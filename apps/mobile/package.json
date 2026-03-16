@@ -1,0 +1,11 @@
+{
+  "name": "@vida/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'not configured yet'",
+    "build": "echo 'not configured yet'",
+    "typecheck": "echo 'not configured yet'",
+    "clean": "rm -rf node_modules .expo"
+  }
+}
