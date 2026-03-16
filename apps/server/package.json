@@ -4,9 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "echo 'not configured yet'",
-    "build": "echo 'not configured yet'",
-    "typecheck": "echo 'not configured yet'",
+    "dev": "wrangler dev",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250525.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.1",
+    "wrangler": "^4.16.0"
   }
 }

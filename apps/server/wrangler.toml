@@ -1,0 +1,6 @@
+name = "vida-server"
+main = "src/index.ts"
+compatibility_date = "2025-03-16"
+
+[observability]
+enabled = true
