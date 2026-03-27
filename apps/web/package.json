@@ -1,0 +1,30 @@
+{
+  "name": "@vida/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@vida/core": "workspace:*",
+    "@vida/types": "workspace:*",
+    "drizzle-orm": "^0.45.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "wa-sqlite": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "typescript": "^5.7.0",
+    "vite": "^6.3.5",
+    "vitest": "^3.2.1"
+  }
+}
