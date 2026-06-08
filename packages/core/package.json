@@ -27,6 +27,7 @@
     "vitest": "^3.2.1"
   },
   "dependencies": {
+    "@vida/types": "workspace:*",
     "drizzle-orm": "^0.45.1",
     "libsodium-wrappers-sumo": "^0.8.2",
     "secure-remote-password": "^0.3.1"

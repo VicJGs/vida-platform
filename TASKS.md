@@ -6,7 +6,7 @@
 
 | Task | Profile | Started | Last Session | Status |
 |------|---------|---------|--------------|--------|
-| toolkit-setup | Generic Coding Session | 2026-06-07 | 2026-06-07 | just started |
+| *(none)* | | | | |
 
 ## 🔴 Blocked
 
@@ -24,7 +24,7 @@
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
-| *(none yet)* | | |
+| toolkit-setup | 2026-06-08 | 2 |
 
 ---
 *To add a task: /task-new [name]*

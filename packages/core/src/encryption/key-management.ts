@@ -96,7 +96,7 @@ export async function unlock(
     zeroKey(keyChain.master_key)
 
     setState('unlocked')
-    return _vaultKey
+    return keyChain.vault_key
   } catch (err) {
     setState('error', err instanceof Error ? err.message : 'Unlock failed')
     throw err
