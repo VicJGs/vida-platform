@@ -321,5 +321,5 @@ These modules can be developed in any order after the foundational modules are i
 
 - **ADR-002 section 8** — Cross-domain relationship map (FK relationships, junction tables, polymorphic references)
 - **ADR-002 section 5.2** — Pages table with entity_type/entity_id polymorphic pattern
-- `docs/architecture/cross-module-integration.md` — Detailed integration points, data freshness, and query patterns
+- `docs/core/architecture/cross-module-integration.md` — Detailed integration points, data freshness, and query patterns
 - `packages/core/src/db/schema.ts` — All table definitions with FK constraints

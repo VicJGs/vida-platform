@@ -4,7 +4,7 @@
 
 Zero-knowledge, local-first, multiplatform life management SaaS.
 Turborepo + pnpm · TypeScript 5.7 strict · Node 22 · React 19.
-Full domain/feature spec lives in `CLAUDE.md`. ADRs in `docs/decisions/`.
+Full domain/feature spec lives in `CLAUDE.md`. ADRs in `docs/core/decisions/`.
 
 ## Where Things Live
 
@@ -25,7 +25,7 @@ Full domain/feature spec lives in `CLAUDE.md`. ADRs in `docs/decisions/`.
 | `@vida/server` | `apps/server/` | Hono on Cloudflare Workers | `src/index.ts`, `src/routes/{auth,sync,billing}.ts`, `wrangler.toml` |
 
 ### Docs & decisions
-- `docs/decisions/ADR-001-tech-stack.md`, `ADR-002-data-model.md`, `ADR-003-sync-protocol.md`
+- `docs/core/decisions/ADR-001-tech-stack.md`, `ADR-002-data-model.md`, `ADR-003-sync-protocol.md`
 - `docs/` also holds module specs, editor blocks, encryption, sync-protocol, platform & infrastructure notes
 - `.adr/` — toolkit ADR template (project-local decisions)
 
@@ -43,3 +43,12 @@ Full domain/feature spec lives in `CLAUDE.md`. ADRs in `docs/decisions/`.
 
 ## Common Commands
 `pnpm dev` · `pnpm build` · `pnpm typecheck` · `pnpm lint` · `pnpm test` · `pnpm format`
+
+## Layer Documentation
+Claude reads these automatically when editing in each directory:
+- `packages/types/src/CLAUDE.md` — shared type definitions
+- `packages/core/src/db/CLAUDE.md` — Drizzle schema + encrypting repository + adapter
+- `packages/core/src/encryption/CLAUDE.md` — zero-knowledge crypto (vault, SRP, key lifecycle)
+
+Only implemented layers are documented; most other dirs are empty scaffolds.
+Run `/layer-docs` again as they fill in, or `/layer-docs --refresh` to regenerate.

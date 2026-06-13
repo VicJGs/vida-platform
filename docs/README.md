@@ -1,0 +1,59 @@
+# Documentation Manifest — Vida Platform
+<!-- Produced by /documentation Phase 0 (documentation-blueprint). The MAP of what to document, at which
+     level, in which aspect, and in what order. Reverse-mode (documenting the existing repo). No-Guessing:
+     code structure ← repo-survey; modules + fill order ← module-dependency-graph; data ← ADR-002. -->
+Status: Phase 0 complete + VERIFIED (2026-06-13) — structure migrated, manifest set, constitution verified vs survey/ADRs (1 drift fixed: ZK-3), core scaffold filled (conventions + server-api). Feature contexts not yet filled.
+
+## Structure (DECIDED — M1–M5, 2026-06-10)
+
+```
+docs/
+├── README.md              this manifest
+├── core/                  CORE level — system-wide truth (M4: architecture + decisions migrated IN)
+│   ├── business-rules.md  the system constitution (18 invariants, cited)
+│   ├── architecture/      system-overview · module-dependency-graph · cross-module-integration ·
+│   │                      data-flow · platform-strategy · performance-strategy · security-model
+│   └── decisions/         ADR-001 (tech-stack) · ADR-002 (data-model) · ADR-003 (sync-protocol)
+├── features/              FEATURES level — the 17 modules (M1: renamed from modules/)
+├── infrastructure/        SERVICES level (M2)
+├── ui/  +  editor/        COMPONENTS level (M3) — Tamagui components + TipTap editor
+└── platform/              per-platform app shells (web/mobile/desktop)
+```
+Note: legacy `docs/architecture.md` (root file) stays put — it is LEGACY, not for decisions `[[authoritative-docs]]`.
+
+## Levels × Aspects
+
+| Level | Home | Aspects |
+|-------|------|---------|
+| **Core** | `docs/core/` | Identity (architecture/system-overview) · **Business Rules** ✅ · Contract (server API) · Structure (decisions/ADR-002 + architecture/module-dependency-graph) · Conventions |
+| **Features** (17) | `docs/features/<module>/` | feature-spec · business-rules · service-contract · state-management-map · component-catalog · page-map (M5) |
+| **Services** | `docs/infrastructure/` | identity · business-rules · contract · structure |
+| **Components** | `docs/ui/` + `docs/editor/` | identity · behavioral-rules · props/states |
+
+## Features — fill order `[FACT: docs/core/architecture/module-dependency-graph.md]`
+| Wave | Modules |
+|------|---------|
+| 0 — Foundational | **Notes & Pages** (in-degree 14, the hub), **Preferences** |
+| 1 — Independent | Tasks · Habits · Finance · Relationships · Check-ins |
+| 2 — Dependent | Projects · Routines · Journals · Learning |
+| 3 — Higher-order | Languages (hard→Learning) · Purposes & Goals · Bucket List |
+| 4 — Peripheral | Gamification · Notifications · Pomodoro |
+
+Services (`docs/infrastructure/`): encryption · sync · db-repository · core-services · utils `[FACT: survey packages/core layers]`.
+Components: `@vida/ui` (`docs/ui/`) · `@vida/editor` (`docs/editor/`) `[FACT: survey]`.
+
+## Fill order (overall)
+Core → Wave 0 (Notes & Pages, Preferences) → Wave 1 → Services (as features need them) → Wave 2 → 3 → 4 → Components.
+
+## Status tracker (⬜ not started · 🔄 in progress · ✅ done)
+| Context | Identity | Business Rules | Contract | Structure | other aspects |
+|---------|:--:|:--:|:--:|:--:|:--|
+| Core | 🔄 architecture/* migrated | ✅ business-rules.md (verified) | 🔄 server-api.md (scaffold — routes unimplemented) | 🔄 ADRs + dep-graph migrated | ✅ conventions.md |
+| Notes & Pages (Wave 0) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| _(all other features/services/components)_ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+
+## Notes
+- The survey pruned 76 dirs — the 17 modules **aren't implemented in code yet** (they live in the ADR-002
+  schema + `@vida/types`). Feature specs are harvested from **ADR-002 + `@vida/types` + legacy life-os**, not code.
+- M4 migrated `docs/architecture/` → `docs/core/architecture/` and `docs/decisions/` → `docs/core/decisions/`
+  (git mv, history preserved); all internal path references updated.

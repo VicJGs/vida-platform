@@ -445,5 +445,5 @@ The neural graph (Sigma.js, WebGL) is designed to handle 10K+ nodes:
 - `packages/core/src/db/adapter.ts` — SQLite PRAGMA configuration
 - `packages/core/src/db/migrations/001_initial.ts` — All indexes and FTS5 virtual tables
 - `packages/core/src/encryption/key-management.ts` — Vault key lifecycle and auto-lock
-- `docs/architecture/data-flow.md` — Read/write flow and cache invalidation patterns
-- `docs/architecture/cross-module-integration.md` — Data freshness strategy (reactive vs on-demand)
+- `docs/core/architecture/data-flow.md` — Read/write flow and cache invalidation patterns
+- `docs/core/architecture/cross-module-integration.md` — Data freshness strategy (reactive vs on-demand)

@@ -298,8 +298,8 @@ The complete technology stack is defined in **ADR-001**. Below is a summary with
 - **ADR-001** — Complete technology stack with full rationale for every choice
 - **ADR-002** — Complete data model (~72 tables, ~520 fields, encryption classification)
 - **ADR-003** — Complete sync protocol (LWW, Yjs, transport, offline behavior, device management)
-- `docs/architecture/data-flow.md` — How data moves through write/read/encrypt/sync pipelines
-- `docs/architecture/cross-module-integration.md` — Every cross-module data access point
-- `docs/architecture/platform-strategy.md` — Code sharing, database adapters, editor/visualization per platform
-- `docs/architecture/security-model.md` — Encryption architecture and key hierarchy
-- `docs/architecture/module-dependency-graph.md` — Module dependencies and risk points
+- `docs/core/architecture/data-flow.md` — How data moves through write/read/encrypt/sync pipelines
+- `docs/core/architecture/cross-module-integration.md` — Every cross-module data access point
+- `docs/core/architecture/platform-strategy.md` — Code sharing, database adapters, editor/visualization per platform
+- `docs/core/architecture/security-model.md` — Encryption architecture and key hierarchy
+- `docs/core/architecture/module-dependency-graph.md` — Module dependencies and risk points

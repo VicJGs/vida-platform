@@ -10,7 +10,7 @@ All business logic lives in `packages/core` and runs identically on web, mobile,
 
 ## Relationship to ADRs
 
-The architecture documents in this directory **interpret and organize** information from the ADRs in `docs/decisions/`. The ADRs are the canonical source of truth for technology choices (ADR-001), data model (ADR-002), and sync protocol (ADR-003). Architecture docs do not duplicate ADR content — they reference it and build on it to answer higher-level questions about how systems connect, how data flows, and what patterns developers should follow.
+The architecture documents in this directory **interpret and organize** information from the ADRs in `docs/core/decisions/`. The ADRs are the canonical source of truth for technology choices (ADR-001), data model (ADR-002), and sync protocol (ADR-003). Architecture docs do not duplicate ADR content — they reference it and build on it to answer higher-level questions about how systems connect, how data flows, and what patterns developers should follow.
 
 ## Documents
 

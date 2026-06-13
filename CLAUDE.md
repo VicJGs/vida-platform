@@ -265,6 +265,6 @@ vida-platform/
 ## Reference Documents
 
 - Architecture overview: `Old/documentation/new_arquitecture/multiplatform-architecture-v2.md`
-- Tech stack decisions: `docs/decisions/ADR-001-tech-stack.md`
-- Complete data model & schema: `docs/decisions/ADR-002-data-model.md`
-- Sync protocol design: `docs/decisions/ADR-003-sync-protocol.md`
+- Tech stack decisions: `docs/core/decisions/ADR-001-tech-stack.md`
+- Complete data model & schema: `docs/core/decisions/ADR-002-data-model.md`
+- Sync protocol design: `docs/core/decisions/ADR-003-sync-protocol.md`
