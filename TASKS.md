@@ -6,7 +6,7 @@
 
 | Task | Profile | Started | Last Session | Status |
 |------|---------|---------|--------------|--------|
-| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-06-18 | Framework COMPLETE + **Wave 0 documented** (Notes & Pages + Preferences, both verified, gate PASS) · next: Wave 1 (Tasks · Habits · Finance · Relationships · Check-ins) |
+| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-06-18 | Wave 0 done + **Tasks (Wave 1) documented** (verified, gate PASS) · next: Habits · Finance · Relationships · Check-ins |
 
 Detailed step plan + live-panel IDs: `.claude/tasks/documentation-blueprint.md`
 

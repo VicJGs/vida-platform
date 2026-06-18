@@ -89,7 +89,12 @@ Also this session — PREFERENCES (Wave 0), full Phase 1→4:
   - Decisions: G1 Preferences owns the Settings SCREEN but DELEGATES account/security→Auth and import/export→Data/Sync (owns only its 3 tables). G2 social fields dropped, G3 AI fields dropped (ZK). G4 keep-all config (superset → 6 new fields flagged INTENDED). G5 per-module visibility system AND feature_gamification kept (distinct concerns). G6 Cmd+K palette. G7 tabbed+searchable (flexible grouping). G8 keep merge-defaults + debounced optimistic autosave + theme→store.
   - Wrote 5 canonical aspect docs (docs/features/preferences/). Verify + foundation gate PASS. Manifest + features index → Preferences ✅. **Wave 0 COMPLETE** (Notes & Pages + Preferences).
   - KEY ZK NOTE captured: "plaintext config" = no L2 field encryption only; L1 (SQLCipher at rest) + L3 (sync blob) still encrypt → server never sees it, ZK holds.
+Also this session — TASKS (Wave 1), full Phase 1→4:
+  - Intake harvested v2 (ADR-002 §5.3 tasks + task_time_logs; @vida/types/task.ts; CLAUDE.md §3) + v1 (life-os tasks). Resolved G1–G9.
+  - Decisions: G1 ALL 12 base layouts + a saveable view-builder (view = saved config). G2 at-most-one parent, standalone first-class. G3 single-level subtasks + rollup, no force-complete, cascade-delete. G4 actual_minutes = auto-sum of time_logs; timer + pomodoro both write logs (one ledger); per-task opt-out. G5 add completed_at. G6 add scheduled_date. G7 migrate to shared tags (deprecate inline tasks.tags). G8 Option A — task recurrence for OBLIGATIONS marked by a `kind='obligation'` classifier (deadline recurrence; behavior recurrence stays Habits/Routines). G9 focus opens pomodoro bound to task → writes time_log.
+  - Wrote 5 canonical aspect docs (docs/features/tasks/). Verify + foundation gate PASS. Manifest + features index → Tasks ✅.
+  - LARGEST INTENDED surface so far → one ADR-002 amendment: completed_at, scheduled_date, recurrence+kind, task_views (saved views), shared-tags migration.
 Next session:
-  - documentation-blueprint framework COMPLETE + Wave 0 done. Next fill-order: **Wave 1** — Tasks · Habits · Finance · Relationships · Check-ins (independent domains), each via `/documentation features/<module>`, same Phase 1→4 loop.
-  - Flagged for build phase: Preferences schema/type catch-up (6 fields + visibility store + entire @vida/types preferences file) → candidate ADR-002 amendment.
+  - Wave 0 + Tasks done. Next fill-order: **Habits · Finance · Relationships · Check-ins** (rest of Wave 1), each via `/documentation features/<module>`, same Phase 1→4 loop.
+  - Build-phase ADR-002 amendments queued: Preferences (6 fields + visibility store + @vida/types file) AND Tasks (5 additions above).
   - Carry-forward: HKDF→BLAKE2b ADR amendment (amend ADR-001 + fix CLAUDE.md) — needs Victor's sign-off.

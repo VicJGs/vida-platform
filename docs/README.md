@@ -2,7 +2,7 @@
 <!-- Produced by /documentation Phase 0 (documentation-blueprint). The MAP of what to document, at which
      level, in which aspect, and in what order. Reverse-mode (documenting the existing repo). No-Guessing:
      code structure ← repo-survey; modules + fill order ← module-dependency-graph; data ← ADR-002. -->
-Status: Phase 0 complete + VERIFIED (2026-06-13). Wave-0 feature contexts **Notes & Pages** + **Preferences** documented + verified (2026-06-18) — 5 canonical aspect docs each, gate PASS. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
+Status: Phase 0 complete + VERIFIED (2026-06-13). Wave-0 (**Notes & Pages**, **Preferences**) + Wave-1 start (**Tasks**) documented + verified (2026-06-18) — 5 canonical aspect docs each, gate PASS. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
 
 ## Structure (DECIDED — M1–M5, 2026-06-10)
 
@@ -51,6 +51,7 @@ Core → Wave 0 (Notes & Pages, Preferences) → Wave 1 → Services (as feature
 | Core | 🔄 architecture/* migrated | ✅ business-rules.md (verified) | 🔄 server-api.md (scaffold — routes unimplemented) | 🔄 ADRs + dep-graph migrated | ✅ conventions.md |
 | Notes & Pages (Wave 0) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ designed iface — modules not yet coded) | ✅ structure-data.md | ✅ conventions.md |
 | Preferences (Wave 0) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ designed iface — no @vida/types yet) | ✅ structure-data.md (⚠ 6 fields + visibility store INTENDED) | ✅ conventions.md |
+| Tasks (Wave 1) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ services not coded) | ✅ structure-data.md (⚠ 5 additions → ADR-002 amendment) | ✅ conventions.md |
 | _(all other features/services/components)_ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Notes
