@@ -75,6 +75,7 @@ Completed:
   - STRUCTURAL DECISION (sets precedent for all 17 features): feature docs aligned to the canonical 5 aspect filenames (Option 1, Victor-approved). structure-data absorbs state-management-map + page-map; component catalog → Components level. Manifest Levels×Aspects row + status tracker + top status updated.
   - PHASE 3 (Verify) + gate (victor:quality-gate-foundation): PASS. vs intake (8/8 gaps), vs sources (6 tables / 33 entity types / Yjs / FTS5 / journal-unique / routes all match ADR-002/003 + note.ts), vs constitution (ZK-1/LF-2/§6 compliant). No silent drift.
   - PHASE 4 (Accept): Notes & Pages ✅ across all 5 aspects in the manifest.
+  - STEP 8 (indexes + /session-log loop): wired the index layer — created docs/features/README.md (17-module status table + fill order, Notes & Pages linked to its 5 aspect docs), docs/core/README.md (core aspect index), and filled the 4 empty level READMEs (infrastructure/editor/ui/platform) with pointer stubs (no faked content). Updated REPO.md "Docs & decisions" to point at the manifest + indexes. Confirmed the /session-log loop: each entry's "Next session" names the next fill-order context → next session resumes from the artifact.
 Decisions:
   - Feature level uses the canonical 5 aspects (consistency with core + framework) — precedent for the remaining 16 modules.
   - G4 entity-note seed pinned as CLIENT-SIDE deterministic from entity fields (zero-knowledge); never server-side.
@@ -84,4 +85,6 @@ Open / flagged:
   - Carry-forward: HKDF→BLAKE2b ADR amendment (still pending sign-off).
   - Not committed yet (awaiting Victor's go).
 Next session:
-  - Step 8 (#13): wire up indexes (docs/features index pointing at the per-feature aspect docs) + confirm /session-log loop. Then next fill-order context: Preferences (Wave 0), then Wave 1 (Tasks · Habits · Finance · Relationships · Check-ins).
+  - Steps 7 + 8 DONE → the documentation-blueprint structural/foundation work is COMPLETE. The framework is built, dogfooded, indexed, and proven on the hub feature.
+  - Next fill-order context: **Preferences** (Wave 0) via `/documentation features/preferences`, then Wave 1 (Tasks · Habits · Finance · Relationships · Check-ins). Same Phase 1→4 loop as Notes & Pages.
+  - Carry-forward: HKDF→BLAKE2b ADR amendment (amend ADR-001 + fix CLAUDE.md) — needs Victor's sign-off.

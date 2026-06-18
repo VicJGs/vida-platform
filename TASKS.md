@@ -6,7 +6,7 @@
 
 | Task | Profile | Started | Last Session | Status |
 |------|---------|---------|--------------|--------|
-| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-06-18 | Step 7 DONE — Notes & Pages documented (5 aspect docs) + verified, gate PASS · next: Step 8 wire indexes / Wave-0 Preferences |
+| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-06-18 | Steps 7+8 DONE — Notes & Pages documented + verified; index layer wired. Framework foundation COMPLETE · next: document Wave-0 Preferences |
 
 Detailed step plan + live-panel IDs: `.claude/tasks/documentation-blueprint.md`
 

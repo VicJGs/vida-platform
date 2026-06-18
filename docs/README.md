@@ -2,7 +2,7 @@
 <!-- Produced by /documentation Phase 0 (documentation-blueprint). The MAP of what to document, at which
      level, in which aspect, and in what order. Reverse-mode (documenting the existing repo). No-Guessing:
      code structure ← repo-survey; modules + fill order ← module-dependency-graph; data ← ADR-002. -->
-Status: Phase 0 complete + VERIFIED (2026-06-13). First feature context **Notes & Pages** documented + verified (2026-06-18) — 5 canonical aspect docs, gate PASS. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Remaining feature/service/component contexts not yet filled.
+Status: Phase 0 complete + VERIFIED (2026-06-13). First feature context **Notes & Pages** documented + verified (2026-06-18) — 5 canonical aspect docs, gate PASS. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
 
 ## Structure (DECIDED — M1–M5, 2026-06-10)
 

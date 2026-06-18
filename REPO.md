@@ -25,8 +25,11 @@ Full domain/feature spec lives in `CLAUDE.md`. ADRs in `docs/core/decisions/`.
 | `@vida/server` | `apps/server/` | Hono on Cloudflare Workers | `src/index.ts`, `src/routes/{auth,sync,billing}.ts`, `wrangler.toml` |
 
 ### Docs & decisions
+- `docs/README.md` — **documentation manifest** (master map: levels × aspects, fill order, status tracker)
+- `docs/core/README.md` — core index · `docs/features/README.md` — features index (17 modules, status + links)
+- Feature contexts use the **canonical 5 aspects** (`identity · business-rules · contract · structure-data · conventions`). Documented so far: **Notes & Pages** (`docs/features/notes-and-pages/`).
 - `docs/core/decisions/ADR-001-tech-stack.md`, `ADR-002-data-model.md`, `ADR-003-sync-protocol.md`
-- `docs/` also holds module specs, editor blocks, encryption, sync-protocol, platform & infrastructure notes
+- `docs/core/business-rules.md` — the system constitution (18 invariants every level inherits)
 - `.adr/` — toolkit ADR template (project-local decisions)
 
 ### Tooling & config
