@@ -2,6 +2,9 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
+- documentation-blueprint: .claude/tasks/documentation-blueprint.md  (live — 8-step plan, mirrors Ctrl+T panel)
+
+## Completed
 - toolkit-setup: .claude/tasks/toolkit-setup.md
 
 ## How Tasks Work

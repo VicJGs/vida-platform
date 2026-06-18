@@ -6,19 +6,34 @@
 
 | Task | Profile | Started | Last Session | Status |
 |------|---------|---------|--------------|--------|
-| *(none)* | | | | |
+| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-06-18 | Step 7 DONE — Notes & Pages documented (5 aspect docs) + verified, gate PASS · next: Step 8 wire indexes / Wave-0 Preferences |
+
+Detailed step plan + live-panel IDs: `.claude/tasks/documentation-blueprint.md`
+
+**Structural fix (must finish first):**
+- Step 1 (#6) — Build survey-repo.js (deterministic core)
+- Step 2 (#7) — Prove it on 3 targets (scalability gate)
+- Step 3 (#8) — Build /survey-repo orchestrator
+- Step 4 (#9) — Refactor /layer-docs onto survey
+- Step 5 (#10) — Refactor /documentation Phase 0 + scenario
+
+**Session scope (unlocks after Step 5):**
+- Step 6 (#11) — Phase 0: discover vida-platform → manifest + docs/core
+- Step 7 (#12) — Pilot: document Notes & Pages
+- Step 8 (#13) — Wire up indexes + /session-log
 
 ## 🔴 Blocked
 
 | Task | Blocker | Since |
 |------|---------|-------|
-| *(none)* | | |
+| Steps 2–8 | each blocked by the prior step (see step plan) | 2026-06-08 |
 
 ## 📋 Planned
 
 | Task | Profile | Priority |
 |------|---------|----------|
-| *(add with /task-new)* | | |
+| Toolkit scan-cascade audit + 6 command migrations | toolkit-development | parked — filed in ~/dev-toolkit/.claude/tasks/ |
+| Integrate /task-new ↔ native task panel | toolkit-development | parked — sync gap found 2026-06-08 |
 
 ## ✅ Completed (last 30 days)
 

@@ -2,7 +2,7 @@
 <!-- Produced by /documentation Phase 0 (documentation-blueprint). The MAP of what to document, at which
      level, in which aspect, and in what order. Reverse-mode (documenting the existing repo). No-Guessing:
      code structure ← repo-survey; modules + fill order ← module-dependency-graph; data ← ADR-002. -->
-Status: Phase 0 complete + VERIFIED (2026-06-13) — structure migrated, manifest set, constitution verified vs survey/ADRs (1 drift fixed: ZK-3), core scaffold filled (conventions + server-api). Feature contexts not yet filled.
+Status: Phase 0 complete + VERIFIED (2026-06-13). First feature context **Notes & Pages** documented + verified (2026-06-18) — 5 canonical aspect docs, gate PASS. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Remaining feature/service/component contexts not yet filled.
 
 ## Structure (DECIDED — M1–M5, 2026-06-10)
 
@@ -26,7 +26,7 @@ Note: legacy `docs/architecture.md` (root file) stays put — it is LEGACY, not 
 | Level | Home | Aspects |
 |-------|------|---------|
 | **Core** | `docs/core/` | Identity (architecture/system-overview) · **Business Rules** ✅ · Contract (server API) · Structure (decisions/ADR-002 + architecture/module-dependency-graph) · Conventions |
-| **Features** (17) | `docs/features/<module>/` | feature-spec · business-rules · service-contract · state-management-map · component-catalog · page-map (M5) |
+| **Features** (17) | `docs/features/<module>/` | **canonical 5 aspects** (aligned to core + framework, 2026-06-18): identity · business-rules · contract · structure-data · conventions. (`structure-data` absorbs the old state-management-map + page-map; the component catalog lives at the **Components** level, not per-feature.) |
 | **Services** | `docs/infrastructure/` | identity · business-rules · contract · structure |
 | **Components** | `docs/ui/` + `docs/editor/` | identity · behavioral-rules · props/states |
 
@@ -49,7 +49,7 @@ Core → Wave 0 (Notes & Pages, Preferences) → Wave 1 → Services (as feature
 | Context | Identity | Business Rules | Contract | Structure | other aspects |
 |---------|:--:|:--:|:--:|:--:|:--|
 | Core | 🔄 architecture/* migrated | ✅ business-rules.md (verified) | 🔄 server-api.md (scaffold — routes unimplemented) | 🔄 ADRs + dep-graph migrated | ✅ conventions.md |
-| Notes & Pages (Wave 0) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Notes & Pages (Wave 0) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ designed iface — modules not yet coded) | ✅ structure-data.md | ✅ conventions.md |
 | _(all other features/services/components)_ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Notes
