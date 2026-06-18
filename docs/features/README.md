@@ -23,7 +23,7 @@ every level (see the master manifest: [`../README.md`](../README.md)).
 | Module | Wave | Status | Docs |
 |--------|:----:|:------:|------|
 | [Notes & Pages](notes-and-pages/) | 0 | ✅ | [identity](notes-and-pages/identity.md) · [business-rules](notes-and-pages/business-rules.md) · [contract](notes-and-pages/contract.md) · [structure-data](notes-and-pages/structure-data.md) · [conventions](notes-and-pages/conventions.md) |
-| Preferences | 0 | ⬜ | — |
+| [Preferences](preferences/) | 0 | ✅ | [identity](preferences/identity.md) · [business-rules](preferences/business-rules.md) · [contract](preferences/contract.md) · [structure-data](preferences/structure-data.md) · [conventions](preferences/conventions.md) |
 | Tasks | 1 | ⬜ | — |
 | Habits | 1 | ⬜ | — |
 | Finance | 1 | ⬜ | — |

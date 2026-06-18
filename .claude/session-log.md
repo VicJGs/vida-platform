@@ -84,7 +84,12 @@ Open / flagged:
   - G5: JournalSummaryConfig (note.ts) has 5 toggles; full personalizable section set is ⚠ INTENDED, not shipped → build-phase type expansion + candidate /adr-new. Needs Victor's go to write the ADR.
   - Carry-forward: HKDF→BLAKE2b ADR amendment (still pending sign-off).
   - Not committed yet (awaiting Victor's go).
+Also this session — PREFERENCES (Wave 0), full Phase 1→4:
+  - Intake harvested v2 (ADR-002 §5.17, 3 all-plaintext tables) + v1 (life-os src/features/settings — substantial: debounced autosave, merge-defaults, searchable tabbed UI, profile/account/AI/social baggage). Resolved G1–G8 with Victor.
+  - Decisions: G1 Preferences owns the Settings SCREEN but DELEGATES account/security→Auth and import/export→Data/Sync (owns only its 3 tables). G2 social fields dropped, G3 AI fields dropped (ZK). G4 keep-all config (superset → 6 new fields flagged INTENDED). G5 per-module visibility system AND feature_gamification kept (distinct concerns). G6 Cmd+K palette. G7 tabbed+searchable (flexible grouping). G8 keep merge-defaults + debounced optimistic autosave + theme→store.
+  - Wrote 5 canonical aspect docs (docs/features/preferences/). Verify + foundation gate PASS. Manifest + features index → Preferences ✅. **Wave 0 COMPLETE** (Notes & Pages + Preferences).
+  - KEY ZK NOTE captured: "plaintext config" = no L2 field encryption only; L1 (SQLCipher at rest) + L3 (sync blob) still encrypt → server never sees it, ZK holds.
 Next session:
-  - Steps 7 + 8 DONE → the documentation-blueprint structural/foundation work is COMPLETE. The framework is built, dogfooded, indexed, and proven on the hub feature.
-  - Next fill-order context: **Preferences** (Wave 0) via `/documentation features/preferences`, then Wave 1 (Tasks · Habits · Finance · Relationships · Check-ins). Same Phase 1→4 loop as Notes & Pages.
+  - documentation-blueprint framework COMPLETE + Wave 0 done. Next fill-order: **Wave 1** — Tasks · Habits · Finance · Relationships · Check-ins (independent domains), each via `/documentation features/<module>`, same Phase 1→4 loop.
+  - Flagged for build phase: Preferences schema/type catch-up (6 fields + visibility store + entire @vida/types preferences file) → candidate ADR-002 amendment.
   - Carry-forward: HKDF→BLAKE2b ADR amendment (amend ADR-001 + fix CLAUDE.md) — needs Victor's sign-off.
