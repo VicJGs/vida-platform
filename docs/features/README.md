@@ -25,9 +25,9 @@ every level (see the master manifest: [`../README.md`](../README.md)).
 | [Notes & Pages](notes-and-pages/) | 0 | ✅ | [identity](notes-and-pages/identity.md) · [business-rules](notes-and-pages/business-rules.md) · [contract](notes-and-pages/contract.md) · [structure-data](notes-and-pages/structure-data.md) · [conventions](notes-and-pages/conventions.md) |
 | [Preferences](preferences/) | 0 | ✅ | [identity](preferences/identity.md) · [business-rules](preferences/business-rules.md) · [contract](preferences/contract.md) · [structure-data](preferences/structure-data.md) · [conventions](preferences/conventions.md) |
 | [Tasks](tasks/) | 1 | ✅ | [identity](tasks/identity.md) · [business-rules](tasks/business-rules.md) · [contract](tasks/contract.md) · [structure-data](tasks/structure-data.md) · [conventions](tasks/conventions.md) |
-| Habits | 1 | ⬜ | — |
-| Finance | 1 | ⬜ | — |
-| Relationships | 1 | ⬜ | — |
+| [Habits](habits/) | 1 | ✅ | [identity](habits/identity.md) · [business-rules](habits/business-rules.md) · [contract](habits/contract.md) · [structure-data](habits/structure-data.md) · [conventions](habits/conventions.md) |
+| [Finance](finance/) | 1 | ✅ | [identity](finance/identity.md) · [business-rules](finance/business-rules.md) · [contract](finance/contract.md) · [structure-data](finance/structure-data.md) · [conventions](finance/conventions.md) |
+| [Relationships](relationships/) | 1 | ✅ | [identity](relationships/identity.md) · [business-rules](relationships/business-rules.md) · [contract](relationships/contract.md) · [structure-data](relationships/structure-data.md) · [conventions](relationships/conventions.md) |
 | Check-ins | 1 | ⬜ | — |
 | Projects | 2 | ⬜ | — |
 | Routines | 2 | ⬜ | — |

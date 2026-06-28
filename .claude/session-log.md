@@ -98,3 +98,78 @@ Next session:
   - Wave 0 + Tasks done. Next fill-order: **Habits · Finance · Relationships · Check-ins** (rest of Wave 1), each via `/documentation features/<module>`, same Phase 1→4 loop.
   - Build-phase ADR-002 amendments queued: Preferences (6 fields + visibility store + @vida/types file) AND Tasks (5 additions above).
   - Carry-forward: HKDF→BLAKE2b ADR amendment (amend ADR-001 + fix CLAUDE.md) — needs Victor's sign-off.
+
+---
+Date: 2026-06-27
+Task: documentation-blueprint
+Goal: Continue /documentation fill order — document Habits (Wave 1) end to end (Phase 1→4).
+Completed:
+  - PHASE 1 (Intake): habits intake was harvested 06-18 (v2 ADR-002 §5.5 + habit.ts + v1 life-os) with gap map G1–G9 open. Resolved all 9 with Victor → marked WHOLE (docs/intake/habits.md Resolution + Change Log).
+  - PHASE 2 (Transform): wrote the 5 canonical aspect docs (docs/features/habits/: identity · business-rules · contract · structure-data · conventions), every claim FACT/INTENT/INTERP-tagged. Deleted the 5 empty pre-framework scaffolds (component-catalog, module-spec, page-map, service-contract, state-management-map).
+  - PHASE 3 (Verify) + gate (victor:quality-gate-foundation): PASS. Verified FACT citations against ADR-002 L1632-1701 (schema exact), habit.ts (@encrypted fields, enums), and confirmed core/src/models/habit.ts is EMPTY (0 lines) → "no core service yet" is accurate. Intent preserved (9/9 gaps → HB-1..HB-12). Zero drift.
+  - PHASE 4 (Accept): Habits ✅ in features/README.md + manifest status tracker (docs/README.md) + top Status line.
+Decisions:
+  - G2 STREAK = consecutive *scheduled* occurrences; a miss resets to 0 (NO grace); counters recompute from the habit_completions ledger (cache). Feeds Gamification (HB-9, INTENDED).
+  - G3 break-habit completion = "abstained today" (success-logged); relapse = no completion → reset.
+  - G4 done when count>=target_count; partial logs for analytics but does NOT advance streak. count=reps, value=measured qty.
+  - G6 quick-check default; mood/ease/satisfaction only via explicit detailed-log.
+  - G7 CONTRIBUTORY purpose link (not navigational): a completion contributes to the linked purpose's metric via purpose_habits (Purpose owns the metric write). INTENDED — creates a real dependency Purpose docs inherit.
+  - G8 RESTORE dropped v1 fields (INTENDED): habits.success_criteria + habits.difficulty; habit_completions.location + completion_time → candidate ADR-002 amendment.
+  - G9 backfill allowed + recomputes streaks; WINDOW is a user-configurable Preferences setting (habit_backfill_window_days, INTENDED), not hardcoded.
+  - G1 4 view surfaces: Dashboard (check any) · Today to-do (Calendar/List/Checkbox modes) · per-habit standalone · All-Habits Overview. (Dashboard vs Overview consolidation left to contract phase.)
+Next session:
+  - Wave 1 cont.: **Finance** next via /documentation features/finance (Phase 1→4). Then Relationships · Check-ins to close Wave 1.
+  - Build-phase ADR-002 amendments now queued for THREE features: Preferences (6 fields + visibility store + @vida/types file), Tasks (5 additions), Habits (G8 4 fields + G7 contribution contract + G9 Preferences backfill setting).
+  - Carry-forward: HKDF→BLAKE2b ADR amendment (amend ADR-001 + fix CLAUDE.md) — still needs Victor's sign-off.
+  - Not committed yet (awaiting Victor's go — consistent with prior docs-commit cadence).
+
+---
+Date: 2026-06-27
+Task: documentation-blueprint
+Goal: Continue /documentation fill order — document Finance (Wave 1) end to end (Phase 1→4).
+Completed:
+  - PHASE 1 (Intake): harvested v2 (ADR-002 §5.8, 6 tables + finance.ts + CLAUDE.md §1) + v1 (life-os finances — 9-page feature, API.md, FinanceOverview, offline). Raised gap map G1–G12. Resolved ALL with Victor → docs/intake/finance.md WHOLE.
+  - PHASE 2 (Transform): wrote 5 canonical aspect docs (docs/features/finance/), every claim FACT/INTENT/INTERP-tagged. Deleted 5 empty pre-framework scaffolds.
+  - PHASE 3 (Verify) + gate (victor:quality-gate-foundation): PASS. Schema verified exact vs ADR-002 §5.8 L1997-2189 + finance.ts; cascade rules confirmed (L2035/2036/2133); transaction = entity_links target (L3811). Caught near-miss: core/src/models/finance.ts + services/finance-service.ts EXIST but are empty (0 lines) → corrected contract.md wording. Intent preserved (12/12 gaps → FN-1..FN-13). Zero drift remaining.
+  - PHASE 4 (Accept): Finance ✅ in features/README.md + manifest (docs/README.md) + top Status line.
+Decisions:
+  - G4 account balance = LEDGER-DERIVED (opening_balance + Σ transactions); never hand-set. → needs accounts.opening_balance (INTENDED).
+  - G5 transfer = ONE row (type=transfer + transfer_to_account_id), EXCLUDED from income/expense totals.
+  - G6 recurring = forecast template by DEFAULT; opt-in auto-generate (editable before confirm).
+  - G7/G8 multi-currency YES; FX + prices fetched DEVICE-SIDE/manual (private), NEVER server. Future "fetch-on-your-behalf" service must be anonymizing/oblivious (NOT blockchain — corrected Victor's framing); advanced/deferred.
+  - G3 derived aggregates computed client-side; storing them is user opt-in + user owns storage security.
+  - G9 RESTORE: liabilities payment_frequency/next_payment_date/interest_type/payoff_date + income next_payment_date. Skip the rest (is_taxable, ownership_percentage, dividends→model as income tx, descriptions→notes).
+  - G10 tags→shared system; categories→managed list + free-text subcategory.
+  - G12 notes on all 5 finance entities. BUDGETING now IN SCOPE (was deferred) but undesigned → INTENDED, needs own design pass, may become its own feature. LIABILITY-PAYMENT view in scope (INTENDED).
+  - ⚠⚠ CONSTITUTIONAL: bank/investment-API ingestion vs zero-knowledge → CANDIDATE ADR "External financial data under zero-knowledge". Documented ⚠ INTENDED + TENTATIVE only; verified-real surface = manual entry + client-side CSV/OFX.
+Next session:
+  - Wave 1 cont.: **Relationships** next via /documentation features/relationships (Phase 1→4). Then Check-ins to close Wave 1.
+  - Candidate ADRs queued (own sessions): (1) External financial data under zero-knowledge [server+sync impact], (2) Budgeting feature design. Plus the growing ADR-002 amendment now spans Preferences + Tasks + Habits + Finance.
+  - Parked platform concern (G_meta): per-module + global ONBOARDING (personalization surface compounding across modules).
+  - Carry-forward: HKDF→BLAKE2b ADR amendment (ADR-001 + CLAUDE.md) — still needs Victor's sign-off.
+  - Not committed yet (awaiting Victor's go).
+
+---
+Date: 2026-06-28
+Task: documentation-blueprint
+Goal: Continue /documentation fill order — document Relationships/CRM (Wave 1) end to end (Phase 1→4).
+Completed:
+  - PHASE 1 (Intake): harvested v2 (ADR-002 §5.9, 6 tables + relationship.ts + CLAUDE.md §6) + v1 (life-os relationships — full CRM: circles, health score, device import, neural graph, API.md). Raised G1–G12. Resolved ALL with Victor → docs/intake/relationships.md WHOLE.
+  - PHASE 2 (Transform): 5 canonical aspect docs (docs/features/relationships/), every claim FACT/INTENT/INTERP-tagged. Deleted 5 empty scaffolds.
+  - PHASE 3 (Verify) + gate (victor:quality-gate-foundation): PASS. Schema exact vs ADR-002 §5.9 L2193-2364 + relationship.ts; CASCADE/SET NULL confirmed; contact=entity_links target (L3811); core/src/models/relationship.ts EMPTY (0 lines). Intent preserved (12/12 → RL-1..RL-12). Zero drift.
+  - PHASE 4 (Accept): Relationships ✅ in features/README.md + manifest + top Status line.
+Decisions:
+  - G2 NETWORKS get schema: network_groups + network_group_contacts (many-to-many) → ADR-002 amendment.
+  - G3 neural graph = membership edges only (contact↔network); NO contact↔contact edge table. Sigma.js.
+  - G4 relationship health = DERIVED (frequency-vs-cadence + sentiment + energy) WEIGHTED BY CLOSENESS (onion theory); new closeness_tier (INTENDED). Network health = aggregate of members.
+  - G1 reminders/events are VIEWED on a GLOBAL CALENDAR (parked platform surface), not in-module; Relationships' Reminders page only CREATES.
+  - TASKS vs EVENTS clarified for Victor: event occurs (never completes) → spawns tasks/reminders; not a subtask. Calendar = read-only cross-module aggregator.
+  - G5 stats derive from interactions ledger. G6 three reminder mechanisms coexist. G7 device import device-side/mobile-first. 
+  - G8 restore how_we_met + interaction energy_given/energy_received/key_takeaways + reminder snooze/priority.
+  - G9 networks AND contacts get standalone pages + notes via pages. G10 tags → shared system WITH SCOPING (universal vs module — Notes & Pages refinement). G11 group reminders optional + birthday-anchored for important people (never auto-send). G12 Tasks/Journal/Gamification confirmed.
+Next session:
+  - Wave 1 FINALE: **Check-ins** via /documentation features/check-ins (Phase 1→4) → closes Wave 1.
+  - Parked NEW platform surface: GLOBAL CALENDAR page (read-only cross-module aggregator of events+tasks+reminders) — joins journal + onboarding G_meta as cross-cutting surfaces.
+  - ADR-002 amendment now spans Preferences + Tasks + Habits + Finance + Relationships (5 features). Plus Notes & Pages tag-scoping refinement.
+  - Carry-forward ADRs: external-financial-data-under-ZK, budgeting design, HKDF→BLAKE2b (still needs sign-off).
+  - Not committed yet (awaiting Victor's go).

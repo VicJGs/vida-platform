@@ -2,7 +2,7 @@
 <!-- Produced by /documentation Phase 0 (documentation-blueprint). The MAP of what to document, at which
      level, in which aspect, and in what order. Reverse-mode (documenting the existing repo). No-Guessing:
      code structure ← repo-survey; modules + fill order ← module-dependency-graph; data ← ADR-002. -->
-Status: Phase 0 complete + VERIFIED (2026-06-13). Wave-0 (**Notes & Pages**, **Preferences**) + Wave-1 start (**Tasks**) documented + verified (2026-06-18) — 5 canonical aspect docs each, gate PASS. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
+Status: Phase 0 complete + VERIFIED (2026-06-13). Wave-0 (**Notes & Pages**, **Preferences**) + Wave-1 (**Tasks**, **Habits**, **Finance**, **Relationships**) documented + verified (2026-06-18 → 2026-06-28) — 5 canonical aspect docs each, gate PASS. Wave 1 has only **Check-ins** left. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
 
 ## Structure (DECIDED — M1–M5, 2026-06-10)
 
@@ -52,6 +52,9 @@ Core → Wave 0 (Notes & Pages, Preferences) → Wave 1 → Services (as feature
 | Notes & Pages (Wave 0) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ designed iface — modules not yet coded) | ✅ structure-data.md | ✅ conventions.md |
 | Preferences (Wave 0) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ designed iface — no @vida/types yet) | ✅ structure-data.md (⚠ 6 fields + visibility store INTENDED) | ✅ conventions.md |
 | Tasks (Wave 1) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ services not coded) | ✅ structure-data.md (⚠ 5 additions → ADR-002 amendment) | ✅ conventions.md |
+| Habits (Wave 1) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ core model empty) | ✅ structure-data.md (⚠ G8 4 fields + G7/G9 → ADR-002 amendment) | ✅ conventions.md |
+| Finance (Wave 1) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ core empty) | ✅ structure-data.md (⚠ largest INTENDED surface: ZK-ingestion ADR + budgeting ADR + ADR-002 amendment) | ✅ conventions.md |
+| Relationships (Wave 1) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ core empty) | ✅ structure-data.md (⚠ networks + closeness + graph + restored fields → ADR-002 amendment) | ✅ conventions.md |
 | _(all other features/services/components)_ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Notes
