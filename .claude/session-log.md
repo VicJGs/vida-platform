@@ -173,3 +173,24 @@ Next session:
   - ADR-002 amendment now spans Preferences + Tasks + Habits + Finance + Relationships (5 features). Plus Notes & Pages tag-scoping refinement.
   - Carry-forward ADRs: external-financial-data-under-ZK, budgeting design, HKDF→BLAKE2b (still needs sign-off).
   - Not committed yet (awaiting Victor's go).
+
+---
+Date: 2026-06-28
+Task: documentation-blueprint
+Goal: Document Check-ins (Wave 1 finale) end to end (Phase 1→4) → CLOSE Wave 1.
+Completed:
+  - PHASE 1 (Intake): harvested v2 (ADR-002 §5.13 3 tables + L970 P/E rationale + CLAUDE.md §9). v1 had NO check-ins (the "today" page ≈ future Journal). Raised G1–G10; resolved ALL with Victor → docs/intake/check-ins.md WHOLE.
+  - PHASE 2 (Transform): 5 canonical aspect docs (docs/features/check-ins/), every claim FACT/INTENT/INTERP-tagged. Deleted 5 empty scaffolds.
+  - PHASE 3 (Verify) + gate (victor:quality-gate-foundation): PASS. Schema exact vs §5.13; CASCADE/SET NULL/UNIQUE confirmed; daily_check_in IS a valid entity_links type (L1350); ZERO code confirmed (no @vida/types or @vida/core check-in file). Intent preserved (10/10 → CK-1..CK-12). Zero drift.
+  - PHASE 4 (Accept): Check-ins ✅ → **Wave 0 + Wave 1 COMPLETE** (7 feature contexts). Manifest + features index + top Status updated.
+Decisions:
+  - ⚠ SCHEMA BUG caught: daily_check_ins.check_in_date is UNIQUE alone → forbids morning+evening same day. FIX = UNIQUE(check_in_date, check_in_type) (CK-2).
+  - G3 check_in_type EXPANDS +afternoon/monthly_review/yearly_review (6 total); default template PER TYPE + full builder.
+  - G5 hardcoded columns = built-in default template; custom_data = extra questions only (no dup).
+  - G7 (significant) review check-ins (weekly/monthly/yearly) are a CROSS-MODULE REVIEW SURFACE — aggregate Purpose/Projects/Tasks progress; Purpose target_reviews happen inside. FORWARD DEPENDENCY (Wave1→Wave2/3) flagged INTENDED, contract finalized when those modules documented.
+  - G8 per-template editable schedule → Preferences + Notifications. G10 check-ins link to Journal day page via entity_links (daily_check_in already valid, L1350) + reviews backlink reviewed entities; NO tags. G9 Gamification streaks INTENDED.
+Next session:
+  - **Wave 2 begins**: Projects · Routines · Journals · Learning (each /documentation features/<module>, Phase 1→4).
+  - NOTE on fill order: Check-ins review contract (G7) + global Calendar surface both want Purpose/Projects/Journal documented — Wave 2 will let us finalize those forward contracts.
+  - ADR-002 amendment now spans 6 features (Preferences/Tasks/Habits/Finance/Relationships/Check-ins incl. the UNIQUE fix + 3 new check_in_types). Candidate ADRs still queued: external-financial-data-under-ZK, budgeting, HKDF→BLAKE2b (sign-off). Parked platform surfaces: global Calendar, onboarding. Notes & Pages tag-scoping refinement.
+  - Habits/Finance/Relationships committed this session (98bb631). Check-ins docs NOT yet committed.
