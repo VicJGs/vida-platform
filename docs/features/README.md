@@ -29,7 +29,7 @@ every level (see the master manifest: [`../README.md`](../README.md)).
 | [Finance](finance/) | 1 | ✅ | [identity](finance/identity.md) · [business-rules](finance/business-rules.md) · [contract](finance/contract.md) · [structure-data](finance/structure-data.md) · [conventions](finance/conventions.md) |
 | [Relationships](relationships/) | 1 | ✅ | [identity](relationships/identity.md) · [business-rules](relationships/business-rules.md) · [contract](relationships/contract.md) · [structure-data](relationships/structure-data.md) · [conventions](relationships/conventions.md) |
 | [Check-ins](check-ins/) | 1 | ✅ | [identity](check-ins/identity.md) · [business-rules](check-ins/business-rules.md) · [contract](check-ins/contract.md) · [structure-data](check-ins/structure-data.md) · [conventions](check-ins/conventions.md) |
-| Projects | 2 | ⬜ | — |
+| [Projects](projects/) | 2 | ✅ | [identity](projects/identity.md) · [business-rules](projects/business-rules.md) · [contract](projects/contract.md) · [structure-data](projects/structure-data.md) · [conventions](projects/conventions.md) |
 | Routines | 2 | ⬜ | — |
 | Journals | 2 | ⬜ | — |
 | Learning | 2 | ⬜ | — |

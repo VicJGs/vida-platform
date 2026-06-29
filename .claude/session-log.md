@@ -194,3 +194,26 @@ Next session:
   - NOTE on fill order: Check-ins review contract (G7) + global Calendar surface both want Purpose/Projects/Journal documented — Wave 2 will let us finalize those forward contracts.
   - ADR-002 amendment now spans 6 features (Preferences/Tasks/Habits/Finance/Relationships/Check-ins incl. the UNIQUE fix + 3 new check_in_types). Candidate ADRs still queued: external-financial-data-under-ZK, budgeting, HKDF→BLAKE2b (sign-off). Parked platform surfaces: global Calendar, onboarding. Notes & Pages tag-scoping refinement.
   - Habits/Finance/Relationships committed this session (98bb631). Check-ins docs NOT yet committed.
+
+---
+Date: 2026-06-29
+Task: documentation-blueprint
+Goal: Wave 2 begins — document Projects (Wave-2 foundation) end to end (Phase 1→4).
+Completed:
+  - PHASE 1 (Intake): harvested v2 (ADR-002 §5.4 3 tables + project.ts + CLAUDE.md §2) + v1 (life-os projects: Kanban, time logging, actions, purpose links, docs). Raised G1–G11; resolved ALL → docs/intake/projects.md WHOLE.
+  - PHASE 2 (Transform): 5 canonical aspect docs (docs/features/projects/), every claim FACT/INTENT/INTERP-tagged. Deleted 5 empty scaffolds.
+  - PHASE 3 (Verify) + gate (victor:quality-gate-foundation): PASS. Schema exact vs §5.4 L1532-1625 + project.ts; nested milestones + CASCADE confirmed; project/milestone valid note targets (L1343); core/src/models/project.ts EMPTY (0 lines). Intent preserved (11/11 → PJ-1..PJ-12). Zero drift.
+  - PHASE 4 (Accept): Projects ✅ → Wave 2 started. Manifest + features index + top Status updated.
+Decisions (big module — most expansions yet):
+  - G2 DEDICATED deliverables table (Project > Milestone > Deliverable > Task, 4 real levels).
+  - G4 deliverable = MULTI-TYPE measurement system (financial / task-statistics / third-party-metrics / activity-logs / artifacts) — dynamic progress; NEEDS OWN DESIGN PASS.
+  - G3 vision + mission = TipTap pages (not columns). G5 project time derived from task focus only (one ledger; no project timer). G6 documents = secure VAULT (large files via R2). G7 dedicated Tasks→Projects API for project-tasks.
+  - G8 cross-module: + project_contacts(ROLE) (Relationships team/stakeholders), project↔Finance accounts, project events (→ global Calendar), plus existing habits/purposes/bucket-list + Check-in reviews + Gamification XP.
+  - G9 user-personalized views (Kanban/timeline/board; archived = filter). G10 deliverable notes. G11 shared scoped tags.
+  - ⚠⚠ GOVERNING PRINCIPLE (Victor): adding integrations does NOT change the ZK goal — external/AI integrations are OPT-IN, USER-OWNS-THE-RISK components wrapped in a protection layer (ZK core + guarded extension layer). → candidate addition to CORE constitution; frames 2 ADRs.
+  - Two ADRs framed: "external data ingestion under ZK" (GENERALIZED from Finance: now banks + social/marketing metrics) + "AI/LLM integration under ZK" (Victor wants AGENTIC, ON-DEVICE = ZK-safe path). Documents = vault is the security-first framing.
+Next session:
+  - Wave 2 cont.: Routines · Journals · Learning. (Journals will let us finalize the global Calendar + Check-in-review forward contracts.)
+  - NEW high-priority follow-up: amend CORE constitution (docs/core/business-rules.md) with the extension-model principle — affects every external-integration ADR. Needs Victor's go.
+  - ADR-002 amendment now spans 7 feature contexts (+ Projects: deliverables table, mission, project_contacts(role), project-account/event links, shared-tags). Candidate ADRs: external-ingestion (generalized), AI-agentic-within, budgeting, HKDF→BLAKE2b. Parked: global Calendar, onboarding, Notes&Pages tag-scoping, deliverable-measurement design pass.
+  - Projects docs NOT yet committed.
