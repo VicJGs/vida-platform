@@ -217,3 +217,21 @@ Next session:
   - NEW high-priority follow-up: amend CORE constitution (docs/core/business-rules.md) with the extension-model principle — affects every external-integration ADR. Needs Victor's go.
   - ADR-002 amendment now spans 7 feature contexts (+ Projects: deliverables table, mission, project_contacts(role), project-account/event links, shared-tags). Candidate ADRs: external-ingestion (generalized), AI-agentic-within, budgeting, HKDF→BLAKE2b. Parked: global Calendar, onboarding, Notes&Pages tag-scoping, deliverable-measurement design pass.
   - Projects docs NOT yet committed.
+
+---
+Date: 2026-07-01
+Task: documentation-blueprint
+Goal: Structural session — scope reconciliation + re-sequencing (no new feature docs).
+Completed:
+  - ROUTINES intake (from 06-30): REFRAME captured — Routines = cross-module ORCHESTRATION layer; named ordered sequences; polymorphic INTERACTIVE steps with per-step completion MODES that drive underlying entities (G2/G3/G5/action-model resolved). Remaining gaps G1/G4/G6-G10 to confirm on return. NOT transformed.
+  - ⚠⚠ SCOPE RECONCILIATION (Victor flagged dropped modules): audited v1 ../life-os/COMPLETE_SYSTEM_ARCHITECTURE.md (91 tables/7 domains) vs v2 (~60/12). Found 4 silently-dropped intended items → Victor ruled KEEP on all: Health domain (exercise+nutrition), Finance Commitments, Duties, Projects Investigations. + Learning verify-list (Grades/Cycles). Enterprise/AI/multi-user drops confirmed CORRECT (ZK/single-user). Durable record: docs/intake/_scope-reconciliation-v1.md. Manifest + features index reconciled → new Wave R.
+  - ROUTINES RE-SEQUENCED to late (Wave 4, before peripherals): it orchestrates other modules, so document those first. Fill order updated in manifest + index + task.
+  - LEARNING DECOMPOSED: ~17 tables → 5 sub-contexts (Courses&Classes · Books · Knowledge · Study Sessions&Planner · Flashcards), each own Phase 1→4 (avoids blowing token budget on one giant context). Language stays separate (Wave 3).
+  - SKILLS SEPARATED from Learning (Victor): v2 skills/skill_resources are a downgraded 2-table version of a larger envisioned module → own feature context (Wave R). Removed from Learning:Knowledge.
+Decisions:
+  - Revised fill order: Wave 2 = Projects ✅ · Learning (5 sub) · Journals; Wave 3 = Languages · Purposes · Bucket List; Wave R = Health · Duties · Skills (+ Finance→Commitments, Projects→Investigations); Wave 4 = Routines · Gamification · Notifications · Pomodoro.
+  - Learning before Journals (Journals aggregates study). Routines + Journals are aggregators → late.
+Next session:
+  - Start **Learning: Courses & Classes** (first Learning sub-context) via /documentation, Phase 1→4. Harvest ADR-002 §5.10 (courses) + §5.18 (ICS) + learning.ts + v1 life-os learning + CLAUDE.md §7.
+  - Backlog now (build/ADR): extension-model principle → constitution; external-ingestion ADR (generalized); AI-agentic-within ADR; budgeting design; deliverable-measurement design; Duties defining-intake; Health full intake; Skills full intake; ADR-002 amendment (7+ contexts); HKDF→BLAKE2b.
+  - This structural state committed this session.

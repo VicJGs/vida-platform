@@ -29,9 +29,26 @@ Mirrors the live Ctrl+T panel. Order = priority. IDs in (parens) are the live-pa
 - [x] Relationships (Wave 1) — 5 aspect docs + verified, gate PASS (06-28). Intake G1–G12 resolved. INTENDED: network_groups + junction (G2), membership-only graph (G3), closeness-weighted health/closeness_tier (G4), G8 restored fields (how_we_met, energy_given/received, key_takeaways, reminder snooze+priority), birthday-anchored group reminders (G11), tag scoping (G10). Parked NEW platform surface: GLOBAL CALENDAR (read-only cross-module event/task/reminder aggregator).
 - [x] Check-ins (Wave 1 FINALE) — 5 aspect docs + verified, gate PASS (06-28). Intake G1–G10 resolved. Caught SCHEMA BUG (check_in_date UNIQUE alone → fix to composite, G2). INTENDED: +afternoon/monthly_review/yearly_review types (G3), review check-ins = cross-module review surface reading Purpose/Projects/Tasks (G7, forward dep), per-template schedule→Prefs+Notifications (G8), pages+Journal-day link (G10), gamification streaks (G9). **← Wave 0 + Wave 1 COMPLETE (7 features).**
 
+### ▸ Wave R — Recovered scope (v1 architecture audit, 2026-06-30 — all KEEP)
+Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM_ARCHITECTURE.md (91 tables/7 domains) vs v2. Record: docs/intake/_scope-reconciliation-v1.md.
+- [ ] **Health** (NEW context) — exercise + nutrition (ExercisePlan/TrainingExercise/WorkoutSession/NutritionPlan/Recipe/MealLog). No v2 schema → full intake + ADR-002 additions. Routines `exercise` step-type forward-refs it.
+- [ ] **Duties** (NEW context) — distinct from Task/Obligation/Routine (v1 MasterDuty). Needs a DEFINING mini-intake before placement.
+- [ ] **Finance → Commitments** (EXPAND documented Finance) — recurring commitments, auto-txn generation + due reminders (ties to budgeting design pass).
+- [ ] **Projects → Investigations** (EXPAND documented Projects) — research/investigation entity.
+- [ ] **Learning → verify** Grades/GPA (CR-002/OR-003), Cycles (OR-008), Subject-as-entity when documenting Learning.
+- [ ] **Skills** (SEPARATE module, extracted from Learning 07-01) — v2 skills/skill_resources are a downgraded 2-table version; envisioned larger/robust. Own intake captures the fuller vision. Removed from Learning:Knowledge sub-context.
+
+### ▸ Learning decomposition (07-01) — ~17 tables → 5 sub-contexts (each own Phase 1→4); Skills split out; Language=Wave 3
+- [ ] Learning: Courses & Classes (courses + ICS sync + homework/exams/syllabus) ← START HERE when Learning begins
+- [ ] Learning: Books (books + book_chapters)
+- [ ] Learning: Knowledge (study_topics + topic_reviews + knowledge_notes)
+- [ ] Learning: Study Sessions & Planner (study_sessions + §5.11 planner)
+- [ ] Learning: Flashcards (flashcard_decks/flashcards/reviews, SM-2)
+
 ### ▸ Wave 2 (in progress)
 - [x] Projects (Wave 2 foundation) — 5 aspect docs + verified, gate PASS (06-29). Intake G1–G11 resolved. DEDICATED deliverables table + multi-type measurement system (financial/stats/3rd-party/logs/artifacts — needs design pass), vision+mission TipTap pages, project time from task focus, document VAULT (R2), dedicated Tasks→Projects API, +project_contacts(role)/account/event links, user-personalized views, deliverable notes, shared scoped tags. ⚠⚠ GOVERNING PRINCIPLE surfaced: ZK core + guarded opt-in extension layer (→ constitution).
-- [ ] NEXT → Wave 2 cont.: Routines · Journals · Learning. (Journals finalizes the global Calendar + Check-in-review forward contracts.)
+- [~] Routines — intake IN PROGRESS + **RE-SEQUENCED to late (before Wave 4 peripherals), 2026-07-01**. Reframe captured: Routines = cross-module ORCHESTRATION layer; named sequences; polymorphic INTERACTIVE steps w/ per-step completion modes driving underlying entities. Deferred because its step-types reference Learning/Health/Duties/etc. — document those first. Intake: docs/intake/routines.md (G2/G3/G5/action-model resolved; G1/G4/G6-G10 to confirm on return).
+- [ ] NEXT → Wave 2 cont.: **Learning** (foundation, most-referenced) → **Journals** (aggregator, after Learning).
 
 ### ▸ Follow-up surfaced by Step 6 Verify
 - [ ] ADR amendment: record the HKDF → BLAKE2b-256 Vault Key decision. Code (vault.ts) is authoritative and deliberate ("replaces HKDF"); ADR-001 §Key Model + CLAUDE.md still say HKDF. Run /adr-new (amend ADR-001) + fix CLAUDE.md — needs Victor's sign-off before editing the ADR.

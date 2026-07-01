@@ -35,9 +35,15 @@ Note: legacy `docs/architecture.md` (root file) stays put — it is LEGACY, not 
 |------|---------|
 | 0 — Foundational | **Notes & Pages** (in-degree 14, the hub), **Preferences** |
 | 1 — Independent | Tasks · Habits · Finance · Relationships · Check-ins |
-| 2 — Dependent | Projects · Routines · Journals · Learning |
+| 2 — Dependent | Projects · **Learning** (~17 tables → 5 sub-contexts: Courses&Classes · Books · Knowledge · Study Sessions&Planner · Flashcards) · Journals  (Learning before Journals — Journals aggregates study) |
 | 3 — Higher-order | Languages (hard→Learning) · Purposes & Goals · Bucket List |
-| 4 — Peripheral | Gamification · Notifications · Pomodoro |
+| 4 — Peripheral | **Routines** (re-sequenced here 2026-07-01 — the orchestrator; needs all modules it sequences documented first) · Gamification · Notifications · Pomodoro |
+| **R — Recovered (v1 audit 2026-06-30 / -07-01)** | **Health** (exercise + nutrition — new domain) · **Duties** (needs defining intake) · **Skills** (separated from Learning — downgraded 2-table version, envisioned larger) · + expansions: Finance→**Commitments**, Projects→**Investigations**, Learning→verify Grades/Cycles. See [`intake/_scope-reconciliation-v1.md`](intake/_scope-reconciliation-v1.md). |
+
+> ⚠ **Scope note (2026-06-30):** v1's `COMPLETE_SYSTEM_ARCHITECTURE.md` (91 tables/7 domains) planned scope the
+> v2 rebuild dropped. Audit + Victor's KEEP decisions: [`intake/_scope-reconciliation-v1.md`](intake/_scope-reconciliation-v1.md).
+> The "17 modules" below understated scope; recovered contexts (Health, Duties) + expansions (Commitments,
+> Investigations) are now tracked in Wave R.
 
 Services (`docs/infrastructure/`): encryption · sync · db-repository · core-services · utils `[FACT: survey packages/core layers]`.
 Components: `@vida/ui` (`docs/ui/`) · `@vida/editor` (`docs/editor/`) `[FACT: survey]`.
