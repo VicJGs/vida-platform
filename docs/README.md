@@ -2,7 +2,7 @@
 <!-- Produced by /documentation Phase 0 (documentation-blueprint). The MAP of what to document, at which
      level, in which aspect, and in what order. Reverse-mode (documenting the existing repo). No-Guessing:
      code structure ← repo-survey; modules + fill order ← module-dependency-graph; data ← ADR-002. -->
-Status: Phase 0 complete + VERIFIED (2026-06-13). **Wave 0 + Wave 1 COMPLETE; Wave 2 started.** Wave-0 (**Notes & Pages**, **Preferences**) + Wave-1 (**Tasks**, **Habits**, **Finance**, **Relationships**, **Check-ins**) + Wave-2 (**Projects**) documented + verified (2026-06-18 → 2026-06-29) — 5 canonical aspect docs each, gate PASS. Wave 2 remaining: Routines · Journals · Learning. ⚠ A governing **extension-model principle** (ZK core + guarded opt-in integrations) was surfaced by Projects → candidate addition to `core/business-rules.md`. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
+Status: Phase 0 complete + VERIFIED (2026-06-13). **Wave 0 + Wave 1 COMPLETE; Wave 2 in progress.** Wave-0 (**Notes & Pages**, **Preferences**) + Wave-1 (**Tasks**, **Habits**, **Finance**, **Relationships**, **Check-ins**) + Wave-2 (**Projects**, **Learning: Education** 1/5) documented + verified (2026-06-18 → 2026-07-03) — 5 canonical aspect docs each, gate PASS. Wave 2 remaining: Routines · Journals · Learning. ⚠ A governing **extension-model principle** (ZK core + guarded opt-in integrations) was surfaced by Projects → candidate addition to `core/business-rules.md`. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
 
 ## Structure (DECIDED — M1–M5, 2026-06-10)
 
@@ -63,6 +63,7 @@ Core → Wave 0 (Notes & Pages, Preferences) → Wave 1 → Services (as feature
 | Relationships (Wave 1) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ core empty) | ✅ structure-data.md (⚠ networks + closeness + graph + restored fields → ADR-002 amendment) | ✅ conventions.md |
 | Check-ins (Wave 1) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ ZERO code) | ✅ structure-data.md (⚠ UNIQUE fix + 3 new types + cross-module review contract) | ✅ conventions.md |
 | Projects (Wave 2) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ core empty) | ✅ structure-data.md (⚠ deliverables table + measurement system + extension-model principle → constitution + 2 ADRs) | ✅ conventions.md |
+| Learning: Education (Wave 2, 1/5) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ ZERO service code) | ✅ structure-data.md (⚠⚠ 8-level hierarchy REFRAME — 14 INTENDED entities, largest ADR-002 amendment yet + 2 design passes) | ✅ conventions.md |
 | _(all other features/services/components)_ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Notes

@@ -234,4 +234,28 @@ Decisions:
 Next session:
   - Start **Learning: Courses & Classes** (first Learning sub-context) via /documentation, Phase 1→4. Harvest ADR-002 §5.10 (courses) + §5.18 (ICS) + learning.ts + v1 life-os learning + CLAUDE.md §7.
   - Backlog now (build/ADR): extension-model principle → constitution; external-ingestion ADR (generalized); AI-agentic-within ADR; budgeting design; deliverable-measurement design; Duties defining-intake; Health full intake; Skills full intake; ADR-002 amendment (7+ contexts); HKDF→BLAKE2b.
-  - This structural state committed this session.
+  - This structural state committed this session (c8d7e14).
+  - PROCESS CLARIFICATION (Victor Q, 07-01): the 5 Learning sub-contexts are each documented as their OWN CONTEXT via the `/documentation <context>` Phase 1→4 loop (own 5 canonical aspect docs), NOT via `/documentation-component`. Rationale: this is reverse-mode intent/design documentation (context altitude); `/documentation-component` is a BUILD-phase forward-spec tool (docs/specs/, wrong altitude here). Folder: nested `docs/features/learning/<sub-context>/{5 aspects}` + a `learning/README.md` umbrella. Applies to any future decomposed module (Learning now; potentially Health/Skills).
+
+---
+Date: 2026-07-03
+Task: documentation-blueprint
+Goal: Document Learning: Education (first of 5 Learning sub-contexts) end to end — including Victor's major hierarchy reframe.
+Completed:
+  - PHASE 1 (Intake): harvested v2 (§5.10 courses + §5.18 ICS + learning.ts + CLAUDE.md §7) + v1 (CollegeGrade/CollegeClassData/TopicImportSource). Original G1–G12 SUPERSEDED by Victor's SCOPE REFRAME → 8-level hierarchy (Institution/Self-taught → Program → Curriculum → Degree → Term → Subject → Module → Topic) + A1–A4 (optional depth, rollup, forkable curricula, subject-vs-session). Reshaped gaps H1–H12 + full H9 views resolved → intake WHOLE. Renamed docs/intake/learning-education.md.
+  - PHASE 2 (Transform): 5 aspect docs in docs/features/learning/education/ + learning/README.md umbrella (5-sub-context index). Old empty learning/ scaffolds deleted.
+  - PHASE 3 (Verify) + gate: PASS. FACT base exact (courses L2372-2403; ICS L3581-3630; entity_links L1344); core models/learning.ts + utils/ics-parser.ts confirmed EMPTY (0 lines). 16 invariants ED-1..ED-16; intent preserved. ⚠ highest INTENT-to-FACT ratio yet (deliberate reframe) — all flagged.
+  - PHASE 4 (Accept): Education ✅ in features index + manifest + umbrella.
+Decisions (the big ones):
+  - RENAME: "Courses & Classes" → **Learning: Education**.
+  - H2: SEPARATE institutions + self_taught tables; degree = field; terms HIERARCHICAL (year⊃semester⊃term); subjects = courses reinterpreted, ALWAYS routed.
+  - H5: class = a SESSION of a subject; everything attaches to the Subject. Assessment types incl. PRESENTATION + WORK (catch-all).
+  - H3: grading_systems BUILDER — weighted components per professor, any scale, modality (online/in-person).
+  - H4: homework = education-task in Tasks Universe (Tasks→Education API, Project-Tasks pattern).
+  - H7: subject_schedules entity — 3 methods (ICS now · document extraction DEFERRED to AI/extension · manual).
+  - H12: progress = Projects measurement PATTERN, FORGED SEPARATELY for Education (no data mixing).
+  - H9 views: Programs Dashboard (acing/lacking) · 11-tab Hub (incl. Assessments + Homework) · dedicated pages per Institution/Program/Curriculum(builder+template gallery)/Degree/Term/Subject + per assessment TYPE · My-Week/assessments-view/GPA-report = INTENDED-IMMATURE (need other modules; perfect later). Defaults ALWAYS shipped (anti-lost principle). Sparse data renders gracefully.
+Next session:
+  - Wave 2 cont.: **Learning: Books** (sub-context 2/5) → Knowledge → Study Sessions & Planner → Flashcards → then Journals.
+  - Education docs NOT yet committed (this session's batch pending Victor's go).
+  - Backlog additions: hierarchy ADR-002 amendment (largest yet — 14 entities); grading-system component model design pass; measurement design pass now serves Projects + Education.

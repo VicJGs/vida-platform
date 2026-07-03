@@ -48,7 +48,8 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 ### ▸ Wave 2 (in progress)
 - [x] Projects (Wave 2 foundation) — 5 aspect docs + verified, gate PASS (06-29). Intake G1–G11 resolved. DEDICATED deliverables table + multi-type measurement system (financial/stats/3rd-party/logs/artifacts — needs design pass), vision+mission TipTap pages, project time from task focus, document VAULT (R2), dedicated Tasks→Projects API, +project_contacts(role)/account/event links, user-personalized views, deliverable notes, shared scoped tags. ⚠⚠ GOVERNING PRINCIPLE surfaced: ZK core + guarded opt-in extension layer (→ constitution).
 - [~] Routines — intake IN PROGRESS + **RE-SEQUENCED to late (before Wave 4 peripherals), 2026-07-01**. Reframe captured: Routines = cross-module ORCHESTRATION layer; named sequences; polymorphic INTERACTIVE steps w/ per-step completion modes driving underlying entities. Deferred because its step-types reference Learning/Health/Duties/etc. — document those first. Intake: docs/intake/routines.md (G2/G3/G5/action-model resolved; G1/G4/G6-G10 to confirm on return).
-- [ ] NEXT → Wave 2 cont.: **Learning** (foundation, most-referenced) → **Journals** (aggregator, after Learning).
+- [x] Learning: Education (Wave 2, sub-context 1/5) — 5 aspect docs + umbrella + verified, gate PASS (07-03). ⚠⚠ SCOPE REFRAME: 8-level hierarchy (Institution/Self-taught → Program → Curriculum → Degree → Term → Subject → Module → Topic), renamed from "Courses & Classes". Grading-system BUILDER, subject_schedules (3 methods), class=session-of-subject, homework=education-task (Tasks Universe), Education-forged measurement, 11-tab Hub + dedicated-page families + per-assessment-type pages. Largest INTENDED surface (14 entities → ADR-002 amendment) + 2 design passes (grading components; measurement shared w/ Projects, separate forges).
+- [ ] NEXT → Wave 2 cont.: **Learning: Books** (2/5) → Knowledge (3/5) → Study Sessions & Planner (4/5) → Flashcards (5/5) → **Journals**.
 
 ### ▸ Follow-up surfaced by Step 6 Verify
 - [ ] ADR amendment: record the HKDF → BLAKE2b-256 Vault Key decision. Code (vault.ts) is authoritative and deliberate ("replaces HKDF"); ADR-001 §Key Model + CLAUDE.md still say HKDF. Run /adr-new (amend ADR-001) + fix CLAUDE.md — needs Victor's sign-off before editing the ADR.
@@ -79,6 +80,10 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 | documentation-blueprint → toolkit-fix detour | structural | /documentation + layer-docs crash on large repos (unbounded scan) | ✓ Steps 1–5 + reroute DONE |
 | toolkit-fix → document-first reroute | process | building before documenting caused rework; dogfood the framework on ourselves | ✓ workflow built + dogfooded on Step 3 |
 | Step 3 sub-agents → script-only signals | over-engineering | budget already bounds to one context; signals must be facts not guesses | ✓ re-scoped, de-guessed |
+| Routines intake → v1 scope audit | scope risk (Victor) | v1 COMPLETE_SYSTEM_ARCHITECTURE planned modules v2 silently dropped | ✓ Wave R created (Health/Duties/Skills + Commitments/Investigations), all KEEP |
+| Routines → re-sequenced to Wave 4 | dependency | it orchestrates modules not yet documented (Learning/Health/Duties) | ✓ fill order updated; intake parked mostly-whole |
+| Learning single context → 5 sub-contexts | token discipline | ~17 tables would blow the one-context budget | ✓ decomposition recorded; Skills separated as own module |
+| Courses & Classes → Learning: Education reframe | intent mismatch (Victor) | flat course list ≠ envisioned 8-level academic hierarchy | ✓ reframed, intake WHOLE, documented + gate PASS |
 
 ## Failures This Session
 *(none yet — On Failure protocol writes here)*

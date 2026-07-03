@@ -33,7 +33,7 @@ every level (see the master manifest: [`../README.md`](../README.md)).
 | [Projects](projects/) | 2 | ✅ | [identity](projects/identity.md) · [business-rules](projects/business-rules.md) · [contract](projects/contract.md) · [structure-data](projects/structure-data.md) · [conventions](projects/conventions.md) |
 | Routines | ~~2~~→4 | ⏸ intake in progress | **Re-sequenced to late** (before peripherals) — orchestrator; needs referenced modules documented first. Intake mostly whole: `../intake/routines.md` |
 | Journals | 2 | ⬜ | — |
-| Learning: Courses & Classes | 2 | ⬜ | courses + ICS sync + homework/exams/syllabus |
+| [Learning: Education](learning/education/) (renamed from "Courses & Classes") | 2 | ✅ | [identity](learning/education/identity.md) · [business-rules](learning/education/business-rules.md) · [contract](learning/education/contract.md) · [structure-data](learning/education/structure-data.md) · [conventions](learning/education/conventions.md) — 8-level hierarchy reframe; umbrella: [learning/](learning/) |
 | Learning: Books | 2 | ⬜ | books + book_chapters |
 | Learning: Knowledge | 2 | ⬜ | study_topics + topic_reviews + knowledge_notes (skills REMOVED → Skills) |
 | Learning: Study Sessions & Planner | 2 | ⬜ | study_sessions + §5.11 planner (5 tables) |
