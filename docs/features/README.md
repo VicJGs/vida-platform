@@ -15,7 +15,7 @@ every level (see the master manifest: [`../README.md`](../README.md)).
 |------|---------|
 | 0 — Foundational | **Notes & Pages** (hub, in-degree 14) · Preferences |
 | 1 — Independent | Tasks · Habits · Finance · Relationships · Check-ins |
-| 2 — Dependent | Projects · **Learning** (5 sub-contexts: Courses&Classes · Books · Knowledge · Study Sessions&Planner · Flashcards) · Journals |
+| 2 — Dependent | Projects · **Books** (own module — extracted from Learning 2026-07-03) · **Learning** (4 sub-contexts: Education · Knowledge · Study Sessions&Planner · Flashcards) · Journals |
 | 3 — Higher-order | Languages · Purposes & Goals · Bucket List |
 | 4 — Peripheral | **Routines** (re-sequenced 2026-07-01 — orchestrator, needs its modules first) · Gamification · Notifications · Pomodoro |
 | R — Recovered | Health · Duties · **Skills** (separated from Learning) (+ Finance→Commitments, Projects→Investigations expansions) |
@@ -34,7 +34,7 @@ every level (see the master manifest: [`../README.md`](../README.md)).
 | Routines | ~~2~~→4 | ⏸ intake in progress | **Re-sequenced to late** (before peripherals) — orchestrator; needs referenced modules documented first. Intake mostly whole: `../intake/routines.md` |
 | Journals | 2 | ⬜ | — |
 | [Learning: Education](learning/education/) (renamed from "Courses & Classes") | 2 | ✅ | [identity](learning/education/identity.md) · [business-rules](learning/education/business-rules.md) · [contract](learning/education/contract.md) · [structure-data](learning/education/structure-data.md) · [conventions](learning/education/conventions.md) — 8-level hierarchy reframe; umbrella: [learning/](learning/) |
-| Learning: Books | 2 | ⬜ | books + book_chapters |
+| [Books](books/) (own module — extracted from Learning 2026-07-03) | 2 | ✅ | [identity](books/identity.md) · [business-rules](books/business-rules.md) · [contract](books/contract.md) · [structure-data](books/structure-data.md) · [conventions](books/conventions.md) — reading Universe reframe; partition serves Education |
 | Learning: Knowledge | 2 | ⬜ | study_topics + topic_reviews + knowledge_notes (skills REMOVED → Skills) |
 | Learning: Study Sessions & Planner | 2 | ⬜ | study_sessions + §5.11 planner (5 tables) |
 | Learning: Flashcards | 2 | ⬜ | flashcard_decks/flashcards/reviews (SM-2) |

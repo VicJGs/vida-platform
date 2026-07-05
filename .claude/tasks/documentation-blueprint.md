@@ -38,9 +38,9 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 - [ ] **Learning → verify** Grades/GPA (CR-002/OR-003), Cycles (OR-008), Subject-as-entity when documenting Learning.
 - [ ] **Skills** (SEPARATE module, extracted from Learning 07-01) — v2 skills/skill_resources are a downgraded 2-table version; envisioned larger/robust. Own intake captures the fuller vision. Removed from Learning:Knowledge sub-context.
 
-### ▸ Learning decomposition (07-01) — ~17 tables → 5 sub-contexts (each own Phase 1→4); Skills split out; Language=Wave 3
-- [ ] Learning: Courses & Classes (courses + ICS sync + homework/exams/syllabus) ← START HERE when Learning begins
-- [ ] Learning: Books (books + book_chapters)
+### ▸ Learning decomposition (07-01) — now 4 sub-contexts (Books EXTRACTED as own module 07-03); Skills split out; Language=Wave 3
+- [x] Learning: Education (formerly Courses & Classes) — done 07-03
+- [x] ~~Learning: Books~~ → **BOOKS, own module** (extracted 07-03, documented 07-05 — see Wave 2 below)
 - [ ] Learning: Knowledge (study_topics + topic_reviews + knowledge_notes)
 - [ ] Learning: Study Sessions & Planner (study_sessions + §5.11 planner)
 - [ ] Learning: Flashcards (flashcard_decks/flashcards/reviews, SM-2)
@@ -49,7 +49,16 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 - [x] Projects (Wave 2 foundation) — 5 aspect docs + verified, gate PASS (06-29). Intake G1–G11 resolved. DEDICATED deliverables table + multi-type measurement system (financial/stats/3rd-party/logs/artifacts — needs design pass), vision+mission TipTap pages, project time from task focus, document VAULT (R2), dedicated Tasks→Projects API, +project_contacts(role)/account/event links, user-personalized views, deliverable notes, shared scoped tags. ⚠⚠ GOVERNING PRINCIPLE surfaced: ZK core + guarded opt-in extension layer (→ constitution).
 - [~] Routines — intake IN PROGRESS + **RE-SEQUENCED to late (before Wave 4 peripherals), 2026-07-01**. Reframe captured: Routines = cross-module ORCHESTRATION layer; named sequences; polymorphic INTERACTIVE steps w/ per-step completion modes driving underlying entities. Deferred because its step-types reference Learning/Health/Duties/etc. — document those first. Intake: docs/intake/routines.md (G2/G3/G5/action-model resolved; G1/G4/G6-G10 to confirm on return).
 - [x] Learning: Education (Wave 2, sub-context 1/5) — 5 aspect docs + umbrella + verified, gate PASS (07-03). ⚠⚠ SCOPE REFRAME: 8-level hierarchy (Institution/Self-taught → Program → Curriculum → Degree → Term → Subject → Module → Topic), renamed from "Courses & Classes". Grading-system BUILDER, subject_schedules (3 methods), class=session-of-subject, homework=education-task (Tasks Universe), Education-forged measurement, 11-tab Hub + dedicated-page families + per-assessment-type pages. Largest INTENDED surface (14 entities → ADR-002 amendment) + 2 design passes (grading components; measurement shared w/ Projects, separate forges).
-- [ ] NEXT → Wave 2 cont.: **Learning: Books** (2/5) → Knowledge (3/5) → Study Sessions & Planner (4/5) → Flashcards (5/5) → **Journals**.
+- [x] **Books (Wave 2, OWN MODULE — extracted from Learning 07-03)** — 5 aspect docs + verified, gate PASS
+      (07-05). ⚠⚠ SCOPE REFRAME: reading Universe (all reading, learning + enjoyment) w/ partition serving
+      Education (Tasks-pattern). Work/asset model (multi-format: physical/pdf/epub/audiobook/braille),
+      automatic cross-format mapping (transcription+TOC anchors, "not synced" fail-loud), annotations
+      (highlights light · bookmarks · quotes first-class + platform-wide quote-embed), Books-own reading
+      sessions + page-photo capture (→ visual reading journal in daily Journal), adaptive Quota Planner
+      (sequenced|parallel, recalc on miss; Calendar/Routines-slots forward dep), Books governing principle.
+      Intake B1–B16 double-critique gated (B16b + B10-confirm caught by gate). 2nd-largest INTENDED surface
+      → ADR-002 amendment + cross-format mapping design pass.
+- [ ] NEXT → Wave 2 cont.: **Learning: Knowledge** (2/4) → Study Sessions & Planner (3/4) → Flashcards (4/4) → **Journals**.
 
 ### ▸ Follow-up surfaced by Step 6 Verify
 - [ ] ADR amendment: record the HKDF → BLAKE2b-256 Vault Key decision. Code (vault.ts) is authoritative and deliberate ("replaces HKDF"); ADR-001 §Key Model + CLAUDE.md still say HKDF. Run /adr-new (amend ADR-001) + fix CLAUDE.md — needs Victor's sign-off before editing the ADR.
@@ -60,7 +69,11 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 - [ ] **ADR: AI/LLM integration under zero-knowledge** (Projects G6) — documents-as-context + AI features. Victor's intent = AGENTIC, ON-DEVICE ("within") = the ZK-safe path; cloud model = opt-in plaintext dent. Own session.
 - [ ] **Deliverable measurement system — design pass** (Projects G4) — the multi-type taxonomy (financial/task-statistic/third-party-metric/activity-log/artifact) needs its own mini-intake before specc'ing internals.
 - [ ] **Budgeting feature design** (Finance G12) — no model in v2/v1; needs its own mini-intake (period, per-category limits, rollover, alerts, Purpose integration). May graduate to its own feature context (own manifest row).
-- [ ] **ADR-002 amendment (consolidated)** — now spans Preferences (6 fields + visibility store) · Tasks (5 additions) · Habits (G8 4 fields + G7 + G9) · Finance (opening_balance, G9 restored fields, import-staging, budgeting, liability-payments, base-currency/FX, managed categories, shared-tags migration) · Relationships (network_groups + junction, closeness_tier, how_we_met, interaction energy/key_takeaways, reminder snooze/priority, event-anchored group reminders). Consider ONE amendment in build phase.
+- [ ] **ADR-002 amendment (consolidated)** — now spans Preferences (6 fields + visibility store) · Tasks (5 additions) · Habits (G8 4 fields + G7 + G9) · Finance (opening_balance, G9 restored fields, import-staging, budgeting, liability-payments, base-currency/FX, managed categories, shared-tags migration) · Relationships (network_groups + junction, closeness_tier, how_we_met, interaction energy/key_takeaways, reminder snooze/priority, event-anchored group reminders) · **Books (07-05: book_assets, annotations ×3, reading_sessions+photos, reading_plans+junction, book_subjects, mapping data; supersede format/current_page/progress/genre/tags columns; entity_links annotation types)**. Consider ONE amendment in build phase.
+- [ ] **Cross-format position mapping — design pass** (Books B4) — transcription + TOC-anchor matching between asset formats (page↔timestamp↔location); states synced/pending/failed; runs under the Books governing principle. Own mini-intake before speccing internals.
+- [ ] **Books governing principle** (Books B3) — Books-scoped instance of the extension-model principle (TTS, transcription, ISBN lookup, photo OCR: opt-in, consent step, user owns risk, OS safety net, manual fallback always). Fold into the extension-model constitution amendment (Projects-surfaced, above).
+- [ ] **Quote-embed editor block** (Books B13) — new Notes/Pages platform block ("use quotes from Books"), per-book>global toggles via Preferences. Spec on the Notes & Pages / @vida/editor side at build.
+- [ ] **Per-module VIEWS review pass at build time (Victor, 07-05)** — every documented module's view/page structure was captured at INTENT level and may carry gaps (Books B13–B16 pattern: gaps surface when entity correlations are drawn). Before building a module's UI: review its view structure, fill gaps, run /critique on the refined views. Flag lives in docs/README.md §Notes.
 - [ ] **Notes & Pages tag-system refinement** — tag SCOPING (universal vs module-specific), surfaced by Relationships G10. Revisit when documenting Notes & Pages contract for tags / build phase.
 - [ ] **Platform onboarding (G_meta)** — per-module + one global onboarding; personalization surface compounding across Preferences/Tasks/Habits/Finance/Relationships. Revisit after Wave 1.
 - [ ] **Global Calendar page (NEW platform surface)** — standalone, read-only cross-module aggregator of events + tasks + reminders in multiple views. Surfaced by Relationships G1 (reminders viewed there, not in-module). Joins journal + onboarding as cross-cutting surfaces. Revisit after Wave 1.
@@ -84,6 +97,7 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 | Routines → re-sequenced to Wave 4 | dependency | it orchestrates modules not yet documented (Learning/Health/Duties) | ✓ fill order updated; intake parked mostly-whole |
 | Learning single context → 5 sub-contexts | token discipline | ~17 tables would blow the one-context budget | ✓ decomposition recorded; Skills separated as own module |
 | Courses & Classes → Learning: Education reframe | intent mismatch (Victor) | flat course list ≠ envisioned 8-level academic hierarchy | ✓ reframed, intake WHOLE, documented + gate PASS |
+| Learning: Books → BOOKS module extraction | intent mismatch (Victor) | v1 Books "worst version ever"; envisioned = reading Universe w/ Education partition, not a Learning sub-extension | ✓ extracted, intake WHOLE (B1–B16, double-critique), documented + gate PASS |
 
 ## Failures This Session
 *(none yet — On Failure protocol writes here)*

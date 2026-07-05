@@ -6,7 +6,7 @@
 
 | Task | Profile | Started | Last Session | Status |
 |------|---------|---------|--------------|--------|
-| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-07-03 | Wave 0+1 + Projects + **Learning: Education (1/5) documented** (8-level hierarchy reframe, verified, gate PASS) · next: **Learning: Books** (2/5) |
+| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-07-05 | Wave 0+1 + Projects + Education + **BOOKS documented** (extracted as own module — reading-Universe reframe, B1–B16 double-critique, gate PASS 07-05) · next: **Learning: Knowledge** (2/4) |
 
 Detailed step plan + live-panel IDs: `.claude/tasks/documentation-blueprint.md`
 

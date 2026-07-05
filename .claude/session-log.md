@@ -259,3 +259,29 @@ Next session:
   - Wave 2 cont.: **Learning: Books** (sub-context 2/5) → Knowledge → Study Sessions & Planner → Flashcards → then Journals.
   - Education docs NOT yet committed (this session's batch pending Victor's go).
   - Backlog additions: hierarchy ADR-002 amendment (largest yet — 14 entities); grading-system component model design pass; measurement design pass now serves Projects + Education.
+
+---
+Date: 2026-07-05 (session started 07-03)
+Task: documentation-blueprint
+Goal: Document Books (was "Learning: Books" 2/5) end to end — became a module extraction + full reframe.
+Completed:
+  - PHASE 1 (Intake): harvested v2 (ADR-002 §Books L2409-2469, learning.ts, schema.ts L641-674 — Drizzle EXISTS, 0 lines of logic) + v1 (rich Book type; metadata.linked_courses junction hack; TOC/syllabus conflation). Original G1–G12 SUPERSEDED by Victor's SCOPE REFRAME → BOOKS = OWN MODULE (reading Universe: all reading, learning+enjoyment) with a PARTITION serving Learning (Tasks↔Education pattern). B-series B1–B16 all resolved; /critique (gate 1) caught B16(b) silently-dropped + B10 unconfirmed INTERP → reopened → resolved (photos STORED as visual reading journal → daily Journal; sessions = Books-own entity). B12 views approved under second /critique (SHIP). Intake renamed → docs/intake/books.md, marked WHOLE.
+  - PHASE 2 (Transform): 5 aspect docs in docs/features/books/ (BK-1..BK-18 invariants; terminal states; contract w/ Books→Education API; structure-data w/ INTENDED entity family; conventions w/ v1-hack landmines). 4 index updates: manifest (own-module row + wave), features index, learning umbrella (4 sub-contexts + pointer), education/contract.md (peer-partition line).
+  - PHASE 3 (Verify) + gate: PASS — no template residue, no stale 5-sub-context refs, constitution cites match (ZK-1/LF-2), FACT line-cites all read this session, 3 FACT-column supersessions flagged loudly (format, current_page/progress, genre/tags).
+  - PHASE 4 (Accept): ✅ in manifest tracker + status line + features index; task file + TASKS.md updated.
+Decisions (the big ones):
+  - EXTRACTION: Books = standalone module; Learning drops to 4 sub-contexts. Wave 2 slot kept.
+  - Work/asset model: book = WORK + 0..n per-format copies (physical/pdf/epub/audiobook/braille/other), native position each; unified progress DERIVED under the conflict rule (ask by default, preset rule automates).
+  - Cross-format mapping AUTOMATIC (transcription + TOC anchors; "not synced yet" fail-loud state; never manual calibration) — design pass filed.
+  - Annotations work-anchored; highlights light; quotes first-class + platform-wide quote-embed block (per-book>global toggles).
+  - Books-own reading sessions (mode-adaptive) + page-photo capture → encrypted visual reading journal in daily Journal.
+  - Adaptive Quota Planner: manual|auto goals, sequenced|parallel multi-book, recalc on miss; Calendar entity (slots preset in Routines) = forward dep, stubbed. Study Planner consumes, never owns.
+  - Books governing principle (integrations opt-in, consent, manual fallback) → folds into extension-model constitution amendment.
+Process:
+  - Victor correction memorized: intake captures INTENT, never "ships now vs later" (memory: intake-captures-intent-not-ship-scope).
+  - Double-critique gate proved itself: caught a silently-resolved gap (B16b) and an unconfirmed INTERP (B10).
+Next session:
+  - Wave 2 cont.: **Learning: Knowledge** (2/4) → Study Sessions & Planner (3/4) → Flashcards (4/4) → Journals.
+  - Books batch COMMITTED this session (docs + intake + indexes + task files, single docs(features) commit).
+  - ⚠ Cross-module flag recorded (Victor): ALL documented modules' view structures = intent-level, may carry gaps — review + fill + /critique gate each module's views at build time. Durable: docs/README.md §Notes + task backlog.
+  - Backlog additions: ADR-002 Books amendment (consolidated), cross-format mapping design pass, Books governing principle, quote-embed block spec.
