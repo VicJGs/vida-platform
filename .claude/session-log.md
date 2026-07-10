@@ -285,3 +285,26 @@ Next session:
   - Books batch COMMITTED this session (docs + intake + indexes + task files, single docs(features) commit).
   - ⚠ Cross-module flag recorded (Victor): ALL documented modules' view structures = intent-level, may carry gaps — review + fill + /critique gate each module's views at build time. Durable: docs/README.md §Notes + task backlog.
   - Backlog additions: ADR-002 Books amendment (consolidated), cross-format mapping design pass, Books governing principle, quote-embed block spec.
+
+---
+Date: 2026-07-10
+Task: documentation-blueprint
+Goal: (1) Capture a new Finance-adjacent idea as intake; (2) document Learning: Knowledge — which became a module extraction.
+Completed:
+  - FISCAL & LEGAL intake stub captured (docs/intake/fiscal-legal.md) — Victor's economic-legal advisory idea. My assessment: 4 capabilities (situate/inform/track-obligations = ZK-safe spine; advise+do-taxes = guarded extension). Reframe urged: situate/plan + hand off filing, NOT tax-engine-for-any-country (regulated/liability). Largest concrete instance of the 2 already-filed ZK ADRs (external-data-ingestion + AI/LLM); validates extension-model principle. Cross-module (Finance↔Projects↔Purpose) → own emerging context. ⏸ DEFERRED to POST-ALL-WAVES (Victor) — do NOT schedule Phase 1 before then. Wired into task backlog + both ZK ADR lines.
+  - KNOWLEDGE (was "Learning: Knowledge" 2/4) → EXTRACTED as own module (3rd from Learning, after Skills+Books). Learning drops 4→3 sub-contexts.
+  - PHASE 1 (Intake): resumed the started intake (was uncommitted). Resolved K1–K12 + KN-A/B/C. Renamed learning-knowledge.md → knowledge.md, marked WHOLE. Key resolutions: K1 user-extensible KINDS + learning-realm (concept=understand/definition=memorize seeds) + object hierarchy below Topic; K3 knowledge-note = pages entity_type (retire knowledge_notes table); K4 entity_links graph (retire resource_type CHECK); K5 pluggable methods/curves every level, mastery derived; K10 mastery = Education measurement source (object mastery + assessments + pace-vs-syllabus; syllabus-as-calendar = Education-owned forward dep).
+  - PHASE 2 (Transform): 5 aspect docs in docs/features/knowledge/ (KN-1..KN-12 invariants; terminal states; contract w/ Knowledge→Education mastery-source API; structure-data w/ INTENDED entity family; conventions w/ FACT-base landmines).
+  - PHASE 3 (Verify) + gate: /critique = REVISE→FIXED→PASS. Real spot-checks: all FACT cites verified vs ADR-002 (study_topics L2557, topic_reviews L2608, knowledge_notes L2715 + resource_type CHECK, entity_links targets, FTS5 excludes knowledge, models/learning.ts=0 lines). 2 No-Guessing defects caught + fixed: (a) invented "§Knowledge-notes" section label → real line cites; (b) kind-hierarchy vs object-hierarchy conflation → object nesting = stated (parent_object_id), kind-registry nesting = [INTERP].
+  - PHASE 4 (Accept): ✅ in features/README (own-module row), learning umbrella (3 sub-contexts + Knowledge pointer), docs/README manifest (status line + fill-order + status matrix), education/contract.md (Knowledge measurement-source peer note). Task file + TASKS.md + Route History updated.
+Decisions (the big ones):
+  - EXTRACTION: Knowledge = standalone module; Learning → 3 sub-contexts. Wave 2 slot kept.
+  - Ontology: ONE flexible knowledge_objects entity + user-extensible object_kinds registry (learning_realm per kind) + object nesting under Topic. Realm drives default study method. Kind-registry self-nesting left [INTERP].
+  - ⭐ LATE CORRECTION (Victor, end of session): the mastery/environment hierarchy TO reach a topic is **Subject › Unit › Topic** (fixed academic spine; Subject = container-org leaf); the user's kinds attach BELOW Topic. Corrects the earlier "Topic is the top object" framing. Mastery DERIVES at the leaf and rolls UP `kind → Topic → Unit → Subject → (Program via Education)`. Captured durably in knowledge/structure-data.md (env-hierarchy block) + business-rules KN-3/KN-9/KN-10 + intake D-section BEFORE context cleanup.
+  - knowledge_notes table + resource_type CHECK + fixed SM-2 columns + hand-set mastery_level + single linked_book_id → ALL superseded (→ pages, entity_links, pluggable methods/curves, derived mastery, many-book links). Consolidated ADR-002 amendment.
+  - Container org (Module⊃Area⊃Subject) via shared scoped tags, multi-membership; Areas serve multiple OS modules. Compound-set builder + shipped default. Knowledge Lab (generate new knowledge). No community — reproducible setups only.
+Next session:
+  - Wave 2 cont.: **Learning: Study Sessions & Planner** → Flashcards → **Journals**.
+  - Knowledge docs NOT yet committed (batch pending Victor's go): docs/features/knowledge/* + docs/intake/knowledge.md (renamed) + docs/intake/fiscal-legal.md + index updates (features/README, learning/README, docs/README, education/contract) + task files.
+  - Backlog additions: ADR-002 Knowledge amendment (consolidated); OS-level cross-module automation/rules surface (forward dep — penalties/rewards/self-testing/real-time analysis); syllabus-as-calendar entity (Education); Education measurement design pass now also consumes Knowledge mastery (3-signal).
+  - ⏸ Fiscal & Legal context deferred to post-all-waves (Victor).

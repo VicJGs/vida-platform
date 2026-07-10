@@ -2,7 +2,7 @@
 <!-- Produced by /documentation Phase 0 (documentation-blueprint). The MAP of what to document, at which
      level, in which aspect, and in what order. Reverse-mode (documenting the existing repo). No-Guessing:
      code structure ← repo-survey; modules + fill order ← module-dependency-graph; data ← ADR-002. -->
-Status: Phase 0 complete + VERIFIED (2026-06-13). **Wave 0 + Wave 1 COMPLETE; Wave 2 in progress.** Wave-0 (**Notes & Pages**, **Preferences**) + Wave-1 (**Tasks**, **Habits**, **Finance**, **Relationships**, **Check-ins**) + Wave-2 (**Projects**, **Learning: Education** 1/5, **Books** — extracted from Learning as its own module 2026-07-03) documented + verified (2026-06-18 → 2026-07-05) — 5 canonical aspect docs each, gate PASS. Wave 2 remaining: Journals · Learning (Knowledge · Study Sessions & Planner · Flashcards). ⚠ A governing **extension-model principle** (ZK core + guarded opt-in integrations) was surfaced by Projects → candidate addition to `core/business-rules.md`. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
+Status: Phase 0 complete + VERIFIED (2026-06-13). **Wave 0 + Wave 1 COMPLETE; Wave 2 in progress.** Wave-0 (**Notes & Pages**, **Preferences**) + Wave-1 (**Tasks**, **Habits**, **Finance**, **Relationships**, **Check-ins**) + Wave-2 (**Projects**, **Learning: Education**, **Books** — extracted from Learning as its own module 2026-07-03, **Knowledge** — extracted from Learning as its own module 2026-07-10) documented + verified (2026-06-18 → 2026-07-10) — 5 canonical aspect docs each, gate PASS. Wave 2 remaining: Journals · Learning (Study Sessions & Planner · Flashcards). ⚠ A governing **extension-model principle** (ZK core + guarded opt-in integrations) was surfaced by Projects → candidate addition to `core/business-rules.md`. Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
 
 ## Structure (DECIDED — M1–M5, 2026-06-10)
 
@@ -35,7 +35,7 @@ Note: legacy `docs/architecture.md` (root file) stays put — it is LEGACY, not 
 |------|---------|
 | 0 — Foundational | **Notes & Pages** (in-degree 14, the hub), **Preferences** |
 | 1 — Independent | Tasks · Habits · Finance · Relationships · Check-ins |
-| 2 — Dependent | Projects · **Books** (own module — EXTRACTED from Learning 2026-07-03, keeps its fill slot) · **Learning** (4 sub-contexts: Education · Knowledge · Study Sessions&Planner · Flashcards) · Journals  (Learning before Journals — Journals aggregates study) |
+| 2 — Dependent | Projects · **Books** (own module — EXTRACTED from Learning 2026-07-03, keeps its fill slot) · **Knowledge** (own module — EXTRACTED from Learning 2026-07-10, keeps its fill slot) · **Learning** (3 sub-contexts: Education · Study Sessions&Planner · Flashcards) · Journals  (Learning before Journals — Journals aggregates study) |
 | 3 — Higher-order | Languages (hard→Learning) · Purposes & Goals · Bucket List |
 | 4 — Peripheral | **Routines** (re-sequenced here 2026-07-01 — the orchestrator; needs all modules it sequences documented first) · Gamification · Notifications · Pomodoro |
 | **R — Recovered (v1 audit 2026-06-30 / -07-01)** | **Health** (exercise + nutrition — new domain) · **Duties** (needs defining intake) · **Skills** (separated from Learning — downgraded 2-table version, envisioned larger) · + expansions: Finance→**Commitments**, Projects→**Investigations**, Learning→verify Grades/Cycles. See [`intake/_scope-reconciliation-v1.md`](intake/_scope-reconciliation-v1.md). |
@@ -65,6 +65,7 @@ Core → Wave 0 (Notes & Pages, Preferences) → Wave 1 → Services (as feature
 | Projects (Wave 2) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ core empty) | ✅ structure-data.md (⚠ deliverables table + measurement system + extension-model principle → constitution + 2 ADRs) | ✅ conventions.md |
 | Learning: Education (Wave 2, 1/5) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ ZERO service code) | ✅ structure-data.md (⚠⚠ 8-level hierarchy REFRAME — 14 INTENDED entities, largest ADR-002 amendment yet + 2 design passes) | ✅ conventions.md |
 | Books (Wave 2, own module — extracted from Learning) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ ZERO service code) | ✅ structure-data.md (⚠⚠ MODULE REFRAME — work/asset model, annotations, plans; 2nd-largest ADR-002 amendment + mapping design pass) | ✅ conventions.md |
+| Knowledge (Wave 2, own module — extracted from Learning 2026-07-10) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ ZERO service code) | ✅ structure-data.md (⚠⚠ MODULE REFRAME — user-extensible kinds+realms, container/tag org, pluggable methods/curves, notes→pages, Knowledge Lab; retires knowledge_notes/resource_type/SM-2 cols → ADR-002 amendment; KN-10 mastery source to Education) | ✅ conventions.md |
 | _(all other features/services/components)_ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Notes

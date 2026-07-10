@@ -38,10 +38,10 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 - [ ] **Learning → verify** Grades/GPA (CR-002/OR-003), Cycles (OR-008), Subject-as-entity when documenting Learning.
 - [ ] **Skills** (SEPARATE module, extracted from Learning 07-01) — v2 skills/skill_resources are a downgraded 2-table version; envisioned larger/robust. Own intake captures the fuller vision. Removed from Learning:Knowledge sub-context.
 
-### ▸ Learning decomposition (07-01) — now 4 sub-contexts (Books EXTRACTED as own module 07-03); Skills split out; Language=Wave 3
+### ▸ Learning decomposition (07-01) — now 3 sub-contexts (Books EXTRACTED 07-03 + Knowledge EXTRACTED 07-10 as own modules); Skills split out; Language=Wave 3
 - [x] Learning: Education (formerly Courses & Classes) — done 07-03
 - [x] ~~Learning: Books~~ → **BOOKS, own module** (extracted 07-03, documented 07-05 — see Wave 2 below)
-- [ ] Learning: Knowledge (study_topics + topic_reviews + knowledge_notes)
+- [x] ~~Learning: Knowledge~~ → **KNOWLEDGE, own module** (extracted 07-10, documented 07-10 — see Wave 2 below)
 - [ ] Learning: Study Sessions & Planner (study_sessions + §5.11 planner)
 - [ ] Learning: Flashcards (flashcard_decks/flashcards/reviews, SM-2)
 
@@ -58,18 +58,33 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
       (sequenced|parallel, recalc on miss; Calendar/Routines-slots forward dep), Books governing principle.
       Intake B1–B16 double-critique gated (B16b + B10-confirm caught by gate). 2nd-largest INTENDED surface
       → ADR-002 amendment + cross-format mapping design pass.
-- [ ] NEXT → Wave 2 cont.: **Learning: Knowledge** (2/4) → Study Sessions & Planner (3/4) → Flashcards (4/4) → **Journals**.
+- [x] **Knowledge (Wave 2, OWN MODULE — extracted from Learning 2026-07-10)** — 5 aspect docs + verified,
+      gate PASS (07-10). ⚠⚠ MODULE REFRAME: knowledge Universe (lifelong catalog; **most-personalizable
+      module**). KN-A boundary (Education plans acquisition / Knowledge holds+transforms+creates → 2 linked
+      entities, never shared table). User-extensible **kinds + learning-realm** (concept=understand,
+      definition=memorize seeds; realm drives default study method) + **object hierarchy below Topic**
+      (`parent_object_id` stated; kind-registry nesting = INTERP). **Container org** Module⊃Area⊃Subject via
+      shared scoped tags (multi-membership; Area serves multiple OS modules). **Pluggable methods/curves at
+      every level** (SM-2 = one preset), mastery **derived**. **Knowledge notes → `pages` type** (retire
+      knowledge_notes table). **entity_links graph** (retire resource_type CHECK). First-class References,
+      fts_knowledge, **Knowledge Lab**, no-community/reproducible-setups, compound-set **builder + default**.
+      **KN-10:** mastery = Education measurement source (object mastery + assessments + pace-vs-syllabus;
+      syllabus-as-calendar = Education-owned forward dep). ⭐ **Env hierarchy (Victor, late-session): Subject ›
+      Unit › Topic** is the fixed spine to reach a Topic (kinds attach BELOW Topic); mastery derives at leaf +
+      rolls up `kind→Topic→Unit→Subject→Program`. Gate caught 2 No-Guessing defects (invented §label +
+      kind/object hierarchy conflation) → fixed. 3rd extraction from Learning (after Skills, Books).
+- [ ] NEXT → Wave 2 cont.: **Learning: Study Sessions & Planner** → Flashcards → **Journals**.
 
 ### ▸ Follow-up surfaced by Step 6 Verify
 - [ ] ADR amendment: record the HKDF → BLAKE2b-256 Vault Key decision. Code (vault.ts) is authoritative and deliberate ("replaces HKDF"); ADR-001 §Key Model + CLAUDE.md still say HKDF. Run /adr-new (amend ADR-001) + fix CLAUDE.md — needs Victor's sign-off before editing the ADR.
 
 ### ▸ Candidate ADRs / decisions surfaced by feature documentation (build-phase, own sessions)
 - [ ] **HIGH — CORE constitution amendment: the "extension-model" principle** (Projects, Victor 06-29) — ZK core is unchanged by integrations; external/AI integrations are OPT-IN, user-owns-the-risk, wrapped in a protection layer. Amend docs/core/business-rules.md; this principle FRAMES both ZK ADRs below. Needs Victor's go.
-- [ ] **ADR: External DATA ingestion under zero-knowledge** (GENERALIZED — Finance G2/FN-9 + Projects G4 third-party metrics) — bank/investment APIs + CSV/OFX + social/marketing metrics (Instagram/YouTube/email) vs "server never sees plaintext". Options: device-direct (pure ZK) / aggregator (documented dent) / server-proxy (breaks ZK, rejected). Touches server + sync → its own session.
-- [ ] **ADR: AI/LLM integration under zero-knowledge** (Projects G6) — documents-as-context + AI features. Victor's intent = AGENTIC, ON-DEVICE ("within") = the ZK-safe path; cloud model = opt-in plaintext dent. Own session.
+- [ ] **ADR: External DATA ingestion under zero-knowledge** (GENERALIZED — Finance G2/FN-9 + Projects G4 third-party metrics + **Fiscal&Legal 07-07 legal-rule-packs, the softest/public-data instance**) — bank/investment APIs + CSV/OFX + social/marketing metrics (Instagram/YouTube/email) + per-jurisdiction legal rules vs "server never sees plaintext". Options: device-direct (pure ZK) / aggregator (documented dent) / server-proxy (breaks ZK, rejected). Touches server + sync → its own session.
+- [ ] **ADR: AI/LLM integration under zero-knowledge** (Projects G6 + **Fiscal&Legal 07-07 tax/legal advisement over private numbers**) — documents-as-context + AI features. Victor's intent = AGENTIC, ON-DEVICE ("within") = the ZK-safe path; cloud model = opt-in plaintext dent. Own session.
 - [ ] **Deliverable measurement system — design pass** (Projects G4) — the multi-type taxonomy (financial/task-statistic/third-party-metric/activity-log/artifact) needs its own mini-intake before specc'ing internals.
 - [ ] **Budgeting feature design** (Finance G12) — no model in v2/v1; needs its own mini-intake (period, per-category limits, rollover, alerts, Purpose integration). May graduate to its own feature context (own manifest row).
-- [ ] **ADR-002 amendment (consolidated)** — now spans Preferences (6 fields + visibility store) · Tasks (5 additions) · Habits (G8 4 fields + G7 + G9) · Finance (opening_balance, G9 restored fields, import-staging, budgeting, liability-payments, base-currency/FX, managed categories, shared-tags migration) · Relationships (network_groups + junction, closeness_tier, how_we_met, interaction energy/key_takeaways, reminder snooze/priority, event-anchored group reminders) · **Books (07-05: book_assets, annotations ×3, reading_sessions+photos, reading_plans+junction, book_subjects, mapping data; supersede format/current_page/progress/genre/tags columns; entity_links annotation types)**. Consider ONE amendment in build phase.
+- [ ] **ADR-002 amendment (consolidated)** — now spans Preferences (6 fields + visibility store) · Tasks (5 additions) · Habits (G8 4 fields + G7 + G9) · Finance (opening_balance, G9 restored fields, import-staging, budgeting, liability-payments, base-currency/FX, managed categories, shared-tags migration) · Relationships (network_groups + junction, closeness_tier, how_we_met, interaction energy/key_takeaways, reminder snooze/priority, event-anchored group reminders) · **Books (07-05: book_assets, annotations ×3, reading_sessions+photos, reading_plans+junction, book_subjects, mapping data; supersede format/current_page/progress/genre/tags columns; entity_links annotation types)** · **Knowledge (07-10: knowledge_objects+object_kinds+learning_realm, knowledge_containers, study_methods/review_curves/method_bindings, review_events, compound_sets, references, knowledge_lab_entries, fts_knowledge; RETIRE knowledge_notes table + resource_type CHECK + fixed SM-2 cols + hand-set mastery_level + single linked_book_id; knowledge-note as pages entity_type)**. Consider ONE amendment in build phase.
 - [ ] **Cross-format position mapping — design pass** (Books B4) — transcription + TOC-anchor matching between asset formats (page↔timestamp↔location); states synced/pending/failed; runs under the Books governing principle. Own mini-intake before speccing internals.
 - [ ] **Books governing principle** (Books B3) — Books-scoped instance of the extension-model principle (TTS, transcription, ISBN lookup, photo OCR: opt-in, consent step, user owns risk, OS safety net, manual fallback always). Fold into the extension-model constitution amendment (Projects-surfaced, above).
 - [ ] **Quote-embed editor block** (Books B13) — new Notes/Pages platform block ("use quotes from Books"), per-book>global toggles via Preferences. Spec on the Notes & Pages / @vida/editor side at build.
@@ -77,6 +92,7 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 - [ ] **Notes & Pages tag-system refinement** — tag SCOPING (universal vs module-specific), surfaced by Relationships G10. Revisit when documenting Notes & Pages contract for tags / build phase.
 - [ ] **Platform onboarding (G_meta)** — per-module + one global onboarding; personalization surface compounding across Preferences/Tasks/Habits/Finance/Relationships. Revisit after Wave 1.
 - [ ] **Global Calendar page (NEW platform surface)** — standalone, read-only cross-module aggregator of events + tasks + reminders in multiple views. Surfaced by Relationships G1 (reminders viewed there, not in-module). Joins journal + onboarding as cross-cutting surfaces. Revisit after Wave 1.
+- [ ] **Fiscal & Legal context (NEW emerging context — Victor 07-07)** — cross-module (Finance ↔ Projects legal-entities ↔ Purpose long-run). Situate user + entities per jurisdiction, per-jurisdiction public rule-packs, obligation tracking (→ Tasks/Notifications/Calendar), long-run what-if planning; opt-in AI advisement + living-ruleset refresh in the guarded extension layer. **Largest concrete instance of the two ZK ADRs below** (external-data-ingestion + AI/LLM) + validates the extension-model principle. Scope reframe urged: situate/organize/plan, NOT file-taxes-for-any-country (regulated/liability). Captured-intent stub: `docs/intake/fiscal-legal.md`. ⏸ **DEFERRED to POST-ALL-WAVES (Victor 07-07)** — Victor returns to enhance it after every wave is done; do NOT schedule its Phase-1 before then. Placement (own vs Finance sub-feature) = Victor's call then.
 
 ### ✅ Done this session
 - [x] (#1) Create /documentation command  →  ~/.claude/commands/documentation.md
@@ -98,6 +114,7 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 | Learning single context → 5 sub-contexts | token discipline | ~17 tables would blow the one-context budget | ✓ decomposition recorded; Skills separated as own module |
 | Courses & Classes → Learning: Education reframe | intent mismatch (Victor) | flat course list ≠ envisioned 8-level academic hierarchy | ✓ reframed, intake WHOLE, documented + gate PASS |
 | Learning: Books → BOOKS module extraction | intent mismatch (Victor) | v1 Books "worst version ever"; envisioned = reading Universe w/ Education partition, not a Learning sub-extension | ✓ extracted, intake WHOLE (B1–B16, double-critique), documented + gate PASS |
+| Learning: Knowledge → KNOWLEDGE module extraction | intent mismatch (Victor) | v1 minimal/nerfed (Education-only, hard-coded Ultralearning); envisioned = knowledge Universe, most-personalizable module w/ Education partition | ✓ extracted 07-10, intake WHOLE (K1–K12 + KN-A/B/C), documented + gate PASS (2 No-Guessing defects caught+fixed) |
 
 ## Failures This Session
 *(none yet — On Failure protocol writes here)*

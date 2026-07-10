@@ -6,7 +6,7 @@
 
 | Task | Profile | Started | Last Session | Status |
 |------|---------|---------|--------------|--------|
-| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-07-05 | Wave 0+1 + Projects + Education + **BOOKS documented** (extracted as own module — reading-Universe reframe, B1–B16 double-critique, gate PASS 07-05) · next: **Learning: Knowledge** (2/4) |
+| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-07-10 | Wave 0+1 + Projects + Education + Books + **KNOWLEDGE documented** (3rd extraction as own module — knowledge-Universe reframe, K1–K12 + KN-A/B/C, gate PASS 07-10 w/ 2 No-Guessing fixes) · Learning now 3 sub-contexts · next: **Study Sessions & Planner** |
 
 Detailed step plan + live-panel IDs: `.claude/tasks/documentation-blueprint.md`
 

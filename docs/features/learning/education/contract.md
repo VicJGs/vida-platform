@@ -39,10 +39,12 @@
 - **⚠ Extension layer (deferred):** document extraction (syllabus→schedule/assessments) — AI-agentic, opt-in.
 
 ## Fed by / Consumed by
-- **Hub for the Learning siblings:** Knowledge (topics per subject), Study Sessions (sessions target
-  subjects), Flashcards (decks per subject) — all read Education's contract; **Books** (own module since
-  2026-07-03) connects via its **partition** (`book_subjects` + Books→Education API: books-per-subject,
-  pace vs schedule/assessments). `[FACT: intake; ../../books/contract.md; CLAUDE.md §7]`
+- **Hub for the Learning siblings:** Study Sessions (sessions target subjects), Flashcards (decks per
+  subject) read Education's contract; **Books** (own module since 2026-07-03) connects via its **partition**
+  (`book_subjects` + Books→Education API: books-per-subject, pace vs schedule/assessments); **Knowledge** (own
+  module since 2026-07-10) links its objects to Education's planning Topics and **provides a mastery
+  measurement source** — object mastery + assessment results + pace-vs-syllabus (KN-2/KN-10). Education owns
+  the rollup + the syllabus-as-calendar entity. `[FACT: intake; ../../books/contract.md; ../../knowledge/contract.md; CLAUDE.md §7]`
 - **Journal `/summary` + global Calendar** → today's class sessions + due assessments. `[INTENT]`
 - **Purpose/Gamification** → study progress signals (⚠ INTENDED). `[INTENT]`
 
