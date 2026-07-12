@@ -6,7 +6,7 @@
 
 | Task | Profile | Started | Last Session | Status |
 |------|---------|---------|--------------|--------|
-| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-07-10 | Wave 0+1 + Projects + Education + Books + **KNOWLEDGE documented** (3rd extraction as own module — knowledge-Universe reframe, K1–K12 + KN-A/B/C, gate PASS 07-10 w/ 2 No-Guessing fixes) · Learning now 3 sub-contexts · next: **Study Sessions & Planner** |
+| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-07-12 | Wave 0+1 + Projects + Education + Books + Knowledge + **SESSIONS & SCHEDULING documented** (4th extraction from Learning **+ PROMOTED to foundation** — polymorphic Session supertype + aggregator scheduling engine + 4-dim Integration Contract, G1–G10 + S1–S5, gate PASS 07-12; surfaced Session Framework ADR) · Learning now 2 sub-contexts · ADR-004 Session Framework written · next: **Flashcards** → Journals |
 
 Detailed step plan + live-panel IDs: `.claude/tasks/documentation-blueprint.md`
 

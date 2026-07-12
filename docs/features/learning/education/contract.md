@@ -39,7 +39,9 @@
 - **⚠ Extension layer (deferred):** document extraction (syllabus→schedule/assessments) — AI-agentic, opt-in.
 
 ## Fed by / Consumed by
-- **Hub for the Learning siblings:** Study Sessions (sessions target subjects), Flashcards (decks per
+- **Hub for the Learning siblings:** **Sessions & Scheduling** (own foundation module since 2026-07-12)
+  provides Education's `class_session` sub-type + targets subjects via `study_session`, and consumes Education
+  deadlines/topics as a `dueIn()` provider + a pace-signal source (G10); Flashcards (decks per
   subject) read Education's contract; **Books** (own module since 2026-07-03) connects via its **partition**
   (`book_subjects` + Books→Education API: books-per-subject, pace vs schedule/assessments); **Knowledge** (own
   module since 2026-07-10) links its objects to Education's planning Topics and **provides a mastery

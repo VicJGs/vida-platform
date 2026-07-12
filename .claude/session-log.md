@@ -308,3 +308,26 @@ Next session:
   - Knowledge docs NOT yet committed (batch pending Victor's go): docs/features/knowledge/* + docs/intake/knowledge.md (renamed) + docs/intake/fiscal-legal.md + index updates (features/README, learning/README, docs/README, education/contract) + task files.
   - Backlog additions: ADR-002 Knowledge amendment (consolidated); OS-level cross-module automation/rules surface (forward dep — penalties/rewards/self-testing/real-time analysis); syllabus-as-calendar entity (Education); Education measurement design pass now also consumes Knowledge mastery (3-signal).
   - ⏸ Fiscal & Legal context deferred to post-all-waves (Victor).
+
+---
+Date: 2026-07-12
+Task: documentation-blueprint
+Goal: Document "Learning: Study Sessions & Planner" (Wave 2 cont.) — which became the largest reframe yet: a module extraction + PROMOTION to a foundation.
+Completed:
+  - COMMITTED the prior Knowledge batch first (commit bdc22e3, gitleaks clean) — docs/features/knowledge/* + renamed intake + fiscal-legal stub + 4 index updates + task files.
+  - PHASE 1 (Intake): harvested v2 (6 schema-only tables, 0 logic — study_sessions L2524-2551 + §5.11 planner L2743-2882; planner types live in knowledge.ts L222-250 post-Knowledge-extraction; pomodoro_sessions = Notes L1432/L1435) + v1 (studyPlanner.ts 409L: real-but-flawed engine, plan+actual MERGED in one row L1677-1711, richer templates + interruption tracking) + documented-foundation boundaries (Books BK-10/BK-12, Education "sessions target subjects" L42, Knowledge KN-10). Wrote + renamed intake → docs/intake/sessions-and-scheduling.md, marked WHOLE.
+  - PHASE 2 (Transform): 5 aspect docs in docs/features/sessions-and-scheduling/ (SS-1..SS-12 invariants; terminal states per capability; 4-dimension Integration Contract as the exposed surface; INTENDED table-per-type entity family; v1/v2 landmines).
+  - PHASE 3 (Verify) + foundation gate: PASS. Mechanical clean (no residue, no stale study-sessions-planner/Focus&Scheduling refs, FACT cites resolve: entity_type incl study_session L1435, task_time_logs L1510, course_id L2800, knowledge.ts L222/L240, 0-logic confirmed). vs-intake: all 16 resolutions reflected; vs-sources: no contradiction (supersessions flagged loud); vs-constitution: reinforces coupling budget + extension-model.
+  - PHASE 4 (Accept): index updates — features/README (new Foundation wave row + status row ✅), learning/README (3→2 sub-contexts + extraction pointer), docs/README (status line + fill order + Foundation row), education/contract (class_session peer note). Intake whole.
+Decisions (the big ones):
+  - EXTRACTION + PROMOTION (G1): "Study Sessions & Planner" → **Sessions & Scheduling**, a Level-Foundation cross-cutting module (sibling to Routines). Learning drops to 2 sub-contexts (Education, Flashcards). 4th extraction from Learning (after Skills/Books/Knowledge).
+  - Aggregator not duplicator (G2/G2-shape): scheduled_study_sessions → `planned_blocks` that POINT at module-owned due-work read live via the `dueIn()` provider primitive (promoted platform-wide, shared with the Global Calendar + Journals agenda). Zero mirroring/staleness; honors BK-12. ⭐ This resolved the parked Global Calendar's core logic (Planner writes blocks / Calendar renders them).
+  - Polymorphic Session supertype + sub-types (G3/S2/S3): one spine + per-type extension; ALL session-shaped OS entities absorbed as sub-types (class/study/focus/reading/practice/daily/review/workout/work); two axes (sub_type × purpose); scheduling_mode (attended|planned|ad-hoc). BK-10 reading_session PRESERVED as a sub-type.
+  - 4-dimension Integration Contract (S5): Attachment · Effects · Lifecycle · Permissions — the module's core; the guardrail that makes user-extensibility (S1=B, rich) safe. Shipped types ship FULLY CONFIGURED; editing them = possible-but-not-recommended.
+  - Storage (S4): table-per-type (base `sessions` spine + per-module extension tables) — forced by S5's need for a stable session_id. → surfaced the **Session Framework ADR**.
+  - Confirms: G4 block↔session link · G6 restore rich templates + interruption tracking (runtime in Notes) · G8 derived analytics · G10 signal-source only.
+  - Deferred: G5 placement-algorithm design-pass; G9 views (dedicated post-completion pass).
+Next session:
+  - DONE this session (Victor go): (a) wrote **ADR-004 Session Framework** (table-per-type + 4-dim contract + base/extension sync rule; Accepted; amends ADR-002; core README + ADR-002 cross-refs updated); (b) COMMITTED the batch (docs/features/sessions-and-scheduling/* + ADR-004 + renamed intake + index updates + task files).
+  - Then Wave 2 cont.: **Learning: Flashcards** → **Journals**.
+  - Backlog additions: Session Framework ADR; ADR-002 amendment (Sessions&Scheduling slice — base spine + extension tables + planned_blocks + attachment/effects/permission tables; reconcile task_time_logs⟷work_session; supersede §5.11 flat planner + Learning-only study_sessions); G5 placement design-pass; G9 views pass; cross-module note (Books/Education/Knowledge/Language/Health gain a *_session sub-type at next touch).

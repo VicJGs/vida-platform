@@ -38,11 +38,11 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 - [ ] **Learning → verify** Grades/GPA (CR-002/OR-003), Cycles (OR-008), Subject-as-entity when documenting Learning.
 - [ ] **Skills** (SEPARATE module, extracted from Learning 07-01) — v2 skills/skill_resources are a downgraded 2-table version; envisioned larger/robust. Own intake captures the fuller vision. Removed from Learning:Knowledge sub-context.
 
-### ▸ Learning decomposition (07-01) — now 3 sub-contexts (Books EXTRACTED 07-03 + Knowledge EXTRACTED 07-10 as own modules); Skills split out; Language=Wave 3
+### ▸ Learning decomposition (07-01) — now 2 sub-contexts (Books 07-03 + Knowledge 07-10 + Sessions&Scheduling 07-12 EXTRACTED as own modules; Sessions PROMOTED to foundation); Skills split out; Language=Wave 3
 - [x] Learning: Education (formerly Courses & Classes) — done 07-03
 - [x] ~~Learning: Books~~ → **BOOKS, own module** (extracted 07-03, documented 07-05 — see Wave 2 below)
 - [x] ~~Learning: Knowledge~~ → **KNOWLEDGE, own module** (extracted 07-10, documented 07-10 — see Wave 2 below)
-- [ ] Learning: Study Sessions & Planner (study_sessions + §5.11 planner)
+- [x] ~~Learning: Study Sessions & Planner~~ → **SESSIONS & SCHEDULING, own FOUNDATION module** (extracted + PROMOTED 07-12, documented 07-12 — see Wave 2 below)
 - [ ] Learning: Flashcards (flashcard_decks/flashcards/reviews, SM-2)
 
 ### ▸ Wave 2 (in progress)
@@ -73,7 +73,22 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
       Unit › Topic** is the fixed spine to reach a Topic (kinds attach BELOW Topic); mastery derives at leaf +
       rolls up `kind→Topic→Unit→Subject→Program`. Gate caught 2 No-Guessing defects (invented §label +
       kind/object hierarchy conflation) → fixed. 3rd extraction from Learning (after Skills, Books).
-- [ ] NEXT → Wave 2 cont.: **Learning: Study Sessions & Planner** → Flashcards → **Journals**.
+- [x] **Sessions & Scheduling (Wave 2, OWN FOUNDATION MODULE — extracted + PROMOTED from Learning 2026-07-12)**
+      — 5 aspect docs + verified, gate PASS (07-12). ⚠⚠ LARGEST REFRAME: "Study Sessions & Planner" → a
+      Level-Foundation cross-cutting module (sibling to Routines). Two pillars: **Sessions framework**
+      (polymorphic Session supertype + sub-type registry — class/study/focus/reading/practice/daily/review/
+      workout/work absorb ALL scattered OS session entities; BK-10 reading_session preserved as a sub-type;
+      2 axes sub_type×purpose; scheduling_mode attended|planned|ad-hoc) + **Scheduling engine** (availability
+      + `planned_blocks` that POINT at module-owned due-work via the `dueIn()` provider primitive — aggregator
+      not duplicator, zero staleness, honors BK-12). ⭐ Resolved the parked **Global Calendar** logic (Planner
+      writes blocks / Calendar renders). **4-dimension Integration Contract** (Attachment·Effects·Lifecycle·
+      Permissions) = the module core + the guardrail for rich user-extensibility (S1=B). Shipped types ship
+      FULLY CONFIGURED (edit = discouraged). Storage = table-per-type (base `sessions` spine + per-module
+      extension tables) → surfaced the **Session Framework ADR**. Confirms: block↔session link (G4), restore
+      rich templates+interruption (G6, runtime in Notes), derived analytics (G8), signal-source-only (G10).
+      Deferred: G5 placement design-pass, G9 views pass. 4th extraction from Learning (after Skills/Books/Knowledge).
+- [ ] NEXT → Wave 2 cont.: **Learning: Flashcards** (its `review_session` conforms to ADR-004) → **Journals**.
+      (ADR-004 Session Framework written + Sessions & Scheduling batch committed 07-12.)
 
 ### ▸ Follow-up surfaced by Step 6 Verify
 - [ ] ADR amendment: record the HKDF → BLAKE2b-256 Vault Key decision. Code (vault.ts) is authoritative and deliberate ("replaces HKDF"); ADR-001 §Key Model + CLAUDE.md still say HKDF. Run /adr-new (amend ADR-001) + fix CLAUDE.md — needs Victor's sign-off before editing the ADR.
@@ -115,6 +130,7 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 | Courses & Classes → Learning: Education reframe | intent mismatch (Victor) | flat course list ≠ envisioned 8-level academic hierarchy | ✓ reframed, intake WHOLE, documented + gate PASS |
 | Learning: Books → BOOKS module extraction | intent mismatch (Victor) | v1 Books "worst version ever"; envisioned = reading Universe w/ Education partition, not a Learning sub-extension | ✓ extracted, intake WHOLE (B1–B16, double-critique), documented + gate PASS |
 | Learning: Knowledge → KNOWLEDGE module extraction | intent mismatch (Victor) | v1 minimal/nerfed (Education-only, hard-coded Ultralearning); envisioned = knowledge Universe, most-personalizable module w/ Education partition | ✓ extracted 07-10, intake WHOLE (K1–K12 + KN-A/B/C), documented + gate PASS (2 No-Guessing defects caught+fixed) |
+| Learning: Study Sessions & Planner → SESSIONS & SCHEDULING extraction **+ PROMOTION to foundation** | intent + altitude mismatch (Victor) | OS had 9+ scattered session entities with no shared spine; a per-course planner couldn't see the rest of life; sessions must be an OS primitive with rich cross-module integration | ✓ extracted + PROMOTED 07-12, intake WHOLE (G1–G10 + S1–S5), documented + gate PASS; surfaced Session Framework ADR |
 
 ## Failures This Session
 *(none yet — On Failure protocol writes here)*

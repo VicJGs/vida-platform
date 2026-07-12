@@ -1,18 +1,19 @@
-<!-- Learning umbrella index — the Learning domain is documented as 3 SUB-CONTEXTS, each with the
+<!-- Learning umbrella index — the Learning domain is documented as 2 SUB-CONTEXTS, each with the
      canonical 5 aspects (decision 2026-07-01: token discipline — one context per pass). Skills was EXTRACTED
      as its own module (see ../../intake/_scope-reconciliation-v1.md); BOOKS was EXTRACTED as its own module
      2026-07-03 (see ../../intake/books.md); KNOWLEDGE was EXTRACTED as its own module 2026-07-10 (see
-     ../../intake/knowledge.md). Language is separate (Wave 3). -->
+     ../../intake/knowledge.md); SESSIONS & SCHEDULING was EXTRACTED + PROMOTED to a foundation module
+     2026-07-12 (see ../sessions-and-scheduling/ + ../../intake/sessions-and-scheduling.md). Language is
+     separate (Wave 3). -->
 
 # Learning — Vida Platform (umbrella)
 
-The Learning domain is documented as **3 sub-contexts**, each a full feature context with the canonical 5
+The Learning domain is documented as **2 sub-contexts**, each a full feature context with the canonical 5
 aspect docs:
 
 | Sub-context | Status | Tables | Docs |
 |---|:---:|---|---|
 | **Education** (renamed from "Courses & Classes", 2026-07-02) | ✅ | `courses`(=subjects) · `ics_feed_configs` · `ics_synced_events` (+ large INTENDED hierarchy) | [education/](education/) |
-| Study Sessions & Planner | ⬜ | `study_sessions` + §5.11 planner (5 tables) | — |
 | Flashcards | ⬜ | `flashcard_decks` · `flashcards` · `flashcard_reviews` | — |
 
 - **Knowledge** (`study_topics`/`topic_reviews`/`knowledge_notes`) was **extracted** into [its own module](../knowledge/)
@@ -25,6 +26,11 @@ aspect docs:
   Books↔Education API (`book_subjects`), the Tasks↔Education pattern. `[FACT: ../../intake/books.md]`
 - **Skills** (`skills`/`skill_resources`) was **separated** into its own module — the v2 tables are a downgraded
   version of a larger envisioned module. `[FACT: ../../intake/_scope-reconciliation-v1.md]`
-- **Education is the hub**: Knowledge objects link to Education's planning Topics (KN-2/KN-10), Study Sessions
-  target subjects, homework are education-tasks, and the Books module's partition links books to subjects.
-  Document the siblings against Education's contract.
+- **Sessions & Scheduling** (`study_sessions` + §5.11 planner) was **extracted AND promoted** to a
+  **foundation module** [../sessions-and-scheduling/](../sessions-and-scheduling/) (2026-07-12): a polymorphic
+  **Session** supertype with sub-types (a `class_session` for Education, `review_session` for Flashcards, plus
+  reading/practice/workout/… across the OS) + an **aggregator scheduling engine**. Education's `class_session`
+  and the Flashcards `review_session` conform to its Integration Contract. `[FACT: ../../intake/sessions-and-scheduling.md]`
+- **Education is the hub**: Knowledge objects link to Education's planning Topics (KN-2/KN-10), Sessions target
+  subjects (via `class_session`/`study_session`), homework are education-tasks, and the Books module's
+  partition links books to subjects. Document the siblings against Education's contract.
