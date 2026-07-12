@@ -55,7 +55,11 @@
 - **CONSUMES ← Books:** chapters/quotes referenced by objects via `entity_links` / `reading_chapter_id`; book
   annotations & quotes remain **Books-owned** (never duplicated here). `[FACT: books/contract.md L49]`
 - **CONSUMES ← Notes & Pages:** the knowledge note page type + `entity_links` graph. `[[../notes-and-pages/contract]]`
-- **CONSUMES ← Flashcards:** the spaced-rep drill method for `memorize`-realm kinds (KN-4/KN-8).
+- **HOSTS → Flashcards** (study-method sub-context, [flashcards/](flashcards/), documented 2026-07-12): the
+  spaced-rep drill + gather method for `memorize`-realm kinds (KN-4/KN-8). It is the **reference implementation
+  of the Study-Method Service framework** — Knowledge's `study_methods` registry is that seam; Flashcards
+  brings content+drill only, and rides Knowledge's generic engine (schedule/curve/review/mastery/grouping).
+  Future services (assessments/self-test/Feynman) plug in identically. `[FACT: ADR-005; flashcards/contract.md]`
 - **FUTURE consumers:** Skills · Languages · Finance · Health — each via its own `compound_set`.
 
 ## Events emitted (⚠ INTENDED)

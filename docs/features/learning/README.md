@@ -1,20 +1,22 @@
-<!-- Learning umbrella index — the Learning domain is documented as 2 SUB-CONTEXTS, each with the
-     canonical 5 aspects (decision 2026-07-01: token discipline — one context per pass). Skills was EXTRACTED
-     as its own module (see ../../intake/_scope-reconciliation-v1.md); BOOKS was EXTRACTED as its own module
-     2026-07-03 (see ../../intake/books.md); KNOWLEDGE was EXTRACTED as its own module 2026-07-10 (see
-     ../../intake/knowledge.md); SESSIONS & SCHEDULING was EXTRACTED + PROMOTED to a foundation module
-     2026-07-12 (see ../sessions-and-scheduling/ + ../../intake/sessions-and-scheduling.md). Language is
-     separate (Wave 3). -->
+<!-- Learning umbrella index — the Learning domain is now ONE SUB-CONTEXT (Education). The rest were extracted:
+     Skills → own module (../../intake/_scope-reconciliation-v1.md); BOOKS → own module 2026-07-03
+     (../../intake/books.md); KNOWLEDGE → own module 2026-07-10 (../../intake/knowledge.md); SESSIONS &
+     SCHEDULING → foundation module 2026-07-12 (../sessions-and-scheduling/); FLASHCARDS → a study-method
+     SERVICE sub-context of KNOWLEDGE 2026-07-12 (../knowledge/flashcards/ + ../../intake/flashcards.md).
+     Language is separate (Wave 3). -->
 
 # Learning — Vida Platform (umbrella)
 
-The Learning domain is documented as **2 sub-contexts**, each a full feature context with the canonical 5
-aspect docs:
+The Learning domain is now documented as **one sub-context (Education)** — everything else was extracted to
+its own module or moved under another module (see header):
 
 | Sub-context | Status | Tables | Docs |
 |---|:---:|---|---|
 | **Education** (renamed from "Courses & Classes", 2026-07-02) | ✅ | `courses`(=subjects) · `ics_feed_configs` · `ics_synced_events` (+ large INTENDED hierarchy) | [education/](education/) |
-| Flashcards | ⬜ | `flashcard_decks` · `flashcards` · `flashcard_reviews` | — |
+
+- **Flashcards** (`flashcards`) was **reframed** into a **study-method service sub-context of Knowledge**
+  [../knowledge/flashcards/](../knowledge/flashcards/) (2026-07-12): retention + gathering; content+drill only,
+  everything generic (Knowledge's engine). Reference impl of **ADR-005**. `[FACT: ../../intake/flashcards.md]`
 
 - **Knowledge** (`study_topics`/`topic_reviews`/`knowledge_notes`) was **extracted** into [its own module](../knowledge/)
   (2026-07-10): the knowledge Universe — the user's lifelong catalog, the most-personalizable module — where

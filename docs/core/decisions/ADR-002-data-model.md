@@ -4,7 +4,7 @@
 **Date:** 2026-03-13
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Complete SQLite schema for local-first, zero-knowledge, multiplatform life management SaaS
-**Amended by:** [ADR-004](ADR-004-session-framework.md) (2026-07-12) — replaces the Learning-only `study_sessions` + the §5.11 flat planner with the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables (a consolidated ADR-002 amendment is pending in the build phase).
+**Amended by:** [ADR-004](ADR-004-session-framework.md) (2026-07-12) — replaces the Learning-only `study_sessions` + the §5.11 flat planner with the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables. · [ADR-005](ADR-005-study-method-service-framework.md) (2026-07-12) — retires `flashcard_decks`, `flashcard_reviews`, and the SM-2 columns on `flashcards`; a reviewable becomes a lean content entity scheduled by Knowledge's generic engine. (A consolidated ADR-002 amendment is pending in the build phase.)
 
 ---
 

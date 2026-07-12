@@ -38,12 +38,12 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 - [ ] **Learning → verify** Grades/GPA (CR-002/OR-003), Cycles (OR-008), Subject-as-entity when documenting Learning.
 - [ ] **Skills** (SEPARATE module, extracted from Learning 07-01) — v2 skills/skill_resources are a downgraded 2-table version; envisioned larger/robust. Own intake captures the fuller vision. Removed from Learning:Knowledge sub-context.
 
-### ▸ Learning decomposition (07-01) — now 2 sub-contexts (Books 07-03 + Knowledge 07-10 + Sessions&Scheduling 07-12 EXTRACTED as own modules; Sessions PROMOTED to foundation); Skills split out; Language=Wave 3
+### ▸ Learning decomposition (07-01) — now **1 sub-context (Education)**: Books 07-03 + Knowledge 07-10 + Sessions&Scheduling 07-12 EXTRACTED as own modules (Sessions PROMOTED to foundation); Flashcards 07-12 → KNOWLEDGE study-method service; Skills split out; Language=Wave 3
 - [x] Learning: Education (formerly Courses & Classes) — done 07-03
 - [x] ~~Learning: Books~~ → **BOOKS, own module** (extracted 07-03, documented 07-05 — see Wave 2 below)
 - [x] ~~Learning: Knowledge~~ → **KNOWLEDGE, own module** (extracted 07-10, documented 07-10 — see Wave 2 below)
 - [x] ~~Learning: Study Sessions & Planner~~ → **SESSIONS & SCHEDULING, own FOUNDATION module** (extracted + PROMOTED 07-12, documented 07-12 — see Wave 2 below)
-- [ ] Learning: Flashcards (flashcard_decks/flashcards/reviews, SM-2)
+- [x] ~~Learning: Flashcards~~ → **KNOWLEDGE study-method SERVICE sub-context** (reframed 07-12, documented 07-12 — see Wave 2 below)
 
 ### ▸ Wave 2 (in progress)
 - [x] Projects (Wave 2 foundation) — 5 aspect docs + verified, gate PASS (06-29). Intake G1–G11 resolved. DEDICATED deliverables table + multi-type measurement system (financial/stats/3rd-party/logs/artifacts — needs design pass), vision+mission TipTap pages, project time from task focus, document VAULT (R2), dedicated Tasks→Projects API, +project_contacts(role)/account/event links, user-personalized views, deliverable notes, shared scoped tags. ⚠⚠ GOVERNING PRINCIPLE surfaced: ZK core + guarded opt-in extension layer (→ constitution).
@@ -87,8 +87,18 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
       extension tables) → surfaced the **Session Framework ADR**. Confirms: block↔session link (G4), restore
       rich templates+interruption (G6, runtime in Notes), derived analytics (G8), signal-source-only (G10).
       Deferred: G5 placement design-pass, G9 views pass. 4th extraction from Learning (after Skills/Books/Knowledge).
-- [ ] NEXT → Wave 2 cont.: **Learning: Flashcards** (its `review_session` conforms to ADR-004) → **Journals**.
-      (ADR-004 Session Framework written + Sessions & Scheduling batch committed 07-12.)
+- [x] **Flashcards (Wave 2 — KNOWLEDGE study-method SERVICE sub-context, reframed from Learning 2026-07-12)** —
+      5 aspect docs at `docs/features/knowledge/flashcards/` + verified, gate PASS (07-12). ⚠⚠ REFRAME: not a
+      module, not under Learning — a **retention + gathering SERVICE inside Knowledge**, the **reference impl of
+      the Study-Method Service framework** (→ **ADR-005**). "Keep the seam, retire the instance": 3 v2 tables
+      collapse to ONE lean card content entity — `flashcard_decks` (→ user Knowledge object) + `flashcard_reviews`
+      (→ generic `review_events`) + SM-2 columns (→ generic `method_binding`/curve; SM-2 = default preset) all
+      RETIRED. Card = reviewable content (front/back/media/card_type + universal tags + note links). Gathering
+      first-class (generate from definition objects/book quotes/notes). Emits `review_events`; Knowledge derives
+      mastery (KN-10). Drill = `review_session` (ADR-004). Framework EXTENSIBLE (roles + integrations open;
+      future services intended). Learning → Education only. FOUNDATION-FIRST principle captured.
+- [ ] NEXT → Wave 2 cont.: **Journals** (the last Wave-2 context; aggregates study/sessions/mastery).
+      ⚠ First: commit the Flashcards + ADR-005 batch.
 
 ### ▸ Follow-up surfaced by Step 6 Verify
 - [ ] ADR amendment: record the HKDF → BLAKE2b-256 Vault Key decision. Code (vault.ts) is authoritative and deliberate ("replaces HKDF"); ADR-001 §Key Model + CLAUDE.md still say HKDF. Run /adr-new (amend ADR-001) + fix CLAUDE.md — needs Victor's sign-off before editing the ADR.
@@ -131,6 +141,7 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 | Learning: Books → BOOKS module extraction | intent mismatch (Victor) | v1 Books "worst version ever"; envisioned = reading Universe w/ Education partition, not a Learning sub-extension | ✓ extracted, intake WHOLE (B1–B16, double-critique), documented + gate PASS |
 | Learning: Knowledge → KNOWLEDGE module extraction | intent mismatch (Victor) | v1 minimal/nerfed (Education-only, hard-coded Ultralearning); envisioned = knowledge Universe, most-personalizable module w/ Education partition | ✓ extracted 07-10, intake WHOLE (K1–K12 + KN-A/B/C), documented + gate PASS (2 No-Guessing defects caught+fixed) |
 | Learning: Study Sessions & Planner → SESSIONS & SCHEDULING extraction **+ PROMOTION to foundation** | intent + altitude mismatch (Victor) | OS had 9+ scattered session entities with no shared spine; a per-course planner couldn't see the rest of life; sessions must be an OS primitive with rich cross-module integration | ✓ extracted + PROMOTED 07-12, intake WHOLE (G1–G10 + S1–S5), documented + gate PASS; surfaced Session Framework ADR |
+| Learning: Flashcards → KNOWLEDGE study-method SERVICE (demotion into Knowledge) | altitude mismatch (Victor) | v1/v2 welded SRS + decks + reviews into flashcard-specific tables; intent = a pluggable study-method service on Knowledge's generic engine, first of a family (assessments/self-test/…) | ✓ reframed 07-12, intake WHOLE (F1–F8 + F-SVC), documented + gate PASS; surfaced ADR-005 Study-Method Service framework; 3 v2 tables retired |
 
 ## Failures This Session
 *(none yet — On Failure protocol writes here)*

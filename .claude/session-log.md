@@ -331,3 +331,24 @@ Next session:
   - DONE this session (Victor go): (a) wrote **ADR-004 Session Framework** (table-per-type + 4-dim contract + base/extension sync rule; Accepted; amends ADR-002; core README + ADR-002 cross-refs updated); (b) COMMITTED the batch (docs/features/sessions-and-scheduling/* + ADR-004 + renamed intake + index updates + task files).
   - Then Wave 2 cont.: **Learning: Flashcards** → **Journals**.
   - Backlog additions: Session Framework ADR; ADR-002 amendment (Sessions&Scheduling slice — base spine + extension tables + planned_blocks + attachment/effects/permission tables; reconcile task_time_logs⟷work_session; supersede §5.11 flat planner + Learning-only study_sessions); G5 placement design-pass; G9 views pass; cross-module note (Books/Education/Knowledge/Language/Health gain a *_session sub-type at next touch).
+
+---
+Date: 2026-07-12 (cont.)
+Task: documentation-blueprint
+Goal: Document "Learning: Flashcards" (last of the Learning decomposition) — which became a reframe into a Knowledge study-method service + a new framework ADR.
+Completed:
+  - PHASE 1 (Intake): harvested v2 (3 schema-only tables, 0 logic — flashcard_decks L2628, flashcards+SM-2 L2656, flashcard_reviews L2693; types in knowledge.ts L106-160) + v1 (entities.ts L1250-1297: richer — image/audio/tags + source_note_id generation) + documented-foundation boundaries (Knowledge KN-4/KN-8 "spaced-rep drill method" in a pluggable study_methods registry; Sessions ADR-004 review_session + dueIn). Wrote docs/intake/flashcards.md, marked WHOLE.
+  - PHASE 2 (Transform): 5 aspect docs at docs/features/knowledge/flashcards/ (FC-1..FC-10; content+drill only; 3 retirements; universal properties) + ADR-005.
+  - PHASE 3 (Verify) + gate: PASS. Mechanical clean (residue, cross-ref paths, FACT cites: flashcard tables L2628/L2656/L2693, v1 media L1258-1260, source_note_id L1272, types L106/L121). vs-intake: F1-F8 + F-SVC reflected; vs-sources: consistent (Knowledge KN-8 already retires SM-2 cols); vs-constitution: coupling budget respected (near-zero standalone surface).
+  - PHASE 4 (Accept): ADR-005 wired into core/README + ADR-002 amended-by; indexes updated — features/README (Flashcards ✅ under Knowledge; Learning → 1 sub-context), learning/README (Education only + Flashcards pointer), knowledge/contract (HOSTS → Flashcards + ADR-005 seam note), docs/README (status + fill order). Intake whole.
+Decisions (the big ones):
+  - REFRAME (F1): Flashcards is NOT a module and NOT under Learning — a retention + gathering SERVICE inside Knowledge; the reference impl of the Study-Method Service framework. Learning drops to ONE sub-context (Education).
+  - GENERIC REVIEW (F2/F3/F4): SRS is not welded to the schema. SM-2 = one bound preset in Knowledge's pluggable curve engine; scheduling/review/mastery all generic. → RETIRE the SM-2 columns + flashcard_reviews.
+  - DECK DISSOLVES (F5): a "deck" is a user-defined Knowledge object below a Topic, not a fixed entity. → RETIRE flashcard_decks. Card stays a lean Flashcards-owned content entity (front/back/media/card_type + tags + note links).
+  - FOUNDATION-FIRST PRINCIPLE (Victor): rigid per-feature structures collapse into generic constructs — "keep the seam, retire the instance." 3 v2 tables → 1.
+  - ADR-005 STUDY-METHOD SERVICE FRAMEWORK: roles (retention/gathering/assessment/elaboration, extensible) + 6-part anatomy (content unit · run surface=Session sub-type · study_methods registration · gather · emitted signals · universal properties) + Knowledge/Education/OS integration. Flashcards = reference impl; future services (assessments/self-test/Feynman) INTENDED, not now. EXTENSIBLE by design.
+  - Gather is first-class (generate cards from definition objects/book quotes/notes). Emits review_events → Knowledge derives mastery (KN-10). Drill = review_session (ADR-004).
+Next session:
+  - COMMIT the Flashcards + ADR-005 batch (this session).
+  - Wave 2 cont.: **Journals** — the LAST Wave-2 context (aggregates study/sessions/mastery/all modules; the integration layer). Then Wave 2 COMPLETE.
+  - Backlog: ADR-005; ADR-002 amendment (Flashcards slice — retire 3 tables, lean card entity) consolidates with the standing amendment; future study-method services (assessments etc.) INTENDED; Flashcards views fold into the build-time per-module VIEWS pass.

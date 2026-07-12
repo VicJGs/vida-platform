@@ -22,6 +22,7 @@ aspects** (master manifest: [`../README.md`](../README.md)).
 - [ADR-002 — Data Model](decisions/ADR-002-data-model.md)
 - [ADR-003 — Sync Protocol](decisions/ADR-003-sync-protocol.md)
 - [ADR-004 — Session Framework](decisions/ADR-004-session-framework.md) (table-per-type sessions + 4-dimension Integration Contract; amends ADR-002)
+- [ADR-005 — Study-Method Service Framework](decisions/ADR-005-study-method-service-framework.md) (pluggable study-method services on Knowledge's generic review engine; Flashcards = reference impl; amends ADR-002)
 
 > The CORE business rules are the **constitution** — the most important rules in the repo. Every lower level
 > (features/services/components) inherits and must comply. `[FACT: business-rules.md]`

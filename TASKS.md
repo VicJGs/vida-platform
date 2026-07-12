@@ -6,7 +6,7 @@
 
 | Task | Profile | Started | Last Session | Status |
 |------|---------|---------|--------------|--------|
-| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-07-12 | Wave 0+1 + Projects + Education + Books + Knowledge + **SESSIONS & SCHEDULING documented** (4th extraction from Learning **+ PROMOTED to foundation** — polymorphic Session supertype + aggregator scheduling engine + 4-dim Integration Contract, G1–G10 + S1–S5, gate PASS 07-12; surfaced Session Framework ADR) · Learning now 2 sub-contexts · ADR-004 Session Framework written · next: **Flashcards** → Journals |
+| documentation-blueprint | Project Foundation → documentation-blueprint | 2026-06-08 | 2026-07-12 | Wave 0+1 + Projects + Education + Books + Knowledge + **SESSIONS & SCHEDULING documented** (4th extraction from Learning **+ PROMOTED to foundation** — polymorphic Session supertype + aggregator scheduling engine + 4-dim Integration Contract, G1–G10 + S1–S5, gate PASS 07-12; surfaced Session Framework ADR) · + **FLASHCARDS reframed** (→ Knowledge study-method service; content+drill only, 3 v2 tables retired; reference impl of **ADR-005** Study-Method Service framework; gate PASS 07-12) · Learning now **1 sub-context (Education)** · next: **Journals** (last Wave-2) |
 
 Detailed step plan + live-panel IDs: `.claude/tasks/documentation-blueprint.md`
 

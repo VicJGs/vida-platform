@@ -15,7 +15,7 @@ every level (see the master manifest: [`../README.md`](../README.md)).
 |------|---------|
 | 0 — Foundational | **Notes & Pages** (hub, in-degree 14) · Preferences |
 | 1 — Independent | Tasks · Habits · Finance · Relationships · Check-ins |
-| 2 — Dependent | Projects · **Books** (own module — extracted from Learning 2026-07-03) · **Knowledge** (own module — extracted from Learning 2026-07-10) · **Learning** (2 sub-contexts: Education · Flashcards) · Journals |
+| 2 — Dependent | Projects · **Books** (own module — extracted from Learning 2026-07-03) · **Knowledge** (own module — extracted from Learning 2026-07-10; **Flashcards** is its study-method sub-context) · **Learning** (1 sub-context: Education) · Journals |
 | F — Foundation | **Sessions & Scheduling** (own module — extracted **+ PROMOTED** from Learning 2026-07-12; the session foundation + scheduling engine many modules build on) |
 | 3 — Higher-order | Languages · Purposes & Goals · Bucket List |
 | 4 — Peripheral | **Routines** (re-sequenced 2026-07-01 — orchestrator, needs its modules first) · Gamification · Notifications · Pomodoro |
@@ -38,7 +38,7 @@ every level (see the master manifest: [`../README.md`](../README.md)).
 | [Books](books/) (own module — extracted from Learning 2026-07-03) | 2 | ✅ | [identity](books/identity.md) · [business-rules](books/business-rules.md) · [contract](books/contract.md) · [structure-data](books/structure-data.md) · [conventions](books/conventions.md) — reading Universe reframe; partition serves Education |
 | [Knowledge](knowledge/) (own module — extracted from Learning 2026-07-10) | 2 | ✅ | [identity](knowledge/identity.md) · [business-rules](knowledge/business-rules.md) · [contract](knowledge/contract.md) · [structure-data](knowledge/structure-data.md) · [conventions](knowledge/conventions.md) — knowledge-Universe reframe; most-personalizable module; provides mastery source to Education |
 | [Sessions & Scheduling](sessions-and-scheduling/) (own module — extracted **+ PROMOTED** from Learning 2026-07-12) | F | ✅ | [identity](sessions-and-scheduling/identity.md) · [business-rules](sessions-and-scheduling/business-rules.md) · [contract](sessions-and-scheduling/contract.md) · [structure-data](sessions-and-scheduling/structure-data.md) · [conventions](sessions-and-scheduling/conventions.md) — Session supertype + sub-types · aggregator scheduling engine · 4-dim Integration Contract; views deferred (G9); **[ADR-004](../core/decisions/ADR-004-session-framework.md)** |
-| Learning: Flashcards | 2 | ⬜ | flashcard_decks/flashcards/reviews (SM-2) |
+| [Knowledge: Flashcards](knowledge/flashcards/) (study-method **service** sub-context of Knowledge — reframed from Learning 2026-07-12) | 2 | ✅ | [identity](knowledge/flashcards/identity.md) · [business-rules](knowledge/flashcards/business-rules.md) · [contract](knowledge/flashcards/contract.md) · [structure-data](knowledge/flashcards/structure-data.md) · [conventions](knowledge/flashcards/conventions.md) — content+drill only; scheduling/curve/review/mastery/deck all generic (Knowledge engine); reference impl of **[ADR-005](../core/decisions/ADR-005-study-method-service-framework.md)**; 3 v2 tables retired |
 | **Skills** (separated from Learning) | R | ⬜ | recovered — v2 is a downgraded 2-table version; envisioned larger/robust; own intake |
 | Languages | 3 | ⬜ | — |
 | Purposes & Goals | 3 | ⬜ | — |
