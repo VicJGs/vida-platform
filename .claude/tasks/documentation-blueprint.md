@@ -45,7 +45,7 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 - [x] ~~Learning: Study Sessions & Planner~~ → **SESSIONS & SCHEDULING, own FOUNDATION module** (extracted + PROMOTED 07-12, documented 07-12 — see Wave 2 below)
 - [x] ~~Learning: Flashcards~~ → **KNOWLEDGE study-method SERVICE sub-context** (reframed 07-12, documented 07-12 — see Wave 2 below)
 
-### ▸ Wave 2 (in progress)
+### ▸ Wave 2 (✅ COMPLETE 2026-07-12)
 - [x] Projects (Wave 2 foundation) — 5 aspect docs + verified, gate PASS (06-29). Intake G1–G11 resolved. DEDICATED deliverables table + multi-type measurement system (financial/stats/3rd-party/logs/artifacts — needs design pass), vision+mission TipTap pages, project time from task focus, document VAULT (R2), dedicated Tasks→Projects API, +project_contacts(role)/account/event links, user-personalized views, deliverable notes, shared scoped tags. ⚠⚠ GOVERNING PRINCIPLE surfaced: ZK core + guarded opt-in extension layer (→ constitution).
 - [~] Routines — intake IN PROGRESS + **RE-SEQUENCED to late (before Wave 4 peripherals), 2026-07-01**. Reframe captured: Routines = cross-module ORCHESTRATION layer; named sequences; polymorphic INTERACTIVE steps w/ per-step completion modes driving underlying entities. Deferred because its step-types reference Learning/Health/Duties/etc. — document those first. Intake: docs/intake/routines.md (G2/G3/G5/action-model resolved; G1/G4/G6-G10 to confirm on return).
 - [x] Learning: Education (Wave 2, sub-context 1/5) — 5 aspect docs + umbrella + verified, gate PASS (07-03). ⚠⚠ SCOPE REFRAME: 8-level hierarchy (Institution/Self-taught → Program → Curriculum → Degree → Term → Subject → Module → Topic), renamed from "Courses & Classes". Grading-system BUILDER, subject_schedules (3 methods), class=session-of-subject, homework=education-task (Tasks Universe), Education-forged measurement, 11-tab Hub + dedicated-page families + per-assessment-type pages. Largest INTENDED surface (14 entities → ADR-002 amendment) + 2 design passes (grading components; measurement shared w/ Projects, separate forges).
@@ -97,7 +97,19 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
       first-class (generate from definition objects/book quotes/notes). Emits `review_events`; Knowledge derives
       mastery (KN-10). Drill = `review_session` (ADR-004). Framework EXTENSIBLE (roles + integrations open;
       future services intended). Learning → Education only. FOUNDATION-FIRST principle captured.
-- [ ] NEXT → Wave 2 cont.: **Journals** (the last Wave-2 context; aggregates study/sessions/mastery).
+- [x] **Journals (Wave 2 FINALE — the integration layer, 2026-07-12)** — 5 aspect docs at
+      `docs/features/journals/` + verified, gate PASS. Boundary: Notes & Pages owns the journal PAGE; Journals
+      owns the **aggregation ENGINE** (`journal-service`, 0-line/INTENDED) — distinct context forced by the dep
+      graph (N&P is a Wave-0 foundation; aggregating all modules from it = a cycle). Two subsystems: **daily
+      dashboard** (live today) + **temporal Review engine** (snapshots → user-defined periods → scheduled
+      Spotify-Wrapped-style recaps showing improvement vs goals/dreams/purposes/projects/workload). J2:
+      **provider registry** (each module registers `summary(date)`; agenda reuses `dueIn`) + **per-module
+      granular user selection**. J4: **snapshot-past + live-today + comparative** (refines N&P G7). No new ADR
+      (reuses the provider seam); surfaced ADR-002 amendment (`journal_snapshots`) + Review-engine design-pass.
+      Forward-deps stubbed: Purpose (Wave 3), Gamification/Notifications (Wave 4). J8 Check-ins integration
+      deferred to that module's revisit. **← WAVE 2 COMPLETE (all contexts documented + gate PASS).**
+- [ ] NEXT → **Wave 3**: Languages · Purposes & Goals · Bucket List. (Then Wave R: Health · Duties · Skills;
+      Wave 4: Routines · Gamification · Notifications.) ⚠ First: commit the Journals batch.
       ⚠ First: commit the Flashcards + ADR-005 batch.
 
 ### ▸ Follow-up surfaced by Step 6 Verify
@@ -142,6 +154,7 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 | Learning: Knowledge → KNOWLEDGE module extraction | intent mismatch (Victor) | v1 minimal/nerfed (Education-only, hard-coded Ultralearning); envisioned = knowledge Universe, most-personalizable module w/ Education partition | ✓ extracted 07-10, intake WHOLE (K1–K12 + KN-A/B/C), documented + gate PASS (2 No-Guessing defects caught+fixed) |
 | Learning: Study Sessions & Planner → SESSIONS & SCHEDULING extraction **+ PROMOTION to foundation** | intent + altitude mismatch (Victor) | OS had 9+ scattered session entities with no shared spine; a per-course planner couldn't see the rest of life; sessions must be an OS primitive with rich cross-module integration | ✓ extracted + PROMOTED 07-12, intake WHOLE (G1–G10 + S1–S5), documented + gate PASS; surfaced Session Framework ADR |
 | Learning: Flashcards → KNOWLEDGE study-method SERVICE (demotion into Knowledge) | altitude mismatch (Victor) | v1/v2 welded SRS + decks + reviews into flashcard-specific tables; intent = a pluggable study-method service on Knowledge's generic engine, first of a family (assessments/self-test/…) | ✓ reframed 07-12, intake WHOLE (F1–F8 + F-SVC), documented + gate PASS; surfaced ADR-005 Study-Method Service framework; 3 v2 tables retired |
+| Journals: page (Notes & Pages) vs ENGINE (Journals) | boundary + dep-graph | N&P (Wave-0 foundation) already owns the journal page; aggregating all modules from it = a cycle; the engine must sit above the modules | ✓ distinct context 07-12; J4 grew into a snapshot-based Review & Analytics subsystem; intake WHOLE (J1–J8); documented + gate PASS; **Wave 2 COMPLETE** |
 
 ## Failures This Session
 *(none yet — On Failure protocol writes here)*

@@ -16,7 +16,7 @@
 - **Not server-aware.** The server never sees page content; all rendering, search, summary aggregation, and the entity-note seed happen client-side (zero-knowledge). `[FACT: business-rules ZK-1]`
 - **Not an open page-type system.** Only the 6 enumerated `type` values exist; new page kinds require a schema/enum change, not free-form types. `[FACT: ADR-002 CHECK constraint L1274-1277]`
 - **Not a slug-based wiki.** v2 dropped v1's `slug`; links resolve by `target_page_id`, never by URL slug. `[FACT: ADR-002 page_links; intake delta #2; INTENT G2]`
-- **Not a static-template journal.** The journal is built from a **live** `/summary` block that re-aggregates on open, not a frozen copy stamped per day. `[INTENT G7; intake delta #5]`
+- **Not a static-template journal.** The journal is built from a **live** `/summary` block that re-aggregates on open, not a frozen copy stamped per day. `[INTENT G7; intake delta #5]` ⚠ **Refined by Journals JR-6 (2026-07-12):** live applies to **today**; a **past** day shows the point-in-time **snapshot** of that day (+ optional live comparative). The aggregation ENGINE behind this block is the Journals context. `[[../journals/business-rules]]`
 - **Not the home of component specs.** The TipTap editor and shared UI widgets are documented at the **components level** (`docs/editor/`, `docs/ui/`), not in this feature. `[FACT: docs/README.md manifest, Components level]`
 
 ## Completion checklist

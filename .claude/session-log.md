@@ -352,3 +352,24 @@ Next session:
   - COMMIT the Flashcards + ADR-005 batch (this session).
   - Wave 2 cont.: **Journals** — the LAST Wave-2 context (aggregates study/sessions/mastery/all modules; the integration layer). Then Wave 2 COMPLETE.
   - Backlog: ADR-005; ADR-002 amendment (Flashcards slice — retire 3 tables, lean card entity) consolidates with the standing amendment; future study-method services (assessments etc.) INTENDED; Flashcards views fold into the build-time per-module VIEWS pass.
+
+---
+Date: 2026-07-12 (cont.)
+Task: documentation-blueprint
+Goal: Document Journals — the integration layer + last Wave-2 context. CLOSES Wave 2.
+Completed:
+  - PHASE 1 (Intake): harvested current (a journal = pages type='journal', OWNED by Notes & Pages — NP-2, /summary block, JournalSummaryConfig 5 toggles, G5 INTENDED menu, G7 live; ADR-002 L1266-1310, note.ts L75-104) + THIS context = the aggregation ENGINE (journal-service.ts 0-line) + v1 "Today" page. Wrote docs/intake/journals.md, marked WHOLE. Completeness sweep run (forward-deps/design-pass/flags only, no new blocking decision).
+  - PHASE 2 (Transform): 5 aspect docs at docs/features/journals/ (JR-1..JR-10).
+  - PHASE 3 (Verify) + gate: PASS. Mechanical clean (residue, paths, cites: idx_pages_journal_unique L1310, JournalSummaryConfig note.ts L75/L104, journal-service 0-line, NP-2 in N&P docs). vs-intake J1-J8 reflected; vs-sources no contradiction (N&P referenced not duplicated; G7 refinement flagged loud as cross-module note); vs-constitution the registry IS the coupling-budget solution (no god-context, no cycle).
+  - PHASE 4 (Accept): indexes — features/README (Journals ✅), docs/README (Wave 2 COMPLETE + fill order), N&P identity (G7 refined-by-JR-6 cross-module note). Task file + TASKS.md + Route History. ← WAVE 2 COMPLETE.
+Decisions (the big ones):
+  - J1 (A): Journals is a DISTINCT context = the aggregation engine — forced by the dep graph (Notes & Pages is a Wave-0 foundation; if it aggregated all modules it would depend on the things that depend on it = a cycle). The engine sits ABOVE the modules.
+  - J2 (A + granular): provider REGISTRY — each module registers a journal contribution (summary(date); agenda reuses dueIn(range)); journal names no module. User selects, per module + granularly, which data points show (config = global default in Preferences + per-journal summary_config override). 4th consumer of the provider seam (after Scheduler, Global Calendar, study-methods).
+  - J4 (snapshot Review engine, overrode live-only): past = point-in-time SNAPSHOT of that day; today = live; + optional live comparative. User-defined time-frames (day/week/month/year + custom: bi-week/bimester/semester). Scheduled Spotify-Wrapped-style reviews (user plans when to receive). Improvement lens: progress vs goals/dreams/purposes, project development, workload. Two subsystems: daily dashboard + temporal Review engine. Refines N&P G7 (JR-6).
+  - No new ADR (reuses provider seam). Surfaced: ADR-002 amendment (journal_snapshots + generalize summary_config) + Review-engine design-pass.
+  - Confirms: J3 (summary+agenda), J6 (free-form entry layered), J7 (shared dueIn w/ Global Calendar). Deferred: J5 views, J8 Check-ins integration (to that module's revisit).
+  - Forward-deps stubbed: Purpose & Goals (Wave 3), Gamification + Notifications (Wave 4).
+Next session:
+  - COMMIT the Journals batch (this session).
+  - ⭐ WAVE 2 COMPLETE. Next: **Wave 3** — Languages · Purposes & Goals · Bucket List. (Then Wave R: Health · Duties · Skills; Wave 4: Routines · Gamification · Notifications.)
+  - Note: Purposes & Goals (Wave 3) is a forward-dep of the Journals review lens — documenting it unblocks that wiring.
