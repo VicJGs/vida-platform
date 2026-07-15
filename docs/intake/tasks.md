@@ -70,8 +70,30 @@ G9 — **Focus mode**: v1 had "focus mode." How should starting focus on a task 
 ### Intake status: ✅ WHOLE. Open carry-forwards (all ⚠ INTENDED → one ADR-002 amendment in build phase):
 1. `completed_at` (G5) · 2. `scheduled_date` (G6) · 3. recurrence rule + `kind`/`obligation` classifier (G8) · 4. saved-views persistence `task_views` (G1) · 5. shared-tags migration, deprecate inline `tasks.tags` (G7).
 
+## ADDENDUM — Task TYPES & presets (Duties dissolution, 2026-07-14) `[INTENT: Victor 2026-07-14]`
+
+The **Duties** defining intake ([[intake/duties.md]]) resolved that **Duty and Obligation are not a module — they
+are TASK TYPES surfaced as PRESETS.** This generalizes G8 and composes with G1. `[INTENT: Victor 2026-07-14]`
+
+- **G8 → generalized.** The `kind ∈ {standard, obligation}` classifier becomes a **user-extensible task `type`**
+  (`standard | obligation | duty | …`). **Duty** and **Obligation** ship as the two built-in non-standard types;
+  the user can define more ("fully personalizable"). Each type carries its own **patterns · contexts · deliverables**.
+  - **`duty` type = a recurring RESPONSIBILITY** (D1): an accountability commitment (ideally Purpose-anchored via
+    `entity_links`) that recurs and generates/points at work. Flexible, internal accountability, gradient/quality-
+    tracked. Composes Scheduler `dueIn`/recurrence for cycle-gen — **no bespoke Master→Instance engine** (Duties D3).
+  - **`obligation` type = a non-negotiable deadline** (unchanged G8 lineage): external consequence, binary
+    compliance, unmovable in scheduling conflicts. The 4-axis Duty-vs-Obligation distinction (see `intake/duties.md`)
+    is the differentiation *between the two types*, not between two modules.
+- **Presets (the "thin tab" — via Spaces).** Each task type gets a **preset**: a saved View (G1 / Spaces SP3) +
+  its **own UI/UX tab** + default fields/deliverables (+ optional starter Template, Spaces SP5). "Duties" and
+  "Obligations" are each a preset tab over the Tasks entity — distinct surfaces, one entity. Home of the preset
+  primitive = **Spaces** ([[intake/spaces.md]] Requirements accumulator); Tasks provides the type + the data.
+- **Build-phase carry-forward (add to the ADR-002 amendment):** widen the `kind`/`type` discriminator to a
+  user-extensible type registry + per-type preset/UI config. Revisit alongside the `task_views` persistence (G1).
+
 ## Change Log
 | Date | Session | Change |
 |------|---------|--------|
 | 2026-06-18 | documentation-blueprint | intake harvested (v2 ADR-002 §5.3 + v1 life-os tasks); gap map G1–G9 raised |
 | 2026-06-18 | documentation-blueprint | gaps resolved (Victor); G1 all-layouts+view-builder, G2–G4/G9 confirmed, G5/G6/G8 schema additions, G7 shared-tags migration; intake WHOLE; 5 INTENDED deltas → ADR-002 amendment |
+| 2026-07-14 | documentation-blueprint | ADDENDUM: Duties dissolved into Tasks + Spaces → G8 `kind` generalized to a user-extensible task **type** (`standard\|obligation\|duty\|…`); Duty/Obligation = 2 shipped types+presets w/ own patterns/deliverables + UI/UX tab (preset home = Spaces) |
