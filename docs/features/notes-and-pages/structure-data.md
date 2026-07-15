@@ -11,7 +11,7 @@
 | `entity_links` | page→entity cross-domain backlink | `context` | `entity_type` CHECK (33); `UNIQUE(page_id, entity_type, entity_id)`; `page_id` CASCADE |
 | `tags` + `page_tags` | shared tags with color | `tags.name` (UNIQUE) | `page_tags` PK `(page_id, tag_id)`, both CASCADE |
 | `note_attachments` | encrypted file blobs + thumbnail | `filename`, `encrypted_blob`, `thumbnail_blob` | `page_id` CASCADE |
-| `pomodoro_sessions` | focus timer linked to page/entity | — (all structural/numeric) | `page_id`→pages SET NULL; `entity_type` CHECK (5) |
+| `pomodoro_sessions` ⚠ re-homes to **Sessions realm** (reframe 2026-07-15) | focus timer — becomes the `focus`-sub-type runtime keyed by `session_id` | — (all structural/numeric) | v2: `page_id`→pages SET NULL; `entity_type` CHECK (5) — both superseded at build (`session_id` FK). `[[../pomodoro/structure-data]]` |
 
 - Every table carries the standard sync metadata (`_sync_id` UNIQUE, `_sync_version`, `_sync_device_id`, `_sync_lww_ts`, `_sync_status`, `_sync_hash`) and soft-delete where applicable. `[FACT: ADR-002 §5.2; CLAUDE.md Conventions]`
 - `pages.content` is the only Yjs-CRDT-synced column; all other columns sync via LWW. `[FACT: ADR-003; note.ts L91]`

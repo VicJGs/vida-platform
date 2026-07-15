@@ -5,7 +5,7 @@
 > **Status:** the 17 modules are not implemented in code yet — they live in ADR-002 schema + `@vida/types`. This contract is the **designed service interface** harvested from the data model and types, NOT yet-shipped code. `[FACT: docs/README.md manifest Notes]` Each signature below is the intended shape; treat as ⚠ INTENDED until `@vida/core` services exist.
 
 ## Exposed surface
-Notes & Pages is the **hub (in-degree 14)** — the most-consumed feature. It exposes, via `@vida/core` services, a typed page/link/tag/attachment/pomodoro API operating on the 6 owned tables. `[FACT: module-dependency-graph.md; ADR-002 §5.2]`
+Notes & Pages is the **hub (in-degree 14)** — the most-consumed feature. It exposes, via `@vida/core` services, a typed page/link/tag/attachment API operating on its owned tables. `[FACT: module-dependency-graph.md; ADR-002 §5.2]` (⚠ The 6th v2 table, `pomodoro_sessions`, **re-homes to the Sessions realm** — reframe 2026-07-15; the Pomodoro entry below becomes a session-lens. `[[../pomodoro/contract]]`)
 
 - **Page CRUD & queries** (returning `Page` `[FACT: note.ts L87-108]`):
   - `getPage(id)` · `createPage(type, …)` · `updatePage(id, patch)` · `softDeletePage(id)`
@@ -16,7 +16,7 @@ Notes & Pages is the **hub (in-degree 14)** — the most-consumed feature. It ex
   - `resolveWikiLink(text)` → candidate pages for the `[[` picker; create-on-miss path (G2)
 - **Tags** (`Tag`, `PageTag`): `upsertTag(name,color)` · `tagPage(page_id, tag_id)` · `getPagesByTag(tag_id)`
 - **Attachments** (`NoteAttachment`): `addAttachment(page_id, file)` · `getAttachments(page_id)`
-- **Pomodoro** (`PomodoroSession`): `startSession(page_id?|entity)` · `endSession(id)` · `getSessionsForPage(page_id)`
+- **Pomodoro** (⚠ reframed 2026-07-15 — a **widget-lens**, not an owned entity): the `/pomodoro` block calls `listFocusEnabledSessions(scope)` and launches a `focus` Session's timer via the Sessions realm; a page links its analytics to that `session_id`. The v2 `startSession/endSession/getSessionsForPage` API is superseded. `[[../pomodoro/contract]]`
 - **Summary aggregation** (the `/summary` block): `buildJournalSummary(date, config)` → reads the enabled sections (see "consumes" below). `[FACT: note.ts JournalSummaryConfig; CLAUDE.md §8 /summary]`
 
 ## What it consumes (outside dependencies)

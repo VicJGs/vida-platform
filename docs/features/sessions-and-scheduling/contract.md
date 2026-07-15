@@ -48,9 +48,10 @@
   | contribute_purpose_metric | Purpose & Goals | `purpose_metric_values` write |
   | award_xp | Gamification | `xp_history` write |
   | surface_journal / surface_calendar | Notes / Global Calendar | daily Journal feed · block render |
-  | attach_pomodoro | Notes | `pomodoro_sessions` (entity_type='study_session') `[FACT L1435]` |
-- **Runtime:** Notes `pomodoro_sessions` (the timer) · Routines (presets availability) · the Global Calendar
-  (reads `planned_blocks` + shares `dueIn`).
+  | attach_pomodoro | **this realm** (⚠ reframed 2026-07-15) | `pomodoro_sessions` re-pointed at `session_id` — the `focus`-sub-type runtime `[[../pomodoro/contract]]` `[FACT superseded: entity_type L1435]` |
+- **Runtime:** `[[../pomodoro/identity]]` — the timer is the `focus`-sub-type runtime owned in this realm
+  (⚠ reframed 2026-07-15; was "Notes `pomodoro_sessions`") · Routines (presets availability) · the Global
+  Calendar (reads `planned_blocks` + shares `dueIn`).
 
 ## Contract error cases (typed)
 - `ProviderUnavailable(module)` — a `dueIn` lane failed; the agenda degrades that lane only (SS-7/fail-loud).

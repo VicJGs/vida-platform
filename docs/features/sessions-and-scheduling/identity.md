@@ -47,8 +47,10 @@ planned ones fill the gaps.
   them (G2/BK-12).
 - **Not the owner of domain mastery.** It **emits** completion signals; Knowledge (KN-10) and Education own
   and compute mastery/pace. It owns **session** analytics only, never **domain** measurement (G10).
-- **Not the Pomodoro runtime.** The timer is a **Notes** entity (`pomodoro_sessions`); this module owns the
-  **templates** and attaches a timer on start. `[FACT: ADR-002 pomodoro_sessions L1432; entity_type includes 'study_session' L1435]`
+- **The Pomodoro runtime lives HERE (⚠ REFRAMED 2026-07-15).** Pomodoro is the runtime of the `focus`
+  sub-type, owned in this realm (not a Notes entity — the earlier "timer is a Notes entity" statement is
+  reversed). This module owns the `focus` templates + attaches the timer on start; the Notes `/pomodoro`
+  block is a widget/lens onto pomodoro-enabled sessions. `[[../pomodoro/identity]]` `[INTENT: reframe 2026-07-15; FACT superseded: pomodoro_sessions entity_type L1435]`
 - **Not the placement algorithm's home yet.** The scheduler's internals (urgency scoring, recalc-on-miss) are
   a deferred **design-pass** (G5), not specced here.
 
@@ -60,6 +62,7 @@ providers feeding the agenda, effects firing across the OS). `[INTENT]`
 **Neighbors.** `[[../../intake/sessions-and-scheduling]]` (whole intake) · `[[../books/identity]]`
 (reading_session sub-type; Books owns reading_plans, consumed) · `[[../learning/education/identity]]`
 (class_session; generation source + pace-signal consumer) · `[[../knowledge/identity]]` (review_session;
-mastery-signal consumer, KN-10) · Flashcards (review_session; SM-2 provider) · Notes & Pages (Pomodoro
-runtime + Journal feed) · Routines (presets availability windows) · Habits / Tasks / Projects / Purpose /
+mastery-signal consumer, KN-10) · Flashcards (review_session; SM-2 provider) · `[[../pomodoro/identity]]`
+(the `focus`-sub-type timer runtime, owned here) · Notes & Pages (`/pomodoro` widget-lens + Journal feed) ·
+Routines (presets availability windows) · Habits / Tasks / Projects / Purpose /
 Gamification / Health (Integration-Contract effect targets) · the parked **Global Calendar** (renders blocks).

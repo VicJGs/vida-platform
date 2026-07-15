@@ -53,9 +53,13 @@
   never a domain measure (single-ownership; prevents drift). `[INTENT G10; FACT Knowledge KN-10]`
 
 **Runtime & analytics**
-- **SS-11 — Pomodoro is a Notes runtime, not a session.** The timer lives in `pomodoro_sessions` (Notes
-  domain); this module owns `session_templates` (restored richer fields + interruption/pause tracking). A
-  session attaches a timer on `start` via an effect; a template configures it. `[INTENT G6; FACT pomodoro_sessions L1432, entity_type includes 'study_session' L1435; session_templates L2861-2881]`
+- **SS-11 — Pomodoro is the runtime of the `focus` sub-type, owned in THIS realm (⚠ REFRAMED 2026-07-15).**
+  The timer runs a `focus` Session and attaches to a **`session_id`** — not a Notes entity. This module owns
+  its templates (richer fields + interruption/pause tracking) as `focus` presets; the Notes `/pomodoro` block
+  is a **widget/lens** showcasing pomodoro-enabled sessions (a view, never the owner). **This reverses the
+  prior "Pomodoro is a Notes runtime" statement:** `pomodoro_sessions` is re-homed here + re-pointed at
+  `session_id` (build-phase ADR-004 amendment + ADR-002 re-home). Full runtime rules:
+  `[[../pomodoro/business-rules]]` (PD-1…PD-12). `[INTENT: Victor reframe 2026-07-15; FACT superseded: entity_type L1435 + Notes ownership; session_templates L2861-2881]`
 - **SS-12 — Analytics are derived, never stored.** Completion rate · avg focus · planned-vs-actual ·
   per-module time · streaks are computed on-read from the session log (matches Habits/Finance). No synced
   aggregate tables; a slow view caches device-locally only. `[INTENT G8]`

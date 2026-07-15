@@ -19,8 +19,9 @@
   session_type, status, urgency_score, page range, L2823-2856) · **`session_templates`** (Pomodoro presets,
   L2861-2881). Planner types live in **`knowledge.ts` L222-250** (moved during the Knowledge extraction), NOT
   learning.ts. `[FACT]`
-- **`pomodoro_sessions`** — the timer runtime, owned by **Notes**, not this module (`entity_type` includes
-  `study_session`). `[FACT: L1432, L1435]`
+- **`pomodoro_sessions`** — the `focus`-sub-type timer runtime. **⚠ REFRAMED 2026-07-15:** re-homed into
+  **this realm** (was Notes-owned) + re-pointed at `session_id` (drops the polymorphic `entity_type`);
+  build-phase ADR-004 amendment + ADR-002 re-home. `[[../pomodoro/structure-data]]` `[FACT superseded: entity_type L1435]`
 
 ### INTENDED shape (the module's real model → ADR-002 amendment)
 **Table-per-type inheritance (S4):**
@@ -54,7 +55,8 @@
   courses. `[FACT: v2 graph courses/study_topics → scheduled_study_sessions → pomodoro_sessions L3751-3757]`
 - **In-edges (providers):** Books · Flashcards · Knowledge · Education · Language (→ future Skills/Health).
 - **Out-edges (effects):** Habits · Tasks · Projects · Purpose · Gamification · Knowledge · Education · Notes
-  (Journal + Pomodoro) · Global Calendar. All via documented integration points (§6 — no direct table access).
+  (Journal `/summary` feed + `/pomodoro` widget-lens) · Global Calendar. The Pomodoro **runtime** is owned in
+  this realm (⚠ reframed 2026-07-15), not a Notes out-edge. All via documented integration points (§6 — no direct table access).
 - **Coupling budget:** the base spine is thin; per-module ownership of extension tables keeps this from
   becoming a god-table (why table-per-type over single-table+JSON — S4).
 

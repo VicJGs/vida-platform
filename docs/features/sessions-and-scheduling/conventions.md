@@ -48,8 +48,9 @@
   merged nor orphaned. `[FACT]`
 - **Don't scope the planner to a course.** v2 `study_plan_batches.course_id` reflects v1's Learning-only
   origin. This module plans across the whole OS; batch scope widens (G5 design-pass). `[FACT L2800]`
-- **Don't treat Pomodoro as owned here.** It's a Notes entity; this module owns templates + attaches on start
-  (SS-11). `[FACT L1432]`
+- **Pomodoro IS owned in this realm (⚠ reframed 2026-07-15).** It is the `focus`-sub-type runtime keyed by
+  `session_id` — no longer a Notes entity. This module owns its templates + runtime; the Notes `/pomodoro`
+  block is a widget-lens only (SS-11, reversed). `[[../pomodoro/conventions]]` `[FACT superseded: entity_type L1435]`
 - **Don't let a user-created type inherit shipped-type powers.** Its permission envelope is a strict subset
   (SS-6); no XP/finance/health effects without explicit opt-in. `[INTENT S5-dim4]`
 - **Views are deferred.** The view family (Hub/wizard/Management/Availability/per-type tools) is a dedicated
