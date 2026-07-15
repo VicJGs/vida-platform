@@ -79,7 +79,103 @@ across the WHOLE OS** — exercises, habits, **recurrent tasks**, **obligations*
   context** (future manifest row). Routines reference it via an `exercise` step-type (forward reference, finalized
   when that module is designed — same pattern as the Learning step-type).
 
+## D. RECONCILIATION — resumed 2026-07-14 (compose the foundations documented since 06-30)
+
+Routines was parked **2026-06-30**. Since then the foundations it forward-referenced were documented — which
+**resolves the "own design pass" the reframe flagged** (the step-type/mode taxonomy) by COMPOSITION, not invention.
+`[FACT: docs/features/sessions-and-scheduling/*, docs/features/health/*]`
+
+- **Sessions & Scheduling (ADR-004) ✅ provides the step "modes."** A polymorphic **Session supertype + sub-type
+  registry** (`study · class · focus · reading · practice · review · **workout** · work · …`) + `dueIn(range)`
+  provider + `createSession(block)` + `generatePlan`/`planned_blocks`. `[FACT: sessions/contract.md §1 SessionRegistry,
+  §"dueIn", identity.md L6-7]` → a routine step's **interactive "do-it-in-place" MODE = launch/drive the underlying
+  entity's Session sub-type** (workout→workout session · focus→focus session · study→study session · reading/
+  practice) **or the entity's native completion** (task drill-in/subtasks · habit tick). **No bespoke mode engine;
+  no parallel record; single source of truth** (the entity) — exactly what G3's "modes DRIVE the underlying entity" asked.
+- **Health ✅ = the "Exercises" module — G_new SUPERSEDED.** The 06-30 note "Exercises = a new future module" is
+  obsolete: Health (documented 07-13/14) owns exercise+nutrition; a **workout is a `workout` Session sub-type** and
+  Health already states *"the `exercise` step drives a Core-scheduled workout session."* `[FACT: health/core/contract.md
+  L50; README L27-28]` → the routine `exercise` step-type = drive a Health workout Session.
+- **Tasks types (this session) ✅.** The reframe's `recurrent task` + `obligation` step-types = a Tasks step of type
+  `standard`/`duty`/`obligation` (Duties dissolution, [[intake/duties.md]]). No separate "obligation" step concept.
+- **Providers/consumers ✅.** `dueIn()` is shared with the **Global Calendar**; **Journals** uses a provider registry
+  (each module registers `summary(date)` + reuses `dueIn`) → Routines **registers as a provider** (routine occurrences
+  → Journal agenda/summary + Calendar), same pattern as every documented module. `[FACT: journals docs; sessions/contract dueIn]`
+- **Net effect:** Routines' remaining "own design pass" shrinks to (a) the `routines` + `routine_step` tables (named
+  ordered sequence + ordering), (b) the **polymorphic step→entity link** (`step_type` + entity ref), (c) how a step
+  **surfaces + drives** its entity (mostly: launch its Session sub-type; else native drill-in) — composition against
+  documented contracts, not fresh invention.
+
+**Still-open gaps under the reconciled framing** (confirm this pass): G1 (view set) · G4 (skip/streak) · G6 (focus
+step = a `focus` Session) · G7 (sequence streak/analytics) · G8 (purpose_routines + provider registration) · G9
+(notes: action vs routine-group level) · G10 (tags → Spaces universal tags) · **NEW:** sequence **partial-completion
+/ "done" threshold** semantics; confirm the **compose-don't-invent** step model.
+
+## E. RESOLUTION — resumed 2026-07-14 `[INTENT: Victor 2026-07-14]`
+**Through-line: Routines is a deeply PERSONALIZABLE orchestration layer** — completion, miss/streak, acceptance
+windows, session types, and step-scoping are all **user-configured policies** (ship defaults, fully editable). A
+major instance of **Spaces** (personalization foundation) + the **autonomy-with-clarity** constitution principle.
+
+**Q1 / STEP MODEL — RESOLVED: compose + user-extensible + actionable-step = recurrent Task.**
+- **Compose ✓** (no bespoke mode engine): a step drives its underlying entity — a **Session sub-type** (workout/
+  focus/study/reading/practice) or the entity's **native completion** (task drill-in · habit tick). Single source
+  of truth; no double-count. `[INTENT Q1]`
+- **User-extensible ✓:** the user can **create new session types** and **new segments** via personalization
+  (Spaces) — "a very complete part of the OS." The Session sub-type registry (ADR-004) is user-extensible, not a
+  fixed enum. `[INTENT Q1]`
+- **Actionable step (no rich entity) = a recurrent TASK** (resolves the edge case): a step that is "just check it
+  within a period/timeframe" **is a Task**, reusing the Tasks module's **recurrence-in-specific-timeframes** (e.g.
+  every 3h). Behaves **alarm-like** — pinpoints the user to act within the time/timeframe, then waits for the check.
+  Not checked within the timeframe → **not done**; **rescheduled within the day → the Scheduler moves it to an open,
+  more-fitting time slot** (availability), then he completes it. `[INTENT Q1; composes Tasks recurrence + Scheduler]`
+- **Step-scoping (shared repeatable actions):** the user establishes repeatable tasks scoped **to ALL routines · to
+  a SPECIFIC routine · to a SUBSET of routines** — one repeatable action can belong to many routines. ⚠ INTENDED —
+  modeling = task↔routine membership; **design-pass.** `[INTENT Q1]`
+
+**Q2 / COMPLETION — RESOLVED: user-configurable "done" POLICY + always-record-partial.**
+- **Broad scheduling** (not just daily): specific days · day + timeframe of the week · day + time of the month · day
+  + time of the year. `[INTENT Q2; composes Scheduler recurrence]`
+- **Always record what was done** — at the timeframe's end the routine computes **what was done vs not**; partial
+  progress is **never discarded** and is surfaced **positively** ("important to be grateful and happy about what was
+  done" → Journal / meaning-spine). `[INTENT Q2]`
+- **The "done" rule is USER-DEFINED** (supersedes a single fixed threshold — threshold is just one option): the user
+  picks his policy per his method — **all-or-nothing** ("wasted unless everything finished" → not computed as done) ·
+  **required-node** ("this specific node not done → routine not done") · **threshold/partial**. Ships a default,
+  fully personalizable. `[INTENT Q2]`
+
+**Q3 / SKIP & MISS — RESOLVED: lifecycle + user-configurable miss policy + acceptance window.**
+- **Routine lifecycle:** active · **paused** (temporarily) · **off** (turned off entirely). ⚠ INTENDED states.
+  `[INTENT Q3]`
+- **Miss-computation is user-personalized:** the user controls **how misses count** AND the **acceptance window** —
+  how long a miss is still "accepted" / can be made good or rescheduled (one week · N days · …) before it counts as a
+  real miss. `[INTENT Q3]`
+
+**Q4 / STREAK RULE — DISSOLVED into user-config.** Not a fixed "same as Habits" rule — streak/miss semantics are part
+of the user-configurable policy (Q2/Q3); the user may align it with Habits or diverge. ⇒ **Gamification must read a
+POLICY-DERIVED streak from each routine, not assume the Habits rule.** `[INTENT: implied by Q2/Q3]`
+
+**Confirmations folded (take-as-proposed unless flagged):** **G1** views = today/to-do (grouped by time-of-day, w/
+the alarm/timeframe-check behavior from Q1) + per-routine standalone page (streak/trend/calendar) + all-routines +
+analytics (ranking, time-period comparison) · **G6** focus step = a `focus` Session · **G7** analytics derive from
+the completions ledger (no denormalized counters) · **G8** `purpose_routines` laddering + Journal `/summary` +
+Gamification feeds; **Routines registers as a `dueIn`/`summary` provider** (Journals pattern) · **G9** notes via
+`pages` at **both** routine-group and step level · **G10** tags = **Spaces universal tags**.
+
+**⚠ INTENDED surface → ADR-002 amendment + design-pass** (consolidate): `routines` + `routine_step` tables (named
+ordered sequence + ordering) · polymorphic `step_type` + entity ref · task↔routine membership (step-scoping) ·
+lifecycle states (active/paused/off) · user-configurable **completion policy** + **miss policy** + **acceptance
+window** · user-extensible session types/segments. Several ride **Spaces** (personalization) — added to its
+requirements accumulator.
+
+## Status (resumed)
+- [x] intake **WHOLE** — Q1/Q2/Q3 resolved + confirmations folded; §E synthesis confirmed faithful (Victor
+  2026-07-14). Step-scoping internals + personalization machinery = ⚠ INTENDED → ADR-002 amendment + Routines
+  design-pass (non-blocking). → **Transform.**
+
 ## Change Log
 | Date | Session | Change |
 |------|---------|--------|
 | 2026-06-29 | documentation-blueprint | intake harvested (v2 ADR-002 §5.6 2 tables + routine.ts + CLAUDE.md §5; v1 life-os routines full feature w/ analytics/ranking/streaks); gap map G1–G10. ⚠ Headline gaps: routine granularity (no group table), habit/task double-completion semantics, routine-vs-habit boundary. |
+| 2026-07-14 | documentation-blueprint | RESOLUTION §E (Victor): Q1 compose + user-extensible session types + actionable-step=recurrent-Task (alarm-like, reschedule-to-open-slot) + step-scoping; Q2 user-configurable completion policy + always-record-partial; Q3 lifecycle (active/paused/off) + user-configurable miss policy + acceptance window; Q4 streak dissolved into user-config (Gamification reads policy-derived streak). Routines = major Spaces consumer. |
+| 2026-06-30 | documentation-blueprint | ⚠⚠ REFRAME (Victor): Routines = cross-module ORCHESTRATION layer; G2 (named ordered sequence) + G3 (interactive per-step modes that DRIVE entities) + G5 (Habit↔Routine boundary) + action-model (polymorphic steps) resolved; G_new (Exercises = future module) recorded. Intake parked mostly-whole. |
+| 2026-07-14 | documentation-blueprint | RECONCILIATION (§D) on resume: Session sub-type registry (ADR-004) + Health workout-session + Tasks duty/obligation types supply the step "modes" by COMPOSITION → design pass shrinks; G_new SUPERSEDED (Exercises = Health). Open gaps re-scoped (G1/G4/G6–G10 + sequence partial-completion). |
