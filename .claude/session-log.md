@@ -764,3 +764,43 @@ Next session:
     registry · templates · presets) + core docs, NOT feature aspect docs (it's CORE/foundation). Purposes capstone
     (#8) depends on Spaces' universal tags. NOTE: Spaces Transform = ADRs + core/ docs, different output shape than
     a feature context.
+
+---
+Date: 2026-07-15
+Task: documentation-blueprint
+Goal: Exec #7 SPACES (CORE/foundation) — resume the parked intake; drive SP1–SP9 to whole against the now-
+      documented modules; checkpoint before the big Transform.
+Completed:
+  - Resumed docs/intake/spaces.md (parked 07-13). The deferral strategy paid off: the requirements accumulator —
+    filled as each module was documented — grounded SP1–SP9 in real needs (workout logger, photo-analyze, A-B-A
+    pronunciation, Skill Tree, vision-board Gallery, preset tabs) instead of speculation. 3 worked-examples now
+    captured (Languages, Duties, Bucket List).
+  - ✅ INTAKE WHOLE — all SP1–SP9 resolved (Victor):
+    · SP1 new foundation tier (N&P → consumer of universal tags/views).
+    · SP2 `entity_tags` open-registry + nestable, distinct from `entity_links` — but the USER chooses whether
+      tags & links act as one surface or separate (personalization, not a hard architecture call).
+    · SP3 `views` first-class: Space-owned OR global/cloneable; ship default views + user creates/edits new ones.
+    · ⭐ SP4 the big call — open capability registry with declared render-targets (non-dogmatic A-shape), AND
+      **user-authored capability Blocks** are IN the vision now: users create their own capabilities "at their own
+      risk," wrapped in a safety-net/security layer. Implementation of the safe-authoring surface = later design-
+      pass; the intent + seam locked now. Guard reuses ADR-004 SS-6 permission envelope + the extension-model
+      principle (sandbox, attachment-scoped, no double-count, opt-in for sensitive modules, media encrypts).
+    · SP5 templates = fork-on-instantiate (deep copy, no back-link; portable seed bundles; ZK-clean).
+    · SP6 `spaces` lightweight entity · SP7 Languages→worked-example · SP8 ZK-never-broken · SP9 substrate beneath
+      the documented seams (Purposes laddering, Global Calendar, dictionary).
+  - Surfaced a NEW candidate ADR: the capability-authoring security model (sandbox + permission envelope).
+  - Checkpointed BEFORE Transform (Victor's call) — Transform is the biggest single deliverable (ADR set + core
+    docs) and deserves fresh focus. Updated task file (exec #7 [~] intake-whole; candidate-ADR list) + TASKS.md.
+Decisions:
+  - The Spaces theme, consistent with the whole effort: maximal user power (author your own tags-interaction,
+    views, capabilities) + shipped defaults + a safety net. Personalization is the identity; ZK is never broken.
+  - SP4's user-authored Blocks are the deepest expression of composability AND the sharpest security surface —
+    resolved by reusing existing guards (extension-model + SS-6 envelope), not a new philosophy.
+  - Transform for a CORE/foundation context outputs ADRs + core docs, NOT feature aspect docs (different shape).
+Next session:
+  - Exec #7 SPACES **TRANSFORM**. Produce the ADR set in dependency order: ① universal tags (entity_tags) →
+    ② saved views (views) → ③ capability-Block registry → ④ templates (fork) → ⑤ capability-authoring security
+    model; then core/business-rules.md personalization-within-ZK invariant + the `spaces` entity + manifest
+    re-sequence (Languages off modules, Spaces as CORE). Run each through the foundation gate. Intake is WHOLE
+    (docs/intake/spaces.md — RESOLUTIONS block + STATUS carry everything). Then #8 Purposes & Goals (CAPSTONE)
+    consumes Spaces' universal tags.

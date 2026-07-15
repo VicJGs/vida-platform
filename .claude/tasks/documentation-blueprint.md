@@ -172,11 +172,14 @@ deferred to #8 (touches every module; accumulates their needs). Order below revi
       Languages, Duties). Intake `docs/intake/bucket-list.md` (RESOLUTION); intent threaded → `intake/spaces.md`
       accumulator + `intake/purposes-and-goals.md` PG8. Empty stubs deleted; off the module list. → build-phase
       ADR-002: retire `bucket_list_items`, widen `dreams`. now → #7 Spaces.
-- [ ] **7. Spaces — CORE/foundation** (Personalization & Composability) — **← NEXT.** resume `docs/intake/spaces.md`
-      (SP1–SP9 captured, name locked, 4 primitives + Templates confirmed) against documented #1–5; incl. **3 worked-
-      examples: Languages + Duties/Obligations + Bucket List** (the last surfaces the **vision-board Gallery View** +
-      **derived-progress** needs) → ADR set (universal tags · saved views · Block registry · templates · **presets**).
-      Purposes (#8) depends on it.
+- [~] **7. Spaces — CORE/foundation** (Personalization & Composability) — **INTAKE WHOLE 2026-07-15 (SP1–SP9
+      resolved); Transform = NEXT SESSION (checkpointed by Victor).** Resolutions: SP1 new foundation tier (N&P→
+      consumer) · SP2 `entity_tags` open-registry+nestable, **distinct from links but user chooses the interaction**
+      · SP3 `views` Space-owned-or-global, default set + user-authored · **SP4 open registry w/ declared render-
+      targets + ⭐ USER-AUTHORED capability Blocks (at-risk, sandboxed) — the big call** · SP5 templates **fork-on-
+      instantiate** · SP6 `spaces` lightweight entity · SP7 Languages→worked-example · SP8 ZK-never-broken · SP9
+      substrate beneath the seams. 3 worked-examples in accumulator (Languages·Duties·Bucket List). **Transform
+      output = ADR set (~5) + core docs, NOT aspect docs** (see intake STATUS). deps for Purposes capstone (#8).
 - [ ] **8. Purposes & Goals — CAPSTONE** (Wave 3) — after 1–7 (esp. Spaces universal tags); resume `docs/intake/purposes-and-goals.md` (PG1 captured; PG2–PG10 vs real docs).
 - [ ] **9. Gamification** (Wave 4) — observes all incl. Purposes (goal-completion XP).
 - [ ] **10. Notifications** (Wave 4) — dead-last leaf — observes all incl. Gamification.
@@ -252,6 +255,13 @@ deferred to #8 (touches every module; accumulates their needs). Order below revi
 - [ ] **Deliverable measurement system — design pass** (Projects G4) — the multi-type taxonomy (financial/task-statistic/third-party-metric/activity-log/artifact) needs its own mini-intake before specc'ing internals.
 - [ ] **Budgeting feature design** (Finance G12) — no model in v2/v1; needs its own mini-intake (period, per-category limits, rollover, alerts, Purpose integration). May graduate to its own feature context (own manifest row).
 - [ ] **ADR-002 amendment (consolidated)** — now spans Preferences (6 fields + visibility store) · Tasks (5 additions) · Habits (G8 4 fields + G7 + G9) · Finance (opening_balance, G9 restored fields, import-staging, budgeting, liability-payments, base-currency/FX, managed categories, shared-tags migration) · Relationships (network_groups + junction, closeness_tier, how_we_met, interaction energy/key_takeaways, reminder snooze/priority, event-anchored group reminders) · **Books (07-05: book_assets, annotations ×3, reading_sessions+photos, reading_plans+junction, book_subjects, mapping data; supersede format/current_page/progress/genre/tags columns; entity_links annotation types)** · **Knowledge (07-10: knowledge_objects+object_kinds+learning_realm, knowledge_containers, study_methods/review_curves/method_bindings, review_events, compound_sets, references, knowledge_lab_entries, fts_knowledge; RETIRE knowledge_notes table + resource_type CHECK + fixed SM-2 cols + hand-set mastery_level + single linked_book_id; knowledge-note as pages entity_type)** · **Routines (07-14: `routines` + `routine_step` [named ordered sequence + ordering] · polymorphic `step_type`+`entity_ref` superseding `action_type`{habit,task,focus}+`linked_habit_id`/`linked_task_id` · `routine_step_membership` [step-scoping] · lifecycle{active,paused,off} · user-configurable completion/miss policy + acceptance_window columns [settings home = Preferences/Spaces])** · **Tasks (07-14: widen `kind`→user-extensible task `type` [standard\|obligation\|duty\|…] + per-type preset/UI config)** · **Pomodoro (07-15: re-home `pomodoro_sessions` Notes→Sessions realm + re-point `entity_type`/`entity_id`/`page_id` → single `session_id` FK; add `paused_at`/`total_pause_seconds`/`was_interrupted`/`interruption_reason`; Preferences +`auto_start_breaks`/`auto_start_next_interval`/`show_notifications`/`play_sounds`; templates = `focus` Session presets, not a Pomodoro table)**. Consider ONE amendment in build phase.
+- [ ] **NEW (Spaces 07-15) — the Spaces ADR set (Transform of exec #7, next session)** — intake WHOLE; Transform
+      produces ~5 ADRs: ① universal tags (`entity_tags`, open-registry, nestable, distinct-from-links w/ user-choice
+      interaction) · ② saved views (`views`, Space-owned-or-global, default+user-authored) · ③ capability-Block
+      registry (open, declared render-targets) · ④ templates (fork-on-instantiate) · ⑤ ⭐ **capability-authoring
+      security model** (sandbox + permission envelope, reuses ADR-004 SS-6 + extension-model — user-authored Blocks
+      at-risk but ZK-safe) + `core/business-rules.md` personalization-within-ZK invariant + `spaces` entity + manifest
+      re-sequence (Languages off, Spaces CORE). `docs/intake/spaces.md` (WHOLE).
 - [ ] **NEW (Pomodoro 07-15) — ADR-004 amendment + Focus Mode design-pass** (build-phase) — ① **ADR-004
       amendment:** pomodoro = the `focus` sub-type **runtime** (re-home `pomodoro_sessions` Notes→Sessions realm,
       re-point at `session_id`, add pause/interruption fields, fold into the `focus` runtime; **reverses SS-11's

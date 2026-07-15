@@ -62,6 +62,36 @@ the generic version of "Hub." `[FACT: ../life-os per-feature pages]`
 `[likely …]` = my read; the rest need your intent. Big decisions: **SP1 (tier/ownership) · SP2 (tag model) · SP4
 (Block registry + home) · SP5 (templates) · SP6 (is a Space a first-class entity).**
 
+> ### ✅ RESOLUTIONS (Victor, 2026-07-15)
+> - **SP1 ✅ CONFIRMED** — Spaces = a new FOUNDATION tier; Notes & Pages becomes a consumer (closes the N&P tag-scoping backlog).
+> - **SP2 ✅ RESOLVED — user decides the interaction.** Ship **two distinct primitives** underneath (a **tag groups**,
+>   a **link references**), both **open-registry** (no CHECK enum) + **nestable** (`parent_tag_id`, `#a/b`). But the
+>   OS does **not** hard-decide merge-vs-distinct — it exposes the **interaction as a user choice** (personalization):
+>   the user configures whether tags & links behave as one unified association surface or stay separate, in his
+>   experience. Capability underneath, choice on top. `[Victor: "the user will choose how he wants them to interact, if he wants them to be one or if not"]`
+> - **SP3 ✅ RESOLVED — both (Space-owned + cloneable), user-driven.** A view may belong to one Space (created just
+>   for it) or be global/reusable; ship a **set of default views** + the user **creates new ones and edits them**.
+>   `views(id, space_id?, filter, layout, grouping)` — `space_id` NULL = global. `[Victor]`
+> - **SP4 ✅ RESOLVED — open flexible registry + user-authored Blocks (at-risk, sandboxed).** Two parts:
+>   - **(render model) non-dogmatic, A-shaped.** One **open capability registry**; a capability **declares its
+>     render targets** (`inline` and/or `standalone`); **placement is the user's per-instance choice**. Don't be
+>     religious about A-vs-B packaging — it can lean either way as the product matures. `[Victor: "not hard to be on about; will lean B if we want and if we don't want"]`
+>   - **(the real decision) USER-AUTHORED capability Blocks are IN the vision — now.** The user gets the power to
+>     **create their own capabilities**, not just place ours — "at their own risk and accord," wrapped in a
+>     **safety net / security layer**. Intent + the authoring **seam** are locked now; the safe-authoring surface's
+>     **implementation is a later design-pass** (Victor: "later on decide how the customization will work on a safe
+>     way… proceed to create a safety net and layer to let it be the most secure possible"). The guard reuses the
+>     existing machinery: **extension-model principle (SP8) + the Sessions permission envelope (ADR-004 SS-6)** —
+>     a user Block runs sandboxed, may only touch entities it is attached to, no double-count, sensitive-module
+>     effects need explicit opt-in consent; media encrypts (L2/L3); ZK is never broken. → **candidate ADR:
+>     capability-authoring security model (sandbox + permission envelope).** `[Victor 2026-07-15]`
+> - **SP5 ✅ RESOLVED — FORK.** Instantiating a Template deep-copies the bundle; the instance has **no `template_id`
+>   link** (edits never conflict with template updates; ZK-clean; Templates are portable seed docs). `[Victor]`
+> - **SP6 ✅ CONFIRMED** — a Space is a lightweight first-class entity (`spaces` record; nav-addressable + nestable).
+> - **SP7 ✅ CONFIRMED** — Languages leaves the module list → shipped Space/template + first Blocks.
+> - **SP8 ✅ CONFIRMED** — personalization never breaks ZK (media Blocks encrypt; external-data Blocks ride the extension-model guard).
+> - **SP9 ✅ CONFIRMED** — Spaces is the substrate beneath the documented seams (Purposes laddering, Global Calendar, dictionary).
+
 - [ ] **SP1 — Tier & ownership `[likely CONFIRM]`.** Spaces is a **new FOUNDATION tier** (sibling to Notes &
       Pages / Preferences); the universal-tag + saved-view primitives live here; **Notes & Pages becomes a
       consumer** (keeps the journal/page tag *usage*, not the tag *primitive*). Confirm the elevation + that this
@@ -168,10 +198,18 @@ the generic version of "Hub." `[FACT: ../life-os per-feature pages]`
   docs/intake/bucket-list.md; docs/intake/purposes-and-goals.md PG8]`
 
 ---
-**STATUS: PARKED 2026-07-13 — resume as execution #8 (foundation, immediately BEFORE the Purposes capstone).**
-Gap map SP1-SP9 written + framed; **name locked = Spaces**; four primitives confirmed by Victor; Templates in
-scope. Deliberately deferred: Spaces touches every module, so SP1-SP9 resolve against **documented** Health/Skills/
-Duties/Routines/etc. (accumulator above), then Transform → the ADR set (universal tags · saved views · Block
-registry · templates). Purposes capstone (#9) depends on Spaces' universal tags. This is CORE/foundation →
-Transform produces ADRs + core docs, not feature aspect docs. Do NOT Transform until #1-7 are documented and the
-gap map is whole.
+**STATUS: ✅ INTAKE WHOLE 2026-07-15 — ready for Transform (exec #7).** All SP1–SP9 resolved (RESOLUTIONS block
+above); **name locked = Spaces**; four primitives confirmed; Templates in scope; accumulator complete (6 modules +
+**3 worked-examples**: Languages · Duties · Bucket List). The deferral worked — SP1–SP9 resolved against
+**documented** modules, not guesses.
+**Transform (next) produces — CORE/foundation output (ADRs + core docs, NOT feature aspect docs):**
+- **ADR set (~4–5):** ① universal tags (`entity_tags`, open-registry, nestable, distinct-from-links w/ user-choice
+  interaction) · ② saved views (`views`, Space-owned-or-global, default set + user-authored) · ③ capability-Block
+  registry (open, declared render-targets) · ④ templates (fork-on-instantiate, portable seed bundles) · ⑤ **NEW —
+  capability-authoring security model (sandbox + permission envelope reusing ADR-004 SS-6 + the extension-model
+  principle).**
+- **`core/business-rules.md` invariant:** personalization-within-ZK (SP8) + the single-user/local-first guarantees.
+- **`spaces` entity** (SP6, lightweight) + the tier elevation (SP1: N&P → consumer).
+- **Manifest re-sequence:** Languages off modules; Spaces documented as CORE. Purposes capstone (#8) then consumes
+  Spaces' universal tags.
+Where the worked-example docs live (SP7) = a Transform decision (a `docs/features/` Space example vs inside Spaces core docs).
