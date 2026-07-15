@@ -22,7 +22,7 @@ would have made the cuts permanent (the v1-failure pattern: intent that never go
 | Learning (Course, Subject, Topic, Test, Work, **Grade**) | ⚠ partial | **VERIFY** Grades/GPA, Subject-as-entity, Cycles when documenting Learning |
 | Projects: Action, **Investigation** | Action≈deliverable (added); Investigation absent | **KEEP** — Investigation (research entity under projects) → Projects expansion |
 | Finance: **Commitment** (OR-007 auto-txn generation, NR-006 due) | ❌ absent | **KEEP** — recurring financial commitments → Finance expansion (ties to budgeting) |
-| Life Mgmt: **Duty** (MasterDuty), Obligation | Obligation folded into Tasks(`kind`); Duty absent | **KEEP** — Duty as a distinct concept → needs a defining mini-intake |
+| Life Mgmt: **Duty** (MasterDuty), Obligation | Obligation folded into Tasks(`kind`); Duty absent | **KEEP → DISSOLVED 2026-07-14** — defining intake ruled Duty+Obligation = **task TYPES + presets**, not a module (Languages→Spaces precedent). Lands in Tasks (type system) + Spaces (preset primitive). See `duties.md` RESOLUTION. |
 | **HEALTH domain**: ExercisePlan, TrainingExercise, WorkoutSession, NutritionPlan, Recipe, MealLog | ❌ ENTIRE domain absent | **KEEP** — new feature context (exercise + nutrition) |
 | Enterprise: subscription tiers, sharing, admin, AI-purpose-gen | ✅ intentionally dropped | **CUT** (correct) — conflicts with single-user + zero-knowledge; AI now covered by the extension-model principle |
 
@@ -31,16 +31,29 @@ would have made the cuts permanent (the v1-failure pattern: intent that never go
    additions required. Routines' `exercise` step-type forward-references it. Entities (v1): ExercisePlan,
    TrainingExercise, WorkoutSession, NutritionPlan, Recipe, MealLog. Rules (v1): CR-005 Exercise Volume,
    CR-006 Macronutrient Totals, UC-HLT-002 Log Workout. `[FACT: doc §2.2 L438; §1.3 L230-241]`
-2. **Finance Commitments** — recurring financial commitments (rent/subscriptions) that **auto-generate
-   transactions** + fire **due reminders**. Finance is already documented ✅ → this is an **expansion**
-   (intake + structure-data delta), tied to the budgeting design pass. `[FACT: doc OR-007 L169, NR-006 L388]`
-3. **Duties** — distinct from Tasks/Obligations (v1 Life-Management `MasterDuty`, Master-Instance pattern
-   SR-006). Meaning vs Task/Obligation/Routine is **not yet defined** → needs a **defining mini-intake**
-   before placement. `[FACT: doc §2.2 L442; SR-006 L118]`
-4. **Projects Investigations** — a research/investigation entity under Projects. Projects documented ✅ →
-   **expansion** (intake + structure-data delta). `[FACT: doc §2.2 L434]`
-5. **Learning** — VERIFY Grades/GPA (CR-002/OR-003), Cycles (OR-008), Subject-as-entity when documenting
-   Learning (Wave 2). `[FACT: doc §2.2 L432; OR-003 L142; CR-002 L211; OR-008 L175]`
+2. **Finance Commitments** — ~~recurring financial commitments~~ **→ RESOLVED 2026-07-15 (expansion done).**
+   Ruling (Victor): a **management SUB-CONTEXT/LAYER in Finance, NOT a new entity** — manages committed/recurring/
+   long-term flows (subscriptions · lending/receivables tracked to a total · liability payoff · income · periodic
+   investments + revenue · installment assets) by **composing the existing 6 entities**; bidirectional + derived
+   progress-to-total; surfaces on the schedule via `dueIn`/Notifications. Threaded into Finance identity/FN-14/
+   structure-data/contract + `intake/finance.md` EXPANSION. `[INTENT: Victor 2026-07-15; FACT: doc OR-007 L169, NR-006 L388]`
+3. **Duties** — ~~needs a defining mini-intake~~ **→ DISSOLVED 2026-07-14 (defining intake complete).** Ruling
+   (Victor): Duty and Obligation are **not a module** — they are **task TYPES surfaced as PRESETS** (thin tabs over
+   the Tasks entity with distinct patterns/contexts/deliverables + own UI/UX; user-extensible, Duty+Obligation = the
+   2 shipped presets). Mirrors **Languages→Spaces**. Intent landed in `intake/tasks.md` (ADDENDUM — task-type
+   generalization of G8) + `intake/spaces.md` (preset primitive, requirements accumulator). Off the module fill
+   order. `[INTENT: Victor 2026-07-14; source: intake/duties.md RESOLUTION]`
+4. **Projects Investigations** — ~~a research/investigation entity under Projects~~ **→ RESOLVED BY COMPOSITION
+   2026-07-15, no entity.** Victor challenged the need vs a milestone/existing entities; resolved: a research/
+   investigation = a **`deliverable` (`measurement_type='artifact'`)** backed by a **Knowledge Lab investigation**
+   (`entity_links`) — explore (Knowledge) vs execute (Projects deliverable). Zero new schema. Threaded into Projects
+   identity + structure-data + `intake/projects.md` EXPANSION. `[INTENT: Victor 2026-07-15; FACT: doc §2.2 L434]`
+5. **Learning** — ~~VERIFY Grades/GPA, Cycles, Subject-as-entity~~ **→ VERIFIED 2026-07-15, all covered by
+   Education (07-03 reframe), no gap.** Subject-as-entity = a first-class level in the 8-level hierarchy
+   (…Term → **Subject** → Module; `courses`→`subjects`). Grades/GPA (CR-002/OR-003) = ED-7 grading-system builder +
+   **derived** subject-grade & term/curriculum **GPA rollup** (richer than v1's fixed formula). Cycles: academic =
+   Education `terms` (year⊃semester⊃term); v1 OR-008 "cycle *session* generation" is **Sessions & Scheduling**
+   (scheduler), not Education. `[FACT: education/identity.md L22, business-rules.md ED-7; doc OR-003 L142/CR-002 L211/OR-008 L175]`
 6. **Skills — SEPARATE it from Learning (Victor, 2026-07-01).** The v2 `skills` + `skill_resources` (2 tables,
    inside §5.10 Learning) are a **deliberately downgraded, simplified** version of a **larger, more robust**
    Skills module Victor envisioned but couldn't fully implement. Decision: extract Skills as its **own feature
@@ -59,7 +72,8 @@ would have made the cuts permanent (the v1-failure pattern: intent that never go
 | Language | §5.12 — already separate (Wave 3) |
 
 ## Manifest impact (applied 2026-06-30)
-- **New feature contexts added to the fill order:** Health, Duties (both ⬜, "recovered from v1 audit").
+- **New feature contexts added to the fill order:** Health, Duties (both ⬜, "recovered from v1 audit"). *(Duties later
+  DISSOLVED 2026-07-14 — see decision 3 above; Health documented + gate PASS.)*
 - **Expansions flagged on documented contexts:** Finance → Commitments; Projects → Investigations.
 - **Learning verify-list** attached to its (future) intake.
 - These join the build-phase backlog; the CUT items are recorded here so they are *decided, not forgotten*.
@@ -68,3 +82,4 @@ would have made the cuts permanent (the v1-failure pattern: intent that never go
 | Date | Session | Change |
 |------|---------|--------|
 | 2026-06-30 | documentation-blueprint | v1 COMPLETE_SYSTEM_ARCHITECTURE audited vs v2; 4 dropped items surfaced; Victor ruled KEEP on all 4; manifest reconciled. |
+| 2026-07-14 | documentation-blueprint | **Duties defining intake → DISSOLVED** into Tasks (task-type system) + Spaces (preset primitive); not a module (Languages→Spaces precedent). Fill order updated. |

@@ -136,8 +136,25 @@ multi-type measurement system (needs design pass), project_contacts(role)/projec
 vision+mission pages, dedicated Tasks→Projects API, vault documents (R2). Governing extension-model principle →
 constitution + 2 ADRs. NOT documented as shipped.
 
+## EXPANSION — Investigations (Wave R, 2026-07-15) `[INTENT: Victor 2026-07-15]`
+Recovered from the v1 audit (`_scope-reconciliation-v1.md` #4: v1 Projects-domain `Investigation` entity, name-only).
+**RESOLVED BY COMPOSITION — no new entity** (Victor: *"resolve it by composition — no entity, record it"*).
+
+- **The question raised (Victor):** why have it, and how does it differ from a milestone / the existing entities?
+- **The distinction (real but already covered):** Milestone/Deliverable/Task = **execution** structure for known
+  work (convergent, progress-measurable); research = **exploration** of an open question (divergent, output =
+  findings, not a pre-specced artifact). BUT the OS already covers both sides: the **deliverables** system has an
+  `artifact` measurement type (research/analyses), and **Knowledge** is the home of open-ended exploration
+  (References · Knowledge Lab · `entity_links` graph).
+- **Resolution:** a research/investigation = a **`deliverable` (`measurement_type='artifact'`)** — the project-side
+  execution/tracking rung — whose **exploration workspace is a Knowledge Lab investigation**, linked via
+  `entity_links`. Zero new schema. Threaded into Projects identity (NOT-note) + structure-data. **Only re-open if a
+  future need surfaces project-specific research structure** (formal hypotheses w/ pass-fail, a decision-gate that
+  redirects the project, or research that *is* the whole project) that neither a deliverable nor a Lab entry captures.
+
 ## Change Log
 | Date | Session | Change |
 |------|---------|--------|
 | 2026-06-28 | documentation-blueprint | intake harvested (v2 ADR-002 §5.4 3 tables + project.ts + CLAUDE.md §2; v1 life-os projects full feature: Kanban, time logging, actions, purpose links, docs); gap map G1–G11. ⚠ Headline gaps: deliverables/hierarchy (no table), vision+mission via TipTap (no mission col), progress auto-calc formula, project-vs-task time ledger. |
+| 2026-07-15 | documentation-blueprint | EXPANSION Investigations (Wave R): RESOLVED BY COMPOSITION — no entity. A research/investigation = a deliverable (artifact measurement type) backed by a Knowledge Lab investigation (entity_links). Threaded into identity + structure-data. |
 | 2026-06-29 | documentation-blueprint | G1–G11 resolved; intake WHOLE. Dedicated deliverables table (G2) w/ multi-type measurement system (financial/statistics/3rd-party/logs/artifacts — needs design pass, G4); vision+mission TipTap pages (G3); project time from task focus only (G5); documents = secure VAULT incl large files via R2 (G6); dedicated Tasks→Projects API for project-tasks (G7); +project_contacts(role)/project-accounts/project-events links (G8); user-personalized views (G9); deliverable notes (G10); shared scoped tags (G11). GOVERNING PRINCIPLE: ZK core + guarded opt-in extension layer (user owns integration risk) → constitution + 2 ADRs (external ingestion, AI agentic-within). |

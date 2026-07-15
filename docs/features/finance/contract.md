@@ -28,6 +28,13 @@
   - bank/broker connection (device-side or private aggregator) — **blocked on ZK-ingestion ADR**
   - `getFxRate`/`setFxRate` + base-currency conversion (FN-8, G8) — device-side/manual
   - budgeting API (G12) — **needs design pass**; liability-payment schedule/tracking (G12)
+  - **Commitments management sub-context (FN-14, 2026-07-15)** — a **derived** surface, no new entity:
+    `listCommitments()` → committed/recurring/long-term flows gathered from recurring transactions + liability
+    schedules + income_streams + periodic investments + installment assets, each with `direction`
+    (payable/receivable) and, where applicable, **derived progress-to-total** (Σ installments / total). Registers a
+    **`dueIn()`** provider (upcoming installments → Global Calendar + Journal agenda) and due reminders via
+    **Notifications**. Reuses FN-5 recurring mode (forecast/auto-gen). **Needs the Commitments/liability-payment
+    design-pass.** `[INTENT: Victor 2026-07-15]`
 
 ## What it consumes (outside dependencies)
 - **Notes & Pages** — notes on transaction/account/asset/investment/liability via `pages` (`entity_type`), read

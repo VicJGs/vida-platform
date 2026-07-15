@@ -125,8 +125,30 @@ decision deferred (candidate ADR-002 amendment). Documented as INTENDED.
 
 ## Status: intake WHOLE (2026-06-27). All G1–G12 resolved. INTENDED surface (bank-connection/import [ADR], multi-currency+FX, recurring auto-gen option, G9 restored fields, budgeting [needs design], liability-payment view, derived-storage opt-in) flagged for the build phase — NOT documented as shipped.
 
+## EXPANSION — Commitments (Wave R, 2026-07-15) `[INTENT: Victor 2026-07-15]`
+Recovered from the v1 audit (`_scope-reconciliation-v1.md` #2: v1 first-class `Commitment` + OR-007 auto-txn + NR-006
+due). **Resolved as a management SUB-CONTEXT/LAYER inside Finance — NOT a new entity** (Victor: *"a management
+sub-context in the Financial module… not another entity, but a layer… the OS is already complex enough and able to
+handle that"*).
+
+- **What it is:** a management layer over the OS's **committed / recurring / long-term cash flows** — monthly
+  subscriptions & payments, **lending/receivables tracked to a total** (receive back over the long run in varying
+  amounts until settled), liability payoff installments, income, periodic investments + their revenue, and
+  installment-purchased assets. It **receives · tracks · pays** these long-term, and presents them on the schedule.
+- **The distinctive shape:** a commitment has a **direction** (payable / receivable) and, where it has a **total**,
+  tracks **progress across many varying-amount installments until settled** — progress **derived** from the linked
+  ledger (mirrors FN-3), never hand-set.
+- **Composition (no new schema):** derives its list from the existing 6 entities (recurring `transactions`,
+  `liabilities` schedules, `income_streams`, `investments` + revenue, installment `assets`); surfaces upcoming
+  installments via **`dueIn`** (→ Global Calendar + Journal agenda) + **Notifications** (due reminder); reuses FN-5
+  recurring mode. Builds no bespoke scheduler/reminder.
+- **→ Docs threaded:** identity (scope + "not a new entity"), business-rules **FN-14**, structure-data (layer, not a
+  table), contract (`listCommitments` + `dueIn` provider). **Open (build-time):** any light "is-a-commitment" marker
+  or personal-lending/receivable representation → the **Commitments/liability-payment/budgeting design-pass**.
+
 ## Change Log
 | Date | Session | Change |
 |------|---------|--------|
 | 2026-06-27 | documentation-blueprint | intake harvested (v2 ADR-002 §5.8 6 tables + finance.ts + CLAUDE.md §1 · v1 life-os finances 9-page feature + API.md); gap map G1–G12 raised. Headline INTENDED surface: CSV/OFX import + conciliation (no schema in either version). |
 | 2026-06-27 | documentation-blueprint | G1–G12 resolved with Victor; intake WHOLE. Flagged: ⚠ constitutional ZK tension on bank/investment-API connections → candidate ADR; budgeting NOW in scope (needs own design pass, may graduate to its own feature); liability-payment view in scope; multi-currency YES (FX device-side/private); balance = ledger-derived; G9 restore 4 liability fields + income next_payment_date; tags→shared, categories→managed list. |
+| 2026-07-15 | documentation-blueprint | EXPANSION Commitments (Wave R): resolved as a management SUB-CONTEXT/LAYER in Finance (NOT a new entity) — derives committed/recurring/long-term flows from existing 6 entities; bidirectional + derived progress-to-total; composes dueIn/Notifications/FN-5. Threaded into 4 aspect docs (identity, FN-14, structure-data, contract). |

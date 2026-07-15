@@ -23,6 +23,11 @@
 - **Cross-module links (G8):** `project_contacts(role)` junction (Relationships team/stakeholders with role);
   project↔Finance account link; **project events** (feed the global Calendar).
 - **Notes (G10):** add `deliverable` as a `pages`/`entity_links` `entity_type`.
+- **Investigations (Wave R, 2026-07-15) — RESOLVED BY COMPOSITION, no new entity.** A research/investigation is a
+  **`deliverable` with `measurement_type='artifact'`** (research/analysis output) whose **exploration workspace is a
+  Knowledge Lab investigation**, linked via `entity_links`. Execution/tracking = the deliverable (progress rolls up
+  normally); open-ended exploration content (question → sources → findings → synthesis) = **Knowledge**. **No
+  `investigations` table.** `[INTENT: Victor 2026-07-15]`
 - **Vault/large files (G6):** R2 attachment pipeline for big encrypted blobs (ADR-003).
 - **Shared-tags migration (G11):** deprecate inline `projects.tags` → shared scoped tags.
 

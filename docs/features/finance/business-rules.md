@@ -48,6 +48,22 @@
 - **FN-13 — Budgeting & liability-payment tracking are INTENDED, undesigned.** Both are in scope but have **no
   data model yet** — documented as intent + open questions, not as behavior. No rule may assume their internals.
   `[INTENT G12]`
+- **FN-14 — Commitments is a management LAYER, not an entity (⚠ INTENDED sub-context).** The Commitments
+  sub-context **derives its list from existing entities** — a "commitment" is any recurring/long-term committed
+  flow already represented by a recurring `transaction`, a `liability` payment schedule (FN-13), an `income_stream`,
+  a periodic `investment` (+ its revenue), or an installment `asset`. **No `commitments` table.** `[INTENT: Victor 2026-07-15]`
+  - **Bidirectional + progress-to-total.** A commitment has a **direction** (payable = outflow · receivable =
+    inflow, e.g. money lent) and, where it has a **total** (payoff / repayment / financed purchase), tracks
+    **progress across many varying-amount installments until settled** — progress is **derived** from the linked
+    ledger, never a hand-set counter (mirrors FN-3 derived-balance). `[INTENT: Victor 2026-07-15]`
+  - **Composes the shared seams.** Upcoming installments surface on the **schedule** via `dueIn()` (→ Global
+    Calendar + Journal agenda); due reminders ride **Notifications**; recurrence reuses the recurring-transaction
+    model (FN-5, forecast-by-default / opt-in auto-generate). Commitments builds **no** bespoke scheduler/reminder.
+    `[INTENT: Victor 2026-07-15]`
+  - **Open (build-time INTERP):** whether marking an existing flow as a "commitment" and representing a **personal
+    lending/receivable** need any light config (a flag / derived predicate) vs falling out entirely of existing
+    entities — resolve at the Commitments/liability-payment/budgeting design-pass. No new rule assumes internals.
+    `[INTERP; INTENT: Victor 2026-07-15]`
 
 ## Validation & edge cases
 - Enum CHECKs (all `[FACT: ADR-002 §5.8]`): `account_type`(7), `transaction_type`{income,expense,transfer},
@@ -90,7 +106,11 @@
 - **FN-9 external ingestion:** CSV/OFX import staging + bank/broker connection → **candidate ADR** ("external
   financial data under zero-knowledge") + new tables.
 - **FN-13 budgeting:** new model(s), needs own design pass (may become its own feature).
-- **Liability-payment tracking:** linking transactions→liability or a `liability_payments` ledger (TBD).
+- **FN-14 Commitments (2026-07-15):** a **management sub-context/view** (no new table) over recurring/long-term
+  committed flows; derived progress-to-total + `dueIn`/Notifications composition. Any light "is-a-commitment"
+  marker or personal-lending/receivable representation is TBD at the Commitments/budgeting design-pass.
+- **Liability-payment tracking:** linking transactions→liability or a `liability_payments` ledger (TBD) — the
+  liability slice of the Commitments view.
 - **G8 multi-currency:** base-currency + FX-rate storage (likely Preferences).
 - **G10:** managed-category store + migration of inline `transactions.tags` → shared tags.
 - **FN-6:** opt-in persisted-aggregates setting (Preferences).

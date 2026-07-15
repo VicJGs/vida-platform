@@ -25,6 +25,12 @@
 - **Budgeting (G12, FN-13):** new table(s) — period, per-category limit, rollover, alerts — **needs design pass**;
   may graduate to its own feature context.
 - **Liability payments (G12):** transactions→liability link **or** a `liability_payments` ledger (TBD).
+- **Commitments (FN-14, 2026-07-15) — a management LAYER, NOT a table.** Derives its list from existing entities
+  (recurring `transactions` · `liabilities` payment schedules · `income_streams` · periodic `investments` + revenue
+  · installment `assets`); direction (payable/receivable) + **progress-to-total derived** from the linked ledger;
+  surfaces on the schedule via `dueIn` + Notifications. Any light "is-a-commitment" marker or personal-lending/
+  receivable representation is a design-pass question — **no new entity by default** (Victor: "not another entity,
+  a layer"). `[INTENT: Victor 2026-07-15]`
 - **Multi-currency (G8):** base/display currency + FX-rate store (likely Preferences).
 - **Categories/tags (G10):** managed-category store; migrate inline `transactions.tags` → shared `tags`/`page_tags`.
 - **Persisted aggregates opt-in (G3, FN-6):** a Preferences setting (user owns storage security).

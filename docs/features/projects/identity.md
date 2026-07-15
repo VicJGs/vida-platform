@@ -35,6 +35,10 @@ in a vault, and his goals/people/finances connected to the work — all on a zer
   extension components** under the governing principle: **ZK core + guarded, user-risk extension layer** (below).
   `[INTENT G4,G6, governing principle]`
 - **Not its own tag vocabulary.** Shared scoped tags (G11). `[INTENT G11]`
+- **Not the owner of a "research/investigation" entity.** A research/investigation is a **`deliverable`
+  (`measurement_type='artifact'`)** backed by a **Knowledge Lab investigation** (linked via `entity_links`) — the
+  distinction is *explore vs execute*: Projects tracks the deliverable, **Knowledge** holds the open-ended
+  exploration. No `investigations` table. `[INTENT: Victor 2026-07-15]`
 
 > **Governing principle (→ core constitution `[[../../core/business-rules]]`):** adding integrations never changes
 > the zero-knowledge goal; external/AI integrations are **opt-in, user-owns-the-risk components wrapped in a tough
