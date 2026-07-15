@@ -172,14 +172,19 @@ deferred to #8 (touches every module; accumulates their needs). Order below revi
       Languages, Duties). Intake `docs/intake/bucket-list.md` (RESOLUTION); intent threaded → `intake/spaces.md`
       accumulator + `intake/purposes-and-goals.md` PG8. Empty stubs deleted; off the module list. → build-phase
       ADR-002: retire `bucket_list_items`, widen `dreams`. now → #7 Spaces.
-- [~] **7. Spaces — CORE/foundation** (Personalization & Composability) — **INTAKE WHOLE 2026-07-15 (SP1–SP9
-      resolved); Transform = NEXT SESSION (checkpointed by Victor).** Resolutions: SP1 new foundation tier (N&P→
-      consumer) · SP2 `entity_tags` open-registry+nestable, **distinct from links but user chooses the interaction**
-      · SP3 `views` Space-owned-or-global, default set + user-authored · **SP4 open registry w/ declared render-
-      targets + ⭐ USER-AUTHORED capability Blocks (at-risk, sandboxed) — the big call** · SP5 templates **fork-on-
-      instantiate** · SP6 `spaces` lightweight entity · SP7 Languages→worked-example · SP8 ZK-never-broken · SP9
-      substrate beneath the seams. 3 worked-examples in accumulator (Languages·Duties·Bucket List). **Transform
-      output = ADR set (~5) + core docs, NOT aspect docs** (see intake STATUS). deps for Purposes capstone (#8).
+- [x] **7. Spaces — CORE/foundation** (Personalization & Composability) — ✅ **TRANSFORM + gate PASS + ACCEPTED
+      2026-07-15.** Produced the **5-ADR set** (each drafted → /critique → revised → accepted one-by-one, every
+      critique found real defects): **[ADR-006](../../docs/core/decisions/ADR-006-spaces-foundation-universal-tags.md)**
+      (foundation tier + universal `entity_tags` open-registry+nestable + `spaces` entity; tag/link **distinct-in-
+      storage / unified-in-OS-by-user-choice**) · **ADR-007** (`views` primitive, Space-owned-or-global, provider-
+      delegated cross-type predicates) · **ADR-008** (capability-Block registry, declared render-targets; capability
+      DRIVES a Session for outcomes, guarded-write discipline generalizes — NOT ADR-004 Effects) · **ADR-009**
+      (templates fork-on-instantiate; **authored-vs-accumulated** capture line = ZK-clean by construction) · **ADR-010**
+      (capability-authoring security: declare→grant→enforce + no-ambient sandbox + revocable + re-grant-on-change +
+      compositional-consent). Core docs: **business-rules PC-1…PC-4 + EX-1/EX-2 + INT-1a**; manifest re-sequence
+      (Languages struck; Spaces CORE-beneath-N&P; ⚠ N&P `page_tags`→`entity_tags` reconciliation flagged); SP7 front
+      door `docs/core/spaces/README.md`. Verify PASS (G1 INT-1 drift fixed; O1/O2 build-seams flagged). Victor Accept:
+      folded general extension-model → EX; community-external expansion **deferred (needs his go)**. **now → #8 Purposes & Goals (capstone).**
 - [ ] **8. Purposes & Goals — CAPSTONE** (Wave 3) — after 1–7 (esp. Spaces universal tags); resume `docs/intake/purposes-and-goals.md` (PG1 captured; PG2–PG10 vs real docs).
 - [ ] **9. Gamification** (Wave 4) — observes all incl. Purposes (goal-completion XP).
 - [ ] **10. Notifications** (Wave 4) — dead-last leaf — observes all incl. Gamification.
@@ -311,6 +316,7 @@ deferred to #8 (touches every module; accumulates their needs). Order below revi
 | **Duties module → DISSOLVED into Tasks + Spaces** (task types + presets) | altitude (Victor) | the defining intake, after harvesting v1 MasterDuty + rich Notion (Master→instance→tasks engine for Duties AND Obligations), showed the whole thing is a **configuration of generic seams** the OS already has (Tasks entity + Scheduler + Spaces presets) — not a module. Duty & Obligation = different **task TYPES** with distinct patterns/contexts/deliverables, each a **preset tab** (own UI/UX). Same move as Languages→Spaces | ✓ 07-14: defining intake complete; DISSOLVED; D1(recurring-responsibility)+D3(compose-seams) locked, D2(Obligation stays a Task type)+extensibility(Duty+Obligation=2 shipped presets, user-extensible); intent landed in Tasks ADDENDUM + Spaces accumulator; manifest/fill-order/scope-recon updated; off the module list |
 | **Bucket List → DISSOLVED into Spaces** (+ `bucket_list_items` collapses into `dreams`) | altitude (Victor, sincere reframe) | asked what the feature really is → "a separated View of things I want to do before I die, with progress, to envision them" = a Space, not a module; and the items ARE Dreams (the `dreams`/`bucket_list_items` overlap PG8 flagged) | ✓ 07-15: dissolved (3rd Spaces worked-example after Languages/Duties); PG8 resolved (one Dream entity, `bucket_list_items` retires into `dreams` at build); intent threaded → spaces.md accumulator + purposes-and-goals.md PG8; stubs deleted; off module list; next = #7 Spaces |
 | **Pomodoro → capability in the Sessions realm** (not a module; boundary moved Notes→Sessions) | altitude + consolidation (Victor) | every piece of a "Pomodoro module" was already owned elsewhere (Notes table+block, Sessions `focus` sub-type + `attach_pomodoro`, Preferences config, Tasks ledger); Victor: the OS is complex enough to handle it "only within the Sessions realm, not leak to any other entity" | ✓ 07-15: documented as a thin capability-doc (G0=B, own `pomodoro/` context); G2 Sessions-realm-only (timer = `focus`-session runtime keyed by `session_id`); v1 richness reshaped (not restored as-is); Focus Mode = polymorphic×platform×tool-bearing INTENDED; boundary reconciled across Sessions(SS-11 reversal)+Notes; ADR noted-at-build (ADR-004 amendment + ADR-002 re-home); gate PASS |
+| **Spaces Transform → per-ADR draft→critique→revise loop** (5 ADRs, each critiqued as created) | Victor: "the nature of this critique … good to critique the other ADRs to see if they are well founded" | a foundation ADR set is load-bearing for the next ADR; a single end-of-set critique would miss cross-ADR drift and let per-ADR defects compound | ✓ 07-15: every ADR (006–010) drafted → /critique (director+engineer) → revised → accepted before the next; each found a REAL defect (R1 unify-reframe · V1 provider-delegated predicates · E1 capability≠Session · T1 authored-vs-accumulated · S1/S4 compositional-consent+TOCTOU); holistic Verify then caught G1 (INT-1 ownership drift) no per-ADR pass could see. Gate PASS; Accepted |
 | **Health current-intent pass (retro-fix)** + Disciplines/capacities → Physical Roles merge | intent enrichment (Victor) | the prior Health docs were transformed from the polished System-2.0 summary; Victor's older System-1.0 DBs + Management hubs carried design DNA the summary abstracted away (clinical biomarkers, Domains/Factors/Exams monitoring, functional nutrition, Physical Roles, Duties wiring) | ✓ 07-14: re-harvested 23 Notion pages (6 MCP agents) → 6-pt delta → co-created CI-1..CI-6 (authoritative) + coherence/realism validation (R1-R4 + C1) → 12 aspect docs enhanced → **re-gate PASS**; **Physical Roles** now the canonical trainable-capability concept (heavy Skills resource) |
 
 ## Failures This Session

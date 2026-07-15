@@ -804,3 +804,57 @@ Next session:
     re-sequence (Languages off modules, Spaces as CORE). Run each through the foundation gate. Intake is WHOLE
     (docs/intake/spaces.md — RESOLUTIONS block + STATUS carry everything). Then #8 Purposes & Goals (CAPSTONE)
     consumes Spaces' universal tags.
+
+---
+Date: 2026-07-15
+Task: documentation-blueprint
+Goal: Exec #7 SPACES (CORE/foundation) — TRANSFORM the WHOLE intake into the ADR set + core docs; gate; Accept.
+      The parked-checkpoint from the prior session (intake WHOLE, Transform is the big deliverable).
+Completed:
+  - TRANSFORM produced the **5-ADR Spaces set**, each drafted → /critique → revised → accepted one-by-one
+    (dependency order), every critique finding real:
+    · ADR-006 (tier + universal `entity_tags` + `spaces` entity) — R1 reframed tag/link as distinct-in-storage /
+      unified-in-OS-by-user-choice (Victor's note); R2 tied entity_links enum-opening to the unify prereq; R3 DATA-4;
+      R4 tier-beneath-N&P precision.
+    · ADR-007 (saved `views`, Space-owned-or-global) — V1 provider-delegated predicate/grouping across heterogeneous
+      types (the substantive fix); V2 DATA-4; V3 EN-2; V4 default-view relationship.
+    · ADR-008 (capability-Block registry, declared render-targets) — E1 removed the over-claim that capabilities
+      "reuse ADR-004 Effects"; reframed: outcome-producing capabilities DRIVE a Session; guarded-write discipline is
+      what generalizes.
+    · ADR-009 (templates, fork-on-instantiate) — T1 replaced the §3.1/§3.4 contradiction with the **authored-vs-
+      accumulated** capture line (keeps Victor's method, drops runtime data; ZK-clean by construction).
+    · ADR-010 (capability-authoring security) — S1 compositional read+egress exfiltration (union of consents);
+      S3 revocation; S4 re-grant-on-envelope-change (TOCTOU); S2 named sandbox-escape residual risk.
+  - Core docs (Transform's 3 non-ADR outputs): **business-rules.md PC-1…PC-4** (personalization-within-ZK invariant)
+    + **INT-1a** (association primitives owned by Spaces tier, consumed by N&P); **manifest re-sequence** in
+    docs/README.md (Languages struck; Spaces = CORE-beneath-N&P; status tracker + execution row ✅) + **N&P
+    reconciliation flag** (page_tags→entity_tags, build-phase); **SP7** resolved → new front door
+    `docs/core/spaces/README.md` (foundation overview + worked-example index: Languages·Duties·Bucket List).
+  - STEP 3 VERIFY (holistic foundation gate) = **PASS**. Intent SP1–SP9 all preserved; cross-ADR seams consistent;
+    vs ADR-001–005 clean. One real finding fixed (G1 = INT-1↔ADR-006 ownership drift → INT-1a). Two build-time
+    seams flagged non-blocking (O1 ADR-005 service-surface vs ADR-008 capability; O2 enabled_blocks vs block_instances).
+  - STEP 4 ACCEPT (Victor): ADR-006…010 flipped Proposed→**Accepted** (2026-07-15). **Folded the general
+    extension-model principle → EX-1/EX-2** in the constitution (Victor's go). **Community-external expansion
+    DEFERRED** (needs Victor's go to broaden beyond the Spaces instance — noted on PC-4).
+Decisions:
+  - The unify tag/link resolution is a REAL OS behavior (query/API over both tables), switchable by the user, not a
+    display flag — policy/mechanism separation, reversible (ADR-006 §3.3).
+  - Capability ≠ Session: three-way split — capabilities render, Sessions own timed outcomes+Effects, the
+    guarded-write discipline is the shared law (ADR-008 E1).
+  - Template privacy line = authored (shareable, his method) vs accumulated (never leaves) — capture-time, by
+    construction (ADR-009 T1).
+  - Security model = declare→grant→enforce inside a no-ambient-authority sandbox; revocable + re-grant-on-change +
+    compositional-consent; safety net bounds blast radius, not correctness (ADR-010).
+  - Spaces is a CORE tier BENEATH N&P; documented late (#7) for practical reasons — recorded as a retroactive
+    reconciliation, not a clean re-order (honors the fill-order rule by flagging, not pretending).
+Next session:
+  - **Exec #8 PURPOSES & GOALS — CAPSTONE.** Resume `docs/intake/purposes-and-goals.md` (PG1 captured; PG2–PG10
+    to resolve against now-documented modules **+ Spaces' universal tags** — the laddering key it was waiting on).
+  - Context to reload: docs/intake/purposes-and-goals.md · docs/core/spaces/README.md (universal tags/views it
+    consumes) · docs/core/business-rules.md (PC/EX/INT-1a) · docs/README.md (manifest, remaining = Purposes →
+    Gamification → Notifications) · .claude/tasks/documentation-blueprint.md.
+  - Carry-forward (build-phase, unchanged): consolidated ADR-002 amendment now +Spaces tables (entity_tags·views·
+    spaces·block_instances·capability_grants + open entity_links enum); N&P page_tags→entity_tags reconciliation;
+    the two standing ZK-integration ADRs (external-data ingestion; AI/LLM) now framed by EX-1/EX-2; HKDF→BLAKE2b
+    ADR-001 amendment (sign-off pending).
+---

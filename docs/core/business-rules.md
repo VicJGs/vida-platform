@@ -50,6 +50,50 @@ these and must comply. Each rule is a FACT cited to its source; nothing here is 
 - **INT-1** — Notes & Pages is the **integration hub**: every module connects via `pages` + `entity_links`
   (polymorphic backlinks). Modules do not read each other's tables directly — cross-module access goes through
   documented integration points. `[FACT: docs/core/architecture/module-dependency-graph.md; cross-module-integration.md]`
+  - **INT-1a (ADR-006 reconciliation, 2026-07-15)** — the polymorphic **association primitives** themselves
+    (`entity_links` *reference* + the new `entity_tags` *grouping*) are owned by the **Spaces tier** (a foundation
+    *beneath* N&P), **consumed** by N&P and every module — they are no longer N&P-owned. N&P remains the **pages/notes
+    hub** (pages, note-backlinks, the journal page); Spaces owns the universal association substrate the hub and all
+    modules use. INT-1's rule (connect via these primitives; no direct cross-table reads) is unchanged; only the
+    *ownership* of the primitives moves down a tier. `[FACT: ADR-006 §3.1-3.3; PC-2]`
+
+## Personalization & Composability (PC) — the Spaces invariant
+The user composes his own module-like surfaces (Spaces) from generic primitives; that power **never** relaxes the
+rules above. Source: the Spaces ADR set (ADR-006…010), which establishes Spaces as a foundation tier *beneath* Notes
+& Pages.
+- **PC-1** — **Personalization never breaks zero-knowledge.** Every user-composed surface — tags, saved views,
+  capabilities, templates — obeys ZK/EN unconditionally: user content encrypts (EN-2), nothing plaintext leaves the
+  device, ZK-1/ZK-2 hold no matter what the user composes or authors. `[FACT: ADR-006 §3.5; ADR-010 §3.5; intake SP8]`
+- **PC-2** — **Ship defaults; the user personalizes; distinct primitives, user-owned composition.** The OS ships
+  working defaults (tags, a default view set, shipped capabilities/templates) and the user creates/edits/forks his
+  own. Tags (grouping) and links (reference) are **distinct at storage**; the OS **resolves** them into one
+  association surface — or keeps them separate — **on the user's choice** (a real behavioral resolution, never a
+  forced merge). `[FACT: ADR-006 §3.3; ADR-007 §3.2]`
+- **PC-3** — **Untrusted capability code runs guarded (extension-model, applied to authoring).** Shipped
+  capabilities are trusted; **user-authored or imported** capabilities run under a **declare→grant→enforce**
+  permission envelope inside a **no-ambient-authority sandbox** — least privilege, attachment-scoped, guarded-write
+  only, no double-count, sensitive-module consent, **revocable**, **fails closed**, **re-grant on envelope change**;
+  the blast radius is bounded to the grant and ZK is never broken. `[FACT: ADR-010; ADR-004 §3.2.4/SS-6]`
+- **PC-4** — **Community is external; the only bridge is user-initiated import/export.** Vida is a single-user
+  local-first ZK vault (SU-1); there is **no in-OS sharing, feed, or marketplace**. The sole sharing bridge is
+  **user-initiated import/export of authored (never accumulated) artifacts** — templates, external reference DBs.
+  The OS never transmits vault data and never auto-shares. `[FACT: ADR-009 §3.4; SU-1; ADR-010 §Option-D-rejected]`
+  - ⏸ **Expansion deferred (Victor 2026-07-15):** broadening the community-external bridge beyond the landed Spaces
+    instance (further shareable artifact classes, external reference-DB ecosystems) **needs Victor's explicit go** —
+    it is not opened by this pass.
+
+## Extension Model (EX) — the guarded opt-in principle
+- **EX-1** — **The zero-knowledge core is never changed by an integration.** Every external / AI / third-party
+  integration is **opt-in**, the **user owns the risk**, and each is wrapped in a **protection layer** (consent +
+  sandbox / permission envelope + encryption). The core stays a pure single-user local-first ZK vault **regardless of
+  which integrations are enabled** — an integration adds a guarded surface, it never relaxes ZK-1/ZK-2/EN. `[FACT:
+  Projects 2026-06-29 surfaced this as the governing principle; ADR-010 §3; task-file HIGH constitution item]`
+- **EX-2** — **EX-1 frames the two standing ZK-integration ADRs** — *external-data ingestion* (bank/import,
+  wearables, public reference data, **egress** to medical/external systems as the strictest case) and *AI/LLM
+  integration* (agentic on-device = the ZK-safe path; cloud model = an opt-in, consented plaintext dent). Every
+  module instance rides EX-1: Finance import, Health wearables/egress (CI-6), Books OCR/TTS, Skills external-DB.
+  **PC-3** (capability authoring) is the *authoring* instance of EX-1; those two standing ADRs remain to be written
+  in their own sessions. `[FACT: task-file candidate-ADRs; Health CI-6; Finance FN-9]`
 
 ---
 
@@ -63,3 +107,5 @@ these and must comply. Each rule is a FACT cited to its source; nothing here is 
 |------|-------------|--------|
 | 2026-06-09 | documentation-blueprint · Phase 0 | initial constitution drafted from ADR-001/002/003 + code |
 | 2026-06-13 | documentation-blueprint · Phase 0 Verify | ZK-3 corrected — drift note had falsely claimed ADR-001 agreed with the code (BLAKE2b); ADR-001 + CLAUDE.md actually say HKDF. Flagged for ADR amendment. |
+| 2026-07-15 | documentation-blueprint · Spaces Transform | Added **Personalization & Composability (PC-1…PC-4)** — the Spaces invariant (ADR-006…010). PC-3 lands the **extension-model** principle's *authoring* instance; PC-4 lands the **community-is-external** principle. Added **INT-1a** (association primitives owned by the Spaces tier, consumed by N&P). |
+| 2026-07-15 | documentation-blueprint · Spaces Accept (Victor) | **Folded the general extension-model principle → EX-1/EX-2** (Victor's go): ZK core unchanged by integrations; opt-in, user-owns-risk, wrapped guard; frames the two standing ZK-integration ADRs. **Community-external expansion deferred** (needs Victor's go to broaden beyond the Spaces instance). |
