@@ -32,7 +32,7 @@ Mirrors the live Ctrl+T panel. Order = priority. IDs in (parens) are the live-pa
 ### ▸ Wave R — Recovered scope (v1 architecture audit, 2026-06-30 — all KEEP)
 Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM_ARCHITECTURE.md (91 tables/7 domains) vs v2. Record: docs/intake/_scope-reconciliation-v1.md.
 - [ ] **Health** (NEW context) — exercise + nutrition (ExercisePlan/TrainingExercise/WorkoutSession/NutritionPlan/Recipe/MealLog). No v2 schema → full intake + ADR-002 additions. Routines `exercise` step-type forward-refs it.
-- [ ] **Duties** (NEW context) — distinct from Task/Obligation/Routine (v1 MasterDuty). Needs a DEFINING mini-intake before placement.
+- [x] ~~**Duties** (NEW context)~~ — **DISSOLVED 07-14** (defining intake complete): Duty + Obligation = **task TYPES + presets**, not a module (Languages→Spaces precedent). Intent → Tasks ADDENDUM (type generalization) + Spaces accumulator (preset primitive). See `docs/intake/duties.md` RESOLUTION.
 - [ ] **Finance → Commitments** (EXPAND documented Finance) — recurring commitments, auto-txn generation + due reminders (ties to budgeting design pass).
 - [ ] **Projects → Investigations** (EXPAND documented Projects) — research/investigation entity.
 - [ ] **Learning → verify** Grades/GPA (CR-002/OR-003), Cycles (OR-008), Subject-as-entity when documenting Learning.
@@ -108,20 +108,159 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
       (reuses the provider seam); surfaced ADR-002 amendment (`journal_snapshots`) + Review-engine design-pass.
       Forward-deps stubbed: Purpose (Wave 3), Gamification/Notifications (Wave 4). J8 Check-ins integration
       deferred to that module's revisit. **← WAVE 2 COMPLETE (all contexts documented + gate PASS).**
-- [ ] NEXT → **Wave 3**: Languages · Purposes & Goals · Bucket List. (Then Wave R: Health · Duties · Skills;
-      Wave 4: Routines · Gamification · Notifications.) ⚠ First: commit the Journals batch.
-      ⚠ First: commit the Flashcards + ADR-005 batch.
+- [x] ~~NEXT → **Wave 3**: Languages · Purposes & Goals · Bucket List~~ → **REMAINING RE-SEQUENCED 2026-07-13**
+      (see below). Journals + Flashcards batches already committed (d780c60 / a88113c).
+
+### ▸ REMAINING — EXECUTION ORDER (re-sequenced 2026-07-13, dependency-correct)
+Trigger: Purposes & Goals intake (PG1) revealed it is the **OS meaning-spine** — ladders up progress/contribution
+from EVERY domain module (incl. recovered Health/Skills + Routines). Documenting it now = speccing its rollup
+against undocumented modules (No-Guessing violation). → moved to **CAPSTONE**, twin of Journals (operational
+plane closed Wave 2; Purposes = meaning plane closes the feature effort). Tail = the 3 read-everything contexts:
+Purposes → Gamification → Notifications. Manifest: `docs/README.md` §"Remaining — EXECUTION ORDER".
+**UPDATE 2026-07-13:** Languages intake revealed it **dissolves into a configuration of generic seams** → surfaced
+**Spaces** (Personalization & Composability foundation). Languages = worked-example (not a module). Spaces' gaps
+deferred to #8 (touches every module; accumulates their needs). Order below revised.
+- [x] **1. Health** (Wave R, new domain) — ✅ **DOCUMENTED + gate PASS 07-13 · CURRENT-INTENT ENHANCED + re-gate PASS 07-14.**
+      Intake WHOLE (`docs/intake/health.md`: v1 seed + Vision + 18-DB Notion + OS-extension reshape + Forks 1-4).
+      ⭐ **07-14 retro-fix:** re-harvested **System-1.0 + Management hubs** (23 pages, 6 MCP agents) → 6-pt delta →
+      **co-created CI-1..CI-6 (authoritative)** + coherence/realism validation (R1-R4 + C1) → enhanced all aspect docs
+      (12 files) → **re-gate PASS.** Key: **Disciplines+capacities MERGED → Physical Roles** (`physical_roles`; heavy
+      Skills resource; professional/medically-aware; manual→LLM→curated-import). Added: **Monitoring spine** (Health
+      Domains→Factors + scheduled Exams→metrics) · **biomarker panel + on-device derived metrics** (BMR/BEE/LBM/1RM) ·
+      bilateral/per-lift · **functional nutrition axis** (8-system + whole-food, R2 research-flagged) · **opt-in
+      cooking-skill** · **CI-6 bidirectional external integrations** (wearables/Google-Health INPUT · medical OUTPUT/
+      egress — INTENT stub). ~~NEXT: exec #3 Duties~~ → **Duties DISSOLVED 07-14 (task types+presets); NEXT: Routines.**
+- [x] **2. Skills** (Wave R, reframe) — ✅ **DOCUMENTED + gate PASS 07-14.** Reframed via Notion "Abilities" design
+      (System 2.0, 5 DBs, as CONTEXT) + **co-created current-intent** (authoritative): a game-like, dependency-graphed,
+      user-composable growth engine. `docs/intake/skills.md` WHOLE; `docs/features/skills/` (5 aspects). Module keeps
+      name "Skills". Health (07-14) confirmed **Physical Roles are a heavy Skills resource** (tighten at Skills build).
+- [x] ~~**3. Duties**~~ — **DISSOLVED 07-14** (defining intake ruled it a **task-type + preset**, not a module;
+      Languages→Spaces precedent). Intent → `intake/tasks.md` ADDENDUM (G8 `kind`→user-extensible task **type**;
+      Duty+Obligation = 2 shipped types w/ own patterns/contexts/deliverables) + `intake/spaces.md` accumulator
+      (the **preset** primitive = thin tab = saved View + per-type UI/UX + default deliverables + Template). D1
+      (recurring-responsibility) + D3 (compose seams) locked; D2 (Obligation stays a Task type) + extensibility ✅.
+- [x] **3. Routines** — ✅ **DOCUMENTED + gate PASS 07-14.** Unparked + RECONCILED (§D) against foundations
+      documented since 06-30 → composition reframe: the step "modes" = documented **Session sub-types (ADR-004)** +
+      native completion (no bespoke engine); **Exercises = Health** (G_new superseded); obligation/task steps = Tasks
+      **types**. §E resolution (Victor): orchestration cockpit; **user-configurable completion policy** (all-or-nothing/
+      required-node/threshold) + **miss policy + acceptance window** + lifecycle (active/paused/off); **policy-derived
+      streak** (Gamification reads it, not the Habits rule); actionable step = recurrent Task (alarm-like, reschedule-
+      to-open-slot); step-scoping; always-record-partial (gratitude). 5 aspect docs `docs/features/routines/`; intake
+      WHOLE. ⚠ INTENDED reframe → ADR-002 amendment + Routines design-pass (step_type taxonomy · membership · policy engine).
+- [x] **4. Expansions batch** — ✅ **DONE 07-15 (Wave R fully reconciled).** All 3 resolved by composition / no new
+      entity: **Finance→Commitments** = a management SUB-CONTEXT/LAYER in Finance (composes recurring txns/liabilities/
+      income/investments/assets; bidirectional + derived progress-to-total; `dueIn`/Notifications; FN-14) ·
+      **Projects→Investigations** = deliverable(`artifact`) + Knowledge Lab investigation (`entity_links`), explore-vs-
+      execute boundary · **Learning** Grades/GPA/Cycles/Subject-as-entity = VERIFIED covered by Education (ED-7 grading
+      builder + derived GPA; `terms`; cycle-session-gen = Sessions&Scheduling). Threaded into aspect docs + intakes + scope-recon.
+- [x] **5. Pomodoro** (Wave 4) — ✅ **DOCUMENTED + gate PASS 07-15.** REFRAME (Victor): a **capability, not a
+      module** = the **focus-timer runtime of the `focus` Session sub-type**, consolidated **entirely into the
+      Sessions realm** (Victor: "handled only within the Sessions realm, not leak to any other entity"); the
+      `/pomodoro` block = a **session-lens** (showcases pomodoro-enabled sessions, links a page's analytics to a
+      `session_id`). Intake WHOLE (G0–G7): v1 richness (pause/interruption/auto-start/notify/sounds/templates)
+      reshaped into the `focus`-session runtime + Preferences + Sessions presets; **Focus Mode** = polymorphic ×
+      platform-adaptive (mobile/desktop/web) × tool-bearing × low-distraction (⚠ INTENDED → design-pass); breaks
+      carry per-type guidance; analytics = derived cut of session analytics; XP via `award_xp` effect. 5 aspect
+      docs `docs/features/pomodoro/` (replaced 5 legacy-named empty stubs). ⚠ **Moves a boundary** — reconciled
+      across **Sessions** (SS-11 reversal + identity/contract/structure-data/conventions) + **Notes** (identity/
+      contract/structure-data/business-rules): `pomodoro_sessions` re-homes Notes→Sessions + re-points `session_id`
+      → build-phase ADR-004 amendment + ADR-002 re-home (noted, not run — Victor's call). now → #6 Bucket List.
+- [x] ~~**6. Bucket List**~~ — **DISSOLVED into Spaces 07-15** (Victor's sincere reframe). NOT a module: "a
+      separated View of things I want to do before I die, with progress, to envision them" = a **Space** (`#before-i-die`
+      tag + vision-board Gallery View + derived progress + Template). The items **are Dreams** → `bucket_list_items`
+      **collapses into `dreams`** (owned by Purposes & Goals; **PG8 RESOLVED**). **3rd Spaces worked-example** (after
+      Languages, Duties). Intake `docs/intake/bucket-list.md` (RESOLUTION); intent threaded → `intake/spaces.md`
+      accumulator + `intake/purposes-and-goals.md` PG8. Empty stubs deleted; off the module list. → build-phase
+      ADR-002: retire `bucket_list_items`, widen `dreams`. now → #7 Spaces.
+- [ ] **7. Spaces — CORE/foundation** (Personalization & Composability) — **← NEXT.** resume `docs/intake/spaces.md`
+      (SP1–SP9 captured, name locked, 4 primitives + Templates confirmed) against documented #1–5; incl. **3 worked-
+      examples: Languages + Duties/Obligations + Bucket List** (the last surfaces the **vision-board Gallery View** +
+      **derived-progress** needs) → ADR set (universal tags · saved views · Block registry · templates · **presets**).
+      Purposes (#8) depends on it.
+- [ ] **8. Purposes & Goals — CAPSTONE** (Wave 3) — after 1–7 (esp. Spaces universal tags); resume `docs/intake/purposes-and-goals.md` (PG1 captured; PG2–PG10 vs real docs).
+- [ ] **9. Gamification** (Wave 4) — observes all incl. Purposes (goal-completion XP).
+- [ ] **10. Notifications** (Wave 4) — dead-last leaf — observes all incl. Gamification.
+- [ ] **Deferred (Victor 07-07): Fiscal & Legal** — post-all-waves; enhanced after #11.
+
+### ▸ Purposes & Goals — intake PARKED (resume as capstone #9)
+- [~] Intake started 2026-07-13, `docs/intake/purposes-and-goals.md`. **PG1 RESOLVED** (Victor): Purposes & Goals
+      is the **organizing meaning-spine of the OS** — (B)-maximal, optional-but-omnipresent; the *directional/
+      meaning* integration plane (twin of Journals' *operational* plane); carries the **envision→plan→act→FAIL→
+      document→reshape→advance** lifecycle. Full gap map PG2–PG10 written + framed (derived progress · values+
+      failure-lifecycle spine · auto-sourced metrics · entity_links laddering · generic reviews · Dreams↔Bucket
+      boundary · ADR-004 review-sessions · provider registration). **Left OPEN by design** — resume at #9 so
+      PG2–PG10 resolve against documented Health/Skills/Routines/etc. instead of guesses.
 
 ### ▸ Follow-up surfaced by Step 6 Verify
 - [ ] ADR amendment: record the HKDF → BLAKE2b-256 Vault Key decision. Code (vault.ts) is authoritative and deliberate ("replaces HKDF"); ADR-001 §Key Model + CLAUDE.md still say HKDF. Run /adr-new (amend ADR-001) + fix CLAUDE.md — needs Victor's sign-off before editing the ADR.
 
 ### ▸ Candidate ADRs / decisions surfaced by feature documentation (build-phase, own sessions)
+- [ ] **NEW (Health 07-13) — ADR: N-of-1 Experiment framework** — Health's Experiments (hypothesis → A/B on the
+      user's own body → measured via metrics + responses → winner + learning → Profile) is a **candidate GENERIC OS
+      primitive** (reusable by Habits/Sleep/Productivity). Built Health-first; seam designed to generalize. Needs
+      Victor's scope call (Health-owned vs generic). Run /adr-new.
+- [ ] **NEW (Health 07-13) — Health is the LARGEST instance of the two ZK ADRs** (AI/LLM + external-data) — LLM
+      plan/meal generation · food-photo analysis · exercise-library / doctor-prescription import · wearable sync.
+      Reinforces those standing ADRs; design Health's augmentation layer against them.
+- [ ] **NEW (Health 07-14) — autonomy-with-clarity → constitution note.** Health's Safety & Medical facet (HC-14:
+      user can do whatever he wants; OS records/advises/safety-nets, never gatekeeps/prescribes/blocks; flags
+      advisory+dismissible) is the **body-instance of the extension-model constitution principle** — fold into that
+      standing amendment (above). Medical data = most-sensitive ZK class.
+- [ ] **NEW (Skills 07-14) — Skills design-passes/ADRs:** ① **external Skill-DB + locale-variant model** (curated
+      capability library w/ language/location/geography/culture variants; opt-in extension-model import + community
+      submission). ② **Skill Composer** (user definition/measurement/integration builder; Quick + Advanced; UI/UX
+      state-of-art). ③ **global-vs-personal Skill Graph + community** (~50+ canonical skills · real dependencies ·
+      shared foundational nodes · path-recommendation + synergy-detection). ④ **shared reflective/Adaptation/N-of-1
+      engine** — Health + Skills both compose it → REINFORCES the candidate **generic Experiment/reflective-practice
+      primitive** ADR (Health-surfaced). ⑤ **ADR-002 Skills changes:** RETIRE `skill_resources`→`entity_links` + ADD
+      skill_levels/activities/actions/dev_logs/dependencies/definitions.
+- [x] ✅ **RESOLVED (Victor 07-14) — community is EXTERNAL, via import/export only.** The `community` is NOT an OS
+      feature/pipeline/code — it's an **external ecosystem** (marketing/growth). The OS's sole bridge = its existing
+      **import/export** of **generic, non-personal templates**; sharing is **100% user-initiated, outside the vault**.
+      Preserves SU-1 + ZK-1 (no in-OS sharing; OS never transmits data). External Skill-DB = public reference pulled
+      via anonymous import. → **Skill docs updated (SK-3).** No ADR carve-out needed.
+- [ ] **NEW candidate — CORE constitution note (principle):** **social/community/marketplace lives OUTSIDE the OS;
+      the sole bridge is user-initiated import/export of generic, non-personal artifacts** (applies to Skills
+      templates · Spaces templates · external Skill-DB · any shareable artifact). Keeps the core a pure single-user
+      local-first ZK vault. Candidate addition to `docs/core/business-rules.md`. Still-open realism flags (NOT
+      blockers): content-curation/ops burden of the ~50+ canonical skill graph + locale variants; on-device vs cloud
+      LLM quality tradeoff — resolve at the Skill-DB/Graph design-passes.
+- [ ] **NEW (Health 07-13 · GREW 07-14) — ADR-002 Health additions** (recovered domain, no v2 schema) — new tables:
+      Core (`health_metrics`/`_values` [+`side`/`formula`/`catalog_ref`; source enum +exam/import]·`health_domains`·
+      `health_factors`·`health_exams`·`assigned_exams`·`health_goals`·**`physical_roles`** [was `disciplines`]·
+      `health_experiments`·`health_responses`·`medical_profile_entries`·`safety_flags`) + Training (`exercises`·
+      `exercise_plans` [+`role_id`/`authoring_source`]·`workout_templates`·`workout_sessions` [ADR-004 extension]·
+      `workout_sets` [+`side`]) + Nutrition (`nutrition_ingredients`/`nutrition_dishes` [+`functional_area`/
+      `whole_food_type`/`recipe_page_id`/`cooking_skill_id`]·`nutritional_plans`·`daily_meal_plans`·`meals`·
+      `shopping_items`) + `entity_type` enum extensions. Consolidate into the standing ADR-002 amendment.
+- [ ] **NEW (Health 07-14) — curated Physical-Role library (design-pass)** — the OS-owned, importable Role library
+      (calisthenics/swimmer/muay-thai/… "how to train each role") carries **geography · language · culture · location**
+      variation. **CONSOLIDATE with the Skills external-DB design-pass** (①, same locale-variant model) — Physical Roles
+      are a heavy Skills resource; likely one shared curated-library + locale-variant framework. Manual Role core is
+      documented; LLM + curated-import = extension-model augmentations (rides the AI + external-data ADRs).
+- [ ] **NEW (Health 07-14) — CI-6 bidirectional external integrations → external-data ADR must add EGRESS.** INPUT
+      (Google Health · wearables · open health sources → metric values) rides the existing external-data ingestion ADR;
+      **OUTPUT → medical systems & services is data EGRESS** (data leaves the ZK vault — a NEW, larger dimension than any
+      prior module) → the external-data ADR needs an explicit **egress-guard** (strictest opt-in/consent). INTENT-only
+      now; wire per-service post-core.
+- [ ] **NEW (Health 07-14) — research: validate the 8-system functional-nutrition taxonomy (R2)** — the "area of action"
+      (Digestive/Immune/Antioxidant/Cellular/Hormonal/Muscular/Neurological/Systemic) ships as an **editable starter**;
+      run `victor:research` to confirm/reshape before Nutrition build. Non-blocking.
 - [ ] **HIGH — CORE constitution amendment: the "extension-model" principle** (Projects, Victor 06-29) — ZK core is unchanged by integrations; external/AI integrations are OPT-IN, user-owns-the-risk, wrapped in a protection layer. Amend docs/core/business-rules.md; this principle FRAMES both ZK ADRs below. Needs Victor's go.
 - [ ] **ADR: External DATA ingestion under zero-knowledge** (GENERALIZED — Finance G2/FN-9 + Projects G4 third-party metrics + **Fiscal&Legal 07-07 legal-rule-packs, the softest/public-data instance**) — bank/investment APIs + CSV/OFX + social/marketing metrics (Instagram/YouTube/email) + per-jurisdiction legal rules vs "server never sees plaintext". Options: device-direct (pure ZK) / aggregator (documented dent) / server-proxy (breaks ZK, rejected). Touches server + sync → its own session.
 - [ ] **ADR: AI/LLM integration under zero-knowledge** (Projects G6 + **Fiscal&Legal 07-07 tax/legal advisement over private numbers**) — documents-as-context + AI features. Victor's intent = AGENTIC, ON-DEVICE ("within") = the ZK-safe path; cloud model = opt-in plaintext dent. Own session.
 - [ ] **Deliverable measurement system — design pass** (Projects G4) — the multi-type taxonomy (financial/task-statistic/third-party-metric/activity-log/artifact) needs its own mini-intake before specc'ing internals.
 - [ ] **Budgeting feature design** (Finance G12) — no model in v2/v1; needs its own mini-intake (period, per-category limits, rollover, alerts, Purpose integration). May graduate to its own feature context (own manifest row).
-- [ ] **ADR-002 amendment (consolidated)** — now spans Preferences (6 fields + visibility store) · Tasks (5 additions) · Habits (G8 4 fields + G7 + G9) · Finance (opening_balance, G9 restored fields, import-staging, budgeting, liability-payments, base-currency/FX, managed categories, shared-tags migration) · Relationships (network_groups + junction, closeness_tier, how_we_met, interaction energy/key_takeaways, reminder snooze/priority, event-anchored group reminders) · **Books (07-05: book_assets, annotations ×3, reading_sessions+photos, reading_plans+junction, book_subjects, mapping data; supersede format/current_page/progress/genre/tags columns; entity_links annotation types)** · **Knowledge (07-10: knowledge_objects+object_kinds+learning_realm, knowledge_containers, study_methods/review_curves/method_bindings, review_events, compound_sets, references, knowledge_lab_entries, fts_knowledge; RETIRE knowledge_notes table + resource_type CHECK + fixed SM-2 cols + hand-set mastery_level + single linked_book_id; knowledge-note as pages entity_type)**. Consider ONE amendment in build phase.
+- [ ] **ADR-002 amendment (consolidated)** — now spans Preferences (6 fields + visibility store) · Tasks (5 additions) · Habits (G8 4 fields + G7 + G9) · Finance (opening_balance, G9 restored fields, import-staging, budgeting, liability-payments, base-currency/FX, managed categories, shared-tags migration) · Relationships (network_groups + junction, closeness_tier, how_we_met, interaction energy/key_takeaways, reminder snooze/priority, event-anchored group reminders) · **Books (07-05: book_assets, annotations ×3, reading_sessions+photos, reading_plans+junction, book_subjects, mapping data; supersede format/current_page/progress/genre/tags columns; entity_links annotation types)** · **Knowledge (07-10: knowledge_objects+object_kinds+learning_realm, knowledge_containers, study_methods/review_curves/method_bindings, review_events, compound_sets, references, knowledge_lab_entries, fts_knowledge; RETIRE knowledge_notes table + resource_type CHECK + fixed SM-2 cols + hand-set mastery_level + single linked_book_id; knowledge-note as pages entity_type)** · **Routines (07-14: `routines` + `routine_step` [named ordered sequence + ordering] · polymorphic `step_type`+`entity_ref` superseding `action_type`{habit,task,focus}+`linked_habit_id`/`linked_task_id` · `routine_step_membership` [step-scoping] · lifecycle{active,paused,off} · user-configurable completion/miss policy + acceptance_window columns [settings home = Preferences/Spaces])** · **Tasks (07-14: widen `kind`→user-extensible task `type` [standard\|obligation\|duty\|…] + per-type preset/UI config)** · **Pomodoro (07-15: re-home `pomodoro_sessions` Notes→Sessions realm + re-point `entity_type`/`entity_id`/`page_id` → single `session_id` FK; add `paused_at`/`total_pause_seconds`/`was_interrupted`/`interruption_reason`; Preferences +`auto_start_breaks`/`auto_start_next_interval`/`show_notifications`/`play_sounds`; templates = `focus` Session presets, not a Pomodoro table)**. Consider ONE amendment in build phase.
+- [ ] **NEW (Pomodoro 07-15) — ADR-004 amendment + Focus Mode design-pass** (build-phase) — ① **ADR-004
+      amendment:** pomodoro = the `focus` sub-type **runtime** (re-home `pomodoro_sessions` Notes→Sessions realm,
+      re-point at `session_id`, add pause/interruption fields, fold into the `focus` runtime; **reverses SS-11's
+      Notes-ownership half**). Composes ADR-004; no new standalone ADR. Reconcile Sessions + Notes CURRENT- docs
+      when built. ② **Focus Mode design-pass:** the polymorphic, platform-adaptive (mobile/desktop/web),
+      tool-bearing, low-distraction runtime — per-session-type tool-sets (workout→Health, reading→Books, work→
+      Tasks) × per-platform states × per-type break-guidance (hydrate/recompose/rest). Big INTENDED surface (code
+      = 0 lines). Rides the Sessions Integration Contract; no new cross-module edges.
+- [ ] **NEW (Routines 07-14) — Routines design-pass** (build-phase) — the `step_type` taxonomy internals (how each type resolves + drives its entity/Session sub-type), the task↔routine membership model (step-scoping), and the **policy engine** (completion policy · miss policy · acceptance window) as a user-configurable surface (rides Preferences + Spaces). Composes ADR-004; no new standalone ADR.
 - [ ] **Cross-format position mapping — design pass** (Books B4) — transcription + TOC-anchor matching between asset formats (page↔timestamp↔location); states synced/pending/failed; runs under the Books governing principle. Own mini-intake before speccing internals.
 - [ ] **Books governing principle** (Books B3) — Books-scoped instance of the extension-model principle (TTS, transcription, ISBN lookup, photo OCR: opt-in, consent step, user owns risk, OS safety net, manual fallback always). Fold into the extension-model constitution amendment (Projects-surfaced, above).
 - [ ] **Quote-embed editor block** (Books B13) — new Notes/Pages platform block ("use quotes from Books"), per-book>global toggles via Preferences. Spec on the Notes & Pages / @vida/editor side at build.
@@ -155,6 +294,14 @@ Surfaced when Victor flagged dropped modules. Audited ../life-os/COMPLETE_SYSTEM
 | Learning: Study Sessions & Planner → SESSIONS & SCHEDULING extraction **+ PROMOTION to foundation** | intent + altitude mismatch (Victor) | OS had 9+ scattered session entities with no shared spine; a per-course planner couldn't see the rest of life; sessions must be an OS primitive with rich cross-module integration | ✓ extracted + PROMOTED 07-12, intake WHOLE (G1–G10 + S1–S5), documented + gate PASS; surfaced Session Framework ADR |
 | Learning: Flashcards → KNOWLEDGE study-method SERVICE (demotion into Knowledge) | altitude mismatch (Victor) | v1/v2 welded SRS + decks + reviews into flashcard-specific tables; intent = a pluggable study-method service on Knowledge's generic engine, first of a family (assessments/self-test/…) | ✓ reframed 07-12, intake WHOLE (F1–F8 + F-SVC), documented + gate PASS; surfaced ADR-005 Study-Method Service framework; 3 v2 tables retired |
 | Journals: page (Notes & Pages) vs ENGINE (Journals) | boundary + dep-graph | N&P (Wave-0 foundation) already owns the journal page; aggregating all modules from it = a cycle; the engine must sit above the modules | ✓ distinct context 07-12; J4 grew into a snapshot-based Review & Analytics subsystem; intake WHOLE (J1–J8); documented + gate PASS; **Wave 2 COMPLETE** |
+| Purposes & Goals (Wave 3) → **CAPSTONE** + full remaining re-sequence | altitude + dependency (Victor) | PG1 intake revealed Purposes is the OS **meaning-spine** — ladders up every module (incl. undocumented Health/Skills/Routines); speccing its rollup now = No-Guessing violation. Twin of Journals (operational plane) → closes the feature effort (meaning plane) | ✓ 07-13: Purposes → capstone; remaining re-sequenced dependency-correct; intake PARKED w/ PG1 captured; manifest+features/README+TASKS updated |
+| **Languages module → DISSOLVED into Spaces** (new CORE foundation) | altitude / foundation-first taken to its limit (Victor) | Languages intake + Victor's probing ("could the user assemble it from tags/views without a module?") showed a whole module = a **configuration of generic seams**; the residue (pronunciation A-B-A) = a specialized capability, not a module. Surfaced 4 missing primitives: **universal tags · saved views · capability Blocks · templates** = **Spaces** (Personalization & Composability foundation) | ✓ 07-13: Languages off module list → worked-example; **Spaces** intake + gap map SP1-SP9 captured, name locked, primitives+Templates confirmed; gaps DEFERRED to exec #8 (touches every module → accumulator grounds them) — before Purposes capstone (needs universal tags); **Health now active (#1)** |
+| **Expansions batch (#4): all 3 → composition / no new entity** | altitude (Victor probing) | Victor challenged each proposed addition ("why an entity? how does it differ from what exists?") | ✓ 07-15: Finance→Commitments = management sub-context (composes existing flows, Victor: "a layer not an entity"); Projects→Investigations = deliverable(artifact)+Knowledge-Lab (Victor: "resolve by composition, no entity"); Learning verify = already covered by Education. Wave R fully reconciled; zero new tables added |
+| **Routines: parked intake → COMPOSITION reframe on resume** | reconciliation (dep-graph moved) | parked 06-30 before Sessions&Scheduling (ADR-004), Health, and the Tasks duty/obligation types were documented; on resume those foundations already provide the step "modes" the intake said needed a bespoke design pass | ✓ 07-14: §D reconciliation (compose Session sub-types + native completion; G_new Exercises=Health superseded) + §E resolution (user-configurable completion/miss policies + acceptance window + lifecycle; policy-derived streak; actionable=recurrent-Task; step-scoping); intake WHOLE; 5 aspect docs; gate PASS |
+| **Duties module → DISSOLVED into Tasks + Spaces** (task types + presets) | altitude (Victor) | the defining intake, after harvesting v1 MasterDuty + rich Notion (Master→instance→tasks engine for Duties AND Obligations), showed the whole thing is a **configuration of generic seams** the OS already has (Tasks entity + Scheduler + Spaces presets) — not a module. Duty & Obligation = different **task TYPES** with distinct patterns/contexts/deliverables, each a **preset tab** (own UI/UX). Same move as Languages→Spaces | ✓ 07-14: defining intake complete; DISSOLVED; D1(recurring-responsibility)+D3(compose-seams) locked, D2(Obligation stays a Task type)+extensibility(Duty+Obligation=2 shipped presets, user-extensible); intent landed in Tasks ADDENDUM + Spaces accumulator; manifest/fill-order/scope-recon updated; off the module list |
+| **Bucket List → DISSOLVED into Spaces** (+ `bucket_list_items` collapses into `dreams`) | altitude (Victor, sincere reframe) | asked what the feature really is → "a separated View of things I want to do before I die, with progress, to envision them" = a Space, not a module; and the items ARE Dreams (the `dreams`/`bucket_list_items` overlap PG8 flagged) | ✓ 07-15: dissolved (3rd Spaces worked-example after Languages/Duties); PG8 resolved (one Dream entity, `bucket_list_items` retires into `dreams` at build); intent threaded → spaces.md accumulator + purposes-and-goals.md PG8; stubs deleted; off module list; next = #7 Spaces |
+| **Pomodoro → capability in the Sessions realm** (not a module; boundary moved Notes→Sessions) | altitude + consolidation (Victor) | every piece of a "Pomodoro module" was already owned elsewhere (Notes table+block, Sessions `focus` sub-type + `attach_pomodoro`, Preferences config, Tasks ledger); Victor: the OS is complex enough to handle it "only within the Sessions realm, not leak to any other entity" | ✓ 07-15: documented as a thin capability-doc (G0=B, own `pomodoro/` context); G2 Sessions-realm-only (timer = `focus`-session runtime keyed by `session_id`); v1 richness reshaped (not restored as-is); Focus Mode = polymorphic×platform×tool-bearing INTENDED; boundary reconciled across Sessions(SS-11 reversal)+Notes; ADR noted-at-build (ADR-004 amendment + ADR-002 re-home); gate PASS |
+| **Health current-intent pass (retro-fix)** + Disciplines/capacities → Physical Roles merge | intent enrichment (Victor) | the prior Health docs were transformed from the polished System-2.0 summary; Victor's older System-1.0 DBs + Management hubs carried design DNA the summary abstracted away (clinical biomarkers, Domains/Factors/Exams monitoring, functional nutrition, Physical Roles, Duties wiring) | ✓ 07-14: re-harvested 23 Notion pages (6 MCP agents) → 6-pt delta → co-created CI-1..CI-6 (authoritative) + coherence/realism validation (R1-R4 + C1) → 12 aspect docs enhanced → **re-gate PASS**; **Physical Roles** now the canonical trainable-capability concept (heavy Skills resource) |
 
 ## Failures This Session
 *(none yet — On Failure protocol writes here)*

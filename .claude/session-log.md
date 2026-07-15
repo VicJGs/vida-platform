@@ -373,3 +373,394 @@ Next session:
   - COMMIT the Journals batch (this session).
   - ⭐ WAVE 2 COMPLETE. Next: **Wave 3** — Languages · Purposes & Goals · Bucket List. (Then Wave R: Health · Duties · Skills; Wave 4: Routines · Gamification · Notifications.)
   - Note: Purposes & Goals (Wave 3) is a forward-dep of the Journals review lens — documenting it unblocks that wiring.
+
+---
+Date: 2026-07-13
+Task: documentation-blueprint
+Goal: SESSION-CLOSE WRAP — this work block closed Wave 2 (three contexts + two ADRs). Detail is in the per-context entries above (Sessions & Scheduling, Flashcards, Journals); this is the block summary.
+Completed:
+  - 3 contexts documented + gate PASS + committed + pushed: Sessions & Scheduling (cc32456), Flashcards (a88113c), Journals (d780c60). Prior Knowledge batch committed at session start (bdc22e3). All on origin/main.
+  - 2 ADRs authored + Accepted: ADR-004 (Session Framework — table-per-type sessions + 4-dim Integration Contract) · ADR-005 (Study-Method Service framework — pluggable services on Knowledge's generic review engine). Both amend ADR-002; core README + ADR-002 cross-refs wired.
+  - ⭐ WAVE 2 COMPLETE (Projects · Education · Books · Knowledge · Sessions & Scheduling · Flashcards · Journals). docs/README flipped to "Wave 0 + Wave 1 + Wave 2 COMPLETE".
+  - Learning collapsed 5 → 1 sub-context (Education); the rest extracted/promoted/demoted across the session.
+Cross-cutting outcome:
+  - One PROVIDER/REGISTRY seam recurred across 4 independent contexts and unified them: dueIn (Scheduler) → Global Calendar → study-methods (Knowledge) → journal contributions. The Global Calendar's core logic was resolved as a by-product (Planner writes blocks / Calendar renders; both read dueIn).
+  - FOUNDATION-FIRST principle established (Victor): rigid per-feature structures collapse into generic constructs ("keep the seam, retire the instance"). Evidence: 6+ v2 tables retired (scattered sessions → 1 supertype; flashcard decks/reviews/SM-2 → generic Knowledge engine).
+Decisions: see per-context entries (G/S/F/J series) + ADR-004, ADR-005. No failures this block.
+Next session:
+  - Wave 3 — recommend starting **Purposes & Goals** (forward-dep of the Journals review lens; documenting it unblocks that wiring), then Languages · Bucket List.
+  - Then Wave R (Health · Duties · Skills) + Wave 4 (Routines · Gamification · Notifications).
+  - Standing backlog: consolidated ADR-002 amendment (now spans Sessions/Flashcards/Journals slices too); design-passes (Sessions G5 placement algo · Journals Review engine); build-time per-module VIEWS pass; J8 Check-ins↔journal integration at Check-ins revisit.
+
+---
+Date: 2026-07-13
+Task: documentation-blueprint
+Goal: Resume Wave 3 / remaining-module documentation. Became a major re-sequencing + two structural
+      reframes + the full Health intake and the start of its Transform.
+Completed:
+  - RE-SEQUENCE #1 — Purposes & Goals → CAPSTONE (#9). PG1 captured (Victor): Purposes is the OS
+    meaning-spine (directional/meaning integration plane; twin of Journals' operational plane); ladders
+    up every module → document last. Intake docs/intake/purposes-and-goals.md PARKED with full gap map
+    (PG1 resolved; PG2-PG10 framed, answered at capstone vs real docs).
+  - RE-SEQUENCE #2 — Languages module DISSOLVED into a new CORE foundation, **Spaces** (Personalization &
+    Composability): universal tags · saved views · capability Blocks · templates. Discovered by probing
+    "could a user assemble Languages from tags/views without a module?" → yes. Languages = worked-example.
+    docs/intake/spaces.md written (gap map SP1-SP9, name locked, 4 primitives + Templates confirmed),
+    PARKED to exec #8 (before Purposes; touches every module → requirements-accumulator grounds it).
+    docs/intake/languages.md marked DISSOLVED (folds into Spaces SP7).
+  - Full remaining EXECUTION ORDER reshaped + written to manifest (docs/README.md), features/README.md,
+    TASKS.md, task Route History: Health(1) → Skills(2) → Duties(3) → Routines(4) → expansions(5) →
+    Pomodoro(6) → Bucket List(7) → SPACES(8) → Purposes CAPSTONE(9) → Gamification(10) → Notifications(11).
+    Deferred: Fiscal & Legal (post-all-waves).
+  - HEALTH intake (exec #1) → WHOLE. docs/intake/health.md: v1 plan seed (never built) + ⭐ Victor's Vision
+    (goal-driven Training+Nutrition engine, 3 authoring modes, closed energy loop, photo capture) + ⭐⭐
+    harvested Victor's Notion "System" page — ALL 18 databases via MCP (9 Physical Training + 9 Nutrition),
+    the authoritative design. Reshaped as an OS EXTENSION (integration architecture §A owns / §B composes /
+    §C provider seams / §D deps / §E layered picture). Core RESOLVED (Forks 1-4): unified Health Metrics ·
+    unified Health Goals · Adaptation/Experiments engine · Disciplines. Closing gaps HL2-HL13 resolved.
+  - HEALTH Transform tranche 1 — umbrella + Core (6 docs): docs/features/health/README.md +
+    core/{identity,business-rules,contract,structure-data,conventions}.md. Layout = umbrella + sub-contexts
+    (Victor's choice). HC-1..HC-13 rules; new entities flagged as ADR-002 additions; all ZK + extension-model.
+In progress:
+  - HEALTH Transform tranche 2 (NOT STARTED): the two pillar sub-contexts — Training (5 aspects) +
+    Nutrition (5 aspects) at docs/features/health/{training,nutrition}/. Each composes the Core + Sessions.
+  - Then Verify gate (victor:quality-gate-foundation) → mark Health ✅ in manifest + features/README.
+Decisions (the big ones):
+  - Purposes → capstone; Languages → dissolved into Spaces (new foundation); both re-sequenced.
+  - Spaces = new CORE foundation tier; Notes & Pages becomes a consumer (closes the N&P tag-scoping backlog).
+  - Health = goal-driven Training+Nutrition engine, umbrella + Core + 2 pillars; composes Sessions/Knowledge/
+    Purposes/Finance/Spaces, not an island.
+  - Health Core unifications: ONE Metric spine (body/perf/test/biomarker), ONE Goal system (specializes
+    Purposes primitive), Experiments = N-of-1 self-experimentation (candidate GENERIC OS primitive → ADR),
+    Disciplines bind Knowledge+Skills. Energy loop: burn = formula/wearable/manual (user choice), intake
+    recomputes dynamically. All AI/import/photo/wearable/prescription = opt-in extension-model.
+  - Candidate ADRs surfaced: N-of-1 Experiment framework; (standing) the two ZK ADRs (AI/LLM + external-data)
+    — Health is their largest instance yet.
+  - MCP: Notion connector authenticated this session; used to harvest the 18-DB design (notion-fetch/query).
+Next session:
+  - Resume HEALTH Transform tranche 2: write Training (5 aspects) then Nutrition (5 aspects) under
+    docs/features/health/, composing the Core (core/*.md) + Sessions (ADR-004) + Knowledge.
+  - Then Verify gate → Accept (manifest + features/README status ✅), /adr-new for the Experiment framework.
+  - Health intake is WHOLE + authoritative (docs/intake/health.md); Core aspect docs done — build pillars on them.
+  - After Health: exec #2 Skills, then Duties, Routines, etc. Spaces (#8) accumulates each module's needs.
+
+---
+Date: 2026-07-13 (cont.)
+Task: documentation-blueprint
+Goal: Finish Health Transform (pillars) + Verify + Accept.
+Completed:
+  - Health Transform tranche 2: Training (5 aspects) + Nutrition (5 aspects) at docs/features/health/
+    {training,nutrition}/. Total Health docs = 16 (umbrella + Core 5 + Training 5 + Nutrition 5).
+  - Verify: mechanical clean (no residue, all checklists) + vs-intake (Forks 1-4 + 18-DB mapping reflected)
+    + vs-sources (composes ADR-004/Knowledge/Purposes-PG6/Spaces; ZK+extension-model honored; forward-deps
+    are STUBS not asserted). Gate victor:quality-gate-foundation → PASS.
+  - Accept: health/README status all ✅; features/README Health ✅ (linked); manifest exec #1 Health ✅;
+    task file Health [x] done; 3 surfaced ADRs backlogged (N-of-1 Experiment framework; Health = largest
+    instance of the 2 ZK ADRs; ADR-002 Health additions — full table list).
+  - ⭐ HEALTH COMPLETE (exec #1). Recovered domain w/ zero v2 schema → most thoroughly-specified module.
+Decisions: as prior entry (Forks 1-4 + HC-1..HC-13). No failures.
+Next session:
+  - Victor flagged he wants to REDIRECT parts of the Health module (reviewing the as-documented design) —
+    handle those redirections FIRST (may revise docs/features/health/* + docs/intake/health.md).
+  - Then exec #2 Skills (recovered module; v2 2-table version is a downgrade — harvest real intent, likely
+    a Notion "System" harvest again if Victor has one).
+  - Roadmap: 2 Skills → 3 Duties → 4 Routines → 5 expansions → 6 Pomodoro → 7 Bucket List → 8 SPACES
+    → 9 Purposes (capstone) → 10 Gamification → 11 Notifications. Deferred: Fiscal & Legal.
+
+---
+Date: 2026-07-14
+Task: documentation-blueprint
+Goal: Skills (exec #2) + a mid-course correction to the documentation APPROACH.
+Completed:
+  - ⭐ APPROACH CORRECTION (Victor): Notion designs are CONTEXT, not core — years-old snapshots. Authoritative
+    layer = Victor's CURRENT intent, CO-CREATED (assistant proposes from his patterns + out-of-box, anchored to
+    the OS core; he refines). Documented in docs/intake/_APPROACH.md + framing rule in _notion-sources.md.
+  - Registered Victor's Notion sources (docs/intake/_notion-sources.md): System 2.0 (whole-OS) · System 1.0
+    (Health, harvested) · English Course · To-do/Tasks · 2× "Glorify God" life-visions. New modules surfaced:
+    Obligations · Physical Roles · Complementations (peek+decide in the reconciliation wave).
+  - SKILLS documented + gate PASS (exec #2): harvested the Notion "Abilities" 5-DB design (System 2.0) as
+    CONTEXT; co-created the current-intent (authoritative) → a game-like, dependency-graphed, user-composable
+    growth engine (Skill Composer · Skill Graph global+personal · dispatch · three-way fill+locale · derived
+    mastery · decay · evidence · insight-compounding · shared reflective engine w/ Health · Purposes laddering ·
+    Gamification · Becoming view · path-rec+synergy). docs/intake/skills.md WHOLE; docs/features/skills/ (5 aspects).
+    Module keeps name "Skills". 5 surfaced ADRs/design-passes backlogged.
+  - ⚠ COHERENCE + REALISM VALIDATION (Victor-caught gap; now a mandatory approach step): audited Skills
+    incrementations vs the constitution + realism + architecture. Findings: MOST pass (local/ZK/SU-safe, compose
+    existing engines). ISSUES: (1) HIGH — `community submission` CONFLICTS with SU-1 (no-sharing) + ZK-1 → cut or
+    ADR-gated carve-out (Victor's decision, backlogged). (2) external Skill-DB import must be anonymous/bulk (ZK
+    metadata) + content-curation/ops burden. (3) unmeasurable skills → mastery must be qualitative/self-rated,
+    never faked (SK-4 refined). (4) on-device vs cloud LLM realism. Fixed SK-3/SK-4; backlogged the constitutional ADR.
+Decisions:
+  - Notion = context; current-intent = authoritative; every module gets a co-created current-intent layer +
+    a coherence+realism validation before Transform. Health owes a retro current-intent pass (documented Notion-centered).
+  - Skills: full recommendation accepted + 2 assistant build-ons (path-recommendation, synergy-detection) approved.
+Next session:
+  - HEALTH current-intent pass (retro-fix): Victor has NEW intakes for Health + wants improvement + a realistic
+    approach. Co-create CI-1..CI-4 (assistant proposes) → run the coherence+realism validation → enhance
+    docs/features/health/* → re-gate. Deepen-harvest System 1.0 for the evolved layer.
+  - Then carry the corrected approach forward: exec #3 Duties → Routines → … → Spaces(#8) → Purposes(#9) →
+    Gamification → Notifications; + the reconciliation wave for Wave 0-2 modules; peek Obligations/Physical
+    Roles/Complementations to decide.
+  - Standing: resolve the community/SU-1 constitutional ADR before Skills' Skill-DB/Graph design-passes.
+
+--- (resolution appended 2026-07-14)
+RESOLVED the community/SU-1 constitutional flag (Victor): the community is EXTERNAL to the OS (marketing/growth),
+NOT a feature/pipeline. The OS's only bridge = existing import/export of generic, non-personal templates; sharing
+is 100% user-initiated, outside the vault → preserves SU-1 + ZK-1. Skills SK-3 updated to RESOLVED; no ADR carve-out
+needed. Surfaced a CORE constitution-note candidate: "social/community/marketplace lives OUTSIDE the OS; the sole
+bridge is user-initiated import/export of generic artifacts" (applies to Skills/Spaces templates, external Skill-DB).
+Skills module now fully coherent + gate PASS. Remaining Skills realism flags (content-curation burden · on-device vs
+cloud LLM) are non-blockers, deferred to the Skill-DB/Graph design-passes.
+
+---
+Date: 2026-07-14
+Task: documentation-blueprint
+Goal: HEALTH current-intent pass (retro-fix) — re-harvest Victor's Notion + co-create the authoritative
+      current-intent + coherence/realism validation + enhance docs/features/health/* + re-gate.
+Completed:
+  - ⭐ HEALTH RE-HARVEST (23 Notion pages via 6 parallel MCP agents): the URLs resolved to a DIFFERENT layer
+    than the System-2.0 18-DB design already captured — the older **System 1.0** DBs + the 3 "…Management"
+    hub pages. Surfaced a 6-point delta ("what we missed"): (A) clinical biomarker + derived-metabolic spine
+    (Health Development: anthropometrics + ~26-marker blood panel + BMR/BEE/LBM/body-fat formulas; per-lift
+    bilateral 1RM/MR), (B) general Health-Monitoring model (Domains→Factors→Results + Exams/Assigned-Exams —
+    a 3rd spine), (C) functional/body-system nutrition (8-system "area of action" + whole-food type taxonomy),
+    (D) cooking-as-skill, (E) "Physical Roles" capability units (objectives/can-do/mastery ladder), (F) deep
+    Duties/Obligations/Purposes wiring + reward/penalty. Recorded in docs/intake/health.md (⭐⭐⭐ section).
+  - CO-CREATED current-intent CI-1..CI-6 (AUTHORITATIVE, Victor refined): CI-1 Monitoring spine (Domains→
+    Factors folded into Metrics grouping + user-scheduled Exams w/ reminders, results→metrics); CI-2 biomarker
+    panel (editable starter) + on-device derived metrics + bilateral/per-lift; CI-3 functional nutrition axis
+    + whole-food taxonomy (editable, R2 research-flagged) + OPT-IN cooking-as-skill; CI-4 Physical Roles
+    (merges Disciplines+capacities → one trainable-capability goal type; heavy Skills resource; professional-
+    grade, medically-aware, manual→LLM→curated-import w/ locale variants); CI-5 Duties/Obligations wiring
+    confirmed (Health = Duties #3's first consumer); CI-6 bidirectional external integrations (Google Health/
+    wearables INPUT · medical-services OUTPUT/egress) — INTENT-only stub.
+  - COHERENCE+REALISM VALIDATION (Step 2): all 6 CIs compose existing seams, stay local/ZK (derived formulas =
+    deterministic on-device, no AI). Flags: R1 biomarker interpretation advisory-only (most-sensitive ZK);
+    R2 8-system taxonomy validity → research; R3 Role professional-import = curation/AI burden → manual core +
+    ext; R4 external OUTPUT = ZK egress (new, sharpest consent); C1 reconciliation = Physical Roles subsumes
+    Disciplines+capacities.
+  - TRANSFORM (12 files): docs/features/health/core/* (5 — Monitoring spine, biomarker+derived, Physical Roles
+    merge, Exams, external-integration intent, HC-19..HC-23), training/* (3 — Physical Roles, per-lift/
+    bilateral, Role-generated medically-aware plans, HT-8/HT-13), nutrition/* (3 — functional axis + whole-food
+    + opt-in cooking-skill + recipe-as-page, HN-12/13/14), README (merge + Monitoring + forward-deps).
+  - VERIFY (Step 3, victor:quality-gate-foundation): re-gate PASS. vs-intent (all CIs landed), vs-ADRs
+    (ZK-1/extension-model/ADR-004/No-Guessing consistent — Exams fixed to scheduled-due-item not Session),
+    completeness (no {{}} residue, terminal states + FACT/INTENT labels present). README status → re-gate PASS 07-14.
+Decisions:
+  - Physical Roles is the canonical trainable-capability concept (C1 merge): `disciplines` table → `physical_roles`;
+    goal type `discipline`+`capacity` → `physical-role`. Roles are the primary resource Skills (#2) consumes.
+  - Exams = user-configured scheduled due-items (compose Scheduler + Notifications, surfaced via dueIn), NOT a
+    Session sub-type (no runtime) — like meals. Results flow back as metric values (source=exam).
+  - Cooking-as-skill is OPT-IN (default = documented dish + optional recipe page).
+  - External integrations are INTENT-only; OUTPUT-to-medical = data egress = strictest guard, deferred to
+    per-service research post-core.
+Next session:
+  - Continue reconciliation → exec #3 DUTIES (Wave R, defining intake). Deps: Tasks ✅. Distinct from Task/
+    Obligation/Routine (v1 MasterDuty); a provider to Routines/Purposes; Health just confirmed it as Duties'
+    first concrete consumer (assigned workouts/meals/exams surface as Duties/Obligations). Needs a DEFINING
+    mini-intake before placement. Victor has Notion "Master Duties"/"Duties" DBs (seen in Health re-harvest,
+    collections 1b57ba8d…80e2 / …80fe) — harvest as context.
+  - Standing Health backlog (build-phase): R2 research (validate 8-system nutrition taxonomy); curated Physical-
+    Role library design-pass (consolidate w/ Skills external-DB, locale-variant model); CI-6 egress-guard folds
+    into the external-data ADR; ADR-002 Health additions grew (domains/factors/exams/assigned_exams/physical_roles
+    + metric side/formula/catalog_ref + source exam/import + nutrition functional_area/whole_food_type/
+    recipe_page_id/cooking_skill_id + exercise_plans.role_id).
+
+---
+Date: 2026-07-14
+Task: documentation-blueprint
+Goal: Exec #3 — DUTIES defining mini-intake (Wave R). Establish what a Duty IS (vs Task/Obligation/
+      Routine) and its placement (own module vs sub-feature) before capturing aspect rules.
+Completed:
+  - DUTIES DEFINING INTAKE → **DISSOLVED** (not a module). Harvested 3 sources: v2 (zero Duties surface —
+    dropped in the 91→60 consolidation; only survivor = tasks.kind='obligation' stub, Tasks G8), v1
+    (MasterDuty/MasterObligation, Master-Instance SR-006 + cycle-gen OR-008, name-only), and Notion
+    System 1.0/2.0 (~15 pages via 2 parallel MCP agents) — a full Master→Instance→Tasks automation engine
+    for BOTH Duties and Obligations + the crisp 4-axis Duty↔Obligation distinction.
+  - Co-created current-intent (collaborative, _APPROACH.md): D1 Duty = recurring RESPONSIBILITY (generates
+    work, isn't the work) · D2 Obligation stays a Task type · D3 compose existing seams (Scheduler dueIn /
+    Tasks Universe / Session sub-types / entity_links — NO bespoke Master→Instance engine) · extensibility
+    = user-extensible task-type/preset system, Duty+Obligation = the 2 shipped presets · D9 → NOT a module.
+  - Wrote/updated 8 files: docs/intake/duties.md (full harvest + RESOLUTION = preserved source) ·
+    docs/intake/tasks.md (ADDENDUM — G8 kind→user-extensible task TYPE; +change-log) · docs/intake/spaces.md
+    (requirements accumulator — the "preset" primitive, 2nd worked-example after Languages) ·
+    docs/intake/_scope-reconciliation-v1.md (Duty row→DISSOLVED + decision 3 + change-log) · docs/README.md
+    (manifest fill-order re-numbered, Duties off, Routines now #3) · docs/features/README.md (Duties row →
+    🚫 dissolved) · TASKS.md · .claude/tasks/documentation-blueprint.md (Wave R item, exec list, Route History).
+  - Verify gate PASS: drift-swept clean (no docs/features/duties/ dir; no stray "pending module / defining
+    intake / #3 Duties / ⬜" refs). Two stray refs caught by the gate (features/README row + a stale "NEXT:
+    exec #3 Duties" pointer) → fixed.
+Decisions:
+  - Duty & Obligation are TASK TYPES surfaced as PRESETS (thin tabs over the Tasks entity; distinct
+    patterns/contexts/deliverables + own UI/UX; user-extensible). Same "keep the seam, retire the instance"
+    move as Languages→Spaces and Flashcards→Knowledge-service.
+  - Obligation semantics live in exactly ONE place (a Tasks type) — removes the earlier module-vs-Task-kind
+    fork (constitution rule 3, single source of truth).
+  - No new ADR: composes existing seams. The kind→extensible-type + per-type-preset widening folds into the
+    standing ADR-002 amendment (build-phase carry-forward, noted in Tasks ADDENDUM).
+  - SU-1: Notion "Accountability Partner" → a Contact reference only (no external notifications).
+Next session:
+  - Exec #3 ROUTINES (Wave 4, unpark intake). Intake mostly-whole at docs/intake/routines.md (G2/G3/G5 +
+    action-model resolved; G1/G4/G6-G10 to confirm on return). Routines = cross-module ORCHESTRATION layer;
+    named sequences of polymorphic INTERACTIVE steps w/ per-step completion modes driving underlying
+    entities. Step-types now reference the Tasks duty/obligation TYPES (this session's output) + Health/
+    Skills (documented). Deps satisfied → clean to proceed.
+
+---
+Date: 2026-07-14
+Task: documentation-blueprint
+Goal: Exec #3 ROUTINES — unpark the parked intake, reconcile against foundations documented since 06-30,
+      resolve open gaps, Transform (5 aspect docs), Verify (gate).
+Completed:
+  - ROUTINES DOCUMENTED + gate PASS. Resumed the 06-30 parked intake; wrote §D RECONCILIATION: the foundations
+    it forward-referenced are now documented, so the "own design pass" (step-type/mode taxonomy) resolves by
+    COMPOSITION — a step's interactive completion drives the underlying entity's **Session sub-type (ADR-004)**
+    or native completion; **Exercises = Health** (G_new superseded — workout Session); obligation/task steps =
+    Tasks **types** (this session's Duties output).
+  - Co-created §E RESOLUTION (Victor, after asking me to explain the questions first): Q1 compose + user-
+    extensible session types + actionable-step = recurrent Task (alarm-like, reschedule-to-open-slot) + step-
+    scoping (all/one/subset of routines); Q2 broad scheduling (day/week/month/year) + ALWAYS-record-partial
+    (gratitude framing) + **user-configurable completion policy** (all-or-nothing/required-node/threshold);
+    Q3 lifecycle (active/paused/off) + **user-configurable miss policy + acceptance window**; Q4 streak
+    DISSOLVED into user-config (Gamification reads a POLICY-DERIVED streak, not the Habits rule). Intake WHOLE.
+  - Transform: 5 canonical aspect docs at docs/features/routines/ (identity · business-rules RT-1..RT-18 ·
+    contract RoutineService + consumed contracts · structure-data as-is-vs-INTENDED · conventions). Removed 5
+    empty legacy-named scaffold stubs first.
+  - Verify (victor:quality-gate-foundation): PASS on all 3 dimensions (vs intake — all §E reflected; vs sources
+    — consistent w/ ADR-002 §5.6 floor [INTENDED flagged], ADR-004, dep-graph no-cycle; vs constitution —
+    ZK/SU/INT/LF/single-source §3/coupling §6/terminal-states/fail-loud). No {{}} residue, all claims labeled,
+    checklists ticked.
+  - Accept: manifest (docs/README.md exec row #3 → ✅) + docs/features/README.md (Routines row ✅ + fill-order
+    string updated, Duties dissolution noted) + TASKS.md + task file (exec list, Route History, ADR-002
+    amendment consolidated + Routines design-pass backlog). Fill order renumbered: Routines now #3; next #4.
+Decisions:
+  - Routines = cross-module ORCHESTRATION cockpit that COMPOSES foundations (Sessions/Scheduler/Tasks-types/
+    Habits/Health), never duplicates them. Single source of truth = the driven entity (no parallel completion).
+  - Deep personalization is the identity: completion policy, miss policy, acceptance window, extensible session
+    types, step-scoping are all user-configured (ship defaults). Major Spaces consumer (added to accumulator).
+  - Streaks are policy-derived — Gamification (#9) must NOT assume the Habits rule (captured to prevent a wrong
+    assumption when Gamification is documented).
+  - No new ADR (composes ADR-004). Build-phase: ADR-002 amendment (routines/routine_step/membership/policy cols
+    + widen action_type→polymorphic step_type) + a Routines design-pass (step_type taxonomy · membership · policy engine).
+Next session:
+  - Exec #4 EXPANSIONS BATCH (opportunistic, amend already-documented modules): Finance→Commitments (recurring
+    commitments, auto-txn + due reminders — ties to budgeting) · Projects→Investigations (research entity) ·
+    Learning→verify Grades/GPA + Cycles + Subject-as-entity. All are deltas on ✅ modules, not new contexts.
+
+---
+Date: 2026-07-15
+Task: documentation-blueprint
+Goal: Exec #4 EXPANSIONS BATCH — opportunistic deltas on already-documented ✅ modules: Finance→Commitments ·
+      Projects→Investigations · Learning→verify Grades/GPA/Cycles/Subject-as-entity.
+Completed:
+  - ⭐ ALL 3 RESOLVED BY COMPOSITION / ZERO NEW TABLES (Victor probed each: "why an entity? how does it differ?").
+  - Finance→Commitments → a management SUB-CONTEXT/LAYER in Finance (NOT a new entity). After 3 reframes Victor
+    landed it: manages committed/recurring/long-term flows (subscriptions · lending/receivables tracked to a
+    TOTAL via varying installments · liability payoff · income · periodic investments+revenue · installment
+    assets) by COMPOSING the existing 6 Finance entities; bidirectional (payable/receivable) + derived
+    progress-to-total (mirrors FN-3); surfaces on the schedule via dueIn + Notifications; reuses FN-5 recurring
+    mode. Threaded into Finance identity (scope + "not an entity"), business-rules FN-14, structure-data
+    (layer not table), contract (listCommitments + dueIn provider) + intake/finance.md EXPANSION.
+  - Projects→Investigations → RESOLVED BY COMPOSITION, no entity. Victor asked why it should exist vs a
+    milestone/existing entities; honest analysis: research = EXPLORE (divergent, output=findings) vs
+    milestone/deliverable/task = EXECUTE (convergent). But already covered → a research/investigation = a
+    deliverable (measurement_type='artifact') whose workspace is a Knowledge Lab investigation, linked via
+    entity_links. Threaded into Projects identity (NOT-note) + structure-data + intake EXPANSION.
+  - Learning verify → VERIFIED, all covered by Education (07-03 reframe), no gap: Subject-as-entity = a hierarchy
+    level; Grades/GPA (CR-002/OR-003) = ED-7 grading-system builder + derived GPA rollup; academic Cycles =
+    Education `terms`; v1 OR-008 cycle-session-gen = Sessions&Scheduling. Recorded in scope-recon.
+  - WAVE R FULLY RECONCILED (Health·Skills·Duties·Routines·Finance-Commitments·Projects-Investigations·Learning).
+  - Accept: manifest exec #4 → ✅; features/README 3 expansion rows → ✅; scope-reconciliation #2/#4/#5 → resolved;
+    TASKS.md + task file (exec list, Route History). Fixed a duplicate Pomodoro line in the task file.
+Decisions:
+  - Commitments = a management layer, not an entity (Victor: "the OS is already complex enough and able to handle
+    that"). Lending/receivable representation + any "is-a-commitment" marker = build-time design-pass question.
+  - Investigations = deliverable(artifact) + Knowledge Lab; only re-open if project-specific research structure
+    (hypotheses w/ pass-fail · decision-gate · research-as-whole-project) is ever needed.
+  - Pattern of the session: mature core → new "features" are compositions, not schema. Nothing new added to ADR-002
+    beyond the standing amendment; no new ADRs.
+Next session:
+  - Exec #5 POMODORO (Wave 4). deps Tasks/Notes/Learning ✅. v2 has `pomodoro_sessions` (Notes module, §5.2);
+    Sessions&Scheduling identity notes pomodoro as a `focus` session sub-type w/ a timer. Likely a composition
+    reframe again: Pomodoro = a focus-timer capability bound to tasks/classes/study-sessions, composing the
+    Session `focus` sub-type + task_time_logs (Tasks G4/G9) rather than a standalone module. Harvest: ADR-002
+    §5.2 pomodoro_sessions + Tasks G9 (focus mode) + sessions/identity focus sub-type + CLAUDE.md §8 Pomodoro block.
+
+---
+Date: 2026-07-15
+Task: documentation-blueprint
+Goal: Exec #5 POMODORO (Wave 4) — document via the framework; expected a composition reframe.
+Completed:
+  - ⭐ REFRAME (Victor): Pomodoro is a **capability, not a module** — the **focus-timer runtime of the `focus`
+    Session sub-type**, consolidated **entirely into the Sessions realm** ("handled only within the Sessions
+    realm, not leak to any other entity"). Finishes ADR-004's absorption of the 9 scattered session entities
+    (it pre-declared `attach_pomodoro` + named `pomodoro_sessions`).
+  - Intake WHOLE (docs/intake/pomodoro.md, G0–G7): G0=(B) thin capability-doc as an OS entity; G1 v1 richness
+    (pause/interruption/auto-start/notify/sounds/templates) all IN but RESHAPED into the focus-session runtime +
+    Preferences + Sessions `focus` presets (not restored as v1 flat fields); G2 Sessions-realm-only (timer keyed
+    by `session_id`, task integration via the session's `log_time` effect); G4 dissolved (session_id retires the
+    polymorphic entity_type); G3 Focus Mode = polymorphic × platform-adaptive (mobile/desktop/web) × tool-bearing
+    × low-distraction (⚠ INTENDED → design-pass); G5 analytics = derived cut of session analytics; G6 breaks carry
+    per-type guidance; G7 XP via `award_xp` effect. Widget refinement: `/pomodoro` block = a lens showcasing
+    pomodoro-enabled sessions + linking a page's analytics to a `session_id`.
+  - 5 aspect docs written at docs/features/pomodoro/ (identity·business-rules PD-1…PD-12·contract·structure-data·
+    conventions), replacing 5 legacy-named empty stubs. All claims FACT/INTENT-labeled; terminal states + fail-loud
+    enumerated; no template residue.
+  - BOUNDARY RECONCILED (the reframe reverses gate-PASSED docs): Sessions (SS-11 reversal + identity/contract/
+    structure-data/conventions) + Notes (identity/contract/structure-data/business-rules) annotated — each keeps
+    its current-v2 FACT while flagging the forward-reframe; no unflagged contradiction.
+  - Verify (victor:quality-gate-foundation): PASS on all 3 dimensions (vs intake — G0–G7 reflected; vs sources —
+    consistent w/ ADR-002/ADR-004/Tasks TK-5/Sessions SS-*, no dep-cycle [Pomodoro is a client of Sessions, rides
+    its effects, adds no edge], code 0-lines flagged; vs constitution — ZK/LF/single-source/coupling/terminal/
+    fail-loud). Fixed a broken cross-ref ([[../health/identity]] → [[../health/training/identity]]).
+  - Accept: manifest docs/README.md exec #5 → ✅ + docs/features/README.md (Pomodoro row ✅ + fill-order #5 ✅) +
+    TASKS.md + task file (exec list, Route History, consolidated ADR-002 amendment + new ADR-004-amendment/Focus-
+    Mode design-pass candidate).
+Decisions:
+  - Pomodoro = a thin runtime OVER Sessions, never a service beside it. No cross-module write of its own — time/
+    XP/journal/calendar all ride the `focus` sub-type's declared Integration-Contract effects (ADR-004 §3.2).
+  - `pomodoro` is NOT a session sub-type — it is the runtime; the sub-type is `focus` (SS-1).
+  - ADR handling = NOTE now / amend at BUILD (Victor): documented the target state; flagged ADR-004 amendment
+    (pomodoro=focus runtime, reverse SS-11) + ADR-002 re-home (pomodoro_sessions→session_id) for the consolidated
+    build-phase pass. No ADR file produced this session.
+  - Pattern holds (5th time): mature core → the "new feature" is a composition/consolidation, not new schema.
+Next session:
+  - Exec #6 BUCKET LIST (Wave 3). deps Projects ✅ + Purposes-intent. Draws the Dream↔Bucket boundary (PG8 —
+    captured in the parked Purposes & Goals intake). v2 has `bucket_list_items` (links to purposes + projects,
+    steps/cost/location). Harvest: ADR-002 bucket_list_items + intake/purposes-and-goals.md PG8 + v1 legacy.
+
+---
+Date: 2026-07-15
+Task: documentation-blueprint
+Goal: Exec #6 BUCKET LIST (Wave 3) — document via the framework; resolve the PG8 Dream↔Bucket boundary.
+Completed:
+  - ⭐ DISSOLVED into Spaces (Victor's sincere reframe). Asked what the feature really is → "a separated View of
+    things I want to do before I die, with progress, to envision them." That is a **Space**, not a module
+    (Languages/Duties precedent) — a `#before-i-die` tag + a vision-board Gallery saved View + derived progress +
+    an optional Template. 3rd Spaces worked-example.
+  - This ALSO resolved PG8 (the Dream↔Bucket↔Purpose boundary the Purposes intake deferred to here): the items
+    ARE **Dreams**. One aspiration entity = `Dream` (owned by Purposes & Goals #8). The redundant
+    `bucket_list_items` table **collapses into `dreams`** (which absorbs its execution/progress/imagery fields).
+    → build-phase ADR-002: retire `bucket_list_items`, widen `dreams`.
+  - Intake docs/intake/bucket-list.md written (full harvest: v2 schema + v1 rich UI + the dreams overlap table +
+    BL1–BL8 gap map) then RESOLVED. Intent threaded into two homes: docs/intake/spaces.md (accumulator — the
+    bucket-list worked-example; surfaces the vision-board Gallery View + derived-progress needs) +
+    docs/intake/purposes-and-goals.md (PG8 marked ✅ RESOLVED; Dreams absorbs; bucket_list_items collapses).
+  - Accept: deleted the 5 empty legacy stubs + removed docs/features/bucket-list/; manifests updated
+    (docs/README.md exec row + wave list; docs/features/README.md status row 🚫dissolved + fill-order + wave
+    list); TASKS.md + task file (exec list, Route History, #7 next-pointer).
+Decisions:
+  - Bucket List is a Space, not a module or a distinct entity — the OS pushes this personalization to the Spaces
+    layer (tags · saved views · templates). No new table; the items are Dreams.
+  - PG8 resolved by collapse, not by drawing a 3-way line: Purpose = meaning-spine; Dream = the aspiration entity
+    (absorbs bucket execution fields); "Bucket List" = a curated Space/view over Dreams. Vision board = the
+    Gallery View; achievement tracking = derived progress + Gamification (Wave 4).
+  - Pattern holds (6th time): mature core → the "feature" is a composition/Space, not new schema.
+Next session:
+  - Exec #7 SPACES — CORE/foundation (Personalization & Composability). This is the big one: resume
+    docs/intake/spaces.md (SP1–SP9 captured, name locked, 4 primitives + Templates confirmed) NOW that #1–5 are
+    documented + the 3 worked-examples (Languages, Duties, Bucket List) are captured in the accumulator. Resolve
+    SP1–SP9 against the documented modules → Transform produces the ADR set (universal tags · saved views · Block
+    registry · templates · presets) + core docs, NOT feature aspect docs (it's CORE/foundation). Purposes capstone
+    (#8) depends on Spaces' universal tags. NOTE: Spaces Transform = ADRs + core/ docs, different output shape than
+    a feature context.

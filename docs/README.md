@@ -2,7 +2,7 @@
 <!-- Produced by /documentation Phase 0 (documentation-blueprint). The MAP of what to document, at which
      level, in which aspect, and in what order. Reverse-mode (documenting the existing repo). No-Guessing:
      code structure ← repo-survey; modules + fill order ← module-dependency-graph; data ← ADR-002. -->
-Status: Phase 0 complete + VERIFIED (2026-06-13). **Wave 0 + Wave 1 + Wave 2 COMPLETE (2026-07-12).** Wave-0 (**Notes & Pages**, **Preferences**) + Wave-1 (**Tasks**, **Habits**, **Finance**, **Relationships**, **Check-ins**) + Wave-2 (**Projects**, **Learning: Education**, **Books** — extracted from Learning as its own module 2026-07-03, **Knowledge** — extracted from Learning as its own module 2026-07-10) + **Sessions & Scheduling** (extracted **+ PROMOTED** from Learning to a **foundation module** 2026-07-12) documented + verified (2026-06-18 → 2026-07-12) — 5 canonical aspect docs each, gate PASS. **Flashcards** was reframed into a **study-method service sub-context of Knowledge** (2026-07-12) — documented + verified, gate PASS; reference impl of **[ADR-005](core/decisions/ADR-005-study-method-service-framework.md)** (Study-Method Service framework; amends ADR-002). Learning is now ONE sub-context (Education). **Journals** (the integration layer — provider-registry aggregation engine + daily dashboard + snapshot-based temporal Review engine) documented + verified 2026-07-12 — **this CLOSES Wave 2.** Next: **Wave 3** (Languages · Purposes & Goals · Bucket List) + Wave R (Health · Duties · Skills) + Wave 4 (Routines · Gamification · Notifications). Sessions & Scheduling surfaced **[ADR-004 — Session Framework](core/decisions/ADR-004-session-framework.md)** (table-per-type storage + 4-dimension Integration Contract; Accepted 2026-07-12, amends ADR-002). ⚠ A governing **extension-model principle** (ZK core + guarded opt-in integrations) was surfaced by Projects → candidate addition to `core/business-rules.md` (Sessions' S5 permission dimension is an instance of it). Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
+Status: Phase 0 complete + VERIFIED (2026-06-13). **Wave 0 + Wave 1 + Wave 2 COMPLETE (2026-07-12).** Wave-0 (**Notes & Pages**, **Preferences**) + Wave-1 (**Tasks**, **Habits**, **Finance**, **Relationships**, **Check-ins**) + Wave-2 (**Projects**, **Learning: Education**, **Books** — extracted from Learning as its own module 2026-07-03, **Knowledge** — extracted from Learning as its own module 2026-07-10) + **Sessions & Scheduling** (extracted **+ PROMOTED** from Learning to a **foundation module** 2026-07-12) documented + verified (2026-06-18 → 2026-07-12) — 5 canonical aspect docs each, gate PASS. **Flashcards** was reframed into a **study-method service sub-context of Knowledge** (2026-07-12) — documented + verified, gate PASS; reference impl of **[ADR-005](core/decisions/ADR-005-study-method-service-framework.md)** (Study-Method Service framework; amends ADR-002). Learning is now ONE sub-context (Education). **Journals** (the integration layer — provider-registry aggregation engine + daily dashboard + snapshot-based temporal Review engine) documented + verified 2026-07-12 — **this CLOSES Wave 2.** **Remaining re-sequenced 2026-07-13** (see "Remaining — EXECUTION ORDER" below): **Health → Skills → Routines → (expansions) → Pomodoro → Bucket List → Spaces (foundation) → Purposes & Goals (CAPSTONE) → Gamification → Notifications** (Duties dissolved into Tasks+Spaces 07-14). Two big reframes this session: (1) **Purposes & Goals → capstone** (OS meaning-spine, ladders up every module); (2) **Languages dissolved → Spaces** (a new Personalization & Composability foundation — universal tags · saved views · capability Blocks · templates — that lets users assemble module-like surfaces; Languages = its worked-example). Spaces' gaps deferred to #8 (touches every module). Sessions & Scheduling surfaced **[ADR-004 — Session Framework](core/decisions/ADR-004-session-framework.md)** (table-per-type storage + 4-dimension Integration Contract; Accepted 2026-07-12, amends ADR-002). ⚠ A governing **extension-model principle** (ZK core + guarded opt-in integrations) was surfaced by Projects → candidate addition to `core/business-rules.md` (Sessions' S5 permission dimension is an instance of it). Feature aspect filenames aligned to the canonical 5 (see Levels × Aspects). Index layer wired (2026-06-18): `core/README.md` + `features/README.md` + level-README stubs. Remaining feature/service/component contexts not yet filled.
 
 ## Structure (DECIDED — M1–M5, 2026-06-10)
 
@@ -37,14 +37,50 @@ Note: legacy `docs/architecture.md` (root file) stays put — it is LEGACY, not 
 | 1 — Independent | Tasks · Habits · Finance · Relationships · Check-ins |
 | 2 — Dependent | Projects · **Books** (own module — EXTRACTED from Learning 2026-07-03, keeps its fill slot) · **Knowledge** (own module — EXTRACTED from Learning 2026-07-10, keeps its fill slot) · **Learning** (1 sub-context: Education; Flashcards → Knowledge study-method service 2026-07-12) · **Journals ✅** (integration layer — documented 2026-07-12, CLOSES Wave 2) |
 | F — Foundation | **Sessions & Scheduling** (own module — EXTRACTED **+ PROMOTED** from Learning 2026-07-12; session foundation + scheduling engine; ✅ documented + verified) |
-| 3 — Higher-order | Languages (hard→Learning) · Purposes & Goals · Bucket List |
+| 3 — Higher-order | Languages (hard→Learning) · ~~Purposes & Goals~~ (→ **re-sequenced to CAPSTONE**, see below) · ~~Bucket List~~ (→ **Spaces**, dissolved 07-15) |
 | 4 — Peripheral | **Routines** (re-sequenced here 2026-07-01 — the orchestrator; needs all modules it sequences documented first) · Gamification · Notifications · Pomodoro |
-| **R — Recovered (v1 audit 2026-06-30 / -07-01)** | **Health** (exercise + nutrition — new domain) · **Duties** (needs defining intake) · **Skills** (separated from Learning — downgraded 2-table version, envisioned larger) · + expansions: Finance→**Commitments**, Projects→**Investigations**, Learning→verify Grades/Cycles. See [`intake/_scope-reconciliation-v1.md`](intake/_scope-reconciliation-v1.md). |
+| **R — Recovered (v1 audit 2026-06-30 / -07-01)** | **Health** (exercise + nutrition — new domain) · ~~**Duties**~~ (**DISSOLVED 07-14** → task types + presets, Tasks+Spaces) · **Skills** (separated from Learning — downgraded 2-table version, envisioned larger) · + expansions: Finance→**Commitments**, Projects→**Investigations**, Learning→verify Grades/Cycles. See [`intake/_scope-reconciliation-v1.md`](intake/_scope-reconciliation-v1.md). |
+
+### Remaining — EXECUTION ORDER (re-sequenced 2026-07-13) `[FACT: module-dependency-graph.md §5-6]`
+> **Why re-sequenced:** intake for Purposes & Goals surfaced (Victor) that it is the **organizing meaning-spine
+> of the whole OS** — it ladders up progress/contribution from *every* domain module (incl. recovered
+> Health/Skills + Routines). Documenting it now would spec its rollup against undocumented modules (guessing —
+> forbidden). Like **Journals** (the operational-integration twin) closed Wave 2 as its aggregator, **Purposes &
+> Goals now closes the whole feature effort as the meaning-integration capstone.** The topological tail is the
+> three "read-everything / read-by-almost-none" contexts in order: Purposes → Gamification → Notifications.
+
+> **Update 2026-07-13:** documenting **Languages** revealed it dissolves into a **configuration of generic seams**,
+> not a module → surfaced **Spaces** (the Personalization & Composability foundation: universal tags · saved views ·
+> capability Blocks · templates). Languages = a validating **worked-example** of Spaces (its intake preserved →
+> `intake/languages.md` → `intake/spaces.md` SP7). Spaces **touches every module**, so its gaps (SP1-SP9, captured
+> in `intake/spaces.md`) are **deferred to execution #8** — resolved against documented modules, immediately BEFORE
+> the Purposes capstone (which needs Spaces' universal tags). Each module documented #1-7 feeds the Spaces
+> "requirements accumulator."
+
+| Order | Context | Wave | Depends-on gate (must be documented first) |
+|:-----:|---------|:----:|--------------------------------------------|
+| 1 | **Health** ✅ *(documented + gate PASS 07-13)* | R | umbrella + Core + Training + Nutrition; 18-DB Notion harvested + OS-extension reshape; composes Sessions/Knowledge/Purposes/Finance/Spaces |
+| 2 | **Skills** ✅ *(documented + gate PASS 07-14)* | R | reframed → game-like growth engine (Skill Composer·Graph·dispatch); composes Sessions/Knowledge/Projects/Purposes/Spaces; Notion "Abilities" + current-intent |
+| — | ~~**Duties**~~ **DISSOLVED 2026-07-14** → task TYPES + presets (Tasks + Spaces), not a module | R | *(defining intake complete — see note below)* |
+| 3 | **Routines** ✅ *(documented + gate PASS 07-14)* | 4 | reframe → cross-module ORCHESTRATION cockpit (named ordered sequences; compose-driven polymorphic steps; user-configurable completion/miss policies + acceptance window; policy-derived streak; provider via `dueIn`/`summary`). Composes Sessions(ADR-004)/Tasks/Habits/Health/Scheduler/Spaces |
+| 4 | *Expansions batch* ✅ *(done 07-15)* | R | **Finance→Commitments** = management sub-context/layer (no entity; composes existing flows + `dueIn`/Notifications) · **Projects→Investigations** = resolved by composition (deliverable `artifact` + Knowledge Lab, no entity) · **Learning** Grades/GPA/Cycles/Subject-as-entity = VERIFIED covered by Education. **← Wave R fully reconciled** |
+| 5 | **Pomodoro** ✅ *(documented + gate PASS 07-15)* | 4 | REFRAME → a **capability, not a module**: the focus-timer runtime of the `focus` Session sub-type, consolidated **entirely into the Sessions realm** (no leak to other entities); `/pomodoro` block = session-lens. v1 richness reshaped into Sessions+Preferences; Focus Mode = polymorphic × platform-adaptive × tool-bearing (⚠ INTENDED design-pass). ⚠ moves a boundary: `pomodoro_sessions` re-homes Notes→Sessions + re-points `session_id` (build-phase ADR-004 amendment + ADR-002 re-home; reconciled across Sessions+Notes docs) |
+| — | ~~**Bucket List**~~ **DISSOLVED 2026-07-15** → a **Space** over **Dreams**, not a module | ~~3~~ | Victor: "a separated View of things I want to do before I die, with progress, to envision them" = a Space (`#before-i-die` tag + vision-board Gallery + progress + Template). `bucket_list_items` **collapses into `dreams`** (Purposes & Goals; PG8 resolved). 3rd Spaces worked-example. Intent → `intake/spaces.md` + `intake/purposes-and-goals.md` PG8 |
+| 7 | **Spaces** *(CORE/foundation — Personalization & Composability)* | Core | resolve SP1-SP9 (`intake/spaces.md`) against documented #1-6; incl. Languages + Duties/Obligations worked-examples → ADR set (tags·views·blocks·templates·**presets**) |
+| 8 | **Purposes & Goals** — **CAPSTONE** | 3 | all modules (1–6) **+ Spaces** (#7, universal tags for laddering) — resume `intake/purposes-and-goals.md` (PG1 captured) |
+| 9 | **Gamification** | 4 | observes all incl. Purposes (goal-completion XP) |
+| 10 | **Notifications** | 4 | dead-last leaf — observes all incl. Gamification |
+
+> **Deferred (Victor 07-07):** **Fiscal & Legal** — post-all-waves; enhanced after #10. `[FACT: intake/fiscal-legal.md]`
+> **~~Languages~~ (module) — DISSOLVED into Spaces 2026-07-13** (worked-example, not a module).
+> **~~Duties~~ (module) — DISSOLVED 2026-07-14** → **task TYPES + presets** (Duty + Obligation = the 2 shipped
+> presets over the Tasks entity; user-extensible). Defining intake complete: `intake/duties.md` RESOLUTION → intent
+> landed in `intake/tasks.md` (ADDENDUM) + `intake/spaces.md` (preset primitive, 2nd worked-example after Languages).
 
 > ⚠ **Scope note (2026-06-30):** v1's `COMPLETE_SYSTEM_ARCHITECTURE.md` (91 tables/7 domains) planned scope the
 > v2 rebuild dropped. Audit + Victor's KEEP decisions: [`intake/_scope-reconciliation-v1.md`](intake/_scope-reconciliation-v1.md).
-> The "17 modules" below understated scope; recovered contexts (Health, Duties) + expansions (Commitments,
-> Investigations) are now tracked in Wave R.
+> The "17 modules" below understated scope; recovered contexts (Health; Duties→dissolved into Tasks+Spaces) +
+> expansions (Commitments, Investigations) are now tracked in Wave R.
 
 Services (`docs/infrastructure/`): encryption · sync · db-repository · core-services · utils `[FACT: survey packages/core layers]`.
 Components: `@vida/ui` (`docs/ui/`) · `@vida/editor` (`docs/editor/`) `[FACT: survey]`.
