@@ -56,6 +56,13 @@ these and must comply. Each rule is a FACT cited to its source; nothing here is 
     hub** (pages, note-backlinks, the journal page); Spaces owns the universal association substrate the hub and all
     modules use. INT-1's rule (connect via these primitives; no direct cross-table reads) is unchanged; only the
     *ownership* of the primitives moves down a tier. `[FACT: ADR-006 §3.1-3.3; PC-2]`
+- **INT-2 (the write-discipline invariant, 2026-07-16 · F1/D1)** — where INT-1 governs cross-module **reads**
+  (connect via the primitives; no direct cross-table reads), INT-2 governs cross-module **writes**: every
+  cross-module effect writes **only via the owning module's documented service method** (the **single write path**),
+  which is **idempotent per a deterministic `effect_event_id`** (same-device replay closed by a local dedup ledger;
+  cross-device convergence via a UNIQUE `effect_event_id` on the output row, enforced by sync). This binds **shipped
+  and user code alike** — no honor-system tier. **PC-3 specializes INT-2 for untrusted (user-authored/imported)
+  code**; the mechanism is owned by **ADR-004 §3.2.5**. `[FACT: ADR-004 §3.2.5; ADR-008 anatomy part 5; ADR-010 §3.3.2/3.3.3]`
 
 ## Personalization & Composability (PC) — the Spaces invariant
 The user composes his own module-like surfaces (Spaces) from generic primitives; that power **never** relaxes the
@@ -73,7 +80,9 @@ rules above. Source: the Spaces ADR set (ADR-006…010), which establishes Space
   capabilities are trusted; **user-authored or imported** capabilities run under a **declare→grant→enforce**
   permission envelope inside a **no-ambient-authority sandbox** — least privilege, attachment-scoped, guarded-write
   only, no double-count, sensitive-module consent, **revocable**, **fails closed**, **re-grant on envelope change**;
-  the blast radius is bounded to the grant and ZK is never broken. `[FACT: ADR-010; ADR-004 §3.2.4/SS-6]`
+  the blast radius is bounded to the grant and ZK is never broken. PC-3 is the **untrusted-code specialization of
+  INT-2** (the general write-discipline rule); the guarded-write + idempotency mechanism it enforces is owned by
+  **ADR-004 §3.2.5**. `[FACT: ADR-010; ADR-004 §3.2.4/§3.2.5/SS-6; INT-2]`
 - **PC-4** — **Community is external; the only bridge is user-initiated import/export.** Vida is a single-user
   local-first ZK vault (SU-1); there is **no in-OS sharing, feed, or marketplace**. The sole sharing bridge is
   **user-initiated import/export of authored (never accumulated) artifacts** — templates, external reference DBs.
@@ -110,3 +119,4 @@ rules above. Source: the Spaces ADR set (ADR-006…010), which establishes Space
 | 2026-07-15 | documentation-blueprint · Spaces Transform | Added **Personalization & Composability (PC-1…PC-4)** — the Spaces invariant (ADR-006…010). PC-3 lands the **extension-model** principle's *authoring* instance; PC-4 lands the **community-is-external** principle. Added **INT-1a** (association primitives owned by the Spaces tier, consumed by N&P). |
 | 2026-07-15 | documentation-blueprint · Spaces Accept (Victor) | **Folded the general extension-model principle → EX-1/EX-2** (Victor's go): ZK core unchanged by integrations; opt-in, user-owns-risk, wrapped guard; frames the two standing ZK-integration ADRs. **Community-external expansion deferred** (needs Victor's go to broaden beyond the Spaces instance). |
 | 2026-07-16 | documentation-blueprint · ADR revise (F5/D6) | **Resolved the 2026-06-13 HKDF flag** — ADR-001 §6 + `CLAUDE.md` amended to `BLAKE2b-256` (keyed), matching the authoritative code (`vault.ts`, tested). Doc-vs-code drift closed; the code was always right. |
+| 2026-07-16 | documentation-blueprint · ADR revise (F1/D1) | Added **INT-2** — the cross-module **write-discipline** invariant (single write path + deterministic-`effect_event_id` idempotency; binds shipped + user code). Grounds the guarded-write/no-double-count mechanism that ADR-004/008/010 previously delegated in a loop; mechanism owned by **ADR-004 §3.2.5**. **PC-3 reframed as INT-2's untrusted-code specialization.** |

@@ -5,8 +5,9 @@
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Sessions & Scheduling (foundation module, extracted + promoted from Learning "Study Sessions & Planner")
 **Tags:** architecture · data model · API
-**Amends:** ADR-002 (Data Model) — adds the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables; supersedes the flat Learning-only `study_sessions` and the §5.11 mirror planner.
+**Amends:** ADR-002 (Data Model) — adds the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables; supersedes the flat Learning-only `study_sessions` and the §5.11 mirror planner. **+ (F1/D1, 2026-07-16)** adds the local-only `applied_effects` dedup ledger + `effect_event_id` columns (owed-tables ledger).
 **Inherits:** ADR-001 (SQLite/libsodium) · ADR-003 (LWW sync) · the surfaced extension-model principle (guarded opt-in integrations).
+**Amended:** 2026-07-16 (F1/D1) — added **§3.2.5** (the write-API contract + idempotency mechanism), making this ADR the **owner** of the guarded-write + no-double-count discipline that ADR-008/010 previously delegated in a loop. Constitution anchor: **INT-2**. Mechanism per the critique gate `docs/reviews/2026-07-15-adr-critique-gate.md` F1/D1.
 
 ---
 
@@ -52,19 +53,79 @@ all `wc -l = 0`), so this is a greenfield structural decision, not a migration o
   and `planned_blocks` all reference.
 
 **3.2 The Integration Contract — 4 dimensions every type declares.**
-1. **Attachment** — polymorphic links to OS entities (`session_attachments`, `entity_links`-style), at
-   *type-level* ("this type is always attached to a habit") and *instance-level* ("this session is about Topic X").
-2. **Effects (penetration)** — a declared, catalogued set of writes the framework fires on lifecycle events:
-   `complete_habit_occurrence · log_time(task|project) · emit_measurement_signal · contribute_purpose_metric ·
-   award_xp · surface_journal · surface_calendar · attach_pomodoro`. Effects go through each target module's
-   documented write API — **never a direct table write**.
-3. **Lifecycle** — the shared state machine `scheduled|planned → in_progress → completed | skipped | missed
-   (attended only) | rescheduled`, with per-type legal transitions + hooks (review → fires SM-2; class →
-   records attendance; workout → writes training volume).
-4. **Permissions / constraints** — the guardrail: effects are scoped to attachments; no double-count (one XP
-   / one habit-occurrence per event); user-created types get a **strict subset** of shipped-type capabilities;
-   effects on sensitive modules (Finance/Health) require explicit opt-in consent. This is the guarded opt-in
-   extension-model principle applied inside the module.
+
+**§3.2.1 Attachment** — polymorphic links to OS entities (`session_attachments`, `entity_links`-style), at
+*type-level* ("this type is always attached to a habit") and *instance-level* ("this session is about Topic X").
+
+**§3.2.2 Effects (penetration)** — a declared, catalogued set of writes the framework fires on lifecycle events:
+`complete_habit_occurrence · log_time(task|project) · emit_measurement_signal · contribute_purpose_metric ·
+award_xp · surface_journal · surface_calendar · attach_pomodoro`. Effects go through each target module's
+documented write API — **never a direct table write** (that API is specified in **§3.2.5**).
+
+**§3.2.3 Lifecycle** — the shared state machine `scheduled|planned → in_progress → completed | skipped | missed
+(attended only) | rescheduled`, with per-type legal transitions + hooks (review → fires SM-2; class →
+records attendance; workout → writes training volume).
+
+**§3.2.4 Permissions / constraints** — the guardrail: effects are scoped to attachments; **no double-count**
+(one XP / one habit-occurrence per event — the *mechanism* is **§3.2.5**); user-created types get a **strict
+subset** of shipped-type capabilities; effects on sensitive modules (Finance/Health) require explicit opt-in
+consent. This is the guarded opt-in extension-model principle applied inside the module.
+
+**§3.2.5 The write-API contract + idempotency — how §3.2.2 (Effects) and §3.2.4 (no-double-count) are actually
+enforced.** *This subsection is the single **owner** of the guarded-write + idempotency mechanism; ADR-008 and
+ADR-010 inherit it **by reference** rather than re-asserting it. Constitution: **INT-2**.*
+
+*Effect taxonomy — not every effect writes; the machinery applies per class:*
+
+| Class | Effect types | Idempotency |
+|---|---|---|
+| **Keyed write** | `complete_habit_occurrence · contribute_purpose_metric · emit_measurement_signal` | deterministic `effect_event_id` + ledger (replay) + a UNIQUE **domain** key **and** a UNIQUE `effect_event_id` on the output row (cross-device) |
+| **Additive write** | `award_xp · log_time` | deterministic `effect_event_id` + ledger (replay) + UNIQUE `effect_event_id` on the output row — its **only** convergence key (no domain natural key exists) |
+| **Projection** | `surface_journal · surface_calendar` | **writes no row** — Journal/Calendar are *pull-aggregated at render*; idempotent **by construction**; no id, no ledger |
+| **Intra-realm** | `attach_pomodoro` | same handler path — **no direct-write exemption for same-owner**; deterministic id from the timer/session |
+
+**A — The write-API contract ("documented write API" made concrete).**
+1. Each effect-receiving module exposes named **effect handlers** — service methods in `packages/core/services/<module>`
+   (e.g. `gamification.awardXp`, `habits.completeOccurrence`, `finance.emitMeasurement`). **This set *is* the module's
+   documented write API for effects.**
+2. A **routing registry** maps each declared effect-type (§3.2.2) → exactly one handler. "Documented" = present in the
+   registry; an effect with no handler **fails closed** (never a silent drop).
+3. Each handler **validates** caller scope/binding, the permission envelope (§3.2.4 consent), and payload before any
+   write; failure ⇒ a hard rejection with **no partial write**.
+4. **Single write path:** these handlers are the **only** cross-boundary writers of the module's tables — no session,
+   capability, or other module issues a direct cross-module table write.
+
+**B — Idempotency ("no double-count" made mechanical) — two layers on one deterministic key.**
+1. **`effect_event_id` is DETERMINISTIC** — derived from the semantic event's stable identity,
+   `derive(subject_natural_key ‖ transition ‖ effect_type)` (e.g. `derive(habit_id ‖ date ‖ "award_xp")`). Two devices
+   originating the *same* outcome compute the *same* id; a retry recomputes the same id. It is **persisted as a UNIQUE
+   column on each output row**. *(A random id would make every re-origination look distinct — the multi-device
+   double-count hole. Determinism is load-bearing.)*
+2. **Replay (same device)** — a device-local **`applied_effects`** ledger keyed `(effect_event_id, effect_type,
+   target_ref)`; the handler **checks-and-inserts in the same transaction as the write**; a conflict ⇒ **no-op**.
+   Defends offline-flush retry, crash-then-rerun, double-dispatch. Content-keyed ⇒ **robust under clock skew**
+   (independent of the LWW clock). **This subsection closes same-device double-count unconditionally.**
+3. **Cross-device** — because the id is deterministic and rides the output row as a UNIQUE column, two devices'
+   independent applications **collide on sync and converge to one**. The collision-**merge** is owned by the **sync
+   layer** (ADR-003 conflict handling); §3.2.5 supplies the deterministic key + UNIQUE requirement that make
+   convergence *possible*. **Honest bound: same-device double-count is closed here; cross-device convergence is
+   enforced by sync — not claimed as a free guarantee.**
+4. The `applied_effects` ledger is **device-local** (not synced, like `sync_queue`): it defends *replay*; *cross-device*
+   convergence rides the synced output rows' UNIQUE `effect_event_id`, not a synced ledger.
+
+**C — No trust exemption.** The contract (A+B) binds **all** effect producers — session Effects, shipped capabilities
+(ADR-008), user-authored capabilities (ADR-010) — **identically**. Only *enforcement* differs by trust tier: user code
+**physically cannot** bypass (the ADR-010 sandbox gives no ambient DB access — its only channel is the mediated API →
+these handlers); shipped code is bound by the same single-write-path invariant, enforced **structurally** (the handlers
+are the only exported cross-module write surface) + code review + a build-time **CI guard** that fails if a module
+writes another module's tables directly. There is **no honor-system tier** for the contract.
+
+**Owed schema** (build-phase — tracked in ADR-002's owed-tables ledger, no DDL into its stale body per D5):
+`applied_effects` (local-only); a deterministic `effect_event_id` on effect-triggering rows; a UNIQUE `effect_event_id`
+on each effect **output** row; domain natural keys where they exist.
+
+**What §3.2.5 does NOT do:** it does not pick the `derive()` hash, the CI-guard implementation, or the sync
+collision-merge algorithm (build-phase / F10) — it locks the **contract + invariants**, not the runtime.
 
 **3.3 Shipped types are fully configured.** Every *identified* sub-type ships with all 4 dimensions authored
 by us; the user never sets up the main ones. Editing a shipped type is allowed but warned as

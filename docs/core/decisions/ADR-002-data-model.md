@@ -6,7 +6,7 @@
 **Context:** Vida Platform — Complete SQLite schema for local-first, zero-knowledge, multiplatform life management SaaS
 **Amended by:** (each entry is the amending ADR's own `Amends:` declaration)
 - [ADR-003](ADR-003-sync-protocol.md) — adds `_sync_field_ts` to **every** syncable table (per-field LWW). *Implicit schema edit — ratify formally at consolidation.*
-- [ADR-004](ADR-004-session-framework.md) (2026-07-12) — replaces the Learning-only `study_sessions` + the §5.11 flat planner with the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables.
+- [ADR-004](ADR-004-session-framework.md) (2026-07-12; **+ F1 §3.2.5, 2026-07-16**) — replaces the Learning-only `study_sessions` + the §5.11 flat planner with the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables. **F1 adds:** `applied_effects` (local-only dedup ledger, not synced — like `sync_queue`); a deterministic `effect_event_id` column on effect-triggering rows; a **UNIQUE** `effect_event_id` column on each effect *output* row (the cross-device convergence key).
 - [ADR-005](ADR-005-study-method-service-framework.md) (2026-07-12) — retires `flashcard_decks`, `flashcard_reviews`, and the SM-2 columns on `flashcards`; a reviewable becomes a lean content entity scheduled by Knowledge's generic engine.
 - [ADR-006](ADR-006-spaces-foundation-universal-tags.md) (2026-07-15) — retires page-only `tags` + `page_tags` for a universal `entity_tags`; adds `parent_tag_id`, `spaces`; opens the `entity_links` `entity_type` CHECK to a registry.
 - [ADR-007](ADR-007-saved-views.md) (2026-07-15) — adds `views`; retires the INTENDED `task_views` (Tasks) and the per-module custom-views store (Preferences).

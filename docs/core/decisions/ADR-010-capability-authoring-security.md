@@ -5,7 +5,7 @@
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Spaces (Personalization & Composability foundation). ADR 5 of 5 — the guard that makes [ADR-008](ADR-008-capability-block-registry.md) §3.5 user-*authored* capabilities safe. The ⭐ SP4 decision.
 **Tags:** security · architecture · extensibility · zero-knowledge · personalization
-**Builds on:** [ADR-004](ADR-004-session-framework.md) §3.2.4 / SS-6 (the permission envelope — scope-to-bindings, no double-count, sensitive-consent, user-types get a strict subset — generalized here beyond sessions) · the **extension-model** constitution principle (ZK core unchanged; integrations opt-in, user-owns-risk, wrapped in a protection layer) · [ADR-008](ADR-008-capability-block-registry.md) (what runs) · [ADR-009](ADR-009-templates-fork-on-instantiate.md) (imported template capabilities are untrusted) · ZK-1, EN-1/EN-2, SU-1, INT-1
+**Builds on:** [ADR-004](ADR-004-session-framework.md) §3.2.4 / SS-6 (the permission envelope — scope-to-bindings, sensitive-consent, user-types get a strict subset) **+ §3.2.5** (the write-API contract + idempotency mechanism this ADR enforces; INT-2) · the **extension-model** constitution principle (ZK core unchanged; integrations opt-in, user-owns-risk, wrapped in a protection layer) · [ADR-008](ADR-008-capability-block-registry.md) (what runs) · [ADR-009](ADR-009-templates-fork-on-instantiate.md) (imported template capabilities are untrusted) · ZK-1, EN-1/EN-2, SU-1, INT-1
 **Amends:** ADR-002 — adds a `capability_grants` record (the envelope the user granted a user-authored capability). No relaxation of any encryption or sync invariant.
 
 ---
@@ -41,12 +41,12 @@ most secure possible"; L83-87]`
 device that holds the **decrypted vault**. Its threat surface:
 - **Exfiltration** — read vault data it was not granted and send it out (the direct ZK-1 violation).
 - **Privilege escalation** — touch entities or modules beyond its bindings.
-- **Corruption** — write bad data, or double-count XP / habit-occurrences / measurements.
+- **Corruption** — write bad data, or double-count XP / habit-occurrences / measurements. *(The double-count half is bounded only because ADR-004 §3.2.5 supplies real idempotency — the sandbox stops a bypass, §3.2.5 stops a replay; both are needed.)*
 - **Resource abuse** — hang or exhaust memory, degrading the local-first app (a local DoS).
 - **Impersonation** — masquerade as a shipped, trusted capability.
 
 The machinery to answer these **already exists** and is reused, not invented: ADR-004's permission envelope (SS-6)
-and the extension-model principle. `[FACT: ADR-004 §3.2.4; business-rules extension-model candidate; task-file HIGH
+and the extension-model principle. `[FACT: ADR-004 §3.2.4–§3.2.5; business-rules INT-2 + extension-model; task-file HIGH
 constitution item]`
 
 ## 3. Decision
@@ -79,10 +79,12 @@ untrusted** and runs under §3.2–§3.5. There is no third tier; there is no "r
 **3.3 The permission envelope (ADR-004 SS-6, generalized).** Within the grant, a capability is bound by:
 1. **Attachment-scoped** — it may read/write **only** entities it is explicitly bound/attached to (ADR-008 §3.3). No
    ambient vault access; there is no "read all pages" primitive for a user capability.
-2. **Guarded-write only** — every write goes through a **documented module write API** (INT-1), never a direct table
-   write; the API validates. A user capability inherits ADR-008's guarded-write discipline with **no exceptions**.
+2. **Guarded-write only** — every write goes through a **documented module write API** (INT-2), never a direct table
+   write; the API validates. A user capability inherits ADR-008's guarded-write discipline — the mechanism owned by
+   **ADR-004 §3.2.5** (the single write path) — with **no exceptions**.
 3. **No double-count** — one effect per event (one XP, one habit-occurrence, one measurement); enforced at the write
-   API, as for sessions (ADR-004 §3.2.4).
+   API by **ADR-004 §3.2.5's idempotency** (deterministic `effect_event_id` + dedup ledger), as for sessions. *This
+   is now a real mechanism, not an assertion — so the corruption bound below (§2) actually holds.*
 4. **Sensitive-module consent** — effects touching a **sensitive class** (Finance, Health; **medical data is the
    most-sensitive**, Health HC-14) require **explicit, per-capability opt-in consent** captured in the grant; never
    default-on. Consent is bound to the classes named in the grant: if the capability is **later attached to an entity

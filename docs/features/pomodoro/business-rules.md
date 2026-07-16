@@ -53,7 +53,8 @@
   table. `[FACT: Sessions SS-12; INTENT G5]`
 - **PD-12 — Effects are permission-bounded (inherit SS-6).** A pomodoro's effects are scoped to its session's
   attachments; no double-count (one XP / one time-log per event); sensitive-module effects need opt-in
-  consent. `[FACT: Sessions SS-6 / ADR-004 §3.2 dim-4]`
+  consent. The no-double-count guarantee rides ADR-004 §3.2.5's idempotency (deterministic `effect_event_id`).
+  `[FACT: Sessions SS-6 / ADR-004 §3.2.4 (permissions) + §3.2.5 (idempotency); INT-2]`
 
 ## Validation & edge cases
 - `ended_at < started_at`, or `duration_seconds` negative / exceeding the interval → typed validation error,

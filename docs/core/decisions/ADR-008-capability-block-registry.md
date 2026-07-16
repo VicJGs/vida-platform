@@ -5,7 +5,7 @@
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Spaces (Personalization & Composability foundation). ADR 3 of 5 in the Spaces set. Covers the **render model + registry** of SP4; user-*authored* capability safety is [ADR-010](ADR-010-capability-authoring-security.md).
 **Tags:** architecture · extensibility · editor · personalization
-**Builds on:** [ADR-005](ADR-005-study-method-service-framework.md) (the 6-part plugin anatomy + "keep the seam, retire the instance") · [ADR-004](ADR-004-session-framework.md) §3.2.4 (a capability inherits the **Permissions / guarded-write discipline** — write only via documented module APIs, scoped to bindings, no double-count, consent for sensitive; a capability that produces a *timed/measurable outcome* drives a **Session**, which owns its Effects, rather than duplicating the effect channel) · [ADR-006](ADR-006-spaces-foundation-universal-tags.md) (a capability is a taggable, note-linkable citizen; standalone instances live on Spaces)
+**Builds on:** [ADR-005](ADR-005-study-method-service-framework.md) (the 6-part plugin anatomy + "keep the seam, retire the instance") · [ADR-004](ADR-004-session-framework.md) §3.2.4 (permission envelope: scoped to bindings, consent for sensitive) **+ §3.2.5** (the **write-API contract + idempotency** a capability inherits — write only via documented module handlers, no double-count via deterministic `effect_event_id`; INT-2) (a capability that produces a *timed/measurable outcome* drives a **Session**, which owns its Effects, rather than duplicating the effect channel) · [ADR-006](ADR-006-spaces-foundation-universal-tags.md) (a capability is a taggable, note-linkable citizen; standalone instances live on Spaces)
 **Amends:** ADR-002 / `editor.ts` — retires the closed `BlockType` union + the hand-kept `packages/editor/src/extensions/` set as the *definition of what a capability is*; introduces the capability registry (definition) + instance model. Exact tables settle at build.
 
 ---
@@ -62,8 +62,9 @@ placement is the user's per-instance choice … not hard to be on about; will le
    tags/`entity_links` (ADR-006); **scoped** — a capability sees only what it is bound to.
 4. **Render targets** — `inline` and/or `standalone` (§3.2).
 5. **Emitted signals (writes)** — a capability writes **only through the target module's documented write API —
-   never a direct table write** (INT-1), under ADR-004 §3.2.4's guarded-write discipline (scoped to its bindings, no
-   double-count, consent for sensitive modules = the extension-model principle). When the outcome is a
+   never a direct table write** (INT-2), under ADR-004 **§3.2.5's write-API contract + idempotency** (scoped to its
+   bindings via §3.2.4; no double-count via the deterministic-`effect_event_id` mechanism; consent for sensitive
+   modules = the extension-model principle). When the outcome is a
    *timed/measurable* one (a logged workout, a focus interval, a practice rep), the capability **drives a Session**,
    and that **Session** owns the catalogued Effects (`award_xp · log_time · contribute_purpose_metric ·
    surface_journal · …`, ADR-004 §3.2.2). A pure-render capability (a chart, a graph) emits nothing. A capability

@@ -32,7 +32,10 @@
 - **SS-6 — Effects are permission-bounded (the guardrail).** A session NEVER affects an entity it is not
   attached to; two types NEVER both complete the same habit occurrence / award XP for the same event
   (no double-count); user-type capabilities are a subset of shipped-type capabilities. This is the guarded
-  opt-in extension-model applied inside the module. `[INTENT S5-dim4; inherits extension-model principle]`
+  opt-in extension-model applied inside the module. **The "no double-count" guarantee is grounded in the
+  write-API contract + idempotency mechanism owned by ADR-004 §3.2.5 (constitution INT-2)** — deterministic
+  `effect_event_id` + a dedup ledger; SS-6 is the Sessions-tier specialization of that mechanism.
+  `[INTENT S5-dim4; FACT: ADR-004 §3.2.5, INT-2; inherits extension-model principle]`
 
 **The Scheduling engine**
 - **SS-7 — Aggregator, never duplicator.** The engine owns `planned_blocks` and its own generated sessions,
