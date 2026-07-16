@@ -18,7 +18,8 @@ the bundle into fresh entities (new UUIDs), and the instance keeps **no `templat
 Consequently instance edits never conflict with template updates, and template updates never mutate existing
 instances — the two are independent from the first second. A template captures the user's **authored
 structure + configuration** (his *method*), never his **accumulated runtime data** (logs, completions, real
-entries) — which by construction makes it a **generic, non-personal artifact**, the one thing the OS can
+entries) — which, because the capture transform includes only authored structure and never reads runtime data in,
+makes it a **generic, non-personal artifact**, the one thing the OS can
 export/import (user-initiated, outside the vault) without breaking single-user zero-knowledge. The OS **ships
 presets** (the "Languages" starter = Victor's method) and the user can **save any Space as a template**. The related
 **"preset" primitive** (a task-type tab, from the Duties worked-example) composes with — but is lighter than — a
@@ -46,6 +47,13 @@ data:
 (ADR-007) · enabled capabilities + their config (ADR-008) · child Space structure (ADR-006) }`. It is a **document**
 (JSON), not a live graph of FKs into someone's vault.
 
+**Capability-config invariant.** The captured "enabled capabilities + their config" carries **authored configuration
+only** — parameters, bindings-*by-type*, cadence — and **never** a reference, handle, or embedded copy of
+**accumulated runtime data** (no live entity ids, no log contents, no completion history). A capability config that
+can only be expressed by pointing at accumulated data is **not capturable** into a template. This closes the
+capability-instance-references-accumulated-data hole: a bundle cannot smuggle vault data in through a capability's
+config the way it is barred from smuggling it in through seed entities.
+
 **3.2 Instantiate = FORK (deep copy, no back-link).** Instantiation **deep-copies** the bundle into fresh entities
 with new client-generated UUIDs (DATA-1); the resulting Space/entities carry **no `template_id`** and no reference to
 the template. Therefore:
@@ -60,19 +68,32 @@ configuration into a bundle — and instantiate it again elsewhere. Shipped temp
 user-saved templates are rows in a light **`templates`** store (id · name `[E]` · serialized bundle `[E]`),
 syncable (`_sync_*` + `deleted_at`, DATA-4), the bundle encrypted per EN-2.
 
-**3.4 Templates are the OS's *only* sharing bridge, and they are ZK-clean by construction.** The capture line is
+**3.4 Templates are the OS's *only* sharing bridge, and they are ZK-clean by design — enforced at capture, not literally "by construction".** The capture line is
 **authored vs accumulated**: "save this Space as a template" captures the user's **authored structure +
 configuration + starter seed** (the Knowledge kinds, the session cadence, a starter Goal's target — *Victor's
 method*, which is the point of sharing) and **never** captures **accumulated runtime data** (real practice logs,
-completions, actual journal text, live progress). This exclusion is **capture-time, by construction** — a template is
-a **generic, non-personal artifact** because runtime data was never in it, not because it was stripped out later.
-Consequently it is the single kind of thing the OS exports/imports. Sharing is **100% user-initiated, outside the
+completions, actual journal text, live progress). This exclusion is **enforced at capture-time** — a template is
+a **generic, non-personal artifact** because the capture transform draws the authored-vs-accumulated line and
+**never reads accumulated runtime data into the bundle** in the first place. This cleanliness is a **correctness
+property the capture transform must uphold** (it selectively captures the authored shell — e.g. an *empty* logger
+target — while excluding that shell's accumulated rows), **not** a free consequence of the data shape. It is
+therefore ZK-clean **by design + enforced at capture** — the one real risk (§5, Harder) is a capture bug that pulls
+runtime data in, and it rides the same guard as ADR-010 + EN-2. Consequently it is the single kind of thing the OS
+exports/imports. Sharing is **100% user-initiated, outside the
 vault** (the user hands a bundle to someone by his own means); the OS never transmits vault data and has **no in-OS
 sharing, feed, or marketplace** (SU-1, ZK-1 hold). What an *authored* value reveals is the user's own call — he
 authored it, he chooses whether to share. This makes Templates the concrete instance of the **community-is-external**
 constitution principle: Spaces templates, Skills templates, and the external Skill-DB are the same move — import/
 export of authored, non-accumulated seeds. `[FACT: intake SP5, SP8; task-file "community is EXTERNAL, import/export
 only"]`
+
+**Forward-ref — imported capability *code* is untrusted.** A bundle may carry a **user-authored capability's code**
+(ADR-008 anatomy), not only its config. Importing such a template therefore imports **executable, untrusted code** —
+an untrusted-import surface. This is **not** an ADR-009 concern to solve: it is governed by **ADR-010 §3.1**, which
+already declares "every non-shipped capability — user-authored *or* arriving inside an imported template — is
+untrusted" and runs under the grant + sandbox. Importing a template is thus **never a trust escalation**; the
+importer grants the capability's envelope exactly as if they had authored it. Shipped-preset capabilities stay
+trusted (ours).
 
 **3.5 A "preset" is a lighter sibling, not a Template.** The Duties worked-example surfaced the **preset** primitive:
 a **thin tab** = `{ a saved View (ADR-007, e.g. over a `tasks` filter) + per-type UI/UX + default fields/deliverables
@@ -113,7 +134,7 @@ channel (there is none — sharing is out-of-OS by design).
 
 **Easier:**
 - One primitive seeds any composed surface (a Language Space, a training program, a preset tab's starter).
-- Templates are safe to share by construction — generic structure, no vault data — with no new OS sharing machinery.
+- Templates are safe to share by design (enforced at capture) — generic structure, no vault data — with no new OS sharing machinery.
 - Instance and template lives are fully decoupled; no reconciliation, no template-migration engine ever needed.
 
 **Harder:**

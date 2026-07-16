@@ -160,7 +160,7 @@ This is NOT just another module — it is the **unifying layer** of the entire p
 - **Local-first**: SQLite on all platforms (wa-sqlite/OPFS for web, expo-sqlite for mobile, Tauri plugin for desktop)
 - **Zero-knowledge**: All data encrypted client-side with libsodium (XChaCha20-Poly1305), server stores only opaque blobs
 - **Auth**: SRP (Secure Remote Password) — server never sees passwords
-- **Key model**: Vault Key = HKDF(Master Key from Argon2id, Account Key)
+- **Key model**: Vault Key = BLAKE2b-256(key = Master Key from Argon2id, message = Account Key)
 - **Editor**: TipTap (ProseMirror-based) with Yjs CRDT sync via y-prosemirror
 - **UI**: Tamagui (universal components across web/mobile/desktop) — neumorphic design dropped
 - **ORM**: Drizzle ORM for type-safe SQLite access

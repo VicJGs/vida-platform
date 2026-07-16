@@ -4,6 +4,7 @@
 **Date:** 2026-03-07
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Zero-knowledge, local-first, multiplatform life management SaaS
+**Amended:** 2026-07-16 (F5 / D6) — §6 Key Model: `HKDF` → `BLAKE2b-256` (keyed), aligning this ADR to the authoritative implementation (`packages/core/src/encryption/vault.ts`, tested). Doc-only alignment; no code changed.
 
 ---
 
@@ -71,9 +72,9 @@ This document locks all technology choices for the Vida Platform. Every library,
 
 | Concern | Library/Protocol | Details |
 |---------|-----------------|---------|
-| **E2E Encryption** | libsodium.js (client-side only — server never encrypts/decrypts) | XChaCha20-Poly1305 for data, Argon2id for key derivation, HKDF for Vault Key |
+| **E2E Encryption** | libsodium.js (client-side only — server never encrypts/decrypts) | XChaCha20-Poly1305 for data, Argon2id for key derivation, BLAKE2b-256 (keyed) for Vault Key |
 | **Authentication** | SRP (Secure Remote Password) | Zero-knowledge — server never sees passwords. Stores only salt + SRP verifier |
-| **Key Model** | Vault Key = HKDF(Master Key, Account Key) | Master Key derived from password via Argon2id. Account Key is user's recovery key |
+| **Key Model** | Vault Key = BLAKE2b-256(key = Master Key, message = Account Key) | Master Key derived from password via Argon2id; Account Key is the user's recovery key. **BLAKE2b keyed-hash** (libsodium-native `crypto_generichash`) replaces HKDF: both inputs are already uniform 256-bit keys, so HKDF's entropy-extraction step buys nothing here — a keyed PRF is sufficient, faster, and adds no extra primitive on WASM. ⚠ **Forward-flag:** no domain-separation label today (one Vault Key only); if a future feature derives *additional* sub-keys from the same Master+Account pair, add per-purpose domain separation then (BLAKE2b `personal`/`salt` or a labelled message). Authoritative impl: `packages/core/src/encryption/vault.ts`. |
 
 ---
 

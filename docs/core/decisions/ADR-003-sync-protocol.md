@@ -761,7 +761,7 @@ When a user logs in on a new device (password + Account Key), the device needs t
 ```
 Phase 1: Immediate (blocks UI until complete, ~seconds)
 ├── Authenticate via SRP
-├── Derive Vault Key (Argon2id + HKDF)
+├── Derive Vault Key (Argon2id Master Key → BLAKE2b-256 keyed)
 ├── Pull user_profile, user_preferences, nav_preferences
 ├── Pull app config tables (achievements, check_in_templates)
 └── Device is now usable with basic settings

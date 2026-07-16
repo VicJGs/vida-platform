@@ -4,7 +4,17 @@
 **Date:** 2026-03-13
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Complete SQLite schema for local-first, zero-knowledge, multiplatform life management SaaS
-**Amended by:** [ADR-004](ADR-004-session-framework.md) (2026-07-12) — replaces the Learning-only `study_sessions` + the §5.11 flat planner with the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables. · [ADR-005](ADR-005-study-method-service-framework.md) (2026-07-12) — retires `flashcard_decks`, `flashcard_reviews`, and the SM-2 columns on `flashcards`; a reviewable becomes a lean content entity scheduled by Knowledge's generic engine. (A consolidated ADR-002 amendment is pending in the build phase.)
+**Amended by:** (each entry is the amending ADR's own `Amends:` declaration)
+- [ADR-003](ADR-003-sync-protocol.md) — adds `_sync_field_ts` to **every** syncable table (per-field LWW). *Implicit schema edit — ratify formally at consolidation.*
+- [ADR-004](ADR-004-session-framework.md) (2026-07-12) — replaces the Learning-only `study_sessions` + the §5.11 flat planner with the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables.
+- [ADR-005](ADR-005-study-method-service-framework.md) (2026-07-12) — retires `flashcard_decks`, `flashcard_reviews`, and the SM-2 columns on `flashcards`; a reviewable becomes a lean content entity scheduled by Knowledge's generic engine.
+- [ADR-006](ADR-006-spaces-foundation-universal-tags.md) (2026-07-15) — retires page-only `tags` + `page_tags` for a universal `entity_tags`; adds `parent_tag_id`, `spaces`; opens the `entity_links` `entity_type` CHECK to a registry.
+- [ADR-007](ADR-007-saved-views.md) (2026-07-15) — adds `views`; retires the INTENDED `task_views` (Tasks) and the per-module custom-views store (Preferences).
+- [ADR-008](ADR-008-capability-block-registry.md) (2026-07-15) — adds the capability registry (definition) + `block_instances`; opens the closed `editor.ts` `BlockType` union. *Exact tables settle at build.*
+- [ADR-009](ADR-009-templates-fork-on-instantiate.md) (2026-07-15) — adds a light `templates` store (user-saved bundles).
+- [ADR-010](ADR-010-capability-authoring-security.md) (2026-07-15) — adds `capability_grants` (incl. `granted_envelope_hash`).
+
+**⚠ Consolidation status (D5 — 2026-07-16, F4).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5 the consolidated re-write is **deferred to its own build-phase session** (it is large — ~15 tables) — it is **not** silently pending. Until then the amended tables live in their amending ADRs and are tracked in the **owed-tables ledger** — `docs/reviews/2026-07-15-adr-critique-gate.md` (§ "throughline ①"). Read that ledger alongside the body so the divergence stays visible.
 
 ---
 

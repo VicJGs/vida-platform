@@ -21,7 +21,12 @@ nothing more. This generalizes ADR-004's session **Permissions** dimension (SS-6
 the **extension-model** principle: **zero-knowledge is never broken** (media encrypts; no ambient network; external
 egress is declared, consented, and mediated), the blast radius is bounded to the granted envelope, and shipped
 capabilities (trusted, ours) are the only ones outside the sandbox. The safety net bounds *blast radius*, not
-*correctness* — a user Block runs "at your own risk," but it **cannot** exceed its envelope or leak the vault.
+*correctness* — a user Block runs "at your own risk." Stated honestly, there are **two distinct bounds**: (1) it
+**cannot** cause the *server* to see plaintext — ZK-1, **unconditional** (§3.5); and (2) it **cannot** exceed its
+granted envelope or exfiltrate *local* vault data **except** (a) through an explicit, user-consented egress grant
+(§3.5 — the user owns that risk) or (b) via a **sandbox escape** (the §5 residual). So "cannot leak the vault" is
+**absolute for the server invariant** and **sandbox-strong for the local vault** — bounded by the runtime, not
+literally unconditional.
 
 ## 2. Context — what triggered this
 
@@ -57,7 +62,11 @@ untrusted** and runs under §3.2–§3.5. There is no third tier; there is no "r
   external data** (in and/or out).
 - **Grant** — at install/enable, the user is shown the declared envelope and **grants it** (or declines). The grant
   is recorded as a **`capability_grants`** row `{ capability_def_id · granted_bindings · granted_effects · media_ok ·
-  external_in_ok · external_out_ok · consented_sensitive_modules }` (syncable per DATA-4; EN-2). Nothing is implicit.
+  external_in_ok · external_out_ok · consented_sensitive_modules · granted_envelope_hash }` (syncable per DATA-4;
+  EN-2). Nothing is implicit. **`granted_envelope_hash`** is a hash of the exact declared envelope the user granted;
+  the **Re-grant on change** check (below) compares the capability's *current* declaration against it, so any envelope
+  change is detected and the capability fails closed until re-granted. This is the field the delta-check depends on —
+  named here so it is not left implicit.
 - **Enforce** — the sandbox permits **only** the granted set at runtime. A call outside the grant fails closed (denied
   + surfaced), never silently widens.
 - **Revocable** — a grant is **never permanent**. The user can revoke it at any time (disable/uninstall); revocation
@@ -76,7 +85,9 @@ untrusted** and runs under §3.2–§3.5. There is no third tier; there is no "r
    API, as for sessions (ADR-004 §3.2.4).
 4. **Sensitive-module consent** — effects touching a **sensitive class** (Finance, Health; **medical data is the
    most-sensitive**, Health HC-14) require **explicit, per-capability opt-in consent** captured in the grant; never
-   default-on.
+   default-on. Consent is bound to the classes named in the grant: if the capability is **later attached to an entity
+   of a sensitive class not covered by the original grant**, that is an envelope change — it **re-prompts** (Re-grant
+   on change, §3.2) and **fails closed** until consented. Sensitive reach never widens silently via a new attachment.
 5. **Strict subset** — a user capability's envelope is a **strict subset** of what shipped capabilities may do; new
    privilege classes are added to shipped first and only exposed to user-authoring deliberately.
 
