@@ -7,6 +7,7 @@
 **Tags:** architecture · data model · extensibility
 **Builds on:** Knowledge KN-5/KN-8 (pluggable methods & curves) · [ADR-004](ADR-004-session-framework.md) (a service run is a Session sub-type)
 **Amends:** ADR-002 — retires `flashcard_decks`, `flashcard_reviews`, and the SM-2 columns on `flashcards`; a reviewable becomes a lean content entity scheduled by the generic engine.
+**Amended by:** [ADR-008](ADR-008-capability-block-registry.md) (F2/D2) — `study_methods` is a **typed specialization (`kind=study_method`) of the one OS capability registry**, not a Knowledge-owned parallel registry. A study-method service **is a capability**; Knowledge continues to own the review **engine** (curves · `method_bindings` · `review_events` · mastery). See ADR-008 §3.1/§3.3a.
 
 ---
 
@@ -14,7 +15,8 @@
 
 A **study-method service** is a pluggable way for the user to work on knowledge — drill it, capture it, be
 assessed on it, elaborate it. This ADR locks that services are **thin content + interaction plugins** riding
-Knowledge's **generic** review engine, registered through one **seam**, rather than each re-implementing
+Knowledge's **generic** review engine, registered through one **seam** — the OS **capability registry** (ADR-008);
+`study_method` is a `kind` of it, not a parallel registry (F2/D2) — rather than each re-implementing
 scheduling, review logging, grouping, and mastery in its own tables. **Flashcards is the reference
 implementation**; future services (assessments, self-test, Feynman, …) plug into the same seam. The set of
 roles and integration points is **open — extensible over time**.
@@ -41,10 +43,13 @@ The v2 flashcard code is schema-only (0 logic), so this is a structural decision
 
 **3.1 A study-method service is a plugin, defined by a 6-part anatomy.**
 1. **Content unit** — the *only* data the service owns (Flashcards: the card; Assessment: the item; Feynman:
-   the prompt). Registered as a **reviewable**.
+   the prompt). Registered as a **reviewable**. The content unit is **data the capability owns, not itself a
+   capability**: the study-*method* is the capability (`kind=study_method`); a card is not (F2/D2).
 2. **Run surface** — a **Session sub-type** (ADR-004): a drill, a test. Every run is a first-class Session.
-3. **Registration** — the service registers in Knowledge's **`study_methods`** registry; the user **binds** it
-   (`method_bindings`) to any knowledge object/container, choosing a curve (KN-8).
+3. **Registration** — the service registers as a **capability of `kind=study_method` in the OS capability registry**
+   (ADR-008 — the one composability registry; **`study_methods` is a typed specialization of it, not a parallel
+   registry**, F2/D2). The user then **binds** it (`method_bindings`) to any knowledge object/container, choosing a
+   curve (KN-8) — the **review-engine specialization** of the `study_method` kind, which stays Knowledge's.
 4. **Gather capability (optional)** — how it *creates* content units from OS sources (Knowledge objects, book
    quotes, notes) — the "gathering" role, first-class alongside retention.
 5. **Emitted signals** — outcomes recorded as generic **`review_events`**; Knowledge **derives** mastery
@@ -106,3 +111,6 @@ not now) and does not design the service view surfaces (build-time views pass).
 ## 6. Review Date / trigger
 Reconsider when the **second** study-method service (assessments) is documented — it is the real test of the
 seam; if it cannot be expressed as (content unit + role + bindings) without engine changes, revisit the anatomy.
+Assessments is now *also* the test of the F2/D2 is-a: if it cannot be expressed as a `kind=study_method`
+capability (ADR-008 §3.3a crosswalk) without forcing review-engine assumptions into the generic registry, revisit
+the specialization.

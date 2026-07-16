@@ -25,7 +25,9 @@
   multiple OS-modules.
 
 **Study methods, curves & review (⚠ INTENDED):**
-- `listMethods()` / `registerMethod(spec)` · `listCurves()` / `defineCurve(spec)` (SM-2 = a built-in preset).
+- `listMethods()` / `registerMethod(spec)` — **thin wrappers over the one OS capability registry** (ADR-008), *not* a
+  parallel store: `registerMethod` registers a `kind=study_method` capability; `listMethods()` reads the
+  `kind='study_method'` partition (F2/D2). · `listCurves()` / `defineCurve(spec)` (SM-2 = a built-in preset).
 - `bindMethod({targetLevel: area|subject|unit|topic|kind, targetId, methodId, curveId?})` (KN-8) — default
   resolved from the target kind's `learning_realm` (KN-4).
 - `getDue(range, {level?})` → items due across levels/methods · `recordReview({objectId|levelRef, methodId,
@@ -57,9 +59,11 @@
 - **CONSUMES ← Notes & Pages:** the knowledge note page type + `entity_links` graph. `[[../notes-and-pages/contract]]`
 - **HOSTS → Flashcards** (study-method sub-context, [flashcards/](flashcards/), documented 2026-07-12): the
   spaced-rep drill + gather method for `memorize`-realm kinds (KN-4/KN-8). It is the **reference implementation
-  of the Study-Method Service framework** — Knowledge's `study_methods` registry is that seam; Flashcards
-  brings content+drill only, and rides Knowledge's generic engine (schedule/curve/review/mastery/grouping).
-  Future services (assessments/self-test/Feynman) plug in identically. `[FACT: ADR-005; flashcards/contract.md]`
+  of the Study-Method Service framework** — Knowledge's `study_methods` (a **typed specialization, `kind=study_method`,
+  of the one OS capability registry, ADR-008**, not a parallel registry — F2/D2) is that seam; Flashcards brings
+  content+drill only, and rides Knowledge's generic **review engine** (schedule/curve/review/mastery/grouping), which
+  stays Knowledge's. Future services (assessments/self-test/Feynman) plug in identically.
+  `[FACT: ADR-005; ADR-008 §3.1/§3.3a; flashcards/contract.md]`
 - **FUTURE consumers:** Skills · Languages · Finance · Health — each via its own `compound_set`.
 
 ## Events emitted (⚠ INTENDED)

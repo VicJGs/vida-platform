@@ -76,6 +76,12 @@ rules above. Source: the Spaces ADR set (ADR-006…010), which establishes Space
   own. Tags (grouping) and links (reference) are **distinct at storage**; the OS **resolves** them into one
   association surface — or keeps them separate — **on the user's choice** (a real behavioral resolution, never a
   forced merge). `[FACT: ADR-006 §3.3; ADR-007 §3.2]`
+  - **PC-2a (ADR-005↔008 registry reconciliation, 2026-07-16 · F2/D2)** — there is **one composability registry**:
+    the capability registry (ADR-008), the supertype for every pluggable unit that drives a Session + owns Effects.
+    ADR-005's `study_methods` is a **typed specialization (`kind=study_method`) of it, not a parallel registry**;
+    **Knowledge owns the review engine** (curves · `method_bindings` · `review_events` · mastery), **the foundation
+    owns the registry**. (Same shape as INT-1a: a module keeps its domain engine while a primitive's ownership sits
+    at the Spaces tier.) `[FACT: ADR-008 §3.1/§3.3a; ADR-005 §3.1(3); PC-2]`
 - **PC-3** — **Untrusted capability code runs guarded (extension-model, applied to authoring).** Shipped
   capabilities are trusted; **user-authored or imported** capabilities run under a **declare→grant→enforce**
   permission envelope inside a **no-ambient-authority sandbox** — least privilege, attachment-scoped, guarded-write
@@ -120,3 +126,4 @@ rules above. Source: the Spaces ADR set (ADR-006…010), which establishes Space
 | 2026-07-15 | documentation-blueprint · Spaces Accept (Victor) | **Folded the general extension-model principle → EX-1/EX-2** (Victor's go): ZK core unchanged by integrations; opt-in, user-owns-risk, wrapped guard; frames the two standing ZK-integration ADRs. **Community-external expansion deferred** (needs Victor's go to broaden beyond the Spaces instance). |
 | 2026-07-16 | documentation-blueprint · ADR revise (F5/D6) | **Resolved the 2026-06-13 HKDF flag** — ADR-001 §6 + `CLAUDE.md` amended to `BLAKE2b-256` (keyed), matching the authoritative code (`vault.ts`, tested). Doc-vs-code drift closed; the code was always right. |
 | 2026-07-16 | documentation-blueprint · ADR revise (F1/D1) | Added **INT-2** — the cross-module **write-discipline** invariant (single write path + deterministic-`effect_event_id` idempotency; binds shipped + user code). Grounds the guarded-write/no-double-count mechanism that ADR-004/008/010 previously delegated in a loop; mechanism owned by **ADR-004 §3.2.5**. **PC-3 reframed as INT-2's untrusted-code specialization.** |
+| 2026-07-16 | documentation-blueprint · ADR revise (F2/D2) | Added **PC-2a** — reconciles the O1 seam: **one composability registry** (ADR-008); ADR-005's `study_methods` is a `kind=study_method` **specialization**, not a parallel registry (Knowledge owns the review engine, the foundation owns the registry). ADR-008 §3.1/§3.3a (anatomy crosswalk) + ADR-005 amended-by. |

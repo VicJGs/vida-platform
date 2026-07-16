@@ -5,7 +5,7 @@
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Spaces (Personalization & Composability foundation). ADR 3 of 5 in the Spaces set. Covers the **render model + registry** of SP4; user-*authored* capability safety is [ADR-010](ADR-010-capability-authoring-security.md).
 **Tags:** architecture · extensibility · editor · personalization
-**Builds on:** [ADR-005](ADR-005-study-method-service-framework.md) (the 6-part plugin anatomy + "keep the seam, retire the instance") · [ADR-004](ADR-004-session-framework.md) §3.2.4 (permission envelope: scoped to bindings, consent for sensitive) **+ §3.2.5** (the **write-API contract + idempotency** a capability inherits — write only via documented module handlers, no double-count via deterministic `effect_event_id`; INT-2) (a capability that produces a *timed/measurable outcome* drives a **Session**, which owns its Effects, rather than duplicating the effect channel) · [ADR-006](ADR-006-spaces-foundation-universal-tags.md) (a capability is a taggable, note-linkable citizen; standalone instances live on Spaces)
+**Builds on:** [ADR-005](ADR-005-study-method-service-framework.md) (the 6-part plugin anatomy + "keep the seam, retire the instance") — **which this registry subsumes: `study_methods` is a `kind` of this one registry, not a parallel registry (F2/D2, §3.1/§3.3a)** · [ADR-004](ADR-004-session-framework.md) §3.2.4 (permission envelope: scoped to bindings, consent for sensitive) **+ §3.2.5** (the **write-API contract + idempotency** a capability inherits — write only via documented module handlers, no double-count via deterministic `effect_event_id`; INT-2) (a capability that produces a *timed/measurable outcome* drives a **Session**, which owns its Effects, rather than duplicating the effect channel) · [ADR-006](ADR-006-spaces-foundation-universal-tags.md) (a capability is a taggable, note-linkable citizen; standalone instances live on Spaces)
 **Amends:** ADR-002 / `editor.ts` — retires the closed `BlockType` union + the hand-kept `packages/editor/src/extensions/` set as the *definition of what a capability is*; introduces the capability registry (definition) + instance model. Exact tables settle at build.
 
 ---
@@ -44,9 +44,15 @@ Languages pronunciation tool. `[FACT: docs/intake/spaces.md L33-37, SP4; L152-19
 
 ## 3. Decision
 
-**3.1 One open capability registry.** Retire the closed `BlockType` union as the *definition of what a capability
-is*. A capability **registers** (like Knowledge's `study_methods`, ADR-005); the OS's block/widget set is the
+**3.1 One open capability registry — the single canonical composability registry.** Retire the closed `BlockType`
+union as the *definition of what a capability is*. A capability **registers** here; the OS's block/widget set is the
 registry's contents, not a core enum. Adding a shipped capability = registering a definition, not editing a union.
+This registry is the **supertype** for every pluggable unit that drives a Session + owns Effects — and there is
+**exactly one**. In particular, **Knowledge's `study_methods` (ADR-005) is _not_ a parallel registry; it is a typed
+specialization (`kind=study_method`) of this one** (F2/D2). A study-method service **is a capability**; its
+review-engine machinery (curves · `method_bindings` · `review_events` · mastery, KN-8/KN-10) is that kind's
+extension — exactly as an ADR-004 Session sub-type extends the Session supertype. Knowledge owns the *engine*; this
+foundation owns the *registry*. The is-a is *shown* in the anatomy crosswalk (§3.3a), not asserted.
 
 **3.2 A capability declares its render targets; the user chooses placement.** A definition declares which of
 `inline` (editor block) and `standalone` (widget / Space surface / mini-app) it supports (one or both). **Per
@@ -55,7 +61,8 @@ instance, the user chooses where to place it** among the targets it supports. Th
 registry does not force a single packaging religion. `[FACT: intake SP4 render-model — "declares render targets …
 placement is the user's per-instance choice … not hard to be on about; will lean B if we want"]`
 
-**3.3 A capability is a plugin — 6-part anatomy (mirrors ADR-005).**
+**3.3 A capability is a plugin — 6-part anatomy.** A study-method service (ADR-005) does not merely *resemble* this
+anatomy; it **instantiates** it as `kind=study_method` (§3.3a shows every ADR-005 part landing).
 1. **Identity / kind** — its registered id + kind (display, config surface).
 2. **Config (inputs)** — per-instance settings (e.g. a chart's metric, a logger's target).
 3. **Entity bindings** — which OS entities it attaches to / reads, via `session_attachments`-style links + universal
@@ -71,6 +78,28 @@ placement is the user's per-instance choice … not hard to be on about; will le
    never invents its own effect channel.
 6. **Universal properties** — a capability instance is a first-class citizen: taggable, note-linkable, attachable
    (ADR-006). Never an island.
+
+**3.3a A study-method is a `kind` of capability — the is-a, shown (F2/D2).** ADR-005 defines a study-method by its
+six parts **plus a `role` axis** (retention/gathering — ADR-005 §6 names a service as `content unit + role +
+bindings`). Not every ADR-005 concept maps to a *positional* part here; this crosswalk resolves **all** of them, and
+is honest where a mapping needs a mechanism this ADR doesn't already carry:
+
+| ADR-005 study-method concept | Capability model (this ADR) | Resolution |
+|---|---|---|
+| 1. Content unit (reviewable) | data the capability owns (its content table) + config (part 2) | the card is **owned data, not a capability**; the *method* is the capability (§3.3 part 5's BR: a reviewable ≠ a capability) |
+| 2. Run surface = a Session sub-type | part 5 **"drives a Session"** | same axis — a drill *is* the capability driving a `review_session` (ADR-004) |
+| 3. Registration (`study_methods`) | part 1 **identity/kind** — `kind=study_method` | the registration record lives in this one registry; curve/level **binding** (`method_bindings`, KN-8) is the kind's review-engine extension |
+| **`role` axis** (retention · gathering · …) | part 2 **config / kind-metadata** — declares `roles: retention\|gathering\|…` | a kind-declared config field (the open registry already carries kind-specific config), so ADR-005 §6's test lands |
+| 4a. Gather — **write** (create content units) | part 5 **emitted-signals** — a §3.2.5 guarded write to its own content table | clean: the capability write contract applied to content creation |
+| 4b. Gather — **read from OS sources** (Book quotes, notes) | **not** part-3's bound-scoped read | gather reaches *across* to unbound sources → a **user-initiated source pick** (a selection/consent act), a distinct read channel *tracked for build* — not "no new mechanism" |
+| 5. Emitted signals (`review_events`) | an **own-domain write** to Knowledge's `review_events`, **not** a §3.2.5 cross-module effect | the review-session's own-domain output; its *downstream* effects (`emit_measurement_signal`, `award_xp`, `log_time`, `surface_journal`) ride §3.2.5 (§3.2.2 catalogue) |
+| 6. Universal properties | part 6 **universal properties** | identical (tags · `entity_links` · attachments) |
+| *(none in ADR-005)* | part 4 **render targets** (`inline`/`standalone`) | **inherited eligibility** — a study-method *may* now declare render-targets; **whether/where a drill renders as a placed instance is the instance/placement model (§3.4/§3.2), settled with the first dual-target capability**, not here |
+
+**Layering.** Knowledge (a **feature** module) registering into this registry (a **foundation**, beneath N&P per
+ADR-006) is a legal **downward** dependency; the review *engine* stays up in Knowledge, only the *registration
+record* lives down here. The reverse would be an inversion and does not occur — this is what makes "the foundation
+owns the registry" safe rather than an ownership grab.
 
 **3.4 One registry spanning both packages — the home question, resolved.** The registry is the single source of a
 capability's definition; **`@vida/editor` provides the `inline` render surface** (a registered capability with an
@@ -115,9 +144,12 @@ TipTap extensions (they *become* registered `inline` definitions — a build-tim
 - **Why rejected:** every capability edits a core union + a bespoke file and is welded to one surface; no
   user-authoring is possible; reproduces the closed-enum rigidity Knowledge/ADR-005 already retired.
 
-### Option C — Two registries (one for editor blocks, one for widgets) (REJECTED)
+### Option C — Two registries of the same shape (REJECTED)
 - **Why rejected:** duplicates the anatomy, splits "the same capability, two surfaces" across two systems, and makes
-  "placement is the user's choice" impossible — the very thing SP4 asks for. One registry, two render surfaces.
+  "placement is the user's choice" impossible — the very thing SP4 asks for. One registry, N render surfaces, N kinds.
+- **This principle also folds in the ADR-005 `study_methods` case (F2/D2)** — not just editor-blocks-vs-widgets. A
+  Knowledge-owned `study_methods` registry running *parallel* to this one is exactly the two-registries-of-the-same-shape
+  split rejected here; instead `study_methods` is a `kind` of this registry (§3.1/§3.3a).
 
 ## 5. Consequences
 
