@@ -858,3 +858,103 @@ Next session:
     the two standing ZK-integration ADRs (external-data ingestion; AI/LLM) now framed by EX-1/EX-2; HKDF→BLAKE2b
     ADR-001 amendment (sign-off pending).
 ---
+
+---
+Date: 2026-07-16
+Task: documentation-blueprint
+Goal: DETOUR (before exec #8 Purposes capstone) — run a whole-set CRITIQUE GATE on all 10 ADRs to
+      confirm they are well-founded in the architecture and to surface loose ends, since Purposes
+      builds on the Spaces set (006–010). Report + verdict only; decide fixes offline.
+Completed:
+  - Ran the gate in two phases: Phase A = ADR-001…005 (base), Phase B = ADR-006…010 (Spaces set),
+    then a human-owned holistic cross-ADR synthesis. One focused reader-critic per ADR (10 total),
+    each returning line-cited findings + a SHIP/REVISE/RETHINK verdict.
+  - Result: **all 10 ADRs = REVISE** (every core decision sound; none ships clean; none needs rethink).
+  - Verified the 3 sharpest claims against source myself: wall-clock LWW mislabeled "logical"
+    (ADR-002:L124 vs L131/L1205 + ADR-003:L653-655 Date.now()); FTS5 external-content over ciphertext
+    (ADR-002:L3642-3647 over pages.content -- [E]); HKDF drift (ADR-001:L74/L76).
+  - Persisted the full report → **docs/reviews/2026-07-15-adr-critique-gate.md** (per-ADR verdicts,
+    5 throughlines, owed-tables ledger, F1–F15 fix menu, D1–D7 decisions + recommendations).
+  - NO ADR was edited (report-only, per Victor's call).
+In progress:
+  - Fix execution (F1–F15) NOT started. Victor chose "menu only" then decided to proceed to revising
+    and solving each point THIS coming session (context to be cleared first).
+Decisions:
+  - The 5 throughlines (the whole-set findings a per-ADR loop can't catch):
+    ① ADR-002 stale vs 004/005/006–010 (owns none of ~15 owed tables; amended-by header omits 003,006–010).
+    ② Guarded-write/idempotency never grounds out: ADR-010 enforces → 008 inherits → 004 §3.2.4 asserts →
+       nobody specifies the write-API contract or the dedup mechanism; shipped capabilities run OUTSIDE the
+       ADR-010 sandbox (honor-system writes). THE deepest gap.
+    ③ O1 (ADR-005 study_methods registry vs ADR-008 capability registry — same shape, boundary unstated) +
+       O2 (ADR-006 spaces.enabled_blocks vs ADR-008 block_instances — dangling both ways).
+    ④ Base correctness: HKDF drift; wall-clock LWW vs "logical" (silent skew data-loss); ADR-002
+       encryption-vs-query trio (encrypted-INTEGER money can't aggregate; indexes over ciphertext; FTS5 over ciphertext).
+    ⑤ ZK overclaims the docs walk back: ADR-009 "ZK-clean by construction" (own text admits "one real risk");
+       ADR-010 "cannot leak the vault" (true for server only; local vault S2-bounded).
+  - Fix menu (see report for full table): F1 guarded-write+idempotency (D1) · F2 O1 boundary (D2) · F3 O2 (D3) ·
+    F4 ADR-002 consolidation/header/ledger (D5) · F5 HKDF→BLAKE2b (D6 sign-off) · F6 LWW clock (D4) ·
+    F7 encryption-vs-query trio (D7 mini design-pass) · F8 ADR-009 ZK-precision · F9 ADR-010 honest-bound ·
+    F10–F15 track-for-build.
+  - Recommendations recorded per D1–D7 in the report. F5/F8/F9 are safe-anytime (independent of D1–D7).
+Next session:
+  - START REVISING — solve F1–F15 point by point. Victor's stated intent: "go to revise and solve each one."
+  - Load first: docs/reviews/2026-07-15-adr-critique-gate.md (the authoritative fix menu + owed-tables ledger).
+  - Suggested order (mine, confirm with Victor): warm up with the safe 🟡 batch (F5 HKDF sign-off, F8 ADR-009
+    wording, F9 ADR-010 wording, F4 header+ledger) → then the 🔴 architectural decisions one at a time under
+    the per-step build gate: D1/F1 (deepest — guarded-write+idempotency) → D2/F2 (O1) → D3/F3 (O2) →
+    D4/F6 (LWW clock) → D7/F7 (encryption-vs-query) → D5/F4 (ADR-002 consolidation, its own large session).
+  - Each ADR edit runs its own per-step build gate + /adr-new amend flow — nothing rewritten silently.
+  - Open sign-off gate: D6 (HKDF) needs Victor's explicit go before editing ADR-001 §Key Model + CLAUDE.md.
+---
+
+---
+Date: 2026-07-16
+Task: documentation-blueprint
+Goal: REVISE + solve the F1–F15 fix menu from the whole-set ADR critique gate ("go to revise and
+      solve each one"). Start with the safe 🟡 batch, then the deepest 🔴 architectural fix.
+Completed:
+  - **Safe 🟡 batch — DONE + committed 798c38b** (doc-only, each edit grounded in source):
+    · F5/D6 — HKDF → BLAKE2b-256(keyed) in ADR-001 §6 + header, CLAUDE.md, ADR-003 diagram; verified
+      against packages/core/src/encryption/vault.ts:78-95 (tested). Closed the 2026-06-13 business-rules
+      HKDF flag. **Victor signed off D6** after a full explanation (why keyed-BLAKE2b ≡ HKDF for two
+      uniform keys; + domain-separation forward-flag).
+    · F8 — ADR-009 "ZK-clean by construction" → "by design, enforced at capture" (all 4 instances);
+      + capability-config invariant + untrusted-imported-code forward-ref → ADR-010.
+    · F9 — ADR-010 honest two-bound wording; named granted_envelope_hash; attachment→sensitive re-consent.
+    · F4-header/D5 — ADR-002 "Amended by" now lists 003–010 + consolidation-status note → owed-tables
+      ledger; body consolidation deferred (D5).
+  - **F1/D1 — DONE + committed 83e4842** (the deepest gap, throughline ②). Full §XXVI double-gated loop:
+    PLAN → /critique → Approval 1 (D1-a/b/c ratified) → /preflight → **independent adversarial critique
+    subagent** (verdict REVISE) → closed B1–B4 + N1–N4 → Approval 2 → 7-step implement → Verify.
+    Grounded guarded-write + idempotency into **ADR-004 §3.2.5** (owner); ADR-008/010 inherit by
+    reference (loop broken). Added constitution **INT-2** (PC-3 specializes it). Feature hinge SS-6
+    grounded. Spec: docs/specs/adr-revisions/f1-guarded-write-idempotency/PLAN.md.
+In progress:
+  - none — both work blocks committed cleanly. F2–F7 + F4-body not started.
+Decisions:
+  - **D6 (F5)** ratified — code (BLAKE2b) is authoritative; docs aligned. No code change.
+  - **D1-a** — applied_effects dedup ledger is LOCAL-ONLY (cross-device rides synced output rows'
+    UNIQUE effect_event_id, not a synced ledger).
+  - **D1-b** — new **INT-2** write-discipline invariant (not stretching INT-1, which is reads only);
+    PC-3 reframed as INT-2's untrusted-code specialization.
+  - **D1-c** — CI direct-write guard for shipped code, tracked-for-build.
+  - **Key design call (F1):** effect_event_id is DETERMINISTIC (derived from the semantic event) — this
+    closes same-device double-count (local ledger) AND enables cross-device convergence (UNIQUE output
+    column), with the honest bound that the cross-device MERGE is F10's job. The adversarial gate caught
+    a real multi-device double-count (B3) that the random-UUID design would have shipped.
+  - **F10 is now load-bearing** — F1 explicitly hands it the cross-device effect-merge (named dependency,
+    not a hidden assumption).
+Next session:
+  - **START F2/D2 (O1 boundary).** Reconcile ADR-005's Knowledge-owned `study_methods` registry vs
+    ADR-008's capability registry (same shape, boundary unstated → two competing composability registries).
+    Recommendation on record (report D2): a study-method service IS a capability (one registry;
+    study_methods becomes a typed view over the capability registry) — avoids the two-registry split
+    ADR-008 itself rejects in its Option C.
+  - Run the same full §XXVI gate (it earned its keep this session — the adversarial critic pass is worth
+    repeating for each 🔴 fix).
+  - Load first: docs/reviews/2026-07-15-adr-critique-gate.md (F2/D2 + owed-tables ledger) · ADR-005 §L46
+    (study_methods registry) · ADR-008 §L48/L58/L92-94/L117-119 (capability registry + rejected Option C).
+  - Remaining after F2: F3/D3 (O2 enabled_blocks↔block_instances) → F6/D4 (LWW clock) → F7/D7
+    (encryption-vs-query) → F4-body/D5 (ADR-002 full consolidation, its own large session).
+  - D6 already signed off; no open sign-off gates for F2.
+---
