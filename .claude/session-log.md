@@ -958,3 +958,56 @@ Next session:
     (encryption-vs-query) → F4-body/D5 (ADR-002 full consolidation, its own large session).
   - D6 already signed off; no open sign-off gates for F2.
 ---
+---
+Date: 2026-07-16
+Task: documentation-blueprint
+Goal: F2/D2 — reconcile the O1 seam (ADR-005 `study_methods` registry vs ADR-008
+      capability registry: two registries of the same shape, boundary unstated),
+      third 🔴 architectural fix in the ADR revise pass. Then a clean checkpoint.
+Completed:
+  - **F2/D2 — DONE + committed (4091bd8)** via the full §XXVI double-gated loop.
+    Decision **D2=A** (Victor, at PLAN): one composability registry — ADR-008 is
+    the **supertype**; `study_methods` is a `kind=study_method` **specialization**
+    (is-a), mirroring ADR-004's Session supertype/sub-type. Knowledge owns the
+    review engine; the foundation owns the registry.
+  - Edits: **ADR-008** (§3.1 unification · §3.3 is-a · **§3.3a anatomy crosswalk**
+    + N2 layering check · §4 Option-C generalized to cover 005 · Builds-on subsumes
+    005) · **ADR-005** (§3.1(3) registration→foundation / binding→engine split ·
+    Amended-by header · §1/§3.2/§3.1(1) clauses · §6 kind-test · BR-5 content-unit-
+    is-data) · **business-rules** (PC-2a reconciliation sub-note, INT-1a-shaped +
+    Change Log) · **report** (owed-ledger From-005/008 reconciled; F2 ticked) ·
+    **feature docs** (`knowledge/contract.md:28`+`:60`, `structure-data.md:38`
+    regrounded; flashcard leaves inherit).
+  - Verify grep PASS (verbs + noun): no unqualified parallel-registry framing at any
+    tier; `registerMethod`/`listMethods` regrounded as pass-throughs; review engine
+    still Knowledge-owned. Spec: `docs/specs/adr-revisions/f2-o1-registry-boundary/PLAN.md`.
+In progress:
+  - none — F2 committed clean. F3–F7 + F4-body not started.
+Decisions:
+  - **D2 = (A)** one registry, `study_method` = kind-specialization (is-a) — the
+    only option that collapses the two registries; reuses ADR-004's supertype/sub-
+    type, not a new mechanism. (B) two-registries-compose rejected — documents the
+    seam instead of closing it, violates ADR-008 Option-C's spirit.
+  - **D2-a = PC-2a sub-note** (not a standalone PC-5) — reconciliation of two ADRs =
+    the INT-1a situation; a full invariant for a boundary-clarification is sprawl.
+  - **`review_events` is an own-domain write, NOT a §3.2.5 effect** (adversarial B4);
+    its *downstream* effects (`emit_measurement_signal`, `award_xp`…) ride §3.2.5/F1.
+  - **`study_methods` is a kind-partition, not a base table** — reconciled in the
+    report's owed-ledger; ADR-002 untouched (D5).
+  - Gate value this round was the **adversarial critique**: self-critique rubber-
+    stamped the crosswalk (the centerpiece); the fresh refuter caught B1 (dropped
+    `role` axis) + B2 (a second registration chokepoint `registerMethod` that the
+    noun-only Verify grep would have passed). Kept the pass for every 🔴 fix.
+Next session:
+  - **START F3/D3 (O2 boundary).** Reconcile ADR-006 §3.4 `spaces.enabled_blocks`
+    (on the `spaces` row, "→ ADR-008") vs ADR-008's `block_instances` — a dangling
+    forward-reference in both directions (008 never mentions `enabled_blocks`).
+  - Recommendation on record (report D3): `enabled_blocks` = allow-list (which
+    capability *types* a Space offers); `block_instances` = actual placements —
+    distinct, stated in ADR-008; OR drop `enabled_blocks` as derivable. Decide at PLAN.
+  - Run the same full §XXVI gate (adversarial critic pass worth repeating).
+  - Load first: `docs/reviews/2026-07-15-adr-critique-gate.md` (F3/D3 + owed-ledger) ·
+    ADR-006 §3.4 (`enabled_blocks`) · ADR-008 §3.2/§3.4/data-model (`block_instances`).
+  - Note the F2↔F3 seam already flagged in ADR-008 §3.3/§3.4 (instance/placement
+    model is F3's turf). No open sign-off gate for F3.
+---
