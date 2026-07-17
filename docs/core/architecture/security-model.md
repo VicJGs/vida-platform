@@ -387,7 +387,7 @@ Every column in every table is classified as **P (Plaintext)** or **E (Encrypted
 | Classification | Marker | Properties | Rule |
 |---------------|--------|-----------|------|
 | **P — Plaintext** | (unmarked) | Queryable with `WHERE`/`ORDER BY`/`JOIN`. Indexed. Still encrypted at rest by SQLCipher (L1) and in sync blobs (L3). | Structural identifiers, foreign keys, enums/status values, timestamps, booleans, sort orders, numeric aggregates needed for queries, sync metadata. |
-| **E — Encrypted** | `-- [E]` | Opaque ciphertext in SQLite. Cannot be queried with SQL. Decrypted in app memory. Searchable only via FTS5 (rebuilt on unlock). | All user-generated free text, PII, financial amounts, names, titles, descriptions, content, tags, URLs that reveal user activity. |
+| **E — Encrypted** | `-- [E]` | Opaque ciphertext in SQLite (random-nonce XChaCha20-Poly1305). **Cannot be queried, indexed, sorted, or aggregated with SQL.** Query features run only in the app after decrypt: aggregation via **decrypt-in-memory** (e.g. all Finance money charts); equality lookup via an **equality-only blind index** (keyed-BLAKE2b PRF in a P side column, domain-separated key per ADR-001 §Key Model); full-text via a **plaintext-fed standalone FTS5** (FTS-2, rebuilt on unlock). Never SQL over ciphertext. See ADR-002 §P/E + §5.19 (F7/D7). | All user-generated free text, PII, financial amounts, names, titles, descriptions, content, tags, URLs that reveal user activity. |
 
 ### Always Plaintext (P)
 

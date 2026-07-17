@@ -1074,7 +1074,60 @@ Next session:
 ---
 Date: 2026-07-17
 Task: documentation-blueprint (ADR revise pass — F1–F15)
-Goal: F6/D4 — resolve the "logical timestamp" label vs `Date.now()` wall-clock
+Goal: F7/D7 — the encryption-vs-query trio: field-level (L2) encryption
+  makes money un-aggregatable, category-index dead, and FTS5 broken, yet
+  ADR-002 aggregates/indexes/searches those columns.
+Completed:
+  - **F7/D7 shipped** — full §XXVI gate: PLAN → /critique [REVISE R1/R2/R3]
+    → Approval 1 [A1/FTS-2/blind-index] → /preflight PASSED → independent
+    adversarial critique [REVISE B1–B3 + N1–N3; core survived] → Approval 2
+    → implement → Verify PASS (caught 1 drift miss). NOT yet committed.
+  - **Decision D7 = keep-encrypted, pay-compute-cost** (consistent across all
+    three legs — they're one privacy axis: queryability vs L2 defense-in-depth):
+    (1) **money stays E**, aggregated **decrypt-in-memory** (A1); (2) **category**
+    keeps E + an **equality-only blind index** (domain-separated keyed-BLAKE2b
+    PRF in a P side column); (3) **FTS** = standalone content-less FTS5 fed
+    decrypted plaintext, **FTS-2** ephemeral/rebuilt-on-unlock. Rejected A2
+    (money→P) + FTS-1 (persisted) + external-content FTS.
+  - 3 docs edited: ADR-002 (§P/E E-row sharpened = binding rule; domain-wide
+    Finance sensitivity note; dropped 2 dead ciphertext indexes; §5.19 FTS
+    rewrite) · security-model.md (mirror E-row, Verify-caught drift) · report.
+  - Doc-only: `packages/` diff = 0. Build items (blind-index column + keyed-
+    BLAKE2b · analytics decrypt-in-memory · FTS-2 rebuild · contact-notes-from-
+    `pages`) → owed-ledger, F4-body/D5 + F10 cross-ref.
+  - Spec: docs/specs/adr-revisions/f7-d7-encryption-vs-query/PLAN.md
+In progress:
+  - none — F7 done through Verify. NOT committed yet (Victor's call).
+Decisions:
+  - **B1 (adversarial, important): the money defect is domain-wide** — the
+    report named 3 fields but ~16 E numeric fields across accounts/transactions/
+    assets/liabilities/investments/income_streams/dreams feed net-worth/portfolio/
+    income charts. A1 keeps them all E; the fix generalizes via the L168 rule +
+    a Finance sensitivity note (non-sensitive aggregates P; sensitive money
+    E+decrypt-in-memory).
+  - **B2 (the citation catch): my "HMAC_vaultsubkey" was wrong twice** — codebase
+    PRF is keyed BLAKE2b (`crypto_generichash`, ADR-001:76) NOT HMAC (training-
+    data default), and ADR-001:77's domain-separation forward-flag applies (blind
+    index = the first 2nd-key feature). Fixed → domain-separated labelled subkey.
+    Consistent with F5 (HKDF→BLAKE2b).
+  - **B3: FTS-2 "never writes to disk" was an overclaim** → "no persistent
+    plaintext tokens + torn down on lock"; OS swap + SQLite temp-spill named
+    (`PRAGMA temp_store=MEMORY`); kept honestly comparable to A1.
+  - Gate value again = the adversarial critique: self-critique caught the FTS
+    persist-vs-rebuild contradiction (R1); the fresh refuter caught the domain-
+    wide scope (B1) + the wrong crypto primitive/key-hygiene (B2). Standing
+    lesson holds across F1/F2/F3/F6/F7.
+Next session:
+  - **START F4-body/D5 (the LAST architectural fix).** ADR-002 full
+    consolidation: fold in the ~15 owed tables (from every module's amendment
+    notes) + the build items owed by F1 (`applied_effects`/`effect_event_id`),
+    F6 (HLC representation + `_sync_field_ts`), F7 (`category_bidx` blind index).
+    D5 = decide write-now vs keep-tracked; the F4-header (amenders + owed-ledger)
+    is already done (798c38b). This closes the F1–F15 revise pass.
+  - Then 🟢 F10–F15 are tracked-for-build (not doc-gated).
+  - Load first: report F4 (L85) + D5 (L106) + the owed-ledger + each module's
+    "ADR-002 amendment" TASKS.md notes.
+--- — resolve the "logical timestamp" label vs `Date.now()` wall-clock
   contradiction (ADR-002/003 + constitution) and the silent cross-device data
   loss it causes.
 Completed:

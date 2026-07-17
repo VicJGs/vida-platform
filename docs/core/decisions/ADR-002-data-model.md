@@ -166,7 +166,17 @@ Every column falls into one of two categories:
 | Classification | Marker | Properties | Rule |
 |---------------|--------|-----------|------|
 | **P — Plaintext** | (unmarked) | Queryable with `WHERE`/`ORDER BY`/`JOIN`. Indexed. Still encrypted at rest by SQLCipher (L1) and in sync blobs (L3) | Structural identifiers, foreign keys, enums/status values, timestamps, booleans, sort orders, numeric aggregates needed for queries, sync metadata |
-| **E — Encrypted** | `-- [E]` | Opaque ciphertext in SQLite. Cannot be queried with SQL. Decrypted in app memory. Searchable only via FTS5 (rebuilt on unlock) | All user-generated free text, PII, financial amounts, names, titles, descriptions, content, tags, URLs that reveal user activity |
+| **E — Encrypted** | `-- [E]` | Opaque ciphertext in SQLite (random-nonce XChaCha20-Poly1305 → not comparable/sortable/aggregatable). **Cannot be queried, indexed, sorted, or aggregated with SQL.** Query features run **only in the app after decrypt**: aggregation via **decrypt-in-memory**; equality lookup via an **equality-only blind index** (a keyed-BLAKE2b PRF of the plaintext in a P side column); full-text via a **plaintext-fed standalone FTS5** (rebuilt on unlock). Never SQL over ciphertext. | All user-generated free text, PII, financial amounts, names, titles, descriptions, content, tags, URLs that reveal user activity |
+
+**Numeric aggregates — P vs E by sensitivity (the encryption-vs-query rule, F7/D7).** A number needed for a chart is
+**P only when it is non-sensitive** (streaks, word counts, progress, `interaction_count`, measured metric `value`,
+`target_value`/`current_value` for progress charts — all correctly P above): these aggregate directly in SQL.
+**Sensitive numbers stay E and aggregate via decrypt-in-memory, never SQL `SUM`.** This applies **across the entire
+Finance domain** — `accounts` (current_balance, credit_limit, interest_rate), `transactions` (amount), `assets`
+(purchase_price, current_value, depreciation_rate), `liabilities` (original_amount, current_balance, interest_rate,
+monthly_payment), `investments` (quantity, purchase_price, current_price), `income_streams` (amount), `dreams`
+(estimated_cost). Net-worth, portfolio-value, and income charts therefore load the relevant rows, decrypt in memory,
+and aggregate in the `analytics` service — the DB never runs `SUM`/`GROUP BY` over these ciphertext columns.
 
 **Always Plaintext (P):**
 - `id` (primary key — needed for joins, lookups)
@@ -2073,7 +2083,12 @@ CREATE TABLE transactions (
 
 CREATE INDEX idx_transactions_account ON transactions(account_id);
 CREATE INDEX idx_transactions_date ON transactions(date);
-CREATE INDEX idx_transactions_category ON transactions(category);
+-- NOTE (F7/D7): NO index on `category` — it is `-- [E]` (random-nonce ciphertext), so a B-tree over it
+-- cannot serve equality/range/sort. Category-filter charts use an equality-only BLIND INDEX: a P side column
+-- `category_bidx = base64(PRF_k(lower(trim(category))))` where `k` is a DOMAIN-SEPARATED subkey (keyed BLAKE2b
+-- `crypto_generichash` + a personalization label, per ADR-001 §Key Model forward-flag — NOT the Vault Key reused).
+-- Leak = category equality/frequency to a local-DB reader (never the server; L3 encrypts the whole row blob).
+-- The `category_bidx` column + its keyed derivation are build-phase (owed-ledger).
 ```
 
 ### Assets
@@ -2244,7 +2259,9 @@ CREATE TABLE contacts (
   _sync_hash      TEXT
 );
 
-CREATE INDEX idx_contacts_name ON contacts(first_name, last_name);
+-- NOTE (F7/D7): NO index on `first_name, last_name` — both are `-- [E]` (random-nonce ciphertext), so a B-tree
+-- cannot sort or match them. Contact name sort/search is a display concern → decrypt-in-memory sort, or the
+-- plaintext-fed FTS5 (§5.19). NO name blind index (names are too sensitive — equality-leak of names is unacceptable).
 ```
 
 ### Contact Events
@@ -3645,46 +3662,52 @@ CREATE TABLE ics_synced_events (
 
 ### 5.19 Full-Text Search (FTS5 Virtual Tables)
 
-These are **device-local only** (not synced). Rebuilt on DB unlock after decryption.
+These are **device-local only** (not synced).
+
+**Why standalone, not external-content (F7/D7).** The searchable columns (`pages.content`, `pages.title`,
+`tasks.description`, `contacts.first_name/last_name`, …) are all `-- [E]` — random-nonce ciphertext. An
+**external-content** FTS5 table (`content='<table>'`) indexes the base table's **stored** values, i.e. the ciphertext
+— useless for search — and the earlier schema also referenced **phantom columns** (`content_text` never existed on
+`pages`; `contacts` has no `notes` column — notes live in `pages` per the no-inline-notes convention). So the FTS
+tables are **standalone content-less** FTS5 (no `content=`), populated from **decrypted plaintext** fed by the app.
+
+**Storage model = FTS-2 (ephemeral, rebuilt on unlock).** The index is built into a **non-persistent** store from
+decrypted plaintext when the vault unlocks and **torn down on lock** — so no searchable plaintext tokens are kept in
+the app's persistent storage, preserving the E fields' at-rest defense-in-depth. Honestly bounded: this is **not** a
+literal "never touches disk" — OS swap/paging of in-memory pages and SQLite temp-spill are residual (the latter
+mitigated by `PRAGMA temp_store = MEMORY`; swap is an OS-level residual shared by any decrypt-to-use path). The `id`
+maps hits back to the source row.
 
 ```sql
--- Notes full-text search
+-- Notes full-text search (standalone; fed decrypted pages.title + pages.content)
 CREATE VIRTUAL TABLE fts_pages USING fts5(
   id UNINDEXED,
-  title,
-  content_text,
-  content='pages',
-  content_rowid='rowid'
+  title,          -- fed decrypted (pages.title is [E])
+  content_text    -- fed decrypted (from pages.content, which is [E])
 );
 
--- Tasks search
+-- Tasks search (fed decrypted tasks.title + tasks.description)
 CREATE VIRTUAL TABLE fts_tasks USING fts5(
   id UNINDEXED,
   title,
-  description,
-  content='tasks',
-  content_rowid='rowid'
+  description
 );
 
--- Contacts search
+-- Contacts search (fed decrypted; `notes` pulled from the contact's `pages` note, not a contacts column)
 CREATE VIRTUAL TABLE fts_contacts USING fts5(
   id UNINDEXED,
   first_name,
   last_name,
   company,
-  notes,
-  content='contacts',
-  content_rowid='rowid'
+  notes           -- from the contact's pages-note (no contacts.notes column exists)
 );
 
--- Courses search
+-- Courses search (fed decrypted course.title + description + provider)
 CREATE VIRTUAL TABLE fts_courses USING fts5(
   id UNINDEXED,
   title,
   description,
-  provider,
-  content='courses',
-  content_rowid='rowid'
+  provider
 );
 ```
 
