@@ -1011,3 +1011,62 @@ Next session:
   - Note the F2↔F3 seam already flagged in ADR-008 §3.3/§3.4 (instance/placement
     model is F3's turf). No open sign-off gate for F3.
 ---
+
+---
+Date: 2026-07-17
+Task: documentation-blueprint (ADR revise pass — F1–F15)
+Goal: F3/D3 — close O2, the dangling forward-reference between ADR-006's
+  `spaces.enabled_blocks` and ADR-008's `block_instances`.
+Completed:
+  - **F3/D3 shipped (commit 0a5f8be)** — full §XXVI gate: PLAN → /critique
+    [REVISE R1/R2/R3] → Approval 1 [D3/D3-a/D3-b/D3-c] → /preflight PASSED →
+    independent adversarial critique [REVISE B1–B6; B4/B7 held; core survived]
+    → Approval 2 [B2 refinement signed off] → implement → Verify PASS.
+  - **Decision D3 = keep both, distinct** (rejected "drop as derivable"):
+    `enabled_blocks` = the Space's authored offered-capability **palette**
+    (a set of capability *definition* refs, ADR-006 §3.4); `block_instances`
+    = the standalone **placements** (ADR-008). Render-target-agnostic
+    membership (form = §3.2 per-instance choice); **teeth-by-surface**
+    (standalone drawn from the palette [enforced]; inline additive/union-safe).
+  - Dangling ref closed **both directions**: ADR-006 §3.4 new palette paragraph
+    + binding notation; ADR-008 §3.4/data-model reciprocal + "/view" string
+    struck + §5 "menu ≠ placements"; ADR-009 §3.1 terminology tie; owed-ledger
+    (junction under 006, block_instances=placements under 008) + F3 entry;
+    spaces/README.md L10+L44. ADR-002 body + packages/ diff = 0 (D5, zero code).
+  - Spec: docs/specs/adr-revisions/f3-o2-enabled-blocks-block-instances/PLAN.md
+In progress:
+  - none — F3 committed clean. F6/F7/F4-body not started.
+Decisions:
+  - **D3 = (A) keep-both-distinct.** Grounded (2 legs): SP6 (enabled Blocks
+    are a Space constituent) + SP5/ADR-009 (a forked template Space carries the
+    set with zero placements → not a projection of placements). "Drop as
+    derivable" is dead on the evidence.
+  - **D3-c teeth-by-surface (B2, the adversarial save).** "Additive, not a
+    restriction" alone left the field cosmetic (global editor base always in the
+    union). Split: standalone = enforced add-menu (single-surface, no conflict);
+    inline = additive union (multi-Space pages need it). Gives the field a
+    testable meaning without reversing Victor's D3-c.
+  - **D3-a storage → F10.** enabled_blocks = a Space↔definition junction,
+    row-based lean (ADR-006 §3.3 sync-robustness precedent); exact sync/storage
+    strategy is F10's, DDL build-phase (D5). Owed-ledger records it.
+  - **D3-b no new PC.** The enforced placement rule is subsystem-local
+    (Spaces), not platform-inherited like PC-2a — argued, not asserted (B6).
+  - Gate value again = the **independent adversarial critique**: self-critique's
+    R1–R3 were structural; the fresh refuter caught B1 (an SP4 [FACT] that was
+    really an inference — the recurring defect class), B2 (toothless field), and
+    B3 (refutable "not derivable" phrasing). Same lesson as F2.
+Next session:
+  - **START F6/D4 (LWW clock).** Resolve ADR-002's "Logical timestamp for LWW"
+    comment (L124) contradicting `Date.now()` wall-clock (L131/L1205 +
+    ADR-003:L653-655); constitution promises logical (CLAUDE.md:L186). No
+    Lamport/hybrid clock exists → cross-device skew silently loses writes
+    (corrupts data, not just docs). Recommendation on record (D4): adopt a
+    hybrid logical clock (or server-timestamp reconciliation) + keep the
+    "logical" wording honest.
+  - Run the same full §XXVI gate (adversarial critic pass worth repeating).
+  - Load first: docs/reviews/2026-07-15-adr-critique-gate.md (F6/D4 + throughline
+    ④) · ADR-002 §sync-metadata (L124/L131/L1205) · ADR-003 §L653-655 ·
+    CLAUDE.md:L186. Note F6 is 🟡 correctness (not capstone-blocking like F1–F3
+    were) but load-bearing for real multi-device data integrity.
+  - Then F7/D7 (encryption-vs-query trio) → F4-body/D5 (ADR-002 consolidation).
+---
