@@ -134,7 +134,7 @@ Sync blob structure (from ADR-002 §4.5):
 └─────────────────────────────────────────────────────┘
 ```
 
-**Note on `field_timestamps`:** This is the key addition for field-level LWW (see §6). Each mutable field's last-modified timestamp is stored in the header so the receiving client can perform per-field merge without decrypting the remote blob first for comparison. Field names are NOT sensitive — they are schema-defined column names, not user content.
+**Note on `field_timestamps`:** This is the key addition for field-level LWW (see §6). Each mutable field's last-modified **HLC stamp** (§6.1) is stored in the header so the receiving client can perform per-field merge without decrypting the remote blob first for comparison. Field names are NOT sensitive — they are schema-defined column names, not user content. The server stores these values as-is in the `blob_index` (§9.4) and only ever compares them; the HLC's storage encoding (§6.1) must keep them comparable, or the header + `blob_index` change together at build.
 
 ### 4.2 Editor Content — Per-Page Yjs Documents
 
@@ -315,10 +315,46 @@ GET  /api/sync/pull-yjs?since={timestamp}
 
 For all non-page tables (and page metadata), conflicts are resolved using **field-level Last-Writer-Wins**. Instead of comparing a single row-level timestamp, each mutable field has its own timestamp.
 
+#### The clock: Hybrid Logical Clock (HLC)
+
+Every LWW timestamp in this protocol — the row-level `_sync_lww_ts` **and** every value in the field-level `_sync_field_ts` map — is produced by a **Hybrid Logical Clock (HLC)**, not a bare wall clock. This is what the word "logical" in the constitution (business-rules.md SU-2) and in ADR-002 §3 means: a clock that orders by **causality**, not by each device's uncorrected `Date.now()`.
+
+**Why not a bare wall clock.** LWW picks the write with the higher timestamp. If device A's clock runs ahead of B's by δ, an edit made on A *earlier in real time* can carry a higher timestamp than a *later* edit on B — so B's newer write is **silently discarded** with no conflict surfaced. On a single-user, multi-device, offline-resilient vault this still bites: offline devices accumulate edits, clocks drift / DST-jump / get set by hand, a device rejoins after a week. The loss is silent and permanent — it violates the "all writes succeed locally" promise. An HLC removes this: on every merge the receiving clock jumps past any remote time it observes, so a skewed clock self-corrects the moment it syncs.
+
+**An HLC stamp is a pair `(physical_ms, counter)`.** The canonical update rules (Kulkarni/Demirbas):
+
+```
+Local event (write / send):
+  l'  = max(last_l, pt)           where pt = Date.now()  (wall clock, may jump backward)
+  c'  = (l' == last_l) ? last_c + 1 : 0
+  store (l', c')
+
+Receive / merge a remote stamp (l_msg, c_msg):
+  l'  = max(last_l, l_msg, pt)
+  if   l' == last_l == l_msg :  c' = max(last_c, c_msg) + 1
+  elif l' == last_l          :  c' = last_c + 1
+  elif l' == l_msg           :  c' = c_msg + 1
+  else                       :  c' = 0            // physical time advanced past both
+  store (l', c')
+```
+
+The `max(last_l, …)` in the local rule handles a **backward wall-clock jump** (the logical part never regresses). The receive rule is what yields causal ordering: if write X is observed before write Y is produced, then `hlc(X) < hlc(Y)`.
+
+**Compare** two stamps lexicographically: `(physical, counter)`, then — on a full tie — **the lexicographically-higher `_sync_device_id` (TEXT) wins**. Because device ids are unique and totally ordered, this makes the comparison a **total order** over all writes, so every device converges on the same winner (see the tie-break note under "How it works").
+
+**Scope.** The HLC governs **structured LWW only** (`_sync_lww_ts` + `_sync_field_ts`, including `deleted_at` — see §6.3). Editor content uses **Yjs CRDT (§6.2), which is timestamp-free** — the HLC does not touch page content.
+
+**Storage representation (build-phase).** SQLite `INTEGER` is a signed 64-bit (`i64`) and could hold a packed HLC, **but** Drizzle/JS reads it into a `number` (float64), capped at `Number.MAX_SAFE_INTEGER = 2⁵³`. A naive pack `physical_ms × 2ᵏ + counter` breaks: `physical_ms` today ≈ 2⁴⁰·⁷, so even a 12-bit counter overflows the JS-safe range by ~2039, and a 16-bit counter overflows today. So the encoding is a real build-phase choice — a zero-padded sortable **string**, a **`BigInt`-typed** column, or **two columns** (`physical`, `counter`) — and it is **coupled to the wire header** (`SyncBlobHeader.sync_lww_ts` / `field_timestamps`) and the server **`blob_index`** (§9.4), which must stay comparable or change together.
+
+**Interim state (not yet built).** The HLC/field-LWW merge logic is not implemented — `packages/core/src/sync/` holds only empty stubs (`crdt.ts`, `queue.ts`, `resolver.ts`); the `mergeFieldLWW`/`hlc.ts` below are the *proposed* targets. Today `packages/core/src/db/repository.ts` stamps `_sync_lww_ts = Date.now()` (interim v0), and the shared type `packages/types/src/sync.ts` still comments the field "Logical timestamp" — both are corrected in the build edit that introduces the HLC.
+
 **How it works:**
 
 ```
 Scenario: User edits a task on two devices while offline.
+(The T-values below are HLC stamps, shown as scalars for readability; because they
+ are HLC — not raw Date.now() — a skewed clock is corrected on merge, so the compare
+ reflects causal order, not whichever device's wall clock happened to run faster.)
 
 Device A (offline): Changes title at T=100
   Local field_timestamps: { title: 100, status: 50, description: 30 }
@@ -344,7 +380,7 @@ Device B receives Device A's blob:
 // packages/core/src/sync/field-lww.ts
 
 interface FieldTimestamps {
-  [fieldName: string]: number  // Unix ms
+  [fieldName: string]: number  // HLC stamp (see "The clock: Hybrid Logical Clock" above), NOT raw Unix ms
 }
 
 /**
@@ -356,7 +392,9 @@ function mergeFieldLWW(
   localFieldTs: FieldTimestamps,
   remoteRow: Record<string, unknown>,
   remoteFieldTs: FieldTimestamps,
-  immutableFields: string[]  // id, created_at, _sync_id — never merged
+  immutableFields: string[],  // id, created_at, _sync_id — never merged
+  localDeviceId: string,      // for the global tie-break on equal HLC stamps
+  remoteDeviceId: string,
 ): { merged: Record<string, unknown>; mergedTs: FieldTimestamps; changed: boolean } {
   const merged = { ...localRow }
   const mergedTs = { ...localFieldTs }
@@ -365,15 +403,23 @@ function mergeFieldLWW(
   for (const field of Object.keys(remoteFieldTs)) {
     if (immutableFields.includes(field)) continue
 
-    const remoteTs = remoteFieldTs[field] ?? 0
-    const localTs = localFieldTs[field] ?? 0
+    const remoteTs = remoteFieldTs[field] ?? 0  // HLC stamp
+    const localTs = localFieldTs[field] ?? 0     // HLC stamp
 
-    if (remoteTs > localTs) {
+    // Compare HLC stamps; on an exact tie, break globally by device id so BOTH
+    // devices pick the SAME winner (lexicographically-higher _sync_device_id).
+    // This replaces the old "keep local" rule, which was deterministic per-device
+    // but NOT globally — two devices setting the same field to different values at
+    // the same stamp would diverge permanently.
+    const remoteWins =
+      remoteTs > localTs ||
+      (remoteTs === localTs && remoteDeviceId > localDeviceId)
+
+    if (remoteWins) {
       merged[field] = remoteRow[field]
       mergedTs[field] = remoteTs
       changed = true
     }
-    // If equal timestamps: keep local (arbitrary but deterministic tie-break)
   }
 
   return { merged, mergedTs, changed }
@@ -385,14 +431,14 @@ function mergeFieldLWW(
 
 **Fields excluded from field-level tracking (managed by sync engine):**
 - `_sync_version`, `_sync_device_id`, `_sync_lww_ts`, `_sync_status`, `_sync_hash`
-- `updated_at` (set to max of merged timestamps after merge)
+- `updated_at` (a user-facing wall-clock `Date.now()` value — DATA-2 Unix ms; set to the wall-clock time of the merge, **not** the HLC max, so HLC stamps never pollute the human-readable "last modified" column)
 
 **Schema change — `_sync_field_ts` column:**
 
 Every syncable table gains one additional column:
 
 ```sql
-_sync_field_ts TEXT  -- JSON: { "title": 1741856400000, "status": 1741856390000, ... }
+_sync_field_ts TEXT  -- JSON: { "title": <hlc>, "status": <hlc>, ... } — HLC stamps, not raw Unix ms (see "The clock: HLC" above). Final encoding is build-phase (string / BigInt / two-column, §6.1) and coupled to the §9.4 blob_index.
 ```
 
 This stores the per-field timestamps locally. The same data is also included in the sync blob header (§4.1) so that the receiving client can compare without decrypting.
@@ -416,7 +462,7 @@ The Yjs document is the authoritative source for page content. The `content` col
 | Same field edited on two devices offline | Field-level LWW: highest timestamp wins |
 | Different fields edited on two devices | Both changes preserved (field-level merge) |
 | Row created on two devices with same UUIDv7 | Extremely unlikely (UUIDv7 includes random bits). If it happens: row_id collision detected, second device regenerates ID |
-| Row deleted on one device, edited on another | Delete wins if `deleted_at` timestamp > edit timestamp. Otherwise edit wins and `deleted_at` is cleared |
+| Row deleted on one device, edited on another | Ordered by **HLC field-timestamps**, not the raw wall-clock `deleted_at`: `deleted_at` is a field-tracked mutable field, so it carries its own HLC stamp in `_sync_field_ts`. Delete wins if `_sync_field_ts['deleted_at']` > the edited field's HLC stamp; otherwise the edit wins and `deleted_at` is cleared. (Soft-delete is thus plain field-level LWW under the same clock — no separate delete-ordering rule, no residual wall-clock comparison that skew could corrupt.) |
 | Page metadata edited + content edited simultaneously | Independent sync units — no conflict possible between them |
 | Attachment row metadata vs. binary blob | Independent pipelines — no conflict possible |
 
@@ -650,9 +696,9 @@ CREATE TABLE attachment_index (
 │       ▼                                                     │
 │  Update _sync_* columns:                                    │
 │    _sync_version++                                          │
-│    _sync_lww_ts = Date.now()                                │
+│    _sync_lww_ts = hlc.now()          // HLC, not Date.now() │
 │    _sync_status = 'pending'                                 │
-│    _sync_field_ts[changedField] = Date.now()                │
+│    _sync_field_ts[changedField] = hlc.now()   // HLC stamp  │
 │    _sync_hash = SHA-256(JSON.stringify(row))                │
 │       │                                                     │
 │       ▼                                                     │
@@ -1030,10 +1076,10 @@ Export runs entirely client-side. No server endpoint needed.
 This ADR introduces one new column to every syncable table:
 
 ```sql
-_sync_field_ts TEXT  -- JSON object mapping field names to Unix ms timestamps
+_sync_field_ts TEXT  -- JSON object mapping field names to HLC stamps (see §6.1 "The clock: HLC")
 ```
 
-This column is classified as **P (plaintext)** — it contains only schema-defined field names and timestamps, no user content.
+This column is classified as **P (plaintext)** — it contains only schema-defined field names and timestamps, no user content. The value type is an **HLC stamp**, not raw Unix ms; the exact encoding (string / BigInt / two-column) is build-phase and coupled to the §9.4 `blob_index` (§6.1).
 
 ---
 

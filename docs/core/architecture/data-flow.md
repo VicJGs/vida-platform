@@ -55,9 +55,9 @@ User action (button click, form submit, inline edit)
     7c. Encrypt E-classified fields (encryptRow)
     7d. Update sync metadata:
         - _sync_version++ (increment)
-        - _sync_lww_ts = Date.now()
+        - _sync_lww_ts = Date.now()   (interim v0; target = HLC stamp, ADR-003 §6.1)
         - _sync_status = 'pending'
-        - _sync_field_ts[changedField] = Date.now() (only changed fields)
+        - _sync_field_ts[changedField] = Date.now() (only changed fields; interim v0 → HLC, ADR-003 §6.1)
         - _sync_hash = SHA-256 of pre-encryption row
     7e. INSERT or UPDATE in SQLite
     |
@@ -205,7 +205,7 @@ Every syncable table has sync metadata columns managed automatically by the repo
 | `_sync_id` | TEXT (UUIDv4) | Repository `create()` | Stable sync identifier, set once |
 | `_sync_version` | INTEGER | Repository `create()`, `update()` | Incremented on every write |
 | `_sync_device_id` | TEXT | Repository `create()`, `update()` | Device that last modified this row |
-| `_sync_lww_ts` | INTEGER | Repository `create()`, `update()` | `Date.now()` — used for LWW conflict resolution |
+| `_sync_lww_ts` | INTEGER | Repository `create()`, `update()` | `Date.now()` (interim v0) — used for LWW conflict resolution; target = HLC stamp (causal, device-id tie-break) per ADR-003 §6.1 |
 | `_sync_status` | TEXT | Repository + sync engine | `'pending'` on write, `'synced'` after server ACK |
 | `_sync_hash` | TEXT | Repository `create()`, `update()` | SHA-256 of pre-encryption row for change detection |
 | `_sync_field_ts` | TEXT (JSON) | Repository `update()` | Per-field timestamps for field-level LWW |

@@ -1070,3 +1070,68 @@ Next session:
     were) but load-bearing for real multi-device data integrity.
   - Then F7/D7 (encryption-vs-query trio) → F4-body/D5 (ADR-002 consolidation).
 ---
+
+---
+Date: 2026-07-17
+Task: documentation-blueprint (ADR revise pass — F1–F15)
+Goal: F6/D4 — resolve the "logical timestamp" label vs `Date.now()` wall-clock
+  contradiction (ADR-002/003 + constitution) and the silent cross-device data
+  loss it causes.
+Completed:
+  - **F6/D4 shipped** — full §XXVI gate: PLAN → /critique [REVISE R1/R2/R3] →
+    Approval 1 [D4/D4-a…D4-d] → /preflight PASSED → independent adversarial
+    critique [REVISE B1–B4 + N1–N4; core HLC survived] → Approval 2 [B3
+    delete-scope signed off] → implement → **Verify PASS** (caught 2 drift
+    misses). NOT yet committed — awaiting Victor's go.
+  - **Decision D4 = adopt a Hybrid Logical Clock (HLC)** for every LWW stamp
+    (`_sync_lww_ts` + all `_sync_field_ts` values): orders by causality (skew
+    self-corrects on merge), 100% client-side (local-first + ZK + dumb relay
+    intact), makes the constitution's "logical" promise TRUE (SU-2 sharpened,
+    no new PC). Rejected (B) server-timestamp (breaks dumb-relay) + (C) honest
+    wall-clock (ships silent loss).
+  - **D4-b global device-id tiebreak** (lexicographic TEXT) replaces §6.1's
+    per-device "keep local" — closed a permanent-divergence path.
+  - **BR-9 (adversarial B3): deletes ride the same clock** — §6.3 delete-vs-edit
+    now orders by the HLC field-timestamp (`_sync_field_ts['deleted_at']`), not
+    raw wall-clock `deleted_at` (same skew hole, was left open).
+  - 6 docs edited: ADR-003 §6.1 (HLC subsection = clock's home; full 4-case
+    receive rule; `mergeFieldLWW` snippet; §6.3; §10.1; §4.1; §17) · ADR-002 §3
+    (L134/L141/L143) + §Sync-Flow · business-rules SU-2 · CLAUDE.md L186 ·
+    data-flow.md (as-built, annotated interim→HLC) · report F6 entry.
+  - Doc-only (D4-d): `packages/` diff = 0. HLC module + `ts()`→`hlc.now()` +
+    field-lww merge + **storage representation** (string/BigInt/two-column —
+    NOT a free INTEGER pack, couples to wire header + `blob_index`) + `types/
+    sync.ts:23` label fix = build-phase, tracked in report, cross-ref F10.
+  - Spec: docs/specs/adr-revisions/f6-d4-lww-clock/PLAN.md
+In progress:
+  - none — F6 done through Verify. NOT committed yet (Victor's call).
+Decisions:
+  - **R1 (self-critique, real error caught): the packing math was wrong** —
+    `physical_ms × 2ᵏ` overflows JS's 2⁵³ safe-int *today* (physical_ms ≈ 2⁴⁰·⁷),
+    not year 6000. So "packs into the existing INTEGER for free" is dead; the HLC
+    representation is a genuine build-phase choice coupled to the wire + server
+    surface. This *strengthened* the D5 deferral.
+  - **B1/B2 (adversarial): representation is not client-only** — the LWW stamp is
+    on the plaintext wire header (`types/sync.ts:45,49`) + server `blob_index`
+    (§9.4); a string/two-column encoding changes both → "adds no visibility" made
+    contingent; honest F10-surface coupling stated.
+  - **B4 (adversarial): `types/sync.ts:23` carries the same "Logical" comment** —
+    NOT edited (would invert the lie while code still stamps Date.now());
+    inventoried as interim, fixed at the build swap. Zero code held.
+  - Gate value again = the **independent adversarial critique**: self-critique
+    caught the R1 math error; the fresh refuter caught B1 (server/wire coupling),
+    B3 (the delete-path skew hole — a real residual in the failure class F6
+    exists to close), and B4. Same standing lesson as F1/F2/F3: self-critique
+    catches structural/precision gaps; the fresh refuter is where the
+    load-bearing catches come from.
+Next session:
+  - **START F7/D7 (encryption-vs-query trio).** ADR-002: encrypted-INTEGER money
+    fields can't be SQL-aggregated for charts; indexes over randomized-nonce
+    ciphertext can't function; FTS5 external-content indexes ciphertext +
+    references phantom columns. D7 = a small design-pass (decrypt-in-memory
+    aggregation; blind-index or plaintext-derived FTS column). Own mini-intake.
+  - Run the same full §XXVI gate (adversarial pass worth repeating).
+  - Load first: report throughline ④ (L63) + F7 (L88) + D7 (L108) · ADR-002
+    §encryption + the cited fields (current_balance L2011, amount L2040,
+    dreams.estimated_cost L1920, FTS5 L3646). Then F4-body/D5 (ADR-002 consolidation).
+---

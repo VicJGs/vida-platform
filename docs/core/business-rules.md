@@ -26,8 +26,10 @@ these and must comply. Each rule is a FACT cited to its source; nothing here is 
 ## Single-User, Multi-Device (SU)
 - **SU-1** — Vida is single-user across multiple devices — **not** collaborative. No sharing, no team features,
   no real-time multi-user editing. `[FACT: CLAUDE.md "Single-user, multi-device"; ADR-003]`
-- **SU-2** — Structured data syncs via field-level **LWW** (last-writer-wins, logical timestamps); editor content
-  syncs via **Yjs CRDT** per page. `[FACT: ADR-003 §Sync]`
+- **SU-2** — Structured data syncs via field-level **LWW** (last-writer-wins). "Logical timestamps" here means a
+  **hybrid logical clock (HLC)** — stamps that order by **causality**, not by each device's raw wall clock — with an
+  exact-tie broken by the lexicographically-higher device id; this is what stops cross-device clock skew from silently
+  discarding a newer write. Editor content syncs via **Yjs CRDT** per page. `[FACT: ADR-003 §6.1; ADR-002 §3]`
   ⚠ Drift note: legacy architecture.md says "Automerge" for structured data — ADR-003 uses LWW. ADR authoritative.
 
 ## Encryption Boundaries (EN)

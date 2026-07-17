@@ -131,16 +131,16 @@ Every **syncable** table includes these columns for LWW (Last-Writer-Wins) confl
 _sync_id        TEXT NOT NULL UNIQUE,  -- UUIDv4, stable sync identifier
 _sync_version   INTEGER NOT NULL DEFAULT 1,
 _sync_device_id TEXT NOT NULL,         -- Device that last modified this row
-_sync_lww_ts    INTEGER NOT NULL,      -- Logical timestamp for LWW resolution
+_sync_lww_ts    INTEGER NOT NULL,      -- Logical timestamp for LWW: an HLC (hybrid logical clock) stamp, NOT raw Date.now(). Encoding is build-phase (ADR-003 §6.1); INTEGER shown as the interim placeholder.
 _sync_status    TEXT NOT NULL DEFAULT 'pending'
                 CHECK (_sync_status IN ('pending','synced','conflict')),
 _sync_hash      TEXT                   -- SHA-256 of row content for change detection
 ```
 
 **How sync works:**
-1. On write: increment `_sync_version`, set `_sync_lww_ts = Date.now()`, set `_sync_status = 'pending'`, compute `_sync_hash`
+1. On write: increment `_sync_version`, set `_sync_lww_ts = hlc.now()` (a **hybrid logical clock** stamp, not raw `Date.now()` — see ADR-003 §6.1; the current code stamps `Date.now()` as the interim v0 until the sync engine lands), set `_sync_status = 'pending'`, compute `_sync_hash`
 2. On push: serialize row to JSON, encrypt with Vault Key, send blob to server
-3. On pull: decrypt blob, compare `_sync_lww_ts` — highest timestamp wins (LWW)
+3. On pull: decrypt blob, compare `_sync_lww_ts` — **highest HLC stamp wins** (LWW); on an exact tie, the lexicographically-higher `_sync_device_id` wins (deterministic global tie-break, ADR-003 §6.1)
 4. On resolve: set `_sync_status = 'synced'`
 
 **Tables that are NOT synced** (device-local only): `sync_queue`, `fts_*` virtual tables, `app_state`.
@@ -1212,7 +1212,7 @@ When a row is pushed to the sync server, the **entire row** (both P and E fields
 ```
 PUSH (client → server):
 1. Client modifies row
-2. Set _sync_version++, _sync_lww_ts = Date.now(), _sync_status = 'pending'
+2. Set _sync_version++, _sync_lww_ts = hlc.now() (HLC stamp; interim code stamps Date.now() — ADR-003 §6.1), _sync_status = 'pending'
 3. For E fields: they are already encrypted in SQLite — decrypt first
 4. Serialize full row to JSON (all fields, plaintext values)
 5. Compress with LZ4

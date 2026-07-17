@@ -183,7 +183,7 @@ This is NOT just another module — it is the **unifying layer** of the entire p
 - **FTS5** virtual tables for full-text search (rebuilt on vault unlock)
 
 ### ADR-003: Sync Protocol
-- **Structured data**: LWW (Last-Writer-Wins) with logical timestamps — sufficient for single-user multi-device
+- **Structured data**: LWW (Last-Writer-Wins) with logical timestamps — a **hybrid logical clock (HLC)** (causal ordering, device-id tie-break), not raw wall-clock, so cross-device skew can't silently drop writes — sufficient for single-user multi-device
 - **Editor content**: Yjs CRDT per page for conflict-free offline merge
 - **Transport**: Encrypted blob push/pull over WebSocket (with polling fallback)
 - **Sync unit**: Each entity syncs as an individually encrypted blob
