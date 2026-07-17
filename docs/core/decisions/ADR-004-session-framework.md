@@ -120,7 +120,7 @@ these handlers); shipped code is bound by the same single-write-path invariant, 
 are the only exported cross-module write surface) + code review + a build-time **CI guard** that fails if a module
 writes another module's tables directly. There is **no honor-system tier** for the contract.
 
-**Owed schema** (build-phase — tracked in ADR-002's owed-tables ledger, no DDL into its stale body per D5):
+**Owed schema** (build-phase — tracked in ADR-002's durable owed-tables ledger **§5.20**, no DDL into its stale body per D5):
 `applied_effects` (local-only); a deterministic `effect_event_id` on effect-triggering rows; a UNIQUE `effect_event_id`
 on each effect **output** row; domain natural keys where they exist.
 

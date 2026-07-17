@@ -14,7 +14,7 @@
 - [ADR-009](ADR-009-templates-fork-on-instantiate.md) (2026-07-15) — adds a light `templates` store (user-saved bundles).
 - [ADR-010](ADR-010-capability-authoring-security.md) (2026-07-15) — adds `capability_grants` (incl. `granted_envelope_hash`).
 
-**⚠ Consolidation status (D5 — 2026-07-16, F4).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5 the consolidated re-write is **deferred to its own build-phase session** (it is large — ~15 tables) — it is **not** silently pending. Until then the amended tables live in their amending ADRs and are tracked in the **owed-tables ledger** — `docs/reviews/2026-07-15-adr-critique-gate.md` (§ "throughline ①"). Read that ledger alongside the body so the divergence stays visible.
+**⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…010 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. *(This supersedes the interim pointer to `docs/reviews/2026-07-15-adr-critique-gate.md` § "throughline ①", which remains the decision's audit record.)*
 
 ---
 
@@ -3713,6 +3713,97 @@ CREATE VIRTUAL TABLE fts_courses USING fts5(
 
 ---
 
+### 5.20 Pending Consolidation — the owed-tables ledger (D5, 2026-07-17)
+
+> **Status: D5-a = TRACK (ratified 2026-07-17).** The §5 schema above is the **pre-amendment v1**. Rather than rewrite
+> it now (the true owed set is large and much of it is build-phase-deferred — see below), this section is the **durable
+> owed-tables ledger**: the single scoped checklist the build-phase schema session (which also writes the Drizzle
+> schema in `packages/core`) consolidates into §5. It supersedes the interim pointer to the review-doc ledger. Source
+> of the decision: `docs/reviews/2026-07-15-adr-critique-gate.md` (F4/D5) + `docs/specs/adr-revisions/f4-body-d5-adr002-consolidation/PLAN.md`.
+>
+> ADR-002 owes schema changes from **two streams**: **(i)** the ADR revise pass (ADR-003 §17 + ADR-004…010 `Amends:`
+> lines + the F1/F6/F7 build columns) — **fully enumerated below**; and **(ii)** the documentation-blueprint module
+> tier — the `[INTENT]`-marked owed amendments in **all 19 `docs/features/*/structure-data.md` docs** (the per-module
+> documented target schema) — **named below, not enumerated**, because table-by-table enumeration of the full v2 module
+> schema *is* the build-phase session this ledger defers.
+
+**Readiness legend:** ✓ fully-specified (drop-in) · ⏳ build-deferred (shape open in-source) · ↔ to-verify at build.
+
+#### Stream (i) — ADR revise-pass owed set (enumerated)
+
+**RETIRE** (superseded — remove from §5 at the build rewrite; reconcile every remaining reference: index, FK, §7
+count, §8 map):
+
+| Retire | Stale §5 location | Superseded by |
+|--------|-------------------|---------------|
+| flat `study_sessions` (Learning-only) | §5.10 (Study Sessions) | ADR-004 `sessions` spine + `study_sessions` **redefined** as a 1:1 extension |
+| §5.11 flat Study Planner (`study_availability`, `availability_exceptions`, `study_plan_batches`, `scheduled_study_sessions`, `session_templates`) | §5.11 | ADR-004 `planned_blocks` + aggregator engine (↔ per-table disposition verified at build — some redefined, not dropped; ADR-004 §3.1) |
+| `flashcard_decks` | §5.10 | ADR-005 — reviewable becomes a lean content entity |
+| `flashcard_reviews` | §5.10 | ADR-005 — generic review engine (`review_events`) |
+| SM-2 columns on `flashcards` *(column-level)* | §5.10 | ADR-005 — scheduled by Knowledge's generic engine |
+| SM-2 columns on `study_topics` *(column-level; flag)* | §5.10 | ADR-005 review engine — reconcile (`study_topics` still carries its own SM-2 today) |
+| `page_tags` | §5.2 (Note Tags) | ADR-006 `entity_tags` (rows migrate) |
+| INTENDED `task_views` + Preferences per-module custom-views store | §5.3 / §5.17 | ADR-007 `views` |
+
+**ADD** (new tables — existence/name decided by the amending ADR; readiness per legend):
+
+| Add | Source | Readiness · shape note |
+|-----|--------|------------------------|
+| `sessions` (spine) | ADR-004 §3.1 | ⏳ thin base row; shared spine |
+| `reading_sessions`, `class_sessions`, `workout_sessions`, `work_sessions`, `study_sessions` (redefined), `focus_sessions` | ADR-004 §3.1 | ⏳ 1:1 extension per sub-type keyed by `session_id`; set left at "…etc." — some settle at build |
+| `planned_blocks` | ADR-004 §3.1 | ⏳ aggregator-scheduled blocks |
+| `session_attachments` | ADR-004 §3.2.1 | ⏳ Integration-Contract polymorphic attachment |
+| `applied_effects` (**local-only, not synced**) | ADR-004 (F1) | ⏳ dedup ledger, like `sync_queue` |
+| `review_curves`, `method_bindings`, `review_events` | ADR-005 | ↔ Knowledge review-engine tables (confirm columns vs Knowledge structure-data at build) |
+| `entity_tags(tag_id, entity_type, entity_id)` | ADR-006 §3.2 | ✓ universal tag junction (replaces `page_tags`) |
+| `spaces` | ADR-006 §3 | ✓ lightweight first-class entity; membership spine = a root tag |
+| `space_enabled_blocks` (junction) | ADR-006 §3.4 (F3/D3) | ⏳ Space↔capability-**definition** palette (the *menu*); row-based; storage strategy → **F10** |
+| `views` | ADR-007 | ✓ saved views (filter × layout × grouping; `space_id` nullable) |
+| capability **registry (definition)** table | ADR-008 §3.1 | ⏳ id·kind·render-targets·bindings·effects·config; `kind` carries `study_method`; "Exact tables settle at build" (ADR-008) |
+| `block_instances` | ADR-008 §3.4 | ⏳ standalone **placements** (distinct from the `enabled_blocks` *menu*) |
+| `templates` | ADR-009 | ✓ `id · name [E] · serialized bundle [E]` — light store |
+| `capability_grants` | ADR-010 | ✓ `capability_def_id · granted_bindings · granted_effects · media_ok · external_in_ok · external_out_ok · consented_sensitive_modules · granted_envelope_hash` |
+
+*Not a table (recorded to prevent re-litigation):* `study_methods` = the `kind='study_method'` partition of the ADR-008
+registry (F2/D2), **not** a base table — queryable via a kind-partition read / optional view. **Inline** capability
+instances = ProseMirror nodes synced in the page's Yjs doc (ADR-008 §3.4) — **no table**.
+
+**AMEND** (column-level changes; F1/F6/F7 build columns stay build-phase but visible):
+
+| Amend | Source | Readiness · disposition |
+|-------|--------|-------------------------|
+| `_sync_field_ts TEXT` on **every** syncable table | ADR-003 §17 | ⏳ **formally ratified here** (was "implicit schema edit") |
+| open `entity_links.entity_type` CHECK enum → registry | ADR-006 §3.2 | ✓ CHECK relaxed to the same registry as `entity_tags` |
+| `parent_tag_id` on `tags` | ADR-006 §3.2 | ✓ tag nesting (`#a/b`) |
+| `effect_event_id` on effect-**triggering** rows; **UNIQUE** `effect_event_id` on effect-**output** rows | ADR-004 (F1) | ⏳ cross-device convergence key |
+| HLC **representation** of `_sync_lww_ts` + `_sync_field_ts` (string / BigInt / two-column) + HLC-state home (`last_l`/`last_c`); `updated_at` stays wall-ms | F6/D4-d | ⏳ build-phase; couples to wire header + `blob_index` → **F10** |
+| `category_bidx TEXT` (blind index) + `idx_transactions_category_bidx` | F7/D7 | ⏳ keyed-BLAKE2b domain-separated derivation |
+| new-domain FTS5 tables — e.g. `fts_knowledge` (Knowledge K11, "absent today") | Knowledge structure-data | ⏳ §5.19's F7 rewrite covered only the *existing* FTS tables (pages/tasks/contacts/courses); new searchable domains owe their own |
+
+#### Stream (ii) — the module-documentation tier (named, not enumerated)
+
+The full per-module documented target schema. **Enumerating these table-by-table is the build-phase schema session
+itself** — this ledger names the complete input set so nothing is silently omitted, and defers the enumeration (D5-a).
+
+**The 19 owed source docs** (`docs/features/<module>/structure-data.md`, unless noted): `books` · `check-ins` ·
+`finance` · `habits` · `journals` · `knowledge` (+ `knowledge/flashcards`) · `pomodoro` · `preferences` · `projects` ·
+`relationships` · `routines` · `sessions-and-scheduling` · `skills` · `tasks` · `health/core` · `health/nutrition` ·
+`health/training` · `learning/education`. **Dissolved modules** (schema landed elsewhere): Bucket List →
+`docs/intake/bucket-list.md`; Duties → `docs/intake/duties.md`; Languages content → `docs/features/languages/`.
+
+**Notable confirmed cross-module MOVES** (examples — the full set lives in the docs above):
+
+| Move | Kind | Source | ADR-002 site |
+|------|------|--------|--------------|
+| `bucket_list_items` → collapse into `dreams` (fields fold in) | RETIRE + AMEND | Bucket List dissolution (PG8) | §5.14 → `dreams` §5.7 |
+| `pomodoro_sessions` → re-home Notes → Sessions, keyed by `session_id` | AMEND (move) | Pomodoro reframe | §5.2 → Sessions realm |
+| `skill_resources` → `entity_links`; `knowledge_notes` / `resource_urls` superseded | RETIRE | Skills / Knowledge structure-data | §5.10 |
+
+> **Build-session checklist = Stream (i) tables above + every doc in the Stream (ii) list.** Both are inputs; §5 is
+> rewritten from them at the build-phase schema session, at which point §7 (count) and §8 (map) are reconciled.
+
+---
+
 ## 6. Tables Dropped from Life OS
 
 | Life OS Table | Reason for Drop |
@@ -3756,9 +3847,18 @@ CREATE VIRTUAL TABLE fts_courses USING fts5(
 | FTS (virtual) | 4 | No |
 | **Total** | **~72 tables** | **~66 syncable** |
 
+> **⚠ This count is the pre-amendment v1 total.** It does **not** include the owed tables tracked in **§5.20**
+> (Stream (i) adds/retires + the 19-module Stream (ii) target schema). The consolidated count is reconciled at the
+> build-phase schema session.
+
 ---
 
 ## 8. Cross-Domain Relationship Map
+
+> **⚠ Pre-amendment v1 map.** The new foundation junctions/edges owed to ADR-002 (universal `entity_tags`, `spaces` /
+> `space_enabled_blocks`, the `sessions` spine + extensions, `views`, the capability registry / `block_instances`,
+> `capability_grants`, `templates`) are **not** drawn here — they are tracked in **§5.20** and integrated into this map
+> at the build-phase schema session.
 
 ```
                            ┌──────────────┐

@@ -119,7 +119,7 @@ editor base — a page can belong to several Spaces, so inline is non-restrictiv
 carried **row-based** (a Space↔capability-def junction) for the same sync-robustness reason 3.3 stores `entity_tags`
 as rows — rows survive concurrent multi-device edits where a JSON-array column would field-LWW-clobber one device's
 change; the exact sync/storage strategy for Spaces' ordered fields settles with the sync work (F10), and the DDL is a
-build-phase ADR-002 amendment (recorded in the owed-tables ledger, `docs/reviews/2026-07-15-adr-critique-gate.md`).
+build-phase ADR-002 amendment (recorded in the durable owed-tables ledger, **ADR-002 §5.20**; F4-body/D5).
 
 **3.5 Personalization never breaks zero-knowledge (framing; enforced in ADR-010 + business-rules).** Tag names and
 descriptions are user content and encrypt (EN-2). This tier introduces *no* server-visible plaintext and *no*

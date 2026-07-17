@@ -1188,3 +1188,65 @@ Next session:
     §encryption + the cited fields (current_balance L2011, amount L2040,
     dreams.estimated_cost L1920, FTS5 L3646). Then F4-body/D5 (ADR-002 consolidation).
 ---
+
+---
+Date: 2026-07-17
+Session goal: F4-body/D5 — ADR-002 consolidation (the LAST architectural fix); close the F1–F15 revise pass
+Profile: Project Foundation → documentation-blueprint
+Scenario: documentation-blueprint
+Stack: Turborepo + pnpm, TypeScript 5.7, React 19, SQLite/SQLCipher + libsodium
+Status: DONE (through Verify) — NOT yet committed (Victor's call)
+Completed:
+  - **F4-body/D5 shipped** — full §XXVI gate: PLAN → /critique [REVISE R1/R2/R3]
+    → Approval 1 [D5-a=TRACK · D5-b=new ADR-002 §5.20] → /preflight PASSED →
+    independent adversarial critique [REFUTED 2/4 claims; B1/B2/B3 + N1 closed;
+    No-Redesign + Grounding survived] → Approval 2 [B1 named-not-enumerated scope
+    signed off] → implement → **Verify PASS** (caught 1 drift).
+  - **Decision D5-a = TRACK** (defer the §5 DDL rewrite to the build-phase schema
+    session; the §5.20 ledger is the tracked artifact) · **D5-b = new ADR-002
+    §5.20** (durable home). Both ratified by Victor.
+  - **Deliverable: ADR-002 §5.20 (Pending Consolidation)** — the durable
+    owed-tables ledger, two streams:
+      · Stream (i) = the ADR-003 §17 + ADR-004…010 `Amends:` + F1/F6/F7 slice,
+        FULLY enumerated as RETIRE / ADD / AMEND rows with ✓/⏳/↔ readiness
+        markers (✓ fully-specified drop-in: entity_tags·spaces·views·templates·
+        capability_grants; ⏳ build-deferred: sessions spine+extensions·registry·
+        block_instances·space_enabled_blocks·HLC/effect/blind-index cols).
+      · Stream (ii) = **named, not enumerated** — the full 19-module documented
+        target schema (docs/features/*/structure-data.md) as the build-session
+        input checklist + confirmed cross-module moves (bucket_list→dreams,
+        pomodoro re-home Notes→Sessions, skill_resources→entity_links).
+  - `_sync_field_ts` formally ratified (was "implicit schema edit"); entity_links
+    CHECK moved RETIRE→AMEND; fts_knowledge noted as owed new-domain FTS.
+  - Repointed ADR-002 ⚠ note (L17) → §5.20; forward-notes on §7 count + §8 map;
+    repointed ADR-006 L122 + ADR-004 L123 (owed-ledger pointers) → §5.20.
+  - **F1–F15 REVISE PASS COMPLETE** — report carries a top RESOLUTION banner +
+    the pass-complete marker + the 🟢 F10–F15 build-phase standing list. No 🔴
+    architectural fix remains. No ADR edit owed by F10–F15.
+  - Doc-only: `packages/` diff = 0. Changed: ADR-002 · ADR-004 · ADR-006 ·
+    report · spec. Spec: docs/specs/adr-revisions/f4-body-d5-adr002-consolidation/PLAN.md
+Decisions:
+  - **Adversarial B1 (the load-bearing catch): the owed set is TWO streams, and
+    the review-doc ledger only ever held one.** My ledger — even after /critique —
+    was scoped to the 10-ADR revise pass; a grep proved 19 module structure-data
+    docs each owe `[INTENT]`-marked ADR-002 amendments (the per-module target
+    schema). Left unfixed that reproduces the exact invisible-divergence F4 exists
+    to kill. Fixed by naming the tier completely (19-doc list) without enumerating
+    it (enumerating IS the deferred build session, per TRACK).
+  - **B3: the TRACK justification overstated "the ADRs defer their shapes."**
+    templates/capability_grants/entity_tags/views/spaces are fully-specified. So
+    "can't write DDL now" is only true because a *material subset* defers → you
+    can't write a *complete* §5 without stubbing. Added a per-row readiness marker.
+    The TRACK *decision* was unaffected.
+  - Gate value again = the **independent adversarial critique**: self-critique
+    (/critique) caught R1's sliver-fix; the fresh refuter caught B1 (the real
+    scope of stream ii), B2 (fts_knowledge), B3 (justification honesty). Same
+    standing lesson as F1–F7 — the load-bearing catches come from the fresh refuter.
+Next session:
+  - **exec #8 — Purposes & Goals capstone** (the OS meaning-spine), now unblocked:
+    its schema references resolve to ADR-002 §5.20. Run the documentation-blueprint
+    workflow (intake → transform → verify → accept) per its CAPSTONE framing.
+  - Housekeeping: the F1–F15 work is uncommitted (F4-body + any prior). Offer to
+    commit the revise-pass close as one `docs(adr)` commit if Victor wants.
+  - 🟢 F10–F15 remain build-phase (F10 load-bearing: sync/storage + HLC representation).
+---
