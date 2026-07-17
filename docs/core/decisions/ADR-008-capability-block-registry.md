@@ -120,8 +120,24 @@ accumulator]`
 (id · kind · declared render-targets · declared bindings · declared effects · config schema). Shipped definitions are
 **code-registered**; user-authored definitions are **stored** (ADR-010). An **instance** = a placed capability +
 config + bindings: an `inline` instance lives in the **page document** (editor node attrs, synced via Yjs per
-ADR-003 — no table); a `standalone` instance is a lightweight **`block_instances`** row referenced by a Space/view,
-carrying `_sync_*` + `deleted_at` (DATA-4). Instance config with user literals encrypts per EN-2.
+ADR-003 — no table); a `standalone` instance is a lightweight **`block_instances`** row referenced by **a Space**,
+carrying `_sync_*` + `deleted_at` (DATA-4). Instance config with user literals encrypts per EN-2. *(Whether a saved
+`view` (ADR-007) can also host a placed instance is an open build seam — ADR-007 defines `filter × layout × grouping`
+over read APIs, with no widget-placement slot today; not asserted here.)*
+
+**A Space's `enabled_blocks` — the offered palette vs the placements (O2 resolved, F3/D3).** ADR-006's `spaces` row
+carries **`enabled_blocks`**: the *per-Space set of capability **definitions** (this registry) the Space offers as
+tools* — its **menu**, distinct from `block_instances`, which are the **placements**. The palette is **authored
+config** (carried by Templates as ADR-009's "enabled capabilities + their config" — the same set) and
+**render-target-agnostic in membership** (an offered definition may be placed `inline` or `standalone` per its
+declared targets; the form is the §3.2 per-instance choice). Its **teeth split by surface**: a **standalone**
+placement (`block_instances`) on a Space is **drawn from that Space's `enabled_blocks`** (the palette is that
+surface's authoritative add-menu — the concrete thing the field enforces); an **inline** placement is chosen
+additively from the union of the page's Spaces' offered capabilities + the global editor base (non-restrictive — a
+page can belong to several Spaces). Curating the palette gates *adding*; it does **not** force-delete existing
+placements (grandfathered). This is what makes "a `block_instances` row referenced by a Space" concrete. Storage of
+the offered set (a Space↔definition junction) settles at build under the ADR-002 amendment + sync work (F10); its
+row-based lean follows ADR-006 §3.3's sync-robustness rationale.
 
 **Terminal states.** Every capability declares **loading / empty / error / success** for each render target it
 supports (a standalone chart with no data ≠ a crash); specified at the contract level.
@@ -162,6 +178,9 @@ TipTap extensions (they *become* registered `inline` definitions — a build-tim
 **Harder:**
 - A capability's instance lives in two possible homes (page-doc vs `block_instances`); the registry drives two
   renderers; consistency across them is real work.
+- Two Space-level concepts must stay distinct in every renderer and doc: a Space's **`enabled_blocks`** (the offered
+  *menu* — authored, ADR-006 §3.4) vs its **`block_instances`** (the *placements*). Conflating menu with placements is
+  the O2 confusion this ADR now closes; keep them separate at the data + UI layer.
 - Opening the set is what *enables* user-authoring — which is exactly why it **requires** ADR-010's guard before any
   non-shipped definition runs.
 

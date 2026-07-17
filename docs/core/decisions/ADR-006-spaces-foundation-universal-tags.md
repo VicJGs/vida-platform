@@ -98,9 +98,28 @@ switch).
 **3.4 A Space is a lightweight first-class entity — `spaces`.** So a Space is nav-addressable and nestable, not a
 purely emergent "just a tag." A `spaces` row binds:
 `{ id · root_tag_id (→ entity_tags membership spine) · name [E] · icon · default_view_id? (→ ADR-007) ·
-enabled_blocks (→ ADR-008) · parent_space_id? }`. A Space nests two ways that agree: by tag hierarchy (3.2) and by
-`parent_space_id`. Its *contents* are emergent (everything carrying the root tag); its *identity, name, and enabled
-tooling* are the record. `spaces` is syncable → carries `_sync_*` + `deleted_at` per DATA-4. `[FACT: intake SP6-CONFIRMED]`
+enabled_blocks (→ its offered-capability set, ADR-008) · parent_space_id? }`. A Space nests two ways that agree: by
+tag hierarchy (3.2) and by `parent_space_id`. Its *contents* are emergent (everything carrying the root tag); its
+*identity, name, and enabled tooling* are the record. `spaces` is syncable → carries `_sync_*` + `deleted_at` per
+DATA-4. `[FACT: intake SP6-CONFIRMED]`
+
+**`enabled_blocks` — the Space's offered-capability palette (O2 resolved, F3/D3).** `enabled_blocks` is *which
+capabilities from the one registry (ADR-008) this Space offers as tools* — the "enabled tooling" of the record above,
+and a first-class constituent of a Space (`[FACT: intake SP6 — "a Space = { root tag · Views · its enabled Blocks
+(tools) · name }"]`). It is **stored authored configuration**, carried into a Space by a Template (ADR-009's "enabled
+capabilities + their config" is this same set — one concept, two names), **not** a query-time projection over placed
+instances: a forked template Space persists the set with **zero** placements, so nothing derived from placements can
+reconstruct it. It holds a **set of capability *definition* refs** (the registrable unit, ADR-008 §3.1; `kind` is
+queryable metadata, not the ref granularity). It is **distinct from ADR-008's `block_instances`** — `enabled_blocks`
+is the *menu* (what the Space offers), `block_instances` are the *placements* (widgets actually placed). Membership is
+**render-target-agnostic** (an offered definition may support `inline`, `standalone`, or both — the user picks the
+form per instance, ADR-008 §3.2); its **teeth split by surface**: it is the enforced add-menu for the Space's
+**standalone** surface, while for **inline** it contributes additively to a page's slash-menu (union with the global
+editor base — a page can belong to several Spaces, so inline is non-restrictive). **Storage:** a set of refs is best
+carried **row-based** (a Space↔capability-def junction) for the same sync-robustness reason 3.3 stores `entity_tags`
+as rows — rows survive concurrent multi-device edits where a JSON-array column would field-LWW-clobber one device's
+change; the exact sync/storage strategy for Spaces' ordered fields settles with the sync work (F10), and the DDL is a
+build-phase ADR-002 amendment (recorded in the owed-tables ledger, `docs/reviews/2026-07-15-adr-critique-gate.md`).
 
 **3.5 Personalization never breaks zero-knowledge (framing; enforced in ADR-010 + business-rules).** Tag names and
 descriptions are user content and encrypt (EN-2). This tier introduces *no* server-visible plaintext and *no*

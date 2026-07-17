@@ -45,7 +45,9 @@ consequence. `[FACT: intake SP5-RESOLVED — "FORK … deep-copies … no templa
 data:
 `{ root_tag (+ nested tags) · seed entities (e.g. Knowledge kinds, a starter Goal, empty logger targets) · views
 (ADR-007) · enabled capabilities + their config (ADR-008) · child Space structure (ADR-006) }`. It is a **document**
-(JSON), not a live graph of FKs into someone's vault.
+(JSON), not a live graph of FKs into someone's vault. (The bundle's "enabled capabilities + their config" **is** the
+target Space's `enabled_blocks` offered-capability palette — ADR-006 §3.4 / ADR-008; one concept, two names — carried
+as authored config, which is exactly why a forked Space lands the palette with zero placements.)
 
 **Capability-config invariant.** The captured "enabled capabilities + their config" carries **authored configuration
 only** — parameters, bindings-*by-type*, cadence — and **never** a reference, handle, or embedded copy of

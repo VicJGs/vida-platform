@@ -9,6 +9,9 @@ version of v1's per-feature "Hub" pages, done as composition rather than one bes
 
 **A Space** = `{ a root tag (membership) · its Views (surfaces) · its enabled capability Blocks (tools) · name/icon }`,
 optionally born from a Template, nestable via tag hierarchy. A lightweight `spaces` record makes it nav-addressable.
+Its "enabled capability Blocks" are the Space's **`enabled_blocks`** — the authored *offered-capability palette* (a set
+of capability definitions from the one registry, ADR-008), distinct from `block_instances` (the actual placements).
+`[ADR-006 §3.4 / ADR-008 — O2 resolved, F3/D3]`
 
 ## The four primitives + the guard (the ADR set)
 
@@ -41,6 +44,7 @@ deliverable** (they demonstrate the built primitives, so they are authored when 
 - The tag/link unify ⇄ separate **resolution layer** surface (ADR-006 §3.3).
 - Each **view layout**'s visual/interaction spec (the standing per-module views review pass).
 - The **sandbox runtime** per platform + the **safe-authoring surface** (language/UI) + grant/consent UX (ADR-010).
-- The **ADR-002 amendment** for the new tables: `entity_tags` · `views` · `spaces` · `block_instances` ·
+- The **ADR-002 amendment** for the new tables: `entity_tags` · `views` · `spaces` · `block_instances` (standalone
+  placements) · the `enabled_blocks` Space↔capability-definition junction (the offered palette, F3/D3) ·
   `capability_grants` (+ open the `entity_links` `entity_type` enum).
 - The **Notes & Pages reconciliation** — retire `page_tags` → consume `entity_tags` (see `docs/README.md` Notes).
