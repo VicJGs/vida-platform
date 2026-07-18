@@ -13,8 +13,9 @@
 - [ADR-008](ADR-008-capability-block-registry.md) (2026-07-15) — adds the capability registry (definition) + `block_instances`; opens the closed `editor.ts` `BlockType` union. *Exact tables settle at build.*
 - [ADR-009](ADR-009-templates-fork-on-instantiate.md) (2026-07-15) — adds a light `templates` store (user-saved bundles).
 - [ADR-010](ADR-010-capability-authoring-security.md) (2026-07-15) — adds `capability_grants` (incl. `granted_envelope_hash`).
+- [ADR-011](ADR-011-universal-measurability-progress-propagation.md) (2026-07-17) — **cross-cutting measurability**: adds a `measurement_kind` + `binding_mode` pair to pursuable entities across 7+ modules; makes `purposes.progress` / `targets.current_value` **nullable** (`NULL = derive`); relaxes `targets.purpose_id` → nullable (SR-003); adds Purpose-domain `values` · `contributions` (retiring `purpose_habits/routines/projects`) · `purpose_reviews` · `plan_steps`; restores `is_higher_better` / `baseline_value` / `success_criteria` / `measurement_method`.
 
-**⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…010 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. *(This supersedes the interim pointer to `docs/reviews/2026-07-15-adr-critique-gate.md` § "throughline ①", which remains the decision's audit record.)*
+**⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…011 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. *(This supersedes the interim pointer to `docs/reviews/2026-07-15-adr-critique-gate.md` § "throughline ①", which remains the decision's audit record.)*
 
 ---
 
@@ -3721,7 +3722,7 @@ CREATE VIRTUAL TABLE fts_courses USING fts5(
 > schema in `packages/core`) consolidates into §5. It supersedes the interim pointer to the review-doc ledger. Source
 > of the decision: `docs/reviews/2026-07-15-adr-critique-gate.md` (F4/D5) + `docs/specs/adr-revisions/f4-body-d5-adr002-consolidation/PLAN.md`.
 >
-> ADR-002 owes schema changes from **two streams**: **(i)** the ADR revise pass (ADR-003 §17 + ADR-004…010 `Amends:`
+> ADR-002 owes schema changes from **two streams**: **(i)** the ADR revise pass (ADR-003 §17 + ADR-004…011 `Amends:`
 > lines + the F1/F6/F7 build columns) — **fully enumerated below**; and **(ii)** the documentation-blueprint module
 > tier — the `[INTENT]`-marked owed amendments in **all 19 `docs/features/*/structure-data.md` docs** (the per-module
 > documented target schema) — **named below, not enumerated**, because table-by-table enumeration of the full v2 module
@@ -3744,6 +3745,7 @@ count, §8 map):
 | SM-2 columns on `study_topics` *(column-level; flag)* | §5.10 | ADR-005 review engine — reconcile (`study_topics` still carries its own SM-2 today) |
 | `page_tags` | §5.2 (Note Tags) | ADR-006 `entity_tags` (rows migrate) |
 | INTENDED `task_views` + Preferences per-module custom-views store | §5.3 / §5.17 | ADR-007 `views` |
+| `purpose_habits`, `purpose_routines`, `purpose_projects` (bare junctions) | §5.7 | ADR-011 first-class `contributions` (weighted edge) |
 
 **ADD** (new tables — existence/name decided by the amending ADR; readiness per legend):
 
@@ -3763,6 +3765,10 @@ count, §8 map):
 | `block_instances` | ADR-008 §3.4 | ⏳ standalone **placements** (distinct from the `enabled_blocks` *menu*) |
 | `templates` | ADR-009 | ✓ `id · name [E] · serialized bundle [E]` — light store |
 | `capability_grants` | ADR-010 | ✓ `capability_def_id · granted_bindings · granted_effects · media_ok · external_in_ok · external_out_ok · consented_sensitive_modules · granted_envelope_hash` |
+| `values` | ADR-011 (PG4) | ✓ first-class core-beliefs layer above purposes (`name[E] · description[E] · sort_order`) |
+| `contributions` | ADR-011 (PG7/PG10) | ⏳ polymorphic weighted goal-edge (`goal_type · goal_id · contributor_type · contributor_id · contribution_percentage · contribution_notes[E]`); Purpose-domain, **not** a Spaces primitive |
+| `purpose_reviews` | ADR-011 (PG3) | ✓ restored alignment/fulfillment loop (`still_aligned · fulfillment_rating · clarity_rating · renewed_commitment · …[E]`) |
+| `plan_steps` | ADR-011 (PG5) | ⏳ lightweight DOC layer on task/target (`owner_type · owner_id · title[E] · note[E] · order · is_completed`); not a tracked entity |
 
 *Not a table (recorded to prevent re-litigation):* `study_methods` = the `kind='study_method'` partition of the ADR-008
 registry (F2/D2), **not** a base table — queryable via a kind-partition read / optional view. **Inline** capability
@@ -3779,6 +3785,10 @@ instances = ProseMirror nodes synced in the page's Yjs doc (ADR-008 §3.4) — *
 | HLC **representation** of `_sync_lww_ts` + `_sync_field_ts` (string / BigInt / two-column) + HLC-state home (`last_l`/`last_c`); `updated_at` stays wall-ms | F6/D4-d | ⏳ build-phase; couples to wire header + `blob_index` → **F10** |
 | `category_bidx TEXT` (blind index) + `idx_transactions_category_bidx` | F7/D7 | ⏳ keyed-BLAKE2b domain-separated derivation |
 | new-domain FTS5 tables — e.g. `fts_knowledge` (Knowledge K11, "absent today") | Knowledge structure-data | ⏳ §5.19's F7 rewrite covered only the *existing* FTS tables (pages/tasks/contacts/courses); new searchable domains owe their own |
+| `measurement_kind` + `binding_mode` pair on **pursuable** entities (Tasks · Habits · Routines · Projects/Deliverables · Dreams · Health · Finance measurables) | ADR-011 §3.1/§3.5 | ⏳ **cross-cutting** — each module's `[INTENT]` note (Stream ii); the contract, not per-table DDL, is locked |
+| `purposes.progress` / `targets.current_value` (+ any pursuable's stored progress) → **nullable** (`NULL = derive`); today `NOT NULL DEFAULT 0` | ADR-011 §3.2 | ⏳ override-slot semantics |
+| `targets.purpose_id` → **nullable** (SR-003 relaxed; `ON DELETE SET NULL`) | ADR-011 (PG9) | ⏳ standalone targets |
+| restore `targets.success_criteria[E]` + `measurement_method`; `purpose_metrics.is_higher_better` + `baseline_value`; provenance `source{manual,auto}` on `purpose_metric_values`; optional per-child **nesting-weight** column | ADR-011 §3.1/§3.3/§3.6 | ⏳ measurement fields |
 
 #### Stream (ii) — the module-documentation tier (named, not enumerated)
 

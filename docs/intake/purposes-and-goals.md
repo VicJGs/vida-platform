@@ -85,7 +85,7 @@ the bolded items below:
   candidate host for scheduled purpose/target reviews. `[FACT: docs/core/decisions/ADR-004; sessions contract]`
 - Do NOT duplicate/contradict these; reference them.
 
-## GAP MAP (what the code cannot answer — for Victor, ONE batch)
+## GAP MAP (what the code cannot answer — for Victor, ONE batch)  → ALL RESOLVED 2026-07-17; see **RESOLUTION** at end (authoritative).
 
 Each gap is a real decision the sources can't settle. `[likely CONFIRM]` = my read of the evidence, needs your
 yes/no; the rest need your intent. **v1-restore candidates are flagged — v2 is the nerfed version, so restore
@@ -189,8 +189,56 @@ is the default unless you say otherwise.**
   Accept.
 
 ---
-**STATUS: PARKED 2026-07-13 — resume as CAPSTONE (execution #9).** PG1 RESOLVED (meaning-spine, above). PG2–PG10
-intentionally left OPEN: Purposes ladders up every module, so its rollup/contribution/metric-sourcing gaps must be
-answered against **documented** Health · Skills · Routines · Bucket List (execution #2–8), not guesses. Re-sequence
-rationale + full order: `docs/README.md` §"Remaining — EXECUTION ORDER"; task Route History 2026-07-13. Do NOT
-Transform until #1–8 are documented and the gap map is made whole.
+## RESOLUTION — intake made WHOLE (2026-07-17, Victor · capstone exec #8)
+
+Victor's reframe drove PG2 from "how does progress compute" → a **universal, OS-wide measurability model**.
+Everything below is authoritative over the per-gap `[likely]` notes above.
+
+**PG2 — Universal Measurability & Progress (the CORE capstone rule → ADR).**
+- Every *pursuable* entity exposes a normalized `progress ∈ [0,1]` via a declared **`measurement_kind`**:
+  · SOLID = **quantitative** (current/target/`unit`, direction via `is_higher_better`+`baseline_value`) · **milestone/checklist** (n-of-m) · **rate/streak** (from Habits/Routines).
+  · ABSTRACT = **qualitative** (self-rating scale, or a status-ladder mapped to representative values).
+  Nothing is "unmeasurable" — an abstract goal is **measured by judgment**, not left un-tracked.
+- **Derive-by-default + manual override** (precedent: Knowledge KN-9/10, Sessions SS-12 "analytics derived, never stored").
+- **Fractal rollup — same math at every scale:** nests DOWN (parent ← children: sub-tasks · deliverables · milestones) and ladders UP (entity → dream → purpose). Heterogeneous kinds **compose** into one goal (e.g. workout streak + body-weight metric + a milestone → one "get fit" goal). Purpose is the strategic convergence point of the whole progress engine.
+- Framing for the ADR: the OS is a **digital measurement layer over real life** — real events (expense paid, workout logged, thesis defended) made *tangible in the abstract realm*.
+
+**Binding primitive — unifies PG6 auto-metrics + auto-completion (one concept).**
+- A measurable value declares a **`source`**: `manual` · `derived-pull` (compute from a linked entity/provider on read) · `event-trigger` (set when a linked entity fires a state-change event).
+- Example (Victor): Dream "England" → Task "Buy tickets" **bound** to a programmed expense (Finance Commitment) → expense reconciled `paid` → **task auto-done** → dream/purpose progress recomputes live.
+- Rides the **existing `INT-2` effect rail** (single write path, idempotent `effect_event_id`, F1/D1) — **no new automation engine.** Writes are sparse; rollups are derived-on-read; "what changed" deltas via **Journals** snapshots (JR-7/8).
+- Bindings must be **acyclic (DAG)**. v1 = single bound-source per measurable; ⚠ **INTENDED-later** = multi-condition / user-authored automation rules (Spaces / capability-Blocks flavored).
+
+**PG6 — metrics auto-source = the `derived-pull` binding.** Restore `is_higher_better` + `baseline_value`. Needs a **measurement-source interface** (modules advertise queryable measures, INT-1-respecting) → folds into the measurability ADR.
+
+**PG5 — goal → action (Victor amended: plan_steps return as a DOC layer).** Decompose via first-class **Tasks** (nested sub-tasks via `parent_task_id`) + **Projects › Milestones › Deliverables** — all causally bindable. PLUS **plan_steps restored as a lightweight *documentation* layer** on a Task/Target: ordered, checkable, may note a "lesser deliverable" (the documented path to the deliverable). **Graduation rule: plan steps DOCUMENT, sub-tasks TRACK** — a step needing real tracking/measurability/laddering becomes a sub-task; a plan-step "lesser deliverable" is a note, NOT the first-class Deliverable entity. A step checklist may feed the task's `checklist` measurement_kind. Restore `success_criteria` + `measurement_method` as target fields; `is_achieved` = derived from status. **No parallel task registry.**
+
+**PG7 — contribution = FULL first-class model (Victor: "not a half-baked version").**
+- Retire bare junctions `purpose_habits/routines/projects` → a single first-class polymorphic **`contributions`** table: `{ goal (purpose|target), contributor (polymorphic `entity_type`/`entity_id`), contribution_percentage (weight), contribution_notes [E] }` — the v1 ContributionMap restored.
+- It is a **THIRD association primitive — the weighted-laddering edge of the progress graph**, distinct from `entity_links` (bare reference / neural graph) and `entity_tags` (grouping). Weight-bearing ⇒ first-class by the payload law (ADR-002 §5.7).
+- Rollup: `purpose.progress = Σ(contributor.progress × weight) / Σweight`.
+- Contributor set widened: habits · routines · projects · **tasks · dreams · finance-targets · check-ins**.
+
+**PG4 — Values = FIRST-CLASS layer (Victor).** New **`values`** entity (core beliefs) ABOVE purposes: **Values → Purposes → Targets**. Purposes link to values; values are queryable/reviewable in their own right — the top of the meaning spine, so "seasons driven by core beliefs" (PG1) is structural. Dreams sit BESIDE (aspirational; link to purpose/value, nullable). Vision = purpose `vision`/`why` fields + Dreams imagery.
+
+**PG3 — restore `purpose_reviews`** as its own shape (still_aligned · alignment_notes · overall_progress · key_achievements · obstacles_faced · adjustments_needed · renewed_commitment · fulfillment_rating · clarity_rating). Distinct from `target_reviews`. A generic review substrate (Knowledge/Purpose/Check-ins) = ADR candidate, **not forced now** (shapes genuinely differ).
+
+**PG9 — reviews fire as `review` sessions** (ADR-004 sub-type) via `dueIn()` → Global Calendar + Journals agenda + Notifications. Distinct *content* from Check-ins reviews (which READ purpose progress, CK-6) but the **same scheduling seam**.
+
+**PG10 — provider registration ✅.** Purpose registers `summary(date)` (goals/targets/reviews-due + progress deltas) + `dueIn(range)` (review due-dates). The strategic/meaning plane registering INTO the operational plane; 4th+ registry consumer.
+
+**PG_notes ✅.** Purpose/Target/Dream/Value → standalone pages via `pages` (entity_type reserved), scoped tags, neural graph. No bespoke notes columns.
+
+**SR-003 RELAXED (Victor).** `targets.purpose_id` → **nullable**; standalone Targets allowed. Every ladder joint is optional (Values · Purposes · Targets · Dreams standalone-first, nullable up the spine) — "optional-but-omnipresent" made structural.
+
+### ADRs to raise at Accept (Step 4)
+1. **Universal Measurability & Progress Propagation** — measurement_kind + normalized progress + bound-source primitive + INT-2-rail propagation + DAG guard + measurement-source interface. The capstone ADR.
+2. *(candidate, deferred)* Generic review substrate.
+
+### ADR-002 owed changes (→ §5.20 ledger, applied build-phase)
+- **NEW:** `values` · `contributions` (polymorphic, weighted) · `purpose_reviews` (restored) · `plan_steps` (lightweight docs layer on task/target).
+- **RETIRE:** `purpose_habits` · `purpose_routines` · `purpose_projects` (→ `contributions`); `bucket_list_items` (→ `dreams`, PG8).
+- **AMEND:** `targets.purpose_id` → nullable (SR-003); restore `targets.success_criteria` + `measurement_method`; restore `purpose_metrics.is_higher_better` + `baseline_value`; add `measurement_kind` + bound-`source` descriptor columns to measurables; `dreams` widened (PG8).
+
+---
+**STATUS: WHOLE 2026-07-17** — all gaps resolved; ready for **Step 2 (Transform)**. PG1 (meaning-spine) + PG8 (Dreams/Bucket) resolved earlier; PG2–PG10 + SR-003 resolved this session per RESOLUTION above.

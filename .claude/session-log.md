@@ -1250,3 +1250,57 @@ Next session:
     commit the revise-pass close as one `docs(adr)` commit if Victor wants.
   - 🟢 F10–F15 remain build-phase (F10 load-bearing: sync/storage + HLC representation).
 ---
+
+---
+Date: 2026-07-17
+Session goal: exec #8 — document the Purposes & Goals CAPSTONE (the OS meaning-spine)
+Profile: Project Foundation → documentation-blueprint
+Scenario: documentation-blueprint
+Stack: Turborepo + pnpm, TypeScript 5.7, React 19, SQLite/SQLCipher + libsodium
+Status: DONE — capstone documented + gate PASS + ADR-011 Accepted. NOT yet committed (Victor's call).
+Completed (full 4-step documentation-blueprint pass):
+  - **Step 1 Intake — WHOLE.** Resumed the parked intake (PG1 + PG8 pre-resolved);
+    made whole against now-documented foundations. Victor's reframe drove PG2 from
+    "how does progress compute" → a UNIVERSAL, OS-wide measurability model. Resolved
+    PG2–PG10 + relaxed SR-003. Wrote docs/intake/purposes-and-goals.md RESOLUTION.
+  - **Step 2 Transform — 5 canonical aspect docs** written to
+    docs/features/purposes-and-goals/ (identity · business-rules · structure-data ·
+    contract · conventions); deleted the off-standard empty stub set
+    (module-spec/page-map/…).
+  - **Step 3 Verify — PASS.** /critique (REVISE) caught 4 issues incl. the load-bearing
+    INT-1a "third association primitive" contradiction (contributions is Purpose-domain,
+    NOT a universal primitive) + stale FACT line-cites (dreams L452→L1931 etc., ADR-002
+    now 4011 lines) + hidden cross-module measurability scope + source/binding_mode
+    collision w/ Health → all fixed. Independent verify caught value/dream entity_type
+    spec-outruns-code → fixed.
+  - **Step 4 Accept.** Manifest ✅ in docs/features/README.md + docs/README.md. Drafted
+    **ADR-011 (Universal Measurability & Progress Propagation)**; independent adversarial
+    refute → REVISE (weights-substrate unspecified [#1], nullable-column amendment,
+    "pursuable" predicate, DAG owner, habit_based→rate orthogonality) → all fixed →
+    **Accepted**. Wired into ADR-002 (header amender · §5.20 Stream (i) RETIRE/ADD/AMEND).
+Decisions (Victor, this session):
+  - **Universal measurability contract:** every pursuable entity exposes normalized
+    progress ∈[0,1] via measurement_kind {quantitative·milestone·rate·qualitative}
+    (solid/abstract); derive-by-default + override; FRACTAL rollup (same weighted math
+    down nesting + up laddering). Nothing is unmeasurable.
+  - **Binding primitive** binding_mode {manual·derived-pull·event-trigger} — auto-metric
+    ≡ auto-completion; rides the existing INT-2 effect rail (ADR-004 §3.2.5), no new
+    engine; derived-pull = a new measurement-source READ seam; acyclic (DAG).
+  - **PG5:** plan_steps RETURN as a DOC layer (not tracked; graduate to sub-tasks).
+  - **PG7:** contributions = FULL first-class weighted edge ("not a half-baked version"),
+    Purpose-domain (not a Spaces primitive).
+  - **PG4:** Values = FIRST-CLASS layer above purposes.
+  - **SR-003 RELAXED:** targets.purpose_id nullable; every ladder joint optional.
+  - Gate value again = the INDEPENDENT adversarial critique: it caught the INT-1a
+    contradiction (self-review glided past "third primitive") and the ADR's unspecified
+    weight-substrate (#1). Same standing lesson as F1–F7.
+Next session:
+  - **exec #9 — Gamification** (Wave 4; observes all incl. Purposes goal-completion XP).
+    Then #10 Notifications. Run the documentation-blueprint workflow per fill order.
+  - Housekeeping: this capstone + ADR-011 + the prior F1–F15 pass are uncommitted.
+    Offer to commit the capstone as one `docs(purposes)` commit (or bundle w/ the
+    pending ADR work) if Victor wants.
+  - 🟢 ADR-011 build-phase owed: measurement_kind/binding_mode on 7+ modules · nullable
+    progress columns · contributions/values/purpose_reviews/plan_steps · nesting-weight
+    (all tracked in ADR-002 §5.20).
+---
