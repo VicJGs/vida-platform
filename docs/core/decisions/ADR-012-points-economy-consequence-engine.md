@@ -1,0 +1,144 @@
+# ADR-012: Model gamification as a multi-currency points economy driven by a rule→consequence engine that rides the existing binding + effect + capability rails — no new engine
+
+**Status:** Accepted
+**Date:** 2026-07-19
+**Decision Makers:** Victor J.
+**Context:** Vida Platform — surfaced by the **Gamification ("the System")** capstone (exec #9, the behavioral incentive/consequence plane, partner to Purposes' meaning plane).
+**Tags:** architecture · data model · cross-cutting · API · behavioral-economics
+**Amends:**
+- **ADR-002 (Data Model)** — adds `currencies` (multi-currency spine) + `store` (Finance-owned nestable Storage layer); **generalizes `xp_history` → `consequence_ledger`** (currency-scoped, ± earn/lock/spend/distribute); **splits `user_profile`** by single-writer (System keeps per-currency total + level; `check_in_streak*` → Check-ins; persona/modules/onboarding → Preferences; **PII stays ⚠** until an account/identity model exists); makes `achievements.condition` a **measurable predicate** over the ADR-011 seam + event stream. DDL tracked in ADR-002 **§5.20** (owed-tables ledger), no DDL into its body per D5.
+- **ADR-004 (Session Framework)** — **extends the §3.2.2 effect catalogue** (a fixed enum, per ADR-004 §6) by **four effect-types** — `grant_currency` · `lock_currency` · `move_money` · `surface_notification` — **all in the pre-existing §3.2.5 Additive class** (each appends a durable row with no domain natural key). To be recorded in ADR-004's own `Amended:` block at consolidation; no new idempotency mechanism is introduced (§3.1).
+
+**Inherits:** ADR-004 (Session Framework) — the **§3.2.5** guarded-write + idempotency rail is **inherited by reference, not re-asserted**; the four new effects ride it unchanged. · ADR-011 (Measurability) — a rule's **condition is a binding** (`event-trigger` · `derived-pull`), acyclic (DAG); achievement predicates + reward-fund-Dream laddering read the **measurement-source seam**. · ADR-010 (Capability Authoring) — user-authored rules/currencies/achievements run under the declare→grant→enforce sandbox. · ADR-008 (Capability/Block registry) — noted **by contrast**: a rule is headless, **not** a render-targeted Block. · ADR-003 (LWW/HLC sync) · ADR-001 (SQLite/libsodium) · constitution **ZK-1, LF-2, INT-1, INT-2, PC-3, EX-1/EX-2, SU-2**.
+
+---
+
+## 1. Summary
+
+Gamification is not a badge layer bolted onto the OS; it is the OS's **behavioral incentive & consequence engine** — a personal *"System"* that turns goals and habits into a game with **real stakes**. It is the **motivation/consequence** plane, partner to Purposes' **meaning/direction** plane (Purposes = *where I'm going*; the System = *the engine that pulls me there*). This ADR locks the model that makes that expressible **without a new engine**:
+
+- A **rule** is `IF [measured condition] THEN [consequence]`, where the condition is an **ADR-011 binding** (acyclic) and the consequence dispatches **one or more TYPED effects, each a separate write on the ADR-004 §3.2.5 rail**. The four gamification-owned effects — `grant_currency` · `lock_currency` · `move_money` · `surface_notification` — are **all §3.2.5 Additive-class** (durable row appends with no domain natural key → a deterministic `effect_event_id` is the sole convergence key); a consequence may **also** fire other modules' pre-existing effects (`complete_habit_occurrence` [keyed] · `surface_journal` [projection]). A "consequence" is therefore **not one effect**: an umbrella effect carrying a single id could not converge the several distinct output rows independently, and across a full consequence set it would have to be additive + keyed + projection at once. The consequence *engine* coordinates; the *rail* keeps every effect idempotent on its own key.
+- The economy is **multi-currency**. Points generalize to many user-definable **resource-currencies** running at once, each declaring a **`backing_kind`** — `real-money` (→ Storage/Finance) · **`self-granted allowance`** (a vacation day, a cheat meal, gaming hours — **no wealth required**) · `measured-time`. Per currency, **four quantities — to-distribute · earned · locked · current — are computed, not stored** (earned/locked/current are ledger-derived; `to-distribute` is a config ceiling minus what's distributed, §3.3); XP becomes *one currency*, not a privileged concept.
+- **Penalties LOCK, never destroy** — a penalty moves currency into a **locked**, recoverable pool via a `lock_currency`/`move_money` effect, never a delete.
+- **Storage** is a **Finance-owned nestable composition layer** (`store` nodes: group | wrapper over an existing account/investment/asset), a single-parent **domain structural hierarchy** orthogonal to Spaces' tag-grouping. Existing Finance entities are **untouched**; rewards route money into a box → earmark a **Dream**, laddering the consequence into Purposes.
+- **Rules are headless automations** governed by the **ADR-010** sandbox — **not** ADR-008 render-Blocks. **Achievements** are predicates over measured state + the event stream (the ADR-011 seam), not v1's bespoke per-category checkers.
+- The System is a **peripheral observer**: it reads every signal via seams and writes **only** its own ledger + fires consequences through each owning module's guarded handler (INT-2). **Nothing core depends on it** (in-degree 1: only Notifications reads it). It is **opt-in and not wealth-gated**.
+
+## 2. Context — what triggered this
+
+Documenting the Gamification capstone forced the question the v2 floor dodged: **what actually happens when you "do the thing → reward · slip → penalty," and where does that machinery live?**
+
+- **v2 is schema-only, 0 logic:** the surface is 4 tables (`user_profile` · `achievements` · `user_achievements` · `xp_history`); `total_xp`/`current_level` are **stored counters nothing derives**, XP is **additive-only (no penalties)**, and there are no rules, currencies, or boxes. `[FACT: ADR-002 §5.15 L3361-3463; grep clean of packages/core/src/services]`
+- **The desire is real-stakes self-improvement, inclusively.** The reward must **not require wealth**: alongside real money, currencies are **self-granted life-allowances** (time, leisure) — the Premack principle, systematised. A points-only XP toy cannot express "lock a vacation day until the workout is logged." `[INTENT: gamification RESOLUTION §B — Victor]`
+- **`user_profile` is overloaded across three owners** — System (`total_xp`, `current_level`), Check-ins (`check_in_streak*`), Preferences/Onboarding (`persona`, `active_modules`, PII) — a single-writer violation waiting to happen. `[FACT: ADR-002 L3366-3396]`
+- **Every rail it needs already exists.** ADR-011 catalogues bindings + the measurement seam; ADR-004 §3.2.5 catalogues the guarded-write/idempotency rail and already carries `award_xp`; ADR-010 carries the capability sandbox. The open question is not "build an engine" but "**does the whole System compose onto these rails, or does it need its own?**" `[FACT: ADR-011 §3.5-3.6; ADR-004 §3.2.5; ADR-010]`
+
+Because the code is greenfield (schema-only), this is a **structural decision, not a migration**. And because the consequence machinery touches Finance (money-moves), Purposes/Dreams (reward targets), and every feeder (signals), it must be decided **once, at core**, or the System will grow a parallel event bus that duplicates the effect rail.
+
+## 3. Decision
+
+**3.1 A rule = a binding + TYPED consequence effects, each idempotent on its own key (the load-bearing decision).**
+A System rule is `IF [measured condition] THEN [consequence]`. The **condition** is an **ADR-011 binding** — `event-trigger` (a linked entity fires a state change) or `derived-pull` (a measurement-source crosses a threshold) — acyclic, enforced at author time (ADR-011 §3.7, and see the consequence-cycle note below). The **consequence** dispatches **one or more typed effects on the ADR-004 §3.2.5 rail**. The four gamification-owned effects are **all Additive-class** — each appends a **durable output row with no domain natural key**, so per §3.2.5's Additive definition a deterministic `effect_event_id` is the **only** cross-device convergence key:
+
+| Effect | Output row | §3.2.5 class | Idempotency substrate |
+|---|---|---|---|
+| **`grant_currency`** (`award_xp` = its XP specialization) | `consequence_ledger` earn row | **Additive** | deterministic `effect_event_id` + local `applied_effects` ledger (replay) + UNIQUE `effect_event_id` on the output row (cross-device) |
+| **`lock_currency`** | `consequence_ledger` lock row | **Additive** | as above — a lock is a legitimately repeatable event, so no domain key exists; `effect_event_id` is the sole convergence key |
+| **`move_money`** | Finance `transfer` transaction | **Additive** | as above — two same-amount transfers are legitimately distinct (no amount/box/day uniqueness); converges on the deterministic `effect_event_id` |
+| **`surface_notification`** | `notifications` row | **Additive** | as above — **NOT a projection**: a notification persists a durable, synced `notifications` row with an independent `is_read`/`read_at` lifecycle (ADR-002 §5.16), unlike `surface_journal`/`surface_calendar` which are pull-aggregated at render |
+
+**Why this refutes a single umbrella effect (Option E), even though all four are one class.** A consequence produces **several distinct output rows** (a ledger earn row · a lock row · a transfer · a notification); each needs its **own** deterministic `effect_event_id` to dedup and converge **independently** on retry/multi-device. An umbrella `apply_consequence` carrying **one** id could not converge them separately — a re-fire would double-apply the legs whose id it did not carry. Moreover a consequence may **also** dispatch other modules' pre-existing effects — `complete_habit_occurrence` (**Keyed**) or `surface_journal` (**Projection**) — so across a full consequence set **all three §3.2.5 classes appear**, and one umbrella effect would have to be additive + keyed + projection at once, which §3.2.5 forbids ("the machinery applies **per class**"). The consequence *engine* is a **coordinator** that fans a rule-fire out to the correct typed handlers; it invents **no new write path** and **no new idempotency mechanism** — it reuses §3.2.5's Additive discipline unchanged. `[FACT: ADR-004 §3.2.5 taxonomy L80-85 (Additive = "no domain natural key exists"); notifications is a synced table ADR-002 §5.16; ADR-011 §3.5-3.7]` `[INTENT: gamification GM-2, refined — GM-2's "keyed" label for lock/move is superseded here; the reconciliation is owed to business-rules.md GM-2]`
+
+**Consequence-cycle guard (extends ADR-011 §3.7).** A consequence-driven currency change can itself be a **measurement-source** (e.g. a `real-money` grant moves `net_worth`), so a rule whose consequence feeds another rule's `derived-pull` condition is a **new edge type** in the binding graph that ADR-011 §3.7 (built for measurement edges) did not originally enumerate. This ADR **extends the §3.7 DAG guard** to count consequence→source→condition edges: such a cycle is rejected at author time exactly as a measurement cycle is. ⚠ This edge-type extension is **owed back to ADR-011 §3.7** at consolidation. `[FACT: ADR-011 §3.7 DAG guard]` `[INTENT: consequence-edge extension]`
+
+**3.2 The economy is MULTI-CURRENCY; XP is one currency.**
+A **`currency`** is a user-definable resource with a **`backing_kind`**:
+- **`real-money`** — backed by the Storage/Finance layer (§3.5); a grant/penalty is a real ledger entry.
+- **`self-granted allowance`** — a vacation day · a cheat meal · gaming hours: **no external backing, no wealth required** — the OS tracks the balance the user honors in life (the great equalizer). `[INTENT: RESOLUTION §B — Victor]`
+- **`measured-time`** — sourced from sessions / `task_time_logs`.
+
+XP is not privileged: it is the canonical **`grant_currency(XP)`** case, so the **§3.2.2-catalogued `award_xp` effect slot** (0-logic today) and its ~9 **documented** feeders (Habits · Tasks · Sessions · Routines · Check-ins · Skills · Pomodoro · …) remain **valid** — `grant_currency` *generalizes* `award_xp`, it does not retire it (no running code exists to break; the feeders are documented emission points). `[FACT: ADR-004 §3.2.2 catalogue L62 lists `award_xp`; feeders as business-rule IDs HB-9/RT-13/CK-11/PD-10/SK-10]` `[INTENT: GM-3]`
+
+**3.3 Currency balances are DERIVED, not stored (the house rule).**
+Per currency, **earned · locked · current recompute on read** from the **`consequence_ledger`** (the generalized `xp_history`: `currency_id · amount(±) · kind{earn,lock,spend,distribute} · entity_type · entity_id · effect_event_id(UNIQUE) · at`). The stored `total_xp`/`current_level` counters become **caches, never the source of truth**. This is the same derive-not-store discipline ADR-011 §3.2 (`NULL = derive`) and SS-12 ("analytics derived, never stored") already lock. `[FACT: sessions SS-12; ADR-011 §3.2]` `[INTENT: GM-4]`
+
+**The pool (`to-distribute`) is a config ceiling, not a ledger sum.** `to-distribute` is categorically different from the other three: it is the **budget the user funds**, not a consequence of past entries. Its **ceiling is a `currencies`-config value** (e.g. "20 vacation days/year") — for a `self-granted allowance` there is **no backing entity** to derive it from, so it **cannot** come from the append-only ledger. `current ≤ ceiling` is the enforced invariant; the ledger records `distribute`/`spend`/`lock` entries **against** that ceiling, and `to-distribute = ceiling − Σ(distributed)`. For a `real-money` currency the ceiling is instead the backing Storage box's real balance (§3.5). This resolves the apparent contradiction: three quantities are ledger-derived, `to-distribute` is `ceiling − ledger`. `[INTENT: GM-3/GM-4 — pool source resolved]`
+
+**3.4 Penalties LOCK, never destroy.**
+A penalty moves currency/money into a **locked** pool via a `lock_currency`/`move_money` effect (Additive, §3.1) — held and **recoverable**, not deleted. A penalty that would drive a currency below its floor **clamps + flags** (money cannot go below a box's real balance; an allowance cannot lock more than exists). `[INTENT: RESOLUTION §A/§B — "not truly lost, but locked"]`
+
+**3.5 Storage = a Finance-owned nestable composition LAYER, not a rewrite.**
+A **`store`** node is a `group` (folder) **or** a `wrapper` (→ an existing `account`/`investment`/`asset`), self-nesting via `parent_id`, carrying `is_locked` · `dream_id?`/`purpose_id?` · a currency overlay. **Existing Finance entities are UNTOUCHED.** The worth-tree is a **domain structural hierarchy** — single-parent, exactly like Projects `parent_milestone` / Tasks `parent_task_id` — and is **orthogonal to Spaces**, which owns many-to-many **tag** grouping (`entity_tags`, INT-1a). A structural worth-hierarchy is *not* a tag-set: the tree is **canonical single-parent** (each value-holder wrapped once → **no double-count**); Spaces tags an entity into any number of themed views *on top*. Net worth = Σ store tree − Σ liabilities. **Owned by Finance**, consumed by the System. `[INTENT: RESOLUTION §C — Victor]` `[FACT: Commitments precedent FN-14; projects/tasks parent-FK; core INT-1a]`
+
+**3.6 Real-money moves through Finance; self-granted needs no Finance; rewards can fund Dreams.**
+A `real-money` reward is a **transfer** into a Storage box (native `transaction_type='transfer'`) — a real entry in the user's own money-truth, **not** a bank API call; the OS is the ledger truth. The `move_money` effect routes through a **Finance-owned transfer handler** (`finance.*`) — which is **INTENDED, not yet built**: today `transfer` exists only as a schema/type value (`transaction_type='transfer'` + `transfer_to_account_id`), and `finance-service.ts` is 0-logic. A **self-granted-allowance** consequence needs **no Finance** — the OS tracks the honored balance against its config ceiling (§3.3). Finance/Health writes require explicit capability consent (**PC-3**). A reward routed into a box may earmark a **Dream** (`estimated_cost`) / Purpose, **laddering the consequence into Purposes progress** via ADR-011 contributions. `[FACT: transfer as type/schema value — packages/types/src/finance.ts L22, L88-89; finance-service.ts = 0 bytes (handler INTENDED); dreams `estimated_cost` ADR-002 L1941; ADR-010 §3.3 sensitive-module consent]` `[INTENT: GM-6/GM-7; the recordTransfer handler]`
+
+**3.7 Achievements = predicates over measured state + the event stream.**
+An achievement `condition` is a **measurable predicate** (streak ≥ N · count ≥ N · `level_reached` · `net_worth ≥ X`) evaluated on the **ADR-011 measurement seam** (pull) + consequence events (push) + a reconcile pass — **not** v1's 22+ bespoke per-category checkers. The v1 catalogue is **app-curated for v1**; user-authored achievements/challenges are the capability model (⚠ INTENDED). `[FACT: ../life-os/src/features/onboarding/constants/achievementDefinitions.ts ~22 distinct condition types (v1, out-of-repo); ADR-011 §3.6]` `[INTENT: GM-13]`
+
+**3.8 Leveling = a pure function of a currency total.**
+A level is **derived** from a currency's cumulative total against a **fixed non-linear curve + titles** (v1: 0·100·300·…·5500) — **no new table**. Level-**unlocks** (rewards that *do* something) are ⚠ INTENDED-later. `[FACT: ../life-os/src/features/onboarding/constants/levelConfig.ts (v1, out-of-repo)]` `[INTENT: GM-14]`
+
+**3.9 Rules are HEADLESS automations under ADR-010 — NOT ADR-008 render-Blocks.**
+Shipped rules are trusted; **user-authored** rules run under ADR-010's declare→grant→enforce sandbox (attachment-scoped · guarded-write · no double-count · sensitive-module consent · revocable · fails closed) — **reusing that machinery without being an ADR-008 capability**. ADR-008 capabilities are **render-targeted Blocks** (inline/standalone); a rule has **no render target** — it is background automation. This is the same "reuse the sandbox, not the render model" boundary ADR-011 draws for bindings. `[FACT: ADR-010 §3.1-3.3; ADR-008 §3.2 render-targets; core PC-3]` `[INTENT: GM-8]`
+
+**3.10 `user_profile` splits by single-writer; PII stays for now.**
+The System owns only **per-currency total + level** (both DERIVED, §3.3). `check_in_streak*` → **Check-ins** (owner exists, CK-11); `persona`/`motivation_style`/`active_modules`/`onboarding_*` → **Preferences** (which owes a receiving amendment). **PII (`display_name`/`avatar_url`/`birth_date`) STAYS in `user_profile`** ⚠ — no account/identity entity exists yet to receive it; relocation is INTENDED once that model is designed. **No field ends with two writers.** `[FACT: overloaded ADR-002 L3366-3396; no account entity today]` `[INTENT: GM-12]`
+
+**3.11 Ownership boundaries (what this ADR does and does NOT claim).**
+- **Owns:** the currency/economy model (`currencies` · `consequence_ledger` · the four derived quantities · lock-not-destroy) · the rule→consequence *coordinator* · the four new typed effect-**types** (their *class assignment*) · the Finance-owned `store` layer's role as a reward target · the achievement-as-predicate contract.
+- **Does NOT own the write rail** — that is ADR-004 §3.2.5, inherited by reference (no re-assertion); the four new effects are *catalogue additions* to §3.2.2, each slotted into an existing §3.2.5 class.
+- **Does NOT own conditions/measurement** — that is ADR-011 (bindings + the seam); a rule condition *is* a binding.
+- **Does NOT own the sandbox** — that is ADR-010; user-authored rules are grants under it.
+- **Does NOT own streaks or signal data** — streaks are module-owned (Habits/Routines/Check-ins, read-only to the System); signals are read via the ADR-011 seam; the System **stores none of them** (GM-10/GM-11).
+- **Does NOT own money** — Finance owns money and the `store` layer; the System **requests** money-moves through the Finance handler (GM-6/GM-9).
+- **Peripheral observer, in-degree 1:** nothing core depends on the System; only **Notifications** reads it (for "unlock"/"level-up") + Journals reads its `summary(date)` provider. **No cycle.** `[INTERP: dependency-graph reasoning from the module docs — the System writes only its own ledger + fires effects through owning-module handlers; INT-2]`
+
+**What this decision does NOT do:** it does not pick the ledger's exact columns/indexes, the `rules` table shape, the currency-curve config format, the achievement reconcile-pass runtime, or the `store` node's overlay encoding — those are **build-phase** (owed to ADR-002 §5.20). It locks the **model + invariants + effect-class assignments**, not the runtime. Level-unlocks, user-authored achievements/challenges, quests-as-a-Space, and cross-device screen-time/budgeting signals are **⚠ INTENDED-later** (Spaces/capability + EX-2/FN-13 frontier), out of scope here.
+
+## 4. Options Considered
+
+### Option A — A multi-currency economy + a rule→consequence *coordinator* on the existing binding/effect/capability rails (CHOSEN)
+- **Rationale:** the whole System is expressible as `binding (ADR-011) → typed effects (ADR-004 §3.2.5) → sandbox (ADR-010)`; the only genuinely new structure is the currency/ledger economy and the Finance `store` layer. Multi-currency with a `self-granted` backing kind makes the System **work without wealth**; derived balances keep the house rule; lock-not-destroy makes penalties humane and idempotent.
+- **Tradeoffs accepted:** generalizing `xp_history → consequence_ledger` + adding `currencies`/`store`; a `user_profile` split touching Check-ins + Preferences; four new effect-types on the ADR-004 catalogue; a coordinator to build (but not an engine).
+
+### Option B — Keep the v1 points-only XP model (single stored counter + bespoke per-category achievement checkers) (REJECTED)
+- **Why rejected:** it cannot express penalties (XP is additive-only), cannot express non-money rewards, has no common currency abstraction, and reproduces v1's 22+ hand-coded checkers instead of predicates over the measurement seam. It is the exact schema-only floor this capstone exists to replace.
+
+### Option C — A dedicated consequence **event-bus / engine** (a new rule-evaluation + effect-dispatch runtime) (REJECTED)
+- **Why rejected:** it duplicates machinery that already exists — ADR-011 already evaluates bindings, ADR-004 §3.2.5 already dispatches idempotent effects, ADR-010 already sandboxes user code. A parallel engine reopens the single-write-path invariant (INT-2) and creates a second place double-counts can occur. The coordinator in Option A rides the proven rail; a new engine is unbudgeted coupling.
+
+### Option D — Storage as a Finance **rewrite** (a god-table over accounts/investments/assets, or a value-holder **supertype**) (REJECTED)
+- **Why rejected:** rewriting Finance to introduce boxes is a migration the greenfield doesn't need and a double-count risk (balances copied out of their owning entities). A supertype forces every value-holder under one table, re-litigating settled Finance structure. The `store` *layer* (wrap-or-group, existing entities untouched, canonical single-parent) gets nestable boxes with **zero** change to Finance's tables — the same Commitments-layer/Spaces pattern the OS already uses.
+
+### Option E — A single umbrella `apply_consequence` effect on the ADR-004 rail (REJECTED — the gate catch)
+- **Why rejected:** an umbrella effect cannot converge a multi-output consequence. Even when all of a consequence's legs are the **same** class, they produce **distinct output rows** (a ledger earn row · a lock row · a transfer · a notification) that must dedup **independently** — each needs its **own** deterministic `effect_event_id`; one umbrella id would double-apply the legs it does not carry on retry/multi-device. And the moment a consequence **also** fires another module's effect — `complete_habit_occurrence` (**Keyed**) or `surface_journal` (**Projection**) — one umbrella effect would have to be additive + keyed + projection **at once**, which §3.2.5 explicitly forbids ("the machinery applies **per class**"). The consequence must fan out to **typed** effects; the umbrella is a category error. `[FACT: ADR-004 §3.2.5 L78-85 (per-class machinery); Additive = one effect_event_id per output row]`
+
+## 5. Consequences
+
+**Easier:**
+- The entire System is a composition of existing rails — a new reward type is a new binding + an existing typed effect, no new code path.
+- Non-money motivation is first-class: a user with no money runs the whole System on self-granted time/leisure.
+- Penalties are humane and safe: lock-not-destroy + clamp-not-overdraw + idempotent-no-double-apply.
+- Balances are always live and cheap (derived reads); nothing core depends on the System, so it can be off entirely.
+- Nestable boxes with zero Finance change; rewards ladder into Dreams → Purposes for free (ADR-011 contributions).
+
+**Harder:**
+- A cross-module amendment: `user_profile` split touches Check-ins + Preferences (each owes a receiving change); `consequence_ledger` **supersedes `xp_history`'s columns** (drops `xp_amount`/`action_type`/`level_before`/`level_after`; adds `currency_id`/`kind`/`effect_event_id`) — the 9 feeders' *documented* emission is retargeted to `grant_currency(XP)`, not a code migration (0-logic today), so nothing running breaks but every documented write-site changes shape.
+- Four new effect-types to add to the ADR-004 §3.2.2 catalogue (all in the pre-existing §3.2.5 **Additive** class — this is why the amendment is cheap: no new idempotency machinery) + a rule-coordinator + a currency-curve config to design at build.
+- A `rules` table + author-time cycle/scope validation (reusing ADR-011 §3.7 + ADR-010 grant checks).
+
+**Explicitly accepted tradeoffs:**
+- One currency/ledger economy that generalizes XP, in exchange for a `xp_history` generalization and a `user_profile` split — rather than N bolt-on reward mechanisms.
+- A coordinator that fans out to typed effects, in exchange for the discipline of never collapsing a consequence into one umbrella effect (Option E).
+
+**Owed schema** (build-phase — tracked in ADR-002 **§5.20**, no DDL into its body per D5):
+- **ADD:** `currencies` (`name[E] · backing_kind{real-money,self-granted,measured-time} · unit · icon · pool/to-distribute config`); `store` (Finance-owned: `parent_id · node_kind{group,wrapper} · (wrapper) ref_type{account,investment,asset}/ref_id · name[E] · is_locked · dream_id?/purpose_id? · currency overlay`); a `rules` table (headless automation: binding-ref + typed-consequence set + ADR-010 grant; **shape open in-source**).
+- **GENERALIZE (RETIRE + ADD):** `xp_history → consequence_ledger` — **supersedes** `xp_history` (drops `xp_amount`/`action_type`/`level_before`/`level_after`), new shape `currency_id · amount(±) · kind{earn,lock,spend,distribute} · entity_type · entity_id · effect_event_id UNIQUE · at`; XP = one currency. (This row is **owed to §5.20 Stream (i)**, which does not yet list it.)
+- **AMEND:** `user_profile` **SPLIT** (System keeps per-currency total + level; `check_in_streak*` → Check-ins; `persona`/modules/onboarding → Preferences; **PII stays ⚠**); `achievements.condition` → measurable predicate over the ADR-011 seam + event stream; `level` → derived over a fixed curve config (no table).
+- **EFFECT CATALOGUE (ADR-004 §3.2.2 — an ADR-004 amendment, per the header):** add `grant_currency` (`award_xp` = its XP case) · `lock_currency` · `move_money` (Finance-owned) · `surface_notification` (→ `notifications` row) — **all §3.2.5 Additive-class** (deterministic `effect_event_id` + UNIQUE on the output row; no domain natural key).
+- **Encryption:** `[E]` on all user free-text — currency names, box/store names, rule + user-authored achievement titles/descriptions, ledger notes; structural enums, amounts, levels, timestamps, FKs are plaintext. `[FACT: ZK-1]`
+
+## 6. Review Date / trigger
+
+Reconsider if: (a) a real reward/penalty cannot be expressed as a binding + a typed effect in a §3.2.5 class (→ extend the effect catalogue, not add an engine); (b) the currency count / ledger volume makes derived-on-read balances too slow at render (→ a cached balance snapshot, paralleling Journals' snapshot pattern — the counter becomes an explicit cache, not the truth); (c) user-authored achievements/challenges or level-unlocks graduate from ⚠ INTENDED to shipped (→ they land on the ADR-008/010 capability rail, not here); or (d) an account/identity entity is designed (→ PII relocates out of `user_profile` per §3.10). Otherwise revisit at the build-phase gamification design-pass (the §5.20 consolidation session).

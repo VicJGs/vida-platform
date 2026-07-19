@@ -14,8 +14,9 @@
 - [ADR-009](ADR-009-templates-fork-on-instantiate.md) (2026-07-15) — adds a light `templates` store (user-saved bundles).
 - [ADR-010](ADR-010-capability-authoring-security.md) (2026-07-15) — adds `capability_grants` (incl. `granted_envelope_hash`).
 - [ADR-011](ADR-011-universal-measurability-progress-propagation.md) (2026-07-17) — **cross-cutting measurability**: adds a `measurement_kind` + `binding_mode` pair to pursuable entities across 7+ modules; makes `purposes.progress` / `targets.current_value` **nullable** (`NULL = derive`); relaxes `targets.purpose_id` → nullable (SR-003); adds Purpose-domain `values` · `contributions` (retiring `purpose_habits/routines/projects`) · `purpose_reviews` · `plan_steps`; restores `is_higher_better` / `baseline_value` / `success_criteria` / `measurement_method`.
+- [ADR-012](ADR-012-points-economy-consequence-engine.md) (2026-07-19) — **Points Economy & Consequence Engine** (Gamification "the System"): adds `currencies` (multi-currency spine) + `store` (Finance-owned nestable Storage layer) + a `rules` table (headless automation); **generalizes `xp_history` → `consequence_ledger`** (currency-scoped ± earn/lock/spend/distribute; drops `xp_amount`/`action_type`/`level_before`/`level_after`); **splits `user_profile`** by single-writer (System keeps per-currency total + level; `check_in_streak*` → Check-ins; persona/modules/onboarding → Preferences; **PII stays ⚠**); makes `achievements.condition` a measurable predicate (ADR-011 seam + event stream); `level` → derived (no table). **Also extends ADR-004 §3.2.2** with four Additive-class effects (`grant_currency` · `lock_currency` · `move_money` · `surface_notification`) and **ADR-011 §3.7** with consequence-edge cycle detection.
 
-**⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…011 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. *(This supersedes the interim pointer to `docs/reviews/2026-07-15-adr-critique-gate.md` § "throughline ①", which remains the decision's audit record.)*
+**⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…012 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. *(This supersedes the interim pointer to `docs/reviews/2026-07-15-adr-critique-gate.md` § "throughline ①", which remains the decision's audit record.)*
 
 ---
 
@@ -3722,7 +3723,7 @@ CREATE VIRTUAL TABLE fts_courses USING fts5(
 > schema in `packages/core`) consolidates into §5. It supersedes the interim pointer to the review-doc ledger. Source
 > of the decision: `docs/reviews/2026-07-15-adr-critique-gate.md` (F4/D5) + `docs/specs/adr-revisions/f4-body-d5-adr002-consolidation/PLAN.md`.
 >
-> ADR-002 owes schema changes from **two streams**: **(i)** the ADR revise pass (ADR-003 §17 + ADR-004…011 `Amends:`
+> ADR-002 owes schema changes from **two streams**: **(i)** the ADR revise pass (ADR-003 §17 + ADR-004…012 `Amends:`
 > lines + the F1/F6/F7 build columns) — **fully enumerated below**; and **(ii)** the documentation-blueprint module
 > tier — the `[INTENT]`-marked owed amendments in **all 19 `docs/features/*/structure-data.md` docs** (the per-module
 > documented target schema) — **named below, not enumerated**, because table-by-table enumeration of the full v2 module
@@ -3746,6 +3747,7 @@ count, §8 map):
 | `page_tags` | §5.2 (Note Tags) | ADR-006 `entity_tags` (rows migrate) |
 | INTENDED `task_views` + Preferences per-module custom-views store | §5.3 / §5.17 | ADR-007 `views` |
 | `purpose_habits`, `purpose_routines`, `purpose_projects` (bare junctions) | §5.7 | ADR-011 first-class `contributions` (weighted edge) |
+| `xp_history` (XP-only ledger: `action_type`/`xp_amount`/`level_before`/`level_after`) | §5.15 | ADR-012 `consequence_ledger` (currency-scoped ± ledger; XP = one currency) |
 
 **ADD** (new tables — existence/name decided by the amending ADR; readiness per legend):
 
@@ -3769,6 +3771,10 @@ count, §8 map):
 | `contributions` | ADR-011 (PG7/PG10) | ⏳ polymorphic weighted goal-edge (`goal_type · goal_id · contributor_type · contributor_id · contribution_percentage · contribution_notes[E]`); Purpose-domain, **not** a Spaces primitive |
 | `purpose_reviews` | ADR-011 (PG3) | ✓ restored alignment/fulfillment loop (`still_aligned · fulfillment_rating · clarity_rating · renewed_commitment · …[E]`) |
 | `plan_steps` | ADR-011 (PG5) | ⏳ lightweight DOC layer on task/target (`owner_type · owner_id · title[E] · note[E] · order · is_completed`); not a tracked entity |
+| `consequence_ledger` | ADR-012 | ⏳ generalizes `xp_history` (RETIRE above): `currency_id · amount(±) · kind{earn,lock,spend,distribute} · entity_type · entity_id · effect_event_id UNIQUE · at`; the 4 derived quantities recompute from it |
+| `currencies` | ADR-012 | ⏳ user-definable resource-currency: `name[E] · backing_kind{real-money,self-granted,measured-time} · unit · icon · pool/to-distribute ceiling config`; XP = one currency |
+| `store` (**Finance-owned**) | ADR-012 | ⏳ nestable Storage LAYER: `parent_id(self-nest) · node_kind{group,wrapper} · (wrapper) ref_type{account,investment,asset}/ref_id · name[E] · is_locked · dream_id?/purpose_id? · currency overlay`; canonical single-parent (no double-count); existing Finance entities UNTOUCHED |
+| `rules` | ADR-012 | ⏳ headless-automation primitive: ADR-011 binding-ref (condition) + typed-consequence set + (user-authored) ADR-010 grant; **shape open in-source**; NOT an ADR-008 render-Block |
 
 *Not a table (recorded to prevent re-litigation):* `study_methods` = the `kind='study_method'` partition of the ADR-008
 registry (F2/D2), **not** a base table — queryable via a kind-partition read / optional view. **Inline** capability
@@ -3789,6 +3795,10 @@ instances = ProseMirror nodes synced in the page's Yjs doc (ADR-008 §3.4) — *
 | `purposes.progress` / `targets.current_value` (+ any pursuable's stored progress) → **nullable** (`NULL = derive`); today `NOT NULL DEFAULT 0` | ADR-011 §3.2 | ⏳ override-slot semantics |
 | `targets.purpose_id` → **nullable** (SR-003 relaxed; `ON DELETE SET NULL`) | ADR-011 (PG9) | ⏳ standalone targets |
 | restore `targets.success_criteria[E]` + `measurement_method`; `purpose_metrics.is_higher_better` + `baseline_value`; provenance `source{manual,auto}` on `purpose_metric_values`; optional per-child **nesting-weight** column | ADR-011 §3.1/§3.3/§3.6 | ⏳ measurement fields |
+| `user_profile` **SPLIT** by single-writer: System keeps per-currency total + level (DERIVED); `check_in_streak*` → Check-ins; `persona`/`motivation_style`/`active_modules`/`onboarding_*` → Preferences (receiving amendment owed); **PII (`display_name`/`avatar_url`/`birth_date`) STAYS ⚠** until an account/identity model exists | ADR-012 §3.10 | ⏳ no field ends with two writers |
+| `achievements.condition` → **measurable predicate** (evaluated on ADR-011 seam + event stream, not a bespoke checker); `level` → **derived** over a fixed non-linear curve config (**no table**) | ADR-012 §3.7/§3.8 | ⏳ engine-on-measurement |
+| **ADR-004 §3.2.2 catalogue** += `grant_currency` · `lock_currency` · `move_money` · `surface_notification` — **all §3.2.5 Additive-class** (deterministic `effect_event_id` + UNIQUE on the output row; no domain natural key). `award_xp` = `grant_currency(XP)` (kept) | ADR-012 §3.1 (extends ADR-004) | ⏳ **also owed to ADR-004's `Amended:` block** at consolidation |
+| **ADR-011 §3.7 DAG guard** extended to count **consequence→source→condition** edges (a currency grant moving `net_worth` can feed another rule's `derived-pull`) | ADR-012 §3.1 (extends ADR-011) | ⏳ **also owed to ADR-011 §3.7** at consolidation |
 
 #### Stream (ii) — the module-documentation tier (named, not enumerated)
 

@@ -23,6 +23,13 @@ aspects** (master manifest: [`../README.md`](../README.md)).
 - [ADR-003 — Sync Protocol](decisions/ADR-003-sync-protocol.md)
 - [ADR-004 — Session Framework](decisions/ADR-004-session-framework.md) (table-per-type sessions + 4-dimension Integration Contract; amends ADR-002)
 - [ADR-005 — Study-Method Service Framework](decisions/ADR-005-study-method-service-framework.md) (pluggable study-method services on Knowledge's generic review engine; Flashcards = reference impl; amends ADR-002)
+- [ADR-006 — Spaces Foundation & Universal Tags](decisions/ADR-006-spaces-foundation-universal-tags.md) (tier + universal `entity_tags` + `spaces`; amends ADR-002)
+- [ADR-007 — Saved Views](decisions/ADR-007-saved-views.md) (filter × layout × grouping; amends ADR-002)
+- [ADR-008 — Capability/Block Registry](decisions/ADR-008-capability-block-registry.md) (render-targeted capability definitions + `block_instances`; amends ADR-002)
+- [ADR-009 — Templates (Fork-on-Instantiate)](decisions/ADR-009-templates-fork-on-instantiate.md) (light `templates` store; amends ADR-002)
+- [ADR-010 — Capability Authoring Security](decisions/ADR-010-capability-authoring-security.md) (declare→grant→enforce sandbox; `capability_grants`)
+- [ADR-011 — Universal Measurability & Progress Propagation](decisions/ADR-011-universal-measurability-progress-propagation.md) (cross-cutting `measurement_kind`/`binding_mode` + fractal rollup; amends ADR-002)
+- [ADR-012 — Points Economy & Consequence Engine](decisions/ADR-012-points-economy-consequence-engine.md) (Gamification "the System": multi-currency economy + rule→consequence coordinator on existing rails; amends ADR-002, extends ADR-004 §3.2.2 + ADR-011 §3.7)
 
 > The CORE business rules are the **constitution** — the most important rules in the repo. Every lower level
 > (features/services/components) inherits and must comply. `[FACT: business-rules.md]`

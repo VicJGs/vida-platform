@@ -21,7 +21,7 @@
 **The v2 model is schema-only, 0 service logic:** `total_xp`/`current_level` are stored counters nothing derives;
 XP is additive-only (no penalties); no rules, no currencies, no boxes. `[FACT: grep clean packages/core/src/services]`
 
-### Intended (the System reframe — ⚠ INTENDED → ADR-002 §5.20 + the capstone ADR) `[INTENT: RESOLUTION]`
+### Intended (the System reframe — ⚠ INTENDED → ADR-002 §5.20 + ADR-012, Accepted 2026-07-19) `[INTENT: RESOLUTION]`
 - **`currencies`** (NEW) — user-definable resource-currency: `name[E] · backing_kind`{real-money, self-granted,
   measured-time}` · unit · icon · pool/to-distribute config`. The multi-currency spine. `[INTENT §B]`
 - **consequence ledger** (generalize `xp_history` → `consequence_ledger`) — `currency_id · amount(±) · kind`{earn,
@@ -43,10 +43,11 @@ XP is additive-only (no penalties); no rules, no currencies, no boxes. `[FACT: g
   - `user_profile` → **SPLIT** (GM-12): System keeps per-currency total + level; `check_in_streak*` → Check-ins;
     persona/modules/onboarding → Preferences; PII → account/profile. `[INTENT GG3]`
   - **level** → a derived value over a fixed non-linear **curve config** + titles (no new table). `[INTENT GG5]`
-- **New effects on the ADR-004 rail — TYPED, each in its §3.2.5 class (NOT one umbrella):** **`grant_currency`**
-  (additive-write; `award_xp` = its XP case) · **`lock_currency`** (keyed) · **`move_money`** (keyed, Finance-owned
-  `finance.recordTransfer`) · **`surface_notification`** (projection). The consequence *engine* coordinates them; the
-  rail keeps their idempotency classes distinct. `[INTENT §A/GG10; FACT: ADR-004 §3.2.5 taxonomy]`
+- **New effects on the ADR-004 rail — TYPED, all §3.2.5 Additive-class (NOT one umbrella):** **`grant_currency`**
+  (`award_xp` = its XP case) · **`lock_currency`** · **`move_money`** (Finance-owned transfer handler — INTENDED, 0-logic
+  today) · **`surface_notification`** (writes a synced `notifications` row → Additive, **not** a projection). Each appends
+  a durable output row with no domain natural key → deterministic `effect_event_id` is the sole convergence key; the
+  *engine* coordinates, the *rail* keeps each effect idempotent independently. `[INTENT §A/GG10; FACT: ADR-004 §3.2.5 taxonomy; ADR-012 §3.1]`
 - **RE-HOME:** the non-System columns leave `user_profile` (GM-12 — `check_in_streak*`→Check-ins, persona/modules→
   Preferences; **PII STAYS ⚠** until an account/identity model exists). **`award_xp` is NOT retired** — it stays the
   canonical **`grant_currency(XP)`** case, so the 9 feeders that emit it are unbroken; `grant_currency` generalizes it
@@ -66,13 +67,13 @@ XP is additive-only (no penalties); no rules, no currencies, no boxes. `[FACT: g
   dep-graph §5; core INT-2]`
 
 ## ADRs / structural decisions
-- **CAPSTONE ADR — "Points Economy & Consequence Engine"** (to raise at Accept; sibling to ADR-011): multi-currency
+- **ADR-012 — "Points Economy & Consequence Engine"** (Accepted 2026-07-19; sibling to ADR-011): multi-currency
   points (real-money · self-granted · measured-time) · nested Storage boxes · earn/lock/distribute ledger ·
   rule-bound reward/penalty/money-move/notify consequences on the ADR-004 rail · user-authored via capabilities.
   `[INTENT]`
-- **ADR-004 (Session Framework)** — the ⚠ INTENDED typed effects (`grant_currency` additive · `lock_currency`/
-  `move_money` keyed · `surface_notification` projection) join the §3.2.2 catalogue at build (each in its §3.2.5
-  class); owed to the capstone ADR + §5.20, not yet in ADR-004's authoritative body. `[FACT: ADR-004 §3.2.5 taxonomy;
+- **ADR-004 (Session Framework)** — the ⚠ INTENDED typed effects (`grant_currency` · `lock_currency`/
+  `move_money` · `surface_notification` — **all §3.2.5 Additive-class**, ADR-012 §3.1) join the §3.2.2 catalogue at build;
+  owed to ADR-012 (Accepted) + §5.20 + ADR-004's own `Amended:` block, not yet in ADR-004's authoritative body. `[FACT: ADR-004 §3.2.5 taxonomy;
   INTENT: new effects]`
 - **ADR-011 (Measurability)** — rules = bindings; conditions read the measurement-source seam. `[FACT: ADR-011]`
 - **ADR-008/010 (Capability authoring)** — user-authored rules/achievements/currencies are capability defs under the

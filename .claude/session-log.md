@@ -1370,3 +1370,57 @@ Next session (FRESH CONTEXT):
   - 🟢 ADR-012 build-phase owed (→ §5.20): `currencies` · consequence_ledger (generalize
     xp_history) · `store` (Finance) · rules · the 4 typed effects · user_profile split.
 ---
+Date: 2026-07-19
+Session goal: Draft + gate + accept + wire **ADR-012 "Points Economy & Consequence Engine"**
+Profile: Project Foundation → documentation-blueprint
+Scenario: documentation-blueprint
+Stack: Turborepo + pnpm, TypeScript 5.7, React 19, SQLite/SQLCipher + libsodium
+Status: **ADR-012 ACCEPTED + WIRED.** Full gated pass complete (draft → independent-refute
+  critique → revise → Accept → wire). Doc-only; `packages/` diff = 0. NOT yet committed.
+Completed:
+  - **DRAFT** — `docs/core/decisions/ADR-012-points-economy-consequence-engine.md`, sibling to
+    ADR-011 in format. Core decision: the whole "System" is a composition of existing rails —
+    `binding (ADR-011) → typed effects (ADR-004 §3.2.5) → sandbox (ADR-010)` — **no new engine**.
+    §3.1 rule=binding+typed-effects · §3.2 multi-currency (real-money/self-granted/measured-time,
+    XP=one currency) · §3.3 derived balances + pool-ceiling · §3.4 lock-not-destroy · §3.5 Storage
+    = Finance-owned nestable LAYER · §3.6 money via Finance · §3.7 achievements=predicates ·
+    §3.8 level=derived · §3.9 rules=headless(ADR-010, not ADR-008) · §3.10 user_profile split (PII
+    stays ⚠) · §3.11 boundaries (peripheral observer, in-degree 1).
+  - **CRITIQUE — independent adversarial refute** (subagent, fresh context; the gate's value
+    again). Verdict REVISE. Caught 3 LOAD-BEARING defects, all verified against files:
+    (1) `surface_notification` mislabeled **Projection** — but `notifications` is a durable synced
+    table (ADR-002 §5.16, is_read/read_at) → it's a **write** = Additive; (2) `[FACT: finance.ts
+    transfer L86-106]` **fabricated** — `finance-service.ts` is 0 bytes, no `recordTransfer`;
+    transfer is only a type field (types/finance.ts L22,L88-89); (3) `lock_currency`/`move_money`
+    labeled **keyed** but have **no domain natural key** (two same-amount rewards are distinct) →
+    Additive. + 7 material/minor (ADR-004 missing from Amends line [adding effect-types mutates a
+    fixed enum]; `to-distribute` pool source undefined; consequence-cycle not shown covered by
+    ADR-011 §3.7 DAG guard; "shipped award_xp" overstates 0-logic; v1 cites → ../life-os/;
+    dep-graph [FACT]→[INTERP]).
+  - **REVISE** — fixed all 10. KEY OUTCOME: **all four gamification effects are §3.2.5 Additive**
+    (not spread across 3 classes). This *strengthened* the anti-umbrella argument: 4 Additive
+    effects still need 4 distinct `effect_event_id`s → an umbrella with one id can't converge them;
+    and a full consequence set spans classes via OTHER-module effects (complete_habit_occurrence
+    [keyed] · surface_journal [projection]). Extended ADR-011 §3.7 DAG guard to consequence edges
+    (owed back to ADR-011). Resolved `to-distribute` = config ceiling − distributed (self-granted
+    has no backing entity, can't be ledger-derived).
+  - **ACCEPT** (Victor) → **WIRE:** status Accepted; ADR-002 header amender (ADR-012 entry) +
+    §5.20 Stream (i) rows (RETIRE `xp_history` · ADD `consequence_ledger`/`currencies`/`store`/
+    `rules` · AMEND user_profile split/achievements-predicate/level-derived/**ADR-004 §3.2.2 +=4
+    Additive effects**/**ADR-011 §3.7 extension**); global consolidation note → ADR-004…012.
+  - **NO-DRIFT reconciliation** (I created the drift by refining GM-2's class labels): corrected
+    keyed/projection → Additive across all 4 gamification aspect docs + fixed the `recordTransfer`
+    cites; flipped "capstone ADR (to raise at Accept)" → "ADR-012 (Accepted)"; updated docs/README
+    manifest (#8 ADR-011 + #9 ADR-012 → Accepted) + brought docs/core/README ADR index current
+    (was missing 006–011).
+Decisions (Victor):
+  - Accepted ADR-012 as revised (all-Additive effect model · self-granted pool ceiling · Storage-
+    as-layer — the three load-bearing calls presented before sign-off).
+Next session:
+  - **exec #10 — Notifications** (dead-last leaf; observes all incl. Gamification) — CLOSES the
+    entire documentation-blueprint task. Notifications table already exists (ADR-002 §5.16); the
+    `surface_notification` Additive effect (ADR-012) is its new in-edge from the System.
+  - 🟢 Build-phase owed to ADR-004's own `Amended:` block: the 4 Additive effect-types. Owed to
+    ADR-011 §3.7: the consequence-edge cycle extension. (Both flagged in ADR-012 + §5.20.)
+  - Not yet committed: ADR-012 + ADR-002 wiring + gamification-doc reconciliation + manifests.
+---

@@ -17,11 +17,15 @@
 - **GM-2 — A rule = a binding; a consequence = a set of TYPED effects (each in its §3.2.5 class).** A System rule is
   `IF [measured condition] THEN [consequence]`: the condition is an **ADR-011 binding** (`event-trigger` · `derived-pull`
   over a measurement-source), acyclic (DAG). A "consequence" is **NOT one effect** — it dispatches **typed effects,
-  each in its correct ADR-004 §3.2.5 write-class**: **`grant_currency`** (additive-write; `award_xp` = the XP case) ·
-  **`lock_currency`** / **`move_money`** (keyed-write, idempotent by domain key) · **`surface_notification`**
-  (projection, no write). The consequence *engine* coordinates them; the *rail* keeps their idempotency classes
-  distinct (a single umbrella effect can't inherit additive + keyed + projection at once). No new engine. `[INTENT;
-  FACT: ADR-011 §3.5-3.7; ADR-004 §3.2.5 taxonomy]`
+  each in its correct ADR-004 §3.2.5 write-class**: all four gamification-owned effects — **`grant_currency`** (`award_xp`
+  = the XP case) · **`lock_currency`** · **`move_money`** · **`surface_notification`** — are **§3.2.5 Additive-class**
+  (each appends a durable output row with no domain natural key → a deterministic `effect_event_id` is the sole
+  convergence key; a notification writes a real synced `notifications` row, so it is Additive, **not** a projection).
+  A consequence may **also** fire other modules' effects (`complete_habit_occurrence` [keyed] · `surface_journal`
+  [projection]). The consequence *engine* coordinates them; the *rail* keeps every effect idempotent on its own key
+  (an umbrella effect can't converge several distinct output rows on one id, nor be additive + keyed + projection at
+  once). No new engine. **[Authority: ADR-012 §3.1 — supersedes the earlier "keyed"/"projection" labels here.]**
+  `[FACT: ADR-004 §3.2.5 taxonomy (Additive = "no domain natural key"); ADR-011 §3.5-3.7; ADR-012 §3.1]`
 - **GM-3 — The economy is MULTI-CURRENCY.** Points generalize to many **resource-currencies** that run
   simultaneously; a reward/penalty is denominated in any of them. **Backing kinds:** `real-money` (→ Storage/Finance) ·
   `self-granted allowance` (vacation · cheat/food-freedom · fun/gaming — no external backing, no wealth required) ·
@@ -31,7 +35,7 @@
   (`total_xp`, `current_level`) become caches, never the source of truth. `[INTENT GG2; FACT: house rule SS-12 /
   ADR-011 §3.2]`
 - **GM-5 — Penalties LOCK, never destroy.** A penalty moves currency/money into a **locked** box/pool — held and
-  **recoverable**, not deleted — via a `lock_currency`/`move_money` **keyed** effect (idempotent by domain key).
+  **recoverable**, not deleted — via a `lock_currency`/`move_money` **Additive** effect (idempotent per deterministic `effect_event_id`; ADR-012 §3.1).
   `[INTENT: RESOLUTION §A/§B — Victor "not truly lost, but locked"]`
 - **GM-6 — Real-money consequences move money through Finance; the OS is the ledger truth.** A `real-money` reward =
   a **transfer** into a Storage box (native `transaction_type='transfer'`, FN-4) — a real entry in the user's own
@@ -128,8 +132,8 @@
 - A penalty is **clamped, never silently over-drawn** (GM-5).
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
-INTENDED, not in ADR-002 §5.15 today (→ consolidate into **§5.20** + the capstone ADR): **GM-2** the TYPED consequence
-effects (`grant_currency` additive · `lock_currency`/`move_money` keyed · `surface_notification` projection) + rules as
+INTENDED, not in ADR-002 §5.15 today (→ consolidated into **§5.20** + **ADR-012**, Accepted 2026-07-19): **GM-2** the TYPED consequence
+effects (`grant_currency` · `lock_currency`/`move_money` · `surface_notification` — **all §3.2.5 Additive-class**, ADR-012 §3.1) + rules as
 a headless automation primitive (ADR-011 binding + ADR-010 envelope, NOT an ADR-008 Block); **GM-3/GM-4**
 multi-currency ledger (generalize `xp_history`) + `currencies` registry; **GM-5** locked-currency/box; **GM-9** the
 `store` Storage layer (Finance-owned domain hierarchy); **GM-6** the `move_money` Finance effect + box↔Dream link;

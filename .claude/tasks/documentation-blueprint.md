@@ -185,9 +185,9 @@ deferred to #8 (touches every module; accumulates their needs). Order below revi
       (Languages struck; Spaces CORE-beneath-N&P; ⚠ N&P `page_tags`→`entity_tags` reconciliation flagged); SP7 front
       door `docs/core/spaces/README.md`. Verify PASS (G1 INT-1 drift fixed; O1/O2 build-seams flagged). Victor Accept:
       folded general extension-model → EX; community-external expansion **deferred (needs his go)**. **now → #8 Purposes & Goals (capstone).**
-- [ ] **8. Purposes & Goals — CAPSTONE** (Wave 3) — after 1–7 (esp. Spaces universal tags); resume `docs/intake/purposes-and-goals.md` (PG1 captured; PG2–PG10 vs real docs).
-- [ ] **9. Gamification** (Wave 4) — observes all incl. Purposes (goal-completion XP).
-- [ ] **10. Notifications** (Wave 4) — dead-last leaf — observes all incl. Gamification.
+- [x] **8. Purposes & Goals — CAPSTONE** (Wave 3) — documented + gate PASS 07-17; **ADR-011 Accepted 07-17**.
+- [x] **9. Gamification** (Wave 4) — documented + gate PASS 07-19; **ADR-012 "Points Economy & Consequence Engine" DRAFTED + independent-refute critique [REVISE] + revised + ACCEPTED + WIRED 07-19**. All 4 effects = §3.2.5 Additive (critic corrected keyed/projection mislabels); extends ADR-004 §3.2.2 + ADR-011 §3.7; ADR-002 §5.20 + header wired; gamification docs reconciled. Doc-only; not yet committed.
+- [ ] **10. Notifications** (Wave 4) — dead-last leaf — observes all incl. Gamification. **← NEXT; CLOSES the task.** Table exists (ADR-002 §5.16); `surface_notification` (ADR-012, Additive) is its new in-edge.
 - [ ] **Deferred (Victor 07-07): Fiscal & Legal** — post-all-waves; enhanced after #11.
 
 ### ▸ Purposes & Goals — intake PARKED (resume as capstone #9)

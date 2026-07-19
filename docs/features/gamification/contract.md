@@ -13,9 +13,10 @@
   **ADR-011 binding** (condition) + one or more **typed consequences**; user-authored rules install under the **ADR-010**
   declare→grant→enforce sandbox (attachment-scoped, sensitive-module consent). NOT an ADR-008 render-Block. `[INTENT §A;
   FACT: ADR-010 §3.1-3.3]`
-- **Consequence dispatch** — on a rule fire, dispatch **typed effects, each in its §3.2.5 class**: `grant_currency`
-  (additive) · `lock_currency`/`move_money` (keyed) · `surface_notification` (projection). Idempotent per
-  `effect_event_id`; the *engine* coordinates, the *rail* enforces class-correct dedup. `[INTENT §A; FACT: ADR-004 §3.2.5]`
+- **Consequence dispatch** — on a rule fire, dispatch **typed effects**: the four gamification-owned effects
+  (`grant_currency` · `lock_currency` · `move_money` · `surface_notification`) are **all §3.2.5 Additive-class**
+  (a consequence may also fire other modules' keyed/projection effects). Idempotent per deterministic
+  `effect_event_id`; the *engine* coordinates, the *rail* enforces per-effect dedup. `[INTENT §A; FACT: ADR-004 §3.2.5; ADR-012 §3.1]`
 - **`balances(currency): { to_distribute, earned, locked, current }`** — all **derived** from the consequence ledger
   (never stored counters). `[INTENT GG2]`
 - **`level(currency): { level, title, progress_to_next }`** — pure function of the currency total over a fixed
@@ -27,7 +28,7 @@
 
 ## What it consumes (documented integration points — no direct table access, constitution §6)
 - **ADR-004 effect rail** — the typed effects above; every write goes through the **owning module's** guarded handler
-  (`gamification.grantCurrency`, `finance.recordTransfer`/`move_money`, `notifications.fire`), idempotent (INT-2 / §3.2.5).
+  (`gamification.grantCurrency`, a Finance transfer handler for `move_money` [INTENDED — 0-logic today], `notifications.fire`), idempotent (INT-2 / §3.2.5).
   `[FACT: ADR-004 §3.2.5]`
 - **ADR-011** — `binding_mode` (rule conditions) + the **measurement-source seam** (Health weight/food-quality · Finance
   categories · time · engagement). `[FACT: ADR-011 §3.5-3.6]`
