@@ -1304,3 +1304,69 @@ Next session:
     progress columns · contributions/values/purpose_reviews/plan_steps · nesting-weight
     (all tracked in ADR-002 §5.20).
 ---
+
+---
+Date: 2026-07-19
+Session goal: exec #9 — document the Gamification context ("the System")
+Profile: Project Foundation → documentation-blueprint
+Scenario: documentation-blueprint
+Stack: Turborepo + pnpm, TypeScript 5.7, React 19, SQLite/SQLCipher + libsodium
+Status: Steps 1-3 DONE + gate PASS + manifest ✅ + COMMITTED. **ADR-012 NOT yet drafted**
+  — deferred to a fresh context (Victor: commit + session-log + /clear, then draft the ADR).
+Completed (documentation-blueprint Steps 1-3 + Accept-partial):
+  - **Step 1 Intake — WHOLE.** Big reframe over a long intake dialogue: Gamification is NOT
+    a badge layer — it is **"the System"**, a behavioral **incentive & consequence engine**
+    (manhwa "level up real life"); the motivation/consequence PARTNER to the Purposes meaning
+    plane. Wrote docs/intake/gamification.md (Current 4-table floor + v1 harvest from
+    ../life-os + RESOLUTION). GG1–GG11 resolved.
+  - **Step 2 Transform — 5 canonical aspect docs** in docs/features/gamification/; deleted the
+    off-standard stub set.
+  - **Step 3 Verify — PASS.** /critique (REVISE) caught the load-bearing **`apply_consequence`
+    taxonomy violation** (one umbrella effect can't hold additive+keyed+projection idempotency
+    classes — ADR-004 §3.2.5) + rules-aren't-ADR-008-Blocks + Storage-vs-Spaces framing +
+    user_profile-PII-destination-undefined + award_xp-shouldn't-be-retired → all fixed.
+    Independent verify caught 2 residual `apply_consequence` slips → fixed.
+  - **Accept-partial:** manifest ✅ in docs/features/README.md + docs/README.md.
+THE SYSTEM MODEL (for drafting ADR-012 next):
+  - **Rule → consequence:** a rule = an **ADR-011 binding** (event-trigger · derived-pull,
+    acyclic DAG) firing **TYPED effects, each in its ADR-004 §3.2.5 write-class**:
+    `grant_currency` (additive; **award_xp = its XP case**, so 9 feeders unbroken) ·
+    `lock_currency`/`move_money` (keyed) · `surface_notification` (projection). The engine
+    coordinates; the rail keeps idempotency classes distinct. NO new engine.
+  - **Multi-currency economy (the inclusivity core, Victor):** many currencies at once, each
+    `backing_kind` = `real-money` (→ Storage/Finance) · **`self-granted allowance`** (vacation
+    days · cheat meals · gaming hours — NO wealth required; the great equalizer, Premack) ·
+    `measured-time` (sessions/time-logs). 4 DERIVED quantities per currency (to-distribute ·
+    earned · locked · current); generalized `xp_history` ledger. Penalties LOCK (recoverable),
+    never destroy.
+  - **Storage = a Finance-owned nestable composition LAYER** (NOT a rewrite): a `store` node =
+    group (folder) | wrapper (→ existing account/investment/asset); `parent_id` single-parent
+    **domain structural hierarchy** (like Projects/Tasks parent-FK, orthogonal to Spaces tag-
+    grouping); `is_locked` · dream/purpose link · currency overlay; existing Finance entities
+    UNTOUCHED; canonical worth-tree (no double-count); net worth = tree − liabilities. Rewards
+    fund Dreams (estimated_cost) → Purposes laddering.
+  - **Rules = HEADLESS automation** (ADR-011 binding + typed effect + ADR-010 permission
+    envelope) — NOT an ADR-008 render-Block. **Achievements** = predicates over measured state
+    (ADR-011 seam) + event stream (not v1 bespoke checkers); app-curated v1, user-authored later.
+  - **user_profile split:** System owns per-currency total + level (DERIVED); check-in streak →
+    Check-ins; persona/modules → Preferences; **PII STAYS ⚠** (no account entity exists yet).
+Decisions (Victor, this session):
+  - The System reframe (real-stakes self-improvement; for kids/turnaround users).
+  - Multi-currency incl. self-granted life-allowances so it works WITHOUT money.
+  - Storage = a composition layer over existing value-holders (NOT rename accounts / NOT a
+    supertype — the OS's Commitments-layer/Spaces pattern; the god-table + supertype both
+    considered and rejected).
+  - Gate value again = the independent critic (caught the §3.2.5 taxonomy violation self-review
+    glided past).
+Next session (FRESH CONTEXT):
+  - **Draft ADR-012 "Points Economy & Consequence Engine"** (capstone-scale, sibling to
+    ADR-011) — its own gated pass: draft → /critique (independent refute) → revise → Accept →
+    wire into ADR-002 §5.20 (Stream i) + header amender + consolidation note →012. Model = the
+    SYSTEM MODEL above. Effects join ADR-004 §3.2.2 at build.
+  - Then **exec #10 — Notifications** (dead-last leaf; observes all incl. Gamification) CLOSES
+    the entire documentation-blueprint task.
+  - Committed this session: 5 gamification aspect docs + intake + manifest + logs. ADR-012 is
+    uncommitted because not yet drafted.
+  - 🟢 ADR-012 build-phase owed (→ §5.20): `currencies` · consequence_ledger (generalize
+    xp_history) · `store` (Finance) · rules · the 4 typed effects · user_profile split.
+---
