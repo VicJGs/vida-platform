@@ -49,9 +49,11 @@
 - **No cycle:** it reads everything, writes only its own rows, is read by nothing. `[FACT: dep-graph; INT-1]`
 
 ## ADRs / structural decisions
-- **ADR-013 (NEW — "Zero-Knowledge Notification Delivery", to raise): content-free wake-signal push + per-channel ZK
-  fidelity (in-app full · push wake-only · email generic · SMS dropped) + on-device compose. Cross-cutting: server relay
-  + ADR-001 Phase-6.7 + ADR-003 transport.** `[INTENT: RESOLUTION N3]`
+- **ADR-013 ("Zero-Knowledge Notification Delivery") — ACCEPTED 2026-07-19:** three-tier delivery (in-app · **native
+  local-scheduled** · content-free wake-signal) + per-channel ZK fidelity (in-app full · push wake-only · email generic
+  · SMS dropped) + on-device compose. Honest bound: push exposes timing to APNs/FCM (new 3rd party) + tokens, never
+  content. Amends ADR-001 (Phase-6.7 resolution) · ADR-002 (delivery-audit) · ADR-003 (wake-relay + device-registry
+  push-token cols). `[FACT: ADR-013]`
 - **ADR-012 (Points Economy)** — owns `surface_notification` (Additive); Notifications is its receiving handler. `[FACT: ADR-012 §3.1]`
 - **ADR-004 (Session Framework)** — the `surface_notification` effect rides §3.2.5; `dueIn` is the Sessions seam. `[FACT: ADR-004 §3.2.5]`
 - **ADR-002 §5.20 amendment (build-phase)** — delivery-audit cols + optional `metadata[E]` on `notifications`; the

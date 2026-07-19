@@ -5,6 +5,7 @@
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Zero-knowledge, local-first, multiplatform life management SaaS
 **Amended:** 2026-07-16 (F5 / D6) — §6 Key Model: `HKDF` → `BLAKE2b-256` (keyed), aligning this ADR to the authoritative implementation (`packages/core/src/encryption/vault.ts`, tested). Doc-only alignment; no code changed.
+**Amended:** 2026-07-19 ([ADR-013](ADR-013-zero-knowledge-notification-delivery.md)) — **resolves the deferred "Push notification service (Expo vs OneSignal)" (Phase 6.7)**: the contract is that push carries **no content** (a content-minimal wake-signal); the vendor choice stays build-phase. Doc-only.
 
 ---
 

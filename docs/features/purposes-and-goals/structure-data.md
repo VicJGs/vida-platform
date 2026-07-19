@@ -77,7 +77,7 @@ measurement/binding/provider machinery. `[FACT: grep clean of packages/core/src/
   core INT-2]`
 
 ## ADRs / structural decisions
-- **CAPSTONE ADR — "Universal Measurability & Progress Propagation"** (to raise at Accept; **CORE-level,
+- **ADR-011 — "Universal Measurability & Progress Propagation"** (Accepted 2026-07-17; **CORE-level,
   cross-cutting — not Purpose-local**): `measurement_kind` + normalized `progress ∈ [0,1]` + the `binding_mode`
   primitive (`manual`/`derived-pull`/`event-trigger`) + the measurement-source READ seam + INT-2-rail write
   propagation + the acyclic (DAG) guard. Lands on every pursuable module; Purpose is its rollup apex + primary

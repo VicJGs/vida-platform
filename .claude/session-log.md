@@ -1470,3 +1470,60 @@ Next:
     dispatcher (`reminder-engine.ts`).
   - Not yet committed: the entire Notifications pass (intake + 5 docs + stub deletions + wiring + logs).
 ---
+Date: 2026-07-19
+Session goal: Draft + gate + accept + wire **ADR-013 "Zero-Knowledge Notification Delivery"** +
+  full close-out audit of the whole documentation-blueprint cycle
+Profile: Project Foundation → documentation-blueprint
+Scenario: documentation-blueprint
+Stack: Turborepo + pnpm, TypeScript 5.7, React 19, SQLite/SQLCipher + libsodium
+Status: **ADR-013 ACCEPTED + WIRED. Close-out audit PASS — the whole cycle is patched up.**
+  documentation-blueprint is COMPLETE (10 modules + ADR-011/012/013). Doc-only; packages/ diff = 0.
+  Notifications pass committed `45a2e00` earlier; THIS (ADR-013 + audit) not yet committed.
+Completed:
+  - **DRAFT ADR-013** — the ZK delivery model surfaced by Notifications N3. Three-tier: in-app
+    (fully local) · **native local-scheduled** OS alerts (server-free, for time reminders) ·
+    **content-free wake-signal** (events + web). Server composes/reads nothing.
+  - **CRITIQUE — independent adversarial refute** (subagent). Verdict REVISE; 3 load-bearing +
+    material, all verified vs files:
+    (1) **ZK OVERCLAIM** — I'd written "wake-signal adds no new metadata surface (same as the relay)."
+      FALSE: APNs/FCM = Apple/Google, a NEW *third-party* observer vs the first-party Cloudflare relay.
+      Rewrote §3.5 as "content-zero, NOT observer-zero" naming the exposure honestly.
+    (2) **MECHANISM OVERCLAIM** — "local scheduling all platforms/offline/closed" false for WEB (no
+      background scheduling → wake-tier) + iOS silent-wake is throttled (the exact unreliability
+      Option D was rejected for). Fixed: native-only local-schedule; closed devices get a generic
+      VISIBLE push upgraded to real content on wake (not a silent wake).
+    (3) **MISSING AUTHORITY** — ADR-003 is sync's single-source-of-truth + already owns a device
+      registry + /api/devices/register; my `device_push_tokens` table duplicated it. Fixed: added
+      ADR-003 to Amends; push tokens = COLUMNS on its registry; reused the existing route.
+    + quiet-hours must be BAKED into the local schedule (fires with app closed, dispatcher can't
+      gate live); wake-trigger reads nothing (blob-arrival + per-user routing); cite precision.
+    (Critic errors I did NOT "fix": my intake doc DOES exist at docs/intake/notifications.md; NF-3
+    DOES state derived-until-fire — both verified, cites kept.)
+  - **REVISE** — all findings fixed; ADR internally re-verified.
+  - **ACCEPT** (Victor) → **WIRE:** status Accepted; amender notes added to **ADR-001** (Phase-6.7
+    push resolution) + **ADR-003** (wake-relay + registry push-token cols) + **ADR-002** header +
+    §5.20 (device-registry push_token/push_platform AMEND row); 3 manifests + notifications/purposes
+    structure-data pointers flipped to Accepted.
+  - **FULL CLOSE-OUT AUDIT (Victor asked "check we didn't leave anything behind"):**
+    · all **13 ADRs = Accepted** (none Proposed/pending) · all **20 documented contexts = exactly
+    canonical-5** · **packages/ diff = 0** across the entire session · ADR-013 amender notes present
+    in ADR-001/002/003.
+    FIXED 3 drift items the audit caught: (a) **journals** carried the same 5 empty off-standard
+    stubs notifications had → deleted (canonical-5 precedent; journals was the only other module
+    with them) · (b) **features/README** Purposes row still said "ADR-011 — pending draft" → Accepted
+    · (c) **purposes-and-goals/structure-data** still said "CAPSTONE ADR (to raise at Accept)" for
+    ADR-011 → Accepted. Remaining "pending"/"to raise" grep hits are frozen historical artifacts
+    (gate PLAN records, intake docs) or false positives ("to raise recall") — correctly left.
+Decisions (Victor):
+  - Accepted ADR-013 (three-tier delivery; timing-to-APNs/FCM accepted as the industry-standard
+    floor, content stays client-only; privacy-max users run in-app + native-local only).
+Next:
+  - **documentation-blueprint is DONE** — ready for `/task-complete` (all 10 execs + ADR-011/012/013,
+    all gated + accepted + wired; audit clean).
+  - 🟢 Build-phase owed → §5.20 (for the schema build session): ADR-012 (currencies · consequence_
+    ledger · store · rules · 4 Additive effects · user_profile split) · ADR-013 (device-registry
+    push_token/push_platform cols · notifications delivery-audit · wake-relay server + local dispatcher).
+    Owed to sibling ADR Amended-blocks at consolidation: ADR-004 §3.2.2 (+4 effects) · ADR-011 §3.7
+    (consequence edges) — both flagged.
+  - Not yet committed: ADR-013 + all wiring + the 3 audit fixes + logs.
+---

@@ -30,6 +30,7 @@ aspects** (master manifest: [`../README.md`](../README.md)).
 - [ADR-010 — Capability Authoring Security](decisions/ADR-010-capability-authoring-security.md) (declare→grant→enforce sandbox; `capability_grants`)
 - [ADR-011 — Universal Measurability & Progress Propagation](decisions/ADR-011-universal-measurability-progress-propagation.md) (cross-cutting `measurement_kind`/`binding_mode` + fractal rollup; amends ADR-002)
 - [ADR-012 — Points Economy & Consequence Engine](decisions/ADR-012-points-economy-consequence-engine.md) (Gamification "the System": multi-currency economy + rule→consequence coordinator on existing rails; amends ADR-002, extends ADR-004 §3.2.2 + ADR-011 §3.7)
+- [ADR-013 — Zero-Knowledge Notification Delivery](decisions/ADR-013-zero-knowledge-notification-delivery.md) (three-tier delivery: in-app · native local-scheduled · content-free wake-signal; server never sees content; amends ADR-001, ADR-002, ADR-003)
 
 > The CORE business rules are the **constitution** — the most important rules in the repo. Every lower level
 > (features/services/components) inherits and must comply. `[FACT: business-rules.md]`

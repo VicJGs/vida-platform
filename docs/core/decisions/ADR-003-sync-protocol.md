@@ -5,6 +5,7 @@
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Sync protocol for zero-knowledge, local-first, multiplatform life management SaaS
 **References:** ADR-001 (Tech Stack), ADR-002 (Data Model), Life OS `syncManager.ts`
+**Amended:** 2026-07-19 ([ADR-013](ADR-013-zero-knowledge-notification-delivery.md)) — adds a **wake-relay** server responsibility (a content-minimal OS push to a user's closed devices on blob-push arrival, by per-user routing — composes/reads nothing) and **extends the §12 device registry** with `push_token` + `push_platform` columns (registration rides the existing `/api/devices/register`). Doc-only; server stays a blind relay.
 
 ---
 
