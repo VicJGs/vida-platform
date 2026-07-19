@@ -3799,6 +3799,7 @@ instances = ProseMirror nodes synced in the page's Yjs doc (ADR-008 §3.4) — *
 | `achievements.condition` → **measurable predicate** (evaluated on ADR-011 seam + event stream, not a bespoke checker); `level` → **derived** over a fixed non-linear curve config (**no table**) | ADR-012 §3.7/§3.8 | ⏳ engine-on-measurement |
 | **ADR-004 §3.2.2 catalogue** += `grant_currency` · `lock_currency` · `move_money` · `surface_notification` — **all §3.2.5 Additive-class** (deterministic `effect_event_id` + UNIQUE on the output row; no domain natural key). `award_xp` = `grant_currency(XP)` (kept) | ADR-012 §3.1 (extends ADR-004) | ⏳ **also owed to ADR-004's `Amended:` block** at consolidation |
 | **ADR-011 §3.7 DAG guard** extended to count **consequence→source→condition** edges (a currency grant moving `net_worth` can feed another rule's `derived-pull`) | ADR-012 §3.1 (extends ADR-011) | ⏳ **also owed to ADR-011 §3.7** at consolidation |
+| `notifications` += **delivery-audit** (which channels a row fired on — `delivered_in_app`/`_push`/`_email` or a `delivered_channels` set; multi-device dedup) + optional `metadata` JSON `[E]` | Notifications structure-data (N4) → ADR-013 | ⏳ lean row + audit; `reminder-engine.ts` dispatcher owes a service, not a table |
 
 #### Stream (ii) — the module-documentation tier (named, not enumerated)
 

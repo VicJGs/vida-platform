@@ -1424,3 +1424,49 @@ Next session:
     ADR-011 §3.7: the consequence-edge cycle extension. (Both flagged in ADR-012 + §5.20.)
   - Not yet committed: ADR-012 + ADR-002 wiring + gamification-doc reconciliation + manifests.
 ---
+Date: 2026-07-19
+Session goal: **exec #10 — Notifications** (the dead-last leaf) — CLOSES documentation-blueprint
+Profile: Project Foundation → documentation-blueprint
+Scenario: documentation-blueprint
+Stack: Turborepo + pnpm, TypeScript 5.7, React 19, SQLite/SQLCipher + libsodium
+Status: **NOTIFICATIONS DOCUMENTED + Verify PASS + gate PASS + manifest ✅.** All 10 execs done —
+  the documentation-blueprint module tier is COMPLETE. Doc-only; `packages/` diff = 0. Committed
+  ADR-012 pass as `3765916` earlier this session; THIS Notifications work not yet committed.
+Completed:
+  - **Intake WHOLE** (`docs/intake/notifications.md`): current floor (1-table, 6-type, 0-logic —
+    `reminder-engine.ts` is 0 bytes) + v1 harvest (../life-os: channels[]/metadata/NotificationPreferences)
+    + **22-producer in-edge sweep** (subagent) + N1–N7 open questions.
+  - **Deep architectural dialogue** (Victor asked for current architecture · problems · ZK limits ·
+    recommendations before deciding). Key finding: **ZK collapses the channel matrix** — in-app =
+    full fidelity (local rows) · push = wake-only · email = generic nudge · SMS = impossible.
+  - **RESOLUTION (Victor accepted my recommendations):**
+    - **N1 = derived-until-fire** — upcoming time reminders are a derived `dueIn()` agenda (no rows);
+      a row materializes only at fire time. Event ones (`surface_notification`) are always rows.
+    - **N2 = confirmed** — delivery config (channels/quiet-hours/toggles) = Preferences §5.17.
+    - **N3 = content-free wake signal** → **surfaces ADR-013** (server relays "sync now" only; device
+      composes locally after decrypt; no [E] content NOR entity refs on the wire). Own gated pass.
+    - **N4 = lean + delivery-audit + optional metadata[E]** · **N5 = digest ⚠ INTENDED** · **N6 = 6
+      types sufficient** · **N7 = expire→archive→purge lifecycle**.
+  - **5 canonical aspect docs** written (`docs/features/notifications/`): identity · business-rules
+    (NF-1…NF-15) · structure-data · contract · conventions. Deleted **5 empty off-standard stubs**
+    (component-catalog/module-spec/page-map/service-contract/state-management-map) → canonical 5,
+    matching the gamification precedent.
+  - **Verify PASS** (No-Guessing spot-checks): `dueIn` = real Sessions provider primitive · §5.16
+    E-marks · `reminder-engine.ts`=0 bytes · Relationships reminders/snooze — all confirmed.
+  - **Wired:** features/README (#10 → documented) + docs/README manifest (#10) + ADR-002 §5.20 AMEND
+    row (notifications delivery-audit + metadata[E]; dispatcher owes a service not a table).
+Decisions (Victor):
+  - Followed my recommendations wholesale (N1 derived-until-fire · N3 content-free wake-signal + a
+    small ADR-013 · N5 digest intended-immature).
+Surfaced: **ADR-013 (Zero-Knowledge Notification Delivery)** — content-free wake-signal push + per-
+  channel ZK fidelity + on-device compose; cross-cutting (server relay + ADR-001 Phase-6.7 + ADR-003
+  transport). Pending draft (its own gated pass, like ADR-011/012).
+Next:
+  - **The documentation-blueprint TASK is ready to CLOSE** (all 10 modules documented). `/task-complete`.
+  - **ADR-013** is the one surfaced-but-undrafted follow-up (draft → independent-refute → revise →
+    accept → wire, the ADR-011/012 rhythm). Victor's call: draft now as the capstone close, or after
+    /task-complete as a fresh follow-up.
+  - 🟢 Build-phase owed → §5.20: notifications delivery-audit cols + metadata[E]; the on-device
+    dispatcher (`reminder-engine.ts`).
+  - Not yet committed: the entire Notifications pass (intake + 5 docs + stub deletions + wiring + logs).
+---

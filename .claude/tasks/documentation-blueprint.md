@@ -187,7 +187,7 @@ deferred to #8 (touches every module; accumulates their needs). Order below revi
       folded general extension-model → EX; community-external expansion **deferred (needs his go)**. **now → #8 Purposes & Goals (capstone).**
 - [x] **8. Purposes & Goals — CAPSTONE** (Wave 3) — documented + gate PASS 07-17; **ADR-011 Accepted 07-17**.
 - [x] **9. Gamification** (Wave 4) — documented + gate PASS 07-19; **ADR-012 "Points Economy & Consequence Engine" DRAFTED + independent-refute critique [REVISE] + revised + ACCEPTED + WIRED 07-19**. All 4 effects = §3.2.5 Additive (critic corrected keyed/projection mislabels); extends ADR-004 §3.2.2 + ADR-011 §3.7; ADR-002 §5.20 + header wired; gamification docs reconciled. Doc-only; not yet committed.
-- [ ] **10. Notifications** (Wave 4) — dead-last leaf — observes all incl. Gamification. **← NEXT; CLOSES the task.** Table exists (ADR-002 §5.16); `surface_notification` (ADR-012, Additive) is its new in-edge.
+- [x] **10. Notifications** (Wave 4) — **DOCUMENTED + Verify PASS + gate PASS 07-19; CLOSES the module tier.** 5 aspect docs; intake WHOLE (N1–N7). Pure sink (in-degree=all, out=0). Two paths: event `surface_notification` (ADR-012 Additive) + time `dueIn` seam; **reminders derived-until-fire**; delivery=Preferences §5.17. **ZK delivery = content-free wake-signal** → surfaced **ADR-013 (ZK Notification Delivery)**, pending draft. Deleted 5 empty off-standard stubs. Doc-only; not yet committed.
 - [ ] **Deferred (Victor 07-07): Fiscal & Legal** — post-all-waves; enhanced after #11.
 
 ### ▸ Purposes & Goals — intake PARKED (resume as capstone #9)
