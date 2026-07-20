@@ -14,3 +14,17 @@
 | 2026-06-07 | setup | rename Claude.md → CLAUDE.md | git mv | cross-platform memory loading (case-sensitive CI) | yes |
 | 2026-06-08 | build | declare cross-package imports as deps | `@vida/types: workspace:*` in core | tsc --noEmit resolves bare specifiers via node_modules, not tsconfig references | yes |
 | 2026-06-08 | core | unlockVault return value | return `keyChain.vault_key` not `_vaultKey` | avoid null-widening of module-level mutable across call boundary | yes |
+
+## documentation-blueprint — completed 2026-07-19
+
+The foundational documentation effort for vida-platform. Built a discovery-driven **Levels × Aspects** framework, then documented the entire platform against it and locked the architecture in ADRs.
+
+**Delivered:**
+- **21 documented contexts** (19 modules + sub-contexts), each as the canonical 5 aspect docs (`identity · business-rules · contract · structure-data · conventions`) under `docs/features/`.
+- **15 ADRs, all Accepted** (`docs/core/decisions/ADR-001…015`) — this session added ADR-011 (Universal Measurability), ADR-012 (Points Economy & Consequence Engine), ADR-013 (ZK Notification Delivery), ADR-014 (External Data Ingestion under ZK), ADR-015 (AI/LLM under ZK). ADR-014/015 are the two standing EX-2 ZK-integration ADRs — closing that constitution loop.
+- **The constitution** (`docs/core/business-rules.md`) and **the owed-tables ledger** (ADR-002 §5.20 — the single scoped input for the build phase: all ADR tables + the 21-module target schema).
+
+**Key decisions / patterns established:**
+- Feature docs describe **intent**; ADRs decide **cross-cutting mechanism** — the discipline that kept the modules coherent.
+- **Every gated ADR ran an independent adversarial critique.** It caught a ZK-honesty overclaim in **five consecutive ADRs** (011–015) plus a prompt-injection security hole — the gate is load-bearing on this project.
+- Doc-only throughout: **`packages/` diff = 0** across the entire task. The build phase (schema consolidation from §5.20) is the next stone.
