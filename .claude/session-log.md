@@ -1580,3 +1580,170 @@ Next:
     plus the prompt-injection catch. The gate is load-bearing on this project.
   - Not yet committed: ADR-014/015 + Fiscal & Legal + all wiring + logs.
 ---
+
+---
+Date: 2026-07-20
+Task: build-roadmap
+Goal: Set the platform's buildable deliverables as a phased, clustered map (dependency map + roadmap
+      across modules/engines/integrations/architecture/applications), then mirror into Linear (scope B).
+Completed:
+  - Created task build-roadmap (.claude/tasks/build-roadmap.md); registered In Progress (TASKS.md, _index.md, panel #1).
+    New scenario for project-foundation profile (build-roadmap) — to formalize via /new-scenario at close.
+  - Captured Victor's INTENT (3 phases, confirmed): Phase 1 local dogfood (localhost web, single-user,
+    built to complete) → Phase 2 venues (self-host · mobile · desktop) + web-first release (self-host OR
+    ZK-cloud, ZK-cloud = perk) → Phase 3 personality (integrations + 2nd-level blocks, post-community).
+  - Docs-patch pass: 4 parallel agents over 15 ADRs + 21 contexts + module-dependency-graph. Confirmed
+    Phase 1 needs NO server/sync (web is local-first; keep _sync_* scaffolding, never flush). Integration
+    register: 22 integrations → 6 DEFINED / 16 UNDEFINED provider (by design, ADR-014/015 punt to build).
+  - Added the 5-layer STRUCTURAL FOUNDATION (Victor's key addition): Database · Architecture · Design
+    System · UI · UX as first-class Phase-1.0 clusters. DB LEADS.
+  - Wrote docs/roadmap.md — full decomposition (~43 clusters / 3 phases; DB granular per ADR-002 §5.20).
+  - Investigated tracker: one task file = one Linear issue; # Cluster:→Project, ## Goal→issue desc,
+    ## Dependencies→blocks relations. GAP: no milestones, no project descriptions in linear_client.py.
+Decisions (Victor):
+  - Deliverables organize module→application; engines/architecture are first-class deliverables.
+  - Phases cut at visible "states reached" (progress must be legible + enjoyable).
+  - Intent-first, docs-second (docs patch intent, don't originate it).
+  - Database Layer leads Phase 1.0; cluster = Linear Project, issues = deliverable-level.
+  - Push scope = Phase 1.0 only (staged; avoid stale 43-cluster dump).
+  - Linear-structure gap → PATH 1: ENHANCE THE TRACKER (milestones + project descriptions) before push.
+In progress:
+  - Phase 1.0 Linear push — NOT started. Blocked on tracker enhancement.
+Next session:
+  - FIRST: commit/clean the dev-toolkit (uncommitted changes flagged at session start) — don't build on dirty.
+  - THEN enhance tracker: linear_client.py add project description (projectUpdate) + ensure_milestone
+    (projectMilestoneCreate) + issue→milestone assignment; tracker_sync.py parse # Milestone: + per-cluster
+    project-description source; dry-run + tests; keep best-effort/backward-compatible.
+  - THEN generate ~30 Phase-1.0 task files from docs/roadmap.md (clusters ①-⑤, issues DB-1..11/AR/DS/UI/UX,
+    milestones, blocked-by links, ## Goal = concise+descriptive).
+  - THEN /track-sync — relay each --approve-cluster to Victor (gated, outward-facing).
+  - Full detail pinned in .claude/tasks/build-roadmap.md → "## Resume — NEXT".
+---
+
+---
+Date: 2026-07-20
+Task: build-roadmap
+Goal: Enhance the tracker (path 1) so Phase-1.0 can be projectized into Linear with milestones +
+      descriptive projects — the precondition before generating task files and pushing.
+Completed:
+  - Ran the full §XXVI Per-Step Build Gate on a TOOLKIT enhancement (code lives in ~/dev-toolkit):
+    spec → critique(independent) → APPROVAL 1 → preflight → critique → APPROVAL 2 → implement.
+  - Spec: ~/dev-toolkit/docs/specs/features/task-tracker-sync/milestones-and-descriptions.md (Phase 5, IMPLEMENTED).
+  - Toolkit commits: 5cd9562 (3.9 `from __future__` shim clean-up — HEAD's tracker_sync.py crashed on
+    import; completed the skipped file from 78e6502) + 1217af4 (feat: milestones + project descriptions).
+  - linear_client.py: new ensure_milestone (idempotent); ensure_project +description (read-back
+    change-detection, non-blocking projectUpdate); ensure_issue +milestone_id (bind re-asserted on
+    known-id AND natural-key AND create paths).
+  - tracker_sync.py: `# Milestone:` anchor (free-form) + `.claude/tasks/_clusters.md` sidecar (strict
+    `### Milestones` + per-cluster description) parsers; do_sync milestone/description pass over mapped
+    projects (skips pending clusters); map `milestones` store; `_clusters.md` excluded from task glob.
+  - Verified: offline unit tests + 9/9 LIVE smoke on a throwaway initiative (create · idempotent re-sync
+    0-dupes · unbind+rebind · full API cleanup). Back-compat proven on the real repo (--status unchanged).
+In progress:
+  - Step 5 of build-roadmap: tracker enhancement DONE; task-file generation + gated push NOT started.
+Decisions:
+  - Milestones = TWO composed sources (free-form anchor + strict `_clusters.md`), never invented; a
+    free-form name with no strict match is created but WARNed on creation (visible typo). [Victor]
+  - Project descriptions = `_clusters.md` sidecar (decision A). One declarative sidecar holds both.
+  - Field names live-introspected before coding (Linear API may have moved) — all confirmed.
+Next session:
+  - FIRST ACTION: plan the Phase-1.0 task-file generation (doc-generation unit → §XXVI LITE path).
+  - Generate ~30 task files from docs/roadmap.md (clusters ①-⑤; DB-1..11 / AR / DS / UI / UX; each with
+    `# Cluster:` + `# Milestone:` + concise `## Goal` + blocked-by links) AND author `.claude/tasks/_clusters.md`
+    (5 cluster descriptions + strict `### Milestones` per cluster).
+  - THEN gated `/track-sync` — relay each `--approve-cluster` to Victor (outward-facing).
+  - Full detail: .claude/tasks/build-roadmap.md → "## Resume — NEXT".
+---
+
+---
+Date: 2026-07-20
+Task: build-roadmap
+Goal: Step 5b + Step 6 — generate the Phase-1.0 task files (clusters ①-⑤) + `_clusters.md`, then
+      gated `/track-sync` push to Linear (cluster-first).
+Completed:
+  - Read the tracker contract from source before writing: `# Task:` is triple-duty (filename =
+    Linear issue title = blocked-by id); tracker scans `.claude/tasks/*.md` NON-recursively; issue
+    body = `## Goal` + auto `toolkit:<slug>` marker; `_clusters.md` = per-`## cluster` description
+    (pre-`###`) + strict `### Milestones` list.
+  - Wrote 35 issue task files flat in `.claude/tasks/`: DB-1..11 (11), AR-1..9 (9), DS-1..5 (5),
+    UI-1..4 (4), UX-1..6 (6). Each: `# Cluster:` + `# Milestone:` + `# Phase:` + `# Source:` +
+    `## Goal` (the Linear body) + `## Dependencies` (blocked-by lines). Kebab-slug titles.
+  - Authored `.claude/tasks/_clusters.md` — 5 cluster descriptions (≤255) + 11 strict milestones.
+  - Verified pre-push via `tracker_sync.py --status`: 5 projects + 35 issues + 11 milestones all
+    resolve, every `◇milestone` matched, every blocked-by resolved, zero warnings.
+  - PUSHED to Linear (cluster-first): ① Database Layer alone → Victor verified → approved + pushed
+    ②③④⑤. Result: 35 issues LIF-61…95 · 5 projects · 14 milestones · ~34 blocks-relations, all
+    BACKLOG. Cross-cluster edges landed (db-6→ar-2, db-8→ar-8, db-2→ar-9, ds-5→ui-1, ar-4→ui-3,
+    ux-3→ui-4, ar-3→ux-5). DB issues re-synced idempotent (`=`, 0 dupes).
+In progress:
+  - Steps 7 (quality gate: victor:quality-gate-foundation + /critique) and 8 (formalize the
+    build-roadmap scenario via /new-scenario) NOT started — deferred to next session by choice.
+Decisions:
+  - File placement: 35 issue-files flat in `.claude/tasks/` (tracker is non-recursive — a subdir
+    would be invisible), NOT indexed in TASKS.md/_index (backlog, not active sessions). [Victor]
+  - Titles: kebab-slug (= filename = blocked-by id), matching existing convention. [Victor]
+  - Description fix: Linear caps `project.description` at 255 chars; the 5 blurbs were 349–455 →
+    `projectCreate` INVALID_INPUT. Chose to TIGHTEN all to ≤255 now (unblock) over the heavier
+    toolkit fix (write long body into Linear's `content` field). [Victor] — toolkit fix FILED as a
+    deferred §XXVI follow-up in build-roadmap.md "## Toolkit follow-up".
+Failures this session:
+  - F: `projectCreate` INVALID_INPUT (Argument Validation Error) on all 5 clusters — root cause
+    `project.description` > 255-char Linear cap. Resolved: tightened `_clusters.md` descriptions to
+    ≤255, re-pushed clean. Create failed atomically (no partial state) → safe retry.
+  - Note: bare `--sync` was denied once by the auto-mode classifier (read as a full push vs the
+    cluster-first boundary); Victor re-authorized. Mechanism clarified: approval-state gates scope,
+    not command-scope (no `--cluster` flag exists).
+Next session:
+  - FIRST ACTION: run Step 7 — `victor:quality-gate-foundation` + `/critique` on docs/roadmap.md +
+    the Linear structure. Verdict SHIP/REVISE/RETHINK. Check: phase placement, dep-graph
+    completeness (missing/over-constraining edges), DB-leads vs UX-track critical path, roadmap↔issue
+    coverage both directions.
+  - THEN Step 8: `/new-scenario project-foundation build-roadmap` to formalize the scenario + close.
+  - Context to resume: everything is already in Linear (LIF-61…95). Task-file source of truth =
+    `.claude/tasks/{db,ar,ds,ui,ux}-*.md` + `_clusters.md`. Full detail: build-roadmap.md "## Resume".
+---
+Date: 2026-07-20
+Task: build-roadmap
+Goal: Step 7 (foundation quality gate on docs/roadmap.md + the Linear structure) + Step 8 (formalize the
+  build-roadmap scenario via /new-scenario + /session-log) — closing out the roadmap task.
+Completed:
+  - STEP 7 GATE → verdict REVISE → fixed → SHIP. Foundation checklist PASS + independent adversarial
+    critic (fresh subagent). Found+fixed 1 BLOCKER + 2 MAJOR + 2 MINOR:
+      · [BLOCKER] AR-2⟵DB-6 dependency INVERTED — the DatabaseAdapter (adapter.ts owns open→migrate→
+        query→close) is BELOW the repository, but the graph blocked the adapter on the repo. Fixed:
+        DB-6/DB-7 ⟵ AR-2, AR-2 ⟵ DB-1. Verified vs adapter.ts before accepting the critic's call.
+      · [MAJOR] Missing crypto edge — DB-5 (encryptRow/XChaCha20) had no path to AR-3. Fixed: DB-5 ⟵ AR-3.
+      · [MAJOR] "19 structure-data docs" → actually 24 on disk. Fixed docs/roadmap.md DB-4; ADR-002 §5.20
+        fix owed via DB-11.
+      · [MINOR ×2] flagged "non-structural no-flush" as HLC-encoding F10-coupled; reworded single-track
+        DB→AR critical path in the roadmap.
+    Zero fabricated ADR cites (critic spot-checked §5.20/§17/F1/F6-D4/F7-D7 — all resolve).
+  - Task-file edits: ar-2/db-6/db-7/db-5 `## Dependencies` corrected. roadmap.md: 3 edits (count + 2 flags).
+  - Linear re-synced: Victor deleted the stale `db-6 blocks ar-2` relation via UI; add-only `--sync`
+    created the 4 new edges (ar-2⟵db-1, db-6⟵ar-2, db-7⟵ar-2, db-5⟵ar-3) — verified live on 2nd pass.
+    Graph now acyclic; `tracker_sync --status` clean, zero warnings.
+  - STEP 8 scenario formalized: `/new-scenario project-foundation build-roadmap` →
+    `~/dev-toolkit/claude-profiles/project-foundation/scenarios/build-roadmap.md` (CRYSTALLIZE mode) +
+    router ## Scenarios table + Dispatch routing updated. Grammar contracts pass (Step 0..8 contiguous,
+    Skill/Trigger/Feeds-into present, execute-plan-doc MOLD wired, 7 sections). Non-code shape (LITE gate,
+    no Currency step) mirroring documentation-blueprint.
+Decisions:
+  - Scenario encodes the gate BEFORE the outward push (Step 5), not after — this session ran the gate
+    AFTER the Linear push and paid for it (a BLOCKER inversion forced a re-sync). The late-gate mistake is
+    recorded in the scenario's Session Origin + Anti-Patterns as the lesson.
+  - AR-2 gains `blocked by db-1` (adapter imports the schema module) — keeps "Database Layer leads" true
+    while un-stacking the AR substrate from behind the full DB repository.
+Failures this session:
+  - F: naive add-only `--sync` would have created a Linear CYCLE (stale `db-6 blocks ar-2` + new
+    `ar-2 blocks db-6`). Caught before pushing by inspecting linear_client (no issueRelationDelete).
+    Resolved: manual UI deletion of the stale relation, then add-only sync. Toolkit gap FILED
+    (tracker relation sync is add-only → needs issueRelationDelete + diff-reconcile) in build-roadmap.md
+    "## Toolkit follow-up".
+Next session:
+  - FIRST ACTION: `/task-complete build-roadmap` — all 8 path steps are done (roadmap SHIP'd, Linear
+    corrected, scenario formalized). Then run `/toolkit-check` before committing `~/dev-toolkit` (the new
+    scenario + router edits are uncommitted there).
+  - THEN the build phase begins: the "Build phase — schema consolidation" planned task (ADR-002 §5.20
+    owed-tables → real Drizzle schema in packages/core) — which IS Phase-1.0 cluster ① Database Layer,
+    starting at DB-1. Everything is in Linear (LIF-61…95); dependency graph is now correct.
+---

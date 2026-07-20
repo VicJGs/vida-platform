@@ -28,3 +28,18 @@ The foundational documentation effort for vida-platform. Built a discovery-drive
 - Feature docs describe **intent**; ADRs decide **cross-cutting mechanism** — the discipline that kept the modules coherent.
 - **Every gated ADR ran an independent adversarial critique.** It caught a ZK-honesty overclaim in **five consecutive ADRs** (011–015) plus a prompt-injection security hole — the gate is load-bearing on this project.
 - Doc-only throughout: **`packages/` diff = 0** across the entire task. The build phase (schema consolidation from §5.20) is the next stone.
+
+## Build Roadmap — completed 2026-07-20
+Set the whole platform's **buildable deliverables** as a phased, clustered dependency map (`docs/roadmap.md`), then projectized it into Linear (initiative `vida-platform`).
+
+**Delivered:**
+- **`docs/roadmap.md`** — 3 phases (1 Local dogfood · 2 Venues+release · 3 Personality), the 5-layer Structural Foundation (① Database · ② Architecture · ③ Design System · ④ UI · ⑤ UX), a tiered dependency map, Phase-1 module sub-slices (1a–1d), the integration register (6 defined / 16 undefined-by-design), and sequencing rules.
+- **35 Phase-1.0 issues in Linear** (LIF-61…95) · 5 Projects · 14 milestones · corrected acyclic blocks-graph. Enhanced the toolkit tracker first (milestones + project descriptions).
+- **Reusable scenario** `project-foundation/scenarios/build-roadmap.md` (crystallized from this task).
+
+**Key decisions / patterns established:**
+- **Database Layer leads.** Technical track (DB→AR) is the critical path; the shorter experience track (UX→DS→UI) blocks on Architecture — a single-track bottleneck, not balanced parity.
+- **Single-user localhost web needs NO server + NO sync** — sync/SRP/relay/mobile/desktop defer wholesale to Phase 2; Phase 1 only scaffolds `_sync_*`/`sync_queue` (write, never flush). Caveat: the HLC *encoding* is F10-coupled, so DB-2 carries a deferred decision, not a free one.
+- **Gate the roadmap AND its dependency graph before the outward push.** The Step-7 foundation gate (run late, after the Linear push) found a BLOCKER **dependency inversion** (AR-2 adapter declared below the DB-6 repository it sits above) that forced a Linear re-sync — an independent adversarial critic caught it by cross-checking every edge against the code, not the roadmap prose. The scenario now encodes gate-before-push.
+- **The tracker's relation sync is add-only** — it can't prune a removed/inverted edge, so an inversion would create a Linear cycle. Filed as a §XXVI toolkit follow-up (needs `issueRelationDelete` + diff-reconcile).
+- Planning-only: **`packages/` diff = 0**. The build phase (Phase-1.0 ① Database Layer, DB-1) is the next stone.

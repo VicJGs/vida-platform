@@ -4,7 +4,7 @@
 
 ## ⚡ In Progress
 
-_(none — documentation-blueprint completed 2026-07-19)_
+_(none)_
 
 ## 🔴 Blocked
 
@@ -23,6 +23,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **build-roadmap** | 2026-07-20 | 3 (2026-07-20) |
 | **documentation-blueprint** | 2026-07-19 | ~20+ (2026-06-08 → 07-19) |
 | toolkit-setup | 2026-06-08 | 2 |
 
