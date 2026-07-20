@@ -109,8 +109,10 @@ rules above. Source: the Spaces ADR set (ADR-006…010), which establishes Space
   wearables, public reference data, **egress** to medical/external systems as the strictest case) and *AI/LLM
   integration* (agentic on-device = the ZK-safe path; cloud model = an opt-in, consented plaintext dent). Every
   module instance rides EX-1: Finance import, Health wearables/egress (CI-6), Books OCR/TTS, Skills external-DB.
-  **PC-3** (capability authoring) is the *authoring* instance of EX-1; those two standing ADRs remain to be written
-  in their own sessions. `[FACT: task-file candidate-ADRs; Health CI-6; Finance FN-9]`
+  **PC-3** (capability authoring) is the *authoring* instance of EX-1. **Both standing ADRs are now written +
+  Accepted (2026-07-19): [ADR-014](decisions/ADR-014-external-data-ingestion-under-zero-knowledge.md)** (external-data
+  ingestion — 3-layer device-mediated guard) **+ [ADR-015](decisions/ADR-015-ai-llm-integration-under-zero-knowledge.md)**
+  (AI/LLM — on-device/cloud two-mode). `[FACT: ADR-014, ADR-015 Accepted; Health CI-6; Finance FN-9]`
 
 ---
 

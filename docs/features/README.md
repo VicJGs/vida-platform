@@ -28,7 +28,7 @@ every level (see the master manifest: [`../README.md`](../README.md)).
 > Spaces** (a Personalization & Composability *foundation*: universal tags · saved views · capability Blocks ·
 > templates — users assemble module-like surfaces from generic parts; Languages = its worked-example). **Duties
 > DISSOLVED → Tasks + Spaces** (Duty + Obligation = task TYPES + presets, not a module; 07-14). Spaces' gaps deferred
-> to #7 (it touches every module). Deferred: Fiscal & Legal. Rationale: [`../README.md`](../README.md).
+> to #7 (it touches every module). **Fiscal & Legal ✅ Phase-1 documented 2026-07-19** — a Finance sub-context ([`finance/fiscal-legal/`](finance/fiscal-legal/); situate/plan, filing hands off, not-professional-advice first-class; INFORM=ADR-014, ADVISE=ADR-015).
 
 ## Status (⬜ not started · 🔄 in progress · ✅ documented + verified)
 | Module | Wave | Status | Docs |

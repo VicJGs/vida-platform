@@ -72,3 +72,21 @@ buildable + ZK-compliant + out of the liability trap.
 - Rule-pack format + provenance + trust/versioning (public law, but *sourced from where*, and how verified?).
 - Liability framing + disclaimers (not professional advice) as a first-class product constraint.
 - How far the on-device planning/what-if engine goes before handing off.
+
+## RESOLUTION (Phase-1, Victor, 2026-07-19)
+- **FL1 Placement = FINANCE SUB-FEATURE** (Victor chose the tighter coupling over own-context). Documented at
+  `docs/features/finance/fiscal-legal/` (5 aspect docs), cross-referenced from Finance. ⚠ Flagged tension:
+  legal-entities/residency reach into Projects — so it's a Finance sub-context that *composes* Projects.
+- **FL2 Scope = SITUATE / ORGANIZE / SURFACE-OBLIGATIONS / MODEL-IMPACT; filing HANDS OFF** (reframe confirmed).
+  NOT TurboTax-for-the-world; never files, never a regulated service.
+- **FL4 Liability = FIRST-CLASS CONSTRAINT.** Every advisement/what-if output labeled "informational, not
+  professional/legal/tax advice"; AI outputs carry `source = ai` + disclaimer; **no auto-actions** on legal/tax
+  matters — the user confirms everything.
+- **Unblocked by the two standing ADRs (this session):** INFORM (rule-packs) = **ADR-014 public-reference layer**
+  (bundled/bulk, provenance/signed, versioned); ADVISE (over private numbers) = **ADR-015** (on-device agentic
+  ZK-safe · cloud = disclosed dent).
+- **FL3 data-model shape (proposed — flag for review):** money-touch = a **jurisdiction link/tag on Finance
+  entities** + `fiscal_residencies` (owner {user | legal_entity} ↔ jurisdiction ↔ type ↔ dates) + `legal_entities`
+  (link to Projects). SITUATE = user's own `[E]` data (ZK-safe, local).
+- **FL5 what-if extent (proposed — flag for review):** on-device engine models *informational* long-run impact
+  over the user's own numbers + public rule-packs (ADR-015 on-device); **stops at modeling — filing hands off.**

@@ -31,6 +31,8 @@ aspects** (master manifest: [`../README.md`](../README.md)).
 - [ADR-011 — Universal Measurability & Progress Propagation](decisions/ADR-011-universal-measurability-progress-propagation.md) (cross-cutting `measurement_kind`/`binding_mode` + fractal rollup; amends ADR-002)
 - [ADR-012 — Points Economy & Consequence Engine](decisions/ADR-012-points-economy-consequence-engine.md) (Gamification "the System": multi-currency economy + rule→consequence coordinator on existing rails; amends ADR-002, extends ADR-004 §3.2.2 + ADR-011 §3.7)
 - [ADR-013 — Zero-Knowledge Notification Delivery](decisions/ADR-013-zero-knowledge-notification-delivery.md) (three-tier delivery: in-app · native local-scheduled · content-free wake-signal; server never sees content; amends ADR-001, ADR-002, ADR-003)
+- [ADR-014 — External Data Ingestion under Zero-Knowledge](decisions/ADR-014-external-data-ingestion-under-zero-knowledge.md) (device-mediated guard; three integration layers — native · public-reference · user-managed; server blind, third-party leaks disclosed, egress stricter; amends ADR-002, ADR-010) — *first of the two standing EX-2 ZK-integration ADRs*)
+- [ADR-015 — AI/LLM Integration under Zero-Knowledge](decisions/ADR-015-ai-llm-integration-under-zero-knowledge.md) (two modes: on-device/agentic ZK-safe-for-content · cloud BYO-key disclosed content dent; dedicated AI page; agent = mediated actor, prompt-injection bounded; amends ADR-002, ADR-014, ADR-010) — *second of the two standing EX-2 ZK-integration ADRs*)
 
 > The CORE business rules are the **constitution** — the most important rules in the repo. Every lower level
 > (features/services/components) inherits and must comply. `[FACT: business-rules.md]`

@@ -7,6 +7,8 @@
 **Tags:** security · architecture · extensibility · zero-knowledge · personalization
 **Builds on:** [ADR-004](ADR-004-session-framework.md) §3.2.4 / SS-6 (the permission envelope — scope-to-bindings, sensitive-consent, user-types get a strict subset) **+ §3.2.5** (the write-API contract + idempotency mechanism this ADR enforces; INT-2) · the **extension-model** constitution principle (ZK core unchanged; integrations opt-in, user-owns-risk, wrapped in a protection layer) · [ADR-008](ADR-008-capability-block-registry.md) (what runs) · [ADR-009](ADR-009-templates-fork-on-instantiate.md) (imported template capabilities are untrusted) · ZK-1, EN-1/EN-2, SU-1, INT-1
 **Amends:** ADR-002 — adds a `capability_grants` record (the envelope the user granted a user-authored capability). No relaxation of any encryption or sync invariant.
+**Amended:** 2026-07-19 ([ADR-014](ADR-014-external-data-ingestion-under-zero-knowledge.md)) — supplies the **external-data semantics** for this envelope's already-declared `external_in_ok` / `external_out_ok` fields (per-source/per-target integration layer + data-scope + the compositional-exfiltration gate on *any* external reach). No new fields; §3.5's referenced "external-data ingestion guard" is now owned + defined by ADR-014. Doc-only.
+**Amended:** 2026-07-19 ([ADR-015](ADR-015-ai-llm-integration-under-zero-knowledge.md)) — an **AI agent is a sandboxed actor with a decision-loop** (a class this envelope contemplated only for static capabilities): its callable tool-set **is** its granted envelope (fails closed on any tool outside it), and its cloud-model call is a **mediator-injected `askModel` primitive** (the agent never holds the key). No new fields. Doc-only.
 
 ---
 

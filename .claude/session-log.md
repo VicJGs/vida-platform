@@ -1527,3 +1527,56 @@ Next:
     (consequence edges) — both flagged.
   - Not yet committed: ADR-013 + all wiring + the 3 audit fixes + logs.
 ---
+Date: 2026-07-19
+Session goal: The deferred work Victor flagged pre-/task-complete — **the 2 standing EX-2 ZK
+  ADRs (014, 015) then Fiscal & Legal Phase-1** (the post-all-waves context)
+Profile: Project Foundation → documentation-blueprint
+Scenario: documentation-blueprint
+Stack: Turborepo + pnpm, TypeScript 5.7, React 19, SQLite/SQLCipher + libsodium
+Status: **ADR-014 + ADR-015 ACCEPTED + WIRED; EX-2 loop CLOSED; FISCAL & LEGAL Phase-1 DONE.**
+  Doc-only; packages/ diff = 0 all session. Not yet committed.
+Completed:
+  - **Victor caught (pre-/task-complete): the deferred Fiscal & Legal** + its 2 dependency ZK ADRs
+    (external-data-ingestion + AI/LLM), which EX-2 named but were never written. Chose: draft the 2
+    ADRs first (they unblock Finance/Health/Projects too), then Fiscal & Legal.
+  - **ADR-014 (External Data Ingestion under ZK) — ACCEPTED + WIRED.** Draft → independent-refute
+    critique [REVISE] → revised. Then Victor gave a **richer integration model** (verdicts across 3
+    turns): full-ZK impossible w/ 3rd parties → be honest; trust anchor = "a source the user already
+    trusts + has data on"; **3 layers by who-owns**: **native** (curated first-party — Apple/Google
+    Health) · **public-reference** (bundled/bulk, hides which item; the "gather without disclosing"
+    idea = fetch the whole set, not the subset) · **user-managed** (Preferences self-service +
+    cookbooks, Notion-style, user-owns-risk); LLM split to ADR-015; egress user-driven within our
+    rails; our server unconditionally blind. **Restructured → SECOND critique [REVISE]** caught the
+    recurring honesty-overclaim ("query-leak-free by construction" — my own cite said "mitigable";
+    named the CDN observer; portfolio-leak via per-holding price fetch) + must-amend-ADR-010 + PJ-11
+    mis-cite + normalization-contract for the upgrade path. All fixed. Wired: ADR-002 header + §5.20 +
+    ADR-010 amender note + core index.
+  - **ADR-015 (AI/LLM under ZK) — ACCEPTED + WIRED.** Draft → independent-refute [REVISE] caught: the
+    **5th on-device honesty-overclaim** ("leaks nothing" → model-download leak + telemetry); the
+    genuinely-important **prompt-injection** gap (agentic tool-loop + ingested untrusted content +
+    sensitive-read + cloud-egress = injection→exfil chain) — added §3.4b bounding it; the BYO-key vs
+    sandboxed-agent custody contradiction — resolved via §3.4a mediator-injected `askModel` (agent
+    never holds the key); Amends ADR-014/ADR-010. Two modes: on-device/agentic (ZK-safe-for-content) ·
+    cloud BYO-key (disclosed content dent); dedicated AI page; native later. Wired.
+  - **EX-2 loop CLOSED** — constitution EX-2 "those two standing ADRs remain to be written" → both
+    Accepted 2026-07-19 (ADR-014/015). All 15 ADRs now Accepted.
+  - **FISCAL & LEGAL Phase-1** — the deferred context, now unblocked. Decisions (Victor): **FL1
+    placement = Finance sub-feature** (chose tighter coupling over own-context); **FL2 scope =
+    situate/organize/surface/model, filing HANDS OFF** (not TurboTax-for-world); **FL4 liability =
+    first-class** (per-output "not professional advice", source=ai, no auto-actions). 5 aspect docs at
+    `features/finance/fiscal-legal/` (FL-1…FL-14); INFORM=ADR-014 public layer, ADVISE=ADR-015. Verify
+    PASS (corrected an overstated cite: Projects has project_contacts, not a legal-entity model →
+    relabeled FACT→INTENT). Wired: §5.20 + both manifests + Finance identity pointer + intake RESOLUTION.
+Decisions (Victor): the 3-layer integration model + honest-not-full-ZK premise; Finance sub-feature
+  placement; filing-hands-off; first-class liability. All ADR Accepts one-by-one.
+Next:
+  - **documentation-blueprint is NOW TRULY COMPLETE** — all modules + all 15 ADRs + the deferred
+    Fiscal & Legal. Ready for `/task-complete`.
+  - 🟢 Build-phase owed → §5.20: ADR-014 (import_staging · connection_config · integration-identity +
+    normalization contract · rule-pack provenance/signing) · ADR-015 (ai_connections · ai_conversations ·
+    askModel mediator · on-device runtime · agentic tool-loop) · Fiscal&Legal (fiscal_residencies ·
+    legal_entities↔Projects · jurisdiction tag on Finance · fiscal_obligations).
+  - Pattern noted (saved to memory): 5 ADRs, 5 ZK-honesty overclaims caught by the independent critic;
+    plus the prompt-injection catch. The gate is load-bearing on this project.
+  - Not yet committed: ADR-014/015 + Fiscal & Legal + all wiring + logs.
+---

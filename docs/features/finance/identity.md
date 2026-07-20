@@ -30,6 +30,12 @@ numbers**. Privacy is the whole point; convenience must never cost zero-knowledg
   transactions, liabilities, income_streams, investments, assets), surfaces them in one place, **tracks progress
   toward a total** (varying installments until settled), and **presents upcoming installments on the schedule**
   (`dueIn`). Fills the *management* gap Notion had, without adding schema. `[INTENT: Victor 2026-07-15]`
+- **Fiscal & Legal ("Jurisdiction Compass") sub-context (Phase-1 2026-07-19):** a **Finance sub-context**
+  ([`fiscal-legal/`](fiscal-legal/identity.md)) that situates the user + their legal-entities across jurisdictions,
+  tracks fiscal-legal obligations (→ Tasks/Notifications/Calendar), and models long-run impact — **filing hands off**
+  (not a regulated service); **"not professional advice" is a first-class constraint**. INFORM (rule-packs) = ADR-014
+  public layer · ADVISE = ADR-015. Adds `fiscal_residencies`/`legal_entities`/`fiscal_obligations` + a jurisdiction tag
+  on Finance entities (Finance untouched). `[INTENT: RESOLUTION FL1 — Victor chose Finance sub-feature]`
 
 **What it is NOT.** `[INTENT; FACT: CLAUDE.md modules + constitution]`
 - **Commitments is NOT a new entity.** It is a **sub-context / management layer** inside Finance over the existing
