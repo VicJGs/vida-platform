@@ -1,5 +1,5 @@
 # Task: storage-master-plan
-# Status: in_progress
+# Status: done   (ADR-016 + storage-build-plan.md authored + both gates cleared + committed 58dc813 · 2026-07-22)
 # Profile: Generic Coding Session
 # Scenario: Default
 # Cluster: ⓪ Storage rebuild — campaign strategy

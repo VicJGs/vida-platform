@@ -50,3 +50,8 @@ Set the whole platform's **buildable deliverables** as a phased, clustered depen
 - **DDL model:** hand-written SQL migrations (ADR-002 §5) + Zod (DB-9); Drizzle is the query-only type mirror (no drizzle-kit). The Drizzle `enumCheck` helper was removed as architecturally wrong. The dual-authoring-vs-drizzle-kit fork is logged for ADR-016.
 - Boundaries held: `_sync_field_ts` deferred to DB-2; no table authored. Campaign uses per-table gating (each table = its own Per-Step Build Gate).
 - Verified: tsc green on core/web/server; committed b234e85 on `feat/db-1-schema-primitives`.
+
+## storage-master-plan (ADR-016 + master ledger) — completed 2026-07-22
+- **ADR-016** ratifies the from-zero storage rebuild: fresh `schema/` authored per-table from the docs; DDL = hand-written SQL migrations, Drizzle query-only, **no drizzle-kit** (fork A; B's revisit trigger — before DB-3 at volume — preserved); three-part enum model (SQL CHECK + Zod + `enumText`); per-table build gate. Realizes ADR-002 §5.20; resolves ADR-001's migration-gen silence.
+- **storage-build-plan.md** = the master table ledger: ~130-150 tables, disk-keyed (24 structure-data docs, NOT §5.20's stale 19) + §5.20 Stream-i, FK-ordered across phases P0→P-final, ✓/⏳/↔, with the DB-2…DB-11→phase map, per-table spec template, row-state lifecycle, count reconciliation.
+- Governs the campaign; every table = its own Per-Step Build Gate, ordered by FK-deps. Next executable: DB-2 (P0.5 sync cols) then P1 (Notes/Tags/Spaces hub).

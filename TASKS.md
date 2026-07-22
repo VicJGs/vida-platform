@@ -4,9 +4,7 @@
 
 ## ⚡ In Progress
 
-| Task | Profile | Started |
-|------|---------|---------|
-| **storage-master-plan** (ADR-016 + storage-build-plan master ledger — the from-zero campaign strategy governing DB-2…DB-11 + per-table gates) | Generic Coding Session | 2026-07-22 |
+_(none)_
 
 ## 🔴 Blocked
 
@@ -25,6 +23,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **storage-master-plan** (ADR-016 + storage-build-plan master ledger; both gates; commit 58dc813) | 2026-07-22 | 1 (2026-07-22) |
 | **db-1-schema-primitives** (LIF-61 · P0 storage-rebuild primitives; both gates + review battery + 4 consistency passes) | 2026-07-22 | 1 (2026-07-20→22) |
 | **build-roadmap** | 2026-07-20 | 3 (2026-07-20) |
 | **documentation-blueprint** | 2026-07-19 | ~20+ (2026-06-08 → 07-19) |
