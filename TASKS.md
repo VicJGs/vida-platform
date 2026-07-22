@@ -4,7 +4,9 @@
 
 ## ⚡ In Progress
 
-_(none)_
+| Task | Profile | Started |
+|------|---------|---------|
+| **storage-master-plan** (ADR-016 + storage-build-plan master ledger — the from-zero campaign strategy governing DB-2…DB-11 + per-table gates) | Generic Coding Session | 2026-07-22 |
 
 ## 🔴 Blocked
 
