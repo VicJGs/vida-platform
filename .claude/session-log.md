@@ -1757,3 +1757,35 @@ Stack: Turborepo + pnpm, TS 5.7 strict, React 19, Drizzle ORM, SQLite/SQLCipher
 Status: in progress
 Note: Profile switched project-foundation → generic-coding-session for the build phase.
       CLAUDE.md carries no `# Profile:` line — this session-log entry IS the persistence (per begin.md PROFILE CONFIRM).
+
+---
+Date: 2026-07-22
+Task: db-1-schema-primitives + storage-master-plan (both COMPLETED this block)
+Goal: Ship DB-1 (storage primitives), then author the campaign's governing artifacts (ADR-016 + master plan).
+Completed:
+  - DB-1 / LIF-61 — packages/core/src/db/schema/{_shared,_registry,index}.ts (12 exports; enumText; NO enumCheck).
+    Verified tsc green core/web/server; additive (monolith untouched). Both build gates + full review battery
+    (code-review/quality-gate/critique/preflight) + 4 consistency passes. Commit b234e85. Linear LIF-61 → Done.
+  - Reconciliation established: v1 schema ~60% stale vs v2 target (docs/infrastructure/database-schema-reconciliation.md).
+  - ARCHITECTURE FINDING: DDL is hand-written SQL migrations (ADR-002 §5) + Zod (DB-9); Drizzle is query-only;
+    NO drizzle-kit. A Drizzle check()/enumCheck helper emits nothing → removed from DB-1.
+  - ADR-016 (docs/core/decisions/ADR-016-storage-layer-rebuild-from-zero.md) — from-zero rebuild decision, fork A
+    (hand-written SQL). Registered in docs/core/README.md. /critique → SHIP.
+  - storage-build-plan.md (docs/infrastructure/) — master table ledger ~130-150 tables, FK-ordered P0→P-final,
+    ✓/⏳/↔, DB-2…DB-11→phase map, per-table spec template, row-state lifecycle. /critique REVISE → 8 fixes applied.
+    Commit 58dc813. Both gates cleared (Approval 1 fork-A + Approval 2).
+In progress:
+  - (none) — both tasks archived. TASKS.md In Progress empty.
+Decisions:
+  - DDL-generation fork RESOLVED = (A) hand-written SQL migrations, no drizzle-kit (ADR-016 §3.2). B's revisit
+    trigger preserved ("before DB-3 authors at volume"). [ADR-016]
+  - Storage rebuilt FROM ZERO (no data → zero migration cost). Per-table gating (each table = own build gate).
+  - Memory saved: read-architecture-before-implementing (docs decide the implementation; don't impose a default).
+Next session:
+  - FIRST ACTION: start DB-2 / LIF-62 — P0.5 sync columns: add `_sync_field_ts` to syncColumns in
+    packages/core/src/db/schema/_shared.ts + decide the HLC representation of _sync_lww_ts/_sync_field_ts (F6/D4).
+    A primitive amendment (before domain tables). Follow the Per-Step Build Gate (per-table gating model).
+  - Context: campaign governed by ADR-016 + docs/infrastructure/storage-build-plan.md (the ledger — read it first).
+    Profile: Generic Coding Session / Default. Branches feat/db-1-schema-primitives + feat/storage-master-plan are
+    stacked and UNPUSHED (b234e85·b2ff2de·58dc813·b4547c2) — decide push/PR.
+---
