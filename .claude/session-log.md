@@ -1747,3 +1747,13 @@ Next session:
     owed-tables → real Drizzle schema in packages/core) — which IS Phase-1.0 cluster ① Database Layer,
     starting at DB-1. Everything is in Linear (LIF-61…95); dependency graph is now correct.
 ---
+
+---
+Date: 2026-07-20
+Session goal: Begin build phase — DB-1 schema-primitives (Drizzle substrate + column conventions)
+Profile: Project Foundation → Generic Coding Session (switched at PROFILE CONFIRM)
+Scenario: Default (generic-coding-session/scenarios/default.md)
+Stack: Turborepo + pnpm, TS 5.7 strict, React 19, Drizzle ORM, SQLite/SQLCipher
+Status: in progress
+Note: Profile switched project-foundation → generic-coding-session for the build phase.
+      CLAUDE.md carries no `# Profile:` line — this session-log entry IS the persistence (per begin.md PROFILE CONFIRM).

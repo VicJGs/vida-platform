@@ -4,7 +4,9 @@
 
 ## ⚡ In Progress
 
-_(none)_
+| Task | Profile | Started |
+|------|---------|---------|
+| **db-1-schema-primitives** (Drizzle substrate + column conventions — ① Database Layer entry, LIF-61) | Generic Coding Session | 2026-07-20 |
 
 ## 🔴 Blocked
 
@@ -14,7 +16,7 @@ _(none)_
 
 | Task | Profile | Priority |
 |------|---------|----------|
-| **Build phase — schema consolidation** (ADR-002 §5.20 owed-tables → real Drizzle schema in `packages/core`; the 15 ADRs + 21-module target schema) | Greenfield / Engineering | next stone — the build phase begins here |
+| **Storage rebuild — from zero** (reframed 2026-07-21: v1 schema ~60% stale vs docs → author v2 from scratch. Follow-up authors `ADR-016` + `storage-build-plan.md` master ledger + per-table gating. Basis: `docs/infrastructure/storage-rebuild-strategy.md` + `database-schema-reconciliation.md`. **DB-1/LIF-61 is P0, in progress.**) | Generic Coding Session | active campaign — DB-1 first |
 | Toolkit scan-cascade audit + 6 command migrations | toolkit-development | parked — filed in ~/dev-toolkit/.claude/tasks/ |
 | Integrate /task-new ↔ native task panel | toolkit-development | parked — sync gap found 2026-06-08 |
 | Global Calendar (cross-module read-only aggregator over `dueIn`) | (feature) | parked platform surface — build when its feeder modules are built |
