@@ -1,5 +1,5 @@
 # Task: db-1-schema-primitives
-# Status: in_progress   (code implemented + verified 2026-07-22; close-out pending: commit · /task-complete · LIF-61→Done)
+# Status: done   (implemented + verified + committed b234e85 on feat/db-1-schema-primitives · 2026-07-22)
 # Profile: Generic Coding Session
 # Scenario: Default
 # Cluster: ① Database Layer

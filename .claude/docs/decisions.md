@@ -43,3 +43,10 @@ Set the whole platform's **buildable deliverables** as a phased, clustered depen
 - **Gate the roadmap AND its dependency graph before the outward push.** The Step-7 foundation gate (run late, after the Linear push) found a BLOCKER **dependency inversion** (AR-2 adapter declared below the DB-6 repository it sits above) that forced a Linear re-sync — an independent adversarial critic caught it by cross-checking every edge against the code, not the roadmap prose. The scenario now encodes gate-before-push.
 - **The tracker's relation sync is add-only** — it can't prune a removed/inverted edge, so an inversion would create a Linear cycle. Filed as a §XXVI toolkit follow-up (needs `issueRelationDelete` + diff-reconcile).
 - Planning-only: **`packages/` diff = 0**. The build phase (Phase-1.0 ① Database Layer, DB-1) is the next stone.
+
+## DB-1 schema primitives (LIF-61) — completed 2026-07-22
+- Rebuild storage FROM ZERO: v1 `schema.ts` is ~60% stale vs the documented v2 target (retire ~22 · missing ~90-110 · divergent ~9 · carry ~40); no deployed data → zero migration cost.
+- DB-1 = P0 primitives only: `schema/` dir + `_shared.ts` (baseColumns, syncColumns[6], typed helpers, `enumText`) + `_registry.ts` (entity_type) + barrel. Additive — v1 monolith stays reference-only.
+- **DDL model:** hand-written SQL migrations (ADR-002 §5) + Zod (DB-9); Drizzle is the query-only type mirror (no drizzle-kit). The Drizzle `enumCheck` helper was removed as architecturally wrong. The dual-authoring-vs-drizzle-kit fork is logged for ADR-016.
+- Boundaries held: `_sync_field_ts` deferred to DB-2; no table authored. Campaign uses per-table gating (each table = its own Per-Step Build Gate).
+- Verified: tsc green on core/web/server; committed b234e85 on `feat/db-1-schema-primitives`.
