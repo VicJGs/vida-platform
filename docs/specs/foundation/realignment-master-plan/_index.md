@@ -1,7 +1,7 @@
 # Master Plan: Vida Platform Foundation-Realignment Campaign
 
 **Type:** planning (foundation) — the master gating + phasing system for the whole realignment.
-**Status:** APPROVED at gate 1 (2026-07-23, Victor). **Part 0 COMPLETE** (scenario `documentation-realignment` + ratified `capability-framework.md`). **Part 1.0 COMPLETE** (legacy quarantine → `docs/_legacy/`; CLAUDE.md foundation lock; definition-of-aligned ratified → framework §5). **Next: Part 1.1 staleness sweep.** Parts 2–3 forward-declared (own gate-1 later).
+**Status:** APPROVED at gate 1 (2026-07-23, Victor). **Part 0 COMPLETE** (scenario + ratified `capability-framework.md`). **Part 1.0 COMPLETE** (legacy quarantine; CLAUDE.md foundation lock; definition-of-aligned → framework §5). **Part 1.1 COMPLETE** (staleness sweep: 10 stale / 7 gap / 7 aligned; As-is exemption ratified → §1.3). **Next: Part 1.2 doc re-runs — notes-and-pages FIRST** (in-degree-14 hub). Parts 2–3 forward-declared (own gate-1 later).
 **Date:** 2026-07-23  ·  **Session:** build-roadmap-resequence (reframed as this campaign; the roadmap resequence becomes Part 3)
 **Grounded in:** `docs/specs/foundation/current-state-baseline/baseline.md` (the ground-truth input).
 **Critique:** independent adversarial pass logged blocking B1–B4 + N1–N4; all incorporated in this revision (see Change Log).
@@ -82,7 +82,7 @@ A failed predicate = a **gap**, filled by context (docs/ADRs) or by Victor's exp
 | Phase | Work | Gate |
 |-------|------|------|
 | 1.0 ✅ | **Legacy quarantine + foundation lock** — DONE 2026-07-23: 4 legacy files → `docs/_legacy/` (+README); CLAUDE.md foundation-locked (Reference section repointed to ADR-001–017 + framework; Data-Domains retired tokens fixed: `page_tags`→`entity_tags`, `flashcard_*`→review engine, `xp_history`→`consequence_ledger`, `purpose_*` junctions→`contributions`, `pomodoro_sessions`→`sessions`); definition-of-aligned ratified → framework §5. (ADR-path drift did not reproduce — already correct.) | LITE ✅ |
-| 1.1 | **Staleness sweep** — run the capability predicates + definition-of-aligned across ALL 24 contexts + 8 arch docs; per-context verdict (aligned / stale+drivers / gap). Extends the baseline's 7-context finding to the full set. | analysis, persisted |
+| 1.1 ✅ | **Staleness sweep** — DONE 2026-07-23 (`docs/specs/foundation/staleness-sweep.md`): 5-agent scoring of all 24 contexts + 8 arch docs. Result: **10 stale / 7 gap / 7 aligned** (contexts); 4 stale / 4 partial (arch). Surfaced + ratified the **As-is exemption** (F1 → framework §1.3). Carries the Part 1.2 dependency-first re-run ordering. | analysis, persisted ✅ |
 | 1.2 | **Doc re-runs** — re-run each stale context through the documentation-blueprint methodology (gap-Qs, ADR-grounding, capability coverage, fill by context/intent). Per-context LITE gate. Ordered by dependency: **Notes & Pages first** (in-degree-14 hub), then substrate feeders, then leaves. Docs may cite substrates + owning ADRs, NOT place them in code (boundary rule). | per-context LITE |
 | 1.3 | **Architecture-doc realignment** — rewrite/refresh `docs/core/architecture/*` from the ADRs so the 5 substrate frameworks get a documented **conceptual** home (which framework/ADR owns them — NOT a directory; that's 2.0). | LITE |
 | 1.4 | **Doc-tier cross-consistency** *(rescoped per B1)* — make the `[INTENT]` amendments consistent **across the 24 context docs** (entity_tags/sessions/measurability/economy referenced identically everywhere; no contradictions). **Explicitly does NOT** rewrite ADR-002 §5/§7/§8 from a consolidated schema — that is **DB-11's** job (ADR-016), out of scope here. | LITE |
@@ -131,6 +131,7 @@ A failed predicate = a **gap**, filled by context (docs/ADRs) or by Victor's exp
 | 2026-07-23 | **APPROVED at gate 1 by Victor.** Part 0 authorized to execute next session. Scenario-name assumption `documentation-realignment` stands (unconfirmed); "RP" still [UNKNOWN] (deferred to Part 3.0). |
 | 2026-07-23 | **Part 0 COMPLETE** — scenario `documentation-realignment` scaffolded (name confirmed by Victor); `capability-framework.md` authored (85 caps from ADRs 004–015), independent critique REVISE→fixed, RATIFIED (LITE gate). |
 | 2026-07-23 | **Part 1.0 COMPLETE** — legacy quarantine (`docs/_legacy/` + README, 4 files), CLAUDE.md foundation lock, definition-of-aligned ratified → framework §5. LITE gate: plan approved by Victor. Next: Part 1.1 staleness sweep. |
+| 2026-07-23 | **Part 1.1 COMPLETE** — 5-agent staleness sweep (`staleness-sweep.md`): 10 stale / 7 gap / 7 aligned (contexts), 4 stale / 4 partial (arch). Surfaced the **As-is exemption** (retired token in a flagged As-is floor that [INTENT] retires ≠ stale) → confirmed by Victor → codified into framework §1.3 (moved purposes/gamification/knowledge stale→aligned). Part 1.2 re-run order set. Next: Part 1.2 doc re-runs, notes-and-pages first. |
 
 ---
 *Gate 1: this revised plan is presented for Victor's approval. Not executed until approved.*

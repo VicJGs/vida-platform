@@ -1904,3 +1904,90 @@ Next session:
   - READ FIRST: docs/specs/foundation/realignment-master-plan/_index.md (APPROVED) + its baseline.
   - CONFIRM with Victor: scenario name (documentation-realignment?) + what "RP" abbreviates.
 ---
+
+---
+Date: 2026-07-23
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Goal: Execute Part 0 (setup) of the approved foundation-realignment master plan, then open Part 1.
+
+Completed:
+  - PART 0 (both deliverables, LITE gate passed):
+    - Scaffolded scenario `documentation-realignment` in the dev-toolkit (~/dev-toolkit,
+      committed 9440a47) — measure→sweep→selective-re-run methodology, non-code (execute-plan-doc),
+      schema-valid (steps 0-7, Skills 7/7/7). Router table + dispatch route updated.
+    - Authored `docs/specs/foundation/capability-framework.md` — 85 capabilities from ADRs 004-015
+      (3 parallel cited-extraction agents), 7 shared rails, two-token predicate model (presence
+      token + stale anti-signal), applies-to membership rules, §5 definition-of-aligned.
+    - Independent adversarial critique → REVISE: B1 (R2 guarded-write rail had two READ-seam
+      citations cross-wired), B2 (ADR-010 missing A8 revocation + A9 resource-limits), B3
+      (CHECK-token honesty). All fixed. RATIFIED by Victor.
+  - PART 1.0 (legacy quarantine + foundation lock, LITE gate passed):
+    - Quarantined 4 legacy docs → docs/_legacy/ (+README): architecture.md (contradicts ADRs on
+      5 axes) + 3 empty root stubs (sync-protocol/encryption/editor-blocks). Reversible git renames.
+    - CLAUDE.md foundation lock: Reference section repointed to ADR-001-017 + framework; Data-Domains
+      retired tokens fixed (page_tags→entity_tags, flashcard_*→review engine, xp_history→
+      consequence_ledger, purpose_* junctions→contributions, pomodoro_sessions→sessions).
+      ADR-path drift did NOT reproduce (already correct) — not "fixed" (No-Guessing).
+    - definition-of-aligned ratified → framework §5 (single source of truth).
+  - Committed: vida-platform cb21f73 (Part 0 + 1.0); dev-toolkit 9440a47 (scenario).
+
+In progress:
+  - PART 1.1 staleness sweep — NOT STARTED. Run framework §5 + §3 predicates across all 24 contexts
+    + 8 docs/core/architecture/* docs; per-context verdict (aligned / stale+named-drivers / gap).
+    Persisted analysis. This triage gates WHICH contexts advance to Part 1.2 re-runs.
+
+Decisions:
+  - Scenario name = `documentation-realignment` (confirmed by Victor; the master-plan [ASSUMPTION] resolved).
+  - Framework structure: 7 shared rails factored out (R1 idempotency … R7 read-seam); two-token predicate
+    (presence + stale anti-signal) makes the sweep grep-mechanical; applies-to as membership RULES not
+    hand-lists (coverage stays decidable as contexts appear).
+  - Part 1.0 scope held tight: only the 4 baseline-named legacy files quarantined; the ~24 OTHER empty
+    doc stubs (editor/infrastructure/platform/ui/languages) deferred to Part 2 (structure) — flagged in
+    docs/_legacy/README, not silently swept.
+  - CLAUDE.md foundation lock = drift-fix only; full ADR-004-017 summary rewrite deferred (bigger refresh).
+  - "RP" abbreviation still [UNKNOWN] — deferred to Part 3.0 (non-blocking).
+
+Next session:
+  - FIRST ACTION: execute Part 1.1 (staleness sweep). Fan out read-only agents over the 24 context
+    `structure-data.md` docs (+ siblings where a driver touches them) + the 8 arch docs, scoring each
+    against `docs/specs/foundation/capability-framework.md` §5 + §3. Persist the verdict table.
+  - READ FIRST: capability-framework.md (§3 predicates + §5 checklist + §4 applies-to rules) +
+    realignment-master-plan Part 1.1 row. Ordering hint for 1.2: Notes & Pages first (in-degree-14 hub).
+---
+
+---
+Date: 2026-07-23 (cont.)
+Task: build-roadmap-resequence (foundation-realignment campaign)
+Goal: Execute Part 1.1 (staleness sweep) of the campaign.
+
+Completed:
+  - PART 1.1 COMPLETE (analysis, persisted → docs/specs/foundation/staleness-sweep.md):
+    - 5 read-only scoring agents (clustered by domain) scored all 24 context structure-data.md docs
+      + 8 docs/core/architecture/* docs against the ratified capability-framework predicates. Cited findings.
+    - Result: CONTEXTS 10 stale / 7 gap / 7 aligned; ARCH 4 stale / 4 partial (0/8 reference ADR-004+).
+    - Surfaced the AS-IS EXEMPTION (F1): 3 agents independently flagged that the raw "anti-signal → stale"
+      rule wrongly fires on retired tokens that appear ONLY in a flagged As-is FACT floor which [INTENT]
+      explicitly retires. Refined to a location-qualified rule (stale only if the token is forward/[INTENT]
+      or uncorrected). Victor CONFIRMED → codified into capability-framework.md §1.3. Moved purposes-and-goals,
+      gamification, knowledge from stale → aligned.
+    - Persisted the Part 1.2 dependency-first re-run ordering (Tier 0 notes-and-pages → feeders → gap-fills
+      → arch docs in 1.3) + findings F2 (measurability/ingest gap families), F3 (entity_tags under-named), F4.
+  - Committed: (this checkpoint) — Part 1.1 sweep + framework §1.3 amendment.
+
+In progress:
+  - PART 1.2 doc re-runs — NOT STARTED. 17 stale+gap contexts, each re-run through documentation-blueprint
+    under its own LITE gate (plan→critique→approval per context). Dependency-ordered; notes-and-pages FIRST.
+
+Decisions:
+  - As-is exemption ratified (framework §1.3): a retired token in a properly-flagged As-is floor that [INTENT]
+    retires does NOT trigger stale (R6's whole purpose). Naming a retired token as the forward mechanism is still stale.
+
+Next session:
+  - FIRST ACTION: start Part 1.2 with notes-and-pages (Tier 0 hub, in-degree-14). Re-run it through the
+    documentation-blueprint methodology under a LITE gate: fix SP1 (page_tags→entity_tags), SP2 (open
+    registry vs closed entity_type CHECK(33)), SP4, add SP3 (parent_tag_id), and complete the pomodoro
+    re-home to the sessions supertype. Then Tier 1 (sessions-and-scheduling, projects, health/core, habits,
+    finance, tasks, relationships, pomodoro, knowledge/flashcards).
+  - READ FIRST: docs/specs/foundation/staleness-sweep.md (verdict table + Part 1.2 ordering) +
+    capability-framework.md (§3 predicates for the target context) + the target's current structure-data.md.
+---

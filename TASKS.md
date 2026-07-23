@@ -6,18 +6,21 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-23 | master plan APPROVED at gate 1; Part 0 next |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-23 | **Part 0 + 1.0 + 1.1 COMPLETE** (framework ratified; legacy quarantined; CLAUDE.md locked; sweep = 10 stale/7 gap/7 aligned). Next: Part 1.2 doc re-runs |
 
 ## 🧭 Next session
 
-**Execute Part 0 of the approved foundation-realignment master plan.** Read first:
-`docs/specs/foundation/realignment-master-plan/_index.md` (APPROVED gate 1) + its baseline
-`docs/specs/foundation/current-state-baseline/baseline.md`. Part 0 =
-(1) `/new-scenario project-foundation documentation-realignment` (formalize the gating+phasing methodology);
-(2) build the **gated** `docs/specs/foundation/capability-framework.md` — every ADR-004–015 capability with a
-mechanical presence/absence predicate + applies-to list (LITE gate: critique + approval). Then Part 1 (docs
-realignment: quarantine legacy → staleness sweep of all 24 contexts → re-run stale docs, Notes & Pages first).
-Open Qs to confirm: scenario name (`documentation-realignment` assumed); what "RP" abbreviates (deferred to Part 3.0).
+**Start Part 1.2 (doc re-runs) — notes-and-pages FIRST** (Tier 0 hub, in-degree-14). Read first:
+`docs/specs/foundation/staleness-sweep.md` (verdict table + Part 1.2 dependency-ordered re-run tiers) +
+`docs/specs/foundation/capability-framework.md` (§3 predicates for the target context) + the target's current
+`structure-data.md`. Each stale/gap context re-runs through the documentation-blueprint methodology under its own
+LITE gate (plan→critique→approval per context). notes-and-pages fixes: SP1 (`page_tags`→`entity_tags`), SP2 (open
+registry vs closed `entity_type CHECK(33)`), SP4, add SP3 (`parent_tag_id`), complete the pomodoro→`sessions`
+supertype re-home. Then Tier 1 (sessions-and-scheduling, projects, health/core, habits, finance, tasks,
+relationships, pomodoro, knowledge/flashcards) → Tier 2 gap-fills → Tier 3 arch docs (Part 1.3).
+Done so far: Part 0 (scenario + ratified capability-framework, 85 caps); Part 1.0 (legacy quarantine + CLAUDE.md
+lock); Part 1.1 (sweep + As-is exemption → framework §1.3). Committed cb21f73, 9440a47, + this Part-1.1 checkpoint.
+Open Q still deferred: what "RP" abbreviates (Part 3.0, non-blocking).
 
 ## 🔴 Blocked
 

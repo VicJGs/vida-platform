@@ -11,3 +11,4 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 | [foundation/current-state-baseline](foundation/current-state-baseline/) | baseline (analysis) | done — ground truth | 2026-07-23-build-roadmap-resequence |
 | [foundation/realignment-master-plan](foundation/realignment-master-plan/) | planning (foundation) | APPROVED gate 1 — executing Part 0 | 2026-07-23-build-roadmap-resequence |
 | [foundation/capability-framework.md](foundation/capability-framework.md) | reference (foundation) | RATIFIED 2026-07-23 — Part 0 complete | 2026-07-23-build-roadmap-resequence |
+| [foundation/staleness-sweep.md](foundation/staleness-sweep.md) | analysis (foundation) | Part 1.1 COMPLETE — 10 stale / 7 gap / 7 aligned; As-is exemption ratified | 2026-07-23-build-roadmap-resequence |

@@ -37,8 +37,12 @@ the Part-1/Part-2 boundary rule), or reconcile ADR-002 §5/§7/§8 (owned by DB-
    **Convention:** `CHECK ∈ {a·b·c}` denotes **enum membership**, however the owning ADR/owed-schema expresses it
    (`{a,b,c}` prose, a SQL `CHECK` constraint, etc.) — the grep token is the **value set** (`a`/`b`/`c`), NOT the
    literal words `CHECK`/`UNIQUE`, which are this framework's SQL-form normalization (DDL is owed to build-phase).
-3. **Anti-signal = automatic stale.** If a context doc contains a retired token (col. "Stale/anti-signal"), it is
-   STALE regardless of anything else — it describes a superseded design.
+3. **Anti-signal = stale — location-qualified** *(the As-is exemption, ratified 2026-07-23, Part 1.1 F1)*. A retired
+   token (col. "Stale/anti-signal") marks the doc STALE when it appears in the **go-forward / `[INTENT]`** model, OR
+   the doc records the retired model as current **without** a correct `[INTENT]` reframe. A token appearing **solely
+   in a properly-flagged As-is (FACT floor)** that `[INTENT]` explicitly retires does **NOT** trigger stale — that is
+   a correctly-reframed doc, which is exactly what the R6 two-tier rail exists to allow. (This does not weaken the
+   gate: naming a retired token as the *forward* mechanism is still stale.)
 4. **A context is ALIGNED** iff every applicable presence predicate passes AND no anti-signal is present
    (see §5, the definition-of-aligned checklist, which is the compact per-context gate).
 5. **Verdict per context:** `aligned` · `stale (+ named drivers = which predicates failed / which anti-signals fired)`
@@ -282,3 +286,4 @@ The Part-1 sweep judges each context against THIS checklist (drawn from §2–§
 |------|--------|
 | 2026-07-23 | Initial draft — extracted from ADRs 004–015 (3-agent cited pass); presented for the LITE gate. |
 | 2026-07-23 | Independent critique REVISE incorporated: B1 (R2 read/write cross-wire), B2 (A8 revocation + A9 resource-limits — ADR-010 coverage), B3 (CHECK-token convention + self-check honesty); non-blocking N2/N3/N5/N6. **RATIFIED by Victor — LITE gate closed, Part 0 complete.** |
+| 2026-07-23 | §1.3 amended — **As-is exemption** (location-qualified stale rule) codified from Part 1.1 sweep finding F1; confirmed by Victor. Anti-signal in a flagged As-is floor that [INTENT] retires no longer fires stale. |

@@ -1,0 +1,109 @@
+# Staleness Sweep — Part 1.1
+
+**Type:** foundation analysis (Part 1.1 of the foundation-realignment campaign). Persisted verdict; gates Part 1.2 re-run scope.
+**Status:** COMPLETE — Part 1.1 closed 2026-07-23 (Victor confirmed the As-is exemption; codified into framework §1.3). Gates Part 1.2 re-run scope.
+**Date:** 2026-07-23  ·  **Session:** build-roadmap-resequence (campaign)
+**Instrument:** `docs/specs/foundation/capability-framework.md` (RATIFIED) — §3 predicates, §4 applies-to, §5 definition-of-aligned.
+**Method:** 5 read-only scoring agents, clustered by domain, each scoring its batch against the framework. Every finding cites the token + line.
+**Scope:** all 24 context `structure-data.md` docs + the 8 `docs/core/architecture/*` docs.
+
+---
+
+## KEY DECISION — the As-is exemption (refined stale rule)
+
+Three of the five scorers independently flagged that the framework's mechanical rule ("a doc containing an anti-signal token is STALE") is **under-specified**: it fires on retired tokens that appear **only in a doc's As-is FACT floor**, where R6's two-tier convention *requires* them to be recorded and then explicitly retired in `[INTENT]`. Marking such a correctly-reframed doc "stale" would send it for a needless re-run.
+
+**Refined rule (adopted here; proposed as a framework §1 clarification):**
+> An anti-signal token triggers **STALE** only when it is in the **go-forward / `[INTENT]`** model, OR the doc records the retired model as current **without** a correct `[INTENT]` reframe. A token appearing **solely in a properly-flagged As-is (FACT floor)** that `[INTENT]` explicitly retires does **NOT** trigger stale — that is a correctly-reframed doc (R6's whole purpose).
+
+This is consistent with the framework's own R6 rail; it does not weaken the instrument (a doc that names a retired token as its *forward* mechanism is still stale). Where the raw and refined verdicts differ, both are shown below. **Pending Victor's confirmation** before it drives Part 1.2 edits and a framework §1 amendment.
+
+---
+
+## Verdict taxonomy (what each gates in Part 1.2)
+
+- **stale** → re-run REQUIRED: names a retired token as its forward model, or documents the retired model with no correct reframe (wrong-model).
+- **gap** → re-run REQUIRED: no forward anti-signal, but silent on ≥1 **applicable** capability (predates the ADR; must add the missing contract).
+- **aligned** (incl. **reframed** = As-is-only retired tokens, `[INTENT]` conforms) → NO re-run (or a trivial fill); already coherent with the foundation.
+
+---
+
+## Verdict table — 24 contexts
+
+| # | Context | Verdict | Primary drivers (ADRs) | Key finding |
+|---|---------|---------|------------------------|-------------|
+| 1 | **notes-and-pages** ⭐hub | **stale** | 006, 004, 007 | FACT body still IS the retired model: `page_tags`, closed `entity_type CHECK(33)` on `entity_links`, flat `pomodoro_sessions`; SP1/SP2/SP4 fail; SP3 (`parent_tag_id`) absent. In-degree-14 hub → **re-run FIRST**. |
+| 2 | **tasks** | **stale** | 011, 012, 006, 007, 009, 004 | Names `task_views` + `page_tags` as **build targets** ([INTENT]); silent on `measurement_kind`/`binding_mode` (M1/M2), `grant_currency` (E2), presets (T4). |
+| 3 | **projects** | **stale** | 011, 014, 015 | Live wrong-model: `progress 0-100 NOT NULL` (M3 anti-signal), bespoke deliverable `measurement_type` displacing `measurement_kind` (M1), `purpose_projects` as live in-edge (M7); X*/AI* absent. |
+| 4 | **journals** | **aligned** | 004, 002 | Pure read-seam consumer; rides `summary(date)`/`dueIn()`, `[E]` blobs; flags `JournalSummaryConfig` as superseded, not asserted. |
+| 5 | **pomodoro** | **stale** (reframe-in-progress) | 004, 012 | As-is IS flat `pomodoro_sessions` + polymorphic `entity_type CHECK`; [INTENT] correctly re-homes to `session_id`/`focus_sessions` but is unfinished; `grant_currency`/R1 tokens absent. |
+| 6 | **sessions-and-scheduling** | **gap** | 004, 002 | Structurally strongest (S1/S2/S3/S7/R6/R7 pass, anti-signals quarantined) but as the effect-producing foundation never names the S4 effect catalogue, S5 lifecycle enum, or the R1 idempotency rail (`effect_event_id`/`applied_effects`). |
+| 7 | **learning/education** | **gap** | 014, 015, 011, 006 | Ingests ICS + extracts docs + touches AI, yet names none of X*/AI*/M* (only the ICS `UNIQUE(feed_id,uid)` dedup survives incidentally); no `entity_tags`. |
+| 8 | **knowledge** | **reframed → aligned** (minor SP1 gap) | 005, 002 | [INTENT] is ADR-005-conformant (generic `review_events`/`method_bindings`, `study_methods` as registry partition, derived mastery); retired SM-2 cols / `resource_type CHECK` appear **only** in the flagged As-is floor. Minor: `entity_tags` token unnamed. |
+| 9 | **knowledge/flashcards** | **stale** | 006, 005, 002 | Genuine forward regression: names **`page_tags`** as the go-forward tag mechanism (line 27, NOT quarantined). SM1–SM4 intent conforms; SM-2/`flashcard_decks` tokens are As-is-only. |
+| 10 | **books** | **gap** | 014, 015, 011, 006, 004 | Clean of live retired tokens, but heavy ingest+AI+measurement module naming none of X*/AI*/M*; `reading_sessions`↔`sessions` supertype linkage not stated in-doc. |
+| 11 | **skills** | **gap** | 014, 015, 011, 006, 012 | Cleanest ingest module (S1 exact, AI6 `source` triad present); absent on external-ingestion layering, `measurement_kind`/`binding_mode`, `entity_tags`, `grant_currency` (E2). |
+| 12 | **habits** | **stale** | 011, 012, 006, 004 | Genuinely stale: names `purpose_habits` + `page_tags` in go-forward; missing the whole M1/M2 + E2 layer. |
+| 13 | **routines** | **stale** | 011, 012, 006 | Carries `purpose_routines` **uncorrected** into the Intended dep graph (not retired to `contributions`); M1/M2/E2 absent. S1 passes. |
+| 14 | **purposes-and-goals** | **reframed → aligned** | 011, 006/007, 009 | Full ADR-011 reframe in [INTENT] (M1–M7 all pass: `measurement_kind`, `binding_mode`, nullable progress, `contributions`, `values`/`purpose_reviews`/`plan_steps`). `target_type`/`habit_based`/junctions appear **only** in As-is, each explicitly RETIRE'd. (Raw rule = stale; refined = aligned.) |
+| 15 | **check-ins** | **gap** | 012, 006 | No anti-signal; as an economy feeder never names `grant_currency` (E2); as E9 `check_in_streak*` owner, silent on the `user_profile` split. "NO tags" assertion to reconcile with SP1. |
+| 16 | **gamification** | **reframed → aligned** | 012, 011, 008/010 | Textbook ADR-012 reframe in [INTENT] (E1–E9 all pass: `currencies`/`backing_kind`, `consequence_ledger`, four Additive effects, `store`, `rules`, `user_profile` split). `xp_history`/`total_xp`/overloaded `user_profile`/bespoke-checkers appear **only** in As-is, each explicitly retired. (Raw = stale; refined = aligned.) |
+| 17 | **finance** | **stale** | 012, 014, 006 | `page_tags` in the migration target (forward); never names the `store`/`move_money` economy substrate it OWNS (E6/E4); ADR-014 ingestion layers/grant tokens absent. |
+| 18 | **finance/fiscal-legal** | **gap** | 014, 015 | Net-new + largely ADR-014/015-aware (correct public-reference layer, AI split, `source=ai`); leaves `external_in_ok`/`external_out_ok` grant tokens + AI egress/scope-min unnamed. |
+| 19 | **health/core** | **stale** | 011, 006, 014, 015 | Live wrong-model: bespoke goal-`type` enum + stored `progress`/`mastery` instead of `measurement_kind`/`binding_mode`/nullable-derive (M1/M2/M3); M5/SP1/X*/AI* gaps. S1 (workout→sessions) passes. |
+| 20 | **health/nutrition** | **gap** | 015, 014, 006 | No retired token; AI-generated rows lack `source=ai` (AI6), food-DB ingestion unlayered, tags never reach `entity_tags`. |
+| 21 | **health/training** | **aligned** | 004 (minor S2/S4) | `workout_sessions` correctly modeled as the `sessions` `workout` sub-type extension keyed on `session_id` — textbook S1; only sub-token naming (S2 `planned_blocks`, S4 effect) is thin. |
+| 22 | **relationships** | **stale** | 006, 014, 013 | As-is inline flat-tag design (`contacts.tags` JSON, no `entity_tags`/`parent_tag_id`) carried as the model; predates ADR-006/013/014 (SP1/SP3 fail; N*/X* gaps). |
+| 23 | **notifications** | **aligned** | 013, 012, 004 | Clean ADR-013 rebuild: three-tier delivery, content-free wake payload, `push_token`/`push_platform` on the existing device registry, `sms` dropped, quiet-hours pre-applied. |
+| 24 | **preferences** | **aligned** (soft E9 fill) | 012, 013 | Owns the N6/N7 + E9 config share correctly; only soft fill-in: `persona`/`active_modules`/`onboarding_*` not yet enumerated. |
+
+**Context rollup (refined rule): 10 stale · 7 gap · 7 aligned** (of which 3 are *reframed*: knowledge, purposes-and-goals, gamification — raw rule would have marked them stale).
+
+## Verdict table — 8 architecture docs
+
+| Doc | Verdict | Key finding |
+|-----|---------|-------------|
+| `README.md` | **stale** | "17 domain modules"; ADR canon frozen at 001–003. Zero ADR-004+ refs. |
+| `system-overview.md` | **stale** | 17 modules, XP-points Gamification, closed slash-block set, `shadcn/ui`, SM-2 `flashcard` decks, junction-table Purposes — the exact pre-substrate worldview. |
+| `cross-module-integration.md` | **stale** | Closed `entity_links` CHECK (34 types), `xp_history`/`awardXP`, `purpose_*` junctions, pref-gated notifications, `flashcard_decks` — every cataloged integration is a retired mechanism. |
+| `module-dependency-graph.md` | **stale** | Whole graph drawn at retired 17-module + junction granularity; self-flagged stale in the roadmap. |
+| `data-flow.md` | **partial** | Core write/read/encryption/sync pipeline still substrate-accurate; only the step-10 effect layer encodes retired direct-`awardXP` with no R1 rail. |
+| `security-model.md` | **partial** | Crypto architecture (§1–7) current + load-bearing; §8 field-classification table is a full snapshot of the retired schema, missing every substrate table. |
+| `platform-strategy.md` | **partial** (low) | Adapter/build/code-sharing strategy substrate-neutral; only editor "custom extensions" framing needs an ADR-008 pass. |
+| `performance-strategy.md` | **partial** (low) | Substrate-neutral perf guidance survives; only incidental legacy table names in cache examples. |
+
+**Arch rollup: 4 stale · 4 partial** (none reference ADR-004+ at all — both greps empty).
+
+---
+
+## Part 1.2 re-run ordering (dependency-first — the sweep's output)
+
+**Tier 0 — the hub, first (in-degree-14):**
+1. `notes-and-pages` (SP1/SP2/SP4 + pomodoro re-home) — everything links to it.
+
+**Tier 1 — substrate feeders / heaviest wrong-model:**
+2. `sessions-and-scheduling` (S4/S5/S6-R1 — the effect-producing foundation many modules ride)
+3. `projects`, `health/core`, `habits`, `finance` (live wrong measurability/economy models)
+4. `tasks`, `relationships`, `pomodoro`, `knowledge/flashcards` (forward-facing retired tokens)
+
+**Tier 2 — gap-fills (add missing X*/AI*/M*/E2 contracts):**
+5. `learning/education`, `books`, `skills`, `check-ins`, `finance/fiscal-legal`, `health/nutrition`, `routines`
+
+**Tier 3 — architecture docs (after the context docs settle — Part 1.3):**
+6. Rewrite the 4 stale arch docs from the ADRs; targeted passes on `data-flow` (step-10 effect rail) + `security-model` (§8 annex); low-touch on platform/performance.
+
+**No re-run needed (aligned/reframed):** `journals`, `purposes-and-goals`, `gamification`, `health/training`, `notifications`, `preferences`, `knowledge` (minor SP1 fill only).
+
+---
+
+## Findings for the campaign
+
+- **F1 — The As-is exemption** (above) is the load-bearing methodology decision; it moves 3 contexts (purposes, gamification, knowledge) from stale→aligned and should be codified into framework §1 before Part 1.2.
+- **F2 — Two systematic gap-families dominate:** (a) every pre-ADR-011 pursuable module is silent on `measurement_kind`/`binding_mode`; (b) every pre-ADR-014/015 ingest module names none of the external-ingestion/AI tokens. These are *additions*, not corrections — lower-risk than the wrong-model stales.
+- **F3 — `entity_tags` is under-named platform-wide:** many docs reference "shared/scoped tags" conceptually but never name the `entity_tags` token (SP1); a few still name `page_tags` forward (flashcards, finance, tasks, habits). A cross-cutting SP1 pass will recur in most re-runs.
+- **F4 — Architecture docs are uniformly pre-substrate** (0/8 reference ADR-004+); 4 need full rewrites, 4 have salvageable substrate-neutral cores. This confirms the baseline and scopes Part 1.3.
+
+## Change Log
+| Date | Change |
+|------|--------|
+| 2026-07-23 | Initial sweep — 5-agent scoring of 24 contexts + 8 arch docs. As-is exemption surfaced + adopted (pending confirm). |
