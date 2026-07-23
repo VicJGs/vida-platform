@@ -24,11 +24,15 @@
   build-phase ADR-004 amendment + ADR-002 re-home. `[[../pomodoro/structure-data]]` `[FACT superseded: entity_type L1435]`
 
 ### INTENDED shape (the module's real model → ADR-002 amendment)
-**Table-per-type inheritance (S4):**
+**Table-per-type inheritance (S1):**
 - **`sessions`** (base spine, this module owns) — `id · sub_type · purpose · scheduling_mode
   (attended|planned|ad-hoc) · planned_block_id? · started_at · ended_at · status · focus_rating? ·
   energy_level? · distraction_count? · key_learnings[E] · sync`. The single stable `session_id` all effects/
   attachments/pomodoro/planned_blocks reference. **Supersedes** the flat Learning-only `study_sessions`.
+  - **`status` — the S5 lifecycle enum** (`CHECK ∈ scheduled·planned·in_progress·completed·skipped·missed·
+    rescheduled`), the state machine every sub-type travels; per-sub-type legal transitions + hooks are declared
+    in `session_type_registry`. (`empty`/`error` are the doc's runtime tail — `business-rules.md` terminal
+    states — NOT persisted CHECK members.) `[INTENT S5 — ADR-004 §3.2.3]`
 - **Per-sub-type extension tables** (1:1 on `session_id`, owned by the domain module):
   `study_sessions*` · `class_sessions` (Education: attendance, ICS link) · `focus_sessions` · `reading_sessions`
   (Books — BK-10 preserved: page-photos, position) · `practice_sessions` + `daily_sessions` (Language) ·
@@ -37,9 +41,18 @@
 - **`planned_blocks`** (reshapes `scheduled_study_sessions`) — `when (date+start/end+availability_window) ·
   target (own study_unit | module_ref pointer) · session_type · purpose · urgency · status`. Points, never
   mirrors (SS-7). `[INTENT G2-shape]`
-- **Integration-Contract tables:** `session_attachments` (polymorphic entity_type/entity_id + level) ·
-  `session_effects` (type→effect catalog bindings) · `session_type_registry` (sub-type defs + permissions
-  envelope). `[INTENT S5]`
+- **Integration-Contract tables (S3, the 4-dimension contract):** `session_attachments` (polymorphic
+  entity_type/entity_id + level — dim1) · `session_effects` (dim2) · `session_type_registry` (sub-type defs +
+  the dim4 permissions envelope + per-type lifecycle transitions/hooks). `[INTENT S3 — ADR-004 §3.2]`
+  - **`session_effects` — the S4 effects catalogue + R1 idempotency (dim2).** The effect `type` is drawn from
+    the **fixed catalogue** `complete_habit_occurrence · log_time · emit_measurement_signal ·
+    contribute_purpose_metric · award_xp · surface_journal · surface_calendar · attach_pomodoro`; each fires via
+    that receiver's **named effect handler (R2)**, never a direct target-table write. Every effect *output* row
+    carries a deterministic **`effect_event_id`** `= derive(subject_natural_key ‖ transition ‖ effect_type)`
+    with a **`UNIQUE`** constraint (R1) — a replayed effect is a no-op. `[INTENT S4/R1 — ADR-004 §3.2.2, §3.2.5]`
+- **`applied_effects`** (System / local-only dedup ledger) — records which `effect_event_id`s have been
+  applied on this device; the read side of the R1 idempotency rail (stops double-count on sync replay). Its
+  physical package home is `[DEFERRED — Part 2]`. `[INTENT R1 — ADR-004 §3.2.5]`
 - **Retained/reshaped:** `study_availability` + `availability_exceptions` (kept) · `study_plan_batches`
   (widen scope beyond course — G5) · `session_templates` (restore v1 fields: focus_technique, description,
   notifications, sounds, usage_count/last_used_at; + interruption/pause tracking). `[INTENT G6; FACT v1 studyPlanner.ts SessionTemplate + PomodoroSession]`

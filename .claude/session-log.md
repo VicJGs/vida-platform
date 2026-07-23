@@ -1991,3 +1991,96 @@ Next session:
   - READ FIRST: docs/specs/foundation/staleness-sweep.md (verdict table + Part 1.2 ordering) +
     capability-framework.md (§3 predicates for the target context) + the target's current structure-data.md.
 ---
+
+---
+Date: 2026-07-23 (cont.)
+Task: build-roadmap-resequence (foundation-realignment campaign)
+Goal: Start Part 1.2 (doc re-runs) — re-run the Tier-0 hub context `notes-and-pages` through the realignment methodology under its LITE gate.
+
+Completed:
+  - PART 1.2 STARTED — `notes-and-pages` (Tier 0 hub, in-degree-14) re-run COMPLETE.
+  - Grounded: read staleness-sweep row 1 + capability-framework §2–§5 (SP1–SP7, S1–S7, R6, As-is exemption)
+    + all 5 aspect docs. No-Guessing baseline = the persisted sweep + framework (inputs already on disk).
+  - Persisted the per-context LITE-gate PLAN: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/notes-and-pages.md
+  - Independent adversarial critique (fresh subagent) → REVISE, 3 blocking, all fixed:
+      B1 bare `focus` → real ADR-004 token `focus_sessions` extension + `sub_type` (value [UNKNOWN — build-phase]);
+      B2 assert the DECIDED ADR-006 §3.1 consumer-ownership reframe (was over-deferred); defer only physical code home;
+      B3 reconcile the sweep's named 007 driver — flag the view lines [INTENT — DEFERRED] rather than silently skip.
+  - Victor approved the revised PLAN (LITE = one gate). Implemented all 5 aspect docs:
+      imposed R6 two-tier As-is (FACT floor) / [INTENT] split; retired SP1 (page_tags→entity_tags, N&P=consumer),
+      SP2 (entity_links CHECK(33)→open registry), SP3 (parent_tag_id), SP4 (tags vs links distinct), S1 (pomodoro→focus_sessions/session_id).
+  - Acceptance verified mechanically (grep): retired tokens As-is-only; forward tokens present; pages.type CHECK(6) preserved.
+  - Advanced trackers (master-plan _index 1.2, task file Session History, TASKS.md). Committed cbc8560 (gitleaks clean).
+
+In progress:
+  - PART 1.2 continues — 16 stale/gap contexts remain. notes-and-pages (Tier 0) is the only one done.
+
+Decisions:
+  - Ownership reframe is ASSERTED not deferred: ADR-006 §3.1 already decides N&P is a CONSUMER of the tag
+    primitive (no longer owns a tag junction). Only the physical package/directory home is [DEFERRED — Part 2].
+  - 007/V1 (saved-views-as-`views`-rows) deferred to a dedicated views/Spaces pass (Victor) — but flagged in-doc
+    to reconcile with the sweep's named 007 driver; not silently skipped.
+  - S1 forward token standardized to ADR-004's real `focus_sessions`; `sub_type` discriminator value left [UNKNOWN — build-phase].
+
+Next session:
+  - FIRST ACTION: Tier 1 re-run — `sessions-and-scheduling` (sweep verdict = GAP; the effect-producing foundation
+    many modules ride: S4 effect catalogue, S5 lifecycle enum, R1 idempotency rail effect_event_id/applied_effects).
+  - Repeat the established unit loop: ground (sweep row 6 + framework §3 S1–S7 + target structure-data) → persisted
+    PLAN → independent adversarial critique → fix → approve → implement (R6 two-tier; cite conceptual owner, defer code home).
+  - READ FIRST: docs/specs/foundation/staleness-sweep.md (row 6 + Part 1.2 tiers) + capability-framework.md (§2 R1, §3 ADR-004)
+    + docs/features/sessions-and-scheduling/structure-data.md. Then rest of Tier 1: projects, health/core, habits, finance → tasks, relationships, pomodoro, knowledge/flashcards.
+---
+
+---
+Date: 2026-07-23 (cont.)
+Task: build-roadmap-resequence (foundation-realignment campaign)
+Goal: Part 1.2 Tier-1 — re-run `sessions-and-scheduling` (sweep verdict = gap; the effect-producing foundation many modules ride) through the realignment methodology under its LITE gate.
+
+Completed:
+  - PART 1.2 — `sessions-and-scheduling` (Tier 1, verdict=gap, drivers 004/002) re-run COMPLETE.
+  - Grounded: sweep row 6 + framework §2 (R1/R2 rails) + §3 ADR-004 (S1–S7) + ALL 5 aspect docs.
+    KEY REFINEMENT: the sweep scored only structure-data.md (its stated scope, L8). Reading all aspects showed
+    S4 (effect catalogue) already present in contract.md L23 and S5 (lifecycle enum) in business-rules.md L83 —
+    only R1 (`applied_effects`/`UNIQUE effect_event_id`) was the genuine gap. So the real fills were narrower
+    than the row-6 verdict implied. (Written into the Next-session pattern: read ALL aspects to refine the sweep.)
+  - Persisted the per-context LITE-gate PLAN: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/sessions-and-scheduling.md
+  - Independent adversarial critique (fresh subagent) → SHIP / 0 blocking. Critic verified against source:
+    ADR-004 §3.2.2/§3.2.3/§3.2.5 exist with every cited token (no fabrication); present/absent diagnosis correct
+    at every line; `applied_effects`/`UNIQUE` genuinely absent from all 5 aspects; C1 `xp_history` is a forward
+    [INTENT] target (As-is exemption does NOT cover it) → C1 correctly IN-SCOPE; no boundary/DDL violation.
+  - Folded 3 non-blocking cite-precision notes: N1 (E4 pin → ADR-012 §3.1, not §3.3), N2 (empty/error stay the
+    doc's runtime tail, NOT framework-S5 CHECK members), N3 (`grant_currency` = E2 feeder / E4 Additive class).
+  - Victor approved (LITE = one gate). Implemented 4 of 5 aspects (identity untouched — no gap reached it):
+    ADDITIONS-not-retirements — named the S4 8-effect catalogue on `session_effects`; the S5 7-state `status`
+    CHECK on the `sessions` spine; the R1 rail (`effect_event_id` + `UNIQUE` + `applied_effects` ledger) on the
+    effect foundation. C1: retired forward `xp_history` → `consequence_ledger` (ADR-012 E3/E4). C2: fixed
+    capability-ID label drift (S1/S3/S4/S5) across structure-data, business-rules, contract, conventions.
+  - Acceptance verified mechanically (grep): R1 tokens present on spine + handlers; catalogue + enum named;
+    no forward `xp_history`; zero residual capability-ID mis-tags; `applied_effects` code home deferred (boundary held).
+  - Advanced trackers: PLAN → IMPLEMENTED; master-plan _index (Part 1.2 row + 2 change-log entries);
+    task Session History; TASKS.md. This session's work not yet committed at log time (checkpoint commit pending).
+
+In progress:
+  - PART 1.2 continues — 15 stale/gap contexts remain. Tier 0 (notes-and-pages) + first Tier-1 (sessions-and-scheduling) done.
+
+Decisions:
+  - The sweep's single-aspect verdict is a FLOOR, not ground truth: a gap can be filled in a sibling aspect the
+    sweep didn't score. Re-run grounding must read ALL aspects before planning the fill. (Refines the unit loop.)
+  - C1 (forward `xp_history` in contract.md L49) fixed even though ADR-012 is not this context's sweep driver:
+    a retired token in the FORWARD/[INTENT] model is a live anti-signal regardless of driver (framework §1.3 rule);
+    flagged + fixed in-scope (bounded to the one effects-target row), never silently skipped. The notes-and-pages B3 pattern.
+  - `empty`/`error` are the doc's own runtime terminal states, NOT members of the ADR-004 §3.2.3 S5 enum —
+    kept out of the persisted `sessions.status` CHECK to avoid future sweep enum-drift flags.
+
+Next session:
+  - FIRST ACTION: Tier 1 continues — re-run `projects` (sweep verdict = STALE; live wrong-model:
+    `progress 0-100 NOT NULL` M3 anti-signal, bespoke deliverable `measurement_type` displacing M1
+    `measurement_kind`, `purpose_projects` as a live in-edge; X*/AI* absent). Closer in shape to notes-and-pages
+    (wrong-model stale) than to sessions-and-scheduling (gap).
+  - Repeat the unit loop WITH the refinement: ground (sweep row 3 + framework §3 M1–M7 + target ALL 5 aspects) →
+    persisted PLAN → independent adversarial critique → fix → approve → implement (R6 two-tier; cite conceptual
+    owner, defer code home; flag forward regressions, don't skip).
+  - READ FIRST: docs/specs/foundation/staleness-sweep.md (row 3) + capability-framework.md (§3 ADR-011 M1–M7)
+    + docs/features/projects/*.md (all aspects). Then rest of Tier 1: health/core, habits, finance → tasks,
+    relationships, pomodoro, knowledge/flashcards.
+---

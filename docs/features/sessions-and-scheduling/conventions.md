@@ -9,7 +9,7 @@
 - **Table-per-type is the pattern.** Every session sub-type = a row in the base `sessions` spine + a 1:1 row
   in a module-owned extension table (`session_id` FK). Read the spine for cross-type work (agenda, Journal,
   Calendar, analytics); join the extension only for that type's tooling. Never widen the spine with
-  type-specific columns. `[INTENT S4]`
+  type-specific columns. `[INTENT S1]`
 - **Register, don't hard-code.** A module adds a sub-type by calling `SessionRegistry.register()` with a full
   `SessionTypeDef` (4 dimensions + extension schema + tools). The core never names sub-types by hand — that's
   what makes new modules (Health, Skills) plug in without touching it. `[INTENT S1]`
@@ -20,8 +20,12 @@
   create a `planned_block` that **points** at the owner's item. Never copy the owner's schedule into a local
   table — that is the v1 staleness bug (SS-7). `[INTENT G2]`
 - **Effects go through the Integration Contract, never direct writes.** A session that completes a habit calls
-  the Habits write API via a declared effect; it never touches `habit_completions` directly. Permission-check
-  (`canTouch`) before every effect (§6 + SS-6). `[INTENT S5]`
+  the Habits write API via a declared effect (R2); it never touches `habit_completions` directly. Permission-check
+  (`canTouch`) before every effect (§6 + SS-6). `[INTENT S3/R2]`
+- **Every cross-module effect is idempotent (R1).** An effect carries a deterministic `effect_event_id`
+  (`derive(subject_natural_key ‖ transition ‖ effect_type)`) and is deduped through the local `applied_effects`
+  ledger — a replayed effect (sync re-delivery) NEVER double-counts. Do not invent a per-effect dedup scheme.
+  `[INTENT R1 — ADR-004 §3.2.5]`
 - **Emit signals, don't compute domain measures.** On completion, emit the measurement event; let
   Knowledge/Education compute mastery/pace. Never derive a domain number here (SS-10). `[INTENT G10]`
 - **Analytics are read-time.** Compute from the session log; no synced aggregate tables (SS-12). `[INTENT G8]`
@@ -52,7 +56,7 @@
   `session_id` — no longer a Notes entity. This module owns its templates + runtime; the Notes `/pomodoro`
   block is a widget-lens only (SS-11, reversed). `[[../pomodoro/conventions]]` `[FACT superseded: entity_type L1435]`
 - **Don't let a user-created type inherit shipped-type powers.** Its permission envelope is a strict subset
-  (SS-6); no XP/finance/health effects without explicit opt-in. `[INTENT S5-dim4]`
+  (SS-6); no XP/finance/health effects without explicit opt-in. `[INTENT S3-dim4]`
 - **Views are deferred.** The view family (Hub/wizard/Management/Availability/per-type tools) is a dedicated
   post-completion pass (G9); do not fabricate view behaviour in these docs. `[INTENT Victor 2026-07-12]`
 

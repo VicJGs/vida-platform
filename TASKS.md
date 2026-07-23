@@ -6,21 +6,23 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-23 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS** — ✅ notes-and-pages (Tier 0 hub) re-run done. Next: Tier 1 `sessions-and-scheduling` |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-23 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS** — ✅ notes-and-pages (Tier 0 hub) + ✅ sessions-and-scheduling (Tier 1) re-runs done. Next: Tier 1 `projects` / `health-core` / `habits` / `finance` |
 
 ## 🧭 Next session
 
-**Continue Part 1.2 (doc re-runs) — Tier 1, `sessions-and-scheduling` NEXT** (S4/S5/S6-R1 — the effect-producing
-foundation many modules ride). Read first: `docs/specs/foundation/staleness-sweep.md` (row 6 verdict = **gap** +
-Part 1.2 tiers) + `docs/specs/foundation/capability-framework.md` (§3 S1–S7 / effect catalogue + R1 rail) + the
-target's current `structure-data.md`. Each context re-runs through the documentation-blueprint methodology under its
-own LITE gate (plan→critique→approval per context). Pattern established by notes-and-pages: ground → persisted PLAN →
-independent adversarial critique → fix → approve → implement (R6 two-tier As-is/[INTENT]; cite conceptual owner,
-defer code home). Then rest of Tier 1 (projects, health/core, habits, finance → tasks, relationships, pomodoro,
-knowledge/flashcards) → Tier 2 gap-fills → Tier 3 arch docs (Part 1.3).
+**Continue Part 1.2 (doc re-runs) — Tier 1, `projects` NEXT** (then `health/core`, `habits`, `finance` — the live
+wrong-model measurability/economy stales). Read first: `docs/specs/foundation/staleness-sweep.md` (the target's row +
+Part 1.2 tiers) + `docs/specs/foundation/capability-framework.md` (§3 M1–M7 / E-layer for these) + the target's current
+`structure-data.md`. Each context re-runs through the documentation-blueprint methodology under its own LITE gate
+(plan→critique→approval per context). Pattern (notes-and-pages + sessions-and-scheduling): ground → **read ALL aspects
+to refine the sweep's single-aspect verdict** → persisted PLAN → independent adversarial critique → fix → approve →
+implement (R6 two-tier As-is/[INTENT]; cite conceptual owner, defer code home; flag forward regressions, don't skip).
+Then rest of Tier 1 (tasks, relationships, pomodoro, knowledge/flashcards) → Tier 2 gap-fills → Tier 3 arch docs (Part 1.3).
 Done so far: Part 0 (framework, 85 caps); Part 1.0 (legacy quarantine + CLAUDE.md lock); Part 1.1 (sweep + As-is
-exemption → framework §1.3); **Part 1.2 ✅ notes-and-pages (Tier 0 hub) re-run** (`part-1.2-reruns/notes-and-pages.md`).
-Committed cb21f73, 9440a47, + Part-1.1 checkpoint. NEW work (this session) not yet committed.
+exemption → framework §1.3); **Part 1.2 ✅ notes-and-pages (Tier 0 hub)** (`part-1.2-reruns/notes-and-pages.md`) +
+**✅ sessions-and-scheduling (Tier 1 gap)** (`part-1.2-reruns/sessions-and-scheduling.md` — S4/S5/R1 added; forward
+`xp_history` retired; critique SHIP).
+Committed: notes-and-pages re-run = cbc8560 (+ cb21f73, 9440a47, Part-1.1 checkpoint). NEW work (sessions-and-scheduling re-run) not yet committed.
 Open Q still deferred: what "RP" abbreviates (Part 3.0, non-blocking); V1/007 saved-views reframe (dedicated pass).
 
 ## 🔴 Blocked

@@ -13,17 +13,21 @@
   declares the 4 Integration-Contract dimensions + its extension fields + its default tools/views. Shipped
   types register fully configured (SS-4); user long-tail types register through the same seam (SS-5).
 - **`SessionTypeDef`** = `{ sub_type, owner_module, extension_schema, attachment_defaults, effects[],
-  lifecycle (transitions + hooks), permissions (capability envelope), default_purpose? }`. `[INTENT S1/S3/S5]`
+  lifecycle (transitions + hooks), permissions (capability envelope), default_purpose? }`. `[INTENT S1/S3/S4/S5]`
 
 ### 2. The Integration Contract (the module's core API — 4 dimensions)
 - **Attachment** — `attach(session_id, entity_type, entity_id, level: 'type'|'instance')`. Polymorphic,
-  `entity_links`-style. Type-level defaults come from the registry; instance-level set per session. `[INTENT S5-dim1]`
-- **Effects** — declared per type, fired by the lifecycle engine on events. Effect kinds (the shipped
-  catalog): `complete_habit_occurrence · log_time(task|project) · emit_measurement_signal · contribute_purpose_metric ·
-  award_xp · surface_journal · surface_calendar · attach_pomodoro`. `[INTENT S5-dim2]`
-- **Lifecycle** — `transition(session_id, event)` over the shared machine (SS-8 states) with per-type legal
-  transitions + hooks. `[INTENT S5-dim3]`
-- **Permissions** — `canTouch(type, effect, target) → bool`; enforced before every effect (SS-6). `[INTENT S5-dim4]`
+  `entity_links`-style. Type-level defaults come from the registry; instance-level set per session. `[INTENT S3-dim1]`
+- **Effects** — declared per type, fired by the lifecycle engine on events. Effect kinds (the shipped **S4
+  catalogue**): `complete_habit_occurrence · log_time(task|project) · emit_measurement_signal · contribute_purpose_metric ·
+  award_xp · surface_journal · surface_calendar · attach_pomodoro`. Each fires through the receiver's **named
+  write API / effect handler (R2)** — never a direct target-table write. Every handler stamps the deterministic
+  **`effect_event_id`** `= derive(subject_natural_key ‖ transition ‖ effect_type)` and is **idempotent** on it
+  (`applied_effects` dedup): a replayed effect no-ops (rail **R1**). `[INTENT S4/R1 — ADR-004 §3.2.2, §3.2.5]`
+- **Lifecycle** — `transition(session_id, event)` over the shared state machine (the SS-1 / terminal-states
+  enum: `scheduled·planned → in_progress → completed·skipped·missed·rescheduled`) with per-type legal
+  transitions + hooks. `[INTENT S5 — ADR-004 §3.2.3]`
+- **Permissions** — `canTouch(type, effect, target) → bool`; enforced before every effect (SS-6). `[INTENT S3-dim4]`
 
 ### 3. The Scheduling engine
 - **`dueIn(range): DueItem[]`** — the **platform-level provider primitive** (shared with the Global Calendar
@@ -46,7 +50,7 @@
   | log_time | Tasks / Projects | Tasks time API (reconciles `task_time_logs` `[FACT L1510]`) |
   | emit_measurement_signal | Knowledge / Education | mastery-source event (KN-10) / pace-vs-syllabus |
   | contribute_purpose_metric | Purpose & Goals | `purpose_metric_values` write |
-  | award_xp | Gamification | `xp_history` write |
+  | award_xp | Gamification | documented write API over `consequence_ledger` (via the `grant_currency` Additive effect — ADR-012 §3.3 E3 + §3.1 E4). **NOT** `xp_history` (retired token) |
   | surface_journal / surface_calendar | Notes / Global Calendar | daily Journal feed · block render |
   | attach_pomodoro | **this realm** (⚠ reframed 2026-07-15) | `pomodoro_sessions` re-pointed at `session_id` — the `focus`-sub-type runtime `[[../pomodoro/contract]]` `[FACT superseded: entity_type L1435]` |
 - **Runtime:** `[[../pomodoro/identity]]` — the timer is the `focus`-sub-type runtime owned in this realm
