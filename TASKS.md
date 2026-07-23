@@ -6,21 +6,22 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-23 | **Part 0 + 1.0 + 1.1 COMPLETE** (framework ratified; legacy quarantined; CLAUDE.md locked; sweep = 10 stale/7 gap/7 aligned). Next: Part 1.2 doc re-runs |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-23 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS** — ✅ notes-and-pages (Tier 0 hub) re-run done. Next: Tier 1 `sessions-and-scheduling` |
 
 ## 🧭 Next session
 
-**Start Part 1.2 (doc re-runs) — notes-and-pages FIRST** (Tier 0 hub, in-degree-14). Read first:
-`docs/specs/foundation/staleness-sweep.md` (verdict table + Part 1.2 dependency-ordered re-run tiers) +
-`docs/specs/foundation/capability-framework.md` (§3 predicates for the target context) + the target's current
-`structure-data.md`. Each stale/gap context re-runs through the documentation-blueprint methodology under its own
-LITE gate (plan→critique→approval per context). notes-and-pages fixes: SP1 (`page_tags`→`entity_tags`), SP2 (open
-registry vs closed `entity_type CHECK(33)`), SP4, add SP3 (`parent_tag_id`), complete the pomodoro→`sessions`
-supertype re-home. Then Tier 1 (sessions-and-scheduling, projects, health/core, habits, finance, tasks,
-relationships, pomodoro, knowledge/flashcards) → Tier 2 gap-fills → Tier 3 arch docs (Part 1.3).
-Done so far: Part 0 (scenario + ratified capability-framework, 85 caps); Part 1.0 (legacy quarantine + CLAUDE.md
-lock); Part 1.1 (sweep + As-is exemption → framework §1.3). Committed cb21f73, 9440a47, + this Part-1.1 checkpoint.
-Open Q still deferred: what "RP" abbreviates (Part 3.0, non-blocking).
+**Continue Part 1.2 (doc re-runs) — Tier 1, `sessions-and-scheduling` NEXT** (S4/S5/S6-R1 — the effect-producing
+foundation many modules ride). Read first: `docs/specs/foundation/staleness-sweep.md` (row 6 verdict = **gap** +
+Part 1.2 tiers) + `docs/specs/foundation/capability-framework.md` (§3 S1–S7 / effect catalogue + R1 rail) + the
+target's current `structure-data.md`. Each context re-runs through the documentation-blueprint methodology under its
+own LITE gate (plan→critique→approval per context). Pattern established by notes-and-pages: ground → persisted PLAN →
+independent adversarial critique → fix → approve → implement (R6 two-tier As-is/[INTENT]; cite conceptual owner,
+defer code home). Then rest of Tier 1 (projects, health/core, habits, finance → tasks, relationships, pomodoro,
+knowledge/flashcards) → Tier 2 gap-fills → Tier 3 arch docs (Part 1.3).
+Done so far: Part 0 (framework, 85 caps); Part 1.0 (legacy quarantine + CLAUDE.md lock); Part 1.1 (sweep + As-is
+exemption → framework §1.3); **Part 1.2 ✅ notes-and-pages (Tier 0 hub) re-run** (`part-1.2-reruns/notes-and-pages.md`).
+Committed cb21f73, 9440a47, + Part-1.1 checkpoint. NEW work (this session) not yet committed.
+Open Q still deferred: what "RP" abbreviates (Part 3.0, non-blocking); V1/007 saved-views reframe (dedicated pass).
 
 ## 🔴 Blocked
 
