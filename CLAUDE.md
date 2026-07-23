@@ -240,9 +240,13 @@ vida-platform/
 
 ## Data Domains (Key Tables)
 
+> Orientation only — NOT the schema source of truth. Table names reflect the ADR-realigned model where a
+> capability-framework anti-signal applied (ADRs 004–017); the authoritative schema is owned by ADR-002 + the
+> per-table build phase (DB-3/DB-4). Rows not yet swept against every ADR may still lag.
+
 | Domain | Key Tables |
 |--------|-----------|
-| Notes & Pages | `pages`, `page_links`, `entity_links`, `tags`, `page_tags`, `note_attachments`, `pomodoro_sessions` |
+| Notes & Pages | `pages`, `page_links`, `entity_links`, `tags`, `entity_tags`, `note_attachments` (pomodoro is now a `sessions` sub-type — ADR-004) |
 | Tasks | `tasks`, `task_time_logs` |
 | Projects | `projects`, `milestones`, `project_documents` |
 | Habits | `habits`, `habit_completions` |
@@ -250,21 +254,27 @@ vida-platform/
 | Purpose & Goals | `purposes`, `targets`, `purpose_metrics`, `purpose_metric_values`, `target_reviews`, `dreams` |
 | Finance | `accounts`, `transactions`, `assets`, `liabilities`, `investments`, `income_streams` |
 | Relationships | `contacts`, `contact_events`, `interactions`, `contact_reminders`, `reminder_groups`, `reminder_group_contacts` |
-| Learning | `courses`, `books`, `book_chapters`, `skills`, `skill_resources`, `study_sessions`, `study_topics`, `topic_reviews`, `flashcard_decks`, `flashcards`, `flashcard_reviews`, `knowledge_notes` |
+| Learning | `courses`, `books`, `book_chapters`, `skills`, `skill_resources`, `study_sessions`, `study_topics`, `topic_reviews`, `review_events`, `method_bindings`, `review_curves`, `knowledge_notes` (flashcard_* retired → generic review engine, ADR-005) |
 | Study Planner | `study_availability`, `availability_exceptions`, `study_plan_batches`, `scheduled_study_sessions`, `session_templates` |
 | Language | `languages`, `language_practice_sessions`, `language_vocabulary`, `language_daily_sessions`, `language_daily_progress`, `language_recordings`, `language_weekly_plans`, `language_base_words`, `language_video_playlists` |
 | Check-ins | `daily_check_ins`, `check_in_templates`, `check_in_template_questions` |
 | Bucket List | `bucket_list_items` |
-| Gamification | `user_profile`, `achievements`, `user_achievements`, `xp_history` |
+| Gamification | `user_profile`, `achievements`, `user_achievements`, `currencies`, `consequence_ledger` (xp_history retired → derived-balance ledger, ADR-012) |
 | Notifications | `notifications` |
 | Preferences | `user_preferences`, `nav_preferences`, `command_bar_history` |
 | ICS Sync | `ics_feed_configs`, `ics_synced_events` |
 | System (local-only) | `app_state`, `sync_queue` |
-| Cross-domain junctions | `purpose_habits`, `purpose_routines`, `purpose_projects`, `project_habits` |
+| Cross-domain junctions | `contributions` (weighted, polymorphic — supersedes `purpose_habits`/`purpose_routines`/`purpose_projects`, ADR-011), `project_habits` |
 
 ## Reference Documents
 
-- Architecture overview: `Old/documentation/new_arquitecture/multiplatform-architecture-v2.md`
-- Tech stack decisions: `docs/core/decisions/ADR-001-tech-stack.md`
-- Complete data model & schema: `docs/core/decisions/ADR-002-data-model.md`
-- Sync protocol design: `docs/core/decisions/ADR-003-sync-protocol.md`
+**The ADRs at `docs/core/decisions/` are the authoritative foundation — ADR-001 through ADR-017 govern.** The
+legacy Multiplatform Guide v2 is quarantined at `docs/_legacy/architecture.md` (superseded on 5 axes; do not use).
+The `docs/core/architecture/*` docs are themselves under realignment (campaign Part 1.3).
+
+- All architecture decisions: `docs/core/decisions/` (ADR-001 … ADR-017)
+- Capability framework (every ADR-004–015 capability + mechanical predicate): `docs/specs/foundation/capability-framework.md`
+- Foundation-realignment campaign: `docs/specs/foundation/realignment-master-plan/_index.md`
+- Tech stack: `docs/core/decisions/ADR-001-tech-stack.md`
+- Data model & schema: `docs/core/decisions/ADR-002-data-model.md`
+- Sync protocol: `docs/core/decisions/ADR-003-sync-protocol.md`

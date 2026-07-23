@@ -1,7 +1,7 @@
 # Master Plan: Vida Platform Foundation-Realignment Campaign
 
 **Type:** planning (foundation) — the master gating + phasing system for the whole realignment.
-**Status:** APPROVED at gate 1 (2026-07-23, Victor). Part 0 authorized; Parts 2–3 forward-declared (own gate-1 later). Execution begins next session.
+**Status:** APPROVED at gate 1 (2026-07-23, Victor). **Part 0 COMPLETE** (scenario `documentation-realignment` + ratified `capability-framework.md`). **Part 1.0 COMPLETE** (legacy quarantine → `docs/_legacy/`; CLAUDE.md foundation lock; definition-of-aligned ratified → framework §5). **Next: Part 1.1 staleness sweep.** Parts 2–3 forward-declared (own gate-1 later).
 **Date:** 2026-07-23  ·  **Session:** build-roadmap-resequence (reframed as this campaign; the roadmap resequence becomes Part 3)
 **Grounded in:** `docs/specs/foundation/current-state-baseline/baseline.md` (the ground-truth input).
 **Critique:** independent adversarial pass logged blocking B1–B4 + N1–N4; all incorporated in this revision (see Change Log).
@@ -67,6 +67,11 @@ A failed predicate = a **gap**, filled by context (docs/ADRs) or by Victor's exp
 **Done when:** all 24 documented contexts + `docs/core/architecture/*` pass the **definition of aligned** (below); divergence resolved; every gap filled or explicitly marked owed-to-intent.
 
 **Definition of "aligned" (the gate predicate — per critique B3), per context:**
+
+> **RATIFIED 2026-07-23 (Part 1.0):** the canonical, mechanical form of this predicate is **`capability-framework.md` §5**
+> (each line carries its capability ID + anti-signal). The checklist below is the original sketch; where they differ,
+> **framework §5 governs.** The Part 1.1 sweep runs framework §5 + the §3 predicates.
+
 - [ ] Tagging model = `entity_tags` (ADR-006), not `page_tags`.
 - [ ] Carries `measurement_kind`/`binding_mode` iff it's an ADR-011 measurable.
 - [ ] Timed/scheduled activity references the ADR-004 `sessions` supertype.
@@ -76,7 +81,7 @@ A failed predicate = a **gap**, filled by context (docs/ADRs) or by Victor's exp
 
 | Phase | Work | Gate |
 |-------|------|------|
-| 1.0 | **Legacy quarantine + foundation lock** — quarantine `docs/architecture.md` + the 3 empty legacy docs; fix CLAUDE.md drift (ADR path, ADR-004+ refs, stale table names); ratify the *definition of aligned* checklist above. | LITE |
+| 1.0 ✅ | **Legacy quarantine + foundation lock** — DONE 2026-07-23: 4 legacy files → `docs/_legacy/` (+README); CLAUDE.md foundation-locked (Reference section repointed to ADR-001–017 + framework; Data-Domains retired tokens fixed: `page_tags`→`entity_tags`, `flashcard_*`→review engine, `xp_history`→`consequence_ledger`, `purpose_*` junctions→`contributions`, `pomodoro_sessions`→`sessions`); definition-of-aligned ratified → framework §5. (ADR-path drift did not reproduce — already correct.) | LITE ✅ |
 | 1.1 | **Staleness sweep** — run the capability predicates + definition-of-aligned across ALL 24 contexts + 8 arch docs; per-context verdict (aligned / stale+drivers / gap). Extends the baseline's 7-context finding to the full set. | analysis, persisted |
 | 1.2 | **Doc re-runs** — re-run each stale context through the documentation-blueprint methodology (gap-Qs, ADR-grounding, capability coverage, fill by context/intent). Per-context LITE gate. Ordered by dependency: **Notes & Pages first** (in-degree-14 hub), then substrate feeders, then leaves. Docs may cite substrates + owning ADRs, NOT place them in code (boundary rule). | per-context LITE |
 | 1.3 | **Architecture-doc realignment** — rewrite/refresh `docs/core/architecture/*` from the ADRs so the 5 substrate frameworks get a documented **conceptual** home (which framework/ADR owns them — NOT a directory; that's 2.0). | LITE |
@@ -124,6 +129,8 @@ A failed predicate = a **gap**, filled by context (docs/ADRs) or by Victor's exp
 | 2026-07-23 | Initial draft. |
 | 2026-07-23 | Critique REVISE incorporated: B1 (1.4 rescoped, DB-11 reconciliation → out-of-scope), B2 (count precision + re-run granularity), B3 (definition-of-aligned checklist), B4 (capability-framework as gated Part-0 deliverable + mechanical predicates), N1 (Part 0 gated), N2 (umbrella framing; Parts 2–3 forward-declared), N3/N4 (Part-1/Part-2 boundary rule + R5). |
 | 2026-07-23 | **APPROVED at gate 1 by Victor.** Part 0 authorized to execute next session. Scenario-name assumption `documentation-realignment` stands (unconfirmed); "RP" still [UNKNOWN] (deferred to Part 3.0). |
+| 2026-07-23 | **Part 0 COMPLETE** — scenario `documentation-realignment` scaffolded (name confirmed by Victor); `capability-framework.md` authored (85 caps from ADRs 004–015), independent critique REVISE→fixed, RATIFIED (LITE gate). |
+| 2026-07-23 | **Part 1.0 COMPLETE** — legacy quarantine (`docs/_legacy/` + README, 4 files), CLAUDE.md foundation lock, definition-of-aligned ratified → framework §5. LITE gate: plan approved by Victor. Next: Part 1.1 staleness sweep. |
 
 ---
 *Gate 1: this revised plan is presented for Victor's approval. Not executed until approved.*

@@ -9,4 +9,5 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 | [foundation/db-2-sync-metadata-columns](foundation/db-2-sync-metadata-columns/) | refactor (foundation) | ⛔ PARKED — superseded by ADR-017 (2026-07-23) | 2026-07-22-db-2-sync-metadata-columns |
 | [features/build-roadmap-resequence](features/build-roadmap-resequence/) | feature (LITE plan) | spec-draft — reframed as Part 3 of realignment-master-plan | 2026-07-23-build-roadmap-resequence |
 | [foundation/current-state-baseline](foundation/current-state-baseline/) | baseline (analysis) | done — ground truth | 2026-07-23-build-roadmap-resequence |
-| [foundation/realignment-master-plan](foundation/realignment-master-plan/) | planning (foundation) | draft — gate 1 (critique→approval) | 2026-07-23-build-roadmap-resequence |
+| [foundation/realignment-master-plan](foundation/realignment-master-plan/) | planning (foundation) | APPROVED gate 1 — executing Part 0 | 2026-07-23-build-roadmap-resequence |
+| [foundation/capability-framework.md](foundation/capability-framework.md) | reference (foundation) | RATIFIED 2026-07-23 — Part 0 complete | 2026-07-23-build-roadmap-resequence |

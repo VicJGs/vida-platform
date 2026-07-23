@@ -1,6 +1,6 @@
 # Task: build-roadmap-resequence
 # Profile: Project Foundation Setup
-# Scenario: Build Roadmap
+# Scenario: Documentation Realignment (Part 1 methodology; Build Roadmap = Part 3, later)
 # Spec: docs/specs/features/build-roadmap-resequence/_index.md
 # Created: 2026-07-23
 # Status: in-progress
@@ -52,7 +52,8 @@ Integration points: existing Linear projects (① Database · ② Architecture �
 |------|--------------|-----------|
 | 2026-07-23 | initialized task + scaffolded spec stub; profile switched to Project Foundation / Build Roadmap | Step 0 — ground in the architecture (ADRs + dep-graph survey) |
 | 2026-07-23 | REFRAME (Victor): code is stale life_os residue, architecture never derived from current docs, early module docs need re-run. Framing held (decision C). Ran 4-agent read-only current-state baseline → persisted `docs/specs/foundation/current-state-baseline/baseline.md`. Findings: ~99% of code predates the doc foundation; architecture incoherent with ADRs 004–017; early docs stale (re-run warranted); ~74% of Structural Foundation unbuilt. | Enter §XXVI planning gate: draw a plan FROM the baseline. |
-| 2026-07-23 | Authored the MASTER PLAN (`docs/specs/foundation/realignment-master-plan/_index.md`) — gating+phasing system, 3 sequential parts (docs→structure→roadmap). Ran independent adversarial /critique → REVISE (B1 ADR-016 violation + B2–B4 + N1–N4); fixed all. **Victor APPROVED at gate 1.** This task is now the master foundation-realignment campaign; the roadmap resequence is Part 3. | **NEXT SESSION: execute Part 0** — `/new-scenario project-foundation documentation-realignment` + build the gated `docs/specs/foundation/capability-framework.md` (every ADR-004–015 capability + mechanical predicate). Then Part 1 (docs realignment). |
+| 2026-07-23 | Authored the MASTER PLAN (`docs/specs/foundation/realignment-master-plan/_index.md`) — gating+phasing system, 3 sequential parts (docs→structure→roadmap). Ran independent adversarial /critique → REVISE (B1 ADR-016 violation + B2–B4 + N1–N4); fixed all. **Victor APPROVED at gate 1.** This task is now the master foundation-realignment campaign; the roadmap resequence is Part 3. | execute Part 0 |
+| 2026-07-23 | **Part 0 COMPLETE.** (1) Scaffolded scenario `documentation-realignment` (name confirmed) — schema-valid, router updated. (2) Authored `docs/specs/foundation/capability-framework.md`: 85 capabilities from ADRs 004–015 (3-agent cited extraction), 7 shared rails, two-token predicate model (present token + stale anti-signal), applies-to membership rules, §5 definition-of-aligned. Independent adversarial critique → REVISE (B1 R2 read/write cross-wire, B2 added A8/A9 ADR-010 coverage, B3 CHECK-token honesty) → all fixed → **RATIFIED (LITE gate)**. **Part 1.0 COMPLETE.** Quarantined 4 legacy docs → `docs/_legacy/`+README; CLAUDE.md foundation lock (Reference→ADR-001–017+framework; Data-Domains retired tokens fixed); definition-of-aligned ratified → framework §5. LITE gate: plan approved by Victor. | **Part 1.1 — staleness sweep:** run framework §5 + §3 predicates across all 24 contexts + 8 arch docs; per-context verdict (aligned / stale+drivers / gap). Persisted analysis. |
 
 ## Notes
 - This is a RE-SEQUENCE of an existing roadmap (docs/roadmap.md, 35 issues LIF-61…95), not a from-zero
