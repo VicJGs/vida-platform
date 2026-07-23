@@ -1846,3 +1846,61 @@ Next session:
     apps/desktop = Tauri shell only (DB adapter unwritten). Encryption-off is already the default.
   - OWED: flip Linear LIF-64 → Backlog.
 ---
+
+## 2026-07-23 — PROFILE SWITCH
+- Switched active profile: Generic Coding Session → **Project Foundation Setup**, scenario **Build Roadmap**.
+- Rationale: ADR-017 kept the Phase-1.0 deliverables unchanged but inverted the ORDER to features-first
+  (encryption/sync/auth deferred). Re-sequencing + re-projectizing an already-specified deliverable set is
+  exactly the Build Roadmap scenario's remit — not defining from zero, not documenting contexts.
+- CLAUDE.md has no `# Profile:` line → not injected; this entry is the persistence. No active task file yet.
+---
+
+---
+Date: 2026-07-23
+Task: build-roadmap-resequence → reframed as the FOUNDATION-REALIGNMENT MASTER CAMPAIGN (roadmap resequence = Part 3)
+Goal: Open the features-first roadmap resequence (ADR-017) — which surfaced a deeper truth: the whole
+  vida-platform code + architecture is stale life_os-migration residue that predates the documentation
+  foundation. Pivoted to authoring a gated master plan to realign docs → structure → roadmap.
+
+Completed:
+  - Profile switch: Generic Coding Session → Project Foundation Setup / Build Roadmap (session-log persisted).
+  - Created task `build-roadmap-resequence` (Linear LIF-96, new cluster General_Vida) + forward-spec stub.
+  - Step 2 docs pass (2 agents): (a) module table-complexity census — Tasks is only 2 tables (project FK is
+    nullable SET NULL), Habits smallest true loop, Notes forced-first hub; (b) code-reality audit — found ADR-017
+    overclaims a "pass-through crypto seam" that doesn't exist (repository.ts:231 requires an unlocked vault).
+  - REFRAME (Victor): code is stale, architecture never derived from the finished docs, early module docs need
+    re-run. Held framing (decision C = let the baseline decide the shape).
+  - Ran a 4-agent read-only CURRENT-STATE BASELINE → persisted `docs/specs/foundation/current-state-baseline/baseline.md`.
+    Findings (all cited): ~99.3% of code (2026-03-27 dump) predates the doc foundation; only 3 files/59 LOC (DB-1)
+    are current; 65% of files are 0-LOC stubs; architecture (code + docs/core/architecture/*) INCOHERENT with ADRs
+    004–017 (5 substrate frameworks have zero home); early module docs stale (re-run warranted, named drivers);
+    ~74% of the roadmap's Structural Foundation unbuilt; legacy layer identified (docs/architecture.md + 3 empty docs
+    + CLAUDE.md drift).
+  - Authored the MASTER PLAN `docs/specs/foundation/realignment-master-plan/_index.md` (3 gated parts:
+    docs → structure → roadmap; umbrella framing). Ran independent adversarial /critique → REVISE (B1 real ADR-016
+    violation: §5.20 reconciliation belongs to DB-11, not Part 1; B2 doc-count precision; B3 define "aligned";
+    B4 capability-framework must be a gated deliverable with mechanical predicates; N1–N4). Fixed ALL.
+  - Victor APPROVED at gate 1.
+  - Memory: added `dont-sketch-run-the-gate-for-foundational-scope`; corrected `authoritative-docs` (docs/core/
+    architecture/* is ALSO stale — precedence is ADRs > arch docs > legacy).
+
+In progress:
+  - Foundation-realignment campaign: gate 1 approved; NOTHING executed yet. Part 0 is the next unit.
+
+Decisions:
+  - Foundation-realignment master plan APPROVED (gate 1). 3 sequential parts, foundation-first. Parts 2–3 are
+    forward-declarations (own gate-1 later). [docs/specs/foundation/realignment-master-plan/_index.md]
+  - build-roadmap-resequence is Part 3 of this campaign, not a standalone task.
+  - Scenario-name assumption: `documentation-realignment` (unconfirmed). "RP to deliver" = [UNKNOWN] (deferred to Part 3.0).
+  - Withdrew the Step-2 "reuse the existing adapter/repository" recommendation — that code is stale residue.
+
+Next session:
+  - FIRST ACTION: execute Part 0 of the approved master plan.
+    (1) `/new-scenario project-foundation documentation-realignment` — formalize the gating+phasing methodology.
+    (2) Build the GATED `docs/specs/foundation/capability-framework.md` — enumerate every ADR-004–015 capability
+        with a mechanical presence/absence predicate + applies-to list (LITE gate: critique + approval).
+    Then Part 1: quarantine legacy (docs/architecture.md + 3 empty docs; fix CLAUDE.md drift) → staleness sweep of
+    all 24 contexts against the predicates → re-run stale docs, Notes & Pages FIRST.
+  - READ FIRST: docs/specs/foundation/realignment-master-plan/_index.md (APPROVED) + its baseline.
+  - CONFIRM with Victor: scenario name (documentation-realignment?) + what "RP" abbreviates.
+---

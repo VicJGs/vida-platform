@@ -4,14 +4,20 @@
 
 ## ⚡ In Progress
 
-_(none)_
+| Task | Profile | Created | Updated | Status |
+|------|---------|---------|---------|--------|
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-23 | master plan APPROVED at gate 1; Part 0 next |
 
 ## 🧭 Next session
 
-Plan the **first deliverable, resequenced** per **ADR-017** (features-first): how the usable product gets built
-on the established local-first stack (encryption/sync/auth deferred to a later hardening pass), delivered via
-web SPA **A** → Tauri desktop **D**, given the current repo state. No task yet — the session opens by authoring
-that execution plan, then converting it to a task. Read first: `docs/core/decisions/ADR-017-*.md`.
+**Execute Part 0 of the approved foundation-realignment master plan.** Read first:
+`docs/specs/foundation/realignment-master-plan/_index.md` (APPROVED gate 1) + its baseline
+`docs/specs/foundation/current-state-baseline/baseline.md`. Part 0 =
+(1) `/new-scenario project-foundation documentation-realignment` (formalize the gating+phasing methodology);
+(2) build the **gated** `docs/specs/foundation/capability-framework.md` — every ADR-004–015 capability with a
+mechanical presence/absence predicate + applies-to list (LITE gate: critique + approval). Then Part 1 (docs
+realignment: quarantine legacy → staleness sweep of all 24 contexts → re-run stale docs, Notes & Pages first).
+Open Qs to confirm: scenario name (`documentation-realignment` assumed); what "RP" abbreviates (deferred to Part 3.0).
 
 ## 🔴 Blocked
 
