@@ -6,6 +6,13 @@
 
 _(none)_
 
+## 🧭 Next session
+
+Plan the **first deliverable, resequenced** per **ADR-017** (features-first): how the usable product gets built
+on the established local-first stack (encryption/sync/auth deferred to a later hardening pass), delivered via
+web SPA **A** → Tauri desktop **D**, given the current repo state. No task yet — the session opens by authoring
+that execution plan, then converting it to a task. Read first: `docs/core/decisions/ADR-017-*.md`.
+
 ## 🔴 Blocked
 
 _(none)_
@@ -14,7 +21,7 @@ _(none)_
 
 | Task | Profile | Priority |
 |------|---------|----------|
-| **Storage rebuild — from zero** (reframed 2026-07-21: v1 schema ~60% stale vs docs → author v2 from scratch. Follow-up authors `ADR-016` + `storage-build-plan.md` master ledger + per-table gating. Basis: `docs/infrastructure/storage-rebuild-strategy.md` + `database-schema-reconciliation.md`. **DB-1/LIF-61 (P0) ✅ done; DB-2 next.**) | Generic Coding Session | active campaign — DB-2 next |
+| **Storage rebuild — from zero** (v1 schema ~60% stale → author v2 from scratch; `ADR-016` + `storage-build-plan.md` ledger + per-table gating. DB-1/LIF-61 ✅ done.) | Generic Coding Session | ⏸ **PARKED by ADR-017** — sequencing inverted to features-first; schema now authored per-feature, not full-schema-first. Resurfaces (incl. encryption/sync at DB-5/DB-2) in the post-validation hardening pass. |
 | Toolkit scan-cascade audit + 6 command migrations | toolkit-development | parked — filed in ~/dev-toolkit/.claude/tasks/ |
 | Integrate /task-new ↔ native task panel | toolkit-development | parked — sync gap found 2026-06-08 |
 | Global Calendar (cross-module read-only aggregator over `dueIn`) | (feature) | parked platform surface — build when its feeder modules are built |

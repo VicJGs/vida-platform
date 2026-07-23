@@ -1789,3 +1789,60 @@ Next session:
     Profile: Generic Coding Session / Default. Branches feat/db-1-schema-primitives + feat/storage-master-plan are
     stacked and UNPUSHED (b234e85·b2ff2de·58dc813·b4547c2) — decide push/PR.
 ---
+
+---
+Date: 2026-07-23
+Task: db-2-sync-metadata-columns (opened, then PARKED) → strategic resequencing (ADR-017)
+Goal: Start DB-2 (sync-metadata columns). Pivoted mid-session to rethink the whole first-deliverable
+      strategy; closed by documenting the decision, killing DB-2, and cleaning context for a fresh
+      planning session.
+Completed:
+  - /task-new db-2-sync-metadata-columns (LIF-64): task file + spec stub (docs/specs/foundation/db-2-...)
+    + indexes + Linear push (IN_PROGRESS) + panel. Merged the pre-existing 2026-07-20 stub's ADR-003 §17 /
+    ADR-004 F1 / HLC F6-D4-d scope. Found the ground-truth anchor: ADR-002 §5.20 ledger (data-model.md:3790-3794).
+  - §XXVI.1a document-context BASELINE: confirmed docs/infrastructure/database-layer/current-{spec,business-rules}.md
+    are CURRENT vs DB-1's shipped code (syncColumns=6; _sync_field_ts owed to DB-2; DDL=hand-written SQL). No drift.
+  - DB-2 PLAN research (ADR-003 §6.1/§17 read in full): the HLC-representation fork (F6/D4-d) analyzed — string /
+    BigInt / two-column. Recommended zero-padded lexicographic STRING (only encoding uniform across row col +
+    _sync_field_ts JSON map + wire header + blob_index; matches ADR-003's lexicographic compare; dodges the
+    float64 2^53 trap). Surfaced for sign-off — NOT resolved (superseded by the pivot).
+  - STRATEGIC PIVOT (the real work): analyzed delivery options against the established stack. Read ADR-001 (web/
+    desktop targets), DatabaseAdapter seam (packages/core/src/db/adapter.ts), the working web-adapter.ts (~473 LOC),
+    repository encrypt/decrypt seam, and confirmed sync/{resolver,crdt,queue}.ts = 0-line stubs.
+    KEY FINDING: the codebase is already authored for "encryption-off now, bolt-on later" —
+    DEFAULT_SQLCIPHER_CONFIG.passphrase='' (adapter.ts:133), pass-through encryptRow/decryptRow, empty sync stubs.
+    Options A (web SPA, @vida/web) and D (Tauri desktop, @vida/desktop) are BOTH documented app targets, not
+    deviations. ~90% of remaining work (the empty @vida/ui + @vida/editor + feature screens) is shared React → the
+    A/D choice only touches the storage adapter + distribution.
+  - AUTHORED ADR-017 (docs/core/decisions/ADR-017-features-first-resequencing-defer-encryption-sync.md) + registered
+    in docs/core/README.md. Records: Phase 1.0 inverted to FEATURES-FIRST; encryption (SQLCipher+libsodium) / sync
+    (HLC/Yjs/blob) / SRP auth DEFERRED to a post-validation hardening pass (seams exist → bolt-ons); deliver A (web
+    SPA, tester vehicle) → graduate to D (Tauri, durable+encryption-ready daily-driver) off one codebase. Amends the
+    SEQUENCING of ADR-016/001 + roadmap; changes NO architecture; ZK thesis deferred, not dropped.
+  - KILLED DB-2 honestly: status → PARKED (not "done"); archived to .claude/tasks/archive/; spec stub bannered
+    SUPERSEDED; TASKS.md In Progress cleared + "Storage rebuild" campaign marked ⏸ PARKED by ADR-017; _index.md
+    moved to Parked/Superseded; docs/specs/_index.md marked PARKED. Native panel task deleted.
+In progress:
+  - (none) — context intentionally cleaned for a fresh planning session.
+Decisions:
+  - ADR-017: features-first resequencing (see above). Encryption/sync/auth = deferred hardening pass, not dropped.
+    Delivery path A(web SPA)→D(Tauri). [docs/core/decisions/ADR-017-*.md]
+  - DB-2 parked: the HLC/sync-metadata work is only needed when sync flushes → defers WITH the sync engine. The
+    string-encoding recommendation is preserved in the session-log + the parked spec stub for when it resurfaces.
+  - Rejected Option B (Supabase/Vercel cloud MVP): would make encryption a REWRITE not a bolt-on, validates
+    features but not the ZK thesis, exposes plaintext life-data during testing. (ADR-017 §3.)
+Failures this session:
+  - F: direct Linear API state-flip (LIF-64 → Backlog via linear_client --set-state) was PERMISSION-GATED
+    (external write not explicitly authorized). Local files + tracker map cache set to BACKLOG; the actual
+    Linear cloud issue LIF-64 still shows In Progress → OWED: Victor flips it (or authorizes the write).
+Next session:
+  - FIRST ACTION: plan the FIRST DELIVERABLE, resequenced per ADR-017 — how the usable product gets built
+    features-first on the local-first stack (encryption/sync/auth deferred), delivered A(web SPA)→D(Tauri), given
+    the CURRENT repo state. Open by authoring that execution plan (victor:planning / /documentation-component),
+    then convert to a task. No task exists yet by design.
+  - READ FIRST: docs/core/decisions/ADR-017-*.md (the authorization) + docs/roadmap.md Phase 1.0 (deliverables
+    unchanged, order replaced). Current build reality: @vida/types (2639 LOC) + @vida/core (4834 LOC, incl.
+    encryption code) real; web-adapter.ts real; @vida/ui + @vida/editor + feature screens EMPTY (the real lift);
+    apps/desktop = Tauri shell only (DB adapter unwritten). Encryption-off is already the default.
+  - OWED: flip Linear LIF-64 → Backlog.
+---
