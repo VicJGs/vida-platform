@@ -12,9 +12,11 @@
 - **Derived aggregates compute client-side; persist only on opt-in.** Net worth, investment value/gain-loss,
   monthly totals are computed (FN-6/FN-7). Storing them is a user choice and the user owns that storage's
   security. `[INTENT G3]`
-- **Zero-knowledge is non-negotiable for external data.** Parse statements and fetch prices/FX **on the device**;
-  never route plaintext through the server. Any aggregator path is a documented ZK dent and needs the ingestion
-  ADR before it ships (FN-9). `[INTENT G2; FACT: ZK-1]`
+- **Zero-knowledge is non-negotiable for external data (ADR-014).** Parse statements and fetch prices/FX **on
+  the device** (**X1**: fetch→parse→encrypt→write vault; a server-plaintext fetch is **refused, not downgraded**);
+  reconcile merge-imports through **`import_staging`** (commit-on-confirm, **X8**); gate external access on
+  **`external_in_ok`/`external_out_ok`** (**X5** — no new grant table). Only the third-party **aggregator**
+  plaintext path is a documented ZK dent needing its own ADR (FN-9). `[INTENT G2; FACT: ADR-014 X1/X5/X8; ZK-1]`
 - **One base/display currency; FX is user-set.** Convert to the base currency for totals; surface a "rate needed"
   state rather than assuming 1:1 (FN-8). `[INTENT G8]`
 - **Recurring defaults to forecast.** A recurring transaction predicts cash flow; only on opt-in does it
@@ -41,7 +43,15 @@
 - **Never** present a computed number that failed to compute as if correct — flag the partial (FN-3/FN-6). `[INTENT G3]`
 - **Never** invent budgeting or liability-payment internals — they are INTENDED + undesigned (FN-13); document
   intent, don't build to a guess. `[INTENT G12]`
-- **Never** reintroduce inline per-transaction tags — use the shared system (FN-10). `[INTENT G10]`
+- **Never** reintroduce inline per-transaction tags — use the shared **`entity_tags`** primitive
+  (`entity_type='transaction'`, SP1), not `page_tags` (FN-10). `[INTENT G10; ADR-006 SP1]`
+- **Never** copy a balance into a `store` node — `store` **references** the owning entity (`ref_type`/`ref_id`);
+  the value lives in `accounts`/`investments`/`assets`; net worth sums the referenced values (FN-15, E6
+  anti-token). `[INTENT; ADR-012 E6]`
+- **Never** destroy or subtract-to-zero currency for a penalty — **LOCK** it (`store.is_locked` +
+  `consequence_ledger kind='lock'`, recoverable; E5). And **never** collapse `move_money` into `grant_currency` —
+  they are two distinct E4 members; Gamification owns currencies/ledger/coordinator, Finance owns only
+  `move_money`/`store` (FN-16). `[INTENT; ADR-012 E4/E5]`
 
 ## Completion checklist
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] each claim

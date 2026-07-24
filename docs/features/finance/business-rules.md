@@ -32,13 +32,18 @@
   `current_balance`, all converted to the **base/display currency** (FN-8). `[INTENT G3,G8; FACT: v1 FinanceOverview]`
 - **FN-8 — Multi-currency, private FX.** Holdings keep their own `currency`; totals convert to a user-set base
   currency using **device-side/manual FX rates** — rates are **never fetched by the server** (ZK-1). `[INTENT G7,G8]`
-- **FN-9 — External ingestion is zero-knowledge-constrained (⚠ INTENDED, blocked on ADR).** CSV/OFX import and
-  any bank/broker connection **parse/fetch on the device only**; the server never sees plaintext financial data.
-  The aggregator path (e.g. Open Finance Brasil/Belvo) is a **documented dent** (a third party sees plaintext),
-  not pure ZK, and requires an explicit decision. `[INTENT G2; FACT: ADR-001/002 ZK]` → **candidate ADR.**
+- **FN-9 — External ingestion is ADR-014-governed (X1/X5/X8).** CSV/OFX import and any bank/broker/price/FX
+  fetch **parse/fetch on the device only** (**X1** device-mediated: fetch→parse→encrypt→write vault blobs); a
+  fetch that would need server plaintext is **refused, not downgraded**. Merge-import reconciles through
+  **`import_staging`** (parsed rows + match metadata + per-row status; auto-match by date/amount tolerance;
+  **commit only on user confirm** — **X8**; never silent overwrite). External access gates on the ADR-010 grant
+  fields **`external_in_ok`/`external_out_ok`** (**X5** — revocable, fail-closed, **no new grant table**). The
+  **only residual open decision** is the third-party **aggregator** path (e.g. Open Finance Brasil/Belvo) — a
+  **documented ZK dent** (a third party sees plaintext), needing its own decision. `[INTENT G2; FACT: ADR-014 X1/X5/X8; ADR-001/002 ZK]`
 - **FN-10 — Categories from a managed list; tags via the shared system.** `category` resolves to a managed
-  category list (stable analytics grouping) + free-text `subcategory`; tagging uses the platform-wide shared
-  tag vocabulary, not the inline `[E]` JSON. `[INTENT G10]`
+  category list (stable analytics grouping) + free-text `subcategory`; tagging uses the platform-wide
+  **`entity_tags`** primitive (`tag_id, entity_type, entity_id`, SP1), not the inline `[E]` JSON
+  `transactions.tags` (As-is floor, retired). `[INTENT G10; ADR-006 SP1]`
 - **FN-11 — Referential integrity.** Deleting an account **cascades** its transactions; a transfer's
   `transfer_to_account_id` and an investment's `account_id` are **SET NULL** on account deletion (the
   transaction/investment survives, unlinked). Soft delete (`deleted_at`) hides without destroying. `[FACT:
@@ -65,6 +70,23 @@
     entities — resolve at the Commitments/liability-payment/budgeting design-pass. No new rule assumes internals.
     `[INTERP; INTENT: Victor 2026-07-15]`
 
+- **FN-15 — Finance owns the money `store` layer (E6).** Beyond the 6 entities, Finance owns a **`store`** tree
+  that *organizes* the money-holders (`node_kind{group,wrapper}`, `ref_type{account,investment,asset}/ref_id`)
+  and holds **lockable reward-target boxes** (`is_locked`, optional `dream_id?`/`purpose_id?`). The `store`
+  **never copies a balance** — a `wrapper` references the owning entity, whose value stays authoritative (mirrors
+  FN-3); net worth derives Σ (referenced values) − Σ liabilities over the tree. `accounts`/`investments`/`assets`
+  are untouched. System/Gamification consumes `store` as a reward target; `store` is **not** `entity_tags` and
+  **not** a value-holder supertype (E6 anti-token). `[INTENT; ADR-012 E6]` ⚠ INTENDED — `store` is not in ADR-002 today.
+- **FN-16 — Finance executes the `move_money` Additive effect (E4); penalties LOCK, never destroy (E5).** Finance
+  is the **target** of the ADR-012 E4 effect **`move_money`** (one of four Additive effects — `grant_currency` ·
+  `lock_currency` · `move_money` · `surface_notification`; `move_money`→Finance). A rule→consequence coordinator
+  (Gamification) *emits* it; Finance *executes* it as a ledger movement via a documented effect handler (**R2** —
+  never a direct cross-module write), **Additive** and idempotent via **R1** (`effect_event_id`). A penalty
+  **locks** a reward-target box (`store.is_locked`) + records a Gamification `consequence_ledger` row `kind='lock'`
+  (recoverable) — it never deletes/subtracts-to-zero money (E5). `move_money` ≠ `grant_currency`: Gamification
+  owns `currencies`/`consequence_ledger`/the coordinator; Finance owns only its `move_money`/`store` members.
+  `[INTENT; ADR-012 E4/E5]`
+
 ## Validation & edge cases
 - Enum CHECKs (all `[FACT: ADR-002 §5.8]`): `account_type`(7), `transaction_type`{income,expense,transfer},
   `recurring_frequency`(6), `asset_type`(6), `liability_type`(7), `investment_type`(8), `income_type`(8),
@@ -84,7 +106,7 @@
 | Transactions (timeframe page) | skeleton | "no transactions in 01–30/06" | typed read error, retry | paginated ledger for the range |
 | Create/edit transaction | — | — | validation (bad enum / transfer w/o target) inline | persisted; balance re-derived |
 | Transfer | — | — | missing destination / same-account → typed error | one row; both balances updated; excluded from totals |
-| CSV/OFX import (⚠ INTENDED) | parsing locally | "no rows parsed" | parse/format error, per-row flags | staged → matched → user-confirmed → committed |
+| CSV/OFX import (⚠ INTENDED, X8) | parsing locally (X1) | "no rows parsed" | parse/format error, per-row flags | `import_staging` → matched (date/amount) → user-confirmed → committed |
 | Investment value/gain-loss | computing | "no price set" → prompt | compute error → show partial + flag | qty×price value + gain/loss |
 | Multi-currency total | computing | — | "FX rate needed" prompt | converted base-currency total |
 | Analytics charts | computing | "not enough data" | data error → degrade that chart only | rendered chart set |
@@ -96,15 +118,16 @@
 - A derive/compute error (balance, net worth, gain-loss) shows a **flagged partial**, never a wrong number
   presented as correct. `[INTENT G3,G4]`
 - Any external fetch that would require the server to see plaintext is **refused**, not silently downgraded
-  (FN-9, ZK). `[INTENT G2; FACT: ZK-1]`
+  (FN-9, ZK, **X1**). `[INTENT G2; FACT: ZK-1; ADR-014 X1]`
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
 **INTENDED**, not in ADR-002 §5.8 / `finance.ts` today (this is the platform's largest INTENDED surface):
 - **FN-3** `accounts.opening_balance` (ledger-derived balance).
 - **G9 restored fields:** liabilities `payment_frequency` + `next_payment_date` + `interest_type` + `payoff_date`;
   income `next_payment_date`.
-- **FN-9 external ingestion:** CSV/OFX import staging + bank/broker connection → **candidate ADR** ("external
-  financial data under zero-knowledge") + new tables.
+- **FN-9 external ingestion:** ADR-014-governed (X1/X5/X8: `import_staging` + the ADR-010 grant fields
+  `external_in_ok`/`external_out_ok` — **no new grant table**). The residual **aggregator** plaintext path →
+  **candidate ADR** ("external financial data under zero-knowledge").
 - **FN-13 budgeting:** new model(s), needs own design pass (may become its own feature).
 - **FN-14 Commitments (2026-07-15):** a **management sub-context/view** (no new table) over recurring/long-term
   committed flows; derived progress-to-total + `dueIn`/Notifications composition. Any light "is-a-commitment"
