@@ -2253,3 +2253,42 @@ Next session:
   - READ FIRST: staleness-sweep.md (row 17) + capability-framework.md (§3 ADR-012 E4/E6 + ADR-014 X8) +
     docs/features/finance/*.md (confirm dir path) + grep schema.ts for finance tables (store/accounts/transactions).
 ---
+
+---
+Date: 2026-07-24
+Session goal: SESSION CLOSE / context-reset boundary — Part 1.2 Tier-1 (health/core + habits)
+Profile: Project Foundation Setup
+Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Status: closed — clean handoff to next session (finance)
+Session summary (this context window):
+  - TWO Tier-1 units completed end-to-end (ground → PLAN → adversarial critique → approve → implement 5
+    aspects → grep-verified acceptance → trackers → commit):
+      1. health/core — commit 2a33124. Stale wrong-model (011/006/014/015). Decomposed health_goals.type →
+         measurement_kind × binding_mode × metric_id/role_id M5-seam; M3 nullable progress/mastery; M4 role
+         rollup; M5/SP1/SP2/X*(incl X4 egress)/AI* gap-adds. NO As-is floor (recovered domain, no v2 schema).
+         Critic SHIP / 0 blocking → 3 notes folded.
+      2. habits — commit 7e18143. Stale wrong-model (011/012/006/004). Three live-FACT retirements
+         (purpose_habits→contributions M7, page_tags/inline-tags→entity_tags SP1, xp_history→consequence_ledger
+         E3) under R6 two-tier + gap-adds (M1/M2 HB-13, E2 grant_currency/S4 award_xp, S4/R1/R2 rails, M4, M5).
+         REAL As-is floor (live schema). Critic REVISE(1 blocking: grant_currency mis-placed in S4 catalogue
+         vs award_xp)→fixed→approved.
+  - Campaign state: Part 1.2 Tier-1 = 5 of the stale/heavy units DONE (notes-and-pages, sessions-and-scheduling,
+    projects, health/core, habits). Remaining Tier-1: finance (last live wrong-model/economy unit), then the
+    forward-facing group (tasks, relationships, pomodoro, knowledge/flashcards). Then Tier 2 gap-fills, Tier 3 arch.
+  - Reusable lessons banked this session: (a) R6 has two shapes — recovered-domain (no As-is floor, edit
+    [INTENT] in place, e.g. health/core) vs live-schema (real As-is floor, two-tier retire, e.g. habits/projects);
+    grep the schema to tell which. (b) S4 catalogue member is `award_xp`; ADR-012 GENERALIZES it to
+    `grant_currency` — two layers, never collapse (the habits B1 catch). (c) The independent code-aware critic
+    reliably catches token/§-pin layer-conflations self-review misses.
+Next session:
+  - FIRST ACTION: start the `finance` re-run (Tier 1). Surface the unit path (§XXVII), then ground in:
+    staleness-sweep.md row 17 (verdict STALE, drivers 012/014/006 — `page_tags` forward; never names the
+    `store`/`move_money` economy substrate it OWNS, E6/E4; ADR-014 ingestion layers/grant tokens absent) +
+    capability-framework.md §3 (ADR-012 E4 `move_money`/E6 `store` — finance is an OWNER not a feeder; ADR-014
+    X1/X5/X8 for CSV/OFX bank-statement import via `import_staging`; ADR-006 SP1) + all 5 finance aspect docs +
+    grep schema.ts for the finance tables (accounts/transactions/store) → establish the As-is FACT floor.
+  - Finance is the heaviest economy case: it OWNS substrate (E6 `store` tree, E4 `move_money`), unlike habits
+    (feeder) — check ADR-012 §3.5 store + §3.1 Additive-effects; and it has merge-import → ADR-014 X8 reconcile.
+  - READ FIRST: staleness-sweep.md (row 17) + capability-framework.md (§3 ADR-012 E4/E6 + ADR-014 X8) +
+    docs/features/finance/*.md (confirm dir) + grep schema.ts finance tables. Then repeat the unit loop.
+---
