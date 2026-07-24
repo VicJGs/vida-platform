@@ -2292,3 +2292,98 @@ Next session:
   - READ FIRST: staleness-sweep.md (row 17) + capability-framework.md (§3 ADR-012 E4/E6 + ADR-014 X8) +
     docs/features/finance/*.md (confirm dir) + grep schema.ts finance tables. Then repeat the unit loop.
 ---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 Tier-1 — `finance` re-run (the last stale/heavy Tier-1 unit; sweep row 17, stale, drivers 012/014/006)
+Completed:
+  - `finance` re-run COMPLETE end-to-end (ground → PLAN → adversarial critique → fix → approve → implement 5
+    aspects → grep-verified acceptance → commit). Commit 6c3fda3.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/finance.md
+  - Edited all 5 aspect docs in docs/features/finance/: identity, structure-data, business-rules, contract,
+    conventions.
+  - Grounding refined the sweep (which scored only structure-data): mixed live-schema R6 case (real As-is
+    floor — 6 tables schema.ts:447-528, page_tags:121, inline transactions.tags:475). Finance is the platform's
+    HEAVIEST economy case — it OWNS substrate (E6 store, E4 move_money), not a feeder.
+  - Changes: SP1 page_tags/inline-tags -> entity_tags (retire, R6 two-tier); E6 store tree (groups/wrappers +
+    lockable reward-target boxes, net worth = Sum tree - Sum liabilities, never copies balances); E4/E5
+    move_money Finance-executes-effect + LOCK-never-destroy; X1/X5/X8 ingestion reframe (ADR-014-governed, not a
+    blocking candidate ADR; only aggregator plaintext dent is residual).
+  - LITE gate: independent adversarial critique (fresh code-aware subagent) -> REVISE (1 blocking) -> fixed.
+    B1: the X5 "new grant table" correction was mis-located to structure-data L23-24 (which has no grant "new
+    tables"); the real contradiction is at biz-rules L107, and structure-data L25's "new table(s)" is Budgeting
+    (G12, out of scope) — a literal edit would have wrongly struck it. Relocated + added do-not-touch guard.
+  - Acceptance grep-verified: entity_tags named, page_tags zero-forward, store/move_money/import_staging/
+    external_*_ok named, 0 M* leak (C6), Budgeting L25 intact (B1), no AI* (C5). Six guards held.
+Decisions:
+  - Ingestion reframe (surfaced to Victor, endorsed): CSV/OFX on-device import is ADR-014-governed (X1), NOT
+    "blocked on a candidate ADR" — moves the platform's largest INTENDED surface from "blocked" to "mechanism
+    decided, aggregator dent open". Only the third-party-aggregator plaintext path remains a genuine open ADR.
+  - No M* for finance (011 not a row-17 driver): Finance is a FEEDER to Purpose targets, not a pursuable —
+    guarded (C6), no measurement_kind/binding_mode added.
+Next session:
+  - FIRST ACTION: start the Tier-1 forward-facing group. Suggested first unit: `tasks` (the aggregation hub the
+    group centers on). Surface the unit path (§XXVII), then ground in staleness-sweep.md (tasks row) +
+    capability-framework.md (§3 predicates for its drivers) + all 5 tasks aspect docs + grep the live schema
+    (tasks/task_time_logs) for the As-is floor. Then repeat the unit loop.
+  - Campaign state: Part 1.2 Tier-1 stale/heavy = 6 of 6 DONE (notes-and-pages, sessions-and-scheduling,
+    projects, health/core, habits, finance). Remaining Tier-1 = forward-facing group (tasks, relationships,
+    pomodoro, knowledge/flashcards). Then Tier 2 gap-fills -> Tier 3 arch docs (Part 1.3).
+  - Reusable lesson banked: the fresh independent critic catches plausible-but-wrong CITE LOCATIONS (B1) that
+    self-review misses because self-review anchors on intent, the critic on the source line. Same discipline as
+    the habits B1 (token/layer conflation).
+---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 Tier-1 forward-facing group — start with `tasks` (the aggregation hub the group centers on; sweep row 2, stale, widest driver set in the campaign)
+Completed:
+  - `tasks` re-run COMPLETE end-to-end (ground → PLAN → adversarial critique → approve → implement 5
+    aspects → grep-verified acceptance → commit). Commit 660c9ea.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/tasks.md
+  - Edited all 5 aspect docs in docs/features/tasks/: identity, structure-data, business-rules, contract,
+    conventions.
+  - Grounding: live-schema R6 case (real As-is floor — tasks:161, task_time_logs:189, inline tasks.tags:176,
+    page_tags:121), BUT task_views is schema-0 (an [INTENT] build target, not a live table — grep-confirmed
+    absent from packages/+apps/). Widest driver set (6 ADRs: 011/012/006/007/009/004) yet LIGHTEST on
+    live-FACT retirement (only SP1 touches the floor).
+  - Changes: SP1 page_tags/inline-tags -> entity_tags (R6 two-tier); V1 task_views -> views primitive
+    (CITE-LEVEL per Victor's C8 approval — full anatomy deferred to the dedicated 007 pass); M1/M2/M3/M4
+    task-as-pursuable + new invariant TK-11 (measurement_kind natural=milestone, binding_mode, sub-task
+    rollup=M4, progress derives no stored col); E2 grant_currency(XP) feeder; S1/S4 timer/pomodoro=sessions
+    sub-type on log_time/attach_pomodoro + R1/R2; T4 preset bound to `kind`; R7 aggregation seam.
+  - LITE gate: independent adversarial critique (fresh code-aware subagent) -> SHIP / 0 blocking — the
+    FIRST Tier-1 unit to clear clean (notes-and-pages->finance each had >=1 blocking B1).
+Decisions:
+  - C8 (the one judgment call, Victor-approved): the deferred "007/V1 saved-views reframe" — tasks retires
+    task_views -> views + names the primitive at cite level (kills V1's literal anti-signal; required for
+    tasks to reach "aligned"), while the full V1 anatomy (filter grammar, cross-type resolution, per-layout
+    fields, 12->7 layout mapping) stays owed to the dedicated cross-context 007 pass. Neither under- nor
+    over-reaching (critic endorsed).
+  - The E2/S4 layering trap (the exact B1 that bit BOTH habits and finance) pre-empted: award_xp = the
+    ADR-004 S4-catalogue member; grant_currency = the SEPARATE ADR-012 E2 generalization. Critic
+    grep-verified all 4 occurrences held — this is why tasks was the first clean unit.
+  - No M5 (C1 — tasks not in the M5 applies-to set; task progress derives + contributes UP via
+    contributions, but is not a queryable-measure source), no M7 (C2 — contributor, not Purpose apex),
+    no X*/AI*/CB* (C7 — grep clean).
+Next session:
+  - FIRST ACTION: start `relationships` (Tier-1 forward-facing group, sweep row 22, stale — drivers
+    006/014/013). Surface the §XXVII unit path, then ground in staleness-sweep.md (row 22) +
+    capability-framework.md (§3 SP1/SP3 tags, X* ingestion, N* notifications for the drivers) + all 5
+    relationships aspect docs + grep the live schema (contacts/interactions/contact_events/
+    contact_reminders/reminder_groups) for the As-is floor. Then repeat the unit loop.
+  - Expected shape: inline contacts.tags JSON As-is floor -> entity_tags (SP1) + parent_tag_id (SP3);
+    N* notification gaps (contact reminders -> ADR-013 three-tier); X* ingestion gaps (ADR-014). Live-schema
+    R6 case (relationships has a live v2 schema).
+  - Campaign state: Part 1.2 Tier-1 = 7 done (notes-and-pages, sessions-and-scheduling, projects,
+    health/core, habits, finance, tasks). Remaining Tier-1 forward-facing = relationships, pomodoro,
+    knowledge/flashcards. Then Tier 2 gap-fills -> Tier 3 arch docs (Part 1.3).
+  - Reusable lesson banked: pre-empting a KNOWN prior-unit B1 (the E2/S4 layering conflation) in the PLAN
+    itself — naming the two layers explicitly at every occurrence — is what produced the campaign's first
+    critique-clean unit. Carry the same discipline (award_xp=S4 member, grant_currency=E2 generalization)
+    into every economy-feeder re-run.
+---
