@@ -2084,3 +2084,55 @@ Next session:
     + docs/features/projects/*.md (all aspects). Then rest of Tier 1: health/core, habits, finance → tasks,
     relationships, pomodoro, knowledge/flashcards.
 ---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment campaign, Part 1.2)
+Goal: Re-run the `projects` context docs (Tier 1) to realign them with the matured foundation
+  (ADRs 011/014/015) — sweep verdict STALE, wrong-model measurability.
+Completed:
+  - Ran the full documentation-realignment unit loop for `projects` (ground → PLAN → independent
+    adversarial critique → fix → LITE-gate approval → implement → grep-verify → trackers).
+  - Grounded in sweep row 3 + framework §2 (R1/R3/R7) + §3 ADR-011 (M1–M7) / ADR-014 (X*) / ADR-015 (AI*)
+    + all 5 aspect docs. Refinement: the wrong-model token `measurement_type` threads through ALL 5 aspects
+    → the MIXED case (wrong-model reframes + gap-adds), not a single-spine fix.
+  - Persisted PLAN: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/projects.md
+  - Independent adversarial critic (fresh subagent) → SHIP / 0 blocking with a full citation-verification
+    ledger (every ADR-011/014/015 cite verified against source; M1 decomposition confirmed correct altitude,
+    not the deferred design pass; `deliverables` confirmed absent → `measurement_type` correctly [INTENT];
+    C1 `project_habits`-survival confirmed vs framework M7 + CLAUDE.md L267 + neighbor Purpose; AI4 "names
+    Projects agentic AI" verbatim; no invented token). 2 cite notes folded (N1, N2).
+  - Implemented across all 5 aspect docs (docs/features/projects/{identity,structure-data,business-rules,
+    contract,conventions}.md): decomposed `measurement_type` → `measurement_kind` (M1) × `binding_mode` (M2)
+    × M5/R7 source-seam; `progress 0-100 NOT NULL` → nullable override `NULL ⇒ derive` + `progress()` (M3,
+    R6 two-tier — As-is FACT kept); per-child + `contributions` weighted rollup (M4); retired `purpose_projects`
+    → `contributions` while KEEPING `project_habits` (M7/C1); named ADR-014 X1/X5 + ADR-015 AI1/AI4/AI6 consumer
+    contracts; C3 investigation `measurement_type='artifact'` → `measurement_kind='milestone'`; C2 `entity_tags`.
+  - Acceptance grep-verified (all §4 criteria pass; zero forward `measurement_type`/`purpose_projects`).
+  - Advanced trackers: PLAN → IMPLEMENTED; master-plan _index (Part 1.2 row + change-log); task Session
+    History; TASKS.md.
+In progress:
+  - PART 1.2 continues — Tier 1: `health/core` (next), then `habits`, `finance`; then the forward-facing
+    retired-token group (`tasks`, `relationships`, `pomodoro`, `knowledge/flashcards`) → Tier 2 → Tier 3 arch.
+Decisions:
+  - The `measurement_type` bespoke enum conflates TWO orthogonal framework axes: measure SHAPE (M1
+    `measurement_kind`) and BINDING (M2 `binding_mode`, further split into internal M5-seam pull vs ADR-014
+    external source). The faithful realignment DECOMPOSES it — it does not rename or coexist. This was the
+    load-bearing call; the critic scrutinized it hardest and confirmed it's the right altitude (naming the
+    axes) vs the deferred design pass (authoring the source-binding DDL).
+  - C1 guard: only the `purpose_*` trio (`purpose_habits`/`purpose_routines`/`purpose_projects`) is in M7's
+    retirement list — `project_habits` STAYS (CLAUDE.md keeps it as a live cross-domain junction). An M7 pass
+    must not over-retire.
+  - `projects` is the MIXED shape (unlike notes-and-pages pure-wrong-model and sessions-and-scheduling
+    pure-gap-add): it carries both live wrong-model tokens to reframe AND absent X*/AI* contracts to name.
+    `health/core` is its closest sibling (same live wrong-model measurability).
+Next session:
+  - FIRST ACTION: Tier 1 continues — re-run `health/core` (sweep row 19, verdict STALE, drivers 011/006/014/015:
+    bespoke goal-`type` enum + stored `progress`/`mastery` instead of `measurement_kind`/`binding_mode`/
+    nullable-derive — M1/M2/M3; plus M5/SP1/X*/AI* gaps; S1 workout→sessions passes). Closest sibling to `projects`.
+  - Repeat the unit loop: ground (sweep row 19 + framework §3 ADR-011 M1–M7 + ADR-014/015 + target ALL aspects)
+    → persisted PLAN → independent adversarial critique → fix → approve → implement (R6 two-tier; cite conceptual
+    owner, defer code home; flag forward regressions, don't skip).
+  - READ FIRST: docs/specs/foundation/staleness-sweep.md (row 19) + capability-framework.md (§3 ADR-011 M1–M7)
+    + docs/features/health/core/*.md (all aspects — confirm the dir path first). Then rest of Tier 1.
+---

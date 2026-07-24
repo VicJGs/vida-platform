@@ -10,21 +10,28 @@
 | `milestones` | milestone (nestable) | title, description | `project_id` **CASCADE**; `parent_milestone_id` self-ref **SET NULL**; `status` CHECK; `progress` 0-100; idx project |
 | `project_documents` | secure file vault | name, `encrypted_blob` (BLOB) | `project_id` **CASCADE**; `milestone_id` **SET NULL**; file_type/file_size |
 
-- `progress` on projects + milestones is denormalized 0-100 — a **derived cache** (PJ-3). `[FACT: L1548,1584]`
+- `progress` on projects + milestones is currently `0-100 **NOT NULL**` (As-is FACT). **[INTENT M3 — ADR-011 §3.4/§3.2]:**
+  reframe to a **nullable override slot** (`NULL ⇒ derive`) — the module implements **`progress()` derived-on-read**;
+  the stored column is only a manual override, never `NOT NULL DEFAULT 0` (which cannot express "unmeasured"). `[FACT: ADR-002 §5.4 L1574 (projects) / L1610 (milestones)]`
 - `estimated_hours`/`actual_hours` are INTEGER **minutes**. `[FACT: L1552]`
 - Structured columns sync **LWW**; document blobs follow the attachment path (large → R2). `[FACT: ADR-003]`
 
 ### ⚠ INTENDED additions (NOT in ADR-002 / project.ts today) — ADR-002 amendment + ADRs `[INTENT G2,G3,G4,G6,G8]`
-- **`deliverables` table (G2):** under a milestone; `measurement_type` ∈ {financial, task_statistic,
-  third_party_metric, activity_log, artifact} (G4); status/progress; a **flexible source link** (e.g. to a
-  Finance account/asset, a metric, an artifact doc). Its own **design pass** (the measurement taxonomy).
+- **`deliverables` table (G2):** under a milestone; an ADR-011 **pursuable**. Carries **`measurement_kind`** CHECK
+  ∈ `quantitative·milestone·rate·qualitative` (M1) + **`binding_mode`** CHECK ∈ `manual·derived-pull·event-trigger`
+  (M2, distinct from provenance `source`); nullable `progress()` (M3). The bespoke `measurement_type` enum is
+  **retired**: its 5 legacy values map to (kind × binding × source) — e.g. **artifact** = `milestone`+`manual`;
+  **financial/task_statistic/activity_log** = `quantitative`+`derived-pull` from an internal source; **third_party_metric**
+  = `quantitative`+`derived-pull` from an **ADR-014** external source. The source (a Finance account/asset, a metric,
+  an artifact doc) is bound via the **measurement-source seam (M5/R7)**. The exact source-binding **design pass** (the
+  measurement taxonomy DDL) is `[DEFERRED — build phase]`. `[INTENT M1/M2/M3 — ADR-011 §3.1/§3.5/§3.4/§3.6; G4]`
 - **Vision/Mission pages (G3):** TipTap `pages` (`entity_type='project'`); `vision` column → one-line summary
   at most; **mission** added.
 - **Cross-module links (G8):** `project_contacts(role)` junction (Relationships team/stakeholders with role);
   project↔Finance account link; **project events** (feed the global Calendar).
 - **Notes (G10):** add `deliverable` as a `pages`/`entity_links` `entity_type`.
 - **Investigations (Wave R, 2026-07-15) — RESOLVED BY COMPOSITION, no new entity.** A research/investigation is a
-  **`deliverable` with `measurement_type='artifact'`** (research/analysis output) whose **exploration workspace is a
+  **`deliverable` with `measurement_kind='milestone'` + `binding_mode='manual'`** (an artifact deliverable — research/analysis output) whose **exploration workspace is a
   Knowledge Lab investigation**, linked via `entity_links`. Execution/tracking = the deliverable (progress rolls up
   normally); open-ended exploration content (question → sources → findings → synthesis) = **Knowledge**. **No
   `investigations` table.** `[INTENT: Victor 2026-07-15]`
@@ -49,14 +56,18 @@
 - Archived = a **view filter** (status ∈ completed/cancelled / soft-deleted), not a new state (G9).
 
 ## Dependencies / graph
-- **Wave 2 foundation + hub.** In-edges: Tasks (tasks point up via FKs), Purpose (`purpose_projects`), Bucket List
-  (`project_id`), Check-in reviews, Journal/Calendar. Out-edges: Tasks (dedicated API), Finance (deliverable
-  measurement + account links), Relationships (`project_contacts`), Notes (pages), ⚠ external services + AI.
-  `[FACT: module-dependency-graph; project.ts junctions; INTENT G4,G7,G8]`
+- **Wave 2 foundation + hub.** In-edges: Tasks (tasks point up via FKs), **Purpose** (As-is FACT `purpose_projects`
+  junction, project.ts L248 — **[INTENT M7]: retired → the polymorphic weighted `contributions` primitive**, ADR-011
+  §Amends; a project *contributes* to a purpose/target), `project_habits` (**kept** — not in M7's retirement list),
+  Bucket List (`project_id`), Check-in reviews, Journal/Calendar. Out-edges: Tasks (dedicated API), Finance (deliverable
+  measurement source via the M5/R7 seam + account links), Relationships (`project_contacts`), Notes (pages), ⚠ external
+  ingestion (**ADR-014**) + agentic AI (**ADR-015**). `[FACT: module-dependency-graph; project.ts junctions; INTENT M7, G4,G7,G8]`
 - No direct cross-module table reads — integration points only (§6). `[FACT: core §6]`
 
 ## Single source of truth (constitution §3)
-- **Progress** derives bottom-up (Tasks→Deliverable→Milestone→Project), a cache (PJ-3) — never a second truth.
+- **Progress** derives bottom-up (Tasks→Deliverable→Milestone→Project) via `progress()` on-read (M3) — never a second
+  truth. **[INTENT M4 — ADR-011 §3.3]:** the DOWN nesting weight is a **per-child column** (default NULL = equal-weight);
+  the UP ladder (project → purpose) is weighted by **`contributions.contribution_percentage`** — not count-weighting.
 - **Project time** derives from task focus sessions (PJ-6) — no separate ledger.
 - **Tasks** are owned by Tasks, read via the dedicated API (PJ-5) — Projects never copies them.
 - Enums (`ProjectScope`, `ProjectComplexity`, shared `Status`/`Priority`) — string-literal unions + SQL CHECK +
@@ -65,9 +76,12 @@
 
 ## ADRs / structural decisions
 - **ADR-002 §5.4** — 3 tables (authoritative). **ADR-001** — RQ+Zustand, TipTap (vision/mission), R2 docs. **ADR-003** — LWW + attachments.
-- ⚠ **Surfaced:** (1) **deliverables table + measurement system** (design pass + ADR-002 amendment); (2) the
-  **extension-model principle** → core constitution; (3) **external data ingestion under ZK** + (4) **AI/LLM
-  (agentic, on-device) under ZK** — two ADRs. `[INTENT G2,G4,G6, governing principle]`
+- **ADR-011** (universal measurability) — `measurement_kind`/`binding_mode`/nullable `progress()`/weighted rollup/
+  `contributions` (M1–M7). **ADR-014** (external ingestion) — `third_party_metric` device-mediated (X1) under
+  `external_in_ok` (X5). **ADR-015** (AI) — agentic on-device/cloud (AI1/AI4), `source=ai` (AI6). All three now
+  **RATIFIED** (were "surfaced candidates" pre-realignment). `[INTENT: ADR-011/014/015]`
+- ⚠ **Still owed at build:** (1) the **deliverables table + measurement-source design pass** + the **ADR-002 amendment**
+  (the INTENDED tables); (2) the **extension-model principle** → core constitution. `[INTENT G2,G4,G6, governing principle]`
 
 ## Completion checklist
 - [x] data model (3 tables + INTENDED deliverables) · [x] dep graph (Wave-2 hub, within budget) · [x] state + route map · [x] ADRs · [x] single source per cross-cutting concern · [x] [FACT/INTENT/INTERP] each claim

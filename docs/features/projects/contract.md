@@ -14,9 +14,9 @@
   · `pinProject(id)` (G1)
 - **Milestones** (`Milestone` `[FACT: L83-96]`): `createMilestone` (nestable via `parent_milestone_id`) ·
   `getMilestoneTree(projectId)` · `getMilestoneProgress(id)` (rollup, PJ-3)
-- **⚠ Deliverables (INTENDED, G2/G4):** `createDeliverable(milestoneId, {measurement_type, source})` ·
-  `getDeliverableProgress(id)` → derived from its measurement backend (financial/stats/metric/log/artifact) ·
-  `linkDeliverableSource(id, entityRef)` (e.g. a Finance account)
+- **⚠ Deliverables (INTENDED, G2/G4):** `createDeliverable(milestoneId, {measurement_kind, binding_mode, source_ref})`
+  (ADR-011 M1/M2) · `getDeliverableProgress(id)` → derives via `binding_mode` (manual override vs `derived-pull` from
+  the M5/R7 source seam) · `linkDeliverableSource(id, entityRef)` (e.g. a Finance account)
 - **Progress (derived, PJ-3):** `getProjectProgress(id)` → bottom-up rollup (Tasks→Deliverable→Milestone→Project)
 - **Documents / vault** (`ProjectDocument` `[FACT: L98-107]`): `addDocument` (inline ≤threshold, else R2, PJ-8) ·
   `getDocument` · `listDocuments(projectId)`
@@ -30,15 +30,18 @@
 - **Relationships (G8):** `project_contacts(role)` — team/stakeholders with roles, via the Relationships contract.
 - **Notes & Pages:** project/milestone/deliverable notes + vision/mission pages (`entity_type` ∈ project,
   milestone, ⚠ deliverable). `[FACT: ADR-002 L1343; INTENT G10]`
-- **⚠ External services + AI (PJ-11, opt-in):** third-party metric ingestion (device-side) + agentic on-device AI
-  over vault docs — gated on the two ADRs + the extension-model principle. `[INTENT G4,G6]`
+- **⚠ External services + AI (PJ-11, opt-in):** third-party metric ingestion is **device-mediated (ADR-014 X1)** under
+  an `external_in_ok` grant (X5); agentic AI over vault docs offers **`on_device`/`cloud` modes (ADR-015 AI1)**, a
+  granted-envelope agent with mediated `askModel` (AI4), and `source=ai` provenance (AI6) — framed by the
+  extension-model principle. `[INTENT G4,G6; ADR-014 X1/X5, ADR-015 AI1/AI4/AI6]`
 
 ## Fed by (parent-module links — read via integration points, §6)
 - **Wave-2 foundation** — Projects is *fed by* Tasks (tasks point up via `project_id`/`milestone_id`) and is a
   hub many modules point at. `[FACT: ADR-002 §5.3; module-dependency-graph]`
 
 ## Consumed by
-- **Purpose & Goals** → `purpose_projects` (a project serves a purpose). `[FACT: project.ts L248]`
+- **Purpose & Goals** → As-is `purpose_projects` (a project serves a purpose); **[INTENT M7]: retired → the
+  polymorphic weighted `contributions`** (ADR-011 §Amends). `[FACT: project.ts L248]`
 - **Bucket List** → `bucket_list_items.project_id`. `[FACT: project.ts L228]`
 - **Check-in reviews** → read project progress in weekly/monthly/yearly reviews (Check-ins G7). `[INTENT]`
 - **Journal `/summary` + global Calendar** → project events + due milestones. `[INTENT G8]`
