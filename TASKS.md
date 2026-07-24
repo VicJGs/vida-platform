@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS** — ✅ notes-and-pages (Tier 0 hub) + ✅ sessions-and-scheduling + ✅ projects + ✅ **health/core** (Tier 1) re-runs done. Next: Tier 1 `habits` / `finance` |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS** — ✅ notes-and-pages (Tier 0 hub) + ✅ sessions-and-scheduling + ✅ projects + ✅ health/core + ✅ **habits** (Tier 1) re-runs done. Next: Tier 1 `finance` |
 
 ## 🧭 Next session
 

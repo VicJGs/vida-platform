@@ -21,18 +21,24 @@ disconnected checklist. `[INTENT: Victor 2026-06-27]`
   4. **All-Habits Overview** — summary listing of every habit.
 - **Quantified completion** (`target_count`/`unit`/`count`/`value`), **streaks** (consecutive scheduled
   occurrences), **mood tracking** (before/after + ease/satisfaction), **build & break** semantics. `[INTENT G2,G3,G4,G6]`
+- **Measurable as a pursuable** — the habit carries `measurement_kind` (natural **`rate`** — occurrence
+  frequency) + `binding_mode` (a completion is the **`event-trigger`**), ADR-011 M1/M2. `[INTENT; ADR-011 M1/M2]`
 
 **What it is NOT.** `[INTENT; FACT: CLAUDE.md modules]`
 - **Not an action-list or deadline tool.** *Action-list* cadence (morning routine steps) belongs to **Routines**;
   *deadline* recurrence (obligations) belongs to **Tasks**. Habits owns **behavior** recurrence only.
-- **Not the Gamification engine.** Streaks/completions **feed** XP & achievements, but `xp_history` /
-  `achievements` are owned by **Gamification** (HB-9). `[INTENT G2]`
-- **Not the Purpose-metrics owner.** A completion **contributes to** a linked purpose's metric, but the metric
-  itself is owned by **Purpose & Goals** (HB-8). `[INTENT G7]`
+- **Not the Gamification engine.** Streaks/completions **feed** the economy via the **`award_xp`** S4 effect
+  (ADR-004 §3.2.2), which ADR-012 generalizes to **`grant_currency(XP)`** (E2); balances derive from the
+  **`consequence_ledger`** (E3, Gamification-owned) — never a forward `xp_history`. Habits emits the effect,
+  never writes the ledger (R2). `[INTENT G2; ADR-004 S4; ADR-012 E2/E3]`
+- **Not the Purpose-metrics owner.** A completion **contributes to** a linked purpose's metric via the
+  polymorphic weighted **`contributions`** primitive (ADR-011 M7 — retiring the `purpose_habits` junction); the
+  metric itself is owned by **Purpose & Goals** (HB-8). `[INTENT G7; ADR-011 M7]`
 - **Not a notes store.** A habit's notes live in a linked `pages` row (`entity_type='habit'`), never inline.
-- **Not its own tag vocabulary (direction).** `habits.tags` is inline `[E]` JSON today `[FACT: ADR-002 §5.5]`,
-  but the platform direction (per the Tasks precedent) is the **shared** tag system — flagged, not yet decided
-  for Habits (see structure-data ⚠). `[INTERP]`
+- **Not its own tag vocabulary.** `habits.tags` is inline `[E]` JSON today (As-is FACT) `[FACT: ADR-002 §5.5]`,
+  retired in favor of the shared **`entity_tags`** primitive (ADR-006 SP1) — Habits is a *consumer*, registering
+  `entity_type='habit'` in the open taggable-type registry. (Direction now **decided**: `entity_tags`, per the
+  platform tag foundation — was "flagged, not yet decided.") `[INTENT; ADR-006 SP1]`
 
 ## Completion checklist
 - [x] "what it is" + "desire" + "what it is NOT" filled · [x] each claim [FACT/INTENT] · [x] no `{{…}}` remaining

@@ -2194,3 +2194,62 @@ Next session:
   - READ FIRST: docs/specs/foundation/staleness-sweep.md (row 12) + capability-framework.md (§3 ADR-011 M1/M2/M7
     + ADR-012 E1/E2) + docs/features/habits/*.md (confirm the dir path first). Then `finance` (row 17).
 ---
+
+---
+Date: 2026-07-24
+Session goal: Part 1.2 Tier-1 — re-run `habits` (foundation-realignment campaign)
+Profile: Project Foundation Setup
+Scenario: Documentation Realignment (Part 1.2 per-context re-run; LITE gate)
+Stack: Turborepo + pnpm, TypeScript 5.7, React 19 (docs-only session)
+Status: completed
+What was done:
+  - Ran the full unit loop for `habits` (sweep row 12, verdict STALE, drivers 011/012/006/004).
+  - Grounded in: sweep row 12 + framework §2 (R1/R2/R3/R4/R7) + §3 (ADR-011 M1/M2/M4/M5/M7, ADR-012 E2/E3,
+    ADR-006 SP1, ADR-004 S4) + §4 applies-to + §5, all 5 aspect docs, AND the live schema
+    (schema.ts / 001_initial.ts / habit.ts) — the As-is FACT floor.
+  - The INVERSE of health/core on R6: habits HAS a live v2 schema → the As-is floor is real. Grep-confirmed
+    purpose_habits:413, page_tags:121, xp_history:1213, project_habits:437 all live. Mixed case with a real
+    two-tier As-is→[INTENT] split (the projects R6 pattern).
+  - Persisted PLAN: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/habits.md
+  - Independent adversarial critic (fresh subagent, code-aware) → REVISE (1 blocking) → fixed → clean.
+    Critic grep-verified all 6 As-is-floor schema lines (zero fabricated floor), every framework cite, all
+    four guards. B1 (blocking): `grant_currency` had been mis-listed inside the ADR-004 §3.2.2 S4 catalogue
+    where the member is `award_xp` (grant_currency = ADR-012 E2 generalization) — the exact two-layer
+    distinction the sessions-and-scheduling PLAN established. Fixed at all 6 occurrences. 3 notes folded
+    (N1 `unit` in R3 list, N2 G-M7 = anti-signal retirement not M7-ownership, N3 N*/E1/E4/E5 deferred-not-missed).
+  - Implemented all 5 aspect docs (docs/features/habits/*): three live-FACT retirements — purpose_habits →
+    contributions (M7), page_tags/inline habits.tags → entity_tags (SP1, resolved the "not yet decided"
+    direction), xp_history → consequence_ledger (E3); gap-adds — M1/M2 habit-pursuable (new invariant HB-13),
+    E2 grant_currency + the award_xp S4 slot, the completion's S4/R1/R2 effect rails, M4 weighted contribution,
+    M5 streak(habit) seam. Extended the R6 named-ADR set → +011/012/006/004.
+  - Acceptance grep-verified: every purpose_habits/xp_history mention carries retire/As-is context (zero
+    forward stale tokens); measurement_kind/binding_mode/entity_tags/consequence_ledger/grant_currency/
+    award_xp/contribute_purpose_metric/streak(habit) all present; C1/C2/C3 guards intact.
+  - Advanced trackers: PLAN → IMPLEMENTED; master-plan _index (row + Change Log); task Session History; TASKS.md.
+In progress:
+  - PART 1.2 continues — Tier 1: `finance` (last live wrong-model/economy unit), then the Tier-1
+    forward-facing group (`tasks`, `relationships`, `pomodoro`, `knowledge/flashcards`) → Tier 2 → Tier 3 arch.
+Decisions:
+  - Habits is the R6 INVERSE of health/core: a live v2 schema means the As-is FACT floor is real, so all three
+    retirements (purpose_habits, page_tags/inline-tags, xp_history) are genuine two-tier As-is→[INTENT] splits
+    (verified by grepping schema.ts for each token + line).
+  - The blocking critique catch (B1) is a reusable lesson: the ADR-004 §3.2.2 S4 catalogue's economy member is
+    `award_xp`; ADR-012 GENERALIZES it to `grant_currency`. They are two layers — never collapse `grant_currency`
+    into the S4 catalogue. (Same discipline the sessions-and-scheduling unit established.)
+  - Economy IS in scope for habits (012 is a row-12 driver) — the exact opposite of health/core, where economy
+    was out of scope (health feeds XP via Sessions' S4, doesn't own the feeder).
+  - Guards prevented over-retirement/over-reach: project_habits KEPT (only purpose_* trio retires, C1); inline
+    habits.tags is the As-is floor not pretended-migrated (C2); the streak cache is already M3-aligned
+    (derived-from-ledger, no stored progress col) so NO forced nullable-override (C3).
+Next session:
+  - FIRST ACTION: Tier 1 — re-run `finance` (sweep row 17, verdict STALE, drivers 012/014/006: `page_tags` in
+    the migration target [forward]; never names the `store`/`move_money` economy substrate it OWNS — E6/E4;
+    ADR-014 ingestion layers/grant tokens absent). NOTE: finance OWNS economy substrate (E6 `store`, E4
+    `move_money`) — heavier than a mere feeder; check the ADR-012 §3.5 `store` + §3.1 Additive-effects contract.
+    Also has bank-statement CSV/OFX import → ADR-014 X8 reconcile-on-import (`import_staging`) is in-scope.
+  - Repeat the unit loop: ground (sweep row 17 + framework §3 ADR-012 E4/E6 + ADR-014 X1/X5/X8 + ADR-006 SP1
+    + target ALL aspects + the live finance schema for the As-is floor) → PLAN → critique → fix → approve →
+    implement (R6 two-tier — finance likely HAS a live schema; flag forward regressions).
+  - READ FIRST: staleness-sweep.md (row 17) + capability-framework.md (§3 ADR-012 E4/E6 + ADR-014 X8) +
+    docs/features/finance/*.md (confirm dir path) + grep schema.ts for finance tables (store/accounts/transactions).
+---
