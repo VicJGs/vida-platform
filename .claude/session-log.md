@@ -2136,3 +2136,61 @@ Next session:
   - READ FIRST: docs/specs/foundation/staleness-sweep.md (row 19) + capability-framework.md (§3 ADR-011 M1–M7)
     + docs/features/health/core/*.md (all aspects — confirm the dir path first). Then rest of Tier 1.
 ---
+
+---
+Date: 2026-07-24
+Session goal: Part 1.2 Tier-1 — re-run `health/core` (foundation-realignment campaign)
+Profile: Project Foundation Setup
+Scenario: Documentation Realignment (Part 1.2 per-context re-run; LITE gate)
+Stack: Turborepo + pnpm, TypeScript 5.7, React 19 (docs-only session)
+Status: completed
+What was done:
+  - Ran the full unit loop for `health/core` (sweep row 19, verdict STALE, drivers 011/006/014/015).
+  - Grounded in: staleness-sweep row 19 + capability-framework §2 (R1/R3/R4/R7) + §3 (ADR-011 M1–M7,
+    ADR-006 SP1–SP7, ADR-014 X1–X11, ADR-015 AI1–AI6) + §4 applies-to + §5, all 5 aspect docs + health/README.
+  - Grounding REFINED the sweep (it scored only structure-data): the goal-`type` wrong-model + derived-but-
+    unslotted `progress`/`mastery` thread through ALL 5 aspects → the MIXED case, closest sibling to `projects`.
+  - Persisted PLAN: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/health-core.md
+  - Independent adversarial critic (fresh subagent) → SHIP / 0 blocking with a CODE-VERIFIED citation ledger:
+    grepped packages/+apps/ → NO `health_*` schema exists → the "no As-is FACT floor" R6 claim is TRUE
+    (`project.ts` DOES exist, explaining why projects had a live floor and health does not); every ADR §-pin
+    verified exact (M1 §3.1, M2 §3.5 incl. the "kept-distinct-from-source" blessing, M3 §3.2/§3.4, M4 §3.3,
+    M5 §3.6 names `body_weight←Health`, X4 §3.3 names "Health CI-6 medical push", AI5 §3.4b); zero fabricated
+    tokens; decomposition at framework-axis altitude; C1/C2/C3 guards correct; boundary held. 3 notes folded
+    (N1 added light G-M4 role-mastery weighted rollup — removes the asymmetry with the projects sibling;
+    N2 `type` literal-vs-prose; N3 AI5 [INTERP] membership).
+  - Implemented across all 5 aspect docs (docs/features/health/core/{identity,structure-data,business-rules,
+    contract,conventions}.md): decomposed bespoke `health_goals.type` → `measurement_kind` (M1) × `binding_mode`
+    (M2) × the existing `metric_id`/`role_id` M5-seam subject; `progress`/`mastery` → nullable override
+    `NULL ⇒ derive` + `progress()`/`deriveMastery()` (M3); role `mastery` = per-child weighted rollup, up-ladder
+    → `contributions` Purposes-owned (M4); named the M5 measure read-seam (R7), `entity_tags`+open taggable-type
+    registry (SP1/SP2), X1/X2/X4-egress/X5/X8 (ADR-014), AI1/AI3/AI5/AI6 + `source=ai` (ADR-015). Extended the
+    R6 named-ADR set → 002+011/006/014/015.
+  - Acceptance grep-verified (all §4 criteria pass; forward bespoke goal-`type` enum retired; measurement_kind/
+    binding_mode/NULL⇒derive/entity_tags/X4/source=ai all present; C1/C2 guards intact).
+  - Advanced trackers: PLAN → IMPLEMENTED; master-plan _index (Part 1.2 row + Change Log); task Session History; TASKS.md.
+In progress:
+  - PART 1.2 continues — Tier 1: `habits` (next), then `finance`; then the Tier-1 forward-facing group
+    (`tasks`, `relationships`, `pomodoro`, `knowledge/flashcards`) → Tier 2 gap-fills → Tier 3 arch (Part 1.3).
+Decisions:
+  - The one axis where `health/core` is LIGHTER than `projects`: Health is a recovered domain with NO v2 schema,
+    so every token is already [INTENT] → there is NO As-is FACT floor to two-tier (projects had live
+    `progress NOT NULL` + `purpose_projects` in project.ts). The critic code-verified this by grep. Every M-axis
+    edit is a clean in-place [INTENT] correction, not a two-tier As-is/[INTENT] split.
+  - Same load-bearing decomposition as projects: a bespoke conflated enum (`health_goals.type`) decomposes into
+    the framework's orthogonal axes (measurement_kind × binding_mode × subject-FK), it does NOT rename or coexist.
+    Here the subject axis reuses the ALREADY-PRESENT `metric_id`/`role_id` FKs — no information lost.
+  - Guards prevented over-retirement: `physical_roles.type` (modality) and `health_metrics.kind` (metric
+    taxonomy) are NOT measurement axes — kept (C1/C2). Economy/E2 is out of scope — Health feeds XP via Sessions'
+    S4 `award_xp` effect (already reframed), it does not own `grant_currency` (C3; 012 is not a row-19 driver).
+Next session:
+  - FIRST ACTION: Tier 1 continues — re-run `habits` (sweep row 12, verdict STALE, drivers 011/012/006/004:
+    names `purpose_habits` + `page_tags` in go-forward; missing the whole M1/M2 + E2 layer). Note `habits` IS
+    an economy feeder (E2 `grant_currency`) AND has a `purpose_habits` junction to retire (M7) — unlike
+    health/core, 012 IS a driver here, so the economy layer is in-scope.
+  - Repeat the unit loop: ground (sweep row 12 + framework §3 ADR-011 M1/M2/M7 + ADR-012 E1/E2 + ADR-006 SP1
+    + ADR-004 S1 + target ALL aspects) → persisted PLAN → independent adversarial critique → fix → approve →
+    implement (R6 two-tier — habits likely HAS a live v2 schema, so As-is floor applies; flag forward regressions).
+  - READ FIRST: docs/specs/foundation/staleness-sweep.md (row 12) + capability-framework.md (§3 ADR-011 M1/M2/M7
+    + ADR-012 E1/E2) + docs/features/habits/*.md (confirm the dir path first). Then `finance` (row 17).
+---

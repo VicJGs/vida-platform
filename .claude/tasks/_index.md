@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-- build-roadmap-resequence: .claude/tasks/build-roadmap-resequence.md  (in-progress 2026-07-23 — Project Foundation / Build Roadmap; re-sequence Phase-1.0 roadmap features-first per ADR-017, defer encryption/sync/auth, re-cluster + re-projectize; cluster General_Vida)
+- build-roadmap-resequence: .claude/tasks/build-roadmap-resequence.md  (in-progress 2026-07-24 — Project Foundation / foundation-realignment campaign; Part 1.2 Tier-1 re-runs: ✅ notes-and-pages + sessions-and-scheduling + projects + health/core done; next `habits`/`finance`; cluster General_Vida)
 
 ## Parked / Superseded
 - db-2-sync-metadata-columns: .claude/tasks/archive/db-2-sync-metadata-columns.md  (PARKED 2026-07-23 — superseded by ADR-017 features-first resequencing; HLC/sync-metadata work defers with the sync engine to the hardening pass; baseline done, no code written; Linear LIF-64 → Backlog)
