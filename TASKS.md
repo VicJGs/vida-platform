@@ -6,12 +6,16 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS** — ✅ notes-and-pages (Tier 0 hub) + ✅ sessions-and-scheduling + ✅ projects + ✅ health/core + ✅ habits + ✅ finance (Tier-1 stale/heavy) + ✅ tasks + ✅ relationships + ✅ **pomodoro** (Tier-1 forward-facing, 3 consecutive critique-clean units) done. Next: LAST forward-facing unit (`knowledge/flashcards`) → then Tier 2 |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS — ✅ ALL of TIER-1 DONE (10 units)**: notes-and-pages (Tier-0 hub) + sessions-and-scheduling + projects + health/core + habits + finance + tasks + relationships + pomodoro + knowledge/flashcards (last 4 = 4 consecutive critique-clean units). Next: **Tier 2 gap-fills** (learning/education, books, skills, check-ins, finance/fiscal-legal, health/nutrition, routines) → then Tier 3 arch docs (Part 1.3) |
 
 ## 🧭 Next session
 
-**Continue Part 1.2 (doc re-runs) — the Tier-1 forward-facing group is nearly DONE (`tasks` ✅, `relationships` ✅, `pomodoro` ✅); LAST unit:
-`knowledge/flashcards`. Then Tier-1 complete → Tier 2 gap-fills.** Read first: `docs/specs/foundation/staleness-sweep.md`
+**Part 1.2 Tier-1 is COMPLETE (10 units). Next is Tier 2 — the gap-fill group** (`learning/education`, `books`,
+`skills`, `check-ins`, `finance/fiscal-legal`, `health/nutrition`, `routines`): these are **gap** verdicts (no forward
+anti-signal, but silent on ≥1 applicable X*/AI*/M*/E2 contract — additions, lower-risk than the wrong-model stales). Same
+per-unit LITE loop (ground → refine sweep → PLAN → independent critique → approve → implement → grep-verify → commit).
+Read first: `staleness-sweep.md` (the target's row) + `capability-framework.md` (§3 predicates for its drivers) + the
+target's 5 aspect docs + grep the live schema. Then Tier 3 = Part 1.3 architecture-doc rewrites.** Read first: `docs/specs/foundation/staleness-sweep.md`
 (the target's row + Part 1.2 tiers) + `docs/specs/foundation/capability-framework.md` (§3 predicates for the target's
 drivers) + the target's current aspect docs + grep the live schema for the As-is floor. Each context re-runs through the
 documentation-blueprint methodology under its own LITE gate (plan→critique→approval per context). Pattern (notes-and-pages
