@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS — ✅ TIER-1 DONE (10) + TIER-2: ✅ routines, skills, learning/education, books** (5th–8th consecutive critique-clean; commits cab2bfe, ed6d5fd, cff16a2, 4910268). skills = first X*/AI* unit; learning/education + books = mixed R6 + X*/AI* (both sweep-mislabeled "gap"/"clean" but had live anti-signals — grep the floor). Tier-2 remaining: check-ins, finance/fiscal-legal, health/nutrition → then Tier 3 arch docs (Part 1.3) |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-25 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS — ✅ TIER-1 DONE (10) + TIER-2: ✅ routines, skills, learning/education, books, check-ins** (5th–9th consecutive critique-clean; commits cab2bfe, ed6d5fd, cff16a2, 4910268, a257d90). skills = first X*/AI*; learning/education + books = mixed R6 + X*/AI*; check-ins = lightest (E9 user_profile split + E2). Tier-2 remaining (2): finance/fiscal-legal, health/nutrition → then Tier 3 arch docs (Part 1.3) |
 
 ## 🧭 Next session
 
@@ -18,12 +18,12 @@ import (X1/X2/X3) under `external_in_ok` (X5) · X4 egress for any export · X11
 `cloud` server-blind · AI3 cloud=egress+scope-min · AI5 untrusted-import provenance · AI6 `source=ai` · **AI4 excluded
 unless the module is a true agentic actor** (Projects only). And the **M1/M2 measured framing** when a module isn't in
 the pursuable set (L240): reference the `measurement_kind` taxonomy in-config + put the pursuable on its Purpose/target,
-don't assert a stored column. **Tier-2 remaining (3)** (`check-ins` [gap 012/006 — the lone NON-ingest, familiar M*/E2/SP1], `finance/fiscal-legal`
-[gap 014/015 — X* grant tokens + AI egress/scope-min], `health/nutrition` [gap 015/014/006 — AI6 `source=ai` + food-DB
-ingest + `entity_tags`]): mostly **gap** verdicts (silent on ≥1 applicable X*/AI*/M*/E2 contract — additions). **NOTE
-(proven twice — education AND books):** a "gap"/"clean"-labeled sweep row can hide live wrong-model tokens (both had
-inline `tags` + `progress NOT NULL DEFAULT 0`) — **grep the live schema for each unit's floor first**, don't trust the
-label to mean pure-additive. Same
+don't assert a stored column. **Tier-2 remaining (2)** (`finance/fiscal-legal` [gap 014/015 — X* grant tokens `external_in_ok`/`external_out_ok` + AI
+egress/scope-min; **NOTE:** finance/core already did the `store`/`move_money` economy — fiscal-legal is the public-reference
+rule-pack + AI-advisement layer], `health/nutrition` [gap 015/014/006 — AI6 `source=ai` on AI-generated rows + food-DB
+ingest X* + `entity_tags`]): both are ingest/AI units — reuse the skills/books/education X*/AI* pattern. **NOTE (proven
+THREE times — education, books, check-ins-was-clean):** a "gap"/"clean"-labeled sweep row can hide live wrong-model
+tokens — **grep the live schema for each unit's floor first**, don't trust the label to mean pure-additive. Same
 per-unit LITE loop (ground → refine sweep → PLAN → independent critique → approve → implement → grep-verify → commit).
 Read first: `staleness-sweep.md` (the target's row) + `capability-framework.md` (§3 predicates for its drivers) + the
 target's 5 aspect docs + grep the live schema. Then Tier 3 = Part 1.3 architecture-doc rewrites.** Read first: `docs/specs/foundation/staleness-sweep.md`

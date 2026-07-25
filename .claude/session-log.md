@@ -2845,3 +2845,86 @@ Next session (post-context-clear — READ THIS FIRST):
         live anti-signals a gap/clean label hid);
     (4) grep the live schema for the As-is floor to tell R6 (retire/reframe) from pure gap-add (no floor).
 ---
+
+---
+Date: 2026-07-25
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 TIER-2 — `check-ins` (sweep row 15, gap; the lightest, lone non-ingest unit)
+Completed:
+  - `check-ins` re-run COMPLETE end-to-end (ground → refine → PLAN → adversarial critique → approve →
+    implement 5 aspects → grep-verified acceptance → commit). Commit a257d90.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/check-ins.md
+  - Edited all 5 aspect docs in docs/features/check-ins/.
+  - THE LIGHTEST Tier-2 unit — the lone non-ingest (no X*/AI*/S1/M*). Drivers 012/006 only. Live floor:
+    daily_check_ins:1100 (NO inline tags — the "NO tags" assertion is real), check_in_templates:1116,
+    check_in_template_questions:1129, user_profile:1171 (check_in_streak*:1183-1185).
+  - Fix = one live-FACT E9 reframe + one E2 gap-add + one SP1/SP4 reconciliation:
+    - E9 (R6): user_profile.check_in_streak/longest_check_in_streak/last_check_in_date (live :1183-1185) →
+      check-ins-OWNED (the user_profile single-writer split; derived from daily_check_ins), off the overloaded
+      user_profile. Corrected CK-11/identity L35's "streaks owned there [Gamification]" conflation → the STREAK
+      is check-ins' (E9), the XP REWARD on it is Gamification's. A 3-owner decomposition (Gamification total_xp/
+      current_level derived; Preferences persona/active_modules/onboarding; check-ins check_in_streak*).
+    - E2: named grant_currency(XP) on completion/streak (award_xp = its XP CASE, NOT the general mechanism);
+      check-ins EMITS the event, Gamification APPLIES the grant → consequence_ledger (E3); check-ins never
+      writes XP. NO S4 — a check-in is not a session (absent from L234); the grant rides the completion EVENT.
+      This is the INVERSE of the habits/finance B1 (where grant_currency was mis-placed inside an S4 catalogue).
+    - SP1/SP4: the "NO tags" stance is SP1-CONSISTENT (SP1's anti-signal is a per-module bespoke tag table,
+      which check-ins doesn't have; SP1 requires entity_tags only IF tagged → opting out is NOT a violation).
+      Framed as a deliberate opt-out from entity_tags, using entity_links (SP4, tags≠links).
+  - LITE gate: independent adversarial critique (fresh code-aware subagent, prompted to refute) → SHIP /
+    0 blocking — NINTH consecutive clean unit. All three rulings CORRECT:
+    (1) E9 reframe vs CK-11 — schema :1183-1185 verified; E9 predicate L177 verbatim ("Check-ins owns
+        check_in_streak*"); the CK-11 correction is a REFINEMENT not a contradiction (Gamification still owns
+        the reward; the doc was written pre-E9-split and E9 is the authority).
+    (2) E2/award_xp layering — grant_currency=E2 general, award_xp=XP case; "no S4" VERIFIED (check-ins absent
+        from the session applies-to L234); the grant on the completion event is the inverse of the habits B1.
+    (3) SP1 reconciliation — no inline tag column verified (contrast bucket_list_items which HAS one); SP1
+        requires entity_tags only if tagged → opt-out legitimate; SP4 correctly cited.
+  - 1 note folded (N1): structure-data As-is floor now acknowledges the co-located total_xp/current_level
+    (Gamification) + persona/active_modules/onboarding (Preferences) siblings on the same user_profile row →
+    the E9 split reads as a real 3-owner decomposition, not a two-column move.
+
+Decisions:
+  - The E9 user_profile-split PATTERN (reusable for Preferences/Gamification if they re-run): a god
+    user_profile holding cross-owner columns (XP + streak + persona/onboarding) is the E9 anti-signal; the
+    split assigns each column-family to its owner (Gamification: derived total+level+PII; Check-ins:
+    check_in_streak*; Preferences: persona/active_modules/onboarding). A module takes ONLY its slice.
+  - A doc that says "X is owned by [neighbor]" can be a CONFLATION to refine, not a fact to preserve: CK-11
+    said streaks are "owned there [Gamification]", but E9 assigns the streak analytic to check-ins and only
+    the reward to Gamification. When a driver ADR post-dates the doc, the ADR is the authority — split the
+    conflation, disclose the correction for the critic to verify (it VERIFIED, ruled a refinement).
+  - "NO tags" / "not tagged" assertions are SP1-CONSISTENT, not violations: SP1's anti-signal is a bespoke
+    inline tag table, not the absence of tagging. Reconcile by naming the opt-out (from entity_tags) + the
+    entity_links it uses (SP4). Reusable for any deliberately-untagged entity.
+
+Next session (post-context-clear — READ THIS FIRST):
+  - Campaign lives in: docs/specs/foundation/realignment-master-plan/_index.md + staleness-sweep.md (per-
+    context verdict table — routines 13, skills 11, learning/education 7, books 10, check-ins 15 done) +
+    capability-framework.md (predicate instrument) + part-1.2-reruns/*.md (15 completed unit PLANs; skills.md
+    = X*/AI* template, learning-education.md + books.md = mixed R6+X*/AI*, books.md = S1 reframe, check-ins.md
+    = E9 user_profile split + SP1 opt-out reconciliation).
+  - FIRST ACTION: continue Part 1.2 TIER-2 (2 LEFT — the last of the tier). Remaining: finance/fiscal-legal
+    (row 18, gap 014/015 — X* grant tokens external_in_ok/external_out_ok + AI egress/scope-min; the
+    public-reference rule-pack [X3 "Fiscal&Legal rule-packs" verbatim] + AI-advisement [X11 "Fiscal
+    advisement" verbatim] layer — DISTINCT from finance/core's store/move_money economy already done in the
+    finance unit), health/nutrition (row 20, gap 015/014/006 — AI6 source=ai on AI-generated food/nutrition
+    rows + food-DB ingest [X3 "Health food-DB" verbatim] + entity_tags SP1). GREP EACH UNIT'S LIVE SCHEMA
+    FLOOR FIRST (proven 3× that gap/clean labels hide live anti-signals). Both reuse the skills/books/
+    education X*/AI* pattern. Suggested: either order; finance/fiscal-legal is net-new (may be schema-0,
+    lighter floor), health/nutrition may have a live floor (grep first). Completing both = TIER-2 DONE →
+    Tier 3 (Part 1.3 arch-doc rewrites).
+  - Per-unit loop (unchanged): surface §XXVII path → ground (sweep row + framework §3 predicates + all 5
+    aspect docs + grep live schema for the As-is floor) → refine the sweep across all 5 aspects → persist
+    LITE-gate PLAN → independent adversarial critique (fresh code-aware subagent, prompted to refute) → fix →
+    Victor approval → implement 5 aspects → grep-verify → commit → update task file + TASKS.md + session-log.
+  - After Tier 2: Tier 3 = Part 1.3 architecture-doc rewrites (4 stale + 4 partial).
+  - REUSABLE DISCIPLINE (9 consecutive clean units — carry it):
+    (1) pre-empt the LIKELY blocking finding IN the PLAN (E2/award_xp/S4 layering; X11 LLM-splits-to-015;
+        AI4-only-for-agents; the S1 base+extension reframe; the measurement decomposition; the E9 split);
+    (2) DISCLOSE arguable membership/mapping/reframe/correction calls — the critic VERIFIES rather than CATCHES;
+    (3) read ALL 5 aspects AND grep the live schema — it caught the mixed cases (education/books live
+        anti-signals) and confirmed check-ins' "NO tags" is genuinely SP1-consistent;
+    (4) grep the live schema for the As-is floor to tell R6 (retire/reframe) from pure gap-add (no floor);
+    (5) a doc claim "X owned by [neighbor]" may be a conflation a later driver ADR refines — split it, disclose.
+---
