@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS — ✅ TIER-1 DONE (10) + TIER-2: ✅ routines, ✅ skills** (5th + 6th consecutive critique-clean; commits cab2bfe, ed6d5fd). **skills = first X*/AI* unit — established the ingest/AI naming pattern** the 4 remaining ingest units inherit. Tier-2 remaining: learning/education, books, check-ins, finance/fiscal-legal, health/nutrition → then Tier 3 arch docs (Part 1.3) |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS — ✅ TIER-1 DONE (10) + TIER-2: ✅ routines, ✅ skills, ✅ learning/education** (5th–7th consecutive critique-clean; commits cab2bfe, ed6d5fd, cff16a2). skills = first X*/AI* unit (pattern the ingest cluster inherits); learning/education = heaviest unit (mixed R6 + Projects measurement decomposition + X*/AI*). Tier-2 remaining: books, check-ins, finance/fiscal-legal, health/nutrition → then Tier 3 arch docs (Part 1.3) |
 
 ## 🧭 Next session
 
@@ -18,9 +18,12 @@ import (X1/X2/X3) under `external_in_ok` (X5) · X4 egress for any export · X11
 `cloud` server-blind · AI3 cloud=egress+scope-min · AI5 untrusted-import provenance · AI6 `source=ai` · **AI4 excluded
 unless the module is a true agentic actor** (Projects only). And the **M1/M2 measured framing** when a module isn't in
 the pursuable set (L240): reference the `measurement_kind` taxonomy in-config + put the pursuable on its Purpose/target,
-don't assert a stored column. **Tier-2 remaining** (`learning/education` [heaviest: X*/AI*/M*], `books`, `check-ins`,
-`finance/fiscal-legal`, `health/nutrition`): mostly **gap** verdicts (silent on ≥1 applicable X*/AI*/M*/E2 contract —
-additions, lower-risk than wrong-model stales). Same
+don't assert a stored column. **Tier-2 remaining** (`books` [gap 014/015/011/006/004 — inherits the X*/AI* pattern + `reading_sessions`↔`sessions`
+supertype], `check-ins` [gap 012/006 — the lone NON-ingest, familiar M*/E2/SP1], `finance/fiscal-legal` [gap 014/015 —
+X* grant tokens + AI egress/scope-min], `health/nutrition` [gap 015/014/006 — AI6 `source=ai` + food-DB ingest +
+`entity_tags`]): mostly **gap** verdicts (silent on ≥1 applicable X*/AI*/M*/E2 contract — additions). **NOTE from
+learning/education:** a "gap"-labeled unit can still hide live wrong-model tokens (courses had inline `tags` + `progress
+NOT NULL DEFAULT 0`) — **grep the live schema for each unit's floor**, don't trust the gap label to mean pure-additive. Same
 per-unit LITE loop (ground → refine sweep → PLAN → independent critique → approve → implement → grep-verify → commit).
 Read first: `staleness-sweep.md` (the target's row) + `capability-framework.md` (§3 predicates for its drivers) + the
 target's 5 aspect docs + grep the live schema. Then Tier 3 = Part 1.3 architecture-doc rewrites.** Read first: `docs/specs/foundation/staleness-sweep.md`

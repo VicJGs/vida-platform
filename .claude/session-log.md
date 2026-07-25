@@ -2682,3 +2682,85 @@ Next session (post-context-clear — READ THIS FIRST):
     (3) read ALL 5 aspects — it caught skills' F1 (submitToCommunity vs SK-3) AND the N1 prose survivors;
     (4) grep the live schema for the As-is floor to tell R6 (retire) from pure gap-add (no floor).
 ---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 TIER-2 — `learning/education` (sweep row 7, gap; THE HEAVIEST unit)
+Completed:
+  - `learning/education` re-run COMPLETE end-to-end (ground → refine → PLAN → adversarial critique → approve →
+    implement 5 aspects → grep-verified acceptance → commit). Commit cff16a2.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/learning-education.md
+  - Edited all 5 aspect docs in docs/features/learning/education/.
+  - THE HEAVIEST UNIT — and a MIXED case, NOT a pure gap. The structure-data-only sweep scoring folded two
+    live wrong-model tokens into "gap". Live floor (grepped): courses:619 [inline tags:636, progress NOT NULL
+    DEFAULT 0:628], ics_feed_configs:1067, ics_synced_events:1080 [UNIQUE(feed_id,uid):1095 + is_ignored].
+  - The docs were already richly reframed (2026-07-01→03, ED-1..ED-16, H1-H12) — the driver-token pass:
+    - 2 live-FACT R6 reframes: SP1 (inline courses.tags → entity_tags, Education-scoped) + M3 (courses.progress
+      NOT NULL DEFAULT 0 → nullable override NULL⇒derive).
+    - M1/M2 DECOMPOSITION: ED-10's bespoke grade/deliverable/goal/manual/count → measurement_kind × binding_mode
+      (the Projects axes; ED-10 explicitly says "same PATTERN as Projects, separate storage"). Education-forged,
+      never merged with Projects' storage. GPA rollup = grade-weighted M4 (weight model = grading-system design
+      pass, deferred).
+    - X* (014): ICS = X1 device-mediated + X2 USER-MANAGED (a user-added URL — distinct from skills'
+      public-reference Skill-DB) + X5 external_in_ok + X8 add-only UNIQUE(feed_id,uid)+is_ignored (ALREADY
+      conforms; framework names "Learning ICS ics_synced_events" verbatim) + X9/X10; curricula import = X1;
+      document extraction splits via X11 (framework names "Learning syllabus" verbatim).
+    - AI* (015): document/syllabus extraction = a SCOPED EXTRACT — AI1 on_device/cloud, AI3 cloud=egress+
+      scope-min, AI5 (syllabus is untrusted-origin, named verbatim → provenance into prompt), AI6 source=ai on
+      auto-recorded rows. NOT AI4 (not a tool-envelope agent — the "AI-agentic" doc wording was loose, realigned).
+    - No E2 (Education is NOT in the feeder list — the "study progress signals → Gamification" is a measurement
+      signal, not a grant_currency grant; study SESSIONS may be the feeder, not Education).
+  - LITE gate: independent adversarial critique (fresh code-aware subagent, prompted to refute) → SHIP /
+    0 blocking — SEVENTH consecutive clean unit. Explicit rulings on the three highest-risk calls, all CORRECT:
+    (1) the two R6 reframes — both live FACTs verified at :636/:628, no fabricated floor, mirrors the ratified
+        projects M3 handling; grep confirmed no other retired token near courses (page_tags is the separate
+        shared table, unreferenced by courses).
+    (2) M1/M2 membership+decomposition — L240 verified to EXCLUDE Education; ED-10 "same PATTERN as Projects,
+        separate storage" verified verbatim; the mapping (deliverable→milestone, count→quantitative,
+        grade-derived→derived-pull, manual→manual) matches the ratified projects decomposition and genuinely
+        un-conflates what-is-measured from how-it-binds — right, not over-reach; the separate-storage guard cited.
+    (3) AI4-NA — AI4's predicate is a tool-envelope multi-hop agent (Projects-only); education's extraction is
+        one-shot extract-and-autorecord riding AI5+AI6, NOT an agent; "AI-agentic" doc wording realigned.
+  - 2 notes, both confirmations (no edits needed beyond N2 wording): N1 X2=user-managed ruled correct;
+    N2 the GPA rollup is GENUINELY M4 (grading-system weights = the child weights) not merely "analogue" —
+    sharpened the G-M4 wording, weight model stays deferred to the grading-system design pass.
+
+Decisions:
+  - X2 layers DIFFER per source (reusable): skills' Skill-DB = public-reference (public bulk dataset);
+    education's ICS = user-managed (a user-pasted URL). Name the specific X2 layer per connector, don't
+    default to one.
+  - A "gap"-labeled sweep row CAN hide live wrong-model tokens (courses had inline tags + progress NOT NULL
+    DEFAULT 0). REUSABLE: grep each remaining Tier-2 unit's live schema for its floor before assuming the
+    gap label means pure-additive — the structure-data-only sweep scoring undersells mixed cases.
+  - The measurement DECOMPOSITION pattern (reusable, from projects → now education): a bespoke flat
+    measurement enum decomposes to measurement_kind (what is measured) × binding_mode (how it binds); when a
+    module isn't in the L240 pursuable set but explicitly reuses the Projects pattern, that reuse IS the
+    membership justification (disclose it) — forge a separate entity, never merge Projects' storage.
+
+Next session (post-context-clear — READ THIS FIRST):
+  - Campaign lives in: docs/specs/foundation/realignment-master-plan/_index.md + staleness-sweep.md (per-
+    context verdict table — routines row 13, skills row 11, learning/education row 7 just done) +
+    capability-framework.md (predicate instrument) + part-1.2-reruns/*.md (13 completed unit PLANs; skills.md
+    = X*/AI* template, learning-education.md = mixed R6+decomposition+X*/AI* template).
+  - FIRST ACTION: continue Part 1.2 TIER-2. Remaining: books (row 10, gap 014/015/011/006/004 — inherits the
+    X*/AI* pattern + reading_sessions↔sessions supertype linkage), check-ins (row 15, gap 012/006 — the lone
+    NON-ingest unit, familiar M*/E2/SP1 family), finance/fiscal-legal (row 18, gap 014/015 — X* grant tokens +
+    AI egress/scope-min), health/nutrition (row 20, gap 015/014/006 — AI6 source=ai + food-DB ingest +
+    entity_tags). GREP EACH UNIT'S LIVE SCHEMA FLOOR FIRST (learning/education proved "gap" can hide live
+    wrong-model tokens). Suggested: books (reuses the X*/AI* pattern) OR check-ins (a quick familiar-family win).
+  - Per-unit loop (unchanged): surface §XXVII path → ground (sweep row + framework §3 predicates + all 5
+    aspect docs + grep live schema for the As-is floor) → refine the sweep across all 5 aspects → persist
+    LITE-gate PLAN → independent adversarial critique (fresh code-aware subagent, prompted to refute) → fix →
+    Victor approval → implement 5 aspects → grep-verify → commit → update task file + TASKS.md + session-log.
+  - After Tier 2: Tier 3 = Part 1.3 architecture-doc rewrites (4 stale + 4 partial).
+  - REUSABLE DISCIPLINE (7 consecutive clean units — carry it):
+    (1) pre-empt the LIKELY blocking finding IN the PLAN (E2/S4 layering; X11 LLM-splits-to-015; AI4-only-for-
+        agents; the measurement decomposition);
+    (2) DISCLOSE arguable membership/mapping calls (education M1/M2 via ED-10's Projects-pattern reuse; the
+        X2 layer choice) — the critic then VERIFIES rather than CATCHES;
+    (3) read ALL 5 aspects AND grep the live schema — it caught education's mixed case (2 live-FACT tokens a
+        gap label hid);
+    (4) grep the live schema for the As-is floor to tell R6 (retire) from pure gap-add (no floor).
+---
