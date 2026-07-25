@@ -2485,3 +2485,63 @@ Next session:
     The reusable discipline holds: pre-empt the likely blocking finding IN the PLAN; disclose arguable
     applies-to/membership calls rather than hide them; read ALL 5 aspects to refine the single-aspect sweep.
 ---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 Tier-1 forward-facing group — `knowledge/flashcards` (LAST forward-facing unit; sweep row 9, stale)
+Completed:
+  - `knowledge/flashcards` re-run COMPLETE end-to-end (ground → PLAN → adversarial critique → approve →
+    implement 5 aspects → grep-verified acceptance → commit). Commit f07f348; tracking 8ff1b45.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/knowledge-flashcards.md
+  - Edited all 5 aspect docs in docs/features/knowledge/flashcards/.
+  - Grounding: THE NARROWEST unit. The ADR-005 generic-review-engine reframe (review_events/method_bindings/
+    review_curves, mastery-derived, decks/SM-2-cols/flashcard_reviews retired) + ADR-002 retirements already
+    conform (verified, not re-done). Live schema: flashcard_decks:761/flashcards:775/flashcard_reviews:796,
+    NO inline `tags` column. Stale surface = ONE forward token: page_tags (structure-data L27).
+  - Changes: SP1 retire the forward page_tags -> entity_tags (forward [INTENT] ref, no As-is floor — reframed
+    in place like tasks/task_views); F3 name entity_tags at ~6 generic "universal tag system" mentions (SM4
+    "taggable via entity_tags"); card registers entity_type='flashcard' (SP2).
+  - LITE gate: independent adversarial critique (fresh code-aware subagent) -> SHIP / 0 blocking — FOURTH
+    consecutive clean unit. Both load-bearing claims verified with content (single page_tags; no inline tags
+    column); the under-scope risk (a missed 005/002 forward token) explicitly REFUTED.
+
+*** MILESTONE: PART 1.2 TIER-1 COMPLETE (10 units) ***
+  Done: notes-and-pages (Tier-0 hub) · sessions-and-scheduling · projects · health/core · habits · finance ·
+  tasks · relationships · pomodoro · knowledge/flashcards. The last 4 (this session) were 4 CONSECUTIVE
+  critique-clean units across 4 distinct shapes (widest-driver-set / notification-primary+membership-nuance /
+  finish-the-reframe / narrowest-one-token).
+
+Decisions:
+  - flashcards 006/SP1 only: page_tags is a forward [INTENT] token (no inline tags column -> no R6 two-tier),
+    corrected in place. 005 (SM1-SM4) + 002 already conform -> verify-only (C1/C2). No M* (mastery is
+    Knowledge-derived, C3). No E2/012 (XP rides the review_session effect, not a flashcards feeder — the
+    OPPOSITE of pomodoro where 012 WAS a driver, C4). entity_links already correct, tags != links (SP4, C5).
+
+Next session (post-context-clear — READ THIS FIRST):
+  - Campaign lives in: docs/specs/foundation/realignment-master-plan/_index.md (master plan) +
+    staleness-sweep.md (the per-context verdict table + tier ordering) + capability-framework.md (the
+    mechanical predicate instrument) + part-1.2-reruns/*.md (the 10 completed unit PLANs — read a sibling as
+    the format template).
+  - FIRST ACTION: start Part 1.2 TIER 2 — the GAP-FILL group. Units (sweep §"Part 1.2 tier 5", all `gap`
+    verdicts): learning/education, books, skills, check-ins, finance/fiscal-legal, health/nutrition, routines.
+    Gap = no forward anti-signal, but silent on >=1 applicable X*/AI*/M*/E2 contract — ADDITIONS, lower-risk
+    than the wrong-model stales (sweep finding F2). Suggested first unit: `routines` (closest sibling to the
+    habits/tasks work — same M1/M2 + E2 gap family), OR learning/education (the heaviest gap-fill: X*/AI*/M*).
+  - Per-unit loop (unchanged): surface §XXVII path → ground (sweep row + framework §3 predicates for the
+    unit's drivers + all 5 aspect docs + grep the live schema for the As-is floor) → read ALL 5 aspects to
+    refine the sweep's single-aspect verdict → persist LITE-gate PLAN in part-1.2-reruns/ → independent
+    adversarial critique (fresh code-aware subagent, prompted to refute) → fix → Victor approval → implement 5
+    aspects → grep-verify acceptance → commit → update task file + TASKS.md + session-log.
+  - After Tier 2: Tier 3 = Part 1.3 architecture-doc rewrites (4 stale + 4 partial arch docs, sweep §"Verdict
+    table — 8 architecture docs").
+  - REUSABLE DISCIPLINE (proven across 4 consecutive clean units this session — carry it):
+    (1) pre-empt the LIKELY blocking finding INSIDE the PLAN (e.g. name award_xp=S4-member vs
+        grant_currency=ADR-012-E2-generalization as two layers at EVERY occurrence — the trap that bit
+        habits/finance, avoided in tasks/pomodoro);
+    (2) DISCLOSE arguable applies-to/membership calls in the PLAN rather than hide them (relationships X*
+        membership-by-rule; tasks C8 views-scope) — the critic then VERIFIES rather than CATCHES;
+    (3) read ALL 5 aspects to refine the sweep's structure-data-only verdict (caught the hidden xp_history in
+        pomodoro's contract; confirmed the "already conforms" reads in flashcards).
+---
