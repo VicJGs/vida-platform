@@ -2764,3 +2764,84 @@ Next session (post-context-clear — READ THIS FIRST):
         gap label hid);
     (4) grep the live schema for the As-is floor to tell R6 (retire) from pure gap-add (no floor).
 ---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 TIER-2 — `books` (sweep row 10, gap; mixed case + S1 reframe)
+Completed:
+  - `books` re-run COMPLETE end-to-end (ground → refine → PLAN → adversarial critique → approve →
+    implement 5 aspects → grep-verified acceptance → commit). Commit 4910268.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/books.md
+  - Edited all 5 aspect docs in docs/features/books/.
+  - A MIXED case, NOT the "clean of live retired tokens" the sweep claimed (the learning/education lesson,
+    proven AGAIN — grep the floor first). Live floor: books:641 [inline tags:657, progress NOT NULL DEFAULT
+    0:650], book_chapters:661.
+  - Fix = 2 live-FACT R6 reframes (SP1 books.tags/genre → entity_tags; M3 books.progress → nullable override)
+    + an S1 REFRAME + X*/AI* layering + light M1/M2:
+    - S1 (the sharpest call): framework S1 predicate names reading_sessions as the base+extension form AND
+      "reading_session standalone" as RETIRED. So BK-10's "Reading sessions are Books' own entity" is a SOFT
+      anti-signal → reframe to base sessions sub_type='reading' + a Books-owned 1:1 extension keyed session_id.
+      BK-10's "Never a study_session reuse" is PRESERVED VERBATIM — reading ≠ study, distinct sub-types (the
+      framework itself lists reading_sessions AND study_sessions as separate extensions). Mode-adaptive capture
+      (physical/braille manual vs digital granular + photos) = the extension columns; the base carries the
+      shared timer/scheduling spine.
+    - X* (014): ISBN/metadata lookup = X1 device-mediated + X2 PUBLIC-REFERENCE + X3 (Books ISBN verbatim) +
+      X5 external_in_ok + X9 revoke; OCR/TTS/transcription = X11 split (Books OCR verbatim).
+    - AI* (015): AI1 on_device/cloud, AI3 cloud=egress+scope-min, AI5 (OCR page untrusted, verbatim), AI6
+      source=ai. AI4 NA (scoped model calls, not agentic).
+    - M1/M2 light: reading-plan goal = pursuable target (measurement_kind × binding_mode); unified progress =
+      quantitative/derived-pull. Books not in L240 — membership disclosed. No stored books.measurement_kind.
+    - No E2: Books not a feeder; the reading-session completion grants via its base-sessions sub-type (Sessions
+      IS the feeder), not Books.
+  - LITE gate: independent adversarial critique (fresh code-aware subagent, prompted to refute) → SHIP /
+    0 blocking — EIGHTH consecutive clean unit. The three sharpest calls all ruled CORRECT:
+    (1) the S1 reframe — framework L79 verified to list reading_sessions AND study_sessions as separate,
+        co-equal extensions and to retire "reading_session standalone"; because they are distinct sub-types,
+        naming the reading sub-type does NOT reuse study_session → BK-10 survives verbatim; the mode-adaptive
+        capture becomes extension columns while the base carries the spine — not "forcing Sessions onto
+        something kept separate".
+    (2) the two R6 reframes — both live anti-signals verified (books.tags inline [E] :657; books.progress NOT
+        NULL DEFAULT 0 :650); the sweep's "clean" genuinely understated it; no other retired token missed.
+    (3) AI4-NA — OCR/TTS/transcription = scoped askModel(scoped_slice)-shaped calls governed by AI1/AI3/AI5,
+        not tool-wielding agents; the auto-write transcription probe explicitly ruled non-agentic (a bounded
+        pipeline output carrying source=ai/AI6, gated by AI5).
+  - 1 note folded (N1): books.progress cite off-by-one → :650 corrected across the PLAN (the tags:657 cite was
+    already correct; ironically current_page — the C-POS "don't re-open" column — sits at the mis-cited :649).
+
+Decisions:
+  - The S1 REFRAME PATTERN (reusable): when a doc frames a timed activity as "the module's OWN entity" (a
+    standalone session table), that is the framework's RETIRED S1 anti-signal ("<x>_session standalone").
+    Reframe to base sessions sub_type + a 1:1 extension keyed session_id; the module-specific capture becomes
+    extension columns, the base carries the shared timer/scheduling spine. A "never reuse <other>_session"
+    guard in the doc STAYS TRUE — distinct sub-types are separate extensions, not a reuse.
+  - CONFIRMED TWICE (education + books): a "gap"/"clean" sweep row can hide live wrong-model tokens. ALWAYS
+    grep the live schema floor first; the structure-data-only sweep scoring undersells mixed cases.
+
+Next session (post-context-clear — READ THIS FIRST):
+  - Campaign lives in: docs/specs/foundation/realignment-master-plan/_index.md + staleness-sweep.md (per-
+    context verdict table — routines row 13, skills row 11, learning/education row 7, books row 10 done) +
+    capability-framework.md (predicate instrument) + part-1.2-reruns/*.md (14 completed unit PLANs; skills.md
+    = X*/AI* template, learning-education.md + books.md = mixed R6+X*/AI* templates, books.md also = the S1
+    reframe template).
+  - FIRST ACTION: continue Part 1.2 TIER-2 (3 left). Remaining: check-ins (row 15, gap 012/006 — the lone
+    NON-ingest unit, familiar M*/E2/SP1 family; E9 user_profile split + check_in_streak*), finance/fiscal-legal
+    (row 18, gap 014/015 — X* grant tokens external_in_ok/external_out_ok + AI egress/scope-min), health/
+    nutrition (row 20, gap 015/014/006 — AI6 source=ai on AI-generated rows + food-DB ingest X* + entity_tags).
+    GREP EACH UNIT'S LIVE SCHEMA FLOOR FIRST. Suggested: check-ins (a quick familiar-family win, no ingest) OR
+    finance/fiscal-legal (pure X*/AI*, reuses the pattern).
+  - Per-unit loop (unchanged): surface §XXVII path → ground (sweep row + framework §3 predicates + all 5
+    aspect docs + grep live schema for the As-is floor) → refine the sweep across all 5 aspects → persist
+    LITE-gate PLAN → independent adversarial critique (fresh code-aware subagent, prompted to refute) → fix →
+    Victor approval → implement 5 aspects → grep-verify → commit → update task file + TASKS.md + session-log.
+  - After Tier 2: Tier 3 = Part 1.3 architecture-doc rewrites (4 stale + 4 partial).
+  - REUSABLE DISCIPLINE (8 consecutive clean units — carry it):
+    (1) pre-empt the LIKELY blocking finding IN the PLAN (E2/S4 layering; X11 LLM-splits-to-015; AI4-only-for-
+        agents; the S1 base+extension reframe; the measurement decomposition);
+    (2) DISCLOSE arguable membership/mapping/reframe calls (books S1 reframe vs BK-10; education M1/M2 via the
+        Projects-pattern reuse) — the critic then VERIFIES rather than CATCHES;
+    (3) read ALL 5 aspects AND grep the live schema — it caught the mixed cases (education + books both had
+        live anti-signals a gap/clean label hid);
+    (4) grep the live schema for the As-is floor to tell R6 (retire/reframe) from pure gap-add (no floor).
+---
