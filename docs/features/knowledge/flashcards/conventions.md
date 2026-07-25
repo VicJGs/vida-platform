@@ -15,8 +15,8 @@
   mastery/schedule value to "help". `[FACT: KN-10]`
 - **Gather via `entity_links`.** When generating cards from a source (object/quote/note), keep the source as
   an `entity_links` reference — that is the capture provenance. `[INTENT: F7]`
-- **Wire the universal properties.** Cards get **tags** (universal system) + **note/page links**
-  (`entity_links`) + attachments (media) — for free, like every OS content entity, not a Flashcards feature. `[FACT: ADR-005 §3.1(6)]`
+- **Wire the universal properties.** Cards get **tags** (via the shared `entity_tags` primitive, SP1) + **note/page links**
+  (`entity_links`, SP4) + attachments (media) — for free, like every OS content entity, not a Flashcards feature. `[FACT: ADR-006 SP1; ADR-005 §3.1(6)]`
 - **Run through a `review_session`.** All drilling is a Session (ADR-004) so Journal/XP/Scheduler integration
   comes for free. `[FACT: ADR-004]`
 
@@ -25,7 +25,7 @@
   `flashcard_review`); grouping has **no** table (a user Knowledge object).
 - `card_type ∈ {basic, reversed, cloze, image_occlusion}`; media as encrypted attachment refs.
 - Follows platform conventions: UUIDv7 TEXT PKs · Unix-ms timestamps · `-- [E]` on card content · `_sync_*`
-  on the syncable entity · soft-delete `deleted_at` · tags via the universal system. `[FACT: CLAUDE.md Conventions]`
+  on the syncable entity · soft-delete `deleted_at` · tags via the shared `entity_tags` primitive (SP1). `[FACT: CLAUDE.md Conventions; ADR-006 SP1]`
 
 ## Landmines / local "never do"
 - **The v2 surface is a schema stub — never cite it as behaviour.** `models/learning.ts` is 0 lines. `[FACT: wc -l = 0]`

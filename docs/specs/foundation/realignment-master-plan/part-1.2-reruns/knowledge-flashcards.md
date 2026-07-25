@@ -1,0 +1,122 @@
+# Re-run PLAN — knowledge/flashcards (Part 1.2, Tier 1 — LAST forward-facing unit)
+
+**Type:** doc-realignment unit PLAN (LITE gate — §XXVI LITE variant; non-code scenario).
+**Status:** ✅ IMPLEMENTED (2026-07-24) — LITE gate passed (critique **SHIP / 0 blocking** → Victor approved); edits landed across **all 5** aspect docs; §4 acceptance verified mechanically (grep): **zero forward `page_tags`** (the only remaining occurrence is the negative "**not** `page_tags`", SP1); `entity_tags` named in all 5 aspects with `entity_type='flashcard'` (SP2); **N1 re-grep clean** — no residual bare "tag system"/"universal tag" phrasing remains (every mention tokened, incl. identity L18-19 per N2); `entity_links` untouched/not conflated (C5/SP4); no forward `grant_currency`/`measurement_kind` (C3/C4). Fourth consecutive critique-clean unit; the narrowest in the campaign. **This completes the entire Tier-1 forward-facing group.** Boundary held (`entity_tags` code home + ADR-002 amendment `[DEFERRED — build]`; ADR-005 reframe + retirements verified-not-redone).
+
+**Prior status (retained):** Independent adversarial critic → **SHIP / 0 blocking** (fourth consecutive clean unit). Both load-bearing claims verified with content (`page_tags` = 1 occurrence at L27; no inline `tags` column → forward-token correction, not R6 retirement); the under-scope risk (missed 005/002 forward token) explicitly refuted (all retired tokens in As-is/RETIRED/conformant positions). 3 implementation-guidance notes (N1 re-grep, N2 identity L18-19, N3 citation) all applied.
+**Date:** 2026-07-24 · **Session:** build-roadmap-resequence (foundation-realignment campaign, Part 1.2).
+**Context:** `docs/features/knowledge/flashcards/` (5 aspect files: identity, structure-data, business-rules, contract, conventions).
+**Verdict (sweep):** **stale** (row 9) — drivers **006, 005, 002**. The **narrowest unit in the campaign** (one forward tag token + F3 token-naming; ADR-005/002 already conform).
+**Grounded in:** `staleness-sweep.md` (row 9 + row 8 parent-context context + Part 1.2 Tier-1 order), `capability-framework.md` §2 (R6) + §3 ADR-006 (SP1/SP2) / ADR-005 (SM1–SM4) + §4 applies-to + §5, all 5 current aspect docs, **and the live schema** (`flashcard_decks:761`, `flashcards:775`, `flashcard_reviews:796` — grepped this session).
+**No-Guessing:** the one forward stale token (`page_tags`) is corrected in place; every generic "universal tag system" mention gets the `entity_tags` token named (F3). No invented tokens. The ADR-005 generic-engine reframe + the ADR-002 retirements are **already done** (recorded FACT + retired `[INTENT]`, R6 two-tier) — this pass does **not** re-do them. Code homes + the ADR-002 amendment are `[DEFERRED — build]`.
+
+---
+
+## §1. Context — why this re-run, and the true stale shape
+
+Flashcards is a **study-method SERVICE inside Knowledge** — the **reference implementation** of the ADR-005 Study-Method Service framework, reframed (Victor 2026-07-12) from a standalone SM-2 flashcards app into a lean content-only card entity that plugs into Knowledge's **generic review engine** (`review_events`/`method_bindings`/`review_curves`), with grouping = a user Knowledge object, mastery **derived** by Knowledge, and drilling run as a `review_session` (ADR-004). It has **3 live tables** (`flashcard_decks`, `flashcards`, `flashcard_reviews`) — two retired outright, the third shrunk to content-only.
+
+**The R6 fact that shapes this unit (the ADR-005 reframe is done; only a tag token is stale):** the sweep verdict is **stale**, but narrowly — **"SM1–SM4 intent conforms; SM-2/`flashcard_decks` tokens are As-is-only"** — the **genuine forward regression is a single token: `page_tags`** (structure-data L27, named as the go-forward tag mechanism, NOT quarantined). This mirrors the parent `knowledge` context (row 8, **reframed→aligned**, "minor: `entity_tags` token unnamed").
+
+**Ground-truth refinement (the sweep scored only structure-data; this PLAN reads all 5 aspects + the schema):**
+
+| Cap | Framework token (owning ADR) | Present today? | Fix shape |
+|---|---|---|---|
+| **SP1** `page_tags` → `entity_tags` | `entity_tags` (`tag_id, entity_type, entity_id`) is the tag primitive; retired `page_tags` (ADR-006 §3.2) | **FORWARD STALE TOKEN** — structure-data L27 names "Tags via the universal **`page_tags`**/tag system" as the go-forward mechanism (the sweep's row-9 find). No As-is floor: flashcards has **no inline `tags` column** (schema `:761/:775` grep-confirmed) → a forward `[INTENT]` reference, reframed in place (like tasks' `task_views`) | **retire in place** → `entity_tags`; Flashcards' card registers `entity_type='flashcard'` (SP2 open registry) |
+| **SP1/SM4** `entity_tags` under-named (F3) | SM4: a content unit is "taggable (**`entity_tags`**), note-linkable (`entity_links`), emits `review_events`" (ADR-005 §3.1(6)); SP1 platform-wide | **GAP (token unnamed)** — every OTHER tag mention says "the universal tag system" generically (identity L34, structure-data L51, business-rules FC-8, contract L29, conventions L18/L27) without naming `entity_tags` | **gap-fill (naming)** — name `entity_tags` at the generic mentions so the SM4 "taggable via `entity_tags`" predicate reads mechanically; `entity_links` (note-linkable) is already named correctly (keep) |
+| **SM1–SM4** generic review engine | registers `kind=study_method` in the ADR-008 registry, binds via `method_bindings` to `review_curves`; uses `review_events`; content unit is an OS citizen; mastery derived (ADR-005 §3.1–3.2) | **ALREADY CONFORMS** — the docs name `study_methods` registration, `method_bindings`, `review_curves`, `review_events`, `review_session`, mastery-derived (KN-10); retired `flashcard_decks`/`flashcard_reviews`/SM-2 cols As-is-only (FC-3, structure-data L11-19) | **guard (C1/C2)** — verify only; do NOT re-do the reframe or manufacture an SM1 `kind=study_method` edit (parent Knowledge owns the registry framing) |
+| **002** ADR-002 retirements | retire `flashcard_decks` + `flashcard_reviews` + SM-2 columns; keep the lean card content entity (the Flashcards ADR-002-amendment slice) | **ALREADY FLAGGED** — structure-data L44-46 + FC-3 + conventions L32-33 record the retirements + flag the amendment | **guard (C1)** — verify; the amendment authoring is `[DEFERRED — build]` |
+
+**Fix shape:** flashcards is a **one-token correction + F3 token-naming** — retire the single forward `page_tags` (structure-data L27) → `entity_tags`, and name the `entity_tags` token at the ~5 generic "universal tag system" mentions (SM4). **No R6 two-tier for tags** (no inline-tag As-is floor — the forward token is `[INTENT]`, reframed in place). **The ADR-005 reframe + ADR-002 retirements already conform** — verify, don't re-do. **No M\*** (mastery is Knowledge-derived, not a flashcards pursuable — C3). **No 012/E\*** (XP rides the `review_session` effect; 012 not a driver — C4).
+
+---
+
+## §2. What changes — one forward-token correction + F3 naming + guards
+
+### Primary — the SP1 tag token (driver 006)
+
+| # | Cap | Retire / name | Owning ADR (cite; DDL deferred) | Aspect(s) |
+|---|---|---|---|---|
+| G-SP1a | **retire forward `page_tags` → `entity_tags`** | structure-data L27 names "Tags via the universal `page_tags`/tag system" — a **forward SP1 anti-signal**. Retire → the card is taggable via **`entity_tags`** (`tag_id, entity_type, entity_id`, SP1); registers `entity_type='flashcard'` in the open registry (SP2). No As-is floor (no inline `tags` column) — reframed in place | ADR-006 §3.2 (SP1/SP2) | structure-data (L27) |
+| G-SP1b | **name `entity_tags` at the generic tag mentions (F3 / SM4)** | every other tag reference says "the universal tag system" generically — name the **`entity_tags`** token so SM4's "content unit taggable (`entity_tags`)" reads mechanically. `entity_links` (note-linkable, SM4) is already named — keep it | ADR-006 §3.2 (SP1); ADR-005 §3.1(6) (SM4) | identity (L34) · structure-data (L51) · business-rules (FC-8) · contract (L29) · conventions (L18/L27) |
+
+### Secondary — flagged guards surfaced by grounding (flag, don't silently skip)
+
+| # | Finding | Fix | Cite | Scope guard |
+|---|---|---|---|---|
+| C1 | **The ADR-005 reframe + ADR-002 retirements are ALREADY DONE.** decks/SM-2-cols/reviews recorded As-is + retired → generic `review_events`/`method_bindings`/`review_curves`/mastery-derived (structure-data L11-27, FC-1…FC-10, conventions L32-33); R6 two-tier complete for the tables. | **Do NOT re-do the reframe.** Verify only; leave the FACT-base retirements + `[INTENT]` generic-engine framing intact. This pass touches only the tag token. | structure-data L11-27; FC-3; `schema.ts:761/775/796` | **scope guard** — don't re-open a finished reframe |
+| C2 | **Do NOT manufacture an SM1 `kind=study_method` edit.** The docs name `study_methods` registration + `method_bindings` + `review_curves` (SM1-conformant per the sweep); the **parent Knowledge context owns the ADR-008 registry framing** (row 8 reframed→aligned). | **Leave the registry framing as-is.** Naming the ADR-008 `kind=study_method` discriminator is a Knowledge-context concern, not a flashcards edit; the sweep flags only `page_tags`. | sweep row 9 (SM1-SM4 conforms) + row 8 (Knowledge owns registry); framework SM1 | **scope guard** — don't over-reach into the parent's registry |
+| C3 | **No M\* — mastery is Knowledge-DERIVED, not a flashcards pursuable.** FC-6/KN-10: Flashcards emits `review_events`; Knowledge derives mastery. Flashcards owns no measure. | **Do NOT add `measurement_kind`/`binding_mode`/M5.** The card is a reviewable content unit, not a pursuable; retention outcomes feed Education's measurement via Knowledge (KN-10), which flashcards does not own. | framework §3 M1 (pursuable set — not a card); FC-6/KN-10 | **scope guard** — no measurability |
+| C4 | **No 012/E\* — XP rides the `review_session` effect, not a flashcards feeder.** contract L33: "Gamification/Journal via `review_session` effects (XP, daily Journal) — ADR-004, not owned here." 012 is not a driver (sweep = 006/005/002). | **Do NOT add `grant_currency`/E2.** XP is a `review_session` (Sessions-owned) effect; flashcards names no economy-feeder contract this pass (unlike pomodoro, where 012 WAS a driver). | sweep row 9 (drivers 006/005/002, no 012); contract L33 | **scope guard** — no economy contract |
+| C5 | **`entity_links` (note/source/resource-linkable) is already correct** (SM4) — identity L35, structure-data L27/L35, FC-7/FC-8, contract, conventions L16-19. | **Keep `entity_links` untouched.** Only the tag token (`entity_tags`) is the gap; the link token is already named. Do NOT conflate tags and links (SP4 — distinct primitives). | ADR-006 §3.3 (SP4); SM4 | **scope guard** — tags ≠ links, only tags need the token |
+| C6 | **No 013/N\*, no 014/X\*, no 015/AI\*.** Drivers are 006/005/002 only. Flashcard *generation* from sources (FC-7 gather) is OS-internal (Knowledge objects/Book quotes/notes via `entity_links`), not external ingestion (X\*) or AI (AI\*). | **Do NOT add N*/X*/AI\* tokens.** The gather path is internal capture, not an ADR-014 connector; no model call is in scope this pass. | sweep row 9 (drivers 006/005/002); framework §4 (flashcards absent from N/X/AI rows) | **scope guard** — stay on the drivers |
+
+**Scope guards (do NOT over-apply):**
+- **This is a token correction, not a reframe.** Only the tag token changes (retire `page_tags` → `entity_tags` + name it at the generic mentions). The ADR-005 generic-engine reframe + the ADR-002 retirements + `entity_links` note-linking + mastery-derived-by-Knowledge are **already correct** — verify, don't rewrite.
+- **No R6 two-tier for tags** — flashcards has no inline `tags` column (no As-is floor); the forward `page_tags` is an `[INTENT]` reference reframed in place (the tasks `task_views` pattern). The R6 two-tier that DOES apply (the 3 retired tables) is **already done** (C1).
+- **Conceptual home + owning ADR only.** `entity_tags` is cited to ADR-006; the code/table home + the ADR-002 amendment are `[DEFERRED — build]`.
+- **Cite-not-re-spec the owned substrates.** `entity_tags`/registry = Spaces-owned (notes-and-pages re-run, done); the generic review engine (`review_events`/`method_bindings`/`review_curves`/`study_methods`) = Knowledge-owned (reframed→aligned); the `review_session` + its effects = Sessions-owned. Flashcards names the tag primitive it consumes, does not author it.
+- **No M\*** (C3), **no 012/E\*** (C4), **no 013/014/015** (C6), **no SM1 registry edit** (C2). **No schema-level reconciliation** — the ADR-002 amendment (retire decks/reviews/SM-2 cols) → build phase (ADR-016).
+
+---
+
+## §3. Per-aspect edit map (5 aspects — 1 correction + F3 token-naming)
+
+**`identity.md`**
+- **G-SP1b** — L34 ("A card participates … the **tag system**, notes/pages links (`entity_links`)"): name the tag token → **`entity_tags`** (SP1); keep `entity_links` (SM4 note-linkable, already correct). `[INTENT; ADR-006 SP1; ADR-005 SM4]`
+
+**`structure-data.md`**
+- **G-SP1a (the find)** — L26-27 ("Tags via the universal **`page_tags`**/tag system; note/source links + grouping via `entity_links`"): **retire the forward `page_tags`** → **`entity_tags`** (SP1, `entity_type='flashcard'`, SP2 open registry); keep `entity_links`. `[INTENT; ADR-006 SP1/SP2; ADR-005 §3.1(6)]`
+- **G-SP1b** — L51 (single-source "**Tags** — the universal tag system"): name `entity_tags` (SP1). `[INTENT; ADR-006 SP1]`
+- **C1 guard** — leave the As-is retirements (L11-19) + the lean-entity `[INTENT]` (L21-27) intact (already correct).
+
+**`business-rules.md`**
+- **G-SP1b** — FC-8 ("Every card participates in the **universal tag system** and links to notes/pages via `entity_links`"): name the tag primitive → **`entity_tags`** (SP1); `entity_links` already correct. `[INTENT; ADR-006 SP1; ADR-005 §3.1(6)]`
+- **C3 guard** — FC-6 (mastery derived): leave intact (no M\*; Knowledge derives — KN-10).
+
+**`contract.md`**
+- **G-SP1b** — L29 (Notes & Pages consumed: "`entity_links` to notes/pages · the **universal tag system** · attachments"): name → **`entity_tags`** (SP1). `[INTENT; ADR-006 SP1]`
+- **C4 guard** — L33 (Gamification/Journal via `review_session` effects): leave intact (no E2; XP is Sessions-owned).
+
+**`conventions.md`**
+- **G-SP1b** — L18 ("Cards get **tags** (universal system) + note/page links (`entity_links`)") + L27 ("tags via the universal system"): name → **`entity_tags`** (SP1). `[INTENT; ADR-006 SP1]`
+- **C1 guard** — leave the "do NOT preserve v2 tables" landmines (L32-35) intact (already correct).
+
+---
+
+## §4. Acceptance (the definition-of-aligned §5 lines this unit must pass)
+
+- [ ] **SP1 (the find)** — the forward `page_tags` (structure-data L27) retired → `entity_tags`; **zero forward `page_tags`** in any aspect.
+- [ ] **SP1/SM4 (F3)** — `entity_tags` named at every generic "universal tag system" mention (identity, structure-data L51, business-rules FC-8, contract, conventions); the SM4 "taggable via `entity_tags`" predicate reads mechanically; `entity_type='flashcard'` (SP2) named.
+- [ ] **C5 guard** — `entity_links` (note-linkable, SM4) left untouched and NOT conflated with `entity_tags` (SP4 — distinct primitives).
+- [ ] **C1 guard** — the ADR-005 generic-engine reframe (retire `flashcard_decks`/`flashcard_reviews`/SM-2 cols → `review_events`/`method_bindings`/`review_curves`/mastery-derived) left intact and NOT re-opened; verified already-conformant.
+- [ ] **C2 guard** — no SM1 `kind=study_method` registry edit manufactured (parent Knowledge owns the ADR-008 registry framing).
+- [ ] **C3 guard** — no M\* (`measurement_kind`/`binding_mode`/M5) added; mastery stays Knowledge-derived (KN-10).
+- [ ] **C4 guard** — no `grant_currency`/E2 added (012 not a driver; XP rides the `review_session` effect).
+- [ ] **C6 guard** — no N*/X*/AI\* tokens added (gather is OS-internal capture, not external ingestion/AI).
+- [ ] **Boundary rule** — the `entity_tags` code/table home + the ADR-002 amendment (retire decks/reviews/SM-2 cols) are `[DEFERRED — Part 2 / build]`; only conceptual ADR homes asserted (cite-not-re-spec Spaces/Knowledge/Sessions).
+- [ ] **R6** — the As-is (live FACT: 3 tables `flashcard_decks`/`flashcards`/`flashcard_reviews` + SM-2 columns) / `[INTENT]` (retire 2, shrink 1, generic engine) split intact; named-ADR set = ADR-005 + ADR-004 + ADR-006 (+ 002 As-is + amendment). **No inline-tag As-is floor** (the `page_tags` fix is a forward-token correction, not a two-tier retirement).
+- [ ] **Rails** — `[E]` on card content (`front`/`back`/`hint`/`explanation`) preserved (R3); `_sync_*`/soft-delete intact (R4); tags via `entity_tags` (SP1), links via `entity_links` (SP4), reviews via generic `review_events`.
+- [ ] **No new anti-signal** introduced; **no structural call made**; no schema-level reconciliation attempted.
+- [ ] **No contradiction** with any ADR 001–017, nor with neighbors (Spaces owns `entity_tags`/registry; Knowledge owns the generic review engine + mastery derivation; Sessions owns `review_session` + its XP/Journal effects; the parent Knowledge context owns the `study_methods` registry framing).
+
+---
+
+## §5. Out of scope (explicit)
+
+- **The ADR-005 generic-engine reframe** — `review_events`/`method_bindings`/`review_curves`/`study_methods`/mastery-derivation are **Knowledge-owned** (reframed→aligned, row 8); this unit verifies flashcards rides them correctly, does not re-author them (C1/C2).
+- **The `entity_tags` primitive + open registry** — **Spaces-owned** (notes-and-pages re-run, done); this unit names Flashcards' card as a *consumer* (`entity_type='flashcard'`), does not author the tag DDL.
+- **The `review_session` + its effects (XP/Journal)** — **Sessions-owned** (reframed this campaign); this unit cites the run surface + effects, does not re-spec them. No economy-feeder contract (C4).
+- **Mastery / measurement** — Knowledge derives mastery from `review_events` (KN-10); Education consumes it as a measurement signal. Flashcards is neither the mastery owner nor an M-pursuable (C3).
+- **The ADR-002 amendment** — retire `flashcard_decks` + `flashcard_reviews` + SM-2 columns, keep the lean card entity → build phase; named/flagged, not authored.
+- **Card types / media / Focus / views** — `card_type` enum, media attachments, the drill UI + browse/manage/stats views are enumerated at intent level; detail is the standing build-time VIEWS pass.
+- **No new drivers** — no notifications (013), ingestion (014 — gather is OS-internal), AI (015), or measurability (011); flashcards' drivers are 006/005/002 only, and 005/002 already conform.
+- **Code/directory homes + schema reconciliation** — final DDL, the amendment authoring → build phase (ADR-016).
+
+---
+
+## Change Log
+| Date | Change |
+|------|--------|
+| 2026-07-24 | Initial PLAN drafted from the ground read (sweep row 9 + row 8 parent context + framework §2 R6 + §3 ADR-006 SP1/SP2 / ADR-005 SM1–SM4 + §4 applies-to + §5, all 5 aspect docs, **and the live schema** — `flashcard_decks:761`/`flashcards:775`/`flashcard_reviews:796`, no inline `tags` column). Ground-truth: the ADR-005 reframe is thoroughly done (generic `review_events`/`method_bindings`/`review_curves`, mastery-derived, decks/SM-2/reviews retired As-is-only, SM1–SM4 conforming) — **the narrowest unit in the campaign.** The genuine stale surface is a **single forward token: `page_tags`** (structure-data L27, grep-confirmed the only occurrence), a forward `[INTENT]` reference (no inline-tag As-is floor) reframed in place → `entity_tags` (SP1); plus F3 token-naming (name `entity_tags` at the ~5 generic "universal tag system" mentions, per SM4). Six guards: C1 the ADR-005 reframe + ADR-002 retirements already done (verify, don't redo); C2 no SM1 registry edit (parent Knowledge owns it); C3 no M\* (mastery is Knowledge-derived); C4 no 012/E\* (XP rides the `review_session` effect — not a driver, unlike pomodoro); C5 `entity_links` already correct, tags ≠ links (SP4); C6 no N*/X*/AI\* (gather is OS-internal). Completing this unit finishes the **entire Tier-1 forward-facing group**. Presented for the LITE gate. |
+| 2026-07-24 | Independent adversarial critique (fresh code-aware subagent) → **SHIP / 0 blocking** — fourth consecutive clean unit. Both load-bearing claims verified with content: `page_tags` = exactly 1 occurrence (structure-data L27, in `[INTENT]`); `flashcards`/`flashcard_decks` have **no `tags` column** (`schema.ts:761-794` — the only nearby `tags` is `knowledge_notes.tags:818`, a different table) → forward-token correction, no As-is floor. **The under-scope hypothesis (a missed 005/002 forward token) was explicitly refuted** — grep of every `flashcard_decks`/`flashcard_reviews`/SM-2 token showed all in source-headers / `[FACT]` As-is floors / RETIRED-supersession markers / ADR-005-conformant "SM-2 is a swappable `review_curves` preset" statements; zero forward. `entity_tags` = 0 occurrences (confirms F3), `entity_links` = 16 (already correct, links need no work — C5/SP4 held). Framework SP1/SP2/SM4 cites exact; guards C3 (M1 excludes reference-data cards), C4 (E2 feeder = Sessions, not flashcards; contract L33 routes XP via `review_session`), C6 (absent from N/X/AI) all confirmed; C2 (no SM1 `kind=study_method` edit — parent Knowledge owns the ADR-008 registry) defensible. 3 non-blocking implementation-guidance notes: N1 (re-grep for residual bare "tag system" post-edit — line numbers drift), N2 (also name the token at identity L18-19's second generic mention), N3 (citation consistency — G-SP1a already specifies it). All 3 to be applied at implement time. Ready for Victor's LITE-gate approval. |

@@ -15,8 +15,8 @@ later — all plugging into the same seam. `[INTENT: Victor 2026-07-12]`
 
 **Its irreducible core (why it is small).** Everything a study method *seemed* to need, the foundation now
 provides generically, so Flashcards owns exactly two things: `[INTENT: ADR-005 §3.2]`
-- **the card as a reviewable content unit** (front/back/hint/explanation + media + card type + universal
-  tags + note links), and
+- **the card as a reviewable content unit** (front/back/hint/explanation + media + card type + `entity_tags`
+  (SP1) + note links via `entity_links`), and
 - **the drill interaction**, run as a `review_session` (ADR-004).
 
 Everything else belongs to the foundation:
@@ -31,8 +31,8 @@ Everything else belongs to the foundation:
 objects (memorize seeds, KN-4), Book quotes, and notes — so "make flashcards from this" is a capture path
 into knowledge, not just manual authoring. `[INTENT: Victor 2026-07-12; FACT: v1 source_note_id — entities.ts L1272]`
 
-**Universal citizen.** A card participates in the platform's universal systems: the **tag system**, **notes/
-pages links** (`entity_links`), and attachments — never an island. `[INTENT: Victor 2026-07-12]`
+**Universal citizen.** A card participates in the platform's universal systems: the shared **`entity_tags`**
+tag primitive (SP1), **notes/pages links** (`entity_links`, SP4), and attachments — never an island. `[INTENT: Victor 2026-07-12; ADR-006 SP1]`
 
 **What it is NOT.** `[INTENT — anti-scope-creep, constitution §1]`
 - **Not its own module**, and **not under Learning** — it lives inside Knowledge.

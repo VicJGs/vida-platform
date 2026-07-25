@@ -26,8 +26,8 @@
   object/container hierarchy (grouping) + `entity_links` graph. `[FACT: knowledge/structure-data.md]`
 - **Sessions & Scheduling:** `review_session` sub-type (run) + reads Knowledge's `dueIn` for the queue (SS-7).
   `[FACT: ADR-004]`
-- **Notes & Pages:** `entity_links` to notes/pages · the **universal tag system** · attachments (card media).
-  `[FACT: notes-and-pages; ADR-005 §3.1(6)]`
+- **Notes & Pages:** `entity_links` to notes/pages (SP4) · the shared **`entity_tags`** tag primitive (SP1) · attachments (card media).
+  `[FACT: notes-and-pages; ADR-006 SP1; ADR-005 §3.1(6)]`
 - **Education:** as a **measurement source** — retention outcomes feed object mastery, one of Education's
   3 signals (KN-10). Flashcards emits; Education/Knowledge read. `[FACT: education/contract.md; KN-10]`
 - **Gamification / Journal:** via `review_session` effects (XP, daily Journal) — ADR-004, not owned here.
