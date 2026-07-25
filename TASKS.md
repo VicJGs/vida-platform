@@ -6,12 +6,23 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-25 | **✅ PART 1 COMPLETE — EXIT GATE ACCEPTED (2026-07-25).** Parts 0 + 1.0–1.4 done. The exit gate (quality-gate-foundation + 6 independent adversarial critics over the whole corpus) returned REVISE → the `preferences` blocker (mis-triaged "aligned", never re-run; missing E9/N6/N7 + ADR-014 Layer-3) was fixed via a LITE-gated Tier-2 re-run (plan SHIP + post-impl SHIP), plus knowledge SP1 fill + gamification PII reconcile + cosmetics. **34/34 docs aligned, corpus-wide zero forward-stale, cross-consistency AGREE.** No `/adr-new` owed (preferences received existing ADR decisions). **NEXT = Part 2 (repository structure from the realigned docs — forward-declared, earns its own gate-1; likely ADR-018)** → Part 3 (roadmap resequence). |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-25 | **✅ PARTS 1 + 2 COMPLETE — both exit gates ACCEPTED (2026-07-25).** Part 1 = docs realignment (34/34 aligned). **Part 2 = repository structure: full double-gate + both exit lenses (independent critic ACCEPT + quality-gate-foundation PASS); `@vida/core` re-derived from docs via ADR-018 (`foundation/` substrate tier + kept `services/` tier; v1 monolith quarantined/unwired; build 8/8 + typecheck 10/10 green; structure only, ADR-017). Commits f63786e/e45a081/56d56c5 on `feat/part-2-repository-structure`.** **NEXT = Part 3 (build roadmap resequence — forward-declared, earns its own gate-1; scenario = Build Roadmap).** |
 
 ## 🧭 Next session
 
-**✅ PART 1 COMPLETE — EXIT GATE ACCEPTED (2026-07-25). NEXT = Part 2 (repository structure).**
-Documentation realignment is done and accepted: 34/34 docs aligned, corpus-wide zero forward-stale, cross-consistency AGREE.
+**✅ PARTS 1 + 2 COMPLETE — both exit gates ACCEPTED (2026-07-25). NEXT = Part 3 (build roadmap resequence).**
+Part 1 (docs realignment, 34/34 aligned) + Part 2 (repository structure — `@vida/core` re-derived from docs per ADR-018;
+`foundation/`+`services/` skeleton; v1 monolith quarantined/unwired; build+typecheck green) are both done and accepted.
+
+**FIRST ACTION next session — Part 3.0 planning (its own gate-1):** Part 3 is FORWARD-DECLARED (scenario = Build Roadmap).
+Rewrite `docs/roadmap.md` features-first off the realigned docs + the new repo structure: capture build intent (first
+deliverable + [RP] + goals), dependency map + cluster decomposition, foundation gate + independent critic, then projectize
++ gated `/track-sync`. Read first on resume: `realignment-master-plan/_index.md` (Part-3 forward-declaration) + ADR-017
+(features-first, what Part 3 sequences) + the now-realigned `docs/roadmap.md`.
+
+**Open Q for Part 3.0:** the "RP" abbreviation (first deliverable) — still `[UNKNOWN]`, resolve at Part 3.0.
+
+**Branch:** Part 2 committed on `feat/part-2-repository-structure` (f63786e/e45a081/56d56c5). Merge to `main` when ready.
 
 **FIRST ACTION next session — Part 2.0 planning (its own gate-1):**
 Part 2 is FORWARD-DECLARED, not yet detailed — it earns its own gate-1 plan before execution (per the master-plan

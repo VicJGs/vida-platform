@@ -1,7 +1,7 @@
 # Part 2 — Repository Structure (gate-1 PLAN)
 
 **Type:** planning (foundation) — the Part-2 gate-1 forward spec that the master-plan forward-declared. This is the **SPEC (gate 1)**: the target structure + disposition ledger + decisions. The execution steps are the **IMPLEMENTATION-PLAN (gate 2)**, authored after Approval 1.
-**Status:** ✅ **IMPLEMENTED (both approvals cleared 2026-07-25).** U2 `f63786e` + U3 `e45a081`; build + typecheck green. See IMPLEMENTATION-PLAN §4. Awaiting Part-2 exit gate (quality-gate-foundation + independent critic + Victor acceptance).
+**Status:** ✅ **COMPLETE — EXIT GATE ACCEPTED (Victor 2026-07-25).** U2 `f63786e` + U3 `e45a081` + housekeeping `56d56c5`; build + typecheck green. Both exit lenses cleared: independent critic = ACCEPT (0 blocking), quality-gate-foundation = PASS. Part 2 closed → Part 3 next.
 **Date:** 2026-07-25 · **Task:** build-roadmap-resequence (foundation-realignment campaign) · **Part:** 2 of 3
 **Scenario:** Repository Structure (runs under the master-plan Part-2 framing + §XXVI full double-gate).
 **Grounded in (No-Guessing inputs):**

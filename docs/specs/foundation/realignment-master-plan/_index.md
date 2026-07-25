@@ -1,7 +1,7 @@
 # Master Plan: Vida Platform Foundation-Realignment Campaign
 
 **Type:** planning (foundation) — the master gating + phasing system for the whole realignment.
-**Status:** ✅ **PART 1 COMPLETE — EXIT GATE ACCEPTED (2026-07-25, Victor).** Part 0 + Parts 1.0/1.1/1.2/1.3/1.4 all done; the Part-1 exit gate ran both lenses (foundation quality-gate + independent adversarial critics over the whole corpus) → verdict REVISE (1 blocker: `preferences` never re-run — sweep row-24 mis-triaged "aligned"→ actually stale-by-omission on E9/N6/N7 + ADR-014 Layer-3) → fixed (preferences Tier-2 re-run, LITE-gated: plan SHIP + post-impl SHIP; knowledge SP1 fill; gamification PII half-line; cosmetics) → re-verified: **34/34 docs aligned, corpus-wide zero forward-stale confirmed, cross-consistency AGREE**. **Next: Part 2 (repository structure) — forward-declared, earns its own gate-1.** Part 3 (build roadmap) after Part 2 exits.
+**Status:** ✅ **PARTS 1 + 2 COMPLETE — both exit gates ACCEPTED (Victor).** Part 1 (docs realignment, 34/34 aligned, zero forward-stale) accepted 2026-07-25. **Part 2 (repository structure) accepted 2026-07-25** — full double-gate + both exit lenses (independent critic ACCEPT + quality-gate-foundation PASS); `@vida/core` re-derived from the docs (ADR-018: `foundation/` substrate tier + kept `services/` tier; v1 monolith quarantined + unwired; build/typecheck green; structure only). **Next: Part 3 (build roadmap resequence) — forward-declared, earns its own gate-1.**
 **Date:** 2026-07-23  ·  **Session:** build-roadmap-resequence (reframed as this campaign; the roadmap resequence becomes Part 3)
 **Grounded in:** `docs/specs/foundation/current-state-baseline/baseline.md` (the ground-truth input).
 **Critique:** independent adversarial pass logged blocking B1–B4 + N1–N4; all incorporated in this revision (see Change Log).
@@ -89,7 +89,7 @@ A failed predicate = a **gap**, filled by context (docs/ADRs) or by Victor's exp
 
 **Exit gate:** ✅ PASSED (2026-07-25) — `victor:quality-gate-foundation` + 6 independent adversarial critics (per-cluster, live-doc audit) + Victor acceptance. REVISE→fixed→re-verified; 34/34 aligned, zero forward-stale. Part 1 done.
 
-## PART 2 — Repository structure from documentation  *(✅ IMPLEMENTED 2026-07-25 — awaiting exit-gate acceptance)*
+## PART 2 — Repository structure from documentation  *(✅ COMPLETE — EXIT GATE ACCEPTED 2026-07-25, Victor)*
 
 **Done:** gate-1 PLAN (`docs/specs/foundation/part-2-repository-structure/_index.md`, critique+preflight grounded) → Approval 1 → **ADR-018** (`foundation/` substrate tier + kept `services/` per-module tier; `models/` dissolved into `@vida/types`; v1 `schema.ts`+`001_initial.ts` quarantined to `db/_legacy/`; dead `web-adapter.ts` → `Old/`; `runner.ts` registry emptied) + IMPLEMENTATION-PLAN → gate-2 critique SHIP → Approval 2 → executed as U2 (`f63786e`) + U3 (`e45a081`). **12 foundation/ substrate dirs (incl `effects/`) + 19 services/ module dirs, each with a layer-doc; `pnpm build` 8/8 + `pnpm typecheck` 10/10 exit 0; 0 tables/DDL authored (structure only, per ADR-017); 0 consumers resolve to v1.** Exit-gate independent critic = **ACCEPT** (no blocking). **Pending: Victor exit-gate acceptance** → then Part 3.
 

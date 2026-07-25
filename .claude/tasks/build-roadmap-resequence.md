@@ -1,6 +1,6 @@
 # Task: build-roadmap-resequence
 # Profile: Project Foundation Setup
-# Scenario: Documentation Realignment (Part 1 methodology; Build Roadmap = Part 3, later)
+# Scenario: Build Roadmap (Part 3 — NEXT; forward-declared, earns its own gate-1). Part 1 = Documentation Realignment [DONE]; Part 2 = Repository Structure [✅ COMPLETE, exit gate accepted 2026-07-25, commits f63786e/e45a081/56d56c5, ADR-018]. A dedicated `repository-structure` scenario is still OWED via /new-scenario (New Scenario Protocol — Part 2 reused the master-plan framing).
 # Spec: docs/specs/features/build-roadmap-resequence/_index.md
 # Created: 2026-07-23
 # Status: in-progress

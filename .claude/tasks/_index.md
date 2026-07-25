@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-- build-roadmap-resequence: .claude/tasks/build-roadmap-resequence.md  (in-progress 2026-07-25 — Project Foundation / foundation-realignment campaign; **✅ PART 1 COMPLETE — EXIT GATE ACCEPTED** (34/34 docs aligned, zero forward-stale; gate caught + fixed the `preferences` stale-by-omission miss + knowledge SP1 + gamification PII); **next = Part 2 (repository structure), forward-declared → earns its own gate-1** (likely ADR-018), then Part 3 roadmap; cluster General_Vida)
+- build-roadmap-resequence: .claude/tasks/build-roadmap-resequence.md  (in-progress 2026-07-25 — Project Foundation / foundation-realignment campaign; **✅ PARTS 1 + 2 COMPLETE — both exit gates ACCEPTED**. Part 1 = docs realignment (34/34 aligned). Part 2 = repository structure (ADR-018: `foundation/`+`services/` re-derived from docs; v1 monolith quarantined/unwired; build+typecheck green; commits f63786e/e45a081/56d56c5). **Next = Part 3 (build roadmap resequence), forward-declared → its own gate-1, scenario = Build Roadmap**; cluster General_Vida)
 
 ## Parked / Superseded
 - db-2-sync-metadata-columns: .claude/tasks/archive/db-2-sync-metadata-columns.md  (PARKED 2026-07-23 — superseded by ADR-017 features-first resequencing; HLC/sync-metadata work defers with the sync engine to the hardening pass; baseline done, no code written; Linear LIF-64 → Backlog)
