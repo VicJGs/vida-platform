@@ -55,15 +55,15 @@
 ## Single source of truth (constitution §3)
 - **Contact stats** (`last_interaction_date`/`interaction_count`/`next_contact_date`) derive from the
   interactions ledger + stay-in-touch cadence (RL-3) — never a second stored truth.
-- **Health** is derived, closeness-weighted (RL-5) — never persisted as authority.
+- **Health** is derived, closeness-weighted (RL-5) — never persisted as authority; it is a **derived analytic, not an M-pursuable** (contacts are ADR-011-excluded reference data — no `measurement_kind`/`binding_mode`). `[INTENT G4; ADR-011 M1 exclusion]`
 - Enums (`RelationshipType`, `InteractionType`, `Sentiment`, `ContactEventType`, `Frequency`) — string-literal
   unions + SQL CHECK + Zod, declared once. `[FACT: relationship.ts L13-36]`
-- Tags resolve to the shared (scoped) vocabulary (RL-10), not inline. `[INTENT G10]`
+- Tags resolve to the shared **`entity_tags`** primitive (SP1, `entity_type='contact'`) with `parent_tag_id` nesting (SP3), not the inline `contacts.tags` JSON (RL-10, As-is floor); the "universal-vs-module scope" refinement is Notes-&-Pages-owned. `[INTENT G10; ADR-006 SP1/SP3]`
 
 ## ADRs / structural decisions
 - **ADR-002 §5.9** — the 6 tables (authoritative). **ADR-001** — RQ+Zustand state, Sigma.js graph. **ADR-003** — LWW.
-- ⚠ **Surfaced decision:** networks + closeness + restored fields + event-anchored group reminders + tag scoping
-  → **ADR-002 amendment** (+ the tag-system refinement noted under Notes & Pages). `[INTENT G2,G4,G8,G10,G11]`
+- **Foundation subject-set (R6):** this doc is subject to **ADR-006** (SP1/SP3 tags), **ADR-013** (N1/N2 reminder→notification delivery), **ADR-014** (X1/X8 device-import ingestion) — beyond the As-is 002/001/003. Every new token is cited to its owning ADR; the code/table home is `[DEFERRED — build]`. **No ADR-011 (M\*):** contacts are framework-excluded reference data (health is derived, not measurable). `social_links` (typed JSON) is a live FACT that **stays** — not a tag concern.
+- ⚠ **Surfaced decision:** networks + closeness + restored fields + event-anchored group reminders + the `entity_tags` migration → **ADR-002 amendment** (+ the tag-system scope refinement noted under Notes & Pages). `[INTENT G2,G4,G8,G10,G11; ADR-006/013/014]`
 
 ## Completion checklist
 - [x] data model (6 tables) · [x] dep graph (independent domain, within budget) · [x] state + route map · [x] ADRs · [x] single source per cross-cutting concern · [x] [FACT/INTENT/INTERP] each claim
