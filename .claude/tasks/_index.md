@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-- build-roadmap-resequence: .claude/tasks/build-roadmap-resequence.md  (in-progress 2026-07-25 — Project Foundation / foundation-realignment campaign; Part 1.2 ✅ TIER-1 DONE (10) + Tier-2 6/7: ✅ routines, skills, learning/education, books, check-ins, fiscal-legal; **next = last Tier-2 unit `health/nutrition`**; then Tier 3 Part 1.3 arch docs; cluster General_Vida)
+- build-roadmap-resequence: .claude/tasks/build-roadmap-resequence.md  (in-progress 2026-07-25 — Project Foundation / foundation-realignment campaign; **✅ Part 1.2 COMPLETE — Tier-1 (10) + Tier-2 (7) = 17 units, 11 consecutive critique-clean**; **next = Part 1.3 (Tier 3) architecture-doc rewrites** `docs/core/architecture/*`, then Part 1 EXIT gate → Part 2 structure → Part 3 roadmap; cluster General_Vida)
 
 ## Parked / Superseded
 - db-2-sync-metadata-columns: .claude/tasks/archive/db-2-sync-metadata-columns.md  (PARKED 2026-07-23 — superseded by ADR-017 features-first resequencing; HLC/sync-metadata work defers with the sync engine to the hardening pass; baseline done, no code written; Linear LIF-64 → Backlog)

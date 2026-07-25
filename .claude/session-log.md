@@ -3030,3 +3030,62 @@ Next session (resume from here):
     5 aspect docs + a sibling PLAN as the format template. Per-unit loop: see the fiscal-legal / check-ins entries.
   - After health/nutrition → TIER-2 DONE → Tier 3 = Part 1.3 architecture-doc rewrites.
 ═══════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION — 2026-07-25 (cont.) — Part 1.2 Tier-2 · health/nutrition → ✅ PART 1.2 COMPLETE
+═══════════════════════════════════════════════════════════════════════════
+Task: build-roadmap-resequence (foundation-realignment master campaign) · Profile: Project Foundation Setup
+Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+
+Goal: Close Part 1.2 Tier-2 — re-run the last unit `health/nutrition`.
+
+Completed this session (2 units — fiscal-legal + nutrition; 10th + 11th CONSECUTIVE critique-clean):
+  6. finance/fiscal-legal  (Tier-2; lightest — pure-gap + net-new)                 — commit a26c421
+  7. health/nutrition      (Tier-2; LAST — fiscal-legal's twin + 1 SP1 reframe)    — commit d4e2cad
+  → ✅ PART 1.2 COMPLETE: Tier-1 (10) + Tier-2 (7) = 17 units, 11 consecutive critique-clean.
+
+Why health/nutrition:
+  - Fiscal-legal's near-twin: net-new / schema-0 (grep — schema.ts 81 tables, zero health/nutrition/meal/food),
+    pure-gap on the X*/AI* families. PLUS one added driver (006, tags) → one SP1 forward-token reframe.
+  - The doc declared an inline `meals.tags` in the INTENDED model (structure-data L27) while HN-12/L37 said
+    "Spaces universal tags" — an internal inconsistency (F1). Reframed to `entity_tags`; because net-new
+    (no live floor), a FORWARD [INTENT] correction, NOT an R6 two-tier retirement (the handoff's "may have a
+    tag floor" warning resolved by the grep — there is none).
+  - Closed the three driver gaps: (015) AI6 source=ai on every AI-generated row + AI1/AI3/AI5 layering;
+    (014) food-DB X1/X2/X3/X5 ("Health food-DB" verbatim) + photo X11 ("Health photo" verbatim);
+    (006) SP1 forward-reframe (inline meals.tags → entity_tags) + SP2 open registry.
+  - Guards: C1 no measurability (composes Core's health_goals, HN-4 — 011 not a driver), C2 no economy,
+    C3 a meal is NOT a session (HN-2 — the inverse of health/training), C4 AI4-NA (scoped fail→manual
+    generation, not agentic), C5 functional/whole-food taxonomy untouched (editable starter, R2).
+
+Campaign state: **✅ PART 1.2 COMPLETE (Tier-1 10 + Tier-2 7 = 17 units, 11 consecutive critique-clean).**
+  Parts 0 + 1.0 + 1.1 + 1.2 all done. NEXT = Part 1.3 (the architecture-doc rewrites), then the Part-1 EXIT gate.
+
+Reusable patterns established across Part 1.2 (the campaign's methodology library):
+  - X*/AI* ingest layering (skills → education/books/fiscal-legal/nutrition): public-reference X2 + device-mediated
+    X1 + whole-set X3 + external_in_ok/external_out_ok X5 + X11 splits the LLM to ADR-015 (AI1 modes, AI3
+    egress+scope-min, AI5 untrusted-content provenance, AI6 source=ai); AI4 ONLY for a true agentic actor
+    (ruled NA 4× — education, books, fiscal-legal, nutrition; the "on-device agentic" wording = AI1's mode label).
+  - M1/M2 measured framing (skills, education): a non-pursuable module references the measurement_kind taxonomy
+    in-config + puts the pursuable on its Purpose/target owner; the DECOMPOSITION (education) — flat enum →
+    measurement_kind × binding_mode.
+  - S1 reframe (books): a module's "own session entity" = the RETIRED standalone anti-signal → base sessions
+    sub_type + 1:1 extension keyed session_id.
+  - E9 god-table split (check-ins): cross-owner columns split to each owner.
+  - PURE-GAP + NET-NEW token-naming (fiscal-legal, nutrition): a schema-0, already-ADR-aware doc → the re-run is
+    a pure token annotation (no R6, no floor, no contradiction) — the lightest unit type. A forward-only inline
+    anti-signal (nutrition's meals.tags) is a forward reframe, still not R6 (no live floor).
+  - GREP THE LIVE SCHEMA FLOOR FIRST — proven across the whole tier; the structure-data-only sweep scoring
+    undersells mixed cases (education/books hid live tokens) and over-warns net-new ones (nutrition's "may have
+    a tag floor" → none). The grep is the arbiter, not the label.
+
+Next session (resume from here):
+  - FIRST ACTION: Part 1.3 (Tier 3) — the architecture-doc rewrites (`docs/core/architecture/*`, 4 stale + 4
+    partial per the sweep). This is a DIFFERENT shape from the per-context units: the arch docs are cross-cutting
+    (whole-system, not one feature), so the re-run realigns them against the now-realigned 17 contexts + the ADRs.
+  - CONFIRM the Part-1.3 methodology with Victor before starting — 8 cross-cutting docs may warrant a small plan
+    of its own (distinct from the per-unit LITE loop). Read first: staleness-sweep.md (the 8 arch-doc rows) +
+    realignment-master-plan/_index.md (the Part-1.3 definition) + the arch docs themselves.
+  - After Part 1.3 → Part 1 EXITS through the foundation quality gate + independent adversarial critic (scenario
+    Step 6, victor:quality-gate-foundation) → then Part 2 (structure) → Part 3 (roadmap resequence).
+═══════════════════════════════════════════════════════════════════════════
