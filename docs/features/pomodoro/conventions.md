@@ -16,8 +16,8 @@
 - **Read config from Preferences; never hard-code 25/5/15/×4 or duplicate it.** `pomodoro_*` +
   `auto_start_* / show_notifications / play_sounds` are the single source. `[FACT: ADR-002 L3497-3500]`
 - **Fire effects through the Session Integration Contract — never a direct write.** Time → Tasks `log_time`
-  (→ `task_time_logs`, TK-5); XP → `award_xp`; dashboard → `surface_journal`. Permission-check (`canTouch`)
-  before every effect (§6 + SS-6). Pomodoro adds **no** cross-module write of its own. `[FACT: Sessions contract; TK-5]`
+  (→ `task_time_logs`, TK-5); XP → `award_xp` (S4 effect; ADR-012 generalizes → `grant_currency(XP)` E2 → `consequence_ledger` E3 — never `xp_history`); dashboard → `surface_journal`. Permission-check (`canTouch`)
+  before every effect, idempotent via R1 (§6 + SS-6). Pomodoro adds **no** cross-module write of its own. `[FACT: Sessions contract; TK-5; INTENT ADR-012 E2/E3]`
 - **Analytics are read-time.** Compute focus stats from the session log (SS-12); no synced Pomodoro aggregate
   table. `[FACT: Sessions SS-12]`
 - **Persist boundaries, not ticks.** The per-second countdown is Zustand-only; only interval start/pause/

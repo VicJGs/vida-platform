@@ -28,7 +28,7 @@ Integration-Contract effects (Sessions `contract.md`; ADR-004 §3.2):
 | Effect | Target | Integration point | Rule |
 |---|---|---|---|
 | `log_time(task\|project)` | Tasks / Projects | Tasks time API → `task_time_logs` | one ledger, per-task opt-out (PD-9 / TK-5) |
-| `award_xp` | Gamification (Wave 4) | `xp_history` write | stub now; Gamification sets the value (PD-10) |
+| `award_xp` (ADR-012 generalizes → `grant_currency(XP)`, E2) | Gamification (Wave 4) | `consequence_ledger` (E3, Gamification-owned) | stub now; Gamification sets the value; Pomodoro writes neither directly (R2) (PD-10) |
 | `surface_journal` | Journals | daily `/summary` focus feed | PD-10 |
 | `surface_calendar` | Global Calendar | block render (if the session was planned) | inherits Sessions |
 
@@ -50,7 +50,7 @@ All go through each module's documented write API — **never a direct table wri
   lifecycle/permissions), the base `sessions` spine (`session_id`, analytics). Pomodoro is a *client* of this. `[FACT: Sessions contract §1-2]`
 - **Preferences** — `pomodoro_*` interval config + `auto_start_* / show_notifications / play_sounds` (PD-3/PD-7). `[FACT: ADR-002 L3497-3500]`
 - **Tasks** (via the Session `log_time` effect) · **Journals** (`surface_journal`) · **Gamification**
-  (`award_xp`, Wave 4) · **Health/Books/etc.** (Focus Mode tools, per session type).
+  (`award_xp` S4 effect, ADR-012-generalized → `grant_currency(XP)` E2 → `consequence_ledger` E3, Wave 4) · **Health/Books/etc.** (Focus Mode tools, per session type).
 
 ## Contract error cases (typed)
 - `NoFocusSession` — `startFocus` given no `session_id` and Session creation failed → explicit, never a silent

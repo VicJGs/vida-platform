@@ -62,5 +62,5 @@ the `focus` sub-type + Integration Contract — Pomodoro is its runtime) · `[[.
 (the 4-dimension contract Pomodoro's reach rides) · `[[../tasks/identity]]` (task→focus-Session→`log_time`,
 TK-5) · `[[../notes-and-pages/identity]]` (`/pomodoro` widget = a session lens) · `[[../health/training/identity]]`
 (workout Focus Mode tools) · Preferences (interval config) · Journals (`/summary` focus feed) · Gamification
-(`award_xp` on completion, Wave 4).
+(`award_xp` on completion — the ADR-004 §3.2.2 S4 effect, which ADR-012 generalizes → `grant_currency(XP)` (E2) → `consequence_ledger` (E3, Gamification-owned), Wave 4).
 </content>
