@@ -17,8 +17,10 @@
   modules via `total_modules`/`completed_modules`.
 - **Schedule & sessions (⚠ INTENDED):** `setSchedule(subjectId, source: ics|document|manual, data)` (ED-5) ·
   `getWeeklySchedule(range)` → sessions across subjects (My-Week, ⚠ immature) · `listSessions(subjectId)`
-- **ICS (FACT base):** `addFeed(url, {default_course_id?, auto_create_sessions?})` · `syncFeed(id)` (device-side,
-  ED-6) · `matchEvent(eventId, subjectId)` · `ignoreEvent(eventId)` `[FACT: §5.18]`
+- **ICS (FACT base):** `addFeed(url, {default_course_id?, auto_create_sessions?})` (a user-added URL = X2
+  `user-managed`, under `external_in_ok` X5) · `syncFeed(id)` (device-mediated, X1; add-only dedup `UNIQUE(feed_id,uid)`
+  + `ignoreEvent` = X8, never delete) · `matchEvent(eventId, subjectId)` · `ignoreEvent(eventId)` `[FACT: §5.18;
+  ADR-014 X1/X2/X5/X8]`
 - **Grading systems (⚠ INTENDED, ED-7):** `createGradingSystem(scope: institution|program|subject, {scale,
   components:[{type, weight, points}]})` · `computeGrade(subjectId)` · `computeGPA(termId|curriculumId)`
 - **Assessments (⚠ INTENDED, ED-8):** `createAssessment(subjectId, {type: exam|quiz|test|presentation|work,
@@ -27,16 +29,21 @@
   `listEducationTasks(subjectId|all)` · education-scoped task UI.
 - **Vault (⚠ INTENDED, ED-13):** `addDocument(subjectId, file)` (inline/R2) · `getVault(subjectId)` → docs +
   notes together.
-- **Measurement (⚠ INTENDED, ED-10):** `setMeasurement(subjectId|programId, {type: grade|deliverable|goal|
-  manual|count, source})` · `getProgress(ref)` — Education-forged entity.
+- **Measurement (⚠ INTENDED, ED-10):** `setMeasurement(subjectId|programId, {measurement_kind, binding_mode, source})`
+  — the bespoke `grade|deliverable|goal|manual|count` decomposes to `measurement_kind` × `binding_mode` (M1/M2, the
+  Projects axes) · `getProgress(ref)` derives-on-read (M3, nullable override) — Education-forged entity, separate
+  storage. `[INTENT ED-10; ADR-011 M1/M2/M3]`
 
 ## What it consumes (outside dependencies)
 - **Tasks** — the dedicated Tasks→Education API (homework/education-tasks; TK-9-compliant). `[INTENT H4]`
 - **Notes & Pages** — notes on Program/Curriculum/Subject (in-vault)/session via `pages` (`course` is a valid
   target today; new entity_types with the amendment). `[FACT: ADR-002 L1344; INTENT H11]`
-- **Shared scoped tags** — Education scope, on Program/Curriculum/Subject. `[INTENT H11]`
+- **Shared scoped tags** — via `entity_tags` (SP1), Education scope, on Program/Curriculum/Subject; retires inline
+  `courses.tags`. `[INTENT H11; ADR-006 SP1]`
 - **Preferences** — Subjects-vs-Courses display name (visual only), view defaults, sync intervals. `[INTENT H9]`
-- **⚠ Extension layer (deferred):** document extraction (syllabus→schedule/assessments) — AI-agentic, opt-in.
+- **⚠ Extension layer (deferred):** document extraction (syllabus→schedule/assessments) — a **scoped extract**
+  (opt-in), model call split to ADR-015 (X11), `on_device`/`cloud` (AI1), untrusted-syllabus provenance bounded
+  (AI5), auto-recorded rows carry `source=ai` (AI6); **not** an AI4 agent. `[ADR-014 X11; ADR-015 AI1/AI5/AI6]`
 
 ## Fed by / Consumed by
 - **Hub for the Learning siblings:** **Sessions & Scheduling** (own foundation module since 2026-07-12)

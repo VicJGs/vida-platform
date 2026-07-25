@@ -21,11 +21,16 @@
   weekly schedule renders from sessions; assessments/grades/documents/homework/notes attach to the **Subject**,
   never to a session. Retake = new subject row in a new term. `[INTENT H5]`
 - **ED-5 — The subject schedule is the single source (⚠ INTENDED).** Each Subject has one `subject_schedule`,
-  fed by exactly three methods: **ICS sync** (device-side, now) · **document extraction** (⚠ deferred,
-  AI/extension) · **manual shaping**. Sessions + the weekly view derive from it. `[INTENT H7]`
-- **ED-6 — ICS is device-side and idempotent.** Feeds fetch on the device every `sync_interval_hours`; events
-  dedup by **UNIQUE(feed_id, uid)**; events match per **Subject**; unmatched events are held, `is_ignored`
-  respected. The server never sees feed plaintext. `[FACT: §5.18 L3629; INTENT H8; FACT: ZK-1]`
+  fed by exactly three methods: **ICS sync** (device-side, now — ADR-014 X1) · **document extraction** (⚠ deferred —
+  a scoped extract whose model call splits to ADR-015 via X11: `on_device`/`cloud` modes AI1, cloud=egress+scope-min
+  AI3, the untrusted syllabus's provenance bounded AI5; **not** an AI4 agent) · **manual shaping**. Sessions + the
+  weekly view derive from it. `[INTENT H7; ADR-014 X1/X11; ADR-015 AI1/AI3/AI5]`
+- **ED-6 — ICS is device-side and idempotent.** Feeds fetch on the device every `sync_interval_hours` — a
+  device-mediated ingest (ADR-014 X1) of a user-added URL (the **X2 `user-managed`** layer) under `external_in_ok`
+  (X5); the feed is an **add-only feed** — events dedup by natural key **UNIQUE(feed_id, uid)** + `is_ignored`, never
+  delete (**X8**, already conforms); events match per **Subject**; revoking a feed stops future fetch but keeps
+  synced events (X9); the feed→events shape is a declared normalization contract (X10). The server never sees feed
+  plaintext. `[FACT: §5.18 L3629; INTENT H8; FACT: ZK-1; ADR-014 X1/X2/X5/X8/X9/X10]`
 - **ED-7 — Grades compute against a user-shaped grading system (⚠ INTENDED).** A `grading_system` (per
   institution / self-taught program / overridden per subject) defines **weighted components** (homework · tasks ·
   exams · quizzes · tests · presentations · works — each with own weight/points, per professor) and the scale
@@ -33,17 +38,19 @@
   assessments through the system — never hand-set as truth. `[INTENT H3]`
 - **ED-8 — Assessments belong to Subjects (⚠ INTENDED).** Types: exam · quiz · test · **presentation** ·
   **work** (catch-all). Each carries date, weight/points (per the grading system), **modality**
-  (online / physical presence), and grade. Auto-recordable from ICS now; from documents later (ED-5).
-  `[INTENT H5 addendum]`
+  (online / physical presence), and grade. Auto-recordable from ICS now; from documents later (ED-5) — rows
+  auto-recorded from extraction carry **`source=ai`** (ADR-015 AI6). `[INTENT H5 addendum; ADR-015 AI6]`
 - **ED-9 — Homework is an education-task in the Tasks Universe (⚠ INTENDED).** A dedicated entity scoped ONLY to
   Education, owned by Tasks, consumed via the **Tasks→Education API** (the Project-Tasks pattern, TK-9-compliant).
   `[INTENT H4]`
 - **ED-10 — Progress is measured, not counted, and Education-forged (⚠ INTENDED).** Subjects/Programs measure
-  progress via the multi-type pattern (grade-derived · deliverable · goal · manual · count) in an
-  **Education-only measurement entity** — same PATTERN as Projects (PJ-4), **separate storage/purpose** (never
-  mixed). Derived, cached, recomputed. `[INTENT H12]`
+  progress in an **Education-only measurement entity** — same axes as Projects (PJ-4), **separate storage/purpose**
+  (never mixed): the multi-type pattern decomposes to **`measurement_kind`** (M1 — deliverable→`milestone`,
+  count→`quantitative`, goal→the target's kind) × **`binding_mode`** (M2 — grade-derived→`derived-pull`,
+  manual→`manual`), not a flat 5-way enum. Progress is a nullable override (`NULL ⇒ derive`, M3), derived/cached/
+  recomputed — never a `NOT NULL DEFAULT 0` counter. `[INTENT H12; ADR-011 M1/M2/M3]`
 - **ED-11 — Curricula are user-shaped and forkable (⚠ INTENDED).** The user inputs his institution's / a
-  program's default curriculum as a BASE (local seed / imported — device-side, ZK) and **forks** it (deep copy +
+  program's default curriculum as a BASE (local seed / imported — device-mediated, ADR-014 X1, ZK) and **forks** it (deep copy +
   lineage pointer) or builds from scratch. Formal curricula are institution-bounded; self-taught curricula are
   fully user-directed. Template edits never mutate the base. `[INTENT A3, H10]`
 - **ED-12 — Terms are hierarchical time containers (⚠ INTENDED).** year ⊃ semester ⊃ term (type/level + optional
@@ -54,8 +61,9 @@
   partial data gracefully and invite increments — never demand completeness. `[INTENT H9.8]`
 - **ED-15 — Defaults before personalization.** Every personalizable view ships a sensible default schema so the
   user "does not get lost and waste time personalizing instead of doing." `[INTENT H9 principle]`
-- **ED-16 — Local-first; shared scoped tags.** Every write succeeds locally first (LWW); tags via the shared
-  vocabulary scoped to Education, on Program/Curriculum/Subject. `[FACT: LF-2/ADR-003; INTENT H11]`
+- **ED-16 — Local-first; shared scoped tags.** Every write succeeds locally first (LWW); tags via the **`entity_tags`**
+  primitive (`tag_id, entity_type, entity_id`, ADR-006 SP1) scoped to Education, on Program/Curriculum/Subject —
+  retiring the inline `courses.tags` (As-is floor). `[FACT: LF-2/ADR-003; INTENT H11; ADR-006 SP1]`
 
 ## Validation & edge cases
 - Enum CHECKs (current): `course_type`{online,in_person,hybrid,self_paced}, `status`{not_started,in_progress,
@@ -92,8 +100,11 @@ yet): `institutions` · `self_taught` · `programs` · `curricula`(+lineage) · 
 subject vault · Education measurement entity · subjects reinterpretation of `courses` (+ `course_type`
 reconciliation). Design passes required: **measurement pattern** (shared with Projects, separate forges) and the
 **grading-system component model**. INTENDED-immature views: My-Week · cross-subject assessments · GPA report.
-Deferred (extension/AI): document extraction/auto-record. Live invariants today: ED-1, ED-6 (schema), ED-16.
-`[FACT: ADR-002 §5.10/§5.18; INTENT: intake]`
+Deferred (extension/AI): document extraction/auto-record. **Driver-token realignment (Part 1.2):** retire inline
+`courses.tags`→`entity_tags` (SP1) + `courses.progress NOT NULL DEFAULT 0`→nullable-override (M3) [the two live-FACT
+reframes]; decompose ED-10's measurement enum→`measurement_kind`×`binding_mode` (M1/M2); name the ICS X* layering
+(X1/X2/X5/X8/X9/X10) + document-extraction AI* (X11→AI1/AI3/AI5/AI6, not AI4). Live invariants today: ED-1, ED-6
+(schema), ED-16. `[FACT: ADR-002 §5.10/§5.18; INTENT: intake; ADR-006/011/014/015]`
 
 ## Completion checklist
 - [x] invariants with [FACT/INTENT] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged
