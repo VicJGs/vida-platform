@@ -6,12 +6,16 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS — ✅ ALL of TIER-1 DONE (10 units)**: notes-and-pages (Tier-0 hub) + sessions-and-scheduling + projects + health/core + habits + finance + tasks + relationships + pomodoro + knowledge/flashcards (last 4 = 4 consecutive critique-clean units). Next: **Tier 2 gap-fills** (learning/education, books, skills, check-ins, finance/fiscal-legal, health/nutrition, routines) → then Tier 3 arch docs (Part 1.3) |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS — ✅ TIER-1 DONE (10 units) + TIER-2 STARTED: ✅ routines** (5th consecutive critique-clean unit; commit cab2bfe). Tier-1: notes-and-pages (Tier-0 hub) + sessions-and-scheduling + projects + health/core + habits + finance + tasks + relationships + pomodoro + knowledge/flashcards. Tier-2 remaining: learning/education, books, skills, check-ins, finance/fiscal-legal, health/nutrition → then Tier 3 arch docs (Part 1.3) |
 
 ## 🧭 Next session
 
-**Part 1.2 Tier-1 is COMPLETE (10 units). Next is Tier 2 — the gap-fill group** (`learning/education`, `books`,
-`skills`, `check-ins`, `finance/fiscal-legal`, `health/nutrition`, `routines`): these are **gap** verdicts (no forward
+**Part 1.2 Tier-1 COMPLETE (10 units). Tier-2 STARTED — ✅ `routines` done** (5th consecutive critique-clean;
+commit cab2bfe). **Refinement worth carrying:** routines' sweep verdict was **stale** (row 13), NOT gap — it is the
+sibling of habits (one live-FACT retirement M7 `purpose_routines`→`contributions` + additive M1/M2/E2/SP1), the
+*lightest* such unit because the orchestration reframe already landed (2026-07-14 §E). So the "Tier-2 = all gap" handoff
+was imprecise: **grep each Tier-2 unit's sweep row before assuming `gap`.** **Tier-2 remaining** (`learning/education`,
+`books`, `skills`, `check-ins`, `finance/fiscal-legal`, `health/nutrition`): mostly **gap** verdicts (no forward
 anti-signal, but silent on ≥1 applicable X*/AI*/M*/E2 contract — additions, lower-risk than the wrong-model stales). Same
 per-unit LITE loop (ground → refine sweep → PLAN → independent critique → approve → implement → grep-verify → commit).
 Read first: `staleness-sweep.md` (the target's row) + `capability-framework.md` (§3 predicates for its drivers) + the

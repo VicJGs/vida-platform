@@ -2545,3 +2545,67 @@ Next session (post-context-clear — READ THIS FIRST):
     (3) read ALL 5 aspects to refine the sweep's structure-data-only verdict (caught the hidden xp_history in
         pomodoro's contract; confirmed the "already conforms" reads in flashcards).
 ---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 TIER-2 START — `routines` (sweep row 13, stale verdict; sibling of habits)
+Completed:
+  - `routines` re-run COMPLETE end-to-end (ground → refine → PLAN → adversarial critique → approve →
+    implement 5 aspects → grep-verified acceptance → commit). Commit cab2bfe.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/routines.md
+  - Edited all 5 aspect docs in docs/features/routines/.
+  - Grounding refined the framing: sweep row 13 verdict is **stale** (drivers 011/012/006), NOT `gap` — the
+    "Tier-2 = all gap" handoff was imprecise (routines is grouped in Tier-2 by processing order but is a
+    stale wrong-model unit, the sibling of habits). Carry-forward: grep each Tier-2 unit's sweep row before
+    assuming gap. THE LIGHTEST stale-with-live-floor unit — the heavy orchestration reframe already landed
+    (2026-07-14 §E, RT-1…RT-18), so only the driver tokens changed.
+  - Live schema (As-is floor): routine_actions:297, routine_completions:316, purpose_routines:421. Confirmed
+    absent: project_routines, inline tags column, page_tags, xp_history, award_xp, grant_currency.
+  - Changes: ONE live-FACT retirement (M7 purpose_routines→contributions, R6 two-tier) + additive naming
+    (M1/M2 measurement_kind='rate'×binding_mode='derived-pull' as new invariant RT-19; E2 grant_currency(XP)
+    →E3 consequence_ledger on the emitted completion event, RT-7 "never writes XP" preserved; SP1 entity_tags
+    token-naming — no floor since no tags column).
+  - LITE gate: independent adversarial critique (fresh code-aware subagent, prompted to refute) → SHIP /
+    0 blocking — FIFTH consecutive clean unit. The E2/S4 layering trap (the habits/finance B1) verified
+    non-firable for a STRUCTURAL reason: 004 is not a routines driver ("S1 passes") and M2 maps to
+    derived-pull (a read seam, no S4 write) vs habits' event-trigger — so grant_currency is never placed in
+    an S4 catalogue and routines names no award_xp. Every schema FACT + framework cite grep-verified exact;
+    under-scope sweep across all 5 aspects clean. 1 note folded (N1: two distinct Gamification seams — the
+    derived-pull measure Gamification READS vs the E2 grant riding the emitted completion event).
+
+Decisions:
+  - routines M1/M2 mapping: measurement_kind='rate' (completion frequency) × binding_mode='derived-pull'
+    (routine-level done is policy-computed over the completions ledger, RT-5/RT-14 — DELIBERATELY contrasts
+    habits' 'event-trigger'; a routine's completion is a policy computation over many step-completions, not a
+    single logged event). M4 UP-only (routine→purpose via contributions weight); the down-rollup (routine→
+    step) stays completion_policy, NOT the fractal Σ(child×weight). C5: M5 does NOT apply (routines absent
+    from M5's §4 applies-to set — the dueIn/summary provider seam RT-13 is the aligned mechanism, not an M5
+    measure source). C4: no S4 catalogue (004 not a driver; the completion→Gamification path is E2 only).
+
+Next session (post-context-clear — READ THIS FIRST):
+  - Campaign lives in: docs/specs/foundation/realignment-master-plan/_index.md (master plan) +
+    staleness-sweep.md (per-context verdict table + tier ordering — row 13 for routines just done) +
+    capability-framework.md (mechanical predicate instrument) + part-1.2-reruns/*.md (11 completed unit
+    PLANs — read routines.md or a sibling as the format template).
+  - FIRST ACTION: continue Part 1.2 TIER-2. Remaining units (sweep §"Part 1.2 tier 5"): learning/education,
+    books, skills, check-ins, finance/fiscal-legal, health/nutrition. **Grep each unit's sweep row first** —
+    routines proved the "all gap" label imprecise; some may be stale wrong-model. Suggested next:
+    `learning/education` (the heaviest gap-fill: X*/AI*/M*), OR a lighter one (books/skills/check-ins) to keep
+    momentum.
+  - Per-unit loop (unchanged): surface §XXVII path → ground (sweep row + framework §3 predicates for the
+    unit's drivers + all 5 aspect docs + grep the live schema for the As-is floor) → read ALL 5 aspects to
+    refine the sweep's single-aspect verdict → persist LITE-gate PLAN in part-1.2-reruns/ → independent
+    adversarial critique (fresh code-aware subagent, prompted to refute) → fix → Victor approval → implement
+    5 aspects → grep-verify acceptance → commit → update task file + TASKS.md + session-log.
+  - After Tier 2: Tier 3 = Part 1.3 architecture-doc rewrites (4 stale + 4 partial arch docs).
+  - REUSABLE DISCIPLINE (now proven across 5 consecutive clean units — carry it):
+    (1) pre-empt the LIKELY blocking finding INSIDE the PLAN (the award_xp=S4-member vs grant_currency=
+        ADR-012-E2-generalization two-layer distinction — the trap that bit habits/finance);
+    (2) DISCLOSE arguable mapping/membership calls in the PLAN rather than hide them (routines' derived-pull-
+        vs-event-trigger mapping, M4 UP-only, M5-exclusion) — the critic then VERIFIES rather than CATCHES;
+    (3) read ALL 5 aspects to refine the sweep's single-aspect verdict (here it corrected the tier label:
+        stale, not gap);
+    (4) grep the live schema for the As-is floor to tell R6 two-tier (retire) from pure gap-add (no floor).
+---
