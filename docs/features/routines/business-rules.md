@@ -35,8 +35,11 @@
   misses. `[INTENT Q3]`
 - **RT-7 — Streaks are POLICY-DERIVED, not a fixed rule.** A routine streak is computed from the routine's own
   completion + miss policy (RT-5/RT-6) — the user may align it with the Habits rule (consecutive scheduled, no
-  grace) or diverge. **Gamification must read the policy-derived streak; it may NOT assume the Habits rule.**
-  `[INTENT Q4]`
+  grace) or diverge. **Gamification must read the policy-derived streak** (a `derived-pull` measure it READS, ADR-011
+  M2); it may NOT assume the Habits rule. **The economy feed is a separate seam:** a routine-completion event fires the
+  **`grant_currency(XP)`** feeder effect (ADR-012 E2) that Gamification applies → **`consequence_ledger`** (E3,
+  idempotent via `effect_event_id`); `award_xp` is its XP case (not retired). **Routines never writes XP itself**
+  (E1/E2 layering). `[INTENT Q4; ADR-011 M2; ADR-012 E2/E3]`
 - **RT-8 — Two skip mechanisms, distinct meanings.** `routine_actions.skip_dates` = **pre-planned** skips (declared
   in advance); `routine_completions.skipped` + `skip_reason` = a **logged** skip on the day. Their effect on the
   streak follows the miss policy (RT-6): a planned skip is neutral by default; an unplanned no-show counts per
@@ -50,9 +53,12 @@
 - **RT-11 — Broad scheduling via the Scheduler.** A routine's cadence spans day · day+timeframe-of-week ·
   day+time-of-month · day+time-of-year, resolved through **Sessions & Scheduling** (availability + `dueIn`),
   not a bespoke Routines scheduler. `[INTENT Q2; FACT: sessions/contract.md]`
-- **RT-12 — Purpose contribution (⚠ INTENDED).** A routine linked via `purpose_routines` **contributes to** that
-  purpose's progress/metric; the metric is owned by **Purpose & Goals** (the mapping is a contract Purpose defines).
-  `[INTENT G8; FACT: project.ts purpose_routines]`
+- **RT-12 — Purpose contribution (⚠ INTENDED).** A routine **contributes to** a linked purpose's progress/metric via
+  the polymorphic weighted **`contributions`** primitive (ADR-011 M7 — retires the As-is `purpose_routines` junction),
+  its laddering weight `contributions.contribution_percentage` (M4-up); the metric is owned by **Purpose & Goals** (the
+  mapping is a contract Purpose defines). *(The routine→**step** rollup is the `completion_policy` (RT-5), NOT the M4
+  fractal Σ(child×weight) — only the up-edge to Purpose is weighted.)* `[INTENT G8; FACT: project.ts purpose_routines
+  (As-is); ADR-011 M4/M7]`
 - **RT-13 — Provider registration (⚠ INTENDED).** Routines **registers as a provider**: it exposes scheduled
   occurrences via **`dueIn()`** (→ Global Calendar + Journal agenda) and a **`summary(date)`** (→ Journal daily
   dashboard), and emits completion events (→ Gamification). Aggregator pattern — no mirroring. `[INTENT G8; FACT:
@@ -63,15 +69,23 @@
 - **RT-15 — Notes via `pages`, at routine and step level.** Notes attach through a linked `pages` row
   (`entity_type='routine_action'` reserved; routine-group level = ⚠ INTENDED extension), never inline. `[FACT:
   ADR-002 L1344; INTENT G9]`
-- **RT-16 — Tags via Spaces universal tags (⚠ INTENDED).** `routine_actions` has no tags column today; the direction
-  is the **shared/universal** tag system owned by **Spaces**, not a bespoke Routines tag store. `[INTENT G10; FACT:
-  §5.6 no tags col; intake/spaces.md SP2]`
+- **RT-16 — Tags via `entity_tags` (⚠ INTENDED).** `routine_actions` has no tags column today (As-is); the go-forward
+  primitive is **`entity_tags`** (`tag_id, entity_type, entity_id`, ADR-006 SP1) — the shared/universal tag system
+  owned by **Spaces**; routines registers `entity_type='routine_action'` as a consumer, never a bespoke Routines tag
+  store. `[INTENT G10; FACT: §5.6 no tags col; ADR-006 SP1; intake/spaces.md SP2]`
 - **RT-17 — Cascade + soft delete.** `routine_completions` cascade-delete with their action (`ON DELETE CASCADE`);
   deleting a routine deletes its steps (⚠ INTENDED). Soft delete (`deleted_at`) hides while preserving the ledger.
   `[FACT: ADR-002 §5.6 CASCADE; soft-delete convention]`
 - **RT-18 — Local-first.** Every create/edit/complete/skip/reschedule succeeds locally first; multi-device
   reconciles LWW on structured columns; the completion ledger merges by (`routine_action_id`, `completed_date`).
   `[FACT: LF-2; ADR-003; §5.6 UNIQUE per action+date]`
+- **RT-19 — A routine is a PURSUABLE (⚠ INTENDED).** The routine carries a **`measurement_kind`** (CHECK ∈
+  quantitative·milestone·rate·qualitative; natural **`rate`** — completion frequency over its cadence) and a
+  **`binding_mode`** (CHECK ∈ manual·derived-pull·event-trigger; **`derived-pull`** — the routine-level done/streak is
+  computed-on-read from the completions ledger by policy, RT-5/RT-14, not a stored counter). No bespoke goal-type
+  column (M1/M2). `progress()` derives on read; any stored progress is a nullable override (`NULL ⇒ derive`, M3). The
+  routine advertises **no** ADR-011 M5 measure source (it is outside the M5 applies-to set); Journal/Calendar read via
+  the `dueIn`/`summary` provider seam (RT-13). `[INTENT; ADR-011 M1/M2/M3]`
 
 ## Validation & edge cases
 - Enum CHECKs (v2): `action_type`∈{habit,task,focus} (⚠ superseded by the polymorphic `step_type` taxonomy),
@@ -113,8 +127,11 @@ entity ref (supersedes `action_type`{habit,task,focus} + `linked_habit_id`/`link
 user-configurable completion policy + miss policy + acceptance window (settings home = **Preferences**/**Spaces**);
 **RT-6** lifecycle states (active/paused/off); **RT-10** task↔routine membership (step-scoping); **RT-12** purpose
 contribution mapping (depends on Purpose contract); **RT-13** provider registration (`dueIn` + `summary`); **RT-15**
-routine-group-level notes; **RT-16** Spaces universal tags. Live invariants today: RT-1, RT-8, RT-9, RT-14 (derive),
-RT-17, RT-18. `[FACT: ADR-002 §5.6; INTENT §E]`
+routine-group-level notes; **RT-16** `entity_tags` (SP1); **RT-19** the routine as a pursuable
+(`measurement_kind`/`binding_mode`, M1/M2). **Driver-token realignment (Part 1.2):** retire the forward
+`purpose_routines` → `contributions` (M7); name the `grant_currency(XP)`→`consequence_ledger` economy feed (E2/E3);
+name `entity_tags` (SP1). Live invariants today: RT-1, RT-8, RT-9, RT-14 (derive),
+RT-17, RT-18. `[FACT: ADR-002 §5.6; INTENT §E; ADR-011/012/006]`
 
 ## Completion checklist
 - [x] invariants with [FACT/INTENT/INTERP] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged

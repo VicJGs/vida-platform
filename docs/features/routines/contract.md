@@ -16,11 +16,14 @@
 - **`completeStep / skipStep(step, {planned|logged, reason?}) / rescheduleStep(step)`** — reschedule asks the
   **Scheduler** for an open, fitting slot in the day. `[INTENT RT-4, RT-8; FACT: Scheduler availability]`
 - **`evaluateRoutine(routine, date): { done|partial, percent, done[], not_done[] }`** — applies the
-  **completion_policy**; always returns the "what was done" record (RT-5). `[INTENT RT-5]`
+  **completion_policy**; always returns the "what was done" record (RT-5). The routine's measure is a pursuable
+  (`measurement_kind`=`rate` × `binding_mode`=`derived-pull`); `progress()` **derives on read** from the completions
+  ledger, no stored counter (ADR-011 M1/M2/M3). `[INTENT RT-5; ADR-011 M1/M2/M3]`
 - **`setLifecycle(routine, active|paused|off)`**. `[INTENT RT-6]`
 - **Provider registration** — `dueIn(range): DueItem[]` (scheduled occurrences → Global Calendar + Journal agenda)
-  and `summary(date)` (→ Journal daily dashboard); emits completion events (→ Gamification). `[INTENT RT-13; FACT:
-  journals provider registry; sessions dueIn]`
+  and `summary(date)` (→ Journal daily dashboard); **emits completion events → Gamification applies the
+  `grant_currency(XP)` feeder effect (ADR-012 E2) → `consequence_ledger` (E3); Routines never writes XP itself.**
+  `[INTENT RT-13; ADR-012 E2/E3; FACT: journals provider registry; sessions dueIn]`
 
 ## What it consumes (documented integration points — no direct table access, constitution §6)
 - **Sessions & Scheduling (ADR-004)** — `SessionRegistry.register/createSession` for step runtimes; the Scheduler's
@@ -32,10 +35,15 @@
 - **Health** — the `exercise` step drives a `workout` Session (Health composes Sessions). `[FACT: health/core/contract.md L50]`
 - **Knowledge / Education** — study/practice steps drive study/review Sessions. `[FACT: sessions/identity.md]`
 - **Journals** — registers `summary(date)` + reuses `dueIn` (provider registry). `[FACT: journals docs]`
-- **Purpose & Goals** — `purpose_routines`; contributes progress (mapping owned by Purpose). `[FACT: project.ts]`
-- **Gamification** — consumes the **policy-derived** streak/completion events (RT-7). `[INTENT RT-7]`
-- **Spaces** — universal tags (RT-16), saved views, user-extensible step/session types + templates. `[FACT:
-  intake/spaces.md SP2/SP3/SP5]`
+- **Purpose & Goals** — contributes progress via the polymorphic weighted **`contributions`** primitive (ADR-011 M7,
+  retires the As-is `purpose_routines`; laddering weight `contribution_percentage`, M4-up); mapping owned by Purpose.
+  `[FACT: project.ts purpose_routines (As-is); ADR-011 M4/M7]`
+- **Gamification** — READS the **policy-derived** streak (a `derived-pull` measure, ADR-011 M2) and consumes
+  completion events, applying `grant_currency(XP)` → `consequence_ledger` (E2/E3) (RT-7). `[INTENT RT-7; ADR-011 M2;
+  ADR-012 E2/E3]`
+- **Spaces** — universal tags via **`entity_tags`** (RT-16, ADR-006 SP1); saved views, user-extensible step/session
+  types + templates (Spaces-owned; 007/SP5 cited-as-consumed, not re-spec'd here). `[FACT: intake/spaces.md SP2/SP3/SP5;
+  ADR-006 SP1]`
 - **Preferences** — home of the user's completion/miss/acceptance-window policy settings. `[INTENT RT-5, RT-6]`
 - **Notes & Pages** — notes via `pages` (`entity_type='routine_action'`) + `entity_links`. `[FACT: ADR-002 L1344; INT-1]`
 
