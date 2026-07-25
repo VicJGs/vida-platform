@@ -2435,3 +2435,53 @@ Next session:
     membership is arguable, state the rule-vs-list basis in the PLAN; when a known prior-unit B1 pattern could
     recur, name the distinction up front.
 ---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 Tier-1 forward-facing group — `pomodoro` (sweep row 5, stale reframe-in-progress)
+Completed:
+  - `pomodoro` re-run COMPLETE end-to-end (ground → PLAN → adversarial critique → approve → implement 5
+    aspects → grep-verified acceptance → commit). Commit 4c027cc; tracking 730107a.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/pomodoro.md
+  - Edited all 5 aspect docs in docs/features/pomodoro/.
+  - Grounding: THE LIGHTEST UNIT — the full ADR-004 reframe was done at the 2026-07-15 intake (docs already
+    name focus/session_id/log_time/attach_pomodoro/surface_journal + supersede As-is entity_type CHECK ->
+    session_id; R6 two-tier already correct). Live schema: pomodoro_sessions:143 (all-plaintext) +
+    user_preferences.pomodoro_*:1262-1265; no focus_sessions/consequence_ledger table yet (schema-0).
+  - Changes (3 token families only): E3 retire the forward xp_history at contract.md:31 (the award_xp effect's
+    MISLABELED target — the real find the sweep's structure-data-only scoring missed) -> consequence_ledger;
+    E2 gap-add grant_currency(XP) alongside award_xp; R1 light completion (applied_effects/UNIQUE — PD-12
+    already named effect_event_id/§3.2.5).
+  - LITE gate: independent adversarial critique (fresh code-aware subagent) -> SHIP / 0 blocking — THIRD
+    consecutive clean unit ("the cleanest unit in the campaign").
+Decisions:
+  - The "R1 absent" sweep verdict was a structure-data-scoring artifact: business-rules PD-12 already named
+    effect_event_id + §3.2.5; only the ledger half (applied_effects/UNIQUE) was genuinely missing. Ground-
+    truth-refinement pattern again — read ALL aspects, not just the one the sweep scored.
+  - The real stale token was a FORWARD xp_history buried in the contract effect-table (award_xp's target
+    integration point), invisible to a structure-data-only sweep. Retiring it -> consequence_ledger (E3).
+  - E2/S4 layering held (C4): award_xp = ADR-004 S4-catalogue member; grant_currency = the SEPARATE ADR-012
+    E2 generalization. The trap that bit habits/finance pre-empted for the 3rd time.
+  - Guards: C1 the entity_type->session_id reframe already done (verified, not re-opened); C2 focus_sessions
+    structure build-deferred; C3 no M* (runtime, not pursuable); C5 capability-not-module (SS-1); C6 no
+    006/N*/X*/AI* (drivers 004/012 only — pomodoro caught only by the §4 ≈all/any-module wildcards, owns no
+    taggable/notifying substrate).
+Next session:
+  - FIRST ACTION: start `knowledge/flashcards` — the LAST Tier-1 forward-facing unit (sweep row 9, stale,
+    drivers 006/005/002). Surface the §XXVII unit path, then ground in staleness-sweep.md (row 9) +
+    capability-framework.md (§3 ADR-006 SP1 + ADR-005 SM1-SM4) + all flashcards aspect docs + grep the live
+    schema (flashcard_decks/flashcards/review_events/method_bindings/review_curves) for the As-is floor.
+  - Expected shape: FORWARD page_tags (line 27) as the go-forward tag -> entity_tags (SP1); the SM1-SM4
+    generic-review-engine intent already conforms (review_events/method_bindings, study_methods as registry
+    partition, derived mastery), with SM-2/flashcard_decks/flashcard_reviews tokens As-is-only. First ADR-005
+    (study-method) unit — verify the generic review engine reframe is complete + finish any page_tags/SP1 gap.
+  - Campaign state: Part 1.2 Tier-1 = 9 done (notes-and-pages, sessions-and-scheduling, projects, health/core,
+    habits, finance, tasks, relationships, pomodoro). LAST forward-facing = knowledge/flashcards. Finishing it
+    completes the ENTIRE Tier-1 group -> Tier 2 gap-fills -> Tier 3 arch docs (Part 1.3).
+  - Milestone: THREE consecutive critique-clean units this session (tasks, relationships, pomodoro) across
+    three distinct shapes (widest-driver-set / notification-primary+membership-nuance / finish-the-reframe).
+    The reusable discipline holds: pre-empt the likely blocking finding IN the PLAN; disclose arguable
+    applies-to/membership calls rather than hide them; read ALL 5 aspects to refine the single-aspect sweep.
+---
