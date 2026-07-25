@@ -2928,3 +2928,53 @@ Next session (post-context-clear — READ THIS FIRST):
     (4) grep the live schema for the As-is floor to tell R6 (retire/reframe) from pure gap-add (no floor);
     (5) a doc claim "X owned by [neighbor]" may be a conflation a later driver ADR refines — split it, disclose.
 ---
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION WRAP — 2026-07-24 → 07-25 (consolidating entry; per-unit entries above)
+═══════════════════════════════════════════════════════════════════════════
+Task: build-roadmap-resequence (foundation-realignment master campaign) · Profile: Project Foundation Setup
+Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+
+Goal: Advance Part 1.2 — the per-context documentation re-runs. Started Tier-2 after Tier-1 completed.
+
+Completed this session (5 units, 5 CONSECUTIVE critique-clean — the 5th–9th clean of the campaign):
+  1. routines            (Tier-1 forward group tail / Tier-2 start) — commit cab2bfe
+  2. skills              (Tier-2; FIRST X*/AI* ingest unit)          — commit ed6d5fd
+  3. learning/education  (Tier-2; heaviest unit; mixed R6 + X*/AI*)  — commit cff16a2
+  4. books               (Tier-2; mixed R6 + S1 reframe)             — commit 4910268
+  5. check-ins           (Tier-2; lightest; E9 user_profile split)   — commit a257d90
+  (+ per-unit tracking commits: 661d9df, 4bd8050, 7d65880, 1e92b25, 12aeef8)
+  Each: ground → refine sweep across all 5 aspects → grep the live schema floor → persist LITE-gate PLAN in
+  part-1.2-reruns/ → independent adversarial critique (fresh code-aware subagent, prompted to refute) → fix →
+  Victor approval → implement all 5 aspect docs → grep-verify acceptance → commit. All 5 PLANs persisted;
+  all 25 aspect docs edited; every acceptance grep clean.
+
+Campaign state: **Part 1.2 = Tier-1 COMPLETE (10) + Tier-2 5 of 7 done.** Tier-2 remaining (2):
+  finance/fiscal-legal (row 18, gap 014/015) · health/nutrition (row 20, gap 015/014/006). Then Tier 3 (Part 1.3).
+
+Key decisions / reusable patterns established this session (full detail in the per-unit entries above):
+  - X*/AI* ingest pattern (skills, then reused by education/books): public-reference/user-managed X2 layer +
+    X1 device-mediated + X3 whole-set + X5 external_in_ok grant + X11 splits the LLM to ADR-015 (AI1 modes,
+    AI3 egress+scope-min, AI5 untrusted-content provenance, AI6 source=ai); AI4 ONLY for a true agentic actor.
+  - M1/M2 measured framing (skills, education): when a module isn't in the L240 pursuable set, reference the
+    measurement_kind taxonomy in-config + put the pursuable on its Purpose/target owner; the measurement
+    DECOMPOSITION (education) — a bespoke flat enum → measurement_kind × binding_mode.
+  - S1 reframe (books): a module's "own session entity" = the framework's RETIRED standalone anti-signal →
+    base sessions sub_type + 1:1 extension keyed session_id; a "never reuse <other>_session" guard stays true.
+  - E9 user_profile split (check-ins): a god-table's cross-owner columns split to each owner; a doc claim
+    "X owned by [neighbor]" may be a conflation a later driver ADR refines.
+  - GREP THE LIVE SCHEMA FLOOR FIRST — proven 3× (education, books, "clean"-labeled units hid inline tags +
+    progress NOT NULL DEFAULT 0). The structure-data-only sweep scoring undersells mixed cases.
+
+Next session (resume from here):
+  - FIRST ACTION: continue Part 1.2 Tier-2 — `finance/fiscal-legal` (or `health/nutrition`); 2 LEFT to close
+    the tier. Both reuse the X*/AI* pattern (skills.md/books.md/learning-education.md = the templates).
+    finance/fiscal-legal = the public-reference rule-pack (X3 "Fiscal&Legal rule-packs" verbatim) + AI-advisement
+    (X11 "Fiscal advisement" verbatim) layer — DISTINCT from finance/core's store/move_money economy (done).
+    health/nutrition = AI6 source=ai + food-DB ingest (X3 "Health food-DB" verbatim) + entity_tags.
+  - GREP EACH UNIT'S LIVE SCHEMA FLOOR before assuming pure-additive (the 3×-proven lesson).
+  - Read first: staleness-sweep.md (the target's row) + capability-framework.md §3 (the target's driver
+    predicates) + the target's 5 aspect docs + a sibling PLAN in part-1.2-reruns/ as the format template.
+  - Per-unit loop + reusable discipline: see the check-ins entry directly above (the full next-session block).
+  - After Tier 2: Tier 3 = Part 1.3 architecture-doc rewrites (4 stale + 4 partial).
+═══════════════════════════════════════════════════════════════════════════
