@@ -17,6 +17,8 @@
 
 ## Local landmines / "never do"
 - **Never** add an inline `notes`/`description`-as-rich-text column to another table — route through `pages` (NP-1). `[FACT: ADR-002 L91]`
+- **Never** tag through a page-only junction — tagging is the **universal `entity_tags`** primitive (`tag_id, entity_type, entity_id`); N&P is a **consumer**, not the owner of a `page_tags` table. Tags are nestable (`parent_tag_id`). `[INTENT: ADR-006 §3.1-3.2]`
+- **Never** validate `entity_links.entity_type` against a fixed CHECK enum — the target type comes from the **open taggable-type registry** (a type must be *registered*), not a hard-coded 33-value list. `[INTENT: ADR-006 §3.2]`
 - **Never** resolve `[[links]]` by title string — titles are not unique; use `target_page_id` (NP-7). `[INTENT G2]`
 - **Never** create a second journal for an existing date — enforce the partial unique index (NP-2). `[FACT: ADR-002 L1309]`
 - **Never** generate the NP-8 seed (or any summary) server-side — it would break zero-knowledge. `[FACT: ZK-1]`

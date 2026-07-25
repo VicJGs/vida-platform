@@ -18,14 +18,22 @@
 - Structured columns sync **LWW**; the completion ledger merges by (`habit_id`,`completed_date`) (no CRDT — habits
   aren't editor documents). `[FACT: ADR-003]`
 
-### ⚠ INTENDED additions (NOT in ADR-002 / habit.ts today) — candidate ADR-002 amendment `[INTENT G7,G8,G9]`
+### ⚠ INTENDED additions (NOT in ADR-002 / habit.ts today) — candidate ADR-002 amendment `[INTENT G7,G8,G9; ADR-011/012/006/004]`
+- **Measurability (ADR-011 M1/M2):** the habit is a **pursuable** → carries `measurement_kind` CHECK ∈
+  `quantitative·milestone·rate·qualitative` (natural = **`rate`**, occurrence frequency) + `binding_mode` CHECK ∈
+  `manual·derived-pull·event-trigger` (a completion is the **`event-trigger`**). No bespoke `target_type` exists
+  on `habits` today → pure add, not a decompose. `[INTENT; ADR-011 M1/M2 §3.1/§3.5]`
 - **Restored v1 fields (G8):** `habits.success_criteria`[E] (definition of done), `habits.difficulty`
   ∈{very_easy…very_hard}; `habit_completions.location`[E], `habit_completions.completion_time`.
-- **Purpose contribution (G7):** no new habits column, but the `purpose_habits` junction gains a
-  completion→metric mapping contract (owned by Purpose).
+- **Purpose contribution (G7 — ADR-011 M7):** the **As-is** `purpose_habits` junction (`schema.ts:413`) is
+  **retired** → the polymorphic weighted **`contributions`** primitive (a habit *contributes* to a purpose/target;
+  laddering weight = `contributions.contribution_percentage`, M4). The completion→metric write is Purpose-owned,
+  emitted as the S4 `contribute_purpose_metric` effect (R1/R2) — never a direct write. `[INTENT G7; ADR-011 M7/M4]`
 - **Backfill window (G9):** lives in **Preferences** (`habit_backfill_window_days`), not on `habits`.
-- **Shared-tags direction:** deprecating inline `habits.tags` JSON in favor of the shared `tags`/`page_tags`
-  system (flagged, not yet decided — mirrors the Tasks precedent). `[INTERP]`
+- **Shared tags (ADR-006 SP1 — DECIDED):** the **As-is** inline `habits.tags` `[E]` JSON (`schema.ts:267`) + the
+  retired `page_tags` (`schema.ts:121`) are **retired** → the shared **`entity_tags`** primitive
+  (`tag_id, entity_type, entity_id`); Habits registers `entity_type='habit'` in the open taggable-type registry and
+  is a *consumer*. (Was "flagged, not yet decided" — now **decided**.) `[INTENT; ADR-006 SP1]`
 
 ## State management map `[FACT: ADR-001 State; life-os habits]`
 - **React Query** owns habit reads/writes — `listHabits`/`getTodayHabits`, optimistic completion logging,
@@ -44,8 +52,9 @@
 
 ## Dependencies / graph
 - **Wave 1 (independent domain)** — no upstream owner. Out-edges: Notes (notes page), Preferences (reminders +
-  backfill window), Purpose (`purpose_habits`), Projects (`project_habits`). In-edges: Journal `/summary`,
-  Purpose metrics (HB-8), Gamification (HB-9). `[FACT: docs/core/architecture/module-dependency-graph.md; intake]`
+  backfill window), Purpose (**`contributions`** — As-is `purpose_habits` junction retired, M7), Projects
+  (**`project_habits`** — KEPT; only the `purpose_*` trio retires, C1 guard). In-edges: Journal `/summary`,
+  Purpose metrics (HB-8), Gamification (HB-9). `[FACT: module-dependency-graph.md; INTENT ADR-011 M7]`
 - Respects the coupling budget — no direct cross-module table reads; links via junctions + integration points
   (§6). `[FACT: core §6]`
 
@@ -53,11 +62,16 @@
 - `HabitType`, `HabitFrequency`, `TimeOfDay`, `HabitDomain` — string-literal unions + SQL CHECK + Zod in
   `@vida/core`, declared once. `[FACT: habit.ts; packages/types/src/CLAUDE.md]`
 - **Streak/total counters derive from the `habit_completions` ledger** (HB-2) — the columns on `habits` are a
-  cache, not a second source.
+  cache, not a second source. Habits **advertises `streak(habit)`/completion-rate as an M5 queryable measure**
+  (via the R7 read seam) that Journal/Purpose read through — not a direct table read (ADR-011 M5). `[INTENT M5]`
 - "Done for the day" derives from `count >= target_count` (HB-5), not a separate boolean.
 
 ## ADRs / structural decisions
-- **ADR-002 §5.5** — the 2 tables (authoritative). **ADR-001** — RQ + Zustand state. **ADR-003** — LWW + ledger merge.
+- **ADR-002 §5.5** — the 2 tables (authoritative As-is FACT floor). **ADR-001** — RQ + Zustand state. **ADR-003** — LWW + ledger merge.
+- **Subject to (R6 named-ADR set):** **ADR-011** (measurability — M1/M2/M4/M5; retire `purpose_habits`→`contributions` M7),
+  **ADR-012** (economy — `grant_currency` E2; retire `xp_history`→`consequence_ledger` E3), **ADR-006** (tags — retire
+  `page_tags`/inline `habits.tags`→`entity_tags` SP1), **ADR-004** (the completion's S4 effects + R1 idempotency rail).
+  Two-tier: the retired tokens are **live FACTs** (schema lines cited) recorded above, retired in `[INTENT]`. `[INTENT R6]`
 - ⚠ **Surfaced decision:** the restored v1 fields (G8) + the purpose-contribution contract (G7) + the Preferences
   backfill setting (G9) → a **candidate ADR-002 amendment** / `/adr-new` in the build phase. `[INTENT G7,G8,G9]`
 

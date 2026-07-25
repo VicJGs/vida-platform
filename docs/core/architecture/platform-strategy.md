@@ -6,6 +6,12 @@ This document describes how the Vida Platform supports web, mobile, and desktop 
 
 **Governs:** All platform-specific adapter implementations and the decision of where to place platform-specific versus shared code.
 
+> **Implementation status (2026-07-25):** The code-sharing strategy here is substrate-neutral and current. Two
+> foundation notes: the editor renders **capability blocks from the open registry** (ADR-008), not a closed extension
+> set (§3.3); and delivery follows **ADR-017** — web SPA (A) first, then Tauri desktop (D), with mobile later and
+> encryption/sync/auth on a deferred hardening pass. Substrate primitives cite their owning ADR; code/directory homes
+> are decided in a later structural phase.
+
 ---
 
 ## 1. Platform Targets
@@ -91,7 +97,10 @@ Each platform provides a concrete `DatabaseAdapter` implementation that wraps it
 
 ### 3.3 `packages/editor` — TipTap Block Editor
 
-The shared editor package containing TipTap configuration, custom extensions (daily summary, task checklist, habits block, etc.), serializers (Markdown, PDF, DOCX), toolbar, and slash menu.
+The shared editor package containing TipTap configuration, the **capability-block registry** (ADR-008 — an open
+registry where each capability declares its render targets and the user chooses placement; e.g. daily summary, task
+checklist, habits block — not a closed, hard-coded extension set), serializers (Markdown, PDF, DOCX), toolbar, and
+slash menu.
 
 - **Web and Desktop:** TipTap runs natively in the React DOM. The editor component renders directly.
 - **Mobile:** TipTap runs inside a React Native WebView. The native app provides the toolbar and slash menu; the WebView provides the editing surface.

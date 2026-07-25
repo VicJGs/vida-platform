@@ -22,20 +22,21 @@
 - **SS-3 — Every session obeys the 4-dimension Integration Contract** (see `contract.md`): **(1) Attachment**
   (what it's about), **(2) Effects** (what it changes in the OS), **(3) Lifecycle** (the states it may
   travel), **(4) Permissions** (what it is allowed to touch). No session type — shipped or user-made — exists
-  without all four declared. `[INTENT S5]`
+  without all four declared. `[INTENT S3]`
 - **SS-4 — Shipped types are fully configured; the user never sets up the main ones.** Every identified
   sub-type ships with its 4 dimensions pre-defined. A user MAY edit a shipped type (discouraged, warned);
   user-extensibility (SS-5) is for NEW long-tail types only. `[INTENT Victor S5-clarify 2026-07-12]`
 - **SS-5 — User-created types are rich but guarded.** A user type may attach to any OS entity and declare
   effects — but only within its **permission envelope** (SS-6): effects are scoped to its attachments, it may
-  not double-count, and sensitive-module effects (Finance/Health) require explicit opt-in consent. `[INTENT S1+S5-dim4]`
+  not double-count, and sensitive-module effects (Finance/Health) require explicit opt-in consent. `[INTENT S1+S3-dim4]`
 - **SS-6 — Effects are permission-bounded (the guardrail).** A session NEVER affects an entity it is not
   attached to; two types NEVER both complete the same habit occurrence / award XP for the same event
   (no double-count); user-type capabilities are a subset of shipped-type capabilities. This is the guarded
   opt-in extension-model applied inside the module. **The "no double-count" guarantee is grounded in the
   write-API contract + idempotency mechanism owned by ADR-004 §3.2.5 (constitution INT-2)** — deterministic
-  `effect_event_id` + a dedup ledger; SS-6 is the Sessions-tier specialization of that mechanism.
-  `[INTENT S5-dim4; FACT: ADR-004 §3.2.5, INT-2; inherits extension-model principle]`
+  `effect_event_id` + the local-only **`applied_effects`** dedup ledger (rail R1); SS-6 is the Sessions-tier
+  specialization of that mechanism.
+  `[INTENT S3-dim4 + R1; FACT: ADR-004 §3.2.5, INT-2; inherits extension-model principle]`
 
 **The Scheduling engine**
 - **SS-7 — Aggregator, never duplicator.** The engine owns `planned_blocks` and its own generated sessions,

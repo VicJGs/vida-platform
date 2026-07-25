@@ -16,6 +16,12 @@ numbers**. Privacy is the whole point; convenience must never cost zero-knowledg
   `[FACT: ADR-002 §5.8]`
 - **Ledger model:** account balances are **derived** from an opening balance + the transaction ledger (the
   ledger is the single source of truth, G4). Transfers are one row, excluded from income/expense totals (G5).
+- **Owns economy substrate (E6/E4).** Beyond the 6 entities, Finance owns the money **`store`** layer — an
+  organizing tree (groups + wrappers over accounts/investments/assets) with **lockable reward-target boxes**
+  (`is_locked`, optionally linked to a `dream`/`purpose` the box saves toward); net worth derives **over the
+  tree** (Σ referenced values − Σ liabilities) and the entities keep their own balances (`store` **never copies**
+  them). Finance is also the **target of the `move_money`** Additive effect — a rule/consequence moves money as a
+  ledger entry; penalties **lock** a box, never destroy it (E5). `[INTENT G3; ADR-012 E6/E4/E5]`
 - **Views (G1):** switchable top dashboard (Financial ⇄ Accounts) · account standalone pages with nested
   account-scoped views (transactions/assets/liabilities/investments) · all-transactions dashboard + timeframe
   page (default = current month) · all-assets / all-investments pages (value ↑/↓ emphasis) · all-liabilities
@@ -41,15 +47,18 @@ numbers**. Privacy is the whole point; convenience must never cost zero-knowledg
 - **Commitments is NOT a new entity.** It is a **sub-context / management layer** inside Finance over the existing
   entities — "the OS is already complex enough and able to handle that." No `commitments` table. `[INTENT: Victor 2026-07-15]`
 - **Not a server-side data aggregator.** Zero-knowledge holds: any external fetch (prices, FX, bank/broker
-  data, statement parsing) happens **on the user's device**; the server only ever stores opaque blobs. The
-  future "fetch-on-your-behalf" service must be a **private/anonymizing** fetch, never a plaintext server relay
-  (FN-8/FN-9, ⚠ candidate ADR). `[INTENT G2,G7; FACT: ADR-001/002 ZK]`
+  data, statement parsing) happens **on the user's device** — this is **ADR-014 device-mediated ingestion (X1)**:
+  fetch→parse→encrypt→write vault blobs; a fetch that would need server plaintext is **refused, not downgraded**.
+  The mechanism is **governed, not blocked**. The one **residual open decision** is the "fetch-on-your-behalf"
+  **aggregator** path (e.g. Open Finance Brasil/Belvo), where a third party sees plaintext — a documented ZK
+  **dent** needing its own decision, never a plaintext server relay (FN-8/FN-9). `[INTENT G2,G7; FACT: ADR-014 X1; ADR-001/002 ZK]`
 - **Not a budgeting tool *yet*.** Budgeting is **in scope but undesigned** — documented as ⚠ INTENDED, needs
   its own design pass; may graduate to its own feature. `[INTENT G12]`
 - **Not a notes store.** Finance entities link notes via `pages` (`entity_type` ∈ transaction/account/asset/
   investment/liability), never inline. `[FACT: ADR-002 §5.2; INTENT G12]`
-- **Not its own tag vocabulary.** Transactions tag through the **shared** tag system (Tasks precedent), not the
-  inline `[E]` JSON (going forward — structure-data ⚠). `[INTENT G10]`
+- **Not its own tag vocabulary.** Transactions tag through the shared **`entity_tags`** primitive (`tag_id,
+  entity_type, entity_id`, SP1; Finance registers `entity_type='transaction'`), not the inline `[E]` JSON
+  `transactions.tags` (the As-is floor, retired going forward). `[INTENT G10; ADR-006 SP1]`
 - **Not the Purpose-metrics / Gamification owner.** Finance **feeds** them (net-worth/savings targets, achievement
   events) but doesn't own those tables. `[INTENT; FACT: CLAUDE.md modules]`
 

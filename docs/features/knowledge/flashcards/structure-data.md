@@ -23,8 +23,8 @@
   card_type (basic|reversed|cloze|image_occlusion) · media (image/audio refs — restore v1) · is_suspended ·
   sort_order · sync`. Registered as a **reviewable** with Knowledge's engine (no scheduling columns).
   `[INTENT: F6; FACT restore v1 media — entities.ts L1258-1260]`
-- **No Flashcards-owned deck / review / schedule tables** — all generic (Knowledge). Tags via the universal
-  `page_tags`/tag system; note/source links + grouping via `entity_links`. `[INTENT: ADR-005 §3.1(6), §3.2]`
+- **No Flashcards-owned deck / review / schedule tables** — all generic (Knowledge). Tags via the shared
+  **`entity_tags`** primitive (`tag_id, entity_type, entity_id`, SP1; the card registers `entity_type='flashcard'` in the open registry, SP2) — **not** `page_tags`; note/source links + grouping via `entity_links` (SP4, distinct from tags). `[INTENT: ADR-006 SP1/SP2; ADR-005 §3.1(6), §3.2]`
 
 ## Dependencies / graph
 - **Position:** a **sub-context under Knowledge** — it does not sit in the dep graph as a standalone; it plugs
@@ -48,7 +48,7 @@
 ## Single source of truth (constitution §3)
 - **Scheduling/curve/mastery/review-log** — Knowledge's generic engine (never duplicated here).
 - **Grouping ("deck")** — the user's Knowledge object hierarchy.
-- **Tags** — the universal tag system. **Note/source/resource links** — `entity_links`.
+- **Tags** — the shared `entity_tags` primitive (SP1). **Note/source/resource links** — `entity_links` (SP4).
 - **`card_type` enum** — canonical Zod validator in `@vida/core`, TEXT+CHECK in SQL.
 
 ## Completion checklist

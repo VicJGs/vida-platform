@@ -45,16 +45,16 @@
 - **PD-9 — Time-to-task flows through the Session `log_time` effect.** On completion the `focus` Session fires
   `log_time(task|project)` → Tasks `task_time_logs`; `actual_minutes` stays the one auto-summed ledger with
   its per-task opt-out. Pomodoro NEVER writes `actual_minutes` directly. `[FACT: Tasks TK-5; Sessions contract effects]`
-- **PD-10 — XP rides `award_xp`; the dashboard feed rides `surface_journal`.** Completed focus sessions fire
-  the `focus` sub-type's declared `award_xp` (Gamification, Wave 4 — stub now) and `surface_journal` (daily
-  `/summary` focus feed) effects. No bespoke Pomodoro→Gamification or Pomodoro→Journal wiring. `[FACT: ADR-004 §3.2 effect catalog; INTENT G5/G7]`
+- **PD-10 — XP rides `award_xp` (generalized to `grant_currency`); the dashboard feed rides `surface_journal`.** Completed focus sessions fire
+  the `focus` sub-type's declared **`award_xp`** S4 effect (ADR-004 §3.2.2) — which ADR-012 **generalizes** → **`grant_currency(XP)`** (E2), landing in the Gamification-owned **`consequence_ledger`** (E3, balances derived-on-read; NOT `xp_history`) — and `surface_journal` (daily
+  `/summary` focus feed). No bespoke Pomodoro→Gamification or Pomodoro→Journal wiring. `[FACT: ADR-004 §3.2 effect catalog; INTENT G5/G7; ADR-012 E2/E3]`
 - **PD-11 — Focus analytics are a derived cut, never stored.** Completed-count · focus time · planned-vs-actual
   · focus streaks are computed on-read from the session log (Sessions SS-12); no synced Pomodoro aggregate
   table. `[FACT: Sessions SS-12; INTENT G5]`
-- **PD-12 — Effects are permission-bounded (inherit SS-6).** A pomodoro's effects are scoped to its session's
+- **PD-12 — Effects are permission-bounded (inherit SS-6) and idempotent (R1).** A pomodoro's effects are scoped to its session's
   attachments; no double-count (one XP / one time-log per event); sensitive-module effects need opt-in
-  consent. The no-double-count guarantee rides ADR-004 §3.2.5's idempotency (deterministic `effect_event_id`).
-  `[FACT: Sessions SS-6 / ADR-004 §3.2.4 (permissions) + §3.2.5 (idempotency); INT-2]`
+  consent. The no-double-count guarantee rides the full ADR-004 §3.2.5 **R1** rail: a deterministic `effect_event_id` + an **`applied_effects`** dedup ledger + a **UNIQUE `effect_event_id`** on each effect-output row (so a sync replay never double-fires).
+  `[FACT: Sessions SS-6 / ADR-004 §3.2.4 (permissions) + §3.2.5 (idempotency, R1); INT-2]`
 
 ## Validation & edge cases
 - `ended_at < started_at`, or `duration_seconds` negative / exceeding the interval → typed validation error,

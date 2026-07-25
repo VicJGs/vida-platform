@@ -7,7 +7,8 @@ Program → Curriculum → Degree → Term → Subject → Module → Topic** �
 he studies, whether **formally** (institution-granted degrees) or **self-taught** (forking real programs'
 curricula to direct his own learning). It carries schedules (ICS-synced, document-derived, or hand-shaped),
 a fully flexible **grading-system builder**, assessments, homework, per-subject vaults, and fluid,
-measurement-based progress. `[FACT: CLAUDE.md §7; ADR-002 §5.10/§5.18; INTENT: intake reframe 2026-07-01/02]`
+**measurement-based progress** (a derived measure — `measurement_kind` × `binding_mode`, M1/M2; progress
+nullable-derives, M3). `[FACT: CLAUDE.md §7; ADR-002 §5.10/§5.18; INTENT: intake reframe 2026-07-01/02; ADR-011 M1/M2/M3]`
 
 **The desire behind it.** The user wants his education to be **structured the way education actually is** — not
 a flat course list. He studies in two modes (formal + self-taught) and wants both to share one spine: pick a
@@ -30,7 +31,7 @@ OS keeps his week organized. `[INTENT: Victor 2026-07-01→03]`
 - **Progress (H12):** the Projects multi-type measurement PATTERN (grade-derived · deliverable · goal · manual ·
   count), **forged as an Education-only entity** — never mixed with Projects' data.
 - **Views (H9):** Programs Dashboard (acing vs lacking) · 10-tab Education Hub (all view-modes + Education-scoped
-  tags) · dedicated pages per Institution / Program / Curriculum (builder + template gallery) / Degree / Term /
+  tags via `entity_tags`, SP1) · dedicated pages per Institution / Program / Curriculum (builder + template gallery) / Degree / Term /
   Subject · per-assessment-type pages. Defaults always shipped ("don't get lost personalizing").
 
 **What it is NOT.** `[INTENT; FACT: CLAUDE.md modules]`
@@ -40,8 +41,11 @@ OS keeps his week organized. `[INTENT: Victor 2026-07-01→03]`
   served by a Tasks→Education API (the Project-Tasks pattern). `[INTENT H4]`
 - **Not a certification authority.** Self-taught mode mirrors real programs for structure; the OS records, it
   doesn't credential.
-- **Not a server-side scraper.** ICS fetch is device-side (ZK); syllabus/document extraction is a **deferred
-  extension** (AI-agentic, opt-in — the extension-model principle). `[INTENT H7/H8; FACT: ZK-1]`
+- **Not a server-side scraper.** ICS fetch is device-mediated (ADR-014 X1 — a user-added feed URL is the X2
+  **`user-managed`** layer; server never sees feed plaintext, ZK); syllabus/document extraction is a **deferred
+  extension** — a **scoped extract** (opt-in) whose model call splits to ADR-015 (X11), runs `on_device`/`cloud`
+  (AI1), and bounds the untrusted syllabus's provenance (AI5). **Not an agent** (a scoped extract, not an AI4
+  tool-envelope). `[INTENT H7/H8; FACT: ZK-1; ADR-014 X1/X2/X11; ADR-015 AI1/AI5]`
 - **Not rigid.** From Subject down to Topic, data is **sparse and progressively fillable** — pages render
   gracefully with partial data and invite increments. `[INTENT H9.8]`
 

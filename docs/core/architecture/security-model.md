@@ -382,6 +382,16 @@ Client                                          Server
 
 Every column in every table is classified as **P (Plaintext)** or **E (Encrypted)**.
 
+> **Scope of this section (2026-07-25).** The **classification rules** and the **substrate field-classes** below are
+> current and authoritative at the *class* level. The **per-table breakdown** (§8 "Per-Table Breakdown") is a snapshot
+> of the **pre-rebuild (v1) schema** and is retained for orientation only — the authoritative per-column P/E
+> classification is regenerated table-by-table by the storage rebuild (**DB-11 / ADR-016**), so retired tables still
+> listed there (`page_tags`, `pomodoro_sessions`, the `purpose_*` junctions, `xp_history`, `flashcard_*`) are v1
+> As-is, not the go-forward model. This section does **not** re-tabulate the rebuilt schema (that is schema-level work
+> owned by DB-11). **Encryption itself is a deferred hardening pass** (ADR-017): Phase-1.0 is features-first; the P/E
+> classification is the *target*, enforced when field-level encryption lands. §1–7 (the crypto architecture) are
+> current and unaffected.
+
 ### Classification Rules
 
 | Classification | Marker | Properties | Rule |
@@ -410,13 +420,33 @@ Every column in every table is classified as **P (Plaintext)** or **E (Encrypted
 - All `summary` / `key_learnings` / `key_concepts` fields — Free text
 - All PII: `first_name`, `last_name`, `email`, `phone`, `nickname`
 - All financial amounts: `amount`, `current_balance`, `purchase_price`, `current_value`, `monthly_payment`
-- All `tags` fields — User-generated labels reveal interests
+- Tag values on `entity_tags` (the universal tag substrate, ADR-006 — supersedes inline `*.tags` / `page_tags`) — user-generated labels reveal interests
 - All user-generated URLs: `url`, `feed_url`, `playlist_url`, `song_url`, `inspiration_url`, `cover_url`
 - All `metadata` / `custom_data` / `steps` / `resources` JSON fields — Arbitrary user content
-- Vocabulary/flashcard content: `word`, `translation`, `front`, `back`, `hint`
+- Vocabulary + review-item content: `word`, `translation`, review-item `front`/`back`/`hint` (on the review engine, ADR-005)
 - Blob fields: `encrypted_blob`, `thumbnail_blob`, `audio_blob`
 
+### Substrate Field-Classes
+
+The foundation substrates (ADRs 004–015) introduce field-classes not present in the v1 per-table breakdown below. Their
+P/E tier is stated here **at the class level** (the exhaustive per-column table is owned by DB-11):
+
+| Substrate class | Tier | Rationale |
+|-----------------|------|-----------|
+| `entity_tags` — `tag_value` / label | **E** | User-generated labels reveal interests (ADR-006). Structural columns (`entity_type`, `entity_id`, FKs) are P. |
+| `spaces` — `name` | **E** | User-named workspace. Structural columns P. |
+| `sessions` — user notes / free text on a session | **E** | Free text. Structural columns (`sub_type`, `status`, timers, counts, FKs, `effect_event_id`) are P. |
+| `contributions` — weight / structural | **P** | Weights and FKs are numeric/structural aggregates for the rollup (ADR-011); no free text. |
+| `consequence_ledger` — currency / amount / rule ref | **P** | Currency amounts here are gamification points, not financial money — numeric structural values needed to derive balances (ADR-012). Any free-text label is E. |
+| review engine — `review_events` / `method_bindings` metadata | **P** (event/metadata); **E** (item content) | Timing, ease, interval, curve params are structural; the reviewed item's content is E (see review-item row above). |
+| `views` — `name`, filter/layout config | **E** (name); **P** (structural config) | The view name is user text; the filter/layout/grouping structure is queryable config (ADR-007). |
+
 ### Per-Table Breakdown
+
+> **v1 snapshot — As-is, not the go-forward model.** The tables below reflect the **pre-rebuild schema** and still list
+> retired tables (`page_tags`, `pomodoro_sessions`, the `purpose_*` junctions, `xp_history`, `flashcard_*`). They are
+> kept for orientation; the **authoritative per-column classification is regenerated per-table by DB-11** (ADR-016)
+> against the substrate model (see "Substrate Field-Classes" above). Do not treat a retired table here as current.
 
 #### Notes & Pages Domain
 
@@ -609,13 +639,19 @@ Every column in every table is classified as **P (Plaintext)** or **E (Encrypted
 
 ### Encryption Statistics
 
-| Metric | Count |
-|--------|-------|
-| **Total fields across all tables** | ~520 |
-| **Plaintext (P) fields** | ~370 (71%) |
-| **Encrypted (E) fields** | ~150 (29%) |
-| **Tables with zero E fields** | ~20 (all-structural: pomodoro_sessions, junction tables, time logs, reviews, availability, preferences, achievements, xp_history) |
-| **Tables where majority of fields are E** | contacts, flashcards, language_vocabulary, daily_check_ins, bucket_list_items |
+> **v1 figures — superseded; not re-asserted here.** The field/table counts that stood in this section described the
+> pre-rebuild schema (the retired ~520-field / ~72-table model). Exact counts are **owned by the storage rebuild
+> (DB-11 / ADR-016)** and are deliberately **not** re-asserted in this doc — asserting a new count would cross into
+> schema-level reconciliation (out of scope for the architecture layer). The **shape** of the distribution is stable
+> and is the useful takeaway:
+>
+> - The **majority of fields are P** (structural identifiers, FKs, enums, timestamps, numeric aggregates, sync
+>   metadata) — this is what keeps the local DB queryable.
+> - **E is concentrated** in user-generated free text, PII, financial amounts, tag values (`entity_tags`), and blobs.
+> - **All-structural tables carry zero E fields** (junction/link tables, time logs, `contributions`, `consequence_ledger`,
+>   review-event metadata, availability, preferences) — they hold only FKs, numbers, and enums.
+> - **E-dominant tables** are the content-heavy ones (contacts, vocabulary, check-ins, bucket-list items, review-item
+>   content).
 
 ---
 

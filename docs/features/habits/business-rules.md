@@ -28,12 +28,17 @@
 - **HB-7 — Mood/ratings are optional, quick-check by default.** `mood_before`/`mood_after`/`ease_rating`/
   `satisfaction` (1–5) are captured only via an explicit "detailed log" affordance; the default completion is a
   single tap. `[INTENT G6; FACT: ADR-002 §5.5 CHECK 1-5]`
-- **HB-8 — Purpose contribution (⚠ INTENDED).** A completion **contributes to** the metric/progress of any
-  purpose linked via `purpose_habits` (writes/increments a `purpose_metric_value`) — not purely navigational.
-  The completion→metric mapping is a contract **Purpose** must define. `[INTENT G7]`
-- **HB-9 — Gamification dependency (⚠ INTENDED).** Streaks and completions **feed** the XP/achievement system
-  (`xp_history`, `achievements`, `user_achievements`); Gamification consumes habit events, Habits never writes
-  XP itself. `[INTENT G2]`
+- **HB-8 — Purpose contribution (⚠ INTENDED — ADR-011 M7/M4 + ADR-004 S4).** A completion **contributes to** the
+  metric/progress of any purpose linked via the polymorphic weighted **`contributions`** primitive (M7 — retiring
+  the As-is `purpose_habits` junction; laddering weight = `contributions.contribution_percentage`, M4) — not purely
+  navigational. The write is the S4 **`contribute_purpose_metric`** effect via **R2** (documented handler, never a
+  direct `purpose_metric_value` write), idempotent via **R1** (`effect_event_id`). The completion→metric mapping is
+  a contract **Purpose** owns. `[INTENT G7; ADR-011 M7/M4; ADR-004 S4/R1/R2]`
+- **HB-9 — Gamification dependency (⚠ INTENDED — ADR-012 E2/E3 + ADR-004 S4).** Streaks and completions **feed**
+  the economy: a completion emits the **`award_xp`** S4 effect (ADR-004 §3.2.2) via **R2**, idempotent via **R1**,
+  which ADR-012 generalizes to **`grant_currency(XP)`** (E2); balances derive from the **`consequence_ledger`**
+  (E3) — never a forward `xp_history`. Gamification consumes habit events; **Habits never writes the ledger itself**
+  (R2). `[INTENT G2; ADR-004 S4/R1/R2; ADR-012 E2/E3]`
 - **HB-10 — Backfill is allowed and recomputes streaks; the window is a user preference (⚠ INTENDED).** The user
   may log/edit a completion for a **past date** (the calendar view affords it), which **recomputes streaks**
   (HB-2). The maximum backfill age is a **user-configurable setting** (the user owns the policy), not a hardcoded
@@ -42,6 +47,11 @@
   hides the habit while preserving the ledger until hard delete. `[FACT: ADR-002 §5.5 CASCADE; soft-delete conv.]`
 - **HB-12 — Local-first.** Every create/edit/complete/backfill succeeds locally first; multi-device reconciles
   LWW on structured columns; the completion ledger merges by (`habit_id`,`completed_date`). `[FACT: LF-2; ADR-003]`
+- **HB-13 — The habit is a pursuable (measurable) (⚠ INTENDED — ADR-011 M1/M2).** The habit carries
+  `measurement_kind` (natural **`rate`** — occurrence frequency) + `binding_mode` (a completion is the
+  **`event-trigger`** advancing the measure + firing the S4 effect on the R1 rail). No bespoke `target_type`
+  column exists today (pure add, not a decompose). Its `progress()`/rate **derives** on read — the streak cache is
+  already derived-from-ledger (HB-2); there is no stored `progress` slot to reframe. `[INTENT; ADR-011 M1/M2/M3]`
 
 ## Validation & edge cases
 - Enum CHECKs: `habit_type`∈{build,break}; `frequency`∈{daily,weekly,biweekly,monthly,custom}; `time_of_day`∈
@@ -74,14 +84,17 @@
   trusting the cache (HB-2). `[INTENT G2]`
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
-The following are **INTENDED**, not in ADR-002 §5.5 / `habit.ts` today:
-- **HB-8** purpose-metric contribution mapping (depends on Purpose contract).
-- **HB-9** Gamification XP/achievement feed.
+The following are **INTENDED**, not in ADR-002 §5.5 / `habit.ts` today. **As-is FACT floor** = the 2 tables + inline
+`habits.tags` + the streak cache; the retired tokens `purpose_habits` (`schema.ts:413`) / `page_tags` (`:121`) /
+`xp_history` (`:1213`) are **live FACTs** recorded then retired in `[INTENT]` (R6 two-tier):
+- **HB-8** purpose contribution via **`contributions`** (M7) + the S4 `contribute_purpose_metric` effect (Purpose-owned).
+- **HB-9** economy feed via the `award_xp` S4 effect → **`grant_currency(XP)`** (E2) → **`consequence_ledger`** (E3), not `xp_history`.
+- **HB-13** measurability — `measurement_kind`/`binding_mode` on the habit (M1/M2).
 - **HB-10** user-configurable backfill window (a **Preferences** setting, e.g. `habit_backfill_window_days`).
 - **G8 restored v1 fields** — `success_criteria`, `difficulty` (on `habits`), completion `location` + completion
   `time` (on `habit_completions`) — to be re-added (candidate **ADR-002 amendment**).
 - **G1** the 4 view surfaces are UI-level (no schema change).
-Until amended, the live invariants are HB-1..HB-7, HB-11, HB-12. `[FACT: ADR-002 §5.5; INTENT G1,G2,G7,G8,G9]`
+Until amended, the live invariants are HB-1..HB-7, HB-11, HB-12. `[FACT: ADR-002 §5.5; INTENT G1,G2,G7,G8,G9,G-M/E/SP]`
 
 ## Completion checklist
 - [x] invariants with [FACT/INTENT] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged

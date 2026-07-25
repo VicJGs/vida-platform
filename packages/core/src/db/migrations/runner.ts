@@ -15,11 +15,10 @@ import { runMigrations, getSchemaVersion } from '../adapter'
 // Each new migration adds one line.
 // ---------------------------------------------------------------------------
 
-import m001 from './001_initial'
-
-const ALL_MIGRATIONS: Migration[] = [
-  m001,
-]
+// Migrations are authored per-feature at build phase (ADR-016 §3.5 / ADR-017 §1).
+// The v1 monolith migration (001_initial) was quarantined to db/_legacy/ in Part 2 (ADR-018);
+// this registry is intentionally empty until the first per-feature migration is authored.
+const ALL_MIGRATIONS: Migration[] = []
 
 // ---------------------------------------------------------------------------
 // Public API

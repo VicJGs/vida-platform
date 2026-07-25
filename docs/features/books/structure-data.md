@@ -6,12 +6,13 @@
 
 | Table | Purpose | `[E]` fields | Key constraints |
 |---|---|---|---|
-| `books` | the work (today: work+copy merged) | title, author, isbn, review, cover_url, genre, tags | `format` CHECK(3); `status` CHECK(4); `progress` 0-100; `rating` 1-5; soft delete |
+| `books` | the work (today: work+copy merged) | title, author, isbn, review, cover_url, genre, **tags** (inline `[E]` — As-is floor → `entity_tags`, SP1) | `format` CHECK(3); `status` CHECK(4); **`progress` `NOT NULL DEFAULT 0`** (As-is floor → nullable override, M3); `rating` 1-5; soft delete |
 | `book_chapters` | flat TOC | title | `book_id` CASCADE; **UNIQUE(book_id, chapter_number)**; est/actual reading minutes; `is_completed`; no soft delete |
 
 - ⚠ Three FACT columns are **superseded by the reframe** (reconcile in the amendment): `books.format` (single →
-  per-asset), `books.current_page`/`progress` (single position → derived from assets, BK-3), `books.genre`/
-  `tags` (columns → shared scoped tags, BK-16). `[INTENT B2/B11]`
+  per-asset), `books.current_page`/`progress` (single position → per-asset native position + a **nullable-override
+  derived `progress`**, M3, BK-3), `books.genre`/`tags` (columns → **`entity_tags`**, SP1, BK-16). `[INTENT B2/B11;
+  ADR-006 SP1; ADR-011 M3]`
 
 ### ⚠ INTENDED model (module extraction — 2nd-largest ADR-002 amendment after Education) `[INTENT: B1–B16]`
 | New entity | Role | Key points |
@@ -21,13 +22,16 @@
 | `book_bookmarks` | position markers | work-anchored (BK-5); label; notes via `pages`; inter-links (BK-6) |
 | `book_highlights` | light span markers | digital content spans; deliberately no notes/inter-links (BK-6) |
 | `book_quotes` | first-class quotes | per book; text `[E]`; position?; notes via `pages`; inter-links; embeddable platform-wide under toggles (BK-7) |
-| `reading_sessions` | Books' own entity | mode-adaptive capture (BK-10); time, pages/position delta, statistics; photo attachments (encrypted → daily Journal) |
+| `reading_sessions` | base `sessions` `sub_type='reading'` + Books-owned 1:1 extension (`session_id`, S1) | mode-adaptive capture (BK-10) = the extension columns; time, pages/position delta, statistics; photo attachments (encrypted → daily Journal); shared timer/scheduling rides the base |
 | `reading_plans` (+ plan↔books) | the Quota Planner | arrangement sequenced\|parallel (BK-11); goal manual\|auto; target date·weekday·day-of-month; quota distribution + recalculation state; holds target_completion_date (B11) |
 | `book_subjects` | Education partition junction | many-to-many; replaces v1's `metadata.linked_courses` hack (BK-13) |
 | conflict/resolution state | BK-8 | pending clashes + preset rule (rule itself lives in Preferences) |
 
 - ⚠ Cross-cutting at build: `entity_links` gains annotation entity types; quote-embed block in `@vida/editor`;
   `pages` targets for bookmark/quote notes; Preferences keys (toggles, conflict rule, reader defaults).
+- ⚠ Ingest/AI (build): ISBN/metadata lookup = device-mediated **public-reference** (ADR-014 X1/X2/X3/X5, "Books
+  ISBN" dataset); OCR/TTS/transcription (cross-format mapping) = **X11** → ADR-015 (AI1/AI3/AI5/AI6); auto-derived
+  rows (mapped position, extracted TOC) carry `source=ai` (AI6). `[INTENT; ADR-014/015]`
 
 ## State management map `[FACT: ADR-001 State]`
 - **React Query** owns work/asset/TOC/annotation/plan/session reads + optimistic writes; **derived** unified
@@ -74,6 +78,11 @@
 ## ADRs / structural decisions
 - **ADR-002 §Books** — FACT base. **ADR-001** — RQ+Zustand, R2, hybrid mobile editor/reader. **ADR-003** —
   LWW + attachment pipeline.
+- **Driver ADRs (Part 1.2):** **ADR-004** (`reading_sessions` = base `sessions` sub-type + extension, S1) ·
+  **ADR-006** (`entity_tags`, SP1 — retire inline `books.tags`/`genre`) · **ADR-011** (nullable-derive `progress` M3;
+  reading-plan goal pursuable M1/M2) · **ADR-014** (ISBN lookup X1/X2/X3/X5/X9; OCR/TTS/transcription X11) ·
+  **ADR-015** (AI1/AI3/AI5/AI6; **not** AI4). All additive except the SP1/M3 reframes + the S1 soft-anti-signal.
+  `[INTENT; ADR-004/006/011/014/015]`
 - ⚠ **Surfaced:** (1) the Books entity-family amendment (assets, annotations ×3, sessions, plans, junction,
   mapping — 2nd-largest yet); (2) **cross-format mapping design pass** (transcription/TOC anchors); (3) the
   **Books governing principle** → joins the extension-model constitution amendment; (4) quote-embed block

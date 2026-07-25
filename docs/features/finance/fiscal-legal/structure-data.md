@@ -20,11 +20,16 @@
 - **`fiscal_obligations`** (NEW — **derived**, user-confirmable) — `jurisdiction_code · owner_type/owner_id ·
   obligation_type · due_date · status · source_rulepack_version · linked_task_id?`. Derived on-device from user data +
   rule-packs (FL-6); each becomes an obligation **Task** on confirm. `[INTENT FL-6]`
-- **Rule-packs (INFORM)** — **NOT a user table**: public datasets via the **ADR-014 public-reference layer** (bundled/
-  bulk, queried local, **provenance-signed + versioned**). A jurisdiction's brackets/entity-types/deadlines live here.
-  `[FACT: ADR-014 Layer-2 + provenance owed]`
-- **What-if / advisement** — **no persistent table required** beyond an optional `[E]` saved-scenario; runs via **ADR-015**
-  (on-device agentic ZK-safe · cloud dent); outputs carry `source = ai` + disclaimer (FL-13). `[FACT: ADR-015]`
+- **Rule-packs (INFORM)** — **NOT a user table**: public datasets via the **ADR-014 `public-reference` layer** (X2),
+  **device-mediated** (X1 — fetched/parsed on-device, server never a fetch proxy), fetched as the **whole set** (X3 —
+  bundled/bulk, queried from a **local copy** so the read hides which rule the user consults, **provenance-signed +
+  versioned** [owed]), gated by **`external_in_ok`** (X5). A jurisdiction's brackets/entity-types/deadlines live here.
+  `[FACT: ADR-014 X1/X2/X3/X5 (Layer-2 = public-reference); provenance/signature owed]`
+- **What-if / advisement** — **no persistent table required** beyond an optional `[E]` saved-scenario; the model call is
+  **ADR-015-governed** (X11 split from the ADR-014 data move), offered in the `on_device` / `cloud` modes (AI1, server-blind);
+  a `cloud` run is a **scope-minimized egress** (AI3 — only the needed numeric slice, not the vault) under **`external_out_ok`**
+  (X5) + the X4 egress gate; a rule-pack feeding the prompt carries its **provenance** in (AI5); outputs carry `source = ai`
+  + disclaimer (AI6/FL-13). `[FACT: ADR-014 X4/X5/X11; ADR-015 AI1/AI3/AI5/AI6]`
 
 ## Dependencies / graph (within the coupling budget — constitution §6)
 - **Depends on (composes, via seams):** **Finance** (money-touch — reads accounts/transactions/assets/income; adds
@@ -37,17 +42,25 @@
   own residency/entity/obligation rows. `[FACT: INT-2; INT-1]`
 
 ## ADRs / structural decisions
-- **ADR-014 (External Data Ingestion)** — rule-packs are the **public-reference layer** (bundled/bulk, provenance-signed,
-  versioned). This context is *the* largest INFORM instance. `[FACT: ADR-014]`
-- **ADR-015 (AI/LLM under ZK)** — advisement/what-if over the user's numbers rides the two-mode AI layer. `[FACT: ADR-015]`
+- **ADR-014 (External Data Ingestion)** — rule-packs are the **`public-reference` layer** (X2), device-mediated (X1),
+  whole-set bulk (X3, provenance-signed/versioned); the ingestion gates on **`external_in_ok`** and any egress on
+  **`external_out_ok`** (X5, existing ADR-010 grants — no new table); the cloud what-if is X4 egress + X6 compositional;
+  revocation stops future fetch, keeps ingested (X9); the advisement's LLM call splits to ADR-015 (X11). This context is
+  *the* largest INFORM instance (§4 names "Fiscal&Legal rule-packs" + "Fiscal advisement" verbatim). `[FACT: ADR-014 X1/X2/X3/X4/X5/X6/X9/X11]`
+- **ADR-015 (AI/LLM under ZK)** — advisement/what-if over the user's numbers rides the two-mode `on_device`/`cloud` AI
+  layer (AI1, server-blind); a cloud call = egress + scope-minimization (AI3); untrusted rule-pack content carries
+  provenance into the prompt (AI5); outputs carry `source = ai` (AI6). **No AI4 agentic-envelope** — the what-if is a
+  scoped, informational, no-auto-action advisement, not a tool-wielding actor. `[FACT: ADR-015 AI1/AI3/AI5/AI6; AI4 N/A]`
 - **ADR-011 (Measurability)** — long-run fiscal impact ladders into Purpose via `contributions`. `[FACT: ADR-011]`
 - **ADR-002 §5.20 amendment (build-phase)** — `fiscal_residencies` · `legal_entities` · jurisdiction link on Finance
   entities · `fiscal_obligations` join the owed ledger. `[INTENT: §5.20]`
 
 ## Single source of truth (constitution §3)
-- **Money lives in Finance** — this sub-context tags it with jurisdiction, never copies balances (FL-9).
+- **Money lives in Finance** — this sub-context **links it to a jurisdiction** (a `jurisdiction_code` association, not the
+  `entity_tags` tag surface), never copies balances (FL-9).
 - **Legal-entities live as/with Projects** — not a duplicate entity model (FL-8).
-- **Public law lives in rule-packs** (ADR-014), versioned + signed — never hand-copied into user data (FL-5).
+- **Public law lives in rule-packs** (ADR-014 `public-reference`, X3), versioned + signed — never hand-copied into user
+  data (FL-5).
 - **Obligations become Tasks** (owned by Tasks) — this context derives, Tasks owns (FL-6).
 - **AI outputs are drafts** (`source=ai` + disclaimer), never the source of truth (FL-13).
 

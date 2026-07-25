@@ -41,7 +41,7 @@ XP is additive-only (no penalties); no rules, no currencies, no boxes. `[FACT: g
   - `achievements` → `condition` becomes a **measurable predicate** evaluated on the ADR-011 seam + event stream (not
     a bespoke checker); user-authored achievements/challenges = capability (⚠ INTENDED). `[INTENT GG6/GG7]`
   - `user_profile` → **SPLIT** (GM-12): System keeps per-currency total + level; `check_in_streak*` → Check-ins;
-    persona/modules/onboarding → Preferences; PII → account/profile. `[INTENT GG3]`
+    `persona`/`motivation_style`/`active_modules`/`onboarding_*` → Preferences; **PII (`display_name`/`avatar_url`/`birth_date`) STAYS in `user_profile` ⚠** — relocation to an account/identity entity is INTENDED-later, not part of this split. `[INTENT GG3; FACT: ADR-012 §3.10]`
   - **level** → a derived value over a fixed non-linear **curve config** + titles (no new table). `[INTENT GG5]`
 - **New effects on the ADR-004 rail — TYPED, all §3.2.5 Additive-class (NOT one umbrella):** **`grant_currency`**
   (`award_xp` = its XP case) · **`lock_currency`** · **`move_money`** (Finance-owned transfer handler — INTENDED, 0-logic

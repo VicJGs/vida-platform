@@ -21,9 +21,16 @@
 - **Backfill respects the user's window.** Past-date completions recompute streaks; reject beyond the
   user-configured limit (HB-10, ⚠ INTENDED). `[INTENT G9]`
 - **Notes via `pages`.** A habit's notes are a linked `pages` row (`entity_type='habit'`), never inline. `[FACT: §5.2]`
-- **Purpose contribution goes through the junction.** A completion contributes to a purpose metric via
-  `purpose_habits` + the Purpose write contract — Habits never writes `purpose_metric_values` directly (HB-8,
-  §6). `[INTENT G7]`
+- **Purpose contribution goes through `contributions`.** A completion contributes to a purpose metric via the
+  **`contributions`** primitive (M7 — retiring `purpose_habits`) as the S4 `contribute_purpose_metric` effect (R2,
+  idempotent via R1) — Habits never writes `purpose_metric_values` directly (HB-8, §6). `[INTENT G7; ADR-011 M7; ADR-004 S4]`
+- **The habit is a pursuable — declare `measurement_kind`/`binding_mode`.** The habit carries `measurement_kind`
+  (natural **`rate`**) + `binding_mode` (a completion = `event-trigger`), never a bespoke goal-type column (M1/M2);
+  its rate/progress derives, the streak cache stays derived-from-ledger (HB-2). `[INTENT; ADR-011 M1/M2]`
+- **Tags via `entity_tags`, not inline/`page_tags`.** The As-is inline `habits.tags` + `page_tags` retire to the
+  shared **`entity_tags`** primitive (SP1); Habits registers `entity_type='habit'`, a consumer. `[INTENT; ADR-006 SP1]`
+- **`streak(habit)` is an M5 measure seam.** Advertise streak/completion-rate as queryable measures (R7) — never a
+  direct cross-module table read (M5). `[INTENT; ADR-011 M5]`
 
 ## Naming & layout
 - Enum values (canonical): `habit_type` `build`/`break`; `frequency` `daily`/`weekly`/`biweekly`/`monthly`/
@@ -42,8 +49,12 @@
 - **Never** count a partial completion toward the streak (HB-5). `[INTENT G4]`
 - **Never** model action-list cadence or deadlines here — that's Routines / Tasks; Habits is behavior recurrence
   only. `[FACT: CLAUDE.md modules]`
-- **Never** write XP/achievements or `purpose_metric_values` from Habits — emit the event/contribution through
-  the owning module (HB-8/HB-9, §6). `[INTENT G2,G7]`
+- **Never** write `consequence_ledger`/XP or `purpose_metric_values` from Habits — emit the S4 effects
+  (`contribute_purpose_metric` · `award_xp`→`grant_currency(XP)` E2) through the owning module, idempotent via R1
+  (HB-8/HB-9, §6; R2). `[INTENT G2,G7; ADR-004 S4/R1/R2; ADR-012 E2]`
+- **Never** retire `project_habits` — only the `purpose_*` trio (`purpose_habits`/`purpose_routines`/
+  `purpose_projects`) retires → `contributions`; `project_habits` is a **kept** live junction (C1 guard).
+  `[FACT: CLAUDE.md junctions; INTENT ADR-011 M7]`
 - **Never** backfill past the user's configured window without a typed rejection (HB-10). `[INTENT G9]`
 
 ## Completion checklist

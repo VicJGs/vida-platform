@@ -28,8 +28,11 @@ and medical services** for a two-way flow of information. The Core is the part t
   body-fat-mass·1RM) are computed on-device from other metrics. **Exams** (user-configured, scheduled + reminded
   medical events) produce metric values. Collapses Notion's Body-Measures + Performance-History + Testing-Lab +
   Health-Development + Domains/Factors/Exams into one spine. `[INTENT Fork 1 + CI-1/CI-2]`
-- **Health Goals (unified).** One goal system (metric-target · **physical-role** · body-composition · event-prep).
-  Progress **derives** from Metrics. A goal **drives programming** (manual in Core; LLM/import opt-in). `[INTENT Fork 2/CI-4]`
+- **Health Goals (unified).** One goal system; the goal is the **pursuable** carrying `measurement_kind` × `binding_mode`
+  (ADR-011 M1/M2) — the former metric-target · **physical-role** · body-composition · event-prep "types" are now
+  (measure-kind × binding × the metric/role subject) combinations, not a bespoke enum. Progress is a **nullable override**
+  (`NULL ⇒ derive`, M3) that **derives** from Metrics via the M5 read seam. A goal **drives programming** (manual in Core;
+  LLM/import opt-in). `[INTENT Fork 2/CI-4; ADR-011 M1/M2/M3/M5]`
 - **Adaptation engine.** Protocols (→ Knowledge) · Responses (observation logs) · **Experiments** (N-of-1: A control
   vs B test → winner + learning) · **Profiles** (derived response profile → feeds the AI planner). `[INTENT Fork 3]`
 - **Physical Roles.** The **trainable-capability** unit (merges the old Disciplines + capacity goals): calisthenics ·
@@ -57,9 +60,12 @@ and Metrics are read by *both* pillars; the Adaptation engine profiles *both* tr
 - **Not an AI/wearable/exchange service (yet).** Plan-by-LLM · food-photo analysis · wearable/prescription import ·
   and the intended **bidirectional external integrations** — INPUT from Google Health / wearables / open health
   sources, OUTPUT to medical systems & services — are **opt-in extension-model** layers on top of the manual Core.
-  The integrations are **INTENT / forward-dep stubs only** (actual per-service wiring waits until the core + services
-  are complete); OUTPUT-to-medical is **data egress** and rides the strictest consent guard. Never core, never
-  non-consensual. `[FACT: ZK-1; extension-model — INTENT CI-6]`
+  INPUT is **device-mediated ingestion (ADR-014 X1)**, layered (X2), gated on `external_in_ok` (X5); the AI leg rides
+  **ADR-015** (on_device/cloud per-use AI1, cloud = egress + scope-min AI3, `source=ai` provenance AI6). The integrations
+  are **INTENT / forward-dep stubs only** (actual per-service wiring waits until the core + services are complete);
+  **OUTPUT-to-medical is data EGRESS** and rides the **X4 egress guard** (`external_out_ok` + union-of-consents + audit +
+  never-auto-transmit — Health CI-6 is ADR-014's named egress example). Never core, never non-consensual.
+  `[FACT: ZK-1; extension-model — INTENT CI-6; ADR-014 X1/X2/X4/X5; ADR-015 AI1/AI3/AI6]`
 - **Not a warden.** Safety & Medical **advises and safety-nets — it never gatekeeps, prescribes, credentials, or
   blocks.** Autonomy-with-clarity: the user's body, the user's call; flags are dismissible. `[INTENT Victor 2026-07-14]`
 

@@ -22,10 +22,16 @@
 - **Derived analytics** (computed, FN-6/FN-7):
   - `getOverview()` → `{totalBalance, totalAssets, totalLiabilities, netWorth, monthlyIncome, monthlyExpenses}`
     (v1 `FinanceOverview`) · `getInvestmentValue(id)` → qty×current_price + gain/loss · chart datasets (G11)
+- **`store` layer** (E6 — Finance owns it, FN-15):
+  - `createStoreNode({node_kind, ref_type?, ref_id?, parent_id?})` · `lockBox`/`unlockBox` (reward-target
+    `is_locked`, optional `dream_id`/`purpose_id`) · `getNetWorth()` computes **over the tree** (Σ wrapped-entity
+    values − Σ liabilities); the tree references entities, **never copies balances** (C1). `[INTENT; ADR-012 E6]`
 - **⚠ INTENDED:**
-  - `importStatement(file)` (CSV/OFX) → client-side parse → stage → `matchTransactions()` → user-confirm →
-    commit (FN-9, G2) — **blocked on ZK-ingestion ADR**
-  - bank/broker connection (device-side or private aggregator) — **blocked on ZK-ingestion ADR**
+  - `importStatement(file)` (CSV/OFX) → client-side parse (**X1** device-mediated) → **`import_staging`** →
+    `matchTransactions()` (auto-match by date/amount tolerance) → user-confirm → commit (**X8**; FN-9, G2) —
+    **ADR-014-governed** (mechanism decided)
+  - bank/broker connection (device-side; gates on `external_in_ok`/`external_out_ok`, **X5**) — the
+    private-**aggregator** plaintext path is the **residual ZK-ingestion ADR**
   - `getFxRate`/`setFxRate` + base-currency conversion (FN-8, G8) — device-side/manual
   - budgeting API (G12) — **needs design pass**; liability-payment schedule/tracking (G12)
   - **Commitments management sub-context (FN-14, 2026-07-15)** — a **derived** surface, no new entity:
@@ -39,7 +45,8 @@
 ## What it consumes (outside dependencies)
 - **Notes & Pages** — notes on transaction/account/asset/investment/liability via `pages` (`entity_type`), read
   through the Notes contract, never its tables. `[FACT: ADR-002 §5.2; INTENT G12]`
-- **Shared tag system** — transaction tagging via `tags`/`page_tags` (FN-10). `[INTENT G10]`
+- **Shared tag system** — transaction tagging via **`entity_tags`** (`tag_id, entity_type, entity_id`, SP1;
+  `entity_type='transaction'`), not `page_tags`/inline (FN-10). `[INTENT G10; ADR-006 SP1]`
 - **Preferences** — base/display currency, recurring-mode (forecast vs auto-gen), persisted-aggregates opt-in,
   import/connection personalization. `[INTENT G3,G6,G8; FACT: Preferences contract]`
 
@@ -54,6 +61,9 @@
   contribution. `[INTENT; FACT: CLAUDE.md Purpose]`
 - **Gamification** → transaction-create / milestone events feed achievements (v1 fired an achievement check on
   create). `[FACT: v1 API.md L173]`
+- **Gamification / System (economy)** → consumes the **`store`** reward-target boxes (`is_locked`,
+  `dream_id`/`purpose_id`), and *emits* the **`move_money`** Additive effect that Finance executes via its effect
+  handler (**R2**, idempotent **R1**) — penalties LOCK a box, never destroy (E5, FN-16). `[INTENT; ADR-012 E4/E6]`
 
 ## Contract error cases
 - `createTransfer` with no destination or source==destination → typed `InvalidTransferError` (FN-4). `[INTENT G5]`

@@ -24,8 +24,9 @@ reshape when life happens, and — as a student — stay **ahead** of classes an
   mapping (transcription + TOC anchors — never manual calibration).
 - **Annotations** anchor to the WORK, visible from every format: highlights (deliberately light) · bookmarks ·
   quotes (first-class, per book, embeddable in any note platform-wide).
-- **Reading sessions** (Books' own entity, mode-adaptive) + **page-photo capture** for physical books — the
-  photos form a **visual reading journal** feeding the daily Journal.
+- **Reading sessions** (a base `sessions` `sub_type='reading'` + a Books-owned 1:1 extension keyed `session_id`,
+  ADR-004 S1 — mode-adaptive capture rides the extension, the shared timer/scheduling rides the base) + **page-photo
+  capture** for physical books — the photos form a **visual reading journal** feeding the daily Journal.
 - **Adaptive Quota Planner:** goals manual or auto-calculated to a target date (date · weekday · day-of-month);
   quotas over free time; **recalculates on missed quotas**; single- or multi-book plans (sequenced | parallel,
   user-arranged). The Books end of the Calendar-entity reconciliation *(forward dep)*.
@@ -41,9 +42,12 @@ reshape when life happens, and — as a student — stay **ahead** of classes an
 - **Not the Study Planner.** The Study Planner plans *study life* from the whole subject intake at another
   altitude; Books owns *reading* plans. The Planner consumes, never owns (B6).
 - **Not a store or social/community reading app.** No purchases, no feeds, no sharing; the ISBN/metadata lookup
-  is a governed convenience, not a marketplace (B8/B11).
+  is a governed convenience (a device-mediated **public-reference** fetch of the Books ISBN dataset — ADR-014
+  X1/X2/X3 under `external_in_ok`), not a marketplace (B8/B11).
 - **Not a server-side pipeline.** Files are client-encrypted (R2 blobs); TTS/transcription/lookup/OCR run under
-  Books' governing principle — opt-in, user owns the risk, OS provides the safety net (B3). `[FACT: ZK-1]`
+  Books' governing principle — each model call splits to ADR-015 (X11), runs `on_device`/`cloud` (AI1), and bounds
+  the untrusted OCR'd page's provenance (AI5); opt-in, user owns the risk, OS provides the safety net (B3). **Not an
+  AI4 agent** (scoped model calls, not a tool-envelope). `[FACT: ZK-1; ADR-014 X11; ADR-015 AI1/AI5]`
 - **Not rigid.** A book with zero copies, a TOC-only entry, a physical-only reader — every state is first-class
   and renders gracefully (anti-lost). `[INTENT B12]`
 

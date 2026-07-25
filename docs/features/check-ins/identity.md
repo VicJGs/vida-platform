@@ -31,8 +31,12 @@ default (use a built-in template) yet fully personalizable. `[INTENT: Victor 202
   modules own that data (§6). Purpose's `target_reviews` happen *within* a check-in review. `[INTENT G7]`
 - **Not a free-form note store.** `reflection` is an inline `[E]` field; but a check-in **links to `pages`** (the
   Journal day page) via `entity_links`. `[INTENT G10; FACT: ADR-002 L1350]`
-- **Not tagged.** Check-ins use **links, not tags** (no per-entry tag vocabulary). `[INTENT G10]`
-- **Not the Gamification owner.** Check-in streaks feed XP/achievements (⚠ INTENDED), owned there. `[INTENT G9]`
+- **Not tagged.** Check-ins use **links, not tags** — a deliberate opt-out from the universal `entity_tags`
+  (SP1-consistent: no bespoke tag store); relationships ride `entity_links` (SP4, tags≠links). `[INTENT G10;
+  ADR-006 SP1/SP4]`
+- **Not the Gamification owner.** The **streak** is check-ins-owned (`check_in_streak*`, ADR-012 E9 — the
+  `user_profile` split); a completion/streak emits **`grant_currency(XP)`** (E2) that Gamification applies →
+  `consequence_ledger` (E3) — check-ins never writes XP itself. `[INTENT G9; ADR-012 E2/E9]`
 
 ## Completion checklist
 - [x] "what it is" + "desire" + "what it is NOT" filled · [x] each claim [FACT/INTENT] · [x] no `{{…}}` remaining

@@ -29,7 +29,10 @@ never discarded, because "it is very important to be grateful and happy about wh
   Scheduler drops it into an open, fitting slot). `[INTENT Q1]`
 - **Everything about judgment is user-configurable policy** (ships defaults, fully editable): the **completion
   policy** (all-or-nothing · required-node · threshold), the **miss policy + acceptance window**, and the routine
-  **lifecycle** (active · paused · off). Streaks are **policy-derived**, not a fixed rule. `[INTENT Q2, Q3]`
+  **lifecycle** (active · paused · off). Streaks are **policy-derived**, not a fixed rule. As a **pursuable**
+  (ADR-011), the routine carries a **`measurement_kind`** (natural `rate` — completion frequency over cadence) and a
+  **`binding_mode`** (`derived-pull` — done/streak is computed-on-read from the completions ledger, not a stored
+  counter). `[INTENT Q2, Q3; ADR-011 M1/M2]`
 - **Step-scoping:** a repeatable action can belong to **all routines · one routine · a subset** (shared
   membership). **User-extensible** step/session types + segments ride **Spaces**. `[INTENT Q1]`
 
@@ -45,10 +48,13 @@ never discarded, because "it is very important to be grateful and happy about wh
   `[FACT: sessions/contract.md]`
 - **Not a duplicator.** A step never writes a parallel completion record — completing the step *is* completing the
   driven entity. `[INTENT Q1 — single source of truth]`
-- **Not the Gamification engine.** Routine outcomes **feed** XP/achievements; Gamification consumes a
-  **policy-derived** streak, Routines never writes XP. `[INTENT Q4]`
-- **Not the Purpose-metrics owner.** A routine **contributes to** a linked purpose via `purpose_routines`; the
-  metric is owned by **Purpose & Goals**. `[FACT: project.ts purpose_routines]`
+- **Not the Gamification engine.** Routine outcomes **feed** the economy: a routine-completion event fires the
+  **`grant_currency(XP)`** feeder effect (ADR-012 E2) that **Gamification applies**, writing to
+  **`consequence_ledger`** (E3). Gamification consumes a **policy-derived** streak (a `derived-pull` measure it
+  READS, RT-7) — **Routines never writes XP itself** (E1/E2 layering). `[INTENT Q4; ADR-012 E2/E3]`
+- **Not the Purpose-metrics owner.** A routine **contributes to** a linked purpose via the polymorphic weighted
+  **`contributions`** primitive (ADR-011 M7 — retires the forward `purpose_routines` junction); the metric is owned
+  by **Purpose & Goals**. `[FACT: project.ts purpose_routines (As-is); INTENT: ADR-011 M7 → contributions]`
 - **Not a notes store.** Notes live in linked `pages` (`entity_type='routine_action'`), never inline. `[FACT:
   ADR-002 L1344]`
 

@@ -26,8 +26,8 @@
 - **FC-7 — Gathering is first-class.** Cards may be generated from Knowledge `definition` objects (KN-4), Book
   quotes, and notes; the source is kept as an `entity_links` reference (v1 `source_note_id` generalized).
   `[INTENT: Victor 2026-07-12; FACT: v1 entities.ts L1272]`
-- **FC-8 — Cards are universal citizens.** Every card participates in the **universal tag system** and links
-  to **notes/pages** via `entity_links`; supports attachments. `[INTENT: Victor 2026-07-12; ADR-005 §3.1(6)]`
+- **FC-8 — Cards are universal citizens.** Every card is taggable via the shared **`entity_tags`** primitive
+  (SP1, `entity_type='flashcard'`) and links to **notes/pages** via `entity_links` (SP4, distinct from tags); supports attachments. `[INTENT: Victor 2026-07-12; ADR-006 SP1; ADR-005 §3.1(6)]`
 - **FC-9 — The due-queue is read from Knowledge's `dueIn`.** The Scheduler (Sessions & Scheduling) reads
   Knowledge's provider; Flashcards does not expose its own queue or own daily caps (those are the
   `method_binding`). `[FACT: ADR-004 SS-7; ADR-005 §3.3]`

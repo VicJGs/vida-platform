@@ -34,11 +34,17 @@
 - **CK-8 — Scheduling drives reminders, user-set, per-template.** A template's `schedule_type` / `schedule_days`
   / `preferred_time` (and the user's chosen times per type) fire **reminders via Preferences + Notifications**,
   configured in each template's standalone editor. `[INTENT G4,G8]`
-- **CK-9 — No tags.** Check-ins use links (CK-7), not a tag vocabulary. `[INTENT G10]`
+- **CK-9 — No tags (SP1-consistent opt-out).** Check-ins use links (CK-7), not a tag vocabulary — no bespoke tag
+  store (what SP1 requires) and a deliberate opt-out from the universal `entity_tags`; relationships ride
+  `entity_links` (SP4, tags≠links). `[INTENT G10; ADR-006 SP1/SP4]`
 - **CK-10 — Referential integrity.** `daily_check_ins.template_id` is **SET NULL** on template delete (the entry
   survives); `check_in_template_questions` **CASCADE** on template delete. `[FACT: L3208, L3263]`
-- **CK-11 — Streaks feed Gamification (⚠ INTENDED).** Consecutive-day check-in streaks + completion emit
-  XP/achievement events; Gamification owns the reward. `[INTENT G9]`
+- **CK-11 — Check-ins own the streak; Gamification owns the reward (⚠ INTENDED).** The consecutive-day
+  **`check_in_streak*`** is **check-ins-owned** (ADR-012 E9 — the `user_profile` split; derived from
+  `daily_check_ins`, not written onto the overloaded `user_profile`). A completion/streak **emits** the
+  **`grant_currency(XP)`** feeder effect (E2 — `award_xp` is its XP case, NOT the general mechanism) which
+  **Gamification applies** → `consequence_ledger` (E3); check-ins never writes XP itself. **No S4** — a check-in is
+  not a session; the grant rides the completion *event*. `[INTENT G9; ADR-012 E2/E3/E9]`
 - **CK-12 — Local-first.** Every check-in/template edit succeeds locally first; LWW on structured columns.
   `[FACT: LF-2; ADR-003]`
 
@@ -73,7 +79,8 @@
 - **CK-3** expand `check_in_type` (+ afternoon, monthly_review, yearly_review).
 - **CK-6** review→Purpose/Projects/Tasks aggregation contract (cross-wave — finalize when documented).
 - **CK-8** per-template schedule → Preferences + Notifications wiring.
-- **CK-11** Gamification streak events.
+- **CK-11** the E9 `user_profile` split (check-ins owns `check_in_streak*`, derived from `daily_check_ins`) + the E2
+  `grant_currency(XP)`→`consequence_ledger` feeder (driver-token realignment, Part 1.2).
 Until amended, the live invariants are CK-1, CK-4 (columns), CK-5, CK-7 (entity_type exists), CK-10, CK-12. All
 schema changes → ADR-002 amendment + the cross-module review contract. `[FACT: ADR-002 §5.13; INTENT G2,G3,G6,G7,G8,G9]`
 

@@ -10,13 +10,15 @@ Drizzle ORM SQLite schema, a platform-agnostic DB adapter, and a generic reposit
 - `DatabaseAdapter` abstracts the per-platform SQLite engine (wa-sqlite/OPFS web, expo-sqlite mobile, Tauri plugin desktop); it owns open→migrate→query→close.
 - Schema composes tables via spread helpers: `...baseColumns` (id+timestamps) and `...syncColumns` (`_sync_*`) — never hand-repeat sync columns.
 
-## Conventions (encoded in schema.ts)
+## Conventions (encoded in `schema/_shared.ts` helpers)
 - PK: UUIDv7 TEXT · timestamps: INTEGER (Unix ms) · money: INTEGER cents · bool: INTEGER 0/1 · dates: TEXT `YYYY-MM-DD` · encrypted fields marked `/* E */`.
 
 ## Imports
 - Types from `@vida/types`; SQLite builders from `drizzle-orm/sqlite-core`; crypto via relative `../encryption/*`.
 
 ## Key files
-- schema.ts: all ~60 tables; edit here to add tables/columns.
-- repository.ts: generic encrypt-before-write / decrypt-after-read CRUD.
-- adapter.ts: `DatabaseAdapter` interface + `DrizzleDb` type + migration shape.
+- `schema/`: the v2 authoring surface — `_shared.ts` (primitives) · `_registry.ts` (entity_type registry) · `<domain>.ts` per structure-data.md, authored **per-feature** (ADR-016 §3.5 / ADR-017). Tables are added here, not in one monolith.
+- `repository.ts`: generic encrypt-before-write / decrypt-after-read CRUD (table-agnostic).
+- `adapter.ts`: `DatabaseAdapter` interface + `DrizzleDb` type + migration shape.
+- `migrations/runner.ts`: applies hand-written SQL migrations (ADR-016 §3.2); registry is empty until per-feature migrations are authored.
+- `_legacy/`: the quarantined v1 `schema.v1.ts` (81 tables, ~60% stale) + `001_initial.v1.ts` — reference-only, do not import (ADR-018). Deleted at parity.

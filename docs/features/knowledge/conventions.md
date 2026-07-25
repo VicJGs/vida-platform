@@ -15,8 +15,9 @@
   personalizable render (KN-5) — never an inline column, never the retired `knowledge_notes` table.
 - **Relate through the link graph.** Cross-module ties use `entity_links` (KN-6); never write `resource_type`.
   A single `linked_book_id` is a landmine — support **many** book links per object.
-- **Containers nest by tags, regroup by view.** Module ⊃ Area ⊃ Subject membership is shared-scoped-tag
-  many-to-many (KN-7); an Area can serve multiple OS-modules. Never model it as a rigid `parent_id` chain.
+- **Containers nest by tags, regroup by view.** Module ⊃ Area ⊃ Subject membership rides the `entity_tags`
+  primitive (ADR-006 SP1, scoped; many-to-many, KN-7); an Area can serve multiple OS-modules. Never model it as a
+  rigid `parent_id` chain.
 - **Compound sets: builder + default.** Every consumer gets a shipped default set so no one is forced to
   personalize (KN-11, anti-lost). AI-assist only via the extension-model path (opt-in, consent, user-owns-risk).
 - **Education plans, Knowledge holds.** Link to Education's planning Topics; never fold a Knowledge object into

@@ -6,11 +6,17 @@ This document describes how data moves through the Vida Platform at every layer 
 
 **Governs:** All service implementations in `packages/core/src/services/`. Every service must follow the data flow described here.
 
-**Code it documents (already implemented):**
+**Code it documents:**
 - `packages/core/src/db/repository.ts` — Generic repository with `encryptRow`, `decryptRow`, `create`, `update`, `findById`, `findAll`
 - `packages/core/src/db/adapter.ts` — Database adapter interface with `SqliteDriver`, `DatabaseAdapter`, `initializeConnection`
 - `packages/core/src/encryption/vault.ts` — Encryption primitives with `encryptField`, `decryptField`, `hashContent`
 - `packages/core/src/encryption/key-management.ts` — Vault key lifecycle with `unlock`, `lock`, `getVaultKey`
+
+> **Implementation status (2026-07-25):** This describes the **target** pipeline. The write/read/service/state core is
+> substrate-accurate, but the **encryption and sync steps run only after the deferred hardening pass** (ADR-017:
+> Phase-1.0 is features-first; storage is rebuilt per-table per ADR-016). The post-commit **effect layer** (step 10 /
+> §5 / §8) rides the shared effect rail with the R1 idempotency guard — not a direct `awardXP` call. Substrate
+> primitives cite their owning ADR; code/directory homes are a later structural phase.
 
 ---
 
@@ -71,8 +77,13 @@ User action (button click, form submit, inline edit)
     |
     v
 [10] POST-COMMIT SIDE EFFECTS (best-effort, non-transactional)
-    10a. Award XP via gamification (if applicable)
-    10b. Dispatch notification (if applicable, respecting user preferences)
+    10a. Apply binding-driven effects on the shared effect rail (if applicable) —
+         the module emits an effect (e.g. grant_currency, ADR-012); the consequence
+         engine applies it EXACTLY ONCE via effect_event_id + applied_effects + UNIQUE
+         (framework R1), so best-effort retry is idempotent. Balances are derived from
+         consequence_ledger (no direct awardXP, no authoritative total_xp column).
+    10b. Dispatch notification (if applicable) via the ZK delivery tiers (ADR-013),
+         filtered locally by user preferences
     10c. Invalidate React Query cache keys
     10d. Trigger sync debounce timer (2s for structured data)
     |
@@ -86,7 +97,7 @@ The sync queue enqueue (step 8) is inside the SQLite transaction because it must
 
 ### Why Post-Commit Side Effects Are Best-Effort
 
-Notifications and XP awards (step 10) run after the transaction commits. A failed notification or gamification write must never roll back a successful data write — the user's data is more important than a badge or toast message. These side effects are retryable and non-critical.
+Notifications and rail effects (step 10) run after the transaction commits. A failed notification or effect application must never roll back a successful data write — the user's data is more important than a badge or toast message. These side effects are retryable and non-critical; the effect rail's idempotency key (`effect_event_id` + `applied_effects` + `UNIQUE`, framework R1) makes retry **exactly-once** rather than duplicating a currency grant.
 
 ---
 
@@ -190,7 +201,10 @@ The repository obtains the vault key via `getVaultKey()` from `packages/core/src
 
 ### Encryption Classification Source
 
-Each table's encryption schema is defined alongside its Drizzle schema in `packages/core/src/db/schema.ts`. Fields marked with `/* E */` comments in the SQL correspond to E-classified fields in the `TableEncryptionSchema`.
+Each table's encryption schema is defined alongside its table in the per-table `schema/` directory authored during the
+build phase (ADR-016 — hand-written SQL migrations are the source of truth; Drizzle is the query-only type mirror).
+Fields marked `-- [E]` in the SQL correspond to E-classified fields in the `TableEncryptionSchema`. See
+`security-model.md` §8 for the P/E classification rules and substrate field-classes.
 
 ---
 
@@ -273,8 +287,14 @@ export async function createTask(input: unknown): Promise<Task> {
   // [4] REPOSITORY WRITE — Encrypts + writes + sync metadata (in transaction with sync queue)
   const task = await taskRepo.create(data)
 
-  // [5] POST-COMMIT SIDE EFFECTS — Best-effort
-  await awardXP({ action: 'task_created', entityType: 'task', entityId: task.id, xp: 5 })
+  // [5] POST-COMMIT SIDE EFFECTS — Best-effort, applied exactly-once via the effect rail
+  const effectEventId = deriveEffectEventId('task_created', task.id) // idempotency key (framework R1)
+  await applyEffects({ // illustrative — the rail's emit API; name is a build-phase detail
+    source: { entityType: 'task', entityId: task.id, action: 'task_created' },
+    effectEventId, // effect applied at most once → no duplicate currency grant
+  })
+  // The consequence engine resolves rules → grant_currency etc. (ADR-012); balances are
+  // derived from consequence_ledger. No direct awardXP; the service only emits the event.
   // React Query invalidation happens at the hook layer, not here
 
   // [6] RETURN typed result
@@ -288,7 +308,7 @@ export async function createTask(input: unknown): Promise<Task> {
 2. **Transform before rules** — Compute defaults and derived fields so business rules see the final shape.
 3. **Business rules throw `ServiceError`** — With a typed error code and human-readable message. Never throw generic `Error`.
 4. **One repository call per write** — The repository handles the transaction (write + sync queue). Don't open manual transactions unless doing a batch operation.
-5. **Side effects after write** — XP, notifications, and other cross-module effects run post-commit. They never block the write.
+5. **Side effects after write** — rail effects (currency grants, contributions), notifications, and other cross-module effects run post-commit. They never block the write, and the rail's idempotency key makes retry exactly-once.
 6. **Return the created/updated entity** — The UI needs the result to update its cache.
 
 ### Batch Operations
@@ -474,7 +494,7 @@ Putting it all together — the full path from user input to encrypted storage t
 │  [3] Enforce business rules (throw ServiceError)                     │
 │  [4] Call repository ─────────────────────────────────────────────── │
 │                                           │                          │
-│  Post-commit: [5] Award XP  [6] Notify  [7] Invalidate cache       │
+│  Post-commit: [5] Apply rail effects (R1)  [6] Notify (ZK)  [7] Invalidate cache │
 └───────────────────────────────────────────┼──────────────────────────┘
                                             │
 ┌───────────────────────────────────────────┼──────────────────────────┐

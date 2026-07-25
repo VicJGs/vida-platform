@@ -6,9 +6,9 @@
 
 | Table | Purpose | `[E]` fields | Key constraints |
 |---|---|---|---|
-| `courses` (→ **subjects**) | the study unit | title, description, provider, instructor, url, tags, metadata | `course_type` CHECK(4); `status` CHECK(4); `progress` 0-100; modules counters; `rating` 1-5 |
+| `courses` (→ **subjects**) | the study unit | title, description, provider, instructor, url, **tags** (inline `[E]` — As-is floor → retire to `entity_tags`, SP1), metadata | `course_type` CHECK(4); `status` CHECK(4); **`progress` `NOT NULL DEFAULT 0`** (As-is floor → nullable override `NULL ⇒ derive`, M3); modules counters; `rating` 1-5 |
 | `ics_feed_configs` | calendar feeds | feed_url, feed_name, last_error, metadata | `default_course_id` SET NULL; `sync_interval_hours` def 6 |
-| `ics_synced_events` | synced events | summary, description, location, raw_event | `feed_id` CASCADE; **UNIQUE(feed_id, uid)**; `matched_course_id` SET NULL |
+| `ics_synced_events` | synced events | summary, description, location, raw_event | `feed_id` CASCADE; **UNIQUE(feed_id, uid)** + `is_ignored` = the **X8 add-only feed** dedup (already conforms); `matched_course_id` SET NULL |
 
 - `courses.metadata` `[E]` JSON held v1-style college data (schedule, grade) — **superseded** by the structured
   entities below. `[FACT: L2391; v1 CollegeClassData]`
@@ -30,17 +30,19 @@
 | assessments | subject-attached | type ∈ exam/quiz/test/presentation/work; date, weight/points, **modality**, grade (ED-8) |
 | education-task | homework | lives in the **Tasks Universe**, Education-scoped, via Tasks→Education API (ED-9) |
 | subject vault | docs + notes | inline + R2, client-encrypted (ED-13, PJ-8 pattern) |
-| Education measurement | fluid progress | multi-type (grade/deliverable/goal/manual/count), **Education-forged** — same pattern as Projects, separate storage (ED-10) |
+| Education measurement | fluid progress | decomposes to **`measurement_kind`** (M1: deliverable→milestone · count→quantitative · goal→target) × **`binding_mode`** (M2: grade-derived→derived-pull · manual→manual) — the Projects axes, **Education-forged, separate storage** (ED-10) |
 
 - ⚠ Reconciliations at build: `course_type` vs the Institution/Self-taught mode level; `entity_links` gains the
-  new entity_types; shared-tags migration for `courses.tags`.
+  new entity_types; **`entity_tags` migration for the inline `courses.tags`** (SP1, Education-scoped).
 
 ## State management map `[FACT: ADR-001 State]`
 - **React Query** owns hierarchy/subject/schedule/assessment reads + optimistic writes; **derived** grade/GPA and
   measurement computations (invalidate up the chain on any descendant change); device-side ICS sync jobs.
 - **Zustand** owns ephemeral UI: hub tab + view mode + grouping per tab, curriculum-builder draft, template-fork
   state, schedule editor, grading-system builder draft.
-- Grades, GPA, and progress are **derived** (ED-7/ED-10) — never hand-maintained truth.
+- Grades, GPA, and progress are **derived** (ED-7/ED-10) — never hand-maintained truth; the live `courses.progress`
+  is a nullable override (`NULL ⇒ derive`, M3), not a `NOT NULL DEFAULT 0` counter. GPA/progress rolls up the
+  hierarchy weighted by the grading-system components (M4; the weight model = the grading-system design pass).
 
 ## Page / route map `[INTENT H9]`
 - **Programs Dashboard** — all programs, grouped/filtered by mode; progress + acing/lacking areas.
@@ -69,6 +71,10 @@
 
 ## ADRs / structural decisions
 - **ADR-002 §5.10/§5.18** — FACT base. **ADR-001** — RQ+Zustand, TipTap notes, R2. **ADR-003** — LWW + attachments.
+- **Driver ADRs (Part 1.2):** **ADR-006** (`entity_tags`, SP1 — retire inline `courses.tags`) · **ADR-011**
+  (`measurement_kind`×`binding_mode` M1/M2, nullable-progress M3, grade-weighted rollup M4) · **ADR-014** (ICS =
+  X1 device-mediated / X2 user-managed / X5 / X8 / X9 / X10; document extraction X11) · **ADR-015** (extraction
+  AI1/AI3/AI5/AI6; **not** AI4). All additive except the two live-FACT reframes (SP1/M3). `[INTENT; ADR-006/011/014/015]`
 - ⚠ **Surfaced:** (1) the hierarchy amendment (14 entities above — largest yet); (2) grading-system component
   model (design pass); (3) measurement pattern shared w/ Projects, forged separately (design pass); (4) document
   extraction under the extension-model/AI ADR. `[INTENT]`

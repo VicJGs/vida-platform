@@ -53,7 +53,7 @@
   as a leaf under `scheduled_study_sessions`/entities. `[FACT: v2 graph scheduled_study_sessions → pomodoro_sessions L3756; entity_type map L3816]`
 - **In-edges:** the `/pomodoro` widget (Notes) launches it; the `focus` Session hosts it.
 - **Out-edges (all via the Session's effects, §6):** Tasks (`log_time` → `task_time_logs` `[FACT L1510]`) ·
-  Journals (`surface_journal`) · Gamification (`award_xp`, Wave 4) · Global Calendar (`surface_calendar`).
+  Journals (`surface_journal`) · Gamification (`award_xp` S4 effect, ADR-012-generalized → `grant_currency(XP)` E2 → `consequence_ledger` E3, Wave 4) · Global Calendar (`surface_calendar`). Each effect rides the **R1** idempotency rail (deterministic `effect_event_id` + `applied_effects` dedup ledger + UNIQUE — no double-count on sync replay) via R2. `[INTENT; ADR-004 S4/R1/R2; ADR-012 E2/E3]`
 - **Coupling budget:** Pomodoro adds no new cross-module edges of its own — it rides the Session's declared
   effects, so its coupling is the Session's, not additive. `[INTENT]`
 
