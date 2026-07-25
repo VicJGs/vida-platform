@@ -6,12 +6,12 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS** — ✅ notes-and-pages (Tier 0 hub) + ✅ sessions-and-scheduling + ✅ projects + ✅ health/core + ✅ habits + ✅ finance (Tier-1 stale/heavy) + ✅ tasks + ✅ **relationships** (Tier-1 forward-facing, 2 consecutive critique-clean units) done. Next: rest of forward-facing group (`pomodoro`, `knowledge/flashcards`) |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-24 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS** — ✅ notes-and-pages (Tier 0 hub) + ✅ sessions-and-scheduling + ✅ projects + ✅ health/core + ✅ habits + ✅ finance (Tier-1 stale/heavy) + ✅ tasks + ✅ relationships + ✅ **pomodoro** (Tier-1 forward-facing, 3 consecutive critique-clean units) done. Next: LAST forward-facing unit (`knowledge/flashcards`) → then Tier 2 |
 
 ## 🧭 Next session
 
-**Continue Part 1.2 (doc re-runs) — the Tier-1 forward-facing group is UNDERWAY (`tasks` ✅, `relationships` ✅ done); next:
-`pomodoro`, `knowledge/flashcards`.** Read first: `docs/specs/foundation/staleness-sweep.md`
+**Continue Part 1.2 (doc re-runs) — the Tier-1 forward-facing group is nearly DONE (`tasks` ✅, `relationships` ✅, `pomodoro` ✅); LAST unit:
+`knowledge/flashcards`. Then Tier-1 complete → Tier 2 gap-fills.** Read first: `docs/specs/foundation/staleness-sweep.md`
 (the target's row + Part 1.2 tiers) + `docs/specs/foundation/capability-framework.md` (§3 predicates for the target's
 drivers) + the target's current aspect docs + grep the live schema for the As-is floor. Each context re-runs through the
 documentation-blueprint methodology under its own LITE gate (plan→critique→approval per context). Pattern (notes-and-pages
