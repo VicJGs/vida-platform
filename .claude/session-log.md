@@ -2387,3 +2387,51 @@ Next session:
     critique-clean unit. Carry the same discipline (award_xp=S4 member, grant_currency=E2 generalization)
     into every economy-feeder re-run.
 ---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 Tier-1 forward-facing group — `relationships` (sweep row 22, stale; the first notification-primary unit)
+Completed:
+  - `relationships` re-run COMPLETE end-to-end (ground → PLAN → adversarial critique → approve → implement 5
+    aspects → grep-verified acceptance → commit). Commit 596aed9; tracking 6b4a850.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/relationships.md
+  - Edited all 5 aspect docs in docs/features/relationships/.
+  - Grounding: live-schema R6 case (6 tables contacts:535…reminder_group_contacts:609; inline contacts.tags:548
+    + social_links:549 = real As-is floor; network_groups = schema-0 [INTENT]; NO page_tags — inline-tags only).
+  - Changes: SP1/SP3 inline contacts.tags -> entity_tags(entity_type='contact') + parent_tag_id nesting (R6
+    two-tier; universal-vs-module scope stays a Notes-&-Pages concern); N1/N2 the three reminder mechanisms ->
+    ADR-013 three-tier delivery, content-free wake payload (N2 = platform's most PII-critical use); X1/X8 device
+    contact import -> device-mediated + import_staging merge-reconcile.
+  - LITE gate: independent adversarial critique (fresh code-aware subagent) -> SHIP / 0 blocking — SECOND
+    consecutive clean unit.
+Decisions:
+  - X* membership-by-rule (disclosed in-PLAN, Victor-approved): Relationships is absent from ADR-014's X1
+    example-list AND the §4 "Ingests external data" row, but framework §4 sanctions coverage "by the rules, not
+    a hand-list… as new contexts appear"; device contact import (RL-11 "refused, not downgraded") IS X1
+    verbatim. Named X1/X8 on that basis; flagged the nuance rather than hiding it — critic adjudicated it
+    defensible.
+  - M* exclusion (C1, the primary guard, Victor-approved): contacts are ADR-011 framework-EXCLUDED reference
+    data (M1 "Excluded: contacts"); relationship health is a DERIVED analytic, NOT a pursuable — no
+    measurement_kind/binding_mode/M5. The biggest over-reach temptation, guarded across all 5 aspects.
+  - 012 NOT a driver (C2): the interaction-streak->Gamification edge stays the existing [INTENT] mention; no
+    grant_currency/E2 manufactured. C4: social_links (typed JSON) kept, not a tag concern.
+Next session:
+  - FIRST ACTION: start `pomodoro` (Tier-1 forward-facing group, sweep row 5, verdict reframe-in-progress —
+    drivers 004/012). Surface the §XXVII unit path, then ground in staleness-sweep.md (row 5) +
+    capability-framework.md (§3 ADR-004 S1/S4 + ADR-012 E2/E3) + all pomodoro aspect docs + grep the live
+    schema (pomodoro_sessions? focus_sessions? entity_type CHECK) for the As-is floor. Then the unit loop.
+  - Expected shape: As-is IS flat pomodoro_sessions + polymorphic entity_type CHECK; [INTENT] correctly
+    re-homes to session_id/focus_sessions (ADR-004 S1) but is UNFINISHED (reframe-in-progress) — finish it +
+    name grant_currency/R1 tokens (012/004). Tightly coupled to the notes-and-pages + sessions-and-scheduling
+    re-runs already done (pomodoro is now a sessions sub-type per ADR-004 / CLAUDE.md).
+  - Campaign state: Part 1.2 Tier-1 = 8 done (notes-and-pages, sessions-and-scheduling, projects, health/core,
+    habits, finance, tasks, relationships). Remaining Tier-1 forward-facing = pomodoro, knowledge/flashcards.
+    Then Tier 2 gap-fills -> Tier 3 arch docs (Part 1.3).
+  - Reusable lesson banked (now 2 consecutive clean units): pre-empting the LIKELY blocking finding inside the
+    PLAN itself — naming both E2/S4 layers explicitly (tasks), disclosing the X* applies-to-by-rule nuance
+    (relationships) — makes the fresh critic VERIFY rather than CATCH. Carry this: when a driver's applies-to
+    membership is arguable, state the rule-vs-list basis in the PLAN; when a known prior-unit B1 pattern could
+    recur, name the distinction up front.
+---
