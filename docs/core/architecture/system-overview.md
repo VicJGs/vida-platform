@@ -6,7 +6,15 @@ The highest-level description of the Vida Platform. The first thing a new develo
 
 **Governs:** No code directly. Provides the mental model for the entire system.
 
-**Content Source:** Extracted and updated from `docs/architecture.md` (v2 legacy) and ADR-001.
+**Content Source:** ADRs 001–017 + `docs/specs/foundation/capability-framework.md`. (The former source `docs/architecture.md`
+is **quarantined legacy** — superseded and moved to `docs/_legacy/`; do not use it.)
+
+> **Implementation status (2026-07-25):** This document describes the platform's **target architecture** — the substrate
+> model established by ADRs 004–017 + the capability framework. It is **not** a snapshot of shipped code: ~99% of current
+> code predates this foundation (see `docs/specs/foundation/current-state-baseline/baseline.md`), the storage layer is being
+> **rebuilt from zero** per-table (ADR-016), and Phase-1.0 is **features-first** with encryption/sync/auth **deferred to a
+> later hardening pass** (ADR-017). Substrate primitives cite their **owning ADR** (conceptual home); their code/directory
+> homes are decided in a later structural phase, not here.
 
 ---
 
@@ -30,7 +38,25 @@ Vida is **not** a collaborative tool. It is single-user, multi-device. There is 
 
 ## 2. Module Inventory
 
-Vida has **17 modules** organized into six domains.
+Vida is organized as **feature modules riding shared foundation substrates**. The feature modules (below) are the
+user-facing domains; the **substrates** are cross-cutting primitives — introduced by ADRs 004–015 — that many modules
+consume rather than each re-implementing. The earlier "17 flat modules" framing predated these substrates and folded
+their mechanisms (tags, sessions, progress, XP, views, spaced repetition) into individual modules; they are now single
+foundations. See `docs/specs/foundation/capability-framework.md` for the full substrate inventory and
+`module-dependency-graph.md` §2 for the substrate list with owning ADRs.
+
+### Foundation Substrates (cross-cutting)
+
+| Substrate | Owning ADR | What it provides |
+|-----------|-----------|-------------------|
+| **Spaces & Tags** | ADR-006 | `spaces` tier + `entity_tags` universal tagging above every module (open registry) |
+| **Sessions** | ADR-004 | `sessions` table-per-type supertype for all timed activity (pomodoro/study/reading), with a shared effect catalogue + idempotency rail |
+| **Measurability** | ADR-011 | Universal progress (`measurement_kind` × `binding_mode`, nullable-derive) + `contributions` weighted rollup |
+| **Points Economy** | ADR-012 | Multi-currency economy via a rule→consequence engine; `grant_currency` effect + `consequence_ledger` |
+| **Saved Views** | ADR-007 | One `views` primitive (filter × layout × grouping), Space-owned or global |
+| **Review Engine** | ADR-005 | Generic review engine for study methods (`review_events` / `method_bindings`), mastery-derived |
+| **Capability Registry** | ADR-008 / ADR-010 | Open capability-block registry under a declare→grant→enforce authoring sandbox |
+| **Ingestion & AI** | ADR-014 / ADR-015 | Device-mediated external-data guard (server blind) + on-device/cloud AI layer |
 
 ### Integration Layer
 
@@ -50,8 +76,8 @@ Day-to-day task execution, habit building, and focus.
 | **Tasks** | Task management with sub-tasks, priority, difficulty, due dates, time logging, and cross-module links (projects, milestones, courses, contacts). Task notes are full pages with the TipTap editor. |
 | **Habits** | Build or break habits with daily/weekly/monthly frequency. Tracks streaks, completion counts, mood before/after, cue/reward patterns. Completable from the journal's `/habits` block. |
 | **Routines** | Daily routine actions (morning, afternoon, evening) with recurrence patterns. Can link to habits and tasks. Tracks actual vs estimated duration. |
-| **Projects** | Project management with milestones, deliverables, documents, and progress tracking. Aggregates tasks and links to habits via junction tables. |
-| **Pomodoro** | Focus timer sessions linked to any entity (task, note, study session) via polymorphic reference. Tracks completed pomodoros, break patterns, and focus statistics. Embeddable as a `/pomodoro` block in the editor. |
+| **Projects** | Project management with milestones, deliverables, and documents. Progress is **derived** through the measurability rollup (ADR-011); aggregates tasks and links to habits via the `project_habits` junction (kept). Contributes to purposes via `contributions`. |
+| **Pomodoro** | Focus timing — a **sub-type of the `sessions` supertype** (ADR-004), not a standalone table. Links to its subject (task, note, study session), rides the shared session lifecycle + effect rail, and surfaces as a capability block in the editor. |
 
 ### Knowledge
 
@@ -59,7 +85,7 @@ Learning, studying, and language acquisition.
 
 | Module | Description |
 |--------|-------------|
-| **Learning** | Courses, books (with chapter-level tracking), skills, study sessions, flashcard decks with SM-2 spaced repetition, knowledge notes, and a study planner that schedules sessions based on availability and urgency. ICS calendar sync imports class schedules. |
+| **Learning** | Courses, books (with chapter-level tracking), skills, study sessions, knowledge notes, and a study planner that schedules sessions based on availability and urgency. Spaced repetition runs on the generic **review engine** (ADR-005 — `review_events` / `method_bindings`, mastery-derived), not bespoke flashcard tables. ICS calendar sync imports class schedules via the device-mediated ingestion guard (ADR-014). |
 | **Languages** | Language learning with proficiency tracking (A1-C2), vocabulary management, daily structured sessions (grammar, conversation, music, bible study), audio recordings for pronunciation practice, and weekly plans. |
 
 ### Personal Growth
@@ -68,7 +94,7 @@ Self-reflection, goal setting, and life aspirations.
 
 | Module | Description |
 |--------|-------------|
-| **Purposes & Goals** | Life purposes with vision/why statements, quantitative/qualitative targets, metrics with time-series tracking, and review cycles. Links to habits, routines, and projects via junction tables with aggregated progress computation. |
+| **Purposes & Goals** | Life purposes with vision/why statements, quantitative/qualitative targets, metrics with time-series tracking, and review cycles. Habits, routines, and projects feed a purpose through `contributions` (weighted, polymorphic — ADR-011 M7); aggregated progress is **derived** via the measurability rollup (M4). |
 | **Check-ins** | Daily morning/evening check-ins with mood (1-10), energy level, intentions, wins, gratitude, challenges, and reflection. Customizable templates with user-defined questions. |
 | **Bucket List** | Life aspirations with categories, progress steps, estimated costs, target dates, and inspiration links. Can link to purposes and projects. |
 
@@ -87,15 +113,19 @@ Cross-cutting services that enhance all modules.
 
 | Module | Description |
 |--------|-------------|
-| **Gamification** | XP points, levels, and achievements. Each module service emits XP events on significant actions (task completion, habit streaks, study sessions). Achievement detection is distributed — each module checks its own conditions. |
-| **Notifications** | Alerts from all modules — task reminders, streak warnings, check-in prompts, achievement alerts, study plan due dates, recurring transaction reminders. All categories are user-configurable (opt-in/opt-out per category, quiet hours). |
-| **Preferences** | User settings: theme (light/dark/system), date/time formats, currency, pomodoro durations, notification toggles, module enable/disable, dashboard layout, quiet hours. Read by every module. |
+| **Gamification** | The user-facing surface of the **Points Economy** substrate (ADR-012) — currencies, levels, achievements — driven by a rule→consequence engine. Modules emit `grant_currency` (and related) effects on the shared effect rail; the engine derives balances from `consequence_ledger` and evaluates achievements as consequence rules. Applied exactly once via the idempotency rail (R1). |
+| **Notifications** | Alerts from all modules — task reminders, streak warnings, check-in prompts, achievement alerts, study-plan due dates, recurring-transaction reminders. Delivered under **zero-knowledge** via three tiers (ADR-013): local-scheduled OS alerts, a content-free cross-device wake-signal, and in-app. The server never sees notification content; per-category control and quiet hours are applied **locally**. |
+| **Preferences** | User settings: theme (light/dark/system), date/time formats, currency, session durations, notification toggles, module enable/disable, dashboard layout, quiet hours. Read by every module. |
 
 ---
 
-## 3. Three-Layer Architecture
+## 3. Architecture Layers
 
-The platform is organized into three layers. Each layer depends only on the layer below it.
+The platform is organized into layers, each depending only on the layer below it. Between the feature modules and the
+raw infrastructure sits a **foundation-substrate tier** (§2) — the cross-cutting primitives (Spaces & Tags, Sessions,
+Measurability, Economy, Views, Review-engine, Capability-registry) that feature modules consume rather than
+re-implement. In the diagram below, the substrates sit conceptually just above Core Infrastructure; the Data Modules
+ride them.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -113,11 +143,11 @@ The platform is organized into three layers. Each layer depends only on the laye
 │                    │   Block Editor     │                           │
 │                    │   (TipTap)         │                           │
 │                    │                    │                           │
-│                    │  Custom Blocks:    │                           │
-│                    │  /summary  /tasks  │                           │
-│                    │  /habits   /chart  │                           │
-│                    │  /pomodoro /events │                           │
-│                    │  /timeline         │                           │
+│                    │  Capability blocks │                           │
+│                    │  (open registry —  │                           │
+│                    │   ADR-008; blocks  │                           │
+│                    │   declare targets, │                           │
+│                    │   user places)     │                           │
 │                    │  [[entity-links]]  │                           │
 │                    └─────────┬──────────┘                           │
 │                              │                                       │
@@ -134,9 +164,21 @@ The platform is organized into three layers. Each layer depends only on the laye
 │  │Routines│ │Languages│ │Purposes &│ │Check-ins │ │Bucket List│ │
 │  └────────┘ └─────────┘ │Goals     │ └──────────┘ └───────────┘ │
 │                          └──────────┘                              │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────┐                  │
-│  │Gamification  │ │Notifications │ │Pomodoro  │                  │
-│  └──────────────┘ └──────────────┘ └──────────┘                  │
+│  ┌──────────────┐ ┌──────────────┐                                │
+│  │Gamification  │ │Notifications │  (Pomodoro/study/reading are   │
+│  └──────────────┘ └──────────────┘   `sessions` sub-types below)  │
+└──────────────────────────────┼───────────────────────────────────────┘
+                               │ ride
+┌──────────────────────────────┼───────────────────────────────────────┐
+│                   FOUNDATION SUBSTRATES                               │
+│                                                                       │
+│  ┌────────────┐ ┌──────────┐ ┌────────────────┐ ┌────────────────┐ │
+│  │ Spaces &   │ │ Sessions │ │ Measurability  │ │ Points Economy │ │
+│  │ Tags (006) │ │  (004)   │ │ /contrib (011) │ │ (012)          │ │
+│  └────────────┘ └──────────┘ └────────────────┘ └────────────────┘ │
+│  ┌────────────┐ ┌──────────────┐ ┌─────────────────────────────┐   │
+│  │ Views (007)│ │ Review (005) │ │ Capability registry (008/010)│  │
+│  └────────────┘ └──────────────┘ └─────────────────────────────┘   │
 └──────────────────────────────┼───────────────────────────────────────┘
                                │
 ┌──────────────────────────────┼───────────────────────────────────────┐
@@ -154,11 +196,24 @@ The platform is organized into three layers. Each layer depends only on the laye
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
+> **Encryption/Sync/Auth are shown for the target architecture but are a deferred hardening pass** (ADR-017): Phase-1.0
+> builds features-first on the local-first stack, adding field-level encryption, cross-device sync, and SRP auth later.
+
 ### Layer Responsibilities
 
-**Notes & Journals Layer** — The user-facing integration interface. The TipTap block editor with custom blocks (`/summary`, `/tasks`, `/habits`, `/chart`, `/pomodoro`, `/timeline`) and `[[entity-links]]` provides a unified way to interact with all module data. Journals aggregate daily activity. Notes connect entities across modules via backlinks.
+**Notes & Journals Layer** — The user-facing integration interface. The TipTap block editor renders **capability blocks
+from an open registry** (ADR-008 — a capability declares its render targets and the user chooses placement, replacing a
+closed slash-command set) plus `[[entity-links]]`, giving a unified way to interact with all module data. Journals
+aggregate daily activity. Notes connect entities across modules via backlinks.
 
-**Data Modules Layer** — The 17 modules that each manage their own domain entities. Each module has its own service layer, Zod validation schemas, and repository interactions. Modules communicate through the patterns documented in `cross-module-integration.md` — never by directly accessing another module's database tables.
+**Data Modules Layer** — The feature modules that each manage their own domain entities via a service layer, Zod
+validation schemas, and repository interactions. Modules communicate through the patterns documented in
+`cross-module-integration.md` — never by directly accessing another module's database tables — and consume the
+foundation substrates below rather than re-implementing tags, sessions, progress, XP, or views.
+
+**Foundation Substrates** — The cross-cutting primitives (Spaces & Tags, Sessions, Measurability/`contributions`,
+Points Economy, Views, Review-engine, Capability-registry) introduced by ADRs 004–012. Each is owned by one ADR
+(conceptual home) and consumed by many modules; see `module-dependency-graph.md` §2 and the capability framework.
 
 **Core Infrastructure** — Shared foundation that every module depends on:
 - **Encryption** — Three-layer model: SQLCipher (L1, full DB), libsodium field-level (L2, sensitive fields), sync blob (L3, transport). See `security-model.md`.
@@ -184,6 +239,10 @@ Vida runs on web, mobile, and desktop from a single TypeScript monorepo. All bus
 
 For the complete code sharing matrix, platform-specific features, and build pipeline, see `platform-strategy.md`.
 
+> **Delivery sequencing is governed by ADR-017:** ship the **web SPA (A)** first, then graduate to **Tauri desktop (D)**
+> on the shared web codebase; mobile follows later. The per-platform "Status/Phase" labels above predate that
+> resequencing and are re-derived by the build roadmap (Part 3) — ADR-017 is authoritative for order.
+
 ---
 
 ## 5. Code Sharing Strategy
@@ -193,7 +252,7 @@ For the complete code sharing matrix, platform-specific features, and build pipe
 | Package | Contents |
 |---------|----------|
 | `packages/types` | TypeScript interfaces, Zod validation schemas, enums. Zero runtime platform dependencies. |
-| `packages/core` | Business logic, encryption (libsodium), database schema (Drizzle), repository, migrations, services, sync engine. Platform-agnostic via the `DatabaseAdapter` interface. |
+| `packages/core` | Business logic, encryption (libsodium), the database layer (**hand-written SQL migrations** as the schema source; **Drizzle is the query-only type mirror** — ADR-016), repository, services, sync engine. Platform-agnostic via the `DatabaseAdapter` interface. |
 
 ### Shared with Adaptation
 
@@ -228,7 +287,7 @@ The complete technology stack is defined in **ADR-001**. Below is a summary with
 
 | Concern | Choice | Rationale |
 |---------|--------|-----------|
-| **ORM** | Drizzle ORM | Type-safe, lightweight, works with SQLite across all platforms. |
+| **DB access** | Drizzle ORM (query-only type mirror) | Type-safe queries across all platforms. **DDL is hand-written SQL migrations**, not drizzle-kit — the migrations are the schema source of truth (ADR-016). |
 | **Web DB** | wa-sqlite + OPFS | True persistent storage via Origin Private File System. Custom WASM build with SQLCipher for full DB encryption at rest. |
 | **Mobile DB** | expo-sqlite (with SQLCipher) | Native SQLite on iOS/Android. Exact approach deferred to Phase 3. |
 | **Desktop DB** | Tauri SQLite plugin + SQLCipher | Native SQLite with encryption at rest via Rust backend. |
@@ -296,8 +355,11 @@ The complete technology stack is defined in **ADR-001**. Below is a summary with
 ## References
 
 - **ADR-001** — Complete technology stack with full rationale for every choice
-- **ADR-002** — Complete data model (~72 tables, ~520 fields, encryption classification)
+- **ADR-002** — Complete data model (encryption classification, cross-domain map). Table/field counts are being re-derived by the per-table schema rebuild (ADR-016 / DB-11) and are not quoted here.
 - **ADR-003** — Complete sync protocol (LWW, Yjs, transport, offline behavior, device management)
+- **ADR-004 … ADR-015** — The foundation substrates (sessions, review engine, spaces/tags, views, capability registry, templates, capability-authoring security, measurability, economy, notifications, external ingestion, AI)
+- **ADR-016 / ADR-017** — Storage rebuilt from zero (hand-written SQL migrations); features-first resequencing (encryption/sync/auth deferred)
+- **`docs/specs/foundation/capability-framework.md`** — The substrate inventory with mechanical predicates
 - `docs/core/architecture/data-flow.md` — How data moves through write/read/encrypt/sync pipelines
 - `docs/core/architecture/cross-module-integration.md` — Every cross-module data access point
 - `docs/core/architecture/platform-strategy.md` — Code sharing, database adapters, editor/visualization per platform
