@@ -6,6 +6,12 @@ This document specifies performance targets, strategies, and budgets for the Vid
 
 **Governs:** All list rendering, query patterns, cache configuration, code splitting decisions, and search infrastructure.
 
+> **Implementation status (2026-07-25):** The performance guidance here is substrate-neutral and current — its query,
+> cache, and index examples use tables that survive the substrate model (`tasks`, `pages`, `entity_links`,
+> `habit_completions`, `transactions`). Note that latency targets referencing **decryption** apply once field-level
+> encryption lands on the **deferred hardening pass** (ADR-017: Phase-1.0 is features-first). No retired tokens are
+> used here; substrate primitives cite their owning ADR.
+
 ---
 
 ## 1. Latency Targets
