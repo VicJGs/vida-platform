@@ -38,7 +38,7 @@ in a vault, and his goals/people/finances connected to the work — all on a zer
   extension components** under the governing principle: **ZK core + guarded, user-risk extension layer** (below).
   External-metric ingestion rides **ADR-014** (device-mediated, `external_in_ok`); agentic AI rides **ADR-015**
   (on_device/cloud, granted-envelope). `[INTENT G4,G6, governing principle; ADR-014/015]`
-- **Not its own tag vocabulary.** Shared scoped tags (G11). `[INTENT G11]`
+- **Not its own tag vocabulary.** Shared scoped tags via `entity_tags` (ADR-006 SP1, G11). `[INTENT G11]`
 - **Not the owner of a "research/investigation" entity.** A research/investigation is a **`deliverable`
   (`measurement_kind='milestone'` + `binding_mode='manual'` — an artifact deliverable)** backed by a **Knowledge Lab
   investigation** (linked via `entity_links`) — the

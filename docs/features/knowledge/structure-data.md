@@ -34,7 +34,7 @@ Subject** → (Program, via Education's measurement, KN-10). Study methods/curve
 |---|---|---|
 | `knowledge_objects` | the object (generalizes `study_topics`) | `kind_id` → `object_kinds`; **`parent_object_id` self-ref — THE stated hierarchy** ("a whole hierarchy of entities below topics", K1); `title`[E]/`description`[E]; `mastery_level` **derived** (KN-9); links out via `entity_links` (KN-6) |
 | `object_kinds` | the user-extensible kind registry | `name`; `learning_realm` (`understand`/`memorize`/user); `default_method_id`; `is_default` (seeds: **topic**, **concept**=understand, **definition**=memorize); `parent_kind_id?` self-ref `[INTERP — whether the kind registry itself nests vs. stays flat is an open choice; validate at build]` |
-| `knowledge_containers` | Module ⊃ Area ⊃ Subject organization | `container_type` (`module`/`area`/`subject`); membership is **many-to-many via shared scoped tags**, NOT `parent_id` (KN-7); Areas may belong to multiple OS-modules |
+| `knowledge_containers` | Module ⊃ Area ⊃ Subject organization | `container_type` (`module`/`area`/`subject`); membership is **many-to-many via the `entity_tags` primitive** (ADR-006 SP1, scoped), NOT `parent_id` (KN-7); Areas may belong to multiple OS-modules |
 | `study_methods` | `kind='study_method'` partition of the OS capability registry (ADR-008), **not a parallel base table** (F2/D2); review engine (curves/bindings/events) stays Knowledge's | flashcards · Feynman · self-test · … ; composable/mixable; bound per level (KN-8) |
 | `review_curves` | personalizable scheduling curves | decay/review/test curves; **SM-2 = one preset**; user-tunable (KN-8/KN-9) |
 | `method_bindings` | which method+curve applies where | polymorphic target (area/subject/unit/topic/kind); resolves the default from `learning_realm` (KN-4) |
@@ -57,7 +57,7 @@ attachment pipeline. `[FACT: ADR-003]`
 - `object_kinds` — flat user-extensible registry (`learning_realm` per kind); optional `parent_kind_id` is `[INTERP]`, not stated.
 - `knowledge_objects` ⊳ self (`parent_object_id`); → `object_kinds`; ⇄ courses/books/skills/languages/… via
   `entity_links` (KN-6); ↦ `pages` for notes (KN-5); ↦ `references`.
-- `knowledge_containers` ⇄ objects/subjects via **shared scoped tags** (many-to-many, KN-7).
+- `knowledge_containers` ⇄ objects/subjects via **`entity_tags`** (ADR-006 SP1, scoped; many-to-many, KN-7).
 - `method_bindings` → `study_methods` + `review_curves`, targeting any level; `review_events` → objects/levels.
 - `compound_sets` → a consumer module; Education reads Knowledge mastery as a measurement source (KN-10).
 

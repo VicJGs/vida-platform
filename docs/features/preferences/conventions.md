@@ -1,4 +1,4 @@
-<!-- Conventions — features/preferences · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · life-os settings · intake -->
+<!-- Conventions — features/preferences · /documentation Phase 2 (realigned Part 1.2) · sources: CLAUDE.md Conventions · ADR-002 · ADR-012 §3.10 · ADR-013 §3.2/§3.4 · ADR-014 §3.2 · life-os settings · intake -->
 
 # Conventions — Preferences  (level: Feature)
 
@@ -24,6 +24,11 @@
 - **Never** add a server-AI preference flag — ZK forbids server inference (G3). `[FACT: ZK-1]`
 - **Never** let module-visibility hide the path back to Settings — keep an escape hatch. `[INTERP: terminal state]`
 - **Never** encrypt a preference field — config is plaintext (PR-1). `[FACT: ADR-002 L1097-1101]`
+- **Never migrate PII into Preferences.** The E9 receipt is **exactly** `persona`/`motivation_style`/`active_modules`/`onboarding_*` (all plaintext); `display_name`/`avatar_url`/`birth_date` (PII) **and** the sibling `[E]` fields `focus_areas`/`life_stage`/`timezone`/`skipped_modules` **stay in `user_profile`** — sweeping `focus_areas[E]` in would break PR-1 (PR-10). `[FACT: ADR-012 §3.10]`
+- **Never** store connector credentials in a preferences table — `connection_config` is `[E]` under the OS mediator (ADR-014 §3.4); Preferences owns the integration *surface*, not the credential (PR-12). `[FACT: ADR-014 §3.4]`
+- **Never** add `sms` as a notification channel — the matrix is `in_app`·`push`·`email` only (N6/PR-11). `[FACT: ADR-013 §3.4]`
+- **Never** conflate the Layer-3 integration surface with the AI-config surface — AI model config is `ai_connections` (ADR-015), a separate page; ADR-014's Preferences surface is data ingestion (X11 splits LLM out). `[FACT: ADR-014 §3.2 L62]`
+- **Keep `active_modules` (E9, persona/onboarding-driven), `module_visibility` (nav show/hide, PR-7), and `feature_gamification` (logic enable, PR-7) conceptually distinct** — whether they merge into one store is a build-phase call, not a conflation to make now. `[INTENT: ADR-012 E9; PR-7]`
 
 ## Completion checklist
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] each claim

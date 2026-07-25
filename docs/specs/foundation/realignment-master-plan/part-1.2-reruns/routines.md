@@ -1,7 +1,7 @@
 # Re-run PLAN — routines (Part 1.2, Tier-2 processing order / stale verdict)
 
 **Type:** doc-realignment unit PLAN (LITE gate — §XXVI LITE variant; non-code scenario).
-**Status:** 🟢 CRITIQUE-CLEAN — independent adversarial critic (fresh code-aware subagent, prompted to refute) → **SHIP / 0 blocking** (5th consecutive clean unit); every schema FACT + framework cite grep-verified exact; the E2/S4 layering trap verified non-firable (004 not a driver + M2=`derived-pull` read seam, no S4 write); under-scope sweep across all 5 aspects clean. N1 folded (two-seam disclosure). **Awaiting Victor LITE-gate approval → implement.**
+**Status:** 🟢 CRITIQUE-CLEAN — independent adversarial critic (fresh code-aware subagent, prompted to refute) → **SHIP / 0 blocking** (5th consecutive clean unit); every schema FACT + framework cite grep-verified exact; the E2/S4 layering trap verified non-firable (004 not a driver + M2=`derived-pull` read seam, no S4 write); under-scope sweep across all 5 aspects clean. N1 folded (two-seam disclosure). **✅ IMPLEMENTED — edits live across all 5 aspects; re-verified by the Part-1 EXIT gate (2026-07-25); LITE gate closed.**
 **Date:** 2026-07-24 · **Session:** build-roadmap-resequence (foundation-realignment campaign, Part 1.2).
 **Context:** `docs/features/routines/` (5 aspect files: identity, structure-data, business-rules, contract, conventions).
 **Verdict (sweep):** **stale** (row 13) — drivers **011, 012, 006**. *(Grouped under the sweep's "Tier 2 — gap-fills" line 90 by **processing order**, but its **verdict is stale wrong-model**, not `gap` — the reconciliation the handoff flagged. Refined below to a **one-retirement + additive** mixed case.)*

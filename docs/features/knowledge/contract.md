@@ -21,8 +21,8 @@
 
 **Containers (⚠ INTENDED):**
 - `createContainer({type: module|area|subject, name})` · `tagMembership(containerId, memberRef, scopedTag)` —
-  many-to-many via shared scoped tags (KN-7); `listContainers(view)` regroups per view. An Area may join
-  multiple OS-modules.
+  many-to-many via the `entity_tags` primitive (ADR-006 SP1, scoped; KN-7); `listContainers(view)` regroups per
+  view. An Area may join multiple OS-modules.
 
 **Study methods, curves & review (⚠ INTENDED):**
 - `listMethods()` / `registerMethod(spec)` — **thin wrappers over the one OS capability registry** (ADR-008), *not* a

@@ -48,8 +48,8 @@
   offers **`on_device`/`cloud` per-use modes (ADR-015 AI1)**; the agent's tool-set **is** its ADR-010 granted envelope
   with a mediated `askModel(scoped_slice)` (AI4); AI-generated rows carry **`source=ai`** (AI6). The ZK core is
   unchanged; the user opts in and owns the risk; Vida wraps them in protection. `[INTENT governing principle; ADR-014 X1/X5, ADR-015 AI1/AI4/AI6; G4,G6]`
-- **PJ-12 — Shared scoped tags; local-first.** Tags via the shared scoped vocabulary (not inline); every write
-  succeeds locally first, LWW on structured columns. `[INTENT G11; FACT: LF-2/ADR-003]`
+- **PJ-12 — Shared scoped tags; local-first.** Tags via the `entity_tags` primitive (ADR-006 SP1, scoped; not
+  inline); every write succeeds locally first, LWW on structured columns. `[INTENT G11; FACT: ADR-006 SP1; LF-2/ADR-003]`
 
 ## Validation & edge cases
 - Enum CHECKs `[FACT: ADR-002 §5.4]`: `scope`(4), `complexity`(4), `status`(5), `priority`(5); `progress` 0-100.

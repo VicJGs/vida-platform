@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/preferences · /documentation Phase 2 · sources: ADR-002 §5.17 · life-os settings · ADR-001/003 -->
+<!-- Structure & Data — features/preferences · /documentation Phase 2 (realigned Part 1.2) · sources: ADR-002 §5.17 · ADR-012 §3.10 (E9) · ADR-013 §3.2/§3.4 (N6/N7) · ADR-014 §3.2 (Layer-3) · life-os settings · ADR-001/003 -->
 
 # Structure & Data — Preferences  (level: Feature)
 
@@ -17,6 +17,14 @@
 - `user_preferences` new columns: `font_size`, `compact_mode`, `number_format`, `default_dashboard_view`, `show_archived`, `notification_frequency`.
 - **Per-module visibility**: a `module_visibility` JSON map (`moduleKey → bool`) on `user_preferences` — *or* a dedicated store; storage shape is a **build-phase decision**.
 - **No `@vida/types` preferences file exists** — `UserPreferences`/`NavPreferences`/`CommandBarEntry` interfaces must be authored. All of the above = **candidate ADR-002 amendment**.
+
+### As-is → `[INTENT]` substrate receipts (foundation matured after this doc) `[INTENT: ADR-012/013/014]`
+
+**As-is FACT floor:** the 3 tables above are the live config model (ADR-002 §5.17); notification channel config + `quiet_hours_*` (`business-rules.md`) + per-module push toggles already exist. `[FACT: ADR-002 §5.17]`
+
+- **E9 — `user_profile` single-writer split (ADR-012 §3.10).** Preferences becomes the single-writer owner of **`persona` · `motivation_style` · `active_modules` · `onboarding_*`**, migrated **off the overloaded `user_profile`** (As-is: `user_profile` overloaded across 3 owners, ADR-002 L3366-3396). System keeps per-currency total+level (derived); `check_in_streak*` → Check-ins; **PII (`display_name`/`avatar_url`/`birth_date`) STAYS in `user_profile` ⚠**; the sibling `[E]` field `focus_areas` is **NOT** part of this receipt. All four routed families are plaintext (PR-1 holds). Storage shape + the `active_modules`↔`module_visibility` reconciliation = **`[DEFERRED — build phase]`**. `[INTENT: ADR-012 §3.10; GM-12; matches check-ins CK-11]`
+- **N6 — channel matrix (ADR-013 §3.4).** The notification channel config enumerates exactly **`in_app`** (full) · **`push`** (wake-only) · **`email`** (generic nudge) — **no `sms`** (dropped: un-encryptable, carrier-visible; v1 `NotificationChannel` had it). Per-module push toggles (As-is) ride the `push` channel. `[INTENT: ADR-013 §3.4; §5 L74 — Preferences owns channel config]`
+- **X (Layer 3) — user-managed integration surface (ADR-014 §3.2).** Preferences hosts the self-service integration layer (webhooks + external-API management + Vida cookbooks). Tables/columns (`connection_config` under **mediator** custody, integration-identity anchor) = **`[DEFERRED — build / ADR-002 §5.20]`**; `connection_config` is `[E]` held by the OS mediator, **not a plaintext preferences column** (PR-1 preserved). `[INTENT: ADR-014 §3.2/§3.4]`
 
 ## State management map `[INTENT G8; FACT: life-os usePreferences/themeStore; ADR-001 State]`
 - **React Query** owns the async read/write: `getMergedPreferences` (long stale time — config rarely changes), optimistic `updatePreferences` with **500ms debounce + batching** (PR-4).
@@ -39,7 +47,8 @@
 
 ## ADRs / structural decisions
 - **ADR-002 §5.17** — the 3 tables (authoritative). **ADR-001** — React Query + Zustand state, Tamagui UI. **ADR-003** — LWW for structured config.
-- ⚠ **Surfaced decision:** schema/type catch-up for the G4/G5 additions → candidate `/adr-new` (ADR-002 amendment) in the build phase. `[INTENT G4]`
+- **Subject to (foundation matured after this doc):** **ADR-012 §3.10** (E9 `user_profile` split — receives config) · **ADR-013 §3.2/§3.4** (N6 channel matrix + N7 quiet-hours config) · **ADR-014 §3.2** (Layer-3 user-managed integration surface). Preferences **cites** these substrates' conceptual homes; code/directory homes = `[DEFERRED — Part 2]`.
+- ⚠ **Surfaced decision:** schema/type catch-up for the G4/G5 additions + the E9/Layer-3 columns → candidate `/adr-new` (ADR-002 amendment) in the build phase. `[INTENT G4]`
 
 ## Completion checklist
 - [x] data model (3 tables) · [x] dep graph (foundational) · [x] state + route map · [x] ADRs · [x] single source per cross-cutting concern · [x] [FACT/INTENT/INTERP] each claim

@@ -36,7 +36,7 @@
   normally); open-ended exploration content (question → sources → findings → synthesis) = **Knowledge**. **No
   `investigations` table.** `[INTENT: Victor 2026-07-15]`
 - **Vault/large files (G6):** R2 attachment pipeline for big encrypted blobs (ADR-003).
-- **Shared-tags migration (G11):** deprecate inline `projects.tags` → shared scoped tags.
+- **Shared-tags migration (G11):** deprecate inline `projects.tags` → the `entity_tags` primitive (ADR-006 SP1, scoped).
 
 ## State management map `[FACT: ADR-001 State; v1 hooks/API.md]`
 - **React Query** owns project/milestone/document reads + optimistic writes, the **derived** progress rollups,
@@ -72,7 +72,7 @@
 - **Tasks** are owned by Tasks, read via the dedicated API (PJ-5) — Projects never copies them.
 - Enums (`ProjectScope`, `ProjectComplexity`, shared `Status`/`Priority`) — string-literal unions + SQL CHECK +
   Zod, declared once. `[FACT: project.ts L13-15; common]`
-- Tags → shared scoped vocabulary (PJ-12), not inline. `[INTENT G11]`
+- Tags → the `entity_tags` primitive (ADR-006 SP1, scoped; PJ-12), not inline. `[INTENT G11]`
 
 ## ADRs / structural decisions
 - **ADR-002 §5.4** — 3 tables (authoritative). **ADR-001** — RQ+Zustand, TipTap (vision/mission), R2 docs. **ADR-003** — LWW + attachments.

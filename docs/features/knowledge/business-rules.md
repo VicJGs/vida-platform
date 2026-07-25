@@ -38,8 +38,8 @@
   scale to every module. `[INTENT K4; FACT superseded: knowledge_notes resource_type CHECK L2717]`
 - **KN-7 — Containers organize by tags, not rigid parents (⚠ INTENDED).** The container hierarchy **Module ⊃
   Area ⊃ Subject** has **many-to-many membership at every step** (one Area may belong to multiple Modules; a
-  "Module" here = an **OS module**). Nesting is expressed through the **shared scoped tag system** and rendered
-  through different views — never a single `parent_id` chain. `[INTENT KN-B, K12]`
+  "Module" here = an **OS module**). Nesting is expressed through the **`entity_tags` primitive** (ADR-006 SP1,
+  scoped) and rendered through different views — never a single `parent_id` chain. `[INTENT KN-B, K12; FACT: ADR-006 SP1]`
 - **KN-8 — Study methods & curves are pluggable at every level (⚠ INTENDED).** Methods (flashcards, Feynman,
   self-test, …) and decay/review/test **curves** are user-selectable and **mixable** per Area / Subject / Unit
   / Topic / kind. **SM-2 is one preset** in the scheduling family, not the model. The v2 fixed SM-2 columns on

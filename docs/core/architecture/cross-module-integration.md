@@ -40,7 +40,7 @@ Every cross-module data access in the platform. Freshness is either **reactive**
 | Projects | Habits | Linked habit status via `project_habits` | Read | Project detail view | On-demand |
 | Projects | Tasks | Tasks belonging to project | Read | Project detail/milestone view | On-demand |
 | Learning | Learning | Scheduled study sessions for a resource | Read | Course/book/topic detail view | On-demand |
-| Learning | Learning | Flashcard deck linked to a resource | Read | Course/topic detail view | On-demand |
+| Learning | Learning | Review-engine deck/method linked to a resource (ADR-005; supersedes `flashcard_decks`) | Read | Course/topic detail view | On-demand |
 | Learning | Learning | Skills linked via `skill_resources` | Read | Course/book detail view | On-demand |
 | Sessions (focus/study) | All modules | Session subject via `entity_type`/`entity_id` | Read | Session start (links to task, note, study resource) | On-demand |
 | Gamification | All modules | `grant_currency` (and related) effects on the shared rail | Read | Module emits an effect on action completion (ADR-012) | On-demand |

@@ -3225,3 +3225,71 @@ Next session (resume from here):
     the scenario Step 6 + staleness-sweep.md (the corpus the gate validates).
   - Deferred open Qs still open: "RP" abbreviation (Part 3.0); V1/007 saved-views dedicated reframe pass.
 ═══════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION — 2026-07-25 — Part-1 EXIT GATE → REVISE→fixed→ ✅ PART 1 ACCEPTED (docs realignment complete)
+═══════════════════════════════════════════════════════════════════════════
+Task: build-roadmap-resequence (foundation-realignment campaign) · Profile: Project Foundation Setup
+Scenario: Documentation Realignment (Step 6 part-exit gate → Step 7 accept & log)
+
+Ran the scenario Step-6 part-exit gate over the WHOLE realigned corpus (24 context docs + 8 arch docs +
+capability-framework). TWO lenses per the scenario: victor:quality-gate-foundation + SIX independent adversarial
+critics (one per domain cluster), each auditing the LIVE docs against framework §5 — NOT the re-run records that
+claim completion. Verdict: **REVISE**.
+
+THE BLOCKER the gate caught (1 context):
+  - `preferences` — sweep row 24 scored it "aligned (soft E9 fill)"; the gate re-scored it **stale-by-omission**.
+    All 5 aspect files were mtime 2026-06-22 (PRE-campaign) and named ZERO substrate tokens. Three+ applicable
+    predicates failed: E9 (`user_profile` single-writer split — the owed ADR-012 §3.10 receiving amendment;
+    gamification GM-12 + check-ins CK-11 both delegate `persona`/`motivation_style`/`active_modules`/`onboarding_*`
+    TO Preferences, which claimed none of them → contradiction-by-omission), N6 (channel matrix, no `sms`, ADR-013
+    §3.4), N7 (quiet-hours pre-applied at registration, ADR-013 §3.2), and the ADR-014 §3.2 Layer-3 user-managed
+    integration surface. Root cause: the sweep scores the TOKEN SURFACE — a doc that is *silent* (names no retired
+    token) reads clean to an anti-signal scorer even when missing owed amendments. Only a whole-corpus gate reading
+    the live files + the sibling docs that point at it exposes "aligned by omission."
+
+THE FIX (Victor approved scope: full close E9/N6/N7 + ADR-014 Layer-3; batch all findings):
+  - `preferences` Tier-2 re-run — persisted LITE PLAN (`part-1.2-reruns/preferences.md`), independent critique
+    **SHIP** (every ADR cite verified vs source + the live `user_profile` schema; PR-1 plaintext guard confirmed —
+    the 4 routed families are plaintext, `focus_areas[E]`+PII excluded), folded 1 hardening note (guard C-E-fields).
+    Implemented across all 5 aspects → post-implementation critique **SHIP** (no execution drift, cross-consistency
+    AGREE). New invariants PR-10 (E9 single-writer + PII-stays), PR-11 (N6 no-sms), PR-12 (Layer-3 surface delegates
+    the mediated guard); N7 quiet-hours contract; landmines (no PII migrate, no credential in plaintext col, no sms,
+    AI-surface ≠ integration-surface).
+  - `knowledge` — owed SP1 `entity_tags` fill at 5 generic-tag sites (the sweep pre-flagged it "minor SP1 fill only").
+  - `gamification` — reconciled the stale PII half-line (structure-data.md:44 "PII → account/profile") to GM-12's
+    correct "PII STAYS in `user_profile` ⚠" (Victor: nothing stale crosses into Part 2).
+  - Cosmetics: `projects` prose `entity_tags` naming (4 sites), `cross-module-integration.md:43` §1 row →
+    review-engine (supersedes flashcard_decks), 4 re-run record headers flipped to IMPLEMENTED.
+
+RE-VERIFICATION: mechanical acceptance grep (all §4 predicates pass) + post-impl adversarial critic (SHIP) +
+CORPUS-WIDE forward-anti-signal sweep (page_tags/xp_history/purpose_*/flashcard_decks/pomodoro_sessions/
+apply_consequence/task_views/shadcn across all 32 docs): **every hit is As-is-floor / negation / retire-reframe /
+security-model §8 v1-banner — ZERO forward-stale.** Result: **34/34 docs aligned, cross-consistency AGREE.**
+
+R2 discipline: no new architectural decision surfaced — preferences RECEIVED existing ADR-012/013/014 decisions;
+storage shape + `active_modules`↔`module_visibility` merge deferred to build-phase (ADR-002 §5.20). No `/adr-new` owed.
+
+✅ VICTOR ACCEPTED PART 1 (2026-07-25). Documentation realignment COMPLETE. Records updated: master-plan `_index.md`
+(status + exit-gate + Change Log), `staleness-sweep.md` (row-24 correction + the lesson), the preferences re-run PLAN,
+TASKS.md / task-index / task-file.
+
+Lessons locked this session:
+  - **SWEEP LABELS SCORE THE TOKEN SURFACE, NOT APPLICABILITY.** An "aligned"/"gap" verdict from an anti-signal
+    scorer misses "aligned by omission" — a doc silent on an OWED amendment. Check every context against APPLICABILITY
+    (framework §4), and cross-check the SIBLING docs that delegate fields to it. The whole-corpus exit gate reading
+    live files (not re-run records) is the safety net; a per-cluster split makes it tractable.
+  - **PLAN CRITIQUE ≠ POST-IMPL CRITIQUE** (re-confirmed): the plan critique verified citations against source+schema;
+    the post-impl critique verified the edits actually LANDED with no drift. Both needed for a doc unit.
+
+Next session (resume from here):
+  - Part 1 CLOSES → **Part 2 (repository structure)** — FORWARD-DECLARED, earns its own gate-1. Derive the target
+    repo structure from the realigned docs: `core/src` homes for the 5 substrates, `schema/` org, a keep/migrate/
+    quarantine/delete disposition ledger over the file census, unwire the v1 `schema.ts` monolith. Structure only —
+    no feature code. Likely ADR-018. Full double-gate per unit.
+  - The Part-1/Part-2 boundary is now LIVE: every `[DEFERRED — Part 2]` code/directory-home call in the realigned
+    docs is Part 2's to decide.
+  - Read first on resume: `realignment-master-plan/_index.md` (Part-2 forward-declaration) + `current-state-baseline/
+    baseline.md` (the file census) + ADR-016 (schema.ts unwire) + ADR-017 (what Part 3 sequences).
+  - Deferred open Qs: "RP" abbreviation (Part 3.0); V1/ADR-007 saved-views dedicated reframe pass.
+═══════════════════════════════════════════════════════════════════════════
