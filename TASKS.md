@@ -6,10 +6,21 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-25 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS — ✅ TIER-1 DONE (10) + TIER-2: ✅ routines, skills, learning/education, books, check-ins** (5th–9th consecutive critique-clean; commits cab2bfe, ed6d5fd, cff16a2, 4910268, a257d90). skills = first X*/AI*; learning/education + books = mixed R6 + X*/AI*; check-ins = lightest (E9 user_profile split + E2). Tier-2 remaining (2): finance/fiscal-legal, health/nutrition → then Tier 3 arch docs (Part 1.3) |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-25 | **Part 0 + 1.0 + 1.1 COMPLETE**; **Part 1.2 IN PROGRESS — ✅ TIER-1 DONE (10) + TIER-2: ✅ routines, skills, learning/education, books, check-ins, fiscal-legal** (5th–10th consecutive critique-clean; commits cab2bfe, ed6d5fd, cff16a2, 4910268, a257d90, a26c421). skills = first X*/AI*; learning/education + books = mixed R6 + X*/AI*; check-ins = lightest (E9 split); fiscal-legal = lightest/cleanest (pure-gap + net-new + no measurability/economy/tags; X*/AI* token-naming). **Tier-2 remaining (1): health/nutrition** → then Tier 3 arch docs (Part 1.3) |
 
 ## 🧭 Next session
 
+**Part 1.2 Tier-2 — LAST unit: `health/nutrition`** (sweep row 20, gap 015/014/006). Reuse the X*/AI* pattern
+(skills.md/books.md/learning-education.md/finance-fiscal-legal.md = the templates): AI6 `source=ai` on
+AI-generated rows + food-DB ingest (X3 "Health food-DB" verbatim, device-mediated X1, public-reference X2,
+`external_in_ok` X5) + `entity_tags` (SP1). **GREP THE LIVE SCHEMA FLOOR FIRST** (the 3×-proven lesson — a
+"gap" label hid live inline `tags`/`progress NOT NULL DEFAULT 0` in education + books). Note 006 is a driver
+(SP1 tags — health/nutrition may have a real tag floor, unlike fiscal-legal). Same per-unit LITE loop:
+ground → refine sweep across all 5 aspects → grep floor → persist PLAN → independent adversarial critique →
+approve → implement → grep-verify → commit. **After health/nutrition → TIER-2 DONE → Tier 3 = Part 1.3
+architecture-doc rewrites (4 stale + 4 partial).**
+
+_Prior next-session note (Tier-1 → early Tier-2, retained for the reusable patterns):_
 **Part 1.2 Tier-1 COMPLETE (10). Tier-2 STARTED — ✅ `routines` + ✅ `skills` done** (5th + 6th consecutive
 critique-clean; commits cab2bfe, ed6d5fd). **Two carry-forwards:** (1) routines' sweep verdict was **stale** (row 13),
 NOT gap — **grep each Tier-2 unit's sweep row before assuming `gap`.** (2) **`skills` established the X*/AI* (014/015)

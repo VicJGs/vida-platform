@@ -2978,3 +2978,55 @@ Next session (resume from here):
   - Per-unit loop + reusable discipline: see the check-ins entry directly above (the full next-session block).
   - After Tier 2: Tier 3 = Part 1.3 architecture-doc rewrites (4 stale + 4 partial).
 ═══════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION — 2026-07-25 (Part 1.2 Tier-2 · fiscal-legal re-run)
+═══════════════════════════════════════════════════════════════════════════
+Task: build-roadmap-resequence (foundation-realignment master campaign) · Profile: Project Foundation Setup
+Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+
+Goal: Advance Part 1.2 Tier-2 — re-run `finance/fiscal-legal` (2nd-to-last Tier-2 unit).
+
+Completed this session (1 unit — 10th CONSECUTIVE critique-clean of the campaign):
+  6. finance/fiscal-legal  (Tier-2; lightest/cleanest — pure-gap + net-new)  — commit a26c421
+     (+ campaign tracking + session-log commit)
+  Loop: ground (sweep row 18 + framework §3 ADR-014/015 + §4 applies-to + all 5 aspects + grep the live
+  schema floor → net-new/schema-0) → refine sweep → persist LITE-gate PLAN (part-1.2-reruns/finance-fiscal-legal.md)
+  → independent adversarial critique (fresh code-aware subagent, prompted to refute) → SHIP/0 blocking →
+  Victor approval → implement all 5 aspect docs (20 additive edits) → grep-verify acceptance clean → commit.
+
+Why fiscal-legal was the lightest/cleanest unit in the campaign:
+  - The intersection of three "easy" properties that never co-occurred before:
+    (1) net-new / schema-0 (grep-confirmed zero fiscal-legal tokens in code) → NO As-is floor → NO R6 two-tier;
+    (2) pure-gap, already ADR-014/015-aware (docs authored 2026-07-19 already name public-reference/two-mode
+        AI/source=ai) → NO contradiction to fix (unlike skills' F1);
+    (3) no measurability (not pursuable, L240 — impact rides Purpose via FL-10), no economy (not a feeder,
+        L242), no tag surface (jurisdiction is a jurisdiction_code link, not tags).
+  - So the whole pass = NAME the mechanical framework tokens the docs already satisfy in prose. Closed the two
+    sweep-named gaps (X5 external_in_ok/external_out_ok — existing ADR-010 grants, no new table; AI3
+    cloud=egress+scope-min) + cited X1/X2/X3/X4/X6/X9/X11 + AI1/AI2/AI5 by ID; AI6 verify-only; new FL-15.
+
+Key decision / reusable pattern established this session:
+  - "PURE-GAP + NET-NEW" unit shape: when a doc is both schema-0 AND already conceptually ADR-aware, the
+    re-run is a pure token-naming annotation — attach capability IDs to the existing prose so the sweep's
+    grep-predicates pass. No R6, no floor, no contradiction. The lightest possible unit type.
+  - AI4-NA on an advisement: a "what-if / model impact" capability that is informational + no-auto-action is
+    an AI3 scoped-generate (model(scenario)), NOT an AI4 tool-envelope agent — even when the docs use the word
+    "agentic" (that word = ADR-015 §3.1's name for the on-device MODE, AI1). Critic verified against §3.1/§3.4.
+    (3rd campaign unit to rule AI4-NA — education, books, now fiscal-legal.)
+
+Campaign state: **Part 1.2 = Tier-1 COMPLETE (10) + Tier-2 6 of 7 done.** Tier-2 remaining (1):
+  health/nutrition (row 20, gap 015/014/006). Then Tier 3 (Part 1.3 arch-doc rewrites: 4 stale + 4 partial).
+
+Next session (resume from here):
+  - FIRST ACTION: the LAST Tier-2 unit — `health/nutrition` (sweep row 20, gap 015/014/006). Reuse the X*/AI*
+    pattern (skills.md/books.md/learning-education.md/finance-fiscal-legal.md = the templates): AI6 source=ai
+    on AI-generated rows + food-DB ingest (X3 "Health food-DB" verbatim, X1 device-mediated, X2 public-reference,
+    external_in_ok X5) + entity_tags (SP1).
+  - GREP THE LIVE SCHEMA FLOOR FIRST — the 3×-proven lesson. NOTE: 006 (SP1 tags) IS a driver here, so unlike
+    fiscal-legal, health/nutrition MAY carry a real live tag floor (inline tags / page_tags) needing an R6
+    two-tier retirement — do not assume pure-additive; grep it.
+  - Read first: staleness-sweep.md (row 20) + capability-framework.md §3 (015/014/006 predicates) + the target's
+    5 aspect docs + a sibling PLAN as the format template. Per-unit loop: see the fiscal-legal / check-ins entries.
+  - After health/nutrition → TIER-2 DONE → Tier 3 = Part 1.3 architecture-doc rewrites.
+═══════════════════════════════════════════════════════════════════════════
