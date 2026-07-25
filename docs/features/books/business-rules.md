@@ -17,8 +17,9 @@
   (page · epub location · audio timestamp); physical/braille assets hold a manually-fed position. `[INTENT B2]`
 - **BK-3 — Unified progress is derived (⚠ INTENDED).** Book-level progress derives from asset positions
   through the cross-format mapping under the conflict rule (BK-8) — never hand-set as a separate truth.
-  ⚠ Supersedes the FACT columns `books.current_page`/`progress` (single-position model) — reconcile in the
-  ADR-002 amendment. `[INTENT B2/B16; FACT: L2419-2420]`
+  ⚠ Supersedes the FACT columns `books.current_page`/`progress` (single-position model): the live `books.progress`
+  becomes a **nullable override** (`NULL ⇒ derive`, ADR-011 M3), never a `NOT NULL DEFAULT 0` counter — reconcile in
+  the ADR-002 amendment. `[INTENT B2/B16; FACT: L2419-2420; ADR-011 M3]`
 - **BK-4 — Cross-format mapping is AUTOMATIC, and honest when absent (⚠ INTENDED).** Positions map between
   formats via transcription + TOC-anchor matching near the stopped point — **never manual calibration** (it
   would break Books as the sole tool). When the mapping is pending/failed/unavailable, the UI shows the
@@ -41,14 +42,20 @@
   copy; entry = manual OR ISBN/metadata lookup (both deliverables). Syllabus/schedule belong to Education;
   they meet only through the partition (BK-13). Chapters stay a flat list `[INTERP: nested sections not
   requested]`. `[INTENT B8; FACT: book_chapters L2445-2469]`
-- **BK-10 — Reading sessions are Books' own entity, mode-adaptive (⚠ INTENDED).** Never a `study_session`
-  reuse. Manual (physical/braille): time, pages read, where the user stopped. Digital/audio: granular position
-  + statistics. **Page-photo capture** (optional): the photo is processed for position AND **stored encrypted
-  as a visual reading journal** — attached to the session and surfaced in the daily Journal. The Study Planner
-  consumes sessions; Gamification/statistics read them. `[INTENT B10 + B10-confirm + B16b]`
+- **BK-10 — Reading sessions are a `reading` Session sub-type, mode-adaptive (⚠ INTENDED).** A reading session is
+  a base `sessions` row (`sub_type='reading'`) + a **Books-owned 1:1 extension** keyed `session_id` (ADR-004 S1) —
+  the shared timer/scheduling/runtime rides the base, the mode-adaptive capture is the extension. **Still never a
+  `study_session` reuse** — `reading` and `study` are *distinct* sub-types (the framework lists both as separate
+  extensions), and never a standalone Books session table. Manual (physical/braille): time, pages read, where the
+  user stopped. Digital/audio: granular position + statistics. **Page-photo capture** (optional): the photo is
+  processed for position (OCR = a scoped extract, AI5/AI6) AND **stored encrypted as a visual reading journal** —
+  attached to the session and surfaced in the daily Journal. The Study Planner consumes sessions;
+  Gamification/statistics read them (the grant rides the base-`sessions` sub-type, not Books — no E2 on Books).
+  `[INTENT B10 + B10-confirm + B16b; ADR-004 S1; ADR-015 AI5/AI6]`
 - **BK-11 — Plans are adaptive and user-arranged (⚠ INTENDED).** A plan covers one or many books — the user
   chooses **sequenced** (A then B) or **parallel** (quota split). Goals are manual or **auto-calculated to a
-  target** (a date · weekday · day-of-month). Missed day/week/month quotas trigger **recalculation** — the
+  target** (a date · weekday · day-of-month) — the plan **goal is a pursuable target** carrying `measurement_kind` ×
+  `binding_mode` (ADR-011 M1/M2; reading progress = `quantitative`/`derived-pull`). Missed day/week/month quotas trigger **recalculation** — the
   plan reshapes and proposes how to make up, never silently drops the target. Pre-Calendar, auto-goals =
   arithmetic over days-until-target; Calendar-slot reconciliation (slots preset in Routines) renders visibly
   stubbed. `[INTENT B9/B15; Transform obligation 4]`
@@ -59,17 +66,22 @@
   (many-to-many) + the Books→Education API: Education reads books-per-subject + pace-status vs next
   class/assessment; Books reads `subject_schedules` + assessment dates to pace the student AHEAD. No direct
   cross-module table access (§6). `[INTENT B7]`
-- **BK-14 — Books' governing principle (⚠ INTENDED).** The ZK core is untouched by integrations. TTS,
-  transcription, ISBN/metadata lookup, and photo OCR are **opt-in**: the user is informed (consent step),
-  the user owns the risk, the OS provides the safety net. Every integration has a manual fallback path.
-  `[INTENT B3/B8; candidate constitution amendment — joins the Projects-surfaced extension-model principle]`
+- **BK-14 — Books' governing principle (⚠ INTENDED).** The ZK core is untouched by integrations. **ISBN/metadata
+  lookup** = device-mediated **public-reference** ingest (ADR-014 X1/X2/X3 "Books ISBN") under `external_in_ok` (X5),
+  revocable (X9); **TTS, transcription, photo OCR** = model pipelines that split to ADR-015 (X11): `on_device`/`cloud`
+  (AI1), cloud = egress + scope-min (AI3), the untrusted OCR'd page carries provenance (AI5), AI-derived rows carry
+  `source=ai` (AI6) — **not** AI4 agents. All **opt-in**: the user is informed (the consent step = the X4/AI1 gate),
+  owns the risk, the OS provides the safety net; every integration has a manual fallback path. `[INTENT B3/B8; ADR-014
+  X1/X2/X3/X5/X9/X11; ADR-015 AI1/AI3/AI5/AI6; candidate constitution amendment — joins the Projects-surfaced
+  extension-model principle]`
 - **BK-15 — The Reader is core and in-app (⚠ INTENDED).** One surface, three modes (read · listen — including
   TTS-converted files · annotate live in all modes), on all 3 platforms; files never leave the encrypted
   store to be read. Auto-session tracking. `[INTENT B3/B12]`
-- **BK-16 — Classification via tags, prose via pages (⚠ INTENDED).** Publisher/genre/category are shared
-  scoped tags (grouping + visualization), not columns; summary + key-takeaways are notes elements with
+- **BK-16 — Classification via tags, prose via pages (⚠ INTENDED).** Publisher/genre/category are **`entity_tags`**
+  (ADR-006 SP1, Books-scoped) — grouping + visualization, not columns; summary + key-takeaways are notes elements with
   dedicated per-type UIs; skill/purpose links are owned by Skills/Purposes. The book row stays lean.
-  ⚠ Supersedes FACT columns `books.genre`/`tags` — shared-tags migration in the amendment. `[INTENT B11]`
+  ⚠ Supersedes the inline FACT columns `books.genre`/`tags` — `entity_tags` migration in the amendment. `[INTENT B11;
+  ADR-006 SP1]`
 - **BK-17 — Defaults before personalization; sparse is normal.** Every view ships a default; TOC-only books,
   copy-less books, unsynced mappings, and empty shelves render gracefully and invite increments (anti-lost).
   `[INTENT B12]`
@@ -123,8 +135,11 @@ attachments) · `reading_plans` (+plan↔books arrangement) · `book_subjects` �
 editor block (Notes & Pages side) · `entity_links` new entity types · format + progress + tags reconciliations
 on the FACT columns. Design passes required: **cross-format mapping** (transcription/TOC anchors) and the
 **Books governing principle** (joins the extension-model constitution amendment). INTENDED-immature: Education
-partition pacing · Calendar-slot reconciliation. Live invariants today: BK-1 (schema `[E]` split), BK-18,
-`UNIQUE(book_id, chapter_number)`. `[FACT: ADR-002 L2409-2469; INTENT: intake]`
+partition pacing · Calendar-slot reconciliation. **Driver-token realignment (Part 1.2):** retire inline
+`books.tags`/`genre`→`entity_tags` (SP1) + `books.progress NOT NULL DEFAULT 0`→nullable-override (M3); reframe
+`reading_sessions`→base `sessions` `reading` sub-type + extension (S1); name ISBN lookup X1/X2/X3/X5/X9 +
+OCR/TTS/transcription X11→AI1/AI3/AI5/AI6 (not AI4). Live invariants today: BK-1 (schema `[E]` split), BK-18,
+`UNIQUE(book_id, chapter_number)`. `[FACT: ADR-002 L2409-2469; INTENT: intake; ADR-004/006/011/014/015]`
 
 ## Completion checklist
 - [x] invariants with [FACT/INTENT] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged
