@@ -6,20 +6,35 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-25 | **Part 0 + 1.0 + 1.1 COMPLETE**; **✅ Part 1.2 COMPLETE — TIER-1 (10) + TIER-2 (7) = 17 units, 11 consecutive critique-clean.** Tier-2: routines, skills, learning/education, books, check-ins, fiscal-legal, health/nutrition (commits cab2bfe, ed6d5fd, cff16a2, 4910268, a257d90, a26c421, d4e2cad). **NEXT = Part 1.3 (Tier 3): architecture-doc rewrites** (4 stale + 4 partial, `docs/core/architecture/*`). Then Part 2 (structure) → Part 3 (roadmap resequence). |
+| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-25 | **Part 0 + 1.0 + 1.1 + 1.2 + ✅ 1.3 COMPLETE.** Part 1.3 = all 8 arch docs realigned to the substrate model (Tier A 4 stale rewrites `6bd84a8` · Tier B 2 surgical `77d07cd` · Tier C 2 low-touch `9bfbf10`), one shared vocabulary, 3 independent critiques all clean. **NEXT = Part-1 EXIT gate** (scenario Step 6: quality-gate-foundation + independent critic over the whole realigned corpus — 8 arch docs + 24 contexts + framework). Then Part 1 CLOSES → Part 2 (structure, likely ADR-018) → Part 3 (roadmap resequence). |
 
 ## 🧭 Next session
 
-**✅ Part 1.2 COMPLETE (17 units, 11 consecutive critique-clean). NEXT = Part 1.3 (Tier 3): the architecture-doc
-rewrites** — `docs/core/architecture/*` (4 stale + 4 partial per the sweep's arch-doc scoring). This is a
-DIFFERENT shape from the per-context Tier-1/2 units: the architecture docs are cross-cutting (they describe the
-whole system, not one feature context), so the re-run realigns them against the now-realigned 17 contexts + the
-ADRs. Read first: `staleness-sweep.md` (the arch-doc rows — scored the 8 `docs/core/architecture/*` docs) +
-`capability-framework.md` + the `realignment-master-plan/_index.md` (Part 1.3 definition) + the arch docs
-themselves. Confirm the Part-1.3 methodology with Victor before starting (it may warrant a small plan of its
-own — 8 docs, cross-cutting, distinct from the per-unit LITE loop). After Part 1.3 → Part 1 (docs realignment)
-EXITS through the foundation quality gate + independent critic (scenario Step 6) → then Part 2 (structure) →
-Part 3 (roadmap resequence).
+**✅ PART 1.3 COMPLETE (all 8 arch docs realigned). NEXT = the Part-1 EXIT gate** — the gate that CLOSES Part 1
+(documentation realignment) and unblocks Part 2.
+
+**FIRST ACTION next session — Part-1 EXIT gate (scenario Step 6):**
+Run `victor:quality-gate-foundation` **+ an INDEPENDENT adversarial critic** (fresh subagent) over the **WHOLE
+realigned corpus**: the 8 arch docs (Part 1.3) + the 24 context docs (Part 1.2) + the capability framework. Verify:
+every context passes the definition-of-aligned (framework §5); NO cross-context or cross-doc contradiction; every
+gap either filled or explicitly marked owed-to-intent. Verdict SHIP / REVISE / RETHINK — fix every finding before
+Part 1 is accepted (no part closes on self-review). Also confirm Part 1.4 (cross-consistency, scenario Step 5): the
+`[INTENT]` tokens agree identically across all contexts (much of this was enforced per-tier, but the gate confirms it).
+
+**Then Part 1 CLOSES →** Part 2 (repository structure from the realigned docs — FORWARD-DECLARED, earns its own
+gate-1; likely ADR-018) → Part 3 (build roadmap resequence, the original task).
+
+**Read first on resume:** `realignment-master-plan/_index.md` (Part-1 exit gate + Parts 2–3 forward-declarations)
++ scenario Step 6 + `staleness-sweep.md` (the corpus the gate validates).
+
+**Deferred open Qs (still open):** "RP" abbreviation (Part 3.0, non-blocking); V1/007 saved-views dedicated reframe pass.
+
+**Lessons locked this session:** (1) for a big multi-doc rewrite run TWO critiques — a PLAN critique AND a
+POST-IMPLEMENTATION critique on the prose (the 2nd caught conceptual stale mechanisms surviving as ordinary English
+— "Pomodoro", "junction tables" — that the token-grep missed). (2) grep is the arbiter, not the sweep label
+(performance-strategy labeled "legacy names" but was grep-clean → status-note-only). (3) arch-doc As-is banner:
+banner a stale schema-snapshot annex v1-As-is + class-level framing + defer per-column to DB-11 (honest without
+crossing the schema-reconciliation boundary).
 
 **Reusable patterns from Part 1.2** (the 5 established mechanisms — full detail in the session-log per-unit entries):
 X*/AI* ingest layering · M1/M2 measured framing · S1 reframe · E9 god-table split · **pure-gap+net-new token-naming**

@@ -3089,3 +3089,139 @@ Next session (resume from here):
   - After Part 1.3 → Part 1 EXITS through the foundation quality gate + independent adversarial critic (scenario
     Step 6, victor:quality-gate-foundation) → then Part 2 (structure) → Part 3 (roadmap resequence).
 ═══════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION — 2026-07-25 — Part 1.3 STARTED · plan gated + Tier A COMPLETE (4 stale arch docs)
+═══════════════════════════════════════════════════════════════════════════
+Task: build-roadmap-resequence (foundation-realignment master campaign) · Profile: Project Foundation Setup
+Scenario: Documentation Realignment (Part 1.3 — architecture-doc realignment; a DIFFERENT shape from the
+per-context 1.2 units: the arch docs are cross-cutting/whole-system, so they share one substrate worldview)
+
+Goal: Open Part 1.3 — confirm methodology, gate a plan, and begin the 8 `docs/core/architecture/*` rewrites
+(sweep triage: 4 stale full-rewrite · 2 partial surgical · 2 partial-low).
+
+Methodology decision (Victor): **grouped by weight (3 tiers)**, not 8 isolated units — the arch docs
+cross-reference each other and must tell ONE consistent substrate story. Tier A = the 4 stale (full rewrite);
+Tier B = data-flow + security-model (surgical, one stale annex each); Tier C = platform + performance (low-touch).
+Each tier runs its own LITE gate. A shared **substrate-delta brief** (§1) is established once and cited by all tiers.
+
+Persisted: `realignment-master-plan/part-1.3-arch-docs.md` (the Part-1.3 plan — §1 14-row substrate-delta brief,
+§2 boundary rules, §3 tier/gate structure, §4 per-doc reframe map, §7 11 grep-checkable acceptance predicates).
+
+Two independent adversarial critiques this session (both fresh subagents, code-aware):
+  1. PLAN critique → REVISE (2 blocking): both invented capability-IDs in the §1 spine — `CA*`→`A2 A5`
+     (ADR-010 family is A1–A9), `T4 (+ TP*)`→`T1 T2 T3` (T4 is the *preset* primitive, not the fork mechanism).
+     Folded + N1 (state the award_xp[S4]/grant_currency[E2] layering explicitly) + N2 (drop Row-9 E6/E9 over-reach).
+     Verified: economy-layering trap avoided, security-model §8 boundary sound, go-forward vocab fully ADR-grounded.
+     → Victor APPROVED the plan.
+  2. POST-IMPLEMENTATION critique (on the rewritten prose, not the plan) → REVISE (2 blocking), both in
+     cross-module-integration.md: §8 "Pomodoro alerts | Pomodoro" (live source module) → "Sessions"; §9
+     "aggregated progress … via junction tables" → "via `contributions`". Both were CONCEPTUAL stale mechanisms
+     the token-grep missed (bare English words, not the retired identifiers `pomodoro_sessions`/`purpose_habits`).
+     Folded + 2 sharpening notes. → clean.
+
+Tier A COMPLETE (4 docs, dep-ordered module-dependency-graph → system-overview → cross-module-integration → README):
+  - module-dependency-graph: added the foundation-substrate tier as the true blast-radius centers; purpose_*
+    junctions → `contributions` (project_habits KEPT); awardXP → effect rail; Pomodoro → `sessions` sub-type across
+    the count/risk tables; entity_links closed CHECK → open registry; schema.ts monolith → ADR-016 per-table framing.
+  - system-overview: substrate tier in the 3-layer model + ASCII redraw (dropped Pomodoro box, opened the slash set
+    → ADR-008 capability registry); 17-flat-modules → substrate worldview; every stale module description reframed;
+    Drizzle → query-only + hand-written SQL migrations (ADR-016); ADR-017 deferred-hardening framing; dropped the
+    "~72 tables" count; legacy source-line repointed to ADRs+framework.
+  - cross-module-integration (heaviest): §5 junctions → `contributions`; §7 the whole awardXP/xp_history/total_xp
+    flow → rule→consequence engine on the effect rail (with the explicit award_xp=S4-member vs grant_currency=E2-
+    generalization discipline stated); §8 pref-gated server dispatch → ADR-013 ZK three-tier (content-free
+    wake-signal, server never sees content, local filtering); §3.2/§10 closed CHECK/`pomodoro_sessions`/`xp_history`/
+    `flashcard_decks` → open registry / `sessions` / `consequence_ledger` / review engine; NEW §11 = external
+    ingestion (ADR-014 X*) + AI (ADR-015 AI*) integration surfaces (the gap-add).
+  - README: substrate + feature-module framing; ADR canon 001 → 017 + capability framework; "the ADR governs".
+
+Boundary held (verified by both critics): conceptual homes cite owning ADRs, NO code/directory homes assigned, NO
+schema reconciliation (counts/DDL deferred to DB-11); implementation-status note in all 4 docs (arch docs describe
+the TARGET, not shipped code — ~99% predates the foundation). Commit **6bd84a8** (gitleaks clean).
+
+Reusable pattern established this session (Part 1.3-specific):
+  - TWO-CRITIC SPLIT for a big rewrite: a PLAN critique (verifies the reframe map + vocabulary + boundary approach)
+    CANNOT catch execution drift (the prose doesn't exist yet); a POST-IMPLEMENTATION critique on the actual prose
+    catches conceptual stale mechanisms that survive as ordinary English in table cells — invisible to a token-grep.
+    Both blocking finds in critique #2 were exactly this class. Grep-verify alone is necessary but not sufficient.
+  - SHARED SUBSTRATE-DELTA BRIEF as the single vocabulary across cross-referential docs — the mechanism that keeps
+    grouped multi-doc rewrites mutually consistent.
+
+Next session (resume from here):
+  - FIRST ACTION: **Tier B** — the two surgical passes. (1) `data-flow.md` step-10 only: retired direct-`awardXP`
+    → the effect rail (binding-driven effect applied exactly-once via effect_event_id/applied_effects/UNIQUE, R1;
+    balances/progress derived; keep award_xp[S4]/grant_currency[E2] discipline). Keep the write/read/encrypt/sync
+    core untouched. (2) `security-model.md` §8 ONLY: reframe the retired-schema field-classification table at the
+    field-CLASS level (name the new substrate classes: entity_tags, sessions+ledgers, contributions,
+    consequence_ledger, review-events + their encryption tier) and DEFER the exhaustive per-column table to DB-11
+    (the boundary Victor greenlit). Keep §1–7 crypto untouched. Run Tier B's own reframe → independent critique →
+    approval → implement → grep-verify → commit.
+  - THEN Tier C (low-touch): platform-strategy editor "custom extensions" → ADR-008 capability registry;
+    performance-strategy incidental legacy table names (xp_history/junctions) → substrate names. Its own LITE gate.
+  - THEN Part 1.3 done → Part 1 EXIT gate (victor:quality-gate-foundation + independent critic, scenario Step 6)
+    → Part 2 (structure) → Part 3 (roadmap resequence).
+  - Read first on resume: `part-1.3-arch-docs.md` §5 (Tier B reframe map) + §2 boundary rules + the target docs'
+    stale annex (data-flow step-10, security-model §8).
+═══════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION — 2026-07-25 (cont.) — Part 1.3 Tiers B + C → ✅ PART 1.3 COMPLETE (all 8 arch docs)
+═══════════════════════════════════════════════════════════════════════════
+Task: build-roadmap-resequence (foundation-realignment campaign) · Profile: Project Foundation Setup
+Scenario: Documentation Realignment (Part 1.3 — architecture-doc realignment; grouped-by-weight, 3 tiers)
+
+Continued from the Tier-A close. Completed Tiers B + C → Part 1.3 done.
+
+TIER B (surgical — commit 77d07cd; post-impl critique SHIP/0 blocking):
+  - data-flow.md: effect-layer touchpoints only (§1 step 10, §5 example, §8 diagram) → direct-awardXP →
+    binding-driven effect on the shared rail, exactly-once via effect_event_id/applied_effects/UNIQUE (R1),
+    balances derived from consequence_ledger; kept award_xp[S4]/grant_currency[E2] discipline; schema.ts-
+    monolith classification ref → ADR-016 per-table. Write/read/encrypt/sync core untouched.
+  - security-model.md §8 ONLY: class-level "Substrate Field-Classes" table (entity_tags=E, spaces.name=E,
+    sessions free-text=E/structural=P, contributions=P, consequence_ledger=P [gamification points ≠ money],
+    review metadata=P/item=E, views.name=E/config=P) + 2 Always-E rubric touches; bannered the per-table
+    breakdown as v1 As-is (retired tables kept for orientation, regenerated by DB-11); Encryption Statistics
+    reframed to distribution-shape (no re-asserted count). §1–7 crypto byte-for-byte untouched (git-diff-verified
+    by the critic). Boundary held: class-level only, per-column deferred to DB-11.
+
+TIER C (low-touch — commit 9bfbf10):
+  - platform-strategy.md: §3.3 editor "custom extensions (fixed set)" → capability-block registry (ADR-008,
+    verbatim) + implementation-status note (ADR-008 blocks + ADR-017 delivery order A→D).
+  - performance-strategy.md: the sweep's "incidental legacy table names" did NOT reproduce — grep confirmed
+    every example table (tasks/pages/entity_links/habit_completions/transactions) is current. So: status note
+    only (flags ADR-017 deferred encryption for decryption-dependent latency targets) + "no retired tokens" finding.
+  - Gate note: Tier C's independent critique is folded into the imminent Part-1 EXIT gate (whole-corpus critic),
+    not a disproportionate dedicated subagent for 3 minimal edits. Tiers A + B each had their own full critique.
+
+✅ PART 1.3 COMPLETE — 4 stale rewritten · 2 partial surgical · 2 partial-low = all 8 arch docs realigned to the
+substrate model, on ONE shared vocabulary. Three independent adversarial critiques (plan + Tier-A post-impl +
+Tier-B post-impl), all REVISE/SHIP→clean. Commits 6bd84a8 (A) · 77d07cd (B) · 9bfbf10 (C). Plan +
+per-tier record: `realignment-master-plan/part-1.3-arch-docs.md`.
+
+Reusable patterns locked this session:
+  - TWO-CRITIC SPLIT for big rewrites (plan critique CANNOT catch execution drift; post-impl critique on the
+    prose catches conceptual stale mechanisms surviving as ordinary English in table cells — grep-invisible).
+  - SHARED SUBSTRATE-DELTA BRIEF as the single vocabulary across cross-referential docs (keeps grouped multi-doc
+    rewrites mutually consistent).
+  - ARCH-DOC As-is BANNER: for a partial doc whose stale annex is a schema snapshot (security-model §8), banner
+    it v1-As-is + add class-level substrate framing + DEFER the per-column table to DB-11 — honest without crossing
+    the schema-reconciliation boundary.
+  - GREP IS THE ARBITER, NOT THE SWEEP LABEL (performance-strategy: labeled "partial/legacy names" but grep-clean →
+    status-note-only, no fabricated retirement).
+
+Campaign state: Parts 0 + 1.0 + 1.1 + 1.2 + 1.3 all COMPLETE. Part 1 (docs realignment) is done EXCEPT its EXIT gate.
+
+Next session (resume from here):
+  - FIRST ACTION: **Part-1 EXIT gate** (scenario Step 6) — run victor:quality-gate-foundation + an INDEPENDENT
+    adversarial critic (fresh subagent) over the WHOLE realigned corpus: all 8 arch docs (Part 1.3) + the 24
+    context docs (Part 1.2) + the capability framework. Verify every context passes the definition-of-aligned,
+    NO cross-context/cross-doc contradiction, every gap filled or explicitly owed-to-intent. Verdict SHIP/REVISE/
+    RETHINK; fix every finding before Part 1 is accepted. Also Part 1.4 (cross-consistency, scenario Step 5) if
+    not already satisfied by the per-tier consistency work — confirm the [INTENT] tokens agree across all contexts.
+  - THEN Part 1 CLOSES → Part 2 (repository structure from docs — FORWARD-DECLARED, earns its own gate-1;
+    likely ADR-018) → Part 3 (build roadmap resequence, the original task).
+  - Read first on resume: realignment-master-plan/_index.md (Part 1 exit gate + Parts 2–3 forward-declarations) +
+    the scenario Step 6 + staleness-sweep.md (the corpus the gate validates).
+  - Deferred open Qs still open: "RP" abbreviation (Part 3.0); V1/007 saved-views dedicated reframe pass.
+═══════════════════════════════════════════════════════════════════════════
