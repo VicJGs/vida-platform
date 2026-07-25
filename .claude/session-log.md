@@ -3293,3 +3293,81 @@ Next session (resume from here):
     baseline.md` (the file census) + ADR-016 (schema.ts unwire) + ADR-017 (what Part 3 sequences).
   - Deferred open Qs: "RP" abbreviation (Part 3.0); V1/ADR-007 saved-views dedicated reframe pass.
 ═══════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION — 2026-07-25 — PART 2 (Repository Structure) COMPLETE — @vida/core re-derived from docs (ADR-018)
+═══════════════════════════════════════════════════════════════════════════
+Task: build-roadmap-resequence (foundation-realignment campaign) · Profile: Project Foundation Setup
+Scenario: Repository Structure (Part 2 — ran under the master-plan Part-2 framing + §XXVI full double-gate)
+
+GOAL: Part 2 of the campaign — derive the target repo structure from the (Part-1) realigned docs, quarantine
+the pre-foundation residue, unwire the v1 schema.ts monolith, stand up the correctly-shaped skeleton. Structure
+only — no feature code (bounded by ADR-017 features-first).
+
+COMPLETED (full double-gate + both exit lenses, all accepted by Victor):
+  - Step 1 (ground): read master-plan _index.md (Part-2 umbrella framing) + baseline.md (code census still
+    valid — Part 1 touched docs only) + ADR-016 (schema/ layout) + ADR-017 (parks schema immediacy → Part 2
+    is placement/quarantine/unwire ONLY, not table authoring). Resolved scenario (default.md is a poor fit;
+    ran under master-plan framing; a dedicated `repository-structure` scenario is still OWED via /new-scenario).
+  - gate-1 PLAN (docs/specs/foundation/part-2-repository-structure/_index.md): target structure + disposition
+    ledger + ADR-018 decision. Independent adversarial critique → REVISE (B1: importer-taxonomy FALSE — the grep
+    matched only literal `db/schema` and MISSED adapter.ts:16 `import * as schema from './schema'`; 3 binders not
+    2; B2: the repoint SEVERS the v1 81-table surface → empty-table namespace, survivable via typeof-only; B3:
+    web-adapter binds via the barrel). Folded + verified.
+  - RECONCILED structure with Victor: he flagged the core/src layout is an ARCH question → read the arch docs →
+    they DELIBERATELY defer code homes to "the structural phase" (4× explicit) BUT data-flow.md:7 GOVERNS
+    services/ + module-dependency-graph.md:31 fixes "modules riding substrates". Result (Victor Q1/Q2 + check):
+    foundation/ (substrate tier + ingestion/ai) + KEPT services/ (per-module, governed) + kept db/encryption/
+    sync/utils; models/ DISSOLVED (redundant with @vida/types). → Approval 1.
+  - gate 2: ADR-018 (docs/core/decisions/ADR-018-repository-structure-from-documentation.md) + IMPLEMENTATION-PLAN.
+    Critique + PREFLIGHT (2 independent subagents). PREFLIGHT=BLOCKED caught a BUILD-BREAKER: runner.ts:18 does a
+    RUNTIME `import m001 from './001_initial'` (ALL_MIGRATIONS=[m001], barrel-exported) — a 4TH consumer of a
+    quarantined file, not typeof-only → moving 001_initial without editing runner breaks tsc. Added ledger row 2b
+    (empty ALL_MIGRATIONS). Gate-2 critique = SHIP (critic ran the WHOLE plan in a worktree → typecheck 10/10 +
+    build 8/8 green). → Approval 2.
+  - IMPLEMENTED on branch feat/part-2-repository-structure:
+      U2 (f63786e) — git mv schema.ts→db/_legacy/schema.v1.ts, 001_initial.ts→db/_legacy/, web-adapter.ts→Old/;
+        emptied runner.ts ALL_MIGRATIONS; deleted 9 models/ + 9 services/ empty stubs; READMEs.
+      U3 (e45a081) — 12 foundation/ substrate dirs (incl effects/) + 19 services/ module dirs, each a CLAUDE.md
+        layer-doc; refreshed stale db/CLAUDE.md. pnpm build 8/8 + typecheck 10/10 exit 0.
+      housekeeping (56d56c5) — fixed the now-defunct file-beats-dir comment in schema/index.ts; flipped statuses.
+  - EXIT GATE: independent critic over the COMMITTED tree = ACCEPT (0 blocking, full acceptance scorecard, build
+    re-verified) + victor:quality-gate-foundation = PASS (2 items N/A: no runtime code/creds). Victor ACCEPTED.
+  - Records: master-plan _index.md (Parts 1+2 COMPLETE), TASKS.md, task-index, task file all flipped to Part 3 next.
+  - MERGED to main (90550fa, --no-ff), branch deleted.
+
+DECISIONS:
+  - ADR-018 (Accepted) — retire Phase-0 arch; re-derive @vida/core from docs. foundation/ substrate tier + kept
+    services/ per-module tier; models/ dissolved into @vida/types; v1 schema.ts + 001_initial quarantined to
+    db/_legacy/ reference-only; runner registry emptied. Amends the master-plan Part-2 line (schema authoring is
+    per-feature, ADR-017); does NOT amend ADR-002 (§5/§7/§8 stays DB-11) or ADR-016 (§3.1 honored).
+
+MERGE TOPOLOGY (flagged): main/origin/main sat at 826a4fd ("complete build-roadmap", the ORIGINAL 2026-07-20
+  roadmap). The whole realignment campaign (Parts 0→1→2) had been committed on a SEPARATE line (tip 12f8385) that
+  the main pointer never advanced to. This merge UNIFIED the two divergent lines onto main. Conflict-free (near-
+  disjoint files); the realignment's docs/_legacy quarantine won. main is now 52 commits AHEAD of origin/main —
+  NOTHING PUSHED (push only on request). That old 826a4fd roadmap is exactly what Part 3 re-sequences features-first.
+
+LESSONS (locked):
+  - THE GATE PAYS OFF ON THE CONSUMER GRAPH, NOT THE TOKEN SURFACE (again). The preflight caught a build-breaking
+    4th schema/migration consumer (runner.ts runtime import) that a too-narrow grep (`db/schema` only, missing the
+    sibling `./schema` and the runtime default-import) had hidden — the same "sweep scores the surface" failure
+    class as Part 1's preferences miss, in a new guise. Corrected grep must match ALL import forms.
+  - READ THE ARCHITECTURE BEFORE ASKING (Victor's correction). I surfaced the core/src layout as an open question
+    when the arch docs already fixed the conceptual model (deferring only the physical home) — data-flow.md governs
+    services/, @vida/types owns the model layer. Derive from the docs; ask only the genuinely-undetermined part.
+  - RECONCILE CONTRADICTORY USER INPUTS AGAINST THE ARCH, don't take the lean at face value: Q1 (keep services/
+    /models) vs Q2 (foundation/+modules split) resolved to foundation/+services/ (drop models/) via the check.
+  - Independent-critic-over-COMMITTED-state (not the plan) is the exit lens; it even ran the build to prove green.
+
+NEXT SESSION (resume Part 3 — Build Roadmap resequence, its own gate-1):
+  - FIRST ACTION: §XXVII surface the Part-3 path (already surfaced this session) → Start Step 1 = GROUND:
+    read the now-unified docs/roadmap.md (the old 826a4fd output) + ADR-017 (features-first) + the ADR-018 homes;
+    resolve the "RP" [UNKNOWN] first-deliverable abbreviation FIRST.
+  - Then: capture build intent (first deliverable + [RP] + goals + web-SPA-A→Tauri-D path) → dependency map +
+    cluster decomposition → gate-1 PLAN → critique → Approval 1 → rewrite docs/roadmap.md → preflight+critique →
+    Approval 2 → projectize (cluster→Project, deliverable→Issue) + gated /track-sync → exit gate → CAMPAIGN DONE.
+  - Read first on resume: realignment-master-plan/_index.md (Part-3 forward-declaration) + ADR-017 + docs/roadmap.md.
+  - OWED: a dedicated `repository-structure` scenario via /new-scenario (Part 2 reused the master-plan framing).
+  - Consider: push main to origin (52 ahead) when Victor wants.
+═══════════════════════════════════════════════════════════════════════════
