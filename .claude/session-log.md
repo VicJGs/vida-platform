@@ -2609,3 +2609,76 @@ Next session (post-context-clear — READ THIS FIRST):
         stale, not gap);
     (4) grep the live schema for the As-is floor to tell R6 two-tier (retire) from pure gap-add (no floor).
 ---
+
+---
+Date: 2026-07-24
+Task: build-roadmap-resequence (foundation-realignment master campaign)
+Profile: Project Foundation Setup · Scenario: Documentation Realignment (Part 1.2 per-context re-runs; LITE gate)
+Goal: Part 1.2 TIER-2 — `skills` (sweep row 11, gap; the FIRST X*/AI* ingest/AI unit)
+Completed:
+  - `skills` re-run COMPLETE end-to-end (ground → refine → PLAN → adversarial critique → approve →
+    implement 5 aspects → grep-verified acceptance → commit). Commit ed6d5fd.
+  - PLAN persisted: docs/specs/foundation/realignment-master-plan/part-1.2-reruns/skills.md
+  - Edited all 5 aspect docs in docs/features/skills/.
+  - THE HEAVIEST GAP-FILL BUT PURE ADDITIVE. First unit in the campaign to touch the X*/AI* (ADR-014/015)
+    ingest/AI capability family — the naming established here templates the 4 remaining Tier-2 ingest units
+    (learning/education, books, finance/fiscal-legal, health/nutrition). Grep confirmed zero forward retired
+    tokens → no R6 two-tier; the one retire (skill_resources→entity_links) was already in-doc.
+  - Skills already conformed on the hard axes: S1 exact (skill_actions.id=session_id), M3 (mastery_override
+    nullable), AI6 (source triad present), entity_links retire stated, and the ZK/SU-1 community coherence
+    (SK-3's 2026-07-14 resolution: community is external; only bridge = user-sovereign import/export).
+  - Adds: X1/X2/X3/X5/X8/X9/X10/X11 (Skill-DB import = device-mediated PUBLIC-REFERENCE whole-set bulk under
+    external_in_ok; template export = X4 egress under external_out_ok) + AI1/AI2/AI3/AI5 (AI-draft: on_device/
+    cloud server-blind, ai_connections, cloud=egress+scope-min, untrusted-import provenance), AI6 verify +
+    MEASURED M1/M2 (measurement_kind taxonomy in the Composer config + binding_mode=derived-pull; the pursuable
+    target's M1/M2 on the Purpose target, SK-10 — NOT a stored skills column) + SP1 entity_tags + E2
+    grant_currency(XP) + new invariant SK-14.
+  - LITE gate: independent adversarial critique (fresh code-aware subagent, prompted to refute) → SHIP /
+    0 blocking — SIXTH consecutive clean unit. Explicit rulings on the two highest-risk calls:
+    (1) M1/M2 MEASURED FRAMING = CORRECT (not over-reach, not under-fix): §4 L240 verified to EXCLUDE Skills
+        from the pursuable set → naming the measurement_kind taxonomy as the Composer-config vocabulary +
+        locating the pursuable on the Purpose target genuinely satisfies driver 011 without asserting a stored
+        skills.measurement_kind column; mastery_override nullable SUPPORTS the not-a-stored-pursuable posture
+        (the live schema's mastery_level NOT NULL DEFAULT is a stored anti-signal correctly deferred to build).
+    (2) F1 FIX SOUND: submitToCommunity (contract:12) contradicted SK-3's "No in-OS submit-to-community
+        pipeline" → reframed to X4 exportTemplate egress; no smuggled sharing pipeline, SU-1/ZK-1 held.
+  - 2 notes folded: N1 extended F1 to sweep the push-direction "community submission" prose across ALL 5
+    aspects (structure-data/business-rules/identity/contract) — kept the import-fallback "→community" (pull a
+    template = SK-3-consistent); N2 AI6 provenance = fill_source=llm / source=ai (distinct from the source ∈
+    curated|community|ai dataset-origin enum).
+
+Decisions:
+  - The X*/AI* NAMING PATTERN (reusable for the ingest cluster): a public-reference dataset (Skill-DB, food-DB,
+    ISBN, rule-packs) = device-mediated (X1) + layer-classified (X2 public-reference) + whole-set bulk fetch
+    (X3, provenance+signature/version) under external_in_ok (X5); any export = X4 egress under external_out_ok
+    (per-target consent, never auto-transmit); an LLM step SPLITS off via X11 to ADR-015 (AI1 on_device/cloud
+    server-blind, AI3 cloud=egress+scope-min, AI5 untrusted-content provenance, AI6 source=ai). AI4 (agent
+    envelope) applies ONLY to a true agentic actor (Projects) — a scoped generate call is NOT agentic.
+  - The M1/M2 MEASURED FRAMING (reusable when a module isn't in the L240 pursuable set): reference the
+    measurement_kind taxonomy in the module's measurement-config + put the pursuable's M1/M2 on its Purpose/
+    target owner; do NOT assert a stored measurement_kind column. This is the anti-overclaim mirror of the
+    relationships/health-core "derived analytic, not measurable" guard.
+
+Next session (post-context-clear — READ THIS FIRST):
+  - Campaign lives in: docs/specs/foundation/realignment-master-plan/_index.md + staleness-sweep.md (per-
+    context verdict table — routines row 13, skills row 11 just done) + capability-framework.md (predicate
+    instrument) + part-1.2-reruns/*.md (12 completed unit PLANs — skills.md is the X*/AI* format template).
+  - FIRST ACTION: continue Part 1.2 TIER-2. Remaining: learning/education (row 7, gap 014/015/011/006 — the
+    heaviest; inherits the skills X*/AI* pattern + ICS add-only feed X8 dedup by feed_id,uid), books (row 10,
+    gap 014/015/011/006/004), check-ins (row 15, gap 012/006 — the lone NON-ingest unit, familiar M*/E2/SP1),
+    finance/fiscal-legal (row 18, gap 014/015), health/nutrition (row 20, gap 015/014/006). **Grep each
+    unit's sweep row first** (routines proved "all gap" imprecise). Suggested: learning/education (bite the
+    heaviest while the X*/AI* pattern is fresh) OR check-ins (a quick familiar-family win).
+  - Per-unit loop (unchanged): surface §XXVII path → ground (sweep row + framework §3 predicates + all 5
+    aspect docs + grep live schema) → refine the sweep across all 5 aspects → persist LITE-gate PLAN →
+    independent adversarial critique (fresh code-aware subagent, prompted to refute) → fix → Victor approval
+    → implement 5 aspects → grep-verify → commit → update task file + TASKS.md + session-log.
+  - After Tier 2: Tier 3 = Part 1.3 architecture-doc rewrites (4 stale + 4 partial).
+  - REUSABLE DISCIPLINE (6 consecutive clean units — carry it):
+    (1) pre-empt the LIKELY blocking finding IN the PLAN (E2 grant_currency vs S4 award_xp layering; the X11
+        LLM-splits-to-015 boundary; AI4-only-for-agents);
+    (2) DISCLOSE arguable membership/mapping calls (skills M1/M2-not-in-set → measured framing; routines
+        derived-pull-vs-event-trigger) — the critic then VERIFIES rather than CATCHES;
+    (3) read ALL 5 aspects — it caught skills' F1 (submitToCommunity vs SK-3) AND the N1 prose survivors;
+    (4) grep the live schema for the As-is floor to tell R6 (retire) from pure gap-add (no floor).
+---
