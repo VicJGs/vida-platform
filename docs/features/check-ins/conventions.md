@@ -21,7 +21,11 @@
   (CK-8). `[INTENT G8]`
 - **Keep scales plaintext, reflection encrypted.** mood_score/energy_level stay plaintext (trend charts);
   everything user-written is `[E]` (CK-1). `[FACT: L970-997]`
-- **Links, not tags.** Check-ins carry no tag vocabulary — relationships are `entity_links` (CK-9). `[INTENT G10]`
+- **Links, not tags.** Check-ins carry no tag vocabulary — an SP1-consistent opt-out from `entity_tags` (no bespoke
+  store); relationships are `entity_links` (SP4, tags≠links; CK-9). `[INTENT G10; ADR-006 SP1/SP4]`
+- **Emit, don't write, the economy.** On completion, **emit** `grant_currency(XP)` (E2) → Gamification applies →
+  `consequence_ledger` (E3); **never write XP or `check_in_streak*` onto `user_profile`** — check-ins owns its streak
+  derived from `daily_check_ins` (E9). `[INTENT; ADR-012 E2/E3/E9]`
 
 ## Naming & layout
 - Enum values (canonical, SQL CHECK + to-build Zod in `@vida/core`): `check_in_type` (current
@@ -37,7 +41,11 @@
 - **Never** duplicate a standard field inside `custom_data` (CK-4). `[INTENT G5]`
 - **Never** read Purpose/Projects/Tasks tables directly for a review — integration points only (CK-6, §6). `[INTENT G7]`
 - **Never** store mood/energy encrypted — they must be plaintext for trends (CK-1). `[FACT: L979]`
-- **Never** add a tag vocabulary to check-ins — use links (CK-9). `[INTENT G10]`
+- **Never** add a tag vocabulary to check-ins — the SP1-consistent opt-out; use `entity_links` (SP4), not
+  `entity_tags` (CK-9). `[INTENT G10; ADR-006 SP1/SP4]`
+- **Never** write XP or `check_in_streak*` onto `user_profile` from check-ins — emit `grant_currency(XP)` (E2,
+  Gamification applies → `consequence_ledger` E3); check-ins owns its streak derived from `daily_check_ins` (E9).
+  `[INTENT; ADR-012 E2/E9]`
 - **Never** let the Journal hold a second copy of check-in answers — link, don't copy (CK-7). `[INTENT G10]`
 
 ## Completion checklist

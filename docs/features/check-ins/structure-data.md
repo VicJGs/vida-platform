@@ -24,7 +24,8 @@
 - **G8:** schedule/reminder wiring → Preferences + Notifications (no new check-in column; reads template
   schedule).
 - **G10 (mostly FACT):** check-in ↔ Journal-day-`pages` link via `entity_links` (`daily_check_in` already a
-  valid `entity_type`, L1350); reviews backlink reviewed entities. NO tags.
+  valid `entity_type`, L1350); reviews backlink reviewed entities. **NO tags** — SP1-consistent (no bespoke tag
+  store); a deliberate opt-out from `entity_tags` (SP4: tags≠links; check-ins uses `entity_links`). `[ADR-006 SP1/SP4]`
 
 ## State management map `[FACT: ADR-001 State]`
 - **React Query** owns check-in/template reads + optimistic writes, the **derived** mood/energy trend datasets,
@@ -51,11 +52,20 @@
 - A check-in instance is keyed by (`check_in_date`, `check_in_type`) (CK-2) — one per slot per day.
 - Default-template fields = the materialized columns; custom answers = `custom_data` (no duplication, CK-4).
 - Mood/energy live once on `daily_check_ins` (plaintext, the trend source). `[FACT: L979]`
+- **Check-ins owns `check_in_streak*`/`last_check_in_date`** (ADR-012 E9 — the `user_profile` split): the streak is
+  **derived from `daily_check_ins`** (consecutive-day analytic), never written onto the overloaded `user_profile`.
+  As-is FACT floor: `user_profile.check_in_streak`/`longest_check_in_streak`/`last_check_in_date` (`schema.ts:1183-1185`)
+  sit on the same overloaded row as Gamification's `total_xp`/`current_level` (`:1181-1182`) and Preferences'
+  `persona`/`active_modules`/`onboarding_*` (`:1173`/`:1186`/`:1188-1189`) — the E9 split is a real 3-owner
+  decomposition. `[INTENT; ADR-012 E9]`
 - Enums (`check_in_type`, `field_type`, `schedule_type`, `preferred_time`) — SQL CHECK + (to-build) Zod in
   `@vida/core`, declared once. `[FACT: §5.13; INTERP — no types yet]`
 
 ## ADRs / structural decisions
 - **ADR-002 §5.13** — the 3 tables (authoritative). **ADR-001** — RQ + Zustand. **ADR-003** — LWW.
+- **Driver ADRs (Part 1.2):** **ADR-012** (E9 `user_profile` split — check-ins owns `check_in_streak*`; E2
+  `grant_currency(XP)` feeder → `consequence_ledger` E3) · **ADR-006** (SP1/SP4 — the "no tags" opt-out is
+  SP1-consistent, uses `entity_links`). `[INTENT; ADR-012/006]`
 - ⚠ **Surfaced:** the UNIQUE **fix** (G2) + expanded types (G3) + review contract (G7) → **ADR-002 amendment**;
   the review→module aggregation is a cross-module contract finalized with Purpose/Projects. `[INTENT G2,G3,G7]`
 

@@ -36,7 +36,10 @@
 ## Consumed by
 - **Journal `/summary`** → today's check-in (mood/energy + entry) surfaced in the daily dashboard (CK-7). `[INTENT
   G4; FACT: Notes /summary]`
-- **Gamification** → streak/completion events (⚠ INTENDED, CK-11). `[INTENT G9]`
+- **Gamification** → check-ins owns the **`check_in_streak*`** (E9, derived from `daily_check_ins`); completion/streak
+  events carry the **`grant_currency(XP)`** feeder effect (E2) Gamification applies → `consequence_ledger` (E3).
+  `total_xp`/`current_level` stay Gamification-owned (derived, E1/E3) — check-ins never writes them. `[INTENT G9;
+  ADR-012 E2/E3/E9]`
 - **Purpose** → a review check-in can satisfy/contribute to `target_reviews` (⚠ INTENDED, CK-6). `[INTENT G7]`
 
 ## Contract error cases
