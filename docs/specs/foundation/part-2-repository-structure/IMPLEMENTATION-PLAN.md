@@ -1,7 +1,7 @@
 # Part 2 — IMPLEMENTATION-PLAN (gate 2)
 
 **Type:** implementation spec (foundation) — the executable build steps for Part 2. Gate-1 SPEC = `_index.md` (Approved 1, Victor 2026-07-25). Decision record = `ADR-018`.
-**Status:** 🟢 **gate-2 critique = SHIP (verified by end-to-end worktree simulation: `pnpm -r typecheck` + `pnpm build` exit 0). Awaiting Approval 2.** No file is touched in the main tree until Approval 2.
+**Status:** ✅ **IMPLEMENTED (Approved 2, Victor 2026-07-25).** U2 = commit `f63786e`, U3 = commit `e45a081`. Acceptance met: `pnpm build` 8/8 + `pnpm typecheck` 10/10 exit 0; 12 foundation/ + 19 services/ dirs with layer-docs; 0 tables authored; 0 consumers resolve to v1. Awaiting Part-2 exit gate.
 **Date:** 2026-07-25 · **Units:** U2 (quarantine + unwire + delete) · U3 (skeleton + verify). U1 = ADR-018 (authored).
 **No-Guessing:** every source path + consumer verified against the live tree (`grep` confirmed: nothing imports `models/`/`services/`; barrel re-exports only encryption/db surfaces; web-adapter dead).
 **Reversibility:** all moves are `git mv`; all edits are content reverts. U2 is one commit, U3 another — either revertable atomically.
