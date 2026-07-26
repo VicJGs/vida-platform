@@ -13,4 +13,6 @@ in Phase 1 (single-user localhost) — this exists so Phase 2 can activate push/
 
 ## Dependencies
 - blocked by `ar-2-database-adapter-web`
-- blocked by `db-2-sync-metadata-columns`
+<!-- removed 2026-07-26 (m1.0-delivery-plan Step 7): stale `blocked by db-2-sync-metadata-columns` —
+     db-2 is PARKED (superseded by ADR-017); its `_sync_*` columns fold into AR-9's own scope. -->
+

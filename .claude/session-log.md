@@ -3420,3 +3420,76 @@ NEXT SESSION (start here):
   - Standing (create-at-gate): net-new module/integration/venue Linear issues per M-phase. Manual: archive
     the 5 empty ①–⑤ Linear Projects in the UI. Git: main ~60 ahead of origin (unpushed).
 ═══════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION — 2026-07-26 — m1.0-delivery-plan (Milestone Delivery Planning)
+═══════════════════════════════════════════════════════════════════════════
+Task: m1.0-delivery-plan (Project Foundation / Build Roadmap adapted).  Profile: Project Foundation Setup.
+Status at close: plan authored + gated + reconciled (Steps 0–7 done). Close-out (new-scenario + task-complete) in progress.
+
+GOAL: author a delivery master plan binding each M1.0 issue → concrete OS entity → ADR-018 code home →
+intent-doc source → proper profile + canonical flow (incl. the 3-level DOC spine), so the OS entities are
+coded to reality WITHOUT diverging from the pattern. Details M1.0; forward-declares M1.4/M2/M3/M4.
+
+COMPLETED:
+  - Grounded the real doc mechanism (Victor's steer): 3-level DOC hierarchy — /documentation (repo, DONE
+    reverse) ⊃ /document-context (context currency: current-spec + current-business-rules) ⊃
+    /documentation-component (forward unit spec + session split) + /layer-docs. Per-issue flow now rides a
+    fixed DOC spine (B baseline · F forward · C currency · L layer-docs).
+  - Authored docs/roadmap/m1.0-delivery-plan.md: 30 M1.0 issues 1:1 with Linear (LIF-62/65/66/68–73/75–95),
+    across the 5 milestones (Boot & DB spine · Substrates · Design System · UI · UX & Shell). Each row =
+    entity · ADR-018 home · intent · profile · flow · DOC marks · deps · gate. + spec home
+    docs/specs/foundation/m1.0-delivery-plan/_index.md.
+  - Step-2 homes VERIFIED vs the real Part-2 structure (foundation/* substrates, services/*, db/*, sync,
+    packages/{ui,editor,types}, apps/web). current-* home RESOLVED = per-context level-home (never docs/modules/).
+    Refinement: M1.0 = infra BENEATH the feature modules → doc flow forward-spec-heavy (ADR-harvest), not aspect-incorporate.
+  - Step-5 GATE: independent adversarial critic → REVISE (1 blocker: §2 mislabeled the DB spine as doc-less
+    when docs/infrastructure/database-layer/current-* already exists) → FIXED (DOC-ground split: DB spine [B]=refresh
+    vs DS/UI [B]=create) → SHIP. Table verified sound (NO adapter↔repo inversion; no scope leak; coverage clean).
+  - Step-6 reconcile: caught grain divergence — DB-3/4/8 are their OWN issues (un-folded), Views→AR-6 fold,
+    DB-2→AR-9 parked-fold. Captured all 30 LIF IDs.
+  - Step-7 reconcile: Depends-on = Linear blocked-by CANONICAL (not my fresh derivation). Caught UI-4↔UX-3
+    inversion (would've cycled) + 2 STALE Linear edges (DB-6←DB-5 crosses M1.0→M3, violates ADR-017; AR-9←DB-2
+    parked). Victor deleted both in Linear UI; I removed the local blocked-by lines (add-only sync would else
+    re-add them). --pull + --status verified clean both sides, acyclic, no conflicts.
+
+DECISIONS:
+  - Scenario = Build Roadmap ADAPTED → new "Milestone Delivery Planning" shape (formalize via /new-scenario).
+  - Cluster General (strategy meta-task, not a Linear issue — storage-master-plan precedent). Spec bucket foundation.
+  - current-* home = per-context level-home (docs/core|infrastructure|ui|editor|features), never docs/modules/.
+  - DB-3/DB-4 = streaming issues (schema lands per-substrate/per-module), tracked but not one-shot builds.
+
+GOTCHAS (locked):
+  - Independent critic caught a doc-ground overclaim self-review would've echoed (database-layer/current-* existed) —
+    following it verbatim would have BLANK-overwritten grounded docs. This is the whole point of the adversarial gate.
+  - Tracker sync is ADD-ONLY — deleting a stale edge in Linear is not enough; the LOCAL task-file blocked-by must
+    also be removed or the next --sync re-adds it. (toolkit follow-up still open: issueRelationDelete + diff-reconcile.)
+  - Linear's blocked-by graph (from gated projectize) OUTRANKS a fresh plan derivation — but can itself carry stale
+    edges from the pre-resequencing ordering; reconcile against ADR-017, not just adopt.
+
+NEXT SESSION (start here):
+  - Finish close-out: /new-scenario project-foundation milestone-delivery-planning (formalize the shape) → /task-complete.
+  - THEN begin BUILDING M1.0-a1 under a CODE profile. Ready heads (no open deps): DS-1 (LIF-81, design-system) ·
+    AR-2 (LIF-73, generic-coding) · DB-9 (LIF-71, add-backend-component) · UX-1 (LIF-90) · AR-4 (LIF-75).
+  - Each build issue runs its per-issue flow from docs/roadmap/m1.0-delivery-plan.md §5 (profile + DOC spine + gate).
+  - Git: main still ~60+ ahead of origin (unpushed).
+═══════════════════════════════════════════════════════════════════════════
+
+── CODA (close) 2026-07-26 ──────────────────────────────────────────────────
+m1.0-delivery-plan COMPLETE + archived. Steps 0–8 done. Independent critic SHIP (after 1 doc-ground fix).
+Scenario "Milestone Delivery Planning" crystallized → project-foundation router wired. Dep graph reconciled
+(inversion + 2 stale edges DB-6←DB-5 / AR-9←DB-2 cleaned BOTH sides; --pull/--status clean, acyclic).
+No active task at close.
+
+NEXT SESSION (start here after /clear):
+  - GOAL: begin BUILDING M1.0-a1 (Boot & DB spine) under a CODE profile. At /begin → PROFILE CONFIRM →
+    switch to a code profile; the code scenario surfaces the issue's per-issue flow.
+  - Ready heads (no open deps): DS-1 (LIF-81, design-system) · AR-2 (LIF-73, generic-coding) ·
+    DB-9 (LIF-71, add-backend-component) · UX-1 (LIF-90, add-frontend-component) · AR-4 (LIF-75).
+  - The build contract per issue lives in docs/roadmap/m1.0-delivery-plan.md §5 (row = entity·home·intent·
+    profile·flow·DOC spine·deps·gate). Each issue runs: [B] document-context baseline → [F] documentation-
+    component forward spec (PLAN g1 → IMPL-PLAN g2) → implement → quality-gate → [C] currency refresh + [L]
+    layer-docs → commit docs WITH code. DB-spine [B] = REFRESH docs/infrastructure/database-layer/.
+  - Read first on resume: docs/roadmap/m1.0-delivery-plan.md (§2 DOC spine, §5 rows, §5.1 dep reconcile).
+  - Git: main ~60+ ahead of origin (this session added the plan + toolkit scenario), unpushed.
+══════════════════════════════════════════════════════════════════════════════

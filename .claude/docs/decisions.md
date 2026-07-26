@@ -75,3 +75,11 @@ Re-projectized Linear from the old substrate-first five-layer structure (①–�
 - **Old ①–⑤ emptied** (0 issues) → the 5 empty Linear Projects should be archived in the UI (tracker_sync creates/updates but does not delete Projects).
 - **Net-new module/integration/venue issues remain create-at-gate** (roadmap rule — created as each M-phase begins, not up front).
 - **Gotchas recorded:** Linear Project description cap = 255 chars (multi-byte → / ① inflate byte-count); `--approve-cluster` from a dry-run short-circuits later syncs → use `--sync --allow-new-clusters`. Linear LIF-97 Done.
+
+## m1.0-delivery-plan (Milestone Delivery Planning) — completed 2026-07-26
+- **current-* doc home** = per-context level-home (`docs/core|infrastructure|ui|editor|features`), NOT a new `docs/modules/` tree — aspect docs + current-* share one home (I2 rule).
+- **DOC spine per issue** = the real 3-level hierarchy (`/document-context` baseline+currency · `/documentation-component` forward · `/layer-docs`), woven into §XXVI/§XXVII — "document in the proper way AS you build", enforced not aspirational.
+- **DB-3/DB-4 = streaming issues** (schema lands per-substrate/per-module, ADR-016 §3.5), tracked but not one-shot builds.
+- **Dependency graph authority:** the tracker's gated blocked-by OUTRANKS a fresh plan derivation — but can carry stale pre-resequencing edges; reconcile against the sequencing ADR. Fixed 2 stale edges (DB-6←DB-5 crossed M1.0→M3 violating ADR-017; AR-9←DB-2 parked) on BOTH sides (add-only sync would else re-add).
+- **New toolkit scenario:** `project-foundation/scenarios/milestone-delivery-planning.md` (crystallized from build-roadmap.md) — the repeatable manual for every later milestone's delivery planning.
+- Not a Linear issue (strategy meta-task). Artifact: `docs/roadmap/m1.0-delivery-plan.md`.

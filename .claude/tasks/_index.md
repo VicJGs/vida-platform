@@ -2,12 +2,13 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — foundation-realignment campaign + Linear projectize both complete. Next: begin building M1.0, under a code profile.)_
+_(none — m1.0-delivery-plan complete. Next: BUILD M1.0-a1 under a code profile; ready heads DS-1/AR-2/DB-9/UX-1/AR-4.)_
 
 ## Parked / Superseded
 - db-2-sync-metadata-columns: .claude/tasks/archive/db-2-sync-metadata-columns.md  (PARKED 2026-07-23 — superseded by ADR-017 features-first resequencing; HLC/sync-metadata work defers with the sync engine to the hardening pass; baseline done, no code written; Linear LIF-64 → Backlog)
 
 ## Completed
+- m1.0-delivery-plan: .claude/tasks/archive/m1.0-delivery-plan.md  (completed 2026-07-26 — Project Foundation / new scenario "Milestone Delivery Planning" crystallized. docs/roadmap/m1.0-delivery-plan.md binds all 30 M1.0 issues 1:1 to entity·ADR-018 home·intent·profile·flow·DOC spine·deps·gate; independent critic SHIP after 1 fix; grain+dep reconcile caught fold/split + UI-4↔UX-3 inversion + 2 stale Linear edges [DB-6←DB-5, AR-9←DB-2] cleaned both sides. Scenario: ~/dev-toolkit/.../scenarios/milestone-delivery-planning.md. Strategy meta-task, not a Linear issue.)
 - linear-projectize: .claude/tasks/archive/linear-projectize.md  (completed 2026-07-26 — U3: re-projectized Linear onto the roadmap M1→M4. Created Projects M1.0/M1.4/M2/M3/M4 (+milestones); re-homed 33 existing issues to final M-homes; created split/head issues LIF-98 ar-9b, LIF-99 db-8b, LIF-100 provider-selection, LIF-101 ux-5b; old ①–⑤ emptied [archive the shells in Linear UI — tracker can't delete Projects]. Net-new module/integration issues remain create-at-gate. Linear LIF-97 Done)
 - build-roadmap-resequence: .claude/tasks/archive/build-roadmap-resequence.md  (completed 2026-07-25 — the foundation-realignment campaign: P1 docs realignment [34/34 aligned] + P2 repo structure [ADR-018] + P3 roadmap resequence [ADR-019, docs/roadmap.md → M1→M4]; all exit gates accepted; docs+structure+roadmap coherent, derived from ADRs 001–019; Linear LIF-96 Done; follow-on = linear-projectize)
 - storage-master-plan: .claude/tasks/archive/storage-master-plan.md  (completed 2026-07-22 — ADR-016 from-zero rebuild [fork A: hand-written SQL, no drizzle-kit] + storage-build-plan.md master ledger ~130-150 tables P0→P-final; both gates; commit 58dc813; not a Linear issue — strategy meta-task)
