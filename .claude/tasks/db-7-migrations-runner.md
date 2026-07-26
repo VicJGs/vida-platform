@@ -1,7 +1,7 @@
 # Task: db-7-migrations-runner
 # Status: planned
-# Cluster: ① Database Layer
-# Milestone: Migrations & Search
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: Boot & DB spine
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer
 

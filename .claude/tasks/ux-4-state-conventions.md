@@ -1,7 +1,7 @@
 # Task: ux-4-state-conventions
 # Status: planned
-# Cluster: ⑤ UX
-# Milestone: Shell & Conventions
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: UX & Shell
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ⑤ UX
 

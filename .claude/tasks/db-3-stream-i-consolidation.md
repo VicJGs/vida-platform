@@ -1,7 +1,7 @@
 # Task: db-3-stream-i-consolidation
 # Status: planned
-# Cluster: ① Database Layer
-# Milestone: Schema
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: Boot & DB spine
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer (ADR-002 §5.20)
 

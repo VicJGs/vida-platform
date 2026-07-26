@@ -1,7 +1,7 @@
 # Task: ui-1-vida-ui-primitives
 # Status: planned
-# Cluster: ④ UI
-# Milestone: Component Library
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: UI
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ④ UI
 

@@ -1,7 +1,7 @@
 # Task: ar-4-state-routing-forms
 # Status: planned
-# Cluster: ② Architecture Layer
-# Milestone: Crypto & App Runtime
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: Boot & DB spine
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer
 

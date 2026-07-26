@@ -1,7 +1,7 @@
 # Task: ux-2-command-bar-search
 # Status: planned
-# Cluster: ⑤ UX
-# Milestone: IA & Navigation
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: UX & Shell
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ⑤ UX
 

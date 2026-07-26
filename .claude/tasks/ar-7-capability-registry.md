@@ -1,6 +1,6 @@
 # Task: ar-7-capability-registry
 # Status: planned
-# Cluster: ② Architecture Layer
+# Cluster: M1.0 Boot & Connective Base
 # Milestone: Substrates
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer (ADR-008/011/012)

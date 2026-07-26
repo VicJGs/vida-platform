@@ -8,7 +8,16 @@
 # Scope: Phase 1.0 — Structural Foundation (clusters ①–⑤). Phase-1 modules and Phase 2/3 clusters
 # are added when their phase begins.
 
-## ① Database Layer
+## M1.0 Boot & Connective Base
+Boot + foundation for the whole OS (features-first, ADR-017/018): app boot, DatabaseAdapter, per-feature DB spine (encryption off), the foundation/ substrates, cross-cutting services, DS/UI/UX shell. Crypto and sync activation deferred to M3/M4.
+### Milestones
+- Boot & DB spine
+- Substrates
+- Design System
+- UI
+- UX & Shell
+
+## ① Database Layer  [RETIRE after re-home — superseded by M1.0/M3/M1.4]
 Consolidated schema in `packages/core`: migrates clean, encrypts per field, seeds a dogfood vault. Fulfills ADR-002 §5.20 — consolidation, per-domain schema, encryption boundary, repository, migrations, FTS5, enums. Leads Phase 1.0.
 ### Milestones
 - Schema

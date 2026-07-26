@@ -1,7 +1,7 @@
 # Task: ar-9-sync-scaffolding-noflush
 # Status: planned
-# Cluster: ② Architecture Layer
-# Milestone: Services & Sync Scaffold
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: Substrates
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer
 

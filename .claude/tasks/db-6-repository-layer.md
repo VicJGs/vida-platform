@@ -1,7 +1,7 @@
 # Task: db-6-repository-layer
 # Status: planned
-# Cluster: ① Database Layer
-# Milestone: Encryption & Repository
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: Boot & DB spine
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer
 

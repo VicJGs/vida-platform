@@ -1,7 +1,7 @@
 # Task: ui-3-vida-editor
 # Status: planned
-# Cluster: ④ UI
-# Milestone: Editor & Shell
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: UI
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ④ UI
 

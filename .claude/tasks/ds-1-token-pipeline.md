@@ -1,7 +1,7 @@
 # Task: ds-1-token-pipeline
 # Status: planned
-# Cluster: ③ Design System
-# Milestone: Tokens & Foundations
+# Cluster: M1.0 Boot & Connective Base
+# Milestone: Design System
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ③ Design System
 
