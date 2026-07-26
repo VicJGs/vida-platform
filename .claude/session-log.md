@@ -3371,3 +3371,52 @@ NEXT SESSION (resume Part 3 — Build Roadmap resequence, its own gate-1):
   - OWED: a dedicated `repository-structure` scenario via /new-scenario (Part 2 reused the master-plan framing).
   - Consider: push main to origin (52 ahead) when Victor wants.
 ═══════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION — 2026-07-25 → 07-26 — CAMPAIGN CLOSE: Part 2 + Part 3 + Linear projectize (all COMPLETE)
+═══════════════════════════════════════════════════════════════════════════
+Tasks: build-roadmap-resequence (foundation-realignment campaign) → COMPLETE + archived;
+       linear-projectize (U3) → COMPLETE + archived.  Profile: Project Foundation Setup.
+No active task at close.
+
+GOAL: finish the foundation-realignment campaign (Parts 2+3) and align Linear to the new roadmap.
+
+COMPLETED:
+  - PART 2 (Repository Structure) — ADR-018: re-derived @vida/core from the realigned docs
+    (foundation/ substrate tier + kept services/ tier; models/ dissolved into @vida/types;
+    v1 schema.ts + 001_initial quarantined to db/_legacy/ + unwired; runner emptied; dead
+    web-adapter → Old/). Full double-gate; preflight caught a BUILD-BREAKER (runner.ts runtime
+    import of the quarantined migration — 4th consumer the grep missed). Both exit lenses
+    (independent critic ACCEPT + quality-gate-foundation PASS). Commits f63786e/e45a081/56d56c5;
+    merge 90550fa (which ALSO unified two divergent git lines — main sat at old build-roadmap 826a4fd
+    while the realignment ran on a separate line).
+  - PART 3 (Build Roadmap Resequence) — ADR-019: rewrote docs/roadmap.md features-first M1→M4
+    (M1 whole-OS-manual+internally-integrated → M2 external integrations+security boundary →
+    M3 whole-OS encryption/release-gate → M4 venues). RP="Real Product". Verified ZK-safe
+    (integrations-before-encryption OK: ZK-1=server-blindness=L3/sync=M4). Per-deliverable ledger,
+    none dropped; provenance 19 ADRs/24 contexts. Both exit lenses cleared. Commits 257bd6f/994f2b9;
+    merge d453301. → CAMPAIGN COMPLETE (docs+structure+roadmap coherent, derived from ADRs 001-019).
+  - linear-projectize (U3): re-projectized Linear onto M1→M4. Created Projects M1.0/M1.4/M2/M3/M4
+    (+milestones); re-homed 33 existing issues to final M-homes by LIF id (no dups); created split/
+    head issues LIF-98 ar-9b, LIF-99 db-8b, LIF-100 provider-selection, LIF-101 ux-5b; old ①–⑤
+    emptied + pruned from _clusters.md. Commits a603369/145ccbd/0b6695a/4c4438c. LIF-96/97 Done.
+
+DECISIONS: ADR-018 (repo structure from docs), ADR-019 (M1→M4 sequencing; integrations-before-
+  encryption with release gate). Both amend sequencing/structure only; ZK model (ADR-002/014/015) intact.
+
+GOTCHAS (locked for reuse):
+  - The double-gate/preflight repeatedly caught real errors on the CONSUMER GRAPH not the token surface
+    (runner.ts 4th consumer; importer-taxonomy grep too narrow). Corrected grep must match all import forms.
+  - Read the architecture before asking (Victor correction): data-flow.md governs services/; @vida/types owns models.
+  - Linear: Project description cap = 255 chars (multi-byte →/① inflate byte-count); --approve-cluster from a
+    dry-run short-circuits later syncs → use --sync --allow-new-clusters; tracker can't DELETE Projects.
+
+NEXT SESSION (start here):
+  - Begin PLANNING → BUILDING **M1.0 (Boot & Connective Base)** — the first buildable work. This is CODE,
+    so switch to a CODE profile/scenario (the campaign ran under Project Foundation). At /begin, PROFILE
+    CONFIRM → switch; then the code scenario surfaces its path (spec-first per §XXVI).
+  - Read first on resume: docs/roadmap.md (M1.0 section) + the M1.0 Linear Project (30 issues, dep-ordered:
+    AR-1 → AR-2 → DB spine → substrates → DS → UI → UX; Notes & Pages is the hub) + ADR-016/017/018.
+  - Standing (create-at-gate): net-new module/integration/venue Linear issues per M-phase. Manual: archive
+    the 5 empty ①–⑤ Linear Projects in the UI. Git: main ~60 ahead of origin (unpushed).
+═══════════════════════════════════════════════════════════════════════════
