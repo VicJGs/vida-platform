@@ -1,7 +1,7 @@
 # Task: db-11-adr-002-reconciliation
 # Status: planned
-# Cluster: ① Database Layer
-# Milestone: Reconciliation
+# Cluster: M1.4 Internal-Integration Hardening
+# Milestone: Reconciliation & Rollups
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer
 

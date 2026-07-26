@@ -17,6 +17,30 @@ Boot + foundation for the whole OS (features-first, ADR-017/018): app boot, Data
 - UI
 - UX & Shell
 
+## M1.4 Internal-Integration Hardening
+The M1 tail that makes the OS viable as a daily driver: ADR-002 reconciliation from the per-feature schema, plus the summary(date) aggregation, measurability/economy rollups, and backlinks that tie the modules together. Closes M1.
+### Milestones
+- Reconciliation & Rollups
+
+## M2 External Integrations & Security Boundary
+External data feeds co-built with the ADR-014/015 ingestion guard: provider-selection head, then Financial/Health/AI/Fiscal/Calendar integrations with external_in/out_ok grants and leak decisions. Built against the encryption seam. Precedes M3.
+### Milestones
+- Provider Selection
+- Integration Families
+
+## M3 Whole-OS Encryption & Security Pass
+The hardening-at-rest (ADR-002/017/019): turn on L1 SQLCipher + L2 field-level [E] across all data; crypto/vault/key-mgmt; keyed blind index; vault-unlock flow; re-verify the ingestion guard live. Gates any release beyond solo-localhost.
+### Milestones
+- Crypto & Boundary
+- Verify & Release
+
+## M4 Venues / Multi-Device
+Multi-device + release venues (ADR-003/017): activate sync (LWW/HLC/Yjs) + server + SRP auth, then desktop (Tauri), mobile (Expo), self-host, and ZK-cloud. Needs encryption beneath (M3).
+### Milestones
+- Sync & Server
+- Desktop & Mobile
+- Self-Host & Cloud
+
 ## ① Database Layer  [RETIRE after re-home — superseded by M1.0/M3/M1.4]
 Consolidated schema in `packages/core`: migrates clean, encrypts per field, seeds a dogfood vault. Fulfills ADR-002 §5.20 — consolidation, per-domain schema, encryption boundary, repository, migrations, FTS5, enums. Leads Phase 1.0.
 ### Milestones

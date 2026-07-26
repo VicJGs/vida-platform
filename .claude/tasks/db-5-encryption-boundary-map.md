@@ -1,7 +1,7 @@
 # Task: db-5-encryption-boundary-map
 # Status: planned
-# Cluster: ① Database Layer
-# Milestone: Encryption & Repository
+# Cluster: M3 Whole-OS Encryption & Security Pass
+# Milestone: Crypto & Boundary
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer
 
