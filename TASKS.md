@@ -6,23 +6,20 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| build-roadmap-resequence (→ **foundation-realignment master campaign**; roadmap resequence = Part 3) | Project Foundation Setup | 2026-07-23 | 2026-07-25 | **✅ PARTS 1 + 2 COMPLETE — both exit gates ACCEPTED (2026-07-25).** Part 1 = docs realignment (34/34 aligned). **Part 2 = repository structure: full double-gate + both exit lenses (independent critic ACCEPT + quality-gate-foundation PASS); `@vida/core` re-derived from docs via ADR-018 (`foundation/` substrate tier + kept `services/` tier; v1 monolith quarantined/unwired; build 8/8 + typecheck 10/10 green; structure only, ADR-017). Commits f63786e/e45a081/56d56c5 on `feat/part-2-repository-structure`.** **NEXT = Part 3 (build roadmap resequence — forward-declared, earns its own gate-1; scenario = Build Roadmap).** |
+| linear-projectize (U3 — the campaign follow-on: re-scope LIF-61…95 onto the roadmap's M1→M4 clusters) | Project Foundation Setup | 2026-07-25 | 2026-07-25 | **PLANNED / ready to start — its own gate.** Author the old→new re-scope mapping (doc-only) → gated `/track-sync --approve-cluster`, one cluster at a time with Victor sign-off. Basis: `docs/roadmap.md` (M1→M4) + `part-3-build-roadmap/IMPLEMENTATION-PLAN.md` U3 (S10–S11). Victor wants Linear properly aligned — NOT deferred. |
 
 ## 🧭 Next session
 
-**✅ PARTS 1 + 2 COMPLETE — both exit gates ACCEPTED (2026-07-25). NEXT = Part 3 (build roadmap resequence).**
-Part 1 (docs realignment, 34/34 aligned) + Part 2 (repository structure — `@vida/core` re-derived from docs per ADR-018;
-`foundation/`+`services/` skeleton; v1 monolith quarantined/unwired; build+typecheck green) are both done and accepted.
+**✅ FOUNDATION-REALIGNMENT CAMPAIGN COMPLETE (2026-07-25) — all three parts' exit gates accepted; merged to main.**
+Part 1 (docs realignment, 34/34 aligned) + Part 2 (repo structure, ADR-018) + Part 3 (roadmap resequence, ADR-019) are
+done. The platform's docs + structure + roadmap are now mutually coherent, derived from ADRs 001–019.
 
-**FIRST ACTION next session — Part 3.0 planning (its own gate-1):** Part 3 is FORWARD-DECLARED (scenario = Build Roadmap).
-Rewrite `docs/roadmap.md` features-first off the realigned docs + the new repo structure: capture build intent (first
-deliverable + [RP] + goals), dependency map + cluster decomposition, foundation gate + independent critic, then projectize
-+ gated `/track-sync`. Read first on resume: `realignment-master-plan/_index.md` (Part-3 forward-declaration) + ADR-017
-(features-first, what Part 3 sequences) + the now-realigned `docs/roadmap.md`.
+**NEXT = `linear-projectize` (U3, the campaign follow-on — its own gate).** Re-scope the old LIF-61…95 issues onto the
+rewritten roadmap's **M1→M4** clusters. FIRST ACTION: author the old→new re-scope mapping (doc-only, no push) — then
+gated `/track-sync --approve-cluster`, one cluster at a time with Victor sign-off. Basis: `docs/roadmap.md` (M1→M4) +
+`docs/specs/foundation/part-3-build-roadmap/IMPLEMENTATION-PLAN.md` §U3 (S10–S11). Victor wants Linear properly aligned.
 
-**Open Q for Part 3.0:** the "RP" abbreviation (first deliverable) — still `[UNKNOWN]`, resolve at Part 3.0.
-
-**Branch:** Part 2 committed on `feat/part-2-repository-structure` (f63786e/e45a081/56d56c5). Merge to `main` when ready.
+**Git:** `main` is ~55 commits ahead of `origin/main` — unpushed (push on request).
 
 **FIRST ACTION next session — Part 2.0 planning (its own gate-1):**
 Part 2 is FORWARD-DECLARED, not yet detailed — it earns its own gate-1 plan before execution (per the master-plan
@@ -67,6 +64,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **build-roadmap-resequence** (→ foundation-realignment campaign: P1 docs realignment + P2 repo structure [ADR-018] + P3 roadmap resequence [ADR-019]; all exit gates accepted; docs+structure+roadmap coherent, derived from ADRs 001–019; LIF-96 Done) | 2026-07-25 | many (2026-07-23 → 07-25) |
 | **storage-master-plan** (ADR-016 + storage-build-plan master ledger; both gates; commit 58dc813) | 2026-07-22 | 1 (2026-07-22) |
 | **db-1-schema-primitives** (LIF-61 · P0 storage-rebuild primitives; both gates + review battery + 4 consistency passes) | 2026-07-22 | 1 (2026-07-20→22) |
 | **build-roadmap** | 2026-07-20 | 3 (2026-07-20) |
