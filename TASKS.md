@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| linear-projectize (U3 — the campaign follow-on: re-scope LIF-61…95 onto the roadmap's M1→M4 clusters) | Project Foundation Setup | 2026-07-25 | 2026-07-25 | **PLANNED / ready to start — its own gate.** Author the old→new re-scope mapping (doc-only) → gated `/track-sync --approve-cluster`, one cluster at a time with Victor sign-off. Basis: `docs/roadmap.md` (M1→M4) + `part-3-build-roadmap/IMPLEMENTATION-PLAN.md` U3 (S10–S11). Victor wants Linear properly aligned — NOT deferred. |
+| _(none active — foundation-realignment campaign + Linear projectize both complete)_ | | | | |
 
 ## 🧭 Next session
 
@@ -14,12 +14,15 @@
 Part 1 (docs realignment, 34/34 aligned) + Part 2 (repo structure, ADR-018) + Part 3 (roadmap resequence, ADR-019) are
 done. The platform's docs + structure + roadmap are now mutually coherent, derived from ADRs 001–019.
 
-**NEXT = `linear-projectize` (U3, the campaign follow-on — its own gate).** Re-scope the old LIF-61…95 issues onto the
-rewritten roadmap's **M1→M4** clusters. FIRST ACTION: author the old→new re-scope mapping (doc-only, no push) — then
-gated `/track-sync --approve-cluster`, one cluster at a time with Victor sign-off. Basis: `docs/roadmap.md` (M1→M4) +
-`docs/specs/foundation/part-3-build-roadmap/IMPLEMENTATION-PLAN.md` §U3 (S10–S11). Victor wants Linear properly aligned.
+**NEXT = begin building — Phase M1.0 (Boot & Connective Base).** The whole foundation-realignment campaign AND the
+Linear projectize are done: Linear now mirrors the M1→M4 roadmap (M1.0 = 30 issues · M1.4/M2/M3/M4 skeletons up ·
+old ①–⑤ emptied). The first buildable work is the M1.0 boot base (per `docs/roadmap.md` M1.0 + the M1.0 Linear
+Project). Switch to a **code** profile/scenario for that (this campaign ran under Project Foundation).
 
-**Git:** `main` is ~55 commits ahead of `origin/main` — unpushed (push on request).
+**Standing follow-ons (create-at-gate, not tasks yet):** net-new module/integration/venue Linear issues are created as
+each M-phase begins. **Manual:** archive the 5 empty ①–⑤ Linear Projects in the Linear UI (tracker can't delete Projects).
+
+**Git:** `main` is ~60 commits ahead of `origin/main` — unpushed (push on request).
 
 **FIRST ACTION next session — Part 2.0 planning (its own gate-1):**
 Part 2 is FORWARD-DECLARED, not yet detailed — it earns its own gate-1 plan before execution (per the master-plan
@@ -64,6 +67,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **linear-projectize** (U3 — re-scoped LIF-61…95 onto the roadmap M1→M4: created M1.0/M1.4/M2/M3/M4 Projects, moved 33 existing issues to final homes, created split/head issues LIF-98…101, old ①–⑤ emptied; LIF-97 Done) | 2026-07-26 | 1 (2026-07-25→26) |
 | **build-roadmap-resequence** (→ foundation-realignment campaign: P1 docs realignment + P2 repo structure [ADR-018] + P3 roadmap resequence [ADR-019]; all exit gates accepted; docs+structure+roadmap coherent, derived from ADRs 001–019; LIF-96 Done) | 2026-07-25 | many (2026-07-23 → 07-25) |
 | **storage-master-plan** (ADR-016 + storage-build-plan master ledger; both gates; commit 58dc813) | 2026-07-22 | 1 (2026-07-22) |
 | **db-1-schema-primitives** (LIF-61 · P0 storage-rebuild primitives; both gates + review battery + 4 consistency passes) | 2026-07-22 | 1 (2026-07-20→22) |

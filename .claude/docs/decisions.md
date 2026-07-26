@@ -65,3 +65,13 @@ The `build-roadmap-resequence` task was reframed into a 3-part **foundation-real
 - **Part 3 — Build roadmap resequence → ADR-019.** Rewrote `docs/roadmap.md` features-first as **M1→M4**: M1 whole-OS-manual + internally-integrated (unencrypted) → M2 external integrations + security boundary (co-built, against the seam) → M3 whole-OS encryption pass (release gate) → M4 venues/multi-device. Schema per-feature (ADR-016); encryption/sync/auth deferred; old Phase-3 integrations pulled to M2, old Phase-2 venues → M4. Every deliverable re-mapped via a per-deliverable ledger (none dropped). **Key verified decision:** integrations precede encryption-at-rest (M2 before M3) is ZK-safe because ZK-1 is server-blindness (L3/sync = M4); encryption gates release.
 
 **RP = Real Product** (resolved). **Follow-on:** `linear-projectize` (U3) — its own gated task to re-scope LIF-61…95 onto the M1→M4 clusters. Commits: Part 2 f63786e/e45a081/56d56c5; Part 3 257bd6f/994f2b9; merges 90550fa/d453301. Linear LIF-96 Done.
+
+## linear-projectize (U3) — completed 2026-07-26
+
+Re-projectized Linear from the old substrate-first five-layer structure (①–⑤, LIF-61…95) onto the features-first **M1→M4** roadmap (ADR-019).
+- **Created Projects:** M1.0 Boot & Connective Base (+5 milestones), M1.4 Internal-Integration Hardening, M2 External Integrations & Security Boundary, M3 Whole-OS Encryption & Security Pass, M4 Venues / Multi-Device (+milestones).
+- **Re-homed 33 existing issues** to final M-homes by existing LIF id (no duplication): 30 boot/foundation → M1.0; DB-5/AR-3 → M3; DB-11 → M1.4.
+- **Created split/head issues** (decision: separate issues): ar-9b-sync-activate (LIF-98, M4), db-8b-blind-index (LIF-99, M3), provider-selection (LIF-100, M2 head), ux-5b-vault-unlock (LIF-101, M3).
+- **Old ①–⑤ emptied** (0 issues) → the 5 empty Linear Projects should be archived in the UI (tracker_sync creates/updates but does not delete Projects).
+- **Net-new module/integration/venue issues remain create-at-gate** (roadmap rule — created as each M-phase begins, not up front).
+- **Gotchas recorded:** Linear Project description cap = 255 chars (multi-byte → / ① inflate byte-count); `--approve-cluster` from a dry-run short-circuits later syncs → use `--sync --allow-new-clusters`. Linear LIF-97 Done.

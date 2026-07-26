@@ -41,37 +41,8 @@ Multi-device + release venues (ADR-003/017): activate sync (LWW/HLC/Yjs) + serve
 - Desktop & Mobile
 - Self-Host & Cloud
 
-## ① Database Layer  [RETIRE after re-home — superseded by M1.0/M3/M1.4]
-Consolidated schema in `packages/core`: migrates clean, encrypts per field, seeds a dogfood vault. Fulfills ADR-002 §5.20 — consolidation, per-domain schema, encryption boundary, repository, migrations, FTS5, enums. Leads Phase 1.0.
-### Milestones
-- Schema
-- Encryption & Repository
-- Migrations & Search
-- Reconciliation
-
-## ② Architecture Layer
-The app boots, unlocks a vault, routes, holds state. Monorepo topology, platform-agnostic DatabaseAdapter (wa-sqlite/OPFS), crypto/vault lifecycle, state/routing/forms, Sessions/Spaces/Capability substrates (ADR-004/006/008), no-flush sync scaffolding.
-### Milestones
-- Boot & Adapter
-- Crypto & App Runtime
-- Substrates
-- Services & Sync Scaffold
-
-## ③ Design System
-A coherent visual language as tokens + Tamagui theme + primitive contracts: the Figma→Tokens Studio→Style Dictionary pipeline, color/type/spacing/shadow foundations, motion, dark mode, and the primitive contracts UI-1 builds against. DS blocks UI.
-### Milestones
-- Tokens & Foundations
-- Theme & Primitives
-
-## ④ UI
-The shared component library + platform views + editor + app shell: `@vida/ui` primitives from the DS contracts, platform views (calendar/gallery/list/neural-graph/timeline), `@vida/editor` (TipTap + blocks + serializers), and app-shell components.
-### Milestones
-- Component Library
-- Editor & Shell
-
-## ⑤ UX
-Information architecture, navigation, and interaction conventions set before modules arrive: module map + routing tree, command bar + search, responsive shell, empty/loading/error + keyboard rules, vault-unlock + onboarding, Home = the Journal dashboard.
-### Milestones
-- IA & Navigation
-- Shell & Conventions
-- Onboarding & Home
+# RETIRED (2026-07-26) — the old substrate-first Phase-1.0 layer-clusters ①–⑤ were superseded by the
+# features-first M1→M4 clusters above (linear-projectize / ADR-019). All their issues were re-homed
+# (M1.0/M1.4/M3). The five Linear Projects are now EMPTY and should be archived in the Linear UI
+# (tracker_sync creates/updates but does not delete Projects). Definitions removed here so the tracker
+# stops managing them.
