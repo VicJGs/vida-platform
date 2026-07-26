@@ -24,11 +24,12 @@ Basis:
 - `.claude/tracker.json` (initiative `vida-platform`, workstation `personal`).
 
 ## Build Steps
-- [ ] **S10 — Author the old→new re-scope mapping** (doc-only, NO push): every old LIF-61…95 issue → its
-      new M-cluster/milestone, or explicitly "re-scoped / merged / deferred." Record in the roadmap's
-      Linear-mapping section. Gate this mapping (critique for alignment) before any push.
-- [ ] **S11 — Gated push** `/track-sync --approve-cluster`, ONE cluster at a time, each with explicit
-      Victor sign-off before it creates Linear state. Start M1.0 → M1 waves → M2 → M3 → M4.
+- [x] **S10 — re-scope mapping authored + gated** — `part-3-build-roadmap/linear-rescope-map.md` (all 35 issues → M-homes); Victor approved the mapping + 4 decisions (retire ①–⑤ · splits as separate issues · DB-2 re-home · M1.0 first). Commit a603369.
+- [~] **S11 — Gated push, per-cluster:**
+  - [x] **M1.0 Boot & Connective Base — PUSHED** (commit 145ccbd): created the Linear Project + 5 milestones; moved the 30 boot/foundation issues in by existing LIF id (no dups). linear-projectize = LIF-97. (Fixed: M1.0 desc trimmed <255 chars — Linear cap.)
+  - [ ] **Deferred existing issues** — DB-5/AR-3 → M3 project; DB-11 → M1.4; then retire old ①/② (①–⑤: ③④⑤ already empty after M1.0). Each its own gate.
+  - [ ] **Split halves (net-new)** — DB-8b (M3), AR-9-activate (M4), UX-5b (M3/M4).
+  - [ ] **Net-new module/integration/venue issues** — M1.1–M1.3 module waves · M2 provider-selection + integration families · M3 encryption · M4 venues. Created **at each cluster's gate** (roadmap rule — not all up front).
 
 ## Gate
 Its own alignment gate (Victor): the mapping is reviewed/approved before per-cluster push; each cluster
