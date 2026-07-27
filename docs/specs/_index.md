@@ -13,3 +13,6 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 | [foundation/capability-framework.md](foundation/capability-framework.md) | reference (foundation) | RATIFIED 2026-07-23 — Part 0 complete | 2026-07-23-build-roadmap-resequence |
 | [foundation/staleness-sweep.md](foundation/staleness-sweep.md) | analysis (foundation) | Part 1.1 COMPLETE — 10 stale / 7 gap / 7 aligned; As-is exemption ratified | 2026-07-23-build-roadmap-resequence |
 | [foundation/m1.0-delivery-plan](foundation/m1.0-delivery-plan/) | feature (LITE plan) | done — plan authored + gated (SHIP) + reconciled; → docs/roadmap/m1.0-delivery-plan.md | 2026-07-26-m1.0-delivery-plan |
+| [components/ar-2-database-adapter-web](components/ar-2-database-adapter-web/) | component (full double-gate) | Approval 1 ✅; Gate-2 IMPL-PLAN Rev 2 (critique REVISE→fixed: VFS/ref-driver/mapResultRow vs installed) — awaiting Approval 2 | 2026-07-27-ar-2-database-adapter-web |
+<!-- note: ds-1-token-pipeline spec lives on branch `ds-1-token-pipeline` (parked, out of sequence) — not registered on main. -->
+

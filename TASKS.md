@@ -6,18 +6,38 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| _(none active — m1.0-delivery-plan complete; next = BUILD M1.0-a1 under a code profile)_ | | | | |
+| ar-2-database-adapter-web (LIF-73, Boot & DB spine) | Add Backend Component | 2026-07-27 | 2026-07-27 | in-progress — **both plan gates done; banked before Approval 2 → implement next** |
+| ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
 
-**✅ FOUNDATION-REALIGNMENT CAMPAIGN COMPLETE (2026-07-25) — all three parts' exit gates accepted; merged to main.**
-Part 1 (docs realignment, 34/34 aligned) + Part 2 (repo structure, ADR-018) + Part 3 (roadmap resequence, ADR-019) are
-done. The platform's docs + structure + roadmap are now mutually coherent, derived from ADRs 001–019.
+**RESUME AR-2 IMPLEMENTATION (LIF-73 · critical-path root of M1.0).** Both planning gates are done and banked:
+- Profile: **Add Backend Component** (Default). Task: `.claude/tasks/ar-2-database-adapter-web.md`.
+- **READ FIRST:** `docs/specs/components/ar-2-database-adapter-web/sessions/IMPLEMENTATION-PLAN-2026-07-27-*.md`
+  (Rev 2 — the build prompt, steps C1–C8) + the PLAN (Approval 1 ✅ recorded there) + the task's Decisions table.
+- **FIRST ACTION:** get **Approval 2** (optionally re-critique IMPL-PLAN Rev 2 first for extra assurance on the C6
+  risk), then implement **C1→C8 in order**. Hard checkpoint after C1/C2: `pnpm --filter @vida/core typecheck`
+  green with `repository.ts` UNEDITED (proves the sync-fence).
+- **Key locked decisions:** sync driver + Web Worker (`AccessHandlePoolVFS`); `DrizzleDb` stays `'sync'`;
+  `repository.ts` untouched (DB-6); optional `sqlCipher` seam; custom Drizzle sync session (`sql-js` blueprint,
+  local `mapResultRow`); "async Drizzle proxy" is a roadmap phrase, NOT adopted.
+- **C6 is the one real risk:** custom Drizzle sync session over `sqlite-core` internals — `[VERIFY]`-first against
+  installed `drizzle-orm@0.45.1` `.d.ts`; fallback = escalate (reopen async fork), don't silently flip.
+- **Uncommitted on main:** the AR-2 planning docs + task/session/index files (this session's work) are UNCOMMITTED
+  — commit them with (or before) the AR-2 code, or on request.
 
-**NEXT = begin building — Phase M1.0 (Boot & Connective Base).** The whole foundation-realignment campaign AND the
-Linear projectize are done: Linear now mirrors the M1→M4 roadmap (M1.0 = 30 issues · M1.4/M2/M3/M4 skeletons up ·
-old ①–⑤ emptied). The first buildable work is the M1.0 boot base (per `docs/roadmap.md` M1.0 + the M1.0 Linear
-Project). Switch to a **code** profile/scenario for that (this campaign ran under Project Foundation).
+**PARKED — DS-1 token pipeline** (branch `ds-1-token-pipeline` @ fd9f144): complete + green but out of sequence
+(M1.0-b, not the -a critical path); LIF-81 → Backlog. Resumes when the -b wave's turn comes. (This session built
+DS-1 first, then course-corrected to the -a spine head AR-2 per the milestone order.)
+
+**Linear hygiene done:** LIF-72 (ar-1) + LIF-61 (db-1) → Done (were lagging Backlog). LIF-73 (ar-2) → In Progress.
+
+---
+<details><summary>✅ FOUNDATION-REALIGNMENT CAMPAIGN COMPLETE (2026-07-25) — prior context</summary>
+
+Part 1 (docs realignment, 34/34 aligned) + Part 2 (repo structure, ADR-018) + Part 3 (roadmap resequence, ADR-019)
+done; docs + structure + roadmap coherent (ADRs 001–019). Linear mirrors M1→M4 (M1.0 = 30 issues). M1.0 build is
+now underway (AR-2 above).</details>
 
 **Standing follow-ons (create-at-gate, not tasks yet):** net-new module/integration/venue Linear issues are created as
 each M-phase begins. **Manual:** archive the 5 empty ①–⑤ Linear Projects in the Linear UI (tracker can't delete Projects).

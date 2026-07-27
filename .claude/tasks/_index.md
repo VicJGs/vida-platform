@@ -2,9 +2,10 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — m1.0-delivery-plan complete. Next: BUILD M1.0-a1 under a code profile; ready heads DS-1/AR-2/DB-9/UX-1/AR-4.)_
+- ar-2-database-adapter-web: .claude/tasks/ar-2-database-adapter-web.md  (in-progress 2026-07-27 — M1.0-a Boot & DB spine, LIF-73, critical-path ROOT. Add Backend Component profile, FULL double-gate. Rebuild DatabaseAdapter (core/src/db/adapter.ts) + web-adapter (apps/web/src/db/, wa-sqlite/OPFS async Drizzle proxy); encryption seam pass-through, SQLCipher→M3. Deps AR-1✅/DB-1✅. Unblocks 6.)
 
 ## Parked / Superseded
+- ds-1-token-pipeline: .claude/tasks/ds-1-token-pipeline.md  (PARKED 2026-07-27 — complete + green on branch `ds-1-token-pipeline` @ fd9f144; out of sequence [M1.0-b Design System track, not the -a critical path]. LIF-81 → Backlog. Resumes when the -b wave's turn comes. SD→Tamagui+CSS pipeline, 13/13 tests, eng-gate PASS, current-* at docs/ui/token-pipeline/.)
 - db-2-sync-metadata-columns: .claude/tasks/archive/db-2-sync-metadata-columns.md  (PARKED 2026-07-23 — superseded by ADR-017 features-first resequencing; HLC/sync-metadata work defers with the sync engine to the hardening pass; baseline done, no code written; Linear LIF-64 → Backlog)
 
 ## Completed

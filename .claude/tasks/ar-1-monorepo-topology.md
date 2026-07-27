@@ -1,9 +1,11 @@
 # Task: ar-1-monorepo-topology
-# Status: planned
+# Status: done
 # Cluster: M1.0 Boot & Connective Base
 # Milestone: Boot & DB spine
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer
+# Reconciled 2026-07-27: work complete (roadmap §5 AR-1 ✅; turbo.json + package export chain live);
+#   stub lagged at 'planned' → flipped to done so LIF-72 reflects reality (was Backlog).
 
 ## Goal
 Lock the monorepo topology: Turbo pipeline (build/typecheck/lint/test task graph), tsconfig

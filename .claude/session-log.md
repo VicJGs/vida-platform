@@ -3493,3 +3493,83 @@ NEXT SESSION (start here after /clear):
   - Read first on resume: docs/roadmap/m1.0-delivery-plan.md (§2 DOC spine, §5 rows, §5.1 dep reconcile).
   - Git: main ~60+ ahead of origin (this session added the plan + toolkit scenario), unpushed.
 ══════════════════════════════════════════════════════════════════════════════
+
+---
+## 2026-07-27 — BUILD M1.0 begins · DS-1 detour parked · PROFILE SWITCH → Add Backend Component (AR-2)
+- Started M1.0 build. FIRST pick was DS-1 (token pipeline) — built it fully + green (branch `ds-1-token-pipeline`,
+  commits 4c8beab + fd9f144: SD→Tamagui+CSS pipeline, 13/13 tests, eng-gate PASS, current-* + layer-doc).
+- **Course-correction (Victor):** DS-1 is the M1.0-**b** track (parallel to the -a critical path), NOT the
+  planned first issue. The intended lead is the -a critical-path head inside the **Boot & DB spine** milestone.
+  Drift cause: the READY block offered a flat ready-head list without flagging -a as critical vs -b as parallel.
+  LESSON: lead issue-selection with the critical path, not an unordered ready-head list.
+- Reorg (approved): DS-1 preserved on its branch (out of sequence, resumes in the -b wave); **main reset clean**;
+  **LIF-81 → Backlog** (tracker sync, branch task marked parked). Nothing lost.
+- **PROFILE SWITCH: Design System → Add Backend Component**, scenario Default. For **AR-2** (LIF-73,
+  `DatabaseAdapter` + web-adapter rebuild — quarantined in Part 2; SQLCipher deferred → M3). Home:
+  `apps/web/src/db/`, `core/src/db/adapter.ts`. Gate = FULL double-gate (§XXVI g1+g2) + quality-gate-engineering
+  + verification (NOT LITE). DOC spine = **B(refresh `database-layer`)·F·C·L** — [B] refreshes the LIVE
+  docs/infrastructure/database-layer/current-* (dated 2026-07-25), not fresh. CLAUDE.md has no `# Profile:` line
+  → this entry is the persistence.
+- Standards for the switch: engineering.md + process.md (backend quadrant; not design).
+- Next: /task-new ar-2-database-adapter → surface §XXVII path → Step 0 (baseline refresh) → Step 1 (read the
+  quarantined/live adapter pattern).
+---
+
+═══════════════════════════════════════════════════════════════════════════
+SESSION WRAP — 2026-07-27 (BANKED before AR-2 Approval 2)
+═══════════════════════════════════════════════════════════════════════════
+Two tasks touched this session; M1.0 build begun.
+
+DS-1 token pipeline (LIF-81): built FULLY + green (SD→Tamagui+CSS, 13/13 tests, eng-gate PASS, current-* +
+layer-doc) — then course-corrected: DS-1 is the M1.0-b track, NOT the -a critical-path head. PARKED on branch
+`ds-1-token-pipeline` (@ fd9f144); main reset clean; LIF-81 → Backlog. Resumes in the -b wave. Lesson saved:
+lead issue-selection with the critical path, not a flat ready-head list. Tamagui API was verified vs INSTALLED
+@tamagui/core@2.5.1 (context7 v1 docs differed) — first of two installed-vs-docs catches this session.
+
+Linear hygiene: LIF-72 (ar-1) + LIF-61 (db-1) → Done (leftover 'planned' stubs never flipped). LIF-73 (ar-2) → In Progress.
+
+AR-2 DatabaseAdapter + web-adapter (LIF-73 · critical-path ROOT · Add Backend Component · full double-gate):
+  - Baseline: adapter.ts is LIVE SQLCipher-first residue (contradicts M1.0/encryption→M3); repository.ts sync +
+    vault-coupled (= DB-6, not AR-2); runner.ts clean; apps/web/src/db empty; blast radius low (no consumers).
+  - Gate 1 (PLAN): critique REVISE (async/sync fork was falsely deferred) → Victor decided SYNC driver + Web Worker
+    (AccessHandlePoolVFS), DrizzleDb stays 'sync', repository.ts untouched → re-critique SHIP → preflight → **Approval 1 ✅**.
+  - Gate 2 (IMPL-PLAN Rev 2, steps C1–C8): critique inspected node_modules, caught 3 build-stoppers vs INSTALLED
+    libs — B1 VFS AccessHandlePoolVFS (not context7's OPFSCoopSyncVFS), B2 mapResultRow type-gap, B3 sql-js (not
+    expo) reference driver — all fixed. **BANKED before Approval 2** (Victor's call — session length).
+  - Reusable lesson (twice today): fetched docs describe *a* version; the pinned node_modules are ground truth.
+    [VERIFY]-against-installed-.d.ts steps turn mid-build faceplants into pre-build corrections.
+
+STATE: nothing implemented; planning docs uncommitted on main. Both AR-2 gate files persist in
+docs/specs/components/ar-2-database-adapter-web/sessions/.
+
+RESUME: TASKS.md "Next session" → read AR-2 IMPLEMENTATION-PLAN Rev 2 → (opt. re-critique) → Approval 2 →
+implement C1→C8 (checkpoint after C1/C2: @vida/core tsc green, repository.ts unedited). C6 = the risk.
+═══════════════════════════════════════════════════════════════════════════
+
+---
+Date: 2026-07-27
+Task: ar-2-database-adapter-web (LIF-73 · M1.0 Boot & DB spine · critical-path root) · Profile: Add Backend Component
+Goal: Begin building M1.0. (Started DS-1, course-corrected to the -a critical-path head AR-2; took AR-2 through both planning gates.)
+Completed:
+  - DS-1 token pipeline BUILT + green, then PARKED (out of sequence, -b track): branch `ds-1-token-pipeline`
+    @ fd9f144; main reset clean; LIF-81 → Backlog. (SD→Tamagui+CSS, 13/13 tests, eng-gate PASS, docs/ui/token-pipeline/.)
+  - Linear hygiene: LIF-72 (ar-1) + LIF-61 (db-1) → Done; LIF-73 (ar-2) → In Progress.
+  - AR-2 baseline (Step 0/1): adapter.ts = live SQLCipher-first residue; repository.ts sync+vault-coupled (DB-6);
+    runner.ts clean; apps/web/src/db empty; no consumers.
+  - AR-2 Gate 1: PLAN → critique REVISE (sync/async fork) → decisions (sync+worker, optional-cipher seam) →
+    re-critique SHIP → preflight PASSED → Approval 1 ✅. File: sessions/PLAN-2026-07-27-*.md.
+  - AR-2 Gate 2: IMPLEMENTATION-PLAN Rev 2 (C1–C8) → critique caught 3 installed-lib build-stoppers (VFS
+    AccessHandlePoolVFS, mapResultRow type-gap, sql-js reference driver) → all fixed. File: sessions/IMPLEMENTATION-PLAN-2026-07-27-*.md.
+In progress:
+  - AR-2 implementation NOT started — banked before Approval 2 (session length). Both gate files persist.
+  - Uncommitted on main: all AR-2 planning docs + task/session/index files + the ar-1 status-flip. Commit with the AR-2 code (or on request).
+Decisions:
+  - Sync driver + Web Worker (AccessHandlePoolVFS); DrizzleDb stays 'sync' → repository.ts untouched (DB-6 fence).
+  - Optional `sqlCipher` config seam (encryption OFF M1.0 → M3). Custom Drizzle sync session (sql-js blueprint, local mapResultRow).
+  - "async Drizzle proxy" is a roadmap phrase, NOT ADR-001 — not adopted. (Decisions table in the task file.)
+Next session:
+  - FIRST ACTION: read docs/specs/components/ar-2-database-adapter-web/sessions/IMPLEMENTATION-PLAN-2026-07-27-*.md
+    (Rev 2, C1–C8) + the PLAN + the task's Decisions table. (Optional) re-critique Rev 2 → Approval 2 → implement C1→C8.
+  - Checkpoint after C1/C2: `pnpm --filter @vida/core typecheck` green with repository.ts UNEDITED (proves the sync fence).
+    C6 (custom Drizzle sync session) is the one risk: [VERIFY]-first vs installed drizzle-orm@0.45.1 .d.ts; fallback = escalate, don't silently flip to async.
+---
