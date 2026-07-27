@@ -2,7 +2,8 @@
 # Profile: Add Backend Component
 # Scenario: Default
 # Spec: docs/specs/components/ar-2-database-adapter-web/_index.md
-# Status: in-progress — implemented + green (10/10 tc · 6/6 tests · post-impl SHIP); UNCOMMITTED; browser/OPFS path verification-deferred (no Playwright smoke yet); §6 repo-CRUD line re-scoped to DB-6 (awaiting acceptance)
+# Status: done
+# Completion: contract complete (5/7 DoD), committed e55010f. Items 1&2 (browser open/persist) carried by LIF-103. Repo-CRUD → DB-6. Unblocks db-6/db-7/ar-5/ar-6/ar-8/ar-9.
 # Cluster: M1.0 Boot & Connective Base
 # Milestone: Boot & DB spine
 # Phase: 1.0 — Structural Foundation

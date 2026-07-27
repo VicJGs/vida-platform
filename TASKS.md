@@ -6,24 +6,20 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ar-2-database-adapter-web (LIF-73, Boot & DB spine) | Add Backend Component | 2026-07-27 | 2026-07-27 | **IMPLEMENTED + green** (async proxy; 10/10 tc · 6/6 tests · post-impl SHIP) — **UNCOMMITTED**; browser/OPFS path verification-deferred; §6 repo-CRUD re-scoped→DB-6 |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
 
-**AR-2 IS BUILT + GREEN (LIF-73 · critical-path root). Close it out: COMMIT → /task-complete → LIF-73 Done.**
-- **DIRECTION was corrected mid-build:** wa-sqlite@1.0.0 Factory API is async-only → sync driver IMPOSSIBLE →
-  adopted the delivery-plan's **async Drizzle proxy** (`drizzle-orm/sqlite-proxy`). Rev 3 re-gated (both critiques);
-  Victor confirmed. Deleted Rev-2's C6 custom-session risk. Details in the 2026-07-27 session-log entry.
-- **State:** implemented A1–A5·R1·R2·W1–W5; full typecheck 10/10; AR-2 tests 6/6; post-impl critic SHIP (0 blocking).
-  Currency docs refreshed + `apps/web/src/db/CLAUDE.md`. **19 files UNCOMMITTED on main** (code + docs + task files).
-- **FIRST ACTION:** decide commit target (short-lived branch vs main) → commit **code + docs together** (§XXIX) →
-  `/task-complete ar-2` → flip **LIF-73 → Done**. Then AR-2 unblocks **db-6/db-7/ar-5/ar-6/ar-8/ar-9** (db-6 next head).
-- ⚠ **AUDIT CAVEATS before calling it "done-done":** (1) the real wa-sqlite path (web-driver/web-adapter/worker) is
-  **typecheck-only — no executed test**; the 6 tests use a better-sqlite3 stand-in (`:memory:`). BR6 OPFS persistence
-  is **verification-deferred** to a Playwright smoke that does NOT exist yet. (2) §6 "createRepository create→read-back"
-  was **re-scoped to DB-6** (needs vault unlock = M3) — needs Victor's acceptance.
-- **Tracked follow-ups:** Playwright OPFS/worker smoke · repo-CRUD e2e w/ vault-unlock in DB-6 · NIT-3 count()→count(*).
+**AR-2 DONE (LIF-73, commit e55010f) — the M1.0 critical-path root is in. Next head: DB-6.**
+- **AR-2 recap:** async DatabaseAdapter + web-adapter (wa-sqlite/OPFS + drizzle-orm/sqlite-proxy). Direction was
+  corrected sync→async mid-build (wa-sqlite Factory API is async-only), Rev 3 re-gated. 5/7 DoD (contract); items 1&2
+  (browser open/persist) carried by **LIF-103** (Playwright+OPFS harness, blocked-by ar-2). Full details: 2026-07-27 session-log.
+- **RECOMMENDED NEXT: DB-6 (LIF-68) — Repository (encrypt/decrypt seam, pass-through).** Now unblocked (blocked-by
+  db-4 ∥ ar-2; ar-2 done — check db-4 status). It owns the repository seam AR-2 only async-propagated, and absorbs the
+  deferred repo-CRUD e2e (needs vault unlock). Profile: Add Backend Component.
+- **Other AR-2 unblocks:** db-7, ar-5, ar-6, ar-8, ar-9.
+- **Tracked follow-ups:** LIF-103 (browser E2E harness — proves AR-2 items 1&2) · NIT-3 count()→count(*) at scale.
+- **DS-1** still parked on branch `ds-1-token-pipeline` (M1.0-b wave).
 
 **PARKED — DS-1 token pipeline** (branch `ds-1-token-pipeline` @ fd9f144): complete + green but out of sequence
 (M1.0-b, not the -a critical path); LIF-81 → Backlog. Resumes when the -b wave's turn comes. (This session built
@@ -87,6 +83,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **ar-2-database-adapter-web** (LIF-73 · M1.0 critical-path ROOT · async DatabaseAdapter + web-adapter over wa-sqlite/OPFS + drizzle-orm/sqlite-proxy. DIRECTION corrected sync→async mid-build [wa-sqlite Factory API async-only] — Rev 3 re-gated. 5/7 DoD [contract]; items 1&2 [browser open/persist] → LIF-103. commit e55010f. Unblocks db-6/7, ar-5/6/8/9) | 2026-07-27 | 1 (2026-07-27) |
 | **m1.0-delivery-plan** (Milestone Delivery Planning — new scenario crystallized. docs/roadmap/m1.0-delivery-plan.md: 30 M1.0 issues bound 1:1 to entity·ADR-018 home·intent·profile·flow·DOC spine·deps·gate; critic SHIP after 1 fix; grain+dep reconcile caught fold/split + inversion + 2 stale Linear edges [cleaned both sides]. Strategy meta-task, not a Linear issue) | 2026-07-26 | 1 (2026-07-26) |
 | **linear-projectize** (U3 — re-scoped LIF-61…95 onto the roadmap M1→M4: created M1.0/M1.4/M2/M3/M4 Projects, moved 33 existing issues to final homes, created split/head issues LIF-98…101, old ①–⑤ emptied; LIF-97 Done) | 2026-07-26 | 1 (2026-07-25→26) |
 | **build-roadmap-resequence** (→ foundation-realignment campaign: P1 docs realignment + P2 repo structure [ADR-018] + P3 roadmap resequence [ADR-019]; all exit gates accepted; docs+structure+roadmap coherent, derived from ADRs 001–019; LIF-96 Done) | 2026-07-25 | many (2026-07-23 → 07-25) |

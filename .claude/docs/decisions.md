@@ -83,3 +83,14 @@ Re-projectized Linear from the old substrate-first five-layer structure (①–�
 - **Dependency graph authority:** the tracker's gated blocked-by OUTRANKS a fresh plan derivation — but can carry stale pre-resequencing edges; reconcile against the sequencing ADR. Fixed 2 stale edges (DB-6←DB-5 crossed M1.0→M3 violating ADR-017; AR-9←DB-2 parked) on BOTH sides (add-only sync would else re-add).
 - **New toolkit scenario:** `project-foundation/scenarios/milestone-delivery-planning.md` (crystallized from build-roadmap.md) — the repeatable manual for every later milestone's delivery planning.
 - Not a Linear issue (strategy meta-task). Artifact: `docs/roadmap/m1.0-delivery-plan.md`.
+
+## AR-2 DatabaseAdapter + web-adapter — completed 2026-07-27
+- **Async driver over wa-sqlite** (reversed an initial sync plan). wa-sqlite@1.0.0's Factory API is async-only, so a
+  sync driver is impossible; adopted the delivery plan's "async Drizzle proxy" (`drizzle-orm/sqlite-proxy`).
+  `DrizzleDb` is `'async'`; `repository.ts` + `migrations/runner.ts` async-propagated. No new ADR — ADR-001 (wa-sqlite)
+  governs and never required sync.
+- **Optional `sqlCipher` config seam** — the DB opens plain in M1.0; passing a config activates SQLCipher at M3. A
+  config change, not a code change.
+- **Repository encrypt/decrypt seam stays DB-6** — AR-2 only async-propagated the consumer to keep the build green.
+- **Items 1&2 (browser open/persist) verification deferred to LIF-103** (Playwright + OPFS/worker harness), a net-new
+  shared-infra dependency surfaced by the completeness audit; AR-2 closed on contract (5/7 DoD).

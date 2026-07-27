@@ -45,3 +45,29 @@ RESUME NEXT SESSION:
   3. Approval 2 → implement C1→C8 in order. Checkpoint after C1/C2: `pnpm --filter @vida/core typecheck` green,
      repository.ts UNEDITED. C6 = the risk ([VERIFY]-first vs installed drizzle-orm@0.45.1 .d.ts).
   4. Then quality-gate-engineering + verification → [C] refresh database-layer current-* + [L] layer-doc → commit docs WITH code.
+
+── COMPLETE 2026-07-27 (LIF-73 → Done · commit e55010f) ──────────────────────
+**DIRECTION CORRECTED sync→async, then BUILT + shipped.** On resume, a build-time [VERIFY] of the installed
+wa-sqlite@1.0.0 found its Factory API is ASYNC-ONLY (sqlite-api.js:742-750) → a sync driver is IMPOSSIBLE over
+wa-sqlite. Halted (§XXIV/§XXVIII), re-read the docs: the delivery plan always specified "async Drizzle proxy"
+(m1.0-delivery-plan.md:100) — the Rev-1/2 SYNC choice was the drift, built on a false premise. Victor confirmed
+the correction. Re-planned Rev 3 (PLAN + IMPL-PLAN), re-gated: independent critique caught 3 build-stoppers
+pre-code (get-shape flat-row vs mapGetResult; missed runner.ts consumer; test must drive the real proxy) — all
+fixed + source-verified. Approval 2 ✅.
+
+The correction made the build SIMPLER: Rev-2's C6 (hand-rolled custom Drizzle sync session, "the one real risk")
++ the B2 mapResultRow gap both DELETED — the official drizzle-orm/sqlite-proxy owns mapResultRow.
+
+BUILT: A1–A5 (adapter async; DrizzleDb=SqliteRemoteDatabase 'async'; createDrizzleProxy; async migration runner +
+cipher/connection helpers), R1 (repository.ts 11 sites async), R2 (runner.ts async), W1–W5 (vite config;
+web-driver.ts on wa-sqlite statements(); worker.ts host+proof; web-adapter.ts over AccessHandlePoolVFS;
+wa-sqlite-vendor.d.ts shim; Node contract test over better-sqlite3). Checkpoint (core tsc green, 3-file async flip)
+→ full typecheck 10/10 → AR-2 tests 6/6 → lint clean. Independent post-impl critique: SHIP (0 blocking; NIT-1
+update-race guard + NIT-4 layer-doc applied). Currency §XXIX: database-layer current-* + apps/web/src/db/CLAUDE.md.
+
+COMPLETENESS AUDIT vs _index.md §2: 5/7 DoD met (contract). Items 1&2 (browser open/reopen + OPFS persistence) are
+code-complete but need a real-browser test (FileSystemSyncAccessHandle is worker-only; Node test uses :memory:) →
+created LIF-103 (qa-1-e2e-harness-opfs, blocked-by ar-2) to carry them. §6 repo-CRUD → DB-6 (needs vault unlock).
+
+Committed straight to main (ground-zero, Victor's call): e55010f (24 files, code + docs together, §XXIX). Gitleaks clean.
+UNBLOCKS: db-6 (next head), db-7, ar-5, ar-6, ar-8, ar-9. FOLLOW-ON: LIF-103.
