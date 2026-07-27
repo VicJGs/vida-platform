@@ -60,6 +60,7 @@ export * as schema from './db/schema'
 
 export {
   DEFAULT_SQLCIPHER_CONFIG,
+  createDrizzleProxy,
   getSchemaVersion,
   setSchemaVersion,
   runMigrations,

@@ -39,7 +39,7 @@ export async function migrate(
 }
 
 /** Get the current schema version without running anything. */
-export function currentVersion(driver: SqliteDriver): number {
+export async function currentVersion(driver: SqliteDriver): Promise<number> {
   return getSchemaVersion(driver)
 }
 
@@ -49,8 +49,8 @@ export const LATEST_VERSION = ALL_MIGRATIONS.length > 0
   : 0
 
 /** Check if the database needs migrations. */
-export function needsMigration(driver: SqliteDriver): boolean {
-  return currentVersion(driver) < LATEST_VERSION
+export async function needsMigration(driver: SqliteDriver): Promise<boolean> {
+  return (await currentVersion(driver)) < LATEST_VERSION
 }
 
 /** List all registered migrations (for debugging / admin UI). */

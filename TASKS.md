@@ -6,25 +6,24 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ar-2-database-adapter-web (LIF-73, Boot & DB spine) | Add Backend Component | 2026-07-27 | 2026-07-27 | in-progress — **both plan gates done; banked before Approval 2 → implement next** |
+| ar-2-database-adapter-web (LIF-73, Boot & DB spine) | Add Backend Component | 2026-07-27 | 2026-07-27 | **IMPLEMENTED + green** (async proxy; 10/10 tc · 6/6 tests · post-impl SHIP) — **UNCOMMITTED**; browser/OPFS path verification-deferred; §6 repo-CRUD re-scoped→DB-6 |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
 
-**RESUME AR-2 IMPLEMENTATION (LIF-73 · critical-path root of M1.0).** Both planning gates are done and banked:
-- Profile: **Add Backend Component** (Default). Task: `.claude/tasks/ar-2-database-adapter-web.md`.
-- **READ FIRST:** `docs/specs/components/ar-2-database-adapter-web/sessions/IMPLEMENTATION-PLAN-2026-07-27-*.md`
-  (Rev 2 — the build prompt, steps C1–C8) + the PLAN (Approval 1 ✅ recorded there) + the task's Decisions table.
-- **FIRST ACTION:** get **Approval 2** (optionally re-critique IMPL-PLAN Rev 2 first for extra assurance on the C6
-  risk), then implement **C1→C8 in order**. Hard checkpoint after C1/C2: `pnpm --filter @vida/core typecheck`
-  green with `repository.ts` UNEDITED (proves the sync-fence).
-- **Key locked decisions:** sync driver + Web Worker (`AccessHandlePoolVFS`); `DrizzleDb` stays `'sync'`;
-  `repository.ts` untouched (DB-6); optional `sqlCipher` seam; custom Drizzle sync session (`sql-js` blueprint,
-  local `mapResultRow`); "async Drizzle proxy" is a roadmap phrase, NOT adopted.
-- **C6 is the one real risk:** custom Drizzle sync session over `sqlite-core` internals — `[VERIFY]`-first against
-  installed `drizzle-orm@0.45.1` `.d.ts`; fallback = escalate (reopen async fork), don't silently flip.
-- **Uncommitted on main:** the AR-2 planning docs + task/session/index files (this session's work) are UNCOMMITTED
-  — commit them with (or before) the AR-2 code, or on request.
+**AR-2 IS BUILT + GREEN (LIF-73 · critical-path root). Close it out: COMMIT → /task-complete → LIF-73 Done.**
+- **DIRECTION was corrected mid-build:** wa-sqlite@1.0.0 Factory API is async-only → sync driver IMPOSSIBLE →
+  adopted the delivery-plan's **async Drizzle proxy** (`drizzle-orm/sqlite-proxy`). Rev 3 re-gated (both critiques);
+  Victor confirmed. Deleted Rev-2's C6 custom-session risk. Details in the 2026-07-27 session-log entry.
+- **State:** implemented A1–A5·R1·R2·W1–W5; full typecheck 10/10; AR-2 tests 6/6; post-impl critic SHIP (0 blocking).
+  Currency docs refreshed + `apps/web/src/db/CLAUDE.md`. **19 files UNCOMMITTED on main** (code + docs + task files).
+- **FIRST ACTION:** decide commit target (short-lived branch vs main) → commit **code + docs together** (§XXIX) →
+  `/task-complete ar-2` → flip **LIF-73 → Done**. Then AR-2 unblocks **db-6/db-7/ar-5/ar-6/ar-8/ar-9** (db-6 next head).
+- ⚠ **AUDIT CAVEATS before calling it "done-done":** (1) the real wa-sqlite path (web-driver/web-adapter/worker) is
+  **typecheck-only — no executed test**; the 6 tests use a better-sqlite3 stand-in (`:memory:`). BR6 OPFS persistence
+  is **verification-deferred** to a Playwright smoke that does NOT exist yet. (2) §6 "createRepository create→read-back"
+  was **re-scoped to DB-6** (needs vault unlock = M3) — needs Victor's acceptance.
+- **Tracked follow-ups:** Playwright OPFS/worker smoke · repo-CRUD e2e w/ vault-unlock in DB-6 · NIT-3 count()→count(*).
 
 **PARKED — DS-1 token pipeline** (branch `ds-1-token-pipeline` @ fd9f144): complete + green but out of sequence
 (M1.0-b, not the -a critical path); LIF-81 → Backlog. Resumes when the -b wave's turn comes. (This session built
@@ -78,6 +77,7 @@ _(none)_
 
 | Task | Profile | Priority |
 |------|---------|----------|
+| **qa-1-e2e-harness-opfs** (Playwright + OPFS/worker E2E harness; proves AR-2 items 1&2 — browser open/reopen/persist. Blocked-by ar-2. Net-new shared infra from the AR-2 audit) | Add Backend Component | M1.0 — after AR-2 |
 | **Storage rebuild — from zero** (v1 schema ~60% stale → author v2 from scratch; `ADR-016` + `storage-build-plan.md` ledger + per-table gating. DB-1/LIF-61 ✅ done.) | Generic Coding Session | ⏸ **PARKED by ADR-017** — sequencing inverted to features-first; schema now authored per-feature, not full-schema-first. Resurfaces (incl. encryption/sync at DB-5/DB-2) in the post-validation hardening pass. |
 | Toolkit scan-cascade audit + 6 command migrations | toolkit-development | parked — filed in ~/dev-toolkit/.claude/tasks/ |
 | Integrate /task-new ↔ native task panel | toolkit-development | parked — sync gap found 2026-06-08 |

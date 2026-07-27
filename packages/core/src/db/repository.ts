@@ -174,28 +174,28 @@ export interface RepositoryConfig {
 
 export interface Repository<T extends AnyTable> {
   /** Insert a new row. Returns the created row (decrypted). */
-  create(data: CreateInput<T>): RowOf<T>
+  create(data: CreateInput<T>): Promise<RowOf<T>>
 
   /** Find by primary key. Returns null if not found or soft-deleted. */
-  findById(id: string): RowOf<T> | null
+  findById(id: string): Promise<RowOf<T> | null>
 
   /** Find all rows. Excludes soft-deleted if enabled. */
-  findAll(): RowOf<T>[]
+  findAll(): Promise<RowOf<T>[]>
 
   /** Update by primary key. Returns the updated row (decrypted). */
-  update(id: string, data: UpdateInput<T>): RowOf<T>
+  update(id: string, data: UpdateInput<T>): Promise<RowOf<T>>
 
   /** Soft delete (if enabled) or hard delete. */
-  delete(id: string): void
+  delete(id: string): Promise<void>
 
   /** Permanently remove the row. */
-  hardDelete(id: string): void
+  hardDelete(id: string): Promise<void>
 
   /** Query with a Drizzle SQL where clause. Returns decrypted rows. */
-  findWhere(where: SQL): RowOf<T>[]
+  findWhere(where: SQL): Promise<RowOf<T>[]>
 
   /** Count rows matching an optional where clause. */
-  count(where?: SQL): number
+  count(where?: SQL): Promise<number>
 }
 
 // ---------------------------------------------------------------------------
@@ -264,7 +264,7 @@ export function createRepository<T extends AnyTable>(
 
   // ---- CREATE ---------------------------------------------------------------
 
-  function create(data: CreateInput<T>): RowOf<T> {
+  async function create(data: CreateInput<T>): Promise<RowOf<T>> {
     const id = uuidv7()
     const timestamp = ts()
     const vaultKey = key()
@@ -281,44 +281,44 @@ export function createRepository<T extends AnyTable>(
     encrypted._sync_hash = computeSyncHash(encrypted)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    db.insert(table).values(encrypted as any).run()
+    await db.insert(table).values(encrypted as any).run()
 
     return decryptRow(encrypted, encryptedFieldSet, vaultKey) as RowOf<T>
   }
 
   // ---- FIND BY ID -----------------------------------------------------------
 
-  function findById(id: string): RowOf<T> | null {
+  async function findById(id: string): Promise<RowOf<T> | null> {
     const filter = notDeleted()
     const where = filter
       ? and(eq(cols.id, id), filter)
       : eq(cols.id, id)
 
-    const rows = db.select().from(table).where(where).all() as Record<string, unknown>[]
+    const rows = await db.select().from(table).where(where).all() as Record<string, unknown>[]
     if (rows.length === 0) return null
     return decrypt(rows[0])
   }
 
   // ---- FIND ALL -------------------------------------------------------------
 
-  function findAll(): RowOf<T>[] {
+  async function findAll(): Promise<RowOf<T>[]> {
     const filter = notDeleted()
     const rows = filter
-      ? (db.select().from(table).where(filter).all() as Record<string, unknown>[])
-      : (db.select().from(table).all() as Record<string, unknown>[])
+      ? (await db.select().from(table).where(filter).all() as Record<string, unknown>[])
+      : (await db.select().from(table).all() as Record<string, unknown>[])
     return decryptAll(rows)
   }
 
   // ---- FIND WHERE -----------------------------------------------------------
 
-  function findWhere(where: SQL): RowOf<T>[] {
-    const rows = db.select().from(table).where(where).all() as Record<string, unknown>[]
+  async function findWhere(where: SQL): Promise<RowOf<T>[]> {
+    const rows = await db.select().from(table).where(where).all() as Record<string, unknown>[]
     return decryptAll(rows)
   }
 
   // ---- COUNT ----------------------------------------------------------------
 
-  function count(where?: SQL): number {
+  async function count(where?: SQL): Promise<number> {
     const baseWhere = where
     const filter = notDeleted()
     const combined = baseWhere && filter
@@ -326,18 +326,18 @@ export function createRepository<T extends AnyTable>(
       : baseWhere ?? filter
 
     const rows = combined
-      ? db.select().from(table).where(combined).all()
-      : db.select().from(table).all()
+      ? await db.select().from(table).where(combined).all()
+      : await db.select().from(table).all()
     return rows.length
   }
 
   // ---- UPDATE ---------------------------------------------------------------
 
-  function update(id: string, data: UpdateInput<T>): RowOf<T> {
+  async function update(id: string, data: UpdateInput<T>): Promise<RowOf<T>> {
     const vaultKey = key()
 
     // Read current row for _sync_version
-    const existing = db
+    const existing = await db
       .select()
       .from(table)
       .where(eq(cols.id, id))
@@ -366,30 +366,34 @@ export function createRepository<T extends AnyTable>(
     encrypted._sync_hash = computeSyncHash({ ...existing[0], ...encrypted })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    db.update(table).set(encrypted as any).where(eq(cols.id, id)).run()
+    await db.update(table).set(encrypted as any).where(eq(cols.id, id)).run()
 
     // Re-read and return the full decrypted row
-    const updated = db
+    const updated = await db
       .select()
       .from(table)
       .where(eq(cols.id, id))
       .all() as Record<string, unknown>[]
+
+    if (updated.length === 0) {
+      throw new Error(`Row vanished after update: ${id}`)
+    }
 
     return decryptRow(updated[0], encryptedFieldSet, vaultKey) as RowOf<T>
   }
 
   // ---- DELETE ---------------------------------------------------------------
 
-  function del(id: string): void {
+  async function del(id: string): Promise<void> {
     if (softDelete && cols.deleted_at) {
-      update(id, { deleted_at: ts() } as unknown as UpdateInput<T>)
+      await update(id, { deleted_at: ts() } as unknown as UpdateInput<T>)
     } else {
-      hardDelete(id)
+      await hardDelete(id)
     }
   }
 
-  function hardDelete(id: string): void {
-    db.delete(table).where(eq(cols.id, id)).run()
+  async function hardDelete(id: string): Promise<void> {
+    await db.delete(table).where(eq(cols.id, id)).run()
   }
 
   // ---- RETURN ---------------------------------------------------------------

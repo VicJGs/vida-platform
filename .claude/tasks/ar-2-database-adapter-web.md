@@ -2,7 +2,7 @@
 # Profile: Add Backend Component
 # Scenario: Default
 # Spec: docs/specs/components/ar-2-database-adapter-web/_index.md
-# Status: in-progress
+# Status: in-progress — implemented + green (10/10 tc · 6/6 tests · post-impl SHIP); UNCOMMITTED; browser/OPFS path verification-deferred (no Playwright smoke yet); §6 repo-CRUD line re-scoped to DB-6 (awaiting acceptance)
 # Cluster: M1.0 Boot & Connective Base
 # Milestone: Boot & DB spine
 # Phase: 1.0 — Structural Foundation
@@ -56,26 +56,39 @@ Intent sources: ADR-001 (wa-sqlite/OPFS, Drizzle), ADR-002 (three-layer encrypti
 - [ ] GATE 2 (IMPL-PLAN → critique → preflight → Approval 2)
 - [ ] Implement: types → adapter/query logic → error handling → registration; tsc --noEmit
 - [ ] Test: adapter unit/integration (open DB, round-trip query, ≥2 error cases)
-- [ ] code-review → /critique SHIP → quality-gate-engineering → verification
-- [ ] [C] currency refresh (database-layer current-*) + [L] layer-docs; commit docs WITH code
+- [x] code-review → /critique SHIP → quality-gate-engineering → verification (independent post-impl critic: SHIP, 0 blocking)
+- [x] [C] currency refresh (database-layer current-*) + [L] apps/web/src/db/CLAUDE.md — done; commit docs WITH code (pending)
 
 ## Build Steps
-<!-- UNIT-level — from IMPLEMENTATION-PLAN §3 (gate 2). Pending Approval 2. -->
-- [ ] C1 — adapter.ts: `DatabaseConfig.sqlCipher` → optional
-- [ ] C2 — adapter.ts: branch `initializeConnection` on `config.sqlCipher` (skip cipher when absent)
-- [ ] C3 — apps/web deps (wa-sqlite, vitest) + vite.config (WASM/worker; exclude wa-sqlite) [VERIFY import specifiers + no-COOP/COEP]
-- [ ] C4 — apps/web/src/db/worker.ts (sync wa-sqlite + OPFSCoopSyncVFS + open + message protocol)
-- [ ] C5 — sync-driver.ts (sync SqliteDriver over wa-sqlite sync API)
-- [ ] C6 — drizzle-sync-session.ts (custom Drizzle sync session → createDrizzle) ⚠ RISK — [VERIFY] against drizzle-orm@0.45.1 .d.ts + expo-sqlite reference FIRST
-- [ ] C7 — web-adapter.ts (DatabaseAdapter impl: open/migrate/createDrizzle/exists/destroy)
-- [ ] C8 — index.ts barrel + web-adapter.test.ts (open/persist/migrate/seam) [VERIFY OPFS-in-worker test env]
-- [ ] checkpoint after C1/C2: @vida/core tsc green with repository.ts unedited
+<!-- UNIT-level — from IMPLEMENTATION-PLAN Rev 3 §3 (gate 2). Approval 2 ✅ 2026-07-27. -->
+<!-- DIRECTION CORRECTED sync→async: wa-sqlite Factory API is async-only → adopt sqlite-proxy (delivery-plan spec). -->
+<!-- C1/C2 (sqlCipher optional + branch) already committed to working tree; preserved, async-wrapped in A-pass. -->
+- [x] A1 — adapter.ts: `DrizzleDb` → `SqliteRemoteDatabase<typeof schema>` (drizzle-orm/sqlite-proxy, 'async')
+- [x] A2 — adapter.ts: `SqliteDriver` methods async + add positional `values(): Promise<unknown[][]>`
+- [x] A3 — adapter.ts: async-ify runMigrations awaits + getSchemaVersion/setSchemaVersion + cipher/connection helpers
+- [x] A4 — adapter.ts: `initializeConnection` async (preserve C1/C2 branch)
+- [x] A5 — adapter.ts: `createDrizzleProxy(driver)` via sqlite-proxy — get→values[0] (flat row), all/values→values
+- [x] R1 — repository.ts: async-propagate 11 call sites + Repository<T> interface sigs
+- [x] R2 — migrations/runner.ts: currentVersion/needsMigration → async
+- [x] ░ CHECKPOINT: `pnpm --filter @vida/core typecheck` green ✅ (3 files: adapter/repository/runner)
+- [x] W1 — apps/web/vite.config.ts (WASM asset + ES worker + optimizeDeps.exclude wa-sqlite; no COOP/COEP)
+- [x] W2 — apps/web/src/db/web-driver.ts (async SqliteDriver over wa-sqlite; query=objects, values=positional; on statements() iterator)
+- [x] W3 — apps/web/src/db/worker.ts (sync WASM build + new AccessHandlePoolVFS + await isReady + in-worker proof + drizzle ping)
+- [x] W4 — apps/web/src/db/web-adapter.ts (DatabaseAdapter: open/migrate/createDrizzle/exists/destroy) + wa-sqlite-vendor.d.ts shim
+- [x] W5 — index.ts barrel + web-adapter.test.ts (Node contract via real createDrizzleProxy over better-sqlite3 — 6/6 green)
+
+## [VERIFY]-resolutions + scope notes (recorded during implement — not direction changes)
+- AccessHandlePoolVFS@1.0.0 is `new AccessHandlePoolVFS(dir)` + `await vfs.isReady`, NOT a `static create(name,module)` (plan's op line). Constructor takes directoryPath only.
+- `exists`/`destroy` are VFS/directory-scoped, NOT raw-OPFS-by-name: the VFS stores files under opaque random OPFS names (SQLite path in a header). `exists` = pool `getSize()>0`; `destroy` = clear the VFS dir. Per-name first-run → AR-4. (Single-vault M1.0.)
+- Repository CRUD is NOT in AR-2's test: `createRepository` calls `getVaultKey()` unconditionally → needs an unlocked vault (Argon2id ceremony = M3/DB-6). AR-2's test validates the adapter+driver+proxy contract at the Drizzle level (the critic's actual ask). Repository CRUD round-trip belongs to DB-6. **[flag for Victor — one §6 acceptance line re-scoped]**
+- wa-sqlite@1.0.0 has no `last_insert_rowid` wrapper → derived via `SELECT last_insert_rowid()` in exec (no AR-2 path needs it; UUIDv7 PKs).
 
 ## Session History
 | Date | What was done | Next step |
 |------|--------------|-----------|
 | 2026-07-27 | Enriched stub → active task; profile → Add Backend Component; DS-1 parked (branch); Linear hygiene (LIF-72/61 → Done) | Step 0 — baseline refresh of docs/infrastructure/database-layer/ |
-| 2026-07-27 | Baseline done (adapter SQLCipher-coupled residue; repository sync/DB-6; web empty). Gate 1: PLAN→critique REVISE (sync/async fork)→D1+driver decided→SHIP→Approval 1 ✅. Gate 2: IMPL-PLAN Rev 2 (critique caught VFS/ref-driver/mapResultRow vs installed→fixed). BANKED before Approval 2. | **RESUME: get Approval 2 (or re-critique Rev 2 first) → implement C1→C8 in order; checkpoint after C1/C2 (core tsc, repository untouched)** |
+| 2026-07-27 | Baseline done (adapter SQLCipher-coupled residue; repository sync/DB-6; web empty). Gate 1: PLAN→critique REVISE (sync/async fork)→D1+driver decided→SHIP→Approval 1 ✅. Gate 2: IMPL-PLAN Rev 2 (critique caught VFS/ref-driver/mapResultRow vs installed→fixed). BANKED before Approval 2. | (superseded next row) |
+| 2026-07-27 | **DIRECTION CORRECTED + BUILT.** [VERIFY] during C3/C4 found wa-sqlite Factory API async-only → sync impossible. Re-planned to **async Drizzle proxy** (delivery-plan spec; Victor confirmed). Rev 3 PLAN+IMPL re-gated (indep critique REVISE→3 fixes: get-shape, runner.ts, real-proxy test). Implemented A1–A5·R1·R2·W1–W5. Checkpoint + full typecheck 10/10 + AR-2 tests 6/6 green. Post-impl critique SHIP (0 blocking; NIT-1/NIT-4 applied). Currency docs refreshed + layer-doc. | **COMMIT (docs WITH code) → /task-complete → LIF-73 Done → unblocks db-6/7, ar-5/6/8/9. Follow-ups: Playwright OPFS smoke; repo-CRUD test in DB-6.** |
 
 ## Notes
 - This is the critical-path root of the whole M1.0 spine. Get the interface right — 6 issues inherit it.

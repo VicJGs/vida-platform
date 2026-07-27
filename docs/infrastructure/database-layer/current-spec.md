@@ -45,6 +45,27 @@ drizzle-kit). So an enum is enforced by: **(1)** the `CHECK` constraint in the S
 canonical Zod validator (DB-9), **(3)** `enumText`'s TS union for query types (DB-1). DB-1 owns only part (3). A
 Drizzle `check()` helper was removed — it emits no DDL in this pipeline. `[FACT: ADR-002 §2.3/§5; migrations/001_initial.ts]`
 
+## AR-2 — DatabaseAdapter contract + web-adapter (IMPLEMENTED 2026-07-27 · LIF-73)
+The adapter seam is **asynchronous** — wa-sqlite@1.0.0's Factory API is async-only (`step`/`prepare_v2`/`finalize`
+are `async function` regardless of WASM build), so a sync driver is impossible. This matches the delivery plan's
+"async Drizzle proxy" for AR-2. `[FACT: node_modules wa-sqlite/src/sqlite-api.js:742-750; delivery-plan §5]`
+- **`SqliteDriver`** (`adapter.ts`) — all methods async: `exec/run/query/batch/close` return Promises; **added**
+  `values(sql,params): Promise<unknown[][]>` (positional rows for the ORM path). `query` stays object-keyed for
+  internal use (migrations, schema version). `[FACT: adapter.ts]`
+- **`DrizzleDb = SqliteRemoteDatabase<typeof schema>`** (`'async'`), built by **`createDrizzleProxy(driver)`** via
+  `drizzle-orm/sqlite-proxy` — the callback maps `run→{rows:[]}`, `all/values→{rows:positionalArrays}`,
+  `get→{rows: firstRow}` (drizzle's `mapGetResult` treats the value as one flat row). `[FACT: adapter.ts; sqlite-proxy/session.js:143-162]`
+- **`initializeConnection`** opens **plain** when `config.sqlCipher` is absent (M1.0); configures+verifies the cipher
+  when present — the M3 seam, a config change not a code change. `[FACT: adapter.ts; ADR-017]`
+- **Migration runner** (`runMigrations`, `getSchemaVersion`, `setSchemaVersion`) is async; each migration runs in a
+  `BEGIN/COMMIT`, failure → `ROLLBACK` + version unchanged; empty registry ⇒ no-op v0. `[FACT: adapter.ts; runner.ts]`
+- **Web impl** (`apps/web/src/db/`): a **Web Worker** (`worker.ts`) hosting the sync wa-sqlite build +
+  `AccessHandlePoolVFS` (OPFS); `web-driver.ts` (async `SqliteDriver` on the `statements()` iterator); `web-adapter.ts`
+  (`DatabaseAdapter` — open/migrate/createDrizzle/exists/destroy). `exists`/`destroy` are VFS-directory-scoped
+  (the VFS uses opaque OPFS names) — per-name first-run is AR-4. `[FACT: apps/web/src/db/*]`
+- **Consequence:** `repository.ts` + `runner.ts` are async-propagated (consume the async `DrizzleDb`). The repository
+  encrypt/decrypt **seam** semantics remain **DB-6**. `[FACT: repository.ts; runner.ts]`
+
 ## Downstream (INTENT — owned by later issues)
 DB-2 sync cols/HLC · DB-3 substrate tables · DB-4 per-domain tables · DB-5 encryption wiring · DB-6/7 repository +
-migrations + monolith retirement · DB-8 FTS5 · DB-11 reconcile ADR-002 §5/§7/§8.
+migrations + monolith retirement · DB-8 FTS5 · DB-11 reconcile ADR-002 §5/§7/§8. **AR-2 unblocks db-6/db-7/ar-5/ar-6/ar-8/ar-9.**

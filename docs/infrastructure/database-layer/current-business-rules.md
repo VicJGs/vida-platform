@@ -33,3 +33,15 @@
 - **[NEW]** The `schema/` directory is the v2 authoring surface; the v1 monolith `schema.ts` is **reference-only**
   and additive-safe (its `./db/schema` import path is preserved until consumers migrate at DB-6/7).
 - **[FACT — boundary]** DB-1 adds **no table** and does **not** add `_sync_field_ts` (DB-2's charter).
+
+## Rules established/changed by AR-2 (IMPLEMENTED 2026-07-27 — `adapter.ts` + `apps/web/src/db/`)
+- **[NEW] BR1 — open without encryption.** In M1.0 the DB opens with no passphrase: `config.sqlCipher` is optional,
+  and `initializeConnection` skips all cipher PRAGMAs + key verification when it is absent. `[FACT: adapter.ts; ADR-017]`
+- **[FACT] BR2 — the encryption seam survives.** When a `sqlCipher` config is supplied, `open()` configures + verifies
+  the cipher first; M3 activation is a config change, not a code change. `[FACT: adapter.ts; ADR-002 §4]`
+- **[NEW] BR7 — the driver is asynchronous.** wa-sqlite's Factory API is async-only, so `SqliteDriver` is async and
+  `DrizzleDb` is `'async'` (`SqliteRemoteDatabase`, via `drizzle-orm/sqlite-proxy`). Consequently `repository.ts`
+  consumes it with `await` at every call site. Invariant #9's L1 (SQLCipher) stays **deferred to M3** — the seam is
+  present, not active. `[FACT: adapter.ts; sqlite-api.js:742-750]`
+- **[FACT — boundary]** AR-2 authors **no migration** (DB-7), activates **no encryption** (M3), and does **not** touch
+  the repository's encrypt/decrypt seam semantics (DB-6) — it only async-propagates the consumers to keep the build green.

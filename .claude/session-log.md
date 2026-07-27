@@ -3573,3 +3573,45 @@ Next session:
   - Checkpoint after C1/C2: `pnpm --filter @vida/core typecheck` green with repository.ts UNEDITED (proves the sync fence).
     C6 (custom Drizzle sync session) is the one risk: [VERIFY]-first vs installed drizzle-orm@0.45.1 .d.ts; fallback = escalate, don't silently flip to async.
 ---
+
+---
+Date: 2026-07-27
+Task: ar-2-database-adapter-web (LIF-73 · M1.0 Boot & DB spine · critical-path ROOT) · Profile: Add Backend Component
+Goal: Resume AR-2 at Approval 2 and implement C1→C8 (the DatabaseAdapter + web-adapter).
+Completed:
+  - Implemented AR-2. Core async pass: packages/core/src/db/adapter.ts (DrizzleDb→SqliteRemoteDatabase 'async';
+    async SqliteDriver + positional values(); createDrizzleProxy via drizzle-orm/sqlite-proxy; async migration
+    runner + cipher/connection helpers; initializeConnection preserves the C1/C2 optional-sqlCipher seam),
+    repository.ts (11 call sites + Repository<T> interface async; +NIT-1 update-race guard), migrations/runner.ts
+    (currentVersion/needsMigration async), index.ts (+createDrizzleProxy export).
+  - Web adapter (apps/web/src/db/): web-driver.ts (async SqliteDriver on wa-sqlite statements() iterator),
+    worker.ts (Web Worker host + in-worker proof + drizzle ping), web-adapter.ts (DatabaseAdapter impl + VFS
+    bootstrap), wa-sqlite-vendor.d.ts (AccessHandlePoolVFS type shim), index.ts, web-adapter.test.ts (Node
+    contract over better-sqlite3), CLAUDE.md (layer doc). vite.config.ts (WASM/ES-worker) + better-sqlite3 devdep.
+  - Verification: checkpoint (@vida/core tsc green, async flip contained to 3 files) → full typecheck 10/10 →
+    AR-2 tests 6/6 → lint clean. Independent post-impl critic: SHIP (0 blocking, 4 NITs; NIT-1+NIT-4 applied).
+  - Currency §XXIX: refreshed docs/infrastructure/database-layer/current-{spec,business-rules}.md (BR1/BR2/BR7 +
+    async contract) + new apps/web/src/db/CLAUDE.md.
+Decisions:
+  - DIRECTION CORRECTED sync→async. [VERIFY] during C3/C4 found wa-sqlite@1.0.0's Factory API is async-only
+    (sqlite-api.js:742-750) → a sync driver is IMPOSSIBLE over wa-sqlite. The Rev-1/2 sync choice was the drift;
+    the delivery plan always specified "async Drizzle proxy" (m1.0-delivery-plan.md:100). Re-planned (Rev 3),
+    re-gated. Victor confirmed. This DELETED Rev-2's C6 (custom sync session, "the one real risk") + the B2
+    mapResultRow gap (drizzle's proxy owns mapResultRow).
+  - repository.ts async-propagation rides into AR-2 (keeps @vida/core compiling); the encrypt/decrypt SEAM stays DB-6.
+  - Independent Rev-3 plan critique caught 3 build-stoppers pre-code (get-shape flat-row, missed runner.ts consumer,
+    test must drive the real createDrizzleProxy) — all fixed + source-verified before implementing.
+In progress / NOT complete:
+  - NOT committed — 19 files uncommitted on main (code + planning docs + currency docs + task files).
+  - AUDIT FINDING: the real wa-sqlite path (web-driver.ts/web-adapter.ts/worker.ts) has ZERO executed test coverage —
+    typecheck-only. All 6 tests use a better-sqlite3 stand-in (:memory:). So the CONTRACT (proxy shapes/migration/seam)
+    is proven, but BR6 OPFS PERSISTENCE across reload and the wa-sqlite/VFS wiring are verification-DEFERRED to a
+    Playwright browser smoke that does not yet exist.
+  - §6 acceptance line "createRepository create→read-back" was RE-SCOPED to DB-6 (createRepository needs an unlocked
+    vault = M3 crypto). Validated at the Drizzle level instead. Needs Victor's acceptance of the re-scope.
+Next session:
+  - FIRST: decide commit target (branch vs main) → commit code + docs TOGETHER (§XXIX) → /task-complete ar-2 →
+    LIF-73 Done. Then AR-2 unblocks db-6/db-7/ar-5/ar-6/ar-8/ar-9 (db-6 = natural next head).
+  - Tracked follow-ups: Playwright OPFS/worker smoke (proves BR6 + the wa-sqlite path); repo-CRUD e2e w/ vault
+    unlock in DB-6; NIT-3 count()→count(*) at scale; main↔worker app binding in AR-4/UI-4.
+---
