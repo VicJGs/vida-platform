@@ -6,7 +6,6 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| m1.0-dep-graph-validation | Project Foundation | 2026-07-28 | 2026-07-28 | just started — standalone session: validate full-M1.0 graph vs ADR contracts + settle streaming-issue loop model (makes the foundation loop-ready) |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
@@ -90,6 +89,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **m1.0-dep-graph-validation** (full-M1.0 dep-graph validated per-edge vs ADR contracts + reconciled across task files/Linear/delivery-plan §5; independent ADR-critique caught db-8←db-6 as illegal M1.0←M3; 9 edges corrected, 7 Linear mutations, --verify clean; streaming loop model settled. commit 5e36376) | 2026-07-28 | 1 (2026-07-28) |
 | **ar-2-database-adapter-web** (LIF-73 · M1.0 critical-path ROOT · async DatabaseAdapter + web-adapter over wa-sqlite/OPFS + drizzle-orm/sqlite-proxy. DIRECTION corrected sync→async mid-build [wa-sqlite Factory API async-only] — Rev 3 re-gated. 5/7 DoD [contract]; items 1&2 [browser open/persist] → LIF-103. commit e55010f. Unblocks db-6/7, ar-5/6/8/9) | 2026-07-27 | 1 (2026-07-27) |
 | **m1.0-delivery-plan** (Milestone Delivery Planning — new scenario crystallized. docs/roadmap/m1.0-delivery-plan.md: 30 M1.0 issues bound 1:1 to entity·ADR-018 home·intent·profile·flow·DOC spine·deps·gate; critic SHIP after 1 fix; grain+dep reconcile caught fold/split + inversion + 2 stale Linear edges [cleaned both sides]. Strategy meta-task, not a Linear issue) | 2026-07-26 | 1 (2026-07-26) |
 | **linear-projectize** (U3 — re-scoped LIF-61…95 onto the roadmap M1→M4: created M1.0/M1.4/M2/M3/M4 Projects, moved 33 existing issues to final homes, created split/head issues LIF-98…101, old ①–⑤ emptied; LIF-97 Done) | 2026-07-26 | 1 (2026-07-25→26) |
