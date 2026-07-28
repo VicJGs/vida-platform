@@ -45,3 +45,31 @@
   present, not active. `[FACT: adapter.ts; sqlite-api.js:742-750]`
 - **[FACT — boundary]** AR-2 authors **no migration** (DB-7), activates **no encryption** (M3), and does **not** touch
   the repository's encrypt/decrypt seam semantics (DB-6) — it only async-propagates the consumers to keep the build green.
+
+## DB-6 — IMPLEMENTED (2026-07-28 · LIF-68)
+Rules the repository ALREADY enforced (preserved, no regression — proven by `repository.test.ts`):
+- **[FACT]** Managed fields are repository-owned — callers never supply `id/created_at/updated_at/_sync_*`; the
+  factory generates UUIDv7 `id`, stamps timestamps, and bumps `_sync_version` on update. `[FACT: repository.ts:37-52,267,336]`
+- **[FACT]** Soft delete is honored when `config.softDelete` + a `deleted_at` column exist; `findById/findAll` filter
+  `isNull(deleted_at)`; `delete()` sets `deleted_at` else hard-deletes. `[FACT: repository.ts:258-263,387-393]`
+- **[FACT]** `_sync_hash` = `hashContent` over all non-`_sync_` fields; `_sync_status` starts `'pending'`.
+  `[FACT: repository.ts:151-160,244]`
+
+Rules DB-6 ESTABLISHED (implemented + tested):
+- **[FACT] BR-DB6-1 — co-transactional enqueue.** Every mutation writes a `sync_queue` row in the **same
+  transaction** (`db.transaction()`) as the entity row; both commit or both roll back. Proven by the SQL-level
+  atomicity test (a mid-tx queue-write fault rolls back the entity row). `[FACT: repository.ts create/update/hardDelete; repository.test.ts]`
+- **[FACT] BR-DB6-1b — coalescing.** The enqueue UPSERTs on `UNIQUE(table_name,row_id,operation)`, so repeated
+  pre-flush mutations of the same row+op collapse to one queue row carrying the latest snapshot (LWW-correct, ADR-003).
+  `[FACT: repository.ts enqueue(); repository.test.ts coalescing]`
+- **[FACT] BR-DB6-2 — `sync_queue` is a device-local foundation table** (`schema/foundation/sync-queue.ts` +
+  `migrations/001_sync_queue.ts`): raw DDL with the ADR-002 §5.1 CHECKs + UNIQUE, no `baseColumns`/`syncColumns`,
+  never enqueues itself. `[FACT: ADR-002 §5.1]`
+- **[FACT] BR-DB6-3 — M1.0 pass-through = empty `[E]` set (ADR-017:20).** The seam runs over an empty encrypted-field
+  set in M1.0; the vault key is fetched **lazily** (only when the `[E]` set is non-empty), so the locked-vault default
+  never throws. Activates at M3 by populating `[E]` sets + unlocking. `[FACT: repository.ts key(); ADR-017:20]`
+- **[FACT] BR-DB6-4 — two distinct enums.** Row `_sync_status` (pending|synced|conflict) ≠ queue `status`
+  (pending|in_flight|failed) — different columns/tables; never conflated. `[FACT: types/sync.ts; ADR-002 §5.1]`
+- **[FACT] BR-DB6-5 — tested to §XIX.** 10 repository cases; `@vida/core` 55/55. `[FACT: repository.test.ts]`
+- **Soft delete enqueues `operation='update'`** (deleted_at set, row still syncs); hard delete `'delete'`.
+  The reader/flush that consumes these is AR-9 (stubbed → M4). `[FACT: repository.ts del/hardDelete]`

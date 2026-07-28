@@ -12,10 +12,11 @@
 // the encrypted field names, and a device ID.
 // ============================================================================
 
-import { eq, and, isNull, type SQL } from 'drizzle-orm'
+import { eq, and, isNull, getTableName, type SQL } from 'drizzle-orm'
 import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
-import type { EncryptedField, TableEncryptionSchema } from '@vida/types'
+import type { EncryptedField, TableEncryptionSchema, SyncOperation } from '@vida/types'
 import type { DrizzleDb } from './adapter'
+import { syncQueue } from './schema'
 import { encryptField, decryptField, hashContent } from '../encryption/vault'
 import { getVaultKey } from '../encryption/key-management'
 
@@ -50,6 +51,9 @@ export type CreateInput<T extends AnyTable> = Omit<InsertOf<T>, ManagedFields>
 
 /** Partial update — everything except managed fields + id */
 export type UpdateInput<T extends AnyTable> = Partial<Omit<InsertOf<T>, ManagedFields>>
+
+/** The transaction handle drizzle passes to `db.transaction(cb)` (async sqlite-proxy). */
+type Tx = Parameters<Parameters<DrizzleDb['transaction']>[0]>[0]
 
 // ---------------------------------------------------------------------------
 // UUIDv7 / UUIDv4 generators
@@ -113,8 +117,11 @@ export function unpackEncrypted(stored: string): EncryptedField {
 export function encryptRow(
   row: Record<string, unknown>,
   encryptedFields: ReadonlySet<string>,
-  vaultKey: Uint8Array,
+  vaultKey: Uint8Array | null,
 ): Record<string, unknown> {
+  // Pass-through when there is nothing to encrypt (M1.0: empty [E] set — ADR-017:20)
+  // or no vault key is available. The seam stays present but dormant until M3.
+  if (encryptedFields.size === 0 || vaultKey === null) return { ...row }
   const result = { ...row }
   for (const field of encryptedFields) {
     const value = result[field]
@@ -132,8 +139,10 @@ export function encryptRow(
 export function decryptRow(
   row: Record<string, unknown>,
   encryptedFields: ReadonlySet<string>,
-  vaultKey: Uint8Array,
+  vaultKey: Uint8Array | null,
 ): Record<string, unknown> {
+  // Pass-through when there is nothing to decrypt (M1.0: empty [E] set) or no key.
+  if (encryptedFields.size === 0 || vaultKey === null) return { ...row }
   const result = { ...row }
   for (const field of encryptedFields) {
     const value = result[field]
@@ -222,17 +231,56 @@ export function createRepository<T extends AnyTable>(
 ): Repository<T> {
   const { deviceId, softDelete = false } = config
   const encryptedFieldSet = new Set(config.encryptedFields)
+  const tableName = getTableName(table)
 
   // Drizzle table columns typed as `any` for dynamic access
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cols = (table as any)
 
-  function key(): Uint8Array {
-    return getVaultKey()
+  // Lazy vault key: fetched ONLY when there are encrypted fields. In M1.0 the [E] set
+  // is empty (ADR-017:20 pass-through seam) and getVaultKey() THROWS while the vault is
+  // locked (key-management.ts) — so an eager fetch would break every M1.0 read/write.
+  function key(): Uint8Array | null {
+    return encryptedFieldSet.size > 0 ? getVaultKey() : null
   }
 
   function ts(): number {
     return Date.now()
+  }
+
+  /**
+   * Enqueue a sync_queue row co-transactionally with an entity mutation (ADR-004 §3.4).
+   * UPSERT on UNIQUE(table_name, row_id, operation): repeated pre-flush mutations of the
+   * same row+op coalesce to the LATEST snapshot (correct for LWW sync, ADR-003).
+   * `sync_queue.status` (pending|in_flight|failed) is the QUEUE enum — distinct from the
+   * row's `_sync_status` (pending|synced|conflict).
+   */
+  async function enqueue(
+    tx: Tx,
+    operation: SyncOperation,
+    rowId: string,
+    snapshot: Record<string, unknown>,
+  ): Promise<void> {
+    const payload = JSON.stringify(snapshot)
+    const now = ts()
+    await tx
+      .insert(syncQueue)
+      .values({
+        id: uuidv7(),
+        table_name: tableName,
+        row_id: rowId,
+        operation,
+        payload,
+        status: 'pending',
+        retry_count: 0,
+        error_message: null,
+        created_at: now,
+      })
+      .onConflictDoUpdate({
+        target: [syncQueue.table_name, syncQueue.row_id, syncQueue.operation],
+        set: { payload, created_at: now, status: 'pending', retry_count: 0, error_message: null },
+      })
+      .run()
   }
 
   function syncMeta(): Record<string, unknown> {
@@ -280,8 +328,12 @@ export function createRepository<T extends AnyTable>(
     const encrypted = encryptRow(row, encryptedFieldSet, vaultKey)
     encrypted._sync_hash = computeSyncHash(encrypted)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await db.insert(table).values(encrypted as any).run()
+    // Entity write + sync_queue enqueue in ONE transaction (ADR-004 §3.4).
+    await db.transaction(async (tx) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await tx.insert(table).values(encrypted as any).run()
+      await enqueue(tx, 'create', id, encrypted)
+    })
 
     return decryptRow(encrypted, encryptedFieldSet, vaultKey) as RowOf<T>
   }
@@ -336,56 +388,63 @@ export function createRepository<T extends AnyTable>(
   async function update(id: string, data: UpdateInput<T>): Promise<RowOf<T>> {
     const vaultKey = key()
 
-    // Read current row for _sync_version
-    const existing = await db
-      .select()
-      .from(table)
-      .where(eq(cols.id, id))
-      .all() as Record<string, unknown>[]
+    // Read → update → re-read → enqueue, all in ONE transaction (ADR-004 §3.4).
+    return db.transaction(async (tx) => {
+      const existing = await tx
+        .select()
+        .from(table)
+        .where(eq(cols.id, id))
+        .all() as Record<string, unknown>[]
 
-    if (existing.length === 0) {
-      throw new Error(`Row not found: ${id}`)
-    }
+      if (existing.length === 0) {
+        throw new Error(`Row not found: ${id}`)
+      }
 
-    const currentVersion =
-      typeof existing[0]._sync_version === 'number'
-        ? existing[0]._sync_version
-        : 1
+      const currentVersion =
+        typeof existing[0]._sync_version === 'number'
+          ? existing[0]._sync_version
+          : 1
 
-    const timestamp = ts()
-    const partial: Record<string, unknown> = {
-      ...(data as Record<string, unknown>),
-      updated_at: timestamp,
-      _sync_version: currentVersion + 1,
-      _sync_device_id: deviceId,
-      _sync_lww_ts: timestamp,
-      _sync_status: 'pending',
-    }
+      const timestamp = ts()
+      const partial: Record<string, unknown> = {
+        ...(data as Record<string, unknown>),
+        updated_at: timestamp,
+        _sync_version: currentVersion + 1,
+        _sync_device_id: deviceId,
+        _sync_lww_ts: timestamp,
+        _sync_status: 'pending',
+      }
 
-    const encrypted = encryptRow(partial, encryptedFieldSet, vaultKey)
-    encrypted._sync_hash = computeSyncHash({ ...existing[0], ...encrypted })
+      const encrypted = encryptRow(partial, encryptedFieldSet, vaultKey)
+      encrypted._sync_hash = computeSyncHash({ ...existing[0], ...encrypted })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await db.update(table).set(encrypted as any).where(eq(cols.id, id)).run()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await tx.update(table).set(encrypted as any).where(eq(cols.id, id)).run()
 
-    // Re-read and return the full decrypted row
-    const updated = await db
-      .select()
-      .from(table)
-      .where(eq(cols.id, id))
-      .all() as Record<string, unknown>[]
+      // Re-read the full persisted row — this is both the return value and the
+      // sync_queue payload snapshot (PLAN §2: the final persisted/re-read row).
+      const updated = await tx
+        .select()
+        .from(table)
+        .where(eq(cols.id, id))
+        .all() as Record<string, unknown>[]
 
-    if (updated.length === 0) {
-      throw new Error(`Row vanished after update: ${id}`)
-    }
+      if (updated.length === 0) {
+        throw new Error(`Row vanished after update: ${id}`)
+      }
 
-    return decryptRow(updated[0], encryptedFieldSet, vaultKey) as RowOf<T>
+      await enqueue(tx, 'update', id, updated[0])
+
+      return decryptRow(updated[0], encryptedFieldSet, vaultKey) as RowOf<T>
+    })
   }
 
   // ---- DELETE ---------------------------------------------------------------
 
   async function del(id: string): Promise<void> {
     if (softDelete && cols.deleted_at) {
+      // A soft delete is a row UPDATE (deleted_at set; row still syncs) — update()
+      // already enqueues operation='update' co-transactionally.
       await update(id, { deleted_at: ts() } as unknown as UpdateInput<T>)
     } else {
       await hardDelete(id)
@@ -393,7 +452,20 @@ export function createRepository<T extends AnyTable>(
   }
 
   async function hardDelete(id: string): Promise<void> {
-    await db.delete(table).where(eq(cols.id, id)).run()
+    // Snapshot before removal → delete + enqueue('delete') in ONE transaction.
+    await db.transaction(async (tx) => {
+      const existing = await tx
+        .select()
+        .from(table)
+        .where(eq(cols.id, id))
+        .all() as Record<string, unknown>[]
+
+      await tx.delete(table).where(eq(cols.id, id)).run()
+
+      if (existing.length > 0) {
+        await enqueue(tx, 'delete', id, existing[0])
+      }
+    })
   }
 
   // ---- RETURN ---------------------------------------------------------------

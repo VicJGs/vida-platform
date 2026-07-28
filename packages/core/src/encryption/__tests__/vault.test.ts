@@ -281,13 +281,15 @@ describe('encryptBytes / decryptBytes', () => {
     expect(decrypted).toEqual(data)
   })
 
+  // libsodium-sumo encrypt/decrypt of 1 MB is inherently ~5s in JS; it sits right on
+  // vitest's 5000ms default and tips over under full-suite load. Give it explicit head-room.
   it('handles large data (1 MB)', () => {
     const data = new Uint8Array(1_000_000)
     for (let i = 0; i < data.length; i++) data[i] = i % 256
     const { nonce, ciphertext } = encryptBytes(data, vaultKey)
     const decrypted = decryptBytes(ciphertext, nonce, vaultKey)
     expect(decrypted).toEqual(data)
-  })
+  }, 20_000)
 
   it('wrong key → throws', () => {
     const data = new Uint8Array([1, 2, 3])

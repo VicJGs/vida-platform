@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none)_
+- db-6-repository-layer: .claude/tasks/db-6-repository-layer.md  (ACTIVE 2026-07-28 — M1.0 delivery campaign, first ready head off AR-2 [LIF-68]. Typed repository layer over the schema: CRUD + encrypt/decrypt pass-through seam [encryption→M3], soft-delete via `deleted_at`, co-transactional `sync_queue` producer write [ADR-004 §3.4]; authors the `sync_queue` foundation fragment. Profile: Add Backend Component / default scenario.)
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)

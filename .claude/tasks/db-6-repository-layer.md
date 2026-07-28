@@ -1,9 +1,12 @@
 # Task: db-6-repository-layer
-# Status: planned
+# Status: in_progress
+# Profile: Add Backend Component
+# Scenario: default
 # Cluster: M1.0 Boot & Connective Base
 # Milestone: Boot & DB spine
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer
+# Activated: 2026-07-28 (M1.0 delivery campaign — first ready head off AR-2)
 
 ## Goal
 Build the typed repository layer over the schema: CRUD with the encrypt/decrypt seam applied

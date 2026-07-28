@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| db-6-repository-layer (LIF-68) | Add Backend Component | 2026-07-28 | 2026-07-28 | ▶ ACTIVE — M1.0 delivery campaign, first ready head off AR-2. Step 0 (baseline) in progress. |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
