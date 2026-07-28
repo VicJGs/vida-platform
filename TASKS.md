@@ -6,7 +6,6 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| **ar-5-sessions-base (LIF-107 ⚠dup LIF-76)** | Add Backend Component | 2026-07-28 | 2026-07-28 | ▶ just started — M1.0 substrate SPINE; ← db-6 ✅ + db-9 ✅; Step 0 baseline next |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
@@ -35,16 +34,18 @@
 - ▶ **READY HEADS NOW** (done = ar-1/db-1/ar-2/**db-6**/**db-9**): **DB-7** (migrations authoring ← ar-2), **AR-4**
   (state/routing/forms ← ar-1), **UX-1** (IA, no blockers) — all parallel; **AR-5/6/7** substrates now ready (← db-6+db-9);
   **DS-1** unparkable for the -b wave. Profile for DB/substrate heads: Add Backend Component.
-- 🎯 **NEXT HEAD DECIDED (2026-07-28, do NOT re-derive): AR-5 — Sessions base (LIF-76)**, profile Add Backend Component,
-  cluster M1.0 Boot & Connective Base. Chosen on 3 axes: (1) delivery-plan substrate tier, prereqs done (← db-6✅+db-9✅),
-  seq rule ③ foundation-before-consumers; (2) **architectural spine** — AR-5 owns the guarded-write + idempotency + effect
-  rail + effect catalogue (ADR-004 §3.2.5, :74-128) that AR-7's capability (ADR-008:8), measurability (ADR-011 §3.5:19)
-  and economy (ADR-012:12,§3.1:40-48) all INHERIT-BY-REFERENCE → build AR-5 first or downstream builds against a missing
-  rail; (3) immediate consumer of DB-9's enums (session type/status + effect catalogue vocabulary, ADR-004 §3.2.2:60-62).
-  AR-6 (Spaces, ADR-006/007) = valid independent 2nd root if running two tracks; AR-7 MUST wait for AR-5+AR-6.
-- 🔧 **Dep-graph gap to reconcile (non-blocking):** the delivery-plan substrate group encodes only the external edge
-  (all three ← db-6+db-9) but NOT the intra-tier edges the ADRs imply: **AR-7 ← AR-5 (effect rail) + AR-6 (spaces context)**
-  (ADR-008/011/012). Same class LIF-105 cleaned for the -a spine. Write AR-7←AR-5,AR-6 into the plan/Linear when convenient.
+- ✅ **AR-5 DONE (2026-07-28, commit f045ac1, merged 4956c81, pushed; LIF-107 → Done).** Sessions base substrate
+  (Option-1 grain: spine + integration-contract STRUCTURE + 5 enums + thin registry). Effect-firing rail /
+  transition engine / scheduler DEFERRED to AR-7/later. Double-gated + 3 independent critiques; typecheck 10/10,
+  core 110/110. **CORRECTION to the prior head note:** AR-5 does NOT own the effect rail — that is AR-7
+  (`foundation/effects`, ADR-004 §3.2.5 is the spec-OWNER, AR-7 builds it, AR-7 ← AR-5). See
+  [[dont-manufacture-forks-from-non-authoritative-notes]].
+- 🎯 **NEXT HEAD (done = ar-1/db-1/ar-2/db-6/db-9/ar-5, 6 of 30): AR-6 — Spaces (LIF-77)** OR **AR-7 — Capability
+  + measurability + effect rail (LIF-78)**. AR-6 = independent 2nd substrate root (← db-6+db-9, ready now); AR-7
+  MUST wait for AR-5 ✅ + **AR-6** (needs both). So **AR-6 is the ready head**; AR-7 unlocks once AR-6 lands.
+  Profile: Add Backend Component. AR-8 ← AR-6 + DB-8.
+- 🔧 **Dep-graph gap to reconcile (non-blocking):** write the intra-tier edge **AR-7 ← AR-5 + AR-6** into the
+  delivery-plan §5 + Linear (the plan encodes only the external ← db-6+db-9). Same class LIF-105 cleaned for the -a spine.
 - ⚠ **Manual Linear (Victor):** DB-9 synced as **LIF-106** (new) — reconcile vs roadmap **LIF-71** (dedup: keep one, remap slug).
 - **Tracked follow-ups:** LIF-103 (browser E2E harness) · LIF-104 (toolkit: harden tracker visibility) · NIT-3 count()→count(*).
 - **Manual Linear (Victor):** archive the 5 empty ①–⑤ shells · db-2 (LIF-64) disposition · confirm old LIF-56–59 gap · **dedup DB-9: LIF-106 (task-synced) vs LIF-71 (roadmap) — keep one, remap the slug.**
@@ -111,6 +112,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **ar-5-sessions-base** (LIF-107 · M1.0 substrate SPINE · Sessions base per ADR-004. Option-1 grain: `sessions` spine + integration-contract STRUCTURE (`session_type_registry` + `session_attachments`) + 5 canonical enums (EFFECT_TYPE=12 incl. ADR-012 amendment) + thin SessionRegistry (register/get/list, BR-3/4/1, user types → db-6 Repository → sync_queue). Effect-firing rail/transition engine/scheduler DEFERRED to AR-7/later. Double-gated + 3 independent critiques [gate-1: EFFECT_TYPE 8→12 subset drift; gate-2: registry PK/Repository mismatch; post-impl: BR-4 effects⊆allowed⊆shipped]. typecheck 10/10, core 110/110. commit f045ac1, merged 4956c81, pushed. Currency §XXIX docs born. Unblocks AR-7. ⚠ LIF-107 dup roadmap LIF-76 — reconcile.) | 2026-07-28 | 1 (2026-07-28) |
 | **db-9-enums-zod** (LIF-106 · M1.0-a spine · canonical enums+Zod. 81 @vida/types enums → `as const` tuple + derived union [C2 tuple-as-source = exhaustive, not `satisfies` ⊆] + 81 `z.enum` validators in @vida/core [zod ^4.4.3, first in repo] + SQL-CHECK↔tuple parity test [ADR-002 §2.3, ADR-016 §3.3 assert-only]. Double-gated + 2 independent critiques [PLAN caught buried tuple-location decision + sqlEnumCheck ADR-overreach; IMPL caught stale-dist false-green risk + 2 missed enums]. Verified: root typecheck 10/10 ZERO consumer edits, core 83 + web 6 green, literal-sets byte-identical vs HEAD. commit a137a44. Unblocks substrates AR-5/6/7) | 2026-07-28 | 1 (2026-07-28) |
 | **db-6-repository-layer** (LIF-68 · M1.0-a1 spine · reconcile+extend of the v1-carried repository: sync_queue foundation table [ADR-002 §5.1 CHECKs+UNIQUE] + migration 001 registered; co-transactional UPSERT enqueue per mutation [ADR-004 §3.4]; M1.0 pass-through seam = empty [E] set + lazy vault key [ADR-017:20]. Baseline caught it was NOT from-zero. Independent /critique [7 fixed, 3 by source-verify — incl. refuting the "proxy has no .transaction()" risk] + 2nd critique [5 exec fixes incl. UPSERT correctness bug]. 10-case tests; @vida/core 55/55; commit 7f90c9b. Unblocks ar-5/6/7 + db-10) | 2026-07-28 | 1 (2026-07-28) |
 | **m1.0-dep-graph-validation** (full-M1.0 dep-graph validated per-edge vs ADR contracts + reconciled across task files/Linear/delivery-plan §5; independent ADR-critique caught db-8←db-6 as illegal M1.0←M3; 9 edges corrected, 7 Linear mutations, --verify clean; streaming loop model settled. commit 5e36376) | 2026-07-28 | 1 (2026-07-28) |

@@ -108,3 +108,20 @@ Re-projectized Linear from the old substrate-first five-layer structure (①–�
 - **Streaming loop model:** db-3/db-4 are schema-slices folded into each consumer's gate, never standalone ready heads.
 - **Method:** census → per-edge derivation → independent adversarial ADR-critique (caught db-8←db-6) → write
   identically to task files + Linear (7 mutations) + §5; --verify clean (47 live). Reversible: yes (edges).
+
+## AR-5 Sessions base — completed 2026-07-28 (commit f045ac1, merged 4956c81; LIF-107)
+- **Grain = Option 1 (structure + contract types + thin registry).** AR-5 ships the `sessions` spine +
+  integration-contract STRUCTURE (session_type_registry, session_attachments) + 5 canonical enums + a thin
+  SessionRegistry. The effect-firing rail, lifecycle-transition engine, and scheduler DEFER to AR-7/later.
+- **AR-5/AR-7 effect-rail boundary (not a fork).** plan §5:120-122 + §5.1.1 (build-order≠runtime-feed) +
+  ADR-004 §3.2.5 ("owner"=spec-owner) already fix it: AR-5 = contract surface + effect-catalogue vocabulary;
+  AR-7 (← AR-5) = the firing rail. "ridden by sessions" is a runtime feed, not a build edge.
+- **EFFECT_TYPE = 12 members** (ADR-004 §3.2.2 base 8 + ADR-012 amendment 4: grant_currency/lock_currency/
+  move_money/surface_notification). award_xp retained (ADR-012 generalizes, does not retire it).
+- **sub_type/purpose OPEN (no SQL CHECK), registry-validated** — a hard CHECK breaks SS-5 user-extensibility;
+  status/scheduling_mode/level are FIXED SQL CHECKs; EFFECT_TYPE is Zod-validated (JSON, no CHECK).
+- **session_type_registry uses id PK + sub_type UNIQUE** (not sub_type PK) so the db-6 generic Repository
+  (id-keyed) drives persistence; user types enqueue to sync_queue; shipped types are in-memory (SS-4).
+- **BR-4 containment = effects ⊆ allowed_effects ⊆ shipped envelope** (post-impl critique fix).
+- Method: full §XXVI double-gate + 3 independent critiques (each caught a real defect); typecheck 10/10,
+  core 110/110. Reversible: yes (additive migration 002).

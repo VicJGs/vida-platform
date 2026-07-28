@@ -3,7 +3,7 @@
 # Scenario: default
 # Spec: docs/specs/foundation/ar-5-sessions-base/_index.md
 # Created: 2026-07-28
-# Status: in-progress
+# Status: done
 # Cluster: M1.0 Boot & Connective Base
 
 ## Goal
