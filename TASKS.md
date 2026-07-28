@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| **ar-5-sessions-base (LIF-107 ⚠dup LIF-76)** | Add Backend Component | 2026-07-28 | 2026-07-28 | ▶ just started — M1.0 substrate SPINE; ← db-6 ✅ + db-9 ✅; Step 0 baseline next |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session

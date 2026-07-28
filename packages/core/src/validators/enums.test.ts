@@ -18,6 +18,11 @@ import {
   MASTERY_LEVEL,
   VAULT_STATE,
   ACHIEVEMENT_TIER,
+  SESSION_SUB_TYPE,
+  SESSION_PURPOSE,
+  SCHEDULING_MODE,
+  SESSION_STATUS,
+  EFFECT_TYPE,
 } from '@vida/types'
 import {
   StatusSchema,
@@ -29,6 +34,13 @@ import { EntityLinkTargetSchema } from './note'
 import { MasteryLevelSchema } from './learning'
 import { VaultStateSchema } from './encryption'
 import { AchievementTierSchema } from './user'
+import {
+  SessionSubTypeSchema,
+  SessionPurposeSchema,
+  SchedulingModeSchema,
+  SessionStatusSchema,
+  EffectTypeSchema,
+} from './session'
 
 // each pair: the z.enum validator and the canonical tuple it was built from
 const PAIRS = [
@@ -40,6 +52,12 @@ const PAIRS = [
   { name: 'MasteryLevel', schema: MasteryLevelSchema, tuple: MASTERY_LEVEL },
   { name: 'VaultState', schema: VaultStateSchema, tuple: VAULT_STATE },
   { name: 'AchievementTier', schema: AchievementTierSchema, tuple: ACHIEVEMENT_TIER },
+  // AR-5 session enums (EFFECT_TYPE = the 12-member catalogue; covered here, not by the SQL parity test — BR-5b)
+  { name: 'SessionSubType', schema: SessionSubTypeSchema, tuple: SESSION_SUB_TYPE },
+  { name: 'SessionPurpose', schema: SessionPurposeSchema, tuple: SESSION_PURPOSE },
+  { name: 'SchedulingMode', schema: SchedulingModeSchema, tuple: SCHEDULING_MODE },
+  { name: 'SessionStatus', schema: SessionStatusSchema, tuple: SESSION_STATUS },
+  { name: 'EffectType', schema: EffectTypeSchema, tuple: EFFECT_TYPE },
 ] as const
 
 describe('canonical enum validators', () => {
