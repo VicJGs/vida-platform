@@ -12,4 +12,8 @@ the device in plaintext). The front door — depends on the crypto/vault lifecyc
 
 ## Dependencies
 - blocked by `ux-1-information-architecture`
-- blocked by `ar-3-crypto-vault-keymgmt`
+
+<!-- ar-3 (crypto/vault, M3) removed 2026-07-28: an M1.0 design issue cannot be build-blocked by M3 impl.
+     The vault-unlock-coupled part is already carved to ux-5b-vault-unlock (M3). This M1.0 issue = the
+     basic first-run/onboarding flow design, blocked only by ux-1 (IA). ar-3 stays an impl-time note. -->
+Note: this M1.0 issue is the first-run onboarding DESIGN; vault-unlock impl lives in ux-5b (M3).

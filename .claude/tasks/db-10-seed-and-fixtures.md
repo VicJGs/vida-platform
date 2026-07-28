@@ -14,3 +14,6 @@ writes.
 ## Dependencies
 - blocked by `db-6-repository-layer`
 - blocked by `db-7-migrations-runner`
+- blocked by `db-9-enums-and-zod-validators`  <!-- added 2026-07-28: seed rows must satisfy enum CHECK constraints; db-9 owns the canonical enum values/Zod -->
+
+Note: db-9 added — seed fixtures write enum-valued rows through the repository and must use the canonical enums.
