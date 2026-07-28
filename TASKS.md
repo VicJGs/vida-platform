@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| m1.0-dep-graph-validation | Project Foundation | 2026-07-28 | 2026-07-28 | just started — standalone session: validate full-M1.0 graph vs ADR contracts + settle streaming-issue loop model (makes the foundation loop-ready) |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
