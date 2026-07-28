@@ -3705,3 +3705,25 @@ Next session:
   - Dep-graph gap (non-blocking, log for reconcile): delivery-plan substrate group has only the external edge (all ← db-6+db-9), NOT the intra-tier edges the ADRs imply — AR-7 ← AR-5 + AR-6. Same class as LIF-105's -a-spine cleanup. Write into plan/Linear when convenient.
   - Manual Linear (Victor): reconcile DB-9 LIF-106 (task-synced) vs roadmap LIF-71 (dedup — keep one, remap slug); prior items still open (archive ①–⑤ shells, db-2 disposition, LIF-56–59 gap).
 ---
+
+---
+Date: 2026-07-28
+Task: ar-5-sessions-base (LIF-107) — COMPLETE + merged + pushed + task-complete
+Goal: M1.0 delivery loop — next ready head AR-5: build the Sessions substrate (spine + integration-contract structure) per ADR-004.
+Completed:
+  - FULL §XXVI double-gated build + 3 independent adversarial critiques (all resolved). commit f045ac1 → merged 4956c81 → pushed → close-out chore 3c2adb7. LIF-107 → Done.
+  - Option-1 grain (Victor-approved): ships STRUCTURE only. Files: packages/types/src/session.ts (5 canonical enums, C2; EFFECT_TYPE=12 = ADR-004 §3.2.2 base 8 + ADR-012 amendment 4), packages/core/src/validators/session.ts (5 z.enum), db/schema/foundation/sessions.ts (3 Drizzle mirrors + indexes), db/migrations/002_sessions.ts (hand-SQL DDL, FIXED CHECKs, registered in runner), foundation/sessions/{types,registry,index}.ts (SessionTypeDef + 4-dim types + thin SessionRegistry: register/get/list, BR-3/4/1, user types → db-6 Repository → sync_queue; shipped types in-memory).
+  - Verify: typecheck 10/10 · @vida/core 110/110 · @vida/web 6/6 · deferral grep clean (rail/transition/scheduler absent). Currency §XXIX: docs/features/sessions-and-scheduling/current-{spec,business-rules}.md born.
+In progress:
+  - NONE. AR-5 done + archived. Milestone loop at a clean head boundary (6 of 30: ar-1/db-1/ar-2/db-6/db-9/ar-5).
+Decisions:
+  - AR-5/AR-7 effect-rail boundary is NOT a fork — plan §5:120-122 + §5.1.1 (build-order≠runtime-feed) + ADR-004 §3.2.5 ("owner"=spec-owner) already fix it. AR-5 = contract surface + effect-catalogue vocabulary; AR-7 (← AR-5) = the firing rail. I falsely escalated this early; Victor corrected. Memory saved: dont-manufacture-forks-from-non-authoritative-notes.
+  - EFFECT_TYPE=12 (add grant_currency/lock_currency/move_money/surface_notification; award_xp retained per ADR-012 — generalizes, not retires). sub_type/purpose OPEN (registry-validated, no CHECK; SS-5). session_type_registry = id PK + sub_type UNIQUE (so db-6 Repository drives it). BR-4 = effects ⊆ allowed_effects ⊆ shipped envelope.
+  - Critique catches (gates paid off): gate-1 EFFECT_TYPE 8→12 subset drift; gate-2 registry PK/Repository mismatch (create/findById would throw); post-impl BR-4 under-enforcement + a §4 overclaim on the deferred entity_type seam.
+  - Minor deviations logged: JSON columns = plain text() not json<T> (json<T> only casts, doesn't serialize — registry stringifies, sync-queue precedent); db-6 test currentVersion assertion 1→>=1 (migration 002 advances the global count; ISOLATED collateral).
+Next session:
+  - START next M1.0 ready head = AR-6 — Spaces (LIF-77). Independent 2nd substrate root, ready now (← db-6 ✅ + db-9 ✅). Home foundation/{spaces,views,effects} + entity_tags/entity_links + backlinks + saved Views (ADR-006–010, ADR-007 folded). Profile: Add Backend Component. First action: /task-new ar-6-spaces → Step 0 baseline (grep the floor — foundation/{spaces,views} are directory-home-only stubs per ADR-018) → §XXVI gate.
+  - AR-7 (LIF-78) stays BLOCKED until AR-5 ✅ + AR-6 both land. AR-8 ← AR-6 + DB-8.
+  - Reuse the proven loop: baseline (grep live floor first) → PLAN → independent /critique → Approval 1 → /preflight → 2nd independent /critique → Approval 2 → implement → post-impl independent /critique → quality-gate-engineering → Currency §XXIX → commit. The independent adversarial critiques are high-value — each of the 3 caught a real defect green tests missed.
+  - Manual Linear (Victor): dedup LIF-107 (task-synced) vs roadmap LIF-76 — keep one, remap slug. Write intra-tier edge AR-7 ← AR-5 + AR-6 into delivery-plan §5 + Linear. Prior open items still stand (archive ①–⑤ shells, LIF-106/LIF-71 db-9 dedup, db-2 disposition).
+---

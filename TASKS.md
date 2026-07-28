@@ -66,7 +66,7 @@ now underway (AR-2 above).</details>
 **Standing follow-ons (create-at-gate, not tasks yet):** net-new module/integration/venue Linear issues are created as
 each M-phase begins. **Manual:** archive the 5 empty ①–⑤ Linear Projects in the Linear UI (tracker can't delete Projects).
 
-**Git:** `main` is ~60 commits ahead of `origin/main` — unpushed (push on request).
+**Git:** `main` pushed to `origin/main` through `3c2adb7` (AR-5 merged + closed out, 2026-07-28). In sync.
 
 **FIRST ACTION next session — Part 2.0 planning (its own gate-1):**
 Part 2 is FORWARD-DECLARED, not yet detailed — it earns its own gate-1 plan before execution (per the master-plan
