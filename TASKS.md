@@ -10,16 +10,22 @@
 
 ## 🧭 Next session
 
-**AR-2 DONE (LIF-73, commit e55010f) — the M1.0 critical-path root is in. Next head: DB-6.**
-- **AR-2 recap:** async DatabaseAdapter + web-adapter (wa-sqlite/OPFS + drizzle-orm/sqlite-proxy). Direction was
-  corrected sync→async mid-build (wa-sqlite Factory API is async-only), Rev 3 re-gated. 5/7 DoD (contract); items 1&2
-  (browser open/persist) carried by **LIF-103** (Playwright+OPFS harness, blocked-by ar-2). Full details: 2026-07-27 session-log.
-- **RECOMMENDED NEXT: DB-6 (LIF-68) — Repository (encrypt/decrypt seam, pass-through).** Now unblocked (blocked-by
-  db-4 ∥ ar-2; ar-2 done — check db-4 status). It owns the repository seam AR-2 only async-propagated, and absorbs the
-  deferred repo-CRUD e2e (needs vault unlock). Profile: Add Backend Component.
-- **Other AR-2 unblocks:** db-7, ar-5, ar-6, ar-8, ar-9.
-- **Tracked follow-ups:** LIF-103 (browser E2E harness — proves AR-2 items 1&2) · NIT-3 count()→count(*) at scale.
-- **DS-1** still parked on branch `ds-1-token-pipeline` (M1.0-b wave).
+**AR-2 DONE + M1.0 -a spine dep-graph RECONCILED (commit ef481c1). Corrected ready-frontier below.**
+- **AR-2 recap:** async DatabaseAdapter + web-adapter (wa-sqlite/OPFS + drizzle-orm/sqlite-proxy). 5/7 DoD (contract);
+  browser open/persist carried by **LIF-103** (Playwright+OPFS harness). Details: 2026-07-27→28 session-log.
+- **Dep-graph reconcile (this session):** the -a spine was inconsistent (plan table vs Linear vs ADRs). Fixed +
+  ADR-critiqued + repaired Linear (db-6/ar-9 were batch-TRASHED — restored). See docs/specs/fixes/m1.0-a-spine-dep-reconcile/.
+- **CORRECTED READY-FRONTIER** (done = ar-1/db-1/ar-2):
+  - **DB-6 (LIF-68) — Repository** ← ar-2 ✅ (spurious db-4 edge REMOVED → now genuinely unblocked). Owns the
+    co-transactional sync_queue write + authors the sync_queue fragment. **Strong next head.** Profile: Add Backend Component.
+  - **DB-9 (LIF-71) — enums+Zod** ← db-1 ✅ · **DB-7 (LIF-69) — migrations runner** ← ar-2 ✅ (authors app_state). Both ready, parallel.
+  - **AR-4 (LIF-75) — state/routing/forms** ← ar-1 ✅ · **UX-1 (LIF-90) — IA** (no blockers). Parallel tracks.
+  - Substrates **AR-5/AR-6 ← DB-6, DB-9** (NOT ready until those land) → AR-7 ← AR-5,DB-6,DB-9. **DS-1** built-but-parked (-b wave, unparkable).
+- ⚠ **BEFORE looping the whole foundation:** only the -a spine graph was per-edge validated. Run a full-M1.0
+  edge-validation pass (b/c/d + db-3/4/8/10 + ar-4/8) against the contracts first, and account for db-3/db-4 being
+  STREAMING slices (co-built with substrates/modules), not standalone loop steps.
+- **Tracked follow-ups:** LIF-103 (browser E2E harness) · LIF-104 (toolkit: harden tracker visibility) · NIT-3 count()→count(*).
+- **Manual Linear (Victor):** archive the 5 empty ①–⑤ shells · db-2 (LIF-64) disposition · confirm old LIF-56–59 gap.
 
 **PARKED — DS-1 token pipeline** (branch `ds-1-token-pipeline` @ fd9f144): complete + green but out of sequence
 (M1.0-b, not the -a critical path); LIF-81 → Backlog. Resumes when the -b wave's turn comes. (This session built

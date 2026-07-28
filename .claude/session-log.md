@@ -3615,3 +3615,25 @@ Next session:
   - Tracked follow-ups: Playwright OPFS/worker smoke (proves BR6 + the wa-sqlite path); repo-CRUD e2e w/ vault
     unlock in DB-6; NIT-3 count()→count(*) at scale; main↔worker app binding in AR-4/UI-4.
 ---
+
+---
+Date: 2026-07-27 → 07-28
+Task: (post-AR-2) M1.0 -a spine dependency reconcile + Linear repair — no formal vida task (triage-driven); toolkit follow-up filed in ~/dev-toolkit
+Goal: Close AR-2 out, verify the milestone/cluster plan, and fix whatever's wrong before looping the foundation.
+Completed:
+  - AR-2 closed: LIF-73 Done, task archived, commits e55010f (impl) + 0524bda (close-out). Follow-on LIF-103 (E2E harness) created.
+  - MILESTONE AUDIT: M1.0 is ~3/30 done (ar-1, db-1, ar-2 = the boot ROOT). Not wrapped. Next MILESTONE = M1.1 (Notes & Pages hub), gated behind finishing M1.0's boot base. Corrected an earlier wrong "DB-6 next" — the graph was inconsistent.
+  - DEP-GRAPH TRIAGE (STRUCTURAL): the delivery-plan §5 table, task-file/Linear edges, and layer/ADR contracts had diverged; §5.1 "Linear always wins" laundered bad/missing edges. Root cause = no single source of truth (two derivations, reconciled by fiat).
+  - Independent ADR-critique (REVISE) corrected my first recommendations: rejected invented `schema/system.ts`, the stale `001_initial` bootstrap (deleted by ADR-018 §3.5b), and the DB-6←DB-7 edge; upheld D-B (DB-6 owns the co-transactional sync_queue write, ADR-004 §3.4).
+  - RECONCILED (committed ef481c1): task files (db-6/db-7 drop db-4 → siblings off ar-2; ar-5/6 ← db-6,db-9; ar-7 ← ar-5,db-6,db-9; ar-9 ← db-6, rescoped to flush-stub-only; db-6 authors sync_queue fragment + write; db-7 authors app_state fragment) + delivery-plan §4/§5.1/line-118 + diagnosis doc (docs/specs/fixes/m1.0-a-spine-dep-reconcile/).
+  - LINEAR REPAIR: root-caused that db-6 (LIF-68) + ar-9 (LIF-80) were batch-TRASHED (invisible because the tracker swallows LinearError + --status reads the stale map). Cause: incomplete linear-projectize left db-1/db-2 stranded in the old ① Database Layer shell → ambiguous cleanup. Both restored (batch-restore). Re-synced all db-6/ar-9 edges. Deleted 7 stale relations via issueRelationDelete (incl. ar-9←db-2, db-6←db-5-M3). Re-homed LIF-61/LIF-64 out of ① Database Layer (now EMPTY); db-2 → Backlog.
+  - Filed toolkit prevention task LIF-104 (harden-tracker-sync-surface-linear-errors) in ~/dev-toolkit.
+Decisions:
+  - DB-6 owns the co-transactional sync_queue enqueue-write + authors the sync_queue foundation fragment; AR-9 = reader/flush engine stub only (ADR-004 §3.4).
+  - DB-7 authors the app_state fragment (ADR-002 §9.1); per-feature migrations, no 001_initial bootstrap (ADR-018 §3.5b).
+  - Retired "Linear always wins" → per-edge derivation from the layer/ADR contract, written identically to task file + Linear + plan table.
+Next session:
+  - CORRECTED ready-frontier (done = ar-1/db-1/ar-2): DB-6 (repository — now unblocked, spurious db-4 edge gone), DB-9 (enums), DB-7 (migrations runner) — the DB-spine heads; plus AR-4 (app-state) and UX-1 (IA) as parallel tracks; DS-1 built-but-parked can be unparked for the -b wave. Substrates AR-5/AR-6 come AFTER DB-6+DB-9.
+  - OPEN before looping the whole foundation: only the -a spine graph was per-edge validated. The b/c/d tracks + db-3/db-4/db-8/db-10 + ar-4/ar-8 have NOT been re-validated against contracts — do a full-M1.0 edge-validation pass first (same method) so the loop's ready-frontier is trustworthy end-to-end. And account for db-3/db-4 being STREAMING slices, not standalone loop steps.
+  - Manual Linear (Victor): archive the 5 empty ①–⑤ shells; db-2 final disposition (parked/cancel/M4); confirm old LIF-56–59 gap.
+---
