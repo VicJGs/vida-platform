@@ -94,3 +94,17 @@ Re-projectized Linear from the old substrate-first five-layer structure (①–�
 - **Repository encrypt/decrypt seam stays DB-6** — AR-2 only async-propagated the consumer to keep the build green.
 - **Items 1&2 (browser open/persist) verification deferred to LIF-103** (Playwright + OPFS/worker harness), a net-new
   shared-infra dependency surfaced by the completeness audit; AR-2 closed on contract (5/7 DoD).
+
+## m1.0-dep-graph-validation (LIF-105) — completed 2026-07-28
+- **Graph edges are build-order blockers, not runtime feeds.** A ready-frontier needs "B must exist before A is
+  built"; the delivery-plan §5 had conflated feeds/implements (esp. the UX design track). New rule in §5.1.1.
+- **db-8 ← db-4, db-7 (not db-6).** FTS5 tables are DDL via the runner; the db-6 populate path is gated on a
+  vault-unlock that is M3 → an illegal M1.0←M3 edge (same class as the retired DB-6←DB-5 and the ux-5←ar-3 below).
+- **ux-5 ← ux-1 (ar-3 removed).** An M1.0 design issue cannot be build-blocked by M3 crypto; vault-unlock impl is
+  carved to ux-5b/M3.
+- **UX track (ux-2..6) blockers are design-time (ux-1/ux-3), not the downstream shell/services they feed.**
+- **db-10 ← +db-9** (seed needs canonical enums); **ds-4 ← +ds-3** (Tamagui animations config); **ar-8 ← ar-6**
+  (owns entity_links; ar-2 transitive).
+- **Streaming loop model:** db-3/db-4 are schema-slices folded into each consumer's gate, never standalone ready heads.
+- **Method:** census → per-edge derivation → independent adversarial ADR-critique (caught db-8←db-6) → write
+  identically to task files + Linear (7 mutations) + §5; --verify clean (47 live). Reversible: yes (edges).
