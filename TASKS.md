@@ -34,6 +34,16 @@
 - ▶ **READY HEADS NOW** (done = ar-1/db-1/ar-2/**db-6**/**db-9**): **DB-7** (migrations authoring ← ar-2), **AR-4**
   (state/routing/forms ← ar-1), **UX-1** (IA, no blockers) — all parallel; **AR-5/6/7** substrates now ready (← db-6+db-9);
   **DS-1** unparkable for the -b wave. Profile for DB/substrate heads: Add Backend Component.
+- 🎯 **NEXT HEAD DECIDED (2026-07-28, do NOT re-derive): AR-5 — Sessions base (LIF-76)**, profile Add Backend Component,
+  cluster M1.0 Boot & Connective Base. Chosen on 3 axes: (1) delivery-plan substrate tier, prereqs done (← db-6✅+db-9✅),
+  seq rule ③ foundation-before-consumers; (2) **architectural spine** — AR-5 owns the guarded-write + idempotency + effect
+  rail + effect catalogue (ADR-004 §3.2.5, :74-128) that AR-7's capability (ADR-008:8), measurability (ADR-011 §3.5:19)
+  and economy (ADR-012:12,§3.1:40-48) all INHERIT-BY-REFERENCE → build AR-5 first or downstream builds against a missing
+  rail; (3) immediate consumer of DB-9's enums (session type/status + effect catalogue vocabulary, ADR-004 §3.2.2:60-62).
+  AR-6 (Spaces, ADR-006/007) = valid independent 2nd root if running two tracks; AR-7 MUST wait for AR-5+AR-6.
+- 🔧 **Dep-graph gap to reconcile (non-blocking):** the delivery-plan substrate group encodes only the external edge
+  (all three ← db-6+db-9) but NOT the intra-tier edges the ADRs imply: **AR-7 ← AR-5 (effect rail) + AR-6 (spaces context)**
+  (ADR-008/011/012). Same class LIF-105 cleaned for the -a spine. Write AR-7←AR-5,AR-6 into the plan/Linear when convenient.
 - ⚠ **Manual Linear (Victor):** DB-9 synced as **LIF-106** (new) — reconcile vs roadmap **LIF-71** (dedup: keep one, remap slug).
 - **Tracked follow-ups:** LIF-103 (browser E2E harness) · LIF-104 (toolkit: harden tracker visibility) · NIT-3 count()→count(*).
 - **Manual Linear (Victor):** archive the 5 empty ①–⑤ shells · db-2 (LIF-64) disposition · confirm old LIF-56–59 gap · **dedup DB-9: LIF-106 (task-synced) vs LIF-71 (roadmap) — keep one, remap the slug.**
