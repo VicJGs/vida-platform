@@ -1,5 +1,5 @@
 # Task: db-9-enums-zod
-# Status: in-progress
+# Status: completed (2026-07-28 · commit a137a44 · LIF-106)
 # Profile: Add Backend Component
 # Scenario: default
 # Spec: docs/specs/foundation/db-9-enums-zod/_index.md
@@ -119,5 +119,6 @@ canonical *validator* layer is genuinely NEW in `@vida/core` (add `zod` dep + a 
 | Date | What was done | Next step |
 |------|--------------|-----------|
 | 2026-07-28 | initialized task + scaffolded spec stub | Step 0 baseline → PLAN (/documentation-component) → critique → preflight |
+| 2026-07-28 | FULL double-gated build DONE. 81 enum tuples (C2) + 81 z.enum validators + parity test; both gates + 2 independent critiques; 89 tests green, root typecheck 10/10 zero consumer edits; commit a137a44; LIF-106 → Done. | Next M1.0 head: DB-7 / AR-4 / UX-1 (substrates AR-5/6/7 now fully unblocked ← db-6+db-9). |
 
 ## Notes

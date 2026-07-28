@@ -16,6 +16,6 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 | [components/ar-2-database-adapter-web](components/ar-2-database-adapter-web/) | component (full double-gate) | done — Rev 3 async; 5/7 DoD (contract); committed e55010f; LIF-73 Done; items 1&2 → LIF-103 | 2026-07-27-ar-2-database-adapter-web |
 | [fixes/m1.0-a-spine-dep-reconcile](fixes/m1.0-a-spine-dep-reconcile/) | fix (structural, dep-graph) | done — -a spine reconciled + ADR-critiqued + Linear repaired; committed ef481c1 | 2026-07-27-ar-2-database-adapter-web |
 | [fixes/m1.0-dep-graph-validation](fixes/m1.0-dep-graph-validation/) | workflow (plan-integrity) | draft — stub + home; standalone session next | 2026-07-28-m1.0-dep-graph-validation |
-| [foundation/db-9-enums-zod](foundation/db-9-enums-zod/) | refactor (foundation) | spec-draft — stub + home; PLAN step next | 2026-07-28-db-9-enums-zod |
+| [foundation/db-9-enums-zod](foundation/db-9-enums-zod/) | refactor (foundation) | done — committed a137a44, LIF-106 Done; 81 tuples+validators+parity test, double-gated | 2026-07-28-db-9-enums-zod |
 <!-- note: ds-1-token-pipeline spec lives on branch `ds-1-token-pipeline` (parked, out of sequence) — not registered on main. -->
 

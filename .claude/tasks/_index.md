@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-- db-9-enums-zod: .claude/tasks/db-9-enums-zod.md  (in-progress 2026-07-28 — LIF-71 · M1.0-a spine ready head off DB-1. Canonical enum sets as single source of truth: SQL TEXT+CHECK ↔ canonical Zod validators in @vida/core, enum literal types in @vida/types [ADR-002 CHECK+Zod parity]. Unblocks substrate wave AR-5/6/7 [← DB-6 ✅ + DB-9]. Profile: Add Backend Component. Cluster: M1.0 Boot & Connective Base.)
+_(none)_
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)
@@ -12,6 +12,7 @@
 - db-2-sync-metadata-columns: .claude/tasks/archive/db-2-sync-metadata-columns.md  (PARKED 2026-07-23 — superseded by ADR-017 features-first resequencing; HLC/sync-metadata work defers with the sync engine to the hardening pass; baseline done, no code written; Linear LIF-64 → Backlog)
 
 ## Completed
+- db-9-enums-zod: .claude/tasks/db-9-enums-zod.md  (completed 2026-07-28 — LIF-106 · M1.0-a spine. 81 @vida/types enums → `as const` tuple + derived union [C2] + 81 z.enum validators in @vida/core [zod ^4.4.3] + SQL-CHECK↔tuple parity test [ADR-002 §2.3 / ADR-016 §3.3 assert-only]. Double-gated + 2 independent critiques; root typecheck 10/10 zero consumer edits, 89 tests green, literal-sets byte-identical vs HEAD. commit a137a44. Unblocks substrates AR-5/6/7 [← db-6+db-9]. ⚠ Linear LIF-106 dup of roadmap LIF-71 — reconcile.)
 - db-6-repository-layer: .claude/tasks/db-6-repository-layer.md  (completed 2026-07-28 — LIF-68 · M1.0-a1 spine. sync_queue foundation table [ADR-002 §5.1] + migration 001 registered; co-transactional UPSERT enqueue [ADR-004 §3.4]; M1.0 pass-through = empty [E] set + lazy vault key [ADR-017:20]. Reconcile+extend, not from-zero [baseline caught it]. Double-gated + independent critique; 10-case tests, @vida/core 55/55; commit 7f90c9b. Unblocks ar-5/6/7 + db-10.)
 - m1.0-dep-graph-validation: .claude/tasks/archive/m1.0-dep-graph-validation.md  (completed 2026-07-28 — LIF-105 Done. Full-M1.0 dep-graph validated per-edge vs ADR contracts + reconciled across task files/Linear/delivery-plan §5. Independent ADR-critique caught db-8←db-6 as an illegal M1.0←M3 edge (→ db-8←db-7); 9 edges corrected, 7 Linear mutations, --verify clean (47 live); streaming loop model settled (db-3/db-4 folded into consumer gates). Established the build-order-vs-runtime-feed rule (§5.1.1). commit 5e36376.)
 - ar-2-database-adapter-web: .claude/tasks/archive/ar-2-database-adapter-web.md  (completed 2026-07-27 — M1.0-a critical-path ROOT. async DatabaseAdapter + web-adapter [wa-sqlite/OPFS + drizzle-orm/sqlite-proxy]; direction corrected sync→async mid-build [wa-sqlite Factory API async-only], Rev 3 re-gated. 5/7 DoD [contract]; browser open/persist → LIF-103. commits e55010f + 0524bda; LIF-73 Done. Follow-on dep-reconcile [ef481c1] + Linear repair.)

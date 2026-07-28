@@ -3681,3 +3681,25 @@ Next session:
   - Done = ar-1/db-1/ar-2/db-6 (4 of 30). Loop is proven safe end-to-end; run the same §XXVI gate per head.
   - Reusable lesson locked this session: on a gated build, VERIFY load-bearing critique findings against source BEFORE revising — the critic's own claims can be wrong (the sqlite-proxy .transaction() refutation), and baseline-before-plan catches stale-code floors (repository.ts was not a stub).
 ---
+
+---
+Date: 2026-07-28
+Task: db-9-enums-zod (LIF-106) — COMPLETED + committed
+Goal: M1.0 delivery loop — next ready head DB-9: author the canonical enum sets as a single source of truth (SQL CHECK ↔ canonical Zod validators in @vida/core), realizing ADR-002 §2.3's missing validator leg.
+Completed:
+  - FULL double-gated build (§XXVI) end-to-end. commit a137a44. 48 files, +1430/−379. @vida/core 83 + @vida/web 6 green; root typecheck 10/10.
+  - Step 0 baseline (Explore survey) caught DB-9 straddles 3 contexts: @vida/types enums EXIST (81 string-literal unions), @vida/core validators are FROM-ZERO (zod not even a dep; `_shared.ts:20-21` forward-ref "Zod validates — DB-9"), DB CHECK EXISTS. ADR-002 §2.3 = the real authority ("Zod schemas in packages/core are the canonical validators").
+  - Code: 81 @vida/types enums → `as const` tuple + derived union `type X=(typeof X_CONST)[number]` (C2) across 14 files; 81 `z.enum` validators in new packages/core/src/validators/ (15 files, barrelled, re-exported); zod@^4.4.3 (first in repo); sync-queue.ts imports canonical tuples; SQL-CHECK↔tuple parity test + validator accept/reject tests.
+  - Gate trail: PLAN → independent /critique (REVISE → 3 must-fix: buried tuple-location decision C surfaced, sqlEnumCheck ADR-016 overreach reframed to (ii) assert-only, auto-grow overclaim downgraded to explicit fixture) → Approval 1 (A+C2+ii) → IMPLEMENTATION-PLAN → /preflight PASSED → 2nd independent /critique (REVISE → MF-1 stale-dist false-green risk in B7, MF-2 two missed enums + 3 nits, 8 claims survived) → Approval 2 → implement → SHIP. Spec: docs/specs/foundation/db-9-enums-zod/.
+  - Closed: LIF-106 → Done (tracker --sync clean); TASKS.md + _index.md + spec _index + panel → Completed.
+Decisions:
+  - C2 tuple-as-source (tuple in @vida/types, union derived): guarantees tuple ≡ union (exhaustive), vs the `satisfies` precedent which only guarantees tuple ⊆ union — a member could silently drop. @vida/types gains tiny runtime arrays (no zod); CLAUDE.md identity line updated to disclose it.
+  - (ii) assert-only CHECK enforcement (hand-author from const + parity test), ADR-016 §3.3 consistent — rejected the `sqlEnumCheck` generator as an unowned ADR-016 §3.2 deviation.
+  - zod 4.4.3: `z.enum(tuple as const)` accepts readonly directly — no cast, no spread (spread widens to string[]).
+Reusable lessons locked:
+  - On a mass mechanical transform (codemod), tsc+tests are NOT enough — a changed literal ('checking'→'checkin') stays green because the derived type just reflects the tuple. The decisive check is a LITERAL-SET diff vs HEAD (byte-identical) — it caught nothing here because the agent was faithful, but it's the only net that would.
+  - MF-1 class: in a dist-resolved monorepo, `pnpm --filter <pkg> typecheck` resolves deps via STALE dist (no `^build`) → false-green. Always rebuild upstream dist first, and treat root `pnpm typecheck`/`test` (turbo `^build`) as authoritative.
+Next session:
+  - Done = ar-1/db-1/ar-2/db-6/db-9 (5 of 30). Substrates AR-5/6/7 now FULLY unblocked (← db-6+db-9). Ready heads: DB-7 (migrations authoring), AR-4 (state/routing/forms), UX-1 (IA), + AR-5/6/7 substrates — all parallel. Same §XXVI gate per head. Profile: Add Backend Component.
+  - Manual Linear (Victor): reconcile DB-9 LIF-106 (task-synced) vs roadmap LIF-71 (dedup — keep one, remap slug); prior items still open (archive ①–⑤ shells, db-2 disposition, LIF-56–59 gap).
+---

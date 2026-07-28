@@ -6,7 +6,6 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| db-9-enums-zod (LIF-106 ⚠dup of LIF-71) | Add Backend Component | 2026-07-28 | 2026-07-28 | ▶ just started — M1.0 ready head off DB-1; Step 0 baseline |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
@@ -29,9 +28,13 @@
   Streaming loop settled: db-3/db-4 fold into consumer gates. Rule: graph edges = build-order blockers, not feeds (§5.1.1).
 - ✅ **DB-6 DONE (2026-07-28, commit 7f90c9b, LIF-68)** — repository + sync_queue producer landed; unblocks the
   substrate tier (ar-5/6/7) + db-10 seed. See Completed table.
-- ▶ **READY HEADS NOW** (done = ar-1/db-1/ar-2/**db-6**): **DB-9** (enums+Zod ← db-1, strong next), **DB-7**
-  (migrations authoring ← ar-2) parallel; **AR-4** (state/routing/forms) + **UX-1** (IA) parallel tracks;
-  **DS-1** unparkable for the -b wave. Substrates **AR-5/6/7 ← db-6 ✅ + db-9** (need DB-9 next). Profile for DB heads: Add Backend Component.
+- ✅ **DB-9 DONE (2026-07-28, commit a137a44, LIF-106)** — 81 canonical enum tuples (C2 tuple-as-source) + 81 z.enum
+  validators + SQL-CHECK↔tuple parity test; zod added (first in repo). Double-gated + 2 independent critiques; root
+  typecheck 10/10 zero consumer edits, 89 tests green. **Substrates AR-5/6/7 now FULLY unblocked** (← db-6 ✅ + db-9 ✅).
+- ▶ **READY HEADS NOW** (done = ar-1/db-1/ar-2/**db-6**/**db-9**): **DB-7** (migrations authoring ← ar-2), **AR-4**
+  (state/routing/forms ← ar-1), **UX-1** (IA, no blockers) — all parallel; **AR-5/6/7** substrates now ready (← db-6+db-9);
+  **DS-1** unparkable for the -b wave. Profile for DB/substrate heads: Add Backend Component.
+- ⚠ **Manual Linear (Victor):** DB-9 synced as **LIF-106** (new) — reconcile vs roadmap **LIF-71** (dedup: keep one, remap slug).
 - **Tracked follow-ups:** LIF-103 (browser E2E harness) · LIF-104 (toolkit: harden tracker visibility) · NIT-3 count()→count(*).
 - **Manual Linear (Victor):** archive the 5 empty ①–⑤ shells · db-2 (LIF-64) disposition · confirm old LIF-56–59 gap · **dedup DB-9: LIF-106 (task-synced) vs LIF-71 (roadmap) — keep one, remap the slug.**
 
@@ -97,6 +100,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **db-9-enums-zod** (LIF-106 · M1.0-a spine · canonical enums+Zod. 81 @vida/types enums → `as const` tuple + derived union [C2 tuple-as-source = exhaustive, not `satisfies` ⊆] + 81 `z.enum` validators in @vida/core [zod ^4.4.3, first in repo] + SQL-CHECK↔tuple parity test [ADR-002 §2.3, ADR-016 §3.3 assert-only]. Double-gated + 2 independent critiques [PLAN caught buried tuple-location decision + sqlEnumCheck ADR-overreach; IMPL caught stale-dist false-green risk + 2 missed enums]. Verified: root typecheck 10/10 ZERO consumer edits, core 83 + web 6 green, literal-sets byte-identical vs HEAD. commit a137a44. Unblocks substrates AR-5/6/7) | 2026-07-28 | 1 (2026-07-28) |
 | **db-6-repository-layer** (LIF-68 · M1.0-a1 spine · reconcile+extend of the v1-carried repository: sync_queue foundation table [ADR-002 §5.1 CHECKs+UNIQUE] + migration 001 registered; co-transactional UPSERT enqueue per mutation [ADR-004 §3.4]; M1.0 pass-through seam = empty [E] set + lazy vault key [ADR-017:20]. Baseline caught it was NOT from-zero. Independent /critique [7 fixed, 3 by source-verify — incl. refuting the "proxy has no .transaction()" risk] + 2nd critique [5 exec fixes incl. UPSERT correctness bug]. 10-case tests; @vida/core 55/55; commit 7f90c9b. Unblocks ar-5/6/7 + db-10) | 2026-07-28 | 1 (2026-07-28) |
 | **m1.0-dep-graph-validation** (full-M1.0 dep-graph validated per-edge vs ADR contracts + reconciled across task files/Linear/delivery-plan §5; independent ADR-critique caught db-8←db-6 as illegal M1.0←M3; 9 edges corrected, 7 Linear mutations, --verify clean; streaming loop model settled. commit 5e36376) | 2026-07-28 | 1 (2026-07-28) |
 | **ar-2-database-adapter-web** (LIF-73 · M1.0 critical-path ROOT · async DatabaseAdapter + web-adapter over wa-sqlite/OPFS + drizzle-orm/sqlite-proxy. DIRECTION corrected sync→async mid-build [wa-sqlite Factory API async-only] — Rev 3 re-gated. 5/7 DoD [contract]; items 1&2 [browser open/persist] → LIF-103. commit e55010f. Unblocks db-6/7, ar-5/6/8/9) | 2026-07-27 | 1 (2026-07-27) |
