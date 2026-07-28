@@ -12,8 +12,9 @@
 
 import { describe, it, expect } from 'vitest'
 import Database from 'better-sqlite3'
-import { SYNC_OPERATION, SYNC_QUEUE_STATUS } from '@vida/types'
+import { SYNC_OPERATION, SYNC_QUEUE_STATUS, SCHEDULING_MODE, SESSION_STATUS } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
+import { migration002Sessions } from '../db/migrations/002_sessions'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -72,12 +73,17 @@ const sameSet = (a: readonly string[], b: readonly string[]): boolean =>
 const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly string[] }> = [
   { table: 'sync_queue', column: 'operation', tuple: SYNC_OPERATION },
   { table: 'sync_queue', column: 'status', tuple: SYNC_QUEUE_STATUS },
+  // AR-5 sessions (only the FIXED scalar-CHECK columns; sub_type/purpose are OPEN, no CHECK;
+  // EFFECT_TYPE is JSON, covered by the Zod test, not here — spec §4/BR-5b).
+  { table: 'sessions', column: 'scheduling_mode', tuple: SCHEDULING_MODE },
+  { table: 'sessions', column: 'status', tuple: SESSION_STATUS },
 ]
 
 async function ddlFor(table: string): Promise<string> {
   const db = new Database(':memory:')
   const driver = createBetterSqlite3Driver(db)
-  await migration001SyncQueue.up(driver) // the REAL migration, not a hand-copied DDL
+  await migration001SyncQueue.up(driver) // the REAL migrations, not hand-copied DDL
+  await migration002Sessions.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

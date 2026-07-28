@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none)_
+- ar-5-sessions-base: .claude/tasks/ar-5-sessions-base.md  (in-progress 2026-07-28 — LIF-76 · M1.0 substrate SPINE · cluster "M1.0 Boot & Connective Base". Sessions base: `sessions` table-per-type + integration contract (guarded-write + idempotency + effect rail + effect catalogue, ADR-004 §3.2.5) that AR-7 capability/measurability/economy inherit-by-reference. Home `packages/core/src/foundation/sessions`. ← db-6 ✅ + db-9 ✅. Profile: Add Backend Component.)
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)

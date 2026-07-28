@@ -6,3 +6,5 @@ export * from './_shared'
 export * from './_registry'
 // Foundation tables (device-local infra, not domain data): DB-6 sync_queue.
 export * from './foundation/sync-queue'
+// Foundation substrate: AR-5 Sessions base (spine + integration-contract structure).
+export * from './foundation/sessions'

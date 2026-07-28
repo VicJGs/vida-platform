@@ -104,9 +104,12 @@ afterEach(() => {
 })
 
 describe('DB-6 — migration wiring', () => {
-  it('registers + applies migration 001 (sync_queue exists at schema version 1)', async () => {
+  it('registers + applies migration 001 (sync_queue exists after migrations applied)', async () => {
     const { driver } = await setup()
-    expect(await currentVersion(driver)).toBe(1)
+    // >= 1: migration 001 is applied. Exact version is not asserted here — AR-5 registered
+    // migration 002 (sessions), so the global count is no longer 1; this test's charter is
+    // that DB-6's own migration ran and created sync_queue, not the global migration count.
+    expect(await currentVersion(driver)).toBeGreaterThanOrEqual(1)
     const tables = await driver.values(
       `SELECT name FROM sqlite_master WHERE type='table' AND name='sync_queue'`,
     )

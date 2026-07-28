@@ -109,3 +109,6 @@ export type {
   RepositoryConfig,
   Repository,
 } from './db/repository'
+
+// Foundation substrate — Sessions base (AR-5 · ADR-004)
+export * from './foundation/sessions'
