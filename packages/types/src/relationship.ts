@@ -10,30 +10,36 @@ import type { SyncableEntity, SyncMetadata } from './sync'
 // Enums
 // ---------------------------------------------------------------------------
 
-export type RelationshipType =
-  | 'family'
-  | 'friend'
-  | 'colleague'
-  | 'mentor'
-  | 'mentee'
-  | 'romantic'
-  | 'professional'
-  | 'acquaintance'
-  | 'other'
+export const RELATIONSHIP_TYPE = [
+  'family',
+  'friend',
+  'colleague',
+  'mentor',
+  'mentee',
+  'romantic',
+  'professional',
+  'acquaintance',
+  'other',
+] as const
+export type RelationshipType = (typeof RELATIONSHIP_TYPE)[number]
 
-export type InteractionType =
-  | 'call'
-  | 'text'
-  | 'email'
-  | 'in_person'
-  | 'video_call'
-  | 'social_media'
-  | 'letter'
-  | 'other'
+export const INTERACTION_TYPE = [
+  'call',
+  'text',
+  'email',
+  'in_person',
+  'video_call',
+  'social_media',
+  'letter',
+  'other',
+] as const
+export type InteractionType = (typeof INTERACTION_TYPE)[number]
 
-export type Sentiment = 'positive' | 'neutral' | 'negative'
+export const SENTIMENT = ['positive', 'neutral', 'negative'] as const
+export type Sentiment = (typeof SENTIMENT)[number]
 
-export type ContactEventType = 'birthday' | 'anniversary' | 'holiday' | 'custom'
+export const CONTACT_EVENT_TYPE = ['birthday', 'anniversary', 'holiday', 'custom'] as const
+export type ContactEventType = (typeof CONTACT_EVENT_TYPE)[number]
 
 // ---------------------------------------------------------------------------
 // Supporting types

@@ -29,32 +29,39 @@ export type BasisPoints = number
 // Shared enums (used across 2+ domains)
 // ---------------------------------------------------------------------------
 
-export type Status =
-  | 'not_started'
-  | 'in_progress'
-  | 'completed'
-  | 'on_hold'
-  | 'cancelled'
+export const STATUS = [
+  'not_started',
+  'in_progress',
+  'completed',
+  'on_hold',
+  'cancelled',
+] as const
+export type Status = (typeof STATUS)[number]
 
-export type Priority = 'critical' | 'high' | 'medium' | 'low' | 'none'
+export const PRIORITY = ['critical', 'high', 'medium', 'low', 'none'] as const
+export type Priority = (typeof PRIORITY)[number]
 
-export type Frequency =
-  | 'daily'
-  | 'weekly'
-  | 'biweekly'
-  | 'monthly'
-  | 'quarterly'
-  | 'yearly'
+export const FREQUENCY = [
+  'daily',
+  'weekly',
+  'biweekly',
+  'monthly',
+  'quarterly',
+  'yearly',
+] as const
+export type Frequency = (typeof FREQUENCY)[number]
 
-export type LifeDomain =
-  | 'health'
-  | 'career'
-  | 'finance'
-  | 'relationships'
-  | 'personal_growth'
-  | 'spiritual'
-  | 'recreation'
-  | 'environment'
+export const LIFE_DOMAIN = [
+  'health',
+  'career',
+  'finance',
+  'relationships',
+  'personal_growth',
+  'spiritual',
+  'recreation',
+  'environment',
+] as const
+export type LifeDomain = (typeof LIFE_DOMAIN)[number]
 
 // ---------------------------------------------------------------------------
 // Base interfaces
@@ -70,13 +77,15 @@ export interface BaseEntity {
 // Notifications
 // ---------------------------------------------------------------------------
 
-export type NotificationType =
-  | 'info'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'reminder'
-  | 'achievement'
+export const NOTIFICATION_TYPE = [
+  'info',
+  'success',
+  'warning',
+  'error',
+  'reminder',
+  'achievement',
+] as const
+export type NotificationType = (typeof NOTIFICATION_TYPE)[number]
 
 export interface Notification {
   id: Id

@@ -10,46 +10,57 @@ import type { SyncableEntity, SyncMetadata } from './sync'
 // Study Topic enums
 // ---------------------------------------------------------------------------
 
-export type StudyTopicStatus = 'not_started' | 'in_progress' | 'reviewing' | 'mastered'
+export const STUDY_TOPIC_STATUS = ['not_started', 'in_progress', 'reviewing', 'mastered'] as const
+export type StudyTopicStatus = (typeof STUDY_TOPIC_STATUS)[number]
 
-export type TopicDifficulty = 'easy' | 'medium' | 'hard' | 'very_hard'
+export const TOPIC_DIFFICULTY = ['easy', 'medium', 'hard', 'very_hard'] as const
+export type TopicDifficulty = (typeof TOPIC_DIFFICULTY)[number]
 
 // ---------------------------------------------------------------------------
 // Flashcard enums
 // ---------------------------------------------------------------------------
 
-export type FlashcardResourceType = 'course' | 'book' | 'topic'
+export const FLASHCARD_RESOURCE_TYPE = ['course', 'book', 'topic'] as const
+export type FlashcardResourceType = (typeof FLASHCARD_RESOURCE_TYPE)[number]
 
 // ---------------------------------------------------------------------------
 // Study Planner enums
 // ---------------------------------------------------------------------------
 
-export type PresetBlock =
-  | 'early_morning'
-  | 'morning'
-  | 'late_morning'
-  | 'afternoon'
-  | 'late_afternoon'
-  | 'evening'
-  | 'night'
+export const PRESET_BLOCK = [
+  'early_morning',
+  'morning',
+  'late_morning',
+  'afternoon',
+  'late_afternoon',
+  'evening',
+  'night',
+] as const
+export type PresetBlock = (typeof PRESET_BLOCK)[number]
 
-export type StudyPlanBatchStatus =
-  | 'draft'
-  | 'pending_approval'
-  | 'approved'
-  | 'active'
-  | 'completed'
+export const STUDY_PLAN_BATCH_STATUS = [
+  'draft',
+  'pending_approval',
+  'approved',
+  'active',
+  'completed',
+] as const
+export type StudyPlanBatchStatus = (typeof STUDY_PLAN_BATCH_STATUS)[number]
 
-export type ScheduledSessionType = 'study' | 'review' | 'practice' | 'exam_prep' | 'homework'
+export const SCHEDULED_SESSION_TYPE = ['study', 'review', 'practice', 'exam_prep', 'homework'] as const
+export type ScheduledSessionType = (typeof SCHEDULED_SESSION_TYPE)[number]
 
-export type ScheduledSessionStatus =
-  | 'scheduled'
-  | 'in_progress'
-  | 'completed'
-  | 'skipped'
-  | 'rescheduled'
+export const SCHEDULED_SESSION_STATUS = [
+  'scheduled',
+  'in_progress',
+  'completed',
+  'skipped',
+  'rescheduled',
+] as const
+export type ScheduledSessionStatus = (typeof SCHEDULED_SESSION_STATUS)[number]
 
-export type ScheduledResourceType = 'topic' | 'flashcard_deck' | 'book' | 'course' | 'homework'
+export const SCHEDULED_RESOURCE_TYPE = ['topic', 'flashcard_deck', 'book', 'course', 'homework'] as const
+export type ScheduledResourceType = (typeof SCHEDULED_RESOURCE_TYPE)[number]
 
 // ---------------------------------------------------------------------------
 // Study Topics (with SM-2 spaced repetition)

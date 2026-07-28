@@ -10,35 +10,42 @@ import type { SyncableEntity, SyncMetadata } from './sync'
 // Project enums
 // ---------------------------------------------------------------------------
 
-export type ProjectScope = 'personal' | 'professional' | 'academic' | 'community'
+export const PROJECT_SCOPE = ['personal', 'professional', 'academic', 'community'] as const
+export type ProjectScope = (typeof PROJECT_SCOPE)[number]
 
-export type ProjectComplexity = 'simple' | 'moderate' | 'complex' | 'enterprise'
+export const PROJECT_COMPLEXITY = ['simple', 'moderate', 'complex', 'enterprise'] as const
+export type ProjectComplexity = (typeof PROJECT_COMPLEXITY)[number]
 
 // ---------------------------------------------------------------------------
 // Purpose & Goals enums
 // ---------------------------------------------------------------------------
 
-export type TargetType = 'quantitative' | 'qualitative' | 'milestone' | 'habit_based'
+export const TARGET_TYPE = ['quantitative', 'qualitative', 'milestone', 'habit_based'] as const
+export type TargetType = (typeof TARGET_TYPE)[number]
 
-export type CalculationMethod = 'sum' | 'average' | 'latest' | 'max' | 'min' | 'count'
+export const CALCULATION_METHOD = ['sum', 'average', 'latest', 'max', 'min', 'count'] as const
+export type CalculationMethod = (typeof CALCULATION_METHOD)[number]
 
 // ---------------------------------------------------------------------------
 // Bucket List enums
 // ---------------------------------------------------------------------------
 
-export type BucketListCategory =
-  | 'travel'
-  | 'adventure'
-  | 'career'
-  | 'creative'
-  | 'education'
-  | 'financial'
-  | 'health'
-  | 'relationship'
-  | 'spiritual'
-  | 'other'
+export const BUCKET_LIST_CATEGORY = [
+  'travel',
+  'adventure',
+  'career',
+  'creative',
+  'education',
+  'financial',
+  'health',
+  'relationship',
+  'spiritual',
+  'other',
+] as const
+export type BucketListCategory = (typeof BUCKET_LIST_CATEGORY)[number]
 
-export type BucketListStatus = 'dream' | 'planned' | 'in_progress' | 'completed' | 'abandoned'
+export const BUCKET_LIST_STATUS = ['dream', 'planned', 'in_progress', 'completed', 'abandoned'] as const
+export type BucketListStatus = (typeof BUCKET_LIST_STATUS)[number]
 
 // ---------------------------------------------------------------------------
 // Supporting types

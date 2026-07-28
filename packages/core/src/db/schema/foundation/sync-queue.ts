@@ -13,12 +13,12 @@
 // ============================================================================
 
 import { sqliteTable, text, integer, index, unique } from 'drizzle-orm/sqlite-core'
-import type { SyncOperation, SyncQueueStatus } from '@vida/types'
+import { SYNC_OPERATION, SYNC_QUEUE_STATUS } from '@vida/types'
 import { enumText } from '../_shared'
 
-// Reuse the canonical unions from @vida/types (single source — do not redefine).
-const OPERATIONS = ['create', 'update', 'delete'] as const satisfies readonly SyncOperation[]
-const STATUSES = ['pending', 'in_flight', 'failed'] as const satisfies readonly SyncQueueStatus[]
+// Canonical enum tuples come straight from @vida/types (DB-9 single source).
+// These are the SAME tuples the z.enum validators + the SQL migration CHECK derive
+// from — see docs/specs/foundation/db-9-enums-zod. Do not redefine them here.
 
 export const syncQueue = sqliteTable(
   'sync_queue',
@@ -26,10 +26,10 @@ export const syncQueue = sqliteTable(
     id: text('id').primaryKey(), // UUIDv7, repository-generated
     table_name: text('table_name').notNull(),
     row_id: text('row_id').notNull(),
-    operation: enumText('operation', OPERATIONS).notNull(),
+    operation: enumText('operation', SYNC_OPERATION).notNull(),
     /** JSON snapshot of the final persisted row at time of change */
     payload: text('payload'),
-    status: enumText('status', STATUSES).notNull().default('pending'),
+    status: enumText('status', SYNC_QUEUE_STATUS).notNull().default('pending'),
     retry_count: integer('retry_count').notNull().default(0),
     error_message: text('error_message'),
     created_at: integer('created_at').notNull(), // Unix ms

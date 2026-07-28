@@ -10,7 +10,8 @@ import type { SyncableEntity, SyncMetadata } from './sync'
 // Enums
 // ---------------------------------------------------------------------------
 
-export type TaskDifficulty = 'trivial' | 'easy' | 'medium' | 'hard' | 'expert'
+export const TASK_DIFFICULTY = ['trivial', 'easy', 'medium', 'hard', 'expert'] as const
+export type TaskDifficulty = (typeof TASK_DIFFICULTY)[number]
 
 // ---------------------------------------------------------------------------
 // Entities

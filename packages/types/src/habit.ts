@@ -10,11 +10,14 @@ import type { SyncableEntity, SyncMetadata } from './sync'
 // Enums
 // ---------------------------------------------------------------------------
 
-export type HabitType = 'build' | 'break'
+export const HABIT_TYPE = ['build', 'break'] as const
+export type HabitType = (typeof HABIT_TYPE)[number]
 
-export type HabitFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom'
+export const HABIT_FREQUENCY = ['daily', 'weekly', 'biweekly', 'monthly', 'custom'] as const
+export type HabitFrequency = (typeof HABIT_FREQUENCY)[number]
 
-export type HabitTimeOfDay = 'morning' | 'afternoon' | 'evening' | 'anytime' | 'whole_day'
+export const HABIT_TIME_OF_DAY = ['morning', 'afternoon', 'evening', 'anytime', 'whole_day'] as const
+export type HabitTimeOfDay = (typeof HABIT_TIME_OF_DAY)[number]
 
 // ---------------------------------------------------------------------------
 // Entities

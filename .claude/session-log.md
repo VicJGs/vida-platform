@@ -3656,3 +3656,28 @@ Next session:
   - Start developing: pick a ready head (recommend DB-6 = repository, the strong DB-spine head, or DB-9/DB-7 in parallel). Profile: Add Backend Component.
   - Tracked follow-ups unchanged: LIF-103 (browser E2E harness / qa-1) · toolkit F-002 (domain-token leak CHECK) · real trashed-fixture test for `--verify`.
 ---
+
+---
+Date: 2026-07-28
+Task: db-6-repository-layer (LIF-68) — COMPLETED + committed
+Goal: M1.0 delivery campaign — run the ready-head → gated-build → next loop; first head = DB-6 (repository layer / sync_queue producer), the strong M1.0-a spine head off AR-2.
+Completed:
+  - FULL double-gated build (§XXVI) end-to-end on DB-6. commit 7f90c9b. @vida/core 55/55, root typecheck 10/10.
+  - Step 0 baseline (/document-context database-layer) CAUGHT that DB-6 was a RECONCILE-AND-EXTEND, not from-zero: repository.ts already existed (v1-carried, async-propagated by AR-2), fully encrypting, but with NO sync_queue producer, NO transaction wrapper, 0-line test. Refreshed docs/infrastructure/database-layer/current-{spec,business-rules}.md with the true floor.
+  - Code: schema/foundation/sync-queue.ts (Drizzle mirror) + migrations/001_sync_queue.ts (hand-written DDL, ADR-002 §5.1 CHECKs + UNIQUE, registered in runner) + repository.ts (lazy vault-key at ALL sites; co-transactional UPSERT enqueue in create/update/delete via db.transaction()) + tests/repository.test.ts (0-line → 10 cases) + package.json (better-sqlite3 devDep).
+  - Gate trail: PLAN → independent adversarial /critique (REVISE → 7 must-fix, 3 resolved by SOURCE VERIFICATION) → Approval 1 (migration seam (i): DB-6 authors+registers) → IMPLEMENTATION-PLAN → /preflight PASSED → 2nd /critique (REVISE → 5 exec fixes incl. the UPSERT correctness bug) → Approval 2 → implement → SHIP. Spec: docs/specs/foundation/db-6-repository-layer/.
+  - Closed: LIF-68 → Done (tracker --sync clean); TASKS.md + _index.md + panel #1 → Completed.
+In progress:
+  - NONE. DB-6 done. Milestone loop at a clean head boundary.
+  - UNCOMMITTED: task-tracker bookkeeping (TASKS.md, _index.md, db-6 task file completed-status) — fold into next chore/session-log commit per repo convention.
+Decisions:
+  - M1.0 encryption stance = ADR-017:20 mechanism: pass-through over an EMPTY [E] field set + lazy vault key (getVaultKey throws when locked). NOT a "skip-when-no-key" branch (the independent critique refuted that against ADR-017:20 + key-management.ts:124-128).
+  - Transaction mechanism = plain db.transaction() — VERIFIED drizzle-orm 0.45.1 sqlite-proxy implements .transaction() (session.js:46-53), refuting the shared assumption it doesn't. No createRepository signature change, no raw-driver path.
+  - sync_queue shape sourced to ADR-002 §5.1 (not the legacy table, which dropped the CHECKs + UNIQUE). Enqueue is an UPSERT on UNIQUE(table_name,row_id,operation) → repeated pre-flush mutations coalesce (LWW-correct).
+  - Soft delete enqueues operation='update'; hard delete 'delete'. Migration ownership = seam (i): DB-6 authors+registers migration 001 (DB-6 independently runnable; DB-7 generalizes the pattern).
+  - Out-of-charter: vault.test.ts 1MB test timeout 5s→20s (pre-existing flaky test, ~4.8s baseline, tipped over under full-suite load — NOT a DB-6 regression, confirmed by stash-and-retest on clean tree).
+Next session:
+  - START the next M1.0 ready head. Recommend DB-9 (canonical enums + Zod in @vida/types/@vida/core) — highest leverage: landing it opens the substrate wave (AR-5/6/7 already have db-6 ✅ + need db-9). Alternatives ready in parallel: DB-7 (migrations authoring), AR-4 (state/routing/forms), UX-1 (IA). Profile: Add Backend Component (DB heads).
+  - Done = ar-1/db-1/ar-2/db-6 (4 of 30). Loop is proven safe end-to-end; run the same §XXVI gate per head.
+  - Reusable lesson locked this session: on a gated build, VERIFY load-bearing critique findings against source BEFORE revising — the critic's own claims can be wrong (the sqlite-proxy .transaction() refutation), and baseline-before-plan catches stale-code floors (repository.ts was not a stub).
+---

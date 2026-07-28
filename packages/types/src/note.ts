@@ -10,63 +10,71 @@ import type { SyncableEntity, SyncMetadata } from './sync'
 // Page enums
 // ---------------------------------------------------------------------------
 
-export type PageType =
-  | 'journal'
-  | 'note'
-  | 'task_note'
-  | 'task_group_note'
-  | 'milestone_note'
-  | 'deliverable_note'
+export const PAGE_TYPE = [
+  'journal',
+  'note',
+  'task_note',
+  'task_group_note',
+  'milestone_note',
+  'deliverable_note',
+] as const
+export type PageType = (typeof PAGE_TYPE)[number]
 
-export type EntityLinkTarget =
-  | 'task'
-  | 'task_time_log'
-  | 'project'
-  | 'milestone'
-  | 'contact'
-  | 'interaction'
-  | 'habit'
-  | 'habit_completion'
-  | 'routine_action'
-  | 'course'
-  | 'book'
-  | 'book_chapter'
-  | 'study_session'
-  | 'study_topic'
-  | 'scheduled_study_session'
-  | 'study_plan_batch'
-  | 'flashcard_deck'
-  | 'skill'
-  | 'knowledge_note'
-  | 'language'
-  | 'language_practice_session'
-  | 'language_recording'
-  | 'purpose'
-  | 'target'
-  | 'purpose_metric_value'
-  | 'account'
-  | 'transaction'
-  | 'asset'
-  | 'liability'
-  | 'investment'
-  | 'income_stream'
-  | 'bucket_list_item'
-  | 'daily_check_in'
-  | 'achievement'
+export const ENTITY_LINK_TARGET = [
+  'task',
+  'task_time_log',
+  'project',
+  'milestone',
+  'contact',
+  'interaction',
+  'habit',
+  'habit_completion',
+  'routine_action',
+  'course',
+  'book',
+  'book_chapter',
+  'study_session',
+  'study_topic',
+  'scheduled_study_session',
+  'study_plan_batch',
+  'flashcard_deck',
+  'skill',
+  'knowledge_note',
+  'language',
+  'language_practice_session',
+  'language_recording',
+  'purpose',
+  'target',
+  'purpose_metric_value',
+  'account',
+  'transaction',
+  'asset',
+  'liability',
+  'investment',
+  'income_stream',
+  'bucket_list_item',
+  'daily_check_in',
+  'achievement',
+] as const
+export type EntityLinkTarget = (typeof ENTITY_LINK_TARGET)[number]
 
 // ---------------------------------------------------------------------------
 // Pomodoro enums
 // ---------------------------------------------------------------------------
 
-export type PomodoroType = 'focus' | 'short_break' | 'long_break'
-export type PomodoroStatus = 'running' | 'paused' | 'completed' | 'cancelled'
+export const POMODORO_TYPE = ['focus', 'short_break', 'long_break'] as const
+export type PomodoroType = (typeof POMODORO_TYPE)[number]
+export const POMODORO_STATUS = ['running', 'paused', 'completed', 'cancelled'] as const
+export type PomodoroStatus = (typeof POMODORO_STATUS)[number]
 
-export type PomodoroEntityType =
-  | 'task'
-  | 'task_group'
-  | 'class_note'
-  | 'note'
-  | 'study_session'
+export const POMODORO_ENTITY_TYPE = [
+  'task',
+  'task_group',
+  'class_note',
+  'note',
+  'study_session',
+] as const
+export type PomodoroEntityType = (typeof POMODORO_ENTITY_TYPE)[number]
 
 // ---------------------------------------------------------------------------
 // Supporting types

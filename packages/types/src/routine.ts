@@ -10,11 +10,14 @@ import type { SyncableEntity, SyncMetadata } from './sync'
 // Enums
 // ---------------------------------------------------------------------------
 
-export type RoutineActionType = 'habit' | 'task' | 'focus'
+export const ROUTINE_ACTION_TYPE = ['habit', 'task', 'focus'] as const
+export type RoutineActionType = (typeof ROUTINE_ACTION_TYPE)[number]
 
-export type RoutineTimeOfDay = 'morning' | 'afternoon' | 'evening'
+export const ROUTINE_TIME_OF_DAY = ['morning', 'afternoon', 'evening'] as const
+export type RoutineTimeOfDay = (typeof ROUTINE_TIME_OF_DAY)[number]
 
-export type RoutineRecurrenceFrequency = 'daily' | 'weekdays' | 'weekends' | 'custom'
+export const ROUTINE_RECURRENCE_FREQUENCY = ['daily', 'weekdays', 'weekends', 'custom'] as const
+export type RoutineRecurrenceFrequency = (typeof ROUTINE_RECURRENCE_FREQUENCY)[number]
 
 // ---------------------------------------------------------------------------
 // Entities

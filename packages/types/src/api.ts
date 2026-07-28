@@ -125,7 +125,8 @@ export interface AttachmentDownloadUrlResponse {
 // Device management
 // ---------------------------------------------------------------------------
 
-export type DevicePlatform = 'web' | 'ios' | 'android' | 'macos' | 'windows' | 'linux'
+export const DEVICE_PLATFORM = ['web', 'ios', 'android', 'macos', 'windows', 'linux'] as const
+export type DevicePlatform = (typeof DEVICE_PLATFORM)[number]
 
 export interface DeviceRegistration {
   device_id: string

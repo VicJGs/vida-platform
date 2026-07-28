@@ -9,8 +9,10 @@ import type { Id, Timestamp, BaseEntity } from './common'
 // Row-level sync metadata (mixin on every syncable table)
 // ---------------------------------------------------------------------------
 
-export type SyncStatus = 'pending' | 'synced' | 'conflict'
-export type SyncOperation = 'create' | 'update' | 'delete'
+export const SYNC_STATUS = ['pending', 'synced', 'conflict'] as const
+export type SyncStatus = (typeof SYNC_STATUS)[number]
+export const SYNC_OPERATION = ['create', 'update', 'delete'] as const
+export type SyncOperation = (typeof SYNC_OPERATION)[number]
 
 /** Present on every syncable row in SQLite */
 export interface SyncMetadata {
@@ -79,7 +81,8 @@ export interface YjsSyncUnit {
 // Sync queue (device-local, NOT synced)
 // ---------------------------------------------------------------------------
 
-export type SyncQueueStatus = 'pending' | 'in_flight' | 'failed'
+export const SYNC_QUEUE_STATUS = ['pending', 'in_flight', 'failed'] as const
+export type SyncQueueStatus = (typeof SYNC_QUEUE_STATUS)[number]
 
 export interface SyncQueueItem {
   id: Id

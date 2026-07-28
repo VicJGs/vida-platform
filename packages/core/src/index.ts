@@ -55,6 +55,9 @@ export type {
   SrpLoginState,
 } from './encryption/srp'
 
+// Validators — Zod schemas for @vida/types enums
+export * from './validators'
+
 // Database — schema & adapter
 export * as schema from './db/schema'
 

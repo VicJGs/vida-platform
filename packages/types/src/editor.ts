@@ -9,32 +9,36 @@
 // ---------------------------------------------------------------------------
 
 /** Standard TipTap / ProseMirror block types */
-export type StandardBlockType =
-  | 'paragraph'
-  | 'heading'
-  | 'bulletList'
-  | 'orderedList'
-  | 'taskList'
-  | 'blockquote'
-  | 'codeBlock'
-  | 'horizontalRule'
-  | 'image'
-  | 'table'
-  | 'callout'
+export const STANDARD_BLOCK_TYPE = [
+  'paragraph',
+  'heading',
+  'bulletList',
+  'orderedList',
+  'taskList',
+  'blockquote',
+  'codeBlock',
+  'horizontalRule',
+  'image',
+  'table',
+  'callout',
+] as const
+export type StandardBlockType = (typeof STANDARD_BLOCK_TYPE)[number]
 
 /** Custom platform integration blocks (slash commands) */
-export type IntegrationBlockType =
-  | 'dailySummary'
-  | 'taskChecklist'
-  | 'eventsBlock'
-  | 'classesBlock'
-  | 'habitsBlock'
-  | 'timelineBlock'
-  | 'chartBlock'
-  | 'pomodoroBlock'
-  | 'entityLink'
-  | 'backlink'
-  | 'milestoneBlock'
+export const INTEGRATION_BLOCK_TYPE = [
+  'dailySummary',
+  'taskChecklist',
+  'eventsBlock',
+  'classesBlock',
+  'habitsBlock',
+  'timelineBlock',
+  'chartBlock',
+  'pomodoroBlock',
+  'entityLink',
+  'backlink',
+  'milestoneBlock',
+] as const
+export type IntegrationBlockType = (typeof INTEGRATION_BLOCK_TYPE)[number]
 
 export type BlockType = StandardBlockType | IntegrationBlockType
 
@@ -42,19 +46,22 @@ export type BlockType = StandardBlockType | IntegrationBlockType
 // Export formats
 // ---------------------------------------------------------------------------
 
-export type ExportFormat = 'md' | 'pdf' | 'docx'
+export const EXPORT_FORMAT = ['md', 'pdf', 'docx'] as const
+export type ExportFormat = (typeof EXPORT_FORMAT)[number]
 
 // ---------------------------------------------------------------------------
 // Daily summary block
 // ---------------------------------------------------------------------------
 
-export type DailySummarySectionType =
-  | 'habits'
-  | 'tasks'
-  | 'study'
-  | 'transactions'
-  | 'interactions'
-  | 'routines'
+export const DAILY_SUMMARY_SECTION_TYPE = [
+  'habits',
+  'tasks',
+  'study',
+  'transactions',
+  'interactions',
+  'routines',
+] as const
+export type DailySummarySectionType = (typeof DAILY_SUMMARY_SECTION_TYPE)[number]
 
 export interface DailySummaryBlockAttrs {
   date: string | null
@@ -75,7 +82,8 @@ export interface EntityLinkBlockAttrs {
 // Chart block
 // ---------------------------------------------------------------------------
 
-export type ChartType = 'bar' | 'line' | 'pie' | 'doughnut' | 'radar'
+export const CHART_TYPE = ['bar', 'line', 'pie', 'doughnut', 'radar'] as const
+export type ChartType = (typeof CHART_TYPE)[number]
 
 export interface ChartBlockAttrs {
   chartType: ChartType
@@ -146,11 +154,8 @@ export interface SlashCommand {
   category: SlashCommandCategory
 }
 
-export type SlashCommandCategory =
-  | 'basic'
-  | 'media'
-  | 'platform'
-  | 'embed'
+export const SLASH_COMMAND_CATEGORY = ['basic', 'media', 'platform', 'embed'] as const
+export type SlashCommandCategory = (typeof SLASH_COMMAND_CATEGORY)[number]
 
 // ---------------------------------------------------------------------------
 // Editor state

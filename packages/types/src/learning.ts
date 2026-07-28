@@ -10,88 +10,110 @@ import type { SyncableEntity, SyncMetadata } from './sync'
 // Course & Book enums
 // ---------------------------------------------------------------------------
 
-export type CourseType = 'online' | 'in_person' | 'hybrid' | 'self_paced'
+export const COURSE_TYPE = ['online', 'in_person', 'hybrid', 'self_paced'] as const
+export type CourseType = (typeof COURSE_TYPE)[number]
 
-export type CourseStatus = 'not_started' | 'in_progress' | 'completed' | 'dropped'
+export const COURSE_STATUS = ['not_started', 'in_progress', 'completed', 'dropped'] as const
+export type CourseStatus = (typeof COURSE_STATUS)[number]
 
-export type BookFormat = 'physical' | 'ebook' | 'audiobook'
+export const BOOK_FORMAT = ['physical', 'ebook', 'audiobook'] as const
+export type BookFormat = (typeof BOOK_FORMAT)[number]
 
-export type BookStatus = 'want_to_read' | 'reading' | 'completed' | 'dropped'
+export const BOOK_STATUS = ['want_to_read', 'reading', 'completed', 'dropped'] as const
+export type BookStatus = (typeof BOOK_STATUS)[number]
 
-export type MasteryLevel =
-  | 'novice'
-  | 'beginner'
-  | 'intermediate'
-  | 'advanced'
-  | 'expert'
-  | 'master'
+export const MASTERY_LEVEL = [
+  'novice',
+  'beginner',
+  'intermediate',
+  'advanced',
+  'expert',
+  'master',
+] as const
+export type MasteryLevel = (typeof MASTERY_LEVEL)[number]
 
-export type SkillResourceType = 'course' | 'book'
+export const SKILL_RESOURCE_TYPE = ['course', 'book'] as const
+export type SkillResourceType = (typeof SKILL_RESOURCE_TYPE)[number]
 
-export type StudySessionResourceType =
-  | 'course'
-  | 'book'
-  | 'topic'
-  | 'homework'
-  | 'article'
-  | 'video'
-  | 'podcast'
+export const STUDY_SESSION_RESOURCE_TYPE = [
+  'course',
+  'book',
+  'topic',
+  'homework',
+  'article',
+  'video',
+  'podcast',
+] as const
+export type StudySessionResourceType = (typeof STUDY_SESSION_RESOURCE_TYPE)[number]
 
 // ---------------------------------------------------------------------------
 // Language enums
 // ---------------------------------------------------------------------------
 
-export type LanguageProficiency = 'a1' | 'a2' | 'b1' | 'b2' | 'c1' | 'c2' | 'native'
+export const LANGUAGE_PROFICIENCY = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2', 'native'] as const
+export type LanguageProficiency = (typeof LANGUAGE_PROFICIENCY)[number]
 
-export type LanguageStatus = 'active' | 'paused' | 'completed' | 'dropped'
+export const LANGUAGE_STATUS = ['active', 'paused', 'completed', 'dropped'] as const
+export type LanguageStatus = (typeof LANGUAGE_STATUS)[number]
 
-export type LearningPhase = 'foundation' | 'building' | 'fluency'
+export const LEARNING_PHASE = ['foundation', 'building', 'fluency'] as const
+export type LearningPhase = (typeof LEARNING_PHASE)[number]
 
-export type LanguageSkillType =
-  | 'listening'
-  | 'speaking'
-  | 'reading'
-  | 'writing'
-  | 'vocabulary'
-  | 'grammar'
+export const LANGUAGE_SKILL_TYPE = [
+  'listening',
+  'speaking',
+  'reading',
+  'writing',
+  'vocabulary',
+  'grammar',
+] as const
+export type LanguageSkillType = (typeof LANGUAGE_SKILL_TYPE)[number]
 
-export type PracticeActivityType =
-  | 'flashcards'
-  | 'reading'
-  | 'writing'
-  | 'listening'
-  | 'speaking'
-  | 'conversation'
-  | 'media'
-  | 'class'
-  | 'app'
-  | 'other'
+export const PRACTICE_ACTIVITY_TYPE = [
+  'flashcards',
+  'reading',
+  'writing',
+  'listening',
+  'speaking',
+  'conversation',
+  'media',
+  'class',
+  'app',
+  'other',
+] as const
+export type PracticeActivityType = (typeof PRACTICE_ACTIVITY_TYPE)[number]
 
-export type VocabularyMastery = 'new' | 'learning' | 'familiar' | 'proficient' | 'mastered'
+export const VOCABULARY_MASTERY = ['new', 'learning', 'familiar', 'proficient', 'mastered'] as const
+export type VocabularyMastery = (typeof VOCABULARY_MASTERY)[number]
 
-export type RecordingType = 'bible' | 'song' | 'pronunciation' | 'conversation'
+export const RECORDING_TYPE = ['bible', 'song', 'pronunciation', 'conversation'] as const
+export type RecordingType = (typeof RECORDING_TYPE)[number]
 
-export type WeeklyTopic =
-  | 'greetings_basics'
-  | 'food_cooking'
-  | 'daily_routine'
-  | 'family_relationships'
-  | 'travel_directions'
-  | 'shopping_money'
-  | 'health_body'
-  | 'hobbies_entertainment'
+export const WEEKLY_TOPIC = [
+  'greetings_basics',
+  'food_cooking',
+  'daily_routine',
+  'family_relationships',
+  'travel_directions',
+  'shopping_money',
+  'health_body',
+  'hobbies_entertainment',
+] as const
+export type WeeklyTopic = (typeof WEEKLY_TOPIC)[number]
 
-export type BaseWordCategory =
-  | 'greetings'
-  | 'numbers'
-  | 'pronouns'
-  | 'common_verbs'
-  | 'common_nouns'
-  | 'adjectives'
-  | 'prepositions'
-  | 'conjunctions'
-  | 'question_words'
-  | 'daily_phrases'
+export const BASE_WORD_CATEGORY = [
+  'greetings',
+  'numbers',
+  'pronouns',
+  'common_verbs',
+  'common_nouns',
+  'adjectives',
+  'prepositions',
+  'conjunctions',
+  'question_words',
+  'daily_phrases',
+] as const
+export type BaseWordCategory = (typeof BASE_WORD_CATEGORY)[number]
 
 // ---------------------------------------------------------------------------
 // Course, Book, Skill

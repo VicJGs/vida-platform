@@ -10,26 +10,31 @@ import type { SyncableEntity, SyncMetadata } from '../sync'
 // Gamification enums
 // ---------------------------------------------------------------------------
 
-export type Persona =
-  | 'student'
-  | 'professional'
-  | 'entrepreneur'
-  | 'creative'
-  | 'parent'
-  | 'retiree'
+export const PERSONA = [
+  'student',
+  'professional',
+  'entrepreneur',
+  'creative',
+  'parent',
+  'retiree',
+] as const
+export type Persona = (typeof PERSONA)[number]
 
-export type AchievementCategory =
-  | 'onboarding'
-  | 'habits'
-  | 'learning'
-  | 'projects'
-  | 'financial'
-  | 'social'
-  | 'checkin'
-  | 'purpose'
-  | 'general'
+export const ACHIEVEMENT_CATEGORY = [
+  'onboarding',
+  'habits',
+  'learning',
+  'projects',
+  'financial',
+  'social',
+  'checkin',
+  'purpose',
+  'general',
+] as const
+export type AchievementCategory = (typeof ACHIEVEMENT_CATEGORY)[number]
 
-export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum'
+export const ACHIEVEMENT_TIER = ['bronze', 'silver', 'gold', 'platinum'] as const
+export type AchievementTier = (typeof ACHIEVEMENT_TIER)[number]
 
 // ---------------------------------------------------------------------------
 // User profile & gamification
@@ -95,17 +100,22 @@ export interface XpHistory extends SyncMetadata {
 // Check-ins
 // ---------------------------------------------------------------------------
 
-export type CheckInType = 'morning' | 'evening' | 'weekly_review'
-export type CheckInScheduleType = 'daily' | 'weekly' | 'custom'
-export type CheckInPreferredTime = 'morning' | 'afternoon' | 'evening' | 'anytime'
+export const CHECK_IN_TYPE = ['morning', 'evening', 'weekly_review'] as const
+export type CheckInType = (typeof CHECK_IN_TYPE)[number]
+export const CHECK_IN_SCHEDULE_TYPE = ['daily', 'weekly', 'custom'] as const
+export type CheckInScheduleType = (typeof CHECK_IN_SCHEDULE_TYPE)[number]
+export const CHECK_IN_PREFERRED_TIME = ['morning', 'afternoon', 'evening', 'anytime'] as const
+export type CheckInPreferredTime = (typeof CHECK_IN_PREFERRED_TIME)[number]
 
-export type CheckInQuestionFieldType =
-  | 'mood_scale'
-  | 'energy_scale'
-  | 'text_list'
-  | 'text_area'
-  | 'rating'
-  | 'boolean'
+export const CHECK_IN_QUESTION_FIELD_TYPE = [
+  'mood_scale',
+  'energy_scale',
+  'text_list',
+  'text_area',
+  'rating',
+  'boolean',
+] as const
+export type CheckInQuestionFieldType = (typeof CHECK_IN_QUESTION_FIELD_TYPE)[number]
 
 export interface DailyCheckIn extends SyncableEntity {
   /** YYYY-MM-DD (unique) */
@@ -165,10 +175,14 @@ export interface CheckInTemplateQuestion extends SyncMetadata {
 // Preferences & Navigation
 // ---------------------------------------------------------------------------
 
-export type Theme = 'light' | 'dark' | 'system'
-export type TimeFormat = '12h' | '24h'
-export type DockPosition = 'bottom' | 'left' | 'right'
-export type DockSize = 'small' | 'medium' | 'large'
+export const THEME = ['light', 'dark', 'system'] as const
+export type Theme = (typeof THEME)[number]
+export const TIME_FORMAT = ['12h', '24h'] as const
+export type TimeFormat = (typeof TIME_FORMAT)[number]
+export const DOCK_POSITION = ['bottom', 'left', 'right'] as const
+export type DockPosition = (typeof DOCK_POSITION)[number]
+export const DOCK_SIZE = ['small', 'medium', 'large'] as const
+export type DockSize = (typeof DOCK_SIZE)[number]
 
 export interface UserPreferences extends SyncableEntity {
   theme: Theme

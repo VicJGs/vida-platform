@@ -10,55 +10,67 @@ import type { SyncableEntity } from './sync'
 // Enums
 // ---------------------------------------------------------------------------
 
-export type AccountType =
-  | 'checking'
-  | 'savings'
-  | 'credit_card'
-  | 'investment'
-  | 'cash'
-  | 'digital_wallet'
-  | 'other'
+export const ACCOUNT_TYPE = [
+  'checking',
+  'savings',
+  'credit_card',
+  'investment',
+  'cash',
+  'digital_wallet',
+  'other',
+] as const
+export type AccountType = (typeof ACCOUNT_TYPE)[number]
 
-export type TransactionType = 'income' | 'expense' | 'transfer'
+export const TRANSACTION_TYPE = ['income', 'expense', 'transfer'] as const
+export type TransactionType = (typeof TRANSACTION_TYPE)[number]
 
-export type AssetType =
-  | 'real_estate'
-  | 'vehicle'
-  | 'electronics'
-  | 'jewelry'
-  | 'collectible'
-  | 'other'
+export const ASSET_TYPE = [
+  'real_estate',
+  'vehicle',
+  'electronics',
+  'jewelry',
+  'collectible',
+  'other',
+] as const
+export type AssetType = (typeof ASSET_TYPE)[number]
 
-export type LiabilityType =
-  | 'mortgage'
-  | 'student_loan'
-  | 'auto_loan'
-  | 'credit_card'
-  | 'personal_loan'
-  | 'medical'
-  | 'other'
+export const LIABILITY_TYPE = [
+  'mortgage',
+  'student_loan',
+  'auto_loan',
+  'credit_card',
+  'personal_loan',
+  'medical',
+  'other',
+] as const
+export type LiabilityType = (typeof LIABILITY_TYPE)[number]
 
-export type InvestmentType =
-  | 'stock'
-  | 'bond'
-  | 'mutual_fund'
-  | 'etf'
-  | 'crypto'
-  | 'real_estate'
-  | 'commodity'
-  | 'other'
+export const INVESTMENT_TYPE = [
+  'stock',
+  'bond',
+  'mutual_fund',
+  'etf',
+  'crypto',
+  'real_estate',
+  'commodity',
+  'other',
+] as const
+export type InvestmentType = (typeof INVESTMENT_TYPE)[number]
 
-export type IncomeType =
-  | 'salary'
-  | 'freelance'
-  | 'investment'
-  | 'rental'
-  | 'business'
-  | 'side_hustle'
-  | 'passive'
-  | 'other'
+export const INCOME_TYPE = [
+  'salary',
+  'freelance',
+  'investment',
+  'rental',
+  'business',
+  'side_hustle',
+  'passive',
+  'other',
+] as const
+export type IncomeType = (typeof INCOME_TYPE)[number]
 
-export type WorkType = 'full_time' | 'part_time' | 'contract' | 'freelance' | 'passive'
+export const WORK_TYPE = ['full_time', 'part_time', 'contract', 'freelance', 'passive'] as const
+export type WorkType = (typeof WORK_TYPE)[number]
 
 // ---------------------------------------------------------------------------
 // Entities

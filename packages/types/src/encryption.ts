@@ -89,7 +89,8 @@ export interface EncryptedField {
 }
 
 /** Encryption classification for schema fields */
-export type FieldClassification = 'plaintext' | 'encrypted'
+export const FIELD_CLASSIFICATION = ['plaintext', 'encrypted'] as const
+export type FieldClassification = (typeof FIELD_CLASSIFICATION)[number]
 
 /**
  * Describes how a specific table's columns are classified.
@@ -156,7 +157,8 @@ export interface FtsRebuildStatus {
 // Vault lifecycle
 // ---------------------------------------------------------------------------
 
-export type VaultState = 'locked' | 'unlocking' | 'unlocked' | 'error'
+export const VAULT_STATE = ['locked', 'unlocking', 'unlocked', 'error'] as const
+export type VaultState = (typeof VAULT_STATE)[number]
 
 export interface VaultStatus {
   state: VaultState
