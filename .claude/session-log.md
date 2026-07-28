@@ -3637,3 +3637,22 @@ Next session:
   - OPEN before looping the whole foundation: only the -a spine graph was per-edge validated. The b/c/d tracks + db-3/db-4/db-8/db-10 + ar-4/ar-8 have NOT been re-validated against contracts — do a full-M1.0 edge-validation pass first (same method) so the loop's ready-frontier is trustworthy end-to-end. And account for db-3/db-4 being STREAMING slices, not standalone loop steps.
   - Manual Linear (Victor): archive the 5 empty ①–⑤ shells; db-2 final disposition (parked/cancel/M4); confirm old LIF-56–59 gap.
 ---
+
+---
+Date: 2026-07-28
+Task: m1.0-dep-graph-validation (LIF-105) — COMPLETED + archived
+Goal: validate every remaining M1.0 dependency edge against the ADR contracts and settle the streaming loop model, so the whole cluster's ready-frontier is trustworthy end-to-end.
+Completed:
+  - Full loop: census (subagent, all 3 sources) → `docs/specs/fixes/m1.0-dep-graph-validation/derived-graph.md` (per-edge derivation, ADR-cited) → independent adversarial ADR-critique → settle streaming loop → write to all 3 sources → verify.
+  - 9 edges corrected, written IDENTICALLY to task files + Linear + delivery-plan §5 (+ new §5.1.1 reconcile note): db-8←db-4,db-7 · db-10←+db-9 · ar-8←ar-6,db-8 · ds-4←+ds-3 · ui-3←ui-1,ar-4 · ui-4←ui-1,ux-3 · ux-2/3/4/6←ux-1/ux-3 · ux-5←ux-1 (−ar-3) · qa-1 §5 row added.
+  - Linear: 7 mutations (4 set_blocks create + 3 issueRelationDelete) via raw client; `--verify` clean (47 issues live). LIF-105 → Done. commit 5e36376 (+ close-out 6af9366, 92edea9). Pushed.
+  - Governing rule established (§5.1.1): a graph edge is a BUILD-ORDER blocker, not a runtime feed — the UX design track's real blocker is ux-1/ux-3, not the shell/services it feeds.
+  - CONTEXT (toolkit detour, logged fully in ~/dev-toolkit): before this task, ran 3 gated /victor-triage fixes on the canonical toolkit — command-layer integrity (git-aware CHECK 3/4), forge-broaden (pathGlob guardrails + guidanceContract), harden-tracker (surface LinearErrors + `--verify`, LIF-104). The `--verify` used here is that new tool. All pushed to dev-toolkit origin.
+Decisions:
+  - db-8←db-6 REFUTED by the critique as an illegal M1.0←M3 edge (populate needs vault-unlock = M3) → db-8←db-7. Same class as ux-5←ar-3 (removed; vault-unlock carved to ux-5b/M3).
+  - Streaming loop (Q1): db-3/db-4 are schema-slices folded into each consumer's gate, never standalone ready heads.
+Next session:
+  - Foundation graph is now trustworthy end-to-end → the ready-head→gated-build→next loop is SAFE to run. Ready heads (done=ar-1/db-1/ar-2): DB-6, DB-7, DB-9, AR-4, UX-1, DS-1 (parked/unparkable). db-8 now rides db-7 (not the db-6 substrate).
+  - Start developing: pick a ready head (recommend DB-6 = repository, the strong DB-spine head, or DB-9/DB-7 in parallel). Profile: Add Backend Component.
+  - Tracked follow-ups unchanged: LIF-103 (browser E2E harness / qa-1) · toolkit F-002 (domain-token leak CHECK) · real trashed-fixture test for `--verify`.
+---

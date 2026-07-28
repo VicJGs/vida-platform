@@ -21,9 +21,14 @@
   - **DB-9 (LIF-71) — enums+Zod** ← db-1 ✅ · **DB-7 (LIF-69) — migrations runner** ← ar-2 ✅ (authors app_state). Both ready, parallel.
   - **AR-4 (LIF-75) — state/routing/forms** ← ar-1 ✅ · **UX-1 (LIF-90) — IA** (no blockers). Parallel tracks.
   - Substrates **AR-5/AR-6 ← DB-6, DB-9** (NOT ready until those land) → AR-7 ← AR-5,DB-6,DB-9. **DS-1** built-but-parked (-b wave, unparkable).
-- ⚠ **BEFORE looping the whole foundation:** only the -a spine graph was per-edge validated. Run a full-M1.0
-  edge-validation pass (b/c/d + db-3/4/8/10 + ar-4/8) against the contracts first, and account for db-3/db-4 being
-  STREAMING slices (co-built with substrates/modules), not standalone loop steps.
+- ✅ **FULL-M1.0 GRAPH NOW VALIDATED (2026-07-28, LIF-105, commit 5e36376).** The b/c/d tracks + db-3/4/8/10 + ar-4/8
+  + qa-1 were per-edge reconciled across all 3 sources; independent ADR-critique clean; `--verify` 47 live. The
+  ready-head→gated-build→next loop is now SAFE to run end-to-end. Key corrections: **db-8 ← db-7** (not db-6 — was an
+  illegal M1.0←M3 edge; db-8 now rides db-7); ux-5 ← ux-1 (ar-3/M3 removed); db-10 ← +db-9; ds-4 ← +ds-3; ar-8 ← ar-6.
+  Streaming loop settled: db-3/db-4 fold into consumer gates. Rule: graph edges = build-order blockers, not feeds (§5.1.1).
+- ▶ **START DEVELOPING — ready heads** (done = ar-1/db-1/ar-2): **DB-6** (repository — strong next head), **DB-9**
+  (enums+Zod), **DB-7** (migrations runner) parallel; **AR-4** (state/routing/forms) + **UX-1** (IA) parallel tracks;
+  **DS-1** unparkable for the -b wave. Profile for the DB heads: Add Backend Component.
 - **Tracked follow-ups:** LIF-103 (browser E2E harness) · LIF-104 (toolkit: harden tracker visibility) · NIT-3 count()→count(*).
 - **Manual Linear (Victor):** archive the 5 empty ①–⑤ shells · db-2 (LIF-64) disposition · confirm old LIF-56–59 gap.
 
