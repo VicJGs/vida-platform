@@ -12,4 +12,9 @@ single-write-path guard so all session state changes go through one channel, and
 and the effect rail (AR-7). Module-level session UI lands later in Phase 1b.
 
 ## Dependencies
-- blocked by `ar-2-database-adapter-web`
+- blocked by `db-6-repository-layer`
+- blocked by `db-9-enums-and-zod-validators`
+<!-- reconciled 2026-07-27 (dep-reconcile triage): was `blocked by ar-2` only (under-specified). A sessions
+     framework persists through the repository (DB-6) and needs canonical enums/Zod (DB-9); its own tables are the
+     DB-3 stream slice, co-built. ar-2 is transitive via db-6. Matches delivery-plan §5 a2. -->
+

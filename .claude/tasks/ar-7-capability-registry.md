@@ -13,3 +13,9 @@ Purposes & Goals (capstone) and Gamification consume.
 
 ## Dependencies
 - blocked by `ar-5-sessions-framework`
+- blocked by `db-6-repository-layer`
+- blocked by `db-9-enums-and-zod-validators`
+<!-- reconciled 2026-07-27 (dep-reconcile triage): added DB-6 + DB-9 (was ar-5 only). The capability/measurability/
+     effect rail persists through the repository (DB-6) and needs enums/Zod (DB-9). `applied_effects` stays in the
+     DB-3 stream under schema/foundation/effects (ADR-018 §3.1) — NOT relocated. -->
+

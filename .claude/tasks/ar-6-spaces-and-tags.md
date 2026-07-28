@@ -12,4 +12,9 @@ composed into user-defined Spaces. The polymorphic association layer the whole p
 backlinks and neural graph read from.
 
 ## Dependencies
-- blocked by `ar-2-database-adapter-web`
+- blocked by `db-6-repository-layer`
+- blocked by `db-9-enums-and-zod-validators`
+<!-- reconciled 2026-07-27 (dep-reconcile triage): was `blocked by ar-2` only (under-specified). The spaces/tags/
+     links association engine persists through the repository (DB-6) and needs canonical enums/Zod (DB-9); its own
+     tables (entity_tags/spaces/views) are the DB-3 stream slice, co-built. ar-2 transitive via db-6. -->
+
