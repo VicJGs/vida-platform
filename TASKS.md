@@ -10,7 +10,7 @@
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-07-29 loop-tooling close-out).** Done = ar-1/db-1/ar-2/db-6/db-9/ar-5/ar-6 (7 of 30).
+**▶ CURRENT (2026-07-29).** Done = ar-1/db-1/ar-2/db-6/db-9/ar-5/ar-6/**db-7** (8 of 30). Pushed to origin/main @ 60a0a60.
 
 ✅ **Item 1 DONE — the delivery-planning loop is built + merged** (in `~/dev-toolkit`, ADR-015): the `--next` re-plan
 grew into the legacy-aware, hierarchical, file-traceable loop — `tracker_sync --census` / `--next` / `--plan <scope>`
@@ -19,12 +19,13 @@ loop now COMPUTES the frontier from this plan (dep-graph + `_clusters.md` milest
 progress + legacy digest — hand-deriving the frontier is retired. See the delivery-plan §4 Consumption Rule.
 ✅ **Branch cleanup DONE** (merged branches deleted incl. `fix-tracker-sync-dedup-guard`).
 
-**▶ NEXT — COMPUTED HEAD = `db-7-migrations-runner`** (via `tracker_sync.py --next`, the authoritative
-consumption rule — delivery-plan §4). Milestone `Boot & DB spine` ← ar-2 ✅; ranked #1 by dependent-count (2);
-parallel ready alts: ar-4, qa-1. `/task-new db-7-migrations-runner` → §XXVI gate. Profile: Add Backend Component.
-> **AR-7 is NOT the current head** — it is READY (blockers ar-5/ar-6/db-6/db-9 all ✅) but sits in the *later*
-> `Substrates` sub-wave, so it comes after the Boot & DB spine drains. The earlier "next = AR-7" note was a
-> substrate-track view, not the frontier. Always trust `--next`, never hand-read a prose "next".
+**▶ NEXT — COMPUTED HEAD = `ar-4-state-routing-forms`** (LIF-75, via `tracker_sync.py --next`, delivery-plan §4).
+Milestone `Boot & DB spine` ← ar-1 ✅; ranked #1 by dependent-count (1); parallel ready alts: db-10, qa-1.
+`/task-new ar-4-state-routing-forms` → §XXVI gate. **⚠ PROFILE SWITCH: `generic-coding`** (frontend — Zustand /
+React Query v5 / TanStack Router / TanStack Form + Zod at `apps/web/src/{stores,router,forms}`), NOT Add Backend
+Component. First `/begin` next session must PROFILE CONFIRM to generic-coding.
+> **AR-7 is NOT the head** — READY (blockers all ✅) but in the *later* `Substrates` sub-wave. Boot & DB spine
+> drains first (ar-4 · db-10 · qa-1). Always trust `--next`, never hand-read a prose "next".
 
 **🔎 DELIVERY-LOOP AUDIT (2026-07-29) — VERIFIED SOUND.** The loop (ADR-015) resolves correctly: `--verify` 47/47
 live · map complete (47 issues, all 38 active nodes ⊆ map) · 0 duplicate active nodes · **0 dangling blockers**
