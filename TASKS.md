@@ -19,11 +19,31 @@ loop now COMPUTES the frontier from this plan (dep-graph + `_clusters.md` milest
 progress + legacy digest — hand-deriving the frontier is retired. See the delivery-plan §4 Consumption Rule.
 ✅ **Branch cleanup DONE** (merged branches deleted incl. `fix-tracker-sync-dedup-guard`).
 
-**▶ NEXT — Item 2: AR-7** (Capability + measurability + effect rail, LIF-78) ← AR-5 ✅ + AR-6 ✅. `/task-new ar-7` →
-§XXVI gate. Confirm the head first with `python3 ~/dev-toolkit/scripts/tracker_sync.py --next` (or
-`--plan milestone:Substrates`) instead of hand-reading this note.
+**▶ NEXT — COMPUTED HEAD = `db-7-migrations-runner`** (via `tracker_sync.py --next`, the authoritative
+consumption rule — delivery-plan §4). Milestone `Boot & DB spine` ← ar-2 ✅; ranked #1 by dependent-count (2);
+parallel ready alts: ar-4, qa-1. `/task-new db-7-migrations-runner` → §XXVI gate. Profile: Add Backend Component.
+> **AR-7 is NOT the current head** — it is READY (blockers ar-5/ar-6/db-6/db-9 all ✅) but sits in the *later*
+> `Substrates` sub-wave, so it comes after the Boot & DB spine drains. The earlier "next = AR-7" note was a
+> substrate-track view, not the frontier. Always trust `--next`, never hand-read a prose "next".
 
-**⚠ Manual-Linear (Victor, Linear UI only):** archive the 5 empty ①–⑤ Project shells; db-2 (LIF-64) disposition.
+**🔎 DELIVERY-LOOP AUDIT (2026-07-29) — VERIFIED SOUND.** The loop (ADR-015) resolves correctly: `--verify` 47/47
+live · map complete (47 issues, all 38 active nodes ⊆ map) · 0 duplicate active nodes · **0 dangling blockers**
+(nothing falsely suppressed) · all frontier waits legitimate. The db-7-vs-AR-7 "disagreement" was sub-wave
+ordering working as designed, not a bug. Robustness comes from `parse_tasks` globbing active-only + `is_done`
+file-wins-then-map. Details: [[delivery-loop-verified-sound]].
+
+**✅ AR-7 edge reconcile DONE (this session):** added the intra-tier `AR-7 ← AR-6` blocker (was missing from both
+the task file and delivery-plan §5) + wrote `AR-5, AR-6, DB-6, DB-9` into §5 row 165 + §4 model. Confirmed `--next`
+unchanged (graph-honesty, not a re-route). NB: `ar-5-sessions-framework` (LIF-76) is CANONICAL — not a stale slug.
+
+**🧹 Hygiene follow-ups (non-blocking, flagged for a future pass):**
+- Delivery-plan §5 AR-6 row Home lists `effects/` which is actually AR-7's home → census under-rates AR-6 as
+  "stub" (cosmetic; `--next` unaffected). Remove `effects` from AR-6's Home cell.
+- Archive residue from the Facet-A dedup (inert — loop never reads `archive/`): 4 superseded task files
+  (`ar-5-sessions-base`, `ar-6-spaces`, `ar-6-spaces-and-tags`, `db-9-enums-and-zod-validators`). Purge or leave.
+
+**⚠ Manual-Linear (Victor, Linear UI only):** **NEW → LIF-78 (AR-7) blocked-by LIF-76 (AR-5) + LIF-77 (AR-6)**
+(the tracker writes identity, not blocker relations); archive the 5 empty ①–⑤ Project shells; db-2 (LIF-64) disposition.
 
 Full detail in `.claude/session-log.md`. Historical AR-*-era notes below (kept for reference):
 

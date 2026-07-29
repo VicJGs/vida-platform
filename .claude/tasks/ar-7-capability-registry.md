@@ -13,6 +13,7 @@ Purposes & Goals (capstone) and Gamification consume.
 
 ## Dependencies
 - blocked by `ar-5-sessions-framework`
+- blocked by `ar-6-spaces`  <!-- intra-tier substrate edge, reconciled 2026-07-29: AR-7's capability/block registry (ADR-008) references the spaces/space_enabled_blocks tables AR-6 owns; capability-registry/block_instances were explicitly DEFERRED from AR-6 → AR-7. Asserted by the 2026-07-28 + 07-29 session-logs; was missing from both this file and delivery-plan §5. -->
 - blocked by `db-6-repository-layer`
 - blocked by `db-9-enums-zod`  <!-- slug→canonical map key (was db-9-enums-and-zod-validators); delivery-planning-loop U1 -->
 <!-- reconciled 2026-07-27 (dep-reconcile triage): added DB-6 + DB-9 (was ar-5 only). The capability/measurability/
