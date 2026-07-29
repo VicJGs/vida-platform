@@ -8,3 +8,5 @@ export * from './_registry'
 export * from './foundation/sync-queue'
 // Foundation substrate: AR-5 Sessions base (spine + integration-contract structure).
 export * from './foundation/sessions'
+// Foundation substrate: AR-6 Spaces base (tags/links/spaces/enabled-blocks/views).
+export * from './foundation/spaces'

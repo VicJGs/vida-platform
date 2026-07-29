@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none)_
+- ar-6-spaces: .claude/tasks/ar-6-spaces.md  (in-progress 2026-07-28 — LIF-77 · M1.0 substrate spine · Spaces per ADR-006–010: `entity_links`/`entity_tags` + backlinks + saved Views [ADR-007 folded], home `core/src/foundation/{spaces,views}`. ← db-6 ✅ + db-9 ✅. Sole ready root of remaining substrate tier; unblocks AR-7 + hard prereq for AR-8 [§5.1.1:207]. Profile: Add Backend Component. Cluster: M1.0 Boot & Connective Base.)
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)

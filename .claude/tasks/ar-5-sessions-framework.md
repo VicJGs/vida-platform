@@ -1,5 +1,6 @@
 # Task: ar-5-sessions-framework
-# Status: planned
+# Status: completed (2026-07-28 · commit f045ac1 · LIF-76)
+# Linear: LIF-76
 # Cluster: M1.0 Boot & Connective Base
 # Milestone: Substrates
 # Phase: 1.0 — Structural Foundation

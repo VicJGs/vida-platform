@@ -112,3 +112,7 @@ export type {
 
 // Foundation substrate — Sessions base (AR-5 · ADR-004)
 export * from './foundation/sessions'
+
+// Foundation substrate — Spaces base (AR-6 · ADR-006/007)
+export * from './foundation/spaces'
+export * from './foundation/views'

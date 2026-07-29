@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| ar-6-spaces (LIF-77) | Add Backend Component | 2026-07-28 | 2026-07-28 | just started — M1.0 substrate spine (Spaces, ← db-6+db-9) |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
