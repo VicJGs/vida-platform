@@ -12,5 +12,5 @@ primitives, and neural-graph data prep. Module-owned engines (journal aggregatio
 points economy) live in their own module clusters — these are the shared ones.
 
 ## Dependencies
-- blocked by `ar-6-spaces-and-tags`  <!-- was ar-2: backlink resolver + neural-graph data-prep read entity_links, owned by ar-6 (Spaces tier, INT-1a); ar-2 is transitive via db-6←ar-2. Corrected 2026-07-28 -->
+- blocked by `ar-6-spaces`  <!-- backlink resolver + neural-graph data-prep read entity_links, owned by ar-6 (Spaces tier, INT-1a). Slug→canonical map key (was ar-6-spaces-and-tags, earlier ar-2); delivery-planning-loop U1 -->
 - blocked by `db-8-fts5-search`

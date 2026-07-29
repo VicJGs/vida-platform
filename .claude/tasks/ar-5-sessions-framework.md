@@ -14,7 +14,7 @@ and the effect rail (AR-7). Module-level session UI lands later in Phase 1b.
 
 ## Dependencies
 - blocked by `db-6-repository-layer`
-- blocked by `db-9-enums-and-zod-validators`
+- blocked by `db-9-enums-zod`  <!-- slug→canonical map key (was db-9-enums-and-zod-validators); delivery-planning-loop U1 -->
 <!-- reconciled 2026-07-27 (dep-reconcile triage): was `blocked by ar-2` only (under-specified). A sessions
      framework persists through the repository (DB-6) and needs canonical enums/Zod (DB-9); its own tables are the
      DB-3 stream slice, co-built. ar-2 is transitive via db-6. Matches delivery-plan §5 a2. -->

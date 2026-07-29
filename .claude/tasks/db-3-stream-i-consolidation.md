@@ -2,8 +2,10 @@
 # Status: planned
 # Cluster: M1.0 Boot & Connective Base
 # Milestone: Boot & DB spine
+# Stream: true
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer (ADR-002 §5.20)
+<!-- # Stream: true — never a delivery head (folds into consumer gates per delivery-plan §5.1.1); delivery-planning-loop U1 -->
 
 ## Goal
 Execute the Stream (i) RETIRE/ADD/AMEND per ADR-002 §5.20. ADD the cross-cutting spine tables:

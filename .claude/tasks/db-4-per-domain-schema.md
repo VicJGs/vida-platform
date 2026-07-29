@@ -2,8 +2,10 @@
 # Status: planned
 # Cluster: M1.0 Boot & Connective Base
 # Milestone: Boot & DB spine
+# Stream: true
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer (Stream ii)
+<!-- # Stream: true — never a delivery head (folds into consumer gates per delivery-plan §5.1.1); delivery-planning-loop U1 -->
 
 ## Goal
 Author the per-domain Drizzle schema from the 19 `structure-data.md` context docs — one domain
