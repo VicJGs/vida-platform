@@ -10,12 +10,22 @@
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-07-29 close-out) — supersedes the AR-*-era notes below.** Done = ar-1/db-1/ar-2/db-6/db-9/ar-5/**ar-6** (7 of 30). AR-6 Spaces merged (fad233b, LIF-77 Done). Next-session order (Victor-directed):
-1. **FIRST — `--next` selector re-plan** (a `~/dev-toolkit` build, run through the TOOLKIT's own loop; branch `feat-tracker-next-selector`, parked at g1 RETHINK). Prereqs the critique found: reconcile task-file `## Dependencies` blocker slugs → real slugs (stale roadmap slugs, e.g. `db-9-enums-and-zod-validators`→`db-9-enums-zod`), persist a `# Milestone` sub-wave order, add a stream/never-head marker. OPEN: sequencing A (one gated build) vs B (split — blocker slugs first). Diagnosis: `~/dev-toolkit/docs/specs/fixes/milestone-ordering-routing/`. **The loop needs `--next` working, so it goes first.**
-2. **THEN — resume the M1.0 loop: next head AR-7** (Capability + measurability + effect rail, LIF-78) ← AR-5 ✅ + AR-6 ✅. `/task-new ar-7` → §XXVI gate. Should consume `--next`.
-3. **THEN — clean hanging:** delete merged toolkit branch `fix-tracker-sync-dedup-guard`; the Manual-Linear items (archive ①–⑤ Project shells; db-2 disposition).
+**▶ CURRENT (2026-07-29 loop-tooling close-out).** Done = ar-1/db-1/ar-2/db-6/db-9/ar-5/ar-6 (7 of 30).
 
-Full detail in `.claude/session-log.md` (2026-07-29 entry). Historical AR-*-era notes below (kept for reference):
+✅ **Item 1 DONE — the delivery-planning loop is built + merged** (in `~/dev-toolkit`, ADR-015): the `--next` re-plan
+grew into the legacy-aware, hierarchical, file-traceable loop — `tracker_sync --census` / `--next` / `--plan <scope>`
++ begin/delivery-plan/§XXX wiring. 4 units, 6 independent critiques, 25 tests, live-verified (`--next`→db-7). The
+loop now COMPUTES the frontier from this plan (dep-graph + `_clusters.md` milestones + statuses) with a per-node
+progress + legacy digest — hand-deriving the frontier is retired. See the delivery-plan §4 Consumption Rule.
+✅ **Branch cleanup DONE** (merged branches deleted incl. `fix-tracker-sync-dedup-guard`).
+
+**▶ NEXT — Item 2: AR-7** (Capability + measurability + effect rail, LIF-78) ← AR-5 ✅ + AR-6 ✅. `/task-new ar-7` →
+§XXVI gate. Confirm the head first with `python3 ~/dev-toolkit/scripts/tracker_sync.py --next` (or
+`--plan milestone:Substrates`) instead of hand-reading this note.
+
+**⚠ Manual-Linear (Victor, Linear UI only):** archive the 5 empty ①–⑤ Project shells; db-2 (LIF-64) disposition.
+
+Full detail in `.claude/session-log.md`. Historical AR-*-era notes below (kept for reference):
 
 ---
 
