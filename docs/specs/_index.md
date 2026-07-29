@@ -20,5 +20,6 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 | [foundation/ar-5-sessions-base](foundation/ar-5-sessions-base/) | component (full double-gate) | spec-draft — stub + home; M1.0 substrate spine, LIF-76, ← db-6+db-9 | 2026-07-28-ar-5-sessions-base |
 | [foundation/ar-6-spaces](foundation/ar-6-spaces/) | component (full double-gate) | spec-draft — stub + home; M1.0 substrate spine, LIF-77, ← db-6+db-9 | 2026-07-28-ar-6-spaces |
 | [fixes/m1.0-baseline-gather-protocol](fixes/m1.0-baseline-gather-protocol/) | fix (process, STRUCTURAL) | implemented — added binding §2.1 gathering protocol + §3 gate precondition to m1.0-delivery-plan | 2026-07-28-ar-6-spaces |
+| [foundation/db-7-migrations-runner](foundation/db-7-migrations-runner/) | component (foundation, full double-gate) | **implemented** — app_state bootstrap + resetDev; closed a latent boot-throw bug; 3 critiques SHIP, typecheck 10/10, core 131 + web 6; LIF-69 | 2026-07-29-db-7-migrations-runner |
 <!-- note: ds-1-token-pipeline spec lives on branch `ds-1-token-pipeline` (parked, out of sequence) — not registered on main. -->
 

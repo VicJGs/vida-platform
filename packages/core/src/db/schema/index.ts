@@ -4,8 +4,9 @@
 // directory. Tables are authored per-feature at build phase (ADR-016 §3.5 / ADR-017).
 export * from './_shared'
 export * from './_registry'
-// Foundation tables (device-local infra, not domain data): DB-6 sync_queue.
+// Foundation tables (device-local infra, not domain data): DB-6 sync_queue · DB-7 app_state.
 export * from './foundation/sync-queue'
+export * from './foundation/app-state'
 // Foundation substrate: AR-5 Sessions base (spine + integration-contract structure).
 export * from './foundation/sessions'
 // Foundation substrate: AR-6 Spaces base (tags/links/spaces/enabled-blocks/views).

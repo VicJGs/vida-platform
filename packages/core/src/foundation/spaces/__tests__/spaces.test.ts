@@ -28,8 +28,6 @@ import { createViewEngine } from '../../views/engine'
 import { createViewProviderRegistry } from '../../views/provider-registry'
 import type { ReadProvider } from '../../views/types'
 
-const CREATE_APP_STATE = `CREATE TABLE app_state (key TEXT PRIMARY KEY, value TEXT)`
-
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
     async exec(sqlText, params) {
@@ -67,8 +65,7 @@ async function setup(): Promise<{ svc: SpacesService; db: DrizzleDb; driver: Sql
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
-  await driver.run(CREATE_APP_STATE)
-  await migrate(driver) // 001 sync_queue + 002 sessions + 003 spaces
+  await migrate(driver) // bootstraps app_state (DB-7 ensureInfra) + 001 sync_queue + 002 sessions + 003 spaces
   const db = createDrizzleProxy(driver)
   const registry = createTaggableTypeRegistry()
   return { svc: createSpacesService(db, 'test-device', registry), db, driver }

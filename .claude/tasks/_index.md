@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none)_
+- db-7-migrations-runner: .claude/tasks/db-7-migrations-runner.md  (in-progress 2026-07-29 — LIF-69 · M1.0 Boot & DB spine COMPUTED head via `tracker_sync --next` (← ar-2 ✅). Migrations runner + `app_state` foundation fragment (schema-version store, ADR-002 §9.1); hand-written SQL, per-feature (ADR-018 §3.5b), sibling of db-6. Profile: Add Backend Component. Spec home docs/specs/foundation/db-7-migrations-runner/. At §XXVI Step 0 baseline.)
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)

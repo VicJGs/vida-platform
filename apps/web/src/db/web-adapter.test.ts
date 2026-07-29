@@ -132,7 +132,8 @@ describe('migration runner (async)', () => {
   it('rolls back a failing migration and leaves the version unchanged', async () => {
     const bsql = new Database(':memory:')
     const driver = createBetterSqlite3Driver(bsql)
-    bsql.exec(`CREATE TABLE app_state (key TEXT PRIMARY KEY, value TEXT)`)
+    // No app_state fixture: this migration's up() throws before any setSchemaVersion,
+    // and getSchemaVersion is missing-table-safe (→0). DB-7 retired the hand-created fixture (BR-9).
 
     const failing: Migration = {
       version: 1,

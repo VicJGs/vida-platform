@@ -7,7 +7,7 @@
 //   const result = await migrate(driver)
 // ============================================================================
 
-import type { SqliteDriver, Migration } from '../adapter'
+import type { SqliteDriver, Migration, DatabaseAdapter, DatabaseConfig } from '../adapter'
 import { runMigrations, getSchemaVersion } from '../adapter'
 import { migration001SyncQueue } from './001_sync_queue'
 import { migration002Sessions } from './002_sessions'
@@ -28,16 +28,34 @@ const ALL_MIGRATIONS: Migration[] = [migration001SyncQueue, migration002Sessions
 // ---------------------------------------------------------------------------
 
 /**
+ * Bootstrap the device-local `app_state` infra table (ADR-002 §5.0) if absent.
+ *
+ * `app_state` holds `schema_version` (ADR-002 §9.1), so it is the version store
+ * the runner reads BEFORE the versioned loop — it therefore cannot itself be a
+ * versioned migration (chicken-and-egg). It is created here, idempotently, at the
+ * start of `migrate()`, ahead of `runMigrations`. Without this, the first
+ * `setSchemaVersion` INSERT throws `no such table: app_state` at real boot
+ * (adapter.ts:231) — masked until DB-7 only by test fixtures. (DB-7 · BR-4/BR-5)
+ */
+export async function ensureInfra(driver: SqliteDriver): Promise<void> {
+  await driver.run(
+    `CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
+  )
+}
+
+/**
  * Run all pending migrations against the given driver.
  *
  * Safe to call on every app startup — only applies migrations
  * whose version is greater than the stored schema_version.
+ * Bootstraps `app_state` first so the version store exists before any write.
  *
  * @returns Number of migrations applied and the resulting version.
  */
 export async function migrate(
   driver: SqliteDriver,
 ): Promise<{ applied: number; currentVersion: number }> {
+  await ensureInfra(driver)
   return runMigrations(driver, ALL_MIGRATIONS)
 }
 
@@ -59,4 +77,28 @@ export async function needsMigration(driver: SqliteDriver): Promise<boolean> {
 /** List all registered migrations (for debugging / admin UI). */
 export function listMigrations(): ReadonlyArray<{ version: number; name: string }> {
   return ALL_MIGRATIONS.map((m) => ({ version: m.version, name: m.name }))
+}
+
+/**
+ * DEV-ONLY: destroy the local database and rebuild it from zero.
+ *
+ * Deletes the DB (file on native; VFS directory on web — adapter.destroy),
+ * re-opens, and re-runs every migration. NOT re-exported from the `@vida/core`
+ * barrel and guarded behind the dev flag, so it is unreachable from production
+ * flows. (DB-7 · BR-8)
+ */
+export async function resetDev(
+  adapter: DatabaseAdapter,
+  config: DatabaseConfig,
+): Promise<{ applied: number; currentVersion: number }> {
+  // `import.meta.env` is a bundler (Vite) augmentation not present in @vida/core's
+  // lib types; cast through `unknown` to read `.DEV` type-safely. Fails CLOSED —
+  // if `env` is absent (non-bundler runtime), the guard treats it as non-dev.
+  const env = (import.meta as unknown as { env?: { DEV?: boolean } }).env
+  if (!env?.DEV) {
+    throw new Error('resetDev() is a development-only helper and must not run in production')
+  }
+  await adapter.destroy(config.dbName)
+  const driver = await adapter.open(config)
+  return migrate(driver)
 }

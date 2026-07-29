@@ -30,7 +30,6 @@ const widgets = sqliteTable('widgets', {
   deleted_at: integer('deleted_at'),
 })
 
-const CREATE_APP_STATE = `CREATE TABLE app_state (key TEXT PRIMARY KEY, value TEXT)`
 const CREATE_WIDGETS = `
   CREATE TABLE widgets (
     id              TEXT PRIMARY KEY,
@@ -86,9 +85,8 @@ async function setup(): Promise<{ driver: SqliteDriver; db: DrizzleDb; bsql: Dat
   await initVault() // libsodium ready — required by hashContent (_sync_hash), independent of vault UNLOCK
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
-  await driver.run(CREATE_APP_STATE)
   await driver.run(CREATE_WIDGETS)
-  await migrate(driver) // applies migration 001 → creates sync_queue (proves B2-B4 end-to-end)
+  await migrate(driver) // bootstraps app_state (DB-7 ensureInfra) + applies migration 001 → sync_queue (proves B2-B4 end-to-end)
   const db = createDrizzleProxy(driver)
   return { driver, db, bsql }
 }
@@ -200,7 +198,6 @@ describe('DB-6 — SQL-level atomicity', () => {
         return base.run(sqlText, params)
       },
     }
-    await driver.run(CREATE_APP_STATE)
     await driver.run(CREATE_WIDGETS)
     await migrate(driver)
     const db = createDrizzleProxy(driver)

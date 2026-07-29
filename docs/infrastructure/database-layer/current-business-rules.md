@@ -73,3 +73,19 @@ Rules DB-6 ESTABLISHED (implemented + tested):
 - **[FACT] BR-DB6-5 — tested to §XIX.** 10 repository cases; `@vida/core` 55/55. `[FACT: repository.test.ts]`
 - **Soft delete enqueues `operation='update'`** (deleted_at set, row still syncs); hard delete `'delete'`.
   The reader/flush that consumes these is AR-9 (stubbed → M4). `[FACT: repository.ts del/hardDelete]`
+
+## DB-7 — IMPLEMENTED (2026-07-29 · LIF-69)
+- **[FACT] BR-DB7-1 — `app_state` is the device-local version store.** `(key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
+  ADR-002 §5.0 shape; holds `schema_version` (ADR-002 §9.1). NOT synced — no `baseColumns`/`syncColumns`.
+  `[FACT: schema/foundation/app-state.ts; ADR-002 §5.0/§9.1]`
+- **[FACT] BR-DB7-2 — `app_state` is bootstrapped BEFORE the versioned loop, not as a versioned migration.** It is the
+  store the runner reads the version FROM, so it cannot be version-gated (chicken-and-egg). `migrate()` calls the
+  idempotent `ensureInfra` (`CREATE TABLE IF NOT EXISTS`) ahead of `runMigrations`. Asymmetry with `sync_queue` (a
+  versioned migration 001) is mechanical. `[FACT: runner.ts]`
+- **[FACT] BR-DB7-3 — the migration engine is forward-only + atomic (preserved).** Only `version > current` applied,
+  ascending, each in `BEGIN/COMMIT`; failure → `ROLLBACK` + version unchanged; up-to-date ⇒ `applied:0`. No `down()`
+  (a knowing divergence from ADR-002 §9.2; rationale ADR-016:17 — local-first, rebuild-not-rollback). `[FACT: adapter.ts:244-273]`
+- **[FACT] BR-DB7-4 — `resetDev` is dev-only.** `import.meta.env.DEV`-guarded (fails closed) + not re-exported from the
+  `@vida/core` barrel, so it is unreachable from production flows. `[FACT: runner.ts resetDev; index.ts]`
+- **[FACT] BR-DB7-5 — no hand-created `app_state` fixtures.** All 4 test-file fixtures retired; the real bootstrap
+  creates the table, so tests exercise the production path. `[FACT: the 4 test files; migrations-runner.test.ts]`

@@ -116,7 +116,24 @@ true pass-through until M3" is a Step-2/Step-3 (`/api-contract` + `/adr-check`) 
 the plan. `[FACT: repository.ts:231; ADR-017; delivery-plan §5 DB-6 "encryption deferred M3"]`
 </details>
 
+## DB-7 — IMPLEMENTED (2026-07-29 · LIF-69)
+The runner now bootstraps its own version store and offers a dev-reset. `[FACT: migrations/runner.ts; schema/foundation/app-state.ts]`
+- **`app_state` infra table** — `schema/foundation/app-state.ts` (Drizzle mirror: `key TEXT PK · value TEXT NOT NULL`,
+  carry-v1-shape per ADR-002 §5.0) + re-exported from `schema/index.ts`. Device-local, NOT synced (no
+  `baseColumns`/`syncColumns`). It is the `schema_version` store (ADR-002 §9.1). `[FACT: schema/foundation/app-state.ts]`
+- **`ensureInfra(driver)` bootstrap** — `migrate()` runs `CREATE TABLE IF NOT EXISTS app_state …` **before**
+  `runMigrations`. `app_state` is the version store, so it can't be a versioned migration (chicken-and-egg); it is
+  bootstrapped pre-loop. This closed a latent gap: `setSchemaVersion` INSERTs into `app_state` (adapter.ts:231) but no
+  production migration created it, so `migrate()` threw `no such table: app_state` at real boot (`worker.ts:23`) —
+  previously masked only by test fixtures. `[FACT: runner.ts; adapter.ts:231]`
+- **`resetDev(adapter, config)`** — dev-only (`import.meta.env.DEV`-guarded, not barrel-exported): `destroy` → `open` →
+  `migrate` from zero. Web OPFS/VFS round-trip is a Playwright follow-up (jsdom can't host the VFS, cf. LIF-103).
+- **Runner engine UNCHANGED** — `runMigrations`/`getSchemaVersion`/`setSchemaVersion`/`Migration` type untouched;
+  forward-only (no `down()`, diverges from ADR-002 §9.2 — inherited, rationale ADR-016:17). `[FACT: adapter.ts]`
+- **Fixtures retired** — the 4 hand-created `app_state` fixtures removed; the real bootstrap now covers them.
+- **Tested** — `db/tests/migrations-runner.test.ts` (6 cases: fresh bootstrap, idempotent ensureInfra, no-op re-run,
+  failing-migration rollback, close/reopen persistence, resetDev rebuild). `@vida/core` 131/131 · `@vida/web` 6/6 · typecheck 10/10. `[FACT: vitest run]`
+
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-3 substrate tables · DB-4 per-domain tables · DB-5 encryption wiring · DB-7 migrations
-authoring (runner + registry exist; DB-6 registered the first migration) · monolith retirement · DB-8 FTS5 ·
-DB-11 reconcile ADR-002 §5/§7/§8. **DB-6 ✅ done → unblocks ar-5/ar-6/ar-7 (substrates) + db-10 (seed).**
+DB-2 sync cols/HLC · DB-3 substrate tables · DB-4 per-domain tables · DB-5 encryption wiring · monolith retirement ·
+DB-8 FTS5 · DB-11 reconcile ADR-002 §5/§7/§8. **DB-6 ✅ + DB-7 ✅ done.** DB-7 unblocks db-10 (seed) with db-6/db-9.

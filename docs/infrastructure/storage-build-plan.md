@@ -35,8 +35,8 @@
 ### P0 · Primitives + infra — **DONE** (DB-1)
 | Table | Domain | Source | Ready | FK-deps | State |
 |-------|--------|--------|:---:|---------|:---:|
-| `app_state` (device-local) | infra | ADR-002 §5.0 | ✓ | — | planned (carry v1 shape → `schema/infra.ts`) |
-| `sync_queue` (device-local) | infra | ADR-002 §5.1 | ✓ | — | planned (carry v1 shape → `schema/infra.ts`) |
+| `app_state` (device-local) | infra | ADR-002 §5.0 | ✓ | — | **verified** (DB-7: `schema/foundation/app-state.ts` + runner `ensureInfra` bootstrap) |
+| `sync_queue` (device-local) | infra | ADR-002 §5.1 | ✓ | — | **verified** (DB-6: `schema/foundation/sync-queue.ts` + migration 001) |
 | _(primitives `_shared.ts`/`_registry.ts`)_ | — | DB-1 | ✓ | — | **verified** |
 
 ### P0.5 · Sync-metadata amendment (DB-2)

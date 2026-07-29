@@ -28,8 +28,6 @@ import {
   SessionTypeNotFound,
 } from '../types'
 
-const CREATE_APP_STATE = `CREATE TABLE app_state (key TEXT PRIMARY KEY, value TEXT)`
-
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
     async exec(sqlText, params) {
@@ -67,8 +65,7 @@ async function setup(): Promise<{ registry: SessionRegistry; db: DrizzleDb; driv
   await initVault() // libsodium ready — _sync_hash on write
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
-  await driver.run(CREATE_APP_STATE)
-  await migrate(driver) // applies 001 (sync_queue) + 002 (sessions tables)
+  await migrate(driver) // bootstraps app_state (DB-7 ensureInfra) + applies 001 (sync_queue) + 002 (sessions tables)
   const db = createDrizzleProxy(driver)
   return { registry: createSessionRegistry(db, 'test-device'), db, driver }
 }
