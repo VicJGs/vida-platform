@@ -7,7 +7,7 @@
 # Milestone: Boot & DB spine
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap/m1.0-delivery-plan.md → DB-9 (roadmap issue LIF-71)
-# Linear: LIF-106 (created by --sync this session) — ⚠ likely DUPLICATE of roadmap LIF-71; reconcile (Victor)
+# Linear: LIF-71
 # Created: 2026-07-28
 # Activated: 2026-07-28 (M1.0 delivery campaign — ready head off DB-1; strong next after DB-6)
 

@@ -4,6 +4,7 @@
 # Spec: docs/specs/foundation/ar-6-spaces/_index.md
 # Created: 2026-07-28
 # Status: in-progress
+# Linear: LIF-77
 # Cluster: M1.0 Boot & Connective Base
 
 ## Goal
