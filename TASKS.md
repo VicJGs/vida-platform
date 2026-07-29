@@ -10,6 +10,15 @@
 
 ## 🧭 Next session
 
+**▶ CURRENT (2026-07-29 close-out) — supersedes the AR-*-era notes below.** Done = ar-1/db-1/ar-2/db-6/db-9/ar-5/**ar-6** (7 of 30). AR-6 Spaces merged (fad233b, LIF-77 Done). Next-session order (Victor-directed):
+1. **FIRST — `--next` selector re-plan** (a `~/dev-toolkit` build, run through the TOOLKIT's own loop; branch `feat-tracker-next-selector`, parked at g1 RETHINK). Prereqs the critique found: reconcile task-file `## Dependencies` blocker slugs → real slugs (stale roadmap slugs, e.g. `db-9-enums-and-zod-validators`→`db-9-enums-zod`), persist a `# Milestone` sub-wave order, add a stream/never-head marker. OPEN: sequencing A (one gated build) vs B (split — blocker slugs first). Diagnosis: `~/dev-toolkit/docs/specs/fixes/milestone-ordering-routing/`. **The loop needs `--next` working, so it goes first.**
+2. **THEN — resume the M1.0 loop: next head AR-7** (Capability + measurability + effect rail, LIF-78) ← AR-5 ✅ + AR-6 ✅. `/task-new ar-7` → §XXVI gate. Should consume `--next`.
+3. **THEN — clean hanging:** delete merged toolkit branch `fix-tracker-sync-dedup-guard`; the Manual-Linear items (archive ①–⑤ Project shells; db-2 disposition).
+
+Full detail in `.claude/session-log.md` (2026-07-29 entry). Historical AR-*-era notes below (kept for reference):
+
+---
+
 **AR-2 DONE + M1.0 -a spine dep-graph RECONCILED (commit ef481c1). Corrected ready-frontier below.**
 - **AR-2 recap:** async DatabaseAdapter + web-adapter (wa-sqlite/OPFS + drizzle-orm/sqlite-proxy). 5/7 DoD (contract);
   browser open/persist carried by **LIF-103** (Playwright+OPFS harness). Details: 2026-07-27→28 session-log.
