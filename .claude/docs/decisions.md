@@ -133,3 +133,13 @@ Re-projectized Linear from the old substrate-first five-layer structure (①–�
 - M1.0 = empty-[E] pass-through (ADR-017:20); [E] marks are the M3 target.
 - Junctions idempotent (findWhere-before-insert) + resolve-then-soft-delete; tag/space nesting cycle-guarded.
 - Deferred by the docs (not chosen): capability registry/block_instances→AR-7; effect rail→AR-7; backlink resolver→AR-8; predicate-DSL/layout/resolution-surface→build-time; page_tags retirement→N&P (M1.1).
+
+## DB-7 migrations runner + app_state — completed 2026-07-29
+- Reconcile+extend (NOT from-zero): the runner + engine (runMigrations/get/setSchemaVersion) already existed with migrations 001/002/003 live. db-7 authored the ONE missing piece.
+- Closed a latent bug: getSchemaVersion swallows the missing table (→0), but setSchemaVersion INSIDE the loop INSERTs into app_state (adapter.ts:231) — no production migration created it, so migrate() threw at real web boot (worker.ts:23); masked only by 4 test fixtures.
+- app_state = documented infra (ADR-002 §5.0 `key TEXT PK, value TEXT NOT NULL`; §9.1 schema_version). NOT an architectural decision — Victor corrected a manufactured "option A/B" fork; the docs already decide. See memory read-architecture-before-implementing.
+- Bootstrap is pre-loop (ensureInfra, idempotent CREATE IF NOT EXISTS) not a versioned migration — it is the version store, so it can't be version-gated. Mechanically forced, not a choice.
+- Home = schema/foundation/app-state.ts (DB-6 sync_queue precedent), NOT the build-plan's stale schema/infra.ts → ledger amended.
+- Forward-only preserved (no down(); inherited divergence from ADR-002 §9.2, rationale ADR-016:17 — reconcile at DB-11).
+- resetDev dev-only (import.meta.env.DEV read type-safely, fails closed; not barrel-exported).
+- Method: full §XXVI double-gate + 3 independent critiques (all SHIP; gate-1 caught a 4th fixture + BR-5 mechanism). typecheck 10/10, @vida/core 131/131, @vida/web 6/6. Reversible: yes (additive). commit d7aa1e0, LIF-69 Done.

@@ -3,7 +3,7 @@
 # Scenario: default
 # Spec: docs/specs/foundation/db-7-migrations-runner/_index.md
 # Created: 2026-07-29
-# Status: in-progress
+# Status: done
 # Linear: LIF-69
 # Cluster: M1.0 Boot & Connective Base
 # Milestone: Boot & DB spine
