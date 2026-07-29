@@ -1,7 +1,8 @@
 # Current-State Baseline — Vida Platform Foundation
 
 **Type:** Ground-truth baseline analysis (the §XXVI.1a No-Guessing input to a planning gate). **FINDINGS ONLY — no plan, no recommendations.**
-**Date:** 2026-07-23
+**Date:** 2026-07-23 (§1–§6 snapshot) · **now also hosts the live `## Divergent Ledger`** consumed by `tracker_sync --census` (delivery-planning-loop Unit 2, ADR-015). The §1–§6 prose is a frozen snapshot; the ledger below is re-verified per authoring and self-audited by the census (BR-8).
+> ⚠ The §1–§6 findings are the 2026-07-23 snapshot and are **stale on specifics** (e.g. §1's "472-LOC dead web-adapter.ts" is now 102-LOC/imported/aligned; the `schema.ts` continuity trap is resolved — quarantined to `db/_legacy/`). For live per-node state run `tracker_sync --census`; use §1–§6 for the historical framing only.
 **Session:** build-roadmap-resequence (framing held per decision C — this baseline decides the shape)
 **No-Guessing:** every claim labeled [FACT: evidence] / [INTERP: from X] / [UNKNOWN: needs Y]. Produced by 4 parallel read-only analyses over the code + git history + docs.
 
@@ -126,3 +127,23 @@ Of the **35 Structural-Foundation deliverables** (DB-1…11 + AR-1…9 + DS-1…
 - [UNKNOWN] Runtime behavior — this baseline is file contents, git dates, and grep presence/absence only; nothing was executed.
 
 *This is the baseline. The plan is drawn from it next, through the gate — not here.*
+
+---
+
+## Divergent Ledger
+
+The **curated** input to `tracker_sync --census` (delivery-planning-loop Unit 2, ADR-015 · BR-4). `divergent` = code that
+is **present in a live (non-`_legacy`) location but contradicts the docs** — a content judgment the census cannot make
+mechanically, so it is listed here (node-attributed) and **self-audited by BR-8**: the census flags any row whose `Path`
+is now absent or now `aligned` as `⚠ stale-ledger-entry`, so this table cannot silently rot like §1–§6 did.
+
+Rules: one row per divergent path · `Issue` = the delivery-plan node id (e.g. `AR-7`) · `Path` = repo-relative ·
+**every row re-verified against the live tree when added** (never copied from the §1 snapshot). Mechanically-detected
+debt (`orphan`, `quarantined`) is NOT listed here — the census computes those from the tree directly.
+
+| Issue | Path | Note |
+|-------|------|------|
+<!-- (currently empty) The ADR-018 reorg + AR-2/5/6 builds resolved baseline §1's divergences: web-adapter.ts → aligned;
+     the v1 schema.ts monolith → quarantined (db/_legacy/, a distinct census class, not divergent). No live non-legacy
+     wired-but-wrong file is known today. Add rows here as new divergence appears; BR-8 keeps them honest. -->
+
