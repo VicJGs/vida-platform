@@ -3,17 +3,18 @@
 # Scenario: Default
 # Spec: docs/specs/foundation/db-2-sync-metadata-columns/_index.md
 # Created: 2026-07-22
-# Status: PARKED — superseded by ADR-017 (features-first resequencing) on 2026-07-23. NOT completed.
-#   Reason: DB-2's charter (add _sync_field_ts + decide the HLC representation F6/D4-d) is only needed
-#   when the sync engine flushes. ADR-017 defers sync (and encryption/auth) to a post-validation hardening
-#   pass, so the HLC decision defers WITH it. Baseline (§XXVI.1a) was done; no code was written; no schema
-#   changed. If revived: the sync-metadata work resurfaces in the hardening pass, re-planned against ADR-017.
-#   Linear LIF-64 → Backlog.
-# Cluster: ① Database Layer
-# Milestone: Schema
-# Phase: 1.0 — Structural Foundation
-# Issue: LIF-64
-# Source: docs/roadmap.md → Phase 1.0 ① Database Layer (DB-2)
+# Status: planned
+# Linear: LIF-64
+#   DEFERRED (Backlog) — ADR-017 (features-first) defers sync (+ encryption/auth) to the post-validation hardening
+#   pass, so DB-2's sync-metadata charter (add _sync_field_ts + decide the HLC representation F6/D4-d) defers WITH
+#   it. Baseline (§XXVI.1a) done; no code / no schema written. RE-HOMED 2026-07-29 from the retired
+#   `① Database Layer` cluster to M4 Sync & Server (its natural home — sync-metadata activates with the sync
+#   engine, alongside ar-9b-sync-activate). Revive → re-plan vs ADR-017. (Status token kept a clean `planned`
+#   [→ BACKLOG] so the tracker doesn't mis-normalize the prose — the old line's "NOT completed" matched DONE.)
+# Cluster: M4 Venues / Multi-Device
+# Milestone: Sync & Server
+# Phase: deferred (post-validation hardening pass, ADR-017)
+# Source: docs/roadmap.md → M4 Venues / Multi-Device · Sync & Server (was Phase 1.0 ① Database Layer DB-2, re-homed)
 
 ## Goal
 Amend the shared `syncColumns` primitive so every syncable table inherits the FINAL

@@ -6,10 +6,10 @@ _(none)_
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)
+- db-2-sync-metadata-columns: .claude/tasks/db-2-sync-metadata-columns.md  (DEFERRED/Backlog — **RE-HOMED 2026-07-29** from the retired `① Database Layer` cluster to **M4 Venues / Multi-Device · Sync & Server** [alongside ar-9b; LIF-64 moved + state BACKLOG in Linear]. Charter = `syncColumns` amendment + HLC representation [ADR-002 §5.20 / ADR-003 §17 / ADR-004 F1]; ADR-017 defers it with the sync engine to the post-validation hardening pass. Baseline done, no code. Not stale — a legit deferred issue that was de-organized.)
 
 ## Parked / Superseded
 - ds-1-token-pipeline: .claude/tasks/ds-1-token-pipeline.md  (PARKED 2026-07-27 — complete + green on branch `ds-1-token-pipeline` @ fd9f144; out of sequence [M1.0-b Design System track, not the -a critical path]. LIF-81 → Backlog. Resumes when the -b wave's turn comes. SD→Tamagui+CSS pipeline, 13/13 tests, eng-gate PASS, current-* at docs/ui/token-pipeline/.)
-- db-2-sync-metadata-columns: .claude/tasks/archive/db-2-sync-metadata-columns.md  (PARKED 2026-07-23 — superseded by ADR-017 features-first resequencing; HLC/sync-metadata work defers with the sync engine to the hardening pass; baseline done, no code written; Linear LIF-64 → Backlog)
 
 ## Completed
 - ar-6-spaces: .claude/tasks/archive/ar-6-spaces.md  (completed 2026-07-29 — LIF-77 · M1.0 substrate spine · Spaces per ADR-006 (SP1–SP7) + ADR-007 (V1–V5). 6 tables + registries/services (SpacesService BR-14/15, ViewEngine V3/4/5); deferred capability-registry/effect-rail→AR-7, backlink-resolver→AR-8. Double-gated + 3 critiques; typecheck 10/10, spaces 14/14. commit e2a170d → merged fad233b. Currency at docs/core/spaces/. Unblocks AR-7. §2.1 gather-protocol + tracker dedup-guard born this session.)
