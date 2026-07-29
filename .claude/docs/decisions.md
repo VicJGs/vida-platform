@@ -125,3 +125,11 @@ Re-projectized Linear from the old substrate-first five-layer structure (①–�
 - **BR-4 containment = effects ⊆ allowed_effects ⊆ shipped envelope** (post-impl critique fix).
 - Method: full §XXVI double-gate + 3 independent critiques (each caught a real defect); typecheck 10/10,
   core 110/110. Reversible: yes (additive migration 002).
+
+## AR-6 Spaces substrate — completed 2026-07-29
+- Scope is mechanical (capability-framework §3): SP1–SP7 (ADR-006) + V1–V5 (ADR-007) — not a "grain" choice.
+- entity_links shape = decided `(page_id, entity_type, entity_id, context)` (cross-module-integration §3.2 + security-model), page-anchored, open target registry, no FK; NOT source-polymorphic (a retracted invention).
+- Types placement follows the built-substrate convention (AR-5): @vida/types = enum vocab only; row types = schema $inferSelect; service types in core/foundation.
+- M1.0 = empty-[E] pass-through (ADR-017:20); [E] marks are the M3 target.
+- Junctions idempotent (findWhere-before-insert) + resolve-then-soft-delete; tag/space nesting cycle-guarded.
+- Deferred by the docs (not chosen): capability registry/block_instances→AR-7; effect rail→AR-7; backlink resolver→AR-8; predicate-DSL/layout/resolution-surface→build-time; page_tags retirement→N&P (M1.1).

@@ -3,7 +3,7 @@
 # Scenario: default
 # Spec: docs/specs/foundation/ar-6-spaces/_index.md
 # Created: 2026-07-28
-# Status: in-progress
+# Status: done (2026-07-29 · merged fad233b · LIF-77)
 # Linear: LIF-77
 # Cluster: M1.0 Boot & Connective Base
 

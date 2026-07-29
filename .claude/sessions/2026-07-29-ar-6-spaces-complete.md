@@ -1,0 +1,1 @@
+Task completed. AR-6 Spaces substrate merged to main (fad233b), LIF-77 → Done. Currency docs at docs/core/spaces/. Unblocks AR-7. This session also: fixed the tracker slug-join dup bug at the core (~/dev-toolkit main 4334dca) + remediated the 3 vida dup pairs (Facet A), and added delivery-plan §2.1 (gather protocol). Next: milestone-ordering triage, then AR-7.
