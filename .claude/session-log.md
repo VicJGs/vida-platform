@@ -3745,3 +3745,24 @@ NEXT SESSION (explicit order, Victor-directed):
   2. THEN: resume the M1.0 loop — next head AR-7 (Capability registry + measurability + effect rail, LIF-78), unblocked by AR-5 ✅ + AR-6 ✅. /task-new ar-7 → §XXVI gate. (The loop should CONSUME --next once it works — that's why --next goes first.)
   3. THEN: clean hanging items — delete the merged toolkit branch fix-tracker-sync-dedup-guard; any other stale branches/shells; the standing Manual-Linear items (archive the empty ①–⑤ Project shells; db-2 disposition).
 Git: vida main @ 88803ef (AR-6 + Facet A + pointers, all committed, NOT pushed). ~/dev-toolkit main @ 89d4a7f (dedup fix + docs). No active vida task (ar-6 archived).
+
+---
+Date: 2026-07-29
+Profile switch: Add Backend Component → Generic Coding Session (at /begin, this session).
+Reason: computed head ar-4-state-routing-forms (LIF-75) is frontend infra (Zustand / React Query v5 / TanStack Router / TanStack Form + Zod at apps/web/src/{stores,router,forms}) — flagged in the TASKS.md frontier note. CLAUDE.md carries no `# Profile:` line, so this entry is the persistence. Scenario dispatched: generic-coding-session/scenarios/default.md.
+
+---
+Date: 2026-07-29→30
+Task: ar-4-state-routing-forms (LIF-75) — COMPLETE on branch `ar-4-state-routing-forms` (M1.0 Boot & DB spine, COMPUTED head off db-7)
+Goal: stand up apps/web client runtime per ADR-001 — Zustand + React Query v5 + TanStack Router + TanStack Form/Zod.
+Completed:
+  - Profile switched Add Backend Component → Generic Coding Session (per frontier flag). Full §XXVI double-gate + §XXX flow.
+  - Built: db/client.ts (WorkerDbClient — main↔worker SqliteDriver proxy, D5), extended db/worker.ts protocol, db/boot.ts (StrictMode-safe boot); lib/query-client.ts + hooks/useSchemaVersion.ts (RQ over local SQLite, no HTTP); routes.tsx (code-based, lazy /notes); stores/app-shell-ui-store.ts (Zustand UI-only); lib/forms.ts (useZodForm, Standard Schema); App.tsx providers + DB-ready gate + error/retry; vite.config.ts vitest env.
+  - ADR-020 (Zustand store placement = per-app hooks) resolving the long-deferred ADR-001:286; pointer added.
+  - Verify: typecheck 10/10 · @vida/web 21/21 (incl timeout/crash/malformed-reply failure paths) · build green · grep-clean · engineering gate PASS.
+Gate trail: baseline → PLAN → critique-1 (REVISE→8 fixed) → Approval 1 → preflight (BLOCKED→added D5 main↔worker binding, the AR-2-assigned layer the PLAN omitted) → critique-2 (SHIP→5 fixed) → Approval 2 → implement → post-impl critique (REVISE→3 MUST+2 SHOULD: RPC timeout/onerror, worker default case, boot memo-clear + App error state) → engineering gate PASS.
+Decisions (resolved from docs, not guessed): D1 homes = architecture over §149 shorthand; D2 ADR-020 per-app hooks (M4 revisit); D3 code-based routes.tsx; D4 grain = mechanism + 1 reference/plane; D5 binding = SqliteDriver proxy, values/batch deferred seam.
+Lessons: (1) Victor corrected TWO manufactured forks — grain + main↔worker ownership were BOTH already in the docs; read the layer doc (apps/web/src/db/CLAUDE.md) + architecture, not just ADRs + the delivery-plan table. (2) Verify library APIs first — TanStack Form v1 dropped the zod adapter (Standard Schema direct); Router uses lazyRouteComponent not React lazy(). (3) Post-impl critique caught happy-path-only error handling — the highest-value gate.
+§XXIX currency: docs/infrastructure/web-client-runtime/current-{spec,business-rules}.md born + promoted to as-built; db layer doc AR-4 line updated; ADR-020 written. All shipped WITH the code.
+Follow-ups (flagged, not dropped): Vite 6→7 bump (own build-infra unit, ADR-001 §22); live-OPFS Playwright smoke (LIF-103); delivery-plan §149 home-cell hygiene; bundle 80KB shell budget → UI-4 era.
+Next: M1.0 loop continues — re-run tracker_sync --next for the head after AR-4 (parallel-ready alts were db-10, qa-1).

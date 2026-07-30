@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none)_
+- ar-4-state-routing-forms: .claude/tasks/ar-4-state-routing-forms.md  (in-progress 2026-07-29 — LIF-75 · M1.0 Boot & DB spine COMPUTED head via `tracker_sync --next` off db-7. Wire `apps/web` client runtime per ADR-001: Zustand stores + React Query v5 + TanStack Router + TanStack Form/Zod at `apps/web/src/{stores,router,forms}`. Profile switched to Generic Coding Session. **blocked-by ar-1** ✅. Grain [full-wiring vs spine] open → resolve at PLAN. Spec stub at docs/specs/foundation/ar-4-state-routing-forms/.)
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)

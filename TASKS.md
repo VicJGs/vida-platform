@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| ar-4-state-routing-forms (LIF-75) | Generic Coding Session | 2026-07-29 | 2026-07-29 | ▶ just started — COMPUTED head off db-7; Step 0 baseline next |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session

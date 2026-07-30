@@ -6,6 +6,7 @@
 **Context:** Vida Platform — Zero-knowledge, local-first, multiplatform life management SaaS
 **Amended:** 2026-07-16 (F5 / D6) — §6 Key Model: `HKDF` → `BLAKE2b-256` (keyed), aligning this ADR to the authoritative implementation (`packages/core/src/encryption/vault.ts`, tested). Doc-only alignment; no code changed.
 **Amended:** 2026-07-19 ([ADR-013](ADR-013-zero-knowledge-notification-delivery.md)) — **resolves the deferred "Push notification service (Expo vs OneSignal)" (Phase 6.7)**: the contract is that push carries **no content** (a content-minimal wake-signal); the vendor choice stays build-phase. Doc-only.
+**Amended:** 2026-07-30 ([ADR-020](ADR-020-zustand-store-placement.md)) — **resolves the deferred "Zustand stores placement (§21)"**: per-app React hooks (`apps/<app>/src/stores/`), not vanilla-in-`packages/core` (no M1.0 cross-platform consumer; revisit at M4). Resolved by AR-4, its first consumer. Doc + first-impl.
 
 ---
 
@@ -283,7 +284,7 @@ apps/server
 | Mobile SQLite + SQLCipher implementation (`expo-sqlite` custom build vs `react-native-quick-sqlite`) | Phase 1.3 (Database Layer) |
 | SRP server library (`secure-remote-password` npm vs Web Crypto API implementation) | Phase 1.4 (Auth System) |
 | Server metadata storage (Cloudflare D1 vs KV for SRP verifiers, user records, device lists) | Phase 1.4 (Auth System) / 1.7 (Sync Server) |
-| Zustand stores placement (`packages/core` vanilla vs per-app React hooks) | Phase 0.5 (Monorepo Init) |
+| Zustand stores placement (`packages/core` vanilla vs per-app React hooks) | ✅ RESOLVED by [ADR-020](ADR-020-zustand-store-placement.md) (2026-07-30, AR-4) — per-app React hooks; revisit at M4 |
 | Platform-conditional icon exports (`lucide-react` vs `lucide-react-native` in `packages/ui`) | Phase 0.5 (Monorepo Init) / 1.9 (Design System) |
 | Sigma.js vs alternatives (if WebGL issues arise) | Phase 10 (Relationship Management) |
 | Push notification service (Expo Notifications vs OneSignal) | Phase 6.7 (Mobile Push) |

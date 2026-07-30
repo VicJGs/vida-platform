@@ -11,7 +11,9 @@ M1.0 (SQLCipher → M3); the seam is pass-through.
 - **Async everywhere.** wa-sqlite@1.0.0's Factory API is async-only (`step`/`prepare_v2`/`finalize` are `async`), so
   the driver and `DrizzleDb` are asynchronous. `DrizzleDb = SqliteRemoteDatabase<schema>` via `drizzle-orm/sqlite-proxy`.
 - **Worker-hosted.** `AccessHandlePoolVFS` needs `FileSystemSyncAccessHandle`, which exists only in a Worker — so the
-  engine + driver + Drizzle proxy all live in `worker.ts`. The app-facing main↔worker binding is AR-4 (not here).
+  engine + driver + Drizzle proxy all live in `worker.ts`. The app-facing main↔worker binding is **`client.ts` (AR-4,
+  built 2026-07-30)** — a `WorkerDbClient` shaped as an `SqliteDriver` proxy over the worker RPC; `boot.ts` owns the
+  single client + one-time open. `exec`/`values`/`batch` on the client are a deferred seam (throw until entity-CRUD, UI-3/M1.1+).
 - **Sync WASM build + AccessHandlePoolVFS** (the non-Asyncify VFS): no SharedArrayBuffer → **no COOP/COEP headers**.
 - The proxy callback returns wa-sqlite's positional `row()` arrays; Drizzle maps them (`mapResultRow`) — we never
   import `mapResultRow`.
