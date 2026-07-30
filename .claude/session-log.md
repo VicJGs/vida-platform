@@ -3766,3 +3766,12 @@ Lessons: (1) Victor corrected TWO manufactured forks — grain + main↔worker o
 §XXIX currency: docs/infrastructure/web-client-runtime/current-{spec,business-rules}.md born + promoted to as-built; db layer doc AR-4 line updated; ADR-020 written. All shipped WITH the code.
 Follow-ups (flagged, not dropped): Vite 6→7 bump (own build-infra unit, ADR-001 §22); live-OPFS Playwright smoke (LIF-103); delivery-plan §149 home-cell hygiene; bundle 80KB shell budget → UI-4 era.
 Next: M1.0 loop continues — re-run tracker_sync --next for the head after AR-4 (parallel-ready alts were db-10, qa-1).
+
+--- (end-state addendum, 2026-07-30)
+AR-4 COMPLETE + committed (955a255 feat + a276821 chore) + PUSHED to origin/ar-4-state-routing-forms. LIF-75 → Done.
+PR: NOT yet created — `gh` is unauthenticated in this env. Next session (or Victor): either `! gh auth login` then
+`gh pr create --base main --head ar-4-state-routing-forms` (full body prepared, in the AR-4 session context), OR open
+via https://github.com/VicJGs/vida-platform/pull/new/ar-4-state-routing-forms. Branch NOT merged to main yet.
+NEXT M1.0 HEAD: run `python3 ~/dev-toolkit/scripts/tracker_sync.py --next` (do NOT hand-read). Parallel-ready alts
+flagged after AR-4 = db-10 (dogfood seed, blockers db-6/7/9 all ✅) + qa-1 (Playwright+OPFS E2E ← ar-2). Merge/push
+the ar-4 branch first. Profile per head (db-10 = generic-coding/backend; qa-1 = Add Backend Component).
