@@ -37,11 +37,13 @@ file-wins-then-map. Details: [[delivery-loop-verified-sound]].
 the task file and delivery-plan §5) + wrote `AR-5, AR-6, DB-6, DB-9` into §5 row 165 + §4 model. Confirmed `--next`
 unchanged (graph-honesty, not a re-route). NB: `ar-5-sessions-framework` (LIF-76) is CANONICAL — not a stale slug.
 
-**🧹 Hygiene follow-ups (non-blocking, flagged for a future pass):**
-- Delivery-plan §5 AR-6 row Home lists `effects/` which is actually AR-7's home → census under-rates AR-6 as
-  "stub" (cosmetic; `--next` unaffected). Remove `effects` from AR-6's Home cell.
-- Archive residue from the Facet-A dedup (inert — loop never reads `archive/`): 4 superseded task files
-  (`ar-5-sessions-base`, `ar-6-spaces`, `ar-6-spaces-and-tags`, `db-9-enums-and-zod-validators`). Purge or leave.
+**🧹 Hygiene follow-ups:**
+- ✅ RESOLVED 2026-07-30 (Phase A re-org): Delivery-plan §5 AR-6 Home `{spaces,views,effects}` → `{spaces,views}`
+  (`effects/` is AR-7's home).
+- ✅ RESOLVED 2026-07-30 (Phase A re-org): purged the one true dedup residue `ar-6-spaces-and-tags` (a keyless /
+  `# Linear:`-less duplicate of `ar-6-spaces` LIF-77). The other 3 files the earlier note lumped in —
+  `ar-5-sessions-base`, `ar-6-spaces`, `db-9-enums-and-zod-validators` — are CANONICAL archived-done tasks, NOT
+  residue; kept. (Now that the loop reads `archive/`, the "inert" assumption no longer holds — hence the correction.)
 
 **⚠ Manual-Linear (Victor, Linear UI only):** **NEW → LIF-78 (AR-7) blocked-by LIF-76 (AR-5) + LIF-77 (AR-6)**
 (the tracker writes identity, not blocker relations); archive the 5 empty ①–⑤ Project shells; db-2 (LIF-64) disposition.
@@ -166,7 +168,6 @@ _(none)_
 | **db-1-schema-primitives** (LIF-61 · P0 storage-rebuild primitives; both gates + review battery + 4 consistency passes) | 2026-07-22 | 1 (2026-07-20→22) |
 | **build-roadmap** | 2026-07-20 | 3 (2026-07-20) |
 | **documentation-blueprint** | 2026-07-19 | ~20+ (2026-06-08 → 07-19) |
-| toolkit-setup | 2026-06-08 | 2 |
 
 ---
 *To add a task: /task-new [name]*
