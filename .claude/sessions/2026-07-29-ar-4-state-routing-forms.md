@@ -11,3 +11,4 @@ Blocked-by ar-1 ✅. Activated a pre-seeded `planned` stub into full in-progress
 Grain (full working wiring vs spine/scaffold) is the first Open Question — resolved at the PLAN gate, not guessed.
 
 Starting from the Default scenario Step 0: document-context BASELINE on the contexts AR-4 touches.
+Task completed 2026-07-30 — LIF-75 Done, commit 955a255. All gates passed.
