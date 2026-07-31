@@ -3807,3 +3807,33 @@ NOT DONE (task still in-progress — resume from the task file's `## Remaining`)
   (B) Phase-5 "use-case-specific creation" — OPEN (spec §6); ASK Victor the shape before building.
 On resume: /begin (vida) → switch profile to Feature Enhancement → read the toolkit task `## Remaining` + spec §6.
 Full session detail: ~/dev-toolkit/.claude/sessions/2026-07-30-delivery-loop-recon-enhance.md.
+
+---
+Date: 2026-07-30 (SESSION END — everything above is now DONE; context cleared after this)
+✅ The prior checkpoint's open items are all resolved. This session closed out the whole tracker-loop arc.
+
+TOOLKIT (~/dev-toolkit, all committed + pushed to GitHub · main @ ec78165):
+- **delivery-loop-recon-enhance** (LIF-109) → DONE + closed. Phase A post-deploy re-org + Phase B new
+  feature-enhancement scenario `validate-shipped-feature-against-live-repo`. Archived.
+- **harden-tracker-sync-surface-linear-errors** (LIF-104) → DONE + closed (was already shipped 2026-07-28
+  [commit 687e3f6, --verify live]; this session did the stranded closure only). Archived.
+- ⚠ **D8 finding CORRECTED**: the "dedup-guard blind to keyless duplicates" claim was misattributed. The
+  census skips archived-planned files (:940), so deleting ar-6-spaces-and-tags had ZERO census effect; the
+  Substrates 27→30% was the effects/ Home-cell fix. Real (minor) gap = census active-pass has no pid-dedup
+  (:921). Corrected across spec §2a / scenario / decisions.md / TASKS.md.
+
+VIDA (main @ 96c8748, pushed to origin):
+- **ar-4-state-routing-forms MERGED to main** (LIF-75 was already Done) — the deferred housekeeping is done.
+  apps/web client runtime + main↔worker DB binding + ADR-020 now on main, alongside the Phase-A re-org.
+- **Loop restarted + verified**: `--next` on main → **db-10-seed-and-fixtures** (both branch views converged).
+
+⏭ NEXT (fresh session — /clear'd for context hygiene): **db-10-seed-and-fixtures** (LIF-62).
+  Profile: Generic Coding Session (delivery-plan §5 says `generic-coding`; discrete backend unit → the
+  add-backend-component workflow is the better fit — resolve at kickoff). Home: `core/src/db/` (seed).
+  Blockers db-6/db-7/db-9 all DONE. Goal: dogfood seed vault through the repository layer (encrypted +
+  sync-queued), B·F·C·L, full §XXVI double-gate + quality-gate-engineering.
+  On resume: /begin (vida) → it auto-computes db-10 via `--next` → switch profile off Feature Enhancement.
+
+🧹 ONE loose end (needs explicit OK, NOT done): the `ar-4-state-routing-forms` branch (local + remote) still
+  exists, fully merged into main. Deleting needs force `-D` (local) + remote delete — left for Victor.
+Full detail: ~/dev-toolkit/.claude/sessions/2026-07-30-delivery-loop-recon-enhance-2.md.
