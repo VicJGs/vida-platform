@@ -143,3 +143,11 @@ Re-projectized Linear from the old substrate-first five-layer structure (①–�
 - Forward-only preserved (no down(); inherited divergence from ADR-002 §9.2, rationale ADR-016:17 — reconcile at DB-11).
 - resetDev dev-only (import.meta.env.DEV read type-safely, fails closed; not barrel-exported).
 - Method: full §XXVI double-gate + 3 independent critiques (all SHIP; gate-1 caught a 4th fixture + BR-5 mechanism). typecheck 10/10, @vida/core 131/131, @vida/web 6/6. Reversible: yes (additive). commit d7aa1e0, LIF-69 Done.
+
+## AR-4 State/Routing/Forms — completed 2026-07-30 (LIF-75)
+- **ADR-020: Zustand store placement = per-app React hooks** (`apps/web/src/stores/`), NOT vanilla-in-`packages/core`. Resolves the long-deferred ADR-001:286; revisit at M4 if a cross-platform store consumer appears.
+- **Code homes** = the architecture docs (`stores/`·`hooks/`·`routes.tsx`·`App.tsx`·`lib/`·`db/`), over the delivery-plan §149 `{stores,router,forms}` shorthand.
+- **Routing** = code-based central `routes.tsx` + `lazyRouteComponent` code-split (not file-based; not per-module self-registration).
+- **Grain** = mechanism + one reference per plane; per-module hooks/stores/forms land in each module's later wave.
+- **D5 main↔worker binding** = a main-thread `SqliteDriver` proxy (`db/client.ts`) over the worker postMessage RPC — the app-facing binding AR-2 assigned to AR-4. `values`/`batch` (Drizzle path) are a declared deferred seam.
+- **Library APIs verified (context7)**: TanStack Form v1 takes a Zod schema directly (Standard Schema; no adapter pkg); Router uses `lazyRouteComponent`.

@@ -10,7 +10,13 @@
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-07-29).** Done = ar-1/db-1/ar-2/db-6/db-9/ar-5/ar-6/**db-7** (8 of 30). Pushed to origin/main @ 60a0a60.
+**▶ CURRENT (2026-07-30).** Done = ar-1/db-1/ar-2/db-6/db-9/ar-5/ar-6/db-7/**ar-4** (9 of 30). ar-4 committed on
+branch `ar-4-state-routing-forms` @ 955a255 (NOT merged/pushed yet). Prior spine pushed to origin/main @ 60a0a60.
+
+**▶ NEXT — RE-COMPUTE the head via `tracker_sync.py --next`** (do not hand-read). After ar-4, the parallel-ready
+alts flagged were **db-10** (dogfood seed ← db-6/db-7/db-9 — now all ✅) and **qa-1** (Playwright+OPFS E2E ← ar-2).
+AR-4 unblocks UI-3 (editor, ← ui-1+ar-4) and UI-4 (app shell) once their other blockers land. Profile per head.
+⚠ First `/begin` next session: merge/push the `ar-4-state-routing-forms` branch, then run `--next`.
 
 ✅ **Item 1 DONE — the delivery-planning loop is built + merged** (in `~/dev-toolkit`, ADR-015): the `--next` re-plan
 grew into the legacy-aware, hierarchical, file-traceable loop — `tracker_sync --census` / `--next` / `--plan <scope>`
@@ -19,11 +25,10 @@ loop now COMPUTES the frontier from this plan (dep-graph + `_clusters.md` milest
 progress + legacy digest — hand-deriving the frontier is retired. See the delivery-plan §4 Consumption Rule.
 ✅ **Branch cleanup DONE** (merged branches deleted incl. `fix-tracker-sync-dedup-guard`).
 
-**▶ NEXT — COMPUTED HEAD = `ar-4-state-routing-forms`** (LIF-75, via `tracker_sync.py --next`, delivery-plan §4).
-Milestone `Boot & DB spine` ← ar-1 ✅; ranked #1 by dependent-count (1); parallel ready alts: db-10, qa-1.
-`/task-new ar-4-state-routing-forms` → §XXVI gate. **⚠ PROFILE SWITCH: `generic-coding`** (frontend — Zustand /
-React Query v5 / TanStack Router / TanStack Form + Zod at `apps/web/src/{stores,router,forms}`), NOT Add Backend
-Component. First `/begin` next session must PROFILE CONFIRM to generic-coding.
+**✅ ar-4 DONE (2026-07-30, LIF-75).** Was the computed head off db-7; built as generic-coding (profile switched).
+apps/web client runtime + the D5 main↔worker binding + ADR-020. Details in the Completed table + session-log.
+Homes landed at `apps/web/src/{stores,routes.tsx,hooks,lib,db}` (architecture homes, NOT the §149 `{stores,router,forms}`
+shorthand — §149 cell is a flagged hygiene follow-up).
 > **AR-7 is NOT the head** — READY (blockers all ✅) but in the *later* `Substrates` sub-wave. Boot & DB spine
 > drains first (ar-4 · db-10 · qa-1). Always trust `--next`, never hand-read a prose "next".
 
@@ -154,6 +159,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **ar-4-state-routing-forms** (LIF-75 · M1.0 Boot & DB spine · COMPUTED head via `--next` off db-7. apps/web client runtime: Zustand + React Query v5 + TanStack Router + TanStack Form/Zod, **+ the main↔worker DB binding AR-2 assigned to AR-4** (D5: `db/client.ts` SqliteDriver proxy over the worker RPC w/ timeout+crash handling; extended `worker.ts` protocol; `boot.ts` DB-ready gate). Grain = mechanism + 1 reference/plane; values/batch = deferred seam. **ADR-020** resolves the long-deferred ADR-001:286 (Zustand placement = per-app hooks). Profile switched → Generic Coding Session. Full §XXVI double-gate + §XXX: 2 plan critiques + preflight (surfaced the missing D5 layer) + post-impl critique (happy-path-only error handling → RPC timeout/onerror + worker default + boot memo-clear + App error/retry) + engineering gate PASS. typecheck 10/10, @vida/web 21/21, build green. commit 955a255 on branch `ar-4-state-routing-forms`. Victor corrected 2 manufactured forks (grain + binding ownership both already in docs). §XXIX docs at docs/infrastructure/web-client-runtime/.) | 2026-07-30 | 1 (2026-07-29→30) |
 | **db-7-migrations-runner** (LIF-69 · M1.0 Boot & DB spine · COMPUTED head via `--next`. Reconcile+extend of the existing runner: authored the `app_state` infra table (`schema/foundation/app-state.ts`, ADR-002 §5.0) + `ensureInfra` pre-loop bootstrap + dev-only `resetDev`. **Closed a latent boot bug** — engine assumed `app_state` but no production migration created it → `migrate()` threw at real web boot (`worker.ts:23`), masked by 4 test fixtures (retired). Engine untouched; forward-only preserved (no `down()`, inherited §9.2 divergence → DB-11). Full §XXVI double-gate + 3 independent critiques (all SHIP; gate-1 caught a 4th fixture + BR-5 mechanism). typecheck 10/10, @vida/core 131/131, @vida/web 6/6. §XXIX docs shipped together. commit d7aa1e0. Also this session: manufactured-fork correction (memory [[read-architecture-before-implementing]]) + delivery-loop audited sound + AR-7 edge reconcile.) | 2026-07-29 | 1 (2026-07-29) |
 | **ar-6-spaces** (LIF-77 · M1.0 substrate spine · Spaces per ADR-006 (SP1–SP7) + ADR-007 (V1–V5). 6 tables (`tags`·`entity_tags`·`entity_links`·`spaces`·`space_enabled_blocks`·`views`, migration 003) + `TaggableTypeRegistry` (SP2 open) + `SpacesService` (BR-14 idempotent junctions, BR-15 resolve-then-soft-delete, BR-3/5 cycle guards, BR-13 M1.0 empty-[E] pass-through) + `ViewsService` + `ViewProviderRegistry` (empty V4/R7 seam) + `ViewEngine` (V3/V4/V5). Deferred: capability registry/block_instances→AR-7, backlink resolver→AR-8, effect rail→AR-7, DSL/layout/resolution-surface→build-time. Double-gated + 3 independent critiques [g1×2: scope-drift + link_type-in-prompt; g2: 3 executability defects vs real repository.ts; post-impl: missing spaces cycle-guard]. §2.1 gather-protocol born after a triage. typecheck 10/10, spaces 14/14, parity 7/7. commit e2a170d → merged fad233b. Currency §XXIX docs at docs/core/spaces/. Unblocks AR-7. LIF-77 canonical (Facet A reconciled the LIF-108 dup).) | 2026-07-29 | 1 (2026-07-28→29) |
 | **ar-5-sessions-base** (LIF-107 · M1.0 substrate SPINE · Sessions base per ADR-004. Option-1 grain: `sessions` spine + integration-contract STRUCTURE (`session_type_registry` + `session_attachments`) + 5 canonical enums (EFFECT_TYPE=12 incl. ADR-012 amendment) + thin SessionRegistry (register/get/list, BR-3/4/1, user types → db-6 Repository → sync_queue). Effect-firing rail/transition engine/scheduler DEFERRED to AR-7/later. Double-gated + 3 independent critiques [gate-1: EFFECT_TYPE 8→12 subset drift; gate-2: registry PK/Repository mismatch; post-impl: BR-4 effects⊆allowed⊆shipped]. typecheck 10/10, core 110/110. commit f045ac1, merged 4956c81, pushed. Currency §XXIX docs born. Unblocks AR-7. ⚠ LIF-107 dup roadmap LIF-76 — reconcile.) | 2026-07-28 | 1 (2026-07-28) |

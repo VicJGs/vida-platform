@@ -3745,3 +3745,65 @@ NEXT SESSION (explicit order, Victor-directed):
   2. THEN: resume the M1.0 loop — next head AR-7 (Capability registry + measurability + effect rail, LIF-78), unblocked by AR-5 ✅ + AR-6 ✅. /task-new ar-7 → §XXVI gate. (The loop should CONSUME --next once it works — that's why --next goes first.)
   3. THEN: clean hanging items — delete the merged toolkit branch fix-tracker-sync-dedup-guard; any other stale branches/shells; the standing Manual-Linear items (archive the empty ①–⑤ Project shells; db-2 disposition).
 Git: vida main @ 88803ef (AR-6 + Facet A + pointers, all committed, NOT pushed). ~/dev-toolkit main @ 89d4a7f (dedup fix + docs). No active vida task (ar-6 archived).
+
+---
+Date: 2026-07-29
+Profile switch: Add Backend Component → Generic Coding Session (at /begin, this session).
+Reason: computed head ar-4-state-routing-forms (LIF-75) is frontend infra (Zustand / React Query v5 / TanStack Router / TanStack Form + Zod at apps/web/src/{stores,router,forms}) — flagged in the TASKS.md frontier note. CLAUDE.md carries no `# Profile:` line, so this entry is the persistence. Scenario dispatched: generic-coding-session/scenarios/default.md.
+
+---
+Date: 2026-07-29→30
+Task: ar-4-state-routing-forms (LIF-75) — COMPLETE on branch `ar-4-state-routing-forms` (M1.0 Boot & DB spine, COMPUTED head off db-7)
+Goal: stand up apps/web client runtime per ADR-001 — Zustand + React Query v5 + TanStack Router + TanStack Form/Zod.
+Completed:
+  - Profile switched Add Backend Component → Generic Coding Session (per frontier flag). Full §XXVI double-gate + §XXX flow.
+  - Built: db/client.ts (WorkerDbClient — main↔worker SqliteDriver proxy, D5), extended db/worker.ts protocol, db/boot.ts (StrictMode-safe boot); lib/query-client.ts + hooks/useSchemaVersion.ts (RQ over local SQLite, no HTTP); routes.tsx (code-based, lazy /notes); stores/app-shell-ui-store.ts (Zustand UI-only); lib/forms.ts (useZodForm, Standard Schema); App.tsx providers + DB-ready gate + error/retry; vite.config.ts vitest env.
+  - ADR-020 (Zustand store placement = per-app hooks) resolving the long-deferred ADR-001:286; pointer added.
+  - Verify: typecheck 10/10 · @vida/web 21/21 (incl timeout/crash/malformed-reply failure paths) · build green · grep-clean · engineering gate PASS.
+Gate trail: baseline → PLAN → critique-1 (REVISE→8 fixed) → Approval 1 → preflight (BLOCKED→added D5 main↔worker binding, the AR-2-assigned layer the PLAN omitted) → critique-2 (SHIP→5 fixed) → Approval 2 → implement → post-impl critique (REVISE→3 MUST+2 SHOULD: RPC timeout/onerror, worker default case, boot memo-clear + App error state) → engineering gate PASS.
+Decisions (resolved from docs, not guessed): D1 homes = architecture over §149 shorthand; D2 ADR-020 per-app hooks (M4 revisit); D3 code-based routes.tsx; D4 grain = mechanism + 1 reference/plane; D5 binding = SqliteDriver proxy, values/batch deferred seam.
+Lessons: (1) Victor corrected TWO manufactured forks — grain + main↔worker ownership were BOTH already in the docs; read the layer doc (apps/web/src/db/CLAUDE.md) + architecture, not just ADRs + the delivery-plan table. (2) Verify library APIs first — TanStack Form v1 dropped the zod adapter (Standard Schema direct); Router uses lazyRouteComponent not React lazy(). (3) Post-impl critique caught happy-path-only error handling — the highest-value gate.
+§XXIX currency: docs/infrastructure/web-client-runtime/current-{spec,business-rules}.md born + promoted to as-built; db layer doc AR-4 line updated; ADR-020 written. All shipped WITH the code.
+Follow-ups (flagged, not dropped): Vite 6→7 bump (own build-infra unit, ADR-001 §22); live-OPFS Playwright smoke (LIF-103); delivery-plan §149 home-cell hygiene; bundle 80KB shell budget → UI-4 era.
+Next: M1.0 loop continues — re-run tracker_sync --next for the head after AR-4 (parallel-ready alts were db-10, qa-1).
+
+--- (end-state addendum, 2026-07-30)
+AR-4 COMPLETE + committed (955a255 feat + a276821 chore) + PUSHED to origin/ar-4-state-routing-forms. LIF-75 → Done.
+PR: NOT yet created — `gh` is unauthenticated in this env. Next session (or Victor): either `! gh auth login` then
+`gh pr create --base main --head ar-4-state-routing-forms` (full body prepared, in the AR-4 session context), OR open
+via https://github.com/VicJGs/vida-platform/pull/new/ar-4-state-routing-forms. Branch NOT merged to main yet.
+NEXT M1.0 HEAD: run `python3 ~/dev-toolkit/scripts/tracker_sync.py --next` (do NOT hand-read). Parallel-ready alts
+flagged after AR-4 = db-10 (dogfood seed, blockers db-6/7/9 all ✅) + qa-1 (Playwright+OPFS E2E ← ar-2). Merge/push
+the ar-4 branch first. Profile per head (db-10 = generic-coding/backend; qa-1 = Add Backend Component).
+
+---
+Date: 2026-07-30
+Profile switch (this session): (none/last-persisted Generic Coding) → Feature Enhancement.
+Reason: Victor opened a NEW effort — a Feature Enhancement of the ADR-015 tracker delivery-planning loop
+(~/dev-toolkit tracker_sync.py: --census/--next/--plan/--verify + dedup-guard), run FROM this vida session
+because vida's live mid-progress state is the test bed. Per Victor's direction, ALL artifacts (task, spec,
+currency, ADR) live in ~/dev-toolkit per the toolkit's doc procedures — NOT vida's docs/. So the M1.0 head
+(--next) is deferred; the ar-4 merge/push above still stands as pending vida housekeeping.
+Task registered in the TOOLKIT tracker: ~/dev-toolkit/.claude/tasks/delivery-loop-recon-enhance.md (in-progress,
+LIF-109, cluster toolkit-session-flow). Scenario dispatched: feature-enhancement/default. CLAUDE.md carries no
+`# Profile:` line, so this entry is the persistence. Next: Step 0 document-context BASELINE → Step 1 watchlist.
+
+---
+Date: 2026-07-30 (CHECKPOINT — context cleared after this)
+⚠ RESUME POINTER — the active work is a TOOLKIT task, not a vida task, so it won't show in vida's TASKS.md.
+Active task: **delivery-loop-recon-enhance** (Feature Enhancement) at ~/dev-toolkit/.claude/tasks/delivery-loop-recon-enhance.md
+(LIF-109), run FROM this vida session with vida as the live test bed. Branch `feat-delivery-loop-recon-enhance`
+in ~/dev-toolkit (checkpoint committed). Profile this session = Feature Enhancement.
+
+DONE: the code fix — ADR-015 delivery loop now counts completed+archived nodes in `--census` (node set = active ∪
+archived-done, deduped by pid; milestone from plan header, cluster canonical; every node `done`; orphans ⚠). Full
+§XXVI double-gate + 2 independent critiques + §XXVIII deviation; Substrates 12→27%; --next/--sync unchanged; 26/26
+tests. §XXIX docs refreshed.
+
+NOT DONE (task still in-progress — resume from the task file's `## Remaining`):
+  (A) POST-DEPLOY RE-ORG on vida — use the fixed loop to rearrange vida + pull residue back on trails: purge the
+      duplicate ar-6 archive files + stray toolkit-setup node, MERGE/PUSH the still-unmerged `ar-4-state-routing-forms`
+      branch (+ open its PR — gh was unauth), re-run --next/--plan/--census to confirm the frontier is clean.
+  (B) Phase-5 "use-case-specific creation" — OPEN (spec §6); ASK Victor the shape before building.
+On resume: /begin (vida) → switch profile to Feature Enhancement → read the toolkit task `## Remaining` + spec §6.
+Full session detail: ~/dev-toolkit/.claude/sessions/2026-07-30-delivery-loop-recon-enhance.md.
