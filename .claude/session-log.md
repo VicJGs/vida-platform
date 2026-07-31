@@ -3775,3 +3775,35 @@ via https://github.com/VicJGs/vida-platform/pull/new/ar-4-state-routing-forms. B
 NEXT M1.0 HEAD: run `python3 ~/dev-toolkit/scripts/tracker_sync.py --next` (do NOT hand-read). Parallel-ready alts
 flagged after AR-4 = db-10 (dogfood seed, blockers db-6/7/9 all ✅) + qa-1 (Playwright+OPFS E2E ← ar-2). Merge/push
 the ar-4 branch first. Profile per head (db-10 = generic-coding/backend; qa-1 = Add Backend Component).
+
+---
+Date: 2026-07-30
+Profile switch (this session): (none/last-persisted Generic Coding) → Feature Enhancement.
+Reason: Victor opened a NEW effort — a Feature Enhancement of the ADR-015 tracker delivery-planning loop
+(~/dev-toolkit tracker_sync.py: --census/--next/--plan/--verify + dedup-guard), run FROM this vida session
+because vida's live mid-progress state is the test bed. Per Victor's direction, ALL artifacts (task, spec,
+currency, ADR) live in ~/dev-toolkit per the toolkit's doc procedures — NOT vida's docs/. So the M1.0 head
+(--next) is deferred; the ar-4 merge/push above still stands as pending vida housekeeping.
+Task registered in the TOOLKIT tracker: ~/dev-toolkit/.claude/tasks/delivery-loop-recon-enhance.md (in-progress,
+LIF-109, cluster toolkit-session-flow). Scenario dispatched: feature-enhancement/default. CLAUDE.md carries no
+`# Profile:` line, so this entry is the persistence. Next: Step 0 document-context BASELINE → Step 1 watchlist.
+
+---
+Date: 2026-07-30 (CHECKPOINT — context cleared after this)
+⚠ RESUME POINTER — the active work is a TOOLKIT task, not a vida task, so it won't show in vida's TASKS.md.
+Active task: **delivery-loop-recon-enhance** (Feature Enhancement) at ~/dev-toolkit/.claude/tasks/delivery-loop-recon-enhance.md
+(LIF-109), run FROM this vida session with vida as the live test bed. Branch `feat-delivery-loop-recon-enhance`
+in ~/dev-toolkit (checkpoint committed). Profile this session = Feature Enhancement.
+
+DONE: the code fix — ADR-015 delivery loop now counts completed+archived nodes in `--census` (node set = active ∪
+archived-done, deduped by pid; milestone from plan header, cluster canonical; every node `done`; orphans ⚠). Full
+§XXVI double-gate + 2 independent critiques + §XXVIII deviation; Substrates 12→27%; --next/--sync unchanged; 26/26
+tests. §XXIX docs refreshed.
+
+NOT DONE (task still in-progress — resume from the task file's `## Remaining`):
+  (A) POST-DEPLOY RE-ORG on vida — use the fixed loop to rearrange vida + pull residue back on trails: purge the
+      duplicate ar-6 archive files + stray toolkit-setup node, MERGE/PUSH the still-unmerged `ar-4-state-routing-forms`
+      branch (+ open its PR — gh was unauth), re-run --next/--plan/--census to confirm the frontier is clean.
+  (B) Phase-5 "use-case-specific creation" — OPEN (spec §6); ASK Victor the shape before building.
+On resume: /begin (vida) → switch profile to Feature Enhancement → read the toolkit task `## Remaining` + spec §6.
+Full session detail: ~/dev-toolkit/.claude/sessions/2026-07-30-delivery-loop-recon-enhance.md.
