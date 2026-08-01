@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-07-03 by /session-end -->
+<!-- Last updated: 2026-08-01 by /session-end -->
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
 | 2026-06-27 | habits | streak semantics | consecutive scheduled occurrences, no grace; counters derive from ledger | one source of truth; cache never lies | yes |
@@ -14,6 +14,9 @@
 | 2026-06-07 | setup | rename Claude.md → CLAUDE.md | git mv | cross-platform memory loading (case-sensitive CI) | yes |
 | 2026-06-08 | build | declare cross-package imports as deps | `@vida/types: workspace:*` in core | tsc --noEmit resolves bare specifiers via node_modules, not tsconfig references | yes |
 | 2026-06-08 | core | unlockVault return value | return `keyChain.vault_key` not `_vaultKey` | avoid null-widening of module-level mutable across call boundary | yes |
+| 2026-08-01 | delivery-structure | tracker hierarchy model | Initiative=Vida · Project=build-tier (M1–M4) · Milestone=slice · Issue=sprint (ADR-016) | fixes the db-10 STRUCTURAL failure; matches Linear entities + tracker mechanism | costly |
+| 2026-08-01 | delivery-structure | db-10 (dogfood seed) dependency | → M1.4, blocked-by ALL 26 modules | the "needs the whole OS" dep was unencoded → false-ready head; now impossible by construction | yes |
+| 2026-08-01 | delivery-structure | reconstruction = re-organize, not re-tier | preserve every LIF id + slug; only re-home Project/Milestone; modules become first-class issues | tracker identity is the foundation; no churn/rename | no |
 
 ## documentation-blueprint — completed 2026-07-19
 
