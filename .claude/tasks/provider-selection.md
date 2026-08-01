@@ -1,7 +1,8 @@
 # Task: provider-selection
 # Status: planned
-# Cluster: M2 External Integrations & Security Boundary
-# Milestone: Provider Selection
+# Linear: LIF-100
+# Project: M2 — External Integrations & Security Boundary
+# Milestone: M2.0 — Integrations & Boundary
 # Phase: 1 (integrations)
 # Source: docs/roadmap.md → M2 · P3-①
 

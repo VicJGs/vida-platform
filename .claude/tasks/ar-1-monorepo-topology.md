@@ -1,7 +1,8 @@
 # Task: ar-1-monorepo-topology
 # Status: done
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Boot & DB spine
+# Linear: LIF-72
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer
 # Reconciled 2026-07-27: work complete (roadmap §5 AR-1 ✅; turbo.json + package export chain live);

@@ -1,7 +1,8 @@
 # Task: ds-5-primitive-contracts
 # Status: planned
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Design System
+# Linear: LIF-85
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ③ Design System
 

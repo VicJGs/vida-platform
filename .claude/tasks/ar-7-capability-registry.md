@@ -1,7 +1,8 @@
 # Task: ar-7-capability-registry
 # Status: planned
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Substrates
+# Linear: LIF-78
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer (ADR-008/011/012)
 

@@ -3,8 +3,8 @@
 # Profile: Add Backend Component
 # Scenario: default
 # Spec: docs/specs/foundation/db-9-enums-zod/_index.md
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Boot & DB spine
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap/m1.0-delivery-plan.md → DB-9 (roadmap issue LIF-71)
 # Linear: LIF-71

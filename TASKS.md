@@ -6,11 +6,29 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| **delivery-structure-reconstruction** | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue) + re-organized LIVE Linear project-first: **M1–M4, 91 issues, 0 deferred edges**, LIF ids preserved, db-10 ← all 26 modules. Output: `docs/specs/foundation/delivery-structure-reconstruction/reconstructed-structure.md`. Remaining = Victor-owned Linear hygiene (move 5 archived DONE, close dups, archive old shells) + Foundation-project decision. |
+| db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-07-30).** Done = ar-1/db-1/ar-2/db-6/db-9/ar-5/ar-6/db-7/**ar-4** (9 of 30). ar-4 committed on
+**▶ CURRENT (2026-07-31) — DELIVERY STRUCTURE UNDER RECONSTRUCTION.** The db-10 triage escalated STRUCTURAL: the
+whole **Project > Milestone > Issue** setup is malformed at its core (db-10 is a symptom — mis-homed to M1.0 with an
+unencoded "needs the whole OS" dep; see the harvest DF register). We STOPPED building and switched to **Project
+Foundation** (NEW scenario `delivery-structure-reconstruction`). **Step 1 (harvest draft) is DONE:**
+`docs/specs/foundation/delivery-structure-reconstruction/intent-and-provenance-harvest.md` — the grounded,
+fully-cited organization of PROJECT → MILESTONES M1–M4 → all deliverables (repo-home + ADR + docs + relationship
+layer) + legacy/migration provenance + DF-1…DF-9.
+- **NEXT:** /begin → resume the reconstruction. Victor confirms (1) milestone framing INT-1..4→M1..4, (2) module-row
+  granularity → then RECONSTRUCT the real structure (granular issues, file-deliverables matching repo/architecture/
+  docs, corrected relationships + outcomes, no orphans).
+- **⚠ DO NOT trust `--next` / build any M1.0 head until the reconstruction lands** — the delivery-plan/tracker encode
+  the malformed structure (that is what surfaced db-10 wrongly). The loop is sound; its input graph is not.
+- db-10 PARKED (un-parks when re-homed). The 9 built units + 20 ADRs are immutable/preserved.
+
+---
+
+**▶ (prior) CURRENT (2026-07-30).** Done = ar-1/db-1/ar-2/db-6/db-9/ar-5/ar-6/db-7/**ar-4** (9 of 30). ar-4 committed on
 branch `ar-4-state-routing-forms` @ 955a255 (NOT merged/pushed yet). Prior spine pushed to origin/main @ 60a0a60.
 
 **▶ NEXT — RE-COMPUTE the head via `tracker_sync.py --next`** (do not hand-read). After ar-4, the parallel-ready

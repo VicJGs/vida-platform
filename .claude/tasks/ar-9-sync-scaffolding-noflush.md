@@ -1,7 +1,8 @@
 # Task: ar-9-sync-scaffolding-noflush
 # Status: planned
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Substrates
+# Linear: LIF-80
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer
 

@@ -11,8 +11,8 @@
 #   `① Database Layer` cluster to M4 Sync & Server (its natural home — sync-metadata activates with the sync
 #   engine, alongside ar-9b-sync-activate). Revive → re-plan vs ADR-017. (Status token kept a clean `planned`
 #   [→ BACKLOG] so the tracker doesn't mis-normalize the prose — the old line's "NOT completed" matched DONE.)
-# Cluster: M4 Venues / Multi-Device
-# Milestone: Sync & Server
+# Project: M4 — Venues / Multi-Device
+# Milestone: M4.0 — Venues
 # Phase: deferred (post-validation hardening pass, ADR-017)
 # Source: docs/roadmap.md → M4 Venues / Multi-Device · Sync & Server (was Phase 1.0 ① Database Layer DB-2, re-homed)
 
@@ -31,8 +31,7 @@ set now makes the Phase-2 sync bolt-on **non-structural** (no table migration to
 metadata later). This is the whole reason DB-2 is a P0.5 primitive and not deferred.
 
 ## Dependencies
-- Blocked by: DB-1 / LIF-61 (schema primitives) — DONE (commit b234e85). This task amends
-  the `syncColumns` primitive DB-1 established (currently 6 cols; `_shared.ts:24-30`).
+- blocked by `db-1-schema-primitives`
 
 ## Context
 Profile: Generic Coding Session / Default

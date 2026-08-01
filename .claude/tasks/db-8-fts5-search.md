@@ -1,7 +1,8 @@
 # Task: db-8-fts5-search
 # Status: planned
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Boot & DB spine
+# Linear: LIF-70
+# Project: M1 — Whole Manual OS
+# Milestone: M1.4 — Internal-Integration Hardening
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer
 

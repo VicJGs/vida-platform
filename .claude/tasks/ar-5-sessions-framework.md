@@ -1,8 +1,8 @@
 # Task: ar-5-sessions-framework
 # Status: completed (2026-07-28 · commit f045ac1 · LIF-76)
 # Linear: LIF-76
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Substrates
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer (ADR-004)
 

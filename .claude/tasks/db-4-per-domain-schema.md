@@ -1,7 +1,8 @@
 # Task: db-4-per-domain-schema
 # Status: planned
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Boot & DB spine
+# Linear: LIF-66
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Stream: true
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer (Stream ii)

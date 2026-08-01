@@ -2,9 +2,9 @@
 # Profile: Add Backend Component
 # Scenario: Default
 # Status: planned
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Boot & DB spine
-# Linear: LIF-103 (created 2026-07-27 — map slug qa-1-e2e-harness-opfs; do NOT mint a duplicate)
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
+# Linear: LIF-103
 # Source: AR-2 completeness audit (2026-07-27) — items 1 & 2 verification dependency
 
 ## Goal

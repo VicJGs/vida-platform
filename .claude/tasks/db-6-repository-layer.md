@@ -1,9 +1,10 @@
 # Task: db-6-repository-layer
 # Status: completed (2026-07-28 · commit 7f90c9b · LIF-68)
+# Linear: LIF-68
 # Profile: Add Backend Component
 # Scenario: default
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Boot & DB spine
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer
 # Activated: 2026-07-28 (M1.0 delivery campaign — first ready head off AR-2)

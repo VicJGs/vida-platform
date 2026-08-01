@@ -1,7 +1,8 @@
 # Task: ar-3-crypto-vault-keymgmt
 # Status: planned
-# Cluster: M3 Whole-OS Encryption & Security Pass
-# Milestone: Crypto & Boundary
+# Linear: LIF-74
+# Project: M3 — Whole-OS Encryption Pass
+# Milestone: M3.0 — Encryption Pass
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer
 

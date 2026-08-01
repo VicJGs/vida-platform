@@ -1,4 +1,49 @@
 ---
+Date: 2026-08-01 (PHASE V COMPLETE — vida delivery structure reconstructed + LIVE in Linear)
+✅ **`delivery-structure-model` (LIF-110) Phase V DONE.** Ran the just-built `delivery-structure-reconstruction`
+scenario (ADR-016 capability) against the harvest → produced `docs/specs/foundation/delivery-structure-reconstruction/
+reconstructed-structure.md` (84 issues), then re-organized the live Linear tracker to it. Result:
+- **4-level hierarchy** (ADR-007/016): Initiative=Vida · Project=tier (M1–M4) · Milestone=slice (M1.0…M1.4, M2.0, M3.0,
+  M4.0) · Issue=sprint. Corrected the malformation where M1.0 was a *Project* (DF-5).
+- **Live in Linear (project-first, relayed approvals): 91 mapped issues, 0 deferred edges.** M1(59) · M2(7) · M3(5) · M4(8).
+  Existing issues kept their LIF ids (re-homed only); 44 new module/hardening/integration/venue issues created.
+- **db-10 (DF-1) fixed in the tracker:** db-10 (+ db-5, db-11, mig-1) blocked-by ALL 26 modules — cannot go ready until
+  the OS exists. The exact failure that triggered this whole arc is now structurally impossible.
+- **Mechanical rigor:** the reconstruction graph was verified by a parser (0 topological-order violations, Blocks =
+  exact inverse of Blocked-by, contiguous #1–84) + gate + /critique + /preflight (each caught real defects: inverted
+  Purposes↔Gamification edge, 4 dropped modules incl. languages/bucket-list, DS-1 status, MIG-1 scope).
+- **Victor corrections that reshaped the work** (all → memory): don't ask what the doc already answers ·
+  [[reconstruct-to-the-mechanism-not-the-stale-draft]] (used ADR-007/016, not the task's pre-model "Project=Vida" draft) ·
+  keep LIF ids, re-organize don't re-tier/rename (reverted SEC/VEN/EXT slugs) · milestones must hold issues (materialized
+  all modules, not create-at-gate). The empty-milestone + orphan-guard (LIF-102 stale map status = IN_PROGRESS→DONE) were
+  both real mechanism findings, fixed locally.
+
+⏭ **Remaining (Victor-owned, non-blocking):** (1) Foundation meta-task project — held pending (sync or leave out);
+(2) manual-Linear hygiene: move 5 archived DONE issues (LIF-73/75/77/69/61) into M1, close dups LIF-107/106, archive
+emptied old M1.0/M1.4 + ①–⑤ shells (tracker can't delete Projects). Local `.tracker-map.json` is gitignored (local
+cache; `--pull` rebuilds). Phase T (toolkit ADR-016 + scenario) committed earlier @ ~/dev-toolkit 4b31176.
+
+---
+Date: 2026-08-01 (CHECKPOINT — Phase T DONE, committed; entering Phase V)
+✅ **T1 `delivery-structure-model` (LIF-110) Phase-T SHIPPED + committed** (~/dev-toolkit @ **4b31176**, not pushed).
+The delivery-structure model is now a gated toolkit capability: **Project = build tier · Milestone = delivery-slice
+· Issue = sprint · Intents = harvest** (ADR-016, the db-10-proof Issue rule = every issue names file homes + dep edges).
+5 deliverables, prose-only, zero scripts/ edits: D4 `.adr/ADR-016` (source of record) · D1 new scenario
+`delivery-structure-reconstruction.md` (re-tier an EXISTING malformed structure; precondition-gated vs build-roadmap)
++ both project-foundation cross-refs · D3 reconciled build-roadmap/MDP/ADR-015 to the model (finished T0's cluster→
+project; retired phase-as-a-level; kept historical narrative) · D2 §XXX step-0 vocab · D5 regen toolkit-guide.
+Full §XXVI double-gate + **3 independent adversarial critiques**, each caught a distinct defect class (PLAN: BR-7
+cross-ref wrong 3/5 + missing D5; IMPL-PLAN: D3 sweep under-counted ~2/3; post-impl: leaked `</content>` EOFs +
+bare ADR-018 cross-repo collision + missing Session Origin). toolkit-check CHECK 1/8/9/14 pass. Victor correction
+this session → memory [[follow-created-structure-questions-are-add-or-deviate]] (dropping 2 manufactured questions
+led to the preflight finding that §XXX names classes-not-scenarios → D2 stayed minimal).
+
+⏭ **NEXT — Phase V (this session, now):** PROFILE SWITCH Toolkit Development → **Project Foundation Setup**; un-park
+the vida `delivery-structure-reconstruction` task; active scenario = the just-built `delivery-structure-reconstruction`.
+Run it against the existing vida harvest (`docs/specs/foundation/delivery-structure-reconstruction/intent-and-provenance-harvest.md`)
+to rebuild vida's real Project>Milestone>Issue structure per the model, un-parking db-10. Surface the scenario path (§XXVII) first.
+
+---
 Date: 2026-06-07
 Session goal: Set up dev-toolkit on existing vida-platform monorepo
 Profile: Generic Coding Session
@@ -3837,3 +3882,104 @@ VIDA (main @ 96c8748, pushed to origin):
 🧹 ONE loose end (needs explicit OK, NOT done): the `ar-4-state-routing-forms` branch (local + remote) still
   exists, fully merged into main. Deleting needs force `-D` (local) + remote delete — left for Victor.
 Full detail: ~/dev-toolkit/.claude/sessions/2026-07-30-delivery-loop-recon-enhance-2.md.
+
+---
+## 2026-07-31 — db-10 kickoff → TRIAGE escalation → PROFILE SWITCH → ground-zero delivery-structure reconstruction
+Started db-10 (Add Backend Component). Baseline surfaced that only the foundation substrate exists (no domain
+tables); I mis-scoped a "minimal foundation seed" and Victor corrected repeatedly — the docs already fix db-10's
+scope, and its charter (dogfood the WHOLE manual OS — ADR-019:20 M1 "every module at manual-CRUD depth + the
+connective layer; nothing left behind") is an M1-complete deliverable, NOT an M1.0 spine unit.
+
+**`/victor-triage` → STRUCTURAL.** Root cause: db-10's "seed the whole OS" charter carries an unencoded dependency
+(every module's tables must exist first) that the §2.1 ledger left as plain "M1" (no `(tail)` marker, unlike its
+sibling DB-11) and that db-10's recorded deps omit (DB-6/7/9 = write-machinery, not the tables); so the derivatives
+(roadmap.md:85, delivery-plan:156/249/119, linear-rescope-map:26, task file, Linear, tracker) homed it to M1.0 and
+`--next` computed it as the ready head off db-7. The loop is sound (garbage-in). db-10 is the SYMPTOM.
+
+**Escalation (Victor):** the error is deeper — the whole **Project > Milestone > Issue** setup (naming, conventions,
+structure, per-level info, relationships) is malformed at its core → redefine **from ground zero**, legacy plan as
+**dogfood** (rich input, zero data loss). Preserve ONLY built code + ADRs. I repeatedly over-preserved ("spine is
+sound") and was corrected — memory [[dont-over-preserve-a-faulty-structure]] saved.
+
+**PROFILE SWITCH: Add Backend Component → Project Foundation Setup.** NEW scenario `delivery-structure-reconstruction`
+(not milestone-delivery-planning / build-roadmap — both presuppose the broken structure). CLAUDE.md has no `# Profile:`
+line → this entry is the persistence. db-10 build STOOD DOWN (task→planned/parked; PLAN-2026-07-31 kept as dogfood).
+New task `delivery-structure-reconstruction` (in_progress).
+
+Target hierarchy: Project=Vida · Milestones=the intents (transformed) · Issues=granular deliverables, each with a
+relationship layer (granular deps) + a proper outcome. Step 1 = the harvest draft
+(`docs/specs/foundation/delivery-structure-reconstruction/intent-and-provenance-harvest.md`): §1 intents→milestones,
+§2 every M1 deliverable→issue with provenance (file:line + whole-doc core sources) + relationship layer (as-recorded
++ defect flags). New memories: [[dont-ask-scope-the-docs-already-fix]], [[dont-over-preserve-a-faulty-structure]].
+Scaffold the new scenario via /new-scenario project-foundation at session-end.
+
+---
+Date: 2026-07-31
+Task: delivery-structure-reconstruction (Project Foundation Setup · NEW scenario delivery-structure-reconstruction)
+Goal: Redefine the Vida delivery structure (Project > Milestone > Issue) from ground zero, because the db-10 triage
+  exposed it as malformed at its core. Step 1 = a grounded, fully-cited HARVEST draft that organizes all existing
+  information so the real structure can be built.
+Completed:
+  - TRIAGE (/victor-triage) of the db-10 mis-home → STRUCTURAL; escalated (Victor) to "the whole Project>Milestone>
+    Issue setup is malformed at its core → redefine from ground zero, legacy plan as dogfood." Preserve only CODE + ADRs.
+  - PROFILE SWITCH persisted: Add Backend Component → Project Foundation Setup (session-log = persistence; CLAUDE.md
+    has no # Profile line). db-10 build STOOD DOWN — .claude/tasks/db-10-seed-and-fixtures.md → planned/PARKED;
+    PLAN-2026-07-31 bannered as DOGFOOD input (not deleted, not executed).
+  - HARVEST DRAFT COMPLETE (Step 1): docs/specs/foundation/delivery-structure-reconstruction/intent-and-provenance-harvest.md
+    Built from 4 parallel ripgrep harvest passes (DB/AR/DS-UI-UX-QA/modules) + the triage. Now organized as the
+    HIERARCHY: PROJECT (overview · architecture[20 ADRs] · repo tree[ADR-018] · established docs · LEGACY/migration
+    provenance[v1 life-os: C13 in-repo _legacy/Old/, C14 out-of-repo ../life-os] · immutable inputs · core-source
+    registry C1–C14) → MILESTONES M1–M4 (each: information · intent · related docs+dogfood · deliverables mapped to
+    repo-home + ADR + docs + relationship-layer + flags) → DEFECT REGISTER DF-1…DF-9.
+  - Key findings baked in: DF-1 db-10 (trigger); DF-3 recurring stale cross-milestone edges (DB-6←DB-5, AR-9←DB-2,
+    UX-5←AR-3, DB-8←DB-6 — db-10 is the latest uncaught); DF-4 delivery instrument covers ONLY M1.0 (~25 module
+    deliverables never made into issues); DF-9 v1 retire-at-parity untracked.
+  - New task file .claude/tasks/delivery-structure-reconstruction.md (in_progress); native panel mirrored (#2).
+Decisions:
+  - Milestones organized as INT-1→M1 · INT-2→M2 · INT-3→M3 · INT-4→M4 · INT-0=Project — flagged ⚠ to-confirm at
+    the top of the draft (Victor to validate before reconstruction).
+  - Draft's SOLE objective = ORGANIZE (no new structure decided): no new milestone names, no re-homing, no outcomes.
+  - Module rows kept at home·ADR·intake-doc·placement granularity (not full line-by-line) — Victor can expand.
+Next session:
+  - FIRST ACTION: /begin (vida) → it should resume delivery-structure-reconstruction (Project Foundation). Read
+    docs/specs/foundation/delivery-structure-reconstruction/intent-and-provenance-harvest.md (the DRAFT).
+  - Then get Victor's two confirmations: (1) milestone framing INT-1..4 = M1..4? (2) module-row granularity?
+  - Then MOVE FROM ORGANIZE → RECONSTRUCT: create the real Project>Milestone>Issue structure from the draft —
+    granular issues whose file-deliverables match the repo homes (ADR-018) + architecture (ADRs) + established docs,
+    each with a corrected relationship layer (resolving DF-1…DF-9) + an explicit outcome. No orphans (db-10-proof).
+  - Housekeeping: scaffold the new scenario via /new-scenario project-foundation delivery-structure-reconstruction
+    (New Scenario Protocol — do at reconstruction close). db-10 stays PARKED until the reconstruction re-homes it.
+---
+
+---
+Date: 2026-07-31 (PROFILE SWITCH — mid-session)
+⚙ PROFILE SWITCH: Project Foundation Setup → **Toolkit Development** (Victor-confirmed). CLAUDE.md carries no
+`# Profile:` line, so THIS entry is the persistence (per /begin PROFILE CONFIRM).
+Why: the 5-turn co-design of the delivery-structure model (Project=layer · Milestone=delivery-slice · Issue=sprint
+· intents=harvest) revealed it is a **toolkit-level capability**, not a vida artifact. Continuing to hand-apply it
+into vida would repeat the original db-10 ad-hoc failure. So we formalize it in the toolkit first, gated.
+NEW toolkit task: **delivery-structure-model** (LIF-110, cluster toolkit-session-flow, ~/dev-toolkit) — run FROM
+this vida session (vida = live test bed), mirroring delivery-loop-recon-enhance. Scenario dispatched:
+toolkit-development/default. **Phase T** (toolkit, blocking) → **Phase V** (vida: apply the scenario to the
+reconstruction). The vida task `delivery-structure-reconstruction` stays in_progress, blocked-by Phase T; db-10
+stays parked beneath both.
+
+---
+Date: 2026-07-31 (T0 SHIPPED — context to be cleared; start T1 fresh)
+✅ **T0 `realign-cluster-to-project` (LIF-111) DONE + merged + archived.** The toolkit's "cluster" is now "project"
+(the Linear Project entity it always was, ADR-007) + the delivery-loop ordering is decoupled from the phase-shaped
+name (`project_order` from `_projects.md` index, `project_mkey` fallback) + `--migrate-conventions`. Back-compat
+readers + deprecated flag aliases; NO Linear-side change; dev-toolkit's own 25 task files dogfood-migrated.
+Triple-gated (impact scan + 3 independent critiques, each caught a distinct real bug — see
+[[three-gates-each-catch-a-distinct-bug-class]]). 39 tests. ~/dev-toolkit main @ **d39fe02** (merge) + 1c73bcf/2ee2ba2
+(task-complete). LIF-111 → Done. **Not pushed** (Victor's call). Unrelated figma file left unstaged.
+
+⏭ **NEXT — T1 `delivery-structure-model` (LIF-110), now UNBLOCKED.** A toolkit task (~/dev-toolkit, profile
+toolkit-development) run FROM a vida session (vida = test bed). It rides the clean `project = tier` vocabulary, so
+its scope simplified: author the `delivery-structure-reconstruction` scenario + the §XXX phase + reconcile
+build-roadmap/milestone-delivery-planning/ADR-015 + the model ADR. Its PLAN (§XXVI g1) is the first step.
+On fresh /begin: it's a TOOLKIT task (won't show in vida's TASKS.md) — resume via ~/dev-toolkit/.claude/tasks/
+delivery-structure-model.md; switch this session's profile to Toolkit Development. Then **Phase V** applies the
+scenario to vida (convention-migrate + re-tier the vida delivery structure).
+- Model (locked, in the LIF-110 session log): Project=tier/front · Milestone=delivery-slice · Issue=sprint · intents=harvest.
+- vida `delivery-structure-reconstruction` stays parked/blocked beneath T1; db-10 parked beneath that.

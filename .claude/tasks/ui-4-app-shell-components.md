@@ -1,7 +1,8 @@
 # Task: ui-4-app-shell-components
 # Status: planned
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: UI
+# Linear: LIF-89
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ④ UI
 

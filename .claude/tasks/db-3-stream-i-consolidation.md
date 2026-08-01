@@ -1,7 +1,8 @@
 # Task: db-3-stream-i-consolidation
 # Status: planned
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Boot & DB spine
+# Linear: LIF-65
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Stream: true
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer (ADR-002 §5.20)

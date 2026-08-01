@@ -1,7 +1,8 @@
 # Task: ux-5b-vault-unlock
 # Status: planned
-# Cluster: M3 Whole-OS Encryption & Security Pass
-# Milestone: Crypto & Boundary
+# Linear: LIF-101
+# Project: M3 — Whole-OS Encryption Pass
+# Milestone: M3.0 — Encryption Pass
 # Phase: 1 (hardening)
 # Source: docs/roadmap.md → M3
 
