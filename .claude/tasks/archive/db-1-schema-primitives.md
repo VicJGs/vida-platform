@@ -2,8 +2,8 @@
 # Status: done   (implemented + verified + committed b234e85 on feat/db-1-schema-primitives · 2026-07-22)
 # Profile: Generic Coding Session
 # Scenario: Default
-# Cluster: ① Database Layer
-# Milestone: Schema
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ① Database Layer
 

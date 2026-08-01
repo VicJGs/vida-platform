@@ -5,7 +5,8 @@
 # Created: 2026-07-28
 # Status: done (2026-07-29 · merged fad233b · LIF-77)
 # Linear: LIF-77
-# Cluster: M1.0 Boot & Connective Base
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 
 ## Goal
 Build the Spaces substrate per ADR-006–010 — `entity_links`/`entity_tags` + backlinks + saved Views (ADR-007 folded) — homing `core/src/foundation/{spaces,views}`.

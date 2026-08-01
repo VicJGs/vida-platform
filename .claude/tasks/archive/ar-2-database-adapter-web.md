@@ -4,8 +4,8 @@
 # Spec: docs/specs/components/ar-2-database-adapter-web/_index.md
 # Status: done
 # Completion: contract complete (5/7 DoD), committed e55010f. Items 1&2 (browser open/persist) carried by LIF-103. Repo-CRUD → DB-6. Unblocks db-6/db-7/ar-5/ar-6/ar-8/ar-9.
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Boot & DB spine
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Linear: LIF-73 (existing — map slug ar-2-database-adapter-web; do NOT mint a duplicate)
 # Source: docs/roadmap/m1.0-delivery-plan.md §5 AR-2 (row 100)

@@ -3,8 +3,8 @@
 # Linear: LIF-75
 # Profile: Generic Coding Session
 # Scenario: default
-# Cluster: M1.0 Boot & Connective Base
-# Milestone: Boot & DB spine
+# Project: M1 — Whole Manual OS
+# Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Spec: docs/specs/foundation/ar-4-state-routing-forms/_index.md
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer · docs/roadmap/m1.0-delivery-plan.md §149 (LIF-75)
