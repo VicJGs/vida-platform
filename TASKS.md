@@ -12,7 +12,20 @@
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-07-31) — DELIVERY STRUCTURE UNDER RECONSTRUCTION.** The db-10 triage escalated STRUCTURAL: the
+**▶ CURRENT (2026-08-01) — DELIVERY STRUCTURE RECONSTRUCTED + LIVE; BACK TO THE BUILD LOOP.**
+The reconstruction is DONE (Phase V): Linear is re-organized to ADR-016 (Initiative→Project M1–M4→Milestone→Issue),
+91 issues, 0 deferred edges, db-10 fixed (← all 26 modules). Committed on branch `phase-v-delivery-reconstruction`
+(ff35a6f) — merge to main + push when ready. Toolkit Phase-T @ ~/dev-toolkit (4b31176 + 02ab9ea).
+- **The loop is LIVE:** `tracker_sync --next` → **`ux-1-information-architecture`** (M1/M1.0 root, 9 ready · 66 blocked).
+  Trust `--next` — the frontier is real again.
+- **FIRST STEP next session (2-min, before trusting `--census`):** retire/replace the stale `docs/roadmap/m1.0-delivery-plan.md`
+  with `reconstructed-structure.md` as the census home-source (else `--census` shows old milestone names like "Substrates";
+  `--next` is unaffected). Then resume the per-issue build gate on the computed head.
+- Db-10 un-parks when its milestone (M1.4) is reached in build order. Manual Linear hygiene: DONE (Victor, 2026-08-01).
+
+<details><summary>(prior) 2026-07-31 — reconstruction kickoff context</summary>
+
+**DELIVERY STRUCTURE UNDER RECONSTRUCTION.** The db-10 triage escalated STRUCTURAL: the
 whole **Project > Milestone > Issue** setup is malformed at its core (db-10 is a symptom — mis-homed to M1.0 with an
 unencoded "needs the whole OS" dep; see the harvest DF register). We STOPPED building and switched to **Project
 Foundation** (NEW scenario `delivery-structure-reconstruction`). **Step 1 (harvest draft) is DONE:**
@@ -25,6 +38,7 @@ layer) + legacy/migration provenance + DF-1…DF-9.
 - **⚠ DO NOT trust `--next` / build any M1.0 head until the reconstruction lands** — the delivery-plan/tracker encode
   the malformed structure (that is what surfaced db-10 wrongly). The loop is sound; its input graph is not.
 - db-10 PARKED (un-parks when re-homed). The 9 built units + 20 ADRs are immutable/preserved.
+</details>
 
 ---
 

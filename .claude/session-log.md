@@ -18,6 +18,13 @@ reconstructed-structure.md` (84 issues), then re-organized the live Linear track
   all modules, not create-at-gate). The empty-milestone + orphan-guard (LIF-102 stale map status = IN_PROGRESS→DONE) were
   both real mechanism findings, fixed locally.
 
+✅ **POST-HYGIENE CHECK (2026-08-01, Victor did the Linear cleanup):** `--pull` reconcile clean (no conflicts) ·
+`--verify` all 91 live · **`--next` → `ux-1-information-architecture`** (M1/M1.0 root, 4 dependents; 9 ready · 66 blocked)
+— the delivery loop now computes correctly over the reconstructed M1–M4 structure. `--census` debt digest accurate
+(5 expected off-seam orphans + 2 v1-quarantined). **The loop is LIVE and ready to resume the build.**
+NB (cosmetic, non-blocking): `--census` still reads the stale `m1.0-delivery-plan.md` for home-attribution (shows old
+milestone names like "Substrates"); `--next` unaffected. Retire/replace that old plan doc as next session's first step.
+
 ⏭ **Remaining (Victor-owned, non-blocking):** (1) Foundation meta-task project — held pending (sync or leave out);
 (2) manual-Linear hygiene: move 5 archived DONE issues (LIF-73/75/77/69/61) into M1, close dups LIF-107/106, archive
 emptied old M1.0/M1.4 + ①–⑤ shells (tracker can't delete Projects). Local `.tracker-map.json` is gitignored (local
