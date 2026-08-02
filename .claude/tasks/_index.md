@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none)_
+- ux-1-information-architecture: .claude/tasks/ux-1-information-architecture.md  (in-progress 2026-08-01 — LIF-90 · M1 / M1.0 experience-track ROOT · computed head via `--next` [highest direct-dependent count = 4]. IA + nav model + routing tree; root of UX-2/3/4/5, informs UI-4. Profile Generic Session, scenario default. Spec stub at docs/specs/foundation/ux-1-information-architecture/. Next: baseline → PLAN → §XXVI gate.)
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)

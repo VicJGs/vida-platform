@@ -63,3 +63,18 @@
   mechanism + one reference instance per plane. `[delivery-plan issue decomposition]`
 - **[INTENT]** No layout/IA — that is UX-3; AR-4's router renders a minimal shell, not the final app chrome (UI-4).
   `[delivery-plan §5 rows 253]`
+
+## Rules established by UX-1 (IMPLEMENTED 2026-08-02 · LIF-90 · Information Architecture)
+- **[FACT] BR-NAV-1 — the nav model is CO-PRIMARY DUAL-AXIS:** module dock (content home) + Spaces bar
+  (cross-cutting overlays). The dock owns canonical content homes; the Spaces bar overlays, never replacing a home.
+  **Amends ADR-007:88** (nav placement → Preferences); ADR-006 §3.4 (nav-addressable) is the cover. The Spaces bar
+  is a designed seam in M1.0, live in M1.1. `[FACT: apps/web/src/nav/module-map.ts; docs/core/architecture/information-architecture.md]`
+- **[FACT] BR-NAV-2 — the canonical nav/module map is CENTRAL DATA** at `apps/web/src/nav/module-map.ts`, READ by
+  the nav chrome (UI-4) + M1.1+ route wiring. It does **not** import/mutate `routes.tsx` and registers no routes —
+  honoring AR-4's single-central-`routes.tsx`, no-self-registration-seam decision. `[FACT: nav/module-map.ts]`
+- **[FACT] BR-NAV-3 — every module carries a `placement`** ∈ {dock · global · secondary · non-nav · spaces-only},
+  anchored in its `docs/features/<module>/identity.md`; conditional-dock items carry `visibleWhen` (a feature flag,
+  e.g. Gamification's `feature_gamification`). `routePath` is UX-facing and MAY differ from `key`. `[FACT: nav/module-map.ts]`
+- **[INTENT] BR-NAV-4 — per-module routes are NOT registered by UX-1;** each M1.1+ module self-wires via
+  `lazy(() => import('./app/<module>'))` reading its map entry. Specific view modes are the per-module VIEWS review
+  (ADR-007), not UX-1. `[FACT: routes.tsx:9]`

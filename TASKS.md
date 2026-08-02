@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| **ux-1-information-architecture** (LIF-90) | Generic Session | 2026-08-01 | 2026-08-01 | ▶ IN PROGRESS — computed head via `--next` (M1 · M1.0 · highest direct-dependent count = 4, root). Scaffolded task + spec stub `docs/specs/foundation/ux-1-information-architecture/`. Next: baseline → PLAN (/documentation-component) → §XXVI gate. |
 | **delivery-structure-reconstruction** | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue) + re-organized LIVE Linear project-first: **M1–M4, 91 issues, 0 deferred edges**, LIF ids preserved, db-10 ← all 26 modules. Output: `docs/specs/foundation/delivery-structure-reconstruction/reconstructed-structure.md`. Remaining = Victor-owned Linear hygiene (move 5 archived DONE, close dups, archive old shells) + Foundation-project decision. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |

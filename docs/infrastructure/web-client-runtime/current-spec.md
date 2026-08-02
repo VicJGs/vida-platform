@@ -88,6 +88,14 @@ The client runtime + its DB binding are built. `[FACT: apps/web/src/*]`
 3. **Router shape** — resolved: single central `routes.tsx` tree with `lazy()` code-split routes; no per-module
    self-registration seam (YAGNI until many modules). `[FACT: routes.tsx]`
 
+## UX-1 — IMPLEMENTED (2026-08-02 · LIF-90 · Information Architecture)
+New home **`apps/web/src/nav/`** (ADR-018 §3.6 layer-doc'd) — the canonical nav/module map as **central data** (no JSX):
+- `module-map.ts` exports `ModuleGroup`, `NavPlacement`, `ModuleNavEntry`, `NAV_AXES`, `MODULE_MAP` (23 modules
+  placed — every system-overview §2 module + the substrate-derived ones + dissolved Spaces entries), `GLOBAL_SURFACES`
+  (6 global-bar surfaces). Read by the nav chrome (UI-4) + M1.1+ route wiring; **does not touch `routes.tsx`**.
+- The IA design doc is `docs/core/architecture/information-architecture.md` (the co-primary dual-axis nav model).
+  `[FACT: apps/web/src/nav/*; typecheck 10/10, lint 0-err]`
+
 ## Downstream (INTENT — consumers)
 - **UI-3** (`@vida/editor`, LIF-88) ← UI-1, **AR-4** — the editor mounts in routes + issues React Query reads.
 - **UI-4** (app shell, LIF-89) ← UI-1, UX-3 — implements the UX-3 layout on AR-4's router.
