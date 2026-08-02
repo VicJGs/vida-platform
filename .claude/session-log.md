@@ -4002,3 +4002,23 @@ primary-doc audit** (caught Routines misclassified — harvest read the cockpit 
 build → typecheck 0/lint 0-err/routes.tsx untouched → Currency (BR-NAV-1..4). Placements: Routines→dock,
 Check-ins→secondary, Gamification→conditional dock, Sessions→dock, Pomodoro/Flashcards→non-nav, Languages/Bucket-List→spaces-only.
 NEXT: recompute `--next` (unblocks UX-2/3/4/5). Owed: ADR-007:88 amendment → future Spaces ADR (M1.1).
+
+---
+Date: 2026-08-02 (PROFILE SWITCH + AR-7 opened)
+⚙ PROFILE SWITCH: (none pinned) → **Add Backend Component** (Victor-confirmed by taking the computed head).
+CLAUDE.md carries no `# Profile:` line, so THIS entry is the persistence (per /begin PROFILE CONFIRM).
+▶ Opened **ar-7-capability-registry (LIF-78)** as the M1.0 head. Cross-confirmed the frontier with the right
+tools before starting: `tracker_sync --next` (→ ar-7, fan-out 3), `--plan project:M1.0` (ar-7 = first READY),
+`--verify` (91/91 mapped issues live in Linear), and `reconstructed-structure.md` row 13 (← AR-5, AR-6; unblocks
+MOD-purposes/MOD-gamification/HARD-2). All 4 blockers done (AR-5/AR-6/DB-6/DB-9). Scenario: add-backend-component/default.
+Now at §XXVII path-surface → §XXVI PLAN gate.
+
+---
+Date: 2026-08-02 (PROFILE SWITCH → Phase 1 realignment)
+⚙ PROFILE SWITCH: Add Backend Component → **Project Foundation** (Victor-confirmed) for Phase 1.
+▶ AR-7 build PAUSED. victor:triage classified the multi-substrate gating gap STRUCTURAL; diagnosis persisted +
+APPROVED (gate 1) at docs/specs/fixes/delivery-gate-multicontext-realignment/PLAN.md. NEW separate task
+**delivery-gate-multicontext-realignment** (Project Foundation, docs-only, full §XXVI double-gate) BLOCKS AR-7.
+Session phasing: P0 triage ✅ → P1 realignment (this) → P2 AR-7 as 4 gated increments. Root cause: per-issue flow
+assumed issue=context; census counts Home paths (over-triggers, so home-count is NOT the rule); anchor = one
+increment per independent substrate, explicit folds allowed (Views→AR-6 precedent). Next: gate-2 IMPLEMENTATION-PLAN.

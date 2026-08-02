@@ -25,6 +25,7 @@
   - **Status:** ✅ shipped(merged) · ◧ built+parked off-sequence (NOT merged) · ⏳ ready/next · ⏸ blocked · ◻ not-started · 〰 stream (authored incrementally at each consumer's build) · ⚠ UNDEFINED/EMERGING (scoping deliverable — define before build).
   - **DF** = **Structural Defect** — a flaw in the OLD structure (from the harvest's Defect Register, §3) that this reconstruction fixes.
   - **⊕agg** = the **all-module aggregators** {HARD-1, DB-10, DB-11, MIG-1, DB-5} — each depends on the FULL M1.1–M1.3 module set, so every `MOD-*` blocks them (written `→ …, ⊕agg` to avoid repeating five ids per module).
+  - **`⊞N`** = an **Outcome-cell** marker (orthogonal to Status): the issue authors N independent substrates and is delivered in **N gated build-step increments** — one full §XXVI double-gate per substrate, in dependency order (the multi-substrate rule, `delivery-plan §2`; DF-11). Absent = single increment. Folds (Views→AR-6) and coupled multi-layer deliverables (DB-9) are NOT marked.
 
 ## 3. Structural Defects (DF) resolved
 | DF | Defect in the OLD structure | Resolution here |
@@ -39,6 +40,7 @@
 | **DF-8** | profile per Issue unstable | every Issue has a fixed Profile |
 | **DF-9** | v1 retire-at-parity untracked | new Issue `MIG-1` (#63) |
 | **DF-10** *(this session)* | **no global build order** — issues had layers but no first→last sequence | the **`#` column** = a full topological order; §5 proves it acyclic |
+| **DF-11** *(this session)* | multi-substrate issue had no per-increment gating spec — the delivery-plan's per-issue flow (§2) assumed issue = one build-context (true only of the single-substrate issues it was written against, AR-5/AR-6) | per-substrate **increment rule** + **enforced gate precondition** written into `delivery-plan §2/§3`; issues authoring >1 independent substrate marked `⊞N` in Outcome (AR-7 ⊞4, AR-8 ⊞≥2); folds/coupled/integration stay 1 gate (Views→AR-6, DB-9, HARD-2) |
 
 ---
 
@@ -61,8 +63,8 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 10 | 〰DB-4 | Stream-(ii) per-domain schema | `core/src/db/schema/<domain>` (016 §3.5) | ← DB-1, DB-3 | DB-8 | Backend | each module's tables at that module's build |
 | 11 | ✅AR-5 | Sessions base | `core/src/foundation/sessions` (004) | ← DB-6, DB-9 | AR-7, MOD-sessions | Backend | sessions spine + registry + effect enums |
 | 12 | ✅AR-6 | Spaces + tags/links + Views | `core/src/foundation/{spaces,views}` (006/007) | ← DB-6, DB-9 | AR-7, AR-8, MOD-notes, MOD-spaces, HARD-3 | Backend | spaces/tags/entity_links + view engine |
-| 13 | ⏳AR-7 | Capability + measurability + effect rail | `core/src/foundation/{capability,measurement,economy,effects}` (011/012/004) | ← AR-5, AR-6 | MOD-purposes, MOD-gamification, HARD-2 | Backend | capability registry + measurability + effects |
-| 14 | ⏳AR-8 | Foundation services (backlink/export/graph-prep) | `core/src/services/{search,export}` (002/001) | ← AR-6 | HARD-3 | Backend | backlink/export/graph-prep (search sub-part → DB-8) |
+| 13 | ⏳AR-7 | Capability + measurability + effect rail | `core/src/foundation/{capability,measurement,economy,effects}` (011/012/004) | ← AR-5, AR-6 | MOD-purposes, MOD-gamification, HARD-2 | Backend | ⊞4 · capability registry + measurability + effects |
+| 14 | ⏳AR-8 | Foundation services (backlink/export/graph-prep) | `core/src/services/{search,export}` (002/001) | ← AR-6 | HARD-3 | Backend | ⊞≥2 (pin at AR-8's turn) · backlink/export/graph-prep (search sub-part → DB-8) |
 | 15 | ⏳AR-9 | Sync scaffolding (no-flush) | `core/src/sync` (003/017) | ← DB-6 | AR-9b | Backend | queue accrues writes; activation → M4 |
 | 16 | ◧DS-1 | Token pipeline (Style Dictionary → CSS/Tamagui) | `packages/ui/src/themes` (001) | root | DS-2 | Design-Sys | design tokens emitted — ⚠ built+green on branch, PARKED off-sequence (DF-6), **NOT merged** (≠ the 9 shipped) |
 | 17 | ◻DS-2 | Foundations (color/space/type scales) | `packages/ui/src/themes` | ← DS-1 | DS-3 | Design-Sys | foundational scales |
@@ -123,7 +125,7 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | # | ID | Title | Home (ADR) | ← Blocked-by | → Blocks | Prof | Outcome |
 |---|----|-------|-----------|--------------|----------|------|---------|
 | 57 | ◻HARD-1 | `summary(date)` provider registry | `services/journals` (002) | ← every `MOD-*` | HARD-4 | Backend | journal summary aggregates all modules |
-| 58 | ◻HARD-2 | Measurability + economy rollups live | `foundation/{measurement,economy}` (011/012) | ← AR-7, MOD-purposes, MOD-gamification | HARD-4 | Backend | end-to-end measurability/economy |
+| 58 | ◻HARD-2 | Measurability + economy rollups live | `foundation/{measurement,economy}` (011/012) | ← AR-7, MOD-purposes, MOD-gamification | HARD-4 | Backend | end-to-end measurability/economy (integration-class — 1 gate, DF-11) |
 | 59 | ◻HARD-3 | Neural-graph + backlinks complete | `foundation/spaces` + `services` + UI-2 (006) | ← AR-6, AR-8, UI-2 | HARD-4 | Backend | working backlinks + neural graph |
 | 60 | ◻DB-8 | FTS5 tables + search population | `core/src/db`, `services/search` (002) | ← DB-4, DB-7 | HARD-4, DB-8b | Backend | full-text search over real content (DF-2) |
 | 61 | ◻DB-11 | ADR-002 §5/§7/§8 reconciliation | `core/src/db` (002) | ← DB-1, **all `MOD-*`** | HARD-4 | Backend | schema doc reconciled |

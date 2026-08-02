@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none)_
+- ar-7-capability-registry: .claude/tasks/ar-7-capability-registry.md  (in_progress 2026-08-02 — LIF-78 · M1.0 Boot & Connective Base · the computed head via `tracker_sync --next`, cross-confirmed against `--plan`, `--verify` (live Linear 91/91), and reconstructed-structure.md row 13. Capability registry + measurability + effect rail → `core/src/foundation/{capability,measurement,economy,effects}` (ADRs 008/011/012/004). All 4 blockers done (AR-5/AR-6/DB-6/DB-9); unblocks MOD-purposes, MOD-gamification, HARD-2. Profile Add Backend Component; at the §XXVI PLAN gate.)
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)
