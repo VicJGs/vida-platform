@@ -1,6 +1,11 @@
-<!-- Last updated: 2026-08-01 by /session-end -->
+<!-- Last updated: 2026-08-02 by /session-end -->
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
+| 2026-08-02 | ux/nav | primary navigation axis | **co-primary dual-axis** — module dock (content home) + Spaces bar (cross-cutting overlays) | reconciles ADR-006/007 (Spaces overlays) + intake SP1 (Spaces first-class axis); Victor's call | costly (amends ADR-007:88; owed to Spaces ADR) |
+| 2026-08-02 | ux/nav | UX-1 deliverable grain | design doc (`information-architecture.md`) + declarative code artifact (`apps/web/src/nav/module-map.ts`) | dual home reconstructed:72; "design/spec issue" is dep-graph sense, not doc-only | yes |
+| 2026-08-02 | ux/nav | nav-map home | `apps/web/src/nav/` (per-app), NOT a shared package | platform-strategy §5 (routing is platform-specific); web-first; M4 revisit if consumer appears | yes |
+| 2026-08-02 | ux/nav | Routines placement | **dock** (own cockpit), not inside Sessions | routines/identity.md:5-8 (active counterpart to Calendar; "Not a session engine"); harvest misread corrected by Victor audit | yes |
+| 2026-08-02 | ux/nav | Check-ins / Gamification placement | Check-ins = secondary (Journal flow); Gamification = conditional dock (`feature_gamification`) | check-ins/identity.md:25 (Journal-surfaced); gamification/identity.md:8 (opt-in) | yes |
 | 2026-06-27 | habits | streak semantics | consecutive scheduled occurrences, no grace; counters derive from ledger | one source of truth; cache never lies | yes |
 | 2026-06-27 | finance | account balance source of truth | ledger-derived (opening_balance + Σ transactions) | balances can't drift; import-friendly | costly |
 | 2026-06-28 | relationships | neural graph edges | contact↔network membership only, no contact↔contact table | matches Victor's model; less schema | yes |

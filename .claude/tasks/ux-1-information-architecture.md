@@ -2,7 +2,7 @@
 # Profile: Generic Session
 # Scenario: default
 # Spec: docs/specs/foundation/ux-1-information-architecture/_index.md
-# Status: in-progress
+# Status: done
 # Linear: LIF-90
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base

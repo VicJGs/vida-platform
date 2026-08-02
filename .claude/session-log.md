@@ -3990,3 +3990,15 @@ delivery-structure-model.md; switch this session's profile to Toolkit Developmen
 scenario to vida (convention-migrate + re-tier the vida delivery structure).
 - Model (locked, in the LIF-110 session log): Project=tier/front · Milestone=delivery-slice · Issue=sprint · intents=harvest.
 - vida `delivery-structure-reconstruction` stays parked/blocked beneath T1; db-10 parked beneath that.
+
+---
+Date: 2026-08-02 — UX-1 Information Architecture SHIPPED
+✅ **UX-1 (LIF-90) DONE + merged/pushed to main (f5a863b); LIF-90 → Done.** The web app's IA + **co-primary
+dual-axis nav model** (module dock = content home + Spaces bar = cross-cutting overlays; amends ADR-007:88, ADR-006
+§3.4 cover; Spaces bar = seam live M1.1). Deliverables: `docs/core/architecture/information-architecture.md` +
+`apps/web/src/nav/module-map.ts` (23 modules placed) + layer-doc. FULL §XXVI gate: baseline → PLAN (3 revs) →
+critique+preflight → Approval 1 → homes verified vs ADR-018 → IMPLEMENTATION-PLAN → map critique → **Victor
+primary-doc audit** (caught Routines misclassified — harvest read the cockpit as inside-Sessions) → Approval 2 →
+build → typecheck 0/lint 0-err/routes.tsx untouched → Currency (BR-NAV-1..4). Placements: Routines→dock,
+Check-ins→secondary, Gamification→conditional dock, Sessions→dock, Pomodoro/Flashcards→non-nav, Languages/Bucket-List→spaces-only.
+NEXT: recompute `--next` (unblocks UX-2/3/4/5). Owed: ADR-007:88 amendment → future Spaces ADR (M1.1).

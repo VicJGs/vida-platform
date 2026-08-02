@@ -6,14 +6,20 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| **ux-1-information-architecture** (LIF-90) | Generic Session | 2026-08-01 | 2026-08-01 | ▶ IN PROGRESS — computed head via `--next` (M1 · M1.0 · highest direct-dependent count = 4, root). Scaffolded task + spec stub `docs/specs/foundation/ux-1-information-architecture/`. Next: baseline → PLAN (/documentation-component) → §XXVI gate. |
 | **delivery-structure-reconstruction** | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue) + re-organized LIVE Linear project-first: **M1–M4, 91 issues, 0 deferred edges**, LIF ids preserved, db-10 ← all 26 modules. Output: `docs/specs/foundation/delivery-structure-reconstruction/reconstructed-structure.md`. Remaining = Victor-owned Linear hygiene (move 5 archived DONE, close dups, archive old shells) + Foundation-project decision. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-01) — DELIVERY STRUCTURE RECONSTRUCTED + LIVE; BACK TO THE BUILD LOOP.**
+**▶ CURRENT (2026-08-02) — UX-1 (IA) DONE + merged/pushed to main (f5a863b); LIF-90 → Done.**
+UX-1 shipped the co-primary dual-axis IA (`docs/core/architecture/information-architecture.md` + `apps/web/src/nav/module-map.ts`).
+Unblocks UX-2/UX-3/UX-4/UX-5. **NEXT: recompute the head via `tracker_sync --next`** (do not hand-read) — UX-1's dependents
+are now ready. Watch: the ADR-007:88 amendment is owed to the future Spaces ADR (M1.1); the map's route slugs are M1.1-adjustable.
+
+<details><summary>(prior) 2026-08-01 — delivery structure reconstructed + live</summary>
+
+**DELIVERY STRUCTURE RECONSTRUCTED + LIVE; BACK TO THE BUILD LOOP.**
 The reconstruction is DONE (Phase V): Linear is re-organized to ADR-016 (Initiative→Project M1–M4→Milestone→Issue),
 91 issues, 0 deferred edges, db-10 fixed (← all 26 modules). Committed on branch `phase-v-delivery-reconstruction`
 (ff35a6f) — merge to main + push when ready. Toolkit Phase-T @ ~/dev-toolkit (4b31176 + 02ab9ea).
@@ -39,6 +45,7 @@ layer) + legacy/migration provenance + DF-1…DF-9.
 - **⚠ DO NOT trust `--next` / build any M1.0 head until the reconstruction lands** — the delivery-plan/tracker encode
   the malformed structure (that is what surfaced db-10 wrongly). The loop is sound; its input graph is not.
 - db-10 PARKED (un-parks when re-homed). The 9 built units + 20 ADRs are immutable/preserved.
+</details>
 </details>
 
 ---
@@ -192,6 +199,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **ux-1-information-architecture** (LIF-90 · M1/M1.0 experience-track ROOT · computed head via `--next`. The web app's IA + **co-primary dual-axis nav model** — module dock (content home) + Spaces bar (cross-cutting overlays); amends ADR-007:88, ADR-006 §3.4 cover; Spaces bar = seam live M1.1. Deliverables: `docs/core/architecture/information-architecture.md` + `apps/web/src/nav/module-map.ts` (23 modules placed) + layer-doc. Grain: design/spec issue that also emits a declarative code artifact (dual home). 4 gates (PLAN critique+preflight, map critique — 3 REVISE all fixed) + **Victor primary-doc audit** caught Routines misclassified (harvest read the cockpit as inside-Sessions). Placements: Routines→dock, Check-ins→secondary, Gamification→conditional dock, Sessions→dock, Pomodoro/Flashcards→non-nav, Languages/Bucket-List→spaces-only. Homes verified vs ADR-018 (per-app, not shared pkg). typecheck 0, lint 0-err, routes.tsx untouched. Currency: BR-NAV-1..4 promoted. commit f5a863b → merged+pushed to main. Unblocks UX-2/3/4/5.) | 2026-08-02 | 1 (2026-08-01→02) |
 | **ar-4-state-routing-forms** (LIF-75 · M1.0 Boot & DB spine · COMPUTED head via `--next` off db-7. apps/web client runtime: Zustand + React Query v5 + TanStack Router + TanStack Form/Zod, **+ the main↔worker DB binding AR-2 assigned to AR-4** (D5: `db/client.ts` SqliteDriver proxy over the worker RPC w/ timeout+crash handling; extended `worker.ts` protocol; `boot.ts` DB-ready gate). Grain = mechanism + 1 reference/plane; values/batch = deferred seam. **ADR-020** resolves the long-deferred ADR-001:286 (Zustand placement = per-app hooks). Profile switched → Generic Coding Session. Full §XXVI double-gate + §XXX: 2 plan critiques + preflight (surfaced the missing D5 layer) + post-impl critique (happy-path-only error handling → RPC timeout/onerror + worker default + boot memo-clear + App error/retry) + engineering gate PASS. typecheck 10/10, @vida/web 21/21, build green. commit 955a255 on branch `ar-4-state-routing-forms`. Victor corrected 2 manufactured forks (grain + binding ownership both already in docs). §XXIX docs at docs/infrastructure/web-client-runtime/.) | 2026-07-30 | 1 (2026-07-29→30) |
 | **db-7-migrations-runner** (LIF-69 · M1.0 Boot & DB spine · COMPUTED head via `--next`. Reconcile+extend of the existing runner: authored the `app_state` infra table (`schema/foundation/app-state.ts`, ADR-002 §5.0) + `ensureInfra` pre-loop bootstrap + dev-only `resetDev`. **Closed a latent boot bug** — engine assumed `app_state` but no production migration created it → `migrate()` threw at real web boot (`worker.ts:23`), masked by 4 test fixtures (retired). Engine untouched; forward-only preserved (no `down()`, inherited §9.2 divergence → DB-11). Full §XXVI double-gate + 3 independent critiques (all SHIP; gate-1 caught a 4th fixture + BR-5 mechanism). typecheck 10/10, @vida/core 131/131, @vida/web 6/6. §XXIX docs shipped together. commit d7aa1e0. Also this session: manufactured-fork correction (memory [[read-architecture-before-implementing]]) + delivery-loop audited sound + AR-7 edge reconcile.) | 2026-07-29 | 1 (2026-07-29) |
 | **ar-6-spaces** (LIF-77 · M1.0 substrate spine · Spaces per ADR-006 (SP1–SP7) + ADR-007 (V1–V5). 6 tables (`tags`·`entity_tags`·`entity_links`·`spaces`·`space_enabled_blocks`·`views`, migration 003) + `TaggableTypeRegistry` (SP2 open) + `SpacesService` (BR-14 idempotent junctions, BR-15 resolve-then-soft-delete, BR-3/5 cycle guards, BR-13 M1.0 empty-[E] pass-through) + `ViewsService` + `ViewProviderRegistry` (empty V4/R7 seam) + `ViewEngine` (V3/V4/V5). Deferred: capability registry/block_instances→AR-7, backlink resolver→AR-8, effect rail→AR-7, DSL/layout/resolution-surface→build-time. Double-gated + 3 independent critiques [g1×2: scope-drift + link_type-in-prompt; g2: 3 executability defects vs real repository.ts; post-impl: missing spaces cycle-guard]. §2.1 gather-protocol born after a triage. typecheck 10/10, spaces 14/14, parity 7/7. commit e2a170d → merged fad233b. Currency §XXIX docs at docs/core/spaces/. Unblocks AR-7. LIF-77 canonical (Facet A reconciled the LIF-108 dup).) | 2026-07-29 | 1 (2026-07-28→29) |
