@@ -4022,3 +4022,30 @@ APPROVED (gate 1) at docs/specs/fixes/delivery-gate-multicontext-realignment/PLA
 Session phasing: P0 triage ✅ → P1 realignment (this) → P2 AR-7 as 4 gated increments. Root cause: per-issue flow
 assumed issue=context; census counts Home paths (over-triggers, so home-count is NOT the rule); anchor = one
 increment per independent substrate, explicit folds allowed (Views→AR-6 precedent). Next: gate-2 IMPLEMENTATION-PLAN.
+
+---
+Date: 2026-08-02 (Phase 1 SHIPPED · PROFILE SWITCH back → Add Backend Component)
+✅ **Phase 1 delivery-gate-multicontext-realignment DONE** — commit 403d25f on branch
+`fix/delivery-gate-multicontext-realignment` (gitleaks clean; NOT merged/pushed). DF-11 + the multi-substrate
+increment rule + ENFORCED gate-1 substrate-count precondition now live in delivery-plan §2/§3; ⊞N marks AR-7 ⊞4 /
+AR-8 ⊞≥2. Full §XXVI double-gate: STRUCTURAL triage → diagnosis (Approval 1) → IMPL-PLAN → independent critique
+REVISE (2 blockers: DF-10 id collision, ⊞N wrong legend column; 2 majors: AR-6 fold underived, breach prose-only)
+→ Rev 2 → re-critique SHIP → preflight PASSED → Approval 2 → implement → acceptance verified (grep + live census
+AR-7 miss4/AR-8 miss2 unchanged). AR-7 un-blocked (panel #2 completed).
+⚙ PROFILE SWITCH: Project Foundation → **Add Backend Component** (resume Phase 2).
+▶ **Phase 2 — AR-7 as ⊞4:** 4 gated increments under LIF-78, dependency order **effects → capability → measurement
+→ economy**, each a full §XXVI double-gate; LIF-78 closes when census aligns all 4. NEXT: Increment 1 (effects) §XXVI
+g1 — focused effects-context baseline + PLAN (the broad AR-7 baseline.md is the shared substrate grounding).
+
+---
+Date: 2026-08-02 (AR-7 Increment 1 — effects rail SHIPPED)
+✅ **AR-7 Increment 1 (`effects`) DONE** — the exactly-once effect rail (ADR-004 §3.2.5 / F1). Full §XXVI:
+baseline+PLAN → critique SHIP (3 fold-ins: F1 composite PK, projection no-op, migration wording) → Approval 1
+(effect_event_id = canonical-string, hash deferred build-phase per ADR-011 §3.8, grounded) → IMPLEMENTATION-PLAN →
+critique REVISE (BLOCKER: enum-parity is hand-maintained not auto-discovered → false-PASS; MAJOR: handler-in-tx
+nested-BEGIN → locked handler sig `(event, tx)`) → fixed → preflight PASSED → Approval 2 → build.
+Files: foundation/effects/{types,event-id,registry,service,index}.ts + schema/foundation/effects.ts + migration 004
+(+runner) + enum-parity wiring + effects.test.ts (8). Verified: @vida/core typecheck 0, 140/140 tests, root 10/10;
+fixed stale spaces version assertion (→ >=3). §XXIX Currency: docs/core/effects/current-{spec,business-rules}.md +
+layer-doc. Branch: ar-7-capability-registry (off fix/delivery-gate-multicontext-realignment). 3 increments remain:
+capability → measurement → economy.

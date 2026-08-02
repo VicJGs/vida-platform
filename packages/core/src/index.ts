@@ -116,3 +116,6 @@ export * from './foundation/sessions'
 // Foundation substrate — Spaces base (AR-6 · ADR-006/007)
 export * from './foundation/spaces'
 export * from './foundation/views'
+
+// Foundation substrate — the effect rail (AR-7 Increment 1 · ADR-004 §3.2.5 / F1)
+export * from './foundation/effects'

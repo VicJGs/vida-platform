@@ -11,3 +11,5 @@ export * from './foundation/app-state'
 export * from './foundation/sessions'
 // Foundation substrate: AR-6 Spaces base (tags/links/spaces/enabled-blocks/views).
 export * from './foundation/spaces'
+// Foundation substrate: AR-7 effect rail (applied_effects dedup ledger).
+export * from './foundation/effects'

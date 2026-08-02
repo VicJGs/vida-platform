@@ -89,7 +89,9 @@ describe('AR-6 — migration 003 wiring', () => {
         'views',
       ]),
     )
-    expect(await currentVersion(driver)).toBe(3)
+    // Spaces migration applied (>=3); the exact latest belongs to whichever migration is last
+    // (AR-7 added 004) — the table set above is the real proof migration 003 ran.
+    expect(await currentVersion(driver)).toBeGreaterThanOrEqual(3)
     await driver.close()
   })
 

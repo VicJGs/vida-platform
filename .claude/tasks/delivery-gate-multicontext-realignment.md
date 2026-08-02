@@ -3,7 +3,7 @@
 # Scenario: default
 # Spec: docs/specs/fixes/delivery-gate-multicontext-realignment/
 # Created: 2026-08-02
-# Status: in_progress
+# Status: done (2026-08-02 · commit 403d25f · branch fix/delivery-gate-multicontext-realignment, not merged)
 # Linear: (none — meta/governance fix, not a Linear issue; mirrors delivery-structure-reconstruction)
 
 ## Goal
@@ -33,8 +33,8 @@ STRUCTURAL (victor:triage, 2026-08-02). Diagnosis = `docs/specs/fixes/delivery-g
 - [x] Approval 2 (Victor, 2026-08-02)
 - [x] Implement doc edits (delivery-plan §2/§3 + reconstructed-structure §3 DF-11 + ⊞N glossary + rows)
 - [x] Acceptance verified: #5 grep-placement clean · #6 live census AR-7 miss4/AR-8 miss2/DB-9 aligned2 · DF-11 unique
-- [ ] Commit docs alone (pending Victor's go — on a branch, main is protected)
-- [ ] Un-block AR-7 → resume Phase 2
+- [x] Commit docs alone — branch `fix/delivery-gate-multicontext-realignment` @ 403d25f (gitleaks clean; not merged/pushed)
+- [x] Un-block AR-7 → resume Phase 2
 
 ## Outcome
 DF-11 written. The multi-substrate increment rule + **enforced** gate-1 substrate-count precondition now live in

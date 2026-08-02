@@ -12,6 +12,7 @@ import { runMigrations, getSchemaVersion } from '../adapter'
 import { migration001SyncQueue } from './001_sync_queue'
 import { migration002Sessions } from './002_sessions'
 import { migration003Spaces } from './003_spaces'
+import { migration004Effects } from './004_effects'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -21,7 +22,12 @@ import { migration003Spaces } from './003_spaces'
 // Migrations are authored per-feature at build phase (ADR-016 §3.5 / ADR-017 §1).
 // The v1 monolith migration (001_initial) was quarantined to db/_legacy/ in Part 2 (ADR-018).
 // DB-6 authors + registers the first real migration: the sync_queue foundation table.
-const ALL_MIGRATIONS: Migration[] = [migration001SyncQueue, migration002Sessions, migration003Spaces]
+const ALL_MIGRATIONS: Migration[] = [
+  migration001SyncQueue,
+  migration002Sessions,
+  migration003Spaces,
+  migration004Effects,
+]
 
 // ---------------------------------------------------------------------------
 // Public API
