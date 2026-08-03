@@ -2,9 +2,9 @@
 import { createTokens } from '@tamagui/core'
 
 export const tokens = createTokens({
-  color: { "blue500": "#3B82F6", "gray900": "#111827", "white": "#FFFFFF", true: "#3B82F6" },
-  space: { "md": 16, true: 16 },
-  size: { "md": 16, true: 16 },
-  radius: { "md": 8, true: 8 },
-  zIndex: { "base": 0, true: 0 },
+  color: { "black": "#000000", "brand100": "#E0E7FF", "brand200": "#C7D2FE", "brand300": "#A5B4FC", "brand400": "#818CF8", "brand50": "#EEF2FF", "brand500": "#6366F1", "brand600": "#4F46E5", "brand700": "#4338CA", "brand800": "#3730A3", "brand900": "#312E81", "danger100": "#FEE2E2", "danger500": "#EF4444", "danger600": "#DC2626", "neutral100": "#F1F5F9", "neutral200": "#E2E8F0", "neutral300": "#CBD5E1", "neutral400": "#94A3B8", "neutral50": "#F8FAFC", "neutral500": "#64748B", "neutral600": "#475569", "neutral700": "#334155", "neutral800": "#1E293B", "neutral900": "#0F172A", "success100": "#D1FAE5", "success500": "#10B981", "success600": "#059669", "white": "#FFFFFF", true: "#000000" },
+  space: { "0": 0, "12": 12, "128": 128, "16": 16, "20": 20, "24": 24, "32": 32, "4": 4, "40": 40, "48": 48, "64": 64, "8": 8, "80": 80, "96": 96, true: 0 },
+  size: { "0": 0, "12": 12, "16": 16, "20": 20, "24": 24, "32": 32, "4": 4, "40": 40, "48": 48, "64": 64, "8": 8, true: 0 },
+  radius: { "full": 9999, "lg": 12, "md": 8, "sm": 4, "xl": 16, true: 9999 },
+  zIndex: { "base": 0, "dropdown": 1000, "modal": 1300, "overlay": 1200, "sticky": 1100, "toast": 1400, true: 0 },
 })

@@ -22,7 +22,7 @@ emits, from that single source, the Tamagui token/theme inputs plus a CSS-variab
 
 1. **Tamagui token/theme modules** — a `createTokens(...)` call (`tokens.ts`) + **plain `light`/`dark` theme
    objects** (`themes.ts`), the inputs DS-4's `createTamagui({ tokens, themes })` consumes. `createTokens` and the
-   theme objects are the mandated universal token layer (ADR-001). `[FACT: ADR-001:110,113]`
+   theme objects are the mandated universal token layer (ADR-001). `[FACT: ADR-001:111,114 — §9 Component Library=Tamagui + Theme=light/dark via Tamagui theme system]`
    `[FACT: context7 /tamagui/tamagui — createTokens({size,space,radius,zIndex,color}); themes are plain objects passed to createTamagui; NO createTheme export]`
 2. **A CSS custom-properties file** (`variables.css`) named per design.md §XII (`color/surface/primary` →
    `--color-surface-primary`) — a *parallel format target off the same seed* for raw-CSS / documentation use.
@@ -45,8 +45,9 @@ hand-editing** and **no value referenced twice** — the three-layer indirection
 **What it is NOT.**
 - NOT the token **values** — color/type/space/radius/shadow foundations are **DS-2**. DS-1 ships a *throwaway
   placeholder seed* (a few values per layer) solely to prove the build end-to-end. `[FACT: m1.0-delivery-plan §5 DS-2]`
-- NOT the Figma wiring — Figma Variables → Tokens Studio export replaces the JSON seed at **DS-2**.
-  `[FACT: task Decision 2026-07-26 — /token-audit = 0 consumers → safe to defer Figma]`
+- NOT the Figma wiring — at **DS-2** the real values are authored **code-first** in the seed; the community Figma
+  file + MCP-scripter bridge come **later** (NOT Tokens Studio). `[DIRECTION: Victor 2026-08-03 — supersedes the
+  original "Figma → Tokens Studio at DS-2" assumption]` `[FACT: /token-audit = 0 consumers → safe to defer Figma]`
 - NOT the full Tamagui app config — `tamagui.config.ts` (`createTamagui`), the provider, and dark-mode wiring are
   **DS-4**. DS-1 produces the `tokens.ts`/`themes.ts` DS-4 *imports*. **No circular dep:** `createTokens(...)` and
   plain theme objects typecheck standalone from `@tamagui/core` **without** `createTamagui`. `[FACT: context7 — createTokens importable from @tamagui/core, returns typed tokens]` `[FACT: roadmap §5 — DS-1 dep = AR-1 only; DS-4 dep = DS-2,DS-3]`
@@ -87,6 +88,8 @@ DS-1 is a build **pipeline**, not a visual component — so `/contract`'s props/
 does not apply. The contract here is the **data/format contract**: seed schema in → three format targets out.
 
 ### 3.1 Input — the JSON seed (Style Dictionary token files)
+> **Erratum (2026-08-03):** the code blocks below draft `$value`/`$type`, but the **shipped** pipeline uses classic
+> `value`/`type` (no `$`) — see `tokens/*.json` + `build-tokens.mjs:44` (`'value' in node`). Follow the live code.
 Three files under `packages/ui/src/themes/tokens/`, one per layer. Style Dictionary token format
 (`{ "$value": ..., "$type": ... }`; references as `{group.name}`):
 ```jsonc
@@ -126,7 +129,7 @@ literals) → violation = B2 build error.
 - [ ] **B1/B3 proven:** every emitted CSS var and Tamagui token/theme key traces to a seed entry (per the §1 projection).
 - [ ] **B4 proven:** two consecutive builds yield byte-identical output per target (no dated header, sorted keys).
 - [ ] Output files carry the GENERATED banner.
-- [ ] Seed is hand-authored (no Figma dependency); the DS-2 handoff point (swap seed → Tokens Studio export) is documented.
+- [ ] Seed is hand-authored (no Figma dependency); the DS-2 handoff point (real values authored **code-first** in the seed; Figma-later via MCP scripter) is documented.
 - [ ] `[C]` `current-spec.md` + `current-business-rules.md` created for the themes context; `[L]` layer-doc for `themes/`.
 
 ## 5. Implementation Prompt
@@ -156,8 +159,9 @@ literals) → violation = B2 build error.
   names; Tamagui emits its own web CSS vars from `createTamagui` at DS-4. DS-4 decides whether Tamagui's runtime
   var names are aliased to the design.md names or the two coexist by scope. Recorded so it's a deliberate DS-4
   decision, not a surprise. `[INTERP: ADR-001:113 + BL-2]`
-- [RESOLVED] Token source = hand-authored JSON seed (Figma at DS-2). Output = Tamagui `tokens.ts`/`themes.ts` +
-  `variables.css`. `[Victor 2026-07-26]`
+- [RESOLVED] Token source = hand-authored JSON seed, **code-first** (real values at DS-2; community Figma file +
+  MCP-scripter bridge later, NOT Tokens Studio). Output = Tamagui `tokens.ts`/`themes.ts` + `variables.css`.
+  `[Victor 2026-07-26; direction refined 2026-08-03]`
 
 ## 7. Change Log
 | Date | Session | Change |

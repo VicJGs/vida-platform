@@ -150,6 +150,11 @@ economy rollups live; neural-graph + backlinks complete; polish. → **M1 done.*
 - **P2-④ · Mobile App** — Expo/RN, expo-sqlite+SQLCipher, WebView editor + native chrome, biometric unlock, push, EAS.
 - **P2-⑤ · Self-Host Packaging** — runtime-agnostic Hono + S3-compatible blob store + self-host guide.
 - **P2-⑥ · ZK-Cloud + Billing** — hosted Cloudflare deploy + `billing.ts`.
+- **P2-⑦ · Design-System Figma community file (MCP-scripter bridge)** — the shareable, community-forkable Figma
+  file for DS/UI/UX, built as a faithful reflection of the shipped code-first design system, synced via **Figma MCP
+  + a custom scripter + docs** (NOT Tokens Studio). Deferred to release because it documents the *finished* product
+  for users to build with. Deps: ← DS-2…DS-5 (design system) + UI-* (products exist to document). `[DIRECTION:
+  Victor 2026-08-03 — release-gated; see docs/ui/token-pipeline/current-spec.md §0]`
 - **Milestone: first public release** — self-host **or** ZK-cloud (ZK-cloud = perk, not headline).
 
 ## Post-M4 — Personality

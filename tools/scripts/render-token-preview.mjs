@@ -1,0 +1,133 @@
+#!/usr/bin/env node
+// Frontend Visual Gate — stage 3 render for DESIGN TOKENS (docs/specs/foundation/frontend-visual-gate.md).
+// Parses the GENERATED packages/ui/src/themes/variables.css, resolves var() chains to literals, categorizes tokens
+// by path-prefix, and emits a self-contained preview.html gallery (swatches / type / spacing / radius / shadow) so
+// Victor can VISUALLY approve the look — the same code that ships is what he sees (code-first source of truth).
+//
+// Run:  pnpm preview:tokens   →   open packages/ui/src/themes/preview.html
+// Deterministic: tokens sorted by name; no timestamps.
+
+import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const THEMES = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'packages', 'ui', 'src', 'themes')
+const CSS = join(THEMES, 'variables.css')
+const OUT = join(THEMES, 'preview.html')
+
+// ── parse `--name: value;` from :root ────────────────────────────────────────────────────────────────
+const raw = new Map()
+for (const line of readFileSync(CSS, 'utf8').split('\n')) {
+  const m = line.match(/^\s*--([\w-]+):\s*(.+?);\s*$/)
+  if (m) raw.set(m[1], m[2].trim())
+}
+
+// resolve var(--x) chains to a literal (cycle-guarded)
+function resolve(val, seen = new Set()) {
+  const m = val.match(/^var\(--([\w-]+)\)$/)
+  if (!m) return val
+  if (seen.has(m[1]) || !raw.has(m[1])) return val
+  seen.add(m[1])
+  return resolve(raw.get(m[1]), seen)
+}
+
+const isColor = (v) => /^#([0-9a-f]{3,8})$/i.test(v) || /^(rgb|hsl)a?\(/i.test(v)
+const isNumber = (v) => /^-?\d+(\.\d+)?$/.test(v)
+const isShadow = (v) => /\d+px|rgba?\(|,/.test(v) && !isColor(v)
+
+// dark overlay → resolve each override to a primitive literal, keyed by css-var name, so the preview toggles REAL dark values
+const darkMap = new Map()
+try {
+  const overlay = JSON.parse(readFileSync(join(THEMES, 'tokens', 'semantic.dark.json'), 'utf8'))
+  const walk = (node, path) => {
+    if (node && typeof node === 'object' && 'value' in node && typeof node.value === 'string') {
+      const prim = node.value.replace(/^\{|\}$/g, '').split('.').join('-')
+      darkMap.set(path.join('-'), resolve(`var(--${prim})`))
+    } else if (node && typeof node === 'object') {
+      for (const k of Object.keys(node)) if (k !== '_note') walk(node[k], [...path, k])
+    }
+  }
+  walk(overlay, [])
+} catch {
+  /* no overlay yet */
+}
+
+// ── group tokens by path-prefix (color/space/size/radius/zIndex/font*/shadow/component) ───────────────
+const groups = new Map()
+for (const [name, val] of [...raw].sort(([a], [b]) => a.localeCompare(b))) {
+  const cat = name.split('-')[0]
+  if (!groups.has(cat)) groups.set(cat, [])
+  groups.get(cat).push({ name, val, resolved: resolve(val) })
+}
+
+// ── render one token as a labelled visual sample ──────────────────────────────────────────────────────
+function sample({ name, val, resolved }, cat) {
+  const chain = val !== resolved ? `<code class="chain">${val} → ${resolved}</code>` : `<code>${resolved}</code>`
+  let visual
+  if (isColor(resolved)) {
+    const dl = darkMap.get(name)
+    visual = `<div class="sw" style="background:${resolved}" data-light="${resolved}"${dl ? ` data-dark="${dl}"` : ''}></div>`
+  }
+  else if (cat === 'radius' && isNumber(resolved)) visual = `<div class="box" style="border-radius:${resolved}px"></div>`
+  else if ((cat === 'space' || cat === 'size') && isNumber(resolved)) visual = `<div class="dim" style="width:${resolved}px;height:${resolved}px"></div><span class="px">${resolved}px</span>`
+  else if (cat === 'fontSize') visual = `<span style="font-size:${resolved}px;line-height:1.1">Aa ${resolved}</span>`
+  else if (cat === 'fontFamily') visual = `<span style="font-family:${resolved};font-size:18px">Aa Vida</span>`
+  else if (cat === 'fontWeight') visual = `<span style="font-weight:${resolved};font-size:18px">Aa ${resolved}</span>`
+  else if (cat === 'lineHeight') visual = `<span class="mono">× ${resolved}</span>`
+  else if (cat === 'letterSpacing') visual = `<span class="mono">${resolved}em</span>`
+  else if (cat === 'shadow' || isShadow(resolved)) visual = `<div class="box" style="box-shadow:${resolved}"></div>`
+  else visual = `<span class="mono">${resolved}</span>`
+  return `<div class="tok"><div class="vis">${visual}</div><div class="meta"><code class="nm">--${name}</code>${chain}</div></div>`
+}
+
+const sections = [...groups.entries()]
+  .map(([cat, toks]) => `<section><h2>${cat} <span class="cnt">${toks.length}</span></h2>
+    <div class="grid">${toks.map((t) => sample(t, cat)).join('')}</div></section>`)
+  .join('\n')
+
+const total = raw.size
+const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Vida — Token Preview (Frontend Visual Gate)</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin:0; font:14px/1.5 system-ui,sans-serif; background:#fff; color:#111; transition:.15s; }
+  body.dark { background:#111827; color:#f3f4f6; }
+  header { position:sticky; top:0; padding:16px 24px; background:inherit; border-bottom:1px solid #8883; display:flex; gap:16px; align-items:center; }
+  h1 { font-size:16px; margin:0; }
+  .sub { color:#8888; font-size:12px; }
+  .warn { margin-left:auto; font-size:12px; color:#b45309; }
+  button { font:inherit; padding:6px 12px; border:1px solid #8886; border-radius:6px; background:transparent; color:inherit; cursor:pointer; }
+  section { padding:16px 24px; border-bottom:1px solid #8882; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:#8899; margin:0 0 12px; }
+  .cnt { color:#8886; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+  .tok { border:1px solid #8883; border-radius:8px; padding:10px; display:flex; gap:10px; align-items:center; }
+  .vis { flex:0 0 56px; display:flex; align-items:center; justify-content:center; height:56px; }
+  .sw { width:48px; height:48px; border-radius:8px; border:1px solid #8884; }
+  .box { width:48px; height:48px; background:#6366F1; }
+  .dim { background:#6366F133; border:1px solid #6366F1; }
+  .px { font-size:10px; color:#8899; margin-left:4px; }
+  .meta { min-width:0; }
+  .nm { display:block; font-size:11px; font-weight:600; word-break:break-all; }
+  code { font-family:ui-monospace,monospace; font-size:11px; color:#8899; }
+  .chain { color:#8896; }
+</style></head>
+<body>
+<header>
+  <h1>Vida Token Preview</h1>
+  <span class="sub">${total} tokens · Frontend Visual Gate stage 3 · GENERATED from variables.css + semantic.dark.json</span>
+  <span class="warn">${darkMap.size} dark overrides — toggle swaps semantic swatches to real dark values (design.md §XI parallel design)</span>
+  <button id="toggle">Toggle light / dark</button>
+</header>
+${sections}
+<script>
+  document.getElementById('toggle').addEventListener('click', () => {
+    const dark = document.body.classList.toggle('dark')
+    for (const el of document.querySelectorAll('.sw[data-dark]')) el.style.background = dark ? el.dataset.dark : el.dataset.light
+  })
+</script>
+</body></html>
+`
+
+writeFileSync(OUT, html)
+console.log(`✓ token preview → ${OUT.replace(`${join(THEMES, '..', '..', '..')}/`, '')} (${total} tokens, ${groups.size} categories)`)

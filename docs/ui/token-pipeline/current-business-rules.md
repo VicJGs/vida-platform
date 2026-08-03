@@ -17,6 +17,18 @@
    `[build-tokens.mjs; vitest "second build is byte-identical"]`
 5. **[FACT] B5 — Generated, never hand-edited.** Every output carries a "GENERATED — DO NOT EDIT" banner; the seed
    is the only editable input. `[build-tokens.mjs BANNER/CSS_BANNER]`
+6. **[FACT] B6 — Scale completeness (DS-2).** brand + neutral are 10-step ramps; signals success/danger; type scale
+   = 7 sizes; spacing = the 4pt set; radius sm→full; shadow ×3. No arbitrary values. `[design.md §II–V; primitive.json]`
+7. **[FACT] B7 — Parallel dark, designed not inverted (DS-2).** semantics that differ in dark have an entry in
+   `semantic.dark.json` (→ a primitive); `themes.ts` dark = light + overlay, loaded by filename (not SD source), maps
+   1:1 to Figma modes. `[design.md §XI; build-tokens.mjs; vitest B7]`
+8. **[FACT] B8 — 4pt grid, `space.*` only (DS-2).** every primitive `space.*` is an integer multiple of 4; build
+   fails loud otherwise. Radius (`full:9999`), size, zIndex, line-heights, aux are exempt. `[design.md §IV; checkLayers; vitest B8]`
+9. **[FACT] B9 — Aux-namespace routing (DS-2).** `fontFamily/fontSize/fontWeight/lineHeight/letterSpacing/shadow` are
+   NOT createTokens categories → CSS + `fonts.ts`, **skipped** in `tokens.ts`/`themes.ts` (incl. aux-referencing
+   semantics); never trip B3. `[build-tokens.mjs AUX/isAuxPath; vitest B9]`
+10. **[FACT] B10 — Contrast is the floor.** semantic text-on-surface pairs meet WCAG AA in both modes (caveat:
+    white-on-brand.500 = 4.47 → buttons use brand.600). Verified in the design gate. `[design.md §II; DS-2 contrast check]`
 
 ## Rules established by DS-1 (IMPLEMENTED 2026-07-26)
 - **[NEW]** design.md §II three-layer architecture is now **enforced mechanically** by the build (B2), not by review
@@ -25,8 +37,13 @@
 - **[NEW]** DS-1 ⊥ DS-4: the Tamagui token/theme modules typecheck **standalone** (no `tamagui.config.ts`), so the
   pipeline is not circularly dependent on the app config DS-4 builds. `[FACT: typecheck green]`
 
-## Boundaries (what DS-1 does NOT own — owed downstream)
-- **[INTENT: DS-2]** The token **values** and the Figma Variables → Tokens Studio source. DS-1's seed is throwaway.
-- **[INTENT: DS-4]** `tamagui.config.ts` (`createTamagui`), provider, dark-mode wiring, and the CSS-var
-  reconciliation (whether Tamagui's own web vars are aliased to the design.md `variables.css` names or coexist by scope).
-- **[INTENT: DS-2 hardening]** Dimension CSS vars carrying units (`px`) — DS-1 emits raw numbers to match Tamagui.
+## Rules established by DS-2 (IMPLEMENTED 2026-08-03)
+- **[DONE]** Token **values** authored code-first (B6) + **parallel dark** (B7) + **4pt grid enforced** (B8) +
+  **aux routing** (B9). ⚠ values are a provisional placeholder palette, not brand ([[ds-2-palette-is-provisional-placeholder]]).
+- **[DONE]** Approved via the **Frontend Visual Gate** (`docs/specs/foundation/frontend-visual-gate.md`) — its first run.
+
+## Boundaries (what the pipeline does NOT own — owed downstream)
+- **[INTENT: DS-4]** `tamagui.config.ts` (`createTamagui`), provider, dark-mode **mechanism** (theme-switch), and the
+  CSS-var reconciliation (Tamagui's own web vars vs the design.md `variables.css` names). `createFont` consumes `fonts.ts`.
+- **[INTENT: DS-5]** component-token expansion + the white-on-brand.500 contrast caveat (buttons → brand.600).
+- **[INTENT: later / M4 P2-⑦]** Figma community file + MCP-scripter bridge (NOT Tokens Studio). `[DIRECTION: Victor 2026-08-03]`
