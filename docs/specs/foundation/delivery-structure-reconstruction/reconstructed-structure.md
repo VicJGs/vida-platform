@@ -16,9 +16,9 @@
 - **Project** — id `M<n>` (n = tier build-order 1–4). Title `M<n> — <Tier Name>`. Description = intent + Done-when.
 - **Milestone** — id `M<n>.<m>` (m = slice order in the tier). Title `M<n>.<m> — <Slice Name>`. *(The dotted number IS the hierarchy: `M1` = Project, `M1.0` = a Milestone under it.)*
 - **Issue** — **existing issues keep their established slug + LIF id** (no renames). New issues take a descriptive slug. Every Issue has a reliable imperative title + all columns below.
-- **Slug prefixes in use** (descriptive, established — NOT a rename mandate): `AR` Architecture&Runtime · `DB` Database&Storage (`DB-8b` blind-index) · `DS` Design System · `UI` UI · `UX` UX&IA (`UX-5b` vault-unlock) · `MOD` Feature Module *(new — DF-4)* · `P3` External-Integration phase (M2) · `M3-pass` encryption release-gate · `P2` Venue phase (M4, `AR-9b` sync-activation) · `QA` Testing · `HARD` Integration-Hardening *(new)* · `MIG` Migration/Retire *(new)*.
+- **Slug prefixes in use** (descriptive, established — NOT a rename mandate): `AR` Architecture&Runtime · `DB` Database&Storage (`DB-8b` blind-index) · `DS` Design System · `UI` UI · `UX` UX&IA (`UX-5b` vault-unlock) · `MOD` Feature Module *(new — DF-4)* · `P3` External-Integration phase (M2) · `M3-pass` encryption release-gate · `P2` Venue phase (M4, `AR-9b` sync-activation) · `QA` Testing · `HARD` Integration-Hardening *(new)* · `MIG` Migration/Retire *(new)* · `CAP` Capability-authoring *(new — post-core extensibility, DF-12)*.
 - **Column glossary:**
-  - **`#`** = the **global build order** — the topological sequence across the WHOLE initiative. Do issues in `#` order and every dependency is already done (fail-proof). `#` runs 1→84 continuously down this doc.
+  - **`#`** = the **global build order** — the topological sequence across the WHOLE initiative. Do issues in `#` order and every dependency is already done (fail-proof). `#` runs 1→85 continuously down this doc.
   - **`←` Blocked-by** = the issues this one depends on (must be done first). `root` = no blockers.
   - **`→` Blocks** = the issues this one unblocks (are waiting on it). `leaf` = blocks nothing.
   - **Profile** (fixed): **Backend**=Add Backend Component · **Design-Sys**=Design System · **Generic**=Generic Coding Session · **Foundation**=Project Foundation Setup.
@@ -41,6 +41,7 @@
 | **DF-9** | v1 retire-at-parity untracked | new Issue `MIG-1` (#63) |
 | **DF-10** *(this session)* | **no global build order** — issues had layers but no first→last sequence | the **`#` column** = a full topological order; §5 proves it acyclic |
 | **DF-11** *(this session)* | multi-substrate issue had no per-increment gating spec — the delivery-plan's per-issue flow (§2) assumed issue = one build-context (true only of the single-substrate issues it was written against, AR-5/AR-6) | per-substrate **increment rule** + **enforced gate precondition** written into `delivery-plan §2/§3`; issues authoring >1 independent substrate marked `⊞N` in Outcome (AR-7 ⊞4, AR-8 ⊞≥2); folds/coupled/integration stay 1 gate (Views→AR-6, DB-9, HARD-2) |
+| **DF-12** *(this session)* | AR-7's cited deferrals had no proven issue HOMES (orphan-deferral risk, db-10-shaped) | homed by the docs' first-consumer-pull rule: registry-runtime → MOD-notes `#31` / UI-3 `#29`; `capability_grants` external-semantics → P3-boundary `#71` (M2); **new** `#85 CAP-authoring` for the ADR-010/SP4 safe-authoring runtime (its only un-homed consumer). `CAP-` slug (not `MOD-`) so the unscoped "all `MOD-*`" aggregators don't pull a `#85` backward-edge |
 
 ---
 
@@ -63,7 +64,7 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 10 | 〰DB-4 | Stream-(ii) per-domain schema | `core/src/db/schema/<domain>` (016 §3.5) | ← DB-1, DB-3 | DB-8 | Backend | each module's tables at that module's build |
 | 11 | ✅AR-5 | Sessions base | `core/src/foundation/sessions` (004) | ← DB-6, DB-9 | AR-7, MOD-sessions | Backend | sessions spine + registry + effect enums |
 | 12 | ✅AR-6 | Spaces + tags/links + Views | `core/src/foundation/{spaces,views}` (006/007) | ← DB-6, DB-9 | AR-7, AR-8, MOD-notes, MOD-spaces, HARD-3 | Backend | spaces/tags/entity_links + view engine |
-| 13 | ⏳AR-7 | Capability + measurability + effect rail | `core/src/foundation/{capability,measurement,economy,effects}` (011/012/004) | ← AR-5, AR-6 | MOD-purposes, MOD-gamification, HARD-2 | Backend | ⊞4 · capability registry + measurability + effects |
+| 13 | ⏳AR-7 | Capability + measurability + effect rail | `core/src/foundation/{capability,measurement,economy,effects}` (011/012/004) | ← AR-5, AR-6 | MOD-purposes, MOD-gamification, HARD-2, CAP-authoring | Backend | ⊞4 · capability registry + measurability + effects |
 | 14 | ⏳AR-8 | Foundation services (backlink/export/graph-prep) | `core/src/services/{search,export}` (002/001) | ← AR-6 | HARD-3 | Backend | ⊞≥2 (pin at AR-8's turn) · backlink/export/graph-prep (search sub-part → DB-8) |
 | 15 | ⏳AR-9 | Sync scaffolding (no-flush) | `core/src/sync` (003/017) | ← DB-6 | AR-9b | Backend | queue accrues writes; activation → M4 |
 | 16 | ◧DS-1 | Token pipeline (Style Dictionary → CSS/Tamagui) | `packages/ui/src/themes` (001) | root | DS-2 | Design-Sys | design tokens emitted — ⚠ built+green on branch, PARKED off-sequence (DF-6), **NOT merged** (≠ the 9 shipped) |
@@ -79,7 +80,7 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 26 | ◻UX-6 | Home = Journal dashboard | `apps/web/src` | ← UX-3 | leaf | Generic | Home renders the daily journal |
 | 27 | ◻UI-1 | Vida UI primitives | `packages/ui/src/components` | ← DS-5 | UI-2, UI-3, UI-4 | Design-Sys | primitive component library |
 | 28 | ◻UI-2 | Platform views (calendar/gallery/list/graph/timeline) | `packages/ui/src/components` | ← UI-1 | HARD-3 | Design-Sys | shared platform views |
-| 29 | ◻UI-3 | Vida editor (@vida/editor, TipTap) — spec is a 0-byte stub → author | `packages/editor/src` | ← UI-1, AR-4 | leaf | Design-Sys | block editor + serializers |
+| 29 | ◻UI-3 | Vida editor (@vida/editor, TipTap) — spec is a 0-byte stub → author | `packages/editor/src` | ← UI-1, AR-4 | CAP-authoring | Design-Sys | block editor + serializers |
 | 30 | ◻UI-4 | App shell components | `apps/web/src` | ← UI-1, UX-3 | leaf | Generic | app shell composed |
 
 ## Milestone M1.1 — Hub & Foundation Modules   *(default home `core/src/services/<module>`)*
@@ -179,11 +180,12 @@ Intent (INT-4): sync → auth → desktop/mobile → self-host → ZK-cloud; nee
 | 82 | ◻P2-3 | Desktop (Tauri) | 001 | ← HARD-4 | leaf | Generic | desktop shares web codebase |
 | 83 | ◻P2-4 | Mobile (Expo) | 001 | ← HARD-4 | leaf | Generic | mobile app + native chrome |
 | 84 | ◻P2-6 | ZK-cloud + billing | 003 | ← P2-1 | leaf | Backend | managed ZK cloud + billing |
+| 85 | ◻⚠CAP-authoring | User-authored capability safe-authoring surface — sandbox runtime · authoring DSL/UI · grant enforce/re-grant/revoke. ⚠ INTENDED-later: no M1–M4 consumer (first-consumer-pull) → deferred to the tail; the per-platform sandbox rides each venue's pass (ADR-010 §3.6, not a hard blocker) | `core/src/foundation/capability` + per-app sandbox (010/008 · SP4) | ← AR-7, UI-3 | leaf | Backend | user-authored Blocks run sandboxed; grants enforced; consumes `capability_grants` |
 
 ---
 
 ## 4. The global build order (first → last, fail-proof)
-Do issues in ascending `#` (contiguous 1→84, grouped by Milestone in this doc). **Every `←` blocker has a strictly
+Do issues in ascending `#` (contiguous 1→85, grouped by Milestone in this doc). **Every `←` blocker has a strictly
 lower `#` and every `→` block a strictly higher `#`** (proven in §5) — so nothing is ever started before its
 dependencies exist; a lower `#` is always safe to start. Independent tracks (DB/AR spine · Design-System DS→UI · UX)
 run in parallel — the `#` is one valid linearization, not a claim that #k must finish before #k+1 begins.

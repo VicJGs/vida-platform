@@ -4049,3 +4049,15 @@ Files: foundation/effects/{types,event-id,registry,service,index}.ts + schema/fo
 fixed stale spaces version assertion (→ >=3). §XXIX Currency: docs/core/effects/current-{spec,business-rules}.md +
 layer-doc. Branch: ar-7-capability-registry (off fix/delivery-gate-multicontext-realignment). 3 increments remain:
 capability → measurement → economy.
+
+---
+Date: 2026-08-02 (Phase 3 — deferral-homing DF-12 SHIPPED)
+✅ **Phase 3 home-deferred-substrate-pieces DONE** — Victor's rigor: every AR-7-cited deferral must have a real
+issue HOME (db-10-proof), grounded in the docs' first-consumer-pull rule (not invented). Trace: registry-runtime →
+MOD-notes #31 / UI-3 #29; capability_grants ext-semantics → P3-boundary #71 (M2); the ONE genuinely un-homed piece
+(ADR-010/SP4 authoring runtime) → NEW #85 CAP-authoring (⚠ INTENDED-later, ←AR-7,UI-3). DF-12 + CAP prefix + edges +
+counts 1→85. Independent critique caught a CRITICAL cycle (MOD- slug pulled by 4 unscoped "all MOD-*" aggregators →
+backward edges) → renamed MOD-→CAP-; and a MAJOR overclaim ("forced by order" was a soft deferral) → reworded honest.
+Applied + acceptance verified (whole-corpus wildcard non-collision, §5 range stays TRUE, acyclic). Discipline locked:
+measurement/economy increments run the same homing check at gate-1. Correction the check drove: I twice treated
+order/placement as a decision to ASK — Victor: the docs/intent/order already fix it; derive, don't ask.
