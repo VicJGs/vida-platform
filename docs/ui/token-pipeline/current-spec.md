@@ -1,8 +1,9 @@
 # Token Pipeline — Current Spec (durable · §XXIX promotion target)
 
 > **Context:** `@vida/ui` → `packages/ui/src/themes/`. **Built** by DS-1 (LIF-81, plumbing) 2026-07-26 + **DS-2**
-> (LIF-82, foundation values + aux namespaces + dark overlay) 2026-08-03. Companion: `current-business-rules.md`.
-> Forward specs: `docs/specs/components/{ds-1-token-pipeline,ds-2-foundations}/_index.md`.
+> (LIF-82, foundation values + aux namespaces + dark overlay) 2026-08-03 + **DS-3** (LIF-83, motion tokens) 2026-08-03.
+> Companion: `current-business-rules.md`.
+> Forward specs: `docs/specs/components/{ds-1-token-pipeline,ds-2-foundations,ds-3-motion-foundation}/_index.md`.
 > **No-Guessing:** `[FACT: src]` / `[INTENT]` (documented direction, not yet built).
 
 ## What the token pipeline is
@@ -18,17 +19,21 @@ packages/ui/src/themes/
 │   ├── semantic.json      # references primitive only  (color/surface/primary → {color.white})
 │   ├── semantic.dark.json # DS-2 dark OVERLAY — semantics that differ in dark (loaded by filename, NOT in SD source)
 │   └── component.json     # references semantic only    (button/background/primary → {color.brand.primary})
-├── build-tokens.mjs       # Style Dictionary build + checkLayers (B2 + B8 4pt-grid) + 4 custom formats + AUX skip (B9)
-├── variables.css          # GENERATED — design.md §XII CSS custom properties (var() chain; incl. aux font*/shadow)
+├── build-tokens.mjs       # Style Dictionary build + checkLayers (B2 + B8 4pt-grid) + 5 custom formats + AUX skip (B9/B11)
+├── variables.css          # GENERATED — design.md §XII CSS custom properties (var() chain; incl. aux font*/shadow/motion)
 ├── tokens.ts              # GENERATED — Tamagui createTokens() (5 categories + `true` defaults; aux excluded)
 ├── themes.ts              # GENERATED — light + PARALLEL DARK base + light_<Comp>/dark_<Comp> sub-themes
-└── fonts.ts               # GENERATED — typography tokens as typed data for DS-4 createFont (aux not in createTokens)
+├── fonts.ts               # GENERATED — typography tokens as typed data for DS-4 createFont (aux not in createTokens)
+└── motion.ts              # GENERATED (DS-3) — duration/easing tokens as typed data for DS-4 createAnimations (B11)
 ```
-`tokens.ts`/`themes.ts`/`fonts.ts` are re-exported from `packages/ui/src/index.ts`. `[FACT: index.ts]`
+`tokens.ts`/`themes.ts`/`fonts.ts`/`motion.ts` are re-exported from `packages/ui/src/index.ts`. `[FACT: index.ts]`
 
-**Aux namespaces (DS-2).** `fontFamily/fontSize/fontWeight/lineHeight/letterSpacing/shadow` are NOT `createTokens`
-categories → routed to `variables.css` + `fonts.ts`, **skipped** in `tokens.ts`/`themes.ts` (incl. aux-referencing
-semantics), so they never trip B3. `createFont`/`createTamagui` = DS-4. `[FACT: build-tokens.mjs AUX/isAuxPath]`
+**Aux namespaces (DS-2 + DS-3).** Namespaces that are NOT `createTokens` categories are **skipped** in
+`tokens.ts`/`themes.ts` (incl. aux-referencing semantics) so they never trip B3, and routed by destination:
+`fontFamily/fontSize/fontWeight/lineHeight/letterSpacing` → `variables.css` + `fonts.ts` (typography);
+`shadow` → `variables.css` only; **`duration/easing` → `variables.css` + `motion.ts` (motion, DS-3, B11).** `AUX` is
+factored `[...TYPOGRAPHY, 'shadow', ...MOTION]` so each emitter filters by its own sub-list (leak-proof).
+`createFont`/`createAnimations`/`createTamagui` = DS-4. `[FACT: build-tokens.mjs AUX/TYPOGRAPHY/MOTION/isAuxPath]`
 
 ## The three-layer → Tamagui projection (the non-trivial core)
 | Seed layer (design.md §II) | → Tamagui construct | Shape |
@@ -48,7 +53,7 @@ sub-themes. CSS-var names (arbitrary depth) and Tamagui token keys (flat, catego
   `tokens.ts` (`createTokens`), `themes.ts` (`light`/`dark` + `light_<Comp>`/`dark_<Comp>`). GENERATED banner on all.
 - **Exit:** `0` success · non-zero on layer-skip / raw-literal-in-non-primitive / dangling-ref / empty-layer, cause named.
 
-## Status (2026-07-26 — DS-1 IMPLEMENTED · 2026-08-03 — DS-2 IMPLEMENTED)
+## Status (2026-07-26 — DS-1 IMPLEMENTED · 2026-08-03 — DS-2 + DS-3 IMPLEMENTED)
 - **DS-1** (plumbing): typecheck green standalone (⊥ DS-4); build deterministic; B2 fail-loud proven. `[FACT: DS-1 session]`
 - **DS-2** (foundation values + extensions): real scales authored — indigo brand / slate neutral / emerald+red
   signals (10-step ramps), 4pt space + size, radius sm→full, zIndex, type scale (7 sizes + families/weights/
@@ -57,6 +62,14 @@ sub-themes. CSS-var names (arbitrary depth) and Tamagui token keys (flat, catego
   **Verify:** `tokens:build` deterministic · **`@vida/ui` 20/20** (13 + B7/B8/B9) · **root typecheck 10/10** ·
   contrast AA both modes. Visual Gate: **PASS (provisional)** — ⚠ palette is a placeholder, not brand
   ([[ds-2-palette-is-provisional-placeholder]]). `[FACT: DS-2 session]`
+- **DS-3** (motion foundation): `duration` (instant 0/fast 150/moderate 250/slow 400, unitless ms) + `easing`
+  (out/in/inOut cubic-beziers + linear) primitives added as a **third aux consumer** (`motion.ts`, mirroring
+  `fonts.ts`); `AUX` refactored into `TYPOGRAPHY`/`shadow`/`MOTION` sub-lists; `vida/fonts` filter narrowed to
+  typography (closed the fonts↔motion leak by construction); `vida/motion` format + `motion.ts` registration + index
+  re-export; B11/B12. Values trace to `motion.md §IX` bands/curves. **Verify:** `tokens:build` deterministic ·
+  **`@vida/ui` 26/26** (20 + B11/fonts-isolation/css-vars-presence) · **root typecheck 10/10** · preview render adds a
+  motion section (4 durations × 4 easings; animate transform+opacity only; honors `prefers-reduced-motion`).
+  Visual Gate: **PASS (provisional)** — its second run. `[FACT: DS-3 session]`
 - Deps: `style-dictionary@5.5.0` (devDep) · `@tamagui/core@2.5.1` (dep) · `vitest@3.2.4` (devDep). `[FACT: package.json]`
 
 ## Source model (direction shaped 2026-08-03 — supersedes the DS-1 "Figma → Tokens Studio" assumption)
@@ -71,8 +84,10 @@ paid-only). Kept aligned per-unit, so "Figma-later" is a projection, not a recon
   brand — replaced when brand identity is defined; the token ARCHITECTURE is final. `[FACT: DS-2; [[ds-2-palette-is-provisional-placeholder]]]`
 - **`light`/`dark` are now PARALLEL-designed** (DS-2 `semantic.dark.json`, 10 overrides; design.md §XI, not an
   inversion), modeled to map 1:1 to Figma variable **modes**. The dark-mode **mechanism** (theme-switch) = DS-4. `[FACT: DS-2]`
-- **CSS dimension vars are unitless** (`--space-16: 16`, not `16px`) because Tamagui tokens want raw numbers; the
-  CSS-var value/name reconciliation vs Tamagui's own web CSS vars is **deferred to DS-4**. `[INTENT: DS-4]`
+- **CSS dimension + duration vars are unitless** (`--space-16: 16`, `--duration-fast: 150`, not `16px`/`150ms`)
+  because Tamagui tokens want raw numbers; the unit reconciliation (px + ms) vs Tamagui's own web CSS vars is
+  **deferred to DS-4**. The lone camelCase `--easing-inOut` (from the `inOut` key; consistent with existing
+  `--fontSize-*` camelCase) is reconciled with it. `[INTENT: DS-4]` `[FACT: DS-3]`
 - **No Figma wiring yet** — seed is hand-authored; the Figma community file + MCP-scripter bridge come later
   (release-gated M4 P2-⑦). `[FACT]` `[DIRECTION: Victor 2026-08-03]`
 - **Contrast caveat → DS-5:** white-on-brand.500 = 4.47 (< AA 4.5 small text); filled buttons use brand.600. `[FACT: DS-2]`
