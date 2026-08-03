@@ -125,3 +125,6 @@ export * from './foundation/capability'
 
 // Foundation substrate — the measurability engine (AR-7 Increment 3 · ADR-011)
 export * from './foundation/measurement'
+
+// Foundation substrate — the points economy (AR-7 Increment 4 · ADR-012)
+export * from './foundation/economy'

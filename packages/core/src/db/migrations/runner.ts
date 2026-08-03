@@ -14,6 +14,7 @@ import { migration002Sessions } from './002_sessions'
 import { migration003Spaces } from './003_spaces'
 import { migration004Effects } from './004_effects'
 import { migration005Capability } from './005_capability'
+import { migration006Economy } from './006_economy'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -29,6 +30,7 @@ const ALL_MIGRATIONS: Migration[] = [
   migration003Spaces,
   migration004Effects,
   migration005Capability,
+  migration006Economy,
 ]
 
 // ---------------------------------------------------------------------------

@@ -52,8 +52,9 @@ export type CreateInput<T extends AnyTable> = Omit<InsertOf<T>, ManagedFields>
 /** Partial update — everything except managed fields + id */
 export type UpdateInput<T extends AnyTable> = Partial<Omit<InsertOf<T>, ManagedFields>>
 
-/** The transaction handle drizzle passes to `db.transaction(cb)` (async sqlite-proxy). */
-type Tx = Parameters<Parameters<DrizzleDb['transaction']>[0]>[0]
+/** The transaction handle drizzle passes to `db.transaction(cb)` (async sqlite-proxy).
+ *  Exported so effect handlers (ADR-004 §3.2.5) can co-write via `createInTx` inside the rail's tx. */
+export type Tx = Parameters<Parameters<DrizzleDb['transaction']>[0]>[0]
 
 // ---------------------------------------------------------------------------
 // UUIDv7 / UUIDv4 generators
@@ -185,6 +186,14 @@ export interface Repository<T extends AnyTable> {
   /** Insert a new row. Returns the created row (decrypted). */
   create(data: CreateInput<T>): Promise<RowOf<T>>
 
+  /**
+   * Insert a new row WITHIN an existing transaction — the same row-build + sync-meta +
+   * co-transactional `sync_queue` enqueue as `create()`, minus opening the transaction.
+   * For effect handlers (ADR-004 §3.2.5 single write path) that must co-write in the effect
+   * rail's tx (§3.2.5-B "same transaction as the write") — `create()` is `db.transaction(tx => createInTx(tx, data))`.
+   */
+  createInTx(tx: Tx, data: CreateInput<T>): Promise<RowOf<T>>
+
   /** Find by primary key. Returns null if not found or soft-deleted. */
   findById(id: string): Promise<RowOf<T> | null>
 
@@ -312,7 +321,9 @@ export function createRepository<T extends AnyTable>(
 
   // ---- CREATE ---------------------------------------------------------------
 
-  async function create(data: CreateInput<T>): Promise<RowOf<T>> {
+  // Entity write + sync_queue enqueue, using a CALLER-supplied tx (ADR-004 §3.4 co-transactional;
+  // §3.2.5 effect handlers co-write in the rail's tx). No transaction opened here.
+  async function createInTx(tx: Tx, data: CreateInput<T>): Promise<RowOf<T>> {
     const id = uuidv7()
     const timestamp = ts()
     const vaultKey = key()
@@ -328,14 +339,16 @@ export function createRepository<T extends AnyTable>(
     const encrypted = encryptRow(row, encryptedFieldSet, vaultKey)
     encrypted._sync_hash = computeSyncHash(encrypted)
 
-    // Entity write + sync_queue enqueue in ONE transaction (ADR-004 §3.4).
-    await db.transaction(async (tx) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await tx.insert(table).values(encrypted as any).run()
-      await enqueue(tx, 'create', id, encrypted)
-    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await tx.insert(table).values(encrypted as any).run()
+    await enqueue(tx, 'create', id, encrypted)
 
     return decryptRow(encrypted, encryptedFieldSet, vaultKey) as RowOf<T>
+  }
+
+  async function create(data: CreateInput<T>): Promise<RowOf<T>> {
+    // Row + sync_queue enqueue in ONE transaction (ADR-004 §3.4) — delegates to createInTx.
+    return db.transaction((tx) => createInTx(tx, data))
   }
 
   // ---- FIND BY ID -----------------------------------------------------------
@@ -472,6 +485,7 @@ export function createRepository<T extends AnyTable>(
 
   return {
     create,
+    createInTx,
     findById,
     findAll,
     update,

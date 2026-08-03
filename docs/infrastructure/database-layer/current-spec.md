@@ -78,6 +78,11 @@ The repository now delivers its full charter. `[FACT: repository.ts; schema/foun
 - **M1.0 pass-through seam** — encrypt/decrypt runs over an empty `[E]` set (ADR-017:20); the vault key is fetched
   **lazily** (only when `encryptedFieldSet.size > 0`), so a locked vault (M1.0 default) never throws. Producer-only —
   the reader/flush is AR-9 (M4).
+- **`createInTx(tx, data)`** *(added AR-7 inc-4, 2026-08-03)* — the co-transactional create body invocable within a
+  **caller-supplied** tx; `create()` is now `db.transaction(tx => createInTx(tx, data))` (zero behavior change). Lets
+  an **effect handler** co-write its output row inside the effect rail's tx (ADR-004 §3.2.5 single write path + §3.2.5-B
+  "same transaction as the write"), rather than opening a nested transaction. First consumer: the economy
+  `grant_currency`/`lock_currency` handlers writing `consequence_ledger`. `[FACT: repository.ts createInTx/create]`
 - **Tested** — `db/tests/repository.test.ts`: 10 cases incl. SQL-level atomic rollback + coalescing + locked-vault
   pass-through + seam-with-key. `@vida/core` suite 55/55; root typecheck 10/10. `[FACT: vitest run]`
 

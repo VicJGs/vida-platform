@@ -4084,3 +4084,20 @@ so the economy increment reuses it (its rule condition IS an ADR-011 binding + c
 guard) — plus all-null-rollup→null nit. Built: MEASUREMENT_KIND/BINDING_MODE + normalize/rollup/resolveProgress/
 assertAcyclic + Pursuable/Binding + empty source seam. @vida/core 160/160, root typecheck 10/10. Currency
 docs/core/measurement/current-*. **1 increment remains: economy (ADR-012) — the final one; consumes Binding + the rail.**
+
+---
+Date: 2026-08-03 (AR-7 Increment 4 — economy SHIPPED · AR-7 COMPLETE · LIF-78 closes)
+✅ **AR-7 Increment 4 (`economy`) DONE — AR-7 COMPLETE (all 4 ⊞ increments).** ADR-012 economy primitives:
+currencies + consequence_ledger (append-only, derived balances) + grant_currency/lock_currency handlers (write the
+ledger via the rail's tx) + dispatchConsequence coordinator + currency service (XP seed). Composes inc-1 (rail + 4
+economy effects) + inc-3 (Binding). Full §XXVI: PLAN → critique REVISE (M1 ledger UNIQUE under-keyed vs rail's
+composite PK → (effect_event_id,kind,target_ref); M2 untyped payload → Zod + BR-5 clamp deferred; M3 4-kind
+reductions; m5 drop deleted_at from append-only ledger) → fixed → Approval 1 → gate-2+build.
+**§XXVIII deviation, grounded in docs (Victor's correction: follow the documentation not a recommendation):**
+ADR-004 §3.2.5 (single write path) + §3.4/BR-DB6-1 (co-transactional) + effects same-tx ⟹ needed a tx-scoped
+Repository write → added **`Repository.createInTx(tx, data)`** (extract create's body; create delegates; zero
+behavior change) — the owed inc-1 "tx-accepting Repository variant" landing at its first consumer (economy handler).
+Build fix: currency name M1.0 empty-[E] pass-through (['name']→vault-locked). @vida/core 169/169, root typecheck
+10/10. Currency: docs/core/economy/current-* + DB-6 current-spec refresh (createInTx) + layer-doc.
+**AR-7/LIF-78 CLOSES** — all 4 foundation homes (effects·capability·measurement·economy) aligned. Branch
+ar-7-capability-registry: main→DF-11→effects→DF-12→capability→measurement→economy. Not merged/pushed.

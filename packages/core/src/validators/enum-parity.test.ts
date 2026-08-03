@@ -19,11 +19,15 @@ import {
   SESSION_STATUS,
   VIEW_LAYOUT,
   EFFECT_TYPE,
+  CURRENCY_BACKING_KIND,
+  CONSEQUENCE_KIND,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
 import { migration003Spaces } from '../db/migrations/003_spaces'
 import { migration004Effects } from '../db/migrations/004_effects'
+import { migration005Capability } from '../db/migrations/005_capability'
+import { migration006Economy } from '../db/migrations/006_economy'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -91,6 +95,9 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   // AR-7 effect rail: applied_effects.effect_type is a scalar FIXED CHECK (vs the sessions
   // registry's JSON-array storage of the same tuple — that one stays Zod-covered, not here).
   { table: 'applied_effects', column: 'effect_type', tuple: EFFECT_TYPE },
+  // AR-7 inc-4 economy: currencies.backing_kind + consequence_ledger.kind are scalar CHECK columns.
+  { table: 'currencies', column: 'backing_kind', tuple: CURRENCY_BACKING_KIND },
+  { table: 'consequence_ledger', column: 'kind', tuple: CONSEQUENCE_KIND },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -100,6 +107,8 @@ async function ddlFor(table: string): Promise<string> {
   await migration002Sessions.up(driver)
   await migration003Spaces.up(driver)
   await migration004Effects.up(driver)
+  await migration005Capability.up(driver)
+  await migration006Economy.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

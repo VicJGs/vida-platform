@@ -15,3 +15,5 @@ export * from './foundation/spaces'
 export * from './foundation/effects'
 // Foundation substrate: AR-7 capability registry (definitions · block_instances · grants).
 export * from './foundation/capability'
+// Foundation substrate: AR-7 economy (currencies · consequence_ledger).
+export * from './foundation/economy'

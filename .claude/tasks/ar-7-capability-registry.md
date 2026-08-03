@@ -3,7 +3,7 @@
 # Scenario: default
 # Spec: docs/specs/foundation/ar-7-capability-registry/_index.md  (to be authored in the PLAN gate)
 # Created: 2026-08-01 (planned) · opened 2026-08-02
-# Status: in_progress
+# Status: done (2026-08-03 · all 4 ⊞ increments shipped · closes LIF-78 · branch ar-7-capability-registry, not merged)
 # Linear: LIF-78
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
@@ -72,7 +72,9 @@ MOD-purposes, MOD-gamification, HARD-2 (reconstructed-structure.md row 13). High
 - [x] Increment 3 — **measurement** (ADR-011) ✅ — `foundation/measurement` — **engine-only, NO tables/migration** (§3.8)
     - [x] gate-1: PLAN → critique SHIP after 2 must-fix (F1 re-home multi-condition→ADR-012 rules; F2 add Binding type for economy handoff) + null-rollup nit → Approval 1
     - [x] gate-2 + build (Victor): MEASUREMENT_KIND/BINDING_MODE enums + normalize/rollup/resolveProgress/assertAcyclic + Pursuable/Binding contracts + empty source seam. @vida/core 160/160, root typecheck 10/10 → Currency docs/core/measurement/current-* + layer-doc
-- [ ] Increment 4 — **economy** (ADR-012) — `foundation/economy`
+- [x] Increment 4 — **economy** (ADR-012) ✅ FINAL — `foundation/economy` + migration 006 — closes LIF-78
+    - [x] gate-1: PLAN → critique REVISE (M1 ledger UNIQUE under-keyed vs rail; M2 untyped payload + BR-5 re-scope; M3 4-kind reductions; m5 drop deleted_at) → fixed → Approval 1
+    - [x] gate-2 + build (Victor): §XXVIII deviation **grounded in docs** (ADR-004 §3.2.5 + §3.4 + BR-DB6-1) → added `Repository.createInTx(tx, data)` (the owed inc-1 tx-scoped write, pulled by its first consumer); currencies + consequence_ledger + computeBalance + grant/lock handlers + coordinator + currency service. Build fix: M1.0 empty-[E] pass-through for currency name (was ['name']→vault-locked). @vida/core **169/169**, root typecheck 10/10 → Currency docs/core/economy/current-* + DB-6 current-spec refresh (createInTx) + layer-doc
 _(each increment's §5 authored at its own Approval 2)_
 
 ## Route History

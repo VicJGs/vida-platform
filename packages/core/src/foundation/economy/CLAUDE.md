@@ -11,5 +11,10 @@ ADR-012
 E2 E3 E4
 
 ## Status
-Directory home only (ADR-018). Engine logic + tables are authored PER-FEATURE at build phase
-(ADR-016 §3.5 / ADR-017). No feature code or DDL lives here yet.
+Built by AR-7 Increment 4 (2026-08-03, FINAL — closed AR-7). `currencies` + `consequence_ledger` (append-only,
+derived balances) — `db/schema/foundation/economy.ts` + migration 006 · `CURRENCY_BACKING_KIND`/`CONSEQUENCE_KIND`
+enums · `balance.ts` (computeBalance) · `handlers.ts` (grant_currency/lock_currency write the ledger via the rail's
+tx + `dispatchConsequence` coordinator) · `registry.ts` (currency service + XP seed). Currency: `docs/core/economy/current-*`.
+Deferred (all homed, DF-12): store+move_money→MOD-finance; surface_notification→MOD-notifications; rules/achievements/
+level/clamp→MOD-gamification; sandbox→#85. Uses `Repository.createInTx` (added to DB-6 this increment for handler co-writes).
+
