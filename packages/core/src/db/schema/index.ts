@@ -13,3 +13,5 @@ export * from './foundation/sessions'
 export * from './foundation/spaces'
 // Foundation substrate: AR-7 effect rail (applied_effects dedup ledger).
 export * from './foundation/effects'
+// Foundation substrate: AR-7 capability registry (definitions · block_instances · grants).
+export * from './foundation/capability'

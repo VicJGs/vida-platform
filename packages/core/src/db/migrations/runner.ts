@@ -13,6 +13,7 @@ import { migration001SyncQueue } from './001_sync_queue'
 import { migration002Sessions } from './002_sessions'
 import { migration003Spaces } from './003_spaces'
 import { migration004Effects } from './004_effects'
+import { migration005Capability } from './005_capability'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -27,6 +28,7 @@ const ALL_MIGRATIONS: Migration[] = [
   migration002Sessions,
   migration003Spaces,
   migration004Effects,
+  migration005Capability,
 ]
 
 // ---------------------------------------------------------------------------

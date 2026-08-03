@@ -64,7 +64,11 @@ MOD-purposes, MOD-gamification, HARD-2 (reconstructed-structure.md row 13). High
     - [x] gate-2: IMPLEMENTATION-PLAN → critique REVISE (blocker enum-parity wiring + major handler-tx signature) → fixed → preflight PASSED → **Approval 2**
     - [x] build + verify: @vida/core typecheck 0, tests **140/140** (effects 8/8 + enum-parity applied_effects), root typecheck **10/10**; fixed stale spaces version assertion → Currency `docs/core/effects/current-*` + layer-doc [L]
     - [ ] commit (pending Victor)
-- [ ] Increment 2 — **capability** registry (ADR-008/010) — `foundation/capability`
+- [x] Increment 2 — **capability** registry (ADR-008/010) ✅ — `foundation/capability` + migration 005
+    - [x] gate-1: baseline + PLAN → critique SHIP (3 fold-ins: BR-5 real-seed, single-level rationale, TERMINAL_STATE) → Approval 1
+    - [x] **deferral-homing check (Victor)** → Phase 3 (DF-12, #85 CAP-authoring) BEFORE building — all deferrals now have issue homes
+    - [x] gate-2: IMPLEMENTATION-PLAN → critique REVISE (blocker: json<T>() forbidden → plain text()) → fixed → Approval 2
+    - [x] build: 3 tables + migration 005 + RENDER_TARGET + TERMINAL_STATE + CapabilityRegistry; §XXVIII deviation (def_id business key — repo.create generates PK); fixed collisions (CapabilityEnvelopeExceeded→Privilege) + relaxed version asserts (≥). @vida/core 148/148, root typecheck 10/10 → Currency docs/core/capability/current-* + layer-doc
 - [ ] Increment 3 — **measurement** (ADR-011) — `foundation/measurement`
 - [ ] Increment 4 — **economy** (ADR-012) — `foundation/economy`
 _(each increment's §5 authored at its own Approval 2)_

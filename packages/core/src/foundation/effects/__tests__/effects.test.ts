@@ -89,7 +89,9 @@ describe('migration 004 wiring', () => {
       await driver.values(`SELECT sql FROM sqlite_master WHERE type='table' AND name='applied_effects'`)
     ).flat()[0] as string
     expect(ddl).not.toMatch(/_sync_/)
-    expect(await currentVersion(driver)).toBe(4)
+    // >= 4 (not ==): the applied_effects table above is the real proof migration 004 ran;
+    // the exact latest belongs to whichever migration is last (AR-7 inc-2 added 005).
+    expect(await currentVersion(driver)).toBeGreaterThanOrEqual(4)
     await driver.close()
   })
 })

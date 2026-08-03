@@ -4061,3 +4061,15 @@ backward edges) → renamed MOD-→CAP-; and a MAJOR overclaim ("forced by order
 Applied + acceptance verified (whole-corpus wildcard non-collision, §5 range stays TRUE, acyclic). Discipline locked:
 measurement/economy increments run the same homing check at gate-1. Correction the check drove: I twice treated
 order/placement as a decision to ASK — Victor: the docs/intent/order already fix it; derive, don't ask.
+
+---
+Date: 2026-08-03 (AR-7 Increment 2 — capability registry SHIPPED)
+✅ **AR-7 Increment 2 (`capability`) DONE** — CB1 registry (ADR-008) + capability_grants (ADR-010), structure +
+thin registry grain. Full §XXVI: PLAN → critique SHIP (3 fold-ins) → Approval 1 → **Victor deferral-homing check →
+Phase 3 (DF-12) FIRST** → IMPLEMENTATION-PLAN → critique REVISE (blocker: json<T>() forbidden → plain text()) →
+Approval 2 → build. 3 tables (capability_definitions/block_instances/capability_grants) + migration 005 +
+RENDER_TARGET/TERMINAL_STATE + CapabilityRegistry (shipped habit_logger seed + BR-2..6 → sync_queue). Build fixes:
+§XXVIII deviation (def_id business key — repo.create generates PK, mirrors session sub_type); export collision
+CapabilityEnvelopeExceeded→CapabilityPrivilegeExceeded (sessions owns the former); relaxed effects+capability
+version asserts to ≥ (latest-version brittleness). @vida/core 148/148, root typecheck 10/10. Currency
+docs/core/capability/current-*. 2 increments remain: measurement → economy.
