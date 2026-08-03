@@ -1,0 +1,8 @@
+{
+  "button": {
+    "background": { "primary": { "value": "{color.brand.primary}", "type": "color" } },
+    "text":       { "primary": { "value": "{color.surface.primary}", "type": "color" } },
+    "padding":    { "value": "{space.inset.default}", "type": "dimension" },
+    "radius":     { "value": "{radius.control}", "type": "dimension" }
+  }
+}

@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none)_
+- ds-1-token-pipeline: .claude/tasks/ds-1-token-pipeline.md  (in_progress 2026-08-03 — RE-LAND · LIF-81 · M1.0-b root · Design System profile. Computed next head (`--next`/`--plan` rank #1 among READY; unblocks ds-2/3/4/5). Build already gated+green on parked branch `ds-1-token-pipeline` @ fd9f144 (packages/ui/themes, 13/13, current-* at docs/ui/token-pipeline/); remaining = integration onto current main (57 behind): re-apply isolated code, regen pnpm-lock, re-verify, ship gate, merge+push. Working branch `ds-1-reland`.)
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)
@@ -11,7 +11,7 @@ _(none)_
 - cap-authoring: .claude/tasks/cap-authoring.md  (planned 2026-08-03 — LIF-156 · M4/M4.0 · ⚠ INTENDED-later. The ADR-010/SP4 user-authored capability safe-authoring surface (sandbox·DSL·authoring UI·grant enforce). Created by DF-12 to home AR-7's deferral; ← ar-7, ui-3. No M1–M4 consumer — a tracked horizon issue.)
 
 ## Parked / Superseded
-- ds-1-token-pipeline: .claude/tasks/ds-1-token-pipeline.md  (PARKED 2026-07-27 — complete + green on branch `ds-1-token-pipeline` @ fd9f144; out of sequence [M1.0-b Design System track, not the -a critical path]. LIF-81 → Backlog. Resumes when the -b wave's turn comes. SD→Tamagui+CSS pipeline, 13/13 tests, eng-gate PASS, current-* at docs/ui/token-pipeline/.)
+- ds-1-token-pipeline: → un-parked 2026-08-03 (now Active — re-land; see Active Tasks above)
 
 ## Completed
 - ar-7-capability-registry: .claude/tasks/archive/ar-7-capability-registry.md  (completed 2026-08-03 — LIF-78 → Done · M1.0 substrate FINAL · the ⊞4 capstone: 4 gated increments (effects·capability·measurement·economy) in `core/src/foundation/*` per ADRs 004/008/010/011/012. Under the DF-11 per-substrate gate rule + DF-12 deferral-homing (new LIF-156 cap-authoring). Added `Repository.createInTx` (docs-grounded §XXVIII). @vida/core 169 tests, root typecheck 10/10. Merged+pushed to main (10db0bf). Unblocks MOD-purposes/MOD-gamification/HARD-2.)
