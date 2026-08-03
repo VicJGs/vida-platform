@@ -1,6 +1,12 @@
-<!-- Last updated: 2026-08-02 by /session-end -->
+<!-- Last updated: 2026-08-03 by /session-end -->
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
+| 2026-08-03 | delivery/gate | multi-substrate issue gating (DF-11) | per-substrate **increment rule** (`⊞N`) + an **enforced** gate-1 substrate-count precondition | the per-issue flow assumed issue = one context; a 4-substrate issue (AR-7) needs N gated increments, not one utopian gate | yes (docs) |
+| 2026-08-03 | delivery/homing | AR-7 deferral homes (DF-12) | first-consumer-pull; new `#85`/**LIF-156 cap-authoring** for the ADR-010/SP4 runtime; grants-ext→P3-boundary; registry-runtime→MOD-notes/UI-3 | db-10-proof — every cited deferral must have a real issue home, no orphans | yes |
+| 2026-08-03 | economy/idempotency | `consequence_ledger` convergence key | UNIQUE `(effect_event_id, kind, target_ref)` mirroring the effect rail's composite PK | a bare `effect_event_id` under-keys vs the rail (two effects share an id, differ in target) | yes |
+| 2026-08-03 | db/repository | effect-handler synced write | added `Repository.createInTx(tx, data)` — the owed inc-1 tx-scoped write, at its first consumer | docs-grounded: ADR-004 §3.2.5 single-write-path + §3.4 co-transactional enqueue, inside the rail's tx | yes (zero behavior change to `create`) |
+| 2026-08-03 | measurement | measurement substrate grain | contract + pure engine, **NO tables/migration** | ADR-011 §3.8 — kind/mode are per-entity columns (DB-4), contributions is Purpose-domain, progress is derived-on-read | yes |
+| 2026-08-03 | delivery/process | multi-substrate deferral: decision vs realignment | when the docs are silent/half-baked on the actual case, triage STRUCTURAL + realign in a separate phase — don't decide ad-hoc | Victor: the docs/intent/order fix placement; a half-baked spec is a defect to flag, not a free choice | n/a (process) |
 | 2026-08-02 | ux/nav | primary navigation axis | **co-primary dual-axis** — module dock (content home) + Spaces bar (cross-cutting overlays) | reconciles ADR-006/007 (Spaces overlays) + intake SP1 (Spaces first-class axis); Victor's call | costly (amends ADR-007:88; owed to Spaces ADR) |
 | 2026-08-02 | ux/nav | UX-1 deliverable grain | design doc (`information-architecture.md`) + declarative code artifact (`apps/web/src/nav/module-map.ts`) | dual home reconstructed:72; "design/spec issue" is dep-graph sense, not doc-only | yes |
 | 2026-08-02 | ux/nav | nav-map home | `apps/web/src/nav/` (per-app), NOT a shared package | platform-strategy §5 (routing is platform-specific); web-first; M4 revisit if consumer appears | yes |
