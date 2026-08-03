@@ -4150,3 +4150,43 @@ pointer; roadmap P2-⑦; 4 stale Tokens-Studio refs corrected; 2 memories writte
 (715687b, 26 files) — **not merged**. Linear LIF-82 → Done (tracker --sync ✓).
 **NEXT HEAD = DS-3 (Motion foundation)** — `reconstructed-structure` #18, ← DS-2, Design System; visual issue → runs
 the Frontend Visual Gate.
+
+---
+Date: 2026-08-03 (DS-3 Motion foundation SHIPPED)
+✅ **DS-3 (`ds-3-motion-foundation`, LIF-83) DONE** — Design System / Default (LITE). Next head via
+reconstructed-structure #18 (← DS-2, doc-# authoritative over `--next`'s ux-3 for the DS track). §XXVII path
+surfaced + approved; task un-planned → in_progress → done.
+
+**What shipped.** Motion primitives added as a **THIRD aux consumer** (reusing DS-2's aux mechanism verbatim):
+`duration` (instant 0/fast 150/moderate 250/slow 400, unitless ms) + `easing` (out/in/inOut cubic-beziers +
+linear), grounded in `standards/motion.md §IX`. Pipeline: `AUX` factored `[...TYPOGRAPHY, 'shadow', ...MOTION]`
+(each emitter filters its own destination sub-list); `vida/fonts` narrowed to TYPOGRAPHY — **closed the
+fonts↔motion leak by construction** (adding to AUX alone would've leaked motion into fonts.ts via the
+all-AUX-except-shadow filter); new `vida/motion` format → GENERATED `motion.ts` (mirrors `vida/fonts`, both
+sort layers; typed data for DS-4 createAnimations); index re-export; durations→`variables.css` unitless (ms
+reconciliation → DS-4); B11 (motion primitives aux-routed) + B12 (reduced-motion + safe-property contract,
+documented/component-gate-enforced, themes layer-doc = its enforcement artifact).
+
+**Gates.** LITE (design-system, single approval). Plan-critique (independent adversarial) **REVISE→5 fixed**
+(F2 AUX side-effect sweep incl. inert `:190` dark-overlay · F8 positive css-vars presence test · F6
+createAnimations shape → `[UNKNOWN: driver-dependent]` · F5 band-floor 150/250 `[FACT]`→`[INTERP]` · F9 mirror
+`vida/fonts` both sort layers). Post-impl critique **SHIP** + 2 NITs (linear mislabeled `cubicBezier`→`type:"easing"`;
+lone camelCase `--easing-inOut`→noted, DS-4). **Live-smoke caught a real render bug** ([[live-smoke-catches-data-shape-bugs]]):
+cubic-bezier commas tripped `isShadow()` → 3 easings rendered as invalid box-shadow; fix = move the cat-keyed
+motion branches above the value-heuristic shadow branch. Verify: `tokens:build` deterministic · **@vida/ui 26/26**
+(20 DS-2 + 6 DS-3) · **root typecheck 10/10**.
+
+**Frontend Visual Gate PASS** (2nd run) — render preview gained a motion section (4 durations × 4 easings,
+animate transform+opacity only, honors `prefers-reduced-motion`). Victor's stage-4 fix: `instant` (0ms) was
+rendered as a 1ms infinite-alternate flicker → fixed to a **static immediate end-state** (0 = state change, no
+tween). Values are **standard-derived (motion.md §IX), NOT a provisional placeholder** (unlike DS-2's palette).
+
+**§XXIX docs promoted:** `docs/ui/token-pipeline/current-spec.md` + `current-business-rules.md` (B11/B12 +
+DS-3 rules + boundaries incl. createAnimations driver `[UNKNOWN]`) + `packages/ui/src/themes/CLAUDE.md` (B12
+enforcement artifact: safe-list + reduced-motion obligation). Spec:
+`docs/specs/components/ds-3-motion-foundation/_index.md` (implemented).
+
+Committed branch `ds-3-motion-foundation` (292cbeb, 15 files) — **NOT merged/pushed** (gitleaks clean).
+**NEXT HEAD = DS-4 (Tamagui config + dark mode)** — reconstructed #19, ← DS-3, Design System: `createTamagui` +
+dark-mode mechanism (theme-switch) + `createFont`←`fonts.ts` + `createAnimations`←`motion.ts` + the deferred
+CSS-var/unit (px+ms) reconciliation. LIF-83 → Done.

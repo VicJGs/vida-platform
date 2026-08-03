@@ -118,5 +118,17 @@
     "resting": { "value": "0 1px 2px 0 rgba(15,23,42,0.06)",    "type": "shadow" },
     "raised":  { "value": "0 4px 12px -2px rgba(15,23,42,0.10)", "type": "shadow" },
     "overlay": { "value": "0 12px 32px -4px rgba(15,23,42,0.18)", "type": "shadow" }
+  },
+  "duration": {
+    "instant":  { "value": 0,   "type": "duration" },
+    "fast":     { "value": 150, "type": "duration" },
+    "moderate": { "value": 250, "type": "duration" },
+    "slow":     { "value": 400, "type": "duration" }
+  },
+  "easing": {
+    "out":    { "value": "cubic-bezier(0, 0, 0.3, 1)", "type": "easing" },
+    "in":     { "value": "cubic-bezier(0.7, 0, 1, 1)", "type": "easing" },
+    "inOut":  { "value": "cubic-bezier(0.4, 0, 0.6, 1)", "type": "easing" },
+    "linear": { "value": "linear",                     "type": "easing" }
   }
 }

@@ -12,14 +12,17 @@ Source model: **code-first** (`docs/specs/foundation/frontend-source-of-truth.md
   Loaded BY FILENAME in the themes emitter, **NOT** in the SD `source` list (else it'd be a phantom rank −1 layer).
   Maps 1:1 to Figma variable modes.
 - `build-tokens.mjs` — the build. Style Dictionary engine + `checkLayers` (3-layer rule + **B8 4pt-grid on `space.*`**,
-  fail-loud) + **4** custom formats. `AUX` namespaces (`fontFamily/fontSize/fontWeight/lineHeight/letterSpacing/
-  shadow`) are NOT Tamagui categories → routed to CSS + `fonts.ts`, **skipped** in `tokens.ts`/`themes.ts` (B9).
-  Exports `checkLayers`/`validate`/`build`/`PipelineError`.
-- `variables.css` · `tokens.ts` · `themes.ts` · `fonts.ts` — **GENERATED — DO NOT EDIT.** `pnpm tokens:build`.
+  fail-loud) + **5** custom formats. `AUX` namespaces are NOT Tamagui categories → **skipped** in `tokens.ts`/
+  `themes.ts` (B9/B11) and routed by destination via three sub-lists: `TYPOGRAPHY` (`fontFamily/fontSize/fontWeight/
+  lineHeight/letterSpacing`) → CSS + `fonts.ts` · `shadow` → CSS only · `MOTION` (`duration/easing`) → CSS +
+  `motion.ts` (DS-3, B11). `AUX = [...TYPOGRAPHY, 'shadow', ...MOTION]`. Exports `checkLayers`/`validate`/`build`/`PipelineError`.
+- `variables.css` · `tokens.ts` · `themes.ts` · `fonts.ts` · `motion.ts` — **GENERATED — DO NOT EDIT.** `pnpm tokens:build`.
   `tokens.ts` = createTokens (5 categories) · `themes.ts` = light + parallel dark + `light_/dark_<Comp>` ·
-  `fonts.ts` = typography data for DS-4 `createFont` · `variables.css` = design.md §XII vars (incl. aux).
-- `preview.html` — GENERATED review artifact (gitignored) via `pnpm preview:tokens` — the Frontend Visual Gate render.
-- `build-tokens.test.ts` — **20 fixtures** (DS-1's 13 + DS-2 B7 dark-differs / B8 off-grid-fails / B9 aux-routing).
+  `fonts.ts` = typography data for DS-4 `createFont` · `motion.ts` = duration/easing data for DS-4 `createAnimations` ·
+  `variables.css` = design.md §XII vars (incl. aux font*/shadow/motion; dimensions + durations unitless).
+- `preview.html` — GENERATED review artifact (gitignored) via `pnpm preview:tokens` — the Frontend Visual Gate render
+  (incl. a DS-3 motion section: animated demos per duration × easing, honoring `prefers-reduced-motion`).
+- `build-tokens.test.ts` — **26 fixtures** (DS-1's 13 + DS-2 B7/B8/B9 + DS-3 B11/fonts-isolation/css-vars-presence).
 
 ## Rules
 - Never hand-edit a generated file — edit `tokens/*.json` and run `pnpm --filter @vida/ui tokens:build`.
@@ -27,7 +30,18 @@ Source model: **code-first** (`docs/specs/foundation/frontend-source-of-truth.md
   with a primitive group path (e.g. semantic `color.success` vs primitive ramp `color.success.*`) — SD deep-merges
   and drops children; namespace it (`color.signal.success`).
 - Space primitives must be integer multiples of 4 (B8, `space.*` only — radius `full:9999`/aux exempt).
-- Aux (font*/shadow) never enter `tokens.ts`/`themes.ts` createTokens (B9). Fonts → `createFont` at DS-4.
+- Aux (font*/shadow/motion) never enter `tokens.ts`/`themes.ts` createTokens (B9/B11). Fonts → `createFont`,
+  motion (`duration`/`easing`) → `createAnimations`, both at DS-4. **Never add a namespace to `AUX` without also
+  giving it a destination sub-list** (`TYPOGRAPHY`/`MOTION`) or its own emitter — else it silently leaks into the
+  first matching aux emitter (the fonts↔motion leak DS-3 closed).
+- **Motion values (B11)** trace to `standards/motion.md §IX`: durations sit in a band (micro 150–200 / transition
+  250–300 / emphasis 350–450); easings are the 3 canonical cubic-beziers + `linear` (progress/data-viz only). No
+  arbitrary timing/curve; >500ms needs written justification.
+- **Motion contract (B12) — for the component gate (DS-5/UI-*), NOT build-enforced here.** Every animation: (a) ships
+  a `@media (prefers-reduced-motion: reduce)` alternative that is an *instant state change* (not the absence of
+  motion; if it communicates state, communicate it another way); (b) animates **only** `transform`/`opacity`/
+  `clip-path` — never `color`/`background`/`box-shadow`/`border`/`width`/`height`/`top-left-right-bottom`/`margin`/
+  `padding`. This layer-doc is B12's enforcement artifact.
 - Keep it deterministic: sort by path, no timestamps (B4).
 - **⚠ Values are a provisional placeholder palette** (indigo/slate/emerald + Space Grotesk/Inter) — NOT Vida's brand
   ([[ds-2-palette-is-provisional-placeholder]]). The architecture is final; a brand pass swaps VALUES only + re-runs

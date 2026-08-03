@@ -75,6 +75,13 @@ function sample({ name, val, resolved }, cat) {
   else if (cat === 'fontWeight') visual = `<span style="font-weight:${resolved};font-size:18px">Aa ${resolved}</span>`
   else if (cat === 'lineHeight') visual = `<span class="mono">× ${resolved}</span>`
   else if (cat === 'letterSpacing') visual = `<span class="mono">${resolved}em</span>`
+  // DS-3 motion — animated demos (transform+opacity only, the motion.md §IX safe list; honor reduced-motion via CSS).
+  // Keyed on `cat` and placed BEFORE the shadow branch: cubic-bezier values contain commas → isShadow() would else
+  // capture out/in/inOut. duration section = same easing, varying speed; easing section = same duration, varying curve.
+  else if (cat === 'duration' && isNumber(resolved)) visual = resolved === '0'
+    ? `<div class="motion-demo motion-instant"></div><span class="px">0ms · instant (no tween)</span>` // 0 = immediate state change, not a loop (motion.md §IX reduced-motion path)
+    : `<div class="motion-demo" style="animation-duration:${resolved}ms"></div><span class="px">${resolved}ms</span>`
+  else if (cat === 'easing') visual = `<div class="motion-demo" style="animation-duration:600ms;animation-timing-function:${resolved}"></div>`
   else if (cat === 'shadow' || isShadow(resolved)) visual = `<div class="box" style="box-shadow:${resolved}"></div>`
   else visual = `<span class="mono">${resolved}</span>`
   return `<div class="tok"><div class="vis">${visual}</div><div class="meta"><code class="nm">--${name}</code>${chain}</div></div>`
@@ -107,6 +114,12 @@ const html = `<!doctype html>
   .box { width:48px; height:48px; background:#6366F1; }
   .dim { background:#6366F133; border:1px solid #6366F1; }
   .px { font-size:10px; color:#8899; margin-left:4px; }
+  /* DS-3 motion demos — animate transform + opacity ONLY (motion.md §IX safe list) */
+  @keyframes vida-move { from { transform:translateX(0); opacity:.35; } to { transform:translateX(28px); opacity:1; } }
+  .motion-demo { width:20px; height:20px; border-radius:6px; background:#6366F1; animation:vida-move 400ms ease-in-out infinite alternate; }
+  /* instant (0ms) = immediate, no tween — static at destination, never loops (that frantic flicker is what 0ms "animated" looks like) */
+  .motion-instant { animation:none; transform:translateX(28px); opacity:1; }
+  @media (prefers-reduced-motion: reduce) { .motion-demo { animation:none; transform:translateX(28px); opacity:1; } }
   .meta { min-width:0; }
   .nm { display:block; font-size:11px; font-weight:600; word-break:break-all; }
   code { font-family:ui-monospace,monospace; font-size:11px; color:#8899; }

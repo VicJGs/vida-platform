@@ -44,6 +44,14 @@
   --color-text-muted: var(--color-neutral-500);
   --color-text-primary: var(--color-neutral-900);
   --color-white: #FFFFFF;
+  --duration-fast: 150;
+  --duration-instant: 0;
+  --duration-moderate: 250;
+  --duration-slow: 400;
+  --easing-in: cubic-bezier(0.7, 0, 1, 1);
+  --easing-inOut: cubic-bezier(0.4, 0, 0.6, 1);
+  --easing-linear: linear;
+  --easing-out: cubic-bezier(0, 0, 0.3, 1);
   --fontFamily-body: 'Inter', system-ui, sans-serif;
   --fontFamily-display: 'Space Grotesk', system-ui, sans-serif;
   --fontSize-body: 16;
