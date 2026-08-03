@@ -30,6 +30,7 @@ Full domain/feature spec lives in `CLAUDE.md`. ADRs in `docs/core/decisions/`.
 - Feature contexts use the **canonical 5 aspects** (`identity · business-rules · contract · structure-data · conventions`). Documented so far: **Notes & Pages** (`docs/features/notes-and-pages/`).
 - `docs/core/decisions/ADR-001-tech-stack.md`, `ADR-002-data-model.md`, `ADR-003-sync-protocol.md`
 - `docs/core/business-rules.md` — the system constitution (18 invariants every level inherits)
+- `docs/specs/foundation/frontend-source-of-truth.md` — **frontend source-of-truth direction** (code-first interim; community Figma file later via Figma MCP scripter, NOT Tokens Studio; release-gated M4 P2-⑦). Every DS/UI/UX spec inherits it (`## 0. Source model`, enforced by `pnpm check:frontend-source-model`).
 - `.adr/` — toolkit ADR template (project-local decisions)
 
 ### Tooling & config

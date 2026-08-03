@@ -1,0 +1,21 @@
+{
+  "_note": "DARK OVERLAY (B7) — loaded BY FILENAME in the themes.ts emitter, NOT via the Style Dictionary source glob. Only tokens whose value differs in dark. Each references a PRIMITIVE. Maps 1:1 to Figma variable modes. Dark shadows (design.md §V = border-based) are handled in CSS at DS-4, not here.",
+  "color": {
+    "surface": {
+      "primary":   { "value": "{color.neutral.900}", "type": "color" },
+      "secondary": { "value": "{color.neutral.800}", "type": "color" },
+      "inverse":   { "value": "{color.white}", "type": "color" }
+    },
+    "text": {
+      "primary": { "value": "{color.neutral.50}", "type": "color" },
+      "muted":   { "value": "{color.neutral.400}", "type": "color" },
+      "inverse": { "value": "{color.neutral.900}", "type": "color" }
+    },
+    "brand": {
+      "primary":  { "value": "{color.brand.400}", "type": "color" },
+      "emphasis": { "value": "{color.brand.300}", "type": "color" }
+    },
+    "focus":  { "ring": { "value": "{color.brand.400}", "type": "color" } },
+    "border": { "default": { "value": "{color.neutral.700}", "type": "color" } }
+  }
+}

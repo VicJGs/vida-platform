@@ -1,9 +1,37 @@
 {
   "color": {
-    "surface": { "primary": { "value": "{color.white}", "type": "color" } },
-    "text":    { "primary": { "value": "{color.gray.900}", "type": "color" } },
-    "brand":   { "primary": { "value": "{color.blue.500}", "type": "color" } }
+    "surface": {
+      "primary":   { "value": "{color.white}", "type": "color" },
+      "secondary": { "value": "{color.neutral.50}", "type": "color" },
+      "inverse":   { "value": "{color.neutral.900}", "type": "color" }
+    },
+    "text": {
+      "primary": { "value": "{color.neutral.900}", "type": "color" },
+      "muted":   { "value": "{color.neutral.500}", "type": "color" },
+      "inverse": { "value": "{color.white}", "type": "color" }
+    },
+    "brand": {
+      "primary":  { "value": "{color.brand.500}", "type": "color" },
+      "emphasis": { "value": "{color.brand.600}", "type": "color" }
+    },
+    "focus":  { "ring": { "value": "{color.brand.500}", "type": "color" } },
+    "border": { "default": { "value": "{color.neutral.200}", "type": "color" } },
+    "signal": {
+      "success": { "value": "{color.success.500}", "type": "color" },
+      "danger":  { "value": "{color.danger.500}", "type": "color" }
+    }
   },
-  "space":  { "inset": { "default": { "value": "{space.md}", "type": "dimension" } } },
-  "radius": { "control": { "value": "{radius.md}", "type": "dimension" } }
+  "space": {
+    "inset": {
+      "compact":  { "value": "{space.8}", "type": "dimension" },
+      "default":  { "value": "{space.12}", "type": "dimension" },
+      "loose":    { "value": "{space.16}", "type": "dimension" },
+      "spacious": { "value": "{space.24}", "type": "dimension" }
+    }
+  },
+  "radius": {
+    "control": { "value": "{radius.md}", "type": "dimension" },
+    "card":    { "value": "{radius.lg}", "type": "dimension" },
+    "pill":    { "value": "{radius.full}", "type": "dimension" }
+  }
 }

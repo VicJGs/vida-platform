@@ -11,17 +11,22 @@
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-03) — DS-1 (token pipeline) RE-LANDED + merged/pushed to main (ab5966c); LIF-81 → Done.**
-DS-1 was built+parked on a branch (57 behind); this session re-landed the isolated `packages/ui/src/themes`
-Style Dictionary→Tamagui+CSS pipeline onto current main (regen lockfile, re-verified green: 13/13 · typecheck 10/10 ·
-no drift). **Unblocks the DS -b track (DS-2/3/4/5).**
+**▶ CURRENT (2026-08-03) — DS-2 (foundations) DONE + two frontend gates stood up.**
+Built DS-2's real foundation token VALUES + 2 pipeline extensions (aux namespaces font*/shadow → CSS+`fonts.ts`,
+skipped from createTokens [B9]; `semantic.dark.json` parallel dark overlay [B7]) + B8 4pt-grid + `source`→3-file
+list. Indigo/slate/emerald **placeholder** palette (⚠ NOT Vida's brand — [[ds-2-palette-is-provisional-placeholder]]),
+7-size type scale (Space Grotesk/Inter), radius/shadow. `@vida/ui` **20/20** · root typecheck **10/10** · Frontend
+Visual Gate **PASS (provisional)**. LIF-82 → Done.
 
-**NEXT HEAD = DS-2 (Foundations — color/space/type scales)**, per the **documentation's authoritative `#`
-topological order** (`reconstructed-structure.md` #17, ← DS-1; DF-10 fixed the `#` column as the global build order).
-⚠ NOTE a divergence: `tracker_sync --next` computes **ux-3** (its dependent-count heuristic: ux-3=2 vs ds-2=1) —
-but the doc `#` order is authoritative when they disagree; DS-2 and UX-3 are independent parallel-ready tracks.
-Profile for DS-2: stay in **Design System** (continue DS-2→DS-3→DS-4→DS-5→UI-1). See [[census-is-branch-relative]]
-for why the loop reads a parked-on-branch unit as "missing".
+This session ALSO produced two durable foundation artifacts (before more build loops):
+- **`docs/specs/foundation/frontend-source-of-truth.md`** — the source-of-truth planning layer (code-first interim;
+  Figma-later via MCP scripter, NOT Tokens Studio; release-gated M4 P2-⑦) + mechanical guard `pnpm check:frontend-source-model`.
+- **`docs/specs/foundation/frontend-visual-gate.md`** — the visual gate (preflight → critique → `pnpm preview:tokens`
+  render → Victor's visual approval) for all visual frontend issues.
+
+**NEXT HEAD = DS-3 (Motion foundation)**, per `reconstructed-structure.md` #18 (← DS-2). Stay in **Design System**
+(DS-3→DS-4→DS-5→UI-1). DS-3 is a visual issue → runs the Frontend Visual Gate. ⚠ NOT committed — DS-2 + both gate artifacts are on the
+working tree of **`main`**; per convention, branch first before committing/PR.
 
 <details><summary>(prior) 2026-08-01 — delivery structure reconstructed + live</summary>
 
