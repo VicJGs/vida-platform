@@ -40,4 +40,6 @@ Two critiques (plan REVISE→fixed 5; post-impl SHIP + 2 NITs) + live-smoke caug
 **Frontend Visual Gate PASS** (2nd run; values standard-derived, not a placeholder). §XXIX docs promoted
 (current-spec/current-business-rules B11/B12 + themes layer-doc = B12 enforcement artifact).
 Spec: `docs/specs/components/ds-3-motion-foundation/_index.md` (implemented). Unblocks DS-4.
+Merged + pushed to origin/main (`8f9cbe2`, --no-ff of `ds-3-motion-foundation`); branch deleted; re-verified
+green (26/26 · 10/10). LIF-83 → Done.
 Next head: DS-4 (Tamagui config + dark mode + createFont/createAnimations wiring).
