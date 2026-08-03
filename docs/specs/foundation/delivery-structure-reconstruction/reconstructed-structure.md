@@ -67,7 +67,7 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 13 | ⏳AR-7 | Capability + measurability + effect rail | `core/src/foundation/{capability,measurement,economy,effects}` (011/012/004) | ← AR-5, AR-6 | MOD-purposes, MOD-gamification, HARD-2, CAP-authoring | Backend | ⊞4 · capability registry + measurability + effects |
 | 14 | ⏳AR-8 | Foundation services (backlink/export/graph-prep) | `core/src/services/{search,export}` (002/001) | ← AR-6 | HARD-3 | Backend | ⊞≥2 (pin at AR-8's turn) · backlink/export/graph-prep (search sub-part → DB-8) |
 | 15 | ⏳AR-9 | Sync scaffolding (no-flush) | `core/src/sync` (003/017) | ← DB-6 | AR-9b | Backend | queue accrues writes; activation → M4 |
-| 16 | ◧DS-1 | Token pipeline (Style Dictionary → CSS/Tamagui) | `packages/ui/src/themes` (001) | root | DS-2 | Design-Sys | design tokens emitted — ⚠ built+green on branch, PARKED off-sequence (DF-6), **NOT merged** (≠ the 9 shipped) |
+| 16 | ✅DS-1 | Token pipeline (Style Dictionary → CSS/Tamagui) | `packages/ui/src/themes` (001) | root | DS-2 | Design-Sys | design tokens emitted — **re-landed onto main 2026-08-03** (ab5966c; DF-6 resolved), LIF-81 Done; DS-2 now ready |
 | 17 | ◻DS-2 | Foundations (color/space/type scales) | `packages/ui/src/themes` | ← DS-1 | DS-3 | Design-Sys | foundational scales |
 | 18 | ◻DS-3 | Motion foundation | `packages/ui/src/themes` | ← DS-2 | DS-4 | Design-Sys | motion tokens/primitives |
 | 19 | ◻DS-4 | Tamagui config + dark mode | `packages/ui/src` (001) | ← DS-3 | DS-5 | Design-Sys | themed Tamagui config |

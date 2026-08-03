@@ -11,10 +11,17 @@
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-02) — UX-1 (IA) DONE + merged/pushed to main (f5a863b); LIF-90 → Done.**
-UX-1 shipped the co-primary dual-axis IA (`docs/core/architecture/information-architecture.md` + `apps/web/src/nav/module-map.ts`).
-Unblocks UX-2/UX-3/UX-4/UX-5. **NEXT: recompute the head via `tracker_sync --next`** (do not hand-read) — UX-1's dependents
-are now ready. Watch: the ADR-007:88 amendment is owed to the future Spaces ADR (M1.1); the map's route slugs are M1.1-adjustable.
+**▶ CURRENT (2026-08-03) — DS-1 (token pipeline) RE-LANDED + merged/pushed to main (ab5966c); LIF-81 → Done.**
+DS-1 was built+parked on a branch (57 behind); this session re-landed the isolated `packages/ui/src/themes`
+Style Dictionary→Tamagui+CSS pipeline onto current main (regen lockfile, re-verified green: 13/13 · typecheck 10/10 ·
+no drift). **Unblocks the DS -b track (DS-2/3/4/5).**
+
+**NEXT HEAD = DS-2 (Foundations — color/space/type scales)**, per the **documentation's authoritative `#`
+topological order** (`reconstructed-structure.md` #17, ← DS-1; DF-10 fixed the `#` column as the global build order).
+⚠ NOTE a divergence: `tracker_sync --next` computes **ux-3** (its dependent-count heuristic: ux-3=2 vs ds-2=1) —
+but the doc `#` order is authoritative when they disagree; DS-2 and UX-3 are independent parallel-ready tracks.
+Profile for DS-2: stay in **Design System** (continue DS-2→DS-3→DS-4→DS-5→UI-1). See [[census-is-branch-relative]]
+for why the loop reads a parked-on-branch unit as "missing".
 
 <details><summary>(prior) 2026-08-01 — delivery structure reconstructed + live</summary>
 
