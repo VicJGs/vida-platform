@@ -1,0 +1,9 @@
+{
+  "color": {
+    "surface": { "primary": { "value": "{color.white}", "type": "color" } },
+    "text":    { "primary": { "value": "{color.gray.900}", "type": "color" } },
+    "brand":   { "primary": { "value": "{color.blue.500}", "type": "color" } }
+  },
+  "space":  { "inset": { "default": { "value": "{space.md}", "type": "dimension" } } },
+  "radius": { "control": { "value": "{radius.md}", "type": "dimension" } }
+}

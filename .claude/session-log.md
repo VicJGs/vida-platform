@@ -4101,3 +4101,16 @@ Build fix: currency name M1.0 empty-[E] pass-through (['name']→vault-locked). 
 10/10. Currency: docs/core/economy/current-* + DB-6 current-spec refresh (createInTx) + layer-doc.
 **AR-7/LIF-78 CLOSES** — all 4 foundation homes (effects·capability·measurement·economy) aligned. Branch
 ar-7-capability-registry: main→DF-11→effects→DF-12→capability→measurement→economy. Not merged/pushed.
+
+---
+Date: 2026-08-03 (session start — ds-1 re-land · PROFILE SWITCH)
+▶ New session. AR-7 confirmed on main (f5e40f8). Ran the delivery loop: `--next` / `--plan initiative`
+→ computed next head = **ds-1-token-pipeline** (rank #1 among READY; root of the DS -b track, blocks
+ds-2/3/4/5). ds-1 is already BUILT + gated on the parked branch `ds-1-token-pipeline` @ fd9f144 (57 behind
+main) — so the issue is a **re-land / integration**, not a fresh build.
+⚙ PROFILE SWITCH: Add Backend Component → **Design System** (ds-1's home profile). Scenario: default.
+§XXVII path surfaced + Victor approved. **Step 1 DONE:** created working branch `ds-1-reland` off main;
+un-parked ds-1 (Active in _index.md + In Progress in TASKS.md); task file header updated (Status/Profile/
+Scenario + re-land context); native panel task #1 created.
+▶ NEXT: Step 2 — re-apply the isolated `packages/ui/themes` code from fd9f144 onto ds-1-reland, regenerate
+pnpm-lock.yaml, then Step 3 re-verify green against current main.

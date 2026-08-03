@@ -6,9 +6,9 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| **delivery-structure-reconstruction** | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue) + re-organized LIVE Linear project-first: **M1–M4, 91 issues, 0 deferred edges**, LIF ids preserved, db-10 ← all 26 modules. Output: `docs/specs/foundation/delivery-structure-reconstruction/reconstructed-structure.md`. Remaining = Victor-owned Linear hygiene (move 5 archived DONE, close dups, archive old shells) + Foundation-project decision. |
+| **ds-1-token-pipeline (LIF-81)** | Design System | 2026-07-26 | 2026-08-03 | 🔨 IN PROGRESS — **RE-LAND** (un-parked as computed next head; root of the DS -b track, unblocks ds-2/3/4/5). Build already gated+green on parked branch @ fd9f144 (`packages/ui/themes`, 13/13, current-* live); remaining = integration onto current main (57 behind): re-apply isolated code, regen pnpm-lock, re-verify, ship gate, merge+push. Working branch `ds-1-reland`. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
-| ds-1-token-pipeline (LIF-81) | Design System | 2026-07-26 | 2026-07-27 | ⏸ PARKED — complete + green on branch `ds-1-token-pipeline` (out of sequence, -b track); resumes in -b wave |
+| delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
 ## 🧭 Next session
 

@@ -11,14 +11,23 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc --build",
+    "tokens:build": "node src/themes/build-tokens.mjs",
+    "build": "pnpm tokens:build && tsc --build",
     "dev": "tsc --build --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "devDependencies": {
-    "typescript": "^5.7.0"
+    "style-dictionary": "^5.5.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.1"
+  },
+  "dependencies": {
+    "@tamagui/core": "^2.5.1"
   }
 }
