@@ -4114,3 +4114,10 @@ un-parked ds-1 (Active in _index.md + In Progress in TASKS.md); task file header
 Scenario + re-land context); native panel task #1 created.
 ▶ NEXT: Step 2 — re-apply the isolated `packages/ui/themes` code from fd9f144 onto ds-1-reland, regenerate
 pnpm-lock.yaml, then Step 3 re-verify green against current main.
+
+▶ **ds-1 re-land COMPLETE + closed out (2026-08-03).** Merged `ds-1-reland` → main (ab5966c) → pushed to
+origin/main (authorized). Re-verified green on merged main (13/13 · typecheck 10/10). Archived task file,
+_index.md/TASKS.md → Completed, panel task done. Deleted stale branches `ds-1-reland` + `ds-1-token-pipeline`
+(fd9f144 content now on main). Linear LIF-81 → Done (tracker --sync). **Frontier advanced:** `--next` →
+**ux-3-shell-layout-responsive** (ds-2/ds-3 now READY — ds-1 unblocked the DS track; ready 11→12).
+NEXT session/step: ux-3 (Add Frontend Component profile) OR ds-2 (Design System — continue the -b track).

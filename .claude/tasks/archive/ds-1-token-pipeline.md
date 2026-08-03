@@ -1,7 +1,17 @@
 # Task: ds-1-token-pipeline
-# Status: in_progress
+# Status: done
+# Completed: 2026-08-03
 # Profile: Design System
 # Scenario: Design System — default (re-land of a parked, already-built branch)
+
+## ✅ DONE (2026-08-03) — RE-LANDED onto main
+Un-parked as the computed next head and re-landed onto current main. Build was already gated+green
+(fd9f144, 2026-07-27); this session INTEGRATED the isolated `packages/ui/src/themes` work 57 commits
+forward: re-applied code + docs, regenerated `pnpm-lock.yaml` (+style-dictionary@5.5.0), re-verified
+green against today's main (tokens:build ✓ · @vida/ui 13/13 ✓ · root typecheck 10/10 ✓ · no artifact
+drift), ship gate SHIP. Main never touched `packages/ui` → 0 clobber; only `docs/specs/_index.md`
+line-merged + lockfile regen. commit ab5966c (merge of `ds-1-reland`) → pushed to origin/main. LIF-81
+→ Done. Currency (§XXIX): `docs/ui/token-pipeline/current-*` verified current. **Unblocks ds-2/3/4/5.**
 # Linear: LIF-81
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base

@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-- ds-1-token-pipeline: .claude/tasks/ds-1-token-pipeline.md  (in_progress 2026-08-03 — RE-LAND · LIF-81 · M1.0-b root · Design System profile. Computed next head (`--next`/`--plan` rank #1 among READY; unblocks ds-2/3/4/5). Build already gated+green on parked branch `ds-1-token-pipeline` @ fd9f144 (packages/ui/themes, 13/13, current-* at docs/ui/token-pipeline/); remaining = integration onto current main (57 behind): re-apply isolated code, regen pnpm-lock, re-verify, ship gate, merge+push. Working branch `ds-1-reland`.)
+_(none)_
 
 ## Planned
 - qa-1-e2e-harness-opfs: .claude/tasks/qa-1-e2e-harness-opfs.md  (planned 2026-07-27 — Playwright + OPFS/worker E2E harness; proves AR-2 `_index.md` §2 items 1&2 [browser open/reopen + OPFS persistence] that the Node better-sqlite3 contract test can't. Net-new shared infra surfaced by the AR-2 completeness audit. Cluster M1.0 Boot & DB spine; **blocked-by ar-2**.)
@@ -11,9 +11,10 @@
 - cap-authoring: .claude/tasks/cap-authoring.md  (planned 2026-08-03 — LIF-156 · M4/M4.0 · ⚠ INTENDED-later. The ADR-010/SP4 user-authored capability safe-authoring surface (sandbox·DSL·authoring UI·grant enforce). Created by DF-12 to home AR-7's deferral; ← ar-7, ui-3. No M1–M4 consumer — a tracked horizon issue.)
 
 ## Parked / Superseded
-- ds-1-token-pipeline: → un-parked 2026-08-03 (now Active — re-land; see Active Tasks above)
+_(none)_
 
 ## Completed
+- ds-1-token-pipeline: .claude/tasks/archive/ds-1-token-pipeline.md  (completed 2026-08-03 — LIF-81 → Done · M1.0-b root · Design System · RE-LANDED. Un-parked as computed next head; integrated the isolated `packages/ui/src/themes` Style Dictionary→Tamagui+CSS pipeline onto current main 57 commits forward (build already gated+green @ fd9f144). Regen pnpm-lock (+style-dictionary@5.5.0), re-verified green (tokens:build · 13/13 · typecheck 10/10 · no drift), ship gate SHIP. commit ab5966c → pushed to main. Currency current-* verified. Unblocks ds-2/3/4/5.)
 - ar-7-capability-registry: .claude/tasks/archive/ar-7-capability-registry.md  (completed 2026-08-03 — LIF-78 → Done · M1.0 substrate FINAL · the ⊞4 capstone: 4 gated increments (effects·capability·measurement·economy) in `core/src/foundation/*` per ADRs 004/008/010/011/012. Under the DF-11 per-substrate gate rule + DF-12 deferral-homing (new LIF-156 cap-authoring). Added `Repository.createInTx` (docs-grounded §XXVIII). @vida/core 169 tests, root typecheck 10/10. Merged+pushed to main (10db0bf). Unblocks MOD-purposes/MOD-gamification/HARD-2.)
 - delivery-gate-multicontext-realignment: .claude/tasks/archive/delivery-gate-multicontext-realignment.md  (completed 2026-08-03 — DF-11: the enforced per-substrate increment rule for multi-substrate issues (⊞N); docs-only, commit 403d25f. Meta-task, no Linear issue.)
 - home-deferred-substrate-pieces: .claude/tasks/archive/home-deferred-substrate-pieces.md  (completed 2026-08-03 — DF-12: homed AR-7's deferrals; new LIF-156 cap-authoring for the ADR-010/SP4 authoring runtime; docs-only, commit a42ca8a. Meta-task, no Linear issue.)
