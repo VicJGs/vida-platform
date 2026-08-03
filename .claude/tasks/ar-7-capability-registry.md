@@ -69,7 +69,9 @@ MOD-purposes, MOD-gamification, HARD-2 (reconstructed-structure.md row 13). High
     - [x] **deferral-homing check (Victor)** → Phase 3 (DF-12, #85 CAP-authoring) BEFORE building — all deferrals now have issue homes
     - [x] gate-2: IMPLEMENTATION-PLAN → critique REVISE (blocker: json<T>() forbidden → plain text()) → fixed → Approval 2
     - [x] build: 3 tables + migration 005 + RENDER_TARGET + TERMINAL_STATE + CapabilityRegistry; §XXVIII deviation (def_id business key — repo.create generates PK); fixed collisions (CapabilityEnvelopeExceeded→Privilege) + relaxed version asserts (≥). @vida/core 148/148, root typecheck 10/10 → Currency docs/core/capability/current-* + layer-doc
-- [ ] Increment 3 — **measurement** (ADR-011) — `foundation/measurement`
+- [x] Increment 3 — **measurement** (ADR-011) ✅ — `foundation/measurement` — **engine-only, NO tables/migration** (§3.8)
+    - [x] gate-1: PLAN → critique SHIP after 2 must-fix (F1 re-home multi-condition→ADR-012 rules; F2 add Binding type for economy handoff) + null-rollup nit → Approval 1
+    - [x] gate-2 + build (Victor): MEASUREMENT_KIND/BINDING_MODE enums + normalize/rollup/resolveProgress/assertAcyclic + Pursuable/Binding contracts + empty source seam. @vida/core 160/160, root typecheck 10/10 → Currency docs/core/measurement/current-* + layer-doc
 - [ ] Increment 4 — **economy** (ADR-012) — `foundation/economy`
 _(each increment's §5 authored at its own Approval 2)_
 

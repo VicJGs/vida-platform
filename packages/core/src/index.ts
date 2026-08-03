@@ -122,3 +122,6 @@ export * from './foundation/effects'
 
 // Foundation substrate — the capability registry (AR-7 Increment 2 · ADR-008 + ADR-010)
 export * from './foundation/capability'
+
+// Foundation substrate — the measurability engine (AR-7 Increment 3 · ADR-011)
+export * from './foundation/measurement'

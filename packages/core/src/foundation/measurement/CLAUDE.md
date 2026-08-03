@@ -11,5 +11,8 @@ ADR-011
 M1 M2 M3 M4 M5 M7
 
 ## Status
-Directory home only (ADR-018). Engine logic + tables are authored PER-FEATURE at build phase
-(ADR-016 §3.5 / ADR-017). No feature code or DDL lives here yet.
+Built by AR-7 Increment 3 (2026-08-03). Contract + pure engine, **NO tables** (§3.8): `MEASUREMENT_KIND` +
+`BINDING_MODE` enums · `engine.ts` (normalize/rollup/resolveProgress/assertAcyclic) · `types.ts` (Pursuable, Binding,
+NormalizeInput, MeasurementCycle) · `source-registry.ts` (empty read seam). Currency: `docs/core/measurement/current-*`.
+Deferred (all homed, DF-12): kind/mode columns → DB-4/MOD-*; contributions → MOD-purposes; real sources →
+source modules; curves/UI → build-phase; multi-condition automation → ADR-012 rules (economy). No migration added.

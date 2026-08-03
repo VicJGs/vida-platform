@@ -4073,3 +4073,14 @@ RENDER_TARGET/TERMINAL_STATE + CapabilityRegistry (shipped habit_logger seed + B
 CapabilityEnvelopeExceeded→CapabilityPrivilegeExceeded (sessions owns the former); relaxed effects+capability
 version asserts to ≥ (latest-version brittleness). @vida/core 148/148, root typecheck 10/10. Currency
 docs/core/capability/current-*. 2 increments remain: measurement → economy.
+
+---
+Date: 2026-08-03 (AR-7 Increment 3 — measurability engine SHIPPED)
+✅ **AR-7 Increment 3 (`measurement`) DONE** — the universal measurability CONTRACT + pure engine, **NO tables /
+NO migration** (ADR-011 §3.8: kind/mode are per-entity columns [DB-4], contributions is Purpose-domain, progress is
+derived-on-read). Full §XXVI: PLAN → critique SHIP after 2 must-fix — F1 re-homed multi-condition automation to
+ADR-012 rules (not #85; ADR-012 §3.9 rules are headless not render-Blocks); F2 UNDER-REACH: added a `Binding` type
+so the economy increment reuses it (its rule condition IS an ADR-011 binding + consequence-cycle extends the DAG
+guard) — plus all-null-rollup→null nit. Built: MEASUREMENT_KIND/BINDING_MODE + normalize/rollup/resolveProgress/
+assertAcyclic + Pursuable/Binding + empty source seam. @vida/core 160/160, root typecheck 10/10. Currency
+docs/core/measurement/current-*. **1 increment remains: economy (ADR-012) — the final one; consumes Binding + the rail.**
