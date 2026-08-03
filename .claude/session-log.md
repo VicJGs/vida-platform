@@ -4121,3 +4121,32 @@ _index.md/TASKS.md → Completed, panel task done. Deleted stale branches `ds-1-
 (fd9f144 content now on main). Linear LIF-81 → Done (tracker --sync). **Frontier advanced:** `--next` →
 **ux-3-shell-layout-responsive** (ds-2/ds-3 now READY — ds-1 unblocked the DS track; ready 11→12).
 NEXT session/step: ux-3 (Add Frontend Component profile) OR ds-2 (Design System — continue the -b track).
+
+---
+Date: 2026-08-03 (DS-2 foundations SHIPPED + 2 frontend gates stood up)
+✅ **DS-2 (`ds-2-foundations`, LIF-82) DONE** — Design System / Default. Real foundation token VALUES + 2 approved
+pipeline extensions. Seed: indigo brand + slate neutral + emerald/red signals (10-step ramps), 4pt space+size,
+radius sm→full, zIndex, 7-size type scale (Space Grotesk/Inter), shadow ×3, `semantic.dark.json` (10 parallel dark
+overrides). Pipeline: aux namespaces (font*/shadow → CSS+`fonts.ts`, skipped from createTokens, B9) · dark overlay
+loaded by filename (B7) · B8 4pt-grid (space.* only) · `source`→explicit 3-file list · `tokenRef` bracket-notation.
+@vida/ui **20/20** (13+B7/B8/B9) · root typecheck **10/10** · deterministic · contrast AA both modes.
+Spec critiqued REVISE→fixed (overlay glob collision / B8 scope / B9 themes path); build bug (numeric keys → bracket)
+caught by typecheck; SD merge-collision (semantic `color.success` vs primitive ramp) caught live → namespaced `signal.*`.
+
+⊕ **Two durable frontend gates built this session** (Victor's ask, before more loops):
+• **Frontend source-of-truth** (`docs/specs/foundation/frontend-source-of-truth.md`) — direction re-shape: truth =
+  documented intent, **code-first interim**; community Figma file later via **Figma MCP scripter, NOT Tokens Studio**
+  (paid); **no ADR** (doc re-shape); Figma bridge = **release-gated M4 P2-⑦**. Ran plan→critique(REVISE→fixed)→approval.
+  Mechanical guard `pnpm check:frontend-source-model` enforces `## 0. Source model` on every forward frontend spec.
+• **Frontend Visual Gate** (`docs/specs/foundation/frontend-visual-gate.md`) — preflight → critique(+quality-gate-design)
+  → `pnpm preview:tokens` render → **Victor's visual approval**. First run = DS-2 palette → **PASS (provisional)**.
+
+⚠ **DS-2 palette is a PROVISIONAL PLACEHOLDER, not Vida's brand** — flagged INTENDED-IMMATURE; brand pass swaps VALUES
+only + re-runs the visual gate ([[ds-2-palette-is-provisional-placeholder]]). Contrast caveat → DS-5: white-on-brand.500
+= 4.47 → buttons use brand.600.
+
+Docs: `[C]` current-spec/current-business-rules (B6–B10) + `[L]` themes/CLAUDE.md refreshed; DS-1 spec errata; REPO.md
+pointer; roadmap P2-⑦; 4 stale Tokens-Studio refs corrected; 2 memories written. Committed branch `ds-2-foundations`
+(715687b, 26 files) — **not merged**. Linear LIF-82 → Done (tracker --sync ✓).
+**NEXT HEAD = DS-3 (Motion foundation)** — `reconstructed-structure` #18, ← DS-2, Design System; visual issue → runs
+the Frontend Visual Gate.
