@@ -179,3 +179,12 @@ Re-projectized Linear from the old substrate-first five-layer structure (①–�
 - **Grain** = mechanism + one reference per plane; per-module hooks/stores/forms land in each module's later wave.
 - **D5 main↔worker binding** = a main-thread `SqliteDriver` proxy (`db/client.ts`) over the worker postMessage RPC — the app-facing binding AR-2 assigned to AR-4. `values`/`batch` (Drizzle path) are a declared deferred seam.
 - **Library APIs verified (context7)**: TanStack Form v1 takes a Zod schema directly (Standard Schema; no adapter pkg); Router uses `lazyRouteComponent`.
+
+## qa-1-e2e-harness-opfs (LIF-103) — completed 2026-08-04
+- **Head chosen by strict `#` global build order** (Victor): QA-1 (#8) over `--next`'s ux-3 and the TASKS.md DS-5 prose. The `#` column in `reconstructed-structure.md` is authoritative; `--next` is a dependent-count convenience.
+- **QA-1 reframed scaffolding → FOUNDATION** (Victor): it's the shared browser-E2E foundation (reusable `db` fixture + OPFS-reset + documented extension points), AR-2 verification is the first consumer. Grounded in a downstream sweep (25+ consumers) + docs — not built in isolation.
+- **Zero-throwaway rule**: item-2 OPFS persistence is proven against the DURABLE `app_state` table via a probe row (shipped `run`/`query`), NOT a synthetic `fixture` table and NOT `schema_version` (which `migrate()` always restores → can't discriminate persistence). The literal "write via Drizzle" over the worker is a deferred seam → **UI-3/M1.1+** (reuses this `db` fixture); the Drizzle contract stays Node-proven.
+- **New scenario `E2E Test Harness`** authored under the `add-backend-component` profile (the API-route `Default` scenario didn't fit test infra) — profile stays Backend (DF-8-fixed, standards match), scenario differs.
+- **Backdoor via a bare dev-only entry** (`harness.html`+`.ts`), NOT `App.tsx` (which auto-opens `'vida'`, destroying the item-1 first-run baseline). Clean OPFS = explicit `beforeEach` wipe, NOT Playwright context isolation (Playwright doesn't reset OPFS — #29901).
+- **Config at the web-app ROOT** (`testDir:'./e2e'`) so `playwright test` (CWD=apps/web) discovers it and doesn't scan the `src/` Vitest files. `PW_EXECUTABLE_PATH` escape hatch drives a system Chromium (Brave) on Playwright-unsupported OSes (macOS 12); unset in CI.
+- **Pre-existing CI reds flagged on owners** (not QA-1's to fix): `@vida/server` no-tests → **P2-1 (#79, M4.0 Venues)** which builds the server; repo-wide Prettier drift → a new standalone Planned hygiene task.
