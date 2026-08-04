@@ -1,5 +1,5 @@
 # Spec: component:ar-2-database-adapter-web
-Status: implemented (contract) — items 1 & 2 (browser open/persist) verification-deferred → carried by the E2E-harness issue
+Status: implemented + VERIFIED — items 1 & 2 (browser open/reopen/persist) proven by QA-1/LIF-103 (2026-08-04). 7/7 DoD (item-2 Drizzle-write variant → UI-3/M1.1+).
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim is [FACT: src] / [INTERP] / [UNKNOWN].
 Session split: the deep Business-Rules/Contract/build-steps live in `sessions/` (gate files), NOT here.
@@ -20,8 +20,8 @@ and hands the repository a typed Drizzle instance — the **critical-path root**
 not SQLCipher activation (M3), not the native mobile/desktop adapters (later).
 
 ## 2. Acceptance (durable — testable DoD)
-- [ ] **[deferred → E2E-harness issue]** Web app opens a **fresh** DB (first run) and **reopens** an existing one across reload — **no passphrase**. *(code shipped in `web-adapter.ts`; needs a real-browser test — `FileSystemSyncAccessHandle` is worker-only.)*
-- [ ] **[deferred → E2E-harness issue]** Round-trip persists: write a row via Drizzle → reopen → read it back (OPFS persistence proven). *(the wa-sqlite path is typecheck-only today; the Node contract test uses `:memory:`.)*
+- [x] **[VERIFIED by QA-1 / LIF-103, 2026-08-04]** Web app opens a **fresh** DB (first run) and **reopens** an existing one across reload — **no passphrase**. *(proven in a real Chromium worker: `apps/web/e2e/db-persistence.spec.ts` item 1, green.)*
+- [x] **[VERIFIED by QA-1 / LIF-103, 2026-08-04 — persistence substance]** Round-trip persists: a written row survives reopen (OPFS persistence proven) — proven against the durable `app_state` table via the shipped `run`/`query` path (`db-persistence.spec.ts` item 2, green). *(The literal "via Drizzle" write path over the worker — `values`/`batch` — is a deferred seam → **UI-3/M1.1+**, which will add that assertion using QA-1's `db` fixture; the Drizzle write contract stays Node-proven, `web-adapter.test.ts:75-120`.)*
 - [x] The encryption **seam** is intact: passing a `sqlCipher` config still routes through configure/verify (M3 path), unit-level. `[web-adapter.test.ts]`
 - [x] `migrate()` runs on open (empty registry ⇒ no-op at version 0); a failing migration rolls back, version unchanged. `[web-adapter.test.ts]`
 - [x] `tsc --noEmit` strict green across `@vida/core` + `@vida/web`; adapter unit/integration tests pass. `[10/10 typecheck · 6/6 tests]`
@@ -51,3 +51,4 @@ That harness is a net-new issue; AR-2 closes on contract and the harness carries
 |------|---------|--------|
 | 2026-07-27 | 2026-07-27-ar-2-database-adapter-web | thin index + Gate-1 PLAN drafted (baseline done; D1 seam decided) |
 | 2026-07-27 | 2026-07-27-ar-2-database-adapter-web | **direction corrected sync→async; implemented (A1–A5·R1·R2·W1–W5); 5/7 DoD met; items 1&2 deferred to the E2E-harness issue; index re-aligned to async** |
+| 2026-08-04 | 2026-08-03-qa-1-e2e-harness-opfs | **items 1 & 2 VERIFIED** by QA-1's Playwright/OPFS harness (green in a real Chromium worker). Item-2 persistence proven via a durable `app_state` probe row; the Drizzle-over-worker write variant remains deferred → UI-3/M1.1+. AR-2 now 7/7. |

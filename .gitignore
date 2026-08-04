@@ -32,6 +32,9 @@ apps/mobile/ios/
 
 # Testing
 coverage/
+test-results/
+playwright-report/
+playwright/.cache/
 
 # Misc
 *.log

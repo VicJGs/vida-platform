@@ -1,4 +1,20 @@
 ---
+Date: 2026-08-03 — PROFILE SWITCH + next-head reconciliation
+- **Profile switch: Design System → Add Backend Component.** CLAUDE.md has no `# Profile:` line → this
+  session-log entry IS the persistence (per begin.md PROFILE CONFIRM switch protocol). Scenario: Default.
+- **Next-head reconciliation (Victor-directed).** Session opened defaulting to DS-5 off the `TASKS.md`
+  "Next session" prose. Victor challenged the grounding; tracing to source showed the DS-5 designation was
+  NOT authoritative:
+  - `reconstructed-structure.md:21` — the `#` column IS the authoritative global build order (DF-10).
+  - By strict `#` order the lowest-# not-done ready issue is **QA-1 (#8)**, not DS-5 (#20). QA-1 < AR-8 (#14)
+    < AR-9 (#15) < DS-5. The `#20` DS-5 head existed only in `TASKS.md:23` prose (track-continuity note).
+  - `tracker_sync --next` independently computed `ux-3` (dependent-count heuristic) — a third answer.
+- **Decision:** Victor chose **strict `#` order → head = QA-1 (LIF-103, Playwright + OPFS E2E harness)**,
+  profile Add Backend Component (fixed per DF-8, `reconstructed-structure.md:62`). TASKS.md note corrected.
+- Lesson: `[[doc-order-authoritative-over-next-heuristic]]` was misapplied at open — doc order read honestly
+  pointed to QA-1, not DS-5; I let a hand-written prose note masquerade as the plan. Verify to the `#` column.
+
+---
 Date: 2026-08-01 (PHASE V COMPLETE — vida delivery structure reconstructed + LIVE in Linear)
 ✅ **`delivery-structure-model` (LIF-110) Phase V DONE.** Ran the just-built `delivery-structure-reconstruction`
 scenario (ADR-016 capability) against the harvest → produced `docs/specs/foundation/delivery-structure-reconstruction/

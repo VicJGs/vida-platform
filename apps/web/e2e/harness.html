@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Vida E2E DB harness</title>
+  </head>
+  <body>
+    <!-- QA-1 (LIF-103) test-only backdoor page. Dev-served by Vite, never a build
+         input → never ships in dist/. Exposes window.__vidaDb for Playwright. -->
+    <main id="e2e-harness">Vida E2E DB harness — ready.</main>
+    <script type="module" src="./harness.ts"></script>
+  </body>
+</html>
