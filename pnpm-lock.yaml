@@ -159,10 +159,19 @@ importers:
 
   packages/ui:
     dependencies:
-      '@tamagui/core':
-        specifier: ^2.5.1
+      '@tamagui/animations-css':
+        specifier: 2.6.2
         version: 2.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@tamagui/core':
+        specifier: 2.6.2
+        version: 2.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: '>=19'
+        version: 19.2.4
     devDependencies:
+      '@types/react':
+        specifier: ^19.1.0
+        version: 19.2.14
       style-dictionary:
         specifier: ^5.5.0
         version: 5.5.0(tslib@2.8.1)
@@ -1166,6 +1175,15 @@ packages:
   '@speed-highlight/core@1.2.14':
     resolution: {integrity: sha512-G4ewlBNhUtlLvrJTb88d2mdy2KRijzs4UhnlrOSRT4bmjh/IqNElZa3zkrZ+TC47TwtlDWzVLFADljF1Ijp5hA==}
 
+  '@tamagui/animation-helpers@2.6.2':
+    resolution: {integrity: sha512-J/42fLJ422ifx09zyTmooT045DYNfpEAj+7honkAQ0qgLTws4gqLy3DMZgG2oC9qP/pkTkcfiP2OOz0Y32aqiQ==}
+
+  '@tamagui/animations-css@2.6.2':
+    resolution: {integrity: sha512-5Q58EzZOyfTOHoUSH465pUgCNPMx9J6CinaBBfLeT1S4zNUvrdXWSx0j464DzPx//XHPour+Y7mVURWGIomWnw==}
+    peerDependencies:
+      react: '>=19'
+      react-dom: '*'
+
   '@tamagui/compose-refs@2.6.2':
     resolution: {integrity: sha512-G2lClm9HRHrtAtGiXCOLzeQ37Ci5RKBHMjFxxkOJ5UZQ1vgxdYbr/UATxATyzorDAPhr0XnfDVp+2nvXvEIb/Q==}
     peerDependencies:
@@ -1180,6 +1198,9 @@ packages:
     resolution: {integrity: sha512-1h++cbYfHD2skKqX3DyXTR0Lp0ld/dI4ZRuf/1AEB+od1QIW/BoEUcALBgCLyty0w9u6OdbsyxEaVu7zHCS7Cg==}
     peerDependencies:
       react: '>=19'
+
+  '@tamagui/cubic-bezier-animator@2.6.2':
+    resolution: {integrity: sha512-QLL1BsVi1WXGCwCDMOYH7ZijtoCWr6wc2rOEUvDvsYVchWKjGI4zi3V33Ul3YWHFLIo3KWyazwSJfAcCWQ+fBg==}
 
   '@tamagui/helpers@2.6.2':
     resolution: {integrity: sha512-FZw55/Pq8AOBR8JNbXvUfz0dUFUFGjvn1CSfHEwf8QnaLZPIwoXY7dQPtN1yviMHck5biYOeukZZquVmrJKLog==}
@@ -1233,6 +1254,11 @@ packages:
 
   '@tamagui/use-force-update@2.6.2':
     resolution: {integrity: sha512-i6ogh6LuiGAVmFW4DMrDlFGqchVhSyOk8sft+7+V5o1X/z9A70xl/ErpMbh9aJGq30qPYdXx5SZFEWfjthwdFw==}
+    peerDependencies:
+      react: '>=19'
+
+  '@tamagui/use-presence@2.6.2':
+    resolution: {integrity: sha512-2Tcc4zJGadGvOl0oL6oxzw/pIiGO1ZBtQmQG5XNHnjdUlXWgxMSLaMlo6VkmzG4Ly0MJ3nAO2d3sUkhoSQGuZw==}
     peerDependencies:
       react: '>=19'
 
@@ -3568,6 +3594,18 @@ snapshots:
 
   '@speed-highlight/core@1.2.14': {}
 
+  '@tamagui/animation-helpers@2.6.2': {}
+
+  '@tamagui/animations-css@2.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@tamagui/animation-helpers': 2.6.2
+      '@tamagui/constants': 2.6.2(react@19.2.4)
+      '@tamagui/cubic-bezier-animator': 2.6.2
+      '@tamagui/use-presence': 2.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@tamagui/web': 2.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+
   '@tamagui/compose-refs@2.6.2(react@19.2.4)':
     dependencies:
       react: 19.2.4
@@ -3587,6 +3625,8 @@ snapshots:
       react: 19.2.4
     transitivePeerDependencies:
       - react-dom
+
+  '@tamagui/cubic-bezier-animator@2.6.2': {}
 
   '@tamagui/helpers@2.6.2(react@19.2.4)':
     dependencies:
@@ -3640,6 +3680,13 @@ snapshots:
   '@tamagui/use-force-update@2.6.2(react@19.2.4)':
     dependencies:
       react: 19.2.4
+
+  '@tamagui/use-presence@2.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@tamagui/web': 2.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react: 19.2.4
+    transitivePeerDependencies:
+      - react-dom
 
   '@tamagui/web@2.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:

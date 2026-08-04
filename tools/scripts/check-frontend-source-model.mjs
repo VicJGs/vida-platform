@@ -4,8 +4,10 @@
 // "## 0. Source model" pointer, so it cannot silently drift from the code-first / Figma-later direction. Fail-loud —
 // mirrors DS-1's B2 "enforce by construction, not by review convention" doctrine (token-pipeline B2).
 //
-// Scope: ds-2…ds-5 + ui-* spec dirs (ds-2 is the positive control — it already carries §0). UX specs are NOT
-// mechanically gated (they don't define token/component source, and ux-1 predates the direction).
+// Scope: FORWARD specs under docs/specs/components/ whose dir is ds-2…ds-5 or ui-* (ds-2 is the positive control —
+// it already carries §0). UX specs are NOT mechanically gated (they don't define token/component source, and ux-1
+// predates the direction). Bug-units (docs/specs/fixes/) + other buckets are excluded even if their slug starts
+// with a governed prefix (e.g. a `ds-4-*` fix diagnosis is not a frontend forward spec).
 // Run:  pnpm check:frontend-source-model   (or node tools/scripts/check-frontend-source-model.mjs)
 
 import { readdirSync, readFileSync } from 'node:fs'
@@ -20,7 +22,8 @@ const HEADING = /^##\s*0\.\s*Source model/m // the required §0 heading
 const indexes = readdirSync(SPECS, { recursive: true, withFileTypes: true })
   .filter((e) => e.isFile() && e.name === '_index.md')
   .map((e) => join(e.parentPath ?? e.path, e.name))
-  .filter((p) => GOVERNED.test(basename(dirname(p))))
+  // FORWARD specs only: under docs/specs/components/, dir name is governed. Excludes fixes/ + other buckets.
+  .filter((p) => basename(dirname(dirname(p))) === 'components' && GOVERNED.test(basename(dirname(p))))
 
 const offenders = indexes.filter((p) => !HEADING.test(readFileSync(p, 'utf8')))
 

@@ -23,11 +23,16 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "devDependencies": {
+    "@types/react": "^19.1.0",
     "style-dictionary": "^5.5.0",
     "typescript": "^5.7.0",
     "vitest": "^3.2.1"
   },
   "dependencies": {
-    "@tamagui/core": "^2.5.1"
+    "@tamagui/animations-css": "2.6.2",
+    "@tamagui/core": "2.6.2"
+  },
+  "peerDependencies": {
+    "react": ">=19"
   }
 }
