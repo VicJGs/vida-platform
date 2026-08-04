@@ -74,6 +74,29 @@ jobs:
         env:
           TURBO_TELEMETRY_DISABLED: 1
 
+  e2e:
+    name: E2E (Playwright + OPFS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @vida/web exec playwright install --with-deps chromium
+
+      - run: pnpm turbo run e2e
+        env:
+          TURBO_TELEMETRY_DISABLED: 1
+
   format-check:
     name: Format Check
     runs-on: ubuntu-latest

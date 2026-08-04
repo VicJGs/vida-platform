@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| qa-1-e2e-harness-opfs (LIF-103) | Add Backend Component · E2E Test Harness | 2026-07-27 | 2026-08-03 | ▶ IN PROGRESS — head by strict `#` order (#8, ← AR-2 ✅). Branch `qa-1-e2e-harness-opfs`. Playwright + OPFS/worker harness proving AR-2 §2 items 1 & 2. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
@@ -20,9 +21,12 @@ useVidaTheme) + ambient `tamagui.d.ts` augmentation. **Animation driver = `@tama
 **Frontend Visual Gate PASS** (composed light｜dark theme surface). §XXIX: token-pipeline deferrals resolved +
 `packages/ui/src/CLAUDE.md` layer-doc. ⚠ **Mid-build RN-driver drift triaged (STRUCTURAL) + corrected**
 (`@tamagui/animations-react-native` → CSS; diagnosis `docs/specs/fixes/ds-4-rn-driver-drift/`).
-**NEXT HEAD = DS-5 (Primitive contracts)** — `reconstructed-structure` #20, ← DS-4, Design System (`packages/ui/src/
-components`; the component-API standard; unblocks UI-1). ⚠ NOT committed — DS-4 is on the working tree of **`main`**;
-branch first before committing/PR.
+**NEXT HEAD = QA-1 (Playwright + OPFS E2E harness, LIF-103)** — chosen 2026-08-03 by **strict `#` global build
+order** (`reconstructed-structure.md:21` DF-10): QA-1 is `#8`, the lowest-`#` not-done ready issue (← AR-2 ✅),
+ahead of AR-8 (#14), AR-9 (#15), and DS-5 (#20). Profile: **Add Backend Component** (fixed, DF-8). The earlier
+"DS-5 next head" note was `TASKS.md` prose (Design-System track-continuity), NOT the authoritative order — superseded.
+DS-5 (#20, ← DS-4 ✅) remains ready and is the head whenever the DS track is advanced next. DS-4 is committed +
+merged (PR #2 → `main` @ 7e54176) — the prior "NOT committed" note was stale.
 
 <details><summary>(prior) 2026-08-03 — DS-3 (Motion foundation) DONE.</summary>
 
@@ -233,7 +237,6 @@ _(none)_
 
 | Task | Profile | Priority |
 |------|---------|----------|
-| **qa-1-e2e-harness-opfs** (Playwright + OPFS/worker E2E harness; proves AR-2 items 1&2 — browser open/reopen/persist. Blocked-by ar-2. Net-new shared infra from the AR-2 audit) | Add Backend Component | M1.0 — after AR-2 |
 | **Storage rebuild — from zero** (v1 schema ~60% stale → author v2 from scratch; `ADR-016` + `storage-build-plan.md` ledger + per-table gating. DB-1/LIF-61 ✅ done.) | Generic Coding Session | ⏸ **PARKED by ADR-017** — sequencing inverted to features-first; schema now authored per-feature, not full-schema-first. Resurfaces (incl. encryption/sync at DB-5/DB-2) in the post-validation hardening pass. |
 | Toolkit scan-cascade audit + 6 command migrations | toolkit-development | parked — filed in ~/dev-toolkit/.claude/tasks/ |
 | Integrate /task-new ↔ native task panel | toolkit-development | parked — sync gap found 2026-06-08 |

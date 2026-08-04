@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -25,6 +26,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.13",
