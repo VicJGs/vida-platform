@@ -64,12 +64,24 @@
   component gate (DS-5/UI-*); the render preview demos animate transform+opacity only + honor reduced-motion.
 - **[DONE]** Approved via the **Frontend Visual Gate** — its second run (motion demos: 4 durations × 4 easings).
 
+## Rules established by DS-4 (IMPLEMENTED 2026-08-03)
+- **[DONE]** `packages/ui/src/tamagui.config.ts` — `createTamagui` composes the generated outputs (B13, no
+  hand-authored values): `createTokens` + two `createFont` (body/display, role-keyed + `$true` default) + light/dark
+  themes + `createAnimations`. `declare module '@tamagui/core'` augmentation lives in an ambient `tamagui.d.ts`
+  (avoids the `typeof config` self-reference cycle under `declaration:true`).
+- **[DONE]** Dark = first-class switchable theme (B14): `<UIProvider theme>` → `TamaguiProvider defaultTheme`
+  (theme state = app Zustand, AR-4); resolves differently at runtime (`light #FFFFFF ≠ dark #0F172A`).
+- **[DONE]** Animation driver **resolved** (was `[UNKNOWN]`): **web = `@tamagui/animations-css`** per ADR-001 §9
+  ("CSS variables on web" + "no extra dependency"), consuming `motion.ts` duration **+ easing** losslessly
+  (`'cubic-bezier(0,0,0.3,1) 150ms'`); **native = reanimated** (ADR-001:258), deferred to mobile. An RN-driver drift
+  was triaged + corrected — `docs/specs/fixes/ds-4-rn-driver-drift/`.
+- **[DONE]** CSS-var reconciliation **resolved**: Tamagui compiles `createTokens` → its own web CSS vars, which are
+  **authoritative at runtime**; the design.md `variables.css` (unitless `--space-*`/`--duration-*`, camelCase
+  `--easing-inOut`) is a **parallel documentation / Figma-projection artifact**, not wired into the app. No runtime
+  dependency on `variables.css`; the unitless-unit concern dissolves.
+
 ## Boundaries (what the pipeline does NOT own — owed downstream)
-- **[INTENT: DS-4]** `tamagui.config.ts` (`createTamagui`), provider, dark-mode **mechanism** (theme-switch), and the
-  CSS-var reconciliation (Tamagui's own web vars vs the design.md `variables.css` names; incl. the unitless-duration
-  `ms` reconciliation + the lone camelCase `--easing-inOut`). `createFont` consumes `fonts.ts`; **`createAnimations`
-  consumes `motion.ts`** + composes named transition presets (duration+easing pairs the 3-layer seed can't express).
-  ⚠ `createAnimations` config shape is **driver-dependent** (CSS driver = duration+easing; RN driver = spring configs,
-  no cubic-bezier) — DS-4 picks the driver and reconciles what it consumes. `[UNKNOWN: driver — verify at DS-4]`
-- **[INTENT: DS-5]** component-token expansion + the white-on-brand.500 contrast caveat (buttons → brand.600).
+- **[INTENT: DS-5]** component-token expansion + the white-on-brand.500 contrast caveat (buttons → brand.600) +
+  semantic transition presets (enter/exit ease refinements via `enterStyle`/`exitStyle`) + `createFont`
+  weight/letterSpacing key ergonomics as components firm up.
 - **[INTENT: later / M4 P2-⑦]** Figma community file + MCP-scripter bridge (NOT Tokens Studio). `[DIRECTION: Victor 2026-08-03]`

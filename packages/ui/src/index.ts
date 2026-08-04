@@ -5,3 +5,8 @@ export { tokens } from './themes/tokens'
 export * from './themes/themes'
 export { fonts } from './themes/fonts' // DS-2 typography tokens (typed data for DS-4 createFont)
 export { motion } from './themes/motion' // DS-3 motion tokens (typed data for DS-4 createAnimations)
+
+// DS-4 — Tamagui config + theme-switch mechanism (composes the generated outputs above).
+export { config, type VidaConfig } from './tamagui.config'
+export { UIProvider, useVidaTheme, type ThemeName, type UIProviderProps } from './provider'
+import './tamagui.d.ts' // side-effect: ship the TamaguiCustomConfig augmentation to consumers (B16)

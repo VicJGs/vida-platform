@@ -4190,3 +4190,53 @@ Committed branch `ds-3-motion-foundation` (292cbeb, 15 files) — **NOT merged/p
 **NEXT HEAD = DS-4 (Tamagui config + dark mode)** — reconstructed #19, ← DS-3, Design System: `createTamagui` +
 dark-mode mechanism (theme-switch) + `createFont`←`fonts.ts` + `createAnimations`←`motion.ts` + the deferred
 CSS-var/unit (px+ms) reconciliation. LIF-83 → Done.
+
+---
+Date: 2026-08-03 (DS-4 Tamagui config + dark mode SHIPPED — incl. a mid-build triage correction)
+✅ **DS-4 (`ds-4-tamagui-config-dark-mode`, LIF-84) DONE** — Design System / Default. Next head via
+reconstructed #19 (← DS-3). §XXVII path surfaced + approved. Gate class **triaged**: DS-* = LITE
+(delivery-plan §3 legend; F·C·L, quality-gate-design/-components), floor-not-ceiling.
+
+**What shipped.** `packages/ui/src/tamagui.config.ts` — the first unit to COMPOSE the tokens (crosses DS-1's
+⊥ DS-4 standalone-typecheck boundary): `createTamagui` over `createTokens` + 2× `createFont` (body/display, role
+keys + a synthesized `$true` default) + light/dark themes + `createAnimations`. `provider.tsx` (`<UIProvider theme>`
+→ TamaguiProvider `defaultTheme`, state = app Zustand AR-4; `useVidaTheme` re-export alias). Ambient `tamagui.d.ts`
+holds the `declare module '@tamagui/core'` augmentation (kept out of the value module to avoid the `typeof config`
+TS2742 cycle under `declaration:true`). index re-exports. New `packages/ui/src/CLAUDE.md` layer-doc.
+
+**Animation driver = `@tamagui/animations-css`** (ADR-001 §9: "CSS variables on web" + "no extra dependency") —
+consumes `motion.ts` duration+easing losslessly (`'cubic-bezier(0,0,0.3,1) 150ms'`); native = reanimated
+(ADR-001:258), deferred to mobile.
+
+**⚠ Mid-build ERROR + TRIAGE (`/victor-triage`).** I drifted to `@tamagui/animations-react-native` (the RN driver)
+for web — NOT named in the docs for web, and it forced `react-native-web`, an extra dep VIOLATING ADR-001's "no extra
+dependency". Victor caught it ("where does this RN come from in the docs?"). Classified **STRUCTURAL**; diagnosis
+persisted `docs/specs/fixes/ds-4-rn-driver-drift/`; corrected across config + package.json + spec (~8 sites) +
+scoped the source-model guard to `components/` (it falsely governed the bug-unit). Root cause: reading a NATIVE
+clause ("reanimated on native") as a WEB choice, and letting a downstream artifact's shape (motion.ts CSS-shaped)
+re-open a settled ADR. Memory: [[dont-let-downstream-shape-reopen-an-adr]]. This was the SECOND driver flip-flop
+(I'd earlier over-corrected FROM the CSS driver TO RN) — the CSS driver was doc-faithful all along.
+
+**Independent critique (read the installed @tamagui/web@2.6.2 types) REVISE→5 fixed:** `addThemeClassName` is a
+`createTamagui({settings})` option not a Provider prop; `useThemeSetting`→`useVidaTheme` (former is next-theme's,
+rejected); pinned the switch mechanism; `createFont` role-vs-numeric size trap (passthrough → typecheck can't catch)
+→ `$true` default + a RUNTIME render assertion; CSS-var reconciliation direction (Tamagui vars authoritative,
+variables.css = projection artifact).
+
+**Build-tooling firsts (all grounded):** `@tamagui/core`+`@tamagui/animations-css` pinned `2.6.2` (family alignment
+— a 2.6.2/2.6.3 skew broke the `animations` config type); `jsx:react-jsx` + `lib:['ES2022','DOM']` + `react` peer +
+`@types/react` (first real JSX in @vida/ui; legacy components/*.tsx were empty stubs).
+
+**Verify:** @vida/ui **30/30** (26 pipeline + 4 new DS-4 runtime assertions: config imports with NO react-native-web ·
+`size.true=16` · `light #FFFFFF ≠ dark #0F172A` · `animations.fast='cubic-bezier(0,0,0.3,1) 150ms'`) · root typecheck
+**10/10** · guard ✓. **Frontend Visual Gate PASS** (3rd run) — added a DS-4 composed theme-surface section to
+`preview:tokens` (a mock card rendered light｜dark from the resolved config themes); Victor approved (dark reads as a
+designed surface, not an inversion).
+
+**§XXIX:** token-pipeline `current-spec.md`/`current-business-rules.md` DS-4 deferrals resolved (dark mechanism,
+CSS-var reconciliation, driver `[UNKNOWN]` → CSS); new `packages/ui/src/CLAUDE.md`. Spec
+`docs/specs/components/ds-4-tamagui-config-dark-mode/_index.md` (implemented).
+
+**NOT committed** — DS-4 on the working tree of `main`; branch-first pending. **NEXT HEAD = DS-5 (Primitive
+contracts)** — reconstructed #20, ← DS-4, Design System (`packages/ui/src/components`; component-API standard;
+unblocks UI-1). LIF-84 → Done.

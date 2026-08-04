@@ -1,0 +1,37 @@
+# packages/ui/src — @vida/ui source (Tamagui design system)
+
+The shared universal component library (ADR-001: Tamagui). Composes the token pipeline into a live Tamagui config +
+the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-config-dark-mode/_index.md` +
+`docs/ui/token-pipeline/current-*`.
+
+## Files
+- `themes/` — the token pipeline (DS-1→DS-3): Style Dictionary seed → GENERATED `tokens.ts`/`themes.ts`/`fonts.ts`/
+  `motion.ts`/`variables.css`. See `themes/CLAUDE.md`. **Edit the JSON seed, never the generated files.**
+- `tamagui.config.ts` — **DS-4.** `createTamagui` composing the generated outputs (B13, no hand-authored values):
+  `createTokens` + two `createFont` (body/display) + light/dark themes + `createAnimations`. Exports `config` +
+  `type VidaConfig`. **`createFont` needs a `$true` default** (fonts.ts keys by role, not `$1..$n` — an unstyled
+  `<Text>` resolves `size.$true`).
+- `tamagui.d.ts` — the `declare module '@tamagui/core'` augmentation (typed `$tokens`). **Ambient on purpose:** kept
+  OUT of the value module so `typeof config` doesn't self-reference under `declaration:true` (TS2742/circularity).
+- `provider.tsx` — **DS-4.** `<UIProvider theme>` (→ `TamaguiProvider defaultTheme`; theme STATE = app Zustand, AR-4)
+  + `useVidaTheme` (a re-export alias of Tamagui `useTheme`, NOT next-theme's `useThemeSetting`).
+- `index.ts` — package barrel; re-exports the generated token data + `config`/`UIProvider`/`useVidaTheme` + a
+  side-effect import of `tamagui.d.ts` (ships the augmentation to consumers).
+- `components/`, `hooks/`, `icons/` — **v1 stubs (mostly empty)**, not yet migrated to Tamagui. Real primitives = DS-5/UI-*.
+
+## Rules
+- **Animation driver = per ADR-001 §9, per-platform:** **web = `@tamagui/animations-css`** (CSS-on-web, no
+  `react-native-web`; consumes `motion.ts` duration+easing as `'<easing> <duration>ms'`); **native = reanimated**
+  (ADR-001:258, when mobile is built). **Never** the web-only `@tamagui/animations-react-native` — it pulls
+  `react-native-web` (an extra dep VIOLATING ADR-001). See `docs/specs/fixes/ds-4-rn-driver-drift/`.
+- Keep `@tamagui/core` + `@tamagui/animations-css` pinned to the same version (family alignment; a skew breaks the
+  `animations` config type).
+- **Dark mode = a switchable first-class Theme** (B14), never a runtime inversion. Theme STATE + toggle UI +
+  persistence are the APP's (UX-3/UI-4); DS-4 ships the config + provider + hook only.
+- **CSS-var reconciliation (resolved):** Tamagui's compiled web CSS vars are authoritative at runtime; the design.md
+  `variables.css` is a parallel documentation / Figma-projection artifact, not wired into the app.
+- JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
+
+## Verify
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (30 tests).
+Visual: `pnpm preview:tokens` → open `themes/preview.html` (incl. the DS-4 light｜dark theme-surface section).

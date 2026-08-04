@@ -11,7 +11,22 @@
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-03) — DS-3 (Motion foundation) DONE.**
+**▶ CURRENT (2026-08-03) — DS-4 (Tamagui config + dark mode) DONE.**
+`packages/ui/src/tamagui.config.ts` composes the generated DS-1→DS-3 outputs into `createTamagui` (createTokens +
+2× createFont [role keys + `$true` default] + light/dark + createAnimations) + `provider.tsx` (UIProvider/
+useVidaTheme) + ambient `tamagui.d.ts` augmentation. **Animation driver = `@tamagui/animations-css`** per ADR-001 §9
+(CSS-on-web + no-extra-dep; consumes motion.ts duration+easing losslessly). **First unit to COMPOSE the tokens**
+(crossed DS-1's ⊥ DS-4). @vida/ui **30/30 · typecheck 10/10** · imports at runtime with NO react-native-web.
+**Frontend Visual Gate PASS** (composed light｜dark theme surface). §XXIX: token-pipeline deferrals resolved +
+`packages/ui/src/CLAUDE.md` layer-doc. ⚠ **Mid-build RN-driver drift triaged (STRUCTURAL) + corrected**
+(`@tamagui/animations-react-native` → CSS; diagnosis `docs/specs/fixes/ds-4-rn-driver-drift/`).
+**NEXT HEAD = DS-5 (Primitive contracts)** — `reconstructed-structure` #20, ← DS-4, Design System (`packages/ui/src/
+components`; the component-API standard; unblocks UI-1). ⚠ NOT committed — DS-4 is on the working tree of **`main`**;
+branch first before committing/PR.
+
+<details><summary>(prior) 2026-08-03 — DS-3 (Motion foundation) DONE.</summary>
+
+**▶ (2026-08-03) — DS-3 (Motion foundation) DONE.**
 Motion primitives shipped: `duration` (instant 0/fast 150/moderate 250/slow 400, unitless ms) + `easing`
 (out/in/inOut cubic-beziers + linear) added as a **third aux consumer** — `AUX` factored
 `[...TYPOGRAPHY, 'shadow', ...MOTION]`, `vida/fonts` narrowed to typography (fonts↔motion leak closed by
@@ -24,6 +39,7 @@ promoted. Spec `docs/specs/components/ds-3-motion-foundation/` (implemented). LI
 (consumes `fonts.ts`→createFont + `motion.ts`→createAnimations; owns the dark-mode mechanism + CSS-var/unit
 reconciliation deferred through DS-1→DS-3). ✅ **Merged + pushed to `origin/main`** (`8f9cbe2`, --no-ff of branch
 `ds-3-motion-foundation`); re-verified green on merged main (26/26 · typecheck 10/10); branch deleted.
+</details>
 
 <details><summary>(prior) 2026-08-03 — DS-2 (foundations) DONE + two frontend gates stood up.</summary>
 
@@ -227,6 +243,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **ds-4-tamagui-config-dark-mode** (LIF-84 · M1.0-b Design System · ← DS-2/DS-3 · reconstructed #19. `packages/ui/src/tamagui.config.ts` composes the generated outputs into `createTamagui` (createTokens + 2× createFont [role keys + `$true` default, guards the passthrough trap] + light/dark themes + createAnimations) + `provider.tsx` (`UIProvider`/`useVidaTheme`) + ambient `tamagui.d.ts` augmentation (avoids the `typeof config` TS2742 cycle under `declaration:true`). **First unit to COMPOSE the tokens** — crossed DS-1's ⊥ DS-4 standalone-typecheck boundary. **Animation driver = `@tamagui/animations-css`** per ADR-001 §9 (CSS-on-web + no-extra-dep; consumes motion.ts duration+easing losslessly). Gate: DS-* LITE (delivery-plan §3). Independent critique (read installed @tamagui/web types) REVISE→5 fixed (addThemeClassName=setting-not-prop · useThemeSetting→useVidaTheme · pinned switch mechanism · createFont `$true` render-assert · CSS-var reconciliation). ⚠ **Mid-build RN-driver drift triaged STRUCTURAL + corrected** (`/victor-triage`; I'd picked `@tamagui/animations-react-native` — not in docs for web, forced react-native-web violating ADR-001; diagnosis `docs/specs/fixes/ds-4-rn-driver-drift/`; memory [[dont-let-downstream-shape-reopen-an-adr]]). Also: core+driver pinned 2.6.2 (family align); jsx/DOM/react added (first JSX in @vida/ui); source-model guard scoped to `components/`. @vida/ui **30/30** · root typecheck **10/10** · imports at runtime with NO react-native-web. **Frontend Visual Gate PASS** (composed light｜dark theme surface). §XXIX: token-pipeline current-* deferrals resolved + `packages/ui/src/CLAUDE.md`. NOT committed — on `main` working tree; branch-first pending. Unblocks DS-5/UI-*/UX-*.) | 2026-08-03 | 1 (2026-08-03) |
 | **ds-3-motion-foundation** (LIF-83 · M1.0-b Design System · ← DS-2 · reconstructed #18. Motion foundation: `duration` (instant 0/fast 150/moderate 250/slow 400, unitless ms) + `easing` (out/in/inOut cubic-beziers + linear) primitives added as a **third aux consumer** — `AUX` factored `[...TYPOGRAPHY, 'shadow', ...MOTION]`, `vida/fonts` narrowed to typography (closed the fonts↔motion leak by construction), new `vida/motion` format → `motion.ts` (mirrors `fonts.ts`), index re-export, B11/B12. Values trace to `standards/motion.md §IX`. LITE gate: plan-critique REVISE→5 fixed (F2 AUX sweep · F8 positive css-vars test · F6 createAnimations UNKNOWN · F5 band-floor INTERP · F9 both sort layers); post-impl critique SHIP + 2 NITs (linear-type→`easing`; camelCase `--easing-inOut`→DS-4). Live-smoke caught a preview render bug (cubic-bezier commas → isShadow miscapture → 3 easings as invalid box-shadow; motion branch moved above shadow). @vida/ui 26/26 · root typecheck 10/10 · deterministic. **Frontend Visual Gate PASS** (2nd run; `instant` render fixed static-not-flicker per Victor; values standard-derived, NOT a provisional placeholder). §XXIX docs promoted (current-spec/current-business-rules B11/B12 + themes CLAUDE.md = B12 enforcement artifact). Merged + pushed to origin/main (`8f9cbe2`, --no-ff); branch deleted; re-verified green. LIF-83 → Done. Unblocks DS-4.) | 2026-08-03 | 1 (2026-08-03) |
 | **ds-1-token-pipeline** (LIF-81 · M1.0-b Design System ROOT · **RE-LANDED** — un-parked as the computed next head (`--next`/`--plan` rank #1 among READY; unblocks ds-2/3/4/5). The build was already gated+green on the parked branch @ fd9f144 (2026-07-27); this session INTEGRATED the isolated `packages/ui/src/themes` Style Dictionary→Tamagui+CSS pipeline onto current main 57 commits forward. Main never touched `packages/ui` → 0 clobber; only `docs/specs/_index.md` line-merged + `pnpm-lock.yaml` regenerated (+style-dictionary@5.5.0). Re-verified green vs today's main: tokens:build ✓ · @vida/ui 13/13 ✓ · root typecheck 10/10 ✓ · no artifact drift. Ship gate SHIP. commit ab5966c (merge of `ds-1-reland`) → pushed to origin/main. LIF-81 → Done. Currency §XXIX: `docs/ui/token-pipeline/current-*` verified current. Profile switched Add Backend Component → Design System.) | 2026-08-03 | 1 (2026-08-03) |
 | **ar-7-capability-registry** (LIF-78 · M1.0 substrate spine · FINAL substrate) — the ⊞4 capstone: **4 gated increments** (effects rail · capability registry · measurability engine · points economy) in `core/src/foundation/{effects,capability,measurement,economy}` (ADRs 004/008/010/011/012). Delivered under the DF-11 per-substrate gating rule (written this session) with a DF-12 deferral-homing pass (new `#85 CAP-authoring`). Added `Repository.createInTx` (docs-grounded §XXVIII). @vida/core 169 tests, root typecheck 10/10. 6 commits on branch `ar-7-capability-registry` (`403d25f`→`b52d7b4`), **not merged/pushed**. Unblocks MOD-purposes, MOD-gamification, HARD-2. | 2026-08-03 | 1 (2026-08-02→03) |

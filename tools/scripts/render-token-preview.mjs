@@ -92,6 +92,27 @@ const sections = [...groups.entries()]
     <div class="grid">${toks.map((t) => sample(t, cat)).join('')}</div></section>`)
   .join('\n')
 
+// DS-4 — composed theme surface: a mock UI card rendered from the RESOLVED semantic theme values, LIGHT next to
+// DARK (the throwaway <Theme>-swap demo — proves the config's dark theme reads as a coherent surface, not a token grid).
+const semLight = (n) => resolve(raw.get(n) ?? '')
+const semDark = (n) => darkMap.get(n) ?? semLight(n)
+const dim = (n, fb) => resolve(raw.get(n) ?? String(fb))
+function surfaceCard(mode, get) {
+  const bg = get('color-surface-primary'), bg2 = get('color-surface-secondary'), text = get('color-text-primary')
+  const muted = get('color-text-muted'), brand = get('color-brand-emphasis'), border = get('color-border-default')
+  const rad = dim('radius-control', 8), pad = dim('space-inset-default', 12)
+  return `<div class="surface" style="background:${bg};color:${text};border:1px solid ${border};border-radius:${rad}px;padding:${pad}px">
+    <span class="surface-label" style="border:1px solid ${border};color:${muted}">${mode}</span>
+    <div style="font-size:20px;font-weight:600;margin:8px 0 6px">Vida — ${mode} surface</div>
+    <div>Primary text on the surface.</div>
+    <div style="color:${muted};margin-bottom:12px">Muted secondary text.</div>
+    <button style="background:${brand};color:#fff;border:none;border-radius:${rad}px;padding:8px 16px;font:inherit;cursor:default">Brand button</button>
+    <div style="background:${bg2};border:1px solid ${border};border-radius:${rad}px;padding:${pad}px;margin-top:12px">Secondary panel</div>
+  </div>`
+}
+const themeSurfaces = `<section><h2>DS-4 — Theme surface <span class="cnt">light ｜ dark (resolved from the config)</span></h2>
+  <div class="surfaces">${surfaceCard('light', semLight)}${surfaceCard('dark', semDark)}</div></section>`
+
 const total = raw.size
 const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Vida — Token Preview (Frontend Visual Gate)</title>
@@ -120,6 +141,10 @@ const html = `<!doctype html>
   /* instant (0ms) = immediate, no tween — static at destination, never loops (that frantic flicker is what 0ms "animated" looks like) */
   .motion-instant { animation:none; transform:translateX(28px); opacity:1; }
   @media (prefers-reduced-motion: reduce) { .motion-demo { animation:none; transform:translateX(28px); opacity:1; } }
+  /* DS-4 composed theme surfaces (light | dark, side by side) */
+  .surfaces { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:720px; }
+  .surface { position:relative; }
+  .surface-label { position:absolute; top:8px; right:8px; font-size:10px; text-transform:uppercase; letter-spacing:.05em; padding:2px 6px; border-radius:4px; }
   .meta { min-width:0; }
   .nm { display:block; font-size:11px; font-weight:600; word-break:break-all; }
   code { font-family:ui-monospace,monospace; font-size:11px; color:#8899; }
@@ -132,6 +157,7 @@ const html = `<!doctype html>
   <span class="warn">${darkMap.size} dark overrides — toggle swaps semantic swatches to real dark values (design.md §XI parallel design)</span>
   <button id="toggle">Toggle light / dark</button>
 </header>
+${themeSurfaces}
 ${sections}
 <script>
   document.getElementById('toggle').addEventListener('click', () => {

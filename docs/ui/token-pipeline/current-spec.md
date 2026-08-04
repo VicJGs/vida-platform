@@ -83,11 +83,13 @@ paid-only). Kept aligned per-unit, so "Figma-later" is a projection, not a recon
 - **⚠ Token VALUES are a provisional placeholder palette** (indigo/slate/emerald + Space Grotesk/Inter), NOT Vida's
   brand — replaced when brand identity is defined; the token ARCHITECTURE is final. `[FACT: DS-2; [[ds-2-palette-is-provisional-placeholder]]]`
 - **`light`/`dark` are now PARALLEL-designed** (DS-2 `semantic.dark.json`, 10 overrides; design.md §XI, not an
-  inversion), modeled to map 1:1 to Figma variable **modes**. The dark-mode **mechanism** (theme-switch) = DS-4. `[FACT: DS-2]`
+  inversion), modeled to map 1:1 to Figma variable **modes**. The dark-mode **mechanism** (theme-switch) is
+  **[RESOLVED — DS-4]**: `<UIProvider theme>` → `TamaguiProvider defaultTheme` (state = app Zustand). `[FACT: DS-2; DS-4]`
 - **CSS dimension + duration vars are unitless** (`--space-16: 16`, `--duration-fast: 150`, not `16px`/`150ms`)
-  because Tamagui tokens want raw numbers; the unit reconciliation (px + ms) vs Tamagui's own web CSS vars is
-  **deferred to DS-4**. The lone camelCase `--easing-inOut` (from the `inOut` key; consistent with existing
-  `--fontSize-*` camelCase) is reconciled with it. `[INTENT: DS-4]` `[FACT: DS-3]`
+  because Tamagui tokens want raw numbers. **[RESOLVED — DS-4]** Tamagui compiles `createTokens` → its own web CSS
+  vars, authoritative at runtime; `variables.css` (unitless + the camelCase `--easing-inOut`) is a parallel
+  documentation / Figma-projection artifact, not wired into the app — so no runtime unit reconciliation is needed.
+  `[FACT: DS-4 tamagui.config.ts; DS-3]`
 - **No Figma wiring yet** — seed is hand-authored; the Figma community file + MCP-scripter bridge come later
   (release-gated M4 P2-⑦). `[FACT]` `[DIRECTION: Victor 2026-08-03]`
 - **Contrast caveat → DS-5:** white-on-brand.500 = 4.47 (< AA 4.5 small text); filled buttons use brand.600. `[FACT: DS-2]`
