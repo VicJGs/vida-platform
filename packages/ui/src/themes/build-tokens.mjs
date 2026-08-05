@@ -176,11 +176,16 @@ StyleDictionary.registerFormat({
         const { category, key } = tamaguiRef(prim)
         base[camel(t.path)] = tokenRef(category, key)
       } else if (rank === 2) {
-        const prim = toPrimitivePath(p, index)
-        if (isAuxPath(prim)) continue // B9
+        // Component sub-theme: reference the SEMANTIC base-theme key (DS-1 spec:113) so dark_<Comp>
+        // inherits the dark overlay by construction. Resolving to the PRIMITIVE here (the old drift)
+        // collapsed the light/dark indirection → dark_<Comp> ≡ light_<Comp>.
+        // See docs/specs/fixes/component-subtheme-dark-drift/.
+        const ref = t.original?.value
+        if (!isRef(ref)) fail(`component token "${p}" must reference a semantic token (B2), got ${JSON.stringify(ref)}`)
+        const semPath = refTarget(ref) // e.g. "color.brand.emphasis"
+        if (isAuxPath(toPrimitivePath(semPath, index))) continue // B9 — aux (shadow/typography) → CSS only, not the theme object
         const Comp = t.path[0].charAt(0).toUpperCase() + t.path[0].slice(1)
-        const { category, key } = tamaguiRef(prim)
-        ;(subs[Comp] ??= {})[camel(t.path.slice(1))] = tokenRef(category, key)
+        ;(subs[Comp] ??= {})[camel(t.path.slice(1))] = camel(semPath.split('.')) // store the base-theme KEY; resolve to light./dark. at emit
       }
     }
     // B7 — dark overlay: light = base; dark = base + semantic.dark.json overrides. The overlay is loaded BY FILENAME
@@ -213,9 +218,13 @@ StyleDictionary.registerFormat({
       `export const light = ${obj(base)}\n`,
       `export const dark = ${obj(darkBase)}\n`,
     ]
+    // Component sub-themes reference the base theme objects (DS-1:113): light_<Comp> → light.<semKey>,
+    // dark_<Comp> → dark.<semKey>. This is what makes dark_<Comp> dark-correct (dark holds the overlay).
+    const refBase = (sub, theme) =>
+      Object.fromEntries(Object.entries(sub).map(([k, semKey]) => [k, `${theme}.${semKey}`]))
     for (const Comp of Object.keys(subs).sort()) {
-      out.push(`export const light_${Comp} = ${obj(subs[Comp])}`)
-      out.push(`export const dark_${Comp} = ${obj(subs[Comp])}\n`)
+      out.push(`export const light_${Comp} = ${obj(refBase(subs[Comp], 'light'))}`)
+      out.push(`export const dark_${Comp} = ${obj(refBase(subs[Comp], 'dark'))}\n`)
     }
     return out.join('\n')
   },
