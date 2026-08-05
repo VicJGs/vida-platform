@@ -1,6 +1,6 @@
 # Spec: component:ds-5-primitive-contracts
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: implemented (2026-08-05 — 10 contracts + component.json full set; components-gate critique REVISE→4 fixed; @vida/ui 31/31, typecheck 0, tokens:build ✓, source-model guard ✓. Visual Gate = UI-1 (no components built yet).)   <!-- draft → approved → implemented -->
+Status: in progress (2026-08-05 — 10 contracts + component.json full set; components-gate critique REVISE→4 fixed; @vida/ui 31/31, typecheck 0, tokens:build ✓, source-model guard ✓. **No token Visual Gate**: DS-5 introduces no new token VALUES — its component tokens are references into DS-2's already-gated semantic values; per frontend-visual-gate.md's render table DS-5 sits in the **Components/Storybook** row, deferred to its first-consumer unit **UI-1**. DS-5 ships on the normal §XXVI gate. In progress = unmerged (PR #6).)   <!-- draft → approved → implemented -->
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-08-05-ds-5-primitive-contracts.
