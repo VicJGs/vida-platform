@@ -34,6 +34,12 @@ Profile: Add Backend Component / Default
 - Backlink resolver home = `services/search/` directory (ADR-018 §3.2 > the arch doc's flat-file path).
 
 ## Open Questions
+- **⚠ Linear cleanup (verify next session):** `--sync` DID push LIF-79 → Done, but the tracker's relation sync is
+  **add-only** (`tracker_sync.py:526-533` `set_blocks`, no removal). The now-deleted `AR-8 ← db-8-fts5-search`
+  edge likely still exists as a `LIF-79 blocked-by LIF-70` relation in Linear — **check + remove manually.**
+  (I earlier claimed the tracker never writes relations — WRONG; corrected here.)
+- **Tracker gap:** `--sync` never retracts a Linear relation when its task-file edge is deleted → stale "blocked by"
+  edges accumulate. Fold into the toolkit task `add-declared-build-order-to-tracker` or file a sibling.
 - Export serializers (UI-3) vs a thin `services/export/` orchestration — the split is noted but not yet designed;
   resolve when UI-3 lands.
 - Toolkit `buildOrder` tie-break (filed task `add-declared-build-order-to-tracker`) — needs its own gate.
