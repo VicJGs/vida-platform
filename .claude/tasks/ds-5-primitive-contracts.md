@@ -5,6 +5,8 @@
 # Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ③ Design System
+# Profile: Design System
+# Scenario: Default (design-system/scenarios/default.md)
 
 ## Goal
 Author the primitive component contracts (API + visual states, not yet built): Button, Input,
