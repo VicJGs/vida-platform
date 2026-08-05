@@ -4256,3 +4256,8 @@ CSS-var reconciliation, driver `[UNKNOWN]` → CSS); new `packages/ui/src/CLAUDE
 **NOT committed** — DS-4 on the working tree of `main`; branch-first pending. **NEXT HEAD = DS-5 (Primitive
 contracts)** — reconstructed #20, ← DS-4, Design System (`packages/ui/src/components`; component-API standard;
 unblocks UI-1). LIF-84 → Done.
+
+
+---
+## 2026-08-05 — Profile switch: Add Backend Component → Design System (DS-5)
+After AR-9 (LIF-80) shipped + PR #4, moved to next `#`-order head **DS-5 primitive contracts** (LIF-85, #20, Design System). Profile switched Backend→Design System; standards quadrant reloaded (design·components·motion·engineering·process). Scenario: Default (design-system).
