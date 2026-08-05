@@ -9,9 +9,61 @@
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
+## 🧭 Delivery Routing — READ THIS FIRST (this repo's routing rule)
+
+> **The authoritative next-head selector for this repo is the `#` GLOBAL BUILD ORDER in
+> `docs/specs/foundation/delivery-structure-reconstruction/reconstructed-structure.md` — NOT `tracker_sync --next`.**
+
+This repo has a hand-authored, cross-milestone topological order (the `#` column, DF-10). It was created
+*because* `--next` had no global order and kept mis-picking heads. So, at **every `/begin`**, for THIS repo:
+
+1. **Compute the head from `#` order.** Walk `reconstructed-structure.md`'s `#` column ascending; the next head
+   is the **lowest-`#`** issue that is (a) NOT done, (b) NOT a `〰` stream row, (c) has **all blockers done**.
+2. **`tracker_sync --next` is ADVISORY only.** Its `order_nodes` tie-breaks the ready set by *direct-dependent
+   count* (`tracker_sync.py:1108`) — a different (also-valid) topo tie-break, so it routinely names a
+   higher-`#` issue (e.g. UX-3 #23 over AR-8 #14). **When `--next` and the `#` order disagree, the `#` order
+   wins.** Use `--next` only to (a) get the *ready set* and (b) flag divergence. See
+   [[doc-order-authoritative-over-next-heuristic]].
+3. **DF-3 invariant — audit before trusting `--next`:** every task-file `blocked by` edge MUST point to a
+   LOWER `#`. A higher-`#` edge is a bug — it silently drops the true head from `--next`'s ready set (this is
+   exactly what a stale `AR-8 ← db-8-fts5-search` [#14 ← #60] edge did, hiding AR-8 and surfacing AR-9 wrongly).
+   Fix the edge; don't route around it.
+4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
+   `#`-order head, the `#` order wins.
+
+**🎯 Computed head now (2026-08-05 · AR-8 #14 DONE): `AR-9` `#15` (LIF-80) — Sync scaffolding (no-flush).**
+Lowest-`#` ready non-stream issue: ← DB-6 ✅. `--next` says UX-3 (#23) by dependent-count — overridden by the `#`
+rule. Profile: **Add Backend Component**. (AR-8 closed with the backlink resolver; its other named pieces —
+graph→AR-6 Views+UI-2, export→UI-3, search→DB-8 — are homed elsewhere in the plan, not AR-8 builds.) *(Toolkit follow-up filed: generalize a declared global-order tie-break into
+`tracker_sync` so `--next` can be correct in any repo — see `~/dev-toolkit/.claude/tasks/`.)*
+> NB: the tracker reads task-file `blocked by` edges, **not** Linear blocker relations (it syncs status/identity
+> only) — so reconciling an edge never needs a Linear change.
+
+---
+
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-03) — DS-4 (Tamagui config + dark mode) DONE.**
+**▶ CURRENT (2026-08-05) — AR-8 (#14, LIF-79) DONE. Next head = AR-9 (#15).**
+AR-8 closed grounded in the plan: its `⊞≥2` pin resolves to ONE bespoke `@vida/core` deliverable — the **backlink
+resolver** (`services/search/backlink-resolver.ts`, read-only over AR-6 `entity_links`; double-gated; core 177/177;
+root typecheck 10/10). The other three named pieces are homed elsewhere *in the plan*: graph-prep→AR-6 Views seam +
+UI-2 (#28), export serializers→UI-3 (#29 "block editor + serializers"), search→DB-8 (#60). Currency
+`docs/core/backlinks/current-*`. Spec `docs/specs/infrastructure/ar-8-foundation-services/`. **NEXT HEAD = AR-9
+`#15` (LIF-80)** — sync scaffolding (no-flush), ← DB-6 ✅, Add Backend Component.
+
+<details><summary>(prior) 2026-08-04 — QA-1 shipped + delivery-routing reconciled.</summary>
+
+**▶ (prior) 2026-08-04 — QA-1 shipped (PR #3 → main). Delivery-routing reconciled.**
+This session: fixed the recurring `--next` vs `#`-order conflict. Root cause = the tracker tie-breaks by
+dependent-count (permanent, structural) + a stale illegal `AR-8 ← db-8` edge (#14←#60, DF-3 violation) that hid
+the true head. Reconciled: AR-8 edge fixed (search → DB-8 stream, not a whole-issue block), 5 stale doc glyphs
+refreshed (QA-1/AR-7/DS-3/DS-4/UX-1 → ✅), the `## 🧭 Delivery Routing` rule above added, glyph-snapshot caveat
+added to the doc.
+</details>
+
+<details><summary>(prior) 2026-08-03 — DS-4 (Tamagui config + dark mode) DONE.</summary>
+
+**▶ (prior) CURRENT (2026-08-03) — DS-4 (Tamagui config + dark mode) DONE.**
 `packages/ui/src/tamagui.config.ts` composes the generated DS-1→DS-3 outputs into `createTamagui` (createTokens +
 2× createFont [role keys + `$true` default] + light/dark + createAnimations) + `provider.tsx` (UIProvider/
 useVidaTheme) + ambient `tamagui.d.ts` augmentation. **Animation driver = `@tamagui/animations-css`** per ADR-001 §9
@@ -26,6 +78,7 @@ ahead of AR-8 (#14), AR-9 (#15), and DS-5 (#20). Profile: **Add Backend Componen
 "DS-5 next head" note was `TASKS.md` prose (Design-System track-continuity), NOT the authoritative order — superseded.
 DS-5 (#20, ← DS-4 ✅) remains ready and is the head whenever the DS track is advanced next. DS-4 is committed +
 merged (PR #2 → `main` @ 7e54176) — the prior "NOT committed" note was stale.
+</details>
 
 <details><summary>(prior) 2026-08-03 — DS-3 (Motion foundation) DONE.</summary>
 
@@ -246,6 +299,7 @@ _(none)_
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| **ar-8-foundation-services** (LIF-79 → Done · M1.0 `#14` · Add Backend Component / Default · ← AR-6. Delivered its ONE bespoke `@vida/core` piece — the **backlink / entity-link resolver** (`services/search/backlink-resolver.ts`: read-only `getBacklinksTo`/`getLinksFrom`/`resolveLink` over AR-6 `entity_links`, soft-delete-aware, index-hitting; `createBacklinkResolver(db, deviceId)`). Chosen as the `#`-order head (the reconciled routing rule; `--next` greedily said UX-3). `⊞≥2` pinned at its turn (DF-11) resolved — grounded in the plan — to just this one: the other named pieces are homed elsewhere IN the plan → **graph-prep** = AR-6 `ViewEngine`/`ViewProviderRegistry` seam + per-module providers (M1.1) + `@vida/ui` neural-graph (UI-2 #28); **export serializers** = UI-3 (#29 "block editor + serializers", `@vida/editor`, ADR-001 §8); **search (FTS5)** = DB-8 (#60 stream). Double-gated: plan critique REVISE→4 fixed (flat-file→`services/search/` dir per ADR-018 §3.2; `and(...)!`; soft-delete wording; notes/ boundary); post-impl critique SHIP + 2 hardening tests (partial-exclusion, revive). @vida/core **177/177** · root typecheck **10/10** · zero regression. Also this session: reconciled the recurring `--next`-vs-`#`-order routing conflict (stale illegal AR-8←db-8 #14←#60 edge fixed; `## 🧭 Delivery Routing` rule installed; 5 stale doc glyphs refreshed; toolkit task filed for a general `--next` build-order tie-break). §XXIX `docs/core/backlinks/current-*`. Spec `docs/specs/infrastructure/ar-8-foundation-services/`. NOT committed (working tree on `main`). Unblocks HARD-3.) | 2026-08-05 | 1 (2026-08-04→05) |
 | **qa-1-e2e-harness-opfs** (LIF-103 → Done · M1.0 #8 · Add Backend Component / **new scenario `E2E Test Harness`** · ← AR-2. The repo's shared **browser-E2E foundation** (Playwright + wa-sqlite/OPFS worker), AR-2 verification as first consumer. Chosen by **strict `#` order** (Victor); profile switch Design System→Backend. Reframed scaffolding→**foundation** (Victor: nothing wasted, help following issues): reusable `db` backdoor fixture + OPFS-reset in `apps/web/e2e/fixtures.ts` (reused by UI-3 CRUD / MOD-* persistence / DB-10 seed — documented extension points), `harness.{html,ts}` backdoor (live ops only, never the deferred `values/batch` seam, never in `dist/`), `db-persistence.spec.ts`. **Zero throwaway** — item-2 persistence proven via a probe row in the DURABLE `app_state` table (not a synthetic table; not `schema_version`). Config at app root (`testDir ./e2e`) + `PW_EXECUTABLE_PATH` escape hatch + `e2e` turbo task + `ci.yml` job. Gates: 2 plan critiques + gate-2 critique + post-impl review (all independent); **live-smoke caught 2 bugs** (config-discovery collision; Vite dep-optimize reload race). Verified **2/2 green, twice, no flake** in a real Chromium worker (Brave on macOS 12). Zero regression (web typecheck ✓ · web 21/21 · core 169/169). **Closes AR-2 items 1 & 2 (7/7)**; Drizzle-write variant → UI-3/M1.1+. commit `4ee122d` → PR #3 merged to `main` (`3c7db3c`). Flagged 2 pre-existing CI reds on owners (`@vida/server` no-tests → P2-1; repo-wide Prettier drift → new Planned hygiene task). Spec `docs/specs/infrastructure/qa-1-e2e-harness-opfs/`.) | 2026-08-04 | 1 (2026-08-03→04) |
 | **ds-4-tamagui-config-dark-mode** (LIF-84 · M1.0-b Design System · ← DS-2/DS-3 · reconstructed #19. `packages/ui/src/tamagui.config.ts` composes the generated outputs into `createTamagui` (createTokens + 2× createFont [role keys + `$true` default, guards the passthrough trap] + light/dark themes + createAnimations) + `provider.tsx` (`UIProvider`/`useVidaTheme`) + ambient `tamagui.d.ts` augmentation (avoids the `typeof config` TS2742 cycle under `declaration:true`). **First unit to COMPOSE the tokens** — crossed DS-1's ⊥ DS-4 standalone-typecheck boundary. **Animation driver = `@tamagui/animations-css`** per ADR-001 §9 (CSS-on-web + no-extra-dep; consumes motion.ts duration+easing losslessly). Gate: DS-* LITE (delivery-plan §3). Independent critique (read installed @tamagui/web types) REVISE→5 fixed (addThemeClassName=setting-not-prop · useThemeSetting→useVidaTheme · pinned switch mechanism · createFont `$true` render-assert · CSS-var reconciliation). ⚠ **Mid-build RN-driver drift triaged STRUCTURAL + corrected** (`/victor-triage`; I'd picked `@tamagui/animations-react-native` — not in docs for web, forced react-native-web violating ADR-001; diagnosis `docs/specs/fixes/ds-4-rn-driver-drift/`; memory [[dont-let-downstream-shape-reopen-an-adr]]). Also: core+driver pinned 2.6.2 (family align); jsx/DOM/react added (first JSX in @vida/ui); source-model guard scoped to `components/`. @vida/ui **30/30** · root typecheck **10/10** · imports at runtime with NO react-native-web. **Frontend Visual Gate PASS** (composed light｜dark theme surface). §XXIX: token-pipeline current-* deferrals resolved + `packages/ui/src/CLAUDE.md`. NOT committed — on `main` working tree; branch-first pending. Unblocks DS-5/UI-*/UX-*.) | 2026-08-03 | 1 (2026-08-03) |
 | **ds-3-motion-foundation** (LIF-83 · M1.0-b Design System · ← DS-2 · reconstructed #18. Motion foundation: `duration` (instant 0/fast 150/moderate 250/slow 400, unitless ms) + `easing` (out/in/inOut cubic-beziers + linear) primitives added as a **third aux consumer** — `AUX` factored `[...TYPOGRAPHY, 'shadow', ...MOTION]`, `vida/fonts` narrowed to typography (closed the fonts↔motion leak by construction), new `vida/motion` format → `motion.ts` (mirrors `fonts.ts`), index re-export, B11/B12. Values trace to `standards/motion.md §IX`. LITE gate: plan-critique REVISE→5 fixed (F2 AUX sweep · F8 positive css-vars test · F6 createAnimations UNKNOWN · F5 band-floor INTERP · F9 both sort layers); post-impl critique SHIP + 2 NITs (linear-type→`easing`; camelCase `--easing-inOut`→DS-4). Live-smoke caught a preview render bug (cubic-bezier commas → isShadow miscapture → 3 easings as invalid box-shadow; motion branch moved above shadow). @vida/ui 26/26 · root typecheck 10/10 · deterministic. **Frontend Visual Gate PASS** (2nd run; `instant` render fixed static-not-flicker per Victor; values standard-derived, NOT a provisional placeholder). §XXIX docs promoted (current-spec/current-business-rules B11/B12 + themes CLAUDE.md = B12 enforcement artifact). Merged + pushed to origin/main (`8f9cbe2`, --no-ff); branch deleted; re-verified green. LIF-83 → Done. Unblocks DS-4.) | 2026-08-03 | 1 (2026-08-03) |

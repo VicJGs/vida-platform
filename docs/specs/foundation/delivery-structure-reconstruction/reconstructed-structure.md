@@ -23,6 +23,9 @@
   - **`→` Blocks** = the issues this one unblocks (are waiting on it). `leaf` = blocks nothing.
   - **Profile** (fixed): **Backend**=Add Backend Component · **Design-Sys**=Design System · **Generic**=Generic Coding Session · **Foundation**=Project Foundation Setup.
   - **Status:** ✅ shipped(merged) · ◧ built+parked off-sequence (NOT merged) · ⏳ ready/next · ⏸ blocked · ◻ not-started · 〰 stream (authored incrementally at each consumer's build) · ⚠ UNDEFINED/EMERGING (scoping deliverable — define before build).
+    > **⚠ Glyphs are a point-in-time SNAPSHOT and may lag.** The authoritative live done-status and the
+    > *computed next head* are owned by `TASKS.md → ## 🧭 Delivery Routing` (walk `#` ascending; first not-done,
+    > non-`〰`, all-blockers-done issue). The `#` column (build ORDER) is stable and authoritative; the glyphs are not.
   - **DF** = **Structural Defect** — a flaw in the OLD structure (from the harvest's Defect Register, §3) that this reconstruction fixes.
   - **⊕agg** = the **all-module aggregators** {HARD-1, DB-10, DB-11, MIG-1, DB-5} — each depends on the FULL M1.1–M1.3 module set, so every `MOD-*` blocks them (written `→ …, ⊕agg` to avoid repeating five ids per module).
   - **`⊞N`** = an **Outcome-cell** marker (orthogonal to Status): the issue authors N independent substrates and is delivered in **N gated build-step increments** — one full §XXVI double-gate per substrate, in dependency order (the multi-substrate rule, `delivery-plan §2`; DF-11). Absent = single increment. Folds (Views→AR-6) and coupled multi-layer deliverables (DB-9) are NOT marked.
@@ -59,20 +62,20 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 5 | ✅AR-4 | Client runtime (state/routing/forms + worker DB binding) | `apps/web/src/{stores,routes,hooks,lib,db}` (001/020) | ← AR-1 | UI-3 | Generic | runtime boots; DB reachable main-thread |
 | 6 | ✅DB-6 | Repository (encrypt/decrypt seam) | `core/src/db/repository.ts` (002/016/017) | ← AR-2 | AR-5, AR-6, AR-9, MOD-notes, DB-10 | Backend | CRUD + co-transactional sync_queue |
 | 7 | ✅DB-7 | Migrations runner + app_state | `core/src/db/migrations/` (016/002) | ← AR-2 | DB-8, DB-10 | Backend | forward-only migrations at boot |
-| 8 | ⏳QA-1 | Playwright + OPFS E2E harness | `apps/web/e2e/` (AR-2 audit) | ← AR-2 | leaf | Backend | browser open/reopen/persist proven |
+| 8 | ✅QA-1 | Playwright + OPFS E2E harness | `apps/web/e2e/` (AR-2 audit) | ← AR-2 | leaf | Backend | browser open/reopen/persist proven |
 | 9 | 〰DB-3 | Stream-(i) substrate schema | `core/src/db/schema/<substrate>` (016 §3.5) | ← DB-1 | DB-4 | Backend | substrate tables at each substrate build |
 | 10 | 〰DB-4 | Stream-(ii) per-domain schema | `core/src/db/schema/<domain>` (016 §3.5) | ← DB-1, DB-3 | DB-8 | Backend | each module's tables at that module's build |
 | 11 | ✅AR-5 | Sessions base | `core/src/foundation/sessions` (004) | ← DB-6, DB-9 | AR-7, MOD-sessions | Backend | sessions spine + registry + effect enums |
 | 12 | ✅AR-6 | Spaces + tags/links + Views | `core/src/foundation/{spaces,views}` (006/007) | ← DB-6, DB-9 | AR-7, AR-8, MOD-notes, MOD-spaces, HARD-3 | Backend | spaces/tags/entity_links + view engine |
-| 13 | ⏳AR-7 | Capability + measurability + effect rail | `core/src/foundation/{capability,measurement,economy,effects}` (011/012/004) | ← AR-5, AR-6 | MOD-purposes, MOD-gamification, HARD-2, CAP-authoring | Backend | ⊞4 · capability registry + measurability + effects |
-| 14 | ⏳AR-8 | Foundation services (backlink/export/graph-prep) | `core/src/services/{search,export}` (002/001) | ← AR-6 | HARD-3 | Backend | ⊞≥2 (pin at AR-8's turn) · backlink/export/graph-prep (search sub-part → DB-8) |
-| 15 | ⏳AR-9 | Sync scaffolding (no-flush) | `core/src/sync` (003/017) | ← DB-6 | AR-9b | Backend | queue accrues writes; activation → M4 |
+| 13 | ✅AR-7 | Capability + measurability + effect rail | `core/src/foundation/{capability,measurement,economy,effects}` (011/012/004) | ← AR-5, AR-6 | MOD-purposes, MOD-gamification, HARD-2, CAP-authoring | Backend | ⊞4 · capability registry + measurability + effects |
+| 14 | ◻AR-8 | Foundation services (backlink/export/graph-prep) | `core/src/services/{search,export}` (002/001) | ← AR-6 | HARD-3 | Backend | ⊞≥2 (pin at AR-8's turn) · backlink/export/graph-prep (search sub-part → DB-8) |
+| 15 | ◻AR-9 | Sync scaffolding (no-flush) | `core/src/sync` (003/017) | ← DB-6 | AR-9b | Backend | queue accrues writes; activation → M4 |
 | 16 | ✅DS-1 | Token pipeline (Style Dictionary → CSS/Tamagui) | `packages/ui/src/themes` (001) | root | DS-2 | Design-Sys | design tokens emitted — **re-landed onto main 2026-08-03** (ab5966c; DF-6 resolved), LIF-81 Done; DS-2 now ready |
 | 17 | ✅DS-2 | Foundations (color/space/type scales) | `packages/ui/src/themes` | ← DS-1 | DS-3 | Design-Sys | **DONE 2026-08-03** (LIF-82) — real values + aux namespaces + dark overlay; ⚠ placeholder palette (not brand); @vida/ui 20/20; branch `ds-2-foundations` (715687b, not merged). DS-3 now ready |
-| 18 | ◻DS-3 | Motion foundation | `packages/ui/src/themes` | ← DS-2 | DS-4 | Design-Sys | motion tokens/primitives |
-| 19 | ◻DS-4 | Tamagui config + dark mode | `packages/ui/src` (001) | ← DS-3 | DS-5 | Design-Sys | themed Tamagui config |
+| 18 | ✅DS-3 | Motion foundation | `packages/ui/src/themes` | ← DS-2 | DS-4 | Design-Sys | motion tokens/primitives |
+| 19 | ✅DS-4 | Tamagui config + dark mode | `packages/ui/src` (001) | ← DS-3 | DS-5 | Design-Sys | themed Tamagui config |
 | 20 | ◻DS-5 | Primitive contracts | `packages/ui/src/components` | ← DS-4 | UI-1 | Design-Sys | primitive component contracts |
-| 21 | ◻UX-1 | Information architecture | `docs/core/architecture`, `apps/web/src` (001) | root | UX-2, UX-3, UX-4, UX-5 | Generic | IA + nav model |
+| 21 | ✅UX-1 | Information architecture | `docs/core/architecture`, `apps/web/src` (001) | root | UX-2, UX-3, UX-4, UX-5 | Generic | IA + nav model |
 | 22 | ◻UX-2 | Command bar + search | `apps/web/src` | ← UX-1 | leaf | Generic | command bar |
 | 23 | ◻UX-3 | Shell layout (responsive) | `apps/web/src` | ← UX-1 | UX-6, UI-4 | Generic | responsive shell layout |
 | 24 | ◻UX-4 | State conventions | `apps/web/src` | ← UX-1 | leaf | Generic | client-state conventions |
