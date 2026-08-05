@@ -33,13 +33,16 @@ Profile: Add Backend Component / Default
   the already-solved neural-graph mechanism — Victor caught this twice.)
 - Backlink resolver home = `services/search/` directory (ADR-018 §3.2 > the arch doc's flat-file path).
 
-## Open Questions
-- **⚠ Linear cleanup (verify next session):** `--sync` DID push LIF-79 → Done, but the tracker's relation sync is
-  **add-only** (`tracker_sync.py:526-533` `set_blocks`, no removal). The now-deleted `AR-8 ← db-8-fts5-search`
-  edge likely still exists as a `LIF-79 blocked-by LIF-70` relation in Linear — **check + remove manually.**
-  (I earlier claimed the tracker never writes relations — WRONG; corrected here.)
-- **Tracker gap:** `--sync` never retracts a Linear relation when its task-file edge is deleted → stale "blocked by"
-  edges accumulate. Fold into the toolkit task `add-declared-build-order-to-tracker` or file a sibling.
+## Linear state (RESOLVED / for next session)
+- **LIF-79 is NOT Done in Linear** and needs a manual flip → Done. Root cause: `--sync`'s `parse_tasks` globs
+  `.claude/tasks/*.md` **active-only** (`tracker_sync.py:73`, NOT `archive/`); I archived AR-8 **before** syncing,
+  so the sync never saw it → never pushed its Done status. Correct order is **set status → sync → archive**.
+  (`--next`/census correctly saw it done via the archived-node union at `:916` — the sync path lacks that.)
+- **The `AR-8 ← db-8` relation: Victor already deleted it manually.** (Corrected mid-session: the tracker DOES
+  write relations — `set_blocks` `:532` — but add-only, so it never retracted the deleted edge.)
+- **Two tracker gaps worth a toolkit task:** (1) `--sync` status push skips archived tasks → a task archived
+  before its final sync never reaches Done; (2) relation sync is add-only → deleted edges linger in Linear.
+  Fold into `add-declared-build-order-to-tracker` or a sibling.
 - Export serializers (UI-3) vs a thin `services/export/` orchestration — the split is noted but not yet designed;
   resolve when UI-3 lands.
 - Toolkit `buildOrder` tie-break (filed task `add-declared-build-order-to-tracker`) — needs its own gate.
