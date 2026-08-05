@@ -131,3 +131,6 @@ export * from './foundation/economy'
 
 // Service — backlink / entity-link resolver (AR-8 Increment 1 · reads AR-6 entity_links)
 export * from './services/search'
+
+// Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
+export * from './sync'
