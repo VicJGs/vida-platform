@@ -5,6 +5,8 @@
 # Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap.md → Phase 1.0 ② Architecture Layer
+# Profile: Add Backend Component
+# Scenario: Default (add-backend-component/scenarios/default.md)
 
 ## Goal
 Wire the offline sync **engine** scaffolding without activating it: the *reader/flush* side

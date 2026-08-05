@@ -128,3 +128,6 @@ export * from './foundation/measurement'
 
 // Foundation substrate — the points economy (AR-7 Increment 4 · ADR-012)
 export * from './foundation/economy'
+
+// Service — backlink / entity-link resolver (AR-8 Increment 1 · reads AR-6 entity_links)
+export * from './services/search'
