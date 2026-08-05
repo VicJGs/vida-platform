@@ -1,5 +1,5 @@
 # Task: ar-9-sync-scaffolding-noflush
-# Status: planned
+# Status: completed (2026-08-05)
 # Linear: LIF-80
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
