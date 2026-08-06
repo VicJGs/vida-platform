@@ -18,14 +18,24 @@
     "tokens:build": "node src/themes/build-tokens.mjs",
     "build": "pnpm tokens:build && tsc --build",
     "dev": "tsc --build --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.storybook.json",
     "test": "vitest run",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "storybook": "storybook dev -p 6006 --no-open",
+    "build-storybook": "storybook build",
+    "clean": "rm -rf dist *.tsbuildinfo storybook-static"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^9",
+    "@storybook/react-vite": "^9",
     "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "storybook": "^9",
     "style-dictionary": "^5.5.0",
     "typescript": "^5.7.0",
+    "vite": "^6.3.5",
     "vitest": "^3.2.1"
   },
   "dependencies": {

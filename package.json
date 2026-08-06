@@ -16,6 +16,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "check:frontend-source-model": "node tools/scripts/check-frontend-source-model.mjs",
     "preview:tokens": "node tools/scripts/render-token-preview.mjs",
+    "storybook": "pnpm --filter @vida/ui storybook",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
