@@ -43,13 +43,16 @@ graph→AR-6 Views+UI-2, export→UI-3, search→DB-8 — are homed elsewhere in
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-05) — AR-8 (#14, LIF-79) DONE. Next head = AR-9 (#15).**
-AR-8 closed grounded in the plan: its `⊞≥2` pin resolves to ONE bespoke `@vida/core` deliverable — the **backlink
-resolver** (`services/search/backlink-resolver.ts`, read-only over AR-6 `entity_links`; double-gated; core 177/177;
-root typecheck 10/10). The other three named pieces are homed elsewhere *in the plan*: graph-prep→AR-6 Views seam +
-UI-2 (#28), export serializers→UI-3 (#29 "block editor + serializers"), search→DB-8 (#60). Currency
-`docs/core/backlinks/current-*`. Spec `docs/specs/infrastructure/ar-8-foundation-services/`. **NEXT HEAD = AR-9
-`#15` (LIF-80)** — sync scaffolding (no-flush), ← DB-6 ✅, Add Backend Component.
+**▶ CURRENT (2026-08-05) — AR-9 (#15, LIF-80) DONE + DS-5 (#20, LIF-85) DELIVERED. Next head = UI-1 (#27).**
+Session shipped three units, all merged to `main` (`5a9e0f9`): **AR-9** (`#15`, LIF-80 → Done, PR #4) — no-flush sync
+stub skeleton in `core/src/sync/*` (seams throw `SyncNotActivated`); **F003** (PR #5) — DS-1 emitter fix so
+component sub-themes dark-resolve (`light.<k>`/`dark.<k>` per DS-1:113); **DS-5** (`#20`, LIF-85 → In Progress, PR #7)
+— 10 primitive contracts + the full `component.json` component-token set (refs into DS-2 semantics). DS-5 authors
+references + contracts, **no built components and no token Visual Gate** (that's UI-1's, per the render table).
+Note: `#16–19` (DS-1..DS-4) done; `#14` AR-8 done. **NEXT HEAD = UI-1 `#27` (LIF-86)** — Vida UI primitives, ← DS-5,
+Design System / Add-Frontend-Component: build the components against DS-5's contracts; carries the component **Visual
+Gate** (Storybook, 8 states) + registering the 9 new `light_/dark_<Comp>` sub-themes in `tamagui.config.ts` (fenced
+to UI-1 by DS-5). Contracts to implement: `docs/specs/components/ds-5-primitive-contracts/`.
 
 <details><summary>(prior) 2026-08-04 — QA-1 shipped + delivery-routing reconciled.</summary>
 

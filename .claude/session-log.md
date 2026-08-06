@@ -4261,3 +4261,13 @@ unblocks UI-1). LIF-84 → Done.
 ---
 ## 2026-08-05 — Profile switch: Add Backend Component → Design System (DS-5)
 After AR-9 (LIF-80) shipped + PR #4, moved to next `#`-order head **DS-5 primitive contracts** (LIF-85, #20, Design System). Profile switched Backend→Design System; standards quadrant reloaded (design·components·motion·engineering·process). Scenario: Default (design-system).
+
+
+---
+## 2026-08-05 — Session close (AR-9 + F003 + DS-5)
+Shipped 3 units, all merged to `main` (`5a9e0f9`): **AR-9** no-flush sync scaffolding (LIF-80 → Done, PR #4);
+**F003** DS-1 emitter fix so component sub-themes dark-resolve (PR #5); **DS-5** 10 primitive contracts +
+full `component.json` component-token set (LIF-85 → In Progress, PR #7). Doc-currency `afc89dc`.
+Triaged a DS-5 reasoning loop (token-ref vs token-value conflation → Visual-Gate flip-flop) — zero
+implementation blast radius, deliverables sound; memory + `docs/specs/fixes/ds-5-visual-gate-scope-misread/`.
+Full log: `.claude/sessions/2026-08-05-ds-5-primitive-contracts-1.md`. **Next head = UI-1 (#27, LIF-86).**
