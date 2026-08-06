@@ -4271,3 +4271,19 @@ full `component.json` component-token set (LIF-85 → In Progress, PR #7). Doc-c
 Triaged a DS-5 reasoning loop (token-ref vs token-value conflation → Visual-Gate flip-flop) — zero
 implementation blast radius, deliverables sound; memory + `docs/specs/fixes/ds-5-visual-gate-scope-misread/`.
 Full log: `.claude/sessions/2026-08-05-ds-5-primitive-contracts-1.md`. **Next head = UI-1 (#27, LIF-86).**
+
+
+---
+## 2026-08-06 — UI-1 (Vida UI primitives): U0 harness + U1 Button
+**Task:** ui-1-vida-ui-primitives (LIF-86, M1.0 #27, Design System). Per-component gate; 1 of 10 primitives done.
+**Completed:**
+- Routing: reconciled stale DS-5 glyph `◻`→`✅` in `reconstructed-structure.md:77` (commit `5794583`).
+- **U0 — Storybook standup** (`1e6b33f`): SB 9.1.20 + react-vite + addon-a11y in `packages/ui`; UIProvider decorator + light｜dark toolbar; `tsconfig.storybook.json`; process-shim `preview-head.html`. `/verify`+plan critique+real-browser verified. Fix doc `docs/specs/fixes/ui-1-storybook-slow-load/` (the "slow load" was a `process is not defined` CRASH, untamed Tamagui — not bundle size).
+- **U1 — Button** (`4f71e7e`, **Visual Gate PASS**): built to `ds-5-primitive-contracts/button.md` on Tamagui v2 — render:'button', sub-theme intent/size variants, focus ring, loading (focusable+aria-busy, spinner, width held), disabled, forwardRef, `ButtonProps` exported. + `button.test.tsx` (6 jsdom), `use-reduced-motion`, `internal/interaction-styles.ts`, `env.d.ts`. typecheck 2/2 · @vida/ui 37/37.
+**Decisions / lessons (carry to U2–U10):**
+- Harness = **Storybook** (docs already fixed it — I wrongly asked; Victor corrected).
+- **Never use Tamagui `group` on a content-hugging primitive** — it sets `container-type:inline-size` and collapses width. Use CSS descendant-hover (`internal/interaction-styles.ts`). [[tamagui-group-breaks-content-width]]
+- **Visual Gate = look at the render** (screenshot + measure box-vs-content), not just computed styles — caught 2 layout bugs (width collapse; loading dim) that typecheck/tests/attribute-probes passed clean over. [[measure-browser-bugs-dont-hypothesize]]
+- loading ≠ disabled (aria-busy, stay focusable); tokens for all sizes; `$padding` component token can't drive `paddingHorizontal`.
+**Not committed to main:** all on branch `ui-1-vida-ui-primitives` (3 commits: `5794583`, `1e6b33f`, `4f71e7e`), NOT merged.
+**Next session:** resume UI-1 at **U2 — Input** (`ds-5-primitive-contracts/input.md`) — has a real `error` state; reuse `light_/dark_Input` sub-theme + interaction-styles + jsdom setup. Then U3 Checkbox … U10 Toast · UF final gate + PR. Full log: `.claude/sessions/2026-08-06-ui-1-vida-ui-primitives-1.md`.

@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-06 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (Storybook harness) + U1 (Button) DONE + Visual-Gate PASS**; branch `ui-1-vida-ui-primitives` (3 commits, NOT merged). Next = **U2 Input**, then U3–U10 + UF final gate/PR. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
@@ -43,7 +44,22 @@ graph→AR-6 Views+UI-2, export→UI-3, search→DB-8 — are homed elsewhere in
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-05) — AR-9 (#15, LIF-80) DONE + DS-5 (#20, LIF-85) DELIVERED. Next head = UI-1 (#27).**
+**▶ CURRENT (2026-08-06) — UI-1 STARTED: U0 (Storybook harness) + U1 (Button) shipped, Visual-Gate PASS.**
+UI-1 (`#27`, LIF-86, Design System) is under way, gated per component on branch `ui-1-vida-ui-primitives` (3 commits,
+NOT merged): **U0** stood up the component Visual-Gate harness (Storybook 9.1.20 + react-vite + addon-a11y in
+`packages/ui`; UIProvider decorator + light｜dark toolbar; `tsconfig.storybook.json`; process-shim `preview-head.html`);
+**U1 Button** built to `ds-5-primitive-contracts/button.md` (render:'button', sub-theme intent/size variants, focus
+ring, loading/disabled, forwardRef, `ButtonProps`) + 6 jsdom tests + `internal/interaction-styles.ts` + `use-reduced-motion`.
+typecheck 2/2 · @vida/ui 37/37 · **Visual Gate PASS**. **Two lessons locked for U2–U10:** (1) never use Tamagui
+`group` on a content-hugging primitive (`container-type:inline-size` collapses width → CSS descendant-hover instead,
+[[tamagui-group-breaks-content-width]]); (2) the Visual Gate means *looking at the render* (screenshot + measure
+box-vs-content), which caught 2 layout bugs code-checks missed. **NEXT = U2 Input** (`input.md`; real `error` state;
+reuse `light_/dark_Input` sub-theme + interaction-styles + jsdom setup), then U3 Checkbox…U10 Toast · UF final gate + PR.
+Still-open (DS-2 brand-pass, not UI-1's): dark-mode overlay direction; filled-`danger` AA gap.
+
+<details><summary>(prior) 2026-08-05 — AR-9 + DS-5 shipped; UI-1 was next head.</summary>
+
+**▶ (prior) CURRENT (2026-08-05) — AR-9 (#15, LIF-80) DONE + DS-5 (#20, LIF-85) DELIVERED. Next head = UI-1 (#27).**
 Session shipped three units, all merged to `main` (`5a9e0f9`): **AR-9** (`#15`, LIF-80 → Done, PR #4) — no-flush sync
 stub skeleton in `core/src/sync/*` (seams throw `SyncNotActivated`); **F003** (PR #5) — DS-1 emitter fix so
 component sub-themes dark-resolve (`light.<k>`/`dark.<k>` per DS-1:113); **DS-5** (`#20`, LIF-85 → In Progress, PR #7)
@@ -53,6 +69,7 @@ Note: `#16–19` (DS-1..DS-4) done; `#14` AR-8 done. **NEXT HEAD = UI-1 `#27` (L
 Design System / Add-Frontend-Component: build the components against DS-5's contracts; carries the component **Visual
 Gate** (Storybook, 8 states) + registering the 9 new `light_/dark_<Comp>` sub-themes in `tamagui.config.ts` (fenced
 to UI-1 by DS-5). Contracts to implement: `docs/specs/components/ds-5-primitive-contracts/`.
+</details>
 
 <details><summary>(prior) 2026-08-04 — QA-1 shipped + delivery-routing reconciled.</summary>
 
