@@ -10,3 +10,9 @@ export { motion } from './themes/motion' // DS-3 motion tokens (typed data for D
 export { config, type VidaConfig } from './tamagui.config'
 export { UIProvider, useVidaTheme, type ThemeName, type UIProviderProps } from './provider'
 import './tamagui.d.ts' // side-effect: ship the TamaguiCustomConfig augmentation to consumers (B16)
+
+// UI-1 — primitives (built against the DS-5 contracts).
+export { Button, type ButtonProps } from './components/button'
+
+// Shared hooks.
+export { useReducedMotion } from './hooks/use-reduced-motion'

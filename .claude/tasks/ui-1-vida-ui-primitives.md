@@ -38,7 +38,13 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
       type-checked); process-shim (untamed-Tamagui `process is not defined` triage, ISOLATED).
       Verified real-browser: renders ~1.5s, card white↔navy on toggle, 0 pageerrors, 31/31, both
       typechecks green, build-storybook OK. Victor confirmed fast + toggle. Fix doc: docs/specs/fixes/ui-1-storybook-slow-load/.
-- [ ] U1 — Button
+- [x] U1 — Button — DONE 2026-08-06. `button.tsx` + `button.stories.tsx` + `button.test.tsx` (6 jsdom) +
+      `hooks/use-reduced-motion.ts` + `internal/interaction-styles.ts` + `env.d.ts`. /verify → plan critique
+      (REVISE: tag→render, group) → post-impl critique (REVISE: B1 a11y, token bypass, tests). **Visual Gate
+      caught 2 layout bugs** the code-checks missed: `group`→`container-type:inline-size` collapsed width
+      (→ CSS descendant-hover, [[tamagui-group-breaks-content-width]]); `aria-disabled`→disabledStyle dimmed
+      loading (→ manual dim). Real-browser verified: hugs content, hover overlay, loading solid+spinner,
+      disabled muted, both themes. typecheck 2/2 · 37/37 tests. **Visual Gate PASS.**
 - [ ] U2 — Input
 - [ ] U3 — Checkbox
 - [ ] U4 — Select
