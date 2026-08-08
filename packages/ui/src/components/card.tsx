@@ -31,7 +31,8 @@ const CardFrame = styled(View, {
   gap: '$12',
   borderWidth: 1,
   borderColor: '$border',
-  borderRadius: '$radius',
+  // radius.card (lg) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
+  borderRadius: '$lg',
   backgroundColor: '$background',
   variants: {
     // Padding drives the $space scale, NOT the `card.padding` sub-theme token — one token can't express three
@@ -70,7 +71,7 @@ const CardElevation = styled(View, {
   left: 0,
   right: 0,
   bottom: 0,
-  borderRadius: '$radius',
+  borderRadius: '$lg', // match the frame (radius.card) so the raised shadow follows the rounded shape
   pointerEvents: 'none',
 })
 

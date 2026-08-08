@@ -65,7 +65,8 @@ const SelectTrigger = styled(View, {
   backgroundColor: '$background',
   borderWidth: 1,
   borderColor: '$border',
-  borderRadius: '$radius',
+  // radius.control (md) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
+  borderRadius: '$md',
   cursor: 'pointer',
   // §VIII focus ring — the trigger IS the focusable element (unlike Input), so its own :focus-visible fires (Button precedent).
   focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: 2 },
@@ -384,7 +385,7 @@ const SelectInner = forwardRef<HTMLButtonElement, SelectProps>(function Select(
               backgroundColor="$panelBackground"
               borderWidth={1}
               borderColor="$border"
-              borderRadius="$radius"
+              borderRadius="$md"
               paddingVertical="$4"
               style={{
                 left: pos.left,

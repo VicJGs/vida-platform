@@ -23,7 +23,9 @@ const ButtonFrame = styled(View, {
   justifyContent: 'center',
   position: 'relative',
   borderWidth: 0,
-  borderRadius: '$radius',
+  // radius.control (md). Tamagui reads borderRadius from the RADIUS TOKEN SCALE, not the component sub-theme `radius`
+  // key — the sub-theme key is inert for dimension props (colors only). The DEF-U5-b space analogue. See CLAUDE.md.
+  borderRadius: '$md',
   cursor: 'pointer',
   userSelect: 'none',
   // §VIII focus ring — 2px solid $colorFocusRing, 2px offset, :focus-visible only (never suppressed).
@@ -209,7 +211,7 @@ export const Button = forwardRef<ComponentRef<typeof ButtonFrame>, ButtonProps>(
         left={0}
         right={0}
         bottom={0}
-        borderRadius="$radius"
+        borderRadius="$md"
         backgroundColor="$colorTextPrimary"
         opacity={0}
         pointerEvents="none"

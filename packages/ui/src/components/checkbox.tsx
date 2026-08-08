@@ -56,7 +56,8 @@ const CheckboxBox = styled(View, {
   justifyContent: 'center',
   borderWidth: 1,
   borderColor: '$border',
-  borderRadius: '$radius',
+  // radius.control (md) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
+  borderRadius: '$md',
   backgroundColor: 'transparent',
   overflow: 'hidden',
   variants: {

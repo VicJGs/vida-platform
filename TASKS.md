@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-08 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (harness) + U1 (Button) + U2 (Input) + U3 (Checkbox) + U4 (Select) + U5 (Card) + U6 (Tabs) + U7 (Menu) DONE + Visual-Gate PASS** (7/10); branch `ui-1-vida-ui-primitives` (NOT merged). Next = **U8 Dialog** (first overlay/organism), then U9 Popover · U10 Toast + UF final gate/PR. |
+| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-08 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0–U8 DONE + Visual-Gate PASS** (Button·Input·Checkbox·Select·Card·Tabs·Menu·**Dialog**) (8/10); @vida/ui **185/185**; branch `ui-1-vida-ui-primitives` (NOT merged). U8 gate caught + fixed a **DS-wide square-corners bug** (`borderRadius:'$radius'` inert → token scale `$md`/`$lg`, DEF-U8-h) + a Dialog body-collapse. Next = **U9 Popover** (3rd/last overlay before Toast), then U10 Toast + UF final gate/PR. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 

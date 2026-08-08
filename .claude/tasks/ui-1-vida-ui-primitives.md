@@ -153,7 +153,28 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
       first) → focus/refine layout effects must dep on `pos`/`entered` or the first `.focus()` no-ops
       ([[portal-open-focus-needs-a-mount-gated-effect-dep]] — carries to U8/U9). DEF-U7-a (danger token), DEF-U7-d
       (accessible-name source) flagged for DS.
-- [ ] U8 — Dialog
+- [x] U8 — Dialog — DONE 2026-08-08. `dialog.tsx` (+ `DialogProps`) + `dialog.stories.tsx` + `dialog.test.tsx`
+      (**25 jsdom**) + `internal/dialog-styles.ts`; registered `light_/dark_Dialog` in `tamagui.config.ts`; barrel.
+      First MODAL/overlay primitive: scrim + centered panel PORTALLED to a dedicated `<div data-vida-dialog-root>` under
+      `<Theme name="Dialog">`; fully controlled (no trigger slot). Focus **TRAP** (Tab/Shift+Tab cycle within; explicit
+      0/1/panel/boundary algo) + background `inert`/`aria-hidden` (excluded by node identity — `<Theme>` is a
+      `display:contents` span) + focus **return** to captured `document.activeElement` (guarded). Esc/backdrop close when
+      `dismissible` (default); both inert when false (destructive-confirm, DEF-U8-f + dev-warn). Motion = mount-triggered
+      CSS **keyframe** with a VISIBLE resting base (fails safe visible, not the Menu `.is-open` transition). Portal root =
+      lazy `useState` init → panel in the first commit (avoids the two-commit focus trap). §XXVI double-gate: Gate-1
+      independent critique REVISE (2 blockers [inert-hits-own-`<Theme>`-span; rAF reveal → permanent-invisible risk] + 4
+      material + 3 minor) → all fixed → Approval 1; Gate-2 /preflight PASSED + 2nd critique REVISE (portal-root lazy-init
+      contradiction; 2 test-plan corrections) → fixed → Approval 2. **Visual Gate PASS in real Brave (Victor, both
+      themes)** — panel 12px/centered, scrim 0.5, focus-first, trap (5 tabs held), inert bg, Esc/backdrop, non-dismissible
+      ignores both, long-content scrolls w/ pinned header+footer, B12 clean (0 violations). **The gate caught 2 bugs
+      typecheck+185-tests+6 prior reviews missed:** (1) **DS-WIDE square corners** — `borderRadius:'$radius'` (sub-theme
+      key) is inert for dimension props on ALL 8 primitives → 0px; root-fixed to the token scale (`$md` control / `$lg`
+      card), DEF-U8-h; (2) Dialog **body collapse** — `flex={1}` (grow:1/basis:0%)+minHeight:0 shrank the body to 0px and
+      clipped children → `flexShrink:1`/minHeight:0. typecheck 2/2 · @vida/ui **185/185** · build + build-storybook ✓ ·
+      root 10/10. Spec: `ui-1-vida-ui-primitives/u8-dialog.md`. DEFs flagged: U8-a…h. Lesson:
+      [[injected-css-loses-to-tamagui-variants]] family — Tamagui reads the theme for COLOR props only; dimension props
+      (radius/space) must reference the token scale ([[portal-open-focus-needs-a-mount-gated-effect-dep]] did NOT bite —
+      lazy-init keeps Dialog single-commit).
 - [ ] U9 — Popover
 - [ ] U10 — Toast
 - [ ] UF — final consolidated gate sweep + version/changelog + §XXIX currency + PR

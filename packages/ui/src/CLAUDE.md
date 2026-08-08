@@ -53,7 +53,23 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   empty → a disabled "No actions" `menuitem`. **⚠ Portal open commits TWICE** (pos null first → panel unrendered, then
   seeded) — the roving-focus + refine layout effects MUST dep on `pos`/`entered` or the first `.focus()` no-ops
   ([[portal-open-focus-needs-a-mount-gated-effect-dep]]; carries to Dialog/Popover). Accepts `aria-label`/`aria-labelledby`
-  for the menu name (DEF-U7-d — contract silent). Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
+  for the menu name (DEF-U7-d — contract silent).
+  **Dialog** is the first MODAL primitive (overlay/organism tier): a scrim + centered panel PORTALLED to a dedicated
+  `<div data-vida-dialog-root>` body child, re-wrapped in `<Theme name="Dialog">`. Fully controlled (`open`/
+  `onOpenChange`, no trigger slot). Unlike Select/Menu (floating-but-non-modal): a real focus **TRAP** (Tab/Shift+Tab
+  cycle within the panel — explicit 0/1/panel/boundary algorithm), the background body siblings are `inert`+`aria-hidden`
+  (excluded from the pass **by node identity**, since `<Theme>` renders a `display:contents` span indistinguishable by
+  tag from the app root), and focus **returns to whatever was focused before open** (captured `document.activeElement`,
+  guarded restore with `document.contains` + body fallback — Dialog owns no trigger ref). `role="dialog"`+`aria-modal`+
+  labelledby(title)+describedby(only when `description`). Esc + backdrop pointerdown close when `dismissible` (default);
+  both inert when `dismissible={false}` (destructive-confirm — a deliberate §XIV-Esc deviation, DEF-U8-f + dev-warn when
+  no focusable action). Motion = a mount-triggered CSS **keyframe** (scrim opacity, panel opacity+scale/lift) with a
+  **visible resting base** so a missed animation fails safe visible (NOT the Menu `.is-open` transition). Portal root is
+  a **lazy `useState` init** (exists during first render → panel in the first commit → focus finds it; not the two-commit
+  trap). No `loading` prop (consumer-composed, DEF-U8-b). ⚠ **Body layout:** the scrollable body is `flexShrink:1 +
+  minHeight:0` (sizes to content, scrolls only when the panel hits maxHeight) — **NOT `flex={1}`** (grow:1/basis:0% +
+  minHeight:0 collapses to 0 height in a content-height panel and clips all children; header/footer keep RN's default
+  `flexShrink:0`). Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
   timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
@@ -63,7 +79,9 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   `motion.ts`), `tabs-styles.ts` (indicator transform-only transition gated on `data-ready`; panel enter-fade
   keyframe; hover label-strengthen; reduced-motion `@media` — reading `motion.ts`), `menu-styles.ts` (panel enter
   opacity + translate from the trigger edge, sign by `data-side`, transform-origin set inline; reduced-motion `@media`
-  — reading `motion.ts`; enter-motion ONLY, the item highlight is a Tamagui variant). **Rule:** a PROP-driven state (e.g. a
+  — reading `motion.ts`; enter-motion ONLY, the item highlight is a Tamagui variant), `dialog-styles.ts` (scrim + panel
+  ENTER via mount-triggered `@keyframes` with a visible resting base — fails safe visible; transform/opacity ONLY;
+  reduced-motion `@media` — reading `motion.ts`). **Rule:** a PROP-driven state (e.g. a
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
   state the styled component can't see.
@@ -80,10 +98,18 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   persistence are the APP's (UX-3/UI-4); DS-4 ships the config + provider + hook only.
 - **CSS-var reconciliation (resolved):** Tamagui's compiled web CSS vars are authoritative at runtime; the design.md
   `variables.css` is a parallel documentation / Figma-projection artifact, not wired into the app.
+- **⚠ Dimension props read the TOKEN SCALE, not the sub-theme (DEF-U8-h — DS-wide, fixed at U8):** Tamagui resolves a
+  `$name` on a **dimension** prop (`borderRadius`/`space`/`size`) against that prop's **token scale** (radius = `sm/md/
+  lg/xl/full`), and against the **theme only for COLOR props**. So a component sub-theme key like `light_Card.radius`
+  is **inert for `borderRadius`** — `borderRadius:'$radius'` resolved to **0px on every primitive** (square corners,
+  latent U1→U7, caught by the U8 Visual Gate). Reference the **primitive radius token** the semantic points to instead:
+  `radius.control → '$md'` (Button/Input/Checkbox/Select/Menu) · `radius.card → '$lg'` (Card/Dialog/Popover/Toast). This
+  is the radius analogue of the space lesson (Card `padding` uses `$8/$12/$24`, not the `card.padding` sub-theme key,
+  DEF-U5-b). The three-layer component→semantic indirection is NOT expressible for dimensions through Tamagui theming.
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
-`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (160 tests).
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (185 tests).
 Token visual: `pnpm preview:tokens` → `themes/preview.html`. Component Visual Gate: `pnpm storybook` (or
 `build-storybook`) — the decorator paints the theme page surface ($colorSurfacePrimary: white light / navy dark) so
 dark mode is reviewable (a bare-on-canvas label would otherwise be invisible on Storybook's white iframe).

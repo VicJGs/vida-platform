@@ -27,7 +27,8 @@ const InputFrame = styled(View, {
   backgroundColor: '$background',
   borderWidth: 1,
   borderColor: '$border',
-  borderRadius: '$radius',
+  // radius.control (md) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
+  borderRadius: '$md',
   cursor: 'text',
   // NB: the focus ring + border→focus are NOT a Tamagui pseudo-style here — they need `:focus-visible` on the inner
   // input reflected onto the frame, which only `.vida-input-frame:has(input:focus-visible)` expresses (input-styles.ts).

@@ -26,6 +26,8 @@ import {
   dark_Tabs,
   light_Menu,
   dark_Menu,
+  light_Dialog,
+  dark_Dialog,
 } from './themes/themes'
 import { fonts as f } from './themes/fonts'
 import { motion } from './themes/motion'
@@ -90,6 +92,8 @@ export const config = createTamagui({
     dark_Tabs,
     light_Menu,
     dark_Menu,
+    light_Dialog,
+    dark_Dialog,
   },
   fonts: { body: bodyFont, display: displayFont },
   animations,

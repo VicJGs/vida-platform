@@ -74,7 +74,8 @@ const MenuPanel = styled(View, {
   backgroundColor: '$background',
   borderWidth: 1,
   borderColor: '$border',
-  borderRadius: '$radius',
+  // radius.control (md) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
+  borderRadius: '$md',
   paddingVertical: '$4',
 })
 
@@ -88,7 +89,7 @@ const MenuItemRow = styled(View, {
   cursor: 'pointer',
   paddingVertical: '$8',
   paddingHorizontal: '$12',
-  borderRadius: '$radius',
+  borderRadius: '$md', // radius.control via the token scale (see CLAUDE.md — sub-theme radius key inert for dimensions)
   focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: -2 },
   hoverStyle: { backgroundColor: '$itemBackgroundHover' },
   variants: {
