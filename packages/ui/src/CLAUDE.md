@@ -32,14 +32,24 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   raised-shadow overlay child (B12); the resting shadow **self-cancels in dark** (its colour = the dark surface) so the
   border carries dark elevation (design §V) — no theme detection. `header`/`footer` are real `<header>`/`<footer>`
   (`render:'header'`/`'footer'`). No `loading` prop (the contract authors none — loading/empty are consumer-composed:
-  skeleton/empty-state as `children`; DEF-U5-f). Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
-  timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
+  skeleton/empty-state as `children`; DEF-U5-f). **Tabs** is the B12 showcase: a `role="tablist"` of `render:'button'`
+  `role="tab"`s (roving tabindex, AUTOMATIC activation, arrows WRAP + skip disabled, Home/End) + a selection
+  **indicator** — an absolute bar whose **transform** animates (250/inOut) while its **width/height resize is an
+  INSTANT inline-style swap** (the B12 asymmetry: animate transform, never left/width). Measured via the active tab's
+  `offsetLeft/Width` relative to the `position:relative` tablist; re-measured on current/orientation/items/**size** +
+  `ResizeObserver` + `document.fonts.ready` (all jsdom-guarded); a `ready` flag suppresses the first-mount slide.
+  Panels are **`<Tabs.Panel value>`** children (the ARIA contract forces a Tabs-owned `role="tabpanel"` wrapper —
+  DEF-U6-a); **only the active panel mounts** (keyed → enter-fade keyframe; no fade-out). `aria-controls` binds only
+  to the active tab so every referenced id exists (axe-clean). No `loading` prop (consumer-composed, DEF-U6-c).
+  Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/timeline/export-dialog) are pre-Tamagui, migrated by
+  UI-2/UI-3.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
   panel enter opacity/translateY + active-option highlight — all reading `motion.ts`, reduced-motion via `@media`),
   `card-styles.ts` (resting + raised elevation shadow → opacity-transition on hover/active, reading `shadow.ts` +
-  `motion.ts`). **Rule:** a PROP-driven state (e.g. a
+  `motion.ts`), `tabs-styles.ts` (indicator transform-only transition gated on `data-ready`; panel enter-fade
+  keyframe; hover label-strengthen; reduced-motion `@media` — reading `motion.ts`). **Rule:** a PROP-driven state (e.g. a
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
   state the styled component can't see.
@@ -59,7 +69,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
-`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (113 tests).
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (136 tests).
 Token visual: `pnpm preview:tokens` → `themes/preview.html`. Component Visual Gate: `pnpm storybook` (or
 `build-storybook`) — the decorator paints the theme page surface ($colorSurfacePrimary: white light / navy dark) so
 dark mode is reviewable (a bare-on-canvas label would otherwise be invisible on Storybook's white iframe).

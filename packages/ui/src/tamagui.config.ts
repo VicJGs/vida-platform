@@ -22,6 +22,8 @@ import {
   dark_Select,
   light_Card,
   dark_Card,
+  light_Tabs,
+  dark_Tabs,
 } from './themes/themes'
 import { fonts as f } from './themes/fonts'
 import { motion } from './themes/motion'
@@ -82,6 +84,8 @@ export const config = createTamagui({
     dark_Select,
     light_Card,
     dark_Card,
+    light_Tabs,
+    dark_Tabs,
   },
   fonts: { body: bodyFont, display: displayFont },
   animations,

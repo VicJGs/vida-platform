@@ -18,6 +18,7 @@ export { Input, type InputProps } from './components/input'
 export { Checkbox, type CheckboxProps } from './components/checkbox'
 export { Select, type SelectProps } from './components/select'
 export { Card, type CardProps } from './components/card'
+export { Tabs, TabsPanel, type TabsProps, type TabsPanelProps } from './components/tabs'
 
 // Shared hooks.
 export { useReducedMotion } from './hooks/use-reduced-motion'
