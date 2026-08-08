@@ -45,7 +45,17 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
       (→ CSS descendant-hover, [[tamagui-group-breaks-content-width]]); `aria-disabled`→disabledStyle dimmed
       loading (→ manual dim). Real-browser verified: hugs content, hover overlay, loading solid+spinner,
       disabled muted, both themes. typecheck 2/2 · 37/37 tests. **Visual Gate PASS.**
-- [ ] U2 — Input
+- [x] U2 — Input — DONE 2026-08-07. `input.tsx` (frame + inner `render:'input'`, leading/trailing slots, forwardRef→
+      HTMLInputElement) + `input.stories.tsx` + `input.test.tsx` (14 jsdom) + `internal/input-styles.ts`; registered
+      `light_/dark_Input` in `tamagui.config.ts`. /verify → Tamagui v2 docs grounding (context7): `render:'input'`,
+      web-standard event model, sub-theme-by-name. plan critique (REVISE: injected-color-var Blocker, spike, spinner,
+      fake-decision) → post-impl critique (SHIP, empirically verified precedence+placeholder). **Two doc-unsettled
+      items measured in-browser:** core `render:'input'` forwards controlled props+ref (PASS → no @tamagui/input dep);
+      `placeholderTextColor` NOT consumed on core → fixed via injected `::placeholder{color:var(--placeholder)}` (real
+      switching theme var). **Focus reconcile (Victor):** deliver `:focus-visible` AS DOCUMENTED (input.md:37,55 + §VIII)
+      — replaced a `:focus-within` draft with `.vida-input-frame:has(input:focus-visible)`; probe-verified vars resolve
+      on the inherited `.t_Input` scope, error precedence via `:not(.vida-input-invalid)` guard. typecheck 2/2 · @vida/ui
+      51/51 · root 10/10 · build + build-storybook ✓. **Visual Gate PASS.**
 - [ ] U3 — Checkbox
 - [ ] U4 — Select
 - [ ] U5 — Card

@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-06 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (Storybook harness) + U1 (Button) DONE + Visual-Gate PASS**; branch `ui-1-vida-ui-primitives` (3 commits, NOT merged). Next = **U2 Input**, then U3–U10 + UF final gate/PR. |
+| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-07 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (harness) + U1 (Button) + U2 (Input) DONE + Visual-Gate PASS**; branch `ui-1-vida-ui-primitives` (NOT merged). Next = **U3 Checkbox**, then U4–U10 + UF final gate/PR. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
@@ -44,17 +44,19 @@ graph→AR-6 Views+UI-2, export→UI-3, search→DB-8 — are homed elsewhere in
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-06) — UI-1 STARTED: U0 (Storybook harness) + U1 (Button) shipped, Visual-Gate PASS.**
-UI-1 (`#27`, LIF-86, Design System) is under way, gated per component on branch `ui-1-vida-ui-primitives` (3 commits,
-NOT merged): **U0** stood up the component Visual-Gate harness (Storybook 9.1.20 + react-vite + addon-a11y in
-`packages/ui`; UIProvider decorator + light｜dark toolbar; `tsconfig.storybook.json`; process-shim `preview-head.html`);
-**U1 Button** built to `ds-5-primitive-contracts/button.md` (render:'button', sub-theme intent/size variants, focus
-ring, loading/disabled, forwardRef, `ButtonProps`) + 6 jsdom tests + `internal/interaction-styles.ts` + `use-reduced-motion`.
-typecheck 2/2 · @vida/ui 37/37 · **Visual Gate PASS**. **Two lessons locked for U2–U10:** (1) never use Tamagui
-`group` on a content-hugging primitive (`container-type:inline-size` collapses width → CSS descendant-hover instead,
-[[tamagui-group-breaks-content-width]]); (2) the Visual Gate means *looking at the render* (screenshot + measure
-box-vs-content), which caught 2 layout bugs code-checks missed. **NEXT = U2 Input** (`input.md`; real `error` state;
-reuse `light_/dark_Input` sub-theme + interaction-styles + jsdom setup), then U3 Checkbox…U10 Toast · UF final gate + PR.
+**▶ CURRENT (2026-08-07) — UI-1: U0 + U1 (Button) + U2 (Input) shipped, Visual-Gate PASS.**
+UI-1 (`#27`, LIF-86, Design System) is under way, gated per component on branch `ui-1-vida-ui-primitives` (NOT merged):
+**U0** stood up the component Visual-Gate harness (Storybook 9.1.20 + react-vite + addon-a11y); **U1 Button** built to
+`button.md`; **U2 Input** built to `input.md` — frame + inner `render:'input'`, leading/trailing slots, all 8 states
+(error/empty live), `forwardRef`→HTMLInputElement, `InputProps`; registered `light_/dark_Input` in `tamagui.config.ts`.
+typecheck 2/2 · @vida/ui **51/51** · root 10/10 · build+build-storybook ✓ · **Visual Gate PASS**. **Lessons locked
+for U3–U10:** (1) never Tamagui `group` on a content-hugging primitive ([[tamagui-group-breaks-content-width]]);
+(2) the Visual Gate = *looking at the render*; (3) **the deliverable is what the DOCS specify — not my discretion**:
+`:focus-visible` was mandated (input.md:37,55 + §VIII), a `:focus-within` shortcut was wrong; delivered the documented
+selector via `.frame:has(input:focus-visible)`; (4) for uncertain Tamagui behavior, **measure in-browser + probe the
+compiled CSS** (`placeholderTextColor` isn't consumed on a core `render:'input'` → injected `::placeholder` reading the
+real `--placeholder` theme var). **NEXT = U3 Checkbox** (`checkbox.md`; `light_/dark_Checkbox` sub-theme: backgroundChecked
+/border/borderError/checkmark/radius), then U4 Select…U10 Toast · UF final gate + PR.
 Still-open (DS-2 brand-pass, not UI-1's): dark-mode overlay direction; filled-`danger` AA gap.
 
 <details><summary>(prior) 2026-08-05 — AR-9 + DS-5 shipped; UI-1 was next head.</summary>
