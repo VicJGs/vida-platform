@@ -1,4 +1,45 @@
 ---
+Date: 2026-08-07 — UI-1 U2 (Input) shipped, Visual-Gate PASS
+Task: ui-1-vida-ui-primitives (LIF-86) · Profile: Design System / Default · branch `ui-1-vida-ui-primitives`
+
+Completed:
+  - **U2 Input** built to `ds-5-primitive-contracts/input.md` (primitive 2/10). Bordered frame wrapping a real
+    `<input>` (`styled(View,{render:'input'})`, no `@tamagui/input` dep), leading/trailing slots, forwardRef→
+    HTMLInputElement, all 8 states (error/empty live), `InputProps` exported. Registered `light_/dark_Input`
+    sub-themes in `tamagui.config.ts`. Files: `input.tsx` · `input.stories.tsx` · `input.test.tsx` (14 jsdom) ·
+    `internal/input-styles.ts` · barrel export. commit `981b777` (NOT merged — UF ships the consolidated PR).
+  - **Gate ran full:** plan (reconcile doc `u2-input.md`) → independent plan critique (REVISE: injected-color-var
+    Blocker, escalate `render:'input'` forwarding to a spike, keep spinner local, delete a fake "error-text
+    ownership" decision) → grounded in Tamagui v2 docs (context7: `render:'input'`, web-standard event model,
+    sub-theme-by-name) → implement → post-impl code critique (SHIP; empirically verified invalid-over-focus
+    precedence + placeholder by rendering into jsdom).
+  - **Two doc-unsettled Tamagui behaviors MEASURED in-browser/probe** (not hypothesized): (1) a core
+    `styled(View,{render:'input'})` DOES forward controlled value/onChange/type/aria-* + `forwardRef` lands on the
+    DOM input → base = core, no new dep. (2) `placeholderTextColor` is NOT consumed on a core render:'input' (React
+    warns) → probed the compiled CSS, found the real switching var `--placeholder` (light neutral500/dark neutral400),
+    injected `.vida-input::placeholder{color:var(--placeholder)}`.
+  - Verify: typecheck both configs · @vida/ui **51/51** · root typecheck 10/10 · build + build-storybook green.
+    Button untouched (6 tests still green). **Visual Gate PASS** (Victor).
+
+Decisions:
+  - **Focus ring delivered AS DOCUMENTED, after a Victor correction.** I first shipped `focusWithinStyle`
+    (`:focus-within`) and asked Victor to "accept it as a reasoned deviation." He corrected the framing: the
+    deliverable is what the docs specify (input.md:37,55 + components §VIII:155 = `:focus-visible`, pointer-
+    suppressed), not my discretion. Re-delivered via `.vida-input-frame:has(input:focus-visible)` (the documented
+    `:focus-visible` selector lifted to the frame; the ring can't sit on the never-focused frame otherwise).
+    Probe-verified the theme vars (`--colorFocusRing`/`--borderFocus`, switching) resolve on the frame's inherited
+    `.t_Input` scope; error precedence via a `:not(.vida-input-invalid)` guard. → memory
+    [[deliverable-is-the-doc-not-my-discretion]].
+
+Next session:
+  - **U3 — Checkbox** (`ds-5-primitive-contracts/checkbox.md`). `light_/dark_Checkbox` sub-theme already generated
+    (themes.ts: backgroundChecked · border · borderError · checkmark · radius) — register it in `tamagui.config.ts`.
+    Same per-component §XXVI double-gate + component Visual Gate. Reuse: input-styles.ts pattern, jsdom setup,
+    forwardRef + dev a11y-name-assert conventions.
+  - Branch `ui-1-vida-ui-primitives` NOT merged (4 commits: U0/U1/U2). UF (after U10) runs the final consolidated
+    gate sweep + §XXIX currency + the single PR.
+
+---
 Date: 2026-08-03 — PROFILE SWITCH + next-head reconciliation
 - **Profile switch: Design System → Add Backend Component.** CLAUDE.md has no `# Profile:` line → this
   session-log entry IS the persistence (per begin.md PROFILE CONFIRM switch protocol). Scenario: Default.
