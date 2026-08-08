@@ -17,7 +17,16 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   + `useVidaTheme` (a re-export alias of Tamagui `useTheme`, NOT next-theme's `useThemeSetting`).
 - `index.ts` — package barrel; re-exports the generated token data + `config`/`UIProvider`/`useVidaTheme` + a
   side-effect import of `tamagui.d.ts` (ships the augmentation to consumers).
-- `components/`, `hooks/`, `icons/` — **v1 stubs (mostly empty)**, not yet migrated to Tamagui. Real primitives = DS-5/UI-*.
+- `components/` — **UI-1 primitives** (built against the DS-5 contracts): `button.tsx`, `input.tsx`, `checkbox.tsx`
+  (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). Remaining v1 stubs (calendar/gallery/list/
+  neural-graph/pomodoro/timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
+- `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
+  (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
+  native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes). **Rule:** a PROP-driven state (e.g. a
+  danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
+  specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
+  state the styled component can't see.
+- `hooks/` — `use-reduced-motion.ts`. `icons/` — v1 stubs.
 
 ## Rules
 - **Animation driver = per ADR-001 §9, per-platform:** **web = `@tamagui/animations-css`** (CSS-on-web, no
@@ -33,5 +42,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
-`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (30 tests).
-Visual: `pnpm preview:tokens` → open `themes/preview.html` (incl. the DS-4 light｜dark theme-surface section).
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (68 tests).
+Token visual: `pnpm preview:tokens` → `themes/preview.html`. Component Visual Gate: `pnpm storybook` (or
+`build-storybook`) — the decorator paints the theme page surface ($colorSurfacePrimary: white light / navy dark) so
+dark mode is reviewable (a bare-on-canvas label would otherwise be invisible on Storybook's white iframe).

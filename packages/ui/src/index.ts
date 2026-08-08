@@ -14,6 +14,7 @@ import './tamagui.d.ts' // side-effect: ship the TamaguiCustomConfig augmentatio
 // UI-1 — primitives (built against the DS-5 contracts).
 export { Button, type ButtonProps } from './components/button'
 export { Input, type InputProps } from './components/input'
+export { Checkbox, type CheckboxProps } from './components/checkbox'
 
 // Shared hooks.
 export { useReducedMotion } from './hooks/use-reduced-motion'

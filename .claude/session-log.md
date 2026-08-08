@@ -4328,3 +4328,15 @@ Full log: `.claude/sessions/2026-08-05-ds-5-primitive-contracts-1.md`. **Next he
 - loading ≠ disabled (aria-busy, stay focusable); tokens for all sizes; `$padding` component token can't drive `paddingHorizontal`.
 **Not committed to main:** all on branch `ui-1-vida-ui-primitives` (3 commits: `5794583`, `1e6b33f`, `4f71e7e`), NOT merged.
 **Next session:** resume UI-1 at **U2 — Input** (`ds-5-primitive-contracts/input.md`) — has a real `error` state; reuse `light_/dark_Input` sub-theme + interaction-styles + jsdom setup. Then U3 Checkbox … U10 Toast · UF final gate + PR. Full log: `.claude/sessions/2026-08-06-ui-1-vida-ui-primitives-1.md`.
+
+
+---
+## 2026-08-07 — UI-1 U3 Checkbox (3/10 atomic tier complete)
+**Task:** ui-1-vida-ui-primitives (LIF-86, M1.0 #27, Design System). Full §XXVI double-gate + component Visual Gate.
+**Shipped (Visual Gate PASS, Victor confirmed):** `checkbox.tsx` + `checkbox.stories.tsx` + `checkbox.test.tsx` (17 jsdom) + `internal/checkbox-styles.ts`; registered `light_/dark_Checkbox` in `tamagui.config.ts`; barrel export; `.storybook/preview.tsx` now paints the theme page surface. typecheck 2/2 · @vida/ui **68/68** · build + build-storybook ✓ · root 10/10.
+**Mechanism:** real `<label>` (`render:'label'`, verified in DOM) wrapping a styled box + an `opacity:0` native `<input type=checkbox>`. The whole state machine is CSS off the input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes via `:has` (zero re-render on toggle, perf budget); React only sets the `.indeterminate` DOM property (layout effect + callback-merged ref) + explicit `aria-checked="mixed"`.
+**Gate story (grounding):** independent critique returned REVISE (3 blockers: §VII union, merged-ref mechanism, `<label>` host). I drafted a discriminated union → **Victor challenged the grounding** ("show it's in the docs"). Reconciled to the **flat contract API verbatim** (the union was my discretion; contract.md:11-25 is authoritative), flagged the contract-vs-`_index.md §2`(§VII) inconsistency as **DEF-U3-a** and the missing box-size token as **DEF-U3-b** (dp 16/20/24 `[INTERP: 4pt grid]`). Tamagui `render:'label'` verified via context7.
+**Visual Gate caught 3 bugs typecheck + 68 jsdom passed clean over:** (1) box missing `.vida-checkbox-box` class → injected rules no-op'd; (2) danger border via injected CSS **lost the specificity race** vs Tamagui's atomic classes → moved to a Tamagui `invalid` **variant** [[injected-css-loses-to-tamagui-variants]]; (3) Storybook canvas stayed white in dark mode → dark label invisible → decorator paints `$colorSurfacePrimary`.
+**Lessons/memory:** [[injected-css-loses-to-tamagui-variants]] (new); [[deliverable-is-the-doc-not-my-discretion]] (extended — critique ≠ authority to rewrite the authored contract); [[measure-browser-bugs-dont-hypothesize]] (gate caught 3).
+**Observation for DS:** `radius.control` reads round on a 16px box (provisional palette — DS-2 value review, not U3).
+**Branch `ui-1-vida-ui-primitives` (NOT merged).** Next = **U4 Select** (first molecular; reuse `light_/dark_Select` sub-theme). Spec: `docs/specs/components/ui-1-vida-ui-primitives/u3-checkbox.md`.

@@ -9,7 +9,16 @@
 import { createFont, createTamagui } from '@tamagui/core'
 import { createAnimations } from '@tamagui/animations-css'
 import { tokens } from './themes/tokens'
-import { light, dark, light_Button, dark_Button, light_Input, dark_Input } from './themes/themes'
+import {
+  light,
+  dark,
+  light_Button,
+  dark_Button,
+  light_Input,
+  dark_Input,
+  light_Checkbox,
+  dark_Checkbox,
+} from './themes/themes'
 import { fonts as f } from './themes/fonts'
 import { motion } from './themes/motion'
 
@@ -48,7 +57,16 @@ const animations = createAnimations({
 
 export const config = createTamagui({
   tokens,
-  themes: { light, dark, light_Button, dark_Button, light_Input, dark_Input },
+  themes: {
+    light,
+    dark,
+    light_Button,
+    dark_Button,
+    light_Input,
+    dark_Input,
+    light_Checkbox,
+    dark_Checkbox,
+  },
   fonts: { body: bodyFont, display: displayFont },
   animations,
   // Vite SPA (non-SSR). addThemeClassName default is already 'html' (theme class on <html> for CSS-var styling).

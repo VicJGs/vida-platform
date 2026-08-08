@@ -56,7 +56,25 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
       — replaced a `:focus-within` draft with `.vida-input-frame:has(input:focus-visible)`; probe-verified vars resolve
       on the inherited `.t_Input` scope, error precedence via `:not(.vida-input-invalid)` guard. typecheck 2/2 · @vida/ui
       51/51 · root 10/10 · build + build-storybook ✓. **Visual Gate PASS.**
-- [ ] U3 — Checkbox
+- [x] U3 — Checkbox — DONE 2026-08-07. `checkbox.tsx` (real <label> via render:'label' → box + opacity:0 native
+      <input type=checkbox>; CSS-driven state off `:checked`/`:indeterminate`/`:focus-visible` via `:has`;
+      `.indeterminate` DOM property set in a layout effect w/ callback-merged ref; explicit `aria-checked="mixed"`) +
+      `checkbox.stories.tsx` + `checkbox.test.tsx` (17 jsdom) + `internal/checkbox-styles.ts`; registered
+      `light_/dark_Checkbox`; `.storybook/preview.tsx` paints the theme canvas. §XXVI double-gate: plan critique
+      (REVISE→3 blockers: §VII union, merged-ref, <label> host) → Victor grounding challenge → RECONCILED to the
+      **flat contract API** (union was my discretion; contract is authoritative) + defects flagged. typecheck 2/2 ·
+      @vida/ui 68/68 · **Visual Gate PASS** (Victor confirmed). Spec: ui-1-vida-ui-primitives/u3-checkbox.md.
+      **Decisions/lessons (carry to U4–U10):**
+      - **Prop-driven state (e.g. `invalid` danger border) → Tamagui `variant`, NOT injected CSS** — injected rules
+        lose the specificity race vs Tamagui's own atomic border classes. [[injected-css-loses-to-tamagui-variants]]
+      - **Deliver the contract's authored API verbatim; don't rewrite it for a standard** — flag the contract-vs-§VII
+        inconsistency as a DS defect (DEF-U3-a), don't silently union it. [[deliverable-is-the-doc-not-my-discretion]]
+      - Native `<input type=checkbox>` + CSS pseudo-classes = the whole state machine, zero re-render on toggle;
+        only `.indeterminate` (a DOM property) needs React (layout effect + merged ref).
+      - Visual Gate caught a missing className (rules no-op'd) + the injected-border loss + a dark-canvas harness gap
+        that typecheck + 68 jsdom tests all passed clean over. [[measure-browser-bugs-dont-hypothesize]]
+      - Defects for DS: DEF-U3-a (§VII union vs flat contract), DEF-U3-b (no checkbox box-size token → dp 16/20/24);
+        observation: `radius.control` reads round on a 16px box (DS-2 value review, provisional palette).
 - [ ] U4 — Select
 - [ ] U5 — Card
 - [ ] U6 — Tabs

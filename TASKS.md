@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-07 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (harness) + U1 (Button) + U2 (Input) DONE + Visual-Gate PASS**; branch `ui-1-vida-ui-primitives` (NOT merged). Next = **U3 Checkbox**, then U4–U10 + UF final gate/PR. |
+| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-07 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (harness) + U1 (Button) + U2 (Input) + U3 (Checkbox) DONE + Visual-Gate PASS** (3/10); branch `ui-1-vida-ui-primitives` (NOT merged). Next = **U4 Select** (first molecular), then U5–U10 + UF final gate/PR. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
