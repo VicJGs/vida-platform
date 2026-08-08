@@ -21,17 +21,25 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - `index.ts` — package barrel; re-exports the generated token data + `config`/`UIProvider`/`useVidaTheme` + a
   side-effect import of `tamagui.d.ts` (ships the augmentation to consumers).
 - `components/` — **UI-1 primitives** (built against the DS-5 contracts): `button.tsx`, `input.tsx`, `checkbox.tsx`,
-  `select.tsx` (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). **Select** is the first molecular +
-  first floating primitive: a `<button role="combobox">` trigger + a listbox panel PORTALLED to `document.body`
-  (react-dom `createPortal`, `zIndex.dropdown`) re-wrapped in `<Theme name="Select">` (the portal detaches the
-  `name:'Select'` sub-theme scope; the base light/dark theme still crosses via `<html>`). Focus STAYS on the trigger,
-  highlight via `aria-activedescendant` (so close returns focus for free); positioned with a SINGLE `top` (Tamagui
-  doesn't clear a stale inline `top`, so top+bottom squished the panel). Remaining v1 stubs (calendar/gallery/list/
-  neural-graph/pomodoro/timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
+  `select.tsx`, `card.tsx` (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). **Select** is the first
+  molecular + first floating primitive: a `<button role="combobox">` trigger + a listbox panel PORTALLED to
+  `document.body` (react-dom `createPortal`, `zIndex.dropdown`) re-wrapped in `<Theme name="Select">` (the portal
+  detaches the `name:'Select'` sub-theme scope; the base light/dark theme still crosses via `<html>`). Focus STAYS on
+  the trigger, highlight via `aria-activedescendant` (so close returns focus for free); positioned with a SINGLE `top`
+  (Tamagui doesn't clear a stale inline `top`, so top+bottom squished the panel). **Card** is a static container — a
+  `<div>` (`role="group"`, or `role="button"` + hand-rolled Enter/keydown/Space-keyup when `interactive`; NEVER a
+  native `<button>`, which can't legally contain the focusable `actions`/`footer`). Elevation = the OPACITY of a
+  raised-shadow overlay child (B12); the resting shadow **self-cancels in dark** (its colour = the dark surface) so the
+  border carries dark elevation (design §V) — no theme detection. `header`/`footer` are real `<header>`/`<footer>`
+  (`render:'header'`/`'footer'`). No `loading` prop (the contract authors none — loading/empty are consumer-composed:
+  skeleton/empty-state as `children`; DEF-U5-f). Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
+  timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
-  panel enter opacity/translateY + active-option highlight — all reading `motion.ts`, reduced-motion via `@media`). **Rule:** a PROP-driven state (e.g. a
+  panel enter opacity/translateY + active-option highlight — all reading `motion.ts`, reduced-motion via `@media`),
+  `card-styles.ts` (resting + raised elevation shadow → opacity-transition on hover/active, reading `shadow.ts` +
+  `motion.ts`). **Rule:** a PROP-driven state (e.g. a
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
   state the styled component can't see.
@@ -51,7 +59,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
-`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (92 tests).
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (113 tests).
 Token visual: `pnpm preview:tokens` → `themes/preview.html`. Component Visual Gate: `pnpm storybook` (or
 `build-storybook`) — the decorator paints the theme page surface ($colorSurfacePrimary: white light / navy dark) so
 dark mode is reviewable (a bare-on-canvas label would otherwise be invisible on Storybook's white iframe).

@@ -20,6 +20,8 @@ import {
   dark_Checkbox,
   light_Select,
   dark_Select,
+  light_Card,
+  dark_Card,
 } from './themes/themes'
 import { fonts as f } from './themes/fonts'
 import { motion } from './themes/motion'
@@ -78,6 +80,8 @@ export const config = createTamagui({
     dark_Checkbox,
     light_Select,
     dark_Select,
+    light_Card,
+    dark_Card,
   },
   fonts: { body: bodyFont, display: displayFont },
   animations,

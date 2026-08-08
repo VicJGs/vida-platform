@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-08 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (harness) + U1 (Button) + U2 (Input) + U3 (Checkbox) + U4 (Select) DONE + Visual-Gate PASS** (4/10); branch `ui-1-vida-ui-primitives` (NOT merged). Next = **U5 Card** (2nd molecular), then U6–U10 + UF final gate/PR. |
+| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-08 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (harness) + U1 (Button) + U2 (Input) + U3 (Checkbox) + U4 (Select) + U5 (Card) DONE + Visual-Gate PASS** (5/10); branch `ui-1-vida-ui-primitives` (NOT merged). Next = **U6 Tabs** (3rd molecular), then U7 Menu · U8–U10 overlays + UF final gate/PR. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
@@ -44,7 +44,22 @@ graph→AR-6 Views+UI-2, export→UI-3, search→DB-8 — are homed elsewhere in
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-08) — UI-1: U0 + U1 Button + U2 Input + U3 Checkbox + U4 Select shipped, Visual-Gate PASS (4/10).**
+**▶ CURRENT (2026-08-08) — UI-1: U0 + U1 Button + U2 Input + U3 Checkbox + U4 Select + U5 Card shipped, Visual-Gate PASS (5/10).**
+U5 Card (2nd molecular — a STATIC container, no floating layer) built to `card.md`: a `<div>` (`role="group"` |
+`role="button"` + hand-rolled Enter-keydown/Space-keyup when `interactive`; NEVER a native `<button>` — it can't
+legally contain the focusable `actions`/`footer`). **Slot composition** (header `<header>` + actions top-right · body ·
+footer `<footer>`) + **elevation = opacity of a raised-shadow overlay (B12)**; the resting shadow **self-cancels in
+dark** (its colour = the dark surface) so the border carries dark elevation (design §V) — no theme detection. §XXVI
+double-gate: independent critique **REVISE (2 blockers + 4 material)** all fixed → Approval 1; preflight PASSED
+(currency-doc gap folded in) + gate-2 SHIP → Approval 2. **B1**: `var(--shadow-*)` never resolved (shadow was AUX/
+CSS-only/unwired) → added typed **`shadow.ts`** (`vida/shadow` format, the `motion.ts` precedent, DEF-U5-e). **§XXVIII
+deviation:** contract authors **no `loading` prop** → shipped verbatim, loading/empty are consumer-composed (DEF-U5-f).
+typecheck 2/2 · @vida/ui **113/113** · build + build-storybook ✓ · root 10/10. **NEXT = U6 Tabs** (`tabs.md`; 3rd
+molecular), then U7 Menu · U8–U10 overlays · UF final gate + PR. Branch `ui-1-vida-ui-primitives` (NOT merged).
+
+<details><summary>(prior) 2026-08-08 — UI-1: U0–U4 (…Select) shipped, Visual-Gate PASS (4/10).</summary>
+
+**▶ (prior) CURRENT (2026-08-08) — UI-1: U0 + U1 Button + U2 Input + U3 Checkbox + U4 Select shipped, Visual-Gate PASS (4/10).**
 U4 Select (first molecular + first floating primitive) built to `select.md` on `@tamagui/core` (hand-build-on-core vs
 Tamagui-kit was a drift Victor corrected — [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]]):
 `<button role=combobox>` + listbox panel portalled to `document.body` (react-dom `createPortal`, `zIndex.dropdown`,
@@ -54,9 +69,8 @@ double-gate (independent critique REVISE→12 findings fixed → Approval 1; pre
 caught 2 bugs** typecheck+92-tests missed: flip mixed top+bottom (Tamagui stale inline `top`) → single-`top`; text
 clipped to a 1.5px line box — **createFont fed lineHeight RATIOS as px**, latent on ALL primitives, fixed ratio→px in
 `tamagui.config.ts` (**DEF-U4-e**, [[tamagui-createfont-lineheight-ratio-is-px]]), Button/Checkbox re-verified.
-typecheck 2/2 · @vida/ui **92/92** · build + build-storybook ✓ · root 10/10. **NEXT = U5 Card** (`card.md`; 2nd
-molecular — slot composition header/footer, `light_/dark_Card`), then U6 Tabs · U7 Menu · U8–U10 overlays · UF final
-gate + PR. Branch `ui-1-vida-ui-primitives` (NOT merged).
+typecheck 2/2 · @vida/ui **92/92** · build + build-storybook ✓ · root 10/10.
+</details>
 
 <details><summary>(prior) 2026-08-07 — UI-1: U0 + U1 (Button) + U2 (Input) + U3 (Checkbox) shipped, Visual-Gate PASS.</summary>
 

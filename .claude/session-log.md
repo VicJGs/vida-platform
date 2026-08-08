@@ -1,4 +1,54 @@
 ---
+Date: 2026-08-08 — UI-1 U5 (Card) shipped, Visual-Gate PASS (5/10)
+Task: ui-1-vida-ui-primitives (LIF-86) · Profile: Design System / Default · branch `ui-1-vida-ui-primitives`
+
+Completed:
+  - **U5 Card** built to `ds-5-primitive-contracts/card.md` (primitive 5/10, 2nd molecular — a STATIC container: no
+    floating layer, no portal, no ARIA widget state machine). A `<div>` host: `role="group"` by default, or
+    `role="button"` + hand-rolled Enter(keydown)/Space(keyup, `e.repeat`-guarded) when `interactive` — **never a native
+    `<button>`** (contract ref = HTMLDivElement AND a button can't legally contain the focusable `actions`/`footer`).
+    **Slot composition:** header (`render:'header'`) + actions (top-right in the header bar) · body (`children`) ·
+    footer (`render:'footer'`). Nested action/footer events `stopPropagation` so they don't fire the card's `onPress`.
+    Files: `card.tsx` · `card.stories.tsx` · `card.test.tsx` (16 jsdom) · `internal/card-styles.ts` · `themes/shadow.ts`
+    (new GENERATED) + `build-tokens.mjs` `vida/shadow` format + `build-tokens.test.ts` (+5) · `tamagui.config.ts`
+    (`light_/dark_Card`) · `index.ts` barrel. §XXIX currency: `current-business-rules.md` B9/B11 + `current-spec.md` +
+    both layer CLAUDE.md. NOT merged (UF ships the consolidated PR).
+  - **Elevation mechanism (the hard part):** elevation = the OPACITY of a raised-shadow overlay child (B12 — only
+    opacity animates, the shadow is static on the overlay). The resting shadow **self-cancels in dark**: `shadow.resting`
+    is `rgba(15,23,42,.06)` and `15,23,42` = `neutral900` = the dark surface, so a dark shadow on a dark surface renders
+    nothing → the 1px border carries dark elevation (design §V "dark = border-based"). No theme detection, no hook.
+  - **Gate ran full (§XXVI double-gate + §XXVII path surfaced):** plan (`u5-card.md`) → independent plan critique
+    **REVISE (2 blockers + 4 material)** → all fixed (Rev 2) → Approval 1 → preflight PASSED (folded in a §XXIX
+    currency-doc gap) + gate-2 SHIP → Approval 2 → implement. Every Tamagui API grounded in shipped code + official
+    docs (context7: `render:'<tag>'` = a semantic HTML element).
+  - Verify: typecheck 2/2 · @vida/ui **113/113** · tokens:build ✓ · build + build-storybook ✓ · root 10/10; siblings
+    unregressed. **Visual Gate PASS** (Victor, both themes — dark elevation reads via border, not a visible shadow).
+
+Decisions / lessons:
+  - **B1 (critique blocker) — a `[FACT:]` tag was really an assumption.** I wrote elevation reads `var(--shadow-*)`
+    "like `--placeholder`" — but `--placeholder` is a Tamagui-emitted *runtime theme var* while `--shadow-*` lived
+    only in an unwired `variables.css` (shadow is AUX / CSS-only / no typed export). Fix: add a typed `shadow.ts` via a
+    new `vida/shadow` build-tokens format — the exact `motion.ts` precedent (an AUX namespace earns a typed export on
+    its first TS consumer). The independent critic greps for the var; a self-review trusts its own tag.
+    [[independent-critique-catches-overclaims]]
+  - **§XXVIII deviation at impl — a state matrix outran the API.** §VIII mandates a `loading` state, but the contract's
+    `CardProps` authors **no `loading` prop**. Shipped the flat API verbatim; loading (and empty) are consumer-composed
+    — a skeleton / empty-state passed as `children` (+ `aria-busy` pass-through), exactly like the contract's `empty`
+    row. A container can't render a content-shaped skeleton anyway. Flagged DEF-U5-f. [[deliverable-is-the-doc-not-my-discretion]]
+  - **B2 — no `onPress`-on-a-div precedent** (Select uses `onClick`) → native `onClick` for pointer + hand-rolled keys.
+  - **The best fix to a fragile mechanism is deleting it:** the critique's M2 (guess the `html.t_dark` class for dark
+    elevation) dissolved once I grounded in token VALUES — the shadow self-cancels, so no class detection is needed.
+  - Defects for DS: DEF-U5-b (`card.padding` single token vs 3 padding options — used `$space` scale), DEF-U5-c (flat
+    API vs §VII discriminated-union — shipped flat + dev-warn), DEF-U5-d (`role=button` with focusable descendants —
+    axe/SR verified), DEF-U5-e (`shadow.ts` typed export added), DEF-U5-f (no `loading` prop).
+
+Next session:
+  - **U6 — Tabs** (`ds-5-primitive-contracts/tabs.md`; 3rd molecular). WAI-ARIA tab/tablist/tabpanel + roving
+    tabindex + arrow-key nav; `light_/dark_Tabs` sub-theme. Same per-component §XXVI double-gate + Visual Gate. Reuse:
+    the `render:'<tag>'` idiom, injected-styles pattern, dev a11y-name warn, forwardRef, jsdom conventions.
+  - Branch `ui-1-vida-ui-primitives` NOT merged (U0–U5). UF (after U10) runs the final consolidated gate + PR.
+
+---
 Date: 2026-08-07 — UI-1 U2 (Input) shipped, Visual-Gate PASS
 Task: ui-1-vida-ui-primitives (LIF-86) · Profile: Design System / Default · branch `ui-1-vida-ui-primitives`
 

@@ -24,14 +24,16 @@ packages/ui/src/themes/
 ├── tokens.ts              # GENERATED — Tamagui createTokens() (5 categories + `true` defaults; aux excluded)
 ├── themes.ts              # GENERATED — light + PARALLEL DARK base + light_<Comp>/dark_<Comp> sub-themes
 ├── fonts.ts               # GENERATED — typography tokens as typed data for DS-4 createFont (aux not in createTokens)
-└── motion.ts              # GENERATED (DS-3) — duration/easing tokens as typed data for DS-4 createAnimations (B11)
+├── motion.ts              # GENERATED (DS-3) — duration/easing tokens as typed data for DS-4 createAnimations (B11)
+└── shadow.ts              # GENERATED (UI-1) — box-shadow literals as typed data for injected component CSS (Card, DEF-U5-e)
 ```
-`tokens.ts`/`themes.ts`/`fonts.ts`/`motion.ts` are re-exported from `packages/ui/src/index.ts`. `[FACT: index.ts]`
+`tokens.ts`/`themes.ts`/`fonts.ts`/`motion.ts`/`shadow.ts` are re-exported from `packages/ui/src/index.ts`. `[FACT: index.ts]`
 
 **Aux namespaces (DS-2 + DS-3).** Namespaces that are NOT `createTokens` categories are **skipped** in
 `tokens.ts`/`themes.ts` (incl. aux-referencing semantics) so they never trip B3, and routed by destination:
 `fontFamily/fontSize/fontWeight/lineHeight/letterSpacing` → `variables.css` + `fonts.ts` (typography);
-`shadow` → `variables.css` only; **`duration/easing` → `variables.css` + `motion.ts` (motion, DS-3, B11).** `AUX` is
+`shadow` → `variables.css` + `shadow.ts` (box-shadow literals; typed export added by UI-1 Card, DEF-U5-e);
+**`duration/easing` → `variables.css` + `motion.ts` (motion, DS-3, B11).** `AUX` is
 factored `[...TYPOGRAPHY, 'shadow', ...MOTION]` so each emitter filters by its own sub-list (leak-proof).
 `createFont`/`createAnimations`/`createTamagui` = DS-4. `[FACT: build-tokens.mjs AUX/TYPOGRAPHY/MOTION/isAuxPath]`
 

@@ -270,6 +270,27 @@ StyleDictionary.registerFormat({
   },
 })
 
+// Shadow tokens as typed plain data (shadow is aux → NOT a createTokens category, B9). Emitted as a typed export the
+// same way motion.ts is, because a TS consumer now needs the values: UI-1 Card injects box-shadow via CSS (elevation
+// = opacity of a raised-shadow overlay, B12) and reads these literals — pipeline stays the single source (no drift).
+// First shadow consumer (DEF-U5-e); shadow is a single namespace, so this flattens `shadow.<level>` (no `ns` key).
+StyleDictionary.registerFormat({
+  name: 'vida/shadow',
+  format: ({ dictionary }) => {
+    const entries = {}
+    for (const t of [...dictionary.allTokens].sort((a, b) => byPathSort(a.path.join('.'), b.path.join('.')))) {
+      if (rankOfFile(t.filePath) !== 0) continue // primitive layer only
+      const [ns, ...rest] = t.path
+      if (ns !== 'shadow') continue // shadow aux only
+      entries[camel(rest)] = t.value
+    }
+    const body = Object.entries(entries)
+      .map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`)
+      .join('\n')
+    return `${BANNER}\n// Shadow tokens as typed data — elevation box-shadow literals for injected component CSS (shadow ⊄ createTokens categories, B9). First consumer: UI-1 Card (DEF-U5-e).\nexport const shadow = {\n${body}\n} as const\n`
+  },
+})
+
 // ── build ─────────────────────────────────────────────────────────────────────────────────────────────
 export async function build() {
   validate() // fail loud BEFORE Style Dictionary runs (B2)
@@ -286,6 +307,7 @@ export async function build() {
           { destination: 'themes.ts', format: 'vida/tamagui-themes' },
           { destination: 'fonts.ts', format: 'vida/fonts' },
           { destination: 'motion.ts', format: 'vida/motion' },
+          { destination: 'shadow.ts', format: 'vida/shadow' },
         ],
       },
     },
@@ -295,7 +317,7 @@ export async function build() {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   build()
-    .then(() => console.log('✓ tokens:build — variables.css, tokens.ts, themes.ts, fonts.ts, motion.ts written'))
+    .then(() => console.log('✓ tokens:build — variables.css, tokens.ts, themes.ts, fonts.ts, motion.ts, shadow.ts written'))
     .catch((err) => {
       console.error(`✗ tokens:build failed: ${err.message}`)
       process.exit(1)

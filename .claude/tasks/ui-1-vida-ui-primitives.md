@@ -90,7 +90,31 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
       build + build-storybook ✓ · root 10/10. **Visual Gate PASS** (Victor confirmed, both themes). Spec:
       `ui-1-vida-ui-primitives/u4-select.md`. **Lessons:** [[tamagui-createfont-lineheight-ratio-is-px]];
       [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]] (hand-build-on-core vs kit was a drift).
-- [ ] U5 — Card
+- [x] U5 — Card — DONE 2026-08-08. `card.tsx` (static container; a `<div>` — `role="group"` | `role="button"` +
+      hand-rolled Enter-keydown/Space-keyup when `interactive`; NEVER a native `<button>`, which can't legally contain
+      the focusable `actions`/`footer`) + `card.stories.tsx` + `card.test.tsx` (16 jsdom) + `internal/card-styles.ts`;
+      registered `light_/dark_Card`. **Slot composition** (header `<header>` + actions top-right · body · footer
+      `<footer>` via `render:'<tag>'`) + **elevation = opacity of a raised-shadow overlay (B12)**; the resting shadow
+      **self-cancels in dark** (its colour = the dark surface) so the border carries dark elevation (design §V) — no
+      theme detection, no hook. §XXVI double-gate: independent plan critique **REVISE (2 blockers + 4 material)** — B1
+      `var(--shadow-*)` never resolves (shadow was AUX/CSS-only/unwired) → added typed **`shadow.ts`** (`vida/shadow`
+      format, the `motion.ts` precedent, DEF-U5-e); B2 `onPress`-on-div → native `onClick` (Select precedent); M1/M2
+      dark elevation dissolved via the self-cancel; M3 disabled drops the interactive class; M4 Space keyup/`e.repeat`
+      → all fixed → Approval 1; preflight PASSED (folded in the §XXIX currency-doc gap) + gate-2 SHIP → Approval 2.
+      **§XXVIII deviation at impl:** contract authors **no `loading` prop** → shipped verbatim, loading/empty are
+      consumer-composed (skeleton/empty-state as `children`), **DEF-U5-f**. typecheck 2/2 · @vida/ui **113/113** ·
+      tokens:build ✓ · build + build-storybook ✓ · root 10/10. **Visual Gate PASS** (Victor, both themes — dark
+      elevation reads via border). Spec: `ui-1-vida-ui-primitives/u5-card.md`. **Lessons (carry to U6–U10):**
+      - **Ground [FACT:] tags in token VALUES / emitted output, not names** — `--shadow-*` *looked* like the runtime
+        `--placeholder` but was only in an unwired `variables.css`. An independent critic greps; a self-review trusts
+        its own tag. [[independent-critique-catches-overclaims]]
+      - **A state matrix can outrun the API** — §VIII demanded `loading`, the contract's `CardProps` had no prop for
+        it. Deliver the API verbatim, render the state by composition (like `empty`), flag the gap for DS (DEF-U5-f).
+        [[deliverable-is-the-doc-not-my-discretion]]
+      - **Dark elevation for free:** a shadow whose colour IS the dark surface renders nothing on dark → the border
+        carries it (design §V). The best fix to a fragile theme-class guess was deleting the mechanism.
+      - **AUX namespace → typed export on first TS consumer** (`shadow.ts` mirrors `motion.ts`); pipeline stays the
+        single source, no literals duplicated in the component.
 - [ ] U6 — Tabs
 - [ ] U7 — Menu
 - [ ] U8 — Dialog

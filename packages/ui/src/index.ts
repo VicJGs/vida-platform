@@ -5,6 +5,7 @@ export { tokens } from './themes/tokens'
 export * from './themes/themes'
 export { fonts } from './themes/fonts' // DS-2 typography tokens (typed data for DS-4 createFont)
 export { motion } from './themes/motion' // DS-3 motion tokens (typed data for DS-4 createAnimations)
+export { shadow } from './themes/shadow' // elevation box-shadow literals (typed data for injected component CSS; UI-1 Card)
 
 // DS-4 — Tamagui config + theme-switch mechanism (composes the generated outputs above).
 export { config, type VidaConfig } from './tamagui.config'
@@ -16,6 +17,7 @@ export { Button, type ButtonProps } from './components/button'
 export { Input, type InputProps } from './components/input'
 export { Checkbox, type CheckboxProps } from './components/checkbox'
 export { Select, type SelectProps } from './components/select'
+export { Card, type CardProps } from './components/card'
 
 // Shared hooks.
 export { useReducedMotion } from './hooks/use-reduced-motion'
