@@ -75,7 +75,21 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
         that typecheck + 68 jsdom tests all passed clean over. [[measure-browser-bugs-dont-hypothesize]]
       - Defects for DS: DEF-U3-a (§VII union vs flat contract), DEF-U3-b (no checkbox box-size token → dp 16/20/24);
         observation: `radius.control` reads round on a 16px box (DS-2 value review, provisional palette).
-- [ ] U4 — Select
+- [x] U4 — Select — DONE 2026-08-08. `select.tsx` (first molecular + first FLOATING primitive: `<button role=combobox>`
+      trigger + listbox panel PORTALLED to `document.body` via react-dom `createPortal`, `zIndex.dropdown`, re-wrapped in
+      `<Theme name="Select">` so the sub-theme crosses the portal) + `select.stories.tsx` + `select.test.tsx` (24 jsdom) +
+      `internal/select-styles.ts`; registered `light_/dark_Select`. WAI-ARIA 1.2 select-only combobox — focus stays on
+      the trigger, highlight via `aria-activedescendant` (close returns focus for free), full keyboard + type-ahead
+      (closed=commit-in-place), no-wrap, hand-rolled fixed positioning (flip-up + h-clamp, close-on-capture-scroll).
+      §XXVI double-gate: independent critique REVISE→**12 findings all fixed** (ARIA-1.2 pattern, `useId` ids, closed
+      type-ahead, portal-theme wrapper, capture-scroll, scrollIntoView…) → Approval 1; preflight PASSED + gate-2 SHIP →
+      Approval 2. **Visual Gate caught 2 bugs** typecheck+92-tests were blind to: (1) flip mixed top+bottom (Tamagui
+      doesn't clear stale inline `top`) → single-`top` positioning; (2) **text clipped to a 1.5px line box** — root =
+      `createFont` fed lineHeight RATIOS as px (latent on ALL primitives); fixed ratio→px at the Tamagui boundary
+      (`tamagui.config.ts`, **DEF-U4-e**), Button/Checkbox re-verified unregressed. typecheck 2/2 · @vida/ui **92/92** ·
+      build + build-storybook ✓ · root 10/10. **Visual Gate PASS** (Victor confirmed, both themes). Spec:
+      `ui-1-vida-ui-primitives/u4-select.md`. **Lessons:** [[tamagui-createfont-lineheight-ratio-is-px]];
+      [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]] (hand-build-on-core vs kit was a drift).
 - [ ] U5 — Card
 - [ ] U6 — Tabs
 - [ ] U7 — Menu

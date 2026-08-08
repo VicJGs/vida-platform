@@ -15,6 +15,7 @@ import './tamagui.d.ts' // side-effect: ship the TamaguiCustomConfig augmentatio
 export { Button, type ButtonProps } from './components/button'
 export { Input, type InputProps } from './components/input'
 export { Checkbox, type CheckboxProps } from './components/checkbox'
+export { Select, type SelectProps } from './components/select'
 
 // Shared hooks.
 export { useReducedMotion } from './hooks/use-reduced-motion'

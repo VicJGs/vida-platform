@@ -10,19 +10,28 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - `tamagui.config.ts` — **DS-4.** `createTamagui` composing the generated outputs (B13, no hand-authored values):
   `createTokens` + two `createFont` (body/display) + light/dark themes + `createAnimations`. Exports `config` +
   `type VidaConfig`. **`createFont` needs a `$true` default** (fonts.ts keys by role, not `$1..$n` — an unstyled
-  `<Text>` resolves `size.$true`).
+  `<Text>` resolves `size.$true`). **`createFont` `lineHeight` must be ABSOLUTE px**, but `fonts.ts` stores design.md
+  RATIOS (§III "1.5 leading") — passing a ratio yields `line-height:1.5px` (a 1.5px line box that clips glyphs under
+  `overflow:hidden`). So `lineScale` converts `round(fontSize×lineHeight)` at this Tamagui boundary; the pipeline stays
+  ratio-pure (DEF-U4-e, U4). [[tamagui-createfont-lineheight-ratio-is-px]]
 - `tamagui.d.ts` — the `declare module '@tamagui/core'` augmentation (typed `$tokens`). **Ambient on purpose:** kept
   OUT of the value module so `typeof config` doesn't self-reference under `declaration:true` (TS2742/circularity).
 - `provider.tsx` — **DS-4.** `<UIProvider theme>` (→ `TamaguiProvider defaultTheme`; theme STATE = app Zustand, AR-4)
   + `useVidaTheme` (a re-export alias of Tamagui `useTheme`, NOT next-theme's `useThemeSetting`).
 - `index.ts` — package barrel; re-exports the generated token data + `config`/`UIProvider`/`useVidaTheme` + a
   side-effect import of `tamagui.d.ts` (ships the augmentation to consumers).
-- `components/` — **UI-1 primitives** (built against the DS-5 contracts): `button.tsx`, `input.tsx`, `checkbox.tsx`
-  (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). Remaining v1 stubs (calendar/gallery/list/
+- `components/` — **UI-1 primitives** (built against the DS-5 contracts): `button.tsx`, `input.tsx`, `checkbox.tsx`,
+  `select.tsx` (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). **Select** is the first molecular +
+  first floating primitive: a `<button role="combobox">` trigger + a listbox panel PORTALLED to `document.body`
+  (react-dom `createPortal`, `zIndex.dropdown`) re-wrapped in `<Theme name="Select">` (the portal detaches the
+  `name:'Select'` sub-theme scope; the base light/dark theme still crosses via `<html>`). Focus STAYS on the trigger,
+  highlight via `aria-activedescendant` (so close returns focus for free); positioned with a SINGLE `top` (Tamagui
+  doesn't clear a stale inline `top`, so top+bottom squished the panel). Remaining v1 stubs (calendar/gallery/list/
   neural-graph/pomodoro/timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
-  native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes). **Rule:** a PROP-driven state (e.g. a
+  native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
+  panel enter opacity/translateY + active-option highlight — all reading `motion.ts`, reduced-motion via `@media`). **Rule:** a PROP-driven state (e.g. a
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
   state the styled component can't see.
@@ -42,7 +51,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
-`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (68 tests).
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (92 tests).
 Token visual: `pnpm preview:tokens` → `themes/preview.html`. Component Visual Gate: `pnpm storybook` (or
 `build-storybook`) — the decorator paints the theme page surface ($colorSurfacePrimary: white light / navy dark) so
 dark mode is reviewable (a bare-on-canvas label would otherwise be invisible on Storybook's white iframe).

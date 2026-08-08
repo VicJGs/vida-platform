@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-07 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (harness) + U1 (Button) + U2 (Input) + U3 (Checkbox) DONE + Visual-Gate PASS** (3/10); branch `ui-1-vida-ui-primitives` (NOT merged). Next = **U4 Select** (first molecular), then U5–U10 + UF final gate/PR. |
+| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-08 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0 (harness) + U1 (Button) + U2 (Input) + U3 (Checkbox) + U4 (Select) DONE + Visual-Gate PASS** (4/10); branch `ui-1-vida-ui-primitives` (NOT merged). Next = **U5 Card** (2nd molecular), then U6–U10 + UF final gate/PR. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
@@ -44,7 +44,23 @@ graph→AR-6 Views+UI-2, export→UI-3, search→DB-8 — are homed elsewhere in
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-07) — UI-1: U0 + U1 (Button) + U2 (Input) shipped, Visual-Gate PASS.**
+**▶ CURRENT (2026-08-08) — UI-1: U0 + U1 Button + U2 Input + U3 Checkbox + U4 Select shipped, Visual-Gate PASS (4/10).**
+U4 Select (first molecular + first floating primitive) built to `select.md` on `@tamagui/core` (hand-build-on-core vs
+Tamagui-kit was a drift Victor corrected — [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]]):
+`<button role=combobox>` + listbox panel portalled to `document.body` (react-dom `createPortal`, `zIndex.dropdown`,
+re-wrapped `<Theme name="Select">` so the sub-theme crosses the portal); WAI-ARIA 1.2 select-only (focus stays on
+trigger via `aria-activedescendant`), full keyboard + type-ahead, flip-up + h-clamp, close-on-capture-scroll. §XXVI
+double-gate (independent critique REVISE→12 findings fixed → Approval 1; preflight PASSED → Approval 2). **Visual Gate
+caught 2 bugs** typecheck+92-tests missed: flip mixed top+bottom (Tamagui stale inline `top`) → single-`top`; text
+clipped to a 1.5px line box — **createFont fed lineHeight RATIOS as px**, latent on ALL primitives, fixed ratio→px in
+`tamagui.config.ts` (**DEF-U4-e**, [[tamagui-createfont-lineheight-ratio-is-px]]), Button/Checkbox re-verified.
+typecheck 2/2 · @vida/ui **92/92** · build + build-storybook ✓ · root 10/10. **NEXT = U5 Card** (`card.md`; 2nd
+molecular — slot composition header/footer, `light_/dark_Card`), then U6 Tabs · U7 Menu · U8–U10 overlays · UF final
+gate + PR. Branch `ui-1-vida-ui-primitives` (NOT merged).
+
+<details><summary>(prior) 2026-08-07 — UI-1: U0 + U1 (Button) + U2 (Input) + U3 (Checkbox) shipped, Visual-Gate PASS.</summary>
+
+**▶ (prior) CURRENT (2026-08-07) — UI-1: U0 + U1 (Button) + U2 (Input) shipped, Visual-Gate PASS.**
 UI-1 (`#27`, LIF-86, Design System) is under way, gated per component on branch `ui-1-vida-ui-primitives` (NOT merged):
 **U0** stood up the component Visual-Gate harness (Storybook 9.1.20 + react-vite + addon-a11y); **U1 Button** built to
 `button.md`; **U2 Input** built to `input.md` — frame + inner `render:'input'`, leading/trailing slots, all 8 states
@@ -58,6 +74,7 @@ compiled CSS** (`placeholderTextColor` isn't consumed on a core `render:'input'`
 real `--placeholder` theme var). **NEXT = U3 Checkbox** (`checkbox.md`; `light_/dark_Checkbox` sub-theme: backgroundChecked
 /border/borderError/checkmark/radius), then U4 Select…U10 Toast · UF final gate + PR.
 Still-open (DS-2 brand-pass, not UI-1's): dark-mode overlay direction; filled-`danger` AA gap.
+</details>
 
 <details><summary>(prior) 2026-08-05 — AR-9 + DS-5 shipped; UI-1 was next head.</summary>
 

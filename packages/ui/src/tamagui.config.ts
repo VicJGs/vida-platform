@@ -18,6 +18,8 @@ import {
   dark_Input,
   light_Checkbox,
   dark_Checkbox,
+  light_Select,
+  dark_Select,
 } from './themes/themes'
 import { fonts as f } from './themes/fonts'
 import { motion } from './themes/motion'
@@ -25,7 +27,15 @@ import { motion } from './themes/motion'
 // Two families over ONE shared role-keyed scale (they differ by `family`, not by scale). `true` = the default face
 // so an unstyled <Text> resolves a size/lineHeight (fonts.ts keys by role, not $1..$n — §1.1-D / B13).
 const sizeScale = { ...f.fontSize, true: f.fontSize.body }
-const lineScale = { ...f.lineHeight, true: f.lineHeight.body }
+// Tamagui createFont wants ABSOLUTE px line-heights; fonts.ts stores design.md RATIOS (§III "1.5 leading"). Passing a
+// ratio directly yields `line-height: 1.5px` — a 1.5px line box that clips glyphs under `overflow:hidden` (surfaced by
+// U4 Select's truncated option/value text; latent on every primitive, hidden only because glyphs overflowed a too-short
+// box). Convert ratio→px HERE, at the Tamagui boundary, so the token pipeline stays ratio-pure. [DEF-U4-e]
+const fsKeys = Object.keys(f.fontSize) as (keyof typeof f.fontSize)[]
+const lineScale: Record<string, number> = {
+  ...Object.fromEntries(fsKeys.map((k) => [k, Math.round(f.fontSize[k] * f.lineHeight[k])])),
+  true: Math.round(f.fontSize.body * f.lineHeight.body),
+}
 const weightScale = { ...f.fontWeight, true: f.fontWeight.regular }
 const trackScale = { ...f.letterSpacing, true: f.letterSpacing.normal }
 
@@ -66,6 +76,8 @@ export const config = createTamagui({
     dark_Input,
     light_Checkbox,
     dark_Checkbox,
+    light_Select,
+    dark_Select,
   },
   fonts: { body: bodyFont, display: displayFont },
   animations,
