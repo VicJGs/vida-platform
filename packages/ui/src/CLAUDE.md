@@ -41,15 +41,29 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Panels are **`<Tabs.Panel value>`** children (the ARIA contract forces a Tabs-owned `role="tabpanel"` wrapper —
   DEF-U6-a); **only the active panel mounts** (keyed → enter-fade keyframe; no fade-out). `aria-controls` binds only
   to the active tab so every referenced id exists (axe-clean). No `loading` prop (consumer-composed, DEF-U6-c).
-  Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/timeline/export-dialog) are pre-Tamagui, migrated by
-  UI-2/UI-3.
+  **Menu** is the second FLOATING primitive (reuses Select's portal + single-`top` positioning + dismiss handlers) but
+  the WAI-ARIA **menu-button** model: trigger `role="button"`+`aria-haspopup="menu"`+`aria-expanded`; a `role="menu"`
+  panel portalled to body under `<Theme name="Menu">`; items `role="menuitem"` with **ROVING DOM FOCUS** — only the
+  active item `tabIndex=0`, real `.focus()` moves down (NOT Select's `aria-activedescendant` — a combobox vs a menu),
+  Esc returns focus to the trigger. The `trigger` is a consumer SLOT wired via **`cloneElement`** (injects aria +
+  composed onClick/onKeyDown + a merged ref — React 19 `props.ref`). 4 placements (start/end align + vertical flip),
+  wrapping arrow nav, type-ahead (string labels). The item highlight is an **`active`-state variant** keyed to
+  activeIndex (NOT `:focus-visible` — unreliable for a *programmatically* focused element); **danger** is an `intent`
+  variant on the label `<Text>` (NOT the row `View` — a `<Text>` with its own colour doesn't inherit the parent's);
+  empty → a disabled "No actions" `menuitem`. **⚠ Portal open commits TWICE** (pos null first → panel unrendered, then
+  seeded) — the roving-focus + refine layout effects MUST dep on `pos`/`entered` or the first `.focus()` no-ops
+  ([[portal-open-focus-needs-a-mount-gated-effect-dep]]; carries to Dialog/Popover). Accepts `aria-label`/`aria-labelledby`
+  for the menu name (DEF-U7-d — contract silent). Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
+  timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
   panel enter opacity/translateY + active-option highlight — all reading `motion.ts`, reduced-motion via `@media`),
   `card-styles.ts` (resting + raised elevation shadow → opacity-transition on hover/active, reading `shadow.ts` +
   `motion.ts`), `tabs-styles.ts` (indicator transform-only transition gated on `data-ready`; panel enter-fade
-  keyframe; hover label-strengthen; reduced-motion `@media` — reading `motion.ts`). **Rule:** a PROP-driven state (e.g. a
+  keyframe; hover label-strengthen; reduced-motion `@media` — reading `motion.ts`), `menu-styles.ts` (panel enter
+  opacity + translate from the trigger edge, sign by `data-side`, transform-origin set inline; reduced-motion `@media`
+  — reading `motion.ts`; enter-motion ONLY, the item highlight is a Tamagui variant). **Rule:** a PROP-driven state (e.g. a
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
   state the styled component can't see.
@@ -69,7 +83,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
-`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (136 tests).
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (160 tests).
 Token visual: `pnpm preview:tokens` → `themes/preview.html`. Component Visual Gate: `pnpm storybook` (or
 `build-storybook`) — the decorator paints the theme page surface ($colorSurfacePrimary: white light / navy dark) so
 dark mode is reviewable (a bare-on-canvas label would otherwise be invisible on Storybook's white iframe).

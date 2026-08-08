@@ -133,7 +133,26 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
       @vida/ui **136/136** · build + build-storybook ✓ · root 10/10. Lessons: [[injected-css-loses-to-tamagui-variants]]
       (hover strengthen as injected `:hover` descendant, beats atomic class); the measure-in-browser gate is the ONLY
       evidence for transform-driven geometry ([[measure-browser-bugs-dont-hypothesize]]). Spec: `ui-1-vida-ui-primitives/u6-tabs.md`.
-- [ ] U7 — Menu
+- [x] U7 — Menu — DONE 2026-08-08. `menu.tsx` (+ `MenuItem`/`MenuProps`) + `menu.stories.tsx` + `menu.test.tsx`
+      (**24 jsdom**) + `internal/menu-styles.ts`; registered `light_/dark_Menu` in `tamagui.config.ts`; barrel
+      (`Menu`/`MenuProps`/`MenuItem`). Second FLOATING primitive (reuses U4 Select's portal + single-`top` positioning +
+      dismiss handlers) but the WAI-ARIA **menu-button** model — trigger role=button+aria-haspopup=menu+aria-expanded;
+      `role="menu"` panel portalled to body under `<Theme name="Menu">`; items `role="menuitem"` with **ROVING DOM
+      FOCUS** (only the active item tabIndex=0, real `.focus()`; NOT Select's `aria-activedescendant`), Esc returns
+      focus to the trigger. `trigger` is a consumer SLOT wired via **`cloneElement`** (aria + composed handlers + merged
+      ref — React 19 `props.ref`). 4 placements (start/end + flip), type-ahead (string labels), wrapping arrow nav.
+      Danger = an `intent` variant on the **label** `<Text>` (not the row). Empty = a disabled "No actions" menuitem.
+      §XXVI double-gate: **Gate 1** independent critique REVISE (1 blocker [danger colour on the wrong element] + 4
+      material [`:focus-visible` highlight racy → `active`-state variant; click-open didn't seed activeIndex; empty-row
+      aria-hidden axe risk; row layout omitted] + 3 minor) → all fixed (Rev 3) → Approval 1; preflight PASSED (1 fold:
+      trigger Enter/Space `preventDefault` vs native double-fire) + gate-2 SHIP → Approval 2. **Visual Gate PASS**
+      (measured in real Brave, both themes): B12 transform+opacity-only transition; danger red + distinct; roving
+      highlight on the active item; disabled skipped; Esc→trigger; bottom-end right-aligns; top-start opens up + flips;
+      empty row. typecheck 2/2 · @vida/ui **160/160** · build + build-storybook ✓ · root 10/10. **No pipeline touch.**
+      Spec: `ui-1-vida-ui-primitives/u7-menu.md` (§18). **Impl bug jsdom caught:** portal open commits TWICE (pos null
+      first) → focus/refine layout effects must dep on `pos`/`entered` or the first `.focus()` no-ops
+      ([[portal-open-focus-needs-a-mount-gated-effect-dep]] — carries to U8/U9). DEF-U7-a (danger token), DEF-U7-d
+      (accessible-name source) flagged for DS.
 - [ ] U8 — Dialog
 - [ ] U9 — Popover
 - [ ] U10 — Toast
