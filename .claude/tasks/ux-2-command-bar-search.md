@@ -3,7 +3,7 @@
 # Scenario: default
 # Spec: docs/specs/foundation/ux-2-command-bar-search/_index.md
 # Created: 2026-08-09
-# Status: in-progress
+# Status: done
 # Cluster: M1 — Whole Manual OS
 # Linear: LIF-91
 # Project: M1 — Whole Manual OS
