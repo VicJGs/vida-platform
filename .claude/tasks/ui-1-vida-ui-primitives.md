@@ -223,7 +223,21 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
       per-item timer/effect must dep only on stable per-item keys, not the record; **enforce a visible cap in the store
       (evict), not a render slice** (a slice kills exit animations). [[measure-browser-bugs-dont-hypothesize]] (gate
       re-targeted the measurement from panel→title to avoid a false dark-mode-text bug).
-- [ ] UF — final consolidated gate sweep + version/changelog + §XXIX currency + PR
+- [x] UF — DONE 2026-08-09. **Consolidated 4-gate sweep** (design·components·motion·engineering — 4 independent
+      adversarial audits across all 10 primitives): **all PASS**. Design: zero hardcoded colors, radius/spacing
+      consistent, dark mode a true parallel Theme. Components: all 10 deliver their contract API, props+types
+      exported (barrel complete), forwardRef on every interactive one, 8-state matrix covered/justified. Motion:
+      only transform/opacity animated, every animation has a reduced-motion path, all timing from `motion.ts`.
+      Engineering: focus/ARIA/listener-hygiene correct, shared helpers byte-identical + 1 Material (repo-wide
+      tsconfig, deferred) + 4 Minor (`!` comments). **In-scope fixes applied:** §XV justification comments on the 4
+      provably-safe non-null `!` (select · dialog×2 · toast-store); named `ToastAction` export (API consistency).
+      **Version:** @vida/ui 0.0.0→**0.1.0** (`UI_VERSION` + package.json) + `packages/ui/CHANGELOG.md`. **DEF register:**
+      `docs/specs/components/ui-1-vida-ui-primitives/DEF-register.md` (DEF-U3-a…U10-f + UF-1 → DS-5 owner). **Follow-up
+      filed:** `tsconfig-strict-index-access` (repo-wide `noUncheckedIndexedAccess`/`noImplicitReturns` §XV gap —
+      cascade-risk, its own gate, NOT folded in). typecheck 2/2 · @vida/ui **219/219** · build + build-storybook ✓ ·
+      root 10/10. Commits `0fcfb6b` (U10) + `4fa6fe5` (UF) on branch `ui-1-vida-ui-primitives`; **PR #8 ready to
+      merge** (direct merge-to-main denied by the safety classifier — Victor merges). Post-merge: `/task-complete` +
+      `--sync` (LIF-86→Done).
 
 ## Open questions
 - OQ-1 [RESOLVED via docs, 2026-08-06]: Visual Gate render mechanism = **Storybook**
