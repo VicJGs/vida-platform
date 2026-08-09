@@ -24,15 +24,18 @@
    1:1 to Figma modes. `[design.md §XI; build-tokens.mjs; vitest B7]`
 8. **[FACT] B8 — 4pt grid, `space.*` only (DS-2).** every primitive `space.*` is an integer multiple of 4; build
    fails loud otherwise. Radius (`full:9999`), size, zIndex, line-heights, aux are exempt. `[design.md §IV; checkLayers; vitest B8]`
-9. **[FACT] B9 — Aux-namespace routing (DS-2).** `fontFamily/fontSize/fontWeight/lineHeight/letterSpacing/shadow` are
-   NOT createTokens categories → CSS + `fonts.ts`, **skipped** in `tokens.ts`/`themes.ts` (incl. aux-referencing
-   semantics); never trip B3. `[build-tokens.mjs AUX/isAuxPath; vitest B9]`
+9. **[FACT] B9 — Aux-namespace routing (DS-2; shadow typed export UI-1).** `fontFamily/fontSize/fontWeight/lineHeight/
+   letterSpacing/shadow` are NOT createTokens categories → routed to CSS + a typed export, **skipped** in
+   `tokens.ts`/`themes.ts` (incl. aux-referencing semantics); never trip B3. Per-namespace destinations: typography →
+   CSS + `fonts.ts`; **shadow → CSS + `shadow.ts`** (the typed `shadow` const of box-shadow literals — added by UI-1
+   Card, the first shadow consumer, DEF-U5-e; an aux namespace earns a typed export the moment a TS consumer needs it,
+   the `motion.ts` precedent). `[build-tokens.mjs AUX/isAuxPath + vida/shadow; vitest B9 + shadow-emit]`
 10. **[FACT] B10 — Contrast is the floor.** semantic text-on-surface pairs meet WCAG AA in both modes (caveat:
     white-on-brand.500 = 4.47 → buttons use brand.600). Verified in the design gate. `[design.md §II; DS-2 contrast check]`
 11. **[FACT] B11 — Motion primitives, aux-routed, standard-aligned (DS-3).** `duration.*` (unitless ms numbers) and
     `easing.*` (CSS cubic-bezier/linear strings) are primitives routed to `variables.css` + `motion.ts` and **skipped**
     by both the `tokens.ts` and `themes.ts` emitters (not Tamagui categories — a third aux consumer alongside
-    typography→`fonts.ts` and shadow→CSS). Every duration sits in a `motion.md §IX` band; every easing is one of the
+    typography→`fonts.ts` and shadow→CSS+`shadow.ts`). Every duration sits in a `motion.md §IX` band; every easing is one of the
     3 canonical cubic-beziers or `linear`. No arbitrary timing/curve; >500ms would need written justification (none).
     `[motion.md §IX; build-tokens.mjs MOTION/AUX; vitest B11 + fonts-isolation + css-vars presence]`
 12. **[FACT] B12 — Motion contract, documented + component-gate-enforced (DS-3).** Two rules travel with the motion

@@ -12,17 +12,21 @@ Source model: **code-first** (`docs/specs/foundation/frontend-source-of-truth.md
   Loaded BY FILENAME in the themes emitter, **NOT** in the SD `source` list (else it'd be a phantom rank −1 layer).
   Maps 1:1 to Figma variable modes.
 - `build-tokens.mjs` — the build. Style Dictionary engine + `checkLayers` (3-layer rule + **B8 4pt-grid on `space.*`**,
-  fail-loud) + **5** custom formats. `AUX` namespaces are NOT Tamagui categories → **skipped** in `tokens.ts`/
+  fail-loud) + **6** custom formats. `AUX` namespaces are NOT Tamagui categories → **skipped** in `tokens.ts`/
   `themes.ts` (B9/B11) and routed by destination via three sub-lists: `TYPOGRAPHY` (`fontFamily/fontSize/fontWeight/
-  lineHeight/letterSpacing`) → CSS + `fonts.ts` · `shadow` → CSS only · `MOTION` (`duration/easing`) → CSS +
-  `motion.ts` (DS-3, B11). `AUX = [...TYPOGRAPHY, 'shadow', ...MOTION]`. Exports `checkLayers`/`validate`/`build`/`PipelineError`.
-- `variables.css` · `tokens.ts` · `themes.ts` · `fonts.ts` · `motion.ts` — **GENERATED — DO NOT EDIT.** `pnpm tokens:build`.
-  `tokens.ts` = createTokens (5 categories) · `themes.ts` = light + parallel dark + `light_/dark_<Comp>` ·
-  `fonts.ts` = typography data for DS-4 `createFont` · `motion.ts` = duration/easing data for DS-4 `createAnimations` ·
+  lineHeight/letterSpacing`) → CSS + `fonts.ts` · `shadow` → CSS + **`shadow.ts`** (box-shadow literals; typed export
+  added by UI-1 Card, DEF-U5-e — an aux namespace earns a typed export on first TS consumer, the `motion.ts`
+  precedent) · `MOTION` (`duration/easing`) → CSS + `motion.ts` (DS-3, B11). `AUX = [...TYPOGRAPHY, 'shadow',
+  ...MOTION]`. Exports `checkLayers`/`validate`/`build`/`PipelineError`.
+- `variables.css` · `tokens.ts` · `themes.ts` · `fonts.ts` · `motion.ts` · `shadow.ts` — **GENERATED — DO NOT EDIT.**
+  `pnpm tokens:build`. `tokens.ts` = createTokens (5 categories) · `themes.ts` = light + parallel dark +
+  `light_/dark_<Comp>` · `fonts.ts` = typography data for DS-4 `createFont` · `motion.ts` = duration/easing data for
+  DS-4 `createAnimations` · `shadow.ts` = box-shadow literals for injected component CSS (Card elevation) ·
   `variables.css` = design.md §XII vars (incl. aux font*/shadow/motion; dimensions + durations unitless).
 - `preview.html` — GENERATED review artifact (gitignored) via `pnpm preview:tokens` — the Frontend Visual Gate render
   (incl. a DS-3 motion section: animated demos per duration × easing, honoring `prefers-reduced-motion`).
-- `build-tokens.test.ts` — **26 fixtures** (DS-1's 13 + DS-2 B7/B8/B9 + DS-3 B11/fonts-isolation/css-vars-presence).
+- `build-tokens.test.ts` — **31 fixtures** (DS-1's 13 + DS-2 B7/B8/B9 + DS-3 B11/fonts-isolation/css-vars-presence +
+  UI-1 shadow-emit ×5).
 
 ## Rules
 - Never hand-edit a generated file — edit `tokens/*.json` and run `pnpm --filter @vida/ui tokens:build`.

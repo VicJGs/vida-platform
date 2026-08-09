@@ -9,6 +9,8 @@ _(none)_
 
 - cap-authoring: .claude/tasks/cap-authoring.md  (planned 2026-08-03 — LIF-156 · M4/M4.0 · ⚠ INTENDED-later. The ADR-010/SP4 user-authored capability safe-authoring surface (sandbox·DSL·authoring UI·grant enforce). Created by DF-12 to home AR-7's deferral; ← ar-7, ui-3. No M1–M4 consumer — a tracked horizon issue.)
 
+- tsconfig-strict-index-access: .claude/tasks/tsconfig-strict-index-access.md  (planned 2026-08-09 — hygiene follow-up from the UI-1 UF engineering gate. Add `noUncheckedIndexedAccess` + `noImplicitReturns` to `tsconfig.base.json` (STANDARDS §XV) + fix the monorepo-wide cascade. STRUCTURAL/repo-wide — deliberately NOT folded into UI-1; runs under its own §XXVI gate. Unfiled in Linear — create at pickup.)
+
 ## Parked / Superseded
 _(none)_
 

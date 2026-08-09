@@ -1,5 +1,5 @@
 # Task: ds-5-primitive-contracts
-# Status: in progress
+# Status: done
 # Linear: LIF-85
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base

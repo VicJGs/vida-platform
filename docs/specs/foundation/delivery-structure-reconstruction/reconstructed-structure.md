@@ -74,7 +74,7 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 17 | ✅DS-2 | Foundations (color/space/type scales) | `packages/ui/src/themes` | ← DS-1 | DS-3 | Design-Sys | **DONE 2026-08-03** (LIF-82) — real values + aux namespaces + dark overlay; ⚠ placeholder palette (not brand); @vida/ui 20/20; branch `ds-2-foundations` (715687b, not merged). DS-3 now ready |
 | 18 | ✅DS-3 | Motion foundation | `packages/ui/src/themes` | ← DS-2 | DS-4 | Design-Sys | motion tokens/primitives |
 | 19 | ✅DS-4 | Tamagui config + dark mode | `packages/ui/src` (001) | ← DS-3 | DS-5 | Design-Sys | themed Tamagui config |
-| 20 | ◻DS-5 | Primitive contracts | `packages/ui/src/components` | ← DS-4 | UI-1 | Design-Sys | primitive component contracts |
+| 20 | ✅DS-5 | Primitive contracts | `packages/ui/src/components` | ← DS-4 | UI-1 | Design-Sys | primitive component contracts — **DELIVERED+MERGED 2026-08-05** (LIF-85, PR #7 `19cda21`): 10 contracts + full `component.json` token set. LIF-85 held *In Progress* only for the component **Visual Gate, which is deferred to UI-1 by the render table** — no buildable work remains here, so ✅ for `#`-order routing. |
 | 21 | ✅UX-1 | Information architecture | `docs/core/architecture`, `apps/web/src` (001) | root | UX-2, UX-3, UX-4, UX-5 | Generic | IA + nav model |
 | 22 | ◻UX-2 | Command bar + search | `apps/web/src` | ← UX-1 | leaf | Generic | command bar |
 | 23 | ◻UX-3 | Shell layout (responsive) | `apps/web/src` | ← UX-1 | UX-6, UI-4 | Generic | responsive shell layout |

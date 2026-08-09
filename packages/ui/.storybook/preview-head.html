@@ -1,0 +1,11 @@
+<!--
+  U0 (UI-1) — process shim for the Storybook preview iframe.
+  @vida/ui runs Tamagui UNTAMED (no @tamagui/vite-plugin, by the DS-4 decision). @tamagui/core reads
+  process.env.TAMAGUI_* at runtime; in the browser `process` is undefined → "ReferenceError: process is
+  not defined" crashes the story to blank. The vite-plugin normally defines these; the shim replaces it,
+  and (unlike defining two specific vars) covers every process.env.* Tamagui reads across all 10 primitives.
+  Grounding: Tamagui Vite guide (config.define process.env) + Storybook preview-head.html iframe injection.
+-->
+<script>
+  window.process = window.process || { env: { NODE_ENV: 'development' } }
+</script>
