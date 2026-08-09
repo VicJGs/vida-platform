@@ -1,4 +1,50 @@
 ---
+Date: 2026-08-09 — UX-5 First-run onboarding design model shipped + MERGED (PR #12)
+Task: ux-5-vault-unlock-onboarding (LIF-94) · Profile: New Feature / Default · branch `ux-5-onboarding` → merged `main`
+
+Completed:
+  - **UX-5** (#25, LIF-94) — the first-run onboarding **design model** (new-feature/Default). Deliverable class =
+    doc + typed declarative artifact under `apps/web/src`; **no rendered component, no Visual Gate** (screens
+    deferred to UI-4). Shape fixed by the 3 signals (authority ADR-019/new-feature · not-visual-gated-by-render-table ·
+    `impl UI-4`) — same as UX-3/UX-4 [[deliverable-shape-is-fixed-by-authority-plus-visualgate-plus-dep]].
+  - **Shipped:** `apps/web/src/onboarding/steps.ts` (`ONBOARDING_STEPS` welcome·privacy·vault·ready + per-step
+    `OnboardingCopyContract` — BR-4 copy-honesty: `m1` M1.0 local-first / `m3?` M3 ZK, gated) · `first-run.ts`
+    (`isFirstRun` + `FIRST_RUN_COMPLETE_KEY` `'first_run:completed'` device-local `app_state` marker +
+    `FIRST_RUN_BRANCH` = the App.tsx seam as data) · `steps.test.ts`/`first-run.test.ts` (8) · `onboarding/CLAUDE.md`
+    · `docs/core/architecture/onboarding.md` (+README row). Spec trail `docs/specs/foundation/ux-5-onboarding/`.
+  - **PR #12 merged to `main`** (`f14d01c`, --merge, branch deleted); merged main re-verified green
+    (@vida/web **87/87** · root typecheck **10/10** · lint 0-err). LIF-94 → Done (`--sync`).
+
+Decisions / lessons:
+  - **The M1.0 boundary is the crux, and the docs fix it.** Auth is OFF in the feature phase — ADR-017:22 "a
+    trivial local passphrase or none". So UX-5's "vault-unlock" half is genuinely not designable here — it's carved
+    to UX-5b/M3. UX-5 designs the *full* flow but marks every crypto/auth element a **deferred seam** (AR-3/UX-5b/M3);
+    no step presumes a vault key. The `vault` step stays in the model (`deferredImpl:'vault-key'`) with M1.0
+    **confirmation** copy ("your vault is ready"), never "create" — a BR-4 copy-honesty rule applied to its own step.
+  - **Two-signal independence (gate-1 material).** `exists()` is the DB-lifecycle signal (open-vs-create) and is NOT
+    the onboarding trigger — on first launch `open()` migrates so `exists()` is already true while the marker is unset;
+    they disagree by design. The branch keys ONLY on `isFirstRun(app_state['first_run:completed'])`. A UI-4 impl that
+    wired the branch to `exists()` would make onboarding never show.
+  - **Key-name collision (gate-2 material).** The device-local marker first reused `'onboarding_completed'` — the
+    exact string of the SYNCED `UserProfile.onboarding_completed` (types-only, table lands M1.1+). Namespaced to
+    `'first_run:completed'` + documented the distinction (device-local first-run vs synced cross-device user flag).
+    Ironically the collision was the very conflation the two-signal doctrine warns against.
+  - **Gates:** §XXVI double-gate — gate-1 critique REVISE (2 blockers: wrong `app_state` cite path · a barrel that
+    contradicted the "no barrel" precedent → both fixed) → Approval 1; /preflight PASSED + 2 folds (vitest import
+    order · unnecessary `!` since `noUncheckedIndexedAccess` is off) ; gate-2 critique SHIP + 2 material integrity
+    fixes → Approval 2. Both critiques independent/adversarial [[independent-critique-catches-overclaims]].
+  - **§XXIX:** web-client-runtime (AR-4) unchanged (new parallel layer, no runtime edit) → current; `onboarding.md`
+    is the new durable doc. **Sync-before-archive:** first `--sync` pushed `in_progress` by mistake; set
+    `# Status: done` then re-synced so LIF-94 → Done landed while the task was still active
+    [[sync-before-archive-else-status-not-pushed]].
+
+Next session:
+  - **NEXT HEAD by the `#`-order rule = UX-6 (#26, LIF-95) — Home = Journal daily dashboard**, ← UX-3 ✅.
+    Profile: **new-feature** (delivery-plan:213). Also ready: UI-2 (#28) · UI-3 (#29) · UI-4 (#30). `--next` says
+    UI-2 by dependent-count → overridden by the `#` order [[doc-order-authoritative-over-next-heuristic]].
+  - UX-5 unblocks UI-4 (renders + wires it) and feeds UX-5b (M3). Leaf otherwise.
+
+---
 Date: 2026-08-08 — UI-1 U5 (Card) shipped, Visual-Gate PASS (5/10)
 Task: ui-1-vida-ui-primitives (LIF-86) · Profile: Design System / Default · branch `ui-1-vida-ui-primitives`
 

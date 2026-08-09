@@ -1,5 +1,5 @@
 # Task: ux-5-vault-unlock-onboarding
-# Status: in_progress
+# Status: done
 # Linear: LIF-94
 # Profile: New Feature
 # Scenario: Default
