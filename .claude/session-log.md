@@ -4523,3 +4523,5 @@ Task file kept at Status: done + **NOT archived** (per [[sync-before-archive-els
 active-only, so archiving before the push would lose it). **Retry `tracker_sync --sync` next session when network is back.**
 **HANDOFF:** UX-3 unblocks **UX-6 (#26)** + **UI-4 (#30)**. Next head by `#`-order = **UX-4 State conventions (#24,
 ← UX-1 ✅, add-frontend-component)** — lowest-# ready. Also ready: UX-5 (#25), UX-6 (#26), UI-2 (#28), UI-3 (#29), UI-4 (#30).
+
+**SYNC LANDED (2026-08-09, later):** retried `tracker_sync --sync` once the network returned → exit 0, `✓ sync complete`; `--pull` reconcile-clean (no conflict = parity). **LIF-92 → Done confirmed on Linear.** Task archived to `.claude/tasks/archive/` → `_index.md` Completed; removed from Active. UX-3 fully closed. Next head = UX-4 (#24).

@@ -45,7 +45,9 @@ UI-4 implements as app-shell components.
   `docs/core/architecture/shell-layout.md`(+README row). typecheck 0 · @vida/web 66/66 (22 new) · lint 0-err · root 10/10.
   **Post-impl audit SHIP** (independent — values/tokens verified, 0 scope violations, code↔doc aligned, faithful to IMPL-PLAN).
   §XXIX currency: the arch doc + shell/CLAUDE.md ARE the durable home (from-zero shell context — no separate current-*).
-- **NEXT:** on `main`, clean tree, NOT committed. Awaiting Victor go → branch `ux-3-shell-layout-responsive` + commit + PR (UX-1/UX-2 pattern), then task-complete + tracker --sync (LIF-92 → Done). Unblocks UX-6 (#26), UI-4 (#30).
+- **CLOSED (2026-08-09):** PR #10 merged (`a30417b`) + close-out (`c42e93a`). **LIF-92 → Done CONFIRMED on Linear**
+  (`tracker_sync --sync` succeeded on retry once network returned; `--pull` reconcile-clean, no conflict = parity).
+  Task archived. Unblocks UX-6 (#26), UI-4 (#30). Next head = UX-4 (#24).
 
 ## Drift caught (2026-08-09, pre-Approval-1)
 Victor flagged the D1–D5 decisions as possible drift. Check confirmed: **YES on two axes.**
