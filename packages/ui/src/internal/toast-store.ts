@@ -9,6 +9,12 @@ import { motion } from '../themes/motion'
 
 export type ToastIntent = 'info' | 'success' | 'danger'
 
+/** One optional toast action — named + exported for API consistency (UF components-gate note). */
+export interface ToastAction {
+  label: string
+  onPress: () => void
+}
+
 export interface ToastOptions {
   title: ReactNode
   description?: ReactNode
@@ -17,7 +23,7 @@ export interface ToastOptions {
   /** ms before auto-dismiss; 0 = sticky (manual dismiss only). Default 5000. */
   duration?: number
   /** One optional action. Pressing it fires `onPress` and does NOT dismiss the toast (u10 §3.3/F2). */
-  action?: { label: string; onPress: () => void }
+  action?: ToastAction
   /** Fires once on removal (timer expiry, dismiss, `toast.dismiss(id)`, Esc, or cap eviction). */
   onDismiss?: () => void
 }
@@ -89,7 +95,7 @@ export function addToast(options: ToastOptions): string {
   const live = records.filter((r) => r.phase !== 'exiting' && regionOf(r) === region)
   if (live.length > limit) {
     // evict the region's OLDEST non-exiting record (live[0]) — routes through dismissToast → normal exit + onDismiss.
-    dismissToast(live[0]!.id)
+    dismissToast(live[0]!.id) // safe: guarded by `live.length > limit` (limit ≥ 0 ⇒ live is non-empty)
   }
   emit()
   return id

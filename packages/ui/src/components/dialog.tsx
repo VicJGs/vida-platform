@@ -242,8 +242,8 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
       e.preventDefault() // nothing to move to — swallow Tab, focus stays on the panel
       return
     }
-    const first = f[0]!
-    const last = f[f.length - 1]!
+    const first = f[0]! // safe: guarded by the `f.length === 0` early-return above
+    const last = f[f.length - 1]! // safe: same guard — f is non-empty here
     if (f.length === 1) {
       e.preventDefault() // one element — keep focus on it, never let Tab escape
       first.focus()

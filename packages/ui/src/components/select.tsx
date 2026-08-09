@@ -226,7 +226,7 @@ const SelectInner = forwardRef<HTMLButtonElement, SelectProps>(function Select(
       } else if (key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
         // Closed type-ahead → commit in place, do NOT open (native <select> / APG behaviour).
         const match = matchTypeahead(key)
-        if (match >= 0) commit(options[match]!.value)
+        if (match >= 0) commit(options[match]!.value) // safe: guarded by `match >= 0` (matchTypeahead returns a valid index or -1)
       }
       return
     }

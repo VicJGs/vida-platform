@@ -34,7 +34,7 @@ import {
 //   toast plays its exit animation. Motion (B12): enter moderate/out, exit fast/in, opacity+translateY only.
 
 export { toast } from '../internal/toast-store'
-export type { ToastIntent, ToastOptions, ToastHandle } from '../internal/toast-store'
+export type { ToastIntent, ToastAction, ToastOptions, ToastHandle } from '../internal/toast-store'
 
 export interface ToastProviderProps {
   /** Max simultaneously VISIBLE toasts PER region; on overflow the oldest is evicted. Default 3. */
