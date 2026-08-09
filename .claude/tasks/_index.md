@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none)_
+- ux-2-command-bar-search: .claude/tasks/ux-2-command-bar-search.md  (in-progress 2026-08-09 — LIF-91 · M1/M1.0 `#22` · Generic Session/default. Command bar + global-search interaction model (⌘K launcher over `command_bar_history` + search-as-you-type over FTS5), defined over the UX-1 nav model; ← ux-1 ✅, leaf. Home `apps/web/src`, spec `docs/specs/foundation/ux-2-command-bar-search/`. Step 0 baseline next.)
 
 ## Planned
 - db-2-sync-metadata-columns: .claude/tasks/db-2-sync-metadata-columns.md  (DEFERRED/Backlog — **RE-HOMED 2026-07-29** from the retired `① Database Layer` cluster to **M4 Venues / Multi-Device · Sync & Server** [alongside ar-9b; LIF-64 moved + state BACKLOG in Linear]. Charter = `syncColumns` amendment + HLC representation [ADR-002 §5.20 / ADR-003 §17 / ADR-004 F1]; ADR-017 defers it with the sync engine to the post-validation hardening pass. Baseline done, no code. Not stale — a legit deferred issue that was de-organized.)
