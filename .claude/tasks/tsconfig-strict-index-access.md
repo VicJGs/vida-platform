@@ -1,6 +1,6 @@
 # Task: tsconfig-strict-index-access
 # Status: planned
-# Linear: (unfiled — create at pickup)
+# Linear: LIF-157
 # Profile: Add Backend Component
 # Source: UI-1 UF engineering gate (2026-08-09)
 

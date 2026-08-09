@@ -1,5 +1,5 @@
 # Task: ui-1-vida-ui-primitives
-# Status: in-progress
+# Status: done
 # Linear: LIF-86
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base

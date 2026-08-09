@@ -6,7 +6,6 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-09 | ✅ BUILD COMPLETE — **PR #8 ready to merge (awaiting Victor)**. M1.0 `#27`. **ALL 10 PRIMITIVES + UF DONE** (Button·Input·Checkbox·Select·Card·Tabs·Menu·Dialog·Popover·Toast) — @vida/ui **v0.1.0**, **219/219**. **UF consolidated gate PASS** (design·components·motion·engineering, 4 independent audits) → in-scope fixes applied (4 `!` §XV comments, `ToastAction` export), version+CHANGELOG, DEF register (`DEF-register.md`, DEF-U3-a…U10-f). Repo-wide tsconfig `noUncheckedIndexedAccess` follow-up filed (`tsconfig-strict-index-access`, its own gate — NOT folded in). **Direct merge-to-main was denied by the safety classifier (bypasses PR review) — Victor merges PR #8.** Post-merge next session: `/task-complete` + `--sync` (LIF-86→Done) → then next head. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
@@ -44,19 +43,18 @@ graph→AR-6 Views+UI-2, export→UI-3, search→DB-8 — are homed elsewhere in
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-09) — UI-1 BUILD COMPLETE + UF DONE. PR #8 ready to merge (awaiting Victor).**
-All 10 primitives shipped (@vida/ui **v0.1.0**, 219 tests). **UF consolidated gate PASS** — 4 independent audits
-(design·components·motion·engineering); all-PASS. In-scope fixes applied (4 non-null `!` §XV justification comments;
-named `ToastAction` export). Version bumped 0.0.0→0.1.0 + `packages/ui/CHANGELOG.md`. **Consolidated DEF register**:
-`docs/specs/components/ui-1-vida-ui-primitives/DEF-register.md` (DEF-U3-a…U10-f + UF-1, for the DS-5 owner). Repo-wide
-**tsconfig `noUncheckedIndexedAccess`/`noImplicitReturns` gap** (§XV, engineering-gate Material) filed as its own task
-`tsconfig-strict-index-access` — cascade-risk, NOT folded into UI-1. **⚠ Direct merge-to-main was DENIED by the safety
-classifier** (bypasses the PR review) — correct guardrail; **Victor merges PR #8** (https://github.com/VicJGs/vida-platform/pull/8).
-**HANDOFF — next session:** (1) after PR #8 merges → `/task-complete ui-1-vida-ui-primitives` + `tracker_sync --sync`
-(LIF-86 → Done) + delete the branch. (2) **Next head by the `#`-order rule = `UX-2` Command bar + search (`#22`, ← UX-1 ✅,
-profile Generic Coding Session)** — lowest-`#` ready; `--next` says UX-3 (#23, dependent-count) → overridden by `#` order
-([[doc-order-authoritative-over-next-heuristic]]); UX-3/4/5 also ready. `/begin` recomputes fresh. UI-1 now unblocks
-UI-2 (#28) · UI-3 (#29) · UI-4 (#30).
+**▶ CURRENT (2026-08-09) — UI-1 DONE + MERGED. Milestone closed; clean handoff to the experience track.**
+All 10 primitives shipped (@vida/ui **v0.1.0**, 219 tests) + **UF consolidated gate PASS** (4 independent audits —
+design·components·motion·engineering). **PR #8 MERGED to `main`** (`21a3305`, --merge); branch deleted;
+**LIF-86 → Done** (`tracker_sync --sync`, exit 0); task archived (`.claude/tasks/archive/`). Merged main re-verified
+green (v0.1.0 · @vida/ui 219/219 · typecheck). Consolidated **DEF register**
+`docs/specs/components/ui-1-vida-ui-primitives/DEF-register.md` (DEF-U3-a…U10-f + UF-1 → DS-5 owner). Repo-wide
+**tsconfig `noUncheckedIndexedAccess`/`noImplicitReturns`** §XV gap filed as its own task `tsconfig-strict-index-access`
+(cascade-risk, NOT folded in).
+**HANDOFF — next session (`/begin` recomputes, but this is the expected head):** **Next head by the `#`-order rule =
+`UX-2` Command bar + search (`#22`, ← UX-1 ✅, profile Generic Coding Session)** — lowest-`#` ready; `--next` says UX-3
+(#23) by dependent-count → overridden by the `#` order ([[doc-order-authoritative-over-next-heuristic]]); UX-3/4/5 also
+ready. UI-1 now unblocks UI-2 (#28) · UI-3 (#29) · UI-4 (#30) too. **No pending UI-1 work — the milestone is closed.**
 
 <details><summary>(prior) 2026-08-09 — U10 Toast (10/10) build detail.</summary>
 
