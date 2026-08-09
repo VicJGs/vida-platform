@@ -1,5 +1,5 @@
 # Task: ux-4-state-conventions
-# Status: in-progress
+# Status: done
 # Linear: LIF-93
 # Profile: add-frontend-component
 # Scenario: Default

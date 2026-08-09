@@ -4525,3 +4525,58 @@ active-only, so archiving before the push would lose it). **Retry `tracker_sync 
 ← UX-1 ✅, add-frontend-component)** — lowest-# ready. Also ready: UX-5 (#25), UX-6 (#26), UI-2 (#28), UI-3 (#29), UI-4 (#30).
 
 **SYNC LANDED (2026-08-09, later):** retried `tracker_sync --sync` once the network returned → exit 0, `✓ sync complete`; `--pull` reconcile-clean (no conflict = parity). **LIF-92 → Done confirmed on Linear.** Task archived to `.claude/tasks/archive/` → `_index.md` Completed; removed from Active. UX-3 fully closed. Next head = UX-4 (#24).
+
+
+---
+## 2026-08-09 — UX-4 State conventions (LIF-93, #24) — BUILT + MERGED (PR #11)
+**Task:** ux-4-state-conventions. Profile **add-frontend-component**, scenario **Default** (single-path). ← UX-1 ✅.
+Full §XXVI double-gate + preflight + pre-ship critique.
+
+**What it is:** the interaction-state conventions every web screen follows — **engineering-gated state-conventions
+LOGIC** (a convention doc + a pure logic artifact). **Builds NO rendered `@vida/ui` component, runs NO Visual Gate**;
+it COMPOSES UI-1's existing primitives. Fixed by the docs, not chosen.
+
+**Shipped (pre-ship critique SHIP):**
+- `apps/web/src/state-conventions/terminal-state.ts` — **reuses `@vida/core`'s `TerminalState` canon** (`export {
+  TERMINAL_STATE, type TerminalState } from '@vida/core'`; barrel index.ts:124) + pure `deriveTerminalState<T>(result,
+  isEmpty)`: **isPending→loading FIRST** (closes the empty-vs-loading race), **isError before data** (error wins over
+  stale placeholderData), `data===undefined` guard (defends + narrows T for isEmpty), else isEmpty?empty:success.
+  Structural `QueryResultLike<T>` slice (no RQ import → pure, RN-portable; a real v5 `UseQueryResult<T>` is assignable).
+- `apps/web/src/state-conventions/keyboard.ts` — `FOCUS_CONTRACT` (§XIV focus-at-transition map) + `OVERLAY_DISMISS`
+  as typed data; no duplicate ⌘K (that's UX-2's — keybind-as-data via command-bar `resolveKeybind`).
+- `+13 tests` (terminal-state 9 incl. race guard + error-over-stale + canon membership; keyboard 4 shape-lock).
+- `apps/web/src/state-conventions/CLAUDE.md` (layer doc) + `docs/core/architecture/state-conventions.md` (+README row)
+  — the convention model incl. §3.1 **static-skeleton composition recipe** ($colorSurfaceSecondary + $md/$lg radius
+  + static bars/no shimmer, the card.stories precedent) because UI-1's shared Skeleton was superseded (DEF-U5-a).
+
+**The session's real story — a manufactured-decision drift Victor caught (twice-reinforced pattern):**
+Rev 1/2 of the PLAN invented an **IN.3 deliverable** — build `Skeleton`/`EmptyState`/`ErrorState` rendered primitives
+in `packages/ui` + a component Visual Gate — and surfaced it as an Approval-1 **"decision D3"** (even ran it past an
+independent critique, which VALIDATED the fork instead of killing it). Victor: *"There isn't supposed to have any
+decisions — everything from description to delivery is already specified... this is a drift."* Three doc signals fix
+UX-4's shape with **zero decisions**: (1) authority = `engineering.md` only (a component build would be
+components/design-gated); (2) `frontend-visual-gate.md:23` classes "UX state-conventions logic" as NOT-visual-gated;
+(3) dep "UX-1 · **via UI-1**" = compose UI-1's primitives, not build new ones. Rev 3 removed IN.3 + the Visual Gate +
+D3. → memory [[deliverable-shape-is-fixed-by-authority-plus-visualgate-plus-dep]] (a critique checks a plan's internal
+soundness; it does NOT catch that a whole sub-deliverable shouldn't exist).
+
+**Gate trail:** Step 0 baseline (state plane current; terminal-state canon exists in code) → Step 1 pattern-read
+(UX-1/2/3 doc+artifact sibling pattern) → PLAN Rev 1 → **gate-1 critique REVISE** (B1 ViewEngine "reuse" overclaim →
+conceptual parallelism [3 un-unified copies]; B2 misquote; B3 empty-vs-loading race + no-CLS + retry + reduced-motion;
+M1-M4) → Rev 2 → **Approval 1** (Rev 3 after the drift-catch, zero decisions) → **preflight PASSED** (G1: skeleton
+recipe folded, since no shared Skeleton) → **gate-2 critique SHIP** (drift-residue sweep clean; derivation correct vs
+RQ v5.101.4 verified on disk; M1 recipe shimmer→static fixed) → **Approval 2** → implement → **pre-ship critique
+SHIP** (1 editorial minor: recipe supersedes card.stories raw radius=4).
+
+**Verify:** typecheck **10/10** · `@vida/web` **79/79** (13 new) · lint **0-err** (4 pre-existing warnings in AR-4's
+client.test.ts, none mine) · grep-clean (imports canon, no re-declared literals). Scope held: only
+`apps/web/src/state-conventions/` + arch doc + README; no packages/ui/stores/routes/tamagui edits; no new dep.
+
+**Close-out:** **PR #11 MERGED** (`26fd4ba`, --merge --delete-branch) → local main synced + re-verified green →
+Status:done → `tracker_sync --sync` **exit 0 ×2** (LIF-93 → Done) → task archived (`.claude/tasks/archive/`) →
+_index Completed + TASKS.md updated. §XXIX currency: the arch doc + `state-conventions/CLAUDE.md` ARE the durable home
+(from-zero context, no separate current-*).
+
+**HANDOFF — next head by the `#`-order rule = `UX-5` Onboarding basic first-run (`#25`, ← UX-1 ✅, profile
+new-feature; vault-unlock → UX-5b/M3, out of M1.0).** `--next` says UI-2 (#28) by dependent-count → overridden by the
+`#` order. Also ready: UX-6 (#26) · UI-2 (#28) · UI-3 (#29) · UI-4 (#30).

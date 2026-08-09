@@ -6,8 +6,9 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ux-4-state-conventions (LIF-93) | add-frontend-component | 2026-08-09 | 2026-08-09 | 🔨 IN PROGRESS — `#`-order head `#24` (← UX-1 ✅). Scenario `Default`. **Step 0 baseline DONE** (state plane current; terminal-state authority = Capability Framework R5). Next: Step 1 pattern-read → PLAN gate. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
+
+*(ux-4-state-conventions LIF-93 → **Done + MERGED** PR #11 (`26fd4ba`), 2026-08-09 — archived. See _index.md Completed.)*
 
 ## 🧭 Delivery Routing — READ THIS FIRST (this repo's routing rule)
 
@@ -31,14 +32,15 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-09 · UX-3 #23 DONE+MERGED PR #10): `UX-4` `#24` (State conventions) — ← UX-1 ✅.**
-Lowest-`#` ready non-stream issue by the `#`-order rule. Profile: **add-frontend-component** (authority
-STANDARDS engineering.md + §XXII DoD). Also ready: UX-5 (#25), UX-6 (#26 — now unblocked by UX-3), UI-2 (#28),
-UI-3 (#29), UI-4 (#30 — now unblocked by UI-1+UX-3). UX-3 (#23) closed; unblocks UX-6 + UI-4.
+**🎯 Computed head now (2026-08-09 · UX-4 #24 DONE+MERGED PR #11): `UX-5` `#25` (Onboarding, basic first-run) — ← UX-1 ✅.**
+Lowest-`#` ready non-stream issue by the `#`-order rule. Profile: **new-feature** (per delivery-plan:212; vault-unlock
+onboarding → **UX-5b/M3**, auth-coupled — M1.0 UX-5 = the basic first-run surface only). Also ready: UX-6 (#26), UI-2
+(#28), UI-3 (#29), UI-4 (#30). `--next` says UI-2 (#28) by dependent-count → overridden by the `#` order
+([[doc-order-authoritative-over-next-heuristic]]). UX-4 (#24) closed.
 > ⚠ **PROFILE NOTE (learned UX-3):** the authoritative per-issue profile is the **delivery-plan** row
-> (`m1.0-delivery-plan.md`), NOT the coarse "Generic" in reconstructed-structure's `#`-table. UX-* =
-> **add-frontend-component** (IA/layout → design-led). Load THAT profile's standards (design/engineering) at pickup,
-> or the gate invents what's already standardized. See [[load-delivery-plan-profile-not-coarse-order-table-label]].
+> (`m1.0-delivery-plan.md`), NOT the coarse "Generic" in reconstructed-structure's `#`-table. UX-1/2/3/4 =
+> **add-frontend-component**; **UX-5 = new-feature** (delivery-plan:212) — the profile is per-row, NOT a blanket UX-*
+> label. Load THAT profile's standards at pickup. See [[load-delivery-plan-profile-not-coarse-order-table-label]].
 *(Toolkit follow-up filed: generalize a declared global-order tie-break into `tracker_sync` so `--next` can be correct in any repo — see `~/dev-toolkit/.claude/tasks/`.)*
 > NB: the tracker reads task-file `blocked by` edges, **not** Linear blocker relations (it syncs status/identity
 > only) — so reconciling an edge never needs a Linear change.
@@ -47,18 +49,20 @@ UI-3 (#29), UI-4 (#30 — now unblocked by UI-1+UX-3). UX-3 (#23) closed; unbloc
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-09) — UI-1 DONE + MERGED. Milestone closed; clean handoff to the experience track.**
-All 10 primitives shipped (@vida/ui **v0.1.0**, 219 tests) + **UF consolidated gate PASS** (4 independent audits —
-design·components·motion·engineering). **PR #8 MERGED to `main`** (`21a3305`, --merge); branch deleted;
-**LIF-86 → Done** (`tracker_sync --sync`, exit 0); task archived (`.claude/tasks/archive/`). Merged main re-verified
-green (v0.1.0 · @vida/ui 219/219 · typecheck). Consolidated **DEF register**
-`docs/specs/components/ui-1-vida-ui-primitives/DEF-register.md` (DEF-U3-a…U10-f + UF-1 → DS-5 owner). Repo-wide
-**tsconfig `noUncheckedIndexedAccess`/`noImplicitReturns`** §XV gap filed as its own task `tsconfig-strict-index-access`
-(cascade-risk, NOT folded in).
-**HANDOFF — next session (`/begin` recomputes, but this is the expected head):** **Next head by the `#`-order rule =
-`UX-2` Command bar + search (`#22`, ← UX-1 ✅, profile Generic Coding Session)** — lowest-`#` ready; `--next` says UX-3
-(#23) by dependent-count → overridden by the `#` order ([[doc-order-authoritative-over-next-heuristic]]); UX-3/4/5 also
-ready. UI-1 now unblocks UI-2 (#28) · UI-3 (#29) · UI-4 (#30) too. **No pending UI-1 work — the milestone is closed.**
+**▶ CURRENT (2026-08-09) — UX-4 State conventions DONE + MERGED. Clean handoff.**
+Engineering-gated state-conventions LOGIC (convention doc + pure logic artifact; **no rendered component, no Visual
+Gate** — corrected mid-session from a manufactured "build 3 primitives + Visual Gate + D3 decision" drift Victor
+caught; see [[deliverable-shape-is-fixed-by-authority-plus-visualgate-plus-dep]]). Shipped:
+`apps/web/src/state-conventions/{terminal-state,keyboard}.ts` (+13 tests) + `CLAUDE.md` +
+`docs/core/architecture/state-conventions.md` (+README row). `deriveTerminalState` **reuses `@vida/core`'s
+`TerminalState` canon** (isPending-first closes the empty-vs-loading race; isError-before-data lets error win over
+stale). §XXVI double-gate (gate-1 REVISE→fixed · gate-2 SHIP) + preflight (G1 skeleton recipe) + pre-ship critique
+SHIP. **PR #11 MERGED to `main`** (`26fd4ba`, --merge); **LIF-93 → Done** (`--sync` exit 0 ×2); task archived. Merged
+main re-verified green (**typecheck 10/10 · @vida/web 79/79 · lint 0-err**).
+**HANDOFF — next head by the `#`-order rule = `UX-5` Onboarding basic first-run (`#25`, ← UX-1 ✅, profile
+new-feature)** — lowest-`#` ready (vault-unlock → UX-5b/M3, out of M1.0). `--next` says UI-2 (#28) by dependent-count →
+overridden by the `#` order. Also ready: UX-6 (#26) · UI-2 (#28) · UI-3 (#29) · UI-4 (#30). UX-4 unblocks nothing new
+(it was a leaf).
 
 <details><summary>(prior) 2026-08-09 — U10 Toast (10/10) build detail.</summary>
 
