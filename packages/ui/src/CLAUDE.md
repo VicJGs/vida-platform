@@ -69,7 +69,27 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   trap). No `loading` prop (consumer-composed, DEF-U8-b). ⚠ **Body layout:** the scrollable body is `flexShrink:1 +
   minHeight:0` (sizes to content, scrolls only when the panel hits maxHeight) — **NOT `flex={1}`** (grow:1/basis:0% +
   minHeight:0 collapses to 0 height in a content-height panel and clips all children; header/footer keep RN's default
-  `flexShrink:0`). Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
+  `flexShrink:0`).
+  **Popover** is the 2nd overlay — a NON-modal `role="dialog"` anchored surface (the app behind stays interactive: no
+  scrim, no focus trap, no `inert` — the Dialog contrast). A genetic HYBRID: **Menu's floating machinery** (trigger
+  `cloneElement` with `aria-haspopup="dialog"`, portal-to-body under `<Theme name="Popover">`, `position:fixed`
+  seed→refine→reveal, outside-pointerdown/capture-scroll/resize dismiss) + **Dialog's `getFocusable` focus-into** (focus
+  MOVES into the panel's first focusable on open) — but NOT trapped. **Trigger opens on `onClick` only** (a dialog
+  opener, not a menu — a native `<button>` synthesizes click on Enter/Space, so no `onKeyDown`/arrow-open; this also
+  sidesteps the U7 double-fire). **Non-modal close model:** a React `onBlur` (focusout) on the panel closes ONLY when
+  `relatedTarget` is a real focusable OUTSIDE panel+trigger (Tab-away); it ignores internal moves + a `null`
+  relatedTarget (survive window-blur; the trigger is an allowed target so Esc's `triggerRef.focus()` doesn't re-close).
+  Esc closes + returns focus to the trigger. **8 placements via an AXIS-SPLIT:** top/bottom = vertical primary (single
+  `top` + horizontal align/flip), left/right = horizontal primary (single `left` + vertical center/flip) — Menu's
+  refine is vertical-only, so left/right needed the inverse axis; still ONE side property per axis (`offset` prop,
+  default 8). **Arrow toward the anchor** (popover.md:27): a rotated-45° 8px square, `borderWidth:0` FLOOR + only the 2
+  OUTER edges set to 1px inline (⚠ `borderStyle:'solid'` with no width → `border-width:medium`≈3px bleeds onto every
+  unset edge — Visual-Gate catch; and the `rotate(45deg)` must be applied or it's an axis-aligned square, also a
+  Visual-Gate catch), `bg=$background` blends the seam; the arrow's edge/offset is an INSTANT inline swap on flip (NOT
+  animated — the Tabs indicator precedent). No `popover.arrow` token → reuses popover.background/border (DEF-U9-b). No
+  `loading` prop (consumer-composed, DEF-U9-c). Panel keeps `overflow:visible` so the arrow isn't clipped; scrolling is
+  on an inner `flexShrink:1 + minHeight:0` wrapper (the U8 body-layout lesson). Motion (B12): opacity + `scale(0.96→1)`
+  from the anchor edge (`transform-origin` inline per resolved side). Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
   timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
@@ -81,7 +101,9 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   opacity + translate from the trigger edge, sign by `data-side`, transform-origin set inline; reduced-motion `@media`
   — reading `motion.ts`; enter-motion ONLY, the item highlight is a Tamagui variant), `dialog-styles.ts` (scrim + panel
   ENTER via mount-triggered `@keyframes` with a visible resting base — fails safe visible; transform/opacity ONLY;
-  reduced-motion `@media` — reading `motion.ts`). **Rule:** a PROP-driven state (e.g. a
+  reduced-motion `@media` — reading `motion.ts`), `popover-styles.ts` (panel ENTER opacity + `scale(0.96→1)` from the
+  anchor edge; transform/opacity ONLY; transform-origin inline per side; reduced-motion `@media` — reading `motion.ts`).
+  **Rule:** a PROP-driven state (e.g. a
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
   state the styled component can't see.
@@ -109,7 +131,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
-`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (185 tests).
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (203 tests).
 Token visual: `pnpm preview:tokens` → `themes/preview.html`. Component Visual Gate: `pnpm storybook` (or
 `build-storybook`) — the decorator paints the theme page surface ($colorSurfacePrimary: white light / navy dark) so
 dark mode is reviewable (a bare-on-canvas label would otherwise be invisible on Storybook's white iframe).

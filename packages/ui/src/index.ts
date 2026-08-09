@@ -21,6 +21,7 @@ export { Card, type CardProps } from './components/card'
 export { Tabs, TabsPanel, type TabsProps, type TabsPanelProps } from './components/tabs'
 export { Menu, type MenuProps, type MenuItem } from './components/menu'
 export { Dialog, type DialogProps } from './components/dialog'
+export { Popover, type PopoverProps } from './components/popover'
 
 // Shared hooks.
 export { useReducedMotion } from './hooks/use-reduced-motion'

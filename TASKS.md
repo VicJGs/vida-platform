@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-08 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0–U8 DONE + Visual-Gate PASS** (Button·Input·Checkbox·Select·Card·Tabs·Menu·**Dialog**) (8/10); @vida/ui **185/185**; branch `ui-1-vida-ui-primitives` (NOT merged). U8 gate caught + fixed a **DS-wide square-corners bug** (`borderRadius:'$radius'` inert → token scale `$md`/`$lg`, DEF-U8-h) + a Dialog body-collapse. Next = **U9 Popover** (3rd/last overlay before Toast), then U10 Toast + UF final gate/PR. |
+| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-09 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0–U9 DONE + Visual-Gate PASS** (Button·Input·Checkbox·Select·Card·Tabs·Menu·Dialog·**Popover**) (9/10); @vida/ui **203/203**; branch `ui-1-vida-ui-primitives` (NOT merged). U9 = the 2nd overlay: a NON-modal `role=dialog` anchored surface (Menu machinery + Dialog focus-into, not trapped; axis-split 8 placements; arrow toward anchor). Its Visual Gate caught 2 pure-visual arrow bugs (missing `rotate(45deg)`; `border-width:medium` bleed). Next = **U10 Toast** (last overlay), then **UF** final consolidated gate + version/changelog + PR. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
@@ -44,8 +44,37 @@ graph→AR-6 Views+UI-2, export→UI-3, search→DB-8 — are homed elsewhere in
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-08) — UI-1: …U6 Tabs + U7 Menu shipped, Visual-Gate PASS (7/10).**
-U7 Menu (4th/last molecular — 2nd FLOATING primitive) built to `menu.md`: reuses U4 Select's portal + single-`top`
+**▶ CURRENT (2026-08-09) — UI-1: U0–U9 shipped (…Popover), Visual-Gate PASS (9/10).**
+U9 Popover (2nd overlay) built to `popover.md`: a **NON-modal `role="dialog"`** anchored surface — the app behind stays
+interactive (no scrim, no focus trap, no `inert` — the Dialog contrast). A genetic HYBRID: **Menu's floating machinery**
+(trigger `cloneElement` `aria-haspopup="dialog"`, portal-to-body under `<Theme name="Popover">`, `position:fixed`
+seed→refine→reveal, outside-pointerdown/capture-scroll/resize dismiss) + **Dialog's `getFocusable` focus-into** (focus
+moves into the panel, NOT trapped). Trigger opens on **`onClick` only** (a dialog opener, not a menu → no arrow-open;
+sidesteps the U7 Enter/Space double-fire). **Non-modal close model:** a React `onBlur` closes only when `relatedTarget`
+is a real focusable OUTSIDE panel+trigger (Tab-away); ignores internal moves + `null` relatedTarget (survive
+window-blur) + the trigger (Esc-return carve-out). Esc closes + returns focus. **8 placements via AXIS-SPLIT** (top/bottom
+= vertical primary/single `top`; left/right = horizontal primary/single `left` — Menu's refine was vertical-only;
+`offset` prop). **Arrow toward anchor** (rotated-45° square, `borderWidth:0` floor + 2 outer edges 1px inline, bg blends;
+instant swap on flip — the Tabs precedent). §XXVI double-gate: **Gate 1** independent critique REVISE (**3 blockers**
+[left/right positioning hand-waved → axis-split spec; focusout `relatedTarget` gating; Esc↔focusout race] + 4 material)
+→ fixed → Approval 1; **Gate 2** /preflight PASSED (3 folds: onClick-only open, onBlur mechanism, jsdom-defers-geometry)
++ 2nd critique **SHIP** → Approval 2. **Visual Gate PASS measured in real Brave** (both themes; geometry unverifiable in
+jsdom): role=dialog/no-aria-modal, z=1200, radius=12px, transition=`[opacity,transform]`@0.15s (B12), theme-crossing bg
+(light `#fff`/dark `#0f172a`), focus-into=input, all 8 placements+flip, arrow direction per side, reduced-motion=none.
+**The gate caught 2 arrow bugs typecheck+203-tests+2 critiques all missed:** missing `rotate(45deg)` (axis-aligned
+square) + `border-style:solid` with no width → `border-width:medium`≈3px bleed on unset edges (→ `borderWidth:0` floor)
+— [[measure-browser-bugs-dont-hypothesize]]. **§XXVIII deviation (mechanical):** spec said "no `tamagui.config.ts`
+change" — wrong, the `light_/dark_Popover` sub-theme must be registered in `createTamagui` for the `ThemeName` type;
+corrected in code + spec. **Drift Victor caught:** I ran an AskUserQuestion "implement the arrow or defer?" — the
+contract (popover.md:27) already specifies the arrow → deliver-the-doc, don't escalate a fork
+([[deliverable-is-the-doc-not-my-discretion]]). typecheck 2/2 · @vida/ui **203/203** (18 new) · build + build-storybook
+✓ · root 10/10. DEFs U9-a…e flagged for DS. **NEXT = U10 Toast** (`toast.md`; last overlay — `zIndex.toast`), then **UF**
+final consolidated gate + version/changelog + §XXIX + PR. Branch `ui-1-vida-ui-primitives` (NOT merged). Spec:
+`docs/specs/components/ui-1-vida-ui-primitives/u9-popover.md`.
+
+<details><summary>(prior) 2026-08-08 — UI-1: U0–U7 (…Menu) shipped, Visual-Gate PASS (7/10).</summary>
+
+**▶ (prior) — U7 Menu (4th/last molecular — 2nd FLOATING primitive)** built to `menu.md`: reuses U4 Select's portal + single-`top`
 positioning + dismiss handlers, but the WAI-ARIA **menu-button** model — trigger `role=button`+`aria-haspopup=menu`+
 `aria-expanded`; `role="menu"` panel portalled to body under `<Theme name="Menu">`; items `role="menuitem"` with
 **ROVING DOM FOCUS** (only the active item `tabIndex=0`, real `.focus()`; NOT Select's `aria-activedescendant`), Esc
@@ -65,6 +94,7 @@ portal open commits TWICE (pos null first) → focus/refine layout effects must 
 ([[portal-open-focus-needs-a-mount-gated-effect-dep]], carries to U8/U9). **NEXT = U8 Dialog** (`dialog.md`; first
 overlay/organism — focus TRAP + scrim + `zIndex.overlay`/`modal`), then U9 Popover · U10 Toast · UF final gate + PR.
 Branch `ui-1-vida-ui-primitives` (NOT merged).
+</details>
 
 <details><summary>(prior) 2026-08-08 — UI-1: U0–U6 (…Tabs) shipped, Visual-Gate PASS (6/10).</summary>
 

@@ -175,7 +175,30 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
       [[injected-css-loses-to-tamagui-variants]] family — Tamagui reads the theme for COLOR props only; dimension props
       (radius/space) must reference the token scale ([[portal-open-focus-needs-a-mount-gated-effect-dep]] did NOT bite —
       lazy-init keeps Dialog single-commit).
-- [ ] U9 — Popover
+- [x] U9 — Popover — DONE 2026-08-09. `popover.tsx` (+ `PopoverProps`) + `popover.stories.tsx` + `popover.test.tsx`
+      (**18 jsdom**) + `internal/popover-styles.ts`; registered `light_/dark_Popover` in `tamagui.config.ts`; barrel.
+      2nd overlay — a NON-modal `role="dialog"` anchored surface (no scrim/trap/`inert`; app stays interactive). A
+      HYBRID: Menu's floating machinery (trigger `cloneElement` aria-haspopup="dialog", portal under `<Theme
+      name="Popover">`, fixed seed→refine→reveal, outside/scroll/resize dismiss) + Dialog's `getFocusable` focus-into
+      (NOT trapped). Trigger opens on **onClick only** (dialog opener, not menu → no arrow-open, sidesteps U7
+      double-fire). **Non-modal close:** React `onBlur` closes only when `relatedTarget` is a real focusable outside
+      panel+trigger (Tab-away); ignores internal moves + null relatedTarget (survive window-blur) + the trigger
+      (Esc-return carve-out). Esc closes + returns focus. **8 placements via AXIS-SPLIT** (top/bottom vertical primary,
+      left/right horizontal primary — Menu's refine was vertical-only; single side property per axis + `offset`). **Arrow
+      toward anchor** (rotated-45° square, `borderWidth:0` floor + 2 outer edges 1px, bg blends; instant swap on flip).
+      §XXVI double-gate: Gate-1 critique REVISE (3 blockers [left/right positioning hand-waved; focusout relatedTarget
+      gating; Esc/focusout race] + 4 material) → fixed → Approval 1; Gate-2 /preflight PASSED (3 folds: onClick-only
+      open, onBlur mechanism, jsdom-defers-geometry) + 2nd critique **SHIP** → Approval 2. **Visual Gate PASS in real
+      Brave (Victor confirmed, both themes)** — measured: role=dialog/no-aria-modal, z=1200, radius=12px, B12
+      transition=[opacity,transform]@0.15s, theme-crossing bg, focus-into=input, all 8 placements+flip, arrow direction
+      per side, reduced-motion=none. **The gate caught 2 arrow bugs typecheck+203-tests+2 critiques missed:** missing
+      `rotate(45deg)` (axis-aligned square) + `border-style:solid` w/ no width → `border-width:medium`≈3px bleed on unset
+      edges (→ `borderWidth:0` floor). typecheck 2/2 · @vida/ui **203/203** · build + build-storybook ✓ · root 10/10.
+      **§XXVIII deviation (mechanical):** spec said "no tamagui.config.ts change" — wrong, the sub-theme needs
+      registering in `createTamagui` for the `ThemeName` type; corrected in code + spec. DEFs U9-a…e flagged for DS.
+      Spec: `ui-1-vida-ui-primitives/u9-popover.md`. Lessons: [[measure-browser-bugs-dont-hypothesize]] (gate caught 2
+      pure-visual bugs); [[deliverable-is-the-doc-not-my-discretion]] (arrow: contract-specified → build it, don't
+      escalate a fork — Victor corrected a manufactured "implement or defer?" AskUserQuestion).
 - [ ] U10 — Toast
 - [ ] UF — final consolidated gate sweep + version/changelog + §XXIX currency + PR
 
