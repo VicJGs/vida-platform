@@ -199,7 +199,30 @@ the frontend-visual-gate render table). Gated **per component** (§XXVI double-g
       Spec: `ui-1-vida-ui-primitives/u9-popover.md`. Lessons: [[measure-browser-bugs-dont-hypothesize]] (gate caught 2
       pure-visual bugs); [[deliverable-is-the-doc-not-my-discretion]] (arrow: contract-specified → build it, don't
       escalate a fork — Victor corrected a manufactured "implement or defer?" AskUserQuestion).
-- [ ] U10 — Toast
+- [x] U10 — Toast — DONE 2026-08-09. `toast.tsx` (`ToastProvider` + internal `ToastItem`) + `internal/toast-store.ts`
+      (external store + `toast` singleton) + `internal/toast-styles.ts` + `toast.stories.tsx` + `toast.test.tsx`
+      (**16 jsdom**, `vi.useFakeTimers`); registered `light_/dark_Toast` in `tamagui.config.ts`; barrel (`toast`/
+      `ToastProvider`/`ToastProviderProps`/`ToastIntent`/`ToastOptions`/`ToastHandle`). The 3rd/last overlay + the
+      **ONLY imperative primitive**: `toast(options)→id` callable from OUTSIDE React, bridged to the mounted
+      `ToastProvider` via a module-level **external store** + React 19 `useSyncExternalStore` (the sonner/react-hot-toast
+      reducer model, zero-dep). Two persistently-mounted live regions (status/polite · alert/assertive — both present
+      when empty so an inserted toast announces). **Focus never moved on appear**; F6 → globally-newest; **Esc item-local**
+      (`stopPropagation`, no overlay leak). Cap **store-enforced, per-region, evict-oldest** (not a render slice → the
+      evicted toast plays its exit). `dismissToast` idempotent → `onDismiss` once. **Timer effect deps `[id,duration]`
+      ONLY** (a store emit re-renders all items; `record`-dep would re-arm + never dismiss); pause-on-hover/focus via refs.
+      §XXVI double-gate: **Gate 1** critique REVISE (2 blockers [queued-timer; Esc/F6 document-leak] + 7 material + 4 minor)
+      → fixed → Approval 1; **/preflight PASSED + 6 folds** (single-provider, action-no-dismiss, F6 target, geometry,
+      harness, atomic); **Gate 2** critique REVISE — confirmed all gate-1/preflight fixes landed + caught **2 NEW gaps the
+      edits opened** (timer effect deps under store-emit re-render; `.slice(-limit)` vs exit-animation contradiction) →
+      resolved by moving the cap to the STORE (evict-oldest), which also dissolved the "queued" state → Approval 2.
+      **Visual Gate PASS measured in real Brave** (Victor, both themes): radius 12px (DEF-U8-h avoided), theme crosses the
+      portal, accents distinct per intent (info/success/danger), zIndex 1400, regions correct, enter `vida-toast-in` /
+      reduced-motion none, B12 clean (opacity/transform only), top/bottom placement, dismiss = real button. typecheck 2/2 ·
+      @vida/ui **219/219** (+16) · build + build-storybook ✓ · root 10/10. DEFs U10-a…f flagged for DS. Spec:
+      `ui-1-vida-ui-primitives/u10-toast.md`. Lessons: **an external store re-renders ALL subscribers on every emit** — a
+      per-item timer/effect must dep only on stable per-item keys, not the record; **enforce a visible cap in the store
+      (evict), not a render slice** (a slice kills exit animations). [[measure-browser-bugs-dont-hypothesize]] (gate
+      re-targeted the measurement from panel→title to avoid a false dark-mode-text bug).
 - [ ] UF — final consolidated gate sweep + version/changelog + §XXIX currency + PR
 
 ## Open questions

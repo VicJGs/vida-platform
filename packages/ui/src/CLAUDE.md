@@ -89,7 +89,29 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   animated — the Tabs indicator precedent). No `popover.arrow` token → reuses popover.background/border (DEF-U9-b). No
   `loading` prop (consumer-composed, DEF-U9-c). Panel keeps `overflow:visible` so the arrow isn't clipped; scrolling is
   on an inner `flexShrink:1 + minHeight:0` wrapper (the U8 body-layout lesson). Motion (B12): opacity + `scale(0.96→1)`
-  from the anchor edge (`transform-origin` inline per resolved side). Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
+  from the anchor edge (`transform-origin` inline per resolved side).
+  **Toast** is the 3rd/last overlay and the **ONLY imperative primitive** — `toast(options) → id` / `toast.dismiss(id)`
+  callable from OUTSIDE the React tree. The bridge is a module-level **external store** (`internal/toast-store.ts`) +
+  React 19 **`useSyncExternalStore`** (the sonner/react-hot-toast reducer model, zero-dep — @vida/ui has no zustand):
+  `toast()` mutates a records array + `emit()` (reassign the ref ONLY in emit — `getSnapshot` must be ref-stable or
+  React loops), the mounted `ToastProvider` subscribes + renders. `ToastProvider` (mounted ONCE near app root; a 2nd
+  instance dev-warns — the store is a singleton) portals to `<body>` under `<Theme name="Toast">` and renders **TWO
+  persistently-mounted live regions** — `role="status"`/`aria-live="polite"` (info+success) and `role="alert"`/
+  `assertive` (danger) — **both present even when empty** (a live region must PRE-EXIST for a screen reader to announce
+  an inserted child, §XIV). **Focus is NEVER moved to a toast on appear**; `F6` (document keydown, `preventDefault`)
+  focuses into the globally-newest toast; **Esc is item-local** (`onKeyDown`+`stopPropagation` — so it can't leak to an
+  overlay behind the toast; the Dialog/Popover precedent). **Cap is STORE-enforced** (per-region, evict-oldest on
+  `add` — NOT a render slice, which would drop the oldest the same commit it starts exiting and kill its exit
+  animation); the provider renders EVERY record (exiting ones are cap-exempt). `dismissToast` is **idempotent**
+  (early-return if already exiting) → `onDismiss` fires exactly once across all paths (timer/dismiss/Esc/eviction).
+  **⚠ Timer effect deps = `[id, duration]` ONLY:** a `ToastItem` re-renders on EVERY store `emit()`, so depping the
+  auto-dismiss timer on `record` would re-arm it on unrelated sibling emits and a busy screen's toasts would never
+  dismiss; pause-on-hover/focus is imperative via refs. Left accent = an absolutely-positioned 3px bar clipped by the
+  panel's `overflow:hidden` (no accent-width token, DEF-U10-c). Intent accent + `$text` cross the portal (light_/dark_
+  Toast). `borderRadius:'$lg'` via the token scale (DEF-U8-h); no `toast.border` token → base `$colorBorderDefault`.
+  No `loading` prop (consumer-composed: `duration:0` + spinner in `description`; `aria-busy` unsettable, DEF-U10-b).
+  Motion (B12): enter `moderate`/`out`, exit `fast`/`in`, opacity + translateY slide from the stack edge only.
+  Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
   timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
@@ -102,7 +124,11 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   — reading `motion.ts`; enter-motion ONLY, the item highlight is a Tamagui variant), `dialog-styles.ts` (scrim + panel
   ENTER via mount-triggered `@keyframes` with a visible resting base — fails safe visible; transform/opacity ONLY;
   reduced-motion `@media` — reading `motion.ts`), `popover-styles.ts` (panel ENTER opacity + `scale(0.96→1)` from the
-  anchor edge; transform/opacity ONLY; transform-origin inline per side; reduced-motion `@media` — reading `motion.ts`).
+  anchor edge; transform/opacity ONLY; transform-origin inline per side; reduced-motion `@media` — reading `motion.ts`),
+  `toast-styles.ts` (enter = a mount `@keyframes` slide+fade; exit = a `[data-phase="exiting"]` transition; slide
+  direction via inline `--vida-toast-from` per placement; transform/opacity ONLY; reduced-motion `@media`). Toast also
+  has `internal/toast-store.ts` — the module-level external store + `toast` singleton (NOT a stylesheet; the
+  imperative→React bridge, see the Toast paragraph).
   **Rule:** a PROP-driven state (e.g. a
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
@@ -131,7 +157,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
-`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (203 tests).
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (219 tests).
 Token visual: `pnpm preview:tokens` → `themes/preview.html`. Component Visual Gate: `pnpm storybook` (or
 `build-storybook`) — the decorator paints the theme page surface ($colorSurfacePrimary: white light / navy dark) so
 dark mode is reviewable (a bare-on-canvas label would otherwise be invisible on Storybook's white iframe).

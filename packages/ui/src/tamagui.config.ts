@@ -30,6 +30,8 @@ import {
   dark_Dialog,
   light_Popover,
   dark_Popover,
+  light_Toast,
+  dark_Toast,
 } from './themes/themes'
 import { fonts as f } from './themes/fonts'
 import { motion } from './themes/motion'
@@ -98,6 +100,8 @@ export const config = createTamagui({
     dark_Dialog,
     light_Popover,
     dark_Popover,
+    light_Toast,
+    dark_Toast,
   },
   fonts: { body: bodyFont, display: displayFont },
   animations,

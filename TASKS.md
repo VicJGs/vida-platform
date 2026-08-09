@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-09 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **U0–U9 DONE + Visual-Gate PASS** (Button·Input·Checkbox·Select·Card·Tabs·Menu·Dialog·**Popover**) (9/10); @vida/ui **203/203**; branch `ui-1-vida-ui-primitives` (NOT merged). U9 = the 2nd overlay: a NON-modal `role=dialog` anchored surface (Menu machinery + Dialog focus-into, not trapped; axis-split 8 placements; arrow toward anchor). Its Visual Gate caught 2 pure-visual arrow bugs (missing `rotate(45deg)`; `border-width:medium` bleed). Next = **U10 Toast** (last overlay), then **UF** final consolidated gate + version/changelog + PR. |
+| ui-1-vida-ui-primitives (LIF-86) | Design System | 2026-08-06 | 2026-08-09 | 🔨 IN PROGRESS — M1.0 `#27`, per-component gate. **ALL 10 PRIMITIVES DONE + Visual-Gate PASS** (Button·Input·Checkbox·Select·Card·Tabs·Menu·Dialog·Popover·**Toast**) (**10/10**); @vida/ui **219/219**; branch `ui-1-vida-ui-primitives` (NOT merged). U10 = last overlay + the ONLY imperative primitive: `toast()` → module external store (`useSyncExternalStore`, zero-dep) → `ToastProvider` (two live regions, focus-never-moved, F6, item-local Esc, store-enforced evict-oldest cap). Gate-2 caught 2 gaps the edits opened (timer effect deps under store-emit; render-slice vs exit-animation) → moved cap to the store. Next = **UF** final consolidated gate (design→components→motion→engineering across all 10) + version/changelog + §XXIX + **PR**. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 | delivery-structure-reconstruction | Project Foundation | 2026-07-31 | 2026-08-01 | ✅ DONE (2026-08-01) — reconstructed to ADR-016 (Initiative→Project→Milestone→Issue); LIVE Linear project-first M1–M4, 91 issues, 0 deferred edges, db-10 ← all 26 modules. Output: `reconstructed-structure.md`. |
 
@@ -44,7 +44,36 @@ graph→AR-6 Views+UI-2, export→UI-3, search→DB-8 — are homed elsewhere in
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-09) — UI-1: U0–U9 shipped (…Popover), Visual-Gate PASS (9/10).**
+**▶ CURRENT (2026-08-09) — UI-1: ALL 10 PRIMITIVES shipped (…Toast), Visual-Gate PASS (10/10).**
+U10 Toast (3rd/last overlay + the **ONLY imperative primitive**) built to `toast.md`: `toast(options)→id` / `toast.dismiss(id)`
+callable from OUTSIDE the React tree, bridged to a mounted `ToastProvider` via a module-level **external store** + React 19
+**`useSyncExternalStore`** (the sonner/react-hot-toast reducer model, zero-dep — `@vida/ui` has no zustand). Provider portals
+to `<body>` under `<Theme name="Toast">` + renders **TWO persistently-mounted live regions** (`role=status`/polite for
+info·success · `role=alert`/assertive for danger — **both present when empty** so an inserted toast announces, §XIV).
+**Focus NEVER moved on appear**; F6 → the globally-newest toast; **Esc item-local** (`onKeyDown`+`stopPropagation`, no leak
+to an overlay behind). **Cap = STORE-enforced, per-region, evict-oldest** (NOT a render slice — a slice would drop the oldest
+the same commit it starts exiting, killing its exit animation); provider renders every record, exiting ones cap-exempt.
+`dismissToast` **idempotent** → `onDismiss` once across all paths. **Timer effect deps `[id,duration]` ONLY** — a store
+`emit()` re-renders ALL items, so a `record`-dep would re-arm the timer on unrelated sibling emits and a busy screen's
+toasts would never dismiss; pause-on-hover/focus is imperative via refs. Left accent = an abs-positioned 3px bar clipped by
+`overflow:hidden`. §XXVI double-gate: **Gate 1** critique REVISE (2 blockers [queued-timer; Esc/F6 document-leak] + 7 material
++ 4 minor) → fixed → Approval 1; **/preflight PASSED + 6 folds** (single-provider dev-warn, action-no-dismiss, F6 target,
+geometry, harness, atomic-announce); **Gate 2** critique REVISE — **confirmed all gate-1/preflight fixes landed** + caught
+**2 NEW gaps the edits opened** (timer effect deps under store-emit re-render; `.slice(-limit)` vs exit-animation
+contradiction) → resolved by moving the cap to the STORE (evict-oldest), which also dissolved the "queued" state → Approval 2.
+**Visual Gate PASS measured in real Brave** (Victor, both themes): radius 12px (DEF-U8-h avoided), theme crosses the portal
+(bg+text+accent shift), accents distinct per intent (info `rgb(99,102,241)`·success `rgb(16,185,129)`·danger `rgb(239,68,68)`),
+zIndex 1400, regions status/polite+alert/assertive, enter `vida-toast-in` / reduced-motion none, **B12 clean** (opacity/transform
+only), top/bottom placement, dismiss = real focusable button. typecheck 2/2 · @vida/ui **219/219** (+16) · build + build-storybook
+✓ · root 10/10. DEFs U10-a…f flagged for DS. **NEXT = UF** — final consolidated gate sweep across all 10 (design → components →
+motion → engineering) + version/changelog + §XXIX currency + **PR** (branch `ui-1-vida-ui-primitives`, NOT merged). Spec:
+`docs/specs/components/ui-1-vida-ui-primitives/u10-toast.md`. Lessons: an external store re-renders ALL subscribers per emit →
+a per-item timer/effect deps only on stable per-item keys, not the record; enforce a visible cap in the store (evict), not a
+render slice ([[measure-browser-bugs-dont-hypothesize]] — the gate re-targeted the measurement panel→title to avoid a false
+dark-mode-text bug).
+
+<details><summary>(prior) 2026-08-09 — UI-1: U0–U9 shipped (…Popover), Visual-Gate PASS (9/10).</summary>
+
 U9 Popover (2nd overlay) built to `popover.md`: a **NON-modal `role="dialog"`** anchored surface — the app behind stays
 interactive (no scrim, no focus trap, no `inert` — the Dialog contrast). A genetic HYBRID: **Menu's floating machinery**
 (trigger `cloneElement` `aria-haspopup="dialog"`, portal-to-body under `<Theme name="Popover">`, `position:fixed`
@@ -71,6 +100,8 @@ contract (popover.md:27) already specifies the arrow → deliver-the-doc, don't 
 ✓ · root 10/10. DEFs U9-a…e flagged for DS. **NEXT = U10 Toast** (`toast.md`; last overlay — `zIndex.toast`), then **UF**
 final consolidated gate + version/changelog + §XXIX + PR. Branch `ui-1-vida-ui-primitives` (NOT merged). Spec:
 `docs/specs/components/ui-1-vida-ui-primitives/u9-popover.md`.
+
+</details>
 
 <details><summary>(prior) 2026-08-08 — UI-1: U0–U7 (…Menu) shipped, Visual-Gate PASS (7/10).</summary>
 
