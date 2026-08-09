@@ -1,6 +1,8 @@
 # Task: ux-4-state-conventions
-# Status: planned
+# Status: in-progress
 # Linear: LIF-93
+# Profile: add-frontend-component
+# Scenario: Default
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
