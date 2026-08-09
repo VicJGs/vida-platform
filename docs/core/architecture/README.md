@@ -34,6 +34,7 @@ how data flows, and what patterns developers should follow. Where a doc and an A
 |------|---------|
 | [system-overview.md](system-overview.md) | Highest-level description of the platform — modules, layers, platforms, and technology stack |
 | [information-architecture.md](information-architecture.md) | Navigation model (co-primary dual-axis: module dock + Spaces bar) and canonical module→nav placement; the experience-track root (UX-1) |
+| [command-bar-and-search.md](command-bar-and-search.md) | The `⌘K` global launcher + search interaction model — two modes, frecency+pinning commands, provider seams, all search states; the experience-track surface (UX-2) |
 | [module-dependency-graph.md](module-dependency-graph.md) | Which modules and foundation substrates depend on which, build order derivation, and risk points |
 | [data-flow.md](data-flow.md) | How data moves through the system — write flow, read flow, encryption pass-through, service layer pattern, state management |
 | [cross-module-integration.md](cross-module-integration.md) | Every point where one module accesses another's data — journal summary, entity links, task references, gamification, notifications |
