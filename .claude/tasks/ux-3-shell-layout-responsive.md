@@ -1,5 +1,5 @@
 # Task: ux-3-shell-layout-responsive
-# Status: in-progress
+# Status: done
 # Linear: LIF-92
 # Profile: add-frontend-component (design-led)
 # Scenario: Default (design-led frontend spec)

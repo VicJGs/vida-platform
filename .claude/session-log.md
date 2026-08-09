@@ -4487,3 +4487,39 @@ Full log: `.claude/sessions/2026-08-05-ds-5-primitive-contracts-1.md`. **Next he
 **UI-1 BUILD COMPLETE — 10/10 primitives, all gates PASS, v0.1.0.**
 
 **MERGE + CLOSE (2026-08-09, later):** Victor gave explicit merge authorization → **PR #8 MERGED** via `gh pr merge 8 --merge --delete-branch` (`21a3305`). Synced local `main` (0/0), pruned the deleted branch, re-verified green on merged main (v0.1.0 · @vida/ui 219/219 · typecheck). Post-merge close-out (sync-before-archive order per [[sync-before-archive-else-status-not-pushed]]): set task `Status: done` → `tracker_sync --sync` (exit 0, LIF-86 → Done) → archived the task to `.claude/tasks/archive/` + moved to `_index.md` Completed + removed from TASKS.md In Progress. **UI-1 milestone CLOSED.** Next session head = UX-2 (#22).
+
+
+---
+## 2026-08-09 — UX-3 Shell layout + responsive (LIF-92, #23) — BUILT + MERGED (PR #10)
+**Task:** ux-3-shell-layout-responsive. Profile CORRECTED mid-session `Generic`→**add-frontend-component (design-led)**.
+Full §XXVI double-gate + independent post-impl audit.
+**Shipped (post-impl audit SHIP):** `apps/web/src/shell/{breakpoints,regions}.ts` (+22 tests) + `shell/CLAUDE.md` +
+`docs/core/architecture/shell-layout.md` (9 sections, +README row). @vida/web **66/66** (22 new) · typecheck 0 · lint
+0-err · root **10/10**. **PR #10 MERGED to main** (`a30417b`, --merge --delete-branch); local main synced+green.
+**What it is:** the shell frame layout + responsive MODEL (5 regions: module dock⇒left sidebar · global bar · Spaces-bar
+seam · content `<Outlet/>` · ⌘K/modal overlay host) — the spec **UI-4 implements as components**. Design/spec class
+(doc + declarative artifact), the UX-1/UX-2 sibling pattern. `breakpoints.ts` APPLIES design.md §X/§IV (375/768/1440/1920
+mobile-first · 1280 content cap · 16/24/32 gutters · 44×44 touch · padding scale) + reserved `TAMAGUI_MEDIA` createMedia
+seam (plain data, UI-4 wires). `regions.ts` = UX-3's OWN design content (not in any standard): `DOCK_STATE`
+drawer→rail→sidebar, `OVERLAY_MODE` sheet→centered, Spaces seam, `LAYERING` (z+radius refs), reserved
+`ShellUIStateContract`. Boundaries held: no packages/ui edit · no store mod · no components · no unbuilt imports.
+**TWO drift-catches by Victor (the session's real story):**
+1. **Profile mislabel** — the `#`-table said "Generic" (loads only `process`); authoritative `m1.0-delivery-plan.md:210`
+   binds UX-3 to **add-frontend-component (design-led)** + authority **design.md**. Under Generic I never loaded design.md
+   → PLAN Rev 1/2 INVENTED a breakpoint set (768/1024/1440) contradicting **design.md §X** (which fixes 375/768/1440/1920).
+   → memory [[load-delivery-plan-profile-not-coarse-order-table-label]].
+2. **Manufactured forks** — I listed D2 (artifact vs pure-doc) + D5 (breakpoint-config home) as open Approval-1
+   decisions. Both were already resolved: D2 by the two-sibling deliverable pattern (UX-1/UX-2 = doc+artifact) + issue
+   Home `apps/web/src`; D5 by the delivery-plan's precise Home (UX-4 lists `packages/ui`, **UX-3 does NOT** → editing DS
+   tamagui.config.ts is out of scope). → widened [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]]
+   (a PLAN's "Decisions Needed" section is the same trap as an AskUserQuestion).
+**Gate trail:** Approval 1 (critique SHIP; drift-catch 1 corrected → Rev 3, drift-catch 2 → Rev 4) → preflight PASSED
+(F1: content max-width is a GLOBAL 1280 rule, not per-bp — tablet 768-1439 & desktop cross 1280) → Approval 2 (gate-2
+critique SHIP: all token names verified exist, all design.md values exact) → post-impl audit SHIP (independent: value/
+token fidelity, 0 scope violations, code↔doc aligned, faithful to IMPL-PLAN). §XXIX currency: the arch doc + shell/CLAUDE.md
+ARE the durable home (from-zero shell context — no separate current-*).
+**⚠ LIF-92 → Done NOT pushed to Linear — network hang** (`--sync` exit 144; `--pull` also timed out at session start).
+Task file kept at Status: done + **NOT archived** (per [[sync-before-archive-else-status-not-pushed]] — parse is
+active-only, so archiving before the push would lose it). **Retry `tracker_sync --sync` next session when network is back.**
+**HANDOFF:** UX-3 unblocks **UX-6 (#26)** + **UI-4 (#30)**. Next head by `#`-order = **UX-4 State conventions (#24,
+← UX-1 ✅, add-frontend-component)** — lowest-# ready. Also ready: UX-5 (#25), UX-6 (#26), UI-2 (#28), UI-3 (#29), UI-4 (#30).

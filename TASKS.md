@@ -31,11 +31,15 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-09 · UX-2 #22 DONE+MERGED): `UX-3` `#23` (Shell layout, responsive) — ← UX-1 ✅.**
-Lowest-`#` ready non-stream issue by the `#`-order rule; `--next` also favors UX-3 (dependent-count 2: →UX-6, UI-4),
-so both agree this time. Profile: **Generic Session**. Also ready: UX-4 (#24), UX-5 (#25), UI-2 (#28), UI-3 (#29),
-UI-4 (#30). UX-2 (#22) closed as a leaf (blocks nothing). *(Toolkit follow-up filed: generalize a declared global-order tie-break into
-`tracker_sync` so `--next` can be correct in any repo — see `~/dev-toolkit/.claude/tasks/`.)*
+**🎯 Computed head now (2026-08-09 · UX-3 #23 DONE+MERGED PR #10): `UX-4` `#24` (State conventions) — ← UX-1 ✅.**
+Lowest-`#` ready non-stream issue by the `#`-order rule. Profile: **add-frontend-component** (authority
+STANDARDS engineering.md + §XXII DoD). Also ready: UX-5 (#25), UX-6 (#26 — now unblocked by UX-3), UI-2 (#28),
+UI-3 (#29), UI-4 (#30 — now unblocked by UI-1+UX-3). UX-3 (#23) closed; unblocks UX-6 + UI-4.
+> ⚠ **PROFILE NOTE (learned UX-3):** the authoritative per-issue profile is the **delivery-plan** row
+> (`m1.0-delivery-plan.md`), NOT the coarse "Generic" in reconstructed-structure's `#`-table. UX-* =
+> **add-frontend-component** (IA/layout → design-led). Load THAT profile's standards (design/engineering) at pickup,
+> or the gate invents what's already standardized. See [[load-delivery-plan-profile-not-coarse-order-table-label]].
+*(Toolkit follow-up filed: generalize a declared global-order tie-break into `tracker_sync` so `--next` can be correct in any repo — see `~/dev-toolkit/.claude/tasks/`.)*
 > NB: the tracker reads task-file `blocked by` edges, **not** Linear blocker relations (it syncs status/identity
 > only) — so reconciling an edge never needs a Linear change.
 
