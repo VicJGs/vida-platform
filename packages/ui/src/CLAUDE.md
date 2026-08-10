@@ -111,8 +111,112 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Toast). `borderRadius:'$lg'` via the token scale (DEF-U8-h); no `toast.border` token → base `$colorBorderDefault`.
   No `loading` prop (consumer-composed: `duration:0` + spinner in `description`; `aria-busy` unsettable, DEF-U10-b).
   Motion (B12): enter `moderate`/`out`, exit `fast`/`in`, opacity + translateY slide from the stack edge only.
-  Remaining v1 stubs (calendar/gallery/list/neural-graph/pomodoro/
-  timeline/export-dialog) are pre-Tamagui, migrated by UI-2/UI-3.
+  **list-view** is **UI-2 · V1** — the first platform view (`list` VIEW_LAYOUT renderer) and the **DATA-VIEW SPINE**
+  V2–V4 reuse. A pure **presentational** generic `ListView<T>`: `items` + `renderItem` + `getKey` → a `role="list"`
+  of `role="listitem"` rows. **Row interactivity is NOT list-view's** — the consumer's `renderItem` composes an
+  interactive Card when a row is clickable (LV-5), so list-view stays layout-only and doesn't re-solve Card's
+  container-vs-button problem. **Four RENDERED terminal states** (BR-2), `state` is a **PROP not derived** (the
+  package→app boundary — the app derives via UX-4 `deriveTerminalState` + passes it; `@vida/ui` is a package, can't
+  import an app): `loading` → N static `SkeletonRow`s (`$colorSurfaceSecondary`, `$md`, fixed `$24` h, **no shimmer**,
+  the UX-4 §3.1 recipe) as aria-hidden listitems + `aria-busy`; `empty`/`error` → a **`role="status"`** message
+  region (NOT a `role="list"` with zero items — that trips axe; error is polite/`status`, not assertive `alert` —
+  it's a statically-rendered state, not a live insertion, the Toast contrast). The container **role is
+  state-dependent** (`list` for list/loading · `status` for empty+error). `state` is a **LOCAL `ViewState` union**
+  (`'loading'|'empty'|'error'|'success'`) — `@vida/ui` deps are Tamagui-only, so importing `@vida/core`'s
+  `TerminalState` would be a wrong-direction edge; structural typing makes `deriveTerminalState()`'s value assignable
+  with no import. **React 19 `ref`-as-prop, NO `forwardRef`** (a generic `forwardRef` erases `<T>`; list-view is
+  non-interactive so §111-115's mandate n/a — the Menu `props.ref` precedent). **No sub-theme** (LV-3): dividers
+  (`$colorBorderDefault`), skeleton, message use BASE semantic tokens, which resolve on an **unnamed** styled host
+  (the `name` prop only scopes component sub-theme keys). `density` = the **between-row GAP** (`$8/$12/$24`), NOT
+  per-row padding (a row's inset is its renderItem's — else double-pad with Card). LV-7 dev-warns on state/items
+  contradictions + a missing accessible name (card.tsx guard precedent). No motion in V1 (LV-6). Spec:
+  `docs/specs/components/ui-2-platform-views/{_index,v1-list-view}.md`.
+  **gallery-view** is **UI-2 · V2** — **list-view's spine with a responsive flex-wrap GRID** (the imagery-first /
+  vision-board `gallery` layout, ADR-007:61). Reuses `type ViewState` from `./list-view` (intra-package, no 2nd copy)
+  + the identical terminal-state switch, `role="list"`/`listitem` + state-dependent role, LV-7 dev-warns, React-19
+  ref-prop. Delta = the grid: `GalleryRoot` (`flexDirection:'row'` + `flexWrap:'wrap'` + density→`gap`), tiles sized
+  by a per-instance `style={tileStyle}` = `{flexGrow:1, flexBasis/minWidth: minTileWidth, maxWidth: minTileWidth*2}`
+  (the tabs `style={indicatorStyle}` precedent — layout numbers, not tokens; **`minWidth` is the enforced FLOOR** —
+  `flexBasis` alone collapses under `flexShrink`). Wraps to a single column at 375 with the default 200 (gallery ≈
+  list on mobile — expected). Skeleton tiles reuse `tileStyle` + **`aspectRatio:3/2`** (tracks the grown width, no
+  jump on load; jsdom CSSOM serializes it `"1.5 / 1"`). **Cover-field degradation is the VIEW ENGINE's**
+  (ADR-007:62-64), NOT this renderer. No sub-theme/motion/new-dep. Spec: `…/ui-2-platform-views/v2-gallery-view.md`.
+  **timeline** is **UI-2 · V3** — V1's spine laid out as a **CONTINUOUS vertical rail** (the `timeline` layout: temporal
+  sequence). **The rail-continuity trick:** `TimelineRoot` has NO gap; the between-row spacing is the Content column's
+  `paddingBottom` (skipped on the last row), so the rail columns sit **flush** and their full-height lines meet — an
+  absolute line scoped to an item CANNOT cross a root `gap`. The dot is at a FIXED `top:12` (12×12, center=18) so no
+  layout measurement is needed; the line is trimmed to the dot at the ends via a **4-branch rule** (`isFirst&&isLast`
+  lone → NO line [else a dangling nub]; first `{top:18,bottom:0}`; last `{top:0,height:18}`; middle `{top:0,bottom:0}`).
+  The `getLabel` temporal label is **real content** (first in the listitem, NOT aria-hidden); only the rail column
+  (line+dot) is `aria-hidden`. Reuses the whole spine via `internal/data-view`. Spec: `…/v3-timeline.md`.
+  **V3 also extracted `internal/data-view.tsx`** (rule of three) — the shared `ViewState` type + the `Message`
+  default empty/error copy + `resolveDataViewState({state,itemCount,ariaLabel,ariaLabelledby,name})` (role +
+  effectiveEmpty + the 3 dev-warns). list-view + gallery-view + timeline all consume it; list-view **re-exports
+  `ViewState`** so the barrel is unchanged. Only the shared LOGIC is extracted — each view keeps its own
+  container/wrapper/skeleton + the 4-branch body switch (the layout genuinely differs).
+  **calendar-view** is **UI-2 · V4** — a **month grid** (`calendar` layout) that buckets dated items onto days.
+  **It DIVERGES from the linear-list spine:** a calendar is a 2D date grid → it renders as a **`role="table"`** (day
+  cells `role="cell"`, NOT `gridcell`/`list`), and **"empty" is a designed grid-with-no-chips state, NOT a status
+  message**. So it reuses the spine's PIECES (`ViewState`, `Message`, `warnMissingName`, ref-prop, base tokens) but
+  **NOT `resolveDataViewState`** (its empty→status role is wrong for a calendar). **Pure display:** `month` is
+  CONTROLLED (NO `useState`); prev/next nav Buttons render only when `onMonthChange` is given. **⚠ TZ-safe day keying:**
+  a `'YYYY-MM-DD'` string is the day key **as-is** (NEVER `new Date(str)` — that's UTC-midnight → an off-by-one in a
+  negative-offset zone like UTC−3 [Brasília]; the COMMON path since that's the platform date format); a `Date` →
+  `format(d,'yyyy-MM-dd')` (local). Grid = **always exactly 42 cells** (`addDays(gridStart,0..41)` — the
+  `endOfWeek(endOfMonth)` interval yields 35 OR 42, so build the fixed 42) for a stable height; weekday headers from
+  the first 7 grid days (shift with `weekStartsOn`); today = `$colorBrandPrimary` badge (injected `today?` seam for
+  deterministic tests); `maxPerDay` chips + "+K more"; 375-usable via a `minWidth:560` table in an `overflowX:auto`
+  wrapper. First view with a **new dep — `date-fns` (^4)** (ADR-001:174; barrel imports, consumer bundler shakes).
+  Terminal states: loading→skeleton grid+aria-busy · error→`role="status"` Message · success/empty→the grid. Spec:
+  `…/v4-calendar-view.md`. (V4 also extracted **`warnMissingName`** into `internal/data-view` — the accessible-name
+  warn shared with `resolveDataViewState`, whose STATE GATE stays put.)
+  **pomodoro-widget** is **UI-2 · V5** — the interactive timer WIDGET `@vida/ui` ships (ADR-008:35). NOT a data-view: a
+  self-timing single-interval countdown with a **DEFERRED session-engine seam** — the pomodoro *session*
+  (lifecycle/persistence/effects/phase-sequencing) is a `sessions` sub-type owned by MOD-sessions (ADR-004); the widget
+  only owns the ephemeral countdown + **emits lifecycle intents** via callbacks (`onStart/onPause/onResume/onReset/
+  onSkip/onComplete`). **⚠ Timer structure (the Toast-lesson traps):** timing is **drift-free** from an `endAtRef`
+  timestamp; the `setInterval` is **armed IMPERATIVELY in `run()`** (the `toast.tsx arm()` precedent) and the ~250ms
+  tick reads `endAtRef.current` + the stable `setRemainingMs` — **NO `useEffect` deps on countdown state** (that
+  re-arms every tick). `status` is BOTH state (renders controls) AND a `statusRef` (read synchronously by the tick
+  latch); a **single `setStatus(next)` helper writes BOTH** so they never desync. `onComplete` fires **exactly once**
+  via a one-way latch (`statusRef!=='running'`→return) in contractual order
+  (`setStatus('idle')→clear→setRemainingMs(0)→msg→onComplete() LAST`). A **`durationMs` change** is the phase-advance
+  seam — an **atomic idle-guarded reset** (gated on `prevDurationRef`, dev-warns mid-run). Controls swap by status
+  (Start·primary → Pause·secondary/Skip·ghost → Resume/Reset/Skip); Skip ≠ onComplete. `role="timer"` (implicit
+  aria-live=off, no per-second spam) + a **polite `role="status"` completion one-shot** (cleared on transition-out).
+  Self-names (composed aria-label). `mm:ss` via `$display`; progress fill clamped [0,1]. Base tokens, no sub-theme, no
+  new dep. Spec: `…/v5-pomodoro-widget.md`.
+  **export-dialog** is **UI-2 · V6** — the reusable export modal. **Composes UI-1 `Dialog`** (via its `footer` +
+  `description` props — NOT children: `footer` renders the actions in a non-scrolling `<footer>`, `description` wires
+  `aria-describedby`) + a **hand-rolled APG `role="radiogroup"`** format picker + `Button`. **PRESENTATIONAL (the V1
+  boundary):** `@vida/ui` can't import `@vida/core`'s serializers → the dialog emits **`onExport(format)`** and the APP
+  wires serialization + download. `ExportFormat` = a **LOCAL union** `'md'|'pdf'|'docx'` (LV-3a; ≡ `@vida/types`
+  EXPORT_FORMAT), no cross-package edge, no new dep. **⚠ The radios are `role="radio"` DIVS** (no native `disabled`), so
+  **`busy` drops every radio to `tabIndex=-1`** or the selected one stays a focusable-but-inert member of Dialog's
+  focus trap (`[tabindex]:not([tabindex="-1"])`). Roving DOM focus (the Menu model): only the selected radio is
+  `tabIndex=0`; ↑↓←→ wrap + Home/End + Space, focus+selection coupled. The **effective selection is DERIVED each
+  render** (`formats.includes(sel) ? sel : formats[0]`) so an orphaned sticky state / changed `formats` self-heals.
+  Export uses Button `loading={busy}` ("Exporting…"); Export does NOT self-close (the consumer closes after the export
+  resolves; failure → Toast, §6). Dev-warns: `defaultFormat∉formats`, empty `formats`. `role="dialog"` focus-into lands
+  on the selected radio (it's `focusables[0]` — the radiogroup precedes the footer + roving). Base tokens, no
+  sub-theme. Spec: `…/v6-export-dialog.md`.
+  **neural-graph** is **UI-2 · V7** (the LAST view) — a **force-directed WebGL graph** (Sigma.js) for the `graph`
+  VIEW_LAYOUT. First component with **WebGL + new deps** (`sigma`·`graphology`·`graphology-layout-forceatlas2`).
+  PRESENTATIONAL: `nodes`/`edges` are props (AR-8's graph-prep, uncrossable) — own minimal `GraphNode`/`GraphEdge`.
+  **⚠ Sigma mounts via a ref+effect (BR-5), WebGL-GUARDED** (`webglAvailable` = `canvas.getContext('webgl')`, false in
+  jsdom → effect skips, no crash). **The effect deps on a CONTENT signature `graphKey`** (node-ids + edge-pairs), NOT
+  the `nodes`/`edges` array REFS — an equal-content new array (the inline-`.map()` consumer footgun) would otherwise
+  `kill()`+rebuild+relayout the WebGL context EVERY render (browsers cap live contexts ~16 → crash; the Toast re-arm
+  bug at WebGL scale). Cleanup = `sigma.kill()` (context/renderer/camera/listeners). `forceAtlas2.assign` with
+  `barnesHutOptimize` + a deterministic circular seed; **documented node-ceiling** (~hundreds; 10K → §6 webworker).
+  **A11y (§XIV MET in V7, not deferred):** the WebGL canvas is `aria-hidden`; a **visually-hidden focusable node
+  `<button>` list** (bare `<button>`, sr-only clip style, NOT UI-1 Button) is the accessible equivalent — `onNodeClick`
+  fires from BOTH Sigma `clickNode` (mouse) AND the buttons (keyboard/SR + jsdom-testable). The node-list renders in
+  success regardless of WebGL (also the no-WebGL data fallback). Sigma canvas is transparent → the frame's
+  `$colorSurfacePrimary` flips with the theme. States via the shared `Message`. Dangling edges skipped + dev-warn.
+  Lifecycle tested by mocking `sigma`/`forceatlas2` + stubbing `getContext`. Spec: `…/v7-neural-graph.md`.
+  **⟹ ALL 7 UI-2 views shipped** (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) + the shared
+  `internal/data-view` spine.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
@@ -128,7 +232,9 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   `toast-styles.ts` (enter = a mount `@keyframes` slide+fade; exit = a `[data-phase="exiting"]` transition; slide
   direction via inline `--vida-toast-from` per placement; transform/opacity ONLY; reduced-motion `@media`). Toast also
   has `internal/toast-store.ts` — the module-level external store + `toast` singleton (NOT a stylesheet; the
-  imperative→React bridge, see the Toast paragraph).
+  imperative→React bridge, see the Toast paragraph). **`internal/data-view.tsx`** (UI-2 · V3) is the shared data-view
+  spine — `ViewState` + `Message` + `resolveDataViewState` — consumed by list-view/gallery-view/timeline (see the
+  timeline paragraph).
   **Rule:** a PROP-driven state (e.g. a
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
@@ -157,7 +263,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
-`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (219 tests).
+`pnpm --filter @vida/ui typecheck && pnpm --filter @vida/ui build && pnpm --filter @vida/ui test` (317 tests).
 Token visual: `pnpm preview:tokens` → `themes/preview.html`. Component Visual Gate: `pnpm storybook` (or
 `build-storybook`) — the decorator paints the theme page surface ($colorSurfacePrimary: white light / navy dark) so
 dark mode is reviewable (a bare-on-canvas label would otherwise be invisible on Storybook's white iframe).
