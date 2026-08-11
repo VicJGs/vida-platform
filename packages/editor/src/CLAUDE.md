@@ -1,0 +1,60 @@
+# packages/editor/src — @vida/editor source (TipTap block editor)
+
+The block editor that is the heart of the Notes & Journals integration layer (ADR-001 §8, CLAUDE.md §8).
+Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core}.md`. Built unit-by-unit (E1→E8), each
+under the §XXVI double-gate + a real-browser component Visual Gate (rendered `@vida/ui`-consuming component).
+
+## Shipped (E1 — editor core spine)
+- `editor.tsx` — **`<VidaEditor>`**: a headless Tiptap v3 React editor (`useEditor` + `<EditorContent>`) in a Tamagui
+  `@tamagui/core` styled frame. **UNCONTROLLED + imperative reset (BR-E1-1):** `defaultValue` seeds the doc ONCE;
+  edits emit via `onChange` (`onUpdate → getJSON`); external resets go through the `forwardRef` handle
+  (`setContent`/`focus`/`getDocument`) — **`setContent` is SILENT (`emitUpdate:false`)**, a reset is not an edit so it
+  never echoes to `onChange`/persistence (Tiptap v3 defaults `emitUpdate:true`; avoids the save-echo + M4 Yjs-feedback
+  dead-end) — NEVER a re-passed `value` prop. **`onChange` also fires once on mount** (Tiptap normalizes the seed) — a
+  benign idempotent echo; the app dirty-checks/dedupes persistence (BR-E1-2). Only non-edit emit; resets are silenced (a React-controlled value loop causes cursor
+  jumps, and BR-2's M4 Yjs inversion makes props-as-source-of-truth a dead end). `onChange` is read through a **ref**
+  so an unstable inline handler never recreates the editor (which would reset ProseMirror state/cursor); the editor is
+  created ONCE (default `[]` deps) and `editable` is synced imperatively via `setEditable`.
+  - **`assertEditorDocument(json)`** — the RUNTIME structural gate (spec §6): Tiptap `getJSON()` returns `JSONContent`,
+    so a bare `as EditorDocument` cast would silence a shape drift vs `@vida/types.EditorNode` that reaches
+    E6/persistence undetected. Validates `type==='doc'` + `content` is an array of `{type:string}`, throws otherwise.
+    Wired into `onUpdate` and `getDocument`. With StarterKit this always holds → a throw is a real contract breach.
+  - **`immediatelyRender:false`** — defers first render to a post-mount effect (StrictMode double-mount safety). Tests
+    MUST `waitFor(.ProseMirror)` / `isEditable` before asserting the first `onChange` — never a synchronous query.
+  - **a11y (BR-6, §XIV):** `role=textbox` + `aria-multiline` + `aria-label`/`aria-labelledby` applied to the
+    contenteditable host via `editorProps.attributes`; dev-warns if neither name is given (the card.tsx guard precedent).
+  - **Frame = base semantic tokens, NO sub-theme (BR-E1-5):** unnamed styled host → `$colorSurfacePrimary` /
+    `$colorBorderDefault` resolve directly (the list-view LV-3 precedent); `borderRadius:'$md'` reads the radius token
+    SCALE, not a sub-theme key (DEF-U8-h). `tamagui.config.ts` is UNTOUCHED (no `light_/dark_Editor`).
+- `internal/editor-styles.ts` — injected CSS (idempotent, browser-only; the `input-styles.ts` mechanism) for what a
+  styled frame can't reach on the inner `.ProseMirror`: **focus ring** on the frame via
+  `:has(.ProseMirror:focus-visible)` → `var(--colorFocusRing)`; **placeholder** `::before` colour →
+  `var(--colorTextMuted)` — a BASE semantic var, **NOT `--placeholder`** (which is sub-theme-only, absent on the
+  editor's unnamed frame — the "cite tokens from emitted output" lesson). `@tiptap/extension-placeholder` marks the
+  empty node but ships no CSS; the consumer renders it.
+- `commands.ts` — **`INTEGRATION_BLOCK_COMMANDS`** (BR-E1-4): the enum→command TYPE MAP, one `SlashCommand` per
+  `INTEGRATION_BLOCK_TYPE` (11), each populating all 7 required fields. E1 owns this so E4's slash menu can LIST
+  commands before E5 builds their node-views. **E1 ships the DATA only** — E5 builds the node-views the commands insert.
+- `index.ts` — barrel: `VidaEditor` + `assertEditorDocument` + `VidaEditorProps`/`VidaEditorHandle` +
+  `INTEGRATION_BLOCK_COMMANDS` + re-exported `EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand` types.
+
+## Deferred (later UI-3 units — empty skeleton files exist)
+`toolbar.tsx` (E3) · `slash-menu.tsx` (E4) · `extensions/*` standard blocks (E2) + integration node-views (E5) ·
+`serializers/{to,from}-*.ts` (E6 markdown round-trip · E7 PDF · E8 DOCX). **Yjs/`y-prosemirror` = a deferred SEAM,
+no dep** (BR-2, M4/AR-9b): `pages.content` is a TipTap-JSON snapshot that renders locally without a Y.Doc; E1's shell
+keeps the content source swappable so M4 can invert authority (JSON→Yjs-derived) without a rewrite.
+
+## Boundary (BR-1 / BR-E1-2)
+`@vida/editor` is PRESENTATIONAL: it emits `EditorDocument` JSON and touches NO SQLite / `@vida/core` (the export-dialog
+precedent). The app wires `onChange` → `pages.content` + persistence. E1 imports only `UIProvider`/`config`/tokens from
+`@vida/ui` (the Tamagui context + base sub-theme) — it composes NO UI-1 primitive yet (Menu/Button arrive at E3/E4).
+
+## Types
+`EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand`/`INTEGRATION_BLOCK_TYPE` are owned by **`@vida/types`**
+(`editor.ts`) and NEVER redefined here (BR-7).
+
+## Verify
+`pnpm --filter @vida/editor typecheck && build && test`. Component Visual Gate: `pnpm --filter @vida/editor storybook`
+(or `build-storybook`) — the decorator paints the theme page surface so the caret/placeholder/frame are reviewable in
+both themes. Tiptap v3 packages: `@tiptap/react` + `@tiptap/pm` (ProseMirror bundle) + `@tiptap/starter-kit` +
+`@tiptap/extension-placeholder`, family-pinned `^3.30.0`.
