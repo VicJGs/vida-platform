@@ -1,0 +1,13 @@
+{
+  "//": "E1 (UI-3) — typecheck-only config for the Storybook harness + stories (mirrors @vida/ui). Without it these files are checked by NOTHING (react-vite builds with esbuild, no typecheck), so a broken decorator/story would ship green. Not part of the tsc --build graph; run via `tsc -p tsconfig.storybook.json`.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "rootDir": "."
+  },
+  "include": [".storybook", "vite.config.ts", "src/**/*.stories.tsx"],
+  "exclude": ["node_modules", "dist"]
+}
