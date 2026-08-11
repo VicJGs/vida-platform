@@ -1,6 +1,6 @@
 {
   "name": "@vida/ui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -43,7 +43,11 @@
   },
   "dependencies": {
     "@tamagui/animations-css": "2.6.2",
-    "@tamagui/core": "2.6.2"
+    "@tamagui/core": "2.6.2",
+    "date-fns": "^4.4.0",
+    "graphology": "0.26.0",
+    "graphology-layout-forceatlas2": "0.10.1",
+    "sigma": "3.0.3"
   },
   "peerDependencies": {
     "react": ">=19"
