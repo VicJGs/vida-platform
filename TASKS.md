@@ -8,7 +8,7 @@
 |------|---------|---------|---------|--------|
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
-*(ux-5-vault-unlock-onboarding LIF-94 → **Done + MERGED** PR #12 (`f14d01c`), 2026-08-09 — archived. See _index.md Completed. Prior: ux-4 LIF-93 PR #11.)*
+*(ui-2-platform-views LIF-87 → **Done + MERGED** PR #13 (`e3872fc`), 2026-08-11 — the 7 platform views + shared data-view spine, @vida/ui v0.2.0, UF gate SHIP. Archived; see _index.md Completed. Prior: ux-5 LIF-94 PR #12.)*
 
 ## 🧭 Delivery Routing — READ THIS FIRST (this repo's routing rule)
 
@@ -19,7 +19,15 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 *because* `--next` had no global order and kept mis-picking heads. So, at **every `/begin`**, for THIS repo:
 
 1. **Compute the head from `#` order.** Walk `reconstructed-structure.md`'s `#` column ascending; the next head
-   is the **lowest-`#`** issue that is (a) NOT done, (b) NOT a `〰` stream row, (c) has **all blockers done**.
+   is the **lowest-`#`** issue that is (a) NOT done, (b) NOT a `〰` stream row, (c) has **all blockers done**,
+   **(d) not gated behind an unfinished SUB-WAVE.**
+1a. **SUB-WAVE GATE (learned 2026-08-09 — the raw `#` walk alone is INSUFFICIENT).** The per-issue `←` edges do
+   NOT encode the coarse sub-wave sequencing in `m1.0-delivery-plan.md:129,140-141`: `-a`∥`-b` → `-c` (UI) → `-d`
+   (UX); **`-d needs -c`** ("UX-6 needs UI-4"). A higher-`#` UI-4 (#30) can't be a per-issue blocker of UX-6 (#26)
+   without violating DF-3, so this gate lives ONLY in the sub-wave note, not the edges. **Before naming a head,
+   check its sub-wave isn't gated by an unfinished earlier wave.** This is why the raw walk wrongly picked UX-6 #26
+   when the real head was UI-2 #28. When `--next` disagrees with a raw `#` walk, suspect a sub-wave gate — `--next`
+   is usually right about eligibility here.
 2. **`tracker_sync --next` is ADVISORY only.** Its `order_nodes` tie-breaks the ready set by *direct-dependent
    count* (`tracker_sync.py:1108`) — a different (also-valid) topo tie-break, so it routinely names a
    higher-`#` issue (e.g. UX-3 #23 over AR-8 #14). **When `--next` and the `#` order disagree, the `#` order
@@ -32,10 +40,17 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-09 · UX-5 #25 DONE+MERGED PR #12): `UX-6` `#26` (Home = Journal daily dashboard) — ← UX-3 ✅.**
-Lowest-`#` ready non-stream issue by the `#`-order rule. Profile: **new-feature** (per delivery-plan:213). Also ready:
-UI-2 (#28), UI-3 (#29), UI-4 (#30). `--next` says UI-2 (#28) by dependent-count → overridden by the `#` order
-([[doc-order-authoritative-over-next-heuristic]]). UX-5 (#25) closed (unblocks UI-4; feeds UX-5b/M3).
+**🎯 Computed head now (2026-08-11): `UI-3` `#29` (Vida editor) — ← UI-1 ✅ + AR-4 ✅. Next in the `-c` UI wave (UI-1 ✅ → UI-2 ✅ → **UI-3** → UI-4). `--next` agrees. ⚠ Before starting UI-3, resolve the UI-3/UI-4 ordering open-decision (`docs/specs/fixes/ui-3-ui-4-ordering-reconcile/` — `#` order says UI-3 first; part-3:116 lists UI-4 first; is "shell before editor" Victor's intent?).**
+⚠ **SUB-WAVE RULE (learned 2026-08-09, added to the routing steps below):** the raw `#`-order walk is INSUFFICIENT
+alone — it does NOT encode the `-c`/`-d` **sub-wave sequencing** (`m1.0-delivery-plan.md:129,140-141`): the **UX
+wave `-d` needs the UI wave `-c`** ("UX-6 needs UI-4"). So although `UX-6 #26` is the lowest-`#` not-done issue by
+per-issue edges (← UX-3 only), it is **NOT eligible** until UI-2→UI-3→UI-4 land. The eligible head is the next in
+the ungated `-c` wave = **UI-2**. This is why `--next` said UI-2. *(A prior "Computed head = UX-6" note here was the
+drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
+> ⚠ **UI-3/UI-4 ORDER — reconcile BEFORE that turn (not before UI-2):** a doc inconsistency exists — `part-3:116`
+> lists UI-4 before UI-3 while roadmap:90 / delivery-plan:140 / `#` order all say UI-3 (#29) before UI-4 (#30);
+> they're parallel-ready so `#` tie-breaks → UI-3 first. Triaged ISOLATED (head unaffected). Diagnosis +
+> open-decision (is "shell before editor" Victor's intent?): `docs/specs/fixes/ui-3-ui-4-ordering-reconcile/`.
 > ⚠ **PROFILE NOTE (learned UX-3):** the authoritative per-issue profile is the **delivery-plan** row
 > (`m1.0-delivery-plan.md`), NOT the coarse "Generic" in reconstructed-structure's `#`-table. UX-1/2/3/4 =
 > **add-frontend-component**; **UX-5/UX-6 = new-feature** (delivery-plan:212-213) — the profile is per-row, NOT a
@@ -48,7 +63,26 @@ UI-2 (#28), UI-3 (#29), UI-4 (#30). `--next` says UI-2 (#28) by dependent-count 
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-09) — UX-5 First-run onboarding DONE + MERGED. Clean handoff.**
+**▶ CURRENT (2026-08-11) — UI-2 Platform views DONE + MERGED (PR #13). Clean handoff.**
+The **7 UI-2 views** (list·gallery·timeline·calendar·pomodoro-widget·export-dialog·neural-graph) + the shared
+`internal/data-view` spine shipped in **@vida/ui v0.2.0**. Built V1..V7, each §XXVI double-gate + component Visual
+Gate; UF consolidated gate **SHIP** (design·components·motion·engineering). Spine = generic `items<T>` + `renderItem` +
+`getKey` + 4 rendered terminal states, `state` as a prop (package→app boundary), local `ViewState`. Notable: calendar
+**TZ-safe day-keying** (`'YYYY-MM-DD'` is the key as-is — the Brasília UTC off-by-one); pomodoro drift-free timer +
+deferred session seam; export-dialog composes UI-1 Dialog; neural-graph Sigma.js WebGL with a **content-keyed effect**
+(`graphKey`, not array-refs) + `kill()` + an accessible node-list (§XIV met). Deps: date-fns·sigma·graphology·
+graphology-layout-forceatlas2. **PR #13 MERGED** (`e3872fc`); LIF-87 → Done; task archived; re-verified green (317/317).
+**3 Victor drift-catches** (all his — I manufactured 2 sign-off "decisions" + 1 gap the docs already solved; memories
+[[capability-framework-resolves-enum-vs-renderer-gaps]] + [[verify-a-critiques-escalation-and-defer-target-before-relaying]]).
+**HANDOFF — next head = `UI-3` Vida editor (`#29`, ← UI-1 ✅ + AR-4 ✅, add-frontend-component).** `--next` agrees.
+⚠ **FIRST next session, before UI-3:** resolve the UI-3/UI-4 ordering open-decision (`docs/specs/fixes/ui-3-ui-4-ordering-reconcile/`
+— is "shell before editor" Victor's intent? `#` order + `--next` say UI-3 first). Then UI-4 (#30); UX-6 stays gated
+behind `-c`. ⚠ App note (UI-4): lazy-load the graph route (heavy WebGL deps). Also un-park: db-10 (M1.4),
+tsconfig-strict-index-access (repo-wide §XV hygiene).
+
+<details><summary>(prior) 2026-08-09 — UX-5 First-run onboarding DONE + MERGED.</summary>
+
+**▶ (prior) — UX-5 First-run onboarding DONE + MERGED. Clean handoff.**
 First-run onboarding **design model** (new-feature/Default; **no rendered component, no Visual Gate** — screens
 deferred to UI-4; shape fixed by authority ADR-019/new-feature + not-visual-gated-by-render-table + `impl UI-4`, same
 as UX-3/UX-4 [[deliverable-shape-is-fixed-by-authority-plus-visualgate-plus-dep]]). Shipped:
@@ -64,6 +98,7 @@ MERGED to `main`** (`f14d01c`, --merge); **LIF-94 → Done** (`--sync`); task ar
 **HANDOFF — next head by the `#`-order rule = `UX-6` Home = Journal daily dashboard (`#26`, ← UX-3 ✅, profile
 new-feature)** — lowest-`#` ready. `--next` says UI-2 (#28) by dependent-count → overridden by the `#` order. Also
 ready: UI-2 (#28) · UI-3 (#29) · UI-4 (#30). UX-5 unblocks UI-4 (renders+wires it); feeds UX-5b/M3.
+</details>
 
 <details><summary>(prior) 2026-08-09 — UX-4 State conventions DONE + MERGED (PR #11).</summary>
 

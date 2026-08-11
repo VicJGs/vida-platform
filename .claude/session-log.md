@@ -1,4 +1,52 @@
 ---
+Date: 2026-08-09 — Head routing corrected (UX-6 → UI-2) + UI-3/UI-4 ordering triage; UI-2 activated (no code)
+Task: ui-2-platform-views (LIF-87) · Profile: Add Frontend Component / Default · branch `main` (working tree only)
+Goal: pick up the next issue by the `#`-order rule, set it up, and begin. Became a routing-correction + triage session.
+
+Completed:
+  - **Head correction (Victor caught the drift twice).** The `#`-order walk + TASKS.md's stale "Computed head =
+    UX-6 #26" note wrongly picked **UX-6**; I mis-activated it (task, spec stub, Linear→in-progress, baseline
+    dispatch). Root cause: the raw `#` walk does NOT encode the **`-c`/`-d` SUB-WAVE gate** (`m1.0-delivery-plan.md:
+    129,140-141`): **`-d` (UX) needs `-c` (UI)** — "UX-6 needs UI-4". UI-4 (#30) can't be a per-issue blocker of
+    UX-6 (#26) without violating DF-3, so the gate lives only in the sub-wave prose. Correct head = **UI-2 (#28)**,
+    next in the ungated `-c` wave (← UI-1 ✅) — exactly what `tracker_sync --next` had said.
+  - **Reverted UX-6:** task file → `planned` (gating note added), LIF-95 → **Backlog**, spec-index row removed,
+    panel task deleted. `.claude/tasks/ux-6-home-journal-dashboard.md` documents why it's not eligible yet.
+  - **Activated UI-2:** `.claude/tasks/ui-2-platform-views.md` (in-progress, LIF-87, add-frontend-component per
+    delivery-plan:200 — NOT the `#`-table "Design-Sys"), spec stub `docs/specs/components/ui-2-platform-views/`,
+    registered in `docs/specs/_index.md`, TASKS.md + `_index.md` rows, session file, panel task #2, Linear → IN_PROGRESS.
+  - **Triage (/victor-triage) of the "U4 before U3" inconsistency Victor flagged → ISOLATED, head unaffected.**
+    `part-3-build-roadmap:116` lists UI-4 before UI-3 but is a *non-ordering* "app boot" enumeration (it also lists
+    DS-1…5 after UI-4 — impossible for a build order); the authoritative sources (roadmap:90, delivery-plan:140,
+    `#` order) unanimously order UI-3 (#29) before UI-4 (#30); they're parallel-ready so `#` tie-breaks. Diagnosis
+    persisted: `docs/specs/fixes/ui-3-ui-4-ordering-reconcile/` + registered in specs index.
+  - **Hardened the routing rule:** added **step 1a (SUB-WAVE GATE)** to TASKS.md's Delivery Routing + corrected the
+    computed-head line to UI-2 + flagged the UI-3/UI-4 reconcile.
+  - **Memories:** [[sub-wave-gate-overrides-raw-hash-order-walk]], [[decide-dont-ask-when-docs-give-the-answer]].
+
+In progress:
+  - **UI-2 build not started** — no baseline, no PLAN, no code yet. Task is set up and IN_PROGRESS only.
+
+Decisions:
+  - Head = UI-2 (#28), profile add-frontend-component (delivery-plan:200). UX-6 waits behind the `-c` UI wave.
+  - UI-3-vs-UI-4 order: DEFERRED to that turn (open question in the fixes/ diagnosis — is "shell before editor"
+    Victor's intent? if yes → re-sequence all authoritative docs; if no → clarify part-3:116 wording). Does NOT
+    block UI-2.
+  - Reserve AskUserQuestion for genuine forks — Victor answered "[No preference]" twice to derivable questions.
+
+Next session:
+  - **First action: UI-2 Step 0 (baseline) → Step 1.** Refresh `@vida/ui` current-* docs (`packages/ui/src`);
+    read 3 existing UI-1 primitives to state the compose pattern (primitives + DS-2..DS-5 tokens/`light_/dark_`
+    sub-themes + the Storybook Visual-Gate harness); confirm the **view inventory + per-view grain** (one spec vs
+    sub-specs; likely gated one view at a time like UI-1's U0–U10) against `m1.0-delivery-plan.md:200` + the
+    `frontend-visual-gate.md` render table (these are RENDERED `@vida/ui` components → expect the component Visual
+    Gate, unlike the UX design models). Then run the document-first §XXVI loop: PLAN (/documentation-component) →
+    critique → preflight → Approval 1.
+  - Views to scope (delivery-plan:200 + REPO.md): calendar · gallery · list · neural-graph (Sigma.js) · timeline ·
+    pomodoro-widget · export-dialog. ADR-001 = Chart.js (canvas) vs Sigma.js (WebGL) boundary.
+  - Spec stub: `docs/specs/components/ui-2-platform-views/_index.md`. Task: `.claude/tasks/ui-2-platform-views.md`.
+
+---
 Date: 2026-08-09 — UX-5 First-run onboarding design model shipped + MERGED (PR #12)
 Task: ux-5-vault-unlock-onboarding (LIF-94) · Profile: New Feature / Default · branch `ux-5-onboarding` → merged `main`
 
@@ -4626,3 +4674,47 @@ _index Completed + TASKS.md updated. §XXIX currency: the arch doc + `state-conv
 **HANDOFF — next head by the `#`-order rule = `UX-5` Onboarding basic first-run (`#25`, ← UX-1 ✅, profile
 new-feature; vault-unlock → UX-5b/M3, out of M1.0).** `--next` says UI-2 (#28) by dependent-count → overridden by the
 `#` order. Also ready: UX-6 (#26) · UI-2 (#28) · UI-3 (#29) · UI-4 (#30).
+
+
+---
+## 2026-08-11 — UI-2 Platform views (LIF-87, #28) — 7 VIEWS BUILT + MERGED (PR #13)
+**Task:** ui-2-platform-views. Profile **add-frontend-component**, scenario **Default**. ← UI-1 ✅. A multi-unit
+build: 7 view components in `@vida/ui` (**v0.2.0**), each V1..V7 through the §XXVI double-gate + a real-browser
+component Visual Gate, then the consolidated **UF gate** (design·components·motion·engineering — SHIP, 2 independent
+critics, 0 blockers).
+
+**What shipped (317 tests, +98 over UI-1):**
+- **`internal/data-view` spine** (extracted V3, rule of three) — `ViewState` + `Message` + `resolveDataViewState` +
+  `warnMissingName`. The data-views take generic `items<T>` + `renderItem` + `getKey`; **`state` is a PROP** (the
+  package→app boundary — @vida/ui can't import an app/core; local `ViewState` union, structurally ≡ the canon).
+- **V1 list-view** (the spine) · **V2 gallery-view** (responsive flex-wrap grid, `minWidth` floor) · **V3 timeline**
+  (continuous vertical rail, density-as-content-padding, 4-branch trim + the extraction) · **V4 calendar-view**
+  (`role=table` month grid, **TZ-safe day-keying** — `'YYYY-MM-DD'` is the key as-is, no UTC round-trip [the Brasília
+  off-by-one]; always-42 grid; +`date-fns`; diverges from the spine) · **V5 pomodoro-widget** (drift-free timer:
+  ref-armed interval, one-way onComplete latch, single setStatus set-both, atomic phase-advance reset; deferred
+  session-engine seam ADR-004/008) · **V6 export-dialog** (composes UI-1 Dialog via footer/description props + APG
+  radiogroup; emits `onExport`; busy→radios tabIndex=-1) · **V7 neural-graph** (Sigma.js WebGL; **content-keyed effect**
+  `graphKey` NOT array-refs → no per-render WebGL-context churn; `kill()` lifecycle; WebGL-guarded jsdom-safe via mock;
+  §XIV met via an accessible node-`<button>` list). Deps added: date-fns·sigma·graphology·graphology-layout-forceatlas2.
+
+**The session's real story — 3 Victor drift-catches (recurring "don't manufacture what the docs resolve"):**
+(1) I triaged table/board as "missing renderers" + wrote a bug-unit — Victor: "I already solved this in the docs"
+(capability-framework V1/V3 = allowed-vocabulary + graceful-degradation). (2+3) On V7 I relayed a critique's two
+"needs-sign-off" escalations to Victor — the a11y text-alt "defer to HARD-3" (HARD-3 owns no a11y → BUILD the
+accessible node-list in V7) and raw-sigma "§XXVIII" (BR-5 + ADR-001:125 already answer it). Both were drift.
+Memories: [[capability-framework-resolves-enum-vs-renderer-gaps]] + [[verify-a-critiques-escalation-and-defer-target-before-relaying]].
+
+**Gate quality:** every gate-2 caught a real revision-opened bug (calendar warnMissingName state-gate; pomodoro
+status/statusRef desync; export busy-radio-in-trap + describedby; neural-graph stale `[nodes,edges]` deps in the impl
+step that would've reintroduced the B1 churn). The UF gate confirmed cross-view coherence + no leaks.
+
+**Verify:** typecheck **10/10** · `@vida/ui` **317/317** · build + build-storybook ✓ · lint **0-err**. §XXIX: `packages/
+ui/src/CLAUDE.md` is the durable currency home (per-view paragraphs + the spine + deps).
+
+**Close-out:** **PR #13 MERGED** to `main` (`e3872fc`, --merge --delete-branch) → main synced + re-verified green
+(317/317) → Status:done → `tracker_sync --sync` ✓ (LIF-87 → Done) → task archived (`.claude/tasks/archive/`) →
+_index Completed + TASKS.md routing updated.
+
+**HANDOFF — next head = `UI-3` Vida editor (`#29`, ← UI-1 ✅ + AR-4 ✅, add-frontend-component).** `--next` agrees.
+⚠ FIRST next session, before UI-3: resolve the UI-3/UI-4 ordering open-decision (`docs/specs/fixes/ui-3-ui-4-ordering-reconcile/`
+— is "shell before editor" Victor's intent?). Then UI-4 (#30, ⚠ lazy-load the graph route); UX-6 stays gated behind `-c`.

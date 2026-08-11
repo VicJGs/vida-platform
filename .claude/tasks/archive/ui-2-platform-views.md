@@ -4,7 +4,7 @@
 # Spec: docs/specs/components/ui-2-platform-views/_index.md
 # Created: 2026-08-01
 # Updated: 2026-08-09
-# Status: in-progress
+# Status: done
 # Linear: LIF-87
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
@@ -86,13 +86,15 @@ Integration points: ← UI-1 (primitives, DONE ✅) — views compose the UI-1 p
       Presentational export modal: composes UI-1 Dialog (footer+description props) + hand-rolled APG radiogroup + Button;
       emits `onExport(format)` (serialization is the app's — the V1 boundary); local ExportFormat; busy→radios
       tabIndex=-1; derive-selection self-heal. typecheck 10/10 · @vida/ui **306/306** (14 new) · build + build-storybook ✓.
-- [~] **V7 `neural-graph`** (+sigma/graphology/forceatlas2) — the LAST view. BUILT + verified. §XXVI double-gate
-      (gate-1 REVISE→fixed: B1 content-key + M1/M4 · Victor caught 2 manufactured sign-offs as drift → Rev 3 [a11y
-      built in V7, raw-sigma per BR-5] · Approval 1 · preflight PASSED [sigma v3 API verified via context7] · gate-2
-      REVISE→fixed: M-A stale-deps-in-impl-step · Approval 2). Sigma WebGL force-directed graph, content-keyed effect +
-      kill() lifecycle (WebGL-guarded, jsdom-safe via mock), built-in accessible node-list (§XIV met), presentational
-      nodes/edges. typecheck 10/10 · @vida/ui **317/317** (11 new) · build + build-storybook ✓ · lint 0-err.
-      **⏳ Component Visual Gate stage 4 (Victor) PENDING.**
+- [x] **V7 `neural-graph`** (+sigma/graphology/forceatlas2) — the LAST view. DONE + **Visual Gate PASS** (Victor,
+      2026-08-10). §XXVI double-gate (gate-1 REVISE→fixed: B1 content-key + M1/M4 · Victor caught 2 manufactured
+      sign-offs as drift → Rev 3 [a11y built in V7, raw-sigma per BR-5] · preflight PASSED [sigma v3 API via context7]
+      · gate-2 REVISE→fixed: M-A stale-deps). Sigma WebGL force-directed graph, content-keyed effect + kill() lifecycle
+      (WebGL-guarded, jsdom-safe via mock), built-in accessible node-list (§XIV met), presentational nodes/edges.
+      typecheck 10/10 · @vida/ui **317/317** (11 new) · build + build-storybook ✓ · lint 0-err.
+- [x] **UF consolidated final gate** — SHIP (2 independent critics, all 4 dimensions; 0 blockers/material). @vida/ui
+      **v0.2.0** (version + UI_VERSION + CHANGELOG). §XXIX currency (CLAUDE.md accurate). **PR #13 MERGED to main**
+      (`e3872fc`); re-verified green (317/317). ⚠ Forward note: the app (UI-4) should lazy-load the graph route.
 
 ## Session History
 | Date | What was done | Next step |
