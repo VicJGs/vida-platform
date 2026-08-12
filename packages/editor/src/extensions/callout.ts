@@ -35,6 +35,10 @@ export const Callout = Node.create<CalloutOptions>({
   group: 'block',
   content: 'block+',
   defining: true,
+  // Isolating (E3): the callout's content never merges with sibling blocks across its boundary — the correct
+  // container semantics AND what lets `insertContent({type:'callout', …})` place a CLOSED callout (without it, the
+  // inserted slice "opens" and the inner paragraph flows out, dropping the wrapper — the E3 insert path needs this).
+  isolating: true,
 
   addOptions() {
     return { HTMLAttributes: {} }
@@ -62,5 +66,20 @@ export const Callout = Node.create<CalloutOptions>({
     ]
   },
 })
+
+// E3 (UI-3) — callout insertion (BR-E3-4a). E2 shipped no insertion command; E3's toolbar needs one. The idiomatic
+// Tiptap home would be an `addCommands` `setCallout` on this node + a `declare module '@tiptap/core'` chain
+// augmentation — but that in-source augmentation does NOT propagate to the toolbar's `ChainedCommands` type in this
+// pnpm monorepo (node_module extensions' shipped-.d.ts augmentations do; an in-source one didn't). Rather than fight
+// it with casts, the toolbar inserts a callout via the already-typed `insertContent` (see toolbar.tsx / DEV note) —
+// the EXACT operation `setCallout` would run. The node's attr `default`/`renderHTML normalizeVariant` still resolve an
+// omitted variant → `info` (gate-2 MAT-1: one source of truth). This helper documents the canonical insert payload.
+export function calloutInsertContent(variant?: CalloutVariant): {
+  type: 'callout'
+  attrs?: { variant: CalloutVariant }
+  content: [{ type: 'paragraph' }]
+} {
+  return { type: 'callout', ...(variant ? { attrs: { variant } } : {}), content: [{ type: 'paragraph' }] }
+}
 
 export default Callout

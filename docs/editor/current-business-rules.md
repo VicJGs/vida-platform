@@ -1,7 +1,8 @@
 # @vida/editor — current business rules (ground truth)
 
 > Durable, living rules `@vida/editor` enforces as built (§XXIX). Promoted from the E1/E2 IMPLEMENTATION-PLANs;
-> refreshed per unit. Consumed by `/critique` + `/preflight`. Scope today: **E1 — editor core + E2 — standard blocks**.
+> refreshed per unit. Consumed by `/critique` + `/preflight`. Scope today: **E1 — editor core + E2 — standard blocks
+> + E3 — toolbar**.
 
 ## Package boundary
 - **BR-1 / BR-E1-2 · Presentational, persists nothing.** `@vida/editor` emits `EditorDocument` JSON via `onChange` and
@@ -51,6 +52,33 @@
 - **BR-E2-7 · Block chrome = token-var CSS, no raw colours.** `internal/editor-styles.ts` styles taskList/table/callout/
   image/code/divider with Tamagui theme vars only; tints via `color-mix(… , transparent)` on a token; no hex/rgb (grep-
   gated). No React node-views; no motion added. `[FACT: editor-styles.ts]`
+
+## Toolbar (E3)
+- **BR-E3-1 · The toolbar mounts INSIDE `<VidaEditor>`; the raw `Editor` never leaks.** `EditorToolbar` renders inside
+  `VidaEditorImpl` (a sibling ABOVE `<EditorContent>`, not inside the contenteditable), ONLY when
+  `toolbar && editable && editor != null` (the null-editor gate — `useEditor` is `Editor|null` under
+  `immediatelyRender:false`). No new public API beyond the additive `toolbar?: boolean` prop (default true); the E1
+  ref handle is unchanged. `[FACT: editor.tsx toolbar gate; toolbar.tsx]`
+- **BR-E3-2 · Active state via `useEditorState`, not per-transaction re-render.** `useToolbarState` subscribes to a
+  selected slice; the toolbar re-renders only when a reflected value changes. The selector runs every transaction and
+  does O(controls) `isActive`/`can()` probes — the DEDUP gates the render, not the compute (not cost-free; narrow if a
+  perf pass shows jank). `[FACT: internal/toolbar-state.ts]`
+- **BR-E3-3 · Toggle active-state is a Tamagui VARIANT on `ToolbarButton`, not injected CSS.** `ToolbarButton` composes
+  UI-1 `<Button intent="ghost" size="sm">` inside a frame whose `active` variant sets the pressed-bg; `aria-pressed` on
+  toggles only. UI-1 Button has no toggle §VIII state — **DEF-E3-a** filed; UI-1 is NOT reopened. `[FACT: toolbar.tsx]`
+- **BR-E3-4 · Block-type + insert use UI-1 `Menu`** (aria-labelled "Turn into"/"Insert"); the active block reflects on
+  the block-type trigger label (Menu has no checked state). `[FACT: toolbar.tsx]`
+- **BR-E3-4a · Callout insertion via `insertContent(calloutInsertContent())`** — E2 shipped no callout command; the
+  planned `setCallout` node-command + `@tiptap/core` chain augmentation did NOT propagate to the toolbar's
+  `ChainedCommands` type in this pnpm monorepo, so the toolbar inserts via the typed `insertContent` (the exact
+  payload). The Callout node is **`isolating`** so the inserted slice stays a closed container. Callout insert is
+  disabled inside a callout (no nesting). `[FACT: callout.ts calloutInsertContent + isolating; toolbar.tsx]`
+- **BR-E3-5 · Every control is `editor.can()`-guarded** (disabled when the command can't run). `[FACT: toolbar-state.ts]`
+- **BR-E3-6 · Toolbar hidden when read-only** (`editable===false`) or `toolbar={false}`. `[FACT: editor.tsx]`
+- **BR-E3-a11y · APG toolbar** — `role="toolbar"` + roving tabindex (single tab stop; `←/→/Home/End`, never `↓/↑` which
+  the Menus own); live enabled-set with a reconcile effect (adopts the effective stop when a control disables; never
+  pulls focus from the editor). Commands chain `.focus()` → focus returns to the editor after activation. `[FACT:
+  toolbar.tsx roving controller + reconcile effect; §XIV]`
 
 ## Contract integrity
 - **Runtime document assertion (not a cast).** `onChange` and `getDocument` return values pass through

@@ -4,6 +4,31 @@ The block editor that is the heart of the Notes & Journals integration layer (AD
 Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-standard-blocks}.md`. Built unit-by-unit
 (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered `@vida/ui`-consuming component).
 
+## Shipped (E3 — toolbar)
+The formatting chrome for `<VidaEditor>`. `<VidaEditor>` gains an additive **`toolbar?: boolean` (default true)**; the
+toolbar renders inside the frame ABOVE `<EditorContent>` only when `toolbar && editable && editor != null` (the
+null-editor gate — `useEditor` is `Editor|null` under `immediatelyRender:false`). The raw `Editor` never leaks
+(E1's curated handle unchanged); `EditorToolbar` is internal (not barrel-exported).
+- `toolbar.tsx` — `EditorToolbar` (`role="toolbar"`, aria-label `Formatting`, `aria-orientation`) with a **roving
+  tabindex** controller: a single tab stop, `←/→/Home/End` move between controls, and it owns ONLY horizontal+Home/End
+  (never `↓/↑`, which the Menus bind to open — M2). The roving order is the LIVE ENABLED set; a **reconcile effect**
+  adopts the effective stop when a control disables under `can()` and refocuses only if a toolbar control owns focus
+  (never pulls focus from the editor — MAT-A/B). `ToolbarButton` composes UI-1 `<Button intent="ghost" size="sm">` in a
+  frame whose **`active` VARIANT** carries the pressed-bg (`$colorSurfaceSecondary`) — a variant, NOT injected CSS (the
+  "prop-driven state = variant" rule); `aria-pressed` on toggles only. **DEF-E3-a** filed: UI-1 Button has no toggle
+  §VIII state. Controls: mark toggles Bold/Italic/Underline/Strike/Code, a block-type `Menu` ("Turn into", trigger
+  label reflects the active block), an insert `Menu` (Table `{3×3,header}`/Callout/Divider — callout disabled inside a
+  callout), Undo/Redo (`can()`-gated). Image + Link excluded (need URL/attachment UI).
+- `internal/toolbar-state.ts` — `useToolbarState` → `useEditorState({editor, selector})` reflects `{marks, can,
+  activeBlock}` (re-renders only on a reflected-value change; the selector's per-transaction `isActive`/`can()` probes
+  are real compute — the dedup gates the render, not the compute). `resolveActiveBlock` (taskList before the generic
+  list checks; N3).
+- `extensions/callout.ts` (E3 additions) — `calloutInsertContent(variant?)` (the canonical insert payload) +
+  **`isolating: true`** on the node (closed container; lets `insertContent` place a closed callout — DEV-1/DEV-2). No
+  `setCallout` node command / `@tiptap/core` augmentation (didn't propagate to the toolbar's `ChainedCommands` in this
+  pnpm monorepo). No new dep; no injected CSS (fully Tamagui); no motion. Tests: `toolbar.test.tsx` +
+  `internal/toolbar-state.test.ts` (**60 total**); stories "Toolbar" + "No toolbar".
+
 ## Shipped (E2 — standard blocks)
 Completes the `STANDARD_BLOCK_TYPE` set (11). StarterKit (E1) provides 7; E2 adds the 4 it lacks via
 `extensions/standard-blocks.ts` (`STANDARD_BLOCK_EXTENSIONS`, spread into `editor.tsx`'s `useEditor` array after

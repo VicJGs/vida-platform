@@ -49,6 +49,7 @@ Legend: 🎟️ missing component token · 📄 contract/doc inconsistency · �
 | U9-e | Popover | contract's `duration.fast` (150ms) is the *Micro* band; a content panel is the *Transition* band (motion.md §IX) — shipped verbatim, flagged for the DS motion pass. |
 | U10-d | Toast | region `placement` is a provider prop, no per-toast position. |
 | U10-e | Toast | cap policy (per-region, store-enforced, evict-oldest, default 3) is an implementation choice — contract pins neither N nor order. |
+| **E3-a** | Button (← UI-3/E3) | **No toggle/pressed §VIII state** (`intent` ∈ primary/secondary/ghost/danger, no `pressed`/`selected` variant + no `aria-pressed`). A toolbar's toggle buttons need it; UI-3/E3 worked around it with a `ToolbarButton` wrapper (ghost Button in a frame whose `active` variant carries the pressed-bg + `aria-pressed`). Consider a first-class `Button` toggle variant to subsume the wrapper (UI-2/UI-3 both compose toolbars). |
 
 ## D. Resolved DS-wide during UI-1 (✅ — no action; recorded for provenance)
 | DEF | Fix |
