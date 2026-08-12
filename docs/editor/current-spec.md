@@ -2,13 +2,14 @@
 
 > Durable, living description of what `@vida/editor` IS as built (§XXIX Currency Rule). Refreshed per unit; never lags
 > the code. Source of truth for `/critique` + `/preflight` + `victor:session-kickoff`. Every claim cites code.
-> Scope today: **E1 — editor core spine** (UI-3). Later units (E2 blocks · E3 toolbar · E4 slash-menu · E5 registry ·
-> E6–E8 serializers) extend this file. Forward spec: `docs/specs/features/ui-3-vida-editor/`.
+> Scope today: **E1 — editor core spine + E2 — standard blocks** (UI-3). Later units (E3 toolbar · E4 slash-menu ·
+> E5 registry · E6–E8 serializers) extend this file. Forward specs: `docs/specs/features/ui-3-vida-editor/`.
 
 ## Package
-`@vida/editor` **v0.1.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
-**v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder`, family-pinned
-`^3.30.0`) + `@tamagui/core@2.6.2` + `@vida/types`/`@vida/ui` (workspace). Peer `react>=19`.
+`@vida/editor` **v0.2.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
+**v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` + **E2:**
+`@tiptap/extension-image` + `@tiptap/extension-table` + `@tiptap/extension-list`, family-pinned `^3.30.0`) +
+`@tamagui/core@2.6.2` + `@vida/types`/`@vida/ui` (workspace). Peer `react>=19`.
 `[FACT: packages/editor/package.json]` Toolchain (Storybook 9 · vitest 3 · jsdom 30 · vite 6) mirrors `@vida/ui`.
 
 ## Public surface `[FACT: packages/editor/src/index.ts]`
@@ -45,6 +46,21 @@ interface VidaEditorHandle { setContent(doc): void; focus(): void; getDocument()
   `.ProseMirror`: focus ring on the frame via `:has(.ProseMirror:focus-visible)` → `var(--colorFocusRing)`;
   placeholder `::before` → `var(--colorTextMuted)` (base semantic, NOT sub-theme-only `--placeholder`).
 
+## Standard blocks (E2) `[FACT: src/extensions/standard-blocks.ts; src/extensions/callout.ts; editor.tsx extensions]`
+The full `STANDARD_BLOCK_TYPE` set (11) is registered. E1's StarterKit provides 7 (paragraph · heading · bulletList ·
+orderedList · blockquote · **codeBlock** · **horizontalRule**); **E2 adds the 4 StarterKit lacks**, spread into the
+`useEditor` extensions array via `STANDARD_BLOCK_EXTENSIONS`:
+- **`taskList`/`taskItem`** — `@tiptap/extension-list` (`TaskItem nested`); inherits StarterKit's bundled `listKeymap`.
+- **`image`** — `@tiptap/extension-image` (`inline:false, allowBase64:true`); **presentational only** — the encrypted
+  `note_attachments` pipeline is deferred (BR-E2-5); `allowBase64` is a known-bad interim (a data-URI bloats the
+  per-page sync blob).
+- **`table`** — `TableKit` from `@tiptap/extension-table` (`table.resizable:false`); one dep bundles Table+Row+Cell+Header.
+- **`callout`** — a bespoke `Node` (`src/extensions/callout.ts`): `group:'block'`, `content:'block+'`, `defining:true`,
+  attr `variant ∈ {info,success,danger}` (default `info`, EXACTLY the `ToastIntent` set); renders/parses
+  `<div data-type="callout" data-variant>`; out-of-set/absent variant → `info`. Styled by injected CSS, no React node-view.
+- **No double-registration:** `codeBlock`/`horizontalRule` stay StarterKit-owned (E2 only styles them). A schema-parity
+  test asserts every `STANDARD_BLOCK_TYPE` value ∈ `editor.schema.nodes`. Full catalog: `docs/editor/extension-catalog.md`.
+
 ## States (§VIII applicable subset) `[FACT: editor.tsx; editor.stories.tsx]`
 `default` (resting/focusable) · `focus` (frame ring) · `disabled` (`editable=false`, no caret) · `empty` (placeholder).
 No loading/error at E1 (the app's terminal-state wrapper owns those, UX-4).
@@ -54,11 +70,13 @@ No loading/error at E1 (the app's terminal-state wrapper owns those, UX-4).
 `category ∈ {platform, embed}`. E1 ships the DATA; E5 builds the node-views the commands insert.
 
 ## File map `[FACT: packages/editor/src]`
-`editor.tsx` (VidaEditor + assertEditorDocument) · `commands.ts` · `internal/editor-styles.ts` · `index.ts` (barrel) ·
-`env.d.ts` (ambient `process.env` type) · `test-setup.ts` (jsdom shims) · `editor.test.tsx`/`commands.test.ts` (18
-tests) · `editor.stories.tsx` (Visual-Gate surface) · `CLAUDE.md` (layer doc).
-**Deferred (empty skeleton):** `toolbar.tsx` (E3) · `slash-menu.tsx` (E4) · `extensions/*` (E2/E5) · `serializers/*`
-(E6–E8). Yjs = a deferred seam, no dep (BR-2/M4).
+`editor.tsx` (VidaEditor + assertEditorDocument) · `commands.ts` · `internal/editor-styles.ts` (E1 chrome + E2 block
+CSS) · **`extensions/standard-blocks.ts`** (E2 — `STANDARD_BLOCK_EXTENSIONS`) · **`extensions/callout.ts`** (E2 —
+bespoke node) · `index.ts` (barrel) · `env.d.ts` · `test-setup.ts` (jsdom shims) ·
+`editor.test.tsx`/`commands.test.ts`/`extensions/standard-blocks.test.tsx` (**30 tests**) · `editor.stories.tsx`
+(Visual-Gate surface incl. the "Standard blocks" story) · `CLAUDE.md` (layer doc).
+**Deferred (empty skeleton):** `toolbar.tsx` (E3) · `slash-menu.tsx` (E4) · `extensions/*` integration node-views
+(E5) · `serializers/*` (E6–E8). Yjs = a deferred seam, no dep (BR-2/M4).
 
 ## Verify
-`pnpm --filter @vida/editor typecheck && build && test` (18 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.
+`pnpm --filter @vida/editor typecheck && build && test` (30 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.

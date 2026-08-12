@@ -1,7 +1,7 @@
 # @vida/editor — current business rules (ground truth)
 
-> Durable, living rules `@vida/editor` enforces as built (§XXIX). Promoted from the E1 IMPLEMENTATION-PLAN; refreshed
-> per unit. Consumed by `/critique` + `/preflight`. Scope today: **E1 — editor core**.
+> Durable, living rules `@vida/editor` enforces as built (§XXIX). Promoted from the E1/E2 IMPLEMENTATION-PLANs;
+> refreshed per unit. Consumed by `/critique` + `/preflight`. Scope today: **E1 — editor core + E2 — standard blocks**.
 
 ## Package boundary
 - **BR-1 / BR-E1-2 · Presentational, persists nothing.** `@vida/editor` emits `EditorDocument` JSON via `onChange` and
@@ -31,6 +31,26 @@
 - **BR-E1-5 · Base tokens, no raw values, no sub-theme.** Chrome uses DS base semantic tokens; a `light_/dark_Editor`
   sub-theme is registered ONLY if bespoke color keys are needed — E1 needs none, so `tamagui.config.ts` is untouched
   (the UI-2 conditional-sub-theme rule). `[FACT: editor.tsx EditorFrame; tamagui.config.ts unchanged]`
+
+## Standard blocks (E2)
+- **BR-E2-1 · Implement the enum, not the prose.** The block set is derived from `STANDARD_BLOCK_TYPE` (11) minus what
+  StarterKit registers → E2 adds `{taskList, image, table, callout}`. A schema-parity test asserts every enum value ∈
+  `editor.schema.nodes`. `[FACT: standard-blocks.test.tsx BR-E2-9; editor.ts:12-24]`
+- **BR-E2-2 · No double-registration.** `codeBlock`/`horizontalRule` stay StarterKit-owned; E2 never re-adds them
+  (ProseMirror throws on duplicate node names) — it only styles them. `[FACT: standard-blocks.ts; editor.tsx extensions]`
+- **BR-E2-3 · taskList from the already-present `@tiptap/extension-list`** (`TaskList`+`TaskItem nested`), promoted to a
+  direct dep; inherits StarterKit's bundled `listKeymap` — do not disable it. `[FACT: standard-blocks.ts; package.json]`
+- **BR-E2-5 · image is presentational; the attachment pipeline is a DEFERRED SEAM.** `@tiptap/extension-image` renders
+  `<img src alt>`; the encrypted `note_attachments` upload/resolve path is the app's, deferred. `allowBase64:true` is a
+  known-bad interim (a data-URI inlines the whole image into the per-page sync blob) — retired by the attachment
+  pipeline before image is exposed in the app UI. E2 builds no upload/encryption. `[FACT: standard-blocks.ts; ADR-002/ADR-003]`
+- **BR-E2-6 · callout is a bespoke Node with a 3-value `variant`.** `{info,success,danger}` (default `info`) — EXACTLY
+  the `ToastIntent` set, so each binds an existing accent token; no `warn` (no `signal.warning` token exists). An
+  out-of-set/absent `data-variant` parses to `info` (no throw). `variant` round-trips through `getJSON()`.
+  `[FACT: callout.ts; standard-blocks.test.tsx]`
+- **BR-E2-7 · Block chrome = token-var CSS, no raw colours.** `internal/editor-styles.ts` styles taskList/table/callout/
+  image/code/divider with Tamagui theme vars only; tints via `color-mix(… , transparent)` on a token; no hex/rgb (grep-
+  gated). No React node-views; no motion added. `[FACT: editor-styles.ts]`
 
 ## Contract integrity
 - **Runtime document assertion (not a cast).** `onChange` and `getDocument` return values pass through

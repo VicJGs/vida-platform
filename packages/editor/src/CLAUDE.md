@@ -1,8 +1,26 @@
 # packages/editor/src — @vida/editor source (TipTap block editor)
 
 The block editor that is the heart of the Notes & Journals integration layer (ADR-001 §8, CLAUDE.md §8).
-Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core}.md`. Built unit-by-unit (E1→E8), each
-under the §XXVI double-gate + a real-browser component Visual Gate (rendered `@vida/ui`-consuming component).
+Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-standard-blocks}.md`. Built unit-by-unit
+(E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered `@vida/ui`-consuming component).
+
+## Shipped (E2 — standard blocks)
+Completes the `STANDARD_BLOCK_TYPE` set (11). StarterKit (E1) provides 7; E2 adds the 4 it lacks via
+`extensions/standard-blocks.ts` (`STANDARD_BLOCK_EXTENSIONS`, spread into `editor.tsx`'s `useEditor` array after
+StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
+- `extensions/standard-blocks.ts` — `taskList`/`taskItem` (`@tiptap/extension-list`, already installed — inherits
+  StarterKit's `listKeymap`), `image` (`@tiptap/extension-image`, `inline:false, allowBase64:true` — **presentational
+  only**, attachment pipeline deferred BR-E2-5), `table` (`TableKit` from `@tiptap/extension-table`, one dep bundles
+  Table+Row+Cell+Header, `resizable:false`), `Callout`. **No double-registration** of codeBlock/horizontalRule (BR-E2-2).
+- `extensions/callout.ts` — bespoke `Node` (`group:'block'`, `content:'block+'`, `defining:true`), attr `variant ∈
+  {info,success,danger}` (default `info` — EXACTLY `ToastIntent`, so each binds an existing accent token; no `warn`).
+  Renders/parses `<div data-type="callout" data-variant>`; out-of-set/absent variant → `info`. Styled by injected CSS,
+  NOT a React node-view (the editor-styles precedent).
+- `internal/editor-styles.ts` extended — token-var CSS for taskList/table/callout(×3)/image/code/divider; tints via
+  `color-mix(… , transparent)` on a Tamagui theme var; **no raw hex** (BR-E2-7), no motion added.
+- Tests: `extensions/standard-blocks.test.tsx` — schema-parity (`STANDARD_BLOCK_TYPE ⊆ schema.nodes`), per-block
+  getJSON round-trip, callout variant + parseHTML default-fallback, TableKit co-registration, end-to-end render via
+  `<VidaEditor>`. Story: `editor.stories.tsx` "Standard blocks". **30 tests** total.
 
 ## Shipped (E1 — editor core spine)
 - `editor.tsx` — **`<VidaEditor>`**: a headless Tiptap v3 React editor (`useEditor` + `<EditorContent>`) in a Tamagui
@@ -39,7 +57,8 @@ under the §XXVI double-gate + a real-browser component Visual Gate (rendered `@
   `INTEGRATION_BLOCK_COMMANDS` + re-exported `EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand` types.
 
 ## Deferred (later UI-3 units — empty skeleton files exist)
-`toolbar.tsx` (E3) · `slash-menu.tsx` (E4) · `extensions/*` standard blocks (E2) + integration node-views (E5) ·
+`toolbar.tsx` (E3) · `slash-menu.tsx` (E4) · `extensions/*` integration node-views (E5 — e.g. `daily-summary.ts`,
+`task-checklist.ts` [the `/tasks` integration block, DISTINCT from the E2 standard `taskList`], …) ·
 `serializers/{to,from}-*.ts` (E6 markdown round-trip · E7 PDF · E8 DOCX). **Yjs/`y-prosemirror` = a deferred SEAM,
 no dep** (BR-2, M4/AR-9b): `pages.content` is a TipTap-JSON snapshot that renders locally without a Y.Doc; E1's shell
 keeps the content source swappable so M4 can invert authority (JSON→Yjs-derived) without a rewrite.

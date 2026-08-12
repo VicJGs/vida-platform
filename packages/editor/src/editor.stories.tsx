@@ -50,3 +50,52 @@ export const Empty: Story = {
 export const Disabled: Story = {
   args: { defaultValue: seeded, editable: false },
 }
+
+// E2 (UI-3) — the standard-block Visual-Gate surface. Seeds one document exercising every E2 block via defaultValue
+// (the only insertion path pre-toolbar/slash-menu): taskList (checked + unchecked), a table (header + body), an
+// image, all 3 callout variants (info/success/danger), a code block, and a divider. Review in BOTH themes: token
+// tints switch, table borders/header fill read the border/surface tokens, callout accents match the DS accents.
+const standardBlocks: EditorDocument = {
+  type: 'doc',
+  content: [
+    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Standard blocks' }] },
+    {
+      type: 'taskList',
+      content: [
+        { type: 'taskItem', attrs: { checked: true }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Done item' }] }] },
+        { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Open item' }] }] },
+      ],
+    },
+    {
+      type: 'table',
+      content: [
+        {
+          type: 'tableRow',
+          content: [
+            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Metric' }] }] },
+            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Value' }] }] },
+          ],
+        },
+        {
+          type: 'tableRow',
+          content: [
+            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Streak' }] }] },
+            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '12 days' }] }] },
+          ],
+        },
+      ],
+    },
+    { type: 'image', attrs: { src: 'https://placehold.co/240x120/png', alt: 'A placeholder image' } },
+    { type: 'callout', attrs: { variant: 'info' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Info callout — the default variant.' }] }] },
+    { type: 'callout', attrs: { variant: 'success' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Success callout.' }] }] },
+    { type: 'callout', attrs: { variant: 'danger' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Danger callout.' }] }] },
+    { type: 'codeBlock', content: [{ type: 'text', text: 'const x = 1 // styled, StarterKit-owned' }] },
+    { type: 'horizontalRule' },
+    { type: 'paragraph', content: [{ type: 'text', text: 'A divider sits above this paragraph.' }] },
+  ],
+}
+
+/** Standard blocks — every E2 block in one document (taskList · table · image · callout ×3 · code · divider). */
+export const StandardBlocks: Story = {
+  args: { defaultValue: standardBlocks },
+}

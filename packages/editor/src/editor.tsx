@@ -17,6 +17,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import type { Content } from '@tiptap/react'
 import type { EditorDocument } from '@vida/types'
 import { ensureEditorStyles } from './internal/editor-styles'
+import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
 
 export interface VidaEditorProps {
   /** Initial document (UNCONTROLLED — see BR-E1-1). Omit → empty doc. */
@@ -105,7 +106,13 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
   if (ariaLabelledby) attributes['aria-labelledby'] = ariaLabelledby
 
   const editor = useEditor({
-    extensions: [StarterKit, Placeholder.configure({ placeholder: placeholder ?? '' })],
+    // StarterKit + Placeholder (E1 spine) + the E2 standard blocks beyond StarterKit (taskList/image/table/callout).
+    // codeBlock/horizontalRule stay owned by StarterKit — never re-added (BR-E2-2, duplicate-node guard).
+    extensions: [
+      StarterKit,
+      Placeholder.configure({ placeholder: placeholder ?? '' }),
+      ...STANDARD_BLOCK_EXTENSIONS,
+    ],
     content: (defaultValue ?? undefined) as Content,
     editable,
     // Defer the first render to a post-mount effect — avoids a StrictMode double-mount render footgun even in our

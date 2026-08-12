@@ -121,7 +121,7 @@ component Visual Gate → next. E1 establishes the editor spine the rest reuse.
 | Unit | Sub-unit | Notes / new surface |
 |------|----------|---------------------|
 | **E1** | package foundation + **editor shell/core** | Deps (`@tiptap/core`,`@tiptap/react`,`@tiptap/starter-kit`), Tamagui frame, `EditorDocument` in/out via `onChange`, controlled+uncontrolled, focus/a11y `role=textbox`. **The spine.** |
-| **E2** | **standard blocks** | The `STANDARD_BLOCK_TYPE` set beyond StarterKit — table, callout, divider, image, code-block. |
+| **E2** | **standard blocks** ✅ | The `STANDARD_BLOCK_TYPE` set beyond StarterKit = **taskList, image, table, callout** (StarterKit already ships divider=`horizontalRule` + `codeBlock` in E1; the earlier "table, callout, divider, image, code-block" was imprecise — corrected against the enum, BR-7). Done: `extensions/standard-blocks.ts` + bespoke `callout.ts`; spec `e2-standard-blocks.md`. |
 | **E3** | **toolbar** | Formatting controls; composes UI-1 Button/Menu; reflects active marks. |
 | **E4** | **slash menu** | `/`-triggered block-insertion menu; composes UI-1 Menu/Popover; type-ahead. Lists integration-block commands (`SlashCommand.block_type`, editor.ts:150) that resolve to E5's placeholders → soft forward-dep on E5's TYPE MAP (see note). |
 | **E5** | **block-registry seam + placeholders** | `BlockRegistry` typed map + placeholder node-views for **every** `INTEGRATION_BLOCK_TYPE` value (BR-3). Reserves the `extensions/*.ts` slots — E1/E5 reconcile the existing stub filenames (`daily-summary.ts`, `backlink-panel.ts`, …) against the enum keys (`dailySummary`, `backlink`, …). |
