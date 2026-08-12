@@ -1,4 +1,91 @@
 ---
+Date: 2026-08-12 — UI-3 / E3 editor toolbar IMPLEMENTED + MERGED; PR reorg into per-unit PRs; CI diagnosed+filed
+Task: ui-3-vida-editor (LIF-88) · Profile: New Feature / Default · branch chain per-unit (main after merges)
+Goal: build E3 (toolbar) under the full §XXVI gate; reorganize UI-3 into per-unit branches+PRs (finished ones merged); session-log for E4.
+
+Completed:
+  - **E3 IMPLEMENTED + MERGED — `@vida/editor` v0.2.0 → v0.3.0** (PR #17, `438a1ec`). The formatting toolbar:
+    `toolbar.tsx` (`EditorToolbar` + `ToolbarButton`) — APG `role=toolbar` + **roving tabindex** (single tab stop;
+    ←/→/Home/End only, never ↓/↑ [Menus own them]; live enabled-set + a **reconcile effect** that adopts the effective
+    stop when a control disables and never pulls focus from the editor). Composes UI-1 Button (Bold/Italic/Underline/
+    Strike/Code toggles + Undo/Redo) + Menu (block-type "Turn into" + insert Table/Callout/Divider). `active` state via
+    `internal/toolbar-state.ts` (`useToolbarState`→`useEditorState` — resolves E1 §8 `shouldRerenderOnTransaction:false`).
+    Additive `toolbar?:boolean` (default true), null-gated mount inside the frame. Pressed-bg = a Tamagui `active`
+    VARIANT (not injected CSS); DEF-E3-a filed (Button has no toggle §VIII state).
+  - **§XXVIII deviations:** DEV-1 callout insert via `insertContent(calloutInsertContent())` NOT a `setCallout` node
+    command — the in-source `declare module '@tiptap/core'` chain augmentation did NOT propagate to the toolbar's
+    `ChainedCommands` type in this pnpm monorepo (node-module extensions' shipped-.d.ts augmentations DO; e.g.
+    `insertTable`). DEV-2 node `isolating:true` (closed container; lets insertContent place a closed callout). DEV-3 no
+    injected CSS (fully Tamagui). DEV-4 tests use a TextSelection-within-content, not `selectAll` (AllSelection breaks isActive).
+  - **Gates (all independent, each caught a real bug):** gate-1 REVISE (2 blockers [`setCallout` didn't exist;
+    null-editor gate — `useEditor` is `Editor|null` under `immediatelyRender:false`] + 3 material) · preflight PASS +4
+    folds · gate-2 REVISE (3 material the edits opened: attrs payload, `useEditorState` per-transaction `can()`
+    compute-honesty, **default-on toolbar regression audit B0**) · **post-impl critique REVISE** (MAT-A/B: roving
+    `rovingId` never reconciled to `effectiveRoving` → tab-stop teleport/focus-orphan → reconcile effect; MAT-D
+    mark-glyph styling; callout-nest guard) · **Visual Gate PASS** (Victor, both themes).
+  - **Automated GREEN:** editor typecheck (tsc+storybook) · @vida/editor **60/60** (was 30) · build + build-storybook ·
+    root typecheck 11/11 · lint 0-err · boundary clean (no @vida/core/app import) · no raw hex · E1/E2 tests unbroken (B0).
+  - **§XXIX Currency:** `docs/editor/current-{spec,business-rules}.md` + `packages/editor/src/CLAUDE.md` + umbrella §5
+    E3 ✅ + DEF-E3-a (UI-1 DEF-register). Spec `docs/specs/features/ui-3-vida-editor/e3-toolbar.md`.
+  - **PR REORGANIZATION (Victor's directive — each E its own branch+PR, finished ones merged):** split the combined
+    PR #14 → **#15 (E1) `290470f`** + **#16 (E2) `d903cb0`** (both merged) + **#14 CLOSED** (superseded); then **#17
+    (E3) `438a1ec`** merged. main = clean linear per-unit chain `eb13b32 → E1 → E2 → E3`. Used a worktree + cherry-pick
+    to keep the stacked E2 diff clean after `--rebase` re-SHA'd E1. Going forward: one branch + one PR per En.
+  - **CI diagnosed + filed (NOT fixed here):** all checks red from a pnpm `action-setup@v4` version conflict
+    (`ci.yml version:9` + `package.json packageManager pnpm@9.15.9` → `ERR_PNPM_BAD_PM_VERSION`, dies at setup).
+    Doc-confirmed fix (drop `version:` from action-setup) filed as a TASKS.md Planned hygiene task — ownerless infra,
+    its own gate. Other reds owned ahead: `@vida/server#test`→P2-1, Format Check (673 files, glob pulls in Old//.claude/
+    docs → needs a `.prettierignore` scope fix FIRST)→Prettier Planned task. deploy.yml left to P2-1. No branch
+    protection → red CI doesn't block merges; real gate = §XXVI + local-green.
+
+Next session — **E4 (slash menu)**: `/`-triggered block-insertion, composes UI-1 Menu/Popover + type-ahead, lists
+`INTEGRATION_BLOCK_COMMANDS` (resolve to E5's placeholders). Branch `ui-3-e4-slash-menu` off main → own PR via §XXVI.
+Then E5 registry → E6 md → E7 PDF → E8 DOCX → UI-4 (#30). Full detail: `.claude/sessions/2026-08-12-ui-3-vida-editor.md`.
+Carry-over (pre-existing, uncommitted, NOT this session's): ux-6 + ui-3-ui-4-reconcile planning on the working tree.
+
+---
+Date: 2026-08-11 — UI-3 / E1 editor core IMPLEMENTED + committed (no re-gate); post-impl gates closed
+Task: ui-3-vida-editor (LIF-88) · Profile: New Feature / Default · branch `ui-3-vida-editor` (committed, NOT pushed)
+Goal: implement the APPROVED-TO-BUILD E1 (editor core spine) from the double-gated spec, run the post-impl gates, commit.
+
+Completed:
+  - **E1 IMPLEMENTED — `@vida/editor` v0.1.0** (commit `246830d`). `<VidaEditor>`: headless Tiptap v3.30.0 (StarterKit
+    + Placeholder) in a `@tamagui/core` BASE-token frame; **uncontrolled + `forwardRef` handle** (setContent/focus/
+    getDocument); `assertEditorDocument` runtime structural gate wired into onUpdate + getDocument; a11y role=textbox
+    via `editorProps.attributes`. `internal/editor-styles.ts` (focus ring `--colorFocusRing` + placeholder
+    `--colorTextMuted` on the inner `.ProseMirror`). `commands.ts` = `INTEGRATION_BLOCK_COMMANDS` (11×7 fields).
+    Barrel + `env.d.ts` + `test-setup.ts` + 18 tests + 3 stories + `src/CLAUDE.md`.
+  - **§8 UNKNOWN resolved:** base semantic tokens suffice → **NO `light_/dark_Editor` sub-theme**; `tamagui.config.ts`
+    untouched (BR-E1-5, UI-2 conditional-sub-theme rule).
+  - **Post-impl gates CLOSED:** Visual Gate **PASS** (Victor, real browser — states × light｜dark, a11y clean) ·
+    Step 8 `/critique` (independent adversarial subagent) = **SHIP**, 0 blockers/material, folded 1 MINOR ·
+    §XXIX Currency (`docs/editor/current-{spec,business-rules}.md` created, code-cited).
+  - **Critique MINOR folded:** Tiptap v3 `setContent` defaults `emitUpdate:true` (verified `setContent.ts:52`) → set
+    `emitUpdate:false` so a programmatic reset never echoes `onChange` (BR-E1-1) + a pinning test.
+  - **Auto-triage (§XXIV), 1 ISOLATED fixed inline:** E1 = first cross-package runtime consumer of `@vida/ui` →
+    surfaced a barrel defect (`import './tamagui.d.ts'` in `dist/index.js` crashed any bundler) → `/// <reference>`.
+    Diagnosis `docs/specs/fixes/ui-tamagui-dts-runtime-import/`; `@vida/ui` 317/317 confirms no regression.
+  - Verify: typecheck 11/11 · @vida/editor 18/18 · @vida/ui 317/317 · build + build-storybook green · boundary clean.
+
+Decisions:
+  - `setContent` is SILENT (`emitUpdate:false`) — a reset ≠ an edit; avoids save-echo + M4 Yjs-feedback (BR-E1-1).
+  - `onChange` fires ONE benign idempotent mount echo (Tiptap seed normalization) — **documented** (spec §8 +
+    current-business-rules), not suppressed (deterministic suppression = out-of-scope normalization edge-cases).
+  - No `light_/dark_Editor` sub-theme (base tokens suffice). tsconfig: no project refs (mirror `@vida/ui` precedent,
+    turbo `^build` orders builds). jsdom test-setup shims (WebGL/getClientRects/elementFromPoint) are test-env only.
+
+Next session:
+  - **First action: start E2 (standard blocks)** — table/callout/divider/image/code-block as Tiptap node extensions in
+    `packages/editor/src/extensions/*` (currently 0-byte skeletons), extending the E1 spine. Re-enter the §XXVI gate
+    (document-context baseline → PLAN /documentation-component → critique → Approval 1 → preflight → critique →
+    Approval 2 → implement). Forward-spec home: `docs/specs/features/ui-3-vida-editor/e2-*.md`.
+  - Ground truth already current: `docs/editor/current-{spec,business-rules}.md` + `packages/editor/src/CLAUDE.md`.
+  - E1 committed on branch `ui-3-vida-editor` (`246830d`), **NOT pushed, no PR** — PR strategy (E1-alone vs stack
+    E2–E8) is deferred to Victor. `@vida/editor` StarterKit already covers paragraph/headings/lists/bold/italic — E2
+    adds only the non-StarterKit standard blocks (BR-E1-3).
+  - `INTEGRATION_BLOCK_COMMANDS` data exists (E1) but node-views defer to E5; E4 (slash-menu UI) lists them.
+
+---
 Date: 2026-08-09 — Head routing corrected (UX-6 → UI-2) + UI-3/UI-4 ordering triage; UI-2 activated (no code)
 Task: ui-2-platform-views (LIF-87) · Profile: Add Frontend Component / Default · branch `main` (working tree only)
 Goal: pick up the next issue by the `#`-order rule, set it up, and begin. Became a routing-correction + triage session.
@@ -4718,3 +4805,48 @@ _index Completed + TASKS.md routing updated.
 **HANDOFF — next head = `UI-3` Vida editor (`#29`, ← UI-1 ✅ + AR-4 ✅, add-frontend-component).** `--next` agrees.
 ⚠ FIRST next session, before UI-3: resolve the UI-3/UI-4 ordering open-decision (`docs/specs/fixes/ui-3-ui-4-ordering-reconcile/`
 — is "shell before editor" Victor's intent?). Then UI-4 (#30, ⚠ lazy-load the graph route); UX-6 stays gated behind `-c`.
+
+---
+Date: 2026-08-11
+Task: ui-3-vida-editor (LIF-88, #29) — @vida/editor TipTap block editor
+Goal: Pick up the computed next head UI-3; through the PLAN gates, get the editor architecture + the first sub-unit (E1) approved to build.
+Completed:
+  - **Routing resolved (no build yet):** UI-3 confirmed head via `#`-order + sub-wave gate (UX-6 #26 gated behind `-c`; UI-3 #29 next after UI-1/UI-2 ✅). The UI-3/UI-4 "open decision" was a FALSE fork — the reconcile doc's own §2 already disqualified the only dissent (`part-3:116` proven non-ordering: lists DS-1..5 after UI-4 though DS-5 precedes UI-4). Decided UI-3-first from docs; no AskUserQuestion.
+  - **Profile CORRECTED:** `#`-table "Design-Sys" → **new-feature** (`m1.0-delivery-plan.md:201`+`:107` "editor/shell → new-feature", authoritative per-issue). Loaded new-feature standards (components·engineering·process).
+  - **Task/branch wired:** branch `ui-3-vida-editor` cut from main; task file expanded from stub (LIF-88, deps UI-1✅+AR-4✅); TASKS.md In Progress + `_index.md` Active + native panel #1 updated.
+  - **Baseline (Step 0-1):** `packages/editor/src` = named-but-EMPTY skeleton (editor/toolbar/slash-menu.tsx + 11 extensions + 4 serializers, all 0-byte; package.json v0.0.0, NO tiptap/yjs deps; nothing imports it). `docs/editor/*` = 5 zero-byte stubs + README. → content-from-zero on an intended shape.
+  - **Integration-check (Step 2):** mapped every seam (Explore agent). KEY: the type contract ALREADY EXISTS — `packages/types/src/editor.ts` (EditorDocument, STANDARD_BLOCK_TYPE, INTEGRATION_BLOCK_TYPE=**11**, EditorState.yjs_state, MarkdownSerializeOptions, EXPORT_FORMAT). Seams: AR-4 runtime (`/notes` M1.1+ stub, queryClient, ensureDbReady), `pages.content` (M1.1+, NOT yet in active schema), BacklinkResolver/SpacesService (live), YjsSyncSeam (throws SyncNotActivated til M4), export-dialog `onExport`.
+  - **Umbrella spec authored + gated:** `docs/specs/features/ui-3-vida-editor/_index.md` — architecture, deferred seams, BR-1..BR-7, E1…E8 sequence. `/critique` REVISE→resolved (Yjs-deferral verified SOUND; fixed 12→11, BR-1 `pages.content` cite→[INTERP], +3 acceptance gates; REJECTED 1 wrong critic finding after verifying .tsx stubs DO exist). **Approval 1.**
+  - **E1 sub-spec authored + FULLY double-gated:** `docs/specs/features/ui-3-vida-editor/e1-editor-core.md`. /read-docs-first (Tiptap v3). API = **uncontrolled + imperative ref** (critic-endorsed: idiomatic + survives M4 Yjs authority-inversion). Gate-1 SHIP (+runtime EditorDocument shape-assert, all-7-SlashCommand-fields, Placeholder-separate-dep). Preflight PASS +4 folds (concrete `@vida/ui` toolchain mirror). Gate-2 SHIP (no cycle, `@tamagui/core@2.6.2` pin coherence). **Approval 1 + Approval 2 granted.**
+In progress:
+  - **E1 is APPROVED-TO-BUILD but NOT IMPLEMENTED.** Zero code this session — all planning/spec. `packages/editor/src` still empty; no deps installed.
+Decisions:
+  - UI-3 = head (docs-derived). Profile = new-feature. Scope: build editor mechanism + standard blocks + serializers + deferred block-registry seam; DEFER Yjs binding (→M4), 11 integration-block bodies (→MOD-*), app-mount (→M1.1+). E1 API = uncontrolled+imperative ref. Gate granularity = per-sub-unit E1…E8 (UI-1/UI-2 precedent). No ADR created (all grounded in ADR-001/ADR-003 + delivery-plan).
+  - 3 AskUserQuestion drifts Victor corrected (all "don't ask what docs resolve"): UI-3/UI-4 intent · gate granularity · the earlier over-ask. Memory [[decide-dont-ask-when-docs-give-the-answer]] reinforced twice.
+Next session:
+  - **FIRST ACTION: implement E1 per `docs/specs/features/ui-3-vida-editor/e1-editor-core.md` §7** (approved, both gates clear — go straight to build, NO re-gate). Order: package foundation (deps + `@vida/ui` toolchain mirror) → EditorDocument⇄Tiptap wiring (+runtime shape-assert) → `<VidaEditor>` shell (Tamagui frame + forwardRef handle) → a11y → `INTEGRATION_BLOCK_COMMANDS` (all 7 fields) → jsdom tests + Storybook Visual Gate + `packages/editor/src/CLAUDE.md`.
+  - Acceptance = e1 spec §6 (10 checks). On divergence → §XXVIII. Then E2 (standard blocks) starts its own gate.
+  - Branch `ui-3-vida-editor` (from main); spec files UNCOMMITTED on the working tree (docs only — safe to leave; commit with E1's first code). Native panel task #1 in_progress.
+---
+
+---
+Date: 2026-08-12
+Task: ui-3-vida-editor (LIF-88, #29) — @vida/editor · E2 standard blocks
+Goal: Pick up where E1 left off — build E2 (standard blocks) through the full §XXVI double-gate + post-impl gate, then commit/PR.
+Completed:
+  - **E2 IMPLEMENTED + all gates cleared.** `@vida/editor` v0.1.0→**0.2.0**. Full loop: baseline (current-* verified current, no drift) → spec `docs/specs/features/ui-3-vida-editor/e2-standard-blocks.md` → gate-1 /critique REVISE→fixed → **Approval 1** → /preflight PASS+2 folds → gate-2 /critique REVISE→fixed → **Approval 2** → implement → post-impl /critique REVISE→fixed → **Visual Gate PASS (both themes)**.
+  - **Scope resolved against the `STANDARD_BLOCK_TYPE` enum (BR-7), not the umbrella prose:** E2 = **{taskList, image, table, callout}** — divider(`horizontalRule`)+`codeBlock` already ship in E1's StarterKit; `taskList` was omitted by the umbrella. Umbrella §5 E2 row corrected.
+  - Code: `extensions/callout.ts` (bespoke Node, 3 variants info/success/danger) + `extensions/standard-blocks.ts` (`STANDARD_BLOCK_EXTENSIONS`: TaskList/TaskItem·Image·TableKit·Callout) spread into `editor.tsx`; removed `image-block.ts` skeleton; extended `internal/editor-styles.ts` (token-var CSS); +12 tests in `standard-blocks.test.tsx`; "Standard blocks" story.
+  - §XXIX currency: `docs/editor/extension-catalog.md` filled · `current-spec.md`+`current-business-rules.md` refreshed · `packages/editor/src/CLAUDE.md` updated.
+  - Acceptance GREEN: typecheck 11/11 · @vida/editor **30/30** · build + build-storybook ✓ · boundary clean (only @vida/types+@vida/ui) · no raw hex.
+  - **Committed `f44a617` + pushed; PR #14 opened** (E1+E2 together, base main) — https://github.com/VicJGs/vida-platform/pull/14
+Decisions:
+  - E2 block set = the enum minus StarterKit's 7 = {taskList, image, table, callout}. taskList from already-installed `@tiptap/extension-list`; table via `TableKit` (1 dep, resolved at preflight — collapsed 5 pkgs→2); callout = bespoke Node styled by injected CSS (no React node-view); image presentational, attachment pipeline deferred (BR-E2-5).
+  - callout variants = 3 (`info/success/danger`) = exactly ToastIntent; NO `warn` (no signal.warning token — would need a DS-2 edit, out of scope). No new ADR (grounded in ADR-001/enum + delivery-plan).
+  - Git: commit E2 + open UI-3 PR now (E1+E2) — Victor's call.
+  - 3 independent critiques each caught a real bug: gate-1 (warn-variant mis-cite → dropped), gate-2 (2 edit-orphaned "4 variants" refs), **post-impl (B1: `--accent*` are `_Toast` sub-theme-scoped → resolve to nothing on the editor's unnamed base frame → swapped to base `--colorBrandPrimary`/`--colorSignalSuccess`/`--colorSignalDanger`)**. Memory [[cite-tokens-from-emitted-output-not-source-files]] reinforced (the `--placeholder` trap recurring).
+Next session:
+  - **FIRST ACTION: start E3 (toolbar)** — the next UI-3 unit. Re-enter the §XXVI gate (baseline → spec `e3-*.md` → critique → Approval 1 → preflight → critique → Approval 2 → implement → post-impl → Visual Gate). Composes UI-1 Button/Menu; reflects active marks. ⚠ E1 §8 note: Tiptap v3 defaults `shouldRerenderOnTransaction:false` → E3 needs `useEditorState` (or opt-in) to reflect active-mark state in the toolbar.
+  - Branch `ui-3-vida-editor` (E1+E2 committed, PR #14 OPEN — not merged). Spec home `docs/specs/features/ui-3-vida-editor/`; ground truth `docs/editor/current-*`.
+  - Sequence remaining: E3 toolbar → E4 slash-menu → E5 registry+placeholders → E6 markdown serializers → E7 PDF → E8 DOCX. UX-6 (#26) stays gated behind the `-c` UI wave (needs UI-4).
+---

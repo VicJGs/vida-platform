@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| ui-3-vida-editor (LIF-88) | New Feature | 2026-08-11 | 2026-08-12 | 🔨 IN PROGRESS — `@vida/editor` (TipTap block editor). Head `#29`, `-c` UI wave (UI-1 ✅ → UI-2 ✅ → **UI-3** → UI-4). **E1 + E2 + E3 DONE & MERGED** — now on **per-unit PRs** (Victor's directive): **#15 (E1) `290470f`** · **#16 (E2) `d903cb0`** · **#17 (E3 toolbar) `438a1ec`** — all merged to `main`; #14 (the old combined E1+E2 PR) CLOSED/superseded. `@vida/editor` **v0.3.0**. E3 = the formatting toolbar (`toolbar.tsx` — APG role=toolbar + roving tabindex composing UI-1 Button/Menu; `internal/toolbar-state.ts` `useEditorState` reflection; additive `toolbar?:boolean` null-gated mount; callout insert via `insertContent`+node `isolating` [DEV-1/2]; DEF-E3-a). Full §XXVI gate + post-impl critique (MAT-A/B roving reconcile) + **Visual Gate PASS**. typecheck 11/11 · editor **60/60** · build+storybook ✓ · boundary clean. **NEXT: E4 (slash menu)** — `/`-triggered block-insertion, composes UI-1 Menu/Popover + type-ahead, lists `INTEGRATION_BLOCK_COMMANDS`; branch `ui-3-e4-slash-menu` off main → own PR via the §XXVI gate. Then E5 registry → E6 md → E7 PDF → E8 DOCX → UI-4 (#30). Specs `docs/specs/features/ui-3-vida-editor/{_index,e1..e3}.md`; ground truth `docs/editor/current-*`. Session `.claude/sessions/2026-08-12-ui-3-vida-editor.md`. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
 *(ui-2-platform-views LIF-87 → **Done + MERGED** PR #13 (`e3872fc`), 2026-08-11 — the 7 platform views + shared data-view spine, @vida/ui v0.2.0, UF gate SHIP. Archived; see _index.md Completed. Prior: ux-5 LIF-94 PR #12.)*
@@ -63,22 +64,38 @@ drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-11) — UI-2 Platform views DONE + MERGED (PR #13). Clean handoff.**
+**▶ CURRENT (2026-08-12) — UI-3 / E1 + E2 + E3 DONE & MERGED (per-unit PRs). Clean handoff to E4.**
+`@vida/editor` **v0.3.0** on `main` — the per-unit PR chain (Victor's directive: each E its own branch+PR): **#15 (E1)
+`290470f` · #16 (E2) `d903cb0` · #17 (E3 toolbar) `438a1ec`**, all merged; **#14 closed** (old combined E1+E2 PR,
+superseded). main is clean linear `eb13b32 → E1 → E2 → E3`. **E3** = the formatting toolbar: `toolbar.tsx`
+(`EditorToolbar` + `ToolbarButton`, APG `role=toolbar` + roving tabindex composing UI-1 Button/Menu) +
+`internal/toolbar-state.ts` (`useToolbarState`→`useEditorState` reflects marks/can/activeBlock — resolves E1 §8's
+`shouldRerenderOnTransaction:false`); additive `toolbar?:boolean` (default true), null-gated mount inside the frame.
+Callout insert via `insertContent(calloutInsertContent())` + node `isolating` (**DEV-1/2**: the `setCallout` chain
+augmentation didn't propagate in this pnpm monorepo). Active-bg = a Tamagui `active` VARIANT (not injected CSS);
+**DEF-E3-a** filed (Button has no toggle state). Full §XXVI gate (gate-1 REVISE 2 blockers · preflight +4 folds ·
+gate-2 REVISE 3 material) + **post-impl critique REVISE** (MAT-A/B: roving `rovingId` never reconciled to
+`effectiveRoving` → tab-stop teleport → reconcile effect) + **Visual Gate PASS**. typecheck 11/11 · editor **60/60** ·
+build + build-storybook ✓ · boundary clean · no hex.
+**HANDOFF — next = `E4` (slash menu)**: the `/`-triggered block-insertion menu — composes UI-1 Menu/Popover +
+type-ahead; lists `INTEGRATION_BLOCK_COMMANDS` (E1's enum→command map) that resolve to E5's placeholder node-views
+(soft forward-dep on E5's TYPE MAP, already in E1). Re-enter the §XXVI gate; spec `…/ui-3-vida-editor/e4-slash-menu.md`;
+branch `ui-3-e4-slash-menu` off main → own PR. Sequence remaining: E4 → E5 registry+placeholders → E6 markdown →
+E7 PDF → E8 DOCX. After E1→E8: UI-4 (#30, ← UX-5 renders+wires it); UX-6 stays gated behind `-c`. Also un-park:
+db-10 (M1.4), tsconfig-strict-index-access (repo-wide §XV hygiene). ⚠ App note (UI-4): lazy-load the graph route
+(heavy WebGL deps).
+⚠ **CI (filed, not done here):** all checks are red from a pnpm `action-setup@v4` version conflict (`ci.yml` `version:9`
++ `packageManager: pnpm@9.15.9`) — a Planned hygiene task (own gate). Other reds owned ahead: `@vida/server#test`→P2-1,
+Format Check (673 files)→the Prettier Planned task. No branch protection → red CI doesn't block merges.
+
+<details><summary>(prior) 2026-08-11 — UI-2 Platform views DONE + MERGED (PR #13).</summary>
+
 The **7 UI-2 views** (list·gallery·timeline·calendar·pomodoro-widget·export-dialog·neural-graph) + the shared
 `internal/data-view` spine shipped in **@vida/ui v0.2.0**. Built V1..V7, each §XXVI double-gate + component Visual
-Gate; UF consolidated gate **SHIP** (design·components·motion·engineering). Spine = generic `items<T>` + `renderItem` +
-`getKey` + 4 rendered terminal states, `state` as a prop (package→app boundary), local `ViewState`. Notable: calendar
-**TZ-safe day-keying** (`'YYYY-MM-DD'` is the key as-is — the Brasília UTC off-by-one); pomodoro drift-free timer +
-deferred session seam; export-dialog composes UI-1 Dialog; neural-graph Sigma.js WebGL with a **content-keyed effect**
-(`graphKey`, not array-refs) + `kill()` + an accessible node-list (§XIV met). Deps: date-fns·sigma·graphology·
-graphology-layout-forceatlas2. **PR #13 MERGED** (`e3872fc`); LIF-87 → Done; task archived; re-verified green (317/317).
-**3 Victor drift-catches** (all his — I manufactured 2 sign-off "decisions" + 1 gap the docs already solved; memories
-[[capability-framework-resolves-enum-vs-renderer-gaps]] + [[verify-a-critiques-escalation-and-defer-target-before-relaying]]).
-**HANDOFF — next head = `UI-3` Vida editor (`#29`, ← UI-1 ✅ + AR-4 ✅, add-frontend-component).** `--next` agrees.
-⚠ **FIRST next session, before UI-3:** resolve the UI-3/UI-4 ordering open-decision (`docs/specs/fixes/ui-3-ui-4-ordering-reconcile/`
-— is "shell before editor" Victor's intent? `#` order + `--next` say UI-3 first). Then UI-4 (#30); UX-6 stays gated
-behind `-c`. ⚠ App note (UI-4): lazy-load the graph route (heavy WebGL deps). Also un-park: db-10 (M1.4),
-tsconfig-strict-index-access (repo-wide §XV hygiene).
+Gate; UF consolidated gate **SHIP**. **PR #13 MERGED** (`e3872fc`); LIF-87 → Done; task archived; green (317/317).
+**3 Victor drift-catches** (memories [[capability-framework-resolves-enum-vs-renderer-gaps]] +
+[[verify-a-critiques-escalation-and-defer-target-before-relaying]]).
+</details>
 
 <details><summary>(prior) 2026-08-09 — UX-5 First-run onboarding DONE + MERGED.</summary>
 
@@ -512,7 +529,8 @@ _(none)_
 | Toolkit scan-cascade audit + 6 command migrations | toolkit-development | parked — filed in ~/dev-toolkit/.claude/tasks/ |
 | Integrate /task-new ↔ native task panel | toolkit-development | parked — sync gap found 2026-06-08 |
 | Global Calendar (cross-module read-only aggregator over `dueIn`) | (feature) | parked platform surface — build when its feeder modules are built |
-| **Repo-wide Prettier conformance** (CI `format-check` job is pre-existing-RED: `pnpm format:check` reports ~534 drifted files repo-wide — REPO.md, TASKS.md, token JSON, etc. Run `pnpm format` + commit, then keep it green. Surfaced by QA-1, 2026-08-04; not owned by any feature issue.) | Generic Coding Session | hygiene — do as a standalone sweep before the next broad touch |
+| **Repo-wide Prettier conformance** (CI `format-check` job is pre-existing-RED: `pnpm format:check` reports **673** drifted files repo-wide. ⚠ NOT a blind `pnpm format` — the glob `**/*.{…,md}` + current `.prettierignore` pulls in `Old/` [quarantined legacy — must NOT touch] + `.claude/` [tracking artifacts] + 373 docs. **Fix `.prettierignore` scope FIRST** [add `Old/`; decide `.claude/`], THEN sweep only governed source. Surfaced by QA-1, 2026-08-04; not owned by any feature issue.) | Generic Coding Session | hygiene — do as a standalone sweep before the next broad touch |
+| **CI: pnpm action-setup version conflict** (ALL `ci.yml`+`deploy.yml` jobs fail at *setup* in ~6s: `pnpm/action-setup@v4` throws `ERR_PNPM_BAD_PM_VERSION` because the workflow sets `version: 9` AND `package.json` pins `packageManager: pnpm@9.15.9`. **Doc-confirmed fix** [action-setup README]: remove `version:` from the `action-setup@v4` steps → it reads `packageManager` [exact 9.15.9, matches local+lockfile]. `ci.yml` ×5 [PR-gating]; `deploy.yml` ×3 is P2-1/deploy territory — leave. NOT owned by any issue [AR-1 done didn't scope GH Actions]; masks all real CI signal until fixed. Surfaced UI-3/E3, 2026-08-12.) | Generic Coding Session | hygiene — own PR; unblocks real CI signal (Test@server stays P2-1's, Format stays Prettier task's) |
 
 ## ✅ Completed (last 30 days)
 

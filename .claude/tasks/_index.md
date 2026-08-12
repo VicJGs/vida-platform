@@ -2,7 +2,9 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — UI-2 completed 2026-08-11. Next head: **ui-3-vida-editor** #29, the `-c` UI wave continues UI-2 → UI-3 → UI-4. ⚠ Before starting UI-3, reconcile the UI-3/UI-4 ordering open-decision — `docs/specs/fixes/ui-3-ui-4-ordering-reconcile/` [`#` order says UI-3 first; part-3:116 lists UI-4 first — is "shell before editor" Victor's intent?]. UX-6 remains gated behind `-c` [needs UI-4].)_
+- ui-3-vida-editor: .claude/tasks/ui-3-vida-editor.md  (in-progress 2026-08-12 — LIF-88 · M1/M1.0 `#29` · **New Feature** · ← UI-1 ✅ + AR-4 ✅. `@vida/editor` TipTap block editor, built per-unit E1..E8. **E1 + E2 + E3 DONE & MERGED** as per-unit PRs (#15 `290470f` · #16 `d903cb0` · #17 `438a1ec`; #14 closed) → `@vida/editor` **v0.3.0** on `main`. E3 = the toolbar (`toolbar.tsx` APG role=toolbar + roving tabindex + `useEditorState` reflection; DEF-E3-a). **NEXT = E4 (slash menu)** — branch `ui-3-e4-slash-menu` off main → own PR via the §XXVI gate; spec `…/ui-3-vida-editor/e4-slash-menu.md`. Then E5 registry → E6 md → E7 PDF → E8 DOCX. Ground truth `docs/editor/current-*`; session `.claude/sessions/2026-08-12-ui-3-vida-editor.md`.)
+
+_(prior — UI-2 completed 2026-08-11. Next head: **ui-3-vida-editor** #29, the `-c` UI wave continues UI-2 → UI-3 → UI-4. ⚠ Before starting UI-3, reconcile the UI-3/UI-4 ordering open-decision — `docs/specs/fixes/ui-3-ui-4-ordering-reconcile/` [`#` order says UI-3 first; part-3:116 lists UI-4 first — is "shell before editor" Victor's intent?]. UX-6 remains gated behind `-c` [needs UI-4].)_
 
 ## Planned
 - db-2-sync-metadata-columns: .claude/tasks/db-2-sync-metadata-columns.md  (DEFERRED/Backlog — **RE-HOMED 2026-07-29** from the retired `① Database Layer` cluster to **M4 Venues / Multi-Device · Sync & Server** [alongside ar-9b; LIF-64 moved + state BACKLOG in Linear]. Charter = `syncColumns` amendment + HLC representation [ADR-002 §5.20 / ADR-003 §17 / ADR-004 F1]; ADR-017 defers it with the sync engine to the post-validation hardening pass. Baseline done, no code. Not stale — a legit deferred issue that was de-organized.)
