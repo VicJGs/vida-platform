@@ -18,6 +18,7 @@ import type { Content } from '@tiptap/react'
 import type { EditorDocument } from '@vida/types'
 import { ensureEditorStyles } from './internal/editor-styles'
 import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
+import { EditorToolbar } from './toolbar'
 
 export interface VidaEditorProps {
   /** Initial document (UNCONTROLLED — see BR-E1-1). Omit → empty doc. */
@@ -26,6 +27,8 @@ export interface VidaEditorProps {
   onChange?: (doc: EditorDocument) => void
   /** Read-only when false. Default true. */
   editable?: boolean
+  /** Render the formatting toolbar (E3). Default true. Ignored when `editable` is false (no formatting affordance). */
+  toolbar?: boolean
   /** Placeholder text for the empty state. */
   placeholder?: string
   /** Accessible name for the textbox (a11y — BR-6). One of these is REQUIRED. */
@@ -87,7 +90,7 @@ function warnMissingName(ariaLabel?: string, ariaLabelledby?: string): void {
 }
 
 function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEditorHandle>): React.ReactElement {
-  const { defaultValue, onChange, editable = true, placeholder } = props
+  const { defaultValue, onChange, editable = true, toolbar = true, placeholder } = props
   const ariaLabel = props['aria-label']
   const ariaLabelledby = props['aria-labelledby']
 
@@ -153,6 +156,12 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
 
   return (
     <EditorFrame className="vida-editor-frame">
+      {/* E3 toolbar — rendered ONLY when editor is non-null (useEditor is Editor|null under immediatelyRender:false,
+          the null-editor gate, BR-E3-1) and the editor is editable + toolbar-enabled. A sibling ABOVE EditorContent,
+          NOT inside the contenteditable (the role=textbox is on the inner .ProseMirror). */}
+      {toolbar && editable && editor ? (
+        <EditorToolbar editor={editor} aria-label={ariaLabel ? `${ariaLabel} formatting` : undefined} />
+      ) : null}
       <EditorContent editor={editor} />
     </EditorFrame>
   )

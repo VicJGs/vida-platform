@@ -99,3 +99,35 @@ const standardBlocks: EditorDocument = {
 export const StandardBlocks: Story = {
   args: { defaultValue: standardBlocks },
 }
+
+// E3 (UI-3) — the toolbar Visual-Gate surface. The toolbar is ON by default (all editable stories above show it);
+// this story seeds mixed content so the reviewer can verify, in BOTH themes:
+//  · active-state — put the cursor in the bold word / the heading → the Bold button shows the pressed bg (BR-E3-3,
+//    the active-bg-over-ghost check), the "Block type" trigger label tracks the block;
+//  · the two Menus (Turn into / Insert) open, flip when clipped, and dispatch (insert a table/callout/divider);
+//  · disabled — Undo is dimmed until the first edit;
+//  · roving — Tab reaches the toolbar once, then ←/→/Home/End move between controls; focus ring is visible.
+const toolbarSeed: EditorDocument = {
+  type: 'doc',
+  content: [
+    { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Toolbar' }] },
+    {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Select a ' },
+        { type: 'text', marks: [{ type: 'bold' }], text: 'bold' },
+        { type: 'text', text: ' word, or click into the heading — the controls reflect the active state.' },
+      ],
+    },
+  ],
+}
+
+/** Toolbar (E3) — formatting controls that apply commands and reflect the active marks/block. */
+export const Toolbar: Story = {
+  args: { defaultValue: toolbarSeed },
+}
+
+/** No toolbar — `toolbar={false}` renders the bare editor (E1/E2 surface, opt-out). */
+export const NoToolbar: Story = {
+  args: { defaultValue: seeded, toolbar: false },
+}

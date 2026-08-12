@@ -2,11 +2,11 @@
 
 > Durable, living description of what `@vida/editor` IS as built (§XXIX Currency Rule). Refreshed per unit; never lags
 > the code. Source of truth for `/critique` + `/preflight` + `victor:session-kickoff`. Every claim cites code.
-> Scope today: **E1 — editor core spine + E2 — standard blocks** (UI-3). Later units (E3 toolbar · E4 slash-menu ·
+> Scope today: **E1 — editor core spine + E2 — standard blocks + E3 — toolbar** (UI-3). Later units (E4 slash-menu ·
 > E5 registry · E6–E8 serializers) extend this file. Forward specs: `docs/specs/features/ui-3-vida-editor/`.
 
 ## Package
-`@vida/editor` **v0.2.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
+`@vida/editor` **v0.3.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
 **v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` + **E2:**
 `@tiptap/extension-image` + `@tiptap/extension-table` + `@tiptap/extension-list`, family-pinned `^3.30.0`) +
 `@tamagui/core@2.6.2` + `@vida/types`/`@vida/ui` (workspace). Peer `react>=19`.
@@ -61,6 +61,27 @@ orderedList · blockquote · **codeBlock** · **horizontalRule**); **E2 adds the
 - **No double-registration:** `codeBlock`/`horizontalRule` stay StarterKit-owned (E2 only styles them). A schema-parity
   test asserts every `STANDARD_BLOCK_TYPE` value ∈ `editor.schema.nodes`. Full catalog: `docs/editor/extension-catalog.md`.
 
+## Toolbar (E3) `[FACT: src/toolbar.tsx; src/internal/toolbar-state.ts; editor.tsx toolbar mount]`
+`<VidaEditor>` gains an additive prop **`toolbar?: boolean` (default true)**; the formatting toolbar renders INSIDE
+the editor frame, above `<EditorContent>`, ONLY when `toolbar && editable && editor != null` (the null-editor gate —
+`useEditor` is `Editor|null` under `immediatelyRender:false`). The raw `Editor` never leaks (E1's curated handle
+unchanged). `EditorToolbar` is internal (not barrel-exported).
+- **`role="toolbar"`** (aria-label `Formatting`, `aria-orientation=horizontal`) with **roving tabindex** — a single
+  tab stop; `←/→` move between controls, `Home/End` to ends; the controller owns ONLY horizontal+Home/End (never
+  `↓/↑`, which the Menus bind to open). The roving order is the LIVE ENABLED set; a reconcile effect adopts the
+  effective stop when a control disables (never pulls focus from the editor).
+- **Controls** (grounded in the registered schema): mark toggles **Bold · Italic · Underline · Strike · Code**
+  (`aria-pressed` = `isActive`); a **block-type Menu** ("Turn into" — Paragraph/H1–3/lists/quote/code, trigger label
+  reflects the active block); an **Insert Menu** (Table `{3×3, header}` · Callout · Divider — callout item disabled
+  inside a callout); **Undo/Redo** (disabled via `editor.can()`). Image + Link are excluded (need URL/attachment UI).
+- **Active state** via `useToolbarState` → `useEditorState({editor, selector})` (re-renders only on a reflected-value
+  change, not per keystroke; the selector does O(controls) `isActive`/`can()` probes per transaction — dedup gates the
+  render, not the compute).
+- **Composition:** `ToolbarButton` wraps UI-1 `<Button intent="ghost" size="sm">` in a frame whose `active` VARIANT
+  carries the pressed-bg (`$colorSurfaceSecondary`) — a variant, not injected CSS (the "prop-driven state = variant"
+  rule); UI-1 Button has no toggle state (**DEF-E3-a** filed). Menus are UI-1 `Menu` (aria-labelled "Turn into" /
+  "Insert"). No new dep; no injected CSS (fully Tamagui); no motion (Menu's open transition is UI-1's).
+
 ## States (§VIII applicable subset) `[FACT: editor.tsx; editor.stories.tsx]`
 `default` (resting/focusable) · `focus` (frame ring) · `disabled` (`editable=false`, no caret) · `empty` (placeholder).
 No loading/error at E1 (the app's terminal-state wrapper owns those, UX-4).
@@ -70,13 +91,15 @@ No loading/error at E1 (the app's terminal-state wrapper owns those, UX-4).
 `category ∈ {platform, embed}`. E1 ships the DATA; E5 builds the node-views the commands insert.
 
 ## File map `[FACT: packages/editor/src]`
-`editor.tsx` (VidaEditor + assertEditorDocument) · `commands.ts` · `internal/editor-styles.ts` (E1 chrome + E2 block
-CSS) · **`extensions/standard-blocks.ts`** (E2 — `STANDARD_BLOCK_EXTENSIONS`) · **`extensions/callout.ts`** (E2 —
-bespoke node) · `index.ts` (barrel) · `env.d.ts` · `test-setup.ts` (jsdom shims) ·
-`editor.test.tsx`/`commands.test.ts`/`extensions/standard-blocks.test.tsx` (**30 tests**) · `editor.stories.tsx`
-(Visual-Gate surface incl. the "Standard blocks" story) · `CLAUDE.md` (layer doc).
-**Deferred (empty skeleton):** `toolbar.tsx` (E3) · `slash-menu.tsx` (E4) · `extensions/*` integration node-views
-(E5) · `serializers/*` (E6–E8). Yjs = a deferred seam, no dep (BR-2/M4).
+`editor.tsx` (VidaEditor + assertEditorDocument + toolbar mount) · `commands.ts` · **`toolbar.tsx`** (E3 —
+`EditorToolbar` + `ToolbarButton`) · **`internal/toolbar-state.ts`** (E3 — `useToolbarState`/`resolveActiveBlock`) ·
+`internal/editor-styles.ts` (E1 chrome + E2 block CSS) · **`extensions/standard-blocks.ts`** (E2) ·
+**`extensions/callout.ts`** (E2 bespoke node + E3 `calloutInsertContent` + `isolating`) · `index.ts` (barrel) ·
+`env.d.ts` · `test-setup.ts` (jsdom shims) · `editor.test.tsx`/`commands.test.ts`/
+`extensions/standard-blocks.test.tsx`/`toolbar.test.tsx`/`internal/toolbar-state.test.ts` (**60 tests**) ·
+`editor.stories.tsx` (Visual-Gate surface incl. "Standard blocks" + "Toolbar" + "No toolbar") · `CLAUDE.md`.
+**Deferred (empty skeleton):** `slash-menu.tsx` (E4) · `extensions/*` integration node-views (E5) · `serializers/*`
+(E6–E8). Yjs = a deferred seam, no dep (BR-2/M4).
 
 ## Verify
-`pnpm --filter @vida/editor typecheck && build && test` (30 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.
+`pnpm --filter @vida/editor typecheck && build && test` (60 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.

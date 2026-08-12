@@ -93,6 +93,75 @@ untouched (BR-E1-5, UI-2 conditional-sub-theme rule).
   + specs. NOT yet committed. (Whether to PR E1 alone or stack E2+ before a UI-3 PR is Victor's call.)
 - Then **E2** (standard blocks: table/callout/divider/image/code-block) — the next UI-3 unit, re-enters the §XXVI gate.
 
+## Session 3 (2026-08-11) — E2 IMPLEMENTED (full §XXVI double-gate + post-impl critique)
+Baseline (current-* current, no drift) → E2 spec authored → **Approval 1** → preflight PASS+2 folds (TableKit resolves
+table to 2 deps; defaultValue is the pre-chrome block-exhibition path) → **Approval 2** → implemented → post-impl
+critique. **Scope resolved against the `STANDARD_BLOCK_TYPE` enum (BR-7):** E2 = **{taskList, image, table, callout}**
+— NOT the umbrella's "table/callout/divider/image/code-block" (divider=`horizontalRule` + `codeBlock` already ship in
+E1's StarterKit; `taskList` was omitted). Umbrella §5 E2 row corrected.
+`@vida/editor` v0.1.0→**0.2.0**: `extensions/callout.ts` (bespoke Node, 3 variants info/success/danger) +
+`extensions/standard-blocks.ts` (`STANDARD_BLOCK_EXTENSIONS`: TaskList/TaskItem·Image·TableKit·Callout) spread into
+`editor.tsx`; `image-block.ts` skeleton removed; `editor-styles.ts` extended (token-var CSS); +12 tests (parity +
+round-trip + callout fallback + e2e render) + "Standard blocks" story. **Automated acceptance GREEN:** editor typecheck
+✓ · build ✓ · build-storybook ✓ · test **30/30** · root typecheck **11/11** · boundary clean · no raw hex.
+**Gate quality — every gate caught a real bug:** gate-1 critique REVISE (B1: callout `warn` variant mis-cited to Toast
++ no backing token → dropped to 3) + M1–M4; gate-2 caught 2 edit-orphaned "4 variants" refs; **post-impl critique
+caught B1 (ISOLATED): `--accentInfo/Success/Danger` are `_Toast` SUB-THEME-scoped → resolve to nothing on the editor's
+unnamed base frame** → swapped to base `--colorBrandPrimary`/`--colorSignalSuccess`/`--colorSignalDanger` (jsdom
+couldn't catch it; the E1 `--placeholder` trap recurring — memory [[cite-tokens-from-emitted-output-not-source-files]]
+reinforced). §XXIX: `extension-catalog.md` filled · `current-*` refreshed · `CLAUDE.md` · umbrella row.
+**DEV-1 (§XXVIII mechanical):** `STANDARD_BLOCK_EXTENSIONS` typed `Extensions` not §3's `readonly Extension[]` (Nodes,
+not Extensions) — type-name refinement, no intent change.
+
+### NEXT (E2)
+- **PENDING: real-browser Visual Gate (Victor)** — `pnpm --filter @vida/editor storybook` → "Standard blocks" story,
+  both themes: confirm callout tints/accents render (the B1 fix), table borders/header fill, taskList checkboxes, image.
+- After Visual Gate PASS → **commit** E1+E2 together (still uncommitted on branch `ui-3-vida-editor`; PR strategy = Victor).
+- Then **E3** (toolbar — composes UI-1 Button/Menu; reflects active marks; needs `useEditorState`/`shouldRerenderOnTransaction` per E1 §8 note).
+
+## Session 4 (2026-08-12) — PR REORG + E3 IMPLEMENTED (full §XXVI double-gate + post-impl critique)
+**PR reorganization (Victor's call — each E its own branch+PR, finished ones merged):** split the combined PR #14
+into **#15 (E1) MERGED** (`290470f`) + **#16 (E2) MERGED** (`d903cb0`); **#14 CLOSED** (superseded). main is clean
+linear `eb13b32 → E1 → E2`. Building E3 on fresh branch **`ui-3-e3-toolbar`** off the merged main. Filed the CI
+pnpm-`action-setup` version-conflict fix as a TASKS.md Planned hygiene task (NOT done here — ownerless infra, its own
+gate; the other CI reds are owned ahead: `@vida/server#test`→P2-1, Format Check→Prettier task).
+
+**E3 (toolbar) — APPROVED (Approval 1 + preflight + Approval 2) → IMPLEMENTED → post-impl critique.**
+`@vida/editor` **v0.2.0→0.3.0**. `<VidaEditor>` gains additive `toolbar?: boolean` (default true), null-gated mount
+inside the frame. `toolbar.tsx` (`EditorToolbar` + `ToolbarButton`) — APG `role=toolbar` + roving tabindex
+(←/→/Home/End only; live enabled-set + reconcile effect) composing UI-1 Button (mark toggles, undo/redo) + Menu
+(block-type "Turn into", insert Table/Callout/Divider); active state via `internal/toolbar-state.ts`
+(`useToolbarState`→`useEditorState`). Callout insert via `insertContent(calloutInsertContent())` + node `isolating`
+(DEV-1/2 — the `setCallout` chain augmentation didn't propagate in this pnpm monorepo). Active-bg = a Tamagui `active`
+VARIANT on `ToolbarButton` (not injected CSS); DEF-E3-a filed (Button has no toggle state). Image+Link excluded.
+**Gates (all independent):** gate-1 REVISE (2 blockers [`setCallout` nonexistent; null-editor gate] + 3 material) →
+preflight PASS +4 folds → gate-2 REVISE (3 material the edits opened: attrs payload, `can()` compute-cost honesty,
+default-on regression audit) → **post-impl REVISE** (MAT-A/B: roving `rovingId` never reconciled to `effectiveRoving`
+→ tab-stop teleport/focus-orphan → added reconcile effect; MAT-D mark-glyph styling; callout-nest guard). §XXVIII:
+DEV-1..4. **Automated GREEN:** editor typecheck ✓ · **60 tests** (was 30) ✓ · build + build-storybook ✓ · root
+typecheck 11/11 · boundary clean · no hex · E1/E2 tests unbroken (default-on toolbar, B0). §XXIX: `current-*` +
+`CLAUDE.md` + umbrella §5 E3 ✅ + DEF-E3-a. Specs `…/ui-3-vida-editor/e3-toolbar.md`.
+
+### NEXT (E3)
+- **PENDING: real-browser Visual Gate (Victor)** — `pnpm --filter @vida/editor storybook` → "Toolbar" story, both
+  themes: (1) **active-bg over ghost** (BR-E3-3 — the key check: does the pressed bg render on the ghost button?),
+  (2) mark glyphs legible (B bold/I italic/U underline/S strike/`</>` mono), (3) both Menus open/flip + dispatch,
+  (4) Undo dimmed until an edit, (5) roving — Tab reaches toolbar once then ←/→/Home/End, focus ring visible.
+- After Visual Gate PASS → **commit** E3 on `ui-3-e3-toolbar` → **its own PR** (per-unit PR model).
+- Then **E4** (slash menu — composes UI-1 Menu/Popover; type-ahead; lists integration-block commands). E5 registry →
+  E6 markdown → E7 PDF → E8 DOCX. Then UI-4 (#30).
+
+## Build Steps — E2 (standard blocks)
+_(materialized 2026-08-11 from e2-standard-blocks.md §7 — approved at Approval 2. All complete; Visual Gate pending.)_
+- [x] B1 · Deps + version — add `@tiptap/extension-image` + `@tiptap/extension-table` (TableKit) + promote `@tiptap/extension-list`; v0.1.0→0.2.0; `pnpm install`.
+- [x] B2 · `extensions/callout.ts` — bespoke `Node.create` (group:block, content:'block+', defining), `CALLOUT_VARIANT` (info/success/danger), variant attr parseHTML/renderHTML + `normalizeVariant` default-fallback.
+- [x] B3 · `extensions/standard-blocks.ts` — `STANDARD_BLOCK_EXTENSIONS` (TaskList, TaskItem nested, Image inline:false/allowBase64, TableKit resizable:false, Callout); removed `image-block.ts` skeleton.
+- [x] B4 · `editor.tsx` — spread `...STANDARD_BLOCK_EXTENSIONS` after StarterKit+Placeholder (no API change, no double-registration).
+- [x] B5 · `internal/editor-styles.ts` — token-var CSS for taskList/table/callout(×3)/image/code/divider; base accent vars (B1 fix); color-mix tints; no hex.
+- [x] B6 · Tests `extensions/standard-blocks.test.tsx` (schema-parity, per-block round-trip, callout variant + parseHTML fallback, TableKit co-reg, e2e VidaEditor render) + "Standard blocks" story.
+- [x] B7 · §XXIX currency — `extension-catalog.md` filled, `current-*` refreshed, `CLAUDE.md`, umbrella §5 E2 row corrected.
+- [x] B8 · **Visual Gate (Victor, real browser) — PASS** (both themes; callout accents/tints verified rendering, taskList/table/image/code/divider, a11y clean). 2026-08-11.
+
 ## Decisions Made
 | Decision | Choice | Reason | Date |
 |----------|--------|--------|------|

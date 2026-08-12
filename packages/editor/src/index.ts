@@ -1,5 +1,6 @@
-// @vida/editor — the TipTap block editor (UI-3). E1 ships the package foundation + editor core spine.
-export const EDITOR_VERSION = '0.1.0'
+// @vida/editor — the TipTap block editor (UI-3). E1 editor core · E2 standard blocks · E3 toolbar.
+// (No hand-maintained version const — `package.json` is the single source of truth; the E2-era `EDITOR_VERSION`
+//  drifted to 0.1.0 and was unconsumed, so E3 dropped it.)
 
 // E1 — editor core.
 export { VidaEditor, assertEditorDocument, type VidaEditorProps, type VidaEditorHandle } from './editor'
