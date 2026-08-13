@@ -4850,3 +4850,16 @@ Next session:
   - Branch `ui-3-vida-editor` (E1+E2 committed, PR #14 OPEN — not merged). Spec home `docs/specs/features/ui-3-vida-editor/`; ground truth `docs/editor/current-*`.
   - Sequence remaining: E3 toolbar → E4 slash-menu → E5 registry+placeholders → E6 markdown serializers → E7 PDF → E8 DOCX. UX-6 (#26) stays gated behind the `-c` UI wave (needs UI-4).
 ---
+Date: 2026-08-13
+Task: ui-3-vida-editor (LIF-88, #29) — @vida/editor · E4 slash menu
+Completed:
+  - **E4 SHIPPED.** `@vida/editor` v0.3.0→**0.4.0**. The `/` slash menu = a **WAI-ARIA combobox** (focus stays in the editor) on **`@tiptap/suggestion`** (new dep) + `@tiptap/react` ReactRenderer — NOT a UI-1 Menu/Popover mount (gate-1 corrected the umbrella; BR-4 at the token layer). Files: `slash-commands.ts` (editor-local `SlashMenuItem` view-model, BR-7; standard blocks insert now + 11 integration blocks DERIVED-disabled via the `isBlockAvailable` E5 seam) · `slash-menu.tsx` (role=listbox popup, `<Theme name="Menu">`) · `extensions/slash-command.ts` (Suggestion extension) · `editor.tsx` (mount + host combobox ARIA via editorProps).
+  - Full §XXVI double-gate + **post-impl critique caught 1 runtime-proven blocker (B1):** the host `role`→combobox flip via a PM plugin was DEAD (PM reads `view._props`/editorProps before plugins, first-writer-wins) → moved to `editorProps.attributes` as a function (single `role` writer) + a real active-flip test. gate-1 also killed a FALSE `@floating-ui/dom` transitive-dep FACT. **Visual Gate PASS** (both themes; combobox ARIA confirmed in devtools).
+  - Automated GREEN: typecheck 11/11 · editor **102/102** · build+storybook ✓ · boundary clean · no hex. §XXIX: `current-*` + `slash-menu-spec.md` (was 0-byte) + `CLAUDE.md` + umbrella §5 E4 ✅.
+  - **Committed `9697b4d` + pushed; PR #18 OPEN** — https://github.com/VicJGs/vida-platform/pull/18
+Decisions:
+  - Command-set scope (standard + deferred-integration) = documented, NOT a fork (capability-framework graceful degradation + `SLASH_COMMAND_CATEGORY` headroom); Victor corrected me for framing it as an "open decision" at Approval 1. Heading = `setNode` turn-into, deliberately not E3's toggle (BR-E4-4b).
+Next session:
+  - **FIRST ACTION: start E5** (block-registry seam + placeholder node-views for all 11 `INTEGRATION_BLOCK_TYPE`, BR-3) through the §XXVI gate. **The E4→E5 seam is built:** E5 flips E4's disabled integration entries on by populating `AVAILABLE_INTEGRATION_BLOCKS` in `slash-commands.ts` (empty today) + registering the placeholder node-views. Cut `ui-3-e5-*` off main AFTER PR #18 merges (per-unit PR model).
+  - Sequence remaining: E5 → E6 markdown (to+from) → E7 PDF → E8 DOCX → UI-4 (#30). Full handoff: `.claude/sessions/2026-08-13-ui-3-e4-slash-menu.md`.
+---

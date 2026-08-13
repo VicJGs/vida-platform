@@ -3,8 +3,8 @@
 # Scenario: Default
 # Spec: docs/specs/features/ui-3-vida-editor/_index.md  (to author — Step 3)
 # Created: 2026-08-11
-# Updated: 2026-08-11
-# Status: in-progress
+# Updated: 2026-08-13
+# Status: done
 # Linear: LIF-88
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
@@ -150,6 +150,59 @@ typecheck 11/11 · boundary clean · no hex · E1/E2 tests unbroken (default-on 
 - After Visual Gate PASS → **commit** E3 on `ui-3-e3-toolbar` → **its own PR** (per-unit PR model).
 - Then **E4** (slash menu — composes UI-1 Menu/Popover; type-ahead; lists integration-block commands). E5 registry →
   E6 markdown → E7 PDF → E8 DOCX. Then UI-4 (#30).
+
+## Session 5 (2026-08-13) — E4 IMPLEMENTED + SHIPPED (full §XXVI double-gate + post-impl critique + Visual Gate)
+E4 (slash menu) built on fresh branch **`ui-3-e4-slash-menu`** off main. `@vida/editor` **v0.3.0→0.4.0**.
+`/`-triggered block palette = a **WAI-ARIA combobox** (focus stays in the editor), built on **`@tiptap/suggestion`**
+(new dep) + `@tiptap/react` `ReactRenderer` — NOT a UI-1 Menu/Popover mount (trigger-anchored + move focus in; the
+umbrella's "composes UI-1 Menu/Popover" was corrected at gate-1 — BR-4 honored at the token layer via the Menu
+sub-theme). New files: `slash-commands.ts` (editor-local `SlashMenuItem` view-model; `@vida/types.SlashCommand`
+untouched, BR-7 — its `block_type` is integration-only; `SLASH_MENU_ITEMS` = standard blocks insert-now + 11 integration
+blocks DERIVED from `INTEGRATION_BLOCK_COMMANDS`, disabled via the `isBlockAvailable` **E5 seam**) · `slash-menu.tsx`
+(role=listbox combobox popup under `<Theme name="Menu">`, imperative onKeyDown) · `extensions/slash-command.ts` (the
+Suggestion extension + ReactRenderer render lifecycle + `slashComboboxAttrs`/`slashActive`). `editor.tsx` mounts it +
+host combobox ARIA via `editorProps.attributes`.
+**Gates (all independent critics):** gate-1 REVISE (2 blockers: heading `setNode` turn-into vs E3 toggle + provenance;
+a FALSE `@floating-ui/dom` transitive-dep FACT → deleted) + 5 material → preflight PASS (installed `@tiptap/suggestion@
+3.30.0`, verified the whole API vs its d.ts) +4 folds → gate-2 SHIP (every d.ts cite TRUE, all 12 commands chainable) +2
+material → **post-impl REVISE → 1 real blocker B1 (runtime-proven): the host `role`→combobox flip via a PM plugin was
+DEAD** (PM consumes `view._props`/editorProps before plugins, first-writer-wins → E1's static `role:'textbox'` always
+won, plugin's combobox silently dropped) → moved the combobox ARIA into `editor.tsx`'s `editorProps.attributes`
+FUNCTION (single `role` writer), added a real active-flip test (`insertContent('/')` → `slashActive` true). §XXVIII:
+DEV-1 (@tiptap/react import path) · DEV-2 (the B1 fix) · DEV-3 (no injected CSS, fully Tamagui) · DEV-4 (ReactRenderer↔
+Tamagui context = React-portal-inside-EditorContent → inherits context, UNKNOWN closed).
+**Automated GREEN:** editor typecheck ✓ · **102 tests** (was 60) ✓ · build + build-storybook ✓ · root typecheck 11/11 ·
+boundary clean · no hex. **Visual Gate PASS** (Victor, both themes; combobox ARIA confirmed in devtools). §XXIX:
+`current-spec`/`current-business-rules` refreshed · `slash-menu-spec.md` filled (was 0-byte) · `CLAUDE.md` E4 section ·
+umbrella §5 E4 → ✅. **Committed `9697b4d` + pushed; PR #18 OPEN** → https://github.com/VicJGs/vida-platform/pull/18.
+Specs `docs/specs/features/ui-3-vida-editor/e4-slash-menu.md`.
+
+### NEXT — E5 (block-registry seam + placeholder node-views)
+- **FIRST ACTION next session: start E5.** Re-enter the §XXVI gate (baseline → spec `e5-*.md` → critique → Approval 1 →
+  preflight → critique → Approval 2 → implement → post-impl → Visual Gate). E5 = the `BlockRegistry` typed map + a
+  **placeholder node-view for every `INTEGRATION_BLOCK_TYPE`** (11) (BR-3, graceful degradation). Reserves/reconciles
+  the `extensions/*.ts` stub filenames (`daily-summary.ts`, `backlink-panel.ts`, …) against the enum keys.
+- **E5's HOOK into E4 (already built):** E4's slash menu already LISTS the 11 integration blocks, disabled, gated by
+  `isBlockAvailable(type)` in `slash-commands.ts` (currently `AVAILABLE_INTEGRATION_BLOCKS = new Set()` — empty). E5
+  **flips them on** by populating that set (or replacing it with a runtime registry query) AND registering the
+  placeholder node-views the `run` closures will insert. Decide at E5 whether E4's integration `run` closures get wired
+  (insert the placeholder node) or stay deferred to a later unit — the seam is ready either way.
+- Sequence remaining: **E5** registry+placeholders → E6 markdown (to+from round-trip) → E7 PDF → E8 DOCX → then **UI-4**
+  (#30, app shell). UX-6 (#26) stays gated behind the `-c` UI wave (needs UI-4).
+- Branch: cut `ui-3-e5-*` off main AFTER PR #18 merges (per-unit PR model). Ground truth `docs/editor/current-*` +
+  `docs/editor/{block-registry,extension-catalog}.md`.
+
+## Build Steps — E4 (slash menu)
+_(materialized 2026-08-12 from e4-slash-menu.md §7 — approved at Approval 2. All complete; shipped 2026-08-13.)_
+- [x] B0 · dep `@tiptap/suggestion@^3.30.0` (installed at preflight) + version 0.3.0→0.4.0.
+- [x] B1 · `slash-commands.ts` — `SlashMenuItem` + `SLASH_MENU_ITEMS` (standard `run` closures + 11 derived-disabled integration entries) + `isBlockAvailable` seam + `filterSlashItems`.
+- [x] B2 · `slash-menu.tsx` — forwardRef role=listbox popup (`<Theme name="Menu">`, grouped options, aria-selected/-disabled, imperative onKeyDown skipping disabled).
+- [x] B3 · `extensions/slash-command.ts` — Extension + `Suggestion({char:'/', allow:!codeBlock, items, command, render})` + ReactRenderer render lifecycle + `slashComboboxAttrs`/`slashActive` (host combobox ARIA — post-impl B1: via editorProps, not a plugin).
+- [x] B4 · mount `SlashCommand` in `editor.tsx` extensions; editorProps.attributes → function merging the combobox ARIA.
+- [x] B5 · styles — none needed (fully Tamagui, DEV-3).
+- [x] B6 · tests `slash-commands.test.ts` + `slash-menu.test.tsx` + `extensions/slash-command.test.ts` (40 new; active-flip proof) + "Slash menu (popup)"/"(live)" stories.
+- [x] B7 · §XXIX currency — `current-*` + `slash-menu-spec.md` + `CLAUDE.md` + umbrella §5 E4 ✅.
+- [x] B8 · **Visual Gate (Victor, real browser) — PASS** (both themes; combobox ARIA + caret-anchoring + dimmed integration rows). 2026-08-13.
 
 ## Build Steps — E2 (standard blocks)
 _(materialized 2026-08-11 from e2-standard-blocks.md §7 — approved at Approval 2. All complete; Visual Gate pending.)_
