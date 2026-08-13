@@ -113,7 +113,10 @@ M4  VENUES / MULTI-DEVICE  (sync → auth → desktop/mobile → self-host → Z
 Features-first does **not** mean "no foundation" — it means build the **thinnest foundation each slice needs, then grow it**. M1's irreducible base then module waves:
 
 **M1.0 — Boot & connective base** (the minimum before any module screen):
-- App boot: monorepo/turbo (AR-1 ✓), **DatabaseAdapter + web-adapter rebuilt** (AR-2 — note: v1 web-adapter was quarantined to `Old/` in Part 2, rebuilt here), state/routing/forms (AR-4), app shell (UI-4), IA/nav (UX-1), DS tokens+primitives (DS-1…5), TipTap editor (UI-3).
+- App boot (an **unordered surface list, NOT a build sequence** — build order is `reconstructed-structure.md`'s `#`
+  column + `m1.0-delivery-plan.md`; this line lists UI-4 before UI-3 and DS-1…5 after UI-4, yet the real order is
+  UI-3 `#29` → UI-4 `#30` and DS-5 precedes UI-4 — see `docs/specs/fixes/ui-3-ui-4-ordering-reconcile/`):
+  monorepo/turbo (AR-1 ✓), **DatabaseAdapter + web-adapter rebuilt** (AR-2 — note: v1 web-adapter was quarantined to `Old/` in Part 2, rebuilt here), state/routing/forms (AR-4), app shell (UI-4), IA/nav (UX-1), DS tokens+primitives (DS-1…5), TipTap editor (UI-3).
 - DB spine: per-feature schema pattern onto `db/schema/` (DB-1 ✓ primitives), repository (DB-6), migrations runner (DB-7 ✓ unwired — repopulated per-feature), enums/Zod (DB-9). **No encryption (DB-5 → M3); `_sync_*` written-never-flushed.**
 - Connective substrates (homed in `foundation/`, ADR-018) — the internal-integration layer requires them, and the **hub modules (Notes, Journals) are their first consumers**, so they land at the head of M1 by first-consumer pull, not "substrate-first regardless" (N1): spaces + `entity_tags` (AR-6), `entity_links`/backlinks, sessions base (AR-5), capability registry (AR-7), measurability (ADR-011), economy (ADR-012), views (ADR-007). A substrate no M1 module consumes is **not** built in M1.
 - Cross-cutting foundation services (AR-8, `services/{search,export,…}` — NOT `foundation/`): search/FTS5, backlink resolver, export serializers, neural-graph **data-prep**. **Module-owned engines stay in their module** (roadmap §91, B2): `summary(date)` journal aggregation ∈ `services/journals/`; study/review engine ∈ `services/knowledge/`; per-module analytics ∈ each module — they are **not** promoted to substrates.

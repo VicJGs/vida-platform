@@ -8,6 +8,8 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 | [foundation/storage-master-plan](foundation/storage-master-plan/) | planning (foundation) | gate 1 — PLAN drafted | 2026-07-22-storage-master-plan |
 | [foundation/db-2-sync-metadata-columns](foundation/db-2-sync-metadata-columns/) | refactor (foundation) | ⛔ PARKED — superseded by ADR-017 (2026-07-23) | 2026-07-22-db-2-sync-metadata-columns |
 | [features/build-roadmap-resequence](features/build-roadmap-resequence/) | feature (LITE plan) | spec-draft — reframed as Part 3 of realignment-master-plan | 2026-07-23-build-roadmap-resequence |
+| [components/ui-2-platform-views](components/ui-2-platform-views/) | component (add-frontend) | **DONE ✅** — all 7 views (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) shipped, PR #13 merged, LIF-87 · M1/M1.0 `#28` | 2026-08-09-ui-2-platform-views |
+| [fixes/ui-3-ui-4-ordering-reconcile](fixes/ui-3-ui-4-ordering-reconcile/) | bug (planning-defect) | **RESOLVED** — UI-3-before-UI-4 confirmed (UI-3 building); `part-3:116` clarified as non-ordering (2026-08-13) | 2026-08-09-ui-2-platform-views |
 | [foundation/current-state-baseline](foundation/current-state-baseline/) | baseline (analysis) | done — ground truth | 2026-07-23-build-roadmap-resequence |
 | [foundation/realignment-master-plan](foundation/realignment-master-plan/) | planning (foundation) | APPROVED gate 1 — executing Part 0 | 2026-07-23-build-roadmap-resequence |
 | [foundation/capability-framework.md](foundation/capability-framework.md) | reference (foundation) | RATIFIED 2026-07-23 — Part 0 complete | 2026-07-23-build-roadmap-resequence |

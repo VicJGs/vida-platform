@@ -12,4 +12,11 @@ agenda (tasks/reminders/schedule), and the free-form entry, aggregating across m
 Victor opens every day. Defined here as UX; the aggregation engine + module feeds land in Phase 1b.
 
 ## Dependencies
-- blocked by `ux-3-shell-layout-responsive`
+- blocked by `ux-3-shell-layout-responsive` (per-issue edge, DONE ✅)
+- **GATED by sub-wave sequencing: the UX wave `-d` needs the UI wave `-c` (`m1.0-delivery-plan.md:129,141`
+  — "UX-6 (needs UI-4)"). NOT eligible until UI-2 → UI-3 → UI-4 are built.** This is why `--next` never
+  picks UX-6 and why the raw `#`-order read (UX-6 ← UX-3 only) is insufficient here.
+
+## Notes
+- 2026-08-09: briefly mis-activated as the head off the raw `#`-order rule; reverted to `planned` — the
+  `-d needs -c` sub-wave constraint governs. Un-parks after UI-4 (#30). Head that session → UI-2 (#28).
