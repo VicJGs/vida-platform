@@ -1,8 +1,40 @@
 # packages/editor/src — @vida/editor source (TipTap block editor)
 
 The block editor that is the heart of the Notes & Journals integration layer (ADR-001 §8, CLAUDE.md §8).
-Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-standard-blocks}.md`. Built unit-by-unit
-(E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered `@vida/ui`-consuming component).
+Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-standard-blocks,e3-toolbar,e4-slash-menu}.md`.
+Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
+`@vida/ui`-consuming component).
+
+## Shipped (E4 — slash menu)
+The `/`-triggered block palette. Type `/` → a caret-anchored, filterable popup; ↑/↓/Enter/Esc drive it while **focus
+stays in the editor** (a WAI-ARIA **combobox**, NOT a UI-1 `Menu`/`Popover` mount — those are trigger-anchored + move
+focus in). Built on `@tiptap/suggestion` (new dep) + `@tiptap/react` `ReactRenderer`. No new public prop (a built-in of
+the editing surface; inert until `/` typed → no read-only gate). Durable: `docs/editor/slash-menu-spec.md`.
+- `extensions/slash-command.ts` — the `Extension` → `Suggestion({char:'/', allowSpaces:false, startOfLine:false,
+  allow:!isActive('codeBlock'), items, command, render})`. `render()` drives a `ReactRenderer(SlashMenu)`: `onStart` +
+  `props.mount()` (v3 managed positioning — no floating-ui import), `onKeyDown` forwards to the popup handle (`Escape`/
+  `Tab` → `exitSuggestion`), `onExit` unmount+destroy. `command({editor,range,props}) → props.run?.(editor,range)`.
+  Exports `slashActive(state)` + **`slashComboboxAttrs(active)`** — the host combobox ARIA merged into editor.tsx's
+  editorProps (see a11y below).
+- `slash-commands.ts` — the editor-local **`SlashMenuItem`** view-model (NOT `@vida/types.SlashCommand`, whose
+  `block_type` is integration-only — BR-7). `SLASH_MENU_ITEMS` = standard blocks (Text·H1–3·bullet/numbered/task list·
+  quote·code·divider·table·callout — each `run = chain().focus().deleteRange(range).<cmd>()`; **heading uses `setNode`
+  turn-into, NOT E3's toggle**; **Image EXCLUDED**, no attachment UI) + the 11 integration blocks **derived from
+  `INTEGRATION_BLOCK_COMMANDS`, `available:false`** (dimmed, ↑/↓-skipped, no-op on select). `isBlockAvailable` seam
+  (empty in M1.0; E5 flips it). `filterSlashItems` = case-insensitive substring over title+keywords (empty→full;
+  no-match→"No blocks").
+- `slash-menu.tsx` — the `forwardRef` `role="listbox"` popup wrapped in `<Theme name="Menu">` (portal-scope; ReactRenderer
+  portals inside `<EditorContent>` → inherits Tamagui context). Rows `role="option"` + `aria-selected`/`aria-disabled`,
+  grouped by category. Reuses the Menu sub-theme token language — fully Tamagui, no injected CSS, no motion. Imperative
+  `onKeyDown` moves selection (wrap, skip disabled) / Enter activates / printables fall through.
+- **⚠ Combobox a11y — the SINGLE `role` writer is `editor.tsx`'s `editorProps.attributes` FUNCTION (post-impl B1).** A
+  ProseMirror plugin CANNOT flip the host `role` textbox→combobox: PM's `computeDocDeco` consumes `view._props`
+  (editorProps) BEFORE plugins with **first-writer-wins**, so E1's static `role:'textbox'` always won and the plugin's
+  `combobox` was silently DROPPED (the a11y feature was dead — caught only post-impl). So `role`/`aria-expanded`/
+  `-controls`/`-haspopup` merge in via editorProps `attributes(state)` (`slashComboboxAttrs(slashActive(state))`);
+  `aria-activedescendant` (needs the popup's live `selectedIndex`) is a raw popup setAttribute (not PM-managed →
+  survives). Tests: `slash-commands.test.ts` · `slash-menu.test.tsx` · `extensions/slash-command.test.ts` (the active-flip
+  proof: `insertContent('/')` → `slashActive` true). **102 total.** Stories "Slash menu (popup)"/"(live)".
 
 ## Shipped (E3 — toolbar)
 The formatting chrome for `<VidaEditor>`. `<VidaEditor>` gains an additive **`toolbar?: boolean` (default true)**; the
@@ -82,9 +114,9 @@ StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
   `INTEGRATION_BLOCK_COMMANDS` + re-exported `EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand` types.
 
 ## Deferred (later UI-3 units — empty skeleton files exist)
-`toolbar.tsx` (E3) · `slash-menu.tsx` (E4) · `extensions/*` integration node-views (E5 — e.g. `daily-summary.ts`,
-`task-checklist.ts` [the `/tasks` integration block, DISTINCT from the E2 standard `taskList`], …) ·
-`serializers/{to,from}-*.ts` (E6 markdown round-trip · E7 PDF · E8 DOCX). **Yjs/`y-prosemirror` = a deferred SEAM,
+`extensions/*` integration node-views (E5 — e.g. `daily-summary.ts`, `task-checklist.ts` [the `/tasks` integration
+block, DISTINCT from the E2 standard `taskList`], …; E4's slash menu already LISTS them, disabled, via the
+`isBlockAvailable` seam) · `serializers/{to,from}-*.ts` (E6 markdown round-trip · E7 PDF · E8 DOCX). **Yjs/`y-prosemirror` = a deferred SEAM,
 no dep** (BR-2, M4/AR-9b): `pages.content` is a TipTap-JSON snapshot that renders locally without a Y.Doc; E1's shell
 keeps the content source swappable so M4 can invert authority (JSON→Yjs-derived) without a rewrite.
 

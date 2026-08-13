@@ -80,6 +80,39 @@
   pulls focus from the editor). Commands chain `.focus()` → focus returns to the editor after activation. `[FACT:
   toolbar.tsx roving controller + reconcile effect; §XIV]`
 
+## Slash menu (E4)
+- **BR-E4-1 · A combobox, not a Menu mount.** The `/` menu is a Tiptap `Suggestion` plugin + `@tiptap/react`
+  `ReactRenderer` popup — focus STAYS in the editor (highlight via `aria-activedescendant`), the inverse of UI-1
+  `Menu`/`Popover` (trigger-anchored + move focus in). BR-4 is honored at the token/visual layer (Menu sub-theme reuse),
+  not by mounting the component. New dep: **`@tiptap/suggestion@^3.30.0`** (`ReactRenderer` from the existing
+  `@tiptap/react`). `[FACT: extensions/slash-command.ts; slash-menu.tsx; package.json]`
+- **BR-E4-3 · Editor-local `SlashMenuItem` view-model; `@vida/types.SlashCommand` NOT redefined (BR-7).**
+  `SlashCommand.block_type` is `IntegrationBlockType` (can't describe a standard block). `SLASH_MENU_ITEMS` unifies
+  standard entries (authored) + the 11 integration entries **derived** from `INTEGRATION_BLOCK_COMMANDS`. `[FACT:
+  slash-commands.ts]`
+- **BR-E4-4/4b · Standard blocks dispatch registered E1/E2 commands after `deleteRange(range)`.** `chain().focus()
+  .deleteRange(range).<cmd>()` removes the `/query` then applies. Heading/Text use SET semantics (`setNode`/`setParagraph`
+  — turn-into), deliberately NOT E3's toggle. Table = `{3×3,header}`; callout = `insertContent(calloutInsertContent())`.
+  **Image EXCLUDED** (BR-E4-4a — no attachment/URL surface, E3 parity). `[FACT: slash-commands.ts; slash-commands.test.ts]`
+- **BR-E4-5 · Integration entries are shown DISABLED (graceful degradation), never inserted, until E5.** All 11 are
+  `available:false` in M1.0 (skipped by ↑/↓, no-op on select — inserting an unregistered node would throw). The
+  `isBlockAvailable` seam (empty set today) flips them on when E5 registers node-views. `[FACT: slash-commands.ts
+  AVAILABLE_INTEGRATION_BLOCKS; capability-framework V3]`
+- **BR-E4-6 · Popup re-establishes the Menu sub-theme scope.** `<Theme name="Menu">` around the listbox (portal-scope
+  lesson). ReactRenderer renders as a React portal inside `<EditorContent>` → inherits `UIProvider`/Tamagui context (no
+  extra provider needed — verified). `[FACT: slash-menu.tsx; @tiptap/react ReactRenderer portal model]`
+- **BR-E4-7 · Filter = case-insensitive substring over title+keywords; empty→full; no-match→"No blocks".** Integration
+  entries stay in results (dimmed). `[FACT: slash-commands.ts filterSlashItems]`
+- **BR-E4-10 · No trigger inside a code block.** `allow: ({editor}) => !editor.isActive('codeBlock')` — `/` stays
+  literal code. `[FACT: slash-command.ts; slash-command.test.ts]`
+- **BR-E4-a11y · Combobox host, the SINGLE `role` writer is `editorProps.attributes` (post-impl B1).** While open, the
+  host flips `role` textbox→combobox + `aria-expanded`/`-controls`/`-haspopup` via `editor.tsx`'s `editorProps.attributes`
+  FUNCTION (`slashComboboxAttrs(slashActive(state))`) — NOT a plugin (PM consumes `view._props` before plugins,
+  first-writer-wins, so a plugin can't override `role`). `aria-activedescendant` = the active option id, set raw by the
+  popup (not PM-managed → survives the per-keystroke decoration re-apply). Options `role="option"` + `aria-selected`/
+  `aria-disabled`; focus never leaves the editor. `[FACT: editor.tsx editorProps.attributes; slash-command.ts
+  slashComboboxAttrs; slash-command.test.ts active-flip; §XIV]`
+
 ## Contract integrity
 - **Runtime document assertion (not a cast).** `onChange` and `getDocument` return values pass through
   `assertEditorDocument` — top-level `type==='doc'` + `content` an array of `{type:string}`, throws otherwise. Tiptap

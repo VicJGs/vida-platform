@@ -1,6 +1,6 @@
 {
   "name": "@vida/editor",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -49,6 +49,7 @@
     "@tiptap/pm": "^3.30.0",
     "@tiptap/react": "^3.30.0",
     "@tiptap/starter-kit": "^3.30.0",
+    "@tiptap/suggestion": "^3.30.0",
     "@vida/types": "workspace:*",
     "@vida/ui": "workspace:*"
   },

@@ -1,5 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect, useMemo } from 'react'
+import { Editor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
 import { VidaEditor } from './editor'
+import { SlashMenu } from './slash-menu'
+import { SLASH_MENU_ITEMS } from './slash-commands'
 import type { EditorDocument } from '@vida/types'
 
 // E1 (UI-3) — the component Visual-Gate surface for <VidaEditor> (frontend-visual-gate.md render table). The
@@ -130,4 +135,34 @@ export const Toolbar: Story = {
 /** No toolbar — `toolbar={false}` renders the bare editor (E1/E2 surface, opt-out). */
 export const NoToolbar: Story = {
   args: { defaultValue: seeded, toolbar: false },
+}
+
+// E4 (UI-3) — the slash-menu Visual-Gate surface. Two stories:
+//  · "Slash menu (popup)" stub-renders the <SlashMenu> popup directly (the Suggestion trigger can't be scripted in a
+//    static story) so the chrome is reviewable in BOTH themes: the Menu sub-theme bg/border, the group labels
+//    (Basic · Media · Platform blocks · Embeds), the selected-row highlight (first row), and the DIMMED integration
+//    rows (available:false — the graceful E5 seam).
+//  · "Slash menu (live)" is a real editable editor — click in and type `/` to open the menu at the caret; standard
+//    blocks insert, integration blocks are dimmed, and `/` inside a code block stays literal (BR-E4-10).
+function SlashMenuPreview(): React.ReactElement {
+  const editor = useMemo(() => new Editor({ extensions: [StarterKit], content: '<p></p>' }), [])
+  useEffect(() => () => editor.destroy(), [editor])
+  return <SlashMenu items={SLASH_MENU_ITEMS} command={() => {}} editor={editor} query="" />
+}
+
+/** Slash menu (popup) — the full command surface: standard blocks (selectable) + 11 dimmed integration blocks. */
+export const SlashMenuPopup: Story = {
+  name: 'Slash menu (popup)',
+  render: () => <SlashMenuPreview />,
+}
+
+/** Slash menu (live) — click in and type `/` to open the block menu at the caret. */
+export const SlashMenuLive: Story = {
+  name: 'Slash menu (live — type /)',
+  args: {
+    defaultValue: {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Type / here to open the block menu…' }] }],
+    },
+  },
 }
