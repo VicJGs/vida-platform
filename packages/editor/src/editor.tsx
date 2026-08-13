@@ -18,6 +18,7 @@ import type { Content } from '@tiptap/react'
 import type { EditorDocument } from '@vida/types'
 import { ensureEditorStyles } from './internal/editor-styles'
 import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
+import { SlashCommand, slashActive, slashComboboxAttrs } from './extensions/slash-command'
 import { EditorToolbar } from './toolbar'
 
 export interface VidaEditorProps {
@@ -104,9 +105,20 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
     onChangeRef.current = onChange
   })
 
-  const attributes: Record<string, string> = { role: 'textbox', 'aria-multiline': 'true' }
-  if (ariaLabel) attributes['aria-label'] = ariaLabel
-  if (ariaLabelledby) attributes['aria-labelledby'] = ariaLabelledby
+  // Host attributes are a FUNCTION of state (not a static object) so the E4 slash menu can flip the host `role`
+  // textbox→combobox while it is open (post-impl B1). editorProps.attributes is the SINGLE `role` writer — a plugin
+  // cannot override it (ProseMirror consumes view._props before plugins, first-writer-wins), so the combobox ARIA MUST
+  // merge here. The base (role=textbox + aria-multiline + name) is the E1 a11y contract; `slashComboboxAttrs` overrides
+  // `role`→combobox + adds aria-expanded/controls/haspopup only while the menu is open (`{}` otherwise).
+  const baseName: Record<string, string> = {}
+  if (ariaLabel) baseName['aria-label'] = ariaLabel
+  if (ariaLabelledby) baseName['aria-labelledby'] = ariaLabelledby
+  const attributes = (state: import('@tiptap/pm/state').EditorState): Record<string, string> => ({
+    role: 'textbox',
+    'aria-multiline': 'true',
+    ...baseName,
+    ...slashComboboxAttrs(slashActive(state)),
+  })
 
   const editor = useEditor({
     // StarterKit + Placeholder (E1 spine) + the E2 standard blocks beyond StarterKit (taskList/image/table/callout).
@@ -115,6 +127,9 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
       StarterKit,
       Placeholder.configure({ placeholder: placeholder ?? '' }),
       ...STANDARD_BLOCK_EXTENSIONS,
+      // E4 — the `/`-triggered slash menu (BR-E4-1). Inert until `/` is typed; a read-only editor can't type, so no
+      // editable gate is needed (contrast the always-visible E3 toolbar's render-gate).
+      SlashCommand,
     ],
     content: (defaultValue ?? undefined) as Content,
     editable,

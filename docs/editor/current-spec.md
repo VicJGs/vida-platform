@@ -2,14 +2,14 @@
 
 > Durable, living description of what `@vida/editor` IS as built (§XXIX Currency Rule). Refreshed per unit; never lags
 > the code. Source of truth for `/critique` + `/preflight` + `victor:session-kickoff`. Every claim cites code.
-> Scope today: **E1 — editor core spine + E2 — standard blocks + E3 — toolbar** (UI-3). Later units (E4 slash-menu ·
-> E5 registry · E6–E8 serializers) extend this file. Forward specs: `docs/specs/features/ui-3-vida-editor/`.
+> Scope today: **E1 — editor core spine + E2 — standard blocks + E3 — toolbar + E4 — slash menu** (UI-3). Later units
+> (E5 registry · E6–E8 serializers) extend this file. Forward specs: `docs/specs/features/ui-3-vida-editor/`.
 
 ## Package
-`@vida/editor` **v0.3.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
+`@vida/editor` **v0.4.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
 **v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` + **E2:**
-`@tiptap/extension-image` + `@tiptap/extension-table` + `@tiptap/extension-list`, family-pinned `^3.30.0`) +
-`@tamagui/core@2.6.2` + `@vida/types`/`@vida/ui` (workspace). Peer `react>=19`.
+`@tiptap/extension-image` + `@tiptap/extension-table` + `@tiptap/extension-list` + **E4:** `@tiptap/suggestion`,
+family-pinned `^3.30.0`) + `@tamagui/core@2.6.2` + `@vida/types`/`@vida/ui` (workspace). Peer `react>=19`.
 `[FACT: packages/editor/package.json]` Toolchain (Storybook 9 · vitest 3 · jsdom 30 · vite 6) mirrors `@vida/ui`.
 
 ## Public surface `[FACT: packages/editor/src/index.ts]`
@@ -82,24 +82,54 @@ unchanged). `EditorToolbar` is internal (not barrel-exported).
   rule); UI-1 Button has no toggle state (**DEF-E3-a** filed). Menus are UI-1 `Menu` (aria-labelled "Turn into" /
   "Insert"). No new dep; no injected CSS (fully Tamagui); no motion (Menu's open transition is UI-1's).
 
+## Slash menu (E4) `[FACT: src/extensions/slash-command.ts; src/slash-menu.tsx; src/slash-commands.ts; editor.tsx]`
+A `/`-triggered block palette: type `/`, a caret-anchored popup lists filterable blocks; ↑/↓/Enter/Esc drive it while
+**focus stays in the editor** (a COMBOBOX, not a Menu). Built on `@tiptap/suggestion` (new dep) + `@tiptap/react`
+`ReactRenderer`, NOT a UI-1 `Menu`/`Popover` mount (those are trigger-anchored + move focus in). No new public prop —
+the menu is a built-in of the editing surface (parity with the default-on toolbar); inert until `/` typed, so read-only
+needs no gate.
+- **Mechanism** — `extensions/slash-command.ts` = an `Extension` whose `addProseMirrorPlugins` returns
+  `Suggestion({ char:'/', allowSpaces:false, startOfLine:false, allow:!isActive('codeBlock'), items, command, render })`.
+  `render()` drives a `ReactRenderer(SlashMenu)` — `onStart` calls `props.mount()` (v3 managed positioning), `onKeyDown`
+  forwards to the popup's imperative handle, `Escape`/`Tab` call `exitSuggestion`, `onExit` unmounts+destroys.
+  `command({editor,range,props})` runs `props.run?.(editor,range)`.
+- **Command set** — `slash-commands.ts` `SLASH_MENU_ITEMS`: an editor-local `SlashMenuItem` view-model (NOT
+  `@vida/types.SlashCommand`, whose `block_type` is integration-only — BR-7 kept). **Standard blocks insert now**
+  (Text·H1–3·bullet/numbered/task list·quote·code·divider·table·callout — each `run` = `chain().focus().deleteRange(range)
+  .<cmd>()`; heading uses `setNode` turn-into, deliberately NOT E3's toggle; Image EXCLUDED, no attachment UI). **The 11
+  integration blocks are DERIVED from `INTEGRATION_BLOCK_COMMANDS`, shown DISABLED** (`available:false`, skipped by ↑/↓,
+  no-op on select) via the `isBlockAvailable` seam (empty in M1.0; E5 flips them on). `filterSlashItems` = case-insensitive
+  substring over title+keywords (empty→full; no match→a disabled "No blocks" row).
+- **Popup** `slash-menu.tsx` — a `forwardRef` `role="listbox"` panel wrapped in `<Theme name="Menu">` (portal-scope), rows
+  `role="option"` + `aria-selected`/`aria-disabled`, grouped by category. Reuses the Menu sub-theme token language (fully
+  Tamagui, no injected CSS). The imperative `onKeyDown` moves selection (wrap, skip disabled), Enter activates.
+- **Combobox a11y (§XIV)** — while open, the editor host flips `role` textbox→**combobox** + `aria-expanded`/`-controls`
+  via `editor.tsx`'s `editorProps.attributes` FUNCTION (the SINGLE `role` writer — a plugin can't override `role`, PM
+  reads `view._props` before plugins first-writer-wins; post-impl B1). `aria-activedescendant` = the active option id,
+  set raw by the popup (not PM-managed → survives). Focus never leaves the editor.
+
 ## States (§VIII applicable subset) `[FACT: editor.tsx; editor.stories.tsx]`
 `default` (resting/focusable) · `focus` (frame ring) · `disabled` (`editable=false`, no caret) · `empty` (placeholder).
 No loading/error at E1 (the app's terminal-state wrapper owns those, UX-4).
 
 ## Integration-block command map `[FACT: commands.ts]`
 `INTEGRATION_BLOCK_COMMANDS` = one `SlashCommand` per `INTEGRATION_BLOCK_TYPE` (11), all 7 required fields populated,
-`category ∈ {platform, embed}`. E1 ships the DATA; E5 builds the node-views the commands insert.
+`category ∈ {platform, embed}`. E1 ships the DATA; E4's slash menu LISTS them (disabled); E5 builds the node-views.
 
 ## File map `[FACT: packages/editor/src]`
-`editor.tsx` (VidaEditor + assertEditorDocument + toolbar mount) · `commands.ts` · **`toolbar.tsx`** (E3 —
-`EditorToolbar` + `ToolbarButton`) · **`internal/toolbar-state.ts`** (E3 — `useToolbarState`/`resolveActiveBlock`) ·
+`editor.tsx` (VidaEditor + assertEditorDocument + toolbar mount + E4 host-combobox editorProps) · `commands.ts` ·
+**`toolbar.tsx`** (E3 — `EditorToolbar` + `ToolbarButton`) · **`internal/toolbar-state.ts`** (E3) ·
 `internal/editor-styles.ts` (E1 chrome + E2 block CSS) · **`extensions/standard-blocks.ts`** (E2) ·
-**`extensions/callout.ts`** (E2 bespoke node + E3 `calloutInsertContent` + `isolating`) · `index.ts` (barrel) ·
-`env.d.ts` · `test-setup.ts` (jsdom shims) · `editor.test.tsx`/`commands.test.ts`/
-`extensions/standard-blocks.test.tsx`/`toolbar.test.tsx`/`internal/toolbar-state.test.ts` (**60 tests**) ·
-`editor.stories.tsx` (Visual-Gate surface incl. "Standard blocks" + "Toolbar" + "No toolbar") · `CLAUDE.md`.
-**Deferred (empty skeleton):** `slash-menu.tsx` (E4) · `extensions/*` integration node-views (E5) · `serializers/*`
+**`extensions/callout.ts`** (E2 bespoke node + E3 `calloutInsertContent` + `isolating`) · **`slash-commands.ts`** (E4 —
+`SlashMenuItem` view-model + `SLASH_MENU_ITEMS` + `filterSlashItems` + `isBlockAvailable` seam) · **`slash-menu.tsx`**
+(E4 — the `ReactRenderer` combobox popup) · **`extensions/slash-command.ts`** (E4 — the Suggestion extension +
+`slashComboboxAttrs`/`slashActive`) · `index.ts` (barrel) · `env.d.ts` · `test-setup.ts` (jsdom shims) ·
+`editor.test.tsx`/`commands.test.ts`/`extensions/standard-blocks.test.tsx`/`toolbar.test.tsx`/
+`internal/toolbar-state.test.ts`/**`slash-commands.test.ts`**/**`slash-menu.test.tsx`**/**`extensions/slash-command.test.ts`**
+(**102 tests**) · `editor.stories.tsx` (Visual-Gate surface incl. "Standard blocks" · "Toolbar" · "Slash menu (popup)" ·
+"Slash menu (live)") · `CLAUDE.md`.
+**Deferred (empty skeleton):** `extensions/*` integration node-views (E5) · `serializers/*`
 (E6–E8). Yjs = a deferred seam, no dep (BR-2/M4).
 
 ## Verify
-`pnpm --filter @vida/editor typecheck && build && test` (60 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.
+`pnpm --filter @vida/editor typecheck && build && test` (102 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.
