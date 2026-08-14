@@ -74,11 +74,13 @@ Fixes the ONE shared architecture; per-unit rules live in each sub-spec.
     becomes authoritative and the JSON becomes a derived snapshot** `[FACT: ADR-003:457 "content… derived from the
     Yjs state"]`. E1's shell API must NOT bake in "JSON is permanently the source" — the mount point must allow the
     content source to be swapped to a Y.Doc binding. `[INTERP: ADR-003:449-457]`
-- **BR-3 · Integration blocks register through a typed seam; bodies deferred.** A `BlockRegistry` maps each
-  `INTEGRATION_BLOCK_TYPE` to a TipTap node spec; in UI-3 every integration block resolves to a **placeholder
-  node-view** (a declared, non-error "block unavailable until its module lands" state — the graceful-degradation
-  model, NOT a crash) `[FACT: editor.ts:28-40; capability-framework.md V3]`. Serializers emit them per
-  `integration_block_handling` (`'placeholder'` default) `[FACT: editor.ts:197-209]`.
+- **BR-3 · Integration blocks are the ADR-008 `inline` render surface; bodies deferred.** The editor is the `inline`
+  renderer (ADR-008 §3.4) driven by the capability registry; each `INTEGRATION_BLOCK_TYPE` maps to a TipTap node whose
+  config lives in node attrs per its `config_schema` (CB2), and in UI-3 every integration block resolves to a
+  **placeholder node-view** — the inline `empty/unavailable` terminal state (CB6), graceful-degradation, NOT a crash
+  `[FACT: editor.ts:28-40; ADR-008 §3.4/§data-model/§terminal-states; capability-framework.md CB1/CB2/CB6]`. Built at
+  **E5** — the "TipTap re-home" AR-7 deferred to UI-3 #29 (`docs/core/capability/current-business-rules.md:26`).
+  Serializers emit them per `integration_block_handling` (`'placeholder'` default) `[FACT: editor.ts:197-209]`.
 - **BR-4 · Compose UI-1 + tokens; no raw values.** Toolbar/slash-menu/block chrome compose UI-1 primitives (Menu,
   Button, Popover, Card…) + DS-2..DS-5 tokens/sub-themes. Dimension props use the token scale (`$md`/`$lg`), color
   props use theme keys — the DEF-U8-h + DEF-U4-e lessons carry `[FACT: packages/ui/src/CLAUDE.md]`.
@@ -124,7 +126,7 @@ component Visual Gate → next. E1 establishes the editor spine the rest reuse.
 | **E2** | **standard blocks** ✅ | The `STANDARD_BLOCK_TYPE` set beyond StarterKit = **taskList, image, table, callout** (StarterKit already ships divider=`horizontalRule` + `codeBlock` in E1; the earlier "table, callout, divider, image, code-block" was imprecise — corrected against the enum, BR-7). Done: `extensions/standard-blocks.ts` + bespoke `callout.ts`; spec `e2-standard-blocks.md`. |
 | **E3** | **toolbar** ✅ | Formatting controls composing UI-1 Button/Menu; reflects active marks/block via `useEditorState`. Done: `toolbar.tsx` (`EditorToolbar` + `ToolbarButton`, APG role=toolbar + roving tabindex) + `internal/toolbar-state.ts`; additive `toolbar?: boolean` prop (null-gated mount); callout insert via `insertContent` + node `isolating` (DEV-1/2); DEF-E3-a (Button toggle state). Spec `e3-toolbar.md`. |
 | **E4** | **slash menu** ✅ | `/`-triggered block palette — a COMBOBOX (focus stays in the editor), built on `@tiptap/suggestion` (new dep) + `@tiptap/react` `ReactRenderer`, NOT a UI-1 Menu/Popover mount (those are trigger-anchored + move focus in; BR-4 honored at the token layer via the Menu sub-theme). Standard blocks insert now; the 11 integration commands shown DISABLED (the `isBlockAvailable` E5 seam). Editor-local `SlashMenuItem` view-model (`@vida/types.SlashCommand` untouched, BR-7). Host combobox ARIA via editorProps (single `role` writer, post-impl B1). Done: `slash-commands.ts` + `slash-menu.tsx` + `extensions/slash-command.ts`; spec `e4-slash-menu.md`. @vida/editor **v0.4.0**. |
-| **E5** | **block-registry seam + placeholders** | `BlockRegistry` typed map + placeholder node-views for **every** `INTEGRATION_BLOCK_TYPE` value (BR-3). Reserves the `extensions/*.ts` slots — E1/E5 reconcile the existing stub filenames (`daily-summary.ts`, `backlink-panel.ts`, …) against the enum keys (`dailySummary`, `backlink`, …). |
+| **E5** | **block-registry seam + placeholders** ✅ | The editor's ADR-008 `inline` render surface — the "TipTap re-home" AR-7 deferred to UI-3 #29 (`capability/current-business-rules.md:26`). `INTEGRATION_BLOCK_EXTENSIONS` = one atom node per `INTEGRATION_BLOCK_TYPE` (11), each declaring its `@vida/types` config-schema as node attrs (CB2; 7 typed, 4 pending) + a placeholder `ReactNodeViewRenderer` node-view (CB6 terminal state). Flips E4's disabled slash-entries on. The 9 stale stub filenames RETIRED (data-derived into one `integration-blocks.tsx`; `tag-extension.ts` kept). @vida/editor **v0.5.0**. Spec `e5-block-registry.md`. |
 
 > **E4↔E5 sequencing note:** the registry's **TYPE MAP** (which `INTEGRATION_BLOCK_TYPE`s exist) is pulled forward
 > into **E1's spine** so E4's slash menu can list integration commands before E5 builds their placeholder node-views.

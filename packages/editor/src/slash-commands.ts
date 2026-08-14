@@ -10,6 +10,7 @@ import type { Editor, Range } from '@tiptap/react'
 import type { IntegrationBlockType, SlashCommandCategory } from '@vida/types'
 import { INTEGRATION_BLOCK_COMMANDS } from './commands'
 import { calloutInsertContent } from './extensions/callout'
+import { AVAILABLE_INTEGRATION_BLOCKS } from './extensions/integration-blocks'
 
 /**
  * A single slash-menu entry. `run` dispatches the block insertion/turn-into after the Suggestion plugin hands back the
@@ -164,27 +165,36 @@ const STANDARD_ITEMS: readonly SlashMenuItem[] = [
   // (BR-E2-5), same reason E3 excluded it. It returns when a URL/upload surface exists.
 ]
 
-// ── the availability seam (BR-E4-5) ─────────────────────────────────────────────────────────────────────────────
-// In M1.0 NO integration block is available (their node-views land in E5 / their MOD-* phases). E5 flips these on by
-// populating this set (or replacing it with a runtime BlockRegistry query) — no E4 rewrite needed.
-const AVAILABLE_INTEGRATION_BLOCKS: ReadonlySet<IntegrationBlockType> = new Set()
-
-/** Whether an integration block can be inserted yet. Always false in M1.0 (the E5 seam). */
+// ── the availability seam (BR-E4-5 → closed by E5) ──────────────────────────────────────────────────────────────
+// E5 registered a placeholder node-view for every integration type, so the availability set is now `AVAILABLE_INTEGRATION_BLOCKS`
+// from `extensions/integration-blocks.ts` (all 11) — "a deferred entry lights up when E5 registers its node-view". The
+// backing set is the SINGLE source (owned by the registry, not re-listed here). MOD-notes #31 may later narrow it.
+/** Whether an integration block can be inserted yet — true once E5's node-view exists for it (BR-E5-5). */
 export function isBlockAvailable(type: IntegrationBlockType): boolean {
   return AVAILABLE_INTEGRATION_BLOCKS.has(type)
 }
 
 // ── integration blocks — DERIVED from E1's data (BR-E4-3), never duplicated ─────────────────────────────────────────
-const INTEGRATION_ITEMS: readonly SlashMenuItem[] = INTEGRATION_BLOCK_COMMANDS.map((cmd) => ({
-  id: cmd.name,
-  title: cmd.label,
-  description: cmd.description,
-  icon: cmd.icon,
-  keywords: [cmd.shortcut, cmd.name],
-  category: cmd.category,
-  available: isBlockAvailable(cmd.block_type),
-  // run stays undefined while unavailable — Suggestion's command → `item.run?.()` is a no-op (BR-E4-5).
-}))
+const INTEGRATION_ITEMS: readonly SlashMenuItem[] = INTEGRATION_BLOCK_COMMANDS.map((cmd) => {
+  const available = isBlockAvailable(cmd.block_type)
+  return {
+    id: cmd.name,
+    title: cmd.label,
+    description: cmd.description,
+    icon: cmd.icon,
+    keywords: [cmd.shortcut, cmd.name],
+    category: cmd.category,
+    available,
+    // Available → insert the placeholder node by type (its config attrs fill from their declared defaults — BR-E5-5).
+    // Unavailable → `run` stays undefined; Suggestion's command → `item.run?.()` is a no-op.
+    ...(available
+      ? {
+          run: (editor: Editor, range: Range) =>
+            editor.chain().focus().deleteRange(range).insertContent({ type: cmd.block_type }).run(),
+        }
+      : {}),
+  }
+})
 
 /** The full slash-menu surface: standard blocks (usable now) followed by the 11 integration blocks (deferred). */
 export const SLASH_MENU_ITEMS: readonly SlashMenuItem[] = [...STANDARD_ITEMS, ...INTEGRATION_ITEMS]

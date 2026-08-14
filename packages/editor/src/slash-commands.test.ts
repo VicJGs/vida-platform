@@ -47,10 +47,10 @@ describe('SLASH_MENU_ITEMS — composition', () => {
 })
 
 describe('integration entries — DERIVED from INTEGRATION_BLOCK_COMMANDS (BR-E4-3/5)', () => {
-  it('surfaces all 11 integration commands, each DISABLED in M1.0 (the E5 seam)', () => {
+  it('surfaces all 11 integration commands, each ENABLED now that E5 registered their node-views (BR-E5-5)', () => {
     const integration = SLASH_MENU_ITEMS.filter((i) => i.category === 'platform' || i.category === 'embed')
     expect(integration).toHaveLength(INTEGRATION_BLOCK_COMMANDS.length) // 11
-    expect(integration.every((i) => !i.available && i.run === undefined)).toBe(true)
+    expect(integration.every((i) => i.available && typeof i.run === 'function')).toBe(true)
   })
 
   it('maps each INTEGRATION_BLOCK_COMMAND 1:1 (title/description/category preserved)', () => {
@@ -62,8 +62,8 @@ describe('integration entries — DERIVED from INTEGRATION_BLOCK_COMMANDS (BR-E4
     }
   })
 
-  it('isBlockAvailable is false for EVERY IntegrationBlockType in M1.0', () => {
-    for (const t of INTEGRATION_BLOCK_TYPE) expect(isBlockAvailable(t), t).toBe(false)
+  it('isBlockAvailable is true for EVERY IntegrationBlockType (E5 registered every node-view, BR-E5-5)', () => {
+    for (const t of INTEGRATION_BLOCK_TYPE) expect(isBlockAvailable(t), t).toBe(true)
   })
 })
 
@@ -83,11 +83,11 @@ describe('filterSlashItems (BR-E4-7)', () => {
     expect(filterSlashItems(SLASH_MENU_ITEMS, 'todo').map((i) => i.id)).toContain('taskList')
   })
 
-  it('keeps a deferred integration entry in the results (searching "summary" surfaces the coming block)', () => {
+  it('surfaces an integration entry by search (searching "summary" → Daily summary, now enabled)', () => {
     const r = filterSlashItems(SLASH_MENU_ITEMS, 'summary')
     const daily = r.find((i) => i.id === 'dailySummary')
     expect(daily).toBeDefined()
-    expect(daily?.available).toBe(false)
+    expect(daily?.available).toBe(true)
   })
 
   it('a no-match query → an empty list', () => {

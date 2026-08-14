@@ -18,6 +18,7 @@ import type { Content } from '@tiptap/react'
 import type { EditorDocument } from '@vida/types'
 import { ensureEditorStyles } from './internal/editor-styles'
 import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
+import { INTEGRATION_BLOCK_EXTENSIONS } from './extensions/integration-blocks'
 import { SlashCommand, slashActive, slashComboboxAttrs } from './extensions/slash-command'
 import { EditorToolbar } from './toolbar'
 
@@ -127,6 +128,10 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
       StarterKit,
       Placeholder.configure({ placeholder: placeholder ?? '' }),
       ...STANDARD_BLOCK_EXTENSIONS,
+      // E5 — the 11 platform integration nodes (ADR-008 `inline` render surface). Each renders a placeholder node-view
+      // until its module body ships (BR-E5-1/4); registering them makes any doc containing an integration block render
+      // safely AND flips E4's disabled slash-entries on.
+      ...INTEGRATION_BLOCK_EXTENSIONS,
       // E4 — the `/`-triggered slash menu (BR-E4-1). Inert until `/` is typed; a read-only editor can't type, so no
       // editable gate is needed (contrast the always-visible E3 toolbar's render-gate).
       SlashCommand,

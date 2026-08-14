@@ -2,7 +2,7 @@
 
 > Durable, living rules `@vida/editor` enforces as built (§XXIX). Promoted from the E1/E2 IMPLEMENTATION-PLANs;
 > refreshed per unit. Consumed by `/critique` + `/preflight`. Scope today: **E1 — editor core + E2 — standard blocks
-> + E3 — toolbar**.
+> + E3 — toolbar + E4 — slash menu + E5 — integration-block registry**.
 
 ## Package boundary
 - **BR-1 / BR-E1-2 · Presentational, persists nothing.** `@vida/editor` emits `EditorDocument` JSON via `onChange` and
@@ -94,10 +94,11 @@
   .deleteRange(range).<cmd>()` removes the `/query` then applies. Heading/Text use SET semantics (`setNode`/`setParagraph`
   — turn-into), deliberately NOT E3's toggle. Table = `{3×3,header}`; callout = `insertContent(calloutInsertContent())`.
   **Image EXCLUDED** (BR-E4-4a — no attachment/URL surface, E3 parity). `[FACT: slash-commands.ts; slash-commands.test.ts]`
-- **BR-E4-5 · Integration entries are shown DISABLED (graceful degradation), never inserted, until E5.** All 11 are
-  `available:false` in M1.0 (skipped by ↑/↓, no-op on select — inserting an unregistered node would throw). The
-  `isBlockAvailable` seam (empty set today) flips them on when E5 registers node-views. `[FACT: slash-commands.ts
-  AVAILABLE_INTEGRATION_BLOCKS; capability-framework V3]`
+- **BR-E4-5 · Integration entries availability tracks node-view existence (CLOSED by E5).** In M1.0-pre-E5 all 11 were
+  `available:false` (an unregistered node would throw on insert); E5 registered a placeholder node-view for every type,
+  so `isBlockAvailable` now reads `AVAILABLE_INTEGRATION_BLOCKS` (owned by `extensions/integration-blocks.tsx`, all 11
+  true) and the entries gain a `run` inserting the node. `[FACT: slash-commands.ts isBlockAvailable + INTEGRATION_ITEMS
+  run; integration-blocks.tsx AVAILABLE_INTEGRATION_BLOCKS; ADR-008 §3.4]`
 - **BR-E4-6 · Popup re-establishes the Menu sub-theme scope.** `<Theme name="Menu">` around the listbox (portal-scope
   lesson). ReactRenderer renders as a React portal inside `<EditorContent>` → inherits `UIProvider`/Tamagui context (no
   extra provider needed — verified). `[FACT: slash-menu.tsx; @tiptap/react ReactRenderer portal model]`
@@ -112,6 +113,47 @@
   popup (not PM-managed → survives the per-keystroke decoration re-apply). Options `role="option"` + `aria-selected`/
   `aria-disabled`; focus never leaves the editor. `[FACT: editor.tsx editorProps.attributes; slash-command.ts
   slashComboboxAttrs; slash-command.test.ts active-flip; §XIV]`
+
+## Integration-block registry (E5) — the ADR-008 `inline` render surface
+> E5 is the editor-side realization of ADR-008 (the capability/block registry) that AR-7 deferred to UI-3 #29
+> (`docs/core/capability/current-business-rules.md:26` — "inline instances · TipTap re-home · BlockType union"). The
+> editor is the `inline` renderer (ADR-008 §3.4); the definition home is AR-7's `CapabilityRegistry` in `@vida/core`.
+- **BR-E5-1 · One inline node per integration capability, DERIVED from E1's data (the ADR-008 `inline` surface, CB1/CB2).**
+  `INTEGRATION_BLOCK_EXTENSIONS` = `INLINE_BLOCK_DEFS.map(createIntegrationBlockNode)`, one node per
+  `INTEGRATION_BLOCK_TYPE` value (11), node `name` = the `block_type`; spread into `useEditor` after the standard blocks.
+  A parity test asserts every value ∈ `editor.schema.nodes`. The factory input `InlineBlockDef` is an inline SLICE (not
+  AR-7's full `CapabilityDefinition`); MOD-notes #31 adapts the real def. `[FACT: integration-blocks.tsx; editor.tsx
+  extensions; integration-blocks.test.tsx parity; ADR-008 §3.1/§3.4]`
+- **BR-E5-2 · Inline config = node attrs per `config_schema` (CB2), lossless for the DECLARED schema.** The 7 typed
+  capabilities declare `addAttributes()` from their `@vida/types` interface (`DailySummaryBlockAttrs {date,sections}`,
+  `EntityLinkBlockAttrs`, `ChartBlockAttrs`, `TimelineBlockAttrs`, `PomodoroBlockAttrs`, `HabitsBlockAttrs`,
+  `TaskChecklistBlockAttrs`), each attr with a `default`; ProseMirror round-trips declared attrs via `nodeFromJSON→toJSON`.
+  The map is `satisfies Record<keyof …Attrs, AttrSpec>` — a COMPILE-TIME drift guard (interfaces are erased). Attrs are
+  `rendered:false` (JSON-only; kept out of the HTML DOM — the HTML per-attr codec is deferred to E6). `[FACT:
+  integration-blocks.tsx CONFIG_SCHEMAS + satisfies; integration-blocks.test.tsx round-trip; ADR-008 §data-model:122; CB2]`
+  - **4 types have no schema yet** (`eventsBlock`/`classesBlock`/`backlink`/`milestoneBlock` — no `@vida/types` interface);
+    they register attr-less; their schema is authored by their MOD-*. `[UNKNOWN: schema pending]`
+- **BR-E5-3 · Placeholders NEVER crash (they degrade), and preserve declared config.** The node type is in the schema, so
+  any doc containing it parses. A doc carrying an UNDECLARED attr does not preserve it: raw PM `checkAttrs` throws
+  `Unsupported attribute`, but TipTap's lenient content-load (neither `enableContentCheck` nor `errorOnInvalidContent`
+  set) catches → warns → degrades to empty — never a crash. `[FACT: editor.tsx has neither flag; integration-blocks.test.tsx
+  boundary test; ADR-008 §terminal-states]`
+- **BR-E5-4 · The placeholder is the inline `empty/unavailable` terminal state (CB6), a React node-view composed from
+  UI-1 tokens.** `ReactNodeViewRenderer(IntegrationBlockPlaceholder)` (the FIRST React node-view in the editor) →
+  `NodeViewWrapper` + a Tamagui card on BASE tokens (`$colorSurfaceSecondary`/`$colorBorderDefault`/`$colorTextPrimary`/
+  `$colorTextMuted`), `contentEditable={false}`, `role="note"` + accessible name, showing the label + description + a
+  muted "Available when its module ships". No icon → no `lucide-react` dep. `[FACT: integration-blocks.tsx; §XIV; CB6]`
+- **BR-E5-5 · HTML contract is type-identifying + the per-node `getAttrs` discriminator (the E6 seam).** `renderHTML` →
+  `<div data-type="integration-block" data-block-type="<name>">` (atom, no content hole; config `rendered:false`);
+  `parseHTML` `getAttrs` returns `false` unless `data-block-type === name` (all 11 share one tag selector — without it
+  the first-registered node claims every div). `[FACT: integration-blocks.tsx parseHTML/renderHTML; integration-blocks.test.tsx discriminator]`
+- **BR-E5-6 · Availability flipped ON; skeleton reconciled.** `AVAILABLE_INTEGRATION_BLOCKS` = all 11; slash entries
+  gain a `run` inserting the node by type. The 9 stale per-type empty stubs were retired (`tag-extension.ts` kept — not
+  an integration type); the placeholders live in ONE `integration-blocks.tsx` (data-derived). `[FACT: slash-commands.ts;
+  git rm of the 9 stubs]`
+- **BR-E5-7 · Boundary + no new dep.** Still no `@vida/core`/app import (MOD-notes #31 wires the real registry); no new
+  dependency (`ReactNodeViewRenderer`/`NodeViewWrapper` ship in the installed `@tiptap/react`). `[FACT: boundary grep;
+  package.json unchanged]`
 
 ## Contract integrity
 - **Runtime document assertion (not a cast).** `onChange` and `getDocument` return values pass through
