@@ -1,9 +1,41 @@
 # packages/editor/src — @vida/editor source (TipTap block editor)
 
 The block editor that is the heart of the Notes & Journals integration layer (ADR-001 §8, CLAUDE.md §8).
-Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-standard-blocks,e3-toolbar,e4-slash-menu}.md`.
+Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-standard-blocks,e3-toolbar,e4-slash-menu,e5-block-registry}.md`.
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
+
+## Shipped (E5 — integration-block registry)
+The editor's **`inline` render surface for the ADR-008 capability registry** — the "TipTap re-home" AR-7 deferred to
+UI-3 #29 (`docs/core/capability/current-business-rules.md:26`). Durable: `docs/editor/block-registry.md`. The editor is
+the `inline` renderer (ADR-008 §3.4), NOT the definition owner (that's AR-7's `CapabilityRegistry` in `@vida/core`).
+- `extensions/integration-blocks.tsx` — `createIntegrationBlockNode(def)` builds one atom `Node` per
+  `INTEGRATION_BLOCK_TYPE` (11) over `INLINE_BLOCK_DEFS` (E1's command data + a per-type `configSchema`);
+  `INTEGRATION_BLOCK_EXTENSIONS` is spread into `useEditor` after the standard blocks. `AVAILABLE_INTEGRATION_BLOCKS`
+  (all 11) is the availability set the slash menu reads (closes the E4 `isBlockAvailable` seam → the entries flip on +
+  gain a `run` inserting the node).
+- **Config = node attrs per `config_schema` (CB2 "inline = editor-node attrs").** The 7 TYPED capabilities declare their
+  `@vida/types` interface (`DailySummaryBlockAttrs {date,sections}`, `EntityLinkBlockAttrs`, `ChartBlockAttrs`,
+  `TimelineBlockAttrs`, `PomodoroBlockAttrs`, `HabitsBlockAttrs`, `TaskChecklistBlockAttrs`) as attrs — each `{default,
+  rendered:false}` (JSON-only; the HTML per-attr codec is deferred to E6). The `CONFIG_SCHEMAS` map is `satisfies
+  Record<keyof …Attrs, AttrSpec>` — a COMPILE-TIME drift guard (interfaces are erased → no runtime key test). Config
+  round-trips losslessly for the declared schema (`nodeFromJSON→toJSON`). The 4 schema-less types
+  (`eventsBlock`/`classesBlock`/`backlink`/`milestoneBlock`) register attr-less — their MOD-* authors the schema.
+- **`IntegrationBlockPlaceholder` — the FIRST React node-view in the editor.** `addNodeView →
+  ReactNodeViewRenderer(IntegrationBlockPlaceholder)` → `NodeViewWrapper` + a Tamagui card on BASE tokens
+  (`$colorSurfaceSecondary`/`$colorBorderDefault`/`$colorTextPrimary`/`$colorTextMuted`), `contentEditable={false}`,
+  `role="note"` + accessible name, label + description + a muted "Available when its module ships" — the inline
+  `empty/unavailable` terminal state (CB6). MOD-* replaces it with the real body. `⚠ .tsx` (JSX) — unlike E2's callout
+  (injected CSS, `.ts`). Mutable (object/array) attr defaults are FUNCTION defaults (`() => []`) — TipTap invokes them
+  per schema build, so each editor owns its array instead of one module-global shared reference (the shared-mutable
+  footgun; a cross-editor isolation test locks it). ProseMirror attrs stay immutable-by-convention.
+- **HTML contract + per-node `getAttrs` discriminator.** `renderHTML` → `<div data-type="integration-block"
+  data-block-type="<name>">` (atom, no content hole); `parseHTML` `getAttrs` returns `false` unless `data-block-type ===
+  name` (all 11 share one tag → without it the first-registered node claims every div). The E6 detection seam.
+- **Never crashes, degrades:** an undeclared attr → raw PM `checkAttrs` throws, but TipTap's lenient content-load
+  (neither `enableContentCheck` nor `errorOnInvalidContent` set in editor.tsx) catches → warns → empty. Tests:
+  `extensions/integration-blocks.test.tsx` (schema path + `<VidaEditor>` RTL for the node-view mount). **120 total.**
+  Story "Integration blocks (placeholders)". Boundary unchanged (no `@vida/core`); no new dep. **v0.5.0.**
 
 ## Shipped (E4 — slash menu)
 The `/`-triggered block palette. Type `/` → a caret-anchored, filterable popup; ↑/↓/Enter/Esc drive it while **focus
@@ -113,12 +145,13 @@ StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
 - `index.ts` — barrel: `VidaEditor` + `assertEditorDocument` + `VidaEditorProps`/`VidaEditorHandle` +
   `INTEGRATION_BLOCK_COMMANDS` + re-exported `EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand` types.
 
-## Deferred (later UI-3 units — empty skeleton files exist)
-`extensions/*` integration node-views (E5 — e.g. `daily-summary.ts`, `task-checklist.ts` [the `/tasks` integration
-block, DISTINCT from the E2 standard `taskList`], …; E4's slash menu already LISTS them, disabled, via the
-`isBlockAvailable` seam) · `serializers/{to,from}-*.ts` (E6 markdown round-trip · E7 PDF · E8 DOCX). **Yjs/`y-prosemirror` = a deferred SEAM,
-no dep** (BR-2, M4/AR-9b): `pages.content` is a TipTap-JSON snapshot that renders locally without a Y.Doc; E1's shell
-keeps the content source swappable so M4 can invert authority (JSON→Yjs-derived) without a rewrite.
+## Deferred (later units)
+`serializers/{to,from}-*.ts` (E6 markdown round-trip · E7 PDF · E8 DOCX) — empty skeleton files exist. Integration-block
+**REAL bodies** (MOD-* phases replace each placeholder node-view) + wiring AR-7's `CapabilityRegistry` into the editor
+(MOD-notes #31). **Yjs/`y-prosemirror` = a deferred SEAM, no dep** (BR-2, M4/AR-9b): `pages.content` is a TipTap-JSON
+snapshot that renders locally without a Y.Doc; E1's shell keeps the content source swappable so M4 can invert authority
+(JSON→Yjs-derived) without a rewrite. (E5's placeholder node-views are SHIPPED — see the E5 section above; the 9 stale
+per-type skeleton stubs were retired, `tag-extension.ts` kept.)
 
 ## Boundary (BR-1 / BR-E1-2)
 `@vida/editor` is PRESENTATIONAL: it emits `EditorDocument` JSON and touches NO SQLite / `@vida/core` (the export-dialog

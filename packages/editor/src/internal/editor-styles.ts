@@ -14,6 +14,10 @@
 // 3) The ProseMirror host drops its native contenteditable outline (the ring is on the frame) and gets sane wrapping
 //    + a min body height so the empty editor is clickable. `[contenteditable="false"]` (editable=false) → default cursor.
 //
+// E5 (integration blocks) — ONE rule: block RHYTHM (vertical margin) for the placeholder node-view wrapper, matching
+// the em-based spacing every other block gets here. The card's own visual styling is Tamagui tokens (BR-E5-4); only
+// the inter-block gap lives in this layer, same as table/callout/image/hr.
+//
 // E2 (standard blocks) — chrome for taskList / table / callout / image / codeBlock / divider (BR-E2-7). Same rules:
 // COLORS are Tamagui theme vars only (no raw hex/rgb); subtle tints are derived FROM a token via `color-mix(… ,
 // transparent)`, never a hardcoded colour. No motion is added (B12-trivially clean). Raw px dims follow the E1
@@ -71,6 +75,12 @@ export function ensureEditorStyles(): void {
     '.vida-editor-frame .ProseMirror pre code{' +
       'background:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.9em}',
     '.vida-editor-frame .ProseMirror hr{border:none;border-top:1px solid var(--colorBorderDefault);margin:0.75em 0}',
+
+    // ── E5 integration blocks ───────────────────────────────────────────────────────────────────
+    // Block RHYTHM only (the same em-based spacing table/callout/image/hr get here) — the card's own visual styling
+    // (bg/border/text) is Tamagui tokens inside the node-view (BR-E5-4). Without this the NodeViewWrapper (a plain
+    // block div, no default margin) makes consecutive placeholders touch top-and-bottom. Matches the callout rhythm.
+    '.vida-editor-frame .vida-integration-block{margin:0.5em 0}',
   ].join('')
   document.head.appendChild(style)
 }

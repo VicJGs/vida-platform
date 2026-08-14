@@ -2,11 +2,11 @@
 
 > Durable, living description of what `@vida/editor` IS as built (§XXIX Currency Rule). Refreshed per unit; never lags
 > the code. Source of truth for `/critique` + `/preflight` + `victor:session-kickoff`. Every claim cites code.
-> Scope today: **E1 — editor core spine + E2 — standard blocks + E3 — toolbar + E4 — slash menu** (UI-3). Later units
-> (E5 registry · E6–E8 serializers) extend this file. Forward specs: `docs/specs/features/ui-3-vida-editor/`.
+> Scope today: **E1 — editor core spine + E2 — standard blocks + E3 — toolbar + E4 — slash menu + E5 — integration-block
+> registry** (UI-3). Later units (E6–E8 serializers) extend this file. Forward specs: `docs/specs/features/ui-3-vida-editor/`.
 
 ## Package
-`@vida/editor` **v0.4.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
+`@vida/editor` **v0.5.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
 **v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` + **E2:**
 `@tiptap/extension-image` + `@tiptap/extension-table` + `@tiptap/extension-list` + **E4:** `@tiptap/suggestion`,
 family-pinned `^3.30.0`) + `@tamagui/core@2.6.2` + `@vida/types`/`@vida/ui` (workspace). Peer `react>=19`.
@@ -112,24 +112,48 @@ needs no gate.
 `default` (resting/focusable) · `focus` (frame ring) · `disabled` (`editable=false`, no caret) · `empty` (placeholder).
 No loading/error at E1 (the app's terminal-state wrapper owns those, UX-4).
 
+## Integration-block registry (E5) `[FACT: src/extensions/integration-blocks.tsx; editor.tsx; slash-commands.ts]`
+The editor's **`inline` render surface for the ADR-008 capability registry** — the TipTap re-home AR-7 deferred to UI-3
+#29 `[FACT: ADR-008 §3.4:104-109; docs/core/capability/current-business-rules.md:26]`. `INTEGRATION_BLOCK_EXTENSIONS` =
+one atom `Node` per `INTEGRATION_BLOCK_TYPE` (11), built by `createIntegrationBlockNode(def)` over `INLINE_BLOCK_DEFS`
+(E1's command data joined to a per-type config schema), spread into `useEditor` after the standard blocks.
+- **Config = node attrs per `config_schema` (CB2).** The 7 typed capabilities declare `addAttributes()` from their
+  `@vida/types` interface (each attr `{default, rendered:false}`); a `satisfies Record<keyof …Attrs, AttrSpec>` guards
+  drift at COMPILE time. Config round-trips losslessly for the declared schema via `nodeFromJSON→toJSON`; it stays out
+  of the HTML DOM (`rendered:false` → the HTML codec is E6). The 4 schema-less types (`eventsBlock`/`classesBlock`/
+  `backlink`/`milestoneBlock`) register attr-less (schema pending, per-module).
+- **Placeholder node-view (the FIRST React node-view).** `addNodeView → ReactNodeViewRenderer(IntegrationBlockPlaceholder)`
+  → `NodeViewWrapper` + a Tamagui card on BASE tokens, `contentEditable={false}`, `role="note"` + accessible name, label
+  + description + a muted "Available when its module ships" — the inline `empty/unavailable` terminal state (CB6). MOD-*
+  replaces this with the real body.
+- **Never-crash (degrade).** The node type is in-schema so any doc parses; an undeclared attr degrades via TipTap's
+  lenient content-load (warn + empty), not a crash.
+- **HTML contract + discriminator.** `renderHTML` → `<div data-type="integration-block" data-block-type="<name>">`;
+  `parseHTML` `getAttrs` returns `false` unless `data-block-type === name` (all 11 share one tag selector — the E6 seam).
+- **Availability flipped on (BR-E4-5 closed).** `AVAILABLE_INTEGRATION_BLOCKS` (owned here) = all 11 → `isBlockAvailable`
+  true; slash entries gain a `run` inserting the node. The definition source in M1.0 is the interim closed enum (the
+  BlockType-union re-home UI-3 owns); MOD-notes #31 wires AR-7's real `CapabilityRegistry`.
+
 ## Integration-block command map `[FACT: commands.ts]`
 `INTEGRATION_BLOCK_COMMANDS` = one `SlashCommand` per `INTEGRATION_BLOCK_TYPE` (11), all 7 required fields populated,
-`category ∈ {platform, embed}`. E1 ships the DATA; E4's slash menu LISTS them (disabled); E5 builds the node-views.
+`category ∈ {platform, embed}`. E1 ships the DATA; E4's slash menu LISTS them; E5 built the node-views (placeholders).
 
 ## File map `[FACT: packages/editor/src]`
 `editor.tsx` (VidaEditor + assertEditorDocument + toolbar mount + E4 host-combobox editorProps) · `commands.ts` ·
 **`toolbar.tsx`** (E3 — `EditorToolbar` + `ToolbarButton`) · **`internal/toolbar-state.ts`** (E3) ·
 `internal/editor-styles.ts` (E1 chrome + E2 block CSS) · **`extensions/standard-blocks.ts`** (E2) ·
-**`extensions/callout.ts`** (E2 bespoke node + E3 `calloutInsertContent` + `isolating`) · **`slash-commands.ts`** (E4 —
-`SlashMenuItem` view-model + `SLASH_MENU_ITEMS` + `filterSlashItems` + `isBlockAvailable` seam) · **`slash-menu.tsx`**
-(E4 — the `ReactRenderer` combobox popup) · **`extensions/slash-command.ts`** (E4 — the Suggestion extension +
-`slashComboboxAttrs`/`slashActive`) · `index.ts` (barrel) · `env.d.ts` · `test-setup.ts` (jsdom shims) ·
-`editor.test.tsx`/`commands.test.ts`/`extensions/standard-blocks.test.tsx`/`toolbar.test.tsx`/
-`internal/toolbar-state.test.ts`/**`slash-commands.test.ts`**/**`slash-menu.test.tsx`**/**`extensions/slash-command.test.ts`**
-(**102 tests**) · `editor.stories.tsx` (Visual-Gate surface incl. "Standard blocks" · "Toolbar" · "Slash menu (popup)" ·
-"Slash menu (live)") · `CLAUDE.md`.
-**Deferred (empty skeleton):** `extensions/*` integration node-views (E5) · `serializers/*`
-(E6–E8). Yjs = a deferred seam, no dep (BR-2/M4).
+**`extensions/callout.ts`** (E2 bespoke node + E3 `calloutInsertContent` + `isolating`) · **`extensions/integration-blocks.tsx`**
+(E5 — the 11 inline nodes + `IntegrationBlockPlaceholder` node-view + `INLINE_BLOCK_DEFS` + `AVAILABLE_INTEGRATION_BLOCKS`) ·
+**`slash-commands.ts`** (E4 — `SlashMenuItem` view-model + `SLASH_MENU_ITEMS` + `filterSlashItems`; E5 — `isBlockAvailable`
+reads the registry set + integration `run`s) · **`slash-menu.tsx`** (E4 — the `ReactRenderer` combobox popup) ·
+**`extensions/slash-command.ts`** (E4 — the Suggestion extension + `slashComboboxAttrs`/`slashActive`) · `index.ts`
+(barrel) · `env.d.ts` · `test-setup.ts` (jsdom shims) · `editor.test.tsx`/`commands.test.ts`/
+`extensions/standard-blocks.test.tsx`/`toolbar.test.tsx`/`internal/toolbar-state.test.ts`/`slash-commands.test.ts`/
+`slash-menu.test.tsx`/`extensions/slash-command.test.ts`/**`extensions/integration-blocks.test.tsx`** (**120 tests**) ·
+`editor.stories.tsx` (Visual-Gate surface incl. "Standard blocks" · "Toolbar" · "Slash menu (popup)" · "Slash menu (live)" ·
+**"Integration blocks (placeholders)"**) · `CLAUDE.md`.
+**Retired (E5):** the 9 stale per-type integration stub files (data-derived into `integration-blocks.tsx`; `tag-extension.ts`
+kept — not an integration type). **Deferred:** `serializers/*` (E6–E8). Yjs = a deferred seam, no dep (BR-2/M4).
 
 ## Verify
-`pnpm --filter @vida/editor typecheck && build && test` (102 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.
+`pnpm --filter @vida/editor typecheck && build && test` (120 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.

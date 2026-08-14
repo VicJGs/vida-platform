@@ -5,7 +5,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { VidaEditor } from './editor'
 import { SlashMenu } from './slash-menu'
 import { SLASH_MENU_ITEMS } from './slash-commands'
-import type { EditorDocument } from '@vida/types'
+import { INTEGRATION_BLOCK_TYPE, type EditorDocument } from '@vida/types'
 
 // E1 (UI-3) — the component Visual-Gate surface for <VidaEditor> (frontend-visual-gate.md render table). The
 // preview decorator roots each story in @vida/ui's UIProvider + paints the theme page surface, so the editor chrome
@@ -140,10 +140,10 @@ export const NoToolbar: Story = {
 // E4 (UI-3) — the slash-menu Visual-Gate surface. Two stories:
 //  · "Slash menu (popup)" stub-renders the <SlashMenu> popup directly (the Suggestion trigger can't be scripted in a
 //    static story) so the chrome is reviewable in BOTH themes: the Menu sub-theme bg/border, the group labels
-//    (Basic · Media · Platform blocks · Embeds), the selected-row highlight (first row), and the DIMMED integration
-//    rows (available:false — the graceful E5 seam).
+//    (Basic · Media · Platform blocks · Embeds), the selected-row highlight (first row), and — since E5 landed — the
+//    integration rows are now SELECTABLE (available:true; each inserts its placeholder), no longer dimmed.
 //  · "Slash menu (live)" is a real editable editor — click in and type `/` to open the menu at the caret; standard
-//    blocks insert, integration blocks are dimmed, and `/` inside a code block stays literal (BR-E4-10).
+//    blocks insert, integration blocks insert their E5 placeholder, and `/` inside a code block stays literal (BR-E4-10).
 function SlashMenuPreview(): React.ReactElement {
   const editor = useMemo(() => new Editor({ extensions: [StarterKit], content: '<p></p>' }), [])
   useEffect(() => () => editor.destroy(), [editor])
@@ -165,4 +165,26 @@ export const SlashMenuLive: Story = {
       content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Type / here to open the block menu…' }] }],
     },
   },
+}
+
+// E5 (UI-3) — the integration-block placeholder Visual-Gate surface. Seeds a doc with all 11 integration nodes; each
+// renders its placeholder node-view — the inline "available when its module ships" terminal state (CB6, ADR-008). This
+// is the FIRST React node-view in the editor. Review in BOTH themes: the card bg reads `$colorSurfaceSecondary`, the
+// border `$colorBorderDefault`, the title `$colorTextPrimary`, and the description + italic hint `$colorTextMuted`.
+const integrationBlocks: EditorDocument = {
+  type: 'doc',
+  content: [
+    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Integration blocks (placeholders)' }] },
+    {
+      type: 'paragraph',
+      content: [{ type: 'text', text: 'Each renders a placeholder until its module ships (E5 — the ADR-008 inline seam).' }],
+    },
+    ...INTEGRATION_BLOCK_TYPE.map((type) => ({ type })),
+  ],
+}
+
+/** Integration blocks (E5) — all 11 platform integration nodes as placeholder node-views. */
+export const IntegrationBlocks: Story = {
+  name: 'Integration blocks (placeholders)',
+  args: { defaultValue: integrationBlocks },
 }
