@@ -2,7 +2,7 @@
 
 > Durable, living rules `@vida/editor` enforces as built (§XXIX). Promoted from the E1/E2 IMPLEMENTATION-PLANs;
 > refreshed per unit. Consumed by `/critique` + `/preflight`. Scope today: **E1 — editor core + E2 — standard blocks
-> + E3 — toolbar + E4 — slash menu + E5 — integration-block registry**.
+> + E3 — toolbar + E4 — slash menu + E5 — integration-block registry + E6 — markdown serializers**.
 
 ## Package boundary
 - **BR-1 / BR-E1-2 · Presentational, persists nothing.** `@vida/editor` emits `EditorDocument` JSON via `onChange` and
@@ -154,6 +154,36 @@
 - **BR-E5-7 · Boundary + no new dep.** Still no `@vida/core`/app import (MOD-notes #31 wires the real registry); no new
   dependency (`ReactNodeViewRenderer`/`NodeViewWrapper` ship in the installed `@tiptap/react`). `[FACT: boundary grep;
   package.json unchanged]`
+
+## Markdown serializers (E6) — the custom TipTap-JSON ↔ Markdown codec (ADR-001 §8)
+- **BR-E6-1 · Custom serializer, no off-the-shelf bridge.** `toMarkdown`/`fromMarkdown` own the JSON↔Markdown mapping;
+  no `@tiptap/markdown` (reopens ADR-001) / `turndown` (drops the E5 `rendered:false` config attrs). `[FACT:
+  serializers/*; ADR-001:100]`
+- **BR-E6-2 · The lossless invariant is JSON→md→JSON.** `fromMarkdown(toMarkdown(doc)).document ≡ doc` over the live
+  schema. The reverse over an arbitrary string is unsatisfiable (equivalent spellings) → `toMarkdown` emits ONE
+  canonical form, `fromMarkdown` parses that CLOSED grammar and degrades on the rest. Canonical: italic→`_` (bold+italic
+  `**_x_**` unambiguous, bold the OUTER mark); code/code-fence variable-length; hardBreak→two-space+`\n`. `[FACT:
+  to-markdown.ts; from-markdown.ts; serializers.test.ts]`
+- **BR-E6-3 · Implement the SCHEMA, not just the block enum.** Handles all 11 `STANDARD_BLOCK_TYPE` + every mark bare
+  `StarterKit@3.30.0` registers (`bold`/`italic`/`strike`/`code`/`link`/`underline`) + the `hardBreak` node. `link`
+  round-trips `href` only (`target`/`rel`/`class` lossy); `underline`→`<u>` HTML span. `[FACT: to-markdown.ts
+  renderTextNode/serializeInline; @tiptap/starter-kit@3.30.0]`
+- **BR-E6-4 · callout & integration blocks use HTML/comment carriers.** callout→`<div data-type="callout"
+  data-variant>` (symmetric with E2's `renderHTML`; E6 hand-parses it — it's headless, no TipTap `parseHTML`).
+  Integration→`integration_block_handling`: `comment` (`<!-- vida:integration type config -->`, config from
+  `node.attrs` — lossless for the DECLARED schema per BR-E5-2; 7 typed full attrs, 4 schema-less type-identity only) ·
+  `skip` · `placeholder` (both declared-lossy). `[FACT: to-markdown.ts serializeCallout/serializeIntegration;
+  from-markdown.ts callout/comment branches]`
+- **BR-E6-6 · Frontmatter via the additive `MarkdownSerializeOptions.frontmatter?`.** Flat YAML, scalars stringly-typed
+  (declared-lossy, out of the document-side invariant). Parse populates `MarkdownParseResult.frontmatter`. `[FACT:
+  @vida/types editor.ts:203; to-markdown.ts renderFrontmatter]`
+- **BR-E6-7/8 · Pure, headless, deterministic; boundary + no new dep.** Data-only signatures (no `Editor`/DOM); import
+  only `@vida/types` (+ editor-local `commands.ts` for integration labels); no `@vida/core`/app import; **zero new
+  runtime dependency** (the closed grammar needs no lexer). `[FACT: serializers/*; package.json deps unchanged; boundary grep]`
+- **BR-E6-9 · Degrade, never throw.** `fromMarkdown` on non-canonical input degrades (unknown block → paragraph;
+  malformed integration config → warn) and never throws; `toMarkdown` on an unknown node → best-effort text. Warnings
+  surface on `MarkdownParseResult.warnings` (parse only — `toMarkdown` returns a bare `string`). `[FACT: from-markdown.ts
+  try/catch + object-guard; serializers.test.ts degradation suite]`
 
 ## Contract integrity
 - **Runtime document assertion (not a cast).** `onChange` and `getDocument` return values pass through
