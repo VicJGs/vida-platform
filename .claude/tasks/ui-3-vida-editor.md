@@ -3,8 +3,8 @@
 # Scenario: Default
 # Spec: docs/specs/features/ui-3-vida-editor/_index.md  (to author — Step 3)
 # Created: 2026-08-11
-# Updated: 2026-08-13
-# Status: done
+# Updated: 2026-08-15
+# Status: in-progress — E1–E6 merged (@vida/editor v0.6.0); E7 (PDF) + E8 (DOCX) remain
 # Linear: LIF-88
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
@@ -230,3 +230,33 @@ _(materialized 2026-08-11 from E1 §7 — approved at Approval 2, no re-gate. Im
 - [x] B5 · `index.ts` barrel — `VidaEditor`, `VidaEditorProps`/`VidaEditorHandle`, `INTEGRATION_BLOCK_COMMANDS`, re-export `EditorDocument` type.
 - [x] B6 · Tests (jsdom, `// @vitest-environment jsdom`): `editor.test.tsx` (render/edit/onChange-valid-doc, setContent/getDocument/focus ref, editable=false, placeholder, aria-name axe, `waitFor(isEditable)` guard) + `commands.test.ts` (parity vs enum, all-7-fields, valid category). Stories `editor.stories.tsx` (default/focus/disabled/empty, under UIProvider) + `src/CLAUDE.md` (§XXIX).
 - [x] B7 · Verify — `pnpm install` (adds tiptap to lock); `pnpm --filter @vida/editor typecheck && build && test` green; root typecheck; no `@vida/core`/app import.
+
+## Session 6 (2026-08-14) — E5 IMPLEMENTED + SHIPPED (see session-log 2026-08-14)
+E5 block-registry (ADR-008 `inline` render adapter) — 11 atom nodes + placeholder node-views. `@vida/editor` v0.4.0→**v0.5.0**. PR #19 `3b3197d` MERGED. Full detail: `.claude/sessions/2026-08-14-ui-3-e5-block-registry.md`.
+
+## Session 7 (2026-08-15) — E6 IMPLEMENTED + SHIPPED (full §XXVI double-gate + post-impl critique)
+E6 (markdown serializers) on branch **`ui-3-e6-markdown-serializers`** off clean main. `@vida/editor` **v0.5.0→v0.6.0**.
+The custom **TipTap-JSON ↔ Markdown serializer** (ADR-001 §8): `serializers/to-markdown.ts` (canonical emitter) +
+`serializers/from-markdown.ts` (closed-grammar inverse parser) + `serializers/serializers.test.ts` (34 tests) + barrel +
+one additive `@vida/types` field `MarkdownSerializeOptions.frontmatter?`. **Lossless invariant = JSON→md→JSON**
+(`fromMarkdown(toMarkdown(doc)).document ≡ doc`) over the live schema (11 blocks + `bold/italic/strike/code/link/underline`
+marks + `hardBreak`). Canonical closed grammar (italic→`_`, bold OUTER, variable code fences, callout/integration→HTML/
+comment carriers, hardBreak→two-space+`\n`) → `fromMarkdown` inverts it + degrades on the rest → **no lexer, zero new dep**.
+**4 independent critiques:** gate-1 REVISE→resolved (B1 amend umbrella BR-5 direction to JSON-side; B2 scope comment-mode
+to declared schema; M1–M3) · **preflight** BLOCKED→resolved (GAP-1 frontmatter value carrier; GAP-2 schema-truth — bare
+`StarterKit@3.30.0` also registers link/underline marks + hardBreak) · gate-2 SHIP · **post-impl REVISE→resolved: 7
+losslessness holes the 29 fixtures missed** (`---`-paragraph→HR · empty link · image `]`/`)` · href `)` · code-body fence ·
+comment `&#39;` · non-object config) — each now a regression fixture.
+**Victor's 2 doc-verify steers pivotal:** (1) ADR-001 §8 fixes "custom serializer" — nearly reopened for `@tiptap/markdown`
+([[dont-let-downstream-shape-reopen-an-adr]]); (2) the "lexer risk" was a manufactured hazard the closed-grammar contract
+dissolves (E5 D-7 pattern → memory [[dont-author-an-escape-hatch-for-a-risk-the-contract-dissolves]]).
+**Automated GREEN:** root typecheck 11/11 · editor **155/155** · build ✓ · enum-parity 10/10 · boundary clean · no hex ·
+no new runtime dep. No Visual Gate (no rendered surface). §XXIX: `serialization-spec.md` (was 0-byte) + `current-*` +
+`CLAUDE.md` + umbrella §5 E6 ✅. **Committed `ebb7d36` + pushed; PR #22 → MERGED `ce0c0c9` (--merge);** branch deleted;
+merged-main green. Spec `docs/specs/features/ui-3-vida-editor/e6-markdown-serializers.md`.
+
+### NEXT — E7 (PDF serializer)
+- **FIRST ACTION next session: start E7** (`@react-pdf/renderer`; web/desktop target, mobile expo-print out of scope —
+  ADR-001:101). Cut `ui-3-e7-*` off clean main, re-enter the §XXVI double-gate. Reuses E6's tree-walk model.
+- Then **E8** DOCX (`docx`) → **UI-4** (#30, app shell). UX-6 (#26) stays gated behind the `-c` wave (needs UI-4).
+- Ground truth: `docs/editor/serialization-spec.md` (E6 filled it; E7 extends) + `docs/editor/current-*`.
