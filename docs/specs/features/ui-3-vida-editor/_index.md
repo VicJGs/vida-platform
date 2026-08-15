@@ -84,9 +84,14 @@ Fixes the ONE shared architecture; per-unit rules live in each sub-spec.
 - **BR-4 · Compose UI-1 + tokens; no raw values.** Toolbar/slash-menu/block chrome compose UI-1 primitives (Menu,
   Button, Popover, Card…) + DS-2..DS-5 tokens/sub-themes. Dimension props use the token scale (`$md`/`$lg`), color
   props use theme keys — the DEF-U8-h + DEF-U4-e lessons carry `[FACT: packages/ui/src/CLAUDE.md]`.
-- **BR-5 · Serializers round-trip losslessly for standard blocks.** `to-markdown ∘ from-markdown` is identity over
-  the `STANDARD_BLOCK_TYPE` set `[FACT: ADR-001:100]`; `MarkdownParseResult` collects `warnings` for lossy/unknown
-  nodes `[FACT: editor.ts:203-208]`. PDF = `@react-pdf/renderer`, DOCX = `docx` `[FACT: ADR-001:101-102,232-234]`.
+- **BR-5 · Serializers round-trip losslessly for standard blocks.** The enforceable invariant is on the JSON side:
+  **`fromMarkdown(toMarkdown(doc)).document ≡ doc`** over the `STANDARD_BLOCK_TYPE` set `[FACT: ADR-001:100]`. (The
+  reverse — `toMarkdown ∘ fromMarkdown` over an arbitrary markdown STRING — is NOT identity and is unsatisfiable by any
+  serializer: Markdown has equivalent spellings [`*`/`-`/`+` bullets, ATX-vs-setext headings, `*`/`_` emphasis], so
+  `fromMarkdown` normalizes to canonical JSON and `toMarkdown` emits one canonical spelling. Amended 2026-08-14 — the
+  earlier "`to ∘ from`" wording named the composition backwards; see E6 BR-E6-2.) `MarkdownParseResult` collects
+  `warnings` for lossy/unknown nodes `[FACT: editor.ts:203-208]`. PDF = `@react-pdf/renderer`, DOCX = `docx`
+  `[FACT: ADR-001:101-102,232-234]`.
 - **BR-6 · A11y + motion inherit the UI-1 contract.** WAI-ARIA per surface (editor = textbox/toolbar/menu roles),
   jsdom-guarded browser APIs, B12 motion (transform/opacity only), reduced-motion `@media`, focus-visible rings
   `[FACT: packages/ui/src/CLAUDE.md]`.
@@ -107,7 +112,8 @@ any `light_/dark_<Unit>` sub-theme registered in `tamagui.config.ts`. `[FACT: ne
       integration-block body reads a non-existent module (BR-3).
 - [ ] Serializers: `to-markdown` · `from-markdown` (round-trip) · `to-pdf` · `to-docx`, wired to the `export-dialog`
       `onExport(format)` contract `[FACT: export-dialog.tsx:28]`. **E6 carries a property/fixture test proving
-      `to-markdown ∘ from-markdown = identity` over the full `STANDARD_BLOCK_TYPE` set** (BR-5 has no other gate).
+      `fromMarkdown(toMarkdown(doc)).document ≡ doc` (JSON→md→JSON identity) over the full `STANDARD_BLOCK_TYPE` set**
+      (BR-5 has no other gate; direction corrected 2026-08-14 per BR-5 above).
 - [ ] **Package boundary gate:** `@vida/editor` imports only `@vida/types` + `@tiptap/*` + (chrome) `@vida/ui`; **no
       `@vida/core` / app import** (BR-1 clean boundary — enforce via package.json/dep check).
 - [ ] **Mobile is OUT of UI-3 scope, stated:** ADR-001:103 mandates a Hybrid RN editor (TipTap-in-WebView + native
@@ -131,7 +137,7 @@ component Visual Gate → next. E1 establishes the editor spine the rest reuse.
 > **E4↔E5 sequencing note:** the registry's **TYPE MAP** (which `INTEGRATION_BLOCK_TYPE`s exist) is pulled forward
 > into **E1's spine** so E4's slash menu can list integration commands before E5 builds their placeholder node-views.
 > E5 adds the node-views + serialization behavior; E1 owns only the enum→command surface. No reorder — a clarified seam.
-| **E6** | **markdown serializers** (`to`+`from`) | Lossless round-trip over standard blocks; `warnings` for lossy; integration blocks per `integration_block_handling`. Built as ONE unit (round-trip co-designed). |
+| **E6** | **markdown serializers** (`to`+`from`) ✅ | Custom TipTap-JSON↔Markdown (ADR-001 §8); JSON→md→JSON identity over the live schema (11 blocks + marks + hardBreak); canonical closed grammar (italic `_`, callout/integration HTML/comment carriers, variable code fences) → no lexer, zero new dep. Additive `MarkdownSerializeOptions.frontmatter?`. `serializers/{to,from}-markdown.ts` + 34 tests. @vida/editor **v0.6.0**. Spec `e6-markdown-serializers.md`. |
 | **E7** | **PDF serializer** | `@react-pdf/renderer` (web/desktop target; mobile=expo-print is out of scope) `[FACT: ADR-001:101]`. |
 | **E8** | **DOCX serializer** | `docx` npm `[FACT: ADR-001:102]`. |
 
@@ -151,3 +157,4 @@ component Visual Gate → next. E1 establishes the editor spine the rest reuse.
 |------|---------|--------|
 | 2026-08-11 | ui-3-vida-editor | initial umbrella authored at PLAN: editor architecture + deferred seams (Yjs, integration blocks, app-mount) + BR-1..BR-7 + E1…E8 sequence; scope/profile/gate/visual-gate UNKNOWNs resolved against ADR-001/ADR-003 + the integration-check + UI-1/UI-2 precedent |
 | 2026-08-11 | ui-3-vida-editor | **/critique REVISE → resolved.** Independent critic verified the Yjs-deferral architecture SOUND (ADR-003:457 + AR-9 stub). Fixed: `INTEGRATION_BLOCK_TYPE` count 12→11 (enum-vs-CLAUDE.md `class-notes` defect flagged); BR-1 `pages.content` cite → `[INTERP]` (no active `pages` table, M1.1+); BR-2 M4 authority-inversion note; §4 +3 gates (no-`@vida/core`-import boundary, MD round-trip property test, mobile-out-of-scope); E4↔E5 type-map seam; export-dialog :27→:28. Rejected critic finding #3 (claimed no `.tsx` stubs — verified they DO exist as 0-byte: `ls packages/editor/src/*.tsx`). |
+| 2026-08-14 | ui-3-e6-markdown-serializers | **BR-5 direction amended** (E6 gate-1 critique B1): the round-trip invariant is the JSON-side `fromMarkdown(toMarkdown(doc)).document ≡ doc`, not the backwards `to ∘ from` over an arbitrary string (unsatisfiable — non-canonical markdown spellings). §4 E6 gate line updated to match. No scope change — a correction of the named gate's direction so the umbrella and `e6-markdown-serializers.md` agree. |

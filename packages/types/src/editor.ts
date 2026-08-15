@@ -197,6 +197,12 @@ export interface EditorState {
 export interface MarkdownSerializeOptions {
   /** Include frontmatter (title, date, tags) */
   include_frontmatter: boolean
+  /**
+   * Emit-side frontmatter values (title/date/tags/…) serialized to the YAML fence when `include_frontmatter` is true.
+   * The type owns serialize/parse of the fence, not WHICH keys — the caller supplies them. Symmetric with
+   * `MarkdownParseResult.frontmatter` (the parse-side carrier). Additive/optional (E6 · UI-3).
+   */
+  frontmatter?: Record<string, unknown>
   /** Render integration blocks as HTML comments or skip */
   integration_block_handling: 'comment' | 'skip' | 'placeholder'
 }

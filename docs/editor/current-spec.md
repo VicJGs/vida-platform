@@ -3,10 +3,11 @@
 > Durable, living description of what `@vida/editor` IS as built (§XXIX Currency Rule). Refreshed per unit; never lags
 > the code. Source of truth for `/critique` + `/preflight` + `victor:session-kickoff`. Every claim cites code.
 > Scope today: **E1 — editor core spine + E2 — standard blocks + E3 — toolbar + E4 — slash menu + E5 — integration-block
-> registry** (UI-3). Later units (E6–E8 serializers) extend this file. Forward specs: `docs/specs/features/ui-3-vida-editor/`.
+> registry + E6 — markdown serializers** (UI-3). Later units (E7 PDF, E8 DOCX) extend this file. Forward specs:
+> `docs/specs/features/ui-3-vida-editor/`. Serializer ground truth: `docs/editor/serialization-spec.md`.
 
 ## Package
-`@vida/editor` **v0.5.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
+`@vida/editor` **v0.6.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
 **v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` + **E2:**
 `@tiptap/extension-image` + `@tiptap/extension-table` + `@tiptap/extension-list` + **E4:** `@tiptap/suggestion`,
 family-pinned `^3.30.0`) + `@tamagui/core@2.6.2` + `@vida/types`/`@vida/ui` (workspace). Peer `react>=19`.
@@ -134,6 +135,22 @@ one atom `Node` per `INTEGRATION_BLOCK_TYPE` (11), built by `createIntegrationBl
   true; slash entries gain a `run` inserting the node. The definition source in M1.0 is the interim closed enum (the
   BlockType-union re-home UI-3 owns); MOD-notes #31 wires AR-7's real `CapabilityRegistry`.
 
+## Markdown serializers (E6) `[FACT: src/serializers/to-markdown.ts; src/serializers/from-markdown.ts; index.ts]`
+The **custom TipTap-JSON ↔ Markdown serializer** (ADR-001 §8) — two pure, headless, deterministic functions (no `Editor`,
+no DOM), barrel-exported: `toMarkdown(doc, options): string` + `fromMarkdown(md, options?): MarkdownParseResult`. NO
+off-the-shelf markdown bridge. Full mapping table: `docs/editor/serialization-spec.md`.
+- **Lossless invariant** = JSON→md→JSON: `fromMarkdown(toMarkdown(doc)).document ≡ doc` over the live schema. `toMarkdown`
+  emits ONE canonical spelling; `fromMarkdown` parses that CLOSED grammar and DEGRADES (never throws) on anything else —
+  so no general-GFM lexer, **zero new runtime dep**. Canonical choices: italic→`_` (bold+italic `**_x_**` unambiguous),
+  callout→`<div data-type="callout">` HTML carrier, integration blocks→`<!-- vida:integration -->` comment (config from
+  `node.attrs`, the E5 `rendered:false` codec landing here), hardBreak→two-space+`\n`, variable-length code fences.
+- **`MarkdownSerializeOptions.frontmatter?`** — one additive field added to `@vida/types` (the emit-side value carrier,
+  symmetric with `MarkdownParseResult.frontmatter`). Flat YAML; scalars round-trip stringly-typed (declared-lossy, out of
+  the document-side invariant). `[FACT: @vida/types editor.ts:203]`
+- **`integration_block_handling`** — `comment` (lossless for the declared schema) · `skip` · `placeholder` (both
+  declared-lossy). Tests: `serializers.test.ts` (34 — 24 round-trip fixtures covering all 11 blocks + every registered
+  mark + hardBreak + 7 stress cases, + modes + frontmatter + degradation). No component surface → no Visual Gate.
+
 ## Integration-block command map `[FACT: commands.ts]`
 `INTEGRATION_BLOCK_COMMANDS` = one `SlashCommand` per `INTEGRATION_BLOCK_TYPE` (11), all 7 required fields populated,
 `category ∈ {platform, embed}`. E1 ships the DATA; E4's slash menu LISTS them; E5 built the node-views (placeholders).
@@ -149,11 +166,13 @@ reads the registry set + integration `run`s) · **`slash-menu.tsx`** (E4 — the
 **`extensions/slash-command.ts`** (E4 — the Suggestion extension + `slashComboboxAttrs`/`slashActive`) · `index.ts`
 (barrel) · `env.d.ts` · `test-setup.ts` (jsdom shims) · `editor.test.tsx`/`commands.test.ts`/
 `extensions/standard-blocks.test.tsx`/`toolbar.test.tsx`/`internal/toolbar-state.test.ts`/`slash-commands.test.ts`/
-`slash-menu.test.tsx`/`extensions/slash-command.test.ts`/**`extensions/integration-blocks.test.tsx`** (**120 tests**) ·
+`slash-menu.test.tsx`/`extensions/slash-command.test.ts`/`extensions/integration-blocks.test.tsx`/**`serializers/serializers.test.ts`** (**155 tests**) ·
 `editor.stories.tsx` (Visual-Gate surface incl. "Standard blocks" · "Toolbar" · "Slash menu (popup)" · "Slash menu (live)" ·
 **"Integration blocks (placeholders)"**) · `CLAUDE.md`.
-**Retired (E5):** the 9 stale per-type integration stub files (data-derived into `integration-blocks.tsx`; `tag-extension.ts`
-kept — not an integration type). **Deferred:** `serializers/*` (E6–E8). Yjs = a deferred seam, no dep (BR-2/M4).
+**E6 serializers** — `serializers/to-markdown.ts` (canonical emitter) · `serializers/from-markdown.ts` (closed-grammar
+inverse parser) · `serializers/serializers.test.ts` (34 tests). **Deferred:** `serializers/to-pdf.ts` (E7) ·
+`serializers/to-docx.ts` (E8). **Retired (E5):** the 9 stale per-type integration stub files (`tag-extension.ts` kept).
+Yjs = a deferred seam, no dep (BR-2/M4).
 
 ## Verify
-`pnpm --filter @vida/editor typecheck && build && test` (120 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.
+`pnpm --filter @vida/editor typecheck && build && test` (155 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.

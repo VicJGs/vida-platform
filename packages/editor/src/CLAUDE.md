@@ -5,6 +5,32 @@ Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-st
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
+## Shipped (E6 — markdown serializers)
+The custom **TipTap-JSON ↔ Markdown** serializer (ADR-001 §8) — two pure, headless, deterministic functions (no `Editor`,
+no DOM), barrel-exported. NO off-the-shelf bridge (`@tiptap/markdown`/`turndown` reopen ADR-001 / drop the E5
+`rendered:false` config). Durable: `docs/editor/serialization-spec.md`. **v0.6.0.**
+- `serializers/to-markdown.ts` — the canonical emitter. Defines ONE spelling per node/mark so the round-trip grammar is
+  CLOSED. Italic→`_` (bold+italic `**_x_**` unambiguous, bold always OUTER — dissolves the `*`/`**` ambiguity);
+  code/code-fence **variable-length** (longest inner run + 1); callout→`<div data-type="callout" data-variant>` HTML
+  carrier; integration→`<!-- vida:integration type config -->` comment (config straight from `node.attrs` — the E5
+  `rendered:false` codec lands here); hardBreak→two-space+`\n`; inline escaping of `` \ ` * _ [ ] < > ~ `` + per-line
+  block-marker guard (a literal `---` paragraph ≠ HR).
+- `serializers/from-markdown.ts` — the exact INVERSE over the closed grammar. Line-classed block tokenizer (fixed
+  precedence: frontmatter → fence → integration-comment → callout-div → heading → **task-before-bullet** → lists →
+  table → blockquote → hr → paragraph) + an escape-aware inline pass (`findClose` skips code spans + escapes). **Degrades,
+  never throws** (BR-E6-9) — unknown input → paragraph + `warnings`. E6 is headless so it hand-parses the `data-type`
+  divs (no TipTap `parseHTML`).
+- **Invariant** = JSON→md→JSON: `fromMarkdown(toMarkdown(doc)).document ≡ doc` over the live schema (11 blocks + every
+  StarterKit-registered mark [`bold/italic/strike/code/link/underline`] + `hardBreak`). `toMarkdown` returns a bare
+  `string` (no emit-side warnings channel); `fromMarkdown` returns `MarkdownParseResult {document, frontmatter, warnings}`.
+- **One additive `@vida/types` edit:** `MarkdownSerializeOptions.frontmatter?` (emit-side value carrier, symmetric with
+  the parse result). Flat YAML; scalars stringly-typed (declared-lossy). `integration_block_handling`: `comment`
+  (lossless for the declared schema) · `skip` · `placeholder`.
+- Tests: `serializers/serializers.test.ts` — **34** (24 round-trip fixtures across all 11 blocks + marks + hardBreak +
+  7 stress cases [nested emphasis, escaped metacharacters, HR-collision, image-brackets, href-parens, code-fence,
+  comment-entities] + 3 handling modes + frontmatter + degradation). No component surface → **no Visual Gate**. Boundary
+  unchanged (no `@vida/core`); **no new runtime dep**. **155 total.**
+
 ## Shipped (E5 — integration-block registry)
 The editor's **`inline` render surface for the ADR-008 capability registry** — the "TipTap re-home" AR-7 deferred to
 UI-3 #29 (`docs/core/capability/current-business-rules.md:26`). Durable: `docs/editor/block-registry.md`. The editor is
@@ -146,7 +172,8 @@ StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
   `INTEGRATION_BLOCK_COMMANDS` + re-exported `EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand` types.
 
 ## Deferred (later units)
-`serializers/{to,from}-*.ts` (E6 markdown round-trip · E7 PDF · E8 DOCX) — empty skeleton files exist. Integration-block
+`serializers/to-pdf.ts` (E7 · `@react-pdf/renderer`) · `serializers/to-docx.ts` (E8 · `docx`) — empty skeleton files
+exist (E6 markdown serializers are SHIPPED — see the E6 section above). Integration-block
 **REAL bodies** (MOD-* phases replace each placeholder node-view) + wiring AR-7's `CapabilityRegistry` into the editor
 (MOD-notes #31). **Yjs/`y-prosemirror` = a deferred SEAM, no dep** (BR-2, M4/AR-9b): `pages.content` is a TipTap-JSON
 snapshot that renders locally without a Y.Doc; E1's shell keeps the content source swappable so M4 can invert authority

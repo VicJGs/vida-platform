@@ -8,5 +8,16 @@ export { VidaEditor, assertEditorDocument, type VidaEditorProps, type VidaEditor
 // E1 — the integration-block command type map (BR-E1-4; the enum→command surface E4's slash menu lists).
 export { INTEGRATION_BLOCK_COMMANDS, INTEGRATION_BLOCK_COMMAND_COUNT } from './commands'
 
+// E6 — markdown serializers (custom TipTap-JSON ↔ Markdown, round-trip lossless; ADR-001 §8).
+export { toMarkdown } from './serializers/to-markdown'
+export { fromMarkdown } from './serializers/from-markdown'
+
 // Re-export the shared editor document contract (owned by @vida/types; never redefined — BR-7).
-export type { EditorDocument, EditorNode, EditorMark, SlashCommand } from '@vida/types'
+export type {
+  EditorDocument,
+  EditorNode,
+  EditorMark,
+  SlashCommand,
+  MarkdownSerializeOptions,
+  MarkdownParseResult,
+} from '@vida/types'
