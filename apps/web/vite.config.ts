@@ -26,5 +26,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],
+    // Stub the WebGL globals BEFORE the test module graph loads — importing the @vida/ui barrel (UIProvider/
+    // ToastProvider/media) transitively evaluates sigma (neural-graph), which reads static WebGL2RenderingContext.*
+    // at load; jsdom/node lack it (UI-4 S1; the packages/editor precedent).
+    setupFiles: ['./src/test-setup.ts'],
   },
 })

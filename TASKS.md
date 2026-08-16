@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| ui-4-app-shell-components (LIF-89) | New Feature | 2026-08-16 | 2026-08-16 | ▶ just started — the `#30` app-shell chrome (dock/sidebar · top-bar · command-bar host · `<Outlet/>` · modal host) in `apps/web/src`, rendering the UX-2/UX-3/UX-5 models on UI-1. Last tile of the `-c` UI wave; releases the `-d` wave. Step 0 baseline → PLAN next. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
 *(**ui-3-vida-editor LIF-88 → Done + MERGED** (E8 PR #24 `79ee267`), 2026-08-16 — `@vida/editor` **v0.8.0**; the TipTap block editor built E1–E8, the serializer suite (md · PDF · DOCX) COMPLETE. LIF-88 synced Done; task archived (see _index.md Completed). **Next head: UI-4 (#30, app shell).** Prior: ui-2-platform-views LIF-87 → Done + MERGED PR #13 (`e3872fc`), 2026-08-11 — the 7 platform views + shared data-view spine, @vida/ui v0.2.0, UF gate SHIP. Prior: ux-5 LIF-94 PR #12.)*
