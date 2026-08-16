@@ -1,7 +1,7 @@
-<!-- Last updated: 2026-06-07 by /init -->
+<!-- Last updated: 2026-08-16 by /session-end -->
 | Component | Location | Key Props | States Handled | Notes |
 |-----------|----------|-----------|----------------|-------|
-| *(add rows as components are built)* | | | | |
+| `AppShell` | `apps/web/src/shell/app-shell.tsx` | `children` (→ content region / router Outlet), `__bp?` (test/story breakpoint override) | responsive reflow per breakpoint (dock drawer→rail→sidebar · bar condensed→full · Spaces mobile-hidden) | UI-4 · S1. The 5-region shell frame (moduleDock/globalBar/spacesBar/content/overlayHost) on `shell/regions.ts` predicates + Tamagui `useMedia()`. Scaffold only — placeholder slots; S2–S4 fill them. Mounts in `routes.tsx` RootComponent. |
 
 ## DatabaseAdapter + web-adapter (AR-2 · 2026-07-27 · commit e55010f)
 Platform-agnostic SQLite seam (`packages/core/src/db/adapter.ts`) + its browser impl (`apps/web/src/db/`).

@@ -4974,3 +4974,17 @@ Decisions:
 Next session:
   - **FIRST ACTION: start E8 (DOCX serializer, `docx` npm)** off clean `main`, §XXVI double-gate. The last serializer; reuses E7/E6's tree-walk model. Then UI-4 (#30, app shell). UX-6 (#26) stays gated behind `-c` (needs UI-4).
   - Ground truth for E8: `docs/editor/serialization-spec.md` (E6+E7 filled it) + `docs/editor/current-*`. ⚠ CI red repo-wide (known pnpm action-setup infra; local green). LIF-88 stays in progress (E8 remains).
+---
+Date: 2026-08-16
+Task: ui-4-app-shell-components (LIF-89, #30) — app shell · S1 shell scaffold
+Completed:
+  - **S1 SHIPPED & MERGED.** The 5-region `AppShell` frame (moduleDock/globalBar/spacesBar/content/overlayHost) on `shell/regions.ts` predicates + Tamagui `useMedia()`/`__bp`; unmount-invisible regions; `styled(View,{render:'nav'/'header'/'main'})` landmarks; `LAYERING` z. **apps/web became the FIRST `@vida/ui` consumer** (+`@vida/ui`/`@tamagui/core@2.6.2`). `media` config (D5 seam, plain object — Tamagui v2 has no `createMedia`) + a `config.media`≡`TAMAGUI_MEDIA` parity guard; `app-shell-ui-store` +`isMobileNavOpen`; `UIProvider`+`ToastProvider` in App.tsx; `RootComponent`→`<AppShell><Outlet/></AppShell>`.
+  - Head verified from the docs (`#`-walk + sub-wave gate + `--next` converge → UI-4 #30); fixed UX-2's missing archive/index bookkeeping (shipped PR #9). Umbrella spec + S1 spec authored; §XXVI gate (gate-1 REVISE→7 folded incl. 2 blockers · preflight PASSED 2 folds · gate-2 clean).
+  - **Visual Gate (real Brave) SHIP** — caught+fixed 2 bugs jsdom can't: `process is not defined` blank page (untamed-Tamagui runtime `process.env.*` → `index.html` shim, UI-1 U0) + viewport-fill (`minHeight:100vh` + `index.css` reset). Barrel sigma-WebGL crash → `setupFiles` stub (@vida/editor precedent).
+  - GREEN: web typecheck · **96 tests** · lint 0-err · build · @vida/ui **317**. **Committed `57aef4f` → PR #25 MERGED `f0fff60` (--merge);** branch deleted; close-out `01b50f3`.
+Decisions:
+  - 3 manufactured "decisions" (nav-to-unbuilt / unit-split / graph-lazy) were doc-determined, not forks — Victor: "every gap was already solved in the documentation." Reinforces [[decide-dont-ask-when-docs-give-the-answer]] / [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]].
+  - Compose-in-apps/web (no new packages/ui component, rule-of-three unmet); the only packages/ui edit is the media config. Profile = new-feature (delivery-plan row over reconstructed-structure's "Generic").
+Next session:
+  - **FIRST ACTION: start S2 (nav chrome)** — module dock + global bar + Spaces-bar seam over `MODULE_MAP`/`GLOBAL_SURFACES`, off clean `main`, §XXVI gate + component Visual Gate. Then S3 (command-bar) → S4 (onboarding) → S5 (integration + `/graph` lazy-split). LIF-89 stays in-progress until S1–S5 land.
+  - Reload: memory [[apps-web-is-the-first-vida-ui-consumer]] (Tamagui gotchas), umbrella `_index.md` §5 roster, `apps/web/src/shell/*` + `nav/module-map.ts`. ⚠ CI red repo-wide (known pnpm action-setup infra; local green).
