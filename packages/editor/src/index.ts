@@ -12,6 +12,9 @@ export { INTEGRATION_BLOCK_COMMANDS, INTEGRATION_BLOCK_COMMAND_COUNT } from './c
 export { toMarkdown } from './serializers/to-markdown'
 export { fromMarkdown } from './serializers/from-markdown'
 
+// E7 — PDF serializer (@react-pdf/renderer, web/desktop; ADR-001:101). Emit-only, no round-trip.
+export { toPdf } from './serializers/to-pdf'
+
 // Re-export the shared editor document contract (owned by @vida/types; never redefined — BR-7).
 export type {
   EditorDocument,
@@ -20,4 +23,5 @@ export type {
   SlashCommand,
   MarkdownSerializeOptions,
   MarkdownParseResult,
+  PdfSerializeOptions,
 } from '@vida/types'

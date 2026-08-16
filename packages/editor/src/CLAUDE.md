@@ -5,6 +5,25 @@ Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-st
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
+## Shipped (E7 — PDF serializer)
+The **PDF serializer** (ADR-001:101 — `@react-pdf/renderer@4.6.1`, **web/desktop**; mobile=`expo-print` OUT of UI-3 scope).
+**Emit-only, no round-trip.** Durable: `docs/editor/serialization-spec.md`. **v0.7.0.** The ONE new top-level runtime dep.
+- `serializers/to-pdf.tsx` — the pure `documentToPdfTree(doc, options): ReactElement<DocumentProps>` (total tree-walk over
+  `EditorNode` → react-pdf `Document/Page/Text/View/Image/Link`; exhaustively testable on `element.type` = the imported
+  CLASS identity) + the thin async `toPdf(doc, options): Promise<Blob>` (`pdf(tree).toBlob()` — the only IO seam;
+  async+binary is engine-intrinsic). **Marks merge as ONE `<Text>` style object** (bold/italic/strike+underline combined
+  `textDecoration`/code Courier); `link` = the outermost `<Link src={href}>` element. Integration blocks → `skip` /
+  placeholder card (`comment`≡`placeholder`); frontmatter (non-empty) → a page-1 header. A **table cell's non-paragraph
+  block recurses via `renderBlock`** (keeps its text — post-impl M1); `orderedList.start` `Number.isFinite`-guarded (M2).
+- `serializers/pdf-theme.ts` — **THE ONE place raw hex lives in the serializer layer** (BR-E7-8a): react-pdf has no CSS
+  runtime (can't read Tamagui vars), so styles must be literal; `to-pdf.tsx` is hex-clean. Print-neutral, provisional —
+  brand fonts/palette deferred; built-in Helvetica/Courier (auto-resolve Bold, no `Font.register`).
+- **Degrade-never-throw is TREE-level** (empty image src skipped, unknown node → text); a present-but-corrupt image src
+  throws at react-pdf RENDER — the caller's contract (valid `note_attachments` srcs, BR-E2-5). Additive `PdfSerializeOptions`
+  in `@vida/types`. Tests: `serializers/to-pdf.test.tsx` (**33** — schema-parity all 11 + marks + hardBreak + integration
+  modes + frontmatter + degradation + M1/M2/m1/m2 regressions + 2 `%PDF-` byte smokes). No component surface → **no Visual
+  Gate**. Boundary unchanged (no `@vida/core`). **188 total.** Spec `docs/specs/features/ui-3-vida-editor/e7-pdf-serializer.md`.
+
 ## Shipped (E6 — markdown serializers)
 The custom **TipTap-JSON ↔ Markdown** serializer (ADR-001 §8) — two pure, headless, deterministic functions (no `Editor`,
 no DOM), barrel-exported. NO off-the-shelf bridge (`@tiptap/markdown`/`turndown` reopen ADR-001 / drop the E5
@@ -172,8 +191,8 @@ StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
   `INTEGRATION_BLOCK_COMMANDS` + re-exported `EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand` types.
 
 ## Deferred (later units)
-`serializers/to-pdf.ts` (E7 · `@react-pdf/renderer`) · `serializers/to-docx.ts` (E8 · `docx`) — empty skeleton files
-exist (E6 markdown serializers are SHIPPED — see the E6 section above). Integration-block
+`serializers/to-docx.ts` (E8 · `docx`) — empty skeleton file exists (E6 markdown + E7 PDF serializers are SHIPPED — see
+their sections above). Integration-block
 **REAL bodies** (MOD-* phases replace each placeholder node-view) + wiring AR-7's `CapabilityRegistry` into the editor
 (MOD-notes #31). **Yjs/`y-prosemirror` = a deferred SEAM, no dep** (BR-2, M4/AR-9b): `pages.content` is a TipTap-JSON
 snapshot that renders locally without a Y.Doc; E1's shell keeps the content source swappable so M4 can invert authority

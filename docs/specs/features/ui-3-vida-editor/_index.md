@@ -138,7 +138,7 @@ component Visual Gate → next. E1 establishes the editor spine the rest reuse.
 > into **E1's spine** so E4's slash menu can list integration commands before E5 builds their placeholder node-views.
 > E5 adds the node-views + serialization behavior; E1 owns only the enum→command surface. No reorder — a clarified seam.
 | **E6** | **markdown serializers** (`to`+`from`) ✅ | Custom TipTap-JSON↔Markdown (ADR-001 §8); JSON→md→JSON identity over the live schema (11 blocks + marks + hardBreak); canonical closed grammar (italic `_`, callout/integration HTML/comment carriers, variable code fences) → no lexer, zero new dep. Additive `MarkdownSerializeOptions.frontmatter?`. `serializers/{to,from}-markdown.ts` + 34 tests. @vida/editor **v0.6.0**. Spec `e6-markdown-serializers.md`. |
-| **E7** | **PDF serializer** | `@react-pdf/renderer` (web/desktop target; mobile=expo-print is out of scope) `[FACT: ADR-001:101]`. |
+| **E7** | **PDF serializer** ✅ | `@react-pdf/renderer` (web/desktop; mobile=expo-print OUT of scope, ADR-001:101). **Emit-only, no round-trip.** Pure `documentToPdfTree` (total tree-walk → react-pdf primitives; all 11 blocks + marks + hardBreak) + thin async `toPdf(doc,options): Promise<Blob>`. Marks merge as one `<Text>` style object; `link`=outermost `<Link>`; integration→placeholder card; frontmatter→page-1 header. Colors literal-quarantined to `pdf-theme.ts` (no CSS runtime). ONE new dep `@react-pdf/renderer@4.6.1`; additive `PdfSerializeOptions` in `@vida/types`. `to-pdf.tsx`+`pdf-theme.ts`+33 tests. @vida/editor **v0.7.0**. Spec `e7-pdf-serializer.md`. |
 | **E8** | **DOCX serializer** | `docx` npm `[FACT: ADR-001:102]`. |
 
 ## 6. Open UNKNOWNs / Decisions Needed

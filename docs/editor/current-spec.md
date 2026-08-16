@@ -3,14 +3,15 @@
 > Durable, living description of what `@vida/editor` IS as built (§XXIX Currency Rule). Refreshed per unit; never lags
 > the code. Source of truth for `/critique` + `/preflight` + `victor:session-kickoff`. Every claim cites code.
 > Scope today: **E1 — editor core spine + E2 — standard blocks + E3 — toolbar + E4 — slash menu + E5 — integration-block
-> registry + E6 — markdown serializers** (UI-3). Later units (E7 PDF, E8 DOCX) extend this file. Forward specs:
-> `docs/specs/features/ui-3-vida-editor/`. Serializer ground truth: `docs/editor/serialization-spec.md`.
+> registry + E6 — markdown serializers + E7 — PDF serializer** (UI-3). Later unit (E8 DOCX) extends this file. Forward
+> specs: `docs/specs/features/ui-3-vida-editor/`. Serializer ground truth: `docs/editor/serialization-spec.md`.
 
 ## Package
-`@vida/editor` **v0.6.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
+`@vida/editor` **v0.7.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
 **v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` + **E2:**
 `@tiptap/extension-image` + `@tiptap/extension-table` + `@tiptap/extension-list` + **E4:** `@tiptap/suggestion`,
-family-pinned `^3.30.0`) + `@tamagui/core@2.6.2` + `@vida/types`/`@vida/ui` (workspace). Peer `react>=19`.
+family-pinned `^3.30.0`) + `@tamagui/core@2.6.2` + **E7:** `@react-pdf/renderer@^4.6.1` (the PDF engine; web/desktop) +
+`@vida/types`/`@vida/ui` (workspace). Peer `react>=19`.
 `[FACT: packages/editor/package.json]` Toolchain (Storybook 9 · vitest 3 · jsdom 30 · vite 6) mirrors `@vida/ui`.
 
 ## Public surface `[FACT: packages/editor/src/index.ts]`
@@ -135,6 +136,24 @@ one atom `Node` per `INTEGRATION_BLOCK_TYPE` (11), built by `createIntegrationBl
   true; slash entries gain a `run` inserting the node. The definition source in M1.0 is the interim closed enum (the
   BlockType-union re-home UI-3 owns); MOD-notes #31 wires AR-7's real `CapabilityRegistry`.
 
+## PDF serializer (E7) `[FACT: src/serializers/to-pdf.tsx; src/serializers/pdf-theme.ts; index.ts]`
+The **PDF serializer** (ADR-001:101 — `@react-pdf/renderer`, web/desktop; mobile=`expo-print` OUT of UI-3 scope).
+**Emit-only, no round-trip** (BR-5 is E6's). Barrel-exported `toPdf(doc, options: PdfSerializeOptions): Promise<Blob>` +
+the internal pure `documentToPdfTree(doc, options): ReactElement<DocumentProps>` (exported for tests). Full mapping:
+`docs/editor/serialization-spec.md`.
+- **Split for testability:** `documentToPdfTree` is a pure/deterministic tree-walk (all 11 `STANDARD_BLOCK_TYPE` + every
+  registered mark + `hardBreak` → react-pdf `Document/Page/Text/View/Image/Link`); `toPdf` is the thin async seam
+  (`pdf(tree).toBlob()`). Async+binary is engine-intrinsic (Yoga layout → byte stream).
+- **Marks merge as one `<Text>` style object** (not delimiter nesting): bold/italic/strike+underline(combined
+  `textDecoration`)/code(Courier); `link` is the outermost `<Link src={href}>` element. `integration_block_handling`:
+  `skip` omits, `placeholder`/`comment` render the re-implemented placeholder card. `frontmatter` (non-empty) → a page-1
+  header block.
+- **Colors are literal, quarantined to `pdf-theme.ts`** (react-pdf has no CSS runtime — can't read Tamagui vars; BR-E7-8a);
+  `to-pdf.tsx` is hex-clean. Built-in Helvetica/Courier (auto-resolve Bold; no `Font.register`); brand fonts/palette deferred.
+- **Degrade never-throw is TREE-level** (empty image src skipped, unknown node → text); a present-but-corrupt image src
+  throws at react-pdf RENDER — the caller's contract (app supplies valid `note_attachments` srcs, BR-E2-5). Additive
+  `PdfSerializeOptions` in `@vida/types`. Tests: `to-pdf.test.tsx` (33). No component surface → **no Visual Gate**.
+
 ## Markdown serializers (E6) `[FACT: src/serializers/to-markdown.ts; src/serializers/from-markdown.ts; index.ts]`
 The **custom TipTap-JSON ↔ Markdown serializer** (ADR-001 §8) — two pure, headless, deterministic functions (no `Editor`,
 no DOM), barrel-exported: `toMarkdown(doc, options): string` + `fromMarkdown(md, options?): MarkdownParseResult`. NO
@@ -166,13 +185,14 @@ reads the registry set + integration `run`s) · **`slash-menu.tsx`** (E4 — the
 **`extensions/slash-command.ts`** (E4 — the Suggestion extension + `slashComboboxAttrs`/`slashActive`) · `index.ts`
 (barrel) · `env.d.ts` · `test-setup.ts` (jsdom shims) · `editor.test.tsx`/`commands.test.ts`/
 `extensions/standard-blocks.test.tsx`/`toolbar.test.tsx`/`internal/toolbar-state.test.ts`/`slash-commands.test.ts`/
-`slash-menu.test.tsx`/`extensions/slash-command.test.ts`/`extensions/integration-blocks.test.tsx`/**`serializers/serializers.test.ts`** (**155 tests**) ·
+`slash-menu.test.tsx`/`extensions/slash-command.test.ts`/`extensions/integration-blocks.test.tsx`/**`serializers/serializers.test.ts`**/**`serializers/to-pdf.test.tsx`** (**188 tests**) ·
 `editor.stories.tsx` (Visual-Gate surface incl. "Standard blocks" · "Toolbar" · "Slash menu (popup)" · "Slash menu (live)" ·
 **"Integration blocks (placeholders)"**) · `CLAUDE.md`.
 **E6 serializers** — `serializers/to-markdown.ts` (canonical emitter) · `serializers/from-markdown.ts` (closed-grammar
-inverse parser) · `serializers/serializers.test.ts` (34 tests). **Deferred:** `serializers/to-pdf.ts` (E7) ·
-`serializers/to-docx.ts` (E8). **Retired (E5):** the 9 stale per-type integration stub files (`tag-extension.ts` kept).
+inverse parser) · `serializers/serializers.test.ts` (34 tests). **E7 serializer** — `serializers/to-pdf.tsx`
+(`documentToPdfTree` + `toPdf`) · `serializers/pdf-theme.ts` (print literals + StyleSheet) · `serializers/to-pdf.test.tsx`
+(33 tests). **Deferred:** `serializers/to-docx.ts` (E8). **Retired (E5):** the 9 stale per-type integration stub files (`tag-extension.ts` kept).
 Yjs = a deferred seam, no dep (BR-2/M4).
 
 ## Verify
-`pnpm --filter @vida/editor typecheck && build && test` (155 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.
+`pnpm --filter @vida/editor typecheck && build && test` (188 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.

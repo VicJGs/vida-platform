@@ -1,6 +1,6 @@
 {
   "name": "@vida/editor",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -41,6 +41,7 @@
     "vitest": "^3.2.1"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.6.1",
     "@tamagui/core": "2.6.2",
     "@tiptap/extension-image": "^3.30.0",
     "@tiptap/extension-list": "^3.30.0",
