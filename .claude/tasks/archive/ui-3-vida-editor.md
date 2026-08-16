@@ -4,7 +4,7 @@
 # Spec: docs/specs/features/ui-3-vida-editor/_index.md  (to author — Step 3)
 # Created: 2026-08-11
 # Updated: 2026-08-15
-# Status: in-progress — E1–E7 merged (@vida/editor v0.7.0); E8 (DOCX) BUILT on branch (v0.8.0, pending PR) — the serializer suite is COMPLETE; then UI-4
+# Status: done — E1–E8 all merged (@vida/editor v0.8.0); the serializer suite (md · PDF · DOCX) is COMPLETE; UI-3/LIF-88 Done (2026-08-16, E8 PR #24 `79ee267`). Next head: UI-4 (#30).
 # Linear: LIF-88
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
