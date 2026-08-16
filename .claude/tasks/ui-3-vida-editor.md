@@ -4,7 +4,7 @@
 # Spec: docs/specs/features/ui-3-vida-editor/_index.md  (to author — Step 3)
 # Created: 2026-08-11
 # Updated: 2026-08-15
-# Status: in-progress — E1–E6 merged (@vida/editor v0.6.0); E7 (PDF) + E8 (DOCX) remain
+# Status: in-progress — E1–E6 merged (@vida/editor v0.6.0); E7 (PDF) BUILT on branch (v0.7.0, pending PR); E8 (DOCX) remains
 # Linear: LIF-88
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
@@ -255,8 +255,29 @@ no new runtime dep. No Visual Gate (no rendered surface). §XXIX: `serialization
 `CLAUDE.md` + umbrella §5 E6 ✅. **Committed `ebb7d36` + pushed; PR #22 → MERGED `ce0c0c9` (--merge);** branch deleted;
 merged-main green. Spec `docs/specs/features/ui-3-vida-editor/e6-markdown-serializers.md`.
 
-### NEXT — E7 (PDF serializer)
-- **FIRST ACTION next session: start E7** (`@react-pdf/renderer`; web/desktop target, mobile expo-print out of scope —
-  ADR-001:101). Cut `ui-3-e7-*` off clean main, re-enter the §XXVI double-gate. Reuses E6's tree-walk model.
-- Then **E8** DOCX (`docx`) → **UI-4** (#30, app shell). UX-6 (#26) stays gated behind the `-c` wave (needs UI-4).
-- Ground truth: `docs/editor/serialization-spec.md` (E6 filled it; E7 extends) + `docs/editor/current-*`.
+## Session 8 (2026-08-15) — E7 IMPLEMENTED (full §XXVI double-gate + preflight + post-impl critique)
+E7 (PDF serializer) on branch **`ui-3-e7-pdf-serializer`** off clean main. `@vida/editor` **v0.6.0→v0.7.0**.
+The **`@react-pdf/renderer` PDF serializer** (ADR-001:101; web/desktop, mobile=expo-print OUT of scope): `serializers/to-pdf.tsx`
+(pure `documentToPdfTree(doc,options): ReactElement<DocumentProps>` — total tree-walk over all 11 `STANDARD_BLOCK_TYPE` +
+every registered mark + hardBreak → react-pdf primitives — + thin async `toPdf(doc,options): Promise<Blob>`) +
+`serializers/pdf-theme.ts` (print-neutral literals + StyleSheet, quarantined — react-pdf has no CSS runtime) +
+`to-pdf.test.tsx` (33) + barrel + additive `PdfSerializeOptions` in `@vida/types`. **Emit-only (no round-trip — BR-5 is E6's).**
+Marks merge as ONE `<Text>` style object (`link`=outermost `<Link>`); integration→placeholder card; frontmatter→page-1 header.
+**Victor's steer (pivotal):** the 6 "decisions" I surfaced were ALL already fixed by ADR-001/umbrella/E6-precedent — no open
+fork ([[dont-manufacture-an-architecture-fork-the-pattern-already-answers]] / [[decide-dont-ask-when-docs-give-the-answer]]).
+**4 gates:** gate-1 REVISE→resolved (3 blockers incl. a fabricated React-peer cite `^19` → real range; 5 material) ·
+**preflight PASSED** (API verified vs the INSTALLED `.d.ts` — self-caught GAP-P1: primitives are CLASSES so tests assert
+`el.type===Text`, not string constants) · gate-2 SHIP (2 render-traps probed + engine-resolved: `Courier-Bold` pre-registered,
+`<Link>` nests in `<Text>`) · **post-impl REVISE→resolved** (2 real bugs green tests hid: **M1** list-in-table-cell text
+SILENTLY DROPPED → recurse via `renderBlock`; **M2** non-numeric `orderedList.start`→`NaN.` → `Number.isFinite` guard;
++m1/m2). **Scope refinement:** degrade-never-throw is TREE-level — a corrupt image src throws at react-pdf render (caller's
+contract, BR-E2-5). **GREEN:** editor **188/188** · root typecheck 11/11 · build ✓ · boundary clean · hex confined to
+`pdf-theme.ts` · one new top-level dep `@react-pdf/renderer@4.6.1`. No Visual Gate (serializer). §XXIX: `serialization-spec.md`
++ `current-*` + `CLAUDE.md` + umbrella §5 E7 ✅. Spec `docs/specs/features/ui-3-vida-editor/e7-pdf-serializer.md`.
+
+### NEXT — commit E7 + PR, then E8 (DOCX)
+- **Commit** E7 on `ui-3-e7-pdf-serializer` → **its own PR** (per-unit PR model). Includes the `@vida/types` additive change
+  + the `@vida/types` dist rebuild.
+- Then **E8** DOCX (`docx` npm) → **UI-4** (#30, app shell). UX-6 (#26) stays gated behind the `-c` wave (needs UI-4).
+- Ground truth for E8: `docs/editor/serialization-spec.md` (E6+E7 filled it) + `docs/editor/current-*`. ⚠ CI red repo-wide
+  (known pnpm action-setup infra; local green).

@@ -213,3 +213,21 @@ export interface MarkdownParseResult {
   /** Warnings for content that couldn't be parsed */
   warnings: string[]
 }
+
+// ---------------------------------------------------------------------------
+// PDF serialization (E7 · UI-3)
+// ---------------------------------------------------------------------------
+
+export interface PdfSerializeOptions {
+  /**
+   * How integration blocks render in the PDF. Reuses the Markdown handling literal (no new enum): a PDF has no
+   * invisible comment layer, so `'comment'` ≡ `'placeholder'` here (both render the E5 placeholder card); `'skip'`
+   * omits the block. Emit-only — no config is encoded (a PDF is never re-imported). Additive (E7 · UI-3).
+   */
+  integration_block_handling: 'comment' | 'skip' | 'placeholder'
+  /**
+   * Emit-side header values (title/date/tags/…) rendered as a page-1 header block when present. Symmetric with
+   * `MarkdownSerializeOptions.frontmatter` — the caller supplies the keys. Additive/optional.
+   */
+  frontmatter?: Record<string, unknown>
+}

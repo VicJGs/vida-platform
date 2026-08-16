@@ -1,8 +1,8 @@
 # @vida/editor — serialization spec (ground truth)
 
 > Durable description of the E6–E8 serializers as built (§XXIX Currency Rule). Refreshed per unit; never lags the code.
-> Scope today: **E6 — Markdown (to + from)**. E7 (PDF) / E8 (DOCX) extend this file. Forward spec:
-> `docs/specs/features/ui-3-vida-editor/e6-markdown-serializers.md`.
+> Scope today: **E6 — Markdown (to + from)** + **E7 — PDF (`to-pdf`)**. E8 (DOCX) extends this file. Forward specs:
+> `docs/specs/features/ui-3-vida-editor/{e6-markdown-serializers,e7-pdf-serializer}.md`.
 
 ## What E6 is
 The **custom TipTap-JSON ↔ Markdown serializer** ADR-001 §8 mandates ("Custom serializer … round-trip lossless") —
@@ -65,8 +65,58 @@ warn) and never throws; `toMarkdown` on an unknown node → best-effort inline t
 is the lossy channel on parse; `toMarkdown` returns a bare `string` (no emit-side warnings channel). `[FACT:
 from-markdown.ts try/catch + warnings; serializers.test.ts degradation suite]`
 
-## Verify
+## Verify (E6)
 `pnpm --filter @vida/editor test` (`serializers.test.ts` — 34 tests: 24 JSON→md→JSON round-trip fixtures covering all 11
 standard blocks + every registered mark + hardBreak + the nested-emphasis / escaped-metacharacter / HR-collision /
 image-bracket / href-paren / code-fence / comment-entity stress cases, plus the 3 handling modes, frontmatter, and
 degradation). Pure — no editor/DOM. `[FACT: serializers.test.ts]`
+
+---
+
+## What E7 is
+The **PDF serializer** ADR-001:101 mandates (`@react-pdf/renderer`, **web/desktop**; mobile=`expo-print` is OUT of UI-3
+scope). **Emit-only — no round-trip** (BR-5 is E6's). Two functions in `packages/editor/src/serializers/to-pdf.tsx`:
+- `toPdf(doc: EditorDocument, options: PdfSerializeOptions): Promise<Blob>` — the only async/IO seam (`pdf(tree).toBlob()`).
+- `documentToPdfTree(doc, options): ReactElement<DocumentProps>` — the **pure/deterministic** tree builder (exhaustively
+  unit-testable on `element.type`, no bytes). Split for testability (the E6 `to`/`from` purity precedent).
+The signature is async+binary because `@react-pdf/renderer` lays out with Yoga and renders a byte STREAM — not a choice.
+`[FACT: to-pdf.tsx; @react-pdf/renderer@4.6.1 pdf().toBlob(); ADR-001:101]`
+
+## Canonical block → react-pdf primitive mapping (E7)
+| node | primitive | notes |
+|------|-----------|-------|
+| paragraph | `<Text style=block>` | inline runs nested inside |
+| heading | `<Text>` + `fontSize:HEADING_SIZE[level]` | level clamped 1–6 (`clampLevel`) |
+| bulletList / listItem | `<View>` rows; each `<View row>` = `•` marker `<Text>` + `<View>` content | nested list recurses via `renderChildren` |
+| orderedList | as bullet; marker `${start+i}.` | `start` `Number.isFinite`-guarded (post-impl M2 — no `NaN.`) |
+| taskList / taskItem | as bullet; marker `☑`/`☐` per `checked` | |
+| blockquote | `<View>` left-border + recursed block children | |
+| codeBlock | `<View>` Courier bg; body split on `\n` → **one `<Text>` per line** | deterministic verbatim (post-impl) |
+| horizontalRule | `<View>` ruled top-border | |
+| image | `<Image src>` | **empty src skipped** (BR-E7-9 tree-level); a present-but-corrupt src throws at react-pdf RENDER — the caller's contract (valid `note_attachments` srcs, BR-E2-5) |
+| table | `<View>` grid; rows `<View row>`, cells bordered `<View>`; header row bold | **a non-paragraph cell child recurses via `renderBlock`** (post-impl M1 — was dropped) |
+| callout | `<View>` variant-tinted box + recursed block children | accent/tint per `{info,success,danger}` |
+| hardBreak | literal `{"\n"}` in the current `<Text>` | |
+- **Marks compose as MERGED style objects on one `<Text>`** (NOT E6's delimiter nesting): `bold`→`fontWeight`,
+  `italic`→`fontStyle`, `strike`+`underline`→combined `textDecoration` (`'underline line-through'`), `code`→`fontFamily:
+  Courier`+bg. The ONE **element** mark is `link` → the OUTERMOST `<Link src={href}>` wrapping the styled `<Text>`
+  (`href` only). `[FACT: to-pdf.tsx inlineStyleFor/renderTextNode; @react-pdf/stylesheet TextDecoration union]`
+
+## Integration blocks + frontmatter (E7)
+- `PdfSerializeOptions.integration_block_handling`: `'skip'` omits; `'placeholder'`/`'comment'` (≡ in PDF — no invisible
+  comment layer) render the **re-implemented placeholder card** (`<View>`/`<Text>` — label from `INTEGRATION_BLOCK_COMMANDS`,
+  NOT an import of the Tamagui `IntegrationBlockPlaceholder`) + "Available when its module ships". No config encoded
+  (emit-only). `[FACT: to-pdf.tsx renderIntegration]`
+- `options.frontmatter` (present + NON-empty) → a page-1 header block (title + `key: value` meta lines). `[FACT: renderHeader]`
+
+## Colors (E7) — literals quarantined to `pdf-theme.ts` (BR-E7-8a)
+`@react-pdf/renderer` has NO CSS runtime (can't read Tamagui vars), so styles must be literal. All hex lives ONLY in
+`serializers/pdf-theme.ts` (print-neutral, provisional — brand palette/fonts deferred); `to-pdf.tsx` has zero hex
+(grep-gated). Built-in standard fonts (Helvetica/Courier — auto-resolve Bold variants, no `Font.register`). `[FACT:
+pdf-theme.ts; to-pdf.tsx hex-clean grep]`
+
+## Verify (E7)
+`pnpm --filter @vida/editor test` (`to-pdf.test.tsx` — 33 tests: schema-parity over all 11 `STANDARD_BLOCK_TYPE`, every
+mark + hardBreak, integration modes, frontmatter, degradation, the M1/M2/m1/m2 regressions, + two `%PDF-` byte-render
+smokes [flat + nested]). Tree tests pure; smokes render headless (Node 22 global `Blob`). One new top-level dep
+`@react-pdf/renderer@4.6.1`. `[FACT: to-pdf.test.tsx]`

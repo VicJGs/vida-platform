@@ -2,7 +2,7 @@
 
 > Durable, living rules `@vida/editor` enforces as built (§XXIX). Promoted from the E1/E2 IMPLEMENTATION-PLANs;
 > refreshed per unit. Consumed by `/critique` + `/preflight`. Scope today: **E1 — editor core + E2 — standard blocks
-> + E3 — toolbar + E4 — slash menu + E5 — integration-block registry + E6 — markdown serializers**.
+> + E3 — toolbar + E4 — slash menu + E5 — integration-block registry + E6 — markdown serializers + E7 — PDF serializer**.
 
 ## Package boundary
 - **BR-1 / BR-E1-2 · Presentational, persists nothing.** `@vida/editor` emits `EditorDocument` JSON via `onChange` and
@@ -184,6 +184,35 @@
   malformed integration config → warn) and never throws; `toMarkdown` on an unknown node → best-effort text. Warnings
   surface on `MarkdownParseResult.warnings` (parse only — `toMarkdown` returns a bare `string`). `[FACT: from-markdown.ts
   try/catch + object-guard; serializers.test.ts degradation suite]`
+
+## PDF serializer (E7) — the @react-pdf/renderer emit-only serializer (ADR-001:101)
+- **BR-E7-1 · Mechanism = `@react-pdf/renderer`, web/desktop; mobile OUT of scope.** ADR-001:101 fixes it (mobile=`expo-print`,
+  a separate WebView-hybrid path). The ONE new top-level runtime dep (`@react-pdf/renderer@^4.6.1`; its heavy transitive
+  tree is inherent). No new ADR. `[FACT: package.json; ADR-001:101; _index.md:119-120]`
+- **BR-E7-2 · Emit-only; NO round-trip.** PDF is terminal — no `fromPdf`. Correctness = every `STANDARD_BLOCK_TYPE` block
+  + every registered mark + `hardBreak` renders faithfully, exhaustively; BR-5's identity invariant is E6's. `[FACT: to-pdf.tsx]`
+- **BR-E7-3 · `toPdf(doc, options): Promise<Blob>` — async+binary is engine-intrinsic** (Yoga layout → byte stream), not a
+  divergence from E6's sync string. `[FACT: to-pdf.tsx toPdf; @react-pdf/renderer pdf().toBlob()]`
+- **BR-E7-4 · Pure tree builder + thin async render.** `documentToPdfTree` (pure/deterministic — no IO/`Date.now`, the
+  exhaustively-testable core, asserted on the imported react-pdf component identity `el.type===Text` since the primitives
+  are CLASSES) + `toPdf = pdf(tree).toBlob()`. Total tree-walk → `Document/Page/Text/View/Image/Link`. **Marks merge as
+  ONE `<Text>` style object** (bold/italic/strike+underline combined `textDecoration`/code Courier); `link` = the outermost
+  `<Link src={href}>` element. `[FACT: to-pdf.tsx documentToPdfTree/inlineStyleFor/renderTextNode]`
+- **BR-E7-5 · Integration blocks per `integration_block_handling`** — `skip` omits; `placeholder`/`comment` (≡ in PDF)
+  render the **re-implemented** placeholder card (`<View>`/`<Text>`, label from `INTEGRATION_BLOCK_COMMANDS` — NOT an import
+  of the Tamagui `IntegrationBlockPlaceholder`). No config encoded (emit-only). `[FACT: to-pdf.tsx renderIntegration]`
+- **BR-E7-6 · Frontmatter (non-empty) → a page-1 header block** (empty `{}` gated out — no stray divider, post-impl m1).
+  `[FACT: to-pdf.tsx renderHeader + non-empty gate]`
+- **BR-E7-7 · A table cell's non-paragraph block recurses via `renderBlock`** (a list/heading/quote in a `block+` cell keeps
+  its text — the E6 `to-markdown.ts:175` precedent; forcing it through the inline-only path DROPPED it — post-impl M1).
+  `orderedList.start` is `Number.isFinite`-guarded (no `NaN.` markers — post-impl M2). `[FACT: to-pdf.tsx renderTable/renderBlock orderedList]`
+- **BR-E7-8 · Colors literal, quarantined to `pdf-theme.ts`** (react-pdf has no CSS runtime — can't read Tamagui vars);
+  `to-pdf.tsx` hex-clean (grep-gated). Built-in Helvetica/Courier (auto-resolve Bold; no `Font.register`); brand
+  fonts/palette deferred. `[FACT: pdf-theme.ts; to-pdf.tsx hex grep]`
+- **BR-E7-9 · Degrade-never-throw is TREE-level.** Empty image src skipped, unknown node → best-effort `<Text>`; a
+  present-but-CORRUPT image src throws at react-pdf RENDER (pdfkit) — the caller's contract (app resolves valid
+  `note_attachments` srcs, BR-E2-5). Boundary clean (no `@vida/core`/app). Additive `PdfSerializeOptions` in `@vida/types`.
+  `[FACT: to-pdf.tsx image empty-src skip + default text; boundary grep; @vida/types editor.ts PdfSerializeOptions]`
 
 ## Contract integrity
 - **Runtime document assertion (not a cast).** `onChange` and `getDocument` return values pass through
