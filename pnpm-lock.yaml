@@ -46,6 +46,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@tamagui/core':
+        specifier: 2.6.2
+        version: 2.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-form':
         specifier: ^1.33.2
         version: 1.33.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -61,6 +64,9 @@ importers:
       '@vida/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@vida/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(@cloudflare/workers-types@4.20260316.1)(@types/better-sqlite3@7.6.13)(better-sqlite3@12.8.0)

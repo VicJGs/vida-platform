@@ -51,7 +51,7 @@ Integration seams (all UNBUILT — design against, do NOT code against — see b
 - [x] Goal stated in one sentence before starting
 - [x] Mode chosen: BUILD (document-first)
 - [x] Work complete — 9 code files (6 src + store + 5 tests) + design doc + layer doc; typecheck 0, lint 0-err, 44/44 tests; engineering gate PASS
-- [ ] /session-end run at close — decisions and outcomes logged
+- [x] /session-end run at close — decisions and outcomes logged (shipped: PR #9 merged `299f452`, close-out `2aac5de`, LIF-91 Done; index/archive backfilled 2026-08-16)
 - [x] Currency Rule (§XXIX) — durable home `docs/core/architecture/command-bar-and-search.md` written + README indexed (no docs/modules ctx)
 
 ## Build Steps

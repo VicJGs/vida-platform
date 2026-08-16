@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vida Platform</title>
+    <!-- UI-4 · S1: process shim. @vida/ui runs Tamagui UNTAMED (no @tamagui/vite-plugin, the DS-4 decision), and
+         @tamagui/core reads process.env.TAMAGUI_* at runtime; `process` is undefined in the browser → a
+         ReferenceError crashes React to a blank page (jsdom defines process, so only a real browser surfaces it).
+         A runtime shim covers EVERY process.env.* read across the library. Mirrors the Storybook preview-head.html
+         fix (docs/specs/fixes/ui-1-storybook-slow-load). [[measure-browser-bugs-dont-hypothesize]] -->
+    <script>
+      window.process = window.process || { env: { NODE_ENV: 'development' } }
+    </script>
   </head>
   <body>
     <div id="root"></div>

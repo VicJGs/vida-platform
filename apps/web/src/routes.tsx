@@ -17,21 +17,20 @@ import {
   Link,
   Outlet,
 } from '@tanstack/react-router'
+import { AppShell } from './shell/app-shell'
 
 const rootRoute = createRootRoute({
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 })
 
-// Minimal shell only — the real app layout/IA is UX-3 / UI-4, out of AR-4 scope.
+// UI-4 · S1: the app-shell chrome wraps the routed content. AppShell mounts HERE (inside the router) — not above
+// <RouterProvider> — because it hosts the <Outlet/>, which is only legal inside a route component.
 function RootComponent() {
   return (
-    <>
-      <nav>
-        <Link to="/">Home</Link> <Link to="/notes">Notes</Link>
-      </nav>
+    <AppShell>
       <Outlet />
-    </>
+    </AppShell>
   )
 }
 

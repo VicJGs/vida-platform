@@ -1,0 +1,9 @@
+/* UI-4 · S1 — minimal global reset so the app-shell fills the viewport cleanly. Without this the default body
+   margin (8px) offsets the shell and its themed background doesn't reach the viewport edges. The shell itself
+   (AppShell) owns min-height: 100vh; this just removes the UA body margin and gives the mount points full height. */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}

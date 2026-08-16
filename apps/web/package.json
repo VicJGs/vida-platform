@@ -13,11 +13,13 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@tamagui/core": "2.6.2",
     "@tanstack/react-form": "^1.33.2",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-router": "^1.170.18",
     "@vida/core": "workspace:*",
     "@vida/types": "workspace:*",
+    "@vida/ui": "workspace:*",
     "drizzle-orm": "^0.45.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

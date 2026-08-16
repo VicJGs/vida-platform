@@ -13,7 +13,7 @@ export { motion } from './themes/motion' // DS-3 motion tokens (typed data for D
 export { shadow } from './themes/shadow' // elevation box-shadow literals (typed data for injected component CSS; UI-1 Card)
 
 // DS-4 — Tamagui config + theme-switch mechanism (composes the generated outputs above).
-export { config, type VidaConfig } from './tamagui.config'
+export { config, media, type VidaConfig } from './tamagui.config'
 export { UIProvider, useVidaTheme, type ThemeName, type UIProviderProps } from './provider'
 
 // UI-1 — primitives (built against the DS-5 contracts).

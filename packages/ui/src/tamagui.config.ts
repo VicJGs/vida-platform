@@ -51,6 +51,19 @@ const lineScale: Record<string, number> = {
 const weightScale = { ...f.fontWeight, true: f.fontWeight.regular }
 const trackScale = { ...f.letterSpacing, true: f.letterSpacing.normal }
 
+// Responsive media — the D5 seam UX-3 reserved (shell-layout.md:149; `apps/web/src/shell/breakpoints.ts`
+// `TAMAGUI_MEDIA` is the mirror/parity-guard, this is the RUNTIME source of truth). A plain object literal — in
+// Tamagui v2 media is passed directly to `createTamagui`, NOT via a `createMedia()` call (that v1 helper is gone).
+// Mobile-first: `mobile` is the empty always-true base; the rest carry min-width thresholds (design.md §X:202-206).
+// `useMedia()` typing flows automatically from `config.media` via the tamagui.d.ts `TamaguiCustomConfig extends
+// VidaConfig` augmentation — no extra .d.ts edit. [UI-4 S1 / LIF-89]
+export const media = {
+  mobile: {},
+  tablet: { minWidth: 768 },
+  desktop: { minWidth: 1440 },
+  wide: { minWidth: 1920 },
+} as const
+
 const bodyFont = createFont({
   family: f.fontFamily.body,
   size: sizeScale,
@@ -105,6 +118,7 @@ export const config = createTamagui({
   },
   fonts: { body: bodyFont, display: displayFont },
   animations,
+  media,
   // Vite SPA (non-SSR). addThemeClassName default is already 'html' (theme class on <html> for CSS-var styling).
   settings: { disableSSR: true, addThemeClassName: 'html' },
 })
