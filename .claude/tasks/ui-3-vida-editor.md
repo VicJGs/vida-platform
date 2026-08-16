@@ -4,7 +4,7 @@
 # Spec: docs/specs/features/ui-3-vida-editor/_index.md  (to author — Step 3)
 # Created: 2026-08-11
 # Updated: 2026-08-15
-# Status: in-progress — E1–E6 merged (@vida/editor v0.6.0); E7 (PDF) BUILT on branch (v0.7.0, pending PR); E8 (DOCX) remains
+# Status: in-progress — E1–E7 merged (@vida/editor v0.7.0); E8 (DOCX) BUILT on branch (v0.8.0, pending PR) — the serializer suite is COMPLETE; then UI-4
 # Linear: LIF-88
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
@@ -281,3 +281,38 @@ contract, BR-E2-5). **GREEN:** editor **188/188** · root typecheck 11/11 · bui
 - Then **E8** DOCX (`docx` npm) → **UI-4** (#30, app shell). UX-6 (#26) stays gated behind the `-c` wave (needs UI-4).
 - Ground truth for E8: `docs/editor/serialization-spec.md` (E6+E7 filled it) + `docs/editor/current-*`. ⚠ CI red repo-wide
   (known pnpm action-setup infra; local green).
+
+## Session 9 (2026-08-16) — E8 IMPLEMENTED (full §XXVI double-gate + preflight + post-impl critique)
+E8 (DOCX serializer) on branch **`ui-3-e8-docx-serializer`** off clean main. `@vida/editor` **v0.7.0→v0.8.0** — **the
+serializer suite (md · PDF · DOCX) is COMPLETE.** The **`docx` object-model serializer** (ADR-001:102; `/dolanmiu/docx@9.7.1`,
+Node + browser): `serializers/to-docx.ts` — a **pure descriptor-AST builder** `documentToDocxBlocks(doc,options): DocxBlock[]`
+(total tree-walk over all 11 `STANDARD_BLOCK_TYPE` + every mark + hardBreak → plain descriptors) + a thin mechanical adapter
+(`blockToDocx`/`runsToChildren`/`buildNumbering`) + `buildDocxDocument(doc,options): Document` + async `toDocx(doc,options):
+Promise<Blob>` (`Packer.toBlob`) + `serializers/docx-theme.ts` (quarantined literals) + `to-docx.test.ts` (36) + additive
+`DocxSerializeOptions` in `@vida/types`. **Emit-only, no round-trip (BR-5 is E6's).**
+**The E8 testability twist (BR-E8-7):** `docx`'s `Paragraph`/`TextRun`/`Table` hold a **private `properties`** field — NOT
+introspectable like react-pdf's plain React elements (E7 asserted `element.type`), so the pure walk emits a plain
+**descriptor AST** (deep-equal testable) + a mechanical adapter, and the adapter is proven by unzipping `word/document.xml`
+(`jszip` test-only devDep). Marks merge as one `TextRun`; `link`=outermost `ExternalHyperlink`; **images DEGRADE to a
+`[image: alt]` text placeholder** (ImageRun needs binary data+dims — deferred to the attachment pipeline, BR-E2-5); ordered
+lists get UNIQUE numbering refs (no shared counter); nested blocks in `blockquote`/`callout`/`table`-cells recurse (BR-E8-nested).
+**4 gates (all independent critics):** gate-1 SHIP→Approval 1 (folded 3 MINORs: hardBreak-is-inline, BR-E8-nested regression,
+taskList glyph attribution) · **preflight PASSED** (installed `docx@9.7.1`+18; verified the object-model API vs the INSTALLED
+`.d.ts` — `Packer.toBlob/toBuffer/toString`, `TextRun.break`, `numbering.config`, `ImageRun.data` required binary; **resolved
+the descriptor-AST split is NEEDED** — private `properties`) · gate-2 SHIP→Approval 2 (confirmed `TableCell.children` is
+`(Paragraph|Table)[]` so a bare run is type-rejected → BR-E8-nested mandatory; folded MINOR-1 unique numbering ref + MINOR-2
+kitchen-sink pack smoke) · **post-impl REVISE→resolved** (independent reviewer drove real OOXML bytes; adapter verified
+correct, NO degrade-never-throw violation): **M1** a test-fixture typo silently dropped a table cell's text (the E7-M1 class,
+in the fixture) → fixed + a 2-cell ragged-row regression; **m1** the `PK` smoke tested zero CONTENT (adapter untested) →
+exposed `buildDocxDocument` + an unzipped `document.xml` assertion; **m2** empty-href `link` → plain run, locked.
+**Automated GREEN:** editor typecheck (tsc+storybook) · **224 tests** (was 188) · build + build-storybook ✓ · root typecheck
+11/11 · boundary clean · hex confined to `docx-theme.ts` · ONE new top-level runtime dep `docx@9.7.1`. No Visual Gate
+(serializer). §XXIX: `serialization-spec.md` + `current-{spec,business-rules}.md` E8 sections + `CLAUDE.md` + umbrella §5 E8 ✅.
+Spec `docs/specs/features/ui-3-vida-editor/e8-docx-serializer.md`.
+
+### NEXT — commit E8 + PR, then UI-4
+- **Commit** E8 on `ui-3-e8-docx-serializer` → **its own PR** (per-unit PR model). Includes the `@vida/types` additive
+  change + dist rebuild + the `jszip` test devDep.
+- Then **UI-4** (#30, app shell) — the next `-c` UI-wave head (← UX-5 renders+wires it). UX-6 (#26) stays gated behind `-c`
+  (needs UI-4). Also un-park: db-10 (M1.4), tsconfig-strict-index-access. ⚠ App note (UI-4): lazy-load the graph route.
+- **UI-3 is now functionally complete** (E1–E8 all built; E1–E7 merged, E8 pending PR). After E8 merges, UI-3/LIF-88 closes.

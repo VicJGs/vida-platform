@@ -1,8 +1,8 @@
 # @vida/editor — serialization spec (ground truth)
 
 > Durable description of the E6–E8 serializers as built (§XXIX Currency Rule). Refreshed per unit; never lags the code.
-> Scope today: **E6 — Markdown (to + from)** + **E7 — PDF (`to-pdf`)**. E8 (DOCX) extends this file. Forward specs:
-> `docs/specs/features/ui-3-vida-editor/{e6-markdown-serializers,e7-pdf-serializer}.md`.
+> Scope today: **E6 — Markdown (to + from)** + **E7 — PDF (`to-pdf`)** + **E8 — DOCX (`to-docx`)** — the serializer
+> suite is COMPLETE. Forward specs: `docs/specs/features/ui-3-vida-editor/{e6-markdown-serializers,e7-pdf-serializer,e8-docx-serializer}.md`.
 
 ## What E6 is
 The **custom TipTap-JSON ↔ Markdown serializer** ADR-001 §8 mandates ("Custom serializer … round-trip lossless") —
@@ -120,3 +120,56 @@ pdf-theme.ts; to-pdf.tsx hex-clean grep]`
 mark + hardBreak, integration modes, frontmatter, degradation, the M1/M2/m1/m2 regressions, + two `%PDF-` byte-render
 smokes [flat + nested]). Tree tests pure; smokes render headless (Node 22 global `Blob`). One new top-level dep
 `@react-pdf/renderer@4.6.1`. `[FACT: to-pdf.test.tsx]`
+
+---
+
+## What E8 is
+The **DOCX serializer** ADR-001:102 mandates (`docx` npm — `/dolanmiu/docx@9.7.1`, Node + browser). **Emit-only — no
+round-trip** (BR-5 is E6's). The last serializer — the suite is complete. Files in `packages/editor/src/serializers/`:
+- `toDocx(doc: EditorDocument, options: DocxSerializeOptions): Promise<Blob>` — the async/IO seam (`Packer.toBlob`).
+- `buildDocxDocument(doc, options): Document` — the sync `docx` model assembler (descriptors → adapter → `Document`);
+  exported for OOXML tests (`Packer.toBuffer` → unzip `word/document.xml`).
+- `documentToDocxBlocks(doc, options): DocxBlock[]` — the **PURE/deterministic** descriptor-AST builder (the exhaustive
+  unit-test surface). `docx`'s core primitives (`Paragraph`/`TextRun`/`Table`) hold a **private `properties`** field —
+  NOT introspectable like react-pdf's plain elements — so the pure walk emits a plain descriptor AST (deep-equal
+  testable), a thin mechanical adapter maps each descriptor 1:1 to a `docx` instance, and the adapter is proven by an
+  unzipped-`document.xml` assertion (the E8 testability split). `[FACT: to-docx.ts; docx@9.7.1 index.d.ts:2508 private properties]`
+
+## Canonical block → `docx` primitive mapping (E8)
+| node | `docx` primitive |
+|------|------------------|
+| paragraph | `Paragraph({children: runs})` |
+| heading | `Paragraph({heading: HeadingLevel.HEADING_<level>, children})` — level clamped 1–6 |
+| bulletList / listItem | `Paragraph({bullet:{level}, children})`; nested = deeper `level` |
+| orderedList | `Paragraph({numbering:{reference, level}})`; **one UNIQUE `reference` per orderedList node** (`ol-<n>`) in `Document.numbering.config` (a shared ref = a shared counter); `attrs.start` → that config level's `start` |
+| taskList / taskItem | `Paragraph` with a `☑ `/`☐ ` glyph run prefix per `checked` |
+| blockquote | child blocks recursed with a left border + indent deco; a non-paragraph child keeps its text (BR-E8-nested) |
+| codeBlock | one shaded monospace `Paragraph` per `\n`-split line (verbatim — the E7 per-line rule) |
+| horizontalRule | `Paragraph({border:{bottom}})` (Word's HR idiom) |
+| image | **degraded** → `Paragraph` of text `[image: <alt>]` (NEVER an `ImageRun` — needs binary data + dims a pure IO-free builder can't get; deferred to the attachment pipeline, BR-E2-5) |
+| table | `Table`/`TableRow`/`TableCell`; header row bold; a non-paragraph cell block recursed (BR-E8-nested — cells are `(Paragraph\|Table)[]`, never a bare run) |
+| callout | child blocks recursed with a variant tint (`shading.fill`) + accent left border |
+| hardBreak | a `TextRun({break:1})` in the inline/mark pass (NOT a block handler) |
+- **Marks merge as ONE `TextRun` options object** (`bold`/`italics`/`strike`/`underline:{}`/`code`→`font:mono`+shading);
+  the ONE **element** mark `link` → an outermost `ExternalHyperlink({link:href, children:[styled run]})` (`href` only; an
+  empty/absent href degrades to a plain run — no dangling relationship). `[FACT: to-docx.ts inlineRuns/runsToChildren]`
+
+## Integration blocks + frontmatter (E8)
+- `DocxSerializeOptions.integration_block_handling`: `'skip'` omits; `'placeholder'`/`'comment'` (≡ in DOCX) render a
+  re-implemented placeholder — a bold label `Paragraph` (from `INTEGRATION_BLOCK_COMMANDS`) + a muted "Available when its
+  module ships" (NOT an import of the Tamagui `IntegrationBlockPlaceholder`). No config encoded (emit-only).
+- `options.frontmatter` (present + NON-empty) → leading paragraphs (bold title + `key: value` meta). `[FACT: to-docx.ts headerBlocks]`
+
+## Colors (E8) — literals quarantined to `docx-theme.ts` (BR-E8-8a)
+`docx` styles via literal hex (6-digit, no `#` — its wire format) / shading / border options; no CSS runtime (the react-pdf
+parallel). All literals live ONLY in `serializers/docx-theme.ts`; `to-docx.ts` is hex-clean (grep-gated). Built-in Word
+fonts (default body / `Courier New` for code); brand fonts/palette deferred. `[FACT: docx-theme.ts; to-docx.ts hex-clean grep]`
+
+## Verify (E8)
+`pnpm --filter @vida/editor test` (`to-docx.test.ts` — 36 tests: schema-parity over all 11 `STANDARD_BLOCK_TYPE`, every
+mark + hardBreak, heading clamp, list nesting + UNIQUE ordered refs + `start`, taskList glyphs, the BR-E8-nested
+container recursions, table header-bold, callout normalization, image degradation, integration modes, frontmatter,
+degradation, determinism, a `PK` zip-magic pack smoke, **+ an unzipped `document.xml` assertion proving the ADAPTER**
+[bold run, nested-cell list, checkbox, `[image: cat]` with no `<pic:pic>`, `<w:hyperlink>`, `<w:numId>`, placeholder] +
+a 2-cell ragged-row regression). Descriptor tests pure; OOXML tests pack headless. ONE new top-level runtime dep
+`docx@9.7.1` (+ `jszip` **devDep**, test-only unzip). `[FACT: to-docx.test.ts]`

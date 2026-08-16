@@ -1,4 +1,68 @@
 ---
+Date: 2026-08-16 — UI-3 / E8 DOCX serializer IMPLEMENTED (full §XXVI double-gate + preflight + post-impl critique); serializer suite COMPLETE
+Task: ui-3-vida-editor (LIF-88) · Profile: New Feature / Default · branch `ui-3-e8-docx-serializer` off clean main (pending PR)
+Goal: build E8 (the last serializer — DOCX via `docx` npm) under the full §XXVI gate; refresh §XXIX currency; ready E8 for its own PR.
+
+Completed:
+  - **E8 IMPLEMENTED — `@vida/editor` v0.7.0→v0.8.0** (branch `ui-3-e8-docx-serializer`, pending PR). The **`docx`
+    object-model serializer** (ADR-001:102 — `/dolanmiu/docx@9.7.1`, Node + browser). **Emit-only, no round-trip** (BR-5 is
+    E6's). **The serializer suite (md · PDF · DOCX) is now COMPLETE — UI-3 is functionally complete (E1–E8 built).**
+    `serializers/to-docx.ts`: a **pure descriptor-AST builder** `documentToDocxBlocks(doc,options): DocxBlock[]` (total
+    tree-walk over all 11 `STANDARD_BLOCK_TYPE` + every registered mark + `hardBreak` → plain descriptors) + a thin
+    mechanical adapter (`blockToDocx`/`runsToChildren`/`buildNumbering`) + `buildDocxDocument(doc,options): Document` +
+    async `toDocx(doc,options): Promise<Blob>` (`Packer.toBlob`) + `serializers/docx-theme.ts` (quarantined literals) +
+    `to-docx.test.ts` (36) + additive `DocxSerializeOptions` in `@vida/types` (dist rebuilt).
+  - **The E8 testability twist (BR-E8-7):** `docx`'s `Paragraph`/`TextRun`/`Table` hold a **private `properties`** field —
+    NOT introspectable like react-pdf's plain React elements (E7 asserted `element.type`). So the pure walk emits a plain
+    **descriptor AST** (deep-equal testable) + a mechanical 1:1 adapter, and the adapter is proven by unzipping
+    `word/document.xml` (`jszip`, a TEST-only devDep). This was resolved at preflight (against the installed `.d.ts`) and
+    validated at gate-2 + post-impl.
+  - **Mapping highlights:** marks merge as one `TextRun` options object; `link`=outermost `ExternalHyperlink` (empty href →
+    plain run); **images DEGRADE to a `[image: alt]` text placeholder** (docx `ImageRun` needs binary data + pixel dims a
+    pure IO-free builder can't get — deferred to the encrypted attachment pipeline, BR-E2-5; verified no `<pic:pic>` in the
+    XML); ordered lists get a **UNIQUE `numbering.reference`** each (a shared ref = a shared counter); nested blocks in
+    `blockquote`/`callout`/`table`-cells **recurse** through the block handlers (BR-E8-nested — docx `TableCell.children` is
+    `(Paragraph|Table)[]`, a bare run is type-rejected; the E7 M1 fix carried forward). Colors literal, quarantined to
+    `docx-theme.ts` (6-digit hex, no `#` — docx's wire format); `to-docx.ts` hex-clean.
+  - **4 gates (all independent critics):**
+    - **gate-1 /critique SHIP → Approval 1** — architecture/scope/cites SOUND; image-degradation + descriptor-AST both
+      judged correctly reasoned. Folded 3 MINORs: hardBreak-is-inline (not a block handler), BR-E8-nested (the E7 M1
+      regression carried forward), taskList glyph attribution.
+    - **/preflight PASSED** — installed `docx@9.7.1` (+18 transitive); verified the object-model API vs the INSTALLED
+      `index.d.ts` (`Packer.toBlob/toBuffer/toString`, `TextRun.break`, `numbering.config`+`LevelFormat`, `HeadingLevel`,
+      `shading.fill`+`BorderStyle`, `ImageRun.data` REQUIRED binary). **Key resolution: the descriptor-AST split is NEEDED**
+      (`Paragraph`/`TextRun`/`Table` hold `private properties`).
+    - **gate-2 /critique SHIP → Approval 2** — confirmed all gate-1 folds + preflight resolutions landed; the load-bearing
+      trap: `TableCell.children` is `(Paragraph|Table)[]` → a bare run is TYPE-rejected → BR-E8-nested's wrap-in-a-Paragraph
+      is mandatory. Folded MINOR-1 (unique numbering ref) + MINOR-2 (kitchen-sink pack smoke over the schema-parity fixture).
+    - **post-impl /critique REVISE → resolved** — an independent reviewer drove real OOXML bytes (unzipped document.xml/
+      numbering.xml/rels across ~20 fixtures): the adapter is CORRECT, NO degrade-never-throw violation, every nested
+      numbering ref resolves. No blocker. Fixed **M1** (a kitchen-sink test-fixture typo nested the 2nd table cell inside the
+      1st → `'E'` silently dropped + ragged table; the `PK` smoke waved it through since Packer packs malformed docs) → fixed
+      the fixture + a 2-cell ragged-row regression; **m1** (the `PK` smoke asserted zero CONTENT — the whole adapter was
+      untested) → exposed `buildDocxDocument` + added an unzipped `document.xml` assertion (hyperlink, numId, `[image: cat]`
+      with no `<pic:pic>`, nested-cell list, placeholder) via `jszip`; **m2** empty-href `link` → plain run, locked. 33→36 tests.
+  - **Automated GREEN:** editor typecheck (tsc + storybook) · **224 tests** (was 188) · build + build-storybook ✓ · root
+    typecheck 11/11 · boundary clean (no `@vida/core`/app import) · hex confined to `docx-theme.ts` · ONE new top-level
+    runtime dep `docx@9.7.1` (+ `jszip` test-only devDep). No Visual Gate (serializer, no `@vida/ui` surface).
+  - **§XXIX Currency:** `docs/editor/serialization-spec.md` (E8 section) + `docs/editor/current-{spec,business-rules}.md`
+    (E8 sections) + `packages/editor/src/CLAUDE.md` (E8 shipped) + umbrella `_index.md` §5 E8 → ✅. Spec
+    `docs/specs/features/ui-3-vida-editor/e8-docx-serializer.md` (status → implemented; full change-log).
+
+Decisions:
+  - Descriptor-AST split (not E7's direct-instance assertions) — FORCED by docx's private `properties` (verified at preflight);
+    the adapter is covered by an unzipped `document.xml` assertion instead. `jszip` is a legitimate test-only devDep.
+  - Images degrade to a text placeholder in M1.0 — docx `ImageRun` needs binary data + pixel dims a pure IO-free builder
+    can't obtain; real embedding is deferred to the attachment pipeline (BR-E2-5). Simplest-correct for the stage.
+  - All engine-specific "decisions" were doc-fixed (ADR-001:102 + the E7 precedent) or resolved at preflight against the
+    installed `.d.ts` — no open fork surfaced to Victor (the E7 steer held).
+
+Next session — **commit E8 → its own PR (per-unit PR model), then UI-4 (#30, app shell)**: the next `-c` UI-wave head
+(← UX-5 renders+wires it); UX-6 (#26) stays gated behind `-c`. After E8 merges, UI-3/LIF-88 closes. Also un-park: db-10
+(M1.4), tsconfig-strict-index-access. ⚠ App note (UI-4): lazy-load the graph route (heavy WebGL deps). ⚠ CI red repo-wide
+(known pnpm action-setup infra; local green is the real gate — no branch protection).
+
+---
 Date: 2026-08-12 — UI-3 / E3 editor toolbar IMPLEMENTED + MERGED; PR reorg into per-unit PRs; CI diagnosed+filed
 Task: ui-3-vida-editor (LIF-88) · Profile: New Feature / Default · branch chain per-unit (main after merges)
 Goal: build E3 (toolbar) under the full §XXVI gate; reorganize UI-3 into per-unit branches+PRs (finished ones merged); session-log for E4.

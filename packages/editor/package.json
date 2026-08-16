@@ -1,6 +1,6 @@
 {
   "name": "@vida/editor",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -33,6 +33,7 @@
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.4.1",
     "jsdom": "^30.0.1",
+    "jszip": "^3.10.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "storybook": "^9",
@@ -52,7 +53,8 @@
     "@tiptap/starter-kit": "^3.30.0",
     "@tiptap/suggestion": "^3.30.0",
     "@vida/types": "workspace:*",
-    "@vida/ui": "workspace:*"
+    "@vida/ui": "workspace:*",
+    "docx": "^9.7.1"
   },
   "peerDependencies": {
     "react": ">=19"
