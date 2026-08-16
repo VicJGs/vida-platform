@@ -3,11 +3,11 @@
 > Durable, living description of what `@vida/editor` IS as built (§XXIX Currency Rule). Refreshed per unit; never lags
 > the code. Source of truth for `/critique` + `/preflight` + `victor:session-kickoff`. Every claim cites code.
 > Scope today: **E1 — editor core spine + E2 — standard blocks + E3 — toolbar + E4 — slash menu + E5 — integration-block
-> registry + E6 — markdown serializers + E7 — PDF serializer** (UI-3). Later unit (E8 DOCX) extends this file. Forward
-> specs: `docs/specs/features/ui-3-vida-editor/`. Serializer ground truth: `docs/editor/serialization-spec.md`.
+> registry + E6 — markdown serializers + E7 — PDF serializer + E8 — DOCX serializer** (UI-3 — the serializer suite is
+> COMPLETE). Forward specs: `docs/specs/features/ui-3-vida-editor/`. Serializer ground truth: `docs/editor/serialization-spec.md`.
 
 ## Package
-`@vida/editor` **v0.7.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
+`@vida/editor` **v0.8.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
 **v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` + **E2:**
 `@tiptap/extension-image` + `@tiptap/extension-table` + `@tiptap/extension-list` + **E4:** `@tiptap/suggestion`,
 family-pinned `^3.30.0`) + `@tamagui/core@2.6.2` + **E7:** `@react-pdf/renderer@^4.6.1` (the PDF engine; web/desktop) +
@@ -136,6 +136,24 @@ one atom `Node` per `INTEGRATION_BLOCK_TYPE` (11), built by `createIntegrationBl
   true; slash entries gain a `run` inserting the node. The definition source in M1.0 is the interim closed enum (the
   BlockType-union re-home UI-3 owns); MOD-notes #31 wires AR-7's real `CapabilityRegistry`.
 
+## DOCX serializer (E8) `[FACT: src/serializers/to-docx.ts; src/serializers/docx-theme.ts; index.ts]`
+The **DOCX serializer** (ADR-001:102 — `docx@9.7.1`, Node + browser). **Emit-only, no round-trip** (BR-5 is E6's) — the
+LAST serializer; the suite is complete. Barrel-exported `toDocx(doc, options: DocxSerializeOptions): Promise<Blob>` +
+the internal `buildDocxDocument(doc, options): Document` (for OOXML tests) + the pure `documentToDocxBlocks(doc,
+options): DocxBlock[]`. Full mapping: `docs/editor/serialization-spec.md`.
+- **Descriptor-AST testability split (BR-E8-7):** `docx`'s `Paragraph`/`TextRun`/`Table` hold a **private `properties`**
+  field (not introspectable like react-pdf's plain elements), so the pure walk emits a plain `DocxBlock` descriptor AST
+  (deep-equal testable), a mechanical adapter maps 1:1 to `docx` instances, proven by an unzipped `word/document.xml`
+  assertion. `toDocx` = `Packer.toBlob(buildDocxDocument(...))` (async+binary = OOXML zip, engine-intrinsic).
+- **Marks merge as one `TextRun` options object** (bold/italics/strike/underline/code→mono); `link` = an outermost
+  `ExternalHyperlink` (empty href → plain run). Ordered lists get one UNIQUE `numbering.reference` each (no shared
+  counter); nested blocks in `blockquote`/`callout`/`table`-cells recurse (BR-E8-nested). `integration_block_handling`:
+  `skip` omits, `placeholder`/`comment` render the re-implemented placeholder; `frontmatter` (non-empty) → leading header.
+- **Images DEGRADE to a text placeholder** `[image: <alt>]` (never an `ImageRun` — needs binary data+dims; deferred to
+  the attachment pipeline, BR-E2-5). **Colors literal, quarantined to `docx-theme.ts`** (no CSS runtime); `to-docx.ts`
+  hex-clean; built-in Word fonts. Additive `DocxSerializeOptions` in `@vida/types`. Tests: `to-docx.test.ts` (36; `jszip`
+  test-only devDep for the OOXML unzip). No component surface → **no Visual Gate**.
+
 ## PDF serializer (E7) `[FACT: src/serializers/to-pdf.tsx; src/serializers/pdf-theme.ts; index.ts]`
 The **PDF serializer** (ADR-001:101 — `@react-pdf/renderer`, web/desktop; mobile=`expo-print` OUT of UI-3 scope).
 **Emit-only, no round-trip** (BR-5 is E6's). Barrel-exported `toPdf(doc, options: PdfSerializeOptions): Promise<Blob>` +
@@ -185,13 +203,15 @@ reads the registry set + integration `run`s) · **`slash-menu.tsx`** (E4 — the
 **`extensions/slash-command.ts`** (E4 — the Suggestion extension + `slashComboboxAttrs`/`slashActive`) · `index.ts`
 (barrel) · `env.d.ts` · `test-setup.ts` (jsdom shims) · `editor.test.tsx`/`commands.test.ts`/
 `extensions/standard-blocks.test.tsx`/`toolbar.test.tsx`/`internal/toolbar-state.test.ts`/`slash-commands.test.ts`/
-`slash-menu.test.tsx`/`extensions/slash-command.test.ts`/`extensions/integration-blocks.test.tsx`/**`serializers/serializers.test.ts`**/**`serializers/to-pdf.test.tsx`** (**188 tests**) ·
+`slash-menu.test.tsx`/`extensions/slash-command.test.ts`/`extensions/integration-blocks.test.tsx`/**`serializers/serializers.test.ts`**/**`serializers/to-pdf.test.tsx`**/**`serializers/to-docx.test.ts`** (**224 tests**) ·
 `editor.stories.tsx` (Visual-Gate surface incl. "Standard blocks" · "Toolbar" · "Slash menu (popup)" · "Slash menu (live)" ·
 **"Integration blocks (placeholders)"**) · `CLAUDE.md`.
 **E6 serializers** — `serializers/to-markdown.ts` (canonical emitter) · `serializers/from-markdown.ts` (closed-grammar
 inverse parser) · `serializers/serializers.test.ts` (34 tests). **E7 serializer** — `serializers/to-pdf.tsx`
 (`documentToPdfTree` + `toPdf`) · `serializers/pdf-theme.ts` (print literals + StyleSheet) · `serializers/to-pdf.test.tsx`
-(33 tests). **Deferred:** `serializers/to-docx.ts` (E8). **Retired (E5):** the 9 stale per-type integration stub files (`tag-extension.ts` kept).
+(33 tests). **E8 serializer** — `serializers/to-docx.ts` (`documentToDocxBlocks` descriptor builder + `buildDocxDocument`
+adapter + `toDocx`) · `serializers/docx-theme.ts` (quarantined literals) · `serializers/to-docx.test.ts` (36 tests).
+**The serializer suite is COMPLETE (md · PDF · DOCX).** **Retired (E5):** the 9 stale per-type integration stub files (`tag-extension.ts` kept).
 Yjs = a deferred seam, no dep (BR-2/M4).
 
 ## Verify

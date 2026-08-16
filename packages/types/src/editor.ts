@@ -231,3 +231,21 @@ export interface PdfSerializeOptions {
    */
   frontmatter?: Record<string, unknown>
 }
+
+// ---------------------------------------------------------------------------
+// DOCX serialization (E8 · UI-3)
+// ---------------------------------------------------------------------------
+
+export interface DocxSerializeOptions {
+  /**
+   * How integration blocks render in the DOCX. Reuses the Markdown/PDF handling literal (no new enum): a DOCX has no
+   * invisible comment layer that survives here, so `'comment'` ≡ `'placeholder'` (both render the E5 placeholder card);
+   * `'skip'` omits the block. Emit-only — no config is encoded (a DOCX is never re-imported). Additive (E8 · UI-3).
+   */
+  integration_block_handling: 'comment' | 'skip' | 'placeholder'
+  /**
+   * Emit-side header values (title/date/tags/…) rendered as a leading header block when present. Symmetric with
+   * `Pdf`/`MarkdownSerializeOptions.frontmatter` — the caller supplies the keys. Additive/optional.
+   */
+  frontmatter?: Record<string, unknown>
+}

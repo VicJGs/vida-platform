@@ -15,6 +15,9 @@ export { fromMarkdown } from './serializers/from-markdown'
 // E7 — PDF serializer (@react-pdf/renderer, web/desktop; ADR-001:101). Emit-only, no round-trip.
 export { toPdf } from './serializers/to-pdf'
 
+// E8 — DOCX serializer (`docx`; ADR-001:102). Emit-only, no round-trip. The last serializer.
+export { toDocx } from './serializers/to-docx'
+
 // Re-export the shared editor document contract (owned by @vida/types; never redefined — BR-7).
 export type {
   EditorDocument,
@@ -24,4 +27,5 @@ export type {
   MarkdownSerializeOptions,
   MarkdownParseResult,
   PdfSerializeOptions,
+  DocxSerializeOptions,
 } from '@vida/types'

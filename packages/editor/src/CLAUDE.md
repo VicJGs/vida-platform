@@ -5,6 +5,35 @@ Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-st
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
+## Shipped (E8 — DOCX serializer)
+The **DOCX serializer** (ADR-001:102 — `docx@9.7.1`, Node + browser). **Emit-only, no round-trip.** The LAST serializer —
+the suite (md · PDF · DOCX) is COMPLETE. Durable: `docs/editor/serialization-spec.md`. **v0.8.0.** ONE new top-level
+runtime dep `docx` (+ `jszip` **test-only devDep** for the OOXML unzip assertions).
+- `serializers/to-docx.ts` — a **pure descriptor-AST builder** `documentToDocxBlocks(doc, options): DocxBlock[]` (the
+  exhaustive unit-test surface) + a thin mechanical **adapter** (`blockToDocx`/`runsToChildren`/`buildNumbering`) + the
+  internal `buildDocxDocument(doc, options): Document` (exported for OOXML tests) + `toDocx(doc, options): Promise<Blob>`
+  (`Packer.toBlob`, the only IO seam; async+binary = an OOXML zip, engine-intrinsic). **Why a descriptor AST (not E7's
+  direct-instance assertions):** `docx`'s `Paragraph`/`TextRun`/`Table` hold a **private `properties`** field — NOT
+  introspectable like react-pdf's plain React elements — so the pure walk emits plain descriptors (deep-equal testable)
+  and the adapter is proven by unzipping `word/document.xml`.
+- **Marks merge as ONE `TextRun` options object** (bold/italics/strike/underline/code→`font:Courier New`+shading); the ONE
+  element mark `link` → an outermost `ExternalHyperlink({link:href})` (empty/absent href → a plain run, no dangling rel).
+  Ordered lists each get a **UNIQUE `numbering.reference`** (`ol-<n>` in `Document.numbering.config`; a shared ref = a
+  shared counter); `orderedList.start` → that config level's `start`. **Nested blocks in `blockquote`/`callout`/`table`
+  cells recurse** through the block handlers so their text survives (BR-E8-nested — docx `TableCell.children` is
+  `(Paragraph|Table)[]`, a bare run is type-rejected; the E7 M1 fix carried forward).
+- **Images DEGRADE to a text placeholder** `[image: <alt>]` — NEVER an `ImageRun` (needs binary data + pixel dimensions a
+  pure IO-free builder can't obtain; real embedding deferred to the encrypted attachment pipeline, BR-E2-5). Integration
+  blocks → `skip` / a re-implemented label+hint placeholder; `frontmatter` (non-empty) → leading header paragraphs.
+- `serializers/docx-theme.ts` — **THE ONE place raw literals live in the E8 serializer** (BR-E8-8a): `docx` has no CSS
+  runtime, colors are 6-digit hex WITHOUT `#` (its wire format), quarantined here; `to-docx.ts` is hex-clean (grep-gated).
+  Built-in Word fonts; brand palette/fonts deferred. Tests: `serializers/to-docx.test.ts` (**36** — schema-parity all 11 +
+  marks + hardBreak + heading clamp + list nesting/unique-refs/start + task glyphs + BR-E8-nested recursions + table
+  header-bold + callout normalize + image degradation + integration modes + frontmatter + degradation + determinism + a
+  `PK` pack smoke + an **unzipped `document.xml` adapter assertion** [`<w:hyperlink>`/`<w:numId>`/`[image: cat]` with no
+  `<pic:pic>`/nested-cell list/placeholder] + a 2-cell ragged-row regression). No component surface → **no Visual Gate**.
+  Boundary unchanged (no `@vida/core`). **224 total.** Spec `docs/specs/features/ui-3-vida-editor/e8-docx-serializer.md`.
+
 ## Shipped (E7 — PDF serializer)
 The **PDF serializer** (ADR-001:101 — `@react-pdf/renderer@4.6.1`, **web/desktop**; mobile=`expo-print` OUT of UI-3 scope).
 **Emit-only, no round-trip.** Durable: `docs/editor/serialization-spec.md`. **v0.7.0.** The ONE new top-level runtime dep.
@@ -191,8 +220,8 @@ StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
   `INTEGRATION_BLOCK_COMMANDS` + re-exported `EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand` types.
 
 ## Deferred (later units)
-`serializers/to-docx.ts` (E8 · `docx`) — empty skeleton file exists (E6 markdown + E7 PDF serializers are SHIPPED — see
-their sections above). Integration-block
+The serializer suite (E6 md + E7 PDF + E8 DOCX) is COMPLETE — all SHIPPED, see their sections above. Remaining deferred:
+Integration-block
 **REAL bodies** (MOD-* phases replace each placeholder node-view) + wiring AR-7's `CapabilityRegistry` into the editor
 (MOD-notes #31). **Yjs/`y-prosemirror` = a deferred SEAM, no dep** (BR-2, M4/AR-9b): `pages.content` is a TipTap-JSON
 snapshot that renders locally without a Y.Doc; E1's shell keeps the content source swappable so M4 can invert authority

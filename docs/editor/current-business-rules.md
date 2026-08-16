@@ -2,7 +2,8 @@
 
 > Durable, living rules `@vida/editor` enforces as built (§XXIX). Promoted from the E1/E2 IMPLEMENTATION-PLANs;
 > refreshed per unit. Consumed by `/critique` + `/preflight`. Scope today: **E1 — editor core + E2 — standard blocks
-> + E3 — toolbar + E4 — slash menu + E5 — integration-block registry + E6 — markdown serializers + E7 — PDF serializer**.
+> + E3 — toolbar + E4 — slash menu + E5 — integration-block registry + E6 — markdown serializers + E7 — PDF serializer
+> + E8 — DOCX serializer** (the serializer suite is COMPLETE).
 
 ## Package boundary
 - **BR-1 / BR-E1-2 · Presentational, persists nothing.** `@vida/editor` emits `EditorDocument` JSON via `onChange` and
@@ -219,6 +220,40 @@
   `assertEditorDocument` — top-level `type==='doc'` + `content` an array of `{type:string}`, throws otherwise. Tiptap
   `getJSON()` returns `JSONContent`; a bare cast would hide a shape drift vs `@vida/types.EditorNode` reaching
   E6/persistence. `[FACT: editor.tsx assertEditorDocument, wired into onUpdate + getDocument; editor.test.tsx negative matrix]`
+
+## DOCX serializer (E8) — the `docx` emit-only serializer (ADR-001:102)
+- **BR-E8-1 · Mechanism = `docx` (npm), web + Node; no alternative.** ADR-001:102 fixes it (`/dolanmiu/docx@9.7.1`). ONE
+  new top-level runtime dep (+18 transitive, lighter than E7's react-pdf); no new ADR. `[FACT: package.json; ADR-001:102]`
+- **BR-E8-2 · Emit-only; NO round-trip.** DOCX is terminal — no `fromDocx`. Correctness = every `STANDARD_BLOCK_TYPE`
+  block + every registered mark + `hardBreak` renders faithfully, exhaustively; BR-5's identity invariant is E6's. `[FACT: to-docx.ts]`
+- **BR-E8-3 · `toDocx(doc, options): Promise<Blob>` — async+binary is engine-intrinsic** (`Packer` zips OOXML). `[FACT:
+  to-docx.ts toDocx; docx Packer.toBlob]`
+- **BR-E8-4 · Emitter = a total tree-walk over `EditorNode` → `docx` instances (implement the SCHEMA).** One handler per
+  `STANDARD_BLOCK_TYPE` block + one per registered mark + `hardBreak` (the mapping table is in `serialization-spec.md`).
+  **Marks merge as ONE `TextRun` options object**; `link` = an outermost `ExternalHyperlink` (`href` only; empty/absent
+  href → a plain run, no dangling relationship). `[FACT: to-docx.ts buildBlocks/inlineRuns/runsToChildren]`
+- **BR-E8-7 · Pure descriptor-AST builder + thin adapter + async pack (testability split).** `documentToDocxBlocks` is
+  pure/deterministic and returns a plain **descriptor AST** (`DocxBlock`/`DocxRun`) — `docx`'s `Paragraph`/`TextRun`/
+  `Table` hold a **private `properties`** field (unlike react-pdf's introspectable elements), so the descriptor AST is the
+  exhaustive unit-test surface; a mechanical adapter (`blockToDocx`) maps 1:1 to `docx` instances, proven by an unzipped
+  `word/document.xml` assertion; `toDocx` = `Packer.toBlob(buildDocxDocument(...))`. `[FACT: to-docx.ts; to-docx.test.ts]`
+- **BR-E8-nested · A non-paragraph block inside a container recurses through the block handlers (the E7 M1 regression).**
+  `blockquote`/`callout`/`table`-cell are `block+` — a list/heading/quote child recurses via the block handlers so its
+  text SURVIVES (docx `TableCell.children` is `(Paragraph|Table)[]` — a bare run is type-rejected; forcing an inline-only
+  path drops it — the E7 `to-pdf.tsx` M1). `[FACT: to-docx.ts buildTable/buildBlocks; to-docx.test.ts ragged-row + cell-list]`
+- **BR-E8-image · Images DEGRADE to a labeled text placeholder** (`[image: <alt>]`), NEVER an `ImageRun` — docx `ImageRun`
+  needs binary data + pixel dimensions a pure IO-free builder can't obtain; real embedding is deferred to the encrypted
+  attachment pipeline (BR-E2-5). Verified via `document.xml` (`[image: cat]` present, no `<pic:pic>`). `[FACT: to-docx.ts image case]`
+- **BR-E8-5/6 · Integration blocks per `integration_block_handling`** (`skip` omits; `placeholder`/`comment` render a
+  re-implemented label + hint placeholder, from `INTEGRATION_BLOCK_COMMANDS`); **frontmatter (non-empty) → leading header
+  paragraphs**. `[FACT: to-docx.ts buildBlocks integration branch, headerBlocks]`
+- **BR-E8-8/8a · Boundary + one dep + hex quarantine.** `to-docx.ts` imports only `@vida/types` + `docx` + `../commands`
+  + `./docx-theme`; no `@vida/core`/app import (grep-gated). All literal colors/shading/border live ONLY in
+  `docx-theme.ts` (6-digit hex, no `#` — docx's wire format); `to-docx.ts` is hex-clean. Ordered lists get one UNIQUE
+  `numbering.reference` per list (no shared counter). `jszip` is a TEST-only devDep (unzip). `[FACT: docx-theme.ts;
+  to-docx.ts grep; buildNumbering]`
+- **BR-E8-9 · Degrade, never throw.** An unknown node → a best-effort text paragraph; `image` → the text placeholder;
+  marks with no docx analog dropped. `toDocx` returns a `Blob` (no warnings channel). `[FACT: to-docx.ts default branch; to-docx.test.ts]`
 
 ## a11y (§XIV)
 - The contenteditable host carries `role=textbox` + `aria-multiline` + an accessible name (`aria-label`/
