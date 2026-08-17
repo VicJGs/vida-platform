@@ -3,7 +3,7 @@
 # Scenario: Default
 # Spec: docs/specs/features/ui-4-app-shell-components/_index.md
 # Created: 2026-08-16
-# Status: in-progress
+# Status: done
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
@@ -91,7 +91,15 @@ escalate. The build is fully doc-determined; the spec cites the sources, it does
   caught ⌘K-dead-on-Mac from farbled `navigator`); router injection into `CommandRunContext`; `search-unavailable`
   states. §XXVI double-gate (gate-1 REVISE 2 blockers+4 material · preflight PASSED 3 folds · gate-2 SHIP) + Visual Gate
   SHIP. Green: web typecheck · 139 tests · lint0 · build. packages/ui untouched.
-- [ ] S4 · Onboarding (4 first-run screens + App.tsx branch)
+- [x] **S4 · Onboarding** — SHIP (Visual Gate passed). `apps/web/src/onboarding/{onboarding.tsx,
+  use-first-run.ts, first-run-repo.ts}` (+3 test files) + `apps/web/src/App.tsx` first-run branch + new
+  `App.test.tsx`. `useFirstRun(dbReady)` 3-state boot resolution (no app-flash) · marker repo mirroring
+  `get/setSchemaVersion` (INSERT OR REPLACE) · 4 confirmation screens (m1 copy only, vault=confirmation/no-input,
+  focus-to-h1, no-Esc, DS tokens + reduced-motion) · write-then-flip completion (never strands). §XXVI double-gate
+  (gate-1 REVISE 2 blockers+4 material folded · preflight PASSED 3 folds · gate-2 caught 1 new Rules-of-Hooks gap) +
+  cleanup-per-test fix. Green: web typecheck · **161 tests** (+22) · lint0 · build. Renders OUTSIDE AppShell → zero
+  S1–S3 regression. Zero `packages/ui` edit. **Visual Gate SHIP** (4 screens both themes · heading focus clean · motion
+  + reduced-motion · vault confirmation no-input · completion→app-at-`/` + marker persists). **Next: S5 (integration).**
 - [ ] S5 · Integration (compose + `/graph` lazy-split + regression + Currency)
 
 ## Plan
