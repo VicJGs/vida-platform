@@ -1,0 +1,91 @@
+// @vitest-environment jsdom
+// UI-4 · S5 — the whole-shell INTEGRATION test. Unlike App.test.tsx (the S4 first-run branch) and
+// command-bar.test.tsx (the S3 overlay in isolation, which mocks `useShellNavigate`), this mounts the REAL <App/>
+// and drives the S1–S4 seams end-to-end through the actual router — proving they COMPOSE, not just that each works
+// alone. The one thing it does NOT mock is the router injection: ⌘K → run a nav command → the real route changes.
+// `./db/boot` + `./onboarding/first-run-repo` are stubbed so no worker loads and the returning-launch branch mounts
+// the shell (the App.test.tsx precedent). Covers the §3.1 verification matrix + the BR-7 `/graph` lazy route.
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+
+const h = vi.hoisted(() => ({ ensureDbReady: vi.fn(), read: vi.fn(), write: vi.fn() }))
+vi.mock('./db/boot', () => ({ ensureDbReady: h.ensureDbReady }))
+vi.mock('./onboarding/first-run-repo', () => ({
+  readFirstRunComplete: h.read,
+  writeFirstRunComplete: h.write,
+}))
+
+import { App } from './App'
+import { router } from './routes'
+import { useCommandBarUIStore } from './stores/command-bar-ui-store'
+import { useAppShellUIStore } from './stores/app-shell-ui-store'
+
+const shellNav = () => document.querySelector('nav[aria-label="Modules"]')
+// Open the command bar the way a user does — the document-level ⌘K keybind (use-command-keybind), NOT by poking the
+// store. This proves the S3 keybind seam is live inside the mounted shell.
+const pressCmdK = () => fireEvent.keyDown(document.body, { key: 'k', metaKey: true })
+
+beforeEach(async () => {
+  h.ensureDbReady.mockReset().mockResolvedValue(undefined)
+  h.read.mockReset().mockResolvedValue(true) // returning launch → straight to the app shell
+  h.write.mockReset()
+  // Reset the singleton router + command-bar store so each test starts from `/` with the bar closed (order-independent).
+  useCommandBarUIStore.setState({ isOpen: false, query: '', mode: 'command' })
+  useAppShellUIStore.setState({ isSidebarOpen: true, isMobileNavOpen: false })
+  await router.navigate({ to: '/' })
+})
+
+afterEach(() => {
+  cleanup()
+})
+
+describe('App shell — whole-shell integration (S5)', () => {
+  it('composes the shell around the index route on a returning launch (S1 regions + first-run seam)', async () => {
+    render(<App />)
+    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
+    // The five-region frame is present: module dock (nav), the global bar (banner/header), the content main.
+    expect(shellNav()).not.toBeNull()
+    expect(document.querySelector('header')).not.toBeNull()
+    expect(document.querySelector('main')).not.toBeNull()
+    // No onboarding leaked into the returning-launch path.
+    expect(screen.queryByRole('button', { name: 'Get started' })).toBeNull()
+  })
+
+  it('⌘K opens the command bar and a nav command drives the REAL router (S3 router-injection seam)', async () => {
+    render(<App />)
+    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
+
+    pressCmdK()
+    const input = await screen.findByRole('combobox')
+    expect(input).toBeTruthy()
+
+    // Running the "Notes" nav command must navigate the actual router to /notes (its lazy chunk then renders).
+    fireEvent.click(screen.getByRole('option', { name: 'Notes' }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Notes' })).toBeTruthy())
+    expect(router.state.location.pathname).toBe('/notes')
+  })
+
+  it('search with no index renders the loud search-unavailable state, never a blank list (S3 + BR-4)', async () => {
+    render(<App />)
+    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
+
+    pressCmdK()
+    const input = await screen.findByRole('combobox')
+    fireEvent.change(input, { target: { value: 'anything' } })
+    // The stub provider degrades to the announced search-unavailable status (references the DB-8 seam), not silence.
+    await waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/DB-8/))
+  })
+
+  it('the /graph route is lazy-split and degrades to the empty graph (BR-7 + BR-4-S5)', async () => {
+    render(<App />)
+    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
+
+    pressCmdK()
+    await screen.findByRole('combobox')
+    // "Graph" (GLOBAL_SURFACES → /graph) → the lazy chunk resolves → NeuralGraph renders its empty terminal state
+    // (no graph-data source in M1.0). This exercises the lazy boundary end-to-end without crashing (WebGL stubbed).
+    fireEvent.click(screen.getByRole('option', { name: 'Graph' }))
+    await waitFor(() => expect(screen.getByText('No connections yet.')).toBeTruthy())
+    expect(router.state.location.pathname).toBe('/graph')
+  })
+})

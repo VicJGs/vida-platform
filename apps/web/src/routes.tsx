@@ -56,7 +56,16 @@ const notesRoute = createRoute({
   component: lazyRouteComponent(() => import('./app/notes')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, notesRoute])
+
+// UI-4 · S5 — the neural-graph route is lazy-split so sigma/graphology never enter the
+// initial bundle (BR-7; performance-strategy.md §6). Mirrors notesRoute.
+const graphRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/graph',
+  component: lazyRouteComponent(() => import('./app/graph')),
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, notesRoute, graphRoute])
 
 export const router = createRouter({
   routeTree,

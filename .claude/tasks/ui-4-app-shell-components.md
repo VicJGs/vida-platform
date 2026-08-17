@@ -100,7 +100,16 @@ escalate. The build is fully doc-determined; the spec cites the sources, it does
   cleanup-per-test fix. Green: web typecheck · **161 tests** (+22) · lint0 · build. Renders OUTSIDE AppShell → zero
   S1–S3 regression. Zero `packages/ui` edit. **Visual Gate SHIP** (4 screens both themes · heading focus clean · motion
   + reduced-motion · vault confirmation no-input · completion→app-at-`/` + marker persists). **Next: S5 (integration).**
-- [ ] S5 · Integration (compose + `/graph` lazy-split + regression + Currency)
+- [~] **S5 · Integration — BUILT + GREEN, pending Visual Gate + PR** (the LAST tile). `App.integration.test.tsx`
+  (full-`<App/>` seam test: ⌘K→real-router nav · search-unavailable · first-run branch · `/graph` empty degrade) ·
+  `app/graph/index.tsx` (lazy `GraphRoute`, `NeuralGraph state="empty"`) · `routes.tsx` graphRoute
+  (`lazyRouteComponent`) · `packages/ui/package.json` `"sideEffects":false` (DF-S5-1). §XXVI double-gate: gate-1
+  REVISE (MEASURED BLOCKER: lazy route alone can't sever sigma — eager barrel + no sideEffects → fixed with BOTH
+  levers, DF-S5-1 reconciled) · **preflight MEASURED 3 gzipped builds** (Lever A route-only leaves sigma in/grows
+  init; Lever B both → sigma out, **42 KB lazy `graph-*` chunk < 50 KB §6**) · gate-2 **SHIP no-drift**
+  (`sideEffects` verified safe). Honest scope: residual ~154 KB init (framework unsplit) → separate
+  `perf-framework-chunk-split` task, NOT BR-7. Green: web **165 tests** (+4) · typecheck · lint0 · build · @vida/ui
+  317 (2 first-in-file timeouts = load flake, pass isolated). **Next: Visual Gate (Victor) → commit → PR → LIF-89 Done.**
 
 ## Plan
 <!-- Only for a SPEC-LESS small task (§XXVI LITE). UI-4 is FULL-class → spec-driven, this stays empty. -->
