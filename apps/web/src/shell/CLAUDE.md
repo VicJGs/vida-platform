@@ -23,6 +23,17 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact
   `aria-current`; `currentColor` icon tint). `nav-icons.ts` — key→`lucide-react` glyph (+ fallback).
   `feature-flags.ts` — `isFeatureEnabled` (M1.0 fail-closed stub). `use-nav-drawer.ts` — drawer focus/Esc/`inert`.
+- **Onboarding (S4) renders OUTSIDE this shell** — the first-run screens live in `apps/web/src/onboarding/*` and mount
+  from `App.tsx`'s first-run branch BEFORE `<RouterProvider>`, so no shell chrome exists during onboarding (S4-BR-h).
+  Not a shell file; noted here because `App.tsx` gates shell-vs-onboarding. See `onboarding/CLAUDE.md`.
+- **Integration (S5)** — S5 adds no shell file; it composes/verifies S1–S4 as one shell (`App.integration.test.tsx`,
+  a full-`<App/>` end-to-end test of the §3.1 seams: ⌘K→real-router nav · search-unavailable · first-run branch) and
+  ships the BR-7 **`/graph` lazy split**: `apps/web/src/app/graph/index.tsx` (default-export `GraphRoute` rendering
+  `<NeuralGraph state="empty"/>` — no graph-data source in M1.0, AR-8 seam) is `lazyRouteComponent`-imported in
+  `routes.tsx`, and `packages/ui/package.json` gained `"sideEffects": false` so Rollup tree-shakes the unused
+  `NeuralGraph` out of the eager barrel graph. MEASURED: sigma/graphology leave the initial chunk into a ~42 KB lazy
+  `graph-*` chunk (< 50 KB, performance-strategy §6). ⚠ the residual ~154 KB initial chunk (React+Tamagui+router,
+  unsplit) is a SEPARATE framework-split perf task, NOT BR-7. See `docs/specs/features/ui-4-app-shell-components/s5-integration.md`.
 - `command-bar.tsx` (S3) — the ⌘K launcher overlay: COMPOSES UI-1 `Dialog` (modal envelope) + `Input` (a `role=combobox`
   field via Input's `{...rest}` pass-through — no `packages/ui` edit) + a hand-rolled `role=listbox` of non-focusable
   `role=option` divs (aria-activedescendant, ↑/↓, Enter — the Select pattern, one tab stop). Builds the registry
@@ -41,6 +52,9 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 - **Chrome composes UI-1, never rebuilds it.** The shell adds NO `@vida/ui` component (rule-of-three unmet — one
   consumer); it composes UI-1 primitives (`Button`/`Menu`/…) + `lucide-react` icons. Icon LIBRARY is ADR-001-fixed
   (`lucide-react` web); the icon MAP is rendering data. Every value is a DS token (no hex, no invented z/spacing).
+  The only `packages/ui` writes are non-component config: the S1 `media` object (D5 seam) + the S5 `"sideEffects":
+  false` metadata (DF-S5-1, a barrel-defect fix enabling the `/graph` tree-shake — NOT a component; the barrel-defect
+  precedent [[first-runtime-consumer-surfaces-latent-barrel-defects]]).
 - **Nav degrades, never crashes.** Links target `routePath` via TanStack `to` (SPA) — never `href` (reload);
   unregistered routes render `NotFoundComponent` (BR-4). The `ShellRoute` widening is confined to `nav-link.tsx`.
 - **Apply the standard, never invent.** Breakpoints (`375/768/1440/1920`), containers (1280 centered, 16/24/32),

@@ -13,6 +13,8 @@ _At UI-4 pickup, two parked items un-gate (NOT this task): `db-10` (M1.4) + `tsc
 
 - tsconfig-strict-index-access: .claude/tasks/tsconfig-strict-index-access.md  (planned 2026-08-09 — hygiene follow-up from the UI-1 UF engineering gate. Add `noUncheckedIndexedAccess` + `noImplicitReturns` to `tsconfig.base.json` (STANDARDS §XV) + fix the monorepo-wide cascade. STRUCTURAL/repo-wide — deliberately NOT folded into UI-1; runs under its own §XXVI gate. Unfiled in Linear — create at pickup.)
 
+- perf-framework-chunk-split: .claude/tasks/perf-framework-chunk-split.md  (planned 2026-08-17 — hygiene follow-up from UI-4/S5. `apps/web/vite.config.ts` manualChunks to split React+Tamagui+TanStack into a `framework` chunk so the initial chunk meets performance-strategy §6 (< 80 KB / < 120 KB gz). S5 measured ~154 KB gz initial AFTER the BR-7 sigma lazy-split — the residual is framework, not sigma. NOT folded into S5 (BR-7 ≠ framework-split; per-unit discipline). Own §XXVI gate; unfiled in Linear — create at pickup.)
+
 ## Parked / Superseded
 _(none)_
 
