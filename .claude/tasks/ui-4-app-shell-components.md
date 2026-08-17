@@ -85,7 +85,12 @@ escalate. The build is fully doc-determined; the spec cites the sources, it does
   mobile drawer (focus/Esc/inert). §XXVI double-gate (gate-1 REVISE 3 blockers+4 material folded · preflight PASSED
   5 folds · gate-2 clean) + Visual Gate SHIP (caught the bounded-frame/region-scroll fix — dock modules below fold).
   web typecheck + 115 tests + lint0 + build · packages/ui untouched.
-- [ ] S3 · Command-bar overlay (⌘K launcher + router injection)
+- [x] **S3 · Command-bar overlay** — SHIP (Visual Gate passed). `apps/web/src/shell/{command-bar.tsx, use-command-keybind.ts,
+  use-command-search.ts}` + `apps/web/src/lib/platform.ts` + app-shell.tsx mount. Composes UI-1 Dialog+Input (zero
+  `packages/ui` edit, BR-1); combobox/listbox (Select pattern, one tab stop); ⌘K keydown (lenient ⌘/Ctrl — Visual-Gate
+  caught ⌘K-dead-on-Mac from farbled `navigator`); router injection into `CommandRunContext`; `search-unavailable`
+  states. §XXVI double-gate (gate-1 REVISE 2 blockers+4 material · preflight PASSED 3 folds · gate-2 SHIP) + Visual Gate
+  SHIP. Green: web typecheck · 139 tests · lint0 · build. packages/ui untouched.
 - [ ] S4 · Onboarding (4 first-run screens + App.tsx branch)
 - [ ] S5 · Integration (compose + `/graph` lazy-split + regression + Currency)
 
@@ -102,6 +107,7 @@ escalate. The build is fully doc-determined; the spec cites the sources, it does
 | 2026-08-16 | Committed `57aef4f` + pushed; **PR #25 MERGED** → main (`f0fff60`, --merge); branch deleted. | **Next: S2 (nav chrome)** off clean main, §XXVI gate |
 | 2026-08-16 | **S2 (nav chrome) built + SHIPPED** on branch `ui-4-s2-nav-chrome`. Step 0–2 (baseline current · integration-check 5 risks resolved · security M1.0 fail-closed). Spec `s2-nav-chrome.md` §XXVI double-gate: gate-1 independent critique REVISE (3 blockers: router `to`-not-`href`+ShellRoute widening · empty-group skip · closed-drawer inert; +4 material) → Approval 1; preflight PASSED (5 folds) → Approval 2. Killed a manufactured icon-lib "decision" (ADR-001 fixes lucide-react). Built 8 files + app-shell rewire; **Visual Gate SHIP** (caught bounded-frame/region-scroll — modules below fold). Green: web typecheck·115 tests·lint0·build. | commit + PR off main |
 | 2026-08-16 | Committed `1432760` + pushed; **PR #26 MERGED** → main (`9bd997e`, --merge); branch deleted. Merged main re-verified green (typecheck·115 tests). | **Next: S3 (command-bar overlay)** off clean main, §XXVI gate |
+| 2026-08-17 | **S3 (command-bar overlay) built + SHIPPED** on branch `ui-4-s3-command-bar-overlay`. Step 0 baseline (command-bar model + shell seams current) · §XXVI double-gate: gate-1 independent critique REVISE (2 blockers: non-focusable options→single trap stop; omit `aria-activedescendant` on empty list · +4 material) → Approval 1; preflight PASSED (3 folds: option-id slug · built-vs-DB8-seam SearchStatus split · post-nav focus) → Approval 2. Killed no manufactured forks (all doc-resolved). Built 4 files + app-shell mount; **Visual Gate SHIP** — caught ⌘K-dead-on-Mac (farbled `navigator` → `detectPlatform` mis-resolved) → §XXVIII lenient-mod fix (⌘ OR Ctrl). Green: web typecheck · 139 tests · lint0 · build; packages/ui untouched. | commit + PR off main |
 
 ## Notes
 - Head verified 2026-08-16 by an independent `#`-order walk against git-confirmed done-status (not just

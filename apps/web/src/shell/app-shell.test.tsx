@@ -3,9 +3,10 @@
 // the nav chrome (S2) renders links, so the shell mounts inside a memory router (renderInShell). We assert region
 // presence/absence, reflow state, landmarks (S1) + the mobile drawer's open/closed a11y (S2).
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { AppShell } from './app-shell'
 import { useAppShellUIStore } from '../stores/app-shell-ui-store'
+import { useCommandBarUIStore } from '../stores/command-bar-ui-store'
 import { renderInShell } from './test-router'
 import { type Breakpoint } from './breakpoints'
 
@@ -14,6 +15,7 @@ import { type Breakpoint } from './breakpoints'
 afterEach(() => {
   cleanup()
   useAppShellUIStore.setState({ isSidebarOpen: true, isMobileNavOpen: false })
+  useCommandBarUIStore.setState({ isOpen: false, query: '', mode: 'command' })
 })
 
 function renderShell(bp: Breakpoint) {
@@ -88,5 +90,20 @@ describe('AppShell', () => {
     expect(dock.getAttribute('aria-hidden')).toBeNull()
     expect(dock.inert).toBe(false)
     expect(container.querySelector('[data-region="navScrim"]')).not.toBeNull()
+  })
+
+  it('mounts the command bar; ⌘K/Ctrl+K opens the overlay (S3)', async () => {
+    await renderShell('desktop')
+    expect(screen.queryByRole('combobox')).toBeNull()
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true }) // jsdom platform → Ctrl+K
+    expect(await screen.findByRole('combobox')).not.toBeNull()
+  })
+
+  it('command bar self-portals; the overlayHost region stays empty (S3-BR-i)', async () => {
+    useCommandBarUIStore.setState({ isOpen: true, query: '', mode: 'command' })
+    const { container } = await renderShell('desktop')
+    const overlay = container.querySelector('[data-region="overlayHost"]') as HTMLElement
+    expect(overlay.children.length).toBe(0) // the Dialog portals to <body>, not into the region
+    expect(screen.getByRole('combobox')).not.toBeNull()
   })
 })

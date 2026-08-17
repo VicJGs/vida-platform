@@ -23,6 +23,16 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact
   `aria-current`; `currentColor` icon tint). `nav-icons.ts` — key→`lucide-react` glyph (+ fallback).
   `feature-flags.ts` — `isFeatureEnabled` (M1.0 fail-closed stub). `use-nav-drawer.ts` — drawer focus/Esc/`inert`.
+- `command-bar.tsx` (S3) — the ⌘K launcher overlay: COMPOSES UI-1 `Dialog` (modal envelope) + `Input` (a `role=combobox`
+  field via Input's `{...rest}` pass-through — no `packages/ui` edit) + a hand-rolled `role=listbox` of non-focusable
+  `role=option` divs (aria-activedescendant, ↑/↓, Enter — the Select pattern, one tab stop). Builds the registry
+  (`navProvider`+`shellActionsProvider`), injects `useShellNavigate` into `CommandRunContext`, `visibleWhen`-filters
+  (gamification fail-closed). Two STORE-driven modes: empty query → command list; non-empty → the `SearchProvider`
+  outcome (`search-unavailable` in M1.0 — a loud `role=status`, the grouped `results` UI is a DB-8 seam). Self-portals
+  via Dialog (the `overlayHost` region stays a reserved marker). `use-command-keybind.ts` (S3) — the global launcher
+  keydown; opens on **EITHER ⌘ or Ctrl + K** (lenient mod — reachability must not hinge on fragile `navigator`
+  detection, which Brave farbles; `resolveKeybind` stays the canonical/display binding). `use-command-search.ts` (S3)
+  — the race-guarded async search hook (last-query-wins). (+ `apps/web/src/lib/platform.ts` — `detectPlatform()`.)
 - `test-router.tsx` — test-only memory-router render helper (not shipped).
 
 ## Rules (do not violate)

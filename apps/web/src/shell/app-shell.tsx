@@ -19,6 +19,7 @@ import {
 } from './regions'
 import { GlobalBar } from './global-bar'
 import { ModuleDock } from './module-dock'
+import { CommandBar } from './command-bar'
 import { useNavDrawer } from './use-nav-drawer'
 
 // The shell's own structural dimensions (px) — layout constants of the chrome design, not DS spacing tokens
@@ -167,8 +168,10 @@ export function AppShell({ children, __bp }: AppShellProps) {
         </ContentMain>
       </View>
 
-      {/* Overlay/modal host — empty until S3 (command-bar + dialogs mount here). Unlabeled: an empty landmark would
-          announce falsely (S1-BR-h). pointerEvents none so the empty host never blocks the content beneath. */}
+      {/* Overlay/modal host — a RESERVED empty marker. UI-1 overlays (incl. S3's command bar) SELF-PORTAL to <body>
+          (Dialog's own portal root), so nothing renders INTO this region; it stays the reserved seam S1 shipped
+          (S3-BR-i). Unlabeled: an empty landmark would announce falsely (S1-BR-h). pointerEvents none so it never
+          blocks the content beneath. */}
       <View
         data-region="overlayHost"
         data-overlay-mode={overlay}
@@ -180,6 +183,10 @@ export function AppShell({ children, __bp }: AppShellProps) {
         pointerEvents="none"
         zIndex={LAYERING.overlayHost}
       />
+
+      {/* S3 · the ⌘K command-bar overlay. Mounted inside AppShell (router + store context for useShellNavigate);
+          renders null while closed + self-portals to <body> when open, so its position in the flow is layout-irrelevant. */}
+      <CommandBar />
     </View>
   )
 }
