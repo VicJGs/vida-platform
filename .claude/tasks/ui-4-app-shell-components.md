@@ -78,7 +78,13 @@ escalate. The build is fully doc-determined; the spec cites the sources, it does
   `apps/web/{shell/app-shell.tsx, shell/media-parity.test.ts, shell/app-shell.test.tsx, stores/app-shell-ui-store.ts,
   App.tsx, routes.tsx, index.html shim, index.css, test-setup.ts, vite.config.ts}` + `@vida/ui`/`@tamagui/core` deps.
   Visual Gate caught+fixed 2 real bugs (process shim; viewport fill). web typecheck + 96 tests + lint0 + build · ui 317.
-- [ ] S2 · Nav chrome (module dock + global bar + Spaces-bar seam over MODULE_MAP)
+- [x] **S2 · Nav chrome** — SHIP (Visual Gate passed). `apps/web/src/shell/{nav-icons.ts, feature-flags.ts,
+  nav-link.tsx, module-dock.tsx, global-bar.tsx, use-nav-drawer.ts, test-router.tsx, app-shell.tsx}` + `lucide-react`
+  dep. Module dock (14 modules grouped, drawer/rail/sidebar, empty-group skip, collapse toggle) · global bar
+  (condensed/full, ⌘K→open, overflow Menu) · NavLink (createLink SPA anchor, ShellRoute widening, currentColor tint) ·
+  mobile drawer (focus/Esc/inert). §XXVI double-gate (gate-1 REVISE 3 blockers+4 material folded · preflight PASSED
+  5 folds · gate-2 clean) + Visual Gate SHIP (caught the bounded-frame/region-scroll fix — dock modules below fold).
+  web typecheck + 115 tests + lint0 + build · packages/ui untouched.
 - [ ] S3 · Command-bar overlay (⌘K launcher + router injection)
 - [ ] S4 · Onboarding (4 first-run screens + App.tsx branch)
 - [ ] S5 · Integration (compose + `/graph` lazy-split + regression + Currency)
@@ -94,6 +100,7 @@ escalate. The build is fully doc-determined; the spec cites the sources, it does
 | 2026-08-16 | **Approval 1 ✅**. Step 5: **/preflight PASSED (2 folds)** — FOLD-1 Visual Gate = running app (`pnpm dev` render-table:45) not Storybook (`apps/web` has none); FOLD-2 jsdom docblock — both folded (Rev 3). **gate-2** clean → scrubbed 2 residual `createMedia` mentions; no new material. | Approval 2 |
 | 2026-08-16 | **Approval 2 ✅ → S1 IMPLEMENTED on branch `ui-4-s1-shell-scaffold`.** 8 steps built; apps/web = first `@vida/ui` consumer. **Visual Gate (real Brave) SHIP** — caught+fixed 2 bugs jsdom missed: `process is not defined` blank page (UI-1-U0 index.html shim) + viewport-fill (`minHeight:100vh`+index.css). Barrel sigma-WebGL crash → setupFiles stub. Green: web typecheck·96 tests·lint0·build · ui 317. **Victor: SHIP.** | commit + PR ✅ |
 | 2026-08-16 | Committed `57aef4f` + pushed; **PR #25 MERGED** → main (`f0fff60`, --merge); branch deleted. | **Next: S2 (nav chrome)** off clean main, §XXVI gate |
+| 2026-08-16 | **S2 (nav chrome) built + SHIPPED** on branch `ui-4-s2-nav-chrome`. Step 0–2 (baseline current · integration-check 5 risks resolved · security M1.0 fail-closed). Spec `s2-nav-chrome.md` §XXVI double-gate: gate-1 independent critique REVISE (3 blockers: router `to`-not-`href`+ShellRoute widening · empty-group skip · closed-drawer inert; +4 material) → Approval 1; preflight PASSED (5 folds) → Approval 2. Killed a manufactured icon-lib "decision" (ADR-001 fixes lucide-react). Built 8 files + app-shell rewire; **Visual Gate SHIP** (caught bounded-frame/region-scroll — modules below fold). Green: web typecheck·115 tests·lint0·build. | commit + PR off main |
 
 ## Notes
 - Head verified 2026-08-16 by an independent `#`-order walk against git-confirmed done-status (not just
