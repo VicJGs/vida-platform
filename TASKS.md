@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-4-app-shell-components (LIF-89) | New Feature | 2026-08-16 | 2026-08-16 | ▶ In Progress — multi-unit (S1–S5). **S1 SHIPPED + MERGED** (PR #25, `f0fff60`). **S2 (nav chrome) SHIPPED + MERGED** (PR #26, `9bd997e`): module dock (14 modules grouped · drawer/rail/sidebar · empty-group skip · collapse toggle) · global bar (⌘K→open + overflow Menu) · NavLink (createLink SPA anchor + lucide icons + currentColor tint) · mobile drawer (focus/Esc/inert). Visual Gate caught the bounded-frame/region-scroll fix (dock modules below fold). Merged main green (115 tests); packages/ui untouched. **Next: S3 (command-bar overlay)** off clean main. LIF-89 stays in-progress until S1–S5 land. |
+| ui-4-app-shell-components (LIF-89) | New Feature | 2026-08-16 | 2026-08-17 | ▶ In Progress — multi-unit (S1–S5). **S1 + S2 SHIPPED + MERGED** (PR #25 `f0fff60`, #26 `9bd997e`). **S3 (command-bar overlay) SHIPPED + MERGED** (PR #27, `7ddfd2b`): the ⌘K launcher — composes UI-1 `Dialog`+`Input` (a `role=combobox` via Input `{...rest}` pass-through) + a hand-rolled `role=listbox` (Select `aria-activedescendant` pattern, one tab stop); registry + `useShellNavigate` injection + `visibleWhen` filter; two store-driven modes (command list ↔ `search-unavailable` DB-8 seam); global keydown opens on **⌘/Ctrl+K** (lenient mod). **Zero `packages/ui` edit.** §XXVI double-gate + Visual Gate SHIP (caught ⌘K-dead-on-Mac from Brave-farbled `navigator` → lenient-mod fix). Green (139 tests). **Next: S4 (onboarding — 4 first-run screens + `App.tsx` `FIRST_RUN_BRANCH`)** off clean main, then S5 (integration + `/graph` lazy-split). LIF-89 stays in-progress until S1–S5 land. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
 *(**ui-3-vida-editor LIF-88 → Done + MERGED** (E8 PR #24 `79ee267`), 2026-08-16 — `@vida/editor` **v0.8.0**; the TipTap block editor built E1–E8, the serializer suite (md · PDF · DOCX) COMPLETE. LIF-88 synced Done; task archived (see _index.md Completed). **Next head: UI-4 (#30, app shell).** Prior: ui-2-platform-views LIF-87 → Done + MERGED PR #13 (`e3872fc`), 2026-08-11 — the 7 platform views + shared data-view spine, @vida/ui v0.2.0, UF gate SHIP. Prior: ux-5 LIF-94 PR #12.)*
@@ -65,7 +65,22 @@ drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-12) — UI-3 / E1 + E2 + E3 DONE & MERGED (per-unit PRs). Clean handoff to E4.**
+**▶ CURRENT (2026-08-17) — UI-4 / S1 + S2 + S3 DONE & MERGED. Next = S4 (onboarding).**
+UI-4 app shell (LIF-89) is mid-build: **S1 (scaffold, PR #25)** · **S2 (nav chrome, PR #26)** · **S3 (command-bar
+overlay, PR #27 `7ddfd2b`)** all shipped + merged to `main`. S3 = the ⌘K launcher composing UI-1 `Dialog`+`Input`
+(combobox/listbox, `useShellNavigate` injection, `search-unavailable` DB-8 seam, lenient ⌘/Ctrl keybind); zero
+`packages/ui` edit; §XXVI double-gate + Visual Gate SHIP (caught ⌘K-dead-on-Mac → lenient mod). Green: 139 tests.
+**HANDOFF — next = `S4` (onboarding):** the 4 first-run screens + `App.tsx` `FIRST_RUN_BRANCH` wiring + completion
+write, off clean `main` through its own §XXVI gate + Visual Gate. The UX-5 model is shipped in
+`apps/web/src/onboarding/*` (`ONBOARDING_STEPS` + `FIRST_RUN_BRANCH`); ground truth `docs/core/architecture/onboarding.md`.
+Then **S5** (integration: compose S1–S4 in `App.tsx`/routes · `/graph` lazy-split · whole-shell regression · Currency).
+LIF-89 stays in-progress until S1–S5 land (do NOT tracker --sync). Spec home:
+`docs/specs/features/ui-4-app-shell-components/` (umbrella `_index.md` §5 = the S-roster).
+⚠ CI red repo-wide = the known pnpm action-setup infra conflict (local green); no branch protection.
+
+<details><summary>(prior) 2026-08-12 — UI-3 / E1 + E2 + E3 DONE & MERGED (per-unit PRs). Clean handoff to E4.</summary>
+
+**▶ (prior) 2026-08-12 — UI-3 / E1 + E2 + E3 DONE & MERGED (per-unit PRs). Clean handoff to E4.**
 `@vida/editor` **v0.3.0** on `main` — the per-unit PR chain (Victor's directive: each E its own branch+PR): **#15 (E1)
 `290470f` · #16 (E2) `d903cb0` · #17 (E3 toolbar) `438a1ec`**, all merged; **#14 closed** (old combined E1+E2 PR,
 superseded). main is clean linear `eb13b32 → E1 → E2 → E3`. **E3** = the formatting toolbar: `toolbar.tsx`
@@ -88,6 +103,7 @@ db-10 (M1.4), tsconfig-strict-index-access (repo-wide §XV hygiene). ⚠ App not
 ⚠ **CI (filed, not done here):** all checks are red from a pnpm `action-setup@v4` version conflict (`ci.yml` `version:9`
 + `packageManager: pnpm@9.15.9`) — a Planned hygiene task (own gate). Other reds owned ahead: `@vida/server#test`→P2-1,
 Format Check (673 files)→the Prettier Planned task. No branch protection → red CI doesn't block merges.
+</details>
 
 <details><summary>(prior) 2026-08-11 — UI-2 Platform views DONE + MERGED (PR #13).</summary>
 
