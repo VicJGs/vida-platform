@@ -78,7 +78,7 @@ authored at its turn (this file is the umbrella; the first unit's spec is a sibl
 | **S1 · Shell scaffold** | the 5-region frame (mounted in `routes.tsx` `RootComponent` wrapping `<Outlet/>`) + `UIProvider`/`ToastProvider` at root (App.tsx) + `media` config (D5) + `app-shell-ui-store` extension (`isMobileNavOpen`) | ✅ | shell-layout.md · regions.ts · breakpoints.ts · provider.tsx · routes.tsx |
 | **S2 · Nav chrome** | module dock + global bar + Spaces-bar seam; responsive drawer→rail→sidebar; renders `MODULE_MAP`/`GLOBAL_SURFACES` | ✅ | IA.md · module-map.ts · regions.ts |
 | **S3 · Command-bar overlay** ✅ SHIPPED | ⌘K launcher (input + command list + result list + `search-unavailable`) + router injection + trigger. Composes UI-1 Dialog+Input; combobox/listbox; lenient ⌘/Ctrl+K. Spec `./s3-command-bar-overlay.md`. | ✅ | command-bar-and-search.md · command-bar/* |
-| **S4 · Onboarding** | the 4 first-run screens + `App.tsx` `FIRST_RUN_BRANCH` wiring + completion write | ✅ | onboarding.md · onboarding/* |
+| **S4 · Onboarding** ✅ SHIPPED | the 4 first-run screens + `App.tsx` `FIRST_RUN_BRANCH` wiring + completion write. `useFirstRun` 3-state boot resolution · marker repo (`INSERT OR REPLACE`) · confirmation-only vault · write-then-flip. Renders OUTSIDE AppShell. Spec `./s4-onboarding.md`. | ✅ | onboarding.md · onboarding/* |
 | **S5 · Integration** | compose S1–S4 in `App.tsx`/routes · `/graph` lazy-split · whole-shell manual regression · Currency + layer-doc | integration (no new render) | routes.tsx · all above |
 
 S1 is the head (everything mounts inside it). Its detailed spec: `./s1-shell-scaffold.md`.

@@ -7,6 +7,8 @@ import { RouterProvider } from '@tanstack/react-router'
 import { ToastProvider, UIProvider } from '@vida/ui'
 import { ensureDbReady } from './db/boot'
 import { queryClient } from './lib/query-client'
+import { Onboarding } from './onboarding/onboarding'
+import { useFirstRun } from './onboarding/use-first-run'
 import { router } from './routes'
 
 export function App() {
@@ -16,6 +18,10 @@ export function App() {
   const [dbReady, setDbReady] = useState(false)
   const [dbError, setDbError] = useState<Error | null>(null)
   const [attempt, setAttempt] = useState(0)
+
+  // UI-4 · S4: resolve first-run against the device-local marker once the DB is open. Called among the hooks
+  // (before the early returns) — Rules of Hooks. `status` gates the branch below (S4-BR-c).
+  const firstRun = useFirstRun(dbReady)
 
   useEffect(() => {
     let active = true
@@ -43,7 +49,9 @@ export function App() {
     )
   }
 
-  if (!dbReady) {
+  // The marker read (S4) is part of boot: hold the same Loading surface while it resolves, so the app chrome
+  // never flashes before onboarding (S4-BR-c). Only after `resolving` clears do we branch.
+  if (!dbReady || firstRun.status === 'resolving') {
     return (
       <main style={{ fontFamily: 'system-ui', padding: '2rem' }}>
         <p>Loading…</p>
@@ -55,11 +63,19 @@ export function App() {
   // app-owned, light-only in M1.0 — no theme store yet) wraps the app. ToastProvider is the singleton toast HOST —
   // it takes no children and portals to <body>, so it's a SIBLING of the app tree, inside UIProvider for the theme
   // context. The shell chrome (AppShell) mounts INSIDE the router, in routes.tsx RootComponent (it wraps the Outlet).
+  //
+  // UI-4 · S4: the first-run branch (FIRST_RUN_BRANCH — before <RouterProvider>). On first launch render the
+  // onboarding takeover (full-viewport, OUTSIDE the router/AppShell — S4-BR-h); its completion write flips
+  // `status` to 'ready', mounting the app at `/`. Onboarding needs neither the router nor the query client.
   return (
     <UIProvider theme="light">
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
+      {firstRun.status === 'onboarding' ? (
+        <Onboarding onComplete={firstRun.markComplete} />
+      ) : (
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      )}
       <ToastProvider />
     </UIProvider>
   )
