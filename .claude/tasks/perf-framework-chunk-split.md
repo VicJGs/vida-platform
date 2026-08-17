@@ -5,7 +5,7 @@
 # Status: planned
 # Project: M1 — Whole Manual OS
 # Milestone: (hygiene follow-up — un-homed until a perf pass)
-# Linear: (unfiled — create at pickup)
+# Linear: LIF-158
 
 ## Goal
 Split React + Tamagui + TanStack Router into a dedicated **framework chunk** (Vite `build.rollupOptions.output.

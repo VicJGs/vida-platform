@@ -6,10 +6,9 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| ui-4-app-shell-components (LIF-89) | New Feature | 2026-08-16 | 2026-08-17 | ▶ In Progress — multi-unit (S1–S5). **S1 + S2 + S3 SHIPPED + MERGED** (PR #25 `f0fff60`, #26 `9bd997e`, #27 `7ddfd2b`). **S4 (onboarding) SHIPPED + MERGED** (PR #28, `c0598b2`): the 4 first-run screens + `App.tsx` `FIRST_RUN_BRANCH`. `useFirstRun(dbReady)` 3-state boot resolution (no app-flash; keys ONLY on the `first_run:completed` marker, never `exists()`) · `first-run-repo` marker I/O (`INSERT OR REPLACE`, mirrors `get/setSchemaVersion`) · 4 confirmation screens (m1 copy only, **vault = confirmation, no input/crypto** — BR-6; focus→h1, no-Esc, DS tokens + reduced-motion) · write-then-flip completion (never strands). **Renders OUTSIDE AppShell → zero S1–S3 regression. Zero `packages/ui` edit.** §XXVI double-gate (gate-1 REVISE 2 blockers+4 material [`$colorSignalDanger` not `$colorTextDanger`] · preflight PASSED 3 folds · gate-2 caught 1 Rules-of-Hooks gap) + Visual Gate SHIP (both themes). Green (**161 tests**, +22). ⚠ full-`<App/>` integration tests tip the 5s default only under abnormal load — one-off `--testTimeout`, NO config change (S3 lesson). **Next: S5 (integration — compose S1–S4 in `App.tsx`/routes · `/graph` lazy-split · whole-shell regression · Currency)** off clean main. LIF-89 stays in-progress until S5 lands. |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
-*(**ui-3-vida-editor LIF-88 → Done + MERGED** (E8 PR #24 `79ee267`), 2026-08-16 — `@vida/editor` **v0.8.0**; the TipTap block editor built E1–E8, the serializer suite (md · PDF · DOCX) COMPLETE. LIF-88 synced Done; task archived (see _index.md Completed). **Next head: UI-4 (#30, app shell).** Prior: ui-2-platform-views LIF-87 → Done + MERGED PR #13 (`e3872fc`), 2026-08-11 — the 7 platform views + shared data-view spine, @vida/ui v0.2.0, UF gate SHIP. Prior: ux-5 LIF-94 PR #12.)*
+*(**ui-4-app-shell-components LIF-89 → Done + MERGED** (S5 PR #29 `7559a4d`), 2026-08-17 — **UI-4 COMPLETE (S1–S5 all landed)**; the web app-shell chrome. S5 (integration) = the full-`<App/>` seam test + BR-7 `/graph` lazy-split (`app/graph` + `routes.tsx` + `@vida/ui` `sideEffects:false` DF-S5-1 → sigma into a 42 KB lazy chunk, MEASURED). §XXVI double-gate (gate-1 critic MEASURED the build, caught the lazy-route-alone BLOCKER · preflight 3 gzipped builds · gate-2 SHIP no-drift) + Visual Gate SHIP. LIF-89 synced Done; task archived. **The `-c` UI wave is complete → the `-d` UX wave (UX-6) is released.** Filed follow-up: `perf-framework-chunk-split` (§6 init budget, not BR-7). Prior: **ui-3-vida-editor LIF-88 → Done + MERGED** (E8 PR #24 `79ee267`), `@vida/editor` v0.8.0. Prior: ui-2-platform-views LIF-87 PR #13.)*
 
 ## 🧭 Delivery Routing — READ THIS FIRST (this repo's routing rule)
 
@@ -41,7 +40,7 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-16): `UI-4` `#30` (app shell components) — ← UI-1 ✅ + UX-3 ✅ + UX-5 (renders+wires it) ✅. UI-3 ✅ DONE (LIF-88, E8 PR #24 `79ee267`). Next in the `-c` UI wave (UI-1 ✅ → UI-2 ✅ → UI-3 ✅ → **UI-4**). UX-6 (#26) stays gated behind `-c` (needs UI-4). At UI-4 pickup, also un-park: `db-10` (M1.4) · `tsconfig-strict-index-access`. ⚠ App note: lazy-load the graph route (heavy WebGL deps).**
+**🎯 Computed head now (2026-08-17): `UX-6` `#26` (Home = Journal daily dashboard) — ← UX-3 ✅. The `-c` UI wave is COMPLETE (UI-1 ✅ → UI-2 ✅ → UI-3 ✅ → UI-4 ✅ S1–S5 merged PR #29 `7559a4d`), so the `-d` UX wave is RELEASED — UX-6 is no longer sub-wave-gated. Profile new-feature (delivery-plan:212-213); UX-6 renders inside the UI-4 shell. Also now un-parked (NOT the head): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · NEW `perf-framework-chunk-split` (§6 init budget — surfaced by S5, NOT BR-7). Prior head UI-4 `#30` → DONE.**
 <details><summary>(prior 2026-08-11) Computed head = UI-3 #29 — resolved: built E1–E8, merged, Done.</summary></details>
 ⚠ **SUB-WAVE RULE (learned 2026-08-09, added to the routing steps below):** the raw `#`-order walk is INSUFFICIENT
 alone — it does NOT encode the `-c`/`-d` **sub-wave sequencing** (`m1.0-delivery-plan.md:129,140-141`): the **UX
@@ -65,22 +64,24 @@ drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-17) — UI-4 / S1–S4 DONE & MERGED. Next = S5 (integration — the LAST unit).**
-UI-4 app shell (LIF-89): **S1 (PR #25)** · **S2 (PR #26)** · **S3 (PR #27 `7ddfd2b`)** · **S4 (onboarding, PR #28
-`c0598b2`)** all shipped + merged to `main`. S4 = the 4 first-run screens + `App.tsx` `FIRST_RUN_BRANCH`:
-`useFirstRun(dbReady)` 3-state boot resolution (no app-flash; keys only on the `first_run:completed` marker) ·
-`first-run-repo` marker I/O (`INSERT OR REPLACE`) · confirmation-only vault (no input/crypto, BR-6) · write-then-flip
-completion. Renders OUTSIDE `AppShell` → zero S1–S3 regression; zero `packages/ui` edit. §XXVI double-gate + Visual
-Gate SHIP (both themes). Green: **161 tests**.
-**HANDOFF — next = `S5` (integration, the final tile):** compose/verify S1–S4 wired in `App.tsx`/`routes.tsx` ·
-**`/graph` lazy-split** (BR-7 — heavy sigma/graphology WebGL out of the initial bundle; the current `dist` main chunk
-is 585 kB, this is where it splits) · whole-shell manual regression at 375/768/1440/1920 · §XXIX Currency + shell
-layer-doc. Off clean `main` through its own §XXVI gate. On S5 SHIP+merge, **THEN** LIF-89 → Done + `tracker --sync`
-(NOT before — S5 is the last unit). Spec home: `docs/specs/features/ui-4-app-shell-components/` (umbrella `_index.md`
-§5 = the S-roster; `s4-onboarding.md` = the just-shipped unit).
-⚠ App note: the marker read is a device-local `app_state` KV — to reset first-run in dev, clear OPFS or the
-`first_run:completed` row. ⚠ Integration tests that mount full `<App/>` are heavy (Tamagui cold-compile) — they tip
-the 5s default only under abnormal machine load; NO test-config change (the S3 load-noise lesson holds).
+**▶ CURRENT (2026-08-17) — UI-4 COMPLETE (S1–S5 merged). LIF-89 → Done. Next head = UX-6 (#26).**
+UI-4 app shell (LIF-89) is DONE: **S1 (PR #25)** · **S2 (PR #26)** · **S3 (PR #27)** · **S4 (PR #28)** · **S5 (PR #29
+`7559a4d`)** all merged to `main`. **S5 (integration — the final tile)** = the full-`<App/>` integration test
+(`App.integration.test.tsx`, 4 tests: ⌘K→real-router nav · search-unavailable · first-run branch · `/graph` empty
+degrade) + **BR-7 `/graph` lazy-split**: `app/graph/index.tsx` (lazy `GraphRoute` → `NeuralGraph state="empty"`) +
+`routes.tsx` graphRoute + **`@vida/ui` `"sideEffects": false` (DF-S5-1)** — the second, MEASURED-necessary lever that
+severs sigma from the eager barrel. Result (gzipped): sigma → a **42 KB lazy `graph-*` chunk (< 50 KB §6)**, initial
+177 KB → 154 KB. §XXVI double-gate (gate-1 critic MEASURED the build → caught the lazy-route-alone BLOCKER · preflight
+3 gzipped builds · gate-2 SHIP no-drift) + Visual Gate SHIP. Green: web **165 tests** (+4) · @vida/ui 317.
+**HANDOFF — next head by the `#`-order + sub-wave rule = `UX-6` Home = Journal daily dashboard (`#26`, ← UX-3 ✅,
+profile new-feature).** The `-c` UI wave (UI-1→UI-2→UI-3→UI-4) is COMPLETE → the `-d` UX wave is RELEASED, so UX-6 is
+no longer sub-wave-gated. UX-6 renders INSIDE the UI-4 shell (the `<Outlet/>` content at `/`). Also now un-parked
+(NOT the head): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · NEW **`perf-framework-chunk-split`**
+(split React+Tamagui+router into a framework chunk for the §6 < 80 KB init target — the S5 residual 154 KB is
+FRAMEWORK, not sigma; NOT BR-7).
+⚠ Integration tests that mount full `<App/>` are heavy (Tamagui cold-compile) — they tip the 5s default only under
+abnormal machine load; one-off `--testTimeout`, NO config change (the S3/S4 load-noise lesson holds — 2 @vida/ui
+first-in-file tests flaked in the full run, passed 40/40 isolated).
 ⚠ CI red repo-wide = the known pnpm action-setup infra conflict (local green); no branch protection.
 
 <details><summary>(prior) 2026-08-12 — UI-3 / E1 + E2 + E3 DONE & MERGED (per-unit PRs). Clean handoff to E4.</summary>

@@ -4988,3 +4988,43 @@ Decisions:
 Next session:
   - **FIRST ACTION: start S2 (nav chrome)** — module dock + global bar + Spaces-bar seam over `MODULE_MAP`/`GLOBAL_SURFACES`, off clean `main`, §XXVI gate + component Visual Gate. Then S3 (command-bar) → S4 (onboarding) → S5 (integration + `/graph` lazy-split). LIF-89 stays in-progress until S1–S5 land.
   - Reload: memory [[apps-web-is-the-first-vida-ui-consumer]] (Tamagui gotchas), umbrella `_index.md` §5 roster, `apps/web/src/shell/*` + `nav/module-map.ts`. ⚠ CI red repo-wide (known pnpm action-setup infra; local green).
+
+---
+Date: 2026-08-17
+Task: ui-4-app-shell-components (LIF-89, #30) — app shell · S5 integration (FINAL tile → UI-4 COMPLETE)
+Completed:
+  - **S5 SHIPPED + MERGED (PR #29 `7559a4d`) — UI-4 is COMPLETE (S1–S5 all landed); LIF-89 → Done.** The last `-c`
+    UI-wave tile; releases the `-d` UX wave (UX-6 unblocked).
+  - **BR-7 `/graph` lazy-split — MEASURED, not assumed.** `app/graph/index.tsx` (lazy `GraphRoute` → `NeuralGraph
+    state="empty"`, degrade-never-crash, no graph-data source in M1.0/AR-8 seam) + `routes.tsx` graphRoute
+    (`lazyRouteComponent`, mirrors `/notes`) + **`packages/ui` `"sideEffects": false` (DF-S5-1)**. Result (gzipped):
+    sigma/graphology moved OUT of the initial chunk into a **42 KB lazy `graph-*` chunk (< 50 KB, performance-strategy
+    §6)**; initial chunk 177 KB → 154 KB.
+  - **`App.integration.test.tsx`** (new, 4 tests) — full-`<App/>` seam test through the REAL router (not mocked, unlike
+    the S3 unit test): ⌘K→nav-command→route change · `search-unavailable` · first-run branch · `/graph` empty degrade.
+  - Green: web **165 tests** (+4) · typecheck · lint 0-err · build · @vida/ui 317 (2 first-in-file timeouts were the
+    documented Tamagui cold-compile load flake — pass 40/40 isolated). Visual Gate SHIP (Victor).
+Decisions:
+  - **DF-S5-1 — the gate's headline catch.** The gate-1 critic RAN the build and disproved the spec's premise that a
+    lazy route is the whole mechanism: sigma was ALREADY eager in the initial chunk via `App.tsx`'s `@vida/ui` barrel
+    import + no `sideEffects` field → a lazy importer can't remove an eager one. Fixed with BOTH levers. Reconciled
+    the BR-1 conflict ("only the media edit") as a flagged DEFECT: BR-1 fences new **components**; a `sideEffects`
+    metadata field is a **barrel-defect fix in the producing package** (the [[first-runtime-consumer-surfaces-latent-barrel-defects]]
+    precedent), and performance-strategy §6 (the bundling authority) mandates the tree-shakeability it enables — §6
+    governs, BR-1's fence refined not broken. Preflight PROVED it with 3 gzipped builds (Lever A insufficient, Lever B
+    works); gate-2 SHIP no-drift (`sideEffects` verified safe — no module-level side effects).
+  - **I manufactured a fork once (AskUserQuestion on the BR-7 mechanism) → Victor: "everything is already solved in
+    the docs, nothing for me to decide."** Re-grounded in the docs (performance §6 + baseline B-C). Reinforces
+    [[decide-dont-ask-when-docs-give-the-answer]] / [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]].
+    The DIFFERENCE: the packages/ui edit was NOT a manufactured fork — it was a MEASURED defect the critique proved,
+    surfaced as a flagged DF at Approval 1 (not an AskUserQuestion), which is the process working.
+  - **Honest scope boundary:** the residual ~154 KB initial chunk (React+Tamagui+router, unsplit) is over §6's
+    < 80 KB "Initial" target, but that is FRAMEWORK, not sigma. Homed as a NEW planned task `perf-framework-chunk-split`
+    (sibling to `tsconfig-strict-index-access`), explicitly NOT folded into S5 (BR-7 ≠ framework-split; per-unit discipline).
+Next session:
+  - **UI-4 is DONE. Next head = UX-6 (Home = Journal daily dashboard, #26)** — the `-d` UX wave is now released (the
+    `-c` UI wave S1→S4→UI-4 is complete). ← UX-3 ✅; profile new-feature (delivery-plan:212-213). UX-6 renders inside
+    this shell.
+  - Also now un-gated (parked): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · NEW
+    `perf-framework-chunk-split` (§6 init budget). All own-gate hygiene/horizon issues, not the next head.
+  - ⚠ CI red repo-wide = the known pnpm action-setup infra conflict (local green); no branch protection.
