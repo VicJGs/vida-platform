@@ -1,5 +1,7 @@
 # Task: ux-6-home-journal-dashboard
-# Status: planned
+# Status: done
+# Scenario: Default
+# Profile: New Feature
 # Linear: LIF-95
 # Project: M1 — Whole Manual OS
 # Milestone: M1.0 — Boot & Connective Base
@@ -20,3 +22,10 @@ Victor opens every day. Defined here as UX; the aggregation engine + module feed
 ## Notes
 - 2026-08-09: briefly mis-activated as the head off the raw `#`-order rule; reverted to `planned` — the
   `-d needs -c` sub-wave constraint governs. Un-parks after UI-4 (#30). Head that session → UI-2 (#28).
+- 2026-08-17: activated (UI-4 done → `-d` released). **DELIVERABLE SHAPE = DESIGN MODEL** (declarative
+  artifact + doc in `apps/web/src`, NO rendered component, NO Visual Gate) — identical to UX-3/4/5.
+  Docs-fixed, not a fork: derived-graph.md:31 "Home/Journal screen **DESIGN** within the shell" ·
+  delivery-plan:270 "design issue" · ui-4 `_index.md`:29 UI-4 scopes OUT "the Journal Home content
+  (UX-6, gated behind this)" so the `/` `<h2>Vida</h2>` placeholder is INTENTIONAL, not a gap. The
+  rendering + aggregation engine (`summary(date)`) are downstream: MOD-journals #33 (M1.1) + Phase-1b
+  module feeds, consuming this design. Boundary here = the M1.0 UX design only.

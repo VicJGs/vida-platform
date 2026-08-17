@@ -76,15 +76,15 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 19 | ✅DS-4 | Tamagui config + dark mode | `packages/ui/src` (001) | ← DS-3 | DS-5 | Design-Sys | themed Tamagui config |
 | 20 | ✅DS-5 | Primitive contracts | `packages/ui/src/components` | ← DS-4 | UI-1 | Design-Sys | primitive component contracts — **DELIVERED+MERGED 2026-08-05** (LIF-85, PR #7 `19cda21`): 10 contracts + full `component.json` token set. LIF-85 held *In Progress* only for the component **Visual Gate, which is deferred to UI-1 by the render table** — no buildable work remains here, so ✅ for `#`-order routing. |
 | 21 | ✅UX-1 | Information architecture | `docs/core/architecture`, `apps/web/src` (001) | root | UX-2, UX-3, UX-4, UX-5 | Generic | IA + nav model |
-| 22 | ◻UX-2 | Command bar + search | `apps/web/src` | ← UX-1 | leaf | Generic | command bar |
-| 23 | ◻UX-3 | Shell layout (responsive) | `apps/web/src` | ← UX-1 | UX-6, UI-4 | Generic | responsive shell layout |
-| 24 | ◻UX-4 | State conventions | `apps/web/src` | ← UX-1 | leaf | Generic | client-state conventions |
-| 25 | ◻UX-5 | Vault-unlock onboarding (surface) | `apps/web/src` | ← UX-1 | UX-5b | Generic | onboarding surface |
-| 26 | ◻UX-6 | Home = Journal dashboard | `apps/web/src` | ← UX-3 | leaf | Generic | Home renders the daily journal |
-| 27 | ◻UI-1 | Vida UI primitives | `packages/ui/src/components` | ← DS-5 | UI-2, UI-3, UI-4 | Design-Sys | primitive component library |
-| 28 | ◻UI-2 | Platform views (calendar/gallery/list/graph/timeline) | `packages/ui/src/components` | ← UI-1 | HARD-3 | Design-Sys | shared platform views |
-| 29 | ◻UI-3 | Vida editor (@vida/editor, TipTap) — spec is a 0-byte stub → author | `packages/editor/src` | ← UI-1, AR-4 | CAP-authoring | Design-Sys | block editor + serializers |
-| 30 | ◻UI-4 | App shell components | `apps/web/src` | ← UI-1, UX-3 | leaf | Generic | app shell composed |
+| 22 | ✅UX-2 | Command bar + search | `apps/web/src` | ← UX-1 | leaf | Generic | command bar — **DONE+MERGED 2026-08-09** (LIF-91, PR #9) |
+| 23 | ✅UX-3 | Shell layout (responsive) | `apps/web/src` | ← UX-1 | UX-6, UI-4 | Generic | responsive shell layout — **DONE+MERGED 2026-08-09** (LIF-92, PR #10) |
+| 24 | ✅UX-4 | State conventions | `apps/web/src` | ← UX-1 | leaf | Generic | client-state conventions — **DONE+MERGED 2026-08-09** (LIF-93, PR #11) |
+| 25 | ✅UX-5 | Vault-unlock onboarding (surface) | `apps/web/src` | ← UX-1 | UX-5b | Generic | onboarding surface — **DONE+MERGED 2026-08-09** (LIF-94, PR #12) |
+| 26 | ◻UX-6 | Home = Journal dashboard | `apps/web/src` | ← UX-3 | leaf | Generic | Home renders the daily journal ← **NEXT HEAD (2026-08-17)** |
+| 27 | ✅UI-1 | Vida UI primitives | `packages/ui/src/components` | ← DS-5 | UI-2, UI-3, UI-4 | Design-Sys | primitive component library — **DONE+MERGED 2026-08-09** (LIF-86, PR #8) |
+| 28 | ✅UI-2 | Platform views (calendar/gallery/list/graph/timeline) | `packages/ui/src/components` | ← UI-1 | HARD-3 | Design-Sys | shared platform views — **DONE+MERGED 2026-08-11** (LIF-87, PR #13) |
+| 29 | ✅UI-3 | Vida editor (@vida/editor, TipTap) | `packages/editor/src` | ← UI-1, AR-4 | CAP-authoring | Design-Sys | block editor + serializers — **DONE+MERGED 2026-08-16** (LIF-88, PR #24) |
+| 30 | ✅UI-4 | App shell components | `apps/web/src` | ← UI-1, UX-3 | leaf | Generic | app shell composed — **DONE+MERGED 2026-08-17** (LIF-89, PR #29) |
 
 ## Milestone M1.1 — Hub & Foundation Modules   *(default home `core/src/services/<module>`)*
 > **Home exceptions (DF-7 — do not glob-expand blindly):** `MOD-spaces` → `apps/web` surfaces over `foundation/spaces`; `MOD-health` → `core/src/services/health/*`; `MOD-finance-commitments` / `MOD-projects-investigations` → sub-contexts of `services/finance` / `services/projects` (no new dir). All other `MOD-*` follow the default.

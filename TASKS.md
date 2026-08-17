@@ -8,7 +8,7 @@
 |------|---------|---------|---------|--------|
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
-*(**ui-4-app-shell-components LIF-89 → Done + MERGED** (S5 PR #29 `7559a4d`), 2026-08-17 — **UI-4 COMPLETE (S1–S5 all landed)**; the web app-shell chrome. S5 (integration) = the full-`<App/>` seam test + BR-7 `/graph` lazy-split (`app/graph` + `routes.tsx` + `@vida/ui` `sideEffects:false` DF-S5-1 → sigma into a 42 KB lazy chunk, MEASURED). §XXVI double-gate (gate-1 critic MEASURED the build, caught the lazy-route-alone BLOCKER · preflight 3 gzipped builds · gate-2 SHIP no-drift) + Visual Gate SHIP. LIF-89 synced Done; task archived. **The `-c` UI wave is complete → the `-d` UX wave (UX-6) is released.** Filed follow-up: `perf-framework-chunk-split` (§6 init budget, not BR-7). Prior: **ui-3-vida-editor LIF-88 → Done + MERGED** (E8 PR #24 `79ee267`), `@vida/editor` v0.8.0. Prior: ui-2-platform-views LIF-87 PR #13.)*
+*(**ux-6-home-journal-dashboard LIF-95 → Done + MERGED**, 2026-08-17 — **UX-6 COMPLETE → M1.0 BUILD WAVES COMPLETE** (all `-a/-b/-c/-d` landed; buildable issues #1–#30 done — census 92%, the residual = the DB-3/DB-4 **stream** rows #9/#10 which never ship standalone). The Home = Journal daily-dashboard **design model** (new-feature; no rendered component, no Visual Gate — shape docs-fixed like UX-3/4/5): `apps/web/src/home/{section-model,journal-contribution,section-state,selection}.ts` + 4 tests + `CLAUDE.md` + `docs/core/architecture/home-journal-dashboard.md`. Three sections (summary/agenda/entry) · journal-contribution registry seam (names no module, `JournalSeamNotActivated` per AR-9) · per-section degrade composition (reuses `TerminalState` by TYPE, no `deriveTerminalState`) · pure `resolveSelection`. Full §XXVI double-gate (Gate-1 REVISE→7 fixed [5-vs-4 terminal-state blocker] · preflight PASSED · Gate-2 REVISE→3 fixed [deriveTerminalState-with-no-data blocker] · post-impl SHIP). typecheck 0 · @vida/web **180 tests** (+15) · lint 0-err. Also reconciled **18 stale delivery glyphs** (UX-2…UI-4). **Next: M1.1 opens → MOD-notes #31.** Prior: **ui-4-app-shell-components LIF-89 → Done + MERGED** (S5 PR #29 `7559a4d`) — **UI-4 COMPLETE (S1–S5 all landed)**; the web app-shell chrome. S5 (integration) = the full-`<App/>` seam test + BR-7 `/graph` lazy-split (`app/graph` + `routes.tsx` + `@vida/ui` `sideEffects:false` DF-S5-1 → sigma into a 42 KB lazy chunk, MEASURED). §XXVI double-gate (gate-1 critic MEASURED the build, caught the lazy-route-alone BLOCKER · preflight 3 gzipped builds · gate-2 SHIP no-drift) + Visual Gate SHIP. LIF-89 synced Done; task archived. **The `-c` UI wave is complete → the `-d` UX wave (UX-6) is released.** Filed follow-up: `perf-framework-chunk-split` (§6 init budget, not BR-7). Prior: **ui-3-vida-editor LIF-88 → Done + MERGED** (E8 PR #24 `79ee267`), `@vida/editor` v0.8.0. Prior: ui-2-platform-views LIF-87 PR #13.)*
 
 ## 🧭 Delivery Routing — READ THIS FIRST (this repo's routing rule)
 
@@ -40,7 +40,7 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-17): `UX-6` `#26` (Home = Journal daily dashboard) — ← UX-3 ✅. The `-c` UI wave is COMPLETE (UI-1 ✅ → UI-2 ✅ → UI-3 ✅ → UI-4 ✅ S1–S5 merged PR #29 `7559a4d`), so the `-d` UX wave is RELEASED — UX-6 is no longer sub-wave-gated. Profile new-feature (delivery-plan:212-213); UX-6 renders inside the UI-4 shell. Also now un-parked (NOT the head): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · NEW `perf-framework-chunk-split` (§6 init budget — surfaced by S5, NOT BR-7). Prior head UI-4 `#30` → DONE.**
+**🎯 Computed head now (2026-08-17): `MOD-notes` `#31` (Notes & Pages — the in-degree-14 HUB) — ← DB-6 ✅ · DB-9 ✅ · AR-6 ✅. M1.0 BUILD WAVES COMPLETE (`-a/-b/-c/-d` all landed; buildable #1–#30 done, #9/#10 = streams → census 92% is those stream rows, not un-built work), so M1.1 (Hub & Foundation Modules) opens; `--next` confirms MOD-notes (dependent-count 17) as its ready head. Confirm at next `/begin` with `--next`. Also un-parked (NOT the head): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · `perf-framework-chunk-split` (§6 init budget). Prior head UX-6 `#26` → DONE (completes M1.0).**
 <details><summary>(prior 2026-08-11) Computed head = UI-3 #29 — resolved: built E1–E8, merged, Done.</summary></details>
 ⚠ **SUB-WAVE RULE (learned 2026-08-09, added to the routing steps below):** the raw `#`-order walk is INSUFFICIENT
 alone — it does NOT encode the `-c`/`-d` **sub-wave sequencing** (`m1.0-delivery-plan.md:129,140-141`): the **UX
@@ -64,24 +64,27 @@ drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-17) — UI-4 COMPLETE (S1–S5 merged). LIF-89 → Done. Next head = UX-6 (#26).**
-UI-4 app shell (LIF-89) is DONE: **S1 (PR #25)** · **S2 (PR #26)** · **S3 (PR #27)** · **S4 (PR #28)** · **S5 (PR #29
-`7559a4d`)** all merged to `main`. **S5 (integration — the final tile)** = the full-`<App/>` integration test
-(`App.integration.test.tsx`, 4 tests: ⌘K→real-router nav · search-unavailable · first-run branch · `/graph` empty
-degrade) + **BR-7 `/graph` lazy-split**: `app/graph/index.tsx` (lazy `GraphRoute` → `NeuralGraph state="empty"`) +
-`routes.tsx` graphRoute + **`@vida/ui` `"sideEffects": false` (DF-S5-1)** — the second, MEASURED-necessary lever that
-severs sigma from the eager barrel. Result (gzipped): sigma → a **42 KB lazy `graph-*` chunk (< 50 KB §6)**, initial
-177 KB → 154 KB. §XXVI double-gate (gate-1 critic MEASURED the build → caught the lazy-route-alone BLOCKER · preflight
-3 gzipped builds · gate-2 SHIP no-drift) + Visual Gate SHIP. Green: web **165 tests** (+4) · @vida/ui 317.
-**HANDOFF — next head by the `#`-order + sub-wave rule = `UX-6` Home = Journal daily dashboard (`#26`, ← UX-3 ✅,
-profile new-feature).** The `-c` UI wave (UI-1→UI-2→UI-3→UI-4) is COMPLETE → the `-d` UX wave is RELEASED, so UX-6 is
-no longer sub-wave-gated. UX-6 renders INSIDE the UI-4 shell (the `<Outlet/>` content at `/`). Also now un-parked
-(NOT the head): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · NEW **`perf-framework-chunk-split`**
-(split React+Tamagui+router into a framework chunk for the §6 < 80 KB init target — the S5 residual 154 KB is
-FRAMEWORK, not sigma; NOT BR-7).
-⚠ Integration tests that mount full `<App/>` are heavy (Tamagui cold-compile) — they tip the 5s default only under
-abnormal machine load; one-off `--testTimeout`, NO config change (the S3/S4 load-noise lesson holds — 2 @vida/ui
-first-in-file tests flaked in the full run, passed 40/40 isolated).
+**▶ CURRENT (2026-08-17) — UX-6 COMPLETE → M1.0 BUILD WAVES COMPLETE. LIF-95 → Done. Next head = MOD-notes (#31, M1.1).**
+UX-6 Home = Journal daily dashboard (LIF-95) is DONE — the **design model** (new-feature; no rendered component, no
+Visual Gate; shape docs-fixed like UX-3/4/5, resolved via derived-graph.md:31 + delivery-plan:270 + ui-4/_index.md:29,
+NOT a fork). Shipped `apps/web/src/home/{section-model,journal-contribution,section-state,selection}.ts` + 4 tests +
+`CLAUDE.md` + `docs/core/architecture/home-journal-dashboard.md` (+README row). Three sections (summary/agenda/entry,
+all in the shell `content` region) · **journal-contribution registry seam** (names no module; `JournalSeamNotActivated`
+per AR-9) · **per-section degrade composition** (`resolveDashboardStates`/`journalStillRenders`, reuses the `@vida/core`
+`TerminalState` canon by TYPE — does NOT call `deriveTerminalState`, no live query in a data-less model) · pure
+`resolveSelection` (override-wins, no module dropped). Full §XXVI double-gate: **Gate-1** REVISE → 7 fixed (blocker: I
+invented a 5th terminal state; canon is 4) → Approval 1 · **preflight** PASSED · **Gate-2** REVISE → 3 fixed (blocker:
+`section-state.ts` can't call `deriveTerminalState` — no live query in a design model) → Approval 2 · **post-impl
+critique SHIP**. Strict-TS caught the `resolveSelection` `Partial`-merge type-hole. typecheck 0 · @vida/web **180 tests**
+(+15) · lint 0-err. Also refreshed **18 stale delivery glyphs** (UX-2…UI-4 merged but marked ◻/⏳).
+**HANDOFF — M1.0 BUILD WAVES COMPLETE** (`-a/-b/-c/-d` all landed; buildable #1–#30 done, #9/#10 = DB-3/DB-4 streams →
+census M1.0 92% is those non-standalone stream rows, not un-built work). **M1.1 (Hub & Foundation Modules) opens →
+next head = `MOD-notes` `#31`** (Notes & Pages, the in-degree-14 HUB, ← DB-6 ✅ · DB-9 ✅ · AR-6 ✅; `--next` confirms,
+dependent-count 17). Notes & Pages before everything (roadmap §Sequencing ②). Also un-parked (NOT the
+head): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · `perf-framework-chunk-split` (§6 init budget).
+⚠ **Shape lesson (memory saved):** UX-6 = design model, docs-fixed — I twice manufactured a "UI-4 shipped without Home →
+must render → ask" fork; the docs already settle it (UI-4 scoped Home content OUT by design). Reuse a canon by TYPE, not
+by runtime — the design model borrows the vocabulary, the engine (MOD-journals #33) borrows the derivation.
 ⚠ CI red repo-wide = the known pnpm action-setup infra conflict (local green); no branch protection.
 
 <details><summary>(prior) 2026-08-12 — UI-3 / E1 + E2 + E3 DONE & MERGED (per-unit PRs). Clean handoff to E4.</summary>
