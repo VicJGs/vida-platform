@@ -77,7 +77,7 @@ authored at its turn (this file is the umbrella; the first unit's spec is a sibl
 |------|-------|------------------------|-----------------|
 | **S1 · Shell scaffold** | the 5-region frame (mounted in `routes.tsx` `RootComponent` wrapping `<Outlet/>`) + `UIProvider`/`ToastProvider` at root (App.tsx) + `media` config (D5) + `app-shell-ui-store` extension (`isMobileNavOpen`) | ✅ | shell-layout.md · regions.ts · breakpoints.ts · provider.tsx · routes.tsx |
 | **S2 · Nav chrome** | module dock + global bar + Spaces-bar seam; responsive drawer→rail→sidebar; renders `MODULE_MAP`/`GLOBAL_SURFACES` | ✅ | IA.md · module-map.ts · regions.ts |
-| **S3 · Command-bar overlay** | ⌘K launcher (input + command list + result list + `search-unavailable`) + router injection + trigger | ✅ | command-bar-and-search.md · command-bar/* |
+| **S3 · Command-bar overlay** ✅ SHIPPED | ⌘K launcher (input + command list + result list + `search-unavailable`) + router injection + trigger. Composes UI-1 Dialog+Input; combobox/listbox; lenient ⌘/Ctrl+K. Spec `./s3-command-bar-overlay.md`. | ✅ | command-bar-and-search.md · command-bar/* |
 | **S4 · Onboarding** | the 4 first-run screens + `App.tsx` `FIRST_RUN_BRANCH` wiring + completion write | ✅ | onboarding.md · onboarding/* |
 | **S5 · Integration** | compose S1–S4 in `App.tsx`/routes · `/graph` lazy-split · whole-shell manual regression · Currency + layer-doc | integration (no new render) | routes.tsx · all above |
 
@@ -92,3 +92,4 @@ S1 is the head (everything mounts inside it). Its detailed spec: `./s1-shell-sca
 |------|---------|--------|
 | 2026-08-16 | 2026-08-16-ui-4-app-shell-components | initial stub (Identity + homes) |
 | 2026-08-16 | 2026-08-16-ui-4-app-shell-components | umbrella authored — §2 BR-1..7, §3 boundaries, §4 whole-issue DoD, §5 S1–S5 roster (doc-derived), §6 none. Per Step-0 baseline. |
+| 2026-08-17 | 2026-08-16-ui-4-app-shell-components-4 | **S3 (command-bar overlay) SHIPPED** — composes UI-1 Dialog+Input, combobox/listbox, ⌘K keydown (lenient ⌘/Ctrl), router injection, `search-unavailable` states; zero `packages/ui` edit (BR-1). §XXVI double-gate (gate-1 REVISE 2 blockers+4 material folded · preflight PASSED 3 folds · gate-2 SHIP) + Visual Gate SHIP (caught a real ⌘K-dead-on-Mac bug → lenient mod match). Green: web typecheck · 139 tests · lint0 · build. Remaining: S4 (onboarding) · S5 (integration). |
