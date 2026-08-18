@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| m1-foundation-closeout | Project Foundation | 2026-08-17 | 2026-08-17 | ⚡ IN PROGRESS — close out **M1.0** (foundation slice: delivery-structure reconcile + §XXIX currency + tracker/Linear Done + close-out record) then open **M1.1** via milestone-delivery-planning. **Step 1 (completeness audit) DONE — M1.0 functionally 100% for buildable scope** (missing 3 = stale census Home-paths on done ar-4/ar-8; not-done 2 = DB-3/DB-4 `〰` streams = the 92% residual). Next: Step 2 §XXIX currency sweep. |
+| m1-foundation-closeout | Project Foundation | 2026-08-17 | 2026-08-18 | ⚡ IN PROGRESS — ⚠ **REROUTED: M1.0 was closed too soon.** Attempted to close M1.0 + open M1.1, but M1.0's schema foundation (DB-3 partial + DB-4 not started) was left unfinished — census "100%" measured homed-code alignment, not issue completion. **M1.0 REOPENED**; docs corrected to flag the mistake (closeout·roadmap·delivery-plan·reconstructed-structure·m1.1-plan). Next M1.0 work = finish DB-3 then DB-4 (schema foundation); **DB-4 flow pending Victor's blueprint**. M1.1 (MOD-notes+all) gated behind M1.0 (modules build on finished schema, don't author it). |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
 *(**ux-6-home-journal-dashboard LIF-95 → Done + MERGED**, 2026-08-17 — **UX-6 COMPLETE → M1.0 BUILD WAVES COMPLETE** (all `-a/-b/-c/-d` landed; buildable issues #1–#30 done — census 92%, the residual = the DB-3/DB-4 **stream** rows #9/#10 which never ship standalone). The Home = Journal daily-dashboard **design model** (new-feature; no rendered component, no Visual Gate — shape docs-fixed like UX-3/4/5): `apps/web/src/home/{section-model,journal-contribution,section-state,selection}.ts` + 4 tests + `CLAUDE.md` + `docs/core/architecture/home-journal-dashboard.md`. Three sections (summary/agenda/entry) · journal-contribution registry seam (names no module, `JournalSeamNotActivated` per AR-9) · per-section degrade composition (reuses `TerminalState` by TYPE, no `deriveTerminalState`) · pure `resolveSelection`. Full §XXVI double-gate (Gate-1 REVISE→7 fixed [5-vs-4 terminal-state blocker] · preflight PASSED · Gate-2 REVISE→3 fixed [deriveTerminalState-with-no-data blocker] · post-impl SHIP). typecheck 0 · @vida/web **180 tests** (+15) · lint 0-err. Also reconciled **18 stale delivery glyphs** (UX-2…UI-4). **Next: M1.1 opens → MOD-notes #31.** Prior: **ui-4-app-shell-components LIF-89 → Done + MERGED** (S5 PR #29 `7559a4d`) — **UI-4 COMPLETE (S1–S5 all landed)**; the web app-shell chrome. S5 (integration) = the full-`<App/>` seam test + BR-7 `/graph` lazy-split (`app/graph` + `routes.tsx` + `@vida/ui` `sideEffects:false` DF-S5-1 → sigma into a 42 KB lazy chunk, MEASURED). §XXVI double-gate (gate-1 critic MEASURED the build, caught the lazy-route-alone BLOCKER · preflight 3 gzipped builds · gate-2 SHIP no-drift) + Visual Gate SHIP. LIF-89 synced Done; task archived. **The `-c` UI wave is complete → the `-d` UX wave (UX-6) is released.** Filed follow-up: `perf-framework-chunk-split` (§6 init budget, not BR-7). Prior: **ui-3-vida-editor LIF-88 → Done + MERGED** (E8 PR #24 `79ee267`), `@vida/editor` v0.8.0. Prior: ui-2-platform-views LIF-87 PR #13.)*
@@ -41,7 +41,7 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-17): `MOD-notes` `#31` (Notes & Pages — the in-degree-14 HUB) — ← DB-6 ✅ · DB-9 ✅ · AR-6 ✅. M1.0 BUILD WAVES COMPLETE (`-a/-b/-c/-d` all landed; buildable #1–#30 done, #9/#10 = streams → census 92% is those stream rows, not un-built work), so M1.1 (Hub & Foundation Modules) opens; `--next` confirms MOD-notes (dependent-count 17) as its ready head. Confirm at next `/begin` with `--next`. Also un-parked (NOT the head): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · `perf-framework-chunk-split` (§6 init budget). Prior head UX-6 `#26` → DONE (completes M1.0).**
+**🎯 Computed head now (2026-08-18 — CORRECTED): finish the M1.0 SCHEMA FOUNDATION — `DB-3` (LIF-65, substrate, 11/~22 tables authored → 11 missing) then `DB-4` (LIF-66, per-domain schema, not started). ⚠ M1.0 was CLOSED TOO SOON (drift caught by Victor): build heads #1–30 are done, but DB-3/DB-4 (the schema foundation, M1.0's core purpose) were left unfinished. The census "100%" measured homed-code alignment, NOT issue completion — it masked the two open `〰` schema issues. `MOD-notes #31` and all of M1.1 are GATED behind M1.0 completion (modules build service+UI on the finished schema; they do NOT author schema). ⚠ DB-4's build FLOW is pending Victor's explicit blueprint — do not start until provided. Prior (wrong) note said M1.0 complete → MOD-notes; superseded.**
 <details><summary>(prior 2026-08-11) Computed head = UI-3 #29 — resolved: built E1–E8, merged, Done.</summary></details>
 ⚠ **SUB-WAVE RULE (learned 2026-08-09, added to the routing steps below):** the raw `#`-order walk is INSUFFICIENT
 alone — it does NOT encode the `-c`/`-d` **sub-wave sequencing** (`m1.0-delivery-plan.md:129,140-141`): the **UX
@@ -65,7 +65,21 @@ drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-17) — UX-6 COMPLETE → M1.0 BUILD WAVES COMPLETE. LIF-95 → Done. Next head = MOD-notes (#31, M1.1).**
+**▶ CURRENT (2026-08-18) — ⚠ M1.0 REOPENED (closed too soon). Next = finish the M1.0 SCHEMA FOUNDATION (DB-3 → DB-4).**
+M1.0's build heads (#1–30) are done+merged, but M1.0's *purpose* is the foundation, which **includes the complete
+schema** — and two schema-foundation issues were left unfinished when M1.0 was wrongly declared closed:
+- **DB-3** (LIF-65, substrate schema): **11 of ~22 charter tables authored, 11 MISSING** (`planned_blocks·templates·
+  contributions·purpose_reviews·plan_steps·store·rules·review_curves·method_bindings·topic_reviews·measurement`).
+- **DB-4** (LIF-66, per-domain schema): **not started** (0 module tables).
+The drift: census `progress` = homed-code alignment, NOT issue completion (so "100%" masked the open `〰` issues);
+and the M1.1 plan had folded DB-4's schema authoring into module increments. **Corrected:** M1.0 reopened + mistake
+flagged across the roadmap/plan/closeout/reconstructed-structure docs; M1.1 grain fixed (modules = service+UI on the
+FINISHED schema). **Next head = finish DB-3 → then DB-4. ⚠ DB-4's build FLOW is pending Victor's explicit blueprint —
+do not start DB-4 until provided.** M1.1 (MOD-notes #31 + all) is GATED behind M1.0 completion.
+
+<details><summary>(superseded 2026-08-18) prior CURRENT — the premature "M1.0 complete → MOD-notes" handoff</summary>
+
+**▶ (superseded) CURRENT (2026-08-17) — UX-6 COMPLETE → M1.0 BUILD WAVES COMPLETE. LIF-95 → Done. Next head = MOD-notes (#31, M1.1).**
 UX-6 Home = Journal daily dashboard (LIF-95) is DONE — the **design model** (new-feature; no rendered component, no
 Visual Gate; shape docs-fixed like UX-3/4/5, resolved via derived-graph.md:31 + delivery-plan:270 + ui-4/_index.md:29,
 NOT a fork). Shipped `apps/web/src/home/{section-model,journal-contribution,section-state,selection}.ts` + 4 tests +
@@ -87,6 +101,7 @@ head): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · `per
 must render → ask" fork; the docs already settle it (UI-4 scoped Home content OUT by design). Reuse a canon by TYPE, not
 by runtime — the design model borrows the vocabulary, the engine (MOD-journals #33) borrows the derivation.
 ⚠ CI red repo-wide = the known pnpm action-setup infra conflict (local green); no branch protection.
+</details>
 
 <details><summary>(prior) 2026-08-12 — UI-3 / E1 + E2 + E3 DONE & MERGED (per-unit PRs). Clean handoff to E4.</summary>
 

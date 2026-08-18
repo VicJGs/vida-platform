@@ -34,10 +34,29 @@ Then **open M1.1 — Hub & Foundation Modules** via the milestone-delivery-plann
 - [ ] 13. Accept & log
 
 ## Route History
-- 2026-08-17: created; Phase 1 (close out M1.0) COMPLETE — Steps 1–5 all done (audit clean · currency refreshed 1 lag · glyphs reconciled census→100% · Linear verified · close-out record written). M1.0 CLOSED.
-- 2026-08-17: Next = Phase 2 (open M1.1 via milestone-delivery-planning).
+- 2026-08-17: created; Phase 1 (close out M1.0) run — Steps 1–5; committed `061b0b5` marking M1.0 CLOSED.
+- 2026-08-17: Phase 2 — drafted + gated `m1.1-delivery-plan.md` (critic REVISE→fixed).
+- 2026-08-18: ⚠ **REROUTE (Victor caught the drift).** M1.0 was CLOSED TOO SOON — its schema foundation (DB-3 partial,
+  11/~22 substrate tables; DB-4 not started) was never verified done. Root cause: census `progress` = homed-code
+  alignment, NOT issue completion. Also the M1.1 plan had "reshaped the process" (folded DB-4's M1.0 schema authoring
+  into module increments). Corrective edits: reopened M1.0 + flagged the mistake across closeout·roadmap·delivery-plan·
+  reconstructed-structure·TASKS; corrected the M1.1 grain (modules = service+UI on the FINISHED schema, don't author it)
+  + gated M1.1 behind M1.0. Lesson → memory [[m1-foundation-owns-schema-modules-build-on-it]].
 
 ## Resume
+**⚠ REROUTED 2026-08-18 — M1.0 REOPENED (was closed too soon).**
+- The M1.0 close (Phase 1, commit `061b0b5`) was premature: DB-3 (substrate schema — 11/~22 tables) + DB-4 (per-domain
+  schema — 0 tables) are unfinished M1.0 foundation. Docs now flag the mistake + reopen M1.0.
+- **Next M1.0 work:** finish DB-3 (author 11 missing substrate tables: planned_blocks·templates·contributions·
+  purpose_reviews·plan_steps·store·rules·review_curves·method_bindings·topic_reviews·measurement — some ADR-016 §3.5
+  shape-open / consumer-gated) → then DB-4 (per-domain, all ~19 domains). **DB-4 build FLOW pending Victor's blueprint.**
+- **M1.1 gated behind M1.0.** m1.1-delivery-plan.md is drafted+gated but grain-corrected: modules = service+UI on the
+  finished schema, do NOT author schema.
+- **Uncommitted reroute edits** (to commit): m1.0-closeout.md · roadmap.md · m1.0-delivery-plan.md · m1.1-delivery-plan.md ·
+  reconstructed-structure.md · TASKS.md · this task file. (Phase 2's m1.1-delivery-plan.md new file also uncommitted.)
+- **Do NOT** mark DB-3 Done or start DB-4 without (a) verifying DB-3's remaining scope and (b) Victor's DB-4 flow blueprint.
+
+<details><summary>(superseded) Phase-1 "M1.0 CLOSED" resume — the premature close</summary>
 **PHASE 1 COMPLETE — M1.0 CLOSED (2026-08-17).**
 - S1 audit: M1.0 functionally 100% buildable; the 92% census = DB-3/DB-4 `〰` streams + 3 stale Home-paths (now fixed).
 - S2 currency: 11/12 current-* current; 8 doc-by-convention; 1 lag (web-client-runtime) refreshed (UX-2/UI-4 runtime delta).
@@ -46,3 +65,4 @@ Then **open M1.1 — Hub & Foundation Modules** via the milestone-delivery-plann
 - S5 record: `docs/roadmap/m1.0-closeout.md` + pointers (roadmap.md, delivery-plan).
 **Changeset (all docs, uncommitted):** docs/roadmap/m1.0-closeout.md (new) · docs/roadmap.md · docs/roadmap/m1.0-delivery-plan.md · docs/specs/foundation/delivery-structure-reconstruction/reconstructed-structure.md · docs/infrastructure/web-client-runtime/current-spec.md · TASKS.md · .claude/tasks/{_index,m1-foundation-closeout}.md
 **Next: Phase 2 — open M1.1 (milestone-delivery-planning, 8 steps → docs/roadmap/m1.1-delivery-plan.md, gated).**
+</details>
