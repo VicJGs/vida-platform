@@ -41,7 +41,7 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-18 — DECIDED): `DB-3` (LIF-65, #9) — finish the M1.0 SCHEMA FOUNDATION, then `DB-4` (LIF-66, #10). Model + flow DECIDED (Victor's blueprint) → `docs/roadmap/schema-foundation-build-flow.md`.** M1.0 was reopened (closed too soon — DB-3 substrate + DB-4 per-domain unfinished; census "100%" measured homed-code alignment, NOT issue completion). The schema-authoring model is now **Model B (upfront foundation)**: DB-3 then DB-4 are **gated build HEADS authored upfront BEFORE M1.1**, run via a **5-phase lifecycle** (intent-intake → current-state → plan double-gate → implement → foundation-soundness verify), each in its OWN clean-context session. DB-3's remaining scope = the **11 §5.20 Stream (i) tables** (`planned_blocks·templates·review_curves·method_bindings·review_events·values·contributions·purpose_reviews·plan_steps·store·rules`). `MOD-notes #31` + all M1.1 are GATED behind M1.0 (modules build service+UI on the finished schema; author none). ⚠ DB-3/DB-4 are **no longer `〰` streams** — real heads at #9/#10, so the `#`-order walk now correctly picks DB-3 as head.**
+**🎯 Computed head now (2026-08-18 — DB-3 DONE → head = `DB-4` (LIF-66, #10)): author the ~19 per-domain schemas, same 5-phase lifecycle, then M1.0 schema foundation is fully complete → M1.1 opens.** **DB-3 (LIF-65, #9) is DONE + PR'd** (PR #31, branch `db-3-stream-i-consolidation`, LIF-65→Done): the 11 §5.20 Stream (i) substrate tables authored (migrations 007–011) via the full 5-phase lifecycle; root typecheck 11/11 · @vida/core 192 tests. Model + flow: `docs/roadmap/schema-foundation-build-flow.md`; spec `docs/specs/foundation/db-3-stream-i-substrate/`. **DB-4** = the per-domain schema (Stream ii, the 19 `structure-data.md` docs), ← DB-3, same 5-phase lifecycle in its own clean-context session; per-domain component sub-issues. `MOD-notes #31` + all M1.1 stay GATED behind M1.0 (modules build service+UI on the finished schema; author none). ⚠ merge PR #31 to land DB-3 on main.
 <details><summary>(prior 2026-08-11) Computed head = UI-3 #29 — resolved: built E1–E8, merged, Done.</summary></details>
 ⚠ **SUB-WAVE RULE (learned 2026-08-09, added to the routing steps below):** the raw `#`-order walk is INSUFFICIENT
 alone — it does NOT encode the `-c`/`-d` **sub-wave sequencing** (`m1.0-delivery-plan.md:129,140-141`): the **UX
@@ -65,21 +65,23 @@ drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-18) — schema-foundation model + flow DECIDED + documented. Next = DB-3 in a FRESH clean-context session.**
-M1.0 was reopened (closed too soon — DB-3 substrate + DB-4 per-domain schema unfinished). This session **decided the
-schema-authoring model and documented the flow** (Victor's blueprint) — no schema authored (that's DB-3's own session):
-- **Model B (upfront foundation) DECIDED:** DB-3 then DB-4 are **gated build HEADS authored upfront BEFORE M1.1**;
-  M1.1+ modules build service+UI on the FINISHED schema, author none. Authoritative flow (5-phase lifecycle):
-  **`docs/roadmap/schema-foundation-build-flow.md`**.
-- **DB-3 remaining scope (corrected vs ADR-002 §5.20):** 11 Stream (i) tables — `planned_blocks·templates·review_curves·
-  method_bindings·review_events·values·contributions·purpose_reviews·plan_steps·store·rules` (`store`/`rules` shape-open).
-  (+`values`,+`review_events`; −`topic_reviews` [DB-4], −`measurement` [a column AMEND, not a table].)
-- **Model-A "streaming" layer retired** across 7 docs; both DB task files primed (profile add-backend-component +
-  scenario + intent source + 5-phase Build Steps) for clean-context pickup.
-- **DB-3/DB-4 are no longer `〰` streams** — real heads at #9/#10; the `#`-order walk now picks DB-3 as head.
+**▶ CURRENT (2026-08-18) — DB-3 BUILT + DONE + PR'd. Next head = DB-4 (LIF-66, #10).**
+DB-3 (LIF-65, #9) ran the full 5-phase lifecycle in one clean-context session and shipped the 11 §5.20 Stream (i)
+substrate tables — **the M1.0 schema foundation's Stream (i) is complete**:
+- **11 tables authored** (migrations 007–011): `values·contributions·purpose_reviews·plan_steps` (007) · `review_curves·
+  method_bindings·review_events` (008) · `store·rules` (009) · `planned_blocks` (010) · `templates` (011). +`@vida/types`
+  enums · Zod validators · `ENTITY_TYPES`+11 · enum-parity +10. Root typecheck 11/11 · @vida/core **192 tests**.
+- **Key calls (doc-determined):** cross-domain refs = plain TEXT no FK (dissolved the DB-3-before-DB-4 ordering concern);
+  all 6 session sub-types deferred to DB-4; DB-3 owns 0 AMENDs; `planned_blocks.sub_type` OPEN-vocab no-CHECK (post-impl
+  critique catch). §XXIX `database-layer/current-*` promoted INTENT→FACT.
+- **Committed** on branch `db-3-stream-i-consolidation` (`61d0c2b`), **PR #31** → main, **LIF-65 → Done**.
 
-**▶ NEXT ACTION:** open a fresh session → `/task-switch db-3-stream-i-consolidation` → run the 5-phase lifecycle
-(start P1 intent-intake from ADR-002 §5.20). DB-4 after DB-3. M1.1 (MOD-notes #31 + all) stays GATED behind M1.0.
+**▶ NEXT ACTION:** (1) **merge PR #31** to land DB-3 on main (Linear already Done; no branch protection). (2) Then
+**DB-4** (LIF-66, #10) — the per-domain schema (Stream ii, the 19 `structure-data.md` docs), ← DB-3, same 5-phase
+lifecycle in its own clean-context session, per-domain component sub-issues. Its P0 fixes the canonical domain-group
+count (~17–21 across charters). M1.1 (MOD-notes #31 + all) stays GATED behind M1.0 until DB-4 lands.
+⚠ Reload for DB-4: `docs/roadmap/schema-foundation-build-flow.md §4` · `.claude/tasks/db-4-per-domain-schema.md` ·
+memory [[open-vocab-columns-take-no-sql-check]] (a tuple ≠ auto-CHECK).
 
 <details><summary>(superseded 2026-08-18) prior CURRENT — the premature "M1.0 complete → MOD-notes" handoff</summary>
 
