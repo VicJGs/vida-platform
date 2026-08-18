@@ -73,3 +73,5 @@ Then **open M1.1 — Hub & Foundation Modules** via the milestone-delivery-plann
 **Changeset (all docs, uncommitted):** docs/roadmap/m1.0-closeout.md (new) · docs/roadmap.md · docs/roadmap/m1.0-delivery-plan.md · docs/specs/foundation/delivery-structure-reconstruction/reconstructed-structure.md · docs/infrastructure/web-client-runtime/current-spec.md · TASKS.md · .claude/tasks/{_index,m1-foundation-closeout}.md
 **Next: Phase 2 — open M1.1 (milestone-delivery-planning, 8 steps → docs/roadmap/m1.1-delivery-plan.md, gated).**
 </details>
+
+Last session: 2026-08-18 — switching to db-3-stream-i-consolidation (M1.0 schema foundation build; closeout's decide-the-model job is complete).

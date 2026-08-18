@@ -44,3 +44,5 @@ First step: fresh clean-context session → `/task-switch db-3-stream-i-consolid
 starting **P1 intent-intake from ADR-002 §5.20**. DB-4 after DB-3. M1.1 stays gated behind M1.0.
 Context to reload: `docs/roadmap/schema-foundation-build-flow.md` (the flow) · `.claude/tasks/db-3-stream-i-consolidation.md`
 (primed task) · ADR-002 §5.20 (the intent source) · memory [[m1-foundation-owns-schema-modules-build-on-it]].
+
+Paused at: 2026-08-18. Switching to db-3-stream-i-consolidation (start the 5-phase schema-foundation lifecycle).

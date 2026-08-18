@@ -21,6 +21,15 @@ import {
   EFFECT_TYPE,
   CURRENCY_BACKING_KIND,
   CONSEQUENCE_KIND,
+  CONTRIBUTION_GOAL_TYPE,
+  CONTRIBUTION_CONTRIBUTOR_TYPE,
+  PLAN_STEP_OWNER_TYPE,
+  REVIEW_CURVE_KIND,
+  METHOD_BINDING_TARGET_TYPE,
+  STORE_NODE_KIND,
+  STORE_REF_TYPE,
+  RULE_CONDITION_BINDING_TYPE,
+  PLANNED_BLOCK_STATUS,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -28,6 +37,11 @@ import { migration003Spaces } from '../db/migrations/003_spaces'
 import { migration004Effects } from '../db/migrations/004_effects'
 import { migration005Capability } from '../db/migrations/005_capability'
 import { migration006Economy } from '../db/migrations/006_economy'
+import { migration007Purpose } from '../db/migrations/007_purpose'
+import { migration008KnowledgeReview } from '../db/migrations/008_knowledge_review'
+import { migration009EconomyStoreRules } from '../db/migrations/009_economy_store_rules'
+import { migration010Scheduling } from '../db/migrations/010_scheduling'
+import { migration011Templates } from '../db/migrations/011_templates'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -98,6 +112,20 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   // AR-7 inc-4 economy: currencies.backing_kind + consequence_ledger.kind are scalar CHECK columns.
   { table: 'currencies', column: 'backing_kind', tuple: CURRENCY_BACKING_KIND },
   { table: 'consequence_ledger', column: 'kind', tuple: CONSEQUENCE_KIND },
+  // DB-3 Purpose domain (007): contributions goal/contributor + plan_steps owner are scalar CHECK cols.
+  { table: 'contributions', column: 'goal_type', tuple: CONTRIBUTION_GOAL_TYPE },
+  { table: 'contributions', column: 'contributor_type', tuple: CONTRIBUTION_CONTRIBUTOR_TYPE },
+  { table: 'plan_steps', column: 'owner_type', tuple: PLAN_STEP_OWNER_TYPE },
+  // DB-3 review engine (008): review_curves.curve_kind + method_bindings.target_type.
+  { table: 'review_curves', column: 'curve_kind', tuple: REVIEW_CURVE_KIND },
+  { table: 'method_bindings', column: 'target_type', tuple: METHOD_BINDING_TARGET_TYPE },
+  // DB-3 store/rules (009): store node_kind/ref_type + rules condition_binding_type.
+  { table: 'store', column: 'node_kind', tuple: STORE_NODE_KIND },
+  { table: 'store', column: 'ref_type', tuple: STORE_REF_TYPE },
+  { table: 'rules', column: 'condition_binding_type', tuple: RULE_CONDITION_BINDING_TYPE },
+  // DB-3 scheduling (010): planned_blocks.status is FIXED. sub_type is OPEN (SS-5/BR-6, no CHECK) —
+  // deliberately NOT a parity row, mirroring sessions.sub_type (registry-validated, not a column CHECK).
+  { table: 'planned_blocks', column: 'status', tuple: PLANNED_BLOCK_STATUS },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -109,6 +137,11 @@ async function ddlFor(table: string): Promise<string> {
   await migration004Effects.up(driver)
   await migration005Capability.up(driver)
   await migration006Economy.up(driver)
+  await migration007Purpose.up(driver)
+  await migration008KnowledgeReview.up(driver)
+  await migration009EconomyStoreRules.up(driver)
+  await migration010Scheduling.up(driver)
+  await migration011Templates.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

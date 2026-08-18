@@ -48,6 +48,11 @@ export type SessionPurpose = (typeof SESSION_PURPOSE)[number]
 export const SCHEDULING_MODE = ['attended', 'planned', 'ad_hoc'] as const
 export type SchedulingMode = (typeof SCHEDULING_MODE)[number]
 
+/** A `planned_blocks` (aggregator-scheduled block) lifecycle status — ADR-004 §3.1 · DB-3 substrate.
+ *  The base `sessions.planned_block_id` points at a block; the block tracks whether it was fulfilled. */
+export const PLANNED_BLOCK_STATUS = ['planned', 'scheduled', 'fulfilled', 'skipped'] as const
+export type PlannedBlockStatus = (typeof PLANNED_BLOCK_STATUS)[number]
+
 /** The S5 lifecycle state machine — FIXED (BR-5a) → hard SQL CHECK. Supersedes the legacy
  *  SCHEDULED_SESSION_STATUS (knowledge.ts), which lacks 'planned' + 'missed'. */
 export const SESSION_STATUS = [

@@ -14,10 +14,13 @@ packages/core/src/db/
 ├── schema/              # v2 authoring surface (DB-1+)
 │   ├── _shared.ts       # primitives: baseColumns · syncColumns · typed column helpers · enumText (SQL CHECK lives in the migration)
 │   ├── _registry.ts     # entity_type registry (single source for polymorphic FKs + CHECKs)
-│   ├── index.ts         # barrel — primitives now; table modules added by DB-3+
+│   ├── index.ts         # barrel — primitives + the foundation/ substrate table modules
+│   ├── foundation/      # [FACT] substrate tables authored by DB-6/7 + AR-5/6/7 (see inventory below)
+│   │   ├── sync-queue.ts · app-state.ts   # DB-6 / DB-7 infra tables
+│   │   ├── sessions.ts · spaces.ts · capability.ts · effects.ts · economy.ts  # AR-5/6/7 substrate
 │   └── <domain>.ts      # [INTENT] one file per structure-data doc (DB-4)
 ├── schema.ts            # v1 monolith — reference-only; deleted at parity (DB-6/7)
-├── repository.ts · adapter.ts · migrations/
+├── repository.ts · adapter.ts · migrations/   # 001_sync_queue … 006_economy (007+ = DB-3)
 ```
 
 ## Current state (FACT)
@@ -139,6 +142,47 @@ The runner now bootstraps its own version store and offers a dev-reset. `[FACT: 
 - **Tested** — `db/tests/migrations-runner.test.ts` (6 cases: fresh bootstrap, idempotent ensureInfra, no-op re-run,
   failing-migration rollback, close/reopen persistence, resetDev rebuild). `@vida/core` 131/131 · `@vida/web` 6/6 · typecheck 10/10. `[FACT: vitest run]`
 
+## AR-5/6/7 — substrate tables authored (topology fact · 2026-07-28…08-03)
+The substrate framework sessions authored **15 substrate tables** into `schema/foundation/` (migrations 002–006). The
+per-table SEMANTICS live in each substrate's own context (`docs/core/{sessions,spaces,capability,effects,economy}/current-*`);
+recorded here only as the DB-layer topology fact so the schema-authoring baseline is accurate. `[FACT: schema/foundation/*.ts; migrations/00{2..6}_*.ts]`
+
+| Module file | Tables | Migration | Source |
+|-------------|--------|-----------|--------|
+| `foundation/sessions.ts` | `sessions` · `session_type_registry` · `session_attachments` | 002 | AR-5 (ADR-004) |
+| `foundation/spaces.ts` | `tags` · `entity_tags` · `entity_links` · `spaces` · `space_enabled_blocks` · `views` | 003 | AR-6 (ADR-006/007) |
+| `foundation/effects.ts` | `applied_effects` | 004 | AR-7 (ADR-004 F1) |
+| `foundation/capability.ts` | `capability_definitions` · `block_instances` · `capability_grants` | 005 | AR-7 (ADR-008/010) |
+| `foundation/economy.ts` | `currencies` · `consequence_ledger` | 006 | AR-7 (ADR-012) |
+
+Mapped to ADR-002 §5.20 Stream (i) ADD, **11 line-items are done** (the 4 satellites — `session_type_registry`,
+`session_attachments`, `tags`, `entity_links` — are not distinct §5.20 rows). **DB-3 authors the 11 remaining ADD
+tables** (`planned_blocks` · `templates` · `review_curves` · `method_bindings` · `review_events` · `values` ·
+`contributions` · `purpose_reviews` · `plan_steps` · `store` · `rules`) + session sub-type extensions (decide author/defer)
++ column-level AMENDs (classify) + the RETIRE reconcile. `[FACT: docs/roadmap/schema-foundation-build-flow.md §3; ADR-002 §5.20]`
+
+## DB-3 — IMPLEMENTED (2026-08-18 · LIF-65 · the Stream (i) substrate remainder)
+The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (i) ADD tables are authored (migrations
+007–011), so DB-4 (per-domain) and every M1.1+ module now build on a finished substrate. `[FACT: schema/foundation/{purpose,knowledge-review,scheduling,templates}.ts + economy.ts; migrations/00{7..11}_*.ts]`
+
+| Migration | Module | Tables |
+|-----------|--------|--------|
+| `007_purpose.ts` | `foundation/purpose.ts` | `values` (quoted keyword) · `contributions` · `purpose_reviews` · `plan_steps` (ADR-011) |
+| `008_knowledge_review.ts` | `foundation/knowledge-review.ts` | `review_curves` · `method_bindings` · `review_events` (ADR-005 generic review engine) |
+| `009_economy_store_rules.ts` | `foundation/economy.ts` | `store` · `rules` (ADR-012 §3.5/§3.9) |
+| `010_scheduling.ts` | `foundation/scheduling.ts` | `planned_blocks` (ADR-004 §3.1) |
+| `011_templates.ts` | `foundation/templates.ts` | `templates` (ADR-009) |
+
+- **All 11 syncable** (`...baseColumns`), all `[E]`-marked fields inert in M1.0 (pass-through, BR-DB6-3). Cross-domain
+  refs are **plain TEXT, no FK** (target domains are DB-4) — the `entity_links.page_id` precedent.
+- **Session sub-type extensions DEFERRED to DB-4** (ADR-004 §3.1 domain-ownership) — none authored here.
+- **Column-level AMENDs owned elsewhere** (per-domain → DB-4; sync cols/HLC → DB-2/M4) — DB-3 owns 0 directly.
+- **RETIRE set verified absent.** **`ENTITY_TYPES`** appended with the 11 new substrate types.
+- Green: `@vida/core` **193 tests** (enum-parity 19 · runner applies all 11 migrations) · root typecheck 11/11.
+- ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
+  `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
+
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-3 substrate tables · DB-4 per-domain tables · DB-5 encryption wiring · monolith retirement ·
-DB-8 FTS5 · DB-11 reconcile ADR-002 §5/§7/§8. **DB-6 ✅ + DB-7 ✅ done.** DB-7 unblocks db-10 (seed) with db-6/db-9.
+DB-2 sync cols/HLC · DB-4 per-domain tables · DB-5 encryption wiring · monolith retirement · DB-8 FTS5 · DB-11
+reconcile ADR-002 §5/§7/§8. **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 schema foundation
+is complete.** DB-7 unblocks db-10 (seed) with db-6/db-9.

@@ -89,3 +89,27 @@ Rules DB-6 ESTABLISHED (implemented + tested):
   `@vida/core` barrel, so it is unreachable from production flows. `[FACT: runner.ts resetDev; index.ts]`
 - **[FACT] BR-DB7-5 — no hand-created `app_state` fixtures.** All 4 test-file fixtures retired; the real bootstrap
   creates the table, so tests exercise the production path. `[FACT: the 4 test files; migrations-runner.test.ts]`
+
+## AR-5/6/7 substrate (boundary — 2026-08-18)
+- **[FACT]** AR-5/6/7 authored 15 substrate tables into `schema/foundation/` (migrations 002–006); their per-table
+  business rules live in `docs/core/{sessions,spaces,capability,effects,economy}/current-business-rules.md`, not here.
+  `[FACT: schema/foundation/*.ts]`
+
+## DB-3 — IMPLEMENTED (2026-08-18 · LIF-65)
+- **[FACT] BR-DB3-1 — the 11 Stream (i) ADD tables are authored** (migrations 007–011), each a syncable table upholding
+  invariants #1–#9 (cross-domain refs plain TEXT no FK, targets are DB-4). `[FACT: migrations/00{7..11}_*.ts]`
+- **[FACT] BR-DB3-2 — OPEN-vocab columns carry NO CHECK.** `planned_blocks.sub_type` is plain TEXT (registry-validated
+  at runtime, SS-5/BR-6), mirroring `sessions.sub_type` — a hard CHECK there would forbid spawning a user-registered
+  custom sub_type. Only `planned_blocks.status` is a FIXED CHECK. `[FACT: 010_scheduling.ts; session.ts:13-15]`
+- **[FACT] BR-DB3-3 — session sub-type extensions DEFERRED to DB-4** (ADR-004 §3.1 domain-ownership); column-level
+  AMENDs owned elsewhere (DB-4 / DB-2-M4) — DB-3 authored 0 AMENDs directly. `[FACT: PLAN §C/§D]`
+- **[FACT] BR-DB3-4 — RETIRE set verified absent** from the v2 surface (the lone `xp_history` string is a supersession
+  comment). `ENTITY_TYPES` appended with the 11 new substrate types. `[FACT: _registry.ts]`
+- **[FACT] BR-DB3-5 — enum CHECK↔tuple parity holds** for all 10 DB-3 CHECK columns (enum-parity.test.ts, 19 tests).
+  `@vida/core` 193 tests green. `[FACT: enum-parity.test.ts]`
+
+**Foundation-readiness (P5) — VERIFIED.** A representative downstream consumer finds every substrate table it needs:
+the DB-4 **Purpose domain** requires `values` · `contributions` · `purpose_reviews` · `plan_steps` — all authored +
+documented (this section + current-spec DB-3 table); the **Knowledge** review engine (`review_curves`/`method_bindings`/
+`review_events`) and **Finance/economy** (`store`/`rules`) likewise. No gap. The M1.0 schema foundation is complete →
+M1.1 (MOD-notes #31) may open.
