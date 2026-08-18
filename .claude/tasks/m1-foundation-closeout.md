@@ -13,7 +13,7 @@ Then **open M1.1 — Hub & Foundation Modules** via the milestone-delivery-plann
 (produce `docs/roadmap/m1.1-delivery-plan.md`, gated). Next build head after this = MOD-notes #31.
 
 ## Dependencies
-- ⚠ M1.0 REOPENED (schema foundation DB-3+DB-4 unfinished); M1.1 gated behind M1.0. DB-4 flow pending Victor's blueprint.
+- ⚠ M1.0 REOPENED (schema foundation DB-3+DB-4 unfinished); M1.1 gated behind M1.0. Model + flow DECIDED 2026-08-18 (Model B) → `docs/roadmap/schema-foundation-build-flow.md`.
 
 ## Build Steps
 ### Phase 1 — Close out M1.0 (LITE: delivery-structure reconcile + §XXIX currency)
@@ -42,19 +42,26 @@ Then **open M1.1 — Hub & Foundation Modules** via the milestone-delivery-plann
   into module increments). Corrective edits: reopened M1.0 + flagged the mistake across closeout·roadmap·delivery-plan·
   reconstructed-structure·TASKS; corrected the M1.1 grain (modules = service+UI on the FINISHED schema, don't author it)
   + gated M1.1 behind M1.0. Lesson → memory [[m1-foundation-owns-schema-modules-build-on-it]].
+- 2026-08-18: **Schema-foundation model + flow DECIDED + DOCUMENTED (Victor's blueprint).** Model B (upfront
+  foundation) + 5-phase lifecycle persisted to `docs/roadmap/schema-foundation-build-flow.md`; DB-3 ledger corrected
+  vs ADR-002 §5.20; Model-A streaming layer retired across 7 docs; both DB task files primed for clean-context pickup;
+  TASKS.md routed to DB-3. No schema authored (that's DB-3's own session). This closes the reconciliation/setup work.
 
 ## Resume
-**⚠ REROUTED 2026-08-18 — M1.0 REOPENED (was closed too soon).**
-- The M1.0 close (Phase 1, commit `061b0b5`) was premature: DB-3 (substrate schema — 11/~22 tables) + DB-4 (per-domain
-  schema — 0 tables) are unfinished M1.0 foundation. Docs now flag the mistake + reopen M1.0.
-- **Next M1.0 work:** finish DB-3 (author 11 missing substrate tables: planned_blocks·templates·contributions·
-  purpose_reviews·plan_steps·store·rules·review_curves·method_bindings·topic_reviews·measurement — some ADR-016 §3.5
-  shape-open / consumer-gated) → then DB-4 (per-domain, all ~19 domains). **DB-4 build FLOW pending Victor's blueprint.**
-- **M1.1 gated behind M1.0.** m1.1-delivery-plan.md is drafted+gated but grain-corrected: modules = service+UI on the
-  finished schema, do NOT author schema.
-- **Reroute committed:** `e7cba50` (reopen + flag mistake, 7 docs) + `c8c6e76` (session log). Prior premature close = `061b0b5`.
-  Tracker created LIF-159 for this task at session-end (accepted).
-- **Do NOT** mark DB-3 Done or start DB-4 without (a) verifying DB-3's remaining scope and (b) Victor's DB-4 flow blueprint.
+**✅ 2026-08-18 — schema-foundation MODEL + FLOW decided and documented. Reconciliation complete. Next = DB-3 (fresh session).**
+- **Model B (upfront foundation) DECIDED** (Victor's blueprint): DB-3 then DB-4 are gated build HEADS authored upfront
+  BEFORE M1.1; M1.1+ modules build service+UI on the finished schema, author none. Run via a **5-phase lifecycle**.
+- **Authoritative flow doc written:** `docs/roadmap/schema-foundation-build-flow.md` (model + 5-phase lifecycle +
+  corrected DB-3 ledger + reconciliation record). All plans/rows/closeout/task-files point here.
+- **DB-3 ledger CORRECTED** vs the earlier drifted list (verified vs ADR-002 §5.20): the 11 remaining substrate ADD
+  tables = `planned_blocks·templates·review_curves·method_bindings·review_events·values·contributions·purpose_reviews·
+  plan_steps·store·rules` (+`values`,+`review_events`; −`topic_reviews` [DB-4], −`measurement` [a column AMEND]).
+- **Model-A "streaming" layer RETIRED** across 7 docs (roadmap · m1.0-delivery-plan rows+note+§5.1.1 ·
+  reconstructed-structure #9/#10 · m1.0-closeout · m1.1-delivery-plan · both task files).
+- **Task files primed** (`db-3-stream-i-consolidation`, `db-4-per-domain-schema`): profile add-backend-component +
+  scenario + intent source + 5-phase Build Steps — ready for clean-context pickup.
+- **Next:** DB-3 in its own fresh session (`/task-switch db-3-stream-i-consolidation`), running the 5-phase lifecycle.
+  DB-4 after DB-3. Do NOT start schema in THIS closeout task/session.
 
 <details><summary>(superseded) Phase-1 "M1.0 CLOSED" resume — the premature close</summary>
 **PHASE 1 COMPLETE — M1.0 CLOSED (2026-08-17).**

@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| m1-foundation-closeout | Project Foundation | 2026-08-17 | 2026-08-18 | ⚡ IN PROGRESS — ⚠ **REROUTED: M1.0 was closed too soon.** Attempted to close M1.0 + open M1.1, but M1.0's schema foundation (DB-3 partial + DB-4 not started) was left unfinished — census "100%" measured homed-code alignment, not issue completion. **M1.0 REOPENED**; docs corrected to flag the mistake (closeout·roadmap·delivery-plan·reconstructed-structure·m1.1-plan). Next M1.0 work = finish DB-3 then DB-4 (schema foundation); **DB-4 flow pending Victor's blueprint**. M1.1 (MOD-notes+all) gated behind M1.0 (modules build on finished schema, don't author it). |
+| m1-foundation-closeout | Project Foundation | 2026-08-17 | 2026-08-18 | ⚡ IN PROGRESS — ⚠ **REROUTED: M1.0 was closed too soon.** Attempted to close M1.0 + open M1.1, but M1.0's schema foundation (DB-3 partial + DB-4 not started) was left unfinished — census "100%" measured homed-code alignment, not issue completion. **M1.0 REOPENED**; docs corrected to flag the mistake (closeout·roadmap·delivery-plan·reconstructed-structure·m1.1-plan). Next M1.0 work = finish DB-3 then DB-4 (schema foundation); **model + flow DECIDED 2026-08-18 (Model B, upfront foundation) → `docs/roadmap/schema-foundation-build-flow.md`**. M1.1 (MOD-notes+all) gated behind M1.0 (modules build on finished schema, don't author it). |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
 *(**ux-6-home-journal-dashboard LIF-95 → Done + MERGED**, 2026-08-17 — **UX-6 COMPLETE → M1.0 BUILD WAVES COMPLETE** (all `-a/-b/-c/-d` landed; buildable issues #1–#30 done — census 92%, the residual = the DB-3/DB-4 **stream** rows #9/#10 which never ship standalone). The Home = Journal daily-dashboard **design model** (new-feature; no rendered component, no Visual Gate — shape docs-fixed like UX-3/4/5): `apps/web/src/home/{section-model,journal-contribution,section-state,selection}.ts` + 4 tests + `CLAUDE.md` + `docs/core/architecture/home-journal-dashboard.md`. Three sections (summary/agenda/entry) · journal-contribution registry seam (names no module, `JournalSeamNotActivated` per AR-9) · per-section degrade composition (reuses `TerminalState` by TYPE, no `deriveTerminalState`) · pure `resolveSelection`. Full §XXVI double-gate (Gate-1 REVISE→7 fixed [5-vs-4 terminal-state blocker] · preflight PASSED · Gate-2 REVISE→3 fixed [deriveTerminalState-with-no-data blocker] · post-impl SHIP). typecheck 0 · @vida/web **180 tests** (+15) · lint 0-err. Also reconciled **18 stale delivery glyphs** (UX-2…UI-4). **Next: M1.1 opens → MOD-notes #31.** Prior: **ui-4-app-shell-components LIF-89 → Done + MERGED** (S5 PR #29 `7559a4d`) — **UI-4 COMPLETE (S1–S5 all landed)**; the web app-shell chrome. S5 (integration) = the full-`<App/>` seam test + BR-7 `/graph` lazy-split (`app/graph` + `routes.tsx` + `@vida/ui` `sideEffects:false` DF-S5-1 → sigma into a 42 KB lazy chunk, MEASURED). §XXVI double-gate (gate-1 critic MEASURED the build, caught the lazy-route-alone BLOCKER · preflight 3 gzipped builds · gate-2 SHIP no-drift) + Visual Gate SHIP. LIF-89 synced Done; task archived. **The `-c` UI wave is complete → the `-d` UX wave (UX-6) is released.** Filed follow-up: `perf-framework-chunk-split` (§6 init budget, not BR-7). Prior: **ui-3-vida-editor LIF-88 → Done + MERGED** (E8 PR #24 `79ee267`), `@vida/editor` v0.8.0. Prior: ui-2-platform-views LIF-87 PR #13.)*
@@ -41,7 +41,7 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-18 — CORRECTED): finish the M1.0 SCHEMA FOUNDATION — `DB-3` (LIF-65, substrate, 11/~22 tables authored → 11 missing) then `DB-4` (LIF-66, per-domain schema, not started). ⚠ M1.0 was CLOSED TOO SOON (drift caught by Victor): build heads #1–30 are done, but DB-3/DB-4 (the schema foundation, M1.0's core purpose) were left unfinished. The census "100%" measured homed-code alignment, NOT issue completion — it masked the two open `〰` schema issues. `MOD-notes #31` and all of M1.1 are GATED behind M1.0 completion (modules build service+UI on the finished schema; they do NOT author schema). ⚠ DB-4's build FLOW is pending Victor's explicit blueprint — do not start until provided. Prior (wrong) note said M1.0 complete → MOD-notes; superseded.**
+**🎯 Computed head now (2026-08-18 — DECIDED): `DB-3` (LIF-65, #9) — finish the M1.0 SCHEMA FOUNDATION, then `DB-4` (LIF-66, #10). Model + flow DECIDED (Victor's blueprint) → `docs/roadmap/schema-foundation-build-flow.md`.** M1.0 was reopened (closed too soon — DB-3 substrate + DB-4 per-domain unfinished; census "100%" measured homed-code alignment, NOT issue completion). The schema-authoring model is now **Model B (upfront foundation)**: DB-3 then DB-4 are **gated build HEADS authored upfront BEFORE M1.1**, run via a **5-phase lifecycle** (intent-intake → current-state → plan double-gate → implement → foundation-soundness verify), each in its OWN clean-context session. DB-3's remaining scope = the **11 §5.20 Stream (i) tables** (`planned_blocks·templates·review_curves·method_bindings·review_events·values·contributions·purpose_reviews·plan_steps·store·rules`). `MOD-notes #31` + all M1.1 are GATED behind M1.0 (modules build service+UI on the finished schema; author none). ⚠ DB-3/DB-4 are **no longer `〰` streams** — real heads at #9/#10, so the `#`-order walk now correctly picks DB-3 as head.**
 <details><summary>(prior 2026-08-11) Computed head = UI-3 #29 — resolved: built E1–E8, merged, Done.</summary></details>
 ⚠ **SUB-WAVE RULE (learned 2026-08-09, added to the routing steps below):** the raw `#`-order walk is INSUFFICIENT
 alone — it does NOT encode the `-c`/`-d` **sub-wave sequencing** (`m1.0-delivery-plan.md:129,140-141`): the **UX
@@ -65,17 +65,21 @@ drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-18) — ⚠ M1.0 REOPENED (closed too soon). Next = finish the M1.0 SCHEMA FOUNDATION (DB-3 → DB-4).**
-M1.0's build heads (#1–30) are done+merged, but M1.0's *purpose* is the foundation, which **includes the complete
-schema** — and two schema-foundation issues were left unfinished when M1.0 was wrongly declared closed:
-- **DB-3** (LIF-65, substrate schema): **11 of ~22 charter tables authored, 11 MISSING** (`planned_blocks·templates·
-  contributions·purpose_reviews·plan_steps·store·rules·review_curves·method_bindings·topic_reviews·measurement`).
-- **DB-4** (LIF-66, per-domain schema): **not started** (0 module tables).
-The drift: census `progress` = homed-code alignment, NOT issue completion (so "100%" masked the open `〰` issues);
-and the M1.1 plan had folded DB-4's schema authoring into module increments. **Corrected:** M1.0 reopened + mistake
-flagged across the roadmap/plan/closeout/reconstructed-structure docs; M1.1 grain fixed (modules = service+UI on the
-FINISHED schema). **Next head = finish DB-3 → then DB-4. ⚠ DB-4's build FLOW is pending Victor's explicit blueprint —
-do not start DB-4 until provided.** M1.1 (MOD-notes #31 + all) is GATED behind M1.0 completion.
+**▶ CURRENT (2026-08-18) — schema-foundation model + flow DECIDED + documented. Next = DB-3 in a FRESH clean-context session.**
+M1.0 was reopened (closed too soon — DB-3 substrate + DB-4 per-domain schema unfinished). This session **decided the
+schema-authoring model and documented the flow** (Victor's blueprint) — no schema authored (that's DB-3's own session):
+- **Model B (upfront foundation) DECIDED:** DB-3 then DB-4 are **gated build HEADS authored upfront BEFORE M1.1**;
+  M1.1+ modules build service+UI on the FINISHED schema, author none. Authoritative flow (5-phase lifecycle):
+  **`docs/roadmap/schema-foundation-build-flow.md`**.
+- **DB-3 remaining scope (corrected vs ADR-002 §5.20):** 11 Stream (i) tables — `planned_blocks·templates·review_curves·
+  method_bindings·review_events·values·contributions·purpose_reviews·plan_steps·store·rules` (`store`/`rules` shape-open).
+  (+`values`,+`review_events`; −`topic_reviews` [DB-4], −`measurement` [a column AMEND, not a table].)
+- **Model-A "streaming" layer retired** across 7 docs; both DB task files primed (profile add-backend-component +
+  scenario + intent source + 5-phase Build Steps) for clean-context pickup.
+- **DB-3/DB-4 are no longer `〰` streams** — real heads at #9/#10; the `#`-order walk now picks DB-3 as head.
+
+**▶ NEXT ACTION:** open a fresh session → `/task-switch db-3-stream-i-consolidation` → run the 5-phase lifecycle
+(start P1 intent-intake from ADR-002 §5.20). DB-4 after DB-3. M1.1 (MOD-notes #31 + all) stays GATED behind M1.0.
 
 <details><summary>(superseded 2026-08-18) prior CURRENT — the premature "M1.0 complete → MOD-notes" handoff</summary>
 

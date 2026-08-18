@@ -63,8 +63,8 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 6 | ✅DB-6 | Repository (encrypt/decrypt seam) | `core/src/db/repository.ts` (002/016/017) | ← AR-2 | AR-5, AR-6, AR-9, MOD-notes, DB-10 | Backend | CRUD + co-transactional sync_queue |
 | 7 | ✅DB-7 | Migrations runner + app_state | `core/src/db/migrations/` (016/002) | ← AR-2 | DB-8, DB-10 | Backend | forward-only migrations at boot |
 | 8 | ✅QA-1 | Playwright + OPFS E2E harness | `apps/web/e2e/` (AR-2 audit) | ← AR-2 | leaf | Backend | browser open/reopen/persist proven |
-| 9 | 〰DB-3 | Stream-(i) substrate schema | `core/src/db/schema/<substrate>` (016 §3.5) | ← DB-1 | DB-4 | Backend | substrate tables at each substrate build |
-| 10 | 〰DB-4 | Stream-(ii) per-domain schema | `core/src/db/schema/<domain>` (016 §3.5) | ← DB-1, DB-3 | DB-8 | Backend | each module's tables at that module's build |
+| 9 | ⏳DB-3 | Stream-(i) substrate schema — **gated HEAD (Model B)** | `core/src/db/schema/<substrate>` (002 §5.20, 016) | ← DB-1 | DB-4 | Backend | full Stream (i) set upfront (11 remaining); NEXT M1.0 head — flow: `roadmap/schema-foundation-build-flow.md` |
+| 10 | ◻DB-4 | Stream-(ii) per-domain schema — **gated HEAD (Model B, ← DB-3)** | `core/src/db/schema/<domain>` (002 §5.20, 016) | ← DB-1, DB-3 | DB-8 | Backend | all ~19 domains upfront BEFORE M1.1 (per-domain sub-issues) |
 | 11 | ✅AR-5 | Sessions base | `core/src/foundation/sessions` (004) | ← DB-6, DB-9 | AR-7, MOD-sessions | Backend | sessions spine + registry + effect enums |
 | 12 | ✅AR-6 | Spaces + tags/links + Views | `core/src/foundation/{spaces,views}` (006/007) | ← DB-6, DB-9 | AR-7, AR-8, MOD-notes, MOD-spaces, HARD-3 | Backend | spaces/tags/entity_links + view engine |
 | 13 | ✅AR-7 | Capability + measurability + effect rail | `core/src/foundation/{capability,measurement,economy,effects}` (011/012/004) | ← AR-5, AR-6 | MOD-purposes, MOD-gamification, HARD-2, CAP-authoring | Backend | ⊞4 · capability registry + measurability + effects |
