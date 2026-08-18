@@ -80,7 +80,7 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 23 | ✅UX-3 | Shell layout (responsive) | `apps/web/src` | ← UX-1 | UX-6, UI-4 | Generic | responsive shell layout — **DONE+MERGED 2026-08-09** (LIF-92, PR #10) |
 | 24 | ✅UX-4 | State conventions | `apps/web/src` | ← UX-1 | leaf | Generic | client-state conventions — **DONE+MERGED 2026-08-09** (LIF-93, PR #11) |
 | 25 | ✅UX-5 | Vault-unlock onboarding (surface) | `apps/web/src` | ← UX-1 | UX-5b | Generic | onboarding surface — **DONE+MERGED 2026-08-09** (LIF-94, PR #12) |
-| 26 | ◻UX-6 | Home = Journal dashboard | `apps/web/src` | ← UX-3 | leaf | Generic | Home renders the daily journal ← **NEXT HEAD (2026-08-17)** |
+| 26 | ✅UX-6 | Home = Journal dashboard | `apps/web/src` | ← UX-3 | leaf | Generic | Home renders the daily journal — **DONE+MERGED 2026-08-17** (LIF-95) — completes the M1.0 `-d` UX wave → **M1.0 build waves COMPLETE** |
 | 27 | ✅UI-1 | Vida UI primitives | `packages/ui/src/components` | ← DS-5 | UI-2, UI-3, UI-4 | Design-Sys | primitive component library — **DONE+MERGED 2026-08-09** (LIF-86, PR #8) |
 | 28 | ✅UI-2 | Platform views (calendar/gallery/list/graph/timeline) | `packages/ui/src/components` | ← UI-1 | HARD-3 | Design-Sys | shared platform views — **DONE+MERGED 2026-08-11** (LIF-87, PR #13) |
 | 29 | ✅UI-3 | Vida editor (@vida/editor, TipTap) | `packages/editor/src` | ← UI-1, AR-4 | CAP-authoring | Design-Sys | block editor + serializers — **DONE+MERGED 2026-08-16** (LIF-88, PR #24) |

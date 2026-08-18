@@ -78,6 +78,9 @@ substrate no M1 module consumes is not built in M1.
 > rollups all work. Encryption/sync/auth off (seam pass-through). Data entered by hand.
 
 ## M1.0 — Boot & connective base
+> ✅ **CLOSED 2026-08-17** — all buildable issues DONE+MERGED; build waves complete. Close-out record:
+> [`docs/roadmap/m1.0-closeout.md`](./roadmap/m1.0-closeout.md). Next milestone: M1.1 (head = MOD-notes #31).
+
 The thinnest foundation the first modules need (grown per module, not all-upfront):
 - **AR-1 · Monorepo topology** — Turbo pipeline, tsconfig refs, package exports (types→core→editor→ui). *(done)*
 - **AR-2 · DatabaseAdapter + web-adapter** — `wa-sqlite` + OPFS; async Drizzle proxy driver. *(rebuild the web-adapter — quarantined to `Old/` in Part 2, ADR-018.)* **SQLCipher WASM + encryption → M3.**

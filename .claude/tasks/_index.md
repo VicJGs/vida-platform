@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — UX-6 complete → M1.0 build waves done; next head MOD-notes #31 (M1.1), not yet started)_
+- m1-foundation-closeout: .claude/tasks/m1-foundation-closeout.md  (in-progress 2026-08-17 — Project Foundation / milestone-delivery-planning. Close out **M1.0** (foundation slice — delivery-structure reconcile + §XXIX currency + tracker/Linear Done + close-out record) then open **M1.1** (Hub & Foundation Modules; produce `m1.1-delivery-plan.md`, gated). Step 1 completeness audit DONE — M1.0 functionally 100% buildable; the 92% census = DB-3/DB-4 `〰` streams + 3 stale census Home-paths on done ar-4/ar-8. Next head after close-out = MOD-notes #31.)
 
 ## Planned
 - db-2-sync-metadata-columns: .claude/tasks/db-2-sync-metadata-columns.md  (DEFERRED/Backlog — **RE-HOMED 2026-07-29** from the retired `① Database Layer` cluster to **M4 Venues / Multi-Device · Sync & Server** [alongside ar-9b; LIF-64 moved + state BACKLOG in Linear]. Charter = `syncColumns` amendment + HLC representation [ADR-002 §5.20 / ADR-003 §17 / ADR-004 F1]; ADR-017 defers it with the sync engine to the post-validation hardening pass. Baseline done, no code. Not stale — a legit deferred issue that was de-organized.)
