@@ -15,5 +15,13 @@ export * from './foundation/spaces'
 export * from './foundation/effects'
 // Foundation substrate: AR-7 capability registry (definitions · block_instances · grants).
 export * from './foundation/capability'
-// Foundation substrate: AR-7 economy (currencies · consequence_ledger).
+// Foundation substrate: AR-7 economy (currencies · consequence_ledger) + DB-3 (store · rules).
 export * from './foundation/economy'
+// Foundation substrate: DB-3 Purpose domain (values · contributions · purpose_reviews · plan_steps).
+export * from './foundation/purpose'
+// Foundation substrate: DB-3 generic review engine (review_curves · method_bindings · review_events).
+export * from './foundation/knowledge-review'
+// Foundation substrate: DB-3 scheduling (planned_blocks — aggregator-scheduled).
+export * from './foundation/scheduling'
+// Foundation substrate: DB-3 templates (light seed-bundle store).
+export * from './foundation/templates'

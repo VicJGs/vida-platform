@@ -63,6 +63,19 @@ export const SCHEDULED_RESOURCE_TYPE = ['topic', 'flashcard_deck', 'book', 'cour
 export type ScheduledResourceType = (typeof SCHEDULED_RESOURCE_TYPE)[number]
 
 // ---------------------------------------------------------------------------
+// Generic review engine (ADR-005 · DB-3 substrate) — structure-data.md:39-41.
+// Cross-domain (Education/Skills/Finance consume via compound_sets), hence substrate.
+// ---------------------------------------------------------------------------
+
+/** A `review_curves` scheduling curve kind — SM-2 is one preset (KN-8/KN-9, user-tunable). */
+export const REVIEW_CURVE_KIND = ['decay', 'review', 'test'] as const
+export type ReviewCurveKind = (typeof REVIEW_CURVE_KIND)[number]
+
+/** A `method_bindings` polymorphic target level — which knowledge object a method+curve applies to (KN-4). */
+export const METHOD_BINDING_TARGET_TYPE = ['area', 'subject', 'unit', 'topic', 'kind'] as const
+export type MethodBindingTargetType = (typeof METHOD_BINDING_TARGET_TYPE)[number]
+
+// ---------------------------------------------------------------------------
 // Study Topics (with SM-2 spaced repetition)
 // ---------------------------------------------------------------------------
 

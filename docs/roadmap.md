@@ -78,11 +78,16 @@ substrate no M1 module consumes is not built in M1.
 > rollups all work. Encryption/sync/auth off (seam pass-through). Data entered by hand.
 
 ## M1.0 — Boot & connective base
+> ⚠️ **REOPENED (2026-08-18)** — build heads #1–30 done, but the **schema foundation is unfinished**: DB-3
+> (substrate — partial, 11/~22 tables) + DB-4 (per-domain — not started). M1.0 was closed too soon without
+> verifying these. **Finish DB-3 + DB-4, THEN M1.1** (modules build on the finished schema, do not author it).
+> DB-4 flow pending Victor's blueprint. Status record: [`docs/roadmap/m1.0-closeout.md`](./roadmap/m1.0-closeout.md).
+
 The thinnest foundation the first modules need (grown per module, not all-upfront):
 - **AR-1 · Monorepo topology** — Turbo pipeline, tsconfig refs, package exports (types→core→editor→ui). *(done)*
 - **AR-2 · DatabaseAdapter + web-adapter** — `wa-sqlite` + OPFS; async Drizzle proxy driver. *(rebuild the web-adapter — quarantined to `Old/` in Part 2, ADR-018.)* **SQLCipher WASM + encryption → M3.**
 - **AR-4 · State + routing + forms** — Zustand, React Query v5, TanStack Router, TanStack Form + Zod.
-- **DB spine** — **DB-1** schema primitives *(done)* · **DB-6** repository (encrypt/decrypt **seam**, pass-through) · **DB-7** migrations runner *(present; per-feature)* · **DB-9** canonical enums + Zod · **DB-10** dogfood seed vault. Schema authored **per-feature** onto `db/schema/<domain>.ts` (ADR-016): **DB-3** the stream-(i) substrate tables land per-substrate as each `foundation/` framework is built; **DB-4** the stream-(ii) per-domain tables land per-module as each module is built — *not* a single upfront campaign.
+- **DB spine** — **DB-1** schema primitives *(done)* · **DB-6** repository (encrypt/decrypt **seam**, pass-through) · **DB-7** migrations runner *(present; per-feature)* · **DB-9** canonical enums + Zod · **DB-10** dogfood seed vault. Schema authored hand-written per ADR-016 into `db/schema/<domain>.ts`. **⚠ Model B — schema is the deliberate exception to "grown per module" above (decided 2026-08-18):** **DB-3** (stream-(i) substrate) then **DB-4** (stream-(ii) per-domain) are authored as **gated foundation build heads BEFORE M1.1** — the full schema is finished upfront so M1.1+ modules build service + UI on it and author no schema. Flow: [`roadmap/schema-foundation-build-flow.md`](./roadmap/schema-foundation-build-flow.md). *(Supersedes the earlier "streaming / per-module / not upfront" model.)*
 - **Connective substrates** (`foundation/`, ADR-018 — pulled by the hubs): **AR-5** Sessions base · **AR-6** Spaces + `entity_tags`/`entity_links` + backlinks · **AR-7** Capability registry + measurability (ADR-011) + effect rail (ADR-004/012) · **Views** (ADR-007).
 - **AR-8 · Foundation services** (cross-cutting only, `services/*`): search + **DB-8** FTS5, backlink resolver, export serializers, neural-graph data-prep. *(Module-owned engines live in their module.)*
 - **AR-9 · Sync scaffolding (no-flush)** — **DB-2** `_sync_*` metadata columns + `sync_queue` writes wired (written-never-flushed; HLC encoding = deferred decision, see caveat); engine stubbed (M4 activates).

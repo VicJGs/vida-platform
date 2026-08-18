@@ -15,6 +15,11 @@ import { migration003Spaces } from './003_spaces'
 import { migration004Effects } from './004_effects'
 import { migration005Capability } from './005_capability'
 import { migration006Economy } from './006_economy'
+import { migration007Purpose } from './007_purpose'
+import { migration008KnowledgeReview } from './008_knowledge_review'
+import { migration009EconomyStoreRules } from './009_economy_store_rules'
+import { migration010Scheduling } from './010_scheduling'
+import { migration011Templates } from './011_templates'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -24,6 +29,7 @@ import { migration006Economy } from './006_economy'
 // Migrations are authored per-feature at build phase (ADR-016 §3.5 / ADR-017 §1).
 // The v1 monolith migration (001_initial) was quarantined to db/_legacy/ in Part 2 (ADR-018).
 // DB-6 authors + registers the first real migration: the sync_queue foundation table.
+// DB-3 (007-011) authors the Stream (i) substrate remainder: Purpose · review engine · store/rules · planned_blocks · templates.
 const ALL_MIGRATIONS: Migration[] = [
   migration001SyncQueue,
   migration002Sessions,
@@ -31,6 +37,11 @@ const ALL_MIGRATIONS: Migration[] = [
   migration004Effects,
   migration005Capability,
   migration006Economy,
+  migration007Purpose,
+  migration008KnowledgeReview,
+  migration009EconomyStoreRules,
+  migration010Scheduling,
+  migration011Templates,
 ]
 
 // ---------------------------------------------------------------------------

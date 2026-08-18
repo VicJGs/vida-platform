@@ -96,6 +96,20 @@ New home **`apps/web/src/nav/`** (ADR-018 §3.6 layer-doc'd) — the canonical n
 - The IA design doc is `docs/core/architecture/information-architecture.md` (the co-primary dual-axis nav model).
   `[FACT: apps/web/src/nav/*; typecheck 10/10, lint 0-err]`
 
+## UX-2 / UI-4 — IMPLEMENTED (runtime deltas · 2026-08-09→08-17 · LIF-91/LIF-89)
+The UX-2 command bar + UI-4 app-shell waves reshaped two AR-4 runtime homes (`routes.tsx`, `stores/`). The shell/
+command-bar UI mechanics themselves live in their own convention docs (`apps/web/src/{shell,command-bar}/CLAUDE.md`
++ `docs/core/architecture/{shell-layout,command-bar-and-search}.md`); recorded here are only the **runtime-level**
+facts (routing tree + store inventory) that the AR-4 snapshot above no longer describes:
+- **Router (`routes.tsx`)** — `RootComponent` now wraps the routed `<Outlet/>` in `<AppShell>` (mounted INSIDE the
+  router, not above `<RouterProvider>`, because it hosts the Outlet) `[FACT: routes.tsx:20-33, UI-4·S1]`. Tree =
+  root + index `/` + lazy `/notes` (the AR-4 reference route) + **lazy `/graph`** (UI-4·S5 — sigma/graphology split
+  out of the initial bundle per BR-7 / performance-strategy §6, mirrors the notes route). `[FACT: routes.tsx:46-63]`
+- **Zustand (`stores/`)** — a **2nd UI-only store** `command-bar-ui-store.ts` (UX-2: ephemeral open/query/mode,
+  never persisted, two-mode command↔search auto-switch) now sits alongside `app-shell-ui-store.ts`, both following
+  the AR-4 UI-only pattern (ADR-020; no vanilla-in-core until an M4 cross-platform consumer). `[FACT: stores/command-bar-ui-store.ts:1-4]`
+- The command-bar itself is an **overlay**, not a route (⌘K launcher composed by UI-4·S3), so it adds no route node.
+
 ## Downstream (INTENT — consumers)
 - **UI-3** (`@vida/editor`, LIF-88) ← UI-1, **AR-4** — the editor mounts in routes + issues React Query reads.
 - **UI-4** (app shell, LIF-89) ← UI-1, UX-3 — implements the UX-3 layout on AR-4's router.

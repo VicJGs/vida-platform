@@ -8,6 +8,19 @@ export const ENTITY_TYPES = [
   'journal',
   'tag',
   'space', // Notes/Pages hub + Spaces foundation (P1)
+  // DB-3 Stream (i) substrate entities (ADR-002 §5.20) — registered so they are valid polymorphic
+  // link/tag targets; each domain still APPENDS its own per-domain types at DB-4.
+  'value',
+  'contribution',
+  'purpose_review',
+  'plan_step',
+  'review_curve',
+  'method_binding',
+  'review_event',
+  'store',
+  'rule',
+  'planned_block',
+  'template',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 
