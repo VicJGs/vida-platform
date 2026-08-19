@@ -5082,3 +5082,21 @@ Next session:
   - Mirror the group-#1 build as the pattern: `docs/specs/foundation/db-4-notes-and-pages/` + `schema/notes.ts` + `migrations/012_notes.ts`.
   - Reload: task "## P0 Output" (22-group table) · flow doc §2 · memories [[stale-source-plus-live-convention-is-fact-not-a-decision]] ·
     [[open-vocab-columns-take-no-sql-check]]. **1 of 22 done; 21 remain.** DB-4 authors ALL 22 before M1.1 (Model B). ⚠ CI red (known pnpm infra; local green).
+
+---
+Date: 2026-08-19 — DB-4 group #3 Sessions & Scheduling (+Pomodoro): full 5-phase lifecycle DONE + COMMITTED (`029cea7`)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema` (NOT pushed/PR'd)
+Goal: run P1→P5 for domain group #3 — the third DB-4 Stream (ii) module.
+Accomplished:
+  - Confirmed group #2 was already committed (`0bc1508`+`0fec077`); fixed the stale TASKS.md "not yet committed" note (git log = ground truth).
+  - **6 tables** (migration `014_sessions_scheduling`, v14): `study_sessions`·`focus_sessions` (`schema/foundation/session-extensions.ts`, new) +
+    `study_availability`·`availability_exceptions`·`study_plan_batches`·`session_templates` (appended to `scheduling.ts`). `STUDY_PLAN_BATCH_STATUS+='failed'`,
+    `PRESET_BLOCK` reused, `ENTITY_TYPES+='session'`. Phase-5 DDL-introspection test (24 cases, all 4 dims). `@vida/core` 221 green · typecheck 11/11 · lint 0.
+  - Gates: gate-1 REVISE→resolved · preflight BLOCKED(BR-DB-1)→PASSED · gate-2 REVISE→SHIP · post-impl SHIP. §XXIX currency promoted. Spec `docs/specs/foundation/db-4-sessions-and-scheduling/`.
+Drift caught + corrected (Victor, ×2 — same class):
+  - `focus_sessions`/`pomodoro_sessions` is NOT a build-decision — the consuming-module reframe doc settles it (`notes-and-pages/structure-data.md:30`: pomodoro_sessions RETIRED → focus_sessions). I collapsed wrongly, then relayed a critic's manufactured "keep both as a decision." Memory strengthened: grep the table name across ALL of docs/; the reframe/current-* doc holds the resolution — [[stale-source-plus-live-convention-is-fact-not-a-decision]].
+Next session:
+  - **FIRST ACTION: open domain group `#4 Tasks`, Phase 1 intent intake** — FRESH clean-context session (one per group).
+    `docs/features/tasks/structure-data.md` (FULL) → P2 → P3 double-gate → P4 → P5. Mirror the group-#3 build as the pattern.
+  - Reload: task "## P0 Output" (22-group table) · flow doc §2 · memory [[stale-source-plus-live-convention-is-fact-not-a-decision]].
+  - Carry-forward: X1 → group #2 PD-7 backfill; DB-11 → interface reconcile. **3 of 22 done; 19 remain.** ⚠ CI red (known pnpm infra; local green).
