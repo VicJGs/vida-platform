@@ -236,3 +236,45 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   DDL-introspection: column-set·nullability·PK·default × 2 — the mandatory Phase-5 bookend); `LATEST_VERSION`=15; root
   typecheck 11/11; lint 0-err (1 pre-existing encryption-1MB timeout flake, passes isolated). Gates: gate-1 SHIP · preflight
   PASSED · gate-2 REVISE→SHIP · post-impl SHIP. Foundation-readiness: MOD-tasks finds every needed column — PASS. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #5 — Projects (IMPLEMENTED 2026-08-19 · `016_projects.ts` + `schema/projects.ts`)
+- **[FACT] BR-PJ5-1 — 4 tables, 11 `[E]`.** `projects` (title/description/vision `[E]`) · `milestones` (title/description
+  `[E]`) · `deliverables` (title/description `[E]`) · `project_documents` (name/encrypted_blob `[E]`). All full
+  `...baseColumns`; projects/milestones/deliverables have `deleted_at` (soft delete); `project_documents` does **not**
+  (faithful §5.4 — has `updated_at`, no `deleted_at`). `[FACT: 016_projects.ts; ADR-002 §5.4]`
+- **[FACT] BR-PJ5-2 — no cross-table FK (no-FK convention).** §5.4's project→milestone/document `CASCADE` +
+  milestone→sub-milestone/document `SET NULL` + `deliverables.milestone_id` are plain TEXT; cascade/reparent semantics
+  (PJ-9) are the app/sync layer's. `[FACT: 016_projects.ts; BR-DB3-1]`
+- **[FACT] BR-PJ5-3 — `deliverables` (the four-level hierarchy) authored now (build-phase INTENDED, G2).** The real level
+  between milestones and tasks, an ADR-011 pursuable. The ⚠ INTENDED flag points TO this build phase. `[FACT: structure-data.md G2; [[build-phase-flags-mean-resolve-now-not-defer]]]`
+- **[FACT] BR-PJ5-4 — `progress` is a NULLABLE override slot on projects/milestones/deliverables.** Was §5.4 `INTEGER NOT
+  NULL DEFAULT 0`; reframed to nullable (NULL ⇒ derive via `progress()` on-read, ADR-011 §3.2/§3.4). Never a hand-set
+  `NOT NULL DEFAULT 0`. `[FACT: ADR-002 §5.4 L1574/L1610; ADR-011 §3.2; PJ-3]`
+- **[FACT] BR-PJ5-5 — measurement pair on `deliverables` ONLY.** `measurement_kind` NOT NULL DEFAULT 'milestone' (doc-
+  licensed rollup natural) + `binding_mode` NULLABLE no default (NULL ⇒ derive, §3.2 override grain). Projects/milestones
+  are **pure bottom-up rollups** (implicit 'milestone' kind) → no stored discriminator. The module doc (structure-data.md
+  PJ-4) is the DB-4 roster; an ADR-011 §3.4 broad pursuable list / §5.20:3816 "Projects/Deliverables" grouping does NOT
+  reopen it. `[FACT: structure-data.md:21,24-27; [[module-doc-is-db4-roster-not-adr-broad-list]]]`
+- **[FACT] BR-PJ5-6 — `nesting_weight` on the rollup children only.** milestones + deliverables carry `nesting_weight`
+  INTEGER nullable (NULL ⇒ equal-weight, ADR-011 §3.3 M4); projects do **not** (top-level — the UP ladder to purpose uses
+  `contributions.contribution_percentage`). `[FACT: ADR-011 §3.3; PJ-3b]`
+- **[FACT] BR-PJ5-7 — shared-primitive & partner-domain boundaries (not authored here).** Inline `projects.tags` RETIRED
+  → `entity_tags` (`ENTITY_TYPES += 'project'/'milestone'/'deliverable'`, PJ-12); `project_contacts(role)` → Relationships;
+  `project_habits` → Habits (kept junction); `contributions` (retired `purpose_projects`, M7) → Purpose/DB-3; project
+  events / project↔account → integration seams; vision/mission → `pages`. `[FACT: 016_projects.ts; contract.md:30; habits/contract.md:47; _registry.ts]`
+- **[FACT] BR-PJ5-8 — `deliverables` omits status/due_date by design.** milestones carry status+due_date (§5.4 FACT floor);
+  a deliverable is framed purely by measurement (no aspect doc owes it status/due_date) — a recorded asymmetry, not a gap.
+  `[FACT: no deliverable status/due_date in any projects aspect; ADR-011 §3.4]`
+- **[FACT] BR-PJ5-9 — 7 FIXED CHECK cols parity-asserted.** projects.scope/complexity/status/priority · milestones.status ·
+  deliverables.measurement_kind/binding_mode ≡ the `@vida/types` tuples (PROJECT_SCOPE/PROJECT_COMPLEXITY/STATUS/PRIORITY/
+  MEASUREMENT_KIND/BINDING_MODE) — no net-new tuple; +7 enum-parity rows. `project_documents` has no CHECK col. `[FACT: enum-parity.test.ts]`
+- **[FACT] BR-PJ5-10 — `project_documents` vault faithful to §5.4.** `encrypted_blob` NULLABLE BLOB (`blob(…,{mode:'buffer'})`);
+  no `deleted_at`; no index; small files inline, large → R2 seam (not a column). `[FACT: 016_projects.ts; ADR-002 §5.4 L1632-1651]`
+- **[FACT] BR-PJ5-11 — mirror-only; interface reconcile → DB-11.** `Project` (progress→nullable, drop `tags`), `Milestone`
+  (+`nesting_weight`, progress→nullable), **new `Deliverable`** interface → DB-11 (compile-safe; no `$inferSelect`↔interface
+  assertion). Cited, not fixed here (group #1/#3/#4 precedent). `[FACT: project.ts:64-113; ADR-016 DB-11]`
+- **[FACT] BR-PJ5-12 — parity + introspection + runner green; ZERO build-decisions.** `@vida/core` **264 tests** (+7
+  enum-parity rows, +16 DDL-introspection: column-set·nullability·PK·default × 4); `LATEST_VERSION`=16; typecheck clean;
+  eslint 0-err. Gates: gate-1 REVISE→resolved · preflight PASSED (5 folds) · gate-2 SHIP · post-impl SHIP. A gate-1 critic
+  escalated the measurement-scope to Victor — re-grounded as doc-determined (the module doc is the roster;
+  [[module-doc-is-db4-roster-not-adr-broad-list]]). Foundation-readiness: MOD-projects finds every needed column — PASS. `[FACT: vitest run]`

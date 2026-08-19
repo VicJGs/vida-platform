@@ -47,6 +47,8 @@ import {
   TASK_KIND,
   MEASUREMENT_KIND,
   BINDING_MODE,
+  PROJECT_SCOPE,
+  PROJECT_COMPLEXITY,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -63,6 +65,7 @@ import { migration012Notes } from '../db/migrations/012_notes'
 import { migration013Preferences } from '../db/migrations/013_preferences'
 import { migration014SessionsScheduling } from '../db/migrations/014_sessions_scheduling'
 import { migration015Tasks } from '../db/migrations/015_tasks'
+import { migration016Projects } from '../db/migrations/016_projects'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -172,6 +175,17 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'tasks', column: 'kind', tuple: TASK_KIND },
   { table: 'tasks', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
   { table: 'tasks', column: 'binding_mode', tuple: BINDING_MODE },
+  // DB-4 group #5 — Projects. FIXED TEXT-CHECK cols: projects.scope/complexity/status/
+  // priority; milestones.status; deliverables.measurement_kind/binding_mode. No-CHECK
+  // cols (parent refs, progress, nesting_weight, dates) are OPEN → not rows;
+  // project_documents has no CHECK col.
+  { table: 'projects', column: 'scope', tuple: PROJECT_SCOPE },
+  { table: 'projects', column: 'complexity', tuple: PROJECT_COMPLEXITY },
+  { table: 'projects', column: 'status', tuple: STATUS },
+  { table: 'projects', column: 'priority', tuple: PRIORITY },
+  { table: 'milestones', column: 'status', tuple: STATUS },
+  { table: 'deliverables', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
+  { table: 'deliverables', column: 'binding_mode', tuple: BINDING_MODE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -192,6 +206,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration013Preferences.up(driver)
   await migration014SessionsScheduling.up(driver)
   await migration015Tasks.up(driver)
+  await migration016Projects.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

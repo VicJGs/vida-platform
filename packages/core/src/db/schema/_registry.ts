@@ -29,6 +29,12 @@ export const ENTITY_TYPES = [
   // (notes via pages `entity_type='task'`; tags via entity_tags, TK-8). task_time_logs
   // is addressed via task_id, not polymorphic refs → not registered.
   'task',
+  // DB-4 group #5 — Projects. project/milestone/deliverable are valid pages/entity_links/
+  // entity_tags targets (notes + vision/mission pages G3/G10; shared tags PJ-12).
+  // project_documents is addressed via project_id → not registered (task_time_logs precedent).
+  'project',
+  'milestone',
+  'deliverable',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

@@ -182,14 +182,16 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling authored · 2026-08-19 · LIF-66)
-The Stream (ii) per-domain modules authored so far (3 of 22). `[FACT: schema/{notes,preferences}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts + 013_preferences.ts + 014_sessions_scheduling.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects authored · 2026-08-19 · LIF-66)
+The Stream (ii) per-domain modules authored so far (5 of 22). `[FACT: schema/{notes,preferences,tasks,projects}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 016_projects.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
 | `012_notes.ts` | `schema/notes.ts` | `pages` · `page_links` · `note_attachments` (ADR-002 §5.2) |
 | `013_preferences.ts` | `schema/preferences.ts` | `user_preferences` · `nav_preferences` · `command_bar_history` (ADR-002 §5.17) |
 | `014_sessions_scheduling.ts` | `foundation/session-extensions.ts` + `foundation/scheduling.ts` | `study_sessions` · `focus_sessions` · `study_availability` · `availability_exceptions` · `study_plan_batches` · `session_templates` (ADR-004 §3.1 · §5.11) |
+| `015_tasks.ts` | `schema/tasks.ts` | `tasks` · `task_time_logs` (ADR-002 §5.3) |
+| `016_projects.ts` | `schema/projects.ts` | `projects` · `milestones` · `deliverables` · `project_documents` (ADR-002 §5.4) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -237,10 +239,32 @@ The Stream (ii) per-domain modules authored so far (3 of 22). `[FACT: schema/{no
   isolated); `LATEST_VERSION`=15; typecheck 11/11; lint 0-err. Interface reconcile (`Task` +7 cols −`tags`; `TaskTimeLog`
   +`updated_at`) → DB-11. **Foundation-readiness:** MOD-tasks finds every needed column — PASS. `[FACT: 015_tasks.ts;
   schema/tasks.ts; docs/specs/foundation/db-4-tasks/]`
-- **Remaining DB-4 groups:** #5 Projects … #22 Notifications (18 more domain groups, per the task P0 slice).
+- **Group #5 Projects (2026-08-19):** **4 tables** — `projects` · `milestones` · `deliverables` · `project_documents`,
+  the four-level hierarchy (Project > Milestone > Deliverable > Task) + document vault. **11 `[E]` fields** (title/
+  description/vision on projects; title/description on milestones + deliverables; name/encrypted_blob on
+  project_documents). **No-FK reconciliation:** §5.4's project→milestone/document CASCADE + milestone SET-NULL +
+  self-ref `parent_milestone_id` → plain TEXT (app/sync layer, PJ-9). **Build-phase INTENDED authored** (not deferred):
+  the **`deliverables` table** (G2) — the ADR-011 pursuable carrying `measurement_kind` NOT NULL DEFAULT 'milestone' +
+  `binding_mode` **nullable, no default** (M1/M2) + `nesting_weight` nullable (§3.3 M4). **`progress` reframed to a
+  NULLABLE override slot** on projects/milestones/deliverables (was §5.4 `NOT NULL DEFAULT 0`; ADR-011 §3.2 — NULL ⇒
+  derive via `progress()`). **Measurement pair scoped to `deliverables` ONLY** (its measure varies; projects/milestones
+  are pure rollups with implicit 'milestone' — structure-data.md PJ-4 is the DB-4 roster, not the ADR-011 §3.4 broad
+  list). **Boundary (partner-domain-owned, not authored here):** inline `projects.tags` RETIRED → `entity_tags`
+  (`entity_type='project'`, PJ-12); `project_contacts` → Relationships; `project_habits` → Habits; `contributions`
+  (retired `purpose_projects`) → Purpose/DB-3; project events / project↔account → integration seams. `project_documents`
+  has `updated_at` but **no `deleted_at`** + `encrypted_blob` **nullable** BLOB + **no index** (faithful §5.4). 7 FIXED
+  CHECK cols parity-asserted (+7 rows: projects.scope/complexity/status/priority · milestones.status ·
+  deliverables.measurement_kind/binding_mode). `ENTITY_TYPES += 'project'/'milestone'/'deliverable'`. **Phase-5
+  DDL-introspection** (`projects-introspection.test.ts`, 16 cases: column-set·nullability·PK·default × 4). `@vida/core`
+  **264 tests** green; `LATEST_VERSION`=16; typecheck clean; eslint 0-err. **Zero build-decisions** (a gate-1 critic
+  escalated the measurement-scope to Victor; re-grounded as doc-determined — the module doc is the roster). Interface
+  reconcile (`Project` progress→nullable −`tags`; `Milestone` +`nesting_weight` progress→nullable; **new `Deliverable`**)
+  → DB-11. **Foundation-readiness:** MOD-projects finds every needed column — PASS. `[FACT: 016_projects.ts;
+  schema/projects.ts; docs/specs/foundation/db-4-projects/]`
+- **Remaining DB-4 groups:** #6 Habits … #22 Notifications (17 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions + #4 Tasks ✅; 18 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions + #4 Tasks + #5 Projects ✅; 17 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

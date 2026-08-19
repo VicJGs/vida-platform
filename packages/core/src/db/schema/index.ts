@@ -35,3 +35,5 @@ export * from './notes'
 export * from './preferences'
 // DB-4 domain (Stream ii): Tasks (tasks · task_time_logs).
 export * from './tasks'
+// DB-4 domain (Stream ii): Projects (projects · milestones · deliverables · project_documents).
+export * from './projects'
