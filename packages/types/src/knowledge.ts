@@ -44,6 +44,9 @@ export const STUDY_PLAN_BATCH_STATUS = [
   'approved',
   'active',
   'completed',
+  // DB-4 group #3 — 'failed' is a documented terminal state (no availability / nothing to
+  // schedule → explicit, never a silent empty plan). sessions-and-scheduling/business-rules.md:89.
+  'failed',
 ] as const
 export type StudyPlanBatchStatus = (typeof STUDY_PLAN_BATCH_STATUS)[number]
 

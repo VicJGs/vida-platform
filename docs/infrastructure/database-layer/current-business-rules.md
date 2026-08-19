@@ -159,3 +159,47 @@ The second Stream (ii) domain module — `user_preferences` · `nav_preferences`
   `life_stage`/`timezone`/`skipped_modules` as `[E]` — only `focus_areas` is `[E]` (§5.15 L3376); do not propagate. `[FACT: ADR-012 §3.10]`
 - **[FACT] BR-P4-7 — parity + runner green.** `@vida/core` 198 tests (+5 parity rows); `LATEST_VERSION`=13; root typecheck
   11/11. Foundation-readiness: MOD-preferences (#32) contract finds every needed column — PASS. `[FACT: vitest run]`
+
+## DB-4 group #3 — Sessions & Scheduling (+Pomodoro) (2026-08-19 · LIF-66)
+The third Stream (ii) domain module — **6 tables** completing the Session framework on the AR-5/AR-7/DB-3 substrate:
+`study_sessions` · `focus_sessions` (`schema/foundation/session-extensions.ts`) + `study_availability` ·
+`availability_exceptions` · `study_plan_batches` · `session_templates` (`schema/foundation/scheduling.ts`), DDL in
+`migrations/014_sessions_scheduling.ts`. `[FACT: those files]`
+- **[FACT] BR-S4-1 — `focus_sessions` IS the `focus` timer runtime; `pomodoro_sessions` is RETIRED (not authored).**
+  Doc-determined by the consuming-module reframe (`notes-and-pages/structure-data.md:30`, `contract.md:19`): the
+  `/pomodoro` widget is a lens onto the `focus_sessions` extension keyed by `session_id`. The retired v2 Notes table's
+  columns land on `focus_sessions` (`type`/`status`/`completed_count`/`duration_seconds` + v1 restores
+  `paused_at`/`total_pause_seconds`/`was_interrupted`/`interruption_reason`); `entity_type`/`entity_id`/`page_id`
+  dropped (PD-1/2). **Zero build-decisions** — three independent reviews + two Victor drift-catches confirmed it. `[FACT: notes-and-pages reframe; ADR-002 §5.20 AMEND]`
+- **[FACT] BR-S4-2 — extensions are 1:1 keyed by `session_id`, own `id` PK (BR-DB-1).** `study_sessions` + `focus_sessions`
+  use full `...baseColumns` (own UUIDv7 `id` PK — the Repository factory generates it) + `session_id TEXT NOT NULL UNIQUE`
+  (the 1:1 key, plain TEXT no FK — ADR-004 §3.4). ADR-004 §3.1 "keyed by session_id" = a key column, not a PK override
+  (preflight catch — a `session_id`-PK table can't persist via the standard Repository). `[FACT: current-business-rules.md:9 BR-DB-1; ADR-004 §3.1/§3.4]`
+- **[FACT] BR-S4-3 — extensions never re-store a spine column (BR-S1/ADR-004 §3.1).** The spine
+  (`focus_rating`/`energy_level`/`distraction_count`/`key_learnings`/`started_at`/`ended_at`/`status`) lives on
+  `sessions` (AR-5); `focus_sessions` has NO `started_at`/`ended_at`; `study_sessions` holds only
+  `resource_type`/`resource_id`/`pages_read`/`lessons_completed`. `[FACT: 014_sessions_scheduling.ts vs 002_sessions.ts]`
+- **[FACT] BR-S4-4 — 5 FIXED enums → SQL CHECK from `@vida/types` tuples; OPEN vocab = plain TEXT no CHECK.**
+  `study_sessions.resource_type`(STUDY_SESSION_RESOURCE_TYPE) · `focus_sessions.type`(POMODORO_TYPE)/`.status`(POMODORO_STATUS)
+  · `study_availability.preset_block`(PRESET_BLOCK — **reused**, `knowledge.ts:30`) · `study_plan_batches.status`
+  (STUDY_PLAN_BATCH_STATUS **+ `'failed'`**, `business-rules.md:89`). Parity asserted for all 5. `day_of_week`(0-6)/
+  `preference_score`(1-5) are numeric BETWEEN checks (not tuple-sourced); `scope_type`/`sub_type` OPEN no CHECK. `[FACT: 014_*.ts; enum-parity.test.ts]`
+- **[FACT] BR-S4-5 — 4 `[E]` fields (not "all-plaintext").** `study_plan_batches.name` · `session_templates.name` ·
+  `session_templates.description` · `availability_exceptions.reason` are `[E]`; `study_sessions`/`study_availability`/
+  `focus_sessions` are zero-`[E]` (timer state structural, `pomodoro/conventions.md:35`). SQL `-- [E]` ↔ mirror
+  `/** @encrypted */` verified matched both directions. `[FACT: 014_*.ts; scheduling.ts]`
+- **[FACT] BR-S4-6 — planner scope widened beyond course (G5).** `study_plan_batches` replaces the v2 `course_id`
+  REFERENCES FK with polymorphic `scope_type`/`scope_id` (OPEN, no FK — no-FK convention). `[FACT: structure-data.md:56; 014_*.ts]`
+- **[FACT] BR-S4-7 — mirror-only; interface reconcile → DB-11.** `PomodoroSession`/`StudyPlanBatch`/`StudySession`
+  (`note.ts`/`knowledge.ts`/`learning.ts`) keep pre-reframe shapes — cited, not fixed here (group #1 precedent). `session_effects`
+  is NOT a table (dim2 = `EFFECT_TYPE` enum + registry JSON + `applied_effects`, all built); `scheduled_study_sessions`
+  DROPPED (→ `planned_blocks`). `[FACT: ADR-002 §5.20; ADR-016 DB-11]`
+- **[FACT] BR-S4-8 — `ENTITY_TYPES += 'session'`.** The base session becomes a valid polymorphic link/attach target
+  (AR-5 never appended it); sub-types addressed via the base `session_id`. `[FACT: _registry.ts:27]`
+- **[FACT] BR-S4-9 — parity + introspection + runner green.** `@vida/core` **221 tests** (+5 enum-parity rows, +18→24
+  DDL-introspection: column-set · nullability · PK · default × 6 tables — the mandatory Phase-5 bookend); `LATEST_VERSION`=14;
+  root typecheck 11/11; lint 0-err. Gates: gate-1 REVISE→resolved · preflight BLOCKED(BR-DB-1)→PASSED · gate-2 REVISE→SHIP ·
+  post-impl SHIP. Foundation-readiness: MOD-sessions (#139) / MOD-notes `/pomodoro` find every needed column — PASS. `[FACT: vitest run]`
+- **[FACT] BR-S4-10 — cross-group flag → group #2 (Preferences).** PD-7 global config (`auto_start_breaks`/
+  `auto_start_next_interval`/`show_notifications`/`play_sounds`) is Preferences-owned and **absent** from shipped
+  `013_preferences.user_preferences` → a group #2 backfill (the runtime reads it, never re-stores). NOT this unit's table. `[FACT: pomodoro business-rules PD-7; 013_preferences.ts]`

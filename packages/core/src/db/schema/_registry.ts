@@ -21,6 +21,10 @@ export const ENTITY_TYPES = [
   'rule',
   'planned_block',
   'template',
+  // DB-4 group #3 — the Sessions base entity becomes a valid polymorphic link/attach
+  // target (AR-5 built the tables but never appended it). Sub-types are addressed via
+  // the base session_id, so only the base `session` is registered (ADR-004 §3.1).
+  'session',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

@@ -21,8 +21,12 @@ export * from './foundation/economy'
 export * from './foundation/purpose'
 // Foundation substrate: DB-3 generic review engine (review_curves · method_bindings · review_events).
 export * from './foundation/knowledge-review'
-// Foundation substrate: DB-3 scheduling (planned_blocks — aggregator-scheduled).
+// Foundation substrate: DB-3 scheduling (planned_blocks — aggregator-scheduled) +
+// DB-4 group #3 Planner tables (study_availability · availability_exceptions ·
+// study_plan_batches · session_templates).
 export * from './foundation/scheduling'
+// DB-4 group #3 (Stream ii): Sessions sub-type extensions (study_sessions · focus_sessions).
+export * from './foundation/session-extensions'
 // Foundation substrate: DB-3 templates (light seed-bundle store).
 export * from './foundation/templates'
 // DB-4 domain (Stream ii): Notes & Pages (pages · page_links · note_attachments).

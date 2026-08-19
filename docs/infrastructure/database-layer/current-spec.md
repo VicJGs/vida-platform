@@ -182,13 +182,14 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences authored · 2026-08-19 · LIF-66)
-The Stream (ii) per-domain modules authored so far (2 of 22). `[FACT: schema/{notes,preferences}.ts; migrations/012_notes.ts + 013_preferences.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling authored · 2026-08-19 · LIF-66)
+The Stream (ii) per-domain modules authored so far (3 of 22). `[FACT: schema/{notes,preferences}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts + 013_preferences.ts + 014_sessions_scheduling.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
 | `012_notes.ts` | `schema/notes.ts` | `pages` · `page_links` · `note_attachments` (ADR-002 §5.2) |
 | `013_preferences.ts` | `schema/preferences.ts` | `user_preferences` · `nav_preferences` · `command_bar_history` (ADR-002 §5.17) |
+| `014_sessions_scheduling.ts` | `foundation/session-extensions.ts` + `foundation/scheduling.ts` | `study_sessions` · `focus_sessions` · `study_availability` · `availability_exceptions` · `study_plan_batches` · `session_templates` (ADR-004 §3.1 · §5.11) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -209,10 +210,21 @@ The Stream (ii) per-domain modules authored so far (2 of 22). `[FACT: schema/{no
   split → ADR-002 §5.17 amended + §5.20 ledger fulfilled). `command_bar_history` gains `created_at`/`updated_at` (P-R2);
   no `deleted_at`. `@vida/types` interfaces unchanged (DB-11 reconcile). E9 cross-group: Gamification's `user_profile`
   must omit the 4 routed fields + `check_in_streak*`. `[FACT: 013_preferences.ts; ADR-002 §5.17]`
-- **Remaining DB-4 groups:** #3 … #22 Notifications (20 more domain groups, per the task P0 slice).
+- **Group #3 Sessions & Scheduling +Pomodoro (2026-08-19):** **6 tables** completing the Session framework on the
+  AR-5/AR-7/DB-3 substrate. `focus_sessions` IS the `focus` timer runtime — `pomodoro_sessions` **RETIRED** into it
+  (notes-and-pages reframe); `scheduled_study_sessions` DROPPED (→ `planned_blocks`); `session_effects` is not a table.
+  Extensions (`study_sessions`/`focus_sessions`): own `id` PK + `session_id UNIQUE` (BR-DB-1; ADR-004 §3.1 "keyed by" =
+  key col, not PK — preflight catch), spine never re-stored. **4 `[E]` fields** (batch/template `name`, template
+  `description`, exception `reason`). 5 FIXED CHECK cols parity-asserted (+5 rows); `PRESET_BLOCK` reused (no `@vida/types`
+  change), `STUDY_PLAN_BATCH_STATUS += 'failed'`. `ENTITY_TYPES += 'session'`. **Phase-5 DDL-introspection** test
+  (`sessions-scheduling-introspection.test.ts`, 24 cases: column-set·nullability·PK·default × 6). `@vida/core` **221 tests**;
+  `LATEST_VERSION`=14; typecheck 11/11. Cross-group: PD-7 global config → group #2 backfill. Interface reconcile
+  (`PomodoroSession`/`StudyPlanBatch`/`StudySession`) → DB-11. **Foundation-readiness:** MOD-sessions (#139) finds every
+  needed column — PASS. `[FACT: 014_sessions_scheduling.ts; docs/specs/foundation/db-4-sessions-and-scheduling/]`
+- **Remaining DB-4 groups:** #4 Tasks … #22 Notifications (19 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences ✅; 20 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions ✅; 19 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

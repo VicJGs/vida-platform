@@ -36,6 +36,11 @@ import {
   DOCK_POSITION,
   DOCK_SIZE,
   PERSONA,
+  STUDY_SESSION_RESOURCE_TYPE,
+  POMODORO_TYPE,
+  POMODORO_STATUS,
+  STUDY_PLAN_BATCH_STATUS,
+  PRESET_BLOCK,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -50,6 +55,7 @@ import { migration010Scheduling } from '../db/migrations/010_scheduling'
 import { migration011Templates } from '../db/migrations/011_templates'
 import { migration012Notes } from '../db/migrations/012_notes'
 import { migration013Preferences } from '../db/migrations/013_preferences'
+import { migration014SessionsScheduling } from '../db/migrations/014_sessions_scheduling'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -143,6 +149,14 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'user_preferences', column: 'persona', tuple: PERSONA },
   { table: 'nav_preferences', column: 'dock_position', tuple: DOCK_POSITION },
   { table: 'nav_preferences', column: 'dock_size', tuple: DOCK_SIZE },
+  // DB-4 group #3 — Sessions & Scheduling (+Pomodoro). FIXED TEXT-CHECK cols only;
+  // day_of_week/preference_score are numeric BETWEEN checks (not tuple-sourced);
+  // scope_type/sub_type/resource_id are OPEN (no CHECK).
+  { table: 'study_sessions', column: 'resource_type', tuple: STUDY_SESSION_RESOURCE_TYPE },
+  { table: 'focus_sessions', column: 'type', tuple: POMODORO_TYPE },
+  { table: 'focus_sessions', column: 'status', tuple: POMODORO_STATUS },
+  { table: 'study_availability', column: 'preset_block', tuple: PRESET_BLOCK },
+  { table: 'study_plan_batches', column: 'status', tuple: STUDY_PLAN_BATCH_STATUS },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -161,6 +175,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration011Templates.up(driver)
   await migration012Notes.up(driver)
   await migration013Preferences.up(driver)
+  await migration014SessionsScheduling.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined
