@@ -94,6 +94,16 @@ than a normal post-impl pass — the acceptance criterion is *downstream usabili
 - Post-impl `/critique` (independent) → §XXIX Currency promote (docs ship in the same commit) →
   a "foundation-readiness" check: pick a representative downstream consumer (e.g. MOD-notes for DB-4's Notes domain)
   and confirm every table/column it needs exists and is documented. Log any gap as a defect, do not hand-wave.
+- **DDL-introspection parity check (MANDATORY — the green tests are blind to it).** Apply each new migration in-memory
+  (better-sqlite3 + `PRAGMA table_info`, the `enum-parity.test.ts` driver pattern) and diff the REAL table, column by
+  column, against BOTH the Drizzle mirror (`schema/<domain>.ts`) and the `@vida/types` interface, on **nullability ·
+  default · column-set · type**. The enum-parity test checks only CHECK *value-sets* and the runner test only checks
+  that migrations *apply* — neither catches a `NOT NULL`-in-mirror-but-nullable-in-SQL drift, which makes `$inferSelect`
+  (and the interface) lie about the row. Every mismatch is a defect; resolve to the canonical contract (usually the
+  `@vida/types` interface + sibling-column convention), fixing BOTH the migration and any ADR §5 DDL it mirrors. Known
+  interface↔table divergences deliberately deferred to DB-11 are exempt — cite them, don't "fix" them.
+  `[origin: DB-4 group #2 P5 caught a `time_format` NOT NULL type-lie a CHECK-only parity pass missed; the group-#1
+  oversight re-review then cleared #1 via this same introspection — 2026-08-19]`
 
 ---
 
