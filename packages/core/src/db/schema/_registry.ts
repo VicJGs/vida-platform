@@ -44,6 +44,13 @@ export const ENTITY_TYPES = [
   // routine_step_id → not registered.
   'routine',
   'routine_step',
+  // DB-4 group #8 — Purpose & Goals. purpose/target/dream + purpose_metric_value are valid
+  // pages/entity_links targets (PG-18; `value` already registered by DB-3). purpose_metrics +
+  // target_reviews addressed via their refs → not registered.
+  'purpose',
+  'target',
+  'dream',
+  'purpose_metric_value',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

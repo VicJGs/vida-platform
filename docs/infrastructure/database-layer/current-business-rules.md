@@ -355,3 +355,48 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   enum-parity, +12 DDL-introspection × 3); `LATEST_VERSION`=18; typecheck clean; eslint 0-err. Gates: gate-1 SHIP ·
   preflight PASSED (6 folds) · gate-2 SHIP · post-impl SHIP. Foundation-readiness: MOD-routines finds the sequence/
   step/ledger — PASS. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #8 — Purpose & Goals (IMPLEMENTED 2026-08-19 · `019_purposes.ts` + `schema/purposes.ts`)
+- **[FACT] BR-PG8-1 — the capstone: 6 tables, DB-3 substrate excluded.** Authors `purposes`·`targets`·`purpose_metrics`·
+  `purpose_metric_values`·`target_reviews`·`dreams` (the §5.7 floor MINUS the DB-3 `values`/`contributions`/
+  `purpose_reviews`/`plan_steps`, consumed no-FK). `schema/purposes.ts` (plural) ≠ `foundation/purpose.ts` (DB-3).
+  `[FACT: 019_purposes.ts; foundation/purpose.ts]`
+- **[FACT] BR-PG8-2 — no cross-table FK; spine joints OPTIONAL (SR-003 relaxed).** All refs (purpose_id/value_id/
+  metric_id/target_id/project_id) plain TEXT + **nullable** → standalone Values/Purposes/Targets/Dreams (PG-9);
+  delete-parent = app-layer SET NULL (PG-19). `[FACT: 019_purposes.ts; BR-DB3-1; PG-9]`
+- **[FACT] BR-PG8-3 — progress DERIVES; override slots.** `purposes.progress` / `targets.current_value` /
+  `dreams.progress_percentage` are **nullable** override slots (NULL⇒derive, PG-4), never `NOT NULL DEFAULT 0` counters.
+  `[FACT: ADR-011 §3.2; PG-4/PG-17]`
+- **[FACT] BR-PG8-4 — measurement pair on `targets` ONLY.** `targets.target_type` → `measurement_kind` (MEASUREMENT_KIND,
+  NN DEFAULT 'quantitative' — the floor target_type default) + `binding_mode` (nullable no-default). purposes (rollup
+  apex), dreams, and metrics do NOT carry the pair (structure-data.md:47 assigns it to targets; the dreams-widen +
+  metric amendment lists omit it — the module doc is the roster over the ADR-011 broad list;
+  [[module-doc-is-db4-roster-not-adr-broad-list]]). `[FACT: structure-data.md:47; ADR-011 §3.1/§3.2]`
+- **[FACT] BR-PG8-5 — PG-15 restored fields.** targets `success_criteria`[E]/`measurement_method`; purpose_metrics
+  `is_higher_better`(bool)/`baseline_value`(REAL); purpose_metric_values `source`{manual,auto} (NN DEFAULT 'manual' —
+  natural for a hand-recorded point) + `context_notes`[E]. `source` (provenance) is a distinct axis from `binding_mode`.
+  `[FACT: structure-data.md:54-56; PG-15]`
+- **[FACT] BR-PG8-6 — `dreams` absorbs `bucket_list_items` (PG-16).** dreams widens with category (BUCKET_LIST_CATEGORY)
+  / status (BUCKET_LIST_STATUS) / priority / target_date / completed_date / location[E] / image_url[E] /
+  cover_image_url[E] / inspiration_url[E] / progress_percentage(nullable) / steps[E] JSON / project_id (no-FK). Keeps
+  BOTH `domain` (LifeDomain, floor) + `category` (bucket vocab). Inline `tags` RETIRED → `entity_tags`. `bucket_list_items`
+  RETIRED (collapsed — no orphan table). No `measurement_kind` (widen list omits it). `[FACT: §5.14 L3324; PG-16]`
+- **[FACT] BR-PG8-7 — ledgers/floor: no `deleted_at`.** `purpose_metrics` (floor), `purpose_metric_values` +
+  `target_reviews` (ledgers) omit `deleted_at`; the two ledgers add `created_at`+`updated_at` via baseColumns
+  (task_time_logs precedent). `target_reviews.progress_rating` = range CHECK 1–10 (not tuple → not a parity row).
+  `[FACT: §5.7; task_time_logs precedent]`
+- **[FACT] BR-PG8-8 — 13 FIXED CHECK cols parity-asserted; 1 net-new tuple, 1 reuse.** purposes(domain/status) ·
+  targets(measurement_kind/binding_mode/status/priority/review_frequency) · purpose_metrics(calculation_method) ·
+  purpose_metric_values(source) · dreams(domain/category/status/priority). **`METRIC_VALUE_SOURCE` net-new**;
+  **`FREQUENCY` reused** for `review_frequency` (gate-1 F2 — byte-identical to a would-be net-new REVIEW_FREQUENCY +
+  the floor `Target` interface already uses `Frequency`); `TARGET_TYPE` retired → DB-11. `[FACT: enum-parity.test.ts; purpose.ts]`
+- **[FACT] BR-PG8-9 — registry += 4.** `ENTITY_TYPES += 'purpose'/'target'/'dream'/'purpose_metric_value'` (PG-18;
+  `'value'` already present from DB-3). `purpose_metrics`/`target_reviews` addressed via their refs → not registered.
+  `[FACT: _registry.ts; PG-18]`
+- **[FACT] BR-PG8-10 — mirror-only; interface reconcile → DB-11.** `Purpose` +value_id/progress→null; new `Target`/
+  `PurposeMetric`/`PurposeMetricValue`/`TargetReview`/`Dream`; retire `TARGET_TYPE`; `BucketListItem`→`Dream`.
+  `[FACT: project.ts; ADR-016 DB-11]`
+- **[FACT] BR-PG8-11 — parity + introspection + runner green; ZERO build-decisions.** `@vida/core` **336 tests** (+13
+  enum-parity, +24 DDL-introspection × 6); `LATEST_VERSION`=19; typecheck clean; eslint 0-err. Gates: gate-1 SHIP ·
+  preflight PASSED (6 folds) · gate-2 SHIP · post-impl SHIP. Foundation-readiness: MOD-purpose finds the spine + Dreams
+  — PASS. `[FACT: vitest run]`

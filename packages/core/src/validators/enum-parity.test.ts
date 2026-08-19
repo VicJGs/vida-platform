@@ -56,6 +56,11 @@ import {
   LIFE_DOMAIN,
   ROUTINE_LIFECYCLE,
   ROUTINE_TIME_OF_DAY,
+  FREQUENCY,
+  CALCULATION_METHOD,
+  METRIC_VALUE_SOURCE,
+  BUCKET_LIST_CATEGORY,
+  BUCKET_LIST_STATUS,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -75,6 +80,7 @@ import { migration015Tasks } from '../db/migrations/015_tasks'
 import { migration016Projects } from '../db/migrations/016_projects'
 import { migration017Habits } from '../db/migrations/017_habits'
 import { migration018Routines } from '../db/migrations/018_routines'
+import { migration019Purposes } from '../db/migrations/019_purposes'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -213,6 +219,22 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'routines', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
   { table: 'routines', column: 'binding_mode', tuple: BINDING_MODE },
   { table: 'routine_step', column: 'time_of_day', tuple: ROUTINE_TIME_OF_DAY },
+  // DB-4 group #8 — Purpose & Goals (capstone). 13 FIXED CHECK cols across 5 tables.
+  // review_frequency reuses FREQUENCY; target_reviews.progress_rating is a range CHECK
+  // (1-10, not tuple → not a row); purpose_metrics/target_reviews have no other CHECK col.
+  { table: 'purposes', column: 'domain', tuple: LIFE_DOMAIN },
+  { table: 'purposes', column: 'status', tuple: STATUS },
+  { table: 'targets', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
+  { table: 'targets', column: 'binding_mode', tuple: BINDING_MODE },
+  { table: 'targets', column: 'status', tuple: STATUS },
+  { table: 'targets', column: 'priority', tuple: PRIORITY },
+  { table: 'targets', column: 'review_frequency', tuple: FREQUENCY },
+  { table: 'purpose_metrics', column: 'calculation_method', tuple: CALCULATION_METHOD },
+  { table: 'purpose_metric_values', column: 'source', tuple: METRIC_VALUE_SOURCE },
+  { table: 'dreams', column: 'domain', tuple: LIFE_DOMAIN },
+  { table: 'dreams', column: 'category', tuple: BUCKET_LIST_CATEGORY },
+  { table: 'dreams', column: 'status', tuple: BUCKET_LIST_STATUS },
+  { table: 'dreams', column: 'priority', tuple: PRIORITY },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -236,6 +258,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration016Projects.up(driver)
   await migration017Habits.up(driver)
   await migration018Routines.up(driver)
+  await migration019Purposes.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

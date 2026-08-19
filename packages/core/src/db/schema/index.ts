@@ -41,3 +41,6 @@ export * from './projects'
 export * from './habits'
 // DB-4 domain (Stream ii): Routines (routines · routine_step · routine_completions) — the orchestration reframe.
 export * from './routines'
+// DB-4 domain (Stream ii): Purpose & Goals (purposes · targets · purpose_metrics · purpose_metric_values ·
+// target_reviews · dreams) — the CAPSTONE. (DB-3 substrate values/contributions/purpose_reviews/plan_steps → foundation/purpose.ts.)
+export * from './purposes'

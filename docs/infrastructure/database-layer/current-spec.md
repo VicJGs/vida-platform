@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits + #7 Routines authored · 2026-08-19 · LIF-66)
-The Stream (ii) per-domain modules authored so far (7 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 018_routines.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits + #7 Routines + #8 Purpose & Goals authored · 2026-08-19 · LIF-66)
+The Stream (ii) per-domain modules authored so far (8 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 019_purposes.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -194,6 +194,7 @@ The Stream (ii) per-domain modules authored so far (7 of 22). `[FACT: schema/{no
 | `016_projects.ts` | `schema/projects.ts` | `projects` · `milestones` · `deliverables` · `project_documents` (ADR-002 §5.4) |
 | `017_habits.ts` | `schema/habits.ts` | `habits` · `habit_completions` · `project_habits` (ADR-002 §5.5) |
 | `018_routines.ts` | `schema/routines.ts` | `routines` · `routine_step` · `routine_completions` (the REFRAME — supersedes the §5.6 POC) |
+| `019_purposes.ts` | `schema/purposes.ts` | `purposes` · `targets` · `purpose_metrics` · `purpose_metric_values` · `target_reviews` · `dreams` (§5.7; DB-3 substrate excluded) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -304,10 +305,27 @@ The Stream (ii) per-domain modules authored so far (7 of 22). `[FACT: schema/{no
   DDL is the build job — not an undone design-pass; the three "open" points were doc-closed). Interface reconcile → DB-11.
   **Foundation-readiness:** MOD-routines finds the sequence/step/ledger — PASS. `[FACT: 018_routines.ts; schema/routines.ts;
   docs/specs/foundation/db-4-routines/]`
-- **Remaining DB-4 groups:** #8 Purpose & Goals … #22 Notifications (15 more domain groups, per the task P0 slice).
+- **Group #8 Purpose & Goals (2026-08-19):** **6 tables** — the CAPSTONE meaning-spine (`purposes` · `targets` ·
+  `purpose_metrics` · `purpose_metric_values` · `target_reviews` · `dreams`); the §5.7 floor MINUS the 4 DB-3 substrate
+  tables (`values`/`contributions`/`purpose_reviews`/`plan_steps`, consumed no-FK). **~19 `[E]`**. **No-FK:** all spine
+  joints plain TEXT + **nullable** (SR-003 relaxed → standalone Values/Purposes/Targets/Dreams, PG-9). **ADR-011
+  amendments:** `progress`/`current_value`/`progress_percentage` → **nullable** override slots (PG-4, no counters);
+  `targets.target_type` → **`measurement_kind`** (NN DEFAULT 'quantitative') + `binding_mode` (nullable — the measurement
+  pair on **`targets` ONLY**, [[module-doc-is-db4-roster-not-adr-broad-list]]: dreams/metrics/purposes lists omit it);
+  restored fields (targets `success_criteria`[E]/`measurement_method`; metrics `is_higher_better`/`baseline_value`;
+  metric_values `source`{manual,auto}+`context_notes`[E], PG-15); `purposes.value_id` (→ DB-3 `values`, PG-9). **`dreams`
+  ABSORBS `bucket_list_items`** (PG-16 — category/status/priority/imagery/steps/project_id/location/completed_date;
+  inline tags → `entity_tags`; `bucket_list_items` retired). **Ledgers** (`purpose_metric_values`/`target_reviews`) +
+  `purpose_metrics` have no `deleted_at` (floor). 13 FIXED CHECK cols parity-asserted; **`METRIC_VALUE_SOURCE` net-new**,
+  `FREQUENCY` reused for `review_frequency` (gate-1 F2). `ENTITY_TYPES += purpose/target/dream/purpose_metric_value`
+  (`value` already present, DB-3). **Phase-5 DDL-introspection** (`purposes-introspection.test.ts`, 24 cases × 6).
+  `@vida/core` **336 tests** green; `LATEST_VERSION`=19; typecheck clean; eslint 0-err. **Zero build-decisions.**
+  Interface reconcile → DB-11. **Foundation-readiness:** MOD-purpose finds the spine + Dreams — PASS. `[FACT:
+  019_purposes.ts; schema/purposes.ts; docs/specs/foundation/db-4-purposes-and-goals/]`
+- **Remaining DB-4 groups:** #9 Finance (+Fiscal & Legal) … #22 Notifications (14 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions + #4 Tasks + #5 Projects + #6 Habits + #7 Routines ✅; 15 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#8 ✅ (…Purpose & Goals); 14 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.
