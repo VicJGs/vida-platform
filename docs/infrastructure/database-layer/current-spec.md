@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects authored · 2026-08-19 · LIF-66)
-The Stream (ii) per-domain modules authored so far (5 of 22). `[FACT: schema/{notes,preferences,tasks,projects}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 016_projects.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits authored · 2026-08-19 · LIF-66)
+The Stream (ii) per-domain modules authored so far (6 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 017_habits.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -192,6 +192,7 @@ The Stream (ii) per-domain modules authored so far (5 of 22). `[FACT: schema/{no
 | `014_sessions_scheduling.ts` | `foundation/session-extensions.ts` + `foundation/scheduling.ts` | `study_sessions` · `focus_sessions` · `study_availability` · `availability_exceptions` · `study_plan_batches` · `session_templates` (ADR-004 §3.1 · §5.11) |
 | `015_tasks.ts` | `schema/tasks.ts` | `tasks` · `task_time_logs` (ADR-002 §5.3) |
 | `016_projects.ts` | `schema/projects.ts` | `projects` · `milestones` · `deliverables` · `project_documents` (ADR-002 §5.4) |
+| `017_habits.ts` | `schema/habits.ts` | `habits` · `habit_completions` · `project_habits` (ADR-002 §5.5) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -261,10 +262,30 @@ The Stream (ii) per-domain modules authored so far (5 of 22). `[FACT: schema/{no
   reconcile (`Project` progress→nullable −`tags`; `Milestone` +`nesting_weight` progress→nullable; **new `Deliverable`**)
   → DB-11. **Foundation-readiness:** MOD-projects finds every needed column — PASS. `[FACT: 016_projects.ts;
   schema/projects.ts; docs/specs/foundation/db-4-projects/]`
-- **Remaining DB-4 groups:** #6 Habits … #22 Notifications (17 more domain groups, per the task P0 slice).
+- **Group #6 Habits (2026-08-19):** **3 tables** — `habits` · `habit_completions` · `project_habits` (the kept
+  Projects↔Habits junction, deferred here from #5). **7 `[E]` fields** (habits name/description/unit/cue/reward +
+  `success_criteria`; habit_completions `location`). **No-FK reconciliation:** §5.5's `habit_id` CASCADE +
+  project_habits' 2 CASCADEs → plain TEXT (app/sync layer, HB-11). **Build-phase INTENDED authored:** measurability
+  (HB-13) — `measurement_kind` NOT NULL DEFAULT **`'rate'`** (doc-licensed natural) + `binding_mode` **nullable, no
+  default** (NULL⇒derive `event-trigger` — the Tasks-gate-2 override-slot grain, NOT a manufactured default); G8
+  restored v1 fields — `success_criteria`[E]/`difficulty` on habits, `location`[E]/`completion_time` on completions.
+  **No stored `progress`/`nesting_weight`** on habits (rate derives; ladders UP via `contributions`, HB-13).
+  **`HABIT_DIFFICULTY` net-new tuple** {very_easy…very_hard} authored in `@vida/types` (TASK_KIND precedent). Streak
+  cache (current/longest/total) = derived cache (HB-2). **Boundary:** inline `habits.tags` RETIRED → `entity_tags`
+  (`ENTITY_TYPES += 'habit'`); `purpose_habits` retired → `contributions` (Purpose/DB-3); HB-8/HB-9 (contribute/XP) →
+  ADR-004/012 services; HB-10 backfill window → Preferences. `habit_completions`: full baseColumns (+`updated_at`), NO
+  `deleted_at` (ledger), `value` REAL (first REAL col in v2), ratings 1–5 range CHECK (not enum-parity), UNIQUE(habit_id,
+  completed_date). `project_habits`: reconciled to the `entity_tags` junction shape — synthetic `id` PK (NOT §5.5's
+  composite PK) + UNIQUE(project_id, habit_id). 7 FIXED CHECK cols parity-asserted (habit_type/frequency/time_of_day/
+  domain/measurement_kind/binding_mode/difficulty). **Phase-5 DDL-introspection** (`habits-introspection.test.ts`, 12
+  cases × 3 tables). `@vida/core` **283 tests** green; `LATEST_VERSION`=17; typecheck clean; eslint 0-err. **Zero
+  build-decisions.** Interface reconcile (`Habit` +4 −`tags`; `HabitCompletion` +3; new `ProjectHabit`) → DB-11.
+  **Foundation-readiness:** MOD-habits finds every needed column — PASS. `[FACT: 017_habits.ts; schema/habits.ts;
+  docs/specs/foundation/db-4-habits/]`
+- **Remaining DB-4 groups:** #7 Routines … #22 Notifications (16 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions + #4 Tasks + #5 Projects ✅; 17 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions + #4 Tasks + #5 Projects + #6 Habits ✅; 16 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

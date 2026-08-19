@@ -278,3 +278,41 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   eslint 0-err. Gates: gate-1 REVISE→resolved · preflight PASSED (5 folds) · gate-2 SHIP · post-impl SHIP. A gate-1 critic
   escalated the measurement-scope to Victor — re-grounded as doc-determined (the module doc is the roster;
   [[module-doc-is-db4-roster-not-adr-broad-list]]). Foundation-readiness: MOD-projects finds every needed column — PASS. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #6 — Habits (IMPLEMENTED 2026-08-19 · `017_habits.ts` + `schema/habits.ts`)
+- **[FACT] BR-HB6-1 — 3 tables, 7 `[E]`.** `habits` (name/description/unit/cue/reward + `success_criteria` `[E]`) ·
+  `habit_completions` (`location` `[E]`) · `project_habits` (zero `[E]`, the kept junction). `habits`/`project_habits`
+  full `...baseColumns` + `deleted_at`; `habit_completions` full baseColumns (+`updated_at`) but **no `deleted_at`**
+  (ledger — hard-deletes with the habit, HB-11). `[FACT: 017_habits.ts; ADR-002 §5.5]`
+- **[FACT] BR-HB6-2 — no cross-table FK (no-FK convention).** §5.5's `habit_completions.habit_id … CASCADE` +
+  `project_habits`' two CASCADEs → plain TEXT; cascade is the app/sync layer's (HB-11). `[FACT: 017_habits.ts; BR-DB3-1]`
+- **[FACT] BR-HB6-3 — the habit is a pursuable; measurement pair authored.** `measurement_kind` NOT NULL DEFAULT
+  **`'rate'`** (HB-13 doc-licensed natural — occurrence frequency) + `binding_mode` **NULLABLE, no default** (NULL ⇒
+  derive `event-trigger`, ADR-011 §3.2 override-slot grain — the same trap gate-2 struck at Tasks; NOT a manufactured
+  default). **No stored `progress`/`nesting_weight`** on habits (the rate derives, the streak cache is derived-from-
+  ledger; habits ladder UP via `contributions.contribution_percentage`). `[FACT: business-rules.md HB-13; ADR-011 §3.1/§3.2/§3.3]`
+- **[FACT] BR-HB6-4 — streak cache is derived, never stored truth.** `current_streak`/`longest_streak`/
+  `total_completions` (`INTEGER NOT NULL DEFAULT 0`) recompute from the `habit_completions` ledger; a cache (HB-2). `[FACT: §5.5; HB-2]`
+- **[FACT] BR-HB6-5 — G8 restored v1 fields authored (build-phase INTENDED).** `habits.success_criteria`[E] +
+  `habits.difficulty` (**net-new `HABIT_DIFFICULTY` tuple** {very_easy,easy,medium,hard,very_hard}, TASK_KIND
+  precedent) + `habit_completions.location`[E] + `habit_completions.completion_time` (Unix-ms moment). `[FACT: structure-data.md:26-27; conventions.md:39]`
+- **[FACT] BR-HB6-6 — `habit_completions` ledger shape.** `value` REAL (first REAL col in v2); `count` NN dflt 1;
+  `mood_before`/`mood_after`/`ease_rating`/`satisfaction` INTEGER **range CHECK `BETWEEN 1 AND 5`** (002_sessions.ts
+  precedent — NOT tuple-sourced, not parity rows); **UNIQUE(`habit_id`,`completed_date`)** (HB-3); `idx_habit_comp_date`. `[FACT: 017_habits.ts; §5.5]`
+- **[FACT] BR-HB6-7 — `project_habits` reconciled to the entity_tags junction shape.** Synthetic `id` UUIDv7 PK (NOT
+  §5.5's `PRIMARY KEY(project_id,habit_id)`) + **UNIQUE(`project_id`,`habit_id`)** (preserves pair-uniqueness) + `idx`
+  on `habit_id`. KEPT, never retired (C1 guard). `[FACT: spaces.ts entityTags; conventions.md:55]`
+- **[FACT] BR-HB6-8 — shared-primitive & partner boundaries (not authored here).** Inline `habits.tags` RETIRED →
+  `entity_tags` (`ENTITY_TYPES += 'habit'`, ADR-006 SP1); notes → `pages`; `purpose_habits` retired → `contributions`
+  (Purpose/DB-3, M7); HB-8 `contribute_purpose_metric` + HB-9 `award_xp`→`grant_currency`→`consequence_ledger` →
+  ADR-004/012 services; HB-10 backfill window → Preferences; streak M5 seam → service (R7). `[FACT: 017_habits.ts; conventions.md:23-31,52-57]`
+- **[FACT] BR-HB6-9 — 7 FIXED CHECK cols parity-asserted.** `habit_type`/`frequency`/`time_of_day`/`domain`/
+  `measurement_kind`/`binding_mode`/`difficulty` SQL CHECK ≡ the `@vida/types` tuples (HABIT_TYPE/HABIT_FREQUENCY/
+  HABIT_TIME_OF_DAY/LIFE_DOMAIN/MEASUREMENT_KIND/BINDING_MODE/**HABIT_DIFFICULTY** [net-new]); +7 enum-parity rows. `[FACT: enum-parity.test.ts]`
+- **[FACT] BR-HB6-10 — mirror-only; interface reconcile → DB-11.** `Habit` (+`measurement_kind`/`binding_mode`/
+  `success_criteria`/`difficulty`, −`tags`) · `HabitCompletion` (+`updated_at`/`location`/`completion_time`) · new
+  `ProjectHabit` → DB-11 (compile-safe; no `$inferSelect`↔interface assertion). `[FACT: habit.ts; ADR-016 DB-11]`
+- **[FACT] BR-HB6-11 — parity + introspection + runner green; ZERO build-decisions.** `@vida/core` **283 tests** (+7
+  enum-parity, +12 DDL-introspection × 3 tables); `LATEST_VERSION`=17; typecheck clean; eslint 0-err. Gates: gate-1
+  SHIP · preflight PASSED (6 folds) · gate-2 SHIP · post-impl SHIP. Foundation-readiness: MOD-habits finds every needed
+  column — PASS. `[FACT: vitest run]`

@@ -35,6 +35,10 @@ export const ENTITY_TYPES = [
   'project',
   'milestone',
   'deliverable',
+  // DB-4 group #6 — Habits. A habit is a valid pages/entity_links/entity_tags target
+  // (notes via pages `entity_type='habit'`; tags via entity_tags, retiring inline
+  // habits.tags). habit_completions + project_habits are addressed via their refs → not registered.
+  'habit',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

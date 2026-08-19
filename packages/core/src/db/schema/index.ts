@@ -37,3 +37,5 @@ export * from './preferences'
 export * from './tasks'
 // DB-4 domain (Stream ii): Projects (projects · milestones · deliverables · project_documents).
 export * from './projects'
+// DB-4 domain (Stream ii): Habits (habits · habit_completions · project_habits).
+export * from './habits'

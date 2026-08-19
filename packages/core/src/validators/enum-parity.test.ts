@@ -49,6 +49,11 @@ import {
   BINDING_MODE,
   PROJECT_SCOPE,
   PROJECT_COMPLEXITY,
+  HABIT_TYPE,
+  HABIT_FREQUENCY,
+  HABIT_TIME_OF_DAY,
+  HABIT_DIFFICULTY,
+  LIFE_DOMAIN,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -66,6 +71,7 @@ import { migration013Preferences } from '../db/migrations/013_preferences'
 import { migration014SessionsScheduling } from '../db/migrations/014_sessions_scheduling'
 import { migration015Tasks } from '../db/migrations/015_tasks'
 import { migration016Projects } from '../db/migrations/016_projects'
+import { migration017Habits } from '../db/migrations/017_habits'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -186,6 +192,17 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'milestones', column: 'status', tuple: STATUS },
   { table: 'deliverables', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
   { table: 'deliverables', column: 'binding_mode', tuple: BINDING_MODE },
+  // DB-4 group #6 — Habits. 7 FIXED TEXT-CHECK cols on `habits`: habit_type/frequency/
+  // time_of_day/domain/measurement_kind/binding_mode/difficulty. The mood_*/ease_rating/
+  // satisfaction ratings are numeric BETWEEN 1 AND 5 (not tuple-sourced → not rows);
+  // habit_completions + project_habits have no CHECK col.
+  { table: 'habits', column: 'habit_type', tuple: HABIT_TYPE },
+  { table: 'habits', column: 'frequency', tuple: HABIT_FREQUENCY },
+  { table: 'habits', column: 'time_of_day', tuple: HABIT_TIME_OF_DAY },
+  { table: 'habits', column: 'domain', tuple: LIFE_DOMAIN },
+  { table: 'habits', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
+  { table: 'habits', column: 'binding_mode', tuple: BINDING_MODE },
+  { table: 'habits', column: 'difficulty', tuple: HABIT_DIFFICULTY },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -207,6 +224,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration014SessionsScheduling.up(driver)
   await migration015Tasks.up(driver)
   await migration016Projects.up(driver)
+  await migration017Habits.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined
