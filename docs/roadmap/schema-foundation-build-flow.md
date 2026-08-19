@@ -151,9 +151,13 @@ authoritative §5.20 Stream (i) ADD set. The **true DB-3 remainder is these 11 s
 **Intent source:** the 19 `docs/features/<module>/structure-data.md` docs (§5.20 Stream (ii)). **Profile:**
 add-backend-component. **Blocked by:** DB-3 (consumes the substrate spine).
 
-**Grain.** Author the per-domain Drizzle schema **one domain group at a time**. *(The "~19 domains" is indicative — the
-counts differ across charters [~17–21] because Health/Knowledge sub-groups fold differently; DB-4's **P0** enumerates the
-single canonical domain-group list, and is the authority for the final count.)* The charter's list: Notes & Pages ·
+**Grain.** Author the per-domain Drizzle schema **one domain group at a time**. *(The "~19 domains" was indicative — the
+counts differed across charters [~17–21] because Health/Knowledge sub-groups fold differently; DB-4's **P0** enumerated the
+single canonical domain-group list and is the authority for the final count.)* **P0 RESOLVED (2026-08-18): 22 domain
+groups** — see `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output". Key grain calls: **Health split ×3**
+(Core/Nutrition/Training); **Languages = own group** (intent = ADR-002 §5.10, its `docs/features/languages/` docs are
+0-byte stubs → author `structure-data.md` in P1); **Pomodoro folded into Sessions**, **ICS folded into Learning**;
+tracked as lightweight build-steps (no Linear sub-issues); cross-domain refs are plain TEXT no-FK → no hard build-order. The charter's list: Notes & Pages ·
 Tasks · Projects · Habits · Routines · Purpose & Goals · Finance (+Fiscal & Legal) · Relationships ·
 Learning/Education · Books · Knowledge · Sessions & Scheduling · Skills · Check-ins · Health (core/nutrition/training)
 · Preferences · Journals · Pomodoro · Gamification · Notifications · ICS). Each domain group is a component sub-issue

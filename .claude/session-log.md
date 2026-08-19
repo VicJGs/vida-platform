@@ -5028,3 +5028,35 @@ Next session:
   - Also now un-gated (parked): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · NEW
     `perf-framework-chunk-split` (§6 init budget). All own-gate hygiene/horizon issues, not the next head.
   - ⚠ CI red repo-wide = the known pnpm action-setup infra conflict (local green); no branch protection.
+
+---
+Date: 2026-08-18
+Task: db-4-per-domain-schema (LIF-66, #10) — per-domain schema · P0 · Slice + DB-3 merge
+Completed:
+  - **Merged DB-3 PR #31 → `main`** (`97a0e0c`, `--merge`; LIF-65 already Done; DB-3 branch deleted). DB-3's 11 Stream (i)
+    substrate tables are now on main — the M1.0 schema foundation's Stream (i) is landed.
+  - **Profile switch** Project Foundation → **add-backend-component** (DB-4's profile); DB-4 flipped planned→in-progress.
+    Surfaced the §XXVII path (DB-4's 5-phase foundation lifecycle from `schema-foundation-build-flow.md §2/§4`).
+  - **P0 · Slice DONE.** Verified ground truth: **24 `structure-data.md` intent docs on disk** (REPO.md's "only Notes &
+    Pages" line is stale); no per-domain schema authored yet (foundation dir = DB-1/DB-3/DB-6/DB-7 substrate only).
+    Produced the **canonical 22-domain-group slice** (task file "## P0 Output"; reconciled flow doc §4 "~19" → 22 +
+    TASKS.md routing). Recorded as lightweight build-steps.
+Decisions:
+  - **D1 Health → SPLIT ×3** (Core/Nutrition/Training) — ~23 tables, distinct concerns; cleaner per-group gates.
+  - **D2 Languages → OWN group, docs-verified.** Victor asked to verify in the docs, not guess. Finding: flow §4's
+    `Languages → docs/features/languages/` points to **0-byte stubs**, but the schema (~9 tables) is **fully specified in
+    ADR-002 §5.10 Language Learning Domain** → Languages is a real DB-4 group; intent source = the ADR; author its
+    `structure-data.md` from the ADR in P1. (Reinforces [[decide-dont-ask-when-docs-give-the-answer]] — read the
+    authoritative source, not the stub the pointer named.)
+  - **D3 Sub-issue form → lightweight build-step checklist** (no Linear sub-issues; DB-4 stays LIF-66).
+  - **D4 (self-made, doc-grounded):** Pomodoro folds into Sessions (its doc self-declares "capability within the Sessions
+    realm"); ICS folds into Learning; Bucket List→Purpose `dreams`; Duties dissolved.
+  - **No-FK → loose order:** DB-3 fixed cross-domain refs as plain TEXT no-FK, so domain groups have no hard build-order;
+    Notes-first is a Phase-5-readiness convention only.
+Next session:
+  - **FIRST ACTION: open domain group `#1 Notes & Pages` (the in-degree-14 hub), Phase 1 intent intake** — FRESH
+    clean-context session (one per domain group, per flow doc). `docs/features/notes-and-pages/structure-data.md` (FULL) →
+    P2 current-state read → P3 plan double-gate → P4 implement (`pages`/`entity_links` are NOT yet on disk — Notes P4
+    authors them) + `ENTITY_TYPES` append → P5 foundation-soundness verify (MOD-notes is the downstream consumer).
+  - Reload: `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output" · flow doc §2 · memory
+    [[open-vocab-columns-take-no-sql-check]]. ⚠ CI red repo-wide (known pnpm infra; local green).

@@ -6,6 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
+| db-4-per-domain-schema (LIF-66) | Add Backend Component | 2026-08-01 | 2026-08-18 | ⚡ IN PROGRESS — **DB-3 PR #31 MERGED to main** (`97a0e0c`). **P0 · Slice DONE (2026-08-18)**: canonical **22 domain groups** enumerated + grain resolved (Health split ×3 · Languages own-group from ADR-002 §5.10 · Pomodoro→Sessions · ICS→Learning · lightweight build-steps, no Linear sub-issues · no-FK → loose order). See task file "## P0 Output". **Next = `#1 Notes & Pages` P1 intake** (hub) — open FRESH next session (clean-context per domain group). |
 | m1-foundation-closeout | Project Foundation | 2026-08-17 | 2026-08-18 | ⚡ IN PROGRESS — ⚠ **REROUTED: M1.0 was closed too soon.** Attempted to close M1.0 + open M1.1, but M1.0's schema foundation (DB-3 partial + DB-4 not started) was left unfinished — census "100%" measured homed-code alignment, not issue completion. **M1.0 REOPENED**; docs corrected to flag the mistake (closeout·roadmap·delivery-plan·reconstructed-structure·m1.1-plan). Next M1.0 work = finish DB-3 then DB-4 (schema foundation); **model + flow DECIDED 2026-08-18 (Model B, upfront foundation) → `docs/roadmap/schema-foundation-build-flow.md`**. M1.1 (MOD-notes+all) gated behind M1.0 (modules build on finished schema, don't author it). |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
@@ -41,7 +42,7 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-18 — DB-3 DONE → head = `DB-4` (LIF-66, #10)): author the ~19 per-domain schemas, same 5-phase lifecycle, then M1.0 schema foundation is fully complete → M1.1 opens.** **DB-3 (LIF-65, #9) is DONE + PR'd** (PR #31, branch `db-3-stream-i-consolidation`, LIF-65→Done): the 11 §5.20 Stream (i) substrate tables authored (migrations 007–011) via the full 5-phase lifecycle; root typecheck 11/11 · @vida/core 192 tests. Model + flow: `docs/roadmap/schema-foundation-build-flow.md`; spec `docs/specs/foundation/db-3-stream-i-substrate/`. **DB-4** = the per-domain schema (Stream ii, the 19 `structure-data.md` docs), ← DB-3, same 5-phase lifecycle in its own clean-context session; per-domain component sub-issues. `MOD-notes #31` + all M1.1 stay GATED behind M1.0 (modules build service+UI on the finished schema; author none). ⚠ merge PR #31 to land DB-3 on main.
+**🎯 Computed head now (2026-08-18 — DB-3 MERGED · DB-4 IN PROGRESS, P0 done → next concrete = `#1 Notes & Pages` P1).** **DB-3 PR #31 MERGED to `main`** (`97a0e0c`; LIF-65 Done). **DB-4 (LIF-66, #10) picked up**; **P0 · Slice DONE** — canonical **22 domain groups** (not the indicative ~19), grain resolved: Health split ×3 · Languages own-group (intent ADR-002 §5.10; its `docs/features/languages/` docs are 0-byte stubs → author `structure-data.md` in P1) · Pomodoro→Sessions · ICS→Learning · lightweight build-steps (no Linear sub-issues) · cross-domain refs plain TEXT no-FK → no hard build-order. Full slice + ordering in `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output". **Next head = domain group `#1 Notes & Pages` (the in-degree-14 hub), Phase 1 intent intake** — open FRESH (clean-context per domain group, per flow doc). Each group runs the 5-phase lifecycle. `MOD-notes #31` + all M1.1 stay GATED behind M1.0.
 <details><summary>(prior 2026-08-11) Computed head = UI-3 #29 — resolved: built E1–E8, merged, Done.</summary></details>
 ⚠ **SUB-WAVE RULE (learned 2026-08-09, added to the routing steps below):** the raw `#`-order walk is INSUFFICIENT
 alone — it does NOT encode the `-c`/`-d` **sub-wave sequencing** (`m1.0-delivery-plan.md:129,140-141`): the **UX
@@ -65,23 +66,25 @@ drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-18) — DB-3 BUILT + DONE + PR'd. Next head = DB-4 (LIF-66, #10).**
-DB-3 (LIF-65, #9) ran the full 5-phase lifecycle in one clean-context session and shipped the 11 §5.20 Stream (i)
-substrate tables — **the M1.0 schema foundation's Stream (i) is complete**:
-- **11 tables authored** (migrations 007–011): `values·contributions·purpose_reviews·plan_steps` (007) · `review_curves·
-  method_bindings·review_events` (008) · `store·rules` (009) · `planned_blocks` (010) · `templates` (011). +`@vida/types`
-  enums · Zod validators · `ENTITY_TYPES`+11 · enum-parity +10. Root typecheck 11/11 · @vida/core **192 tests**.
-- **Key calls (doc-determined):** cross-domain refs = plain TEXT no FK (dissolved the DB-3-before-DB-4 ordering concern);
-  all 6 session sub-types deferred to DB-4; DB-3 owns 0 AMENDs; `planned_blocks.sub_type` OPEN-vocab no-CHECK (post-impl
-  critique catch). §XXIX `database-layer/current-*` promoted INTENT→FACT.
-- **Committed** on branch `db-3-stream-i-consolidation` (`61d0c2b`), **PR #31** → main, **LIF-65 → Done**.
+**▶ CURRENT (2026-08-18) — DB-3 MERGED · DB-4 IN PROGRESS (P0 done). Next = `#1 Notes & Pages` P1 intake (open FRESH).**
+This session: (1) **merged DB-3 PR #31** → `main` (`97a0e0c`, LIF-65 already Done; DB-3 branch deleted). (2) Switched
+profile Project Foundation → **add-backend-component**; picked up **DB-4 (LIF-66, #10)**. (3) Ran **P0 · Slice**:
+- **Canonical 22 domain groups** (the indicative "~19" resolved) — full table + build order in
+  `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output". Grain decisions (approved): **Health split ×3**
+  (Core/Nutrition/Training) · **Languages = own group** (intent = **ADR-002 §5.10 Language Learning Domain**, ~9 tables;
+  its `docs/features/languages/*.md` are 0-byte stubs → author `structure-data.md` from the ADR in P1) · **Pomodoro
+  folded into Sessions** (self-declared capability; `pomodoro_sessions`→`focus_sessions`) · **ICS folded into Learning**
+  · Bucket List→Purpose `dreams` · Duties dissolved.
+- **Tracking (D3):** lightweight build-step checklist — **no Linear sub-issues**; DB-4 stays LIF-66.
+- **Ordering:** cross-domain refs = plain TEXT **no-FK** (DB-3 decision) → **no hard build-order**; Notes-first is a
+  Phase-5-readiness convention, not a blocker.
 
-**▶ NEXT ACTION:** (1) **merge PR #31** to land DB-3 on main (Linear already Done; no branch protection). (2) Then
-**DB-4** (LIF-66, #10) — the per-domain schema (Stream ii, the 19 `structure-data.md` docs), ← DB-3, same 5-phase
-lifecycle in its own clean-context session, per-domain component sub-issues. Its P0 fixes the canonical domain-group
-count (~17–21 across charters). M1.1 (MOD-notes #31 + all) stays GATED behind M1.0 until DB-4 lands.
-⚠ Reload for DB-4: `docs/roadmap/schema-foundation-build-flow.md §4` · `.claude/tasks/db-4-per-domain-schema.md` ·
-memory [[open-vocab-columns-take-no-sql-check]] (a tuple ≠ auto-CHECK).
+**▶ NEXT ACTION (fresh session):** domain group **`#1 Notes & Pages`** (the in-degree-14 hub) — **Phase 1 intent intake**
+(`docs/features/notes-and-pages/structure-data.md`, FULL) → P2 current-state read → P3 plan double-gate → P4 implement
+(SQL migration + Drizzle modules + `ENTITY_TYPES` append) → P5 foundation-soundness verify. One clean-context session per
+domain group (per flow doc). N.B. `pages`/`entity_links` are NOT yet on disk — Notes P4 authors them.
+⚠ Reload for Notes & Pages: `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output" · flow doc §2 (5-phase) ·
+`docs/features/notes-and-pages/structure-data.md` · memory [[open-vocab-columns-take-no-sql-check]] (a tuple ≠ auto-CHECK).
 
 <details><summary>(superseded 2026-08-18) prior CURRENT — the premature "M1.0 complete → MOD-notes" handoff</summary>
 
