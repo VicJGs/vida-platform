@@ -33,3 +33,5 @@ export * from './foundation/templates'
 export * from './notes'
 // DB-4 domain (Stream ii): Preferences (user_preferences · nav_preferences · command_bar_history).
 export * from './preferences'
+// DB-4 domain (Stream ii): Tasks (tasks · task_time_logs).
+export * from './tasks'

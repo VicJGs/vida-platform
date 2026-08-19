@@ -13,6 +13,12 @@ import type { SyncableEntity, SyncMetadata } from './sync'
 export const TASK_DIFFICULTY = ['trivial', 'easy', 'medium', 'hard', 'expert'] as const
 export type TaskDifficulty = (typeof TASK_DIFFICULTY)[number]
 
+// The task's obligation discriminator (DB-4 group #4 · structure-data G8). `obligation`
+// = a deadline-recurring task (carries `recurrence_rule`); `standard` = the non-recurring
+// baseline. Also the ADR-009 T4 preset type discriminator. `standard` is the default.
+export const TASK_KIND = ['standard', 'obligation'] as const
+export type TaskKind = (typeof TASK_KIND)[number]
+
 // ---------------------------------------------------------------------------
 // Entities
 // ---------------------------------------------------------------------------

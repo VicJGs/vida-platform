@@ -50,7 +50,7 @@ each running the 5-phase lifecycle at domain granularity.
 | 1 | Notes & Pages (hub) | `notes-and-pages/structure-data.md` | ✅ **DONE** (P1–P5, 2026-08-18) — `schema/notes.ts` + `migrations/012_notes.ts` (`pages`·`page_links`·`note_attachments`) + barrel + runner + parity. Full §XXVI double-gate + post-impl SHIP. `@vida/core` 193 green · v12. Spec: `docs/specs/foundation/db-4-notes-and-pages/`. NOT committed. |
 | 2 | Preferences | `preferences/structure-data.md` | ✅ **DONE** (P1–P5, 2026-08-19) — `schema/preferences.ts` + `migrations/013_preferences.ts` (`user_preferences`·`nav_preferences`·`command_bar_history`) + barrel + runner + 5 parity rows + ADR-002 §5.17/§5.20 amendment + §XXIX docs. ALL plaintext (PR-1). **Build-phase intent authored, not deferred** (G4 6 cols · PB-2 `module_visibility` · E9 `user_profile` split → Preferences single-writer owner, ADR-012 §3.10). Gate-1 REVISE→fixed · preflight PASSED · gate-2 SHIP · post-impl REVISE→fixed (`time_format` NOT NULL type-lie) → SHIP. `@vida/core` 198 green · v13. Spec: `docs/specs/foundation/db-4-preferences/`. ⚠ **E9 cross-group:** Gamification's `user_profile` (group ~#19) MUST omit `persona`/`motivation_style`/`active_modules`/`onboarding_completed` + `check_in_streak*`. NOT committed. |
 | 3 | Sessions & Scheduling (+Pomodoro) | `sessions-and-scheduling/` + `pomodoro/` | ✅ **DONE** (P1–P5, 2026-08-19) — **6 tables**: `study_sessions`·`focus_sessions` (`schema/foundation/session-extensions.ts`) + `study_availability`·`availability_exceptions`·`study_plan_batches`·`session_templates` (`scheduling.ts`) + `migrations/014_sessions_scheduling.ts`. **`focus_sessions` IS the `focus` timer runtime; `pomodoro_sessions` RETIRED** into it (notes-and-pages reframe — resolved after 2 Victor drift-catches: no build-decisions, docs settle it via the consuming-module reframe doc). Extensions: own `id` PK + `session_id UNIQUE` (BR-DB-1 preflight catch). 4 `[E]` fields. `STUDY_PLAN_BATCH_STATUS += 'failed'`; `PRESET_BLOCK` reused; `ENTITY_TYPES += 'session'`. Gates: gate-1 REVISE→resolved · preflight BLOCKED(BR-DB-1)→PASSED · gate-2 REVISE→SHIP · post-impl SHIP. Phase-5 DDL-introspection (24 cases, all 4 dims). `@vida/core` **221 tests** · v14 · typecheck 11/11 · lint 0. Spec `docs/specs/foundation/db-4-sessions-and-scheduling/`. ⚠ X1 → group #2 PD-7 backfill; DB-11 → interface reconcile. |
-| 4 | Tasks | `tasks/structure-data.md` | ☐ |
+| 4 | Tasks | `tasks/structure-data.md` | ✅ **DONE** (P1–P5, 2026-08-19) — **2 tables** `tasks`·`task_time_logs` (`schema/tasks.ts` + `migrations/015_tasks.ts`, v15). **Zero decisions** (⚠ Victor drift-catch: I first framed 4 "shape points w/ leans" = the Notes-#1 manufactured-decisions drift → all doc-closed). No-FK reconcile (5 parent refs + self-ref + `task_id` → plain TEXT). **Build-phase INTENDED authored:** `completed_at`·`scheduled_date`·`kind`(**TASK_KIND** net-new)·`recurrence_rule`(RRULE)·`measurement_kind`/`binding_mode`(M1/M2)·`nesting_weight`(M4). Boundary: inline `tags`→`entity_tags`(+`ENTITY_TYPES+='task'`)·`task_views`→`views`(AR-6)·notes→`pages`·timer→`focus_sessions`(#3). Gate-2 caught + struck a manufactured `binding_mode NOT NULL DEFAULT 'event-trigger'` → nullable no-default (ADR-011 §3.2 override-slot). Gates: gate-1 SHIP·preflight PASSED·gate-2 REVISE→SHIP·post-impl SHIP. Phase-5 introspection (8). `@vida/core` **240 green** · v15 · typecheck 11/11 · lint 0. Spec `docs/specs/foundation/db-4-tasks/`. Interface reconcile (`Task`+7−`tags`·`TaskTimeLog`+`updated_at`)→DB-11. |
 | 5 | Projects | `projects/structure-data.md` | ☐ |
 | 6 | Habits | `habits/structure-data.md` | ☐ |
 | 7 | Routines | `routines/structure-data.md` | ☐ |
@@ -109,3 +109,31 @@ each running the 5-phase lifecycle at domain granularity.
   (`json<T>()`→`text()`)→fixed · preflight PASSED · gate-2 SHIP · post-impl REVISE (`time_format` NOT NULL type-lie)→fixed
   →SHIP. `@vida/core` **198 green** · v13. Spec `docs/specs/foundation/db-4-preferences/`. **2 of 22 done; 20 remain.**
   Next = group **#3 Sessions & Scheduling (+Pomodoro)** (fresh clean-context session).
+- **Group #4 Tasks — P1 intent intake + P2 current-state read DONE (2026-08-19).** Spec
+  `docs/specs/foundation/db-4-tasks/_index.md`. **Authoring set = 2 net-new tables** (`tasks` · `task_time_logs`,
+  both ABSENT on disk). Read the full `docs/features/tasks/` 5-aspect spec + ADR-002 §5.3 + task.ts + ADR-011/006/007/
+  009/004/012. **Boundary confirmed doc-fixed (Notes-#1 pattern):** `views` (spaces.ts:113) + `entity_tags`/`entity_links`
+  (AR-6 substrate) are already authored → Tasks authors NEITHER; `task_views` retires → `views`, inline `tasks.tags`
+  retires → `entity_tags` (register `entity_type='task'`). **Build-phase INTENDED additions captured (author now, not
+  defer — [[build-phase-flags-mean-resolve-now-not-defer]]):** `completed_at` (G5) · `scheduled_date` (G6) ·
+  `kind`+recurrence (G8, **TASK_KIND net-new tuple**) · `measurement_kind`/`binding_mode` (M1/M2, tuples already ship
+  `measurement.ts`) · sub-task rollup-weight (M4). **No-FK reconciliation:** §5.3's 4 parent FKs + self-ref CASCADE →
+  plain TEXT no FK (cascade/set-null = app/sync layer, TK-4) — stale-source-vs-live-convention = FACT. **ZERO shape
+  decisions** — every point that first read "open" is doc-closed (⚠ Victor drift-catch: I first framed 4 "shape points
+  with leans" = the Notes-#1 manufactured-decisions drift): recurrence = single `recurrence_rule` TEXT/RRULE (locked
+  convention — habit/routine freq+days model **explicitly excluded** for tasks, conventions.md:13,25) · sub-task weight =
+  `nesting_weight` nullable NULL⇒equal (ADR-011 §3.3 L54, named verbatim) · inline `tasks.tags` = **not authored** (→
+  entity_tags, §5.20 RETIRE + conventions.md:29) · `Task` interface reconcile = **DB-11** fixed boundary (group #1/#3
+  precedent), only `TASK_KIND` tuple authored now. Migration `015_tasks` → v15. **P3 = straight authoring plan, zero
+  forks.** Next = P3 plan double-gate ([[stale-source-plus-live-convention-is-fact-not-a-decision]] · [[build-phase-flags-mean-resolve-now-not-defer]]).
+- **Group #4 Tasks — P3→P5 DONE + committed (2026-08-19).** P3: gate-1 critique SHIP (12 claim-classes verified, zero
+  manufactured decisions) → Approval 1 · preflight PASSED (both tables own `id` PK → no BR-DB-1 trap) · gate-2 REVISE→SHIP
+  (**caught + struck a manufactured `binding_mode NOT NULL DEFAULT 'event-trigger'`** — docs name what event-trigger *means*,
+  not a universal default; → nullable no-default, ADR-011 §3.2 override-slot grain; + a fabricated-quote NIT) → Approval 2.
+  P4: authored `TASK_KIND` tuple + `TaskKindSchema` · `015_tasks.ts` (v15) · `schema/tasks.ts` · `ENTITY_TYPES += 'task'` ·
+  +6 enum-parity rows + `ddlFor` chain→015 · introspection test. Reconciled a stale `spaces.test.ts` fixture (hard-coded
+  `'task'` as its unregistered example → now seeded; → synthetic type). P5: DDL-introspection (8) · post-impl critique SHIP ·
+  §XXIX promoted (`current-{spec,business-rules}` BR-T4-1…9) · foundation-readiness MOD-tasks PASS. `@vida/core` **240 green**
+  · typecheck 11/11 · lint 0 · v15. Committed on branch `db-4-per-domain-schema`. **4 of 22 done; 18 remain. Next = #5 Projects.**
+  ⚠ Meta: the manufactured-decisions drift recurred a 3rd time (now reversed as a manufactured DEFAULT) — memory
+  [[stale-source-plus-live-convention-is-fact-not-a-decision]] reinforced; the tell is "shape points w/ leans" in P1 framing.

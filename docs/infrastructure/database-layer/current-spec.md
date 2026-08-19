@@ -221,10 +221,26 @@ The Stream (ii) per-domain modules authored so far (3 of 22). `[FACT: schema/{no
   `LATEST_VERSION`=14; typecheck 11/11. Cross-group: PD-7 global config → group #2 backfill. Interface reconcile
   (`PomodoroSession`/`StudyPlanBatch`/`StudySession`) → DB-11. **Foundation-readiness:** MOD-sessions (#139) finds every
   needed column — PASS. `[FACT: 014_sessions_scheduling.ts; docs/specs/foundation/db-4-sessions-and-scheduling/]`
-- **Remaining DB-4 groups:** #4 Tasks … #22 Notifications (19 more domain groups, per the task P0 slice).
+- **Group #4 Tasks (2026-08-19):** **2 tables** (`tasks` · `task_time_logs`), the OS-wide task primitive + aggregator.
+  2 `[E]` fields (`tasks.title`/`description`). **No-FK reconciliation:** §5.3's 5 parent FKs (`project_id`/`milestone_id`/
+  `course_id`/`contact_id` + self-ref `parent_task_id`) + `task_time_logs.task_id` CASCADE → plain TEXT (cascade/set-null
+  = app/sync layer, TK-4). **Build-phase INTENDED authored** (not deferred): `completed_at` (G5) · `scheduled_date` (G6) ·
+  `kind` (**`TASK_KIND` net-new tuple** {standard,obligation}, G8) · `recurrence_rule` (RRULE, obligations, G8) ·
+  `measurement_kind` NOT NULL DEFAULT 'milestone' + `binding_mode` **nullable, no default** (ADR-011 M1/M2 — gate-2 caught a
+  manufactured `event-trigger` default; NULL ⇒ derive-natural, §3.2 override-slot) · `nesting_weight` INTEGER nullable
+  (ADR-011 §3.3 M4, NULL ⇒ equal). **Boundary (substrate, not authored):** inline `tasks.tags` RETIRED → `entity_tags`
+  (`entity_type='task'`); `task_views` RETIRED → shared `views` (AR-6); notes → `pages`; timer → `focus_sessions` (#3).
+  **No stored progress column** (M3 derives). 6 FIXED CHECK cols parity-asserted (+6 rows: status/priority/difficulty/kind/
+  measurement_kind/binding_mode — first live use of the 5 shared tuples). `task_time_logs` zero-`[E]`, no `deleted_at`
+  (ledger). `ENTITY_TYPES += 'task'`. **Phase-5 DDL-introspection** (`tasks-introspection.test.ts`, 8 cases: column-set·
+  nullability·PK·default × 2). `@vida/core` **240 tests** green (1 pre-existing encryption-1MB timeout flake, passes
+  isolated); `LATEST_VERSION`=15; typecheck 11/11; lint 0-err. Interface reconcile (`Task` +7 cols −`tags`; `TaskTimeLog`
+  +`updated_at`) → DB-11. **Foundation-readiness:** MOD-tasks finds every needed column — PASS. `[FACT: 015_tasks.ts;
+  schema/tasks.ts; docs/specs/foundation/db-4-tasks/]`
+- **Remaining DB-4 groups:** #5 Projects … #22 Notifications (18 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions ✅; 19 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions + #4 Tasks ✅; 18 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

@@ -41,6 +41,12 @@ import {
   POMODORO_STATUS,
   STUDY_PLAN_BATCH_STATUS,
   PRESET_BLOCK,
+  STATUS,
+  PRIORITY,
+  TASK_DIFFICULTY,
+  TASK_KIND,
+  MEASUREMENT_KIND,
+  BINDING_MODE,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -56,6 +62,7 @@ import { migration011Templates } from '../db/migrations/011_templates'
 import { migration012Notes } from '../db/migrations/012_notes'
 import { migration013Preferences } from '../db/migrations/013_preferences'
 import { migration014SessionsScheduling } from '../db/migrations/014_sessions_scheduling'
+import { migration015Tasks } from '../db/migrations/015_tasks'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -157,6 +164,14 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'focus_sessions', column: 'status', tuple: POMODORO_STATUS },
   { table: 'study_availability', column: 'preset_block', tuple: PRESET_BLOCK },
   { table: 'study_plan_batches', column: 'status', tuple: STUDY_PLAN_BATCH_STATUS },
+  // DB-4 group #4 — Tasks. The 6 FIXED TEXT-CHECK cols on `tasks`; parent refs +
+  // recurrence_rule/scheduled_date are OPEN (no CHECK); task_time_logs has no CHECK col.
+  { table: 'tasks', column: 'status', tuple: STATUS },
+  { table: 'tasks', column: 'priority', tuple: PRIORITY },
+  { table: 'tasks', column: 'difficulty', tuple: TASK_DIFFICULTY },
+  { table: 'tasks', column: 'kind', tuple: TASK_KIND },
+  { table: 'tasks', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
+  { table: 'tasks', column: 'binding_mode', tuple: BINDING_MODE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -176,6 +191,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration012Notes.up(driver)
   await migration013Preferences.up(driver)
   await migration014SessionsScheduling.up(driver)
+  await migration015Tasks.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

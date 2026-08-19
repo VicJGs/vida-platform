@@ -203,3 +203,36 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
 - **[FACT] BR-S4-10 — cross-group flag → group #2 (Preferences).** PD-7 global config (`auto_start_breaks`/
   `auto_start_next_interval`/`show_notifications`/`play_sounds`) is Preferences-owned and **absent** from shipped
   `013_preferences.user_preferences` → a group #2 backfill (the runtime reads it, never re-stores). NOT this unit's table. `[FACT: pomodoro business-rules PD-7; 013_preferences.ts]`
+
+## Rules established by DB-4 group #4 — Tasks (IMPLEMENTED 2026-08-19 · `015_tasks.ts` + `schema/tasks.ts`)
+- **[FACT] BR-T4-1 — 2 tables, 2 `[E]`.** `tasks` (`title`/`description` `[E]`) + `task_time_logs` (zero `[E]`). Both full
+  `...baseColumns`; `tasks` has `deleted_at` (soft delete), `task_time_logs` does **not** (ledger — hard-deletes with the
+  task, §5.3 + TK-4). `[FACT: 015_tasks.ts; ADR-002 §5.3]`
+- **[FACT] BR-T4-2 — no cross-table FK (no-FK convention).** §5.3's 5 parent refs (`project_id`/`milestone_id`/`course_id`/
+  `contact_id` + self-ref `parent_task_id`) + `task_time_logs.task_id` are plain TEXT; the `ON DELETE SET NULL`/`CASCADE`
+  semantics (TK-2/TK-4) are the app/sync layer's. `[FACT: 015_tasks.ts; BR-DB3-1]`
+- **[FACT] BR-T4-3 — build-phase INTENDED authored, not deferred.** `completed_at` (G5) · `scheduled_date` (G6) · `kind`
+  (`TASK_KIND` {standard,obligation}, G8) · `recurrence_rule` (RRULE, obligations-only, G8) · `measurement_kind`/
+  `binding_mode` (ADR-011 M1/M2) · `nesting_weight` (ADR-011 §3.3 M4). The ⚠ INTENDED flags point TO this build phase.
+  `[FACT: structure-data G5/G6/G8; ADR-011; [[build-phase-flags-mean-resolve-now-not-defer]]]`
+- **[FACT] BR-T4-4 — `measurement_kind` NOT NULL DEFAULT 'milestone'; `binding_mode` NULLABLE no default.** measurement_kind
+  has a doc-licensed natural ("natural = milestone", structure-data.md:20). binding_mode has **no** licensed universal
+  default → nullable (NULL ⇒ derive-natural, ADR-011 §3.2 override-slot grain); a `NOT NULL DEFAULT 'event-trigger'` was a
+  manufactured default, struck at gate-2. `[FACT: structure-data.md:20; ADR-011 §3.2; gate-2 finding #1]`
+- **[FACT] BR-T4-5 — progress derives; only the per-child weight is stored.** No stored `progress` column on `tasks`
+  (M3 derives on read); `nesting_weight` INTEGER nullable (NULL ⇒ equal-weight) is the ADR-011 §3.3 M4 per-child weight.
+  `[FACT: business-rules TK-3/TK-11; ADR-011 §3.3 L54; conventions.md:32]`
+- **[FACT] BR-T4-6 — shared-primitive boundary (not authored here).** Inline `tasks.tags` RETIRED → `entity_tags`
+  (`ENTITY_TYPES += 'task'`, TK-8); `task_views` RETIRED → shared `views` (AR-6); a task's notes → `pages`
+  (`entity_type='task'`); the timer → `focus_sessions` (group #3, the `log_time` S4 effect writes `task_time_logs`).
+  `[FACT: 015_tasks.ts; conventions.md:14,16,29; _registry.ts]`
+- **[FACT] BR-T4-7 — 6 FIXED CHECK cols parity-asserted.** `status`/`priority`/`difficulty`/`kind`/`measurement_kind`/
+  `binding_mode` SQL CHECK ≡ the `@vida/types` tuples (STATUS/PRIORITY/TASK_DIFFICULTY/**TASK_KIND** [net-new]/
+  MEASUREMENT_KIND/BINDING_MODE) — first live use of the 5 shared tuples; +6 enum-parity rows. `[FACT: enum-parity.test.ts; task.ts TASK_KIND]`
+- **[FACT] BR-T4-8 — mirror-only; interface reconcile → DB-11.** `Task` (`task.ts`) keeps its pre-INTENDED shape + `tags`
+  (gains 7 cols, drops `tags` at DB-11); `TaskTimeLog` gains `updated_at` at DB-11. Cited, not fixed here (group #1/#3
+  precedent). `[FACT: task.ts:26-47; ADR-016 DB-11]`
+- **[FACT] BR-T4-9 — parity + introspection + runner green.** `@vida/core` **240 tests** (+6 enum-parity rows, +8
+  DDL-introspection: column-set·nullability·PK·default × 2 — the mandatory Phase-5 bookend); `LATEST_VERSION`=15; root
+  typecheck 11/11; lint 0-err (1 pre-existing encryption-1MB timeout flake, passes isolated). Gates: gate-1 SHIP · preflight
+  PASSED · gate-2 REVISE→SHIP · post-impl SHIP. Foundation-readiness: MOD-tasks finds every needed column — PASS. `[FACT: vitest run]`

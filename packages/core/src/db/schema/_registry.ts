@@ -25,6 +25,10 @@ export const ENTITY_TYPES = [
   // target (AR-5 built the tables but never appended it). Sub-types are addressed via
   // the base session_id, so only the base `session` is registered (ADR-004 §3.1).
   'session',
+  // DB-4 group #4 — Tasks. A task is a valid pages/entity_links/entity_tags target
+  // (notes via pages `entity_type='task'`; tags via entity_tags, TK-8). task_time_logs
+  // is addressed via task_id, not polymorphic refs → not registered.
+  'task',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

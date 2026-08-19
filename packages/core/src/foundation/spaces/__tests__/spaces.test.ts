@@ -114,9 +114,13 @@ describe('AR-6 — TaggableTypeRegistry (SP2)', () => {
   })
   it('register adds a new type at runtime', () => {
     const r = createTaggableTypeRegistry()
-    expect(r.isRegistered('task')).toBe(false)
-    r.register('task')
-    expect(r.isRegistered('task')).toBe(true)
+    // A synthetic, deliberately-unregistered type — the open registry (SP2) accepts
+    // arbitrary user-extensible strings. NOT a real ENTITY_TYPES member, so future
+    // DB-4 domain appends (e.g. 'task', group #4) never re-break this fixture.
+    const t = 'custom_user_type'
+    expect(r.isRegistered(t)).toBe(false)
+    r.register(t)
+    expect(r.isRegistered(t)).toBe(true)
   })
 })
 

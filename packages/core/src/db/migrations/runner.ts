@@ -23,6 +23,7 @@ import { migration011Templates } from './011_templates'
 import { migration012Notes } from './012_notes'
 import { migration013Preferences } from './013_preferences'
 import { migration014SessionsScheduling } from './014_sessions_scheduling'
+import { migration015Tasks } from './015_tasks'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -34,7 +35,7 @@ import { migration014SessionsScheduling } from './014_sessions_scheduling'
 // DB-6 authors + registers the first real migration: the sync_queue foundation table.
 // DB-3 (007-011) authors the Stream (i) substrate remainder: Purpose · review engine · store/rules · planned_blocks · templates.
 // DB-4 (012+) authors the Stream (ii) per-domain tables: notes (012) · preferences (013) ·
-// sessions & scheduling (014).
+// sessions & scheduling (014) · tasks (015).
 const ALL_MIGRATIONS: Migration[] = [
   migration001SyncQueue,
   migration002Sessions,
@@ -50,6 +51,7 @@ const ALL_MIGRATIONS: Migration[] = [
   migration012Notes,
   migration013Preferences,
   migration014SessionsScheduling,
+  migration015Tasks,
 ]
 
 // ---------------------------------------------------------------------------
