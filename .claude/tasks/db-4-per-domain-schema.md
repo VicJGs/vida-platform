@@ -29,9 +29,12 @@ each running the 5-phase lifecycle at domain granularity.
 ## Build Steps (per domain group — 5-phase lifecycle, flow doc §2/§4)
 - [x] **P0 · Slice** — enumerate the domain groups (canonical list below); track each as a lightweight build-step
       (D3: no Linear sub-issues — DB-4 stays LIF-66). Done 2026-08-18.
-- [ ] Per domain group: **P1 intent intake** (its structure-data.md, FULL) → **P2 current-state read** →
-      **P3 plan double-gate** → **P4 implement** (SQL migration + Drizzle modules + `ENTITY_TYPES` appends) →
-      **P5 foundation-soundness verify** (the module that consumes it, e.g. MOD-notes for Notes, finds every table/column).
+- [ ] Per domain group: **P1 intent intake** (ALL 5 aspects + owning ADR + §5.20 ledger, FULL) → **P2 current-state read** →
+      **⛔ Phase-1 No-Decisions Gate** (flow doc §2: string-check for "decision/open point/shape point/lean/TBD/choose" =
+      drift → re-ground; grep the concept across the corpus; never manufacture a default) → **P1/P2 checkpoint glance to
+      Victor** ("zero decisions — every point doc-cited") → **P3 plan double-gate** (a STRAIGHT authoring plan) →
+      **P4 implement** (SQL migration + Drizzle modules + `ENTITY_TYPES` appends) → **P5 foundation-soundness verify**
+      (the consuming module finds every table/column; DDL-introspection parity bookend).
 - [ ] **Close** — when all domains authored + verified, mark DB-4 Done → M1.0 schema foundation complete → M1.1 opens.
 
 ## P0 Output — Canonical Domain-Group Slice (2026-08-18, approved)

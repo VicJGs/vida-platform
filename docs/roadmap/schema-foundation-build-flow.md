@@ -70,6 +70,39 @@ Capture the **complete intended** schema into documentation before any planning.
 - Skills: `/document-context` (refresh the `database-layer` context's `current-*`) → `/documentation-component` (the
   unit spec, in `docs/specs/foundation/<db-3|db-4>-<slice>/`).
 
+#### Phase 1 — No-Decisions Gate (anti-drift protocol · MANDATORY)
+**A Phase-1 intake produces "resolutions ALL doc-determined, ZERO decisions" — NEVER a list of "open points", "shape
+points", or "decisions with leans".** The documentation already closes every point (Model B: the schema's consumers are
+unwritten, so nothing may be left to re-decide later). This drift recurred THREE times (Notes #1, Sessions #3, Tasks #4)
+and Victor corrected it every time — it is the single failure mode of this flow. `[[stale-source-plus-live-convention-is-fact-not-a-decision]]`
+
+**The tell (a mechanical string-check, not a judgment call).** If the P1/P3 spec contains any of — *decision · open
+point · open question · shape point · resolve at the gate · lean · TBD · choose · "either…or"* — that IS the drift
+signal. STOP and re-ground each occurrence in the docs before proceeding. A clean intake contains none of these words in
+its own analysis (quoting a doc that uses them is fine).
+
+**The mandatory No-Guessing steps (every group, BEFORE writing that any "gap" exists):**
+1. **Read ALL five aspects** — `identity · structure-data · business-rules · contract · conventions` — plus the owning
+   ADR(s), the **ADR-002 §5.20 ledger** (ADD/RETIRE/AMEND = the definitive table roster; a table not in the ADD set is
+   not owed), and the §5.<n> body DDL. *Stopping at `structure-data.md` is the documented root cause of the drift.*
+2. **Grep the concept across the WHOLE corpus** (`docs/` + `packages/`) for every column a feature doc leaves loose. An
+   existing canonical representation used ≥2× elsewhere WINS over inventing one — e.g. Tasks #4: "recurrence rule
+   *fields*" → the platform's single `recurrence_rule` RRULE column (found 3×), not a new frequency+days model.
+3. **Read the owning ADR's mechanism section** — it often NAMES the exact column (ADR-011 §3.3 named `nesting_weight`
+   verbatim; §5.20 enumerates the `measurement_kind`+`binding_mode` pursuable pair).
+4. **`@vida/types` interface reconciles are a STANDING DB-11 boundary** — mirror-only now, cited, P5-exempt. Never a
+   per-unit "extend-now vs defer" choice.
+5. **NEVER manufacture a DEFAULT.** An INTENDED column's default must be licensed by a documented "natural"/default;
+   absent one, the column is NULLABLE (the override-slot grain, ADR-011 §3.2). Gate-2 struck a manufactured
+   `binding_mode NOT NULL DEFAULT 'event-trigger'` at Tasks #4 — the reverse form of the same drift.
+
+**Checkpoint (the supervised-loop backstop).** After **P1 + P2** (both mechanical / pre-gate), SURFACE the intake to
+Victor for a ~30-second glance — a compact table of the group's tables + every column tagged `[FACT floor]`/`[INTENDED]`/
+boundary, and the one-line assertion **"zero decisions — every point doc-cited."** The drift, if present, is visible
+here, one step BEFORE the P3 gates spin up. On his nod → proceed to the P3 double-gate. *(This is the fastest catch
+point; the two independent critics have twice failed to catch this class, so the string-check + this glance — not more
+adversarial review — are the reliable guard.)*
+
 ### Phase 2 — Current-state / skeleton read (reconcile-and-extend, never from-zero)
 Determine exactly what is authored on disk vs skeleton vs absent. Every prior DB issue (DB-6, DB-7) was built
 reconcile-and-extend; do the same. This is the No-Guessing baseline the plan is drawn from.
@@ -77,8 +110,10 @@ reconcile-and-extend; do the same. This is the No-Guessing baseline the plan is 
 - Output: a precise "authored ✓ / missing ✗ / shape-open ⏳" table per table.
 
 ### Phase 3 — Plan (full double-gate, end-to-end)
-Plan *what & how* from the documented intent. The shape of every shape-open table is resolved **here**, cited to its
-ADR/structure-data source. `[No-Guessing: each claim FACT/INTERP/UNKNOWN]`
+Plan *what & how* from the documented intent. Because the **Phase-1 No-Decisions Gate** already closed every shape from
+the docs, **Phase 3 is a STRAIGHT AUTHORING PLAN with nothing to "decide at the gate"** (the group #3/#4 outcome) — the
+exact DDL + files + tests, each `[FACT]`-cited. If Phase 3 surfaces a genuine fork, that means Phase 1 was incomplete →
+return to it and re-ground, do not "resolve at the gate". `[No-Guessing: each claim FACT/INTERP/UNKNOWN]`
 - PLAN → `/critique` (fix every REVISE) → **Approval 1** → `/preflight` (against the spec) → `/critique` → **Approval 2**.
 - Split form: `sessions/PLAN-<session>-<unit>.md` (gate 1) then `IMPLEMENTATION-PLAN-<session>-<unit>.md` (gate 2).
 
