@@ -20,6 +20,7 @@ import { migration008KnowledgeReview } from './008_knowledge_review'
 import { migration009EconomyStoreRules } from './009_economy_store_rules'
 import { migration010Scheduling } from './010_scheduling'
 import { migration011Templates } from './011_templates'
+import { migration012Notes } from './012_notes'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -30,6 +31,7 @@ import { migration011Templates } from './011_templates'
 // The v1 monolith migration (001_initial) was quarantined to db/_legacy/ in Part 2 (ADR-018).
 // DB-6 authors + registers the first real migration: the sync_queue foundation table.
 // DB-3 (007-011) authors the Stream (i) substrate remainder: Purpose · review engine · store/rules · planned_blocks · templates.
+// DB-4 (012+) authors the Stream (ii) per-domain tables: notes (pages · page_links · note_attachments).
 const ALL_MIGRATIONS: Migration[] = [
   migration001SyncQueue,
   migration002Sessions,
@@ -42,6 +44,7 @@ const ALL_MIGRATIONS: Migration[] = [
   migration009EconomyStoreRules,
   migration010Scheduling,
   migration011Templates,
+  migration012Notes,
 ]
 
 // ---------------------------------------------------------------------------

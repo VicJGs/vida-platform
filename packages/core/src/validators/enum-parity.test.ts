@@ -30,6 +30,7 @@ import {
   STORE_REF_TYPE,
   RULE_CONDITION_BINDING_TYPE,
   PLANNED_BLOCK_STATUS,
+  PAGE_TYPE,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -42,6 +43,7 @@ import { migration008KnowledgeReview } from '../db/migrations/008_knowledge_revi
 import { migration009EconomyStoreRules } from '../db/migrations/009_economy_store_rules'
 import { migration010Scheduling } from '../db/migrations/010_scheduling'
 import { migration011Templates } from '../db/migrations/011_templates'
+import { migration012Notes } from '../db/migrations/012_notes'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -126,6 +128,8 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   // DB-3 scheduling (010): planned_blocks.status is FIXED. sub_type is OPEN (SS-5/BR-6, no CHECK) —
   // deliberately NOT a parity row, mirroring sessions.sub_type (registry-validated, not a column CHECK).
   { table: 'planned_blocks', column: 'status', tuple: PLANNED_BLOCK_STATUS },
+  // DB-4 group #1 — Notes & Pages (pages.type is the only CHECK; entity_type is OPEN, no CHECK)
+  { table: 'pages', column: 'type', tuple: PAGE_TYPE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -142,6 +146,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration009EconomyStoreRules.up(driver)
   await migration010Scheduling.up(driver)
   await migration011Templates.up(driver)
+  await migration012Notes.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

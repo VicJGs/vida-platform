@@ -182,7 +182,30 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
+## DB-4 — IN PROGRESS (group #1 Notes & Pages authored · 2026-08-18 · LIF-66)
+The first Stream (ii) per-domain module. `[FACT: schema/notes.ts; migrations/012_notes.ts]`
+
+| Migration | Module | Tables |
+|-----------|--------|--------|
+| `012_notes.ts` | `schema/notes.ts` | `pages` · `page_links` · `note_attachments` (ADR-002 §5.2) |
+
+- **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
+  AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
+  (Sessions group #3); `page_tags` retired → `entity_tags`. `[FACT: spaces.ts; ADR-004 §3.1]`
+- **All 3 syncable** (full `baseColumns` + `deleted_at`, N-R2/ADR-016 §3.4), `[E]` fields inert in M1.0 (pass-through).
+  **No cross-table FK** (self-ref `parent_id` incl.) — the `entity_links.page_id` precedent (N-R1).
+- `pages.type` FIXED CHECK (6, from `PAGE_TYPE`) — parity asserted (`enum-parity.test.ts`, `{pages,type,PAGE_TYPE}`);
+  `pages.entity_type` OPEN, no CHECK (registry-validated, BR-N2). Partial UNIQUE `idx_pages_journal_unique` (NP-2).
+- **`ENTITY_TYPES` unchanged** — `page`/`note`/`journal` already seeded; the module types pages reference arrive with
+  their own DB-4 groups. **`@vida/types` row interfaces unchanged** (DB-4 authors the Drizzle mirror only — the DB-3
+  precedent; `PageLink`/`NoteAttachment` stay `SyncMetadata`-based, the same divergence as `entity_links`/`EntityLink`,
+  reconciled at DB-11). `[FACT: _registry.ts; note.ts:127]`
+- Green: `@vida/core` **193 tests** (parity picks up `pages.type`; runner rebuilds to `LATEST_VERSION`=12) · root
+  typecheck 11/11. **Foundation-readiness:** MOD-notes (#31) contract finds every needed column — PASS.
+- **Remaining DB-4 groups:** #2 Preferences … #22 Notifications (21 more domain groups, per the task P0 slice).
+
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables · DB-5 encryption wiring · monolith retirement · DB-8 FTS5 · DB-11
-reconcile ADR-002 §5/§7/§8. **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 schema foundation
-is complete.** DB-7 unblocks db-10 (seed) with db-6/db-9.
+DB-2 sync cols/HLC · DB-4 per-domain tables (**group #1 Notes ✅; 21 groups remain**) · DB-5 encryption wiring ·
+monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
+staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
+DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

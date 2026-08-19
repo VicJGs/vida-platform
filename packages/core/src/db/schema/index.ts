@@ -25,3 +25,5 @@ export * from './foundation/knowledge-review'
 export * from './foundation/scheduling'
 // Foundation substrate: DB-3 templates (light seed-bundle store).
 export * from './foundation/templates'
+// DB-4 domain (Stream ii): Notes & Pages (pages · page_links · note_attachments).
+export * from './notes'

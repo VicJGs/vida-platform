@@ -111,5 +111,23 @@ Rules DB-6 ESTABLISHED (implemented + tested):
 **Foundation-readiness (P5) — VERIFIED.** A representative downstream consumer finds every substrate table it needs:
 the DB-4 **Purpose domain** requires `values` · `contributions` · `purpose_reviews` · `plan_steps` — all authored +
 documented (this section + current-spec DB-3 table); the **Knowledge** review engine (`review_curves`/`method_bindings`/
-`review_events`) and **Finance/economy** (`store`/`rules`) likewise. No gap. The M1.0 schema foundation is complete →
-M1.1 (MOD-notes #31) may open.
+`review_events`) and **Finance/economy** (`store`/`rules`) likewise. No gap. The M1.0 substrate foundation is complete →
+DB-4 per-domain authoring begins.
+
+## DB-4 group #1 — Notes & Pages (IN PROGRESS · 2026-08-18 · LIF-66)
+The first Stream (ii) domain module — `pages` · `page_links` · `note_attachments` (`schema/notes.ts` +
+`migrations/012_notes.ts`). `[FACT: those files]`
+- **[FACT] BR-N4-1 — net-new = 3 tables.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) are AR-6
+  substrate (migration 003); N&P is a consumer (ADR-006 §3.1). `pomodoro_sessions`→`focus_sessions` (group #3);
+  `page_tags`→`entity_tags` (retired, verified absent). `[FACT: spaces.ts; ADR-004 §3.1]`
+- **[FACT] BR-N4-2 — `pages.type` FIXED CHECK(6) from `PAGE_TYPE`; `pages.entity_type` OPEN (no CHECK).** The polymorphic
+  attach target is registry-validated, mirroring `entity_links`/`entity_tags` (the retired 33-value `ENTITY_LINK_TARGET`
+  tuple is NOT wired as a CHECK). Parity asserted `{pages,type,PAGE_TYPE}`. `[FACT: 012_notes.ts; enum-parity.test.ts; [[open-vocab-columns-take-no-sql-check]]]`
+- **[FACT] BR-N4-3 — no cross-table FK, self-ref incl.** `parent_id`/`source_page_id`/`target_page_id`/`page_id` are
+  plain TEXT; NP-9 cascade/orphan is app/sync-layer. Full `baseColumns`+`deleted_at` on all 3 (ADR-016 §3.4), superseding
+  ADR-002 §5.2's stale `REFERENCES`/created_at-only shape. `[FACT: 012_notes.ts; ADR-002 §5.2:22 stale]`
+- **[FACT] BR-N4-4 — this unit authors the Drizzle mirror only.** No `@vida/types` row-interface change (DB-3 precedent);
+  `PageLink`/`NoteAttachment` stay `SyncMetadata`-based — the same divergence already shipped for `entity_links`/
+  `EntityLink`; interface reconcile is DB-11. Compiles (no `$inferSelect↔interface` assertion). `[FACT: note.ts:127]`
+- **[FACT] BR-N4-5 — enum parity + runner green.** `@vida/core` 193 tests; `LATEST_VERSION`=12. Foundation-readiness:
+  MOD-notes (#31) finds every needed column — PASS. `[FACT: vitest run]`
