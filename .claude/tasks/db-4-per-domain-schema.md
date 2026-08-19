@@ -47,7 +47,7 @@ each running the 5-phase lifecycle at domain granularity.
 
 | # | Domain group | Intent source | Status |
 |---|---|---|---|
-| 1 | Notes & Pages (hub) | `notes-and-pages/structure-data.md` | ☐ |
+| 1 | Notes & Pages (hub) | `notes-and-pages/structure-data.md` | ✅ **DONE** (P1–P5, 2026-08-18) — `schema/notes.ts` + `migrations/012_notes.ts` (`pages`·`page_links`·`note_attachments`) + barrel + runner + parity. Full §XXVI double-gate + post-impl SHIP. `@vida/core` 193 green · v12. Spec: `docs/specs/foundation/db-4-notes-and-pages/`. NOT committed. |
 | 2 | Preferences | `preferences/structure-data.md` | ☐ |
 | 3 | Sessions & Scheduling (+Pomodoro) | `sessions-and-scheduling/` + `pomodoro/` | ☐ |
 | 4 | Tasks | `tasks/structure-data.md` | ☐ |
@@ -79,3 +79,25 @@ each running the 5-phase lifecycle at domain granularity.
   add-backend-component. Started **P0 · Slice**: verified 24 `structure-data.md` intent docs on disk + inspected
   grain-ambiguous groups (health 3-doc, knowledge+flashcards, finance+fiscal-legal, pomodoro MOVE, languages dissolve).
   Canonical domain-group list proposed for approval before sub-issue creation.
+- 2026-08-18: **Group #1 Notes & Pages — P1 intent intake DONE** → `docs/specs/foundation/db-4-notes-and-pages/_index.md`.
+  Read the full 5-aspect feature spec + `note.ts` + ADR-002 §5.2 + the AR-6 substrate on disk. **Key finding (corrects a
+  stale routing note):** AR-6 (`schema/foundation/spaces.ts`, migration 003) **already authored `entity_links`, `tags`,
+  `entity_tags`** — so N&P's net-new surface is **3 tables only: `pages` · `page_links` · `note_attachments`** (`page_tags`
+  retired→`entity_tags`; `pomodoro_sessions` re-homed→`focus_sessions`/Sessions group #3). ADR-002 §5.2 confirmed
+  self-flagged STALE (L22).
+  ⚠ **Drift Victor caught (corrected same session):** I first wrote §4 as "5 open shape-decisions for P3" (FK · base ·
+  home · `has_pomodoro` · `summary_config`). All 5 are **doc-determined, not decisions** — resolved to §4 N-R1…N-R6:
+  no-FK convention (BR-DB3-1/spaces.ts) · full `baseColumns` (ADR-016 §3.4 locked pattern) · `schema/notes.ts`+`012`
+  (ADR-016 §3.1) · `has_pomodoro` retained (plaintext filter, never retired) · `summary_config` schema-neutral. Root
+  cause = treating STALE ADR-002 §5.2 DDL as live ambiguity against the settled conventions. **P3 = a straight authoring
+  plan, zero shape to resolve.** P1+P2 done. Next = P3.
+- 2026-08-18: **Group #1 Notes & Pages — P3→P5 DONE (full §XXVI double-gate).** P3: `PLAN-2026-08-18-db-4-notes.md` →
+  gate-1 independent critique REVISE (1 blocker = my "types already match" claim; the fix was NOT the critic's "promote
+  the interfaces" lean — verified the `entity_links`/`EntityLink` divergence already ships + DB-3 added 0 row interfaces →
+  kept N-R2, corrected wording, DB-11 owns interface reconcile) → Approval 1 · preflight PASSED +2 folds
+  (`summary_config`→plain `text()` not `json<T>`; runner test count-dynamic) → gate-2 SHIP → Approval 2. P4: authored
+  `schema/notes.ts` + `migrations/012_notes.ts` + barrel + runner + 4 parity edits; `@vida/core` **193 green** (incl.
+  `pages.type` parity) · root typecheck 11/11 · grep gates pass. P5: post-impl independent critique **SHIP** (0
+  blocker/material; added `-- [E]` SQL comments per ADR-002 §5.2 source) · §XXIX promoted `database-layer/current-{spec,
+  business-rules}.md` · foundation-readiness MOD-notes #31 PASS. **NOT committed** (branch `db-4-per-domain-schema`).
+  Next = group **#2 Preferences** (fresh clean-context session).

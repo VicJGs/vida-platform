@@ -5060,3 +5060,25 @@ Next session:
     authors them) + `ENTITY_TYPES` append → P5 foundation-soundness verify (MOD-notes is the downstream consumer).
   - Reload: `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output" · flow doc §2 · memory
     [[open-vocab-columns-take-no-sql-check]]. ⚠ CI red repo-wide (known pnpm infra; local green).
+
+---
+Date: 2026-08-18 — DB-4 group #1 Notes & Pages: full 5-phase lifecycle DONE + COMMITTED (`f2198ac`)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema` (NOT pushed/PR'd)
+Goal: run P1→P5 for domain group #1 (Notes & Pages) — the first DB-4 Stream (ii) module.
+Accomplished:
+  - Authored 3 net-new tables — `schema/notes.ts` + `migrations/012_notes.ts` (`pages`·`page_links`·`note_attachments`).
+    Finding: AR-6 already substrated `tags`/`entity_tags`/`entity_links` → Notes = 3 tables, not 6-7 (`page_tags` retired;
+    `pomodoro_sessions`→`focus_sessions`/group #3). Spec `docs/specs/foundation/db-4-notes-and-pages/`.
+  - Full §XXVI double-gate (gate-1 REVISE→fixed · preflight +2 folds · gate-2 SHIP) + post-impl critique SHIP.
+    `@vida/core` 193 green (+`pages.type` parity) · root typecheck 11/11 · runner v12. §XXIX docs promoted.
+Drift caught + corrected (Victor):
+  - I first wrote "5 open shape-decisions for P3" — all doc-determined (no-FK · full baseColumns · schema/<domain>.ts ·
+    `has_pomodoro` · `summary_config`). No decisions come from the docs. Memory: [[stale-source-plus-live-convention-is-fact-not-a-decision]].
+  - Also rejected the gate-1 critic's own lean (promote `@vida/types` interfaces) — verified the shipped `entity_links`/`EntityLink`
+    divergence + DB-3 precedent → mirror-only is correct; interface reconcile is DB-11.
+Next session:
+  - **FIRST ACTION: open domain group `#2 Preferences`, Phase 1 intent intake** — FRESH clean-context session (one per group).
+    `docs/features/preferences/structure-data.md` (FULL) → P2 → P3 double-gate → P4 (SQL + Drizzle + `ENTITY_TYPES` verify) → P5.
+  - Mirror the group-#1 build as the pattern: `docs/specs/foundation/db-4-notes-and-pages/` + `schema/notes.ts` + `migrations/012_notes.ts`.
+  - Reload: task "## P0 Output" (22-group table) · flow doc §2 · memories [[stale-source-plus-live-convention-is-fact-not-a-decision]] ·
+    [[open-vocab-columns-take-no-sql-check]]. **1 of 22 done; 21 remain.** DB-4 authors ALL 22 before M1.1 (Model B). ⚠ CI red (known pnpm infra; local green).
