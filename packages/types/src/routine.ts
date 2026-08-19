@@ -19,6 +19,12 @@ export type RoutineTimeOfDay = (typeof ROUTINE_TIME_OF_DAY)[number]
 export const ROUTINE_RECURRENCE_FREQUENCY = ['daily', 'weekdays', 'weekends', 'custom'] as const
 export type RoutineRecurrenceFrequency = (typeof ROUTINE_RECURRENCE_FREQUENCY)[number]
 
+// Reframe (DB-4 group #7, §E): the routine lifecycle. ROUTINE_ACTION_TYPE +
+// ROUTINE_RECURRENCE_FREQUENCY are superseded by the polymorphic step_type (OPEN)
+// + recurrence_rule (RRULE) — retired at the DB-11 interface reconcile.
+export const ROUTINE_LIFECYCLE = ['active', 'paused', 'off'] as const
+export type RoutineLifecycle = (typeof ROUTINE_LIFECYCLE)[number]
+
 // ---------------------------------------------------------------------------
 // Entities
 // ---------------------------------------------------------------------------

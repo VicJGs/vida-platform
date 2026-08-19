@@ -316,3 +316,42 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   enum-parity, +12 DDL-introspection × 3 tables); `LATEST_VERSION`=17; typecheck clean; eslint 0-err. Gates: gate-1
   SHIP · preflight PASSED (6 folds) · gate-2 SHIP · post-impl SHIP. Foundation-readiness: MOD-habits finds every needed
   column — PASS. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #7 — Routines (IMPLEMENTED 2026-08-19 · `018_routines.ts` + `schema/routines.ts`)
+- **[FACT] BR-RT7-1 — the REFRAME, not the POC.** Authors 3 tables — `routines` (sequence) · `routine_step`
+  (polymorphic step, **replaces** the flat `routine_actions`) · `routine_completions` (per-step ledger). The
+  orchestration reframe DESIGN landed (`docs/intake/routines.md` §E, RT-1…RT-19); only the DDL was deferred "→ build
+  phase" = DB-4 (shape-open, store/rules pattern). ⚠ Two Victor corrections re-grounded this: (a) "there is a docs for
+  that, investigate deeper" (the design landed, not an undone design-pass — [[check-intake-and-reruns-before-triaging-a-design-pass-undone]]);
+  (b) "already solved inside the documentation" (the three "open" points were doc-closed). `[FACT: 018_routines.ts; §E; part-1.2-reruns/routines.md]`
+- **[FACT] BR-RT7-2 — no cross-table FK (no-FK convention).** `routine_id` / `routine_step_id` / `entity_id` are
+  plain TEXT; cascade (RT-17) is the app/sync layer's. `[FACT: 018_routines.ts; BR-DB3-1]`
+- **[FACT] BR-RT7-3 — a routine is a pursuable (RT-19).** `routines.measurement_kind` NOT NULL DEFAULT **`'rate'`**
+  (doc-licensed natural) + `binding_mode` **NULLABLE, no default** (NULL ⇒ derive `derived-pull`, ADR-011 §3.2 override
+  slot — the Tasks/Habits trap avoided). `progress` is a NULLABLE override slot; **no cached streak columns** (RT-14,
+  analytics derive from `routine_completions`). `[FACT: business-rules.md RT-19; ADR-011 §3.1/§3.2]`
+- **[FACT] BR-RT7-4 — `step_type` is an OPEN vocab → plain TEXT, NO CHECK.** User-extensible (§E Q1, session `sub_type`
+  precedent, [[open-vocab-columns-take-no-sql-check]]); the driven entity is a polymorphic `entity_type`+`entity_id`
+  ref (nullable — an actionable step may have none, RT-4). `[FACT: 018_routines.ts; §E Q1]`
+- **[FACT] BR-RT7-5 — cadence = `recurrence_rule` (RRULE).** The "broad schedule" (day/week/month/year, RT-11) is the
+  platform recurrence canon (tasks precedent), consumed by the Scheduler (Sessions & Scheduling) — no bespoke Routines
+  scheduler. `[FACT: RT-11; tasks precedent]`
+- **[FACT] BR-RT7-6 — doc-decided BOUNDARIES (not authored here).** Completion/miss/acceptance **policy** →
+  Preferences/Spaces (conventions.md:11, structure-data.md:66, NOT on `routines`); `routine_step_membership`/
+  step-scoping → Spaces (design-pass, **non-blocking**, intake.md:171); the Scheduler + provider (`dueIn`/`summary`) →
+  services; tags→`entity_tags`; notes→`pages`; `purpose_routines` retired → `contributions` (Purpose/DB-3, M7);
+  XP→`consequence_ledger` (Gamification). `[FACT: conventions.md:11; intake.md:171; ADR-011 M7]`
+- **[FACT] BR-RT7-7 — `routine_completions` ledger, re-keyed.** `routine_step_id` (was `routine_action_id`); full
+  baseColumns (+`updated_at`, task_time_logs precedent), **no `deleted_at`** (ledger, RT-17); `completed_at`/
+  `completed_date` NN; UNIQUE(`routine_step_id`,`completed_date`) (RT-3/RT-18). `[FACT: 018_routines.ts; §5.6]`
+- **[FACT] BR-RT7-8 — 4 FIXED CHECK cols parity-asserted; 1 net-new tuple.** `routines.lifecycle`
+  (**ROUTINE_LIFECYCLE** {active,paused,off} — net-new) / `.measurement_kind` (MEASUREMENT_KIND) / `.binding_mode`
+  (BINDING_MODE) + `routine_step.time_of_day` (ROUTINE_TIME_OF_DAY); +4 enum-parity rows. `step_type` OPEN (no row).
+  `ROUTINE_ACTION_TYPE`/`ROUTINE_RECURRENCE_FREQUENCY` superseded (retired at DB-11). `[FACT: enum-parity.test.ts; routine.ts]`
+- **[FACT] BR-RT7-9 — mirror-only; interface reconcile → DB-11.** new `Routine`/`RoutineStep`; `RoutineCompletion`
+  re-key +`updated_at`; retire `RoutineAction`/`ROUTINE_ACTION_TYPE`/`ROUTINE_RECURRENCE_FREQUENCY`; aspect docs'
+  `entity_type='routine_action'` → `routine`/`routine_step` (doc-sweep). `[FACT: routine.ts; ADR-016 DB-11]`
+- **[FACT] BR-RT7-10 — parity + introspection + runner green; ZERO build-decisions.** `@vida/core` **299 tests** (+4
+  enum-parity, +12 DDL-introspection × 3); `LATEST_VERSION`=18; typecheck clean; eslint 0-err. Gates: gate-1 SHIP ·
+  preflight PASSED (6 folds) · gate-2 SHIP · post-impl SHIP. Foundation-readiness: MOD-routines finds the sequence/
+  step/ledger — PASS. `[FACT: vitest run]`

@@ -39,3 +39,5 @@ export * from './tasks'
 export * from './projects'
 // DB-4 domain (Stream ii): Habits (habits · habit_completions · project_habits).
 export * from './habits'
+// DB-4 domain (Stream ii): Routines (routines · routine_step · routine_completions) — the orchestration reframe.
+export * from './routines'

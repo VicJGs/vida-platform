@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits authored · 2026-08-19 · LIF-66)
-The Stream (ii) per-domain modules authored so far (6 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 017_habits.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits + #7 Routines authored · 2026-08-19 · LIF-66)
+The Stream (ii) per-domain modules authored so far (7 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 018_routines.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -193,6 +193,7 @@ The Stream (ii) per-domain modules authored so far (6 of 22). `[FACT: schema/{no
 | `015_tasks.ts` | `schema/tasks.ts` | `tasks` · `task_time_logs` (ADR-002 §5.3) |
 | `016_projects.ts` | `schema/projects.ts` | `projects` · `milestones` · `deliverables` · `project_documents` (ADR-002 §5.4) |
 | `017_habits.ts` | `schema/habits.ts` | `habits` · `habit_completions` · `project_habits` (ADR-002 §5.5) |
+| `018_routines.ts` | `schema/routines.ts` | `routines` · `routine_step` · `routine_completions` (the REFRAME — supersedes the §5.6 POC) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -282,10 +283,31 @@ The Stream (ii) per-domain modules authored so far (6 of 22). `[FACT: schema/{no
   build-decisions.** Interface reconcile (`Habit` +4 −`tags`; `HabitCompletion` +3; new `ProjectHabit`) → DB-11.
   **Foundation-readiness:** MOD-habits finds every needed column — PASS. `[FACT: 017_habits.ts; schema/habits.ts;
   docs/specs/foundation/db-4-habits/]`
-- **Remaining DB-4 groups:** #7 Routines … #22 Notifications (16 more domain groups, per the task P0 slice).
+- **Group #7 Routines (2026-08-19):** **3 tables** — the ORCHESTRATION REFRAME (`routines` · `routine_step` ·
+  `routine_completions`), superseding the flat 2-table §5.6 POC (`routine_actions` retired → `routine_step`). The
+  reframe **design landed** (`docs/intake/routines.md` §E 2026-07-14, RT-1…RT-19); only the DDL was deferred "→ build
+  phase" = this session (shape-open, the store/rules pattern; [[check-intake-and-reruns-before-triaging-a-design-pass-undone]]).
+  **6 `[E]`** (routines name/description; routine_step title/description; completion skip_reason). **No-FK:** routine_id/
+  routine_step_id/entity_id plain TEXT (app-layer cascade, RT-17). `routines` (pursuable, RT-19): `measurement_kind` NN
+  DEFAULT **`'rate'`** + `binding_mode` **nullable no-default** (NULL⇒derive derived-pull); `lifecycle` CHECK
+  **ROUTINE_LIFECYCLE**{active,paused,off} (net-new); cadence = **`recurrence_rule` RRULE** (platform canon, RT-11
+  Scheduler-consumed); `progress` nullable override slot, **no cached streak** (RT-14). `routine_step`: **`step_type`
+  OPEN vocab (no CHECK** — user-extensible §E Q1, session sub_type precedent); polymorphic `entity_type`+`entity_id`
+  (nullable, RT-4); `is_required`; `time_of_day` (ROUTINE_TIME_OF_DAY, nullable); `skip_dates` JSON. `routine_completions`:
+  ledger (baseColumns +`updated_at`, no `deleted_at`), re-keyed to `routine_step_id`, UNIQUE(routine_step_id,
+  completed_date). **Doc-decided BOUNDARIES (not authored):** completion/miss/acceptance policy → Preferences/Spaces;
+  `routine_step_membership`/step-scoping → Spaces (design-pass, non-blocking); Scheduler; tags→`entity_tags`;
+  purpose→`contributions`; XP→`consequence_ledger`. 4 FIXED CHECK cols parity-asserted (routines.lifecycle/measurement_kind/
+  binding_mode + routine_step.time_of_day). `ENTITY_TYPES += 'routine'/'routine_step'`. **Phase-5 DDL-introspection**
+  (`routines-introspection.test.ts`, 12 cases × 3). `@vida/core` **299 tests** green; `LATEST_VERSION`=18; typecheck
+  clean; eslint 0-err. **Zero build-decisions** (⚠ two Victor corrections re-grounded the read: the reframe design landed,
+  DDL is the build job — not an undone design-pass; the three "open" points were doc-closed). Interface reconcile → DB-11.
+  **Foundation-readiness:** MOD-routines finds the sequence/step/ledger — PASS. `[FACT: 018_routines.ts; schema/routines.ts;
+  docs/specs/foundation/db-4-routines/]`
+- **Remaining DB-4 groups:** #8 Purpose & Goals … #22 Notifications (15 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions + #4 Tasks + #5 Projects + #6 Habits ✅; 16 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences + #3 Sessions + #4 Tasks + #5 Projects + #6 Habits + #7 Routines ✅; 15 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

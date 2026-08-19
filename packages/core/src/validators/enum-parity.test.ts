@@ -54,6 +54,8 @@ import {
   HABIT_TIME_OF_DAY,
   HABIT_DIFFICULTY,
   LIFE_DOMAIN,
+  ROUTINE_LIFECYCLE,
+  ROUTINE_TIME_OF_DAY,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -72,6 +74,7 @@ import { migration014SessionsScheduling } from '../db/migrations/014_sessions_sc
 import { migration015Tasks } from '../db/migrations/015_tasks'
 import { migration016Projects } from '../db/migrations/016_projects'
 import { migration017Habits } from '../db/migrations/017_habits'
+import { migration018Routines } from '../db/migrations/018_routines'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -203,6 +206,13 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'habits', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
   { table: 'habits', column: 'binding_mode', tuple: BINDING_MODE },
   { table: 'habits', column: 'difficulty', tuple: HABIT_DIFFICULTY },
+  // DB-4 group #7 — Routines (reframe). 3 FIXED CHECK cols on `routines` + 1 on
+  // `routine_step`. `step_type` is an OPEN vocab (no CHECK → not a row);
+  // routine_completions has no CHECK col.
+  { table: 'routines', column: 'lifecycle', tuple: ROUTINE_LIFECYCLE },
+  { table: 'routines', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
+  { table: 'routines', column: 'binding_mode', tuple: BINDING_MODE },
+  { table: 'routine_step', column: 'time_of_day', tuple: ROUTINE_TIME_OF_DAY },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -225,6 +235,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration015Tasks.up(driver)
   await migration016Projects.up(driver)
   await migration017Habits.up(driver)
+  await migration018Routines.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

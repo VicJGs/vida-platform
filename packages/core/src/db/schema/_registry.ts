@@ -39,6 +39,11 @@ export const ENTITY_TYPES = [
   // (notes via pages `entity_type='habit'`; tags via entity_tags, retiring inline
   // habits.tags). habit_completions + project_habits are addressed via their refs → not registered.
   'habit',
+  // DB-4 group #7 — Routines (reframe). Notes/tags at routine-group + step level (RT-15/16);
+  // supersedes the docs' pre-reframe `routine_action`. routine_completions addressed via
+  // routine_step_id → not registered.
+  'routine',
+  'routine_step',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 
