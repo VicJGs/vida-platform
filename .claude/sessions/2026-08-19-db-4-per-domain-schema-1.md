@@ -52,5 +52,15 @@ Preferences-owned) + `check_in_streak*` (→ Check-ins). It keeps PII (`[E]`) + 
 - **Mirror groups #1/#2 as the pattern:** `schema/{notes,preferences}.ts` + `migrations/012_notes.ts`/`013_preferences.ts`.
 - Reload: task "## P0 Output" (22-group table) · flow doc §2 · memories [[build-phase-flags-mean-resolve-now-not-defer]] ·
   [[stale-source-plus-live-convention-is-fact-not-a-decision]] · [[open-vocab-columns-take-no-sql-check]].
-- **2 of 22 groups done; 20 remain.** DB-4 authors ALL 22 (M1.0) before M1.1 opens (Model B). Branch NOT committed.
+- **2 of 22 groups done; 20 remain.** DB-4 authors ALL 22 (M1.0) before M1.1 opens (Model B).
   ⚠ CI red repo-wide (known pnpm infra; local green).
+
+## Post-completion (same session)
+- **Group #2 COMMITTED** — `0bc1508` (`feat(db-4): author Preferences schema (group #2)`), 13 files +820, gitleaks clean.
+- **Group #1 oversight gate (Victor-requested) — CLEAN.** An independent critic introspected `012_notes.ts` with
+  in-memory `PRAGMA table_info` and diffed all 3 tables (pages/page_links/note_attachments) across SQL ↔ Drizzle mirror
+  ↔ `@vida/types` for the `time_format` bug class → **no nullability/default/column/type drift**; the only divergences
+  are the known DB-11-deferred interface items. The type-lie was group-#2-specific (a §5.17 ADR oversight), not systemic.
+- **Flow-doc P5 hardened** — added a MANDATORY "DDL-introspection parity check" step to
+  `docs/roadmap/schema-foundation-build-flow.md §Phase 5` (PRAGMA table_info diff vs mirror + interface on
+  nullability/default/column-set/type). Committed `65b3939`. Every remaining DB-4 group runs it.
