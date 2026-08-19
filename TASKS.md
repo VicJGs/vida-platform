@@ -6,7 +6,7 @@
 
 | Task | Profile | Created | Updated | Status |
 |------|---------|---------|---------|--------|
-| db-4-per-domain-schema (LIF-66) | Add Backend Component | 2026-08-01 | 2026-08-18 | ⚡ IN PROGRESS — P0 slice DONE (**22 domain groups**). **Group #1 Notes & Pages ✅ DONE + COMMITTED** (`f2198ac`, 2026-08-18) — `schema/notes.ts` + `migrations/012_notes.ts` (`pages`·`page_links`·`note_attachments`); full §XXVI double-gate + post-impl SHIP; `@vida/core` 193 green · v12. **1 of 22 groups done. Next = group `#2 Preferences`** — open FRESH (clean-context per group). Not yet pushed/PR'd (branch `db-4-per-domain-schema`). |
+| db-4-per-domain-schema (LIF-66) | Add Backend Component | 2026-08-01 | 2026-08-19 | ⚡ IN PROGRESS — P0 slice DONE (**22 domain groups**). **#1 Notes & Pages ✅ COMMITTED** (`f2198ac`) · **#2 Preferences ✅ DONE** (2026-08-19) — `schema/preferences.ts` + `migrations/013_preferences.ts` (`user_preferences`·`nav_preferences`·`command_bar_history`, ALL plaintext) + ADR-002 §5.17/§5.20 amendment; **first group to AUTHOR build-phase intent, not defer it** (G4 · `module_visibility` · E9 `user_profile` split — after a Victor drift-catch, [[build-phase-flags-mean-resolve-now-not-defer]]); §XXVI double-gate + post-impl REVISE→SHIP (`time_format` NOT NULL type-lie); `@vida/core` 198 green · v13. **2 of 22 done. Next = group `#3 Sessions & Scheduling`** — open FRESH (clean-context per group). #2 not yet committed (branch `db-4-per-domain-schema`). |
 | m1-foundation-closeout | Project Foundation | 2026-08-17 | 2026-08-18 | ⚡ IN PROGRESS — ⚠ **REROUTED: M1.0 was closed too soon.** Attempted to close M1.0 + open M1.1, but M1.0's schema foundation (DB-3 partial + DB-4 not started) was left unfinished — census "100%" measured homed-code alignment, not issue completion. **M1.0 REOPENED**; docs corrected to flag the mistake (closeout·roadmap·delivery-plan·reconstructed-structure·m1.1-plan). Next M1.0 work = finish DB-3 then DB-4 (schema foundation); **model + flow DECIDED 2026-08-18 (Model B, upfront foundation) → `docs/roadmap/schema-foundation-build-flow.md`**. M1.1 (MOD-notes+all) gated behind M1.0 (modules build on finished schema, don't author it). |
 | db-10-seed-and-fixtures (LIF-62) | Add Backend Component | 2026-07-31 | 2026-08-01 | ⏸ PARKED — now correctly homed at **M1 / M1.4** with its REAL dependency (← all 26 modules) encoded in Linear (DF-1 fixed). Un-parks when its milestone (M1.4) is reached in the build order. |
 
@@ -42,7 +42,7 @@ This repo has a hand-authored, cross-milestone topological order (the `#` column
 4. **The "Next session" note below is a convenience, not the source.** If it ever disagrees with the computed
    `#`-order head, the `#` order wins.
 
-**🎯 Computed head now (2026-08-18 — DB-4 IN PROGRESS · group #1 DONE+COMMITTED → next concrete = `#2 Preferences` P1).** DB-4 P0 slice = **22 domain groups**. **Group #1 Notes & Pages ✅ DONE + COMMITTED** (`f2198ac`): `schema/notes.ts` + `migrations/012_notes.ts` (`pages`·`page_links`·`note_attachments`) — 3 net-new tables (tags/entity_links were AR-6; pomodoro re-homed); full §XXVI double-gate + post-impl SHIP; `@vida/core` 193 green · v12; spec `docs/specs/foundation/db-4-notes-and-pages/`. **Next head = domain group `#2 Preferences`, Phase 1 intent intake** — open FRESH (one clean-context session per group, per flow doc `docs/roadmap/schema-foundation-build-flow.md §2`). Each group runs the 5-phase lifecycle. **1 of 22 done; 21 remain.** `MOD-notes #31` + all M1.1 stay GATED behind M1.0 (DB-4 must finish all 22 groups first). Not yet pushed/PR'd.
+**🎯 Computed head now (2026-08-19 — DB-4 IN PROGRESS · groups #1 + #2 DONE → next concrete = `#3 Sessions & Scheduling` P1).** DB-4 P0 slice = **22 domain groups**. **#1 Notes & Pages ✅ COMMITTED** (`f2198ac`, v12) · **#2 Preferences ✅ DONE** (2026-08-19, v13): `schema/preferences.ts` + `migrations/013_preferences.ts` (`user_preferences`·`nav_preferences`·`command_bar_history`, ALL plaintext) + ADR-002 §5.17/§5.20 amendment; **first group to author build-phase intent not defer it** (G4 · `module_visibility` · E9 `user_profile` split); §XXVI double-gate + post-impl REVISE→SHIP; `@vida/core` 198 green; spec `docs/specs/foundation/db-4-preferences/`. **Next head = domain group `#3 Sessions & Scheduling (+Pomodoro)`, Phase 1 intent intake** — open FRESH (one clean-context session per group, per flow doc `docs/roadmap/schema-foundation-build-flow.md §2`). Each group runs the 5-phase lifecycle. **2 of 22 done; 20 remain.** `MOD-notes #31` + all M1.1 stay GATED behind M1.0 (DB-4 must finish all 22 groups first). Group #2 not yet committed.
 <details><summary>(prior 2026-08-11) Computed head = UI-3 #29 — resolved: built E1–E8, merged, Done.</summary></details>
 ⚠ **SUB-WAVE RULE (learned 2026-08-09, added to the routing steps below):** the raw `#`-order walk is INSUFFICIENT
 alone — it does NOT encode the `-c`/`-d` **sub-wave sequencing** (`m1.0-delivery-plan.md:129,140-141`): the **UX
@@ -66,25 +66,31 @@ drift Victor caught — it applied the raw `#` walk without the sub-wave gate.)*
 
 ## 🧭 Next session
 
-**▶ CURRENT (2026-08-18) — DB-4 group #1 Notes & Pages DONE + COMMITTED (`f2198ac`). Next = group `#2 Preferences` P1 (open FRESH).**
-This session ran the full 5-phase lifecycle for **group #1 Notes & Pages** and committed it (branch `db-4-per-domain-schema`,
-NOT pushed/PR'd — 21 groups remain before DB-4 closes):
-- **Authored 3 net-new tables** — `schema/notes.ts` + `migrations/012_notes.ts` (`pages`·`page_links`·`note_attachments`).
-  **Key finding:** AR-6 already substrated `tags`/`entity_tags`/`entity_links`; N&P is a consumer — so Notes = 3 tables,
-  not 6-7 (`page_tags` retired; `pomodoro_sessions`→`focus_sessions`/group #3). Spec `docs/specs/foundation/db-4-notes-and-pages/`.
-- **Full §XXVI double-gate** (gate-1 REVISE→fixed · preflight +2 folds · gate-2 SHIP) + post-impl critique **SHIP**.
-  `@vida/core` **193 green** (+`pages.type` parity) · root typecheck 11/11 · runner v12. §XXIX docs promoted.
-- ⚠ **Drift Victor caught + corrected:** I first wrote 5 "open shape decisions for P3" — all were doc-determined
-  (no-FK · full baseColumns · `schema/<domain>.ts` · `has_pomodoro` · `summary_config`). Memory saved:
-  [[stale-source-plus-live-convention-is-fact-not-a-decision]]. **No decisions come from the docs — they're facts.**
+**▶ CURRENT (2026-08-19) — DB-4 group #2 Preferences DONE (P1–P5). Next = group `#3 Sessions & Scheduling` P1 (open FRESH). 2 of 22 done.**
+This session ran the full 5-phase lifecycle for **group #2 Preferences** (branch `db-4-per-domain-schema`, NOT committed):
+- **Authored 3 tables, ALL plaintext** — `schema/preferences.ts` + `migrations/013_preferences.ts` (`user_preferences`·
+  `nav_preferences`·`command_bar_history`). Spec `docs/specs/foundation/db-4-preferences/`. 5 FIXED CHECK enums (theme/
+  time_format/dock_position/dock_size/persona, +5 parity rows); `default_task_priority`/`font_size`/`notification_frequency` OPEN no-CHECK.
+- **First group to AUTHOR build-phase intent, not defer it:** G4 6 cols · PB-2 `module_visibility` · **E9 `user_profile`
+  split** (`persona`/`motivation_style`/`active_modules`/`onboarding_completed` → Preferences single-writer owner, ADR-012
+  §3.10). ADR-002 §5.17 amended + §5.20 E9 ledger fulfilled.
+- **Full §XXVI double-gate** (gate-1 REVISE `json<T>()`→`text()`→fixed · preflight PASSED §XXIX-path-fix · gate-2 SHIP) +
+  post-impl critique **REVISE→SHIP** (`time_format` NOT NULL type-lie — a §5.17 gap a CHECK-only parity test is blind to).
+  `@vida/core` **198 green** · typecheck 11/11 · lint 0-err · runner v13.
+- ⚠ **Drift Victor caught + corrected:** I first recommended a strict-mirror + DEFER of G4/E9/visibility. Victor: "both
+  are important since we are in the build phase … read/interpret docs based on what we're doing." The `⚠ INTENDED`/
+  `[DEFERRED — build phase]` flags point TO this build phase → author now. Memory: [[build-phase-flags-mean-resolve-now-not-defer]].
+- ⚠ **E9 CROSS-GROUP CONSTRAINT (record for group ~#19 Gamification):** `user_profile` MUST omit `persona`/
+  `motivation_style`/`active_modules`/`onboarding_completed` + `check_in_streak*` (→ Check-ins); keeps PII + `focus_areas[E]`
+  + `life_stage` + `skipped_modules` + `timezone` + derived counters. No field with two writers.
 
-**▶ NEXT ACTION (fresh session):** domain group **`#2 Preferences`** — **Phase 1 intent intake**
-(`docs/features/preferences/structure-data.md`, FULL) → P2 current-state read → P3 plan double-gate → P4 implement
-(SQL migration + Drizzle module + `ENTITY_TYPES` verify) → P5 foundation-soundness. One clean-context session per group.
-⚠ Reload for group #2: `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output" (the 22-group table) · flow doc §2
-(`docs/roadmap/schema-foundation-build-flow.md`, 5-phase) · **the group-#1 build as the pattern to mirror**
-(`docs/specs/foundation/db-4-notes-and-pages/` + `packages/core/src/db/schema/notes.ts` + `migrations/012_notes.ts`) ·
-memories [[stale-source-plus-live-convention-is-fact-not-a-decision]] · [[open-vocab-columns-take-no-sql-check]].
+**▶ NEXT ACTION (fresh session):** domain group **`#3 Sessions & Scheduling (+Pomodoro)`** — **Phase 1 intent intake**
+(`docs/features/sessions-and-scheduling/` + `pomodoro/`) → P2 → P3 double-gate → P4 → P5. One clean-context session per group.
+⚠ Reload for group #3: `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output" (22-group table) · flow doc §2
+(`docs/roadmap/schema-foundation-build-flow.md`) · **groups #1/#2 as the pattern** (`schema/{notes,preferences}.ts` +
+`migrations/012_notes.ts`/`013_preferences.ts`) · memories [[build-phase-flags-mean-resolve-now-not-defer]] ·
+[[stale-source-plus-live-convention-is-fact-not-a-decision]] · [[open-vocab-columns-take-no-sql-check]].
+⚠ Note: group #3 authors the session sub-type 1:1 extensions DEFERRED from DB-3 (`focus_sessions` incl. pomodoro re-home, BR-DB3-3).
 ⚠ Model B still holds: DB-4 authors ALL 22 groups (M1.0) before M1.1 modules open.
 
 <details><summary>(prior 2026-08-18) — DB-3 MERGED · DB-4 P0 slice (22 groups). Next was #1 Notes & Pages.</summary>

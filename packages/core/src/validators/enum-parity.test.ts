@@ -31,6 +31,11 @@ import {
   RULE_CONDITION_BINDING_TYPE,
   PLANNED_BLOCK_STATUS,
   PAGE_TYPE,
+  THEME,
+  TIME_FORMAT,
+  DOCK_POSITION,
+  DOCK_SIZE,
+  PERSONA,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -44,6 +49,7 @@ import { migration009EconomyStoreRules } from '../db/migrations/009_economy_stor
 import { migration010Scheduling } from '../db/migrations/010_scheduling'
 import { migration011Templates } from '../db/migrations/011_templates'
 import { migration012Notes } from '../db/migrations/012_notes'
+import { migration013Preferences } from '../db/migrations/013_preferences'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -130,6 +136,13 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'planned_blocks', column: 'status', tuple: PLANNED_BLOCK_STATUS },
   // DB-4 group #1 — Notes & Pages (pages.type is the only CHECK; entity_type is OPEN, no CHECK)
   { table: 'pages', column: 'type', tuple: PAGE_TYPE },
+  // DB-4 group #2 — Preferences (5 FIXED CHECK cols; default_task_priority/font_size/
+  // notification_frequency are OPEN/bare-default, no CHECK — deliberately not rows).
+  { table: 'user_preferences', column: 'theme', tuple: THEME },
+  { table: 'user_preferences', column: 'time_format', tuple: TIME_FORMAT },
+  { table: 'user_preferences', column: 'persona', tuple: PERSONA },
+  { table: 'nav_preferences', column: 'dock_position', tuple: DOCK_POSITION },
+  { table: 'nav_preferences', column: 'dock_size', tuple: DOCK_SIZE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -147,6 +160,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration010Scheduling.up(driver)
   await migration011Templates.up(driver)
   await migration012Notes.up(driver)
+  await migration013Preferences.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

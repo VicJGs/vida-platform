@@ -131,3 +131,31 @@ The first Stream (ii) domain module — `pages` · `page_links` · `note_attachm
   `EntityLink`; interface reconcile is DB-11. Compiles (no `$inferSelect↔interface` assertion). `[FACT: note.ts:127]`
 - **[FACT] BR-N4-5 — enum parity + runner green.** `@vida/core` 193 tests; `LATEST_VERSION`=12. Foundation-readiness:
   MOD-notes (#31) finds every needed column — PASS. `[FACT: vitest run]`
+
+## DB-4 group #2 — Preferences (2026-08-19 · LIF-66)
+The second Stream (ii) domain module — `user_preferences` · `nav_preferences` · `command_bar_history`
+(`schema/preferences.ts` + `migrations/013_preferences.ts`). `[FACT: those files]`
+- **[FACT] BR-P4-1 — ALL plaintext, ZERO `[E]` (PR-1).** Preferences is structural config, not content; no field is
+  field-level encrypted. The Repository registers an empty `[E]` set (M1.0 pass-through, BR-DB6-3). `[FACT: ADR-002 L1123-1127 "All P"]`
+- **[FACT] BR-P4-2 — 5 FIXED enums → SQL CHECK, sourced from `@vida/types` tuples.** `theme`(THEME) · `time_format`(TIME_FORMAT)
+  · `dock_position`(DOCK_POSITION) · `dock_size`(DOCK_SIZE) · `persona`(PERSONA). Parity asserted for all 5. `default_task_priority`
+  = bare default no CHECK; `font_size`/`notification_frequency` = OPEN plain TEXT no CHECK (vocab undefined —
+  `[[open-vocab-columns-take-no-sql-check]]`). `[FACT: 013_preferences.ts; enum-parity.test.ts]`
+- **[FACT] BR-P4-3 — full `baseColumns` on all 3; NO `deleted_at`.** `command_bar_history` GAINS `created_at`/`updated_at`
+  vs ADR-002 §5.17's omission (ADR-016 §3.4 locked pattern; interface `CommandBarHistory extends SyncMetadata` diverges →
+  DB-11). Config has no soft-delete (invariant #7 opt-in). No cross-table FK. **§5.17 gap-fix:** `time_format` given
+  `NOT NULL` (§5.17 omitted it while its sibling FIXED enums `theme`/`dock_position`/`dock_size` carry it, and the
+  `UserPreferences.time_format` interface is non-null) — post-impl critique catch (a CHECK-only parity test is blind to
+  nullability). `[FACT: 013_preferences.ts; ADR-002 §5.17 amendment]`
+- **[FACT] BR-P4-4 — build-phase intent authored (DB-4 = the build phase).** The `⚠ INTENDED`/`[DEFERRED — build phase]`
+  items are resolved here, not deferred: G4 six columns · PB-2 `module_visibility` (JSON) · E9 `user_profile` split
+  (`persona`/`motivation_style`/`active_modules`/`onboarding_completed` — Preferences single-writer owner, ADR-012 §3.10).
+  ADR-002 §5.17 amended + §5.20 E9 ledger fulfilled. `[FACT: ADR-002 §5.17 amendment 2026-08-19]`
+- **[FACT] BR-P4-5 — three "module" concerns stay DISTINCT (PR-7).** `module_visibility` (nav show/hide) ≠ `active_modules`
+  (E9 enabled set) ≠ `feature_gamification` (logic enable) — documented in the `preferences.ts` header. `[FACT: conventions.md:31]`
+- **[FACT] BR-P4-6 — E9 cross-group constraint (for group ~#19 Gamification).** `user_profile`, when authored, OMITS the
+  4 Preferences-routed fields + `check_in_streak*` (→ Check-ins); keeps PII (`[E]`) + `focus_areas[E]` + `life_stage` +
+  `skipped_modules` + `timezone` + derived counters. No field ends with two writers. ⚠ `conventions.md:27` mislabels
+  `life_stage`/`timezone`/`skipped_modules` as `[E]` — only `focus_areas` is `[E]` (§5.15 L3376); do not propagate. `[FACT: ADR-012 §3.10]`
+- **[FACT] BR-P4-7 — parity + runner green.** `@vida/core` 198 tests (+5 parity rows); `LATEST_VERSION`=13; root typecheck
+  11/11. Foundation-readiness: MOD-preferences (#32) contract finds every needed column — PASS. `[FACT: vitest run]`

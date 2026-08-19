@@ -27,3 +27,5 @@ export * from './foundation/scheduling'
 export * from './foundation/templates'
 // DB-4 domain (Stream ii): Notes & Pages (pages · page_links · note_attachments).
 export * from './notes'
+// DB-4 domain (Stream ii): Preferences (user_preferences · nav_preferences · command_bar_history).
+export * from './preferences'

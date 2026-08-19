@@ -48,7 +48,7 @@ each running the 5-phase lifecycle at domain granularity.
 | # | Domain group | Intent source | Status |
 |---|---|---|---|
 | 1 | Notes & Pages (hub) | `notes-and-pages/structure-data.md` | ✅ **DONE** (P1–P5, 2026-08-18) — `schema/notes.ts` + `migrations/012_notes.ts` (`pages`·`page_links`·`note_attachments`) + barrel + runner + parity. Full §XXVI double-gate + post-impl SHIP. `@vida/core` 193 green · v12. Spec: `docs/specs/foundation/db-4-notes-and-pages/`. NOT committed. |
-| 2 | Preferences | `preferences/structure-data.md` | ☐ |
+| 2 | Preferences | `preferences/structure-data.md` | ✅ **DONE** (P1–P5, 2026-08-19) — `schema/preferences.ts` + `migrations/013_preferences.ts` (`user_preferences`·`nav_preferences`·`command_bar_history`) + barrel + runner + 5 parity rows + ADR-002 §5.17/§5.20 amendment + §XXIX docs. ALL plaintext (PR-1). **Build-phase intent authored, not deferred** (G4 6 cols · PB-2 `module_visibility` · E9 `user_profile` split → Preferences single-writer owner, ADR-012 §3.10). Gate-1 REVISE→fixed · preflight PASSED · gate-2 SHIP · post-impl REVISE→fixed (`time_format` NOT NULL type-lie) → SHIP. `@vida/core` 198 green · v13. Spec: `docs/specs/foundation/db-4-preferences/`. ⚠ **E9 cross-group:** Gamification's `user_profile` (group ~#19) MUST omit `persona`/`motivation_style`/`active_modules`/`onboarding_completed` + `check_in_streak*`. NOT committed. |
 | 3 | Sessions & Scheduling (+Pomodoro) | `sessions-and-scheduling/` + `pomodoro/` | ☐ |
 | 4 | Tasks | `tasks/structure-data.md` | ☐ |
 | 5 | Projects | `projects/structure-data.md` | ☐ |
@@ -101,3 +101,11 @@ each running the 5-phase lifecycle at domain granularity.
   blocker/material; added `-- [E]` SQL comments per ADR-002 §5.2 source) · §XXIX promoted `database-layer/current-{spec,
   business-rules}.md` · foundation-readiness MOD-notes #31 PASS. **NOT committed** (branch `db-4-per-domain-schema`).
   Next = group **#2 Preferences** (fresh clean-context session).
+- **Group #2 Preferences — DONE (P1–P5, 2026-08-19).** `schema/preferences.ts` + `migrations/013_preferences.ts`
+  (`user_preferences`·`nav_preferences`·`command_bar_history`, ALL plaintext) + barrel + runner + 5 parity rows +
+  ADR-002 §5.17/§5.20 amendment + §XXIX docs. **First group to author build-phase intent (not defer it):** G4 6 cols
+  · PB-2 `module_visibility` · E9 `user_profile` split (Preferences single-writer owner, ADR-012 §3.10) — after Victor
+  corrected an initial strict-mirror+defer misread ([[build-phase-flags-mean-resolve-now-not-defer]]). Gate-1 REVISE
+  (`json<T>()`→`text()`)→fixed · preflight PASSED · gate-2 SHIP · post-impl REVISE (`time_format` NOT NULL type-lie)→fixed
+  →SHIP. `@vida/core` **198 green** · v13. Spec `docs/specs/foundation/db-4-preferences/`. **2 of 22 done; 20 remain.**
+  Next = group **#3 Sessions & Scheduling (+Pomodoro)** (fresh clean-context session).

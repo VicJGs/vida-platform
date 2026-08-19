@@ -182,12 +182,13 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (group #1 Notes & Pages authored · 2026-08-18 · LIF-66)
-The first Stream (ii) per-domain module. `[FACT: schema/notes.ts; migrations/012_notes.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences authored · 2026-08-19 · LIF-66)
+The Stream (ii) per-domain modules authored so far (2 of 22). `[FACT: schema/{notes,preferences}.ts; migrations/012_notes.ts + 013_preferences.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
 | `012_notes.ts` | `schema/notes.ts` | `pages` · `page_links` · `note_attachments` (ADR-002 §5.2) |
+| `013_preferences.ts` | `schema/preferences.ts` | `user_preferences` · `nav_preferences` · `command_bar_history` (ADR-002 §5.17) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -202,10 +203,16 @@ The first Stream (ii) per-domain module. `[FACT: schema/notes.ts; migrations/012
   reconciled at DB-11). `[FACT: _registry.ts; note.ts:127]`
 - Green: `@vida/core` **193 tests** (parity picks up `pages.type`; runner rebuilds to `LATEST_VERSION`=12) · root
   typecheck 11/11. **Foundation-readiness:** MOD-notes (#31) contract finds every needed column — PASS.
-- **Remaining DB-4 groups:** #2 Preferences … #22 Notifications (21 more domain groups, per the task P0 slice).
+- **Group #2 Preferences (2026-08-19):** 3 tables, ALL plaintext (ZERO `[E]`, PR-1). 5 FIXED CHECK cols (theme/time_format/
+  dock_position/dock_size/persona — parity asserted, +5 rows); `default_task_priority`/`font_size`/`notification_frequency`
+  OPEN no-CHECK. **Build-phase intent authored, not deferred** (G4 6 cols · PB-2 `module_visibility` · E9 `user_profile`
+  split → ADR-002 §5.17 amended + §5.20 ledger fulfilled). `command_bar_history` gains `created_at`/`updated_at` (P-R2);
+  no `deleted_at`. `@vida/types` interfaces unchanged (DB-11 reconcile). E9 cross-group: Gamification's `user_profile`
+  must omit the 4 routed fields + `check_in_streak*`. `[FACT: 013_preferences.ts; ADR-002 §5.17]`
+- **Remaining DB-4 groups:** #3 … #22 Notifications (20 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**group #1 Notes ✅; 21 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1 Notes + #2 Preferences ✅; 20 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.
