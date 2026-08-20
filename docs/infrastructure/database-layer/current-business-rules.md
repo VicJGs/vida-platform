@@ -589,3 +589,29 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   flake, passes standalone); `LATEST_VERSION`=25; typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight PASSED (1
   shape-correcting fold F1 + 4 mechanical) · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.** Interface reconcile
   (Contact/Interaction/ContactReminder/ReminderGroup + new NetworkGroup/NetworkGroupContact) → DB-11. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #16 Check-ins (IMPLEMENTED 2026-08-20 · `026_check_ins.ts` + `schema/check-ins.ts`)
+- **[FACT] BR-CK-1 — enums RECONCILE, not net-new (gate-1 catch).** The 4 check-in tuples (`CHECK_IN_TYPE`/
+  `CHECK_IN_SCHEDULE_TYPE`/`CHECK_IN_PREFERRED_TIME`/`CHECK_IN_QUESTION_FIELD_TYPE`) + the 3 interfaces + the 4 Zod schemas
+  **already exist** in `@vida/types/entities/user.ts` + `validators/user.ts` (colocated because `check_in_streak*` historically
+  sat on `user_profile`). DB-4 amends in place — a new `check-in.ts` would double-export. `[FACT: user.ts:103; validators/user.ts:19]`
+- **[FACT] BR-CK-2 — CK-3: `check_in_type` 3→6.** Amended the EXISTING tuple `+afternoon/monthly_review/yearly_review`
+  (intake G3); `CheckInTypeSchema`/`DailyCheckIn.check_in_type` auto-inherit (tuple-sourced). `[FACT: user.ts:104-111]`
+- **[FACT] BR-CK-3 — CK-2: composite UNIQUE (the bug fix).** `daily_check_ins` uniqueness `UNIQUE(check_in_date)` →
+  **`UNIQUE(check_in_date, check_in_type)`** so morning+afternoon+evening+reviews coexist per day; the old single-col UNIQUE is
+  GONE. `check_in_template_questions` keeps `UNIQUE(template_id, field_key)`. `[FACT: 026:57,106]`
+- **[FACT] BR-CK-4 — `deleted_at` = NONE on all 3 (documented FACT).** §5.13 DDL + the §Check-ins P/E table omit it on all 3
+  (while every neighboring domain lists `created_at, updated_at, deleted_at`); CK-10 documents the hard-delete lifecycle
+  (`template_id` SET NULL / questions CASCADE — app-layer under no-FK). `[FACT: ADR-002 §5.13; business-rules CK-10]`
+- **[FACT] BR-CK-5 — `check_in_template_questions` = `id` + `syncColumns` (NO `created_at`/`updated_at`).** The §5.13 floor
+  omits them + the interface `extends SyncMetadata` + explicit `id`. Not `baseColumns`. `pk == ['id']` holds. `[FACT: 026:87-107; user.ts:159]`
+- **[FACT] BR-CK-6 — no FK; `mood`/`energy` numeric BETWEEN.** `template_id` ×2 plain TEXT (SET-NULL/CASCADE app-layer, CK-10).
+  `mood_score`/`energy_level` = plaintext INT `BETWEEN 1 AND 10` (trend charts; not tuple-sourced → not parity rows). 4 FIXED
+  CHECK cols parity-asserted. `[FACT: 026:40-41; enum-parity 4 rows]`
+- **[FACT] BR-CK-7 — cite-not-author boundaries + registry.** E9 `check_in_streak*` = DERIVED from `daily_check_ins` (no
+  column; the `user_profile` removal is Gamification #21's edit) · E2 `grant_currency(XP)` = Gamification-owned (no economy
+  col) · SP1 no tags (opt-out) · G7 review aggregation = integration + optional `entity_links` (no column) · reminders =
+  Preferences/Notifications. **No M\*** (C-M — not pursuable). `ENTITY_TYPES += daily_check_in` (pages/entity_links target,
+  G10; already in `note.ts` `ENTITY_LINK_TARGET`; templates/questions excluded). **Phase-5 introspection** (12 × 4).
+  `@vida/core` **635 green**; `LATEST_VERSION`=26; typecheck 11/11; eslint 0. Gates: gate-1 REVISE→resolved · preflight PASSED
+  · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.** Interface reconcile → DB-11. `[FACT: vitest run]`

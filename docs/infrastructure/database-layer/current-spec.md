@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes … #12 Learning/Education + #14 Relationships authored · 2026-08-20 · LIF-66)
-The Stream (ii) per-domain modules authored so far (14 of 21 active; #13 Languages dissolved → Spaces, ADR-006). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 025_relationships.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes … #14 Relationships + #16 Check-ins authored · 2026-08-20 · LIF-66)
+The Stream (ii) per-domain modules authored so far (15 of 21 active; #13 Languages dissolved → Spaces, ADR-006). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships,check-ins}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 026_check_ins.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -201,6 +201,7 @@ The Stream (ii) per-domain modules authored so far (14 of 21 active; #13 Languag
 | `023_books.ts` | `schema/books.ts` | `books` · `book_chapters` · `book_assets` · `book_bookmarks` · `book_highlights` · `book_quotes` · `reading_sessions` (Sessions `reading` sub-type) · `reading_plans` · `reading_plan_books` · `book_subjects` (§Books reshaped roster) |
 | `024_learning_education.ts` | `schema/learning.ts` | `subjects` (=courses) · `ics_feed_configs` · `ics_synced_events` · `institutions` · `self_taught` · `programs` · `curricula` · `terms` · `class_sessions` (Sessions `class` sub-type) · `subject_schedules` · `grading_systems` · `grading_components` · `assessments` · `subject_documents` · `education_measurements` (§5.10/§5.18 reshaped + INTENDED hierarchy) |
 | `025_relationships.ts` | `schema/relationships.ts` | `contacts` · `contact_events` · `interactions` · `contact_reminders` · `reminder_groups` · `reminder_group_contacts` (§5.9 reshaped) + `network_groups` · `network_group_contacts` (net-new networks, G2) |
+| `026_check_ins.ts` | `schema/check-ins.ts` | `daily_check_ins` · `check_in_templates` · `check_in_template_questions` (§5.13; CK-2 composite UNIQUE + CK-3 type 3→6) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -470,10 +471,30 @@ The Stream (ii) per-domain modules authored so far (14 of 21 active; #13 Languag
   +how_we_met/closeness_tier −tags · Interaction +energy/key_takeaways · ContactReminder +snooze/priority · ReminderGroup
   +anchor · new NetworkGroup/NetworkGroupContact) → DB-11.
   `[FACT: 025_relationships.ts; schema/relationships.ts; docs/specs/foundation/db-4-relationships/]`
-- **Remaining DB-4 groups:** #15 … #22 (7 more domain groups; #13 Languages dissolved → Spaces, ADR-006).
+- **Group #16 Check-ins (2026-08-20):** **3 tables** — the lightest group (structured daily-reflection + a template
+  form-builder), the lone non-ingest unit. `daily_check_ins` + `check_in_templates` (baseColumns) + `check_in_template_questions`
+  (**`id` + `syncColumns`, NO `created_at`/`updated_at`** — the §5.13 floor omits them + the interface `extends SyncMetadata`).
+  **No `deleted_at` on ANY** — a documented FACT (§5.13 DDL + the P/E table omit it on all 3 while every neighbor lists it;
+  CK-10 = hard-delete lifecycle). Build-phase fixes (intake §Resolution WHOLE): **CK-2** `daily_check_ins` uniqueness
+  `UNIQUE(check_in_date)` → **`UNIQUE(check_in_date, check_in_type)`** (the bug fix); **CK-3** `check_in_type` **3→6**
+  (`+afternoon/monthly_review/yearly_review` — amended the EXISTING `CHECK_IN_TYPE` tuple in `@vida/types/entities/user.ts`,
+  the sole types-layer edit). No-FK (`template_id` ×2 plain TEXT, SET-NULL/CASCADE app-layer). **4 FIXED CHECK cols** — all
+  the module's OWN existing tuples (`CHECK_IN_TYPE`/`CHECK_IN_SCHEDULE_TYPE`/`CHECK_IN_PREFERRED_TIME`/`CHECK_IN_QUESTION_FIELD_TYPE`,
+  colocated in `entities/user.ts` since `check_in_streak*` historically lived on `user_profile`) — a **gate-1 catch**: the
+  enums + interfaces + validators already existed → **reconcile-and-extend, NOT net-new** (a new `check-in.ts` would have
+  double-exported). `mood_score`/`energy_level` = numeric `BETWEEN 1 AND 10` (not tuple-sourced). `ENTITY_TYPES += daily_check_in`
+  (pages/entity_links target, G10; already in `note.ts` `ENTITY_LINK_TARGET`; **no tags** — SP1 opt-out). **OUT** (cite-not-author):
+  E9 `check_in_streak*` = DERIVED from `daily_check_ins` (no column; the `user_profile` removal is Gamification #21's edit) ·
+  E2 `grant_currency(XP)` = Gamification-owned (no economy col) · G7 review aggregation = integration + optional `entity_links`
+  (no column) · reminders = Preferences/Notifications. No M\* (C-M). **Phase-5 introspection**
+  (`check-ins-introspection.test.ts`, 12 cases × 4). `@vida/core` **635 tests** green; `LATEST_VERSION`=26; typecheck 11/11;
+  eslint 0. Gates: gate-1 **REVISE**→resolved (the net-new-types miss) · preflight PASSED · gate-2 SHIP · post-impl SHIP.
+  **Zero build-decisions.** Interface reconcile (`DailyCheckIn`/`CheckInTemplate`/`CheckInTemplateQuestion` vs the mirror; the
+  `CHECK_IN_TYPE` expansion flows through automatically) → DB-11. `[FACT: 026_check_ins.ts; schema/check-ins.ts; docs/specs/foundation/db-4-check-ins/]`
+- **Remaining DB-4 groups:** #17 … #22 (6 more domain groups; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 ✅ (14 of 21 active); 7 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 ✅ (15 of 21 active); 6 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

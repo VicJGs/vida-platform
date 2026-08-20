@@ -104,6 +104,10 @@ import {
   SENTIMENT,
   CONTACT_EVENT_TYPE,
   REMINDER_GROUP_ANCHOR,
+  CHECK_IN_TYPE,
+  CHECK_IN_SCHEDULE_TYPE,
+  CHECK_IN_PREFERRED_TIME,
+  CHECK_IN_QUESTION_FIELD_TYPE,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -130,6 +134,7 @@ import { migration022Knowledge } from '../db/migrations/022_knowledge'
 import { migration023Books } from '../db/migrations/023_books'
 import { migration024LearningEducation } from '../db/migrations/024_learning_education'
 import { migration025Relationships } from '../db/migrations/025_relationships'
+import { migration026CheckIns } from '../db/migrations/026_check_ins'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -368,6 +373,13 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'contact_reminders', column: 'priority', tuple: PRIORITY },
   { table: 'reminder_groups', column: 'frequency', tuple: FREQUENCY },
   { table: 'reminder_groups', column: 'anchor_type', tuple: REMINDER_GROUP_ANCHOR },
+  // DB-4 group #16 — Check-ins. 4 FIXED CHECK cols (all the module's own tuples, reused from
+  // @vida/types entities/user.ts; CHECK_IN_TYPE amended 3→6, CK-3). mood_score/energy_level are
+  // numeric BETWEEN 1 AND 10 (not tuple-sourced → not rows). No inline tags (SP1).
+  { table: 'daily_check_ins', column: 'check_in_type', tuple: CHECK_IN_TYPE },
+  { table: 'check_in_templates', column: 'schedule_type', tuple: CHECK_IN_SCHEDULE_TYPE },
+  { table: 'check_in_templates', column: 'preferred_time', tuple: CHECK_IN_PREFERRED_TIME },
+  { table: 'check_in_template_questions', column: 'field_type', tuple: CHECK_IN_QUESTION_FIELD_TYPE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -398,6 +410,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration023Books.up(driver)
   await migration024LearningEducation.up(driver)
   await migration025Relationships.up(driver)
+  await migration026CheckIns.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

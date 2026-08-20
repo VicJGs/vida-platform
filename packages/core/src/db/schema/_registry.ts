@@ -111,6 +111,11 @@ export const ENTITY_TYPES = [
   // habit_completions precedent) + the 2 junctions.
   'contact',
   'network',
+  // DB-4 group #16 — Check-ins. daily_check_in is a pages/entity_links target (the check-in↔Journal-day-page
+  // link + review backlinks, G10/CK-7; already in note.ts ENTITY_LINK_TARGET — this is the pages/registry side).
+  // NO tags (SP1 opt-out — registration valid, tagging is a per-use choice). check_in_template/_question EXCLUDED
+  // (config/child, addressed via own refs — the habit_completions precedent).
+  'daily_check_in',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

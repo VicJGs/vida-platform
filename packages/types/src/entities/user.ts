@@ -100,7 +100,15 @@ export interface XpHistory extends SyncMetadata {
 // Check-ins
 // ---------------------------------------------------------------------------
 
-export const CHECK_IN_TYPE = ['morning', 'evening', 'weekly_review'] as const
+// DB-4 #16 (CK-3, intake G3): expanded 3→6 — +afternoon/monthly_review/yearly_review.
+export const CHECK_IN_TYPE = [
+  'morning',
+  'afternoon',
+  'evening',
+  'weekly_review',
+  'monthly_review',
+  'yearly_review',
+] as const
 export type CheckInType = (typeof CHECK_IN_TYPE)[number]
 export const CHECK_IN_SCHEDULE_TYPE = ['daily', 'weekly', 'custom'] as const
 export type CheckInScheduleType = (typeof CHECK_IN_SCHEDULE_TYPE)[number]
