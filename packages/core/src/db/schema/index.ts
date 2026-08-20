@@ -56,3 +56,8 @@ export * from './knowledge'
 // DB-4 domain (Stream ii): Books (books · book_chapters · book_assets · book_bookmarks · book_highlights ·
 // book_quotes · reading_sessions [Sessions `reading` sub-type] · reading_plans · reading_plan_books · book_subjects).
 export * from './books'
+// DB-4 domain (Stream ii): Learning: Education (+ICS) — THE Learning hub (15 tables): subjects[=courses]
+// · ics_feed_configs · ics_synced_events · institutions · self_taught · programs · curricula · terms ·
+// class_sessions [Sessions `class` sub-type] · subject_schedules · grading_systems · grading_components ·
+// assessments · subject_documents · education_measurements. Homework = Tasks-owned (C-HW). Inline tags → entity_tags.
+export * from './learning'

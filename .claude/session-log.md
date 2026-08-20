@@ -5264,3 +5264,47 @@ Next session:
     "no soft delete" children omit it** (BR-DB-AUDIT). Phase-1 No-Decisions Gate is the recurring trap.
   - Carry-forward: DB-11 += Book*/Reading* interfaces + retire stale BOOK_FORMAT. **12 of 22 done; 10 remain.** ⚠ CI red
     (known pnpm infra; local green). ⚠ sandbox /tmp hit ENOSPC late-session (didn't affect tests/writes). Branch NOT committed.
+
+---
+Date: 2026-08-20 — DB-4 group #12 Learning/Education (+ICS): full 5-phase lifecycle DONE (the heaviest group)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #12 — THE Learning hub, the largest DB-4 group (15 tables). Following P0 table order.
+Accomplished:
+  - **15 tables** (`024_learning_education.ts`, v24; `schema/learning.ts`): 3 FACT-floor reshaped (`subjects`[=courses]·
+    `ics_feed_configs`·`ics_synced_events`) + 12 net-new INTENDED (`institutions`·`self_taught`·`programs`·`curricula`·`terms`·
+    `class_sessions` [Sessions `class` sub-type]·`subject_schedules`·`grading_systems`·`grading_components`·`assessments`·
+    `subject_documents`·`education_measurements`). §5.10/§5.18 STALE; net-new domain (nothing was on disk).
+  - 2 R6 reframes: inline `courses.tags`→entity_tags (SP1); `courses.progress NOT NULL DEFAULT 0`→nullable (M3). The 8-level
+    hierarchy (institutions+self_taught SEPARATE → programs → curricula[lineage] → terms[hierarchical] → subjects[routed]).
+    `class_sessions`=`class` session extension (own id + session_id UNIQUE, no FK, **no deleted_at** — SESSION_SUB_TYPE:21
+    already had 'class'); `subject_schedules` UNIQUE(subject_id); `education_measurements`=Education-forged measure entity
+    (axes M1×M2, `measurement_kind` **notNull no-default** — dedicated entity, deliberate divergence from deliverables'
+    'milestone' default; separate storage from Projects); `subject_documents`=PJ-8 vault (no deleted_at, nullable BLOB+R2).
+  - No-FK everywhere; **deleted_at on 11 of 15** (ics ×2 [X8 add-only/X9 revoke], class_sessions [extension], subject_documents
+    [PJ-8] omit). **15 FIXED CHECK** = 11 net-new tuples (`learning.ts`) + 4 reused (COURSE_TYPE/COURSE_STATUS/MEASUREMENT_KIND/
+    BINDING_MODE) + 11 z.enum validators; `subjects.rating` numeric BETWEEN; `subject_documents.doc_type` OPEN. `ENTITY_TYPES += 7`
+    (class_session excluded — sub-type via base session). OUT: homework=Tasks-owned (C-HW, no local table); AI extraction pipeline
+    (source=ai col authored, service=ADR-014/015); grade/GPA/measurement compute=service; E2/AI4/M5 guards held.
+  - Gates: gate-1 SHIP · preflight PASSED (6 folds) · gate-2 SHIP · post-impl SHIP — both critics prompted-to-refute confirmed
+    zero manufactured deferrals + no over-invented columns + guards held. **Zero build-decisions.**
+  - Green: `@vida/core` **578 tests** (25 files incl. new `learning-education-introspection.test.ts` 60 cases × 4 dims + 15 new
+    enum-parity rows); `LATEST_VERSION`=24; typecheck 11/11; eslint 0. §XXIX current-* promoted (BR-ED-1…10). (⚠ vault 1MB
+    crypto test flaked on timeout once at 26s, passed on retry at 6.9s — pre-existing timing flake, unrelated.)
+Victor directives + corrections:
+  - ⚠ **"I already solved the gap inside the documentation regarding the grades … that is a clear drift."** At the P1/P2
+    checkpoint I framed the grading-system's weighted-component model as an author-vs-defer boundary (14 vs 15 tables) and put
+    it to Victor — reading the `(design pass)` LABEL in structure-data.md as "undesigned → defer". But `docs/intake/
+    learning-education.md` §Resolution was marked **WHOLE** — H3 fully specified the grading builder (weighted components
+    {type,weight,points}, scope, scale). Corrected → author `grading_components` NOW; the `(design pass)` label is a build-phase
+    forward-pointer, and we ARE the build phase. Reinforced [[build-phase-flags-mean-resolve-now-not-defer]] with this instance:
+    **before presenting any author-vs-defer boundary to Victor, grep the intake §Resolution/§WHOLE first.**
+Next session:
+  - **FIRST ACTION: open P0 table group `#13 Languages`, Phase 1 intent intake** — FRESH clean-context. ⚠ Per P0 D2: the intent
+    source is **ADR-002 §5.10 Language Learning Domain** (~9 tables, fully specified — Language/LanguageVocabulary/
+    LanguagePracticeSession/LanguageDailySession/LanguageDailyProgress/LanguageRecording/LanguageWeeklyPlan/LanguageBaseWord/
+    LanguageVideoPlaylist, all in `@vida/types/learning.ts`). The `docs/features/languages/*.md` stubs are 0-byte → **author
+    `structure-data.md` from the ADR in its P1** before running P2→P5. Grep intake+reruns FIRST (any driver-token reframe?).
+  - **READ ALL 5 ASPECTS + THE RERUN before scoping.** Phase-1 No-Decisions Gate is the recurring trap; a `(design pass)` label
+    ≠ defer when the intake §Resolution is WHOLE. deleted_at: session extensions + "no soft delete" children omit it.
+  - Carry-forward: DB-11 += Learning interfaces (Course→Subject rename, default_course_id→default_subject_id, stale Course
+    progress/tags). **13 of 22 done; 9 remain.** ⚠ CI red (known pnpm infra; local green). Branch NOT committed/pushed.

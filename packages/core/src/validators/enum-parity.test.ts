@@ -86,6 +86,19 @@ import {
   BOOK_ASSET_FORMAT,
   READING_PLAN_ARRANGEMENT,
   READING_PLAN_GOAL_TYPE,
+  COURSE_TYPE,
+  COURSE_STATUS,
+  DEGREE_TIER,
+  TERM_LEVEL,
+  PROGRAM_PARENT_TYPE,
+  SCHEDULE_SOURCE,
+  GRADING_SCOPE,
+  GRADING_SCALE_TYPE,
+  GRADING_COMPONENT_TYPE,
+  ASSESSMENT_TYPE,
+  ASSESSMENT_MODALITY,
+  MEASUREMENT_REF_TYPE,
+  RECORD_SOURCE,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -110,6 +123,7 @@ import { migration020Finance } from '../db/migrations/020_finance'
 import { migration021Skills } from '../db/migrations/021_skills'
 import { migration022Knowledge } from '../db/migrations/022_knowledge'
 import { migration023Books } from '../db/migrations/023_books'
+import { migration024LearningEducation } from '../db/migrations/024_learning_education'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -315,6 +329,26 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'book_assets', column: 'format', tuple: BOOK_ASSET_FORMAT },
   { table: 'reading_plans', column: 'arrangement', tuple: READING_PLAN_ARRANGEMENT },
   { table: 'reading_plans', column: 'goal_type', tuple: READING_PLAN_GOAL_TYPE },
+  // DB-4 group #12 — Learning: Education (+ICS). 15 FIXED CHECK cols across the hub. subjects.rating
+  // is a numeric BETWEEN (not tuple-sourced → not a row); metadata/routing refs/progress/dates are OPEN.
+  // subject_documents.doc_type is OPEN (user-extensible catch-all, no CHECK). education_measurements reuses
+  // MEASUREMENT_KIND/BINDING_MODE (both CHECK-backed → rows, like deliverables). class_sessions rides base
+  // sessions OPEN sub_type (no CHECK); ics/institution/self_taught/curricula have no FIXED CHECK col.
+  { table: 'subjects', column: 'course_type', tuple: COURSE_TYPE },
+  { table: 'subjects', column: 'status', tuple: COURSE_STATUS },
+  { table: 'subjects', column: 'degree_tier', tuple: DEGREE_TIER },
+  { table: 'programs', column: 'parent_type', tuple: PROGRAM_PARENT_TYPE },
+  { table: 'terms', column: 'level', tuple: TERM_LEVEL },
+  { table: 'subject_schedules', column: 'source', tuple: SCHEDULE_SOURCE },
+  { table: 'grading_systems', column: 'scope', tuple: GRADING_SCOPE },
+  { table: 'grading_systems', column: 'scale_type', tuple: GRADING_SCALE_TYPE },
+  { table: 'grading_components', column: 'component_type', tuple: GRADING_COMPONENT_TYPE },
+  { table: 'assessments', column: 'type', tuple: ASSESSMENT_TYPE },
+  { table: 'assessments', column: 'modality', tuple: ASSESSMENT_MODALITY },
+  { table: 'assessments', column: 'source', tuple: RECORD_SOURCE },
+  { table: 'education_measurements', column: 'ref_type', tuple: MEASUREMENT_REF_TYPE },
+  { table: 'education_measurements', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
+  { table: 'education_measurements', column: 'binding_mode', tuple: BINDING_MODE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -343,6 +377,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration021Skills.up(driver)
   await migration022Knowledge.up(driver)
   await migration023Books.up(driver)
+  await migration024LearningEducation.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

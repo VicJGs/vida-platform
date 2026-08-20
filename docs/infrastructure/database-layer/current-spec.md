@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits + #7 Routines + #8 Purpose & Goals + #9 Finance (+Fiscal & Legal) + Skills + Knowledge (+flashcards) + Books authored · 2026-08-20 · LIF-66)
-The Stream (ii) per-domain modules authored so far (12 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 023_books.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes … #11 Books + #12 Learning/Education (+ICS) authored · 2026-08-20 · LIF-66)
+The Stream (ii) per-domain modules authored so far (13 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 024_learning_education.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -199,6 +199,7 @@ The Stream (ii) per-domain modules authored so far (12 of 22). `[FACT: schema/{n
 | `021_skills.ts` | `schema/skills.ts` | `skills` · `skill_levels` · `skill_activities` · `skill_actions` (Sessions `practice` sub-type) · `skill_dev_logs` · `skill_dependencies` · `skill_definitions` (§5.9 reshaped roster) |
 | `022_knowledge.ts` | `schema/knowledge.ts` | `knowledge_objects` · `object_kinds` · `knowledge_containers` · `references` · `compound_sets` · `knowledge_lab_entries` · `flashcards` (§5.10 reshaped roster; `references` = quoted SQL keyword) |
 | `023_books.ts` | `schema/books.ts` | `books` · `book_chapters` · `book_assets` · `book_bookmarks` · `book_highlights` · `book_quotes` · `reading_sessions` (Sessions `reading` sub-type) · `reading_plans` · `reading_plan_books` · `book_subjects` (§Books reshaped roster) |
+| `024_learning_education.ts` | `schema/learning.ts` | `subjects` (=courses) · `ics_feed_configs` · `ics_synced_events` · `institutions` · `self_taught` · `programs` · `curricula` · `terms` · `class_sessions` (Sessions `class` sub-type) · `subject_schedules` · `grading_systems` · `grading_components` · `assessments` · `subject_documents` · `education_measurements` (§5.10/§5.18 reshaped + INTENDED hierarchy) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -416,10 +417,39 @@ The Stream (ii) per-domain modules authored so far (12 of 22). `[FACT: schema/{n
   session sub-type extension must not (base `sessions` owns lifecycle; the `study_sessions`/`focus_sessions` precedent).
   REMOVED from `skills.ts` + `021_skills.ts`. Audit of all authored groups found this the sole instance; no table violates
   an explicit "no soft delete" doc signal. `[FACT: skills.ts skillActions; 021_skills.ts]`
-- **Remaining DB-4 groups:** #12 Learning/Education … #22 Notifications (10 more domain groups, per the task P0 slice).
+- **Group #12 Learning/Education (+ICS) (2026-08-20):** **15 tables** — THE Learning hub, the heaviest group. 3 FACT-floor
+  reshaped (`subjects` [=`courses`], `ics_feed_configs`, `ics_synced_events`) + 12 net-new INTENDED (the 8-level academic
+  hierarchy + grading builder + measurement). **ADR-002 §5.10/§5.18 STALE**; net-new domain (nothing was on disk). Two R6
+  reframes: inline `courses.tags`→`entity_tags` (SP1); `courses.progress NOT NULL DEFAULT 0`→nullable override (M3). Hierarchy
+  (ED-2/H2): `institutions` + `self_taught` (SEPARATE) → `programs` (parent_type+id) → `curricula` (`forked_from_id` lineage,
+  ED-11) → `terms` (hierarchical `level`+`parent_term_id`, ED-12) → `subjects` (+`curriculum_id`/`term_id`/`degree_tier`, ED-3/A1).
+  **`class_sessions` = a `sessions` `class` sub-type 1:1 extension** (own id PK + `session_id` UNIQUE, no FK, **no `deleted_at`**;
+  the study/focus/reading/practice precedent). `subject_schedules` = one per subject (`UNIQUE(subject_id)`, ED-5); `class_sessions`
+  ARE the schedule content. **Grading builder** (ED-7): `grading_systems` (scope+scale) + `grading_components` (weighted template
+  {type,weight,points}) + `assessments` (type/date/weight/modality/score + `source` AI6). **`education_measurements`** =
+  Education-forged measure entity (ED-10, separate storage from Projects): `measurement_kind` (M1, **notNull no-default** —
+  dedicated entity, caller-supplied, deliberately diverges from `deliverables`' 'milestone' default) × `binding_mode` (M2,
+  nullable no-default ⇒ derive) × `progress` (M3 nullable override). `subject_documents` = the per-subject vault (ED-13, the
+  `project_documents`/PJ-8 pattern — baseColumns only, **no `deleted_at`**, nullable BLOB + R2 ref). **No-FK** everywhere.
+  **`deleted_at` on 11 of 15** — `ics_feed_configs`/`ics_synced_events` (FACT interfaces omit; X8 add-only "never delete" /
+  X9 revoke=`is_active`), `class_sessions` (session extension), `subject_documents` (PJ-8) omit it. **15 FIXED CHECK cols**:
+  reused `COURSE_TYPE`/`COURSE_STATUS`/`MEASUREMENT_KIND`/`BINDING_MODE` + **11 net-new tuples** (`DEGREE_TIER`·`TERM_LEVEL`·
+  `PROGRAM_PARENT_TYPE`·`SCHEDULE_SOURCE`·`GRADING_SCOPE`·`GRADING_SCALE_TYPE`·`GRADING_COMPONENT_TYPE`·`ASSESSMENT_TYPE`·
+  `ASSESSMENT_MODALITY`·`MEASUREMENT_REF_TYPE`·`RECORD_SOURCE`). OPEN no-CHECK: `subject_documents.doc_type`; `subjects.rating`
+  numeric BETWEEN. `ENTITY_TYPES += subject/institution/program/curriculum/term/assessment/subject_document` (7; `class_session`
+  excluded — sub-type via base `session`). **OUT** (owned elsewhere / undesigned): homework = **Tasks-owned** (C-HW, no local
+  table); AI document-extraction pipeline (`source=ai` col authored, the service is ADR-014/015); grade/GPA/measurement
+  *computation* = runtime service (M1.1+); base `sessions` spine (ADR-004); entity_tags/links (AR-6); E2/grant (C-E2); AI4
+  agent (C-AI4); M5 seam (C-M5); My-Week/cross-subject/GPA-report views. **Phase-5 introspection**
+  (`learning-education-introspection.test.ts`, 60 cases × 4). `@vida/core` **578 tests** green; `LATEST_VERSION`=24; typecheck
+  11/11; eslint 0. **Zero build-decisions** — the `(design pass)` labels are build-phase forward-pointers, resolved WHOLE by
+  the intake §Resolution (a Victor drift-catch corrected an author-vs-defer framing at P1). Interface reconcile (Course→Subject,
+  `default_course_id`→`default_subject_id`, stale COURSE progress/tags) → DB-11.
+  `[FACT: 024_learning_education.ts; schema/learning.ts; docs/specs/foundation/db-4-learning-education/]`
+- **Remaining DB-4 groups:** #13 Languages … #22 Notifications (9 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#9 + Skills + Knowledge + Books ✅ (12 of 22); 10 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 ✅ (13 of 22); 9 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

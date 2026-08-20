@@ -522,3 +522,39 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   extension must not. Audit fixed `skill_actions` (Skills group — wrongly had it) → REMOVED from `skills.ts` + `021_skills.ts`;
   `study_sessions`/`focus_sessions` already correct. No other authored table violates an explicit "no soft delete" signal.
   `[FACT: session-extensions.ts; skills.ts; 021_skills.ts]`
+
+## Rules established by DB-4 group #12 Learning/Education (+ICS) (IMPLEMENTED 2026-08-20 · `024_learning_education.ts` + `schema/learning.ts`)
+- **[FACT] BR-ED-1 — SP1: no inline tags.** `subjects` (= `courses` reshaped) does NOT carry an inline `tags` column;
+  classification is `entity_tags` (`entity_type='subject'`, ADR-006 SP1). Registered in `ENTITY_TYPES`.
+- **[FACT] BR-ED-2 — M3: progress DERIVED, never a counter.** `subjects.progress` + `education_measurements.progress` are
+  nullable override slots (`NULL⇒derive`); the §5.10 `NOT NULL DEFAULT 0` anti-signal is resolved out. `[FACT: 024:48,375]`
+- **[FACT] BR-ED-3 — M1/M2: Education-forged measure entity.** `education_measurements` carries `measurement_kind` (reused
+  MEASUREMENT_KIND, **notNull no-default** — a dedicated measure entity, caller-supplies; deliberately diverges from
+  `deliverables`' `'milestone'` default) × `binding_mode` (reused BINDING_MODE, nullable no-default ⇒ derive). **Separate
+  storage from Projects** (ED-10 — never mixed). `[FACT: 024:375-377]`
+- **[FACT] BR-ED-4 — X8: ICS is an add-only feed.** `ics_synced_events` has `UNIQUE(feed_id, uid)` + `is_ignored` and **no
+  `deleted_at`** (never delete); `ics_feed_configs` also omits `deleted_at` (revoke = `is_active`, X9). Both match the FACT
+  interfaces. `[FACT: 024:122; schema/learning.ts]`
+- **[FACT] BR-ED-5 — no FK anywhere.** Every ref (`curriculum_id`/`term_id`/`parent_id`/`parent_term_id`/`program_id`/
+  `subject_id`/`grading_system_id`/`grading_component_id`/`scope_id`/`ref_id`/`session_id`/`schedule_id`/`source_event_id`/
+  `matched_subject_id`/`default_subject_id`/`forked_from_id`) is plain TEXT (§5.10 REFERENCES superseded, ADR-016 §3.4).
+- **[FACT] BR-ED-6 — the 8-level hierarchy (ED-2/H2).** `institutions` + `self_taught` (SEPARATE tables) → `programs`
+  (`parent_type` ∈ institution|self_taught) → `curricula` (`forked_from_id` lineage) → `terms` (hierarchical `level`
+  ∈ year|semester|term + `parent_term_id`) → `subjects` (routed via `curriculum_id`/`term_id`/`degree_tier`, nullable per A1).
+- **[FACT] BR-ED-7 — `class_sessions` = a `class` Session sub-type (ED-4).** Own `id` PK + `session_id` UNIQUE (1:1 → base
+  `sessions`, no FK), **no `deleted_at`** (base owns lifecycle). Spine fields (start/end/status) live on `sessions`, never
+  re-stored. Excluded from `ENTITY_TYPES` (addressed via base `session`). `[FACT: 024:230-248]`
+- **[FACT] BR-ED-8 — grade builder + assessments (ED-7/ED-8).** `grading_systems` (scope+scale_type) + `grading_components`
+  (weighted template {component_type, weight, max_points}) + `assessments` (type/date/weight/modality/score). Grade/GPA
+  **COMPUTATION** = runtime service (M1.1+), never a stored authority. `assessments.source` ∈ RECORD_SOURCE (`manual|ai|import`,
+  AI6 provenance). `[FACT: 024:280-338]`
+- **[FACT] BR-ED-9 — subject vault (ED-13, PJ-8).** `subject_documents` = the `project_documents` pattern: `baseColumns` only
+  (**no `deleted_at`**), nullable `encrypted_blob` BLOB (inline) + `storage_ref` (R2); `doc_type` OPEN no-CHECK. `[FACT: 024:348-367]`
+- **[FACT] BR-ED-10 — boundaries held.** Homework = **Tasks-owned** (C-HW — no local table); AI document-extraction pipeline =
+  ADR-014/015 service (only the `source=ai` column authored); `entity_tags`/`entity_links` = AR-6 (not redefined); no E2/grant
+  (C-E2), no AI4 agent (C-AI4), no M5 seam (C-M5). **15 FIXED CHECK cols** (11 net-new + 4 reused tuples); `subjects.rating`
+  numeric BETWEEN; `subject_documents.doc_type` OPEN. **Phase-5 introspection** (60 × 4). `@vida/core` **578 tests** green;
+  `LATEST_VERSION`=24; typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight PASSED (6 folds) · gate-2 SHIP · post-impl SHIP.
+  **Zero build-decisions** (⚠ Victor drift-catch at P1: an author-vs-defer framing of the grading `(design pass)` label — the
+  intake §Resolution had resolved it WHOLE; corrected → author now, [[build-phase-flags-mean-resolve-now-not-defer]]).
+  Interface reconcile (Course→Subject, `default_course_id`→`default_subject_id`) → DB-11. `[FACT: vitest run]`

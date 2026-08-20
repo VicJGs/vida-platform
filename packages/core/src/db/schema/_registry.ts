@@ -90,6 +90,20 @@ export const ENTITY_TYPES = [
   'book_chapter',
   'book_bookmark',
   'book_quote',
+  // DB-4 group #12 — Learning: Education (+ICS). subject (=courses; tags/notes/links target,
+  // SP1 entity_type='subject') · institution · program · curriculum · term · assessment ·
+  // subject_document are valid pages/entity_links targets (H11 tags on Program/Curriculum/Subject
+  // is an app-layer scope, not a registry split — the list is one ENTITY_TYPES feeding all three).
+  // EXCLUDED: class_session (a `sessions` sub-type → base `session`, ADR-004 §3.1, the reading_session/
+  // skill_action precedent); ics_feed_config/ics_synced_event/self_taught/subject_schedule/grading_system/
+  // grading_component/education_measurement (config/child/junction entities addressed via their own refs).
+  'subject',
+  'institution',
+  'program',
+  'curriculum',
+  'term',
+  'assessment',
+  'subject_document',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 
