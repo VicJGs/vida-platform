@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits + #7 Routines + #8 Purpose & Goals authored · 2026-08-19 · LIF-66)
-The Stream (ii) per-domain modules authored so far (8 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 019_purposes.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits + #7 Routines + #8 Purpose & Goals + #9 Finance (+Fiscal & Legal) authored · 2026-08-20 · LIF-66)
+The Stream (ii) per-domain modules authored so far (9 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 020_finance.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -195,6 +195,7 @@ The Stream (ii) per-domain modules authored so far (8 of 22). `[FACT: schema/{no
 | `017_habits.ts` | `schema/habits.ts` | `habits` · `habit_completions` · `project_habits` (ADR-002 §5.5) |
 | `018_routines.ts` | `schema/routines.ts` | `routines` · `routine_step` · `routine_completions` (the REFRAME — supersedes the §5.6 POC) |
 | `019_purposes.ts` | `schema/purposes.ts` | `purposes` · `targets` · `purpose_metrics` · `purpose_metric_values` · `target_reviews` · `dreams` (§5.7; DB-3 substrate excluded) |
+| `020_finance.ts` | `schema/finance.ts` | `accounts` · `transactions` · `assets` · `liabilities` · `investments` · `income_streams` (§5.8) + `fiscal_residencies` · `legal_entities` · `fiscal_obligations` (§5.20 L3828) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -322,10 +323,34 @@ The Stream (ii) per-domain modules authored so far (8 of 22). `[FACT: schema/{no
   `@vida/core` **336 tests** green; `LATEST_VERSION`=19; typecheck clean; eslint 0-err. **Zero build-decisions.**
   Interface reconcile → DB-11. **Foundation-readiness:** MOD-purpose finds the spine + Dreams — PASS. `[FACT:
   019_purposes.ts; schema/purposes.ts; docs/specs/foundation/db-4-purposes-and-goals/]`
-- **Remaining DB-4 groups:** #9 Finance (+Fiscal & Legal) … #22 Notifications (14 more domain groups, per the task P0 slice).
+- **Group #9 Finance (+Fiscal & Legal) (2026-08-20):** **9 tables** — the 6 §5.8 finance entities (`accounts` ·
+  `transactions` · `assets` · `liabilities` · `investments` · `income_streams`, authored fresh — they lived in the
+  pre-rebuild monolith) + the 3 net-new Fiscal & Legal tables (`fiscal_residencies` · `legal_entities` ·
+  `fiscal_obligations`, §5.20 L3828). Largest group so far. **No-FK:** within-domain refs (`transactions.account_id`
+  CASCADE, `transfer_to`/`investments.account_id` SET NULL) + cross-domain (`legal_entities.project_id`,
+  `fiscal_obligations.linked_task_id`, `owner_id`) → plain TEXT + indexes; §5.8 `REFERENCES` superseded (ADR-016 §3.4);
+  cascade/orphan app-layer (FN-11). **Build-phase intent authored:** `accounts.opening_balance` (FN-3);
+  `transactions.category_bidx` + `idx_transactions_category_bidx` (F7 P-side blind-index column; keyed-PRF derivation
+  service-deferred); liabilities G9 ×4 (`payment_frequency`/`next_payment_date`/`interest_type`/`payoff_date`);
+  `income_streams.next_payment_date`; `jurisdiction_code` on the 5 finance entities (FL-9). **Inline `transactions.tags`
+  RETIRED** → `entity_tags` (FN-10/SP1 — no tags column). **13 FIXED CHECK cols** parity-asserted; **`INTEREST_TYPE` +
+  `FISCAL_OWNER_TYPE` net-new** (`@vida/types` + Zod), `FREQUENCY` reused ×3 (`recurring_frequency`/`payment_frequency`/
+  income `frequency`). **OPEN-vocab no-CHECK:** `currency`, all `jurisdiction_code`, `category_bidx`, and the fiscal
+  `residency_type`/`entity_type`/`obligation_type`/`status` (per-jurisdiction, rule-pack-defined — conventions.md:32).
+  Fiscal nullability = the `structure-data.md` roster `?`-notation (nullable = `fiscal_residencies.end_date`,
+  `legal_entities.project_id`, `fiscal_obligations.linked_task_id`; all else NOT NULL). **OUT** (documented boundary):
+  `import_staging`/`connection_config` (undecided ingestion ADR), `ai_connections` (ADR-015), budgeting/`liability_payments`/
+  FX (design pass), `measurement_kind`/`binding_mode` (Finance is a Purpose feeder, C6), `store`/`rules` (DB-3),
+  `move_money` (handler). `ENTITY_TYPES += account/transaction/asset/investment/liability` (income_stream + fiscal
+  entities excluded — G12/conventions.md:26). **Phase-5 DDL-introspection** (`finance-introspection.test.ts`, 36 cases ×
+  4). `@vida/core` **385 tests** green; `LATEST_VERSION`=20; typecheck 11/11; eslint 0-err. **Zero build-decisions.**
+  Interface reconcile → DB-11 (Finance +opening_balance/category_bidx/jurisdiction_code/G9; new `FiscalResidency`/
+  `LegalEntity`/`FiscalObligation`). **Foundation-readiness:** MOD-finance finds the 6 entities + net worth over the
+  DB-3 `store` tree + fiscal spine — PASS. `[FACT: 020_finance.ts; schema/finance.ts; docs/specs/foundation/db-4-finance-and-fiscal-legal/]`
+- **Remaining DB-4 groups:** #10 … #22 Notifications (13 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#8 ✅ (…Purpose & Goals); 14 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#9 ✅ (…Finance +Fiscal & Legal); 13 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

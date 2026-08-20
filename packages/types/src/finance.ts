@@ -72,6 +72,15 @@ export type IncomeType = (typeof INCOME_TYPE)[number]
 export const WORK_TYPE = ['full_time', 'part_time', 'contract', 'freelance', 'passive'] as const
 export type WorkType = (typeof WORK_TYPE)[number]
 
+// Liability interest structure (G9 restored from v1). FIXED → SQL CHECK.
+export const INTEREST_TYPE = ['fixed', 'variable'] as const
+export type InterestType = (typeof INTEREST_TYPE)[number]
+
+// Fiscal & Legal sub-context — who a residency/obligation belongs to. FIXED → SQL CHECK.
+// (residency_type/obligation_type/status/entity_type are per-jurisdiction OPEN vocabs — no tuple, no CHECK.)
+export const FISCAL_OWNER_TYPE = ['user', 'legal_entity'] as const
+export type FiscalOwnerType = (typeof FISCAL_OWNER_TYPE)[number]
+
 // ---------------------------------------------------------------------------
 // Entities
 // ---------------------------------------------------------------------------

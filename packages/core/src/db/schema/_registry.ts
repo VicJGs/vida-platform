@@ -51,6 +51,15 @@ export const ENTITY_TYPES = [
   'target',
   'dream',
   'purpose_metric_value',
+  // DB-4 group #9 — Finance. account/transaction/asset/investment/liability are valid pages/
+  // entity_links/entity_tags targets (notes-via-pages G12; shared tags retire inline
+  // transactions.tags, FN-10/SP1). income_streams NOT a note target (G12 lists 5, conventions.md:26).
+  // Fiscal entities NOT registered (legal_entity composes Projects; obligation → Tasks — both already registered).
+  'account',
+  'transaction',
+  'asset',
+  'investment',
+  'liability',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

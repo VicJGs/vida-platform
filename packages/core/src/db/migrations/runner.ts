@@ -28,6 +28,7 @@ import { migration016Projects } from './016_projects'
 import { migration017Habits } from './017_habits'
 import { migration018Routines } from './018_routines'
 import { migration019Purposes } from './019_purposes'
+import { migration020Finance } from './020_finance'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -39,7 +40,8 @@ import { migration019Purposes } from './019_purposes'
 // DB-6 authors + registers the first real migration: the sync_queue foundation table.
 // DB-3 (007-011) authors the Stream (i) substrate remainder: Purpose · review engine · store/rules · planned_blocks · templates.
 // DB-4 (012+) authors the Stream (ii) per-domain tables: notes (012) · preferences (013) ·
-// sessions & scheduling (014) · tasks (015) · projects (016) · habits (017) · routines (018) · purpose (019).
+// sessions & scheduling (014) · tasks (015) · projects (016) · habits (017) · routines (018) · purpose (019) ·
+// finance & fiscal-legal (020).
 const ALL_MIGRATIONS: Migration[] = [
   migration001SyncQueue,
   migration002Sessions,
@@ -60,6 +62,7 @@ const ALL_MIGRATIONS: Migration[] = [
   migration017Habits,
   migration018Routines,
   migration019Purposes,
+  migration020Finance,
 ]
 
 // ---------------------------------------------------------------------------

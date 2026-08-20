@@ -5100,3 +5100,36 @@ Next session:
     `docs/features/tasks/structure-data.md` (FULL) → P2 → P3 double-gate → P4 → P5. Mirror the group-#3 build as the pattern.
   - Reload: task "## P0 Output" (22-group table) · flow doc §2 · memory [[stale-source-plus-live-convention-is-fact-not-a-decision]].
   - Carry-forward: X1 → group #2 PD-7 backfill; DB-11 → interface reconcile. **3 of 22 done; 19 remain.** ⚠ CI red (known pnpm infra; local green).
+
+---
+Date: 2026-08-20 — DB-4 group #9 Finance (+Fiscal & Legal): full 5-phase lifecycle DONE
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #9 — the largest DB-4 group (9 tables).
+Accomplished:
+  - **9 tables** (`020_finance.ts`, v20): 6 §5.8 finance entities (`accounts`·`transactions`·`assets`·`liabilities`·`investments`·
+    `income_streams`, authored fresh — they lived in the pre-rebuild monolith) + 3 net-new Fiscal & Legal (`fiscal_residencies`·
+    `legal_entities`·`fiscal_obligations`, §5.20 L3828). `schema/finance.ts` mirror. Spec `docs/specs/foundation/db-4-finance-and-fiscal-legal/`.
+  - Build-phase intent authored: `accounts.opening_balance` (FN-3); `transactions.category_bidx`+idx (F7, P-side blind-index col;
+    PRF derivation service-deferred); liabilities G9 ×4; `income_streams.next_payment_date`; `jurisdiction_code` on the 5 (FL-9).
+    Inline `transactions.tags` RETIRED → entity_tags (FN-10). `store`/`rules` (DB-3) consumed, not re-authored.
+  - Enums: net-new `INTEREST_TYPE`+`FISCAL_OWNER_TYPE` (@vida/types + Zod); `FREQUENCY` reused ×3. **13 FIXED CHECK cols**
+    parity-asserted; OPEN no-CHECK: currency/jurisdiction_code/category_bidx + fiscal residency_type/entity_type/obligation_type/status.
+    `ENTITY_TYPES += account/transaction/asset/investment/liability` (income_stream + fiscal excluded, G12).
+  - Fiscal nullability = the `structure-data.md` roster `?`-notation (nullable = residencies.end_date, legal_entities.project_id,
+    obligations.linked_task_id; all else NOT NULL). Finance-6 nullability/defaults per §5.8 exactly.
+  - Gates: gate-1 SHIP · preflight PASSED · gate-2 REVISE→resolved · post-impl SHIP. **Phase-5 DDL-introspection** (36 cases × 4).
+    `@vida/core` **385 tests** green (+49); typecheck 11/11; eslint 0-err; `LATEST_VERSION`=20. §XXIX current-* promoted (BR-FN9-1…8).
+Drift caught + corrected (Victor, ×3 — all the same class, the Phase-1 No-Decisions Gate leaking):
+  - I surfaced doc-determined facts as "open convention point / advisory / fold / governing principle." The FK convention
+    (`current-spec.md:176-177`), nullability (§5.8 FACT + fiscal roster `?`-notation), and fiscal enum vocab (`conventions.md:32`
+    "per-jurisdiction enums from rule-packs" → OPEN) are ALL doc-fixed. Cleaned the spec to pure `[FACT]` citations, zero folds/notes.
+    Reinforces [[stale-source-plus-live-convention-is-fact-not-a-decision]] + [[module-doc-is-db4-roster-not-adr-broad-list]].
+  - Impl catch: my spec undercounted parity rows (12 → actually 13; `liabilities.payment_frequency` CHECK). Migration was right; fixed the spec.
+Next session:
+  - **FIRST ACTION: open domain group `#10`, Phase 1 intent intake** — FRESH clean-context session (one per group).
+    Grep intake+reruns FIRST → read the module's FULL 5-aspect structure-data (the roster) + ADR-002 § → P2 → P3 double-gate → P4 → P5.
+    Mirror the group-#9 build as the pattern (`schema/finance.ts` + `020_finance.ts` + `finance-introspection.test.ts`).
+  - Reload: task "## P0 Output" (22-group table) for #10's identity · flow doc §2 · **Phase-1 No-Decisions Gate is the recurring trap** —
+    if the docs fix it, it's a `[FACT]`, never a decision/advisory/fold.
+  - Carry-forward: DB-11 → interface reconcile (+= Finance opening_balance/category_bidx/jurisdiction_code/G9 · new FiscalResidency/
+    LegalEntity/FiscalObligation). **9 of 22 done; 13 remain.** ⚠ CI red (known pnpm infra; local green).

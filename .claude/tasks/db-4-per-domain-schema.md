@@ -144,8 +144,11 @@ each running the 5-phase lifecycle at domain granularity.
   `projects`·`milestones`·`deliverables`·`project_documents`) · **#6 Habits** (`7b81702`, v17: `habits`·`habit_completions`·
   `project_habits`) · **#7 Routines** (`10c6c2e`, v18: the orchestration REFRAME `routines`·`routine_step`·`routine_completions`,
   supersedes the §5.6 POC) · **#8 Purpose & Goals** (`55abae9`, v19: the CAPSTONE, 6 tables — §5.7 floor − the 4 DB-3
-  substrate). Each: full §XXVI double-gate + preflight + independent post-impl SHIP; §XXIX promoted. `@vida/core`
-  **240→336 green**; v15→v19; typecheck clean; eslint 0. **8 of 22 done; 14 remain. Next = #9 Finance (+Fiscal & Legal).**
+  substrate) · **#9 Finance (+Fiscal & Legal)** (v20: `020_finance`, 9 tables — 6 §5.8 finance entities [fresh, ex-monolith]
+  + 3 net-new Fiscal & Legal `fiscal_residencies`·`legal_entities`·`fiscal_obligations`; largest group; net-new
+  `INTEREST_TYPE`+`FISCAL_OWNER_TYPE`; inline `tags` retired; fiscal OPEN vocabs + roster-`?` nullability). Each: full
+  §XXVI double-gate + preflight + independent post-impl SHIP; §XXIX promoted. `@vida/core`
+  **240→385 green**; v15→v20; typecheck clean; eslint 0. **9 of 22 done; 13 remain. Next = #10.**
   Key rulings: measurement pair scoped by the module-doc roster (deliverables/targets only); `binding_mode` always
   nullable no-default; `project_habits`→entity_tags v2 shape; Routines authors the reframe; `dreams` absorbs
   `bucket_list_items`; nullable no-FK spine (SR-003). DB-11 backlog grows (interfaces + retirements, all groups).

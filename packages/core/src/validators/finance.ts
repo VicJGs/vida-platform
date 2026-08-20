@@ -7,6 +7,8 @@ import {
   INVESTMENT_TYPE,
   INCOME_TYPE,
   WORK_TYPE,
+  INTEREST_TYPE,
+  FISCAL_OWNER_TYPE,
 } from '@vida/types'
 
 export const AccountTypeSchema = z.enum(ACCOUNT_TYPE)
@@ -16,3 +18,5 @@ export const LiabilityTypeSchema = z.enum(LIABILITY_TYPE)
 export const InvestmentTypeSchema = z.enum(INVESTMENT_TYPE)
 export const IncomeTypeSchema = z.enum(INCOME_TYPE)
 export const WorkTypeSchema = z.enum(WORK_TYPE)
+export const InterestTypeSchema = z.enum(INTEREST_TYPE)
+export const FiscalOwnerTypeSchema = z.enum(FISCAL_OWNER_TYPE)

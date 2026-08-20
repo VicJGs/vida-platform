@@ -44,3 +44,6 @@ export * from './routines'
 // DB-4 domain (Stream ii): Purpose & Goals (purposes · targets · purpose_metrics · purpose_metric_values ·
 // target_reviews · dreams) — the CAPSTONE. (DB-3 substrate values/contributions/purpose_reviews/plan_steps → foundation/purpose.ts.)
 export * from './purposes'
+// DB-4 domain (Stream ii): Finance (accounts · transactions · assets · liabilities · investments · income_streams)
+// + Fiscal & Legal sub-context (fiscal_residencies · legal_entities · fiscal_obligations). (DB-3 substrate store/rules → foundation/economy.ts.)
+export * from './finance'

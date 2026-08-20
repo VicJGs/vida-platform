@@ -400,3 +400,37 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   enum-parity, +24 DDL-introspection × 6); `LATEST_VERSION`=19; typecheck clean; eslint 0-err. Gates: gate-1 SHIP ·
   preflight PASSED (6 folds) · gate-2 SHIP · post-impl SHIP. Foundation-readiness: MOD-purpose finds the spine + Dreams
   — PASS. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #9 — Finance (+Fiscal & Legal) (IMPLEMENTED 2026-08-20 · `020_finance.ts` + `schema/finance.ts`)
+- **[FACT] BR-FN9-1 — 9 tables: 6 finance entities (fresh) + 3 net-new Fiscal & Legal.** Authors the §5.8 `accounts`·
+  `transactions`·`assets`·`liabilities`·`investments`·`income_streams` (absent from the new `schema/` — they lived in the
+  pre-rebuild monolith) + `fiscal_residencies`·`legal_entities`·`fiscal_obligations` (§5.20 L3828). The DB-3 `store`/`rules`
+  (E6, `foundation/economy.ts`) are CONSUMED, not re-authored. `[FACT: 020_finance.ts; foundation/economy.ts]`
+- **[FACT] BR-FN9-2 — no FK (within + cross-domain).** `transactions.account_id`/`transfer_to_account_id`,
+  `investments.account_id` (§5.8 CASCADE/SET NULL) + `legal_entities.project_id`, `fiscal_obligations.linked_task_id`,
+  `owner_id` → plain TEXT + indexes; §5.8 `REFERENCES` superseded (ADR-016 §3.4); cascade/orphan is app-layer (FN-11).
+  `[FACT: 020_finance.ts; current-spec.md:176-177]`
+- **[FACT] BR-FN9-3 — build-phase intent authored, not deferred.** `accounts.opening_balance` (FN-3 ledger-derived);
+  `transactions.category_bidx` + `idx_transactions_category_bidx` (F7 — a P-side equality blind-index column; the
+  keyed-BLAKE2b derivation is service-layer, deferred); liabilities G9 ×4 (`payment_frequency`/`next_payment_date`/
+  `interest_type`/`payoff_date`); `income_streams.next_payment_date`; `jurisdiction_code` on the 5 finance entities
+  (FL-9). All additive/nullable. `[FACT: 020_finance.ts; §5.20 L3814/3828; FN-3/G9/FL-9]`
+- **[FACT] BR-FN9-4 — inline `transactions.tags` RETIRED → `entity_tags`.** No `tags` column; Finance is a tag consumer
+  (`entity_type='transaction'` + account/asset/investment/liability). `[FACT: 020_finance.ts; FN-10/SP1]`
+- **[FACT] BR-FN9-5 — FIXED vs OPEN enums.** 13 FIXED CHECK cols parity-asserted; `INTEREST_TYPE`+`FISCAL_OWNER_TYPE`
+  net-new (`@vida/types` + Zod), `FREQUENCY` reused ×3 (`recurring_frequency`/`payment_frequency`/income `frequency`).
+  OPEN no-CHECK: `currency`, all `jurisdiction_code`, `category_bidx`, and the fiscal `residency_type`/`entity_type`/
+  `obligation_type`/`status` (per-jurisdiction, rule-pack-defined — conventions.md:32; [[open-vocab-columns-take-no-sql-check]]).
+  `[FACT: 020_finance.ts; enum-parity.test.ts]`
+- **[FACT] BR-FN9-6 — fiscal nullability = the roster `?`-notation** (the sole source for net-new tables, no ADR-002 SQL).
+  Nullable = `fiscal_residencies.end_date`, `legal_entities.project_id`, `fiscal_obligations.linked_task_id`; every other
+  fiscal column NOT NULL. Finance-6 nullability/defaults per §5.8 exactly. `[FACT: fiscal-legal/structure-data.md:12-22; §5.8]`
+- **[FACT] BR-FN9-7 — no M\*; scope boundary.** No `measurement_kind`/`binding_mode` on any finance table (Finance is a
+  Purpose feeder, not a pursuable — C6). OUT (documented boundary): `import_staging`/`connection_config` (undecided
+  ingestion ADR), `ai_connections` (ADR-015), budgeting/`liability_payments`/FX (design pass), `move_money` (handler).
+  `ENTITY_TYPES += account/transaction/asset/investment/liability` (income_stream + fiscal entities excluded, G12).
+  `[FACT: _registry.ts; docs/specs/foundation/db-4-finance-and-fiscal-legal/]`
+- **[FACT] BR-FN9-8 — parity + introspection + runner green.** `@vida/core` 385 tests (+13 enum-parity rows, +36
+  DDL-introspection × 9); `LATEST_VERSION`=20; typecheck 11/11; eslint 0-err. Gates: gate-1 SHIP · preflight PASSED ·
+  gate-2 REVISE→resolved (fiscal nullability = roster, not FL-11 inference) · post-impl SHIP. Foundation-readiness:
+  MOD-finance finds the 6 entities + net worth over the DB-3 `store` tree + the fiscal spine — PASS. `[FACT: vitest run]`

@@ -61,6 +61,15 @@ import {
   METRIC_VALUE_SOURCE,
   BUCKET_LIST_CATEGORY,
   BUCKET_LIST_STATUS,
+  ACCOUNT_TYPE,
+  TRANSACTION_TYPE,
+  ASSET_TYPE,
+  LIABILITY_TYPE,
+  INVESTMENT_TYPE,
+  INCOME_TYPE,
+  WORK_TYPE,
+  INTEREST_TYPE,
+  FISCAL_OWNER_TYPE,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -81,6 +90,7 @@ import { migration016Projects } from '../db/migrations/016_projects'
 import { migration017Habits } from '../db/migrations/017_habits'
 import { migration018Routines } from '../db/migrations/018_routines'
 import { migration019Purposes } from '../db/migrations/019_purposes'
+import { migration020Finance } from '../db/migrations/020_finance'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -235,6 +245,23 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'dreams', column: 'category', tuple: BUCKET_LIST_CATEGORY },
   { table: 'dreams', column: 'status', tuple: BUCKET_LIST_STATUS },
   { table: 'dreams', column: 'priority', tuple: PRIORITY },
+  // DB-4 group #9 — Finance (+Fiscal & Legal). 13 FIXED TEXT-CHECK cols. OPEN vocabs
+  // (currency, jurisdiction_code, category_bidx, residency_type, entity_type, obligation_type,
+  // obligation status) have NO CHECK → deliberately not rows. recurring_frequency + payment_frequency
+  // + income frequency all reuse FREQUENCY.
+  { table: 'accounts', column: 'account_type', tuple: ACCOUNT_TYPE },
+  { table: 'transactions', column: 'transaction_type', tuple: TRANSACTION_TYPE },
+  { table: 'transactions', column: 'recurring_frequency', tuple: FREQUENCY },
+  { table: 'assets', column: 'asset_type', tuple: ASSET_TYPE },
+  { table: 'liabilities', column: 'liability_type', tuple: LIABILITY_TYPE },
+  { table: 'liabilities', column: 'interest_type', tuple: INTEREST_TYPE },
+  { table: 'liabilities', column: 'payment_frequency', tuple: FREQUENCY },
+  { table: 'investments', column: 'investment_type', tuple: INVESTMENT_TYPE },
+  { table: 'income_streams', column: 'income_type', tuple: INCOME_TYPE },
+  { table: 'income_streams', column: 'work_type', tuple: WORK_TYPE },
+  { table: 'income_streams', column: 'frequency', tuple: FREQUENCY },
+  { table: 'fiscal_residencies', column: 'owner_type', tuple: FISCAL_OWNER_TYPE },
+  { table: 'fiscal_obligations', column: 'owner_type', tuple: FISCAL_OWNER_TYPE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -259,6 +286,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration017Habits.up(driver)
   await migration018Routines.up(driver)
   await migration019Purposes.up(driver)
+  await migration020Finance.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined
