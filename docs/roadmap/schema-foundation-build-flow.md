@@ -77,9 +77,13 @@ unwritten, so nothing may be left to re-decide later). This drift recurred THREE
 and Victor corrected it every time — it is the single failure mode of this flow. `[[stale-source-plus-live-convention-is-fact-not-a-decision]]`
 
 **The tell (a mechanical string-check, not a judgment call).** If the P1/P3 spec contains any of — *decision · open
-point · open question · shape point · resolve at the gate · lean · TBD · choose · "either…or"* — that IS the drift
-signal. STOP and re-ground each occurrence in the docs before proceeding. A clean intake contains none of these words in
-its own analysis (quoting a doc that uses them is fine).
+point · open question · shape point · resolve at the gate · lean · TBD · choose · "either…or" · advisory · fold · note ·
+governing principle · transparency note · "this is the moment to say so"* — that IS the drift signal. STOP and re-ground
+each occurrence in the docs before proceeding. A clean intake contains none of these words in its own analysis (quoting a
+doc that uses them is fine). *(The `advisory · fold · note · governing principle` set was added after group #9 Finance,
+where the SAME No-Decisions drift leaked through the gate machinery — a critic's "minor advisory" and a preflight "fold" —
+instead of through the word "decision"; a doc-fixed FACT re-surfaced by a critic or a gate is still just the FACT, cite it
+or drop it. [[stale-source-plus-live-convention-is-fact-not-a-decision]] · [[verify-a-critiques-escalation-and-defer-target-before-relaying]])*
 
 **The mandatory No-Guessing steps (every group, BEFORE writing that any "gap" exists):**
 1. **Read ALL five aspects** — `identity · structure-data · business-rules · contract · conventions` — plus the owning
