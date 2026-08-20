@@ -10,6 +10,8 @@ import {
   SCHEDULED_RESOURCE_TYPE,
   REVIEW_CURVE_KIND,
   METHOD_BINDING_TARGET_TYPE,
+  KNOWLEDGE_CONTAINER_TYPE,
+  CARD_TYPE,
 } from '@vida/types'
 
 export const StudyTopicStatusSchema = z.enum(STUDY_TOPIC_STATUS)
@@ -23,3 +25,6 @@ export const ScheduledResourceTypeSchema = z.enum(SCHEDULED_RESOURCE_TYPE)
 // DB-3: generic review engine (ADR-005)
 export const ReviewCurveKindSchema = z.enum(REVIEW_CURVE_KIND)
 export const MethodBindingTargetTypeSchema = z.enum(METHOD_BINDING_TARGET_TYPE)
+// DB-4 group #10: Knowledge Universe reframe
+export const KnowledgeContainerTypeSchema = z.enum(KNOWLEDGE_CONTAINER_TYPE)
+export const CardTypeSchema = z.enum(CARD_TYPE)

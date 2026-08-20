@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits + #7 Routines + #8 Purpose & Goals + #9 Finance (+Fiscal & Legal) authored · 2026-08-20 · LIF-66)
-The Stream (ii) per-domain modules authored so far (9 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 020_finance.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes + #2 Preferences + #3 Sessions & Scheduling + #4 Tasks + #5 Projects + #6 Habits + #7 Routines + #8 Purpose & Goals + #9 Finance (+Fiscal & Legal) + Skills + Knowledge (+flashcards) + Books authored · 2026-08-20 · LIF-66)
+The Stream (ii) per-domain modules authored so far (12 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 023_books.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -196,6 +196,9 @@ The Stream (ii) per-domain modules authored so far (9 of 22). `[FACT: schema/{no
 | `018_routines.ts` | `schema/routines.ts` | `routines` · `routine_step` · `routine_completions` (the REFRAME — supersedes the §5.6 POC) |
 | `019_purposes.ts` | `schema/purposes.ts` | `purposes` · `targets` · `purpose_metrics` · `purpose_metric_values` · `target_reviews` · `dreams` (§5.7; DB-3 substrate excluded) |
 | `020_finance.ts` | `schema/finance.ts` | `accounts` · `transactions` · `assets` · `liabilities` · `investments` · `income_streams` (§5.8) + `fiscal_residencies` · `legal_entities` · `fiscal_obligations` (§5.20 L3828) |
+| `021_skills.ts` | `schema/skills.ts` | `skills` · `skill_levels` · `skill_activities` · `skill_actions` (Sessions `practice` sub-type) · `skill_dev_logs` · `skill_dependencies` · `skill_definitions` (§5.9 reshaped roster) |
+| `022_knowledge.ts` | `schema/knowledge.ts` | `knowledge_objects` · `object_kinds` · `knowledge_containers` · `references` · `compound_sets` · `knowledge_lab_entries` · `flashcards` (§5.10 reshaped roster; `references` = quoted SQL keyword) |
+| `023_books.ts` | `schema/books.ts` | `books` · `book_chapters` · `book_assets` · `book_bookmarks` · `book_highlights` · `book_quotes` · `reading_sessions` (Sessions `reading` sub-type) · `reading_plans` · `reading_plan_books` · `book_subjects` (§Books reshaped roster) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -347,10 +350,76 @@ The Stream (ii) per-domain modules authored so far (9 of 22). `[FACT: schema/{no
   Interface reconcile → DB-11 (Finance +opening_balance/category_bidx/jurisdiction_code/G9; new `FiscalResidency`/
   `LegalEntity`/`FiscalObligation`). **Foundation-readiness:** MOD-finance finds the 6 entities + net worth over the
   DB-3 `store` tree + fiscal spine — PASS. `[FACT: 020_finance.ts; schema/finance.ts; docs/specs/foundation/db-4-finance-and-fiscal-legal/]`
-- **Remaining DB-4 groups:** #10 … #22 Notifications (13 more domain groups, per the task P0 slice).
+- **Group Skills (2026-08-20):** **7 tables** authored fresh (only `db/_legacy` had the old 2-table floor) — the
+  reshaped `skills` capability + `skill_levels` · `skill_activities` · `skill_actions` · `skill_dev_logs` ·
+  `skill_dependencies` · `skill_definitions`. The `structure-data.md` roster is authoritative; **ADR-002 §5.9 DDL is
+  STALE** (`mastery_level NOT NULL DEFAULT 'novice'`, `practice_hours`, `proficiency_test_score`, `skill_resources`
+  CHECK) — superseded. **Mastery DERIVED (BR-SK-1):** `current_level`/`progress` nullable derived slots +
+  `mastery_override` nullable (M3); the §5.9 default anti-signal resolved out. **`skill_actions` = the Sessions
+  `practice` sub-type (BR-SK-2):** own `id` PK + `session_id` UNIQUE (1:1, no FK; the group-#3 extension pattern);
+  `SESSION_SUB_TYPE` already carries `'practice'`. **No FK anywhere** (self-ref + all parent/definition refs plain
+  TEXT, BR-SK-3). **No stored `measurement_kind`** — Composer `measurement_config` is `[E]` JSON as plain `text()`
+  (opaque blob, P-2); the pursuable's M1/M2 is Purpose-owned (BR-SK-4/C-M1). `components_tracked` = plain `json<T>`.
+  **14 FIXED CHECK cols / 11 tuples** parity-asserted; **7 net-new enums** (`SKILL_LEVEL_STATUS`/`SKILL_ACTIVITY_TYPE`/
+  `SKILL_FILL_SOURCE`/`SKILL_DEPENDENCY_TYPE`/`SKILL_DEPENDENCY_SCOPE`/`SKILL_DEFINITION_SOURCE`/`SKILL_SETUP_MODE` →
+  `@vida/types/skill.ts` + Zod), reused `LIFE_DOMAIN`/`PRIORITY`/`FREQUENCY`/`MASTERY_LEVEL`. **OPEN no-CHECK:**
+  `skills.status`/`ladder_template`, `skill_activities.difficulty`, `skill_levels.duration_target`,
+  `skill_actions.best_time`, `skill_definitions.locale_variant`; rating INTs plain. **RETIRE `skill_resources`** →
+  `entity_links` (AR-6 substrate, not authored). **`ENTITY_TYPES += skill/skill_level/skill_activity/skill_dev_log/
+  skill_dependency/skill_definition`** — `skill_action` EXCLUDED (session sub-type → via base `session`, ADR-004 §3.1);
+  the roster's stale "`skill` already reserved" corrected (skill was absent). **OUT** (documented boundary): the X*/AI*
+  ingestion layer, `external_in_ok`/`external_out_ok` (ADR-010 grant fields), `ai_connections` (ADR-015),
+  `import_staging` (ADR-014), `grant_currency` (Gamification), Purpose-target measurability. **Phase-5 introspection**
+  (`skills-introspection.test.ts`, 28 cases × 4). `@vida/core` **426 tests** green; `LATEST_VERSION`=21; typecheck
+  11/11; eslint 0-err. **Zero build-decisions.** Interface reconcile → DB-11 (new `Skill`/`SkillLevel`/`SkillActivity`/
+  `SkillAction`/`SkillDevLog`/`SkillDependency`/`SkillDefinition`; the stale learning.ts `Skill` retired).
+  `[FACT: 021_skills.ts; schema/skills.ts; docs/specs/foundation/db-4-skills/]`
+- **Group #10 Knowledge (+flashcards) (2026-08-20):** **7 tables** — the largest, most-reframed group (the "Knowledge
+  Universe"). `knowledge_objects` (generalizes `study_topics`; `parent_object_id` self-ref IS the Subject›Unit›Topic +
+  user-kinds hierarchy, BR-KN-1) · `object_kinds` (user-extensible kind registry) · `knowledge_containers` (Module⊃Area⊃
+  Subject) · `references` (first-class, replaces `resource_urls`; quoted SQL keyword) · `compound_sets` · `knowledge_lab_entries`
+  · `flashcards` (content-only, ADR-005). **ADR-002 §5.10 DDL STALE** — `study_topics`/`topic_reviews`/`knowledge_notes`/
+  `flashcard_decks`/`flashcard_reviews` superseded. **Mastery DERIVED** (`mastery_level` nullable, §5.10 `NOT NULL DEFAULT 0`
+  resolved out, BR-KN-2); **SM-2 cols RETIRED** → the DB-3 review engine (`review_curves`/`method_bindings`/`review_events`,
+  CONSUMED not re-authored, BR-KN-3); cross-module via `entity_links`, tags via `entity_tags`, notes via `pages` (BR-KN-4).
+  **No-FK.** `knowledge_objects` carries the Knowledge-intrinsic `study_topics` survivors; **Education-plan/Books-context cols
+  EXCLUDED** (`due_date`/`estimated_study`/`study_time`/`class_date`/`reading_pages` — KN-2 "Education plans, Knowledge holds",
+  BR-KN-6). `flashcards` content-only (no `deck_id`/SM-2/`is_mastered`, BR-KN-7). `references.url` = **`[E]`** (ZK: replaces
+  `resource_urls[E]`, KN-1). **4 FIXED CHECK cols = 4 tuples**: reused `STUDY_TOPIC_STATUS`/`TOPIC_DIFFICULTY`, net-new
+  `KNOWLEDGE_CONTAINER_TYPE`/`CARD_TYPE`. OPEN no-CHECK: `object_kinds.name`/`learning_realm` (user-extensible KN-4),
+  `references.type`, `compound_sets.consumer_module`. `ENTITY_TYPES += knowledge_object/knowledge_container/reference/flashcard`
+  (object_kind/compound_set/knowledge_lab_entry excluded — non-targets). **OUT** (documented boundary): `study_methods` (ADR-008
+  registry, not a table), `fts_knowledge` (DB-8), knowledge notes (`pages`), Education rollup/syllabus-as-calendar (KN-10), the
+  compound-set AI-assist + OS automation surface ("not designed anywhere", business-rules L78-80). `compound_sets`/
+  `knowledge_lab_entries` = base tables only. **Phase-5 introspection** (`knowledge-introspection.test.ts`, 28 cases × 4).
+  `@vida/core` green; `LATEST_VERSION`=22; typecheck 11/11; eslint 0-err. **Zero build-decisions** (gate-1 REVISE→resolved:
+  `references.url` [E], the sole ZK-regression catch). Interface reconcile → DB-11. `[FACT: 022_knowledge.ts; schema/knowledge.ts; docs/specs/foundation/db-4-knowledge/]`
+- **Group #11 Books (2026-08-20):** **10 tables** — the 2nd-largest reframe (the reading Universe). `books`/`book_chapters`
+  reshaped from the 2-table FACT floor + 8 net-new (`book_assets`, 3 annotations [`book_bookmarks`/`book_highlights`/
+  `book_quotes`], `reading_sessions`, `reading_plans`, `reading_plan_books`, `book_subjects`). **ADR-002 §Books STALE.**
+  **book = the WORK**, copies = `book_assets` (0..n, per-format `native_position`, BK-2). Unified progress DERIVED
+  (`books.progress` nullable override, §Books `NOT NULL DEFAULT 0` resolved out, BR-BK-2); `current_page`→asset,
+  `format`→asset, `genre`/`tags`→`entity_tags`. **`reading_sessions` = a `sessions` `reading` sub-type 1:1 extension**
+  (own id PK + `session_id` UNIQUE, no FK; BK-10, S1 — `reading` ≠ `study`). **3 annotation natures** (BK-6: bookmarks+quotes
+  take notes/links, highlights deliberately light). No-FK; the ONE doc-fixed UNIQUE = `book_chapters(book_id, chapter_number)`.
+  **`deleted_at` on 8 of 10** — `book_chapters` (FACT floor omits + "no soft delete" + child) and `reading_sessions`
+  (session extension — base `sessions` owns lifecycle) carry NONE (F1). **No `measurement_kind`/`binding_mode` on
+  `reading_plans`** — the plan goal is a Purpose target (C-M1, the Skills pattern). **4 FIXED CHECK = 4 tuples**: reused
+  `BOOK_STATUS` + net-new `BOOK_ASSET_FORMAT`/`READING_PLAN_ARRANGEMENT`/`READING_PLAN_GOAL_TYPE`; `books.rating` numeric
+  BETWEEN. `BOOK_FORMAT` now stale → DB-11. `ENTITY_TYPES += book/book_chapter/book_bookmark/book_quote` (book_highlight
+  excluded BK-6, reading_session excluded sub-type). **OUT**: cross-format mapping (BK-4 design pass), conflict state (BK-8
+  Preferences+derived), ISBN/OCR/TTS X*/AI* service, Education pacing, quote-embed block, photos (note_attachments). **Phase-5
+  introspection** (`books-introspection.test.ts`, 40 cases × 4). `@vida/core` **503 tests** green; `LATEST_VERSION`=23;
+  typecheck 11/11; eslint 0. **Zero build-decisions** (gate-1 REVISE→resolved: the `deleted_at`-on-extension audit — see below).
+  Interface reconcile → DB-11. `[FACT: 023_books.ts; schema/books.ts; docs/specs/foundation/db-4-books/]`
+- **⚠ Cross-group fix (2026-08-20 `deleted_at` audit):** `skill_actions` (Skills group) wrongly carried `deleted_at` — a
+  session sub-type extension must not (base `sessions` owns lifecycle; the `study_sessions`/`focus_sessions` precedent).
+  REMOVED from `skills.ts` + `021_skills.ts`. Audit of all authored groups found this the sole instance; no table violates
+  an explicit "no soft delete" doc signal. `[FACT: skills.ts skillActions; 021_skills.ts]`
+- **Remaining DB-4 groups:** #12 Learning/Education … #22 Notifications (10 more domain groups, per the task P0 slice).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#9 ✅ (…Finance +Fiscal & Legal); 13 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#9 + Skills + Knowledge + Books ✅ (12 of 22); 10 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

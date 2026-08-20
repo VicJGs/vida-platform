@@ -5133,3 +5133,134 @@ Next session:
     if the docs fix it, it's a `[FACT]`, never a decision/advisory/fold.
   - Carry-forward: DB-11 → interface reconcile (+= Finance opening_balance/category_bidx/jurisdiction_code/G9 · new FiscalResidency/
     LegalEntity/FiscalObligation). **9 of 22 done; 13 remain.** ⚠ CI red (known pnpm infra; local green).
+
+---
+Date: 2026-08-20 — DB-4 group Skills: full 5-phase lifecycle DONE
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group Skills — the 10th DB-4 Stream (ii) module. Victor directive this session: FOLLOW P0 TABLE ORDER from now on (starting Skills = table #9); Finance had been built out-of-order as table #15.
+Accomplished:
+  - **7 tables** (`021_skills.ts`, v21): `skills` (reshaped) · `skill_levels` · `skill_activities` · `skill_actions`
+    (Sessions `practice` sub-type 1:1 extension) · `skill_dev_logs` · `skill_dependencies` · `skill_definitions`
+    (`schema/skills.ts`). Spec `docs/specs/foundation/db-4-skills/_index.md`. Only `db/_legacy` had the old 2-table floor.
+  - **ADR-002 §5.9 DDL is STALE** (mastery_level NOT NULL DEFAULT 'novice', practice_hours, proficiency_test_score,
+    skill_resources CHECK) — superseded by the `structure-data.md` roster ([[module-doc-is-db4-roster-not-adr-broad-list]]).
+    Mastery resolved DERIVED (BR-SK-1: current_level/progress nullable slots + mastery_override nullable, no default).
+  - `skill_actions` = the confirmed group-#3 1:1 session-extension pattern (own id PK + session_id UNIQUE, no FK, BR-SK-2);
+    `SESSION_SUB_TYPE` already carries 'practice'. No-FK anywhere. No stored measurement_kind (`measurement_config` [E]
+    JSON stored as plain text() per the Notes summary_config precedent, P-2); pursuable M1/M2 is Purpose-owned (C-M1).
+  - Enums: **7 net-new** (`SKILL_LEVEL_STATUS`/`SKILL_ACTIVITY_TYPE`/`SKILL_FILL_SOURCE`/`SKILL_DEPENDENCY_TYPE`/
+    `SKILL_DEPENDENCY_SCOPE`/`SKILL_DEFINITION_SOURCE`/`SKILL_SETUP_MODE` → new `@vida/types/skill.ts` + new
+    `validators/skill.ts`); reused LIFE_DOMAIN/PRIORITY/FREQUENCY/MASTERY_LEVEL. **14 FIXED CHECK cols / 11 tuples**
+    parity-asserted. OPEN no-CHECK (un-enumerated): skills.status/ladder_template, skill_activities.difficulty,
+    skill_levels.duration_target, skill_actions.best_time, skill_definitions.locale_variant; rating INTs plain.
+  - `ENTITY_TYPES += skill/skill_level/skill_activity/skill_dev_log/skill_dependency/skill_definition` — **skill_action
+    EXCLUDED** (session sub-type addressed via base `session`, ADR-004 §3.1, group-#3 precedent). Corrected the roster's
+    STALE "skill already reserved" claim — `skill` was genuinely absent from the live `_registry.ts`
+    ([[cite-tokens-from-emitted-output-not-source-files]]). RETIRE `skill_resources` → `entity_links` (not authored).
+  - Gates: gate-1 SHIP (independent critic, column-by-column) · preflight PASSED (6 folds — the material one: parity is
+    14 CHECK columns / 11 tuples, NOT "11 columns"; the Finance 12→13 lesson) · gate-2 SHIP (critic reproduced 14/11) ·
+    post-impl SHIP (critic reproduced 14/11 + mirror↔migration exact for all 7 tables). **Zero build-decisions.**
+  - Green: `@vida/core` **426 tests** (+14 enum-parity rows, +28 DDL-introspection × 7); `LATEST_VERSION`=21; typecheck
+    11/11; eslint 0. Only failure = pre-existing vault 1MB timeout FLAKE (passes standalone 15.9s; tips past 20s under
+    full-suite load — documented in-test, unrelated to schema). §XXIX current-{spec,business-rules} promoted (BR-SK-1…7).
+Notable this session (no Victor drift-catches — clean run):
+  - Followed the No-Decisions discipline from the start: surfaced every under-enumerated vocab (status/difficulty/
+    duration_target/best_time) as OPEN no-CHECK (No-Guessing) + disclosed for the critic, rather than inventing CHECKs.
+  - The gate-2 critic noted `business-rules.md:74` sketches a `planning/active/honing/completed` narrative for
+    skills.status, but the roster leaves it un-enumerated → OPEN is the deliberate roster-authority call (consistent
+    with the SKILL_LEVEL_STATUS "locked"-synonym drop). On record, not a defect.
+Next session:
+  - **FIRST ACTION: open P0 table group `#10 Knowledge (+flashcards)`, Phase 1 intent intake** — FRESH clean-context.
+    Grep intake+reruns FIRST → read the FULL 5-aspect `docs/features/knowledge/` (+`knowledge/flashcards/`) roster +
+    ADR-002 § → P2 → P3 double-gate → P4 → P5. Mirror the Skills build (`schema/skills.ts` + `021_skills.ts` +
+    `skills-introspection.test.ts`). ⚠ flashcard_* RETIRED → the generic review engine (ADR-005): the DB-3
+    `review_curves`/`method_bindings`/`review_events` substrate is ALREADY authored → Knowledge CONSUMES it, authors none.
+  - Reload: task "## P0 Output" table for #10's roster · flow doc §2 · **Phase-1 No-Decisions Gate is the recurring trap.**
+  - Carry-forward: DB-11 interface reconcile += new Skill/SkillLevel/SkillActivity/SkillAction/SkillDevLog/
+    SkillDependency/SkillDefinition (retire the stale learning.ts `Skill`). **10 of 22 done; 12 remain.** ⚠ CI red
+    (known pnpm infra; local green). Branch `db-4-per-domain-schema` NOT committed/pushed.
+
+---
+Date: 2026-08-20 — DB-4 group #10 Knowledge (+flashcards): full 5-phase lifecycle DONE
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #10 — the largest, most-reframed DB-4 group (the "Knowledge Universe"). Following P0 table order.
+Accomplished:
+  - **7 tables** (`022_knowledge.ts`, v22): `knowledge_objects` · `object_kinds` · `knowledge_containers` ·
+    `references` · `compound_sets` · `knowledge_lab_entries` · `flashcards` (`schema/knowledge.ts`). Spec
+    `docs/specs/foundation/db-4-knowledge/_index.md`. Net-new in the rebuild (only `_legacy` had the v2 floor).
+  - **ADR-002 §5.10 is STALE** — `study_topics`→`knowledge_objects` (topic-kind row of a general object; `parent_object_id`
+    self-ref = the Subject›Unit›Topic + user-kinds hierarchy, BR-KN-1); `topic_reviews`→`review_events` (DB-3);
+    `knowledge_notes`→`pages` (KN-5); `flashcard_decks`/`flashcard_reviews` RETIRED (ADR-005); `resource_type` CHECK→
+    `entity_links` (KN-6); `resource_urls`→`references` (K6). Mastery DERIVED (nullable, §5.10 NOT NULL DEFAULT 0 resolved
+    out, BR-KN-2). SM-2 cols RETIRED → the DB-3 review engine (`review_curves`/`method_bindings`/`review_events` on disk,
+    CONSUMED not re-authored, BR-KN-3). No-FK everywhere.
+  - The heavy call: `knowledge_objects` = the Knowledge-intrinsic `study_topics` survivors (title/description/key_concepts/
+    status/difficulty/is_exam_topic/sort_order) + reframe (kind_id/parent_object_id/derived mastery_level); EXCLUDED the
+    Education-plan/Books-context cols (due_date/estimated_study/study_time/class_date/reading_pages) per KN-2 "Education plans,
+    Knowledge holds" (BR-KN-6). `flashcards` content-only (BR-KN-7: no deck_id/SM-2/is_mastered). `references.url`=[E] (ZK).
+  - Enums: **2 net-new** (`KNOWLEDGE_CONTAINER_TYPE`=[module,area,subject], `CARD_TYPE`=[basic,reversed,cloze,image_occlusion]
+    → appended to existing `knowledge.ts` + `validators/knowledge.ts`); reused `STUDY_TOPIC_STATUS`/`TOPIC_DIFFICULTY`.
+    **4 FIXED CHECK cols = 4 tuples** (all single-use). OPEN no-CHECK: `object_kinds.name`/`learning_realm` (user-extensible
+    KN-4), `references.type`, `compound_sets.consumer_module`.
+  - `ENTITY_TYPES += knowledge_object/knowledge_container/reference/flashcard` (4; object_kind/compound_set/knowledge_lab_entry
+    excluded = non-targets; flashcard mandated by SP2). `references` is a SQL keyword → quoted in the DDL + the introspection
+    PRAGMA (`PRAGMA table_info("references")`). `compound_sets`/`knowledge_lab_entries` = base tables only (AI-assist +
+    OS-automation surface "not documented anywhere / not designed", business-rules L78-80 → deferred service, the Skills X*/AI* precedent).
+  - Gates: gate-1 REVISE→resolved (F1: `references.url` must be [E] — a real ZK regression; the content it replaces
+    [`resource_urls`] is [E] per KN-1) · preflight PASSED (8 folds) · gate-2 SHIP (4=4 parity reproduced) · post-impl SHIP
+    (reconciled `data_refs` → plain per the approved spec — I'd over-marked it [E]; §XXVIII no-silent-drift). **Zero build-decisions.**
+  - Green: `@vida/core` full suite 23/23 files (incl. the vault flake this run); knowledge-introspection 28 (7×4);
+    enum-parity 98 (+4 rows); runner 6 (rebuilds to `LATEST_VERSION`=22); typecheck 11/11; eslint 0. §XXIX current-* promoted (BR-KN-1…7).
+Notable:
+  - The `references` SQL-keyword trap — caught + handled at author time (quoted in the migration DDL, index, and the PRAGMA);
+    proven safe end-to-end by the full-registry `migrate()` in the runner test.
+  - Correctly scoped a HUGE reframe: authored the resolved core (7 tables) + deferred the explicitly-undesigned surfaces
+    (AI-assist, OS automations, Education rollup, FTS5) — the [[check-intake-and-reruns-before-triaging-a-design-pass-undone]]
+    discipline applied to a genuinely design-pass-bounded group, without over-building.
+Next session:
+  - **FIRST ACTION: open P0 table group `#11 Books`, Phase 1 intent intake** — FRESH clean-context. Grep intake+reruns FIRST:
+    the rerun `part-1.2-reruns/books.md` is a **MIXED case** — 2 live-FACT R6 reframes (`books.tags`→entity_tags,
+    `books.progress`→nullable override) + an **S1 reframe** (`reading_sessions` = a `sessions` `reading` sub-type 1:1 extension,
+    the same pattern as `skill_actions`/group #3's `study_sessions`/`focus_sessions`) + X*/AI* layering (ISBN/OCR). Read FULL
+    5-aspect `docs/features/books/` + ADR-002 §5.10 Books DDL (`books`/`book_chapters`). Mirror the Knowledge/Skills build.
+  - Reload: task "## P0 Output" table for #11's roster · flow doc §2 · Phase-1 No-Decisions Gate is the recurring trap.
+  - Carry-forward: DB-11 interface reconcile += new Knowledge (KnowledgeObject/ObjectKind/KnowledgeContainer/Reference/
+    CompoundSet/KnowledgeLabEntry) + Flashcard (content-only) interfaces (retire stale learning.ts study_topic/flashcard).
+    **11 of 22 done; 11 remain.** ⚠ CI red (known pnpm infra; local green). Branch `db-4-per-domain-schema` NOT committed/pushed.
+
+---
+Date: 2026-08-20 — DB-4 group #11 Books: full 5-phase lifecycle DONE (+ a cross-group deleted_at audit fix)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #11 — the 2nd-largest DB-4 reframe (the reading Universe). Following P0 table order.
+Accomplished:
+  - **10 tables** (`023_books.ts`, v23): `books`·`book_chapters` (reshaped from the 2-table FACT floor) + 8 net-new
+    (`book_assets` · `book_bookmarks`/`book_highlights`/`book_quotes` · `reading_sessions` [S1 session extension] ·
+    `reading_plans` · `reading_plan_books` · `book_subjects`). `schema/books.ts`. §Books STALE floor superseded.
+  - book = the WORK, copies = `book_assets` (BK-2); progress DERIVED (`books.progress` nullable, §Books NOT NULL DEFAULT 0
+    resolved out, BR-BK-2); `format`→assets, `current_page`→asset, `genre`/`tags`→entity_tags. `reading_sessions` = a
+    `sessions` `reading` sub-type 1:1 extension (BK-10/S1; own id PK + session_id UNIQUE, no FK). 3 annotation natures (BK-6).
+  - No-FK; ONE doc-fixed UNIQUE = `book_chapters(book_id, chapter_number)`. **`deleted_at` on 8 of 10** — `book_chapters`
+    (FACT floor omits + "no soft delete" + child) and `reading_sessions` (session extension) omit it (F1). **No measurement
+    axes on `reading_plans`** (C-M1: Purpose-owned — the Skills pattern). 3 net-new enums + reuse BOOK_STATUS; 4 FIXED CHECK=4
+    tuples; `books.rating` numeric BETWEEN; `ENTITY_TYPES += book/book_chapter/book_bookmark/book_quote`; BOOK_FORMAT→DB-11.
+  - Gates: gate-1 REVISE→resolved · preflight (7 folds) · gate-2 SHIP (4=4 + 8-of-10 reproduced) · post-impl SHIP (11 checks).
+    Green: `@vida/core` **503 tests** (24 files); `LATEST_VERSION`=23; typecheck 11/11; eslint 0. §XXIX current-* promoted (BR-BK-1…7 + BR-DB-AUDIT).
+Victor directives + corrections:
+  - ⚠ **"read the documentation properly"** — I'd scoped from a partial read (structure-data + business-rules). The FULL
+    5-aspect + rerun read corrected the highest-risk call: `reading_plans` does NOT carry `measurement_kind`/`binding_mode`
+    (rerun C-M1: Books not in L240; the goal is a Purpose target — the Skills pattern). Lesson: read ALL aspects + the rerun
+    before scoping a large reframe.
+  - ⚠ **"re-check past implementations"** — audit found `skill_actions` (Skills) WRONGLY carried `deleted_at`; a session
+    sub-type extension must not (base `sessions.ts:41` owns lifecycle; `study_sessions`/`focus_sessions` precedent). FIXED —
+    removed from `skills.ts` + `021_skills.ts` (pre-release, no version churn), re-verified green. Sole instance across all
+    authored groups; no table violates an explicit "no soft delete" signal. Recorded as BR-DB-AUDIT + codified in the Books spec.
+Next session:
+  - **FIRST ACTION: open P0 table group `#12 Learning/Education (+ICS)`, Phase 1 intent intake** — FRESH clean-context.
+    Grep intake+reruns FIRST: the rerun `part-1.2-reruns/learning-education.md` is the **HEAVIEST unit** — MIXED: 2 R6
+    reframes (`courses.tags`→entity_tags, `courses.progress`→nullable) + an M1/M2 DECOMPOSITION (ED-10 enum → the Projects
+    `measurement_kind`×`binding_mode` axes) + X*/AI* (ICS = X1/X2-user-managed/X8; document extraction = X11 → AI1/AI3/AI5/AI6).
+    No E2. Read FULL 5-aspect `docs/features/learning/education/` + ADR-002 §5.10 (`courses`, `ics_feed_configs`, `ics_synced_events`).
+  - **READ ALL 5 ASPECTS + THE RERUN before scoping** (the Books lesson). **deleted_at: session extensions + explicit
+    "no soft delete" children omit it** (BR-DB-AUDIT). Phase-1 No-Decisions Gate is the recurring trap.
+  - Carry-forward: DB-11 += Book*/Reading* interfaces + retire stale BOOK_FORMAT. **12 of 22 done; 10 remain.** ⚠ CI red
+    (known pnpm infra; local green). ⚠ sandbox /tmp hit ENOSPC late-session (didn't affect tests/writes). Branch NOT committed.

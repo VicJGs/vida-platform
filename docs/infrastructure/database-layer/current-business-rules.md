@@ -434,3 +434,91 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   DDL-introspection × 9); `LATEST_VERSION`=20; typecheck 11/11; eslint 0-err. Gates: gate-1 SHIP · preflight PASSED ·
   gate-2 REVISE→resolved (fiscal nullability = roster, not FL-11 inference) · post-impl SHIP. Foundation-readiness:
   MOD-finance finds the 6 entities + net worth over the DB-3 `store` tree + the fiscal spine — PASS. `[FACT: vitest run]`
+
+## Rules established by DB-4 group Skills (IMPLEMENTED 2026-08-20 · `021_skills.ts` + `schema/skills.ts`)
+- **[FACT] BR-SK-1 — mastery is DERIVED, never a stored default.** `skills.current_level` + `progress` are nullable
+  derived slots (service-written); `mastery_override` is the nullable manual override (M3). The ADR-002 §5.9
+  `mastery_level NOT NULL DEFAULT 'novice'` anti-signal is resolved OUT — §5.9's whole DDL is STALE, superseded by the
+  `structure-data.md` roster. `[FACT: 021_skills.ts:44-52; structure-data.md:11-12]`
+- **[FACT] BR-SK-2 — `skill_actions` IS the Sessions `practice` sub-type**, not a standalone table: own `id` UUIDv7 PK +
+  `session_id TEXT NOT NULL UNIQUE` (1:1 key, no FK); spine (timer/scheduling) lives on `sessions`, never re-stored. The
+  group-#3 `study_sessions`/`focus_sessions` pattern. `SESSION_SUB_TYPE` already carries `'practice'` (OPEN). `[FACT:
+  021_skills.ts:141-160; session-extensions.ts; session.ts:24]`
+- **[FACT] BR-SK-3 — no FK anywhere.** Self-ref `parent_skill_id`, all parent refs (`skill_id`/`level_id`/`activity_id`),
+  `definition_id`, `session_id`, and the graph edges (`from_/to_skill_id`) are plain TEXT; cascade = app/sync-layer
+  (ADR-016 §3.4; §5.9 `REFERENCES` superseded). `[FACT: 021_skills.ts]`
+- **[FACT] BR-SK-4 — no stored `measurement_kind`.** The Composer `measurement_config` is `[E]` JSON stored as plain
+  `text()` (opaque blob at rest, P-2), referencing the ADR-011 taxonomy at the service layer — NOT a typed CHECK column.
+  The pursuable Target-Mastery's M1/M2 is Purpose-owned (C-M1). `components_tracked` (plain) = `json<T>`. `[FACT:
+  skills.ts:81-83]`
+- **[FACT] BR-SK-5 — tags/notes/links ride the AR-6 substrate.** No inline tags column; tags via `entity_tags`, notes via
+  `pages`, links via `entity_links`. `ENTITY_TYPES += skill/skill_level/skill_activity/skill_dev_log/skill_dependency/
+  skill_definition`; **`skill_action` EXCLUDED** (session sub-type → base `session`, ADR-004 §3.1); the roster's stale
+  "`skill` already reserved" corrected (skill was absent). `skill_resources` RETIRED → `entity_links` (not authored).
+  `[FACT: _registry.ts; structure-data.md:44,47-48]`
+- **[FACT] BR-SK-6 — FIXED vs OPEN enums.** 14 FIXED CHECK cols / 11 tuples parity-asserted; 7 net-new enums
+  (`SKILL_LEVEL_STATUS`/`SKILL_ACTIVITY_TYPE`/`SKILL_FILL_SOURCE`/`SKILL_DEPENDENCY_TYPE`/`SKILL_DEPENDENCY_SCOPE`/
+  `SKILL_DEFINITION_SOURCE`/`SKILL_SETUP_MODE`) + Zod; reused `LIFE_DOMAIN`/`PRIORITY`/`FREQUENCY`/`MASTERY_LEVEL`.
+  OPEN no-CHECK (un-enumerated in every aspect doc): `skills.status`/`ladder_template`, `skill_activities.difficulty`,
+  `skill_levels.duration_target`, `skill_actions.best_time`, `skill_definitions.locale_variant`; rating INTs plain.
+  `[FACT: enum-parity.test.ts; skill.ts]`
+- **[FACT] BR-SK-7 — parity + introspection + runner green.** `@vida/core` 426 tests (+14 enum-parity rows, +28
+  DDL-introspection × 7); `LATEST_VERSION`=21; typecheck 11/11; eslint 0-err. Gates: gate-1 SHIP · preflight PASSED (6
+  folds) · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.** Interface reconcile → DB-11. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #10 Knowledge (+flashcards) (IMPLEMENTED 2026-08-20 · `022_knowledge.ts` + `schema/knowledge.ts`)
+- **[FACT] BR-KN-1 — the recursive spine.** `knowledge_objects.parent_object_id` (self-ref, no FK) IS the
+  `Subject›Unit›Topic` + user-kinds hierarchy (KN-3); every object has `kind_id` → `object_kinds`. `knowledge_objects`
+  generalizes the retired `study_topics`. `[FACT: 022_knowledge.ts:35-40; structure-data.md:35]`
+- **[FACT] BR-KN-2 — mastery DERIVED, never hand-set.** `knowledge_objects.mastery_level` is nullable (service-computed
+  at the leaf, rolls up the spine, KN-9); the §5.10 `NOT NULL DEFAULT 0` anti-signal resolved out. `[FACT: 022:47]`
+- **[FACT] BR-KN-3 — SM-2 cols RETIRED to the DB-3 engine.** No `easiness_factor`/`repetition_number`/`interval_days`/
+  `next_review_date`/`last_reviewed_at` on `knowledge_objects` OR `flashcards`; scheduling state is DB-3
+  `review_curves`/`method_bindings`/`review_events` (CONSUMED, `foundation/knowledge-review.ts`; KN-8, ADR-005). `[FACT]`
+- **[FACT] BR-KN-4 — cross-module via `entity_links`, tags via `entity_tags`, notes via `pages`.** No `course_id`/
+  `linked_book_id`/`reading_chapter_id` FK (→ `entity_links`, KN-6); no inline tags (containers + tags via `entity_tags`,
+  KN-7); no `resource_type` CHECK; knowledge notes = `pages` rows (KN-5, not a table). `[FACT: KN-5/6/7]`
+- **[FACT] BR-KN-5 — no FK anywhere.** `kind_id`/`parent_object_id`/`default_method_id`/`object_id`/`promoted_object_id`
+  plain TEXT; §5.10 REFERENCES superseded (ADR-016 §3.4). `references` is a SQL keyword → quoted in the DDL. `[FACT: 022_knowledge.ts]`
+- **[FACT] BR-KN-6 — Education plans, Knowledge holds (KN-2).** `knowledge_objects` carries the Knowledge-intrinsic
+  `study_topics` survivors (`title`/`description`/`key_concepts`/`status`/`difficulty`/`is_exam_topic`/`sort_order`);
+  the Education-plan/Books-context cols (`due_date`/`estimated_study_minutes`/`study_time_minutes`/`class_date`/
+  `reading_start/end_page`) are NOT carried — reached via `entity_links`. `[FACT: KN-2; §5.10:2590-2621]`
+- **[FACT] BR-KN-7 — flashcards content-only + FIXED/OPEN enums + ZK.** `flashcards` = `front/back/hint/explanation[E]`,
+  `card_type`, `media`, `is_suspended`, `sort_order` — NO `deck_id`/SM-2/`is_mastered` (ADR-005). `references.url` = `[E]`
+  (replaces `resource_urls[E]`, KN-1 — the gate-1 catch). **4 FIXED CHECK cols = 4 tuples**: reused `STUDY_TOPIC_STATUS`/
+  `TOPIC_DIFFICULTY` + net-new `KNOWLEDGE_CONTAINER_TYPE`/`CARD_TYPE`. OPEN no-CHECK: `object_kinds.name`/`learning_realm`
+  (user-extensible, KN-4), `references.type`, `compound_sets.consumer_module`. `ENTITY_TYPES += knowledge_object/
+  knowledge_container/reference/flashcard`. `compound_sets`/`knowledge_lab_entries` = base tables only (AI-assist +
+  automation surface undesigned, deferred). **Phase-5 introspection** (28 × 4). `@vida/core` green; `LATEST_VERSION`=22;
+  typecheck 11/11; eslint 0. Gates: gate-1 REVISE→resolved (`references.url` [E]) · preflight PASSED (8 folds) · gate-2 SHIP ·
+  post-impl SHIP (reconciled `data_refs` → plain per spec). **Zero build-decisions.** Interface reconcile → DB-11. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #11 Books (IMPLEMENTED 2026-08-20 · `023_books.ts` + `schema/books.ts`)
+- **[FACT] BR-BK-1 — book = the WORK, copies = assets (BK-2).** `books` holds work-level identity; `book_assets` (0..n,
+  no FK) each carry `format` + one `native_position`. A 0-asset book (TOC-only) is first-class. `[FACT: BK-2; 023_books.ts]`
+- **[FACT] BR-BK-2 — unified progress DERIVED (BK-3/M3).** `books.progress` nullable override (`NULL⇒derive`); the §Books
+  `NOT NULL DEFAULT 0` anti-signal resolved out. `books.current_page` RETIRED → per-asset `native_position`. `[FACT: BK-3]`
+- **[FACT] BR-BK-3 — classification via `entity_tags`, prose via `pages` (BK-16).** Inline `books.genre`/`tags` RETIRED →
+  `entity_tags`; `books.format` RETIRED → `book_assets`; notes on bookmarks/quotes via `pages`. `[FACT: BK-16]`
+- **[FACT] BR-BK-4 — `reading_sessions` = a `reading` Session sub-type (BK-10, S1).** Own `id` PK + `session_id` UNIQUE
+  (1:1, no FK); the base `sessions` owns timer/scheduling AND lifecycle → `reading_sessions` carries **NO `deleted_at`**
+  (the `study_sessions`/`focus_sessions` precedent). `reading` ≠ `study`. `SESSION_SUB_TYPE` carries `'reading'`. `[FACT: BK-10]`
+- **[FACT] BR-BK-5 — 3 annotation natures (BK-6).** `book_bookmarks` + `book_quotes` take notes (`pages`) + inter-links
+  (`entity_links`); `book_highlights` are deliberately light (no notes/links → excluded from ENTITY_TYPES). `[FACT: BK-6]`
+- **[FACT] BR-BK-6 — no FK; one doc-fixed UNIQUE.** All refs plain TEXT (§Books REFERENCES/CASCADE superseded); the only
+  UNIQUE = `book_chapters(book_id, chapter_number)` (§Books L2501). **`deleted_at` on 8 of 10** — `book_chapters` omits it
+  (FACT floor + structure-data:10 "no soft delete" + child, conventions:41 "on parents") and `reading_sessions` omits it
+  (session extension). `[FACT: 023_books.ts]`
+- **[FACT] BR-BK-7 — no measurement axes on `reading_plans` (C-M1) + FIXED/OPEN enums.** The plan goal's `measurement_kind`/
+  `binding_mode` is a Purpose target (Purpose-owned; Books absent from the M1 pursuable set — the Skills pattern);
+  `reading_plans` holds only plan mechanics. **4 FIXED CHECK = 4 tuples**: reused `BOOK_STATUS` + net-new `BOOK_ASSET_FORMAT`/
+  `READING_PLAN_ARRANGEMENT`/`READING_PLAN_GOAL_TYPE`; `books.rating` numeric BETWEEN. `ENTITY_TYPES += book/book_chapter/
+  book_bookmark/book_quote`. `BOOK_FORMAT` now stale → DB-11. **Phase-5 introspection** (40 × 4). `@vida/core` **503 tests**
+  green; `LATEST_VERSION`=23; typecheck 11/11; eslint 0. Gates: gate-1 REVISE→resolved (deleted_at-on-extension audit — see
+  BR-DB-AUDIT) · preflight PASSED (7 folds) · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.** `[FACT: vitest run]`
+- **[FACT] BR-DB-AUDIT (2026-08-20) — session extensions carry NO `deleted_at`.** A session sub-type extension
+  (`session_id` UNIQUE 1:1 → base `sessions`) is soft-deleted via its base (`sessions.ts:41` has `deleted_at`), so the
+  extension must not. Audit fixed `skill_actions` (Skills group — wrongly had it) → REMOVED from `skills.ts` + `021_skills.ts`;
+  `study_sessions`/`focus_sessions` already correct. No other authored table violates an explicit "no soft delete" signal.
+  `[FACT: session-extensions.ts; skills.ts; 021_skills.ts]`

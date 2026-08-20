@@ -60,6 +60,36 @@ export const ENTITY_TYPES = [
   'asset',
   'investment',
   'liability',
+  // DB-4 group Skills. skill + the structural/library children are valid pages/entity_links/
+  // entity_tags targets (notes+tags on a skill via `entity_type='skill'`, structure-data.md:44;
+  // the roster names all 6 as entity_type extensions, structure-data.md:47-48). The roster's
+  // "skill already reserved" was STALE — skill was absent from this list. `skill_action` is
+  // EXCLUDED: it is a `sessions` sub-type addressed via base session_id, and sub-types are not
+  // registered — only the base `session` is (ADR-004 §3.1, the group-#3 precedent above).
+  'skill',
+  'skill_level',
+  'skill_activity',
+  'skill_dev_log',
+  'skill_dependency',
+  'skill_definition',
+  // DB-4 group #10 — Knowledge Universe. knowledge_object (links/tags target, KN-6/7 — supersedes the
+  // roster's `study_topic`) · knowledge_container (entity_tags membership, KN-7) · reference (linkable to
+  // objects) · flashcard (SP2 — flashcards/structure-data.md:27 registers `entity_type='flashcard'`).
+  // EXCLUDED: object_kind/compound_set/knowledge_lab_entry (registry/config/child entities addressed via
+  // their own refs, not polymorphic targets). knowledge_note is a `pages` row of an existing page type (KN-5).
+  'knowledge_object',
+  'knowledge_container',
+  'reference',
+  'flashcard',
+  // DB-4 group #11 — Books. book (work: tags/notes/links target, BK-16 + Knowledge linked_book_id) ·
+  // book_chapter (Knowledge topic↔chapter link target, structure-data:62) · book_bookmark · book_quote
+  // (both take notes via pages + inter-links, BK-6). EXCLUDED: book_highlight (BK-6 — deliberately no
+  // notes/links), reading_session (session sub-type → base `session`, ADR-004 §3.1), book_asset/reading_plan/
+  // reading_plan_books/book_subjects (config/junction/child entities addressed via their own refs).
+  'book',
+  'book_chapter',
+  'book_bookmark',
+  'book_quote',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

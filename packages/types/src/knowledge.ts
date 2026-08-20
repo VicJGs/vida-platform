@@ -78,6 +78,17 @@ export type ReviewCurveKind = (typeof REVIEW_CURVE_KIND)[number]
 export const METHOD_BINDING_TARGET_TYPE = ['area', 'subject', 'unit', 'topic', 'kind'] as const
 export type MethodBindingTargetType = (typeof METHOD_BINDING_TARGET_TYPE)[number]
 
+// DB-4 group #10 — the Knowledge Universe reframe (ADR-002 §5.10 reshaped roster).
+// `object_kinds.name`/`learning_realm` are OPEN (user-extensible, KN-4) — no tuple here.
+
+/** A `knowledge_containers` level — the fixed Module ⊃ Area ⊃ Subject org spine (KN-7). */
+export const KNOWLEDGE_CONTAINER_TYPE = ['module', 'area', 'subject'] as const
+export type KnowledgeContainerType = (typeof KNOWLEDGE_CONTAINER_TYPE)[number]
+
+/** A content-only flashcard's rendering type (ADR-005 — the card is a reviewable, no scheduling). */
+export const CARD_TYPE = ['basic', 'reversed', 'cloze', 'image_occlusion'] as const
+export type CardType = (typeof CARD_TYPE)[number]
+
 // ---------------------------------------------------------------------------
 // Study Topics (with SM-2 spaced repetition)
 // ---------------------------------------------------------------------------

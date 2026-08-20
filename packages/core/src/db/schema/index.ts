@@ -47,3 +47,12 @@ export * from './purposes'
 // DB-4 domain (Stream ii): Finance (accounts · transactions · assets · liabilities · investments · income_streams)
 // + Fiscal & Legal sub-context (fiscal_residencies · legal_entities · fiscal_obligations). (DB-3 substrate store/rules → foundation/economy.ts.)
 export * from './finance'
+// DB-4 domain (Stream ii): Skills (skills · skill_levels · skill_activities · skill_actions [Sessions
+// `practice` sub-type extension] · skill_dev_logs · skill_dependencies · skill_definitions). skill_resources RETIRED → entity_links.
+export * from './skills'
+// DB-4 domain (Stream ii): Knowledge Universe (knowledge_objects · object_kinds · knowledge_containers ·
+// references · compound_sets · knowledge_lab_entries · flashcards). Retired → review engine (DB-3) + pages.
+export * from './knowledge'
+// DB-4 domain (Stream ii): Books (books · book_chapters · book_assets · book_bookmarks · book_highlights ·
+// book_quotes · reading_sessions [Sessions `reading` sub-type] · reading_plans · reading_plan_books · book_subjects).
+export * from './books'

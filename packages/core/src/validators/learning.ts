@@ -4,6 +4,9 @@ import {
   COURSE_STATUS,
   BOOK_FORMAT,
   BOOK_STATUS,
+  BOOK_ASSET_FORMAT,
+  READING_PLAN_ARRANGEMENT,
+  READING_PLAN_GOAL_TYPE,
   MASTERY_LEVEL,
   SKILL_RESOURCE_TYPE,
   STUDY_SESSION_RESOURCE_TYPE,
@@ -22,6 +25,10 @@ export const CourseTypeSchema = z.enum(COURSE_TYPE)
 export const CourseStatusSchema = z.enum(COURSE_STATUS)
 export const BookFormatSchema = z.enum(BOOK_FORMAT)
 export const BookStatusSchema = z.enum(BOOK_STATUS)
+// DB-4 group #11 — Books reframe
+export const BookAssetFormatSchema = z.enum(BOOK_ASSET_FORMAT)
+export const ReadingPlanArrangementSchema = z.enum(READING_PLAN_ARRANGEMENT)
+export const ReadingPlanGoalTypeSchema = z.enum(READING_PLAN_GOAL_TYPE)
 export const MasteryLevelSchema = z.enum(MASTERY_LEVEL)
 export const SkillResourceTypeSchema = z.enum(SKILL_RESOURCE_TYPE)
 export const StudySessionResourceTypeSchema = z.enum(STUDY_SESSION_RESOURCE_TYPE)

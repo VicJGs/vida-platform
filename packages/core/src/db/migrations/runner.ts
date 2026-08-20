@@ -29,6 +29,9 @@ import { migration017Habits } from './017_habits'
 import { migration018Routines } from './018_routines'
 import { migration019Purposes } from './019_purposes'
 import { migration020Finance } from './020_finance'
+import { migration021Skills } from './021_skills'
+import { migration022Knowledge } from './022_knowledge'
+import { migration023Books } from './023_books'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -41,7 +44,7 @@ import { migration020Finance } from './020_finance'
 // DB-3 (007-011) authors the Stream (i) substrate remainder: Purpose · review engine · store/rules · planned_blocks · templates.
 // DB-4 (012+) authors the Stream (ii) per-domain tables: notes (012) · preferences (013) ·
 // sessions & scheduling (014) · tasks (015) · projects (016) · habits (017) · routines (018) · purpose (019) ·
-// finance & fiscal-legal (020).
+// finance & fiscal-legal (020) · skills (021) · knowledge & flashcards (022) · books (023).
 const ALL_MIGRATIONS: Migration[] = [
   migration001SyncQueue,
   migration002Sessions,
@@ -63,6 +66,9 @@ const ALL_MIGRATIONS: Migration[] = [
   migration018Routines,
   migration019Purposes,
   migration020Finance,
+  migration021Skills,
+  migration022Knowledge,
+  migration023Books,
 ]
 
 // ---------------------------------------------------------------------------

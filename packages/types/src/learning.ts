@@ -22,6 +22,22 @@ export type BookFormat = (typeof BOOK_FORMAT)[number]
 export const BOOK_STATUS = ['want_to_read', 'reading', 'completed', 'dropped'] as const
 export type BookStatus = (typeof BOOK_STATUS)[number]
 
+// DB-4 group #11 — Books reframe (ADR-002 §Books reshaped roster). BOOK_FORMAT above is now
+// STALE (single-format → per-asset) — retained for the DB-11 row-interface reconcile; `book_assets`
+// uses BOOK_ASSET_FORMAT below (BK-2). `books.status` reuses BOOK_STATUS.
+
+/** A per-format book copy's format (BK-2; supersedes the single BOOK_FORMAT). */
+export const BOOK_ASSET_FORMAT = ['physical', 'pdf', 'epub', 'audiobook', 'braille', 'other'] as const
+export type BookAssetFormat = (typeof BOOK_ASSET_FORMAT)[number]
+
+/** A reading plan's book arrangement (BK-11): one after another, or quota-split in parallel. */
+export const READING_PLAN_ARRANGEMENT = ['sequenced', 'parallel'] as const
+export type ReadingPlanArrangement = (typeof READING_PLAN_ARRANGEMENT)[number]
+
+/** A reading plan's goal source (BK-11): user-set, or auto-calculated to a target. */
+export const READING_PLAN_GOAL_TYPE = ['manual', 'auto'] as const
+export type ReadingPlanGoalType = (typeof READING_PLAN_GOAL_TYPE)[number]
+
 export const MASTERY_LEVEL = [
   'novice',
   'beginner',

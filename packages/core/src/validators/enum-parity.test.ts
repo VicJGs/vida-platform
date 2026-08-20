@@ -70,6 +70,22 @@ import {
   WORK_TYPE,
   INTEREST_TYPE,
   FISCAL_OWNER_TYPE,
+  MASTERY_LEVEL,
+  SKILL_LEVEL_STATUS,
+  SKILL_ACTIVITY_TYPE,
+  SKILL_FILL_SOURCE,
+  SKILL_DEPENDENCY_TYPE,
+  SKILL_DEPENDENCY_SCOPE,
+  SKILL_DEFINITION_SOURCE,
+  SKILL_SETUP_MODE,
+  STUDY_TOPIC_STATUS,
+  TOPIC_DIFFICULTY,
+  KNOWLEDGE_CONTAINER_TYPE,
+  CARD_TYPE,
+  BOOK_STATUS,
+  BOOK_ASSET_FORMAT,
+  READING_PLAN_ARRANGEMENT,
+  READING_PLAN_GOAL_TYPE,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -91,6 +107,9 @@ import { migration017Habits } from '../db/migrations/017_habits'
 import { migration018Routines } from '../db/migrations/018_routines'
 import { migration019Purposes } from '../db/migrations/019_purposes'
 import { migration020Finance } from '../db/migrations/020_finance'
+import { migration021Skills } from '../db/migrations/021_skills'
+import { migration022Knowledge } from '../db/migrations/022_knowledge'
+import { migration023Books } from '../db/migrations/023_books'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -262,6 +281,40 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'income_streams', column: 'frequency', tuple: FREQUENCY },
   { table: 'fiscal_residencies', column: 'owner_type', tuple: FISCAL_OWNER_TYPE },
   { table: 'fiscal_obligations', column: 'owner_type', tuple: FISCAL_OWNER_TYPE },
+  // DB-4 group Skills. 14 FIXED TEXT-CHECK cols / 11 distinct tuples (LIFE_DOMAIN×2,
+  // MASTERY_LEVEL×2, FREQUENCY×2). OPEN vocabs (skills.status/ladder_template;
+  // skill_activities.difficulty; skill_levels.duration_target; skill_actions.best_time;
+  // skill_definitions.locale_variant) = no CHECK → not rows. Rating INTs (quality/energy_*/
+  // focus_*) are plain INTEGER, not tuple-sourced. skill_actions has no FIXED CHECK column.
+  { table: 'skills', column: 'domain', tuple: LIFE_DOMAIN },
+  { table: 'skills', column: 'current_level', tuple: MASTERY_LEVEL },
+  { table: 'skills', column: 'mastery_override', tuple: MASTERY_LEVEL },
+  { table: 'skills', column: 'priority', tuple: PRIORITY },
+  { table: 'skills', column: 'practice_frequency', tuple: FREQUENCY },
+  { table: 'skills', column: 'setup_mode', tuple: SKILL_SETUP_MODE },
+  { table: 'skill_levels', column: 'status', tuple: SKILL_LEVEL_STATUS },
+  { table: 'skill_activities', column: 'type', tuple: SKILL_ACTIVITY_TYPE },
+  { table: 'skill_activities', column: 'frequency', tuple: FREQUENCY },
+  { table: 'skill_activities', column: 'fill_source', tuple: SKILL_FILL_SOURCE },
+  { table: 'skill_dependencies', column: 'type', tuple: SKILL_DEPENDENCY_TYPE },
+  { table: 'skill_dependencies', column: 'scope', tuple: SKILL_DEPENDENCY_SCOPE },
+  { table: 'skill_definitions', column: 'domain', tuple: LIFE_DOMAIN },
+  { table: 'skill_definitions', column: 'source', tuple: SKILL_DEFINITION_SOURCE },
+  // DB-4 group #10 — Knowledge (+flashcards). 4 FIXED CHECK cols = 4 tuples (all single-use).
+  // OPEN vocabs (object_kinds.name/learning_realm, references.type, compound_sets.consumer_module) =
+  // no CHECK → not rows. mastery_level is a derived INTEGER (no CHECK). `references` is a SQL keyword
+  // (quoted in DDL) but has no CHECK column → not queried here.
+  { table: 'knowledge_objects', column: 'status', tuple: STUDY_TOPIC_STATUS },
+  { table: 'knowledge_objects', column: 'difficulty', tuple: TOPIC_DIFFICULTY },
+  { table: 'knowledge_containers', column: 'container_type', tuple: KNOWLEDGE_CONTAINER_TYPE },
+  { table: 'flashcards', column: 'card_type', tuple: CARD_TYPE },
+  // DB-4 group #11 — Books. 4 FIXED TEXT-CHECK cols = 4 tuples (all single-use). books.rating is a
+  // numeric BETWEEN (not tuple-sourced → not a row). Position/statistics/json cols + reading_sessions.sub_type
+  // (rides base sessions OPEN vocab) = no CHECK. reading_plans has NO measurement axes (C-M1).
+  { table: 'books', column: 'status', tuple: BOOK_STATUS },
+  { table: 'book_assets', column: 'format', tuple: BOOK_ASSET_FORMAT },
+  { table: 'reading_plans', column: 'arrangement', tuple: READING_PLAN_ARRANGEMENT },
+  { table: 'reading_plans', column: 'goal_type', tuple: READING_PLAN_GOAL_TYPE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -287,6 +340,9 @@ async function ddlFor(table: string): Promise<string> {
   await migration018Routines.up(driver)
   await migration019Purposes.up(driver)
   await migration020Finance.up(driver)
+  await migration021Skills.up(driver)
+  await migration022Knowledge.up(driver)
+  await migration023Books.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined
