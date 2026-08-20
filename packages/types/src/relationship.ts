@@ -41,6 +41,14 @@ export type Sentiment = (typeof SENTIMENT)[number]
 export const CONTACT_EVENT_TYPE = ['birthday', 'anniversary', 'holiday', 'custom'] as const
 export type ContactEventType = (typeof CONTACT_EVENT_TYPE)[number]
 
+/**
+ * Reminder-group scheduling anchor (DB-4 #14, G11/RL-7).
+ * `schedule` = the fixed frequency/time_of_day/days_of_week cadence (the pre-existing behaviour).
+ * `birthday` = event-anchored: fire `anchor_days_before` days before each member's birthday (`contact_events`).
+ */
+export const REMINDER_GROUP_ANCHOR = ['schedule', 'birthday'] as const
+export type ReminderGroupAnchor = (typeof REMINDER_GROUP_ANCHOR)[number]
+
 // ---------------------------------------------------------------------------
 // Supporting types
 // ---------------------------------------------------------------------------

@@ -99,6 +99,11 @@ import {
   ASSESSMENT_MODALITY,
   MEASUREMENT_REF_TYPE,
   RECORD_SOURCE,
+  RELATIONSHIP_TYPE,
+  INTERACTION_TYPE,
+  SENTIMENT,
+  CONTACT_EVENT_TYPE,
+  REMINDER_GROUP_ANCHOR,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -124,6 +129,7 @@ import { migration021Skills } from '../db/migrations/021_skills'
 import { migration022Knowledge } from '../db/migrations/022_knowledge'
 import { migration023Books } from '../db/migrations/023_books'
 import { migration024LearningEducation } from '../db/migrations/024_learning_education'
+import { migration025Relationships } from '../db/migrations/025_relationships'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -349,6 +355,19 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'education_measurements', column: 'ref_type', tuple: MEASUREMENT_REF_TYPE },
   { table: 'education_measurements', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
   { table: 'education_measurements', column: 'binding_mode', tuple: BINDING_MODE },
+  // DB-4 group #14 — Relationships (CRM). 9 FIXED TEXT-CHECK cols. FREQUENCY reused ×3
+  // (stay_in_touch_frequency + contact_reminders.frequency + reminder_groups.frequency); PRIORITY
+  // reused for contact_reminders.priority. OPEN vocab (contacts.closeness_tier = Preferences-defined)
+  // has NO CHECK → not a row. Junctions have no CHECK col.
+  { table: 'contacts', column: 'relationship_type', tuple: RELATIONSHIP_TYPE },
+  { table: 'contacts', column: 'stay_in_touch_frequency', tuple: FREQUENCY },
+  { table: 'contact_events', column: 'event_type', tuple: CONTACT_EVENT_TYPE },
+  { table: 'interactions', column: 'interaction_type', tuple: INTERACTION_TYPE },
+  { table: 'interactions', column: 'sentiment', tuple: SENTIMENT },
+  { table: 'contact_reminders', column: 'frequency', tuple: FREQUENCY },
+  { table: 'contact_reminders', column: 'priority', tuple: PRIORITY },
+  { table: 'reminder_groups', column: 'frequency', tuple: FREQUENCY },
+  { table: 'reminder_groups', column: 'anchor_type', tuple: REMINDER_GROUP_ANCHOR },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -378,6 +397,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration022Knowledge.up(driver)
   await migration023Books.up(driver)
   await migration024LearningEducation.up(driver)
+  await migration025Relationships.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

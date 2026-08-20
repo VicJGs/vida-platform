@@ -61,3 +61,8 @@ export * from './books'
 // class_sessions [Sessions `class` sub-type] · subject_schedules · grading_systems · grading_components ·
 // assessments · subject_documents · education_measurements. Homework = Tasks-owned (C-HW). Inline tags → entity_tags.
 export * from './learning'
+
+// DB-4 group #14 — Relationships (CRM): contacts · contact_events · interactions · contact_reminders ·
+// reminder_groups · reminder_group_contacts + net-new networks (network_groups · network_group_contacts, G2).
+// Inline contacts.tags → entity_tags (G10); social_links KEPT (C4); health derived (no M*, C1).
+export * from './relationships'

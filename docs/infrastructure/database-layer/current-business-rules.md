@@ -558,3 +558,34 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   **Zero build-decisions** (⚠ Victor drift-catch at P1: an author-vs-defer framing of the grading `(design pass)` label — the
   intake §Resolution had resolved it WHOLE; corrected → author now, [[build-phase-flags-mean-resolve-now-not-defer]]).
   Interface reconcile (Course→Subject, `default_course_id`→`default_subject_id`) → DB-11. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #14 Relationships (CRM) (IMPLEMENTED 2026-08-20 · `025_relationships.ts` + `schema/relationships.ts`)
+- **[FACT] BR-RL-1 — PII is [E]; health is DERIVED, never a measurable (C1).** All identifying contact fields + free text are
+  `[E]` (RL-1; empty [E] set in M1.0, pass-through). Relationship health carries **NO `measurement_kind`/`binding_mode`** —
+  contacts are ADR-011-excluded reference data; health is a derived, closeness-weighted analytic, never stored. `[FACT: 025:*]`
+- **[FACT] BR-RL-2 — SP1: no inline tags; `social_links` KEPT (C4).** Inline `contacts.tags` RETIRED → `entity_tags`
+  (`entity_type='contact'`, G10/SP1); `social_links` stays a typed-JSON column (structured, not a tag concern). `[FACT: 025 contacts]`
+- **[FACT] BR-RL-3 — networks authored now (G2, build-phase).** `network_groups` + `network_group_contacts` (M:N, RL-4 — a
+  contact in many networks) are net-new; the rerun's schema-0 `[INTENT]` guard was the doc-realignment pass's, superseded by
+  DB-4 ([[build-phase-flags-mean-resolve-now-not-defer]]). Description → `pages` (`entity_type='network'`); health derived.
+- **[FACT] BR-RL-4 — `deleted_at` on `contacts` ONLY.** The §5.9 floor gives it to `contacts` alone; children/ledgers/groups/
+  junctions omit it (RL-2 cascade = app-layer; `interactions` = the ledger, RL-3, hard-deletes — the `habit_completions`/
+  `routine_completions` precedent, HB-11/RT-17; `reminder_groups`/`network_groups` use `is_active`). `[FACT: 025; schema/relationships.ts]`
+- **[FACT] BR-RL-5 — junctions = entity_tags-v2 shape, NOT §5.9 composite PK.** `reminder_group_contacts` +
+  `network_group_contacts` carry a synthetic `id` PK + `baseColumns` + `UNIQUE(pair)` + reverse index on `contact_id`
+  (the `project_habits`:29-30 convention; §5.9's composite-PK/`SyncMetadata` shape is the stale source — a preflight catch F1).
+- **[FACT] BR-RL-6 — no FK anywhere.** `contact_id` (×5), `reminder_group_id`, `network_group_id` are plain TEXT (§5.9
+  REFERENCES/CASCADE/SET NULL superseded, ADR-016 §3.4); cascade/orphan/SET-NULL = app-layer (RL-2). `[FACT: 025 no REFERENCES]`
+- **[FACT] BR-RL-7 — build-phase G8/G11 fields authored.** `contacts.how_we_met`[E] + `closeness_tier` (G4, OPEN no-CHECK —
+  Preferences-defined vocab, `contact.md:31`); `interactions.energy_given`/`energy_received` (INT plaintext — the
+  `sentiment`/`duration` precedent) + `key_takeaways`[E]; `contact_reminders.is_snoozed`/`snoozed_until`/`priority` (reuse
+  `PRIORITY`); `reminder_groups.anchor_type`(NN DEFAULT 'schedule')/`anchor_days_before` (event-anchored, G11). `[FACT: 025]`
+- **[FACT] BR-RL-8 — 9 FIXED CHECK cols; 1 net-new enum; registry +2; boundaries held.** FIXED: `RELATIONSHIP_TYPE`·
+  `FREQUENCY`×3·`CONTACT_EVENT_TYPE`·`INTERACTION_TYPE`·`SENTIMENT`·`PRIORITY`·net-new `REMINDER_GROUP_ANCHOR` (`{schedule,
+  birthday}`); `closeness_tier` OPEN no-CHECK. `ENTITY_TYPES += contact/network` (child/junction excluded — `habit_completions`
+  precedent). **OUT** (cite-not-author): notification delivery (N1/N2, Notifications-owned — no delivery cols); device import
+  (X1/X8, ADR-014 service — no `import_staging`); health-compute/closeness-banding; Sigma.js graph; Gamification streak
+  (C2, `[INTENT]`, no E2). **Phase-5 introspection** (32 × 4). `@vida/core` **619 tests** green (1 pre-existing vault-1MB perf
+  flake, passes standalone); `LATEST_VERSION`=25; typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight PASSED (1
+  shape-correcting fold F1 + 4 mechanical) · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.** Interface reconcile
+  (Contact/Interaction/ContactReminder/ReminderGroup + new NetworkGroup/NetworkGroupContact) → DB-11. `[FACT: vitest run]`

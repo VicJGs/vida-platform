@@ -104,6 +104,13 @@ export const ENTITY_TYPES = [
   'term',
   'assessment',
   'subject_document',
+  // DB-4 group #14 — Relationships (CRM). contact (standalone page + notes via pages `entity_type='contact'`,
+  // G9; shared tags retire inline contacts.tags, RL-10/SP1) + network (standalone page + notes, G9; entity_tags
+  // registers `entity_type='network'` now that networks land, SP2/RL-4). EXCLUDED: contact_event/interaction/
+  // contact_reminder/reminder_group (addressed via contact_id/own refs → not polymorphic targets, the
+  // habit_completions precedent) + the 2 junctions.
+  'contact',
+  'network',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

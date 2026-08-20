@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes … #11 Books + #12 Learning/Education (+ICS) authored · 2026-08-20 · LIF-66)
-The Stream (ii) per-domain modules authored so far (13 of 22). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 024_learning_education.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes … #12 Learning/Education + #14 Relationships authored · 2026-08-20 · LIF-66)
+The Stream (ii) per-domain modules authored so far (14 of 21 active; #13 Languages dissolved → Spaces, ADR-006). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 025_relationships.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -200,6 +200,7 @@ The Stream (ii) per-domain modules authored so far (13 of 22). `[FACT: schema/{n
 | `022_knowledge.ts` | `schema/knowledge.ts` | `knowledge_objects` · `object_kinds` · `knowledge_containers` · `references` · `compound_sets` · `knowledge_lab_entries` · `flashcards` (§5.10 reshaped roster; `references` = quoted SQL keyword) |
 | `023_books.ts` | `schema/books.ts` | `books` · `book_chapters` · `book_assets` · `book_bookmarks` · `book_highlights` · `book_quotes` · `reading_sessions` (Sessions `reading` sub-type) · `reading_plans` · `reading_plan_books` · `book_subjects` (§Books reshaped roster) |
 | `024_learning_education.ts` | `schema/learning.ts` | `subjects` (=courses) · `ics_feed_configs` · `ics_synced_events` · `institutions` · `self_taught` · `programs` · `curricula` · `terms` · `class_sessions` (Sessions `class` sub-type) · `subject_schedules` · `grading_systems` · `grading_components` · `assessments` · `subject_documents` · `education_measurements` (§5.10/§5.18 reshaped + INTENDED hierarchy) |
+| `025_relationships.ts` | `schema/relationships.ts` | `contacts` · `contact_events` · `interactions` · `contact_reminders` · `reminder_groups` · `reminder_group_contacts` (§5.9 reshaped) + `network_groups` · `network_group_contacts` (net-new networks, G2) |
 
 - **Net-new = 3 tables only.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) were already authored by the
   AR-6 substrate (migration 003); N&P is a **consumer** (ADR-006 §3.1). `pomodoro_sessions` re-homed → `focus_sessions`
@@ -446,10 +447,33 @@ The Stream (ii) per-domain modules authored so far (13 of 22). `[FACT: schema/{n
   the intake §Resolution (a Victor drift-catch corrected an author-vs-defer framing at P1). Interface reconcile (Course→Subject,
   `default_course_id`→`default_subject_id`, stale COURSE progress/tags) → DB-11.
   `[FACT: 024_learning_education.ts; schema/learning.ts; docs/specs/foundation/db-4-learning-education/]`
-- **Remaining DB-4 groups:** #13 Languages … #22 Notifications (9 more domain groups, per the task P0 slice).
+- **Group #14 Relationships (CRM) (2026-08-20):** **8 tables** — the PII-heaviest module (personal CRM). 6 §5.9 tables
+  authored fresh (absent from the new `schema/`; lived in the pre-rebuild monolith) + **2 net-new networks** (`network_groups`
+  + `network_group_contacts`, G2/RL-4 — a contact in MANY networks). **Build-phase INTENDED authored** (intake §Resolution
+  WHOLE): inline `contacts.tags` RETIRED → `entity_tags` (G10/SP1); `contacts.how_we_met`[E] + `closeness_tier` (G4, OPEN
+  no-CHECK — Preferences-defined vocab, `contact.md:31`); `interactions.energy_given`/`energy_received` (INT plaintext, the
+  `sentiment`/`duration` precedent) + `key_takeaways`[E] (G8); `contact_reminders.is_snoozed`/`snoozed_until`/`priority`
+  (reuse `PRIORITY`, G8); `reminder_groups.anchor_type`/`anchor_days_before` (event-anchored mode, G11 — net-new
+  `REMINDER_GROUP_ANCHOR` = `{schedule,birthday}`). `social_links` KEPT as typed JSON (C4). **`deleted_at` on `contacts`
+  ONLY** — the §5.9 floor + the `habit_completions`/`routine_completions` ledger precedent (children/ledgers/groups cascade
+  or use `is_active`; `interactions` = the ledger, RL-3). **Junctions reshaped to the entity_tags-v2 shape** (synthetic `id`
+  PK + `baseColumns` + `UNIQUE(pair)` + reverse index — `project_habits`:29-30, NOT §5.9's composite PK; a preflight catch
+  F1). **No-FK** everywhere (contact_id ×5 / reminder_group_id / network_group_id plain TEXT; cascade = app-layer RL-2). **9
+  FIXED CHECK cols** (`RELATIONSHIP_TYPE`·`FREQUENCY`×3·`CONTACT_EVENT_TYPE`·`INTERACTION_TYPE`·`SENTIMENT`·`PRIORITY`·net-new
+  `REMINDER_GROUP_ANCHOR`); `closeness_tier` OPEN no-CHECK. `ENTITY_TYPES += contact/network` (2; child/junction tables
+  excluded — the `habit_completions` precedent). **No M\*** (C1 — health is a derived, closeness-weighted analytic, contacts
+  are ADR-011-excluded reference data); **no E2/grant** (C2, Gamification streak stays `[INTENT]`). **OUT** (cite-not-author):
+  notification delivery (N1/N2, Notifications-owned — no delivery cols); device import (X1/X8, ADR-014 service — no
+  `import_staging`); health-compute/closeness-banding; Sigma.js graph. **Phase-5 introspection**
+  (`relationships-introspection.test.ts`, 32 cases × 4). `@vida/core` **619 tests** green (1 pre-existing vault-1MB perf flake,
+  passes standalone); `LATEST_VERSION`=25; typecheck 11/11; eslint 0. **Zero build-decisions.** Interface reconcile (Contact
+  +how_we_met/closeness_tier −tags · Interaction +energy/key_takeaways · ContactReminder +snooze/priority · ReminderGroup
+  +anchor · new NetworkGroup/NetworkGroupContact) → DB-11.
+  `[FACT: 025_relationships.ts; schema/relationships.ts; docs/specs/foundation/db-4-relationships/]`
+- **Remaining DB-4 groups:** #15 … #22 (7 more domain groups; #13 Languages dissolved → Spaces, ADR-006).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 ✅ (13 of 22); 9 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 ✅ (14 of 21 active); 7 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.
