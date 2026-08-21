@@ -12,5 +12,8 @@ Follows the service data-flow pattern GOVERNED by docs/core/architecture/data-fl
 (validate -> repository -> encrypt-seam -> return). Rides foundation/ substrates; does not re-implement them.
 
 ## Status
-Directory home only (ADR-018). Service logic is authored PER-FEATURE at build phase (ADR-017).
-Types + Zod live in @vida/types. No feature code lives here yet.
+**MOD-notes ① BUILT (2026-08-21, LIF-131).** `service.ts` (`createNotesService` factory), `types.ts`
+(`NotesService` interface + typed errors), `index.ts` barrel. Pages/page_links/note_attachments CRUD +
+wiki-resolve + NP-8 seed + `entity_tags` reads; facade → AR-6 `SpacesService` (entity-link/tag writes) +
+AR-8 `BacklinkResolver` (entity-link reads). Returns Drizzle Rows. Zod in `validators/note.ts`. 16 tests green.
+NOTE: factory-object service — NO `this.` for intra-service calls (breaks on destructure). Increment ② (UI) pending.
