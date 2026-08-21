@@ -6,9 +6,14 @@
 // module-scope memoized (`??=`), so React 19's dev double-mount / double-effect
 // cannot spawn a second worker or double-open (R5/R9). `open()` in the worker
 // also migrates (worker.ts) — no separate migrate call here.
+//
+// MOD-notes ②a: boot also resolves+caches the device id (device-local `app_state`
+// KV, after migrate creates the table) so `getDeviceId()` is synchronous for the
+// post-boot data plane (App gates render on this promise → no hook runs before it).
 // ============================================================================
 
 import { WorkerDbClient } from './client'
+import { getOrCreateDeviceId } from './device-id'
 
 const DB_NAME = 'vida'
 
@@ -37,7 +42,8 @@ export function ensureDbReady(): Promise<WorkerDbClient> {
   return (readyPromise ??= (async () => {
     try {
       const c = getDbClient()
-      await c.open(DB_NAME)
+      await c.open(DB_NAME) // opens + migrates (worker.ts) — app_state now exists
+      await getOrCreateDeviceId(c.driver) // resolve+cache before any data-plane consumer (DP-3)
       return c
     } catch (e) {
       readyPromise = null

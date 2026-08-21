@@ -5452,3 +5452,10 @@ Next session:
     `docs/roadmap/m1.1-delivery-plan.md` (gated 2026-08-17), re-confirm it holds now the schema is genuinely complete →
     foundation gate + independent critic → reconcile grain/dep-graph to tracker → accept. Head after = MOD-notes #31.
     Also retry `tracker --sync`. Reload `.claude/tasks/m1-foundation-closeout.md` (Build Steps Phase 2 + Resume).
+
+---
+## Profile switch — 2026-08-21
+Task `mod-notes` (LIF-131): profile **Add Backend Component → Add Frontend Component**.
+Increment ① (backend service) is DONE + MERGED to `main`. Session opens increment ② — the UI surface
+(add-frontend-component/default scenario). Standards re-loaded for the frontend profile (design + components
++ engineering). §XXVII path surfaced for the frontend scenario.

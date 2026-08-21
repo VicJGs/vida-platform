@@ -1,5 +1,5 @@
 # Task: mod-notes
-# Profile: Add Backend Component
+# Profile: Add Frontend Component
 # Scenario: default
 # Spec: docs/specs/features/mod-notes/_index.md
 # Created: 2026-08-21
@@ -39,25 +39,43 @@ Integration points: `/summary` provider seam → MOD-journals (consumer, later);
 | *(logged automatically by /session-log)* | | | |
 
 ## Progress
-<!-- SESSION checklist — the scenario's ## Task List (what the native panel mirrors). Session-level. -->
-- [ ] document-context BASELINE — `docs/features/notes-and-pages/` current-* as ground truth
-- [ ] Forward spec written + Per-Step Build Gate cleared (§XXVI) before any implementation
-- [ ] Read 3 existing `@vida/core` services — state the pattern found
-- [ ] Service contract approved before any code (`/api-contract` mapped → service API + Zod + typed errors)
-- [ ] `/adr-check` validates approach against existing decisions
-- [ ] `/adr-new` recorded (if significant architectural choice)
-- [ ] TypeScript types and interfaces written first
-- [ ] Service logic (CRUD + wiki-link resolve + summary aggregation) implemented
-- [ ] Full error handling implemented (typed error classes — local-first, no HTTP status codes)
-- [ ] Repository / React-Query wiring registered
-- [ ] `tsc --noEmit` passes — zero errors
-- [ ] Vitest: success case + ≥2 error cases (replaces curl — no HTTP endpoint)
-- [ ] `/critique` → SHIP verdict
-- [ ] Currency Rule (§XXIX) — `docs/features/notes-and-pages/` current-* refreshed for every context touched
+<!-- INCREMENT ② (add-frontend-component). ① DONE+MERGED. ② decomposed into 5 sub-units; ⚠ the profile's
+     SUBSTANCE (rendered surface · all visual states · dark · responsive · /component-audit · real-browser Visual
+     Gate) lives in the VISUAL units ②b–②e — NOT in ②a. ② is NOT finalized until those + the Visual Gate land. -->
+
+**② status: IN PROGRESS — only ②a (non-visual prerequisite) is done. The add-frontend-component deliverable (visual surface + Visual Gate) is NOT built.**
+
+### ②a — the app data plane (NON-VISUAL prerequisite) — ✅ DONE + GATED
+- [x] Step 0 baseline · Step 1 patterns · Step 2 contract (Gate-1) · Step 2b preflight+Gate-2 (Approval 2)
+- [x] Implement (worker seam · DP-8 mutex · device-id · service accessor · RQ hooks) — @vida/web 196 tests · tsc 0 · ESLint 0 · build ✓
+- [x] Engineering gates: post-impl /critique SHIP · tsc 0 · §XXIX current-* refreshed
+- [n/a] visual states · dark · responsive · motion · /component-audit · **Visual Gate** — ②a renders nothing; these are ②b's, NOT satisfied here
+
+### ②b–②e — the VISUAL surface (the actual add-frontend-component deliverable) — ⬜ NOT STARTED
+- [ ] ②b — replace the AR-4 `/notes` stub: route + List/Gallery/Calendar/Neural views wired to `usePages`
+- [ ] ②b — ALL visual states (default/hover/focus/active/disabled/loading/error/empty) · dark mode · responsive 375/768/1440 · motion
+- [ ] ②c — TipTap editor mount + `[[` picker (create-on-miss)
+- [ ] ②d — backlink/entity-link panels + page metadata (favorite/archive/icon/cover)
+- [ ] ②e — FTS5 search UI (over the DB-8 seam)
+- [ ] **`/component-audit` + `/critique` SHIP + quality-gate-components/-engineering/verification + REAL-BROWSER VISUAL GATE** (the gate I wrongly marked done against non-visual ②a)
+- [ ] Step 9 Currency Rule (§XXIX) refresh for the visual contexts + commit
+- [ ] Only when ②b–②e + Visual Gate land does LIF-131 close
 
 ## Build Steps
 <!-- UNIT-level — mirrors the active spec's §5 Implementation Prompt; what victor:execute-plan-* works.
      Filled when the unit's spec §5 is approved. Distinct from ## Progress (connected-build-loop, R1). -->
+
+### ② UI · unit ②a — the app data plane (spec: `sessions/PLAN-2026-08-21-02a-data-plane.md`) — DONE
+- [x] Gate: gate-1 REVISE (B1 concurrency · B2 positional) → preflight PASSED (2 assumptions→FACT) → gate-2 **RETHINK** (per-RPC queue interleaves txns) → refolded to whole-transaction mutex → Approval 2
+- [x] `db/worker.ts` `values` op (positional) · `db/client.ts` `driver.values` RPC (seam closed; exec/batch still deferred)
+- [x] `db/drizzle.ts` `getDb()` + **DP-8 non-reentrant transaction mutex** (Proxy over `.transaction`; reads bypass)
+- [x] `db/device-id.ts` + `db/boot.ts` — `getOrCreateDeviceId`/`getDeviceId` (app_state KV, uuidv7, never-synced)
+- [x] `services/notes-service.ts` `getNotesService()` (mirrors ① wiring) · `app/notes/hooks.ts` (reads+state, mutations+invalidation matrix)
+- [x] e2e: `values` backdoor (`harness.ts`/`fixtures.ts`) + `notes-data-plane.spec.ts` (documented persistence spec — app_state probe + reload; CI-only, macOS-12 host)
+- [x] Rebuilt stale `@vida/core` dist (predated ① services/notes). Drift Victor caught: §4 e2e over-specified vs `e2e/CLAUDE.md` → corrected to the documented pattern (no service-in-harness)
+- [x] Verify: typecheck 0 · @vida/web **193 tests** (+13) · ESLint 0 · build ✓ · §XXIX current-* refreshed
+
+### ① Backend service — DONE + MERGED
 - [x] S1 — EXTENDED `validators/note.ts`: `createPageSchema`/`updatePageSchema` (journal_date-iff-journal refine), reused `PageTypeSchema`
 - [x] S2 — `services/notes/types.ts`: `NotesService` interface (Drizzle-Row returns) + input types + `JournalExistsError`/`UnregisteredEntityTypeError`
 - [x] S3 — `services/notes/service.ts`: `createNotesService` factory, 4 repos, all methods (pages CRUD/NP-2/NP-6 · page-links idempotent NP-5 · resolveWikiLink · ensureEntityNote NP-8 · attachments · tag reads · facade→AR-6/AR-8)
@@ -77,6 +95,39 @@ Integration points: `/summary` provider seam → MOD-journals (consumer, later);
 
 ## Notes
 - **Scenario vocabulary mapping** (honest, not a deviation): the add-backend-component/default scenario is HTTP-route-shaped; MOD-notes ① is a local-first `@vida/core` service with NO HTTP endpoint (ZK blob-relay server). So `/api-contract` → the service contract; `curl` tests → Vitest; HTTP status codes → typed error classes (`JournalExistsError`, `UnregisteredEntityTypeError`, …).
+
+### ⚠ Step-0 BASELINE FINDINGS — increment ② (frontend surface, ground truth on disk)
+Scope per `m1.1-delivery-plan.md` §4:54 + §9:192-197 (② UI): TipTap editor mount + standard/12 platform blocks;
+List/Calendar/Gallery/Neural views (renderers **hard-coded** — ADR-007 saved-view *selection* deferred); `[[` picker +
+create-on-miss; backlink/entity-link panels; page metadata (favorite/archive/icon/cover); FTS5 search UI over the DB-8 seam.
+
+1. **The ① service is UNCHANGED since merge → `notes-and-pages` current-* are CURRENT** (no §XXIX refresh owed).
+   Surface ② consumes: `createNotesService(db, deviceId, {spaces, backlinks, registry})` → Rows; `createPage`/
+   `resolveWikiLink`/`ensureEntityNote`/`getBacklinks`/`getPagesByType`/`listPages`/facades. `[FACT: docs/features/notes-and-pages/current-spec.md]`
+2. **The web notes route is a bare AR-4 placeholder** — `apps/web/src/app/notes/index.tsx` = `<h2>Notes</h2>` (6 lines);
+   `[id].tsx` is empty. `routes.tsx` already lazy-mounts `/notes` (code-based TanStack Router). ② REPLACES the stub.
+   No `docs/modules/…/notes` current-* exists yet → D6 births them at scaffold. `[FACT: apps/web/src/app/notes/, routes.tsx]`
+3. **@vida/editor is NOT yet consumed by apps/web** (0 imports) — ② is the FIRST app consumer of the TipTap editor. `[FACT: grep @vida/editor apps/web/src]`
+4. **UI-2 views: only `NeuralGraph` is wired** (in `/graph`). List/Calendar/Gallery are unconsumed → ② is their first app consumer. `[FACT: grep @vida/ui view imports]`
+5. **⚠ DATA-PLANE SEAM (the real first problem, not the editor).** The app-facing DrizzleDb path
+   `exec`/`values`/`batch` currently **THROWS** a documented seam error (`client.ts:44,154-162`); the AR-4 header +
+   `db/CLAUDE.md` home it to "module entity-CRUD (UI-3 / M1.1+)" — i.e. **MOD-notes ② is the wave that closes it**
+   (worker-side `exec/values/batch` ops + the client proxy). Until closed, `createRepository` (which NotesService's 4
+   repos use) cannot read/write `pages` in the browser. `[FACT: apps/web/src/db/client.ts, apps/web/src/db/CLAUDE.md]`
+6. **✅ RESOLVED (was UNKNOWN) — vault gating is NOT a blocker.** `repository.ts:249-253`: the vault key is fetched
+   **lazily, ONLY when `encryptedFields.size > 0`** — `key() = encryptedFieldSet.size > 0 ? getVaultKey() : null`.
+   NotesService constructs all 4 repos with **`encryptedFields: []`** (M1.0 pass-through, current-spec) → `getVaultKey()`
+   is **never called** → no vault-unlock handshake required for ② at M1.0. The `db/CLAUDE.md` "vault-gated" note is the
+   general/M3 case, inapplicable to empty-`[E]`. `[FACT: packages/core/src/db/repository.ts:249-253, 121-146]`
+7. **Data-plane wiring pattern to follow:** `useSchemaVersion.ts` (React-Query hook → `@vida/core` read → `getDbClient().driver`,
+   no HTTP, BR-RT-3) is the model the per-module entity hooks (`usePages`, …) copy. `App.tsx` gates render on `ensureDbReady()`
+   then `QueryClientProvider ⊃ RouterProvider`. `[FACT: apps/web/src/hooks/useSchemaVersion.ts, App.tsx, lib/query-client.ts]`
+
+⇒ **Plan implication:** ② is NOT one component. It decomposes into at least: (a) **data-plane** — close the DrizzleDb
+worker seam + resolve vault-gating + construct `NotesService` + React-Query hooks; (b) **route + list/collection views**;
+(c) **editor mount** (first @vida/editor app consumer) + `[[` picker; (d) **backlink/entity-link panels + page metadata**;
+(e) **FTS5 search UI** (over the DB-8 seam). Each is its own §XXVI-gated sub-unit. Item (a) + (6) are the scoping risks to
+settle in Gate-1/preflight — the editor is downstream of a working data plane.
 
 ### ⚠ Step-0b BASELINE FINDINGS (ground truth on disk vs delivery-plan §9)
 1. **`entity_links` + `entity_tags` are NOT notes-owned tables** — they live in the AR-6 Spaces substrate (`schema/foundation/spaces.ts`), not `notes.ts`. `notes.ts` owns 3 tables only: `pages` · `page_links` · `note_attachments`. (Reconciles structure-data.md:31's "N&P-described" = conceptual/write-owner vs physical file home; not a contradiction.)

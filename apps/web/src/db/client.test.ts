@@ -43,6 +43,25 @@ describe('WorkerDbClient', () => {
     await expect(client.open('vida')).rejects.toThrow(/boom/)
   })
 
+  // MOD-notes ②a — the Drizzle-proxy read seam. `values` RPCs the worker `values`
+  // op and returns its positional-array `result` (NOT the object-row `rows` path).
+  it('driver.values() returns the positional arrays from the worker result', async () => {
+    const client = new WorkerDbClient(
+      mockWorker((req) =>
+        req.op === 'values' ? { ok: true, result: [['a', 1], ['b', 2]] } : { ok: true },
+      ),
+    )
+    await client.open('vida')
+    const values = await client.driver.values('SELECT k, v FROM t')
+    expect(values).toEqual([['a', 1], ['b', 2]])
+  })
+
+  it('driver.values() defaults to [] when the worker returns no result', async () => {
+    const client = new WorkerDbClient(mockWorker(() => ({ ok: true })))
+    await client.open('vida')
+    expect(await client.driver.values('SELECT 1')).toEqual([])
+  })
+
   it('correlates concurrent requests by id even when replies arrive out of order', async () => {
     // Reply to the SECOND request before the first: buffer, flush in reverse.
     const buffer: Array<() => void> = []
@@ -71,9 +90,9 @@ describe('WorkerDbClient', () => {
     await expect(client.exists('vida')).resolves.toBe(true)
   })
 
-  it('throws the deferred-seam error for exec/values/batch', () => {
+  it('throws the deferred-seam error for exec/batch (values is now live — ②a)', () => {
     const client = new WorkerDbClient(mockWorker(() => ({ ok: true })))
-    expect(() => client.driver.values('x')).toThrow(/seam/i)
+    expect(() => client.driver.exec('x')).toThrow(/seam/i)
     expect(() => client.driver.batch([])).toThrow(/seam/i)
   })
 

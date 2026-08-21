@@ -9,9 +9,10 @@
 //   - `driver`: an `SqliteDriver` proxy so `getSchemaVersion(client.driver)` and
 //     (later) `createDrizzleProxy` work unchanged across the worker boundary.
 //
-// GRAIN (AR-4): query · run · close are live; `exec`/`values`/`batch` (the richer
-// RawQueryResult + Drizzle-proxy path) THROW a documented seam error — they land
-// with module entity-CRUD (UI-3 / M1.1+), together with the worker-side ops.
+// GRAIN: query · run · values · close are live. `values` (the Drizzle-proxy read
+// path — positional arrays) landed with MOD-notes ②a entity-CRUD. `exec`/`batch`
+// remain a documented seam (unused by the sqlite-proxy callback, which needs only
+// run+values; batch is for worker-side migrations).
 // ============================================================================
 
 import type { SqliteDriver, RawQueryResult } from '@vida/core'
@@ -25,6 +26,7 @@ type RequestBody =
   | { op: 'migrate' }
   | { op: 'run'; sql: string; params?: unknown[] }
   | { op: 'query'; sql: string; params?: unknown[] }
+  | { op: 'values'; sql: string; params?: unknown[] }
   | { op: 'close' }
 
 type WorkerRequest = RequestBody & { id: number }
@@ -41,7 +43,7 @@ export interface WorkerLike {
   terminate(): void
 }
 
-const SEAM = 'AR-4 seam: exec/values/batch use the Drizzle-proxy path, deferred to entity CRUD (UI-3/M1.1+).'
+const SEAM = 'Seam: exec/batch are unused by the sqlite-proxy callback (run+values only); batch is worker-side migrations.'
 // A worker RPC that never replies (worker crash, WASM load failure, killed
 // worker) must fail loud, not hang the boot gate. 15s is generous vs a local read.
 const RPC_TIMEOUT_MS = 15_000
@@ -149,12 +151,15 @@ export class WorkerDbClient {
     close: async (): Promise<void> => {
       await this.close()
     },
-    // Deferred seam — see file header. Present to satisfy the interface; throw
-    // loudly rather than silently no-op if a consumer reaches them early.
-    exec: (): Promise<RawQueryResult> => {
-      throw new Error(SEAM)
+    // MOD-notes ②a — the Drizzle-proxy read path. Returns POSITIONAL arrays
+    // (worker `values` op) so Drizzle's mapResultRow indexes cells correctly.
+    values: async (sql: string, params?: unknown[]): Promise<unknown[][]> => {
+      const res = await this.call({ op: 'values', sql, params })
+      return (res.result ?? []) as unknown[][]
     },
-    values: (): Promise<unknown[][]> => {
+    // Still-deferred seam — see file header. `exec`/`batch` are unused by the
+    // sqlite-proxy callback (run+values only); throw loudly if reached early.
+    exec: (): Promise<RawQueryResult> => {
       throw new Error(SEAM)
     },
     batch: (): Promise<void> => {
