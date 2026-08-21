@@ -1,5 +1,5 @@
 # Task: m1-foundation-closeout
-# Status: in-progress
+# Status: done
 # Profile: Project Foundation
 # Scenario: milestone-delivery-planning (with an M1.0 close-out prefix)
 # Linear: LIF-159
@@ -32,16 +32,27 @@ check a census-only close (2026-08-17) missed. Root-cause guard, not ceremony.
 - [x] 5. Close-out record — wrote `docs/roadmap/m1.0-closeout.md` + pointers. ⚠ **This declared "M1.0 CLOSED" — PREMATURE, REVERTED 2026-08-18** (see Route History): M1.0's schema foundation (DB-3+DB-4) was unfinished. The closeout record is now a REOPENED status record flagging the mistake.
 
 ### Phase 2 — Open M1.1 (milestone-delivery-planning, 8 steps)
-- [ ] 6. Ground in M1.1 roadmap § + issues + repo-structure ADR + dep-graph
-- [ ] 7. Capture delivery intent (sub-waves + per-issue profile/flow policy)
-- [ ] 8. Docs pass — verify homes vs real tree; classify flow class; resolve current-* homes
-- [ ] 9. Decompose — per-issue delivery table + sub-waves + critical path
-- [ ] 10. Write docs/roadmap/m1.1-delivery-plan.md
-- [ ] 11. Gate — foundation gate + independent adversarial critic
-- [ ] 12. Reconcile grain 1:1 + dep graph to tracker canonical
-- [ ] 13. Accept & log
+- [x] 6. Ground — plan HELD; 6 ◇M1.1 issues 1:1 w/ tracker; roadmap order + edges confirmed; Model B correction already baked in.
+- [x] 7. Capture delivery intent — **§9 per-module deferred-to-build scope** authored (full intent surfaced per [[build-phase-flags-mean-resolve-now-not-defer]]; 6-module doc sweep).
+- [x] 8. Docs pass — homes verified on disk (sessions=no service.ts→create; spaces=has service.ts→UI-dominant; app/{spaces,sessions,check-ins} absent; 4 svc dirs = placeholder CLAUDE.md); DOC-spine create/refresh all correct.
+- [x] 9. Decompose — §3 table + §4 sub-waves re-confirmed; §9 enriches each row with ①/② build scope + homed deferrals.
+- [x] 10. Write — `m1.1-delivery-plan.md` status flipped draft→RE-CONFIRMED; Verification block + §9 added; REPO.md:30 stale line fixed.
+- [x] 11. Gate — foundation gate + independent adversarial critic (fresh, checked disk) → **SHIP**; 2 NITs folded (AR-8 phrasing, JR-6 backfill).
+- [x] 12. Reconcile grain 1:1 + dep graph — critic independently verified 6 LIF IDs (131/133/127/141/139/119) + acyclic edges = tracker canonical. No fold/split.
+- [x] 13. Accept & log — this entry; `tracker --sync` retried (best-effort, no status change to push); ready for close.
 
 ## Route History
+- 2026-08-21: **PHASE 2 COMPLETE — M1.1 OPENED.** Ran the milestone-delivery-planning workflow (Steps 6–13) to re-confirm
+  the drafted `m1.1-delivery-plan.md` now the 117-table schema is real. Grounded (6 ◇M1.1 issues 1:1 w/ tracker; roadmap
+  order Notes→Prefs→Journals→Spaces→Sessions→Check-ins; edges DF-3 clean) + docs-passed all homes/DOC-spine on disk.
+  **Per Victor's directive, surfaced every deferred-to-build intent** ([[build-phase-flags-mean-resolve-now-not-defer]]):
+  swept all 6 module doc-sets (parallel Explore agents) → authored **§9 Per-module deferred-to-build scope** binding each
+  ⚠ INTENDED / [DEFERRED — build phase] / →service / design-pass / derived-in-service item to ① NOW / ② NOW / later-milestone
+  (HOMED). Four recurring buckets codified (derived-in-service · seam-activation engine-now/wiring-M1.4 · DB-4 INTENDED cols ·
+  genuinely-later). Flipped the plan status draft→RE-CONFIRMED + Verification block; fixed REPO.md:30 stale line. **Foundation
+  gate + independent adversarial critic (checked disk) → SHIP**; 2 NITs folded. Critic verified 6 LIF IDs + acyclic edges
+  (Steps 12/7 satisfied). `tracker --sync` retried (best-effort; Linear already correct — no status change to push). **M1.1
+  delivery contract set + gated + reconciled → next build head = MOD-notes #31 (its own fresh session/task).**
 - 2026-08-21: **RESUMED** — DB-3 + DB-4 both complete (DB-4 merged, PR #32). Ran a **Phase 0 delivery-truth gate**
   (Victor request) on the two issues that reopened M1.0: verified true delivery vs the §5.20 ledger (DB-3) + the
   `structure-data.md` floors (DB-4), not just "Done" status. Independent adversarial critic → **SHIP / both HONEST**.
@@ -72,11 +83,15 @@ check a census-only close (2026-08-17) missed. Root-cause guard, not ceremony.
   TASKS.md routed to DB-3. No schema authored (that's DB-3's own session). This closes the reconciliation/setup work.
 
 ## Resume
-**✅ 2026-08-21 — PHASE 0 (delivery-truth gate) + PHASE 1 (close out M1.0) DONE. M1.0 is genuinely CLOSED. Next = Phase 2: open M1.1.**
-- **Phase 0 gate PASSED:** DB-3 (LIF-65) + DB-4 (LIF-66) verified *truly delivered* their scope (not just marked Done) — against the ADR-002 §5.20 ledger (11 tables) + the per-domain `structure-data.md` floors (21 groups / 117 tables); independent adversarial critic → both HONEST. `@vida/core` 786/787 (1 pre-existing vault-1MB flake, passes standalone).
-- **Phase 1 done:** census M1.0 100%; §XXIX currency reconciled; delivery-structure reconciled (reconstructed-structure · delivery-plan · P0 roster); tracker/Linear verified (95 live, all M1.0 DONE); `m1.0-closeout.md` → ✅ CLOSED; db-3/db-4 task files archived.
-- **Phase 2 (next):** re-open `docs/roadmap/m1.1-delivery-plan.md` (drafted 2026-08-17, gated) and re-confirm it holds now that the schema is genuinely complete → run the 8-step milestone-delivery-planning workflow (Steps 6–13) → foundation gate + independent critic → reconcile grain/dep-graph to tracker → accept. Head after = MOD-notes #31.
-- Reload: `docs/roadmap/schema-foundation-build-flow.md` · `docs/roadmap/m1.1-delivery-plan.md` · this file's Build Steps Phase 2.
+**✅ 2026-08-21 — ALL PHASES DONE. M1.0 CLOSED + M1.1 OPENED. This task is COMPLETE (pending Victor's commit/close call).**
+- **Phase 0** (delivery-truth gate) + **Phase 1** (close M1.0) — done; M1.0 genuinely CLOSED (evidence, not census).
+- **Phase 2** (open M1.1) — done: `m1.1-delivery-plan.md` RE-CONFIRMED + gated (foundation gate + independent critic → **SHIP**);
+  **§9 per-module deferred-to-build scope surfaced** (every ⚠ INTENDED / build-phase intent bound to ① NOW / ② NOW / later-HOMED,
+  per Victor's directive). 6 issues 1:1 w/ tracker (LIF 131/133/127/141/139/119); edges acyclic = canonical.
+- **Uncommitted (on `main`):** `docs/roadmap/m1.1-delivery-plan.md` · `REPO.md` · `.claude/tasks/m1-foundation-closeout.md`.
+  On `main` → **branch before committing** (global rule). `tracker --sync` was retried best-effort (Linear already correct).
+- **Next build head = MOD-notes #31** — a FRESH task/session (`/task-new mod-notes`, add-backend-component → add-frontend-component);
+  the builder reads **§9 MOD-notes** for its ①/② scope before the `[F]` unit spec. Reload: `m1.1-delivery-plan.md` (esp. §9).
 
 <details><summary>(superseded) 2026-08-18 resume — schema-foundation model decided</summary>
 
