@@ -788,3 +788,39 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   + SyncMetadata/UNIQUE guard + no-deleted_at guard = 15) + 2 parity rows. `@vida/core` **780 green**; `LATEST_VERSION`=31;
   typecheck 0; eslint 0. Gates: gate-1 SHIP · preflight PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero
   build-decisions.** UserProfile interface reconcile (shed 7 fields) + XpHistory retire → DB-11. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #22 Notifications (IMPLEMENTED 2026-08-21 · `032_notifications.ts` + `schema/notifications.ts`) — **the FINAL DB-4 group → DB-4 COMPLETE (21/21)**
+- **[FACT] BR-NF-1 — 1 table; the dead-last observer leaf (a PURE SINK).** `notifications` — in-degree = everything,
+  out-degree 0 (nothing depends on it). The dispatcher (`reminder-engine.ts`, 0 bytes), the two production paths
+  (event-driven `surface_notification` / time-driven `dueIn()`), derived-until-fire reminders (NF-3, no phantom future
+  rows), and the ZK wake-signal delivery (NF-6, **ADR-013**) are all **service logic (M1.1)** — not schema. Delivery config
+  → Preferences (`notification_{email,push,in_app}` etc., NF-4). `[FACT: §5.16; ADR-013; dep-graph leaf]`
+- **[FACT] BR-NF-2 — bespoke shape; NO `updated_at`, NO `deleted_at`.** `id + fields + created_at + 6 _sync_*` (NOT
+  `baseColumns`). **NO `updated_at`** — v2 deliberately dropped it (intake L22; the `Notification` interface confirms;
+  mutation tracked via `read_at`/`archived_at`/`_sync_lww_ts`). **NO `deleted_at`** — the read→archive→expire→**purge**
+  lifecycle (NF-13; `is_archived`/`expires_at` govern, purge = hard delete). `[FACT: §5.16 L3475-3500; common.ts:90-108; NF-13]`
+- **[FACT] BR-NF-3 — `effect_event_id` (nullable) + `UNIQUE` = the Additive cross-device convergence key.** A
+  `surface_notification` is an ADR-004 §3.2.5 **Additive** output row; per **ADR-012 L45/L139** it carries a deterministic
+  `effect_event_id` + a **UNIQUE on the row** — this, **NOT** the device-local `applied_effects` ledger (`effects.ts:5`,
+  which cannot converge across devices), is what merges a multi-device collision to one row. Mirrors the `consequence_ledger`
+  sibling (`economy.ts:46,52`). **Nullable** (event rows only; time-driven dispatcher fires are NULL — keyed by the `dueIn`
+  occurrence, dispatcher service). **Plain single-column `UNIQUE(effect_event_id)`** (not `consequence_ledger`'s composite —
+  `surface_notification`'s effect_type is constant, no `kind`/`target_ref` subdivision); SQLite treats NULLs as distinct →
+  time-driven NULL rows are unconstrained, event rows converge. Plaintext (structural). ⚠ **Gate-1 catch** (a P1 miss: I
+  stopped at the module roster and didn't cross-check ADR-012's Additive mechanism — [[verify-a-critiques-escalation-and-defer-target-before-relaying]]
+  applied in reverse: doc-check the critique's RULING → it was a real doc-fixed FACT). `[FACT: ADR-012 L45/L139; economy.ts:46,52; effects.ts:5]`
+- **[FACT] BR-NF-4 — RESOLUTION-N4 build-phase AMENDMENTs authored.** `metadata` [E] (optional entity payload JSON, nullable)
+  + a **3-flag delivery-audit** `delivered_in_app`/`delivered_push`/`delivered_email` (P, NN default 0 — which channels a row
+  fired on, multi-device delivery dedup). The delivery-audit shape (docs offered "flags OR a set") = **3 flags**, grounded on
+  the Preferences channel-triad (`preferences.ts:69-71`, the canonical channel representation; SMS dropped). `[FACT: RESOLUTION N4;
+  preferences.ts:69-71]`
+- **[FACT] BR-NF-5 — nullability = the interface; 1 CHECK; terminal-sink registry.** Nullability from the `common.ts:90-108`
+  `Notification` interface (title/type/is_read/is_archived/created_at NN; rest nullable). **1 FIXED CHECK** (`type` →
+  `NOTIFICATION_TYPE`, reuse existing tuple; +1 enum-parity row); `entity_type` OPEN (registry-validated, no CHECK). **No
+  `ENTITY_TYPES` append** (terminal sink — a link *source* via `entity_type`/`entity_id`, never a link *target*). No new
+  enum/validator (`NOTIFICATION_TYPE`/`NotificationTypeSchema` exist). §5.16 partial index `idx_notifications_unread(is_read)
+  WHERE is_archived=0` = SQL-only (NP-2 precedent). **Phase-5 introspection** (`notifications-introspection.test.ts`, 1 × 4 +
+  no-updated_at/deleted_at guard + UNIQUE-convergence/partial-index behavioral guard = 6) + 1 parity row. `@vida/core` **787
+  green**; `LATEST_VERSION`=32; typecheck 0; eslint 0. Gates: gate-1 **REVISE**→resolved (the `effect_event_id` catch) ·
+  preflight PASSED · gate-2 SHIP · post-impl SHIP. `Notification` interface reconcile (add metadata/delivered_*/effect_event_id
+  + sync) → DB-11. **⚠ DB-4 is now COMPLETE — 21/21 active groups authored → the M1.0 schema foundation is done.** `[FACT: vitest run]`

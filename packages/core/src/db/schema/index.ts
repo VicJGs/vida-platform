@@ -106,3 +106,11 @@ export * from './journals'
 // #16 derived; keeps PII + total_xp/current_level caches). achievements = the FIRST non-syncable static-seed table
 // (no _sync_*/updated_at/deleted_at). xp_history RETIRED → consequence_ledger. ENTITY_TYPES += 'achievement'.
 export * from './gamification'
+
+// DB-4 group #22 — Notifications (1 table): notifications — the dead-last observer leaf, a PURE SINK
+// (in-degree = everything, out-degree 0). The dispatcher / delivery / ZK wake-signal (ADR-013) are service
+// (M1.1), not schema. §5.16 floor + RESOLUTION-N4 AMENDMENTs (metadata[E] + 3-flag delivery-audit) + the
+// ADR-012 Additive convergence key (effect_event_id nullable + UNIQUE — surface_notification is an Additive
+// output row; the device-local applied_effects ledger can't converge cross-device). Bespoke shape (id + fields
+// + created_at + _sync_*; NO updated_at [v2 dropped], NO deleted_at [purge lifecycle]). ← DB-4 COMPLETE (21/21).
+export * from './notifications'

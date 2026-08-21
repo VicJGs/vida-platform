@@ -40,6 +40,7 @@ import { migration028HealthNutrition } from './028_health_nutrition'
 import { migration029HealthTraining } from './029_health_training'
 import { migration030Journals } from './030_journals'
 import { migration031Gamification } from './031_gamification'
+import { migration032Notifications } from './032_notifications'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -55,7 +56,7 @@ import { migration031Gamification } from './031_gamification'
 // finance & fiscal-legal (020) · skills (021) · knowledge & flashcards (022) · books (023) ·
 // learning: education & ics (024) · relationships / CRM (025) · check-ins (026) ·
 // health: core (027) · health: nutrition (028) · health: training (029) · journals (030) ·
-// gamification (031).
+// gamification (031) · notifications (032). ← DB-4 COMPLETE (21/21 active groups).
 const ALL_MIGRATIONS: Migration[] = [
   migration001SyncQueue,
   migration002Sessions,
@@ -88,6 +89,7 @@ const ALL_MIGRATIONS: Migration[] = [
   migration029HealthTraining,
   migration030Journals,
   migration031Gamification,
+  migration032Notifications,
 ]
 
 // ---------------------------------------------------------------------------

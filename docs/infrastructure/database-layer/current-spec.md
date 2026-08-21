@@ -567,10 +567,25 @@ The Stream (ii) per-domain modules authored so far (18 of 21 active; #13 Languag
   + 2 parity rows. `@vida/core` **780 tests** green; `LATEST_VERSION`=31; typecheck 0; eslint 0. Gates: gate-1 SHIP · preflight
   PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero build-decisions.** UserProfile interface reconcile (shed 7 fields) +
   XpHistory retire → DB-11. `[FACT: 031_gamification.ts; schema/gamification.ts; docs/specs/foundation/db-4-gamification/]`
-- **Remaining DB-4 groups:** #22 Notifications (1 more; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
+- **Group #22 Notifications (2026-08-21) — the FINAL group:** **1 table** — `notifications`, the dead-last observer leaf
+  (a PURE SINK, out-degree 0). The dispatcher / two production paths / derived-until-fire reminders / ZK wake-signal delivery
+  (ADR-013) are **service (M1.1)**, not schema; delivery config → Preferences (NF-4). §5.16 floor + RESOLUTION-N4 AMENDMENTs
+  (`metadata[E]` + a 3-flag delivery-audit `delivered_in_app/push/email`, grounded on the Preferences channel-triad) + the
+  **ADR-012 Additive convergence key** (`effect_event_id` nullable + `UNIQUE` — a `surface_notification` is an Additive output
+  row; the device-local `applied_effects` ledger can't converge cross-device, so ADR-012 L45/L139 mandate a UNIQUE on the row;
+  nullable because time-driven fires have no effect id; SQLite NULL-distinct → they don't collide). **Bespoke shape**
+  (`id + fields + created_at + _sync_*`; NO `updated_at` [v2 dropped, intake L22], NO `deleted_at` [purge lifecycle NF-13]).
+  Nullability = the `common.ts` `Notification` interface. **1 FIXED CHECK** (`type`→`NOTIFICATION_TYPE`, reuse) +1 parity row;
+  no new enum/validator; **no `ENTITY_TYPES` append** (terminal sink); §5.16 partial index SQL-only. **Phase-5 introspection**
+  (`notifications-introspection.test.ts`, 1 × 4 + no-updated_at/deleted_at + UNIQUE-convergence/partial-index behavioral guards
+  = 6) + 1 parity row. `@vida/core` **787 tests** green; `LATEST_VERSION`=32; typecheck 0; eslint 0. Gates: gate-1 **REVISE**
+  →resolved (the `effect_event_id` convergence-key catch — a real P1 miss, ADR-012 cross-check) · preflight PASSED · gate-2 SHIP
+  · post-impl SHIP. `Notification` interface reconcile → DB-11. `[FACT: 032_notifications.ts; schema/notifications.ts; docs/specs/foundation/db-4-notifications/]`
+- **✅ DB-4 COMPLETE — all 21 active groups authored (migrations 012–032; #13 Languages dissolved → Spaces, ADR-006). The M1.0
+  schema foundation is done.**
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 + #17 + #18 + #19 + #20 + #21 ✅ (20 of 21 active); 1 group remains**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**✅ COMPLETE — 21/21 active groups; #15 Finance done at v20**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
-DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.
+DB-4 per-domain authoring is ✅ COMPLETE (21/21 → M1.0 schema foundation done).** DB-7 unblocks db-10 (seed) with db-6/db-9.
