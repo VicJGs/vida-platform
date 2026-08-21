@@ -5347,3 +5347,43 @@ Next session:
   - **The module `structure-data.md` roster IS the authoritative per-table floor** (even for a recovered domain, no v2
     code) — a blanket convention never overrides its explicit per-table notation; and a critique's premise needs
     doc-checking too, not just its escalations. **16 of 21 done; 5 remain.** Branch NOT committed/pushed.
+
+---
+Date: 2026-08-20 — DB-4 group #18 Health: Nutrition: full 5-phase lifecycle DONE (the fuel pillar)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #18 — Health: Nutrition (composes the Core spine authored in #17).
+Accomplished:
+  - **6 tables** (`028_health_nutrition.ts`, v28; `schema/health-nutrition.ts` + net-new `packages/types/src/nutrition.ts`
+    + `validators/nutrition.ts`): nutrition_ingredients · nutrition_dishes · nutritional_plans · daily_meal_plans · meals ·
+    shopping_items. Net-new (recovered domain). Composes Core #17: Nutrition Goals → Core `health_goals` (C1/HN-4),
+    Experiments/Responses → Core Adaptation (HN-5), cost → Finance, tags → Spaces.
+  - **`deleted_at` on `nutritional_plans` ONLY** (the floor L22 — the #17 ruling applied cleanly: the structure-data roster
+    IS the authoritative per-table floor). **OPEN-vocab-heavy: only 3 FIXED CHECK** — `MEAL_SOURCE` (meals.source, manual|ai|
+    import, AI6 triad; `ai` not `llm` per rerun N3) + `MEAL_GENERATION_METHOD` (daily_meal_plans.generation_method) net-new +
+    reused `FREQUENCY` (nutritional_plans.review_frequency). Everything else OPEN (no CHECK): modality (caloric_strategy/
+    dietary_framework/philosophy/meal_type, conventions L17); editable-starter taxonomy (functional_area/whole_food_type, C5/
+    HN-12/HN-13 — never hard-code as truth); all `status` columns (bare "status P" floor; terminal-states prose is ambiguous
+    UI-state). **Inline `meals.tags` dropped → `entity_tags`** (SP1 forward-reframe, no live floor → no R6).
+  - money[E] = `money()` INTEGER cents + @encrypted (finance precedent, meals.cost + shopping.estimated_cost); `photo_blob` =
+    `blob(buffer)` [E]; no cross-table FK. C1–C8 guards held (no measurement_kind/binding_mode, no economy, no session — a
+    meal is LOGGED via `dueIn()` not a session [C3, the inverse of Training #19]; no AI4 agentic envelope; cooking_skill_id
+    opt-in nullable C6; no import_staging C8). X*/AI* wiring = cite-not-author (only source/generation_method/ai_meal_generation).
+    `ENTITY_TYPES += 6` (incl. `nutritional_plan`, not `nutrition_plan` — fixed #17's stale comment shorthand, NIT-1).
+  - Gates: gate-1 SHIP (2 NITs) · preflight PASSED (9 folds) · gate-2 SHIP (2 NITs) · post-impl SHIP (0 findings). All via
+    independent adversarial critics with the #17 methodology guard (ground findings in the floor; verify the premise). All 4
+    NITs cosmetic, folded (registry comment, blob import, §3b rating REAL→INTEGER doc-consistency).
+  - Green: `@vida/core` **730 tests** (29 files incl. new health-nutrition-introspection.test.ts 25 cases = 6×4 + deleted_at-
+    floor guard; +3 enum-parity rows); `LATEST_VERSION`=28; root typecheck 11/11; eslint 0. §XXIX current-* promoted (BR-NT-1…6).
+    Committed on branch `db-4-per-domain-schema`.
+Notes:
+  - No Victor drift-catch this group — the #17 lesson (the module structure-data roster IS the authoritative per-table floor,
+    even for a recovered domain with no v2 code; doc-check a critique's premise) carried forward cleanly. Both critics grounded
+    their findings correctly and did not re-open the deleted_at floor.
+Next session:
+  - **FIRST ACTION: open P0 table group `#19 Health: Training`, Phase 1 intent intake** — FRESH clean-context. Read FULL
+    5-aspect `docs/features/health/training/` + grep intake+reruns FIRST. Training is the **inverse of Nutrition on C3**: a
+    workout IS a Session (composes `sessions` `workout` sub-type + a Health-owned `workout_sessions` extension, ADR-004) — so
+    it authors the Training pillar catalogs (exercises/plans/protocols) + the session extension (no deleted_at on the
+    extension, the session-extension precedent). ⚠ `health/training` was **row 21 = ALIGNED** in the staleness sweep — it may
+    have NO rerun (unlike Core row-19-stale / Nutrition row-20-gap); confirm and read the aspects directly. The roster IS the floor.
+  - **17 of 21 done; 4 remain.** After #19 Training: 3 more groups (#20/#21/#22). Branch `db-4-per-domain-schema`.

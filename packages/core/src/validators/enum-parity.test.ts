@@ -122,6 +122,8 @@ import {
   SAFETY_FLAG_TRIGGER,
   SAFETY_FLAG_STATUS,
   PHYSICAL_ROLE_AUTHORING_SOURCE,
+  MEAL_SOURCE,
+  MEAL_GENERATION_METHOD,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -150,6 +152,7 @@ import { migration024LearningEducation } from '../db/migrations/024_learning_edu
 import { migration025Relationships } from '../db/migrations/025_relationships'
 import { migration026CheckIns } from '../db/migrations/026_check_ins'
 import { migration027HealthCore } from '../db/migrations/027_health_core'
+import { migration028HealthNutrition } from '../db/migrations/028_health_nutrition'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -418,6 +421,14 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'medical_profile_entries', column: 'source', tuple: MEDICAL_PROFILE_SOURCE },
   { table: 'safety_flags', column: 'trigger', tuple: SAFETY_FLAG_TRIGGER },
   { table: 'safety_flags', column: 'status', tuple: SAFETY_FLAG_STATUS },
+
+  // DB-4 group #18 — Health: Nutrition. 3 FIXED CHECK cols = 2 net-new (MEAL_SOURCE on meals.source [AI6 triad];
+  // MEAL_GENERATION_METHOD on daily_meal_plans.generation_method) + 1 reused (FREQUENCY on nutritional_plans.
+  // review_frequency). Everything else OPEN (modality per conventions L17 · editable-starter functional_area/
+  // whole_food_type C5 · bare "status P") → NO CHECK, not rows.
+  { table: 'meals', column: 'source', tuple: MEAL_SOURCE },
+  { table: 'daily_meal_plans', column: 'generation_method', tuple: MEAL_GENERATION_METHOD },
+  { table: 'nutritional_plans', column: 'review_frequency', tuple: FREQUENCY },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -450,6 +461,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration025Relationships.up(driver)
   await migration026CheckIns.up(driver)
   await migration027HealthCore.up(driver)
+  await migration028HealthNutrition.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

@@ -118,8 +118,8 @@ export const ENTITY_TYPES = [
   'daily_check_in',
   // DB-4 group #17 — Health: Core. The 11 taggable/linkable Core entity_types (structure-data §ADR-002 additions)
   // register in the OPEN registry (SP2; NOT a closed CHECK) — consumed by entity_tags (SP1) + entity_links + pages.
-  // Health is a tag CONSUMER, never a tag-table owner. The pillar types (workout_session/exercise/meal/
-  // nutrition_plan) are Nutrition #18 / Training #19's, NOT registered here.
+  // Health is a tag CONSUMER, never a tag-table owner. The Training #19 pillar types (workout_session/exercise) are
+  // registered there; the Nutrition #18 types are the block below.
   'health_metric',
   'health_metric_value',
   'health_domain',
@@ -131,6 +131,15 @@ export const ENTITY_TYPES = [
   'health_experiment',
   'medical_profile_entry',
   'safety_flag',
+  // DB-4 group #18 — Health: Nutrition. The 6 taggable Nutrition entity_types (structure-data §ADR-002 additions L43-45)
+  // register in the OPEN SP2 registry. Inline meals.tags dropped → entity_tags (SP1). Note: `nutritional_plan` (not
+  // `nutrition_plan`) per the floor L43.
+  'nutrition_ingredient',
+  'nutrition_dish',
+  'nutritional_plan',
+  'daily_meal_plan',
+  'meal',
+  'shopping_item',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

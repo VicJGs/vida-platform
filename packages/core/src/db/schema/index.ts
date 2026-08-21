@@ -77,3 +77,9 @@ export * from './check-ins'
 // decomposed → measurement_kind × binding_mode (ADR-011). deleted_at on health_goals ONLY (floor). No tags
 // owned (SP1 consumer); X*/AI*/M4/M5 = cite-not-author. Nutrition #18 / Training #19 are separate groups.
 export * from './health-core'
+
+// DB-4 group #18 — Health: Nutrition (6 tables): nutrition_ingredients · nutrition_dishes · nutritional_plans ·
+// daily_meal_plans · meals · shopping_items. The fuel pillar (recovered domain). Composes Core #17 (goals/metrics/
+// adaptation), Finance (cost), Spaces (tags). deleted_at on nutritional_plans ONLY (floor). Inline meals.tags dropped
+// → entity_tags (SP1). 3 FIXED CHECK (MEAL_SOURCE/MEAL_GENERATION_METHOD + reused FREQUENCY); rest OPEN (modality/starter).
+export * from './health-nutrition'

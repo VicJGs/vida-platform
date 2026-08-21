@@ -651,3 +651,30 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   REVISE→resolved (deleted_at floor — Victor drift-catch) · preflight PASSED (10 folds) · gate-2 SHIP (3 folds) · post-impl
   SHIP. **Zero build-decisions** (the deleted_at drift was a critique's false premise, not a manufactured decision). 12 row
   interfaces + 14 enums → DB-11 interface reconcile. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #18 Health: Nutrition (IMPLEMENTED 2026-08-20 · `028_health_nutrition.ts` + `schema/health-nutrition.ts`)
+- **[FACT] BR-NT-1 — 6 net-new tables; the fuel pillar composes the Core spine (#17).** `nutrition_ingredients`·
+  `nutrition_dishes`·`nutritional_plans`·`daily_meal_plans`·`meals`·`shopping_items`. Net-new (recovered domain); the
+  `structure-data.md` roster IS the documented per-table floor. Nutrition owns only food-specific entities; Nutrition Goals →
+  Core `health_goals` (C1/HN-4), Experiments/Responses → Core Adaptation (HN-5), cost → Finance, tags → Spaces. `[FACT: structure-data §Entities]`
+- **[FACT] BR-NT-2 — `deleted_at` on `nutritional_plans` ONLY (the floor, L22).** The soft-deletable strategy entity; the other
+  5 omit it (libraries = reference data; daily_plans/meals/shopping = instances/logs). The #17 ruling applied cleanly (follow
+  the documented per-table floor). `[FACT: structure-data L22; introspection deleted_at-floor test]`
+- **[FACT] BR-NT-3 — OPEN-vocab-heavy: only 3 FIXED CHECK.** `meals.source` (`MEAL_SOURCE`=manual|ai|import, AI6 triad, net-new)
+  + `daily_meal_plans.generation_method` (`MEAL_GENERATION_METHOD`, net-new) + `nutritional_plans.review_frequency` (reused
+  `FREQUENCY`). **Everything else OPEN** (no CHECK): caloric_strategy/dietary_framework/philosophy/meal_type = modality
+  (conventions L17); `functional_area`/`whole_food_type` = editable STARTERS (C5/HN-12/HN-13 — never hard-code as truth); all
+  `status` columns = bare "status P" in the floor (terminal-states prose is ambiguous UI-state, not a stored-enum contract).
+  `[FACT: floor inline-enumeration + conventions L17 + C5; [[open-vocab-columns-take-no-sql-check]]]`
+- **[FACT] BR-NT-4 — SP1 forward-reframe: NO inline `meals.tags`.** Dropped → `entity_tags` (a forward `[INTENT]` correction,
+  no live floor → no R6); the 6 `entity_type`s register in the OPEN SP2 registry. `ENTITY_TYPES += 6` (incl. `nutritional_plan`,
+  NOT `nutrition_plan`). `[FACT: rerun G-SP1/F1; _registry.ts]`
+- **[FACT] BR-NT-5 — C1–C8 guards held.** No `measurement_kind`/`binding_mode` (C1 — composes Core goals; `goal_id` no-FK
+  nullable); no economy (C2); a meal is a LOGGED entity, NOT a session (C3 — `scheduled_at`+`status`+`dueIn()`, no sub-type);
+  no AI4 agentic envelope (C4 — only `source`/`generation_method`/`ai_meal_generation` provenance); `cooking_skill_id` opt-in
+  nullable (C6); no `import_staging` (C8, Finance-owned). X*/AI* wiring = cite-not-author. `[FACT: rerun C1–C8]`
+- **[FACT] BR-NT-6 — money[E] + blob[E]; no-FK.** `meals.cost` + `shopping_items.estimated_cost` = `money()` INTEGER cents +
+  `@encrypted` (finance precedent); `meals.photo_blob` = `blob(buffer)` [E]. No cross-table FK (goal_id/plan_id/daily_plan_id/
+  recipe_page_id/cooking_skill_id/meal_ref plain TEXT). **Phase-5 introspection** (6 × 4 + deleted_at guard = 25). `@vida/core`
+  **730 green**; `LATEST_VERSION`=28; typecheck 11/11; eslint 0. Gates: gate-1 SHIP (2 NITs) · preflight (9 folds) · gate-2 SHIP
+  (2 NITs) · post-impl SHIP. **Zero build-decisions.** 6 row interfaces + 2 enums → DB-11. `[FACT: vitest run]`
