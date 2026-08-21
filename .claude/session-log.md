@@ -5426,3 +5426,29 @@ Next session:
     already exist colocated (e.g. in entities/user.ts) — grep the exact NAME + READ the hit before declaring net-new (the #16 lesson).
   - **18 of 21 done; 3 remain** (#20 Journals · #21 Gamification · #22 Notifications). ⚠ **E9 cross-group for #21 Gamification:**
     `user_profile` MUST omit `persona`/`motivation_style`/`active_modules`/`onboarding_completed` (→ Preferences #2) + `check_in_streak*` (→ Check-ins #16). Branch `db-4-per-domain-schema`.
+
+---
+Date: 2026-08-21 — m1-foundation-closeout: Phase 0 (delivery-truth gate) + Phase 1 (close out M1.0) — M1.0 CLOSED
+Task: m1-foundation-closeout (LIF-159) · Profile: Project Foundation · scenario milestone-delivery-planning (+ M1.0 close-out prefix) · branch `chore/m1.0-closeout`
+Goal: verify DB-3 + DB-4 truly delivered (Victor-added gate), then close out M1.0.
+Accomplished:
+  - **Phase 0 delivery-truth gate PASSED** — DB-3 (LIF-65) + DB-4 (LIF-66) verified TRULY delivered, not just marked Done:
+    DB-3 = all 11 §5.20 Stream (i) ADD tables (migrations 007–011), RETIRE set absent; DB-4 = all 21 active groups
+    (migrations 012–032, v32, 117 tables), 6-group deep sample matches each `structure-data.md` floor member-by-member,
+    #13 Languages doc-licensed 0-table dissolution. Independent adversarial critic (checked disk, not prose) → both HONEST,
+    not overclaims. `@vida/core` 786/787 (1 pre-existing vault-1MB flake, passes standalone 36/36).
+  - **Phase 1 close-out DONE (5 steps):** census M1.0 100%; §XXIX currency (database-layer current-spec 18→21 groups, v32);
+    delivery-structure reconciled (reconstructed-structure #9/#10 → ✅; delivery-plan header+rows → CLOSED; DB-4 P0 roster
+    8 stale ☐ → ✅); tracker/Linear `--verify` 95 live, all M1.0 DONE (no push); `m1.0-closeout.md` rewritten
+    REOPENED → ✅ CLOSED (premature close kept as the resolved lesson); db-3/db-4 task files archived; `_index.md` reconciled.
+  - Committed `2966ba2` on branch `chore/m1.0-closeout` (9 files, gitleaks clean, `git show --stat` verified).
+Notes / open:
+  - **`tracker --sync` failed on a transient network error** (`Connection reset by peer` on a Linear `set_blocks` call, both
+    attempts) — NOT a correctness issue (Linear already has both DB issues DONE; the closeout pushes no status change). Retry
+    at the top of the Phase 2 session. Learned/reinforced: separate "marked Done" (tracker) from "delivered scope" (tables vs
+    intent docs) — certify a milestone against its intent sources, not its census.
+Next session:
+  - **FIRST ACTION: Phase 2 — open M1.1** (milestone-delivery-planning Steps 6–13). Re-open the drafted
+    `docs/roadmap/m1.1-delivery-plan.md` (gated 2026-08-17), re-confirm it holds now the schema is genuinely complete →
+    foundation gate + independent critic → reconcile grain/dep-graph to tracker → accept. Head after = MOD-notes #31.
+    Also retry `tracker --sync`. Reload `.claude/tasks/m1-foundation-closeout.md` (Build Steps Phase 2 + Resume).

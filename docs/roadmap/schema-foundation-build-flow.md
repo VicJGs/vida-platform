@@ -5,7 +5,7 @@
      the delivery plans, the reconstructed-structure rows, the closeout record, and the two task files
      all point here. No-Guessing: claims are [FACT: src] / [INTERP] / [UNKNOWN]. -->
 
-Status: **ACTIVE — authoritative. DB-3 is the next M1.0 build head; DB-4 follows it.**
+Status: **✅ COMPLETE — authoritative (historical). DB-3 (LIF-65, PR #31) then DB-4 (LIF-66, PR #32) were both authored via this 5-phase flow; the M1.0 schema foundation is done (2026-08-21).**
 Supersedes: the "streaming loop model (Q1 settled)" in [`m1.0-delivery-plan.md` §5.1.1](./m1.0-delivery-plan.md)
 and every "DB-3/DB-4 are `〰` streams / land per-module / not upfront" description across the corpus (reconciled — see §5).
 

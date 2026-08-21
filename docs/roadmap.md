@@ -78,10 +78,12 @@ substrate no M1 module consumes is not built in M1.
 > rollups all work. Encryption/sync/auth off (seam pass-through). Data entered by hand.
 
 ## M1.0 — Boot & connective base
-> ⚠️ **REOPENED (2026-08-18)** — build heads #1–30 done, but the **schema foundation is unfinished**: DB-3
-> (substrate — partial, 11/~22 tables) + DB-4 (per-domain — not started). M1.0 was closed too soon without
-> verifying these. **Finish DB-3 + DB-4, THEN M1.1** (modules build on the finished schema, do not author it).
-> DB-4 flow pending Victor's blueprint. Status record: [`docs/roadmap/m1.0-closeout.md`](./roadmap/m1.0-closeout.md).
+> ✅ **CLOSED (2026-08-21)** — all build heads #1–30 **and** the schema foundation are done: DB-3 (substrate,
+> 11 §5.20 Stream (i) tables, LIF-65 PR #31) + DB-4 (per-domain, all 21 active groups, migrations 012–032 v32,
+> LIF-66 PR #32). Both verified *truly delivered* via a Phase-0 delivery-truth gate (against the §5.20 ledger +
+> the `structure-data.md` floors — not census alignment; the 2026-08-17 premature-close mode is retired). Modules
+> build service+UI on the finished schema, do not author it. **M1.0 CLOSED → M1.1 opens** (head MOD-notes #31).
+> Status record: [`docs/roadmap/m1.0-closeout.md`](./roadmap/m1.0-closeout.md).
 
 The thinnest foundation the first modules need (grown per module, not all-upfront):
 - **AR-1 · Monorepo topology** — Turbo pipeline, tsconfig refs, package exports (types→core→editor→ui). *(done)*

@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes … #18 Nutrition + #19 Training authored · Health domain COMPLETE · 2026-08-20 · LIF-66)
-The Stream (ii) per-domain modules authored so far (18 of 21 active; #13 Languages dissolved → Spaces, ADR-006). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships,check-ins,health-core,health-nutrition,health-training}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 029_health_training.ts]`
+## DB-4 — ✅ COMPLETE (all 21 active groups #1 Notes … #22 Notifications authored · 2026-08-21 · LIF-66)
+The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COMPLETE, 2026-08-21)**; #13 Languages dissolved → Spaces, ADR-006. `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships,check-ins,health-core,health-nutrition,health-training,journals,gamification,notifications}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 032_notifications.ts; LATEST_VERSION=32]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
