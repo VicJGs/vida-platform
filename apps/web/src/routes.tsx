@@ -65,7 +65,15 @@ const graphRoute = createRoute({
   component: lazyRouteComponent(() => import('./app/graph')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, notesRoute, graphRoute])
+// MOD-notes ②b — the per-page detail route (structure-data.md:40 "any page → note/[id]").
+// Placeholder body in ②b (title only); the TipTap editor mounts in ②c.
+const noteDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/note/$id',
+  component: lazyRouteComponent(() => import('./app/note-detail')),
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, notesRoute, graphRoute, noteDetailRoute])
 
 export const router = createRouter({
   routeTree,

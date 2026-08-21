@@ -13,6 +13,7 @@ import { Dialog, Input } from '@vida/ui'
 import { Search } from 'lucide-react'
 import type { Command, CommandRunContext, SearchOutcome } from '../command-bar/types'
 import { createCommandRegistry, navProvider, shellActionsProvider } from '../command-bar/registry'
+import { notesCommandProvider } from '../app/notes/commands'
 import { stubSearchProvider } from '../command-bar/search-provider'
 import { useCommandBarUIStore } from '../stores/command-bar-ui-store'
 import { isFeatureEnabled } from './feature-flags'
@@ -69,6 +70,7 @@ export function CommandBar() {
     const registry = createCommandRegistry()
     registry.register(navProvider)
     registry.register(shellActionsProvider)
+    registry.register(notesCommandProvider) // MOD-notes ②b — the "New note" action (M1.1 module contribution)
     return registry
       .collect([], Date.now())
       .filter((c) => c.visibleWhen == null || isFeatureEnabled(c.visibleWhen))

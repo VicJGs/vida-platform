@@ -14,6 +14,10 @@ vi.mock('./onboarding/first-run-repo', () => ({
   readFirstRunComplete: h.read,
   writeFirstRunComplete: h.write,
 }))
+// MOD-notes ②b — the /notes route is a real data-backed surface now; stub its data
+// hook so this SHELL-seam test stays focused (the router injection), not the notes
+// data layer (which would pull the @vida/core service graph into the lazy chunk).
+vi.mock('./app/notes/hooks', () => ({ usePagesByType: () => ({ data: [], state: 'empty' }) }))
 
 import { App } from './App'
 import { router } from './routes'

@@ -5,9 +5,9 @@
 # Current Spec — Notes & Pages (built slice)
 
 **Status:** MOD-notes increment ① (LIF-131, M1.1) shipped the `@vida/core` Notes & Pages **service** over the
-DB-4 schema. Increment **②a (the app data plane)** is now built — the `apps/web` wiring that makes the ① service
-reachable from React. The remaining ② rendered units (②b views · ②c editor + `[[` picker · ②d panels · ②e search)
-remain INTENDED. `[FACT: this branch — packages/core/src/services/notes/, apps/web/src/{db,services,app/notes}]`
+DB-4 schema. Increment **②a (the app data plane)** wires it into React; **②b (the `/notes` collection surface)** is now
+built — the rendered browse surface. The remaining ② units (②c editor + `[[` picker · ②d panels · ②e search) remain
+INTENDED. `[FACT: this branch — packages/core/src/services/notes/, apps/web/src/{db,services,app/notes,stores}]`
 
 ## What is BUILT (MOD-notes ① · add-backend-component)
 
@@ -54,6 +54,22 @@ The `apps/web` wiring that lets React read/write pages through the ① service a
 - **Tests:** 13 jsdom (device-id · DP-8 wire-order serialization · client `values` RPC · hooks read+invalidate) +
   a CI-only e2e `notes-data-plane.spec.ts` (values-seam positional read-back + reload-persist over the real worker,
   via the QA-1 `db` fixture on the durable `app_state` table). `@vida/web` 193 tests green; typecheck 0; ESLint 0; build ✓.
+
+## What is BUILT (MOD-notes ②b · the `/notes` collection surface — add-frontend-component)
+The rendered browse surface over `note`-type pages, composing the M1.0 UI-2 views over the ②a data plane.
+- **Route** `apps/web/src/app/notes/index.tsx` (replaces the AR-4 stub): `usePagesByType('note')` → the multi-mode top
+  view (List default · Gallery · Neural), terminal state from the hook (never re-derived). Per-page detail route
+  `note/$id` (`app/note-detail.tsx`, placeholder — editor is ②c); `routes.tsx` wires both.
+- **View switcher** (`view-switcher.tsx`): the `hasMultiModeTopView` selector over the ephemeral `activeNotesView`
+  Zustand slice (`stores/notes-ui-store.ts`); renderers hard-coded, saved-view selection deferred (ADR-007).
+- **`NoteCard`** (`note-card.tsx`): an interactive UI-1 Card → navigates to `note/$id`; the List/Gallery `renderItem`.
+- **Neural** degrades to `NeuralGraph` empty (graph-prep deferred).
+- **Creation = the command-bar action** (`commands.ts` → registered in `shell/command-bar.tsx`): a MOD-notes
+  `CommandProvider` "New note" (⌘K) — createPage → invalidate (`notesKeys`, `keys.ts`) → navigate. The service is
+  DYNAMIC-imported in the run (keeps the eager shell bundle light, BR-7).
+- **Dark-capable** (token-only, zero hex); app is light-only M1.0 (no theme store) → no rendered dark pass.
+- **Tests:** route per state · switcher · card navigate · store · the command run (create/invalidate/navigate/toast) ·
+  the `@vida/core` `PageRow` barrel export (B1). typecheck 0 · ESLint 0.
 
 ## Contract boundaries (what ① does NOT own — grounded)
 - **`/summary` aggregation ENGINE → MOD-journals ①** (`summary(date)` registry + `buildDashboard`). ① keeps only

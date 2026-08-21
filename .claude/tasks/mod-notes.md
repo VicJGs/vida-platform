@@ -43,7 +43,7 @@ Integration points: `/summary` provider seam → MOD-journals (consumer, later);
      SUBSTANCE (rendered surface · all visual states · dark · responsive · /component-audit · real-browser Visual
      Gate) lives in the VISUAL units ②b–②e — NOT in ②a. ② is NOT finalized until those + the Visual Gate land. -->
 
-**② status: IN PROGRESS — only ②a (non-visual prerequisite) is done. The add-frontend-component deliverable (visual surface + Visual Gate) is NOT built.**
+**② status: IN PROGRESS — ②a (data plane) + ②b (the `/notes` collection surface) built + gated. Remaining: ②c editor · ②d panels · ②e search + the real-browser Visual Gate.**
 
 ### ②a — the app data plane (NON-VISUAL prerequisite) — ✅ DONE + GATED
 - [x] Step 0 baseline · Step 1 patterns · Step 2 contract (Gate-1) · Step 2b preflight+Gate-2 (Approval 2)
@@ -51,15 +51,19 @@ Integration points: `/summary` provider seam → MOD-journals (consumer, later);
 - [x] Engineering gates: post-impl /critique SHIP · tsc 0 · §XXIX current-* refreshed
 - [n/a] visual states · dark · responsive · motion · /component-audit · **Visual Gate** — ②a renders nothing; these are ②b's, NOT satisfied here
 
-### ②b–②e — the VISUAL surface (the actual add-frontend-component deliverable) — ⬜ NOT STARTED
-- [ ] ②b — replace the AR-4 `/notes` stub: route + List/Gallery/Calendar/Neural views wired to `usePages`
-- [ ] ②b — ALL visual states (default/hover/focus/active/disabled/loading/error/empty) · dark mode · responsive 375/768/1440 · motion
-- [ ] ②c — TipTap editor mount + `[[` picker (create-on-miss)
+### ②b — the `/notes` collection surface (spec `sessions/PLAN-2026-08-21-02b-notes-collection.md`) — ✅ DONE (gated; Visual Gate owed)
+- [x] Full §XXVI double-gate: gate-1 REVISE (demonstrability · B1 PageRow · miscites) → preflight PASSED → gate-2 REVISE (B-1 cache-invalidation · R-1 residual Tabs drift) — all folded; Victor drift-catch (docs decide creation/switcher/route, not me)
+- [x] Route + multi-mode views (List/Gallery/Neural) · switcher (Zustand) · NoteCard → `note/$id` detail · command-bar "New note" (BR-7 dynamic import) · empty/loading/error/success states · dark-capable (zero hex)
+- [x] `@vida/core` `PageRow` barrel export (B1) · `keys.ts` extracted (eager-bundle discipline); impl fixes: `styled(Text,{render:'h1'})`, dynamic-import service, consolidated render tests (flakiness), S5 integration stubs the hook
+- [x] typecheck 0 · ESLint 0 · full @vida/web suite green · §XXIX current-* refreshed
+- [ ] ⚠ **REAL-BROWSER VISUAL GATE still owed** — CI-only (macOS-12 host can't run Chromium); jsdom render tests are the local proof
+- [ ] ⚠ `/component-audit` + quality-gate-components not yet run
+
+### ②c–②e — remaining visual units — ⬜ NOT STARTED
+- [ ] ②c — TipTap editor mount + `[[` picker (create-on-miss) — replaces the note-detail placeholder body
 - [ ] ②d — backlink/entity-link panels + page metadata (favorite/archive/icon/cover)
 - [ ] ②e — FTS5 search UI (over the DB-8 seam)
-- [ ] **`/component-audit` + `/critique` SHIP + quality-gate-components/-engineering/verification + REAL-BROWSER VISUAL GATE** (the gate I wrongly marked done against non-visual ②a)
-- [ ] Step 9 Currency Rule (§XXIX) refresh for the visual contexts + commit
-- [ ] Only when ②b–②e + Visual Gate land does LIF-131 close
+- [ ] Only when ②c–②e + the Visual Gate land does LIF-131 close
 
 ## Build Steps
 <!-- UNIT-level — mirrors the active spec's §5 Implementation Prompt; what victor:execute-plan-* works.
