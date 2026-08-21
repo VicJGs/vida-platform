@@ -5459,3 +5459,27 @@ Task `mod-notes` (LIF-131): profile **Add Backend Component → Add Frontend Com
 Increment ① (backend service) is DONE + MERGED to `main`. Session opens increment ② — the UI surface
 (add-frontend-component/default scenario). Standards re-loaded for the frontend profile (design + components
 + engineering). §XXVII path surfaced for the frontend scenario.
+
+---
+Date: 2026-08-21
+Task: mod-notes (LIF-131) — MOD-notes increment ② (add-frontend-component)
+Goal: Open increment ② (UI surface); switch profile Add Backend → Add Frontend; build the rendered notes surface with full §XXVI gating.
+Completed:
+  - Profile switch ①→② persisted (task file + session-log); standards reloaded (design·components·engineering·process).
+  - **②a — the app data plane** (committed `6b72613`, branch `mod-notes-2a-data-plane`): worker `values` seam (apps/web/src/db/{worker,client}.ts); main-thread DrizzleDb + DP-8 whole-transaction mutex (db/drizzle.ts); device-id (db/device-id.ts + boot.ts); getNotesService() accessor (services/notes-service.ts); React-Query hooks (app/notes/hooks.ts). Gate: g1 REVISE(B1/B2)→preflight→g2 RETHINK(per-RPC queue interleaves txns → refolded to whole-transaction mutex)→post-impl SHIP.
+  - **②b — the /notes collection surface** (committed `21f5e3b`): route (app/notes/index.tsx, replaces AR-4 stub) + multi-mode views (List/Gallery/Neural) + switcher (stores/notes-ui-store.ts) + NoteCard→note/$id (app/note-detail.tsx) + command-bar "New note" (app/notes/commands.ts → shell/command-bar.tsx) + @vida/core PageRow barrel export + keys.ts. Gate: g1 REVISE(demonstrability/PageRow/miscites)→preflight→g2 REVISE(B-1 cache-invalidation·R-1 residual Tabs).
+  - Verify (both): typecheck 0 · ESLint 0 · @vida/web 209 tests serial-green · build ✓. §XXIX current-* refreshed.
+In progress:
+  - ②b's real-browser Visual Gate + /component-audit — OWED, CI-only (macOS-12 host has no local Chromium). jsdom render tests are the local proof.
+Decisions:
+  - Victor drift-catches (all corrected from docs): creation = command-bar CommandProvider seam (not a bespoke button); view switcher = the `hasMultiModeTopView` capability (not a "decided" Tabs control); route = doc-fixed `note/[id]`; the browser round-trip harness already exists (QA-1); the e2e is the documented app_state-probe persistence spec, not a service-in-harness round-trip.
+  - DP-8: serialize WHOLE transactions (mutex on db.transaction), not per-RPC (which interleaves BEGINs).
+  - Command "New note" DYNAMIC-imports the service (BR-7 — keeps the eager shell bundle light).
+  - Tamagui headings need `styled(Text,{render:'h1'})` (runtime role/tag not honoured).
+Next session:
+  - START ②c — mount the TipTap editor (@vida/editor VidaEditor) in app/note-detail.tsx (replaces the placeholder body) + the `[[` picker (resolveWikiLink → createPageLink create-on-miss). Own §XXVI gate + real-browser Visual Gate.
+  - Once ②c gives the full editing surface, run /component-audit + /critique + quality-gate-components/-engineering/verification + the REAL-BROWSER VISUAL GATE (CI or macOS-13+) across ②b+②c.
+  - Reload: docs/roadmap/m1.1-delivery-plan.md §9 MOD-notes ② (editor mount + 12 platform blocks); docs/features/notes-and-pages/{contract,identity}.md (`[[` picker G2, editor); @vida/editor surface (VidaEditor/VidaEditorHandle, EditorDocument, INTEGRATION_BLOCK_COMMANDS); the ②b spec (sessions/PLAN-2026-08-21-02b) for the note-detail seam.
+  - FOLLOW-UP: parallel-suite flakiness under CPU contention (a `testTimeout`/workers bump in apps/web/vite.config) — latent pre-existing, exposed by ②b's added render tests; all pass serial.
+  - Branch `mod-notes-2a-data-plane` holds ②a+②b (unpushed, unmerged).
+---
