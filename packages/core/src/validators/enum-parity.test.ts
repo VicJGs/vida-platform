@@ -124,6 +124,9 @@ import {
   PHYSICAL_ROLE_AUTHORING_SOURCE,
   MEAL_SOURCE,
   MEAL_GENERATION_METHOD,
+  MOVEMENT_PATTERN,
+  WORKOUT_SET_CATEGORY,
+  BURN_SOURCE,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -153,6 +156,7 @@ import { migration025Relationships } from '../db/migrations/025_relationships'
 import { migration026CheckIns } from '../db/migrations/026_check_ins'
 import { migration027HealthCore } from '../db/migrations/027_health_core'
 import { migration028HealthNutrition } from '../db/migrations/028_health_nutrition'
+import { migration029HealthTraining } from '../db/migrations/029_health_training'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -429,6 +433,16 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'meals', column: 'source', tuple: MEAL_SOURCE },
   { table: 'daily_meal_plans', column: 'generation_method', tuple: MEAL_GENERATION_METHOD },
   { table: 'nutritional_plans', column: 'review_frequency', tuple: FREQUENCY },
+
+  // DB-4 group #19 — Health: Training. 5 FIXED CHECK cols = 3 net-new (MOVEMENT_PATTERN on exercises.movement_pattern;
+  // WORKOUT_SET_CATEGORY on workout_sets.category; BURN_SOURCE on workout_sessions.burn_source) + 2 reused from #17
+  // (METRIC_SIDE on workout_sets.side; PHYSICAL_ROLE_AUTHORING_SOURCE on exercise_plans.authoring_source). OPEN vocabs
+  // (primary_muscle/difficulty/risk_level/progression_model/workout_type/set_structure/location/form_quality/status) → no CHECK.
+  { table: 'exercises', column: 'movement_pattern', tuple: MOVEMENT_PATTERN },
+  { table: 'workout_sets', column: 'category', tuple: WORKOUT_SET_CATEGORY },
+  { table: 'workout_sets', column: 'side', tuple: METRIC_SIDE },
+  { table: 'workout_sessions', column: 'burn_source', tuple: BURN_SOURCE },
+  { table: 'exercise_plans', column: 'authoring_source', tuple: PHYSICAL_ROLE_AUTHORING_SOURCE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -462,6 +476,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration026CheckIns.up(driver)
   await migration027HealthCore.up(driver)
   await migration028HealthNutrition.up(driver)
+  await migration029HealthTraining.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

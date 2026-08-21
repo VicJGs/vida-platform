@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes … #17 Health: Core + #18 Health: Nutrition authored · 2026-08-20 · LIF-66)
-The Stream (ii) per-domain modules authored so far (17 of 21 active; #13 Languages dissolved → Spaces, ADR-006). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships,check-ins,health-core,health-nutrition}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 028_health_nutrition.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes … #18 Nutrition + #19 Training authored · Health domain COMPLETE · 2026-08-20 · LIF-66)
+The Stream (ii) per-domain modules authored so far (18 of 21 active; #13 Languages dissolved → Spaces, ADR-006). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships,check-ins,health-core,health-nutrition,health-training}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 029_health_training.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -519,10 +519,24 @@ The Stream (ii) per-domain modules authored so far (17 of 21 active; #13 Languag
   (`health-nutrition-introspection.test.ts`, 6 × 4 + deleted_at guard = 25). `@vida/core` **730 tests** green; `LATEST_VERSION`=28;
   typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight (9 folds) · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.**
   Interface reconcile (6 Nutrition interfaces + 2 enums) → DB-11. `[FACT: 028_health_nutrition.ts; schema/health-nutrition.ts; packages/types/src/nutrition.ts; docs/specs/foundation/db-4-health-nutrition/]`
-- **Remaining DB-4 groups:** #19 Training · #20 · #21 · #22 (4 more; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
+- **Group #19 Health: Training (2026-08-20):** **5 tables** — the exercise pillar (`exercises`·`exercise_plans`·
+  `workout_templates`·`workout_sessions`·`workout_sets`), the five-layer spine (Catalog → Plan → Template → Instance → Log).
+  Net-new (recovered domain, **no rerun** — row 21 ALIGNED). A workout **IS a Session**: `workout_sessions` = the `sessions`
+  `workout` sub-type 1:1 extension (own id + `session_id` UNIQUE, no FK, **no `deleted_at`** — base owns lifecycle, ADR-004).
+  **`deleted_at` on `exercises` + `exercise_plans`** (the floor marks two); templates/session-extension/set-log omit it. **5
+  FIXED CHECK** — 3 net-new (`MOVEMENT_PATTERN`/`WORKOUT_SET_CATEGORY`/`BURN_SOURCE`) + **2 reused from #17** (`METRIC_SIDE`
+  on workout_sets.side, `PHYSICAL_ROLE_AUTHORING_SOURCE` on exercise_plans.authoring_source, member-exact); rest OPEN
+  (modality). **[E]-numeric asymmetry** preserved exactly (planned_reps/planned_weight/actual_reps [E]; planned_sets/
+  sets_done/weight_used plaintext — floor L27-28) via typed-column + `@encrypted`. Performance → Core `health_metric_values`
+  (no local KPI store, HT-5); `goal_ids`/`role_id`/`knowledge_object_id` no-FK. `ENTITY_TYPES += 4` (template excluded). **Phase-5
+  introspection** (`health-training-introspection.test.ts`, 5 × 4 + deleted_at guard + session_id-unique guard = 22). `@vida/core`
+  **757 tests** green; `LATEST_VERSION`=29; typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight (9 folds) · gate-2 SHIP ·
+  post-impl SHIP. **Zero build-decisions.** **The Health domain (Core + Nutrition + Training) is COMPLETE.** Interface reconcile
+  (5 Training interfaces + 3 enums) → DB-11. `[FACT: 029_health_training.ts; schema/health-training.ts; packages/types/src/training.ts; docs/specs/foundation/db-4-health-training/]`
+- **Remaining DB-4 groups:** #20 Journals · #21 Gamification · #22 Notifications (3 more; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 + #17 + #18 ✅ (17 of 21 active); 4 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 + #17 + #18 + #19 ✅ (18 of 21 active); 3 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

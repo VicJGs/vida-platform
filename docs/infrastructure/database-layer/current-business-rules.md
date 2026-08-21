@@ -678,3 +678,33 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   recipe_page_id/cooking_skill_id/meal_ref plain TEXT). **Phase-5 introspection** (6 × 4 + deleted_at guard = 25). `@vida/core`
   **730 green**; `LATEST_VERSION`=28; typecheck 11/11; eslint 0. Gates: gate-1 SHIP (2 NITs) · preflight (9 folds) · gate-2 SHIP
   (2 NITs) · post-impl SHIP. **Zero build-decisions.** 6 row interfaces + 2 enums → DB-11. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #19 Health: Training (IMPLEMENTED 2026-08-20 · `029_health_training.ts` + `schema/health-training.ts`)
+- **[FACT] BR-HT-1 — 5 net-new tables; the exercise pillar; a workout IS a Session.** `exercises`·`exercise_plans`·
+  `workout_templates`·`workout_sessions`·`workout_sets` (Catalog → Plan → Template → Instance → Log). Net-new (recovered
+  domain, **no rerun** — row 21 ALIGNED). `workout_sessions` = the `sessions` `workout` sub-type **1:1 extension** (ADR-004):
+  own `id` (baseColumns) + `session_id text notNull unique` (no FK), **NO `deleted_at`** (base owns lifecycle — the
+  skill_actions/class_sessions/reading_sessions precedent). `[FACT: structure-data L21; session-extensions.ts]`
+- **[FACT] BR-HT-2 — `deleted_at` on `exercises` + `exercise_plans`** (the floor L13/L18 marks TWO); `workout_templates`
+  (bare "timestamps"), `workout_sessions` (extension), `workout_sets` (child log) omit it. Follow the floor per-table (the
+  #17/#18 ruling — the roster IS the floor). `[FACT: structure-data L13,18; introspection deleted_at-floor test]`
+- **[FACT] BR-HT-3 — 5 FIXED CHECK; cross-group enum REUSE.** 3 net-new (`MOVEMENT_PATTERN`=exercises.movement_pattern;
+  `WORKOUT_SET_CATEGORY`=workout_sets.category; `BURN_SOURCE`=workout_sessions.burn_source) + **2 reused from #17 health.ts**
+  (`METRIC_SIDE`=workout_sets.side; `PHYSICAL_ROLE_AUTHORING_SOURCE`=exercise_plans.authoring_source — member-exact). Everything
+  else OPEN (modality per conventions L16: primary_muscle/difficulty/risk_level/progression_model/workout_type/set_structure/
+  location/form_quality/status). `movement_pattern` FIXED-but-NULLABLE (a cardio/mobility exercise has no strength pattern).
+  `[FACT: floor inline-enumeration; health.ts:33,108]`
+- **[FACT] BR-HT-4 — [E]-numeric asymmetry preserved exactly.** `workout_sets`: `planned_reps`(INTEGER [E]) · `planned_weight`
+  (REAL [E]) · `actual_reps`(INTEGER [E]) are encrypted; `planned_sets`/`sets_done`/`weight_used` are plaintext (the floor's
+  L27-28 asymmetric P/E marking — no blanket "encrypt all numeric"). [E]-numeric = typed column + `@encrypted` (money[E] pattern).
+  `[FACT: structure-data L27-28]`
+- **[FACT] BR-HT-5 — composed-not-owned; no local KPI store.** Performance (1RM/volume/PR, per-lift/per-side) → Core
+  `health_metric_values` (source=derived, HT-5 — no Training KPI table); base session+runtime+scheduler → Sessions;
+  protocols/technique → Knowledge; `goal_ids`(JSON)/`role_id`/`knowledge_object_id` = no-FK refs to Core/Knowledge. No
+  measurement axes (composes Core goals, like Nutrition); no economy (Gamification seam). `[FACT: HT-5/HT-7; identity]`
+- **[FACT] BR-HT-6 — no-FK; registry +4.** `ENTITY_TYPES += 4` (`exercise`/`exercise_plan`/`workout_session`/`workout_set`;
+  `workout_template` excluded — definition table, not a polymorphic target, per floor L37). `order` = quoted reserved word,
+  notNull dflt 0 (health_domains precedent). **Phase-5 introspection** (5 × 4 + deleted_at-floor guard + session_id-unique
+  guard = 22). `@vida/core` **757 green**; `LATEST_VERSION`=29; typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight (9
+  folds) · gate-2 SHIP (2 NITs) · post-impl SHIP — all clean. **Zero build-decisions.** 5 row interfaces + 3 enums → DB-11.
+  **The Health domain (#17 Core + #18 Nutrition + #19 Training) is now COMPLETE.** `[FACT: vitest run]`

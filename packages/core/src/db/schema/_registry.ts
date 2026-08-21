@@ -140,6 +140,12 @@ export const ENTITY_TYPES = [
   'daily_meal_plan',
   'meal',
   'shopping_item',
+  // DB-4 group #19 — Health: Training. The 4 taggable Training entity_types (structure-data §ADR-002 additions L37;
+  // conventions L21) register in the OPEN SP2 registry. workout_session is the Sessions `workout` sub-type extension.
+  'exercise',
+  'exercise_plan',
+  'workout_session',
+  'workout_set',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

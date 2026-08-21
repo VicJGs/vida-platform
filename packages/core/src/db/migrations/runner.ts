@@ -37,6 +37,7 @@ import { migration025Relationships } from './025_relationships'
 import { migration026CheckIns } from './026_check_ins'
 import { migration027HealthCore } from './027_health_core'
 import { migration028HealthNutrition } from './028_health_nutrition'
+import { migration029HealthTraining } from './029_health_training'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -80,6 +81,7 @@ const ALL_MIGRATIONS: Migration[] = [
   migration026CheckIns,
   migration027HealthCore,
   migration028HealthNutrition,
+  migration029HealthTraining,
 ]
 
 // ---------------------------------------------------------------------------

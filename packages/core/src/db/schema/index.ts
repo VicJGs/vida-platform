@@ -83,3 +83,10 @@ export * from './health-core'
 // adaptation), Finance (cost), Spaces (tags). deleted_at on nutritional_plans ONLY (floor). Inline meals.tags dropped
 // → entity_tags (SP1). 3 FIXED CHECK (MEAL_SOURCE/MEAL_GENERATION_METHOD + reused FREQUENCY); rest OPEN (modality/starter).
 export * from './health-nutrition'
+
+// DB-4 group #19 — Health: Training (5 tables): exercises · exercise_plans · workout_templates · workout_sessions
+// (Sessions `workout` sub-type extension, ADR-004) · workout_sets. The exercise pillar (recovered domain). Composes
+// Core #17 (goals/metrics/roles), Sessions (runtime/scheduler), Knowledge (technique/protocols). deleted_at on
+// exercises + exercise_plans (floor); workout_sessions = own id + session_id UNIQUE, no deleted_at. 5 FIXED CHECK
+// (MOVEMENT_PATTERN/WORKOUT_SET_CATEGORY/BURN_SOURCE net-new + reused METRIC_SIDE/PHYSICAL_ROLE_AUTHORING_SOURCE from #17).
+export * from './health-training'

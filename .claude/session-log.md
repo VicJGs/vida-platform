@@ -5387,3 +5387,42 @@ Next session:
     extension, the session-extension precedent). ⚠ `health/training` was **row 21 = ALIGNED** in the staleness sweep — it may
     have NO rerun (unlike Core row-19-stale / Nutrition row-20-gap); confirm and read the aspects directly. The roster IS the floor.
   - **17 of 21 done; 4 remain.** After #19 Training: 3 more groups (#20/#21/#22). Branch `db-4-per-domain-schema`.
+
+---
+Date: 2026-08-20 — DB-4 group #19 Health: Training: full 5-phase lifecycle DONE (the exercise pillar; Health domain COMPLETE)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #19 — Health: Training (the C3 inverse of Nutrition; a workout IS a Session).
+Accomplished:
+  - **5 tables** (`029_health_training.ts`, v29; `schema/health-training.ts` + net-new `packages/types/src/training.ts`
+    + `validators/training.ts`): exercises · exercise_plans · workout_templates · workout_sessions · workout_sets. The
+    five-layer spine (Catalog → Plan → Template → Instance → Log). Net-new (recovered domain, **no rerun** — row 21 ALIGNED,
+    the 5 aspects were the sole source).
+  - **A workout IS a Session:** `workout_sessions` = the `sessions` `workout` sub-type 1:1 extension (ADR-004) — own id
+    (baseColumns) + `session_id text notNull unique` (no-FK), **NO deleted_at** (base owns lifecycle; the skill_actions/
+    class_sessions/reading_sessions precedent; the floor's "id = session_id" reshaped to the live BR-DB-1 shape).
+  - **`deleted_at` on `exercises` + `exercise_plans`** (the floor marks TWO this time — L13/L18); templates/session-extension/
+    workout_sets omit it. **5 FIXED CHECK** — 3 net-new (`MOVEMENT_PATTERN`/`WORKOUT_SET_CATEGORY`/`BURN_SOURCE`) + **2 reused
+    from #17 `health.ts`** (`METRIC_SIDE` on workout_sets.side; `PHYSICAL_ROLE_AUTHORING_SOURCE` on exercise_plans.authoring_source,
+    member-exact cross-group reuse); rest OPEN (modality, conventions L16). `movement_pattern` FIXED-but-nullable (cardio has none).
+  - **[E]-numeric asymmetry preserved exactly** (floor L27-28): planned_reps/planned_weight/actual_reps [E]; planned_sets/
+    sets_done/weight_used plaintext — via typed-column + @encrypted (money[E] pattern; no blanket "encrypt all numeric").
+    Performance → Core `health_metric_values` (no local KPI store, HT-5); goal_ids/role_id/knowledge_object_id no-FK.
+    `ENTITY_TYPES += 4` (workout_template excluded — definition table, per floor L37). `order` = quoted reserved word, notNull dflt 0.
+  - Gates: gate-1 SHIP · preflight PASSED (9 folds) · gate-2 SHIP (2 NITs) · post-impl SHIP (0 findings). All via independent
+    adversarial critics with the #17 methodology guard. Both NITs cosmetic (order default, partial-index test-hygiene), folded.
+  - Green: `@vida/core` **757 tests** (30 files incl. new health-training-introspection.test.ts 22 cases = 5×4 + deleted_at-
+    floor guard + session_id-UNIQUE guard; +5 enum-parity rows); `LATEST_VERSION`=29; root typecheck 11/11; eslint 0. §XXIX
+    current-* promoted (BR-HT-1…6). Committed on branch `db-4-per-domain-schema`.
+  - **The Health domain (#17 Core + #18 Nutrition + #19 Training) is COMPLETE** — 23 tables across 3 migrations (027/028/029).
+Notes:
+  - No Victor drift-catch — the #17 lesson (the module structure-data roster IS the authoritative per-table floor; doc-check
+    a critique's premise) held across #18 and #19. Cross-group enum reuse (METRIC_SIDE/PHYSICAL_ROLE_AUTHORING_SOURCE from #17)
+    worked cleanly — the Health sub-modules share a types vocabulary via health.ts.
+Next session:
+  - **FIRST ACTION: open P0 table group `#20 Journals`, Phase 1 intent intake** — FRESH clean-context. Read FULL 5-aspect
+    `docs/features/journals/` + grep intake+reruns FIRST. Journals is the **integration/connective layer** (the daily-dashboard
+    tying all modules together) — expect heavy composition (pages/entity_links/summary blocks), possibly few net-new tables.
+    ⚠ **colocation risk** [[db4-types-may-be-colocated-grep-name-before-net-new]]: #20 Journals / #21 Gamification enums may
+    already exist colocated (e.g. in entities/user.ts) — grep the exact NAME + READ the hit before declaring net-new (the #16 lesson).
+  - **18 of 21 done; 3 remain** (#20 Journals · #21 Gamification · #22 Notifications). ⚠ **E9 cross-group for #21 Gamification:**
+    `user_profile` MUST omit `persona`/`motivation_style`/`active_modules`/`onboarding_completed` (→ Preferences #2) + `check_in_streak*` (→ Check-ins #16). Branch `db-4-per-domain-schema`.
