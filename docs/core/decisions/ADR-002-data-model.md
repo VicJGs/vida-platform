@@ -3508,6 +3508,12 @@ CREATE INDEX idx_notifications_unread ON notifications(is_read) WHERE is_archive
 
 ### User Preferences
 
+> **Amended 2026-08-19 (DB-4 group #2 build phase).** Added the G4 columns (`compact_mode`, `font_size`,
+> `number_format`, `default_dashboard_view`, `show_archived`, `notification_frequency`), the per-module
+> `module_visibility` JSON map, and the **E9 `user_profile` single-writer split** columns (`persona`,
+> `motivation_style`, `active_modules`, `onboarding_completed` — migrated here per ADR-012 §3.10; §5.20 receiving
+> amendment fulfilled). All plaintext (PR-1). `font_size`/`notification_frequency` are OPEN (no CHECK — vocab TBD).
+
 ```sql
 CREATE TABLE user_preferences (
   id                          TEXT PRIMARY KEY,
@@ -3515,16 +3521,22 @@ CREATE TABLE user_preferences (
   theme                       TEXT NOT NULL DEFAULT 'system'
                               CHECK (theme IN ('light','dark','system')),
   accent_color                TEXT DEFAULT '#6366f1',
+  compact_mode                INTEGER NOT NULL DEFAULT 0,   -- [DB-4 G4]
+  font_size                   TEXT,                 -- [DB-4 G4] OPEN, no CHECK
   -- Locale
   date_format                 TEXT DEFAULT 'YYYY-MM-DD',
-  time_format                 TEXT DEFAULT '24h' CHECK (time_format IN ('12h','24h')),
+  time_format                 TEXT NOT NULL DEFAULT '24h' CHECK (time_format IN ('12h','24h')),  -- NOT NULL added DB-4 §5.17 gap-fix (interface + sibling enums)
   week_starts_on              INTEGER DEFAULT 1,   -- 0=Sun, 1=Mon
   currency                    TEXT DEFAULT 'USD',
+  number_format               TEXT,                 -- [DB-4 G4]
   -- Dashboard
   dashboard_layout            TEXT,                 -- JSON
+  default_dashboard_view      TEXT,                 -- [DB-4 G4]
+  module_visibility           TEXT,                 -- [DB-4 PB-2] JSON map {moduleKey: bool}
   -- Tasks
   show_completed_tasks        INTEGER NOT NULL DEFAULT 1,
   default_task_priority       TEXT DEFAULT 'medium',
+  show_archived               INTEGER NOT NULL DEFAULT 0,   -- [DB-4 G4]
   -- Pomodoro
   pomodoro_work_minutes       INTEGER NOT NULL DEFAULT 25,
   pomodoro_break_minutes      INTEGER NOT NULL DEFAULT 5,
@@ -3537,6 +3549,7 @@ CREATE TABLE user_preferences (
   quiet_hours_enabled         INTEGER NOT NULL DEFAULT 0,
   quiet_hours_start           TEXT,                 -- HH:MM
   quiet_hours_end             TEXT,                 -- HH:MM
+  notification_frequency      TEXT,                 -- [DB-4 G4] OPEN, no CHECK
   -- Per-module push toggles
   push_habits                 INTEGER NOT NULL DEFAULT 1,
   push_tasks                  INTEGER NOT NULL DEFAULT 1,
@@ -3545,6 +3558,12 @@ CREATE TABLE user_preferences (
   push_study                  INTEGER NOT NULL DEFAULT 1,
   -- Features
   feature_gamification        INTEGER NOT NULL DEFAULT 1,
+  -- Onboarding & persona (E9 user_profile split, ADR-012 §3.10 — Preferences single-writer owner)
+  persona                     TEXT
+                              CHECK (persona IN ('student','professional','entrepreneur','creative','parent','retiree')),
+  motivation_style            TEXT,
+  active_modules              TEXT,                 -- JSON array of module keys
+  onboarding_completed        INTEGER NOT NULL DEFAULT 0,
 
   created_at                  INTEGER NOT NULL,
   updated_at                  INTEGER NOT NULL,
@@ -3798,7 +3817,7 @@ instances = ProseMirror nodes synced in the page's Yjs doc (ADR-008 §3.4) — *
 | `purposes.progress` / `targets.current_value` (+ any pursuable's stored progress) → **nullable** (`NULL = derive`); today `NOT NULL DEFAULT 0` | ADR-011 §3.2 | ⏳ override-slot semantics |
 | `targets.purpose_id` → **nullable** (SR-003 relaxed; `ON DELETE SET NULL`) | ADR-011 (PG9) | ⏳ standalone targets |
 | restore `targets.success_criteria[E]` + `measurement_method`; `purpose_metrics.is_higher_better` + `baseline_value`; provenance `source{manual,auto}` on `purpose_metric_values`; optional per-child **nesting-weight** column | ADR-011 §3.1/§3.3/§3.6 | ⏳ measurement fields |
-| `user_profile` **SPLIT** by single-writer: System keeps per-currency total + level (DERIVED); `check_in_streak*` → Check-ins; `persona`/`motivation_style`/`active_modules`/`onboarding_*` → Preferences (receiving amendment owed); **PII (`display_name`/`avatar_url`/`birth_date`) STAYS ⚠** until an account/identity model exists | ADR-012 §3.10 | ⏳ no field ends with two writers |
+| `user_profile` **SPLIT** by single-writer: System keeps per-currency total + level (DERIVED); `check_in_streak*` → Check-ins; `persona`/`motivation_style`/`active_modules`/`onboarding_*` → Preferences (**receiving amendment FULFILLED — DB-4 group #2, §5.17 `user_preferences`**); **PII (`display_name`/`avatar_url`/`birth_date`) STAYS ⚠** until an account/identity model exists | ADR-012 §3.10 | ✅ Preferences-side authored (§5.17); Gamification's `user_profile` (unbuilt) must omit these 4 + `check_in_streak*` |
 | `achievements.condition` → **measurable predicate** (evaluated on ADR-011 seam + event stream, not a bespoke checker); `level` → **derived** over a fixed non-linear curve config (**no table**) | ADR-012 §3.7/§3.8 | ⏳ engine-on-measurement |
 | **ADR-004 §3.2.2 catalogue** += `grant_currency` · `lock_currency` · `move_money` · `surface_notification` — **all §3.2.5 Additive-class** (deterministic `effect_event_id` + UNIQUE on the output row; no domain natural key). `award_xp` = `grant_currency(XP)` (kept) | ADR-012 §3.1 (extends ADR-004) | ⏳ **also owed to ADR-004's `Amended:` block** at consolidation |
 | **ADR-011 §3.7 DAG guard** extended to count **consequence→source→condition** edges (a currency grant moving `net_worth` can feed another rule's `derived-pull`) | ADR-012 §3.1 (extends ADR-011) | ⏳ **also owed to ADR-011 §3.7** at consolidation |

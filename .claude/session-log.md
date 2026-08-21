@@ -5028,3 +5028,401 @@ Next session:
   - Also now un-gated (parked): `db-10` (M1.4) · `tsconfig-strict-index-access` (repo-wide §XV) · NEW
     `perf-framework-chunk-split` (§6 init budget). All own-gate hygiene/horizon issues, not the next head.
   - ⚠ CI red repo-wide = the known pnpm action-setup infra conflict (local green); no branch protection.
+
+---
+Date: 2026-08-18
+Task: db-4-per-domain-schema (LIF-66, #10) — per-domain schema · P0 · Slice + DB-3 merge
+Completed:
+  - **Merged DB-3 PR #31 → `main`** (`97a0e0c`, `--merge`; LIF-65 already Done; DB-3 branch deleted). DB-3's 11 Stream (i)
+    substrate tables are now on main — the M1.0 schema foundation's Stream (i) is landed.
+  - **Profile switch** Project Foundation → **add-backend-component** (DB-4's profile); DB-4 flipped planned→in-progress.
+    Surfaced the §XXVII path (DB-4's 5-phase foundation lifecycle from `schema-foundation-build-flow.md §2/§4`).
+  - **P0 · Slice DONE.** Verified ground truth: **24 `structure-data.md` intent docs on disk** (REPO.md's "only Notes &
+    Pages" line is stale); no per-domain schema authored yet (foundation dir = DB-1/DB-3/DB-6/DB-7 substrate only).
+    Produced the **canonical 22-domain-group slice** (task file "## P0 Output"; reconciled flow doc §4 "~19" → 22 +
+    TASKS.md routing). Recorded as lightweight build-steps.
+Decisions:
+  - **D1 Health → SPLIT ×3** (Core/Nutrition/Training) — ~23 tables, distinct concerns; cleaner per-group gates.
+  - **D2 Languages → OWN group, docs-verified.** Victor asked to verify in the docs, not guess. Finding: flow §4's
+    `Languages → docs/features/languages/` points to **0-byte stubs**, but the schema (~9 tables) is **fully specified in
+    ADR-002 §5.10 Language Learning Domain** → Languages is a real DB-4 group; intent source = the ADR; author its
+    `structure-data.md` from the ADR in P1. (Reinforces [[decide-dont-ask-when-docs-give-the-answer]] — read the
+    authoritative source, not the stub the pointer named.)
+  - **D3 Sub-issue form → lightweight build-step checklist** (no Linear sub-issues; DB-4 stays LIF-66).
+  - **D4 (self-made, doc-grounded):** Pomodoro folds into Sessions (its doc self-declares "capability within the Sessions
+    realm"); ICS folds into Learning; Bucket List→Purpose `dreams`; Duties dissolved.
+  - **No-FK → loose order:** DB-3 fixed cross-domain refs as plain TEXT no-FK, so domain groups have no hard build-order;
+    Notes-first is a Phase-5-readiness convention only.
+Next session:
+  - **FIRST ACTION: open domain group `#1 Notes & Pages` (the in-degree-14 hub), Phase 1 intent intake** — FRESH
+    clean-context session (one per domain group, per flow doc). `docs/features/notes-and-pages/structure-data.md` (FULL) →
+    P2 current-state read → P3 plan double-gate → P4 implement (`pages`/`entity_links` are NOT yet on disk — Notes P4
+    authors them) + `ENTITY_TYPES` append → P5 foundation-soundness verify (MOD-notes is the downstream consumer).
+  - Reload: `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output" · flow doc §2 · memory
+    [[open-vocab-columns-take-no-sql-check]]. ⚠ CI red repo-wide (known pnpm infra; local green).
+
+---
+Date: 2026-08-18 — DB-4 group #1 Notes & Pages: full 5-phase lifecycle DONE + COMMITTED (`f2198ac`)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema` (NOT pushed/PR'd)
+Goal: run P1→P5 for domain group #1 (Notes & Pages) — the first DB-4 Stream (ii) module.
+Accomplished:
+  - Authored 3 net-new tables — `schema/notes.ts` + `migrations/012_notes.ts` (`pages`·`page_links`·`note_attachments`).
+    Finding: AR-6 already substrated `tags`/`entity_tags`/`entity_links` → Notes = 3 tables, not 6-7 (`page_tags` retired;
+    `pomodoro_sessions`→`focus_sessions`/group #3). Spec `docs/specs/foundation/db-4-notes-and-pages/`.
+  - Full §XXVI double-gate (gate-1 REVISE→fixed · preflight +2 folds · gate-2 SHIP) + post-impl critique SHIP.
+    `@vida/core` 193 green (+`pages.type` parity) · root typecheck 11/11 · runner v12. §XXIX docs promoted.
+Drift caught + corrected (Victor):
+  - I first wrote "5 open shape-decisions for P3" — all doc-determined (no-FK · full baseColumns · schema/<domain>.ts ·
+    `has_pomodoro` · `summary_config`). No decisions come from the docs. Memory: [[stale-source-plus-live-convention-is-fact-not-a-decision]].
+  - Also rejected the gate-1 critic's own lean (promote `@vida/types` interfaces) — verified the shipped `entity_links`/`EntityLink`
+    divergence + DB-3 precedent → mirror-only is correct; interface reconcile is DB-11.
+Next session:
+  - **FIRST ACTION: open domain group `#2 Preferences`, Phase 1 intent intake** — FRESH clean-context session (one per group).
+    `docs/features/preferences/structure-data.md` (FULL) → P2 → P3 double-gate → P4 (SQL + Drizzle + `ENTITY_TYPES` verify) → P5.
+  - Mirror the group-#1 build as the pattern: `docs/specs/foundation/db-4-notes-and-pages/` + `schema/notes.ts` + `migrations/012_notes.ts`.
+  - Reload: task "## P0 Output" (22-group table) · flow doc §2 · memories [[stale-source-plus-live-convention-is-fact-not-a-decision]] ·
+    [[open-vocab-columns-take-no-sql-check]]. **1 of 22 done; 21 remain.** DB-4 authors ALL 22 before M1.1 (Model B). ⚠ CI red (known pnpm infra; local green).
+
+---
+Date: 2026-08-19 — DB-4 group #3 Sessions & Scheduling (+Pomodoro): full 5-phase lifecycle DONE + COMMITTED (`029cea7`)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema` (NOT pushed/PR'd)
+Goal: run P1→P5 for domain group #3 — the third DB-4 Stream (ii) module.
+Accomplished:
+  - Confirmed group #2 was already committed (`0bc1508`+`0fec077`); fixed the stale TASKS.md "not yet committed" note (git log = ground truth).
+  - **6 tables** (migration `014_sessions_scheduling`, v14): `study_sessions`·`focus_sessions` (`schema/foundation/session-extensions.ts`, new) +
+    `study_availability`·`availability_exceptions`·`study_plan_batches`·`session_templates` (appended to `scheduling.ts`). `STUDY_PLAN_BATCH_STATUS+='failed'`,
+    `PRESET_BLOCK` reused, `ENTITY_TYPES+='session'`. Phase-5 DDL-introspection test (24 cases, all 4 dims). `@vida/core` 221 green · typecheck 11/11 · lint 0.
+  - Gates: gate-1 REVISE→resolved · preflight BLOCKED(BR-DB-1)→PASSED · gate-2 REVISE→SHIP · post-impl SHIP. §XXIX currency promoted. Spec `docs/specs/foundation/db-4-sessions-and-scheduling/`.
+Drift caught + corrected (Victor, ×2 — same class):
+  - `focus_sessions`/`pomodoro_sessions` is NOT a build-decision — the consuming-module reframe doc settles it (`notes-and-pages/structure-data.md:30`: pomodoro_sessions RETIRED → focus_sessions). I collapsed wrongly, then relayed a critic's manufactured "keep both as a decision." Memory strengthened: grep the table name across ALL of docs/; the reframe/current-* doc holds the resolution — [[stale-source-plus-live-convention-is-fact-not-a-decision]].
+Next session:
+  - **FIRST ACTION: open domain group `#4 Tasks`, Phase 1 intent intake** — FRESH clean-context session (one per group).
+    `docs/features/tasks/structure-data.md` (FULL) → P2 → P3 double-gate → P4 → P5. Mirror the group-#3 build as the pattern.
+  - Reload: task "## P0 Output" (22-group table) · flow doc §2 · memory [[stale-source-plus-live-convention-is-fact-not-a-decision]].
+  - Carry-forward: X1 → group #2 PD-7 backfill; DB-11 → interface reconcile. **3 of 22 done; 19 remain.** ⚠ CI red (known pnpm infra; local green).
+
+---
+Date: 2026-08-20 — DB-4 group #9 Finance (+Fiscal & Legal): full 5-phase lifecycle DONE
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #9 — the largest DB-4 group (9 tables).
+Accomplished:
+  - **9 tables** (`020_finance.ts`, v20): 6 §5.8 finance entities (`accounts`·`transactions`·`assets`·`liabilities`·`investments`·
+    `income_streams`, authored fresh — they lived in the pre-rebuild monolith) + 3 net-new Fiscal & Legal (`fiscal_residencies`·
+    `legal_entities`·`fiscal_obligations`, §5.20 L3828). `schema/finance.ts` mirror. Spec `docs/specs/foundation/db-4-finance-and-fiscal-legal/`.
+  - Build-phase intent authored: `accounts.opening_balance` (FN-3); `transactions.category_bidx`+idx (F7, P-side blind-index col;
+    PRF derivation service-deferred); liabilities G9 ×4; `income_streams.next_payment_date`; `jurisdiction_code` on the 5 (FL-9).
+    Inline `transactions.tags` RETIRED → entity_tags (FN-10). `store`/`rules` (DB-3) consumed, not re-authored.
+  - Enums: net-new `INTEREST_TYPE`+`FISCAL_OWNER_TYPE` (@vida/types + Zod); `FREQUENCY` reused ×3. **13 FIXED CHECK cols**
+    parity-asserted; OPEN no-CHECK: currency/jurisdiction_code/category_bidx + fiscal residency_type/entity_type/obligation_type/status.
+    `ENTITY_TYPES += account/transaction/asset/investment/liability` (income_stream + fiscal excluded, G12).
+  - Fiscal nullability = the `structure-data.md` roster `?`-notation (nullable = residencies.end_date, legal_entities.project_id,
+    obligations.linked_task_id; all else NOT NULL). Finance-6 nullability/defaults per §5.8 exactly.
+  - Gates: gate-1 SHIP · preflight PASSED · gate-2 REVISE→resolved · post-impl SHIP. **Phase-5 DDL-introspection** (36 cases × 4).
+    `@vida/core` **385 tests** green (+49); typecheck 11/11; eslint 0-err; `LATEST_VERSION`=20. §XXIX current-* promoted (BR-FN9-1…8).
+Drift caught + corrected (Victor, ×3 — all the same class, the Phase-1 No-Decisions Gate leaking):
+  - I surfaced doc-determined facts as "open convention point / advisory / fold / governing principle." The FK convention
+    (`current-spec.md:176-177`), nullability (§5.8 FACT + fiscal roster `?`-notation), and fiscal enum vocab (`conventions.md:32`
+    "per-jurisdiction enums from rule-packs" → OPEN) are ALL doc-fixed. Cleaned the spec to pure `[FACT]` citations, zero folds/notes.
+    Reinforces [[stale-source-plus-live-convention-is-fact-not-a-decision]] + [[module-doc-is-db4-roster-not-adr-broad-list]].
+  - Impl catch: my spec undercounted parity rows (12 → actually 13; `liabilities.payment_frequency` CHECK). Migration was right; fixed the spec.
+Next session:
+  - **FIRST ACTION: open domain group `#10`, Phase 1 intent intake** — FRESH clean-context session (one per group).
+    Grep intake+reruns FIRST → read the module's FULL 5-aspect structure-data (the roster) + ADR-002 § → P2 → P3 double-gate → P4 → P5.
+    Mirror the group-#9 build as the pattern (`schema/finance.ts` + `020_finance.ts` + `finance-introspection.test.ts`).
+  - Reload: task "## P0 Output" (22-group table) for #10's identity · flow doc §2 · **Phase-1 No-Decisions Gate is the recurring trap** —
+    if the docs fix it, it's a `[FACT]`, never a decision/advisory/fold.
+  - Carry-forward: DB-11 → interface reconcile (+= Finance opening_balance/category_bidx/jurisdiction_code/G9 · new FiscalResidency/
+    LegalEntity/FiscalObligation). **9 of 22 done; 13 remain.** ⚠ CI red (known pnpm infra; local green).
+
+---
+Date: 2026-08-20 — DB-4 group Skills: full 5-phase lifecycle DONE
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group Skills — the 10th DB-4 Stream (ii) module. Victor directive this session: FOLLOW P0 TABLE ORDER from now on (starting Skills = table #9); Finance had been built out-of-order as table #15.
+Accomplished:
+  - **7 tables** (`021_skills.ts`, v21): `skills` (reshaped) · `skill_levels` · `skill_activities` · `skill_actions`
+    (Sessions `practice` sub-type 1:1 extension) · `skill_dev_logs` · `skill_dependencies` · `skill_definitions`
+    (`schema/skills.ts`). Spec `docs/specs/foundation/db-4-skills/_index.md`. Only `db/_legacy` had the old 2-table floor.
+  - **ADR-002 §5.9 DDL is STALE** (mastery_level NOT NULL DEFAULT 'novice', practice_hours, proficiency_test_score,
+    skill_resources CHECK) — superseded by the `structure-data.md` roster ([[module-doc-is-db4-roster-not-adr-broad-list]]).
+    Mastery resolved DERIVED (BR-SK-1: current_level/progress nullable slots + mastery_override nullable, no default).
+  - `skill_actions` = the confirmed group-#3 1:1 session-extension pattern (own id PK + session_id UNIQUE, no FK, BR-SK-2);
+    `SESSION_SUB_TYPE` already carries 'practice'. No-FK anywhere. No stored measurement_kind (`measurement_config` [E]
+    JSON stored as plain text() per the Notes summary_config precedent, P-2); pursuable M1/M2 is Purpose-owned (C-M1).
+  - Enums: **7 net-new** (`SKILL_LEVEL_STATUS`/`SKILL_ACTIVITY_TYPE`/`SKILL_FILL_SOURCE`/`SKILL_DEPENDENCY_TYPE`/
+    `SKILL_DEPENDENCY_SCOPE`/`SKILL_DEFINITION_SOURCE`/`SKILL_SETUP_MODE` → new `@vida/types/skill.ts` + new
+    `validators/skill.ts`); reused LIFE_DOMAIN/PRIORITY/FREQUENCY/MASTERY_LEVEL. **14 FIXED CHECK cols / 11 tuples**
+    parity-asserted. OPEN no-CHECK (un-enumerated): skills.status/ladder_template, skill_activities.difficulty,
+    skill_levels.duration_target, skill_actions.best_time, skill_definitions.locale_variant; rating INTs plain.
+  - `ENTITY_TYPES += skill/skill_level/skill_activity/skill_dev_log/skill_dependency/skill_definition` — **skill_action
+    EXCLUDED** (session sub-type addressed via base `session`, ADR-004 §3.1, group-#3 precedent). Corrected the roster's
+    STALE "skill already reserved" claim — `skill` was genuinely absent from the live `_registry.ts`
+    ([[cite-tokens-from-emitted-output-not-source-files]]). RETIRE `skill_resources` → `entity_links` (not authored).
+  - Gates: gate-1 SHIP (independent critic, column-by-column) · preflight PASSED (6 folds — the material one: parity is
+    14 CHECK columns / 11 tuples, NOT "11 columns"; the Finance 12→13 lesson) · gate-2 SHIP (critic reproduced 14/11) ·
+    post-impl SHIP (critic reproduced 14/11 + mirror↔migration exact for all 7 tables). **Zero build-decisions.**
+  - Green: `@vida/core` **426 tests** (+14 enum-parity rows, +28 DDL-introspection × 7); `LATEST_VERSION`=21; typecheck
+    11/11; eslint 0. Only failure = pre-existing vault 1MB timeout FLAKE (passes standalone 15.9s; tips past 20s under
+    full-suite load — documented in-test, unrelated to schema). §XXIX current-{spec,business-rules} promoted (BR-SK-1…7).
+Notable this session (no Victor drift-catches — clean run):
+  - Followed the No-Decisions discipline from the start: surfaced every under-enumerated vocab (status/difficulty/
+    duration_target/best_time) as OPEN no-CHECK (No-Guessing) + disclosed for the critic, rather than inventing CHECKs.
+  - The gate-2 critic noted `business-rules.md:74` sketches a `planning/active/honing/completed` narrative for
+    skills.status, but the roster leaves it un-enumerated → OPEN is the deliberate roster-authority call (consistent
+    with the SKILL_LEVEL_STATUS "locked"-synonym drop). On record, not a defect.
+Next session:
+  - **FIRST ACTION: open P0 table group `#10 Knowledge (+flashcards)`, Phase 1 intent intake** — FRESH clean-context.
+    Grep intake+reruns FIRST → read the FULL 5-aspect `docs/features/knowledge/` (+`knowledge/flashcards/`) roster +
+    ADR-002 § → P2 → P3 double-gate → P4 → P5. Mirror the Skills build (`schema/skills.ts` + `021_skills.ts` +
+    `skills-introspection.test.ts`). ⚠ flashcard_* RETIRED → the generic review engine (ADR-005): the DB-3
+    `review_curves`/`method_bindings`/`review_events` substrate is ALREADY authored → Knowledge CONSUMES it, authors none.
+  - Reload: task "## P0 Output" table for #10's roster · flow doc §2 · **Phase-1 No-Decisions Gate is the recurring trap.**
+  - Carry-forward: DB-11 interface reconcile += new Skill/SkillLevel/SkillActivity/SkillAction/SkillDevLog/
+    SkillDependency/SkillDefinition (retire the stale learning.ts `Skill`). **10 of 22 done; 12 remain.** ⚠ CI red
+    (known pnpm infra; local green). Branch `db-4-per-domain-schema` NOT committed/pushed.
+
+---
+Date: 2026-08-20 — DB-4 group #10 Knowledge (+flashcards): full 5-phase lifecycle DONE
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component (5-phase schema-foundation) · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #10 — the largest, most-reframed DB-4 group (the "Knowledge Universe"). Following P0 table order.
+Accomplished:
+  - **7 tables** (`022_knowledge.ts`, v22): `knowledge_objects` · `object_kinds` · `knowledge_containers` ·
+    `references` · `compound_sets` · `knowledge_lab_entries` · `flashcards` (`schema/knowledge.ts`). Spec
+    `docs/specs/foundation/db-4-knowledge/_index.md`. Net-new in the rebuild (only `_legacy` had the v2 floor).
+  - **ADR-002 §5.10 is STALE** — `study_topics`→`knowledge_objects` (topic-kind row of a general object; `parent_object_id`
+    self-ref = the Subject›Unit›Topic + user-kinds hierarchy, BR-KN-1); `topic_reviews`→`review_events` (DB-3);
+    `knowledge_notes`→`pages` (KN-5); `flashcard_decks`/`flashcard_reviews` RETIRED (ADR-005); `resource_type` CHECK→
+    `entity_links` (KN-6); `resource_urls`→`references` (K6). Mastery DERIVED (nullable, §5.10 NOT NULL DEFAULT 0 resolved
+    out, BR-KN-2). SM-2 cols RETIRED → the DB-3 review engine (`review_curves`/`method_bindings`/`review_events` on disk,
+    CONSUMED not re-authored, BR-KN-3). No-FK everywhere.
+  - The heavy call: `knowledge_objects` = the Knowledge-intrinsic `study_topics` survivors (title/description/key_concepts/
+    status/difficulty/is_exam_topic/sort_order) + reframe (kind_id/parent_object_id/derived mastery_level); EXCLUDED the
+    Education-plan/Books-context cols (due_date/estimated_study/study_time/class_date/reading_pages) per KN-2 "Education plans,
+    Knowledge holds" (BR-KN-6). `flashcards` content-only (BR-KN-7: no deck_id/SM-2/is_mastered). `references.url`=[E] (ZK).
+  - Enums: **2 net-new** (`KNOWLEDGE_CONTAINER_TYPE`=[module,area,subject], `CARD_TYPE`=[basic,reversed,cloze,image_occlusion]
+    → appended to existing `knowledge.ts` + `validators/knowledge.ts`); reused `STUDY_TOPIC_STATUS`/`TOPIC_DIFFICULTY`.
+    **4 FIXED CHECK cols = 4 tuples** (all single-use). OPEN no-CHECK: `object_kinds.name`/`learning_realm` (user-extensible
+    KN-4), `references.type`, `compound_sets.consumer_module`.
+  - `ENTITY_TYPES += knowledge_object/knowledge_container/reference/flashcard` (4; object_kind/compound_set/knowledge_lab_entry
+    excluded = non-targets; flashcard mandated by SP2). `references` is a SQL keyword → quoted in the DDL + the introspection
+    PRAGMA (`PRAGMA table_info("references")`). `compound_sets`/`knowledge_lab_entries` = base tables only (AI-assist +
+    OS-automation surface "not documented anywhere / not designed", business-rules L78-80 → deferred service, the Skills X*/AI* precedent).
+  - Gates: gate-1 REVISE→resolved (F1: `references.url` must be [E] — a real ZK regression; the content it replaces
+    [`resource_urls`] is [E] per KN-1) · preflight PASSED (8 folds) · gate-2 SHIP (4=4 parity reproduced) · post-impl SHIP
+    (reconciled `data_refs` → plain per the approved spec — I'd over-marked it [E]; §XXVIII no-silent-drift). **Zero build-decisions.**
+  - Green: `@vida/core` full suite 23/23 files (incl. the vault flake this run); knowledge-introspection 28 (7×4);
+    enum-parity 98 (+4 rows); runner 6 (rebuilds to `LATEST_VERSION`=22); typecheck 11/11; eslint 0. §XXIX current-* promoted (BR-KN-1…7).
+Notable:
+  - The `references` SQL-keyword trap — caught + handled at author time (quoted in the migration DDL, index, and the PRAGMA);
+    proven safe end-to-end by the full-registry `migrate()` in the runner test.
+  - Correctly scoped a HUGE reframe: authored the resolved core (7 tables) + deferred the explicitly-undesigned surfaces
+    (AI-assist, OS automations, Education rollup, FTS5) — the [[check-intake-and-reruns-before-triaging-a-design-pass-undone]]
+    discipline applied to a genuinely design-pass-bounded group, without over-building.
+Next session:
+  - **FIRST ACTION: open P0 table group `#11 Books`, Phase 1 intent intake** — FRESH clean-context. Grep intake+reruns FIRST:
+    the rerun `part-1.2-reruns/books.md` is a **MIXED case** — 2 live-FACT R6 reframes (`books.tags`→entity_tags,
+    `books.progress`→nullable override) + an **S1 reframe** (`reading_sessions` = a `sessions` `reading` sub-type 1:1 extension,
+    the same pattern as `skill_actions`/group #3's `study_sessions`/`focus_sessions`) + X*/AI* layering (ISBN/OCR). Read FULL
+    5-aspect `docs/features/books/` + ADR-002 §5.10 Books DDL (`books`/`book_chapters`). Mirror the Knowledge/Skills build.
+  - Reload: task "## P0 Output" table for #11's roster · flow doc §2 · Phase-1 No-Decisions Gate is the recurring trap.
+  - Carry-forward: DB-11 interface reconcile += new Knowledge (KnowledgeObject/ObjectKind/KnowledgeContainer/Reference/
+    CompoundSet/KnowledgeLabEntry) + Flashcard (content-only) interfaces (retire stale learning.ts study_topic/flashcard).
+    **11 of 22 done; 11 remain.** ⚠ CI red (known pnpm infra; local green). Branch `db-4-per-domain-schema` NOT committed/pushed.
+
+---
+Date: 2026-08-20 — DB-4 group #11 Books: full 5-phase lifecycle DONE (+ a cross-group deleted_at audit fix)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #11 — the 2nd-largest DB-4 reframe (the reading Universe). Following P0 table order.
+Accomplished:
+  - **10 tables** (`023_books.ts`, v23): `books`·`book_chapters` (reshaped from the 2-table FACT floor) + 8 net-new
+    (`book_assets` · `book_bookmarks`/`book_highlights`/`book_quotes` · `reading_sessions` [S1 session extension] ·
+    `reading_plans` · `reading_plan_books` · `book_subjects`). `schema/books.ts`. §Books STALE floor superseded.
+  - book = the WORK, copies = `book_assets` (BK-2); progress DERIVED (`books.progress` nullable, §Books NOT NULL DEFAULT 0
+    resolved out, BR-BK-2); `format`→assets, `current_page`→asset, `genre`/`tags`→entity_tags. `reading_sessions` = a
+    `sessions` `reading` sub-type 1:1 extension (BK-10/S1; own id PK + session_id UNIQUE, no FK). 3 annotation natures (BK-6).
+  - No-FK; ONE doc-fixed UNIQUE = `book_chapters(book_id, chapter_number)`. **`deleted_at` on 8 of 10** — `book_chapters`
+    (FACT floor omits + "no soft delete" + child) and `reading_sessions` (session extension) omit it (F1). **No measurement
+    axes on `reading_plans`** (C-M1: Purpose-owned — the Skills pattern). 3 net-new enums + reuse BOOK_STATUS; 4 FIXED CHECK=4
+    tuples; `books.rating` numeric BETWEEN; `ENTITY_TYPES += book/book_chapter/book_bookmark/book_quote`; BOOK_FORMAT→DB-11.
+  - Gates: gate-1 REVISE→resolved · preflight (7 folds) · gate-2 SHIP (4=4 + 8-of-10 reproduced) · post-impl SHIP (11 checks).
+    Green: `@vida/core` **503 tests** (24 files); `LATEST_VERSION`=23; typecheck 11/11; eslint 0. §XXIX current-* promoted (BR-BK-1…7 + BR-DB-AUDIT).
+Victor directives + corrections:
+  - ⚠ **"read the documentation properly"** — I'd scoped from a partial read (structure-data + business-rules). The FULL
+    5-aspect + rerun read corrected the highest-risk call: `reading_plans` does NOT carry `measurement_kind`/`binding_mode`
+    (rerun C-M1: Books not in L240; the goal is a Purpose target — the Skills pattern). Lesson: read ALL aspects + the rerun
+    before scoping a large reframe.
+  - ⚠ **"re-check past implementations"** — audit found `skill_actions` (Skills) WRONGLY carried `deleted_at`; a session
+    sub-type extension must not (base `sessions.ts:41` owns lifecycle; `study_sessions`/`focus_sessions` precedent). FIXED —
+    removed from `skills.ts` + `021_skills.ts` (pre-release, no version churn), re-verified green. Sole instance across all
+    authored groups; no table violates an explicit "no soft delete" signal. Recorded as BR-DB-AUDIT + codified in the Books spec.
+Next session:
+  - **FIRST ACTION: open P0 table group `#12 Learning/Education (+ICS)`, Phase 1 intent intake** — FRESH clean-context.
+    Grep intake+reruns FIRST: the rerun `part-1.2-reruns/learning-education.md` is the **HEAVIEST unit** — MIXED: 2 R6
+    reframes (`courses.tags`→entity_tags, `courses.progress`→nullable) + an M1/M2 DECOMPOSITION (ED-10 enum → the Projects
+    `measurement_kind`×`binding_mode` axes) + X*/AI* (ICS = X1/X2-user-managed/X8; document extraction = X11 → AI1/AI3/AI5/AI6).
+    No E2. Read FULL 5-aspect `docs/features/learning/education/` + ADR-002 §5.10 (`courses`, `ics_feed_configs`, `ics_synced_events`).
+  - **READ ALL 5 ASPECTS + THE RERUN before scoping** (the Books lesson). **deleted_at: session extensions + explicit
+    "no soft delete" children omit it** (BR-DB-AUDIT). Phase-1 No-Decisions Gate is the recurring trap.
+  - Carry-forward: DB-11 += Book*/Reading* interfaces + retire stale BOOK_FORMAT. **12 of 22 done; 10 remain.** ⚠ CI red
+    (known pnpm infra; local green). ⚠ sandbox /tmp hit ENOSPC late-session (didn't affect tests/writes). Branch NOT committed.
+
+---
+Date: 2026-08-20 — DB-4 group #12 Learning/Education (+ICS): full 5-phase lifecycle DONE (the heaviest group)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #12 — THE Learning hub, the largest DB-4 group (15 tables). Following P0 table order.
+Accomplished:
+  - **15 tables** (`024_learning_education.ts`, v24; `schema/learning.ts`): 3 FACT-floor reshaped (`subjects`[=courses]·
+    `ics_feed_configs`·`ics_synced_events`) + 12 net-new INTENDED (`institutions`·`self_taught`·`programs`·`curricula`·`terms`·
+    `class_sessions` [Sessions `class` sub-type]·`subject_schedules`·`grading_systems`·`grading_components`·`assessments`·
+    `subject_documents`·`education_measurements`). §5.10/§5.18 STALE; net-new domain (nothing was on disk).
+  - 2 R6 reframes: inline `courses.tags`→entity_tags (SP1); `courses.progress NOT NULL DEFAULT 0`→nullable (M3). The 8-level
+    hierarchy (institutions+self_taught SEPARATE → programs → curricula[lineage] → terms[hierarchical] → subjects[routed]).
+    `class_sessions`=`class` session extension (own id + session_id UNIQUE, no FK, **no deleted_at** — SESSION_SUB_TYPE:21
+    already had 'class'); `subject_schedules` UNIQUE(subject_id); `education_measurements`=Education-forged measure entity
+    (axes M1×M2, `measurement_kind` **notNull no-default** — dedicated entity, deliberate divergence from deliverables'
+    'milestone' default; separate storage from Projects); `subject_documents`=PJ-8 vault (no deleted_at, nullable BLOB+R2).
+  - No-FK everywhere; **deleted_at on 11 of 15** (ics ×2 [X8 add-only/X9 revoke], class_sessions [extension], subject_documents
+    [PJ-8] omit). **15 FIXED CHECK** = 11 net-new tuples (`learning.ts`) + 4 reused (COURSE_TYPE/COURSE_STATUS/MEASUREMENT_KIND/
+    BINDING_MODE) + 11 z.enum validators; `subjects.rating` numeric BETWEEN; `subject_documents.doc_type` OPEN. `ENTITY_TYPES += 7`
+    (class_session excluded — sub-type via base session). OUT: homework=Tasks-owned (C-HW, no local table); AI extraction pipeline
+    (source=ai col authored, service=ADR-014/015); grade/GPA/measurement compute=service; E2/AI4/M5 guards held.
+  - Gates: gate-1 SHIP · preflight PASSED (6 folds) · gate-2 SHIP · post-impl SHIP — both critics prompted-to-refute confirmed
+    zero manufactured deferrals + no over-invented columns + guards held. **Zero build-decisions.**
+  - Green: `@vida/core` **578 tests** (25 files incl. new `learning-education-introspection.test.ts` 60 cases × 4 dims + 15 new
+    enum-parity rows); `LATEST_VERSION`=24; typecheck 11/11; eslint 0. §XXIX current-* promoted (BR-ED-1…10). (⚠ vault 1MB
+    crypto test flaked on timeout once at 26s, passed on retry at 6.9s — pre-existing timing flake, unrelated.)
+Victor directives + corrections:
+  - ⚠ **"I already solved the gap inside the documentation regarding the grades … that is a clear drift."** At the P1/P2
+    checkpoint I framed the grading-system's weighted-component model as an author-vs-defer boundary (14 vs 15 tables) and put
+    it to Victor — reading the `(design pass)` LABEL in structure-data.md as "undesigned → defer". But `docs/intake/
+    learning-education.md` §Resolution was marked **WHOLE** — H3 fully specified the grading builder (weighted components
+    {type,weight,points}, scope, scale). Corrected → author `grading_components` NOW; the `(design pass)` label is a build-phase
+    forward-pointer, and we ARE the build phase. Reinforced [[build-phase-flags-mean-resolve-now-not-defer]] with this instance:
+    **before presenting any author-vs-defer boundary to Victor, grep the intake §Resolution/§WHOLE first.**
+Next session:
+  - **FIRST ACTION: open P0 table group `#13 Languages`, Phase 1 intent intake** — FRESH clean-context. ⚠ Per P0 D2: the intent
+    source is **ADR-002 §5.10 Language Learning Domain** (~9 tables, fully specified — Language/LanguageVocabulary/
+    LanguagePracticeSession/LanguageDailySession/LanguageDailyProgress/LanguageRecording/LanguageWeeklyPlan/LanguageBaseWord/
+    LanguageVideoPlaylist, all in `@vida/types/learning.ts`). The `docs/features/languages/*.md` stubs are 0-byte → **author
+    `structure-data.md` from the ADR in its P1** before running P2→P5. Grep intake+reruns FIRST (any driver-token reframe?).
+  - **READ ALL 5 ASPECTS + THE RERUN before scoping.** Phase-1 No-Decisions Gate is the recurring trap; a `(design pass)` label
+    ≠ defer when the intake §Resolution is WHOLE. deleted_at: session extensions + "no soft delete" children omit it.
+  - Carry-forward: DB-11 += Learning interfaces (Course→Subject rename, default_course_id→default_subject_id, stale Course
+    progress/tags). **13 of 22 done; 9 remain.** ⚠ CI red (known pnpm infra; local green). Branch NOT committed/pushed.
+
+---
+Date: 2026-08-20 — DB-4 group #17 Health: Core: full 5-phase lifecycle DONE (the shared Health spine)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #17 — Health: Core (Core-only; Nutrition #18 / Training #19 are separate groups).
+Accomplished:
+  - **12 tables** (`027_health_core.ts`, v27; `schema/health-core.ts` + net-new `packages/types/src/health.ts` +
+    `validators/health.ts`): health_metrics · health_metric_values · health_domains · health_factors · health_exams ·
+    assigned_exams · health_goals · physical_roles · health_experiments · health_responses · medical_profile_entries ·
+    safety_flags. Recovered domain (NO v2 schema) — all net-new ADR-002 additions.
+  - Goal `type` DECOMPOSED → measurement_kind × binding_mode × subject FK (ADR-011 M1/M2; REUSE MEASUREMENT_KIND/
+    BINDING_MODE from measurement.ts + STATUS/FREQUENCY from common.ts); progress/mastery = nullable REAL M3 override
+    slots (NULL⇒derive, no DEFAULT); binding_mode nullable no-default (tasks gate-2 precedent). 14 net-new FIXED tuples
+    (health.ts) + 14 z.enum; 18 FIXED CHECK cols (14 net-new + 4 reused on health_goals) parity-asserted; OPEN vocabs
+    (modality/experiment-type/exam-kind/category/body_part/response-scales/severity/medical-status/winner) = plain TEXT
+    no CHECK. no-FK; photo_blob = blob(buffer) [E] (note_attachments precedent); source incl. `ai` (AI6).
+  - **deleted_at on `health_goals` ONLY** (the documented floor, structure-data L45); 11 others omit it (entities →
+    status/end_date/phase; 4 ledgers → append). C1/C2/C3 guards held (physical_roles.type=OPEN modality; health_metrics.
+    kind=FIXED taxonomy; no economy — XP via Sessions S4). X*/AI*/M4/M5 = cite-not-author. `ENTITY_TYPES += 11` (OPEN SP2).
+  - Gates: gate-1 REVISE→resolved · preflight PASSED (10 folds) · gate-2 SHIP (3 folds: photo_blob→blob · idx precedent
+    fix · F10 NOT-NULL/default posture) · post-impl SHIP (zero findings). All via independent adversarial critics.
+  - Green: `@vida/core` **702 tests** (28 files incl. new health-core-introspection.test.ts 49 cases = 12×4 + deleted_at-
+    floor guard; +18 enum-parity rows); `LATEST_VERSION`=27; root typecheck 11/11; eslint 0. §XXIX current-* promoted
+    (BR-HC-1…8). Barrels wired (types/validators/schema); migration registered in runner.
+Victor directives + corrections:
+  - ⚠ **"The documentation already has all the floors that you are stating that it lacks."** At gate-1 an independent
+    critic ruled my `deleted_at`-on-`health_goals`-only reading was "under-annotation → floor it on all 8 entities,"
+    premised on "Health has NO per-table floor (recovered domain, no v2 schema)." I APPLIED the REVISE. Victor caught it:
+    the premise was FALSE — the module `structure-data.md` roster (authored from the AUTHORITATIVE 18-DB Notion design)
+    IS the per-table floor; "no v2 *code*" ≠ "no *documented* floor." Reverted to goals-only (floor L45 marks it alone).
+    **Lesson: doc-check a critique's RULING (its premise), not just its escalations** — a critique can be internally
+    rigorous yet rest on a false premise. Extended memory [[verify-a-critiques-escalation-and-defer-target-before-relaying]].
+Next session:
+  - **FIRST ACTION: open P0 table group `#18 Health: Nutrition`, Phase 1 intent intake** — FRESH clean-context. Read FULL
+    5-aspect `docs/features/health/nutrition/` + grep intake+reruns FIRST (`part-1.2-reruns/health-nutrition.md` = the
+    separate Tier-2 gap unit — its own X*/AI6 pass, row 20). The Health CORE tables it composes are now authored (v27).
+  - **The module `structure-data.md` roster IS the authoritative per-table floor** (even for a recovered domain, no v2
+    code) — a blanket convention never overrides its explicit per-table notation; and a critique's premise needs
+    doc-checking too, not just its escalations. **16 of 21 done; 5 remain.** Branch NOT committed/pushed.
+
+---
+Date: 2026-08-20 — DB-4 group #18 Health: Nutrition: full 5-phase lifecycle DONE (the fuel pillar)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #18 — Health: Nutrition (composes the Core spine authored in #17).
+Accomplished:
+  - **6 tables** (`028_health_nutrition.ts`, v28; `schema/health-nutrition.ts` + net-new `packages/types/src/nutrition.ts`
+    + `validators/nutrition.ts`): nutrition_ingredients · nutrition_dishes · nutritional_plans · daily_meal_plans · meals ·
+    shopping_items. Net-new (recovered domain). Composes Core #17: Nutrition Goals → Core `health_goals` (C1/HN-4),
+    Experiments/Responses → Core Adaptation (HN-5), cost → Finance, tags → Spaces.
+  - **`deleted_at` on `nutritional_plans` ONLY** (the floor L22 — the #17 ruling applied cleanly: the structure-data roster
+    IS the authoritative per-table floor). **OPEN-vocab-heavy: only 3 FIXED CHECK** — `MEAL_SOURCE` (meals.source, manual|ai|
+    import, AI6 triad; `ai` not `llm` per rerun N3) + `MEAL_GENERATION_METHOD` (daily_meal_plans.generation_method) net-new +
+    reused `FREQUENCY` (nutritional_plans.review_frequency). Everything else OPEN (no CHECK): modality (caloric_strategy/
+    dietary_framework/philosophy/meal_type, conventions L17); editable-starter taxonomy (functional_area/whole_food_type, C5/
+    HN-12/HN-13 — never hard-code as truth); all `status` columns (bare "status P" floor; terminal-states prose is ambiguous
+    UI-state). **Inline `meals.tags` dropped → `entity_tags`** (SP1 forward-reframe, no live floor → no R6).
+  - money[E] = `money()` INTEGER cents + @encrypted (finance precedent, meals.cost + shopping.estimated_cost); `photo_blob` =
+    `blob(buffer)` [E]; no cross-table FK. C1–C8 guards held (no measurement_kind/binding_mode, no economy, no session — a
+    meal is LOGGED via `dueIn()` not a session [C3, the inverse of Training #19]; no AI4 agentic envelope; cooking_skill_id
+    opt-in nullable C6; no import_staging C8). X*/AI* wiring = cite-not-author (only source/generation_method/ai_meal_generation).
+    `ENTITY_TYPES += 6` (incl. `nutritional_plan`, not `nutrition_plan` — fixed #17's stale comment shorthand, NIT-1).
+  - Gates: gate-1 SHIP (2 NITs) · preflight PASSED (9 folds) · gate-2 SHIP (2 NITs) · post-impl SHIP (0 findings). All via
+    independent adversarial critics with the #17 methodology guard (ground findings in the floor; verify the premise). All 4
+    NITs cosmetic, folded (registry comment, blob import, §3b rating REAL→INTEGER doc-consistency).
+  - Green: `@vida/core` **730 tests** (29 files incl. new health-nutrition-introspection.test.ts 25 cases = 6×4 + deleted_at-
+    floor guard; +3 enum-parity rows); `LATEST_VERSION`=28; root typecheck 11/11; eslint 0. §XXIX current-* promoted (BR-NT-1…6).
+    Committed on branch `db-4-per-domain-schema`.
+Notes:
+  - No Victor drift-catch this group — the #17 lesson (the module structure-data roster IS the authoritative per-table floor,
+    even for a recovered domain with no v2 code; doc-check a critique's premise) carried forward cleanly. Both critics grounded
+    their findings correctly and did not re-open the deleted_at floor.
+Next session:
+  - **FIRST ACTION: open P0 table group `#19 Health: Training`, Phase 1 intent intake** — FRESH clean-context. Read FULL
+    5-aspect `docs/features/health/training/` + grep intake+reruns FIRST. Training is the **inverse of Nutrition on C3**: a
+    workout IS a Session (composes `sessions` `workout` sub-type + a Health-owned `workout_sessions` extension, ADR-004) — so
+    it authors the Training pillar catalogs (exercises/plans/protocols) + the session extension (no deleted_at on the
+    extension, the session-extension precedent). ⚠ `health/training` was **row 21 = ALIGNED** in the staleness sweep — it may
+    have NO rerun (unlike Core row-19-stale / Nutrition row-20-gap); confirm and read the aspects directly. The roster IS the floor.
+  - **17 of 21 done; 4 remain.** After #19 Training: 3 more groups (#20/#21/#22). Branch `db-4-per-domain-schema`.
+
+---
+Date: 2026-08-20 — DB-4 group #19 Health: Training: full 5-phase lifecycle DONE (the exercise pillar; Health domain COMPLETE)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #19 — Health: Training (the C3 inverse of Nutrition; a workout IS a Session).
+Accomplished:
+  - **5 tables** (`029_health_training.ts`, v29; `schema/health-training.ts` + net-new `packages/types/src/training.ts`
+    + `validators/training.ts`): exercises · exercise_plans · workout_templates · workout_sessions · workout_sets. The
+    five-layer spine (Catalog → Plan → Template → Instance → Log). Net-new (recovered domain, **no rerun** — row 21 ALIGNED,
+    the 5 aspects were the sole source).
+  - **A workout IS a Session:** `workout_sessions` = the `sessions` `workout` sub-type 1:1 extension (ADR-004) — own id
+    (baseColumns) + `session_id text notNull unique` (no-FK), **NO deleted_at** (base owns lifecycle; the skill_actions/
+    class_sessions/reading_sessions precedent; the floor's "id = session_id" reshaped to the live BR-DB-1 shape).
+  - **`deleted_at` on `exercises` + `exercise_plans`** (the floor marks TWO this time — L13/L18); templates/session-extension/
+    workout_sets omit it. **5 FIXED CHECK** — 3 net-new (`MOVEMENT_PATTERN`/`WORKOUT_SET_CATEGORY`/`BURN_SOURCE`) + **2 reused
+    from #17 `health.ts`** (`METRIC_SIDE` on workout_sets.side; `PHYSICAL_ROLE_AUTHORING_SOURCE` on exercise_plans.authoring_source,
+    member-exact cross-group reuse); rest OPEN (modality, conventions L16). `movement_pattern` FIXED-but-nullable (cardio has none).
+  - **[E]-numeric asymmetry preserved exactly** (floor L27-28): planned_reps/planned_weight/actual_reps [E]; planned_sets/
+    sets_done/weight_used plaintext — via typed-column + @encrypted (money[E] pattern; no blanket "encrypt all numeric").
+    Performance → Core `health_metric_values` (no local KPI store, HT-5); goal_ids/role_id/knowledge_object_id no-FK.
+    `ENTITY_TYPES += 4` (workout_template excluded — definition table, per floor L37). `order` = quoted reserved word, notNull dflt 0.
+  - Gates: gate-1 SHIP · preflight PASSED (9 folds) · gate-2 SHIP (2 NITs) · post-impl SHIP (0 findings). All via independent
+    adversarial critics with the #17 methodology guard. Both NITs cosmetic (order default, partial-index test-hygiene), folded.
+  - Green: `@vida/core` **757 tests** (30 files incl. new health-training-introspection.test.ts 22 cases = 5×4 + deleted_at-
+    floor guard + session_id-UNIQUE guard; +5 enum-parity rows); `LATEST_VERSION`=29; root typecheck 11/11; eslint 0. §XXIX
+    current-* promoted (BR-HT-1…6). Committed on branch `db-4-per-domain-schema`.
+  - **The Health domain (#17 Core + #18 Nutrition + #19 Training) is COMPLETE** — 23 tables across 3 migrations (027/028/029).
+Notes:
+  - No Victor drift-catch — the #17 lesson (the module structure-data roster IS the authoritative per-table floor; doc-check
+    a critique's premise) held across #18 and #19. Cross-group enum reuse (METRIC_SIDE/PHYSICAL_ROLE_AUTHORING_SOURCE from #17)
+    worked cleanly — the Health sub-modules share a types vocabulary via health.ts.
+Next session:
+  - **FIRST ACTION: open P0 table group `#20 Journals`, Phase 1 intent intake** — FRESH clean-context. Read FULL 5-aspect
+    `docs/features/journals/` + grep intake+reruns FIRST. Journals is the **integration/connective layer** (the daily-dashboard
+    tying all modules together) — expect heavy composition (pages/entity_links/summary blocks), possibly few net-new tables.
+    ⚠ **colocation risk** [[db4-types-may-be-colocated-grep-name-before-net-new]]: #20 Journals / #21 Gamification enums may
+    already exist colocated (e.g. in entities/user.ts) — grep the exact NAME + READ the hit before declaring net-new (the #16 lesson).
+  - **18 of 21 done; 3 remain** (#20 Journals · #21 Gamification · #22 Notifications). ⚠ **E9 cross-group for #21 Gamification:**
+    `user_profile` MUST omit `persona`/`motivation_style`/`active_modules`/`onboarding_completed` (→ Preferences #2) + `check_in_streak*` (→ Check-ins #16). Branch `db-4-per-domain-schema`.

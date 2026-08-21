@@ -20,6 +20,27 @@ import { migration008KnowledgeReview } from './008_knowledge_review'
 import { migration009EconomyStoreRules } from './009_economy_store_rules'
 import { migration010Scheduling } from './010_scheduling'
 import { migration011Templates } from './011_templates'
+import { migration012Notes } from './012_notes'
+import { migration013Preferences } from './013_preferences'
+import { migration014SessionsScheduling } from './014_sessions_scheduling'
+import { migration015Tasks } from './015_tasks'
+import { migration016Projects } from './016_projects'
+import { migration017Habits } from './017_habits'
+import { migration018Routines } from './018_routines'
+import { migration019Purposes } from './019_purposes'
+import { migration020Finance } from './020_finance'
+import { migration021Skills } from './021_skills'
+import { migration022Knowledge } from './022_knowledge'
+import { migration023Books } from './023_books'
+import { migration024LearningEducation } from './024_learning_education'
+import { migration025Relationships } from './025_relationships'
+import { migration026CheckIns } from './026_check_ins'
+import { migration027HealthCore } from './027_health_core'
+import { migration028HealthNutrition } from './028_health_nutrition'
+import { migration029HealthTraining } from './029_health_training'
+import { migration030Journals } from './030_journals'
+import { migration031Gamification } from './031_gamification'
+import { migration032Notifications } from './032_notifications'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -30,6 +51,12 @@ import { migration011Templates } from './011_templates'
 // The v1 monolith migration (001_initial) was quarantined to db/_legacy/ in Part 2 (ADR-018).
 // DB-6 authors + registers the first real migration: the sync_queue foundation table.
 // DB-3 (007-011) authors the Stream (i) substrate remainder: Purpose · review engine · store/rules · planned_blocks · templates.
+// DB-4 (012+) authors the Stream (ii) per-domain tables: notes (012) · preferences (013) ·
+// sessions & scheduling (014) · tasks (015) · projects (016) · habits (017) · routines (018) · purpose (019) ·
+// finance & fiscal-legal (020) · skills (021) · knowledge & flashcards (022) · books (023) ·
+// learning: education & ics (024) · relationships / CRM (025) · check-ins (026) ·
+// health: core (027) · health: nutrition (028) · health: training (029) · journals (030) ·
+// gamification (031) · notifications (032). ← DB-4 COMPLETE (21/21 active groups).
 const ALL_MIGRATIONS: Migration[] = [
   migration001SyncQueue,
   migration002Sessions,
@@ -42,6 +69,27 @@ const ALL_MIGRATIONS: Migration[] = [
   migration009EconomyStoreRules,
   migration010Scheduling,
   migration011Templates,
+  migration012Notes,
+  migration013Preferences,
+  migration014SessionsScheduling,
+  migration015Tasks,
+  migration016Projects,
+  migration017Habits,
+  migration018Routines,
+  migration019Purposes,
+  migration020Finance,
+  migration021Skills,
+  migration022Knowledge,
+  migration023Books,
+  migration024LearningEducation,
+  migration025Relationships,
+  migration026CheckIns,
+  migration027HealthCore,
+  migration028HealthNutrition,
+  migration029HealthTraining,
+  migration030Journals,
+  migration031Gamification,
+  migration032Notifications,
 ]
 
 // ---------------------------------------------------------------------------

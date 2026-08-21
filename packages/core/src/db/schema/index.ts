@@ -21,7 +21,96 @@ export * from './foundation/economy'
 export * from './foundation/purpose'
 // Foundation substrate: DB-3 generic review engine (review_curves · method_bindings · review_events).
 export * from './foundation/knowledge-review'
-// Foundation substrate: DB-3 scheduling (planned_blocks — aggregator-scheduled).
+// Foundation substrate: DB-3 scheduling (planned_blocks — aggregator-scheduled) +
+// DB-4 group #3 Planner tables (study_availability · availability_exceptions ·
+// study_plan_batches · session_templates).
 export * from './foundation/scheduling'
+// DB-4 group #3 (Stream ii): Sessions sub-type extensions (study_sessions · focus_sessions).
+export * from './foundation/session-extensions'
 // Foundation substrate: DB-3 templates (light seed-bundle store).
 export * from './foundation/templates'
+// DB-4 domain (Stream ii): Notes & Pages (pages · page_links · note_attachments).
+export * from './notes'
+// DB-4 domain (Stream ii): Preferences (user_preferences · nav_preferences · command_bar_history).
+export * from './preferences'
+// DB-4 domain (Stream ii): Tasks (tasks · task_time_logs).
+export * from './tasks'
+// DB-4 domain (Stream ii): Projects (projects · milestones · deliverables · project_documents).
+export * from './projects'
+// DB-4 domain (Stream ii): Habits (habits · habit_completions · project_habits).
+export * from './habits'
+// DB-4 domain (Stream ii): Routines (routines · routine_step · routine_completions) — the orchestration reframe.
+export * from './routines'
+// DB-4 domain (Stream ii): Purpose & Goals (purposes · targets · purpose_metrics · purpose_metric_values ·
+// target_reviews · dreams) — the CAPSTONE. (DB-3 substrate values/contributions/purpose_reviews/plan_steps → foundation/purpose.ts.)
+export * from './purposes'
+// DB-4 domain (Stream ii): Finance (accounts · transactions · assets · liabilities · investments · income_streams)
+// + Fiscal & Legal sub-context (fiscal_residencies · legal_entities · fiscal_obligations). (DB-3 substrate store/rules → foundation/economy.ts.)
+export * from './finance'
+// DB-4 domain (Stream ii): Skills (skills · skill_levels · skill_activities · skill_actions [Sessions
+// `practice` sub-type extension] · skill_dev_logs · skill_dependencies · skill_definitions). skill_resources RETIRED → entity_links.
+export * from './skills'
+// DB-4 domain (Stream ii): Knowledge Universe (knowledge_objects · object_kinds · knowledge_containers ·
+// references · compound_sets · knowledge_lab_entries · flashcards). Retired → review engine (DB-3) + pages.
+export * from './knowledge'
+// DB-4 domain (Stream ii): Books (books · book_chapters · book_assets · book_bookmarks · book_highlights ·
+// book_quotes · reading_sessions [Sessions `reading` sub-type] · reading_plans · reading_plan_books · book_subjects).
+export * from './books'
+// DB-4 domain (Stream ii): Learning: Education (+ICS) — THE Learning hub (15 tables): subjects[=courses]
+// · ics_feed_configs · ics_synced_events · institutions · self_taught · programs · curricula · terms ·
+// class_sessions [Sessions `class` sub-type] · subject_schedules · grading_systems · grading_components ·
+// assessments · subject_documents · education_measurements. Homework = Tasks-owned (C-HW). Inline tags → entity_tags.
+export * from './learning'
+
+// DB-4 group #14 — Relationships (CRM): contacts · contact_events · interactions · contact_reminders ·
+// reminder_groups · reminder_group_contacts + net-new networks (network_groups · network_group_contacts, G2).
+// Inline contacts.tags → entity_tags (G10); social_links KEPT (C4); health derived (no M*, C1).
+export * from './relationships'
+
+// DB-4 group #16 — Check-ins: daily_check_ins · check_in_templates · check_in_template_questions
+// (§5.13). Enums reused from @vida/types entities/user.ts (CHECK_IN_TYPE amended 3→6, CK-3). No tags (SP1).
+export * from './check-ins'
+
+// DB-4 group #17 — Health: Core (12 tables): health_metrics · health_metric_values · health_domains ·
+// health_factors · health_exams · assigned_exams · health_goals · physical_roles · health_experiments ·
+// health_responses · medical_profile_entries · safety_flags. Recovered domain (no v2 schema). Goal `type`
+// decomposed → measurement_kind × binding_mode (ADR-011). deleted_at on health_goals ONLY (floor). No tags
+// owned (SP1 consumer); X*/AI*/M4/M5 = cite-not-author. Nutrition #18 / Training #19 are separate groups.
+export * from './health-core'
+
+// DB-4 group #18 — Health: Nutrition (6 tables): nutrition_ingredients · nutrition_dishes · nutritional_plans ·
+// daily_meal_plans · meals · shopping_items. The fuel pillar (recovered domain). Composes Core #17 (goals/metrics/
+// adaptation), Finance (cost), Spaces (tags). deleted_at on nutritional_plans ONLY (floor). Inline meals.tags dropped
+// → entity_tags (SP1). 3 FIXED CHECK (MEAL_SOURCE/MEAL_GENERATION_METHOD + reused FREQUENCY); rest OPEN (modality/starter).
+export * from './health-nutrition'
+
+// DB-4 group #19 — Health: Training (5 tables): exercises · exercise_plans · workout_templates · workout_sessions
+// (Sessions `workout` sub-type extension, ADR-004) · workout_sets. The exercise pillar (recovered domain). Composes
+// Core #17 (goals/metrics/roles), Sessions (runtime/scheduler), Knowledge (technique/protocols). deleted_at on
+// exercises + exercise_plans (floor); workout_sessions = own id + session_id UNIQUE, no deleted_at. 5 FIXED CHECK
+// (MOVEMENT_PATTERN/WORKOUT_SET_CATEGORY/BURN_SOURCE net-new + reused METRIC_SIDE/PHYSICAL_ROLE_AUTHORING_SOURCE from #17).
+export * from './health-training'
+
+// DB-4 group #20 — Journals (1 table): journal_snapshots — the frozen point-in-time day-summary record
+// (JR-6/JR-7) the temporal Review engine reads. The INTEGRATION LAYER, but almost all of it is runtime code /
+// owned elsewhere: the journal PAGE + summary_config[E] = Notes & Pages (#1); the dueIn() agenda = Sessions;
+// the section registry = code; reviews + per-period rollups = design-pass (no table). Hand-composed reduced
+// column set (captured_at IS the timestamp; NO created_at/updated_at/deleted_at). No enums/CHECK/UNIQUE/FK.
+export * from './journals'
+
+// DB-4 group #21 — Gamification ("the System") (3 tables): user_profile · achievements · user_achievements.
+// The heaviest INTENDED reframe (ADR-012) but only 3 tables — the economy spine (currencies · consequence_ledger
+// · store · rules) is already-authored DB-3 substrate (foundation/economy.ts, consumed); the rule→consequence
+// engine / typed effects / derivation are service logic (M1.1+). user_profile = the ADR-012 §3.10 post-split residual
+// (drops persona/motivation_style/active_modules/onboarding_completed → Preferences #2; check_in_streak* → Check-ins
+// #16 derived; keeps PII + total_xp/current_level caches). achievements = the FIRST non-syncable static-seed table
+// (no _sync_*/updated_at/deleted_at). xp_history RETIRED → consequence_ledger. ENTITY_TYPES += 'achievement'.
+export * from './gamification'
+
+// DB-4 group #22 — Notifications (1 table): notifications — the dead-last observer leaf, a PURE SINK
+// (in-degree = everything, out-degree 0). The dispatcher / delivery / ZK wake-signal (ADR-013) are service
+// (M1.1), not schema. §5.16 floor + RESOLUTION-N4 AMENDMENTs (metadata[E] + 3-flag delivery-audit) + the
+// ADR-012 Additive convergence key (effect_event_id nullable + UNIQUE — surface_notification is an Additive
+// output row; the device-local applied_effects ledger can't converge cross-device). Bespoke shape (id + fields
+// + created_at + _sync_*; NO updated_at [v2 dropped], NO deleted_at [purge lifecycle]). ← DB-4 COMPLETE (21/21).
+export * from './notifications'

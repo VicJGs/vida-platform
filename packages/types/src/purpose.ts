@@ -20,3 +20,8 @@ export type ContributionContributorType = (typeof CONTRIBUTION_CONTRIBUTOR_TYPE)
 /** PG5 — the owner a lightweight `plan_steps` checklist item hangs off (not a tracked entity — PG-11). */
 export const PLAN_STEP_OWNER_TYPE = ['task', 'target'] as const
 export type PlanStepOwnerType = (typeof PLAN_STEP_OWNER_TYPE)[number]
+
+/** PG-15 (DB-4 group #8) — provenance of a `purpose_metric_values` point: hand-recorded vs derived-pull writer.
+ *  Distinct axis from `binding_mode` (how a measurable is fed). Matches Health's provenance `source`. */
+export const METRIC_VALUE_SOURCE = ['manual', 'auto'] as const
+export type MetricValueSource = (typeof METRIC_VALUE_SOURCE)[number]

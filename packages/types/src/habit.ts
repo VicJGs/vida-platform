@@ -19,6 +19,11 @@ export type HabitFrequency = (typeof HABIT_FREQUENCY)[number]
 export const HABIT_TIME_OF_DAY = ['morning', 'afternoon', 'evening', 'anytime', 'whole_day'] as const
 export type HabitTimeOfDay = (typeof HABIT_TIME_OF_DAY)[number]
 
+// Restored from v1 (DB-4 group #6, G8) — the habit's difficulty rating. Distinct from
+// TASK_DIFFICULTY {trivial…expert} and TOPIC_DIFFICULTY {easy…very_hard}.
+export const HABIT_DIFFICULTY = ['very_easy', 'easy', 'medium', 'hard', 'very_hard'] as const
+export type HabitDifficulty = (typeof HABIT_DIFFICULTY)[number]
+
 // ---------------------------------------------------------------------------
 // Entities
 // ---------------------------------------------------------------------------

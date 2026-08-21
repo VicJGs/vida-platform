@@ -22,6 +22,22 @@ export type BookFormat = (typeof BOOK_FORMAT)[number]
 export const BOOK_STATUS = ['want_to_read', 'reading', 'completed', 'dropped'] as const
 export type BookStatus = (typeof BOOK_STATUS)[number]
 
+// DB-4 group #11 — Books reframe (ADR-002 §Books reshaped roster). BOOK_FORMAT above is now
+// STALE (single-format → per-asset) — retained for the DB-11 row-interface reconcile; `book_assets`
+// uses BOOK_ASSET_FORMAT below (BK-2). `books.status` reuses BOOK_STATUS.
+
+/** A per-format book copy's format (BK-2; supersedes the single BOOK_FORMAT). */
+export const BOOK_ASSET_FORMAT = ['physical', 'pdf', 'epub', 'audiobook', 'braille', 'other'] as const
+export type BookAssetFormat = (typeof BOOK_ASSET_FORMAT)[number]
+
+/** A reading plan's book arrangement (BK-11): one after another, or quota-split in parallel. */
+export const READING_PLAN_ARRANGEMENT = ['sequenced', 'parallel'] as const
+export type ReadingPlanArrangement = (typeof READING_PLAN_ARRANGEMENT)[number]
+
+/** A reading plan's goal source (BK-11): user-set, or auto-calculated to a target. */
+export const READING_PLAN_GOAL_TYPE = ['manual', 'auto'] as const
+export type ReadingPlanGoalType = (typeof READING_PLAN_GOAL_TYPE)[number]
+
 export const MASTERY_LEVEL = [
   'novice',
   'beginner',
@@ -114,6 +130,64 @@ export const BASE_WORD_CATEGORY = [
   'daily_phrases',
 ] as const
 export type BaseWordCategory = (typeof BASE_WORD_CATEGORY)[number]
+
+// ---------------------------------------------------------------------------
+// DB-4 group #12 — Learning: Education (+ICS) reframe enums
+// (ADR-002 §5.10/§5.18 + intake §Resolution WHOLE + Part-1.2 rerun). All FIXED
+// (closed vocabularies fixed by the docs) → SQL CHECK + Zod parity.
+// ---------------------------------------------------------------------------
+
+/** Degree difficulty tier — a FIELD on `subjects`, not a table (conventions L31). */
+export const DEGREE_TIER = ['high_school', 'bachelor', 'master', 'doctorate'] as const
+export type DegreeTier = (typeof DEGREE_TIER)[number]
+
+/** Hierarchical time container level: year ⊃ semester ⊃ term (ED-12, conventions L31). */
+export const TERM_LEVEL = ['year', 'semester', 'term'] as const
+export type TermLevel = (typeof TERM_LEVEL)[number]
+
+/** A program parents to an institution OR a self_taught row (ED-2, separate tables). */
+export const PROGRAM_PARENT_TYPE = ['institution', 'self_taught'] as const
+export type ProgramParentType = (typeof PROGRAM_PARENT_TYPE)[number]
+
+/** The three schedule-feed methods for one `subject_schedule` (ED-5). */
+export const SCHEDULE_SOURCE = ['ics', 'document', 'manual'] as const
+export type ScheduleSource = (typeof SCHEDULE_SOURCE)[number]
+
+/** A grading system's scope (ED-7, contract L24). */
+export const GRADING_SCOPE = ['institution', 'program', 'subject'] as const
+export type GradingScope = (typeof GRADING_SCOPE)[number]
+
+/** The grading scale kind (ED-7 — A–F / 0–10 / pass-fail / custom, intake H3). */
+export const GRADING_SCALE_TYPE = ['letter', 'numeric', 'pass_fail', 'custom'] as const
+export type GradingScaleType = (typeof GRADING_SCALE_TYPE)[number]
+
+/** A weighted grading-system component's type (ED-7 component enumeration). */
+export const GRADING_COMPONENT_TYPE = [
+  'homework',
+  'task',
+  'exam',
+  'quiz',
+  'test',
+  'presentation',
+  'work',
+] as const
+export type GradingComponentType = (typeof GRADING_COMPONENT_TYPE)[number]
+
+/** A subject-attached assessment's type (ED-8, conventions L31). */
+export const ASSESSMENT_TYPE = ['exam', 'quiz', 'test', 'presentation', 'work'] as const
+export type AssessmentType = (typeof ASSESSMENT_TYPE)[number]
+
+/** Assessment modality — online vs requiring physical presence (ED-8, conventions L32). */
+export const ASSESSMENT_MODALITY = ['online', 'in_person'] as const
+export type AssessmentModality = (typeof ASSESSMENT_MODALITY)[number]
+
+/** What an `education_measurements` row measures — a subject or a program (ED-10). */
+export const MEASUREMENT_REF_TYPE = ['subject', 'program'] as const
+export type MeasurementRefType = (typeof MEASUREMENT_REF_TYPE)[number]
+
+/** Provenance of an auto-recordable row — `ai` = AI6 authorship (ADR-015 §3.6). */
+export const RECORD_SOURCE = ['manual', 'ai', 'import'] as const
+export type RecordSource = (typeof RECORD_SOURCE)[number]
 
 // ---------------------------------------------------------------------------
 // Course, Book, Skill

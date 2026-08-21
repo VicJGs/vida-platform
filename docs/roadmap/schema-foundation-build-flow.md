@@ -70,6 +70,43 @@ Capture the **complete intended** schema into documentation before any planning.
 - Skills: `/document-context` (refresh the `database-layer` context's `current-*`) → `/documentation-component` (the
   unit spec, in `docs/specs/foundation/<db-3|db-4>-<slice>/`).
 
+#### Phase 1 — No-Decisions Gate (anti-drift protocol · MANDATORY)
+**A Phase-1 intake produces "resolutions ALL doc-determined, ZERO decisions" — NEVER a list of "open points", "shape
+points", or "decisions with leans".** The documentation already closes every point (Model B: the schema's consumers are
+unwritten, so nothing may be left to re-decide later). This drift recurred THREE times (Notes #1, Sessions #3, Tasks #4)
+and Victor corrected it every time — it is the single failure mode of this flow. `[[stale-source-plus-live-convention-is-fact-not-a-decision]]`
+
+**The tell (a mechanical string-check, not a judgment call).** If the P1/P3 spec contains any of — *decision · open
+point · open question · shape point · resolve at the gate · lean · TBD · choose · "either…or" · advisory · fold · note ·
+governing principle · transparency note · "this is the moment to say so"* — that IS the drift signal. STOP and re-ground
+each occurrence in the docs before proceeding. A clean intake contains none of these words in its own analysis (quoting a
+doc that uses them is fine). *(The `advisory · fold · note · governing principle` set was added after group #9 Finance,
+where the SAME No-Decisions drift leaked through the gate machinery — a critic's "minor advisory" and a preflight "fold" —
+instead of through the word "decision"; a doc-fixed FACT re-surfaced by a critic or a gate is still just the FACT, cite it
+or drop it. [[stale-source-plus-live-convention-is-fact-not-a-decision]] · [[verify-a-critiques-escalation-and-defer-target-before-relaying]])*
+
+**The mandatory No-Guessing steps (every group, BEFORE writing that any "gap" exists):**
+1. **Read ALL five aspects** — `identity · structure-data · business-rules · contract · conventions` — plus the owning
+   ADR(s), the **ADR-002 §5.20 ledger** (ADD/RETIRE/AMEND = the definitive table roster; a table not in the ADD set is
+   not owed), and the §5.<n> body DDL. *Stopping at `structure-data.md` is the documented root cause of the drift.*
+2. **Grep the concept across the WHOLE corpus** (`docs/` + `packages/`) for every column a feature doc leaves loose. An
+   existing canonical representation used ≥2× elsewhere WINS over inventing one — e.g. Tasks #4: "recurrence rule
+   *fields*" → the platform's single `recurrence_rule` RRULE column (found 3×), not a new frequency+days model.
+3. **Read the owning ADR's mechanism section** — it often NAMES the exact column (ADR-011 §3.3 named `nesting_weight`
+   verbatim; §5.20 enumerates the `measurement_kind`+`binding_mode` pursuable pair).
+4. **`@vida/types` interface reconciles are a STANDING DB-11 boundary** — mirror-only now, cited, P5-exempt. Never a
+   per-unit "extend-now vs defer" choice.
+5. **NEVER manufacture a DEFAULT.** An INTENDED column's default must be licensed by a documented "natural"/default;
+   absent one, the column is NULLABLE (the override-slot grain, ADR-011 §3.2). Gate-2 struck a manufactured
+   `binding_mode NOT NULL DEFAULT 'event-trigger'` at Tasks #4 — the reverse form of the same drift.
+
+**Checkpoint (the supervised-loop backstop).** After **P1 + P2** (both mechanical / pre-gate), SURFACE the intake to
+Victor for a ~30-second glance — a compact table of the group's tables + every column tagged `[FACT floor]`/`[INTENDED]`/
+boundary, and the one-line assertion **"zero decisions — every point doc-cited."** The drift, if present, is visible
+here, one step BEFORE the P3 gates spin up. On his nod → proceed to the P3 double-gate. *(This is the fastest catch
+point; the two independent critics have twice failed to catch this class, so the string-check + this glance — not more
+adversarial review — are the reliable guard.)*
+
 ### Phase 2 — Current-state / skeleton read (reconcile-and-extend, never from-zero)
 Determine exactly what is authored on disk vs skeleton vs absent. Every prior DB issue (DB-6, DB-7) was built
 reconcile-and-extend; do the same. This is the No-Guessing baseline the plan is drawn from.
@@ -77,8 +114,10 @@ reconcile-and-extend; do the same. This is the No-Guessing baseline the plan is 
 - Output: a precise "authored ✓ / missing ✗ / shape-open ⏳" table per table.
 
 ### Phase 3 — Plan (full double-gate, end-to-end)
-Plan *what & how* from the documented intent. The shape of every shape-open table is resolved **here**, cited to its
-ADR/structure-data source. `[No-Guessing: each claim FACT/INTERP/UNKNOWN]`
+Plan *what & how* from the documented intent. Because the **Phase-1 No-Decisions Gate** already closed every shape from
+the docs, **Phase 3 is a STRAIGHT AUTHORING PLAN with nothing to "decide at the gate"** (the group #3/#4 outcome) — the
+exact DDL + files + tests, each `[FACT]`-cited. If Phase 3 surfaces a genuine fork, that means Phase 1 was incomplete →
+return to it and re-ground, do not "resolve at the gate". `[No-Guessing: each claim FACT/INTERP/UNKNOWN]`
 - PLAN → `/critique` (fix every REVISE) → **Approval 1** → `/preflight` (against the spec) → `/critique` → **Approval 2**.
 - Split form: `sessions/PLAN-<session>-<unit>.md` (gate 1) then `IMPLEMENTATION-PLAN-<session>-<unit>.md` (gate 2).
 
@@ -94,6 +133,16 @@ than a normal post-impl pass — the acceptance criterion is *downstream usabili
 - Post-impl `/critique` (independent) → §XXIX Currency promote (docs ship in the same commit) →
   a "foundation-readiness" check: pick a representative downstream consumer (e.g. MOD-notes for DB-4's Notes domain)
   and confirm every table/column it needs exists and is documented. Log any gap as a defect, do not hand-wave.
+- **DDL-introspection parity check (MANDATORY — the green tests are blind to it).** Apply each new migration in-memory
+  (better-sqlite3 + `PRAGMA table_info`, the `enum-parity.test.ts` driver pattern) and diff the REAL table, column by
+  column, against BOTH the Drizzle mirror (`schema/<domain>.ts`) and the `@vida/types` interface, on **nullability ·
+  default · column-set · type**. The enum-parity test checks only CHECK *value-sets* and the runner test only checks
+  that migrations *apply* — neither catches a `NOT NULL`-in-mirror-but-nullable-in-SQL drift, which makes `$inferSelect`
+  (and the interface) lie about the row. Every mismatch is a defect; resolve to the canonical contract (usually the
+  `@vida/types` interface + sibling-column convention), fixing BOTH the migration and any ADR §5 DDL it mirrors. Known
+  interface↔table divergences deliberately deferred to DB-11 are exempt — cite them, don't "fix" them.
+  `[origin: DB-4 group #2 P5 caught a `time_format` NOT NULL type-lie a CHECK-only parity pass missed; the group-#1
+  oversight re-review then cleared #1 via this same introspection — 2026-08-19]`
 
 ---
 
@@ -151,9 +200,13 @@ authoritative §5.20 Stream (i) ADD set. The **true DB-3 remainder is these 11 s
 **Intent source:** the 19 `docs/features/<module>/structure-data.md` docs (§5.20 Stream (ii)). **Profile:**
 add-backend-component. **Blocked by:** DB-3 (consumes the substrate spine).
 
-**Grain.** Author the per-domain Drizzle schema **one domain group at a time**. *(The "~19 domains" is indicative — the
-counts differ across charters [~17–21] because Health/Knowledge sub-groups fold differently; DB-4's **P0** enumerates the
-single canonical domain-group list, and is the authority for the final count.)* The charter's list: Notes & Pages ·
+**Grain.** Author the per-domain Drizzle schema **one domain group at a time**. *(The "~19 domains" was indicative — the
+counts differed across charters [~17–21] because Health/Knowledge sub-groups fold differently; DB-4's **P0** enumerated the
+single canonical domain-group list and is the authority for the final count.)* **P0 RESOLVED (2026-08-18): 22 domain
+groups** — see `.claude/tasks/db-4-per-domain-schema.md` "## P0 Output". Key grain calls: **Health split ×3**
+(Core/Nutrition/Training); **Languages = own group** (intent = ADR-002 §5.10, its `docs/features/languages/` docs are
+0-byte stubs → author `structure-data.md` in P1); **Pomodoro folded into Sessions**, **ICS folded into Learning**;
+tracked as lightweight build-steps (no Linear sub-issues); cross-domain refs are plain TEXT no-FK → no hard build-order. The charter's list: Notes & Pages ·
 Tasks · Projects · Habits · Routines · Purpose & Goals · Finance (+Fiscal & Legal) · Relationships ·
 Learning/Education · Books · Knowledge · Sessions & Scheduling · Skills · Check-ins · Health (core/nutrition/training)
 · Preferences · Journals · Pomodoro · Gamification · Notifications · ICS). Each domain group is a component sub-issue
