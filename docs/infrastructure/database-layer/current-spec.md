@@ -533,10 +533,26 @@ The Stream (ii) per-domain modules authored so far (18 of 21 active; #13 Languag
   **757 tests** green; `LATEST_VERSION`=29; typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight (9 folds) · gate-2 SHIP ·
   post-impl SHIP. **Zero build-decisions.** **The Health domain (Core + Nutrition + Training) is COMPLETE.** Interface reconcile
   (5 Training interfaces + 3 enums) → DB-11. `[FACT: 029_health_training.ts; schema/health-training.ts; packages/types/src/training.ts; docs/specs/foundation/db-4-health-training/]`
-- **Remaining DB-4 groups:** #20 Journals · #21 Gamification · #22 Notifications (3 more; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
+- **Group #20 Journals (2026-08-21):** **1 net-new table** — `journal_snapshots` (the frozen point-in-time day-summary
+  record the temporal Review engine reads, JR-6/JR-7). The platform **INTEGRATION LAYER**, but almost all of it is runtime
+  code / owned elsewhere: the journal PAGE (`pages` `type='journal'` + `journal_date` + `summary_config[E]`) = Notes & Pages
+  #1 (referenced, not re-authored); the `dueIn()` agenda = Sessions; the section registry = runtime code; reviews +
+  per-period rollups = **design-pass** (no table — structure-data L24-25). **Hand-composed reduced column set** (`id ·
+  snapshot_date · sections_data[E] · captured_at · 6 _sync_*`) — `captured_at` IS the timestamp so NO `created_at`/
+  `updated_at`; a frozen ledger record → NO `deleted_at` (the `check_in_template_questions` precedent; NOT `baseColumns`).
+  `sections_data` NOT NULL [E] (JR-7 "faithful record"; the `summary_config` plain-`text()` pattern). **No enums/CHECK/UNIQUE/
+  FK** (zero FIXED vocab; one-per-date is NP-2 for *pages* not snapshots + backfill re-capture is design-pass → plain index
+  on `snapshot_date`, no UNIQUE). **No `@vida/types` edit** (no enums; `JournalSnapshot` interface → DB-11) · **no
+  `ENTITY_TYPES` append** (internal record addressed by `snapshot_date`, not a polymorphic target — the `task_time_logs`/
+  `habit_completions` precedent) · **no ADR-002 §5-body edit** (named-not-enumerated §5.20; the DB-4 authoring IS the
+  amendment). **Phase-5 introspection** (`journals-introspection.test.ts`, 1 × 4 + no-`deleted_at`/`created_at`/`updated_at`
+  floor guard + index/no-UNIQUE guard = 6). `@vida/core` **763 tests** green; `LATEST_VERSION`=30; typecheck 0; eslint 0.
+  Gates: gate-1 SHIP · preflight PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero build-decisions.** Interface
+  reconcile (1 `JournalSnapshot` row interface) → DB-11. `[FACT: 030_journals.ts; schema/journals.ts; docs/specs/foundation/db-4-journals/]`
+- **Remaining DB-4 groups:** #21 Gamification · #22 Notifications (2 more; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 + #17 + #18 + #19 ✅ (18 of 21 active); 3 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 + #17 + #18 + #19 + #20 ✅ (19 of 21 active); 2 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

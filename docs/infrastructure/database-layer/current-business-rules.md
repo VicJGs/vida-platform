@@ -708,3 +708,44 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   guard = 22). `@vida/core` **757 green**; `LATEST_VERSION`=29; typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight (9
   folds) · gate-2 SHIP (2 NITs) · post-impl SHIP — all clean. **Zero build-decisions.** 5 row interfaces + 3 enums → DB-11.
   **The Health domain (#17 Core + #18 Nutrition + #19 Training) is now COMPLETE.** `[FACT: vitest run]`
+
+## Rules established by DB-4 group #20 Journals (IMPLEMENTED 2026-08-21 · `030_journals.ts` + `schema/journals.ts`)
+- **[FACT] BR-JR-1 — 1 net-new table; the INTEGRATION LAYER is mostly runtime code / owned elsewhere.** `journal_snapshots`
+  is the sole owned table — a point-in-time frozen record of a day's aggregated summary (JR-6/JR-7), the one home for
+  point-in-time journal data the temporal Review engine reads. Owned ELSEWHERE (referenced, never re-authored): the journal
+  PAGE (`pages` `type='journal'` + `journal_date` + `summary_config[E]`, NP-2) = Notes & Pages #1 (`schema/notes.ts:36-65`);
+  the `dueIn()` agenda primitive = Sessions (ADR-004); metric computation = `analytics.ts`; the per-module selection default =
+  Preferences (the per-journal override is the existing `summary_config` column). The section registry is **runtime code**
+  ("NOT a table", structure-data L21). `[FACT: structure-data "Owned by THIS context"; notes.ts:36-65]`
+- **[FACT] BR-JR-2 — hand-composed reduced column set; NO `baseColumns`, NO `deleted_at`.** `journal_snapshots` = `id`
+  (uuidPk) · `snapshot_date` (calendarDate NOT NULL, YYYY-MM-DD, JR-7 date key, plaintext) · `sections_data` (text NOT NULL
+  **[E]**) · `captured_at` (timestampMs NOT NULL, Unix ms) · 6 `_sync_*`. **`captured_at` IS the timestamp** so NO
+  `created_at`/`updated_at`; a **frozen ledger record** (JR-6/JR-7 lifecycle; backfill re-capture is design-pass) → NO
+  `deleted_at`. The floor lists exactly `id · snapshot_date · sections_data[E] · captured_at · sync` — the
+  `check_in_template_questions` reduced-column precedent (floor-governed omission; `pk==['id']` holds). `[FACT: structure-data
+  L16-17; check-ins.ts:86; introspection no-deleted_at/created_at/updated_at guard]`
+- **[FACT] BR-JR-3 — `sections_data` NOT NULL [E], licensed by JR-7.** The column IS the frozen record ("the frozen
+  per-section data", structure-data L17) → a null contradicts JR-7 ("a faithful record of that day", `[INTENT: J4]`). Authored
+  now (build phase). `[E]` via `@encrypted` JSDoc + plain `text()` (NOT `json<T>()`) — the `summary_config` pattern
+  (`notes.ts:54-55`); repository discovers encrypted fields via an explicit `encryptedFields[]` list (repository.ts:177), so the
+  JSDoc is documentation-of-intent (M1.0 = pass-through). `[FACT: JR-7; conventions L29; notes.ts:54-55]`
+- **[FACT] BR-JR-4 — no enums / no CHECK / no UNIQUE / no FK.** Zero FIXED-vocab column → no CHECK, no `@vida/types` tuple, no
+  validator, no enum-parity row. Plain `index('idx_journal_snapshots_date')` on `snapshot_date` (supports `getJournal(date)`,
+  mirrors `idx_pages_journal_date`); **NO UNIQUE** — one-per-date is NP-2 for *pages* (JR-1 boundary), never stated for
+  snapshots, and backfill re-capture is design-pass → a UNIQUE would encode an undecided rule. No cross-table FK (ADR-016 §3.4;
+  `snapshot_date` links to the pages journal by date at the app layer). `[FACT: business-rules JR-1/JR-6; structure-data L24-25]`
+- **[FACT] BR-JR-5 — reviews + per-period rollups REFUSED (design-pass); no discriminator manufactured.** structure-data L24-25:
+  "**No standalone review table decided yet (design-pass)**"; per-period rollups are "**Optionally** … for reviews" under the
+  review design-pass; the review-engine internals (period math, Wrapped composition, delivery, backfill-vs-frozen) are a
+  design-pass (identity L48-49; intake J4). So NO `period`/`snapshot_type` discriminator on `journal_snapshots` — author the
+  daily FACT floor only (the `reading_plans` un-manufactured precedent). `[FACT: structure-data L18,24-25; identity L48-49]`
+- **[FACT] BR-JR-6 — no `ENTITY_TYPES` append; no ADR-002 §5-body edit.** A snapshot is an internal record addressed by
+  `snapshot_date`, NOT a `pages`/`entity_links`/`entity_tags` target (the `task_time_logs`/`habit_completions` precedent);
+  `'journal'` already exists (`_registry.ts:8` — the pages type, not the snapshot). No ADR-002 §5-body edit (named-not-enumerated
+  §5.20; the DB-4 authoring + this promotion ARE the amendment mechanism — the stale-source rule). **⚠ Downstream note for the
+  `journal-service` author:** the generic `createRepository.createInTx` injects `created_at`/`updated_at` unconditionally
+  (repository.ts:334-337), so a snapshot insert needs a bespoke path — a pre-existing property shared with
+  `check_in_template_questions`, not a defect. **Phase-5 introspection** (`journals-introspection.test.ts`, 1 × 4 +
+  no-deleted_at/created_at/updated_at guard + index/no-UNIQUE guard = 6). `@vida/core` **763 green**; `LATEST_VERSION`=30;
+  typecheck 0; eslint 0. Gates: gate-1 SHIP · preflight PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero
+  build-decisions.** 1 `JournalSnapshot` row interface → DB-11. `[FACT: vitest run; repository.ts:334-337]`

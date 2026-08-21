@@ -90,3 +90,10 @@ export * from './health-nutrition'
 // exercises + exercise_plans (floor); workout_sessions = own id + session_id UNIQUE, no deleted_at. 5 FIXED CHECK
 // (MOVEMENT_PATTERN/WORKOUT_SET_CATEGORY/BURN_SOURCE net-new + reused METRIC_SIDE/PHYSICAL_ROLE_AUTHORING_SOURCE from #17).
 export * from './health-training'
+
+// DB-4 group #20 — Journals (1 table): journal_snapshots — the frozen point-in-time day-summary record
+// (JR-6/JR-7) the temporal Review engine reads. The INTEGRATION LAYER, but almost all of it is runtime code /
+// owned elsewhere: the journal PAGE + summary_config[E] = Notes & Pages (#1); the dueIn() agenda = Sessions;
+// the section registry = code; reviews + per-period rollups = design-pass (no table). Hand-composed reduced
+// column set (captured_at IS the timestamp; NO created_at/updated_at/deleted_at). No enums/CHECK/UNIQUE/FK.
+export * from './journals'
