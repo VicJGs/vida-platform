@@ -146,6 +146,11 @@ export const ENTITY_TYPES = [
   'exercise_plan',
   'workout_session',
   'workout_set',
+  // DB-4 group #21 — Gamification. achievement is a pages/entity_links target (already in note.ts
+  // ENTITY_LINK_TARGET:57 — this is the pages/registry side; the daily_check_in #16 precedent). EXCLUDED:
+  // user_profile (singleton, not a polymorphic target) + user_achievement (addressed via achievement_id, the
+  // habit_completions precedent).
+  'achievement',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

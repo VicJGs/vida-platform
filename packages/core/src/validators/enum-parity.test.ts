@@ -36,6 +36,8 @@ import {
   DOCK_POSITION,
   DOCK_SIZE,
   PERSONA,
+  ACHIEVEMENT_CATEGORY,
+  ACHIEVEMENT_TIER,
   STUDY_SESSION_RESOURCE_TYPE,
   POMODORO_TYPE,
   POMODORO_STATUS,
@@ -157,6 +159,8 @@ import { migration026CheckIns } from '../db/migrations/026_check_ins'
 import { migration027HealthCore } from '../db/migrations/027_health_core'
 import { migration028HealthNutrition } from '../db/migrations/028_health_nutrition'
 import { migration029HealthTraining } from '../db/migrations/029_health_training'
+import { migration030Journals } from '../db/migrations/030_journals'
+import { migration031Gamification } from '../db/migrations/031_gamification'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -443,6 +447,10 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'workout_sets', column: 'side', tuple: METRIC_SIDE },
   { table: 'workout_sessions', column: 'burn_source', tuple: BURN_SOURCE },
   { table: 'exercise_plans', column: 'authoring_source', tuple: PHYSICAL_ROLE_AUTHORING_SOURCE },
+  // DB-4 group #21 — Gamification. 2 FIXED CHECK on achievements (reuse existing tuples); user_profile has
+  // no CHECK col (persona left with it → Preferences); entity_type is OPEN (registry-validated, no parity row).
+  { table: 'achievements', column: 'category', tuple: ACHIEVEMENT_CATEGORY },
+  { table: 'achievements', column: 'tier', tuple: ACHIEVEMENT_TIER },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -477,6 +485,8 @@ async function ddlFor(table: string): Promise<string> {
   await migration027HealthCore.up(driver)
   await migration028HealthNutrition.up(driver)
   await migration029HealthTraining.up(driver)
+  await migration030Journals.up(driver)
+  await migration031Gamification.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

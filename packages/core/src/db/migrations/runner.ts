@@ -39,6 +39,7 @@ import { migration027HealthCore } from './027_health_core'
 import { migration028HealthNutrition } from './028_health_nutrition'
 import { migration029HealthTraining } from './029_health_training'
 import { migration030Journals } from './030_journals'
+import { migration031Gamification } from './031_gamification'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -53,7 +54,8 @@ import { migration030Journals } from './030_journals'
 // sessions & scheduling (014) · tasks (015) · projects (016) · habits (017) · routines (018) · purpose (019) ·
 // finance & fiscal-legal (020) · skills (021) · knowledge & flashcards (022) · books (023) ·
 // learning: education & ics (024) · relationships / CRM (025) · check-ins (026) ·
-// health: core (027) · health: nutrition (028) · health: training (029) · journals (030).
+// health: core (027) · health: nutrition (028) · health: training (029) · journals (030) ·
+// gamification (031).
 const ALL_MIGRATIONS: Migration[] = [
   migration001SyncQueue,
   migration002Sessions,
@@ -85,6 +87,7 @@ const ALL_MIGRATIONS: Migration[] = [
   migration028HealthNutrition,
   migration029HealthTraining,
   migration030Journals,
+  migration031Gamification,
 ]
 
 // ---------------------------------------------------------------------------

@@ -549,10 +549,28 @@ The Stream (ii) per-domain modules authored so far (18 of 21 active; #13 Languag
   floor guard + index/no-UNIQUE guard = 6). `@vida/core` **763 tests** green; `LATEST_VERSION`=30; typecheck 0; eslint 0.
   Gates: gate-1 SHIP · preflight PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero build-decisions.** Interface
   reconcile (1 `JournalSnapshot` row interface) → DB-11. `[FACT: 030_journals.ts; schema/journals.ts; docs/specs/foundation/db-4-journals/]`
-- **Remaining DB-4 groups:** #21 Gamification · #22 Notifications (2 more; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
+- **Group #21 Gamification ("the System") (2026-08-21):** **3 tables** — `user_profile` · `achievements` · `user_achievements`.
+  The heaviest INTENDED reframe (ADR-012 "Points Economy & Consequence Engine") but only 3 tables: the economy spine
+  (`currencies`·`consequence_ledger`·`store`·`rules`) is **already-authored DB-3 substrate** (`foundation/economy.ts`, consumed);
+  the rule→consequence engine / typed effects / multi-currency derivation are **service logic (M1.1+)** — "no new engine". The
+  3 authored = the surviving §5.15 FACT-floor (`xp_history` **RETIRED** → `consequence_ledger`). **`user_profile`** = the ADR-012
+  §3.10 single-writer split residual (DROPS 7 cols: persona/motivation_style/active_modules/onboarding_completed → Preferences #2;
+  check_in_streak*/last_check_in_date → Check-ins #16 derived; KEEPS PII[E] + life_stage + focus_areas[E] + timezone +
+  skipped_modules + total_xp/current_level caches; no deleted_at). **Nullability = the `entities/user.ts` interface** (the
+  $inferSelect oracle: focus_areas/timezone/total_xp/current_level/skipped_modules NOT NULL w/ defaults; life_stage/PII nullable),
+  NOT the stale §5.15 DDL body. **`achievements`** = the **FIRST non-syncable static-seed table** (id + fields + created_at ONLY;
+  no _sync_*/updated_at/deleted_at — the Achievement interface extends neither Syncable nor SyncMetadata; seeded via a dedicated
+  path, NOT the sync Repository). **`user_achievements`** = SyncMetadata (id + syncColumns, no created_at/updated_at) +
+  UNIQUE(achievement_id), no-FK. **2 FIXED CHECK** (achievements category/tier) reuse existing tuples (+2 enum-parity rows); no
+  new enum/validator (reconcile-and-extend, colocated in entities/user.ts). `ENTITY_TYPES += 'achievement'`. **Phase-5
+  introspection** (`gamification-introspection.test.ts`, 3 × 4 + non-syncable + SyncMetadata/UNIQUE + no-deleted_at guards = 15)
+  + 2 parity rows. `@vida/core` **780 tests** green; `LATEST_VERSION`=31; typecheck 0; eslint 0. Gates: gate-1 SHIP · preflight
+  PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero build-decisions.** UserProfile interface reconcile (shed 7 fields) +
+  XpHistory retire → DB-11. `[FACT: 031_gamification.ts; schema/gamification.ts; docs/specs/foundation/db-4-gamification/]`
+- **Remaining DB-4 groups:** #22 Notifications (1 more; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 + #17 + #18 + #19 + #20 ✅ (19 of 21 active); 2 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 + #17 + #18 + #19 + #20 + #21 ✅ (20 of 21 active); 1 group remains**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

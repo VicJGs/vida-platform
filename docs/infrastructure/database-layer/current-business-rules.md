@@ -749,3 +749,42 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   no-deleted_at/created_at/updated_at guard + index/no-UNIQUE guard = 6). `@vida/core` **763 green**; `LATEST_VERSION`=30;
   typecheck 0; eslint 0. Gates: gate-1 SHIP · preflight PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero
   build-decisions.** 1 `JournalSnapshot` row interface → DB-11. `[FACT: vitest run; repository.ts:334-337]`
+
+## Rules established by DB-4 group #21 Gamification ("the System") (IMPLEMENTED 2026-08-21 · `031_gamification.ts` + `schema/gamification.ts`)
+- **[FACT] BR-GM-1 — the heaviest INTENDED reframe (ADR-012), but only 3 tables authored.** The System's economy spine
+  (`currencies`·`consequence_ledger`·`store`·`rules`) is **already-authored DB-3 substrate** (`foundation/economy.ts:23-103`)
+  — CONSUMED, not authored. The rule→consequence engine, the typed effects (`grant_currency`/`lock_currency`/`move_money`/
+  `surface_notification` = ADR-004 §3.2.5 catalogue entries), multi-currency derivation (4 quantities DERIVE from
+  `consequence_ledger`, GM-4), the achievement-evaluation engine (GM-13) and level-derivation (GM-14) are all **service logic
+  (M1.1+)** — "no new engine" (ADR-012 §3.1). So #21 authors the **3 surviving §5.15 FACT-floor tables**: `user_profile`·
+  `achievements`·`user_achievements`. `[FACT: ADR-012 §3.1; economy.ts:23-103; §5.15]`
+- **[FACT] BR-GM-2 — `xp_history` RETIRED → `consequence_ledger`** (ADR-012 §3.1; DB-3-authored). Not authored; the `XpHistory`
+  interface (`entities/user.ts:88`) → DB-11 retire. `[FACT: ADR-012 §3.1/L137; economy.ts:36]`
+- **[FACT] BR-GM-3 — `user_profile` = the ADR-012 §3.10 single-writer split residual.** DROPS 7 columns:
+  `persona`/`motivation_style`/`active_modules`/`onboarding_completed` → **Preferences #2** (on disk `preferences.ts:85-88`);
+  `check_in_streak`/`longest_check_in_streak`/`last_check_in_date` → **Check-ins #16** (DERIVED, no column). KEEPS PII
+  (`display_name`/`avatar_url`/`birth_date`[E] — stays ⚠ until an account entity) + `life_stage` (by elimination, no sibling
+  claimed it) + `focus_areas`[E] + `timezone` + `skipped_modules` + `total_xp`/`current_level` (caches, GM-4). No field with
+  two writers. No `deleted_at` (singleton). `[FACT: ADR-012 §3.10; preferences.ts:85-88]`
+- **[FACT] BR-GM-4 — nullability = the `entities/user.ts` interface (the $inferSelect oracle), NOT the stale §5.15 DDL body.**
+  `focus_areas`/`timezone`/`total_xp`/`current_level`/`skipped_modules` = NOT NULL with defaults (`'[]'`/`'UTC'`/`0`/`1`/`'[]'`
+  — interface `string[]`/`string`/`number`); `life_stage`/PII = nullable (interface `… | null`). The §5.15 body's bare-nullable
+  `focus_areas`/`timezone` is the pre-amendment stale form, voided by the live interface (Victor drift-catch → grounded as FACT,
+  [[stale-source-plus-live-convention-is-fact-not-a-decision]]). Same rule set `achievements.tier` NOT NULL DEFAULT 'bronze'
+  (interface `AchievementTier` non-null). `[FACT: entities/user.ts:43-79]`
+- **[FACT] BR-GM-5 — `achievements` is the FIRST non-syncable table.** App-defined **static seed**: `id + key(UNIQUE) +
+  category(CHECK) + tier(CHECK dflt 'bronze') + title + description + icon + xp_reward + condition(JSON) + is_secret + created_at`
+  ONLY — **NO `_sync_*`, NO `updated_at`, NO `deleted_at`** (the `Achievement` interface extends neither `SyncableEntity` nor
+  `SyncMetadata`, `user.ts:67-79`; §5.15 L3405-3423). ⚠ **Downstream (M1.1):** the generic `Repository.create()` injects
+  `_sync_*` unconditionally (`repository.ts:295-303`), so `achievements` must be **seeded via a dedicated path, NOT the sync
+  Repository**. `[FACT: entities/user.ts:67-79; §5.15 L3405-3423]`
+- **[FACT] BR-GM-6 — `user_achievements` = SyncMetadata + UNIQUE; no-FK; registry +1.** `id + achievement_id(plain TEXT no-FK,
+  CASCADE app-layer) + earned_at + progress(JSON) + 6 _sync_*`, **UNIQUE(achievement_id)**, NO `created_at`/`updated_at`
+  (`UserAchievement extends SyncMetadata` — the `check_in_template_questions` precedent), no `deleted_at`. **2 FIXED CHECK**
+  (`achievements.category`→`ACHIEVEMENT_CATEGORY`, `.tier`→`ACHIEVEMENT_TIER`) reuse the EXISTING tuples (+2 enum-parity rows);
+  no new enum/validator (reconcile-and-extend, the colocation-in-`entities/user.ts` handled upfront). `ENTITY_TYPES += 'achievement'`
+  (a pages/entity_links target; `user_profile` singleton + `user_achievement` via achievement_id EXCLUDED). No ADR-002 §5-body
+  edit (named-not-enumerated §5.20). **Phase-5 introspection** (`gamification-introspection.test.ts`, 3 × 4 + non-syncable guard
+  + SyncMetadata/UNIQUE guard + no-deleted_at guard = 15) + 2 parity rows. `@vida/core` **780 green**; `LATEST_VERSION`=31;
+  typecheck 0; eslint 0. Gates: gate-1 SHIP · preflight PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero
+  build-decisions.** UserProfile interface reconcile (shed 7 fields) + XpHistory retire → DB-11. `[FACT: vitest run]`

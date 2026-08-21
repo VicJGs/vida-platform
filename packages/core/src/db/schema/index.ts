@@ -97,3 +97,12 @@ export * from './health-training'
 // the section registry = code; reviews + per-period rollups = design-pass (no table). Hand-composed reduced
 // column set (captured_at IS the timestamp; NO created_at/updated_at/deleted_at). No enums/CHECK/UNIQUE/FK.
 export * from './journals'
+
+// DB-4 group #21 — Gamification ("the System") (3 tables): user_profile · achievements · user_achievements.
+// The heaviest INTENDED reframe (ADR-012) but only 3 tables — the economy spine (currencies · consequence_ledger
+// · store · rules) is already-authored DB-3 substrate (foundation/economy.ts, consumed); the rule→consequence
+// engine / typed effects / derivation are service logic (M1.1+). user_profile = the ADR-012 §3.10 post-split residual
+// (drops persona/motivation_style/active_modules/onboarding_completed → Preferences #2; check_in_streak* → Check-ins
+// #16 derived; keeps PII + total_xp/current_level caches). achievements = the FIRST non-syncable static-seed table
+// (no _sync_*/updated_at/deleted_at). xp_history RETIRED → consequence_ledger. ENTITY_TYPES += 'achievement'.
+export * from './gamification'
