@@ -1,5 +1,5 @@
 # Task: db-4-per-domain-schema
-# Status: in-progress
+# Status: done — DB-4 COMPLETE (21/21 active groups, migrations 012–032; 2026-08-21)
 # Profile: add-backend-component
 # Scenario: add-backend-component (schema-foundation build — 5-phase lifecycle, per-domain sub-issues)
 # Linear: LIF-66
@@ -29,13 +29,13 @@ each running the 5-phase lifecycle at domain granularity.
 ## Build Steps (per domain group — 5-phase lifecycle, flow doc §2/§4)
 - [x] **P0 · Slice** — enumerate the domain groups (canonical list below); track each as a lightweight build-step
       (D3: no Linear sub-issues — DB-4 stays LIF-66). Done 2026-08-18.
-- [ ] Per domain group: **P1 intent intake** (ALL 5 aspects + owning ADR + §5.20 ledger, FULL) → **P2 current-state read** →
+- [x] Per domain group: **P1 intent intake** (ALL 5 aspects + owning ADR + §5.20 ledger, FULL) → **P2 current-state read** →
       **⛔ Phase-1 No-Decisions Gate** (flow doc §2: string-check for "decision/open point/shape point/lean/TBD/choose" =
       drift → re-ground; grep the concept across the corpus; never manufacture a default) → **P1/P2 checkpoint glance to
       Victor** ("zero decisions — every point doc-cited") → **P3 plan double-gate** (a STRAIGHT authoring plan) →
       **P4 implement** (SQL migration + Drizzle modules + `ENTITY_TYPES` appends) → **P5 foundation-soundness verify**
-      (the consuming module finds every table/column; DDL-introspection parity bookend).
-- [ ] **Close** — when all domains authored + verified, mark DB-4 Done → M1.0 schema foundation complete → M1.1 opens.
+      (the consuming module finds every table/column; DDL-introspection parity bookend). **ALL 21 groups run (012–032).**
+- [x] **Close** — all domains authored + verified; DB-4 Done → **M1.0 schema foundation complete** → M1.1 opens. (2026-08-21)
 
 ## P0 Output — Canonical Domain-Group Slice (2026-08-18, approved)
 **21 domain groups** (was 22; **#13 Languages dissolved → Spaces worked-example**, ADR-006 — corrected 2026-08-20), each its own 5-phase run. Resolved grain decisions:
@@ -83,6 +83,23 @@ each running the 5-phase lifecycle at domain granularity.
 | 22 | Notifications | `notifications/structure-data.md` | ☐ |
 
 ## Route History
+- 2026-08-21: **🎉 DB-4 COMPLETE — groups #20 Journals · #21 Gamification · #22 Notifications DONE (P1–P5) → 21/21 active
+  groups authored (migrations 012–032) → the M1.0 schema foundation is done.** Committed on branch `db-4-per-domain-schema`
+  (`4aee56f` Journals · `97295c3` Gamification · `fb4eb28` Notifications). The session's throughline: **the three
+  "connective/leaf" contexts authored a tiny schema relative to their ambition** — the reframe weight lives in DB-3 substrate
+  + service logic (Model B's payoff). **#20 Journals** = 1 table (`journal_snapshots`, frozen daily record); the aggregation
+  engine is runtime code. **#21 Gamification** = 3 tables (`user_profile` post-ADR-012-§3.10 split · `achievements` the FIRST
+  non-syncable static-seed table · `user_achievements`); the whole economy spine (currencies/consequence_ledger/store/rules)
+  is already-authored DB-3, consumed. **#22 Notifications** = 1 table (`notifications`, a pure sink); dispatcher/delivery/ZK-wake
+  = service + ADR-013. Gates: all three ran the full double-gate + preflight + post-impl; **#22 gate-1 REVISE** caught a real
+  **P1 miss** (I'd declared "no `effect_event_id`, applied_effects dedups" — but `applied_effects` is device-local, and ADR-012
+  L45/L139 mandate a UNIQUE `effect_event_id` on the Additive output row for cross-device convergence; the `consequence_ledger`
+  sibling proved it → authored nullable + UNIQUE). One ISOLATED P4 test-hygiene fix (#22: match a UNIQUE index by column, not
+  the mirror's cosmetic name — the gamification precedent). `@vida/core` **787 green**; `LATEST_VERSION`=32; typecheck 0; eslint
+  0. §XXIX current-* promoted (BR-JR-1…6 · BR-GM-1…6 · BR-NF-1…5; DB-4 marked COMPLETE). ⚠ Carry-forward: **DB-11** interface
+  reconciles (JournalSnapshot new; UserProfile shed-7 + XpHistory retire; Notification add metadata/delivered_*/effect_event_id).
+  **Lesson: read the owning ADR's mechanism section, never just the module roster's column list — a roster's SILENCE on a
+  table-class mechanical requirement (ADR-012 Additive) is a gap, not a closure.** [[verify-a-critiques-escalation-and-defer-target-before-relaying]] applied to a RULING.
 - 2026-08-01: created as a `# Stream: true` non-head (Model A).
 - 2026-08-18: **re-chartered as a real gated build head (Model B)** — Victor's schema-foundation blueprint. Stream
   header removed; profile add-backend-component; per-domain-sub-issue 5-phase grain. Flow:
