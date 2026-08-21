@@ -5308,3 +5308,42 @@ Next session:
     ≠ defer when the intake §Resolution is WHOLE. deleted_at: session extensions + "no soft delete" children omit it.
   - Carry-forward: DB-11 += Learning interfaces (Course→Subject rename, default_course_id→default_subject_id, stale Course
     progress/tags). **13 of 22 done; 9 remain.** ⚠ CI red (known pnpm infra; local green). Branch NOT committed/pushed.
+
+---
+Date: 2026-08-20 — DB-4 group #17 Health: Core: full 5-phase lifecycle DONE (the shared Health spine)
+Task: db-4-per-domain-schema (LIF-66) · Profile: Add Backend Component · branch `db-4-per-domain-schema`
+Goal: run P1→P5 for domain group #17 — Health: Core (Core-only; Nutrition #18 / Training #19 are separate groups).
+Accomplished:
+  - **12 tables** (`027_health_core.ts`, v27; `schema/health-core.ts` + net-new `packages/types/src/health.ts` +
+    `validators/health.ts`): health_metrics · health_metric_values · health_domains · health_factors · health_exams ·
+    assigned_exams · health_goals · physical_roles · health_experiments · health_responses · medical_profile_entries ·
+    safety_flags. Recovered domain (NO v2 schema) — all net-new ADR-002 additions.
+  - Goal `type` DECOMPOSED → measurement_kind × binding_mode × subject FK (ADR-011 M1/M2; REUSE MEASUREMENT_KIND/
+    BINDING_MODE from measurement.ts + STATUS/FREQUENCY from common.ts); progress/mastery = nullable REAL M3 override
+    slots (NULL⇒derive, no DEFAULT); binding_mode nullable no-default (tasks gate-2 precedent). 14 net-new FIXED tuples
+    (health.ts) + 14 z.enum; 18 FIXED CHECK cols (14 net-new + 4 reused on health_goals) parity-asserted; OPEN vocabs
+    (modality/experiment-type/exam-kind/category/body_part/response-scales/severity/medical-status/winner) = plain TEXT
+    no CHECK. no-FK; photo_blob = blob(buffer) [E] (note_attachments precedent); source incl. `ai` (AI6).
+  - **deleted_at on `health_goals` ONLY** (the documented floor, structure-data L45); 11 others omit it (entities →
+    status/end_date/phase; 4 ledgers → append). C1/C2/C3 guards held (physical_roles.type=OPEN modality; health_metrics.
+    kind=FIXED taxonomy; no economy — XP via Sessions S4). X*/AI*/M4/M5 = cite-not-author. `ENTITY_TYPES += 11` (OPEN SP2).
+  - Gates: gate-1 REVISE→resolved · preflight PASSED (10 folds) · gate-2 SHIP (3 folds: photo_blob→blob · idx precedent
+    fix · F10 NOT-NULL/default posture) · post-impl SHIP (zero findings). All via independent adversarial critics.
+  - Green: `@vida/core` **702 tests** (28 files incl. new health-core-introspection.test.ts 49 cases = 12×4 + deleted_at-
+    floor guard; +18 enum-parity rows); `LATEST_VERSION`=27; root typecheck 11/11; eslint 0. §XXIX current-* promoted
+    (BR-HC-1…8). Barrels wired (types/validators/schema); migration registered in runner.
+Victor directives + corrections:
+  - ⚠ **"The documentation already has all the floors that you are stating that it lacks."** At gate-1 an independent
+    critic ruled my `deleted_at`-on-`health_goals`-only reading was "under-annotation → floor it on all 8 entities,"
+    premised on "Health has NO per-table floor (recovered domain, no v2 schema)." I APPLIED the REVISE. Victor caught it:
+    the premise was FALSE — the module `structure-data.md` roster (authored from the AUTHORITATIVE 18-DB Notion design)
+    IS the per-table floor; "no v2 *code*" ≠ "no *documented* floor." Reverted to goals-only (floor L45 marks it alone).
+    **Lesson: doc-check a critique's RULING (its premise), not just its escalations** — a critique can be internally
+    rigorous yet rest on a false premise. Extended memory [[verify-a-critiques-escalation-and-defer-target-before-relaying]].
+Next session:
+  - **FIRST ACTION: open P0 table group `#18 Health: Nutrition`, Phase 1 intent intake** — FRESH clean-context. Read FULL
+    5-aspect `docs/features/health/nutrition/` + grep intake+reruns FIRST (`part-1.2-reruns/health-nutrition.md` = the
+    separate Tier-2 gap unit — its own X*/AI6 pass, row 20). The Health CORE tables it composes are now authored (v27).
+  - **The module `structure-data.md` roster IS the authoritative per-table floor** (even for a recovered domain, no v2
+    code) — a blanket convention never overrides its explicit per-table notation; and a critique's premise needs
+    doc-checking too, not just its escalations. **16 of 21 done; 5 remain.** Branch NOT committed/pushed.

@@ -116,6 +116,21 @@ export const ENTITY_TYPES = [
   // NO tags (SP1 opt-out — registration valid, tagging is a per-use choice). check_in_template/_question EXCLUDED
   // (config/child, addressed via own refs — the habit_completions precedent).
   'daily_check_in',
+  // DB-4 group #17 — Health: Core. The 11 taggable/linkable Core entity_types (structure-data §ADR-002 additions)
+  // register in the OPEN registry (SP2; NOT a closed CHECK) — consumed by entity_tags (SP1) + entity_links + pages.
+  // Health is a tag CONSUMER, never a tag-table owner. The pillar types (workout_session/exercise/meal/
+  // nutrition_plan) are Nutrition #18 / Training #19's, NOT registered here.
+  'health_metric',
+  'health_metric_value',
+  'health_domain',
+  'health_factor',
+  'health_exam',
+  'assigned_exam',
+  'health_goal',
+  'physical_role',
+  'health_experiment',
+  'medical_profile_entry',
+  'safety_flag',
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 

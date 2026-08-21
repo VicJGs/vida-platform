@@ -182,8 +182,8 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
 - ⚠ **Post-impl fix:** `planned_blocks.sub_type` shipped with a hard CHECK, corrected to OPEN TEXT (SS-5/BR-6, mirrors
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
-## DB-4 — IN PROGRESS (groups #1 Notes … #14 Relationships + #16 Check-ins authored · 2026-08-20 · LIF-66)
-The Stream (ii) per-domain modules authored so far (15 of 21 active; #13 Languages dissolved → Spaces, ADR-006). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships,check-ins}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 026_check_ins.ts]`
+## DB-4 — IN PROGRESS (groups #1 Notes … #16 Check-ins + #17 Health: Core authored · 2026-08-20 · LIF-66)
+The Stream (ii) per-domain modules authored so far (16 of 21 active; #13 Languages dissolved → Spaces, ADR-006). `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships,check-ins,health-core}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 027_health_core.ts]`
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -491,10 +491,26 @@ The Stream (ii) per-domain modules authored so far (15 of 21 active; #13 Languag
   eslint 0. Gates: gate-1 **REVISE**→resolved (the net-new-types miss) · preflight PASSED · gate-2 SHIP · post-impl SHIP.
   **Zero build-decisions.** Interface reconcile (`DailyCheckIn`/`CheckInTemplate`/`CheckInTemplateQuestion` vs the mirror; the
   `CHECK_IN_TYPE` expansion flows through automatically) → DB-11. `[FACT: 026_check_ins.ts; schema/check-ins.ts; docs/specs/foundation/db-4-check-ins/]`
-- **Remaining DB-4 groups:** #17 … #22 (6 more domain groups; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
+- **Group #17 Health: Core (2026-08-20):** **12 tables** — the shared Health spine (Metrics + Monitoring · Goals ·
+  Adaptation · Physical Roles · Safety & Medical). Recovered domain, **no v2 schema** → all net-new ADR-002 additions, but
+  the `structure-data.md` roster (from the AUTHORITATIVE 18-DB Notion design) IS the documented per-table floor. `health_metrics`·
+  `health_metric_values`·`health_domains`·`health_factors`·`health_exams`·`assigned_exams`·`health_goals`·`physical_roles`·
+  `health_experiments`·`health_responses`·`medical_profile_entries`·`safety_flags`. **`deleted_at` on `health_goals` ONLY** (the
+  floor L45; the other 11 omit it — entities via `status`/`end_date`/`phase`, 4 ledgers append). Goal `type` **DECOMPOSED** →
+  `measurement_kind` (REUSE `MEASUREMENT_KIND`) × `binding_mode` (REUSE `BINDING_MODE`, nullable no-default) × subject FK (ADR-011
+  M1/M2); `progress`/`mastery` = nullable REAL `NULL⇒derive` slots (M3). **18 FIXED CHECK** (14 net-new `health.ts` tuples + 4
+  reused) + OPEN vocabs no-CHECK (modality/experiment-type/exam-kind/category/body_part/response-scales/severity/medical-status/
+  winner). No-FK; `photo_blob` = `blob(buffer)` [E]; `source` incl. `ai` (AI6). **C1/C2/C3 guards** held (modality/taxonomy kept;
+  no economy). X*/AI*/M4/M5 = cite-not-author (only provenance columns). `ENTITY_TYPES += 11` (OPEN SP2; pillar types are #18/#19's).
+  **Phase-5 introspection** (`health-core-introspection.test.ts`, 12 × 4 + deleted_at-floor guard = 49). `@vida/core` **702 tests**
+  green; `LATEST_VERSION`=27; typecheck 11/11; eslint 0. Gates: gate-1 **REVISE**→resolved (deleted_at floor — Victor drift-catch
+  on a critique's false "no floor" premise) · preflight PASSED (10 folds) · gate-2 SHIP (3 folds) · post-impl SHIP. **Zero
+  build-decisions.** Interface reconcile (12 Health row interfaces + 14 enums) → DB-11. Nutrition #18 / Training #19 = separate
+  groups. `[FACT: 027_health_core.ts; schema/health-core.ts; packages/types/src/health.ts; docs/specs/foundation/db-4-health-core/]`
+- **Remaining DB-4 groups:** #18 Nutrition · #19 Training · #20 · #21 · #22 (5 more; #13 Languages dissolved → Spaces, ADR-006; #15 Finance done at v20).
 
 ## Downstream (INTENT — owned by later issues)
-DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 ✅ (15 of 21 active); 6 groups remain**) · DB-5 encryption wiring ·
+DB-2 sync cols/HLC · DB-4 per-domain tables (**groups #1–#12 + #14 + #16 + #17 ✅ (16 of 21 active); 5 groups remain**) · DB-5 encryption wiring ·
 monolith retirement · DB-8 FTS5 (`fts_pages`) · DB-11 reconcile ADR-002 §5/§7/§8 (+ the `@vida/types` row-interface
 staleness). **DB-3 ✅ + DB-6 ✅ + DB-7 ✅ + the AR-5/6/7 substrate ✅ done → the M1.0 substrate foundation is complete;
 DB-4 per-domain authoring is in progress.** DB-7 unblocks db-10 (seed) with db-6/db-9.

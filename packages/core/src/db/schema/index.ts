@@ -70,3 +70,10 @@ export * from './relationships'
 // DB-4 group #16 — Check-ins: daily_check_ins · check_in_templates · check_in_template_questions
 // (§5.13). Enums reused from @vida/types entities/user.ts (CHECK_IN_TYPE amended 3→6, CK-3). No tags (SP1).
 export * from './check-ins'
+
+// DB-4 group #17 — Health: Core (12 tables): health_metrics · health_metric_values · health_domains ·
+// health_factors · health_exams · assigned_exams · health_goals · physical_roles · health_experiments ·
+// health_responses · medical_profile_entries · safety_flags. Recovered domain (no v2 schema). Goal `type`
+// decomposed → measurement_kind × binding_mode (ADR-011). deleted_at on health_goals ONLY (floor). No tags
+// owned (SP1 consumer); X*/AI*/M4/M5 = cite-not-author. Nutrition #18 / Training #19 are separate groups.
+export * from './health-core'

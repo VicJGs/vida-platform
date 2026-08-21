@@ -615,3 +615,39 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   G10; already in `note.ts` `ENTITY_LINK_TARGET`; templates/questions excluded). **Phase-5 introspection** (12 × 4).
   `@vida/core` **635 green**; `LATEST_VERSION`=26; typecheck 11/11; eslint 0. Gates: gate-1 REVISE→resolved · preflight PASSED
   · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.** Interface reconcile → DB-11. `[FACT: vitest run]`
+
+## Rules established by DB-4 group #17 Health: Core (IMPLEMENTED 2026-08-20 · `027_health_core.ts` + `schema/health-core.ts`)
+- **[FACT] BR-HC-1 — recovered domain, 12 net-new tables, the documented floor governs.** Health has NO v2 schema/code,
+  but the `structure-data.md` roster (from the AUTHORITATIVE 18-DB Notion design) IS the per-table floor. "No v2 *code*"
+  ≠ "no *documented* floor" (a gate-1 critic's "no floor → blanket baseline" premise was FALSE, Victor corrected it). 12
+  tables authored per the floor: `health_metrics`·`health_metric_values`·`health_domains`·`health_factors`·`health_exams`·
+  `assigned_exams`·`health_goals`·`physical_roles`·`health_experiments`·`health_responses`·`medical_profile_entries`·
+  `safety_flags`. `[FACT: structure-data.md §Entities; 027_health_core.ts]`
+- **[FACT] BR-HC-2 — `deleted_at` on `health_goals` ONLY (the floor, L45).** Every other table's tail-notation
+  ("timestamps"/"_sync_*") omits it; header L7 lists soft-delete as the deletion *mechanism*, not a per-table mandate.
+  Entities manage lifecycle via `status`/`end_date`/`phase`; the 4 ledgers (`health_metric_values`/`assigned_exams`/
+  `health_responses`/`safety_flags`) append. Selective, NOT blanket. `[FACT: structure-data L45; introspection deleted_at-floor test]`
+- **[FACT] BR-HC-3 — goal `type` DECOMPOSED (ADR-011 M1/M2), never authored.** `health_goals` carries `measurement_kind`
+  (REUSE `MEASUREMENT_KIND`, notNull) × `binding_mode` (REUSE `BINDING_MODE`, **NULLABLE no-default** — the tasks gate-2
+  ruling) × the `metric_id`/`role_id` subject. The bespoke metric-target/physical-role/body-comp/event-prep enum is gone.
+  `[FACT: health-core.ts:160-161; rerun G-M1/G-M2]`
+- **[FACT] BR-HC-4 — `progress`/`mastery` = nullable REAL override slots (M3), no DEFAULT.** `health_goals.progress` +
+  `physical_roles.mastery` are `NULL ⇒ derive`; `progress()`/`deriveMastery()` are service-layer (not authored). `[FACT: health-core.ts:174,193; rerun G-M3]`
+- **[FACT] BR-HC-5 — C1/C2/C3 guards held.** `physical_roles.type` = OPEN modality (no CHECK, NOT the measurement axis, C1);
+  `health_metrics.kind` = FIXED data-taxonomy (`HEALTH_METRIC_KIND`, NOT `measurement_kind`, C2); no economy/XP columns —
+  Health feeds XP via the Sessions S4 effect (C3). `[FACT: health-core.ts:71,66; rerun C1/C2/C3]`
+- **[FACT] BR-HC-6 — X*/AI*/M4/M5 = cite-not-author.** No integration/ingestion/AI table; the only DDL trace is provenance
+  columns (`health_metric_values.source` incl. **`ai`** [AI6], `physical_roles.authoring_source`, `medical_profile_entries.source`,
+  `health_experiments.source`). The M5 read-seam + `deriveMastery()`/`progress()` derivers + wearable/medical egress (X4) are
+  service-phase (M1.1+). `[FACT: rerun §5; health.ts:37 (`ai`)]`
+- **[FACT] BR-HC-7 — 18 FIXED CHECK + OPEN-vocab split; no-FK; [E] via @encrypted.** 14 net-new FIXED tuples (`health.ts`) +
+  4 reused (MEASUREMENT_KIND/BINDING_MODE/STATUS/FREQUENCY on `health_goals`) = 18 CHECK columns, parity-asserted. OPEN vocabs
+  (modality/experiment-type/exam-kind/category/body_part/response-scales/severity/medical-status/winner) = plain TEXT no CHECK
+  ([[open-vocab-columns-take-no-sql-check]]). No cross-table FK (plain TEXT ids, ADR-016 §3.4). `photo_blob` = `blob(buffer)`
+  [E] (note_attachments precedent). `[FACT: enum-parity +18 rows; 027_health_core.ts]`
+- **[FACT] BR-HC-8 — registry +11; Core-only; DB-11 deferred.** `ENTITY_TYPES += 11` (OPEN SP2 registry; pillar types
+  workout_session/exercise/meal/nutrition_plan are Nutrition #18 / Training #19's). **Phase-5 introspection** (12 × 4 + the
+  deleted_at-floor guard = 49). `@vida/core` **702 green**; `LATEST_VERSION`=27; typecheck 11/11; eslint 0. Gates: gate-1
+  REVISE→resolved (deleted_at floor — Victor drift-catch) · preflight PASSED (10 folds) · gate-2 SHIP (3 folds) · post-impl
+  SHIP. **Zero build-decisions** (the deleted_at drift was a critique's false premise, not a manufactured decision). 12 row
+  interfaces + 14 enums → DB-11 interface reconcile. `[FACT: vitest run]`

@@ -108,6 +108,20 @@ import {
   CHECK_IN_SCHEDULE_TYPE,
   CHECK_IN_PREFERRED_TIME,
   CHECK_IN_QUESTION_FIELD_TYPE,
+  HEALTH_METRIC_KIND,
+  METRIC_DIRECTION,
+  METRIC_SIDE,
+  HEALTH_METRIC_VALUE_SOURCE,
+  HEALTH_GOAL_HORIZON,
+  ASSIGNED_EXAM_STATUS,
+  HEALTH_EXPERIMENT_PILLAR,
+  HEALTH_EXPERIMENT_PHASE,
+  HEALTH_EXPERIMENT_SOURCE,
+  MEDICAL_PROFILE_KIND,
+  MEDICAL_PROFILE_SOURCE,
+  SAFETY_FLAG_TRIGGER,
+  SAFETY_FLAG_STATUS,
+  PHYSICAL_ROLE_AUTHORING_SOURCE,
 } from '@vida/types'
 import { migration001SyncQueue } from '../db/migrations/001_sync_queue'
 import { migration002Sessions } from '../db/migrations/002_sessions'
@@ -135,6 +149,7 @@ import { migration023Books } from '../db/migrations/023_books'
 import { migration024LearningEducation } from '../db/migrations/024_learning_education'
 import { migration025Relationships } from '../db/migrations/025_relationships'
 import { migration026CheckIns } from '../db/migrations/026_check_ins'
+import { migration027HealthCore } from '../db/migrations/027_health_core'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -380,6 +395,29 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'check_in_templates', column: 'schedule_type', tuple: CHECK_IN_SCHEDULE_TYPE },
   { table: 'check_in_templates', column: 'preferred_time', tuple: CHECK_IN_PREFERRED_TIME },
   { table: 'check_in_template_questions', column: 'field_type', tuple: CHECK_IN_QUESTION_FIELD_TYPE },
+
+  // DB-4 group #17 — Health: Core. 18 FIXED CHECK cols = 14 net-new (health.ts) + 4 reused
+  // (MEASUREMENT_KIND/BINDING_MODE on health_goals; STATUS on health_goals.status; FREQUENCY on
+  // health_goals.review_frequency). OPEN vocabs (modality/experiment-type/exam-kind/category/body_part/
+  // response-scales/severity/medical-status/winner) carry NO CHECK → not rows.
+  { table: 'health_metrics', column: 'kind', tuple: HEALTH_METRIC_KIND },
+  { table: 'health_metrics', column: 'direction', tuple: METRIC_DIRECTION },
+  { table: 'health_metrics', column: 'side', tuple: METRIC_SIDE },
+  { table: 'health_metric_values', column: 'source', tuple: HEALTH_METRIC_VALUE_SOURCE },
+  { table: 'assigned_exams', column: 'status', tuple: ASSIGNED_EXAM_STATUS },
+  { table: 'health_goals', column: 'measurement_kind', tuple: MEASUREMENT_KIND },
+  { table: 'health_goals', column: 'binding_mode', tuple: BINDING_MODE },
+  { table: 'health_goals', column: 'horizon', tuple: HEALTH_GOAL_HORIZON },
+  { table: 'health_goals', column: 'status', tuple: STATUS },
+  { table: 'health_goals', column: 'review_frequency', tuple: FREQUENCY },
+  { table: 'physical_roles', column: 'authoring_source', tuple: PHYSICAL_ROLE_AUTHORING_SOURCE },
+  { table: 'health_experiments', column: 'pillar', tuple: HEALTH_EXPERIMENT_PILLAR },
+  { table: 'health_experiments', column: 'phase', tuple: HEALTH_EXPERIMENT_PHASE },
+  { table: 'health_experiments', column: 'source', tuple: HEALTH_EXPERIMENT_SOURCE },
+  { table: 'medical_profile_entries', column: 'kind', tuple: MEDICAL_PROFILE_KIND },
+  { table: 'medical_profile_entries', column: 'source', tuple: MEDICAL_PROFILE_SOURCE },
+  { table: 'safety_flags', column: 'trigger', tuple: SAFETY_FLAG_TRIGGER },
+  { table: 'safety_flags', column: 'status', tuple: SAFETY_FLAG_STATUS },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -411,6 +449,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration024LearningEducation.up(driver)
   await migration025Relationships.up(driver)
   await migration026CheckIns.up(driver)
+  await migration027HealthCore.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined
