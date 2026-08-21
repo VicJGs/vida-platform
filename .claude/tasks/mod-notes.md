@@ -1,14 +1,97 @@
 # Task: mod-notes
-# Status: planned
+# Profile: Add Backend Component
+# Scenario: default
+# Spec: docs/specs/features/mod-notes/_index.md
+# Created: 2026-08-21
+# Status: in-progress
+# Cluster: M1 — Whole Manual OS
 # Linear: LIF-131
 # Project: M1 — Whole Manual OS
 # Milestone: M1.1 — Hub & Foundation Modules
 # Source: reconstructed-structure.md (Phase V, LIF-110; ADR-016 model)
 
 ## Goal
-Notes & Pages (in-degree-14 HUB) — pages/links — the connective layer
+Build the `@vida/core` Notes & Pages service (MOD-notes increment ①) — a typed page/link/tag/attachment API over the DB-4-authored `pages`/`page_links`/`entity_links`/`note_attachments` schema: page CRUD (all 6 types) with journal-date conflict (`JournalExistsError`), `page_links`/`entity_links` UNIQUE idempotence, `resolveWikiLink` + create-on-miss, client-deterministic entity-note auto-seed, today-only `/summary` 5-section aggregation, open `entity_type` registry validation, and `entity_tags` reads (AR-6 owns writes). Notes & Pages is the in-degree-14 HUB — the connective layer 12+ modules pull.
 
 ## Dependencies
-- blocked by `ar-6-spaces`
-- blocked by `db-6-repository-layer`
-- blocked by `db-9-enums-zod`
+- blocked by `ar-6-spaces` ✅
+- blocked by `db-6-repository-layer` ✅
+- blocked by `db-9-enums-zod` ✅
+
+## Context
+Profile: Add Backend Component (default scenario)
+Increment: ① Backend service only. ② UI is a separate downstream unit (add-frontend-component).
+Files involved:
+- `packages/core/src/services/notes/*` — NEW (currently only a CLAUDE.md directory-home stub, ADR-018 Part 2)
+- consumes `packages/core/src/db/schema/notes.ts` (DB-6/DB-4 pages/page_links/entity_links/note_attachments) via the encrypting repository
+- consumes AR-6 `foundation/spaces` for `entity_tags` READS (writes owned by AR-6)
+- consumes AR-8 `search/backlink-resolver.ts` (already built — do NOT rebuild)
+- `@vida/types` page/link/tag/attachment types + Zod validators
+- React-Query wiring seam (repository → hooks)
+Integration points: `/summary` provider seam → MOD-journals (consumer, later); `entity_type` open registry (SP2); DB-8 FTS5 (later).
+
+## Open Questions
+- [to be filled as they arise — see spec §6]
+
+## Decisions Made
+| Decision | Choice | Reason | Date |
+|----------|--------|--------|------|
+| *(logged automatically by /session-log)* | | | |
+
+## Progress
+<!-- SESSION checklist — the scenario's ## Task List (what the native panel mirrors). Session-level. -->
+- [ ] document-context BASELINE — `docs/features/notes-and-pages/` current-* as ground truth
+- [ ] Forward spec written + Per-Step Build Gate cleared (§XXVI) before any implementation
+- [ ] Read 3 existing `@vida/core` services — state the pattern found
+- [ ] Service contract approved before any code (`/api-contract` mapped → service API + Zod + typed errors)
+- [ ] `/adr-check` validates approach against existing decisions
+- [ ] `/adr-new` recorded (if significant architectural choice)
+- [ ] TypeScript types and interfaces written first
+- [ ] Service logic (CRUD + wiki-link resolve + summary aggregation) implemented
+- [ ] Full error handling implemented (typed error classes — local-first, no HTTP status codes)
+- [ ] Repository / React-Query wiring registered
+- [ ] `tsc --noEmit` passes — zero errors
+- [ ] Vitest: success case + ≥2 error cases (replaces curl — no HTTP endpoint)
+- [ ] `/critique` → SHIP verdict
+- [ ] Currency Rule (§XXIX) — `docs/features/notes-and-pages/` current-* refreshed for every context touched
+
+## Build Steps
+<!-- UNIT-level — mirrors the active spec's §5 Implementation Prompt; what victor:execute-plan-* works.
+     Filled when the unit's spec §5 is approved. Distinct from ## Progress (connected-build-loop, R1). -->
+- [x] S1 — EXTENDED `validators/note.ts`: `createPageSchema`/`updatePageSchema` (journal_date-iff-journal refine), reused `PageTypeSchema`
+- [x] S2 — `services/notes/types.ts`: `NotesService` interface (Drizzle-Row returns) + input types + `JournalExistsError`/`UnregisteredEntityTypeError`
+- [x] S3 — `services/notes/service.ts`: `createNotesService` factory, 4 repos, all methods (pages CRUD/NP-2/NP-6 · page-links idempotent NP-5 · resolveWikiLink · ensureEntityNote NP-8 · attachments · tag reads · facade→AR-6/AR-8)
+- [x] S4 — `services/notes/index.ts` barrel + `export * from './services/notes'` in `@vida/core` index.ts
+- [x] S5 — `__tests__/notes-service.test.ts`: 14 cases, all green (fixed 1 test-harness bug: `createEntityLink` → `async` so registry throw is a rejection)
+- [x] S6 — created `docs/features/notes-and-pages/current-spec.md` + `current-business-rules.md` (D6, §XXIX)
+- [x] Gate — tsc 0 · Vitest 16/16 (full suite 802/803, the 1 red = pre-existing vault-1MB perf flake, passes standalone) · ESLint 0 · post-impl critique REVISE→SHIP (2 BLOCKERs: this-on-destructure + UpdatePageInput type≡validator, both fixed+tested)
+
+## Plan
+<!-- Only for a SPEC-LESS small task (§XXVI LITE): victor:planning writes its plan here instead of a spec. -->
+
+## Session History
+| Date | What was done | Next step |
+|------|--------------|-----------|
+| 2026-08-21 | promoted planned stub → in-progress; scaffolded spec stub | run the loop: Step 0b baseline (`document-context notes-and-pages`) → plan (`/documentation-component`) → critique → preflight |
+| 2026-08-21 | **Increment ① DONE** — baseline (5-aspect + schema) → PLAN (spec §2–§6) → gate-1 REVISE→fixed → Approval 1 → preflight PASSED → gate-2 REVISE→fixed (Row-return BLOCKER) → Approval 2 → implemented S1–S6 → post-impl critique REVISE→fixed (this-on-destructure + type≡validator BLOCKERs). 16 tests green, tsc 0, ESLint 0. current-* born. | increment ② UI (add-frontend-component): notes route + TipTap mount + List/Calendar/Gallery/Neural views + `[[` picker + backlink panels. Consider committing ① first. |
+
+## Notes
+- **Scenario vocabulary mapping** (honest, not a deviation): the add-backend-component/default scenario is HTTP-route-shaped; MOD-notes ① is a local-first `@vida/core` service with NO HTTP endpoint (ZK blob-relay server). So `/api-contract` → the service contract; `curl` tests → Vitest; HTTP status codes → typed error classes (`JournalExistsError`, `UnregisteredEntityTypeError`, …).
+
+### ⚠ Step-0b BASELINE FINDINGS (ground truth on disk vs delivery-plan §9)
+1. **`entity_links` + `entity_tags` are NOT notes-owned tables** — they live in the AR-6 Spaces substrate (`schema/foundation/spaces.ts`), not `notes.ts`. `notes.ts` owns 3 tables only: `pages` · `page_links` · `note_attachments`. (Reconciles structure-data.md:31's "N&P-described" = conceptual/write-owner vs physical file home; not a contradiction.)
+2. **The entity_link WRITE path is ALREADY BUILT** — AR-6 `SpacesService.createLink/removeLink` (`foundation/spaces/service.ts:158-192`): idempotent (findWhere business key → live no-op / soft-deleted revive / absent create), registry-validated (`UnknownEntityType`). MOD-notes ① **delegates, does NOT rebuild.** So §9's "entity_links create" is an EXISTING capability (per [[issue-title-lists-capabilities-not-builds]]).
+3. **The entity_link READ path is ALREADY BUILT** — AR-8 `BacklinkResolver.getBacklinksTo/getLinksFrom/resolveLink` (`services/search/backlink-resolver.ts`, read-only). MOD-notes ① consumes it for `getBacklinks`.
+4. **`entity_tags` WRITES = AR-6** (`tagEntity/untagEntity`); notes only READS. Confirmed.
+5. ⇒ **Genuinely NET-NEW in MOD-notes ①** (nothing built yet): `pages` CRUD (6 types, `JournalExistsError`) · `page_links` create/read (page↔page — backlink-resolver.ts:12 confirms page_links is DEFERRED to M1.1) · `resolveWikiLink` (title search over pages + create-on-miss stub `note`) · entity-note auto-seed (NP-8, client-deterministic) · today `/summary` 5-section aggregation · `note_attachments` CRUD. Plus the FACADE that composes AR-6 (links/tags writes) + AR-8 (backlink reads).
+6. **Backlink resolver real path** = `packages/core/src/services/search/backlink-resolver.ts` (§9 said `search/backlink-resolver.ts` — the `services/` prefix was dropped).
+
+### Service pattern (Step 1 — 3 services read: spaces, search/backlink-resolver, + the repo config)
+- Factory `createNotesService(db, deviceId, deps…): NotesService` returning an object literal implementing an `interface`; **not** a class.
+- Per table: `createRepository(db, <table>, { deviceId, encryptedFields: [], softDelete: true })` — **M1.0 empty-[E] pass-through** (BR-13); soft-delete → `delete()` sets `deleted_at` + enqueues `operation:'update'`.
+- `findWhere` runs the predicate **verbatim** (does NOT auto-apply notDeleted) → every read appends `isNull(deleted_at)`; drizzle `and()` is `SQL|undefined` → `!` suffix (mirrors AR-6).
+- Idempotent junction writes: findWhere business UNIQUE key → live row no-op · soft-deleted revive · absent create (BR-14/15).
+- Typed errors in a `types.ts`; string-literal enums + Zod in `@vida/types` (never TS `enum`).
+- Data-flow: **validate → repository → encrypt-seam → return** (`docs/core/architecture/data-flow.md`).
+- **§9 deferred-and-homed (do NOT pull in):** field-level `[E]` encryption → M3/DB-5 (M1.0 is pass-through); wider `/summary` personalizable menu → M1.4 (G5); ADR-007 saved-view selection → deferred design-pass (renderers hard-coded); neural-graph data-prep → AR-8 future / Views design-pass; FTS5 engine → DB-8.
+- Model B: DB-4 authored the schema in M1.0; this increment CONSUMES it, authors no tables.

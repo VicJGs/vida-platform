@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none active — m1-foundation-closeout completed; next head = MOD-notes #31, start via `/task-new mod-notes`)_
+- mod-notes (LIF-131): .claude/tasks/mod-notes.md  (in-progress 2026-08-21 — **M1.1 HEAD**, Add Backend Component. Increment ① = `@vida/core` Notes & Pages service over the DB-4 schema; ← DB-6/DB-9/AR-6 ✅. Spec: docs/specs/features/mod-notes/. Next = Step-0b baseline → PLAN.)
 
 ## Planned
 _(none active — DB-4 completed; see Completed below)_
