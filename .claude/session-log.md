@@ -5483,3 +5483,74 @@ Next session:
   - FOLLOW-UP: parallel-suite flakiness under CPU contention (a `testTimeout`/workers bump in apps/web/vite.config) — latent pre-existing, exposed by ②b's added render tests; all pass serial.
   - Branch `mod-notes-2a-data-plane` holds ②a+②b (unpushed, unmerged).
 ---
+Date: 2026-08-21
+Task: mod-notes (LIF-131) — increment ②c
+Goal: Build ②c — mount the TipTap editor + autosave + the `[[` wiki-link picker — under full §XXVI gating; then verify in a real browser.
+Completed:
+  - **②c IMPLEMENTED** across two packages, full §XXVI double-gate + post-impl SHIP:
+    - `@vida/editor` v0.9.0: `extensions/wiki-link.ts` (the `wikiLink` MARK + the `WikiLink` Suggestion surface + `applyWikiSelection`) · `wiki-link-menu.tsx` (the picker popup) · `editor.tsx` (gated `wikiLink?` prop + combobox ARIA) · `serializers/to-markdown.ts` (emit-only `[[label]]`) · barrel exports · `extensions/wiki-link.test.ts`.
+    - `apps/web`: `app/note-detail.tsx` REWRITE (state switch incl. empty→"not found" EM-9 · editable title via `@vida/ui Input` EM-6 · `VidaEditor key={id}` EM-2 · save indicator · `[[` wiring with toast-on-error) · `app/notes/use-note-autosave.ts` (debounce + skip-once echo + flush-on-unmount) · `app/note-detail.test.tsx` · `use-note-autosave.test.ts` · added `@vida/editor` to apps/web deps (first consumer).
+  - Gates: gate-1 (main critique + picker DELTA critique, both REVISE→folded) → Approval 1 → IMPLEMENTATION-PLAN → gate-2 preflight+critique (BLOCKED/REVISE→folded, verified vs INSTALLED `@tiptap/suggestion@3.30.0`) → Approval 2 → post-impl `/critique` SHIP (1 MATERIAL folded: error-surfacing; + NITs stripWikiClose/debounce/Enter/test-opts).
+  - Verify: typecheck 0 (both) · `@vida/editor` **234** tests · `@vida/web` **218** tests · build ✓ (both) · ESLint clean.
+  - §XXIX current-* refreshed (notes-and-pages current-spec + current-business-rules + `@vida/editor` CLAUDE.md). Specs marked implemented. Spec: `docs/specs/features/mod-notes/sessions/{PLAN,IMPLEMENTATION-PLAN}-2026-08-21-02c-editor-mount.md`.
+  - **MCP setup for real-browser testing:** added `chrome-devtools` MCP pointed at Brave (`--executablePath "/Applications/Brave Browser.app/…"` `--isolated` `--viewport 1440x900`) + `playwright` MCP. Triaged + fixed a Playwright MCP crash (`-32000` / npx `ENOTEMPTY` from a stale `.playwright-*` temp dir in `~/.npm/_npx/9833c18b2d85bc59`) → cleared the cache dir, verified clean start. Diagnosis: `docs/specs/fixes/playwright-mcp-npx-cache-enotempty/_index.md`.
+In progress:
+  - **⚠ RUNTIME BUG (deferred to a fresh session): "New note" does not work in the real browser.** Not yet root-caused — traced the write path on paper (drizzle-proxy only uses run/values, never the throwing exec/batch seam; boot/device-id/service graph sound) so it's a runtime signal only a real browser shows. Blocked on driving Brave via the chrome-devtools MCP (needs a Claude Code restart to load the Brave-configured MCP).
+  - ②b+②c real-browser **Visual Gate** + `/component-audit` — now runnable LOCALLY via Brave (the prior "macOS-12/CI-only" claim was a HALLUCINATION — corrected).
+Decisions:
+  - **Victor drift-catch (major): the ②c/②d split was manufactured.** Docs fix ②c = editor + `[[` picker together (current-spec.md:9 · §9 · task file); title is ②c (§9 metadata parenthetical excludes it). Rewrote the PLAN; folded the picker back in. Memory saved: [[dont-split-a-doc-fixed-increment-subunit]].
+  - `wikiLink` is a MARK (not a block node) — reuses the shipped `link`-mark serializer machinery; PDF/DOCX degrade to text (emit-only markdown).
+  - Autosave dedupe = a skip-once flag, NOT string-equality (TipTap normalizes the seed → string-eq would phantom-save empty pages).
+  - `[[` two-write = link-row FIRST (idempotent) then mark; the app's injected onSelect/onCreate toast+re-throw so a failure surfaces and no mark is applied.
+  - **The "macOS-12 can't run Chromium → Visual Gate CI-only" claim is a HALLUCINATION** (Victor corrected). Brave (Chromium) runs fine locally. Must purge this false claim from the task file + ②b/②c specs.
+Next session (FRESH — solve the notes creation bug):
+  - RESTART Claude Code first (loads the Brave-configured chrome-devtools MCP). Then restart the dev server (`pnpm --filter @vida/web dev`) and drive Brave: navigate `/notes` → ⌘K "New note" → capture console + network + screenshot → root-cause the creation failure. NOTE: creation is ⌘K-only by design (②b) — there is no ＋ button; a discoverability gap to consider separately.
+  - Then run the real-browser Visual Gate + `/component-audit` across ②b+②c (now local via Brave).
+  - PURGE the false macOS-12/CI-only Visual-Gate note from `.claude/tasks/mod-notes.md` + `docs/specs/features/mod-notes/sessions/PLAN-*-02b/02c` + current-spec.md.
+  - ②c is NOT committed (branch `mod-notes-2a-data-plane`, holds ②a+②b+②c unpushed). Commit when Victor asks.
+  - If using the `playwright` MCP specifically: may need `npx playwright install chromium`.
+---
+Date: 2026-08-22
+Task: mod-notes (LIF-131) — increment ②c browser verification / triage
+Goal: Root-cause why "New note" fails in the real browser (blocking the Visual Gate), fix it under proper gating, then unblock the create→edit flow.
+Completed:
+  - **Bug #1 — vault-not-initialized-on-boot (FIXED + verified live in Brave).** ⌘K→"New note" threw `Vault not initialized` (swallowed by `commands.ts` catch → silent). Root cause: `apps/web` never called `initVault()` at boot; every repository WRITE computes a keyless `_sync_hash` via `hashContent()→assertReady()` needing libsodium loaded, INDEPENDENT of `[E]` encryption. Baseline finding #6 was half-wrong (ruled out the UNLOCK/getVaultKey gate, missed the WASM-load gate). Validated by 3 independent subagents (docs-grounding + adversarial critique [resolved the main-thread-realm make-or-break] + preflight). Fix: `apps/web/src/db/boot.ts` (`Promise.all([initVault(), c.open()])`) + `apps/web/src/app/notes/commands.ts` (log the discarded error) + new `apps/web/src/db/boot.test.ts` (real initVault via ensureDbReady + real hashContent). Bug-unit: `docs/specs/fixes/vault-not-initialized-on-boot/`.
+  - **Bug #2 — editor-empty-doc-assert-crash (FIXED + verified live).** Found while verifying #1: opening a NEW note crashed (`[VidaEditor] getJSON() did not return a doc-rooted EditorDocument`). Root cause: `assertEditorDocument` rejected an empty ProseMirror doc — PM's `Node.toJSON()` omits `content` when empty → `{type:'doc'}`; every new note has null content→seeds an empty doc. Ran `/victor-triage` (ISOLATED). Fix: normalize missing `content→[]` in `packages/editor/src/editor.tsx` + regression tests (`editor.test.tsx`; corrected the line-121 test that ENCODED the bug) + rebuilt `@vida/editor` dist (app consumes dist). Bug-unit: `docs/specs/fixes/editor-empty-doc-assert-crash/`.
+  - **Verified live (chrome-devtools MCP / Brave):** ⌘K→New note→`/note/$id`→editor mounts→typing→autosave→"Saved", content persisted (read-back), console clean. Screenshots saved under both bug-unit dirs.
+  - **Verification green:** `@vida/web` tsc 0 · `@vida/editor` tsc 0 + build · `boot.test.ts` 2/2 · pure-logic assert matrix 8/8.
+  - **§XXIX + housekeeping:** baseline finding #6 corrected; `packages/editor/src/CLAUDE.md` + `apps/web/src/db/CLAUDE.md` + `docs/features/notes-and-pages/current-business-rules.md` refreshed; the **macOS-12/CI-only Visual-Gate HALLUCINATION purged** (task file + 4 mod-notes session specs); follow-up task filed.
+In progress:
+  - **Real-browser Visual Gate + `/component-audit` across ②b+②c** — NOW UNBLOCKED (create→edit→autosave works live). Not yet run. To be done in a FRESH session.
+  - Nothing committed this session (Victor's call): the issue branch `mod-notes-2a-data-plane` holds ②a+②b (committed) + ②c + both fixes (uncommitted). No separate fix branches were created — both fixes are directly on the issue branch.
+Decisions:
+  - Fixes landed directly on the issue branch, not separate branches (so no merge step; a single commit will bundle ②c + both fixes after the Visual Gate).
+  - The `@vida/core`-level "whole-OS proper fix" (hoist `initVault`/libsodium-readiness into the DB-open path so mobile/desktop don't re-forget it) was organized as a PROPER FOLLOW-UP, not folded in: `.claude/tasks/core-vault-init-on-db-open.md` + a TASKS.md row. Land the boot fix now (documented startup owner); hoist later.
+  - `assertEditorDocument` empty-doc tolerance is the correct contract (an empty doc IS valid; PM omits the empty `content` key) — normalize, don't reject.
+Next session (FRESH):
+  - FIRST: run the **real-browser Visual Gate** (editor + `[[` picker + `/notes` collection, 375/768/1440) via chrome-devtools MCP (Brave) + `/component-audit` + `victor:quality-gate-components` across ②b+②c. Dev server: `pnpm --filter @vida/web dev` (⚠ Node 22 needed for the jsdom vitest suites — `.nvmrc`=22 but only v20.20.2 installed locally: `nvm install 22`; Vite dev itself runs on 20).
+  - THEN: **commit everything on `mod-notes-2a-data-plane`** — ②c + both fixes + all §XXIX docs, in one commit (docs ship WITH code, §XXIX). Then continue ②d panels → ②e search per the plan; LIF-131 closes only after ②d+②e+Visual Gate.
+  - Context to reload: `.claude/tasks/mod-notes.md` (Session History 2026-08-22 row + ②c) · the two bug-units under `docs/specs/fixes/` · `apps/web/src/db/boot.ts` · `packages/editor/src/editor.tsx`.
+---
+Date: 2026-08-22
+Task: mod-notes (LIF-131) — design session (methodology, no code)
+Goal: Enhance the UI/UX session flow (Victor's draft) into a durable, thoughtfully-shaped build methodology, and persist it so nothing is lost before a fresh session runs it on the Notes entity.
+Completed:
+  - **Designed + persisted the `Entity Delivery Flow` methodology** → `docs/specs/foundation/entity-delivery-flow/_index.md` (DESIGN status; overlay on §XXVI/§XXVII/§XXIX/§XXX — not a rewrite; governed by No-Guessing).
+  - **The reframe (Victor's key point):** the ①/② backend/frontend split happens too late (each track plans in isolation, the seam is implicit). Fixed with a shared **Entity Front Matter** ABOVE the fork: Intake → Baseline → **Interpretation layer** → **Decomposition Gate** (emits `slice-map.md` + `seam-contract.md`).
+  - **Interpretation layer** (`delivery/interpretation.md` — dependencies · needs · organization · implicit-rules): makes implicit deps explicit BEFORE build. Grounded justification: the vault-not-initialized bug was an implicit NEED (keyless `_sync_hash` requires libsodium) no doc stated.
+  - **Two shaped tracks:** backend "Entity Service Build Flow" (5 lenses: operations · operation-flow · invariants · contract · composition; + 3 backend-only nuances: persistence/schema, concurrency/txn, ZK/security; + a per-slice **Verification Gate** = Vitest + live-DB smoke) and frontend "Entity UI/UX Build Flow" (5 lenses: screens · screen-flow · ux · components-flow · slice-map; + a per-slice blocking **Visual Gate**).
+  - **Recovery variant** ("Entity Re-scope Flow") for already-built/possibly-wrong entities: an exhaustive audit → `reconciliation.md` ledger (✅aligned/❌wrong/📄undocumented/🕳gap/⛔ungated-owed, each cross-checked code↔doc) → **Re-scope Gate** → corrected slice-map. Exit condition = a DRY pass (nothing left behind). Composes `/audit-existing` + `victor:impact-scan` with a persisted ledger.
+  - **Directory layout** defined: `docs/features/<entity>/{delivery,service,ui-ux}/` alongside the existing aspect corpus (no duplication — the tracks reference identity/structure-data/business-rules/contract/conventions, never restate them).
+  - Updated `.claude/tasks/mod-notes.md` (Session History + next-step pointer) + `TASKS.md` (In-Progress status → new approach).
+In progress:
+  - Methodology is DESIGN-only — NOT codified into the dev-toolkit yet (deliberate: validate on Notes first, then `/enhance-scenario` + a new backend scenario).
+Decisions:
+  - **Decomposition Gate has two modes** — *decide* (net-new entity) vs *ratify+detail* (doc-fixed split). MOD-notes = ratify mode: retrofit the front matter onto the doc-fixed ①/②a–②e, do NOT re-decide ([[dont-split-a-doc-fixed-increment-subunit]]).
+  - Overlay-not-rewrite: every phase maps 1:1 onto the existing §XXVI/§XXIX rails; bookends unchanged.
+  - Naming still OPEN (confirm before authoring the Notes artifacts): `delivery/` + `service/` + `ui-ux/` vs alternatives (`api-ux/`, `backend/`/`frontend/`).
+Next session (FRESH — run the methodology on Notes):
+  - Reload `docs/specs/foundation/entity-delivery-flow/_index.md` (esp. §7 recovery variant + §10 Notes application + §11 open items).
+  - Confirm the 2 open decisions (dir names; ratify-mode retrofit) — then produce the FIRST artifact: `docs/features/notes-and-pages/delivery/reconciliation.md` (exhaustive built-vs-docs sweep) → `baseline.md` + `interpretation.md` → re-scoped `slice-map.md`.
+  - Then run the owed **②b+②c real-browser Visual Gate** (Brave via chrome-devtools MCP) under the per-slice format → `/component-audit` → **commit ②c + both fixes + docs** on `mod-notes-2a-data-plane` (§XXIX: docs ship WITH code). Then ②d/②e.
+  - ⚠ Node 22 needed for the jsdom vitest suites (`.nvmrc`=22, only v20.20.2 local → `nvm install 22`; Vite dev runs on 20).
+---
