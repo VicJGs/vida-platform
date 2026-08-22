@@ -31,9 +31,14 @@ This methodology does **not** replace §XXVI (Per-Step Build Gate), §XXVII (Ses
 
 - The **PLAN gate** and **IMPL-PLAN gate** per slice = §XXVI gate-1 / gate-2, unchanged.
 - The **Currency** step per track = §XXIX, unchanged.
-- What is **new**: the shared **Entity Front Matter** (Intake → Baseline → **Interpretation** →
-  **Decomposition Gate**) above the fork, and a **per-slice, blocking** verification gate at the end of
-  each slice (Visual Gate frontend / Verification Gate backend).
+- What is **new**: the shared **Entity Front Matter** (Intake → Baseline → **Documentation Gate** →
+  **Interpretation** → **Interpretation Gate** → **Decomposition Gate**) above the fork, and a **per-slice,
+  blocking** verification gate at the end of each slice (Visual Gate frontend / Verification Gate backend).
+- The **Documentation Gate** (on the source aspect corpus + baseline) and the **Interpretation Gate** (on the
+  interpretation output) form an **escalating-trust chain**: `Baseline → ░Documentation Gate░ → Interpretation
+  → ░Interpretation Gate░ → ░Decomposition░`. They gate the *yardstick* before it builds or judges code, and are
+  **additive** to the §XXVI g1/g2 per-slice gates — g1 critiques a slice's *own spec* against its §2/§4
+  `[FACT: standards/process.md:362]`, whereas these gate the *upstream corpus/interpretation* (different objects).
 
 ## 3. The unified flow
 
@@ -41,9 +46,11 @@ This methodology does **not** replace §XXVI (Per-Step Build Gate), §XXVII (Ses
 ENTITY <X>
 │
 ╠═ ENTITY FRONT MATTER  (once, spans BOTH planes) ═════════════════════════
-│  0 · INTAKE          — gather ALL sources for the whole entity
-│  1 · BASELINE        — one consolidated map: data + service + UI together
-│  1.5 · INTERPRETATION LAYER  ★ — make the implicit explicit (see §4)
+│  0 · INTAKE               — gather ALL sources for the whole entity
+│  1 · BASELINE             — one consolidated map: data + service + UI together
+│  1.25 · DOCUMENTATION ░GATE░ ★ — gate the SOURCE aspect corpus + baseline (the yardstick) before it is read/judged
+│  1.5 · INTERPRETATION LAYER  ★ — make the implicit explicit (see §4), from a TRUSTED source
+│  1.75 · INTERPRETATION ░GATE░ ★ — gate the interpretation output before decomposition rests on it
 │  2 · DECOMPOSITION ░GATE░    ★ — decide the slices AND the backend/frontend split
 │         output: slice-map.md (each slice tagged {backend | frontend | shared})
 │                 + seam-contract.md (the service API the UI will consume)
@@ -51,12 +58,12 @@ ENTITY <X>
 ╠═ fork ═══ (backend generally precedes the UI that consumes it) ══════════
 │
 ╠═ TRACK A · BACKEND  — "Entity Service Build Flow"  (§5)
-│     3A · SERVICE SPEC SET → docs/features/<entity>/service/
+│     3A · SERVICE SPEC SET → docs/features/<entity>/service/ → ░DOCUMENTATION GATE (spec-set)░
 │     per slice: PLAN ░g1░ → IMPL ░g2░ → BUILD → VERIFICATION ░GATE░ (blocking)
 │     §XXIX currency
 │
 ╠═ TRACK B · FRONTEND — "Entity UI/UX Build Flow"  (§6)
-│     3B · UI/UX SPEC SET → docs/features/<entity>/ui-ux/
+│     3B · UI/UX SPEC SET → docs/features/<entity>/ui-ux/ → ░DOCUMENTATION GATE (spec-set)░
 │     per slice: PLAN ░g1░ → IMPL ░g2░ → BUILD → VISUAL ░GATE░ (blocking)
 │     §XXIX currency
 │
@@ -88,6 +95,30 @@ and every `UNKNOWN` is flagged rather than silently guessed.
 No aspect doc stated it; it surfaced only when the browser crashed. The **NEEDS** section is exactly
 where that dependency gets written down *before* build. The interpretation layer is a defense against
 that whole bug class.
+
+## 4.5 The yardstick gates — Documentation Gate + Interpretation Gate
+
+The methodology is documentation-first; these two gates are what make that a **quality** claim, not just a
+sequencing one. They gate the *documentation* — the yardstick everything downstream builds on and judges
+against — before it is trusted. Both are **blocking**.
+
+- **Documentation Gate** — validates the **source** the interpretation will read: the entity aspect corpus
+  (`identity · structure-data · business-rules · contract · conventions · current-*`) + the baseline are
+  complete, coherent, and No-Guessing-clean (every `UNKNOWN` resolved). A per-track instance also gates each
+  **spec-set** (`service/`, `ui-ux/`) before that track builds.
+- **Interpretation Gate** — validates the **output** of the interpretation layer (`delivery/interpretation.md`):
+  every DEPENDENCY/NEED/IMPLICIT-RULE surfaced, every `UNKNOWN` flagged not guessed — before decomposition (or,
+  in the recovery variant, reconciliation) rests on it.
+
+**Why the order is strict** (`Baseline → ░Documentation Gate░ → Interpretation → ░Interpretation Gate░ →
+Decomposition`): the interpretation layer *consumes* the source docs (§4, "so decomposition rests on stated
+facts"). You cannot soundly derive from an un-gated input — gate the input first, then gate the derivation.
+Baseline sits *before* the Documentation Gate because it only *organizes* raw docs; it asserts nothing to gate.
+
+**Additive, not redundant** with §XXVI g1/g2: g1 critiques *a slice's own spec* against its §2/§4
+`[FACT: standards/process.md:362]`; these gate the *upstream corpus + interpretation* — **different objects**.
+In the recovery variant this double-gating of the yardstick (source, then interpretation) is exactly what makes
+the reconciliation's `❌ wrong` verdicts trustworthy: the code is judged against a doc that was itself gated.
 
 ## 5. Backend track — "Entity Service Build Flow"
 
@@ -158,10 +189,12 @@ normal tracks. Composes existing tools — `/audit-existing`, `victor:impact-sca
 **persisted ledger** and a **re-scope gate**.
 
 ```
-INTAKE → BASELINE → INTERPRETATION   (+ built code is a source)
+INTAKE → BASELINE → ░DOCUMENTATION GATE░ → INTERPRETATION (+ built code is a source) → ░INTERPRETATION GATE░
+│   (the front-matter gates run ONCE, cross-plane; the standards union is loaded at Step 0 — see §5/§6 scenarios)
 │
 ╠═ AUDIT / RECONCILIATION layer ═══ ★variant-only★
-│    compare BUILT vs INTERPRETATION, item by item, each cross-checked code ↔ its doc layer:
+│    sweep BOTH planes (① service + ② surface) vs INTERPRETATION, item by item, each cross-checked code ↔ its
+│    doc layer AND tagged {backend | frontend | shared}:
 │      ✅ aligned       built + matches docs + gated
 │      ❌ wrong         built but diverges from docs/intent   → fix
 │      📄 undocumented  code exists, no doc                   → back-fill doc
@@ -170,10 +203,10 @@ INTAKE → BASELINE → INTERPRETATION   (+ built code is a source)
 │    EXHAUSTIVE sweep — exit condition is a DRY pass (zero new items), not "I think I got them all"
 │
 ╠═ RE-SCOPE ░GATE░ ═══ ★variant-only★
-│    reconciliation ledger → a CORRECTED slice-map (every ❌/📄/🕳/⛔ becomes a scoped slice with
-│    its gate). Approved before any further code.
+│    reconciliation ledger → a CORRECTED, TAGGED slice-map (every ❌/📄/🕳/⛔ becomes a scoped slice with
+│    its gate AND its plane). Approved before any further code.
 │
-╚═ resume the normal per-slice backend/frontend tracks from the corrected slice-map
+╚═ resume BY TAG: backend slices → ░Verification Gate░ · frontend slices → ░Visual Gate░ (shared → both)
 ```
 
 **Artifacts:** `delivery/reconciliation.md` (the ledger) → feeds a re-scoped `slice-map.md`.
@@ -210,25 +243,29 @@ fork against a fixed structure ([[dont-split-a-doc-fixed-increment-subunit]]):
 Notes runs the **recovery variant** in **ratify mode** (the ①/②a–②e split is doc-fixed — retrofit, do
 not re-decide). Grounded reconciliation-ledger sketch (the real sweep runs next session):
 
-| Item | Bucket | Action |
-|------|--------|--------|
-| ① backend service | ✅ aligned | none (current-* current) |
-| ②a data plane | ✅ aligned | none |
-| ②b `/notes` surface | ⛔ ungated-owed | run Visual Gate + `/component-audit` |
-| ②c editor + picker | ⛔ ungated-owed + 🟡 uncommitted | run Visual Gate + commit |
-| 2 bug fixes (vault, empty-doc) | 🟡 uncommitted | commit with the gate result |
-| implicit deps beyond libsodium (device-id, registry, entity_type reg) | 📄 interpretation sweep | write `interpretation.md`; verify no latent bombs |
-| ②d panels / ②e search | 🕳 gap | scope under the new slice-map |
-| `delivery/` + `ui-ux/` + `service/` docs | 📄 undocumented | author the front matter |
-| `core-vault-init-on-db-open` (spun-out) | 🕳 gap (homed) | already tracked; link from the ledger |
+| Item | Plane | Bucket | Action |
+|------|-------|--------|--------|
+| notes aspect corpus + `delivery/` front matter | shared | 📄 → ░Documentation Gate░ | gate the yardstick BEFORE the sweep (the ledger itself then clears the ░Interpretation Gate░) |
+| ① backend service | backend | ✅ aligned | re-read vs its `current-*` under the sweep; none if aligned |
+| ②a data plane | shared | ✅ aligned | none |
+| ②b `/notes` surface | frontend | ⛔ ungated-owed | run Visual Gate + `/component-audit` |
+| ②c editor + picker | frontend | ⛔ ungated-owed + 🟡 uncommitted | run Visual Gate + commit |
+| 2 bug fixes (vault, empty-doc) | shared | 🟡 uncommitted | commit with the gate result |
+| implicit deps beyond libsodium (device-id, registry, entity_type reg) | shared | 📄 interpretation sweep | write `interpretation.md`; verify no latent bombs |
+| ②d panels / ②e search | frontend | 🕳 gap | scope under the new tagged slice-map |
+| `delivery/` + `ui-ux/` + `service/` docs | shared | 📄 undocumented | author the front matter |
+| `core-vault-init-on-db-open` (spun-out) | **backend** | 🕳 gap (homed) | Service slice → ░Verification Gate░ — **the cross-plane instance the old single-plane recovery stranded** |
 
-That table *is* the re-scoped path — nothing left behind, every owed gate homed.
+That table *is* the re-scoped path — nothing left behind, every owed gate homed, every row routed to the gate its
+plane owns.
 
 ## 11. Open items / next steps
 
-1. **Next session:** run the recovery variant on Notes — first artifact = `delivery/reconciliation.md`
-   (exhaustive sweep), then `baseline.md` + `interpretation.md`, then the re-scoped `slice-map.md`, then
-   the owed ②b+②c Visual Gate under the per-slice format.
+1. **Next session:** run the recovery variant on Notes in the corrected order — `baseline.md` →
+   ░Documentation Gate░ → `interpretation.md` → ░Interpretation Gate░ → `reconciliation.md` (EXHAUSTIVE,
+   **sweeping both planes ①+②, each item tagged** {backend|frontend|shared}) → the re-scoped, **tagged**
+   `slice-map.md` → resume by tag: the owed ②b+②c **Visual** Gate + any backend slice (e.g.
+   `core-vault-init-on-db-open`) under its **Verification** Gate.
 2. **After validation:** codify the proven shape into the toolkit — `/enhance-scenario
    add-frontend-component default` (Phase 2 + `ui-ux/` set + blocking Visual Gate) + a new backend
    scenario for the Entity Service Build Flow; update §XXX espinha references if warranted.

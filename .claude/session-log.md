@@ -5554,3 +5554,21 @@ Next session (FRESH — run the methodology on Notes):
   - Then run the owed **②b+②c real-browser Visual Gate** (Brave via chrome-devtools MCP) under the per-slice format → `/component-audit` → **commit ②c + both fixes + docs** on `mod-notes-2a-data-plane` (§XXIX: docs ship WITH code). Then ②d/②e.
   - ⚠ Node 22 needed for the jsdom vitest suites (`.nvmrc`=22, only v20.20.2 local → `nvm install 22`; Vite dev runs on 20).
 ---
+Date: 2026-08-22
+Task: mod-notes (LIF-131) — methodology fix (no product code)
+Goal: Fix the Entity Delivery Flow recovery variant before running it on Notes — Victor caught it scoped wrong (frontend-only) and missing the documentation gate.
+Completed:
+  - Fixed 3 gate drifts under a full §XXVI gate (diagnosis SHIP → Approval 1 → preflight BLOCKED→3 folded → gate-2 REVISE→folded → Approval 2 → 4-file edit → toolkit-check PASS): (A) single-plane→CROSS-PLANE recovery (sweep ①+②, tagged slice-map, dispatch-by-tag — the vault→core hoist is now a routed backend slice, not stranded); (B) added the Documentation Gate + Interpretation Gate (additive to §XXVI g1, process.md:362); (C) fixed ordering (Baseline→Doc Gate→Interpretation→Interp Gate→Decomposition).
+  - Standards seam re-wired from scenario prose → a real Step-0 load action (gate-2 catch: kickoff loads by profile, not scenario).
+  - 4 files: vida SoT docs/specs/foundation/entity-delivery-flow/_index.md + toolkit reference-doc + both entity-rescope scenarios (re-cut Steps 0→8).
+  - Toolkit fix committed+pushed ~/dev-toolkit 3ee6f88 (amends v1 406c24c → v1.1) + synced (global commands + repo).
+  - Bug-unit: docs/specs/fixes/entity-delivery-flow-gate-drifts/ (diagnosis + IMPLEMENTATION-PLAN).
+Decisions:
+  - The reference-doc was already cross-plane-correct; the two per-profile scenarios flattened it → fix the scenarios + sharpen §6, not a rewrite. STRUCTURAL (same root cause in 4 files: reasoning from the local artifact, not the dependency chain).
+  - Documentation Gate + Interpretation Gate = same gate-type on successive artifacts (gate the source, then the derivation); order strict because interpretation consumes the source.
+  - Commit scope: ONLY the methodology docs + session artifacts. The ②c editor code + 2 bug fixes stay uncommitted on mod-notes-2a-data-plane (bundle with the owed Visual Gate).
+Next session (FRESH):
+  - Run the entity re-scope on Notes on the CORRECTED methodology: baseline → Documentation Gate → interpretation → Interpretation Gate → cross-plane reconciliation (sweep ①+②, tagged) → tagged slice-map → resume by tag (owed ②b+②c Visual Gate + vault→core backend slice under its Verification Gate) → commit ②c + both fixes.
+  - Reload: docs/specs/foundation/entity-delivery-flow/_index.md (corrected §3/§4.5/§7/§10) + the entity-rescope scenario (now Steps 0–8, cross-plane) + mod-notes.md Session History.
+  - ⚠ Node 22 for jsdom vitest (.nvmrc=22, only v20.20.2 local → nvm install 22; Vite dev runs on 20).
+---
