@@ -60,3 +60,19 @@ Profile: Add Frontend Component (default scenario) — but the WORK this session
    MCP) → `/component-audit` → **commit ②c + both fixes + docs** in one commit (§XXIX).
 4. Then ②d panels → ②e search. LIF-131 closes only after ②d + ②e + the Visual Gate.
 5. ⚠ Node 22 for the jsdom vitest suites (`.nvmrc`=22; only v20.20.2 local → `nvm install 22`).
+
+## Update — codified into the toolkit (same session)
+After persisting the design, ran a full §XXVI planning gate to codify the methodology into `~/dev-toolkit`:
+- **Gate:** gate-1 `/critique` (independent) REVISE → all folded (BLOCKER: single-source reference-doc vs
+  profile-relative `→ Knowledge:` grammar → cite by explicit cross-profile path) · Approval 1 · `/preflight`
+  PASSED (all artifact paths FACT-verified) · gate-2 `/critique` SHIP · Approval 2.
+- **Implemented A1–A14:** reference-doc (`project-foundation/knowledge/reference-docs/entity-delivery-flow.md`);
+  enhanced add-frontend/backend-component **default** scenarios (front-matter Interpretation + Decomposition-Gate
+  as Steps 1–2, renumbered to 11, per-slice blocking Visual/Verification gate); new **entity-rescope** recovery
+  scenarios (both profiles); routers; light §XXX overlay ref (STANDARDS 3.2); regenerated `toolkit-guide.md`;
+  registered the unit.
+- **`/toolkit-check` PASS** (CHECK 1/3/4/5/8/9/10/13/14 on the touched surface).
+- **Committed + pushed** to `~/dev-toolkit` `origin/main`: `406c24c` (codification, 12 files) + `8f99a43`
+  (pre-existing housekeeping). Vida design-doc commit `5cfa25b` stays local; vida ②c code + fixes untouched
+  (uncommitted, bundled after the Visual Gate). Plan artifact: `~/dev-toolkit/docs/specs/toolkit/entity-delivery-flow-codification/_index.md`.
+- **Maturity: v1 — pending validation.** The MOD-notes recovery-variant run is the validation that may amend v1→v2.
