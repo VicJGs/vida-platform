@@ -8,6 +8,7 @@ import {
   useImperativeHandle,
   useRef,
   type ForwardRefExoticComponent,
+  type ReactNode,
   type RefAttributes,
 } from 'react'
 import { styled, View } from '@tamagui/core'
@@ -20,6 +21,7 @@ import { ensureEditorStyles } from './internal/editor-styles'
 import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
 import { INTEGRATION_BLOCK_EXTENSIONS } from './extensions/integration-blocks'
 import { SlashCommand, slashActive, slashComboboxAttrs } from './extensions/slash-command'
+import { WikiLink, WikiLinkMark, wikiActive, wikiComboboxAttrs, type WikiLinkConfig } from './extensions/wiki-link'
 import { EditorToolbar } from './toolbar'
 
 export interface VidaEditorProps {
@@ -36,6 +38,17 @@ export interface VidaEditorProps {
   /** Accessible name for the textbox (a11y — BR-6). One of these is REQUIRED. */
   'aria-label'?: string
   'aria-labelledby'?: string
+  /** The `[[` wiki-link picker (MOD-notes ②c). Injected data (query/onCreate/onSelect) — the editor never imports
+   *  @vida/core. Omit → no picker (the `wikiLink` mark still renders existing links). */
+  wikiLink?: WikiLinkConfig
+  /** Visual presentation of the editor surface (MOD-notes ② / F5):
+   *  · `'plain'` (default) — SEAMLESS notebook page: content flows on the page, no box border/radius, focus = caret.
+   *  · `'boxed'` — the original bordered card (embedded/Storybook consumers). */
+  frame?: 'boxed' | 'plain'
+  /** A header slot rendered BELOW the (sticky) toolbar and ABOVE the content (MOD-notes ② / F7) — e.g. the note
+   *  title. Placing it here makes the toolbar a "normal text editor" top bar above the whole document (toolbar →
+   *  header → content), while the editor keeps ownership of its own instance. */
+  header?: ReactNode
 }
 
 /** Imperative handle for external/programmatic content resets (NOT per-keystroke — BR-E1-1). */
@@ -50,37 +63,55 @@ const EMPTY_DOC: EditorDocument = { type: 'doc', content: [] }
 /**
  * Validate a Tiptap `getJSON()` payload against the @vida/types.EditorDocument structural contract at RUNTIME
  * (top-level `type==='doc'`, `content` an array of `{type: string}`). Tiptap returns `JSONContent`; a bare
- * `as EditorDocument` cast would silence a shape drift that reaches E6/persistence undetected (spec §6). Loud by
- * design — with StarterKit this always holds, so a throw here is a real contract breach, caught in tests, not prod noise.
+ * `as EditorDocument` cast would silence a shape drift that reaches E6/persistence undetected (spec §6).
+ *
+ * An EMPTY document is valid: ProseMirror's `Node.toJSON()` OMITS the `content` key when the doc has no children,
+ * so `getJSON()` of a freshly-created (empty) note is `{type:'doc'}`. We normalize that absent key to `[]` — the
+ * @vida/types contract makes `EditorDocument.content` a required array — rather than reject a legitimately-empty doc.
+ * (Regression: a too-strict `!Array.isArray(content)` crashed every new note on open — docs/specs/fixes/editor-empty-doc-assert-crash.)
  */
 export function assertEditorDocument(json: unknown): EditorDocument {
-  if (
-    typeof json !== 'object' ||
-    json === null ||
-    (json as { type?: unknown }).type !== 'doc' ||
-    !Array.isArray((json as { content?: unknown }).content)
-  ) {
+  if (typeof json !== 'object' || json === null || (json as { type?: unknown }).type !== 'doc') {
     throw new Error('[VidaEditor] getJSON() did not return a doc-rooted EditorDocument')
   }
-  for (const node of (json as { content: unknown[] }).content) {
+  const content = (json as { content?: unknown }).content ?? []
+  if (!Array.isArray(content)) {
+    throw new Error('[VidaEditor] getJSON() did not return a doc-rooted EditorDocument')
+  }
+  for (const node of content) {
     if (typeof node !== 'object' || node === null || typeof (node as { type?: unknown }).type !== 'string') {
       throw new Error('[VidaEditor] EditorDocument child node is missing a string `type`')
     }
   }
-  return json as EditorDocument
+  return { ...(json as object), content } as EditorDocument
 }
 
-// Base-token chrome frame (BR-E1-5). Unnamed styled host → base semantic tokens resolve directly (no sub-theme
-// needed; the list-view LV-3 precedent). `borderRadius:'$md'` uses the radius token SCALE, not a sub-theme key
-// (DEF-U8-h). `className` threads the injected-CSS hook onto the DOM node.
+// Base-token chrome frame (BR-E1-5, revised 2026-08-22 for the notebook model — MOD-notes ②/F5). Two presentations:
+//  · 'plain' (default) — SEAMLESS: content flows on the page surface (transparent, no box border/radius). The
+//     Notion-like note page. Focus = the CARET (no frame ring — a full-page editor's focus indicator is the caret,
+//     §XIV; the boxed ring below is scoped to `[data-frame="boxed"]` in editor-styles.ts).
+//  · 'boxed' — the original 1px-border card (embedded/Storybook consumers).
+// Unnamed styled host → base semantic tokens resolve directly (the list-view LV-3 precedent); `borderRadius:'$md'`
+// reads the radius token SCALE not a sub-theme key (DEF-U8-h). `className` threads the injected-CSS hook.
 const EditorFrame = styled(View, {
   backgroundColor: '$colorSurfacePrimary',
-  borderColor: '$colorBorderDefault',
-  borderWidth: 1,
-  borderRadius: '$md',
-  paddingHorizontal: '$12',
-  paddingVertical: '$8',
-  minHeight: 120,
+  variants: {
+    frame: {
+      boxed: {
+        borderColor: '$colorBorderDefault',
+        borderWidth: 1,
+        borderRadius: '$md',
+        paddingHorizontal: '$12',
+        paddingVertical: '$8',
+        minHeight: 120,
+      },
+      plain: {
+        backgroundColor: 'transparent',
+        minHeight: 240,
+      },
+    },
+  } as const,
+  defaultVariants: { frame: 'plain' },
 })
 
 function warnMissingName(ariaLabel?: string, ariaLabelledby?: string): void {
@@ -92,7 +123,8 @@ function warnMissingName(ariaLabel?: string, ariaLabelledby?: string): void {
 }
 
 function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEditorHandle>): React.ReactElement {
-  const { defaultValue, onChange, editable = true, toolbar = true, placeholder } = props
+  const { defaultValue, onChange, editable = true, toolbar = true, placeholder, wikiLink, frame = 'plain', header } =
+    props
   const ariaLabel = props['aria-label']
   const ariaLabelledby = props['aria-labelledby']
 
@@ -119,6 +151,8 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
     'aria-multiline': 'true',
     ...baseName,
     ...slashComboboxAttrs(slashActive(state)),
+    // MOD-notes ②c — the `[[` picker flips the host to combobox too (same single-`role`-writer rule as slash).
+    ...wikiComboboxAttrs(wikiActive(state)),
   })
 
   const editor = useEditor({
@@ -135,6 +169,10 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
       // E4 — the `/`-triggered slash menu (BR-E4-1). Inert until `/` is typed; a read-only editor can't type, so no
       // editable gate is needed (contrast the always-visible E3 toolbar's render-gate).
       SlashCommand,
+      // MOD-notes ②c — the `wikiLink` MARK is registered ALWAYS (so existing note content with wiki-links renders; a
+      // mark absent from the schema is dropped on load). The `[[` picker (WikiLink) is GATED on the injected config.
+      WikiLinkMark,
+      ...(wikiLink ? [WikiLink.configure({ config: wikiLink })] : []),
     ],
     content: (defaultValue ?? undefined) as Content,
     editable,
@@ -175,13 +213,18 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
   )
 
   return (
-    <EditorFrame className="vida-editor-frame">
-      {/* E3 toolbar — rendered ONLY when editor is non-null (useEditor is Editor|null under immediatelyRender:false,
-          the null-editor gate, BR-E3-1) and the editor is editable + toolbar-enabled. A sibling ABOVE EditorContent,
-          NOT inside the contenteditable (the role=textbox is on the inner .ProseMirror). */}
+    <EditorFrame frame={frame} data-frame={frame} className="vida-editor-frame">
+      {/* E3 toolbar (F7) — a STICKY top bar above the whole document (toolbar → header → content), so it reads like a
+          normal text editor rather than a tool bolted inside the note. Rendered ONLY when editor is non-null (the
+          null-editor gate, BR-E3-1) + editable + toolbar-enabled. `position:sticky` pins it to the scroll container's
+          top; the opaque surface bg keeps scrolling content from bleeding under it. */}
       {toolbar && editable && editor ? (
-        <EditorToolbar editor={editor} aria-label={ariaLabel ? `${ariaLabel} formatting` : undefined} />
+        <View position="sticky" top={0} zIndex={10} backgroundColor="$colorSurfacePrimary">
+          <EditorToolbar editor={editor} aria-label={ariaLabel ? `${ariaLabel} formatting` : undefined} />
+        </View>
       ) : null}
+      {/* Header slot (e.g. the note title) — below the sticky toolbar, above the content. */}
+      {header}
       <EditorContent editor={editor} />
     </EditorFrame>
   )

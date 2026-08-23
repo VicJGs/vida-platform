@@ -104,6 +104,20 @@ describe('VidaEditor', () => {
     expect(lastDoc.type).toBe('doc')
     expect(Array.isArray(lastDoc.content)).toBe(true)
   })
+
+  // Regression: docs/specs/fixes/editor-empty-doc-assert-crash. A brand-new note stores content:null →
+  // note-detail safeParse(null) seeds an explicitly-empty {type:'doc',content:[]}. ProseMirror keeps it empty and
+  // Node.toJSON() OMITS the content key → getJSON() === {type:'doc'} → the mount onUpdate echo must NOT crash.
+  it('mounts with an explicitly-empty doc without crashing (safeParse(null) seed)', async () => {
+    const { container, onChange } = renderEditor({ defaultValue: { type: 'doc', content: [] } })
+    const pm = await findTextbox(container)
+    expect(pm.getAttribute('role')).toBe('textbox')
+    // The mount echo fired a valid EditorDocument (content normalized to an array), not a throw.
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    const doc = onChange.mock.calls.at(-1)![0] as EditorDocument
+    expect(doc.type).toBe('doc')
+    expect(Array.isArray(doc.content)).toBe(true)
+  })
 })
 
 // The material §6 gate: the RUNTIME structural assertion (NOT a bare cast) that stops a Tiptap JSONContent shape
@@ -114,12 +128,18 @@ describe('assertEditorDocument', () => {
     expect(assertEditorDocument(doc)).toBe(doc)
   })
 
+  // ProseMirror's Node.toJSON() omits `content` for an EMPTY doc, so getJSON() of a freshly-created (empty) note is
+  // {type:'doc'}. That is a legitimately-empty document — normalize the absent key to [] (spec: content is a required
+  // array) rather than reject it. Regression: docs/specs/fixes/editor-empty-doc-assert-crash.
+  it('normalizes an empty doc (no content key) to {type:"doc",content:[]}', () => {
+    expect(assertEditorDocument({ type: 'doc' })).toEqual({ type: 'doc', content: [] })
+  })
+
   it.each([
     ['null', null],
     ['a non-object', 42],
     ['a non-doc root type', { type: 'paragraph', content: [] }],
-    ['a missing content array', { type: 'doc' }],
-    ['content not an array', { type: 'doc', content: {} }],
+    ['content present but not an array', { type: 'doc', content: {} }],
     ['a child without a string type', { type: 'doc', content: [{ text: 'x' }] }],
   ])('throws on %s', (_label, bad) => {
     expect(() => assertEditorDocument(bad)).toThrow()

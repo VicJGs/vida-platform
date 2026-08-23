@@ -38,7 +38,11 @@ const CardFrame = styled(View, {
     // Padding drives the $space scale, NOT the `card.padding` sub-theme token — one token can't express three
     // options, and Tamagui resolves space props against the space scale, not a theme sub-theme (button.tsx lesson;
     // u5-card.md §1.1 / DEF-U5-b). Values = the semantic space.inset.{compact,default,spacious} the token references.
-    padding: {
+    // ⚠ The variant is named `pad`, NOT `padding`: a variant named identically to a built-in Tamagui style prop
+    // (`padding`) is consumed as the raw style shorthand (`padding:"default"` → invalid → DROPPED, 0 inset on every
+    // card) instead of matching the variant. Renamed `padding`→`pad` (the wrapper maps the public `padding` prop to
+    // it) so the inset actually applies. Surfaced by MOD-notes ② (NoteCard text flush to the border, F3).
+    pad: {
       compact: { padding: '$8' },
       default: { padding: '$12' },
       spacious: { padding: '$24' },
@@ -59,7 +63,7 @@ const CardFrame = styled(View, {
       },
     },
   } as const,
-  defaultVariants: { padding: 'default' },
+  defaultVariants: { pad: 'default' },
 })
 
 // Absolute overlay carrying the RAISED shadow at opacity 0 → 1 on hover/active (via .vida-card-elevation, B12).
@@ -91,7 +95,7 @@ const CardFooter = styled(View, {
   render: 'footer',
 })
 
-export interface CardProps extends Omit<GetProps<typeof CardFrame>, 'children'> {
+export interface CardProps extends Omit<GetProps<typeof CardFrame>, 'children' | 'pad'> {
   /** Slot rendered in the header bar (left). */
   header?: ReactNode
   /** Slot rendered as a `<footer>` region. */
@@ -173,7 +177,7 @@ export const Card = forwardRef<ComponentRef<typeof CardFrame>, CardProps>(functi
       role={interactive ? 'button' : 'group'}
       tabIndex={interactive ? (disabled ? -1 : 0) : undefined}
       aria-disabled={interactive && disabled ? true : undefined}
-      padding={padding}
+      pad={padding}
       interactive={active}
       opacity={interactive && disabled ? 0.5 : 1}
       onClick={active ? onPress : undefined}

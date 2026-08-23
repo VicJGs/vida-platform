@@ -39,8 +39,9 @@ export function ensureEditorStyles(): void {
     // 3) editable host — no native outline, wrap long content, clickable empty body.
     '.vida-editor-frame .ProseMirror{outline:none;white-space:pre-wrap;word-break:break-word;min-height:1.5em}',
     '.vida-editor-frame .ProseMirror[contenteditable="false"]{cursor:default}',
-    // 1) focus-visible ring on the frame (2px, 2px offset — §VIII).
-    '.vida-editor-frame:has(.ProseMirror:focus-visible){outline:2px solid var(--colorFocusRing);outline-offset:2px}',
+    // 1) focus-visible ring on the frame (2px, 2px offset — §VIII) — BOXED frame only. The 'plain' notebook frame
+    //    (MOD-notes ②/F5) is a full-page editor whose focus indicator is the CARET (Notion/Docs model), so no box ring.
+    '.vida-editor-frame[data-frame="boxed"]:has(.ProseMirror:focus-visible){outline:2px solid var(--colorFocusRing);outline-offset:2px}',
     // 2) placeholder — muted, theme-switching. opacity:1 defeats Firefox's default placeholder opacity.
     '.vida-editor-frame .ProseMirror p.is-editor-empty:first-child::before{' +
       'color:var(--colorTextMuted);content:attr(data-placeholder);float:left;height:0;pointer-events:none;opacity:1}',

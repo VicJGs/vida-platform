@@ -5,6 +5,37 @@ Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-st
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
+## Shipped (MOD-notes ②c — the `[[` wiki-link surface) — v0.9.0
+The `[[` picker AR-7/e4 deferred here ("a separate suggestion surface", e4-slash-menu.md:31), built as part of
+MOD-notes ②c. **Two additive extensions + one prop; the editor stays `@vida/core`-free** (data INJECTED).
+- `extensions/wiki-link.ts` — (1) the **`wikiLink` MARK** (`Mark.create`, inline, `inclusive:false`, attrs
+  `targetPageId`+`label`, `<a data-wikilink data-target-page-id>`), registered **UNCONDITIONALLY** in `editor.tsx` so
+  existing note content with links renders (a mark absent from the schema is dropped on load; NP-7 = the link is stored
+  by id, never resolved by title). (2) the **`WikiLink` Suggestion Extension** (sibling of E4's `SlashCommand`),
+  **GATED** on an injected `config` (`addProseMirrorPlugins` returns `[]` with no config → zero cost). `Suggestion({
+  char:'[[', allowSpaces:true, allowedPrefixes:null, debounce:150, items: async cfg.query(stripWikiClose(q), signal),
+  command, render})`. **`char:'[['`** works via `findSuggestionMatch`'s `escapeForRegEx` (→ `\[\[…`); **`allowedPrefixes:
+  null`** is REQUIRED (the default `[' ']` suppresses mid-word `[[`). Exports `WikiSuggestionPluginKey`, `wikiActive`,
+  `wikiComboboxAttrs` (the host combobox ARIA — merged into editor.tsx's `editorProps.attributes`, the single-`role`-
+  writer rule, exactly like `slashComboboxAttrs`), `stripWikiClose` (trims a typed trailing `]]` from the query).
+- **`applyWikiSelection(editor, range, props, cfg)`** (exported, testable) — the WL-2b order: `onCreate` (create-on-miss
+  via a `{__create}` sentinel) → `onSelect` (the `page_links` row) **awaited FIRST** → then the mark applied
+  **ATOMICALLY** as `insertContent({type:'text', marks:[{type:'wikiLink', attrs}]})` (NOT setMark→insert→unsetMark). A
+  rejection throws before the mark → no partial write. The Suggestion `command` is sync fire-and-forget
+  (`void applyWikiSelection(...).catch(()=>{})`) — **the APP's injected `onSelect`/`onCreate` surface the error** (toast
+  + re-throw); the editor never imports `@vida/ui`/`@vida/core`.
+- `wiki-link-menu.tsx` — the combobox popup (ReactRenderer, `<Theme name="Menu">`, `role=listbox`, roving
+  `aria-activedescendant`, imperative `onKeyDown`): candidate rows + a persistent **"+ Create '<query>'"** row + a
+  `loading` hint. Mirrors `slash-menu.tsx`.
+- `serializers/to-markdown.ts` — `case 'wikiLink' → [[label]]` + `'wikiLink'` in `MARK_ORDER` (after `link`).
+  **EMIT-ONLY**: `from-markdown` has no `[[]]` rule → md→JSON reads it as literal text (declared non-identity); E7 PDF
+  + E8 DOCX degrade to the display text. The `targetPageId` lives in `pages.content` JSON only.
+- **New `VidaEditor` prop:** `wikiLink?: WikiLinkConfig` (`{query(text,signal), onCreate(text), onSelect(candidate)}`);
+  `WikiLinkConfig`/`WikiLinkCandidate` (with a forward-compat `entityType?`/`entityId?` for ②d's entity variant) are
+  barrel-exported. Tests: `extensions/wiki-link.test.ts` (**10** — mark round-trip, `[[`-activate, WL-2b order,
+  create-on-miss, emit-only). **234 total.** Boundary unchanged (no `@vida/core`); no new runtime dep
+  (`@tiptap/suggestion` already present since E4).
+
 ## Shipped (E8 — DOCX serializer)
 The **DOCX serializer** (ADR-001:102 — `docx@9.7.1`, Node + browser). **Emit-only, no round-trip.** The LAST serializer —
 the suite (md · PDF · DOCX) is COMPLETE. Durable: `docs/editor/serialization-spec.md`. **v0.8.0.** ONE new top-level
@@ -199,7 +230,10 @@ StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
   - **`assertEditorDocument(json)`** — the RUNTIME structural gate (spec §6): Tiptap `getJSON()` returns `JSONContent`,
     so a bare `as EditorDocument` cast would silence a shape drift vs `@vida/types.EditorNode` that reaches
     E6/persistence undetected. Validates `type==='doc'` + `content` is an array of `{type:string}`, throws otherwise.
-    Wired into `onUpdate` and `getDocument`. With StarterKit this always holds → a throw is a real contract breach.
+    **An EMPTY doc is valid:** ProseMirror's `Node.toJSON()` omits the `content` key for a childless node, so a
+    freshly-created note's `getJSON()` is `{type:'doc'}` — the assert NORMALIZES the absent key to `[]` (a required
+    array per the type) instead of rejecting it. (Regression: the old `!Array.isArray(content)` crashed every new note
+    on open — `docs/specs/fixes/editor-empty-doc-assert-crash`.) Wired into `onUpdate` and `getDocument`.
   - **`immediatelyRender:false`** — defers first render to a post-mount effect (StrictMode double-mount safety). Tests
     MUST `waitFor(.ProseMirror)` / `isEditable` before asserting the first `onChange` — never a synchronous query.
   - **a11y (BR-6, §XIV):** `role=textbox` + `aria-multiline` + `aria-label`/`aria-labelledby` applied to the

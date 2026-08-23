@@ -5572,3 +5572,23 @@ Next session (FRESH):
   - Reload: docs/specs/foundation/entity-delivery-flow/_index.md (corrected §3/§4.5/§7/§10) + the entity-rescope scenario (now Steps 0–8, cross-plane) + mod-notes.md Session History.
   - ⚠ Node 22 for jsdom vitest (.nvmrc=22, only v20.20.2 local → nvm install 22; Vite dev runs on 20).
 ---
+---
+Date: 2026-08-23
+Task: mod-notes (LIF-131) — entity re-scope recovery on Notes + 7 build slices
+Goal: Run the corrected Entity Re-scope (recovery) flow on Notes, then build the re-scoped slices through their gates.
+Completed:
+  - **Recovery front matter** (`docs/features/notes-and-pages/delivery/{baseline,interpretation,reconciliation,slice-map}.md`) with two blocking yardstick gates via independent critics: **Documentation Gate** REVISE→PASS (killed the stale macOS/CI Visual-Gate hallucination in both current-*, added the Node-22 caveat) → **Interpretation Gate** PASS (latent-bomb hunt: no second vault-class boot bomb) → cross-plane **reconciliation** (26-item dry pass; `❌ wrong` bucket honestly empty) → **Re-scope Gate** approved.
+  - **S1** stale migration comments (001/002/003 → ALL_MIGRATIONS 001–032, 3 files). **S2** `service/` 5-lens backend spec set (7 files). **S3** `ui-ux/` 5-lens frontend spec set (6 files). Each spec-set Documentation-Gated (PASS). Victor corrected my D1 (the lens-sets are bookend deliverables, not deferrable).
+  - **S4 Visual Gate DRIVEN in Brave (chrome-devtools MCP) → FAILED at Victor's review — 7 findings (F1–F7).** Corrected 2 drifts by re-reading the authoritative `m1.1-delivery-plan.md:151-156`: F1 delete + F4 graph-nodes were NOT doc-deferred (my own `ui-ux/screen-flow.md` invented the delete defer); ②d/②e are §9 "② NOW" (part of LIF-131), not "later"; the **Calendar view was never built**. Re-scoped → E1–E3 (editor) + N1–N8 (Notes); editor changes land in `@vida/editor`/`@vida/ui` (Victor's call).
+  - **Built + live-verified (Brave):** E1 notebook `frame:'plain'` (seamless page · borderless 24px title · centered 720 column · caret focus) · E2 sticky toolbar above the title (new `header` slot) · E3 slash `/`+`[[` menus `scrollIntoView` the selection · N1 fixed the `@vida/ui` **Card `padding`-variant name collision** (0 inset on every card → 12px) · N2 "New note" button (header + empty state) · N3 delete (confirm Dialog → softDeletePage → /notes) · N4 **Calendar view** (`CalendarView`, notes by `created_at` + month nav). typecheck 0 across editor/ui/web.
+  - **Committed as a WIP checkpoint** on `mod-notes-2a-data-plane` (E1–E3 + N1–N4 + the earlier ②c editor + 2 bug fixes + recovery front matter + service/ui-ux lens sets + §XXIX currency).
+  - 5 memories saved: entity-lens-specs-are-bookend-deliverables · entity-rescope-anchor-on-authoritative-delivery-scope · visual-gate-cross-unit-finding-check-owning-doc · visual-gate-needs-victor-review-before-pass · tamagui-variant-name-collides-with-style-prop.
+Decisions:
+  - MOD-notes ② = the full §9 "② UI NOW" list built NOW (not a thin slice); only saved-view selection / /summary menu (M1.4) / cross-entity graph data-prep (AR-8) / FTS5 engine (DB-8) stay deferred.
+  - Editor presentation changes (notebook feel, toolbar-above) go in `@vida/editor` so every consumer inherits them; the Card fix in `@vida/ui`.
+  - Per Victor: a per-slice doc-checkpoint against the AUTHORITATIVE delivery scope (§9), not the module's own current-*/self-authored decomposition.
+Next session (FRESH — N5–N8):
+  - N5 Neural note-nodes (feed pages + `page_links` to `NeuralGraph`) · N6 backlink/entity-link panels · N7 page metadata (favorite/archive/icon/cover) · N8 FTS5 search UI (over the DB-8 seam, degrades).
+  - Then the **consolidated real-browser Visual Gate** (every state × {375·768·1440} + §XIV a11y + `/component-audit`) → **Victor review** → §XXIX currency refresh → S6 `core-vault-init-on-db-open` (backend, Verification Gate).
+  - Reload `docs/features/notes-and-pages/delivery/slice-map.md` **Rev 3** (the E/N slice table + status) first. Dev server: `apps/web` `./node_modules/.bin/vite` (Node 20 fine). ⚠ Node 22 for the jsdom suites — the E1–E3/N1 changes need test updates.
+---

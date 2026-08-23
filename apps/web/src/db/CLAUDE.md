@@ -21,7 +21,7 @@ M1.0 (SQLCipher → M3); the seam is pass-through.
 ## Key files
 - `web-driver.ts` — async `SqliteDriver` over wa-sqlite's `statements()` iterator (owns prepare/finalize, no leak).
   `query()` → object rows (internal); `values()` → positional arrays (the ORM proxy path).
-- `worker.ts` — the Web Worker: bootstraps the VFS, opens, migrates (empty registry = no-op v0), builds the Drizzle
+- `worker.ts` — the Web Worker: bootstraps the VFS, opens, migrates (`ALL_MIGRATIONS` 001–032), builds the Drizzle
   proxy, and exposes an `open|exec|query|close` message protocol (AR-2's in-worker proof).
 - `web-adapter.ts` — the `DatabaseAdapter` impl (`open`/`migrate`/`createDrizzle`/`exists`/`destroy`). `exists`/`destroy`
   are VFS-directory-scoped (the VFS stores files under opaque OPFS names); per-name first-run detection is AR-4.
@@ -34,5 +34,8 @@ M1.0 (SQLCipher → M3); the seam is pass-through.
 - `createDrizzleProxy` (in `@vida/core`) is the shared SQL→driver mapping; `web-adapter.createDrizzle` delegates to it.
 - OPFS/worker wiring can't be unit-tested in jsdom (`FileSystemSyncAccessHandle` is browser-worker-only) → a Playwright
   smoke is the follow-up; the Node/better-sqlite3 split proves the contract.
-- Repository CRUD (encrypt/decrypt) is DB-6's surface — `createRepository` needs an unlocked vault (M3 crypto), so it
-  is not exercised here.
+- Repository CRUD is DB-6's surface. Field-level **encryption** (`encryptField`/`decryptField`) needs an UNLOCKED vault
+  (a password-derived key → M3), and is skipped for empty-`[E]` repos (M1.0 pass-through). **But every WRITE also
+  computes a keyless `_sync_hash` via `hashContent()` → that requires `initVault()` (libsodium WASM loaded) at boot,
+  independent of `[E]`.** MOD-notes ②a exercises repository writes on web (no unlock); `db/boot.ts` calls `initVault()`.
+  See `docs/specs/fixes/vault-not-initialized-on-boot` (+ a follow-up to hoist libsodium-ready into @vida/core's open path).

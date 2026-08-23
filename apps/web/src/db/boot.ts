@@ -10,8 +10,14 @@
 // MOD-notes ②a: boot also resolves+caches the device id (device-local `app_state`
 // KV, after migrate creates the table) so `getDeviceId()` is synchronous for the
 // post-boot data plane (App gates render on this promise → no hook runs before it).
+//
+// Boot also calls `initVault()` (libsodium WASM ready) — a hard precondition of every
+// repository WRITE, since `_sync_hash` is a keyless BLAKE2b hash computed on write.
+// See docs/specs/fixes/vault-not-initialized-on-boot. (A follow-up hoists this into
+// @vida/core's DB-open path so mobile/desktop don't re-forget it.)
 // ============================================================================
 
+import { initVault } from '@vida/core'
 import { WorkerDbClient } from './client'
 import { getOrCreateDeviceId } from './device-id'
 
@@ -42,7 +48,14 @@ export function ensureDbReady(): Promise<WorkerDbClient> {
   return (readyPromise ??= (async () => {
     try {
       const c = getDbClient()
-      await c.open(DB_NAME) // opens + migrates (worker.ts) — app_state now exists
+      // initVault() loads libsodium WASM (no key/password) — a HARD precondition of
+      // every repository WRITE: `_sync_hash` is computed on write via hashContent()
+      // (BLAKE2b), which throws `assertReady()` until the WASM is loaded. This is
+      // independent of field-level [E] encryption, so it's required even in the M1.0
+      // empty-[E] pass-through (ADR-017), and runs main-thread (the hash is computed
+      // before the SQL crosses to the worker). Overlapped with open() — no shared dep.
+      // Fix: docs/specs/fixes/vault-not-initialized-on-boot.
+      await Promise.all([initVault(), c.open(DB_NAME)]) // libsodium ready + DB open+migrate
       await getOrCreateDeviceId(c.driver) // resolve+cache before any data-plane consumer (DP-3)
       return c
     } catch (e) {

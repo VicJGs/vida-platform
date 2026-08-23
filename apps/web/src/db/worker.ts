@@ -20,7 +20,7 @@ let db: DrizzleDb | null = null
 
 async function open(dbName: string): Promise<void> {
   driver = await adapter.open({ dbName }) // plain — no sqlCipher in M1.0
-  await migrate(driver) // bootstraps app_state (DB-7 ensureInfra) + applies 001/002/003
+  await migrate(driver) // bootstraps app_state (DB-7 ensureInfra) + applies ALL_MIGRATIONS (001–032)
   db = adapter.createDrizzle(driver)
   // Prove the Drizzle proxy callback fires end-to-end against wa-sqlite
   // (raw SQL — the schema barrel has no tables yet; table CRUD is covered by

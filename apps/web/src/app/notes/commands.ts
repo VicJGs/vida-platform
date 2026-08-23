@@ -31,7 +31,10 @@ const newNoteCommand: Command = {
         void queryClient.invalidateQueries({ queryKey: notesKeys.type('note') })
         void queryClient.invalidateQueries({ queryKey: notesKeys.lists() })
         ctx.navigate(`/note/${page.id}`)
-      } catch {
+      } catch (e) {
+        // Log the error too — a toast-only catch (no console) hid a boot-init bug for
+        // a whole debug session (docs/specs/fixes/vault-not-initialized-on-boot).
+        console.error('[notes:new-note] createPage failed', e)
         toast({ title: 'Could not create note', intent: 'danger' })
       }
     })()

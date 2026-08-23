@@ -10,6 +10,7 @@ import { useNotesUiStore, type NotesView } from '../../stores/notes-ui-store'
 
 const VIEWS: ReadonlyArray<{ value: NotesView; label: string }> = [
   { value: 'list', label: 'List' },
+  { value: 'calendar', label: 'Calendar' },
   { value: 'gallery', label: 'Gallery' },
   { value: 'neural', label: 'Graph' },
 ]

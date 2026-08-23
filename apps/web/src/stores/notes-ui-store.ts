@@ -4,7 +4,7 @@
 // is deferred (ADR-007); this is the ephemeral "open view" (structure-data.md:36).
 import { create } from 'zustand'
 
-export type NotesView = 'list' | 'gallery' | 'neural'
+export type NotesView = 'list' | 'calendar' | 'gallery' | 'neural'
 
 interface NotesUIState {
   activeNotesView: NotesView

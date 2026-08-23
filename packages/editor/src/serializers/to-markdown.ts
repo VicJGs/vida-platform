@@ -35,7 +35,7 @@ function codeSpan(text: string): string {
 
 // Outer→inner nesting order for a text node carrying multiple marks. `code` is handled first (literal span) so the
 // others wrap around it; the rest wrap innermost→outermost by this order for a DETERMINISTIC canonical spelling.
-const MARK_ORDER = ['link', 'bold', 'italic', 'underline', 'strike'] as const
+const MARK_ORDER = ['link', 'wikiLink', 'bold', 'italic', 'underline', 'strike'] as const
 
 function markRank(type: string): number {
   const i = (MARK_ORDER as readonly string[]).indexOf(type)
@@ -55,6 +55,11 @@ function wrapMark(inner: string, mark: EditorMark): string {
       return `~~${inner}~~`
     case 'underline':
       return `<u>${inner}</u>`
+    case 'wikiLink':
+      // EMIT-ONLY (MOD-notes ②c / WL-6): the display label bracketed. `targetPageId` lives in the JSON (NP-7), NOT in
+      // markdown — `from-markdown` has no `[[…]]` rule, so md→JSON reads this as literal text (declared non-identity;
+      // markdown is a human/export view). PDF/DOCX likewise degrade to the text.
+      return `[[${inner}]]`
     case 'link': {
       // Only `href` round-trips through Markdown; `target`/`rel`/`class` are lossy by construction (BR-E6-3).
       // Escape `)` (and `\`) in the href so a parenthesised URL survives the closed-grammar round-trip (post-impl M2).

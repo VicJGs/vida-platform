@@ -39,10 +39,38 @@ Rules the `apps/web` data plane enforces so React consumers get correct, local-f
 - **DP-6 — RQ invalidate-and-reread.** No optimistic updates; each mutation invalidates its key matrix. `[FACT: app/notes/hooks.ts]`
 - **DP-7 — Centralized terminal state.** Read hooks expose `deriveTerminalState(query, isEmpty)` (the UX-4 canon); consumers read `state`, never re-derive. `[FACT: app/notes/hooks.ts; state-conventions/terminal-state.ts]`
 
+## Enforced now (②c — the note editor + autosave + `[[` picker)
+Rules the `apps/web` authoring surface + the `@vida/editor` WikiLink surface enforce. Cited to `apps/web/src/app/` +
+`packages/editor/src/`.
+- **EM-2 — Per-page isolation via an explicit remount key.** The `/note/$id` route reuses one component instance, so
+  `NoteEditorSurface` is `key={id}` — a page change remounts + reseeds; no cross-page content bleed. `[FACT: note-detail.tsx]`
+- **EM-3 — Autosave is debounced + skip-once + non-optimistic.** `onChange`→debounce(≈600 ms)→`useUpdatePage({content})`;
+  the first onChange (the normalized-seed mount echo) is dropped by a skip-once flag (not string-equality — TipTap
+  normalizes the seed). `[FACT: use-note-autosave.ts]`
+- **EM-4 — Content parse is guarded.** null/blank/corrupt `pages.content` → the empty doc; never throws into render. `[FACT: note-detail.tsx safeParse]`
+- **EM-6 — Title editable on the same path.** The title `Input` persists via `useUpdatePage({title})` on blur. `[FACT: note-detail.tsx]`
+- **EM-9 — A missing id is `empty`, not error.** `getPage`→null→`deriveTerminalState`→`empty` → "Note not found"
+  (never a blank editable editor); only `success` mounts `VidaEditor`. `[FACT: note-detail.tsx; hooks.ts usePage]`
+- **EM-10 — Flush on unmount/id change.** Any pending debounced save flushes in cleanup → no lost edit on fast navigate. `[FACT: use-note-autosave.ts]`
+- **WL-2b — `[[` two-write ordered, partial-failure tolerant.** `applyWikiSelection` awaits `createPageLink` (the
+  `page_links` row) FIRST, then applies the `wikiLink` mark; a rejected `onSelect`/`onCreate` → no mark (no
+  content↔relation divergence). `createPageLink` idempotency (NP-5) makes a retry safe. `[FACT: extensions/wiki-link.ts]`
+- **WL-4 — Editor stays `@vida/core`-free.** The `[[` picker's data (`resolveWikiLink`/`createPage`/`createPageLink`)
+  is INJECTED via the `VidaEditor` `wikiLink` prop; `@vida/editor` imports no `@vida/core`. `[FACT: extensions/wiki-link.ts; note-detail.tsx wiki config]`
+- **WL-6 — `wikiLink` markdown is emit-only.** `to-markdown` emits `[[label]]`; `from-markdown` reads it as text (no
+  `[[]]` rule); PDF/DOCX degrade to text. The `targetPageId` lives in the `pages.content` JSON (NP-7). `[FACT: serializers/to-markdown.ts]`
+
 ## Not enforced here (homed elsewhere — do not add to ①)
 - Field-level `[E]` encryption (M1.0 pass-through) → M3/DB-5. `getBacklinks` returns entity-links only; the
   G6 page+entity merge is tentative → ②. `/summary` aggregation engine → MOD-journals ①. FTS5 → DB-8.
   Hard-delete cascade → deferred (no FK; service-driven cleanup, later).
+- **Boot precondition (app-owned, not a ① rule):** every repository WRITE computes a keyless `_sync_hash` via
+  `hashContent()`, which requires `initVault()` (libsodium WASM loaded) at app startup — independent of `[E]`. The
+  ① service assumes it (its tests call `initVault()`); the consuming app must call it at boot (`apps/web/src/db/boot.ts`).
+  `[FACT: docs/specs/fixes/vault-not-initialized-on-boot]`
 
 ## Status
-2026-08-21 — MOD-notes ① IMPLEMENTED. 16 tests green. See `current-spec.md` + `docs/specs/features/mod-notes/`.
+2026-08-22 — MOD-notes ① + ②a + ②b + **②c** IMPLEMENTED (②c + both bug fixes uncommitted). `@vida/editor` 234 ·
+`@vida/web` 218 green (prior run; Node 22 to re-run the jsdom suites locally). See `current-spec.md` +
+`docs/specs/features/mod-notes/`. ⚠ ②b+②c real-browser Visual Gate + `/component-audit` owed — runs **locally in
+Brave** (chrome-devtools MCP; live-verified 2026-08-22), not blocked on any host/CI upgrade.

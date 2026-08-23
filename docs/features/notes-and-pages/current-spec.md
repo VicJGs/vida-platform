@@ -5,9 +5,9 @@
 # Current Spec — Notes & Pages (built slice)
 
 **Status:** MOD-notes increment ① (LIF-131, M1.1) shipped the `@vida/core` Notes & Pages **service** over the
-DB-4 schema. Increment **②a (the app data plane)** wires it into React; **②b (the `/notes` collection surface)** is now
-built — the rendered browse surface. The remaining ② units (②c editor + `[[` picker · ②d panels · ②e search) remain
-INTENDED. `[FACT: this branch — packages/core/src/services/notes/, apps/web/src/{db,services,app/notes,stores}]`
+DB-4 schema. Increment **②a (the app data plane)** wires it into React; **②b (the `/notes` collection surface)** is the
+rendered browse surface; **②c (the note editor + autosave + `[[` picker)** is now built — the authoring surface. The
+remaining ② units (②d panels · ②e search) remain INTENDED. `[FACT: this branch — packages/core/src/services/notes/, apps/web/src/{db,services,app/notes,note-detail.tsx}, packages/editor/src/extensions/wiki-link.ts]`
 
 ## What is BUILT (MOD-notes ① · add-backend-component)
 
@@ -71,6 +71,38 @@ The rendered browse surface over `note`-type pages, composing the M1.0 UI-2 view
 - **Tests:** route per state · switcher · card navigate · store · the command run (create/invalidate/navigate/toast) ·
   the `@vida/core` `PageRow` barrel export (B1). typecheck 0 · ESLint 0.
 
+## What is BUILT (MOD-notes ②c · the note editor + autosave + `[[` picker — add-frontend-component)
+The authoring surface at `note/$id`, mounting the M1.0 `@vida/editor` `VidaEditor` (its FIRST `apps/web` consumer).
+- **Editor mount + autosave** (`apps/web/src/app/note-detail.tsx` — replaces the ②b placeholder): `usePage(id)` →
+  state switch (loading · **empty→"Note not found"** [a missing id is `empty`, not error — EM-9] · error · success);
+  on success a `NoteEditorSurface` **keyed `key={id}`** (the route reuses one instance — EM-2) mounts `VidaEditor`
+  seeded from `pages.content` (parsed guarded → empty doc on null/corrupt — EM-4). An **editable title** (`@vida/ui`
+  `Input`, `aria-label`→`aria-labelledby` of the editor) persists via `useUpdatePage` on blur (EM-6). A save indicator
+  (`role=status`) reflects Saved/Saving…/Save failed (EM-7).
+- **Autosave hook** (`apps/web/src/app/notes/use-note-autosave.ts`): debounced (≈600 ms) `useUpdatePage({id,patch:{content}})`;
+  **skip-once mount-echo flag** (NOT string-equality — TipTap normalizes the seed, EM-3); **flush on unmount/id-change**
+  (no lost edit on fast navigate — EM-10); `mutate` via a ref so the cleanup doesn't fire mid-life.
+- **The `[[` wiki-link picker** — a new `@vida/editor` surface (its home, per the `SlashCommand` precedent):
+  - `packages/editor/src/extensions/wiki-link.ts` — the `wikiLink` **MARK** (inline, carries `targetPageId`; registered
+    ALWAYS so existing links render — NP-7) + the `WikiLink` **Suggestion** extension (`char:'[['`,
+    `allowedPrefixes:null`, async `items`+`AbortSignal`), GATED on an injected `wikiLink` config; `applyWikiSelection`
+    writes the `page_links` row FIRST then applies the mark atomically (WL-2b), create-on-miss via a `{__create}`
+    sentinel (WL-3).
+  - `packages/editor/src/wiki-link-menu.tsx` — the combobox popup (candidate list + a "+ Create '<query>'" row +
+    loading; roving keyboard, Esc). Host combobox ARIA merges via `wikiComboboxAttrs` in editor.tsx's editorProps.
+  - `packages/editor/src/serializers/to-markdown.ts` — `case 'wikiLink' → [[label]]` (EMIT-ONLY; `from-markdown` has no
+    `[[]]` rule → md→JSON reads it as text; PDF/DOCX degrade to text — WL-6).
+  - `apps/web/src/app/note-detail.tsx` wires the injected config: `query`→`resolveWikiLink`, `onCreate`→`createPage`
+    (+invalidate lists/type), `onSelect`→`createPageLink(currentId, targetId)` (+invalidate backlinks/pagelinks).
+  - `@vida/editor` stays free of `@vida/core` (data injected — WL-4); `@vida/editor` v0.9.0.
+- **Tests:** `packages/editor/src/extensions/wiki-link.test.ts` (mark/ARIA/`[[`-activate/WL-2b order/create-on-miss/
+  emit-only) · `apps/web/src/app/note-detail.test.tsx` (state branches · title rename · label wiring) ·
+  `apps/web/src/app/notes/use-note-autosave.test.ts` (skip-once · debounce · flush). `@vida/editor` 234 green ·
+  `@vida/web` 218 green · typecheck 0 · build ✓. ⚠ real-browser Visual Gate + `/component-audit` owed — runs
+  **locally in Brave** (chrome-devtools MCP; the vault + empty-doc fixes were live-verified there 2026-08-22),
+  not blocked on any host/CI upgrade. ⚠ Re-running the jsdom Vitest suites locally needs **Node 22** (`.nvmrc`=22;
+  only v20.20.2 installed → jsdom/undici load error). The green counts hold (prior run); `nvm install 22` to reproduce.
+
 ## Contract boundaries (what ① does NOT own — grounded)
 - **`/summary` aggregation ENGINE → MOD-journals ①** (`summary(date)` registry + `buildDashboard`). ① keeps only
   `summary_config` storage (a `pages` column). The `buildJournalSummary` block-interface is a ② surface.
@@ -83,6 +115,26 @@ Page CRUD (6 types), NP-2 conflict, destructure-safety, update contract, page-li
 resolveWikiLink, ensureEntityNote idempotent+deterministic, NP-6 (page + delegated link), facade delegation,
 entity_tags reads, attachments. `@vida/core` full suite green; typecheck 0; ESLint 0.
 
+## What is BUILT (MOD-notes ② UI refinements — the notebook consumer, 2026-08-23)
+From the recovery's Visual-Gate review (7 findings F1–F7); the editor changes (E1–E3) live in `@vida/editor`
+(see `docs/editor/current-spec.md`). The `apps/web` Notes changes:
+- **NoteCard containment (N1/F3):** fixed a `@vida/ui` **Card** defect — a variant literally named `padding`
+  collided with the built-in style prop → 0 inset on EVERY card; renamed the variant `padding`→`pad`. `[FACT:
+  packages/ui/src/components/card.tsx; memory tamagui-variant-name-collides-with-style-prop]`
+- **On-page "New note" button (N2/F2):** header + empty-state buttons (`useCreatePage`→navigate), ADDITIVE to the
+  ⌘K command. `[FACT: app/notes/index.tsx]`
+- **Delete affordance (N3/F1):** a note-detail Delete → confirm `Dialog` → `useSoftDeletePage` (NP-9) → back to
+  /notes. `[FACT: app/note-detail.tsx]`
+- **Calendar view (N4):** the missed §9 4th view — `@vida/ui CalendarView` bucketing notes by `created_at` + month
+  nav; `NotesView` union + switcher gained `calendar`. `[FACT: app/notes/index.tsx, view-switcher.tsx, stores/notes-ui-store.ts]`
+- The note editor page now reads as a **Notion-like notebook** (E1 seamless page · E2 sticky toolbar above the title ·
+  E3 slash-menu scroll-into-view) — `note-detail.tsx` passes the title via the editor's `header` slot.
+- **Still owed (②d/②e — NEXT fresh session):** N5 Neural note-nodes · N6 backlink/entity panels · N7 page metadata
+  (favorite/archive/icon/cover) · N8 FTS5 search UI. Then the consolidated Visual Gate + Victor review + §XXIX.
+
 ## Status
-2026-08-21 — MOD-notes ① IMPLEMENTED (branch `ui-1-vida-ui-primitives`/successor). Spec:
-`docs/specs/features/mod-notes/_index.md`. Next: MOD-notes ② (UI surface, add-frontend-component).
+2026-08-23 — MOD-notes ① + ②a + ②b + ②c + **② UI refinements (E1–E3 · N1–N4)** IMPLEMENTED + **committed** on
+`mod-notes-2a-data-plane` (WIP checkpoint). typecheck 0 (`@vida/editor`/`@vida/ui`/`@vida/web`); live-verified in
+Brave. Spec: `docs/features/notes-and-pages/delivery/slice-map.md` (Rev 3). **Next (fresh session): N5–N8** →
+consolidated real-browser Visual Gate (375/768/1440 + a11y + `/component-audit`) → Victor review → commit →
+S6 `core-vault-init-on-db-open`. ⚠ Node 22 to re-run the jsdom suites locally (the E1–E3/N1 changes need test updates).

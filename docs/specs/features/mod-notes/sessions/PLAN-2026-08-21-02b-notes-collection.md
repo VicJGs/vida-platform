@@ -162,7 +162,7 @@ rebuild dist. Otherwise app-only; route wiring edits `routes.tsx`. `[FACT: index
 - [ ] **A11y (§XIV):** the multi-mode switcher is keyboard-navigable with correct roles; the list has an accessible name; focus visible on cards + switcher; tab order follows reading order. (The "New note" command's chrome/focus is UX-2/UI-4's; MOD-notes owns only `run()`.)
 - [ ] `pnpm --filter @vida/web typecheck` 0 · `test` green (route render per state · switcher toggle · card navigate · store) · `build` ✓ · ESLint 0.
 - [ ] `/component-audit` + `/critique` SHIP + quality-gate-components/-engineering/verification PASS.
-- [ ] **REAL-BROWSER VISUAL GATE** — the states at 375/768/1440. **Run locus:** CI/screenshots or a macOS-13+ path — this host is macOS 12 (no local Chromium); the jsdom render tests are the local proof, the Visual Gate is the browser gate. `[FACT: e2e/CLAUDE.md macOS-12 caveat]`
+- [ ] **REAL-BROWSER VISUAL GATE** — the states at 375/768/1440. **Run locus:** runnable locally via the `chrome-devtools` MCP (Brave); the jsdom render tests are the fast unit-level proof, the Visual Gate is the browser gate. `[FACT: e2e/CLAUDE.md]`
 - [ ] §XXIX current-* refreshed (the notes-and-pages built slice gains the ②b surface; D6 births the app-notes context docs if not present).
 
 ## 5. Implementation Prompt

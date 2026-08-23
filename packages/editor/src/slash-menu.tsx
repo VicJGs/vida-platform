@@ -124,6 +124,9 @@ function SlashMenuImpl(props: SlashMenuProps, ref: React.ForwardedRef<SlashMenuH
     if (!dom) return
     if (selectedIndex >= 0 && items[selectedIndex]?.available) {
       dom.setAttribute('aria-activedescendant', slashOptionId(selectedIndex))
+      // F6 — keep the highlighted option VISIBLE when arrowing past the panel's scroll fold (maxHeight:320). Without
+      // this, ↑/↓ move the selection off-screen and it reads as "arrows don't work / can't see what I'm selecting".
+      document.getElementById(slashOptionId(selectedIndex))?.scrollIntoView({ block: 'nearest' })
     } else {
       dom.removeAttribute('aria-activedescendant')
     }

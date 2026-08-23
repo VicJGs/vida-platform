@@ -6,6 +6,19 @@
 > registry + E6 — markdown serializers + E7 — PDF serializer + E8 — DOCX serializer** (UI-3 — the serializer suite is
 > COMPLETE). Forward specs: `docs/specs/features/ui-3-vida-editor/`. Serializer ground truth: `docs/editor/serialization-spec.md`.
 
+> **MOD-notes ② refinements (2026-08-23, the notebook consumer):** three presentation/interaction changes, all in
+> `@vida/editor` (every consumer inherits them):
+> - **`frame?: 'boxed' | 'plain'` prop (default `'plain'`, revises BR-E1-5).** `plain` = SEAMLESS notebook page
+>   (transparent, no box border/radius/minHeight box; focus = the CARET, no frame ring). `boxed` = the original 1px
+>   card (Storybook/embedded). The focus-ring CSS is scoped to `[data-frame="boxed"]` (`internal/editor-styles.ts`).
+>   `[FACT: editor.tsx EditorFrame; internal/editor-styles.ts]`
+> - **`header?: ReactNode` slot + toolbar as a STICKY TOP BAR** (F7). Render order inside the frame is now
+>   `[position:sticky top:0 toolbar] → [header] → [EditorContent]`, so the toolbar sits ABOVE the header (the app
+>   passes the note title as `header`) like a normal text editor. `[FACT: editor.tsx render]`
+> - **Slash `/` + `[[` menus `scrollIntoView({block:'nearest'})` the selected option** (F6) on ↑/↓, so the highlight
+>   stays visible past the panel's `maxHeight:320` scroll fold. `[FACT: slash-menu.tsx; wiki-link-menu.tsx]`
+> ⚠ The `@vida/editor` jsdom tests for these need Node 22 (local is 20) — run in CI / after `nvm install 22`.
+
 ## Package
 `@vida/editor` **v0.8.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
 **v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` + **E2:**
