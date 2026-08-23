@@ -132,9 +132,9 @@ export * from './foundation/economy'
 // Service — backlink / entity-link resolver (AR-8 Increment 1 · reads AR-6 entity_links)
 export * from './services/search'
 
-// Service — Notes & Pages module (MOD-notes ① · LIF-131 · M1.1): pages/page_links/
-// note_attachments CRUD + wiki-resolve + NP-8 seed; delegates entity-link/tag to AR-6/AR-8
-export * from './services/notes'
+// Service — Notes & Pages module (MOD-notes ①): REMOVED at the ground-zero reset (LIF-131).
+// The service + validator are rebuilt from scratch through the Entity Delivery Flow (envision-first).
+// The DB-4 schema (pages/page_links/note_attachments) + its Row types stay — see the export below.
 
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
