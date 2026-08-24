@@ -132,9 +132,9 @@ export * from './foundation/economy'
 // Service — backlink / entity-link resolver (AR-8 Increment 1 · reads AR-6 entity_links)
 export * from './services/search'
 
-// Service — Notes & Pages module (MOD-notes ①): REMOVED at the ground-zero reset (LIF-131).
-// The service + validator are rebuilt from scratch through the Entity Delivery Flow (envision-first).
-// The DB-4 schema (pages/page_links/note_attachments) + its Row types stay — see the export below.
+// Service — Notes & Pages module (MOD-notes ①): rebuilt from scratch through the Entity Delivery Flow
+// (envision-first, LIF-131). Slice A1 = pages CRUD + createNotesService factory; A2-A8 extend it.
+export * from './services/notes'
 
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
