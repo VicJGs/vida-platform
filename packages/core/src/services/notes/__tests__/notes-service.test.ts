@@ -326,3 +326,72 @@ describe('A3 — resolveWikiLink', () => {
     expect(await svc.resolveWikiLink('trip')).toHaveLength(2)
   })
 })
+
+describe('A4 — ensureEntityNote', () => {
+  // Proves the A4 charter (spec §4): idempotent type-keyed seed of a *_note; content = a deterministic minimal
+  // TipTap doc (NP-8/conventions:7); no registry guard (N3); soft-deleted → create-fresh.
+
+  it('creates a *_note on first call and seeds content as a TipTap doc', async () => {
+    const { svc } = await setup()
+    const row = await svc.ensureEntityNote('task_note', 'task', 't1', { title: 'Buy milk', status: 'todo' })
+    expect(row.type).toBe('task_note')
+    expect(row.entity_type).toBe('task')
+    expect(row.entity_id).toBe('t1')
+    expect(row.content).toBeTruthy()
+    const doc = JSON.parse(row.content!) as { type: string; content: unknown }
+    expect(doc.type).toBe('doc')
+    expect(row.content).toContain('Buy milk')
+    expect(row.content).toContain('todo')
+  })
+
+  it('is idempotent — a second identical call returns the SAME id, one row', async () => {
+    const { svc } = await setup()
+    const first = await svc.ensureEntityNote('task_note', 'task', 't1', { title: 'x' })
+    const second = await svc.ensureEntityNote('task_note', 'task', 't1', { title: 'x' })
+    expect(second.id).toBe(first.id)
+    expect(await svc.getPagesForEntity('task', 't1')).toHaveLength(1)
+  })
+
+  it('keys idempotency on type — a different-type page on the same entity does not satisfy the request', async () => {
+    const { svc } = await setup()
+    const stub = await svc.createPage({ type: 'note', entity_type: 'task', entity_id: 't1', title: 'stub' })
+    const note = await svc.ensureEntityNote('task_note', 'task', 't1', { title: 'x' })
+    expect(note.type).toBe('task_note')
+    expect(note.id).not.toBe(stub.id)
+    expect(await svc.getPagesForEntity('task', 't1')).toHaveLength(2)
+  })
+
+  it('produces deterministic content — same seed → identical content string (across entities)', async () => {
+    const { svc } = await setup()
+    const seed = { title: 'T', type: 'task', status: 'done', dates: '2026-08-08' }
+    const a = await svc.ensureEntityNote('task_note', 'task', 'a', seed)
+    const b = await svc.ensureEntityNote('task_note', 'task', 'b', seed)
+    expect(a.content).toBe(b.content)
+  })
+
+  it('renders fields in the fixed declared order regardless of seed key order', async () => {
+    const { svc } = await setup()
+    // Scrambled insertion order → the summary must still be `title · type · status · dates`.
+    const row = await svc.ensureEntityNote('task_note', 'task', 't1', {
+      status: 's',
+      dates: 'd',
+      type: 't',
+      title: 'ti',
+    })
+    expect(row.content).toContain('ti · t · s · d')
+  })
+
+  it('does NOT guard the entity_type against the registry (N3)', async () => {
+    const { svc } = await setup()
+    const row = await svc.ensureEntityNote('task_note', 'unregistered_type', 'x', { title: 'y' })
+    expect(row.entity_type).toBe('unregistered_type')
+  })
+
+  it('creates a fresh note after the prior one was soft-deleted', async () => {
+    const { svc } = await setup()
+    const first = await svc.ensureEntityNote('task_note', 'task', 't1', { title: 'x' })
+    await svc.softDeletePage(first.id)
+    const second = await svc.ensureEntityNote('task_note', 'task', 't1', { title: 'x' })
+    expect(second.id).not.toBe(first.id)
+  })
+})

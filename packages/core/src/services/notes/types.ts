@@ -9,7 +9,7 @@
 // ============================================================================
 
 import { z } from 'zod'
-import { createPageSchema, updatePageSchema } from '../../validators/note'
+import { createPageSchema, updatePageSchema, entityNoteSeedSchema } from '../../validators/note'
 import type { SpacesService } from '../../foundation/spaces/service'
 import type { BacklinkResolver } from '../search/backlink-resolver'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
@@ -18,6 +18,8 @@ import type { PageType } from '@vida/types'
 
 export type CreatePageInput = z.infer<typeof createPageSchema>
 export type UpdatePageInput = z.infer<typeof updatePageSchema>
+/** NP-8 entity-note seed — a service input DTO (single-homed here like CreatePageInput, not a @vida/types entity). */
+export type EntityNoteSeed = z.infer<typeof entityNoteSeedSchema>
 
 export interface NotesServiceDeps {
   spaces: SpacesService
@@ -49,6 +51,16 @@ export interface NotesService {
   // Title candidates for the [[ picker (B3). Match mirrors the E4 slash-menu filter
   // (filterSlashItems: case-insensitive substring, empty→all live pages). Never creates (IR-4).
   resolveWikiLink(text: string): Promise<PageRow[]>
+
+  // --- entity-note seed (A4) -------------------------------------------------
+  // NP-8: idempotently ensure the parent entity's *_note of this type exists; on create, seed
+  // `content` with a deterministic minimal TipTap doc from `seed`. Never creates a duplicate.
+  ensureEntityNote(
+    pageType: PageType,
+    entityType: string,
+    entityId: string,
+    seed: EntityNoteSeed,
+  ): Promise<PageRow>
 }
 
 /** NP-2: a live journal already exists for this calendar date. */

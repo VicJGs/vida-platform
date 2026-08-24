@@ -60,3 +60,15 @@ export const updatePageSchema = z
     word_count: z.number().int().nonnegative().optional(),
   })
   .strict()
+
+/**
+ * NP-8 entity-note seed input (defense-in-depth). The parent entity's local fields the
+ * deterministic summary is built from; all optional — different parents populate different
+ * subsets. `type` here is the PARENT entity's kind (e.g. 'task'), NOT PageType.
+ */
+export const entityNoteSeedSchema = z.object({
+  title: z.string().nullish(),
+  type: z.string().nullish(),
+  status: z.string().nullish(),
+  dates: z.string().nullish(),
+})

@@ -19,7 +19,19 @@ import { createRepository } from '../../db/repository'
 import { pages, pageLinks, type PageRow, type PageLinkRow } from '../../db/schema/notes'
 import { createPageSchema, updatePageSchema } from '../../validators/note'
 import type { PageType } from '@vida/types'
-import { type NotesService, type NotesServiceDeps, JournalExistsError } from './types'
+import { type NotesService, type NotesServiceDeps, type EntityNoteSeed, JournalExistsError } from './types'
+
+// NP-8 seed: fixed field order (title·type·status·dates), skip nullish → a short summary, wrapped in a minimal
+// TipTap doc (conventions.md:7 — pages.content is TipTap/ProseMirror JSON; ADR-003:457 — the column stores a local
+// snapshot). Deterministic: no Date.now/random; JSON.stringify of a literal preserves insertion order. An all-nullish
+// seed → an empty paragraph, still a valid structurally-non-blank doc (NP-8 "never blank").
+function buildSeedContent(seed: EntityNoteSeed): string {
+  const summary = [seed.title, seed.type, seed.status, seed.dates].filter((v) => v != null).join(' · ')
+  return JSON.stringify({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: summary ? [{ type: 'text', text: summary }] : [] }],
+  })
+}
 
 export function createNotesService(
   db: DrizzleDb,
@@ -128,6 +140,28 @@ export function createNotesService(
     getPageLinksTo(pageId) {
       // Reverse read (ex-AR-8, deferred to M1.1) — backed by idx_page_links_target (schema/notes.ts:80).
       return livePageLinks(eq(pageLinks.target_page_id, pageId))
+    },
+
+    // --- entity-note seed (A4) -----------------------------------------------
+    async ensureEntityNote(pageType, entityType, entityId, seed) {
+      // BR-A4-1/IR-5: idempotent — return the existing *_note of THIS type for this entity, else create.
+      // Key includes `type` so an A3 [[-stub `note` on the same entity doesn't satisfy a `task_note` request.
+      const existing = await pageRepo.findWhere(
+        and(
+          eq(pages.type, pageType),
+          eq(pages.entity_type, entityType),
+          eq(pages.entity_id, entityId),
+          isNull(pages.deleted_at),
+        )!,
+      )
+      if (existing.length > 0) return existing[0]
+      // BR-A4-3: seed → content (a minimal TipTap doc, the Yjs-doc genesis); title unset. BR-A4-4: no registry guard.
+      return pageRepo.create({
+        type: pageType,
+        entity_type: entityType,
+        entity_id: entityId,
+        content: buildSeedContent(seed),
+      })
     },
 
     // --- wiki (A3) -----------------------------------------------------------
