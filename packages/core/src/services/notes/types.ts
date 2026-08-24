@@ -9,18 +9,20 @@
 // ============================================================================
 
 import { z } from 'zod'
-import { createPageSchema, updatePageSchema, entityNoteSeedSchema } from '../../validators/note'
+import { createPageSchema, updatePageSchema, entityNoteSeedSchema, newAttachmentSchema } from '../../validators/note'
 import type { SpacesService } from '../../foundation/spaces/service'
 import type { BacklinkResolver } from '../search/backlink-resolver'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
-import type { PageRow, PageLinkRow } from '../../db/schema/notes'
+import type { PageRow, PageLinkRow, NoteAttachmentRow } from '../../db/schema/notes'
 import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
-import type { PageType } from '@vida/types'
+import { type PageType, MAX_ATTACHMENT_BYTES } from '@vida/types'
 
 export type CreatePageInput = z.infer<typeof createPageSchema>
 export type UpdatePageInput = z.infer<typeof updatePageSchema>
 /** NP-8 entity-note seed — a service input DTO (single-homed here like CreatePageInput, not a @vida/types entity). */
 export type EntityNoteSeed = z.infer<typeof entityNoteSeedSchema>
+/** A6 attachment input — insertable subset of the documented NoteAttachment type; single-homed like EntityNoteSeed. */
+export type NewAttachment = z.infer<typeof newAttachmentSchema>
 
 export interface NotesServiceDeps {
   spaces: SpacesService
@@ -88,6 +90,12 @@ export interface NotesService {
     entityType: string,
     entityId: string,
   ): Promise<{ entityLinks: EntityLinkRow[]; pageLinks: PageLinkRow[] }>
+
+  // --- attachments (A6) ------------------------------------------------------
+  // addAttachment enforces the 25 MB per-attachment limit (ADR-003:185) → AttachmentTooLargeError.
+  addAttachment(pageId: string, file: NewAttachment): Promise<NoteAttachmentRow>
+  getAttachments(pageId: string): Promise<NoteAttachmentRow[]>
+  removeAttachment(id: string): Promise<void>
 }
 
 /** NP-2: a live journal already exists for this calendar date. */
@@ -107,5 +115,13 @@ export class UnregisteredEntityTypeError extends Error {
   constructor(public readonly entityType: string) {
     super(`Entity type is not registered: ${entityType}`)
     this.name = 'UnregisteredEntityTypeError'
+  }
+}
+
+/** ADR-003:185 — an attachment exceeds the 25 MB per-attachment limit (`MAX_ATTACHMENT_BYTES`). */
+export class AttachmentTooLargeError extends Error {
+  constructor(public readonly sizeBytes: number) {
+    super(`Attachment exceeds the ${MAX_ATTACHMENT_BYTES}-byte limit: ${sizeBytes}`)
+    this.name = 'AttachmentTooLargeError'
   }
 }

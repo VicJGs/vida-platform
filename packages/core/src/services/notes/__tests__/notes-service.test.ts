@@ -19,9 +19,11 @@ import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
 import { createSpacesService, type SpacesService } from '../../../foundation/spaces/service'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService } from '../service'
+import { MAX_ATTACHMENT_BYTES } from '@vida/types'
 import {
   JournalExistsError,
   UnregisteredEntityTypeError,
+  AttachmentTooLargeError,
   type NotesService,
   type UpdatePageInput,
 } from '../types'
@@ -464,5 +466,99 @@ describe('A5 — tag reads + link/tag facade', () => {
     const blTask = await svc.getBacklinks('task', 't1')
     expect(blTask.entityLinks).toHaveLength(1)
     expect(blTask.pageLinks).toHaveLength(0)
+  })
+})
+
+describe('A6 — note_attachments', () => {
+  // Proves the A6 charter (spec §4): CRUD over note_attachments (blob + thumbnail, empty-[E] pass-through),
+  // page-scoped reads, soft-delete, and the ADR-003:185 25 MB per-attachment limit (fail-loud).
+
+  it('creates an attachment and round-trips the blob (live-DB smoke, N1)', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'p' })
+    const row = await svc.addAttachment(page.id, {
+      filename: 'a.png',
+      mime_type: 'image/png',
+      encrypted_blob: new Uint8Array([1, 2, 3]),
+      size_bytes: 3,
+    })
+    expect(row.page_id).toBe(page.id)
+    expect(row.filename).toBe('a.png')
+    expect(row.mime_type).toBe('image/png')
+    expect(row.size_bytes).toBe(3)
+    expect(row.id).toBeTruthy()
+    expect(row._sync_hash).toBeTruthy()
+    const [fetched] = await svc.getAttachments(page.id)
+    // a Uint8Array write reads back as a Buffer — byte-equal but not `===`; compare via spread.
+    expect([...(fetched!.encrypted_blob as Uint8Array)]).toEqual([1, 2, 3])
+  })
+
+  it('persists an attachment with no thumbnail (thumbnail_blob null on re-read)', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'p' })
+    await svc.addAttachment(page.id, {
+      filename: 'b.txt',
+      mime_type: 'text/plain',
+      encrypted_blob: new Uint8Array([9]),
+      size_bytes: 1,
+    })
+    // Assert the PERSISTED value (DB re-read) — the create-return leaves an unprovided nullable col undefined.
+    const [fetched] = await svc.getAttachments(page.id)
+    expect(fetched!.thumbnail_blob).toBeNull()
+  })
+
+  it('rejects an attachment over the 25 MB limit; accepts one exactly at it (ADR-003:185, boundary >)', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'p' })
+    const tiny = new Uint8Array([0]) // the guard reads size_bytes, not the blob length
+    await expect(
+      svc.addAttachment(page.id, {
+        filename: 'big',
+        mime_type: 'application/octet-stream',
+        encrypted_blob: tiny,
+        size_bytes: MAX_ATTACHMENT_BYTES + 1,
+      }),
+    ).rejects.toBeInstanceOf(AttachmentTooLargeError)
+    await expect(
+      svc.addAttachment(page.id, {
+        filename: 'big',
+        mime_type: 'application/octet-stream',
+        encrypted_blob: tiny,
+        size_bytes: MAX_ATTACHMENT_BYTES + 1,
+      }),
+    ).rejects.toMatchObject({ sizeBytes: MAX_ATTACHMENT_BYTES + 1 })
+    // exactly at the limit succeeds (boundary is `>`, not `>=`)
+    await expect(
+      svc.addAttachment(page.id, {
+        filename: 'edge',
+        mime_type: 'application/octet-stream',
+        encrypted_blob: tiny,
+        size_bytes: MAX_ATTACHMENT_BYTES,
+      }),
+    ).resolves.toBeTruthy()
+  })
+
+  it('getAttachments returns only the given page attachments', async () => {
+    const { svc } = await setup()
+    const a = await svc.createPage({ type: 'note', title: 'a' })
+    const b = await svc.createPage({ type: 'note', title: 'b' })
+    const blob = new Uint8Array([1])
+    await svc.addAttachment(a.id, { filename: '1', mime_type: 'x', encrypted_blob: blob, size_bytes: 1 })
+    await svc.addAttachment(a.id, { filename: '2', mime_type: 'x', encrypted_blob: blob, size_bytes: 1 })
+    await svc.addAttachment(b.id, { filename: '3', mime_type: 'x', encrypted_blob: blob, size_bytes: 1 })
+    expect(await svc.getAttachments(a.id)).toHaveLength(2)
+  })
+
+  it('removeAttachment soft-deletes (excluded from getAttachments, N7/NP-9)', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'p' })
+    const row = await svc.addAttachment(page.id, {
+      filename: 'gone',
+      mime_type: 'x',
+      encrypted_blob: new Uint8Array([1]),
+      size_bytes: 1,
+    })
+    await svc.removeAttachment(row.id)
+    expect(await svc.getAttachments(page.id)).toHaveLength(0)
   })
 })

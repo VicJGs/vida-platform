@@ -72,3 +72,16 @@ export const entityNoteSeedSchema = z.object({
   status: z.string().nullish(),
   dates: z.string().nullish(),
 })
+
+/**
+ * A6 attachment input — the insertable subset of the documented `NoteAttachment` type (@vida/types).
+ * `[E]` fields (filename/encrypted_blob/thumbnail_blob) carry RAW bytes in M1.0 (repo encrypts at M3).
+ * A Node `Buffer` IS a `Uint8Array`, so `z.instanceof(Uint8Array)` validates a buffer.
+ */
+export const newAttachmentSchema = z.object({
+  filename: z.string(),
+  mime_type: z.string(),
+  encrypted_blob: z.instanceof(Uint8Array),
+  thumbnail_blob: z.instanceof(Uint8Array).nullish(),
+  size_bytes: z.number().int().nonnegative(),
+})

@@ -16,16 +16,24 @@
 import { and, eq, isNull, like, type SQL } from 'drizzle-orm'
 import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
-import { pages, pageLinks, type PageRow, type PageLinkRow } from '../../db/schema/notes'
+import {
+  pages,
+  pageLinks,
+  noteAttachments,
+  type PageRow,
+  type PageLinkRow,
+  type NoteAttachmentRow,
+} from '../../db/schema/notes'
 import { entityTags, type EntityTagRow } from '../../db/schema/foundation/spaces'
 import { createPageSchema, updatePageSchema } from '../../validators/note'
-import type { PageType } from '@vida/types'
+import { type PageType, MAX_ATTACHMENT_BYTES } from '@vida/types'
 import {
   type NotesService,
   type NotesServiceDeps,
   type EntityNoteSeed,
   JournalExistsError,
   UnregisteredEntityTypeError,
+  AttachmentTooLargeError,
 } from './types'
 
 // NP-8 seed: fixed field order (title·type·status·dates), skip nullish → a short summary, wrapped in a minimal
@@ -51,6 +59,14 @@ export function createNotesService(
   const pageLinkRepo = createRepository(db, pageLinks, { deviceId, encryptedFields: [], softDelete: true })
   // A5/B1: net-new read-repo over entity_tags (AR-6 owns writes; it exposes no tag-read). Mirrors AR-8's read-repo.
   const entityTagRepo = createRepository(db, entityTags, { deviceId, encryptedFields: [], softDelete: true })
+  // A6: note_attachments CRUD repo (blob + thumbnail; empty-[E] pass-through in M1.0, repo encrypts at M3).
+  const noteAttachmentRepo = createRepository(db, noteAttachments, {
+    deviceId,
+    encryptedFields: [],
+    softDelete: true,
+  })
+  const liveAttachments = (pred: SQL): Promise<NoteAttachmentRow[]> =>
+    noteAttachmentRepo.findWhere(and(pred, isNull(noteAttachments.deleted_at))!)
 
   // N7/IR-6: findWhere is verbatim → always AND isNull(deleted_at). and() is SQL|undefined → `!`.
   const live = (pred: SQL): Promise<PageRow[]> => pageRepo.findWhere(and(pred, isNull(pages.deleted_at))!)
@@ -195,6 +211,31 @@ export function createNotesService(
         livePageLinks(eq(pageLinks.target_page_id, entityId)),
       ])
       return { entityLinks, pageLinks: pageLinkRows }
+    },
+
+    // --- attachments (A6 · seam-contract:29) ---------------------------------
+    async addAttachment(pageId, file) {
+      // BR-A6-7 (ADR-003:185): fail-loud at the creation entry point on the 25 MB per-attachment limit.
+      if (file.size_bytes > MAX_ATTACHMENT_BYTES) throw new AttachmentTooLargeError(file.size_bytes)
+      // BR-A6-2: [E] fields carry RAW bytes (repo encrypts at M3). NewAttachment carries a cross-platform
+      // Uint8Array (matching @vida/types NoteAttachment), but the DB-4 schema types the blob columns as `Buffer`
+      // (drizzle mode:'buffer', Node-centric) — a schema-vs-types divergence (DB-11 class). Reconcile with a
+      // TYPE-ONLY cast at the storage boundary: erased at runtime, so no `Buffer` reference reaches the browser/
+      // mobile targets; every SQLite engine accepts a Uint8Array blob at runtime (verified by the round-trip test).
+      return noteAttachmentRepo.create({
+        page_id: pageId,
+        filename: file.filename,
+        mime_type: file.mime_type,
+        encrypted_blob: file.encrypted_blob as Buffer,
+        thumbnail_blob: file.thumbnail_blob != null ? (file.thumbnail_blob as Buffer) : null,
+        size_bytes: file.size_bytes,
+      })
+    },
+    getAttachments(pageId) {
+      return liveAttachments(eq(noteAttachments.page_id, pageId))
+    },
+    async removeAttachment(id) {
+      await noteAttachmentRepo.delete(id) // soft-delete (NP-9) → enqueues operation:'update'
     },
 
     // --- entity-note seed (A4) -----------------------------------------------
