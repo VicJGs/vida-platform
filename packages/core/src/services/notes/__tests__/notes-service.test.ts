@@ -260,3 +260,69 @@ describe('A2 — page_links', () => {
     expect(toB.map((l) => l.source_page_id).sort()).toEqual(['a', 'd'])
   })
 })
+
+describe('A3 — resolveWikiLink', () => {
+  // Proves the A3 charter (spec §4): the match mirrors the E4 slash-menu filter — case-insensitive substring,
+  // empty→all live pages, non-empty-no-match→[]; excludes soft-deleted (N7); never creates (IR-4).
+
+  it('finds a page by case-insensitive substring of its title', async () => {
+    const { svc } = await setup()
+    const p = await svc.createPage({ type: 'note', title: 'Meeting Notes' })
+    const hits = await svc.resolveWikiLink('meeting') // lowercase query, mixed-case title
+    expect(hits.map((h) => h.id)).toContain(p.id)
+  })
+
+  it('matches mid-string (locks contains, not prefix — the E4 mirror)', async () => {
+    const { svc } = await setup()
+    const p = await svc.createPage({ type: 'note', title: 'Weekly Meeting Notes' })
+    const hits = await svc.resolveWikiLink('meeting') // a prefix-only `q%` would MISS this
+    expect(hits.map((h) => h.id)).toContain(p.id)
+  })
+
+  it('returns multiple candidates when titles collide (NP-7)', async () => {
+    const { svc } = await setup()
+    await svc.createPage({ type: 'note', title: 'Project' })
+    await svc.createPage({ type: 'note', title: 'Project' })
+    expect(await svc.resolveWikiLink('project')).toHaveLength(2)
+  })
+
+  it('excludes soft-deleted pages from candidates (N7 / BR-A3-3)', async () => {
+    const { svc } = await setup()
+    const p = await svc.createPage({ type: 'note', title: 'Gone' })
+    expect(await svc.resolveWikiLink('gone')).toHaveLength(1)
+    await svc.softDeletePage(p.id)
+    expect(await svc.resolveWikiLink('gone')).toHaveLength(0)
+  })
+
+  it('empty / whitespace query → ALL live pages (mirror E4 if(!q) return items)', async () => {
+    const { svc } = await setup()
+    await svc.createPage({ type: 'note', title: 'One' })
+    await svc.createPage({ type: 'note', title: 'Two' })
+    const third = await svc.createPage({ type: 'journal', journal_date: '2026-07-07' })
+    expect(await svc.resolveWikiLink('')).toHaveLength(3)
+    expect(await svc.resolveWikiLink('   ')).toHaveLength(3)
+    await svc.softDeletePage(third.id)
+    expect(await svc.resolveWikiLink('')).toHaveLength(2)
+  })
+
+  it('non-empty query with no title hit → [] (distinct from the empty-browse)', async () => {
+    const { svc } = await setup()
+    await svc.createPage({ type: 'note', title: 'Alpha' })
+    expect(await svc.resolveWikiLink('zzz-nope')).toHaveLength(0)
+  })
+
+  it('does NOT create on a no-match (IR-4 / BR-A3-2)', async () => {
+    const { svc } = await setup()
+    await svc.createPage({ type: 'note', title: 'Alpha' })
+    const before = (await svc.getPagesByType('note')).length
+    await svc.resolveWikiLink('zzz-nope')
+    expect((await svc.getPagesByType('note')).length).toBe(before) // no stub page minted
+  })
+
+  it('searches across page types (title search is type-agnostic)', async () => {
+    const { svc } = await setup()
+    await svc.createPage({ type: 'journal', journal_date: '2026-08-08', title: 'Trip Log' })
+    await svc.createPage({ type: 'note', title: 'Trip Ideas' })
+    expect(await svc.resolveWikiLink('trip')).toHaveLength(2)
+  })
+})

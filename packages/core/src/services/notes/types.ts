@@ -44,6 +44,11 @@ export interface NotesService {
   removePageLink(source: string, target: string): Promise<void>
   getPageLinksFrom(pageId: string): Promise<PageLinkRow[]>
   getPageLinksTo(pageId: string): Promise<PageLinkRow[]>
+
+  // --- wiki (A3) -------------------------------------------------------------
+  // Title candidates for the [[ picker (B3). Match mirrors the E4 slash-menu filter
+  // (filterSlashItems: case-insensitive substring, empty→all live pages). Never creates (IR-4).
+  resolveWikiLink(text: string): Promise<PageRow[]>
 }
 
 /** NP-2: a live journal already exists for this calendar date. */

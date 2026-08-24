@@ -13,7 +13,7 @@
 // appends isNull(deleted_at). Later slices (A2-A8) extend this same file.
 // ============================================================================
 
-import { and, eq, isNull, type SQL } from 'drizzle-orm'
+import { and, eq, isNull, like, type SQL } from 'drizzle-orm'
 import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
 import { pages, pageLinks, type PageRow, type PageLinkRow } from '../../db/schema/notes'
@@ -128,6 +128,18 @@ export function createNotesService(
     getPageLinksTo(pageId) {
       // Reverse read (ex-AR-8, deferred to M1.1) — backed by idx_page_links_target (schema/notes.ts:80).
       return livePageLinks(eq(pageLinks.target_page_id, pageId))
+    },
+
+    // --- wiki (A3) -----------------------------------------------------------
+    async resolveWikiLink(text) {
+      // Match mirrors the E4 slash-menu filter (filterSlashItems, slash-commands.ts:210-215): trim, then
+      // empty → all, else case-insensitive substring. B3 (the [[ picker) mirrors E4 (slice-map.md:32).
+      const q = text.trim()
+      // BR-A3-5: mirror E4 `if (!q) return items` — a bare [[ browses ALL live pages (B3 caps the dropdown).
+      if (q.length === 0) return pageRepo.findWhere(isNull(pages.deleted_at))
+      // BR-A3-4: SQLite LIKE is ASCII-case-insensitive → the query-layer equal of E4's toLowerCase().includes().
+      // No .toLowerCase() on q (the query folds case); live-only via the A1 `live` closure. IR-4: never creates.
+      return live(like(pages.title, `%${q}%`))
     },
   }
 }
