@@ -5487,3 +5487,42 @@ Next session:
     (IR-11 revive-or-noop, IR-12 sync-queue coalesce) + `foundation/spaces/service.ts` (the idempotent junction
     pattern to mirror) + the A1 files. Branch `mod-notes-rebuild`. Env note: pnpm lives under Node v24
     (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`); repo `.nvmrc`=22 but v22 isn't installed.
+
+---
+Date: 2026-08-24
+Task: mod-notes (LIF-131)
+Goal: Continue Track A (Entity Service Build Flow) of the Notes rebuild — build the backend service slices after A1.
+Completed:
+  - **Track A slices A2–A6 built end-to-end**, each through the full §XXVI double-gate (Doc Gate → Approval 1 →
+    IMPLEMENTATION-PLAN → gate-2 → Approval 2 → impl → post-impl critique) + ░Verification Gate░, each committed:
+    - **A2** page_links write+read (idempotent revive-or-noop IR-11; reverse read ex-AR-8) — `d5e80a6`
+    - **A3** resolveWikiLink (title substring, mirrors E4 slash-menu filter; empty→all) — `ff32bc8`
+    - **A4** ensureEntityNote NP-8 (seed→content TipTap doc; EntityNoteSeed z.infer) — `f2cc8e2`
+    - **A5** tag reads + link/tag facade (`_deps` consumed; getBacklinks ①-merge; UnregisteredEntityTypeError) — `9ddc46a`
+    - **A6** note_attachments CRUD (first BLOB surface; AttachmentTooLargeError 25 MB guard) — `71c4804`
+  - Specs + IMPLEMENTATION-PLANs for A2–A6 under `docs/specs/features/mod-notes/service/`. Service is now
+    `packages/core/src/services/notes/{types,service}.ts` + `validators/note.ts` (entityNoteSeed/newAttachment schemas).
+  - Final bars: `@vida/core` **831/831** · notes-service **44/44** · typecheck 11/11 · eslint 0.
+  - Killed a stale `@vida/editor storybook` dev server (running since Aug 11).
+In progress:
+  - Track A backend: **A7 (summary) + A8 (cascade, N8 g1) remain.** Track B (② UI) after the seam is consumed.
+Decisions:
+  - **A2** revive-or-noop mandatory (FULL UNIQUE forces it). **A3** contains+empty→all doc-fixed via "B3 mirrors E4"
+    → BR-E4-7. **A4** seed→`content` not `title` (ADR-003:457; IR-7 governs sync not local write). **A5** getBacklinks
+    = ①-merge (supersedes removed-①); facade pre-validates → Notes' own error (IR-2/C5). **A6** 25 MB guard IS A6's
+    (ADR-003:185 hard rule), not R2-only.
+  - **Recurring lesson (Victor, multiple catches): code-verification CONFIRMS a doc, never OVERRIDES it.** "Empirically
+    confirmed" is a No-Guessing FACT check, not design authority; read the unit `_index.md` + cited ADRs to the line.
+    Saved: memory `follow-the-mirrors-x-pointer-before-declaring-unfixed` (3 instances).
+  - Filed follow-up: **DB-6 `create()` return-fidelity** — returns the constructed row, so an unprovided nullable
+    column is `undefined`-at-runtime vs typed `Buffer|null` (repository-wide).
+Next session:
+  - **FIRST ACTION: slice A7 (today /summary + summary_config)** — `getSummaryConfig`/`setSummaryConfig` (a `pages`
+    column, plain-text JSON per IR-8) + `buildJournalSummary(date, config)` block surface. The summary registry ENGINE
+    is **MOD-journals ①** — Notes PROVIDES the block + config and CONSUMES the engine (a seam; do not build the engine).
+    Same §XXVI double-gate → ░Verification Gate░. Then A8 (cascade, carries the N8 g1 best-effort-vs-*InTx decision).
+  - Reload: `delivery/slice-map.md` (A7/A8 rows) · `delivery/seam-contract.md` (A7 methods, summary seam) ·
+    `interpretation.md` (IR-8 summary_config text-not-json, N8/IR-13 cascade) · the A1–A6 service. Branch
+    `mod-notes-rebuild`. Env: pnpm under Node v24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`);
+    run the crypto-heavy test suite ALONE (not concurrent with typecheck — 16 false timeouts otherwise).
+---
