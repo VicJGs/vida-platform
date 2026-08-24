@@ -5452,3 +5452,38 @@ Next session:
     `docs/roadmap/m1.1-delivery-plan.md` (gated 2026-08-17), re-confirm it holds now the schema is genuinely complete →
     foundation gate + independent critic → reconcile grain/dep-graph to tracker → accept. Head after = MOD-notes #31.
     Also retry `tracker --sync`. Reload `.claude/tasks/m1-foundation-closeout.md` (Build Steps Phase 2 + Resume).
+
+---
+Date: 2026-08-24
+Task: mod-notes (LIF-131)
+Goal: Add an intent-coverage check before the backend fork, then start Track A of the Notes rebuild.
+Completed:
+  - **NEW gate: Step 2.5 · ░Intent Coverage Gate░** (Victor-requested, before the fork). Built
+    `docs/features/notes-and-pages/delivery/intent-coverage.md` — a full intent→disposition matrix from every
+    authoritative source (5 aspect docs · intake · baseline NP-* · interpretation N1-9/IR-1…13 · envision
+    ECs+12 vision points+3 new-intent). Surfaced 5 flags; an independent critic doc-verified every routed/deferred
+    home (upsertTag→AR-6+MOD-spaces · 8 data-blocks→per-module bodies · from-parent nav→owning modules ·
+    Templates→ADR-009+Spaces · view-system→MOD-spaces **LIF-141** ②). **PASS, 0 UNHOMED, 0 silent drops.**
+  - Flagged the methodology addition for the toolkit → **LIF-162** (`entity-delivery-flow-intent-coverage-gate`,
+    Planned) + memory `intent-coverage-gate-added-to-entity-delivery-flow`.
+  - **TRACK A · slice A1 built end-to-end** — `packages/core/src/services/notes/{types,service,index}.ts` + 13
+    tests + `@vida/core` barrel. Full §XXVI: spec `docs/specs/features/mod-notes/service/a1-*.md` (gate-1
+    REVISE→fixed) → Approval 1 → IMPLEMENTATION-PLAN (preflight PASSED + gate-2 SHIP, empirical tsc/eslint) →
+    Approval 2 → impl → post-impl critique SHIP. **13/13 · typecheck 11/11 · eslint 0 · core 796 pass** (1 =
+    pre-existing vault-1MB worker-timeout flake, 36/36 standalone). Committed `6ca4d7d` (gitleaks clean).
+In progress:
+  - Track A backend: A2-A8 remain (A1 ✅). Track B (② B1-B7) after the seam is consumed.
+Decisions:
+  - Intent Coverage Gate sits between Decomposition and the Fork; a route is valid only if its named home is
+    doc-verified to own it (else it's a hand-wave). Adopted + codified (LIF-162).
+  - A1: D-1 journal create-fresh on a soft-deleted date · D-2 `listPages({tag})` fails loud until A5 (critic
+    override of a silent no-op) · D-3 `_deps` frozen at A1.
+  - §XXIX currency deferred to the A-track close (current-* still describe the removed ①).
+Next session:
+  - **FIRST ACTION: slice A2 (page_links write+read)** — `createPageLink` (idempotent, revive-or-noop IR-11),
+    `removePageLink`, `getPageLinksFrom`, `getPageLinksTo` (reverse read ex-AR-8, `idx_page_links_target`) — under
+    the same §XXVI double-gate → ░Verification Gate░. Extends the SAME `services/notes/service.ts`.
+  - Reload: `delivery/slice-map.md` (A2 row) + `delivery/seam-contract.md` (A2 methods) + `delivery/interpretation.md`
+    (IR-11 revive-or-noop, IR-12 sync-queue coalesce) + `foundation/spaces/service.ts` (the idempotent junction
+    pattern to mirror) + the A1 files. Branch `mod-notes-rebuild`. Env note: pnpm lives under Node v24
+    (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`); repo `.nvmrc`=22 but v22 isn't installed.
