@@ -16,10 +16,15 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
-import { createSpacesService } from '../../../foundation/spaces/service'
+import { createSpacesService, type SpacesService } from '../../../foundation/spaces/service'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService } from '../service'
-import { JournalExistsError, type NotesService, type UpdatePageInput } from '../types'
+import {
+  JournalExistsError,
+  UnregisteredEntityTypeError,
+  type NotesService,
+  type UpdatePageInput,
+} from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -54,17 +59,17 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   }
 }
 
-async function setup(): Promise<{ svc: NotesService; db: DrizzleDb }> {
+async function setup(): Promise<{ svc: NotesService; db: DrizzleDb; spaces: SpacesService }> {
   await initVault() // N1: libsodium ready before the first write (hashContent stamps _sync_hash)
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
-  await migrate(driver) // applies 012_notes → pages + idx_pages_journal_unique
+  await migrate(driver) // applies 003_spaces (tags/entity_tags/entity_links) + 012_notes → pages
   const db = createDrizzleProxy(driver)
   const registry = createTaggableTypeRegistry()
   const spaces = createSpacesService(db, 'test-device', registry)
   const backlinks = createBacklinkResolver(db, 'test-device')
   const svc = createNotesService(db, 'test-device', { spaces, backlinks, registry })
-  return { svc, db }
+  return { svc, db, spaces } // spaces exposed for A5 tag/link seeding (createTag → tagId)
 }
 
 const PAGE_TYPES = [
@@ -393,5 +398,71 @@ describe('A4 — ensureEntityNote', () => {
     await svc.softDeletePage(first.id)
     const second = await svc.ensureEntityNote('task_note', 'task', 't1', { title: 'x' })
     expect(second.id).not.toBe(first.id)
+  })
+})
+
+describe('A5 — tag reads + link/tag facade', () => {
+  // Proves the A5 charter (spec §4): net-new entity_tags reads (B1); the AR-6 write facade with IR-2/C5
+  // registry pre-validation (create/tag only); the AR-8 read delegate; and the ①-composed getBacklinks merge.
+
+  it('reads tags (net-new B1): tagEntity then getTagsForEntity / getEntitiesByTag; untag excludes (N7)', async () => {
+    const { svc, spaces } = await setup()
+    const tag = await spaces.createTag({ name: 'work' }) // AR-6 owns tag CRUD; Notes only associates + reads
+    await svc.tagEntity(tag.id, 'note', 'n1')
+    expect(await svc.getTagsForEntity('note', 'n1')).toHaveLength(1)
+    const byTag = await svc.getEntitiesByTag(tag.id)
+    expect(byTag.map((r) => r.entity_id)).toContain('n1')
+    await svc.untagEntity(tag.id, 'note', 'n1')
+    expect(await svc.getTagsForEntity('note', 'n1')).toHaveLength(0)
+    expect(await svc.getEntitiesByTag(tag.id)).toHaveLength(0)
+  })
+
+  it('createEntityLink delegates to AR-6 and is idempotent (revive-or-noop)', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'src' })
+    const link = await svc.createEntityLink(page.id, 'note', 'n1')
+    expect(link.page_id).toBe(page.id)
+    expect(link.entity_type).toBe('note')
+    const again = await svc.createEntityLink(page.id, 'note', 'n1')
+    expect(again.id).toBe(link.id) // AR-6 idempotent no-op
+  })
+
+  it('pre-validates entity_type on create/tag (IR-2 → UnregisteredEntityTypeError); remove/untag are no-op', async () => {
+    const { svc, spaces } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'src' })
+    const tag = await spaces.createTag({ name: 't' })
+    // create/tag reject an unregistered type
+    await expect(svc.createEntityLink(page.id, 'nope', 'x')).rejects.toBeInstanceOf(UnregisteredEntityTypeError)
+    await expect(svc.createEntityLink(page.id, 'nope', 'x')).rejects.toMatchObject({ entityType: 'nope' })
+    await expect(svc.tagEntity(tag.id, 'nope', 'x')).rejects.toBeInstanceOf(UnregisteredEntityTypeError)
+    // a REGISTERED type succeeds
+    await expect(svc.createEntityLink(page.id, 'note', 'n1')).resolves.toBeTruthy()
+    // remove/untag do NOT validate (mirror AR-6) → no throw for an unregistered type
+    await expect(svc.removeEntityLink(page.id, 'nope', 'x')).resolves.toBeUndefined()
+    await expect(svc.untagEntity(tag.id, 'nope', 'x')).resolves.toBeUndefined()
+  })
+
+  it('getEntityLinksFrom delegates to AR-8 (entity_links from a page)', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'src' })
+    await svc.createEntityLink(page.id, 'note', 'n1')
+    const links = await svc.getEntityLinksFrom(page.id)
+    expect(links.map((l) => l.entity_id)).toContain('n1')
+  })
+
+  it('getBacklinks merges entity_links (AR-8) + page_links (A2), kept typed-distinct', async () => {
+    const { svc } = await setup()
+    const target = await svc.createPage({ type: 'note', title: 'target' })
+    const source = await svc.createPage({ type: 'note', title: 'source' })
+    await svc.createEntityLink(source.id, 'note', target.id) // entity_link → target
+    await svc.createPageLink(source.id, target.id) // page_link → target
+    const bl = await svc.getBacklinks('note', target.id)
+    expect(bl.entityLinks).toHaveLength(1)
+    expect(bl.pageLinks).toHaveLength(1)
+    // a NON-page entity: the entity-link branch works, pageLinks empty (no page↔page links to a task id)
+    await svc.createEntityLink(source.id, 'task', 't1')
+    const blTask = await svc.getBacklinks('task', 't1')
+    expect(blTask.entityLinks).toHaveLength(1)
+    expect(blTask.pageLinks).toHaveLength(0)
   })
 })

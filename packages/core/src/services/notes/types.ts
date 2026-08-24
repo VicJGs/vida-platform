@@ -14,6 +14,7 @@ import type { SpacesService } from '../../foundation/spaces/service'
 import type { BacklinkResolver } from '../search/backlink-resolver'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
 import type { PageRow, PageLinkRow } from '../../db/schema/notes'
+import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
 import type { PageType } from '@vida/types'
 
 export type CreatePageInput = z.infer<typeof createPageSchema>
@@ -61,6 +62,32 @@ export interface NotesService {
     entityId: string,
     seed: EntityNoteSeed,
   ): Promise<PageRow>
+
+  // --- tag reads (A5, net-new B1) --------------------------------------------
+  // AR-6 SpacesService owns tag WRITES but exposes no tag-read; Notes adds the read (seam-contract:25).
+  getEntitiesByTag(tagId: string): Promise<EntityTagRow[]>
+  getTagsForEntity(entityType: string, entityId: string): Promise<EntityTagRow[]>
+
+  // --- write facade → AR-6 (A5) ----------------------------------------------
+  // createEntityLink/tagEntity pre-validate entityType vs the runtime registry (IR-2/C5) →
+  // UnregisteredEntityTypeError, then delegate. remove/untag delegate without a guard (mirror AR-6).
+  createEntityLink(
+    pageId: string,
+    entityType: string,
+    entityId: string,
+    context?: string | null,
+  ): Promise<EntityLinkRow>
+  removeEntityLink(pageId: string, entityType: string, entityId: string): Promise<void>
+  tagEntity(tagId: string, entityType: string, entityId: string): Promise<EntityTagRow>
+  untagEntity(tagId: string, entityType: string, entityId: string): Promise<void>
+
+  // --- read facade → AR-8 (A5) + the ①-composed merge ------------------------
+  getEntityLinksFrom(pageId: string): Promise<EntityLinkRow[]>
+  // getBacklinks = the C4/G6 merge: entity_links (AR-8) ⊕ page_links (A2), kept typed-distinct (seam-contract:28).
+  getBacklinks(
+    entityType: string,
+    entityId: string,
+  ): Promise<{ entityLinks: EntityLinkRow[]; pageLinks: PageLinkRow[] }>
 }
 
 /** NP-2: a live journal already exists for this calendar date. */
@@ -68,5 +95,17 @@ export class JournalExistsError extends Error {
   constructor(public readonly journalDate: string) {
     super(`A journal already exists for ${journalDate}`)
     this.name = 'JournalExistsError'
+  }
+}
+
+/**
+ * NP-6/SP2 (IR-2/baseline C5): an `entity_type` not in the runtime registry. Thrown by the A5 facade
+ * BEFORE delegating a link/tag write. Distinct from AR-6's `UnknownEntityType` — Notes owns its error surface
+ * (seam-contract:34); the data-flow.md §5 `ServiceError` divergence is a flagged DB-11 reconcile, not this slice.
+ */
+export class UnregisteredEntityTypeError extends Error {
+  constructor(public readonly entityType: string) {
+    super(`Entity type is not registered: ${entityType}`)
+    this.name = 'UnregisteredEntityTypeError'
   }
 }

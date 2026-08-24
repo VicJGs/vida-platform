@@ -17,9 +17,16 @@ import { and, eq, isNull, like, type SQL } from 'drizzle-orm'
 import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
 import { pages, pageLinks, type PageRow, type PageLinkRow } from '../../db/schema/notes'
+import { entityTags, type EntityTagRow } from '../../db/schema/foundation/spaces'
 import { createPageSchema, updatePageSchema } from '../../validators/note'
 import type { PageType } from '@vida/types'
-import { type NotesService, type NotesServiceDeps, type EntityNoteSeed, JournalExistsError } from './types'
+import {
+  type NotesService,
+  type NotesServiceDeps,
+  type EntityNoteSeed,
+  JournalExistsError,
+  UnregisteredEntityTypeError,
+} from './types'
 
 // NP-8 seed: fixed field order (title·type·status·dates), skip nullish → a short summary, wrapped in a minimal
 // TipTap doc (conventions.md:7 — pages.content is TipTap/ProseMirror JSON; ADR-003:457 — the column stores a local
@@ -36,18 +43,27 @@ function buildSeedContent(seed: EntityNoteSeed): string {
 export function createNotesService(
   db: DrizzleDb,
   deviceId: string,
-  // Frozen 3-dep factory signature (seam-contract.md:8). Consumed from slice A5
-  // (link/tag facade); unused in A1 → `_` prefix keeps it lint-clean (^_ ignore).
-  _deps: NotesServiceDeps,
+  // Frozen 3-dep factory signature (seam-contract.md:8). CONSUMED from slice A5 (link/tag facade + registry).
+  deps: NotesServiceDeps,
 ): NotesService {
   // N9/N2: empty-[E] pass-through, soft-delete, deviceId (mirrors spaces/service.ts:69).
   const pageRepo = createRepository(db, pages, { deviceId, encryptedFields: [], softDelete: true })
   const pageLinkRepo = createRepository(db, pageLinks, { deviceId, encryptedFields: [], softDelete: true })
+  // A5/B1: net-new read-repo over entity_tags (AR-6 owns writes; it exposes no tag-read). Mirrors AR-8's read-repo.
+  const entityTagRepo = createRepository(db, entityTags, { deviceId, encryptedFields: [], softDelete: true })
 
   // N7/IR-6: findWhere is verbatim → always AND isNull(deleted_at). and() is SQL|undefined → `!`.
   const live = (pred: SQL): Promise<PageRow[]> => pageRepo.findWhere(and(pred, isNull(pages.deleted_at))!)
   const livePageLinks = (pred: SQL): Promise<PageLinkRow[]> =>
     pageLinkRepo.findWhere(and(pred, isNull(pageLinks.deleted_at))!)
+  const liveEntityTags = (pred: SQL): Promise<EntityTagRow[]> =>
+    entityTagRepo.findWhere(and(pred, isNull(entityTags.deleted_at))!)
+
+  // IR-2/baseline C5: validate entity_type against the RUNTIME registry (NOT the closed EntityLinkTargetSchema,
+  // which would silently re-close the OPEN SP2 registry). Notes' own error surface (seam-contract:34).
+  const assertRegistered = (entityType: string): void => {
+    if (!deps.registry.isRegistered(entityType)) throw new UnregisteredEntityTypeError(entityType)
+  }
 
   return {
     async createPage(input) {
@@ -140,6 +156,45 @@ export function createNotesService(
     getPageLinksTo(pageId) {
       // Reverse read (ex-AR-8, deferred to M1.1) — backed by idx_page_links_target (schema/notes.ts:80).
       return livePageLinks(eq(pageLinks.target_page_id, pageId))
+    },
+
+    // --- tag reads (A5, net-new B1 · seam-contract:25) ------------------------
+    getEntitiesByTag(tagId) {
+      return liveEntityTags(eq(entityTags.tag_id, tagId))
+    },
+    getTagsForEntity(entityType, entityId) {
+      return liveEntityTags(and(eq(entityTags.entity_type, entityType), eq(entityTags.entity_id, entityId))!)
+    },
+
+    // --- write facade → AR-6 (A5 · seam-contract:26) --------------------------
+    async createEntityLink(pageId, entityType, entityId, context) {
+      assertRegistered(entityType) // IR-2/C5; async method → the throw surfaces as a rejection
+      return deps.spaces.createLink(pageId, entityType, entityId, context)
+    },
+    removeEntityLink(pageId, entityType, entityId) {
+      return deps.spaces.removeLink(pageId, entityType, entityId) // no guard (AR-6 removeLink doesn't either)
+    },
+    async tagEntity(tagId, entityType, entityId) {
+      assertRegistered(entityType) // IR-2/C5
+      return deps.spaces.tagEntity(tagId, entityType, entityId)
+    },
+    untagEntity(tagId, entityType, entityId) {
+      return deps.spaces.untagEntity(tagId, entityType, entityId) // no guard
+    },
+
+    // --- read facade → AR-8 (A5 · seam-contract:27) + the ①-composed merge ----
+    getEntityLinksFrom(pageId) {
+      return deps.backlinks.getLinksFrom(pageId) // pure AR-8 delegate (entity_links)
+    },
+    async getBacklinks(entityType, entityId) {
+      // BR-A5-5 (seam-contract:28 · baseline C4): entity_links (AR-8) ⊕ page_links (A2 livePageLinks), kept
+      // typed-distinct. Local is `pageLinkRows` (NOT `pageLinks`) — a `pageLinks` const would hit the imported
+      // table's name in the eq predicate under a destructure-TDZ ReferenceError.
+      const [entityLinks, pageLinkRows] = await Promise.all([
+        deps.backlinks.getBacklinksTo(entityType, entityId),
+        livePageLinks(eq(pageLinks.target_page_id, entityId)),
+      ])
+      return { entityLinks, pageLinks: pageLinkRows }
     },
 
     // --- entity-note seed (A4) -----------------------------------------------
