@@ -16,7 +16,7 @@
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
 import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
-import { pages, type PageRow } from '../../db/schema/notes'
+import { pages, pageLinks, type PageRow, type PageLinkRow } from '../../db/schema/notes'
 import { createPageSchema, updatePageSchema } from '../../validators/note'
 import type { PageType } from '@vida/types'
 import { type NotesService, type NotesServiceDeps, JournalExistsError } from './types'
@@ -30,9 +30,12 @@ export function createNotesService(
 ): NotesService {
   // N9/N2: empty-[E] pass-through, soft-delete, deviceId (mirrors spaces/service.ts:69).
   const pageRepo = createRepository(db, pages, { deviceId, encryptedFields: [], softDelete: true })
+  const pageLinkRepo = createRepository(db, pageLinks, { deviceId, encryptedFields: [], softDelete: true })
 
   // N7/IR-6: findWhere is verbatim → always AND isNull(deleted_at). and() is SQL|undefined → `!`.
   const live = (pred: SQL): Promise<PageRow[]> => pageRepo.findWhere(and(pred, isNull(pages.deleted_at))!)
+  const livePageLinks = (pred: SQL): Promise<PageLinkRow[]> =>
+    pageLinkRepo.findWhere(and(pred, isNull(pageLinks.deleted_at))!)
 
   return {
     async createPage(input) {
@@ -87,6 +90,44 @@ export function createNotesService(
       if (filter.archived !== undefined) conds.push(eq(pages.is_archived, filter.archived))
       const pred = conds.length > 0 ? and(...conds)! : undefined
       return pred ? live(pred) : pageRepo.findWhere(isNull(pages.deleted_at))
+    },
+
+    // --- page_links (A2) -----------------------------------------------------
+    async createPageLink(source, target, context) {
+      // BR-A2-1/IR-11 revive-or-noop. findWhere the business key INCLUDING soft-deleted rows — the ONE read that
+      // does NOT filter deleted, because UNIQUE(source,target) is FULL (012_notes.ts:78): a soft-deleted row still
+      // holds the key, so a plain re-insert would collide. Mirrors spaces/service.ts createLink (:158-180).
+      const existing = await pageLinkRepo.findWhere(
+        and(eq(pageLinks.source_page_id, source), eq(pageLinks.target_page_id, target))!,
+      )
+      if (existing.length > 0) {
+        const row = existing[0]
+        if (row.deleted_at != null) {
+          // BR-A2-2: revive — stable id, context re-supplied by this call (mirror createLink:170).
+          return pageLinkRepo.update(row.id, { deleted_at: null, context: context ?? null })
+        }
+        return row // idempotent no-op — context left untouched (BR-A2-2)
+      }
+      return pageLinkRepo.create({ source_page_id: source, target_page_id: target, context: context ?? null })
+    },
+
+    async removePageLink(source, target) {
+      // BR-A2-4 resolve-then-soft-delete by business key. `liveRow` (NOT `live` — that name is the pages closure
+      // above; a local `live` would shadow it). Mirrors spaces/service.ts removeLink (:182-192).
+      const existing = await pageLinkRepo.findWhere(
+        and(eq(pageLinks.source_page_id, source), eq(pageLinks.target_page_id, target))!,
+      )
+      const liveRow = existing.find((r) => r.deleted_at == null)
+      if (liveRow) await pageLinkRepo.delete(liveRow.id) // soft-delete → enqueues operation:'update'
+    },
+
+    getPageLinksFrom(pageId) {
+      return livePageLinks(eq(pageLinks.source_page_id, pageId))
+    },
+
+    getPageLinksTo(pageId) {
+      // Reverse read (ex-AR-8, deferred to M1.1) — backed by idx_page_links_target (schema/notes.ts:80).
+      return livePageLinks(eq(pageLinks.target_page_id, pageId))
     },
   }
 }

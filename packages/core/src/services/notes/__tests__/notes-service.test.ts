@@ -194,3 +194,69 @@ describe('A1 — pages CRUD', () => {
     expect(both[0]?.title).toBe('fav+arch')
   })
 })
+
+describe('A2 — page_links', () => {
+  // Proves the A2 charter (spec §4): idempotent revive-or-noop (IR-11), context asymmetry (BR-A2-2),
+  // resolve-then-soft-delete + double-unlink no-op (BR-A2-4), directional live reads (BR-A2-3), N1 smoke.
+
+  it('creates a fresh link and round-trips it (live-DB smoke, N1 hashContent ran)', async () => {
+    const { svc } = await setup()
+    const link = await svc.createPageLink('a', 'b', 'ctx')
+    expect(link.source_page_id).toBe('a')
+    expect(link.target_page_id).toBe('b')
+    expect(link.context).toBe('ctx')
+    expect(link.id).toBeTruthy()
+    expect(link._sync_hash).toBeTruthy() // stamped by hashContent — proves libsodium was ready
+    const from = await svc.getPageLinksFrom('a')
+    expect(from).toHaveLength(1)
+    expect(from[0]?.id).toBe(link.id)
+  })
+
+  it('is an idempotent no-op on a duplicate (source,target) — same id, one row', async () => {
+    const { svc } = await setup()
+    const first = await svc.createPageLink('a', 'b')
+    const second = await svc.createPageLink('a', 'b')
+    expect(second.id).toBe(first.id)
+    expect(await svc.getPageLinksFrom('a')).toHaveLength(1)
+  })
+
+  it('revives a soft-deleted link with the SAME id and refreshes context (IR-11 / BR-A2-2)', async () => {
+    const { svc } = await setup()
+    const first = await svc.createPageLink('a', 'b', 'ctx1')
+    await svc.removePageLink('a', 'b')
+    const revived = await svc.createPageLink('a', 'b', 'ctx2')
+    expect(revived.id).toBe(first.id) // reused, not a fresh row (the FULL UNIQUE demands revive)
+    expect(revived.deleted_at).toBeNull()
+    expect(revived.context).toBe('ctx2') // revive re-supplies context
+    expect(await svc.getPageLinksFrom('a')).toHaveLength(1)
+  })
+
+  it('leaves context untouched on a live no-op (BR-A2-2 asymmetry)', async () => {
+    const { svc } = await setup()
+    await svc.createPageLink('a', 'b', 'ctx1')
+    const again = await svc.createPageLink('a', 'b', 'other') // live path → no rewrite
+    expect(again.context).toBe('ctx1')
+    expect(await svc.getPageLinksFrom('a')).toHaveLength(1)
+  })
+
+  it('removePageLink soft-deletes (excluded from reads) and a second unlink is a no-op (N7 / BR-A2-4)', async () => {
+    const { svc } = await setup()
+    await svc.createPageLink('a', 'b')
+    await svc.removePageLink('a', 'b')
+    expect(await svc.getPageLinksFrom('a')).toHaveLength(0)
+    expect(await svc.getPageLinksTo('b')).toHaveLength(0)
+    // idempotent unlink: no live row → no throw
+    await expect(svc.removePageLink('a', 'b')).resolves.toBeUndefined()
+  })
+
+  it('reads links directionally — getPageLinksFrom (source) vs getPageLinksTo (target, reverse index)', async () => {
+    const { svc } = await setup()
+    await svc.createPageLink('a', 'b')
+    await svc.createPageLink('a', 'c')
+    await svc.createPageLink('d', 'b')
+    const fromA = await svc.getPageLinksFrom('a')
+    expect(fromA.map((l) => l.target_page_id).sort()).toEqual(['b', 'c'])
+    const toB = await svc.getPageLinksTo('b')
+    expect(toB.map((l) => l.source_page_id).sort()).toEqual(['a', 'd'])
+  })
+})

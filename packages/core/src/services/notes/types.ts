@@ -13,7 +13,7 @@ import { createPageSchema, updatePageSchema } from '../../validators/note'
 import type { SpacesService } from '../../foundation/spaces/service'
 import type { BacklinkResolver } from '../search/backlink-resolver'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
-import type { PageRow } from '../../db/schema/notes'
+import type { PageRow, PageLinkRow } from '../../db/schema/notes'
 import type { PageType } from '@vida/types'
 
 export type CreatePageInput = z.infer<typeof createPageSchema>
@@ -35,6 +35,15 @@ export interface NotesService {
   getPagesByType(type: PageType): Promise<PageRow[]>
   getPagesForEntity(entityType: string, entityId: string): Promise<PageRow[]>
   listPages(filter: { favorite?: boolean; archived?: boolean; tag?: string }): Promise<PageRow[]>
+
+  // --- page_links (A2) -------------------------------------------------------
+  // Wiki-style page↔page links. Idempotent revive-or-noop (IR-11 / NP-5); the FULL
+  // UNIQUE(source,target) means a soft-deleted row keeps the key, so a re-link revives
+  // it rather than colliding. No typed error (the UNIQUE clash is absorbed, not surfaced).
+  createPageLink(source: string, target: string, context?: string | null): Promise<PageLinkRow>
+  removePageLink(source: string, target: string): Promise<void>
+  getPageLinksFrom(pageId: string): Promise<PageLinkRow[]>
+  getPageLinksTo(pageId: string): Promise<PageLinkRow[]>
 }
 
 /** NP-2: a live journal already exists for this calendar date. */
