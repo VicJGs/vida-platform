@@ -5526,3 +5526,42 @@ Next session:
     `mod-notes-rebuild`. Env: pnpm under Node v24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`);
     run the crypto-heavy test suite ALONE (not concurrent with typecheck — 16 false timeouts otherwise).
 ---
+
+---
+Date: 2026-08-25
+Task: mod-notes (LIF-131)
+Goal: Continue Track A of the Notes rebuild — build the remaining backend service slices (A7, A8), then close Track A.
+Completed:
+  - **Track A slices A7 + A8 built end-to-end + committed**, each via the full §XXVI double-gate + ░Verification Gate░:
+    - **A7** /summary config storage (`getSummaryConfig`/`setSummaryConfig` over `pages.summary_config`, IR-8;
+      `summaryConfigSchema` mirroring `@vida/types JournalSummaryConfig`, consumed-not-re-homed) — `05353e5`
+    - **A8** page-delete cascade cleanup (IR-13 eventually-consistent service-driven cascade; page-last, fail-loud,
+      re-drivable) — `5522b04`
+  - **§XXIX A-track currency close-out** — regenerated `docs/features/notes-and-pages/current-{spec,business-rules}.md`
+    from the shipped A1–A8 service (retired the removed-① residue) — `213c63f`.
+  - **TRACK A (backend ①) COMPLETE** — A1–A8 all shipped; the ①→② seam is frozen (`delivery/seam-contract.md`).
+  - Final bars: `@vida/core` **844/844** · notes-service **57/57** · typecheck 11/11 · eslint 0.
+In progress:
+  - MOD-notes **② (Track B, UI)** — not started. B1–B7 (routes+renderers → detail+editor → `[[` picker → link/backlink
+    panels → Neural graph → filters/create-with-tags → journal summary block), each with a ░Visual Gate░.
+Decisions:
+  - **A7:** `buildJournalSummary` is a **② (B7) block surface, NOT an ① method** — the intent authority
+    (`contract.md:20`/`identity.md:19`/`current-spec.md:40`) home it to ②; the slice-map/seam-contract/intent-coverage
+    A7 rows had drifted (corrected). ① owns only `summary_config` storage. Read on corrupt config = **fail-loud**
+    (not silent-null) per the fail-loud convention.
+  - **A8:** the cascade is the **documented IR-13 handling** — per-entity, eventually-consistent, re-drive, fail-loud,
+    NOT transactional / no `*InTx`. There was **no open decision** (a gated IR fixes it); the slice-map's "best-effort
+    vs *InTx g1 decision" was drift. Aligned 4 delivery-doc lines.
+  - **Recurring lesson (2 Victor drift-catches on A8):** don't frame a doc-resolved handling as an open decision, and
+    when flagged, DON'T over-correct by inventing an unsourced mandate + foundation scope — re-ground in the gated doc.
+    Saved: memory `dont-frame-a-doc-resolved-handling-as-a-decision-nor-over-correct` (+ `aspect-docs-outrank-rebuild-
+    decomposition-artifacts` from A7).
+Next session:
+  - **FIRST ACTION: fork → TRACK B (② UI), slice B1** (`/notes` route + 4 baseline renderers List/Gallery/Calendar/
+    Neural + the 4 terminal states incl. empty-with-create-CTA — EC-4/EC-5). Entity UI/UX Build Flow, per-slice
+    ░Visual Gate░ (real browser × {light｜dark} × {375·768·1440} + §XIV a11y + the anchored EC MUSTs).
+  - Reload: `delivery/slice-map.md` (TRACK B table, B1 row) · `delivery/seam-contract.md` (frozen ①→② API — B1 consumes
+    `listPages`/`getPagesByType`/`getPageByJournalDate`) · `delivery/envision.md` (the 11 pinned ② ECs + `envision-shots/`)
+    · `apps/web/src/` (AR-4 `<h2>` stub to replace, `routes.tsx`, `@vida/ui` views, `nav/module-map.ts`).
+  - Env: pnpm under Node v24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`); run the crypto-heavy
+    @vida/core suite ALONE (not concurrent with typecheck). Branch `mod-notes-rebuild`.
