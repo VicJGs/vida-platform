@@ -30,7 +30,8 @@
 | `createEntityLink` · `removeEntityLink` · `tagEntity` · `untagEntity` (facade → AR-6, IR-2 registry-validate, `UnregisteredEntityTypeError`) | ✅ BUILT | A5 (delegates to AR-6 ✅) |
 | `getEntityLinksFrom` (facade → AR-8) · `getBacklinks` (①-merge page_links+entity_links, G6/C4) | ✅ BUILT | A5 (← A2) |
 | `addAttachment` · `getAttachments` · `removeAttachment` | ✅ BUILT | A6 |
-| `getSummaryConfig` · `setSummaryConfig` (plain-text IR-8) · `buildJournalSummary(date,config)` today 5-section block | ✅ BUILT | A7 (engine = MOD-journals, consumed) |
+| `getSummaryConfig` · `setSummaryConfig` (plain-text IR-8, ① config storage) | ✅ BUILT | A7 |
+| `buildJournalSummary(date,config)` — the today 5-section `/summary` **block** | ➡️ ROUTED → **B7 (②)** | intent authority `contract.md:20`/`identity.md:19`/`current-spec.md:40`: a ② block surface, NOT an ① method; consumes MOD-journals' engine (corrected 2026-08-24, Victor drift-catch) |
 | page-delete **cascade** (page_links/entity_links/entity_tags/attachments), non-atomic N8/IR-13 | ✅ BUILT (gated) | A8 (g1 decision) |
 
 **§1 verdict:** every exposed ① method → a named A-slice. Backend contract fully covered.

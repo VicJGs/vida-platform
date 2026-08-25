@@ -85,3 +85,16 @@ export const newAttachmentSchema = z.object({
   thumbnail_blob: z.instanceof(Uint8Array).nullish(),
   size_bytes: z.number().int().nonnegative(),
 })
+
+/**
+ * A7 journal-summary config (defense-in-depth; the UI already validated). The canonical Zod mirror of the
+ * documented `@vida/types` `JournalSummaryConfig` (note.ts:83-89) — keep the field set in lockstep. Stored
+ * stringified in `pages.summary_config` (plain `text()`, IR-8; the service stringifies/parses the boundary).
+ */
+export const summaryConfigSchema = z.object({
+  showHabits: z.boolean().optional(),
+  showTasks: z.boolean().optional(),
+  showStudySessions: z.boolean().optional(),
+  showTransactions: z.boolean().optional(),
+  showInteractions: z.boolean().optional(),
+})

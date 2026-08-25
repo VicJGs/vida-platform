@@ -25,7 +25,7 @@ import {
   type NoteAttachmentRow,
 } from '../../db/schema/notes'
 import { entityTags, type EntityTagRow } from '../../db/schema/foundation/spaces'
-import { createPageSchema, updatePageSchema } from '../../validators/note'
+import { createPageSchema, updatePageSchema, summaryConfigSchema } from '../../validators/note'
 import { type PageType, MAX_ATTACHMENT_BYTES } from '@vida/types'
 import {
   type NotesService,
@@ -270,6 +270,24 @@ export function createNotesService(
       // BR-A3-4: SQLite LIKE is ASCII-case-insensitive → the query-layer equal of E4's toLowerCase().includes().
       // No .toLowerCase() on q (the query folds case); live-only via the A1 `live` closure. IR-4: never creates.
       return live(like(pages.title, `%${q}%`))
+    },
+
+    // --- summary config (A7 · seam-contract:30) ------------------------------
+    // ① owns ONLY summary_config storage; the /summary block (buildJournalSummary) is ② (B7). See a7-summary.md §1.
+    async getSummaryConfig(pageId) {
+      const page = await pageRepo.findById(pageId) // notDeleted-filtered (repository.ts)
+      if (page == null || page.summary_config == null) return null
+      // BR-A7-3: IR-8 parse + re-validate (defense-in-depth; the "UI already validated" validator ethos). A corrupt
+      // persisted value FAILS LOUD (natural SyntaxError/ZodError throw) — NOT masked to null (contract.md:33 fail-loud;
+      // null is reserved for the legitimately-unset case, mirroring getPage's null-for-absent read).
+      return summaryConfigSchema.parse(JSON.parse(page.summary_config))
+    },
+
+    async setSummaryConfig(pageId, config) {
+      // BR-A7-4/IR-8: validate the structured config (async → ZodError rejection), then the SERVICE stringifies at the
+      // storage boundary (summary_config is plain text(), not json<T>()). update throws "Row not found: <id>" if absent.
+      const data = summaryConfigSchema.parse(config)
+      return pageRepo.update(pageId, { summary_config: JSON.stringify(data) })
     },
   }
 }

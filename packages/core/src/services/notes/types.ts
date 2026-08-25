@@ -15,7 +15,7 @@ import type { BacklinkResolver } from '../search/backlink-resolver'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
 import type { PageRow, PageLinkRow, NoteAttachmentRow } from '../../db/schema/notes'
 import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
-import { type PageType, MAX_ATTACHMENT_BYTES } from '@vida/types'
+import { type PageType, type JournalSummaryConfig, MAX_ATTACHMENT_BYTES } from '@vida/types'
 
 export type CreatePageInput = z.infer<typeof createPageSchema>
 export type UpdatePageInput = z.infer<typeof updatePageSchema>
@@ -96,6 +96,13 @@ export interface NotesService {
   addAttachment(pageId: string, file: NewAttachment): Promise<NoteAttachmentRow>
   getAttachments(pageId: string): Promise<NoteAttachmentRow[]>
   removeAttachment(id: string): Promise<void>
+
+  // --- summary config (A7) ---------------------------------------------------
+  // ① owns ONLY summary_config storage (a `pages` column, stringified JSON per IR-8). The `/summary` block
+  // (buildJournalSummary) is a ② surface (B7), consuming MOD-journals' engine — NOT an ① method (a7-summary.md §1).
+  // getSummaryConfig re-validates + fails loud on a corrupt stored value (contract.md:33); null = legitimately unset.
+  getSummaryConfig(pageId: string): Promise<JournalSummaryConfig | null>
+  setSummaryConfig(pageId: string, config: JournalSummaryConfig): Promise<PageRow>
 }
 
 /** NP-2: a live journal already exists for this calendar date. */

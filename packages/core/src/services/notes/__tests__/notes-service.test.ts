@@ -11,6 +11,7 @@
 // ============================================================================
 
 import { describe, it, expect } from 'vitest'
+import { ZodError } from 'zod'
 import Database from 'better-sqlite3'
 import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../db/adapter'
 import { migrate } from '../../../db/migrations/runner'
@@ -560,5 +561,61 @@ describe('A6 — note_attachments', () => {
     })
     await svc.removeAttachment(row.id)
     expect(await svc.getAttachments(page.id)).toHaveLength(0)
+  })
+})
+
+describe('A7 — summary config', () => {
+  it('setSummaryConfig writes + getSummaryConfig round-trips (live-DB smoke, N1)', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'journal', journal_date: '2026-08-24' })
+    const row = await svc.setSummaryConfig(page.id, { showHabits: true, showTasks: false })
+    // stored as a stringified JSON blob (IR-8), not a structured column
+    expect(typeof row.summary_config).toBe('string')
+    expect(await svc.getSummaryConfig(page.id)).toEqual({ showHabits: true, showTasks: false })
+  })
+
+  it('getSummaryConfig returns null when unset', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'no config' })
+    expect(await svc.getSummaryConfig(page.id)).toBeNull()
+  })
+
+  it('getSummaryConfig returns null for an absent page (read, not fail-loud)', async () => {
+    const { svc } = await setup()
+    expect(await svc.getSummaryConfig('missing-id')).toBeNull()
+  })
+
+  it('setSummaryConfig on a missing page rejects (Row not found, fail-loud)', async () => {
+    const { svc } = await setup()
+    await expect(svc.setSummaryConfig('missing-id', {})).rejects.toThrow(/Row not found/)
+  })
+
+  it('setSummaryConfig rejects an invalid config (ZodError, fail-loud) — no persist', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'p' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- deliberately-invalid input for the fail-loud path
+    await expect(svc.setSummaryConfig(page.id, { showHabits: 'yes' } as any)).rejects.toBeInstanceOf(ZodError)
+    expect(await svc.getSummaryConfig(page.id)).toBeNull() // the rejected write never persisted
+  })
+
+  it('empty config round-trips ({} is distinct from null/unset)', async () => {
+    const { svc } = await setup()
+    const page = await svc.createPage({ type: 'note', title: 'p' })
+    await svc.setSummaryConfig(page.id, {})
+    expect(await svc.getSummaryConfig(page.id)).toEqual({})
+  })
+
+  it('getSummaryConfig FAILS LOUD on a corrupt stored value (BR-A7-3, not masked to null)', async () => {
+    const { svc } = await setup()
+    // updatePage accepts summary_config as a raw string (validators/note.ts:58) → the reachable corrupt-write path.
+    // A config read must throw on a corrupt persisted value (contract.md:33 fail-loud), NOT swallow it to null — this
+    // locks out a regression that reintroduces a try/catch→null (which would keep every other A7 case green).
+    const malformed = await svc.createPage({ type: 'note', title: 'malformed' })
+    await svc.updatePage(malformed.id, { summary_config: 'not json {' })
+    await expect(svc.getSummaryConfig(malformed.id)).rejects.toThrow() // JSON.parse → SyntaxError
+
+    const wrongShape = await svc.createPage({ type: 'note', title: 'wrong-shape' })
+    await svc.updatePage(wrongShape.id, { summary_config: '{"showHabits":"yes"}' })
+    await expect(svc.getSummaryConfig(wrongShape.id)).rejects.toBeInstanceOf(ZodError) // parses, fails validation
   })
 })
