@@ -28,7 +28,7 @@
 | Merged read (① composes) | `getBacklinks(entityType, entityId)` | **NET-NEW merge, NOT a raw AR-8 passthrough** — composes AR-8 `getBacklinksTo` (entity_links) **+** A2 `getPageLinksTo` (page_links), G6; A5's Verification Gate owns the merge shape (baseline C4) | A5 (← A2) |
 | Attachments | `addAttachment(pageId, file)` · `getAttachments(pageId)` · `removeAttachment(id)` | `NoteAttachmentRow` / `void` | A6 |
 | Summary (config storage) | `getSummaryConfig(pageId)` · `setSummaryConfig(pageId, config)` | config storage only (plain-text JSON, IR-8) → `JournalSummaryConfig \| null` / `PageRow`. ⚠ **`buildJournalSummary` is NOT an ① method — it is the ② `/summary` BLOCK (B7), consuming MOD-journals' engine directly** (`contract.md:20`·`identity.md:19`·`current-spec.md:40`; corrected 2026-08-24). | A7 |
-| Cascade | `softDeletePage` triggers the **service-driven cascade** (page_links/entity_links/entity_tags/attachments) — **non-atomic** (N8/IR-13); resolution set at A8 g1 | A8 |
+| Cascade | `softDeletePage` triggers the **service-driven cascade** (page_links/entity_links/entity_tags/attachments, page-last) — per-entity, **eventually-consistent + re-drive** (IR-13, gated); NOT transactional (no `*InTx`) | A8 |
 
 ## Typed errors (local-first — no HTTP codes)
 `JournalExistsError(journalDate)` (NP-2) · `UnregisteredEntityTypeError(entityType)` (NP-6/SP2) · Zod validation → **async Promise rejection** (never sync throw). Bespoke `extends Error` (AR-6/AR-8 convention).

@@ -107,6 +107,29 @@ export function createNotesService(
     },
 
     async softDeletePage(id) {
+      // A8 · IR-1/IR-13: service-driven per-entity cascade. Satellites first, page LAST, FAIL-LOUD (no swallow) → a
+      // mid-cascade failure leaves a LIVE, re-drivable page. Eventually consistent (per-entity LWW blobs, ADR-003).
+      // NOT transactional — cross-entity atomicity is not the platform model (no-FK; IR-13). No *InTx.
+      // 1. page_links — both FK sides (page↔page), de-duped by id (a self-link P→P appears in both).
+      const [outLinks, inLinks] = await Promise.all([
+        livePageLinks(eq(pageLinks.source_page_id, id)),
+        livePageLinks(eq(pageLinks.target_page_id, id)),
+      ])
+      const linkIds = new Set([...outLinks, ...inLinks].map((l) => l.id))
+      for (const linkId of linkIds) await pageLinkRepo.delete(linkId)
+      // 2. entity_links — the page's OUTGOING links (page_id side, As-is FK) → AR-6 removeLink (delegate).
+      for (const el of await deps.backlinks.getLinksFrom(id)) {
+        await deps.spaces.removeLink(id, el.entity_type, el.entity_id)
+      }
+      // 3. entity_tags — rows referencing P by entity_id (NP-9 ADR-006) → AR-6 untagEntity (delegate).
+      for (const et of await liveEntityTags(eq(entityTags.entity_id, id))) {
+        await deps.spaces.untagEntity(et.tag_id, et.entity_type, et.entity_id)
+      }
+      // 4. note_attachments (page_id = P).
+      for (const a of await liveAttachments(eq(noteAttachments.page_id, id))) {
+        await noteAttachmentRepo.delete(a.id)
+      }
+      // 5. the page itself — LAST (a partial failure above left a live, re-drivable page).
       await pageRepo.delete(id) // soft (sets deleted_at) + enqueues operation:'update'
     },
 

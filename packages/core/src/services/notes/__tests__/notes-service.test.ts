@@ -619,3 +619,108 @@ describe('A7 — summary config', () => {
     await expect(svc.getSummaryConfig(wrongShape.id)).rejects.toBeInstanceOf(ZodError) // parses, fails validation
   })
 })
+
+describe('A8 — cascade cleanup', () => {
+  it('full cascade soft-deletes the page and every satellite (live-DB smoke, N1)', async () => {
+    const { svc, spaces } = await setup()
+    const p = await svc.createPage({ type: 'note', title: 'P' })
+    const q = await svc.createPage({ type: 'note', title: 'Q' })
+    await svc.createPageLink(p.id, q.id) // P → Q (outgoing)
+    await svc.createPageLink(q.id, p.id) // Q → P (incoming — target side)
+    await svc.createEntityLink(p.id, 'note', 'ent-x') // P's outgoing entity_link
+    const tag = await spaces.createTag({ name: 'work' })
+    await svc.tagEntity(tag.id, 'note', p.id) // an entity_tag ON P
+    await svc.addAttachment(p.id, {
+      filename: 'a',
+      mime_type: 'x',
+      encrypted_blob: new Uint8Array([1]),
+      size_bytes: 1,
+    })
+
+    // pre-state: every satellite is seeded live → the post-delete emptiness below is non-vacuous.
+    expect(await svc.getPageLinksFrom(p.id)).toHaveLength(1)
+    expect(await svc.getEntityLinksFrom(p.id)).toHaveLength(1)
+    expect(await svc.getTagsForEntity('note', p.id)).toHaveLength(1)
+    expect(await svc.getAttachments(p.id)).toHaveLength(1)
+
+    await svc.softDeletePage(p.id)
+
+    expect(await svc.getPage(p.id)).toBeNull()
+    expect(await svc.getPageLinksFrom(p.id)).toHaveLength(0)
+    expect(await svc.getPageLinksTo(p.id)).toHaveLength(0) // Q → P cleaned (both FK sides)
+    expect(await svc.getEntityLinksFrom(p.id)).toHaveLength(0)
+    expect(await svc.getTagsForEntity('note', p.id)).toHaveLength(0)
+    expect(await svc.getAttachments(p.id)).toHaveLength(0)
+  })
+
+  it('self-link (P→P) is cleaned exactly once (no double-delete)', async () => {
+    const { svc } = await setup()
+    const p = await svc.createPage({ type: 'note', title: 'P' })
+    await svc.createPageLink(p.id, p.id) // self-link: appears as both source and target
+    await expect(svc.softDeletePage(p.id)).resolves.toBeUndefined()
+    expect(await svc.getPageLinksFrom(p.id)).toHaveLength(0)
+  })
+
+  it('backlinks INTO P survive — only the page_id side cascades', async () => {
+    const { svc } = await setup()
+    const p = await svc.createPage({ type: 'note', title: 'P' })
+    const x = await svc.createPage({ type: 'note', title: 'X' })
+    await svc.createEntityLink(x.id, 'note', p.id) // X links TO P (page_id = X, entity_id = P)
+    await svc.softDeletePage(p.id)
+    // X's own outgoing link is untouched — the cascade only cleans P's OUTGOING links (page_id = P).
+    expect(await svc.getEntityLinksFrom(x.id)).toHaveLength(1)
+  })
+
+  it('re-drive is idempotent — a second softDeletePage does not throw (BR-A8-5)', async () => {
+    const { svc } = await setup()
+    const p = await svc.createPage({ type: 'note', title: 'P' })
+    const q = await svc.createPage({ type: 'note', title: 'Q' })
+    await svc.createPageLink(p.id, q.id)
+    await svc.softDeletePage(p.id)
+    await expect(svc.softDeletePage(p.id)).resolves.toBeUndefined()
+  })
+
+  it('fail-loud: a satellite failure rejects, leaves the page LIVE + re-drivable (BR-A8-5)', async () => {
+    const { svc, spaces } = await setup()
+    const p = await svc.createPage({ type: 'note', title: 'P' })
+    const tag = await spaces.createTag({ name: 'work' })
+    await svc.tagEntity(tag.id, 'note', p.id)
+    await svc.addAttachment(p.id, { filename: 'a', mime_type: 'x', encrypted_blob: new Uint8Array([1]), size_bytes: 1 })
+
+    // Inject a fault in the entity_tags cleanup step (runs BEFORE attachments + the page delete). Since the notes
+    // service captured this same `spaces` object as `deps.spaces`, reassigning the method faults the running cascade.
+    const realUntag = spaces.untagEntity.bind(spaces)
+    spaces.untagEntity = () => Promise.reject(new Error('boom'))
+
+    await expect(svc.softDeletePage(p.id)).rejects.toThrow('boom')
+    expect(await svc.getPage(p.id)).not.toBeNull() // page deleted LAST → survives the mid-cascade failure
+    expect(await svc.getAttachments(p.id)).toHaveLength(1) // fail-loud halted before the downstream steps
+
+    // re-drive with the fault cleared → the cascade completes idempotently (IR-13 re-drive).
+    spaces.untagEntity = realUntag
+    await expect(svc.softDeletePage(p.id)).resolves.toBeUndefined()
+    expect(await svc.getPage(p.id)).toBeNull()
+    expect(await svc.getTagsForEntity('note', p.id)).toHaveLength(0)
+    expect(await svc.getAttachments(p.id)).toHaveLength(0)
+  })
+
+  it('unrelated rows are untouched by the cascade', async () => {
+    const { svc, spaces } = await setup()
+    const p = await svc.createPage({ type: 'note', title: 'P' })
+    const s = await svc.createPage({ type: 'note', title: 'S' }) // sibling, unrelated
+    const t = await svc.createPage({ type: 'note', title: 'T' })
+    await svc.createPageLink(s.id, t.id) // S's own link
+    await svc.createEntityLink(s.id, 'note', 'ent-s')
+    const tag = await spaces.createTag({ name: 'personal' })
+    await svc.tagEntity(tag.id, 'note', s.id)
+    await svc.addAttachment(s.id, { filename: 'b', mime_type: 'x', encrypted_blob: new Uint8Array([2]), size_bytes: 1 })
+
+    await svc.softDeletePage(p.id)
+
+    expect(await svc.getPage(s.id)).not.toBeNull()
+    expect(await svc.getPageLinksFrom(s.id)).toHaveLength(1)
+    expect(await svc.getEntityLinksFrom(s.id)).toHaveLength(1)
+    expect(await svc.getTagsForEntity('note', s.id)).toHaveLength(1)
+    expect(await svc.getAttachments(s.id)).toHaveLength(1)
+  })
+})
