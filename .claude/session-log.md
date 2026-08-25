@@ -5565,3 +5565,28 @@ Next session:
     · `apps/web/src/` (AR-4 `<h2>` stub to replace, `routes.tsx`, `@vida/ui` views, `nav/module-map.ts`).
   - Env: pnpm under Node v24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`); run the crypto-heavy
     @vida/core suite ALONE (not concurrent with typecheck). Branch `mod-notes-rebuild`.
+
+---
+Date: 2026-08-25
+Task: mod-notes (LIF-131) — M1.1 HEAD · Track B (② UI)
+Goal: Fork into Track B and deliver slice B1 (the /notes collection surface) end-to-end via the Entity UI/UX Build Flow (per-slice ░Visual Gate░).
+Completed:
+  - **B1 · /notes collection BUILT + committed** (`51936e7` on `mod-notes-rebuild`). Files: `apps/web/src/app/notes/{index,notes-collection,notes-service,use-notes-list}.tsx` + `notes-collection.test.tsx` · `stores/notes-view-store.ts` · `db/device.ts`(+test) · `app/note/index.tsx` (enabling stub) · `App.tsx`/`routes.tsx` (boot + route) · `packages/core/src/index.ts` (flat Row re-export).
+  - The surface: 4 hard-coded @vida/ui renderers (List/Gallery/Calendar/Neural) behind an ephemeral `Tabs` view-switch · 4 terminal states via `deriveTerminalState` · empty create-CTA (EC-4/EC-5) · Neural nodes-only (B5 owns edges) · recency order · New Note→`createPage`→`/note/$id`.
+  - First per-module data-plane wiring: `getNotesService()` singleton · React-Query hooks (invalidate-and-reread) · N2 `getDeviceId`/`app_state` · N1 `initVault` at boot.
+  - **Activated the `values` Drizzle-proxy worker seam** (`worker.ts` op + `client.ts` proxy + `client.test.ts`) — a documented deferral B1 triggered as the first main-thread Drizzle consumer.
+  - Full §XXVI: Doc Gate REVISE→resolved · preflight PASSED · gate-2 (empirical tsc) REVISE→resolved · code-review MINOR-FIXES→resolved · **░Visual Gate PASS░** (live browser). Specs: `docs/specs/features/mod-notes/ui-ux/{b1-notes-collection,IMPLEMENTATION-PLAN-b1}.md`.
+  - §XXIX: `notes-and-pages/current-spec.md` (② B1 section) · `apps/web/src/db/CLAUDE.md` (values seam live) · task file. Memory saved: `visual-gate-catches-worker-rpc-bugs-unit-tests-bypass`.
+  - Bars: `@vida/core` 844/844 · `@vida/web` 193/193 · typecheck 0 · eslint 0.
+In progress:
+  - Track B continues: B2–B7 remain (B2 next). Track A (①) complete. `db-10` (M1.4) parked.
+Decisions:
+  - Service-wiring seam is CONVENTION-FIXED, not a decision (I wrongly surfaced a provider-vs-singleton fork mid-session — Victor drift-catch; re-grounded to the shipped `useSchemaVersion`/`db/boot` conventions + N4 + `current-spec.md:62`).
+  - Default `/notes` order = recency (created_at desc) as a baseline presentation default; configurable sort/grouping stays routed to MOD-spaces (envision pt 6), manual order to DB-11.
+  - `/note/$id` = a B1 enabling stub route (AR-4→/notes pattern); B2 fills it. Blessed by gate-2 as enabling infra, not scope-creep.
+  - **The ░Visual Gate░ caught a real runtime bug 4 code-gates + 192 unit tests missed** (the `values` seam) — validates the non-skippable live gate; unit tests use a direct driver + source imports and bypass the worker-RPC/dist path.
+Next session:
+  - **FIRST ACTION: TRACK B slice B2** — note detail + real `@vida/editor` mount + collapsible detail rail + confirm-gated soft-delete (EC-6/7/11). The `/note/$id` route exists as B1's stub; B2 replaces the placeholder. Same §XXVI double-gate → ░Visual Gate░.
+  - Reload: `delivery/slice-map.md` (B2 row) · `delivery/seam-contract.md` (B2 ← `getPage`/`updatePage`/`softDeletePage` + @vida/editor) · `delivery/envision.md` (EC-6/7/11) · `apps/web/src/app/note/index.tsx` (the stub) · `@vida/editor` barrel.
+  - Env: run web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`) — Node 20 default crashes jsdom 30 (`markAsUncloneable`). Branch `mod-notes-rebuild`. Visual Gate screenshots are gitignored (`.claude/visual-gate/`).
+---
