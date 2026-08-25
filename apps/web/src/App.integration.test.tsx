@@ -8,8 +8,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-const h = vi.hoisted(() => ({ ensureDbReady: vi.fn(), read: vi.fn(), write: vi.fn() }))
+const h = vi.hoisted(() => ({
+  ensureDbReady: vi.fn(),
+  ensureDeviceId: vi.fn(),
+  initVault: vi.fn(),
+  read: vi.fn(),
+  write: vi.fn(),
+}))
 vi.mock('./db/boot', () => ({ ensureDbReady: h.ensureDbReady }))
+// MOD-notes ② · B1 — App.tsx boot now also resolves the device id (N2) + inits libsodium (N1); stub both (no worker/crypto).
+vi.mock('./db/device', () => ({ ensureDeviceId: h.ensureDeviceId }))
+vi.mock('@vida/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@vida/core')>()),
+  initVault: h.initVault,
+}))
 vi.mock('./onboarding/first-run-repo', () => ({
   readFirstRunComplete: h.read,
   writeFirstRunComplete: h.write,
@@ -27,6 +39,8 @@ const pressCmdK = () => fireEvent.keyDown(document.body, { key: 'k', metaKey: tr
 
 beforeEach(async () => {
   h.ensureDbReady.mockReset().mockResolvedValue(undefined)
+  h.ensureDeviceId.mockReset().mockResolvedValue('test-device-id')
+  h.initVault.mockReset().mockResolvedValue(undefined)
   h.read.mockReset().mockResolvedValue(true) // returning launch → straight to the app shell
   h.write.mockReset()
   // Reset the singleton router + command-bar store so each test starts from `/` with the bar closed (order-independent).

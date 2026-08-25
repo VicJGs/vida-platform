@@ -71,9 +71,16 @@ describe('WorkerDbClient', () => {
     await expect(client.exists('vida')).resolves.toBe(true)
   })
 
-  it('throws the deferred-seam error for exec/values/batch', () => {
+  it('RPCs the worker for values() and returns positional rows (the Drizzle-proxy read path, B1)', async () => {
+    const client = new WorkerDbClient(
+      mockWorker((req) => (req.op === 'values' ? { ok: true, rows: [[1, 'a']] } : { ok: true })),
+    )
+    await expect(client.driver.values('SELECT id, name FROM t')).resolves.toEqual([[1, 'a']])
+  })
+
+  it('still throws the deferred-seam error for exec/batch (unused by the Drizzle-proxy path)', () => {
     const client = new WorkerDbClient(mockWorker(() => ({ ok: true })))
-    expect(() => client.driver.values('x')).toThrow(/seam/i)
+    expect(() => client.driver.exec('x')).toThrow(/seam/i)
     expect(() => client.driver.batch([])).toThrow(/seam/i)
   })
 

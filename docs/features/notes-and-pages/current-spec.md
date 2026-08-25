@@ -6,9 +6,10 @@
 # Current Spec — Notes & Pages (built slice)
 
 **Status:** MOD-notes increment ① (LIF-131, M1.1) — the `@vida/core` Notes & Pages **service** over the DB-4 schema
-— is COMPLETE (Track A, slices A1–A8, rebuilt ground-zero via the Entity Delivery Flow). The UI increment ② (② UI:
-`/notes` routes/screens, TipTap mount, `[[` picker, view renderers, panels, journal summary block) remains INTENDED
-(Track B, not yet built). `[FACT: packages/core/src/services/notes/{service,types,index}.ts]`
+— is COMPLETE (Track A, slices A1–A8, rebuilt ground-zero via the Entity Delivery Flow). The UI increment ② (Track B)
+is **IN PROGRESS** — **slice B1 (the `/notes` collection surface) is BUILT** (see the ② section below); B2–B7 (real
+editor mount, `[[` picker, panels, neural edges, create-with-tags/filters, journal summary) remain INTENDED.
+`[FACT: packages/core/src/services/notes/{service,types,index}.ts; apps/web/src/app/notes/*]`
 
 ## What is BUILT (MOD-notes ① · A1–A8)
 
@@ -70,7 +71,35 @@ delete) · A7 summary config (round-trip · null-unset/absent · missing-page re
 fail-loud) · A8 cascade (full cascade + pre-state · self-link dedup · backlinks-into-P survive · idempotent re-drive ·
 **fault-injection fail-loud** · unrelated untouched). `@vida/core` full suite **844/844**; typecheck 11/11; ESLint 0.
 
+## What is BUILT (MOD-notes ② · B1 — the /notes collection surface)
+
+### The collection surface (`apps/web/src/app/notes/`)
+- **`/notes` route** (`index.tsx` → `notes-collection.tsx`) — replaces the AR-4 `<h2>` stub. Composes the four
+  **hard-coded** `@vida/ui` renderers (`ListView`/`GalleryView`/`CalendarView`/`NeuralGraph`) behind an **ephemeral**
+  `Tabs` view-switch (Zustand `notes-view-store.ts`; saved-view *selection* stays MOD-spaces/ADR-007). Neural =
+  **nodes-only** (`edges={[]}`; page-link fan-out is B5). `[FACT: notes-collection.tsx]`
+- **Four terminal states** derived app-side via UX-4 `deriveTerminalState` (isPending-first) + passed as the `state`
+  prop; **empty carries a New Note create-CTA** (EC-4/EC-5). Row open + New Note → `/note/$id` (a B1 **enabling stub**
+  route; B2 mounts the real editor). Default **recency order** (created_at desc) in `use-notes-list.ts`.
+- **The first per-module data-plane wiring:** `notes-service.ts` `getNotesService()` (module-scope singleton;
+  `createDrizzleProxy(getDbClient().driver)` + `getDeviceId()` + the AR-6/AR-8/registry deps) · `use-notes-list.ts`
+  (`useNotesList`/`useCreateNote`, React-Query, invalidate-and-reread). `[FACT: apps/web/src/app/notes/*]`
+
+### App-infra activated by B1 (the first module read+write consumer)
+- **`db/device.ts`** — `ensureDeviceId()` (boot; UUIDv7 in `app_state`, N2) + sync `getDeviceId()`; **`App.tsx` boot**
+  now `ensureDbReady → ensureDeviceId → initVault` (N1 before the first write). `[FACT: db/device.ts; App.tsx]`
+- **The `values` worker op / RPC-proxy seam** — `createDrizzleProxy` issues `driver.values()` for every SELECT; the
+  main-thread RPC-proxy driver's `values` was a **documented deferred seam** (worker.ts/`db/CLAUDE.md`: "lands with
+  entity-CRUD, M1.1+"). B1 activated it (`worker.ts` op + `client.ts` proxy). Caught by the ░Visual Gate░ live (the
+  collection first rendered "Couldn't load."); the app's prior main-thread read (`useSchemaVersion`) uses raw
+  `driver.query`, so B1 is the first main-thread **Drizzle** consumer. `[FACT: apps/web/src/db/{worker,client}.ts]`
+
+### Visual Gate (light, M1.0) — PASS
+Real browser: empty (+create-CTA) + success × List/Gallery/Calendar/Neural × 375/768/1440; write path end-to-end
+(New Note → `createPage`/`createInTx` round-trips through the worker); a11y (real `<h2>`, APG Tabs, role=status/list,
+rows role=button, keyboard-reachable nodes); console clean. `@vida/web` **193 tests**; `@vida/core` **844**; tc 0; eslint 0.
+
 ## Status
-2026-08-25 — **MOD-notes ① COMPLETE** (Track A, A1–A8), branch `mod-notes-rebuild`. The ①→② seam is frozen
+2026-08-25 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1 BUILT** (Track B opened), branch `mod-notes-rebuild`. The ①→② seam is frozen
 (`docs/features/notes-and-pages/delivery/seam-contract.md`). Specs: `docs/specs/features/mod-notes/service/`.
 **Next: MOD-notes ② (Track B, UI surface, add-frontend-component) — B1–B7.**

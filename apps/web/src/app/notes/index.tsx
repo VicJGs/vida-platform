@@ -1,6 +1,8 @@
-// Notes route — AR-4 placeholder. AR-4 stands up the runtime + proves one
-// lazy-loaded route; the real Notes surface is a later module wave (M1.1+).
-// Default export = the route component consumed by `lazyRouteComponent` in routes.tsx.
+// Notes route — MOD-notes ② · B1 (LIF-131). Replaces the AR-4 `<h2>` placeholder
+// with the real collection surface. Default export = the route component consumed
+// by `lazyRouteComponent` in routes.tsx (still its own async chunk).
+import { NotesCollection } from './notes-collection'
+
 export default function NotesRoute() {
-  return <h2>Notes</h2>
+  return <NotesCollection />
 }

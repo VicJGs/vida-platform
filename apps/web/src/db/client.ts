@@ -25,11 +25,18 @@ type RequestBody =
   | { op: 'migrate' }
   | { op: 'run'; sql: string; params?: unknown[] }
   | { op: 'query'; sql: string; params?: unknown[] }
+  | { op: 'values'; sql: string; params?: unknown[] } // MOD-notes ② · B1 — the Drizzle-proxy read path (was the AR-4 seam)
   | { op: 'close' }
 
 type WorkerRequest = RequestBody & { id: number }
 
-type OkResponse = { id: number; ok: true; rows?: Record<string, unknown>[]; result?: unknown }
+// `rows` is column-keyed objects for `query`, positional arrays for `values` (the Drizzle-proxy shape).
+type OkResponse = {
+  id: number
+  ok: true
+  rows?: Record<string, unknown>[] | unknown[][]
+  result?: unknown
+}
 type ErrResponse = { id: number; ok: false; error: string }
 type WorkerResponse = OkResponse | ErrResponse
 
@@ -41,7 +48,9 @@ export interface WorkerLike {
   terminate(): void
 }
 
-const SEAM = 'AR-4 seam: exec/values/batch use the Drizzle-proxy path, deferred to entity CRUD (UI-3/M1.1+).'
+// `values` landed with MOD-notes ② · B1 (the Drizzle-proxy read path). `exec`/`batch` stay deferred (unused by the
+// createDrizzleProxy callback — it needs only `run` + `values`).
+const SEAM = 'AR-4 seam: exec/batch are unused by the Drizzle-proxy path (needs run+values only); land with their consumer.'
 // A worker RPC that never replies (worker crash, WASM load failure, killed
 // worker) must fail loud, not hang the boot gate. 15s is generous vs a local read.
 const RPC_TIMEOUT_MS = 15_000
@@ -154,8 +163,11 @@ export class WorkerDbClient {
     exec: (): Promise<RawQueryResult> => {
       throw new Error(SEAM)
     },
-    values: (): Promise<unknown[][]> => {
-      throw new Error(SEAM)
+    // MOD-notes ② · B1 — the Drizzle-proxy read path (createDrizzleProxy calls `values` for every SELECT).
+    // RPCs to the worker's real driver.values (positional arrays). Was the AR-4 seam; entity-CRUD landed.
+    values: async (sql: string, params?: unknown[]): Promise<unknown[][]> => {
+      const res = await this.call({ op: 'values', sql, params })
+      return (res.rows ?? []) as unknown[][]
     },
     batch: (): Promise<void> => {
       throw new Error(SEAM)

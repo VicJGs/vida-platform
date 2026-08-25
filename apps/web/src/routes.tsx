@@ -65,7 +65,15 @@ const graphRoute = createRoute({
   component: lazyRouteComponent(() => import('./app/graph')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, notesRoute, graphRoute])
+// MOD-notes ② · B1 — the note-detail route. B1 registers it (+ a placeholder) so the
+// collection's row-open + New Note navigation resolves (EC-4); B2 mounts the real editor.
+const noteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/note/$id',
+  component: lazyRouteComponent(() => import('./app/note')),
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, notesRoute, graphRoute, noteRoute])
 
 export const router = createRouter({
   routeTree,

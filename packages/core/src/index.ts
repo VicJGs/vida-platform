@@ -60,6 +60,9 @@ export * from './validators'
 
 // Database — schema & adapter
 export * as schema from './db/schema'
+// ②-facing Drizzle Row types — the frozen Notes seam surface the UI binds to by name (seam-contract.md:12).
+// The `schema` namespace above does not surface these flat; MOD-notes ② (B1+) imports `PageRow` et al. directly.
+export type { PageRow, PageLinkRow, NoteAttachmentRow } from './db/schema/notes'
 
 export {
   DEFAULT_SQLCIPHER_CONFIG,

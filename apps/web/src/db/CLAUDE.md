@@ -13,7 +13,9 @@ M1.0 (SQLCipher → M3); the seam is pass-through.
 - **Worker-hosted.** `AccessHandlePoolVFS` needs `FileSystemSyncAccessHandle`, which exists only in a Worker — so the
   engine + driver + Drizzle proxy all live in `worker.ts`. The app-facing main↔worker binding is **`client.ts` (AR-4,
   built 2026-07-30)** — a `WorkerDbClient` shaped as an `SqliteDriver` proxy over the worker RPC; `boot.ts` owns the
-  single client + one-time open. `exec`/`values`/`batch` on the client are a deferred seam (throw until entity-CRUD, UI-3/M1.1+).
+  single client + one-time open. `values` (the Drizzle-proxy read path) landed with **MOD-notes ② · B1** — the first
+  main-thread Drizzle consumer, exactly the entity-CRUD trigger AR-4 named (op in `worker.ts` + proxy in `client.ts`);
+  `exec`/`batch` stay deferred (unused by `createDrizzleProxy`, which needs only `run` + `values`).
 - **Sync WASM build + AccessHandlePoolVFS** (the non-Asyncify VFS): no SharedArrayBuffer → **no COOP/COEP headers**.
 - The proxy callback returns wa-sqlite's positional `row()` arrays; Drizzle maps them (`mapResultRow`) — we never
   import `mapResultRow`.

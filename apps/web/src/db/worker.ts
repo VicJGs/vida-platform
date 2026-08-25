@@ -32,9 +32,8 @@ async function open(dbName: string): Promise<void> {
 // main-thread client (client.ts) needs: `run` (write), `migrate` (explicit),
 // `exists` (per-name first-run detection). `exec` is KEPT as an alias of `run`
 // (do not remove — AR-2 compatibility, R7).
-// SEAM — `values` / `batch` (the Drizzle-proxy repository path) are deferred to
-// when module entity-CRUD lands (UI-3 / M1.1+); add the ops here + on the client
-// driver then. AR-4 grain = mechanism + one reference read, not the full data path.
+// `values` (the Drizzle-proxy read path) LANDED with MOD-notes ② · B1 — the first module entity-CRUD, exactly the
+// trigger AR-4 named. `batch` stays deferred (the createDrizzleProxy callback needs only run + values).
 type WorkerRequest =
   | { id: number; op: 'open'; dbName: string }
   | { id: number; op: 'exists'; dbName: string }
@@ -42,10 +41,11 @@ type WorkerRequest =
   | { id: number; op: 'run'; sql: string; params?: unknown[] }
   | { id: number; op: 'exec'; sql: string; params?: unknown[] } // alias of 'run' (AR-2 compat)
   | { id: number; op: 'query'; sql: string; params?: unknown[] }
+  | { id: number; op: 'values'; sql: string; params?: unknown[] } // positional arrays — the Drizzle-proxy read path (B1)
   | { id: number; op: 'close' }
 
 type WorkerResponse =
-  | { id: number; ok: true; rows?: Record<string, unknown>[]; result?: unknown }
+  | { id: number; ok: true; rows?: Record<string, unknown>[] | unknown[][]; result?: unknown }
   | { id: number; ok: false; error: string }
 
 function assertOpen(d: SqliteDriver | null): asserts d is SqliteDriver {
@@ -91,6 +91,13 @@ workerScope.onmessage = async (event: MessageEvent<WorkerRequest>): Promise<void
       case 'query': {
         assertOpen(driver)
         const rows = await driver.query(msg.sql, msg.params)
+        response = { id: msg.id, ok: true, rows }
+        break
+      }
+      case 'values': {
+        // The Drizzle-proxy read path (createDrizzleProxy → driver.values). Positional-array rows (B1).
+        assertOpen(driver)
+        const rows = await driver.values(msg.sql, msg.params)
         response = { id: msg.id, ok: true, rows }
         break
       }

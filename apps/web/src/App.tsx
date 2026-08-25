@@ -5,7 +5,9 @@ import { useEffect, useState } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { ToastProvider, UIProvider } from '@vida/ui'
+import { initVault } from '@vida/core'
 import { ensureDbReady } from './db/boot'
+import { ensureDeviceId } from './db/device'
 import { queryClient } from './lib/query-client'
 import { Onboarding } from './onboarding/onboarding'
 import { useFirstRun } from './onboarding/use-first-run'
@@ -26,13 +28,17 @@ export function App() {
   useEffect(() => {
     let active = true
     setDbError(null)
+    // Boot order (MOD-notes ② · B1): DB open+migrated → device id resolved (N2, reads
+    // app_state) → libsodium ready (N1, before any Notes write hashes _sync_hash) → render.
     ensureDbReady()
+      .then(() => ensureDeviceId())
+      .then(() => initVault())
       .then(() => {
         if (active) setDbReady(true)
       })
       .catch((e: unknown) => {
-        // Open can reject (WASM load, migration error). Surface it with a retry
-        // instead of an unhandled rejection + a permanent "Loading…" (MUST-4).
+        // Open can reject (WASM load, migration error), as can device-id I/O or vault init.
+        // Surface it with a retry instead of an unhandled rejection + a permanent "Loading…" (MUST-4).
         if (active) setDbError(e instanceof Error ? e : new Error(String(e)))
       })
     return () => {
