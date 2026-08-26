@@ -81,6 +81,13 @@ export function ensureEditorStyles(): void {
     // (bg/border/text) is Tamagui tokens inside the node-view (BR-E5-4). Without this the NodeViewWrapper (a plain
     // block div, no default margin) makes consecutive placeholders touch top-and-bottom. Matches the callout rhythm.
     '.vida-editor-frame .vida-integration-block{margin:0.5em 0}',
+
+    // ── B3 `[[` wiki-link mark ──────────────────────────────────────────────────────────────────
+    // A wiki-link looks like a link: the info-accent colour + underline (BR-B3-4). Colour reads `--colorBrandPrimary`
+    // — the SAME base-scope accent the callout/table/image rules use (probe-emitted, theme-switching; NOT an
+    // `--accent*`/`--colorTextLink` sub-theme var — the "cite tokens from emitted output" lesson, A-1). No href, so
+    // it's styled text, not a navigable anchor (in-content traversal is not a B3 concern — slice-map:32).
+    '.vida-editor-frame .vida-wikilink{color:var(--colorBrandPrimary);text-decoration:underline;cursor:pointer}',
   ].join('')
   document.head.appendChild(style)
 }

@@ -18,10 +18,17 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import { styled, Text, View, useMedia } from '@tamagui/core'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Button, Dialog, Input, Menu, toast, type MenuItem } from '@vida/ui'
-import { VidaEditor, type EditorDocument } from '@vida/editor'
+import { VidaEditor, type EditorDocument, type WikiLinkConfig } from '@vida/editor'
 import type { PageRow } from '@vida/core'
 import { deriveTerminalState } from '../../state-conventions/terminal-state'
-import { useDeleteNote, useNote, useUpdateNote } from './use-note'
+import { getNotesService } from '../notes/notes-service'
+import {
+  useCreateNoteFromLink,
+  useCreatePageLink,
+  useDeleteNote,
+  useNote,
+  useUpdateNote,
+} from './use-note'
 import { EMPTY_DOC, parseContent, serializeContent } from './note-content-codec'
 
 const AUTOSAVE_DEBOUNCE_MS = 600
@@ -140,6 +147,22 @@ function usePageAutosave(
   return { persistTitle, persistContent }
 }
 
+// ── B3 `[[` picker config builder (pure, testable — the app↔editor binding) ──────────────────────────────
+// Presents resolveWikiLink candidates AS-IS (no self-filter — self-links are a valid, handled case, BR-B3-7/D-4);
+// title null → 'Untitled' (PageRow.title is string|null). onCreate/onSelect delegate to the fail-loud mutation hooks.
+export function buildWikiConfig(deps: {
+  resolveWikiLink: (text: string) => Promise<PageRow[]>
+  createNote: (title: string) => Promise<PageRow>
+  createLink: (targetId: string) => Promise<unknown>
+}): WikiLinkConfig {
+  return {
+    query: (text) =>
+      deps.resolveWikiLink(text).then((rows) => rows.map((r) => ({ id: r.id, title: r.title ?? 'Untitled' }))),
+    onCreate: (text) => deps.createNote(text).then((r) => ({ id: r.id, title: r.title ?? text })),
+    onSelect: (c) => deps.createLink(c.id).then(() => undefined),
+  }
+}
+
 // ── the loaded surface (success — a real PageRow) ────────────────────────────────────────────────────────
 function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNode {
   const navigate = useNavigate()
@@ -147,6 +170,8 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
   const autosave = useUpdateNote(id) // the debounced single-writer for title/content
   const meta = useUpdateNote(id) // a SEPARATE instance for discrete favorite/archive toggles (own isPending; no contention)
   const del = useDeleteNote(id)
+  const createLink = useCreatePageLink(id) // B3 — the `[[` picker's onSelect (fail-loud hook, BR-B3-5)
+  const createNote = useCreateNoteFromLink() // B3 — create-on-miss (BR-B3-6)
   const railId = useId()
 
   // Seed the editor ONCE from the first read; never re-seed from a refetch (BR-B2-4).
@@ -166,6 +191,20 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
     [],
   )
   const { persistTitle, persistContent } = usePageAutosave(autosave, baseline)
+
+  // B3 — the `[[` picker config injected into @vida/editor (keeps the editor @vida/core-free, BR-B3-2). `query` presents
+  // resolveWikiLink's candidates AS-IS — no self-filter: a self-link is a valid, handled case (BR-B3-7/D-4). The writes
+  // go through the fail-loud mutation hooks (onError Toast); applyWikiSelection awaits onSelect BEFORE the mark, so a
+  // rejected write leaves no dangling link (BR-B3-5). The editor reads this ONCE at mount (R-2).
+  const wikiConfig = useMemo<WikiLinkConfig>(
+    () =>
+      buildWikiConfig({
+        resolveWikiLink: (text) => getNotesService().resolveWikiLink(text),
+        createNote: (title) => createNote.mutateAsync(title),
+        createLink: (targetId) => createLink.mutateAsync(targetId),
+      }),
+    [createLink, createNote],
+  )
 
   const onTitleChange = (v: string): void => {
     setTitle(v)
@@ -266,8 +305,9 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
           defaultValue={seeded.doc}
           editable={!corrupt}
           aria-label="Note body"
-          placeholder="Type ‘/’ for a block…"
+          placeholder="Type ‘/’ for a block, ‘[[’ to link a note…"
           onChange={onEditorChange}
+          wikiConfig={corrupt ? undefined : wikiConfig}
         />
       </MainCol>
 

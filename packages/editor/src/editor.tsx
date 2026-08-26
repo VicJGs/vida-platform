@@ -20,6 +20,7 @@ import { ensureEditorStyles } from './internal/editor-styles'
 import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
 import { INTEGRATION_BLOCK_EXTENSIONS } from './extensions/integration-blocks'
 import { SlashCommand, slashActive, slashComboboxAttrs } from './extensions/slash-command'
+import { WikiLink, WikiLinkMark, wikiActive, wikiComboboxAttrs, type WikiLinkConfig } from './extensions/wiki-link'
 import { EditorToolbar } from './toolbar'
 
 export interface VidaEditorProps {
@@ -33,6 +34,10 @@ export interface VidaEditorProps {
   toolbar?: boolean
   /** Placeholder text for the empty state. */
   placeholder?: string
+  /** Enable the `[[` note-link picker (MOD-notes B3). Injected by the app (query/onCreate/onSelect) so the editor stays
+   *  `@vida/core`-free (BR-B3-2). Omit → the picker is off (the `wikiLink` mark still renders existing links).
+   *  Read ONCE at mount (the editor is created with `[]` deps) — pass a stable value. */
+  wikiConfig?: WikiLinkConfig
   /** Accessible name for the textbox (a11y — BR-6). One of these is REQUIRED. */
   'aria-label'?: string
   'aria-labelledby'?: string
@@ -92,7 +97,7 @@ function warnMissingName(ariaLabel?: string, ariaLabelledby?: string): void {
 }
 
 function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEditorHandle>): React.ReactElement {
-  const { defaultValue, onChange, editable = true, toolbar = true, placeholder } = props
+  const { defaultValue, onChange, editable = true, toolbar = true, placeholder, wikiConfig } = props
   const ariaLabel = props['aria-label']
   const ariaLabelledby = props['aria-labelledby']
 
@@ -118,7 +123,10 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
     role: 'textbox',
     'aria-multiline': 'true',
     ...baseName,
+    // The slash menu (E4) and the `[[` picker (B3) both flip the host role→combobox while open; only one is active at a
+    // time. editorProps.attributes is the SINGLE `role` writer — a plugin cannot override it (BR-B3-9).
     ...slashComboboxAttrs(slashActive(state)),
+    ...wikiComboboxAttrs(wikiActive(state)),
   })
 
   const editor = useEditor({
@@ -135,6 +143,10 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
       // E4 — the `/`-triggered slash menu (BR-E4-1). Inert until `/` is typed; a read-only editor can't type, so no
       // editable gate is needed (contrast the always-visible E3 toolbar's render-gate).
       SlashCommand,
+      // B3 — the `wikiLink` MARK (registered UNCONDITIONALLY so existing `[[`-links in content render — BR-B3-4) + the
+      // `[[` picker Suggestion (gated on `wikiConfig`; off when absent — BR-B3-2).
+      WikiLinkMark,
+      WikiLink.configure({ config: wikiConfig ?? null }),
     ],
     content: (defaultValue ?? undefined) as Content,
     editable,

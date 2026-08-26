@@ -39,12 +39,20 @@ const h = vi.hoisted(() => ({
   note: vi.fn(),
   update: vi.fn(),
   del: vi.fn(),
+  createLink: vi.fn(),
+  createNote: vi.fn(),
   updateMutate: vi.fn(),
   delMutate: vi.fn(),
 }))
-vi.mock('./use-note', () => ({ useNote: h.note, useUpdateNote: h.update, useDeleteNote: h.del }))
+vi.mock('./use-note', () => ({
+  useNote: h.note,
+  useUpdateNote: h.update,
+  useDeleteNote: h.del,
+  useCreatePageLink: h.createLink,
+  useCreateNoteFromLink: h.createNote,
+}))
 
-import { NoteDetail } from './note-detail'
+import { NoteDetail, buildWikiConfig } from './note-detail'
 
 const DOC = { type: 'doc', content: [{ type: 'paragraph' }] }
 const page = (over: Partial<PageRow> = {}): PageRow =>
@@ -74,6 +82,8 @@ const success = (over: Partial<PageRow> = {}) =>
 beforeEach(() => {
   h.update.mockReturnValue({ mutate: h.updateMutate, isPending: false })
   h.del.mockReturnValue({ mutate: h.delMutate, isPending: false })
+  h.createLink.mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue(undefined), isPending: false })
+  h.createNote.mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false })
 })
 afterEach(() => {
   cleanup()
@@ -227,5 +237,35 @@ describe('NoteDetail rail toggle (EC-7)', () => {
     fireEvent.click(toggle)
     const toggleAfter = screen.getByRole('button', { name: /show panel|hide panel/i })
     expect(toggleAfter.getAttribute('aria-expanded')).toBe(String(!openAtStart))
+  })
+})
+
+// ── B3 · the `[[` picker app binding (buildWikiConfig) ─────────────────────────────────────────────────────
+describe('buildWikiConfig — the [[ picker service binding (B3)', () => {
+  const row = (id: string, title: string | null): PageRow => ({ id, title }) as unknown as PageRow
+
+  it('query maps resolveWikiLink rows to candidates AS-IS incl. the current page (no self-filter); null title → Untitled', async () => {
+    const resolveWikiLink = vi.fn().mockResolvedValue([row('self', 'Me'), row('p2', null)])
+    const cfg = buildWikiConfig({ resolveWikiLink, createNote: vi.fn(), createLink: vi.fn() })
+    const candidates = await cfg.query('m', new AbortController().signal)
+    expect(resolveWikiLink).toHaveBeenCalledWith('m')
+    expect(candidates).toEqual([
+      { id: 'self', title: 'Me' },
+      { id: 'p2', title: 'Untitled' },
+    ])
+  })
+
+  it('onCreate delegates to createNote (create-on-miss) and maps the new page to a candidate', async () => {
+    const createNote = vi.fn().mockResolvedValue(row('new', 'New Note'))
+    const cfg = buildWikiConfig({ resolveWikiLink: vi.fn(), createNote, createLink: vi.fn() })
+    expect(await cfg.onCreate('New Note')).toEqual({ id: 'new', title: 'New Note' })
+    expect(createNote).toHaveBeenCalledWith('New Note')
+  })
+
+  it('onSelect calls createLink with the candidate id (the page_links write)', async () => {
+    const createLink = vi.fn().mockResolvedValue(undefined)
+    const cfg = buildWikiConfig({ resolveWikiLink: vi.fn(), createNote: vi.fn(), createLink })
+    await cfg.onSelect({ id: 'target', title: 'T' })
+    expect(createLink).toHaveBeenCalledWith('target')
   })
 })

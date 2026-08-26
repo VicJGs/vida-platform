@@ -5,6 +5,38 @@ Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-st
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
+## Shipped (B3 — the `[[` wiki-link picker, MOD-notes ②)
+The `[[`-triggered note-link picker (LIF-131 · B3). A `@tiptap/suggestion` combobox — the sibling of E4's `SlashCommand`
+(e4-slash-menu.md:31 homed the `[[` autocomplete to MOD-notes). Type `[[` → a caret-anchored popup searches page titles;
+↑/↓/Enter/Esc drive it while **focus stays in the editor**. Fresh rebuild — a discontinued recovery-branch impl was
+REFERENCE ONLY. Spec `docs/specs/features/mod-notes/ui-ux/b3-note-link-picker.md · BR-B3-1..12`.
+- `extensions/wiki-link.ts` — **two extensions + a pure apply.** `WikiLinkMark` = the inline `wikiLink` MARK storing
+  `targetPageId` (NP-7: resolve-by-id, survives rename; parses `a[data-wikilink]`, disjoint from StarterKit's `link`
+  which owns `<a href>`); registered **UNCONDITIONALLY** in editor.tsx so existing `[[`-links render (a mark absent from
+  the schema is dropped on load — the E5 precedent). `WikiLink` = the `[[` `Suggestion` (`char:'[['`, `allowSpaces:true`
+  [titles carry spaces — diverges from E4's false], `allowedPrefixes:null` [mid-word `[[`], `debounce:150`), **GATED on an
+  injected `config`** — no config → no plugin (zero cost). `applyWikiSelection` = the pure, testable apply: **row FIRST
+  (await `onSelect`/`onCreate`), mark SECOND** — a rejected write throws BEFORE the mark, so content never renders a link
+  with no backing `page_links` row (BR-B3-5). `wikiActive`/`wikiComboboxAttrs` = the host combobox ARIA merged into
+  editor.tsx's `editorProps.attributes` (the single `role` writer, beside `slashComboboxAttrs`). `stripWikiClose` trims a
+  typed trailing `]]`.
+- `wiki-link-menu.tsx` — the combobox popup (mirrors `slash-menu.tsx`): `role=listbox` under `<Theme name="Menu">`,
+  `role=option` rows, a trailing **"+ Create '<query>'"** row for a non-empty query (create-on-miss), loading/empty
+  hints, imperative `onKeyDown` (↑/↓ wrap, Enter), `aria-activedescendant` on the host. Menu sub-theme tokens, no
+  injected CSS/motion.
+- **Injected-config boundary (BR-B3-2):** `@vida/editor` stays `@vida/core`-free. `<VidaEditor>` gains
+  `wikiConfig?: WikiLinkConfig` (`{ query, onCreate, onSelect }`); the app (note-detail) wires it to `resolveWikiLink` /
+  `createPage` / `createPageLink`. Barrel exports `type { WikiLinkConfig, WikiLinkCandidate }`. Read ONCE at mount (`[]`
+  deps) — pass a stable value.
+- `internal/editor-styles.ts` — one rule: `.vida-wikilink{color:var(--colorBrandPrimary);text-decoration:underline}`
+  (the emitted base accent, the cite-tokens-from-emitted-output lesson; no href → styled text, not a navigable anchor —
+  in-content traversal is B4/B5, not B3).
+- Tests: `extensions/wiki-link.test.ts` (**10** — registration, `[[` activation, `applyWikiSelection` order +
+  **reject→no-mark**, `stripWikiClose`) + `wiki-link-menu.test.tsx` (**9** — states, create-row, keyboard). **243 total.**
+  Boundary unchanged (no `@vida/core`); `@tiptap/suggestion` already installed (E4 dep). **░Visual Gate PASS░** (live:
+  picker at caret · real-service candidates · self-candidate incl. [no self-filter] · create-on-miss → real note+link ·
+  select-existing · NP-5 idempotent re-link · NP-7 mark · indigo styled link · combobox ARIA · 375+1440 · console clean).
+
 ## Shipped (E8 — DOCX serializer)
 The **DOCX serializer** (ADR-001:102 — `docx@9.7.1`, Node + browser). **Emit-only, no round-trip.** The LAST serializer —
 the suite (md · PDF · DOCX) is COMPLETE. Durable: `docs/editor/serialization-spec.md`. **v0.8.0.** ONE new top-level

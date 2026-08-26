@@ -7,9 +7,9 @@
 
 **Status:** MOD-notes increment ① (LIF-131, M1.1) — the `@vida/core` Notes & Pages **service** over the DB-4 schema
 — is COMPLETE (Track A, slices A1–A8, rebuilt ground-zero via the Entity Delivery Flow). The UI increment ② (Track B)
-is **IN PROGRESS** — **slices B1 (`/notes` collection) + B2 (note detail) are BUILT** (see the ② sections below);
-B3–B7 (`[[` picker, entity-link/backlink panels, neural edges, create-with-tags/filters, journal summary) remain
-INTENDED. `[FACT: packages/core/src/services/notes/{service,types,index}.ts; apps/web/src/app/{notes,note}/*]`
+is **IN PROGRESS** — **slices B1 (`/notes` collection) + B2 (note detail) + B3 (`[[` note-link picker) are BUILT** (see
+the ② sections below); B4–B7 (entity-link/backlink panels, neural edges, create-with-tags/filters, journal summary)
+remain INTENDED. `[FACT: packages/core/src/services/notes/{service,types,index}.ts; apps/web/src/app/{notes,note}/*; packages/editor/src/extensions/wiki-link.ts]`
 
 ## What is BUILT (MOD-notes ① · A1–A8)
 
@@ -132,7 +132,31 @@ delete → cascade → nav; favorite label-flip + rail reflect; success + not-fo
 App.integration flake, green standalone — env CPU contention); typecheck 0; eslint 0 errors.
 Specs: `docs/specs/features/mod-notes/ui-ux/{b2-note-detail,IMPLEMENTATION-PLAN-b2}.md`.
 
+## What is BUILT (MOD-notes ② · B3 — the `[[` note-link picker)
+The entity's reason-to-exist made real: *"how does a user link two notes?"* (EC-3, EC-2's `[[` half, EC-10). Spans two
+planes — the **`@vida/editor`** picker mechanism + the **`apps/web`** service wiring. `[FACT: slice-map.md:32; b3-note-link-picker.md]`
+- **`@vida/editor` (built fresh — a discontinued recovery-branch impl was reference only):** `extensions/wiki-link.ts`
+  (`WikiLinkMark` storing `target_page_id` [NP-7], registered unconditionally so links render; `WikiLink` `@tiptap/
+  suggestion` gated on an injected `wikiConfig`; `applyWikiSelection` = **row-first-then-mark, fail-loud** — reject → no
+  mark, BR-B3-5) + `wiki-link-menu.tsx` (the combobox popup, `+ Create` row) + host combobox ARIA (`editorProps`, the
+  single `role` writer) + the `.vida-wikilink` style. Editor stays `@vida/core`-free (injected config, BR-B3-2). See
+  `packages/editor/src/CLAUDE.md`.
+- **`apps/web` (note-detail wiring):** `useCreatePageLink`/`useCreateNoteFromLink` mutation hooks (mirror `useUpdateNote`
+  — invalidate `NOTES_LIST_KEY`, `onError` Toast fail-loud; create-on-miss `onSuccess` toast) + `buildWikiConfig`
+  (pure) → `query`=`resolveWikiLink` (candidates **as-is**, **no self-filter** — self-links are a valid handled case,
+  BR-B3-7/D-4), `onCreate`=`createPage({type:'note'})`, `onSelect`=`createPageLink`. `[FACT: use-note.ts; note-detail.tsx buildWikiConfig]`
+- **Behavior (doc-grounded):** `[[` → picker → `resolveWikiLink` candidates → select → **`createPageLink` (page_links,
+  page↔page)** + insert the `wikiLink` mark; **create-on-miss** explicit ("+ Create") → stub `note` → then link; NP-5
+  idempotent revive-or-noop; NP-7 resolve-by-id (survives rename); split from `/entity-link` (entity_links, B4).
+### Visual Gate (light, M1.0) — PASS
+Live browser: `[[` opens the picker at the caret; real-service candidates (incl. the current note — no self-filter);
+create-on-miss → a REAL new note + link + styled indigo link; select-existing → the created note is searchable; NP-5
+idempotent re-link (no error); NP-7 mark stores `target_page_id`; combobox ARIA (role/expanded/controls/activedescendant)
++ reverts on close; list invalidates live (the create-on-miss note joins the collection); × 375/1440; console clean.
+`@vida/editor` **243 tests** (+19: wiki-link 10, wiki-link-menu 9) · `@vida/web` **217 tests** (+3 buildWikiConfig) ·
+typecheck 0 · eslint 0 errors. Specs: `docs/specs/features/mod-notes/ui-ux/{b3-note-link-picker,IMPLEMENTATION-PLAN-b3}.md`.
+
 ## Status
-2026-08-25 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
+2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2+B3 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
 (`docs/features/notes-and-pages/delivery/seam-contract.md`). Specs: `docs/specs/features/mod-notes/service/`.
-**Next: MOD-notes ② (Track B, UI surface, add-frontend-component) — B1–B7.**
+**Next: MOD-notes ② (Track B) — B4 (entity-link + backlink/link panels).**

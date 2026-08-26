@@ -11,7 +11,8 @@
 // ============================================================================
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { PageRow, UpdatePageInput } from '@vida/core'
+import { toast } from '@vida/ui'
+import type { PageLinkRow, PageRow, UpdatePageInput } from '@vida/core'
 import { getNotesService } from '../notes/notes-service'
 
 const NOTES_LIST_KEY = ['pages', 'list'] as const
@@ -40,5 +41,32 @@ export function useDeleteNote(id: string) {
   return useMutation({
     mutationFn: (): Promise<void> => getNotesService().softDeletePage(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTES_LIST_KEY }),
+  })
+}
+
+/** B3 — create a `page_links` row from this note to `targetId` (the `[[` picker's onSelect). Idempotent revive-or-noop
+ *  (A2/NP-5). The `onError` Toast makes the write FAIL-LOUD (BR-B3-5) — never swallowed. Invalidate the LIST so the
+ *  Backlinks (B4) / graph (B5) reflect the new link; never `noteKey(id)` (BR-B2-4 no re-seed). */
+export function useCreatePageLink(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (targetId: string): Promise<PageLinkRow> => getNotesService().createPageLink(id, targetId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTES_LIST_KEY }),
+    onError: () => toast({ title: "Couldn't create link", intent: 'danger' }),
+  })
+}
+
+/** B3 — create-on-miss: a stub `note` page titled `title` (the `[[` picker's onCreate, BR-B3-6). Same fail-loud +
+ *  list-invalidate contract (the new note joins the collection). A SUCCESS toast confirms the note created off-screen
+ *  (EC-10's informative toast, BR-B3-10) — the plain link (useCreatePageLink) stays silent-immediate (B2 convention). */
+export function useCreateNoteFromLink() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (title: string): Promise<PageRow> => getNotesService().createPage({ type: 'note', title }),
+    onSuccess: (row) => {
+      queryClient.invalidateQueries({ queryKey: NOTES_LIST_KEY })
+      toast({ title: `Created “${row.title ?? 'Untitled'}”`, intent: 'success' })
+    },
+    onError: () => toast({ title: "Couldn't create note", intent: 'danger' }),
   })
 }
