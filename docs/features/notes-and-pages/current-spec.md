@@ -7,9 +7,9 @@
 
 **Status:** MOD-notes increment ① (LIF-131, M1.1) — the `@vida/core` Notes & Pages **service** over the DB-4 schema
 — is COMPLETE (Track A, slices A1–A8, rebuilt ground-zero via the Entity Delivery Flow). The UI increment ② (Track B)
-is **IN PROGRESS** — **slice B1 (the `/notes` collection surface) is BUILT** (see the ② section below); B2–B7 (real
-editor mount, `[[` picker, panels, neural edges, create-with-tags/filters, journal summary) remain INTENDED.
-`[FACT: packages/core/src/services/notes/{service,types,index}.ts; apps/web/src/app/notes/*]`
+is **IN PROGRESS** — **slices B1 (`/notes` collection) + B2 (note detail) are BUILT** (see the ② sections below);
+B3–B7 (`[[` picker, entity-link/backlink panels, neural edges, create-with-tags/filters, journal summary) remain
+INTENDED. `[FACT: packages/core/src/services/notes/{service,types,index}.ts; apps/web/src/app/{notes,note}/*]`
 
 ## What is BUILT (MOD-notes ① · A1–A8)
 
@@ -99,7 +99,40 @@ Real browser: empty (+create-CTA) + success × List/Gallery/Calendar/Neural × 3
 (New Note → `createPage`/`createInTx` round-trips through the worker); a11y (real `<h2>`, APG Tabs, role=status/list,
 rows role=button, keyboard-reachable nodes); console clean. `@vida/web` **193 tests**; `@vida/core` **844**; tc 0; eslint 0.
 
+## What is BUILT (MOD-notes ② · B2 — the note-detail surface)
+
+### The detail surface (`apps/web/src/app/note/`)
+- **`/note/$id` route** (`index.tsx` → `note-detail.tsx`) — fills the B1 enabling stub. Reads `$id` via
+  `getRouteApi('/note/$id').useParams()` (decoupled-lazy pattern; does not pull the route config into the chunk).
+  `[FACT: index.tsx; routes.tsx:70-74]`
+- **Real `@vida/editor` mount (EC-6)** over `pages.content`, with local **autosave** (LF-2, no save button):
+  `note-content-codec.ts` is the `content` (stringified TipTap JSON \| null) ⇄ `EditorDocument` codec; a corrupt
+  value **degrades to a read-only editor + flag banner** (business-rules.md:29 — the ONE doc-mandated try/catch,
+  distinct from the fail-loud config path). `apps/web` gained `@vida/editor` as a workspace dep. `[FACT: note-detail.tsx; note-content-codec.ts; editor.tsx:25-39]`
+- **Single-writer autosave (BR-B2-4):** one debounced writer coalesces `{title, content}`; the content baseline is
+  the **normalized** serialization so the editor's mount echo is a true no-op (no spurious save-per-open); the editor
+  is seeded ONCE (`useMemo([])`) and never re-seeded from a refetch; writes invalidate `['pages','list']` only.
+  `[FACT: note-detail.tsx usePageAutosave; use-note.ts]`
+- **Editable title** over `pages.title` (header); **favorite/archive** discrete toggles (a SEPARATE mutation
+  instance from autosave) reflecting from the returned `PageRow`, state conveyed by the menu-item **label** (not
+  `aria-pressed` — invalid on `role=menuitem`). `[FACT: note-detail.tsx]`
+- **Collapsible detail rail (EC-7)** — a `role="complementary"` panel (metadata: created/updated/word_count/
+  favorite/archived) toggled from the header (`aria-expanded`/`aria-controls`); **responsive: side-by-side ≥768,
+  stacked full-width <768** (a `flex:1` MainCol collapses to height-0 in a column under RNW `minHeight:0` — fixed to
+  content-height/full-width when stacked; a live Visual-Gate catch). `[FACT: note-detail.tsx Root/MainCol/Rail]`
+- **Confirm-gated soft-delete (EC-11)** — `@vida/ui Dialog dismissible={false}` → `softDeletePage` (A8 cascade) →
+  navigate to `/notes`. `[FACT: note-detail.tsx; dialog.tsx:46-47]`
+- **Read axis (BR-B2-2):** `deriveTerminalState` over `useNote` → loading / error (query reject) / not-found (null) /
+  success; each rendered distinctly. `[FACT: note-detail.tsx; terminal-state.ts]`
+
+### Visual Gate (light, M1.0) — PASS
+Live browser: EC-6 editor mount + autosave persisted across reload; EC-7 rail toggle + narrow-stack; EC-11 confirm
+delete → cascade → nav; favorite label-flip + rail reflect; success + not-found read states; × 1440/768/narrow; a11y
+(dialog focus, landmarks, named textboxes, menu); console clean. `@vida/web` **214 tests** (28 note; 1 pre-existing
+App.integration flake, green standalone — env CPU contention); typecheck 0; eslint 0 errors.
+Specs: `docs/specs/features/mod-notes/ui-ux/{b2-note-detail,IMPLEMENTATION-PLAN-b2}.md`.
+
 ## Status
-2026-08-25 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1 BUILT** (Track B opened), branch `mod-notes-rebuild`. The ①→② seam is frozen
+2026-08-25 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
 (`docs/features/notes-and-pages/delivery/seam-contract.md`). Specs: `docs/specs/features/mod-notes/service/`.
 **Next: MOD-notes ② (Track B, UI surface, add-frontend-component) — B1–B7.**
