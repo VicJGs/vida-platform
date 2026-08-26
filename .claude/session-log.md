@@ -5697,3 +5697,48 @@ Next session:
   - **FIRST ACTION: Track B · slice B5 — Neural note-graph edges** (note-node graph over `getPageLinksFrom`; node-click → detail). EC-1/EC-10. Same §XXVI double-gate → ░Visual Gate░.
   - Reload: `delivery/slice-map.md` (B5 row) · `delivery/seam-contract.md` (B5 ← `getPageLinksFrom`) · `delivery/envision.md` (EC-1) · `apps/web/src/app/notes/notes-collection.tsx` (the B1 Neural nodes-only surface B5 adds edges to).
   - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; `corepack pnpm`). Branch `mod-notes-rebuild` (B4 uncommitted; B3 = `6eff41e`).
+
+---
+Date: 2026-08-26 (mod-notes session 17)
+Task: mod-notes (LIF-131) — M1.1 HEAD · Track B (② UI), slice B5
+Goal: Deliver Track B slice B5 — Neural note-graph page-link edges — via the Entity UI/UX Build Flow (per-slice ░Visual Gate░).
+Completed:
+  - **B5 BUILT + COMMITTED `618d15c` + close-out `de23462` → ░Visual Gate PASS░.** The smallest Track-B slice — a
+    **pure `apps/web` slice, no package touched** — filling the B1 Neural view's `edges={[]}` with real `page_links` edges.
+    - `apps/web/src/app/notes/use-notes-list.ts`: `toGraphEdges(rows, nodeIds)` (pure filter both-ends-in-set + map
+      `source_page_id→source`, drops danglers BR-B5-2) + `useNotesGraphEdges(nodeIds, enabled)` (an **N-wide**
+      `getPageLinksFrom` fan-out, `Promise.all`, **lazily `enabled: view==='neural'`**, order-invariant
+      `['links','graph', sorted-sig]` key).
+    - `apps/web/src/app/notes/notes-collection.tsx`: `nodeIds` memo + `edges={edgesQuery.data ?? []}` (additive — edge
+      error degrades to nodes-only; `state` stays list-driven, BR-B5-4). Node-click → detail inherited from B1 (BR-B5-6).
+    - `apps/web/src/app/note/use-note.ts` (**R1 liveness**): `useInvalidateLinks` collapsed to the `['links']` **prefix**
+      + `useCreatePageLink` routed through it. Tests: `use-notes-list.test.ts` (toGraphEdges + fan-out + enabled-gate) +
+      `use-note.test.ts` (['links'] invalidation) + `notes-collection.test.tsx` mock fold.
+  - Full §XXVI: spec `ui-ux/b5-neural-graph-edges.md` (g1 Doc Gate REVISE→resolved) → Approval 1 →
+    `IMPLEMENTATION-PLAN-b5.md` (g2 empirical SHIP + 1 fold) → Approval 2 → impl → code-review (7 angles, no bugs, 2
+    hardenings) → `/critique` SHIP → **░Visual Gate PASS░** (live browser: WebGL edge Alpha—Bravo renders [node-list
+    "1 connections", was 0 pre-B5]; node-click→`/note/$id`; **EC-10 live BOTH ways** — remove link→"0 connections",
+    re-link via `[[`→"1 connections"; no dangling warning; 375/768/1440; a11y node-list focusable w/ counts; console
+    clean; shots `.claude/visual-gate/b5-*.png`).
+  - **Bars:** `@vida/web` **242 tests** (46 files) · root typecheck 12/12 · eslint 0 errors. §XXIX
+    `notes-and-pages/current-spec.md` + `current-business-rules.md` refreshed. Registry row updated.
+Decisions:
+  - **R1 liveness (the correctness heart):** a bare `NOTES_LIST_KEY` invalidation did NOT reach the graph's
+    `['links','graph',…]` key (React-Query invalidation is PREFIX-based) and `staleTime:30s` blocks mount-refetch, so a
+    new `[[` edge never appeared. The `['links']` prefix reaches graph + B4 panels — **also repaired a latent B4 gap**
+    (link writes never refreshed the Links-out/Backlinks panels). Grounded in `query-client.ts:18`.
+  - **g1 caught a plausible-but-false BR:** BR-B5-5 asserted invalidation on `NOTES_LIST_KEY` — false against the runtime.
+    Lesson: verify a cache-liveness BR's MECHANISM against the actual QueryClient config, not plausibility.
+  - Edges = `page_links` ONLY (node↔note); `entity_links` stay the B4 panels' concern (envision.md:25/seam-contract.md:41).
+  - DEF-N5-a did NOT re-surface — the `NeuralGraph` `graphKey` content-signature re-init handled async edge arrival (verified live).
+  - `GraphEdge` already barrel-exported (`@vida/ui` index.ts:46) — no package touch at all.
+  - Grounded throughout (Victor: "ground everything in the documentation as a clearance step").
+  - Memory saved: `verify-a-cache-liveness-BR-against-the-runtime-config`.
+Next session:
+  - **FIRST ACTION: Track B · slice B6 — tags / create-with-tags / favorite-archive filters** (`listPages` filters +
+    `tagEntity` + `updatePage` metadata). Same §XXVI double-gate → ░Visual Gate░.
+  - Reload: `delivery/slice-map.md` (B6 row) · `delivery/seam-contract.md:23` (B6 ← `listPages` filters + `tagEntity` +
+    `updatePage`) · `delivery/envision.md` (EC-4/EC-5 create-with-tags + favorites filter) ·
+    `apps/web/src/app/notes/{notes-collection,use-notes-list}.tsx` (the B1 collection B6 adds filters to). Then B7 (summary).
+  - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; `corepack pnpm`).
+    Branch `mod-notes-rebuild` (B5 = `618d15c`, close-out `de23462`).
