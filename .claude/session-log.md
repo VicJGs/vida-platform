@@ -5616,3 +5616,48 @@ Next session:
   - Reload: `delivery/slice-map.md` (B3 row) · `delivery/seam-contract.md` (B3 ← `resolveWikiLink`+`createPageLink`) · `delivery/envision.md` (EC-3: search/resolve-by-id/create-on-miss, never silent) · `packages/editor/src/{slash-command,slash-menu}.ts(x)` (E4 — the picker to mirror; `wiki-link*` may already exist in the editor dist — grep before building) · `apps/web/src/app/note/note-detail.tsx` (the editor mount B3 extends).
   - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; use `corepack pnpm`) — Node 20 default crashes jsdom 30. Branch `mod-notes-rebuild` (B2 = `3d24a0b`).
 ---
+
+---
+Date: 2026-08-26 (mod-notes session 15)
+Task: mod-notes (LIF-131) — M1.1 HEAD · Track B (② UI), slice B3
+Goal: Deliver Track B slice B3 — the `[[` note-link picker — end-to-end via the Entity UI/UX Build Flow (per-slice ░Visual Gate░).
+Completed:
+  - **B3 · `[[` note-link picker BUILT + committed** (`6eff41e` on `mod-notes-rebuild`). Two planes:
+    - `@vida/editor` (built FRESH — the discontinued recovery-branch impl was reference-only): `extensions/wiki-link.ts`
+      (`WikiLinkMark` stores `target_page_id`/NP-7, registered unconditionally; `WikiLink` `@tiptap/suggestion` gated on
+      an injected `wikiConfig`; `applyWikiSelection` = row-first-then-mark FAIL-LOUD [reject→no-mark]; `wikiActive`/
+      `wikiComboboxAttrs`/`stripWikiClose`; `debounce:150`) + `wiki-link-menu.tsx` (combobox popup + "+ Create" row) +
+      `editor.tsx` (`wikiConfig?` prop, register mark+plugin, merge ARIA) + `editor-styles.ts` (`.vida-wikilink`) + barrel.
+    - `apps/web`: `use-note.ts` (`useCreatePageLink`/`useCreateNoteFromLink` — fail-loud onError + create-on-miss onSuccess
+      toast) + `note-detail.tsx` (`buildWikiConfig` — candidates AS-IS, **no self-filter**; `wikiConfig` on `<VidaEditor>`).
+  - Full §XXVI: spec `ui-ux/b3-note-link-picker.md` (Doc Gate REVISE→resolved: self-filter miscite · RQ-v5 seam · allowSpaces
+    divergence · bug-attribution) → Approval 1 → `IMPLEMENTATION-PLAN-b3.md` (preflight + empirical gate-2 SHIP — opened
+    `@tiptap/suggestion@3.30` dist: `allowedPrefixes:null`/`char:'[['`/`Mark.create`/`insertContent` marks all verified) →
+    Approval 2 → **fold-audit (Victor directive) → 2 drifts fixed** → impl → code-review SHIP (debounce:150 + create-toast
+    folded) → **░Visual Gate PASS░** (live chrome-devtools: picker@caret · real candidates incl. self · create-on-miss→real
+    note+link · select-existing · NP-5 idempotent re-link · NP-7 mark · indigo styled link · combobox ARIA · list
+    invalidates live · 375+1440 · console clean; shots `.claude/visual-gate/b3-*.png`).
+  - §XXIX: `notes-and-pages/current-spec.md` (② B3 section) + `packages/editor/src/CLAUDE.md` (Shipped B3) refreshed.
+  - Bars: `@vida/editor` **243** (+19: wiki-link 10, wiki-link-menu 9) · `@vida/web` **217** (+3 buildWikiConfig) · tc 0 · eslint 0 errors.
+In progress:
+  - Track B continues: B4–B7 remain (B4 next). Track A (①) complete. `db-10` (M1.4) parked.
+Decisions:
+  - **The discontinued recovery-branch impl + the frozen delivery contract (seam-contract/slice-map) are REFERENCE, NOT
+    authority — the 5 aspect docs are** (Victor: "the frozen contract is a clear drift… check the documentation, this
+    version was discontinued because it was not implemented correctly"). Re-derived B3 from the aspect docs.
+  - **NO self-filter** — self-links are a documented, handled case (`current-spec.md:71` A8 "self-link dedup"); my filter
+    was a drift removing a valid capability (Victor: "check the documentation, you should not be asking").
+  - **B3 = EC-3 (picker only)** per `slice-map.md:32`; click-nav is not B3 (graph node-click=B5, panels=B4) — not a decision.
+  - Fail-loud write is the app's mutation-hook `onError` Toast; `applyWikiSelection` guarantees no-mark-on-reject. The
+    discontinued impl's real bug = the sync `command` `.catch(()=>{})` swallowing the write error (surfaced nowhere).
+  - Create-on-miss success toast (informative); plain link silent-immediate (B2 silent-success convention). BR-B3-10 reconciled.
+  - Memory saved: `discontinued-impl-and-frozen-decomposition-are-reference-not-authority` (Victor drift-catch ×3).
+Next session:
+  - **FIRST ACTION: TRACK B slice B4 — entity-link + backlink/link panels** (the `/entity-link` affordance → AR-6 write
+    via ①; the Links-out / Backlinks panels: page_links via A2 `getPageLinksTo` + entity_links via A5 `getBacklinks`/
+    `getEntityLinksFrom`, kept **distinct** from `[[`; EC-2). Same §XXVI double-gate → ░Visual Gate░.
+  - Reload: `delivery/slice-map.md` (B4 row) · `delivery/seam-contract.md` (B4 ← `createEntityLink`/`getBacklinks`/
+    `getEntityLinksFrom` + `getPageLinksTo`) · `delivery/envision.md` (EC-2) · `apps/web/src/app/note/note-detail.tsx`
+    (the collapsible rail B4 fills — B2 stood up the container + metadata; B4 adds the link panels).
+  - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; `corepack pnpm`) —
+    Node 20 default crashes jsdom 30. Branch `mod-notes-rebuild` (B3 = `6eff41e`).
