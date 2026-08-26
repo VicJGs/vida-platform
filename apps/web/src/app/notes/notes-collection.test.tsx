@@ -11,8 +11,14 @@ import type { PageRow } from '@vida/core'
 const nav = vi.fn()
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => nav }))
 
-const h = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), mutate: vi.fn() }))
-vi.mock('./use-notes-list', () => ({ useNotesList: h.list, useCreateNote: h.create }))
+const h = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), mutate: vi.fn(), edges: vi.fn() }))
+// B5 fold (g2-1): notes-collection now imports useNotesGraphEdges from this module — the whole-module mock MUST
+// stub it or every collection test throws "not a function".
+vi.mock('./use-notes-list', () => ({
+  useNotesList: h.list,
+  useCreateNote: h.create,
+  useNotesGraphEdges: h.edges,
+}))
 
 import { NotesCollection } from './notes-collection'
 import { useNotesViewStore } from '../../stores/notes-view-store'
@@ -29,12 +35,14 @@ const renderScreen = () =>
 
 beforeEach(() => {
   h.create.mockReturnValue({ mutate: h.mutate, isPending: false })
+  h.edges.mockReturnValue({ data: undefined }) // B5 default: no edges (the 4 non-neural views never read them)
 })
 afterEach(() => {
   cleanup()
   h.list.mockReset()
   h.create.mockReset()
   h.mutate.mockReset()
+  h.edges.mockReset()
   nav.mockReset()
   useNotesViewStore.setState({ view: 'list' }) // reset the module-scope ephemeral store between tests
 })
@@ -94,5 +102,32 @@ describe('NotesCollection view-switch', () => {
     expect(screen.getByRole('list', { name: 'Notes, list view' })).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: 'Gallery' }))
     expect(screen.getByRole('list', { name: 'Notes, gallery view' })).toBeTruthy()
+  })
+})
+
+describe('NotesCollection Neural edges (B5)', () => {
+  it('gates the edge fan-out OFF when the Neural view is not active (BR-B5-3 lazy-enable)', () => {
+    h.list.mockReturnValue({ isPending: false, isError: false, data: [page('1', 'Note A'), page('2', 'Note B')] })
+    renderScreen() // default view = list
+    expect(h.edges).toHaveBeenCalledWith(['1', '2'], false)
+  })
+
+  it('enables the fan-out + renders page-link edges as node connection counts on the Neural view (EC-1)', () => {
+    h.list.mockReturnValue({ isPending: false, isError: false, data: [page('1', 'Note A'), page('2', 'Note B')] })
+    h.edges.mockReturnValue({ data: [{ source: '1', target: '2' }] })
+    useNotesViewStore.setState({ view: 'neural' })
+    renderScreen()
+    expect(h.edges).toHaveBeenCalledWith(['1', '2'], true)
+    // WebGL canvas is aria-hidden in jsdom; the a11y node-list carries the degree derived from `edges` — non-zero once linked.
+    expect(screen.getByRole('button', { name: 'Note A, 1 connections' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Note B, 1 connections' })).toBeTruthy()
+  })
+
+  it('degrades to nodes-only (0 connections) when the edges query has no data (BR-B5-4)', () => {
+    h.list.mockReturnValue({ isPending: false, isError: false, data: [page('1', 'Note A')] })
+    h.edges.mockReturnValue({ data: undefined }) // error/pending → no edges, graph still shows its nodes
+    useNotesViewStore.setState({ view: 'neural' })
+    renderScreen()
+    expect(screen.getByRole('button', { name: 'Note A, 0 connections' })).toBeTruthy()
   })
 })

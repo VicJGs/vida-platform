@@ -12,7 +12,7 @@
 // enabling stub).
 // ============================================================================
 
-import { type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { useNavigate } from '@tanstack/react-router'
 import {
@@ -26,7 +26,7 @@ import {
 } from '@vida/ui'
 import type { PageRow } from '@vida/core'
 import { deriveTerminalState } from '../../state-conventions/terminal-state'
-import { useNotesList, useCreateNote } from './use-notes-list'
+import { useNotesList, useCreateNote, useNotesGraphEdges } from './use-notes-list'
 import { useNotesViewStore, type NotesView } from '../../stores/notes-view-store'
 
 const VIEW_ITEMS: ReadonlyArray<{ value: NotesView; label: string }> = [
@@ -64,6 +64,12 @@ export function NotesCollection(): ReactNode {
   // App derives the terminal state (isPending-first) + passes it to each view (BR-B1-1/2).
   const state = deriveTerminalState(query, (rows) => rows.length === 0)
   const items = query.data ?? []
+
+  // B5 — Neural page-link edges: a getPageLinksFrom fan-out over the node set, lazily fetched only for the Neural
+  // view (BR-B5-3). `edges` is additive — the graph's `state` stays node-driven; an edge error degrades to nodes-only
+  // (`?? []`), never blanking the graph (BR-B5-4).
+  const nodeIds = useMemo(() => items.map((p) => p.id), [items])
+  const edgesQuery = useNotesGraphEdges(nodeIds, view === 'neural')
 
   const openRow = (id: string): void => {
     void navigate({ to: '/note/$id', params: { id } })
@@ -142,7 +148,7 @@ export function NotesCollection(): ReactNode {
         <Tabs.Panel value="neural">
           <NeuralGraph
             nodes={items.map((p) => ({ id: p.id, label: pageTitle(p) }))}
-            edges={[]}
+            edges={edgesQuery.data ?? []}
             state={state}
             onNodeClick={openRow}
             aria-label="Notes, neural view"

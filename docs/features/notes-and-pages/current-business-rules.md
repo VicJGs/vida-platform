@@ -51,5 +51,7 @@ The rules the shipped `@vida/core` Notes & Pages service enforces in code. Inher
   platform model (IR-13). Saved-view selection → MOD-spaces/ADR-007.
 
 ## Status
-2026-08-25 — **MOD-notes ① COMPLETE** (Track A, A1–A8). **57 tests green** (`@vida/core` 844/844). See
-`current-spec.md` + `docs/specs/features/mod-notes/service/`. Next: MOD-notes ② (Track B).
+2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8, **57 tests green**, `@vida/core` 844/844). ② Track B: B1–B5
+shipped (collection · detail · `[[` picker · link panels · **B5 Neural page-link edges**). The B5 ② rule (a UI concern,
+homed in `current-spec.md`): link-write hooks invalidate the `['links']` prefix so the graph + B4 panels refresh live
+(EC-10). Next: MOD-notes ② (Track B) — B6 (tags/filters).

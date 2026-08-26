@@ -4,7 +4,7 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 
 | Unit | Type | Status | Last session |
 |------|------|--------|--------------|
-| [features/mod-notes](features/mod-notes/) | feature (add-backend, increment ①) | **implemented ✅** — `@vida/core` Notes & Pages service (`services/notes/*`); pages/page_links/note_attachments CRUD + wiki-resolve + NP-8 seed + facade→AR-6/AR-8; 16 tests green, tsc 0, ESLint 0; full §XXVI double-gate + post-impl critique (2 BLOCKERs caught+fixed); current-* born. M1.1 HEAD ①. Next: MOD-notes ② UI. LIF-131 | 2026-08-21-mod-notes |
+| [features/mod-notes](features/mod-notes/) | feature (Entity Delivery Flow · ① backend + ② UI) | **in progress 🔨** — ① TRACK A COMPLETE (A1–A8, seam frozen). ② TRACK B: B1–B4 shipped (░Visual Gate PASS░ each); **B5 forward spec authored** (`ui-ux/b5-neural-graph-edges.md` — Neural note-graph edges: `page_links` fan-out → `NeuralGraph.edges`; pure apps/web slice) → g1 Doc Gate next. M1.1 HEAD. LIF-131 | 2026-08-26-mod-notes-17 |
 | [foundation/db-1-schema-primitives](foundation/db-1-schema-primitives/) | refactor (foundation) | done — committed b234e85, LIF-61 Done | 2026-07-21-db-1-schema-primitives |
 | [foundation/storage-master-plan](foundation/storage-master-plan/) | planning (foundation) | gate 1 — PLAN drafted | 2026-07-22-storage-master-plan |
 | [foundation/db-2-sync-metadata-columns](foundation/db-2-sync-metadata-columns/) | refactor (foundation) | ⛔ PARKED — superseded by ADR-017 (2026-07-23) | 2026-07-22-db-2-sync-metadata-columns |

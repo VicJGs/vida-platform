@@ -49,13 +49,16 @@ export function useDeleteNote(id: string) {
 }
 
 /** B3 — create a `page_links` row from this note to `targetId` (the `[[` picker's onSelect). Idempotent revive-or-noop
- *  (A2/NP-5). The `onError` Toast makes the write FAIL-LOUD (BR-B3-5) — never swallowed. Invalidate the LIST so the
- *  Backlinks (B4) / graph (B5) reflect the new link; never `noteKey(id)` (BR-B2-4 no re-seed). */
+ *  (A2/NP-5). The `onError` Toast makes the write FAIL-LOUD (BR-B3-5) — never swallowed. Invalidates the ['links']
+ *  namespace + the list (via `useInvalidateLinks`) so the Backlinks/Links-out panels AND the Neural graph reflect the
+ *  new link live (BR-B5-5, EC-10); never `noteKey(id)` (BR-B2-4 no re-seed).
+ *  ⚠ B5 fix: a bare `NOTES_LIST_KEY` invalidation did NOT reach the graph's `['links','graph',…]` key (different
+ *  prefix) — under `staleTime:30s` the new edge would never appear. `useInvalidateLinks` (['links'] prefix) does. */
 export function useCreatePageLink(id: string) {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidateLinks()
   return useMutation({
     mutationFn: (targetId: string): Promise<PageLinkRow> => getNotesService().createPageLink(id, targetId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTES_LIST_KEY }),
+    onSuccess: invalidate,
     onError: () => toast({ title: "Couldn't create link", intent: 'danger' }),
   })
 }
@@ -110,13 +113,15 @@ export function useNoteTitle(id: string) {
   })
 }
 
-/** Invalidate BOTH panel keys + the collection after a link write/remove — so Backlinks/Links-out/graph reflect it live
- *  (EC-10). NEVER `noteKey(id)` (the B2 no-re-seed rule, BR-B2-4/BR-B4-9). */
-function useInvalidateLinks(id: string): () => void {
+/** Invalidate the whole `['links']` namespace + the collection after a link write/remove — so Backlinks
+ *  (`['links','back',id]`), Links-out (`['links','out',id]`) AND the Neural graph (`['links','graph',…]`, B5) all
+ *  reflect it live (EC-10, BR-B5-5). React-Query invalidation is PREFIX-based, so the single `['links']` key covers
+ *  all three (and is why a bare `NOTES_LIST_KEY` invalidation never reached the graph). NEVER `noteKey(id)` (the B2
+ *  no-re-seed rule, BR-B2-4/BR-B4-9). */
+function useInvalidateLinks(): () => void {
   const queryClient = useQueryClient()
   return () => {
-    queryClient.invalidateQueries({ queryKey: backlinksKey(id) })
-    queryClient.invalidateQueries({ queryKey: linksOutKey(id) })
+    queryClient.invalidateQueries({ queryKey: ['links'] })
     queryClient.invalidateQueries({ queryKey: NOTES_LIST_KEY })
   }
 }
@@ -125,7 +130,7 @@ function useInvalidateLinks(id: string): () => void {
  *  Row FIRST, fail-loud (BR-B4-6): the caller (`entity-link-body`) awaits this BEFORE committing the node; `onError`
  *  Toast makes the failure loud. `entity_type='page'` for a page target (matches the backlinks query key). */
 export function useCreateEntityLink(id: string) {
-  const invalidate = useInvalidateLinks(id)
+  const invalidate = useInvalidateLinks()
   return useMutation({
     mutationFn: (target: { entityType: string; entityId: string }): Promise<EntityLinkRow> =>
       getNotesService().createEntityLink(id, target.entityType, target.entityId),
@@ -136,7 +141,7 @@ export function useCreateEntityLink(id: string) {
 
 /** B4 — remove an OUTGOING entity_links row (soft-delete, NP-9). Links-out only (backlinks are read-only, BR-B4-7). */
 export function useRemoveEntityLink(id: string) {
-  const invalidate = useInvalidateLinks(id)
+  const invalidate = useInvalidateLinks()
   return useMutation({
     mutationFn: (target: { entityType: string; entityId: string }): Promise<void> =>
       getNotesService().removeEntityLink(id, target.entityType, target.entityId),
@@ -147,7 +152,7 @@ export function useRemoveEntityLink(id: string) {
 
 /** B4 — remove an OUTGOING page_links row (soft-delete, NP-9). Links-out only (BR-B4-7). */
 export function useRemovePageLink(id: string) {
-  const invalidate = useInvalidateLinks(id)
+  const invalidate = useInvalidateLinks()
   return useMutation({
     mutationFn: (targetId: string): Promise<void> => getNotesService().removePageLink(id, targetId),
     onSuccess: invalidate,

@@ -76,8 +76,11 @@ fail-loud) · A8 cascade (full cascade + pre-state · self-link dedup · backlin
 ### The collection surface (`apps/web/src/app/notes/`)
 - **`/notes` route** (`index.tsx` → `notes-collection.tsx`) — replaces the AR-4 `<h2>` stub. Composes the four
   **hard-coded** `@vida/ui` renderers (`ListView`/`GalleryView`/`CalendarView`/`NeuralGraph`) behind an **ephemeral**
-  `Tabs` view-switch (Zustand `notes-view-store.ts`; saved-view *selection* stays MOD-spaces/ADR-007). Neural =
-  **nodes-only** (`edges={[]}`; page-link fan-out is B5). `[FACT: notes-collection.tsx]`
+  `Tabs` view-switch (Zustand `notes-view-store.ts`; saved-view *selection* stays MOD-spaces/ADR-007). Neural renders
+  **nodes + `page_links` edges** (B5): `useNotesGraphEdges` fans out `getPageLinksFrom` over the node set (lazily —
+  `enabled: view==='neural'`), maps `PageLinkRow → GraphEdge{source,target}`, filters danglers, and feeds
+  `<NeuralGraph edges>`; edges are additive (an edge error degrades to nodes-only, never blanking the graph).
+  `[FACT: notes-collection.tsx; use-notes-list.ts toGraphEdges/useNotesGraphEdges]`
 - **Four terminal states** derived app-side via UX-4 `deriveTerminalState` (isPending-first) + passed as the `state`
   prop; **empty carries a New Note create-CTA** (EC-4/EC-5). Row open + New Note → `/note/$id` (a B1 **enabling stub**
   route; B2 mounts the real editor). Default **recency order** (created_at desc) in `use-notes-list.ts`.
@@ -191,6 +194,8 @@ remove an entity-link → the Entity links group empties while the page-link sta
 Specs: `docs/specs/features/mod-notes/ui-ux/{b4-link-panels,IMPLEMENTATION-PLAN-b4}.md`.
 
 ## Status
-2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2+B3+B4 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
-(`docs/features/notes-and-pages/delivery/seam-contract.md`). Specs: `docs/specs/features/mod-notes/service/`.
-**Next: MOD-notes ② (Track B) — B5 (Neural note-graph edges).**
+2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2+B3+B4+B5 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
+(`docs/features/notes-and-pages/delivery/seam-contract.md`). Specs: `docs/specs/features/mod-notes/service/` + `ui-ux/`.
+**B5** shipped the Neural page-link edges (`useNotesGraphEdges` fan-out → `NeuralGraph.edges`) + widened the link-write
+hooks' invalidation to the `['links']` prefix so a link write refreshes the graph AND the B4 panels live (EC-10).
+**Next: MOD-notes ② (Track B) — B6 (tags / create-with-tags / favorite-archive filters).**
