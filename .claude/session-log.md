@@ -5590,3 +5590,29 @@ Next session:
   - Reload: `delivery/slice-map.md` (B2 row) · `delivery/seam-contract.md` (B2 ← `getPage`/`updatePage`/`softDeletePage` + @vida/editor) · `delivery/envision.md` (EC-6/7/11) · `apps/web/src/app/note/index.tsx` (the stub) · `@vida/editor` barrel.
   - Env: run web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`) — Node 20 default crashes jsdom 30 (`markAsUncloneable`). Branch `mod-notes-rebuild`. Visual Gate screenshots are gitignored (`.claude/visual-gate/`).
 ---
+
+---
+Date: 2026-08-25 (mod-notes session 14)
+Task: mod-notes (LIF-131) — Add Frontend Component / Entity Delivery Flow, Track B
+Goal: Deliver Track B slice B2 — the /note/$id note-detail surface — end-to-end via the Entity UI/UX Build Flow (per-slice ░Visual Gate░).
+Completed:
+  - **B2 · note detail BUILT + committed** (`3d24a0b` on `mod-notes-rebuild`). Files: `apps/web/src/app/note/{index,note-detail,use-note,note-content-codec}.tsx` (+ `note-detail.test.tsx`, `note-content-codec.test.ts`) · `apps/web/package.json` (+`@vida/editor` dep) · `pnpm-lock.yaml`.
+  - Fills the B1 `/note/$id` stub: reads `$id` via `getRouteApi('/note/$id')` (decoupled-lazy); mounts the **real `@vida/editor`** over `pages.content` with **local autosave** (LF-2, no save button); editable title; collapsible metadata rail; favorite/archive toggles; **confirm-gated soft-delete** (`Dialog dismissible={false}` → A8 cascade → nav `/notes`).
+  - `note-content-codec.ts` = the `content`(stringified JSON|null)⇄`EditorDocument` codec — corrupt value → read-only editor + flag banner (the ONE doc-mandated try/catch, business-rules.md:29).
+  - **Single-writer autosave**: one debounced writer coalescing `{title,content}`; content baseline = the NORMALIZED serialization so the editor mount echo is a true no-op (no spurious save-per-open); editor seeded ONCE (`useMemo([])`), never re-seeded; invalidate `['pages','list']` only. Favorite/archive on a SEPARATE mutation instance; state via menu-item LABEL (not `aria-pressed`).
+  - Responsive detail layout: side-by-side (main + 280px rail) ≥768, stacked full-width <768.
+  - Full §XXVI: spec `ui-ux/b2-note-detail.md` (gate-1 REVISE→resolved) → Approval 1 → `IMPLEMENTATION-PLAN-b2.md` (preflight PASSED + gate-2 empirical REVISE→resolved) → Approval 2 → impl → code-review MINOR-FIXES→resolved → **░Visual Gate PASS░** (live chrome-devtools: editor + autosave-across-reload · rail toggle + narrow-stack · confirm-delete→cascade→nav · favorite label-flip · not-found; 1440/768/narrow; a11y; console clean). Shots: `delivery/b2-shots/` (5).
+  - §XXIX: `notes-and-pages/current-spec.md` (② B2 section) · task file · TASKS.md. Memory saved: `flex1-child-collapses-to-height-0-in-column-under-rnw`.
+  - Bars: `@vida/core` 844/844 · `@vida/web` 214 (28 new note tests; 1 pre-existing `App.integration` flake, green standalone) · typecheck 0 · eslint 0.
+In progress:
+  - Track B continues: B3–B7 remain (B3 next). Track A (①) complete. `db-10` (M1.4) parked.
+Decisions:
+  - **Title editing is doc/vision-fixed, NOT a decision** — I wrongly fired an AskUserQuestion (title in B2 vs defer to B6); Victor drift-catch ("this is a drift check the documentation"). Re-grounded to the approved greybox (title in the header), `contract.md:10-12` (`updatePage` patches title), and NP-7 ("survives rename"). Same class as [[dont-frame-a-doc-resolved-handling-as-a-decision-nor-over-correct]] / [[decide-dont-ask-when-docs-give-the-answer]].
+  - Autosave = local, debounced, dirty-checked, no save button — doc-fixed by business-rules.md:29 (LF-2), not a UX choice.
+  - Corrupt content → read-only + flag is the ONE place a try/catch is doc-mandated (editor-degrade contract), deliberately distinct from A7's fail-loud config path.
+  - **The ░Visual Gate░ caught a real responsive bug** unit tests/jsdom can't see: a `flex:1` MainCol collapses to height 0 in the mobile column layout (RNW `minHeight:0`) → editor painted over the stacked rail. Fixed to content-height/full-width when stacked. Extends the "live gate catches a class unit tests bypass" lesson from worker-RPC to LAYOUT.
+Next session:
+  - **FIRST ACTION: TRACK B slice B3** — the `[[` note-link picker: a `@tiptap/suggestion` picker mirroring the E4 slash-menu → `resolveWikiLink(text)` candidates → select binds `createPageLink`; **create-on-miss** explicit (EC-3/EC-2/EC-10). Same §XXVI double-gate → ░Visual Gate░.
+  - Reload: `delivery/slice-map.md` (B3 row) · `delivery/seam-contract.md` (B3 ← `resolveWikiLink`+`createPageLink`) · `delivery/envision.md` (EC-3: search/resolve-by-id/create-on-miss, never silent) · `packages/editor/src/{slash-command,slash-menu}.ts(x)` (E4 — the picker to mirror; `wiki-link*` may already exist in the editor dist — grep before building) · `apps/web/src/app/note/note-detail.tsx` (the editor mount B3 extends).
+  - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; use `corepack pnpm`) — Node 20 default crashes jsdom 30. Branch `mod-notes-rebuild` (B2 = `3d24a0b`).
+---
