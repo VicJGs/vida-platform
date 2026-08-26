@@ -144,7 +144,7 @@ const CardText = styled(Text, {
  * has no editable child); `role="note"` + an accessible name announce a named, non-broken region (BR-E5-4, §XIV). It
  * shows the capability's label + description; the config attrs live in node state (round-tripped), NOT displayed here.
  */
-function IntegrationBlockPlaceholder({ node }: NodeViewProps): ReactElement {
+export function IntegrationBlockPlaceholder({ node }: NodeViewProps): ReactElement {
   const def = DEF_BY_NAME[node.type.name]
   const label = def?.label ?? node.type.name
   return (

@@ -50,6 +50,14 @@ vi.mock('./use-note', () => ({
   useDeleteNote: h.del,
   useCreatePageLink: h.createLink,
   useCreateNoteFromLink: h.createNote,
+  // B4 hooks — the note-detail now imports these (+ renders the link panels). Default them to inert/empty so the B2
+  // read-axis/autosave/delete tests keep exercising ONLY B2 (the panels render their empty state).
+  useCreateEntityLink: () => ({ mutate: vi.fn(), mutateAsync: vi.fn() }),
+  useRemoveEntityLink: () => ({ mutate: vi.fn() }),
+  useRemovePageLink: () => ({ mutate: vi.fn() }),
+  useBacklinks: () => ({ isPending: false, isError: false, data: { entityLinks: [], pageLinks: [] } }),
+  useLinksOut: () => ({ isPending: false, isError: false, data: { pageLinks: [], entityLinks: [] } }),
+  useNoteTitle: () => ({ data: null }),
 }))
 
 import { NoteDetail, buildWikiConfig } from './note-detail'

@@ -5,6 +5,28 @@ Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-st
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
+## Shipped (B4 — the entityLink/backlink block bodies, MOD-notes ②)
+The two **Notes-native ADR-008 block bodies** (LIF-131 · B4) — the real inline bodies that replace the E5 placeholder for
+`entityLink` + `backlink` (`intent-coverage.md:68-69` homes both BUILT-in-B4; `block-registry.md:20-21` "the owning module
+supplies the real body"). Spec `docs/specs/features/mod-notes/ui-ux/b4-link-panels.md · BR-B4-1..12`.
+- `extensions/block-bodies.tsx` — **the app-injected delegation seam.** `makeBlockBodyNode(type, render)` =
+  `createIntegrationBlockNode(def).extend({ addOptions:{render}, addNodeView: ReactNodeViewRenderer(BodyShell) })` —
+  `.extend()` preserves the E5 name/attrs/parseHTML/renderHTML (content round-trips), overriding only the node-view.
+  `BodyShell` renders `extension.options.render?.({attrs, updateAttributes, deleteNode})` else `IntegrationBlockPlaceholder`
+  (graceful fallback — the other 10 blocks). The editor stays **`@vida/core`-free AND app-free** (BR-1): it calls a
+  function it was handed; the app (note-detail) supplies the React body with its router/hooks/panels.
+- `editor.tsx` — `blockBodies?: BlockBodies` prop; the extensions array **SWAPS** `entityLink`/`backlink` out of
+  `INTEGRATION_BLOCK_EXTENSIONS` and re-adds `makeBlockBodyNode(...).configure({render})` (swap, NOT append — one `name`
+  registered twice throws). Read ONCE at mount (stable value, the `wikiConfig` precedent). `index.ts` exports
+  `BlockBodies`/`BlockBodyRenderer`.
+- **The `entityLink` picker is node-hosted** (no `slash-commands.ts` change): the E5 slash `run` inserts the empty node;
+  the app body renders the picker → row-first-fail-loud write → commit (`updateAttributes`) | self-clean (`deleteNode`).
+  The picker input is the **first interactive node-view** in the editor — verified live it captures keystrokes past
+  ProseMirror (stopPropagation on keydown + option `onMouseDown` preventDefault). App-side: `apps/web/src/app/note/
+  {entity-link-body,links-panels}.tsx`. Tests `extensions/block-bodies.test.tsx` (**6** — schema-preserve swap, attrs
+  round-trip, parseHTML discriminator, BodyShell delegate/fallback/null). **249 total.** ░Visual Gate PASS░ (see
+  `docs/features/notes-and-pages/current-spec.md` B4).
+
 ## Shipped (B3 — the `[[` wiki-link picker, MOD-notes ②)
 The `[[`-triggered note-link picker (LIF-131 · B3). A `@tiptap/suggestion` combobox — the sibling of E4's `SlashCommand`
 (e4-slash-menu.md:31 homed the `[[` autocomplete to MOD-notes). Type `[[` → a caret-anchored popup searches page titles;

@@ -19,6 +19,7 @@ import type { EditorDocument } from '@vida/types'
 import { ensureEditorStyles } from './internal/editor-styles'
 import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
 import { INTEGRATION_BLOCK_EXTENSIONS } from './extensions/integration-blocks'
+import { makeBlockBodyNode, type BlockBodies } from './extensions/block-bodies'
 import { SlashCommand, slashActive, slashComboboxAttrs } from './extensions/slash-command'
 import { WikiLink, WikiLinkMark, wikiActive, wikiComboboxAttrs, type WikiLinkConfig } from './extensions/wiki-link'
 import { EditorToolbar } from './toolbar'
@@ -38,6 +39,11 @@ export interface VidaEditorProps {
    *  `@vida/core`-free (BR-B3-2). Omit → the picker is off (the `wikiLink` mark still renders existing links).
    *  Read ONCE at mount (the editor is created with `[]` deps) — pass a stable value. */
   wikiConfig?: WikiLinkConfig
+  /** Real inline bodies for the two Notes-native ADR-008 blocks (MOD-notes B4). Injected by the app so the editor stays
+   *  `@vida/core`-free AND app-free (BR-B4-4): the `entityLink`/`backlink` node-views delegate to these renderers;
+   *  absent one, the E5 `IntegrationBlockPlaceholder` (the other 10 blocks + graceful fallback). Read ONCE at mount —
+   *  pass a stable value. */
+  blockBodies?: BlockBodies
   /** Accessible name for the textbox (a11y — BR-6). One of these is REQUIRED. */
   'aria-label'?: string
   'aria-labelledby'?: string
@@ -97,7 +103,7 @@ function warnMissingName(ariaLabel?: string, ariaLabelledby?: string): void {
 }
 
 function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEditorHandle>): React.ReactElement {
-  const { defaultValue, onChange, editable = true, toolbar = true, placeholder, wikiConfig } = props
+  const { defaultValue, onChange, editable = true, toolbar = true, placeholder, wikiConfig, blockBodies } = props
   const ariaLabel = props['aria-label']
   const ariaLabelledby = props['aria-labelledby']
 
@@ -138,8 +144,12 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
       ...STANDARD_BLOCK_EXTENSIONS,
       // E5 — the 11 platform integration nodes (ADR-008 `inline` render surface). Each renders a placeholder node-view
       // until its module body ships (BR-E5-1/4); registering them makes any doc containing an integration block render
-      // safely AND flips E4's disabled slash-entries on.
-      ...INTEGRATION_BLOCK_EXTENSIONS,
+      // safely AND flips E4's disabled slash-entries on. B4 (MOD-notes) SWAPS the two Notes-native nodes
+      // (`entityLink`/`backlink`) for `.extend()`ed versions whose node-view delegates to the injected `blockBodies`
+      // renderer (else the same placeholder) — a swap, NOT an append (two nodes with one `name` throw). BR-B4-4.
+      ...INTEGRATION_BLOCK_EXTENSIONS.filter((n) => n.name !== 'entityLink' && n.name !== 'backlink'),
+      makeBlockBodyNode('entityLink', blockBodies?.entityLink ?? null),
+      makeBlockBodyNode('backlink', blockBodies?.backlink ?? null),
       // E4 — the `/`-triggered slash menu (BR-E4-1). Inert until `/` is typed; a read-only editor can't type, so no
       // editable gate is needed (contrast the always-visible E3 toolbar's render-gate).
       SlashCommand,

@@ -156,7 +156,41 @@ idempotent re-link (no error); NP-7 mark stores `target_page_id`; combobox ARIA 
 `@vida/editor` **243 tests** (+19: wiki-link 10, wiki-link-menu 9) · `@vida/web` **217 tests** (+3 buildWikiConfig) ·
 typecheck 0 · eslint 0 errors. Specs: `docs/specs/features/mod-notes/ui-ux/{b3-note-link-picker,IMPLEMENTATION-PLAN-b3}.md`.
 
+## What is BUILT (MOD-notes ② · B4 — entity-link + backlink block bodies + link panels)
+The note-detail's full link surface (EC-2 "Link + Links-out + Backlinks") — the **two Notes-native ADR-008 block bodies**
++ the **two rail panels**. Doc-fixed BUILT-in-B4 (`intent-coverage.md:68-69` GATE PASS · `block-registry.md:20-21`).
+Spans two planes. `[FACT: b4-link-panels.md; intent-coverage.md:68-69]`
+- **`@vida/editor` — the app-injected block-body seam** (`extensions/block-bodies.tsx`): `makeBlockBodyNode(type, render)`
+  `.extend()`s the E5 `entityLink`/`backlink` nodes with a node-view (`BodyShell`) that **delegates to an app-injected
+  `render` fn**, else the E5 `IntegrationBlockPlaceholder` (graceful — the other 10 blocks). `<VidaEditor>` gains a
+  `blockBodies?: { entityLink?, backlink? }` prop; `editor.tsx` **swaps** (not appends) the two nodes. Editor stays
+  `@vida/core`-free AND app-free (BR-1/BR-B4-4). `index.ts` exports `BlockBodies`/`BlockBodyRenderer`.
+- **`apps/web` — the two bodies + the panels + the hooks:**
+  - `entity-link-body.tsx` — the `entityLink` renderer: empty attrs → an inline page-picker (`resolveWikiLink`) → on
+    select **`resolveEntityLink`** (row FIRST: `createEntityLink` awaited BEFORE the node commits; reject/cancel →
+    `deleteNode`, BR-B4-6) → `updateAttributes({entityType:'page', entityId, label})`; filled → a navigable `<Link>`
+    (title by id, NP-7) or a graceful "opens when its module ships" for an unshipped type (CB6).
+  - `links-panels.tsx` — `<LinksOutPanel>` (`getPageLinksFrom` ⊕ `getEntityLinksFrom`, two DISTINCT groups, each row
+    removable) + `<BacklinksPanel>` (`getBacklinks`, two distinct groups, **READ-ONLY** — BR-B4-7; the four
+    `business-rules.md:32` terminal states). `BacklinksPanel` is ALSO the `/backlink` block body (shared, D-5).
+  - `use-note.ts` (EXTENDED) — reads `useBacklinks`/`useLinksOut`/`useNoteTitle`; writes `useCreateEntityLink`/
+    `useRemoveEntityLink`/`useRemovePageLink` (`onSuccess` invalidate `['links','back'/'out',id]` + `NOTES_LIST_KEY`,
+    never `noteKey(id)`; `onError` Toast). `note-detail.tsx` renders the panels in the rail + injects `blockBodies`.
+- **`@vida/core` barrel** — `EntityLinkRow`/`EntityTagRow` type re-exports added (the ②-facing Notes seam, seam-contract.md:12).
+- **`entity_type='page'`** for a page target (matches the `getBacklinks('page', id)` key). `[[`/`page_links` and
+  `/entity-link`/`entity_links` stay structurally + visually DISTINCT (BR-B4-1); `getBacklinks` merges them only at read.
+
+### Visual Gate (light, M1.0) — PASS
+Live browser (chrome-devtools): the rail Links-out + Backlinks (two distinct groups) · `/entity-link` insert → picker
+(autoFocus + keyboard captured inside the atom node-view) → select page → an `entity_links` row **DISTINCT** from the
+`[[` page_link (appears in the Entity links group, not Page links) → committed inline `🔗` reference · `/backlink` block
+renders the backlinks panel inline (real body, not placeholder) · Backlinks populated (merged, read-only — no remove) ·
+remove an entity-link → the Entity links group empties while the page-link stays · cross-note live update · title-by-id ·
+375 stacked / 1440 side-by-side · console clean. `@vida/editor` **249 tests** (+6 block-bodies) · `@vida/web` **229 tests**
+(+12: links-panels 6, entity-link-body 6) · typecheck 0 · eslint 0 errors. Shots `.claude/visual-gate/b4-*.png`.
+Specs: `docs/specs/features/mod-notes/ui-ux/{b4-link-panels,IMPLEMENTATION-PLAN-b4}.md`.
+
 ## Status
-2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2+B3 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
+2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2+B3+B4 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
 (`docs/features/notes-and-pages/delivery/seam-contract.md`). Specs: `docs/specs/features/mod-notes/service/`.
-**Next: MOD-notes ② (Track B) — B4 (entity-link + backlink/link panels).**
+**Next: MOD-notes ② (Track B) — B5 (Neural note-graph edges).**

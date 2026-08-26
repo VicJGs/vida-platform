@@ -11,6 +11,9 @@ export { INTEGRATION_BLOCK_COMMANDS, INTEGRATION_BLOCK_COMMAND_COUNT } from './c
 // B3 (MOD-notes) — the `[[` note-link picker's injected-config surface the app (note-detail) wires to the Notes service.
 export type { WikiLinkConfig, WikiLinkCandidate } from './extensions/wiki-link'
 
+// B4 (MOD-notes) — the app-injected inline bodies for the two Notes-native ADR-008 blocks (`entityLink`/`backlink`).
+export type { BlockBodies, BlockBodyRenderer } from './extensions/block-bodies'
+
 // E6 — markdown serializers (custom TipTap-JSON ↔ Markdown, round-trip lossless; ADR-001 §8).
 export { toMarkdown } from './serializers/to-markdown'
 export { fromMarkdown } from './serializers/from-markdown'

@@ -5661,3 +5661,39 @@ Next session:
     (the collapsible rail B4 fills — B2 stood up the container + metadata; B4 adds the link panels).
   - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; `corepack pnpm`) —
     Node 20 default crashes jsdom 30. Branch `mod-notes-rebuild` (B3 = `6eff41e`).
+
+---
+Date: 2026-08-26 (mod-notes session 16)
+Task: mod-notes (LIF-131) — M1.1 HEAD · Track B (② UI), slice B4
+Goal: Deliver Track B slice B4 — entity-link + backlink block bodies + the Links-out/Backlinks rail panels — via the Entity UI/UX Build Flow (per-slice ░Visual Gate░).
+Completed:
+  - **B4 BUILT + ░Visual Gate PASS░** (uncommitted on `mod-notes-rebuild`). Two planes:
+    - `@vida/editor`: `extensions/block-bodies.tsx` (`makeBlockBodyNode` `.extend()`s the E5 `entityLink`/`backlink`
+      nodes with `BodyShell`, an app-injected node-view renderer; else the E5 placeholder — editor stays `@vida/core`-free
+      AND app-free, BR-1) + `editor.tsx` `blockBodies?` prop (SWAPS the two nodes, no double-register) + `index.ts` exports.
+    - `apps/web`: `entity-link-body.tsx` (node-hosted page-picker → `resolveEntityLink` row-first fail-loud → commit/self-clean)
+      + `links-panels.tsx` (`LinksOutPanel` removable · `BacklinksPanel` read-only, also the `/backlink` body — D-5) +
+      `use-note.ts` (+5 hooks) + `note-detail.tsx` wiring; `@vida/core` barrel += `EntityLinkRow`/`EntityTagRow`.
+  - Full §XXVI: spec `ui-ux/b4-link-panels.md` (g1 REVISE→my critique was drift, re-grounded from the docs → SHIP) →
+    Approval 1 → `IMPLEMENTATION-PLAN-b4.md` (g2 refined the mechanism to app-injected renderers + node-hosted picker;
+    preflight+critique SHIP, 2 folds: double-register guard + R4) → Approval 2 → impl → code-review (fixed a real
+    blur-race: option `onMouseDown` preventDefault + `doneRef` guard) → **░Visual Gate PASS░** (live chrome-devtools).
+  - §XXIX: `notes-and-pages/current-spec.md` (② B4) + `packages/editor/src/CLAUDE.md` (Shipped B4) refreshed.
+  - Bars: `@vida/editor` **249** (+6 block-bodies) · `@vida/web` **229** (+12: links-panels 6, entity-link-body 6) · tc 0 · eslint 0. Shots `.claude/visual-gate/b4-*.png`.
+In progress:
+  - Track B continues: B5–B7 remain (B5 next). Track A (①) complete. `db-10` (M1.4) parked.
+Decisions:
+  - **Big Victor drift-catch (whole slice): my g1 `/critique` manufactured a "defer the write picker / over-engineering
+    at M1.1" fork, and my draft deferred `/backlink`, framed `/entity-link` as a `[[` char-picker, and missed the
+    app-mount wiring — ALL FOUR contradicted the gate-PASSED `intent-coverage.md:68-69` (`/entity-link` + `/backlink` =
+    ✅ BUILT B4) + `block-registry.md:20-21`.** Victor: "this was already solved and you are presenting to me so that I
+    can decide. Check the documentation and ground everything on it." Re-grounded the whole slice from the docs.
+  - Mechanism (g2, doc-grounded not asked): app-injected node-view renderers (the block body needs app routing/hooks the
+    editor can't hold) + a node-hosted picker (no `slash-commands.ts` change). Fail-loud = "no COMMITTED node without a row".
+  - `entity_type='page'` for a page target (matches the `getBacklinks('page',id)` key); `[[`/page_links ⟂ `/entity-link`/entity_links, merged only at read.
+  - The ░Visual Gate░ verified R4 live: the entityLink picker input (first INTERACTIVE node-view) captures keystrokes past ProseMirror.
+  - Memory saved: `dont-reopen-a-passed-intent-coverage-homing`.
+Next session:
+  - **FIRST ACTION: Track B · slice B5 — Neural note-graph edges** (note-node graph over `getPageLinksFrom`; node-click → detail). EC-1/EC-10. Same §XXVI double-gate → ░Visual Gate░.
+  - Reload: `delivery/slice-map.md` (B5 row) · `delivery/seam-contract.md` (B5 ← `getPageLinksFrom`) · `delivery/envision.md` (EC-1) · `apps/web/src/app/notes/notes-collection.tsx` (the B1 Neural nodes-only surface B5 adds edges to).
+  - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; `corepack pnpm`). Branch `mod-notes-rebuild` (B4 uncommitted; B3 = `6eff41e`).

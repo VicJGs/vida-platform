@@ -18,11 +18,12 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import { styled, Text, View, useMedia } from '@tamagui/core'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Button, Dialog, Input, Menu, toast, type MenuItem } from '@vida/ui'
-import { VidaEditor, type EditorDocument, type WikiLinkConfig } from '@vida/editor'
+import { VidaEditor, type BlockBodies, type EditorDocument, type WikiLinkConfig } from '@vida/editor'
 import type { PageRow } from '@vida/core'
 import { deriveTerminalState } from '../../state-conventions/terminal-state'
 import { getNotesService } from '../notes/notes-service'
 import {
+  useCreateEntityLink,
   useCreateNoteFromLink,
   useCreatePageLink,
   useDeleteNote,
@@ -30,6 +31,8 @@ import {
   useUpdateNote,
 } from './use-note'
 import { EMPTY_DOC, parseContent, serializeContent } from './note-content-codec'
+import { EntityLinkBody } from './entity-link-body'
+import { BacklinksPanel, LinksOutPanel } from './links-panels'
 
 const AUTOSAVE_DEBOUNCE_MS = 600
 
@@ -172,6 +175,7 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
   const del = useDeleteNote(id)
   const createLink = useCreatePageLink(id) // B3 — the `[[` picker's onSelect (fail-loud hook, BR-B3-5)
   const createNote = useCreateNoteFromLink() // B3 — create-on-miss (BR-B3-6)
+  const createEntityLink = useCreateEntityLink(id) // B4 — the `/entity-link` write (fail-loud hook, BR-B4-6)
   const railId = useId()
 
   // Seed the editor ONCE from the first read; never re-seed from a refetch (BR-B2-4).
@@ -204,6 +208,31 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
         createLink: (targetId) => createLink.mutateAsync(targetId),
       }),
     [createLink, createNote],
+  )
+
+  // B4 — the two Notes-native block bodies injected into @vida/editor (BR-B4-4). `entityLink` hosts its own page-picker
+  // (resolveWikiLink) → createEntityLink (fail-loud, row-first) → commit/self-clean; `backlink` renders the host page's
+  // Backlinks panel inline (the SAME component as the rail — BR-B4-2/D-5). The editor stays @vida/core-free (BR-1).
+  const entityLinkDeps = useMemo(
+    () => ({
+      resolveTargets: (text: string) => getNotesService().resolveWikiLink(text),
+      createLink: (t: { entityType: string; entityId: string }) => createEntityLink.mutateAsync(t),
+    }),
+    [createEntityLink],
+  )
+  const blockBodies = useMemo<BlockBodies>(
+    () => ({
+      entityLink: (ctx) => (
+        <EntityLinkBody
+          attrs={ctx.attrs}
+          updateAttributes={ctx.updateAttributes}
+          deleteNode={ctx.deleteNode}
+          deps={entityLinkDeps}
+        />
+      ),
+      backlink: () => <BacklinksPanel id={id} />,
+    }),
+    [entityLinkDeps, id],
   )
 
   const onTitleChange = (v: string): void => {
@@ -308,6 +337,7 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
           placeholder="Type ‘/’ for a block, ‘[[’ to link a note…"
           onChange={onEditorChange}
           wikiConfig={corrupt ? undefined : wikiConfig}
+          blockBodies={corrupt ? undefined : blockBodies}
         />
       </MainCol>
 
@@ -319,6 +349,9 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
           <MetaRow>{page.word_count} words</MetaRow>
           <MetaRow>{isFavorite ? '★ Favorite' : 'Not favorited'}</MetaRow>
           <MetaRow>{isArchived ? 'Archived' : 'Active'}</MetaRow>
+          {/* B4 — the link panels: outgoing (removable) + backlinks (read-only). */}
+          <LinksOutPanel id={id} />
+          <BacklinksPanel id={id} />
         </Rail>
       ) : null}
 
