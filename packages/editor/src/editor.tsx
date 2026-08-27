@@ -147,9 +147,13 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
       // safely AND flips E4's disabled slash-entries on. B4 (MOD-notes) SWAPS the two Notes-native nodes
       // (`entityLink`/`backlink`) for `.extend()`ed versions whose node-view delegates to the injected `blockBodies`
       // renderer (else the same placeholder) — a swap, NOT an append (two nodes with one `name` throw). BR-B4-4.
-      ...INTEGRATION_BLOCK_EXTENSIONS.filter((n) => n.name !== 'entityLink' && n.name !== 'backlink'),
+      // B7 (MOD-notes) adds `dailySummary` to the same swap set (the `/summary` block body). BR-B7-1.
+      ...INTEGRATION_BLOCK_EXTENSIONS.filter(
+        (n) => n.name !== 'entityLink' && n.name !== 'backlink' && n.name !== 'dailySummary',
+      ),
       makeBlockBodyNode('entityLink', blockBodies?.entityLink ?? null),
       makeBlockBodyNode('backlink', blockBodies?.backlink ?? null),
+      makeBlockBodyNode('dailySummary', blockBodies?.dailySummary ?? null),
       // E4 — the `/`-triggered slash menu (BR-E4-1). Inert until `/` is typed; a read-only editor can't type, so no
       // editable gate is needed (contrast the always-visible E3 toolbar's render-gate).
       SlashCommand,

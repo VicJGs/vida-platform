@@ -24,9 +24,12 @@ function headless(content?: EditorDocument): Editor {
     extensions: [
       StarterKit,
       ...STANDARD_BLOCK_EXTENSIONS,
-      ...INTEGRATION_BLOCK_EXTENSIONS.filter((n) => n.name !== 'entityLink' && n.name !== 'backlink'),
+      ...INTEGRATION_BLOCK_EXTENSIONS.filter(
+        (n) => n.name !== 'entityLink' && n.name !== 'backlink' && n.name !== 'dailySummary',
+      ),
       makeBlockBodyNode('entityLink', null),
       makeBlockBodyNode('backlink', null),
+      makeBlockBodyNode('dailySummary', null),
     ],
     content: content ?? '',
   })
@@ -124,5 +127,49 @@ describe('BodyShell — the node-view delegates to the injected renderer, else t
       if (pm.querySelector('[role="note"]') === null) throw new Error('placeholder not mounted yet')
     })
     expect(pm.textContent).toContain('Available when its module ships')
+  })
+
+  it('renders the injected dailySummary body (NOT the placeholder) when a renderer is supplied (B7, BR-B7-1)', async () => {
+    const ref = createRef<VidaEditorHandle>()
+    const dailySummary: BlockBodyRenderer = ({ attrs }) => (
+      <span data-testid="ds-body">Summary: {String((attrs.sections as string[]).join(','))}</span>
+    )
+    const seeded = doc([{ type: 'dailySummary', attrs: { date: '2026-08-26', sections: ['habits', 'tasks'] } }])
+    const { container } = render(
+      <UIProvider>
+        <VidaEditor ref={ref} aria-label="Note body" defaultValue={seeded} blockBodies={{ dailySummary }} />
+      </UIProvider>,
+    )
+    const pm = await findPM(container)
+    await waitFor(() => {
+      if (pm.querySelector('[data-testid="ds-body"]') === null) throw new Error('body not mounted yet')
+    })
+    expect(pm.textContent).toContain('Summary: habits,tasks')
+    expect(pm.textContent).not.toContain('Available when its module ships')
+  })
+
+  it('falls back to the E5 placeholder for dailySummary when NO renderer is injected (graceful)', async () => {
+    const ref = createRef<VidaEditorHandle>()
+    const seeded = doc([{ type: 'dailySummary', attrs: { date: null, sections: [] } }])
+    const { container } = render(
+      <UIProvider>
+        <VidaEditor ref={ref} aria-label="Note body" defaultValue={seeded} />
+      </UIProvider>,
+    )
+    const pm = await findPM(container)
+    await waitFor(() => {
+      if (pm.querySelector('[role="note"]') === null) throw new Error('placeholder not mounted yet')
+    })
+    expect(pm.textContent).toContain('Available when its module ships')
+  })
+})
+
+describe('makeBlockBodyNode — dailySummary preserves the E5 schema (B7 swap)', () => {
+  it('registers dailySummary exactly once + its {date, sections} attrs round-trip (BR-B7-1)', () => {
+    const names = Object.keys(headless().schema.nodes)
+    expect(names).toContain('dailySummary')
+    const attrs = { date: '2026-08-26', sections: ['habits', 'tasks'] }
+    const node = headless().schema.nodeFromJSON({ type: 'dailySummary', attrs })
+    expect(node.toJSON().attrs).toEqual(attrs)
   })
 })

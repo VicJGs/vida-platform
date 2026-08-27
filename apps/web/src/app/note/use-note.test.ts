@@ -8,19 +8,24 @@ import { renderHook, waitFor, cleanup } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-const h = vi.hoisted(() => ({ createPageLink: vi.fn(), removePageLink: vi.fn() }))
+const h = vi.hoisted(() => ({ createPageLink: vi.fn(), removePageLink: vi.fn(), getSummaryConfig: vi.fn() }))
 vi.mock('../notes/notes-service', () => ({
-  getNotesService: () => ({ createPageLink: h.createPageLink, removePageLink: h.removePageLink }),
+  getNotesService: () => ({
+    createPageLink: h.createPageLink,
+    removePageLink: h.removePageLink,
+    getSummaryConfig: h.getSummaryConfig,
+  }),
 }))
 // Toast is a real @vida/ui import in use-note.ts — stub it so onError/onSuccess don't touch the DOM store here.
 vi.mock('@vida/ui', () => ({ toast: vi.fn() }))
 
-import { useCreatePageLink, useRemovePageLink } from './use-note'
+import { useCreatePageLink, useRemovePageLink, useSummaryConfig } from './use-note'
 
 afterEach(() => {
   cleanup()
   h.createPageLink.mockReset()
   h.removePageLink.mockReset()
+  h.getSummaryConfig.mockReset()
 })
 
 function setup<T>(hook: () => T) {
@@ -53,5 +58,15 @@ describe('useRemovePageLink — same ["links"] invalidation (Links-out remove re
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(keys()).toContainEqual(['links'])
     expect(keys()).toContainEqual(['pages', 'list'])
+  })
+})
+
+describe('useSummaryConfig — B7 reads the ① getSummaryConfig on its own key (BR-B7-4)', () => {
+  it('reads getSummaryConfig(id) and returns the parsed config', async () => {
+    h.getSummaryConfig.mockResolvedValue({ showHabits: true })
+    const { result } = setup(() => useSummaryConfig('p1'))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(h.getSummaryConfig).toHaveBeenCalledWith('p1')
+    expect(result.current.data).toEqual({ showHabits: true })
   })
 })

@@ -224,9 +224,40 @@ reflects current tags; 375 filter-bar reflow; console clean. **Caught + fixed a 
 the modal Dialog → inline picker). `@vida/web` **256 tests** (+14) · `@vida/core` **846** · typecheck 0 · eslint 0.
 Shots `.claude/visual-gate/b6-*.png`. Specs: `docs/specs/features/mod-notes/ui-ux/{b6-metadata-filters-tags,IMPLEMENTATION-PLAN-b6}.md`.
 
+## What is BUILT (MOD-notes ② · B7 — journal `/summary` block + Home entry seam) — the FINAL Track-B slice
+The `/summary` block body + the journal `entry` mount seam (EC-5; slice-map.md:36). Spans two planes (editor seam + app
+body); **NO `@vida/core` change** — the aggregation engine is fenced to MOD-journals #33. `[FACT: b7-summary-block.md; IMPLEMENTATION-PLAN-b7.md]`
+- **`@vida/editor`:** `BlockBodies` gains `dailySummary?: BlockBodyRenderer`; `editor.tsx` swaps the `dailySummary`
+  node into the delegating node-view (the B4 mechanism, a 3rd filter clause + `makeBlockBodyNode`). Editor stays
+  `@vida/core`-free AND app-free (BR-B7-1/8). `editor` tests **252** (+3: dailySummary delegate/fallback/schema-swap).
+- **`apps/web`:** `build-journal-summary.ts` — B7's OWN `/summary` surface `buildJournalSummary(date, sections)`
+  (a ② surface, NOT an ① method — `contract.md:20`) + `SummaryRow` (B7-local, `DailySummarySectionType`-keyed — NOT
+  `home/`'s `HomeSectionKey`-keyed `SectionData`) + `sectionsFromConfig` (the 5-flag→5-row A7 fallback). The engine is
+  inert (wave order: `mod-journals` blocks-on `mod-notes`) → each row degrades to **`state:'empty'`** with "available when
+  Journals ships" (NOT `'error'` — `business-rules.md:30`), never blanks (BR-B7-2/3). `journal-entry-seam.ts` —
+  `resolveTodayJournalPageId` (resolve-or-create today's journal, NP-2 idempotent) for the UX-6 Home (Phase-1b consumes
+  it; B7 ships the seam, not the screen — BR-B7-5). `daily-summary-body.tsx` — `DailySummaryBody` (read-only node body:
+  rows from the block `sections` attr, else the A7 config fallback; one card per row; `role="note"` region; base tokens).
+  `use-note.ts` += `useSummaryConfig` (reads the ① `getSummaryConfig`, its own `['pages',id,'summaryConfig']` key).
+  `note-detail.tsx` wires `dailySummary` into the `blockBodies` useMemo. `[FACT: apps/web/src/app/note/{build-journal-summary,journal-entry-seam,daily-summary-body,use-note,note-detail}.tsx]`
+- **§XXVIII refinement (surfaced):** the A7 config fallback is read INSIDE `DailySummaryBody` via `useSummaryConfig(pageId)`
+  (mirrors B4's `CommittedRef`/`useNoteTitle`), not threaded as a `config` prop — self-contained, uses `pageId`. And
+  `buildJournalSummary`'s frozen `date` slot is `_date` (unused by the inert impl; #33 activates it).
+
+### Visual Gate (light, M1.0) — PASS
+Live browser (chrome-devtools): inserted `/summary` via the slash menu → the block mounts the real body (not the E5
+placeholder); an unconfigured note → the R2 non-blank "No summary sections configured" surface; after `setSummaryConfig
+{showHabits,showTasks,showStudySessions}` + reload → **three per-row cards (Habits · Tasks · Study)**, each degrading to
+"available when Journals ships" (never `'error'`, never blank); 375 stacks full-width (no flex-collapse); console clean
+(the sole form-field issue is B6's rail inputs, pre-existing). `@vida/editor` **252** · `@vida/web` **269** (+13:
+build-journal-summary 6, journal-entry-seam 2, daily-summary-body 4, use-note +1) · typecheck 0 · eslint 0.
+Shots `.claude/visual-gate/b7-*.png`. Specs: `docs/specs/features/mod-notes/ui-ux/{b7-summary-block,IMPLEMENTATION-PLAN-b7}.md`.
+
 ## Status
-2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2+B3+B4+B5+B6 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
+2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② Track B COMPLETE (B1–B7 all BUILT)**, branch `mod-notes-rebuild`. The ①→② seam is frozen
 (`docs/features/notes-and-pages/delivery/seam-contract.md`) except B6's 3 documented §XXVIII tag touches (`listPages{tag}`
 impl · `listTags` · `createTag`). Specs: `docs/specs/features/mod-notes/service/` + `ui-ux/`.
-**B6** shipped the collection filter bar + create-with-tags + rail metadata (icon/cover/tag chips).
-**Next: MOD-notes ② (Track B) — B7 (journal `/summary` block + Home entry seam), the final Track-B slice.**
+**B7** shipped the journal `/summary` block body (degrades per-row against the inert MOD-journals engine, never blanks) +
+the journal `entry` mount seam for Home. **⇒ ENTITY CLOSE: MOD-notes (LIF-131) — the in-degree-14 hub — is COMPLETE.**
+**Next M1.1 wave:** MOD-journals (#33) fills the aggregation engine (`buildDashboard`) that B7's `buildJournalSummary`
+seam consumes; then Home Phase-1b renders the dashboard (consuming `resolveTodayJournalPageId` + the UX-6 model).

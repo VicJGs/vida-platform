@@ -113,6 +113,17 @@ export function useNoteTitle(id: string) {
   })
 }
 
+/** B7 — the A7 persisted summary-config default for a page (the `/summary` block's empty-`sections` fallback, BR-B7-4).
+ *  Reads the ① `getSummaryConfig` (which parses + validates the stringified `pages.summary_config` column). Read-only in
+ *  B7; its own key (`['pages', id, 'summaryConfig']`) is disjoint from `noteKey`/`NOTES_LIST_KEY`/`['links']` so it never
+ *  re-seeds the mounted editor (BR-B2-4). `[FACT: service.ts:323-329 getSummaryConfig; b7-summary-block.md BR-B7-4]` */
+export function useSummaryConfig(id: string) {
+  return useQuery({
+    queryKey: ['pages', id, 'summaryConfig'] as const,
+    queryFn: () => getNotesService().getSummaryConfig(id),
+  })
+}
+
 /** Invalidate the whole `['links']` namespace + the collection after a link write/remove — so Backlinks
  *  (`['links','back',id]`), Links-out (`['links','out',id]`) AND the Neural graph (`['links','graph',…]`, B5) all
  *  reflect it live (EC-10, BR-B5-5). React-Query invalidation is PREFIX-based, so the single `['links']` key covers

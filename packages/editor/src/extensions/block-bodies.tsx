@@ -23,6 +23,10 @@ export type BlockBodyRenderer = (ctx: {
 export interface BlockBodies {
   entityLink?: BlockBodyRenderer
   backlink?: BlockBodyRenderer
+  /** B7 (MOD-notes) — the `/summary` block body (the `dailySummary` node). A read-only body (ignores the mutators):
+   *  it reads the node's {date, sections} attrs and renders the per-row journal summary, degrading each row against the
+   *  inert MOD-journals engine (never blanks). Absent → the E5 placeholder. `[FACT: b7-summary-block.md BR-B7-1]` */
+  dailySummary?: BlockBodyRenderer
 }
 
 /** The node-view SHELL: delegate to the injected renderer; when absent (or it returns null) render the E5 placeholder

@@ -64,7 +64,25 @@ The rules the shipped `@vida/core` Notes & Pages service enforces in code. Inher
   `NOTES_LIST_KEY`, never `noteKey` (no editor re-seed, BR-B6-7); the create-dialog TagPicker is **inline** (a portalled
   Popover dismisses the modal Dialog — Visual-Gate catch).
 
+## Enforced now (② · B7 — the `/summary` block + Home entry seam; NO ① change)
+- **The `/summary` block degrades per-row against the inert engine — never blanks (EC-5 · G5).** `buildJournalSummary(date,
+  sections)` is a ② `apps/web` surface (NOT an ① method — `contract.md:20`); it consumes MOD-journals' engine, which is
+  0 lines / fenced to #33, and `mod-journals` blocks-on `mod-notes` — so every enabled row degrades to `state:'empty'`
+  with "available when Journals ships" (`'error'` is reserved for a #33-era provider that threw — `business-rules.md:30`
+  "empty is NOT an error"). The block never blanks (structural: one card per enabled row; `sections=[]` → an explicit
+  non-blank surface). B7 authors ZERO `@vida/core` journal code. `[FACT: BR-B7-2/3; build-journal-summary.ts]`
+- **Rows come from the block `sections` attr (CB2); `getSummaryConfig` is the persisted default (5-flag→5-row map).**
+  When `sections` is empty, fall back to A7's `summary_config` mapped `showHabits→habits · showTasks→tasks ·
+  showStudySessions→study · showTransactions→transactions · showInteractions→interactions` (`routines` has no flag — the
+  **G5 delta → M1.4**, not resolved here). `[FACT: BR-B7-4; business-rules.md:43; editor.ts:56-63; note.ts:83-89]`
+- **The journal `entry` mount seam is a typed resolver, not a screen (Home render = Phase-1b).** `resolveTodayJournalPageId`
+  resolves-or-creates today's journal page (NP-2 idempotent, resolve-first). `[FACT: BR-B7-5; journal-entry-seam.ts]`
+- **Reuse the `TerminalState` canon by TYPE only.** B7 uses its own `SummaryRow` (row-granular) — NOT `home/`'s
+  `SectionData`/`resolveDashboardStates`/`journalStillRenders` (those are `HomeSectionKey`-typed, the 3 Home lanes).
+  `[FACT: BR-B7-6; home/journal-contribution.ts:22-26]`
+
 ## Status
-2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + ② Track B **B1–B6 shipped** (collection · detail · `[[` picker ·
-link panels · Neural edges · **B6 tags/filters/metadata**). `@vida/core` **846** (+2 B6: tag-filter, listTags/createTag) ·
-`@vida/web` **256** (+14). Next: MOD-notes ② (Track B) — **B7** (journal `/summary` block + Home entry seam), the final slice.
+2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② Track B COMPLETE (B1–B7)** (collection · detail · `[[` picker ·
+link panels · Neural edges · tags/filters/metadata · **B7 `/summary` block + entry seam**). `@vida/core` **846** ·
+`@vida/editor` **252** · `@vida/web` **269**. **⇒ ENTITY CLOSE: MOD-notes (LIF-131), the in-degree-14 hub, is COMPLETE.**
+Next M1.1: **MOD-journals #33** fills the `buildDashboard` engine B7's `buildJournalSummary` seam consumes.

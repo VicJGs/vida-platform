@@ -20,6 +20,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Button, Dialog, Input, Menu, toast, type MenuItem } from '@vida/ui'
 import { VidaEditor, type BlockBodies, type EditorDocument, type WikiLinkConfig } from '@vida/editor'
 import type { PageRow } from '@vida/core'
+import type { DailySummarySectionType } from '@vida/types'
 import { deriveTerminalState } from '../../state-conventions/terminal-state'
 import { getNotesService } from '../notes/notes-service'
 import {
@@ -32,6 +33,7 @@ import {
 } from './use-note'
 import { EMPTY_DOC, parseContent, serializeContent } from './note-content-codec'
 import { EntityLinkBody } from './entity-link-body'
+import { DailySummaryBody } from './daily-summary-body'
 import { BacklinksPanel, LinksOutPanel } from './links-panels'
 import { useTags, useNoteTags, useTagNote, useUntagNote } from '../notes/use-tags'
 import { TagPicker } from '../notes/tag-picker'
@@ -301,6 +303,14 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
         />
       ),
       backlink: () => <BacklinksPanel id={id} />,
+      // B7 — the `/summary` block body (read-only): reads {date, sections} attrs → buildJournalSummary → per-row cards,
+      // degrading against the inert MOD-journals engine (BR-B7-1/3). The A7 config fallback is read inside the body.
+      dailySummary: (ctx) => (
+        <DailySummaryBody
+          attrs={ctx.attrs as { date: string | null; sections: DailySummarySectionType[] }}
+          pageId={id}
+        />
+      ),
     }),
     [entityLinkDeps, id],
   )

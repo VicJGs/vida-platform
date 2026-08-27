@@ -27,7 +27,7 @@
 | Facade → AR-8 (read) | `getEntityLinksFrom(pageId)` | pure AR-8 delegate (`getLinksFrom`) — entity_links only | A5 |
 | Merged read (① composes) | `getBacklinks(entityType, entityId)` | **NET-NEW merge, NOT a raw AR-8 passthrough** — composes AR-8 `getBacklinksTo` (entity_links) **+** A2 `getPageLinksTo` (page_links), G6; A5's Verification Gate owns the merge shape (baseline C4) | A5 (← A2) |
 | Attachments | `addAttachment(pageId, file)` · `getAttachments(pageId)` · `removeAttachment(id)` | `NoteAttachmentRow` / `void` | A6 |
-| Summary (config storage) | `getSummaryConfig(pageId)` · `setSummaryConfig(pageId, config)` | config storage only (plain-text JSON, IR-8) → `JournalSummaryConfig \| null` / `PageRow`. ⚠ **`buildJournalSummary` is NOT an ① method — it is the ② `/summary` BLOCK (B7), consuming MOD-journals' engine directly** (`contract.md:20`·`identity.md:19`·`current-spec.md:40`; corrected 2026-08-24). | A7 |
+| Summary (config storage) | `getSummaryConfig(pageId)` · `setSummaryConfig(pageId, config)` | config storage only (plain-text JSON, IR-8) → `JournalSummaryConfig \| null` / `PageRow`. ⚠ **`buildJournalSummary` is NOT an ① method — it is the ② `/summary` BLOCK (B7), consuming MOD-journals' engine directly** (`contract.md:20`·`identity.md:19`·`current-spec.md:62`; corrected 2026-08-24; cross-ref refreshed B7). | A7 |
 | Cascade | `softDeletePage` triggers the **service-driven cascade** (page_links/entity_links/entity_tags/attachments, page-last) — per-entity, **eventually-consistent + re-drive** (IR-13, gated); NOT transactional (no `*InTx`) | A8 |
 
 ## Typed errors (local-first — no HTTP codes)
@@ -40,7 +40,7 @@
 - **B4** ← `createEntityLink`/`getBacklinks`/`getEntityLinksFrom` + `getPageLinksTo`.
 - **B5** ← `getPageLinksFrom` (graph edges).
 - **B6** ← `listPages` filters + `tagEntity` (create-with-tags) + page metadata via `updatePage`.
-- **B7** ← `get/setSummaryConfig` (from ①); **`buildJournalSummary` is B7's OWN `/summary` block surface**, consuming MOD-journals' engine directly (NOT an ① method — intent authority `contract.md:20`·`current-spec.md:40`).
+- **B7** ← `get/setSummaryConfig` (from ①); **`buildJournalSummary` is B7's OWN `/summary` block surface**, consuming MOD-journals' engine directly (NOT an ① method — intent authority `contract.md:20`·`current-spec.md:62`).
 
 ## Seams OUT (Notes provides / consumes)
 - **PROVIDES:** `summary_config` + the `/summary` block surface → MOD-journals; the journal `entry` editor mount → Home.
