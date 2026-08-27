@@ -59,6 +59,15 @@ vi.mock('./use-note', () => ({
   useLinksOut: () => ({ isPending: false, isError: false, data: { pageLinks: [], entityLinks: [] } }),
   useNoteTitle: () => ({ data: null }),
 }))
+// B6: the rail now renders icon/cover + tag chips + the TagPicker → real tag hooks. Mock the whole module (covers
+// both the rail's direct calls AND the TagPicker's) so the B2 tests need no QueryClientProvider/service.
+vi.mock('../notes/use-tags', () => ({
+  useTags: () => ({ data: [] }),
+  useNoteTags: () => ({ data: [] }),
+  useTagNote: () => ({ mutate: vi.fn() }),
+  useUntagNote: () => ({ mutate: vi.fn() }),
+  useCreateTag: () => ({ mutate: vi.fn(), isPending: false }),
+}))
 
 import { NoteDetail, buildWikiConfig } from './note-detail'
 

@@ -14,7 +14,7 @@ import type { SpacesService } from '../../foundation/spaces/service'
 import type { BacklinkResolver } from '../search/backlink-resolver'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
 import type { PageRow, PageLinkRow, NoteAttachmentRow } from '../../db/schema/notes'
-import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
+import type { EntityTagRow, EntityLinkRow, TagRow } from '../../db/schema/foundation/spaces'
 import { type PageType, type JournalSummaryConfig, MAX_ATTACHMENT_BYTES } from '@vida/types'
 
 export type CreatePageInput = z.infer<typeof createPageSchema>
@@ -69,6 +69,10 @@ export interface NotesService {
   // AR-6 SpacesService owns tag WRITES but exposes no tag-read; Notes adds the read (seam-contract:25).
   getEntitiesByTag(tagId: string): Promise<EntityTagRow[]>
   getTagsForEntity(entityType: string, entityId: string): Promise<EntityTagRow[]>
+  // B6 (§XXVIII, D-6, A5-category): the tag-definition list (filter/create picker source) + a create facade → AR-6.
+  // The rich nestable color/icon tags-browser is MOD-spaces ② (delivery-plan:232) — NOT here.
+  listTags(): Promise<TagRow[]>
+  createTag(name: string): Promise<TagRow>
 
   // --- write facade → AR-6 (A5) ----------------------------------------------
   // createEntityLink/tagEntity pre-validate entityType vs the runtime registry (IR-2/C5) →

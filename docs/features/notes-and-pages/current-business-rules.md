@@ -50,8 +50,21 @@ The rules the shipped `@vida/core` Notes & Pages service enforces in code. Inher
   block surface → MOD-journals ① / ② B7. FTS5 → DB-8. Cross-entity transactional atomicity / `*InTx` → not the
   platform model (IR-13). Saved-view selection → MOD-spaces/ADR-007.
 
+## Enforced now (② · B6 tag surface — §XXVIII touches on the frozen ① seam, A5-category)
+- **`listPages({tag})` — server-side tag filter (was throwing, now implemented).** The A1 fail-loud placeholder is
+  replaced: read the tagged page-ids from `entity_tags` (`entity_type='page'`, `isNull(deleted_at)`) then
+  `inArray(pages.id, ids)`, AND-composed with favorite/archived; an empty id-set → `[]`. No client-side re-filter
+  (BR-B6-1). `[FACT: service.ts listPages]`
+- **`listTags()` / `createTag(name)` — Notes owns net-new tag reads + a create facade → AR-6.** `listTags` returns live
+  tag definitions (NP-9 discipline); `createTag` trims + **rejects a blank name** (AR-6's `createTag` validates nothing)
+  then delegates. The nestable color/icon tags-browser is MOD-spaces ② (delivery-plan:232). `[FACT: service.ts listTags/createTag]`
+- **② tag/filter UI rules (homed in `current-spec.md`):** the filter maps 1:1 to `listPages` params, default `{}` (no
+  invented default-hide, BR-B6-2); create-with-tags creates THEN tags, per-tag fail-loud, note survives a partial
+  failure (BR-B6-4); the tag picker is search + create-on-miss (BR-B6-5); tag writes invalidate `['tags']` +
+  `NOTES_LIST_KEY`, never `noteKey` (no editor re-seed, BR-B6-7); the create-dialog TagPicker is **inline** (a portalled
+  Popover dismisses the modal Dialog — Visual-Gate catch).
+
 ## Status
-2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8, **57 tests green**, `@vida/core` 844/844). ② Track B: B1–B5
-shipped (collection · detail · `[[` picker · link panels · **B5 Neural page-link edges**). The B5 ② rule (a UI concern,
-homed in `current-spec.md`): link-write hooks invalidate the `['links']` prefix so the graph + B4 panels refresh live
-(EC-10). Next: MOD-notes ② (Track B) — B6 (tags/filters).
+2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + ② Track B **B1–B6 shipped** (collection · detail · `[[` picker ·
+link panels · Neural edges · **B6 tags/filters/metadata**). `@vida/core` **846** (+2 B6: tag-filter, listTags/createTag) ·
+`@vida/web` **256** (+14). Next: MOD-notes ② (Track B) — **B7** (journal `/summary` block + Home entry seam), the final slice.

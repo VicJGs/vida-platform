@@ -33,6 +33,8 @@ import {
 import { EMPTY_DOC, parseContent, serializeContent } from './note-content-codec'
 import { EntityLinkBody } from './entity-link-body'
 import { BacklinksPanel, LinksOutPanel } from './links-panels'
+import { useTags, useNoteTags, useTagNote, useUntagNote } from '../notes/use-tags'
+import { TagPicker } from '../notes/tag-picker'
 
 const AUTOSAVE_DEBOUNCE_MS = 600
 
@@ -75,6 +77,19 @@ const RailSectionLabel = styled(Text, {
   color: '$colorTextMuted',
 })
 const MetaRow = styled(Text, { fontFamily: '$body', fontSize: '$small', color: '$colorTextPrimary' })
+const FieldWrap = styled(View, { flexDirection: 'column', gap: '$4' })
+const TagChipRow = styled(View, { flexDirection: 'row', flexWrap: 'wrap', gap: '$4', alignItems: 'center' })
+const TagChip = styled(View, {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: '$4',
+  paddingHorizontal: '$8',
+  paddingVertical: '$4',
+  borderRadius: '$sm',
+  backgroundColor: '$colorSurfacePrimary',
+  borderColor: '$colorBorderDefault',
+  borderWidth: 1,
+})
 const Banner = styled(Text, {
   fontFamily: '$body',
   fontSize: '$small',
@@ -185,8 +200,63 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
   const [title, setTitle] = useState<string>(page.title ?? '')
   const [isFavorite, setIsFavorite] = useState<boolean>(page.is_favorite)
   const [isArchived, setIsArchived] = useState<boolean>(page.is_archived)
+  const [icon, setIcon] = useState<string>(page.icon ?? '') // B6 metadata (slice-map.md:35)
+  const [cover, setCover] = useState<string>(page.cover_image ?? '')
   const [railOpen, setRailOpen] = useState<boolean>(media.tablet) // collapsed by default at 375 (mobile)
   const [confirmOpen, setConfirmOpen] = useState(false)
+
+  // B6 — the note's applied tags: junction rows (tag_ids) resolved to names via the live tag list.
+  const noteTags = useNoteTags(id)
+  const allTags = useTags()
+  const tagNote = useTagNote(id)
+  const untagNote = useUntagNote(id)
+  const currentTagIds = useMemo(() => (noteTags.data ?? []).map((r) => r.tag_id), [noteTags.data])
+  const tagNameById = useMemo(
+    () => new Map((allTags.data ?? []).map((t) => [t.id, t.name] as const)),
+    [allTags.data],
+  )
+
+  // B6 — the icon/cover metadata patch: a debounced write through the `meta` mutation (invalidate list only, no
+  // re-seed — BR-B6-7). Reuses the AUTOSAVE_DEBOUNCE cadence + the usePageAutosave flush-on-unmount discipline so a
+  // sub-debounce edit isn't dropped (nor written after unmount) when navigating away mid-edit.
+  const metaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const metaPendingRef = useRef<{ icon?: string | null; cover_image?: string | null }>({})
+  const flushMeta = useCallback((): void => {
+    if (metaTimerRef.current) {
+      clearTimeout(metaTimerRef.current)
+      metaTimerRef.current = null
+    }
+    const patch = metaPendingRef.current
+    metaPendingRef.current = {}
+    if (patch.icon === undefined && patch.cover_image === undefined) return
+    meta.mutate(patch, { onError: () => toast({ title: "Couldn't save metadata", intent: 'danger' }) })
+  }, [meta])
+  const patchMetaDebounced = useCallback(
+    (patch: { icon?: string | null; cover_image?: string | null }): void => {
+      metaPendingRef.current = { ...metaPendingRef.current, ...patch }
+      if (metaTimerRef.current) clearTimeout(metaTimerRef.current)
+      metaTimerRef.current = setTimeout(flushMeta, AUTOSAVE_DEBOUNCE_MS)
+    },
+    [flushMeta],
+  )
+  // Flush a pending icon/cover edit on unmount (clears the timer → no stale write after navigate). Mirrors usePageAutosave.
+  const flushMetaRef = useRef(flushMeta)
+  flushMetaRef.current = flushMeta
+  useEffect(() => () => flushMetaRef.current(), [])
+  const onIconChange = (v: string): void => {
+    setIcon(v)
+    patchMetaDebounced({ icon: v.length > 0 ? v : null })
+  }
+  const onCoverChange = (v: string): void => {
+    setCover(v)
+    patchMetaDebounced({ cover_image: v.length > 0 ? v : null })
+  }
+
+  // B6 — the rail tag picker: value = current tag ids; a change DIFFS to a tag/untag write (row-first fail-loud hooks).
+  const onTagsChange = (next: string[]): void => {
+    for (const added of next.filter((t) => !currentTagIds.includes(t))) tagNote.mutate(added)
+    for (const removed of currentTagIds.filter((t) => !next.includes(t))) untagNote.mutate(removed)
+  }
 
   // Baseline built ONCE (mount-stable) — the normalized content string avoids the mount-echo false-positive, and
   // memoizing it stops a whole-doc re-serialize on every title keystroke re-render.
@@ -349,6 +419,37 @@ function NoteDetailLoaded({ page, id }: { page: PageRow; id: string }): ReactNod
           <MetaRow>{page.word_count} words</MetaRow>
           <MetaRow>{isFavorite ? '★ Favorite' : 'Not favorited'}</MetaRow>
           <MetaRow>{isArchived ? 'Archived' : 'Active'}</MetaRow>
+          {/* B6 — icon/cover metadata editing (debounced patch via useUpdateNote). */}
+          <FieldWrap>
+            <RailSectionLabel>Icon</RailSectionLabel>
+            <Input value={icon} onChangeText={onIconChange} placeholder="📝 or a short label" aria-label="Note icon" />
+          </FieldWrap>
+          <FieldWrap>
+            <RailSectionLabel>Cover</RailSectionLabel>
+            <Input value={cover} onChangeText={onCoverChange} placeholder="Cover image URL" aria-label="Note cover image" />
+          </FieldWrap>
+          {/* B6 — the note's tags: removable chips + the shared TagPicker to add/create (EC-8 read-back). */}
+          <FieldWrap>
+            <RailSectionLabel>Tags</RailSectionLabel>
+            <TagChipRow role="list" aria-label="Note tags">
+              {currentTagIds.map((tagId) => (
+                <TagChip key={tagId} role="listitem">
+                  <Text fontFamily="$body" fontSize="$small" color="$colorTextPrimary">
+                    {tagNameById.get(tagId) ?? '…'}
+                  </Text>
+                  <Button
+                    intent="ghost"
+                    size="sm"
+                    onPress={() => untagNote.mutate(tagId)}
+                    aria-label={`Remove tag ${tagNameById.get(tagId) ?? ''}`}
+                  >
+                    ✕
+                  </Button>
+                </TagChip>
+              ))}
+              <TagPicker value={currentTagIds} onChange={onTagsChange} triggerLabel="+ Tag" />
+            </TagChipRow>
+          </FieldWrap>
           {/* B4 — the link panels: outgoing (removable) + backlinks (read-only). */}
           <LinksOutPanel id={id} />
           <BacklinksPanel id={id} />

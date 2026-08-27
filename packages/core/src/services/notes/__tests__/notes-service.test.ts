@@ -181,15 +181,26 @@ describe('A1 — pages CRUD', () => {
     expect(forT1[0]?.entity_id).toBe('t1')
   })
 
-  it('listPages filters by favorite/archived and fails loud on {tag} (BR-A1-7)', async () => {
-    const { svc } = await setup()
-    await svc.createPage({ type: 'note', title: 'fav', is_favorite: true })
-    await svc.createPage({ type: 'note', title: 'plain' })
+  it('listPages filters by favorite/archived/tag, AND-composed (BR-A1-7/BR-B6-1)', async () => {
+    const { svc, spaces } = await setup()
+    const fav = await svc.createPage({ type: 'note', title: 'fav', is_favorite: true })
+    const plain = await svc.createPage({ type: 'note', title: 'plain' })
     const favs = await svc.listPages({ favorite: true })
     expect(favs).toHaveLength(1)
     expect(favs[0]?.title).toBe('fav')
     expect(await svc.listPages({})).toHaveLength(2)
-    expect(() => svc.listPages({ tag: 'x' })).toThrow(/A5/)
+    // B6 (D-6 touch 1): the `{tag}` branch — tag two pages (entity_type='page'), filter to exactly them.
+    const tag = await spaces.createTag({ name: 'proj' })
+    await svc.tagEntity(tag.id, 'page', fav.id)
+    await svc.tagEntity(tag.id, 'page', plain.id)
+    expect((await svc.listPages({ tag: tag.id })).map((p) => p.id).sort()).toEqual([fav.id, plain.id].sort())
+    // tag AND favorite narrows to just the favorited one
+    const taggedFav = await svc.listPages({ tag: tag.id, favorite: true })
+    expect(taggedFav).toHaveLength(1)
+    expect(taggedFav[0]?.id).toBe(fav.id)
+    // a tag matching no page → [] (empty id-set short-circuit)
+    const empty = await spaces.createTag({ name: 'empty' })
+    expect(await svc.listPages({ tag: empty.id })).toEqual([])
   })
 
   it('listPages combines favorite AND archived (multi-cond path)', async () => {
@@ -722,5 +733,31 @@ describe('A8 — cascade cleanup', () => {
     expect(await svc.getEntityLinksFrom(s.id)).toHaveLength(1)
     expect(await svc.getTagsForEntity('note', s.id)).toHaveLength(1)
     expect(await svc.getAttachments(s.id)).toHaveLength(1)
+  })
+})
+
+describe('B6 — tag list + create facade (§XXVIII, D-6)', () => {
+  // Net-new tag READS (A5 category) + a create facade → AR-6. The rich nestable/color/icon tags-browser is
+  // MOD-spaces ②; Notes exposes only the tag-definition list + a plain create its filter/create-with-tags picker need.
+
+  it('listTags returns live tag definitions and excludes a soft-deleted tag (NP-9)', async () => {
+    const { svc, spaces } = await setup()
+    const a = await spaces.createTag({ name: 'alpha' })
+    const b = await spaces.createTag({ name: 'beta' })
+    expect((await svc.listTags()).map((t) => t.name).sort()).toEqual(['alpha', 'beta'])
+    await spaces.deleteTag(b.id) // soft-delete
+    const after = (await svc.listTags()).map((t) => t.name)
+    expect(after).toContain('alpha')
+    expect(after).not.toContain('beta')
+    void a
+  })
+
+  it('createTag delegates to AR-6, trims the name, and rejects a blank name', async () => {
+    const { svc } = await setup()
+    const tag = await svc.createTag('  work  ')
+    expect(tag.name).toBe('work')
+    expect((await svc.listTags()).map((t) => t.name)).toContain('work')
+    await expect(svc.createTag('')).rejects.toThrow(/empty/)
+    await expect(svc.createTag('   ')).rejects.toThrow(/empty/)
   })
 })

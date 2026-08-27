@@ -11,13 +11,21 @@ import type { PageRow } from '@vida/core'
 const nav = vi.fn()
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => nav }))
 
-const h = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), mutate: vi.fn(), edges: vi.fn() }))
-// B5 fold (g2-1): notes-collection now imports useNotesGraphEdges from this module — the whole-module mock MUST
-// stub it or every collection test throws "not a function".
+const h = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), mutate: vi.fn(), edges: vi.fn(), tags: vi.fn() }))
+// B5 fold (g2-1): notes-collection imports useNotesGraphEdges from this module — the whole-module mock MUST stub it.
 vi.mock('./use-notes-list', () => ({
   useNotesList: h.list,
-  useCreateNote: h.create,
+  useCreateNoteWithTags: h.create, // B6: create-with-tags flow
   useNotesGraphEdges: h.edges,
+}))
+// B6 fold: the collection imports the tag hooks (filter bar + create-dialog TagPicker) — mock the whole module so
+// the tests need no QueryClientProvider.
+vi.mock('./use-tags', () => ({
+  useTags: h.tags,
+  useCreateTag: () => ({ mutate: vi.fn(), isPending: false }),
+  useNoteTags: () => ({ data: [] }),
+  useTagNote: () => ({ mutate: vi.fn() }),
+  useUntagNote: () => ({ mutate: vi.fn() }),
 }))
 
 import { NotesCollection } from './notes-collection'
@@ -36,6 +44,7 @@ const renderScreen = () =>
 beforeEach(() => {
   h.create.mockReturnValue({ mutate: h.mutate, isPending: false })
   h.edges.mockReturnValue({ data: undefined }) // B5 default: no edges (the 4 non-neural views never read them)
+  h.tags.mockReturnValue({ data: [] }) // B6 default: no tag definitions
 })
 afterEach(() => {
   cleanup()
@@ -43,8 +52,9 @@ afterEach(() => {
   h.create.mockReset()
   h.mutate.mockReset()
   h.edges.mockReset()
+  h.tags.mockReset()
   nav.mockReset()
-  useNotesViewStore.setState({ view: 'list' }) // reset the module-scope ephemeral store between tests
+  useNotesViewStore.setState({ view: 'list', filter: {} }) // reset the module-scope ephemeral store between tests
 })
 
 describe('NotesCollection terminal states', () => {
@@ -79,11 +89,18 @@ describe('NotesCollection terminal states', () => {
 })
 
 describe('NotesCollection actions', () => {
-  it('New Note triggers createPage (the mutation)', () => {
+  it('New Note opens the create dialog → Create fires create-with-tags (EC-8, BR-B6-4)', () => {
     h.list.mockReturnValue({ isPending: false, isError: false, data: [] })
     renderScreen()
     fireEvent.click(screen.getByRole('button', { name: 'New Note' }))
+    // create is gated behind the dialog now (set tags on create) — the header click does NOT create.
+    expect(h.mutate).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
     expect(h.mutate).toHaveBeenCalledTimes(1)
+    expect(h.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ tagIds: [] }),
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
   })
 
   it('opening a row navigates to /note/$id', () => {
@@ -91,6 +108,25 @@ describe('NotesCollection actions', () => {
     renderScreen()
     fireEvent.click(screen.getByRole('button', { name: 'Note A' }))
     expect(nav).toHaveBeenCalledWith({ to: '/note/$id', params: { id: 'note-1' } })
+  })
+})
+
+describe('NotesCollection filter bar (B6 · EC-9)', () => {
+  it('the Favorites toggle drives listPages({favorite:true}) and is pressed', () => {
+    h.list.mockReturnValue({ isPending: false, isError: false, data: [] })
+    renderScreen()
+    // default: unfiltered ({}) — the sole call arg (BR-B6-2, no invented default-hide).
+    expect(h.list).toHaveBeenLastCalledWith({})
+    fireEvent.click(screen.getByRole('button', { name: /Favorites/ }))
+    expect(useNotesViewStore.getState().filter).toEqual({ favorite: true })
+    expect(screen.getByRole('button', { name: /Favorites/, pressed: true })).toBeTruthy()
+  })
+
+  it('the Archived toggle maps to archived:true (explicit show-only, no default-hide)', () => {
+    h.list.mockReturnValue({ isPending: false, isError: false, data: [] })
+    renderScreen()
+    fireEvent.click(screen.getByRole('button', { name: 'Archived' }))
+    expect(useNotesViewStore.getState().filter).toEqual({ archived: true })
   })
 })
 

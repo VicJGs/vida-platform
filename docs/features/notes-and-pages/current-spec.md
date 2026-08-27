@@ -21,15 +21,20 @@ remain INTENDED. `[FACT: packages/core/src/services/notes/{service,types,index}.
 
 ### Surface (returns Drizzle **Rows** — `PageRow`/`PageLinkRow`/`NoteAttachmentRow`/`EntityLinkRow`/`EntityTagRow`)
 - **Pages (A1):** `createPage` · `getPage` · `updatePage` · `softDeletePage` · `getPageByJournalDate` ·
-  `getPagesByType` · `getPagesForEntity` · **`listPages({favorite?, archived?, tag?})`** (the `tag` branch reads
-  `entity_tags`, live since A5).
+  `getPagesByType` · `getPagesForEntity` · **`listPages({favorite?, archived?, tag?})`** (all three filters
+  server-side; the `tag` branch — implemented in **B6** — is a two-query compose: read the tagged page-ids from
+  `entity_tags` [`entity_type='page'`], then `inArray(pages.id, ids)` AND-composed with favorite/archived; empty
+  id-set → `[]`. `[FACT: service.ts:149-171]`).
 - **Page-links (A2, idempotent):** `createPageLink` (revive-or-noop, IR-11) · `removePageLink` · `getPageLinksFrom` ·
   `getPageLinksTo` (reverse read, ex-AR-8).
 - **Wiki (A3):** `resolveWikiLink(text)` — title substring candidates (`like(title,'%q%')`, trim, empty→all live);
   mirrors the E4 slash-menu filter; never creates (IR-4).
 - **Entity-note seed (A4):** `ensureEntityNote(pageType, entityType, entityId, seed)` — idempotent, seeds `content`
   with a deterministic minimal TipTap doc.
-- **Tag reads (A5, net-new — AR-6 has no tag-read):** `getEntitiesByTag` · `getTagsForEntity`.
+- **Tag reads (A5, net-new — AR-6 has no tag-read):** `getEntitiesByTag` · `getTagsForEntity`. **B6 (§XXVIII, A5-category)
+  added `listTags()`** (live tag definitions over a read-only `tags` repo — the filter/create picker's source) and
+  **`createTag(name)`** (write facade → AR-6 `createTag`, trims + rejects blank; the rich color/icon/nesting
+  tags-browser stays MOD-spaces ②). `[FACT: service.ts listTags/createTag; index.ts TagRow re-export]`
 - **Facade → AR-6 (entity-link/tag WRITES):** `createEntityLink` · `removeEntityLink` · `tagEntity` · `untagEntity`
   (create/tag pre-validate `entity_type` vs the runtime registry, IR-2).
 - **Facade → AR-8 (entity-link READS) + ①-merge:** `getEntityLinksFrom` (pure AR-8 delegate) · **`getBacklinks` =
@@ -193,9 +198,35 @@ remove an entity-link → the Entity links group empties while the page-link sta
 (+12: links-panels 6, entity-link-body 6) · typecheck 0 · eslint 0 errors. Shots `.claude/visual-gate/b4-*.png`.
 Specs: `docs/specs/features/mod-notes/ui-ux/{b4-link-panels,IMPLEMENTATION-PLAN-b4}.md`.
 
+## What is BUILT (MOD-notes ② · B6 — metadata + filters + create-with-tags)
+The collection's filter bar + create-with-tags + the rail metadata (EC-8/EC-9 + slice-map.md:35). Spans two planes +
+three §XXVIII ① touches (A5-category), all Doc-Gate-adjudicated sound. `[FACT: b6-metadata-filters-tags.md; IMPLEMENTATION-PLAN-b6.md]`
+- **`@vida/core` (3 touches):** implemented `listPages({tag})` (two-query compose) · `listTags()` (net-new read) ·
+  `createTag(name)` (facade → AR-6, trims/rejects-blank) + `TagRow` barrel re-export. `notes` tests **60** (+3: tag-filter,
+  listTags-live-only, createTag-delegate/trim/reject); `@vida/core` **846**.
+- **`apps/web`:** the **filter bar** — 3 explicit "show only" toggles mapping 1:1 to `listPages({favorite,archived,tag})`,
+  default `{}` (B1's unfiltered set; no invented default-hide, BR-B6-2), tag via a UI-1 `Menu` over `useTags()`. Filter
+  state = ephemeral Zustand beside `view` (`notes-view-store`). The **create-with-tags Dialog** (New Note → title `Input`
+  + an **inline** `<TagPicker>` → `useCreateNoteWithTags`: `createPage` THEN `tagEntity` per tag, per-tag fail-loud toast,
+  navigate; BR-B6-4). The **`<TagPicker>`** (`tag-picker.tsx`) = search `useTags()` (pure `filterTags`/`hasExactTag`) +
+  **create-on-miss** (mirrors B3), multi-select; renders **inline inside the modal Dialog** (a portalled Popover would
+  dismiss the Dialog — a Visual-Gate catch) and as a **Popover** in the rail. **`use-tags.ts`** (new) = `useTags`/
+  `useNoteTags` reads + `useTagNote`/`useUntagNote`/`useCreateTag` fail-loud writes (invalidate `['tags']` + `NOTES_LIST_KEY`,
+  never `noteKey`). The **note-detail rail** gains **icon/cover** editing (debounced patch via `useUpdateNote`, flush-on-
+  unmount) + the note's **tag chips** (removable, `useNoteTags`⊕`useTags` for names) + the `<TagPicker>`.
+  `[FACT: apps/web/src/app/notes/{notes-collection,use-notes-list,use-tags,tag-picker}.tsx; app/note/note-detail.tsx; stores/notes-view-store.ts]`
+
+### Visual Gate (light, M1.0) — PASS
+Live browser (chrome-devtools): EC-8 create-with-tags (inline picker → create-on-miss "urgent" → applied → navigated to
+the tagged note); EC-9 tag filter → only the tagged note; favorite∧tag AND-composition → the filtered-empty create-CTA;
+`listPages({tag})` live; icon 🔥 persisted across nav (flush-on-unmount); removable tag chip; the rail Popover picker
+reflects current tags; 375 filter-bar reflow; console clean. **Caught + fixed a real bug** (portalled Popover dismissing
+the modal Dialog → inline picker). `@vida/web` **256 tests** (+14) · `@vida/core` **846** · typecheck 0 · eslint 0.
+Shots `.claude/visual-gate/b6-*.png`. Specs: `docs/specs/features/mod-notes/ui-ux/{b6-metadata-filters-tags,IMPLEMENTATION-PLAN-b6}.md`.
+
 ## Status
-2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2+B3+B4+B5 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
-(`docs/features/notes-and-pages/delivery/seam-contract.md`). Specs: `docs/specs/features/mod-notes/service/` + `ui-ux/`.
-**B5** shipped the Neural page-link edges (`useNotesGraphEdges` fan-out → `NeuralGraph.edges`) + widened the link-write
-hooks' invalidation to the `['links']` prefix so a link write refreshes the graph AND the B4 panels live (EC-10).
-**Next: MOD-notes ② (Track B) — B6 (tags / create-with-tags / favorite-archive filters).**
+2026-08-26 — **MOD-notes ① COMPLETE** (Track A, A1–A8) + **② B1+B2+B3+B4+B5+B6 BUILT** (Track B), branch `mod-notes-rebuild`. The ①→② seam is frozen
+(`docs/features/notes-and-pages/delivery/seam-contract.md`) except B6's 3 documented §XXVIII tag touches (`listPages{tag}`
+impl · `listTags` · `createTag`). Specs: `docs/specs/features/mod-notes/service/` + `ui-ux/`.
+**B6** shipped the collection filter bar + create-with-tags + rail metadata (icon/cover/tag chips).
+**Next: MOD-notes ② (Track B) — B7 (journal `/summary` block + Home entry seam), the final Track-B slice.**

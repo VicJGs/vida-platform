@@ -11,8 +11,10 @@
 // ============================================================================
 
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
+import { toast } from '@vida/ui'
 import type { PageRow, PageLinkRow } from '@vida/core'
 import type { GraphEdge } from '@vida/ui'
+import type { NotesFilter } from '../../stores/notes-view-store'
 import { getNotesService } from './notes-service'
 
 const NOTES_LIST_KEY = ['pages', 'list'] as const
@@ -24,12 +26,14 @@ const NOTES_LIST_KEY = ['pages', 'list'] as const
 const GRAPH_EDGES_KEY = (nodeIds: readonly string[]) =>
   ['links', 'graph', [...nodeIds].sort().join('|')] as const
 
-/** The Notes collection — all live (non-deleted) pages, unfiltered (B1). */
-export function useNotesList() {
+/** The Notes collection — live (non-deleted) pages, filtered by the ① `listPages` params (B6). The `filter` is
+ *  part of the query key so a change refetches; `NOTES_LIST_KEY` stays the invalidation PREFIX (covers every filtered
+ *  key). Default `{}` = B1's unfiltered set (BR-B6-2). */
+export function useNotesList(filter: NotesFilter = {}) {
   return useQuery({
-    queryKey: NOTES_LIST_KEY,
+    queryKey: [...NOTES_LIST_KEY, filter] as const,
     queryFn: async (): Promise<PageRow[]> => {
-      const rows = await getNotesService().listPages({})
+      const rows = await getNotesService().listPages(filter)
       // Baseline recency order (newest first) — a deterministic default so the collection isn't in arbitrary
       // SQLite rowid order (created_at is Unix ms). This is NOT the configurable sort/grouping system (envision
       // pt 6 → MOD-spaces) nor persisted manual order (→ DB-11); just B1's default display order.
@@ -44,6 +48,32 @@ export function useCreateNote() {
   return useMutation({
     mutationFn: (): Promise<PageRow> => getNotesService().createPage({ type: 'note' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTES_LIST_KEY }),
+  })
+}
+
+/** B6 · create-with-tags (EC-8): createPage(title) THEN tagEntity per chosen tag. Create precedes tagging (BR-B6-4)
+ *  — a per-tag failure toasts but the (created) note survives + the mutation still resolves with it, so the caller
+ *  navigates to a real note. Invalidates the list + the ['tags'] namespace (an active tag filter re-reads). */
+export function useCreateNoteWithTags() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { title?: string | null; tagIds?: string[] }): Promise<PageRow> => {
+      const svc = getNotesService()
+      const page = await svc.createPage({ type: 'note', title: input.title ?? undefined })
+      for (const tagId of input.tagIds ?? []) {
+        try {
+          await svc.tagEntity(tagId, 'page', page.id)
+        } catch {
+          toast({ title: "Couldn't add tag", intent: 'danger' })
+        }
+      }
+      return page
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: NOTES_LIST_KEY })
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+    },
+    onError: () => toast({ title: "Couldn't create note", intent: 'danger' }),
   })
 }
 

@@ -13,7 +13,7 @@
 // appends isNull(deleted_at). Later slices (A2-A8) extend this same file.
 // ============================================================================
 
-import { and, eq, isNull, like, type SQL } from 'drizzle-orm'
+import { and, eq, inArray, isNull, like, type SQL } from 'drizzle-orm'
 import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
 import {
@@ -24,7 +24,7 @@ import {
   type PageLinkRow,
   type NoteAttachmentRow,
 } from '../../db/schema/notes'
-import { entityTags, type EntityTagRow } from '../../db/schema/foundation/spaces'
+import { entityTags, tags, type EntityTagRow, type TagRow } from '../../db/schema/foundation/spaces'
 import { createPageSchema, updatePageSchema, summaryConfigSchema } from '../../validators/note'
 import { type PageType, MAX_ATTACHMENT_BYTES } from '@vida/types'
 import {
@@ -59,6 +59,9 @@ export function createNotesService(
   const pageLinkRepo = createRepository(db, pageLinks, { deviceId, encryptedFields: [], softDelete: true })
   // A5/B1: net-new read-repo over entity_tags (AR-6 owns writes; it exposes no tag-read). Mirrors AR-8's read-repo.
   const entityTagRepo = createRepository(db, entityTags, { deviceId, encryptedFields: [], softDelete: true })
+  // B6 (§XXVIII, D-6): net-new READ-repo over `tags` — same A5 category (Notes owns tag reads; AR-6 has no tag-read).
+  // For `listTags()` (the filter/create picker's tag-definition source) + the `listPages({tag})` id-set read.
+  const tagRepo = createRepository(db, tags, { deviceId, encryptedFields: [], softDelete: true })
   // A6: note_attachments CRUD repo (blob + thumbnail; empty-[E] pass-through in M1.0, repo encrypts at M3).
   const noteAttachmentRepo = createRepository(db, noteAttachments, {
     deviceId,
@@ -74,6 +77,8 @@ export function createNotesService(
     pageLinkRepo.findWhere(and(pred, isNull(pageLinks.deleted_at))!)
   const liveEntityTags = (pred: SQL): Promise<EntityTagRow[]> =>
     entityTagRepo.findWhere(and(pred, isNull(entityTags.deleted_at))!)
+  // B6: live tag definitions (NP-9/IR-6 verbatim-read discipline — never surface a soft-deleted tag).
+  const liveTags = (): Promise<TagRow[]> => tagRepo.findWhere(isNull(tags.deleted_at))
 
   // IR-2/baseline C5: validate entity_type against the RUNTIME registry (NOT the closed EntityLinkTargetSchema,
   // which would silently re-close the OPEN SP2 registry). Notes' own error surface (seam-contract:34).
@@ -146,13 +151,20 @@ export function createNotesService(
       return live(and(eq(pages.entity_type, entityType), eq(pages.entity_id, entityId))!)
     },
 
-    listPages(filter) {
-      // BR-A1-7 (D-2): the tag branch needs the entity_tags read that lands at A5. Fail LOUD rather
-      // than silently returning an unfiltered (wrong-but-plausible) set.
-      if (filter.tag !== undefined) {
-        throw new Error('listPages({tag}) is available from slice A5')
-      }
+    async listPages(filter) {
       const conds: SQL[] = []
+      // B6 (§XXVIII, D-6 · BR-B6-1): the `{tag}` branch is a TWO-QUERY COMPOSE (the DB-6 repo's findWhere is
+      // single-table, so pages⋈entity_tags is not expressible through it). (1) read the tagged page-ids from
+      // entity_tags for THIS tag (entity_type='page', the tagEntity write convention); (2) constrain pages to that
+      // id-set. Empty id-set → no live page carries the tag → []. AND-composes with favorite/archived.
+      if (filter.tag !== undefined) {
+        const tagged = await liveEntityTags(
+          and(eq(entityTags.tag_id, filter.tag), eq(entityTags.entity_type, 'page'))!,
+        )
+        const ids = tagged.map((t) => t.entity_id)
+        if (ids.length === 0) return []
+        conds.push(inArray(pages.id, ids))
+      }
       if (filter.favorite !== undefined) conds.push(eq(pages.is_favorite, filter.favorite))
       if (filter.archived !== undefined) conds.push(eq(pages.is_archived, filter.archived))
       const pred = conds.length > 0 ? and(...conds)! : undefined
@@ -203,6 +215,17 @@ export function createNotesService(
     },
     getTagsForEntity(entityType, entityId) {
       return liveEntityTags(and(eq(entityTags.entity_type, entityType), eq(entityTags.entity_id, entityId))!)
+    },
+    // B6 (§XXVIII, D-6): the tag-definition list (net-new READ, A5 category) + a create facade → AR-6. The rich
+    // nestable/color/icon tags-browser stays MOD-spaces ② (delivery-plan:232); Notes exposes only what its filter +
+    // create-with-tags picker need. createTag guards a blank name (AR-6's createTag is a bare create — no validation).
+    listTags() {
+      return liveTags()
+    },
+    async createTag(name) {
+      const trimmed = name.trim()
+      if (!trimmed) throw new Error('Tag name cannot be empty')
+      return deps.spaces.createTag({ name: trimmed })
     },
 
     // --- write facade → AR-6 (A5 · seam-contract:26) --------------------------
