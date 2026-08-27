@@ -5742,3 +5742,26 @@ Next session:
     `apps/web/src/app/notes/{notes-collection,use-notes-list}.tsx` (the B1 collection B6 adds filters to). Then B7 (summary).
   - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; `corepack pnpm`).
     Branch `mod-notes-rebuild` (B5 = `618d15c`, close-out `de23462`).
+
+---
+Date: 2026-08-26
+Task: mod-notes (LIF-131) — Track B ② slice B6
+Goal: Build MOD-notes ② slice B6 — metadata + filters + create-with-tags (EC-8/EC-9 + slice-map:35) via the full §XXVI double-gate → ░Visual Gate░.
+Completed:
+  - **B6 BUILT + COMMITTED `b9fc2c8` on `mod-notes-rebuild` → ░Visual Gate PASS░.** The largest Track-B slice: two planes + THREE §XXVIII ① touches (A5-category, Doc-Gate-adjudicated sound).
+  - `@vida/core`: implemented `listPages({tag})` (two-query compose — `entity_tags` ids → `inArray(pages.id, ids)` AND favorite/archived; was a throwing A1 placeholder A5 left unwired) · `listTags()` (net-new read over a read-only `tags` repo) · `createTag(name)` (facade → AR-6, trims + rejects blank) + `TagRow` barrel re-export; replaced the throwing test (`service.ts`/`types.ts`/`index.ts` + `notes-service.test.ts`).
+  - `apps/web`: filter bar (3 explicit "show only" toggles → `listPages`, default `{}` no invented default-hide; tag via UI-1 Menu) + filter state in the ephemeral `notes-view-store` + create-with-tags Dialog (`useCreateNoteWithTags`) + `<TagPicker>` (search + create-on-miss, inline in the modal / Popover in the rail) + new `use-tags.ts` + rail icon/cover (debounced, flush-on-unmount) + removable tag chips. New: `tag-picker.tsx`, `use-tags.ts` (+ tests).
+  - Full §XXVI: Doc Gate REVISE→resolved (independent critic caught `listPages({tag})` THROWS → 3 ① touches not 2; `createTag` name-guard; corrected the false `current-spec.md` "live since A5" claim) → g2 preflight+critique SHIP → code-review MINOR-FIXES→resolved (`metaTimerRef` unmount leak → flush-on-unmount; TagPicker stale-`value` closure → ref) → ░Visual Gate PASS░.
+  - Visual Gate (live browser): create-on-miss "urgent"→applied→navigate; tag filter→only Charlie; favorite∧tag→filtered-empty-CTA; icon 🔥 persisted; rail chip+Popover; 375 reflow; console clean. **Caught + fixed a real bug: a portalled Popover was dismissing the modal create-Dialog → inline picker.** Shots `.claude/visual-gate/b6-*.png`.
+  - §XXIX: `current-spec.md` + `current-business-rules.md` refreshed. Bars: `@vida/core` 846 · `@vida/web` 256 (+14) · tc 0 · eslint 0.
+In progress:
+  - (none — B6 fully closed; B7 not yet started)
+Decisions:
+  - **The archived-default + the 3 ① touches are NOT "judgment calls" — both doc-resolved (Victor drift-catch).** No default-hide-archived exists in the docs (my invention); the collection default is `{}` (B1's set), filters are explicit "show only" toggles. `listPages({tag})` is A1's documented contract (completing a throwing branch); `listTags`/`createTag` follow A5's "Notes owns net-new tag reads + write-facade delegates to AR-6". Presented as FACT, judgment-call framing removed.
+  - `listPages({tag})` = a TWO-QUERY compose (not a raw JOIN) — the DB-6 repo's `findWhere` is single-table.
+  - The create-dialog TagPicker MUST be inline (a portalled Popover dismisses the modal Dialog).
+Next session:
+  - **FIRST ACTION: Track B · slice B7 — journal `/summary` block + Home entry seam** (the FINAL Track-B slice; then ENTITY CLOSE). Render the `/summary` block (fail-loud per section, never blanks) consuming MOD-journals; the journal `entry` editor mount seam. Seam `seam-contract.md:43` (B7 ← `get/setSummaryConfig`; `buildJournalSummary` = B7's OWN block surface consuming MOD-journals' engine, NOT an ① method). Same §XXVI double-gate → ░Visual Gate░.
+  - Reload: `delivery/slice-map.md` (B7 row) · `delivery/seam-contract.md:43` · `delivery/envision.md` (EC-5 journal) · `apps/web/src/home/*` (UX-6 journal-contribution registry seam) · `packages/editor` E5 `/summary` placeholder. Note MOD-journals ① is NOT built yet — B7 likely renders against a not-yet-activated engine seam (degrade-per-section); check whether B7 is buildable now or gated behind MOD-journals.
+  - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; `corepack pnpm`). Branch `mod-notes-rebuild` (B6 = `b9fc2c8`).
+---
