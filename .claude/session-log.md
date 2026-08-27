@@ -5765,3 +5765,30 @@ Next session:
   - Reload: `delivery/slice-map.md` (B7 row) · `delivery/seam-contract.md:43` · `delivery/envision.md` (EC-5 journal) · `apps/web/src/home/*` (UX-6 journal-contribution registry seam) · `packages/editor` E5 `/summary` placeholder. Note MOD-journals ① is NOT built yet — B7 likely renders against a not-yet-activated engine seam (degrade-per-section); check whether B7 is buildable now or gated behind MOD-journals.
   - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; `corepack pnpm`). Branch `mod-notes-rebuild` (B6 = `b9fc2c8`).
 ---
+
+---
+Date: 2026-08-26
+Task: mod-notes (LIF-131) — Track B ② slice B7 (FINAL Track-B slice)
+Goal: Build MOD-notes ② slice B7 — journal `/summary` block + Home entry seam (EC-5 + slice-map:36) via the full §XXVI double-gate → ░Visual Gate░; then ENTITY CLOSE readiness.
+Completed:
+  - **B7 BUILT + COMMITTED `5a15d31` on `mod-notes-rebuild` → ░Visual Gate PASS░ (mine).** Two planes (editor seam + app body); NO `@vida/core` change (the aggregation engine is fenced to MOD-journals #33). ⇒ Track B COMPLETE (B1–B7); MOD-notes ①+② entity-complete pending Victor's whole-issue visual gate.
+  - Step 0 (buildability): verdict = BUILDABLE NOW via the degrade path — `mod-journals` blocks-on `mod-notes`, so the engine is provably absent; rendering against the inert seam IS the design (AR-9 `JournalSeamNotActivated` precedent). Not gated behind #33.
+  - `@vida/editor`: `BlockBodies.dailySummary?` + `editor.tsx` swaps the `dailySummary` node into the delegating node-view (B4 mechanism; a 3rd filter clause + `makeBlockBodyNode`). Editor stays `@vida/core`-free AND app-free. `editor` tests **252** (+3).
+  - `apps/web`: `build-journal-summary.ts` (`buildJournalSummary(_date, sections)` — B7's OWN ② surface, NOT an ① method; `SummaryRow` B7-local `DailySummarySectionType`-keyed; `sectionsFromConfig` 5-flag→5-row) · `journal-entry-seam.ts` (`resolveTodayJournalPageId`, NP-2 idempotent) · `daily-summary-body.tsx` (`DailySummaryBody` read-only node body) · `use-note.ts` `useSummaryConfig` · `note-detail.tsx` wiring. `@vida/web` **269** (+13).
+  - Full §XXVI: Doc Gate REVISE→resolved (B1/B2 `SectionData` is HomeSectionKey-keyed [3 Home lanes] ≠ the block's N rows → B7-local `SummaryRow`; B3 the 6-vs-5 vocab gap is the **G5 delta → M1.4**, not DB-11, mis-cited `schema/notes.ts:19-22`; M3 inert = `'empty'` not `'error'` per business-rules.md:30) → Approval 1 → gate-2 SHIP (every empirical claim verified vs code) → Approval 2 → impl → code-review MINOR-FIXES→resolved (symmetric `date` type-guard at the frozen boundary) → ░Visual Gate PASS░.
+  - Visual Gate (live browser, chrome-devtools): `/summary` via slash menu → the block mounts the real body (not the E5 placeholder); unconfigured note → the R2 non-blank "No summary sections configured" surface; after `setSummaryConfig{showHabits,showTasks,showStudySessions}` + reload → **3 per-row cards (Habits·Tasks·Study)** each degrading to "available when Journals ships" (never `'error'`, never blank); 375 stacks full-width (no flex-collapse); console clean. Shot `.claude/visual-gate/b7-summary-block-1440.png`.
+  - §XXIX: `current-spec.md` + `current-business-rules.md` promoted (B7 built + ENTITY CLOSE). Grounded the Doc-Gate residual in the docs (Victor directive): the stale `current-spec.md:40`→`:62` cross-ref fixed across `slice-map`/`seam-contract`/`intent-coverage`.
+  - Bars: `@vida/editor` **252** · `@vida/web` **269** · typecheck 0 · eslint 0 errors.
+In progress:
+  - (none for B7 — built + committed + Visual-Gate-PASS). **Entity close-out DEFERRED: Victor runs his own visual gate on the WHOLE issue before `/session-end` + `/task-complete`.**
+Decisions:
+  - **`buildJournalSummary` is a ② app surface, NOT an ① method (A7 lesson held) + authors ZERO `@vida/core` journal code** — the engine is fenced to #33; the signature is the frozen swap seam #33 fills with no B7 rewrite.
+  - **Inert engine → `state:'empty'` (NOT `'error'`)** — a not-yet-shipped module is "nothing yet", which business-rules.md:30 says is NOT an error; no 5th TerminalState invented.
+  - **B7 uses its own row-granular `SummaryRow`, NOT `home/`'s `SectionData`/`resolveDashboardStates`** — those are `HomeSectionKey`-typed (the 3 Home lanes summary|agenda|entry), a different granularity from the block's N summary rows.
+  - **The 6-vs-5 section-vocab gap is the G5 delta → M1.4**, not a DB-11 reconcile (Doc-Gate catch; grounded in business-rules.md:43 + slice-map.md:59).
+  - **§XXVIII refinement (surfaced):** the A7 config fallback reads inside `DailySummaryBody` via `useSummaryConfig(pageId)` (mirrors B4's `CommittedRef`/`useNoteTitle`), not a threaded prop; the frozen `date` slot is `_date` (inert impl, #33 activates it).
+Next session:
+  - **FIRST ACTION: after Victor's whole-issue visual gate → run `/session-end` + `/task-complete` (syncs LIF-131 → Done in Linear) to formally CLOSE the entity.** B7 is committed `5a15d31`; Track B complete (B1–B7); Track A complete (A1–A8).
+  - Then the next M1.1 head: **MOD-journals #33** — fills the `buildDashboard` aggregation engine that B7's `buildJournalSummary` seam consumes; then Home Phase-1b renders the dashboard (consuming `resolveTodayJournalPageId` + the UX-6 model).
+  - Env: web tests + vite under Node 24 (`export PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`). Branch `mod-notes-rebuild`.
+---
