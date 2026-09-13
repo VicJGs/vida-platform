@@ -20,7 +20,6 @@ import { migration008KnowledgeReview } from './008_knowledge_review'
 import { migration009EconomyStoreRules } from './009_economy_store_rules'
 import { migration010Scheduling } from './010_scheduling'
 import { migration011Templates } from './011_templates'
-import { migration012Notes } from './012_notes'
 import { migration013Preferences } from './013_preferences'
 import { migration014SessionsScheduling } from './014_sessions_scheduling'
 import { migration015Tasks } from './015_tasks'
@@ -69,7 +68,6 @@ const ALL_MIGRATIONS: Migration[] = [
   migration009EconomyStoreRules,
   migration010Scheduling,
   migration011Templates,
-  migration012Notes,
   migration013Preferences,
   migration014SessionsScheduling,
   migration015Tasks,

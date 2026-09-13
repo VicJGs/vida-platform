@@ -66,6 +66,15 @@ export const SESSION_STATUS = [
 ] as const
 export type SessionStatus = (typeof SESSION_STATUS)[number]
 
+// Pomodoro / focus-timer phase + run-state — a Sessions sub-type concern (ADR-004:
+// pomodoro is a `sessions` sub-type; `focus_sessions` is the timer runtime). Relocated
+// here from the retired notes types file during the notes teardown (2026-09-11).
+// TODO(backend-replan): confirm final home in the full-backend intake.
+export const POMODORO_TYPE = ['focus', 'short_break', 'long_break'] as const
+export type PomodoroType = (typeof POMODORO_TYPE)[number]
+export const POMODORO_STATUS = ['running', 'paused', 'completed', 'cancelled'] as const
+export type PomodoroStatus = (typeof POMODORO_STATUS)[number]
+
 /**
  * The effect catalogue (Integration-Contract dim2) — FIXED vocabulary (BR-5b).
  * Stored as a JSON array in session_type_registry.effects → Zod-validated, NO SQL CHECK.

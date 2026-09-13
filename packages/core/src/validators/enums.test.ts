@@ -2,8 +2,8 @@
 // DB-9 — canonical enum validators (BR-DB9-4: reject invalid, accept valid)
 //
 // Every validator is built identically — `z.enum(<canonical tuple>)` — so a
-// representative spread across domains (incl. the widest, EntityLinkTarget=34,
-// and a shared enum) proves the mechanism uniformly. The tuple↔union↔schema
+// representative spread across domains (incl. a shared enum) proves the
+// mechanism uniformly. The tuple↔union↔schema
 // structural equality is additionally guaranteed by `pnpm typecheck` (the
 // schema is built FROM the tuple) and by enum-parity.test.ts for the DB side.
 // ============================================================================
@@ -14,7 +14,6 @@ import {
   PRIORITY,
   SYNC_OPERATION,
   ACCOUNT_TYPE,
-  ENTITY_LINK_TARGET,
   MASTERY_LEVEL,
   VAULT_STATE,
   ACHIEVEMENT_TIER,
@@ -30,7 +29,6 @@ import {
 } from './common'
 import { SyncOperationSchema } from './sync'
 import { AccountTypeSchema } from './finance'
-import { EntityLinkTargetSchema } from './note'
 import { MasteryLevelSchema } from './learning'
 import { VaultStateSchema } from './encryption'
 import { AchievementTierSchema } from './user'
@@ -48,7 +46,6 @@ const PAIRS = [
   { name: 'Priority', schema: PrioritySchema, tuple: PRIORITY },
   { name: 'SyncOperation', schema: SyncOperationSchema, tuple: SYNC_OPERATION },
   { name: 'AccountType', schema: AccountTypeSchema, tuple: ACCOUNT_TYPE },
-  { name: 'EntityLinkTarget', schema: EntityLinkTargetSchema, tuple: ENTITY_LINK_TARGET },
   { name: 'MasteryLevel', schema: MasteryLevelSchema, tuple: MASTERY_LEVEL },
   { name: 'VaultState', schema: VaultStateSchema, tuple: VAULT_STATE },
   { name: 'AchievementTier', schema: AchievementTierSchema, tuple: ACHIEVEMENT_TIER },

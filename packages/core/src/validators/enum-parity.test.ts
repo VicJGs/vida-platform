@@ -30,7 +30,6 @@ import {
   STORE_REF_TYPE,
   RULE_CONDITION_BINDING_TYPE,
   PLANNED_BLOCK_STATUS,
-  PAGE_TYPE,
   THEME,
   TIME_FORMAT,
   DOCK_POSITION,
@@ -142,7 +141,6 @@ import { migration008KnowledgeReview } from '../db/migrations/008_knowledge_revi
 import { migration009EconomyStoreRules } from '../db/migrations/009_economy_store_rules'
 import { migration010Scheduling } from '../db/migrations/010_scheduling'
 import { migration011Templates } from '../db/migrations/011_templates'
-import { migration012Notes } from '../db/migrations/012_notes'
 import { migration013Preferences } from '../db/migrations/013_preferences'
 import { migration014SessionsScheduling } from '../db/migrations/014_sessions_scheduling'
 import { migration015Tasks } from '../db/migrations/015_tasks'
@@ -247,8 +245,6 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   // DB-3 scheduling (010): planned_blocks.status is FIXED. sub_type is OPEN (SS-5/BR-6, no CHECK) —
   // deliberately NOT a parity row, mirroring sessions.sub_type (registry-validated, not a column CHECK).
   { table: 'planned_blocks', column: 'status', tuple: PLANNED_BLOCK_STATUS },
-  // DB-4 group #1 — Notes & Pages (pages.type is the only CHECK; entity_type is OPEN, no CHECK)
-  { table: 'pages', column: 'type', tuple: PAGE_TYPE },
   // DB-4 group #2 — Preferences (5 FIXED CHECK cols; default_task_priority/font_size/
   // notification_frequency are OPEN/bare-default, no CHECK — deliberately not rows).
   { table: 'user_preferences', column: 'theme', tuple: THEME },
@@ -471,7 +467,6 @@ async function ddlFor(table: string): Promise<string> {
   await migration009EconomyStoreRules.up(driver)
   await migration010Scheduling.up(driver)
   await migration011Templates.up(driver)
-  await migration012Notes.up(driver)
   await migration013Preferences.up(driver)
   await migration014SessionsScheduling.up(driver)
   await migration015Tasks.up(driver)

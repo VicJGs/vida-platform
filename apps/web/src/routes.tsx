@@ -6,7 +6,7 @@
 // (BR-RT-8): each top-level route's component is its own async chunk.
 //
 // AR-4 ships the tree + a root route + a not-found + ONE lazy reference route
-// (/notes). Per-module routes land with each module's own wave (M1.1+).
+// (/graph). Per-module routes land with each module's own wave (M1.1+).
 // ============================================================================
 
 import {
@@ -49,23 +49,15 @@ const indexRoute = createRoute({
   component: () => <h2>Vida</h2>,
 })
 
-// Reference lazy route — the component loads as a separate chunk on navigation.
-const notesRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/notes',
-  component: lazyRouteComponent(() => import('./app/notes')),
-})
-
-
 // UI-4 · S5 — the neural-graph route is lazy-split so sigma/graphology never enter the
-// initial bundle (BR-7; performance-strategy.md §6). Mirrors notesRoute.
+// initial bundle (BR-7; performance-strategy.md §6). The lazy-route reference pattern.
 const graphRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/graph',
   component: lazyRouteComponent(() => import('./app/graph')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, notesRoute, graphRoute])
+const routeTree = rootRoute.addChildren([indexRoute, graphRoute])
 
 export const router = createRouter({
   routeTree,
