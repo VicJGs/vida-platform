@@ -1,0 +1,77 @@
+# Backend Intent — Part A: xcut-views
+
+> Cross-cutting source: **saved-view engine** (ADR-007) — filter × layout × grouping primitive,
+> Space-owned or global, resolved over per-module read providers (INT-1).
+> Sources swept: `docs/core/decisions/ADR-007-saved-views.md`, `docs/core/spaces/current-spec.md`,
+> `docs/core/spaces/current-business-rules.md`, `docs/intake/spaces.md`, and the built substrate
+> (`packages/core/src/foundation/views/{service,engine,provider-registry,types}.ts`).
+> NOTE: there is no `docs/core/views/current-*.md`; the durable views contract lives inside the **spaces**
+> substrate docs (Spaces owns ADR-006 + ADR-007). Every item below is an **engine/cross-cutting** concern
+> (a view is defined over ≥2 modules' entity types) — the whole source is cross-cutting by construction.
+
+| id | description | source (file:line) | evidence | boundary | cross-cutting | candidate home |
+|----|-------------|--------------------|----------|----------|---------------|----------------|
+| XCU-01 | `ViewsService.createView(input)` — create a saved-view row (`space_id?`, `name`, `layout`, `filter`, `grouping`, `sort`); filter/grouping/sort stringified to JSON TEXT on write; `space_id ?? null`. | packages/core/src/foundation/views/service.ts:48; docs/core/spaces/current-spec.md:27; ADR-007:19 | FACT | service | engine (shared by every module that ships/authors a saved surface) — contributors: tasks, relationships (Global Calendar), languages (dictionary), bucket-list (vision board), all Spaces | ViewsService (foundation/views) |
+| XCU-02 | `ViewsService.updateView(id, patch)` — partial update; encodePatch stringifies filter/grouping/sort when present; wires `spaces.default_view_id` via a create→create→update sequence (V2). | packages/core/src/foundation/views/service.ts:59; docs/core/spaces/current-business-rules.md:16 (BR-9) | FACT | service | engine — same contributors as XCU-01 | ViewsService |
+| XCU-03 | `ViewsService.deleteView(id)` — syncable **soft-delete** (`repo.delete` → enqueue `operation:'update'`), never hard delete. | packages/core/src/foundation/views/service.ts:63 | FACT | service | engine — same contributors | ViewsService |
+| XCU-04 | `ViewsService.getView(id)` — fetch one view by id; absent → throws `ViewNotFound(id)`. | packages/core/src/foundation/views/service.ts:67; types.ts:46 | FACT | service | engine — same contributors | ViewsService |
+| XCU-05 | **Clone a view** — clone a global view into a Space (or vice-versa) as an independent copy (ADR-009 fork stance); user-driven. NOT yet a distinct method on the built `ViewsService` (surface = create-from-source). | ADR-007:19,50-51; docs/intake/spaces.md:72,110-111 | INTERPRETATION | service | engine — same contributors | ViewsService (cloneView) — **gap: not in built service** |
+| XCU-06 | **Ship a default-view set** — the OS seeds a default view per entity type and per shipped Space; a Space may own many views, `spaces.default_view_id` names the opener. | ADR-007:19,50,54; docs/intake/spaces.md:73,107-108,110 | FACT | service | engine + Spaces (seed pipeline) — contributors: every shipped Space/template | ViewsService seed / Spaces template seeding |
+| XCU-07 | `ViewProviderRegistry.register(provider)` / `.get(type)` / `.list()` — the V4/R7 read-provider seam; keyed by `provider.entityType`; **ships EMPTY**, modules register their documented list/query API per-module at their build. | packages/core/src/foundation/views/provider-registry.ts:18; docs/core/spaces/current-spec.md:28; ADR-007:79-82 | FACT | service | **engine seam** — every module that exposes a read API for view fan-out registers here (tasks, events/relationships, reminders, journals, languages, dreams, …) | ViewProviderRegistry (foundation/views) |
+| XCU-08 | `ReadProvider` interface (`entityType`, `list(filter): Promise<unknown[]>`) — the per-module documented read-API shape the engine fans out to; each module implements one at its build (INT-1 — never a direct cross-module table read). | packages/core/src/foundation/views/types.ts:24; ADR-007:79-82; docs/core/spaces/current-business-rules.md:18 (BR-11) | FACT | service | **engine seam** — every read-exposing module is a contributor/implementor | per-module service (implements) + ViewProviderRegistry (registers) |
+| XCU-09 | `ViewEngine.resolve(view)` — parse filter/grouping JSON, **fan** the filter out to each selected entity_type's registered provider, **merge** the result rows, return a `ResolvedView`. The core cross-module aggregation derivation. | packages/core/src/foundation/views/engine.ts:37-60; docs/core/spaces/current-spec.md:29; ADR-007:79-80 | FACT | service | **engine** — aggregates across every provider-registered module | ViewEngine (foundation/views) |
+| XCU-10 | Engine **grouping derivation** (V3/BR-10) — group merged rows by `grouping.field`; a row lacking that field routes to the `'ungrouped'` bucket, never dropped; grouping applied after filter, independent of layout. | packages/core/src/foundation/views/engine.ts:62-74; docs/core/spaces/current-business-rules.md:17; ADR-007:65,70 | FACT | service | engine | ViewEngine |
+| XCU-11 | Engine **terminal-state derivation** (V5/R5/BR-12) — derive `state`: providerErrored→`'error'`, else empty rows→`'empty'`, else `'success'`; engine **never emits `loading`** (consumer pre-await state). | packages/core/src/foundation/views/engine.ts:76-78; docs/core/spaces/current-business-rules.md:19; ADR-007:91-92 | FACT | service | engine | ViewEngine |
+| XCU-12 | Engine **graceful degradation** (V4/BR-11) — a selected type with **no provider** → declared degraded note + empty contribution (never silently dropped); a provider that **throws** → degraded note + `state:'error'`; resolve NEVER throws mid-fan-out. Degradations returned in `ResolvedView.degraded[]`. | packages/core/src/foundation/views/engine.ts:47-59; types.ts:41; docs/core/spaces/current-business-rules.md:18-19 | FACT | service | engine | ViewEngine |
+| XCU-13 | **Cross-type predicate delegation** (heterogeneous views, ADR-007 §3.3.4) — predicates & group-by are provider-delegated, not global: each type's read API applies the predicates it understands; a predicate a provider does not recognize is **ignored for that type** (not dropped) unless the view opts into "exclude types that can't satisfy". | ADR-007:66-72 | FACT (contract) / INTERPRETATION (opt-in exclude not in built engine) | service | engine | ViewEngine — **partial gap: per-type predicate matching + opt-in exclude are build-time (engine passes whole filter to provider.list)** |
+| XCU-14 | **Layout↔entity-field compatibility** — each layout **declares the entity fields it needs** (calendar→date field; gallery→image/cover field; board→group-by field); an entity lacking them makes that layout unavailable/degraded — a declared non-error state, never a crash. | ADR-007:60-64,106,127; docs/core/spaces/current-business-rules.md:17 | INTERPRETATION | both (service: field-availability derivation; UI: renderer degradation surface) | engine | ViewEngine (field-declaration/availability) + P6 UI (renderer) — **gap: field-declaration not in built engine** |
+| XCU-15 | **Invariant V1/BR-8** — a saved surface IS a `views` row (filter × layout × grouping), not a component; `@vida/ui` view components are the renderers a view *selects*. | docs/core/spaces/current-business-rules.md:15; ADR-007:15,45 | FACT | service | engine | ViewsService (schema-enforced) |
+| XCU-16 | **Invariant V2/BR-9** — `views.space_id` nullable: NULL = global/reusable, set = Space-owned; `spaces.default_view_id` names the opener (one of the Space's views, not a separate slot). | docs/core/spaces/current-business-rules.md:16; ADR-007:48-54 | FACT | service | engine | ViewsService |
+| XCU-17 | **Invariant V3/BR-10** — `layout ∈ VIEW_LAYOUT` (FIXED SQL CHECK); filter/grouping/sort are JSON TEXT (no per-field schema guarantee). `VIEW_LAYOUT` (`@vida/types/src/view.ts`) z.enum parity-tested vs the SQL CHECK. | docs/core/spaces/current-spec.md:17,20,22; docs/core/spaces/current-business-rules.md:17 | FACT | service | engine | ViewsService (validator) + @vida/types |
+| XCU-18 | **Invariant V5/BR-12/BR-13** — `views.name` `[E]` + user-literal filter values `[E]` (M3 target; M1.0 pass-through plaintext, empty [E] set); repo created with `encryptedFields:[]` now. | docs/core/spaces/current-business-rules.md:19-20; ADR-007:74; packages/core/src/foundation/views/service.ts:45 | FACT | service | engine | ViewsService |
+| XCU-19 | **Syncability** — `views` carries `_sync_*` + `deleted_at` (DATA-4); all mutations flow through the DB-6 Repository → co-transactional `sync_queue`. | ADR-007:74; docs/core/spaces/current-spec.md:26; packages/core/src/foundation/views/service.ts:44-45 | FACT | service | engine | ViewsService (via Repository) |
+| XCU-20 | **Facade / collapse of parallels** — `task_views` (Tasks, INTENDED) and Preferences' per-module custom-views store collapse INTO `views` (a Task board = a `views` row with `entity_types=[task]`). No parallel per-module view tables. | ADR-007:9,30,84-85; docs/intake/spaces.md:29,48-49,109 | FACT | service | engine — contributors: tasks, preferences (retired their own view stores) | ViewsService (single primitive) |
+| XCU-21 | **Nav placement / default-view preference** lives in **Preferences** (per-Space visibility + default-view pref), NOT in the views engine. Boundary note: the views service owns the view rows; Preferences owns which opens where. | ADR-007:87-88; docs/intake/spaces.md:48-49 | FACT | UI/pref (not views-service) | shared — contributors: preferences, spaces | Preferences service (out of views scope) |
+| XCU-22 | **Emergent-Space view** — a view whose filter is a single root tag renders the emergent contents of a Space (the reason a Space *has* views); resolution reuses the same fan-out. | ADR-007:59; ADR-007:57 | INTERPRETATION | service | engine + Spaces | ViewEngine (filter=root tag) |
+
+## Local flag index (§4a deferred + §4b live-intent) — every flag/verb → the item id that homes it
+
+**§4a — deferral flags**
+- `INTENDED task_views` (Tasks) retired into `views` → docs/core/decisions/ADR-007-saved-views.md:9 → XCU-20
+- `INTENDED task_views` + per-module custom views flagged, never unified → docs/core/decisions/ADR-007-saved-views.md:30 → XCU-20
+- `does NOT design each layout's visual/interaction spec (build-time views pass)` → docs/core/decisions/ADR-007-saved-views.md:94 → XCU-14 (build-time UI; service side of layout-field compat homed there)
+- `does NOT define the predicate DSL's full grammar (build-time)` → docs/core/decisions/ADR-007-saved-views.md:96 → XCU-13 (predicate delegation contract homed; grammar = build-time detail)
+- `does NOT build the provider registry (reuses Journals'/Sessions' pattern — wiring per-module at build)` → docs/core/decisions/ADR-007-saved-views.md:96-97 → XCU-07/XCU-08 (registry built empty; per-module provider wiring is each module's build)
+- `Deferred (owned elsewhere — NOT built here)` header → docs/core/spaces/current-spec.md:31 → (section, not an item)
+- `Predicate-DSL grammar, per-layout visual specs, unify⇄separate resolution → build-time` → docs/core/spaces/current-spec.md:34 → XCU-13 (predicate) + XCU-14 (layout spec)
+- `INTENDED task_views + per-module custom views` (intake) → docs/intake/spaces.md:29 → XCU-20
+- `Preferences owns per-module custom views → becomes Space nav/default-view prefs` → docs/intake/spaces.md:48-49 → XCU-21
+- SP3 `[likely: both]` decision → RESOLVED both/user-driven → docs/intake/spaces.md:72,107-111 → XCU-05 (clone) + XCU-06 (default set) + XCU-01 (user-created)
+
+**§4b — derivation verbs + BR/rule ids**
+- `resolve` (ViewEngine.resolve) → packages/core/src/foundation/views/engine.ts:37 → XCU-09
+- `fans/fan-out` (filter → providers) → docs/core/spaces/current-spec.md:29; ADR-007:79-80 → XCU-09
+- `merges/merge` (provider results) → ADR-007:80; engine.ts:54-55 → XCU-09
+- `provider` / `ReadProvider` / `ViewProviderRegistry` → provider-registry.ts:18; types.ts:24 → XCU-07 / XCU-08
+- `groups/grouping` (ungrouped bucket) → engine.ts:62-74 → XCU-10
+- `aggregation` (Global Calendar cross-module) → ADR-007:126 → XCU-09
+- `derived progress` (Bucket-List vision board over Dreams) → ADR-007:37 → contributor of XCU-09 (progress readout is a Dreams/Bucket-List derivation, provider-fed; not a views-engine item — flagged in UNKNOWNs)
+- `degrade / degraded` (no-provider / provider-error) → engine.ts:47-59; BR-11/BR-12 → XCU-12
+- `terminal state` (loading/empty/error/success) → engine.ts:76-78; ADR-007:91 → XCU-11
+- `clone` (global↔Space independent copy) → ADR-007:50-51 → XCU-05
+- `emergent contents of a Space` (single-root-tag filter) → ADR-007:59 → XCU-22
+- `resolve-then-soft-delete` (junction removes) → BR-15 → out-of-scope for views (Spaces junctions, SpacesService); noted, not a views item
+- BR-8 (V1) saved surface = views row → current-business-rules.md:15 → XCU-15
+- BR-9 (V2) space_id nullable / default_view_id → :16 → XCU-16
+- BR-10 (V3) layout CHECK + JSON + ungrouped/degrade → :17 → XCU-17 (schema) + XCU-10 (ungrouped) + XCU-14 (layout-field)
+- BR-11 (V4/R7) fan-out to ReadProviders / no-provider degrade → :18 → XCU-07/XCU-08 (seam) + XCU-12 (degrade)
+- BR-12 (V5/R5) name [E] / terminal states / provider-error → error / never loading → :19 → XCU-11 + XCU-12 + XCU-18
+- BR-13 M1.0 encryption pass-through (empty [E] set) → :20 → XCU-18
+- V1–V5 framework refs (ADR-007) → covered by XCU-15/16/17 (+10/13/14) / (07,08,09,12) / (11,12,18) respectively
+
+## UNKNOWNs
+- **cloneView not present on the built ViewsService** — ADR-007:50-51 + SP3 mandate user clone (global↔Space), but `service.ts` ships only create/update/delete/get. Is clone a build-time addition to ViewsService or a consumer-side create-from-source? → ADR-007:50-51 vs packages/core/src/foundation/views/service.ts:25-30 → blocker: needs P3 to home cloneView (service method vs UI orchestration).
+- **Default-view seeding owner** — who seeds the OS default view set (XCU-06): ViewsService, a Spaces template-seed pipeline (ADR-009 templates), or a bootstrap step? → ADR-007:19,50; docs/intake/spaces.md:107 → blocker: crosses views ⇄ Spaces/templates (ADR-009); resolve at P3 decomposition.
+- **Per-type predicate matching + opt-in "exclude types that can't satisfy"** — ADR-007:66-72 specifies per-type predicate application + an opt-in exclude mode, but the built engine passes the whole `filter` to each `provider.list` (matching is delegated to the provider, no exclude flag). Is per-type predicate narrowing the provider's job, the engine's, or a build-time detail? → ADR-007:66-72 vs engine.ts:53-55 → blocker: predicate-DSL grammar is explicitly build-time; the exclude-mode flag has no home yet.
+- **Layout field-declaration mechanism** (XCU-14) — ADR-007:60-64 says each layout declares required fields and degrades when absent, but no field-declaration registry exists in the built engine (declared "build-time"). Service half (field-availability derivation) vs UI half (renderer degradation) split per ADR-020 not yet resolved. → ADR-007:60-64 → blocker: P6 (UI) owns renderer; the availability-derivation service half needs a P3 home.
+- **`derived progress` per Bucket-List/Dreams item** (ADR-007:37) — a view surfaces it but the derivation belongs to Dreams/Bucket-List, not the views engine. Confirm it's homed in that module's Part A (not double-counted here). → ADR-007:37 → blocker: cross-module dedup (§4c) — verify against bucket-list/dreams Part A.
