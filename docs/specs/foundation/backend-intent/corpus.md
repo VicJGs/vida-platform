@@ -375,12 +375,14 @@ build = per-module build phase / design-pass / ADR-016, later = post-M1 candidat
 > adds the missing **learning-education (5)** + the recovered **gamification (6)** → **34 sections, 154
 > UNKNOWNs** (143 + 5 + 6).
 >
-> ⚠ **RATIFICATION GAP (not merely an UNKNOWN): GG4 — XP-per-action reward table (fixed app-config vs
-> user-tunable) + difficulty/priority weighting.** This is a genuinely UNRATIFIED design gap, not a
-> shape-open build detail: gamification intake's final RESOLUTION confirm-list (`intake.md:197`)
-> confirmed GG2/3/5/8/9/10/11 but **skipped GG4**. It needs Victor's ratification, not just a build-time
-> DDL pick. Homed in the gamification section below (owner: Gamification build / **needs-Victor-
-> ratification**; resolve-by: P3 decomposition or a design-pass).
+> ✅ **RATIFICATION GAP — RESOLVED 2026-09-14: GG4 — XP-per-action reward model + difficulty/priority
+> weighting.** Was a genuinely UNRATIFIED design gap (gamification intake's RESOLUTION confirm-list
+> `intake.md:197` confirmed GG2/3/5/8/9/10/11 but **skipped GG4**). Ratified via a Victor-approved
+> pre-P2 design-pass (`PLAN-gg4-reward-model.md`, `/critique`+`/preflight` gate) → **ADR-012 §3.11**:
+> shipped-default `rules` (static-seed, deterministic IDs) · `weight_by` descriptor field · global
+> `xp_difficulty_weighting` preference + per-rule override · achievements-bridge (D3) · `grant_currency`
+> untouched · currency integration-ready (M2/ADR-014 owns the plumbing). Homes: gamification build +
+> Preferences build (see the GG4 row below).
 
 > Full per-UNKNOWN text + source:line lives in each `parts/<slug>.md → ## UNKNOWNs`. This table homes
 > them (owner + phase). Rows condensed by theme where a reader listed several sub-parts of one decision.
@@ -562,7 +564,7 @@ build = per-module build phase / design-pass / ADR-016, later = post-M1 candidat
 ### gamification (6)
 | UNKNOWN | Owner | By |
 |---|---|---|
-| ⚠ **GG4 — XP-per-action reward table (fixed app-config vs user-tunable) + difficulty/priority weighting** — **UNRATIFIED design gap** (intake RESOLUTION confirm-list `intake.md:197` skipped GG4); homed provisionally GM-01 + feeder `grant_currency` amounts | **Gamification build / needs-Victor-ratification** | P3 decomposition or design-pass |
+| ✅ **GG4 — XP-per-action reward model + difficulty/priority weighting** — **RESOLVED 2026-09-14** (Victor-approved design-pass `PLAN-gg4-reward-model.md` → **ADR-012 §3.11**): shipped-default `rules` (static-seed) + `weight_by` descriptor + global `xp_difficulty_weighting` pref w/ per-rule override + achievements-bridge (D3); `grant_currency` untouched; currency integration-ready (M2/ADR-014 owns plumbing) | **RESOLVED → homes: gamification build (seed/grammar/bridge) + Preferences build (toggle col)** | ADR-012 §3.11 (done); code at P3-decomposed build |
 | Level-unlocks (rewards that DO something) — ⚠ INTENDED-later; GM-03/XCU-16 cover only base level derivation | MOD-gamification build | later / gamification design-pass |
 | User-authored achievements / challenges / quests-as-a-Space — GM-13/GM-14 = app-curated only; GM-24 defers quests to a Space | #85 / xcut-capability (sandbox authoring model) | later (capability graduation, ADR-012 §6(c)) |
 | `user_profile` PII relocation (`display_name`/`avatar_url`/`birth_date` stay ⚠ until account/identity entity) — homed GM-12 | future identity design (ADR-012 §6(d)) | later |
