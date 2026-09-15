@@ -183,11 +183,19 @@ The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (
   `sessions.sub_type`) after the post-impl critique. `[FACT: db-3 P5]`
 
 ## DB-4 — ✅ COMPLETE (all 21 active groups #1 Notes … #22 Notifications authored · 2026-08-21 · LIF-66)
-The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COMPLETE, 2026-08-21)**; #13 Languages dissolved → Spaces, ADR-006. `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships,check-ins,health-core,health-nutrition,health-training,journals,gamification,notifications}.ts + foundation/{session-extensions,scheduling}.ts; migrations/012_notes.ts … 032_notifications.ts; LATEST_VERSION=32]`
+The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COMPLETE, 2026-08-21)**; #13 Languages dissolved → Spaces, ADR-006. `[FACT: schema/{notes,preferences,tasks,projects,habits,routines,purposes,finance,skills,knowledge,books,learning,relationships,check-ins,health-core,health-nutrition,health-training,journals,gamification,notifications}.ts + foundation/{session-extensions,scheduling}.ts; migrations/013_preferences.ts … 032_notifications.ts + 033_notes.ts; LATEST_VERSION=33]`
+
+> **⚠ P2 backend-replan reconcile (2026-09-14, LIF-163).** Notes (group #1) was torn down (`eaf64f8`) and
+> **REBUILT** on a NEW appended migration **`033_notes.ts` (`version:33`)** — NOT slot 012 (the runner filters
+> `version > currentVersion`, so a v12 migration is silently skipped on a v32 device). **Slot 012 is now an
+> inert gap** (011→013); the shape is unchanged from the pre-teardown holistic build (corpus §11 verified).
+> Also **O4 provenance unify:** `PHYSICAL_ROLE_AUTHORING_SOURCE`/`SKILL_FILL_SOURCE` `'llm'`→`'ai'` (+ their
+> CHECKs in 021/027/029) → the canonical triad `manual|ai|import` platform-wide. `LATEST_VERSION=33`;
+> `@vida/core` 796/796; typecheck 11/11. Audit: `docs/specs/foundation/backend-intent/schema-audit.md`.
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
-| `012_notes.ts` | `schema/notes.ts` | `pages` · `page_links` · `note_attachments` (ADR-002 §5.2) |
+| `033_notes.ts` (was 012, rebuilt P2) | `schema/notes.ts` | `pages` · `page_links` · `note_attachments` (ADR-002 §5.2) |
 | `013_preferences.ts` | `schema/preferences.ts` | `user_preferences` · `nav_preferences` · `command_bar_history` (ADR-002 §5.17) |
 | `014_sessions_scheduling.ts` | `foundation/session-extensions.ts` + `foundation/scheduling.ts` | `study_sessions` · `focus_sessions` · `study_availability` · `availability_exceptions` · `study_plan_batches` · `session_templates` (ADR-004 §3.1 · §5.11) |
 | `015_tasks.ts` | `schema/tasks.ts` | `tasks` · `task_time_logs` (ADR-002 §5.3) |

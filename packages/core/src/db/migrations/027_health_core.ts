@@ -180,7 +180,7 @@ export const migration027HealthCore: Migration = {
         exercise_refs        TEXT,            -- JSON
         session_sub_types    TEXT,            -- JSON
         authoring_source     TEXT NOT NULL DEFAULT 'manual' CHECK (authoring_source IN (
-                               'manual', 'llm', 'import'
+                               'manual', 'ai', 'import'
                              )),
         locale_variant       TEXT,            -- nullable
         approach             TEXT,            -- [E]; nullable

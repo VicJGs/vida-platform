@@ -103,7 +103,8 @@ export type SafetyFlagTrigger = (typeof SAFETY_FLAG_TRIGGER)[number]
 export const SAFETY_FLAG_STATUS = ['active', 'dismissed', 'acknowledged'] as const
 export type SafetyFlagStatus = (typeof SAFETY_FLAG_STATUS)[number]
 
-// Physical-Role authoring mode (structure-data.md:57). `llm` = the AI-draft leg;
-// `import` = the curated OS-owned Role library (locale-varying).
-export const PHYSICAL_ROLE_AUTHORING_SOURCE = ['manual', 'llm', 'import'] as const
+// Physical-Role authoring mode (structure-data.md:57). `ai` = the AI-draft leg;
+// `import` = the curated OS-owned Role library (locale-varying). Canonical provenance
+// triad `manual|ai|import` (unified with MEAL_SOURCE/HEALTH_METRIC_VALUE_SOURCE, P2 O4 2026-09-14).
+export const PHYSICAL_ROLE_AUTHORING_SOURCE = ['manual', 'ai', 'import'] as const
 export type PhysicalRoleAuthoringSource = (typeof PHYSICAL_ROLE_AUTHORING_SOURCE)[number]

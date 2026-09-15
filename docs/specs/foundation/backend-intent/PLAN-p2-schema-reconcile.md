@@ -121,14 +121,19 @@ sessions/scheduling/pomodoro/journals span `foundation/{sessions,scheduling,sess
 3. **Post-impl gate:** after fixes — DDL-introspection parity per changed table + typecheck 11/11 + the
    deleted-symbol sweep + `/critique`. → P2 done.
 
-## 8. Acceptance (P2 done when)
-- [ ] `schema-audit.md`: every schema-affecting corpus item classified + cited; every GAP either FIXED or
-  DEFERRED-with-home; 0 unaddressed.
-- [ ] Notes hub rebuilt (schema + types + validators + appended migration + barrels + parity rows); ~10
-  polymorphic consumers + `entity_links`/`entity_tags`/`_registry` re-validated.
-- [ ] Types colocation correct (0 mis-filed vocab); OPEN/FIXED CHECK placement matches conventions.
-- [ ] typecheck 11/11 · DDL-introspection parity green per changed table · 0 dangling imports.
-- [ ] Audit-report gate + post-impl gate pass.
+## 8. Acceptance (P2 done when) — ✅ ALL MET (2026-09-14)
+- [x] `schema-audit.md`: 435 items classified + cited; **0 GAP**; every DIVERGENT resolved, 117 DEFERRED-with-home
+  (0 unhomed). 0 unaddressed.
+- [x] Notes hub rebuilt (schema + types + validators + appended migration `033_notes.ts` v33 + barrels + parity
+  row + new introspection test); `_registry` re-validated complete (no-op); consumers re-checked (no-FK, no break).
+- [x] Types colocation correct (0 mis-filed vocab; O4 `'llm'`→`'ai'` unified); OPEN/FIXED CHECK placement per conventions.
+- [x] typecheck 11/11 · DDL-introspection parity green (notes 12 tests) · 0 dangling imports · `@vida/core` 796/796.
+- [x] Audit-report gate (2 critics SHIP) + post-impl gate (independent critic SHIP) pass.
+
+**Disposition ledger (Approval 2, Victor 2026-09-14):** O1 keep course_type modality · O2 keep tasks.kind FIXED ·
+O3 DEFER daily_cap-split + nutrition name_bidx to M1.2 module builds (flagged, `schema-audit-deferred-homes.md`) ·
+O4 UNIFY provenance to `manual|ai|import` (applied) · O5 keep exercise_plans.status OPEN. Expose-sweep (112) +
+progress→null batch DEFERRED to DB-11 / module builds (scope refinement).
 
 ## 9. Out of scope for P2
 Pure service logic that implies no persisted shape (→ P3) · the decomposition/issue list (P3) · the

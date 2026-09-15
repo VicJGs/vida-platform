@@ -40,6 +40,7 @@ import { migration029HealthTraining } from './029_health_training'
 import { migration030Journals } from './030_journals'
 import { migration031Gamification } from './031_gamification'
 import { migration032Notifications } from './032_notifications'
+import { migration033Notes } from './033_notes'
 
 // ---------------------------------------------------------------------------
 // Migration registry — import every migration file here in order.
@@ -88,6 +89,7 @@ const ALL_MIGRATIONS: Migration[] = [
   migration030Journals,
   migration031Gamification,
   migration032Notifications,
+  migration033Notes, // Notes & Pages hub — REBUILT P2 (appended at v33, NOT slot 012)
 ]
 
 // ---------------------------------------------------------------------------

@@ -79,7 +79,7 @@ export const migration029HealthTraining: Migration = {
         goal_ids            TEXT,            -- JSON → Core health_goals
         role_id             TEXT,            -- no-FK; nullable → Core physical_roles
         authoring_source    TEXT NOT NULL DEFAULT 'manual' CHECK (authoring_source IN (
-                              'manual', 'llm', 'import'
+                              'manual', 'ai', 'import'
                             )),
         deleted_at          INTEGER,         -- the documented floor (L18)
         ${BASE}

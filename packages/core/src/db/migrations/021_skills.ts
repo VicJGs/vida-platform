@@ -123,7 +123,7 @@ export const migration021Skills: Migration = {
         prerequisites   TEXT,            -- [E]
         success_criteria TEXT,           -- [E]
         fill_source     TEXT             -- nullable
-                        CHECK (fill_source IN ('manual', 'llm', 'import')),
+                        CHECK (fill_source IN ('manual', 'ai', 'import')),
         created_at      INTEGER NOT NULL,
         updated_at      INTEGER NOT NULL,
         deleted_at      INTEGER,

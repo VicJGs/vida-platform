@@ -22,9 +22,10 @@ export type SkillLevelStatus = (typeof SKILL_LEVEL_STATUS)[number]
 export const SKILL_ACTIVITY_TYPE = ['practice', 'study', 'project', 'assessment', 'review'] as const
 export type SkillActivityType = (typeof SKILL_ACTIVITY_TYPE)[number]
 
-// How an activity/definition row was filled (structure-data.md:22,33). `llm` is the
-// AI-draft leg (≈ AI6's `ai`); distinct from SKILL_DEFINITION_SOURCE (dataset origin).
-export const SKILL_FILL_SOURCE = ['manual', 'llm', 'import'] as const
+// How an activity/definition row was filled (structure-data.md:22,33). `ai` is the
+// AI-draft leg; distinct from SKILL_DEFINITION_SOURCE (dataset origin). Canonical provenance
+// triad `manual|ai|import` (unified with MEAL_SOURCE/HEALTH_METRIC_VALUE_SOURCE, P2 O4 2026-09-14).
+export const SKILL_FILL_SOURCE = ['manual', 'ai', 'import'] as const
 export type SkillFillSource = (typeof SKILL_FILL_SOURCE)[number]
 
 // Skill-graph edge kind (structure-data.md:30).

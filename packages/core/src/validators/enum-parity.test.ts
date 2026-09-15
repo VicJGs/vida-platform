@@ -38,6 +38,7 @@ import {
   ACHIEVEMENT_CATEGORY,
   ACHIEVEMENT_TIER,
   NOTIFICATION_TYPE,
+  PAGE_TYPE,
   STUDY_SESSION_RESOURCE_TYPE,
   POMODORO_TYPE,
   POMODORO_STATUS,
@@ -161,6 +162,7 @@ import { migration029HealthTraining } from '../db/migrations/029_health_training
 import { migration030Journals } from '../db/migrations/030_journals'
 import { migration031Gamification } from '../db/migrations/031_gamification'
 import { migration032Notifications } from '../db/migrations/032_notifications'
+import { migration033Notes } from '../db/migrations/033_notes'
 import type { SqliteDriver } from '../db/adapter'
 
 // --- minimal async driver over better-sqlite3 (repository.test.ts pattern) ---
@@ -451,6 +453,9 @@ const FIXTURE: ReadonlyArray<{ table: string; column: string; tuple: readonly st
   { table: 'achievements', column: 'tier', tuple: ACHIEVEMENT_TIER },
   // DB-4 group #22 — Notifications. 1 FIXED CHECK (type); entity_type is OPEN (registry-validated, no row).
   { table: 'notifications', column: 'type', tuple: NOTIFICATION_TYPE },
+  // DB-4 group #1 — Notes & Pages (REBUILT P2). 1 FIXED CHECK (pages.type from PAGE_TYPE, N-R6);
+  // entity_type is OPEN (registry-validated, NOT-20 retired the 33-value CHECK → no parity row).
+  { table: 'pages', column: 'type', tuple: PAGE_TYPE },
 ]
 
 async function ddlFor(table: string): Promise<string> {
@@ -487,6 +492,7 @@ async function ddlFor(table: string): Promise<string> {
   await migration030Journals.up(driver)
   await migration031Gamification.up(driver)
   await migration032Notifications.up(driver)
+  await migration033Notes.up(driver)
   const row = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
     .get(table) as { sql: string } | undefined

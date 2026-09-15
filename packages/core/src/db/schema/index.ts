@@ -29,6 +29,8 @@ export * from './foundation/scheduling'
 export * from './foundation/session-extensions'
 // Foundation substrate: DB-3 templates (light seed-bundle store).
 export * from './foundation/templates'
+// DB-4 domain (Stream ii): Notes & Pages hub (pages · page_links · note_attachments) — REBUILT P2.
+export * from './notes'
 // DB-4 domain (Stream ii): Preferences (user_preferences · nav_preferences · command_bar_history).
 export * from './preferences'
 // DB-4 domain (Stream ii): Tasks (tasks · task_time_logs).
