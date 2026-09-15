@@ -29,7 +29,7 @@ Delivery Flow vertical fork for the service tier.
 - Profile switched Add-Frontend-Component → project-foundation (this session).
 
 ## Open Questions
-- [P1] Final decomposition axis — cross-cutting-services-first + per-module-CRUD, vs pure-layer. (Resolve at P3.)
+- ~~[P1] Final decomposition axis~~ — RESOLVED at P3: cross-cutting-services-first + per-module-CRUD; **module-owned seams fold into their owner MOD** (Victor 2026-09-15).
 - [P5] Disposition of the existing module-vertical Linear issues (#31–#48) + mod-notes LIF-131.
 
 ## Decisions Made
@@ -39,6 +39,8 @@ Delivery Flow vertical fork for the service tier.
 | Re-plan scope | Whole backend (data + service) from unified intent | "module by module leaves things undone" | 2026-09-11 |
 | Schema action | Audit + targeted fix (NOT wholesale redo of the 117 gated tables) | DB-4 was already built holistically-upfront (Model B); redo = over-engineering | 2026-09-11 |
 | GG4 reward model | Shipped-default `rules` (static-seed) + `weight_by` descriptor + global `xp_difficulty_weighting` pref w/ per-rule override + achievements-bridge (D3); `grant_currency` untouched; currency integration-ready (M2 owns plumbing) | Victor-approved design-pass; reuses authored substrate, no new economy table, no M2/P2 smuggle | 2026-09-14 |
+| P3 decomposition axis | Cross-cutting-services-first (XS) + per-module CRUD (MOD); XS = pure-infra engines only; **module-owned seams (summary/dueIn/review/pages/economy) fold into their owner MOD** with consumers build-edging to the owner | Corpus homes cross-cutting work to owning modules; matches the plan's B.11/economy fold rules; XS-first "bag of consumer stubs" avoided | 2026-09-15 |
+| P3 edge model | BUILD edges (→XS or seam-owner MOD, acyclicity-checked) vs RUNTIME read-seams (MOD→MOD, may be bidirectional, not build-blockers) | Running acyclicity over runtime seams falsely fails on legit bidirectional provider seams (finance↔projects) | 2026-09-15 |
 
 ## Progress
 <!-- Campaign phases — the milestone-delivery-planning scenario, gated per §XXVI. -->
@@ -53,7 +55,7 @@ Delivery Flow vertical fork for the service tier.
   - [x] **FIXES APPLIED** (§XXVI IMPLEMENT, 2026-09-14) — **O4 unify:** `'llm'`→`'ai'` in `PHYSICAL_ROLE_AUTHORING_SOURCE`/`SKILL_FILL_SOURCE` tuples + 3 migration CHECKs (021/027/029); no stray `'llm'` in source. **Notes-hub rebuild:** `schema/notes.ts` + `migrations/033_notes.ts` (`version:33`, appended not slot-012) + `@vida/types/note.ts` (REDUCED — pomodoro re-homed to session.ts, Tag/PageTag/EntityLink dropped as Spaces-owned; keeps PAGE_TYPE/ENTITY_LINK_TARGET-ref/Page/PageLink/NoteAttachment) + `validators/note.ts` (REDUCED) + 4 barrels + runner `ALL_MIGRATIONS` + `enum-parity` `pages.type` row + new `notes-introspection.test.ts`. Restored as SHAPE-reference from pre-teardown git (`eaf64f8^`), reconciled to corpus §11 + current re-homing.
   - [x] **VERIFY GREEN** — **typecheck 11/11** (Node 24); **isolated tests 177 passed** (enum-parity 159 · notes-introspection 12 · migrations-runner 6); V1 (`check_in_streak*` absent from user_profile) ✓ · V3 (`page_tags`/`pomodoro_sessions`/`pages.slug` absent from schema/) ✓ · V4 dist ghosts regenerated ✓. `LATEST_VERSION`→33 derives. [full @vida/core suite running for authoritative count.]
   - [x] **post-impl gate SHIP** (`/critique` §7.3) — independent critic (`ad3ea4bf`) adversarially verified the applied diff on disk (even injected a mirror-default drift to prove the introspection test catches it → it did); all 6 areas CLEAN, 1 NIT folded (note.ts EntityLink comment). **§XXIX currency:** `docs/infrastructure/database-layer/current-spec.md` refreshed (notes→033, `LATEST_VERSION=33`, O4 unify). **✅ P2 COMPLETE** — reconcile confirmed (0 GAP), notes hub rebuilt, O4 unified, green tree (typecheck 11/11 · @vida/core 796/796). Uncommitted on branch `backend-replan` (awaiting Victor's commit call).
-- [ ] P3 · HORIZONTAL DECOMPOSITION — carve corpus → proper issues (cross-cutting-first + per-module CRUD), acyclic
-- [ ] P4 · COVERAGE GATE — independent adversarial critic: ⋃(issues) ⊇ corpus · 0 unhomed · nothing smuggled
+- [x] **P3 · HORIZONTAL DECOMPOSITION ✅ COMPLETE (2026-09-15)** — plan `PLAN-p3-decomposition.md` (method-gate: independent critic + `/preflight` REVISE→2 blocking+4 nits fixed → `/critique` SHIP → **Approval 1 ✅ Victor 2026-09-15**). Carve Workflow `wf_d28406db-35c` (34 readers → deterministic assembler → verifier; resumed 5× as the assembler was fixed, readers cached). **33 issues = 11 XS + 22 MOD** (`decomposition.md` + `traceability.md`). **1200 canonical ids (disk-verified, 2 independent sweeps 0-diff — supersedes the stale corpus header 1194 which undercounted `*u` split-UI rows) · 0 unhomed · acyclic(build)=true · 0 dangling · partition closes (985+401−186=1200).** Homed-out: 222 P6 · 105 DEFERRED · 98 RIDE. **Gate 2 (Decomposition Gate): both in-workflow + independent on-disk critics SHIP.** 5 REVISE rounds all corpus-cited: namespacing · build-vs-runtime edge split · sessions fold · module-owned-seam fold (Victor) · 2 directional edge fixes. **Accepted (Victor 2026-09-15).**
+- [ ] P4 · COVERAGE GATE — independent adversarial critic: ⋃(issues) ⊇ corpus · 0 unhomed · nothing smuggled (P3's `traceability.md` 1200-key set = the join key)
 - [ ] P5 · LINEAR REORG — create/reshape projects/milestones/issues; retire the module-vertical ① issues
 - [ ] P6 · FRONTEND TRACK SCOPING — the separated ② plan (later)
