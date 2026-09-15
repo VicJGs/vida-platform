@@ -5508,3 +5508,21 @@ Decisions:
 Next session (P3 — fresh context):
   - **FIRST ACTION: P3 · Horizontal Decomposition** — carve `corpus.md` (1194 items) into proper acyclic Linear issues (cross-cutting-services-first + per-module CRUD). Runs its own plan + §XXVI gates (ADR-021 §3.6).
   - Reload: `docs/roadmap/backend-consolidation-plan.md` (P3 scope) · `corpus.md`/`parts/*.md` · `schema-audit.md` (built/deferred, incl. O3 defer-adds for M1.2) · `.claude/tasks/backend-replan.md` (Progress: P0✅ P1✅ GG4✅ P2✅ → P3). Env: Node 24. Branch `backend-replan`, NOT pushed. GG4 settled; P5 will dispose module-vertical issues #31–#48 + mod-notes LIF-131.
+
+---
+Date: 2026-09-15 — backend-replan P3 EXECUTION — horizontal decomposition (COMPLETE, committed `4c1560d`)
+Task: backend-replan · Profile: project-foundation / milestone-delivery-planning · branch `backend-replan` (7 commits ahead of main, NOT pushed)
+Goal: carve the P1 intent corpus into an acyclic backend issue set (cross-cutting-services-first + per-module CRUD) that provably covers 100% of intent, through P3's own §XXVI gates.
+Accomplished:
+  - **P3 method gate (Approval 1):** `PLAN-p3-decomposition.md` written → independent adversarial critic + `/preflight` REVISE (2 blocking + 4 nits: §2 delegation-vs-derivation tiebreak, fail-loud mis-route guard, canonical id-set, B.1 relabel) → all fixed → `/critique` SHIP → **Victor approved**.
+  - **Carve Workflow `wf_d28406db-35c`** (34 per-part readers → deterministic in-script assembler → adversarial verifier). Ran once + **resumed 4× as the assembler was fixed** (readers cached → each resume ~90s / ~90K tok vs 2.8M for the initial reader pass). Assembler builds the output markdown deterministically; workflow RETURNS it → written to disk (no LLM re-transcription of the 1200-row matrix).
+  - **5 REVISE rounds, each corpus-cited:** (1) id namespacing `slug:itemId` (item-ids unique only within a part — XCU-01 recurs across xcut files; bare-id count 992 → namespaced 1200); (2) BUILD-vs-RUNTIME edge split, assertAcyclic over build edges only (runtime read-seams may be bidirectional); (3) sessions fold (pomodoro + sessions-and-scheduling → MOD-sessions); (4) **module-owned-seam fold — Victor decision:** summary→MOD-journals, dueIn→MOD-sessions, review→MOD-knowledge, pages→MOD-notes-and-pages, economy→MOD-gamification (XS = pure-infra engines only); (5) 2 directional edge fixes (drop XS-views→XS-templates + MOD-preferences→journals/notifications; demote MOD-sessions→journals to runtime).
+  - **Result: 33 issues = 11 XS + 22 MOD.** Guards all PASS: acyclic(build)=true · 0 unhomed · 0 dangling · partition closes (985 in-issue + 401 homed-out − 186 split-overlap = 1200). Homed-out: 222 P6 · 105 DEFERRED · 98 RIDE. Deliverables: `decomposition.md` + `traceability.md` (1200-key matrix).
+  - **Gate 2 (Decomposition Gate): SHIP** — in-workflow verifier + independent on-disk critic both converge. The "1200 vs 1194" scare resolved: corpus HEADER is stale (undercounted the `*u` split-UI-leg rows); fresh disk sweep = reader sweep = 1200 (0 diff), disk-authoritative.
+Decisions:
+  - Decomposition axis (Open Q [P1] RESOLVED): cross-cutting-first + per-module CRUD; module-owned seams fold to owner MOD; BUILD (→XS/seam-owner) vs RUNTIME (MOD→MOD) edges.
+  - Canonical id-set = **1200 disk-verified** (supersedes corpus header 1194); `traceability.md` is P4's join key.
+Next session (P4 — fresh context):
+  - **FIRST ACTION: P4 · Coverage Gate** — independent adversarial set-cover: ⋃(issues) ⊇ corpus · 0 unhomed · nothing smuggled, joined against `traceability.md`'s 1200-key set. Runs its own §XXVI gate (ADR-021 §3.6).
+  - Reload: `decomposition.md` + `traceability.md` (the P3 output) · `corpus.md`/`parts/*.md` (ground truth) · `PLAN-p3-decomposition.md` (method) · `.claude/tasks/backend-replan.md` (Progress P0✅ P1✅ GG4✅ P2✅ P3✅ → P4). Env: Node 24. Branch `backend-replan`, 7 commits ahead, NOT pushed.
+  - After P4: P5 Linear reorg (dispose #31–#48 + mod-notes LIF-131) · P6 frontend track. Note for P4: the corpus HEADER count (1194) is stale vs the 1200 disk truth — P4 joins on 1200.
