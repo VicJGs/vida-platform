@@ -5489,3 +5489,22 @@ Decisions:
 Next session:
   - **P2 EXECUTION unchanged** (per `PLAN-p2-schema-reconcile.md`) — GG4 now settled beside it (PLAN-p2:135 already scoped GG4 out of P2). GG4's own code (seed rules, grammar, toggle col) is a P3-decomposed gamification+Preferences build, not P2.
   - branch `backend-replan`, now +GG4 docs (uncommitted at time of log). Env: Node 24.
+
+---
+Date: 2026-09-14 — backend-replan P2 EXECUTION — schema+types reconcile + notes-hub rebuild (COMPLETE, committed `7a2a2a4`)
+Task: backend-replan · Profile: project-foundation / milestone-delivery-planning · branch `backend-replan` (6 commits ahead of main, NOT pushed)
+Goal: reconcile the DB-4 schema + @vida/types + validators against the P1 intent corpus (targeted fix, not a redo) + rebuild the torn-down notes hub, through P2's own §XXVI gates.
+Accomplished:
+  - **P2 audit (Workflow `wf_f7ecb25f-a91`, 31 auditors + triage, 32 agents, 2.43M tok):** 435 schema-implicating items — **312 ALIGNED · 117 DEFERRED (0 unhomed) · 6 DIVERGENT · 0 GAP · 8 bidx.** 0-GAP confirms the reconcile thesis (DB-4 Model-B already carried the intent). Deliverables: `schema-audit.md` + `-appendix.md` (435-item roster) + `-deferred-homes.md`.
+  - **Audit-report gate (Approval 2): 2 critics SHIP** (independent adversarial critic falsification-tested every claim vs files on disk + `/critique`). Victor ratified O1–O5.
+  - **Notes-hub rebuild** (recovered pre-teardown shape from git `eaf64f8^`, reconciled to corpus §11): `schema/notes.ts` + `migrations/033_notes.ts` (`version:33`, appended — slot 012 inert gap) + `@vida/types/note.ts` (REDUCED — pomodoro re-homed to session.ts, Tag/PageTag/EntityLink dropped) + `validators/note.ts` + 4 barrels + runner + `enum-parity` `pages.type` row + new `notes-introspection.test.ts` (12 cases).
+  - **O4 provenance unify:** `'llm'`→`'ai'` (2 tuples + 3 migration CHECKs) → canonical `manual|ai|import`.
+  - **Post-impl gate: independent critic SHIP** (injected a mirror-drift to prove the introspection test catches it). Green: typecheck 11/11 · `@vida/core` 796/796 · V1/V3/V4 ✓. §XXIX currency refreshed (`database-layer/current-spec.md`).
+Decisions:
+  - P2 = targeted reconcile (0 GAP → expose + verify + notes rebuild; 1 new migration).
+  - Approval 2: O1 keep course_type modality · O2 keep tasks.kind FIXED · **O3 DEFER daily_cap-split + nutrition name_bidx → M1.2 module builds (flagged, DO-NOT-LOSE)** · **O4 UNIFY provenance** · O5 keep exercise_plans.status OPEN.
+  - Scope refinement: 112-item expose sweep + progress→null batch DEFER to DB-11 (plan Acceptance = types-colocation *correct*, not speculative expose).
+  - Migration at v33 not slot 012 (runner filters version > current). Reduced note.ts (drop re-homed/Spaces-owned symbols).
+Next session (P3 — fresh context):
+  - **FIRST ACTION: P3 · Horizontal Decomposition** — carve `corpus.md` (1194 items) into proper acyclic Linear issues (cross-cutting-services-first + per-module CRUD). Runs its own plan + §XXVI gates (ADR-021 §3.6).
+  - Reload: `docs/roadmap/backend-consolidation-plan.md` (P3 scope) · `corpus.md`/`parts/*.md` · `schema-audit.md` (built/deferred, incl. O3 defer-adds for M1.2) · `.claude/tasks/backend-replan.md` (Progress: P0✅ P1✅ GG4✅ P2✅ → P3). Env: Node 24. Branch `backend-replan`, NOT pushed. GG4 settled; P5 will dispose module-vertical issues #31–#48 + mod-notes LIF-131.
