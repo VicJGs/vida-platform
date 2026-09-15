@@ -31,6 +31,7 @@ Delivery Flow vertical fork for the service tier.
 ## Open Questions
 - ~~[P1] Final decomposition axis~~ — RESOLVED at P3: cross-cutting-services-first + per-module-CRUD; **module-owned seams fold into their owner MOD** (Victor 2026-09-15).
 - [P5] Disposition of the existing module-vertical Linear issues (#31–#48) + mod-notes LIF-131.
+- [P5] **Park `KNO-46`** ("future cross-module rules ADR (undocumented surface)") as an `M2+ undesigned` backlog item — the one homed-but-untargeted intent surfaced by P4's C5 audit (Victor-ratified 2026-09-15; not a P3 re-entry).
 
 ## Decisions Made
 | Decision | Choice | Reason | Date |
