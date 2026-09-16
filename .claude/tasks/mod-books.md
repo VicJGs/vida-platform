@@ -9,4 +9,11 @@
 Books — books + chapters + progress
 
 ## Dependencies
-- blocked by `mod-notes`
+- blocked by `mod-journals`
+- blocked by `mod-knowledge`
+- blocked by `mod-notes-and-pages`
+- blocked by `mod-sessions`
+- blocked by `xs-ai`
+- blocked by `xs-ingestion`
+- blocked by `xs-measurement-engine`
+- blocked by `xs-spaces-tags-links`

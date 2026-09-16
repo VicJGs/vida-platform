@@ -9,4 +9,4 @@
 Preferences — user/nav/command-bar prefs
 
 ## Dependencies
-- blocked by `mod-notes`
+- (none)

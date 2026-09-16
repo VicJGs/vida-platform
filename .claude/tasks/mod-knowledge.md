@@ -9,5 +9,12 @@
 Knowledge (+ review engine, Flashcards svc) — topics/definitions + SM-2 review
 
 ## Dependencies
-- blocked by `mod-books`
-- blocked by `mod-notes`
+- blocked by `mod-notes-and-pages`
+- blocked by `mod-sessions`
+- blocked by `xs-ai`
+- blocked by `xs-backlinks-search-export`
+- blocked by `xs-capability`
+- blocked by `xs-effect-rail`
+- blocked by `xs-ingestion`
+- blocked by `xs-measurement-engine`
+- blocked by `xs-spaces-tags-links`

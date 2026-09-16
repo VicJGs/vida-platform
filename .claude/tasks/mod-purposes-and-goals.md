@@ -1,4 +1,4 @@
-# Task: mod-purposes
+# Task: mod-purposes-and-goals
 # Status: planned
 # Linear: LIF-136
 # Project: M1 — Whole Manual OS
@@ -9,13 +9,10 @@
 Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st capstone) — purposes/targets/metrics over all measured modules
 
 ## Dependencies
-- blocked by `ar-7-capability-registry`
-- blocked by `mod-books`
-- blocked by `mod-finance`
-- blocked by `mod-habits`
-- blocked by `mod-knowledge`
-- blocked by `mod-learning`
-- blocked by `mod-projects`
-- blocked by `mod-relationships`
-- blocked by `mod-routines`
-- blocked by `mod-tasks`
+- blocked by `mod-journals`
+- blocked by `mod-notes-and-pages`
+- blocked by `mod-sessions`
+- blocked by `xs-effect-rail`
+- blocked by `xs-measurement-engine`
+- blocked by `xs-spaces-tags-links`
+- blocked by `xs-views`

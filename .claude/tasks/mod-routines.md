@@ -9,5 +9,11 @@
 Routines (orchestrator) — routines linked to habits/tasks
 
 ## Dependencies
-- blocked by `mod-habits`
-- blocked by `mod-tasks`
+- blocked by `mod-journals`
+- blocked by `mod-knowledge`
+- blocked by `mod-notes-and-pages`
+- blocked by `mod-sessions`
+- blocked by `xs-effect-rail`
+- blocked by `xs-measurement-engine`
+- blocked by `xs-spaces-tags-links`
+- blocked by `xs-views`

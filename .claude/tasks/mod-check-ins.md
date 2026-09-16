@@ -1,4 +1,4 @@
-# Task: mod-checkins
+# Task: mod-check-ins
 # Status: planned
 # Linear: LIF-119
 # Project: M1 — Whole Manual OS
@@ -10,3 +10,5 @@ Check-ins — daily check-in templates + entries
 
 ## Dependencies
 - blocked by `mod-journals`
+- blocked by `mod-notes-and-pages`
+- blocked by `xs-effect-rail`

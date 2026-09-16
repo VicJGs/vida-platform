@@ -9,4 +9,8 @@
 Habits — habits + completions + streaks
 
 ## Dependencies
-- blocked by `mod-notes`
+- blocked by `mod-notes-and-pages`
+- blocked by `xs-effect-rail`
+- blocked by `xs-measurement-engine`
+- blocked by `xs-notifications-delivery`
+- blocked by `xs-spaces-tags-links`

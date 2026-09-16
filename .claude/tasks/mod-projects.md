@@ -9,4 +9,11 @@
 Projects — projects › milestones › deliverables › tasks
 
 ## Dependencies
-- blocked by `mod-tasks`
+- blocked by `mod-journals`
+- blocked by `mod-notes-and-pages`
+- blocked by `mod-sessions`
+- blocked by `xs-ai`
+- blocked by `xs-effect-rail`
+- blocked by `xs-ingestion`
+- blocked by `xs-measurement-engine`
+- blocked by `xs-spaces-tags-links`

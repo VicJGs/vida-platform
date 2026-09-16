@@ -10,4 +10,4 @@ Calendar & Extraction (live ICS, syllabus, webhooks) — live ICS feed
 
 ## Dependencies
 - blocked by `provider-selection`
-- blocked by `mod-learning`
+- blocked by `mod-learning-education`

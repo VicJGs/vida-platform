@@ -9,5 +9,5 @@
 Sessions & Scheduling (Pomodoro=sub-type) — session/pomodoro surface
 
 ## Dependencies
-- blocked by `ar-5-sessions-framework`
-- blocked by `mod-notes`
+- blocked by `xs-effect-rail`
+- blocked by `xs-measurement-engine`

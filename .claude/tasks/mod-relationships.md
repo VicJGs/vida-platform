@@ -9,4 +9,10 @@
 Relationships (CRM) — contacts/interactions/reminders
 
 ## Dependencies
-- blocked by `mod-notes`
+- blocked by `mod-journals`
+- blocked by `mod-notes-and-pages`
+- blocked by `mod-sessions`
+- blocked by `xs-ingestion`
+- blocked by `xs-notifications-delivery`
+- blocked by `xs-spaces-tags-links`
+- blocked by `xs-views`

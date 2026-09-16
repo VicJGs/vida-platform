@@ -9,5 +9,9 @@
 Gamification (economy surface — 2nd capstone) — XP/achievements/currencies ledger
 
 ## Dependencies
-- blocked by `ar-7-capability-registry`
-- blocked by `mod-purposes`
+- blocked by `mod-journals`
+- blocked by `xs-capability`
+- blocked by `xs-effect-rail`
+- blocked by `xs-measurement-engine`
+- blocked by `xs-notifications-delivery`
+- blocked by `xs-views`

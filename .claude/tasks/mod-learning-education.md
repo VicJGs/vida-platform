@@ -1,4 +1,4 @@
-# Task: mod-learning
+# Task: mod-learning-education
 # Status: planned
 # Linear: LIF-130
 # Project: M1 — Whole Manual OS
@@ -9,5 +9,11 @@
 Learning: Education (ICS surface; live feed → M2) — courses/homework/exams surface
 
 ## Dependencies
-- blocked by `mod-books`
-- blocked by `mod-knowledge`
+- blocked by `mod-journals`
+- blocked by `mod-notes-and-pages`
+- blocked by `mod-sessions`
+- blocked by `xs-ai`
+- blocked by `xs-backlinks-search-export`
+- blocked by `xs-ingestion`
+- blocked by `xs-measurement-engine`
+- blocked by `xs-spaces-tags-links`

@@ -9,5 +9,5 @@
 Journals (daily dashboard; owns `summary(date)`) — one journal/day; agenda; entry
 
 ## Dependencies
-- blocked by `mod-notes`
-- blocked by `mod-preferences`
+- blocked by `mod-sessions`
+- blocked by `xs-measurement-engine`

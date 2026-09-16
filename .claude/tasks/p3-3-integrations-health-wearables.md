@@ -10,4 +10,4 @@ Health & Wearables (Apple/Google Health, BLE) — wearable/health ingestion
 
 ## Dependencies
 - blocked by `provider-selection`
-- blocked by `mod-health`
+- blocked by `mod-health-core`

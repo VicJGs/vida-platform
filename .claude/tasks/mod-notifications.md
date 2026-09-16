@@ -9,4 +9,6 @@
 Notifications (in-app/local; dead-last leaf) — local notifications over any entity
 
 ## Dependencies
-- blocked by `mod-gamification`
+- blocked by `mod-sessions`
+- blocked by `xs-effect-rail`
+- blocked by `xs-notifications-delivery`

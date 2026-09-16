@@ -5544,3 +5544,27 @@ Decisions:
 Next session (P5 — fresh context):
   - **FIRST ACTION: P5 · Linear reorg** — create/reshape projects/milestones/issues from the SHIP'd 33-issue set; retire the module-vertical issues #31–#48; dispose mod-notes LIF-131. Park KNO-46 as an M2+ undesigned backlog item. Runs its own plan + §XXVI gates (ADR-021 §3.6).
   - Reload: `coverage-report.md` (certified join key) + `decomposition.md`/`traceability.md` (the issue set) + `.claude/tasks/backend-replan.md` (Progress P0✅ P1✅ GG4✅ P2✅ P3✅ **P4✅** → P5). Env: Node 24. Branch `backend-replan`, 9 commits ahead, NOT pushed. After P5: P6 frontend-track scoping.
+
+---
+Date: 2026-09-15 — backend-replan P5 LINEAR REORG — DONE (live tracker reshaped)
+Task: backend-replan · Profile: project-foundation / milestone-delivery-planning · branch `backend-replan` (NOT pushed)
+Goal: projectize the P4-certified 33-issue carve into the live Linear tracker — create the net-new cross-cutting-service + health-split issues, reshape the 20 continuing, retire the 6 folded, park KNO-46; re-home aggregator deps; NO scope re-decided.
+Accomplished:
+  - **Step 1 Ground:** reloaded coverage-report/decomposition/traceability + live Linear (`--status`). Derived — NOT chose (Victor: "see the intent + current picture") — milestone homing from ADR-019 §3.5 first-consumer-pull + ADR-021 §3.4: 11 XS distribute M1.1×6 (spaces-tags-links·views·templates·effect-rail·measurement-engine·capability[transitive via xs-templates]) + M1.2×5 (ingestion·ai·egress-guard·backlinks-search-export·notifications-delivery); 22 MOD keep current homes.
+  - **Step 2 Plan:** `PLAN-p5-linear-reorg.md` — 13 create + 20 reshape + 6 retire + 1 park; g1-N2 aggregator re-home; g1-N5 reshape→verify→write. Forward-declared **§11a: P6 needs the SAME reorg one tier down** (222 P6 UI legs) — Victor flag.
+  - **Step 3 method gate (Approval 1):** independent critic REVISE→2 blocking fixed — **B1** blocked-by edges resolve by SLUG not LIF → renames orphan out-of-scope M2 `p3-3`/`p3-6` → §6.4 fan-out; **B2** retire is scripted `--retire`, not manual (`:726`). Critic re-derived XS homing + arithmetic (matched). +4 NITs. Victor approved.
+  - **Step 4 execute:** `tools/backend-intent/p5-reshape.mjs` (deterministic, fail-loud) — 5 `git mv` → local reshape (edges from decomposition build-deps, milestones §4, retires+fold pointers, park, aggregator remap, §6.4, map-key renames) → assertions green. `--status` diff = exactly intended.
+  - **Gate-2 (Approval 2): SHIP** — on-disk critic: edge-exact 33/33, 48-node Kahn topo acyclic, 6 retired/fold, 0 dangling, milestones+aggregators exact.
+  - **Live write:** `--sync` (reshapes+edges) → new issues refused by the **orphan-create guard** (`:489`) → `--sync --allow-orphan-create` → **created LIF-164…177** (health-nutrition/training · xmod-cross-module-rules-adr[KNO-46] · 11 xs-*) → `--retire ×6` (LIF-141/123/121/118/120/134 → Canceled + map keys dropped). Final `--status` clean, 0 `[+ create]`.
+Decisions:
+  - Milestone homing = derived from first-consumer-pull (ADR-019 §3.5), not chosen. `xs-capability`@M1.1 by transitive build-dep (xs-templates), not first-MOD-consumer.
+  - Retire = reshape-not-delete (keep LIF/header); 6 folded Canceled, not removed.
+  - `hard-2` XS-measurement-engine dep = deferred to gate-2 → resolved NO (kept minimal).
+  - Memory saved: [[tracker-sync-orphan-create-guard]] — `--allow-orphan-create` gotcha + slug-vs-LIF + scripted-retire + add-only-edge.
+Residual / manual:
+  - **Cosmetic (inert):** 5 aggregators (db-10/db-11/mig-1/hard-1/db-5) retain Linear blocking-relations to the 6 Canceled (add-only won't remove; Canceled blockers don't block) — delete in UI when convenient.
+  - `reconstructed-structure.md #31–#48` rows not yet rewritten (ADR-021 amends the methodology; tracker is now live truth) — currency follow-up.
+  - Commit pending Victor's call. Uncommitted: PLAN-p5 + p5-reshape.mjs + `.claude/tasks/*` reshapes + map + task/TASKS updates.
+Next session (P6 — fresh context):
+  - **FIRST ACTION: P6 · Frontend track scoping** — decompose the 222 P6 UI legs → P6 coverage gate → P6 Linear projectization reusing P5's mechanics verbatim (slug-vs-LIF §6.4 · scripted `--retire` · add-only-edge deletion · g1-N5) + Entity Delivery Flow ①/② fork scoped to frontend (ADR-021 §3.5). Re-assert the 0-service-leg boundary. Own plan + §XXVI gates.
+  - Reload: `PLAN-p5-linear-reorg.md §11a` + `coverage-report.md` C5 (222 UI legs) + `traceability.md` (P6-tagged) + `.claude/tasks/backend-replan.md` (P0…P5✅ → P6). Env: Node 24.
