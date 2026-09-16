@@ -7,7 +7,7 @@
 # Cluster: M1 — Whole Manual OS
 # Linear: LIF-131
 # Project: M1 — Whole Manual OS
-# Milestone: M1.1 — Hub & Foundation Modules
+# Milestone: M1.1.1 — Hub & Foundation · Backend
 # Source: reconstructed-structure.md (Phase V, LIF-110; ADR-016 model)
 # Note: reshaped from mod-notes (LIF-131); prior ①/② torn down (eaf64f8); re-planned under P3 decomposition — reports reshape, not Done.
 

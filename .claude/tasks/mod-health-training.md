@@ -3,7 +3,7 @@
 # Linear: LIF-165
 # Profile: Add Backend Component
 # Project: M1 — Whole Manual OS
-# Milestone: M1.3 — Depth & Recovered Modules
+# Milestone: M1.1.3 — Depth & Recovered · Backend
 # Source: decomposition.md (P3) + coverage-report.md (P4 SHIP) — backend-replan
 
 ## Goal

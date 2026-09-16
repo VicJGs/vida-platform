@@ -86,56 +86,77 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 29 | ✅UI-3 | Vida editor (@vida/editor, TipTap) | `packages/editor/src` | ← UI-1, AR-4 | CAP-authoring | Design-Sys | block editor + serializers — **DONE+MERGED 2026-08-16** (LIF-88, PR #24) |
 | 30 | ✅UI-4 | App shell components | `apps/web/src` | ← UI-1, UX-3 | leaf | Generic | app shell composed — **DONE+MERGED 2026-08-17** (LIF-89, PR #29) |
 
-## Milestone M1.1 — Hub & Foundation Modules   *(default home `core/src/services/<module>`)*
-> **Home exceptions (DF-7 — do not glob-expand blindly):** `MOD-spaces` → `apps/web` surfaces over `foundation/spaces`; `MOD-health` → `core/src/services/health/*`; `MOD-finance-commitments` / `MOD-projects-investigations` → sub-contexts of `services/finance` / `services/projects` (no new dir). All other `MOD-*` follow the default.
-| # | ID | Title | ADR | ← Blocked-by | → Blocks | Prof | Outcome |
-|---|----|-------|-----|--------------|----------|------|---------|
-| 31 | ◻MOD-notes | Notes & Pages (in-degree-14 HUB) | 002 §5.2 | ← DB-6, DB-9, AR-6 | MOD-prefs, MOD-journals, MOD-spaces, MOD-sessions, MOD-tasks, MOD-habits, MOD-finance, MOD-relationships, MOD-books, MOD-knowledge, MOD-health, MOD-duties, ⊕agg | Backend | pages/links — the connective layer |
-| 32 | ◻MOD-prefs | Preferences | 002 | ← MOD-notes | MOD-journals, ⊕agg | Backend | user/nav/command-bar prefs |
-| 33 | ◻MOD-journals | Journals (daily dashboard; owns `summary(date)`) | 002 | ← MOD-notes, MOD-prefs | MOD-checkins, ⊕agg | Backend | one journal/day; agenda; entry |
-| 34 | ◻MOD-spaces | Spaces module surface | 006–010 | ← AR-6, MOD-notes | ⊕agg | Backend | user-facing spaces/tags |
-| 35 | ◻MOD-sessions | Sessions & Scheduling (Pomodoro=sub-type) | 004 | ← AR-5, MOD-notes | ⊕agg | Backend | session/pomodoro surface |
-| 36 | ◻MOD-checkins | Check-ins | 002 | ← MOD-journals | ⊕agg | Backend | daily check-in templates + entries |
+## Milestone M1.1.1 — Hub & Foundation · Backend   *(BACKEND · `core/src/{foundation,services}` · done-when: service tier complete + coverage-gated (tests green, P4 set-cover), NOT a showcase — ADR-021. Incl. 6 cross-cutting XS substrates, no frontend twin.)*
 
-## Milestone M1.2 — Feature Modules
-| # | ID | Title | ADR | ← Blocked-by | → Blocks | Prof | Outcome |
-|---|----|-------|-----|--------------|----------|------|---------|
-| 37 | ◻MOD-tasks | Tasks | 002 | ← MOD-notes | MOD-projects, MOD-routines, MOD-purposes, ⊕agg | Backend | tasks + sub-tasks + time logs |
-| 38 | ◻MOD-habits | Habits | 002 | ← MOD-notes | MOD-routines, MOD-purposes, ⊕agg | Backend | habits + completions + streaks |
-| 39 | ◻MOD-finance | Finance | 002 | ← MOD-notes | MOD-purposes, MOD-finance-commitments, MOD-fiscal-legal, P3-2, P3-5, ⊕agg | Backend | accounts/transactions/assets/… |
-| 40 | ◻MOD-relationships | Relationships (CRM) | 002 | ← MOD-notes | MOD-purposes, ⊕agg | Backend | contacts/interactions/reminders |
-| 41 | ◻MOD-books | Books | 005/002 | ← MOD-notes | MOD-knowledge, MOD-learning, MOD-purposes, ⊕agg | Backend | books + chapters + progress |
-| 42 | ◻MOD-projects | Projects | 002 | ← MOD-tasks | MOD-purposes, MOD-projects-investigations, MOD-bucket-list, ⊕agg | Backend | projects › milestones › deliverables › tasks |
-| 43 | ◻MOD-knowledge | Knowledge (+ review engine, Flashcards svc) | 005/002 | ← MOD-notes, MOD-books | MOD-learning, MOD-purposes, MOD-skills, MOD-languages, ⊕agg | Backend | topics/definitions + SM-2 review |
-| 44 | ◻MOD-learning | Learning: Education (ICS surface; live feed → M2) | 002 | ← MOD-knowledge, MOD-books | MOD-purposes, MOD-languages, P3-6, ⊕agg | Backend | courses/homework/exams surface |
-| 45 | ◻MOD-routines | Routines (orchestrator) | 002 | ← MOD-tasks, MOD-habits | MOD-purposes, ⊕agg | Backend | routines linked to habits/tasks |
-| 46 | ◻MOD-purposes | Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st capstone) | 011 | ← AR-7, MOD-tasks, MOD-habits, MOD-finance, MOD-relationships, MOD-projects, MOD-books, MOD-knowledge, MOD-learning, MOD-routines | MOD-gamification, MOD-bucket-list, HARD-2, ⊕agg | Backend | purposes/targets/metrics over all measured modules |
-| 47 | ◻MOD-gamification | Gamification (economy surface — 2nd capstone) | 012 | ← AR-7, MOD-purposes | MOD-notifications, HARD-2, ⊕agg | Backend | XP/achievements/currencies ledger |
-| 48 | ◻MOD-notifications | Notifications (in-app/local; dead-last leaf) | 013 | ← MOD-gamification | ⊕agg | Backend | local notifications over any entity |
+| # | Issue | Build-deps (→XS / seam-owner MOD) — full set: `decomposition.md` |
+|---|---|---|
+| 31 | ◻XS-capability | — |
+| 32 | ◻XS-effect-rail | — |
+| 33 | ◻XS-measurement-engine | XS-effect-rail |
+| 34 | ◻XS-spaces-tags-links | — |
+| 35 | ◻XS-views | — |
+| 36 | ◻XS-templates | XS-capability, XS-spaces-tags-links, XS-views |
+| 37 | ◻MOD-preferences | — |
+| 38 | ◻MOD-sessions | XS-effect-rail, XS-measurement-engine |
+| 39 | ◻MOD-journals | MOD-sessions, XS-measurement-engine |
+| 40 | ◻MOD-notes-and-pages | MOD-journals, XS-{spaces,templates,views} |
+| 41 | ◻MOD-check-ins | MOD-journals, MOD-notes-and-pages, XS-effect-rail |
 
-## Milestone M1.3 — Depth & Recovered Modules
-| # | ID | Title | ADR | ← Blocked-by | → Blocks | Prof | Outcome |
-|---|----|-------|-----|--------------|----------|------|---------|
-| 49 | ◻MOD-health | Health (Core · Training · Nutrition) | 002 | ← MOD-notes | P3-3, ⊕agg | Backend | health tracking sub-contexts |
-| 50 | ◻MOD-skills | Skills | 002 | ← MOD-knowledge | ⊕agg | Backend | skills + resources |
-| 51 | ◻MOD-finance-commitments | Finance → Commitments (composition) | 002 | ← MOD-finance | ⊕agg | Backend | commitments view over finance |
-| 52 | ◻MOD-projects-investigations | Projects → Investigations (composition; sub-context of `services/projects`) | 002 | ← MOD-projects | ⊕agg | Backend | investigations view over projects |
-| 53 | ◻MOD-languages | Language learning (dictionary/vocab/practice; a Knowledge section) | 002 | ← MOD-knowledge, MOD-learning | ⊕agg | Backend | per-language proficiency + vocabulary + practice sessions |
-| 54 | ◻MOD-bucket-list | Bucket List (items linked to purposes & projects) | 002 | ← MOD-purposes, MOD-projects | ⊕agg | Backend | bucket-list items with steps/cost/location |
-| 55 | ◻⚠MOD-duties | Duties — ⚠ UNDEFINED (define what a Duty IS vs Task/Habit/Routine + placement FIRST) | 002 | ← MOD-notes | ⊕agg | Backend | **scoping deliverable**: no v2 schema (dropped in 91→60 consolidation); intent captured `docs/intake/duties.md` |
-| 56 | ◻⚠MOD-fiscal-legal | Fiscal & Legal ("Jurisdiction Compass") — ⚠ EMERGING (net-new; harvest+define FIRST) | 002 | ← MOD-finance | ⊕agg | Backend | **scoping deliverable**: pre-harvest cross-module intent (Finance↔Projects↔Purposes); intent captured `docs/intake/fiscal-legal.md` |
+## Milestone M1.1.2 — Feature Modules · Backend
 
-## Milestone M1.4 — Internal-Integration Hardening   *(→ Project M1 done; all M1.4 runs after every module)*
+| # | Issue | Build-deps (→XS / seam-owner MOD) — full set: `decomposition.md` |
+|---|---|---|
+| 42 | ◻XS-backlinks-search-export | — |
+| 43 | ◻XS-egress-guard | — |
+| 44 | ◻XS-ingestion | — |
+| 45 | ◻XS-ai | XS-egress-guard, XS-ingestion |
+| 46 | ◻XS-notifications-delivery | — |
+| 47 | ◻MOD-finance | MOD-{journals,notes,sessions}, XS-×8 |
+| 48 | ◻MOD-gamification | MOD-journals, XS-{capability,effect,measurement,notif,views} |
+| 49 | ◻MOD-habits | MOD-notes-and-pages, XS-×4 |
+| 50 | ◻MOD-knowledge | MOD-notes-and-pages, MOD-sessions, XS-×6 |
+| 51 | ◻MOD-books | MOD-knowledge, MOD-{journals,notes,sessions}, XS-×4 |
+| 52 | ◻MOD-learning-education | MOD-{journals,notes,sessions}, XS-×5 |
+| 53 | ◻MOD-notifications | MOD-sessions, XS-effect-rail, XS-notifications-delivery |
+| 54 | ◻MOD-projects | MOD-{journals,notes,sessions}, XS-×5 |
+| 55 | ◻MOD-purposes-and-goals | MOD-{journals,notes,sessions}, XS-×4 |
+| 56 | ◻MOD-relationships | MOD-{journals,notes,sessions}, XS-×4 |
+| 64 | ◻MOD-routines | MOD-knowledge, MOD-{journals,notes,sessions}, XS-×4 |
+| 65 | ◻MOD-tasks | MOD-notes-and-pages, MOD-sessions, XS-×6 |
+
+## Milestone M1.1.3 — Depth & Recovered · Backend
+
+| # | Issue | Build-deps (→XS / seam-owner MOD) — full set: `decomposition.md` |
+|---|---|---|
+| 66 | ◻MOD-health-core | MOD-knowledge, MOD-{journals,notes,sessions}, XS-×8 |
+| 67 | ◻MOD-health-nutrition | MOD-{journals,sessions}, XS-×5 |
+| 68 | ◻MOD-health-training | MOD-sessions, XS-×6 |
+| 69 | ◻MOD-languages | MOD-knowledge, MOD-{journals,notes,sessions}, XS-×5 |
+| 70 | ◻MOD-skills | MOD-knowledge, MOD-{journals,notes,sessions}, XS-×8 |
+
+## Milestone M1.2.1 — Hub & Foundation · Frontend   *(FRONTEND · P6 — empty; the 222 P6 UI legs decompose here = the showcase-able slice (ADR-016). Scoped from `coverage-report.md` C5 at P6.)*
+
+*(→ P6 · not yet scoped — the ② UI issues for notes/preferences/journals/sessions/check-ins)*
+
+## Milestone M1.2.2 — Feature Modules · Frontend
+
+*(→ P6 · the ② UI issues for the M1.1.2 feature modules)*
+
+## Milestone M1.2.3 — Depth & Recovered · Frontend
+
+*(→ P6 · the ② UI issues for the M1.1.3 depth modules)*
+
+## Milestone M1.4 — Internal-Integration Hardening   *(FLAT cross-track CLOSER — Victor's cut `part-3-build-roadmap/_index.md:130`; summary+rollups=backend, graph/backlinks/polish=UI. **M1 done = operable + coherent REQUIRES BOTH TRACKS**: HARD-4 gains `← M1.2.*` at P6 — cannot close on backend alone, ADR-019 §3.2. Now #64–71 [was #57–64, +7 for the XS insertion].)*
 | # | ID | Title | Home (ADR) | ← Blocked-by | → Blocks | Prof | Outcome |
 |---|----|-------|-----------|--------------|----------|------|---------|
-| 57 | ◻HARD-1 | `summary(date)` provider registry | `services/journals` (002) | ← every `MOD-*` | HARD-4 | Backend | journal summary aggregates all modules |
-| 58 | ◻HARD-2 | Measurability + economy rollups live | `foundation/{measurement,economy}` (011/012) | ← AR-7, MOD-purposes, MOD-gamification | HARD-4 | Backend | end-to-end measurability/economy (integration-class — 1 gate, DF-11) |
-| 59 | ◻HARD-3 | Neural-graph + backlinks complete | `foundation/spaces` + `services` + UI-2 (006) | ← AR-6, AR-8, UI-2 | HARD-4 | Backend | working backlinks + neural graph |
-| 60 | ◻DB-8 | FTS5 tables + search population | `core/src/db`, `services/search` (002) | ← DB-4, DB-7 | HARD-4, DB-8b | Backend | full-text search over real content (DF-2) |
-| 61 | ◻DB-11 | ADR-002 §5/§7/§8 reconciliation | `core/src/db` (002) | ← DB-1, **all `MOD-*`** | HARD-4 | Backend | schema doc reconciled |
-| 62 | ⏸DB-10 | Dogfood seed vault | `packages/core/src/db/seed/` (016; +ADR-009 seed-bundle / 019 dogfood — ⚠ UNCITED, resolve at build) | ← DB-6, DB-7, DB-9, **all M1.1–M1.3 `MOD-*`** | HARD-4 | Backend | localhost vault seeded with a full manual OS (DF-1) |
-| 63 | ◻MIG-1 | v1 retire-at-parity (DF-9) | `db/_legacy/*`, `Old/*`, `docs/_legacy/*` (016/018) | ← DB-1, **all `MOD-*` schemas** | HARD-4 | Backend | quarantined v1 residue (code + Old/ + legacy docs) deleted at parity |
-| 64 | ◻HARD-4 | Polish → M1 done | distributed **[GATE — no file home]** | ← HARD-1, HARD-2, HARD-3, DB-8, DB-10, DB-11, MIG-1 | P3-1, AR-3, P2-3, P2-4 | Generic | **M1 done: operable + coherent** |
+| 64 | ◻HARD-1 | `summary(date)` provider registry | `services/journals` (002) | ← every `MOD-*` | HARD-4 | Backend | journal summary aggregates all modules |
+| 65 | ◻HARD-2 | Measurability + economy rollups live | `foundation/{measurement,economy}` (011/012) | ← AR-7, MOD-purposes, MOD-gamification | HARD-4 | Backend | end-to-end measurability/economy (integration-class — 1 gate, DF-11) |
+| 66 | ◻HARD-3 | Neural-graph + backlinks complete | `foundation/spaces` + `services` + UI-2 (006) | ← AR-6, AR-8, UI-2 | HARD-4 | Backend | working backlinks + neural graph |
+| 67 | ◻DB-8 | FTS5 tables + search population | `core/src/db`, `services/search` (002) | ← DB-4, DB-7 | HARD-4, DB-8b | Backend | full-text search over real content (DF-2) |
+| 68 | ◻DB-11 | ADR-002 §5/§7/§8 reconciliation | `core/src/db` (002) | ← DB-1, **all `MOD-*`** | HARD-4 | Backend | schema doc reconciled |
+| 69 | ⏸DB-10 | Dogfood seed vault | `packages/core/src/db/seed/` (016; +ADR-009 seed-bundle / 019 dogfood — ⚠ UNCITED, resolve at build) | ← DB-6, DB-7, DB-9, **all M1.1–M1.3 `MOD-*`** | HARD-4 | Backend | localhost vault seeded with a full manual OS (DF-1) |
+| 70 | ◻MIG-1 | v1 retire-at-parity (DF-9) | `db/_legacy/*`, `Old/*`, `docs/_legacy/*` (016/018) | ← DB-1, **all `MOD-*` schemas** | HARD-4 | Backend | quarantined v1 residue (code + Old/ + legacy docs) deleted at parity |
+| 71 | ◻HARD-4 | Polish → M1 done | distributed **[GATE — no file home]** | ← HARD-1, HARD-2, HARD-3, DB-8, DB-10, DB-11, MIG-1 | P3-1, AR-3, P2-3, P2-4 | Generic | **M1 done: operable + coherent** |
 
 ---
 
@@ -145,13 +166,13 @@ Intent (INT-2): working external integrations for localhost dogfood, pre-encrypt
 ## Milestone M2.0 — Integrations & Boundary
 | # | ID | Title | ADR | ← Blocked-by | → Blocks | Prof | Outcome |
 |---|----|-------|-----|--------------|----------|------|---------|
-| 65 | ◻P3-1 | Provider-selection pass (head — the ~16 UNDEFINED of 22; 6 already defined) | 014/015 | ← HARD-4 | P3-2, P3-3, P3-4, P3-5, P3-6 | Foundation | all 22 integrations (6 defined + 16 chosen) have providers |
-| 66 | ◻P3-2 | Financial (CSV/OFX, aggregator, prices/FX) | 014 | ← P3-1, MOD-finance | P3-boundary | Backend | bank import + price feeds |
-| 67 | ◻P3-3 | Health & Wearables (Apple/Google Health, BLE) | 014 | ← P3-1, MOD-health | P3-boundary | Backend | wearable/health ingestion |
-| 68 | ◻P3-4 | AI/LLM (askModel, on-device, BYO-cloud, OCR/TTS) | 015 | ← P3-1 | P3-boundary | Backend | askModel runtime for modules |
-| 69 | ◻P3-5 | Fiscal rule-packs | 014 | ← P3-1, MOD-finance | P3-boundary | Backend | fiscal rule packs |
-| 70 | ◻P3-6 | Calendar & Extraction (live ICS, syllabus, webhooks) | 014 | ← P3-1, MOD-learning | P3-boundary | Backend | live ICS feed |
-| 71 | ◻P3-boundary | Security boundary (ingestion/egress guard) | 014/015 | ← P3-2, P3-3, P3-4, P3-5, P3-6 | M3-pass | Backend | verified ingestion/egress guard |
+| 72 | ◻P3-1 | Provider-selection pass (head — the ~16 UNDEFINED of 22; 6 already defined) | 014/015 | ← HARD-4 | P3-2, P3-3, P3-4, P3-5, P3-6 | Foundation | all 22 integrations (6 defined + 16 chosen) have providers |
+| 73 | ◻P3-2 | Financial (CSV/OFX, aggregator, prices/FX) | 014 | ← P3-1, MOD-finance | P3-boundary | Backend | bank import + price feeds |
+| 74 | ◻P3-3 | Health & Wearables (Apple/Google Health, BLE) | 014 | ← P3-1, MOD-health | P3-boundary | Backend | wearable/health ingestion |
+| 75 | ◻P3-4 | AI/LLM (askModel, on-device, BYO-cloud, OCR/TTS) | 015 | ← P3-1 | P3-boundary | Backend | askModel runtime for modules |
+| 76 | ◻P3-5 | Fiscal rule-packs | 014 | ← P3-1, MOD-finance | P3-boundary | Backend | fiscal rule packs |
+| 77 | ◻P3-6 | Calendar & Extraction (live ICS, syllabus, webhooks) | 014 | ← P3-1, MOD-learning | P3-boundary | Backend | live ICS feed |
+| 78 | ◻P3-boundary | Security boundary (ingestion/egress guard) | 014/015 | ← P3-2, P3-3, P3-4, P3-5, P3-6 | M3-pass | Backend | verified ingestion/egress guard |
 
 ---
 
@@ -161,11 +182,11 @@ Intent (INT-3): L1 SQLCipher + L2 field-`[E]` across ALL data; release gate `[AD
 ## Milestone M3.0 — Encryption Pass
 | # | ID | Title | Home (ADR) | ← Blocked-by | → Blocks | Prof | Outcome |
 |---|----|-------|-----------|--------------|----------|------|---------|
-| 72 | ◻AR-3 | Crypto / vault / key-mgmt | `core/src/encryption` (001/002) | ← HARD-4 | DB-5, DB-8b, UX-5b, M3-pass, AR-9b | Backend | vault key model (Argon2id→MK→VK), SRP |
-| 73 | ◻DB-5 | Encryption boundary map (`[E]`/SQLCipher) | `core/src/db` (002 §4) | ← AR-3, **all `MOD-*` schemas** | M3-pass | Backend | every `[E]` field mapped |
-| 74 | ◻DB-8b | Blind index (keyed BLAKE2b) | `core/src/db` (002) | ← AR-3, DB-8 | leaf | Backend | searchable encrypted fields |
-| 75 | ◻UX-5b | Vault-unlock flow | `apps/web/src` (017) | ← AR-3, UX-5 | leaf | Generic | unlock UX (auth-coupled) |
-| 76 | ◻M3-pass | SQLCipher activation + guard re-verify + release gate | cross-cutting **[GATE — no file home]** (019 §3.4) | ← AR-3, DB-5, P3-boundary | leaf | Backend | encryption on end-to-end; release gate |
+| 79 | ◻AR-3 | Crypto / vault / key-mgmt | `core/src/encryption` (001/002) | ← HARD-4 | DB-5, DB-8b, UX-5b, M3-pass, AR-9b | Backend | vault key model (Argon2id→MK→VK), SRP |
+| 80 | ◻DB-5 | Encryption boundary map (`[E]`/SQLCipher) | `core/src/db` (002 §4) | ← AR-3, **all `MOD-*` schemas** | M3-pass | Backend | every `[E]` field mapped |
+| 81 | ◻DB-8b | Blind index (keyed BLAKE2b) | `core/src/db` (002) | ← AR-3, DB-8 | leaf | Backend | searchable encrypted fields |
+| 82 | ◻UX-5b | Vault-unlock flow | `apps/web/src` (017) | ← AR-3, UX-5 | leaf | Generic | unlock UX (auth-coupled) |
+| 83 | ◻M3-pass | SQLCipher activation + guard re-verify + release gate | cross-cutting **[GATE — no file home]** (019 §3.4) | ← AR-3, DB-5, P3-boundary | leaf | Backend | encryption on end-to-end; release gate |
 
 ---
 
@@ -175,15 +196,15 @@ Intent (INT-4): sync → auth → desktop/mobile → self-host → ZK-cloud; nee
 ## Milestone M4.0 — Venues
 | # | ID | Title | ADR | ← Blocked-by | → Blocks | Prof | Outcome |
 |---|----|-------|-----|--------------|----------|------|---------|
-| 77 | ◻DB-2 | `_sync_*` metadata columns + HLC | 002/003 | ← DB-1 | AR-9b | Backend | sync columns + HLC on syncable tables |
-| 78 | ◻AR-9b | Sync engine activation (flush queue; LWW/HLC/Yjs) | 003 | ← AR-9, DB-2, AR-3 | P2-1 | Backend | queue flushes; cross-device merge |
-| 79 | ◻P2-1 | Sync / server (Hono/CF Workers, R2 relay) | 003 | ← AR-9b | P2-2, P2-5, P2-6 | Backend | ZK blob relay live · **owns the `@vida/server` test setup** — its vitest currently has 0 test files, so CI's `test` job fails `@vida/server#test` ("No test files found"); P2-1 lands the server + its tests and turns that green *(flagged by QA-1, 2026-08-04)* |
-| 80 | ◻P2-2 | ZK notifications Tier-3 | 013 | ← P2-1 | leaf | Backend | push without server-visible content |
-| 81 | ◻P2-5 | Self-host | 003 | ← P2-1 | leaf | Backend | self-hostable server |
-| 82 | ◻P2-3 | Desktop (Tauri) | 001 | ← HARD-4 | leaf | Generic | desktop shares web codebase |
-| 83 | ◻P2-4 | Mobile (Expo) | 001 | ← HARD-4 | leaf | Generic | mobile app + native chrome |
-| 84 | ◻P2-6 | ZK-cloud + billing | 003 | ← P2-1 | leaf | Backend | managed ZK cloud + billing |
-| 85 | ◻⚠CAP-authoring | User-authored capability safe-authoring surface — sandbox runtime · authoring DSL/UI · grant enforce/re-grant/revoke. ⚠ INTENDED-later: no M1–M4 consumer (first-consumer-pull) → deferred to the tail; the per-platform sandbox rides each venue's pass (ADR-010 §3.6, not a hard blocker) | `core/src/foundation/capability` + per-app sandbox (010/008 · SP4) | ← AR-7, UI-3 | leaf | Backend | user-authored Blocks run sandboxed; grants enforced; consumes `capability_grants` |
+| 84 | ◻DB-2 | `_sync_*` metadata columns + HLC | 002/003 | ← DB-1 | AR-9b | Backend | sync columns + HLC on syncable tables |
+| 85 | ◻AR-9b | Sync engine activation (flush queue; LWW/HLC/Yjs) | 003 | ← AR-9, DB-2, AR-3 | P2-1 | Backend | queue flushes; cross-device merge |
+| 86 | ◻P2-1 | Sync / server (Hono/CF Workers, R2 relay) | 003 | ← AR-9b | P2-2, P2-5, P2-6 | Backend | ZK blob relay live · **owns the `@vida/server` test setup** — its vitest currently has 0 test files, so CI's `test` job fails `@vida/server#test` ("No test files found"); P2-1 lands the server + its tests and turns that green *(flagged by QA-1, 2026-08-04)* |
+| 87 | ◻P2-2 | ZK notifications Tier-3 | 013 | ← P2-1 | leaf | Backend | push without server-visible content |
+| 88 | ◻P2-5 | Self-host | 003 | ← P2-1 | leaf | Backend | self-hostable server |
+| 89 | ◻P2-3 | Desktop (Tauri) | 001 | ← HARD-4 | leaf | Generic | desktop shares web codebase |
+| 90 | ◻P2-4 | Mobile (Expo) | 001 | ← HARD-4 | leaf | Generic | mobile app + native chrome |
+| 91 | ◻P2-6 | ZK-cloud + billing | 003 | ← P2-1 | leaf | Backend | managed ZK cloud + billing |
+| 92 | ◻⚠CAP-authoring | User-authored capability safe-authoring surface — sandbox runtime · authoring DSL/UI · grant enforce/re-grant/revoke. ⚠ INTENDED-later: no M1–M4 consumer (first-consumer-pull) → deferred to the tail; the per-platform sandbox rides each venue's pass (ADR-010 §3.6, not a hard blocker) | `core/src/foundation/capability` + per-app sandbox (010/008 · SP4) | ← AR-7, UI-3 | leaf | Backend | user-authored Blocks run sandboxed; grants enforced; consumes `capability_grants` |
 
 ---
 

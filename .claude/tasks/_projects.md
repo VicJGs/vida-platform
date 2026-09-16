@@ -5,10 +5,16 @@
 ## M1 — Whole Manual OS
 The entire OS, every module operable by hand, unified by the internal connective layer, on localhost with encryption/sync/auth off. Done-when: every module manually operable AND the OS internally coherent.
 ### Milestones
+<!-- Track-first M1.#.# (ADR-021): M1.0=flat cross-track opener · M1.1.*=Backend · M1.2.*=Frontend(P6) ·
+     M1.4=flat cross-track CLOSER (Victor's cut, part-3-build-roadmap/_index.md:130 — coherence gate, NOT a backend
+     arm; keeps its number). List ORDER drives tracker_sync --plan (milestone_index), so it is in delivery order. -->
 - M1.0 — Boot & Connective Base
-- M1.1 — Hub & Foundation Modules
-- M1.2 — Feature Modules
-- M1.3 — Depth & Recovered Modules
+- M1.1.1 — Hub & Foundation · Backend
+- M1.1.2 — Feature Modules · Backend
+- M1.1.3 — Depth & Recovered · Backend
+- M1.2.1 — Hub & Foundation · Frontend
+- M1.2.2 — Feature Modules · Frontend
+- M1.2.3 — Depth & Recovered · Frontend
 - M1.4 — Internal-Integration Hardening
 
 ## M2 — External Integrations & Security Boundary
