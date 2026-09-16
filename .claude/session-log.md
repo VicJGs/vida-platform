@@ -5568,3 +5568,26 @@ Residual / manual:
 Next session (P6 — fresh context):
   - **FIRST ACTION: P6 · Frontend track scoping** — decompose the 222 P6 UI legs → P6 coverage gate → P6 Linear projectization reusing P5's mechanics verbatim (slug-vs-LIF §6.4 · scripted `--retire` · add-only-edge deletion · g1-N5) + Entity Delivery Flow ①/② fork scoped to frontend (ADR-021 §3.5). Re-assert the 0-service-leg boundary. Own plan + §XXVI gates.
   - Reload: `PLAN-p5-linear-reorg.md §11a` + `coverage-report.md` C5 (222 UI legs) + `traceability.md` (P6-tagged) + `.claude/tasks/backend-replan.md` (P0…P5✅ → P6). Env: Node 24.
+
+---
+Date: 2026-09-16 — backend-replan P5.1 (org pass) + forward-queue refresh — DONE
+Task: backend-replan · Profile: project-foundation / milestone-delivery-planning · branch `backend-replan` (NOT pushed)
+Goal: after P5's issue reorg, make the tracker's ORGANIZATION seamless — surface the backend/frontend axis, build the track-first milestone hierarchy Victor specified, and clean + order the full forward build queue per vida's established structure.
+Completed:
+  - **Labels:** created `backend` Linear label + applied to the 34 service-tier issues (11 xs + 22 mod + xmod park). Surfaced the existing `Profile` axis (reconstructed-structure.md) into Linear; secondary to milestone-track. Zero leak.
+  - **Renamed 5 stale Linear titles** to match slugs (mod-notes→mod-notes-and-pages, checkins→check-ins, learning→learning-education, purposes→purposes-and-goals, health→health-core) via GraphQL `issueUpdate` — the tracker sets title write-once-at-create, so reshape left them stale.
+  - **Deleted 30 stale aggregator→Canceled relations** (db-10/db-11/mig-1/hard-1/db-5 × 6 retired) via `issueRelationDelete` (add-only sync couldn't remove them).
+  - **Track-first `M1.#.#` milestone hierarchy** (Victor-chosen orientation): renamed **3** milestones in place (M1.1/M1.2/M1.3 → M1.1.1/.2/.3 · Backend, issues stay homed) + **kept M1.4 FLAT** as the cross-track coherence CLOSER (B1 — grounded in Victor's cut `part-3-build-roadmap/_index.md:130` + ADR-019 §3.2) + created **3 empty frontend** milestones M1.2.1/.2/.3 (sortOrder 3200/3400/3600, done-whens set). Done-whens documented per milestone (B2): backend=coverage-gated-not-showcase · frontend=the-showcase · M1.4=both-track "M1 done" gate.
+  - **Reconciled** (sync-safe): 39 task headers M1.1/2/3→M1.1.1/2/3; `.tracker-map.json` keys REPLACED (F2); `_projects.md` M1 list in DELIVERY ORDER (F1/F3 — drives `--plan`, not sortOrder); `reconstructed-structure.md` #31–63 backend queue + M1.2.* placeholders + M1.4 both-track note + tail renumber +7 (→ M1.4 #64–71, M2 #72–78, M3 #79–83, M4 #84–92).
+  - **Forward-queue cleanup:** archived the 6 retired task files → `.claude/tasks/archive/` (Canceled in Linear for audit, out of the active glob) → `--plan` 81→**75 active**, 0 dead [READY]. Refreshed the stale DB-4-era `TASKS.md` routing "computed head" note → the post-reorg forward queue.
+  - Commits: `97c369f` (P5), `42638a3` (P5.1 hierarchy+labels), `a4bf3b4` (queue refresh). All gated (P5 method+gate-2; P5.1 preflight PASSED + /critique + independent critic REVISE→5 fixed). tracker `--status`/`--plan` clean; board verified.
+Decisions:
+  - Track/layer axis → Linear = a **label per Profile value** (mirror `reconstructed-structure.md` Profile: backend/frontend/design-system/foundation/generic), NOT a bespoke tag; but the **milestone-track** (M1.#.#) is the primary carrier, label secondary (cross-project filter).
+  - **M1.4 stays flat** (cross-track closer, Victor's cut) — B1; NOT under Backend. Zero-churn (8 headers untouched) + matches the doc's literal "M1.4".
+  - **F5 (load-bearing):** "M1 done = operable" needs UI → `HARD-4 ← M1.2.*` edge is REQUIRED, wired at P6. M1.4 cannot close on backend alone.
+  - Retired issues → **archive/** (established convention), not delete — keeps fold-pointer audit, leaves the active plan.
+  - Memory saved: [[tracker-sync-orphan-create-guard]] (the `--allow-orphan-create` gotcha + slug-vs-LIF + scripted-retire + add-only-edge mechanics, hit repeatedly this session).
+Next session (P6 — fresh context):
+  - **FIRST ACTION: P6 · Frontend track scoping** — decompose the 222 P6 UI legs (`coverage-report.md` C5, already P6-tagged in `traceability.md`) → P6 coverage gate → home into the **empty M1.2.1/.2/.3 frontend milestones** (already created) → **wire `HARD-4 ← M1.2.*`** (F5, makes "M1 done" honest) + assign frontend `#` positions (insert between #63 and #64, shift M1.4+ down). Reuse P5's mechanics verbatim (slug-vs-LIF · scripted `--retire` · add-only-edge deletion · reshape→`--status`→gate-2→live-write). Entity Delivery Flow ①/② fork scoped to frontend (ADR-021 §3.5). Re-assert the 0-service-leg boundary. Own plan + §XXVI gates.
+  - Reload: `.claude/tasks/backend-replan.md` (P0…P5.1 ✅ → P6) · `PLAN-p5-linear-reorg.md §11a` · `coverage-report.md` C5 · `traceability.md` · `docs/roadmap/backend-consolidation-plan.md` §P6. Env: Node 24. Branch `backend-replan`, NOT pushed.
+  - **Small triage (non-blocking):** re-home `LIF-160 core-vault-init` + delete its stray `M1.1 — … (hardening)` milestone (c5d99da1).
