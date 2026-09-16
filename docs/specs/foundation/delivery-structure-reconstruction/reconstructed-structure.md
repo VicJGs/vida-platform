@@ -18,7 +18,7 @@
 - **Issue** — **existing issues keep their established slug + LIF id** (no renames). New issues take a descriptive slug. Every Issue has a reliable imperative title + all columns below.
 - **Slug prefixes in use** (descriptive, established — NOT a rename mandate): `AR` Architecture&Runtime · `DB` Database&Storage (`DB-8b` blind-index) · `DS` Design System · `UI` UI · `UX` UX&IA (`UX-5b` vault-unlock) · `MOD` Feature Module *(new — DF-4)* · `P3` External-Integration phase (M2) · `M3-pass` encryption release-gate · `P2` Venue phase (M4, `AR-9b` sync-activation) · `QA` Testing · `HARD` Integration-Hardening *(new)* · `MIG` Migration/Retire *(new)* · `CAP` Capability-authoring *(new — post-core extensibility, DF-12)*.
 - **Column glossary:**
-  - **`#`** = the **global build order** — the topological sequence across the WHOLE initiative. Do issues in `#` order and every dependency is already done (fail-proof). `#` runs 1→85 continuously down this doc.
+  - **`#`** = the **global build order** — the topological sequence across the WHOLE initiative. Do issues in `#` order and every dependency is already done (fail-proof). `#` runs 1→116 continuously down this doc (P6 inserted the 24 `FE-*` frontend issues at #64–87; the M1.4/M2/M3/M4 tail shifted +24).
   - **`←` Blocked-by** = the issues this one depends on (must be done first). `root` = no blockers.
   - **`→` Blocks** = the issues this one unblocks (are waiting on it). `leaf` = blocks nothing.
   - **Profile** (fixed): **Backend**=Add Backend Component · **Design-Sys**=Design System · **Generic**=Generic Coding Session · **Foundation**=Project Foundation Setup.
@@ -134,29 +134,53 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 | 69 | ◻MOD-languages | MOD-knowledge, MOD-{journals,notes,sessions}, XS-×5 |
 | 70 | ◻MOD-skills | MOD-knowledge, MOD-{journals,notes,sessions}, XS-×8 |
 
-## Milestone M1.2.1 — Hub & Foundation · Frontend   *(FRONTEND · P6 — empty; the 222 P6 UI legs decompose here = the showcase-able slice (ADR-016). Scoped from `coverage-report.md` C5 at P6.)*
-
-*(→ P6 · not yet scoped — the ② UI issues for notes/preferences/journals/sessions/check-ins)*
-
-## Milestone M1.2.2 — Feature Modules · Frontend
-
-*(→ P6 · the ② UI issues for the M1.1.2 feature modules)*
-
-## Milestone M1.2.3 — Depth & Recovered · Frontend
-
-*(→ P6 · the ② UI issues for the M1.1.3 depth modules)*
-
-## Milestone M1.4 — Internal-Integration Hardening   *(FLAT cross-track CLOSER — Victor's cut `part-3-build-roadmap/_index.md:130`; summary+rollups=backend, graph/backlinks/polish=UI. **M1 done = operable + coherent REQUIRES BOTH TRACKS**: HARD-4 gains `← M1.2.*` at P6 — cannot close on backend alone, ADR-019 §3.2. Now #64–71 [was #57–64, +7 for the XS insertion].)*
+## Milestone M1.2.1 — Hub & Foundation · Frontend   *(FRONTEND · the ② UI/UX track — the showcase-able slice (ADR-016). Scoped at P6 from `coverage-report.md` C5 · 222 UI legs → 24 `fe-*` issues, `decomposition-p6.md`. Each rides its M1.1.x backend twin 1:1 (add-frontend-component, per-slice Visual Gate). Live: LIF-178…201.)*
 | # | ID | Title | Home (ADR) | ← Blocked-by | → Blocks | Prof | Outcome |
 |---|----|-------|-----------|--------------|----------|------|---------|
-| 64 | ◻HARD-1 | `summary(date)` provider registry | `services/journals` (002) | ← every `MOD-*` | HARD-4 | Backend | journal summary aggregates all modules |
-| 65 | ◻HARD-2 | Measurability + economy rollups live | `foundation/{measurement,economy}` (011/012) | ← AR-7, MOD-purposes, MOD-gamification | HARD-4 | Backend | end-to-end measurability/economy (integration-class — 1 gate, DF-11) |
-| 66 | ◻HARD-3 | Neural-graph + backlinks complete | `foundation/spaces` + `services` + UI-2 (006) | ← AR-6, AR-8, UI-2 | HARD-4 | Backend | working backlinks + neural graph |
-| 67 | ◻DB-8 | FTS5 tables + search population | `core/src/db`, `services/search` (002) | ← DB-4, DB-7 | HARD-4, DB-8b | Backend | full-text search over real content (DF-2) |
-| 68 | ◻DB-11 | ADR-002 §5/§7/§8 reconciliation | `core/src/db` (002) | ← DB-1, **all `MOD-*`** | HARD-4 | Backend | schema doc reconciled |
-| 69 | ⏸DB-10 | Dogfood seed vault | `packages/core/src/db/seed/` (016; +ADR-009 seed-bundle / 019 dogfood — ⚠ UNCITED, resolve at build) | ← DB-6, DB-7, DB-9, **all M1.1–M1.3 `MOD-*`** | HARD-4 | Backend | localhost vault seeded with a full manual OS (DF-1) |
-| 70 | ◻MIG-1 | v1 retire-at-parity (DF-9) | `db/_legacy/*`, `Old/*`, `docs/_legacy/*` (016/018) | ← DB-1, **all `MOD-*` schemas** | HARD-4 | Backend | quarantined v1 residue (code + Old/ + legacy docs) deleted at parity |
-| 71 | ◻HARD-4 | Polish → M1 done | distributed **[GATE — no file home]** | ← HARD-1, HARD-2, HARD-3, DB-8, DB-10, DB-11, MIG-1 | P3-1, AR-3, P2-3, P2-4 | Generic | **M1 done: operable + coherent** |
+| 64 | ◻FE-preferences | ② preferences UI (9 legs) | `apps/web/src/preferences` (018/020) | ← MOD-preferences | HARD-4 | Frontend | settings surfaces over the finished prefs service |
+| 65 | ◻FE-sessions | ② sessions/pomodoro UI (5 legs) | `apps/web/src/sessions` (018/020) | ← MOD-sessions | HARD-4 | Frontend | session + pomodoro faces |
+| 66 | ◻FE-journals | ② journals UI (8 legs) | `apps/web/src/journals` (018/020) | ← MOD-journals | HARD-4 | Frontend | daily-dashboard journal surfaces |
+| 67 | ◻FE-notes-and-pages | ② notes & pages UI (13 legs) | `apps/web/src/notes` (018/020) | ← MOD-notes-and-pages | HARD-4 | Frontend | the notes hub UI (incl. preview-card, Space-add-menu folds) |
+| 68 | ◻FE-check-ins | ② check-ins UI (10 legs) | `apps/web/src/check-ins` (018/020) | ← MOD-check-ins | HARD-4 | Frontend | check-in flows |
+| 69 | ◻FE-shell-integration-wiring | thin VISIBLE — wire built M1.0 UI to services (11 RIDE legs) | `apps/web/src` shell (018/020) | ← UI-2, UI-3, UI-4, UX-2 · **← DB-8 [live-search completion only — forward-ref/GAP-1; M1.2.1 done-when = SearchProvider seam + `search-unavailable`, not live FTS5]** | HARD-4 | Frontend | ⌘K search · export dialog · serializers · neural-graph · Spaces menu wired |
+
+## Milestone M1.2.2 — Feature Modules · Frontend   *(FRONTEND · mirrors M1.1.2 twins 1:1. Live: LIF-178…201.)*
+| # | ID | Title | Home (ADR) | ← Blocked-by | → Blocks | Prof | Outcome |
+|---|----|-------|-----------|--------------|----------|------|---------|
+| 70 | ◻FE-finance | ② finance UI (29 legs) | `apps/web/src/finance` (018/020) | ← MOD-finance | HARD-4 | Frontend | finance surfaces (largest module UI) |
+| 71 | ◻FE-gamification | ② gamification UI (7 legs) | `apps/web/src/gamification` (018/020) | ← MOD-gamification | HARD-4 | Frontend | XP/achievements faces |
+| 72 | ◻FE-habits | ② habits UI (8 legs) | `apps/web/src/habits` (018/020) | ← MOD-habits | HARD-4 | Frontend | habit tracker surfaces |
+| 73 | ◻FE-knowledge | ② knowledge UI (5 legs) | `apps/web/src/knowledge` (018/020) | ← MOD-knowledge | HARD-4 | Frontend | knowledge/flashcard faces |
+| 74 | ◻FE-books | ② books UI (32 legs) | `apps/web/src/books` (018/020) | ← MOD-books | HARD-4 | Frontend | reading universe UI (largest set) |
+| 75 | ◻FE-learning-education | ② learning/education UI (6 legs) | `apps/web/src/learning` (018/020) | ← MOD-learning-education | HARD-4 | Frontend | classes/schedule surfaces |
+| 76 | ◻FE-notifications | ② notifications UI (2 legs) | `apps/web/src/notifications` (018/020) | ← MOD-notifications | HARD-4 | Frontend | notification surfaces |
+| 77 | ◻FE-projects | ② projects UI (3 legs) | `apps/web/src/projects` (018/020) | ← MOD-projects | HARD-4 | Frontend | project/milestone faces |
+| 78 | ◻FE-purposes-and-goals | ② purposes & goals UI (2 legs) | `apps/web/src/purposes` (018/020) | ← MOD-purposes-and-goals | HARD-4 | Frontend | purpose/target surfaces |
+| 79 | ◻FE-relationships | ② relationships UI (3 legs) | `apps/web/src/relationships` (018/020) | ← MOD-relationships | HARD-4 | Frontend | CRM surfaces |
+| 80 | ◻FE-routines | ② routines UI (7 legs) | `apps/web/src/routines` (018/020) | ← MOD-routines | HARD-4 | Frontend | routine tracker surfaces |
+| 81 | ◻FE-tasks | ② tasks UI (11 legs) | `apps/web/src/tasks` (018/020) | ← MOD-tasks | HARD-4 | Frontend | full tasks view |
+| 82 | ◻FE-integrations-ai-surfaces | thin VISIBLE — cross-module config faces (8 legs) | `apps/web/src` (018/020) | ← XS-egress-guard, XS-ingestion, XS-ai, XS-capability | HARD-4 | Frontend | ingestion consent · egress audit · import review · AI mgmt (UI config only, BR-2) |
+
+## Milestone M1.2.3 — Depth & Recovered · Frontend   *(FRONTEND · mirrors M1.1.3 twins 1:1. Live: LIF-178…201.)*
+| # | ID | Title | Home (ADR) | ← Blocked-by | → Blocks | Prof | Outcome |
+|---|----|-------|-----------|--------------|----------|------|---------|
+| 83 | ◻FE-health-core | ② health: core UI (12 legs) | `apps/web/src/health` (018/020) | ← MOD-health-core | HARD-4 | Frontend | health metrics/goals surfaces |
+| 84 | ◻FE-health-nutrition | ② health: nutrition UI (2 legs) | `apps/web/src/health/nutrition` (018/020) | ← MOD-health-nutrition | HARD-4 | Frontend | nutrition surfaces |
+| 85 | ◻FE-health-training | ② health: training UI (9 legs) | `apps/web/src/health/training` (018/020) | ← MOD-health-training | HARD-4 | Frontend | workout surfaces |
+| 86 | ◻FE-languages | ② languages UI (2 legs) | `apps/web/src/languages` (018/020) | ← MOD-languages | HARD-4 | Frontend | language surfaces |
+| 87 | ◻FE-skills | ② skills UI (18 legs) | `apps/web/src/skills` (018/020) | ← MOD-skills | HARD-4 | Frontend | skill development surfaces |
+
+## Milestone M1.4 — Internal-Integration Hardening   *(FLAT cross-track CLOSER — Victor's cut `part-3-build-roadmap/_index.md:130`; summary+rollups=backend, graph/backlinks/polish=UI. **M1 done = operable + coherent REQUIRES BOTH TRACKS**: HARD-4 `← M1.2.*` (all 24 FE) wired at P6 — cannot close on backend alone, ADR-019 §3.2. Now #88–95 [was #64–71, +24 for the P6 frontend insertion at #64–87].)*
+| # | ID | Title | Home (ADR) | ← Blocked-by | → Blocks | Prof | Outcome |
+|---|----|-------|-----------|--------------|----------|------|---------|
+| 88 | ◻HARD-1 | `summary(date)` provider registry | `services/journals` (002) | ← every `MOD-*` | HARD-4 | Backend | journal summary aggregates all modules |
+| 89 | ◻HARD-2 | Measurability + economy rollups live | `foundation/{measurement,economy}` (011/012) | ← AR-7, MOD-purposes, MOD-gamification | HARD-4 | Backend | end-to-end measurability/economy (integration-class — 1 gate, DF-11) |
+| 90 | ◻HARD-3 | Neural-graph + backlinks complete | `foundation/spaces` + `services` + UI-2 (006) | ← AR-6, AR-8, UI-2 | HARD-4 | Backend | working backlinks + neural graph |
+| 91 | ◻DB-8 | FTS5 tables + search population | `core/src/db`, `services/search` (002) | ← DB-4, DB-7 | HARD-4, DB-8b, **FE-shell-integration-wiring [live-search completion]** | Backend | full-text search over real content (DF-2) |
+| 92 | ◻DB-11 | ADR-002 §5/§7/§8 reconciliation | `core/src/db` (002) | ← DB-1, **all `MOD-*`** | HARD-4 | Backend | schema doc reconciled |
+| 93 | ⏸DB-10 | Dogfood seed vault | `packages/core/src/db/seed/` (016; +ADR-009 seed-bundle / 019 dogfood — ⚠ UNCITED, resolve at build) | ← DB-6, DB-7, DB-9, **all M1.1–M1.3 `MOD-*`** | HARD-4 | Backend | localhost vault seeded with a full manual OS (DF-1) |
+| 94 | ◻MIG-1 | v1 retire-at-parity (DF-9) | `db/_legacy/*`, `Old/*`, `docs/_legacy/*` (016/018) | ← DB-1, **all `MOD-*` schemas** | HARD-4 | Backend | quarantined v1 residue (code + Old/ + legacy docs) deleted at parity |
+| 95 | ◻HARD-4 | Polish → M1 done | distributed **[GATE — no file home]** | ← HARD-1, HARD-2, HARD-3, DB-8, DB-10, DB-11, MIG-1, **all 24 `FE-*` (M1.2.*)** | P3-1, AR-3, P2-3, P2-4 | Generic | **M1 done: operable + coherent (both tracks)** |
 
 ---
 
@@ -166,13 +190,13 @@ Intent (INT-2): working external integrations for localhost dogfood, pre-encrypt
 ## Milestone M2.0 — Integrations & Boundary
 | # | ID | Title | ADR | ← Blocked-by | → Blocks | Prof | Outcome |
 |---|----|-------|-----|--------------|----------|------|---------|
-| 72 | ◻P3-1 | Provider-selection pass (head — the ~16 UNDEFINED of 22; 6 already defined) | 014/015 | ← HARD-4 | P3-2, P3-3, P3-4, P3-5, P3-6 | Foundation | all 22 integrations (6 defined + 16 chosen) have providers |
-| 73 | ◻P3-2 | Financial (CSV/OFX, aggregator, prices/FX) | 014 | ← P3-1, MOD-finance | P3-boundary | Backend | bank import + price feeds |
-| 74 | ◻P3-3 | Health & Wearables (Apple/Google Health, BLE) | 014 | ← P3-1, MOD-health | P3-boundary | Backend | wearable/health ingestion |
-| 75 | ◻P3-4 | AI/LLM (askModel, on-device, BYO-cloud, OCR/TTS) | 015 | ← P3-1 | P3-boundary | Backend | askModel runtime for modules |
-| 76 | ◻P3-5 | Fiscal rule-packs | 014 | ← P3-1, MOD-finance | P3-boundary | Backend | fiscal rule packs |
-| 77 | ◻P3-6 | Calendar & Extraction (live ICS, syllabus, webhooks) | 014 | ← P3-1, MOD-learning | P3-boundary | Backend | live ICS feed |
-| 78 | ◻P3-boundary | Security boundary (ingestion/egress guard) | 014/015 | ← P3-2, P3-3, P3-4, P3-5, P3-6 | M3-pass | Backend | verified ingestion/egress guard |
+| 96 | ◻P3-1 | Provider-selection pass (head — the ~16 UNDEFINED of 22; 6 already defined) | 014/015 | ← HARD-4 | P3-2, P3-3, P3-4, P3-5, P3-6 | Foundation | all 22 integrations (6 defined + 16 chosen) have providers |
+| 97 | ◻P3-2 | Financial (CSV/OFX, aggregator, prices/FX) | 014 | ← P3-1, MOD-finance | P3-boundary | Backend | bank import + price feeds |
+| 98 | ◻P3-3 | Health & Wearables (Apple/Google Health, BLE) | 014 | ← P3-1, MOD-health | P3-boundary | Backend | wearable/health ingestion |
+| 99 | ◻P3-4 | AI/LLM (askModel, on-device, BYO-cloud, OCR/TTS) | 015 | ← P3-1 | P3-boundary | Backend | askModel runtime for modules |
+| 100 | ◻P3-5 | Fiscal rule-packs | 014 | ← P3-1, MOD-finance | P3-boundary | Backend | fiscal rule packs |
+| 101 | ◻P3-6 | Calendar & Extraction (live ICS, syllabus, webhooks) | 014 | ← P3-1, MOD-learning | P3-boundary | Backend | live ICS feed |
+| 102 | ◻P3-boundary | Security boundary (ingestion/egress guard) | 014/015 | ← P3-2, P3-3, P3-4, P3-5, P3-6 | M3-pass | Backend | verified ingestion/egress guard |
 
 ---
 
@@ -182,11 +206,11 @@ Intent (INT-3): L1 SQLCipher + L2 field-`[E]` across ALL data; release gate `[AD
 ## Milestone M3.0 — Encryption Pass
 | # | ID | Title | Home (ADR) | ← Blocked-by | → Blocks | Prof | Outcome |
 |---|----|-------|-----------|--------------|----------|------|---------|
-| 79 | ◻AR-3 | Crypto / vault / key-mgmt | `core/src/encryption` (001/002) | ← HARD-4 | DB-5, DB-8b, UX-5b, M3-pass, AR-9b | Backend | vault key model (Argon2id→MK→VK), SRP |
-| 80 | ◻DB-5 | Encryption boundary map (`[E]`/SQLCipher) | `core/src/db` (002 §4) | ← AR-3, **all `MOD-*` schemas** | M3-pass | Backend | every `[E]` field mapped |
-| 81 | ◻DB-8b | Blind index (keyed BLAKE2b) | `core/src/db` (002) | ← AR-3, DB-8 | leaf | Backend | searchable encrypted fields |
-| 82 | ◻UX-5b | Vault-unlock flow | `apps/web/src` (017) | ← AR-3, UX-5 | leaf | Generic | unlock UX (auth-coupled) |
-| 83 | ◻M3-pass | SQLCipher activation + guard re-verify + release gate | cross-cutting **[GATE — no file home]** (019 §3.4) | ← AR-3, DB-5, P3-boundary | leaf | Backend | encryption on end-to-end; release gate |
+| 103 | ◻AR-3 | Crypto / vault / key-mgmt | `core/src/encryption` (001/002) | ← HARD-4 | DB-5, DB-8b, UX-5b, M3-pass, AR-9b | Backend | vault key model (Argon2id→MK→VK), SRP |
+| 104 | ◻DB-5 | Encryption boundary map (`[E]`/SQLCipher) | `core/src/db` (002 §4) | ← AR-3, **all `MOD-*` schemas** | M3-pass | Backend | every `[E]` field mapped |
+| 105 | ◻DB-8b | Blind index (keyed BLAKE2b) | `core/src/db` (002) | ← AR-3, DB-8 | leaf | Backend | searchable encrypted fields |
+| 106 | ◻UX-5b | Vault-unlock flow | `apps/web/src` (017) | ← AR-3, UX-5 | leaf | Generic | unlock UX (auth-coupled) |
+| 107 | ◻M3-pass | SQLCipher activation + guard re-verify + release gate | cross-cutting **[GATE — no file home]** (019 §3.4) | ← AR-3, DB-5, P3-boundary | leaf | Backend | encryption on end-to-end; release gate |
 
 ---
 
@@ -196,21 +220,21 @@ Intent (INT-4): sync → auth → desktop/mobile → self-host → ZK-cloud; nee
 ## Milestone M4.0 — Venues
 | # | ID | Title | ADR | ← Blocked-by | → Blocks | Prof | Outcome |
 |---|----|-------|-----|--------------|----------|------|---------|
-| 84 | ◻DB-2 | `_sync_*` metadata columns + HLC | 002/003 | ← DB-1 | AR-9b | Backend | sync columns + HLC on syncable tables |
-| 85 | ◻AR-9b | Sync engine activation (flush queue; LWW/HLC/Yjs) | 003 | ← AR-9, DB-2, AR-3 | P2-1 | Backend | queue flushes; cross-device merge |
-| 86 | ◻P2-1 | Sync / server (Hono/CF Workers, R2 relay) | 003 | ← AR-9b | P2-2, P2-5, P2-6 | Backend | ZK blob relay live · **owns the `@vida/server` test setup** — its vitest currently has 0 test files, so CI's `test` job fails `@vida/server#test` ("No test files found"); P2-1 lands the server + its tests and turns that green *(flagged by QA-1, 2026-08-04)* |
-| 87 | ◻P2-2 | ZK notifications Tier-3 | 013 | ← P2-1 | leaf | Backend | push without server-visible content |
-| 88 | ◻P2-5 | Self-host | 003 | ← P2-1 | leaf | Backend | self-hostable server |
-| 89 | ◻P2-3 | Desktop (Tauri) | 001 | ← HARD-4 | leaf | Generic | desktop shares web codebase |
-| 90 | ◻P2-4 | Mobile (Expo) | 001 | ← HARD-4 | leaf | Generic | mobile app + native chrome |
-| 91 | ◻P2-6 | ZK-cloud + billing | 003 | ← P2-1 | leaf | Backend | managed ZK cloud + billing |
-| 92 | ◻⚠CAP-authoring | User-authored capability safe-authoring surface — sandbox runtime · authoring DSL/UI · grant enforce/re-grant/revoke. ⚠ INTENDED-later: no M1–M4 consumer (first-consumer-pull) → deferred to the tail; the per-platform sandbox rides each venue's pass (ADR-010 §3.6, not a hard blocker) | `core/src/foundation/capability` + per-app sandbox (010/008 · SP4) | ← AR-7, UI-3 | leaf | Backend | user-authored Blocks run sandboxed; grants enforced; consumes `capability_grants` |
+| 108 | ◻DB-2 | `_sync_*` metadata columns + HLC | 002/003 | ← DB-1 | AR-9b | Backend | sync columns + HLC on syncable tables |
+| 109 | ◻AR-9b | Sync engine activation (flush queue; LWW/HLC/Yjs) | 003 | ← AR-9, DB-2, AR-3 | P2-1 | Backend | queue flushes; cross-device merge |
+| 110 | ◻P2-1 | Sync / server (Hono/CF Workers, R2 relay) | 003 | ← AR-9b | P2-2, P2-5, P2-6 | Backend | ZK blob relay live · **owns the `@vida/server` test setup** — its vitest currently has 0 test files, so CI's `test` job fails `@vida/server#test` ("No test files found"); P2-1 lands the server + its tests and turns that green *(flagged by QA-1, 2026-08-04)* |
+| 111 | ◻P2-2 | ZK notifications Tier-3 | 013 | ← P2-1 | leaf | Backend | push without server-visible content |
+| 112 | ◻P2-5 | Self-host | 003 | ← P2-1 | leaf | Backend | self-hostable server |
+| 113 | ◻P2-3 | Desktop (Tauri) | 001 | ← HARD-4 | leaf | Generic | desktop shares web codebase |
+| 114 | ◻P2-4 | Mobile (Expo) | 001 | ← HARD-4 | leaf | Generic | mobile app + native chrome |
+| 115 | ◻P2-6 | ZK-cloud + billing | 003 | ← P2-1 | leaf | Backend | managed ZK cloud + billing |
+| 116 | ◻⚠CAP-authoring | User-authored capability safe-authoring surface — sandbox runtime · authoring DSL/UI · grant enforce/re-grant/revoke. ⚠ INTENDED-later: no M1–M4 consumer (first-consumer-pull) → deferred to the tail; the per-platform sandbox rides each venue's pass (ADR-010 §3.6, not a hard blocker) | `core/src/foundation/capability` + per-app sandbox (010/008 · SP4) | ← AR-7, UI-3 | leaf | Backend | user-authored Blocks run sandboxed; grants enforced; consumes `capability_grants` |
 
 ---
 
 ## 4. The global build order (first → last, fail-proof)
-Do issues in ascending `#` (contiguous 1→85, grouped by Milestone in this doc). **Every `←` blocker has a strictly
-lower `#` and every `→` block a strictly higher `#`** (proven in §5) — so nothing is ever started before its
+Do issues in ascending `#` (contiguous 1→116, grouped by Milestone in this doc). **Every `←` blocker has a strictly
+lower `#` and every `→` block a strictly higher `#`** (proven in §5 — one documented forward-ref exception: FE-shell-integration-wiring #69 ← DB-8 #91, the live-search *completion* leg only; its M1.2.1 done-when is the SearchProvider seam + `search-unavailable`, so it is buildable at #69 without DB-8, GAP-1) — so nothing is ever started before its
 dependencies exist; a lower `#` is always safe to start. Independent tracks (DB/AR spine · Design-System DS→UI · UX)
 run in parallel — the `#` is one valid linearization, not a claim that #k must finish before #k+1 begins.
 **Critical path (a longest chain, the minimum schedule):**
@@ -219,8 +243,9 @@ AR-1→DB-1→AR-2→DB-6→AR-6→MOD-notes→MOD-tasks→MOD-projects→MOD-pu
 ## 5. Verification (self-check before the Step-6 gate)
 - **Levels unambiguous:** 1 Initiative · 4 Projects · Milestones (M1: M1.0–M1.4; M2/M3/M4: one each) · every Issue under one Milestone. ✅
 - **Every Issue has: `#` order · id · title · home · ADR · ← Blocked-by · → Blocks · status · profile · outcome.** ✅
-- **Acyclic + no upstream edges (both directions checked):** every `←` id has a strictly lower `#` than the row; every `→` id has a strictly higher `#`. db-10 (#62) ← all `MOD-*` (#31–56). AR-8's `←DB-8` removed. No M1←M3 edge. ✅
-- **db-10-proof:** DB-10 Blocked-by enumerates all `MOD-*`; its `#`=62 is after every module (last is #56). ✅
+- **Acyclic + no upstream edges (both directions checked):** every `←` id has a strictly lower `#` than the row; every `→` id has a strictly higher `#`. db-10 (#93) ← all `MOD-*` (#31–56). Each `FE-*` (#64–87) ← its `MOD-*` twin (#31–56). HARD-4 (#95) ← all 24 `FE-*` (#64–87). AR-8's `←DB-8` removed. No M1←M3 edge. **One documented forward-ref: FE-shell #69 ← DB-8 #91** (live-search completion only, not the M1.2.1 deliverable — GAP-1). ✅
+- **db-10-proof:** DB-10 Blocked-by enumerates all `MOD-*`; its `#`=93 is after every module (last is #56) and after every `FE-*` (last is #87). ✅
+- **M1-done-both-tracks:** HARD-4 (#95) ← all 24 `FE-*` — M1.4 cannot close on the backend alone (ADR-019 §3.2, P5.1 F5). ✅
 - **Every DF resolved** incl. DF-5 (grain), DF-8 (profile column), DF-10 (the `#` order). ✅
 
 ## 6. Re-organization plan for Step 7 projectize (identities preserved — no re-tier, no rename)
