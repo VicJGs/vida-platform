@@ -5612,3 +5612,22 @@ Blocked / deferred (needs explicit Victor go):
   - **Commit** — nothing committed this session (Victor's call on message / push / PR).
 Next session:
   - **FIRST ACTION:** (1) commit the P6 work; (2) authorize + run the LIF-160 triage. Then **consider `/task-complete backend-replan`** — the P0–P6 campaign is complete (whole backend+frontend re-plan, 100%-coverage-gated, projectized). Next real work = the module BUILD, head `#31 xs-capability` (forward queue). Env: Node 24. Branch `backend-replan`, NOT pushed.
+
+---
+Date: 2026-09-17 — xs-capability #31 (LIF-169) — FIRST M1.1.1 module build — COMPLETE
+Task: xs-capability · Profile: add-backend-component / Default (Entity Delivery Flow v1) · branch `xs-capability` → PR → main
+Goal: build the head of the post-campaign module queue — the ADR-010 declare→grant→enforce envelope-enforcement service tier over the AR-7 capability registry.
+Accomplished:
+  - **3 slices, each Verification-Gate-passed** (live-store smoke on better-sqlite3 + migration 005 + Repository):
+    S1 decision core + grant reads (`enforcer.ts`: checkAction/assertPermitted · getGrant/isEnvelopeCurrent · canonicalEnvelopeHash · SENSITIVE_MODULE_CLASSES) · S2 grant/revoke writes · S3 offered-set resolver (`offered-set.ts`: inline=union/standalone=restrict).
+  - **§XXVI double-gate:** gate-1 /critique REVISE (R1–R4) → SHIP · Approval 1 · /preflight BLOCKED (B1 hash asymmetry) → resolved via ADR-008:119-121 → PASSED · gate-2 /critique SHIP · Approval 2. Post-impl: S1 REVISE (P1) → SHIP; final S2/S3 SHIP.
+  - Spec set `docs/specs/foundation/xs-capability/{delivery,service}/`; Currency `docs/core/capability/current-*` (BR-9..17) + CLAUDE.md; reconciled stale AR-7 deferrals (enforce/re-grant now BUILT at #31; execution sandbox/DSL/UI → #116).
+  - typecheck 0 · @vida/core **824 tests green** · lint clean. Commits `f4937e9` (impl+currency) + `80f297a` (close-out). LIF-169 → Done.
+Decisions:
+  - **Scope boundary (Ratify mode, P3 4 legs):** #31 = envelope DECISION (the *what*, ADR-010 §3.6); execution sandbox/DSL/UI → #116, per-source layer → #44, egress mediation → #43, effect firing → #32.
+  - **Envelope hash = declaration {bindings,effects} only** (ADR-008:119-121), keyless BLAKE2b, symmetric grant-vs-drift; render_targets/config/consent-booleans excluded.
+  - Compositional-exfiltration union enforced ACROSS the sensitive+external checks (no entity-type→module map; caller supplies moduleClass). Sensitivity = a consumer contract (BR-17). Total fail-closed default (BR-9).
+  - `Repository.findWhere` skips the soft-delete filter → `activeGrant()` isNull(deleted_at) explicitly. Memory: [[repository-findwhere-skips-softdelete-filter]].
+  - **Git workflow (from now on):** each issue = own branch off main → PR → merge (merge commit). backend-replan campaign merged to main directly (ff); xs-capability is the first per-issue PR.
+Next session:
+  - **FIRST ACTION:** head **#32 xs-effect-rail** (M1.1.1, deps none) — likely Ratify+recovery (AR-7 `foundation/effects/` EffectRail exists; extend against P3 legs XCU-09/10/22 · XCU-SP-30). Fresh branch `xs-effect-rail` off main + add-backend-component path. Env: Node 24 via nvm + corepack pnpm.
