@@ -14,7 +14,10 @@
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| xs-capability (LIF-169 → Done) | 2026-09-17 | 1 |
 | backend-replan (LIF-163 → Done) | 2026-09-17 | 7 |
+
+*(xs-capability = the FIRST M1.1.1 module build (head #31) — the ADR-010 envelope-enforcement service tier over the AR-7 registry: `packages/core/src/foundation/capability/{enforcer,offered-set}.ts` (checkAction/assertPermitted · grant/revoke · canonicalEnvelopeHash · resolveOfferedSet). 3 slices, each Verification-Gate-passed; §XXVI double-gated + 2 post-impl critiques SHIP; 824 @vida/core tests green; commit `f4937e9`. Archived → `.claude/tasks/archive/xs-capability.md`; decisions in `.claude/docs/decisions.md`. **Next head: #32 xs-effect-rail** (M1.1.1, deps none).)*
 
 *(backend-replan = the whole-backend + frontend re-plan campaign, P0–P6, 100%-coverage-gated + projectized. Full detail archived at `.claude/tasks/archive/backend-replan.md`; decisions in `.claude/docs/decisions.md`. **Next real work = the module BUILD, head `#31 xs-capability`** per the forward queue below.)*
 

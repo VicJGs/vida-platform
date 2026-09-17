@@ -11,9 +11,14 @@ ADR-008 + ADR-010
 CB1-CB* A2 A5
 
 ## Status
-Built by AR-7 Increment 2 (2026-08-03). `capability_definitions` (CB1 registry, `def_id` semantic id) +
-`block_instances` (standalone placements, structure) + `capability_grants` (ADR-010 envelope, structure) —
-`db/schema/foundation/capability.ts` + migration 005 · `RENDER_TARGET` enum · `TERMINAL_STATE` + `CapabilityRegistry`
-(shipped code-registered + user persisted; BR-2..6 validation → sync_queue). Currency: `docs/core/capability/current-*`.
-Deferred (all homed, DF-12): sandbox/DSL/enforce runtime → `#85 CAP-authoring`; registry runtime → MOD-notes/UI-3;
-grant ext-semantics → P3-boundary. JSON dims = plain TEXT (registry stringifies) — never `json<T>()`.
+Registry built by AR-7 Increment 2 (2026-08-03): `capability_definitions` (CB1 registry, `def_id`) + `block_instances`
++ `capability_grants` (ADR-010 envelope) — `db/schema/foundation/capability.ts` + migration 005 · `RENDER_TARGET` ·
+`TERMINAL_STATE` + `CapabilityRegistry` (shipped code-registered + user persisted; BR-2..6 → sync_queue).
+**Enforcement services added by XS-capability #31 (2026-09-17):** `enforcer.ts` (`createCapabilityEnforcer` —
+checkAction/assertPermitted decision core · getGrant/isEnvelopeCurrent · grant/revoke · `canonicalEnvelopeHash` ·
+`SENSITIVE_MODULE_CLASSES`) + `offered-set.ts` (`createOfferedSetResolver`). Fail-closed, shipped-bypass, ADR-010
+declare→grant→enforce. Currency: `docs/core/capability/current-*` (BR-9..17). Spec: `docs/specs/foundation/xs-capability/`.
+Deferred (all homed, DF-12): user-code **execution sandbox + DSL + authoring UI** → `#116 CAP-authoring`; registry
+runtime → MOD-notes/UI-3; per-source layer → XS-ingestion `#44`; egress mediation/audit → XS-egress-guard `#43`.
+⚠ Gotcha: `Repository.findWhere` does NOT apply the soft-delete filter — filter `isNull(deleted_at)` explicitly (see
+`enforcer.ts activeGrant()`). JSON dims = plain TEXT (stringify on write) — never `json<T>()`.
