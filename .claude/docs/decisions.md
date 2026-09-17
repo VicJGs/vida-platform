@@ -356,3 +356,22 @@ end to end; the entire M1 build queue is now projectized in Linear + coverage-ga
 - **P4 coverage gate = deterministic set-cover + independent Layer-2 critic** (D*=1200 authoritative; 0 unhomed/smuggled/double-home). **P5 Linear reorg** applied the 33-issue set live. **P5.1** track-first `M1.#.#` milestones + `backend`/`frontend` Profile-value labels.
 - **P6 frontend track = 24 `fe-*` issues (LIF-178…201)** into M1.2.*, 55 blocker edges incl. `hard-4 ← all 24 fe` (M1-done-needs-both-tracks); 0 standalone xcut; RIDE gets a thin VISIBLE issue (Victor).
 - **Close-out (2026-09-17):** both trailing "pending" items verified already resolved via live Linear read — LIF-160 already homed at M3.0 alongside ar-3; the stray `M1.1 (hardening)` milestone no longer exists (swept all 11 projects). No destructive write needed; stale docs corrected (§XXIX currency). **Lesson: verify tracker state live before executing a task-file "pending/blocked" write — the docs lag the board.**
+
+## XS-capability (#31, LIF-169) — completed 2026-09-17
+The first M1.1.1 module build — the ADR-010 declare→grant→enforce **envelope-enforcement service tier** over the AR-7
+`capability_grants` structure (`packages/core/src/foundation/capability/{enforcer,offered-set}.ts`).
+- **Scope boundary (Ratify mode, P3 4 legs):** #31 owns the platform-agnostic **decision** logic (the *what*, ADR-010
+  §3.6) — it decides, it does not execute. Execution sandbox + DSL + authoring UI → `#116 CAP-authoring`; per-source
+  layer → XS-ingestion `#44`; egress mediation/audit → XS-egress-guard `#43`; effect firing → `#32`. XCU-SP-32's
+  "sandbox" here = the envelope decision service, NOT the user-code runtime.
+- **Envelope hash = the DECLARATION `{bindings, effects}` only** (ADR-008:119-121), sorted/keyless (BLAKE2b via
+  `hashContent`), so grant-time and drift-check hashes are symmetric. `render_targets` (CB2) / config / consent
+  booleans are NOT hashed. External/media privilege is encoded in the declared effects; the grant booleans are consent.
+- **Compositional-exfiltration union (BR-13)** enforced ACROSS the `sensitive` + `external` checks (no entity-type→
+  module map — the caller supplies `moduleClass`; `SENSITIVE_MODULE_CLASSES = {finance, health}`, ADR-010 §3.3.4).
+  BR-17: sensitivity is a **consumer contract** — a sensitive module MUST guard reads with the `sensitive` action.
+- **Total fail-closed** (BR-9): unrecognized action denies (defensive `default`), never crashes — post-impl catch.
+- **Seam gotcha (memory saved):** `Repository.findWhere` does NOT apply the soft-delete filter → `getGrant`/`revoke`
+  filter `isNull(deleted_at)` explicitly (`activeGrant()`); caught by the live-store Verification Gate.
+- 3 slices (S1 decision core + reads · S2 grant/revoke · S3 offered-set), each Verification-Gate-passed; §XXVI
+  double-gate + 2 post-impl critiques SHIP. 824 @vida/core tests green; commit `f4937e9`. **Next head: #32 xs-effect-rail.**

@@ -1,5 +1,5 @@
 # Task: xs-capability
-# Status: in-progress
+# Status: done
 # Linear: LIF-169
 # Profile: Add Backend Component
 # Scenario: Default
