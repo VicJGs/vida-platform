@@ -342,3 +342,17 @@ Re-projectized Linear from the old substrate-first five-layer structure (①–�
 - **`fe-<slug>` naming convention introduced** (BR-9): frontend issues mirror backend `mod-`/`xs-`; edges resolve by slug. First frontend projectization → no prior convention. Reversible: yes.
 - **RIDE search boundary → DB-8/M1.4**: `fe-shell-integration-wiring`'s search legs (BSE-14/15/16) wire to the `SearchProvider` seam + `search-unavailable` state in M1.2.1; live FTS5 defers to DB-8/M1.4 (`shell ← DB-8` for that leg only). Prevents a false "search done in M1.2". Reversible: no (correctness — the FTS5 engine genuinely is M1.4).
 - **P6 coverage gate = deterministic set-cover + proven teeth** (`p6-set-cover.mjs`, independent of the generator): 222 legs · 0 service · 0 unhomed · partition=222; negative tests (drop-row→UNHOMED, mis-map NOT-24→collision) confirm fail-loud. Reversible: n/a (a gate).
+
+## backend-replan (LIF-163) — completed 2026-09-17
+
+The whole-backend + frontend re-plan campaign (P0–P6), replacing the module-by-module
+vertical-slice grain with a full-intent, service-layer-first consolidation. 100%-coverage-gated
+end to end; the entire M1 build queue is now projectized in Linear + coverage-gated.
+
+- **Re-plan scope = whole backend from unified intent** (not module-by-module — "module by module leaves things undone"). Schema = **audit + targeted fix**, NOT wholesale redo of the 117 gated tables (Model B already built it holistically-upfront; redo = over-engineering).
+- **ADR-021 authored** (P0) — governs the consolidation; each phase P1–P6 runs its OWN plan + §XXVI double-gate.
+- **P1 full-intent intake** → `corpus.md` (1200 canonical items disk-verified · 0 unhomed). **P2 schema reconcile** → only new DDL = notes hub (`033_notes.ts`); O4 provenance unified to `manual|ai|import`; green tree (@vida/core 796/796).
+- **P3 decomposition = 33 issues (11 XS cross-cutting + 22 MOD)**; module-owned seams fold into their owner MOD; BUILD edges (acyclic) vs RUNTIME read-seams distinguished.
+- **P4 coverage gate = deterministic set-cover + independent Layer-2 critic** (D*=1200 authoritative; 0 unhomed/smuggled/double-home). **P5 Linear reorg** applied the 33-issue set live. **P5.1** track-first `M1.#.#` milestones + `backend`/`frontend` Profile-value labels.
+- **P6 frontend track = 24 `fe-*` issues (LIF-178…201)** into M1.2.*, 55 blocker edges incl. `hard-4 ← all 24 fe` (M1-done-needs-both-tracks); 0 standalone xcut; RIDE gets a thin VISIBLE issue (Victor).
+- **Close-out (2026-09-17):** both trailing "pending" items verified already resolved via live Linear read — LIF-160 already homed at M3.0 alongside ar-3; the stray `M1.1 (hardening)` milestone no longer exists (swept all 11 projects). No destructive write needed; stale docs corrected (§XXIX currency). **Lesson: verify tracker state live before executing a task-file "pending/blocked" write — the docs lag the board.**

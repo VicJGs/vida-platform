@@ -3,7 +3,7 @@
 # Scenario: milestone-delivery-planning
 # Spec: docs/roadmap/backend-consolidation-plan.md
 # Created: 2026-09-11
-# Status: in-progress
+# Status: done
 # Project: M1 — Whole Manual OS
 # Milestone: M1.1+ (backend service tier — cross-milestone)
 # Linear: LIF-163
