@@ -121,7 +121,7 @@ export interface SessionsService {
   addAvailabilityException(input: AvailabilityExceptionInput): Promise<AvailabilityException>
   removeAvailabilityException(id: string): Promise<void>
   listAvailabilityExceptions(): Promise<AvailabilityException[]>
-  // --- S6 · session_templates (focus presets, PD-3) — hard-delete; is_default single-winner --
+  // --- S6 · session_templates CRUD (focus presets, PD-3) — hard-delete -----
   createTemplate(input: TemplateInput): Promise<SessionTemplate>
   updateTemplate(id: string, patch: TemplatePatch): Promise<SessionTemplate>
   deleteTemplate(id: string): Promise<void>
@@ -175,9 +175,11 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
   const templateRepo = createRepository(db, sessionTemplates, extCfg)
   const PD3_DEFAULTS: FocusConfig = { workMin: 25, shortBreakMin: 5, longBreakMin: 15, sessionsBeforeLong: 4 }
 
-  // PD-3: the runtime OBEYS user_preferences (→ PD-3 hard defaults when no prefs row). Templates are presets
-  // applied by the UI (fe-sessions) to preferences — the backend runtime never threads a template into the
-  // timer cadence (no per-run config storage, no template_id link on focus_sessions). `[FACT: pomodoro/business-rules.md:22-25 PD-3]`
+  // PD-3: "config is Preferences-owned; the runtime only obeys it." The runtime resolves the cadence from
+  // `user_preferences` → PD-3 hard defaults (services/preferences unbuilt → read the table directly, IR-3).
+  // Named templates are focus PRESETS the ② UI applies (fe-sessions) — the M1.1 backend persists no
+  // timer↔template binding (no `template_id` on focus_sessions), so the runtime does NOT resolve from a
+  // template. `startFocus.templateId` is a ②-seam the backend does not consume in M1.1.
   async function resolveFocusConfig(): Promise<FocusConfig> {
     const prefs = (await userPrefsRepo.findAll())[0]
     if (prefs)
@@ -208,10 +210,11 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
     })
   }
 
-  // S6 — is_default single-winner (PD-3): unset every OTHER template's default flag. Sequential
-  // best-effort (no cross-row tx — same eventual-consistency stance as the soft-delete cascade).
+  // S6 single-winner (PD-3): clear is_default on every template except `exceptId`. Sequential
+  // best-effort (no cross-row tx — eventual consistency, same stance as the soft-delete cascade).
   async function unsetOtherDefaults(exceptId: string): Promise<void> {
-    for (const t of await templateRepo.findAll()) {
+    const all = await templateRepo.findAll()
+    for (const t of all) {
       if (t.id !== exceptId && t.is_default) await templateRepo.update(t.id, { is_default: false })
     }
   }
@@ -533,32 +536,30 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       return exceptionRepo.findAll()
     },
 
-    // --- S6 · session_templates (focus presets, PD-3) — hard-delete; single-winner default --
+    // --- S6 · session_templates CRUD (focus presets, PD-3) -------------------
     async createTemplate(input) {
       const p = TemplateSchema.safeParse(input)
       if (!p.success) throw new InvalidSessionInput(p.error.issues[0]?.path.join('.') || 'input')
-      const data = {
+      // Set every field explicitly (defaults mirror the migration-014 DDL) so the returned row equals the
+      // DB row — `Repository.create` returns the constructed row, not a re-read, so omitted DDL-defaulted
+      // columns would come back `undefined` (mirrors the spaces-service pattern).
+      const row = await templateRepo.create({
         name: input.name,
-        ...(input.work_minutes !== undefined && { work_minutes: input.work_minutes }),
-        ...(input.short_break_minutes !== undefined && { short_break_minutes: input.short_break_minutes }),
-        ...(input.long_break_minutes !== undefined && { long_break_minutes: input.long_break_minutes }),
-        ...(input.intervals_before_long_break !== undefined && {
-          intervals_before_long_break: input.intervals_before_long_break,
-        }),
-        ...(input.auto_start_breaks !== undefined && { auto_start_breaks: input.auto_start_breaks }),
-        ...(input.auto_start_work !== undefined && { auto_start_work: input.auto_start_work }),
-        ...(input.is_default !== undefined && { is_default: input.is_default }),
-        ...(input.focus_technique !== undefined && { focus_technique: input.focus_technique }),
-        ...(input.description !== undefined && { description: input.description }),
-        ...(input.notifications !== undefined && { notifications: input.notifications }),
-        ...(input.sounds !== undefined && { sounds: input.sounds }),
-        ...(input.usage_count !== undefined && { usage_count: input.usage_count }),
-        ...(input.last_used_at !== undefined && { last_used_at: input.last_used_at }),
-      }
-      const created = await templateRepo.create(data)
-      // Re-read: create() returns the built row, so DDL-defaulted (omitted) columns would be undefined.
-      const row = (await templateRepo.findById(created.id)) ?? created
-      if (row.is_default) await unsetOtherDefaults(row.id)
+        work_minutes: input.work_minutes ?? 25,
+        short_break_minutes: input.short_break_minutes ?? 5,
+        long_break_minutes: input.long_break_minutes ?? 15,
+        intervals_before_long_break: input.intervals_before_long_break ?? 4,
+        auto_start_breaks: input.auto_start_breaks ?? true,
+        auto_start_work: input.auto_start_work ?? false,
+        is_default: input.is_default ?? false,
+        focus_technique: input.focus_technique ?? null,
+        description: input.description ?? null,
+        notifications: input.notifications ?? true,
+        sounds: input.sounds ?? true,
+        usage_count: input.usage_count ?? 0,
+        last_used_at: input.last_used_at ?? null,
+      })
+      if (input.is_default) await unsetOtherDefaults(row.id) // single-winner (PD-3)
       return row
     },
 
@@ -584,7 +585,7 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
         ...(patch.last_used_at !== undefined && { last_used_at: patch.last_used_at }),
       }
       const row = await templateRepo.update(id, data)
-      if (patch.is_default === true) await unsetOtherDefaults(id)
+      if (patch.is_default === true) await unsetOtherDefaults(id) // single-winner (PD-3)
       return row
     },
 

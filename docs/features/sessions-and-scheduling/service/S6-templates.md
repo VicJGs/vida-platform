@@ -3,9 +3,10 @@
 
 # S6 — session_templates CRUD (forward spec · g1)
 
-**Home:** extends `services/sessions/service.ts`. One new repo over `session_templates`. No new factory deps.
-Independent CRUD (build-order swap: before S5). S3's `resolveFocusConfig` already READS a template row; S6
-adds its CRUD.
+**Home:** extends `services/sessions/service.ts`. Reuses the `templateRepo` S3 added. No new factory deps.
+Independent CRUD (build-order swap: before S5). Templates are **②-applied presets** (PD-3); the M1.1 backend
+runtime does NOT bind a template to a timer (no `template_id` column) — building S6 also reconciled S3's
+`resolveFocusConfig` to drop its dead `templateId` branch (§XXVIII).
 
 ## §1 Operations (return the row; signatures → `delivery/seam-contract.md`)
 - `createTemplate(input): SessionTemplate` — create a focus preset (`name` required).
@@ -42,8 +43,9 @@ Adds the 5 methods to `SessionsService`. `TemplateInput` (name + optional preset
 4. **Single-winner:** `createTemplate({name:'A', is_default:true})` then `createTemplate({name:'B',
    is_default:true})` → only B is default (`listTemplates` shows exactly one `is_default:true`);
    `setDefaultTemplate(A.id)` → only A default.
-5. **PD-3 separation:** a template with a distinct cadence exists, but the S3 runtime obeys `user_preferences`
-   (→ defaults), NOT the template — proves templates are presets, not a runtime config source (PD-3).
+5. A created preset round-trips **all** the fields the ② UI applies (`work_minutes`, break minutes,
+   `intervals_before_long_break`, `focus_technique`) — the returned row equals the DB row. (The backend does
+   NOT bind template→timer cadence — PD-3; that's a ② concern.)
 6. `tsc` clean; full `@vida/core` suite green.
 
 ## §5 Implementation prompt (order)

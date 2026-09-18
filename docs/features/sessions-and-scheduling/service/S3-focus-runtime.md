@@ -17,8 +17,7 @@ M1.1). The shipped `focus` def is **NOT edited** (`registry.test.ts` pins its `{
 envelope — BR-4 tests). `[FACT: intake/pomodoro.md:166,179; registry.test.ts:74,140,150; interpretation.md IR-1]`
 
 ## §1 Operations (signatures in `delivery/seam-contract.md`; return the `focus_sessions` row = `FocusTimer`)
-- `startFocus({ sessionId?, attach? }): FocusTimer` — (no `templateId` — PD-3: preset application is a
-  fe-sessions concern; the runtime obeys `user_preferences`). **no `sessionId`:**
+- `startFocus({ sessionId?, templateId?, attach? }): FocusTimer` — **no `sessionId`:**
   `createSession('focus', status:'in_progress', started_at:now, extension:{kind:'focus', type:'focus',
   status:'running'})` (reuses S1; S2's `sub_type` gate passes — `focus` is shipped) + optional `attach`
   (S1/S2). **With `sessionId` (resume, B1):** load the mapped `focus_sessions` row via
@@ -38,12 +37,14 @@ envelope — BR-4 tests). `[FACT: intake/pomodoro.md:166,179; registry.test.ts:7
   `interruption_reason=reason ?? null` (PD-6).
 
 ## §2 Operation-flow & invariants
-- **Config (PD-3) — CORRECTED in S6.** The runtime **obeys `user_preferences.pomodoro_*`** (read via a
-  `Repository`; row may be absent) → else the PD-3 hard defaults (`work 25 · short_break 5 · long_break 15 ·
-  sessions_before_long 4`). Templates are **UI-applied presets** (S6), NOT threaded into the runtime cadence
-  — PD-3: "the runtime only obeys [preferences]"; there is no per-run config storage / `template_id` link. (The
-  earlier "template → prefs → defaults precedence" over-stated PD-3 and is removed.) A mid-run config change
-  applies to the **next** interval, never the running one. `[FACT: pomodoro/business-rules.md:22-25 PD-3; preferences.ts:64-67]`
+- **Config (PD-3) — RECONCILED in S6 (§XXVIII).** The runtime resolves cadence from `user_preferences.pomodoro_*`
+  (read via a `Repository`; row may be absent) → PD-3 hard defaults (`work 25 · short_break 5 · long_break 15 ·
+  sessions_before_long 4`). PD-3 = "config is Preferences-owned; the runtime only obeys it." A mid-run config
+  change applies to the **next** interval, never the running one. **NOTE:** this spec originally wrote a
+  `templateId → prefs → defaults` precedence; S6 found that dead — `focus_sessions` has no `template_id`, so the
+  backend can't bind a timer to a template, and PD-3 makes config Preferences-owned. Templates are ②-applied
+  presets (fe-sessions); `startFocus.templateId` is a ②-seam the M1.1 backend does not consume. `resolveFocusConfig`
+  takes no `templateId`. `[FACT: preferences.ts:64-67; scheduling.ts (no template_id); PD-3]`
 - **Timer state machine (PD-4, fail-loud IR-5).** `running ⇄ paused → completed | cancelled`. Illegal moves →
   `InvalidFocusTransition(id, from, event)` (pause a non-running, resume a non-paused, complete/next a
   completed/cancelled), no write. Mirrors the InvalidTransition shape.

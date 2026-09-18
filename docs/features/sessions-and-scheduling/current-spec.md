@@ -106,10 +106,12 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   absent/non-focus → `SessionMissing`. Pause-exclusion (PD-5): `total_pause_seconds` accrues, real focus =
   run wall-time − pauses (per-interval cut derived in S7). Interruption capture (PD-6). Cadence (PD-4):
   `nextInterval` advances focus→break→focus, long-break every `sessions_before_long`, `completed_count` tracks.
-- **Config (PD-3):** the runtime **obeys `user_preferences.pomodoro_*`** → PD-3 defaults (25/5/15/4), read via
-  a repo. Templates are UI-applied presets (S6), **NOT** threaded into the runtime cadence (PD-3: "runtime only
-  obeys [preferences]"; no per-run config storage / `template_id` link). Corrected in S6 (was over-stated as a
-  template→prefs→defaults precedence). `[FACT: pomodoro/business-rules.md:22-25]`
+- **Config (PD-3):** the runtime resolves cadence from `user_preferences.pomodoro_*` → PD-3 defaults
+  (25/5/15/4), read via a repo. PD-3 = "config is Preferences-owned; the runtime only obeys it." Named
+  templates are **②-applied presets** (fe-sessions) — the M1.1 backend persists **no** timer↔template binding
+  (no `template_id` on `focus_sessions`), so `nextInterval` does not resolve from a template. `startFocus.templateId`
+  is a ②-seam the backend does not consume. *(Reconciled in S6 — §XXVIII — from the S3 spec's original
+  "template → prefs → defaults" precedence, which contradicted PD-3 + the schema.)*
 - **S2-flag RESOLVED (intake:166,179 "stub the contract, wire later"):** `completeFocus` finalizes the
   **focus_sessions run only** (status + duration + `completed_count`); it does **NOT** auto-fire session effects
   in M1.1 — the session stays `in_progress`, and session-completion-with-effects remains S2's single
@@ -130,12 +132,14 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
 ### S6 — session_templates CRUD (`services/sessions/service.ts`)
 `[FACT: services/sessions/service.ts; 32 sessions tests green on a live unlocked vault]`
 - **`createTemplate`/`updateTemplate`/`deleteTemplate`/`listTemplates`/`setDefaultTemplate`** over
-  `session_templates` (focus presets, PD-3). Hard-delete (no `deleted_at`). `name`/`description` `[E]` seam.
-- **`is_default` single-winner** — `setDefaultTemplate`/create/update with `is_default:true` unset every other
-  (sequential best-effort). Validation (IR-5): `name` non-empty, minutes/intervals ≥ 1 (DDL has no CHECK →
-  app-layer is the guard). `createTemplate` re-reads post-insert so DDL-defaulted fields are complete.
-- Templates are **presets** — applying one to a run is a UI concern (fe-sessions); the S3 runtime obeys
-  `user_preferences` (PD-3), not a template. `usage_count`/`last_used_at` bump-on-use → fe-sessions.
+  `session_templates` (focus presets, PD-3). Hard-delete (no `deleted_at`; syncs `operation:'delete'`).
+  `name`/`description` `[E]` via the M1.0 seam.
+- **`is_default` single-winner (PD-3):** a hoisted `unsetOtherDefaults(exceptId)` clears every other default;
+  `setDefaultTemplate` + `create`/`update` with `is_default:true` enforce at-most-one. Sequential best-effort.
+- **Fail-loud validation (IR-5):** `name` non-empty, minutes/intervals ≥ 1 (no DDL CHECK → app-layer is the
+  guard). `create` sets all fields explicitly (defaults mirror the DDL) so the returned row == the DB row.
+- **`usage_count`/`last_used_at` bump-on-use → homed to ② (fe-sessions)** — S6 exposes the fields via CRUD;
+  the backend does not auto-increment (doc-checked: no doc specifies backend bump timing).
 
 ## What is DEFERRED (NOT built — the rest of MOD-sessions ①'s scope)
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
@@ -143,8 +147,7 @@ BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring + S3 focus 
 per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
 non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **plan-batch endpoints**
 (`approve`/`activate`/`recalc`; no G5 algorithm) → **S5** · **`dueIn` aggregator + analytics** → **S7** ·
-view layer → G9 · shipped-type editing → later · `key_learnings` encryption (M1.0 pass-through seam,
-`encryptedFields:[]`).
+view layer → G9 · shipped-type editing → later · `key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).
 
 ## Verification (2026-07-28)
 typecheck 10/10 · @vida/core 110/110 · @vida/web 6/6 · deferral grep clean. Spec:

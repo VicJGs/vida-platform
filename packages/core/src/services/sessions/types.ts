@@ -103,10 +103,10 @@ export class InvalidSessionInput extends Error {
 
 // --- S3 · Pomodoro focus runtime -------------------------------------------
 
-/** Start (or resume) a focus timer. No `sessionId` → creates a fresh `focus` session (S1).
- *  No `templateId`: PD-3 — the runtime obeys `user_preferences`; preset application is a fe-sessions concern. */
+/** Start (or resume) a focus timer. No `sessionId` → creates a fresh `focus` session (S1). */
 export interface StartFocusInput {
   sessionId?: string
+  templateId?: string
   attach?: AttachInput
 }
 
@@ -169,7 +169,7 @@ export type AvailabilityException = AvailabilityExceptionRow
 
 // --- S6 · session_templates (focus presets, PD-3) --------------------------
 
-/** A focus preset. `name` required + `[E]`; all timing/flag fields optional (DDL defaults apply if omitted). */
+/** A focus preset. `name` required; the rest fall to DDL defaults (25/5/15/4, flags) when omitted. */
 export interface TemplateInput {
   name: string
   work_minutes?: number

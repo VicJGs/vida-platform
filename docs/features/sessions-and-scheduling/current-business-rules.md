@@ -93,9 +93,9 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
 - **BR-23 (PD-6) — interruption capture.** `cancelFocus` sets `was_interrupted=true` + `interruption_reason`.
 - **BR-24 (PD-4/PD-7) — cadence.** `nextInterval` advances focus→break→focus; long-break every
   `sessions_before_long` focus intervals; `completed_count` increments on each finished focus interval (incl.
-  `completeFocus` on a focus interval). **Config: the runtime OBEYS `user_preferences.pomodoro_*` → PD-3
-  defaults** (PD-3 "runtime only obeys [preferences]"; templates are UI-applied presets, NOT threaded to the
-  runtime — corrected in S6). `[FACT: service.ts; preferences.ts; pomodoro/business-rules.md:22-25]`
+  `completeFocus` on a focus interval). Config resolves from `user_preferences.pomodoro_*` → PD-3 defaults
+  (PD-3: config Preferences-owned; the runtime obeys it). Templates are ②-applied presets, NOT runtime-resolved
+  (no `template_id` binding — reconciled in S6). `[FACT: service.ts; preferences.ts]`
 - **BR-25 (§0, intake:166,179) — run-complete ≠ session-complete in M1.1.** `completeFocus` finalizes the
   focus_sessions run only; the session stays `in_progress` and effect-firing stays S2's `completeSession` path
   (deferred handlers #46). No second firing path (IR-1). `[FACT: service.ts; intake/pomodoro.md:166,179]`
@@ -111,14 +111,17 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
   the G5 placement algorithm (deferred) resolves, so S4 imposes no uniqueness/overlap rule. `[FACT: SS-9;
   intake:31-33; scheduling.ts no UNIQUE]`
 
-## ENFORCED now (MOD-sessions ① · S6 — session_templates, `services/sessions/service.ts`)
-- **BR-29 (PD-3) — template CRUD + single-winner default.** `session_templates` CRUD (hard-delete, no
-  `deleted_at`; `name`/`description` `[E]`); `setDefaultTemplate`/create/update with `is_default:true` unset
-  every other template (at most one default, ever — sequential best-effort). `name` non-empty + minutes/
-  intervals ≥ 1 (app-layer; DDL has no CHECK). `[FACT: service.ts; validators/session.ts]`
-- **BR-30 (PD-3) — templates are presets, not a runtime config source.** A template does NOT auto-thread into
-  the S3 timer cadence; the runtime obeys `user_preferences`. Applying a preset + `usage_count`/`last_used_at`
-  bump-on-use → fe-sessions. `[FACT: pomodoro/business-rules.md:22-25]`
+## ENFORCED now (MOD-sessions ① · S6 — session_templates CRUD, `services/sessions/service.ts`)
+- **BR-29 (PD-3) — focus-preset CRUD.** `createTemplate`/`updateTemplate`/`deleteTemplate`/`listTemplates` over
+  `session_templates`; hard-delete (no `deleted_at`, syncs `operation:'delete'`); `name`/`description` `[E]` via
+  the M1.0 seam; `create` sets all fields explicitly (DDL-mirrored defaults) so the returned row == the DB row.
+  `[FACT: service.ts]`
+- **BR-30 (PD-3) — `is_default` single-winner.** `setDefaultTemplate` + `create`/`update` with `is_default:true`
+  run `unsetOtherDefaults` → at most one default template ever (sequential best-effort). `[FACT: service.ts]`
+- **BR-31 (IR-5) — fail-loud validation.** `name` non-empty; minutes/intervals ≥ 1 → `InvalidSessionInput`
+  before the write (no DDL CHECK — app-layer is the only guard). `[FACT: service.ts; validators/session.ts]`
+- **NOTE — `usage_count`/`last_used_at` bump-on-use is a ② (fe-sessions) concern**, not a backend behavior
+  (doc-checked: no doc specifies backend bump timing).
 
 ## NOT YET enforced (deferred — do not claim)
 - Per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + fire-time sensitive-consent

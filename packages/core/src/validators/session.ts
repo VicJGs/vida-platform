@@ -77,8 +77,8 @@ export const AvailabilityExceptionSchema = AvailabilityExceptionFields.refine(
   { message: 'end_time must be > start_time', path: ['end_time'] },
 )
 
-// MOD-sessions ① S6 — session_templates (focus presets, PD-3). Migration 014:176-202 has NO CHECK
-// (all INTEGER NOT NULL DEFAULT) → app-layer is the only guard: name non-empty, minutes/intervals ≥ 1.
+// MOD-sessions ① S6 — session_templates (focus presets, PD-3). No DDL CHECK (all plain INTEGER NOT NULL
+// DEFAULT) → app-layer is the only guard: name non-empty, minutes/intervals ≥ 1 (fail-loud, IR-5).
 const TemplateFields = z.object({
   name: z.string().min(1),
   work_minutes: z.number().int().min(1).optional(),
