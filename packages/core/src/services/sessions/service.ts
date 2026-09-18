@@ -33,6 +33,13 @@ import {
 } from '../../db/schema/foundation/session-extensions'
 import { resolveTargets, type ResolvedTarget } from '../../foundation/sessions/attachments'
 import type { SessionRegistry } from '../../foundation/sessions/registry'
+import {
+  transition,
+  InvalidTransition,
+  type TransitionResult,
+} from '../../foundation/sessions/lifecycle'
+import type { EffectRail } from '../../foundation/effects'
+import { type TaggableTypeRegistry, UnknownEntityType } from '../../foundation/spaces'
 import { CreateSessionSchema } from '../../validators/session'
 import {
   type CreateSessionInput,
@@ -41,11 +48,17 @@ import {
   InvalidSessionInput,
 } from './types'
 
+export { InvalidTransition }
+
 export interface SessionsServiceDeps {
   db: DrizzleDb
   deviceId: string
-  /** AR-5 SessionRegistry — injected now for a stable signature; USED in S2 (registry validation). */
+  /** AR-5 SessionRegistry — validates createSession sub_type (S2) + drives lifecycle transitions. */
   registry: SessionRegistry
+  /** #32 effect rail — completion fires declared effects through it (fail-loud on missing handlers). */
+  rail: EffectRail
+  /** Shared entity-type registry (spaces/ENTITY_TYPES) — validates attach entity_type (BR-6). */
+  entityRegistry: TaggableTypeRegistry
 }
 
 export interface SessionsService {
@@ -62,6 +75,10 @@ export interface SessionsService {
   ): Promise<SessionAttachmentRow>
   detach(attachmentId: string): Promise<void>
   resolveTargets(sessionId: string): Promise<ResolvedTarget[]>
+  /** Complete a session — routes through the #32 transition engine (fires declared effects). */
+  completeSession(id: string): Promise<TransitionResult>
+  /** Apply any declared lifecycle event via the #32 transition engine. */
+  transitionSession(id: string, event: string): Promise<TransitionResult>
 }
 
 // The single source of the sub_type → extension routing (B1). Only these two
@@ -74,9 +91,9 @@ function extKindFor(subType: string): ExtKind | null {
 }
 
 export function createSessionsService(deps: SessionsServiceDeps): SessionsService {
-  // `deps.registry` (AR-5 SessionRegistry) is accepted now for a stable cross-slice
-  // signature; it is consumed in S2 (runtime sub_type/entity_type validation).
-  const { db, deviceId } = deps
+  const { db, deviceId, registry, rail, entityRegistry } = deps
+  // The #32 transition engine's deps — completion/lifecycle route through it (IR-1), never a second path.
+  const transitionDeps = { db, registry, rail, deviceId }
 
   const sessionCfg = { deviceId, encryptedFields: [] as string[], softDelete: true }
   const extCfg = { deviceId, encryptedFields: [] as string[], softDelete: false }
@@ -110,6 +127,10 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       if (!parsed.success) {
         throw new InvalidSessionInput(parsed.error.issues[0]?.path.join('.') || 'input')
       }
+      // S2 — sub_type must be a registered type (SS-3); an unregistered one throws
+      // SessionTypeNotFound (fail-loud, BEFORE the tx → no write). Shipped types resolve
+      // in-memory; user types cost one findWhere. Roster = AR-5-shipped + register() seam.
+      await registry.get(input.sub_type)
       const kind = extKindFor(input.sub_type)
       const ext = input.extension
       if (ext) {
@@ -217,6 +238,8 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
 
     // --- attach (idempotent, hard-create; entity_type validation is S2) ------
     async attach(sessionId, entityType, entityId, level) {
+      // S2 — entity_type must be a registered polymorphic target (BR-6); mirrors spaces assertRegistered.
+      if (!entityRegistry.isRegistered(entityType)) throw new UnknownEntityType(entityType)
       if (level !== 'type' && level !== 'instance') throw new InvalidSessionInput('level')
       const existing = await attachmentRepo.findWhere(
         eq(sessionAttachments.session_id, sessionId),
@@ -239,6 +262,15 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
 
     resolveTargets(sessionId) {
       return resolveTargets(db, sessionId)
+    },
+
+    // --- completion / lifecycle — delegate to the #32 engine (IR-1, no second path) --
+    completeSession(id) {
+      return transition(transitionDeps, id, 'complete')
+    },
+
+    transitionSession(id, event) {
+      return transition(transitionDeps, id, event)
     },
   }
 }

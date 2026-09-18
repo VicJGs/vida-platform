@@ -68,7 +68,20 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
   entity_type, entity_id, level)` key (no revive path — no `deleted_at`); `detach` hard-deletes. `sub_type`
   immutable on `updateSession` (B3). `[FACT: service.ts attach/detach/updateSession]`
 - **NOTE — S1 is STRUCTURAL only.** Semantic `sub_type`/`entity_type` **registry** validation and completion→
-  `transition()` wiring are S2 (the `registry` dep is injected but unused in S1).
+  `transition()` wiring are S2.
+
+## ENFORCED now (MOD-sessions ① · S2 — `services/sessions/service.ts`)
+- **BR-18 (SS-3) — createSession sub_type registry gate.** `createSession` runs `await registry.get(sub_type)`
+  before the tx; an unregistered sub_type → `SessionTypeNotFound`, no write. The roster is AR-5-shipped (`focus`)
+  + the `register()` seam (delivery-plan:239); owning modules register their own sub-types (SS-5). `[FACT: service.ts]`
+- **BR-19 (BR-6) — attach entity_type registry gate.** `attach` rejects an entity_type not in the
+  `TaggableTypeRegistry` (ENTITY_TYPES) → `UnknownEntityType`; mirrors the spaces `assertRegistered`. `[FACT: service.ts; spaces]`
+- **BR-20 (IR-1, SS-1/SS-8) — completion routes through the #32 engine, fail-loud.** `completeSession`/
+  `transitionSession` delegate to `transition({db, registry, rail, deviceId}, id, event)` — no second firing
+  path (preserves BR-8..BR-12). Completion fires declared effects via the rail; a non-`projection` effect with no
+  handler → `NoEffectHandler` (fail-loud). `completeSession('focus')` throws in M1.1 (its handlers deferred #46);
+  a no-effect type completes `fired:0`; an illegal `(status,event)` → `InvalidTransition`. Focus-completion M1.1
+  behavior → S3. `[FACT: service.ts; lifecycle.ts; effects/service.ts:38-40]`
 
 ## NOT YET enforced (deferred — do not claim)
 - Per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + fire-time sensitive-consent

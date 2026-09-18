@@ -71,8 +71,8 @@ DB-4 landed the full table substrate the service tier (MOD-sessions ①) will dr
   (`POMODORO_*`, `STUDY_*`, `PRESET_BLOCK`) live in `@vida/types` (`session.ts`, `knowledge.ts`, `learning.ts`).
 
 ## What is BUILT (MOD-sessions ① · S1 — `services/sessions/`)
-The first real `services/*` build: `createSessionsService({ db, deviceId, registry })` (factory-object, mirrors
-`foundation/spaces/service.ts`). `[FACT: services/sessions/service.ts; 10 tests green on a live unlocked vault]`
+The first real `services/*` build: `createSessionsService({ db, deviceId, registry, rail, entityRegistry })`
+(factory-object, mirrors `foundation/spaces/service.ts`). `[FACT: services/sessions/service.ts]`
 - **Session CRUD** — `createSession` (spine + optional 1:1 `focus`/`study` extension, written **atomically** via
   `Repository.createInTx` in one `db.transaction`) · `getSession` (spine + mapped extension, null if
   soft-deleted) · `updateSession` (spine + extension; `sub_type` immutable) · `softDeleteSession` (**spine only**
@@ -82,15 +82,26 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   create, **no revive** — no `deleted_at`); `detach` = **hard delete**; `resolveTargets` re-exports the #32 reader.
 - **Repos:** `sessions` `softDelete:true`; `focus_sessions`/`study_sessions`/`session_attachments`
   `softDelete:false` (no `deleted_at`). All `encryptedFields:[]` (M1.0 pass-through). Structural validation
-  (`CreateSessionSchema`, fail-loud `InvalidSessionInput`). NOT yet: semantic `sub_type`/`entity_type` **registry**
-  validation, completion/lifecycle wiring → **S2**.
+  (`CreateSessionSchema`, fail-loud `InvalidSessionInput`).
+
+### S2 — registry validation + completion wiring (`services/sessions/service.ts`)
+`[FACT: services/sessions/service.ts; 16 tests green on a live unlocked vault]`
+- **`createSession` sub_type gate** — `await registry.get(sub_type)` before the tx; unregistered → `SessionTypeNotFound`,
+  no write (SS-3). Roster stays **AR-5-shipped (`focus`) + the `register()` seam** (delivery-plan:239); owning
+  modules register their own sub-types (SS-5) — S2 seeds nothing.
+- **`attach` entity_type gate** — `entityRegistry.isRegistered(entityType)` → `UnknownEntityType` (BR-6); mirrors
+  the spaces `assertRegistered`. Factory gained `rail: EffectRail` + `entityRegistry: TaggableTypeRegistry` deps.
+- **`completeSession`/`transitionSession`** — delegate to the built #32 `transition({db, registry, rail, deviceId},
+  id, event)` (IR-1 — no second firing path). Completion fires declared effects through the rail, which is
+  **fail-loud**: a non-`projection` effect with no handler throws `NoEffectHandler`. So `completeSession('focus')`
+  throws in M1.1 (`log_time`/`attach_pomodoro` handlers deferred #46); a no-effect type completes `fired:0`.
+  **⚠ focus-completion behavior in M1.1 is S3's to resolve** (stub handlers / narrow effects / complete-sans-fire).
 
 ## What is DEFERRED (NOT built — the rest of MOD-sessions ①'s scope)
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
-BUILT; S1 session CRUD + attach BUILT (above).** Still deferred:
+BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring BUILT (above).** Still deferred:
 per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
-non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **runtime
-`sub_type`/`entity_type` registry-validation + completion→`transition()` wiring** → **S2** · **Pomodoro focus
+non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **Pomodoro focus
 runtime** (start/pause/resume/complete/cancel/nextInterval over `focus_sessions`) → **S3** · **availability** →
 **S4** · **plan-batch endpoints** (`approve`/`activate`/`recalc`; no G5 algorithm) → **S5** · **`session_templates`
 CRUD** → **S6** · **`dueIn` aggregator + analytics** → **S7** · view layer → G9 · shipped-type editing → later ·
