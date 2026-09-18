@@ -11,7 +11,7 @@
 Measurement engine — measurable + rollup derivation (measurement XCU-01…17, spaces SP-33).
 
 ## Dependencies
-- blocked by `xs-effect-rail` (satisfied — #32 merged `d67d3ae`)
+- blocked by `xs-effect-rail` (satisfied — #32 merged, commit d67d3ae)
 
 ## Outcome (2026-09-18) — FULL RATIFY
 Entity Re-scope recovery flow. The 15 in-issue legs (`decomposition.md:46`) were already satisfied by the
