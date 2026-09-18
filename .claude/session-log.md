@@ -5631,3 +5631,21 @@ Decisions:
   - **Git workflow (from now on):** each issue = own branch off main → PR → merge (merge commit). backend-replan campaign merged to main directly (ff); xs-capability is the first per-issue PR.
 Next session:
   - **FIRST ACTION:** head **#32 xs-effect-rail** (M1.1.1, deps none) — likely Ratify+recovery (AR-7 `foundation/effects/` EffectRail exists; extend against P3 legs XCU-09/10/22 · XCU-SP-30). Fresh branch `xs-effect-rail` off main + add-backend-component path. Env: Node 24 via nvm + corepack pnpm.
+
+---
+Date: 2026-09-18 — xs-measurement-engine #33 (LIF-173) — M1.1.1 head — FULL RATIFY (no code)
+Task: xs-measurement-engine · Profile: Add Backend Component · Scenario: Entity Re-scope (Entity Delivery Flow recovery variant) · branch `xs-measurement-engine` → PR #35 → main
+Goal: build the 3rd M1.1.1 XS foundation head — the ADR-011 universal measurability engine (measurable + rollup derivation, decomposition.md:46 legs XCU-01…17 + SP-33).
+Accomplished:
+  - **Determined FULL RATIFY — zero production code owed.** The engine substrate was already built by **AR-7 Increment 3 (2026-08-03)**: `foundation/measurement/{engine,types,source-registry}.ts` (normalize/rollup/resolveProgress/assertAcyclic + Pursuable/Binding/EntityRef + empty source seam) + `validators/measurement.ts` + 12 tests; DB-4 landed the `measurement_kind`/`binding_mode`/metric columns (13 schemas); the #31/#32 rail carries `emit_measurement_signal`/`contribute_purpose_metric`. AR-7 `PLAN-2026-08-03-measurement.md` §1 "Is (build-now)" == #33's 15-leg brief exactly; §6 homed EVERY deferral OUTSIDE #33 (DB-4 #10, MOD-purposes #46, source MODs, build-phase, ADR-012, #85).
+  - **Recovery flow, all gates cleared:** Documentation Gate (/critique SHIP + 4 carry-forwards, incl. U-1 = measurement reuses the #32 rail's `deriveEffectEventId`, builds no hash) → Interpretation layer (`delivery/interpretation.md`) → Interpretation Gate (/critique REVISE ×2 [XCU-08 contract-only; XCU-05 perf-envelope deferred-with-cause] → applied → PASS) → Reconciliation ledger (`delivery/reconciliation.md`, 15/15 ✅, DRY re-sweep) → **independent adversarial refutation agent → CONCEDED on all 15 legs** → Re-scope Gate (slice-map, 0 code slices) → Victor approved → pre-ship /critique SHIP.
+  - Witness: 12 measurement tests green + `@vida/core` typecheck clean (Node 24).
+  - Deliverable = ratify-proof doc set `docs/features/measurement/delivery/{interpretation,reconciliation,slice-map}.md` + §XXIX ratification marker in `docs/core/measurement/current-spec.md`. Committed `fd22438` → PR #35 → merged `f2c7362`. **LIF-173 → Done** (tracker --sync, 16 downstream MODs unblocked).
+  - Housekeeping: fixed a tracker phantom-edge (backticked commit SHA on the `## Dependencies` line parsed as a blocker slug) via PR #36 (`3586f0f`). Direct push-to-main was correctly blocked by the auto-mode classifier → routed through PR.
+Decisions:
+  - **#33 = FULL RATIFY, close as Done** (not merge/re-home) — it's a real build-graph node with 16 dependents; the node is satisfied. Diverges from #31/#32 (which ratified+EXTENDED) because measurement's AR-7 increment was a complete pure engine, not a structure-only stub.
+  - XCU-10 (binding_mode≠source): no runtime validator owed — the two axes live on different tables (can't co-validate in a table-less engine); structurally satisfied. XCU-09: no measurement-side helper owed — rides the existing rail; `EffectEvent` needs firing-entity state (not derivable from a `Binding`). XCU-SP-33: documented-seam only (Purposes-owned laddering; AR-6 tag substrate built).
+  - §XXIX for a code-unchanged context = mark-current + optional pointer, NOT a manufactured refresh.
+  - Memory: [[xs-foundation-heads-trace-to-ar7-ratify]]; extended [[tracker-sync-orphan-create-guard]] (phantom-edge + push-to-main-blocked).
+Next session:
+  - **FIRST ACTION:** next XS head via `tracker_sync --next` — peer heads **xs-spaces-tags-links** (16 dependents) or **xs-views** (8). Both likely AR-6/AR-7 ratify-recoveries — verify each `PLAN-*.md` §1 vs its decomposition roster to size ratify-vs-extend before building. Env: Node 24 via nvm + corepack pnpm; per-issue branch → PR.

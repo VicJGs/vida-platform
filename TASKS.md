@@ -14,6 +14,7 @@
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| xs-measurement-engine (LIF-173 → Done) | 2026-09-18 | 1 — FULL RATIFY (no code) |
 | xs-effect-rail (LIF-170 → Done) | 2026-09-17 | 1 |
 | xs-capability (LIF-169 → Done) | 2026-09-17 | 1 |
 | backend-replan (LIF-163 → Done) | 2026-09-17 | 7 |
