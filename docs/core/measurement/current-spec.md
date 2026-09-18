@@ -18,3 +18,12 @@ Purpose's `contributions` feed later. Rides increment-1's rail for the `event-tr
 
 ## Deferred
 See current-business-rules.md § Deferred (all homed).
+
+## Ratified
+- **2026-09-18 · xs-measurement-engine #33 (LIF-173) — FULL RATIFY, no code change.** The AR-7 Increment-3
+  substrate was confirmed to satisfy all 15 in-issue legs of `decomposition.md:46` (XCU-01,02,03,04,05,06,08,09,
+  10,11,13,14,15,17,SP-33); independently adversarially verified; 12 tests green + typecheck clean. Proof set:
+  `docs/features/measurement/delivery/{interpretation,reconciliation,slice-map}.md`.
+- *Downstream now available* (navigational — ownership boundary unchanged, §3.8 no tables): the per-module
+  `measurement_kind`/`binding_mode`/metric columns landed in **DB-4** (`db/schema/*`), and the `event-trigger`
+  push side rides the **#31/#32 effect rail** (`emit_measurement_signal`/`contribute_purpose_metric` live).
