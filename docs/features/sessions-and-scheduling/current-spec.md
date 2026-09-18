@@ -112,14 +112,26 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   in M1.1 — the session stays `in_progress`, and session-completion-with-effects remains S2's single
   `completeSession` path (fired when #46 wires handlers). The shipped `focus` def is untouched (registry.test-pinned).
 
+### S4 — Availability (`services/sessions/service.ts`)
+`[FACT: services/sessions/service.ts; 28 sessions tests green on a live unlocked vault]`
+- **`setAvailability`/`updateAvailability`/`removeAvailability`/`listAvailability`** over `study_availability` +
+  **`addAvailabilityException`/`removeAvailabilityException`/`listAvailabilityExceptions`** over
+  `availability_exceptions` (SS-9 — Planner-owned scheduling input).
+- **Hard-delete** (`hardDelete`, no `deleted_at`; syncs `operation:'delete'`). Fail-loud validation (IR-5):
+  `day_of_week` 0..6, `preference_score` 1..5, `preset_block` ∈ 7 `PRESET_BLOCK` values, HH:MM times +
+  `end > start`, `YYYY-MM-DD` date → typed `InvalidSessionInput` before the write.
+- **Doc-resolved semantics:** `is_available:false`+times is a valid recurring **blackout** window (orthogonal,
+  never rejected); **no uniqueness/overlap check** — overlapping/multiple windows are valid Planner input the
+  (deferred, G5) placement algorithm resolves. `[FACT: SS-9; intake:31-33; scheduling.ts no UNIQUE]`
+
 ## What is DEFERRED (NOT built — the rest of MOD-sessions ①'s scope)
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
-BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring + S3 focus runtime BUILT (above).** Still deferred:
+BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring + S3 focus runtime + S4 availability BUILT (above).** Still deferred:
 per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
-non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **availability** →
-**S4** · **plan-batch endpoints** (`approve`/`activate`/`recalc`; no G5 algorithm) → **S5** · **`session_templates`
-CRUD** → **S6** · **`dueIn` aggregator + analytics** → **S7** · view layer → G9 · shipped-type editing → later ·
-`key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).
+non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **plan-batch endpoints**
+(`approve`/`activate`/`recalc`; no G5 algorithm) → **S5** · **`session_templates` CRUD** → **S6** · **`dueIn`
+aggregator + analytics** → **S7** · view layer → G9 · shipped-type editing → later · `key_learnings` encryption
+(M1.0 pass-through seam, `encryptedFields:[]`).
 
 ## Verification (2026-07-28)
 typecheck 10/10 · @vida/core 110/110 · @vida/web 6/6 · deferral grep clean. Spec:

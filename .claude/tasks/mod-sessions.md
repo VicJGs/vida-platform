@@ -50,11 +50,20 @@ S4 availability · S5 plan-batch endpoints · S6 session_templates CRUD · S7 du
   sessions tests; AC2 caught a resumeTimer no-op/illegal-move divergence → fixed) · §XXIX (BR-21..BR-25).
   `@vida/core` 862/862.
 
+- **S4 ✅ DONE (2026-09-18, commit pending).** Availability CRUD (7 methods) over `study_availability` +
+  `availability_exceptions` (SS-9); hard-delete (no `deleted_at` — corrected `_index` nuance-1 which wrongly
+  listed these as softDelete:true); fail-loud range/format validation (day 0..6, score 1..5, PRESET_BLOCK,
+  HH:MM+end>start, YYYY-MM-DD). **Victor drift-catch:** my 2 "non-blocking nits" (uniqueness, is_available+times)
+  were actually doc-resolved specs — `is_available:false`+times = valid blackout (orthogonal); no uniqueness/
+  overlap (SS-9/G5 input, stored as-is). Folded in as FACTs + AC6/AC7. Gated: g1 SHIP (after the nit-recheck) ·
+  preflight PASSED · g2 · Verification Gate PASS (28 sessions tests) · §XXIX (BR-26..BR-28). `@vida/core` 867/867.
+
 ## Next step
-- **S4 — Availability** (`setAvailability`/`addException`/`listAvailability` over `study_availability` +
-  `availability_exceptions`; SS-9, BR-5c range CHECKs, `reason` `[E]` seam). Independent CRUD slice (only needs
-  the factory). Author `service/S4-*.md` → g1 → preflight → g2 → build → Verification Gate. Env: Node 24 via nvm.
-  Remaining after S4: S6 (session_templates CRUD) · S5 (plan-batch endpoints) · S7 (dueIn + analytics).
+- **S6 — `session_templates` CRUD** (focus presets: create/update/delete/list/setDefault; `name`/`description`
+  `[E]` seam; `is_default` single-winner PD-3). Independent CRUD slice. NOTE build-order swap: doing S6 before
+  S5 (both independent; S6 is simpler and S3's `resolveFocusConfig` already reads a template row). Author
+  `service/S6-*.md` → g1 → preflight → g2 → build → Verification Gate. Env: Node 24 via nvm.
+  Remaining: S6 (templates) · S5 (plan-batch endpoints) · S7 (dueIn + analytics).
 
 ## Route History
 - 2026-09-18: baseline (current-* refreshed for DB-4 substrate) → interpretation → decomposition gate

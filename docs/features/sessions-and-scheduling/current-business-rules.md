@@ -99,6 +99,17 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
   focus_sessions run only; the session stays `in_progress` and effect-firing stays S2's `completeSession` path
   (deferred handlers #46). No second firing path (IR-1). `[FACT: service.ts; intake/pomodoro.md:166,179]`
 
+## ENFORCED now (MOD-sessions ① · S4 — availability, `services/sessions/service.ts`)
+- **BR-26 (SS-9) — availability CRUD, Planner-owned.** `study_availability` + `availability_exceptions` CRUD;
+  hard-delete (no `deleted_at`, syncs `operation:'delete'`). `reason` `[E]` via the M1.0 seam. `[FACT: service.ts]`
+- **BR-27 (IR-5) — fail-loud range/format validation.** `day_of_week` 0..6, `preference_score` 1..5,
+  `preset_block` ∈ `PRESET_BLOCK`, `start/end_time` HH:MM with `end > start`, `exception_date` YYYY-MM-DD →
+  typed `InvalidSessionInput(field)` before the write (DDL CHECK is the backstop). `[FACT: service.ts; validators/session.ts]`
+- **BR-28 (doc-resolved) — `is_available` orthogonal + no uniqueness.** A `false`+times window is a valid
+  recurring blackout (never rejected); overlapping/multiple windows persist as-is — availability is the input
+  the G5 placement algorithm (deferred) resolves, so S4 imposes no uniqueness/overlap rule. `[FACT: SS-9;
+  intake:31-33; scheduling.ts no UNIQUE]`
+
 ## NOT YET enforced (deferred — do not claim)
 - Per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + fire-time sensitive-consent
   enforcement + consent-threading → #46 / MOD-*. The gate utility (`assertEffectPermitted`) ships; its callers do not.

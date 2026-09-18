@@ -13,8 +13,13 @@ import type {
   PomodoroStatus,
   StudySessionResourceType,
 } from '@vida/types'
+import type { PresetBlock } from '@vida/types'
 import type { SessionRow, SessionAttachmentRow } from '../../db/schema/foundation/sessions'
 import type { FocusSessionRow, StudySessionRow } from '../../db/schema/foundation/session-extensions'
+import type {
+  StudyAvailabilityRow,
+  AvailabilityExceptionRow,
+} from '../../db/schema/foundation/scheduling'
 
 /** The `focus` sub-type 1:1 extension input (PD-4/PD-5/PD-6 fields; spine fields NEVER here — BR-S1). */
 export interface FocusExtensionInput {
@@ -134,5 +139,31 @@ export class SessionMissing extends Error {
     this.name = 'SessionMissing'
   }
 }
+
+// --- S4 · Availability (SS-9) ----------------------------------------------
+
+/** A recurring weekly window (`study_availability`). Always timed; `is_available` flags free vs blackout. */
+export interface AvailabilityInput {
+  day_of_week: number
+  start_time: string
+  end_time: string
+  is_available?: boolean
+  preference_score?: number | null
+  preset_block?: PresetBlock | null
+  max_session_minutes?: number | null
+}
+export type AvailabilityPatch = Partial<AvailabilityInput>
+
+/** A date-specific override (`availability_exceptions`). Times optional (whole-day or partial). */
+export interface AvailabilityExceptionInput {
+  exception_date: string
+  is_available: boolean
+  reason?: string | null // [E] — M1.0 pass-through seam
+  start_time?: string | null
+  end_time?: string | null
+}
+
+export type Availability = StudyAvailabilityRow
+export type AvailabilityException = AvailabilityExceptionRow
 
 export type { SessionAttachmentRow }

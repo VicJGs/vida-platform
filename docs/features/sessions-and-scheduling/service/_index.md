@@ -15,11 +15,13 @@ forward specs → `service/S<n>-*.md` (the g1/g2 objects). Slices + gate ledger 
 ## The 3 backend-only nuances (apply to every slice)
 
 1. **Persistence & schema binding.** Each table gets its own repo with the right `softDelete` flag:
-   - `sessions`, `study_availability`, `availability_exceptions`, `study_plan_batches`, `session_templates`,
-     `planned_blocks` → **`softDelete: true`** (they carry `deleted_at`).
-   - `study_sessions`, `focus_sessions`, `session_attachments` → **`softDelete: false`** — they use
-     `...baseColumns` with **no `deleted_at`** (B2′/IR-7 — the base session owns lifecycle). `detach` = **hard
-     delete**; `attach` = findWhere-key → no-op-or-create (no revive path, unlike the spaces junctions);
+   - **Only `sessions` + `planned_blocks` carry `deleted_at`** → `softDelete: true` `[FACT: sessions.ts:41;
+     scheduling.ts:30 + migration 014]`.
+   - `study_sessions`, `focus_sessions`, `session_attachments`, `study_availability`,
+     `availability_exceptions`, `study_plan_batches`, `session_templates` → **`softDelete: false`** — they use
+     bare `...baseColumns` with **no `deleted_at`** (extensions: base owns lifecycle B2′/IR-7; the scheduler-input
+     + batch + template tables: hard-delete-by-design). `delete` on these is a **hard delete** (syncs as
+     `operation:'delete'`); `detach` = hard; `attach` = findWhere-key → no-op-or-create (no revive path);
      soft-deleting a session touches the **spine only** (the extension goes unreachable via `getSession`).
    - `planned_blocks` carries its own `deleted_at` → `softDelete: true`.
 2. **Concurrency & transactions.** A session spine + its 1:1 extension (`focus_sessions`/`study_sessions`) are

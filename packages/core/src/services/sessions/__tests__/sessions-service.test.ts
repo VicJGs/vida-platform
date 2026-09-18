@@ -420,3 +420,57 @@ describe('S3 — Pomodoro focus runtime', () => {
     await driver.close()
   })
 })
+
+describe('S4 — Availability (SS-9)', () => {
+  it('AC1/AC2 — set/list/update/remove a window; sync enqueued', async () => {
+    const { svc, db, driver } = await setup()
+    const w = await svc.setAvailability({ day_of_week: 1, start_time: '09:00', end_time: '11:00', preference_score: 4 })
+    expect(w.day_of_week).toBe(1)
+    expect((await svc.listAvailability())).toHaveLength(1)
+
+    const upd = await svc.updateAvailability(w.id, { preference_score: 2 })
+    expect(upd.preference_score).toBe(2)
+
+    await svc.removeAvailability(w.id)
+    expect(await svc.listAvailability()).toHaveLength(0)
+    const q = await db.select().from(syncQueue).all()
+    expect(q.some((r) => r.operation === 'delete')).toBe(true)
+    await driver.close()
+  })
+
+  it('AC3 — typed validation, no write', async () => {
+    const { svc, driver } = await setup()
+    await expect(svc.setAvailability({ day_of_week: 7, start_time: '09:00', end_time: '11:00' })).rejects.toMatchObject({ field: 'day_of_week' })
+    await expect(svc.setAvailability({ day_of_week: 1, start_time: '09:00', end_time: '11:00', preference_score: 6 })).rejects.toMatchObject({ field: 'preference_score' })
+    await expect(svc.setAvailability({ day_of_week: 1, start_time: '25:00', end_time: '11:00' })).rejects.toMatchObject({ field: 'start_time' })
+    await expect(svc.setAvailability({ day_of_week: 1, start_time: '09:00', end_time: '08:00' })).rejects.toMatchObject({ field: 'end_time' })
+    expect(await svc.listAvailability()).toHaveLength(0)
+    await driver.close()
+  })
+
+  it('AC4/AC5 — exceptions: add/list/remove + date validation', async () => {
+    const { svc, driver } = await setup()
+    const e = await svc.addAvailabilityException({ exception_date: '2026-10-01', is_available: false, reason: 'holiday' })
+    expect(e.exception_date).toBe('2026-10-01')
+    expect(await svc.listAvailabilityExceptions()).toHaveLength(1)
+    await expect(svc.addAvailabilityException({ exception_date: '10/01/2026', is_available: false })).rejects.toMatchObject({ field: 'exception_date' })
+    await svc.removeAvailabilityException(e.id)
+    expect(await svc.listAvailabilityExceptions()).toHaveLength(0)
+    await driver.close()
+  })
+
+  it('AC6 — a blackout window (is_available:false + times) is accepted, not rejected (doc-resolved)', async () => {
+    const { svc, driver } = await setup()
+    const w = await svc.setAvailability({ day_of_week: 2, start_time: '13:00', end_time: '14:00', is_available: false })
+    expect(w.is_available).toBe(false)
+    await driver.close()
+  })
+
+  it('AC7 — overlapping windows both persist (no uniqueness/overlap reject — SS-9/G5 input)', async () => {
+    const { svc, driver } = await setup()
+    await svc.setAvailability({ day_of_week: 3, start_time: '09:00', end_time: '12:00' })
+    await svc.setAvailability({ day_of_week: 3, start_time: '10:00', end_time: '11:00' })
+    expect(await svc.listAvailability()).toHaveLength(2)
+    await driver.close()
+  })
+})

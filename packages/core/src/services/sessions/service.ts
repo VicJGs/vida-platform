@@ -32,7 +32,11 @@ import {
   type StudySessionRow,
 } from '../../db/schema/foundation/session-extensions'
 import { userPreferences } from '../../db/schema/preferences'
-import { sessionTemplates } from '../../db/schema/foundation/scheduling'
+import {
+  sessionTemplates,
+  studyAvailability,
+  availabilityExceptions,
+} from '../../db/schema/foundation/scheduling'
 import type { PomodoroType } from '@vida/types'
 import { resolveTargets, type ResolvedTarget } from '../../foundation/sessions/attachments'
 import type { SessionRegistry } from '../../foundation/sessions/registry'
@@ -43,7 +47,12 @@ import {
 } from '../../foundation/sessions/lifecycle'
 import type { EffectRail } from '../../foundation/effects'
 import { type TaggableTypeRegistry, UnknownEntityType } from '../../foundation/spaces'
-import { CreateSessionSchema } from '../../validators/session'
+import {
+  CreateSessionSchema,
+  AvailabilitySchema,
+  AvailabilityPatchSchema,
+  AvailabilityExceptionSchema,
+} from '../../validators/session'
 import {
   type CreateSessionInput,
   type SessionPatch,
@@ -51,6 +60,11 @@ import {
   type StartFocusInput,
   type FocusTimer,
   type FocusConfig,
+  type AvailabilityInput,
+  type AvailabilityPatch,
+  type AvailabilityExceptionInput,
+  type Availability,
+  type AvailabilityException,
   InvalidSessionInput,
   InvalidFocusTransition,
   SessionMissing,
@@ -94,6 +108,14 @@ export interface SessionsService {
   nextInterval(id: string): Promise<FocusTimer>
   completeFocus(id: string): Promise<FocusTimer>
   cancelFocus(id: string, opts?: { interruptionReason?: string }): Promise<FocusTimer>
+  // --- S4 · Availability (SS-9) — hard-delete (no deleted_at) --------------
+  setAvailability(input: AvailabilityInput): Promise<Availability>
+  updateAvailability(id: string, patch: AvailabilityPatch): Promise<Availability>
+  removeAvailability(id: string): Promise<void>
+  listAvailability(): Promise<Availability[]>
+  addAvailabilityException(input: AvailabilityExceptionInput): Promise<AvailabilityException>
+  removeAvailabilityException(id: string): Promise<void>
+  listAvailabilityExceptions(): Promise<AvailabilityException[]>
 }
 
 // The single source of the sub_type → extension routing (B1). Only these two
@@ -116,6 +138,8 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
   const focusRepo = createRepository(db, focusSessions, extCfg)
   const studyRepo = createRepository(db, studySessions, extCfg)
   const attachmentRepo = createRepository(db, sessionAttachments, extCfg)
+  const availabilityRepo = createRepository(db, studyAvailability, extCfg) // no deleted_at → hard delete
+  const exceptionRepo = createRepository(db, availabilityExceptions, extCfg)
 
   // Read the mapped extension row for a session (findWhere is soft-delete-blind,
   // but the extensions carry no deleted_at anyway). Returns null when spine-only.
@@ -435,6 +459,67 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
         was_interrupted: true,
         interruption_reason: opts?.interruptionReason ?? null,
       })
+    },
+
+    // --- S4 · Availability (SS-9) — CRUD; hard-delete; no uniqueness/overlap check (G5 input) --
+    async setAvailability(input) {
+      const p = AvailabilitySchema.safeParse(input)
+      if (!p.success) throw new InvalidSessionInput(p.error.issues[0]?.path.join('.') || 'input')
+      return availabilityRepo.create({
+        day_of_week: input.day_of_week,
+        start_time: input.start_time,
+        end_time: input.end_time,
+        is_available: input.is_available ?? true,
+        preference_score: input.preference_score ?? null,
+        preset_block: input.preset_block ?? null,
+        max_session_minutes: input.max_session_minutes ?? null,
+      })
+    },
+
+    async updateAvailability(id, patch) {
+      const p = AvailabilityPatchSchema.safeParse(patch)
+      if (!p.success) throw new InvalidSessionInput(p.error.issues[0]?.path.join('.') || 'input')
+      if (patch.start_time != null && patch.end_time != null && !(patch.end_time > patch.start_time)) {
+        throw new InvalidSessionInput('end_time')
+      }
+      const data = {
+        ...(patch.day_of_week !== undefined && { day_of_week: patch.day_of_week }),
+        ...(patch.start_time !== undefined && { start_time: patch.start_time }),
+        ...(patch.end_time !== undefined && { end_time: patch.end_time }),
+        ...(patch.is_available !== undefined && { is_available: patch.is_available }),
+        ...(patch.preference_score !== undefined && { preference_score: patch.preference_score }),
+        ...(patch.preset_block !== undefined && { preset_block: patch.preset_block }),
+        ...(patch.max_session_minutes !== undefined && { max_session_minutes: patch.max_session_minutes }),
+      }
+      return availabilityRepo.update(id, data)
+    },
+
+    async removeAvailability(id) {
+      await availabilityRepo.hardDelete(id) // no deleted_at → hard; enqueues operation:'delete'
+    },
+
+    listAvailability() {
+      return availabilityRepo.findAll()
+    },
+
+    async addAvailabilityException(input) {
+      const p = AvailabilityExceptionSchema.safeParse(input)
+      if (!p.success) throw new InvalidSessionInput(p.error.issues[0]?.path.join('.') || 'input')
+      return exceptionRepo.create({
+        exception_date: input.exception_date,
+        is_available: input.is_available,
+        reason: input.reason ?? null,
+        start_time: input.start_time ?? null,
+        end_time: input.end_time ?? null,
+      })
+    },
+
+    async removeAvailabilityException(id) {
+      await exceptionRepo.hardDelete(id)
+    },
+
+    listAvailabilityExceptions() {
+      return exceptionRepo.findAll()
     },
   }
 

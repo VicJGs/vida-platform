@@ -6,6 +6,7 @@ import {
   SESSION_STATUS,
   EFFECT_TYPE,
   PLANNED_BLOCK_STATUS,
+  PRESET_BLOCK,
 } from '@vida/types'
 
 // Canonical validators for the Session framework enums (AR-5 · ADR-004).
@@ -40,3 +41,38 @@ export const CreateSessionSchema = z
     (d) => d.started_at == null || d.ended_at == null || d.ended_at >= d.started_at,
     { message: 'ended_at must be >= started_at', path: ['ended_at'] },
   )
+
+// MOD-sessions ① S4 — Availability (SS-9). Mirrors migration 014 CHECKs: day 0..6, score 1..5,
+// preset_block ∈ PRESET_BLOCK, HH:MM times, YYYY-MM-DD date. Fail-loud before the write (IR-5).
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/
+const YMD = /^\d{4}-\d{2}-\d{2}$/
+
+const AvailabilityFields = z.object({
+  day_of_week: z.number().int().min(0).max(6),
+  start_time: z.string().regex(HHMM),
+  end_time: z.string().regex(HHMM),
+  is_available: z.boolean().optional(),
+  preference_score: z.number().int().min(1).max(5).nullish(),
+  preset_block: z.enum(PRESET_BLOCK).nullish(),
+  max_session_minutes: z.number().int().min(1).nullish(),
+})
+// Create: both times required + end > start (a real window). is_available:false = a valid blackout window
+// (orthogonal — never rejected). No uniqueness/overlap check (SS-9/G5 input — stored as-is).
+export const AvailabilitySchema = AvailabilityFields.refine(
+  (d) => d.end_time > d.start_time,
+  { message: 'end_time must be > start_time', path: ['end_time'] },
+)
+// Patch: every field optional; the end>start check is applied in the service when both are present.
+export const AvailabilityPatchSchema = AvailabilityFields.partial()
+
+const AvailabilityExceptionFields = z.object({
+  exception_date: z.string().regex(YMD),
+  is_available: z.boolean(),
+  reason: z.string().nullish(),
+  start_time: z.string().regex(HHMM).nullish(),
+  end_time: z.string().regex(HHMM).nullish(),
+})
+export const AvailabilityExceptionSchema = AvailabilityExceptionFields.refine(
+  (d) => d.start_time == null || d.end_time == null || d.end_time > d.start_time,
+  { message: 'end_time must be > start_time', path: ['end_time'] },
+)
