@@ -32,12 +32,25 @@ remains INTENDED (not yet built). `[FACT: this branch — commit pending]`
   (unique across shipped + persisted); persists user types. `get(sub_type)` / `list()` merge shipped ∪ user.
 - Typed errors, fail-loud, no partial writes.
 
+## What is BUILT (XS-effect-rail #32 · XCU-09/10 — `foundation/sessions/{attachments,lifecycle}.ts`)
+- **`resolveTargets(db, sessionId): ResolvedTarget[]`** (`attachments.ts`, XCU-10) — the read-side of dim1: all
+  `session_attachments` rows for a session (`{entityType, entityId, level}`), `[]` when none. Direct select, no
+  soft-delete filter (`session_attachments` has no `deleted_at`).
+- **`transition(deps, sessionId, event): {status, fired}`** (`lifecycle.ts`, XCU-09) — the lifecycle state machine:
+  validate the declared `(status,event)` transition (else `InvalidTransition`, no write); stamp `started_at` at
+  `in_progress`; **on completion** fire the type's declared effects; commit status **last** (fire-first, replay-safe).
+- **`fireCompletionEffects(deps, session, def): {fired}`** (exported) — per (effect × resolved target) the
+  replay-safe `applyEffect` fan-out (no outer tx); occurrence key = target entity + **stable `started_at` UTC date**
+  (SS-6 no-double-count); no-attachment fallback = the session is the subject. Structural `canTouch` only —
+  **sensitive-consent is handler-side** (ADR-004 §3.2.5-A3/BR-17), the S2 gate is the handler seam.
+
 ## What is DEFERRED (NOT built — see identity.md "What it is NOT")
-Effect-firing rail (`applied_effects`, `effect_event_id`, routing, handlers) → AR-7 · lifecycle-transition
-engine → later · scheduler (`planned_blocks`, availability, `dueIn`, `generatePlan`, G5) · per-sub-type
-extension tables (Books/Education/…) → DB-4/M1.1+ · session/attachment WRITE paths (`attach()`, session CRUD)
-+ their runtime `sub_type`/`entity_type` registry-validation → with those write paths · view layer → G9 ·
-shipped-type editing → later.
+Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step now BUILT (#32).** Still deferred:
+per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
+non-completion firing + heterogeneous-attachment target disambiguation → with handlers · scheduler
+(`planned_blocks`, availability, `dueIn`, `generatePlan`, G5) · per-sub-type extension tables (Books/Education/…)
+→ DB-4/M1.1+ · session/attachment WRITE paths (`attach()`, session CRUD) → with those write paths · view layer →
+G9 · shipped-type editing → later · `key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).
 
 ## Verification (2026-07-28)
 typecheck 10/10 · @vida/core 110/110 · @vida/web 6/6 · deferral grep clean. Spec:

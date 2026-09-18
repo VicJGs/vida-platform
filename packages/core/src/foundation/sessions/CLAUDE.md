@@ -11,5 +11,11 @@ ADR-004
 S1 S4 S5
 
 ## Status
-Directory home only (ADR-018). Engine logic + tables are authored PER-FEATURE at build phase
-(ADR-016 §3.5 / ADR-017). No feature code or DDL lives here yet.
+AR-5 (2026-07-28): `SessionTypeDef` 4-dim contract + thin `SessionRegistry` + tables (`sessions`,
+`session_type_registry`, `session_attachments`) via migration 002. **XS-effect-rail #32 (2026-09-17):** the runtime
+— `attachments.ts` (`resolveTargets`, XCU-10) + `lifecycle.ts` (`transition` + `fireCompletionEffects`, XCU-09):
+validate declared transitions, stamp started_at/ended_at, **fire declared effects on completion** through the AR-7
+rail (replay-safe fan-out, no-double-count keyed by target ‖ started_at-UTC-date). Structural scope only —
+sensitive-consent is handler-side (`foundation/effects/gate.ts` seam, ADR-004 §3.2.5-A3/BR-17). Currency:
+`docs/features/sessions-and-scheduling/current-*`. Deferred: per-module handlers + scheduler → #46/MOD-*.
+⚠ M1.0: use `encryptedFields:[]` (vault-locked pass-through seam) even though `key_learnings` is `[E]`.
