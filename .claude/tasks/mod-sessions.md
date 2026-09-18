@@ -39,11 +39,22 @@ S4 availability · S5 plan-batch endpoints · S6 session_templates CRUD · S7 du
   Also caught: manufactured a shipped-roster scope fork Victor closed via delivery-plan:239 → memory
   [[sparse-foundation-seed-is-extension-seam-not-a-gap]].
 
+- **S3 ✅ DONE (2026-09-18, commit pending).** Pomodoro focus runtime over `focus_sessions`:
+  `startFocus` (create-or-resume) · `pause`/`resume` (pause-exclusion PD-5) · `nextInterval` (cadence PD-4,
+  long-break every `sessions_before_long`) · `completeFocus` (run-complete + `completed_count`) · `cancelFocus`
+  (interruption PD-6). Config template→user_preferences→PD-3 defaults (IR-3). New errors
+  `InvalidFocusTransition`/`SessionMissing`. **S2 flag RESOLVED** (intake:166,179 "stub the contract, wire
+  later"): `completeFocus` finalizes the RUN only — session stays `in_progress`, effect-firing stays S2's
+  `completeSession` path (deferred #46); shipped `focus` def untouched (registry.test-pinned). Gated: g1 (1
+  REVISE→B1 resume-path + B2 completed_count + nit) · preflight PASSED · g2 · Verification Gate PASS (23
+  sessions tests; AC2 caught a resumeTimer no-op/illegal-move divergence → fixed) · §XXIX (BR-21..BR-25).
+  `@vida/core` 862/862.
+
 ## Next step
-- **S3 — Pomodoro focus runtime** (`startFocus`/`pause`/`resume`/`complete`/`cancel`/`nextInterval` over
-  `focus_sessions`; pause-exclusion IR-4, interruption capture, config precedence IR-3). **Must resolve the S2
-  flag:** how M1.1 focus completion behaves given the fail-loud rail. Author `service/S3-*.md` → g1 → preflight
-  → g2 → build → Verification Gate. Env: Node 24 via nvm.
+- **S4 — Availability** (`setAvailability`/`addException`/`listAvailability` over `study_availability` +
+  `availability_exceptions`; SS-9, BR-5c range CHECKs, `reason` `[E]` seam). Independent CRUD slice (only needs
+  the factory). Author `service/S4-*.md` → g1 → preflight → g2 → build → Verification Gate. Env: Node 24 via nvm.
+  Remaining after S4: S6 (session_templates CRUD) · S5 (plan-batch endpoints) · S7 (dueIn + analytics).
 
 ## Route History
 - 2026-09-18: baseline (current-* refreshed for DB-4 substrate) → interpretation → decomposition gate

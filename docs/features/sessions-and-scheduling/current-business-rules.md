@@ -83,6 +83,22 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
   a no-effect type completes `fired:0`; an illegal `(status,event)` → `InvalidTransition`. Focus-completion M1.1
   behavior → S3. `[FACT: service.ts; lifecycle.ts; effects/service.ts:38-40]`
 
+## ENFORCED now (MOD-sessions ① · S3 — focus runtime, `services/sessions/service.ts`)
+- **BR-21 (PD-4, IR-5) — timer state machine, fail-loud.** `focus_sessions.status` moves `running ⇄ paused →
+  completed | cancelled`; an illegal move (`pause` a non-running, `resume`/`start` a non-paused, `complete`/`next`
+  a terminal) → `InvalidFocusTransition`, no write; a missing/non-focus session → `SessionMissing`. `[FACT: service.ts]`
+- **BR-22 (PD-5) — real focus excludes pauses.** `pauseFocus` stamps `paused_at`; `resumeFocus` folds the span
+  into `total_pause_seconds`; `completeFocus` sets `duration_seconds = run wall-time − total_pause_seconds` (≥ 0).
+  `[FACT: service.ts]`
+- **BR-23 (PD-6) — interruption capture.** `cancelFocus` sets `was_interrupted=true` + `interruption_reason`.
+- **BR-24 (PD-4/PD-7) — cadence.** `nextInterval` advances focus→break→focus; long-break every
+  `sessions_before_long` focus intervals; `completed_count` increments on each finished focus interval (incl.
+  `completeFocus` on a focus interval). Config precedence template → `user_preferences.pomodoro_*` → PD-3
+  defaults (IR-3). `[FACT: service.ts; preferences.ts]`
+- **BR-25 (§0, intake:166,179) — run-complete ≠ session-complete in M1.1.** `completeFocus` finalizes the
+  focus_sessions run only; the session stays `in_progress` and effect-firing stays S2's `completeSession` path
+  (deferred handlers #46). No second firing path (IR-1). `[FACT: service.ts; intake/pomodoro.md:166,179]`
+
 ## NOT YET enforced (deferred — do not claim)
 - Per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + fire-time sensitive-consent
   enforcement + consent-threading → #46 / MOD-*. The gate utility (`assertEffectPermitted`) ships; its callers do not.

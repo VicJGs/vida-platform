@@ -27,8 +27,10 @@ import {
   NoEffectHandler,
 } from '../../../foundation/effects'
 import { createTaggableTypeRegistry, UnknownEntityType } from '../../../foundation/spaces'
+import { createRepository } from '../../../db/repository'
+import { userPreferences } from '../../../db/schema/preferences'
 import { createSessionsService, type SessionsService } from '../service'
-import { InvalidSessionInput } from '../types'
+import { InvalidSessionInput, InvalidFocusTransition, SessionMissing } from '../types'
 import type { PomodoroType } from '@vida/types'
 
 // A user-registered, no-extension session type (SS-5) — the spine-only path S1 tested via 'class'
@@ -326,6 +328,95 @@ describe('S1 — soft-delete / restore + sync (AC6)', () => {
 
     const q = await db.select().from(syncQueue).all()
     expect(q.length).toBeGreaterThanOrEqual(3)
+    await driver.close()
+  })
+})
+
+describe('S3 — Pomodoro focus runtime', () => {
+  it('AC1 — startFocus({}) creates a running focus session + timer row', async () => {
+    const { svc, driver } = await setup()
+    const timer = await svc.startFocus({})
+    expect(timer.type).toBe('focus')
+    expect(timer.status).toBe('running')
+    expect(timer.completed_count).toBe(0)
+    const got = await svc.getSession(timer.session_id)
+    expect(got?.session.sub_type).toBe('focus')
+    expect(got?.session.status).toBe('in_progress')
+    expect(got?.session.started_at).not.toBeNull()
+    await driver.close()
+  })
+
+  it('AC2 — pause accumulates total_pause_seconds; resume on a non-paused → InvalidFocusTransition', async () => {
+    const { svc, driver } = await setup()
+    const t = await svc.startFocus({})
+    const paused = await svc.pauseFocus(t.id)
+    expect(paused.status).toBe('paused')
+    expect(paused.paused_at).not.toBeNull()
+    const resumed = await svc.resumeFocus(t.id)
+    expect(resumed.status).toBe('running')
+    expect(resumed.total_pause_seconds).toBeGreaterThanOrEqual(0)
+    await expect(svc.resumeFocus(t.id)).rejects.toBeInstanceOf(InvalidFocusTransition) // now running
+    await driver.close()
+  })
+
+  it('AC3 — cadence honors user_preferences (sessions_before_long=2 → long_break on the 2nd focus)', async () => {
+    const { svc, db, driver } = await setup()
+    const prefsRepo = createRepository(db, userPreferences, { deviceId: 'test-device', encryptedFields: [] })
+    await prefsRepo.create({ pomodoro_sessions_before_long: 2 })
+    const t = await svc.startFocus({})
+    const i1 = await svc.nextInterval(t.id) // finished focus #1 → 1%2≠0 → short_break
+    expect(i1.type).toBe('short_break')
+    expect(i1.completed_count).toBe(1)
+    const i2 = await svc.nextInterval(t.id) // break → focus
+    expect(i2.type).toBe('focus')
+    const i3 = await svc.nextInterval(t.id) // finished focus #2 → 2%2==0 → long_break
+    expect(i3.type).toBe('long_break')
+    expect(i3.completed_count).toBe(2)
+    await driver.close()
+  })
+
+  it('AC4 — completeFocus finalizes the run (completed_count++), session stays in_progress; re-complete → InvalidFocusTransition', async () => {
+    const { svc, driver } = await setup()
+    const t = await svc.startFocus({})
+    const done = await svc.completeFocus(t.id)
+    expect(done.status).toBe('completed')
+    expect(done.completed_count).toBe(1) // was on a focus interval (B2)
+    expect(done.duration_seconds).toBeGreaterThanOrEqual(0)
+    const got = await svc.getSession(t.session_id)
+    expect(got?.session.status).toBe('in_progress') // §0 — no auto-complete/fire in M1.1
+    await expect(svc.completeFocus(t.id)).rejects.toBeInstanceOf(InvalidFocusTransition)
+    await driver.close()
+  })
+
+  it('AC5 — cancelFocus captures the interruption', async () => {
+    const { svc, driver } = await setup()
+    const t = await svc.startFocus({})
+    const cancelled = await svc.cancelFocus(t.id, { interruptionReason: 'phone rang' })
+    expect(cancelled.status).toBe('cancelled')
+    expect(cancelled.was_interrupted).toBe(true)
+    expect(cancelled.interruption_reason).toBe('phone rang')
+    await driver.close()
+  })
+
+  it('AC6 — config fallback: no user_preferences row → PD-3 defaults (sessions_before_long=4)', async () => {
+    const { svc, driver } = await setup()
+    const t = await svc.startFocus({})
+    const i1 = await svc.nextInterval(t.id) // 1%4≠0 → short_break (default cadence)
+    expect(i1.type).toBe('short_break')
+    await driver.close()
+  })
+
+  it('AC7 — resume path: paused row resumes; terminal → InvalidFocusTransition; missing → SessionMissing', async () => {
+    const { svc, driver } = await setup()
+    const t = await svc.startFocus({})
+    await svc.pauseFocus(t.id)
+    const resumed = await svc.startFocus({ sessionId: t.session_id })
+    expect(resumed.status).toBe('running')
+
+    await svc.completeFocus(t.id)
+    await expect(svc.startFocus({ sessionId: t.session_id })).rejects.toBeInstanceOf(InvalidFocusTransition)
+
+    await expect(svc.startFocus({ sessionId: 'no-such-session' })).rejects.toBeInstanceOf(SessionMissing)
     await driver.close()
   })
 })

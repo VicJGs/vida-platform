@@ -31,6 +31,9 @@ import {
   type FocusSessionRow,
   type StudySessionRow,
 } from '../../db/schema/foundation/session-extensions'
+import { userPreferences } from '../../db/schema/preferences'
+import { sessionTemplates } from '../../db/schema/foundation/scheduling'
+import type { PomodoroType } from '@vida/types'
 import { resolveTargets, type ResolvedTarget } from '../../foundation/sessions/attachments'
 import type { SessionRegistry } from '../../foundation/sessions/registry'
 import {
@@ -45,7 +48,12 @@ import {
   type CreateSessionInput,
   type SessionPatch,
   type Session,
+  type StartFocusInput,
+  type FocusTimer,
+  type FocusConfig,
   InvalidSessionInput,
+  InvalidFocusTransition,
+  SessionMissing,
 } from './types'
 
 export { InvalidTransition }
@@ -79,6 +87,13 @@ export interface SessionsService {
   completeSession(id: string): Promise<TransitionResult>
   /** Apply any declared lifecycle event via the #32 transition engine. */
   transitionSession(id: string, event: string): Promise<TransitionResult>
+  // --- S3 · Pomodoro focus runtime (timer id = the focus_sessions row id) ---
+  startFocus(input: StartFocusInput): Promise<FocusTimer>
+  pauseFocus(id: string): Promise<FocusTimer>
+  resumeFocus(id: string): Promise<FocusTimer>
+  nextInterval(id: string): Promise<FocusTimer>
+  completeFocus(id: string): Promise<FocusTimer>
+  cancelFocus(id: string, opts?: { interruptionReason?: string }): Promise<FocusTimer>
 }
 
 // The single source of the sub_type → extension routing (B1). Only these two
@@ -120,7 +135,53 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
     return null
   }
 
-  return {
+  // --- S3 focus-runtime substrate: config resolution + shared timer helpers ---
+  const userPrefsRepo = createRepository(db, userPreferences, { deviceId, encryptedFields: [] })
+  const templateRepo = createRepository(db, sessionTemplates, extCfg)
+  const PD3_DEFAULTS: FocusConfig = { workMin: 25, shortBreakMin: 5, longBreakMin: 15, sessionsBeforeLong: 4 }
+
+  // IR-3 precedence: template → user_preferences → PD-3 hard defaults (services/preferences unbuilt → read the table).
+  async function resolveFocusConfig(templateId?: string): Promise<FocusConfig> {
+    if (templateId) {
+      const t = await templateRepo.findById(templateId)
+      if (t)
+        return {
+          workMin: t.work_minutes,
+          shortBreakMin: t.short_break_minutes,
+          longBreakMin: t.long_break_minutes,
+          sessionsBeforeLong: t.intervals_before_long_break,
+        }
+    }
+    const prefs = (await userPrefsRepo.findAll())[0]
+    if (prefs)
+      return {
+        workMin: prefs.pomodoro_work_minutes,
+        shortBreakMin: prefs.pomodoro_break_minutes,
+        longBreakMin: prefs.pomodoro_long_break_minutes,
+        sessionsBeforeLong: prefs.pomodoro_sessions_before_long,
+      }
+    return PD3_DEFAULTS
+  }
+
+  async function loadFocusRow(sessionId: string): Promise<FocusSessionRow | null> {
+    const rows = await focusRepo.findWhere(eq(focusSessions.session_id, sessionId))
+    return rows[0] ?? null
+  }
+
+  // Resume a PAUSED timer only (§2 — resume a non-paused is illegal); real focus excludes the
+  // paused span (PD-5). startFocus handles the running=no-op case itself before calling this.
+  async function resumeTimer(row: FocusSessionRow): Promise<FocusTimer> {
+    if (row.status !== 'paused') throw new InvalidFocusTransition(row.id, row.status, 'resume')
+    const now = Date.now()
+    const addPause = row.paused_at != null ? Math.floor((now - row.paused_at) / 1000) : 0
+    return focusRepo.update(row.id, {
+      status: 'running',
+      total_pause_seconds: row.total_pause_seconds + addPause,
+      paused_at: null,
+    })
+  }
+
+  const service: SessionsService = {
     // --- createSession (validate → tx{ spine [+ extension] }) ----------------
     async createSession(input) {
       const parsed = CreateSessionSchema.safeParse(input)
@@ -272,5 +333,110 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
     transitionSession(id, event) {
       return transition(transitionDeps, id, event)
     },
+
+    // --- S3 · Pomodoro focus runtime (timer id = focus_sessions.id) ----------
+    async startFocus(input) {
+      if (input.sessionId) {
+        // Resume path (B1) — the session must be a focus session with a timer row.
+        const spine = await sessionRepo.findById(input.sessionId)
+        if (!spine || spine.sub_type !== 'focus') throw new SessionMissing(input.sessionId)
+        const row = await loadFocusRow(input.sessionId)
+        if (!row) throw new SessionMissing(input.sessionId)
+        if (row.status === 'running') return row // idempotent no-op
+        if (row.status === 'paused') return resumeTimer(row)
+        throw new InvalidFocusTransition(row.id, row.status, 'start') // completed/cancelled → terminal
+      }
+      // Fresh path — a focus timer IS a new focus Session (PD-1). S2 sub_type gate passes (focus shipped).
+      const created = await service.createSession({
+        sub_type: 'focus',
+        scheduling_mode: 'ad_hoc',
+        status: 'in_progress',
+        started_at: Date.now(),
+        extension: { kind: 'focus', type: 'focus', status: 'running' },
+      })
+      if (input.attach) {
+        await service.attach(
+          created.session.id,
+          input.attach.entityType,
+          input.attach.entityId,
+          input.attach.level,
+        )
+      }
+      const row = await loadFocusRow(created.session.id)
+      if (!row) throw new SessionMissing(created.session.id)
+      return row
+    },
+
+    async pauseFocus(id) {
+      const row = await focusRepo.findById(id)
+      if (!row) throw new SessionMissing(id)
+      if (row.status !== 'running') throw new InvalidFocusTransition(id, row.status, 'pause')
+      return focusRepo.update(id, { status: 'paused', paused_at: Date.now() })
+    },
+
+    async resumeFocus(id) {
+      const row = await focusRepo.findById(id)
+      if (!row) throw new SessionMissing(id)
+      return resumeTimer(row)
+    },
+
+    async nextInterval(id) {
+      const row = await focusRepo.findById(id)
+      if (!row) throw new SessionMissing(id)
+      if (row.status === 'completed' || row.status === 'cancelled') {
+        throw new InvalidFocusTransition(id, row.status, 'next')
+      }
+      const cfg = await resolveFocusConfig()
+      let nextType: PomodoroType
+      let completed = row.completed_count
+      if (row.type === 'focus') {
+        completed = row.completed_count + 1
+        nextType = completed % cfg.sessionsBeforeLong === 0 ? 'long_break' : 'short_break'
+      } else {
+        nextType = 'focus'
+      }
+      return focusRepo.update(id, { type: nextType, completed_count: completed, status: 'running' })
+    },
+
+    async completeFocus(id) {
+      const row = await focusRepo.findById(id)
+      if (!row) throw new SessionMissing(id)
+      if (row.status === 'completed' || row.status === 'cancelled') {
+        throw new InvalidFocusTransition(id, row.status, 'complete')
+      }
+      const spine = await sessionRepo.findById(row.session_id)
+      const now = Date.now()
+      // Fold an open pause, then real focus = run wall-time − total pauses (PD-5; per-interval cut is S7).
+      const openPause =
+        row.status === 'paused' && row.paused_at != null
+          ? Math.floor((now - row.paused_at) / 1000)
+          : 0
+      const totalPause = row.total_pause_seconds + openPause
+      const startedAt = spine?.started_at ?? row.created_at
+      const duration = Math.max(0, Math.floor((now - startedAt) / 1000) - totalPause)
+      const completedCount = row.type === 'focus' ? row.completed_count + 1 : row.completed_count // B2
+      return focusRepo.update(id, {
+        status: 'completed',
+        duration_seconds: duration,
+        total_pause_seconds: totalPause,
+        paused_at: null,
+        completed_count: completedCount,
+      })
+    },
+
+    async cancelFocus(id, opts) {
+      const row = await focusRepo.findById(id)
+      if (!row) throw new SessionMissing(id)
+      if (row.status === 'completed' || row.status === 'cancelled') {
+        throw new InvalidFocusTransition(id, row.status, 'cancel')
+      }
+      return focusRepo.update(id, {
+        status: 'cancelled',
+        was_interrupted: true,
+        interruption_reason: opts?.interruptionReason ?? null,
+      })
+    },
   }
+
+  return service
 }

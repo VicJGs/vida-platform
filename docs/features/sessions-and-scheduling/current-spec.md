@@ -95,14 +95,28 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   id, event)` (IR-1 — no second firing path). Completion fires declared effects through the rail, which is
   **fail-loud**: a non-`projection` effect with no handler throws `NoEffectHandler`. So `completeSession('focus')`
   throws in M1.1 (`log_time`/`attach_pomodoro` handlers deferred #46); a no-effect type completes `fired:0`.
-  **⚠ focus-completion behavior in M1.1 is S3's to resolve** (stub handlers / narrow effects / complete-sans-fire).
+  **⚠ focus-completion behavior in M1.1 → resolved in S3 (below).**
+
+### S3 — Pomodoro focus runtime (`services/sessions/service.ts`)
+`[FACT: services/sessions/service.ts; 23 sessions tests green on a live unlocked vault]`
+- **`startFocus`/`pauseFocus`/`resumeFocus`/`nextInterval`/`completeFocus`/`cancelFocus`** over the
+  `focus_sessions` row (the timer id = `focus_sessions.id`). `startFocus({})` creates a fresh `focus` session
+  (`in_progress`) + timer; `startFocus({sessionId})` resumes (paused→running / running→no-op / terminal→error).
+- **Timer state machine** `running ⇄ paused → completed | cancelled`; illegal moves → `InvalidFocusTransition`;
+  absent/non-focus → `SessionMissing`. Pause-exclusion (PD-5): `total_pause_seconds` accrues, real focus =
+  run wall-time − pauses (per-interval cut derived in S7). Interruption capture (PD-6). Cadence (PD-4):
+  `nextInterval` advances focus→break→focus, long-break every `sessions_before_long`, `completed_count` tracks.
+- **Config (IR-3, PD-3):** template → `user_preferences.pomodoro_*` → PD-3 defaults (25/5/15/4), read via a repo.
+- **S2-flag RESOLVED (intake:166,179 "stub the contract, wire later"):** `completeFocus` finalizes the
+  **focus_sessions run only** (status + duration + `completed_count`); it does **NOT** auto-fire session effects
+  in M1.1 — the session stays `in_progress`, and session-completion-with-effects remains S2's single
+  `completeSession` path (fired when #46 wires handlers). The shipped `focus` def is untouched (registry.test-pinned).
 
 ## What is DEFERRED (NOT built — the rest of MOD-sessions ①'s scope)
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
-BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring BUILT (above).** Still deferred:
+BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring + S3 focus runtime BUILT (above).** Still deferred:
 per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
-non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **Pomodoro focus
-runtime** (start/pause/resume/complete/cancel/nextInterval over `focus_sessions`) → **S3** · **availability** →
+non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **availability** →
 **S4** · **plan-batch endpoints** (`approve`/`activate`/`recalc`; no G5 algorithm) → **S5** · **`session_templates`
 CRUD** → **S6** · **`dueIn` aggregator + analytics** → **S7** · view layer → G9 · shipped-type editing → later ·
 `key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).

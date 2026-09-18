@@ -95,4 +95,44 @@ export class InvalidSessionInput extends Error {
   }
 }
 
+// --- S3 · Pomodoro focus runtime -------------------------------------------
+
+/** Start (or resume) a focus timer. No `sessionId` → creates a fresh `focus` session (S1). */
+export interface StartFocusInput {
+  sessionId?: string
+  templateId?: string
+  attach?: AttachInput
+}
+
+/** The timer IS the `focus_sessions` row (a `focus` Session's 1:1 extension). */
+export type FocusTimer = FocusSessionRow
+
+/** Interval config the runtime obeys (PD-3), resolved template → user_preferences → PD-3 defaults (IR-3). */
+export interface FocusConfig {
+  workMin: number
+  shortBreakMin: number
+  longBreakMin: number
+  sessionsBeforeLong: number
+}
+
+/** Illegal timer state move (PD-4, IR-5) — thrown BEFORE any write. */
+export class InvalidFocusTransition extends Error {
+  constructor(
+    public readonly id: string,
+    public readonly from: string,
+    public readonly event: string,
+  ) {
+    super(`Illegal focus-timer move for '${id}': no '${event}' from status '${from}'`)
+    this.name = 'InvalidFocusTransition'
+  }
+}
+
+/** The focus session behind a timer is absent / not a focus session (pomodoro/contract.md:62). */
+export class SessionMissing extends Error {
+  constructor(public readonly sessionId: string) {
+    super(`No focus session found for '${sessionId}'`)
+    this.name = 'SessionMissing'
+  }
+}
+
 export type { SessionAttachmentRow }
