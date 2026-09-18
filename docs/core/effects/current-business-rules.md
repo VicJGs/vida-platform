@@ -28,6 +28,14 @@
   `db.transaction` (nested BEGIN fails). *Owed to DB-6:* a `tx`-scoped Repository write path for the first
   encrypting handler (no handler exists yet — empty seam).
 
+- **BR-8 — Fire-time sensitive-consent gate (XCU-22, #32).** `assertEffectPermitted(ctx, effectType, moduleClass?)`
+  (`gate.ts`) throws `EffectConsentMissing` iff a non-projection effect targets a sensitive module
+  (∈ `SENSITIVE_MODULE_CLASSES`) absent from `ctx.consentedSensitiveModules`. Producer-agnostic + pure; the caller
+  supplies the consented set (session → `permissions.sensitive_optins`; ADR-010 cap → `grant.consented_sensitive_modules`).
+  It is a **handler-side seam** — the consuming sensitive module invokes it (ADR-004 §3.2.5-A3; BR-17); producers
+  (the session engine) never call it, and never infer `moduleClass` from a binding (IR-5). [ADR-004 §3.2.5-A3; BR-17]
+
 ## Deferred (not in this increment)
-Per-module handlers; `effect_event_id` columns on consumer output rows; cross-device convergence merge (AR-9/M4);
-session-lifecycle→fire wiring; the `derive()` hash.
+Per-module handlers + the actual invocation of the BR-8 gate + consent-threading (→ #46 / MOD-*); `effect_event_id`
+columns on consumer output rows; cross-device convergence merge (AR-9/M4); the `derive()` hash.
+**No longer deferred:** session-lifecycle→fire wiring is BUILT (#32, `foundation/sessions/lifecycle.ts`).

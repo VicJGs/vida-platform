@@ -6,3 +6,5 @@ export * from './types'
 export * from './event-id'
 export { createEffectRegistry, type EffectRegistry } from './registry'
 export { createEffectRail, type EffectRail } from './service'
+// XS-effect-rail #32 (XCU-22) — fire-time validation gate.
+export { assertEffectPermitted, EffectConsentMissing, type FireGateContext } from './gate'
