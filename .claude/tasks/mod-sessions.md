@@ -78,12 +78,23 @@ S4 availability · S5 plan-batch endpoints · S6 session_templates CRUD · S7 du
   dead-surface). Gated: g1 (1 REVISE→window omitted) · preflight PASSED · g2 · Verification Gate PASS (36 sessions
   tests) · §XXIX (BR-32..BR-33). `@vida/core` 875/875.
 
-## Next step
-- **S7 — `dueIn` aggregator + analytics (THE FINALE).** `dueIn(range): DueItem[]` = own `planned_blocks` ∪ live
-  provider reads (empty provider registry seam, N5 — providers not built) + `registerDueProvider` + derived
-  session analytics getters (IR-6, no stored aggregates). Shared PLATFORM primitive (IR-2 — Journals + future
-  Calendar consume it). Depends on S1+S5. Author `service/S7-*.md` → g1 → preflight → g2 → build → Verification
-  Gate. Env: Node 24 via nvm. **After S7: Entity Close — all 7 slices green → PR → /task-complete (① backend done).**
+- **S7 ✅ DONE (2026-09-18, commit pending).** `dueIn(range)` shared platform primitive (own `planned_blocks` ∪
+  live provider reads, empty registry seam N5, SS-7 per-lane degrade) + `registerDueProvider` + `getSessionAnalytics`
+  (derived-on-read SS-12/IR-6: total/completed/completionRate/avgFocusRating/totalFocusSeconds, `deleted_at`-
+  filtered). `DueItem`/`DueProvider`/`SessionAnalytics`/`TimeRange` in service types (barrel-exported; @vida/types
+  promotion deferred). Doc-grounded g1 caught 2 dead-surface/correctness items (removed unused `ProviderUnavailable`
+  class; analytics `deleted_at` filter). Gated: g1 (1 REVISE ×2) · preflight PASSED · g2 · Verification Gate PASS
+  (40 sessions tests) · §XXIX (BR-34..BR-35). `@vida/core` 879/879.
+
+## ✅ ① BACKEND COMPLETE — all 7 slices built (S1–S7)
+`packages/core/src/services/sessions/` = the full MOD-sessions ① service tier. `@vida/core` 879/879, tsc clean.
+current-* promoted BR-13..BR-35. 8 slice commits on branch `mod-sessions` (off main, not pushed).
+
+## Next step — ENTITY CLOSE
+- **PR** `mod-sessions` → main (per git workflow: own branch → PR → merge). Then **`/task-complete mod-sessions`**
+  (tracker --sync → LIF-139 Done; unblocks the 22 dependents). ② UI = separate `fe-sessions` issue.
+- Deferred/homed beyond ①: effect handlers → #46 · placement algorithm + SS-8 bridge → M1.2 · live dueIn provider
+  lanes → owning modules · richer analytics → later · view layer → G9 · `[E]` encryption → M3/DB-5.
 
 ## Route History
 - 2026-09-18: baseline (current-* refreshed for DB-4 substrate) → interpretation → decomposition gate

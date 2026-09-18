@@ -213,4 +213,37 @@ export class InvalidBatchTransition extends Error {
   }
 }
 
+// --- S7 · dueIn aggregator + analytics -------------------------------------
+
+/** A time window in Unix ms (both ends inclusive). */
+export interface TimeRange {
+  start: number
+  end: number
+}
+
+/** The shared platform due-work item (contract.md:34) — Journals + the future Calendar consume it. */
+export interface DueItem {
+  source_module: string
+  ref_id: string
+  label: string
+  est_minutes: number
+  urgency: number
+  hard_deadline?: number
+}
+
+/** A live-read provider lane (SS-7). Registered into the empty seam; owning modules supply these. */
+export interface DueProvider {
+  module: string
+  fetch(range: TimeRange): Promise<DueItem[]>
+}
+
+/** Derived-on-read session analytics (SS-12/PD-11/IR-6) — never a stored aggregate. */
+export interface SessionAnalytics {
+  total: number
+  completed: number
+  completionRate: number
+  avgFocusRating: number | null
+  totalFocusSeconds: number
+}
+
 export type { SessionAttachmentRow }

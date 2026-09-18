@@ -152,12 +152,31 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   (`activatePlan` writes no `planned_blocks` in M1.1 — proven by AC4), and the `completed`/`failed` terminal
   transitions → **M1.2 study-planner design-pass**.
 
-## What is DEFERRED (NOT built — the rest of MOD-sessions ①'s scope)
+### S7 — dueIn aggregator + analytics (`services/sessions/service.ts`)
+`[FACT: services/sessions/service.ts; 40 sessions tests green on a live unlocked vault]`
+- **`dueIn(range): DueItem[]`** — the shared platform primitive (IR-2; Journals + future Calendar consume it):
+  own `planned_blocks` in range (`deleted_at`-filtered) ∪ live provider reads. **SS-7 degrade:** a throwing
+  provider lane is caught + skipped; `dueIn` never throws. Empty registry + no blocks (M1.1) → `[]`.
+- **`registerDueProvider(provider)`** — the empty provider seam (N5); owning modules register lanes later.
+- **`getSessionAnalytics(range): SessionAnalytics`** — derived-on-read (SS-12/IR-6, no stored aggregate):
+  `{total, completed, completionRate, avgFocusRating, totalFocusSeconds}`, `deleted_at`-filtered. Richer cuts
+  (per-module time, planned-vs-actual, streaks) → later getters.
+- `DueItem`/`DueProvider`/`SessionAnalytics`/`TimeRange` in `services/sessions/types.ts` (barrel-exported;
+  `@vida/types` promotion deferred until a non-core consumer needs it).
+
+## ① BACKEND COMPLETE — all 7 slices built (S1–S7)
+`services/sessions/` is the full MOD-sessions ① service tier over the AR-5 spine + #32 rail + DB-4 schema:
+session CRUD+attach · registry-validation+completion-wiring · Pomodoro focus runtime · availability · plan-batch
+endpoints · templates · dueIn+analytics. `@vida/core` 879/879. Next: ② UI = `fe-sessions`.
+
+## What is DEFERRED (NOT built — homed beyond MOD-sessions ①)
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
-BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring + S3 focus runtime + S4 availability + S6 templates + S5 plan-batch endpoints BUILT (above).** Still deferred:
+BUILT; S1–S7 the full ① service tier BUILT (above).** Still deferred (NOT ①'s scope):
 per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
 non-completion firing + heterogeneous-attachment target disambiguation → with handlers · the plan **placement
-algorithm** + SS-8 bridge + `completed`/`failed` → M1.2 · **`dueIn` aggregator + analytics** → **S7** ·
+algorithm** + SS-8 bridge + `completed`/`failed` → M1.2 · live **`dueIn` provider lanes** (Books/Flashcards/
+Knowledge/Education/Language) → owning modules (the S7 registry is the seam) · richer analytics (per-module time,
+planned-vs-actual, streaks) → later getters · **② UI** (session/planner hub, `/pomodoro` widget) → `fe-sessions` ·
 view layer → G9 · shipped-type editing → later · `key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).
 
 ## Verification (2026-07-28)

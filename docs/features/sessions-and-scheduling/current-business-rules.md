@@ -133,6 +133,17 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
   `completed`/`failed` transitions are the M1.2 study-planner mini-intake. `activatePlan` writes no
   `planned_blocks` (proven, AC4). `[FACT: service.ts; sessions-service.test.ts S5-AC4]`
 
+## ENFORCED now (MOD-sessions ① · S7 — dueIn aggregator + analytics, `services/sessions/service.ts`)
+- **BR-34 (SS-7, IR-2) — dueIn aggregates, never duplicates; degrades per lane.** `dueIn(range)` = own
+  `planned_blocks` in range (`deleted_at`-filtered) ∪ live provider reads; a throwing provider lane is caught +
+  skipped (SS-7 degrade), `dueIn` never throws. Shared platform primitive (Journals + Calendar consume it);
+  empty registry + no blocks (M1.1) → `[]`. `registerDueProvider` is the empty seam (N5). `[FACT: service.ts]`
+- **BR-35 (SS-12/PD-11/IR-6) — analytics derived-on-read, never stored.** `getSessionAnalytics(range)` computes
+  `{total, completed, completionRate, avgFocusRating, totalFocusSeconds}` from the session log (`deleted_at`-
+  filtered) + `focus_sessions`; writes no aggregate. `[FACT: service.ts]`
+
+## ✅ ① BACKEND COMPLETE — S1–S7 enforced (BR-13..BR-35). Next: ② UI (fe-sessions).
+
 ## NOT YET enforced (deferred — do not claim)
 - Per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + fire-time sensitive-consent
   enforcement + consent-threading → #46 / MOD-*. The gate utility (`assertEffectPermitted`) ships; its callers do not.

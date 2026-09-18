@@ -16,7 +16,7 @@
 // completion/lifecycle wiring — those are S2. Spec: service/S1-*.md
 // ============================================================================
 
-import { eq } from 'drizzle-orm'
+import { eq, and, gte, lte, isNull } from 'drizzle-orm'
 import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
 import {
@@ -37,6 +37,7 @@ import {
   studyAvailability,
   availabilityExceptions,
   studyPlanBatches,
+  plannedBlocks,
   type StudyPlanBatchRow,
 } from '../../db/schema/foundation/scheduling'
 import type { PomodoroType } from '@vida/types'
@@ -74,6 +75,10 @@ import {
   type SessionTemplate,
   type GeneratePlanInput,
   type PlanBatch,
+  type TimeRange,
+  type DueItem,
+  type DueProvider,
+  type SessionAnalytics,
   InvalidSessionInput,
   InvalidFocusTransition,
   SessionMissing,
@@ -137,6 +142,10 @@ export interface SessionsService {
   approvePlan(id: string): Promise<PlanBatch>
   activatePlan(id: string): Promise<PlanBatch>
   recalcPlan(id: string): Promise<PlanBatch>
+  // --- S7 · dueIn aggregator (shared platform primitive) + derived analytics ---
+  dueIn(range: TimeRange): Promise<DueItem[]>
+  registerDueProvider(provider: DueProvider): void
+  getSessionAnalytics(range: TimeRange): Promise<SessionAnalytics>
 }
 
 // The single source of the sub_type → extension routing (B1). Only these two
@@ -162,6 +171,8 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
   const availabilityRepo = createRepository(db, studyAvailability, extCfg) // no deleted_at → hard delete
   const exceptionRepo = createRepository(db, availabilityExceptions, extCfg)
   const batchRepo = createRepository(db, studyPlanBatches, extCfg) // no deleted_at → hard delete
+  const plannedBlocksRepo = createRepository(db, plannedBlocks, sessionCfg) // HAS deleted_at → softDelete
+  const dueProviders: DueProvider[] = [] // S7 empty provider seam (N5); owning modules register lanes
 
   // Read the mapped extension row for a session (findWhere is soft-delete-blind,
   // but the extensions carry no deleted_at anyway). Returns null when spine-only.
@@ -655,6 +666,67 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       assertBatchStatus(row, 'active', 'recalc')
       // Shell: mark a recompute occurred; the real re-placement is the deferred algorithm (M1.2).
       return batchRepo.update(id, { generated_at: Date.now() })
+    },
+
+    // --- S7 · dueIn aggregator (SS-7) + derived analytics (SS-12/IR-6) -------
+    async dueIn(range) {
+      const items: DueItem[] = []
+      // Own planned_blocks in range (findWhere is soft-delete-blind → filter deleted_at explicitly).
+      const blocks = await plannedBlocksRepo.findWhere(
+        and(
+          gte(plannedBlocks.scheduled_start, range.start),
+          lte(plannedBlocks.scheduled_start, range.end),
+        )!,
+      )
+      for (const b of blocks) {
+        if (b.deleted_at != null) continue
+        items.push({
+          source_module: 'sessions',
+          ref_id: b.id,
+          label: b.sub_type ?? 'session',
+          est_minutes: b.scheduled_end != null ? Math.round((b.scheduled_end - b.scheduled_start) / 60000) : 0,
+          urgency: 0, // no urgency column — the deferred algorithm (M1.2) computes it
+          hard_deadline: b.scheduled_end ?? undefined,
+        })
+      }
+      // Live provider lanes (empty in M1.1). SS-7 degrade: a throwing lane is skipped, never fatal.
+      for (const p of dueProviders) {
+        try {
+          items.push(...(await p.fetch(range)))
+        } catch {
+          // degrade this lane only; surfacing the failed lane to the ② agenda is deferred (§2)
+        }
+      }
+      return items
+    },
+
+    registerDueProvider(provider) {
+      dueProviders.push(provider)
+    },
+
+    async getSessionAnalytics(range) {
+      // Session log in range, soft-deleted excluded (findWhere is soft-delete-blind).
+      const inRange = await sessionRepo.findWhere(
+        and(
+          gte(sessions.started_at, range.start),
+          lte(sessions.started_at, range.end),
+          isNull(sessions.deleted_at),
+        )!,
+      )
+      const total = inRange.length
+      const completed = inRange.filter((s) => s.status === 'completed').length
+      const completionRate = total > 0 ? completed / total : 0
+      const rated = inRange.filter((s) => s.focus_rating != null)
+      const avgFocusRating =
+        rated.length > 0 ? rated.reduce((sum, s) => sum + (s.focus_rating ?? 0), 0) / rated.length : null
+      // Focus time = Σ focus_sessions.duration_seconds for the in-range focus sessions (derived, not stored).
+      let totalFocusSeconds = 0
+      for (const s of inRange) {
+        if (s.sub_type !== 'focus') continue
+        const rows = await focusRepo.findWhere(eq(focusSessions.session_id, s.id))
+        totalFocusSeconds += rows[0]?.duration_seconds ?? 0
+      }
+      return { total, completed, completionRate, avgFocusRating, totalFocusSeconds }
     },
   }
 

@@ -588,3 +588,62 @@ describe('S5 — Plan-batch endpoints (state machine; G5 algorithm deferred)', (
     await driver.close()
   })
 })
+
+describe('S7 — dueIn aggregator + analytics (finale)', () => {
+  it('AC1 — empty world: dueIn returns []', async () => {
+    const { svc, driver } = await setup()
+    expect(await svc.dueIn({ start: 0, end: 9_999_999_999_999 })).toEqual([])
+    await driver.close()
+  })
+
+  it('AC2 — own planned_blocks: in-range mapped to DueItem; out-of-range + soft-deleted excluded', async () => {
+    const { svc, db, driver } = await setup()
+    const blockRepo = createRepository(db, plannedBlocks, { deviceId: 'test-device', encryptedFields: [], softDelete: true })
+    await blockRepo.create({ scheduled_start: 5000, scheduled_end: 8000, sub_type: 'focus', status: 'planned' })
+    await blockRepo.create({ scheduled_start: 99_000, status: 'planned' }) // out of range
+    const deleted = await blockRepo.create({ scheduled_start: 6000, status: 'planned' })
+    await blockRepo.delete(deleted.id) // soft-delete
+
+    const items = await svc.dueIn({ start: 0, end: 10_000 })
+    expect(items).toHaveLength(1)
+    expect(items[0]?.source_module).toBe('sessions')
+    expect(items[0]?.label).toBe('focus')
+    expect(items[0]?.est_minutes).toBe(Math.round((8000 - 5000) / 60000))
+    expect(items[0]?.hard_deadline).toBe(8000)
+    await driver.close()
+  })
+
+  it('AC3 — providers union; a throwing lane degrades (skipped), dueIn does not throw', async () => {
+    const { svc, driver } = await setup()
+    svc.registerDueProvider({
+      module: 'books',
+      fetch: async () => [{ source_module: 'books', ref_id: 'b1', label: 'Read ch.3', est_minutes: 30, urgency: 2 }],
+    })
+    svc.registerDueProvider({
+      module: 'flaky',
+      fetch: async () => {
+        throw new Error('provider down')
+      },
+    })
+    const items = await svc.dueIn({ start: 0, end: 10_000 })
+    expect(items).toHaveLength(1) // the books lane; the flaky lane degraded, no throw
+    expect(items[0]?.source_module).toBe('books')
+    await driver.close()
+  })
+
+  it('AC4 — analytics derived-on-read (deleted excluded), no stored aggregate', async () => {
+    const { svc, driver } = await setup()
+    await svc.createSession({ sub_type: 'focus', scheduling_mode: 'ad_hoc', status: 'completed', started_at: 1000, focus_rating: 4 })
+    await svc.createSession({ sub_type: 'focus', scheduling_mode: 'ad_hoc', status: 'completed', started_at: 2000, focus_rating: 2 })
+    await svc.createSession({ sub_type: 'focus', scheduling_mode: 'ad_hoc', status: 'in_progress', started_at: 3000 })
+    const a = await svc.getSessionAnalytics({ start: 0, end: 10_000 })
+    expect(a.total).toBe(3)
+    expect(a.completed).toBe(2)
+    expect(a.completionRate).toBeCloseTo(2 / 3)
+    expect(a.avgFocusRating).toBe(3) // (4 + 2) / 2
+    const empty = await svc.getSessionAnalytics({ start: 100_000, end: 200_000 })
+    expect(empty.total).toBe(0)
+    expect(empty.completionRate).toBe(0)
+    await driver.close()
+  })
+})
