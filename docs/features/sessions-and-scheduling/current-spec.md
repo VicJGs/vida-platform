@@ -141,12 +141,23 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
 - **`usage_count`/`last_used_at` bump-on-use → homed to ② (fe-sessions)** — S6 exposes the fields via CRUD;
   the backend does not auto-increment (doc-checked: no doc specifies backend bump timing).
 
+### S5 — Plan-batch endpoints (`services/sessions/service.ts`)
+`[FACT: services/sessions/service.ts; 36 sessions tests green on a live unlocked vault]`
+- **`generatePlan`/`approvePlan`/`activatePlan`/`recalcPlan`** — the `study_plan_batches` state machine
+  (`pending_approval → approved → active`, `recalc` self-loops on `active`); illegal moves →
+  `InvalidBatchTransition`, no write. `softDelete:false`; `name` `[E]`; `create` sets all fields explicitly
+  (returned row == DB row). `generatePlan → pending_approval` = a minimal traversable shell (`total_sessions:0`).
+- **Deferred (grounded — intake:169-170 batch-lifecycle mini-intake + G5):** the placement **algorithm**
+  (`planned_blocks` population, urgency/conflict, recalc re-placement), the **SS-8** block→session bridge
+  (`activatePlan` writes no `planned_blocks` in M1.1 — proven by AC4), and the `completed`/`failed` terminal
+  transitions → **M1.2 study-planner design-pass**.
+
 ## What is DEFERRED (NOT built — the rest of MOD-sessions ①'s scope)
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
-BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring + S3 focus runtime + S4 availability + S6 templates BUILT (above).** Still deferred:
+BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring + S3 focus runtime + S4 availability + S6 templates + S5 plan-batch endpoints BUILT (above).** Still deferred:
 per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
-non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **plan-batch endpoints**
-(`approve`/`activate`/`recalc`; no G5 algorithm) → **S5** · **`dueIn` aggregator + analytics** → **S7** ·
+non-completion firing + heterogeneous-attachment target disambiguation → with handlers · the plan **placement
+algorithm** + SS-8 bridge + `completed`/`failed` → M1.2 · **`dueIn` aggregator + analytics** → **S7** ·
 view layer → G9 · shipped-type editing → later · `key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).
 
 ## Verification (2026-07-28)

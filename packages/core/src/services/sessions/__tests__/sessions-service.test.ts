@@ -14,6 +14,7 @@ import { syncQueue } from '../../../db/schema/foundation/sync-queue'
 import { sessions } from '../../../db/schema/foundation/sessions'
 import { appliedEffects } from '../../../db/schema/foundation/effects'
 import { focusSessions } from '../../../db/schema/foundation/session-extensions'
+import { plannedBlocks } from '../../../db/schema/foundation/scheduling'
 import { initVault } from '../../../encryption/vault'
 import {
   createSessionRegistry,
@@ -30,7 +31,12 @@ import { createTaggableTypeRegistry, UnknownEntityType } from '../../../foundati
 import { createRepository } from '../../../db/repository'
 import { userPreferences } from '../../../db/schema/preferences'
 import { createSessionsService, type SessionsService } from '../service'
-import { InvalidSessionInput, InvalidFocusTransition, SessionMissing } from '../types'
+import {
+  InvalidSessionInput,
+  InvalidFocusTransition,
+  SessionMissing,
+  InvalidBatchTransition,
+} from '../types'
 import type { PomodoroType } from '@vida/types'
 
 // A user-registered, no-extension session type (SS-5) — the spine-only path S1 tested via 'class'
@@ -534,6 +540,51 @@ describe('S6 — session_templates CRUD (PD-3)', () => {
     expect(t.long_break_minutes).toBe(20)
     expect(t.intervals_before_long_break).toBe(2)
     expect(t.focus_technique).toBe('flowtime')
+    await driver.close()
+  })
+})
+
+describe('S5 — Plan-batch endpoints (state machine; G5 algorithm deferred)', () => {
+  it('AC1 — generatePlan creates a pending_approval shell (total_sessions:0); sync enqueued', async () => {
+    const { svc, db, driver } = await setup()
+    const b = await svc.generatePlan({ scope_type: 'course', scope_id: 'c1', name: 'Wk1' })
+    expect(b.status).toBe('pending_approval')
+    expect(b.total_sessions).toBe(0)
+    expect(b.generated_at).not.toBeNull()
+    const q = await db.select().from(syncQueue).all()
+    expect(q.length).toBeGreaterThanOrEqual(1)
+    await driver.close()
+  })
+
+  it('AC2 — approve → active → recalc happy path', async () => {
+    const { svc, driver } = await setup()
+    const b = await svc.generatePlan({ scope_type: 'course', scope_id: 'c1' })
+    const appr = await svc.approvePlan(b.id)
+    expect(appr.status).toBe('approved')
+    expect(appr.approved_at).not.toBeNull()
+    const act = await svc.activatePlan(b.id)
+    expect(act.status).toBe('active')
+    const rec = await svc.recalcPlan(b.id)
+    expect(rec.status).toBe('active') // recalc self-loops (shell)
+    await driver.close()
+  })
+
+  it('AC3 — illegal transitions → InvalidBatchTransition, no write', async () => {
+    const { svc, driver } = await setup()
+    const b = await svc.generatePlan({}) // pending_approval
+    await expect(svc.activatePlan(b.id)).rejects.toBeInstanceOf(InvalidBatchTransition) // needs approved
+    await expect(svc.recalcPlan(b.id)).rejects.toBeInstanceOf(InvalidBatchTransition) // needs active
+    await svc.approvePlan(b.id) // → approved
+    await expect(svc.approvePlan(b.id)).rejects.toBeInstanceOf(InvalidBatchTransition) // no longer pending
+    await driver.close()
+  })
+
+  it('AC4 — activatePlan writes NO planned_blocks (SS-8 bridge deferred with the algorithm)', async () => {
+    const { svc, db, driver } = await setup()
+    const b = await svc.generatePlan({})
+    await svc.approvePlan(b.id)
+    await svc.activatePlan(b.id)
+    expect(await db.select().from(plannedBlocks).all()).toHaveLength(0)
     await driver.close()
   })
 })

@@ -123,6 +123,16 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
 - **NOTE — `usage_count`/`last_used_at` bump-on-use is a ② (fe-sessions) concern**, not a backend behavior
   (doc-checked: no doc specifies backend bump timing).
 
+## ENFORCED now (MOD-sessions ① · S5 — plan-batch endpoints, `services/sessions/service.ts`)
+- **BR-32 (business-rules:88) — batch state machine, fail-loud.** `generatePlan → pending_approval`;
+  `approvePlan` (pending_approval→approved, stamps `approved_at`); `activatePlan` (approved→active); `recalcPlan`
+  (active→active, re-bumps `generated_at`). Any endpoint from a non-matching status → `InvalidBatchTransition`,
+  no write. `softDelete:false` (no `deleted_at`); `name` `[E]`. `[FACT: service.ts]`
+- **BR-33 (delivery-plan:249 + intake:169-170) — endpoints are a shell; algorithm deferred.** `generatePlan`
+  writes `total_sessions:0` + no `planned_blocks`; the placement algorithm, SS-8 block→session bridge, and
+  `completed`/`failed` transitions are the M1.2 study-planner mini-intake. `activatePlan` writes no
+  `planned_blocks` (proven, AC4). `[FACT: service.ts; sessions-service.test.ts S5-AC4]`
+
 ## NOT YET enforced (deferred — do not claim)
 - Per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + fire-time sensitive-consent
   enforcement + consent-threading → #46 / MOD-*. The gate utility (`assertEffectPermitted`) ships; its callers do not.

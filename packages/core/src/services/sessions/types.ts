@@ -20,6 +20,7 @@ import type {
   StudyAvailabilityRow,
   AvailabilityExceptionRow,
   SessionTemplateRow,
+  StudyPlanBatchRow,
 } from '../../db/schema/foundation/scheduling'
 
 /** The `focus` sub-type 1:1 extension input (PD-4/PD-5/PD-6 fields; spine fields NEVER here — BR-S1). */
@@ -188,5 +189,28 @@ export interface TemplateInput {
 }
 export type TemplatePatch = Partial<TemplateInput>
 export type SessionTemplate = SessionTemplateRow
+
+// --- S5 · Plan-batch endpoints (study_plan_batches) ------------------------
+
+/** Generate a plan batch. scope_type/scope_id are OPEN (G5-widened beyond course); the placement `window` is
+ *  algorithm-only (M1.2) and NOT accepted here. `name` [E]. */
+export interface GeneratePlanInput {
+  scope_type?: string | null
+  scope_id?: string | null
+  name?: string | null
+}
+export type PlanBatch = StudyPlanBatchRow
+
+/** Illegal plan-batch state move (business-rules.md:88) — thrown BEFORE any write. */
+export class InvalidBatchTransition extends Error {
+  constructor(
+    public readonly id: string,
+    public readonly from: string,
+    public readonly event: string,
+  ) {
+    super(`Illegal plan-batch move for '${id}': no '${event}' from status '${from}'`)
+    this.name = 'InvalidBatchTransition'
+  }
+}
 
 export type { SessionAttachmentRow }

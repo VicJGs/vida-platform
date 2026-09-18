@@ -36,6 +36,8 @@ import {
   sessionTemplates,
   studyAvailability,
   availabilityExceptions,
+  studyPlanBatches,
+  type StudyPlanBatchRow,
 } from '../../db/schema/foundation/scheduling'
 import type { PomodoroType } from '@vida/types'
 import { resolveTargets, type ResolvedTarget } from '../../foundation/sessions/attachments'
@@ -70,12 +72,15 @@ import {
   type TemplateInput,
   type TemplatePatch,
   type SessionTemplate,
+  type GeneratePlanInput,
+  type PlanBatch,
   InvalidSessionInput,
   InvalidFocusTransition,
   SessionMissing,
+  InvalidBatchTransition,
 } from './types'
 
-export { InvalidTransition }
+export { InvalidTransition } // from lifecycle (not ./types); the ./types errors export via the barrel
 
 export interface SessionsServiceDeps {
   db: DrizzleDb
@@ -127,6 +132,11 @@ export interface SessionsService {
   deleteTemplate(id: string): Promise<void>
   listTemplates(): Promise<SessionTemplate[]>
   setDefaultTemplate(id: string): Promise<void>
+  // --- S5 · Plan-batch endpoints (study_plan_batches) — state machine, no G5 algorithm ---
+  generatePlan(input: GeneratePlanInput): Promise<PlanBatch>
+  approvePlan(id: string): Promise<PlanBatch>
+  activatePlan(id: string): Promise<PlanBatch>
+  recalcPlan(id: string): Promise<PlanBatch>
 }
 
 // The single source of the sub_type → extension routing (B1). Only these two
@@ -151,6 +161,7 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
   const attachmentRepo = createRepository(db, sessionAttachments, extCfg)
   const availabilityRepo = createRepository(db, studyAvailability, extCfg) // no deleted_at → hard delete
   const exceptionRepo = createRepository(db, availabilityExceptions, extCfg)
+  const batchRepo = createRepository(db, studyPlanBatches, extCfg) // no deleted_at → hard delete
 
   // Read the mapped extension row for a session (findWhere is soft-delete-blind,
   // but the extensions carry no deleted_at anyway). Returns null when spine-only.
@@ -217,6 +228,11 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
     for (const t of all) {
       if (t.id !== exceptId && t.is_default) await templateRepo.update(t.id, { is_default: false })
     }
+  }
+
+  // S5 batch-state guard (business-rules:88) — fail-loud before any write.
+  function assertBatchStatus(row: StudyPlanBatchRow, expected: string, event: string): void {
+    if (row.status !== expected) throw new InvalidBatchTransition(row.id, row.status, event)
   }
 
   const service: SessionsService = {
@@ -600,6 +616,45 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
     async setDefaultTemplate(id) {
       await unsetOtherDefaults(id)
       await templateRepo.update(id, { is_default: true })
+    },
+
+    // --- S5 · Plan-batch endpoints — state machine only (G5 algorithm deferred M1.2) ---
+    async generatePlan(input) {
+      // Shell: create a batch ready for approval (pending_approval). Placement (planned_blocks,
+      // total_sessions) is the deferred algorithm — M1.2 (intake:169-170). All fields set explicitly
+      // so the returned row == the DB row (Repository.create returns the constructed row, S6 lesson).
+      return batchRepo.create({
+        name: input.name ?? null,
+        scope_type: input.scope_type ?? null,
+        scope_id: input.scope_id ?? null,
+        status: 'pending_approval',
+        total_sessions: 0,
+        generated_at: Date.now(),
+        approved_at: null,
+      })
+    },
+
+    async approvePlan(id) {
+      const row = await batchRepo.findById(id)
+      if (!row) throw new InvalidBatchTransition(id, 'missing', 'approve')
+      assertBatchStatus(row, 'pending_approval', 'approve')
+      return batchRepo.update(id, { status: 'approved', approved_at: Date.now() })
+    },
+
+    async activatePlan(id) {
+      const row = await batchRepo.findById(id)
+      if (!row) throw new InvalidBatchTransition(id, 'missing', 'activate')
+      assertBatchStatus(row, 'approved', 'activate')
+      // SS-8 block→session bridge deferred with the algorithm — status flip only in M1.1.
+      return batchRepo.update(id, { status: 'active' })
+    },
+
+    async recalcPlan(id) {
+      const row = await batchRepo.findById(id)
+      if (!row) throw new InvalidBatchTransition(id, 'missing', 'recalc')
+      assertBatchStatus(row, 'active', 'recalc')
+      // Shell: mark a recompute occurred; the real re-placement is the deferred algorithm (M1.2).
+      return batchRepo.update(id, { generated_at: Date.now() })
     },
   }
 

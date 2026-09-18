@@ -69,13 +69,21 @@ S4 availability · S5 plan-batch endpoints · S6 session_templates CRUD · S7 du
   (doc-checked nits) · preflight PASSED · g2 · Verification Gate PASS (32 sessions tests) · §XXIX (BR-29..BR-31).
   `@vida/core` 871/871.
 
+- **S5 ✅ DONE (2026-09-18, commit pending).** Plan-batch endpoints (`generatePlan`/`approve`/`activate`/`recalc`)
+  = the `study_plan_batches` state machine (`pending_approval→approved→active`, recalc self-loop); fail-loud
+  `InvalidBatchTransition`; `softDelete:false`; `name` `[E]`; explicit-default create (returned==DB, S6 lesson).
+  Doc-grounded per Victor's instruction: `generatePlan→pending_approval` = minimal traversable shell (intake:169-170
+  defers the full batch lifecycle to an M1.2 mini-intake); placement algorithm + SS-8 bridge + completed/failed →
+  M1.2 (AC4 proves no planned_blocks written). `window` param omitted (algorithm-only, avoids S3-templateId
+  dead-surface). Gated: g1 (1 REVISE→window omitted) · preflight PASSED · g2 · Verification Gate PASS (36 sessions
+  tests) · §XXIX (BR-32..BR-33). `@vida/core` 875/875.
+
 ## Next step
-- **S5 — Plan-batch endpoints** (`generatePlan` shell + `approve`/`activate`/`recalc` state machine over
-  `study_plan_batches`; NO G5 placement algorithm — deferred M1.2; `name` `[E]`; typed empty-plan; SS-8
-  activate→createSession bridge). Depends on S1. Then **S7 — `dueIn` aggregator + analytics** (finale: shared
-  platform primitive + empty provider seam + derived analytics). Author `service/S5-*.md` → g1 → preflight → g2
-  → build → Verification Gate. Env: Node 24 via nvm.
-  Remaining: S5 (plan-batch) · S7 (dueIn + analytics). Then Entity Close → PR → /task-complete.
+- **S7 — `dueIn` aggregator + analytics (THE FINALE).** `dueIn(range): DueItem[]` = own `planned_blocks` ∪ live
+  provider reads (empty provider registry seam, N5 — providers not built) + `registerDueProvider` + derived
+  session analytics getters (IR-6, no stored aggregates). Shared PLATFORM primitive (IR-2 — Journals + future
+  Calendar consume it). Depends on S1+S5. Author `service/S7-*.md` → g1 → preflight → g2 → build → Verification
+  Gate. Env: Node 24 via nvm. **After S7: Entity Close — all 7 slices green → PR → /task-complete (① backend done).**
 
 ## Route History
 - 2026-09-18: baseline (current-* refreshed for DB-4 substrate) → interpretation → decomposition gate
