@@ -58,12 +58,23 @@ S4 availability · S5 plan-batch endpoints · S6 session_templates CRUD · S7 du
   overlap (SS-9/G5 input, stored as-is). Folded in as FACTs + AC6/AC7. Gated: g1 SHIP (after the nit-recheck) ·
   preflight PASSED · g2 · Verification Gate PASS (28 sessions tests) · §XXIX (BR-26..BR-28). `@vida/core` 867/867.
 
+- **S6 ✅ DONE (2026-09-18, commit pending).** `session_templates` CRUD (create/update/delete/list/setDefault);
+  hard-delete; `name`/`description` `[E]`; `is_default` single-winner (sequential best-effort); app-layer
+  validation (DDL has no CHECK). `createTemplate` re-reads post-insert (create() returns the built row → omitted
+  DDL-defaulted fields would be undefined). **§XXVIII correction to committed S3 (grounded in PD-3):** S6's
+  integration test exposed that S3's config precedence claimed "template → prefs → defaults", but
+  `pomodoro/business-rules.md:22-25` PD-3 says the runtime OBEYS `user_preferences`; templates are UI-applied
+  presets, NOT threaded to the runtime → removed `templateId` from `startFocus` + `resolveFocusConfig`'s dead
+  branch; corrected S3 current-*/spec (BR-24) + config line. Gated: g1 SHIP · preflight PASSED · g2 · Verification
+  Gate PASS (32 sessions tests; 2 caught real gaps → both fixed) · §XXIX (BR-29/BR-30). `@vida/core` 871/871.
+
 ## Next step
-- **S6 — `session_templates` CRUD** (focus presets: create/update/delete/list/setDefault; `name`/`description`
-  `[E]` seam; `is_default` single-winner PD-3). Independent CRUD slice. NOTE build-order swap: doing S6 before
-  S5 (both independent; S6 is simpler and S3's `resolveFocusConfig` already reads a template row). Author
-  `service/S6-*.md` → g1 → preflight → g2 → build → Verification Gate. Env: Node 24 via nvm.
-  Remaining: S6 (templates) · S5 (plan-batch endpoints) · S7 (dueIn + analytics).
+- **S5 — Plan-batch endpoints** (`generatePlan` shell + `approve`/`activate`/`recalc` state machine over
+  `study_plan_batches`; draft→pending_approval→approved→active→completed→failed; **NO G5 placement algorithm** —
+  M1.1 ships the wizard + endpoints, not the algorithm; `activate` may `createSession` per block, SS-8; typed
+  `NoAvailability`/`NothingToSchedule`, never a silent empty batch; `name` `[E]`). Needs S1. Author
+  `service/S5-*.md` → g1 → preflight → g2 → build → Verification Gate. Env: Node 24 via nvm.
+  Remaining: S5 (plan-batch) · S7 (dueIn + analytics — the finale).
 
 ## Route History
 - 2026-09-18: baseline (current-* refreshed for DB-4 substrate) → interpretation → decomposition gate

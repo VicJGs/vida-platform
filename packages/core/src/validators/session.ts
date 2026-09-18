@@ -76,3 +76,24 @@ export const AvailabilityExceptionSchema = AvailabilityExceptionFields.refine(
   (d) => d.start_time == null || d.end_time == null || d.end_time > d.start_time,
   { message: 'end_time must be > start_time', path: ['end_time'] },
 )
+
+// MOD-sessions ① S6 — session_templates (focus presets, PD-3). Migration 014:176-202 has NO CHECK
+// (all INTEGER NOT NULL DEFAULT) → app-layer is the only guard: name non-empty, minutes/intervals ≥ 1.
+const TemplateFields = z.object({
+  name: z.string().min(1),
+  work_minutes: z.number().int().min(1).optional(),
+  short_break_minutes: z.number().int().min(1).optional(),
+  long_break_minutes: z.number().int().min(1).optional(),
+  intervals_before_long_break: z.number().int().min(1).optional(),
+  auto_start_breaks: z.boolean().optional(),
+  auto_start_work: z.boolean().optional(),
+  is_default: z.boolean().optional(),
+  focus_technique: z.string().nullish(),
+  description: z.string().nullish(),
+  notifications: z.boolean().optional(),
+  sounds: z.boolean().optional(),
+  usage_count: z.number().int().min(0).optional(),
+  last_used_at: z.number().int().nullish(),
+})
+export const TemplateSchema = TemplateFields
+export const TemplatePatchSchema = TemplateFields.partial()

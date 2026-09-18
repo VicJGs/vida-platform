@@ -106,7 +106,10 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   absent/non-focus → `SessionMissing`. Pause-exclusion (PD-5): `total_pause_seconds` accrues, real focus =
   run wall-time − pauses (per-interval cut derived in S7). Interruption capture (PD-6). Cadence (PD-4):
   `nextInterval` advances focus→break→focus, long-break every `sessions_before_long`, `completed_count` tracks.
-- **Config (IR-3, PD-3):** template → `user_preferences.pomodoro_*` → PD-3 defaults (25/5/15/4), read via a repo.
+- **Config (PD-3):** the runtime **obeys `user_preferences.pomodoro_*`** → PD-3 defaults (25/5/15/4), read via
+  a repo. Templates are UI-applied presets (S6), **NOT** threaded into the runtime cadence (PD-3: "runtime only
+  obeys [preferences]"; no per-run config storage / `template_id` link). Corrected in S6 (was over-stated as a
+  template→prefs→defaults precedence). `[FACT: pomodoro/business-rules.md:22-25]`
 - **S2-flag RESOLVED (intake:166,179 "stub the contract, wire later"):** `completeFocus` finalizes the
   **focus_sessions run only** (status + duration + `completed_count`); it does **NOT** auto-fire session effects
   in M1.1 — the session stays `in_progress`, and session-completion-with-effects remains S2's single
@@ -124,14 +127,24 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   never rejected); **no uniqueness/overlap check** — overlapping/multiple windows are valid Planner input the
   (deferred, G5) placement algorithm resolves. `[FACT: SS-9; intake:31-33; scheduling.ts no UNIQUE]`
 
+### S6 — session_templates CRUD (`services/sessions/service.ts`)
+`[FACT: services/sessions/service.ts; 32 sessions tests green on a live unlocked vault]`
+- **`createTemplate`/`updateTemplate`/`deleteTemplate`/`listTemplates`/`setDefaultTemplate`** over
+  `session_templates` (focus presets, PD-3). Hard-delete (no `deleted_at`). `name`/`description` `[E]` seam.
+- **`is_default` single-winner** — `setDefaultTemplate`/create/update with `is_default:true` unset every other
+  (sequential best-effort). Validation (IR-5): `name` non-empty, minutes/intervals ≥ 1 (DDL has no CHECK →
+  app-layer is the guard). `createTemplate` re-reads post-insert so DDL-defaulted fields are complete.
+- Templates are **presets** — applying one to a run is a UI concern (fe-sessions); the S3 runtime obeys
+  `user_preferences` (PD-3), not a template. `usage_count`/`last_used_at` bump-on-use → fe-sessions.
+
 ## What is DEFERRED (NOT built — the rest of MOD-sessions ①'s scope)
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
-BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring + S3 focus runtime + S4 availability BUILT (above).** Still deferred:
+BUILT; S1 CRUD + attach + S2 registry-validation + completion-wiring + S3 focus runtime + S4 availability + S6 templates BUILT (above).** Still deferred:
 per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
 non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **plan-batch endpoints**
-(`approve`/`activate`/`recalc`; no G5 algorithm) → **S5** · **`session_templates` CRUD** → **S6** · **`dueIn`
-aggregator + analytics** → **S7** · view layer → G9 · shipped-type editing → later · `key_learnings` encryption
-(M1.0 pass-through seam, `encryptedFields:[]`).
+(`approve`/`activate`/`recalc`; no G5 algorithm) → **S5** · **`dueIn` aggregator + analytics** → **S7** ·
+view layer → G9 · shipped-type editing → later · `key_learnings` encryption (M1.0 pass-through seam,
+`encryptedFields:[]`).
 
 ## Verification (2026-07-28)
 typecheck 10/10 · @vida/core 110/110 · @vida/web 6/6 · deferral grep clean. Spec:

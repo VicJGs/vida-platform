@@ -474,3 +474,59 @@ describe('S4 — Availability (SS-9)', () => {
     await driver.close()
   })
 })
+
+describe('S6 — session_templates CRUD (PD-3)', () => {
+  it('AC1/AC2 — create/list/update/delete; DDL defaults for omitted fields; sync enqueued', async () => {
+    const { svc, db, driver } = await setup()
+    const t = await svc.createTemplate({ name: 'Deep Work', work_minutes: 50 })
+    expect(t.work_minutes).toBe(50)
+    expect(t.short_break_minutes).toBe(5) // DDL default
+    expect(t.intervals_before_long_break).toBe(4) // DDL default
+    expect(await svc.listTemplates()).toHaveLength(1)
+
+    const upd = await svc.updateTemplate(t.id, { short_break_minutes: 10 })
+    expect(upd.short_break_minutes).toBe(10)
+
+    await svc.deleteTemplate(t.id)
+    expect(await svc.listTemplates()).toHaveLength(0)
+    const q = await db.select().from(syncQueue).all()
+    expect(q.some((r) => r.operation === 'delete')).toBe(true)
+    await driver.close()
+  })
+
+  it('AC3 — typed validation, no write', async () => {
+    const { svc, driver } = await setup()
+    await expect(svc.createTemplate({ name: '' })).rejects.toMatchObject({ field: 'name' })
+    await expect(svc.createTemplate({ name: 'X', work_minutes: 0 })).rejects.toMatchObject({ field: 'work_minutes' })
+    expect(await svc.listTemplates()).toHaveLength(0)
+    await driver.close()
+  })
+
+  it('AC4 — is_default single-winner across create + setDefaultTemplate', async () => {
+    const { svc, driver } = await setup()
+    const a = await svc.createTemplate({ name: 'A', is_default: true })
+    const b = await svc.createTemplate({ name: 'B', is_default: true })
+    let defaults = (await svc.listTemplates()).filter((t) => t.is_default)
+    expect(defaults).toHaveLength(1)
+    expect(defaults[0]?.id).toBe(b.id) // B won (created last)
+
+    await svc.setDefaultTemplate(a.id)
+    defaults = (await svc.listTemplates()).filter((t) => t.is_default)
+    expect(defaults).toHaveLength(1)
+    expect(defaults[0]?.id).toBe(a.id)
+    await driver.close()
+  })
+
+  it('AC5 — PD-3 separation: the runtime obeys user_preferences, NOT a template (templates are UI-applied presets)', async () => {
+    const { svc, driver } = await setup()
+    // A template with a distinct cadence (long-break every 2) exists...
+    await svc.createTemplate({ name: 'Long', intervals_before_long_break: 2 })
+    // ...but with no user_preferences row, the running timer uses the PD-3 default cadence (4), not the template.
+    const timer = await svc.startFocus({})
+    await svc.nextInterval(timer.id) // focus #1 → short_break
+    await svc.nextInterval(timer.id) // → focus
+    const i3 = await svc.nextInterval(timer.id) // focus #2 → 2%4≠0 → short_break (template ignored — PD-3)
+    expect(i3.type).toBe('short_break')
+    await driver.close()
+  })
+})

@@ -52,6 +52,8 @@ import {
   AvailabilitySchema,
   AvailabilityPatchSchema,
   AvailabilityExceptionSchema,
+  TemplateSchema,
+  TemplatePatchSchema,
 } from '../../validators/session'
 import {
   type CreateSessionInput,
@@ -65,6 +67,9 @@ import {
   type AvailabilityExceptionInput,
   type Availability,
   type AvailabilityException,
+  type TemplateInput,
+  type TemplatePatch,
+  type SessionTemplate,
   InvalidSessionInput,
   InvalidFocusTransition,
   SessionMissing,
@@ -116,6 +121,12 @@ export interface SessionsService {
   addAvailabilityException(input: AvailabilityExceptionInput): Promise<AvailabilityException>
   removeAvailabilityException(id: string): Promise<void>
   listAvailabilityExceptions(): Promise<AvailabilityException[]>
+  // --- S6 · session_templates (focus presets, PD-3) — hard-delete; is_default single-winner --
+  createTemplate(input: TemplateInput): Promise<SessionTemplate>
+  updateTemplate(id: string, patch: TemplatePatch): Promise<SessionTemplate>
+  deleteTemplate(id: string): Promise<void>
+  listTemplates(): Promise<SessionTemplate[]>
+  setDefaultTemplate(id: string): Promise<void>
 }
 
 // The single source of the sub_type → extension routing (B1). Only these two
@@ -164,18 +175,10 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
   const templateRepo = createRepository(db, sessionTemplates, extCfg)
   const PD3_DEFAULTS: FocusConfig = { workMin: 25, shortBreakMin: 5, longBreakMin: 15, sessionsBeforeLong: 4 }
 
-  // IR-3 precedence: template → user_preferences → PD-3 hard defaults (services/preferences unbuilt → read the table).
-  async function resolveFocusConfig(templateId?: string): Promise<FocusConfig> {
-    if (templateId) {
-      const t = await templateRepo.findById(templateId)
-      if (t)
-        return {
-          workMin: t.work_minutes,
-          shortBreakMin: t.short_break_minutes,
-          longBreakMin: t.long_break_minutes,
-          sessionsBeforeLong: t.intervals_before_long_break,
-        }
-    }
+  // PD-3: the runtime OBEYS user_preferences (→ PD-3 hard defaults when no prefs row). Templates are presets
+  // applied by the UI (fe-sessions) to preferences — the backend runtime never threads a template into the
+  // timer cadence (no per-run config storage, no template_id link on focus_sessions). `[FACT: pomodoro/business-rules.md:22-25 PD-3]`
+  async function resolveFocusConfig(): Promise<FocusConfig> {
     const prefs = (await userPrefsRepo.findAll())[0]
     if (prefs)
       return {
@@ -203,6 +206,14 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       total_pause_seconds: row.total_pause_seconds + addPause,
       paused_at: null,
     })
+  }
+
+  // S6 — is_default single-winner (PD-3): unset every OTHER template's default flag. Sequential
+  // best-effort (no cross-row tx — same eventual-consistency stance as the soft-delete cascade).
+  async function unsetOtherDefaults(exceptId: string): Promise<void> {
+    for (const t of await templateRepo.findAll()) {
+      if (t.id !== exceptId && t.is_default) await templateRepo.update(t.id, { is_default: false })
+    }
   }
 
   const service: SessionsService = {
@@ -520,6 +531,74 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
 
     listAvailabilityExceptions() {
       return exceptionRepo.findAll()
+    },
+
+    // --- S6 · session_templates (focus presets, PD-3) — hard-delete; single-winner default --
+    async createTemplate(input) {
+      const p = TemplateSchema.safeParse(input)
+      if (!p.success) throw new InvalidSessionInput(p.error.issues[0]?.path.join('.') || 'input')
+      const data = {
+        name: input.name,
+        ...(input.work_minutes !== undefined && { work_minutes: input.work_minutes }),
+        ...(input.short_break_minutes !== undefined && { short_break_minutes: input.short_break_minutes }),
+        ...(input.long_break_minutes !== undefined && { long_break_minutes: input.long_break_minutes }),
+        ...(input.intervals_before_long_break !== undefined && {
+          intervals_before_long_break: input.intervals_before_long_break,
+        }),
+        ...(input.auto_start_breaks !== undefined && { auto_start_breaks: input.auto_start_breaks }),
+        ...(input.auto_start_work !== undefined && { auto_start_work: input.auto_start_work }),
+        ...(input.is_default !== undefined && { is_default: input.is_default }),
+        ...(input.focus_technique !== undefined && { focus_technique: input.focus_technique }),
+        ...(input.description !== undefined && { description: input.description }),
+        ...(input.notifications !== undefined && { notifications: input.notifications }),
+        ...(input.sounds !== undefined && { sounds: input.sounds }),
+        ...(input.usage_count !== undefined && { usage_count: input.usage_count }),
+        ...(input.last_used_at !== undefined && { last_used_at: input.last_used_at }),
+      }
+      const created = await templateRepo.create(data)
+      // Re-read: create() returns the built row, so DDL-defaulted (omitted) columns would be undefined.
+      const row = (await templateRepo.findById(created.id)) ?? created
+      if (row.is_default) await unsetOtherDefaults(row.id)
+      return row
+    },
+
+    async updateTemplate(id, patch) {
+      const p = TemplatePatchSchema.safeParse(patch)
+      if (!p.success) throw new InvalidSessionInput(p.error.issues[0]?.path.join('.') || 'input')
+      const data = {
+        ...(patch.name !== undefined && { name: patch.name }),
+        ...(patch.work_minutes !== undefined && { work_minutes: patch.work_minutes }),
+        ...(patch.short_break_minutes !== undefined && { short_break_minutes: patch.short_break_minutes }),
+        ...(patch.long_break_minutes !== undefined && { long_break_minutes: patch.long_break_minutes }),
+        ...(patch.intervals_before_long_break !== undefined && {
+          intervals_before_long_break: patch.intervals_before_long_break,
+        }),
+        ...(patch.auto_start_breaks !== undefined && { auto_start_breaks: patch.auto_start_breaks }),
+        ...(patch.auto_start_work !== undefined && { auto_start_work: patch.auto_start_work }),
+        ...(patch.is_default !== undefined && { is_default: patch.is_default }),
+        ...(patch.focus_technique !== undefined && { focus_technique: patch.focus_technique }),
+        ...(patch.description !== undefined && { description: patch.description }),
+        ...(patch.notifications !== undefined && { notifications: patch.notifications }),
+        ...(patch.sounds !== undefined && { sounds: patch.sounds }),
+        ...(patch.usage_count !== undefined && { usage_count: patch.usage_count }),
+        ...(patch.last_used_at !== undefined && { last_used_at: patch.last_used_at }),
+      }
+      const row = await templateRepo.update(id, data)
+      if (patch.is_default === true) await unsetOtherDefaults(id)
+      return row
+    },
+
+    async deleteTemplate(id) {
+      await templateRepo.hardDelete(id) // no deleted_at → hard; enqueues operation:'delete'
+    },
+
+    listTemplates() {
+      return templateRepo.findAll()
+    },
+
+    async setDefaultTemplate(id) {
+      await unsetOtherDefaults(id)
+      await templateRepo.update(id, { is_default: true })
     },
   }
 

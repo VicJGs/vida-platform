@@ -19,6 +19,7 @@ import type { FocusSessionRow, StudySessionRow } from '../../db/schema/foundatio
 import type {
   StudyAvailabilityRow,
   AvailabilityExceptionRow,
+  SessionTemplateRow,
 } from '../../db/schema/foundation/scheduling'
 
 /** The `focus` sub-type 1:1 extension input (PD-4/PD-5/PD-6 fields; spine fields NEVER here — BR-S1). */
@@ -102,10 +103,10 @@ export class InvalidSessionInput extends Error {
 
 // --- S3 · Pomodoro focus runtime -------------------------------------------
 
-/** Start (or resume) a focus timer. No `sessionId` → creates a fresh `focus` session (S1). */
+/** Start (or resume) a focus timer. No `sessionId` → creates a fresh `focus` session (S1).
+ *  No `templateId`: PD-3 — the runtime obeys `user_preferences`; preset application is a fe-sessions concern. */
 export interface StartFocusInput {
   sessionId?: string
-  templateId?: string
   attach?: AttachInput
 }
 
@@ -165,5 +166,27 @@ export interface AvailabilityExceptionInput {
 
 export type Availability = StudyAvailabilityRow
 export type AvailabilityException = AvailabilityExceptionRow
+
+// --- S6 · session_templates (focus presets, PD-3) --------------------------
+
+/** A focus preset. `name` required + `[E]`; all timing/flag fields optional (DDL defaults apply if omitted). */
+export interface TemplateInput {
+  name: string
+  work_minutes?: number
+  short_break_minutes?: number
+  long_break_minutes?: number
+  intervals_before_long_break?: number
+  auto_start_breaks?: boolean
+  auto_start_work?: boolean
+  is_default?: boolean
+  focus_technique?: string | null
+  description?: string | null // [E] — M1.0 pass-through seam
+  notifications?: boolean
+  sounds?: boolean
+  usage_count?: number
+  last_used_at?: number | null
+}
+export type TemplatePatch = Partial<TemplateInput>
+export type SessionTemplate = SessionTemplateRow
 
 export type { SessionAttachmentRow }
