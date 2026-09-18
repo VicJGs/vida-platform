@@ -44,13 +44,57 @@ remains INTENDED (not yet built). `[FACT: this branch — commit pending]`
   (SS-6 no-double-count); no-attachment fallback = the session is the subject. Structural `canTouch` only —
   **sensitive-consent is handler-side** (ADR-004 §3.2.5-A3/BR-17), the S2 gate is the handler seam.
 
-## What is DEFERRED (NOT built — see identity.md "What it is NOT")
-Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step now BUILT (#32).** Still deferred:
+## What is BUILT (DB-4 #3 · schema substrate — migration `014_sessions_scheduling.ts` + `010_scheduling.ts`)
+DB-4 landed the full table substrate the service tier (MOD-sessions ①) will drive. All tables carry
+`...baseColumns` (syncable); DDL is hand-written SQL in the migrations, mirrored by the Drizzle schema. NO FK
+(ADR-004 §3.4). `[FACT: ALL_MIGRATIONS registers 010+014 — runner.ts:21,24,60]`
+- **1:1 sub-type extensions** (`schema/foundation/session-extensions.ts`) — own `id` UUIDv7 PK + `session_id`
+  UNIQUE → `sessions.id` (the 1:1 key, plain TEXT no FK); spine fields never re-stored (BR-S1); zero-`[E]`:
+  - **`study_sessions`** — `resource_type` (`STUDY_SESSION_RESOURCE_TYPE`, FIXED CHECK) · `resource_id` ·
+    `pages_read` · `lessons_completed`. Index `(resource_type, resource_id)`.
+  - **`focus_sessions`** — the Pomodoro timer runtime (supersedes retired v2 `pomodoro_sessions`, PD-1/2):
+    `duration_seconds` · `type` (`POMODORO_TYPE`, FIXED) · `status` (`POMODORO_STATUS`, FIXED, default `running`)
+    · `completed_count` · `paused_at` · `total_pause_seconds` · `was_interrupted` · `interruption_reason`.
+    Index `(status)`. `[FACT: session-extensions.ts:35-51]`
+- **Scheduler/planner tables** (`schema/foundation/scheduling.ts`) — §5.11 "redefined, not dropped":
+  - **`planned_blocks`** (DB-3) — aggregator output; `scheduled_start/_end` · `sub_type` (OPEN, no CHECK) ·
+    `target_type`/`target_id` (polymorphic) · `status` (`PLANNED_BLOCK_STATUS`, FIXED) · `source` · own `deleted_at`.
+  - **`study_availability`** — recurring windows: `day_of_week` (CHECK 0..6) · `start/end_time` (HH:MM) ·
+    `is_available` · `preference_score` (CHECK 1..5) · `preset_block` (`PRESET_BLOCK`, FIXED) · `max_session_minutes`.
+  - **`availability_exceptions`** — date overrides: `exception_date` · `is_available` · `reason` `[E]` · `start/end_time`.
+  - **`study_plan_batches`** — `name` `[E]` · `scope_type`/`scope_id` (OPEN, G5-widened) · `status`
+    (`STUDY_PLAN_BATCH_STATUS`, FIXED, +`failed`) · `total_sessions` · `generated_at` · `approved_at`.
+  - **`session_templates`** — focus presets: `name` `[E]` · work/break minutes · `intervals_before_long_break` ·
+    auto-start flags · `is_default` · `focus_technique` · `description` `[E]` · `notifications`/`sounds` · usage stats.
+  `[FACT: scheduling.ts:19-113]`
+- **Validators** (`validators/session.ts`) — `PlannedBlockStatusSchema` present; the DB-4 enums
+  (`POMODORO_*`, `STUDY_*`, `PRESET_BLOCK`) live in `@vida/types` (`session.ts`, `knowledge.ts`, `learning.ts`).
+
+## What is BUILT (MOD-sessions ① · S1 — `services/sessions/`)
+The first real `services/*` build: `createSessionsService({ db, deviceId, registry })` (factory-object, mirrors
+`foundation/spaces/service.ts`). `[FACT: services/sessions/service.ts; 10 tests green on a live unlocked vault]`
+- **Session CRUD** — `createSession` (spine + optional 1:1 `focus`/`study` extension, written **atomically** via
+  `Repository.createInTx` in one `db.transaction`) · `getSession` (spine + mapped extension, null if
+  soft-deleted) · `updateSession` (spine + extension; `sub_type` immutable) · `softDeleteSession` (**spine only**
+  — extensions carry no `deleted_at`, base owns lifecycle) · `restoreSession` (spine update-by-PK; extension
+  reappears intact).
+- **`attach`/`detach`** — idempotent structural attach over `session_attachments` (findWhere-key → no-op-or-
+  create, **no revive** — no `deleted_at`); `detach` = **hard delete**; `resolveTargets` re-exports the #32 reader.
+- **Repos:** `sessions` `softDelete:true`; `focus_sessions`/`study_sessions`/`session_attachments`
+  `softDelete:false` (no `deleted_at`). All `encryptedFields:[]` (M1.0 pass-through). Structural validation
+  (`CreateSessionSchema`, fail-loud `InvalidSessionInput`). NOT yet: semantic `sub_type`/`entity_type` **registry**
+  validation, completion/lifecycle wiring → **S2**.
+
+## What is DEFERRED (NOT built — the rest of MOD-sessions ①'s scope)
+Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
+BUILT; S1 session CRUD + attach BUILT (above).** Still deferred:
 per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
-non-completion firing + heterogeneous-attachment target disambiguation → with handlers · scheduler
-(`planned_blocks`, availability, `dueIn`, `generatePlan`, G5) · per-sub-type extension tables (Books/Education/…)
-→ DB-4/M1.1+ · session/attachment WRITE paths (`attach()`, session CRUD) → with those write paths · view layer →
-G9 · shipped-type editing → later · `key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).
+non-completion firing + heterogeneous-attachment target disambiguation → with handlers · **runtime
+`sub_type`/`entity_type` registry-validation + completion→`transition()` wiring** → **S2** · **Pomodoro focus
+runtime** (start/pause/resume/complete/cancel/nextInterval over `focus_sessions`) → **S3** · **availability** →
+**S4** · **plan-batch endpoints** (`approve`/`activate`/`recalc`; no G5 algorithm) → **S5** · **`session_templates`
+CRUD** → **S6** · **`dueIn` aggregator + analytics** → **S7** · view layer → G9 · shipped-type editing → later ·
+`key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).
 
 ## Verification (2026-07-28)
 typecheck 10/10 · @vida/core 110/110 · @vida/web 6/6 · deferral grep clean. Spec:

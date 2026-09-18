@@ -22,6 +22,12 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
 - **BR-5a — FIXED enums = hard SQL CHECK.** `scheduling_mode`, `status`, `level` carry SQL CHECKs; parity test
   asserts CHECK-set ≡ tuple. `[FACT: 002_sessions.ts, enum-parity.test.ts]`
 - **BR-5b — EFFECT_TYPE = Zod-validated (no SQL CHECK).** Stored as JSON; covered by the enum validator test.
+- **BR-5c (DB-4 #3) — sub-type/scheduler FIXED enums = hard SQL CHECK.** `focus_sessions.type`/`.status`
+  (`POMODORO_TYPE`/`POMODORO_STATUS`), `study_sessions.resource_type` (`STUDY_SESSION_RESOURCE_TYPE`),
+  `planned_blocks.status` (`PLANNED_BLOCK_STATUS`), `study_plan_batches.status` (`STUDY_PLAN_BATCH_STATUS`),
+  `study_availability.preset_block` (`PRESET_BLOCK`) + range CHECKs (`day_of_week` 0..6, `preference_score` 1..5)
+  are DDL-enforced; `sub_type` on `planned_blocks` stays OPEN (no CHECK, SS-5/BR-6). App-layer/runtime validation
+  of these on the WRITE path is still deferred to MOD-sessions ①. `[FACT: 014_sessions_scheduling.ts, scheduling.ts]`
 - **BR-6 — OPEN vocab.** `sub_type`/`purpose`/`entity_type` are free-TEXT (no CHECK) so SS-5 user-extensibility
   holds. (Their runtime registry-validation binds with the write path — deferred.)
 - **BR-7 — spine is syncable.** `sessions` + registry + attachments carry `...baseColumns` (`_sync_*`);
@@ -43,6 +49,26 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
   ∈ allowed_effects at registration; target ∈ attachments by construction); sensitive-consent is enforced by the
   consuming handler via the `assertEffectPermitted` seam (`foundation/effects/gate.ts`), NOT the engine
   (ADR-004 §3.2.5-A3 / BR-17 / IR-5 — no engine-side `moduleClass` inference). `[FACT: lifecycle.ts, effects/gate.ts]`
+
+## ENFORCED now (MOD-sessions ① · S1 — `services/sessions/service.ts`)
+- **BR-13 (IR-5) — structural create validation, fail-loud.** `createSession` runs `CreateSessionSchema`
+  (enum membership for `scheduling_mode`/`status`; `focus_rating`/`energy_level` 1..5; `ended_at ≥ started_at`);
+  a failure → `InvalidSessionInput(field)`, no write. `status` is caller-supplied (spine has no default).
+  `[FACT: service.ts createSession; validators/session.ts CreateSessionSchema]`
+- **BR-14 (nuance-2) — spine+extension atomicity.** The `sessions` row + its 1:1 `focus`/`study` extension are
+  written in ONE `db.transaction` via `createInTx`; a failed extension insert rolls back the spine (proven: an
+  invalid `focus_sessions.type` leaves zero `sessions` rows). `[FACT: service.ts; sessions-service.test.ts AC2]`
+- **BR-15 (B1) — `sub_type`→extension routing.** Only `focus`→`focus_sessions`, `study`→`study_sessions`; every
+  other sub_type is spine-only. An `extension` on an unmapped/mismatched sub_type → `InvalidSessionInput
+  ('extension')`. `[FACT: service.ts extKindFor]`
+- **BR-16 (B2′) — soft-delete is spine-only.** Extensions carry no `deleted_at` (base owns lifecycle) →
+  `softDeleteSession` flips the spine's `deleted_at`; the extension is unreachable via `getSession` and reappears
+  on `restoreSession` (update-by-PK). `[FACT: service.ts; session-extensions.ts; memory session-extensions-carry-no-deleted-at]`
+- **BR-17 (IR-7) — attach is idempotent + hard-detach.** `attach` no-ops on a duplicate `(session_id,
+  entity_type, entity_id, level)` key (no revive path — no `deleted_at`); `detach` hard-deletes. `sub_type`
+  immutable on `updateSession` (B3). `[FACT: service.ts attach/detach/updateSession]`
+- **NOTE — S1 is STRUCTURAL only.** Semantic `sub_type`/`entity_type` **registry** validation and completion→
+  `transition()` wiring are S2 (the `registry` dep is injected but unused in S1).
 
 ## NOT YET enforced (deferred — do not claim)
 - Per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + fire-time sensitive-consent
