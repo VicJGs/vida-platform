@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-09-16 by /session-end -->
+<!-- Last updated: 2026-09-18 by /session-end -->
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
 | 2026-09-16 | backend-replan P6 — label taxonomy | Apply `frontend`+`P6` (plan §5.4) or just the Profile-value label | **`frontend` label only — no bespoke `P6` tag.** Created + applied to all 24 `fe-*` (mirrors P5.1's `backend`). | The P5.1 decision is "one label per `Profile` value, NOT a bespoke tag" (no `P5` precedent); P6 membership is already recoverable via the M1.2.\* milestones + `frontend`. Overrides the P6 plan's loose "`P6` label" wording. | Yes (add the tag later if wanted) |
@@ -391,3 +391,22 @@ The runtime that makes the AR-7 effect rail FIRE (Entity Re-scope / Ratify, 3 Ve
   vault-locked. Caught by the live-store gate. Memory: [[m10-repos-use-empty-encryptedfields-seam]].
 - **Boundary (Ratify):** per-module handlers, consent-threading, scheduler → #46 / MOD-*.
 - 839 @vida/core tests green; tsc 0; commit `52c2f69`; PR #34 merged (`300b185`). **Next head: #33 xs-spaces-tags-links.**
+
+## xs-measurement-engine (#33, LIF-173) — completed 2026-09-18 — FULL RATIFY (no code)
+The ADR-011 universal measurability engine (Entity Re-scope / recovery). **Zero production code owed** — the
+substrate was built ahead of schedule by AR-7 Increment 3 (2026-08-03).
+- **The 15 in-issue legs (`decomposition.md:46`) == AR-7 `PLAN-2026-08-03-measurement.md` §1 "Is (build-now)".**
+  The engine (`normalize`/`rollup`/`resolveProgress`/`assertAcyclic` + `Pursuable`/`Binding`/`EntityRef` + enums +
+  seam) + 12 tests all pre-existed; DB-4 landed the columns (13 schemas); the #31/#32 rail carries the effect types.
+- **Close as Done, not merge/re-home** — #33 is a real build-graph node (16 dependents); the node is satisfied.
+  Diverges from #31/#32 (ratified+EXTENDED) because measurement's AR-7 increment was a complete pure engine.
+- **XCU-10 (binding_mode ≠ source): no validator owed** — the axes live on different tables; a table-less engine
+  can't co-validate; structurally satisfied by distinct enums + schema separation.
+- **XCU-09 (event-trigger): no helper owed** — rides the existing rail; `EffectEvent` needs firing-entity state
+  (not derivable from a `Binding`); reuse `deriveEffectEventId`, build no hash (resolves U-1).
+- **XCU-SP-33: documented-seam only** — Purposes-owned laddering; the AR-6 tag substrate + `rollup` it rides are built.
+- **§XXIX for a code-unchanged context** = verify + mark-current + optional pointer, NOT a manufactured refresh.
+- Proven safe via an **independent adversarial refutation** (CONCEDED on all 15 legs) + pre-ship `/critique` (SHIP).
+  Deliverable = `docs/features/measurement/delivery/*` + a §XXIX marker in `docs/core/measurement/current-spec.md`.
+- 12 measurement tests green; tsc 0; PR #35 merged (`f2c7362`); housekeeping PR #36 (phantom-edge) + #37 (close-out).
+  Memory: [[xs-foundation-heads-trace-to-ar7-ratify]]. **Next head: `tracker_sync --next` (xs-spaces-tags-links / xs-views).**
