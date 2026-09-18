@@ -1,19 +1,36 @@
 // ============================================================================
-// SessionsService — S1: Session CRUD + attach (MOD-sessions ① · LIF-139)
+// SessionsService — MOD-sessions ① backend service tier (LIF-139)
 //
-// The first real services/* build. Factory-object (no `this.`, IR-8), mirroring
-// foundation/spaces/service.ts. Every mutation → the db-6 Repository → co-
+// The first real services/* build, over the AR-5 `foundation/sessions` spine +
+// the #32 effect rail + the DB-4 schema. Factory-object (no `this.`, IR-8 —
+// intra-service calls go via the `service` const / hoisted closures, mirroring
+// foundation/spaces/service.ts). Every mutation → the db-6 Repository → co-
 // transactional sync_queue enqueue. M1.0 pass-through: encryptedFields: [] on
-// every repo (key_learnings [E] stays dormant until M3/DB-5).
+// every repo ([E] fields — key_learnings, template/batch/exception names —
+// stay dormant until M3/DB-5).
 //
-// Table lifecycle (B2'): `sessions` carries deleted_at (softDelete: true);
-// `focus_sessions`/`study_sessions`/`session_attachments` use ...baseColumns
-// with NO deleted_at (the base session owns lifecycle) → softDelete: false,
-// removed only on a hard delete. Soft-deleting a session touches the SPINE only;
-// the extension goes unreachable via getSession.
+// The 7 slices (spec: service/S1-*.md … S7-*.md · rules: current-business-rules
+// BR-13..BR-35):
+//   S1 session CRUD + attach (atomic spine+extension via createInTx)
+//   S2 sub_type/entity_type registry validation + completion→#32 transition wiring
+//   S3 Pomodoro focus runtime over focus_sessions (pause/interruption/cadence)
+//   S4 availability CRUD (study_availability + availability_exceptions)
+//   S5 plan-batch endpoints (study_plan_batches state machine; G5 algorithm → M1.2)
+//   S6 session_templates CRUD (focus presets; is_default single-winner)
+//   S7 dueIn aggregator (shared platform primitive) + derived analytics
 //
-// S1 is STRUCTURAL only: no sub_type/entity_type registry validation and no
-// completion/lifecycle wiring — those are S2. Spec: service/S1-*.md
+// Table lifecycle: `sessions` + `planned_blocks` carry deleted_at (softDelete:true);
+// `focus_sessions`/`study_sessions`/`session_attachments`/`study_availability`/
+// `availability_exceptions`/`study_plan_batches`/`session_templates` use bare
+// ...baseColumns with NO deleted_at (base owns lifecycle / hard-delete-by-design)
+// → softDelete:false. Soft-deleting a session touches the SPINE only; the
+// extension goes unreachable via getSession.
+//
+// Config (PD-3) is Preferences-owned (user_preferences → PD-3 defaults); templates
+// are ②-applied presets, not runtime-bound. Effect firing rides the single #32
+// path; per-module handlers are deferred (#46) — the rail is fail-loud on a
+// missing handler. Deferred beyond ①: placement algorithm + SS-8 bridge → M1.2 ·
+// live dueIn provider lanes → owning modules · ② UI → fe-sessions.
 // ============================================================================
 
 import { eq, and, gte, lte, isNull } from 'drizzle-orm'
