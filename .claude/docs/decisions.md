@@ -375,3 +375,19 @@ The first M1.1.1 module build — the ADR-010 declare→grant→enforce **envelo
   filter `isNull(deleted_at)` explicitly (`activeGrant()`); caught by the live-store Verification Gate.
 - 3 slices (S1 decision core + reads · S2 grant/revoke · S3 offered-set), each Verification-Gate-passed; §XXVI
   double-gate + 2 post-impl critiques SHIP. 824 @vida/core tests green; commit `f4937e9`. **Next head: #32 xs-effect-rail.**
+
+## xs-effect-rail (#32, LIF-170) — completed 2026-09-17
+The runtime that makes the AR-7 effect rail FIRE (Entity Re-scope / Ratify, 3 Verification-Gate-passed slices).
+- **Effects fire ON COMPLETION** (SS-10), never other transitions; the engine is the rail's first producer.
+- **Replay-safe fan-out, not all-or-none** (ADR-004 §3.2.5): each effect owns its `applyEffect` tx; recovery is
+  replay (ledger dedupes), not transaction rollback. Corrected an early "one transition = one atomic fan-out" over-reach.
+- **No-double-count key** = `derive(target.entityId ‖ started_at-UTC-date ‖ effectType)` — stable + deterministic
+  across replay/devices (SS-6). NOT `ended_at` (unset at fire time) / `Date.now()` (non-deterministic).
+- **Fire-first, commit-status-last** — the status write is the commit point; a mid-fire crash self-heals on replay.
+- **Consent gate is HANDLER-side, not engine-side** (ADR-004 §3.2.5-A3 / BR-17 / IR-5): the engine cannot supply
+  `moduleClass` (no inference; no map), so `assertEffectPermitted` (`foundation/effects/gate.ts`) is a handler seam;
+  the engine enforces only structural `canTouch` (holds by construction). §XXVIII deviation from the slice-map, doc-forced.
+- **M1.0 `encryptedFields:[]` seam** — even for `[E]` tables (`sessions.key_learnings`); `getVaultKey` throws
+  vault-locked. Caught by the live-store gate. Memory: [[m10-repos-use-empty-encryptedfields-seam]].
+- **Boundary (Ratify):** per-module handlers, consent-threading, scheduler → #46 / MOD-*.
+- 839 @vida/core tests green; tsc 0; commit `52c2f69`; PR #34 merged (`300b185`). **Next head: #33 xs-spaces-tags-links.**

@@ -14,8 +14,11 @@
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| xs-effect-rail (LIF-170 → Done) | 2026-09-17 | 1 |
 | xs-capability (LIF-169 → Done) | 2026-09-17 | 1 |
 | backend-replan (LIF-163 → Done) | 2026-09-17 | 7 |
+
+*(xs-effect-rail = the 2nd M1.1.1 build (head #32) — makes the AR-7 effect rail FIRE. `foundation/sessions/{attachments,lifecycle}.ts` (resolveTargets · transition · fireCompletionEffects) + `foundation/effects/gate.ts` (assertEffectPermitted, handler seam). XCU-09/10/22/SP-30. Entity Re-scope/Ratify; 3 slices Verification-Gate-passed; §XXVI double-gate; gate caught 3 determinism/wiring blockers + the M1.0 `encryptedFields:[]` seam. 839 @vida/core tests green; commit `52c2f69`, PR #34 merged (`300b185`). Archived → `.claude/tasks/archive/xs-effect-rail.md`. **Next head: #33 xs-spaces-tags-links** (16 dependents) or next `#`-order.)*
 
 *(xs-capability = the FIRST M1.1.1 module build (head #31) — the ADR-010 envelope-enforcement service tier over the AR-7 registry: `packages/core/src/foundation/capability/{enforcer,offered-set}.ts` (checkAction/assertPermitted · grant/revoke · canonicalEnvelopeHash · resolveOfferedSet). 3 slices, each Verification-Gate-passed; §XXVI double-gated + 2 post-impl critiques SHIP; 824 @vida/core tests green; commit `f4937e9`. Archived → `.claude/tasks/archive/xs-capability.md`; decisions in `.claude/docs/decisions.md`. **Next head: #32 xs-effect-rail** (M1.1.1, deps none).)*
 
