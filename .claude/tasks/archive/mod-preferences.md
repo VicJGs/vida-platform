@@ -1,5 +1,5 @@
 # Task: mod-preferences
-# Status: in-progress — ① backend COMPLETE (3/3 slices); pending commit + /task-complete
+# Status: done
 # Linear: LIF-133
 # Profile: Add Backend Component
 # Scenario: Default

@@ -14,6 +14,7 @@
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| mod-preferences (LIF-133 → Done) | 2026-09-19 | 1 — Add Backend Component/Default (Entity Delivery Flow): ① service tier over DB-4 #2 schema, 3 slices (user/nav prefs singletons + command_bar_history), each §XXVI double-gated + live-store Verification Gate. `createPreferencesService`; +`MergedPreferences`/`MergedNavPreferences`; 2 §XXVIII deviations (config-view type · raw-reader Row types). PR #44, @vida/core 932/932. Deferred: ② fe-preferences LIF-134. |
 | xs-templates (LIF-176 → Done) | 2026-09-19 | 1 — Entity Re-scope: BUILD S1 types + S2 store CRUD (`TemplatesService`); RATIFY XCU-06/09/SP-31; capture/instantiate/shipped/preset = first-consumer-pull SEAMS (3 Victor drift-catches → all doc-grounded); PR #43, @vida/core 907/907 |
 | xs-views (LIF-177 → Done) | 2026-09-18 | 1 — Entity Re-scope: RATIFY 21 legs + EXTEND `ViewsService.cloneView` (XCU-05), 4 doc seams; PR #42, @vida/core 893/893 |
 | xs-spaces-tags-links (LIF-175 → Done) | 2026-09-18 | 1 — XCU-SP-27 AssociationResolver (tag/link unify⇄separate), PR #40, @vida/core 886/886 |
