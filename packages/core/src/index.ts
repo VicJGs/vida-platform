@@ -132,5 +132,8 @@ export * from './foundation/economy'
 // Service — backlink / entity-link resolver (AR-8 Increment 1 · reads AR-6 entity_links)
 export * from './services/search'
 
+// Service — Sessions & Scheduling (MOD-sessions ① · LIF-139 · S1 CRUD + attach)
+export * from './services/sessions'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
