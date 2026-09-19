@@ -439,3 +439,13 @@ current-* promoted BR-13..BR-35. PR #39.
 - **Repository read path pinned** (not raw `db.select()`): empty `[E]` set (BR-13 M1.0 pass-through, no `key()` call/vault-lock) + `findWhere` decrypt seam honored for M3; explicit `isNull(deleted_at)` (findWhere skips soft-delete); `entity_type` registry-validated fail-loud.
 - **`TaggableRef` not `EntityRef`:** avoided coupling to `foundation/measurement`'s `EntityRef` ({type,id}, ADR-011) — no measurement dependency; kept spaces vocabulary (entity_type/entity_id).
 - Two Victor drift-catches resolved against doc lines (cosmetic-unified; AR-8 over-scope). §XXVI double-gate + per-slice Verification Gate (7 tests, live better-sqlite3) + post-impl critique SHIP + engineering gate PASS. Currency: BR-16/17 added. 886/886. PR #40 → merged `1c0f42a`.
+
+## xs-views (#35, LIF-177) — completed 2026-09-18
+Entity Re-scope recovery of the AR-6 · ADR-007 saved-view substrate. Outcome: RATIFY 21 legs + one thin EXTEND.
+- **Head via `#`-order rule**, not `--next`: lowest-`#` ready issue = #35 (deps none); `--next`'s mod-journals (#39) is advisory. Peers xs-templates #36 (now unblocked), mod-preferences #37, mod-journals #39.
+- **Ratify vs extend** sized by reconciliation: 15 FACT legs already built (V1–V5) + `cloneView` (XCU-05) the only owed code. 4 gap-legs closed as documented seams; XCU-21 = Preferences boundary.
+- **XCU-06 seed = ADR-009 Templates (#36)**, delegates to `createView`; zero seed code here (doc-fixed — Victor drift-catch on a 3-way fork the docs already close). [[decide-dont-ask-when-docs-give-the-answer]]
+- **XCU-14 = P6/renderer seam**, grounded in ADR-007:94/106/127 + the engine's deliberate layout-agnosticism (BR-10's "never crash" holds by construction); not the #35-invariant hand-wave.
+- **#35-position invariant:** any leg needing a not-yet-built consumer (providers, journal-contribution, templates) is a SEAM by topological construction, never wired code.
+- **cloneView contract:** `targetSpaceId` REQUIRED (the two ADR-007:50-51 redirects; zero INTERP — no rename, no no-arg duplicate); independent copy (fresh id/_sync_*, no back-link); raw-TEXT copy of filter/grouping/sort; no `default_view_id` touch; co-transactional `sync_queue` create.
+- §XXIX: `docs/core/spaces/current-*` + **BR-18** (BR-16/17 taken by XCU-SP-27 — verified live).
