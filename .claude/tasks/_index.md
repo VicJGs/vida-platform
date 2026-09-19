@@ -2,7 +2,9 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — `xs-views` completed 2026-09-18, LIF-177 → Done. Next head via `#`-order: xs-templates #36 (now unblocked — ← xs-capability✅/xs-spaces-tags-links✅/xs-views✅), mod-preferences #37, or mod-journals #39.)_
+- xs-templates (LIF-176): .claude/tasks/xs-templates.md  (🟡 in-progress — `#36` M1.1.1 head; Add Backend Component · Entity Re-scope. ADR-009 template capability over AR-6/AR-7. Branch `xs-templates` off main. At Step 0 baseline.)
+
+_(prior: `xs-views` completed 2026-09-18, LIF-177 → Done. `#`-order forward queue after xs-templates: mod-preferences #37, mod-journals #39.)_
 
 <details><summary>superseded — mod-notes vertical grain (folded into the campaign)</summary>
 

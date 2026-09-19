@@ -31,3 +31,4 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 | [features/ui-4-app-shell-components](features/ui-4-app-shell-components/) | feature (new-feature, FULL gate) | spec-draft — stub + home; M1/M1.0 `#30`, LIF-89, ← ui-1 ✅ + ux-3 ✅; renders UX-2/UX-3/UX-5 models; baseline + PLAN next (document-first §XXVI) | 2026-08-16-ui-4-app-shell-components |
 
 | xs-views | Unit (backend extend) | spec-draft | 2026-09-18 | ViewsService.cloneView (XCU-05) |
+| [features/xs-templates](features/xs-templates/) | feature (add-backend, Entity Re-scope) | spec-draft (stub) | 2026-09-19 | #36 M1.1.1 head — ADR-009 template capability; written after Step 4 reconciliation |
