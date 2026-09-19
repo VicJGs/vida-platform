@@ -2,7 +2,9 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — `xs-templates` completed 2026-09-19, LIF-176 → Done, archived. `#`-order forward queue: mod-preferences #37 (deps none), mod-journals #39 (← mod-sessions✅, xs-measurement✅). `--next` advises mod-journals by dependent-count; `#`-order → mod-preferences #37 is the lower-# ready head.)_
+- mod-journals (LIF-127 → in-progress): .claude/tasks/mod-journals.md  (started 2026-09-19 — add-backend-component / Default (Entity Delivery Flow) · M1/M1.1.1 head `#39` · ← mod-sessions✅ + xs-measurement✅ · 20 dependents. The ① backend service tier for the Notes & Journals integration layer: one journal/day daily dashboard owning `summary(date)`, agenda + entry, over `journal_snapshots`, composing pages/entity_links + the module-contribution registry. Confirmed Default — services/journals/ holds only a scaffold CLAUDE.md.)
+
+_(prior: `mod-preferences` completed 2026-09-19, LIF-133 → Done. `xs-templates` completed 2026-09-19, LIF-176 → Done. `#`-order forward queue after #37 done → mod-journals #39, which `--next` also advises by dependent-count.)_
 
 <details><summary>superseded — mod-notes vertical grain (folded into the campaign)</summary>
 
