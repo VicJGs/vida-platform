@@ -431,3 +431,11 @@ current-* promoted BR-13..BR-35. PR #39.
   completed/failed → M1.2 (intake:169-170 batch-lifecycle mini-intake).
 - **`dueIn` = shared platform primitive** (SS-7 aggregate/degrade; empty provider seam N5); analytics
   derived-on-read (SS-12/IR-6). Memory: [[sparse-foundation-seed-is-extension-seam-not-a-gap]]. ② UI → `fe-sessions`.
+
+## xs-spaces-tags-links (XCU-SP-27) — completed 2026-09-18
+- **AssociationResolver** = the tag/link unify⇄separate resolution SERVICE over `entity_tags` + `entity_links` (ADR-006 §3.3). `resolveAssociations(ref, mode)`: `unified` → one homogeneous `Association[]` (edges keep `kind`, no blur/dedup — BR-4); `separate` → two typed relations.
+- **Behavioral, not cosmetic:** the modes differ in RELATION STRUCTURE (one homogeneous relation vs two heterogeneous), not container — the "computed in the OS, not a display flag" property (ADR-006:90-92). Reversibility is a storage property, not a reshape claim. No dedup (a tag-membership and a link to the same id are distinct associations).
+- **Scope (outgoing half only):** resolves an entity's tag memberships + outbound (`page_id`) links; INBOUND refs are AR-8's backlink resolver → complete space = this ⊕ AR-8. Cross-entity by-filter querying = views engine (ADR-007/xs-views). Stateless on `mode` (persisted switch + surface = P6/Preferences+Spaces).
+- **Repository read path pinned** (not raw `db.select()`): empty `[E]` set (BR-13 M1.0 pass-through, no `key()` call/vault-lock) + `findWhere` decrypt seam honored for M3; explicit `isNull(deleted_at)` (findWhere skips soft-delete); `entity_type` registry-validated fail-loud.
+- **`TaggableRef` not `EntityRef`:** avoided coupling to `foundation/measurement`'s `EntityRef` ({type,id}, ADR-011) — no measurement dependency; kept spaces vocabulary (entity_type/entity_id).
+- Two Victor drift-catches resolved against doc lines (cosmetic-unified; AR-8 over-scope). §XXVI double-gate + per-slice Verification Gate (7 tests, live better-sqlite3) + post-impl critique SHIP + engineering gate PASS. Currency: BR-16/17 added. 886/886. PR #40 → merged `1c0f42a`.
