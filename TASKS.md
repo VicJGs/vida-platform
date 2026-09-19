@@ -14,6 +14,7 @@
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| mod-sessions (LIF-139 → Done) | 2026-09-18 | 1 — ① backend S1–S7, @vida/core 879/879 |
 | xs-measurement-engine (LIF-173 → Done) | 2026-09-18 | 1 — FULL RATIFY (no code) |
 | xs-effect-rail (LIF-170 → Done) | 2026-09-17 | 1 |
 | xs-capability (LIF-169 → Done) | 2026-09-17 | 1 |

@@ -410,3 +410,24 @@ substrate was built ahead of schedule by AR-7 Increment 3 (2026-08-03).
   Deliverable = `docs/features/measurement/delivery/*` + a §XXIX marker in `docs/core/measurement/current-spec.md`.
 - 12 measurement tests green; tsc 0; PR #35 merged (`f2c7362`); housekeeping PR #36 (phantom-edge) + #37 (close-out).
   Memory: [[xs-foundation-heads-trace-to-ar7-ratify]]. **Next head: `tracker_sync --next` (xs-spaces-tags-links / xs-views).**
+
+## mod-sessions (LIF-139) — completed 2026-09-18
+
+MOD-sessions ① backend service tier (`packages/core/src/services/sessions/`, the first real `services/*` build),
+via the Entity Delivery Flow: RATIFY decomposition → 7 gated slices (S1–S7). `@vida/core` 879/879, tsc clean.
+current-* promoted BR-13..BR-35. PR #39.
+
+- **Completion routes through the existing #32 `transition()` (IR-1)** — one firing path; per-module handlers
+  deferred (#46). The rail is **fail-loud** on a missing handler → `completeSession('focus')` throws in M1.1;
+  a no-effect type completes `fired:0`. The focus timer `complete` finalizes the run only (intake:166,179
+  "stub the contract, wire later"), never auto-fires.
+- **No shipped-roster seeding** — `createSession` validates against the AR-5-shipped registry (`focus`) + the
+  `register()` seam; owning modules register their own sub-types (SS-5, delivery-plan:239).
+- **Config is Preferences-owned (PD-3)** — focus runtime reads `user_preferences` → PD-3 defaults; templates are
+  ②-applied presets (no `template_id` binding — the S3 `templateId→config` branch was reconciled out in S6).
+- **Table lifecycle** — only `sessions` + `planned_blocks` carry `deleted_at`; extension/scheduler-input/batch/
+  template tables hard-delete. Soft-deleting a session = spine only.
+- **Plan-batch = state-machine shell** — `generatePlan→pending_approval`; placement algorithm + SS-8 bridge +
+  completed/failed → M1.2 (intake:169-170 batch-lifecycle mini-intake).
+- **`dueIn` = shared platform primitive** (SS-7 aggregate/degrade; empty provider seam N5); analytics
+  derived-on-read (SS-12/IR-6). Memory: [[sparse-foundation-seed-is-extension-seam-not-a-gap]]. ② UI → `fe-sessions`.

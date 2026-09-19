@@ -1,5 +1,5 @@
 # Task: mod-sessions
-# Status: in_progress
+# Status: done
 # Linear: LIF-139
 # Profile: Add Backend Component
 # Scenario: Default (Entity Delivery Flow — default path)
