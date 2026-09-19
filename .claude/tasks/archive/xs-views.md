@@ -1,5 +1,5 @@
 # Task: xs-views
-# Status: in-progress
+# Status: done
 # Linear: LIF-177
 # Profile: Add Backend Component
 # Scenario: Entity Re-scope (Entity Delivery Flow recovery variant)
@@ -52,18 +52,22 @@ Integration points: ADR-007 (views/layouts allowed-vocabulary + graceful degrada
 - [x] Currency Rule (§XXIX) — refreshed `docs/core/spaces/current-spec.md:28` (ViewsService + clone) + added **BR-18** (BR-16/17 were taken by XCU-SP-27 — verified live, not the spec's stale "BR-16")
 
 ## Build Steps
-<!-- UNIT-level — mirrors spec §5 (approved). -->
-- [ ] `nvm use` (env: node v20 < .nvmrc 22; better-sqlite3 ABI) + corepack pnpm
-- [ ] Add `cloneView(sourceId, targetSpaceId): Promise<ViewRow>` to `ViewsService` interface (service.ts §3)
-- [ ] Implement in the returned object (closure over `repo`, NO `this.`): findById→ViewNotFound→repo.create PICK 6 fields
-- [ ] Tests in `spaces.test.ts` — 7 acceptance cases + live-store sync_queue `create` assertion (reuse :127-144 pattern)
-- [ ] Verification Gate: typecheck 0 · lint 0 · `@vida/core` suite green
-- [ ] §XXIX: promote current-spec.md:28 line + new BR-16 to `docs/core/spaces/current-*`
+<!-- UNIT-level — mirrors spec §5 (approved). ALL DONE. -->
+- [x] `nvm use 24` (node v20 < required; better-sqlite3 ABI) + corepack pnpm
+- [x] Add `cloneView(sourceId, targetSpaceId): Promise<ViewRow>` to `ViewsService` interface
+- [x] Implement (closure over `repo`, NO `this.`): findById→ViewNotFound→repo.create PICK 6 fields
+- [x] +7 tests in `spaces.test.ts` (reuse :127-144 sync_queue pattern)
+- [x] Verification Gate: typecheck 0 · @vida/core 893 green (+7) · eslint 0
+- [x] §XXIX: current-spec.md ViewsService line + **BR-18** (not BR-16 — live-verified)
+
+## Outcome
+SHIP → PR #42 merged to main (`701eca8` → merge `5e23b17`). LIF-177 → Done. RATIFY 21 legs + one EXTEND (`cloneView`, XCU-05); 4 documented seams + 1 Preferences boundary. 16 XS/MOD downstream dependents unblocked.
 
 ## Session History
 | Date | What was done | Next step |
 |------|--------------|-----------|
 | 2026-09-18 | initialized task from P6 stub; head #35 resolved via `#`-order rule; scenario = Entity Re-scope | run Step 0 baseline (document-context on views + cross-plane standards load) |
+| 2026-09-18 | full Entity Re-scope recovery: baseline → Doc Gate → Interp Gate → Envision SKIP → reconciliation (RATIFY 21 + EXTEND 1) → Re-scope Gate → spec double-gate → impl `cloneView` + 7 tests → post-impl SHIP → §XXIX. PR #42 merged, LIF-177 Done. | COMPLETE — next head via `#`-order (peers: xs-templates #36 [now unblocked], mod-preferences #37, mod-journals #39) |
 
 ## Notes
 - Env: Node 24 via nvm + corepack pnpm. Branch `xs-views` off `main` → PR → merge (per-issue git workflow).
