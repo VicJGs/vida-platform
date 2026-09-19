@@ -138,5 +138,8 @@ export * from './services/sessions'
 // Service — Preferences (mod-preferences #37 · LIF-133 · Slice 1: user_preferences config provider)
 export * from './services/preferences'
 
+// Service — Journals (mod-journals #39 · LIF-127 · Slice 1: contribution registry + types + typed errors)
+export * from './services/journals'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
