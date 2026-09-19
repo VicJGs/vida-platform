@@ -5649,3 +5649,20 @@ Decisions:
   - Memory: [[xs-foundation-heads-trace-to-ar7-ratify]]; extended [[tracker-sync-orphan-create-guard]] (phantom-edge + push-to-main-blocked).
 Next session:
   - **FIRST ACTION:** next XS head via `tracker_sync --next` — peer heads **xs-spaces-tags-links** (16 dependents) or **xs-views** (8). Both likely AR-6/AR-7 ratify-recoveries — verify each `PLAN-*.md` §1 vs its decomposition roster to size ratify-vs-extend before building. Env: Node 24 via nvm + corepack pnpm; per-issue branch → PR.
+
+---
+Date: 2026-09-19 — xs-templates #36 (LIF-176) — M1.1.1 head — BUILD store+types · RATIFY · first-consumer-pull SEAMS
+Task: xs-templates · Profile: Add Backend Component · Scenario: Entity Re-scope (recovery) · branch `xs-templates` → PR #43 → main (`166db0d`) → Done
+Goal: build the ADR-009 template capability (#36) — the 14-leg roster (xcut-templates XCU-01…13 + xcut-spaces XCU-SP-31).
+Accomplished:
+  - **BUILT (consumer-independent):** S1 types (`@vida/types/template.ts` — `TemplateBundle` 5-member envelope with OPAQUE members [serialization is build-time, ADR-009:112-115], `INSTANTIATION_STATUS`, `InstantiationResult`/`FlaggedMember`, typed errors; `validators/template.ts` envelope-only `BundleSchema`) + S2 store CRUD (`foundation/templates/service.ts` — `TemplatesService` create/list/get/soft-delete over the DB-6 Repository; **no `update`** [fork model, XCU-01]; empty `[E]` [M1.0, XCU-09]). @vida/core 907 tests (+14).
+  - **RATIFY:** XCU-06 fork-invariant (no `template_id`, by absence) · XCU-09 `[E]` pass-through · XCU-SP-31 umbrella · `templates` table + migration 011.
+  - **SEAMS (first-consumer-pull, 0 code):** capture (XCU-02/03/04/07-serializer) · instantiate-execution (XCU-05/11) · shipped-asset-source (XCU-08) · preset (XCU-12/13). No M1.1 consumer → pulled by the first *module*.
+  - Full Entity Re-scope front-matter gated (Documentation → Interpretation → Reconciliation → Re-scope) + per-slice §XXVI double-gate + live-store Verification Gate for S1/S2 + Step-7 pre-ship /critique SHIP + §XXIX (`docs/core/spaces/current-*` BR-19/20/21).
+Decisions:
+  - **The head is store+types+seams, NOT a service build** — a `#`-early XS head builds only what has a consumer NOW (its own substrate) + documents the rest as first-consumer-pull seams (ADR-019 §3.5). Same shape-class as measurement (ratify) / views (21-ratify/1-extend).
+  - **3 Victor drift-catches, one root (inventing shape the docs defer):** (1) S1 invented detailed seed sub-schemas → ADR-009:112-115 routes serialization to build-time → opaque `unknown` envelope; (2) preset has NO store → XCU-12 = type+invariant, not CRUD; (3) capture/instantiate over-scoped as build-now + a manufactured need for sibling read-methods → `decomposition.md:49` read-seams "—" + capability-framework.md:239 (template-capable = modules) → SEAMS, no sibling changes. The **reconciliation** was the weak link (check the decomposition's own consumer column before calling legs build-now).
+  - **1 ISOLATED triage:** empty `[E]` still needs `initVault()` (sync-hash path); `SYNC_OPERATION` = create|update|delete (not `insert`). Memory [[m10-repos-use-empty-encryptedfields-seam]] refined.
+  - Memory: [[reconciliation-check-decomposition-consumer-column-before-build-now]] (new); [[decide-dont-ask-when-docs-give-the-answer]] (re-hit — asking the sibling-read fork WAS the drift).
+Next session:
+  - **FIRST ACTION:** next head via the `#`-order rule = **mod-preferences #37** (deps none, lowest-# ready). `tracker_sync --next` advises **mod-journals #39** (dependent-count) — `#`-order wins. Verify the head's profile + scenario at pickup; likely a MOD CRUD build over the finished schema. Env: Node 24 via nvm + corepack pnpm; per-issue branch → PR.
