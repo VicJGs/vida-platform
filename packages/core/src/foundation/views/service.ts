@@ -27,6 +27,13 @@ export interface ViewsService {
   updateView(id: string, patch: Partial<CreateViewInput>): Promise<ViewRow>
   deleteView(id: string): Promise<void>
   getView(id: string): Promise<ViewRow>
+  /**
+   * Clone a saved view into an independent copy (XCU-05 · ADR-007:50-51 · ADR-009 fork stance).
+   * `targetSpaceId` redirects ownership — a string re-homes into that Space, `null` makes it global.
+   * name/layout/filter/grouping/sort are copied verbatim; the clone gets a fresh id + sync metadata
+   * (no back-link) and never touches `spaces.default_view_id`.
+   */
+  cloneView(sourceId: string, targetSpaceId: string | null): Promise<ViewRow>
 }
 
 function encodePatch(patch: Partial<CreateViewInput>): Record<string, unknown> {
@@ -68,6 +75,24 @@ export function createViewsService(db: DrizzleDb, deviceId: string): ViewsServic
       const row = await repo.findById(id)
       if (!row) throw new ViewNotFound(id)
       return row
+    },
+
+    async cloneView(sourceId, targetSpaceId) {
+      // Inline findById+throw (not this.getView — factory service breaks on destructure).
+      const source = await repo.findById(sourceId)
+      if (!source) throw new ViewNotFound(sourceId) // BR-clone-4
+
+      // PICK the copyable fields — never spread the source row (id/_sync_* are select-only,
+      // repo.create mints them fresh → independent copy, no back-link). filter/grouping/sort are
+      // already JSON TEXT on the row, so they pass through raw (no re-stringify). BR-clone-1/3/6.
+      return repo.create({
+        space_id: targetSpaceId, // BR-clone-2 — string → Space, null → global
+        name: source.name, // verbatim, no rename (BR-clone-2)
+        layout: source.layout,
+        filter: source.filter,
+        grouping: source.grouping,
+        sort: source.sort,
+      })
     },
   }
 }

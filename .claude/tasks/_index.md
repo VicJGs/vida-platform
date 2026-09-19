@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — `backend-replan` completed 2026-09-17; the campaign superseded the mod-notes vertical grain. Next real work = the module BUILD, head `#31 xs-capability` per `reconstructed-structure.md`.)_
+- xs-views (LIF-177): .claude/tasks/xs-views.md  (in-progress 2026-09-18 — head `#35` M1.1.1 Backend · Add Backend Component · Entity Re-scope recovery variant. Ratify/extend the AR-6 ADR-007 ViewEngine `core/src/foundation/views/`; owed legs XCU-01…22 + XCU-SP-34. Branch `xs-views`, at Step 0 baseline.)
 
 <details><summary>superseded — mod-notes vertical grain (folded into the campaign)</summary>
 
