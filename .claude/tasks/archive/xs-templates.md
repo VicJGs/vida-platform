@@ -1,5 +1,5 @@
 # Task: xs-templates
-# Status: in-progress
+# Status: done
 # Linear: LIF-176
 # Profile: Add Backend Component
 # Scenario: Entity Re-scope (Entity Delivery Flow recovery variant)
@@ -55,7 +55,7 @@ Integration points: composes xs-capability✅ · xs-spaces-tags-links✅ · xs-v
   - [—] S3/S4/S5 **RECLASSIFIED as first-consumer-pull SEAMS** (2026-09-19 Victor drift-catch #3, "ground everything in the documentation"): capture (XCU-02/03/04/07-serializer), instantiate-execution (XCU-05/11), shipped-asset-source (XCU-08), preset (XCU-12/13) have NO M1.1 consumer — decomposition.md:49 read-seams "—"; capability-framework.md:239 template-capable = *modules* (none built); ADR-019 §3.5 first-consumer-pull. NOT built at #36; NO sibling-service (#34/#35) changes. My reconciliation over-scoped them as 11 build legs → corrected in reconciliation.md §E + slice-map.md. **Head code = S1 + S2 + ratify + documented seams.**
 - [x] Step 7 — /critique changed files → **SHIP** (strict-TS clean, live-store tested, grounded, matches corrected docs).
 - [x] Step 8 — §XXIX currency: `docs/core/spaces/current-spec.md` + `current-business-rules.md` refreshed with the templates store+types delta (BR-19/20/21) + the seam deferrals. (Templates contract lives under Spaces — no docs/core/templates/.)
-- [ ] Commit + push + PR (LIF-176) → merge.
+- [x] Commit `7d80855` → PR #43 → merged `166db0d` to main; branch deleted. LIF-176 → Done.
 - [ ] Step 6 — Resume by tag (per-slice build + blocking verification)
 - [ ] Step 7 — /critique changed files → SHIP
 - [ ] Step 8 — Currency Rule §XXIX (refresh CURRENT- docs, commit with code)
