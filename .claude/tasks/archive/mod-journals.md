@@ -3,7 +3,7 @@
 # Scenario: Default
 # Spec: docs/specs/features/mod-journals/_index.md
 # Created: 2026-09-19
-# Status: in-progress
+# Status: done
 # Linear: LIF-127
 # Project: M1 — Whole Manual OS
 # Milestone: M1.1.1 — Hub & Foundation · Backend
