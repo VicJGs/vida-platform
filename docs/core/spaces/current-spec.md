@@ -3,6 +3,7 @@
      Born 2026-07-29 by AR-6 (LIF-77). Promoted from docs/specs/foundation/ar-6-spaces/_index.md §3. -->
 Level: CORE / foundation (a tier beneath Notes & Pages). Owning ADRs: ADR-006 (tags/links/spaces) · ADR-007 (views).
 Status: **AR-6 built (2026-07-29)** — structure + thin services. M1.0 grain; deferrals below.
+**XCU-SP-27 association-resolution SERVICE added 2026-09-18** (`xs-spaces-tags-links`, LIF-175) — the unify⇄separate read layer over `entity_tags` + `entity_links`; the resolution *surface* (UI + persisted switch) remains P6.
 
 ## What exists in code
 
@@ -27,13 +28,14 @@ only `views.layout` is a FIXED SQL CHECK. `[E]` fields are the M3 target — M1.
 - `ViewsService` — view CRUD (filter/grouping/sort stringified on write).
 - `ViewProviderRegistry` (V4/R7) — read-provider seam; **ships EMPTY** (modules register per-module at their build).
 - `ViewEngine.resolve(view)` (V3/V4/V5) — fans filter to registered providers, merges, groups (ungrouped bucket for missing group-by), returns terminal state (`loading`|`empty`|`error`|`success`); no-provider/provider-error degrade, never throw/drop.
+- `AssociationResolver` (XCU-SP-27, `association-resolver.ts`) — the tag/link **unify⇄separate resolution** read layer. `resolveAssociations(ref, mode)`: `separate` → `{ tags, links }` (two typed relations); `unified` → one homogeneous `Association[]` (each edge keeps its `kind` — no blur/dedup, BR-4). Resolves an entity's **outgoing** half only: tag memberships (`entity_tags` by `(entity_type,entity_id)`) + outbound links (`entity_links` by `page_id`); **inbound refs are AR-8**, complete space = this ⊕ AR-8. Reads via the Repository (empty `[E]` set, explicit `isNull(deleted_at)`); `entity_type` registry-validated (BR-2); stateless on `mode` (switch persisted in Preferences/Spaces, P6).
 
 ## Deferred (owned elsewhere — NOT built here)
 - Capability registry / `block_instances` → **AR-7** (ADR-008). `space_enabled_blocks.capability_def_id` is the forward seam (plain ref, no FK).
 - Effect-firing rail (R1/R2) → **AR-7**. Backlink **resolver** service + neural-graph data-prep → **AR-8** (reads the `entity_links` AR-6 owns).
-- Predicate-DSL grammar, per-layout visual specs, unify⇄separate resolution surface → build-time (ADR-006 §3.3 / ADR-007 §"does NOT").
+- Predicate-DSL grammar, per-layout visual specs → build-time (ADR-007 §"does NOT"). The unify⇄separate resolution **service** is now BUILT (XCU-SP-27, above); only its **surface** (UI + the persisted user switch) remains → P6/Preferences+Spaces (ADR-006 §3.3).
 - `page_tags`→`entity_tags` migration → N&P build (M1.1; no live floor now).
 - Field encryption of `[E]` columns → M3 (ADR-017 pass-through until then).
 
 ## Tests
-`packages/core/src/foundation/spaces/__tests__/spaces.test.ts` (14) + `VIEW_LAYOUT` in `validators/enum-parity.test.ts`.
+`packages/core/src/foundation/spaces/__tests__/spaces.test.ts` (14) + `association-resolver.test.ts` (7 — shape · behavioral no-dedup · partiality · guards · stable order, live better-sqlite3 store) + `VIEW_LAYOUT` in `validators/enum-parity.test.ts`.
