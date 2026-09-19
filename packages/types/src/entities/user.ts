@@ -193,33 +193,64 @@ export const DOCK_SIZE = ['small', 'medium', 'large'] as const
 export type DockSize = (typeof DOCK_SIZE)[number]
 
 export interface UserPreferences extends SyncableEntity {
+  // Appearance
   theme: Theme
   accent_color: string
+  compact_mode: boolean
+  /** OPEN vocab (no CHECK) — schema/preferences.ts:48 */
+  font_size: string | null
+  // Locale
   date_format: string
   time_format: TimeFormat
   /** 0=Sun, 1=Mon */
   week_starts_on: number
   currency: string
+  number_format: string | null
+  // Dashboard
   dashboard_layout: Record<string, unknown> | null
+  default_dashboard_view: string | null
+  /** PB-2 per-module nav visibility {moduleKey: bool} — distinct from active_modules & feature_gamification (PR-7) */
+  module_visibility: Record<string, boolean> | null
+  // Tasks
   show_completed_tasks: boolean
   default_task_priority: string
+  show_archived: boolean
+  // Pomodoro
   pomodoro_work_minutes: number
   pomodoro_break_minutes: number
   pomodoro_long_break_minutes: number
   pomodoro_sessions_before_long: number
+  // Notifications
   notification_email: boolean
   notification_push: boolean
   notification_in_app: boolean
   quiet_hours_enabled: boolean
   quiet_hours_start: string | null
   quiet_hours_end: string | null
+  /** OPEN vocab (no CHECK) — schema/preferences.ts:75 */
+  notification_frequency: string | null
+  // Per-module push toggles
   push_habits: boolean
   push_tasks: boolean
   push_routines: boolean
   push_contacts: boolean
   push_study: boolean
+  // Features
   feature_gamification: boolean
+  // Onboarding & persona (E9 single-writer split, ADR-012 §3.10 — plaintext config, never PII)
+  persona: Persona | null
+  motivation_style: string | null
+  active_modules: string[] | null
+  onboarding_completed: boolean
 }
+
+/**
+ * The merged, consumer-facing preferences view: config fields only, DB row overlaid on defaults (PR-2 — never
+ * `undefined`). Strips SyncableEntity metadata (id/timestamps/_sync_*) because the defaults-fallback path has no row
+ * identity — mirrors the `sessions` `FocusConfig` subset precedent. `getMergedPreferences` returns this;
+ * `USER_PREFERENCES_DEFAULTS` is one.
+ */
+export type MergedPreferences = Omit<UserPreferences, keyof SyncableEntity>
 
 export interface NavPreferences extends SyncableEntity {
   dock_position: DockPosition
@@ -230,6 +261,10 @@ export interface NavPreferences extends SyncableEntity {
   haptic_feedback: boolean
   reduce_motion: boolean
 }
+
+/** Merged, consumer-facing nav-config view: config fields only, DB row overlaid on defaults (PR-2). Strips the
+ *  SyncableEntity metadata — same B1 pattern as `MergedPreferences`. `getNavPreferences` returns this. */
+export type MergedNavPreferences = Omit<NavPreferences, keyof SyncableEntity>
 
 export interface CommandBarHistory extends SyncMetadata {
   id: Id

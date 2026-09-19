@@ -135,5 +135,8 @@ export * from './services/search'
 // Service — Sessions & Scheduling (MOD-sessions ① · LIF-139 · S1 CRUD + attach)
 export * from './services/sessions'
 
+// Service — Preferences (mod-preferences #37 · LIF-133 · Slice 1: user_preferences config provider)
+export * from './services/preferences'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'

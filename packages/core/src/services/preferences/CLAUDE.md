@@ -12,5 +12,11 @@ Follows the service data-flow pattern GOVERNED by docs/core/architecture/data-fl
 (validate -> repository -> encrypt-seam -> return). Rides foundation/ substrates; does not re-implement them.
 
 ## Status
-Directory home only (ADR-018). Service logic is authored PER-FEATURE at build phase (ADR-017).
-Types + Zod live in @vida/types. No feature code lives here yet.
+mod-preferences #37 (LIF-133) — **① backend COMPLETE (all 3 slices)**. `createPreferencesService` (`service.ts`),
+over the DB-6 Repository (`encryptedFields: []`, plaintext config PR-1):
+- Slice 1 user_preferences — getMergedPreferences / updatePreferences / get+setModuleVisibility.
+- Slice 2 nav_preferences — getNavPreferences / updateNavPreferences.
+- Slice 3 command_bar_history — recordCommand (upsert) / pinCommand / getCommandHistory (pinned-then-frecency).
+Errors in `types.ts`. Interfaces + `MergedPreferences`/`MergedNavPreferences` in `@vida/types/entities/user.ts`; Zod in
+`@vida/core/src/validators/user.ts`. Durable docs: `docs/modules/preferences/current-*`. Remaining: ② fe-preferences
+(LIF-134) · DB-11 CommandBarHistory interface reconcile · sessions inline-read→seam migration (deferred hygiene).
