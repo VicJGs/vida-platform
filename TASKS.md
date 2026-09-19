@@ -14,6 +14,7 @@
 
 | Task | Completed | Sessions |
 |------|-----------|----------|
+| xs-spaces-tags-links (LIF-175 → Done) | 2026-09-18 | 1 — XCU-SP-27 AssociationResolver (tag/link unify⇄separate), PR #40, @vida/core 886/886 |
 | mod-sessions (LIF-139 → Done) | 2026-09-18 | 1 — ① backend S1–S7, @vida/core 879/879 |
 | xs-measurement-engine (LIF-173 → Done) | 2026-09-18 | 1 — FULL RATIFY (no code) |
 | xs-effect-rail (LIF-170 → Done) | 2026-09-17 | 1 |
