@@ -30,3 +30,4 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 | [foundation/ux-2-command-bar-search](foundation/ux-2-command-bar-search/) | feature (foundation) | **DONE ✅** — command bar + search interaction model; 9 files + design doc; PR #9 merged (`299f452`), LIF-91 Done · M1/M1.0 `#22` (row corrected 2026-08-16) | 2026-08-09-ux-2-command-bar-search |
 | [features/ui-4-app-shell-components](features/ui-4-app-shell-components/) | feature (new-feature, FULL gate) | spec-draft — stub + home; M1/M1.0 `#30`, LIF-89, ← ui-1 ✅ + ux-3 ✅; renders UX-2/UX-3/UX-5 models; baseline + PLAN next (document-first §XXVI) | 2026-08-16-ui-4-app-shell-components |
 
+| xs-views | Unit (backend extend) | spec-draft | 2026-09-18 | ViewsService.cloneView (XCU-05) |

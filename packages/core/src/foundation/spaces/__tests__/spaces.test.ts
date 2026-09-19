@@ -17,7 +17,7 @@ import Database from 'better-sqlite3'
 import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../db/adapter'
 import { migrate, currentVersion } from '../../../db/migrations/runner'
 import { syncQueue } from '../../../db/schema/foundation/sync-queue'
-import { entityTags } from '../../../db/schema/foundation/spaces'
+import { entityTags, views } from '../../../db/schema/foundation/spaces'
 import { eq } from 'drizzle-orm'
 import { initVault } from '../../../encryption/vault'
 import { createTaggableTypeRegistry } from '../registry'
@@ -27,6 +27,7 @@ import { createViewsService } from '../../views/service'
 import { createViewEngine } from '../../views/engine'
 import { createViewProviderRegistry } from '../../views/provider-registry'
 import type { ReadProvider } from '../../views/types'
+import { ViewNotFound } from '../../views/types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -265,6 +266,101 @@ describe('AR-6 — ViewEngine resolution (V3/V4/V5)', () => {
     const res = await engine.resolve(v)
     expect(res.state).toBe('error')
     expect(res.degraded[0]).toMatch(/failed/)
+    await driver.close()
+  })
+})
+
+describe('XS-views — ViewsService.cloneView (XCU-05)', () => {
+  it('clone a global view into a Space → new id, space_id set, content copied verbatim (BR-clone-2/3)', async () => {
+    const { db, driver } = await setup()
+    const svc = createViewsService(db, 'test-device')
+    const source = await svc.createView({
+      name: 'Global board',
+      layout: 'board',
+      filter: { entity_types: ['task'] },
+      grouping: { field: 'status' },
+      sort: { by: 'created_at' },
+    })
+    expect(source.space_id).toBeNull()
+
+    const clone = await svc.cloneView(source.id, 'sp1')
+    expect(clone.id).not.toBe(source.id) // fresh id (BR-clone-1)
+    expect(clone.space_id).toBe('sp1') // redirected (BR-clone-2)
+    expect(clone.name).toBe('Global board') // verbatim, no rename
+    expect(clone.layout).toBe('board')
+    expect(clone.filter).toBe(source.filter) // raw TEXT identical (BR-clone-3)
+    expect(clone.grouping).toBe(source.grouping)
+    expect(clone.sort).toBe(source.sort)
+    await driver.close()
+  })
+
+  it('duplicate in the same Space (targetSpaceId = source.space_id) is independent (BR-clone-1)', async () => {
+    const { db, driver } = await setup()
+    const svc = createViewsService(db, 'test-device')
+    const source = await svc.createView({ name: 'orig', layout: 'list', space_id: 'sp1' })
+    const clone = await svc.cloneView(source.id, source.space_id)
+    expect(clone.id).not.toBe(source.id)
+    expect(clone.space_id).toBe('sp1')
+
+    // editing the clone leaves the source untouched
+    await svc.updateView(clone.id, { name: 'changed' })
+    const stillOrig = await svc.getView(source.id)
+    expect(stillOrig.name).toBe('orig')
+    await driver.close()
+  })
+
+  it('clone a Space-owned view with targetSpaceId=null → global (BR-clone-2)', async () => {
+    const { db, driver } = await setup()
+    const svc = createViewsService(db, 'test-device')
+    const source = await svc.createView({ name: 'v', layout: 'list', space_id: 'sp1' })
+    const clone = await svc.cloneView(source.id, null)
+    expect(clone.space_id).toBeNull()
+    await driver.close()
+  })
+
+  it('clone of an absent id rejects ViewNotFound (BR-clone-4)', async () => {
+    const { db, driver } = await setup()
+    const svc = createViewsService(db, 'test-device')
+    await expect(svc.cloneView('missing', 'sp1')).rejects.toBeInstanceOf(ViewNotFound)
+    await driver.close()
+  })
+
+  it('clone of a soft-deleted source rejects ViewNotFound (findById filters deleted_at)', async () => {
+    const { db, driver } = await setup()
+    const svc = createViewsService(db, 'test-device')
+    const source = await svc.createView({ name: 'v', layout: 'list' })
+    await svc.deleteView(source.id) // soft-delete
+    await expect(svc.cloneView(source.id, null)).rejects.toBeInstanceOf(ViewNotFound)
+    await driver.close()
+  })
+
+  it('live-store: clone persists the row AND enqueues a co-transactional sync_queue create (BR-clone-6, F1)', async () => {
+    const { db, driver } = await setup()
+    const svc = createViewsService(db, 'test-device')
+    const source = await svc.createView({ name: 'v', layout: 'list' })
+    const clone = await svc.cloneView(source.id, 'sp1')
+
+    // the cloned row persists + reads back
+    const rows = await db.select().from(views).where(eq(views.id, clone.id)).all()
+    expect(rows).toHaveLength(1)
+    expect(rows[0].space_id).toBe('sp1')
+
+    // both the source create AND the clone create are enqueued (atomicity = both present)
+    const q = await db.select().from(syncQueue).where(eq(syncQueue.row_id, clone.id)).all()
+    expect(q).toHaveLength(1)
+    expect(q[0].table_name).toBe('views')
+    expect(q[0].operation).toBe('create')
+    await driver.close()
+  })
+
+  it('clone does NOT write the spaces table (no default_view_id wiring, BR-clone-5)', async () => {
+    const { db, driver } = await setup()
+    const svc = createViewsService(db, 'test-device')
+    const source = await svc.createView({ name: 'v', layout: 'list' })
+    const clone = await svc.cloneView(source.id, 'sp1')
+    const q = await db.select().from(syncQueue).where(eq(syncQueue.row_id, clone.id)).all()
+    // only the views insert — no 'spaces' write (which a default_view_id wire would be)
+    expect(q.every((r) => r.table_name === 'views')).toBe(true)
     await driver.close()
   })
 })
