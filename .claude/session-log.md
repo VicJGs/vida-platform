@@ -5666,3 +5666,20 @@ Decisions:
   - Memory: [[reconciliation-check-decomposition-consumer-column-before-build-now]] (new); [[decide-dont-ask-when-docs-give-the-answer]] (re-hit — asking the sibling-read fork WAS the drift).
 Next session:
   - **FIRST ACTION:** next head via the `#`-order rule = **mod-preferences #37** (deps none, lowest-# ready). `tracker_sync --next` advises **mod-journals #39** (dependent-count) — `#`-order wins. Verify the head's profile + scenario at pickup; likely a MOD CRUD build over the finished schema. Env: Node 24 via nvm + corepack pnpm; per-issue branch → PR.
+
+---
+Date: 2026-09-19 — mod-journals #39 (LIF-127) — M1.1.1 head — ① BACKEND COMPLETE (4 slices) → PR #46
+Task: mod-journals · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow v1) · branch `mod-journals` → PR #46 (open)
+Goal: build the ① backend service tier for the Notes & Journals integration layer — the aggregation engine + provider registry + snapshot store behind the daily journal dashboard.
+Accomplished:
+  - **Full Entity Delivery Flow front matter + 4 §XXVI-double-gated slices, each with a Verification Gate + §XXIX currency:** baseline (substrate ground truth via an Explore agent) → interpretation.md + Interpretation Gate (REVISE R1–R4→PASS) → slice-map + seam-contract (DECIDE, 4 slices) → Decomposition Gate (Victor Approval 1).
+  - **S1** registry + types + typed errors (`createJournalRegistry` ADR-004 factory; deterministic `list()`, overwrite-dedup). **S2** dashboard engine (`buildDashboard`: per-section degrade, deterministic, selection filter) + pure `resolveSelection` + `journalStillRenders`. **S3** snapshot store + service shell (`createJournalsService`, `captureSnapshot`/`getJournal`; live-store gate). **S4** `buildReview` compose-skeleton (+ `InsufficientHistory`).
+  - `@vida/core` **965/965** (+33: registry 8 · dashboard 10 · service live-store 15) · typecheck 0 · eslint clean (Node 24). Commit `10c42fd` → **PR #46**. Currency `docs/modules/journals/current-*` born; delivery docs `docs/features/journals/delivery/*`; 4 slice specs `docs/specs/features/mod-journals/sessions/*`.
+Decisions (see .claude/docs/decisions.md — 6 rows):
+  - **5 doc-grounded corrections** (Victor's standing "ground everything in the documentation"): types→`@vida/core` not `@vida/types` (layering — `TerminalState` canon); `TerminalState` reused verbatim (`success`, not invented `'populated'`); registry = ADR-004 factory (not the UX-6 placeholder bare fn); selection **storage is a seam** (no Preferences field / `summary_config` still 5-toggle); `journal_snapshots` reduced-column Repository write **probed** not assumed (BR-S3-9).
+  - `getJournal` today=live realized as snapshot-if-exists-else-live under the past-day capture policy (strict tz-aware today = design-pass, avoids the Brasília off-by-one).
+  - `/adr-check` PASS — registry-home lift consistent with ADR-004/ADR-018, no new ADR.
+  - Design-pass/seams documented: module provider registrations · per-journal `summary_config` read · named-period→range math · Wrapped trajectory · `analytics.ts` presentation · scheduling/delivery · the `apps/web` UX-6 placeholder migration (→ fe-journals ②).
+  - Memory: [[journals-engine-types-live-in-vida-core-not-vida-types]] (new), [[repository-create-on-reduced-column-table-drops-phantom-basecolumns]] (new).
+Next session:
+  - **FIRST ACTION:** merge PR #46 → `/task-complete mod-journals` (LIF-127 → Done). Then next head via `#`-order (verify `tracker_sync --next`). The ② `fe-journals` (Journal views, Wrapped UI, selection controls, apps/web registry migration) is a separate frontend issue. Env: Node 24 via nvm + corepack pnpm; per-issue branch → PR.
