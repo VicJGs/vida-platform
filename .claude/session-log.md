@@ -5683,3 +5683,19 @@ Decisions (see .claude/docs/decisions.md — 6 rows):
   - Memory: [[journals-engine-types-live-in-vida-core-not-vida-types]] (new), [[repository-create-on-reduced-column-table-drops-phantom-basecolumns]] (new).
 Next session:
   - **FIRST ACTION:** merge PR #46 → `/task-complete mod-journals` (LIF-127 → Done). Then next head via `#`-order (verify `tracker_sync --next`). The ② `fe-journals` (Journal views, Wrapped UI, selection controls, apps/web registry migration) is a separate frontend issue. Env: Node 24 via nvm + corepack pnpm; per-issue branch → PR.
+
+---
+Date: 2026-09-19 — mod-notes-and-pages #35 (LIF-131) — M1.1.1 head — ① BACKEND COMPLETE (4 slices) → PR #48 merged
+Task: mod-notes-and-pages · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow v1, 2nd run) · branch `mod-notes-and-pages` → PR #48 (merged `00dd638`); task-complete → PR #49 (`ac8f59f`)
+Goal: build the ① `@vida/core` backend service tier for the Notes & Pages hub — the in-degree-14 connective layer — over the finished DB-4 schema.
+Accomplished:
+  - **Full Entity Delivery Flow front matter + 4 §XXVI-double-gated slices**, each with a live-store Verification Gate + post-impl /critique SHIP + §XXIX currency: BASELINE (Explore substrate map) → interpretation.md → Decomposition Gate (Approval 1, ratify NOT-01…54).
+  - **S1** pages-core (CRUD · NP-2 `JournalExistsError` in-service · registry-validated entity_type · soft-delete · metadata/summary_config/word_count) `ef8c1ed`. **S2** entity notes (`ensureEntityNote` NP-8 idempotent + deterministic EditorDocument seed) + attachments (first BLOB consumer) `231a92f`. **S3** page-links (idempotent+**revive**, full UNIQUE) + `resolveWikiLink` (NP-7) `45f4580`. **S4** delegation facade (entity-link writes→AR-6, reads→AR-8; validate-with-notes-error-then-delegate) + entity-tag reads `b3099e1`.
+  - `@vida/core` **995/995** (+30, all live-store) · typecheck 0 · eslint 0 · gitleaks clean. LIF-131 → Done. Currency `docs/modules/notes/current-*`; delivery `docs/features/notes-and-pages/delivery/*`; 4 PLAN + 4 IMPLEMENTATION-PLAN specs `docs/specs/features/mod-notes-and-pages/sessions/*`.
+Decisions (see .claude/docs/decisions.md):
+  - **Grounding directive held (Victor ×N — "ground everything in the documentation").** Every BR/decision cited to code+doc.
+  - word_count/has_pomodoro = caller pass-through (validator already accepts them, not service-derived). `createNoteAndLink` dropped (NOT-19 = ② caller-compose). `getBacklinks` unconditional `getPageLinksTo` (D-S4-2 refined gate-1 F2). No `entityNoteSeedSchema` (dead code). page_links revive vs pages journal create-new = schema-driven (full vs partial UNIQUE).
+  - **First blob consumer:** `encrypted_blob` `Uint8Array`→`Buffer` boundary cast (documented; reconcile DB-11/M3).
+  - Memory: [[repository-create-returns-input-row-not-db-defaults]] (new — create() returns input row, not DB defaults; backfill notNull-defaults in the service; live-gate-caught via word_count).
+Next session:
+  - **FIRST ACTION:** next head via `tracker_sync --next` = **mod-check-ins** (M1.1.1, 6 dependents, ready) — verify at pickup. The ② `fe-notes-and-pages` (all Notes UI: `[[` picker, backlinks panel, /summary block, collection views, metadata controls, search) is a separate frontend issue. Env: Node 24 via nvm + corepack pnpm; per-issue branch → PR.
