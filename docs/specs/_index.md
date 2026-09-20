@@ -4,6 +4,7 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 
 | Unit | Type | Status | Last session |
 |------|------|--------|--------------|
+| [features/mod-check-ins](features/mod-check-ins/) | feature (add-backend, increment ①) | **① COMPLETE** — M1.1.1 head #41, LIF-119; all 5 slices/28 legs shipped (validators · entry CRUD · templates · derivations · cross-module seams); §XXVI double-gated + per-slice Verification Gates; core green. ② fe-check-ins separate. | 2026-09-19-mod-check-ins |
 | [features/mod-journals](features/mod-journals/) | feature (add-backend, increment ①) | spec-draft — stub + home; M1.1.1 head #39, LIF-127, ← mod-sessions✅ + xs-measurement✅ | 2026-09-19-mod-journals |
 | [features/mod-notes](features/mod-notes/) | feature (add-backend, increment ①) | **implemented ✅** — `@vida/core` Notes & Pages service (`services/notes/*`); pages/page_links/note_attachments CRUD + wiki-resolve + NP-8 seed + facade→AR-6/AR-8; 16 tests green, tsc 0, ESLint 0; full §XXVI double-gate + post-impl critique (2 BLOCKERs caught+fixed); current-* born. M1.1 HEAD ①. Next: MOD-notes ② UI. LIF-131 | 2026-08-21-mod-notes |
 | [foundation/db-1-schema-primitives](foundation/db-1-schema-primitives/) | refactor (foundation) | done — committed b234e85, LIF-61 Done | 2026-07-21-db-1-schema-primitives |

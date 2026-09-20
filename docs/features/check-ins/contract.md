@@ -1,3 +1,4 @@
+> ⤷ superseded by ../../modules/check-ins/current-spec.md (rules → ../../modules/check-ins/current-business-rules.md) — kept as backing, not the canonical truth. ⚠ pre-schema: the "ZERO CODE / no @vida/types file" status is stale — types + Zod validators exist (see current-spec §2).
 <!-- Contract — features/check-ins · /documentation Phase 2 · sources: ADR-002 §5.13 · CLAUDE.md §9 · intake -->
 
 # Contract — Check-ins  (level: Feature)

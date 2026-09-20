@@ -144,5 +144,8 @@ export * from './services/journals'
 // Service — Notes & Pages (mod-notes-and-pages #35 · LIF-131 · S1: pages-core service tier)
 export * from './services/notes'
 
+// Service — Check-ins (mod-check-ins #41 · LIF-119 · S2: entry CRUD service tier)
+export * from './services/checkins'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
