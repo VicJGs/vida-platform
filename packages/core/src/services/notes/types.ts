@@ -10,6 +10,7 @@
 import type { z } from 'zod'
 import type { PageType } from '@vida/types'
 import type { PageRow, PageLinkRow, NoteAttachmentRow } from '../../db/schema/notes'
+import type { EntityLinkRow, EntityTagRow } from '../../db/schema/foundation/spaces'
 import type { DrizzleDb } from '../../db/adapter'
 import type { SpacesService } from '../../foundation/spaces/service'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
@@ -80,6 +81,22 @@ export interface NotesService {
   getPageLinksFrom(pageId: string): Promise<PageLinkRow[]>
   getPageLinksTo(pageId: string): Promise<PageLinkRow[]>
   resolveWikiLink(text: string): Promise<PageRow[]>
+
+  // ── S4: Delegation facade + registry ────────────────────────────
+  createEntityLink(
+    pageId: string,
+    entityType: string,
+    entityId: string,
+    context?: string,
+  ): Promise<EntityLinkRow>
+  removeEntityLink(pageId: string, entityType: string, entityId: string): Promise<void>
+  getEntityLinksFrom(pageId: string): Promise<EntityLinkRow[]>
+  getBacklinks(
+    entityType: string,
+    entityId: string,
+  ): Promise<{ pageLinks: PageLinkRow[]; entityLinks: EntityLinkRow[] }>
+  getTagsForEntity(entityType: string, entityId: string): Promise<EntityTagRow[]>
+  getEntitiesByTag(tagId: string): Promise<EntityTagRow[]>
 }
 
 /** NP-2 conflict — one journal per calendar date; never a silent overwrite (NOT-09/10). */

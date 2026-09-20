@@ -9,7 +9,8 @@
 - **S1 — Service shell + Pages core: BUILT** (2026-09-19, LIF-131). `services/notes/{types,service,index}.ts` + live-store tests. @vida/core 979 green.
 - **S2 — Entity notes + attachments: BUILT** (2026-09-19). `ensureEntityNote` + `seedContent` + attachments; `newAttachmentSchema` appended to validators/note.ts. @vida/core 985 green (+6).
 - **S3 — Page-links + wiki resolution: BUILT** (2026-09-19). `createPageLink` (idempotent+revive) + `removePageLink` + `getPageLinksFrom`/`getPageLinksTo` + `resolveWikiLink`. @vida/core 990 green (+5).
-- S4 (delegation facade + registry): PENDING.
+- **S4 — Delegation facade + registry: BUILT** (2026-09-19). entity-link facade (→AR-6/AR-8) + entity-tag reads + `getBacklinks`. @vida/core 995 green (+5).
+- **① BACKEND COMPLETE** (S1–S4, 2026-09-19). ② `fe-notes-and-pages` (UI) is a separate issue.
 
 ## Construction
 `createNotesService(deps): NotesService` — factory-object, hoisted closures, no `this.` [FACT: services/notes/service.ts:35-38].
@@ -35,6 +36,14 @@ Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `
 - `createPageLink(source, target, context?): Promise<PageLinkRow>` — NP-5 idempotent: live → no-op · soft-deleted → **revive** · absent → create (full `UNIQUE(source,target)` mandates revive; mirror AR-6 `createLink`). The existing-check query intentionally includes soft-deleted rows. [FACT: service.ts createPageLink; migrations/033_notes.ts:91]
 - `removePageLink(source, target): Promise<void>` — resolve-then-soft-delete (no-op if absent). `getPageLinksFrom`/`getPageLinksTo(pageId): Promise<PageLinkRow[]>` — direction reads, `isNull(deleted_at)`. [FACT: service.ts; NOT-16/17]
 - `resolveWikiLink(text): Promise<PageRow[]>` — NP-7: non-deleted pages with `title` LIKE `%text%` (candidates; caller binds a concrete `target_page_id` → id-based, rename-safe). Excludes null-title + soft-deleted. M1.0 uses plain LIKE (no wildcard-escape; title→FTS5/DB-8 at M3). [FACT: service.ts resolveWikiLink; NOT-18/50]
+
+## Contract (S4 — built)
+- `createEntityLink(pageId, entityType, entityId, context?): Promise<EntityLinkRow>` — validates with the NOTES `UnregisteredEntityTypeError` (S1 assertRegistered) THEN delegates the WRITE to **AR-6** `spaces.createLink` (a pure passthrough would leak spaces' `UnknownEntityType`). `removeEntityLink` → `spaces.removeLink`. Notes never re-implements entity_links idempotence. [FACT: service.ts; NOT-20/22/23; spaces/service.ts:158-192]
+- `getEntityLinksFrom(pageId): Promise<EntityLinkRow[]>` → **AR-8** `backlinks.getLinksFrom`. `getBacklinks(entityType, entityId): Promise<{pageLinks, entityLinks}>` → `entityLinks` via AR-8 `getBacklinksTo` + `pageLinks` via local `getPageLinksTo(entityId)` (unconditional; non-page id → `[]`); UNMERGED (G6 merge → ②). [FACT: service.ts; NOT-24/25]
+- `getTagsForEntity(entityType, entityId)` / `getEntitiesByTag(tagId): Promise<EntityTagRow[]>` — read-only `entity_tags` repo (AR-6 owns writes; ② calls `spaces.tagEntity` directly). [FACT: service.ts; NOT-26/27/28]
+
+## Delegation topology (as-built)
+`NotesServiceDeps = {db, deviceId, spaces: SpacesService (AR-6), backlinks: BacklinkResolver (AR-8), registry: TaggableTypeRegistry}`. Locally-owned repos: `pages`, `page_links`, `note_attachments`, + a read-only `entity_tags` repo. Delegated: entity-link writes→AR-6, entity-link reads→AR-8, tag writes→AR-6.
 
 ## Composition seams (delegation topology — built at S2–S4)
 - entity-link/tag **WRITES** → AR-6 `SpacesService` (`deps.spaces`) — S4.

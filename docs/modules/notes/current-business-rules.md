@@ -42,5 +42,12 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
 - **BR-S3-3 (direction reads, soft-delete filtered):** `getPageLinksFrom` (source) / `getPageLinksTo` (target) append `isNull(deleted_at)`. [FACT: service.ts; NOT-17]
 - **BR-S3-4 (NP-7 resolve by id):** `resolveWikiLink(text)` returns non-deleted title-LIKE candidates; the caller binds a concrete `target_page_id` (id-based, rename-safe, collision-immune). Excludes null-title. M1.0 plain LIKE; wildcard-escape deferred (title→FTS5/DB-8 at M3). [FACT: service.ts; NOT-18/50]
 
-## Pending (S4) — invariants to add on build
-NP-6 entity-link registry validation (reuse assertRegistered) · entity-link facade delegation (AR-6 writes / AR-8 reads) · entity-tag reads · getBacklinks (page+entity lists).
+## S4 — Delegation facade + registry (BUILT)
+- **BR-S4-1 (validate-then-delegate):** `createEntityLink` runs the notes `assertRegistered` first → notes' `UnregisteredEntityTypeError` (NOT-20/21), THEN delegates the write to AR-6 `spaces.createLink`. A pure passthrough would surface spaces' `UnknownEntityType` (breaks the notes error contract). [FACT: service.ts; spaces/types.ts:37]
+- **BR-S4-2 (write delegation, no re-impl):** `createEntityLink`/`removeEntityLink` → AR-6; notes never re-implements entity_links idempotence/UNIQUE. [FACT: service.ts; NOT-22/23]
+- **BR-S4-3 (read delegation):** `getEntityLinksFrom` → AR-8 `getLinksFrom`. [FACT: service.ts; NOT-25]
+- **BR-S4-4 (getBacklinks both lists):** returns `{entityLinks (AR-8 getBacklinksTo), pageLinks (local getPageLinksTo(entityId), unconditional → [] for non-page ids)}`, UNMERGED; grouped presentation → ② G6. [FACT: service.ts; NOT-24]
+- **BR-S4-5 (entity_tags reads only):** `getTagsForEntity`/`getEntitiesByTag` via a read-only repo, `isNull(deleted_at)`; tag WRITES are AR-6's (② calls `spaces.tagEntity`). [FACT: service.ts; NOT-26/27/28]
+
+## ① BACKEND COMPLETE (S1–S4, 2026-09-19)
+All NOT-01…54 service-boundary rows built or homed. Deferred/seam (documented): eager-trigger wiring (owning modules) · `/summary` engine (journals) · wider menu (M1.4) · pomodoro lens (Sessions) · Views/neural (design-pass/AR-8) · FTS5 (DB-8) · templates apply (ADR-009) · `[E]` wiring (M3/DB-5) · hard-delete cascade (Part 2) · blob-type reconcile (DB-11/M3) · G6 merge (②). ② `fe-notes-and-pages` is a separate frontend issue.

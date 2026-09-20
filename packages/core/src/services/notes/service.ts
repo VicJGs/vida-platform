@@ -19,6 +19,7 @@ import {
   type PageLinkRow,
   type NoteAttachmentRow,
 } from '../../db/schema/notes'
+import { entityTags, type EntityLinkRow, type EntityTagRow } from '../../db/schema/foundation/spaces'
 import { createPageSchema, updatePageSchema, newAttachmentSchema } from '../../validators/note'
 import {
   JournalExistsError,
@@ -69,7 +70,7 @@ function allOf(...conditions: (SQL | undefined)[]): SQL {
 }
 
 export function createNotesService(deps: NotesServiceDeps): NotesService {
-  const { db, deviceId, registry } = deps
+  const { db, deviceId, registry, spaces, backlinks } = deps
   // pages HAS deleted_at → softDelete:true; encryptedFields:[] M1.0 pass-through (BR-S1-11).
   const pageRepo = createRepository(db, pages, { deviceId, encryptedFields: [], softDelete: true })
   // note_attachments HAS deleted_at → softDelete:true; [E] blobs pass-through in M1.0 (BR-S2-5).
@@ -80,6 +81,12 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
   })
   // page_links HAS deleted_at → softDelete:true; empty [E] (BR-S3-1).
   const linkRepo = createRepository(db, pageLinks, { deviceId, encryptedFields: [], softDelete: true })
+  // Read-only entity_tags repo — AR-6 owns the writes; notes only reads (D-S4-1, mirror AR-8 resolver).
+  const entityTagRepo = createRepository(db, entityTags, {
+    deviceId,
+    encryptedFields: [],
+    softDelete: true,
+  })
 
   /** NP-6/SP2 — reject an entity_type absent from the injected registry (BR-S1-3; reused by S4). */
   function assertRegistered(entityType: string | null | undefined): void {
@@ -234,6 +241,49 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
     // NP-7 — resolve by title CANDIDATES; the caller binds a concrete target_page_id (BR-S3-4/D-S3-1).
     resolveWikiLink: async (text: string): Promise<PageRow[]> =>
       pageRepo.findWhere(allOf(like(pages.title, `%${text}%`), isNull(pages.deleted_at))),
+
+    // ── S4: delegation facade + registry ────────────────────────────
+    // WRITE delegated to AR-6, but validate with the NOTES error first (BR-S4-1): a pure passthrough
+    // would surface spaces' UnknownEntityType, breaking the notes error contract (NOT-20/21).
+    createEntityLink: async (
+      pageId: string,
+      entityType: string,
+      entityId: string,
+      context?: string,
+    ): Promise<EntityLinkRow> => {
+      assertRegistered(entityType)
+      return spaces.createLink(pageId, entityType, entityId, context ?? null)
+    },
+
+    removeEntityLink: async (pageId: string, entityType: string, entityId: string): Promise<void> => {
+      await spaces.removeLink(pageId, entityType, entityId)
+    },
+
+    getEntityLinksFrom: async (pageId: string): Promise<EntityLinkRow[]> =>
+      backlinks.getLinksFrom(pageId),
+
+    // Both lists UNMERGED; the grouped presentation is G6-tentative → ② (BR-S4-4). pageLinks via
+    // getPageLinksTo(entityId) unconditionally — a non-page id yields [] anyway (D-S4-2).
+    getBacklinks: async (
+      entityType: string,
+      entityId: string,
+    ): Promise<{ pageLinks: PageLinkRow[]; entityLinks: EntityLinkRow[] }> => ({
+      entityLinks: await backlinks.getBacklinksTo(entityType, entityId),
+      pageLinks: await service.getPageLinksTo(entityId),
+    }),
+
+    // entity_tags READS only — AR-6 owns writes (NOT-26/27/28, BR-S4-5).
+    getTagsForEntity: async (entityType: string, entityId: string): Promise<EntityTagRow[]> =>
+      entityTagRepo.findWhere(
+        allOf(
+          eq(entityTags.entity_type, entityType),
+          eq(entityTags.entity_id, entityId),
+          isNull(entityTags.deleted_at),
+        ),
+      ),
+
+    getEntitiesByTag: async (tagId: string): Promise<EntityTagRow[]> =>
+      entityTagRepo.findWhere(allOf(eq(entityTags.tag_id, tagId), isNull(entityTags.deleted_at))),
   }
 
   return service

@@ -61,6 +61,7 @@ interface Harness {
   svc: NotesService
   db: DrizzleDb
   registry: TaggableTypeRegistry
+  spaces: ReturnType<typeof createSpacesService>
 }
 
 const DEVICE = 'test-device'
@@ -74,7 +75,7 @@ async function setup(): Promise<Harness> {
   const spaces = createSpacesService(db, DEVICE, registry)
   const backlinks = createBacklinkResolver(db, DEVICE)
   const svc = createNotesService({ db, deviceId: DEVICE, spaces, backlinks, registry })
-  return { svc, db, registry }
+  return { svc, db, registry, spaces }
 }
 
 describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
@@ -298,5 +299,53 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
     await h.svc.createPage({ type: 'note' }) // null title — never matches
     const hits = await h.svc.resolveWikiLink('Meeting')
     expect(hits.map((p) => p.title).sort()).toEqual(['Meeting agenda', 'Meeting notes'])
+  })
+
+  // ── S4: delegation facade + registry ────────────────────────────
+
+  it('createEntityLink delegates to AR-6 and appears in getEntityLinksFrom + getBacklinks (BR-S4-1/2/3/4)', async () => {
+    h.registry.register('task')
+    const page = await h.svc.createPage({ type: 'task_note', entity_type: 'task', entity_id: 't1' })
+    const link = await h.svc.createEntityLink(page.id, 'task', 't1')
+    expect(link.page_id).toBe(page.id)
+    expect(await h.svc.getEntityLinksFrom(page.id)).toHaveLength(1)
+    const back = await h.svc.getBacklinks('task', 't1')
+    expect(back.entityLinks).toHaveLength(1)
+    expect(back.pageLinks).toHaveLength(0) // a non-page entity id → no page-links (D-S4-2)
+  })
+
+  it('createEntityLink rejects an unregistered entity_type with the NOTES error (BR-S4-1)', async () => {
+    const page = await h.svc.createPage({ type: 'note' })
+    await expect(h.svc.createEntityLink(page.id, 'nope_type', 'x')).rejects.toBeInstanceOf(
+      UnregisteredEntityTypeError,
+    )
+  })
+
+  it('getBacklinks merges page-links for a page target (BR-S4-4)', async () => {
+    const a = await h.svc.createPage({ type: 'note', title: 'A' })
+    const b = await h.svc.createPage({ type: 'note', title: 'B' })
+    await h.svc.createPageLink(a.id, b.id)
+    const back = await h.svc.getBacklinks('note', b.id)
+    expect(back.pageLinks).toHaveLength(1) // A→B page-link surfaced via getPageLinksTo(b.id)
+  })
+
+  it('removeEntityLink drops the link from getBacklinks (BR-S4-2)', async () => {
+    h.registry.register('task')
+    const page = await h.svc.createPage({ type: 'task_note', entity_type: 'task', entity_id: 't2' })
+    await h.svc.createEntityLink(page.id, 'task', 't2')
+    await h.svc.removeEntityLink(page.id, 'task', 't2')
+    expect((await h.svc.getBacklinks('task', 't2')).entityLinks).toHaveLength(0)
+  })
+
+  it('getTagsForEntity / getEntitiesByTag read entity_tags (AR-6 owns writes) (BR-S4-5)', async () => {
+    h.registry.register('task')
+    const tag = await h.spaces.createTag({ name: 'urgent' })
+    await h.spaces.tagEntity(tag.id, 'task', 't3')
+    const tags = await h.svc.getTagsForEntity('task', 't3')
+    expect(tags).toHaveLength(1)
+    expect(tags[0]!.tag_id).toBe(tag.id)
+    const entities = await h.svc.getEntitiesByTag(tag.id)
+    expect(entities).toHaveLength(1)
+    expect(entities[0]!.entity_id).toBe('t3')
   })
 })
