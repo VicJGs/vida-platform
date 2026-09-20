@@ -1,0 +1,61 @@
+// ============================================================================
+// services/notes — types (mod-notes-and-pages ① · Slice 1)
+//
+// The Notes & Pages hub (in-degree 14): deps + the NotesService interface +
+// input types + typed errors. S1 declares the Pages-core surface; S2–S4 append.
+// Factory-object shape, hoisted closures, no `this.` (NOT-43). Bespoke Error
+// subclasses (NOT-44; ServiceError reconcile → DB-11).
+// ============================================================================
+
+import type { z } from 'zod'
+import type { PageType } from '@vida/types'
+import type { PageRow } from '../../db/schema/notes'
+import type { DrizzleDb } from '../../db/adapter'
+import type { SpacesService } from '../../foundation/spaces/service'
+import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
+import type { BacklinkResolver } from '../search/backlink-resolver'
+import type { createPageSchema, updatePageSchema } from '../../validators/note'
+
+export interface NotesServiceDeps {
+  db: DrizzleDb
+  deviceId: string
+  /** AR-6 — entity-link/tag WRITES (delegated; exercised in S4). */
+  spaces: SpacesService
+  /** AR-8 — entity-link READS (delegated; exercised in S4). */
+  backlinks: BacklinkResolver
+  /** AR-6/ADR-006 SP2 — open taggable-type registry; validates entity_type (S1 createPage; S4 links). */
+  registry: TaggableTypeRegistry
+}
+
+/** createPage input — the Zod-validated create shape (validators/note.ts). */
+export type CreatePageInput = z.infer<typeof createPageSchema>
+/** updatePage input — the `.strict()` updatable-fields whitelist (NOT-03). */
+export type UpdatePageInput = z.infer<typeof updatePageSchema>
+
+export interface NotesService {
+  // ── S1: Pages core ──────────────────────────────────────────────
+  createPage(input: CreatePageInput): Promise<PageRow>
+  getPage(id: string): Promise<PageRow | null>
+  updatePage(id: string, patch: UpdatePageInput): Promise<PageRow>
+  softDeletePage(id: string): Promise<void>
+  getPageByJournalDate(date: string): Promise<PageRow | null>
+  getPagesByType(type: PageType): Promise<PageRow[]>
+  getPagesForEntity(entityType: string, entityId: string): Promise<PageRow[]>
+  listPages(filters?: { favorite?: boolean; archived?: boolean }): Promise<PageRow[]>
+}
+
+/** NP-2 conflict — one journal per calendar date; never a silent overwrite (NOT-09/10). */
+export class JournalExistsError extends Error {
+  constructor(public readonly journalDate: string) {
+    super(`A journal page already exists for ${journalDate}`)
+    this.name = 'JournalExistsError'
+  }
+}
+
+/** NP-6/SP2 — entity_type must be in the injected TaggableTypeRegistry (NOT-20/21). */
+export class UnregisteredEntityTypeError extends Error {
+  constructor(public readonly entityType: string) {
+    super(`Unregistered entity_type: "${entityType}"`)
+    this.name = 'UnregisteredEntityTypeError'
+  }
+}

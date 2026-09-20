@@ -141,5 +141,8 @@ export * from './services/preferences'
 // Service — Journals (mod-journals #39 · LIF-127 · Slice 1: contribution registry + types + typed errors)
 export * from './services/journals'
 
+// Service — Notes & Pages (mod-notes-and-pages #35 · LIF-131 · S1: pages-core service tier)
+export * from './services/notes'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
