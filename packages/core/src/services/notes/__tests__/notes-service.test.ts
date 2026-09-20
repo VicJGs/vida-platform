@@ -190,4 +190,64 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
     const p = await createPage({ type: 'note', title: 'detached' })
     expect(await getPage(p.id)).toMatchObject({ title: 'detached' })
   })
+
+  // ── S2: entity notes + attachments ──────────────────────────────
+
+  it('ensureEntityNote is idempotent — 2nd call returns the same row (BR-S2-1)', async () => {
+    h.registry.register('task')
+    const seed = { title: 'Task 1', type: 'task', status: 'open' }
+    const first = await h.svc.ensureEntityNote('task_note', 'task', 't1', seed)
+    const second = await h.svc.ensureEntityNote('task_note', 'task', 't1', seed)
+    expect(second.id).toBe(first.id)
+    expect(await h.svc.getPagesForEntity('task', 't1')).toHaveLength(1)
+  })
+
+  it('ensureEntityNote seed content is deterministic — equal seed → identical content (BR-S2-2)', async () => {
+    h.registry.register('task')
+    const seed = { title: 'T', type: 'task', status: 'open', priority: 'high' }
+    const a = await h.svc.ensureEntityNote('task_note', 'task', 'e1', seed)
+    const b = await h.svc.ensureEntityNote('task_note', 'task', 'e2', seed)
+    expect(a.content).toBe(b.content)
+    expect(a.content).toContain('"type":"doc"') // a valid EditorDocument (D-S2-1)
+  })
+
+  it('ensureEntityNote key order does not affect content (sorted dynamic keys, R1)', async () => {
+    h.registry.register('task')
+    const a = await h.svc.ensureEntityNote('task_note', 'task', 'k1', { title: 'X', beta: '2', alpha: '1' })
+    const b = await h.svc.ensureEntityNote('task_note', 'task', 'k2', { title: 'X', alpha: '1', beta: '2' })
+    expect(a.content).toBe(b.content)
+  })
+
+  it('ensureEntityNote rejects an unregistered entity_type (BR-S2-4)', async () => {
+    await expect(
+      h.svc.ensureEntityNote('task_note', 'not_registered_type', 'x', { title: 'x' }),
+    ).rejects.toBeInstanceOf(UnregisteredEntityTypeError)
+  })
+
+  it('addAttachment stores a blob; getAttachments round-trips the bytes (BR-S2-5)', async () => {
+    const page = await h.svc.createPage({ type: 'note', title: 'with-file' })
+    const bytes = new Uint8Array([1, 2, 3, 4])
+    const att = await h.svc.addAttachment(page.id, {
+      filename: 'a.bin',
+      mimeType: 'application/octet-stream',
+      encryptedBlob: bytes,
+      sizeBytes: 4,
+    })
+    expect(att.page_id).toBe(page.id)
+    const list = await h.svc.getAttachments(page.id)
+    expect(list).toHaveLength(1)
+    expect(Array.from(list[0]!.encrypted_blob)).toEqual([1, 2, 3, 4])
+  })
+
+  it('removeAttachment soft-deletes — getAttachments excludes it (BR-S2-6/7)', async () => {
+    const page = await h.svc.createPage({ type: 'note' })
+    const att = await h.svc.addAttachment(page.id, {
+      filename: 'b.bin',
+      mimeType: 'application/octet-stream',
+      encryptedBlob: new Uint8Array([9]),
+      sizeBytes: 1,
+    })
+    await h.svc.removeAttachment(att.id)
+    expect(await h.svc.getAttachments(page.id)).toHaveLength(0)
+  })
 })

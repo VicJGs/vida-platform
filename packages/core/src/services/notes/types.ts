@@ -9,7 +9,7 @@
 
 import type { z } from 'zod'
 import type { PageType } from '@vida/types'
-import type { PageRow } from '../../db/schema/notes'
+import type { PageRow, NoteAttachmentRow } from '../../db/schema/notes'
 import type { DrizzleDb } from '../../db/adapter'
 import type { SpacesService } from '../../foundation/spaces/service'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
@@ -32,6 +32,26 @@ export type CreatePageInput = z.infer<typeof createPageSchema>
 /** updatePage input — the `.strict()` updatable-fields whitelist (NOT-03). */
 export type UpdatePageInput = z.infer<typeof updatePageSchema>
 
+/**
+ * Parent-entity LOCAL fields used to seed an entity note's content (NOT-12). Read purely,
+ * client-side; no cross-module table access. `seedContent` is deterministic over this (NP-8/ZK-1).
+ */
+export interface EntityNoteSeed {
+  title?: string
+  type?: string
+  status?: string
+  [k: string]: string | number | boolean | null | undefined
+}
+
+/** New attachment input (camelCase); mapped to `note_attachments` columns by addAttachment (NOT-29). */
+export interface NewAttachment {
+  filename: string
+  mimeType: string
+  encryptedBlob: Uint8Array
+  thumbnailBlob?: Uint8Array
+  sizeBytes: number
+}
+
 export interface NotesService {
   // ── S1: Pages core ──────────────────────────────────────────────
   createPage(input: CreatePageInput): Promise<PageRow>
@@ -42,6 +62,17 @@ export interface NotesService {
   getPagesByType(type: PageType): Promise<PageRow[]>
   getPagesForEntity(entityType: string, entityId: string): Promise<PageRow[]>
   listPages(filters?: { favorite?: boolean; archived?: boolean }): Promise<PageRow[]>
+
+  // ── S2: Entity notes + attachments ──────────────────────────────
+  ensureEntityNote(
+    pageType: PageType,
+    entityType: string,
+    entityId: string,
+    seed: EntityNoteSeed,
+  ): Promise<PageRow>
+  addAttachment(pageId: string, file: NewAttachment): Promise<NoteAttachmentRow>
+  getAttachments(pageId: string): Promise<NoteAttachmentRow[]>
+  removeAttachment(id: string): Promise<void>
 }
 
 /** NP-2 conflict — one journal per calendar date; never a silent overwrite (NOT-09/10). */

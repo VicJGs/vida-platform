@@ -48,7 +48,8 @@ Integration points: DB-4 Notes & Pages schema (foundation) · Repository layer (
 - [x] document-context BASELINE — Notes & Pages substrate mapped (Explore agent, [FACT] citations); current-* births at S1/D6
 - [x] Interpretation layer written — delivery/interpretation.md (dependencies · needs · organization · implicit rules)
 - [x] Decomposition Gate — delivery/slice-map.md + seam-contract.md; gate-1 /critique REVISE→fixed→SHIP; **Approval 1 ✅ (2026-09-19)**
-- [x] **S1 BUILT** — services/notes/{types,service,index}.ts + live-store tests (14); §XXVI double-gate (Approval 1 · preflight PASSED G-S1-1 · Approval 2) + post-impl SHIP; typecheck 0 · @vida/core 979 green · eslint 0; §XXIX current-* born
+- [x] **S1 BUILT** — services/notes/{types,service,index}.ts + live-store tests (14); §XXVI double-gate (Approval 1 · preflight PASSED G-S1-1 · Approval 2) + post-impl SHIP; typecheck 0 · @vida/core 979 green · eslint 0; §XXIX current-* born. Commit `ef8c1ed`.
+- [x] **S2 BUILT** — ensureEntityNote (NP-8 idempotent · deterministic seedContent) + attachments (add/get/remove) + newAttachmentSchema; §XXVI double-gate (Approval 1 R1/R2 · preflight PASSED · Approval 2 camelCase-map fix) + post-impl SHIP; typecheck 0 · @vida/core 985 green (+6) · eslint 0; §XXIX current-* refreshed. First blob consumer → Uint8Array/Buffer cast flagged DB-11/M3.
 - [ ] Forward spec written + Per-Step Build Gate cleared (§XXVI) before any implementation
 - [ ] Read 3 existing services — state the pattern found
 - [ ] /api-contract approved before any code
@@ -77,7 +78,13 @@ Integration points: DB-4 Notes & Pages schema (foundation) · Repository layer (
 - [x] B10 — gates: typecheck 0 · @vida/core 979 green (+14) · eslint 0 · Verification Gate PASS · post-impl /critique SHIP · §XXIX current-* born
 - NOTE (grounded refinement, not divergence): B4 backfills notNull-default columns (create() returns input-derived row, not a re-read — repository.ts:331-346); convention = sessions/service.ts:305. Impl-plan + BR-S1-8 updated.
 
-### S2–S4 — pending (next: S2 entity notes + attachments)
+### S2 — Entity notes + attachments ✅ DONE (2026-09-19)
+- [x] B1 types (EntityNoteSeed, NewAttachment, +4 sigs) · B2 newAttachmentSchema (append-only) · B3 attachRepo
+- [x] B4 seedContent (pure EditorDocument, sorted dynamic keys) · B5 ensureEntityNote (idempotent, reuse S1) · B6 attachments (camelCase→snake map, blob cast)
+- [x] B7 barrel · B8 6 live-store tests (idempotence · determinism · key-order · unregistered · BLOB round-trip · soft-delete) · B9 gates green
+- NOTE: first blob consumer — Uint8Array→Buffer boundary cast (documented, DB-11/M3 reconcile).
+
+### S3–S4 — pending (next: S3 page-links + wiki resolution)
 
 ## Plan
 <!-- Only for a SPEC-LESS small task (§XXVI LITE). N/A — this is a full-gate code build. -->
@@ -87,6 +94,7 @@ Integration points: DB-4 Notes & Pages schema (foundation) · Repository layer (
 |------|--------------|-----------|
 | 2026-08-21 | reshaped from mod-notes under P3 decomposition (planning only) | — |
 | 2026-09-19 | build STARTED: branch `mod-notes-and-pages` off main; verified live BASELINE (service absent, schema/types/validators present); confirmed all 4 blockers done | run BASELINE (document-context) → interpretation → Decomposition Gate |
+| 2026-09-19 | Decomposition Gate (Approval 1) + S1 BUILT (pages core, commit `ef8c1ed`) + S2 BUILT (entity notes + attachments); @vida/core 985 green | S3 — page-links + wiki resolution |
 
 ## Notes
 - 2nd run of Entity Delivery Flow v1 (mod-journals was 1st) — flag any friction for v1 hardening.

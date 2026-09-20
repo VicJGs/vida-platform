@@ -9,18 +9,45 @@
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
-import type { PageType } from '@vida/types'
+import type { EditorDocument, EditorNode, PageType } from '@vida/types'
 import { createRepository } from '../../db/repository'
-import { pages, type PageRow } from '../../db/schema/notes'
-import { createPageSchema, updatePageSchema } from '../../validators/note'
+import { pages, noteAttachments, type PageRow, type NoteAttachmentRow } from '../../db/schema/notes'
+import { createPageSchema, updatePageSchema, newAttachmentSchema } from '../../validators/note'
 import {
   JournalExistsError,
   UnregisteredEntityTypeError,
   type CreatePageInput,
+  type EntityNoteSeed,
+  type NewAttachment,
   type NotesService,
   type NotesServiceDeps,
   type UpdatePageInput,
 } from './types'
+
+/**
+ * Deterministic client-side seed for an entity note's `content` (NP-8/ZK-1). PURE function of `seed`:
+ * a minimal TipTap `EditorDocument` (heading = title; a paragraph of the remaining fields), leading
+ * fields in a FIXED order then the rest via `Object.keys().sort()` — NOT insertion order, which isn't
+ * guaranteed across callers. No `Date.now()`/random → same seed ⇒ byte-identical string (BR-S2-2).
+ */
+function seedContent(seed: EntityNoteSeed): string {
+  const content: EditorNode[] = []
+  if (seed.title != null) {
+    content.push({ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: seed.title }] })
+  }
+  const LEADING = ['type', 'status']
+  const rest = Object.keys(seed)
+    .filter((k) => k !== 'title' && !LEADING.includes(k))
+    .sort()
+  const lines = [...LEADING, ...rest]
+    .filter((k) => seed[k] != null)
+    .map((k) => `${k}: ${String(seed[k])}`)
+  if (lines.length > 0) {
+    content.push({ type: 'paragraph', content: [{ type: 'text', text: lines.join(' · ') }] })
+  }
+  const doc: EditorDocument = { type: 'doc', content }
+  return JSON.stringify(doc)
+}
 
 /**
  * Combine active-row conditions into a single SQL clause. `and(...)` is typed
@@ -38,6 +65,12 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
   const { db, deviceId, registry } = deps
   // pages HAS deleted_at → softDelete:true; encryptedFields:[] M1.0 pass-through (BR-S1-11).
   const pageRepo = createRepository(db, pages, { deviceId, encryptedFields: [], softDelete: true })
+  // note_attachments HAS deleted_at → softDelete:true; [E] blobs pass-through in M1.0 (BR-S2-5).
+  const attachRepo = createRepository(db, noteAttachments, {
+    deviceId,
+    encryptedFields: [],
+    softDelete: true,
+  })
 
   /** NP-6/SP2 — reject an entity_type absent from the injected registry (BR-S1-3; reused by S4). */
   function assertRegistered(entityType: string | null | undefined): void {
@@ -105,6 +138,50 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
           isNull(pages.deleted_at),
         ),
       ),
+
+    // ── S2: entity notes + attachments ──────────────────────────────
+    ensureEntityNote: async (
+      pageType: PageType,
+      entityType: string,
+      entityId: string,
+      seed: EntityNoteSeed,
+    ): Promise<PageRow> => {
+      // NP-8 idempotent: return the existing non-deleted *_note for this (pageType, entity) if present.
+      const existing = (await service.getPagesForEntity(entityType, entityId)).find(
+        (p) => p.type === pageType,
+      )
+      if (existing) return existing
+      // Absent → create via S1 createPage (inherits registry validation, BR-S1-3) with a deterministic seed.
+      return service.createPage({
+        type: pageType,
+        entity_type: entityType,
+        entity_id: entityId,
+        content: seedContent(seed),
+      })
+    },
+
+    addAttachment: async (pageId: string, file: NewAttachment): Promise<NoteAttachmentRow> => {
+      const f = newAttachmentSchema.parse(file)
+      return attachRepo.create({
+        page_id: pageId,
+        filename: f.filename,
+        mime_type: f.mimeType,
+        // Drizzle types blob({mode:'buffer'}) as Node's Buffer, but @vida/core is cross-platform and
+        // libsodium (M3) yields Uint8Array; both SQLite drivers (better-sqlite3/wa-sqlite) accept a
+        // Uint8Array bind param at runtime. First blob consumer — bridge the schema type to the
+        // platform-neutral value. Blob-type reconcile → DB-11/M3.
+        encrypted_blob: f.encryptedBlob as unknown as Buffer,
+        thumbnail_blob: (f.thumbnailBlob ?? null) as unknown as Buffer | null,
+        size_bytes: f.sizeBytes,
+      })
+    },
+
+    getAttachments: async (pageId: string): Promise<NoteAttachmentRow[]> =>
+      attachRepo.findWhere(allOf(eq(noteAttachments.page_id, pageId), isNull(noteAttachments.deleted_at))),
+
+    removeAttachment: async (id: string): Promise<void> => {
+      await attachRepo.delete(id)
+    },
   }
 
   return service

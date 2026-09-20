@@ -59,3 +59,16 @@ export const updatePageSchema = z
     word_count: z.number().int().nonnegative().optional(),
   })
   .strict()
+
+// ---------------------------------------------------------------------------
+// addAttachment input (S2) — defense-in-depth for note_attachments (NOT-29).
+// CamelCase to match the public NewAttachment type; the service maps to snake_case
+// columns. Buffer is a Uint8Array subclass, so z.instanceof(Uint8Array) accepts it.
+// ---------------------------------------------------------------------------
+export const newAttachmentSchema = z.object({
+  filename: z.string().min(1),
+  mimeType: z.string().min(1),
+  encryptedBlob: z.instanceof(Uint8Array),
+  thumbnailBlob: z.instanceof(Uint8Array).optional(),
+  sizeBytes: z.number().int().nonnegative(),
+})

@@ -4,6 +4,8 @@ export {
   JournalExistsError,
   UnregisteredEntityTypeError,
   type CreatePageInput,
+  type EntityNoteSeed,
+  type NewAttachment,
   type NotesService,
   type NotesServiceDeps,
   type UpdatePageInput,

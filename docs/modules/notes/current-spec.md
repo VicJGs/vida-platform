@@ -6,8 +6,9 @@
 > Delivery: `docs/features/notes-and-pages/delivery/*`. Slices ship incrementally (see Status).
 
 ## Status
-- **S1 — Service shell + Pages core: BUILT** (2026-09-19, LIF-131). `services/notes/{types,service,index}.ts` + live-store tests (14). @vida/core 979 green.
-- S2 (entity notes + attachments) · S3 (page-links + wiki) · S4 (delegation facade + registry): PENDING.
+- **S1 — Service shell + Pages core: BUILT** (2026-09-19, LIF-131). `services/notes/{types,service,index}.ts` + live-store tests. @vida/core 979 green.
+- **S2 — Entity notes + attachments: BUILT** (2026-09-19). `ensureEntityNote` + `seedContent` + attachments; `newAttachmentSchema` appended to validators/note.ts. @vida/core 985 green (+6).
+- S3 (page-links + wiki) · S4 (delegation facade + registry): PENDING.
 
 ## Construction
 `createNotesService(deps): NotesService` — factory-object, hoisted closures, no `this.` [FACT: services/notes/service.ts:35-38].
@@ -22,6 +23,12 @@ Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `
 - `getPageByJournalDate(date): Promise<PageRow|null>` · `getPagesByType(type): Promise<PageRow[]>` · `getPagesForEntity(entityType, entityId): Promise<PageRow[]>` · `listPages({favorite?,archived?}): Promise<PageRow[]>` [FACT: service.ts:48-52,88-107].
 - Errors: `JournalExistsError(journalDate)`, `UnregisteredEntityTypeError(entityType)` — bespoke `extends Error`, stable `.name` [FACT: types.ts:49-64]. `ServiceError` reconcile → DB-11.
 - Input types: `CreatePageInput`/`UpdatePageInput` = `z.infer` of `validators/note.ts` [FACT: types.ts:33-36].
+
+## Contract (S2 — built)
+- `ensureEntityNote(pageType, entityType, entityId, seed: EntityNoteSeed): Promise<PageRow>` — NP-8 idempotent (find-then-create by `(pageType, entity_type, entity_id)` via `getPagesForEntity`); `content` = `seedContent(seed)`, a deterministic minimal `EditorDocument` JSON (fixed leading fields + sorted dynamic keys, no Date/random) [FACT: service.ts seedContent + ensureEntityNote].
+- `addAttachment(pageId, file: NewAttachment): Promise<NoteAttachmentRow>` · `getAttachments(pageId): Promise<NoteAttachmentRow[]>` · `removeAttachment(id): Promise<void>` over `note_attachments` [FACT: schema/notes.ts:91-107; service.ts].
+- `NewAttachment` is camelCase (`Uint8Array` blobs); the service maps to snake_case columns. **First blob consumer:** Drizzle types `blob('buffer')` as `Buffer` but the platform-neutral value is `Uint8Array` (libsodium at M3); a documented boundary cast bridges it — blob-type reconcile → DB-11/M3.
+- `newAttachmentSchema` appended to `validators/note.ts` (no `entityNoteSeedSchema` — seed is caller-internal). `EntityNoteSeed`/`NewAttachment` are plain TS types.
 
 ## Composition seams (delegation topology — built at S2–S4)
 - entity-link/tag **WRITES** → AR-6 `SpacesService` (`deps.spaces`) — S4.

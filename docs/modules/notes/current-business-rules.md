@@ -29,6 +29,12 @@
 create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zod rejection. Reads → row/`PageRow[]`/`null`
 (never throw on absence). Fail loud on invalid input.
 
-## Pending (S2–S4) — invariants to add on build
-NP-8 entity-note seed determinism (ZK-1) · NP-5 page-link/entity-link idempotence · NP-7 wiki-link resolve-by-id ·
-entity-link facade delegation (AR-6/AR-8) · entity-tag reads · attachments.
+## S2 — Entity notes + attachments (BUILT)
+- **BR-S2-1 (NP-8 idempotent auto-exist):** `ensureEntityNote(pageType, entityType, entityId, seed)` returns the existing non-deleted `*_note` for `(pageType, entity_type, entity_id)` (via `getPagesForEntity` + `type` filter), else creates via S1 `createPage`. Second call → same row. [FACT: service.ts ensureEntityNote; NOT-11]
+- **BR-S2-2 (seed determinism — content only, ZK-1):** `content` = a PURE `seedContent(seed)` → minimal `EditorDocument` JSON; leading fields (title→type→status) then `Object.keys(seed).sort()` (NOT insertion order), nullish skipped, no `Date.now()`/random. Same seed → byte-identical `content`. Row `id`/timestamps are repo-generated (non-deterministic by design). [FACT: service.ts seedContent; NOT-12]
+- **BR-S2-3 (registry on create):** inherits BR-3 — an unregistered `entity_type` → `UnregisteredEntityTypeError`. [FACT: reuse S1]
+- **BR-S2-4 (attachments):** `addAttachment` inserts `note_attachments` (validated by `newAttachmentSchema`, camelCase→snake_case map); `getAttachments` filters `isNull(deleted_at)`; `removeAttachment` soft-deletes. `[E]` blobs pass-through in M1.0. [FACT: service.ts; schema/notes.ts:91-107; NOT-29/30/31]
+- **BR-S2-5 (first blob consumer):** `encrypted_blob` bridged from `Uint8Array` (public API) to Drizzle's `Buffer` type via a documented boundary cast — both SQLite drivers accept `Uint8Array` at runtime; reconcile → DB-11/M3.
+
+## Pending (S3–S4) — invariants to add on build
+NP-5 page-link/entity-link idempotence · NP-7 wiki-link resolve-by-id · entity-link facade delegation (AR-6/AR-8) · entity-tag reads.
