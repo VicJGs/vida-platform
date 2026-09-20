@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — `mod-notes-and-pages` completed 2026-09-19, LIF-131 → Done, PR #48 merged (`00dd638`), archived. ② `fe-notes-and-pages` = a separate frontend issue. Next head via `tracker_sync --next` at pickup.)_
+- mod-check-ins (LIF-119): .claude/tasks/mod-check-ins.md  (▶ IN PROGRESS 2026-09-19 — ① backend service tier over DB-4 `026_check_ins`; M1.1.1 head #41; Add Backend Component / Default, Entity Delivery Flow; deps ✅ mod-journals + mod-notes-and-pages + xs-effect-rail. Spec stub: docs/specs/features/mod-check-ins/.)
 
 <details><summary>superseded — mod-notes vertical grain (folded into the campaign)</summary>
 

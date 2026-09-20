@@ -1,3 +1,4 @@
+> ⤷ superseded by ../../modules/check-ins/current-spec.md (rules → ../../modules/check-ins/current-business-rules.md) — kept as backing, not the canonical truth. ⚠ pre-schema: the "UNIQUE on date alone / SET NULL / CASCADE" rows are stale; the schema is UNIQUE(date,type) + no-FK (see current-spec §3).
 <!-- Structure & Data — features/check-ins · /documentation Phase 2 · sources: ADR-002 §5.13 · ADR-001/003 · intake -->
 
 # Structure & Data — Check-ins  (level: Feature)

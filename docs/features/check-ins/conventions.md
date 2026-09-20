@@ -1,3 +1,4 @@
+> companion backing doc — no current-* equivalent (it is the canonical home for conventions).
 <!-- Conventions — features/check-ins · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · intake -->
 
 # Conventions — Check-ins  (level: Feature)

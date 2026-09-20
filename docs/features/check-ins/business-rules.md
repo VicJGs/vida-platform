@@ -1,3 +1,4 @@
+> ⤷ superseded by ../../modules/check-ins/current-spec.md (rules → ../../modules/check-ins/current-business-rules.md) — kept as backing, not the canonical truth. ⚠ pre-schema: CK-2/CK-3/CK-10 "to-fix" framing is stale; the schema realized them (see current-business-rules §1).
 <!-- Business Rules — features/check-ins · /documentation Phase 2 · sources: ADR-002 §5.13 · CLAUDE.md §9 · intake -->
 
 # Business Rules — Check-ins  (level: Feature)

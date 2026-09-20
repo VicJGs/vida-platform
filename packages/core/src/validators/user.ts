@@ -103,3 +103,87 @@ export const RecordCommandSchema = z.object({
   command_label: z.string(),
   command_category: z.string().nullable().optional(),
 })
+
+// --- Check-ins (mod-check-ins #41 · S1 · CHE-18/19) ------------------------
+// Entity object validators for the check-ins service (S2–S5 consume them). Mirrors @vida/types
+// entities/user.ts:128-180 + schema/check-ins.ts; DOMAIN fields only (no baseColumns/syncColumns —
+// the UserPreferencesFields precedent above). FIXED enums reuse the tuple schemas (lines 19-22).
+// mood/energy bounded 1-10 (CHE-19; check-ins.ts:52-53). Patch = .partial() (UpdatePreferencesSchema idiom).
+
+/** daily_check_ins domain fields — mirrors DailyCheckIn (entities/user.ts:128-151). */
+export const DailyCheckInFields = z.object({
+  check_in_date: z.string(), // YYYY-MM-DD (:130)
+  check_in_type: CheckInTypeSchema,
+  template_id: z.string().nullable(), // Id | null (:132), no-FK
+  mood_score: z.number().int().min(1).max(10).nullable(), // 1-10 (CHE-19)
+  energy_level: z.number().int().min(1).max(10).nullable(), // 1-10 (CHE-19)
+  top_intentions: z.array(z.string()), // [E]
+  wins: z.array(z.string()), // [E]
+  gratitude: z.array(z.string()), // [E]
+  challenges: z.array(z.string()), // [E]
+  tomorrow_focus: z.array(z.string()), // [E]
+  reflection: z.string().nullable(), // [E]
+  custom_data: z.record(z.string(), z.unknown()).nullable(), // [E] JSON keyed by field_key
+})
+
+/** createCheckIn input (CHE-01) — slot keys required; the rest optional/service-defaulted. */
+export const CreateCheckInSchema = DailyCheckInFields.partial().extend({
+  check_in_date: z.string(),
+  check_in_type: CheckInTypeSchema,
+})
+
+/** updateCheckIn patch (CHE-02) — every field optional EXCEPT the slot key, which is immutable on update
+ *  (CK-2: a check-in is keyed by (date,type); editing = content edit, not a slot move — the notes
+ *  updatePageSchema .strict()-whitelist / NOT-03 precedent). Moving a slot = delete + recreate. */
+export const UpdateCheckInSchema = DailyCheckInFields.partial().omit({
+  check_in_date: true,
+  check_in_type: true,
+})
+
+/** check_in_templates domain fields — mirrors CheckInTemplate (entities/user.ts:153-165). */
+export const CheckInTemplateFields = z.object({
+  name: z.string(), // [E]
+  description: z.string().nullable(), // [E]
+  icon: z.string(),
+  is_default: z.boolean(),
+  is_active: z.boolean(),
+  schedule_type: CheckInScheduleTypeSchema.nullable(),
+  schedule_days: z.array(z.number().int().min(0).max(6)).nullable(), // JSON [0-6] (check-ins.ts:77)
+  preferred_time: CheckInPreferredTimeSchema.nullable(),
+  sort_order: z.number().int(),
+})
+
+/** createTemplate input (CHE-06) — name required; the rest optional/schema-defaulted. */
+export const CreateTemplateSchema = CheckInTemplateFields.partial().extend({
+  name: z.string(),
+})
+
+/** updateTemplate patch (CHE-07) — every field optional. */
+export const UpdateTemplateSchema = CheckInTemplateFields.partial()
+
+/** check_in_template_questions domain fields — mirrors CheckInTemplateQuestion (entities/user.ts:167-180).
+ *  Excludes id + template_id (service/route args; addQuestion(templateId, q) — seam-contract). */
+export const CheckInTemplateQuestionFields = z.object({
+  field_key: z.string().min(1), // required, non-empty; UNIQUE per template (CHE-08; command_key min(1) precedent)
+  label: z.string(), // [E]
+  field_type: CheckInQuestionFieldTypeSchema,
+  placeholder: z.string().nullable(), // [E]
+  is_required: z.boolean(),
+  min_value: z.number().int().nullable(),
+  max_value: z.number().int().nullable(),
+  sort_order: z.number().int(),
+})
+
+/** addQuestion payload (CHE-08) — core fields required; the rest optional/schema-defaulted. */
+export const AddQuestionSchema = CheckInTemplateQuestionFields.partial().extend({
+  field_key: z.string().min(1),
+  label: z.string(),
+  field_type: CheckInQuestionFieldTypeSchema,
+})
+
+/** setSchedule config (CHE-11) — the per-template schedule; config only (fire is CHE-24, deferred). */
+export const ScheduleConfigSchema = z.object({
+  schedule_type: CheckInScheduleTypeSchema.nullable(),
+  schedule_days: z.array(z.number().int().min(0).max(6)).nullable(),
+  preferred_time: CheckInPreferredTimeSchema.nullable(),
+})

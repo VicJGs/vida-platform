@@ -11,6 +11,7 @@
 
 ## ✅ Completed (last 30 days)
 
+| mod-check-ins (LIF-119 → Done) | 2026-09-19 | 1 — ① backend COMPLETE (S1–S5, all 28 legs). `createCheckInsService` over DB-4 `026_check_ins`: validators · entry CRUD · templates/questions · derivations (trend/streak) · cross-module seams (Journal link · guarded XP emit · placeholder review). @vida/core 1039 green (+44). §XXVI double-gated per slice + Verification Gates; 7 gate-caught issues + 1 Victor drift-catch (template↔type). ② fe-check-ins separate. |
 | mod-notes-and-pages (LIF-131 → Done) | 2026-09-19 | 1 — ① backend COMPLETE (S1–S4), PR #48 merged (`00dd638`). The in-degree-14 hub service over DB-4; @vida/core 995 green (+30). See `.claude/tasks/archive/mod-notes-and-pages.md`. ② fe-notes-and-pages separate. |
 
 | Task | Completed | Sessions |
