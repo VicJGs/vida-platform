@@ -3,7 +3,7 @@
 # Scenario: Default (Entity Delivery Flow v1)
 # Spec: docs/specs/features/mod-notes-and-pages/_index.md
 # Created: 2026-08-21
-# Status: in-progress
+# Status: done
 # Linear: LIF-131
 # Project: M1 — Whole Manual OS
 # Milestone: M1.1.1 — Hub & Foundation · Backend

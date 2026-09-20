@@ -16,3 +16,6 @@ Config provider over the DB-4 #2 schema; plaintext (`encryptedFields: []`).
 | `recordCommand(key, label, category?)` | Cmd+K upsert-by-key (PR-6) | `void` |
 | `pinCommand(key, pinned)` | set pin; no-op on unrecorded key | `void` |
 | `getCommandHistory()` | pinned-then-frecency list | `CommandBarHistoryRow[]` |
+
+## @vida/core — NotesService (mod-notes-and-pages ①, LIF-131)
+`createNotesService({db, deviceId, spaces, backlinks, registry}): NotesService` — the Notes & Pages hub service (factory-object, no `this.`). Surface: pages CRUD (`createPage`/`getPage`/`updatePage`/`softDeletePage`/`getPageByJournalDate`/`getPagesByType`/`getPagesForEntity`/`listPages`) · `ensureEntityNote` + attachments (`addAttachment`/`getAttachments`/`removeAttachment`) · page-links (`createPageLink` idempotent+revive/`removePageLink`/`getPageLinksFrom`/`getPageLinksTo`/`resolveWikiLink`) · entity-link facade (`createEntityLink`/`removeEntityLink`→AR-6, `getEntityLinksFrom`/`getBacklinks`→AR-8) · entity-tag reads (`getTagsForEntity`/`getEntitiesByTag`). Errors: `JournalExistsError`, `UnregisteredEntityTypeError`. Spec: `docs/specs/features/mod-notes-and-pages/`; currency: `docs/modules/notes/current-*`.

@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-- mod-notes-and-pages (LIF-131): .claude/tasks/mod-notes-and-pages.md  (🔨 IN PROGRESS 2026-09-19 — M1.1.1 head #35, the in-degree-14 HUB. ① `@vida/core` Notes & Pages service tier over the finished DB-4 schema (`schema/notes.ts` + `033_notes.ts`). Branch `mod-notes-and-pages` off main. All 4 blockers done. BASELINE verified: service ABSENT · schema/types/validators PRESENT; prior impl `f31b807` torn down `eaf64f8` = shape-reference only. Scenario: Default (Entity Delivery Flow v1). Next: BASELINE → interpretation → Decomposition Gate.)
+_(none — `mod-notes-and-pages` completed 2026-09-19, LIF-131 → Done, PR #48 merged (`00dd638`), archived. ② `fe-notes-and-pages` = a separate frontend issue. Next head via `tracker_sync --next` at pickup.)_
 
 <details><summary>superseded — mod-notes vertical grain (folded into the campaign)</summary>
 
