@@ -3,7 +3,7 @@
 # Scenario: Default
 # Spec: docs/specs/features/mod-check-ins/_index.md
 # Created: 2026-09-19
-# Status: in-progress
+# Status: done (① backend — LIF-119 → Done, PR #51 merged ee68761; ② fe-check-ins separate)
 # Project: M1 — Whole Manual OS
 # Milestone: M1.1.1 — Hub & Foundation · Backend
 # Linear: LIF-119

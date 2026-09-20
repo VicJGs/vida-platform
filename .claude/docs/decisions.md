@@ -8,6 +8,15 @@
 | 2026-09-19 | mod-check-ins ① — streak semantics | current_streak = run-ending-at-latest vs today-relative | **Today-relative: full run only if latest date is asOf/asOf−1, else 0** (asOf injected) | A stale streak reported as "current" is a wrong number (business-rules §5). asOf restores the seam-contract param + keeps `computeStreak` pure/deterministic. | Yes |
 | 2026-09-19 | mod-check-ins ① — E9 streak/XP ownership | Where the streak + XP live | **Streak DERIVED read-side (never `user_profile` write); XP EMIT-only via the effect rail (apply→M1.2 Gamification)** | CHE-14/CHE-17 + ADR-012 E9/E2/E3. Check-ins owns the derived streak; Gamification owns the reward. | No (ADR) |
 | 2026-09-19 | mod-check-ins ① — cross-module deps | How to wire Journal-link + effect-rail without hard coupling / crashing on deferred handlers | **Optional dormant deps (`journal?`/`effects?`) + guarded emit (fire only if a handler is registered)** | Keeps unit construction valid, defers the apply safely (no NoEffectHandler crash), IR-13 eventually-consistent re-feed. | Yes |
+
+## mod-check-ins ① — completed 2026-09-19 (LIF-119 → Done, PR #51)
+The check-ins backend service tier over DB-4 `026_check_ins`, all 5 Entity-Delivery-Flow slices / 28 legs.
+Key decisions (rows above): template↔type resolved via built-in-default + `is_default` (no `check_in_type`
+column, intake §Resolution G3/G5 — a Victor drift-catch); parsed domain returns (not raw Rows); slot key
+immutable on update (CK-2); today-relative derived streak (E9, no `user_profile` write); XP emit-only via the
+effect rail (apply → M1.2 Gamification); optional dormant cross-module deps + guarded emit. Per-slice §XXVI
+double-gate + live-store Verification Gates; 7 gate-caught issues fixed. `@vida/core` 1039 tests green. Archived
+→ `.claude/tasks/archive/mod-check-ins.md`. ② fe-check-ins is a separate frontend issue.
 | 2026-09-19 | mod-journals ① — types home | `@vida/types` vs `@vida/core` for the contribution/engine types | **`@vida/core/services/journals/types.ts`** (NOT `@vida/types`) | `SectionData.state` reuses the `@vida/core` `TerminalState` canon (`foundation/capability/types.ts`), and `@vida/types` is the base layer that cannot import `@vida/core`. `JournalSummaryConfig` (a `Page` field) stays in `@vida/types/note.ts`. | No (layering-forced) |
 | 2026-09-19 | mod-journals ① — TerminalState | Journal section state vocabulary | **Reuse the `@vida/core` canon `['loading','empty','error','success']` verbatim** — the docs' prose "populated" maps to `success`. | Never redefine the canon (the UX-6 "reuse by TYPE" rule); no 5th-state invention. | No |
 | 2026-09-19 | mod-journals ① — registry shape | Module-level function (UX-6 placeholder) vs factory | **ADR-004 factory `createJournalRegistry()`** (mirrors `createEffectRegistry`); overwrite-dedup by `module` (self-owned key), unlike EffectRegistry's throw (shared effect-type key). `/adr-check` PASS, no new ADR (`structure-data.md:44`). | Registries here are factories (SessionRegistry/EffectRail precedent); the `apps/web` bare function was a design-model placeholder. | Yes |

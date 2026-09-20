@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-- mod-check-ins (LIF-119): .claude/tasks/mod-check-ins.md  (▶ IN PROGRESS 2026-09-19 — ① backend service tier over DB-4 `026_check_ins`; M1.1.1 head #41; Add Backend Component / Default, Entity Delivery Flow; deps ✅ mod-journals + mod-notes-and-pages + xs-effect-rail. Spec stub: docs/specs/features/mod-check-ins/.)
+_(none — `mod-check-ins` completed 2026-09-19, LIF-119 → Done, PR #51 merged (`ee68761`), archived → `.claude/tasks/archive/mod-check-ins.md`. ① backend all 5 slices/28 legs; @vida/core 1039 green. ② `fe-check-ins` = a separate frontend issue. Next head via `#`-order / `tracker_sync --next` at pickup.)_
 
 <details><summary>superseded — mod-notes vertical grain (folded into the campaign)</summary>
 
