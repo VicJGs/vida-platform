@@ -8,7 +8,8 @@
 ## Status
 - **S1 — Service shell + Pages core: BUILT** (2026-09-19, LIF-131). `services/notes/{types,service,index}.ts` + live-store tests. @vida/core 979 green.
 - **S2 — Entity notes + attachments: BUILT** (2026-09-19). `ensureEntityNote` + `seedContent` + attachments; `newAttachmentSchema` appended to validators/note.ts. @vida/core 985 green (+6).
-- S3 (page-links + wiki) · S4 (delegation facade + registry): PENDING.
+- **S3 — Page-links + wiki resolution: BUILT** (2026-09-19). `createPageLink` (idempotent+revive) + `removePageLink` + `getPageLinksFrom`/`getPageLinksTo` + `resolveWikiLink`. @vida/core 990 green (+5).
+- S4 (delegation facade + registry): PENDING.
 
 ## Construction
 `createNotesService(deps): NotesService` — factory-object, hoisted closures, no `this.` [FACT: services/notes/service.ts:35-38].
@@ -29,6 +30,11 @@ Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `
 - `addAttachment(pageId, file: NewAttachment): Promise<NoteAttachmentRow>` · `getAttachments(pageId): Promise<NoteAttachmentRow[]>` · `removeAttachment(id): Promise<void>` over `note_attachments` [FACT: schema/notes.ts:91-107; service.ts].
 - `NewAttachment` is camelCase (`Uint8Array` blobs); the service maps to snake_case columns. **First blob consumer:** Drizzle types `blob('buffer')` as `Buffer` but the platform-neutral value is `Uint8Array` (libsodium at M3); a documented boundary cast bridges it — blob-type reconcile → DB-11/M3.
 - `newAttachmentSchema` appended to `validators/note.ts` (no `entityNoteSeedSchema` — seed is caller-internal). `EntityNoteSeed`/`NewAttachment` are plain TS types.
+
+## Contract (S3 — built)
+- `createPageLink(source, target, context?): Promise<PageLinkRow>` — NP-5 idempotent: live → no-op · soft-deleted → **revive** · absent → create (full `UNIQUE(source,target)` mandates revive; mirror AR-6 `createLink`). The existing-check query intentionally includes soft-deleted rows. [FACT: service.ts createPageLink; migrations/033_notes.ts:91]
+- `removePageLink(source, target): Promise<void>` — resolve-then-soft-delete (no-op if absent). `getPageLinksFrom`/`getPageLinksTo(pageId): Promise<PageLinkRow[]>` — direction reads, `isNull(deleted_at)`. [FACT: service.ts; NOT-16/17]
+- `resolveWikiLink(text): Promise<PageRow[]>` — NP-7: non-deleted pages with `title` LIKE `%text%` (candidates; caller binds a concrete `target_page_id` → id-based, rename-safe). Excludes null-title + soft-deleted. M1.0 uses plain LIKE (no wildcard-escape; title→FTS5/DB-8 at M3). [FACT: service.ts resolveWikiLink; NOT-18/50]
 
 ## Composition seams (delegation topology — built at S2–S4)
 - entity-link/tag **WRITES** → AR-6 `SpacesService` (`deps.spaces`) — S4.

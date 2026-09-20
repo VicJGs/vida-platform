@@ -250,4 +250,53 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
     await h.svc.removeAttachment(att.id)
     expect(await h.svc.getAttachments(page.id)).toHaveLength(0)
   })
+
+  // ── S3: page-links + wiki resolution ────────────────────────────
+
+  it('createPageLink is idempotent — 2nd call returns the same row, no duplicate (BR-S3-1)', async () => {
+    const a = await h.svc.createPage({ type: 'note', title: 'A' })
+    const b = await h.svc.createPage({ type: 'note', title: 'B' })
+    const first = await h.svc.createPageLink(a.id, b.id)
+    const second = await h.svc.createPageLink(a.id, b.id)
+    expect(second.id).toBe(first.id)
+    expect(await h.svc.getPageLinksFrom(a.id)).toHaveLength(1)
+  })
+
+  it('createPageLink REVIVES a soft-deleted link (same id, deleted_at cleared) (BR-S3-1)', async () => {
+    const a = await h.svc.createPage({ type: 'note', title: 'A' })
+    const b = await h.svc.createPage({ type: 'note', title: 'B' })
+    const first = await h.svc.createPageLink(a.id, b.id)
+    await h.svc.removePageLink(a.id, b.id)
+    expect(await h.svc.getPageLinksFrom(a.id)).toHaveLength(0)
+    const revived = await h.svc.createPageLink(a.id, b.id)
+    expect(revived.id).toBe(first.id) // same row revived, NOT a new one
+    expect(revived.deleted_at).toBeNull()
+    expect(await h.svc.getPageLinksFrom(a.id)).toHaveLength(1)
+  })
+
+  it('removePageLink is a no-op when absent (BR-S3-2)', async () => {
+    const a = await h.svc.createPage({ type: 'note' })
+    const b = await h.svc.createPage({ type: 'note' })
+    await expect(h.svc.removePageLink(a.id, b.id)).resolves.toBeUndefined()
+  })
+
+  it('getPageLinksFrom/To read the correct direction, excluding soft-deleted (BR-S3-3)', async () => {
+    const a = await h.svc.createPage({ type: 'note' })
+    const b = await h.svc.createPage({ type: 'note' })
+    await h.svc.createPageLink(a.id, b.id)
+    expect(await h.svc.getPageLinksFrom(a.id)).toHaveLength(1)
+    expect(await h.svc.getPageLinksTo(b.id)).toHaveLength(1)
+    expect(await h.svc.getPageLinksTo(a.id)).toHaveLength(0)
+  })
+
+  it('resolveWikiLink returns title-substring candidates, excluding soft-deleted + null-title (BR-S3-4)', async () => {
+    await h.svc.createPage({ type: 'note', title: 'Meeting notes' })
+    await h.svc.createPage({ type: 'note', title: 'Meeting agenda' })
+    await h.svc.createPage({ type: 'note', title: 'Grocery list' })
+    const gone = await h.svc.createPage({ type: 'note', title: 'Meeting archived' })
+    await h.svc.softDeletePage(gone.id)
+    await h.svc.createPage({ type: 'note' }) // null title — never matches
+    const hits = await h.svc.resolveWikiLink('Meeting')
+    expect(hits.map((p) => p.title).sort()).toEqual(['Meeting agenda', 'Meeting notes'])
+  })
 })

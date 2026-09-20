@@ -49,7 +49,8 @@ Integration points: DB-4 Notes & Pages schema (foundation) · Repository layer (
 - [x] Interpretation layer written — delivery/interpretation.md (dependencies · needs · organization · implicit rules)
 - [x] Decomposition Gate — delivery/slice-map.md + seam-contract.md; gate-1 /critique REVISE→fixed→SHIP; **Approval 1 ✅ (2026-09-19)**
 - [x] **S1 BUILT** — services/notes/{types,service,index}.ts + live-store tests (14); §XXVI double-gate (Approval 1 · preflight PASSED G-S1-1 · Approval 2) + post-impl SHIP; typecheck 0 · @vida/core 979 green · eslint 0; §XXIX current-* born. Commit `ef8c1ed`.
-- [x] **S2 BUILT** — ensureEntityNote (NP-8 idempotent · deterministic seedContent) + attachments (add/get/remove) + newAttachmentSchema; §XXVI double-gate (Approval 1 R1/R2 · preflight PASSED · Approval 2 camelCase-map fix) + post-impl SHIP; typecheck 0 · @vida/core 985 green (+6) · eslint 0; §XXIX current-* refreshed. First blob consumer → Uint8Array/Buffer cast flagged DB-11/M3.
+- [x] **S2 BUILT** — ensureEntityNote (NP-8 idempotent · deterministic seedContent) + attachments (add/get/remove) + newAttachmentSchema; §XXVI double-gate (Approval 1 R1/R2 · preflight PASSED · Approval 2 camelCase-map fix) + post-impl SHIP; typecheck 0 · @vida/core 985 green (+6) · eslint 0; §XXIX current-* refreshed. First blob consumer → Uint8Array/Buffer cast flagged DB-11/M3. Commit `231a92f`.
+- [x] **S3 BUILT** — createPageLink (idempotent+revive, full UNIQUE) · removePageLink · getPageLinksFrom/To · resolveWikiLink (NP-7); mirrors AR-6 createLink; §XXVI double-gate (Approval 1 SHIP-clean · preflight PASSED · Approval 2) + post-impl SHIP; typecheck 0 · @vida/core 990 green (+5) · eslint 0; §XXIX current-* refreshed.
 - [ ] Forward spec written + Per-Step Build Gate cleared (§XXVI) before any implementation
 - [ ] Read 3 existing services — state the pattern found
 - [ ] /api-contract approved before any code
@@ -84,7 +85,11 @@ Integration points: DB-4 Notes & Pages schema (foundation) · Repository layer (
 - [x] B7 barrel · B8 6 live-store tests (idempotence · determinism · key-order · unregistered · BLOB round-trip · soft-delete) · B9 gates green
 - NOTE: first blob consumer — Uint8Array→Buffer boundary cast (documented, DB-11/M3 reconcile).
 
-### S3–S4 — pending (next: S3 page-links + wiki resolution)
+### S3 — Page-links + wiki resolution ✅ DONE (2026-09-19)
+- [x] B1 types (+5 sigs) · B2 linkRepo + like import · B3 createPageLink (idempotent+revive, no-isNull existing-check) · B4 removePageLink · B5 direction reads · B6 resolveWikiLink (title LIKE)
+- [x] B7 5 live-store tests (idempotent no-op · revive cycle same-id · remove no-op · direction · wiki substring+exclusions) · B8 gates green (990)
+
+### S4 — pending (next: delegation facade + registry — AR-6 writes / AR-8 reads, entity-tag reads, getBacklinks)
 
 ## Plan
 <!-- Only for a SPEC-LESS small task (§XXVI LITE). N/A — this is a full-gate code build. -->
@@ -95,6 +100,7 @@ Integration points: DB-4 Notes & Pages schema (foundation) · Repository layer (
 | 2026-08-21 | reshaped from mod-notes under P3 decomposition (planning only) | — |
 | 2026-09-19 | build STARTED: branch `mod-notes-and-pages` off main; verified live BASELINE (service absent, schema/types/validators present); confirmed all 4 blockers done | run BASELINE (document-context) → interpretation → Decomposition Gate |
 | 2026-09-19 | Decomposition Gate (Approval 1) + S1 BUILT (pages core, commit `ef8c1ed`) + S2 BUILT (entity notes + attachments); @vida/core 985 green | S3 — page-links + wiki resolution |
+| 2026-09-19 | S3 BUILT (page-links idempotent+revive · resolveWikiLink); @vida/core 990 green | S4 — delegation facade + registry (final slice) |
 
 ## Notes
 - 2nd run of Entity Delivery Flow v1 (mod-journals was 1st) — flag any friction for v1 hardening.

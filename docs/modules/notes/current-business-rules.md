@@ -36,5 +36,11 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
 - **BR-S2-4 (attachments):** `addAttachment` inserts `note_attachments` (validated by `newAttachmentSchema`, camelCase→snake_case map); `getAttachments` filters `isNull(deleted_at)`; `removeAttachment` soft-deletes. `[E]` blobs pass-through in M1.0. [FACT: service.ts; schema/notes.ts:91-107; NOT-29/30/31]
 - **BR-S2-5 (first blob consumer):** `encrypted_blob` bridged from `Uint8Array` (public API) to Drizzle's `Buffer` type via a documented boundary cast — both SQLite drivers accept `Uint8Array` at runtime; reconcile → DB-11/M3.
 
-## Pending (S3–S4) — invariants to add on build
-NP-5 page-link/entity-link idempotence · NP-7 wiki-link resolve-by-id · entity-link facade delegation (AR-6/AR-8) · entity-tag reads.
+## S3 — Page-links + wiki resolution (BUILT)
+- **BR-S3-1 (NP-5 idempotent + revive):** `createPageLink(source, target, context?)` queries by the business key INCLUDING soft-deleted (full `UNIQUE(source,target)` → ≤1 row); live → no-op, soft-deleted → revive (`update {deleted_at:null, context}`), absent → create. Mirror AR-6 `createLink`. [FACT: service.ts; migrations/033_notes.ts:91; NOT-14]
+- **BR-S3-2 (resolve-then-soft-delete):** `removePageLink` soft-deletes the live row; no-op if absent. [FACT: service.ts; NOT-16]
+- **BR-S3-3 (direction reads, soft-delete filtered):** `getPageLinksFrom` (source) / `getPageLinksTo` (target) append `isNull(deleted_at)`. [FACT: service.ts; NOT-17]
+- **BR-S3-4 (NP-7 resolve by id):** `resolveWikiLink(text)` returns non-deleted title-LIKE candidates; the caller binds a concrete `target_page_id` (id-based, rename-safe, collision-immune). Excludes null-title. M1.0 plain LIKE; wildcard-escape deferred (title→FTS5/DB-8 at M3). [FACT: service.ts; NOT-18/50]
+
+## Pending (S4) — invariants to add on build
+NP-6 entity-link registry validation (reuse assertRegistered) · entity-link facade delegation (AR-6 writes / AR-8 reads) · entity-tag reads · getBacklinks (page+entity lists).

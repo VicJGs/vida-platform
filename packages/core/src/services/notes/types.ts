@@ -9,7 +9,7 @@
 
 import type { z } from 'zod'
 import type { PageType } from '@vida/types'
-import type { PageRow, NoteAttachmentRow } from '../../db/schema/notes'
+import type { PageRow, PageLinkRow, NoteAttachmentRow } from '../../db/schema/notes'
 import type { DrizzleDb } from '../../db/adapter'
 import type { SpacesService } from '../../foundation/spaces/service'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
@@ -73,6 +73,13 @@ export interface NotesService {
   addAttachment(pageId: string, file: NewAttachment): Promise<NoteAttachmentRow>
   getAttachments(pageId: string): Promise<NoteAttachmentRow[]>
   removeAttachment(id: string): Promise<void>
+
+  // ── S3: Page-links + wiki resolution ────────────────────────────
+  createPageLink(sourcePageId: string, targetPageId: string, context?: string): Promise<PageLinkRow>
+  removePageLink(sourcePageId: string, targetPageId: string): Promise<void>
+  getPageLinksFrom(pageId: string): Promise<PageLinkRow[]>
+  getPageLinksTo(pageId: string): Promise<PageLinkRow[]>
+  resolveWikiLink(text: string): Promise<PageRow[]>
 }
 
 /** NP-2 conflict — one journal per calendar date; never a silent overwrite (NOT-09/10). */

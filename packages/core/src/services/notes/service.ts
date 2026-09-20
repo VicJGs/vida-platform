@@ -8,10 +8,17 @@
 // runs the clause verbatim (BR-S1-7). NP-2 enforced in-service (BR-S1-1).
 // ============================================================================
 
-import { and, eq, isNull, type SQL } from 'drizzle-orm'
+import { and, eq, isNull, like, type SQL } from 'drizzle-orm'
 import type { EditorDocument, EditorNode, PageType } from '@vida/types'
 import { createRepository } from '../../db/repository'
-import { pages, noteAttachments, type PageRow, type NoteAttachmentRow } from '../../db/schema/notes'
+import {
+  pages,
+  pageLinks,
+  noteAttachments,
+  type PageRow,
+  type PageLinkRow,
+  type NoteAttachmentRow,
+} from '../../db/schema/notes'
 import { createPageSchema, updatePageSchema, newAttachmentSchema } from '../../validators/note'
 import {
   JournalExistsError,
@@ -71,6 +78,8 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
     encryptedFields: [],
     softDelete: true,
   })
+  // page_links HAS deleted_at → softDelete:true; empty [E] (BR-S3-1).
+  const linkRepo = createRepository(db, pageLinks, { deviceId, encryptedFields: [], softDelete: true })
 
   /** NP-6/SP2 — reject an entity_type absent from the injected registry (BR-S1-3; reused by S4). */
   function assertRegistered(entityType: string | null | undefined): void {
@@ -182,6 +191,49 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
     removeAttachment: async (id: string): Promise<void> => {
       await attachRepo.delete(id)
     },
+
+    // ── S3: page-links + wiki resolution ────────────────────────────
+    createPageLink: async (
+      sourcePageId: string,
+      targetPageId: string,
+      context?: string,
+    ): Promise<PageLinkRow> => {
+      // Business-key query INCLUDING soft-deleted (the revive path needs it) — UNIQUE(source,target)
+      // is FULL, so ≤1 row per key exists (BR-S3-1, mirror spaces/service.ts:158-180).
+      const existing = await linkRepo.findWhere(
+        allOf(eq(pageLinks.source_page_id, sourcePageId), eq(pageLinks.target_page_id, targetPageId)),
+      )
+      const row = existing[0]
+      if (row) {
+        if (row.deleted_at != null) {
+          return linkRepo.update(row.id, { deleted_at: null, context: context ?? null }) // revive
+        }
+        return row // idempotent no-op
+      }
+      return linkRepo.create({
+        source_page_id: sourcePageId,
+        target_page_id: targetPageId,
+        context: context ?? null,
+      })
+    },
+
+    removePageLink: async (sourcePageId: string, targetPageId: string): Promise<void> => {
+      const existing = await linkRepo.findWhere(
+        allOf(eq(pageLinks.source_page_id, sourcePageId), eq(pageLinks.target_page_id, targetPageId)),
+      )
+      const live = existing.find((r) => r.deleted_at == null)
+      if (live) await linkRepo.delete(live.id) // resolve-then-soft-delete (BR-S3-2)
+    },
+
+    getPageLinksFrom: async (pageId: string): Promise<PageLinkRow[]> =>
+      linkRepo.findWhere(allOf(eq(pageLinks.source_page_id, pageId), isNull(pageLinks.deleted_at))),
+
+    getPageLinksTo: async (pageId: string): Promise<PageLinkRow[]> =>
+      linkRepo.findWhere(allOf(eq(pageLinks.target_page_id, pageId), isNull(pageLinks.deleted_at))),
+
+    // NP-7 — resolve by title CANDIDATES; the caller binds a concrete target_page_id (BR-S3-4/D-S3-1).
+    resolveWikiLink: async (text: string): Promise<PageRow[]> =>
+      pageRepo.findWhere(allOf(like(pages.title, `%${text}%`), isNull(pages.deleted_at))),
   }
 
   return service
