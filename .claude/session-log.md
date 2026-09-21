@@ -5699,3 +5699,19 @@ Decisions (see .claude/docs/decisions.md):
   - Memory: [[repository-create-returns-input-row-not-db-defaults]] (new — create() returns input row, not DB defaults; backfill notNull-defaults in the service; live-gate-caught via word_count).
 Next session:
   - **FIRST ACTION:** next head via `tracker_sync --next` = **mod-check-ins** (M1.1.1, 6 dependents, ready) — verify at pickup. The ② `fe-notes-and-pages` (all Notes UI: `[[` picker, backlinks panel, /summary block, collection views, metadata controls, search) is a separate frontend issue. Env: Node 24 via nvm + corepack pnpm; per-issue branch → PR.
+
+---
+Date: 2026-09-21 — xs-ingestion #44 (LIF-172) — M1.1.2 head — ① BACKEND COMPLETE (5 slices) → PR #57 merged → Done
+Task: xs-ingestion · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow v1) · branch xs-ingestion → PR #57 (`127accb`) + chore PR #58 (`5057b8b`)
+Goal: build the ADR-014 device-mediated ingestion service tier (foundation/ingestion) — XCU-01…05,09…16 (13 legs), over the built enforcer #31 + egress guard #43.
+Accomplished:
+  - `packages/core/src/foundation/ingestion/` — 5 slices: S1 classify+disclose (XCU-02/03) · S2 guard core (XCU-01 refuse · XCU-12 opt-in · IR-2 sensitive→egress #43 · XCU-09 mediator custody · XCU-13 revoke=keep-ingested) · S3 reconcile/staging+feed-dedup (XCU-10/11) · S4 public-reference whole-set+verify (XCU-04/05) · S5 integration registry (XCU-14/15/16, IR-11). No schema, deny-safe/fail-closed ports, durable stores = M2.
+  - Full Entity Delivery Flow gate, all doc-grounded: Interpretation SHIP → Approval 1 → preflight → Approval 2 → per-slice Verification Gates (S2 live-store) → pre-ship /critique SHIP. @vida/core 1096/1096 (+42), tsc 0, eslint 0.
+  - Currency `docs/core/ingestion/current-*` born (IN-1…IN-13); delivery docs + service/_index implemented. LIF-172 → Done.
+Decisions:
+  - M1 = engine/decision/registry + deny-safe ports, no schema; M2 = durable stores + real reach (egress #43 shape-class, doc-grounded).
+  - Opt-in = enforcer external_in boolean (dropped manufactured `not_opt_in`); ingress-carries-egress delegated to egress #43; revoke = keep-ingested by construction; whole-set-never-subset; layers = tiers of one normalized contract (IR-11).
+  - Doc-faithfulness fixes at the gates (restored `timestamps`, dropped invented `'conflict'` status, 3-column LeakDisclosure, `PublicRefDenied.datasetId`). Reused egress `UserInitiationProof` via re-export (barrel collision).
+  - Memory: [[xs-security-services-deny-safe-port-build-shape]] (new).
+Next session:
+  - **FIRST ACTION:** next `#`-order head = #45 xs-ai (now unblocked — deps egress #43 + ingestion #44 built), the XS security-service shape-class (XCU-17…27, ADR-015). Alt #46 xs-notifications-delivery. Env: Node 24 via nvm; per-issue branch → PR (run push→PR→merge in the FOREGROUND).
