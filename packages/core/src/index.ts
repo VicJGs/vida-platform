@@ -123,6 +123,9 @@ export * from './foundation/effects'
 // Foundation substrate — the capability registry (AR-7 Increment 2 · ADR-008 + ADR-010)
 export * from './foundation/capability'
 
+// Foundation substrate — the egress guard (XS-egress-guard #43 · ADR-014 §3.3 · XCU-06/08)
+export * from './foundation/egress'
+
 // Foundation substrate — the measurability engine (AR-7 Increment 3 · ADR-011)
 export * from './foundation/measurement'
 
