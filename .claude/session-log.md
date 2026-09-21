@@ -5715,3 +5715,21 @@ Decisions:
   - Memory: [[xs-security-services-deny-safe-port-build-shape]] (new).
 Next session:
   - **FIRST ACTION:** next `#`-order head = #45 xs-ai (now unblocked — deps egress #43 + ingestion #44 built), the XS security-service shape-class (XCU-17…27, ADR-015). Alt #46 xs-notifications-delivery. Env: Node 24 via nvm; per-issue branch → PR (run push→PR→merge in the FOREGROUND).
+
+---
+Date: 2026-09-21 — xs-ai #45 (LIF-167) — M1.1.2 head — ① BACKEND COMPLETE (4 slices) → PR #60 merged → Done
+Task: xs-ai · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow v1) · branch xs-ai → PR #60 (`416197b`) + chore PR #61 (`3eff09a`)
+Goal: build the ADR-015 AI-application service tier (foundation/ai) — XCU-17…27 (11 legs), over the built enforcer #31 + egress #43 + ingestion #44.
+Accomplished:
+  - `packages/core/src/foundation/ai/` — 4 slices: S1 modes·disclosure·provenance·split-seam (XCU-18/20/24/17, pure) · S2 `askModel` core (XCU-22/19/27 + XCU-26 on-device port; cloud call = PUSH egress via `assertEgressPermitted`, mediator-injected, re-hits gate IR-8, AI-egress audit via #43) · S3 agent gate (XCU-21 tool-set=envelope fails-closed · XCU-23 injection bounding) · S4 `ai_connections` config (XCU-25, key mediator-custodied). Server blind in both modes. No schema, deny-safe/fail-closed ports; durable stores + module askModel runtime (LIF-145) = M2.
+  - Full Entity Delivery Flow: interpretation + slice-map + seam-contract + service spec → Decomposition Approval 1 → per-slice Verification Gates (S2/S3 live-store on real capability_grants + built egress guard) → pre-ship /critique REVISE→SHIP. @vida/core 1128/1128 (+42 over the pre-M1.1.2 baseline; +32 this task), tsc 0, eslint 0.
+  - Currency `docs/core/ai/current-*` born (BR-AI-1…13). LIF-167 → Done (both blocker edges synced).
+Decisions (see .claude/docs/decisions.md):
+  - M1 = pure decision/mode/agent-gate/config tier + deny-safe ports, no schema; M2 = durable stores + real reach (module runtime = LIF-145).
+  - **A cloud AI call is a PUSH egress → `assertEgressPermitted`/`checkEgress` (XCU-19→XCU-06), NOT `assertFetchEgress`** (XCU-08 = ingestion's fetch case). Interpretation drafted with assertFetchEgress → corrected during S2 build + docs reconciled. `EgressTarget.kind:'model'` pre-wired by egress.
+  - `askModel` mediator-injected (agent never holds the key); tool-set IS the granted envelope (delegates to enforcer, fails closed); source=ai provenance; key mediator-custodied.
+  - Pre-ship /critique caught a copied-for-symmetry dead `enforcer` param on `createAiService` → dropped (egress holds it; tool-gate is a separate factory). Don't copy sibling signatures mechanically.
+  - Task-Goal ADR typo fixed (ADR-014/020 → ADR-015; ADR-020 = Zustand/frontend). Barrel collision `buildDisclosure`→`buildAiDisclosure`.
+  - Memory: [[xs-security-services-deny-safe-port-build-shape]] extended (triad complete; push-vs-fetch egress; no mechanical signature copy).
+Next session:
+  - **FIRST ACTION:** `#`-order head = **#46 xs-notifications-delivery** (← none, ready) — the LAST M1.1.2 XS security service (`xcut-notifications` XCU-01…18). Completes M1.1.2 backend → opens MOD feature builds (#47 MOD-finance …). Env: Node 24 via nvm; per-issue branch → PR → merge in the FOREGROUND.
