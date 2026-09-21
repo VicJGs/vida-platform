@@ -1,5 +1,5 @@
 # Task: xs-egress-guard
-# Status: in-progress
+# Status: done
 # Linear: LIF-171
 # Profile: Add Backend Component
 # Scenario: Default (Entity Delivery Flow v1) — CONFIRMED build-from-docs (baseline: zero prior egress code)
@@ -50,6 +50,6 @@ Egress guard — external-out leak enforcement (XCU-06/08; ADR-015).
 - [x] Currency §XXIX: `docs/core/egress/current-{spec,business-rules}.md` born (D6) — EG-1…10 promoted
 - [x] Step 10 /critique → **SHIP** (2 non-blocking nits: M2 [E]/append-only doc-only forward-flag · test-cast comment folded)
 - [x] Step 11 Currency §XXIX confirmed — current-* match the code
-- [ ] COMMIT (branch `xs-egress-guard` → PR → merge) + `/task-complete` — awaiting Victor's go (outward-facing)
+- [x] COMMIT — branch `xs-egress-guard` → PR #55 → merged `529236c` (main); `/task-complete` done
 
 ## Notes
