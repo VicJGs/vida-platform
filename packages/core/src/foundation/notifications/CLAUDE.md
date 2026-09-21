@@ -11,5 +11,12 @@ ADR-013
 N1 N2 N7
 
 ## Status
-Directory home only (ADR-018). Engine logic + tables are authored PER-FEATURE at build phase
-(ADR-016 §3.5 / ADR-017). No feature code or DDL lives here yet.
+**BUILT M1** — XS-notifications-delivery #46 (LIF-174), 2026-09-21. The ZK delivery ENGINE: `types.ts` · `tiers.ts`
+(selectTier/channelsFor) · `payload.ts` (buildWakePayload, content-zero) · `scheduling.ts` (bakeQuietHours/reschedulePlan/
+dedupKey/shouldMaterialize) · `ports.ts` (deny-safe defaults) · `service.ts` (`createNotificationDeliveryEngine(ports?)`).
+17 legs XCU-01…12,14-18. Pure decision/routing tier + deny-safe/fail-closed ports, **NO schema** — real reach
+(Expo/Tauri/Web-Push, Hono wake-relay, email) + delivery-audit/push-token columns are M2 (behind the ports).
+
+Gating is UPSTREAM (MOD-notifications dispatcher, NF-5) — the engine holds no enforcer/egress and runs no permission
+check; it executes an already-gated `DeliveryDecision`. Surface (records/dispatch/UI) = MOD-notifications (`services/notifications/`).
+Docs: `docs/core/notifications-delivery/current-{spec,business-rules}.md`. 38 tests; @vida/core 1166 green.

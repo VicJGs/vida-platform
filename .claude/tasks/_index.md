@@ -2,7 +2,12 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — `xs-backlinks-search-export` completed 2026-09-20, LIF-168 → Done, PR #53 merged (`ea99232`), archived → `.claude/tasks/archive/xs-backlinks-search-export.md`. RATIFY + R7 back-fill; @vida/core 1040 green. **Next head via `#`-order at pickup:** M1.1.2 continues — `xs-egress-guard #43` · `xs-ingestion #44` · `xs-notifications-delivery #46` (all ← none, ready).)_
+- xs-notifications-delivery (LIF-174 → in-progress): .claude/tasks/xs-notifications-delivery.md  (M1/M1.1.2 `#46` · add-backend-component / Default (Entity Delivery Flow). The ADR-013 ZK notification **delivery engine** — 17 legs (XCU-01…12, 14–18), pure decision/routing tier + deny-safe ports, no schema. The LAST M1.1.2 XS security service; completes the backend wave.)
+
+<details><summary>prior (none active)</summary>
+
+_(`xs-ai` completed 2026-09-21, LIF-167 → Done, PR #60 merged (`416197b`). `xs-ingestion` LIF-172 → Done PR #57. `xs-egress-guard` LIF-171 → Done PR #55. `xs-backlinks-search-export` LIF-168 → Done PR #53.)_
+</details>
 
 <details><summary>superseded — mod-notes vertical grain (folded into the campaign)</summary>
 
