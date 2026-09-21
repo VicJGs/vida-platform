@@ -1,6 +1,7 @@
 # Task: xs-notifications-delivery
-# Status: in-progress
+# Status: done
 # Linear: LIF-174
+# PR: #63 (merged, 30db0a9)
 # Profile: Add Backend Component
 # Scenario: Default (Entity Delivery Flow v1)
 # Project: M1 — Whole Manual OS
@@ -59,7 +60,7 @@ See docs/specs/foundation/xs-notifications-delivery/delivery/{interpretation,sli
 - [x] tsc --noEmit 0 · eslint 0 · per-slice Verification Gate PASS (all PURE — no live-store; stated, DEL-9/10)
 - [x] D6 + Currency Rule (§XXIX) — docs/core/notifications-delivery/current-{spec,business-rules}.md born; foundation/notifications/CLAUDE.md → BUILT
 - [x] /critique pre-ship → independent critic REVISE→SHIP. B1 (deliver folds push/email failure to in-app, never rejects — BR-ND-8) + B2 (scheduleLocal registers under `dedupKey` namespace, not raw ts) + N1 (drop DeliverySuppressed from seam-doc) + N3 (return `at`) folded. Full @vida/core 1168/1168 (+40), tsc 0, eslint 0.
-- [ ] PR → merge
+- [x] PR #63 → merged (30db0a9) → main; branch deleted. LIF-174 → Done.
 
 ## Build Steps
 <!-- filled from the approved slice specs -->
