@@ -1,5 +1,5 @@
 # Task: xs-backlinks-search-export
-# Status: in-progress
+# Status: done
 # Linear: LIF-168
 # Profile: Add Backend Component
 # Scenario: Entity Re-scope (Entity Delivery Flow recovery variant)
