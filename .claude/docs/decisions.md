@@ -501,3 +501,26 @@ M1.1.2 head `#42` · add-backend-component / Entity Re-scope (Entity Delivery Fl
 
 ## xs-egress-guard — completed 2026-09-20 (LIF-171 → Done, PR #55 `529236c`)
 M1.1.2 head `#43` · add-backend-component / **Default** (Entity Delivery Flow — build-from-docs; Step-0 baseline via an Explore sweep found **zero prior egress code**, so scenario corrected Entity Re-scope → Default). Builds `packages/core/src/foundation/egress` — the **per-target egress-mediation service, the strictest gate in the system** (ADR-014 §3.3). `createEgressGuard(enforcer, ports?)` layers **per-target consent + union-of-consents + audit + never-auto-transmit** on top of the CapabilityEnforcer's `external_out` boolean (#31). **S1 XCU-06** `assertEgressPermitted` (persists once) + `checkEgress` (PURE — never writes); **S2 XCU-08** `assertFetchEgress` ("a fetch is an outbound request" → the same gate, params→audited slice). 6-step **fail-closed** flow (never-auto-transmit → target resolvable → external_out boolean [delegated #31] → sensitive-union [steps 3+4 = the compositional union] → per-target consent → build). Key decisions: (1) **M1 = finished service + persistence PORTS, no schema; durable audit + per-target-consent STORE = M2** — grounded in `xcut-ingestion-ai.md:5` (M2-facing), DB-4-authored-no-egress-table, `PLAN-p6:189` (finished-twin a P6 face rides); the M2 store is `[E]` (R3/EN-2) + append-only (ledger convention); M1 ports = deny-safe consent + no-op audit → egress DENIED until a consent adapter is wired (fail-closed by construction). (2) **PF-1 — `checkEgress` pure, `assertEgressPermitted` persists once** (a speculative check must not record a non-egress; preflight caught this). (3) **target = the stable integration-identity anchor (X10)**, not a raw URL. (4) **`EgressDenied(defId, reason)`** parity with `CapabilityDenied`; an unresolvable def propagates `CapabilityNotFound` (bug, not deny — INV-7). Full §XXVI double-gate: Decomposition (Approval 1) → **Victor drift-catch** (I framed R-1…R-4/nit-a as "decisions/leans/your-call"; Victor: "there is nothing for me to choose or decide, everything in there" → stripped all decision framing, re-grounded as doc-cited FACT) → IMPL-PLAN → /preflight (BLOCKED-1 PF-1 fixed + 5 assumptions folded) → Approval 2 → per-slice Verification Gates (14/14 **live-store** smoke on real `capability_grants`) → pre-ship /critique SHIP (2 nits: M2 [E]/append-only doc-only forward-flag · test-cast comment). @vida/core **1064/1064** (+14), tsc 0, eslint clean. Currency `docs/core/egress/current-{spec,business-rules}.md` born (EG-1…10). Delegated/homed-out: external_out boolean+union → #31 · per-source layer → XS-ingestion #44 · credential injection + provider call → mediator (XCU-09) · model call → XS-ai #45/ADR-015 · durable store+targets → M2 · audit VIEW + consent UX → P6 (XCU-06u). ② no FE (service tier; P6 face = `fe-integrations-ai-surfaces`). Memory reaffirmed: [[dont-frame-a-doc-resolved-handling-as-a-decision-nor-over-correct]] · [[factory-service-no-this-for-intra-calls]].
+
+## xs-ingestion (LIF-172) — completed 2026-09-21
+The cross-cutting `foundation/ingestion` device-mediated ingestion-guard service (ADR-014 §3.1-3.8; XS #44,
+M1.1.2). Fresh build, 5 slices, 13 legs (XCU-01…05,09…16) over the BUILT capability enforcer #31 + egress
+guard #43. Key decisions (all doc-grounded — Victor's standing "ground everything in the documentation"):
+- **M1 = engine/decision/registry tier + deny-safe ports; M2 = durable stores + real reach.** Identical
+  disposition to the sibling egress-guard #43: no schema, `import_staging`/`connection_config`/integration
+  registry deferred to M2, all UIs to P6 (corpus xcut-ingestion-ai.md:5 "M2-facing"; ADR-014 §5 owed-schema).
+- **Opt-in = the enforcer `external_in` boolean** (off by default = no grant) — NO separate `not_opt_in` reason
+  (the grant's existence IS the opt-in state). Dropped a manufactured reason at the preflight/critique.
+- **Ingress-carries-egress is delegated, not re-implemented.** A sensitive-read fetch (`sensitiveModules`
+  non-empty) routes through `egressGuard.assertFetchEgress` (#43, XCU-08) — a fetch is an outbound request.
+- **Revoke = stop-future/keep-ingested by construction** (touches only the grant via `enforcer.revoke`, never
+  a data row). Mediator credential custody = a port; M1 has none → `mediator_unavailable` (deny-safe).
+- **Whole-set-never-subset** enforced by refusing a `subset` request; provenance verify fails closed.
+- **Layers are tiers of one normalized contract** (IR-11): a native-adapter upgrade keeps the same
+  integration-identity + normalization contract (connector migration, not data migration).
+- Doc-faithfulness fixes at the gates: `NormalizationContract` restored `timestamps` (ADR-014:78); dropped an
+  invented `'conflict'` StagedRowStatus; `LeakDisclosure` matched the 3-column ADR-014:56-60 matrix;
+  `PublicRefDenied` stores `datasetId` (typed-error parity).
+Gates: Interpretation SHIP → Decomposition Approval 1 → preflight → Approval 2 → per-slice Verification Gates
+(S2 live-store) → pre-ship /critique SHIP. @vida/core 1096/1096, tsc 0, eslint 0. PR #57 (`127accb`).
+Currency: docs/core/ingestion/current-{spec,business-rules}.md (IN-1…IN-13).
