@@ -1,4 +1,15 @@
-<!-- Last updated: 2026-09-20 by /task-complete -->
+<!-- Last updated: 2026-09-21 by /session-end -->
+
+## XS-notifications-delivery (#46, LIF-174) — completed 2026-09-21 (PR #63 `30db0a9`)
+The ADR-013 ZK notification DELIVERY engine (`foundation/notifications`) — 17 legs (XCU-01…12,14-18), pure decision/routing tier + deny-safe ports, no schema. Decisions:
+- **The engine holds NO enforcer/egress — gating is upstream (the dispatcher, NF-5).** A first draft mechanically copied the egress/ingestion/ai "delegate off-device transmit to egress #43" pillar. Corrected at gate-1 (self-caught, independent critic confirmed): (a) `decomposition.md:47` gives this XS zero build deps — egress is not one; (b) `EgressAct.userInitiation` is a mandatory `{kind:'user_action'}` and egress step-1 never-auto-transmit would deny every arrival-triggered notification push (egress governs interactive *content* egress; a wake signal is content-zero); (c) ADR-013 §3.6 L74 — delivery "does NOT own gating." → `createNotificationDeliveryEngine(ports?)` executes an already-gated `DeliveryDecision`. Extends [[xs-security-services-deny-safe-port-build-shape]]: the deny-safe shape generalizes, its egress-delegation does not.
+- **All slices pure → no live-store gate.** No grant-reads + no schema at M1 ⇒ nothing to persist/smoke; stated honestly, not faked (unlike egress/ai which had a `capability_grants` seam).
+- **Content-zero is a RUNTIME invariant, not just a type.** `buildWakePayload` refuses any content/type/entity key (`FORBIDDEN_PAYLOAD_KEYS`, `PayloadNotContentFree`) — defense-in-depth for an untyped caller (IR-3).
+- **Quiet-hours is baked at REGISTRATION, not gated at fire** (the OS fires with the app closed) — `bakeQuietHours` is pure over local minute-of-day (TZ-safe, caller-resolved). Fire-time quiet-hours gate = the dispatcher (NF-5); the two are distinct.
+- **`dedupKey` passes the ADR-012 `effect_event_id` THROUGH (not re-hashed)** — the effect rail owns the key (N3); namespaced `event:`/`due:`. Pre-ship /critique B2: `scheduleLocal` must register under this namespace, not the raw timestamp.
+- **`deliver` never rejects** (pre-ship /critique B1): any push/email failure or mis-built payload folds to in-app fallback + flag; in-app is the unconditional baseline (BR-ND-8/NF-7).
+- Memory: [[xs-security-services-deny-safe-port-build-shape]] extended (notification-delivery-is-not-egress).
+
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
 | 2026-09-19 | mod-check-ins ① — template↔type model | How templates associate to check_in_types (CHE-05/12) given no `check_in_type` column | **Built-in columns are the type-agnostic default; custom templates resolve via `is_default`/`is_active`; no type column** | Intake §Resolution G3/G5 (CONFIRMED): "columns ARE the built-in default" + "start without creating anything". A Victor drift-catch — I first framed CK-4-vs-CHE-12 as a conflict + asked; the docs already settle it. | No (doc-fixed) |
