@@ -132,6 +132,9 @@ export * from './foundation/ingestion'
 // Foundation substrate — the AI-application service tier (XS-ai #45 · ADR-015 §3.1-3.8 · XCU-17…27)
 export * from './foundation/ai'
 
+// Foundation substrate — the ZK notification delivery engine (XS-notifications-delivery #46 · ADR-013 · XCU-01…12,14-18)
+export * from './foundation/notifications'
+
 // Foundation substrate — the measurability engine (AR-7 Increment 3 · ADR-011)
 export * from './foundation/measurement'
 
