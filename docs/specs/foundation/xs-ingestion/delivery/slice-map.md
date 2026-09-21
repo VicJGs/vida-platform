@@ -1,0 +1,51 @@
+# Slice Map — XS-ingestion (#44, LIF-172)
+
+> Entity Delivery Flow §2 Decomposition output. **Build-from-docs / Decide mode** (§8): P3 fixed **13 legs**
+> `[FACT: decomposition.md:45]`; this records the slices + per-slice Verification-Gate ledger.
+> All slices tagged **backend** (XS substrate, **no frontend twin** — the P6 face `fe-integrations-ai-surfaces`
+> rides the finished service `[FACT: reconstructed-structure.md:162]`).
+> Envision Gate: **N/A** (pure backend, renders no user surface — §3.75 one-question test = No).
+> Interpretation Gate: **SHIP** (independent critic; 2 citation NITs folded).
+
+## The M1 scope (doc-determined — see interpretation R-1…R-5)
+Ingestion at M1.1.2 builds the **finished decision/engine/registry tier + its persistence & mediation PORTS**;
+the durable STORES (`import_staging`, `connection_config`, dataset + integration registry rows), the **real
+native adapters + public mirror/CDN + actual network fetch**, and the **consent/review/management UIs** are
+**M2/P6**. Grounds: `[FACT: xcut-ingestion-ai.md:5 "M2-facing … seams captured now"]` + ADR-014 §5 owed-schema
+`[FACT: ADR-014:125-133]` + DB-4 authored no ingestion table (Step-0 grep). Ports ship an **M1 default adapter**
+(deny-safe fetch/verify/mediator · in-memory staging · empty registries) so the service is live-testable now and
+M2 swaps the real adapters (field-encrypted `[E]`, interpretation IR-12) — no schema, no drift. Identical
+disposition to the sibling **XS-egress-guard #43** `[FACT: xs-egress-guard/delivery/slice-map.md:9-17]`.
+
+## Slices (build order)
+
+| # | Slice | Plane | Legs | Depends on | Verification Gate (blocking) |
+|---|-------|-------|------|------------|------------------------------|
+| S1 | **Ingestion foundation — types · layer classification · honest-leak disclosure.** The shared vocabulary (`IngestionSource`, `IngestionLayer`, `IntegrationIdentity`, `NormalizationContract`, `IngestionAct`, `IngestionDecision`) + typed `IngestionDenied` taxonomy; `classifyLayer(source)` (XCU-02, not a flat toggle); `buildDisclosure(layer)` producing the who-sees-what payload from the leak matrix (XCU-03). Pure, deterministic, no ports, no enforcer. | backend | XCU-02, XCU-03 | — (foundational) | Vitest: `classifyLayer` returns each of the 3 layers · rejects an unknown layer · `buildDisclosure` returns the exact per-layer residual (native=trusted-source-only · public-reference=corpus-use+IP+live-price-residual · user-managed=user-configured) · disclosure is deterministic · typed-error assertions. **No live store** (pure). |
+| S2 | **Ingestion guard core over the enforcer (the egress-twin).** `createIngestionGuard(enforcer, egressGuard, ports?)`; `assertIngestionPermitted`/`checkIngestion` run the enforcer `external_in` boolean, then the rails: **opt-in/off-by-default** (XCU-12), **device-mediated + refuse-not-downgrade** (XCU-01), **mediator credential custody** invariant via `IngestionMediatorPort` (XCU-09); `revokeIntegration` delegates to `enforcer.revoke` + enforces **keep-ingested** (XCU-13). A sensitive-read fetch **rides `egressGuard.assertFetchEgress`** (delegated, IR-2). Deny-safe mediator port. | backend | XCU-01, XCU-09, XCU-12, XCU-13 | S1 + CapabilityEnforcer `#31` + EgressGuard `#43` | Vitest: permit path returns a decision · deny per reason (`external_in_not_granted` [= off-by-default + boolean fail] · `server_proxy_refused` · `sensitive_egress_unconsented` · `mediator_unavailable`) · revoke halts future + never purges (keep-ingested) · sensitive-read fetch routes to egress gate · mediator never exposes the credential · typed-error assertions · **live-store smoke** (real `capability_grants` row → enforcer boolean → permit/deny + revoke). |
+| S3 | **Reconcile-on-import engine.** `stageImport` → `ImportStagingPort` (M1 in-memory) → `autoMatch` by date±tolerance & amount±tolerance (per-row status) → `commitStaged` on user confirm (idempotent, ADR-004 §3.2.5); **user is final authority, parse error fails loud per-row** (XCU-10). `dedupeFeed` by natural key `(feed_id, uid)` → mark `is_ignored`, never delete (XCU-11). | backend | XCU-10, XCU-11 | S1 (types) | Vitest: auto-match within tolerance / miss outside · per-row status assigned · commit only confirmed rows · commit is idempotent (re-commit no-ops) · parse error fails loud per-row (not silent) · `dedupeFeed` marks `is_ignored` not delete · dedup by `(feed_id,uid)` exact · **live-store smoke** (stage→commit through the in-memory port + a persistence probe). |
+| S4 | **Public-reference engine.** `fetchWholeSet(datasetId)` over a `DatasetFetchPort` (deny-safe) enforcing the **whole-set-never-subset** invariant (XCU-04); `verifyDataset` over a `DatasetVerifierPort` (fails closed) — provenance + signature + version, **reject poisoned/unsigned** (XCU-05). | backend | XCU-04, XCU-05 | S1 (types) | Vitest: a scoped/subset refresh is refused (whole-set invariant) · an unsigned/poisoned dataset fails verify closed · a signed dataset with a version verifies · deny-safe port refuses fetch by default · typed-error assertions. **No live store** (ports in-memory). |
+| S5 | **Integration registry + connector seams.** `createIntegrationRegistry()` — the stable integration-identity + normalization-contract registry, in-memory, deterministic `list()` (XCU-14, mirrors `createCapabilityRegistry`); `registerNativeAdapter` **seam** (XCU-15 — adapters + qualification policy = M2/U-1); `registerUserManagedConnector` enforcing **connector = sandboxed ADR-010 capability** (credentials mediator-custodied, compositional-exfil rides egress) (XCU-16 — Preferences page = P6, third-party-shared = OUT/U-3). | backend | XCU-14, XCU-15, XCU-16 | S1 (types) | Vitest: register + resolve an integration-identity · a native/user-managed layer upgrade keeps the same identity + normalization contract (IR-11) · a user-managed connector without mediator custody is rejected · deterministic `list()` · duplicate-identity rejected · typed-error assertions. **No live store** (in-memory registry). |
+
+## Why this order
+- **S1 first** — it owns the shared types + the `IngestionDenied` taxonomy that S2–S5 reuse wholesale; pure and
+  dependency-free.
+- **S2 next** — the guard core is the load-bearing decision service (the egress-twin); it consumes S1's vocab and
+  the two BUILT upstreams (`#31`, `#43`), and every later engine's fetch/import ultimately passes its gate.
+- **S3, S4** — the two engines (reconcile-staging · public-reference) build on S1's types; independent of each
+  other, sequenced by the per-slice Verification-Gate rule (no batching).
+- **S5 last** — the registries reference S1's identity/contract types and complete the connector seam layer.
+
+## Coverage check (Decide — every P3 leg homed)
+S1 → XCU-02, 03 · S2 → XCU-01, 09, 12, 13 · S3 → XCU-10, 11 · S4 → XCU-04, 05 · S5 → XCU-14, 15, 16.
+**13/13 legs homed, 0 unhomed, 0 double-homed** (partition = decomposition.md:45's exact 13). No `structural`
+ECs (Envision N/A) → no Visual-Gate MUSTs to map.
+
+## Explicitly out of scope (delegated — see interpretation ORGANIZATION)
+- `external_in` **boolean** decision + in/out union across action checks → **CapabilityEnforcer `#31`** (BUILT).
+- **outbound-fetch-as-egress** (URL/params consent + audit) → **EgressGuard `#43`** (BUILT, XCU-08).
+- the **model call / cognition** on an ingested-then-AI pipeline → **XS-ai `#45` / ADR-015** (XCU-17…27).
+- **durable stores** (`import_staging`, `connection_config`, dataset + integration registry rows) + **real native
+  adapters + public mirror/CDN + actual network fetch** → **M2** (U-1/U-2/U-4).
+- all **consent / import-review / integration-management UIs** (XCU-03u/10u/16u) → **P6 UI**.
+- **native-set qualification policy** (U-1) + **third-party-shared connectors** (U-3, PC-4) → owed-decision / deferred.

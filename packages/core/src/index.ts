@@ -126,6 +126,9 @@ export * from './foundation/capability'
 // Foundation substrate — the egress guard (XS-egress-guard #43 · ADR-014 §3.3 · XCU-06/08)
 export * from './foundation/egress'
 
+// Foundation substrate — the ingestion guard (XS-ingestion #44 · ADR-014 §3.1-3.8 · XCU-01…05,09…16)
+export * from './foundation/ingestion'
+
 // Foundation substrate — the measurability engine (AR-7 Increment 3 · ADR-011)
 export * from './foundation/measurement'
 
