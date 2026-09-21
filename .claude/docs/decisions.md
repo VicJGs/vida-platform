@@ -524,3 +524,14 @@ guard #43. Key decisions (all doc-grounded — Victor's standing "ground everyth
 Gates: Interpretation SHIP → Decomposition Approval 1 → preflight → Approval 2 → per-slice Verification Gates
 (S2 live-store) → pre-ship /critique SHIP. @vida/core 1096/1096, tsc 0, eslint 0. PR #57 (`127accb`).
 Currency: docs/core/ingestion/current-{spec,business-rules}.md (IN-1…IN-13).
+
+## xs-ai (LIF-167) — completed 2026-09-21
+The ADR-015 AI-application service tier (`foundation/ai`, XS-ai #45), 4 slices XCU-17…27, over the built enforcer #31 + egress #43 + ingestion #44. Key decisions (all doc-grounded per Victor's standing directive):
+- **M1 = pure decision/mode/agent-gate/config tier + deny-safe/fail-closed ports + NO schema.** Durable stores (`ai_connections`/`ai_conversations`/AI-egress audit) + real mediator/on-device runtime = M2; the module `askModel` runtime is a separate M2 issue (LIF-145). Identical disposition to egress #43 / ingestion #44 (corpus `xcut-ingestion-ai.md:5`).
+- **A cloud AI call is a PUSH egress → `egressGuard.assertEgressPermitted`/`checkEgress` (XCU-19→XCU-06), NOT `assertFetchEgress`** (that's XCU-08, ingestion's fetch case). The interpretation was drafted with assertFetchEgress, corrected during the S2 build, docs reconciled. `EgressTarget.kind:'model'` was already pre-wired by egress.
+- **`askModel` is mediator-injected — the agent never holds the key** (XCU-22); asserts egress first (persists the AI-egress audit XCU-27) then the mediator; re-hits the gate every call (IR-8, no silent on-device→cloud upgrade); M1 mediator absent → `model_unavailable` deny-safe.
+- **The agent tool-set IS the granted envelope** (XCU-21): a tool = a `CapabilityAction`, delegated to `enforcer.assertPermitted`, fails closed (`CapabilityDenied`). Injection bounding (XCU-23): provenance into the prompt, unknown origin → untrusted (fail-safe); the other two mechanisms are composed (S2 egress gate + S3 tool gate), not restated.
+- **`createAiService(egressGuard, ports?)` takes NO `enforcer`** — unlike the ingestion twin. Pre-ship /critique caught a copied-for-symmetry dead `enforcer` param (`void enforcer`); the cloud path goes fully through egress (which holds the enforcer), on-device needs no check, and the tool-gate is a separate factory. Template reasoned-from, not copied.
+- **Barrel collision:** ai's `buildDisclosure` collided with ingestion's → renamed `buildAiDisclosure`.
+- Corrected the task-file Goal typo (ADR-014/020 → ADR-015; ADR-020 is Zustand/frontend).
+- Memory: [[xs-security-services-deny-safe-port-build-shape]] extended (triad complete; push-vs-fetch egress; don't copy sibling signatures mechanically).
