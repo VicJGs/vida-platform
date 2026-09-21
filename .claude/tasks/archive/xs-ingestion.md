@@ -1,7 +1,7 @@
 # Task: xs-ingestion
 # Profile: Add Backend Component
 # Scenario: Default (Entity Delivery Flow v1)
-# Status: in-progress
+# Status: done
 # Linear: LIF-172
 # Project: M1 — Whole Manual OS
 # Milestone: M1.1.2 — Feature Modules · Backend
