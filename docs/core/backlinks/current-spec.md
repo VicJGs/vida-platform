@@ -23,6 +23,11 @@ All queries filter `isNull(deleted_at)` (soft-delete aware). `getBacklinksTo` hi
 `idx_entity_links_entity (entity_type, entity_id)`. `resolveLink` relies on the schema's
 `UNIQUE(page_id, entity_type, entity_id)` (≤1 live row → `rows[0] ?? null`).
 
+## R7 read-seam conformance (INT-1)
+This resolver IS the documented read API modules pull entity-link data through — never a direct
+`entity_links` read or a materialized cross-module index. Read-only (BL-1) + graceful-degrade (unknown →
+`[]`, BL-3). See **BL-7**. `[capability-framework.md:66 R7 (INT-1) · ADR-007 §3.4 · ADR-011 §3.6]`
+
 ## Scope boundary (M1.0)
 - **IN:** entity-link read/resolve only.
 - **DEFERRED:** page↔page links (`page_links` table is M1.1 Notes & Pages) · preview-card data enrichment

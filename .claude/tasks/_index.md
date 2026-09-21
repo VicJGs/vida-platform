@@ -2,7 +2,12 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none — `mod-check-ins` completed 2026-09-19, LIF-119 → Done, PR #51 merged (`ee68761`), archived → `.claude/tasks/archive/mod-check-ins.md`. ① backend all 5 slices/28 legs; @vida/core 1039 green. ② `fe-check-ins` = a separate frontend issue. Next head via `#`-order / `tracker_sync --next` at pickup.)_
+- xs-backlinks-search-export: .claude/tasks/xs-backlinks-search-export.md  (in-progress 2026-09-20 — LIF-168 · add-backend-component / Entity Re-scope · M1/M1.1.2 `#42` · ← none. The cross-cutting read/query service tier — 4 engines: backlink resolver (BUILT AR-8 #1) · FTS5 search · export serializers · neural-graph data-prep. Reconcile the built resolver vs docs, then re-scope which deferred engines M1.1.2 owns vs keeps as first-consumer-pull seams. Head via `#`-order over `--next`'s xs-ingestion. Source corpus: `docs/specs/foundation/backend-intent/parts/xcut-backlinks-search-export.md`.)
+
+<details><summary>previous head — mod-check-ins (completed)</summary>
+
+_(none — `mod-check-ins` completed 2026-09-19, LIF-119 → Done, PR #51 merged (`ee68761`), archived → `.claude/tasks/archive/mod-check-ins.md`. ① backend all 5 slices/28 legs; @vida/core 1039 green. ② `fe-check-ins` = a separate frontend issue.)_
+</details>
 
 <details><summary>superseded — mod-notes vertical grain (folded into the campaign)</summary>
 
