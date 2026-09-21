@@ -8,6 +8,7 @@
 //   • empty          — unknown entity/page → [] (never throws; no registry gate on reads)
 //   • resolveLink    — exact key → row; non-matching key → null
 //   • isolation      — (task,T1) must not surface for (task,T2) or (note,T1)
+//   • R7 conformance — read-only surface, no write path (INT-1 / BL-7)
 //
 // Seeds through AR-6's real write path (SpacesService.createLink/removeLink) so the
 // read side is proven against genuinely-written rows, not hand-inserted fixtures.
@@ -173,6 +174,22 @@ describe('AR-8 · BacklinkResolver — composite-key isolation', () => {
     expect(await resolver.getBacklinksTo('task', 'T2')).toHaveLength(0) // same type, other id
     expect(await resolver.getBacklinksTo('note', 'T1')).toHaveLength(0) // other type, same id
     expect(await resolver.getBacklinksTo('task', 'T1')).toHaveLength(1) // exact
+    await driver.close()
+  })
+})
+
+describe('AR-8 · BacklinkResolver — R7 read-seam conformance (INT-1, BL-7)', () => {
+  it('exposes ONLY the documented read surface — no write path (read-only, BL-1/BL-7)', async () => {
+    // R7 (INT-1): the resolver IS the documented read API modules pull entity-link data through; it must
+    // never grow a mutation method (writes are AR-6 SpacesService's, BL-1). This structurally guards BL-7 —
+    // a write-shaped member appearing on the read seam is a fail-loud regression.
+    const { resolver, driver } = await setup()
+    const surface = Object.keys(resolver).sort()
+    expect(surface).toEqual(['getBacklinksTo', 'getLinksFrom', 'resolveLink'])
+    const mutators = surface.filter((k) =>
+      /^(create|update|delete|remove|write|mutate|set|insert|upsert)/i.test(k),
+    )
+    expect(mutators).toEqual([])
     await driver.close()
   })
 })

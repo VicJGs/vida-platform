@@ -34,3 +34,4 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 
 | xs-views | Unit (backend extend) | spec-draft | 2026-09-18 | ViewsService.cloneView (XCU-05) |
 | [features/xs-templates](features/xs-templates/) | feature (add-backend, Entity Re-scope) | spec-draft (stub) | 2026-09-19 | #36 M1.1.1 head — ADR-009 template capability; written after Step 4 reconciliation |
+| [foundation/xs-backlinks-search-export](foundation/xs-backlinks-search-export/) | feature (add-backend, Entity Re-scope) | spec-draft (stub) | 2026-09-20 | #42 M1.1.2 head (LIF-168) — backlinks/search/export/graph-prep read-service tier; spec written after Step 4 reconciliation |
