@@ -51,3 +51,22 @@ export {
 // S6 — cross-module providers + delegates (FIN-31/32/33/34/35/37)
 export { FINANCE_ENTITY_TYPES, type FinanceEntityType } from './types'
 export { createFinanceJournalContribution, registerFinanceJournal } from './journal'
+// S7 — fiscal-legal SITUATE (FL-01/02/03/09/10)
+export {
+  createFiscalLegalService,
+  MONEY_TOUCH_TYPES,
+  RulePackUnverified,
+  ExternalGrantMissing,
+  InsufficientRuleData,
+  AdviceIsInformational,
+  NoAutoAction,
+  FilingHandsOff,
+  ModelUnavailable,
+  type FiscalLegalService,
+  type FiscalLegalServiceDeps,
+  type MoneyTouchType,
+  type CreateResidencyInput,
+  type UpdateResidencyInput,
+  type CreateLegalEntityInput,
+  type UpdateLegalEntityInput,
+} from './fiscal-legal'

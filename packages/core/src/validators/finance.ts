@@ -160,3 +160,40 @@ export const CreateIncomeStreamSchema = IncomeStreamFields.partial().extend({
   amount: money,
 })
 export const UpdateIncomeStreamSchema = IncomeStreamFields.partial()
+
+// ── S7: fiscal-legal SITUATE validators (FL-01/FL-03) ──────────────────────
+// owner_type is FIXED (FISCAL_OWNER_TYPE CHECK); jurisdiction_code/residency_type/entity_type are OPEN (no CHECK,
+// per-jurisdiction rule-pack vocab). notes/name/registration_ref are notNull [E] → REQUIRED in the create input.
+const ResidencyFields = z.object({
+  owner_type: z.enum(FISCAL_OWNER_TYPE),
+  owner_id: z.string(),
+  jurisdiction_code: z.string(),
+  residency_type: z.string(),
+  start_date: calendarDate,
+  end_date: calendarDate.nullable(),
+  notes: z.string(),
+})
+export const CreateResidencySchema = ResidencyFields.partial().extend({
+  owner_type: z.enum(FISCAL_OWNER_TYPE),
+  owner_id: z.string(),
+  jurisdiction_code: z.string(),
+  residency_type: z.string(),
+  start_date: calendarDate,
+  notes: z.string(),
+})
+export const UpdateResidencySchema = ResidencyFields.partial()
+
+const LegalEntityFields = z.object({
+  project_id: z.string().nullable(),
+  name: z.string(),
+  entity_type: z.string(),
+  jurisdiction_code: z.string(),
+  registration_ref: z.string(),
+})
+export const CreateLegalEntitySchema = LegalEntityFields.partial().extend({
+  name: z.string(),
+  entity_type: z.string(),
+  jurisdiction_code: z.string(),
+  registration_ref: z.string(),
+})
+export const UpdateLegalEntitySchema = LegalEntityFields.partial()

@@ -1,7 +1,7 @@
 # Current Business Rules — finance   (level: Module · tier: STANDARD)
-> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S6 of 8. Fiscal-legal (S7–S8) NOT yet built.
+> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S7 of 8; fiscal-legal S8 (guarded) NOT built. 
 > Inherits: docs/core/business-rules.md (ZK-1/2/3, LF-1/2/3). Finance holds money data → ZK-1 governs `[E]` fields; the M1.0 `[E]` set is EMPTY (pass-through, M3 target). A child rule contradicting a parent is a CONFLICT — flagged, never overridden.
-> Last refreshed: 2026-09-22-mod-finance-S6  ·  Source of truth = the code (Currency Rule §XXIX).
+> Last refreshed: 2026-09-22-mod-finance-S7  ·  Source of truth = the code (Currency Rule §XXIX).
 
 ## 1. Invariants — what is ALWAYS / NEVER true
 
@@ -95,12 +95,29 @@
   (Spaces-owned `entity_tags`). Deny-safe → `[]` only when no resolver; a wired resolver fails loud on an
   unregistered type (its contract, not swallowed). `Transaction.tags` stays `[]` (DB-11); this is the real read. `[FACT: service.ts getEntityTags]`
 
-### Pending / INTENDED (S7–S8 — not yet realized)
+### Realized (S7 — fiscal-legal SITUATE; the always-available, no-external-dep spine)
+- **BR-S7-1 (FL-4/FL-1).** `createFiscalLegalService` is a Finance **sub-context** — residency + legal-entity CRUD +
+  money-touch, all on-device over `[E]` data, **needs no external integration**. Returns Row types (no `@vida/types`
+  fiscal interface, DB-11). `[FACT: services/finance/fiscal-legal.ts]`
+- **BR-S7-2 (FL-9).** `linkMoneyTouch(entityType, id, jurisdiction)` sets `jurisdiction_code` on a Finance entity
+  (account/transaction/asset/investment/income_stream — **liability excluded**) via the finance update path;
+  Finance **untouched in structure**. `jurisdiction_code` now exposed on the 5 `@vida/types` money-touch interfaces
+  (FL-02, deferred S1→S7). `[FACT: fiscal-legal.ts linkMoneyTouch; types finance.ts]`
+- **BR-S7-3 (FL-8).** `registerLegalEntity` links a Project via `project_id` (no-FK forward-dep); fiscal-legal owns
+  only its own situation. `[FACT: fiscal-legal.ts]`
+- **BR-S7-4 (FL-11/X5/X9).** `assertExternalGrant` gates external reach on the ADR-010 fields via the enforcer,
+  **fail-closed** (no enforcer/grant → `ExternalGrantMissing`); SITUATE works without it. No new grant table. `[FACT: fiscal-legal.ts assertExternalGrant]`
+- **BR-S7-5 (FL-10).** The 7-error typed contract (`RulePackUnverified`, `ExternalGrantMissing`, `InsufficientRuleData`,
+  `AdviceIsInformational`, `NoAutoAction`, `FilingHandsOff`, `ModelUnavailable`) — each a named error; S8 throws the
+  INFORM/DERIVE/ADVISE ones. `[FACT: fiscal-legal.ts]`
+
+### Pending / INTENDED (S8 + later — not yet realized)
+- **S8 fiscal-legal guarded** — FL-04 rulePack (ADR-014 public-reference) · FL-05 deriveObligations (`fiscal_obligations`
+  + Tasks/Notif/Calendar fan-out) · FL-06 model (ADR-015 AI) · FL-07 prepareFilingSummary (hands off) · FL-08 long-run
+  impact → Purpose. S7 defined their error contract; S8 builds them.
 - **FN-13/14 (FIN-36/38/39)** Commitments/budgeting/liability-payment (undesigned) · **FN-15 (FIN-18/23/24)**
-  store-tree net worth + lock-box · **FL-01…10** fiscal-legal (S7–S8). Each homed in `slice-map.md`; **no rule may
-  assume their internals.**
-- **FIN-31 concrete emit** (Gamification #48) · **materialize write path · durable stores** (FX/base-currency,
-  managed-category, persisted-aggregates, import_staging) — all M2 via the S5/S6 deny-safe ports/seams.
+  store-tree net worth + lock-box · **FIN-31 concrete emit** (#48) · **materialize write path · durable stores**
+  (FX/base-currency, managed-category, persisted-aggregates, import_staging) — all M2 via the S5/S6 deny-safe ports/seams.
 
 ## 3. Rule inventory — explicit · implicit · invented
 - **EXPLICIT (schema/service-realized):** FN-2/3/4/10/11 (S1–S2), BR-S3-1…6 (S3) — all cited to `service.ts`/`schema/finance.ts`.

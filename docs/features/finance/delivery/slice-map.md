@@ -48,13 +48,24 @@
 | S4 | handler registered; idempotent replay (same event_id → no double); ledger-movement co-write; lock-port deny-safe | fire `move_money` on the real rail; `applied_effects` holds; deny-safe rollback (7 tests) | ✅ PASS |
 | S5 | recurring forecast (month-end clamp, far-anchor); `FxRateMissingError`; category passthrough; import stage/match/confirm + merge-no-dup; grant-gate fail-closed | import round-trips instance staging port + creates real txns; injected-guard delegation (11 tests) | ✅ PASS |
 | S6 | Journal contribution summary/dueIn well-formed; getNetWorth {value,partial}; getEntityTags deny-safe + delegate; FINANCE_ENTITY_TYPES; nets-to-0 → success | contribution registered in a live Journals registry; summary/dueIn over real txns + G9 schedules (7 tests) | ✅ PASS |
-| S7 | residency/legal-entity/money-touch CRUD; grant-gate fail-closed; typed errors | live CRUD on fiscal_residencies/legal_entities; jurisdiction link | ☐ |
+| S7 | residency/legal-entity CRUD (invalid enum, soft-delete, not-found); linkMoneyTouch sets jurisdiction_code + rejects bad type; grant-gate fail-closed + enforcer allow/deny; 7 named errors | live CRUD on fiscal_residencies/legal_entities; money-touch via finance update (6 tests) | ✅ PASS |
 | S8 | deriveObligations never-on-unverified + no-auto-action; rulePack/model deny-safe; disclaimer uncstrippable | fiscal_obligations derive + confirm→fan-out seam; #44/#45 ports fail-closed | ☐ |
 
 ## Build notes / §XXVIII deviations
 - **S1 (2026-09-21):** two code-review-driven refinements, both grounded:
   1. **No finance-local not-found error.** Dropped the initial `guardExists`/`FinanceEntityNotFoundError` — `repository.update()`/`delete()` already throw `Error('Row not found')` (repository.ts:412); the pre-read was a redundant SELECT and a divergence from the checkins/journals precedent (bare repo throw). Soft-delete-aware update rejection (update() ignores `deleted_at`) is a **repo-wide** concern → DB-11, not a finance patch (altitude).
   2. **`@vida/types` interfaces extended (FIN-01/FIN-27).** Added `Account.opening_balance`, liability G9 (`payment_frequency`/`next_payment_date`/`interest_type`/`payoff_date`), `IncomeStream.next_payment_date` — the schema had them, the interfaces didn't, so the exposed contract was incomplete. FIN-27 is homed to "finance service / @vida/types" (parts/finance.md:37), so this is in S1 scope, not deferred DB-11. `jurisdiction_code` interface exposure stays for S7 (FL-02).
+
+- **S7 (2026-09-22):** fiscal-legal SITUATE (FL-01/02/03/09/10) — new `services/finance/fiscal-legal.ts`
+  (`createFiscalLegalService`, a Finance sub-context) + 4 fiscal validators. The always-available, no-external-dep
+  spine: residency/legal-entity CRUD (Row types, DB-11; `[E]` M1 pass-through), `linkMoneyTouch` (jurisdiction_code
+  on the 5 money-touch entities via the finance update path — Finance untouched), `assertExternalGrant` (fail-closed
+  via enforcer), the 7-error FL-10 contract (S8 throws the guarded ones). Full gate: PLAN → gate-1 /critique
+  REVISE→SHIP (B1 named-error constructors) → /adr-check (ADR-002 §5.20 exact-match roster · ADR-010 fail-closed) →
+  /preflight PASSED → gate-2 SHIP → implement → **§XXVIII deviation** (tsc-caught: exposed `jurisdiction_code` on the
+  5 `@vida/types` money-touch interfaces — FL-02, deferred S1→S7 per slice-map.md:57; grounded, not a new decision) →
+  Verification Gate PASS → code-review **[] (no bugs)** → pre-ship /critique SHIP. @vida/core **1240/1240** (+7),
+  tsc 0, eslint 0, no consumer regression from the `@vida/types` change. §XXIX: `finance/current-*` refreshed (S7).
 
 - **S6 (2026-09-22):** cross-module providers + delegates (FIN-31/32/33/34/35/37) — `journal.ts`
   (`createFinanceJournalContribution`/`registerFinanceJournal`) + service reads, **zero re-implementation**

@@ -103,6 +103,8 @@ export interface Account extends SyncableEntity {
   is_active: boolean
   color: string | null
   icon: string | null
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }
 
@@ -125,6 +127,8 @@ export interface Transaction extends SyncableEntity {
   recurring_frequency: Frequency | null
   /** @encrypted */
   tags: string[]
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }
 
@@ -141,6 +145,8 @@ export interface Asset extends SyncableEntity {
   depreciation_rate: BasisPoints | null
   /** @encrypted */
   location: string | null
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }
 
@@ -180,6 +186,8 @@ export interface Investment extends SyncableEntity {
   purchase_price: Money | null
   /** @encrypted — cents / unit */
   current_price: Money | null
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }
 
@@ -198,5 +206,7 @@ export interface IncomeStream extends SyncableEntity {
   end_date: string | null
   /** G9 restored (FIN-27) */
   next_payment_date: string | null
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }

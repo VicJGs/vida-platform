@@ -17,7 +17,15 @@ import { appliedEffects } from '../../../db/schema/foundation/effects'
 import { createEffectRail, createEffectRegistry, type EffectEvent } from '../../../foundation/effects'
 import type { IngestionGuard, IngestionAct } from '../../../foundation/ingestion'
 import type { AssociationResolver, TagAssociation } from '../../../foundation/spaces'
+import type { CapabilityEnforcer, CapabilityAction } from '../../../foundation/capability'
 import { createJournalRegistry } from '../../journals'
+import {
+  createFiscalLegalService,
+  ExternalGrantMissing,
+  RulePackUnverified,
+  AdviceIsInformational,
+  type MoneyTouchType,
+} from '../index'
 import {
   createFinanceService,
   InvalidTransferError,
@@ -774,5 +782,74 @@ describe('mod-finance S6 — cross-module providers + delegates', () => {
     const empty = await contrib.dueIn!({ from: '2026-01-01', to: '2026-01-31' })
     expect(empty.state).toBe('empty')
     expect(empty.items).toEqual([])
+  })
+})
+
+describe('mod-finance S7 — fiscal-legal SITUATE', () => {
+  let h: Harness
+  let fl: ReturnType<typeof createFiscalLegalService>
+  beforeEach(async () => {
+    h = await setup()
+    fl = createFiscalLegalService({ db: h.db, deviceId: 'test-device', finance: h.svc })
+  })
+
+  // ── FL-01 residency CRUD ──────────────────────────────────────────
+  it('setResidency + list + soft-delete (FL-01); invalid owner_type rejects; not-found fails loud', async () => {
+    const r = await fl.setResidency({ owner_type: 'user', owner_id: 'u1', jurisdiction_code: 'US-CA', residency_type: 'resident', start_date: '2020-01-01', notes: 'primary' })
+    expect(r.id).toBeTruthy()
+    expect(r.owner_type).toBe('user')
+    expect(r.end_date).toBeNull() // nullable coalesced
+    expect(r.notes).toBe('primary') // [E] plaintext pass-through (M1)
+    expect((await fl.listResidencies()).map((x) => x.id)).toContain(r.id)
+    // co-transactional sync_queue
+    expect((await h.db.select().from(syncQueue).all()).length).toBeGreaterThan(0)
+    await fl.softDeleteResidency(r.id)
+    expect((await fl.listResidencies()).find((x) => x.id === r.id)).toBeUndefined()
+    // invalid enum + not-found
+    // @ts-expect-error — invalid owner_type is the failure path under test
+    await expect(fl.setResidency({ owner_type: 'nope', owner_id: 'u', jurisdiction_code: 'X', residency_type: 't', start_date: '2020-01-01', notes: 'n' })).rejects.toThrow()
+    await expect(fl.updateResidency('missing', { notes: 'x' })).rejects.toThrow(/not found/i)
+  })
+
+  // ── FL-03 legal-entity CRUD ───────────────────────────────────────
+  it('registerLegalEntity (project_id optional, no-FK); [E] name/registration_ref round-trip (FL-03)', async () => {
+    const e = await fl.registerLegalEntity({ name: 'Acme LLC', entity_type: 'llc', jurisdiction_code: 'US-DE', registration_ref: 'REG-123' })
+    expect(e.project_id).toBeNull() // optional forward-dep, no-FK
+    expect(e.name).toBe('Acme LLC')
+    expect(e.registration_ref).toBe('REG-123')
+    expect((await fl.listLegalEntities()).map((x) => x.id)).toContain(e.id)
+  })
+
+  // ── FL-02 money-touch ─────────────────────────────────────────────
+  it('linkMoneyTouch sets jurisdiction_code on a Finance entity (finance untouched in structure, FL-02)', async () => {
+    const a = await h.svc.createAccount({ name: 'A', account_type: 'checking' })
+    expect(a.jurisdiction_code).toBeNull()
+    await fl.linkMoneyTouch('account', a.id, 'US-CA')
+    expect((await h.svc.getAccount(a.id))?.jurisdiction_code).toBe('US-CA') // set via the finance update path
+  })
+
+  it('linkMoneyTouch rejects a non-money-touch type + a missing entity (fail loud)', async () => {
+    await expect(fl.linkMoneyTouch('liability' as unknown as MoneyTouchType, 'x', 'US')).rejects.toThrow(/money-touch/i)
+    await expect(fl.linkMoneyTouch('account', 'missing-id', 'US')).rejects.toThrow(/not found/i)
+  })
+
+  // ── FL-09 grant-gate ──────────────────────────────────────────────
+  const action: CapabilityAction = { type: 'external_in', source: 'rulepack-US' }
+  const stubEnforcer = (allowed: boolean): CapabilityEnforcer =>
+    ({ checkAction: async () => ({ allowed }) }) as unknown as CapabilityEnforcer
+
+  it('assertExternalGrant fails closed with no enforcer (M1); delegates when wired (FL-09)', async () => {
+    await expect(fl.assertExternalGrant('cap-1', action)).rejects.toBeInstanceOf(ExternalGrantMissing)
+    const allowFl = createFiscalLegalService({ db: h.db, deviceId: 'test-device', finance: h.svc, enforcer: stubEnforcer(true) })
+    await expect(allowFl.assertExternalGrant('cap-1', action)).resolves.toBeUndefined()
+    const denyFl = createFiscalLegalService({ db: h.db, deviceId: 'test-device', finance: h.svc, enforcer: stubEnforcer(false) })
+    await expect(denyFl.assertExternalGrant('cap-1', action)).rejects.toBeInstanceOf(ExternalGrantMissing)
+  })
+
+  // ── FL-10 typed-error contract (the name IS the contract) ─────────
+  it('FL-10 error classes carry their contract name', () => {
+    expect(new RulePackUnverified('x').name).toBe('RulePackUnverified')
+    expect(new ExternalGrantMissing('x').name).toBe('ExternalGrantMissing')
+    expect(new AdviceIsInformational('x').name).toBe('AdviceIsInformational')
   })
 })

@@ -1,7 +1,7 @@
 # Current Spec — finance   (level: Module · tier: STANDARD)
-> Coverage: schema (`020_finance`, 9 tables) + colocated `@vida/types` + validators + service tier S1–S6 of 8. Fiscal-legal service (S7–S8) NOT yet built.
+> Coverage: schema (`020_finance`, 9 tables) + colocated `@vida/types` + validators + service tier S1–S7 of 8; fiscal-legal S8 (guarded) NOT built. 
 > Inherits: docs/core (business-rules constitution — ZK-1/2/3, LF-1/2/3). This doc must not contradict any level above it.
-> Last refreshed: 2026-09-22-mod-finance-S6  ·  Source of truth = the code (Currency Rule §XXIX).
+> Last refreshed: 2026-09-22-mod-finance-S7  ·  Source of truth = the code (Currency Rule §XXIX).
 
 ## 1. Identity & responsibility
 **What it is.** The finance module — accounts, transactions, assets, liabilities, investments, income streams —
@@ -18,7 +18,15 @@ over the DB-4 `020_finance` schema. This build delivers the ① **backend servic
 - Not the tag owner — consumes `entity_tags` (Spaces SP1); notes via the `pages` seam (both S6). `[FACT: parts/finance.md]`
 
 ## 2. Contract — what it exposes / needs
-**Status: ① BACKEND — S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6 ✅ · S7–S8 ☐ (fiscal-legal, 2 slices remain).** ② fe-finance separate.
+**Status: ① BACKEND — S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6 ✅ · S7 ✅ · S8 ☐ (fiscal-legal guarded, 1 slice remains).** ② fe-finance separate.
+
+**S7 (2026-09-22) — fiscal-legal SITUATE (FL-01/02/03/09/10), new `fiscal-legal.ts` + fiscal validators:**
+`createFiscalLegalService` (a Finance sub-context, the always-available no-external-dep spine) — residency +
+legal-entity CRUD (returns Row types, DB-11; `[E]` M1 pass-through); `linkMoneyTouch` sets `jurisdiction_code` on a
+money-touch Finance entity (5 types, liability excluded) via the finance update path; `assertExternalGrant`
+fail-closed via the enforcer (no enforcer → `ExternalGrantMissing`); the 7-error FL-10 typed contract (S8 throws the
+guarded ones). **§XXVIII deviation:** exposed `jurisdiction_code` on the 5 money-touch `@vida/types` interfaces
+(FL-02, deferred S1→S7 per slice-map.md:57). `[FACT: services/finance/fiscal-legal.ts; types finance.ts]`
 
 **S6 (2026-09-22) — cross-module providers + delegates (FIN-31/32/33/34/35/37), `journal.ts` + service methods:**
 `createFinanceJournalContribution`/`registerFinanceJournal` — ONE Journals contribution (`summary(date)` = today's
@@ -70,18 +78,20 @@ tx-threaded for the FIN-24 atomic swap). Consent-gating deferred (#48). `[FACT: 
 
 ## 4. Deferred / open (homed, not built)
 FIN-18 store-tree net worth · FIN-24 lock-box · FIN-36/38/39 Commitments/budgeting/liability-payment
-(design-pass) · **FL-01…10 fiscal-legal (S7–S8)** · net-worth-over-time chart (snapshot design-pass) · **FIN-31
-concrete achievement emit** (Gamification #48) · **all S5 deferred STORES** (FX/base-currency, managed-category,
-persisted-aggregates, import_staging, materialize write path — M2 via the deny-safe ports). Homed in `slice-map.md`.
+(design-pass) · **FL-04…08 fiscal-legal GUARDED (S8)** — rulePack (ADR-014) · deriveObligations (`fiscal_obligations`
++ Tasks/Notif/Calendar) · model (ADR-015 AI) · prepareFilingSummary (hands off) · long-run impact→Purpose ·
+net-worth-over-time chart (snapshot design-pass) · **FIN-31 concrete emit** (#48) · **all S5 deferred STORES**
+(FX/base-currency, managed-category, persisted-aggregates, import_staging, materialize write path — M2). Homed in `slice-map.md`.
 
 ## 5. Terminal states
 Overview/dashboard · account balance · investment value · each chart — loading/empty/error/success. A derive
 error → flagged partial (`partial` / `degraded[]`), never a wrong number. Empty dataset → all-zero, not an error.
 
 ## 6. Verification
-S1–S6: @vida/core **1233/1233** (+9 S6), tsc 11/11, eslint 0, live-store Verification Gate PASS (real
+S1–S7: @vida/core **1240/1240** (+7 S7), tsc 11/11, eslint 0, live-store Verification Gate PASS (real
 better-sqlite3 + `initVault()` + `migrate()`; S3 degrade drops a table; S4 fires the REAL effect rail; S5 import
-round-trips the staging port; S6 registers into a live Journals registry). `[FACT: finance-service.test.ts, 66 tests]`
+round-trips the staging port; S6 registers into a live Journals registry; S7 fiscal-legal CRUD + money-touch +
+fail-closed grant-gate). `@vida/types` extended (jurisdiction_code, S7 §XXVIII). `[FACT: finance-service.test.ts, 72 tests]`
 
 ## Completion checklist
 - [x] §1 identity · [x] §2 contract (S1–S3 done, S4–S8 pending) · [x] §3 structure · [x] §4 deferred homed · [x] §5 states · [x] §6 verification
