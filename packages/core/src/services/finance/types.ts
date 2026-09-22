@@ -67,6 +67,88 @@ export type UpdateInvestmentInput = z.infer<typeof UpdateInvestmentSchema>
 export type CreateIncomeStreamInput = z.infer<typeof CreateIncomeStreamSchema>
 export type UpdateIncomeStreamInput = z.infer<typeof UpdateIncomeStreamSchema>
 
+// --- S3: derived analytics DTOs (service-local; @vida/types untouched, BR-S3-2) ------------------
+/**
+ * FIN-17 — the derived financial overview. All figures are COMPUTED on read (FN-6), never stored.
+ * `netWorth` = FN-7 SIMPLE sum (Σ accounts + Σ assets − Σ liabilities), NOT the deferred store tree
+ * (FIN-18); investments are not a net-worth term by FN-7's definition. A null asset/liability value is
+ * UNKNOWN (counted into `unvalued*`, folded into `partial`), never a silent 0 (BR-S3-4/FN-40).
+ */
+export interface FinanceOverview {
+  totalBalance: Money
+  totalAssets: Money
+  totalLiabilities: Money
+  netWorth: Money
+  monthlyIncome: Money
+  monthlyExpenses: Money
+  month: string // 'YYYY-MM' the monthly figures cover
+  unvaluedAssets: number
+  unvaluedLiabilities: number
+  partial: boolean
+}
+
+/** getOverview options — pin the monthly window; default = current calendar month. */
+export interface OverviewOptions {
+  month?: string // 'YYYY-MM'
+}
+
+/**
+ * FIN-19 — a single investment's derived value + gain/loss (qty × current_price vs purchase).
+ * A missing `currentPrice` is the legitimate "no price set" empty state (`priceSet:false`, null value),
+ * NOT an error/partial (BR-S3-5). `gainLossPct` is a RATIO (0.12), not a pre-multiplied percent (D3).
+ *
+ * `currentValue == null` is the AUTHORITATIVE "value unknown" signal — it is null when EITHER the price OR
+ * the quantity is unset (both are schema-nullable). `priceSet` reports only the price dimension (the FN-19
+ * empty-state reason); it can be `true` while `currentValue` is null (price set, quantity missing). A consumer
+ * decides renderability off `currentValue != null`, never off `priceSet` alone.
+ */
+export interface InvestmentValue {
+  investmentId: string
+  quantity: number | null
+  currentPrice: Money | null
+  purchasePrice: Money | null
+  currentValue: Money | null
+  costBasis: Money | null
+  gainLoss: Money | null
+  gainLossPct: number | null
+  priceSet: boolean
+}
+
+/** FIN-22 chart-dataset primitives (pure derivations; Chart.js render is P6). */
+export interface SpendingByCategory {
+  category: string | null
+  total: Money
+}
+export interface IncomeExpensePoint {
+  period: string // 'YYYY-MM'
+  income: Money
+  expenses: Money
+  net: Money // income − expenses (cash-flow folded in)
+}
+export interface BreakdownSlice {
+  type: string
+  total: Money
+}
+export interface AssetLiabilityBreakdown {
+  assets: BreakdownSlice[]
+  liabilities: BreakdownSlice[]
+}
+/** Inclusive 'YYYY-MM-DD' window for the range-scoped chart derivations. */
+export interface ChartRange {
+  from: string
+  to: string
+}
+/**
+ * FIN-22 aggregator — the default chart template. Each dataset is computed INDEPENDENTLY; a data error
+ * degrades ONLY that chart (its field → null + its name pushed to `degraded`), never the whole set.
+ */
+export interface ChartDatasets {
+  spendingByCategory: SpendingByCategory[] | null
+  incomeVsExpense: IncomeExpensePoint[] | null
+  assetLiabilityBreakdown: AssetLiabilityBreakdown | null
+  degraded: string[]
+}
+
 export interface FinanceService {
   // ── S1: accounts ────────────────────────────────────────────────
   createAccount(input: CreateAccountInput): Promise<Account>
@@ -84,6 +166,20 @@ export interface FinanceService {
   createTransfer(input: CreateTransferInput): Promise<Transaction>
   /** DERIVED (FN-3): opening_balance + Σ signed ledger (transfers debit source / credit dest, FN-4). */
   getBalance(accountId: string): Promise<Money>
+
+  // ── S3: derived analytics (read-side, no writes — FN-6) ──────────
+  /** FIN-17 — derived overview; netWorth = FN-7 simple sum; monthly totals exclude transfers (FN-12). */
+  getOverview(opts?: OverviewOptions): Promise<FinanceOverview>
+  /** FIN-19 — one investment's value + gain/loss; missing price = empty state, not error. */
+  getInvestmentValue(id: string): Promise<InvestmentValue>
+  /** FIN-22 — expenses grouped by category over a range (transfers excluded). */
+  getSpendingByCategory(range: ChartRange): Promise<SpendingByCategory[]>
+  /** FIN-22 — monthly income vs expense (net = income − expenses) over a range (transfers excluded). */
+  getIncomeVsExpense(range: ChartRange): Promise<IncomeExpensePoint[]>
+  /** FIN-22 — current asset/liability totals by type (chart approximation; null values sum as 0). */
+  getAssetLiabilityBreakdown(): Promise<AssetLiabilityBreakdown>
+  /** FIN-22 aggregator — the default chart set; a failing chart degrades alone (`degraded`). */
+  getChartDatasets(range: ChartRange): Promise<ChartDatasets>
 
   // ── S1: assets ──────────────────────────────────────────────────
   createAsset(input: CreateAssetInput): Promise<Asset>

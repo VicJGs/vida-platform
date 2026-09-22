@@ -44,7 +44,7 @@
 |---|-------------------------------------------|----------------------------------------------------------------------|--------|
 | S1 | CRUD happy + invalid-enum reject + soft-delete hides + not-found fail-loud + faithful-echo defaults | create→read each of 5 tables; `deleted_at` set; `sync_queue` enqueued (13 tests) | ✅ PASS |
 | S2 | balance = opening+Σledger; edit/delete re-derives; transfer both-balances + excluded; source==dest rejects; FN-4 on account_id change | live ledger writes; balance re-derive over real rows (11 tests) | ✅ PASS |
-| S3 | overview totals; net-worth = FN-7 sum; investment gain/loss; partial-flag on error | overview over a live multi-account/asset/liability set | ☐ |
+| S3 | overview totals; net-worth = FN-7 sum; investment gain/loss; partial-flag on error | overview over a live multi-account/asset/liability set; per-chart degrade via live DROP TABLE (41 tests) | ✅ PASS |
 | S4 | handler registered; idempotent replay (same event_id → no double); ledger-movement co-write; lock-port deny-safe | fire `move_money` on the real rail; `applied_effects` UNIQUE holds | ☐ |
 | S5 | recurring forecast; `FxRateMissingError`; import refuse (ZK) fail-closed; grant-gate fail-closed | ingestion/egress ports exercised against built #44/#43 | ☐ |
 | S6 | `/summary` provider output; entity_tags read/write; dueIn over G9 schedules; notes delegate | provider registered in the live Journals registry; entity_tags round-trip | ☐ |
@@ -55,6 +55,16 @@
 - **S1 (2026-09-21):** two code-review-driven refinements, both grounded:
   1. **No finance-local not-found error.** Dropped the initial `guardExists`/`FinanceEntityNotFoundError` — `repository.update()`/`delete()` already throw `Error('Row not found')` (repository.ts:412); the pre-read was a redundant SELECT and a divergence from the checkins/journals precedent (bare repo throw). Soft-delete-aware update rejection (update() ignores `deleted_at`) is a **repo-wide** concern → DB-11, not a finance patch (altitude).
   2. **`@vida/types` interfaces extended (FIN-01/FIN-27).** Added `Account.opening_balance`, liability G9 (`payment_frequency`/`next_payment_date`/`interest_type`/`payoff_date`), `IncomeStream.next_payment_date` — the schema had them, the interfaces didn't, so the exposed contract was incomplete. FIN-27 is homed to "finance service / @vida/types" (parts/finance.md:37), so this is in S1 scope, not deferred DB-11. `jurisdiction_code` interface exposure stays for S7 (FL-02).
+
+- **S3 (2026-09-22):** derived analytics (FIN-17/19/22) appended to `createFinanceService` (types.ts DTOs +
+  service.ts closures; `@vida/types` untouched — DTOs service-local). Full gate: PLAN `PLAN-S3-derived-analytics.md`
+  → gate-1 /critique REVISE→SHIP (B1: unified null-value policy — overview surfaces `unvalued*`+`partial`, not a
+  silent 0; N1–5 folded) → /adr-check (ADR-012 §3.3 derive-not-store house rule; FN-7 vs deferred store-tree
+  reconciled) → /preflight PASSED (4 clarifications folded: breakdown null note · empty path · auth/ZK axis ·
+  current-* birth) → gate-2 /critique SHIP → implement → Verification Gate PASS → code-review (4 findings folded:
+  priceSet/currentValue contract · 2× sort determinism · gainLossPct `>0` guard) → pre-ship /critique SHIP.
+  No `date-fns` in core (checkins inline precedent); `monthWindow` UTC arithmetic. @vida/core **1207/1207** (+16),
+  tsc 0, eslint 0. §XXIX: `docs/modules/finance/current-{spec,business-rules}.md` BORN (D6, covering S1–S3).
 
 - **S2 (2026-09-21):** balance is DERIVED (FN-3) — no balance-column write on transaction mutation; `getBalance` recomputes live. Two code-review fixes folded: (1) `updateTransaction` re-validates FN-4 on an `account_id` change (an account_id-only patch could turn a transfer into a self-transfer that nets to 0 — regression-tested); (2) `listTransactions`/`getTransactionsInRange` use a stable `byNewest` comparator (date desc → created_at desc → uuidv7 id desc) since `findWhere` issues no `ORDER BY`. M1 pagination = in-memory slice (single-user local ledger). Transaction `tags` returns `[]` (inline column retired → entity_tags; real read is S6/FIN-35). Achievement emit (FIN-31) deferred to S6.
 

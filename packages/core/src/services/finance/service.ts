@@ -64,6 +64,15 @@ import {
   type UpdateInvestmentInput,
   type CreateIncomeStreamInput,
   type UpdateIncomeStreamInput,
+  type OverviewOptions,
+  type FinanceOverview,
+  type InvestmentValue,
+  type ChartRange,
+  type SpendingByCategory,
+  type IncomeExpensePoint,
+  type AssetLiabilityBreakdown,
+  type BreakdownSlice,
+  type ChartDatasets,
 } from './types'
 
 // --- Row → @vida/types interface (single _sync_status cast; INTENDED cols ride the spread) ---
@@ -80,6 +89,16 @@ const toTransaction = (r: TransactionRow): Transaction => ({
 // (dates have no time). Tiebreak: created_at desc, then the time-sortable uuidv7 id desc (deterministic).
 const byNewest = (a: TransactionRow, b: TransactionRow): number =>
   b.date.localeCompare(a.date) || b.created_at - a.created_at || b.id.localeCompare(a.id)
+
+// S3 date helpers (no date-fns in @vida/core — the checkins inline precedent, service.ts:441).
+const currentMonth = (): string => new Date().toISOString().slice(0, 7) // 'YYYY-MM'
+const monthWindow = (m: string): { from: string; to: string } => {
+  const [y, mo] = m.split('-')
+  // Day 0 of the NEXT month = last day of `m`. The 1-based `mo` is passed as Date.UTC's 0-based month
+  // index, which lands on the next month; day 0 rolls back to `m`'s last day. UTC → no TZ off-by-one.
+  const lastDay = new Date(Date.UTC(Number(y), Number(mo), 0)).getUTCDate()
+  return { from: `${m}-01`, to: `${m}-${String(lastDay).padStart(2, '0')}` }
+}
 const toAsset = (r: AssetRow): Asset => ({ ...r, _sync_status: r._sync_status as Asset['_sync_status'] })
 const toLiability = (r: LiabilityRow): Liability => ({ ...r, _sync_status: r._sync_status as Liability['_sync_status'] })
 const toInvestment = (r: InvestmentRow): Investment => ({ ...r, _sync_status: r._sync_status as Investment['_sync_status'] })
@@ -215,6 +234,61 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
     return bal
   }
 
+  // --- S3 derived analytics (hoisted closures; the chart derivations are shared by getChartDatasets) ---
+  // Raw rows in an inclusive [start,end] date range. findWhere skips the soft-delete filter → add isNull.
+  async function txRowsInRange(start: string, end: string): Promise<TransactionRow[]> {
+    return txRepo.findWhere(
+      and(gte(transactions.date, start), lte(transactions.date, end), isNull(transactions.deleted_at)) as SQL,
+    )
+  }
+
+  // FIN-22 — expenses grouped by category (income + transfer rows dropped, BR-S3-3); desc by total.
+  const spendingByCategory = async (range: ChartRange): Promise<SpendingByCategory[]> => {
+    const byCat = new Map<string | null, number>()
+    for (const t of await txRowsInRange(range.from, range.to)) {
+      if (t.transaction_type !== 'expense') continue
+      byCat.set(t.category, (byCat.get(t.category) ?? 0) + t.amount)
+    }
+    return [...byCat.entries()]
+      .map(([category, total]) => ({ category, total }))
+      // desc by total, then a STABLE category tiebreak — findWhere issues no ORDER BY, so equal totals would
+      // otherwise return in nondeterministic row order across devices (the S2 byNewest precedent, service.ts:88).
+      .sort((a, b) => b.total - a.total || (a.category ?? '').localeCompare(b.category ?? ''))
+  }
+
+  // FIN-22 — monthly income vs expense (net = income − expenses); transfers excluded (FN-12). No zero-fill (R3).
+  const incomeVsExpense = async (range: ChartRange): Promise<IncomeExpensePoint[]> => {
+    const byPeriod = new Map<string, { income: number; expenses: number }>()
+    for (const t of await txRowsInRange(range.from, range.to)) {
+      if (t.transaction_type === 'transfer') continue
+      const period = t.date.slice(0, 7)
+      const bucket = byPeriod.get(period) ?? { income: 0, expenses: 0 }
+      if (t.transaction_type === 'income') bucket.income += t.amount
+      else bucket.expenses += t.amount
+      byPeriod.set(period, bucket)
+    }
+    return [...byPeriod.entries()]
+      .map(([period, b]) => ({ period, income: b.income, expenses: b.expenses, net: b.income - b.expenses }))
+      .sort((a, b) => a.period.localeCompare(b.period))
+  }
+
+  // FIN-22 — current asset/liability totals by type; null value sums as 0 (chart approximation, BR-S3-4 note).
+  const assetLiabilityBreakdown = async (): Promise<AssetLiabilityBreakdown> => {
+    const group = <T>(rows: T[], typeOf: (r: T) => string, valOf: (r: T) => number | null): BreakdownSlice[] => {
+      const m = new Map<string, number>()
+      for (const r of rows) m.set(typeOf(r), (m.get(typeOf(r)) ?? 0) + (valOf(r) ?? 0))
+      // desc by total, then a stable `type` tiebreak (findAll has no ORDER BY — same determinism guard as above).
+      return [...m.entries()]
+        .map(([type, total]) => ({ type, total }))
+        .sort((a, b) => b.total - a.total || a.type.localeCompare(b.type))
+    }
+    const [assetRows, liabilityRows] = [await assetRepo.findAll(), await liabilityRepo.findAll()]
+    return {
+      assets: group(assetRows, (a) => a.asset_type, (a) => a.current_value),
+      liabilities: group(liabilityRows, (l) => l.liability_type, (l) => l.current_balance),
+    }
+  }
+
   // Update/soft-delete on a missing id fail loud via the repository's own throw
   // (`Error('Row not found: <id>')`, repository.ts:412) — the checkins/journals precedent,
   // no finance-local pre-read guard. Soft-delete-aware update rejection is a repo-wide
@@ -308,6 +382,114 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
       )
     },
     getBalance,
+
+    // ── S3: derived analytics (read-side, no writes — FN-6) ──────────
+    // FIN-17 — netWorth = FN-7 SIMPLE sum (accounts + assets − liabilities; investments NOT a term, deferred
+    // store-tree FIN-18). Null asset/liability value = UNKNOWN → counted into unvalued* + partial, never a
+    // silent 0 (BR-S3-4/FN-40). Monthly income/expense exclude transfers (FN-12).
+    getOverview: async (opts: OverviewOptions = {}): Promise<FinanceOverview> => {
+      const month = opts.month ?? currentMonth()
+      const { from, to } = monthWindow(month)
+
+      let totalBalance = 0
+      let balanceThrew = false
+      for (const a of await accountRepo.findAll()) {
+        try {
+          totalBalance += await getBalance(a.id)
+        } catch {
+          balanceThrew = true // a per-account compute failure flags partial; the account contributes 0
+        }
+      }
+
+      let totalAssets = 0
+      let unvaluedAssets = 0
+      for (const a of await assetRepo.findAll()) {
+        if (a.current_value == null) unvaluedAssets += 1
+        else totalAssets += a.current_value
+      }
+      let totalLiabilities = 0
+      let unvaluedLiabilities = 0
+      for (const l of await liabilityRepo.findAll()) {
+        if (l.current_balance == null) unvaluedLiabilities += 1
+        else totalLiabilities += l.current_balance
+      }
+
+      let monthlyIncome = 0
+      let monthlyExpenses = 0
+      for (const t of await txRowsInRange(from, to)) {
+        if (t.transaction_type === 'income') monthlyIncome += t.amount
+        else if (t.transaction_type === 'expense') monthlyExpenses += t.amount
+      }
+
+      return {
+        totalBalance,
+        totalAssets,
+        totalLiabilities,
+        netWorth: totalBalance + totalAssets - totalLiabilities, // FN-7 simple sum
+        monthlyIncome,
+        monthlyExpenses,
+        month,
+        unvaluedAssets,
+        unvaluedLiabilities,
+        partial: balanceThrew || unvaluedAssets > 0 || unvaluedLiabilities > 0,
+      }
+    },
+
+    // FIN-19 — qty × current_price + gain/loss vs purchase. Missing price = "no price set" empty state
+    // (priceSet:false, null value), NOT an error/partial (BR-S3-5). Not-found throws (the getBalance precedent).
+    getInvestmentValue: async (id: string): Promise<InvestmentValue> => {
+      const inv = await investmentRepo.findById(id)
+      if (inv == null) throw new Error(`investment not found: ${id}`)
+      const { quantity } = inv
+      const currentPrice = inv.current_price
+      const purchasePrice = inv.purchase_price
+      // Fractional shares × integer cents → round to integer cents (rounded independently — display-grade, R2).
+      const currentValue = currentPrice != null && quantity != null ? Math.round(quantity * currentPrice) : null
+      const costBasis = purchasePrice != null && quantity != null ? Math.round(quantity * purchasePrice) : null
+      const gainLoss = currentValue != null && costBasis != null ? currentValue - costBasis : null
+      // Ratio (D3); null unless costBasis is strictly positive — 0 avoids divide-by-zero, ≤0 (e.g. a short's
+      // negative quantity) makes the percentage sign-meaningless, so we report null rather than a wrong number.
+      const gainLossPct = gainLoss != null && costBasis != null && costBasis > 0 ? gainLoss / costBasis : null
+      // `currentValue != null` is the authoritative "value is known" signal (null when EITHER price or quantity
+      // is unset). `priceSet` is the price-specific empty-state reason only (FN-19 "no price set") — a consumer
+      // renders a value iff currentValue != null, not off priceSet alone.
+      return {
+        investmentId: id,
+        quantity,
+        currentPrice,
+        purchasePrice,
+        currentValue,
+        costBasis,
+        gainLoss,
+        gainLossPct,
+        priceSet: currentPrice != null,
+      }
+    },
+
+    // FIN-22 chart derivations (delegate to the hoisted closures — shared with getChartDatasets).
+    getSpendingByCategory: spendingByCategory,
+    getIncomeVsExpense: incomeVsExpense,
+    getAssetLiabilityBreakdown: assetLiabilityBreakdown,
+
+    // FIN-22 aggregator — each dataset computed INDEPENDENTLY; a throw degrades ONLY that chart (its field →
+    // null, its name → `degraded`), never the whole set (FN-40; the journals/dashboard.ts degrade precedent).
+    getChartDatasets: async (range: ChartRange): Promise<ChartDatasets> => {
+      const degraded: string[] = []
+      const safe = async <T>(name: string, fn: () => Promise<T>): Promise<T | null> => {
+        try {
+          return await fn()
+        } catch {
+          degraded.push(name)
+          return null
+        }
+      }
+      return {
+        spendingByCategory: await safe('spendingByCategory', () => spendingByCategory(range)),
+        incomeVsExpense: await safe('incomeVsExpense', () => incomeVsExpense(range)),
+        assetLiabilityBreakdown: await safe('assetLiabilityBreakdown', () => assetLiabilityBreakdown()),
+        degraded,
+      }
+    },
 
     // ── assets (FIN-13) ─────────────────────────────────────────────
     createAsset: async (input: CreateAssetInput): Promise<Asset> => {

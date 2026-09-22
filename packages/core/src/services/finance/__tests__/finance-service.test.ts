@@ -51,6 +51,7 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
 interface Harness {
   svc: FinanceService
   db: DrizzleDb
+  bsql: Database.Database // raw handle — S3 uses it to DROP a table for the live-store per-chart degrade test
 }
 
 async function setup(): Promise<Harness> {
@@ -60,7 +61,7 @@ async function setup(): Promise<Harness> {
   await migrate(driver)
   const db = createDrizzleProxy(driver)
   const svc = createFinanceService({ db, deviceId: 'test-device' })
-  return { svc, db }
+  return { svc, db, bsql }
 }
 
 describe('mod-finance S1 — entity CRUD', () => {
@@ -281,5 +282,187 @@ describe('mod-finance S2 — ledger + derived balance + transfers', () => {
     // changing source to equal the destination (transfer_to=B) must re-trigger FN-4 even though
     // neither transaction_type nor transfer_to_account_id is in the patch.
     await expect(h.svc.updateTransaction(t.id, { account_id: acctB })).rejects.toBeInstanceOf(InvalidTransferError)
+  })
+})
+
+describe('mod-finance S3 — derived analytics', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // ── getOverview (FIN-17) ──────────────────────────────────────────
+  describe('getOverview (FIN-17)', () => {
+    it('netWorth = FN-7 simple sum; monthly totals EXCLUDE transfers (FN-12); clean path partial:false', async () => {
+      const a = await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 1_000_00, current_balance: 1_000_00 })
+      const b = await h.svc.createAccount({ name: 'B', account_type: 'savings' })
+      await h.svc.createTransaction({ account_id: a.id, transaction_type: 'income', amount: 200_00, date: '2026-09-10' })
+      await h.svc.createTransaction({ account_id: a.id, transaction_type: 'expense', amount: 50_00, date: '2026-09-15' })
+      await h.svc.createTransfer({ fromAccountId: a.id, toAccountId: b.id, amount: 30_00, date: '2026-09-20' })
+      await h.svc.createAsset({ name: 'Car', asset_type: 'vehicle', current_value: 5_000_00 })
+      await h.svc.createLiability({ name: 'Loan', liability_type: 'personal_loan', current_balance: 2_000_00 })
+
+      const o = await h.svc.getOverview({ month: '2026-09' })
+      expect(o.totalBalance).toBe(1_150_00) // A: 1000+200−50−30=1120 ; B: +30 = 1150 total
+      expect(o.totalAssets).toBe(5_000_00)
+      expect(o.totalLiabilities).toBe(2_000_00)
+      expect(o.netWorth).toBe(4_150_00) // 1150 + 5000 − 2000
+      expect(o.monthlyIncome).toBe(200_00) // transfer's 30 EXCLUDED
+      expect(o.monthlyExpenses).toBe(50_00) // transfer's 30 EXCLUDED
+      expect(o.month).toBe('2026-09')
+      expect(o.unvaluedAssets).toBe(0)
+      expect(o.unvaluedLiabilities).toBe(0)
+      expect(o.partial).toBe(false)
+    })
+
+    it('investments are NOT a net-worth term (FN-7, N1)', async () => {
+      await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 100_00, current_balance: 100_00 })
+      const before = (await h.svc.getOverview({ month: '2026-09' })).netWorth
+      await h.svc.createInvestment({ name: 'VOO', investment_type: 'stock', quantity: 10, current_price: 500_00 })
+      const after = (await h.svc.getOverview({ month: '2026-09' })).netWorth
+      expect(after).toBe(before) // 100_00 — the 5000_00 investment value does not move net worth
+    })
+
+    it('a null asset/liability value is UNKNOWN — counted + partial, never a silent 0 (BR-S3-4/FN-40)', async () => {
+      await h.svc.createAsset({ name: 'House', asset_type: 'real_estate' }) // no current_value
+      await h.svc.createAsset({ name: 'Car', asset_type: 'vehicle', current_value: 30_000_00 })
+      await h.svc.createLiability({ name: 'Loan', liability_type: 'personal_loan' }) // no current_balance
+      const o = await h.svc.getOverview({ month: '2026-09' })
+      expect(o.totalAssets).toBe(30_000_00) // the unvalued house contributes 0…
+      expect(o.unvaluedAssets).toBe(1) // …but is COUNTED, not silently dropped
+      expect(o.unvaluedLiabilities).toBe(1)
+      expect(o.partial).toBe(true)
+    })
+
+    it('inactive accounts still count toward totalBalance (N2)', async () => {
+      await h.svc.createAccount({ name: 'Active', account_type: 'checking', opening_balance: 100_00, current_balance: 100_00 })
+      await h.svc.createAccount({ name: 'Closed', account_type: 'checking', opening_balance: 500_00, current_balance: 500_00, is_active: false })
+      const o = await h.svc.getOverview({ month: '2026-09' })
+      expect(o.totalBalance).toBe(600_00) // both included
+    })
+
+    it('empty dataset → all-zero overview, unvalued 0, partial:false', async () => {
+      const o = await h.svc.getOverview({ month: '2026-09' })
+      expect(o).toMatchObject({ totalBalance: 0, totalAssets: 0, totalLiabilities: 0, netWorth: 0, monthlyIncome: 0, monthlyExpenses: 0, unvaluedAssets: 0, unvaluedLiabilities: 0, partial: false })
+    })
+
+    it('defaults to the current calendar month when unpinned', async () => {
+      const o = await h.svc.getOverview()
+      expect(o.month).toMatch(/^\d{4}-\d{2}$/)
+      expect(o.month).toBe(new Date().toISOString().slice(0, 7))
+    })
+  })
+
+  // ── getInvestmentValue (FIN-19) ───────────────────────────────────
+  describe('getInvestmentValue (FIN-19)', () => {
+    it('value + gain/loss with fractional-share rounding; gainLossPct is a ratio (D3)', async () => {
+      // qty 2.5 × price 100_00 = 250_00 ; cost 2.5 × 80_00 = 200_00 ; gain 50_00 ; pct 0.25
+      const inv = await h.svc.createInvestment({ name: 'ETF', investment_type: 'etf', quantity: 2.5, purchase_price: 80_00, current_price: 100_00 })
+      const v = await h.svc.getInvestmentValue(inv.id)
+      expect(v.currentValue).toBe(250_00)
+      expect(v.costBasis).toBe(200_00)
+      expect(v.gainLoss).toBe(50_00)
+      expect(v.gainLossPct).toBeCloseTo(0.25, 6)
+      expect(v.priceSet).toBe(true)
+    })
+
+    it('missing current_price = "no price set" empty state (priceSet:false, null value) — NOT a throw (BR-S3-5)', async () => {
+      const inv = await h.svc.createInvestment({ name: 'Private', investment_type: 'other', quantity: 5 })
+      const v = await h.svc.getInvestmentValue(inv.id)
+      expect(v.priceSet).toBe(false)
+      expect(v.currentValue).toBeNull()
+      expect(v.gainLoss).toBeNull()
+      expect(v.gainLossPct).toBeNull()
+    })
+
+    it('a zero cost basis yields a null gainLossPct (no divide-by-zero)', async () => {
+      const inv = await h.svc.createInvestment({ name: 'Gift', investment_type: 'stock', quantity: 10, purchase_price: 0, current_price: 100_00 })
+      const v = await h.svc.getInvestmentValue(inv.id)
+      expect(v.currentValue).toBe(1_000_00)
+      expect(v.costBasis).toBe(0)
+      expect(v.gainLoss).toBe(1_000_00)
+      expect(v.gainLossPct).toBeNull()
+    })
+
+    it('price set but quantity null → priceSet:true yet currentValue null (currentValue is the authoritative signal)', async () => {
+      const inv = await h.svc.createInvestment({ name: 'Held', investment_type: 'stock', current_price: 100_00 }) // no quantity
+      const v = await h.svc.getInvestmentValue(inv.id)
+      expect(v.priceSet).toBe(true) // the price dimension IS set…
+      expect(v.currentValue).toBeNull() // …but value is unknown without a quantity — a consumer keys off this
+      expect(v.gainLoss).toBeNull()
+      expect(v.gainLossPct).toBeNull()
+    })
+
+    it('a missing investment fails loud', async () => {
+      await expect(h.svc.getInvestmentValue('missing-id')).rejects.toThrow(/not found/i)
+    })
+  })
+
+  // ── chart datasets (FIN-22) ───────────────────────────────────────
+  describe('chart datasets (FIN-22)', () => {
+    beforeEach(async () => {
+      const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
+      const b = (await h.svc.createAccount({ name: 'B', account_type: 'savings' })).id
+      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 40_00, category: 'food', date: '2026-08-10' })
+      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 60_00, category: 'food', date: '2026-09-10' })
+      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 10_00, category: 'rent', date: '2026-09-11' })
+      await h.svc.createTransaction({ account_id: a, transaction_type: 'income', amount: 500_00, category: 'salary', date: '2026-09-01' })
+      await h.svc.createTransfer({ fromAccountId: a, toAccountId: b, amount: 25_00, date: '2026-09-15' }) // must never appear
+    })
+
+    it('getSpendingByCategory groups EXPENSES by category, excludes income + transfers, desc by total', async () => {
+      const rows = await h.svc.getSpendingByCategory({ from: '2026-09-01', to: '2026-09-30' })
+      expect(rows).toEqual([
+        { category: 'food', total: 60_00 },
+        { category: 'rent', total: 10_00 },
+      ]) // salary income + the 25_00 transfer excluded; desc order
+    })
+
+    it('getIncomeVsExpense buckets by month, net = income − expenses, transfers excluded, ascending', async () => {
+      const rows = await h.svc.getIncomeVsExpense({ from: '2026-08-01', to: '2026-09-30' })
+      expect(rows).toEqual([
+        { period: '2026-08', income: 0, expenses: 40_00, net: -40_00 },
+        { period: '2026-09', income: 500_00, expenses: 70_00, net: 430_00 }, // transfer's 25 excluded
+      ])
+    })
+
+    it('getAssetLiabilityBreakdown totals by type; null value sums as 0 (chart approximation)', async () => {
+      await h.svc.createAsset({ name: 'Car', asset_type: 'vehicle', current_value: 30_000_00 })
+      await h.svc.createAsset({ name: 'Bike', asset_type: 'vehicle', current_value: 2_000_00 })
+      await h.svc.createAsset({ name: 'Land', asset_type: 'real_estate' }) // null → 0
+      await h.svc.createLiability({ name: 'Loan', liability_type: 'personal_loan', current_balance: 5_000_00 })
+      const bd = await h.svc.getAssetLiabilityBreakdown()
+      expect(bd.assets).toEqual([
+        { type: 'vehicle', total: 32_000_00 },
+        { type: 'real_estate', total: 0 },
+      ])
+      expect(bd.liabilities).toEqual([{ type: 'personal_loan', total: 5_000_00 }])
+    })
+
+    it('equal-total categories sort deterministically (stable tiebreak, no ORDER BY)', async () => {
+      const a = (await h.svc.createAccount({ name: 'C', account_type: 'checking' })).id
+      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 10_00, category: 'zeta', date: '2026-10-01' })
+      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 10_00, category: 'alpha', date: '2026-10-02' })
+      const rows = await h.svc.getSpendingByCategory({ from: '2026-10-01', to: '2026-10-31' })
+      expect(rows.map((r) => r.category)).toEqual(['alpha', 'zeta']) // equal totals → category asc, not row order
+    })
+
+    it('getChartDatasets returns all three on the clean path, degraded empty', async () => {
+      const d = await h.svc.getChartDatasets({ from: '2026-08-01', to: '2026-09-30' })
+      expect(d.spendingByCategory).not.toBeNull()
+      expect(d.incomeVsExpense).not.toBeNull()
+      expect(d.assetLiabilityBreakdown).not.toBeNull()
+      expect(d.degraded).toEqual([])
+    })
+
+    it('a failing chart degrades ALONE — others still return (FN-40, live-store)', async () => {
+      // Drop the assets table on the real store → assetLiabilityBreakdown throws; the txn-based charts survive.
+      h.bsql.exec('DROP TABLE assets')
+      const d = await h.svc.getChartDatasets({ from: '2026-08-01', to: '2026-09-30' })
+      expect(d.assetLiabilityBreakdown).toBeNull()
+      expect(d.degraded).toContain('assetLiabilityBreakdown')
+      expect(d.spendingByCategory).not.toBeNull() // degrades ONLY that chart
+      expect(d.incomeVsExpense).not.toBeNull()
+    })
   })
 })
