@@ -33,6 +33,7 @@ import type {
   IngestionGuard,
   IngestionAct,
 } from '../../foundation/ingestion'
+import type { AssociationResolver, TagAssociation } from '../../foundation/spaces'
 
 export interface FinanceServiceDeps {
   db: DrizzleDb
@@ -45,7 +46,23 @@ export interface FinanceServiceDeps {
   stagingPort?: ImportStagingPort // default: in-memory (durable import_staging = M2); INSTANCE-shared
   ingestionGuard?: IngestionGuard // BUILT #44, app/M2-injected; absent ⇒ external access fails closed
   importTolerance?: MatchTolerance // default: { dateDays: 3, amountCents: 0 } (exact-amount, ±3d)
+  // ── S6: cross-module consumer port ──
+  associations?: AssociationResolver // FIN-35 tag read (Spaces-owned #40); absent ⇒ getEntityTags → [] (deny-safe)
+  // NB (FIN-31): the achievement-feed emit `effects` dep + concrete emit are added by Gamification at #48
+  // (achievements PULL finance's net_worth via the ADR-011 §3.6 seam — FIN-33 — so finance need not push).
 }
+
+// FIN-34/35 — the finance entities that may carry notes/tags. Finance DECLARES this set; the app registers it into
+// the shared taggable-type registry (Spaces/Notes own the registry). Finance authors no registry, no tag DDL.
+export const FINANCE_ENTITY_TYPES = [
+  'account',
+  'transaction',
+  'asset',
+  'investment',
+  'liability',
+  'income_stream',
+] as const
+export type FinanceEntityType = (typeof FINANCE_ENTITY_TYPES)[number]
 
 // --- Zod-inferred input shapes (validators/finance.ts) ----------------------
 export type CreateAccountInput = z.infer<typeof CreateAccountSchema>
@@ -275,6 +292,12 @@ export interface FinanceService {
   confirmImport(batchId: string, confirmedSourceRowIds: string[]): Promise<CommitResult>
   /** FIN-29 — gate external access via the injected ingestion guard; no guard ⇒ ZeroKnowledgeViolationError. */
   assertExternalAccess(act: IngestionAct): Promise<void>
+
+  // ── S6: cross-module read seams ──────────────────────────────────
+  /** FIN-33 — the Purpose measurement-source read seam (ADR-011 §3.6): net worth + its partial flag. Feeder-only. */
+  getNetWorth(opts?: OverviewOptions): Promise<{ value: Money; partial: boolean }>
+  /** FIN-35 — a finance entity's tags via the shared entity_tags primitive (deny-safe → [] when no resolver). */
+  getEntityTags(entityType: string, entityId: string): Promise<TagAssociation[]>
 
   // ── S1: assets ──────────────────────────────────────────────────
   createAsset(input: CreateAssetInput): Promise<Asset>

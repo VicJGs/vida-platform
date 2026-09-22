@@ -34,6 +34,7 @@ import {
   computeOnlyAggregatesPort,
   passthroughCategoryPort,
 } from './config-seams'
+import type { TagAssociation } from '../../foundation/spaces'
 import {
   accounts,
   transactions,
@@ -363,8 +364,11 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
   const createTransactionImpl = async (input: CreateTransactionInput): Promise<Transaction> => {
     const p = CreateTransactionSchema.parse(input)
     assertTransferShape(p.transaction_type, p.transfer_to_account_id, p.account_id) // FN-4
-    // NB: the create-side achievement emit (FIN-31) is a cross-module seam wired in S6.
-    return toTransaction(await txRepo.create(serializeTransaction(p)))
+    const created = toTransaction(await txRepo.create(serializeTransaction(p)))
+    // FIN-31 emit point (S6): the create-side achievement FEED. M1 emits NOTHING — achievements PULL finance's
+    // net_worth via the ADR-011 §3.6 seam (getNetWorth); the concrete emit + `effects` dep are wired by
+    // Gamification at #48 (grant_currency is the wrong effect — an achievement feed is not a currency award).
+    return created
   }
 
   const service: FinanceService = {
@@ -677,6 +681,24 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
         if (e instanceof ZeroKnowledgeViolationError) throw e
         throw new ZeroKnowledgeViolationError(e instanceof Error ? e.message : 'external access refused')
       }
+    },
+
+    // ── S6: cross-module read seams ──────────────────────────────────
+    // FIN-33 — the Purpose measurement-source read seam (ADR-011 §3.6): net worth + its partial flag (so Purpose
+    // never treats an understated net worth — unvalued assets, S3 — as authoritative). Feeder-only, no M* on finance.
+    getNetWorth: async (opts?: OverviewOptions): Promise<{ value: Money; partial: boolean }> => {
+      const o = await service.getOverview(opts) // captured-const intra-call (the notes/service.ts precedent)
+      return { value: o.netWorth, partial: o.partial }
+    },
+
+    // FIN-35 — a finance entity's tags via the shared entity_tags primitive (Spaces #40). Deny-safe ONLY for the
+    // no-resolver M1 case → [] (not an error). A WIRED resolver whose registry lacks a finance type throws
+    // UnknownEntityType (the resolver's fail-loud contract — a registration bug, NOT swallowed here). The sync
+    // toTransaction mapper keeps tags:[] (DB-11); THIS is the real read.
+    getEntityTags: async (entityType: string, entityId: string): Promise<TagAssociation[]> => {
+      if (!deps.associations) return []
+      const r = await deps.associations.resolveAssociations({ entityType, entityId }, 'separate')
+      return r.mode === 'separate' ? r.tags : []
     },
 
     // ── assets (FIN-13) ─────────────────────────────────────────────

@@ -47,7 +47,7 @@
 | S3 | overview totals; net-worth = FN-7 sum; investment gain/loss; partial-flag on error | overview over a live multi-account/asset/liability set; per-chart degrade via live DROP TABLE (41 tests) | ✅ PASS |
 | S4 | handler registered; idempotent replay (same event_id → no double); ledger-movement co-write; lock-port deny-safe | fire `move_money` on the real rail; `applied_effects` holds; deny-safe rollback (7 tests) | ✅ PASS |
 | S5 | recurring forecast (month-end clamp, far-anchor); `FxRateMissingError`; category passthrough; import stage/match/confirm + merge-no-dup; grant-gate fail-closed | import round-trips instance staging port + creates real txns; injected-guard delegation (11 tests) | ✅ PASS |
-| S6 | `/summary` provider output; entity_tags read/write; dueIn over G9 schedules; notes delegate | provider registered in the live Journals registry; entity_tags round-trip | ☐ |
+| S6 | Journal contribution summary/dueIn well-formed; getNetWorth {value,partial}; getEntityTags deny-safe + delegate; FINANCE_ENTITY_TYPES; nets-to-0 → success | contribution registered in a live Journals registry; summary/dueIn over real txns + G9 schedules (7 tests) | ✅ PASS |
 | S7 | residency/legal-entity/money-touch CRUD; grant-gate fail-closed; typed errors | live CRUD on fiscal_residencies/legal_entities; jurisdiction link | ☐ |
 | S8 | deriveObligations never-on-unverified + no-auto-action; rulePack/model deny-safe; disclaimer uncstrippable | fiscal_obligations derive + confirm→fan-out seam; #44/#45 ports fail-closed | ☐ |
 
@@ -55,6 +55,19 @@
 - **S1 (2026-09-21):** two code-review-driven refinements, both grounded:
   1. **No finance-local not-found error.** Dropped the initial `guardExists`/`FinanceEntityNotFoundError` — `repository.update()`/`delete()` already throw `Error('Row not found')` (repository.ts:412); the pre-read was a redundant SELECT and a divergence from the checkins/journals precedent (bare repo throw). Soft-delete-aware update rejection (update() ignores `deleted_at`) is a **repo-wide** concern → DB-11, not a finance patch (altitude).
   2. **`@vida/types` interfaces extended (FIN-01/FIN-27).** Added `Account.opening_balance`, liability G9 (`payment_frequency`/`next_payment_date`/`interest_type`/`payoff_date`), `IncomeStream.next_payment_date` — the schema had them, the interfaces didn't, so the exposed contract was incomplete. FIN-27 is homed to "finance service / @vida/types" (parts/finance.md:37), so this is in S1 scope, not deferred DB-11. `jurisdiction_code` interface exposure stays for S7 (FL-02).
+
+- **S6 (2026-09-22):** cross-module providers + delegates (FIN-31/32/33/34/35/37) — `journal.ts`
+  (`createFinanceJournalContribution`/`registerFinanceJournal`) + service reads, **zero re-implementation**
+  (registers into the built Journals registry, reads via the injected `AssociationResolver`). FIN-32+37 = ONE
+  contribution (summary + dueIn). FIN-33 `getNetWorth → {value, partial}` = the ADR-011 §3.6 measurement seam.
+  FIN-34 = boundary (`FINANCE_ENTITY_TYPES`, no note columns). FIN-35 `getEntityTags` deny-safe. FIN-31 = reserved
+  emit-point comment (achievements PULL via the seam; concrete emit #48). Full gate: PLAN → gate-1 /critique
+  REVISE→SHIP (B1 drop `grant_currency` emit — wrong effect + would misfire; N1 drop NotesPort — over-scope, real
+  method mismatch) → /adr-check (ADR-011 §3.6 pull seam · ADR-006 SP1 consumer · ADR-012 §3.7 achievements-pull) →
+  /preflight BLOCKED→resolved (drop unused `effects?` dep; narrow AssociationResult) → gate-2 SHIP → implement →
+  Verification Gate PASS → code-review (2 borderline: F1 getEntityTags deny-safe comment tightened to not swallow
+  UnknownEntityType · F2 summary state from overview presence, not netWorth!==0) → pre-ship /critique SHIP.
+  @vida/core **1233/1233** (+9), tsc 0, eslint 0. §XXIX: `finance/current-*` refreshed (S6). No S1–S5/@vida/types change.
 
 - **S5 (2026-09-22):** external/ingestion/config seams (FIN-20/21/25/28/29/30/40) — `config-seams.ts` (4 deny-safe
   default ports) + service methods, **zero re-implementation** (delegates to built ingestion #44 reconcile

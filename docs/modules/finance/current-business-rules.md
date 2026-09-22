@@ -1,7 +1,7 @@
 # Current Business Rules — finance   (level: Module · tier: STANDARD)
-> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S5 of 8. Fiscal-legal (S7–S8) NOT yet built.
+> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S6 of 8. Fiscal-legal (S7–S8) NOT yet built.
 > Inherits: docs/core/business-rules.md (ZK-1/2/3, LF-1/2/3). Finance holds money data → ZK-1 governs `[E]` fields; the M1.0 `[E]` set is EMPTY (pass-through, M3 target). A child rule contradicting a parent is a CONFLICT — flagged, never overridden.
-> Last refreshed: 2026-09-22-mod-finance-S5  ·  Source of truth = the code (Currency Rule §XXIX).
+> Last refreshed: 2026-09-22-mod-finance-S6  ·  Source of truth = the code (Currency Rule §XXIX).
 
 ## 1. Invariants — what is ALWAYS / NEVER true
 
@@ -76,12 +76,31 @@
 - **BR-S5-7 (FN-40).** Typed errors added: `FxRateMissingError`, `ZeroKnowledgeViolationError` — a refused/missing
   path fails loud, never a silent default. `[FACT: types.ts]`
 
-### Pending / INTENDED (S6–S8 — not yet realized)
+### Realized (S6 — cross-module providers + delegates)
+- **BR-S6-1 (FIN-31).** A transaction create is the achievement-FEED point (Gamification owns achievements). M1
+  emits **nothing concrete** — achievements PULL finance's `net_worth` via the ADR-011 §3.6 seam (`getNetWorth`);
+  the emit + `effects` dep are wired at #48. `grant_currency` would be the wrong effect (a currency award, and would
+  misfire per-transaction once economy's handler registers). `[FACT: service.ts createTransactionImpl comment; ADR-012 §3.7]`
+- **BR-S6-2 (FIN-32/37).** Finance registers ONE `JournalContribution` (`createFinanceJournalContribution`):
+  `summary(date)` = today's transactions + net-worth snapshot; `dueIn(range)` = upcoming G9 installments
+  (liabilities/income `next_payment_date`, NOT the deferred Commitments derive). Empty → `state:'empty'`, never a
+  throw (the dashboard owns degrade). `[FACT: services/finance/journal.ts]`
+- **BR-S6-3 (FIN-33 / ADR-011 §3.6 / C6).** `getNetWorth → {value, partial}` is the Purpose measurement-source
+  read seam (value + flag, never stale-as-fresh); `getBalance` is the other measure. Finance is a FEEDER — **NO
+  `measurement_kind`/`binding_mode` on finance entities**. `[FACT: service.ts getNetWorth]`
+- **BR-S6-4 (FIN-34 / G12).** Notes on a finance entity are `pages` rows owned by Notes & Pages — finance owns NO
+  note columns and only DECLARES `FINANCE_ENTITY_TYPES` for the shared registry; the consumer uses the Notes
+  contract directly. `[FACT: types.ts FINANCE_ENTITY_TYPES; finance schema has no note columns]`
+- **BR-S6-5 (FIN-35 / SP1).** `getEntityTags` reads a finance entity's tags via the injected `AssociationResolver`
+  (Spaces-owned `entity_tags`). Deny-safe → `[]` only when no resolver; a wired resolver fails loud on an
+  unregistered type (its contract, not swallowed). `Transaction.tags` stays `[]` (DB-11); this is the real read. `[FACT: service.ts getEntityTags]`
+
+### Pending / INTENDED (S7–S8 — not yet realized)
 - **FN-13/14 (FIN-36/38/39)** Commitments/budgeting/liability-payment (undesigned) · **FN-15 (FIN-18/23/24)**
-  store-tree net worth + lock-box · cross-module providers (FIN-31/32/33/34/35/37, S6) · **FL-01…10** fiscal-legal
-  (S7–S8). Each homed in `slice-map.md`; **no rule may assume their internals.**
-- **Materialize write path · durable stores** (FX/base-currency, managed-category, persisted-aggregates,
-  import_staging) — all M2 via the S5 deny-safe ports (zero-signature-change swap).
+  store-tree net worth + lock-box · **FL-01…10** fiscal-legal (S7–S8). Each homed in `slice-map.md`; **no rule may
+  assume their internals.**
+- **FIN-31 concrete emit** (Gamification #48) · **materialize write path · durable stores** (FX/base-currency,
+  managed-category, persisted-aggregates, import_staging) — all M2 via the S5/S6 deny-safe ports/seams.
 
 ## 3. Rule inventory — explicit · implicit · invented
 - **EXPLICIT (schema/service-realized):** FN-2/3/4/10/11 (S1–S2), BR-S3-1…6 (S3) — all cited to `service.ts`/`schema/finance.ts`.

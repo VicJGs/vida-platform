@@ -48,3 +48,6 @@ export {
   computeOnlyAggregatesPort,
   passthroughCategoryPort,
 } from './config-seams'
+// S6 — cross-module providers + delegates (FIN-31/32/33/34/35/37)
+export { FINANCE_ENTITY_TYPES, type FinanceEntityType } from './types'
+export { createFinanceJournalContribution, registerFinanceJournal } from './journal'

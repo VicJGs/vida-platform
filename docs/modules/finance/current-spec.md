@@ -1,7 +1,7 @@
 # Current Spec — finance   (level: Module · tier: STANDARD)
-> Coverage: schema (`020_finance`, 9 tables) + colocated `@vida/types` + validators + service tier S1–S5 of 8. Fiscal-legal service (S7–S8) NOT yet built.
+> Coverage: schema (`020_finance`, 9 tables) + colocated `@vida/types` + validators + service tier S1–S6 of 8. Fiscal-legal service (S7–S8) NOT yet built.
 > Inherits: docs/core (business-rules constitution — ZK-1/2/3, LF-1/2/3). This doc must not contradict any level above it.
-> Last refreshed: 2026-09-22-mod-finance-S5  ·  Source of truth = the code (Currency Rule §XXIX).
+> Last refreshed: 2026-09-22-mod-finance-S6  ·  Source of truth = the code (Currency Rule §XXIX).
 
 ## 1. Identity & responsibility
 **What it is.** The finance module — accounts, transactions, assets, liabilities, investments, income streams —
@@ -18,7 +18,15 @@ over the DB-4 `020_finance` schema. This build delivers the ① **backend servic
 - Not the tag owner — consumes `entity_tags` (Spaces SP1); notes via the `pages` seam (both S6). `[FACT: parts/finance.md]`
 
 ## 2. Contract — what it exposes / needs
-**Status: ① BACKEND — S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6–S8 ☐ (3 slices remain).** ② fe-finance separate.
+**Status: ① BACKEND — S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6 ✅ · S7–S8 ☐ (fiscal-legal, 2 slices remain).** ② fe-finance separate.
+
+**S6 (2026-09-22) — cross-module providers + delegates (FIN-31/32/33/34/35/37), `journal.ts` + service methods:**
+`createFinanceJournalContribution`/`registerFinanceJournal` — ONE Journals contribution (`summary(date)` = today's
+txns + net-worth snapshot; `dueIn(range)` = upcoming G9 installments). `getNetWorth → {value, partial}` = the Purpose
+measurement-source read seam (ADR-011 §3.6; feeder-only, no M* on finance). `getEntityTags` via injected
+`AssociationResolver` (deny-safe → []). `FINANCE_ENTITY_TYPES` declared for the shared taggable/notes registry
+(finance owns no note columns). FIN-31 = a reserved emit-point comment; the concrete emit is #48 (achievements PULL
+`net_worth` via the seam). `[FACT: services/finance/{journal.ts,service.ts}]`
 
 **S5 (2026-09-22) — external / ingestion / config seams (FIN-20/21/25/28/29/30/40), `config-seams.ts` + service methods:**
 3 real derivations + 5 deny-safe ports over deferred stores, zero re-implementation. `forecastRecurring`
@@ -62,8 +70,8 @@ tx-threaded for the FIN-24 atomic swap). Consent-gating deferred (#48). `[FACT: 
 
 ## 4. Deferred / open (homed, not built)
 FIN-18 store-tree net worth · FIN-24 lock-box · FIN-36/38/39 Commitments/budgeting/liability-payment
-(design-pass) · cross-module providers FIN-31/32/33/34/35/37 (S6) · FL-01…10 fiscal-legal (S7–S8) ·
-net-worth-over-time chart (snapshot design-pass) · **all S5 deferred STORES** (FX/base-currency, managed-category,
+(design-pass) · **FL-01…10 fiscal-legal (S7–S8)** · net-worth-over-time chart (snapshot design-pass) · **FIN-31
+concrete achievement emit** (Gamification #48) · **all S5 deferred STORES** (FX/base-currency, managed-category,
 persisted-aggregates, import_staging, materialize write path — M2 via the deny-safe ports). Homed in `slice-map.md`.
 
 ## 5. Terminal states
@@ -71,9 +79,9 @@ Overview/dashboard · account balance · investment value · each chart — load
 error → flagged partial (`partial` / `degraded[]`), never a wrong number. Empty dataset → all-zero, not an error.
 
 ## 6. Verification
-S1–S5: @vida/core **1224/1224** (+8 S5), tsc 11/11, eslint 0, live-store Verification Gate PASS (real
-better-sqlite3 + `initVault()` + `migrate()`; S3 degrade drops a table; S4 fires the REAL effect rail; S5
-import round-trips the staging port + creates real txns). `[FACT: finance-service.test.ts, 59 tests]`
+S1–S6: @vida/core **1233/1233** (+9 S6), tsc 11/11, eslint 0, live-store Verification Gate PASS (real
+better-sqlite3 + `initVault()` + `migrate()`; S3 degrade drops a table; S4 fires the REAL effect rail; S5 import
+round-trips the staging port; S6 registers into a live Journals registry). `[FACT: finance-service.test.ts, 66 tests]`
 
 ## Completion checklist
 - [x] §1 identity · [x] §2 contract (S1–S3 done, S4–S8 pending) · [x] §3 structure · [x] §4 deferred homed · [x] §5 states · [x] §6 verification

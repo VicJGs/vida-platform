@@ -16,6 +16,8 @@ import { syncQueue } from '../../../db/schema'
 import { appliedEffects } from '../../../db/schema/foundation/effects'
 import { createEffectRail, createEffectRegistry, type EffectEvent } from '../../../foundation/effects'
 import type { IngestionGuard, IngestionAct } from '../../../foundation/ingestion'
+import type { AssociationResolver, TagAssociation } from '../../../foundation/spaces'
+import { createJournalRegistry } from '../../journals'
 import {
   createFinanceService,
   InvalidTransferError,
@@ -26,6 +28,9 @@ import {
   StoreLayerNotActive,
   FxRateMissingError,
   ZeroKnowledgeViolationError,
+  FINANCE_ENTITY_TYPES,
+  createFinanceJournalContribution,
+  registerFinanceJournal,
   type StoreLockPort,
   type ParsedStatementRow,
   type FinanceService,
@@ -684,5 +689,90 @@ describe('mod-finance S5 — external / ingestion / config seams', () => {
     await expect(permitSvc.assertExternalAccess(act)).resolves.toBeUndefined()
     const denySvc = createFinanceService({ db: h.db, deviceId: 'test-device', ingestionGuard: stubGuard(false, 'server_proxy_refused') })
     await expect(denySvc.assertExternalAccess(act)).rejects.toBeInstanceOf(ZeroKnowledgeViolationError)
+  })
+})
+
+describe('mod-finance S6 — cross-module providers + delegates', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // ── FIN-33 Purpose measurement-source read seam ───────────────────
+  it('getNetWorth returns the value + partial flag (ADR-011 §3.6); partial when an asset is unvalued', async () => {
+    await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 1_000_00, current_balance: 1_000_00 })
+    await h.svc.createAsset({ name: 'Car', asset_type: 'vehicle', current_value: 5_000_00 })
+    const clean = await h.svc.getNetWorth({ month: '2026-09' })
+    expect(clean).toEqual({ value: 6_000_00, partial: false })
+    await h.svc.createAsset({ name: 'House', asset_type: 'real_estate' }) // no current_value → unvalued
+    const partial = await h.svc.getNetWorth({ month: '2026-09' })
+    expect(partial.value).toBe(6_000_00) // unvalued contributes 0…
+    expect(partial.partial).toBe(true) // …but the measure is flagged, never stale-as-fresh
+  })
+
+  // ── FIN-35 tags via entity_tags (deny-safe) ───────────────────────
+  it('getEntityTags returns [] when no AssociationResolver is injected (deny-safe)', async () => {
+    expect(await h.svc.getEntityTags('transaction', 'tx-1')).toEqual([])
+  })
+
+  it('getEntityTags delegates to the injected AssociationResolver and returns its tags', async () => {
+    const tags: TagAssociation[] = [{ kind: 'tag', tagId: 't-groceries' } as TagAssociation]
+    let seenRef: unknown
+    const stubResolver = {
+      async resolveAssociations(ref: unknown) {
+        seenRef = ref
+        return { mode: 'separate' as const, tags, links: [] }
+      },
+    } as unknown as AssociationResolver
+    const svc = createFinanceService({ db: h.db, deviceId: 'test-device', associations: stubResolver })
+    expect(await svc.getEntityTags('transaction', 'tx-9')).toEqual(tags)
+    expect(seenRef).toEqual({ entityType: 'transaction', entityId: 'tx-9' }) // correct TaggableRef shape
+  })
+
+  // ── FIN-34 boundary declaration ───────────────────────────────────
+  it('declares FINANCE_ENTITY_TYPES for the shared taggable/notes registry (no note columns owned)', () => {
+    expect(FINANCE_ENTITY_TYPES).toContain('transaction')
+    expect(FINANCE_ENTITY_TYPES).toContain('account')
+    expect(FINANCE_ENTITY_TYPES).toHaveLength(6)
+  })
+
+  // ── FIN-32 + FIN-37 the Journal contribution ──────────────────────
+  it('registers ONE finance Journal contribution; summary(date) = today txns + net-worth snapshot (FIN-32)', async () => {
+    const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 200_00, current_balance: 200_00 })).id
+    await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 30_00, date: '2026-03-15' })
+    const registry = createJournalRegistry()
+    registerFinanceJournal(registry, h.svc)
+    const contrib = registry.get('finance')
+    expect(contrib?.sectionKey).toBe('summary')
+    const section = await contrib!.summary('2026-03-15')
+    expect(section.state).toBe('success')
+    expect(section.module).toBe('finance')
+    const payload = section.items![0] as { netWorth: number; todaysTransactions: unknown[] }
+    expect(payload.netWorth).toBe(170_00) // opening 200_00 − the 30_00 expense (derived balance, FN-3)
+    expect(payload.todaysTransactions).toHaveLength(1)
+  })
+
+  it('summary state=success when holdings net to exactly 0 (real data, not empty) — F2', async () => {
+    // account +500 and a liability −500 → net worth 0, but there IS finance data (must not read as 'empty')
+    await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 500_00, current_balance: 500_00 })
+    await h.svc.createLiability({ name: 'Loan', liability_type: 'personal_loan', current_balance: 500_00 })
+    const contrib = createFinanceJournalContribution(h.svc)
+    const section = await contrib.summary('2026-03-15') // no txns today, net worth 0
+    expect((section.items![0] as { netWorth: number }).netWorth).toBe(0)
+    expect(section.state).toBe('success') // derived from overview presence, not netWorth!==0
+  })
+
+  it('dueIn(range) surfaces upcoming G9 installments (liabilities/income next_payment_date), empty → state:empty (FIN-37)', async () => {
+    await h.svc.createLiability({ name: 'Mortgage', liability_type: 'mortgage', current_balance: 100_000_00, next_payment_date: '2026-04-01', monthly_payment: 1_500_00 })
+    await h.svc.createIncomeStream({ name: 'Salary', income_type: 'salary', amount: 5_000_00, next_payment_date: '2026-04-05' })
+    const contrib = createFinanceJournalContribution(h.svc)
+    const agenda = await contrib.dueIn!({ from: '2026-04-01', to: '2026-04-30' })
+    expect(agenda.sectionKey).toBe('agenda')
+    expect(agenda.state).toBe('success')
+    expect((agenda.items as { date: string }[]).map((x) => x.date)).toEqual(['2026-04-01', '2026-04-05']) // sorted
+    // a range with no installments → empty, not an error
+    const empty = await contrib.dueIn!({ from: '2026-01-01', to: '2026-01-31' })
+    expect(empty.state).toBe('empty')
+    expect(empty.items).toEqual([])
   })
 })
