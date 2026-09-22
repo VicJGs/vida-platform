@@ -94,6 +94,8 @@ export interface Account extends SyncableEntity {
   currency: string
   /** @encrypted — in cents */
   current_balance: Money
+  /** @encrypted — in cents; ledger-derived-balance seed (FN-3, FIN-01) */
+  opening_balance: Money | null
   /** @encrypted — in cents */
   credit_limit: Money | null
   /** @encrypted — basis points */
@@ -157,6 +159,11 @@ export interface Liability extends SyncableEntity {
   due_date: string | null
   /** @encrypted */
   lender: string | null
+  // G9 restored schedule fields (FIN-27) — feed the liability-payment view.
+  payment_frequency: Frequency | null
+  next_payment_date: string | null
+  interest_type: InterestType | null
+  payoff_date: string | null
   deleted_at: Timestamp | null
 }
 
@@ -189,5 +196,7 @@ export interface IncomeStream extends SyncableEntity {
   employer: string | null
   start_date: string | null
   end_date: string | null
+  /** G9 restored (FIN-27) */
+  next_payment_date: string | null
   deleted_at: Timestamp | null
 }

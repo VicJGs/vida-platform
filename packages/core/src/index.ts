@@ -159,5 +159,8 @@ export * from './services/notes'
 // Service — Check-ins (mod-check-ins #41 · LIF-119 · S2: entry CRUD service tier)
 export * from './services/checkins'
 
+// Service — Finance (mod-finance #47 · LIF-122 · S1: entity CRUD service tier)
+export * from './services/finance'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
