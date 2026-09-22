@@ -61,6 +61,30 @@ export const CreateAccountSchema = AccountFields.partial().extend({
 })
 export const UpdateAccountSchema = AccountFields.partial()
 
+// --- transactions (FIN-06/07 · S2) ------------------------------------------
+const TransactionFields = z.object({
+  account_id: z.string(),
+  transfer_to_account_id: z.string().nullable(),
+  transaction_type: TransactionTypeSchema,
+  amount: money,
+  currency: z.string(),
+  category: z.string().nullable(),
+  category_bidx: z.string().nullable(),
+  subcategory: z.string().nullable(),
+  description: z.string().nullable(),
+  date: calendarDate,
+  is_recurring: z.boolean(),
+  recurring_frequency: FrequencySchema.nullable(),
+  jurisdiction_code: z.string().nullable(),
+})
+export const CreateTransactionSchema = TransactionFields.partial().extend({
+  account_id: z.string(),
+  transaction_type: TransactionTypeSchema,
+  amount: money,
+  date: calendarDate,
+})
+export const UpdateTransactionSchema = TransactionFields.partial()
+
 // --- assets (FIN-13) --------------------------------------------------------
 const AssetFields = z.object({
   name: z.string(),

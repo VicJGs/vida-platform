@@ -15,15 +15,18 @@
 // (opening_balance/jurisdiction_code, DB-11 interface reconcile) ride the row spread.
 // ============================================================================
 
-import type { Account, Asset, Liability, Investment, IncomeStream } from '@vida/types'
+import { and, eq, gte, isNull, lte, type SQL } from 'drizzle-orm'
+import type { Account, Asset, Liability, Investment, IncomeStream, Transaction, Money } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import {
   accounts,
+  transactions,
   assets,
   liabilities,
   investments,
   incomeStreams,
   type AccountRow,
+  type TransactionRow,
   type AssetRow,
   type LiabilityRow,
   type InvestmentRow,
@@ -32,6 +35,8 @@ import {
 import {
   CreateAccountSchema,
   UpdateAccountSchema,
+  CreateTransactionSchema,
+  UpdateTransactionSchema,
   CreateAssetSchema,
   UpdateAssetSchema,
   CreateLiabilitySchema,
@@ -42,10 +47,15 @@ import {
   UpdateIncomeStreamSchema,
 } from '../../validators/finance'
 import {
+  InvalidTransferError,
   type FinanceService,
   type FinanceServiceDeps,
   type CreateAccountInput,
   type UpdateAccountInput,
+  type CreateTransactionInput,
+  type UpdateTransactionInput,
+  type TransactionFilter,
+  type CreateTransferInput,
   type CreateAssetInput,
   type UpdateAssetInput,
   type CreateLiabilityInput,
@@ -58,6 +68,18 @@ import {
 
 // --- Row → @vida/types interface (single _sync_status cast; INTENDED cols ride the spread) ---
 const toAccount = (r: AccountRow): Account => ({ ...r, _sync_status: r._sync_status as Account['_sync_status'] })
+// Transaction.tags is a STALE interface field — the inline column was retired → entity_tags (FN-10/SP1).
+// S2 returns tags:[]; the real tag read via entity_tags is S6 (FIN-35). (DB-11 interface reconcile.)
+const toTransaction = (r: TransactionRow): Transaction => ({
+  ...r,
+  tags: [],
+  _sync_status: r._sync_status as Transaction['_sync_status'],
+})
+
+// Newest-first with a STABLE total order — findWhere issues no ORDER BY, and same-date rows are common
+// (dates have no time). Tiebreak: created_at desc, then the time-sortable uuidv7 id desc (deterministic).
+const byNewest = (a: TransactionRow, b: TransactionRow): number =>
+  b.date.localeCompare(a.date) || b.created_at - a.created_at || b.id.localeCompare(a.id)
 const toAsset = (r: AssetRow): Asset => ({ ...r, _sync_status: r._sync_status as Asset['_sync_status'] })
 const toLiability = (r: LiabilityRow): Liability => ({ ...r, _sync_status: r._sync_status as Liability['_sync_status'] })
 const toInvestment = (r: InvestmentRow): Investment => ({ ...r, _sync_status: r._sync_status as Investment['_sync_status'] })
@@ -71,6 +93,7 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
   const cfg = { deviceId, encryptedFields: [] as string[], softDelete: true }
 
   const accountRepo = createRepository(db, accounts, cfg)
+  const txRepo = createRepository(db, transactions, cfg)
   const assetRepo = createRepository(db, assets, cfg)
   const liabilityRepo = createRepository(db, liabilities, cfg)
   const investmentRepo = createRepository(db, investments, cfg)
@@ -89,6 +112,22 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
     is_active: p.is_active ?? true,
     color: p.color ?? null,
     icon: p.icon ?? null,
+    jurisdiction_code: p.jurisdiction_code ?? null,
+    deleted_at: null,
+  })
+  const serializeTransaction = (p: CreateTransactionInput): CreateInput<typeof transactions> => ({
+    account_id: p.account_id,
+    transfer_to_account_id: p.transfer_to_account_id ?? null,
+    transaction_type: p.transaction_type,
+    amount: p.amount,
+    currency: p.currency ?? 'USD',
+    category: p.category ?? null,
+    category_bidx: p.category_bidx ?? null,
+    subcategory: p.subcategory ?? null,
+    description: p.description ?? null,
+    date: p.date,
+    is_recurring: p.is_recurring ?? false,
+    recurring_frequency: p.recurring_frequency ?? null,
     jurisdiction_code: p.jurisdiction_code ?? null,
     deleted_at: null,
   })
@@ -144,6 +183,38 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
     deleted_at: null,
   })
 
+  // FN-4 — a transfer MUST set a distinct destination; a non-transfer MUST leave it null (fail-loud).
+  function assertTransferShape(type: string, transferTo: string | null | undefined, sourceId: string): void {
+    if (type === 'transfer') {
+      if (transferTo == null) throw new InvalidTransferError('a transfer requires transfer_to_account_id')
+      if (transferTo === sourceId) throw new InvalidTransferError('source and destination must differ')
+    } else if (transferTo != null) {
+      throw new InvalidTransferError(`a ${type} must not set transfer_to_account_id`)
+    }
+  }
+
+  // FN-3/FN-4 — DERIVED balance: opening_balance + Σ signed ledger. Outgoing rows (account_id=acct)
+  // sign income +/expense −/transfer −; incoming transfer rows (transfer_to_account_id=acct) add +.
+  // findWhere skips the soft-delete filter → add isNull(deleted_at) explicitly (repository-findwhere seam).
+  async function getBalance(accountId: string): Promise<Money> {
+    const acct = await accountRepo.findById(accountId)
+    if (acct == null) throw new Error(`account not found: ${accountId}`)
+    let bal: number = acct.opening_balance ?? 0
+    const out = await txRepo.findWhere(
+      and(eq(transactions.account_id, accountId), isNull(transactions.deleted_at)) as SQL,
+    )
+    for (const r of out) {
+      if (r.transaction_type === 'income') bal += r.amount
+      else if (r.transaction_type === 'expense') bal -= r.amount
+      else if (r.transaction_type === 'transfer') bal -= r.amount // outgoing transfer debits the source
+    }
+    const incoming = await txRepo.findWhere(
+      and(eq(transactions.transfer_to_account_id, accountId), isNull(transactions.deleted_at)) as SQL,
+    )
+    for (const r of incoming) bal += r.amount // incoming transfer credits the destination
+    return bal
+  }
+
   // Update/soft-delete on a missing id fail loud via the repository's own throw
   // (`Error('Row not found: <id>')`, repository.ts:412) — the checkins/journals precedent,
   // no finance-local pre-read guard. Soft-delete-aware update rejection is a repo-wide
@@ -166,6 +237,77 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
       return row ? toAccount(row) : null
     },
     listAccounts: async (): Promise<Account[]> => (await accountRepo.findAll()).map(toAccount),
+
+    // ── transactions + balance + transfers (FIN-05/06/07/08/09/10/11/12) ──
+    createTransaction: async (input: CreateTransactionInput): Promise<Transaction> => {
+      const p = CreateTransactionSchema.parse(input)
+      assertTransferShape(p.transaction_type, p.transfer_to_account_id, p.account_id) // FN-4
+      // NB: the create-side achievement emit (FIN-31) is a cross-module seam wired in S6.
+      return toTransaction(await txRepo.create(serializeTransaction(p)))
+    },
+    updateTransaction: async (id: string, patch: UpdateTransactionInput): Promise<Transaction> => {
+      const p = UpdateTransactionSchema.parse(patch)
+      // Re-validate FN-4 when ANY of its three legs changes (type · transfer_to · account_id) — an
+      // account_id change alone can turn a transfer into a self-transfer (source == dest).
+      if (
+        p.transaction_type !== undefined ||
+        p.transfer_to_account_id !== undefined ||
+        p.account_id !== undefined
+      ) {
+        const existing = await txRepo.findById(id)
+        if (existing == null) throw new Error(`Row not found: ${id}`)
+        const type = p.transaction_type ?? existing.transaction_type
+        const transferTo =
+          p.transfer_to_account_id !== undefined ? p.transfer_to_account_id : existing.transfer_to_account_id
+        assertTransferShape(type, transferTo, p.account_id ?? existing.account_id)
+      }
+      return toTransaction(await txRepo.update(id, p))
+    },
+    softDeleteTransaction: async (id: string): Promise<void> => {
+      await txRepo.delete(id) // balance re-derives on the next getBalance (FN-3)
+    },
+    listTransactions: async (filter: TransactionFilter = {}): Promise<Transaction[]> => {
+      const clauses: SQL[] = [isNull(transactions.deleted_at)]
+      if (filter.account_id) clauses.push(eq(transactions.account_id, filter.account_id))
+      if (filter.transaction_type) clauses.push(eq(transactions.transaction_type, filter.transaction_type))
+      if (filter.from) clauses.push(gte(transactions.date, filter.from))
+      if (filter.to) clauses.push(lte(transactions.date, filter.to))
+      const rows = await txRepo.findWhere(and(...clauses) as SQL)
+      // Newest first; M1 pagination = in-memory slice (single-user local ledger — findWhere has no limit/offset).
+      rows.sort(byNewest)
+      const start = filter.offset ?? 0
+      const sliced = filter.limit != null ? rows.slice(start, start + filter.limit) : rows.slice(start)
+      return sliced.map(toTransaction)
+    },
+    getTransactionsInRange: async (start: string, end: string): Promise<Transaction[]> => {
+      const rows = await txRepo.findWhere(
+        and(gte(transactions.date, start), lte(transactions.date, end), isNull(transactions.deleted_at)) as SQL,
+      )
+      rows.sort(byNewest)
+      return rows.map(toTransaction)
+    },
+    createTransfer: async (input: CreateTransferInput): Promise<Transaction> => {
+      if (input.fromAccountId === input.toAccountId) {
+        throw new InvalidTransferError('source and destination must differ')
+      }
+      // One transfer row (FN-4): account_id=source, transfer_to_account_id=dest; both balances derive from it.
+      return toTransaction(
+        await txRepo.create(
+          serializeTransaction({
+            account_id: input.fromAccountId,
+            transfer_to_account_id: input.toAccountId,
+            transaction_type: 'transfer',
+            amount: input.amount,
+            date: input.date,
+            currency: input.currency,
+            category: input.category,
+            subcategory: input.subcategory,
+            description: input.description,
+          }),
+        ),
+      )
+    },
+    getBalance,
 
     // ── assets (FIN-13) ─────────────────────────────────────────────
     createAsset: async (input: CreateAssetInput): Promise<Asset> => {

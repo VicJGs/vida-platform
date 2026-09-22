@@ -43,7 +43,7 @@
 | S | Functional (Vitest logic + failure paths) | Live-store smoke (real better-sqlite3 + `initVault()` + `migrate()`) | Status |
 |---|-------------------------------------------|----------------------------------------------------------------------|--------|
 | S1 | CRUD happy + invalid-enum reject + soft-delete hides + not-found fail-loud + faithful-echo defaults | create→read each of 5 tables; `deleted_at` set; `sync_queue` enqueued (13 tests) | ✅ PASS |
-| S2 | balance = opening+Σledger; edit/delete re-derives; transfer both-balances + excluded; source==dest rejects | live ledger writes; balance re-derive over real rows | ☐ |
+| S2 | balance = opening+Σledger; edit/delete re-derives; transfer both-balances + excluded; source==dest rejects; FN-4 on account_id change | live ledger writes; balance re-derive over real rows (11 tests) | ✅ PASS |
 | S3 | overview totals; net-worth = FN-7 sum; investment gain/loss; partial-flag on error | overview over a live multi-account/asset/liability set | ☐ |
 | S4 | handler registered; idempotent replay (same event_id → no double); ledger-movement co-write; lock-port deny-safe | fire `move_money` on the real rail; `applied_effects` UNIQUE holds | ☐ |
 | S5 | recurring forecast; `FxRateMissingError`; import refuse (ZK) fail-closed; grant-gate fail-closed | ingestion/egress ports exercised against built #44/#43 | ☐ |
@@ -55,6 +55,8 @@
 - **S1 (2026-09-21):** two code-review-driven refinements, both grounded:
   1. **No finance-local not-found error.** Dropped the initial `guardExists`/`FinanceEntityNotFoundError` — `repository.update()`/`delete()` already throw `Error('Row not found')` (repository.ts:412); the pre-read was a redundant SELECT and a divergence from the checkins/journals precedent (bare repo throw). Soft-delete-aware update rejection (update() ignores `deleted_at`) is a **repo-wide** concern → DB-11, not a finance patch (altitude).
   2. **`@vida/types` interfaces extended (FIN-01/FIN-27).** Added `Account.opening_balance`, liability G9 (`payment_frequency`/`next_payment_date`/`interest_type`/`payoff_date`), `IncomeStream.next_payment_date` — the schema had them, the interfaces didn't, so the exposed contract was incomplete. FIN-27 is homed to "finance service / @vida/types" (parts/finance.md:37), so this is in S1 scope, not deferred DB-11. `jurisdiction_code` interface exposure stays for S7 (FL-02).
+
+- **S2 (2026-09-21):** balance is DERIVED (FN-3) — no balance-column write on transaction mutation; `getBalance` recomputes live. Two code-review fixes folded: (1) `updateTransaction` re-validates FN-4 on an `account_id` change (an account_id-only patch could turn a transfer into a self-transfer that nets to 0 — regression-tested); (2) `listTransactions`/`getTransactionsInRange` use a stable `byNewest` comparator (date desc → created_at desc → uuidv7 id desc) since `findWhere` issues no `ORDER BY`. M1 pagination = in-memory slice (single-user local ledger). Transaction `tags` returns `[]` (inline column retired → entity_tags; real read is S6/FIN-35). Achievement emit (FIN-31) deferred to S6.
 
 ## Coverage check (Ratify completeness)
 48 homed legs = S1(13) + S2(8) + S3(3) + S4(1) + S5(7) + S6(6) + S7(5) + S8(5) = **48** ✓. Deferred set (FIN-18/23/24/36/38/39) + RIDE (FIN-43/44, FL-11) + ② ui legs = the complement, all homed above. Every `structural` EC = N/A (pure backend, Envision N/A).

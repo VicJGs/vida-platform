@@ -13,7 +13,7 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
-import { createFinanceService, type FinanceService } from '../index'
+import { createFinanceService, InvalidTransferError, type FinanceService } from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -185,5 +185,101 @@ describe('mod-finance S1 — entity CRUD', () => {
       // @ts-expect-error — invalid enum value is the failure path under test
       h.svc.createIncomeStream({ name: 'X', income_type: 'not_a_type', amount: 1 }),
     ).rejects.toThrow()
+  })
+})
+
+describe('mod-finance S2 — ledger + derived balance + transfers', () => {
+  let h: Harness
+  let acctA: string
+  let acctB: string
+  beforeEach(async () => {
+    h = await setup()
+    acctA = (await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 100_00, current_balance: 100_00 })).id
+    acctB = (await h.svc.createAccount({ name: 'B', account_type: 'savings' })).id
+  })
+
+  it('getBalance = opening_balance + Σ signed ledger (FN-3): income adds, expense subtracts', async () => {
+    expect(await h.svc.getBalance(acctA)).toBe(100_00) // opening only
+    await h.svc.createTransaction({ account_id: acctA, transaction_type: 'income', amount: 50_00, date: '2026-09-10' })
+    await h.svc.createTransaction({ account_id: acctA, transaction_type: 'expense', amount: 20_00, date: '2026-09-11' })
+    expect(await h.svc.getBalance(acctA)).toBe(130_00) // 100 + 50 − 20
+  })
+
+  it('createTransaction returns tags:[] — inline tags retired → entity_tags (FN-10, S6)', async () => {
+    const t = await h.svc.createTransaction({ account_id: acctA, transaction_type: 'income', amount: 1_00, date: '2026-09-10' })
+    expect(t.tags).toEqual([])
+    expect(t.transfer_to_account_id).toBeNull()
+  })
+
+  it('createTransaction rejects a transfer_to on a non-transfer + a transfer with no target (FN-4)', async () => {
+    await expect(
+      h.svc.createTransaction({ account_id: acctA, transaction_type: 'expense', amount: 1_00, date: '2026-09-10', transfer_to_account_id: acctB }),
+    ).rejects.toBeInstanceOf(InvalidTransferError)
+    await expect(
+      h.svc.createTransaction({ account_id: acctA, transaction_type: 'transfer', amount: 1_00, date: '2026-09-10' }),
+    ).rejects.toBeInstanceOf(InvalidTransferError)
+  })
+
+  it('createTransfer moves money: source −amount, destination +amount (FN-4, one row)', async () => {
+    const t = await h.svc.createTransfer({ fromAccountId: acctA, toAccountId: acctB, amount: 40_00, date: '2026-09-12' })
+    expect(t.transaction_type).toBe('transfer')
+    expect(t.transfer_to_account_id).toBe(acctB)
+    expect(await h.svc.getBalance(acctA)).toBe(60_00) // 100 − 40
+    expect(await h.svc.getBalance(acctB)).toBe(40_00) // 0 + 40
+    // exactly one row was created (FN-4 — one transfer row, not two)
+    expect((await h.svc.listTransactions()).filter((x) => x.transaction_type === 'transfer')).toHaveLength(1)
+  })
+
+  it('createTransfer rejects source == destination (FN-4)', async () => {
+    await expect(
+      h.svc.createTransfer({ fromAccountId: acctA, toAccountId: acctA, amount: 1_00, date: '2026-09-12' }),
+    ).rejects.toBeInstanceOf(InvalidTransferError)
+  })
+
+  it('updateTransaction re-derives the balance (FN-3, never a manual correction)', async () => {
+    const t = await h.svc.createTransaction({ account_id: acctA, transaction_type: 'expense', amount: 20_00, date: '2026-09-10' })
+    expect(await h.svc.getBalance(acctA)).toBe(80_00)
+    await h.svc.updateTransaction(t.id, { amount: 5_00 })
+    expect(await h.svc.getBalance(acctA)).toBe(95_00) // re-derived: 100 − 5
+  })
+
+  it('softDeleteTransaction removes it from the balance derivation + list (FN-3)', async () => {
+    const t = await h.svc.createTransaction({ account_id: acctA, transaction_type: 'expense', amount: 30_00, date: '2026-09-10' })
+    expect(await h.svc.getBalance(acctA)).toBe(70_00)
+    await h.svc.softDeleteTransaction(t.id)
+    expect(await h.svc.getBalance(acctA)).toBe(100_00) // deleted row excluded
+    expect((await h.svc.listTransactions()).find((x) => x.id === t.id)).toBeUndefined()
+  })
+
+  it('listTransactions filters by account/type/range + paginates (FIN-09)', async () => {
+    await h.svc.createTransaction({ account_id: acctA, transaction_type: 'income', amount: 1_00, date: '2026-08-01' })
+    await h.svc.createTransaction({ account_id: acctA, transaction_type: 'expense', amount: 2_00, date: '2026-09-05' })
+    await h.svc.createTransaction({ account_id: acctB, transaction_type: 'income', amount: 3_00, date: '2026-09-06' })
+    expect(await h.svc.listTransactions({ account_id: acctA })).toHaveLength(2)
+    expect(await h.svc.listTransactions({ transaction_type: 'income' })).toHaveLength(2)
+    expect(await h.svc.listTransactions({ from: '2026-09-01', to: '2026-09-30' })).toHaveLength(2)
+    // newest-first + pagination
+    const page = await h.svc.listTransactions({ limit: 1, offset: 0 })
+    expect(page).toHaveLength(1)
+    expect(page[0]!.date).toBe('2026-09-06') // newest
+  })
+
+  it('getTransactionsInRange returns the ranged ledger, newest first (FIN-10)', async () => {
+    await h.svc.createTransaction({ account_id: acctA, transaction_type: 'income', amount: 1_00, date: '2026-06-15' })
+    await h.svc.createTransaction({ account_id: acctA, transaction_type: 'income', amount: 2_00, date: '2026-07-15' })
+    const june = await h.svc.getTransactionsInRange('2026-06-01', '2026-06-30')
+    expect(june).toHaveLength(1)
+    expect(june[0]!.date).toBe('2026-06-15')
+  })
+
+  it('getBalance on a missing account fails loud', async () => {
+    await expect(h.svc.getBalance('missing')).rejects.toThrow(/not found/i)
+  })
+
+  it('updateTransaction rejects an account_id change that turns a transfer into a self-transfer (FN-4)', async () => {
+    const t = await h.svc.createTransfer({ fromAccountId: acctA, toAccountId: acctB, amount: 10_00, date: '2026-09-12' })
+    // changing source to equal the destination (transfer_to=B) must re-trigger FN-4 even though
+    // neither transaction_type nor transfer_to_account_id is in the patch.
+    await expect(h.svc.updateTransaction(t.id, { account_id: acctB })).rejects.toBeInstanceOf(InvalidTransferError)
   })
 })
