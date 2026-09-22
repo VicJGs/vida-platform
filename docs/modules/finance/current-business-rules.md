@@ -1,7 +1,7 @@
 # Current Business Rules — finance   (level: Module · tier: STANDARD)
-> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S3 of 8. Fiscal-legal (S7–S8) NOT yet built.
+> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S4 of 8. Fiscal-legal (S7–S8) NOT yet built.
 > Inherits: docs/core/business-rules.md (ZK-1/2/3, LF-1/2/3). Finance holds money data → ZK-1 governs `[E]` fields; the M1.0 `[E]` set is EMPTY (pass-through, M3 target). A child rule contradicting a parent is a CONFLICT — flagged, never overridden.
-> Last refreshed: 2026-09-22-mod-finance-S3  ·  Source of truth = the code (Currency Rule §XXIX).
+> Last refreshed: 2026-09-22-mod-finance-S4  ·  Source of truth = the code (Currency Rule §XXIX).
 
 ## 1. Invariants — what is ALWAYS / NEVER true
 
@@ -40,11 +40,28 @@
 - **BR-S3-6 (FN-8) — S3 sums RAW cents, no FX.** No currency conversion; multi-currency base-currency
   conversion + `FxRateMissingError` is S5/FIN-21 (needs the deferred Preferences base-currency port). `[FACT: slice-map.md:18,38]`
 
-### Pending / INTENDED (S4–S8 — not yet realized)
+### Realized (S4 — move_money effect handler)
+- **BR-S4-1 (FN-16 / ADR-012 E4).** Finance EXECUTES `move_money` as a **ledger movement** — a `transactions`
+  transfer row co-written through the rail's tx via `createInTx` (a documented effect handler, never a direct
+  cross-module write). `[FACT: services/finance/effects.ts move_money]`
+- **BR-S4-2 (R1).** Idempotency is the RAIL's (`applied_effects` check-and-insert); the handler does not
+  re-implement it. A replay of the same `(subjectNaturalKey, transition, targetRef)` → `applied:false`, no double
+  transfer. The `transactions` row carries no `effect_event_id` column in M1 (deferred output-row enhancement). `[FACT: foundation/effects/service.ts; effects.ts]`
+- **BR-S4-3 (FN-4).** `fromAccountId === toAccountId` → `InvalidTransferError` (fail-loud, nothing written). `[FACT: effects.ts]`
+- **BR-S4-4 (E5).** A penalty LOCKS a reward-target box, never destroys money. The store layer is deferred → the
+  lock routes to a deny-safe `StoreLockPort` that **fails loud** (`StoreLayerNotActive`, tx-threaded for the
+  future atomic swap), rolling the whole effect back. `[FACT: effects.ts denySafeStoreLockPort]`
+- **BR-S4-5 (C2).** `move_money ≠ grant_currency` — the `consequence_ledger` `kind='lock'` row on a penalty is
+  Gamification's `lock_currency` handler (separate rail effect), not this handler's. `[FACT: economy/handlers.ts]`
+  - **Consent (PC-3):** move_money touches the Finance sensitive class → the fire-time consent gate is required for
+    an UNTRUSTED caller. Deferred with the gate's callers (#46/#85): M1 is auth-off (ADR-017), no grant envelope,
+    only trusted in-process callers. `[FACT: ADR-010 PC-3; ADR-017; effects/CLAUDE.md]`
+
+### Pending / INTENDED (S5–S8 — not yet realized)
 - **FN-5 (FIN-20)** recurring forecast/materialize · **FN-8 (FIN-21)** private FX · **FN-9 (FIN-28/29)** ADR-014
   ingestion + external grant-gate · **FN-13/14 (FIN-36/38/39)** Commitments/budgeting/liability-payment
-  (undesigned) · **FN-15 (FIN-18/23/24)** store-tree net worth + lock-box · **FN-16 (FIN-26)** `move_money`
-  effect handler · **FL-01…10** fiscal-legal. Each homed in `slice-map.md`; **no rule may assume their internals.**
+  (undesigned) · **FN-15 (FIN-18/23/24)** store-tree net worth + lock-box · **FL-01…10** fiscal-legal. Each homed
+  in `slice-map.md`; **no rule may assume their internals.**
 
 ## 3. Rule inventory — explicit · implicit · invented
 - **EXPLICIT (schema/service-realized):** FN-2/3/4/10/11 (S1–S2), BR-S3-1…6 (S3) — all cited to `service.ts`/`schema/finance.ts`.
@@ -52,6 +69,10 @@
   from `getBalance`/lists (explicit `isNull(deleted_at)` on `findWhere` — the repository-findwhere seam); newest-first stable sort on ledger reads.
 - **INVENTED / DRIFT-RISK:** none. The DTOs (`FinanceOverview`/`InvestmentValue`/chart shapes) are service-local
   by design (`@vida/types` untouched — DB-11 does not own derivation DTOs).
+- **DB-11 reconcile (noted, not a bug):** `accounts.current_balance` (notNull, default 0, caller-settable at
+  create) is a **legacy column** — `getBalance` derives the authoritative balance from `opening_balance + Σ ledger`
+  and NEVER writes `current_balance`; `move_money` (S4) likewise only appends a transfer row. So `current_balance`
+  can go stale; **no reader should trust it — use `getBalance`.** A future DB-11 pass drops or derives-caches it. `[FACT: service.ts getBalance; effects.ts move_money]`
 
 ## 4. Validation & edge cases
 - Enum CHECKs (SQL, from the tuples): `account_type`(7), `transaction_type`{income,expense,transfer},

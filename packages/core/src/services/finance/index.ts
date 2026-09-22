@@ -19,3 +19,15 @@ export {
   type CreateIncomeStreamInput,
   type UpdateIncomeStreamInput,
 } from './types'
+// S4 — the move_money effect handler (FIN-26)
+export {
+  createFinanceEffectHandlers,
+  registerFinanceEffects,
+  denySafeStoreLockPort,
+  MoveMoneyPayload,
+  MalformedMoveMoneyPayload,
+  StoreLayerNotActive,
+  type FinanceEffectHandlers,
+  type StoreLockPort,
+  type MoveMoneyPayloadT,
+} from './effects'

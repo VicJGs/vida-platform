@@ -45,7 +45,7 @@
 | S1 | CRUD happy + invalid-enum reject + soft-delete hides + not-found fail-loud + faithful-echo defaults | create→read each of 5 tables; `deleted_at` set; `sync_queue` enqueued (13 tests) | ✅ PASS |
 | S2 | balance = opening+Σledger; edit/delete re-derives; transfer both-balances + excluded; source==dest rejects; FN-4 on account_id change | live ledger writes; balance re-derive over real rows (11 tests) | ✅ PASS |
 | S3 | overview totals; net-worth = FN-7 sum; investment gain/loss; partial-flag on error | overview over a live multi-account/asset/liability set; per-chart degrade via live DROP TABLE (41 tests) | ✅ PASS |
-| S4 | handler registered; idempotent replay (same event_id → no double); ledger-movement co-write; lock-port deny-safe | fire `move_money` on the real rail; `applied_effects` UNIQUE holds | ☐ |
+| S4 | handler registered; idempotent replay (same event_id → no double); ledger-movement co-write; lock-port deny-safe | fire `move_money` on the real rail; `applied_effects` holds; deny-safe rollback (7 tests) | ✅ PASS |
 | S5 | recurring forecast; `FxRateMissingError`; import refuse (ZK) fail-closed; grant-gate fail-closed | ingestion/egress ports exercised against built #44/#43 | ☐ |
 | S6 | `/summary` provider output; entity_tags read/write; dueIn over G9 schedules; notes delegate | provider registered in the live Journals registry; entity_tags round-trip | ☐ |
 | S7 | residency/legal-entity/money-touch CRUD; grant-gate fail-closed; typed errors | live CRUD on fiscal_residencies/legal_entities; jurisdiction link | ☐ |
@@ -55,6 +55,17 @@
 - **S1 (2026-09-21):** two code-review-driven refinements, both grounded:
   1. **No finance-local not-found error.** Dropped the initial `guardExists`/`FinanceEntityNotFoundError` — `repository.update()`/`delete()` already throw `Error('Row not found')` (repository.ts:412); the pre-read was a redundant SELECT and a divergence from the checkins/journals precedent (bare repo throw). Soft-delete-aware update rejection (update() ignores `deleted_at`) is a **repo-wide** concern → DB-11, not a finance patch (altitude).
   2. **`@vida/types` interfaces extended (FIN-01/FIN-27).** Added `Account.opening_balance`, liability G9 (`payment_frequency`/`next_payment_date`/`interest_type`/`payoff_date`), `IncomeStream.next_payment_date` — the schema had them, the interfaces didn't, so the exposed contract was incomplete. FIN-27 is homed to "finance service / @vida/types" (parts/finance.md:37), so this is in S1 scope, not deferred DB-11. `jurisdiction_code` interface exposure stays for S7 (FL-02).
+
+- **S4 (2026-09-22):** `move_money` effect handler (FIN-26) in new file `services/finance/effects.ts` (mirrors
+  `foundation/economy/handlers.ts`): `createFinanceEffectHandlers` + `registerFinanceEffects`; the Additive handler
+  co-writes a `transactions` transfer via `createInTx` (rail owns idempotency). Deny-safe `StoreLockPort`
+  (`StoreLayerNotActive`, tx-threaded for the FIN-24 swap). Full gate: PLAN → gate-1 /critique REVISE→SHIP (B1
+  EffectEvent identity contract grounded in `lifecycle.ts:75`+BR-2; B2 `StoreLockPort(boxId, tx)` for atomic swap)
+  → /adr-check (ADR-004 §3.2.5 rail-owns-idempotency; consent-defer grounded in PC-3+ADR-017; output-row
+  effect_event_id defer matches the rail's own posture) → /preflight PASSED → gate-2 SHIP → implement → Verification
+  Gate PASS (7 tests over the REAL rail) → code-review (3 findings: F1 spec/test targetRef reconciled · F2 silent-
+  collision homed to #48 · F3 current_balance→DB-11 note) → pre-ship /critique SHIP. @vida/core **1216/1216** (+9),
+  tsc 0, eslint 0. §XXIX: `finance/current-*` refreshed (S4). No service.ts/@vida/types change (additive new file).
 
 - **S3 (2026-09-22):** derived analytics (FIN-17/19/22) appended to `createFinanceService` (types.ts DTOs +
   service.ts closures; `@vida/types` untouched — DTOs service-local). Full gate: PLAN `PLAN-S3-derived-analytics.md`

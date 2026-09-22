@@ -13,7 +13,19 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
-import { createFinanceService, InvalidTransferError, type FinanceService } from '../index'
+import { appliedEffects } from '../../../db/schema/foundation/effects'
+import { createEffectRail, createEffectRegistry, type EffectEvent } from '../../../foundation/effects'
+import {
+  createFinanceService,
+  InvalidTransferError,
+  createFinanceEffectHandlers,
+  registerFinanceEffects,
+  denySafeStoreLockPort,
+  MalformedMoveMoneyPayload,
+  StoreLayerNotActive,
+  type StoreLockPort,
+  type FinanceService,
+} from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -464,5 +476,99 @@ describe('mod-finance S3 — derived analytics', () => {
       expect(d.spendingByCategory).not.toBeNull() // degrades ONLY that chart
       expect(d.incomeVsExpense).not.toBeNull()
     })
+  })
+})
+
+describe('mod-finance S4 — move_money effect handler', () => {
+  let h: Harness
+  let rail: ReturnType<typeof createEffectRail>
+  let acctA: string
+  let acctB: string
+
+  // Build the REAL rail + registry over the same store, register the finance handler (the M1 trusted caller).
+  function wire(storeLock?: StoreLockPort): void {
+    const registry = createEffectRegistry()
+    const handlers = createFinanceEffectHandlers(h.db, 'test-device', storeLock)
+    registerFinanceEffects(registry, handlers)
+    rail = createEffectRail(h.db, registry)
+  }
+  const ev = (over: Partial<EffectEvent> & { payload: Record<string, unknown> }): EffectEvent => ({
+    subjectNaturalKey: 'rule-1',
+    transition: 'reward',
+    effectType: 'move_money',
+    targetRef: acctB,
+    ...over,
+  })
+
+  beforeEach(async () => {
+    h = await setup()
+    acctA = (await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 100_00, current_balance: 100_00 })).id
+    acctB = (await h.svc.createAccount({ name: 'B', account_type: 'savings' })).id
+    wire()
+  })
+
+  it('registers + executes move_money as ONE transfer row that moves both balances (FIN-26/BR-S4-1)', async () => {
+    const res = await rail.applyEffect(ev({ payload: { fromAccountId: acctA, toAccountId: acctB, amount: 40_00, date: '2026-09-20' } }))
+    expect(res.applied).toBe(true)
+    const transfers = (await h.svc.listTransactions()).filter((t) => t.transaction_type === 'transfer')
+    expect(transfers).toHaveLength(1)
+    expect(await h.svc.getBalance(acctA)).toBe(60_00) // 100 − 40
+    expect(await h.svc.getBalance(acctB)).toBe(40_00) // 0 + 40 (derived, FN-3)
+  })
+
+  it('idempotent replay → applied:false, NO second row; a distinct move → applied:true (BR-S4-2)', async () => {
+    const payload = { fromAccountId: acctA, toAccountId: acctB, amount: 40_00, date: '2026-09-20' }
+    expect((await rail.applyEffect(ev({ payload }))).applied).toBe(true)
+    // same subjectNaturalKey+transition+targetRef → same effect_event_id → deduped
+    expect((await rail.applyEffect(ev({ payload }))).applied).toBe(false)
+    // a genuinely-distinct move (different transition) → applies
+    expect((await rail.applyEffect(ev({ transition: 'reward-2', payload }))).applied).toBe(true)
+    expect((await h.svc.listTransactions()).filter((t) => t.transaction_type === 'transfer')).toHaveLength(2)
+  })
+
+  it('source == destination → InvalidTransferError, nothing written (BR-S4-3)', async () => {
+    await expect(
+      rail.applyEffect(ev({ targetRef: acctA, payload: { fromAccountId: acctA, toAccountId: acctA, amount: 10_00 } })),
+    ).rejects.toBeInstanceOf(InvalidTransferError)
+    expect(await h.svc.listTransactions()).toHaveLength(0)
+  })
+
+  it('malformed payload → MalformedMoveMoneyPayload, nothing written', async () => {
+    await expect(
+      rail.applyEffect(ev({ payload: { fromAccountId: acctA, amount: -5 } })), // missing toAccountId + non-positive
+    ).rejects.toBeInstanceOf(MalformedMoveMoneyPayload)
+    expect(await h.svc.listTransactions()).toHaveLength(0)
+  })
+
+  it('lockTarget + deny-safe port → StoreLayerNotActive AND the transfer rolls back atomically (BR-S4-4)', async () => {
+    // deny-safe port is the default; a penalty lock must fail loud and revert the whole effect.
+    await expect(
+      // a penalty's target dimension IS the box being locked → targetRef = the box id (producer convention)
+      rail.applyEffect(ev({ transition: 'penalty', targetRef: 'box-1', payload: { fromAccountId: acctA, toAccountId: acctB, amount: 20_00, lockTarget: 'box-1' } })),
+    ).rejects.toBeInstanceOf(StoreLayerNotActive)
+    expect(await h.svc.listTransactions()).toHaveLength(0) // transfer rolled back
+    expect(await h.db.select().from(appliedEffects).all()).toHaveLength(0) // dedup key not burned (same tx rollback)
+    // balances untouched
+    expect(await h.svc.getBalance(acctA)).toBe(100_00)
+  })
+
+  it('a real store-lock port receives the rail tx and co-writes atomically (B2 — swap shape)', async () => {
+    let received = false
+    const spyLock: StoreLockPort = {
+      async lock(_boxId, tx) {
+        received = tx != null // the future real port co-writes through this tx (F1 §3B)
+      },
+      async unlock() {},
+    }
+    wire(spyLock)
+    const res = await rail.applyEffect(ev({ transition: 'penalty', targetRef: 'box-1', payload: { fromAccountId: acctA, toAccountId: acctB, amount: 20_00, date: '2026-09-20', lockTarget: 'box-1' } }))
+    expect(res.applied).toBe(true)
+    expect(received).toBe(true) // lock was called WITH the tx
+    expect((await h.svc.listTransactions()).filter((t) => t.transaction_type === 'transfer')).toHaveLength(1)
+  })
+
+  it('the deny-safe port throws on both lock and unlock (never fabricates a lock)', async () => {
+    await expect(denySafeStoreLockPort.lock('box', {} as never)).rejects.toBeInstanceOf(StoreLayerNotActive)
+    await expect(denySafeStoreLockPort.unlock('box', {} as never)).rejects.toBeInstanceOf(StoreLayerNotActive)
   })
 })

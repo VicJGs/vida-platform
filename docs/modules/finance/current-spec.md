@@ -1,7 +1,7 @@
 # Current Spec — finance   (level: Module · tier: STANDARD)
-> Coverage: schema (`020_finance`, 9 tables) + colocated `@vida/types` + validators + service tier S1–S3 of 8. Fiscal-legal service (S7–S8) NOT yet built.
+> Coverage: schema (`020_finance`, 9 tables) + colocated `@vida/types` + validators + service tier S1–S4 of 8. Fiscal-legal service (S7–S8) NOT yet built.
 > Inherits: docs/core (business-rules constitution — ZK-1/2/3, LF-1/2/3). This doc must not contradict any level above it.
-> Last refreshed: 2026-09-22-mod-finance-S3  ·  Source of truth = the code (Currency Rule §XXIX).
+> Last refreshed: 2026-09-22-mod-finance-S4  ·  Source of truth = the code (Currency Rule §XXIX).
 
 ## 1. Identity & responsibility
 **What it is.** The finance module — accounts, transactions, assets, liabilities, investments, income streams —
@@ -18,7 +18,13 @@ over the DB-4 `020_finance` schema. This build delivers the ① **backend servic
 - Not the tag owner — consumes `entity_tags` (Spaces SP1); notes via the `pages` seam (both S6). `[FACT: parts/finance.md]`
 
 ## 2. Contract — what it exposes / needs
-**Status: ① BACKEND — S1 ✅ · S2 ✅ · S3 ✅ · S4–S8 ☐ (5 slices remain).** ② fe-finance separate.
+**Status: ① BACKEND — S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5–S8 ☐ (4 slices remain).** ② fe-finance separate.
+
+**S4 (2026-09-22) — `move_money` effect handler (FIN-26), new file `effects.ts`:**
+`createFinanceEffectHandlers(db, deviceId, storeLock?)` + `registerFinanceEffects(registry, handlers)` — the
+`move_money` Additive handler co-writes a `transactions` transfer row via `createInTx` (rail owns idempotency,
+BR-S4-2); `MoveMoneyPayload` (Zod); the penalty branch hits a deny-safe `StoreLockPort` (`StoreLayerNotActive`,
+tx-threaded for the FIN-24 atomic swap). Consent-gating deferred (#48). `[FACT: services/finance/effects.ts]`
 
 **S3 (2026-09-22) — derived analytics (FIN-17/19/22), append-only to `createFinanceService`:**
 - `getOverview(opts?: {month?}) → FinanceOverview` — `{totalBalance, totalAssets, totalLiabilities, netWorth,
@@ -55,8 +61,8 @@ Overview/dashboard · account balance · investment value · each chart — load
 error → flagged partial (`partial` / `degraded[]`), never a wrong number. Empty dataset → all-zero, not an error.
 
 ## 6. Verification
-S1–S3: @vida/core **1207/1207** (+16 S3), tsc 11/11, eslint 0, live-store Verification Gate PASS (real
-better-sqlite3 + `initVault()` + `migrate()`; the degrade test drops a real table). `[FACT: finance-service.test.ts, 41 tests]`
+S1–S4: @vida/core **1216/1216** (+9 S4), tsc 11/11, eslint 0, live-store Verification Gate PASS (real
+better-sqlite3 + `initVault()` + `migrate()`; S3 degrade test drops a real table; S4 fires the REAL effect rail). `[FACT: finance-service.test.ts, 48 tests]`
 
 ## Completion checklist
 - [x] §1 identity · [x] §2 contract (S1–S3 done, S4–S8 pending) · [x] §3 structure · [x] §4 deferred homed · [x] §5 states · [x] §6 verification
