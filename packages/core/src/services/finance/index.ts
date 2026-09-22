@@ -31,3 +31,20 @@ export {
   type StoreLockPort,
   type MoveMoneyPayloadT,
 } from './effects'
+// S5 — external / ingestion / config seams (FIN-20/21/25/28/29/30/40)
+export {
+  FxRateMissingError,
+  ZeroKnowledgeViolationError,
+  type FxRatePort,
+  type RecurringModePort,
+  type PersistedAggregatesPort,
+  type ManagedCategoryPort,
+  type RecurringForecast,
+  type ParsedStatementRow,
+} from './types'
+export {
+  createInMemoryFxRatePort,
+  forecastOnlyRecurringPort,
+  computeOnlyAggregatesPort,
+  passthroughCategoryPort,
+} from './config-seams'

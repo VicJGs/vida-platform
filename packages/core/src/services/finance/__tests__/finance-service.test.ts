@@ -15,6 +15,7 @@ import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
 import { appliedEffects } from '../../../db/schema/foundation/effects'
 import { createEffectRail, createEffectRegistry, type EffectEvent } from '../../../foundation/effects'
+import type { IngestionGuard, IngestionAct } from '../../../foundation/ingestion'
 import {
   createFinanceService,
   InvalidTransferError,
@@ -23,7 +24,10 @@ import {
   denySafeStoreLockPort,
   MalformedMoveMoneyPayload,
   StoreLayerNotActive,
+  FxRateMissingError,
+  ZeroKnowledgeViolationError,
   type StoreLockPort,
+  type ParsedStatementRow,
   type FinanceService,
 } from '../index'
 
@@ -570,5 +574,115 @@ describe('mod-finance S4 — move_money effect handler', () => {
   it('the deny-safe port throws on both lock and unlock (never fabricates a lock)', async () => {
     await expect(denySafeStoreLockPort.lock('box', {} as never)).rejects.toBeInstanceOf(StoreLayerNotActive)
     await expect(denySafeStoreLockPort.unlock('box', {} as never)).rejects.toBeInstanceOf(StoreLayerNotActive)
+  })
+})
+
+describe('mod-finance S5 — external / ingestion / config seams', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // ── FIN-20 recurring forecast ─────────────────────────────────────
+  it('forecastRecurring projects a monthly recurring txn across the range; non-recurring excluded (FIN-20)', async () => {
+    const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
+    await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 20_00, date: '2026-01-15', is_recurring: true, recurring_frequency: 'monthly' })
+    await h.svc.createTransaction({ account_id: a, transaction_type: 'income', amount: 5_00, date: '2026-01-20' }) // one-off, excluded
+    const fc = await h.svc.forecastRecurring({ from: '2026-01-01', to: '2026-03-31' })
+    expect(fc.map((f) => f.date)).toEqual(['2026-01-15', '2026-02-15', '2026-03-15'])
+    expect(fc.every((f) => f.amount === 20_00 && f.transaction_type === 'expense')).toBe(true)
+  })
+
+  it('forecastRecurring clamps a month-end anchor + never drifts the day (Jan 31 → Feb 28 → Mar 31, F3)', async () => {
+    const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
+    await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 90_00, date: '2026-01-31', is_recurring: true, recurring_frequency: 'monthly' })
+    const fc = await h.svc.forecastRecurring({ from: '2026-01-01', to: '2026-04-30' })
+    expect(fc.map((f) => f.date)).toEqual(['2026-01-31', '2026-02-28', '2026-03-31', '2026-04-30']) // Feb not skipped; day restored to 31
+  })
+
+  it('forecastRecurring does NOT silently vanish for a far-past anchor (arithmetic jump, F1)', async () => {
+    const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
+    // a daily recurring anchored 26 years before the window — the old O(distance) advance loop starved to []
+    await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 1_00, date: '2000-01-01', is_recurring: true, recurring_frequency: 'daily' })
+    const fc = await h.svc.forecastRecurring({ from: '2026-03-01', to: '2026-03-05' })
+    expect(fc.map((f) => f.date)).toEqual(['2026-03-01', '2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05'])
+  })
+
+  it('materializeDue returns [] under the default forecast-only mode (never auto-writes, FIN-20)', async () => {
+    expect(await h.svc.materializeDue()).toEqual([])
+    expect(await h.svc.listTransactions()).toHaveLength(0) // nothing written
+  })
+
+  // ── FIN-21 FX ─────────────────────────────────────────────────────
+  it('convertToBase: same-currency identity; cross-currency converts; missing rate → FxRateMissingError (no silent 1:1)', async () => {
+    expect(await h.svc.convertToBase(50_00, 'USD', 'USD')).toBe(50_00) // identity, no rate needed
+    await h.svc.setFxRate('EUR', 'USD', 1.1)
+    expect(await h.svc.convertToBase(100_00, 'EUR', 'USD')).toBe(110_00) // round(100_00 × 1.1)
+    await expect(h.svc.convertToBase(1_00, 'GBP', 'USD')).rejects.toBeInstanceOf(FxRateMissingError) // never silent 1:1
+  })
+
+  // ── FIN-30 managed category ───────────────────────────────────────
+  it('resolveCategory passthrough default → free-text allowed, managed:false (FIN-30)', async () => {
+    expect(await h.svc.resolveCategory('groceries')).toEqual({ category: 'groceries', managed: false })
+  })
+
+  // ── FIN-25 persisted aggregates ───────────────────────────────────
+  it('aggregatesPersisted default false → S3 stays compute-only (FIN-25)', async () => {
+    expect(await h.svc.aggregatesPersisted()).toBe(false)
+  })
+
+  // ── FIN-28 import-reconcile ───────────────────────────────────────
+  it('importStatement stages + auto-matches; confirmImport commits confirmed rows as real txns (FIN-28)', async () => {
+    const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
+    // an existing manual txn that one imported row should auto-match (date+amount within tolerance)
+    await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 25_00, date: '2026-02-01' })
+    const rows: ParsedStatementRow[] = [
+      { sourceRowId: 'r1', date: '2026-02-01', amountCents: 25_00, account_id: a, transaction_type: 'expense', description: 'Coffee' }, // matches existing
+      { sourceRowId: 'r2', date: '2026-02-05', amountCents: 300_00, account_id: a, transaction_type: 'income' }, // new
+    ]
+    const { batchId, staged } = await h.svc.importStatement(rows)
+    expect(staged.find((s) => s.sourceRowId === 'r1')?.status).toBe('auto_matched') // offered for merge (not silent dup)
+    expect(staged.find((s) => s.sourceRowId === 'r2')?.status).toBe('unmatched')
+
+    // user confirms only the new row → one new txn created; the round-trip uses the SAME instance staging port (B3)
+    const res = await h.svc.confirmImport(batchId, ['r2'])
+    expect(res.committed).toEqual(['r2'])
+    const incomes = await h.svc.listTransactions({ transaction_type: 'income' })
+    expect(incomes).toHaveLength(1)
+    expect(incomes[0]!.amount).toBe(300_00)
+  })
+
+  it('confirming an auto_matched row MERGES (no duplicate created) — X8 never-silent-dup (F2)', async () => {
+    const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
+    await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 25_00, date: '2026-02-01' })
+    const before = (await h.svc.listTransactions()).length // 1
+    const rows: ParsedStatementRow[] = [
+      { sourceRowId: 'm1', date: '2026-02-01', amountCents: 25_00, account_id: a, transaction_type: 'expense' }, // matches existing
+    ]
+    const { batchId, staged } = await h.svc.importStatement(rows)
+    expect(staged[0]!.status).toBe('auto_matched')
+    // even if the user confirms the auto-matched row, it merges into the existing txn — NO new row
+    await h.svc.confirmImport(batchId, ['m1'])
+    expect(await h.svc.listTransactions()).toHaveLength(before) // still 1, no duplicate
+  })
+
+  // ── FIN-29 external grant-gate ────────────────────────────────────
+  const act: IngestionAct = {
+    defId: 'cap-bank',
+    source: { integrationId: 'bank', layer: 'user-managed', normalizationContractId: 'nc-1' },
+    dataScope: { sensitiveModules: ['finance'] },
+  }
+  const stubGuard = (permitted: boolean, reason?: string): IngestionGuard =>
+    ({ assertIngestionPermitted: async () => ({ permitted, reason }) }) as unknown as IngestionGuard
+
+  it('assertExternalAccess fails closed when NO ingestion guard is wired (M1 default, BR-S5-5)', async () => {
+    await expect(h.svc.assertExternalAccess(act)).rejects.toBeInstanceOf(ZeroKnowledgeViolationError)
+  })
+
+  it('assertExternalAccess delegates to the injected guard (permit resolves, deny → ZeroKnowledgeViolationError)', async () => {
+    const permitSvc = createFinanceService({ db: h.db, deviceId: 'test-device', ingestionGuard: stubGuard(true) })
+    await expect(permitSvc.assertExternalAccess(act)).resolves.toBeUndefined()
+    const denySvc = createFinanceService({ db: h.db, deviceId: 'test-device', ingestionGuard: stubGuard(false, 'server_proxy_refused') })
+    await expect(denySvc.assertExternalAccess(act)).rejects.toBeInstanceOf(ZeroKnowledgeViolationError)
   })
 })

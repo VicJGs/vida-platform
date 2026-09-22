@@ -25,10 +25,26 @@ import type {
   CreateIncomeStreamSchema,
   UpdateIncomeStreamSchema,
 } from '../../validators/finance'
+import type {
+  StagedRow,
+  MatchTolerance,
+  CommitResult,
+  ImportStagingPort,
+  IngestionGuard,
+  IngestionAct,
+} from '../../foundation/ingestion'
 
 export interface FinanceServiceDeps {
   db: DrizzleDb
   deviceId: string
+  // ── S5: deferred-store ports (optional; each defaults to a deny-safe "not-configured" impl) ──
+  fx?: FxRatePort // default: in-memory (rates settable in-process; swapped for Preferences at M2)
+  recurringMode?: RecurringModePort // default: forecast-only (never auto-materializes)
+  persistedAggregates?: PersistedAggregatesPort // default: disabled (compute-only)
+  managedCategory?: ManagedCategoryPort // default: passthrough (free-text allowed)
+  stagingPort?: ImportStagingPort // default: in-memory (durable import_staging = M2); INSTANCE-shared
+  ingestionGuard?: IngestionGuard // BUILT #44, app/M2-injected; absent ⇒ external access fails closed
+  importTolerance?: MatchTolerance // default: { dateDays: 3, amountCents: 0 } (exact-amount, ±3d)
 }
 
 // --- Zod-inferred input shapes (validators/finance.ts) ----------------------
@@ -149,6 +165,65 @@ export interface ChartDatasets {
   degraded: string[]
 }
 
+// ── S5: deferred-store ports (deny-safe defaults live in config-seams.ts) ────────────────────────
+/** FX rates — device-side/manual only (ZK-1, never server-fetched). `getRate` null = not configured. */
+export interface FxRatePort {
+  getRate(from: string, to: string): Promise<number | null>
+  setRate(from: string, to: string, rate: number): Promise<void>
+}
+/** Recurring mode — a Preferences setting (deferred). Default 'forecast' (never auto-materializes, BR-S5-1). */
+export interface RecurringModePort {
+  mode(): Promise<'forecast' | 'materialize'>
+}
+/** Persisted-aggregates opt-in (deferred Preferences). Default false (compute-only, BR-S5-3). */
+export interface PersistedAggregatesPort {
+  enabled(): Promise<boolean>
+}
+/** Managed-category resolve (deferred store). Default passthrough (free-text, BR-S5-6). null = not in list. */
+export interface ManagedCategoryPort {
+  resolve(category: string): Promise<string | null>
+}
+
+// ── S5: DTOs ─────────────────────────────────────────────────────
+/** A projected occurrence of a recurring transaction — a PREDICTION, never a written row (FIN-20). */
+export interface RecurringForecast {
+  date: string // 'YYYY-MM-DD'
+  amount: Money
+  account_id: string
+  transaction_type: TransactionType
+  sourceTransactionId: string
+}
+/** The device/P6 CSV-OFX parse output; maps to an ingestion StagedRow (its `parsed` carries this) for matching,
+ *  and carries the finance fields needed to CREATE the transaction on commit (FIN-28). */
+export interface ParsedStatementRow {
+  sourceRowId: string
+  date: string // 'YYYY-MM-DD'
+  amountCents: Money
+  account_id: string
+  transaction_type: TransactionType
+  description?: string | null
+  category?: string | null
+}
+
+// ── S5: typed errors (FN-40 fail-loud) ───────────────────────────
+/** FIN-21 — a cross-currency conversion with no configured rate (never a silent 1:1). */
+export class FxRateMissingError extends Error {
+  constructor(
+    public readonly from: string,
+    public readonly to: string,
+  ) {
+    super(`No FX rate configured for ${from} → ${to} (set one device-side; rates are never server-fetched)`)
+    this.name = 'FxRateMissingError'
+  }
+}
+/** FIN-28/29 — a path that would need server plaintext / an ungranted external reach (refused, not downgraded). */
+export class ZeroKnowledgeViolationError extends Error {
+  constructor(reason: string) {
+    super(`Refused (zero-knowledge): ${reason}`)
+    this.name = 'ZeroKnowledgeViolationError'
+  }
+}
+
 export interface FinanceService {
   // ── S1: accounts ────────────────────────────────────────────────
   createAccount(input: CreateAccountInput): Promise<Account>
@@ -180,6 +255,26 @@ export interface FinanceService {
   getAssetLiabilityBreakdown(): Promise<AssetLiabilityBreakdown>
   /** FIN-22 aggregator — the default chart set; a failing chart degrades alone (`degraded`). */
   getChartDatasets(range: ChartRange): Promise<ChartDatasets>
+
+  // ── S5: external / ingestion / config seams (deny-safe over deferred stores) ──
+  /** FIN-20 — project recurring txns across a range; creates NO row. */
+  forecastRecurring(range: ChartRange): Promise<RecurringForecast[]>
+  /** FIN-20 — materialize due recurring rows; `[]` under the default forecast-only mode. */
+  materializeDue(asOf?: string): Promise<Transaction[]>
+  /** FIN-21 — convert to base currency; identity if equal; missing rate → FxRateMissingError (no silent 1:1). */
+  convertToBase(amount: Money, from: string, base: string): Promise<Money>
+  getFxRate(from: string, to: string): Promise<number | null>
+  setFxRate(from: string, to: string, rate: number): Promise<void>
+  /** FIN-30 — resolve a category against the managed list; free-text passthrough default. No category_bidx (M3). */
+  resolveCategory(category: string): Promise<{ category: string; managed: boolean }>
+  /** FIN-25 — whether derived aggregates are persisted (opt-in); default false → S3 compute-only. */
+  aggregatesPersisted(): Promise<boolean>
+  /** FIN-28 — stage parsed CSV/OFX rows + auto-match vs existing txns; returns a batch for user confirm. */
+  importStatement(rows: ParsedStatementRow[]): Promise<{ batchId: string; staged: StagedRow[] }>
+  /** FIN-28 — commit the user-confirmed rows of a batch as real transactions (never silent duplicate). */
+  confirmImport(batchId: string, confirmedSourceRowIds: string[]): Promise<CommitResult>
+  /** FIN-29 — gate external access via the injected ingestion guard; no guard ⇒ ZeroKnowledgeViolationError. */
+  assertExternalAccess(act: IngestionAct): Promise<void>
 
   // ── S1: assets ──────────────────────────────────────────────────
   createAsset(input: CreateAssetInput): Promise<Asset>

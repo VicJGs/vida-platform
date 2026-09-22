@@ -1,7 +1,7 @@
 # Current Business Rules — finance   (level: Module · tier: STANDARD)
-> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S4 of 8. Fiscal-legal (S7–S8) NOT yet built.
+> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S5 of 8. Fiscal-legal (S7–S8) NOT yet built.
 > Inherits: docs/core/business-rules.md (ZK-1/2/3, LF-1/2/3). Finance holds money data → ZK-1 governs `[E]` fields; the M1.0 `[E]` set is EMPTY (pass-through, M3 target). A child rule contradicting a parent is a CONFLICT — flagged, never overridden.
-> Last refreshed: 2026-09-22-mod-finance-S4  ·  Source of truth = the code (Currency Rule §XXIX).
+> Last refreshed: 2026-09-22-mod-finance-S5  ·  Source of truth = the code (Currency Rule §XXIX).
 
 ## 1. Invariants — what is ALWAYS / NEVER true
 
@@ -57,11 +57,31 @@
     an UNTRUSTED caller. Deferred with the gate's callers (#46/#85): M1 is auth-off (ADR-017), no grant envelope,
     only trusted in-process callers. `[FACT: ADR-010 PC-3; ADR-017; effects/CLAUDE.md]`
 
-### Pending / INTENDED (S5–S8 — not yet realized)
-- **FN-5 (FIN-20)** recurring forecast/materialize · **FN-8 (FIN-21)** private FX · **FN-9 (FIN-28/29)** ADR-014
-  ingestion + external grant-gate · **FN-13/14 (FIN-36/38/39)** Commitments/budgeting/liability-payment
-  (undesigned) · **FN-15 (FIN-18/23/24)** store-tree net worth + lock-box · **FL-01…10** fiscal-legal. Each homed
-  in `slice-map.md`; **no rule may assume their internals.**
+### Realized (S5 — external / ingestion / config seams; deny-safe over deferred stores)
+- **BR-S5-1 (FN-5).** Recurring = **forecast-by-default** (`forecastRecurring` projects occurrences, creates NO
+  row; computed by index from the anchor → month-end clamped, no day-drift). Materialize is opt-in via a deferred
+  `RecurringModePort` (default forecast-only → `materializeDue` returns `[]`, never auto-writes). `[FACT: service.ts forecastRecurring/materializeDue]`
+- **BR-S5-2 (FN-8/ZK-1).** `convertToBase`: same-currency identity; else a device-side `FxRatePort` rate;
+  **missing rate → `FxRateMissingError`, never a silent 1:1**. Rates are never server-fetched. `[FACT: service.ts convertToBase]`
+- **BR-S5-3 (FN-6).** Persisted-aggregates opt-in; `aggregatesPersisted()` default **false** → S3 stays compute-only. `[FACT: service.ts; config-seams.ts]`
+- **BR-S5-4 (FN-9/X1/X8).** CSV/OFX import over the built ingestion reconcile primitives: `importStatement`
+  (stage parsed rows → `autoMatch` vs existing) → `confirmImport` (commit confirmed as real txns). An
+  `auto_matched` row **merges (never a silent duplicate)**; instance staging port round-trips by `batchId`;
+  durable `import_staging` = M2. `[FACT: service.ts importStatement/confirmImport]`
+- **BR-S5-5 (FN-9/X5/ADR-010).** External access gates via the **injected** ingestion guard (fail-closed on the
+  ADR-010 grant fields, no new table); no guard wired (M1) → `ZeroKnowledgeViolationError`. Finance constructs no
+  egress/ingestion guard — it inherits the compositional-exfiltration rule by delegating. `[FACT: service.ts assertExternalAccess]`
+- **BR-S5-6 (FN-10).** `resolveCategory`: managed hit → `managed:true`; miss → free-text passthrough
+  (`managed:false`), never a silent reject. No `category_bidx` (keyed blind index needs the dormant vault key → M3). `[FACT: service.ts resolveCategory]`
+- **BR-S5-7 (FN-40).** Typed errors added: `FxRateMissingError`, `ZeroKnowledgeViolationError` — a refused/missing
+  path fails loud, never a silent default. `[FACT: types.ts]`
+
+### Pending / INTENDED (S6–S8 — not yet realized)
+- **FN-13/14 (FIN-36/38/39)** Commitments/budgeting/liability-payment (undesigned) · **FN-15 (FIN-18/23/24)**
+  store-tree net worth + lock-box · cross-module providers (FIN-31/32/33/34/35/37, S6) · **FL-01…10** fiscal-legal
+  (S7–S8). Each homed in `slice-map.md`; **no rule may assume their internals.**
+- **Materialize write path · durable stores** (FX/base-currency, managed-category, persisted-aggregates,
+  import_staging) — all M2 via the S5 deny-safe ports (zero-signature-change swap).
 
 ## 3. Rule inventory — explicit · implicit · invented
 - **EXPLICIT (schema/service-realized):** FN-2/3/4/10/11 (S1–S2), BR-S3-1…6 (S3) — all cited to `service.ts`/`schema/finance.ts`.

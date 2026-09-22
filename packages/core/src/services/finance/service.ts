@@ -16,8 +16,24 @@
 // ============================================================================
 
 import { and, eq, gte, isNull, lte, type SQL } from 'drizzle-orm'
-import type { Account, Asset, Liability, Investment, IncomeStream, Transaction, Money } from '@vida/types'
-import { createRepository, type CreateInput } from '../../db/repository'
+import type { Account, Asset, Liability, Investment, IncomeStream, Transaction, Money, Frequency } from '@vida/types'
+import { createRepository, uuidv7, type CreateInput } from '../../db/repository'
+import {
+  autoMatch,
+  commitStaged,
+  createInMemoryStagingPort,
+  type StagedRow,
+  type MatchCandidate,
+  type MatchTolerance,
+  type CommitResult,
+  type IngestionAct,
+} from '../../foundation/ingestion'
+import {
+  createInMemoryFxRatePort,
+  forecastOnlyRecurringPort,
+  computeOnlyAggregatesPort,
+  passthroughCategoryPort,
+} from './config-seams'
 import {
   accounts,
   transactions,
@@ -73,6 +89,10 @@ import {
   type AssetLiabilityBreakdown,
   type BreakdownSlice,
   type ChartDatasets,
+  type RecurringForecast,
+  type ParsedStatementRow,
+  FxRateMissingError,
+  ZeroKnowledgeViolationError,
 } from './types'
 
 // --- Row → @vida/types interface (single _sync_status cast; INTENDED cols ride the spread) ---
@@ -99,6 +119,42 @@ const monthWindow = (m: string): { from: string; to: string } => {
   const lastDay = new Date(Date.UTC(Number(y), Number(mo), 0)).getUTCDate()
   return { from: `${m}-01`, to: `${m}-${String(lastDay).padStart(2, '0')}` }
 }
+
+// S5 — the k-th occurrence of a recurring anchor, computed FROM THE ANCHOR by index (never iterated from the
+// previous result). Day-based freqs add days; month-based freqs add months and CLAMP the day to the target
+// month's last day (Jan 31 +1mo → Feb 28, not a Mar-3 rollover) — and because every occurrence is computed from
+// the anchor's original day, the day-of-month never drifts (Feb 28 → Mar 31, not Mar 28). UTC; no date-fns.
+const addSteps = (anchor: string, freq: Frequency, n: number): string => {
+  const [y, m, d] = anchor.split('-').map(Number)
+  if (freq === 'daily' || freq === 'weekly' || freq === 'biweekly') {
+    const days = (freq === 'daily' ? 1 : freq === 'weekly' ? 7 : 14) * n
+    const dt = new Date(Date.UTC(y, m - 1, d))
+    dt.setUTCDate(dt.getUTCDate() + days)
+    return dt.toISOString().slice(0, 10)
+  }
+  const monthsAdd = (freq === 'monthly' ? 1 : freq === 'quarterly' ? 3 : 12) * n
+  const total = m - 1 + monthsAdd
+  const ny = y + Math.floor(total / 12)
+  const nm = ((total % 12) + 12) % 12 // 0-based target month (handles negatives)
+  const lastDay = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate()
+  const nd = Math.min(d, lastDay) // clamp — never roll over into the next month
+  return `${ny}-${String(nm + 1).padStart(2, '0')}-${String(nd).padStart(2, '0')}`
+}
+// Coarse (under-estimating) step count from anchor to `from` — O(1) jump close, then a bounded refine lands
+// exactly (the divisors 31/93/366 are ≥ any real interval, so this never overshoots `from`). Avoids the
+// O(anchor-distance) advance loop that would silently starve a far-anchored forecast.
+const coarseSteps = (anchor: string, from: string, freq: Frequency): number => {
+  const days = Math.floor((Date.parse(from) - Date.parse(anchor)) / 86_400_000)
+  if (days <= 0) return 0
+  switch (freq) {
+    case 'daily': return days
+    case 'weekly': return Math.floor(days / 7)
+    case 'biweekly': return Math.floor(days / 14)
+    case 'monthly': return Math.floor(days / 31)
+    case 'quarterly': return Math.floor(days / 93)
+    case 'yearly': return Math.floor(days / 366)
+  }
+}
 const toAsset = (r: AssetRow): Asset => ({ ...r, _sync_status: r._sync_status as Asset['_sync_status'] })
 const toLiability = (r: LiabilityRow): Liability => ({ ...r, _sync_status: r._sync_status as Liability['_sync_status'] })
 const toInvestment = (r: InvestmentRow): Investment => ({ ...r, _sync_status: r._sync_status as Investment['_sync_status'] })
@@ -117,6 +173,15 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
   const liabilityRepo = createRepository(db, liabilities, cfg)
   const investmentRepo = createRepository(db, investments, cfg)
   const incomeRepo = createRepository(db, incomeStreams, cfg)
+
+  // S5 deferred-store ports — deny-safe defaults; the stagingPort is INSTANCE-shared so a batch survives
+  // importStatement → confirmImport (B3). All swap for Preferences/M2-backed impls with no signature change.
+  const fx = deps.fx ?? createInMemoryFxRatePort()
+  const recurringMode = deps.recurringMode ?? forecastOnlyRecurringPort
+  const persistedAggregates = deps.persistedAggregates ?? computeOnlyAggregatesPort
+  const managedCategory = deps.managedCategory ?? passthroughCategoryPort
+  const stagingPort = deps.stagingPort ?? createInMemoryStagingPort()
+  const importTolerance: MatchTolerance = deps.importTolerance ?? { dateDays: 3, amountCents: 0 }
 
   // --- serialize create: backfill notNull-defaults + coalesce nullables to null (faithful echo) ---
   const serializeAccount = (p: CreateAccountInput): CreateInput<typeof accounts> => ({
@@ -293,6 +358,15 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
   // (`Error('Row not found: <id>')`, repository.ts:412) — the checkins/journals precedent,
   // no finance-local pre-read guard. Soft-delete-aware update rejection is a repo-wide
   // concern (update() re-reads without the deleted_at filter) → DB-11, not a finance patch.
+  // Hoisted create path (no `this.`) — shared by the createTransaction method AND confirmImport (S5), so an
+  // imported row goes through the SAME validate → FN-4 → create path (and any future S6 emit rides both).
+  const createTransactionImpl = async (input: CreateTransactionInput): Promise<Transaction> => {
+    const p = CreateTransactionSchema.parse(input)
+    assertTransferShape(p.transaction_type, p.transfer_to_account_id, p.account_id) // FN-4
+    // NB: the create-side achievement emit (FIN-31) is a cross-module seam wired in S6.
+    return toTransaction(await txRepo.create(serializeTransaction(p)))
+  }
+
   const service: FinanceService = {
     // ── accounts (FIN-01/02/03/04) ──────────────────────────────────
     createAccount: async (input: CreateAccountInput): Promise<Account> => {
@@ -313,12 +387,7 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
     listAccounts: async (): Promise<Account[]> => (await accountRepo.findAll()).map(toAccount),
 
     // ── transactions + balance + transfers (FIN-05/06/07/08/09/10/11/12) ──
-    createTransaction: async (input: CreateTransactionInput): Promise<Transaction> => {
-      const p = CreateTransactionSchema.parse(input)
-      assertTransferShape(p.transaction_type, p.transfer_to_account_id, p.account_id) // FN-4
-      // NB: the create-side achievement emit (FIN-31) is a cross-module seam wired in S6.
-      return toTransaction(await txRepo.create(serializeTransaction(p)))
-    },
+    createTransaction: createTransactionImpl,
     updateTransaction: async (id: string, patch: UpdateTransactionInput): Promise<Transaction> => {
       const p = UpdateTransactionSchema.parse(patch)
       // Re-validate FN-4 when ANY of its three legs changes (type · transfer_to · account_id) — an
@@ -488,6 +557,125 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
         incomeVsExpense: await safe('incomeVsExpense', () => incomeVsExpense(range)),
         assetLiabilityBreakdown: await safe('assetLiabilityBreakdown', () => assetLiabilityBreakdown()),
         degraded,
+      }
+    },
+
+    // ── S5: external / ingestion / config seams ──────────────────────
+    // FIN-20 — project recurring txns across the range; creates NO row. TransactionFilter has no is_recurring
+    // field → raw findWhere(is_recurring=1). Occurrences step by recurring_frequency (capped, no unbounded loop).
+    forecastRecurring: async (range: ChartRange): Promise<RecurringForecast[]> => {
+      const recurring = await txRepo.findWhere(
+        and(eq(transactions.is_recurring, true), isNull(transactions.deleted_at)) as SQL,
+      )
+      const out: RecurringForecast[] = []
+      for (const t of recurring) {
+        if (t.recurring_frequency == null) continue // no cadence → cannot project
+        const freq = t.recurring_frequency
+        if (t.date > range.to) continue // anchor after the window → no occurrence
+        // First index k whose occurrence ≥ from: coarse arithmetic jump, then a BOUNDED refine (no O(distance) loop).
+        let k = Math.max(0, coarseSteps(t.date, range.from, freq))
+        let g = 0
+        while (addSteps(t.date, freq, k) < range.from && g++ < 500) k++
+        // Emit occurrences (each computed from the anchor by index — no day-of-month drift) until past `to`.
+        g = 0
+        for (let d = addSteps(t.date, freq, k); d <= range.to && g++ < 10_000; d = addSteps(t.date, freq, ++k)) {
+          out.push({
+            date: d,
+            amount: t.amount,
+            account_id: t.account_id,
+            transaction_type: t.transaction_type,
+            sourceTransactionId: t.id,
+          })
+        }
+      }
+      return out
+    },
+
+    // FIN-20 — materialize is opt-in (Preferences recurring-mode). M1 default forecast-only → never auto-writes;
+    // the materialize WRITE path is deferred (M2), so even 'materialize' mode returns [] here (no write path yet).
+    materializeDue: async (): Promise<Transaction[]> => {
+      await recurringMode.mode() // consulted per contract; the write path is M2 regardless (BR-S5-1)
+      return []
+    },
+
+    // FIN-21 — convert to base; identity if equal; missing rate → FxRateMissingError (no silent 1:1, BR-S5-2).
+    // rate = base units per 1 `from` unit; both currencies assumed 1/100 minor units (JPY-style out of scope).
+    convertToBase: async (amount: Money, from: string, base: string): Promise<Money> => {
+      if (from === base) return amount
+      const rate = await fx.getRate(from, base)
+      if (rate == null) throw new FxRateMissingError(from, base)
+      return Math.round(amount * rate)
+    },
+    getFxRate: (from: string, to: string): Promise<number | null> => fx.getRate(from, to),
+    setFxRate: (from: string, to: string, rate: number): Promise<void> => fx.setRate(from, to, rate),
+
+    // FIN-30 — managed hit → managed:true (canonical form); miss → free-text passthrough (BR-S5-6). No bidx (M3).
+    resolveCategory: async (category: string): Promise<{ category: string; managed: boolean }> => {
+      const hit = await managedCategory.resolve(category)
+      return hit != null ? { category: hit, managed: true } : { category, managed: false }
+    },
+
+    // FIN-25 — opt-in persisted aggregates; default false → S3 stays compute-only (BR-S5-3).
+    aggregatesPersisted: (): Promise<boolean> => persistedAggregates.enabled(),
+
+    // FIN-28 — stage parsed rows (parsed carries the finance row) + auto-match vs existing txns; NO commit yet.
+    importStatement: async (rows: ParsedStatementRow[]): Promise<{ batchId: string; staged: StagedRow[] }> => {
+      const staged: StagedRow[] = rows.map((r) => ({
+        sourceRowId: r.sourceRowId,
+        date: r.date,
+        amountCents: r.amountCents,
+        parsed: r, // the ingestion normalization payload (XCU-14) — read back on commit
+        status: 'unmatched' as const,
+      }))
+      const existing: MatchCandidate[] = (
+        await txRepo.findWhere(isNull(transactions.deleted_at) as SQL)
+      ).map((t) => ({ id: t.id, date: t.date, amountCents: t.amount }))
+      const matched = autoMatch(staged, existing, importTolerance)
+      const batchId = uuidv7()
+      await stagingPort.put(batchId, matched)
+      return { batchId, staged: matched }
+    },
+
+    // FIN-28 — commit the user-confirmed rows as real transactions (never silent dup; parse_error rejected).
+    confirmImport: async (batchId: string, confirmedSourceRowIds: string[]): Promise<CommitResult> => {
+      const all = await stagingPort.take(batchId)
+      const confirmedSet = new Set(confirmedSourceRowIds)
+      const confirmed = all.filter((r) => confirmedSet.has(r.sourceRowId))
+      const result = commitStaged(confirmed) // pure partition; the caller drives the write (this service)
+      for (const sourceRowId of result.committed) {
+        const row = confirmed.find((r) => r.sourceRowId === sourceRowId)
+        if (row == null) continue
+        // X8 — an `auto_matched` row MERGES into the existing txn (its matchId): do NOT create a duplicate. Only an
+        // `unmatched` row becomes a NEW transaction. (A real field-level merge-update is P6/M2; M1 keeps existing.)
+        if (row.status === 'auto_matched') continue
+        // `parsed` is the ingestion opaque normalization payload (XCU-14) — our own ParsedStatementRow round-trip.
+        const p = row.parsed as ParsedStatementRow
+        await createTransactionImpl({
+          account_id: p.account_id,
+          transaction_type: p.transaction_type,
+          amount: p.amountCents,
+          date: p.date,
+          description: p.description ?? undefined,
+          category: p.category ?? undefined,
+        })
+      }
+      await stagingPort.clear(batchId)
+      return result
+    },
+
+    // FIN-29 — gate external access via the INJECTED ingestion guard (#44); no guard wired ⇒ fail-closed (BR-S5-5).
+    assertExternalAccess: async (act: IngestionAct): Promise<void> => {
+      if (deps.ingestionGuard == null) {
+        throw new ZeroKnowledgeViolationError('external access unavailable (no ingestion guard wired at M1)')
+      }
+      try {
+        const decision = await deps.ingestionGuard.assertIngestionPermitted(act)
+        if (decision.permitted === false) {
+          throw new ZeroKnowledgeViolationError(decision.reason ?? 'ingestion refused')
+        }
+      } catch (e) {
+        if (e instanceof ZeroKnowledgeViolationError) throw e
+        throw new ZeroKnowledgeViolationError(e instanceof Error ? e.message : 'external access refused')
       }
     },
 

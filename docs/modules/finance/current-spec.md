@@ -1,7 +1,7 @@
 # Current Spec — finance   (level: Module · tier: STANDARD)
-> Coverage: schema (`020_finance`, 9 tables) + colocated `@vida/types` + validators + service tier S1–S4 of 8. Fiscal-legal service (S7–S8) NOT yet built.
+> Coverage: schema (`020_finance`, 9 tables) + colocated `@vida/types` + validators + service tier S1–S5 of 8. Fiscal-legal service (S7–S8) NOT yet built.
 > Inherits: docs/core (business-rules constitution — ZK-1/2/3, LF-1/2/3). This doc must not contradict any level above it.
-> Last refreshed: 2026-09-22-mod-finance-S4  ·  Source of truth = the code (Currency Rule §XXIX).
+> Last refreshed: 2026-09-22-mod-finance-S5  ·  Source of truth = the code (Currency Rule §XXIX).
 
 ## 1. Identity & responsibility
 **What it is.** The finance module — accounts, transactions, assets, liabilities, investments, income streams —
@@ -18,7 +18,16 @@ over the DB-4 `020_finance` schema. This build delivers the ① **backend servic
 - Not the tag owner — consumes `entity_tags` (Spaces SP1); notes via the `pages` seam (both S6). `[FACT: parts/finance.md]`
 
 ## 2. Contract — what it exposes / needs
-**Status: ① BACKEND — S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5–S8 ☐ (4 slices remain).** ② fe-finance separate.
+**Status: ① BACKEND — S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6–S8 ☐ (3 slices remain).** ② fe-finance separate.
+
+**S5 (2026-09-22) — external / ingestion / config seams (FIN-20/21/25/28/29/30/40), `config-seams.ts` + service methods:**
+3 real derivations + 5 deny-safe ports over deferred stores, zero re-implementation. `forecastRecurring`
+(by-index-from-anchor, month-end clamp, no drift) + `materializeDue` (forecast-only default → `[]`); `convertToBase`
+/`getFxRate`/`setFxRate` (device-side `FxRatePort`; missing → `FxRateMissingError`, no silent 1:1); `resolveCategory`
+(free-text passthrough; no bidx = M3); `aggregatesPersisted` (false = compute-only); `importStatement`/`confirmImport`
+(over the built ingestion reconcile primitives, instance staging port, auto-matched → merge-no-dup); `assertExternalAccess`
+(injected ingestion guard; no guard → `ZeroKnowledgeViolationError` fail-closed). Deferred stores + materialize
+write path = M2 (ports swap, zero-signature). `[FACT: services/finance/{service.ts,config-seams.ts}]`
 
 **S4 (2026-09-22) — `move_money` effect handler (FIN-26), new file `effects.ts`:**
 `createFinanceEffectHandlers(db, deviceId, storeLock?)` + `registerFinanceEffects(registry, handlers)` — the
@@ -52,17 +61,19 @@ tx-threaded for the FIN-24 atomic swap). Consent-gating deferred (#48). `[FACT: 
   in core); `monthWindow` uses UTC calendar arithmetic (day 0 of next month). `[FACT: service.ts currentMonth/monthWindow]`
 
 ## 4. Deferred / open (homed, not built)
-FIN-18 store-tree net worth · FIN-21 FX · FIN-24 lock-box · FIN-26 `move_money` · FIN-36/38/39 Commitments/
-budgeting/liability-payment (design-pass) · FL-01…10 fiscal-legal (S7–S8) · net-worth-over-time chart (snapshot
-design-pass) — all in `slice-map.md` + `PLAN-S3-derived-analytics.md §3.4`.
+FIN-18 store-tree net worth · FIN-24 lock-box · FIN-36/38/39 Commitments/budgeting/liability-payment
+(design-pass) · cross-module providers FIN-31/32/33/34/35/37 (S6) · FL-01…10 fiscal-legal (S7–S8) ·
+net-worth-over-time chart (snapshot design-pass) · **all S5 deferred STORES** (FX/base-currency, managed-category,
+persisted-aggregates, import_staging, materialize write path — M2 via the deny-safe ports). Homed in `slice-map.md`.
 
 ## 5. Terminal states
 Overview/dashboard · account balance · investment value · each chart — loading/empty/error/success. A derive
 error → flagged partial (`partial` / `degraded[]`), never a wrong number. Empty dataset → all-zero, not an error.
 
 ## 6. Verification
-S1–S4: @vida/core **1216/1216** (+9 S4), tsc 11/11, eslint 0, live-store Verification Gate PASS (real
-better-sqlite3 + `initVault()` + `migrate()`; S3 degrade test drops a real table; S4 fires the REAL effect rail). `[FACT: finance-service.test.ts, 48 tests]`
+S1–S5: @vida/core **1224/1224** (+8 S5), tsc 11/11, eslint 0, live-store Verification Gate PASS (real
+better-sqlite3 + `initVault()` + `migrate()`; S3 degrade drops a table; S4 fires the REAL effect rail; S5
+import round-trips the staging port + creates real txns). `[FACT: finance-service.test.ts, 59 tests]`
 
 ## Completion checklist
 - [x] §1 identity · [x] §2 contract (S1–S3 done, S4–S8 pending) · [x] §3 structure · [x] §4 deferred homed · [x] §5 states · [x] §6 verification

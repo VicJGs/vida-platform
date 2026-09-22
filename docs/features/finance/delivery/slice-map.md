@@ -46,7 +46,7 @@
 | S2 | balance = opening+Σledger; edit/delete re-derives; transfer both-balances + excluded; source==dest rejects; FN-4 on account_id change | live ledger writes; balance re-derive over real rows (11 tests) | ✅ PASS |
 | S3 | overview totals; net-worth = FN-7 sum; investment gain/loss; partial-flag on error | overview over a live multi-account/asset/liability set; per-chart degrade via live DROP TABLE (41 tests) | ✅ PASS |
 | S4 | handler registered; idempotent replay (same event_id → no double); ledger-movement co-write; lock-port deny-safe | fire `move_money` on the real rail; `applied_effects` holds; deny-safe rollback (7 tests) | ✅ PASS |
-| S5 | recurring forecast; `FxRateMissingError`; import refuse (ZK) fail-closed; grant-gate fail-closed | ingestion/egress ports exercised against built #44/#43 | ☐ |
+| S5 | recurring forecast (month-end clamp, far-anchor); `FxRateMissingError`; category passthrough; import stage/match/confirm + merge-no-dup; grant-gate fail-closed | import round-trips instance staging port + creates real txns; injected-guard delegation (11 tests) | ✅ PASS |
 | S6 | `/summary` provider output; entity_tags read/write; dueIn over G9 schedules; notes delegate | provider registered in the live Journals registry; entity_tags round-trip | ☐ |
 | S7 | residency/legal-entity/money-touch CRUD; grant-gate fail-closed; typed errors | live CRUD on fiscal_residencies/legal_entities; jurisdiction link | ☐ |
 | S8 | deriveObligations never-on-unverified + no-auto-action; rulePack/model deny-safe; disclaimer uncstrippable | fiscal_obligations derive + confirm→fan-out seam; #44/#45 ports fail-closed | ☐ |
@@ -55,6 +55,18 @@
 - **S1 (2026-09-21):** two code-review-driven refinements, both grounded:
   1. **No finance-local not-found error.** Dropped the initial `guardExists`/`FinanceEntityNotFoundError` — `repository.update()`/`delete()` already throw `Error('Row not found')` (repository.ts:412); the pre-read was a redundant SELECT and a divergence from the checkins/journals precedent (bare repo throw). Soft-delete-aware update rejection (update() ignores `deleted_at`) is a **repo-wide** concern → DB-11, not a finance patch (altitude).
   2. **`@vida/types` interfaces extended (FIN-01/FIN-27).** Added `Account.opening_balance`, liability G9 (`payment_frequency`/`next_payment_date`/`interest_type`/`payoff_date`), `IncomeStream.next_payment_date` — the schema had them, the interfaces didn't, so the exposed contract was incomplete. FIN-27 is homed to "finance service / @vida/types" (parts/finance.md:37), so this is in S1 scope, not deferred DB-11. `jurisdiction_code` interface exposure stays for S7 (FL-02).
+
+- **S5 (2026-09-22):** external/ingestion/config seams (FIN-20/21/25/28/29/30/40) — `config-seams.ts` (4 deny-safe
+  default ports) + service methods, **zero re-implementation** (delegates to built ingestion #44 reconcile
+  primitives + injected guard). 3 real derivations (forecast/FX-convert/category) + deny-safe seams. Full gate:
+  PLAN → gate-1 /critique REVISE→SHIP (B1 inject guard not construct · B2 reuse StagedRow, only ParsedStatementRow
+  net-new · B3 instance staging port batchId round-trip · B4 drop category_bidx = dormant M3) → /adr-check (ADR-014
+  §3.5 import flow + §3.4 fail-closed grant + ZK-1 device-side FX; delegating inherits §3.42 compositional-exfil) →
+  /preflight BLOCKED→resolved (RecurringForecast type · raw findWhere is_recurring · uuidv7 batchId) → gate-2 SHIP →
+  implement → Verification Gate PASS → code-review (3 real bugs: F1 forecast guard-starvation → arithmetic
+  by-index jump · F2 auto_matched → merge-no-dup · F3 month-end clamp + no day-drift) → pre-ship /critique SHIP.
+  Hoisted `createTransactionImpl` (import reuses the one create path). @vida/core **1224/1224** (+8), tsc 0, eslint
+  0. §XXIX: `finance/current-*` refreshed (S5). No S1–S4/@vida/types change (additive).
 
 - **S4 (2026-09-22):** `move_money` effect handler (FIN-26) in new file `services/finance/effects.ts` (mirrors
   `foundation/economy/handlers.ts`): `createFinanceEffectHandlers` + `registerFinanceEffects`; the Additive handler
