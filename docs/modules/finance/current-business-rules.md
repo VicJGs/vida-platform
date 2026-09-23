@@ -111,10 +111,36 @@
   `AdviceIsInformational`, `NoAutoAction`, `FilingHandsOff`, `ModelUnavailable`) — each a named error; S8 throws the
   INFORM/DERIVE/ADVISE ones. `[FACT: fiscal-legal.ts]`
 
-### Pending / INTENDED (S8 + later — not yet realized)
-- **S8 fiscal-legal guarded** — FL-04 rulePack (ADR-014 public-reference) · FL-05 deriveObligations (`fiscal_obligations`
-  + Tasks/Notif/Calendar fan-out) · FL-06 model (ADR-015 AI) · FL-07 prepareFilingSummary (hands off) · FL-08 long-run
-  impact → Purpose. S7 defined their error contract; S8 builds them.
+### Realized (S8 — fiscal-legal INFORM / DERIVE / ADVISE, guarded)
+- **BR-S8-1 (FL-04/X5).** `rulePack(jurisdiction)` grant-gates `external_in` (fail-closed) then reads the ADR-014
+  public-reference layer via the BUILT `createPublicReferenceEngine`; M1 deny-safe fetch → `RulePackUnverified`, no
+  grant → `ExternalGrantMissing`. `RulePack = {jurisdiction_code, version, verified}` (version required by
+  `source_rulepack_version` notNull; **content owed → M2**, format unspecified). `[FACT: services/finance/fiscal-legal.ts rulePack; parts/finance.md:123]`
+- **BR-S8-2 (FL-05/FL-5).** `deriveObligations(range, pack)` is the proposer + unverified-law gate: refuses an
+  unverified pack (`RulePackUnverified`), **never persists / fans out**. The per-jurisdiction rule-evaluation is an
+  **owed M2 seam** (no pack content format yet) → a verified handle yields `[]` at M1. `[FACT: fiscal-legal.ts deriveObligations]`
+- **BR-S8-3 (FL-3/FL-6/FL-11 · NoAutoAction structural).** `confirmObligation(candidate)` is the ONLY persist path
+  (hand-authored FL-11 or derived): writes one `fiscal_obligations` row (`status:'pending'`, `linked_task_id:null` at
+  M1) then a deny-safe fan-out that **surfaces `{deferred:['tasks','notifications','calendar']}`** (never swallowed,
+  never rolls back the valid local row — FIN-31 reserved-emit, not S4-atomic). NoAutoAction/AdviceIsInformational/
+  FilingHandsOff are enforced **structurally** (method split · baked disclaimer · no `file()` affordance), NOT thrown. `[FACT: fiscal-legal.ts confirmObligation; fiscal-ports.ts]`
+- **BR-S8-4 (FL-06/FL-13 · ADR-015).** `model(scenario, pack)` runs the what-if via the BUILT `AiService.askModel`
+  (deny-safe M1 → `ModelUnavailable`); requires a verified pack (else `InsufficientRuleData`); output carries
+  `source:'ai'` (`stampAiProvenance`) + **BOTH** disclosures — the FL-3 `NOT_PROFESSIONAL_ADVICE` legal label AND
+  `buildAiDisclosure(mode)` (the egress bound), all non-optional readonly. Boundary-validated (`WhatIfScenarioBaseSchema`). `[FACT: fiscal-legal.ts model; fiscal-ports.ts NOT_PROFESSIONAL_ADVICE]`
+- **BR-S8-5 (FL-2/FL-07).** `prepareFilingSummary(jurisdiction)` assembles + **RETURNS** the organized summary
+  (residencies/legal-entities/money-touch/obligations, soft-delete-filtered) — the deliverable; the OS **never files**.
+  Format-render is a SEPARATE optional `exportFiling` (deny-safe M1 → `FilingExportNotActive`; the summary is unaffected). `[FACT: fiscal-legal.ts prepareFilingSummary; contract.md:22]`
+- **BR-S8-6 (FL-08/FL-10 · ADR-011).** `feedLongRunImpact(impact)` feeds a modeled outcome into Purpose via a deny-safe
+  `ContributionsPort` whose input **mirrors the `contributions` schema** (never a bespoke path); M1 fail-loud
+  (`ContributionsSinkNotActive`). `[FACT: fiscal-legal.ts feedLongRunImpact; schema/foundation/purpose.ts:33-49]`
+- **BR-S8-7 (FL-12/ZK-1).** Derivation + summary assembly run on-device; a `cloud` what-if is the only sharing path,
+  its egress triple **caller-supplied** (the tier has no vault access to over-send from). `[FACT: fiscal-legal.ts model cloud branch; ai/types.ts:76-89]`
+- **Deferred (M2, all homed):** rule-pack content/mirror/verifier (owed) · AI mediator/on-device runtime (LIF-145) ·
+  Tasks/Notifications/Calendar fan-out write-paths · export format-render · Purpose `contributions` writer · `[E]`
+  encryption of obligation/scenario text (M1 `encryptedFields:[]` pass-through). Each behind a zero-signature-change port.
+
+### Pending / INTENDED (later — not yet realized)
 - **FN-13/14 (FIN-36/38/39)** Commitments/budgeting/liability-payment (undesigned) · **FN-15 (FIN-18/23/24)**
   store-tree net worth + lock-box · **FIN-31 concrete emit** (#48) · **materialize write path · durable stores**
   (FX/base-currency, managed-category, persisted-aggregates, import_staging) — all M2 via the S5/S6 deny-safe ports/seams.

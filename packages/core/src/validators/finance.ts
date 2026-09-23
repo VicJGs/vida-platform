@@ -197,3 +197,25 @@ export const CreateLegalEntitySchema = LegalEntityFields.partial().extend({
   registration_ref: z.string(),
 })
 export const UpdateLegalEntitySchema = LegalEntityFields.partial()
+
+// ── S8: fiscal-legal INFORM/DERIVE/ADVISE validators (FL-05) ────────────────
+// obligation_type is OPEN (per-jurisdiction rule-pack vocab, no CHECK); owner_type is
+// FIXED (FISCAL_OWNER_TYPE). `status`/`linked_task_id` are service-set on confirm, so
+// they are NOT part of the candidate input. (The what-if scenario's `mode` guard lives
+// in fiscal-legal.ts, which owns the foundation/ai import — validators stays a @vida/types leaf.)
+
+/** FL-05 — the obligation-derivation window (from ≤ to; lexical on YYYY-MM-DD). */
+export const DeriveObligationsRangeSchema = z
+  .object({ from: calendarDate, to: calendarDate })
+  .refine((r) => r.from <= r.to, { message: 'range: from must be ≤ to' })
+
+/** FL-05c — a proposed obligation (hand-authored FL-11 or derived). */
+export const ObligationCandidateSchema = z.object({
+  jurisdiction_code: z.string(),
+  owner_type: z.enum(FISCAL_OWNER_TYPE),
+  owner_id: z.string(),
+  obligation_type: z.string(),
+  due_date: calendarDate,
+  source_rulepack_version: z.string(),
+  linked_task_id: z.string().nullable().optional(),
+})

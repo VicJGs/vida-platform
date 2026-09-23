@@ -49,9 +49,31 @@
 | S5 | recurring forecast (month-end clamp, far-anchor); `FxRateMissingError`; category passthrough; import stage/match/confirm + merge-no-dup; grant-gate fail-closed | import round-trips instance staging port + creates real txns; injected-guard delegation (11 tests) | ✅ PASS |
 | S6 | Journal contribution summary/dueIn well-formed; getNetWorth {value,partial}; getEntityTags deny-safe + delegate; FINANCE_ENTITY_TYPES; nets-to-0 → success | contribution registered in a live Journals registry; summary/dueIn over real txns + G9 schedules (7 tests) | ✅ PASS |
 | S7 | residency/legal-entity CRUD (invalid enum, soft-delete, not-found); linkMoneyTouch sets jurisdiction_code + rejects bad type; grant-gate fail-closed + enforcer allow/deny; 7 named errors | live CRUD on fiscal_residencies/legal_entities; money-touch via finance update (6 tests) | ✅ PASS |
-| S8 | deriveObligations never-on-unverified + no-auto-action; rulePack/model deny-safe; disclaimer uncstrippable | fiscal_obligations derive + confirm→fan-out seam; #44/#45 ports fail-closed | ☐ |
+| S8 | rulePack fail-closed; deriveObligations refuse-on-unverified + no-persist; confirmObligation persists + surfaces deferred fan-out; model source=ai + both disclosures + deny; exportFiling/feedLongRunImpact fail-loud; boundary-validation | live confirmObligation → 1 fiscal_obligations row + sync_queue; model via injected AI stub; prepareFilingSummary assembles a real summary; ports fail-closed vs real enforcer/public-ref (8 tests) | ✅ PASS |
 
 ## Build notes / §XXVIII deviations
+- **S8 (2026-09-22):** fiscal-legal INFORM/DERIVE/ADVISE guarded (FL-04/05/06/07/08) — extended `fiscal-legal.ts`
+  (7 ops) + new `services/finance/fiscal-ports.ts` (DTOs + 3 deny-safe ports + `NOT_PROFESSIONAL_ADVICE`) + 2 validators.
+  Every external/cross-module reach = a deny-safe/fail-closed port composing a BUILT substrate (public-reference engine,
+  AI service) or fronting an unbuilt target (fan-out/export/contributions); zero-signature-change swap at M2. Full
+  gate: PLAN → **gate-1 /critique REVISE→re-grounded** (the headline: finding-1 "build a real pack-derivation" was
+  **INVERTED as over-reach** — the rule-pack format is OWED to the ADR-014 build M2 per parts/finance.md:123, so
+  deriveObligations = lifecycle + unverified-law gate, evaluation owed; the real testable path is `confirmObligation`
+  via FL-11 manual authoring; 4 other findings confirmed → structural throw-sites, FilingHandsOff overload, surfaced
+  fan-out, model positive test) → Approval 1 → **/preflight BLOCKED→resolved** (6 shape gaps grounded: FL-3 disclaimer ≠
+  AI mode disclosure [both carried]; RulePack version required by `source_rulepack_version notNull`; prepareFilingSummary
+  RETURNS the summary [contract.md:22]; grant action `{type:'external_in',source}`; ContributionInput mirrors the
+  `contributions` schema; pinned field shapes) → **gate-2 /critique REVISE→folded** (1 blocking: `model(scenario, pack)`
+  signature so the positive stamp test is reachable; 3 nits) → Approval 2 → implement → **Verification Gate PASS**
+  (@vida/core **1247/1247** +7, tsc 0, eslint 0; deny + positive paths) → **code-review** (2 folded: F1 missing
+  `model` boundary validation → added `WhatIfScenarioBaseSchema`; F2 3 serial reads → one Promise.all) → pre-ship
+  /critique **SHIP**. §XXIX: `finance/current-*` promoted (BR-S8-1…7). **§XXVIII deviations (both grounded, recorded):**
+  (1) **`WhatIfScenarioBaseSchema` co-located in `fiscal-legal.ts`**, not `validators/finance.ts` as PLAN §3.3 placed
+  it — keeps `validators` a `@vida/types` leaf (the mode guard needs `foundation/ai` `AI_MODES`). (2) **`FanoutTargetsNotActive`
+  dropped** (PLAN §5 listed it) — the deny-safe fan-out RETURNS `{deferred:[...]}` (never throws), so the error would be
+  a defined-but-unthrown class = the exact manufacture anti-pattern the honest-throw-site accounting refuses. No
+  `@vida/types` change (Row types + service-local DTOs, DB-11). **① BACKEND COMPLETE (S1–S8).**
+
 - **S1 (2026-09-21):** two code-review-driven refinements, both grounded:
   1. **No finance-local not-found error.** Dropped the initial `guardExists`/`FinanceEntityNotFoundError` — `repository.update()`/`delete()` already throw `Error('Row not found')` (repository.ts:412); the pre-read was a redundant SELECT and a divergence from the checkins/journals precedent (bare repo throw). Soft-delete-aware update rejection (update() ignores `deleted_at`) is a **repo-wide** concern → DB-11, not a finance patch (altitude).
   2. **`@vida/types` interfaces extended (FIN-01/FIN-27).** Added `Account.opening_balance`, liability G9 (`payment_frequency`/`next_payment_date`/`interest_type`/`payoff_date`), `IncomeStream.next_payment_date` — the schema had them, the interfaces didn't, so the exposed contract was incomplete. FIN-27 is homed to "finance service / @vida/types" (parts/finance.md:37), so this is in S1 scope, not deferred DB-11. `jurisdiction_code` interface exposure stays for S7 (FL-02).

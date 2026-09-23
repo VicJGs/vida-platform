@@ -70,3 +70,24 @@ export {
   type CreateLegalEntityInput,
   type UpdateLegalEntityInput,
 } from './fiscal-legal'
+// S8 — fiscal-legal INFORM/DERIVE/ADVISE (guarded) (FL-04/05/06/07/08)
+export {
+  NOT_PROFESSIONAL_ADVICE,
+  denySafeObligationFanoutPort,
+  denySafeFilingExportPort,
+  denySafeContributionsPort,
+  FilingExportNotActive,
+  ContributionsSinkNotActive,
+  type RulePack,
+  type ObligationCandidate,
+  type ObligationFanoutResult,
+  type ConfirmResult,
+  type WhatIfScenario,
+  type Advisement,
+  type FilingSummary,
+  type FilingHandoffRef,
+  type ContributionInput,
+  type ObligationFanoutPort,
+  type FilingExportPort,
+  type ContributionsPort,
+} from './fiscal-ports'

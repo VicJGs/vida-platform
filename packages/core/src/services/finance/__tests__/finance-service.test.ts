@@ -24,8 +24,17 @@ import {
   ExternalGrantMissing,
   RulePackUnverified,
   AdviceIsInformational,
+  InsufficientRuleData,
+  ModelUnavailable,
+  FilingExportNotActive,
+  ContributionsSinkNotActive,
+  NOT_PROFESSIONAL_ADVICE,
   type MoneyTouchType,
+  type RulePack,
+  type WhatIfScenario,
 } from '../index'
+import { fiscalObligations } from '../../../db/schema/finance'
+import type { AiService } from '../../../foundation/ai'
 import {
   createFinanceService,
   InvalidTransferError,
@@ -851,5 +860,104 @@ describe('mod-finance S7 — fiscal-legal SITUATE', () => {
     expect(new RulePackUnverified('x').name).toBe('RulePackUnverified')
     expect(new ExternalGrantMissing('x').name).toBe('ExternalGrantMissing')
     expect(new AdviceIsInformational('x').name).toBe('AdviceIsInformational')
+  })
+})
+
+describe('mod-finance S8 — fiscal-legal INFORM / DERIVE / ADVISE (guarded)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  const stubEnforcer = (allowed: boolean): CapabilityEnforcer =>
+    ({ checkAction: async () => ({ allowed }) }) as unknown as CapabilityEnforcer
+  const verifiedPack = (j = 'US-CA'): RulePack => ({ jurisdiction_code: j, version: 'v1', verified: true })
+  const flWith = (extra: Partial<Parameters<typeof createFiscalLegalService>[0]> = {}) =>
+    createFiscalLegalService({ db: h.db, deviceId: 'test-device', finance: h.svc, ...extra })
+
+  // ── FL-04 INFORM — rule-pack (grant-gated; deny-safe M1 fetch) ─────
+  it('rulePack fails closed with no enforcer (ExternalGrantMissing); grant + M1 deny-safe fetch → RulePackUnverified', async () => {
+    await expect(flWith().rulePack('US-CA')).rejects.toBeInstanceOf(ExternalGrantMissing)
+    const fl = flWith({ enforcer: stubEnforcer(true) })
+    await expect(fl.rulePack('US-CA')).rejects.toBeInstanceOf(RulePackUnverified) // no mirror wired (M1 fetch_unavailable)
+  })
+
+  // ── FL-05 DERIVE — unverified refuses + never persists; verified → [] (owed eval) ──
+  it('deriveObligations refuses an unverified pack (RulePackUnverified) and never persists', async () => {
+    const fl = flWith()
+    await expect(
+      fl.deriveObligations({ from: '2026-01-01', to: '2026-12-31' }, { jurisdiction_code: 'US-CA', version: 'v1', verified: false }),
+    ).rejects.toBeInstanceOf(RulePackUnverified)
+    // a verified handle has no CONTENT to evaluate at M1 (owed) → no candidates, still no persist
+    expect(await fl.deriveObligations({ from: '2026-01-01', to: '2026-12-31' }, verifiedPack())).toEqual([])
+    expect((await h.db.select().from(fiscalObligations).all()).length).toBe(0)
+  })
+
+  // ── FL-05c — the ONLY persist path (positive, FL-11 manual authoring) ──
+  it('confirmObligation persists exactly one obligation + surfaces the deferred fan-out (NoAutoAction structural)', async () => {
+    const fl = flWith()
+    const result = await fl.confirmObligation({
+      jurisdiction_code: 'US-CA', owner_type: 'user', owner_id: 'u1',
+      obligation_type: 'income_tax_filing', due_date: '2026-04-15', source_rulepack_version: 'v1',
+    })
+    expect(result.obligation.id).toBeTruthy()
+    expect(result.obligation.status).toBe('pending')
+    expect(result.obligation.linked_task_id).toBeNull() // fan-out deferred at M1
+    expect(result.fanout.deferred).toEqual(['tasks', 'notifications', 'calendar']) // surfaced, not swallowed
+    expect((await h.db.select().from(fiscalObligations).all()).length).toBe(1) // exactly one — derive never auto-persisted
+    expect((await h.db.select().from(syncQueue).all()).length).toBeGreaterThan(0) // co-transactional enqueue
+  })
+
+  // ── FL-06 ADVISE — deny-safe + positive stamp/disclosure via injected stub ──
+  const stubAi = (content: string): AiService =>
+    ({ checkModelCall: async () => ({ permitted: true, disclosure: {} }), askModel: async () => ({ content }) }) as unknown as AiService
+
+  it('model: no AI → ModelUnavailable; unverified pack → InsufficientRuleData', async () => {
+    await expect(
+      flWith().model({ defId: 'd', jurisdiction_code: 'US-CA', mode: 'on_device', prompt: 'p' }, verifiedPack()),
+    ).rejects.toBeInstanceOf(ModelUnavailable)
+    await expect(
+      flWith({ ai: stubAi('x') }).model(
+        { defId: 'd', jurisdiction_code: 'US-CA', mode: 'on_device', prompt: 'p' },
+        { jurisdiction_code: 'US-CA', version: 'v1', verified: false },
+      ),
+    ).rejects.toBeInstanceOf(InsufficientRuleData)
+    // boundary validation: an empty defId / bad mode is rejected before any AI reach (parity with the other S8 ops)
+    await expect(
+      flWith({ ai: stubAi('x') }).model({ defId: '', jurisdiction_code: 'US-CA', mode: 'on_device', prompt: 'p' }, verifiedPack()),
+    ).rejects.toThrow()
+  })
+
+  it('model with an injected AI stub returns source=ai + BOTH disclosures (FL-3 label + the mode bound)', async () => {
+    const fl = flWith({ ai: stubAi('You may owe estimated tax quarterly.') })
+    const scenario: WhatIfScenario = { defId: 'd', jurisdiction_code: 'US-CA', mode: 'on_device', prompt: 'incorporate here?' }
+    const adv = await fl.model(scenario, verifiedPack())
+    expect(adv.content).toContain('estimated tax')
+    expect(adv.source).toBe('ai')
+    expect(adv.disclaimer).toBe(NOT_PROFESSIONAL_ADVICE) // FL-3 legal label baked, non-optional
+    expect(adv.modeDisclosure.mode).toBe('on_device') // the AI mode/egress bound — a DIFFERENT disclosure
+  })
+
+  // ── FL-07 — prepareFilingSummary RETURNS the real deliverable; exportFiling deny-safe ──
+  it('prepareFilingSummary assembles + returns the summary (deliverable); only the format-export is deferred', async () => {
+    const fl = flWith()
+    await fl.setResidency({ owner_type: 'user', owner_id: 'u1', jurisdiction_code: 'US-CA', residency_type: 'resident', start_date: '2020-01-01', notes: 'n' })
+    const a = await h.svc.createAccount({ name: 'A', account_type: 'checking' })
+    await fl.linkMoneyTouch('account', a.id, 'US-CA')
+    await fl.confirmObligation({ jurisdiction_code: 'US-CA', owner_type: 'user', owner_id: 'u1', obligation_type: 'filing', due_date: '2026-04-15', source_rulepack_version: 'v1' })
+    const summary = await fl.prepareFilingSummary('US-CA')
+    expect(summary.jurisdiction_code).toBe('US-CA')
+    expect(summary.residencies.length).toBe(1)
+    expect(summary.moneyTouch).toContainEqual({ type: 'account', id: a.id, jurisdiction_code: 'US-CA' })
+    expect(summary.obligations.length).toBe(1)
+    // the summary is the deliverable; only the FORMAT-render hand-off is deferred (M2):
+    await expect(fl.exportFiling(summary, 'pdf')).rejects.toBeInstanceOf(FilingExportNotActive)
+  })
+
+  // ── FL-08 — long-run impact feed is deny-safe (never a silent no-op) ──
+  it('feedLongRunImpact fails loud when the Purpose contributions writer is absent (ContributionsSinkNotActive)', async () => {
+    await expect(
+      flWith().feedLongRunImpact({ goal_type: 'purpose', goal_id: 'p1', contributor_type: 'finance_target', contributor_id: 'f1', contribution_percentage: 10 }),
+    ).rejects.toBeInstanceOf(ContributionsSinkNotActive)
   })
 })
