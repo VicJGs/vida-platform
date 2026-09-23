@@ -384,3 +384,89 @@ describe('mod-habits S3 — backfill + window', () => {
     expect((await h.svc.getHabit(hab.id))?.total_completions).toBe(0)
   })
 })
+
+describe('mod-habits S4 — derived reads + M5 seam', () => {
+  const ASOF = '2026-09-23'
+  const TODAY_DOW = dow(ASOF)
+  const OTHER_DOW = (TODAY_DOW + 1) % 7
+
+  it('getTodayHabits returns only active, scheduled-today, non-deleted habits (HB-6)', async () => {
+    const h = await setup(() => ASOF)
+    const a = await h.svc.createHabit({ name: 'Daily', frequency: 'daily' }) // scheduled today
+    const b = await h.svc.createHabit({ name: 'TodayCustom', frequency: 'custom', days_of_week: [TODAY_DOW] })
+    await h.svc.createHabit({ name: 'OtherDay', frequency: 'custom', days_of_week: [OTHER_DOW] }) // not today
+    await h.svc.createHabit({ name: 'Inactive', frequency: 'daily', is_active: false }) // inactive
+    await h.svc.createHabit({ name: 'NoSchedule', frequency: 'weekly' }) // weekly + null days_of_week → no schedule
+    const del = await h.svc.createHabit({ name: 'Deleted', frequency: 'daily' })
+    await h.svc.softDeleteHabit(del.id)
+    const today = await h.svc.getTodayHabits()
+    const names = today.map((x) => x.name).sort()
+    expect(names).toEqual(['Daily', 'TodayCustom'])
+    expect(today.map((x) => x.id).sort()).toEqual([a.id, b.id].sort())
+  })
+
+  it('getStreak reflects the cache after S2 mutations (HB-2)', async () => {
+    const h = await setup(() => ASOF)
+    const hab = await h.svc.createHabit({ name: 'Read', frequency: 'daily' })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-22' })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-23' })
+    expect(await h.svc.getStreak(hab.id)).toEqual({ current: 2, longest: 2, total: 2 })
+  })
+
+  it('getCompletionRate = done ÷ scheduled over a range (BR-S4-3)', async () => {
+    const h = await setup(() => ASOF)
+    const hab = await h.svc.createHabit({ name: 'Walk', frequency: 'daily', target_count: 1 })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-21' })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-23' }) // 22 missed
+    const r = await h.svc.getCompletionRate(hab.id, { from: '2026-09-21', to: '2026-09-23' })
+    expect(r).toEqual({ scheduled: 3, done: 2, rate: 2 / 3 }) // 3 daily-scheduled, 2 done
+  })
+
+  it('getCompletionRate excludes an off-schedule done completion (does not inflate the rate; g2 NIT-1)', async () => {
+    const h = await setup(() => ASOF)
+    // scheduled only on today's weekday; 2026-09-22 is a different weekday (off-schedule)
+    const hab = await h.svc.createHabit({ name: 'Sched', frequency: 'custom', days_of_week: [TODAY_DOW] })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-23' }) // scheduled + done
+    await h.svc.logCompletion(hab.id, { date: '2026-09-22' }) // OFF-schedule + done
+    const r = await h.svc.getCompletionRate(hab.id, { from: '2026-09-22', to: '2026-09-23' })
+    expect(r).toEqual({ scheduled: 1, done: 1, rate: 1 }) // the off-day done (22) is in neither count
+  })
+
+  it('getCompletionRate returns rate:null when nothing is scheduled in the range (empty ≠ 0)', async () => {
+    const h = await setup(() => ASOF)
+    const hab = await h.svc.createHabit({ name: 'Rare', frequency: 'custom', days_of_week: [OTHER_DOW] })
+    const r = await h.svc.getCompletionRate(hab.id, { from: ASOF, to: ASOF }) // asOf weekday != OTHER_DOW
+    expect(r).toEqual({ scheduled: 0, done: 0, rate: null })
+  })
+
+  it('getMoodTrend returns range mood points ascending, nulls preserved (HB-7)', async () => {
+    const h = await setup(() => ASOF)
+    const hab = await h.svc.createHabit({ name: 'Yoga', frequency: 'daily' })
+    await h.svc.logDetailedCompletion(hab.id, { date: '2026-09-23', mood_after: 5 })
+    await h.svc.logDetailedCompletion(hab.id, { date: '2026-09-22', mood_after: 3, ease_rating: 4 })
+    const trend = await h.svc.getMoodTrend(hab.id, { from: '2026-09-20', to: '2026-09-23' })
+    expect(trend.map((p) => p.date)).toEqual(['2026-09-22', '2026-09-23']) // ascending
+    expect(trend[0]?.mood_after).toBe(3)
+    expect(trend[0]?.ease_rating).toBe(4)
+    expect(trend[1]?.mood_before).toBeNull() // null preserved
+  })
+
+  it('getCalendar returns a month’s completions with done = count>=target', async () => {
+    const h = await setup(() => ASOF)
+    const hab = await h.svc.createHabit({ name: 'Pushups', frequency: 'daily', target_count: 10 })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-10', count: 10 }) // done
+    await h.svc.logCompletion(hab.id, { date: '2026-09-11', count: 3 }) // partial
+    await h.svc.logCompletion(hab.id, { date: '2026-08-31', count: 10 }) // prior month — excluded
+    const cal = await h.svc.getCalendar(hab.id, '2026-09')
+    expect(cal.map((d) => d.date)).toEqual(['2026-09-10', '2026-09-11'])
+    expect(cal[0]?.done).toBe(true)
+    expect(cal[1]?.done).toBe(false) // partial
+  })
+
+  it('per-habit reads fail loud on a missing habit', async () => {
+    const h = await setup(() => ASOF)
+    await expect(h.svc.getStreak('nope')).rejects.toThrow(/not found/i)
+    await expect(h.svc.getCompletionRate('nope', { from: ASOF, to: ASOF })).rejects.toThrow(/not found/i)
+    await expect(h.svc.getCalendar('nope', '2026-09')).rejects.toThrow(/not found/i)
+  })
+})

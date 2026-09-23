@@ -42,6 +42,38 @@ export type UpdateHabitInput = z.infer<typeof UpdateHabitSchema>
 export type LogCompletionInput = z.infer<typeof LogCompletionSchema>
 export type EditCompletionInput = z.infer<typeof EditCompletionSchema>
 
+// --- S4 derived-read DTOs (service-local; @vida/types untouched — the finance-S3 precedent) -----------------
+export interface HabitDateRange {
+  from: string // YYYY-MM-DD (inclusive)
+  to: string // YYYY-MM-DD (inclusive)
+}
+/** HAB-15 — the streak cache read (S2 keeps it fresh; HB-2). */
+export interface StreakSummary {
+  current: number
+  longest: number
+  total: number
+}
+/** HAB-15 — done ÷ scheduled over a range; `rate` null when `scheduled==0` (nothing due — not a silent 0). */
+export interface CompletionRate {
+  scheduled: number
+  done: number
+  rate: number | null
+}
+/** HAB-15 — a per-completion mood point over a range (charts are ②). */
+export interface MoodPoint {
+  date: string
+  mood_before: number | null
+  mood_after: number | null
+  ease_rating: number | null
+  satisfaction: number | null
+}
+/** HAB-15 — a completion in the calendar month (render is ②). */
+export interface CalendarDay {
+  date: string
+  count: number
+  done: boolean
+}
+
 /** listHabits filter (HAB-04) — narrow the Dashboard / All-Habits read (M1). */
 export interface HabitFilter {
   is_active?: boolean
@@ -89,4 +121,16 @@ export interface HabitsService {
   /** HAB-13 — log/edit a completion for a PAST date; recomputes streaks (HB-2). Rejects a future date or a
    *  date beyond the user's configured backfill window with `BackfillWindowError` (HB-10). */
   backfillCompletion(habitId: string, pastDate: string, input?: Omit<LogCompletionInput, 'date'>): Promise<HabitCompletion>
+
+  // ── S4: derived reads (read-only; the M5 measure seam) ───────────
+  /** HAB-05 — active habits scheduled for today (grouping into display modes is ②). */
+  getTodayHabits(): Promise<Habit[]>
+  /** HAB-15 — the streak cache; also the M5 read seam (R7). */
+  getStreak(habitId: string): Promise<StreakSummary>
+  /** HAB-15 — completion-rate over a range (done ÷ scheduled); also the M5 read seam (R7). */
+  getCompletionRate(habitId: string, range: HabitDateRange): Promise<CompletionRate>
+  /** HAB-15 — per-completion mood points over a range. */
+  getMoodTrend(habitId: string, range: HabitDateRange): Promise<MoodPoint[]>
+  /** HAB-15 — the month's completions for the calendar view. */
+  getCalendar(habitId: string, month: string): Promise<CalendarDay[]>
 }

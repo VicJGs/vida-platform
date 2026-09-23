@@ -11,4 +11,9 @@ export {
   type LogCompletionInput,
   type EditCompletionInput,
   type HabitFilter,
+  type HabitDateRange,
+  type StreakSummary,
+  type CompletionRate,
+  type MoodPoint,
+  type CalendarDay,
 } from './types'

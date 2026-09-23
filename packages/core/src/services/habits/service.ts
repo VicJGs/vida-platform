@@ -13,7 +13,7 @@
 // completion mutation (HB-2) — never hand-incremented; a stale cache self-heals on the next recompute.
 // ============================================================================
 
-import { and, eq, isNull, type SQL } from 'drizzle-orm'
+import { and, eq, gte, isNull, lte, type SQL } from 'drizzle-orm'
 import type { Habit, HabitCompletion } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import { habits, habitCompletions, type HabitRow, type HabitCompletionRow } from '../../db/schema/habits'
@@ -27,6 +27,11 @@ import {
   type UpdateHabitInput,
   type LogCompletionInput,
   type EditCompletionInput,
+  type HabitDateRange,
+  type StreakSummary,
+  type CompletionRate,
+  type MoodPoint,
+  type CalendarDay,
 } from './types'
 
 // Defensive JSON read (the checkins parseJson boundary): the service is the only writer, but a future
@@ -284,6 +289,69 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
     // ── S3 ──────────────────────────────────────────────────────────
     // A backfill IS a dated completion in the past → the same upsert path (which carries the window guard).
     backfillCompletion: (habitId, pastDate, input = {}) => upsertCompletion(habitId, { ...input, date: pastDate }),
+
+    // ── S4: derived reads (read-only) ─────────────────────────────────
+    getTodayHabits: async () => {
+      const today = clock()
+      // read ROWS directly (isScheduledOn takes a HabitRow — one predicate, no Habit overload; g1 NIT-1/2)
+      const rows = await habitsRepo.findWhere(and(isNull(habits.deleted_at), eq(habits.is_active, true)) as SQL)
+      return rows.filter((r) => isScheduledOn(r, today)).map(toHabit) // IR-8: custom w/ empty days_of_week never matches
+    },
+
+    getStreak: async (habitId): Promise<StreakSummary> => {
+      const habit = await loadHabitOrThrow(habitId)
+      return { current: habit.current_streak, longest: habit.longest_streak, total: habit.total_completions }
+    },
+
+    getCompletionRate: async (habitId, range: HabitDateRange): Promise<CompletionRate> => {
+      const habit = await loadHabitOrThrow(habitId)
+      const comps = await completionsRepo.findWhere(eq(habitCompletions.habit_id, habitId) as SQL)
+      const doneDates = new Set(comps.filter((c) => c.count >= habit.target_count).map((c) => c.completed_date))
+      let scheduled = 0
+      let done = 0
+      for (let n = toDayNum(range.from); n <= toDayNum(range.to); n++) {
+        const d = fromDayNum(n)
+        if (!isScheduledOn(habit, d)) continue
+        scheduled += 1
+        if (doneDates.has(d)) done += 1
+      }
+      return { scheduled, done, rate: scheduled === 0 ? null : done / scheduled } // null = nothing due (BR-S4-3)
+    },
+
+    getMoodTrend: async (habitId, range: HabitDateRange): Promise<MoodPoint[]> => {
+      await loadHabitOrThrow(habitId)
+      const comps = await completionsRepo.findWhere(
+        and(
+          eq(habitCompletions.habit_id, habitId),
+          gte(habitCompletions.completed_date, range.from),
+          lte(habitCompletions.completed_date, range.to),
+        ) as SQL,
+      )
+      return comps
+        .sort((a, b) => a.completed_date.localeCompare(b.completed_date))
+        .map((c) => ({
+          date: c.completed_date,
+          mood_before: c.mood_before,
+          mood_after: c.mood_after,
+          ease_rating: c.ease_rating,
+          satisfaction: c.satisfaction,
+        }))
+    },
+
+    getCalendar: async (habitId, month): Promise<CalendarDay[]> => {
+      const habit = await loadHabitOrThrow(habitId)
+      // month = 'YYYY-MM' → lexical [month-01, month-31] covers all valid days (28/30/31-day months alike)
+      const comps = await completionsRepo.findWhere(
+        and(
+          eq(habitCompletions.habit_id, habitId),
+          gte(habitCompletions.completed_date, `${month}-01`),
+          lte(habitCompletions.completed_date, `${month}-31`),
+        ) as SQL,
+      )
+      return comps
+        .sort((a, b) => a.completed_date.localeCompare(b.completed_date))
+        .map((c) => ({ date: c.completed_date, count: c.count, done: c.count >= habit.target_count }))
+    },
   }
 
   return service

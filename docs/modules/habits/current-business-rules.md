@@ -72,5 +72,23 @@
   hidden default limit. Beyond `asOf − w` (day-math) → `BackfillWindowError`. `[FACT: services/habits/service.ts:110-112,206-212; business-rules.md:42-45]`
 - **BR-HB-22 · Reject → no row, no cache change (BR-S3-5).** The guard precedes any write. `[FACT: business-rules.md:75; services/habits/service.ts:220]`
 
-## S4–S5 (pending)
-Derived reads today-list/analytics/M5 (S4) · effect fan-out + cross-module seams (S5).
+## S4 — Derived reads + M5 seam (read-only)
+
+- **BR-HB-23 · `getTodayHabits` — computed schedule read (HB-6).** Active, non-deleted habits scheduled for today
+  (`isScheduledOn` over rows); returns flat `Habit[]` (grouping into display modes is ②). `[FACT: services/habits/service.ts]`
+- **BR-HB-24 · `getStreak` reads the cache (HB-2).** Returns `{current, longest, total}` from the S2-maintained
+  cache; not a re-walk; no write. `[FACT: services/habits/service.ts]`
+- **BR-HB-25 · `getCompletionRate` = done ÷ scheduled over a range.** Counts scheduled occurrences + done ones in
+  `[from,to]`; off-schedule done rows are in NEITHER count; `rate = null` when `scheduled==0` (nothing due — not a
+  silent 0). `[INTERP grounded HB-5; services/habits/service.ts]`
+- **BR-HB-26 · `getMoodTrend` / `getCalendar`.** Mood points (nulls preserved, ascending) / month completions
+  (`done = count>=target`) over the ledger — the charts/calendar render is ②. `[FACT: services/habits/service.ts]`
+- **BR-HB-27 · M5 measure read seam (R7).** `getStreak`/`getCompletionRate` ARE the queryable measures
+  Journal/Purpose read through. The pursuable `rate` MEASURE VALUE + goal-vs-habit target model remain the
+  documented design-pass (rerun §5:146) — NOT built here. `[FACT: parts/habits.md:25,66; rerun §5:146]`
+- **BR-HB-28 · Reads are pure + fail-loud.** No mutation; per-habit reads throw `Habit not found` on a missing/
+  soft-deleted habit. `[FACT: services/habits/service.ts]`
+
+## S5 (pending)
+Effect fan-out (`complete_habit_occurrence`/`contribute_purpose_metric`/`award_xp`) + cross-module seams
+(entity_tags/pages/project_habits) + `registerHabitsJournal`/`registerHabitsEffects`.

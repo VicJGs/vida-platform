@@ -45,9 +45,22 @@ Adds `HabitsServiceDeps.prefs?: HabitsPrefsPort` (`{ backfillWindowDays(): Promi
 (fail-OPEN)** default: null window = no limit. The not-future + within-window guard (`assertDateWritable`) runs on
 the shared completion write path (log/detailed/backfill), never on edit/delete. `BackfillWindowError` exported.
 
-### S4–S5 (pending)
-`getTodayHabits`/`getStreak`/`getCompletionRate`/`getMoodTrend`/`getCalendar` (S4) · effect fan-out +
-`contributeToPurposeMetrics`/`getEntityTags` + `registerHabitsJournal`/`registerHabitsEffects` (S5).
+### S4 — derived reads + M5 seam (read-only)
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `getTodayHabits` | `() => Promise<Habit[]>` | active + scheduled-today (grouping = ②) |
+| `getStreak` | `(habitId) => Promise<StreakSummary>` | reads the cache; the M5 seam |
+| `getCompletionRate` | `(habitId, {from,to}) => Promise<CompletionRate>` | done ÷ scheduled; `rate:null` when scheduled==0; the M5 seam |
+| `getMoodTrend` | `(habitId, {from,to}) => Promise<MoodPoint[]>` | per-completion mood points (charts = ②) |
+| `getCalendar` | `(habitId, month) => Promise<CalendarDay[]>` | month completions (`done = count>=target`) |
+
+Service-local DTOs (`HabitDateRange`/`StreakSummary`/`CompletionRate`/`MoodPoint`/`CalendarDay`; `@vida/types`
+untouched — finance-S3 precedent). `HabitDateRange` (not `DateRange`) to avoid a `@vida/core` barrel collision with
+`./services/journals`. Reads are pure (no cache write); per-habit reads fail loud on a missing habit. The pursuable
+`rate` MEASURE value + goal-vs-habit target model stay the documented design-pass (rerun §5:146).
+
+### S5 (pending)
+effect fan-out + `contributeToPurposeMetrics`/`getEntityTags` + `registerHabitsJournal`/`registerHabitsEffects` (S5).
 
 ## Types & typed errors
 - `@vida/types` `Habit` (reconciled: +`measurement_kind`/`binding_mode`/`success_criteria`/`difficulty`, −`tags`),
@@ -65,3 +78,4 @@ Repo typecheck 11/11 · `@vida/core` 1285 (→ +2 folds) · eslint 0 · 10 habit
 | 2026-09-23 | S1 | born — definition CRUD + `@vida/types` reconcile; §XXVI g1 SHIP + Verification Gate + g2 code-review SHIP (3 NITs folded) |
 | 2026-09-23 | S2 | completion ledger + streak-recompute engine; §XXVI g1 SHIP (streak algo hand-walked) + Verification Gate (35 habits tests, @vida/core 1297) + g2 code-review SHIP (future-date comment + 2 hardening tests folded) |
 | 2026-09-23 | S3 | backfill + window (permissive fail-OPEN Preferences port); future/beyond-window reject; §XXVI g1 REVISE→fixed (fail-OPEN vs deny-safe terminology) + Verification Gate (41 habits tests, @vida/core 1305) + g2 code-review SHIP (clock-hoist folded) |
+| 2026-09-23 | S4 | derived reads (today-list/streak/completion-rate/mood/calendar) + M5 seam; `rate` measure = design-pass; §XXVI g1 SHIP + Verification Gate (49 habits tests, @vida/core 1312) + g2 code-review SHIP (off-schedule-exclusion test folded; DateRange→HabitDateRange barrel-collision fix) |
