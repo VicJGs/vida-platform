@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none active — mod-gamification ① completed 2026-09-22; next `#`-order head = #49 MOD-habits, fresh session)_
+- mod-habits (LIF-125 · in-progress): .claude/tasks/mod-habits.md  (M1/M1.1.2 `#49` · add-backend-component / Default (Entity Delivery Flow v1). Habits ① backend service tier — `createHabitsService` over DB-4 `habits` + `habit_completions`: CRUD, recurrence/time-of-day, quantified completion ledger + mood, streak/completion-rate derivations, build/break, + cross-module seams (contributions → Purpose metric · guarded `grant_currency(XP)` · journal contribution · pages/entity_tags consumers). All 5 blockers Done. ② `fe-habits` LIF-182 separate P6. Branch `mod-habits` off main.)
 
 <details><summary>prior (xs-notifications-delivery completed)</summary>
 
