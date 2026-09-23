@@ -40,9 +40,10 @@ export interface HabitsServiceDeps {
 ## 3. Registration helpers (composed at app wire-up, not in the factory)
 ```ts
 export function registerHabitsJournal(registry: JournalRegistry, svc: HabitsService): void  // S5
-export function registerHabitsEffects(registry: EffectRegistry, db: DrizzleDb, deviceId: string): void  // S5
 ```
-`[FACT: packages/core/src/services/gamification/journal.ts:64-74 (registerGamificationJournal/Effects precedent)]`
+**No `registerHabitsEffects`** — habits is an effect **PRODUCER** (it EMITS `complete_habit_occurrence`/
+`contribute_purpose_metric`/`award_xp`), not a handler OWNER. `registerGamificationEffects` exists because
+gamification OWNS the economy handlers; habits owns none, so it registers nothing on the rail. `[FACT: packages/core/src/services/gamification/journal.ts:66-74 (registerGamificationJournal = the pattern; registerGamificationEffects registers economy handlers gamification owns); foundation/effects/CLAUDE.md (per-module handlers registered by owners)]`
 
 ## 4. Typed errors (fail-loud, `.name` set)
 - `BackfillWindowError` (S3) — backfill beyond the configured window; no row written. `[FACT: parts/habits.md:23; contract.md:54]`

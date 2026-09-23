@@ -16,7 +16,17 @@ import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
 import { habitCompletions } from '../../../db/schema/habits'
-import { createHabitsService, HabitScheduleError, BackfillWindowError, type HabitsService } from '../index'
+import type { HabitCompletion } from '@vida/types'
+import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import type { JournalContribution } from '../../journals'
+import {
+  createHabitsService,
+  registerHabitsJournal,
+  HabitScheduleError,
+  BackfillWindowError,
+  MetricContributionError,
+  type HabitsService,
+} from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -73,6 +83,29 @@ async function setup(
 // UTC weekday (0=Sun…6=Sat) — used to build days_of_week that deterministically match/exclude chosen dates,
 // regardless of the real weekday of those dates (mirrors the service's `weekday`).
 const dow = (d: string): number => new Date(`${d}T00:00:00Z`).getUTCDay()
+
+// A minimal HabitCompletion literal for exercising S5 emit methods that only read `completed_date`.
+const mkCompletion = (habitId: string, date: string): HabitCompletion => ({
+  id: `c-${date}`,
+  habit_id: habitId,
+  completed_date: date,
+  count: 1,
+  value: null,
+  mood_before: null,
+  mood_after: null,
+  ease_rating: null,
+  satisfaction: null,
+  location: null,
+  completion_time: null,
+  created_at: 0,
+  updated_at: 0,
+  _sync_id: `s-${date}`,
+  _sync_version: 1,
+  _sync_device_id: 'd',
+  _sync_lww_ts: 0,
+  _sync_status: 'pending',
+  _sync_hash: null,
+})
 
 describe('mod-habits S1 — definition CRUD', () => {
   let h: Harness
@@ -468,5 +501,141 @@ describe('mod-habits S4 — derived reads + M5 seam', () => {
     await expect(h.svc.getStreak('nope')).rejects.toThrow(/not found/i)
     await expect(h.svc.getCompletionRate('nope', { from: ASOF, to: ASOF })).rejects.toThrow(/not found/i)
     await expect(h.svc.getCalendar('nope', '2026-09')).rejects.toThrow(/not found/i)
+  })
+})
+
+describe('mod-habits S5 — effect fan-out + cross-module seams', () => {
+  const ASOF = '2026-09-23'
+  const EFFECT_TYPES = ['complete_habit_occurrence', 'contribute_purpose_metric', 'award_xp'] as const
+
+  async function freshDb(): Promise<{ db: DrizzleDb; bsql: Database.Database }> {
+    await initVault()
+    const bsql = new Database(':memory:')
+    const driver = createBetterSqlite3Driver(bsql)
+    await migrate(driver)
+    return { db: createDrizzleProxy(driver), bsql }
+  }
+  // A service wired to a REAL rail whose handlers record fires (idempotency is the rail's, tested for real).
+  async function withRail(register: readonly (typeof EFFECT_TYPES)[number][], onFire: (t: string, transition: string) => void) {
+    const { db } = await freshDb()
+    const registry = createEffectRegistry()
+    for (const t of register) registry.register(t, async (event) => onFire(t, event.transition))
+    const rail = createEffectRail(db, registry)
+    return createHabitsService({ db, deviceId: 'test-device', clock: () => ASOF, effects: { rail, registry } })
+  }
+
+  it('a done completion fans out the 3 effects once; a re-log of the same date does not double-fire (idempotent)', async () => {
+    const fired: string[] = []
+    const svc = await withRail(EFFECT_TYPES, (t, tr) => fired.push(`${t}@${tr}`))
+    const hab = await svc.createHabit({ name: 'Water', frequency: 'daily' })
+    await svc.logCompletion(hab.id, { date: ASOF }) // done (target 1)
+    expect(fired.sort()).toEqual([
+      `award_xp@completed:${ASOF}`,
+      `complete_habit_occurrence@completed:${ASOF}`,
+      `contribute_purpose_metric@completed:${ASOF}`,
+    ])
+    await svc.logCompletion(hab.id, { date: ASOF, count: 1 }) // re-log same date → rail dedups
+    expect(fired).toHaveLength(3) // no double-fire (R1)
+  })
+
+  it('a partial completion fires no effects', async () => {
+    const fired: string[] = []
+    const svc = await withRail(['award_xp'], () => fired.push('x'))
+    const hab = await svc.createHabit({ name: 'Pushups', target_count: 10 })
+    await svc.logCompletion(hab.id, { date: ASOF, count: 3 }) // partial
+    expect(fired).toHaveLength(0)
+  })
+
+  it('an editCompletion that flips partial→done fires the effects (B1)', async () => {
+    const fired: string[] = []
+    const svc = await withRail(['award_xp'], () => fired.push('x'))
+    const hab = await svc.createHabit({ name: 'Read', target_count: 5 })
+    await svc.logCompletion(hab.id, { date: ASOF, count: 2 }) // partial → no fire
+    expect(fired).toHaveLength(0)
+    await svc.editCompletion(hab.id, ASOF, { count: 5 }) // flip to done → fire
+    expect(fired).toHaveLength(1)
+  })
+
+  it('with no effects port a done completion persists and fires nothing (dormant)', async () => {
+    const { db } = await freshDb()
+    const svc = createHabitsService({ db, deviceId: 'test-device', clock: () => ASOF })
+    const hab = await svc.createHabit({ name: 'Walk', frequency: 'daily' })
+    const c = await svc.logCompletion(hab.id, { date: ASOF })
+    expect(c.completed_date).toBe(ASOF) // succeeds, no throw
+  })
+
+  it('a throwing contribute_purpose_metric handler does NOT fail logCompletion (failure isolated, BR-S5-2)', async () => {
+    const { db } = await freshDb()
+    const registry = createEffectRegistry()
+    registry.register('contribute_purpose_metric', async () => {
+      throw new Error('handler boom')
+    })
+    const rail = createEffectRail(db, registry)
+    const svc = createHabitsService({ db, deviceId: 'test-device', clock: () => ASOF, effects: { rail, registry } })
+    const hab = await svc.createHabit({ name: 'Yoga', frequency: 'daily' })
+    const c = await svc.logCompletion(hab.id, { date: ASOF }) // must NOT throw
+    expect(c.completed_date).toBe(ASOF)
+    expect((await svc.getHabit(hab.id))?.current_streak).toBe(1) // persisted + cache recomputed
+  })
+
+  it('contributeToPurposeMetrics throws MetricContributionError when the handler throws', async () => {
+    const { db } = await freshDb()
+    const registry = createEffectRegistry()
+    registry.register('contribute_purpose_metric', async () => {
+      throw new Error('boom')
+    })
+    const rail = createEffectRail(db, registry)
+    const svc = createHabitsService({ db, deviceId: 'test-device', clock: () => ASOF, effects: { rail, registry } })
+    const hab = await svc.createHabit({ name: 'Meditate', frequency: 'daily' })
+    // a completion for a date never auto-fired (novel key → guaranteed re-fire → throw)
+    const completion = mkCompletion(hab.id, '2026-09-15')
+    await expect(svc.contributeToPurposeMetrics(hab.id, completion)).rejects.toBeInstanceOf(MetricContributionError)
+  })
+
+  it('getEntityTags → [] without a resolver; → resolver tags with one (HAB-21)', async () => {
+    const { db } = await freshDb()
+    const svc1 = createHabitsService({ db, deviceId: 'test-device', clock: () => ASOF })
+    const hab1 = await svc1.createHabit({ name: 'A' })
+    expect(await svc1.getEntityTags('habit', hab1.id)).toEqual([])
+
+    const { db: db2 } = await freshDb()
+    const associations = {
+      resolveAssociations: async () => ({ mode: 'separate' as const, tags: [{ kind: 'tag' as const, tagId: 't1' }], links: [] }),
+    }
+    const svc2 = createHabitsService({ db: db2, deviceId: 'test-device', clock: () => ASOF, associations: associations as never })
+    const hab2 = await svc2.createHabit({ name: 'B' })
+    expect(await svc2.getEntityTags('habit', hab2.id)).toEqual([{ kind: 'tag', tagId: 't1' }])
+  })
+
+  it('linkProject / listProjectsForHabit / unlinkProject round-trip; re-link resurrects (no UNIQUE throw, HAB-27)', async () => {
+    const { db } = await freshDb()
+    const svc = createHabitsService({ db, deviceId: 'test-device', clock: () => ASOF })
+    const hab = await svc.createHabit({ name: 'Gym' })
+    await svc.linkProject(hab.id, 'proj-1')
+    await svc.linkProject(hab.id, 'proj-1') // idempotent on a live pair
+    expect(await svc.listProjectsForHabit(hab.id)).toEqual(['proj-1'])
+    await svc.unlinkProject(hab.id, 'proj-1')
+    expect(await svc.listProjectsForHabit(hab.id)).toEqual([])
+    const relinked = await svc.linkProject(hab.id, 'proj-1') // resurrect (soft-deleted pair + UNIQUE → no throw)
+    expect(relinked.project_id).toBe('proj-1')
+    expect(await svc.listProjectsForHabit(hab.id)).toEqual(['proj-1'])
+  })
+
+  it('registerHabitsJournal registers a summary contribution (due/done; empty day → empty, BR-S5-7)', async () => {
+    const { db } = await freshDb()
+    const svc = createHabitsService({ db, deviceId: 'test-device', clock: () => ASOF })
+    const captured: JournalContribution[] = []
+    const registry = { register: (def: JournalContribution) => captured.push(def) }
+    registerHabitsJournal(registry as never, svc)
+    expect(captured).toHaveLength(1)
+    const contrib = captured[0]!
+    expect(contrib.module).toBe('habits')
+    const empty = await contrib.summary(ASOF) // no habits → empty
+    expect(empty.state).toBe('empty')
+    const hab = await svc.createHabit({ name: 'D', frequency: 'daily' })
+    await svc.logCompletion(hab.id, { date: ASOF }) // due + done
+    const s = await contrib.summary(ASOF)
+    expect(s.state).toBe('success')
+    expect(s.items?.[0]).toEqual({ due: 1, done: 1 })
   })
 })

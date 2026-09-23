@@ -89,6 +89,29 @@
 - **BR-HB-28 · Reads are pure + fail-loud.** No mutation; per-habit reads throw `Habit not found` on a missing/
   soft-deleted habit. `[FACT: services/habits/service.ts]`
 
-## S5 (pending)
-Effect fan-out (`complete_habit_occurrence`/`contribute_purpose_metric`/`award_xp`) + cross-module seams
-(entity_tags/pages/project_habits) + `registerHabitsJournal`/`registerHabitsEffects`.
+## S5 — Effect fan-out + cross-module seams
+
+- **BR-HB-29 · Completion effect fan-out (HAB-16).** A DONE completion (`count>=target`) fires
+  `complete_habit_occurrence` · `contribute_purpose_metric` · `award_xp` on the rail — POST-COMMIT, each GUARDED
+  (`registry.resolve` else no-op), idempotent (`effect_event_id` from `habitId|'completed:'+date|type` → re-log/
+  re-edit = safe no-op). Fired from every done-leaving mutation (log/detailed/backfill/**edit**), gated on the
+  derived done-state. `[FACT: services/habits/service.ts:143-161,272,319]`
+- **BR-HB-30 · Effects never fail the persisted completion (HAB-19, IR-5).** The fan-out is failure-isolated
+  (per-emit try/catch); a handler throw is non-fatal — the completion + cache already stand. `[FACT: services/habits/service.ts:155-159]`
+- **BR-HB-31 · Emit-only producer (R2).** Habits EMITS; the metric/ledger WRITES are Purpose/Gamification handlers.
+  No direct `purpose_metric_value`/`consequence_ledger` write; NO `registerHabitsEffects` (owns no handler).
+  `contributeToPurposeMetrics` re-throws `MetricContributionError` on emit failure (the re-drivable path).
+  `deleteCompletion` fires nothing + does not reverse a prior effect (no reverse effect exists — deferred). `[FACT: services/habits/service.ts:399-407; business-rules.md:37-41]`
+- **BR-HB-32 · entity_tags consumer, deny-safe (HAB-21).** `getEntityTags(entityType, entityId)` → `[]` without an
+  `associations` resolver; else its tags (finance FIN-35 shape). `HABIT_ENTITY_TYPE='habit'`. `[FACT: services/habits/service.ts:409-414]`
+- **BR-HB-33 · project_habits association, resurrect-aware (HAB-27, C1).** `linkProject` (live→return · soft-deleted
+  →resurrect · else create — never surfaces the UNIQUE) · `unlinkProject` (soft-delete) · `listProjectsForHabit`.
+  `[FACT: services/habits/service.ts:416-448]`
+- **BR-HB-34 · Journal contribution (HB-6).** `registerHabitsJournal` registers a `summary(date)` contribution
+  (module='habits', sectionKey='summary') → `{due, done}`; `due>0 ⇒ success` else `empty` (TerminalState by TYPE).
+  `getDayCompletionDigest(date)` is the read it consumes. `[FACT: services/habits/journal.ts; service.ts:450-461]`
+
+## ① COMPLETE
+S1–S5 landed. Habits reminder schedule (HAB-06) rides the S1/S4 reads; sync (HAB-25) rides the substrate; the
+`rate` measure value + goal-vs-habit target model remain the documented design-pass (rerun §5:146). ② `fe-habits`
+(LIF-182) owns all UI.

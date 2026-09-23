@@ -14,13 +14,21 @@
 // ============================================================================
 
 import { and, eq, gte, isNull, lte, type SQL } from 'drizzle-orm'
-import type { Habit, HabitCompletion } from '@vida/types'
+import type { Habit, HabitCompletion, EffectType, ProjectHabit } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
-import { habits, habitCompletions, type HabitRow, type HabitCompletionRow } from '../../db/schema/habits'
+import {
+  habits,
+  habitCompletions,
+  projectHabits,
+  type HabitRow,
+  type HabitCompletionRow,
+  type ProjectHabitRow,
+} from '../../db/schema/habits'
 import { CreateHabitSchema, UpdateHabitSchema, LogCompletionSchema, EditCompletionSchema } from '../../validators/habit'
 import {
   HabitScheduleError,
   BackfillWindowError,
+  MetricContributionError,
   type HabitsService,
   type HabitsServiceDeps,
   type CreateHabitInput,
@@ -33,6 +41,9 @@ import {
   type MoodPoint,
   type CalendarDay,
 } from './types'
+
+// The 3 S4-catalogue effects a DONE completion fans out (HAB-16). Producer-only — habits emits, never handles.
+const COMPLETION_EFFECTS: readonly EffectType[] = ['complete_habit_occurrence', 'contribute_purpose_metric', 'award_xp']
 
 // Defensive JSON read (the checkins parseJson boundary): the service is the only writer, but a future
 // sync row / manual DB edit could carry malformed JSON — degrade to the fallback, never throw an opaque
@@ -57,6 +68,10 @@ const toHabit = (r: HabitRow): Habit => ({
 const toCompletion = (r: HabitCompletionRow): HabitCompletion => ({
   ...r,
   _sync_status: r._sync_status as HabitCompletion['_sync_status'],
+})
+const toProjectHabit = (r: ProjectHabitRow): ProjectHabit => ({
+  ...r,
+  _sync_status: r._sync_status as ProjectHabit['_sync_status'],
 })
 
 // --- S2 streak engine (pure) -------------------------------------------------
@@ -119,6 +134,31 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
 
   const habitsRepo = createRepository(db, habits, { ...cfg, softDelete: true })
   const completionsRepo = createRepository(db, habitCompletions, { ...cfg, softDelete: false }) // ledger — hard delete
+  const projectHabitsRepo = createRepository(db, projectHabits, { ...cfg, softDelete: true }) // KEPT junction (C1)
+  const { effects, associations } = deps
+
+  // BR-S5-1 — a DONE completion fans out the 3 S4 effects, each GUARDED (no handler → no-op) and POST-COMMIT.
+  // The rail dedups by (subjectNaturalKey|transition|effectType|targetRef) → re-firing the same (habit,date) is a
+  // safe no-op (R1). Emitted from every done-leaving mutation (log/detailed/backfill/edit), gated on done-state.
+  const emitCompletionEffect = async (habit: HabitRow, date: string, effectType: EffectType): Promise<void> => {
+    if (!effects || !effects.registry.resolve(effectType)) return // dormant
+    await effects.rail.applyEffect({
+      subjectNaturalKey: habit.id,
+      transition: `completed:${date}`,
+      effectType,
+      targetRef: habit.id,
+    })
+  }
+  const emitCompletionEffects = async (habit: HabitRow, completion: HabitCompletionRow): Promise<void> => {
+    if (completion.count < habit.target_count) return // only DONE completions fan out (HB-5)
+    for (const t of COMPLETION_EFFECTS) {
+      try {
+        await emitCompletionEffect(habit, completion.completed_date, t)
+      } catch {
+        // post-commit, failure-isolated (BR-S5-2): the persisted completion stands; a handler throw is non-fatal.
+      }
+    }
+  }
 
   // --- S1 serialize (faithful echo) ---
   const serializeHabit = (p: CreateHabitInput): CreateInput<typeof habits> => ({
@@ -229,6 +269,7 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
       ? await completionsRepo.update(existing.id, serializeCompletionPatch(p))
       : await completionsRepo.create(serializeCompletionCreate(habitId, date, p))
     await recomputeAndCache(habit)
+    await emitCompletionEffects(habit, row) // BR-S5-1 — fan out on done (guarded, post-commit, idempotent)
     return toCompletion(row)
   }
 
@@ -275,6 +316,7 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
       if (!existing) throw new Error(`Completion not found: ${habitId} @ ${date}`) // fail-loud (HB-2 edit path)
       const row = await completionsRepo.update(existing.id, serializeCompletionPatch(p))
       await recomputeAndCache(habit)
+      await emitCompletionEffects(habit, row) // B1 — an edit that flips partial→done must fire (idempotent on re-edit)
       return toCompletion(row)
     },
 
@@ -351,6 +393,71 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
       return comps
         .sort((a, b) => a.completed_date.localeCompare(b.completed_date))
         .map((c) => ({ date: c.completed_date, count: c.count, done: c.count >= habit.target_count }))
+    },
+
+    // ── S5: cross-module seams ────────────────────────────────────────
+    contributeToPurposeMetrics: async (habitId, completion) => {
+      const habit = await loadHabitOrThrow(habitId)
+      if (!effects || !effects.registry.resolve('contribute_purpose_metric')) return // dormant (no handler)
+      try {
+        await emitCompletionEffect(habit, completion.completed_date, 'contribute_purpose_metric')
+      } catch (e) {
+        // HAB-19 — the re-drivable path: surface a typed error (the completion already persisted elsewhere).
+        throw new MetricContributionError(e instanceof Error ? e.message : String(e))
+      }
+    },
+
+    getEntityTags: async (entityType, entityId) => {
+      if (!associations) return [] // deny-safe: no resolver → no tags (finance FIN-35 precedent)
+      const r = await associations.resolveAssociations({ entityType, entityId }, 'separate')
+      return r.mode === 'separate' ? r.tags : []
+    },
+
+    linkProject: async (habitId, projectId) => {
+      // one row per pair (UNIQUE); findWhere does NOT filter soft-deletes (IR-3) → we see a soft-deleted pair too.
+      const existing = (
+        await projectHabitsRepo.findWhere(
+          and(eq(projectHabits.habit_id, habitId), eq(projectHabits.project_id, projectId)) as SQL,
+        )
+      )[0]
+      if (existing) {
+        if (existing.deleted_at == null) return toProjectHabit(existing) // live → idempotent return
+        return toProjectHabit(await projectHabitsRepo.update(existing.id, { deleted_at: null })) // resurrect
+      }
+      return toProjectHabit(await projectHabitsRepo.create({ project_id: projectId, habit_id: habitId, deleted_at: null }))
+    },
+
+    unlinkProject: async (habitId, projectId) => {
+      const existing = (
+        await projectHabitsRepo.findWhere(
+          and(
+            eq(projectHabits.habit_id, habitId),
+            eq(projectHabits.project_id, projectId),
+            isNull(projectHabits.deleted_at),
+          ) as SQL,
+        )
+      )[0]
+      if (existing) await projectHabitsRepo.delete(existing.id) // soft-delete
+    },
+
+    listProjectsForHabit: async (habitId) => {
+      const rows = await projectHabitsRepo.findWhere(
+        and(eq(projectHabits.habit_id, habitId), isNull(projectHabits.deleted_at)) as SQL,
+      )
+      return rows.map((r) => r.project_id)
+    },
+
+    // HB-6 — the day digest the Journal /summary consumes. Reuses isScheduledOn (no duplicate predicate).
+    getDayCompletionDigest: async (date) => {
+      const dueRows = (
+        await habitsRepo.findWhere(and(isNull(habits.deleted_at), eq(habits.is_active, true)) as SQL)
+      ).filter((r) => isScheduledOn(r, date))
+      if (dueRows.length === 0) return { due: 0, done: 0 }
+      const comps = await completionsRepo.findWhere(eq(habitCompletions.completed_date, date) as SQL)
+      const countByHabit = new Map<string, number>()
+      for (const c of comps) countByHabit.set(c.habit_id, c.count)
+      const done = dueRows.filter((r) => (countByHabit.get(r.id) ?? 0) >= r.target_count).length
+      return { due: dueRows.length, done }
     },
   }
 

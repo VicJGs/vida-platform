@@ -9,14 +9,27 @@
 // ============================================================================
 
 import type { z } from 'zod'
-import type { Habit, HabitCompletion, HabitType, LifeDomain } from '@vida/types'
+import type { Habit, HabitCompletion, HabitType, LifeDomain, ProjectHabit } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
+import type { AssociationResolver, TagAssociation } from '../../foundation/spaces'
 import type {
   CreateHabitSchema,
   UpdateHabitSchema,
   LogCompletionSchema,
   EditCompletionSchema,
 } from '../../validators/habit'
+
+/** The `entity_type` habits registers in the shared taggable/pages registries (ADR-006 SP1 / Notes `pages`).
+ *  A forward export consumed by tag reads + the ② page-linking surface (HAB-21/22). */
+export const HABIT_ENTITY_TYPE = 'habit'
+
+/** S5 HAB-16 — the effect rail + registry (the registry gates the guarded emit). Injected by M1.2 Gamification;
+ *  dormant without a registered handler. Mirrors the checkins EffectsPort. */
+export interface EffectsPort {
+  rail: EffectRail
+  registry: EffectRegistry
+}
 
 /** S3 — the Preferences window port (Preferences owns `habit_backfill_window_days`). `null` = no limit.
  *  PERMISSIVE / fail-OPEN by default (a user convenience policy, NOT a fail-closed security gate). */
@@ -31,9 +44,10 @@ export interface HabitsServiceDeps {
   clock?: () => string
   /** S3 — backfill window source (Preferences-owned). Absent → permissive (fail-OPEN): no limit. */
   prefs?: HabitsPrefsPort
-  // ── later slices append optional cross-module ports ──
-  // effects? (S5 rail+registry, fail-CLOSED) · contributions? (S5 Purpose ladder) ·
-  // associations? (S5 entity_tags) · notes? (S5 pages).
+  /** S5 — the effect rail (guarded completion fan-out; dormant without a registered handler). */
+  effects?: EffectsPort
+  /** S5 — the entity_tags resolver (Spaces-owned); absent → getEntityTags returns []. */
+  associations?: AssociationResolver
 }
 
 // --- Zod-inferred input shapes (validators/habit.ts) ------------------------
@@ -99,6 +113,15 @@ export class BackfillWindowError extends Error {
   }
 }
 
+/** HAB-19 — a purpose-metric contribution emit failed. Thrown from the standalone `contributeToPurposeMetrics`
+ *  (the re-drivable path); the auto-fan-out catches it non-fatally (the completion already persisted, BR-S5-2). */
+export class MetricContributionError extends Error {
+  constructor(public readonly reason: string) {
+    super(`Purpose-metric contribution failed: ${reason}`)
+    this.name = 'MetricContributionError'
+  }
+}
+
 export interface HabitsService {
   // ── S1: habit definition CRUD ────────────────────────────────────
   createHabit(input: CreateHabitInput): Promise<Habit>
@@ -133,4 +156,21 @@ export interface HabitsService {
   getMoodTrend(habitId: string, range: HabitDateRange): Promise<MoodPoint[]>
   /** HAB-15 — the month's completions for the calendar view. */
   getCalendar(habitId: string, month: string): Promise<CalendarDay[]>
+
+  // ── S5: cross-module seams (emit-only producer + associations) ────
+  /** HAB-17 — emit the `contribute_purpose_metric` effect (Purpose owns the write, R2); throws
+   *  `MetricContributionError` on emit failure (the re-drivable path). */
+  contributeToPurposeMetrics(habitId: string, completion: HabitCompletion): Promise<void>
+  /** HAB-21 — a habit's tags via the shared `entity_tags` primitive; deny-safe → [] without a resolver. */
+  getEntityTags(entityType: string, entityId: string): Promise<TagAssociation[]>
+  /** HAB-27 — associate a habit with a project (KEPT junction, C1); idempotent/resurrect-aware. */
+  linkProject(habitId: string, projectId: string): Promise<ProjectHabit>
+  /** HAB-27 — soft-delete a habit↔project association. */
+  unlinkProject(habitId: string, projectId: string): Promise<void>
+  /** HAB-27 — the project_ids a habit is associated with. */
+  listProjectsForHabit(habitId: string): Promise<string[]>
+
+  /** HB-6 journal-support — the day's due-habit count + how many are done (the Journal `/summary` consumption
+   *  shape; used by the registered JournalContribution). */
+  getDayCompletionDigest(date: string): Promise<{ due: number; done: number }>
 }

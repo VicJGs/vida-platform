@@ -59,8 +59,25 @@ untouched — finance-S3 precedent). `HabitDateRange` (not `DateRange`) to avoid
 `./services/journals`. Reads are pure (no cache write); per-habit reads fail loud on a missing habit. The pursuable
 `rate` MEASURE value + goal-vs-habit target model stay the documented design-pass (rerun §5:146).
 
-### S5 (pending)
-effect fan-out + `contributeToPurposeMetrics`/`getEntityTags` + `registerHabitsJournal`/`registerHabitsEffects` (S5).
+### S5 — effect fan-out + cross-module seams
+| Method / export | Signature | Notes |
+|-----------------|-----------|-------|
+| `contributeToPurposeMetrics` | `(habitId, completion) => Promise<void>` | emit `contribute_purpose_metric`; throws `MetricContributionError` on failure |
+| `getEntityTags` | `(entityType, entityId) => Promise<TagAssociation[]>` | deny-safe → [] without a resolver (finance FIN-35) |
+| `linkProject`/`unlinkProject`/`listProjectsForHabit` | project_habits junction (KEPT, C1) | `linkProject` idempotent/resurrect-aware |
+| `getDayCompletionDigest` | `(date) => Promise<{due, done}>` | the Journal /summary consumption shape |
+| `registerHabitsJournal(registry, svc)` · `HABIT_ENTITY_TYPE` · `MetricContributionError` | exports | JournalContribution (summary → due/done); no `registerHabitsEffects` (emit-only producer) |
+
+Completion effect fan-out: a DONE completion fires `complete_habit_occurrence`/`contribute_purpose_metric`/
+`award_xp` — post-commit, guarded, idempotent (rail dedup), failure-isolated — from every done-leaving mutation
+(log/detailed/backfill/edit). Deps gain `effects?: EffectsPort` + `associations?: AssociationResolver` (dormant/[]).
+
+## ① BACKEND COMPLETE (S1–S5)
+`createHabitsService` over DB-4 `habits` + `habit_completions` (+ `project_habits`): definition CRUD · completion
+ledger + streak engine · backfill/window · derived reads + M5 seam · effect fan-out + cross-module seams. Deferred
+(homed): the `rate` measure value + goal-vs-habit target model (design-pass, rerun §5:146) · `[E]` wiring (M3/DB-5)
+· backfill-window setting (Preferences) · purpose/economy handler WRITES (Purpose/Gamification, M2). ② `fe-habits`
+(LIF-182) owns all UI.
 
 ## Types & typed errors
 - `@vida/types` `Habit` (reconciled: +`measurement_kind`/`binding_mode`/`success_criteria`/`difficulty`, −`tags`),
@@ -79,3 +96,4 @@ Repo typecheck 11/11 · `@vida/core` 1285 (→ +2 folds) · eslint 0 · 10 habit
 | 2026-09-23 | S2 | completion ledger + streak-recompute engine; §XXVI g1 SHIP (streak algo hand-walked) + Verification Gate (35 habits tests, @vida/core 1297) + g2 code-review SHIP (future-date comment + 2 hardening tests folded) |
 | 2026-09-23 | S3 | backfill + window (permissive fail-OPEN Preferences port); future/beyond-window reject; §XXVI g1 REVISE→fixed (fail-OPEN vs deny-safe terminology) + Verification Gate (41 habits tests, @vida/core 1305) + g2 code-review SHIP (clock-hoist folded) |
 | 2026-09-23 | S4 | derived reads (today-list/streak/completion-rate/mood/calendar) + M5 seam; `rate` measure = design-pass; §XXVI g1 SHIP + Verification Gate (49 habits tests, @vida/core 1312) + g2 code-review SHIP (off-schedule-exclusion test folded; DateRange→HabitDateRange barrel-collision fix) |
+| 2026-09-23 | S5 | effect fan-out (guarded/idempotent/post-commit/isolated, on every done-leaving mutation) + entity_tags + project_habits + Journal contribution; emit-only producer (no registerHabitsEffects); §XXVI g1 REVISE→fixed (B1 edit-flip-to-done missed-fire; B2 getEntityTags signature; 4 NITs) + Verification Gate (58 habits tests, @vida/core 1322) + g2 code-review SHIP (idempotency key traced byte-by-byte). **① BACKEND COMPLETE.** EffectsPort barrel-collision (not re-exported). |
