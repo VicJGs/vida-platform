@@ -10,18 +10,32 @@
 import type { z } from 'zod'
 import type { DrizzleDb } from '../../db/adapter'
 import type { CurrencyDef, CurrencyBalance } from '../../foundation/economy'
-import type { CurrencyCreateSchema, UpdateProfileSchema } from '../../validators/gamification'
+import type { EffectRail } from '../../foundation/effects'
+import type { MeasurementSourceRegistry } from '../../foundation/measurement'
+import type { CapabilityEnforcer } from '../../foundation/capability'
+import type {
+  CurrencyCreateSchema,
+  UpdateProfileSchema,
+  RuleCreateSchema,
+  RuleUpdateSchema,
+} from '../../validators/gamification'
 import type { LevelInfo, ClampResult } from './level'
+import type { Rule, RuleContext, ExecutionResult } from './rules'
 
-/** S1 deps — the module composes the economy substrate from db+deviceId (registry created inside).
- *  S2+ append the injected rail/measurement/enforcer ports. */
+/** S1 deps = db+deviceId (the economy registry is composed inside). S2 appends the injected ports:
+ *  rail (required to executeRule), measurement (derived_pull conditions), enforcer (user-authored rules). */
 export interface GamificationServiceDeps {
   db: DrizzleDb
   deviceId: string
+  rail?: EffectRail
+  measurement?: MeasurementSourceRegistry
+  enforcer?: CapabilityEnforcer
 }
 
 export type CurrencyCreateInput = z.infer<typeof CurrencyCreateSchema>
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>
+export type RuleCreateInput = z.infer<typeof RuleCreateSchema>
+export type RuleUpdateInput = z.infer<typeof RuleUpdateSchema>
 
 /** The user_profile real-column VIEW (IR-11: the @vida/types UserProfile interface diverges — it still
  *  carries persona/check_in_streak/etc. that moved to Preferences/Check-ins). This mirrors the row. */
@@ -59,6 +73,18 @@ export interface GamificationService {
   // --- Profile (IR-11 real-column view) ---
   getProfile(): Promise<GamificationProfile | null>
   updateProfile(patch: UpdateProfileInput): Promise<GamificationProfile>
+  // --- Rules (S2 — GM-2/GM-8; requires the rail to execute) ---
+  createRule(input: RuleCreateInput): Promise<Rule>
+  updateRule(id: string, patch: RuleUpdateInput): Promise<Rule>
+  enableRule(id: string): Promise<Rule>
+  disableRule(id: string): Promise<Rule>
+  deleteRule(id: string): Promise<void>
+  listRules(): Promise<Rule[]>
+  getRule(id: string): Promise<Rule>
+  /** Fire a single rule if its condition is met; parses consequences → clamps lock/spend → dispatches. */
+  executeRule(ruleId: string, ctx: RuleContext): Promise<ExecutionResult>
+  /** Sweep all enabled rules against the context (derived_pull + matching event_trigger). */
+  evaluateRules(ctx: RuleContext): Promise<ExecutionResult[]>
 }
 
 /** getCurrency/getBalance on an unknown currency code (fail-loud). */
@@ -77,3 +103,37 @@ export class CurrencyExists extends Error {
     this.name = 'CurrencyExists'
   }
 }
+
+/** getRule/updateRule/executeRule on an unknown or soft-deleted rule id. */
+export class RuleNotFound extends Error {
+  constructor(id: string) {
+    super(`Rule not found: ${id}`)
+    this.name = 'RuleNotFound'
+  }
+}
+
+/** createRule/updateRule would make the rule dependency graph cyclic (a rule feeding its own condition). */
+export class RuleBindingCyclic extends Error {
+  constructor(detail: string) {
+    super(`Rule binding graph has a cycle: ${detail}`)
+    this.name = 'RuleBindingCyclic'
+  }
+}
+
+/** A user-authored rule (grant_id set) whose capability envelope denies a consequence effect (fail-closed). */
+export class RuleGrantDenied extends Error {
+  constructor(ruleId: string, reason: string) {
+    super(`Rule ${ruleId} denied by its capability grant: ${reason}`)
+    this.name = 'RuleGrantDenied'
+  }
+}
+
+/** executeRule/evaluateRules without an injected effect rail (S2 dep). */
+export class RailNotConfigured extends Error {
+  constructor() {
+    super('Cannot execute a rule: no effect rail configured (inject deps.rail)')
+    this.name = 'RailNotConfigured'
+  }
+}
+
+export type { Rule, RuleContext, ExecutionResult, RuleCondition, ConsequenceSpec } from './rules'

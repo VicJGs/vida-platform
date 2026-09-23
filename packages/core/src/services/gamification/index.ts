@@ -8,11 +8,22 @@ export { createGamificationService } from './service'
 export {
   CurrencyNotFound,
   CurrencyExists,
+  RuleNotFound,
+  RuleBindingCyclic,
+  RuleGrantDenied,
+  RailNotConfigured,
   type GamificationService,
   type GamificationServiceDeps,
   type GamificationProfile,
   type CurrencyCreateInput,
   type UpdateProfileInput,
+  type RuleCreateInput,
+  type RuleUpdateInput,
+  type Rule,
+  type RuleContext,
+  type ExecutionResult,
+  type RuleCondition,
+  type ConsequenceSpec,
 } from './types'
 export {
   deriveLevel,

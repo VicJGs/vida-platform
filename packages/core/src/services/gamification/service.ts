@@ -16,19 +16,43 @@ import {
   type CurrencyBalance,
   type LedgerEntry,
 } from '../../foundation/economy'
+import { assertAcyclic, MeasurementCycle } from '../../foundation/measurement'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
-import { consequenceLedger } from '../../db/schema/foundation/economy'
+import { consequenceLedger, rules } from '../../db/schema/foundation/economy'
 import { userProfile, type UserProfileRow } from '../../db/schema/gamification'
-import { CurrencyCreateSchema, UpdateProfileSchema } from '../../validators/gamification'
+import {
+  CurrencyCreateSchema,
+  UpdateProfileSchema,
+  RuleCreateSchema,
+  RuleUpdateSchema,
+} from '../../validators/gamification'
 import { deriveLevel, clampToFloor } from './level'
+import {
+  parseRule,
+  evaluateCondition,
+  buildEffectEvents,
+  rulesToBindings,
+  serializeCondition,
+  serializeConsequences,
+  type Rule,
+  type RuleContext,
+  type ExecutionResult,
+  type ConsequenceSpec,
+} from './rules'
 import {
   CurrencyNotFound,
   CurrencyExists,
+  RuleNotFound,
+  RuleBindingCyclic,
+  RuleGrantDenied,
+  RailNotConfigured,
   type GamificationService,
   type GamificationServiceDeps,
   type GamificationProfile,
   type CurrencyCreateInput,
   type UpdateProfileInput,
+  type RuleCreateInput,
+  type RuleUpdateInput,
 } from './types'
 
 /** XP is the canonical shipped currency — the default for level (§3.2). */
@@ -64,11 +88,13 @@ function toProfile(row: UserProfileRow): GamificationProfile {
 }
 
 export function createGamificationService(deps: GamificationServiceDeps): GamificationService {
-  const { db, deviceId } = deps
+  const { db, deviceId, rail, measurement, enforcer } = deps
   const currencyRegistry = createCurrencyRegistry(db, deviceId)
   // Append-only ledger read (no deleted_at → plain findWhere) + the singleton profile row.
   const ledgerRepo = createRepository(db, consequenceLedger, { deviceId, encryptedFields: [] })
   const profileRepo = createRepository(db, userProfile, { deviceId, encryptedFields: [] })
+  // rules has deleted_at → softDelete:true (findAll/findById exclude soft-deleted).
+  const rulesRepo = createRepository(db, rules, { deviceId, encryptedFields: [], softDelete: true })
 
   async function listCurrencies() {
     return currencyRegistry.list()
@@ -152,6 +178,168 @@ export function createGamificationService(deps: GamificationServiceDeps): Gamifi
     return toProfile(row)
   }
 
+  // --- S2 rule engine -------------------------------------------------------
+
+  async function listRules(): Promise<Rule[]> {
+    return (await rulesRepo.findAll()).map(parseRule) // findAll excludes soft-deleted
+  }
+
+  async function getRule(id: string): Promise<Rule> {
+    const row = await rulesRepo.findById(id) // findById excludes soft-deleted → null
+    if (!row) throw new RuleNotFound(id)
+    return parseRule(row)
+  }
+
+  /** The whole rule set (incl. the candidate) must stay acyclic — a rule may not feed its own condition. */
+  function assertRuleGraphAcyclic(all: Rule[]): void {
+    try {
+      assertAcyclic(rulesToBindings(all))
+    } catch (e) {
+      if (e instanceof MeasurementCycle) throw new RuleBindingCyclic(e.message)
+      throw e
+    }
+  }
+
+  async function createRule(input: RuleCreateInput): Promise<Rule> {
+    const parsed = RuleCreateSchema.parse(input)
+    const candidate: Rule = {
+      id: '(new)',
+      name: parsed.name,
+      condition: parsed.condition,
+      consequences: parsed.consequences,
+      grantId: parsed.grantId ?? null,
+      isEnabled: parsed.isEnabled ?? true,
+      created_at: 0,
+      updated_at: 0,
+    }
+    assertRuleGraphAcyclic([...(await listRules()), candidate])
+    const created = await rulesRepo.create({
+      name: parsed.name,
+      condition_binding_type: parsed.condition.kind,
+      condition_ref: serializeCondition(parsed.condition),
+      consequences: serializeConsequences(parsed.consequences),
+      grant_id: parsed.grantId ?? null,
+      is_enabled: parsed.isEnabled ?? true,
+    })
+    return getRule(created.id) // re-read (create echoes input; is_enabled default etc.)
+  }
+
+  async function updateRule(id: string, patch: RuleUpdateInput): Promise<Rule> {
+    const parsed = RuleUpdateSchema.parse(patch)
+    const current = await getRule(id)
+    const merged: Rule = {
+      ...current,
+      name: parsed.name ?? current.name,
+      condition: parsed.condition ?? current.condition,
+      consequences: parsed.consequences ?? current.consequences,
+      isEnabled: parsed.isEnabled ?? current.isEnabled,
+    }
+    assertRuleGraphAcyclic([...(await listRules()).filter((r) => r.id !== id), merged])
+    const dbPatch: UpdateInput<typeof rules> = {}
+    if (parsed.name !== undefined) dbPatch.name = parsed.name
+    if (parsed.condition !== undefined) {
+      dbPatch.condition_binding_type = parsed.condition.kind
+      dbPatch.condition_ref = serializeCondition(parsed.condition)
+    }
+    if (parsed.consequences !== undefined) dbPatch.consequences = serializeConsequences(parsed.consequences)
+    if (parsed.isEnabled !== undefined) dbPatch.is_enabled = parsed.isEnabled
+    await rulesRepo.update(id, dbPatch)
+    return getRule(id)
+  }
+
+  async function enableRule(id: string): Promise<Rule> {
+    await getRule(id)
+    await rulesRepo.update(id, { is_enabled: true })
+    return getRule(id)
+  }
+
+  async function disableRule(id: string): Promise<Rule> {
+    await getRule(id)
+    await rulesRepo.update(id, { is_enabled: false })
+    return getRule(id)
+  }
+
+  async function deleteRule(id: string): Promise<void> {
+    await getRule(id) // fail-loud on unknown
+    await rulesRepo.delete(id) // soft-delete (softDelete:true)
+  }
+
+  /** Evaluate + fire a loaded rule. Shared by executeRule (by id) and evaluateRules (sweep) so a sweep
+   *  doesn't re-fetch each rule. */
+  async function executeLoadedRule(rule: Rule, ctx: RuleContext): Promise<ExecutionResult> {
+    if (!rule.isEnabled) return { ruleId: rule.id, fired: false, reason: 'disabled', effectsFired: 0, clamped: false }
+
+    const query = (key: string): number | null => measurement?.query(key) ?? null
+    const evalResult = evaluateCondition(rule, ctx, query)
+    if (!evalResult.met) {
+      return {
+        ruleId: rule.id,
+        fired: false,
+        reason: evalResult.unmeasured ? 'unmeasured' : 'condition_not_met',
+        effectsFired: 0,
+        clamped: false,
+      }
+    }
+
+    // User-authored rule (grant_id set) → the capability envelope must permit every consequence effect
+    // (fail-closed: no enforcer, or a denied effect, blocks the whole fire). Shipped/trusted rules skip this.
+    if (rule.grantId != null) {
+      if (!enforcer) throw new RuleGrantDenied(rule.id, 'no enforcer configured')
+      for (const c of rule.consequences) {
+        // R2 — `grant_id` identifies the capability the rule was authored under; the enforcer keys by
+        // capability DEF id. At M1 (auth-off, no live authoring surface) this is a fail-closed HOOK; the
+        // grant-row → def-id resolution when a REAL enforcer is wired is owed to #85 CAP-authoring (⚠ INTENDED).
+        const decision = await enforcer.checkAction(rule.grantId, { type: 'effect', effect: c.effectType })
+        if (!decision.allowed) throw new RuleGrantDenied(rule.id, decision.reason ?? 'not_permitted')
+      }
+    }
+
+    // Below-floor clamp for lock consequences (IR-12): a lock cannot drive a balance below 0; a fully
+    // clamped lock (nothing available) is dropped, not fired.
+    let clamped = false
+    const finalConsequences: ConsequenceSpec[] = []
+    for (const c of rule.consequences) {
+      if (c.effectType === 'lock_currency') {
+        const bal = await getBalance(c.payload.currencyId)
+        const res = clampToFloor(bal.current, c.payload.amount)
+        if (res.clamped) clamped = true
+        if (res.applied <= 0) continue
+        finalConsequences.push({ ...c, payload: { ...c.payload, amount: res.applied } })
+      } else {
+        finalConsequences.push(c)
+      }
+    }
+
+    const events = buildEffectEvents({ ...rule, consequences: finalConsequences }, ctx)
+    // Fan onto the rail per effect and count what was NEWLY applied (R1). dispatchConsequence discards the
+    // rail's {applied} results, so a replay would over-report — we drive rail.applyEffect directly (still the
+    // substrate's write path, no re-implementation). Each applyEffect is atomic (F1 §3B: ledger row + handler
+    // co-write roll back together); the SET is not atomic — on a partial failure the caller re-drives and the
+    // rail dedups the already-applied effects by effect_event_id (IR-2/GM-20).
+    let effectsFired = 0
+    for (const event of events) {
+      const { applied } = await rail!.applyEffect(event)
+      if (applied) effectsFired += 1
+    }
+    // `fired` = the rule triggered (condition met + dispatched) this call; `effectsFired` = effects NEWLY
+    // applied (an idempotent replay or a fully-clamped lock → 0), so downstream counters never double-count.
+    return { ruleId: rule.id, fired: true, effectsFired, clamped }
+  }
+
+  async function executeRule(ruleId: string, ctx: RuleContext): Promise<ExecutionResult> {
+    if (!rail) throw new RailNotConfigured()
+    return executeLoadedRule(await getRule(ruleId), ctx)
+  }
+
+  async function evaluateRules(ctx: RuleContext): Promise<ExecutionResult[]> {
+    if (!rail) throw new RailNotConfigured()
+    const out: ExecutionResult[] = []
+    for (const rule of await listRules()) {
+      if (rule.isEnabled) out.push(await executeLoadedRule(rule, ctx))
+    }
+    return out
+  }
+
   return {
     defineCurrency,
     listCurrencies,
@@ -163,5 +351,14 @@ export function createGamificationService(deps: GamificationServiceDeps): Gamifi
     previewSpend,
     getProfile,
     updateProfile,
+    createRule,
+    updateRule,
+    enableRule,
+    disableRule,
+    deleteRule,
+    listRules,
+    getRule,
+    executeRule,
+    evaluateRules,
   }
 }

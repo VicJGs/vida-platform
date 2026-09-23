@@ -69,8 +69,9 @@ Intake resolution: `docs/intake/gamification.md` (GG1/GG6/§A/§B/§C — "the S
 - [x] Interpretation layer — `delivery/interpretation.md` (scope spine RATIFY/BUILD · 13 IMPLICIT RULES · 3 OQs resolved)
 - [x] Decomposition Gate — `slice-map.md` + `seam-contract.md` · independent gate-1 critique **SHIP** (2 REVISE + N1 folded) → **Approval 1 GRANTED**
 - [~] Per-slice service track (Steps 3–11) S1→S2→S3→S4:
-  - [x] **S1** currency surface + level + below-floor clamp — 10/10 live-store, tsc 0, eslint 0, 1256/1256; code-review REVISE (R1 shipped-code dup guard + R2 N+1) folded; current-* born
-  - [ ] S2 rule engine · [ ] S3 achievement engine · [ ] S4 journal + wiring
+  - [x] **S1** currency surface + level + below-floor clamp — 10/10 live-store; code-review REVISE (R1 shipped-code dup guard + R2 N+1) folded; current-* born
+  - [x] **S2** rule engine — CRUD + assertAcyclic + executeRule (parse consequences → rail.applyEffect) + user-authored envelope (fail-closed) + lock clamp; 20/20 live-store, 1267/1267, tsc 0, eslint 0; code-review REVISE (R1 honest effectsFired + R2 grant_id→def-id #85 defer + N1 atomicity) folded; current-* refreshed
+  - [ ] S3 achievement engine · [ ] S4 journal + wiring
 
 ## Build Steps
 <!-- UNIT-level — mirrors the active spec's §5 Implementation Prompt; what victor:execute-plan-* works.
@@ -82,6 +83,7 @@ Intake resolution: `docs/intake/gamification.md` (GG1/GG6/§A/§B/§C — "the S
 |------|--------------|-----------|
 | 2026-09-22 | initialized task (expanded P5 stub) + scaffolded spec stub + fresh branch off main | Step 0 BASELINE → Step 1 interpretation layer |
 | 2026-09-22 | BASELINE + interpretation layer (13 IR, scope spine) + Decomposition Gate (4 slices, independent critic SHIP) → Approval 1 → **S1 shipped** (currency surface + level curve + below-floor clamp; 10 live-store tests; 2 code-review REVISE folded; current-* born) | S2 rule engine (CRUD + assertAcyclic + executeRule → dispatchConsequence) |
+| 2026-09-22 | **S2 shipped** — rule engine: CRUD + acyclicity guard + executeRule/evaluateRules (parse consequences → rail.applyEffect, idempotent) + user-authored envelope (fail-closed) + lock clamp. 20/20 live-store; code-review REVISE folded (R1 honest effectsFired, R2 grant_id→#85, N1 atomicity comment); current-* refreshed | S3 achievement engine (predicate eval → unlock → user_achievement + reward + notification) |
 
 ## Notes
 - Env: Node 24 via nvm (better-sqlite3 ABI for live-store gates); per-issue branch `mod-gamification` → PR when ① completes.

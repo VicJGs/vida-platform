@@ -23,19 +23,30 @@ S2+ append injected ports (rail · measurement · enforcer). `[FACT: services/ga
 | `getBalance(code)` / `getBalances()` | ledger rows → `computeBalance(entries, pool_ceiling)` — DERIVED, never stored | `service.ts:97-115` |
 | `deriveLevel(total)` / `getLevel(code='XP')` | pure non-linear curve `1+⌊√(total/100)⌋` + title; level from lifetime `earned` | `service.ts:117-120; level.ts:44-48` |
 | `previewSpend(code, requested)` | `clampToFloor(current, requested)` — below-floor clamp+flag | `service.ts:122-125; level.ts:60-64` |
-| `getProfile()` / `updateProfile(patch)` | real-column VIEW (IR-11); upsert singleton + re-read (defaults) | `service.ts:127-153` |
+| `getProfile()` / `updateProfile(patch)` | real-column VIEW (IR-11); upsert singleton + re-read (defaults) | `service.ts` |
+
+## Surface (S2 — rule engine)
+| Op | Behaviour | Source |
+|----|-----------|--------|
+| `createRule`/`updateRule` | validate → acyclicity check (`assertAcyclic` over rule→rule edges) → persist; re-read | `service.ts` |
+| `enableRule`/`disableRule`/`deleteRule` | toggle `is_enabled` / soft-delete | `service.ts` |
+| `listRules`/`getRule(id)` | parsed `Rule[]` / one or `RuleNotFound` (soft-deleted excluded) | `service.ts` |
+| `executeRule(id, ctx)` | eval condition → envelope check (user-authored) → clamp locks → `rail.applyEffect` per effect; honest `effectsFired` | `service.ts` |
+| `evaluateRules(ctx)` | sweep enabled rules against the context | `service.ts` |
 
 ## Composed (RATIFY — not re-implemented)
 `computeBalance` `[FACT: foundation/economy/balance.ts:12-27]` · `createCurrencyRegistry` (`create`/`list`,
 SHIPPED_CURRENCIES=[XP]) `[FACT: foundation/economy/registry.ts:44-73]` · `CurrencyDef`/`CurrencyBalance`/
-`LedgerEntry` types `[FACT: foundation/economy/types.ts:8-22]`.
+`LedgerEntry` types `[FACT: foundation/economy/types.ts:8-22]` · the effect rail `applyEffect` (idempotent) ·
+measurement `query`/`assertAcyclic` · capability `checkAction` (user-authored rules).
 
 ## Files
-`services/gamification/{level,types,service,index}.ts` + `__tests__/gamification-service.test.ts` (10 live-store
-tests) · `validators/gamification.ts` (`CurrencyCreateSchema`, `UpdateProfileSchema`).
+`services/gamification/{level,rules,types,service,index}.ts` + `__tests__/gamification-service.test.ts` (20
+live-store tests) · `validators/gamification.ts` (Currency/Profile + Rule/Condition/ConsequenceSpec schemas).
 
-## Not in S1 (homed)
-- S2 rule engine · S3 achievement engine · S4 journal provider + wiring (this module, later slices).
+## Not in S1/S2 (homed)
+- S3 achievement engine · S4 journal provider + effect-handler wiring (this module, later slices).
 - Store worth-tree = **Finance-owned** (FIN-18/FIN-24) — composed via the `move_money` effect, never built here.
-- `total_xp`/`current_level` cache refresh — folds into the effect-firing mutation path (S2/S3); S1 derives live.
-- User-authored rules/achievements (⚠ INTENDED → #85 CAP-authoring) · level-unlocks · quests.
+- `total_xp`/`current_level` cache refresh — folds into the effect-firing mutation path (S3); currently derived live.
+- User-authored rules AUTHORING surface + `grant_id`→def-id resolution (⚠ INTENDED → #85) · level-unlocks · quests.
+- `derived_pull` recurring-occasion feeder wiring → composition seam (OQ-2).

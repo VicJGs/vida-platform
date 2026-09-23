@@ -27,9 +27,40 @@
 - **BR-GM-8 (append-only ledger read).** `consequence_ledger` has no `deleted_at`; balance reads use plain
   `findWhere(eq(currency_id, code))`. `[FACT: service.ts:99-104; db/schema/foundation/economy.ts:36-59]`
 
+## S2 — Rule engine (shipped)
+
+- **BR-GM-9 (rule = binding + typed effects, GM-2).** A rule's condition is an ADR-011 binding
+  (`event_trigger` matches an incoming event; `derived_pull` reads the measurement seam vs a threshold); its
+  `consequences` are typed ADR-004 effects (`grant_currency`/`lock_currency`/`move_money`/`surface_notification`).
+  `[FACT: rules.ts:82-99; validators/gamification.ts GAMIFICATION_EFFECTS]`
+- **BR-GM-10 (fire = per-effect dispatch on the rail, IR-2/IR-7).** `executeRule` parses `consequences` →
+  `EffectEvent[]` (transition `${ruleId}:${occasion}#${index}` — distinct per consequence, idempotent per
+  occasion) → `rail.applyEffect` per effect. Each effect is atomic; the set is re-driven on partial failure and
+  the rail dedups already-applied effects. `[FACT: service.ts executeLoadedRule; rules.ts:88-99]`
+- **BR-GM-11 (honest applied-count, R1).** `ExecutionResult.effectsFired` counts effects NEWLY applied — an
+  idempotent replay or a fully-clamped lock reports 0, so a downstream journal/achievement/level counter never
+  double-counts. `fired` = the rule triggered this call. `[FACT: service.ts executeLoadedRule; rules.ts ExecutionResult]`
+- **BR-GM-12 (below-floor clamp on lock, IR-12).** A `lock_currency` consequence is clamped to the currency's
+  live `current` before firing; a fully-clamped lock (nothing available) is dropped. Rewards (`grant_currency`)
+  are never clamped. `[FACT: service.ts executeLoadedRule]`
+- **BR-GM-13 (acyclic rule graph, GM-2 / measurement §3.7).** `createRule`/`updateRule` reject a rule whose
+  consequence feeds its own (or a mutual) `derived_pull` condition — `rulesToBindings` builds producer→consumer
+  edges (grant/lock currencyId == a condition measureKey), `assertAcyclic` throws `RuleBindingCyclic`. The graph
+  includes disabled rules (conservative — enabling can't introduce an unchecked cycle). `[FACT: rules.ts rulesToBindings; service.ts assertRuleGraphAcyclic]`
+- **BR-GM-14 (user-authored ⇒ envelope; shipped ⇒ trusted, IR-9, fail-closed).** A rule with `grant_id != null`
+  requires the capability enforcer to permit EVERY consequence effect before ANY fires (no enforcer, or any
+  deny → `RuleGrantDenied`); `grant_id == null` = shipped/trusted, skips the check. **R2:** `grant_id` is passed
+  as the capability identity to `checkAction`; the grant-row→def-id resolution when a REAL enforcer is wired is
+  owed to #85 CAP-authoring (M1 auth-off; this is a fail-closed HOOK). `[FACT: service.ts executeLoadedRule]`
+- **BR-GM-15 (rules CRUD, soft-delete).** `rules` has `deleted_at` → `softDelete:true`; `getRule`/`listRules`
+  exclude soft-deleted; `deleteRule` soft-deletes; `RuleUpdateSchema.strict()` (no `grantId` — grant is
+  create-time). `[FACT: service.ts rulesRepo + CRUD ops]`
+
 ## Deferred (homed, not dropped)
-- Rule engine (S2) · achievement engine (S3) · journal provider + effect-handler wiring (S4) — this module.
-- `total_xp`/`current_level` cache refresh → the effect-firing mutation path (S2/S3).
+- Achievement engine (S3) · journal provider + effect-handler wiring (S4) — this module.
+- `total_xp`/`current_level` cache refresh → the effect-firing mutation path (S3).
+- Rule `grant_id` → capability def-id resolution + the authoring surface → #85 CAP-authoring (⚠ INTENDED).
+- `derived_pull` recurring occasion wiring (which feeder supplies the occasion token) → composition seam (OQ-2).
 - Store worth-tree → **MOD-finance** (FIN-18/FIN-24; compose via `move_money{lockTarget}`). `[FACT: docs/core/economy/current-business-rules.md:22]`
 - Fire-time consent gate for cross-module `move_money` → auth-off M1 (ADR-017; Finance BR-S4-5, #46/#85).
 - User-authored rules/achievements sandbox → ⚠ INTENDED (#85) · level-unlocks · quests.
