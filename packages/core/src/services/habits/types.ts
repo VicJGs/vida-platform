@@ -18,14 +18,22 @@ import type {
   EditCompletionSchema,
 } from '../../validators/habit'
 
+/** S3 — the Preferences window port (Preferences owns `habit_backfill_window_days`). `null` = no limit.
+ *  PERMISSIVE / fail-OPEN by default (a user convenience policy, NOT a fail-closed security gate). */
+export interface HabitsPrefsPort {
+  backfillWindowDays(): Promise<number | null>
+}
+
 export interface HabitsServiceDeps {
   db: DrizzleDb
   deviceId: string
   /** S2 — `asOf` clock for the streak recompute (YYYY-MM-DD); default = today. Injected for deterministic tests. */
   clock?: () => string
-  // ── later slices append optional, deny-safe cross-module ports ──
-  // effects? (S5 rail+registry) · contributions? (S5 Purpose ladder) · prefs? (S3 backfill window /
-  // S5 push_habits) · associations? (S5 entity_tags) · notes? (S5 pages) — each defaults deny-safe.
+  /** S3 — backfill window source (Preferences-owned). Absent → permissive (fail-OPEN): no limit. */
+  prefs?: HabitsPrefsPort
+  // ── later slices append optional cross-module ports ──
+  // effects? (S5 rail+registry, fail-CLOSED) · contributions? (S5 Purpose ladder) ·
+  // associations? (S5 entity_tags) · notes? (S5 pages).
 }
 
 // --- Zod-inferred input shapes (validators/habit.ts) ------------------------
@@ -50,6 +58,15 @@ export class HabitScheduleError extends Error {
   }
 }
 
+/** HAB-13 / BR-S3-3/4 — a completion write for a future date, or a past date beyond the user's configured
+ *  backfill window, is refused (no row written). */
+export class BackfillWindowError extends Error {
+  constructor(public readonly reason: string) {
+    super(`Backfill rejected: ${reason}`)
+    this.name = 'BackfillWindowError'
+  }
+}
+
 export interface HabitsService {
   // ── S1: habit definition CRUD ────────────────────────────────────
   createHabit(input: CreateHabitInput): Promise<Habit>
@@ -67,4 +84,9 @@ export interface HabitsService {
   editCompletion(habitId: string, date: string, patch: EditCompletionInput): Promise<HabitCompletion>
   /** HAB-12 — delete a completion (hard — ledger has no deleted_at); re-derives the counters (HB-2). */
   deleteCompletion(habitId: string, date: string): Promise<void>
+
+  // ── S3: backfill + window ────────────────────────────────────────
+  /** HAB-13 — log/edit a completion for a PAST date; recomputes streaks (HB-2). Rejects a future date or a
+   *  date beyond the user's configured backfill window with `BackfillWindowError` (HB-10). */
+  backfillCompletion(habitId: string, pastDate: string, input?: Omit<LogCompletionInput, 'date'>): Promise<HabitCompletion>
 }

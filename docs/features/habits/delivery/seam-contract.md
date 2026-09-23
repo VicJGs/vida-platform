@@ -56,7 +56,7 @@ export function registerHabitsEffects(registry: EffectRegistry, db: DrizzleDb, d
 | `effects` (rail+registry) | ① emits | Sessions/AR-7 (rail) | guarded post-commit `applyEffect`; no-op if registry unresolved; idempotent via R1 |
 | `contributions` | ① emits `contribute_purpose_metric` | Purpose | Purpose owns the metric write; ① never writes `purpose_metric_value` |
 | economy (`award_xp`→`grant_currency`) | ① emits via `effects` | Gamification | ① never writes `consequence_ledger` (R2) |
-| `prefs` | ① reads | Preferences | `habit_backfill_window_days` (S3) + `push_habits` schedule expose (S5); deny-safe default |
+| `prefs` | ① reads | Preferences | `habit_backfill_window_days` (S3) + `push_habits` schedule expose (S5); **permissive (fail-OPEN)** default — null window = no limit (a user convenience policy, NOT a fail-closed security gate) |
 | `associations` | ① reads/writes | Spaces | `entity_tags` (SP1); absent → `[]` |
 | `notes` | ① delegates | Notes & Pages | habit notes = `pages` row (`entity_type='habit'`); never inline |
 | `project_habits` | ① reads/writes (owned junction) | Habits (KEPT) | navigational; C1 — never retired |

@@ -57,5 +57,20 @@
 - **BR-HB-17 · Fail-loud on missing parent/row.** log/edit/delete on a missing (or soft-deleted) habit throw
   `Habit not found` (no orphan completion — no FK guards it); edit/delete on a missing completion throw. `[FACT: services/habits/service.ts:177-181,247-249,257-259]`
 
-## S3–S5 (pending)
-Backfill + window (S3) · derived reads today-list/analytics/M5 (S4) · effect fan-out + cross-module seams (S5).
+## S3 — Backfill + window policy
+
+- **BR-HB-18 · Backfill = a past-dated completion, recomputes streaks (HB-10).** `backfillCompletion(habitId,
+  pastDate, input)` routes through the shared S2 upsert+recompute path. `[FACT: services/habits/service.ts:290]`
+- **BR-HB-19 · The date guard is on the shared write path.** `assertDateWritable(date, asOf)` runs at the top of
+  `upsertCompletion` — so `logCompletion`/`logDetailedCompletion`/`backfillCompletion` are all guarded and can't be
+  bypassed; `editCompletion`/`deleteCompletion` (existing rows) are not. `[FACT: services/habits/service.ts:205-225]`
+- **BR-HB-20 · Reject future dates (BR-S3-3).** `date > asOf` (lexical) → `BackfillWindowError` — a completion can't
+  be logged for a day that hasn't happened. `[FACT: services/habits/service.ts:206]`
+- **BR-HB-21 · Window is FAIL-OPEN / permissive (HB-10).** The window value comes from a Preferences port
+  (`habit_backfill_window_days`, Preferences-owned); unconfigured (`null`) → NO limit (allow). This is deliberately
+  the OPPOSITE of the fail-closed security ports — the window is a user convenience policy the user owns, never a
+  hidden default limit. Beyond `asOf − w` (day-math) → `BackfillWindowError`. `[FACT: services/habits/service.ts:110-112,206-212; business-rules.md:42-45]`
+- **BR-HB-22 · Reject → no row, no cache change (BR-S3-5).** The guard precedes any write. `[FACT: business-rules.md:75; services/habits/service.ts:220]`
+
+## S4–S5 (pending)
+Derived reads today-list/analytics/M5 (S4) · effect fan-out + cross-module seams (S5).

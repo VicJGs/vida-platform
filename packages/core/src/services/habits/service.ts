@@ -20,6 +20,7 @@ import { habits, habitCompletions, type HabitRow, type HabitCompletionRow } from
 import { CreateHabitSchema, UpdateHabitSchema, LogCompletionSchema, EditCompletionSchema } from '../../validators/habit'
 import {
   HabitScheduleError,
+  BackfillWindowError,
   type HabitsService,
   type HabitsServiceDeps,
   type CreateHabitInput,
@@ -106,6 +107,9 @@ const recomputeStreak = (habit: HabitRow, completions: HabitCompletionRow[], asO
 export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
   const { db, deviceId } = deps
   const clock = deps.clock ?? (() => new Date().toISOString().slice(0, 10))
+  // S3 — permissive (fail-OPEN) default: no port → no window limit (a user convenience policy, NOT a
+  // fail-closed security gate; the OPPOSITE of the effects/contributions security ports). BR-S3-4.
+  const prefs = deps.prefs ?? { backfillWindowDays: async (): Promise<number | null> => null }
   const cfg = { deviceId, encryptedFields: [] as string[] }
 
   const habitsRepo = createRepository(db, habits, { ...cfg, softDelete: true })
@@ -196,11 +200,25 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
     return rows[0]
   }
 
-  // shared log/detailed path — UPSERT per (habit,date) (HB-3) then recompute.
+  // BR-S3-3/4 — guard a NEW dated write: reject a future date (lexical) or a past date beyond the window
+  // (day-math). Today (date === asOf) passes both. Runs BEFORE any write (BR-S3-5: reject → no row).
+  const assertDateWritable = async (date: string, asOf: string): Promise<void> => {
+    if (date > asOf) throw new BackfillWindowError(`date ${date} is in the future`)
+    if (date < asOf) {
+      const w = await prefs.backfillWindowDays() // null = no limit (permissive default)
+      if (w != null && toDayNum(date) < toDayNum(asOf) - w) {
+        throw new BackfillWindowError(`date ${date} is beyond the ${w}-day backfill window`)
+      }
+    }
+  }
+
+  // shared log/detailed/backfill path — UPSERT per (habit,date) (HB-3) then recompute.
   const upsertCompletion = async (habitId: string, input: LogCompletionInput): Promise<HabitCompletion> => {
     const p = LogCompletionSchema.parse(input)
     const habit = await loadHabitOrThrow(habitId)
-    const date = p.date ?? clock()
+    const asOf = clock() // read once (avoids a UTC-midnight straddle between the default-date and the guard, g2 N2)
+    const date = p.date ?? asOf
+    await assertDateWritable(date, asOf) // BR-S3-2 — on the shared path so logCompletion can't bypass it
     const existing = await findCompletion(habitId, date)
     const row = existing
       ? await completionsRepo.update(existing.id, serializeCompletionPatch(p))
@@ -262,6 +280,10 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
       await completionsRepo.delete(existing.id) // hard delete (softDelete:false)
       await recomputeAndCache(habit)
     },
+
+    // ── S3 ──────────────────────────────────────────────────────────
+    // A backfill IS a dated completion in the past → the same upsert path (which carries the window guard).
+    backfillCompletion: (habitId, pastDate, input = {}) => upsertCompletion(habitId, { ...input, date: pastDate }),
   }
 
   return service

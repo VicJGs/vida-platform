@@ -2,9 +2,13 @@
 export { createHabitsService } from './service'
 export {
   HabitScheduleError,
+  BackfillWindowError,
   type HabitsService,
   type HabitsServiceDeps,
+  type HabitsPrefsPort,
   type CreateHabitInput,
   type UpdateHabitInput,
+  type LogCompletionInput,
+  type EditCompletionInput,
   type HabitFilter,
 } from './types'

@@ -16,7 +16,7 @@ import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
 import { habitCompletions } from '../../../db/schema/habits'
-import { createHabitsService, HabitScheduleError, type HabitsService } from '../index'
+import { createHabitsService, HabitScheduleError, BackfillWindowError, type HabitsService } from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -57,13 +57,16 @@ interface Harness {
   bsql: Database.Database
 }
 
-async function setup(clock?: () => string): Promise<Harness> {
+async function setup(
+  clock?: () => string,
+  prefs?: { backfillWindowDays: () => Promise<number | null> },
+): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createHabitsService({ db, deviceId: 'test-device', clock })
+  const svc = createHabitsService({ db, deviceId: 'test-device', clock, prefs })
   return { svc, db, bsql }
 }
 
@@ -316,16 +319,68 @@ describe('mod-habits S2 — completion ledger + streak engine', () => {
     expect(after?.longest_streak).toBe(3) // the pre-reset peak survives (not clobbered to 2)
   })
 
-  it('a future-dated completion counts in total but not the streak walk (g2 NIT-1)', async () => {
+  it('a future-dated completion is REJECTED at the write path (closed by S3; was g2 NIT-1)', async () => {
     const hab = await h.svc.createHabit({ name: 'Plan', frequency: 'daily' }) // clock = ASOF 2026-09-23
-    await h.svc.logCompletion(hab.id, { date: '2026-09-25' }) // future relative to asOf
+    await expect(h.svc.logCompletion(hab.id, { date: '2026-09-25' })).rejects.toBeInstanceOf(BackfillWindowError)
     const after = await h.svc.getHabit(hab.id)
-    expect(after?.total_completions).toBe(1) // counted in total
-    expect(after?.current_streak).toBe(0) // excluded from the walk (hasn't happened)
-    expect(after?.longest_streak).toBe(0)
+    expect(after?.total_completions).toBe(0) // no row written (BR-S3-5)
   })
 
   it('logCompletion on a missing habit fails loud (no orphan completion)', async () => {
     await expect(h.svc.logCompletion('nonexistent-id', { date: ASOF })).rejects.toThrow(/not found/i)
+  })
+})
+
+describe('mod-habits S3 — backfill + window', () => {
+  const ASOF = '2026-09-23'
+
+  it('backfillCompletion for a past date persists + recomputes (no prefs → unlimited)', async () => {
+    const h = await setup(() => ASOF)
+    const hab = await h.svc.createHabit({ name: 'Read', frequency: 'daily' })
+    const c = await h.svc.backfillCompletion(hab.id, '2026-09-20', { count: 1 })
+    expect(c.completed_date).toBe('2026-09-20')
+    expect((await h.svc.getHabit(hab.id))?.total_completions).toBe(1)
+  })
+
+  it('with no prefs port, a far-past date is allowed (permissive/fail-OPEN default)', async () => {
+    const h = await setup(() => ASOF)
+    const hab = await h.svc.createHabit({ name: 'Old', frequency: 'daily' })
+    const c = await h.svc.backfillCompletion(hab.id, '2020-01-01')
+    expect(c.completed_date).toBe('2020-01-01')
+  })
+
+  it('with a prefs window, a date older than asOf−w is rejected, no row (HB-10, BR-S3-4/5)', async () => {
+    const h = await setup(() => ASOF, { backfillWindowDays: async () => 7 })
+    const hab = await h.svc.createHabit({ name: 'Walk', frequency: 'daily' })
+    // asOf−7 = 2026-09-16; 09-15 is beyond the window
+    await expect(h.svc.backfillCompletion(hab.id, '2026-09-15')).rejects.toBeInstanceOf(BackfillWindowError)
+    expect((await h.svc.getHabit(hab.id))?.total_completions).toBe(0) // no row (BR-S3-5)
+    const c = await h.svc.backfillCompletion(hab.id, '2026-09-18') // within window
+    expect(c.completed_date).toBe('2026-09-18')
+  })
+
+  it('a future date is rejected via BOTH logCompletion and backfillCompletion (BR-S3-3)', async () => {
+    const h = await setup(() => ASOF)
+    const hab = await h.svc.createHabit({ name: 'Plan', frequency: 'daily' })
+    await expect(h.svc.logCompletion(hab.id, { date: '2026-09-24' })).rejects.toBeInstanceOf(BackfillWindowError)
+    await expect(h.svc.backfillCompletion(hab.id, '2026-09-24')).rejects.toBeInstanceOf(BackfillWindowError)
+  })
+
+  it('today (date === asOf) via logCompletion still persists — the guard never rejects today (N1)', async () => {
+    const h = await setup(() => ASOF)
+    const hab = await h.svc.createHabit({ name: 'Water', frequency: 'daily' })
+    const c = await h.svc.logCompletion(hab.id) // date defaults to asOf
+    expect(c.completed_date).toBe(ASOF)
+    expect((await h.svc.getHabit(hab.id))?.current_streak).toBe(1)
+  })
+
+  it('editCompletion / deleteCompletion are not window-guarded (operate on existing rows)', async () => {
+    const h = await setup(() => ASOF, { backfillWindowDays: async () => 7 })
+    const hab = await h.svc.createHabit({ name: 'Gym', frequency: 'daily' })
+    await h.svc.backfillCompletion(hab.id, '2026-09-18', { count: 1 }) // within window
+    const e = await h.svc.editCompletion(hab.id, '2026-09-18', { count: 2 })
+    expect(e.count).toBe(2)
+    await h.svc.deleteCompletion(hab.id, '2026-09-18')
+    expect((await h.svc.getHabit(hab.id))?.total_completions).toBe(0)
   })
 })

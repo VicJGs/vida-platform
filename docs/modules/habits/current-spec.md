@@ -36,9 +36,18 @@ The streak cache (`current_streak`/`longest_streak`/`total_completions`) is a pr
 mutation — `isScheduledOn` (daily→all; else→`days_of_week` weekday) + a done-gate (`count>=target`) + the
 grace/reset walk. `asOf` injected via the optional `clock` dep (default today). `HabitsServiceDeps` gains `clock?`.
 
-### S3–S5 (pending)
-`backfillCompletion` (S3) · `getTodayHabits`/`getStreak`/`getCompletionRate`/`getMoodTrend`/`getCalendar` (S4) ·
-effect fan-out + `contributeToPurposeMetrics`/`getEntityTags` + `registerHabitsJournal`/`registerHabitsEffects` (S5).
+### S3 — backfill + window
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `backfillCompletion` | `(habitId, pastDate, input?) => Promise<HabitCompletion>` | past-date completion + recompute; rejects future / beyond-window with `BackfillWindowError` |
+
+Adds `HabitsServiceDeps.prefs?: HabitsPrefsPort` (`{ backfillWindowDays(): Promise<number|null> }`) — **permissive
+(fail-OPEN)** default: null window = no limit. The not-future + within-window guard (`assertDateWritable`) runs on
+the shared completion write path (log/detailed/backfill), never on edit/delete. `BackfillWindowError` exported.
+
+### S4–S5 (pending)
+`getTodayHabits`/`getStreak`/`getCompletionRate`/`getMoodTrend`/`getCalendar` (S4) · effect fan-out +
+`contributeToPurposeMetrics`/`getEntityTags` + `registerHabitsJournal`/`registerHabitsEffects` (S5).
 
 ## Types & typed errors
 - `@vida/types` `Habit` (reconciled: +`measurement_kind`/`binding_mode`/`success_criteria`/`difficulty`, −`tags`),
@@ -55,3 +64,4 @@ Repo typecheck 11/11 · `@vida/core` 1285 (→ +2 folds) · eslint 0 · 10 habit
 |------|-------|--------|
 | 2026-09-23 | S1 | born — definition CRUD + `@vida/types` reconcile; §XXVI g1 SHIP + Verification Gate + g2 code-review SHIP (3 NITs folded) |
 | 2026-09-23 | S2 | completion ledger + streak-recompute engine; §XXVI g1 SHIP (streak algo hand-walked) + Verification Gate (35 habits tests, @vida/core 1297) + g2 code-review SHIP (future-date comment + 2 hardening tests folded) |
+| 2026-09-23 | S3 | backfill + window (permissive fail-OPEN Preferences port); future/beyond-window reject; §XXVI g1 REVISE→fixed (fail-OPEN vs deny-safe terminology) + Verification Gate (41 habits tests, @vida/core 1305) + g2 code-review SHIP (clock-hoist folded) |
