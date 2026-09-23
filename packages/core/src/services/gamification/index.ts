@@ -6,6 +6,11 @@
 
 export { createGamificationService } from './service'
 export {
+  createGamificationJournalContribution,
+  registerGamificationJournal,
+  registerGamificationEffects,
+} from './journal'
+export {
   CurrencyNotFound,
   CurrencyExists,
   RuleNotFound,

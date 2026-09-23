@@ -41,6 +41,13 @@ S2+ append injected ports (rail · measurement · enforcer). `[FACT: services/ga
 | `listAchievements()` / `getUserAchievements()` | seed read (direct) / earned join (syncable) | `service.ts` |
 | `evaluateAchievements(ctx)` | eval predicates (measure/currency) → unlock: earned-join + guarded reward + guarded notification | `service.ts` |
 
+## Surface (S4 — journal provider + wiring · ① backend COMPLETE)
+| Op | Behaviour | Source |
+|----|-----------|--------|
+| `createGamificationJournalContribution(svc)` | ONE `summary`-section contribution; `summary(date)→SectionData` snapshot (level · XP · achievements), state-by-type | `journal.ts` |
+| `registerGamificationJournal(registry, svc)` | register the contribution into the Journals registry | `journal.ts` |
+| `registerGamificationEffects(registry, db, deviceId)` | wire the economy grant/lock handlers onto a rail (call-once) | `journal.ts` |
+
 ## Composed (RATIFY — not re-implemented)
 `computeBalance` `[FACT: foundation/economy/balance.ts:12-27]` · `createCurrencyRegistry` (`create`/`list`,
 SHIPPED_CURRENCIES=[XP]) `[FACT: foundation/economy/registry.ts:44-73]` · `CurrencyDef`/`CurrencyBalance`/
@@ -48,13 +55,14 @@ SHIPPED_CURRENCIES=[XP]) `[FACT: foundation/economy/registry.ts:44-73]` · `Curr
 measurement `query`/`assertAcyclic` · capability `checkAction` (user-authored rules).
 
 ## Files
-`services/gamification/{level,rules,achievements,types,service,index}.ts` + `__tests__/gamification-service.test.ts`
-(26 live-store tests) · `validators/gamification.ts` (Currency/Profile + Rule/Condition/ConsequenceSpec +
-Achievement condition/seed schemas).
+`services/gamification/{level,rules,achievements,journal,types,service,index}.ts` +
+`__tests__/gamification-service.test.ts` (29 live-store tests) · `validators/gamification.ts`
+(Currency/Profile + Rule/Condition/ConsequenceSpec + Achievement condition/seed schemas).
 
-## Not in S1/S2/S3 (homed)
-- S4 journal provider (`summary(date)→SectionData`) + effect-handler registration wiring (this module, next slice).
+## Homed OUT / deferred (① backend complete; the rest is ② or later)
+- ② `fe-gamification` (LIF-181) — all user-visible surfaces (currency dashboard · rule builder · achievement wall).
 - Store worth-tree = **Finance-owned** (FIN-18/FIN-24) — composed via the `move_money` effect, never built here.
 - `total_xp`/`current_level` cache refresh — folds into the effect-firing mutation path; currently derived live.
 - User-authored rules AUTHORING surface + `grant_id`→def-id resolution (⚠ INTENDED → #85) · level-unlocks · quests.
-- `derived_pull` recurring-occasion feeder wiring → composition seam (OQ-2) · achievement partial-progress + multi-currency rewards.
+- `derived_pull` recurring-occasion feeder wiring (OQ-2) · achievement partial-progress + multi-currency rewards ·
+  journal per-day deltas (dated ledger + tz).

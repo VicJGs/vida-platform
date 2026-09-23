@@ -20,6 +20,7 @@ import { createEffectRail, createEffectRegistry } from '../../../foundation/effe
 import { createEconomyHandlers, registerEconomyEffects } from '../../../foundation/economy'
 import { createMeasurementSourceRegistry, type MeasurementSourceRegistry } from '../../../foundation/measurement'
 import type { CapabilityEnforcer } from '../../../foundation/capability'
+import { createJournalRegistry } from '../../journals'
 import {
   createGamificationService,
   deriveLevel,
@@ -30,6 +31,9 @@ import {
   RuleBindingCyclic,
   RuleGrantDenied,
   RailNotConfigured,
+  createGamificationJournalContribution,
+  registerGamificationJournal,
+  registerGamificationEffects,
   type GamificationService,
 } from '../index'
 
@@ -473,5 +477,54 @@ describe('mod-gamification S3 — achievement engine', () => {
     await seedLedger(db, 'XP', 'earn', 100)
     // Must not throw NoEffectHandler for the missing surface_notification handler.
     expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(1)
+  })
+})
+
+// --- S4 journal provider + wiring -------------------------------------------
+
+describe('mod-gamification S4 — journal provider + wiring', () => {
+  it('summary is empty on a no-data day and success once there is data (state by type)', async () => {
+    const { svc, db } = await setupWithRail()
+    const contribution = createGamificationJournalContribution(svc)
+    expect(contribution).toMatchObject({ module: 'gamification', sectionKey: 'summary' })
+
+    const empty = await contribution.summary('2026-09-22')
+    expect(empty).toMatchObject({ module: 'gamification', state: 'empty' })
+
+    await seedLedger(db, 'XP', 'earn', 1600) // → level 5
+    await svc.seedAchievements([{ key: 'a1', category: 'general', title: 'A1' }])
+    const filled = await contribution.summary('2026-09-22')
+    expect(filled.state).toBe('success')
+    expect(filled.items?.[0]).toMatchObject({ level: 5, title: 'Apprentice', achievementsEarned: 0 })
+    expect((filled.items?.[0] as { xp: { earned: number } }).xp.earned).toBe(1600)
+  })
+
+  it('registerGamificationJournal registers the contribution into the Journals registry', async () => {
+    const { svc } = await setupWithRail()
+    const registry = createJournalRegistry()
+    registerGamificationJournal(registry, svc)
+    expect(registry.list().some((c) => c.module === 'gamification')).toBe(true)
+  })
+
+  it('registerGamificationEffects wires the economy grant/lock handlers onto a rail', async () => {
+    await initVault()
+    const bsql = new Database(':memory:')
+    const driver = createBetterSqlite3Driver(bsql)
+    await migrate(driver)
+    const db = createDrizzleProxy(driver)
+    const registry = createEffectRegistry()
+    const rail = createEffectRail(db, registry)
+    // Before wiring, grant_currency has no handler → applyEffect would throw. After wiring, it applies.
+    registerGamificationEffects(registry, db, 'test-device')
+    const res = await rail.applyEffect({
+      subjectNaturalKey: 'u1',
+      transition: 't1',
+      effectType: 'grant_currency',
+      targetRef: 'u1',
+      payload: { currencyId: 'XP', amount: 50 },
+    })
+    expect(res).toEqual({ applied: true })
+    const svc = createGamificationService({ db, deviceId: 'test-device' })
+    expect((await svc.getBalance('XP')).earned).toBe(50)
   })
 })

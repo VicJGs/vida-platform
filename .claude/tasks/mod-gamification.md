@@ -68,11 +68,11 @@ Intake resolution: `docs/intake/gamification.md` (GG1/GG6/§A/§B/§C — "the S
 - [x] document-context BASELINE — 7 composed contexts pinned as ground truth (all current-* born + unchanged)
 - [x] Interpretation layer — `delivery/interpretation.md` (scope spine RATIFY/BUILD · 13 IMPLICIT RULES · 3 OQs resolved)
 - [x] Decomposition Gate — `slice-map.md` + `seam-contract.md` · independent gate-1 critique **SHIP** (2 REVISE + N1 folded) → **Approval 1 GRANTED**
-- [~] Per-slice service track (Steps 3–11) S1→S2→S3→S4:
+- [x] Per-slice service track (Steps 3–11) S1→S2→S3→S4 — **① backend COMPLETE** (29 live-store tests, @vida/core 1276/1276):
   - [x] **S1** currency surface + level + below-floor clamp — 10/10 live-store; code-review REVISE (R1 shipped-code dup guard + R2 N+1) folded; current-* born
   - [x] **S2** rule engine — CRUD + assertAcyclic + executeRule (parse consequences → rail.applyEffect) + user-authored envelope (fail-closed) + lock clamp; 20/20 live-store; code-review REVISE (R1 honest effectsFired + R2 grant_id→def-id #85 defer + N1 atomicity) folded; current-* refreshed
   - [x] **S3** achievement engine — non-syncable static-seed (direct drizzle) + evaluateAchievements (measure/currency predicate) → unlock (earned-join + registry-guarded reward + dormant notification); 26/26 live-store, 1273/1273, tsc 0, eslint 0; code-review **SHIP** (2 NITs folded); current-* refreshed
-  - [ ] S4 journal provider (summary→SectionData) + effect-handler wiring + module barrel
+  - [x] **S4** journal provider (`createGamificationJournalContribution` `summary(date)→SectionData` snapshot, state-by-type) + `registerGamificationJournal` + `registerGamificationEffects` (call-once economy wiring); 29/29 live-store, 1276/1276, tsc 0, eslint 0; code-review **SHIP** (snapshot-scope ruled acceptable M1 deferral; NIT-2 folded); current-* refreshed → **① COMPLETE**
 
 ## Build Steps
 <!-- UNIT-level — mirrors the active spec's §5 Implementation Prompt; what victor:execute-plan-* works.
@@ -86,6 +86,7 @@ Intake resolution: `docs/intake/gamification.md` (GG1/GG6/§A/§B/§C — "the S
 | 2026-09-22 | BASELINE + interpretation layer (13 IR, scope spine) + Decomposition Gate (4 slices, independent critic SHIP) → Approval 1 → **S1 shipped** (currency surface + level curve + below-floor clamp; 10 live-store tests; 2 code-review REVISE folded; current-* born) | S2 rule engine (CRUD + assertAcyclic + executeRule → dispatchConsequence) |
 | 2026-09-22 | **S2 shipped** — rule engine: CRUD + acyclicity guard + executeRule/evaluateRules (parse consequences → rail.applyEffect, idempotent) + user-authored envelope (fail-closed) + lock clamp. 20/20 live-store; code-review REVISE folded (R1 honest effectsFired, R2 grant_id→#85, N1 atomicity comment); current-* refreshed | S3 achievement engine (predicate eval → unlock → user_achievement + reward + notification) |
 | 2026-09-22 | **S3 shipped** — achievement engine: seedAchievements (direct-drizzle non-syncable, idempotent by key) + listAchievements/getUserAchievements + evaluateAchievements (measure/currency predicate → unlock: earned-join + registry-guarded reward + dormant notification). 26/26 live-store; code-review SHIP (2 NITs folded); current-* refreshed | S4 journal provider (summary→SectionData) + effect-handler wiring + createGamificationService barrel |
+| 2026-09-22 | **S4 shipped → ① BACKEND COMPLETE** — journal contribution (summary snapshot, state-by-type) + registerGamificationJournal + registerGamificationEffects (call-once economy wiring). 29/29 live-store, @vida/core 1276/1276, tsc 0, eslint 0; code-review SHIP (snapshot = acceptable M1 deferral; NIT-2 folded); current-* complete (BR-GM-1..22). All 4 slices double-gated + code-reviewed + §XXIX-current. | PR ① → merge · then `/task-complete` (② fe-gamification LIF-181 separate P6) |
 
 ## Notes
 - Env: Node 24 via nvm (better-sqlite3 ABI for live-store gates); per-issue branch `mod-gamification` → PR when ① completes.

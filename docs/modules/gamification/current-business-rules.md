@@ -75,9 +75,22 @@
 - **BR-GM-20 (unlock idempotency).** Already-earned achievements are filtered out (the earned-`Set`); the reward
   effect's deterministic `achievement:${id}:reward` transition dedups a re-fire on the rail. `[FACT: service.ts evaluateAchievements]`
 
+## S4 — Journal provider + wiring (shipped — ① backend COMPLETE)
+
+- **BR-GM-21 (journal contribution, GM-15).** `createGamificationJournalContribution(svc)` registers ONE
+  `summary`-section contribution (no `dueIn` agenda); `summary(date) → SectionData` is a tz-safe SNAPSHOT
+  (current level/title · XP balance · achievements-to-date). `state` derives from its own live read as a
+  `TerminalState` BY TYPE (`hasData ? 'success' : 'empty'`, never `deriveTerminalState`); a no-data day returns
+  `state:'empty'`, never throws (the per-section degrade is the dashboard's). `earned>0` covers every non-empty
+  XP state (the S2 clamp forbids a real-but-zero balance), so no false-empty. `[FACT: journal.ts]`
+- **BR-GM-22 (effect-handler wiring, call-once).** `registerGamificationEffects(registry, db, deviceId)` wires
+  the economy grant/lock handlers onto a rail (composes `createEconomyHandlers` + `registerEconomyEffects` —
+  invents no handler) so rules (S2) + rewards (S3) can fire. Call-once at module init (a re-register throws
+  `DuplicateEffectHandler`, the shared substrate contract). `[FACT: journal.ts registerGamificationEffects]`
+
 ## Deferred (homed, not dropped)
-- Journal provider + effect-handler wiring (S4) — this module.
 - `total_xp`/`current_level` cache refresh → the effect-firing mutation path (currently derived live).
+- Journal per-day deltas (XP earned today · achievements unlocked today) → a dated ledger query + tz handling.
 - Rule `grant_id` → capability def-id resolution + the authoring surface → #85 CAP-authoring (⚠ INTENDED).
 - `derived_pull` recurring occasion wiring (which feeder supplies the occasion token) → composition seam (OQ-2).
 - Achievement partial-`progress` tracking (`Record<string,number>`) + multi-currency rewards → later slices.
