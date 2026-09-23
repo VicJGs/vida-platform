@@ -162,5 +162,8 @@ export * from './services/checkins'
 // Service — Finance (mod-finance #47 · LIF-122 · S1: entity CRUD service tier)
 export * from './services/finance'
 
+// Service — Gamification (mod-gamification #48 · LIF-124 · S1: currency surface + level + clamp)
+export * from './services/gamification'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
