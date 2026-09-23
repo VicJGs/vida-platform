@@ -34,6 +34,28 @@
 - **Terminal states (S1):** `listHabits` → empty `[]` | rows | typed read error; `getHabit` → `null` | row;
   `createHabit`/`updateHabit` → row | `ZodError`/`HabitScheduleError`. `[FACT: docs/features/habits/business-rules.md:68-76]`
 
-## S2–S5 (pending)
-Completion ledger + streak recompute engine · backfill + window · derived reads (today-list/analytics/M5) ·
-effect fan-out + cross-module seams — appended as each slice's Verification Gate passes.
+## S2 — Completion ledger + streak-recompute engine
+
+- **BR-HB-10 · One completion per (habit, date) — UPSERT (HB-3).** `logCompletion`/`logDetailedCompletion` on an
+  existing `(habit_id, completed_date)` UPDATE that row (only the sent keys); never a duplicate. `date` defaults to
+  the clock (today); `count` defaults 1. The ledger has no `deleted_at` → `softDelete:false` (hard delete). `[FACT: services/habits/service.ts:200-207; db/schema/habits.ts:108-111]`
+- **BR-HB-11 · "Done" = `count >= target_count` (HB-5).** Only a done completion advances the streak; a partial is
+  persisted (analytics) but does not. `value` (REAL) is analytics-only. `[FACT: services/habits/service.ts:82]`
+- **BR-HB-12 · Scheduled occurrence = `days_of_week` (HB-2/HB-6).** `isScheduledOn`: `daily` → every day; else →
+  `weekday(date) ∈ days_of_week` (0=Sun). The weekly/biweekly/monthly PERIOD is the `rate`-derivation design-pass
+  (rerun §5:146), NOT a streak input. Shared with the S4 today-list. `[FACT: services/habits/service.ts:71-75; business-rules.md:12-13; realignment .../part-1.2-reruns/habits.md:146]`
+- **BR-HB-13 · Streak recompute is deterministic from the ledger (HB-2).** On every log/detailed/edit/delete,
+  recompute all three cache columns by walking scheduled dates earliest-done→asOf: done → run++/longest=max;
+  `asOf` not-done → grace-skip; elapsed scheduled miss → reset 0 (no grace). `asOf` injected via the `clock` dep.
+  Generalizes the checkins `computeStreak`. `[FACT: services/habits/service.ts:79-101; checkins/service.ts:113-135]`
+- **BR-HB-14 · `total_completions` = all done rows (incl. off-schedule).** ≠ the scheduled subset the streak walks;
+  a future-dated done row counts in total but is excluded from the walk (hasn't happened). `[FACT: services/habits/service.ts:82,96-100]`
+- **BR-HB-15 · Cache is a self-healing projection (BR-S2-7).** The ledger mutation + cache write are sequential
+  (not one tx); a stale cache re-derives on the next mutation (HB-2 self-heal). `[FACT: services/habits/service.ts:184-188]`
+- **BR-HB-16 · Ratings 1–5 (HB-7).** `logDetailedCompletion` validates `mood_before/mood_after/ease_rating/
+  satisfaction ∈ 1–5` (Zod, the enforced service guard — SQL CHECK is migration-only). `[FACT: validators/habit.ts:56-67]`
+- **BR-HB-17 · Fail-loud on missing parent/row.** log/edit/delete on a missing (or soft-deleted) habit throw
+  `Habit not found` (no orphan completion — no FK guards it); edit/delete on a missing completion throw. `[FACT: services/habits/service.ts:177-181,247-249,257-259]`
+
+## S3–S5 (pending)
+Backfill + window (S3) · derived reads today-list/analytics/M5 (S4) · effect fan-out + cross-module seams (S5).

@@ -1,31 +1,31 @@
 // ============================================================================
-// services/habits — the service (mod-habits #49 ① · S1 definition CRUD)
+// services/habits — the service (mod-habits #49 ①)
 //
-// CRUD over the finished DB-4 `017_habits` `habits` table. Factory-object, hoisted
-// closures, no `this.` (the ② destructure shape; the finance/checkins precedent).
+// S1 (definition CRUD + @vida/types reconcile) + S2 (completion ledger + streak-recompute engine).
+// Factory-object, hoisted closures, no `this.` (the ② destructure shape; the finance/checkins precedent).
 // Persistence: DB-6 Repository, encryptedFields:[] M1.0 pass-through (HAB-26 → M3/DB-5).
-// habits carries deleted_at → softDelete:true (HB-11 soft-delete preserves the ledger;
-// the hard-delete cascade is not an M1.0 op — no hard-delete surface here).
+//   habits           → softDelete:true  (HB-11 soft-delete preserves the ledger; no hard-delete surface in M1.0)
+//   habit_completions → softDelete:false (ledger — no deleted_at; a delete is a hard delete)
 //
-// create() ECHOES the input row (not a DB re-read), so serializeHabit backfills every
-// notNull-default column + coalesces nullables to null → the returned row is FAITHFUL
-// (repository-create-returns-input-row seam). The derived streak cache is written at its
-// 0-defaults only; recompute is S2 (never here — the cache is derived-from-ledger, HB-2).
-// Row → @vida/types: parse the JSON arrays + a single `_sync_status` string→union cast +
-// coalesce the nullable-with-default time_of_day (drizzle-row-not-assignable seam).
+// create() ECHOES the input row (not a DB re-read), so serialize*() backfills every notNull-default column +
+// coalesces nullables to null → the returned row is FAITHFUL (repository-create-returns-input-row seam).
+// The streak cache (current/longest/total_completions) is a PROJECTION recomputed from the ledger on every
+// completion mutation (HB-2) — never hand-incremented; a stale cache self-heals on the next recompute.
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
-import type { Habit } from '@vida/types'
+import type { Habit, HabitCompletion } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
-import { habits, type HabitRow } from '../../db/schema/habits'
-import { CreateHabitSchema, UpdateHabitSchema } from '../../validators/habit'
+import { habits, habitCompletions, type HabitRow, type HabitCompletionRow } from '../../db/schema/habits'
+import { CreateHabitSchema, UpdateHabitSchema, LogCompletionSchema, EditCompletionSchema } from '../../validators/habit'
 import {
   HabitScheduleError,
   type HabitsService,
   type HabitsServiceDeps,
   type CreateHabitInput,
   type UpdateHabitInput,
+  type LogCompletionInput,
+  type EditCompletionInput,
 } from './types'
 
 // Defensive JSON read (the checkins parseJson boundary): the service is the only writer, but a future
@@ -40,7 +40,7 @@ function parseJsonArray<T>(value: string | null): T[] | null {
   }
 }
 
-// --- Row → @vida/types interface (JSON arrays parsed; time_of_day coalesced; _sync_status cast) ---
+// --- Row → @vida/types interface ---
 const toHabit = (r: HabitRow): Habit => ({
   ...r,
   days_of_week: parseJsonArray<number>(r.days_of_week),
@@ -48,14 +48,70 @@ const toHabit = (r: HabitRow): Habit => ({
   time_of_day: (r.time_of_day ?? 'anytime') as Habit['time_of_day'], // DB default guarantees a value (BR-S1-3)
   _sync_status: r._sync_status as Habit['_sync_status'],
 })
+const toCompletion = (r: HabitCompletionRow): HabitCompletion => ({
+  ...r,
+  _sync_status: r._sync_status as HabitCompletion['_sync_status'],
+})
+
+// --- S2 streak engine (pure) -------------------------------------------------
+const DAY_MS = 86_400_000
+const toDayNum = (d: string): number => Math.floor(Date.parse(`${d}T00:00:00Z`) / DAY_MS)
+const fromDayNum = (n: number): string => new Date(n * DAY_MS).toISOString().slice(0, 10)
+const weekday = (d: string): number => new Date(`${d}T00:00:00Z`).getUTCDay() // 0=Sun … 6=Sat (schema [0-6], 0=Sun)
+
+/** BR-S2-4 — a scheduled occurrence: daily → every day; else → weekday ∈ days_of_week. The weekly/biweekly/
+ *  monthly PERIOD is NOT modeled here (the `rate`-derivation design-pass, rerun §5:146). Shared with S4's today-list. */
+const isScheduledOn = (habit: HabitRow, date: string): boolean => {
+  if (habit.frequency === 'daily') return true
+  const dow = parseJsonArray<number>(habit.days_of_week) ?? []
+  return dow.includes(weekday(date))
+}
+
+interface StreakCache {
+  current_streak: number
+  longest_streak: number
+  total_completions: number
+}
+
+/** BR-S2-5 — deterministic recompute from the ledger (HB-2). Generalizes checkins.computeStreak from
+ *  consecutive-days to consecutive-scheduled-occurrences. `asOf` injected for determinism.
+ *  total_completions = ALL done rows (incl. off-schedule, BR-S2-6); the streak counts only scheduled done dates. */
+const recomputeStreak = (habit: HabitRow, completions: HabitCompletionRow[], asOf: string): StreakCache => {
+  const target = habit.target_count
+  const doneDates = new Set(completions.filter((c) => c.count >= target).map((c) => c.completed_date))
+  if (doneDates.size === 0) return { current_streak: 0, longest_streak: 0, total_completions: 0 }
+
+  // Future-dated done rows (> asOf) count in total_completions (doneDates.size) but are EXCLUDED from the walk
+  // (the loop ends at asOf) — a completion that hasn't happened yet cannot advance a streak. So an all-future
+  // ledger yields {current:0, longest:0, total:n>0} by construction. S3's backfill window rejects future dates. (g2 NIT-1)
+  const earliest = [...doneDates].sort()[0] as string
+  const end = toDayNum(asOf)
+  let run = 0
+  let longest = 0
+  for (let n = toDayNum(earliest); n <= end; n++) {
+    const d = fromDayNum(n)
+    if (!isScheduledOn(habit, d)) continue // off-schedule days are transparent (BR-S2-4)
+    if (doneDates.has(d)) {
+      run += 1 // done-branch FIRST — a scheduled-AND-done asOf counts (NIT-1)
+      if (run > longest) longest = run
+    } else if (d === asOf) {
+      // today scheduled but not yet done → not a miss yet (grace, the checkins gap≤1 analog) — skip
+    } else {
+      run = 0 // a missed elapsed scheduled occurrence resets (no grace, HB-2)
+    }
+  }
+  return { current_streak: run, longest_streak: longest, total_completions: doneDates.size }
+}
 
 export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
   const { db, deviceId } = deps
-  const cfg = { deviceId, encryptedFields: [] as string[], softDelete: true }
+  const clock = deps.clock ?? (() => new Date().toISOString().slice(0, 10))
+  const cfg = { deviceId, encryptedFields: [] as string[] }
 
-  const habitsRepo = createRepository(db, habits, cfg)
+  const habitsRepo = createRepository(db, habits, { ...cfg, softDelete: true })
+  const completionsRepo = createRepository(db, habitCompletions, { ...cfg, softDelete: false }) // ledger — hard delete
 
-  // --- serialize create: backfill notNull-defaults + coalesce nullables to null (faithful echo) ---
+  // --- S1 serialize (faithful echo) ---
   const serializeHabit = (p: CreateHabitInput): CreateInput<typeof habits> => ({
     name: p.name,
     description: p.description ?? null,
@@ -81,12 +137,37 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
     deleted_at: null,
   })
 
-  // --- serialize update: only the keys the caller sent; JSON-encode the arrays if present ---
-  const serializeUpdate = (p: UpdateHabitInput): UpdateInput<typeof habits> => {
+  const serializeHabitUpdate = (p: UpdateHabitInput): UpdateInput<typeof habits> => {
     const { days_of_week, times_of_day, ...rest } = p
     const out: UpdateInput<typeof habits> = { ...rest }
     if ('days_of_week' in p) out.days_of_week = days_of_week == null ? null : JSON.stringify(days_of_week)
     if ('times_of_day' in p) out.times_of_day = times_of_day == null ? null : JSON.stringify(times_of_day)
+    return out
+  }
+
+  // --- S2 serialize (completion) ---
+  const serializeCompletionCreate = (
+    habitId: string,
+    date: string,
+    p: LogCompletionInput,
+  ): CreateInput<typeof habitCompletions> => ({
+    habit_id: habitId,
+    completed_date: date,
+    count: p.count ?? 1,
+    value: p.value ?? null,
+    mood_before: p.mood_before ?? null,
+    mood_after: p.mood_after ?? null,
+    ease_rating: p.ease_rating ?? null,
+    satisfaction: p.satisfaction ?? null,
+    location: p.location ?? null,
+    completion_time: p.completion_time ?? null,
+  })
+  // re-log / edit patch: only the keys the caller sent (never null-blanks an unpassed field).
+  const serializeCompletionPatch = (p: LogCompletionInput | EditCompletionInput): UpdateInput<typeof habitCompletions> => {
+    const out: UpdateInput<typeof habitCompletions> = {}
+    for (const k of ['count', 'value', 'mood_before', 'mood_after', 'ease_rating', 'satisfaction', 'location', 'completion_time'] as const) {
+      if (k in p) (out as Record<string, unknown>)[k] = (p as Record<string, unknown>)[k]
+    }
     return out
   }
 
@@ -96,7 +177,40 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
     }
   }
 
+  const loadHabitOrThrow = async (habitId: string): Promise<HabitRow> => {
+    const habit = await habitsRepo.findById(habitId) // excludes soft-deleted
+    if (!habit) throw new Error(`Habit not found: ${habitId}`) // fail-loud — no orphan completion (no FK guards this)
+    return habit
+  }
+
+  // BR-S2-5/7 — recompute the cache from the ledger + schedule, write it to the habit row.
+  const recomputeAndCache = async (habit: HabitRow): Promise<void> => {
+    const comps = await completionsRepo.findWhere(eq(habitCompletions.habit_id, habit.id) as SQL)
+    await habitsRepo.update(habit.id, recomputeStreak(habit, comps, clock()))
+  }
+
+  const findCompletion = async (habitId: string, date: string): Promise<HabitCompletionRow | undefined> => {
+    const rows = await completionsRepo.findWhere(
+      and(eq(habitCompletions.habit_id, habitId), eq(habitCompletions.completed_date, date)) as SQL,
+    )
+    return rows[0]
+  }
+
+  // shared log/detailed path — UPSERT per (habit,date) (HB-3) then recompute.
+  const upsertCompletion = async (habitId: string, input: LogCompletionInput): Promise<HabitCompletion> => {
+    const p = LogCompletionSchema.parse(input)
+    const habit = await loadHabitOrThrow(habitId)
+    const date = p.date ?? clock()
+    const existing = await findCompletion(habitId, date)
+    const row = existing
+      ? await completionsRepo.update(existing.id, serializeCompletionPatch(p))
+      : await completionsRepo.create(serializeCompletionCreate(habitId, date, p))
+    await recomputeAndCache(habit)
+    return toCompletion(row)
+  }
+
   const service: HabitsService = {
+    // ── S1 ──────────────────────────────────────────────────────────
     createHabit: async (input) => {
       const p = CreateHabitSchema.parse(input)
       assertSchedule(p.frequency, p.days_of_week) // BR-S1-2
@@ -105,10 +219,8 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
 
     updateHabit: async (id, patch) => {
       const p = UpdateHabitSchema.parse(patch)
-      // Re-validate the schedule if the patch changes frequency to custom without clearing days_of_week
-      // in the same patch (an existing schedule on the row is left to the caller — S1 guards the patch itself).
       if (p.frequency === 'custom') assertSchedule(p.frequency, p.days_of_week)
-      return toHabit(await habitsRepo.update(id, serializeUpdate(p)))
+      return toHabit(await habitsRepo.update(id, serializeHabitUpdate(p)))
     },
 
     softDeleteHabit: async (id) => {
@@ -116,18 +228,39 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
     },
 
     getHabit: async (id) => {
-      const r = await habitsRepo.findById(id) // excludes soft-deleted
+      const r = await habitsRepo.findById(id)
       return r ? toHabit(r) : null
     },
 
     listHabits: async (filter = {}) => {
-      // findWhere skips the soft-delete filter (IR-3) → add isNull(deleted_at) explicitly.
-      const conds: SQL[] = [isNull(habits.deleted_at)]
+      const conds: SQL[] = [isNull(habits.deleted_at)] // findWhere skips the soft-delete filter (IR-3)
       if (filter.is_active !== undefined) conds.push(eq(habits.is_active, filter.is_active))
       if (filter.domain !== undefined) conds.push(eq(habits.domain, filter.domain))
       if (filter.habit_type !== undefined) conds.push(eq(habits.habit_type, filter.habit_type))
       const rows = await habitsRepo.findWhere(and(...conds) as SQL)
       return rows.map(toHabit)
+    },
+
+    // ── S2 ──────────────────────────────────────────────────────────
+    logCompletion: (habitId, input = {}) => upsertCompletion(habitId, input),
+    logDetailedCompletion: (habitId, input) => upsertCompletion(habitId, input),
+
+    editCompletion: async (habitId, date, patch) => {
+      const p = EditCompletionSchema.parse(patch)
+      const habit = await loadHabitOrThrow(habitId)
+      const existing = await findCompletion(habitId, date)
+      if (!existing) throw new Error(`Completion not found: ${habitId} @ ${date}`) // fail-loud (HB-2 edit path)
+      const row = await completionsRepo.update(existing.id, serializeCompletionPatch(p))
+      await recomputeAndCache(habit)
+      return toCompletion(row)
+    },
+
+    deleteCompletion: async (habitId, date) => {
+      const habit = await loadHabitOrThrow(habitId)
+      const existing = await findCompletion(habitId, date)
+      if (!existing) throw new Error(`Completion not found: ${habitId} @ ${date}`)
+      await completionsRepo.delete(existing.id) // hard delete (softDelete:false)
+      await recomputeAndCache(habit)
     },
   }
 

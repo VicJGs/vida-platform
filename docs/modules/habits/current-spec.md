@@ -24,8 +24,19 @@ prefs · associations · notes). Repo: `createRepository(db, habits, { deviceId,
 | `getHabit` | `(id) => Promise<Habit \| null>` | excludes soft-deleted |
 | `listHabits` | `(filter?: HabitFilter) => Promise<Habit[]>` | `HabitFilter { is_active?, domain?, habit_type? }`; explicit `isNull(deleted_at)` |
 
-### S2–S5 (pending)
-`logCompletion`/`logDetailedCompletion`/`editCompletion`/`deleteCompletion` + streak engine (S2) ·
+### S2 — completion ledger + streak recompute
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `logCompletion` | `(habitId, input?: {date?, count?, value?}) => Promise<HabitCompletion>` | UPSERT per (habit,date) (HB-3); recomputes streak cache |
+| `logDetailedCompletion` | `(habitId, input) => Promise<HabitCompletion>` | + mood/ease/satisfaction (1–5) / location / completion_time |
+| `editCompletion` | `(habitId, date, patch) => Promise<HabitCompletion>` | re-derives counters; throws if completion missing |
+| `deleteCompletion` | `(habitId, date) => Promise<void>` | hard delete (ledger); re-derives counters |
+
+The streak cache (`current_streak`/`longest_streak`/`total_completions`) is a projection recomputed on every
+mutation — `isScheduledOn` (daily→all; else→`days_of_week` weekday) + a done-gate (`count>=target`) + the
+grace/reset walk. `asOf` injected via the optional `clock` dep (default today). `HabitsServiceDeps` gains `clock?`.
+
+### S3–S5 (pending)
 `backfillCompletion` (S3) · `getTodayHabits`/`getStreak`/`getCompletionRate`/`getMoodTrend`/`getCalendar` (S4) ·
 effect fan-out + `contributeToPurposeMetrics`/`getEntityTags` + `registerHabitsJournal`/`registerHabitsEffects` (S5).
 
@@ -43,3 +54,4 @@ Repo typecheck 11/11 · `@vida/core` 1285 (→ +2 folds) · eslint 0 · 10 habit
 | Date | Slice | Change |
 |------|-------|--------|
 | 2026-09-23 | S1 | born — definition CRUD + `@vida/types` reconcile; §XXVI g1 SHIP + Verification Gate + g2 code-review SHIP (3 NITs folded) |
+| 2026-09-23 | S2 | completion ledger + streak-recompute engine; §XXVI g1 SHIP (streak algo hand-walked) + Verification Gate (35 habits tests, @vida/core 1297) + g2 code-review SHIP (future-date comment + 2 hardening tests folded) |

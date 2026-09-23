@@ -15,6 +15,7 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
+import { habitCompletions } from '../../../db/schema/habits'
 import { createHabitsService, HabitScheduleError, type HabitsService } from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -56,15 +57,19 @@ interface Harness {
   bsql: Database.Database
 }
 
-async function setup(): Promise<Harness> {
+async function setup(clock?: () => string): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createHabitsService({ db, deviceId: 'test-device' })
+  const svc = createHabitsService({ db, deviceId: 'test-device', clock })
   return { svc, db, bsql }
 }
+
+// UTC weekday (0=Sun…6=Sat) — used to build days_of_week that deterministically match/exclude chosen dates,
+// regardless of the real weekday of those dates (mirrors the service's `weekday`).
+const dow = (d: string): number => new Date(`${d}T00:00:00Z`).getUTCDay()
 
 describe('mod-habits S1 — definition CRUD', () => {
   let h: Harness
@@ -181,5 +186,146 @@ describe('mod-habits S1 — definition CRUD', () => {
     const rows = await h.db.select().from(syncQueue).all()
     const forHabit = rows.filter((r) => r.row_id === hab.id)
     expect(forHabit.length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('mod-habits S2 — completion ledger + streak engine', () => {
+  // Deterministic clock: asOf = 2026-09-23 unless a test overrides.
+  const ASOF = '2026-09-23'
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup(() => ASOF)
+  })
+
+  it('logCompletion creates a row; re-logging the same date UPSERTs (HB-3)', async () => {
+    const hab = await h.svc.createHabit({ name: 'Water' })
+    const c1 = await h.svc.logCompletion(hab.id, { date: '2026-09-23', count: 1 })
+    expect(c1.completed_date).toBe('2026-09-23')
+    const c2 = await h.svc.logCompletion(hab.id, { date: '2026-09-23', count: 2 })
+    expect(c2.count).toBe(2)
+    const rows = await h.svc.getHabit(hab.id)
+    expect(rows).toBeTruthy()
+    // exactly one ledger row for that date (upsert, not duplicate)
+    const all = await h.db.select().from(habitCompletions).all()
+    expect(all.filter((r) => r.habit_id === hab.id && r.completed_date === '2026-09-23')).toHaveLength(1)
+  })
+
+  it('done (count>=target) advances current_streak; a partial does not (HB-5)', async () => {
+    const hab = await h.svc.createHabit({ name: 'Pushups', target_count: 10 })
+    const partial = await h.svc.logCompletion(hab.id, { date: ASOF, count: 3 }) // partial
+    expect(partial.count).toBe(3)
+    expect((await h.svc.getHabit(hab.id))?.current_streak).toBe(0) // partial ≠ streak
+    expect((await h.svc.getHabit(hab.id))?.total_completions).toBe(0)
+    await h.svc.logCompletion(hab.id, { date: ASOF, count: 10 }) // now done (upsert)
+    expect((await h.svc.getHabit(hab.id))?.current_streak).toBe(1)
+    expect((await h.svc.getHabit(hab.id))?.total_completions).toBe(1)
+  })
+
+  it('daily: consecutive done days increment; a missed elapsed day resets to 0, longest holds (HB-2)', async () => {
+    const h2 = await setup(() => '2026-09-24')
+    const hab = await h2.svc.createHabit({ name: 'Read', frequency: 'daily' })
+    await h2.svc.logCompletion(hab.id, { date: '2026-09-21' })
+    await h2.svc.logCompletion(hab.id, { date: '2026-09-22' })
+    // 2026-09-23 is a missed elapsed scheduled day; asOf=24 (not done → grace-skip)
+    const after = await h2.svc.getHabit(hab.id)
+    expect(after?.current_streak).toBe(0) // 23 missed → reset
+    expect(after?.longest_streak).toBe(2) // 21–22 run held
+  })
+
+  it('daily: today scheduled-but-not-done does NOT zero the prior streak (grace)', async () => {
+    const h2 = await setup(() => '2026-09-24')
+    const hab = await h2.svc.createHabit({ name: 'Journal', frequency: 'daily' })
+    await h2.svc.logCompletion(hab.id, { date: '2026-09-22' })
+    await h2.svc.logCompletion(hab.id, { date: '2026-09-23' })
+    const after = await h2.svc.getHabit(hab.id) // asOf=24 not done → skip; 22–23 done
+    expect(after?.current_streak).toBe(2)
+  })
+
+  it('asOf scheduled AND done counts toward current_streak (NIT-1 branch order)', async () => {
+    const hab = await h.svc.createHabit({ name: 'Meditate', frequency: 'daily' })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-22' })
+    await h.svc.logCompletion(hab.id, { date: ASOF }) // asOf itself, done
+    expect((await h.svc.getHabit(hab.id))?.current_streak).toBe(2) // asOf counted, not skipped
+  })
+
+  it('custom days_of_week: an off-day gap is transparent (does not break the streak)', async () => {
+    // scheduled = weekdays of 21 and 23; 22 (a distinct weekday) is an off-day
+    const hab = await h.svc.createHabit({
+      name: 'Gym',
+      frequency: 'custom',
+      days_of_week: [dow('2026-09-21'), dow('2026-09-23')],
+    })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-21' })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-23' }) // asOf, scheduled, done; 22 is off-schedule
+    expect((await h.svc.getHabit(hab.id))?.current_streak).toBe(2)
+  })
+
+  it('total_completions counts ALL done rows incl. off-schedule (BR-S2-6)', async () => {
+    const hab = await h.svc.createHabit({
+      name: 'Run',
+      frequency: 'custom',
+      days_of_week: [dow('2026-09-21')], // only 21's weekday is scheduled
+    })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-21' }) // scheduled + done
+    await h.svc.logCompletion(hab.id, { date: '2026-09-22' }) // off-schedule + done
+    const after = await h.svc.getHabit(hab.id)
+    expect(after?.total_completions).toBe(2) // both done rows
+    expect(after?.current_streak).toBe(1) // only the scheduled one advances the streak
+  })
+
+  it('break-habit streak advances on logged abstain-days (HB-4)', async () => {
+    const hab = await h.svc.createHabit({ name: 'No sugar', habit_type: 'break', frequency: 'daily' })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-22' })
+    await h.svc.logCompletion(hab.id, { date: '2026-09-23' })
+    expect((await h.svc.getHabit(hab.id))?.current_streak).toBe(2)
+  })
+
+  it('logDetailedCompletion persists mood; a rating out of 1–5 rejects (HB-7, BR-S2-8)', async () => {
+    const hab = await h.svc.createHabit({ name: 'Yoga' })
+    const c = await h.svc.logDetailedCompletion(hab.id, { date: ASOF, mood_after: 5, ease_rating: 4 })
+    expect(c.mood_after).toBe(5)
+    expect(c.ease_rating).toBe(4)
+    await expect(h.svc.logDetailedCompletion(hab.id, { date: ASOF, mood_before: 6 })).rejects.toThrow()
+  })
+
+  it('editCompletion and deleteCompletion re-derive the counters (HB-2)', async () => {
+    const h2 = await setup(() => '2026-09-22')
+    const hab = await h2.svc.createHabit({ name: 'Walk', frequency: 'daily', target_count: 1 })
+    await h2.svc.logCompletion(hab.id, { date: '2026-09-21' })
+    await h2.svc.logCompletion(hab.id, { date: '2026-09-22' })
+    expect((await h2.svc.getHabit(hab.id))?.current_streak).toBe(2)
+    // edit 22 down to a partial (count 0 < target) → no longer done → recompute
+    await h2.svc.editCompletion(hab.id, '2026-09-22', { count: 0 })
+    expect((await h2.svc.getHabit(hab.id))?.current_streak).toBe(1) // only 21 done; 22==asOf not-done → skip
+    // delete 21 → nothing done
+    await h2.svc.deleteCompletion(hab.id, '2026-09-21')
+    const after = await h2.svc.getHabit(hab.id)
+    expect(after?.current_streak).toBe(0)
+    expect(after?.total_completions).toBe(0)
+  })
+
+  it('longest_streak holds across a reset THEN a shorter rebuild (guards a naive longest=current bug)', async () => {
+    const h2 = await setup(() => '2026-09-23')
+    const hab = await h2.svc.createHabit({ name: 'Floss', frequency: 'daily' })
+    for (const d of ['2026-09-18', '2026-09-19', '2026-09-20']) await h2.svc.logCompletion(hab.id, { date: d }) // run 3
+    // 2026-09-21 missed → reset
+    await h2.svc.logCompletion(hab.id, { date: '2026-09-22' })
+    await h2.svc.logCompletion(hab.id, { date: '2026-09-23' }) // asOf, done → new run 2
+    const after = await h2.svc.getHabit(hab.id)
+    expect(after?.current_streak).toBe(2) // the rebuilt run
+    expect(after?.longest_streak).toBe(3) // the pre-reset peak survives (not clobbered to 2)
+  })
+
+  it('a future-dated completion counts in total but not the streak walk (g2 NIT-1)', async () => {
+    const hab = await h.svc.createHabit({ name: 'Plan', frequency: 'daily' }) // clock = ASOF 2026-09-23
+    await h.svc.logCompletion(hab.id, { date: '2026-09-25' }) // future relative to asOf
+    const after = await h.svc.getHabit(hab.id)
+    expect(after?.total_completions).toBe(1) // counted in total
+    expect(after?.current_streak).toBe(0) // excluded from the walk (hasn't happened)
+    expect(after?.longest_streak).toBe(0)
+  })
+
+  it('logCompletion on a missing habit fails loud (no orphan completion)', async () => {
+    await expect(h.svc.logCompletion('nonexistent-id', { date: ASOF })).rejects.toThrow(/not found/i)
   })
 })

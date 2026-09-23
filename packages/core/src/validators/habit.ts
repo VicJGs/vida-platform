@@ -49,3 +49,22 @@ export const CreateHabitSchema = HabitFields.partial().extend({
   name: z.string(),
 })
 export const UpdateHabitSchema = HabitFields.partial()
+
+// --- habit_completions (HAB-07/09/11 · S2) ----------------------------------
+// Ratings mirror the SQL 1–5 CHECK (SQL-migration-only, so Zod is the enforced service-layer guard, BR-S2-8).
+const rating = z.number().int().min(1).max(5)
+const CompletionFields = z.object({
+  date: z.string(), // YYYY-MM-DD → completed_date
+  count: z.number().int(),
+  value: z.number().nullable(), // REAL measured quantity (analytics)
+  mood_before: rating.nullable(),
+  mood_after: rating.nullable(),
+  ease_rating: rating.nullable(),
+  satisfaction: rating.nullable(),
+  location: z.string().nullable(),
+  completion_time: z.number().int().nullable(), // Unix ms
+})
+// log + detailed share one partial shape (the distinction is which fields the caller passes).
+export const LogCompletionSchema = CompletionFields.partial()
+// edit patches an existing (habit,date) row → `date` identifies the row, not a patchable field.
+export const EditCompletionSchema = CompletionFields.omit({ date: true }).partial()
