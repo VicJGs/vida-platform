@@ -577,3 +577,15 @@ The ADR-015 AI-application service tier (`foundation/ai`, XS-ai #45), 4 slices X
 - **Barrel collision:** ai's `buildDisclosure` collided with ingestion's → renamed `buildAiDisclosure`.
 - Corrected the task-file Goal typo (ADR-014/020 → ADR-015; ADR-020 is Zustand/frontend).
 - Memory: [[xs-security-services-deny-safe-port-build-shape]] extended (triad complete; push-vs-fetch egress; don't copy sibling signatures mechanically).
+
+## mod-gamification ① backend — completed 2026-09-22 (LIF-124 → Done, PR #67)
+
+Key decisions (the Points Economy "System" service tier over `foundation/economy`):
+- **RATIFY vs BUILD spine (doc-fixed):** the ADR-012 economy engine was already built in AR-7 (`computeBalance`, grant/lock handlers, `dispatchConsequence`, currency registry). MOD-gamification COMPOSES it and builds only the four downstream-homed pieces (rules engine · achievement engine · level curve · journal). Read the substrate barrel header + its current-business-rules Deferred for the boundary.
+- **Store worth-tree = Finance-owned, NOT this task** (`economy/current-business-rules.md:22` + `structure-data.md:81` home it to MOD-finance, FIN-18/24). Compose-only via the `move_money` effect — a domain boundary, not a time-defer. Dropped a whole planned slice.
+- **Balances DERIVED never stored** (IR-1); `total_xp`/`current_level` are caches derived live via `getLevel`.
+- **Currency ops are a thin-BUILD over `registry.list()`** (R1): the registry exposes only `create()→void` + `list()→CurrencyDef[]`; `getCurrency`/the `Currency` shape are built on `list()`, not passed through. Reused `CurrencyDef` (no duplicate interface).
+- **Rule engine:** condition = ADR-011 binding (event_trigger match / derived_pull measurement compare); consequences = typed ADR-004 effects parsed → `EffectEvent[]` with per-consequence idempotent transition `${rule}:${occasion}#${i}` → `rail.applyEffect`. `assertAcyclic` over producer→consumer rule edges rejects a rule feeding its own condition. `effectsFired` counts NEWLY-applied (not `events.length`) so replays/clamped-locks don't double-count downstream (R1 gate catch). User-authored (`grant_id`) → enforcer envelope, fail-closed; `grant_id`→def-id resolution deferred to #85 CAP-authoring.
+- **Achievements = first non-syncable static-seed table** → seed/read via **direct drizzle** (`db.insert`/`select`, `uuidv7()` id, `onConflictDoNothing` by key); write only `user_achievements` (syncable, UNIQUE(achievement_id)). Predicate = measure (measurement seam) or currency-balance quantity → not-met on null source.
+- **Registry-guarded effect emit:** `surface_notification` (MOD-notifications-owned, unregistered at M1) stays a dormant seam via `canFire(registry.resolve)` — no `NoEffectHandler` on unlock; the reward (economy handler) fires (checkins CK-17 precedent).
+- **Journal `summary(date)` = tz-safe snapshot** (level/XP/achievements-to-date), state-by-type; per-day deltas deferred (dated ledger + tz). `registerGamificationEffects` = call-once economy wiring.

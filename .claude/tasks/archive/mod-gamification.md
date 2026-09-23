@@ -1,5 +1,5 @@
 # Task: mod-gamification
-# Status: in-progress
+# Status: done (① backend COMPLETE — PR #67 merged d198ddc 2026-09-22; ② fe-gamification LIF-181 separate)
 # Linear: LIF-124
 # Profile: Add Backend Component
 # Scenario: Default (Entity Delivery Flow v1)
