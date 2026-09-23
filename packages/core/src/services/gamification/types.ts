@@ -8,9 +8,10 @@
 // ============================================================================
 
 import type { z } from 'zod'
+import type { Achievement, UserAchievement } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type { CurrencyDef, CurrencyBalance } from '../../foundation/economy'
-import type { EffectRail } from '../../foundation/effects'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
 import type { MeasurementSourceRegistry } from '../../foundation/measurement'
 import type { CapabilityEnforcer } from '../../foundation/capability'
 import type {
@@ -18,16 +19,19 @@ import type {
   UpdateProfileSchema,
   RuleCreateSchema,
   RuleUpdateSchema,
+  AchievementSeedSchema,
 } from '../../validators/gamification'
 import type { LevelInfo, ClampResult } from './level'
 import type { Rule, RuleContext, ExecutionResult } from './rules'
 
-/** S1 deps = db+deviceId (the economy registry is composed inside). S2 appends the injected ports:
- *  rail (required to executeRule), measurement (derived_pull conditions), enforcer (user-authored rules). */
+/** S1 deps = db+deviceId (the economy registry is composed inside). S2 appends rail (required to
+ *  executeRule), measurement (derived_pull conditions), enforcer (user-authored rules). S3 appends
+ *  registry (gates the guarded reward/notification emit — dormant when a handler is unregistered). */
 export interface GamificationServiceDeps {
   db: DrizzleDb
   deviceId: string
   rail?: EffectRail
+  registry?: EffectRegistry
   measurement?: MeasurementSourceRegistry
   enforcer?: CapabilityEnforcer
 }
@@ -36,6 +40,7 @@ export type CurrencyCreateInput = z.infer<typeof CurrencyCreateSchema>
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>
 export type RuleCreateInput = z.infer<typeof RuleCreateSchema>
 export type RuleUpdateInput = z.infer<typeof RuleUpdateSchema>
+export type AchievementSeedInput = z.infer<typeof AchievementSeedSchema>
 
 /** The user_profile real-column VIEW (IR-11: the @vida/types UserProfile interface diverges — it still
  *  carries persona/check_in_streak/etc. that moved to Preferences/Check-ins). This mirrors the row. */
@@ -85,6 +90,14 @@ export interface GamificationService {
   executeRule(ruleId: string, ctx: RuleContext): Promise<ExecutionResult>
   /** Sweep all enabled rules against the context (derived_pull + matching event_trigger). */
   evaluateRules(ctx: RuleContext): Promise<ExecutionResult[]>
+  // --- Achievements (S3 — GM-13; static-seed read + earned-join write + unlock effects) ---
+  /** Seed app-curated achievements (direct write — achievements is non-syncable; idempotent by key). */
+  seedAchievements(defs: AchievementSeedInput[]): Promise<void>
+  listAchievements(): Promise<Achievement[]>
+  getUserAchievements(): Promise<UserAchievement[]>
+  /** Evaluate every not-yet-earned achievement's predicate; unlock the satisfied ones (write the earned
+   *  join + fire reward + notification via the rail). Returns the newly-earned joins. */
+  evaluateAchievements(ctx: RuleContext): Promise<UserAchievement[]>
 }
 
 /** getCurrency/getBalance on an unknown currency code (fail-loud). */
@@ -137,3 +150,4 @@ export class RailNotConfigured extends Error {
 }
 
 export type { Rule, RuleContext, ExecutionResult, RuleCondition, ConsequenceSpec } from './rules'
+export type { AchievementCondition } from './achievements'

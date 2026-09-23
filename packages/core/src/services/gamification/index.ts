@@ -24,6 +24,8 @@ export {
   type ExecutionResult,
   type RuleCondition,
   type ConsequenceSpec,
+  type AchievementSeedInput,
+  type AchievementCondition,
 } from './types'
 export {
   deriveLevel,

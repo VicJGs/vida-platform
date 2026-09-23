@@ -56,11 +56,31 @@
   exclude soft-deleted; `deleteRule` soft-deletes; `RuleUpdateSchema.strict()` (no `grantId` — grant is
   create-time). `[FACT: service.ts rulesRepo + CRUD ops]`
 
+## S3 — Achievement engine (shipped)
+
+- **BR-GM-16 (achievements is a non-syncable static seed, IR-8).** `seedAchievements` writes via **direct
+  drizzle** (`db.insert` + `uuidv7()` id + explicit `created_at` + `onConflictDoNothing` by `key`) — NOT the
+  sync Repository (the table has no `_sync_*` columns; routing it through the Repository would break the insert
+  + wrongly enqueue sync). `listAchievements` reads via `db.select`. `[FACT: service.ts seedAchievements/listAchievements]`
+- **BR-GM-17 (unlock = earned-join write + guarded reward + guarded notification, GM-13/GM-15).** On a met
+  predicate, `evaluateAchievements` writes `user_achievements` (syncable; `UNIQUE(achievement_id)` converges a
+  cross-device double-unlock) + fires `grant_currency` (XP reward) + `surface_notification` via the rail.
+  `[FACT: service.ts unlockAchievement]`
+- **BR-GM-18 (registry-guarded emit, dormant seam).** An effect fires only if a handler is registered
+  (`registry.resolve`); `surface_notification` (MOD-notifications-owned, unregistered at M1) stays dormant, the
+  reward fires (economy handler present). No `NoEffectHandler` on unlock. `[FACT: service.ts canFire]`
+- **BR-GM-19 (predicate eval, IR-4).** Conditions read the measurement seam (`measure`) or a derived currency
+  balance quantity (`currency` ∈ earned/current/locked/spent); a null source (unmeasured / unknown currency) →
+  not met (never fabricated). A `condition == null` achievement is skipped (no auto-predicate). `[FACT: achievements.ts; service.ts evaluateAchievements]`
+- **BR-GM-20 (unlock idempotency).** Already-earned achievements are filtered out (the earned-`Set`); the reward
+  effect's deterministic `achievement:${id}:reward` transition dedups a re-fire on the rail. `[FACT: service.ts evaluateAchievements]`
+
 ## Deferred (homed, not dropped)
-- Achievement engine (S3) · journal provider + effect-handler wiring (S4) — this module.
-- `total_xp`/`current_level` cache refresh → the effect-firing mutation path (S3).
+- Journal provider + effect-handler wiring (S4) — this module.
+- `total_xp`/`current_level` cache refresh → the effect-firing mutation path (currently derived live).
 - Rule `grant_id` → capability def-id resolution + the authoring surface → #85 CAP-authoring (⚠ INTENDED).
 - `derived_pull` recurring occasion wiring (which feeder supplies the occasion token) → composition seam (OQ-2).
+- Achievement partial-`progress` tracking (`Record<string,number>`) + multi-currency rewards → later slices.
 - Store worth-tree → **MOD-finance** (FIN-18/FIN-24; compose via `move_money{lockTarget}`). `[FACT: docs/core/economy/current-business-rules.md:22]`
 - Fire-time consent gate for cross-module `move_money` → auth-off M1 (ADR-017; Finance BR-S4-5, #46/#85).
 - User-authored rules/achievements sandbox → ⚠ INTENDED (#85) · level-unlocks · quests.

@@ -8,6 +8,7 @@
 
 import { z } from 'zod'
 import { CurrencyBackingKindSchema } from './economy'
+import { AchievementCategorySchema, AchievementTierSchema } from './user'
 
 /** defineCurrency input (maps to foundation CurrencyDef; `name` is [E]). */
 export const CurrencyCreateSchema = z.object({
@@ -76,6 +77,36 @@ export const RuleUpdateSchema = z
     isEnabled: z.boolean().optional(),
   })
   .strict()
+
+// --- S3 achievement engine --------------------------------------------------
+
+const Operator = z.enum(['gte', 'lte', 'eq'])
+
+/** An achievement's auto-evaluable predicate (GM-13): over a measurement source OR a currency balance
+ *  quantity. Stored in achievements.condition (JSON); null = no auto-predicate (skipped by the engine). */
+export const AchievementConditionSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('measure'), measureKey: z.string().min(1), operator: Operator, threshold: z.number() }),
+  z.object({
+    kind: z.literal('currency'),
+    currencyCode: z.string().min(1),
+    quantity: z.enum(['earned', 'current', 'locked', 'spent']),
+    operator: Operator,
+    threshold: z.number(),
+  }),
+])
+
+/** seedAchievements input — app-curated static content (achievements is a non-syncable seed table). */
+export const AchievementSeedSchema = z.object({
+  key: z.string().min(1),
+  category: AchievementCategorySchema,
+  tier: AchievementTierSchema.optional(),
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
+  xpReward: z.number().int().nonnegative().optional(),
+  condition: AchievementConditionSchema.nullable().optional(),
+  isSecret: z.boolean().optional(),
+})
 
 /** updateProfile input — the mutable, non-cache user_profile columns (IR-11 real-column view). */
 export const UpdateProfileSchema = z

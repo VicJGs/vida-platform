@@ -34,6 +34,13 @@ S2+ append injected ports (rail · measurement · enforcer). `[FACT: services/ga
 | `executeRule(id, ctx)` | eval condition → envelope check (user-authored) → clamp locks → `rail.applyEffect` per effect; honest `effectsFired` | `service.ts` |
 | `evaluateRules(ctx)` | sweep enabled rules against the context | `service.ts` |
 
+## Surface (S3 — achievement engine)
+| Op | Behaviour | Source |
+|----|-----------|--------|
+| `seedAchievements(defs)` | direct-drizzle insert (non-syncable seed), idempotent by `key` | `service.ts` |
+| `listAchievements()` / `getUserAchievements()` | seed read (direct) / earned join (syncable) | `service.ts` |
+| `evaluateAchievements(ctx)` | eval predicates (measure/currency) → unlock: earned-join + guarded reward + guarded notification | `service.ts` |
+
 ## Composed (RATIFY — not re-implemented)
 `computeBalance` `[FACT: foundation/economy/balance.ts:12-27]` · `createCurrencyRegistry` (`create`/`list`,
 SHIPPED_CURRENCIES=[XP]) `[FACT: foundation/economy/registry.ts:44-73]` · `CurrencyDef`/`CurrencyBalance`/
@@ -41,12 +48,13 @@ SHIPPED_CURRENCIES=[XP]) `[FACT: foundation/economy/registry.ts:44-73]` · `Curr
 measurement `query`/`assertAcyclic` · capability `checkAction` (user-authored rules).
 
 ## Files
-`services/gamification/{level,rules,types,service,index}.ts` + `__tests__/gamification-service.test.ts` (20
-live-store tests) · `validators/gamification.ts` (Currency/Profile + Rule/Condition/ConsequenceSpec schemas).
+`services/gamification/{level,rules,achievements,types,service,index}.ts` + `__tests__/gamification-service.test.ts`
+(26 live-store tests) · `validators/gamification.ts` (Currency/Profile + Rule/Condition/ConsequenceSpec +
+Achievement condition/seed schemas).
 
-## Not in S1/S2 (homed)
-- S3 achievement engine · S4 journal provider + effect-handler wiring (this module, later slices).
+## Not in S1/S2/S3 (homed)
+- S4 journal provider (`summary(date)→SectionData`) + effect-handler registration wiring (this module, next slice).
 - Store worth-tree = **Finance-owned** (FIN-18/FIN-24) — composed via the `move_money` effect, never built here.
-- `total_xp`/`current_level` cache refresh — folds into the effect-firing mutation path (S3); currently derived live.
+- `total_xp`/`current_level` cache refresh — folds into the effect-firing mutation path; currently derived live.
 - User-authored rules AUTHORING surface + `grant_id`→def-id resolution (⚠ INTENDED → #85) · level-unlocks · quests.
-- `derived_pull` recurring-occasion feeder wiring → composition seam (OQ-2).
+- `derived_pull` recurring-occasion feeder wiring → composition seam (OQ-2) · achievement partial-progress + multi-currency rewards.

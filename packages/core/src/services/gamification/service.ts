@@ -9,6 +9,7 @@
 // ============================================================================
 
 import { eq } from 'drizzle-orm'
+import type { Achievement, UserAchievement, EffectType } from '@vida/types'
 import {
   createCurrencyRegistry,
   computeBalance,
@@ -17,16 +18,18 @@ import {
   type LedgerEntry,
 } from '../../foundation/economy'
 import { assertAcyclic, MeasurementCycle } from '../../foundation/measurement'
-import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
+import { createRepository, uuidv7, type CreateInput, type UpdateInput } from '../../db/repository'
 import { consequenceLedger, rules } from '../../db/schema/foundation/economy'
-import { userProfile, type UserProfileRow } from '../../db/schema/gamification'
+import { userProfile, achievements, userAchievements, type UserProfileRow } from '../../db/schema/gamification'
 import {
   CurrencyCreateSchema,
   UpdateProfileSchema,
   RuleCreateSchema,
   RuleUpdateSchema,
+  AchievementSeedSchema,
 } from '../../validators/gamification'
 import { deriveLevel, clampToFloor } from './level'
+import { parseAchievementCondition, evaluateAchievementCondition } from './achievements'
 import {
   parseRule,
   evaluateCondition,
@@ -53,6 +56,7 @@ import {
   type UpdateProfileInput,
   type RuleCreateInput,
   type RuleUpdateInput,
+  type AchievementSeedInput,
 } from './types'
 
 /** XP is the canonical shipped currency — the default for level (§3.2). */
@@ -88,13 +92,15 @@ function toProfile(row: UserProfileRow): GamificationProfile {
 }
 
 export function createGamificationService(deps: GamificationServiceDeps): GamificationService {
-  const { db, deviceId, rail, measurement, enforcer } = deps
+  const { db, deviceId, rail, registry, measurement, enforcer } = deps
   const currencyRegistry = createCurrencyRegistry(db, deviceId)
   // Append-only ledger read (no deleted_at → plain findWhere) + the singleton profile row.
   const ledgerRepo = createRepository(db, consequenceLedger, { deviceId, encryptedFields: [] })
   const profileRepo = createRepository(db, userProfile, { deviceId, encryptedFields: [] })
   // rules has deleted_at → softDelete:true (findAll/findById exclude soft-deleted).
   const rulesRepo = createRepository(db, rules, { deviceId, encryptedFields: [], softDelete: true })
+  // user_achievements is syncable (the earned join). achievements is a NON-syncable static seed → direct drizzle.
+  const userAchievementsRepo = createRepository(db, userAchievements, { deviceId, encryptedFields: [] })
 
   async function listCurrencies() {
     return currencyRegistry.list()
@@ -340,6 +346,126 @@ export function createGamificationService(deps: GamificationServiceDeps): Gamifi
     return out
   }
 
+  // --- S3 achievement engine ------------------------------------------------
+
+  function toAchievement(row: typeof achievements.$inferSelect): Achievement {
+    return {
+      id: row.id,
+      key: row.key,
+      category: row.category,
+      tier: row.tier,
+      title: row.title,
+      description: row.description,
+      icon: row.icon,
+      xp_reward: row.xp_reward,
+      condition: row.condition != null ? (JSON.parse(row.condition) as Record<string, unknown>) : null,
+      is_secret: row.is_secret,
+      created_at: row.created_at,
+    }
+  }
+
+  function toUserAchievement(row: typeof userAchievements.$inferSelect): UserAchievement {
+    return {
+      ...row,
+      progress: row.progress != null ? (JSON.parse(row.progress) as Record<string, unknown>) : null,
+    } as UserAchievement // _sync_status Row(string)→union cast (the DB-11 reconcile)
+  }
+
+  /** An effect may fire only if a handler is registered — the registry gates the guarded emit
+   *  (the checkins CK-17 precedent). surface_notification is MOD-notifications' (unregistered at M1) →
+   *  its emit stays dormant until wired; grant_currency (economy) is present when the rail is. */
+  function canFire(effectType: EffectType): boolean {
+    return registry?.resolve(effectType) != null
+  }
+
+  async function seedAchievements(defs: AchievementSeedInput[]): Promise<void> {
+    for (const def of defs) {
+      const d = AchievementSeedSchema.parse(def)
+      await db
+        .insert(achievements)
+        .values({
+          id: uuidv7(),
+          key: d.key,
+          category: d.category,
+          tier: d.tier ?? 'bronze',
+          title: d.title,
+          description: d.description ?? null,
+          icon: d.icon ?? null,
+          xp_reward: d.xpReward ?? 0,
+          condition: d.condition != null ? JSON.stringify(d.condition) : null,
+          is_secret: d.isSecret ?? false,
+          created_at: Date.now(),
+        })
+        .onConflictDoNothing({ target: achievements.key }) // idempotent re-seed by key
+        .run()
+    }
+  }
+
+  async function listAchievements(): Promise<Achievement[]> {
+    return (await db.select().from(achievements).all()).map(toAchievement)
+  }
+
+  async function getUserAchievements(): Promise<UserAchievement[]> {
+    return (await userAchievementsRepo.findAll()).map(toUserAchievement)
+  }
+
+  async function unlockAchievement(a: Achievement, ctx: RuleContext): Promise<UserAchievement> {
+    // The earned join (syncable; UNIQUE(achievement_id) makes a cross-device double-unlock converge).
+    const created = await userAchievementsRepo.create({ achievement_id: a.id, earned_at: Date.now(), progress: null })
+    // Reward: grant the achievement's XP (idempotent transition — a re-fire dedups on the rail). M1
+    // rewards are XP-only (the field is `xp_reward`, the level curve is XP-based, GM-14); a multi-currency
+    // reward is a later concern. NIT-2: `progress` reconciles to Record<string,number> at the progress slice.
+    if (a.xp_reward > 0 && canFire('grant_currency')) {
+      await rail!.applyEffect({
+        subjectNaturalKey: ctx.subjectId,
+        transition: `achievement:${a.id}:reward`,
+        effectType: 'grant_currency',
+        targetRef: ctx.subjectId,
+        payload: { currencyId: XP_CODE, amount: a.xp_reward },
+      })
+    }
+    // Notification: dormant until MOD-notifications registers the handler (canFire guards it).
+    if (canFire('surface_notification')) {
+      await rail!.applyEffect({
+        subjectNaturalKey: ctx.subjectId,
+        transition: `achievement:${a.id}:notify`,
+        effectType: 'surface_notification',
+        targetRef: a.id,
+        payload: { kind: 'achievement_unlocked', achievementId: a.id },
+      })
+    }
+    return toUserAchievement(created)
+  }
+
+  async function evaluateAchievements(ctx: RuleContext): Promise<UserAchievement[]> {
+    if (!rail) throw new RailNotConfigured()
+    const earned = new Set((await getUserAchievements()).map((u) => u.achievement_id))
+    const candidates = (await listAchievements()).filter((a) => !earned.has(a.id))
+    // Prefetch balances for currency-conditions so the evaluator stays pure/sync.
+    const balances = new Map<string, CurrencyBalance>()
+    for (const a of candidates) {
+      const cond = parseAchievementCondition(a.condition)
+      if (cond?.kind === 'currency' && !balances.has(cond.currencyCode)) {
+        try {
+          balances.set(cond.currencyCode, await getBalance(cond.currencyCode))
+        } catch {
+          /* unknown currency → left unresolved (condition won't fire) */
+        }
+      }
+    }
+    const resolveMeasure = (key: string): number | null => measurement?.query(key) ?? null
+    const resolveCurrency = (code: string): CurrencyBalance | null => balances.get(code) ?? null
+
+    const newly: UserAchievement[] = []
+    for (const a of candidates) {
+      const cond = parseAchievementCondition(a.condition)
+      if (!cond) continue // no auto-evaluable predicate → skipped
+      if (!evaluateAchievementCondition(cond, resolveMeasure, resolveCurrency)) continue
+      newly.push(await unlockAchievement(a, ctx))
+    }
+    return newly
+  }
+
   return {
     defineCurrency,
     listCurrencies,
@@ -360,5 +486,9 @@ export function createGamificationService(deps: GamificationServiceDeps): Gamifi
     getRule,
     executeRule,
     evaluateRules,
+    seedAchievements,
+    listAchievements,
+    getUserAchievements,
+    evaluateAchievements,
   }
 }

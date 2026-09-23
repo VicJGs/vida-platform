@@ -221,9 +221,10 @@ async function setupWithRail(enforcer?: CapabilityEnforcer): Promise<RailHarness
   const registry = createEffectRegistry()
   const rail = createEffectRail(db, registry)
   // The economy handlers must be registered for grant/lock effects to fire (the S4 wiring, done here).
+  // surface_notification is deliberately NOT registered — it stays dormant at M1 (MOD-notifications owns it).
   registerEconomyEffects(registry, createEconomyHandlers(db, 'test-device'))
   const measurement = createMeasurementSourceRegistry()
-  const svc = createGamificationService({ db, deviceId: 'test-device', rail, measurement, enforcer })
+  const svc = createGamificationService({ db, deviceId: 'test-device', rail, registry, measurement, enforcer })
   return { svc, db, measurement }
 }
 
@@ -401,5 +402,76 @@ describe('mod-gamification S2 — rule engine', () => {
     const results = await svc.evaluateRules({ subjectId: 'u1', occasion: 'sweep-1' })
     expect(results.filter((r) => r.fired)).toHaveLength(1) // only the derived_pull one
     expect((await svc.getBalance('XP')).earned).toBe(20)
+  })
+})
+
+// --- S3 achievement engine --------------------------------------------------
+
+describe('mod-gamification S3 — achievement engine', () => {
+  it('seeds static achievements (direct, non-syncable) and re-seed is idempotent by key', async () => {
+    const { svc } = await setupWithRail()
+    await svc.seedAchievements([
+      { key: 'first_steps', category: 'onboarding', title: 'First Steps', xpReward: 10 },
+      { key: 'centurion', category: 'general', title: 'Centurion', xpReward: 50, condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 } },
+    ])
+    expect((await svc.listAchievements()).map((a) => a.key).sort()).toEqual(['centurion', 'first_steps'])
+    await svc.seedAchievements([{ key: 'first_steps', category: 'onboarding', title: 'dup' }]) // idempotent
+    expect((await svc.listAchievements()).filter((a) => a.key === 'first_steps')).toHaveLength(1)
+  })
+
+  it('unlocks a currency-condition achievement and fires its XP reward through the rail', async () => {
+    const { svc, db } = await setupWithRail()
+    await svc.seedAchievements([
+      { key: 'centurion', category: 'general', title: 'Centurion', xpReward: 50, condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 } },
+    ])
+    // Not yet met.
+    expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(0)
+    // Earn 100 XP → condition met.
+    await seedLedger(db, 'XP', 'earn', 100)
+    const unlocked = await svc.evaluateAchievements({ subjectId: 'u1' })
+    expect(unlocked).toHaveLength(1)
+    expect((await svc.getUserAchievements())).toHaveLength(1)
+    // The reward (grant_currency 50) fired on the rail → XP earned is now 150.
+    expect((await svc.getBalance('XP')).earned).toBe(150)
+  })
+
+  it('unlocks a measure-condition achievement from the measurement seam', async () => {
+    const { svc, measurement } = await setupWithRail()
+    await svc.seedAchievements([
+      { key: 'streak7', category: 'habits', title: 'Week Warrior', condition: { kind: 'measure', measureKey: 'habit_streak', operator: 'gte', threshold: 7 } },
+    ])
+    let streak = 3
+    measurement.advertise('habit_streak', () => streak)
+    expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(0) // below threshold
+    streak = 8
+    expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(1)
+  })
+
+  it('is idempotent — an already-earned achievement is not unlocked again', async () => {
+    const { svc, db } = await setupWithRail()
+    await svc.seedAchievements([
+      { key: 'centurion', category: 'general', title: 'Centurion', xpReward: 50, condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 } },
+    ])
+    await seedLedger(db, 'XP', 'earn', 100)
+    expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(1)
+    expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(0) // already earned
+    expect(await svc.getUserAchievements()).toHaveLength(1)
+  })
+
+  it('skips an achievement with no auto-evaluable predicate (condition null)', async () => {
+    const { svc } = await setupWithRail()
+    await svc.seedAchievements([{ key: 'manual', category: 'general', title: 'Manual', xpReward: 5 }])
+    expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(0)
+  })
+
+  it('unlocks even when the notification handler is unregistered (dormant seam)', async () => {
+    // setupWithRail registers economy handlers but NOT surface_notification → the notify emit is guarded off.
+    const { svc, db } = await setupWithRail()
+    await svc.seedAchievements([
+      { key: 'centurion', category: 'general', title: 'Centurion', condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 } },
+    ])
+    await seedLedger(db, 'XP', 'earn', 100)
+    // Must not throw NoEffectHandler for the missing surface_notification handler.
+    expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(1)
   })
 })
