@@ -2,7 +2,12 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-- xs-notifications-delivery (LIF-174 → in-progress): .claude/tasks/xs-notifications-delivery.md  (M1/M1.1.2 `#46` · add-backend-component / Default (Entity Delivery Flow). The ADR-013 ZK notification **delivery engine** — 17 legs (XCU-01…12, 14–18), pure decision/routing tier + deny-safe ports, no schema. The LAST M1.1.2 XS security service; completes the backend wave.)
+- mod-gamification (LIF-124 → in-progress): .claude/tasks/mod-gamification.md  (M1/M1.1.2 `#48` · add-backend-component / Default (Entity Delivery Flow v1). "The System" — the behavioral incentive/consequence engine over DB-4 `031_gamification` (`user_profile`/`achievements`/`user_achievements`) + the ADR-012 DB-3 economy spine (`currencies`/`consequence_ledger`/`store`/`rules`). Rules=ADR-011 bindings · effects=ADR-004 rail · derived multi-currency (to-distribute/earned/locked/current) · achievements over the measurement seam · money moves only through Finance's guarded handler. All 6 blockers done. ② fe-gamification (LIF-181) separate.)
+
+<details><summary>prior (xs-notifications-delivery completed)</summary>
+
+- xs-notifications-delivery (LIF-174 → Done): .claude/tasks/xs-notifications-delivery.md  (M1/M1.1.2 `#46` · add-backend-component / Default (Entity Delivery Flow). The ADR-013 ZK notification **delivery engine** — 17 legs (XCU-01…12, 14–18), pure decision/routing tier + deny-safe ports, no schema. The LAST M1.1.2 XS security service; completes the backend wave.)
+</details>
 
 <details><summary>prior (none active)</summary>
 
