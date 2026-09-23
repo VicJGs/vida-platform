@@ -5753,3 +5753,18 @@ Decisions:
 Next session:
   - FIRST ACTION: build S3 — derived analytics (FIN-17/19/22): getOverview (net worth = FN-7 simple sum: Σaccount balances + Σasset current_value − Σliability current_balance; monthly income/expense transfers-EXCLUDED FIN-12), getInvestmentValue (qty×current_price + gain/loss vs purchase), chart datasets. Then S4 move_money handler (register on EffectRegistry, ledger-movement via createInTx, R1 idempotency; penalty-lock = deny-safe StoreLockPort) → S5 seams → S6 providers → S7/S8 fiscal-legal.
   - Reload: docs/features/finance/delivery/slice-map.md (slices + gate ledger + build notes) + parts/finance.md (per-leg signatures). Env: Node 24 via nvm. Per-issue branch mod-finance already open; PR when ① completes.
+
+---
+Date: 2026-09-23 — mod-habits #49 (LIF-125) — ① BACKEND COMPLETE → PR #68 merged → Done
+Task: mod-habits · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow v1) · branch mod-habits → PR #68 (`528ebff`) + close-out (`dfd2801`)
+Goal: build the Habits module ① backend service tier (createHabitsService) over DB-4 habits + habit_completions + project_habits.
+Accomplished:
+  - ① COMPLETE — 5 slices, each §XXVI double-gated (g1 critique + live-store Verification Gate) + independent g2 code-review:
+    S1 def CRUD + @vida/types reconcile (d6b80c7) · S2 completion ledger + streak-recompute engine (581c2d7) ·
+    S3 backfill + fail-OPEN window port (2b9bf41) · S4 derived reads + M5 seam (a2fdae1) · S5 effect fan-out (emit-only) + entity_tags + project_habits + Journal contribution (fcaa749).
+  - @vida/core 1322/1322 (46 habits live-store + 12 introspection), tsc 11/11, eslint 0, gitleaks clean. Currency docs/modules/habits/current-* (BR-HB-1…34). Delivery docs/features/habits/delivery/ (PLAN-S1…S5).
+Decisions:
+  - Scheduled-occurrence = days_of_week (daily=every day); weekly/biweekly/monthly PERIOD = documented `rate` design-pass (rerun §5:146), NOT a decision — Victor drift-catch resolved (intake §E G2 + rerun §5 grounding). Cost 3 turns; memory reinforced [[check-intake-and-reruns-before-triaging-a-design-pass-undone]].
+  - Emit-only producer (R2) → no registerHabitsEffects; fan-out on every done-leaving mutation, rail-idempotent, failure-isolated. Fail-OPEN backfill window (HB-10 user-owned). 2 @vida/core barrel collisions fixed (DateRange→HabitDateRange; EffectsPort not re-exported).
+Next session:
+  - **FIRST ACTION:** next `#`-order head = **#50 MOD-knowledge (LIF-128, BACKLOG)** — reconstructed-structure.md:117; blockers (MOD-notes-and-pages, MOD-sessions, XS-×6) all Done; advisory --next AGREES (mod-knowledge, 11 dependents). FRESH session via `/begin`. Read docs/features/knowledge/* + rerun part-1.2-reruns/knowledge.md + parts/knowledge.md (NO intake/knowledge.md exists) before scoping. Env: Node 24 via nvm; per-issue branch → PR → merge.
