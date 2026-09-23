@@ -5733,3 +5733,23 @@ Decisions (see .claude/docs/decisions.md):
   - Memory: [[xs-security-services-deny-safe-port-build-shape]] extended (triad complete; push-vs-fetch egress; no mechanical signature copy).
 Next session:
   - **FIRST ACTION:** `#`-order head = **#46 xs-notifications-delivery** (← none, ready) — the LAST M1.1.2 XS security service (`xcut-notifications` XCU-01…18). Completes M1.1.2 backend → opens MOD feature builds (#47 MOD-finance …). Env: Node 24 via nvm; per-issue branch → PR → merge in the FOREGROUND.
+
+---
+Date: 2026-09-21 — mod-finance #47 (LIF-122) — M1.1.2 head — ① BACKEND S1+S2 of 8 (paused)
+Task: mod-finance · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow v1) · branch mod-finance (2 commits, unpushed)
+Goal: build the Finance module backend service tier (createFinanceService + createFiscalLegalService) over DB-4 020_finance — 48 legs (38 FIN + 10 FL) in 8 slices.
+Completed:
+  - Entity Delivery Flow front matter: docs/features/finance/delivery/{interpretation,slice-map,seam-contract}.md. Decomposition Gate (Approval 1) — independent critic REVISE→SHIP (2 roster fixes: FIN-04 unhomed + FL-11 smuggled, cancelled in the total). Ratify+detail mode over decomposition.md:58 / traceability.md / parts/finance.md.
+  - S1 (bc67f01) — entity CRUD: createFinanceService (accounts/assets/liabilities/investments/income_streams), validators/finance.ts (5 Create/Update pairs, reuses shared FrequencySchema), faithful create-echo, Row→interface cast. Extended @vida/types (FIN-01/27): Account.opening_balance + liability G9 + IncomeStream.next_payment_date. 13 legs.
+  - S2 (d5b9707) — ledger + derived balance + transfers: getBalance (FN-3, opening+Σsigned, transfer-aware), createTransaction/update/softDelete (FN-4 shape enforcement), createTransfer (one row, source≠dest), listTransactions (filter+M1 pagination) + getTransactionsInRange. 8 legs.
+  - Each slice: full per-slice loop (build → tsc → live-store Verification Gate → independent code-review → commit). 24 live-store tests. @vida/core 1191/1191, tsc 0 (11/11 pkgs), eslint 0, gitleaks clean. 3 code-review bugs caught+fixed+regression-tested.
+In progress:
+  - S3–S8 remain (6 slices). createFinanceService needs S3–S6; createFiscalLegalService is S7–S8.
+Decisions:
+  - Dropped an initial guardExists/FinanceEntityNotFoundError — repo.update()/delete() already throw Row-not-found; pre-read was redundant + diverged from checkins/journals precedent. Soft-delete-aware update rejection = repo-wide DB-11 concern (altitude), not a finance patch.
+  - @vida/types interface extension (opening_balance, liability G9, income next_payment_date) is FIN-27 scope (homed to "finance service / @vida/types" parts/finance.md:37), NOT deferred DB-11. jurisdiction_code interface exposure stays for S7 (FL-02).
+  - Net worth in ① = FN-7 simple sum (S3/FIN-17); store-tree net worth (FIN-18) defers with the store layer. move_money penalty→lock-box (S4) = deny-safe port to the deferred store. Transaction.tags returns [] (inline retired → entity_tags; real read = S6/FIN-35).
+  - Balance is DERIVED — no balance-column write on mutation; getBalance recomputes live.
+Next session:
+  - FIRST ACTION: build S3 — derived analytics (FIN-17/19/22): getOverview (net worth = FN-7 simple sum: Σaccount balances + Σasset current_value − Σliability current_balance; monthly income/expense transfers-EXCLUDED FIN-12), getInvestmentValue (qty×current_price + gain/loss vs purchase), chart datasets. Then S4 move_money handler (register on EffectRegistry, ledger-movement via createInTx, R1 idempotency; penalty-lock = deny-safe StoreLockPort) → S5 seams → S6 providers → S7/S8 fiscal-legal.
+  - Reload: docs/features/finance/delivery/slice-map.md (slices + gate ledger + build notes) + parts/finance.md (per-leg signatures). Env: Node 24 via nvm. Per-issue branch mod-finance already open; PR when ① completes.

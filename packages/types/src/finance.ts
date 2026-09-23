@@ -94,6 +94,8 @@ export interface Account extends SyncableEntity {
   currency: string
   /** @encrypted — in cents */
   current_balance: Money
+  /** @encrypted — in cents; ledger-derived-balance seed (FN-3, FIN-01) */
+  opening_balance: Money | null
   /** @encrypted — in cents */
   credit_limit: Money | null
   /** @encrypted — basis points */
@@ -101,6 +103,8 @@ export interface Account extends SyncableEntity {
   is_active: boolean
   color: string | null
   icon: string | null
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }
 
@@ -123,6 +127,8 @@ export interface Transaction extends SyncableEntity {
   recurring_frequency: Frequency | null
   /** @encrypted */
   tags: string[]
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }
 
@@ -139,6 +145,8 @@ export interface Asset extends SyncableEntity {
   depreciation_rate: BasisPoints | null
   /** @encrypted */
   location: string | null
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }
 
@@ -157,6 +165,11 @@ export interface Liability extends SyncableEntity {
   due_date: string | null
   /** @encrypted */
   lender: string | null
+  // G9 restored schedule fields (FIN-27) — feed the liability-payment view.
+  payment_frequency: Frequency | null
+  next_payment_date: string | null
+  interest_type: InterestType | null
+  payoff_date: string | null
   deleted_at: Timestamp | null
 }
 
@@ -173,6 +186,8 @@ export interface Investment extends SyncableEntity {
   purchase_price: Money | null
   /** @encrypted — cents / unit */
   current_price: Money | null
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }
 
@@ -189,5 +204,9 @@ export interface IncomeStream extends SyncableEntity {
   employer: string | null
   start_date: string | null
   end_date: string | null
+  /** G9 restored (FIN-27) */
+  next_payment_date: string | null
+  /** ISO jurisdiction code — the fiscal-legal money-touch link (FL-02/FL-9; exposure deferred S1→S7). */
+  jurisdiction_code: string | null
   deleted_at: Timestamp | null
 }
