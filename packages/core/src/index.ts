@@ -123,6 +123,9 @@ export * from './foundation/effects'
 // Foundation substrate — the capability registry (AR-7 Increment 2 · ADR-008 + ADR-010)
 export * from './foundation/capability'
 
+// Foundation substrate — the generic review engine (ADR-005 · mod-knowledge #50 ① S3)
+export * from './foundation/review'
+
 // Foundation substrate — the egress guard (XS-egress-guard #43 · ADR-014 §3.3 · XCU-06/08)
 export * from './foundation/egress'
 

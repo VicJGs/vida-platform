@@ -1,8 +1,9 @@
 # Current Spec — Knowledge (module)
 
 > §XXIX currency. The shipped `createKnowledgeService` contract + persistence model. Updated per slice.
-> Status: **S1 + S2 shipped**. Home: `packages/core/src/services/knowledge/`. Types: `@vida/types/knowledge.ts`
-> (10 entity interfaces mirror `022_knowledge` + `008_knowledge_review`). Validators: `@vida/core/validators/knowledge.ts`.
+> Status: **S1 + S2 + S3 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
+> `packages/core/src/foundation/review/` (D1). Types: `@vida/types/knowledge.ts` (10 entity interfaces mirror
+> `022_knowledge` + `008_knowledge_review`). Validators: `@vida/core/validators/knowledge.ts`.
 
 ## Persistence model
 - DB-6 `createRepository` per table, `encryptedFields:[]` (M1.0), `softDelete:true` on `knowledge_objects` +
@@ -60,21 +61,46 @@ listMemberships(scopedTag): Promise<EntityTagRow[]>       // list-by-tag; soft-d
 `KnowledgeEntityRef = {entityType, entityId}` (local — not the spaces `TaggableRef`, to keep the dep surface
 `{SpacesService, BacklinkResolver}`). Input schemas: `CreateKnowledgeContainerSchema`, `AddReferenceSchema`.
 
+## S3 surface — review engine ① (KNO-15..20), delegated to `foundation/review`
+`KnowledgeServiceDeps` adds the required `review: ReviewEngine`. The engine is a no-`this.` factory
+(`createReviewEngine(db, deviceId, { capability })`, home `foundation/review/`), composed at app-wiring as
+`createCapabilityRegistry → createReviewEngine → createKnowledgeService`. Cross-consumed (flashcards S7 + future).
+`KnowledgeService` re-exposes the verbs by bare method reference; `resolveDefaultMethod` is the one wrapper (kind
+lookup → delegate).
+```
+listMethods(): Promise<CapabilityDefinition[]>                       // capability.list() filtered kind='study_method'
+registerMethod(input): Promise<CapabilityDefinition>                 // empty-envelope register → get; RegisterMethodSchema
+listCurves(): Promise<ReviewCurve[]>                                 // soft-del filtered; params json parsed
+defineCurve(input): Promise<ReviewCurve>                             // is_preset:false; params stringify/parse; DefineCurveSchema
+removeCurve(id): Promise<void>                                       // guard → ReviewCurveNotFoundError
+bindMethod(input): Promise<MethodBinding>                            // no-FK refs, NOT asserted; BindMethodSchema
+listBindings(targetType, targetId): Promise<MethodBinding[]>        // by target level; soft-del filtered; S4 due input
+unbindMethod(id): Promise<void>                                      // guard → MethodBindingNotFoundError
+resolveDefaultMethod(kindId): Promise<string | null>                // 2-tier: default_method_id else null; ObjectKindNotFoundError on miss
+```
+Engine input schemas: `DefineCurveSchema`, `RegisterMethodSchema`, `BindMethodSchema`.
+
 Typed errors: `ObjectKindNotFoundError`, `InvalidParentRefError`, `HierarchyCycleError`,
-`KnowledgeObjectNotFoundError`, `KnowledgeContainerNotFoundError` (S2), `ReferenceNotFoundError` (S2), + the
-delegated substrate errors `UnknownEntityType` (bad target type) / `TagNotFound` (bad scopedTag).
+`KnowledgeObjectNotFoundError`, `KnowledgeContainerNotFoundError` (S2), `ReferenceNotFoundError` (S2),
+`ReviewCurveNotFoundError` / `MethodBindingNotFoundError` (S3, in `foundation/review`), + the delegated substrate
+errors `UnknownEntityType` (bad target type) / `TagNotFound` (bad scopedTag) / `DuplicateCapabilityId` (dup method id).
 
 Constant: `KNOWLEDGE_OBJECT_ENTITY_TYPE = 'knowledge_object'` (the tag/pages entity_type; consumed S2/S6).
 
-## Verification (S1 + S2)
-Live-store (Node 24, better-sqlite3), **41 tests** — S1 (22): seed idempotency + re-seed-when-cleared · kind CRUD ·
+## Verification (S1 + S2 + S3)
+Live-store (Node 24, better-sqlite3), **54 tests** — S1 (22): seed idempotency + re-seed-when-cleared · kind CRUD ·
 object CRUD + faithful echo · `key_concepts` JSON round-trip · referential-integrity + cycle rejects · mastery-
 unsettable · listObjects filtering · soft-delete · sync_queue enqueue. S2 (+19): container CRUD + type-filter +
 soft-delete · reference add/list/remove + object-guard + `ReferenceNotFoundError` · link write→`listLinks` read
 round-trip (via real `spaces`/`backlinks`) + many-book + idempotency + object-guard + `UnknownEntityType` ·
 tagMembership→`listMemberships` round-trip + many-to-many + container-guard + bogus-scopedTag `TagNotFound`
-(no-orphan) + untag guard. Full `@vida/core` suite green (**1363**), typecheck 0, eslint 0.
+(no-orphan) + untag guard. **S3 (+13):** engine (11, `foundation/review/__tests__/engine.test.ts`) — empty-envelope
+register + partition filter (excludes shipped `habit_logger`) + dup-id reject + `config_schema` round-trip · curve
+persist + `params` json round-trip (object, not string) + null params + soft-del filter + `removeCurve` guard ·
+`bindMethod` no-FK (unregistered method allowed) + `listBindings` by target + `unbindMethod` guard · 2-tier
+`resolveDefaultMethod` (no realm synthesis) · sync_queue enqueue — plus service delegation smoke (+2). Full
+`@vida/core` suite green (**1376**), typecheck 0, eslint 0, gitleaks clean.
 
 ## Not yet built
-S3–S8 per `docs/modules/knowledge/delivery/decomposition.md`. The 10 `@vida/types` interfaces are authored (DB-11
+S4–S8 per `docs/modules/knowledge/delivery/decomposition.md`. The 10 `@vida/types` interfaces are authored (DB-11
 reconcile, S1); their **validators + service methods** land in the owning slice.

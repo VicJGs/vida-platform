@@ -106,7 +106,7 @@ const toReference = (r: ReferenceRow): Reference => ({
 })
 
 export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeService {
-  const { db, deviceId, spaces, backlinks } = deps
+  const { db, deviceId, spaces, backlinks, review } = deps
 
   const kindsRepo = createRepository(db, objectKinds, { deviceId, softDelete: true, encryptedFields: [] })
   const objectsRepo = createRepository(db, knowledgeObjects, { deviceId, softDelete: true, encryptedFields: [] })
@@ -360,6 +360,20 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     )
   }
 
+  // --- S3: review engine ① (KNO-15..20) — delegate to the composed `review` engine (D1) ---
+  // The engine (foundation/review) owns methods/curves/bindings logic; Knowledge owns the SURFACE. The engine
+  // is a no-`this.` factory object, so its verbs are re-exposed by bare method reference (no rebinding needed).
+  // resolveDefaultMethod is the one non-pass-through: it looks the kind up here (Knowledge owns object_kinds)
+  // then delegates the pure resolution (KNO-20 / BR-S3-5).
+  async function resolveDefaultMethod(kindId: string): Promise<string | null> {
+    const kind = await kindsRepo.findById(kindId)
+    if (kind == null) throw new ObjectKindNotFoundError(kindId)
+    return review.resolveDefaultMethod({
+      default_method_id: kind.default_method_id,
+      learning_realm: kind.learning_realm,
+    })
+  }
+
   return {
     seedDefaultKinds,
     createKind,
@@ -382,5 +396,15 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     tagMembership,
     untagMembership,
     listMemberships,
+    // S3 — review engine ① (bare-reference delegation; the engine is a no-`this.` factory object)
+    listMethods: review.listMethods,
+    registerMethod: review.registerMethod,
+    listCurves: review.listCurves,
+    defineCurve: review.defineCurve,
+    removeCurve: review.removeCurve,
+    bindMethod: review.bindMethod,
+    listBindings: review.listBindings,
+    unbindMethod: review.unbindMethod,
+    resolveDefaultMethod,
   }
 }

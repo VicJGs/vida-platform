@@ -21,6 +21,8 @@ import { knowledgeObjects, objectKinds } from '../../../db/schema/knowledge'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
 import { createSpacesService, type SpacesService } from '../../../foundation/spaces/service'
 import { TagNotFound, UnknownEntityType } from '../../../foundation/spaces/types'
+import { createCapabilityRegistry } from '../../../foundation/capability'
+import { createReviewEngine } from '../../../foundation/review'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import {
   createKnowledgeService,
@@ -84,7 +86,10 @@ async function setup(): Promise<Harness> {
   const registry = createTaggableTypeRegistry()
   const spaces = createSpacesService(db, 'test-device', registry)
   const backlinks = createBacklinkResolver(db, 'test-device')
-  const svc = createKnowledgeService({ db, deviceId: 'test-device', spaces, backlinks })
+  // S3 deps: the review engine composes the ONE capability registry (kind='study_method' partition).
+  const capability = createCapabilityRegistry(db, 'test-device')
+  const review = createReviewEngine(db, 'test-device', { capability })
+  const svc = createKnowledgeService({ db, deviceId: 'test-device', spaces, backlinks, review })
   return { svc, db, bsql, spaces }
 }
 
@@ -465,5 +470,56 @@ describe('mod-knowledge S2 — containers + references + link/tag cross-cut', ()
     await expect(
       h.svc.untagMembership('ghost', { entityType: 'knowledge_object', entityId: obj }, tag.id),
     ).rejects.toBeInstanceOf(KnowledgeContainerNotFoundError)
+  })
+})
+
+// ============================================================================
+// S3 — review engine ① delegation smoke (the ENGINE's own coverage lives in
+// foundation/review/__tests__/engine.test.ts; here we prove KnowledgeService
+// re-exposes the verbs against the composed engine + the resolveDefaultMethod
+// kind-lookup wrapper that is the one non-pass-through).
+// ============================================================================
+describe('mod-knowledge S3 — review-engine delegation surface', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('KnowledgeService re-exposes methods/curves/bindings against the composed engine (KNO-15..19)', async () => {
+    await h.svc.registerMethod({ id: 'feynman' })
+    expect((await h.svc.listMethods()).map((m) => m.id)).toContain('feynman')
+
+    const curve = await h.svc.defineCurve({ curve_kind: 'review', name: 'Custom', params: { ef: 2.5 } })
+    expect((await h.svc.listCurves()).map((c) => c.id)).toContain(curve.id)
+
+    const binding = await h.svc.bindMethod({
+      targetType: 'topic',
+      targetId: 'topic-1',
+      methodId: 'feynman',
+      curveId: curve.id,
+    })
+    expect((await h.svc.listBindings('topic', 'topic-1')).map((b) => b.id)).toContain(binding.id)
+
+    await h.svc.unbindMethod(binding.id)
+    expect((await h.svc.listBindings('topic', 'topic-1')).length).toBe(0)
+    await h.svc.removeCurve(curve.id)
+    expect((await h.svc.listCurves()).map((c) => c.id)).not.toContain(curve.id)
+  })
+
+  it('resolveDefaultMethod looks the kind up: default_method_id else null; ObjectKindNotFoundError on miss (KNO-20)', async () => {
+    // a kind WITH an explicit override → tier 1
+    const withMethod = await h.svc.createKind({
+      name: 'drill-kind',
+      learning_realm: 'memorize',
+      default_method_id: 'flashcards',
+    })
+    expect(await h.svc.resolveDefaultMethod(withMethod.id)).toBe('flashcards')
+
+    // a kind WITHOUT one → tier 2 = null (NO realm→id synthesis; that tier is S7)
+    const noMethod = await h.svc.createKind({ name: 'plain-kind', learning_realm: 'memorize' })
+    expect(await h.svc.resolveDefaultMethod(noMethod.id)).toBeNull()
+
+    // unresolved kind → typed error
+    await expect(h.svc.resolveDefaultMethod('ghost-kind')).rejects.toBeInstanceOf(ObjectKindNotFoundError)
   })
 })

@@ -33,10 +33,22 @@ backend over DB-4 group #10 (`022_knowledge`: 7 owned tables) + the DB-3 review 
   → independent code-review SHIP (1 MINOR: ReferenceNotFoundError folded) → §XXIX currency. @vida/core 1363 green,
   tsc 0, eslint 0. Added `KnowledgeContainerNotFoundError`/`ReferenceNotFoundError`; deps grew (+spaces,+backlinks).
 
+- 2026-09-26: **S3 SHIPPED** — review engine ① (KNO-15..20): the generic scheduling substrate built into
+  `foundation/review/` (`createReviewEngine`, D1 — cross-consumed), composed into `createKnowledgeService` as the
+  required `review` dep. Methods = the `kind='study_method'` partition of the ONE capability registry (empty-envelope
+  register, F2/D2 — not a parallel store); curves over `review_curves` (json `params` stringify/parse seam recurs);
+  bindings over `method_bindings` (no-FK refs not asserted, BR-S3-6); 2-tier `resolveDefaultMethod` (default_method_id
+  else null — realm tier homed forward to S7). Full flow: PLAN-s3 → **gate-1 REVISE→3 folds** (F1 dropped invented
+  `'spaced_rep'`/`'elaboration'` method ids = No-Guessing violation → 2-tier resolver; F2 `seedPresetCurves`→S4;
+  F3 citation) → Approval 1 → preflight PASS + **gate-2 SHIP** (2 NITs folded: deps-shape, top-level barrel) →
+  Approval 2 → implement → Verification Gate (**13 new tests**, live-store) → independent code-review **SHIP** (0
+  findings) → §XXIX currency. @vida/core **1376 green**, tsc 0, eslint 0, gitleaks clean. Not yet committed at log
+  time.
+
 ## Slice tracker (decomposition.md — 8 slices)
 - [x] S1 Types reconcile + Kinds + Objects + Hierarchy
 - [x] S2 Containers + References + link/tag cross-cut
-- [ ] S3 Review engine ①: methods + curves + bindings
+- [x] S3 Review engine ①: methods + curves + bindings
 - [ ] S4 Review engine ②: due + record + derive + rollup
 - [ ] S5 Measurement source + Education seams
 - [ ] S6 Pages-notes + Compound sets + Lab + AI/search/ingestion seams

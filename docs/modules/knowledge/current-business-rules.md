@@ -1,8 +1,9 @@
 # Current Business Rules — Knowledge (module)
 
 > §XXIX currency. Ground truth for the shipped `createKnowledgeService` backend. Updated per slice.
-> Status: **S1 + S2 shipped** (kinds/objects/hierarchy + containers/references/link+tag). S3–S8 pending
-> (`docs/modules/knowledge/delivery/decomposition.md`). Inherits KN-1…KN-12 (`docs/features/knowledge/business-rules.md`).
+> Status: **S1 + S2 + S3 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review engine ①:
+> methods/curves/bindings). S4–S8 pending (`docs/modules/knowledge/delivery/decomposition.md`). Inherits KN-1…KN-12
+> (`docs/features/knowledge/business-rules.md`).
 
 ## S1 — Kinds + Objects + Hierarchy (legs KNO-01…09, 41)
 
@@ -76,7 +77,37 @@
   there is no legacy tag data — KN-45 is satisfied by tagging riding `entity_tags` (BR-KN-S2-2). `[FACT: schema/
   knowledge.ts:45-68 (no tags col); parts/knowledge.md:60]`
 
+## Review engine ① (S3 — KNO-15..20) — `foundation/review`
+> The generic review engine's SCHEDULING substrate. Homes to `foundation/review` (D1 — cross-consumed by
+> flashcards S7 + future skills/languages/education), composed into `createKnowledgeService` as the required
+> `review` dep. Authors no schema (`008_knowledge_review` already shipped). No mastery/derive/due/record — that is S4.
+- **BR-KN-S3-1 — Methods are the `kind='study_method'` partition of the ONE capability registry, never a parallel
+  store.** `registerMethod` → `capability.register(...)`; `listMethods` → `capability.list()` filtered
+  `kind==='study_method'` (the registry returns all kinds). `[FACT: engine.ts listMethods/registerMethod;
+  capability/registry.ts:129-132; F2/D2]`
+- **BR-KN-S3-2 — A study_method declares an EMPTY privilege envelope.** `render_targets:[]/effects:[]/bindings:[]/
+  terminal_states:{}` → passes capability BR-2..6 trivially; `register()` forces `is_user_type:true`. Roles/config
+  ride `config_schema` (resolved at S7). `[FACT: engine.ts registerMethod; capability/registry.ts:84-119]`
+- **BR-KN-S3-3 — Curves are personalizable; SM-2 = one preset (seed defers to S4).** `defineCurve` creates a USER
+  curve (`is_preset:false`); `listCurves` reads live curves. `params` is `json<T>` → stringify-on-write /
+  parse-on-read (one localized cast). `[FACT: engine.ts defineCurve/toCurve; schema knowledge-review.ts:17-27;
+  [[json-t-columns-need-service-serialize-in-m10]]]`
+- **BR-KN-S3-4 — Bindings are polymorphic; refs are no-FK and NOT asserted.** `bindMethod({targetType(area|subject|
+  unit|topic|kind), targetId, methodId, curveId?, dailyCap?})` inserts one row; `method_id`/`curve_id` may reference
+  an unregistered/future method (e.g. Flashcards at S7) — the schema is no-FK, so `bindMethod` adds no existence
+  guard. `[FACT: engine.ts bindMethod; schema knowledge-review.ts:30-45,34,53]`
+- **BR-KN-S3-5 — `resolveDefaultMethod` is 2-tier, never a guess.** `default_method_id` if set, else `null`. The
+  engine resolver is PURE over the kind's fields; the service wrapper looks the kind up (→ `ObjectKindNotFoundError`
+  on miss) + delegates. The realm→method tier is a **forward seam** (S7, when methods self-declare their realm):
+  S3 never synthesizes a method id. `[FACT: engine.ts resolveDefaultMethod; service.ts resolveDefaultMethod;
+  conventions.md:8-10; business-rules.md KN-4:26-29]`
+- **BR-KN-S3-6 — Soft-delete + M1.0 seam.** `review_curves`/`method_bindings` soft-delete; `listCurves`/
+  `listBindings` hand-append `isNull(deleted_at)`; `removeCurve`/`unbindMethod` guard via `findById` (→
+  `ReviewCurveNotFoundError`/`MethodBindingNotFoundError`). `review_events` is untouched in S3 (append-only, S4).
+  `[FACT: engine.ts; [[repository-findwhere-skips-softdelete-filter]]]`
+
 ## Deferred to later slices
-Review engine + curves/bindings/due/record (S3/S4) · mastery derivation + rollup (S4) · measurement source →
-Education (S5) · pages-notes/compound/lab/search/ingestion (S6) · flashcards (S7) · events + journal (S8).
+Mastery derivation + rollup + due-queue + recordReview (S4) · measurement source → Education (S5) ·
+pages-notes/compound/lab/search/ingestion (S6) · flashcards (S7) · events + journal (S8). The **SM-2 preset seed**
+(`seedPresetCurves`) + the **realm-driven default-method tier** both defer (S4 / S7 respectively).
 `KNO-44`/`KNO-46` excluded (Education assessment link / OS-automation surface, parked).

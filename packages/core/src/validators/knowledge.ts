@@ -76,3 +76,32 @@ export const AddReferenceSchema = z.object({
   url: z.string().nullable().optional(),
   type: z.string().nullable().optional(),
 })
+
+// ---------------------------------------------------------------------------
+// mod-knowledge S3 — Review engine ① (methods + curves + bindings) input validators
+// ---------------------------------------------------------------------------
+
+/** defineCurve (KNO-18). curve_kind FIXED (decay|review|test); name [E]/required; params = free-form tuning
+ *  (JSON-as-TEXT, BR-S3-8). `is_preset` is NOT a user input — user curves are never presets (seed defers to S4). */
+export const DefineCurveSchema = z.object({
+  name: z.string().min(1),
+  curve_kind: ReviewCurveKindSchema,
+  params: z.record(z.string(), z.unknown()).nullable().optional(),
+})
+
+/** registerMethod (KNO-16). A study_method capability carries only an id + optional config; the empty privilege
+ *  envelope (render_targets/effects/bindings/terminal_states) is supplied by the engine (BR-S3-2), not the caller. */
+export const RegisterMethodSchema = z.object({
+  id: z.string().min(1),
+  config_schema: z.record(z.string(), z.unknown()).optional(),
+})
+
+/** bindMethod (KNO-19). Polymorphic target (area|subject|unit|topic|kind); method_id/curve_id are no-FK refs
+ *  (BR-S3-6 — not asserted to exist). daily_cap optional throttle. */
+export const BindMethodSchema = z.object({
+  targetType: MethodBindingTargetTypeSchema,
+  targetId: z.string().min(1),
+  methodId: z.string().min(1),
+  curveId: z.string().nullable().optional(),
+  dailyCap: z.number().int().nullable().optional(),
+})

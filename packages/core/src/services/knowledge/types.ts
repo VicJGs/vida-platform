@@ -14,11 +14,21 @@ import type {
   ObjectKind,
   KnowledgeContainer,
   Reference,
+  ReviewCurve,
+  MethodBinding,
+  MethodBindingTargetType,
   StudyTopicStatus,
   TopicDifficulty,
 } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type { SpacesService } from '../../foundation/spaces'
+import type { CapabilityDefinition } from '../../foundation/capability'
+import type {
+  ReviewEngine,
+  DefineCurveInput,
+  RegisterMethodInput,
+  BindMethodInput,
+} from '../../foundation/review'
 import type { BacklinkResolver } from '../search/backlink-resolver'
 import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
 import type {
@@ -42,6 +52,9 @@ export interface KnowledgeServiceDeps {
   spaces: SpacesService
   /** AR-8 — entity-link READS (S2 `listLinks` delegates here; the query half). */
   backlinks: BacklinkResolver
+  /** ADR-005 — the generic review engine (S3 delegates methods/curves/bindings/resolveDefaultMethod here).
+   *  Required: the engine is core to Knowledge and S7/flashcards needs the SAME instance (D1). */
+  review: ReviewEngine
 }
 
 /** S2 — a polymorphic link/tag target or member (entityType is validated fail-loud by `spaces`). Local by
@@ -184,4 +197,25 @@ export interface KnowledgeService {
   untagMembership(containerId: string, memberRef: KnowledgeEntityRef, scopedTag: string): Promise<void>
   /** KNO-13/45 — list the members carrying a scoped tag (list-by-tag read; NotesService getEntitiesByTag precedent). */
   listMemberships(scopedTag: string): Promise<EntityTagRow[]>
+
+  // ── S3: review engine ① — methods + curves + bindings (delegates to `review`) ──
+  /** KNO-15 — read the `study_method` partition of the capability registry. */
+  listMethods(): Promise<CapabilityDefinition[]>
+  /** KNO-16 — register a `study_method` capability (empty envelope). */
+  registerMethod(input: RegisterMethodInput): Promise<CapabilityDefinition>
+  /** KNO-17 — read live scheduling curves. */
+  listCurves(): Promise<ReviewCurve[]>
+  /** KNO-18 — define a user curve (SM-2 preset seed defers to S4). */
+  defineCurve(input: DefineCurveInput): Promise<ReviewCurve>
+  /** Companion — soft-delete a curve (guard → ReviewCurveNotFoundError). */
+  removeCurve(id: string): Promise<void>
+  /** KNO-19 — bind a method(+curve) polymorphically at a spine level. */
+  bindMethod(input: BindMethodInput): Promise<MethodBinding>
+  /** Companion / S4 due-queue input — bindings at a target level. */
+  listBindings(targetType: MethodBindingTargetType, targetId: string): Promise<MethodBinding[]>
+  /** Companion — soft-delete a binding (guard → MethodBindingNotFoundError). */
+  unbindMethod(id: string): Promise<void>
+  /** KNO-20 — resolve a kind's default method (2-tier: `default_method_id` else null). Looks the kind up
+   *  (→ ObjectKindNotFoundError on miss) then delegates to the pure engine resolver. */
+  resolveDefaultMethod(kindId: string): Promise<string | null>
 }
