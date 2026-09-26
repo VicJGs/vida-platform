@@ -1,4 +1,17 @@
-<!-- Last updated: 2026-09-22 by /session-end -->
+<!-- Last updated: 2026-09-25 by /session-end -->
+
+## MOD-knowledge (#50, LIF-128) — 🔨 ① REBUILD, S1/8 shipped (2026-09-25)
+Rebuild of the discarded Antigravity branch. `createKnowledgeService` over DB-4 `022_knowledge` (7 tables) +
+DB-3 `008_knowledge_review` (3 tables); 56 legs across 8 slices. Branch `mod-knowledge-rebuild`, S1 committed `a433a3d`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-09-25 | disposition | salvage vs rebuild the Antigravity mod-knowledge work | **rebuild** (branch = shape-reference only, discarded) | 43/56 legs absent incl. the core review engine; KN-9 mastery-settable bug; broken mastery derivation; provenance-stripped `@vida/types`; 7 scratch `.cjs`; false "S1–S5 complete" claim | no (branch retained for reference) |
+| 2026-09-25 | decomposition (D1) | home the generic review engine | **`foundation/review/`** (reserved stub), not `services/knowledge/`; service composes it | schema already in foundation namespace (`schema/foundation/knowledge-review.ts`); cross-consumed; `parts/knowledge.md:120` flagged it an open P3 call | yes (code-org move) |
+| 2026-09-25 | persistence | `json<T>()` column serialization | **service-side** JSON.stringify write / parse read, one localized cast per boundary | M1.0 repo `encryptRow` is a pass-through with empty `[E]` set → non-encrypted json cols aren't auto-serialized; knowledge is the first json<T> consumer; no M3 double-stringify | n/a (mechanical) |
+| 2026-09-25 | S1 / KN-9 | mastery_level settability | **omit from create/update input schemas**; service inits null; update whitelists 9 fields | mastery is DERIVED (KN-9); fixes the Antigravity bug where `Update=Create.partial()` allowed hand-setting it | n/a (invariant) |
+| 2026-09-25 | scope | slice count | **8 slices**, per-slice full gate cycle | largest MOD (56 legs); matches the finance scale | yes |
+| 2026-09-25 | tracker | LIF-128 state | reconcile **Done → BACKLOG** | erroneously pushed to Done by the Antigravity run; not actually complete | yes (→ Done on real completion) |
 
 ## MOD-finance (#47, LIF-122) — ✅ ① BACKEND COMPLETE (S1–S8), merged PR #66 (2026-09-22)
 The Finance module service tier over DB-4 `020_finance` — 48 legs (38 FIN + 10 FL) in 8 slices; `createFinanceService` (S1–S6) + `createFiscalLegalService` (S7–S8). **All 8 slices done + merged to main (`8f0c460`).** @vida/core **1247/1247**, tsc 0, eslint 0.
