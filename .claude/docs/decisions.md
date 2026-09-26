@@ -1,11 +1,15 @@
 <!-- Last updated: 2026-09-25 by /session-end -->
 
-## MOD-knowledge (#50, LIF-128) — 🔨 ① REBUILD, S1/8 shipped (2026-09-25)
+## MOD-knowledge (#50, LIF-128) — 🔨 ① REBUILD, S1+S2/8 shipped (2026-09-25)
 Rebuild of the discarded Antigravity branch. `createKnowledgeService` over DB-4 `022_knowledge` (7 tables) +
-DB-3 `008_knowledge_review` (3 tables); 56 legs across 8 slices. Branch `mod-knowledge-rebuild`, S1 committed `a433a3d`.
+DB-3 `008_knowledge_review` (3 tables); 56 legs across 8 slices. Branch `mod-knowledge-rebuild`, S1 `a433a3d`, S2 `bc88904`.
 
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
+| 2026-09-25 | S2 / composition | link/tag substrate wiring | **compose both halves** — `SpacesService` (writes: createLink/removeLink/tagEntity/untagEntity) + `BacklinkResolver` (link reads) + read-only `entityTagRepo`/`tagsRepo` | both resolvers are READ-only; `decomposition.md:54,56` "via resolver" was imprecise; NotesService precedent (deps = spaces+backlinks, required) | yes (code-org) |
+| 2026-09-25 | S2 / KN-7 | container membership binding | **caller-supplied `scopedTag`** (a tags id); `tagMembership(containerId, memberRef, scopedTag)` records via entity_tags | `knowledge_containers` has no `root_tag_id` column (unlike `spaces`) → the binding cannot live in the schema (M1.0 owns it); the doc-fixed signature carries it | no (schema-fixed) |
+| 2026-09-25 | S2 / integrity (F1) | scoped-tag existence | **guard on CREATE path** — `tagMembership` asserts `scopedTag` resolves (read-only `tagsRepo.findById` → `TagNotFound`); untag NOT guarded | `spaces.tagEntity` blind-inserts an unresolved tag_id → silent orphan; remove must stay cleanable | no (invariant) |
+| 2026-09-25 | S2 / errors (F5, code-review) | reference not-found error | **distinct `ReferenceNotFoundError`** (+ `KnowledgeContainerNotFoundError`) | reusing `KnowledgeObjectNotFoundError` for a missing reference id is a semantic smell (message names an "object") | n/a |
 | 2026-09-25 | disposition | salvage vs rebuild the Antigravity mod-knowledge work | **rebuild** (branch = shape-reference only, discarded) | 43/56 legs absent incl. the core review engine; KN-9 mastery-settable bug; broken mastery derivation; provenance-stripped `@vida/types`; 7 scratch `.cjs`; false "S1–S5 complete" claim | no (branch retained for reference) |
 | 2026-09-25 | decomposition (D1) | home the generic review engine | **`foundation/review/`** (reserved stub), not `services/knowledge/`; service composes it | schema already in foundation namespace (`schema/foundation/knowledge-review.ts`); cross-consumed; `parts/knowledge.md:120` flagged it an open P3 call | yes (code-org move) |
 | 2026-09-25 | persistence | `json<T>()` column serialization | **service-side** JSON.stringify write / parse read, one localized cast per boundary | M1.0 repo `encryptRow` is a pass-through with empty `[E]` set → non-encrypted json cols aren't auto-serialized; knowledge is the first json<T> consumer; no M3 double-stringify | n/a (mechanical) |
