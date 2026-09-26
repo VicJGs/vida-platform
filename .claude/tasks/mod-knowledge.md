@@ -1,12 +1,39 @@
 # Task: mod-knowledge
-# Status: planned
+# Status: in_progress
 # Linear: LIF-128
 # Project: M1 — Whole Manual OS
 # Milestone: M1.1.2 — Feature Modules · Backend
 # Source: reconstructed-structure.md (Phase V, LIF-110; ADR-016 model)
+# Profile: Add Backend Component
+# Scenario: add-backend-component / Default (Entity Delivery Flow v1)
 
 ## Goal
-Knowledge (+ review engine, Flashcards svc) — topics/definitions + SM-2 review
+Knowledge (+ generic review engine, Flashcards svc) — the `createKnowledgeService` ①
+backend over DB-4 group #10 (`022_knowledge`: 7 owned tables) + the DB-3 review engine
+(`review_curves`/`method_bindings`/`review_events`). 56 legs homed per decomposition.md:65.
+
+## Route History
+- 2026-09-25: REBUILD started. The prior Antigravity branch `mod-knowledge` (2 ungated
+  commits, ~14 of 56 legs, no review engine / no cross-module seams, S5 self-marked Pending,
+  7 scratch `.cjs` at repo root, blind rewrite of shared `@vida/types/knowledge.ts`) is kept
+  as SHAPE-reference only — discarded, never merged. Building fresh from docs under the full
+  §XXVI / Entity Delivery Flow gate on branch `mod-knowledge-rebuild` off main. Linear LIF-128
+  reverted to planned (erroneously pushed Done). [Victor: rebuild via Claude Code + reconcile now]
+- 2026-09-25: **S1 SHIPPED** (of 8 slices) — types reconcile (10 interfaces, provenance preserved) + kinds/objects/
+  hierarchy CRUD + cycle guard + typed errors. Full Entity Delivery Flow: PLAN → gate-1 SHIP → Approval 1 →
+  preflight PASSED → gate-2 SHIP → Approval 2 → implement → Verification Gate (22 live-store tests, @vida/core
+  1344 green, tsc 0, eslint 0) → independent code-review SHIP (4 MINOR folded) → §XXIX currency. Fixed the KN-9
+  mastery-settable bug + the json<T> serialization seam Antigravity missed. Not yet committed.
+
+## Slice tracker (decomposition.md — 8 slices)
+- [x] S1 Types reconcile + Kinds + Objects + Hierarchy
+- [ ] S2 Containers + References + link/tag cross-cut
+- [ ] S3 Review engine ①: methods + curves + bindings
+- [ ] S4 Review engine ②: due + record + derive + rollup
+- [ ] S5 Measurement source + Education seams
+- [ ] S6 Pages-notes + Compound sets + Lab + AI/search/ingestion seams
+- [ ] S7 Flashcards sub-service
+- [ ] S8 Event fan-out + Journal contribution
 
 ## Dependencies
 - blocked by `mod-notes-and-pages`

@@ -1,6 +1,14 @@
 // ============================================================================
-// Knowledge: Flashcards, Study Topics, Knowledge Notes, Study Planner
-// @vida/types — ADR-002 §5.10 (partial), §5.11
+// Knowledge Universe (+ generic review engine) + Study Planner
+// @vida/types — ADR-002 §5.10 reshaped (DB-4 group #10) + §5.11
+//
+// Entity interfaces mirror the shipped schema 1:1:
+//   knowledge_objects · object_kinds · knowledge_containers · references ·
+//   compound_sets · knowledge_lab_entries · flashcards      (schema/knowledge.ts)
+//   review_curves · method_bindings · review_events         (schema/foundation/knowledge-review.ts)
+// RETIRED (pre-DB-4 shape): StudyTopic → knowledge_objects; TopicReview/FlashcardReview →
+//   review_events (ADR-005); FlashcardDeck → retired; KnowledgeNote → pages (KN-5).
+// Enums + Study-Planner interfaces below are UNCHANGED (imported by schema + validators + sessions).
 // ============================================================================
 
 import type { Id, Timestamp } from './common'
@@ -90,74 +98,91 @@ export const CARD_TYPE = ['basic', 'reversed', 'cloze', 'image_occlusion'] as co
 export type CardType = (typeof CARD_TYPE)[number]
 
 // ---------------------------------------------------------------------------
-// Study Topics (with SM-2 spaced repetition)
+// DB-4 group #10 — Knowledge Universe entities (ADR-002 §5.10 reshaped roster)
+// 1:1 mirrors of schema/knowledge.ts (7 owned tables). [E] = M3 target
+// (M1.0 empty encryptedFields set, BR-DB6-3).
 // ---------------------------------------------------------------------------
 
-export interface StudyTopic extends SyncableEntity {
-  course_id: Id | null
-  linked_book_id: Id | null
-  reading_chapter_id: Id | null
+/** A knowledge object — generalizes study_topics; `parent_object_id` self-ref IS the
+ *  Subject›Unit›Topic + user-kinds hierarchy (KN-3). `mastery_level` is DERIVED (KN-9),
+ *  never hand-set. [FACT: schema/knowledge.ts knowledge_objects] */
+export interface KnowledgeObject extends SyncableEntity {
+  kind_id: Id
+  parent_object_id: Id | null
   /** @encrypted */
   title: string
   /** @encrypted */
   description: string | null
-  status: StudyTopicStatus
-  /** 0–100 */
-  mastery_level: number
+  /** @encrypted */
+  key_concepts: string[] | null
+  /** DERIVED — read-only (KN-9); nullable, no default */
+  mastery_level: number | null
+  status: StudyTopicStatus | null
   difficulty: TopicDifficulty | null
-  due_date: string | null
   is_exam_topic: boolean
-  study_time_minutes: number
-  estimated_study_minutes: number
-  /** @encrypted */
-  key_concepts: string[]
-  /** @encrypted */
-  resource_urls: string[]
   sort_order: number
-  /** SM-2 — default 2.5 */
-  easiness_factor: number
-  /** SM-2 */
-  repetition_number: number
-  /** SM-2 */
-  interval_days: number
-  next_review_date: string | null
-  last_reviewed_at: Timestamp | null
-  class_date: string | null
-  reading_start_page: number | null
-  reading_end_page: number | null
   deleted_at: Timestamp | null
 }
 
-export interface TopicReview extends SyncMetadata {
-  id: Id
-  topic_id: Id
-  /** 0–5 (SM-2 quality) */
-  quality: number
-  response_time_seconds: number | null
-  reviewed_at: Timestamp
+/** The user-extensible kind registry (FLAT — no parent_kind_id). Seeds topic/concept/definition
+ *  as editable/removable defaults; `learning_realm` drives the default study method (KN-4). */
+export interface ObjectKind extends SyncableEntity {
+  name: string
+  /** OPEN — understand | memorize | user-defined */
+  learning_realm: string | null
+  default_method_id: Id | null
+  is_default: boolean
+  deleted_at: Timestamp | null
 }
 
-// ---------------------------------------------------------------------------
-// Flashcards (SM-2)
-// ---------------------------------------------------------------------------
+/** Module ⊃ Area ⊃ Subject organization; membership is many-to-many via entity_tags (KN-7). */
+export interface KnowledgeContainer extends SyncableEntity {
+  container_type: KnowledgeContainerType
+  /** @encrypted */
+  name: string
+  deleted_at: Timestamp | null
+}
 
-export interface FlashcardDeck extends SyncableEntity {
+/** First-class Reference (K6) — replaces study_topics.resource_urls[]. */
+export interface Reference extends SyncableEntity {
+  object_id: Id | null
   /** @encrypted */
   title: string
   /** @encrypted */
-  description: string | null
-  resource_type: FlashcardResourceType | null
-  resource_id: Id | null
-  new_cards_per_day: number
-  reviews_per_day: number
-  is_active: boolean
-  total_cards: number
-  mastered_cards: number
+  source: string | null
+  /** @encrypted — a saved URL is knowledge content (KN-1) */
+  url: string | null
+  /** OPEN — un-enumerated label */
+  type: string | null
   deleted_at: Timestamp | null
 }
 
+/** Per-consumer personalization bundle (KN-11) — one per consumer module; a default ships. */
+export interface CompoundSet extends SyncableEntity {
+  /** OPEN — education | skills | finance | health | … */
+  consumer_module: string
+  /** @encrypted */
+  name: string | null
+  /** @encrypted — JSON rules/methods/params (opaque blob at rest) */
+  spec: string | null
+  is_default: boolean
+  deleted_at: Timestamp | null
+}
+
+/** Knowledge Lab entry — generate NEW knowledge: hypothesis + own-module data → conclusion → promote. */
+export interface KnowledgeLabEntry extends SyncableEntity {
+  /** @encrypted */
+  hypothesis: string
+  /** JSON own-module ref IDs (plain) */
+  data_refs: string[] | null
+  /** @encrypted */
+  conclusion: string | null
+  promoted_object_id: Id | null
+  deleted_at: Timestamp | null
+}
+
+/** Content-only reviewable card (ADR-005, BR-KN-7) — no deck_id, no SM-2 cols, no is_mastered. */
 export interface Flashcard extends SyncableEntity {
-  deck_id: Id
   /** @encrypted */
   front: string
   /** @encrypted */
@@ -166,54 +191,51 @@ export interface Flashcard extends SyncableEntity {
   hint: string | null
   /** @encrypted */
   explanation: string | null
-  /** SM-2 — default 2.5 */
-  easiness_factor: number
-  /** SM-2 */
-  repetitions: number
-  /** SM-2 */
-  interval_days: number
-  next_review_date: string | null
-  last_reviewed_at: Timestamp | null
-  times_reviewed: number
-  times_correct: number
-  is_mastered: boolean
+  card_type: CardType
+  /** image/audio refs (JSON) */
+  media: string[] | null
   is_suspended: boolean
-}
-
-export interface FlashcardReview extends SyncMetadata {
-  id: Id
-  flashcard_id: Id
-  /** 0–5 (SM-2 quality) */
-  quality: number
-  response_time_ms: number | null
-  previous_interval: number | null
-  new_interval: number | null
-  previous_easiness: number | null
-  new_easiness: number | null
-  reviewed_at: Timestamp
-}
-
-// ---------------------------------------------------------------------------
-// Knowledge Notes
-// ---------------------------------------------------------------------------
-
-export interface KnowledgeNote extends SyncableEntity {
-  parent_note_id: Id | null
-  resource_type: FlashcardResourceType | null
-  resource_id: Id | null
-  /** @encrypted */
-  title: string
-  /** @encrypted */
-  content: string | null
-  /** @encrypted */
-  topic: string | null
-  /** @encrypted */
-  subtopic: string | null
-  /** @encrypted */
-  tags: string[]
-  is_pinned: boolean
-  is_archived: boolean
+  sort_order: number
   deleted_at: Timestamp | null
+}
+
+// ---------------------------------------------------------------------------
+// Generic review engine (DB-3 · ADR-005) — 1:1 mirrors of
+// schema/foundation/knowledge-review.ts. Knowledge-owned, cross-consumed.
+// ---------------------------------------------------------------------------
+
+/** A personalizable scheduling curve; SM-2 is one preset (KN-8/KN-9). */
+export interface ReviewCurve extends SyncableEntity {
+  /** @encrypted */
+  name: string
+  curve_kind: ReviewCurveKind
+  /** @encrypted — curve tuning params (JSON-as-TEXT) */
+  params: Record<string, unknown> | null
+  is_preset: boolean
+  deleted_at: Timestamp | null
+}
+
+/** Which method+curve applies where (polymorphic target level, KN-4). */
+export interface MethodBinding extends SyncableEntity {
+  /** → capability registry (kind=study_method) */
+  method_id: string
+  curve_id: Id | null
+  target_type: MethodBindingTargetType
+  /** polymorphic knowledge-object/level ref */
+  target_id: string
+  daily_cap: number | null
+  deleted_at: Timestamp | null
+}
+
+/** Append-only outcome log; generalizes topic_reviews/flashcard_reviews.
+ *  NO `deleted_at` — immutable ledger (mirrors consequence_ledger / AvailabilityException). */
+export interface ReviewEvent extends SyncableEntity {
+  object_id: string
+  method_id: string
+  /** signal/grade (SM-2 quality 0–5); nullable */
+  quality: number | null
+  /** Unix ms */
+  reviewed_at: Timestamp
 }
 
 // ---------------------------------------------------------------------------

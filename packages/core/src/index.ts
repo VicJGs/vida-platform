@@ -168,5 +168,8 @@ export * from './services/gamification'
 // Service — Habits (mod-habits #49 · LIF-125 · S1: definition CRUD + @vida/types reconcile)
 export * from './services/habits'
 
+// Service — Knowledge (mod-knowledge #50 · LIF-128 · S1: kinds + objects + hierarchy + @vida/types reconcile)
+export * from './services/knowledge'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
