@@ -56,3 +56,23 @@ export const CreateKnowledgeObjectSchema = z.object({
   sort_order: z.number().int().optional(),
 })
 export const UpdateKnowledgeObjectSchema = CreateKnowledgeObjectSchema.partial()
+
+// ---------------------------------------------------------------------------
+// mod-knowledge S2 — Containers + References (input validators)
+// ---------------------------------------------------------------------------
+
+/** knowledge_containers create (KNO-12). container_type FIXED (module|area|subject); name [E]/required.
+ *  Nesting is NOT a parent_id — membership rides entity_tags (KN-7, BR-S2-1/2). */
+export const CreateKnowledgeContainerSchema = z.object({
+  container_type: KnowledgeContainerTypeSchema,
+  name: z.string().min(1),
+})
+
+/** references add (KNO-29). object_id is the separate call arg; the body carries the first-class Reference
+ *  fields that replace resource_urls[E] (title required; source/url/type nullable/OPEN — BR-S2-3). */
+export const AddReferenceSchema = z.object({
+  title: z.string().min(1),
+  source: z.string().nullable().optional(),
+  url: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
+})

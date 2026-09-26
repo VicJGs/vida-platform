@@ -18,12 +18,18 @@ import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
 import { knowledgeObjects, objectKinds } from '../../../db/schema/knowledge'
+import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSpacesService, type SpacesService } from '../../../foundation/spaces/service'
+import { TagNotFound, UnknownEntityType } from '../../../foundation/spaces/types'
+import { createBacklinkResolver } from '../../search/backlink-resolver'
 import {
   createKnowledgeService,
   ObjectKindNotFoundError,
   InvalidParentRefError,
   HierarchyCycleError,
   KnowledgeObjectNotFoundError,
+  KnowledgeContainerNotFoundError,
+  ReferenceNotFoundError,
   type KnowledgeService,
 } from '../index'
 
@@ -64,6 +70,7 @@ interface Harness {
   svc: KnowledgeService
   db: DrizzleDb
   bsql: Database.Database
+  spaces: SpacesService
 }
 
 async function setup(): Promise<Harness> {
@@ -72,8 +79,13 @@ async function setup(): Promise<Harness> {
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createKnowledgeService({ db, deviceId: 'test-device' })
-  return { svc, db, bsql }
+  // S2 deps: the shared registry seeds knowledge_object/container/reference from ENTITY_TYPES (no register()
+  // needed); spaces = the write half, backlinks = the read half (NotesService harness recipe).
+  const registry = createTaggableTypeRegistry()
+  const spaces = createSpacesService(db, 'test-device', registry)
+  const backlinks = createBacklinkResolver(db, 'test-device')
+  const svc = createKnowledgeService({ db, deviceId: 'test-device', spaces, backlinks })
+  return { svc, db, bsql, spaces }
 }
 
 /** Helper: seed + return a usable kind id (the `topic` default). */
@@ -276,5 +288,182 @@ describe('mod-knowledge S1 — kinds + objects + hierarchy', () => {
     const obj = await h.svc.createObject({ kind_id: kindId, title: 'Synced' })
     const q = await h.db.select().from(syncQueue).where(eq(syncQueue.row_id, obj.id)).all()
     expect(q.length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('mod-knowledge S2 — containers + references + link/tag cross-cut', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  /** Helper: a seeded object to hang references/links on. */
+  async function anObject(title = 'Bayes'): Promise<string> {
+    const kindId = await seededTopicKindId(h.svc)
+    return (await h.svc.createObject({ kind_id: kindId, title })).id
+  }
+
+  // --- KNO-12/14 containers -------------------------------------------------
+  it('createContainer persists a {container_type,name} row + faithful echo (KNO-12)', async () => {
+    const c = await h.svc.createContainer({ container_type: 'module', name: 'Health OS' })
+    expect(c.id).toBeTruthy()
+    expect(c.container_type).toBe('module')
+    expect(c.name).toBe('Health OS')
+    expect(c.deleted_at).toBeNull() // faithful echo (not undefined)
+  })
+
+  it('createContainer rejects an invalid container_type + empty name (validator)', async () => {
+    await expect(h.svc.createContainer({ container_type: 'bogus' as never, name: 'X' })).rejects.toThrow()
+    await expect(h.svc.createContainer({ container_type: 'area', name: '' })).rejects.toThrow()
+  })
+
+  it('listContainers filters by type + excludes soft-deleted (KNO-14, BR-S2-9)', async () => {
+    const m = await h.svc.createContainer({ container_type: 'module', name: 'M' })
+    await h.svc.createContainer({ container_type: 'area', name: 'A' })
+    await h.svc.createContainer({ container_type: 'subject', name: 'S' })
+    expect((await h.svc.listContainers()).length).toBe(3)
+    expect((await h.svc.listContainers({ containerType: 'area' })).map((c) => c.name)).toEqual(['A'])
+    await h.svc.deleteContainer(m.id)
+    expect((await h.svc.listContainers()).length).toBe(2)
+    expect((await h.svc.listContainers({ containerType: 'module' })).length).toBe(0)
+  })
+
+  it('deleteContainer guard-exists throws (KnowledgeContainerNotFoundError)', async () => {
+    await expect(h.svc.deleteContainer('nope')).rejects.toBeInstanceOf(KnowledgeContainerNotFoundError)
+  })
+
+  // --- KNO-29/30 references -------------------------------------------------
+  it('addReference persists object-scoped; listReferences returns only that object (KNO-29/30)', async () => {
+    const objA = await anObject('A')
+    const objB = await anObject('B')
+    const r = await h.svc.addReference(objA, { title: 'Elements of Statistical Learning', source: 'book', url: 'https://x' })
+    expect(r.id).toBeTruthy()
+    expect(r.object_id).toBe(objA)
+    expect(r.title).toBe('Elements of Statistical Learning')
+    expect(r.source).toBe('book')
+    expect(r.type).toBeNull() // nullable coalesced (faithful echo)
+    await h.svc.addReference(objB, { title: 'other' })
+    expect((await h.svc.listReferences(objA)).map((x) => x.title)).toEqual(['Elements of Statistical Learning'])
+  })
+
+  it('addReference rejects an unresolved object (KnowledgeObjectNotFoundError, BR-S2-8)', async () => {
+    await expect(h.svc.addReference('ghost', { title: 'x' })).rejects.toBeInstanceOf(KnowledgeObjectNotFoundError)
+  })
+
+  it('removeReference soft-deletes — hidden from listReferences (companion)', async () => {
+    const obj = await anObject()
+    const r = await h.svc.addReference(obj, { title: 'doomed' })
+    await h.svc.removeReference(r.id)
+    expect((await h.svc.listReferences(obj)).length).toBe(0)
+  })
+
+  it('removeReference throws ReferenceNotFoundError for a missing id (MINOR-5 — precise error type)', async () => {
+    await expect(h.svc.removeReference('nope')).rejects.toBeInstanceOf(ReferenceNotFoundError)
+  })
+
+  // --- KNO-10/11 links (write via spaces, read via backlinks) ---------------
+  it('linkObject writes ONE link via spaces (page_id=objectId); listLinks reads it back (KNO-10)', async () => {
+    const obj = await anObject()
+    const link = await h.svc.linkObject(obj, { entityType: 'book', entityId: 'book-1' }, 'ch.3')
+    expect(link.page_id).toBe(obj) // the object is the source anchor
+    expect(link.entity_type).toBe('book')
+    expect(link.entity_id).toBe('book-1')
+    expect(link.context).toBe('ch.3')
+    const links = await h.svc.listLinks(obj)
+    expect(links.map((l) => l.entity_id)).toEqual(['book-1'])
+  })
+
+  it('linkObject supports MANY book links per object (KNO-11, restores linked_book_ids[])', async () => {
+    const obj = await anObject()
+    await h.svc.linkObject(obj, { entityType: 'book', entityId: 'b1' })
+    await h.svc.linkObject(obj, { entityType: 'book', entityId: 'b2' })
+    await h.svc.linkObject(obj, { entityType: 'book', entityId: 'b3' })
+    expect((await h.svc.listLinks(obj)).map((l) => l.entity_id).sort()).toEqual(['b1', 'b2', 'b3'])
+  })
+
+  it('linkObject is idempotent — a repeat link is a no-op, not a duplicate (spaces BR-14)', async () => {
+    const obj = await anObject()
+    const a = await h.svc.linkObject(obj, { entityType: 'book', entityId: 'b1' })
+    const b = await h.svc.linkObject(obj, { entityType: 'book', entityId: 'b1' })
+    expect(a.id).toBe(b.id)
+    expect((await h.svc.listLinks(obj)).length).toBe(1)
+  })
+
+  it('linkObject rejects an unresolved object (KnowledgeObjectNotFoundError, BR-S2-8)', async () => {
+    await expect(
+      h.svc.linkObject('ghost', { entityType: 'book', entityId: 'b1' }),
+    ).rejects.toBeInstanceOf(KnowledgeObjectNotFoundError)
+  })
+
+  it('linkObject rejects an unregistered target entity_type (UnknownEntityType, delegated to spaces, BR-S2-7)', async () => {
+    const obj = await anObject()
+    await expect(
+      h.svc.linkObject(obj, { entityType: 'not_a_real_type', entityId: 'x' }),
+    ).rejects.toBeInstanceOf(UnknownEntityType)
+  })
+
+  it('unlinkObject guards the object then soft-deletes the link (KNO-10, F4)', async () => {
+    const obj = await anObject()
+    await h.svc.linkObject(obj, { entityType: 'book', entityId: 'b1' })
+    await h.svc.unlinkObject(obj, { entityType: 'book', entityId: 'b1' })
+    expect((await h.svc.listLinks(obj)).length).toBe(0)
+    await expect(h.svc.unlinkObject('ghost', { entityType: 'book', entityId: 'b1' })).rejects.toBeInstanceOf(
+      KnowledgeObjectNotFoundError,
+    )
+  })
+
+  // --- KNO-13/45 tag membership (write via spaces, read via entityTagRepo) --
+  it('tagMembership records a membership via spaces; listMemberships reads it back (KNO-13)', async () => {
+    const container = await h.svc.createContainer({ container_type: 'subject', name: 'Nutrition' })
+    const tag = await h.spaces.createTag({ name: 'Nutrition' })
+    const obj = await anObject()
+    const m = await h.svc.tagMembership(container.id, { entityType: 'knowledge_object', entityId: obj }, tag.id)
+    expect(m.tag_id).toBe(tag.id)
+    expect(m.entity_id).toBe(obj)
+    const members = await h.svc.listMemberships(tag.id)
+    expect(members.map((x) => x.entity_id)).toEqual([obj])
+  })
+
+  it('tagMembership is many-to-many — one member in multiple containers/tags (KN-7)', async () => {
+    const c1 = await h.svc.createContainer({ container_type: 'module', name: 'M1' })
+    const c2 = await h.svc.createContainer({ container_type: 'module', name: 'M2' })
+    const t1 = await h.spaces.createTag({ name: 'T1' })
+    const t2 = await h.spaces.createTag({ name: 'T2' })
+    const area = await h.svc.createContainer({ container_type: 'area', name: 'Shared Area' })
+    // the Area container joins both modules (Areas may belong to multiple OS-modules)
+    await h.svc.tagMembership(c1.id, { entityType: 'knowledge_container', entityId: area.id }, t1.id)
+    await h.svc.tagMembership(c2.id, { entityType: 'knowledge_container', entityId: area.id }, t2.id)
+    expect((await h.svc.listMemberships(t1.id)).map((x) => x.entity_id)).toEqual([area.id])
+    expect((await h.svc.listMemberships(t2.id)).map((x) => x.entity_id)).toEqual([area.id])
+  })
+
+  it('tagMembership rejects an unresolved container (KnowledgeContainerNotFoundError, BR-S2-8)', async () => {
+    const tag = await h.spaces.createTag({ name: 'T' })
+    await expect(
+      h.svc.tagMembership('ghost', { entityType: 'knowledge_object', entityId: 'x' }, tag.id),
+    ).rejects.toBeInstanceOf(KnowledgeContainerNotFoundError)
+  })
+
+  it('tagMembership rejects a bogus scopedTag — no silent orphan (TagNotFound, F1/BR-S2-8b)', async () => {
+    const container = await h.svc.createContainer({ container_type: 'subject', name: 'S' })
+    const obj = await anObject()
+    await expect(
+      h.svc.tagMembership(container.id, { entityType: 'knowledge_object', entityId: obj }, 'no-such-tag'),
+    ).rejects.toBeInstanceOf(TagNotFound)
+    // and nothing was persisted (the orphan guard fired before the write)
+    expect((await h.svc.listMemberships('no-such-tag')).length).toBe(0)
+  })
+
+  it('untagMembership guards the container then removes; scopedTag NOT guarded (F4)', async () => {
+    const container = await h.svc.createContainer({ container_type: 'subject', name: 'S' })
+    const tag = await h.spaces.createTag({ name: 'T' })
+    const obj = await anObject()
+    await h.svc.tagMembership(container.id, { entityType: 'knowledge_object', entityId: obj }, tag.id)
+    await h.svc.untagMembership(container.id, { entityType: 'knowledge_object', entityId: obj }, tag.id)
+    expect((await h.svc.listMemberships(tag.id)).length).toBe(0)
+    // container guard fires on remove too
+    await expect(
+      h.svc.untagMembership('ghost', { entityType: 'knowledge_object', entityId: obj }, tag.id),
+    ).rejects.toBeInstanceOf(KnowledgeContainerNotFoundError)
   })
 })

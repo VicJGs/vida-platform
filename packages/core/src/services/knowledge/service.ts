@@ -18,30 +18,49 @@
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
-import type { KnowledgeObject, ObjectKind } from '@vida/types'
+import type { KnowledgeObject, ObjectKind, KnowledgeContainer, Reference } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
   knowledgeObjects,
   objectKinds,
+  knowledgeContainers,
+  references,
   type KnowledgeObjectRow,
   type ObjectKindRow,
+  type KnowledgeContainerRow,
+  type ReferenceRow,
 } from '../../db/schema/knowledge'
+import {
+  tags,
+  entityTags,
+  type EntityTagRow,
+  type EntityLinkRow,
+} from '../../db/schema/foundation/spaces'
+import { TagNotFound } from '../../foundation/spaces'
 import {
   CreateObjectKindSchema,
   CreateKnowledgeObjectSchema,
   UpdateKnowledgeObjectSchema,
+  CreateKnowledgeContainerSchema,
+  AddReferenceSchema,
 } from '../../validators/knowledge'
 import {
   KnowledgeObjectNotFoundError,
   ObjectKindNotFoundError,
   InvalidParentRefError,
   HierarchyCycleError,
+  KnowledgeContainerNotFoundError,
+  ReferenceNotFoundError,
   type KnowledgeService,
   type KnowledgeServiceDeps,
   type CreateObjectKindInput,
   type CreateKnowledgeObjectInput,
   type UpdateKnowledgeObjectInput,
   type ObjectFilter,
+  type CreateKnowledgeContainerInput,
+  type AddReferenceInput,
+  type ContainerFilter,
+  type KnowledgeEntityRef,
 } from './types'
 
 /** KNO-03 — the shipped default kinds (KN-4 realms). `topic` = a spine node → realm null (not a study
@@ -75,12 +94,28 @@ const toKnowledgeObject = (r: KnowledgeObjectRow): KnowledgeObject => ({
   key_concepts: parseJsonArray<string>(r.key_concepts as unknown as string | null),
   _sync_status: r._sync_status as KnowledgeObject['_sync_status'],
 })
+// S2 — no json<T> columns on containers/references (all text/enumText, BR-S2-10): only the _sync_status
+// union cast is needed (the Drizzle-row-not-assignable seam [[drizzle-row-not-assignable-to-vida-types-interface]]).
+const toContainer = (r: KnowledgeContainerRow): KnowledgeContainer => ({
+  ...r,
+  _sync_status: r._sync_status as KnowledgeContainer['_sync_status'],
+})
+const toReference = (r: ReferenceRow): Reference => ({
+  ...r,
+  _sync_status: r._sync_status as Reference['_sync_status'],
+})
 
 export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeService {
-  const { db, deviceId } = deps
+  const { db, deviceId, spaces, backlinks } = deps
 
   const kindsRepo = createRepository(db, objectKinds, { deviceId, softDelete: true, encryptedFields: [] })
   const objectsRepo = createRepository(db, knowledgeObjects, { deviceId, softDelete: true, encryptedFields: [] })
+  // S2 WRITE repos (own tables).
+  const containersRepo = createRepository(db, knowledgeContainers, { deviceId, softDelete: true, encryptedFields: [] })
+  const referencesRepo = createRepository(db, references, { deviceId, softDelete: true, encryptedFields: [] })
+  // S2 READ-ONLY repos (junction/tag reads; link/tag WRITES delegate to `spaces`, BR-S2-6). findWhere/findById only.
+  const entityTagRepo = createRepository(db, entityTags, { deviceId, softDelete: true, encryptedFields: [] })
+  const tagsRepo = createRepository(db, tags, { deviceId, softDelete: true, encryptedFields: [] })
 
   // --- kind registry (KNO-01/02/03) -----------------------------------------
 
@@ -116,6 +151,14 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
 
   async function assertParentExists(parentId: string): Promise<void> {
     if ((await objectsRepo.findById(parentId)) == null) throw new InvalidParentRefError(parentId)
+  }
+
+  // --- S2 integrity helpers (KNO-08 pattern; fail-loud, never a silent orphan) ---
+  async function assertObjectExists(objectId: string): Promise<void> {
+    if ((await objectsRepo.findById(objectId)) == null) throw new KnowledgeObjectNotFoundError(objectId)
+  }
+  async function assertContainerExists(containerId: string): Promise<void> {
+    if ((await containersRepo.findById(containerId)) == null) throw new KnowledgeContainerNotFoundError(containerId)
   }
 
   /** Walk the desired parent's ancestor chain; reject a self-parent or a loop that reaches `objectId`. */
@@ -210,6 +253,113 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     await objectsRepo.delete(id) // soft delete (softDelete:true → sets deleted_at)
   }
 
+  // --- S2: containers (KNO-12/14) -------------------------------------------
+
+  async function createContainer(input: CreateKnowledgeContainerInput): Promise<KnowledgeContainer> {
+    const v = CreateKnowledgeContainerSchema.parse(input)
+    const row = await containersRepo.create({
+      container_type: v.container_type,
+      name: v.name,
+      deleted_at: null, // faithful echo (create echoes input; a new row is not deleted)
+    } satisfies CreateInput<typeof knowledgeContainers>)
+    return toContainer(row)
+  }
+
+  async function listContainers(filter: ContainerFilter = {}): Promise<KnowledgeContainer[]> {
+    const clauses: SQL[] = [isNull(knowledgeContainers.deleted_at)] // findWhere skips the soft-delete filter
+    if (filter.containerType !== undefined) {
+      clauses.push(eq(knowledgeContainers.container_type, filter.containerType))
+    }
+    const rows = await containersRepo.findWhere(clauses.length === 1 ? clauses[0]! : and(...clauses)!)
+    return rows.map(toContainer)
+  }
+
+  async function deleteContainer(id: string): Promise<void> {
+    await assertContainerExists(id)
+    await containersRepo.delete(id) // soft delete
+  }
+
+  // --- S2: references (KNO-29/30) -------------------------------------------
+
+  async function addReference(objectId: string, input: AddReferenceInput): Promise<Reference> {
+    const v = AddReferenceSchema.parse(input)
+    await assertObjectExists(objectId) // fail-loud: no reference on a non-existent object (BR-S2-8)
+    const row = await referencesRepo.create({
+      object_id: objectId,
+      title: v.title,
+      source: v.source ?? null,
+      url: v.url ?? null,
+      type: v.type ?? null,
+      deleted_at: null, // faithful echo
+    } satisfies CreateInput<typeof references>)
+    return toReference(row)
+  }
+
+  async function listReferences(objectId: string): Promise<Reference[]> {
+    const rows = await referencesRepo.findWhere(
+      and(eq(references.object_id, objectId), isNull(references.deleted_at))!,
+    )
+    return rows.map(toReference)
+  }
+
+  async function removeReference(id: string): Promise<void> {
+    if ((await referencesRepo.findById(id)) == null) throw new ReferenceNotFoundError(id)
+    await referencesRepo.delete(id) // soft delete
+  }
+
+  // --- S2: cross-module links (KNO-10/11) — write via spaces, read via backlinks ---
+
+  async function linkObject(
+    objectId: string,
+    targetRef: KnowledgeEntityRef,
+    context?: string | null,
+  ): Promise<EntityLinkRow> {
+    await assertObjectExists(objectId)
+    // Source anchor = the object id in page_id (plain TEXT, no FK — a generic source anchor). spaces validates
+    // targetRef.entityType against the registry (fail-loud UnknownEntityType) + is idempotent (KN-6; never resource_type).
+    return spaces.createLink(objectId, targetRef.entityType, targetRef.entityId, context ?? null)
+  }
+
+  async function unlinkObject(objectId: string, targetRef: KnowledgeEntityRef): Promise<void> {
+    await assertObjectExists(objectId) // guard the source (F4); spaces.removeLink no-ops on a missing link row
+    await spaces.removeLink(objectId, targetRef.entityType, targetRef.entityId)
+  }
+
+  async function listLinks(objectId: string): Promise<EntityLinkRow[]> {
+    // Raw-reader (NotesService precedent); getLinksFrom already filters soft-deletes.
+    return backlinks.getLinksFrom(objectId)
+  }
+
+  // --- S2: tag membership (KNO-13/45) — write via spaces, read via entityTagRepo ---
+
+  async function tagMembership(
+    containerId: string,
+    memberRef: KnowledgeEntityRef,
+    scopedTag: string,
+  ): Promise<EntityTagRow> {
+    await assertContainerExists(containerId)
+    // Create-path silent-orphan guard (BR-S2-8b): spaces.tagEntity blind-inserts an unresolved tag_id, so verify
+    // the scoped tag resolves to a LIVE tags row (findById applies notDeleted) before delegating.
+    if ((await tagsRepo.findById(scopedTag)) == null) throw new TagNotFound(scopedTag)
+    return spaces.tagEntity(scopedTag, memberRef.entityType, memberRef.entityId)
+  }
+
+  async function untagMembership(
+    containerId: string,
+    memberRef: KnowledgeEntityRef,
+    scopedTag: string,
+  ): Promise<void> {
+    await assertContainerExists(containerId) // guard the container (F4); scopedTag NOT guarded — remove stays cleanable
+    await spaces.untagEntity(scopedTag, memberRef.entityType, memberRef.entityId)
+  }
+
+  async function listMemberships(scopedTag: string): Promise<EntityTagRow[]> {
+    // List-by-tag (getEntitiesByTag precedent); findWhere skips the soft-delete filter → add it.
+    return entityTagRepo.findWhere(
+      and(eq(entityTags.tag_id, scopedTag), isNull(entityTags.deleted_at))!,
+    )
+  }
+
   return {
     seedDefaultKinds,
     createKind,
@@ -219,5 +369,18 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     getObject,
     listObjects,
     deleteObject,
+    // S2
+    createContainer,
+    listContainers,
+    deleteContainer,
+    addReference,
+    listReferences,
+    removeReference,
+    linkObject,
+    unlinkObject,
+    listLinks,
+    tagMembership,
+    untagMembership,
+    listMemberships,
   }
 }
