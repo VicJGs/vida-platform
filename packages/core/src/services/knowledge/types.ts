@@ -17,6 +17,7 @@ import type {
   ReviewCurve,
   MethodBinding,
   MethodBindingTargetType,
+  ReviewEvent,
   StudyTopicStatus,
   TopicDifficulty,
 } from '@vida/types'
@@ -28,6 +29,9 @@ import type {
   DefineCurveInput,
   RegisterMethodInput,
   BindMethodInput,
+  RecordReviewInput,
+  DueRange,
+  ReviewDueItem,
 } from '../../foundation/review'
 import type { BacklinkResolver } from '../search/backlink-resolver'
 import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
@@ -218,4 +222,17 @@ export interface KnowledgeService {
   /** KNO-20 — resolve a kind's default method (2-tier: `default_method_id` else null). Looks the kind up
    *  (→ ObjectKindNotFoundError on miss) then delegates to the pure engine resolver. */
   resolveDefaultMethod(kindId: string): Promise<string | null>
+
+  // ── S4: review engine ② — record + due + derive + rollup ───────────────────
+  /** KNO-22 — append a review outcome (delegates to the engine; mastery is derive-on-read). */
+  recordReview(input: RecordReviewInput): Promise<ReviewEvent>
+  /** KNO-21 — due-queue provider across bound targets (delegates). */
+  getDue(range: DueRange, opts?: { level?: MethodBindingTargetType }): Promise<ReviewDueItem[]>
+  /** KNO-21 — is a single object due as of `at` (delegates). */
+  dueIn(objectId: string, at?: number): Promise<boolean>
+  /** KNO-23 — leaf mastery (0–100) derived on read; null when unmeasured (delegates to the engine). */
+  deriveMastery(objectId: string): Promise<number | null>
+  /** KNO-24 — mastery rolled UP the `parent_object_id` spine (kind→Topic→Unit→Subject) via measurement.rollup;
+   *  null when the node + subtree are all unmeasured. Guards an unresolved object. */
+  rollupMastery(objectId: string): Promise<number | null>
 }

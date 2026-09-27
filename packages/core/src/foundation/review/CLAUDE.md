@@ -21,5 +21,13 @@ here because it is cross-consumed (flashcards S7 + future skills/languages/educa
 composes it as the required `review` dep. Spec/rules: `docs/modules/knowledge/current-{spec,business-rules}.md`
 (BR-KN-S3-*). ⚠ Gotcha: `review_curves.params` is `json<T>()` → stringify-on-write / parse-on-read at the engine
 boundary (the M1.0 repo does not auto-serialize non-encrypted values).
-**Deferred here (S4+):** `getDue`/`dueIn` · `recordReview` (append `review_events`) · `deriveMastery` (COMPUTED,
-never hand-set) · `rollupMastery` (via `foundation/measurement` free functions) · `seedPresetCurves` (SM-2 preset).
+Engine ② BUILT by S4 (2026-09-27): `recordReview` (append-only `review_events`; no mastery write — derive-on-read),
+`getDue`/`dueIn` (due-queue from events + bound review-curve interval; unbound/never-reviewed ⇒ due now),
+`deriveMastery` (0–100 or null via `foundation/measurement.normalize` on the latest non-null quality — generic on
+`object_id`, NEVER reads knowledge_objects). Composes the pure `foundation/measurement` free functions by import
+(first service consumer). `rollupMastery` is NOT here — it walks `knowledge_objects.parent_object_id`, so it lives in
+`services/knowledge` (composing `measurement.rollup`). Mastery = derive-on-read, never stored, never a formula (KN-9
+"tune the curve, not the number"). ⚠ `DueItem` name is owned by `services/sessions` → this module exports
+`ReviewDueItem`. **Deferred here (S5+):** `seedPresetCurves` (SM-2 preset) · non-linear decay/interval curves
+(ADR-011:76 build-phase) · `getMasterySource` 3-signal Education seam (S5, measurement source-registry) · event
+fan-out (`review.recorded`/`mastery.changed`, S8).

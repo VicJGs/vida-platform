@@ -105,3 +105,16 @@ export const BindMethodSchema = z.object({
   curveId: z.string().nullable().optional(),
   dailyCap: z.number().int().nullable().optional(),
 })
+
+// ---------------------------------------------------------------------------
+// mod-knowledge S4 — Review engine ② (record) input validator
+// ---------------------------------------------------------------------------
+
+/** recordReview (KNO-22). Appends a review_events row; `quality` is the 0–5 signal (nullable — a method may emit a
+ *  non-graded signal). `objectId`/`methodId` are no-FK refs (BR-S4-1, mirrors bindMethod). reviewed_at is stamped
+ *  by the engine (Date.now()), not a caller input. */
+export const RecordReviewSchema = z.object({
+  objectId: z.string().min(1),
+  methodId: z.string().min(1),
+  quality: z.number().int().min(0).max(5).nullable().optional(),
+})

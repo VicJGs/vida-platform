@@ -37,6 +37,7 @@ import {
   type EntityLinkRow,
 } from '../../db/schema/foundation/spaces'
 import { TagNotFound } from '../../foundation/spaces'
+import { rollup } from '../../foundation/measurement'
 import {
   CreateObjectKindSchema,
   CreateKnowledgeObjectSchema,
@@ -374,6 +375,31 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     })
   }
 
+  /** KNO-24 — roll mastery UP the `parent_object_id` spine via `measurement.rollup` (knowledge-specific: the generic
+   *  engine must not know `knowledge_objects`). A node with children = rollup of their derived progress (nulls
+   *  excluded — an unmeasured child can't drag a parent down); a leaf = the engine's derive. The recursion carries a
+   *  visited-set backstop: S1 guards `parent_object_id` at CREATE-time only, so a corrupted/synced row must not loop
+   *  the walk (BR-S4-4). Internal recursion is in [0,1]; the public value is bridged to 0–100 (BR-S4-5). */
+  async function rollupMastery(objectId: string): Promise<number | null> {
+    await assertObjectExists(objectId)
+    const seen = new Set<string>()
+    const nodeProgress = async (id: string): Promise<number | null> => {
+      if (seen.has(id)) return null // cycle/visited backstop — never re-count or infinite-loop
+      seen.add(id)
+      const children = await objectsRepo.findWhere(
+        and(eq(knowledgeObjects.parent_object_id, id), isNull(knowledgeObjects.deleted_at))!,
+      )
+      if (children.length === 0) {
+        const m = await review.deriveMastery(id) // 0–100 | null
+        return m === null ? null : m / 100 // → [0,1]
+      }
+      const childProgress = await Promise.all(children.map((c) => nodeProgress(c.id)))
+      return rollup(childProgress.map((progress) => ({ progress }))) // [0,1] | null (nulls excluded)
+    }
+    const result = await nodeProgress(objectId)
+    return result === null ? null : Math.round(result * 100) // [0,1] → 0–100
+  }
+
   return {
     seedDefaultKinds,
     createKind,
@@ -406,5 +432,11 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     listBindings: review.listBindings,
     unbindMethod: review.unbindMethod,
     resolveDefaultMethod,
+    // S4 — review engine ② (engine verbs by bare reference; rollupMastery is the knowledge-specific wrapper)
+    recordReview: review.recordReview,
+    getDue: review.getDue,
+    dueIn: review.dueIn,
+    deriveMastery: review.deriveMastery,
+    rollupMastery,
   }
 }

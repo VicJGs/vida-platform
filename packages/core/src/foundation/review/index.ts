@@ -11,5 +11,8 @@ export {
   type DefineCurveInput,
   type RegisterMethodInput,
   type BindMethodInput,
+  type RecordReviewInput,
   type ResolveKindInput,
+  type DueRange,
+  type ReviewDueItem,
 } from './types'

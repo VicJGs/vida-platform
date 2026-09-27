@@ -45,11 +45,25 @@ backend over DB-4 group #10 (`022_knowledge`: 7 owned tables) + the DB-3 review 
   findings) → §XXIX currency. @vida/core **1376 green**, tsc 0, eslint 0, gitleaks clean. Not yet committed at log
   time.
 
+- 2026-09-27: **S4 SHIPPED** — review engine ② (KNO-21..24): `recordReview` (append-only `review_events`, no mastery
+  write), `getDue`/`dueIn` (due-queue from events + bound review-curve interval; never-reviewed ⇒ due now),
+  `deriveMastery` (0–100 or null, derive-on-read via `foundation/measurement.normalize` — generic engine verb), and
+  `rollupMastery` (knowledge service, walks `parent_object_id` via `measurement.rollup`, visited-set backstop, [0,1]↔0–100
+  bridge). **A DRIFT happened + was corrected:** I first framed the mastery 0–100 mapping as an open design decision
+  needing intent/ADR + ran AskUserQuestion; Victor: "clear drift, the documentation states how this works." Re-grounded:
+  mastery = derive-on-read via the measurement engine, curve-parameterized ("tune the curve, not the number", KN-9),
+  internals build-phase (ADR-011:76) — no formula to decide. Memory [[mastery-measurement-derivation-is-doc-resolved-not-a-decision]].
+  Full flow after correction: PLAN-s4 → gate-1 REVISE→3 folds+3 NITs (F1 named the events→normalize reduction; F2
+  citation provenance to KN-9; F3 narrowed the measurement precedent = first service consumer) → Approval 1 → preflight
+  PASS + gate-2 SHIP → Approval 2 → implement (`DueItem`→`ReviewDueItem` barrel-collision rename) → Verification Gate
+  (13 new tests incl. 3-level rollup + cycle-backstop) → independent code-review **SHIP** (0 bugs; race ruled out —
+  parent_object_id is single-parent) → §XXIX currency. @vida/core **1389 green**, tsc 0, eslint 0, gitleaks clean.
+
 ## Slice tracker (decomposition.md — 8 slices)
 - [x] S1 Types reconcile + Kinds + Objects + Hierarchy
 - [x] S2 Containers + References + link/tag cross-cut
 - [x] S3 Review engine ①: methods + curves + bindings
-- [ ] S4 Review engine ②: due + record + derive + rollup
+- [x] S4 Review engine ②: due + record + derive + rollup
 - [ ] S5 Measurement source + Education seams
 - [ ] S6 Pages-notes + Compound sets + Lab + AI/search/ingestion seams
 - [ ] S7 Flashcards sub-service

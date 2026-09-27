@@ -13,12 +13,13 @@
 // ============================================================================
 
 import type { z } from 'zod'
-import type { ReviewCurve, MethodBinding, MethodBindingTargetType } from '@vida/types'
+import type { ReviewCurve, MethodBinding, MethodBindingTargetType, ReviewEvent } from '@vida/types'
 import type { CapabilityRegistry, CapabilityDefinition } from '../capability'
 import type {
   DefineCurveSchema,
   RegisterMethodSchema,
   BindMethodSchema,
+  RecordReviewSchema,
 } from '../../validators/knowledge'
 
 /** The `kind` partition the study-method registry reads/writes in the OS capability registry (ADR-008). */
@@ -34,6 +35,22 @@ export interface ReviewEngineDeps {
 export type DefineCurveInput = z.infer<typeof DefineCurveSchema>
 export type RegisterMethodInput = z.infer<typeof RegisterMethodSchema>
 export type BindMethodInput = z.infer<typeof BindMethodSchema>
+export type RecordReviewInput = z.infer<typeof RecordReviewSchema>
+
+/** getDue/dueIn window — Unix-ms inclusive range (S4). A due target's next-review falls within [from, to]. */
+export interface DueRange {
+  from: number
+  to: number
+}
+
+/** A due-queue item (KNO-21) — the bound target + why it's due. Consumed by the Scheduler + flashcards (SS-7). */
+export interface ReviewDueItem {
+  targetType: MethodBindingTargetType
+  targetId: string
+  methodId: string
+  /** the computed next-review time (ms); null when never reviewed (due now). */
+  dueAt: number | null
+}
 
 /** The kind fields `resolveDefaultMethod` reads (pure — no persistence). `learning_realm` is carried for the
  *  S7 forward seam (realm→registered-method match); S3 reads only `default_method_id` (BR-S3-5). */
@@ -88,4 +105,17 @@ export interface ReviewEngine {
   /** KNO-20 — resolve the default method for a kind: `default_method_id` if set, else `null`. Pure; NEVER
    *  synthesizes a method id (the realm-driven tier activates at S7 — BR-S3-5). */
   resolveDefaultMethod(kind: ResolveKindInput): string | null
+
+  // ── S4: review engine ② — record + due + derive ────────────────────────────
+  /** KNO-22 — append an immutable `review_events` row (`reviewed_at` stamped now); does NOT write mastery
+   *  (derive-on-read, BR-S4-1). */
+  recordReview(input: RecordReviewInput): Promise<ReviewEvent>
+  /** KNO-21 — the due-queue provider: bound targets whose next-review falls within `range` (optionally filtered
+   *  by `level`=target_type). Unbound/never-reviewed ⇒ due now (BR-S4-2). */
+  getDue(range: DueRange, opts?: { level?: MethodBindingTargetType }): Promise<ReviewDueItem[]>
+  /** KNO-21 — is a single object due as of `at` (ms, default now)? Convenience over the same rule. */
+  dueIn(objectId: string, at?: number): Promise<boolean>
+  /** KNO-23 — derive leaf mastery (0–100) on read from the object's `review_events`; `null` when unmeasured
+   *  (no non-null quality). Generic on `object_id`; NEVER reads knowledge_objects (BR-S4-3). */
+  deriveMastery(objectId: string): Promise<number | null>
 }

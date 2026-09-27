@@ -1,7 +1,7 @@
 # Current Business Rules — Knowledge (module)
 
 > §XXIX currency. Ground truth for the shipped `createKnowledgeService` backend. Updated per slice.
-> Status: **S1 + S2 + S3 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review engine ①:
+> Status: **S1 + S2 + S3 + S4 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review engine ①:
 > methods/curves/bindings). S4–S8 pending (`docs/modules/knowledge/delivery/decomposition.md`). Inherits KN-1…KN-12
 > (`docs/features/knowledge/business-rules.md`).
 
@@ -106,8 +106,39 @@
   `ReviewCurveNotFoundError`/`MethodBindingNotFoundError`). `review_events` is untouched in S3 (append-only, S4).
   `[FACT: engine.ts; [[repository-findwhere-skips-softdelete-filter]]]`
 
+## Review engine ② (S4 — KNO-21..24) — due + record + derive + rollup
+> Activates the S3 substrate. Composes `foundation/measurement` (the pure `normalize`/`rollup` free functions,
+> imported — S4 is the FIRST service consumer). Authors no schema. **Mastery is a MEASUREMENT, derived-on-read via
+> the engine — never a stored number, never a bespoke formula** ("tune the curve, not the number", KN-9). SM-2 is the
+> SCHEDULING axis (`getDue`), a separate concern from the mastery axis.
+- **BR-KN-S4-1 — `recordReview` appends an immutable event; mastery is NOT written.** `recordReview({objectId,
+  methodId, quality?})` → one `review_events` row (`reviewed_at`=now); no `mastery_level` write (derive-on-read).
+  `review_events` is append-only (no `deleted_at`; eventsRepo has no `softDelete`). `[FACT: engine.ts recordReview;
+  schema knowledge-review.ts:48-62]`
+- **BR-KN-S4-2 — `getDue`/`dueIn` is the due-queue provider.** Iterates live `method_bindings`; a target is due if
+  `now ≥ latestReviewedAt + (curve.params.interval_days ?? 1)·DAY`; **unbound/never-reviewed ⇒ due now** (short-
+  circuits before any deref — no crash). `getDue` filters by `level`=target_type; reports `dueAt` (null when never
+  reviewed). Curve-accurate SM-2 progression = build-phase (ADR-011:76). `[FACT: engine.ts getDue/dueIn/nextReviewAt]`
+- **BR-KN-S4-3 — `deriveMastery(objectId)` is a pure derive-on-read (0–100 or null).** M1.0 reduction: the LATEST
+  non-null `quality` → `measurement.normalize({kind:'qualitative', rating, scaleMax:5})` → ×100. **`null` when no
+  non-null quality** (unmeasured — NEVER 0); **`quality 0` ⇒ mastery 0** (a real measured value, distinct from null).
+  Generic on `object_id` — the engine NEVER reads `knowledge_objects.mastery_level`. `quality` is the input, never
+  stored as mastery (the Antigravity conflation, avoided by construction). Multi-event weighting/decay = build-phase.
+  `[FACT: engine.ts deriveMastery; measurement/engine.ts:14-33; business-rules.md KN-9:47-50]`
+- **BR-KN-S4-4 — `rollupMastery(objectId)` rolls UP the `parent_object_id` spine via `measurement.rollup`.** A node
+  with children = `rollup(children)` (weighted; nulls excluded — an unmeasured child can't drag a parent down); a leaf
+  = `deriveMastery`. Internal recursion is `[0,1]`, bridged to 0–100. Knowledge-owned (walks `knowledge_objects`, which
+  the generic engine must not know). Carries a **visited-set backstop** (S1 guards cycles at create-time only; a
+  corrupted/synced row must not infinite-loop). Guards an unresolved object. `[FACT: service.ts rollupMastery;
+  measurement/engine.ts rollup:38-53; structure-data.md:29-31]`
+- **BR-KN-S4-5 — The override slot is inert-not-dead in M1.0.** `mastery_level` (nullable) is an ADR-011 override
+  slot (`NULL ⇒ derive`), but there is no mastery write path in M1.0 (S1 blocks the user), so it stays null; honoring
+  a manual override activates where mastery becomes writable (not built here, YAGNI). `[FACT: ADR-011 §3.2:48;
+  schema/knowledge.ts:57]`
+
 ## Deferred to later slices
-Mastery derivation + rollup + due-queue + recordReview (S4) · measurement source → Education (S5) ·
-pages-notes/compound/lab/search/ingestion (S6) · flashcards (S7) · events + journal (S8). The **SM-2 preset seed**
-(`seedPresetCurves`) + the **realm-driven default-method tier** both defer (S4 / S7 respectively).
-`KNO-44`/`KNO-46` excluded (Education assessment link / OS-automation surface, parked).
+Measurement source → Education (S5, the `getMasterySource` 3-signal seam) · pages-notes/compound/lab/search/ingestion
+(S6) · flashcards (S7) · events + journal fan-out (S8, incl. `review.recorded`/`mastery.changed`). The **SM-2 preset
+seed** (`seedPresetCurves`) + the **realm-driven default-method tier** + **non-linear decay/interval curves** defer
+(S4-adjacent / S7 / build-phase respectively). `KNO-44`/`KNO-46` excluded (Education assessment link / OS-automation
+surface, parked).

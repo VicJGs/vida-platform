@@ -189,3 +189,84 @@ describe('foundation/review — engine ① (methods + curves + bindings)', () =>
     expect(queued.some((q) => q.table_name === 'review_curves')).toBe(true)
   })
 })
+
+// ============================================================================
+// S4 — review engine ②: record + due + derive (live-store).
+// ============================================================================
+describe('foundation/review — engine ② (record + due + derive)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  const DAY = 86_400_000
+
+  // --- recordReview (KNO-22) ------------------------------------------------
+  it('recordReview appends an immutable event (reviewed_at set, quality stored); no mastery write; enqueues sync', async () => {
+    const ev = await h.engine.recordReview({ objectId: 'obj-1', methodId: 'flashcards', quality: 4 })
+    expect(ev.object_id).toBe('obj-1')
+    expect(ev.method_id).toBe('flashcards')
+    expect(ev.quality).toBe(4)
+    expect(ev.reviewed_at).toBeGreaterThan(0)
+    // co-transactional enqueue on review_events (append-only source of truth)
+    const queued = await h.db.select().from(syncQueue).all()
+    expect(queued.some((q) => q.table_name === 'review_events')).toBe(true)
+  })
+
+  it('recordReview accepts a null/absent quality (non-graded signal)', async () => {
+    const ev = await h.engine.recordReview({ objectId: 'obj-1', methodId: 'm' })
+    expect(ev.quality).toBeNull()
+  })
+
+  // --- deriveMastery (KNO-23) — the null-vs-0 boundary ----------------------
+  it('deriveMastery: null with NO events (unmeasured, not 0); 0–100 from the latest non-null quality', async () => {
+    expect(await h.engine.deriveMastery('fresh')).toBeNull() // unmeasured — never coerced to 0
+
+    await h.engine.recordReview({ objectId: 'q0', methodId: 'm', quality: 0 })
+    expect(await h.engine.deriveMastery('q0')).toBe(0) // a real 0 (distinct from null)
+
+    await h.engine.recordReview({ objectId: 'q3', methodId: 'm', quality: 3 })
+    expect(await h.engine.deriveMastery('q3')).toBe(60) // 3/5 → 0.6 → 60
+
+    await h.engine.recordReview({ objectId: 'q5', methodId: 'm', quality: 5 })
+    expect(await h.engine.deriveMastery('q5')).toBe(100)
+  })
+
+  it('deriveMastery uses the LATEST non-null quality (input, not stored-as-mastery)', async () => {
+    await h.engine.recordReview({ objectId: 'o', methodId: 'm', quality: 2 })
+    await h.engine.recordReview({ objectId: 'o', methodId: 'm', quality: 5 }) // later → wins
+    await h.engine.recordReview({ objectId: 'o', methodId: 'm' }) // null quality → skipped
+    expect(await h.engine.deriveMastery('o')).toBe(100)
+  })
+
+  // --- getDue / dueIn (KNO-21) ----------------------------------------------
+  it('getDue: a just-reviewed bound target is due after its interval, not before; filters by level', async () => {
+    const curve = await h.engine.defineCurve({ name: 'C', curve_kind: 'review', params: { interval_days: 1 } })
+    await h.engine.bindMethod({ targetType: 'topic', targetId: 'T', methodId: 'm', curveId: curve.id })
+    await h.engine.recordReview({ objectId: 'T', methodId: 'm', quality: 4 })
+    const now = Date.now()
+    // due ~now+1day → inside a 2-day window, outside a 1-hour window
+    expect((await h.engine.getDue({ from: now, to: now + 2 * DAY })).map((d) => d.targetId)).toContain('T')
+    expect((await h.engine.getDue({ from: now, to: now + 3_600_000 })).map((d) => d.targetId)).not.toContain('T')
+    // level filter
+    expect((await h.engine.getDue({ from: now, to: now + 2 * DAY }, { level: 'subject' })).length).toBe(0)
+  })
+
+  it('getDue: a bound but NEVER-reviewed target is due now (no crash on empty events, NIT-3)', async () => {
+    await h.engine.bindMethod({ targetType: 'topic', targetId: 'never', methodId: 'm' })
+    const now = Date.now()
+    const due = await h.engine.getDue({ from: now - 1000, to: now + 1000 })
+    const item = due.find((d) => d.targetId === 'never')
+    expect(item).toBeDefined()
+    expect(item!.dueAt).toBeNull() // never reviewed → due now, dueAt null
+  })
+
+  it('dueIn: never-reviewed ⇒ due; reviewed-recently ⇒ not due until past the interval', async () => {
+    const curve = await h.engine.defineCurve({ name: 'C', curve_kind: 'review', params: { interval_days: 1 } })
+    await h.engine.bindMethod({ targetType: 'topic', targetId: 'x', methodId: 'm', curveId: curve.id })
+    expect(await h.engine.dueIn('x')).toBe(true) // never reviewed
+    await h.engine.recordReview({ objectId: 'x', methodId: 'm', quality: 4 })
+    expect(await h.engine.dueIn('x')).toBe(false) // just reviewed → due ~+1day
+    expect(await h.engine.dueIn('x', Date.now() + 2 * DAY)).toBe(true) // past the interval
+  })
+})

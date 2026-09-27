@@ -523,3 +523,79 @@ describe('mod-knowledge S3 — review-engine delegation surface', () => {
     await expect(h.svc.resolveDefaultMethod('ghost-kind')).rejects.toBeInstanceOf(ObjectKindNotFoundError)
   })
 })
+
+// ============================================================================
+// S4 — review engine ②: rollupMastery over the parent_object_id tree + the
+// derive/record delegation on the real knowledge surface (first service
+// consumer of measurement.rollup + normalize — live-store).
+// ============================================================================
+describe('mod-knowledge S4 — rollupMastery over the object tree', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  /** a knowledge object (optionally under a parent). */
+  async function anObject(title: string, parentObjectId?: string): Promise<string> {
+    const kindId = await seededTopicKindId(h.svc)
+    return (await h.svc.createObject({ kind_id: kindId, title, parent_object_id: parentObjectId ?? null })).id
+  }
+
+  it('rollupMastery = measurement.rollup of children, nulls excluded, bridged to 0–100 (KNO-24)', async () => {
+    const parent = await anObject('Topic')
+    const c1 = await anObject('c1', parent)
+    const c2 = await anObject('c2', parent)
+    await anObject('c3-unmeasured', parent) // no reviews → null → excluded from the rollup
+    // record via the KnowledgeService surface (delegation → engine)
+    await h.svc.recordReview({ objectId: c1, methodId: 'm', quality: 5 }) // → 100 → 1.0
+    await h.svc.recordReview({ objectId: c2, methodId: 'm', quality: 3 }) // → 60  → 0.6
+    // rollup([1.0, 0.6, null]) = 0.8 → 80 (the unmeasured child can't drag it down)
+    expect(await h.svc.rollupMastery(parent)).toBe(80)
+    // a leaf rolls up to its own derived mastery
+    expect(await h.svc.rollupMastery(c1)).toBe(100)
+  })
+
+  it('rollupMastery recurses a 3-level tree (Unit → Topic → leaves), rolling up at each level (KNO-24)', async () => {
+    const unit = await anObject('Unit')
+    const topicA = await anObject('TopicA', unit) // node with leaves → 0.8
+    const topicB = await anObject('TopicB', unit) // node with one leaf → 1.0
+    const a1 = await anObject('a1', topicA)
+    const a2 = await anObject('a2', topicA)
+    const b1 = await anObject('b1', topicB)
+    await h.svc.recordReview({ objectId: a1, methodId: 'm', quality: 5 }) // 100 → 1.0
+    await h.svc.recordReview({ objectId: a2, methodId: 'm', quality: 3 }) // 60  → 0.6
+    await h.svc.recordReview({ objectId: b1, methodId: 'm', quality: 5 }) // 100 → 1.0
+    expect(await h.svc.rollupMastery(topicA)).toBe(80) // rollup([1.0,0.6]) = 0.8
+    expect(await h.svc.rollupMastery(topicB)).toBe(100) // rollup([1.0]) = 1.0
+    // Unit rolls up its Topics: rollup([0.8, 1.0]) = 0.9 → 90
+    expect(await h.svc.rollupMastery(unit)).toBe(90)
+  })
+
+  it('rollupMastery returns null when the node + subtree are all unmeasured', async () => {
+    const parent = await anObject('Topic')
+    await anObject('leaf', parent) // no reviews anywhere
+    expect(await h.svc.rollupMastery(parent)).toBeNull()
+  })
+
+  it('rollupMastery terminates on a corrupted parent_object_id cycle (visited-set backstop, BR-S4-4)', async () => {
+    // Create two objects, then force a cycle DIRECTLY (bypassing the S1 create/update cycle guard) to simulate a
+    // corrupted/synced row: A is a child of B and B is a child of A.
+    const a = await anObject('A')
+    const b = await anObject('B')
+    await h.db.update(knowledgeObjects).set({ parent_object_id: b }).where(eq(knowledgeObjects.id, a)).run()
+    await h.db.update(knowledgeObjects).set({ parent_object_id: a }).where(eq(knowledgeObjects.id, b)).run()
+    // Must resolve (not infinite-loop) and, with no reviews, be unmeasured.
+    expect(await h.svc.rollupMastery(a)).toBeNull()
+  })
+
+  it('rollupMastery guards an unresolved object', async () => {
+    await expect(h.svc.rollupMastery('ghost')).rejects.toBeInstanceOf(KnowledgeObjectNotFoundError)
+  })
+
+  it('deriveMastery delegates to the engine on the knowledge surface (null → value)', async () => {
+    const obj = await anObject('leaf')
+    expect(await h.svc.deriveMastery(obj)).toBeNull()
+    await h.svc.recordReview({ objectId: obj, methodId: 'm', quality: 4 })
+    expect(await h.svc.deriveMastery(obj)).toBe(80) // 4/5 → 0.8 → 80
+  })
+})

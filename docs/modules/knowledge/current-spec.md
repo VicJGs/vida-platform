@@ -1,7 +1,7 @@
 # Current Spec — Knowledge (module)
 
 > §XXIX currency. The shipped `createKnowledgeService` contract + persistence model. Updated per slice.
-> Status: **S1 + S2 + S3 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
+> Status: **S1 + S2 + S3 + S4 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
 > `packages/core/src/foundation/review/` (D1). Types: `@vida/types/knowledge.ts` (10 entity interfaces mirror
 > `022_knowledge` + `008_knowledge_review`). Validators: `@vida/core/validators/knowledge.ts`.
 
@@ -87,8 +87,24 @@ errors `UnknownEntityType` (bad target type) / `TagNotFound` (bad scopedTag) / `
 
 Constant: `KNOWLEDGE_OBJECT_ENTITY_TYPE = 'knowledge_object'` (the tag/pages entity_type; consumed S2/S6).
 
-## Verification (S1 + S2 + S3)
-Live-store (Node 24, better-sqlite3), **54 tests** — S1 (22): seed idempotency + re-seed-when-cleared · kind CRUD ·
+## S4 surface — review engine ② (KNO-21..24), engine verbs delegated + `rollupMastery` knowledge-owned
+Engine (`foundation/review`) gains the generic verbs; `KnowledgeService` re-exposes them by bare reference;
+`rollupMastery` is the one knowledge wrapper (walks `knowledge_objects`, composes `measurement.rollup`, imported).
+Mastery is **derive-on-read** (never stored). S4 imports the pure `foundation/measurement` free functions
+(`normalize`/`rollup`) — the FIRST service consumer.
+```
+recordReview({objectId, methodId, quality?}): Promise<ReviewEvent>   // append-only; reviewed_at=now; no mastery write
+getDue(range:{from,to}, {level?}): Promise<ReviewDueItem[]>          // due-queue; never-reviewed ⇒ due now (dueAt null)
+dueIn(objectId, at?=now): Promise<boolean>                           // single-object due check
+deriveMastery(objectId): Promise<number | null>                      // 0–100 (latest-quality qualitative); null=unmeasured
+rollupMastery(objectId): Promise<number | null>                      // measurement.rollup up parent_object_id; visited-set; guards
+```
+`ReviewDueItem = {targetType, targetId, methodId, dueAt: number|null}` (renamed from `DueItem` — sessions owns that
+name; barrel-collision rename). Input schema: `RecordReviewSchema`. Constants: `DAY_MS`, `DEFAULT_INTERVAL_DAYS=1`
+(M1.0 fallback), `QUALITY_SCALE_MAX=5`. No new `@vida/types` (`ReviewEvent` exists). Non-linear curves = build-phase.
+
+## Verification (S1 + S2 + S3 + S4)
+Live-store (Node 24, better-sqlite3), **67 tests** — S1 (22): seed idempotency + re-seed-when-cleared · kind CRUD ·
 object CRUD + faithful echo · `key_concepts` JSON round-trip · referential-integrity + cycle rejects · mastery-
 unsettable · listObjects filtering · soft-delete · sync_queue enqueue. S2 (+19): container CRUD + type-filter +
 soft-delete · reference add/list/remove + object-guard + `ReferenceNotFoundError` · link write→`listLinks` read
@@ -98,9 +114,13 @@ tagMembership→`listMemberships` round-trip + many-to-many + container-guard + 
 register + partition filter (excludes shipped `habit_logger`) + dup-id reject + `config_schema` round-trip · curve
 persist + `params` json round-trip (object, not string) + null params + soft-del filter + `removeCurve` guard ·
 `bindMethod` no-FK (unregistered method allowed) + `listBindings` by target + `unbindMethod` guard · 2-tier
-`resolveDefaultMethod` (no realm synthesis) · sync_queue enqueue — plus service delegation smoke (+2). Full
-`@vida/core` suite green (**1376**), typecheck 0, eslint 0, gitleaks clean.
+`resolveDefaultMethod` (no realm synthesis) · sync_queue enqueue — plus service delegation smoke (+2). **S4 (+13):**
+engine (+7) — recordReview append + sync-enqueue + null-quality · deriveMastery null-vs-0 boundary + latest-non-null
+wins · getDue interval window + level filter + never-reviewed-due-now (no crash) · dueIn · — plus service (+6):
+rollupMastery null-exclusion (0.8→80) + 3-level tree (Unit→Topic→leaves = 90) + all-unmeasured→null + cycle-backstop
+terminates + guard + deriveMastery delegation. Full `@vida/core` suite green (**1389**), typecheck 0, eslint 0,
+gitleaks clean.
 
 ## Not yet built
-S4–S8 per `docs/modules/knowledge/delivery/decomposition.md`. The 10 `@vida/types` interfaces are authored (DB-11
+S5–S8 per `docs/modules/knowledge/delivery/decomposition.md`. The 10 `@vida/types` interfaces are authored (DB-11
 reconcile, S1); their **validators + service methods** land in the owning slice.
