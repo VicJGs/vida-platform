@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-09-27 by /session-end -->
+<!-- Last updated: 2026-09-29 by /session-end -->
 
 ## MOD-knowledge (#50, LIF-128) — 🔨 ① REBUILD, S1–S4/8 shipped (2026-09-27)
 Rebuild of the discarded Antigravity branch. `createKnowledgeService` over DB-4 `022_knowledge` (7 tables) +
@@ -619,3 +619,11 @@ Key decisions (the Points Economy "System" service tier over `foundation/economy
 - **Backfill window is PERMISSIVE (fail-OPEN)** — the opposite of the fail-closed security ports (HB-10 "user owns the policy"); null window = no limit. Guard on the shared write path (can't bypass via logCompletion); future dates rejected.
 - **Habits is an effect PRODUCER (emit-only, R2)** → NO `registerHabitsEffects` (owns no handler). Fan-out fires on EVERY done-leaving mutation (log/detailed/backfill/edit), gated on done-state, rail-idempotent (re-fire safe). Failure-isolated (a handler throw never fails the persisted completion). `contributeToPurposeMetrics` re-throws `MetricContributionError` (the re-drivable path).
 - **`@vida/core` barrel collisions**: renamed habits `DateRange`→`HabitDateRange`; did NOT re-export `EffectsPort` (checkins owns that name). Cross-service DTO/port names collide at the package barrel — namespace them.
+
+## mod-knowledge ① S5 (LIF-128) — 2026-09-29 (`fb2918b`, branch `mod-knowledge-rebuild`)
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-09-29 | knowledge/measurement | How does Knowledge expose mastery to Education (KN-10)? | A service **method** `getMasterySource(subjectRef)`, NOT a scalar `measurement.advertise` | The source-registry resolver is sync/scalar (`()=>number\|null`); mastery is async/per-subject/struct; no consumer exists. KNO-25 reclassified 🧩→🔨. | Yes (advertise a scalar later if a global measure emerges) |
+| 2026-09-29 | knowledge | What is "Subject" for the mastery rollup? | The spine `knowledge_object` (`structure-data.md:28-30`), NOT the `container_type='subject'` container | The mastery spine Subject›Unit›Topic is all knowledge_objects via `parent_object_id`; containers are a separate tag-based org. `rollupMastery` is the correct walk. | N/A (doc fact) |
+| 2026-09-29 | knowledge | KNO-27 `assessmentResults` + KNO-26 `paceVsSyllabus` in M1.0 | Deny-safe `null` (never fabricated) | Education's assessments + syllabus-as-calendar entities are unbuilt (forward-dep); No-Guessing. Visibility = return-type + comment (no logger seam at services/knowledge). | Yes (compute when Education lands) |
+| 2026-09-29 | knowledge | KNO-42 cross-module mismatch flag | `null` discipline now; mismatch-detection latent | Level/ref mismatch is unvalidatable (Subject/Unit/Topic positional, no level attr); signal-vs-signal needs ≥2 present signals. | Yes |
