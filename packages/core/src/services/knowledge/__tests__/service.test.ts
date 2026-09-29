@@ -599,3 +599,53 @@ describe('mod-knowledge S4 — rollupMastery over the object tree', () => {
     expect(await h.svc.deriveMastery(obj)).toBe(80) // 4/5 → 0.8 → 80
   })
 })
+
+// ============================================================================
+// S5 — cross-module measurement source (KNO-25/26/27/42). getMasterySource
+// composes S4's rollupMastery for objectMastery; the other two signals are
+// deny-safe null (Education entities unbuilt). Subject = the spine
+// knowledge_object (structure-data.md:28-30), not the subject container.
+// ============================================================================
+describe('mod-knowledge S5 — getMasterySource (Education measurement source)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  async function anObject(title: string, parentObjectId?: string): Promise<string> {
+    const kindId = await seededTopicKindId(h.svc)
+    return (await h.svc.createObject({ kind_id: kindId, title, parent_object_id: parentObjectId ?? null })).id
+  }
+
+  it('objectMastery = the spine rollup (concrete value); the two Education signals are null (KNO-25/26/27)', async () => {
+    // The S4 3-level tree (Unit → Topic → leaves) → 90, asserted as a CONCRETE number through getMasterySource,
+    // not `x === rollupMastery(x)` (NIT-1). The Subject-level object here is `unit` (top of the spine).
+    const subject = await anObject('Subject')
+    const topicA = await anObject('TopicA', subject)
+    const topicB = await anObject('TopicB', subject)
+    const a1 = await anObject('a1', topicA)
+    const a2 = await anObject('a2', topicA)
+    const b1 = await anObject('b1', topicB)
+    await h.svc.recordReview({ objectId: a1, methodId: 'm', quality: 5 }) // 1.0
+    await h.svc.recordReview({ objectId: a2, methodId: 'm', quality: 3 }) // 0.6
+    await h.svc.recordReview({ objectId: b1, methodId: 'm', quality: 5 }) // 1.0
+
+    const src = await h.svc.getMasterySource(subject)
+    expect(src.objectMastery).toBe(90) // rollup([rollup([1.0,0.6])=0.8, rollup([1.0])=1.0]) = 0.9 → 90
+    expect(src.assessmentResults).toBeNull() // KNO-27 seam — Education assessments unbuilt, never fabricated
+    expect(src.paceVsSyllabus).toBeNull() // KNO-26 seam — Education syllabus-as-calendar unbuilt, never fabricated
+  })
+
+  it('an all-unmeasured subject yields all-null (no signal fabricated, KNO-42 discipline)', async () => {
+    const subject = await anObject('Subject')
+    await anObject('leaf', subject) // no reviews anywhere in the subtree
+    const src = await h.svc.getMasterySource(subject)
+    expect(src.objectMastery).toBeNull()
+    expect(src.assessmentResults).toBeNull()
+    expect(src.paceVsSyllabus).toBeNull()
+  })
+
+  it('an unresolved subjectRef throws KnowledgeObjectNotFoundError, not an all-null struct (BR-S5-5)', async () => {
+    await expect(h.svc.getMasterySource('ghost')).rejects.toBeInstanceOf(KnowledgeObjectNotFoundError)
+  })
+})

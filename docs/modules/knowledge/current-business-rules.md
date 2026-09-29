@@ -1,8 +1,9 @@
 # Current Business Rules — Knowledge (module)
 
 > §XXIX currency. Ground truth for the shipped `createKnowledgeService` backend. Updated per slice.
-> Status: **S1 + S2 + S3 + S4 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review engine ①:
-> methods/curves/bindings). S4–S8 pending (`docs/modules/knowledge/delivery/decomposition.md`). Inherits KN-1…KN-12
+> Status: **S1 + S2 + S3 + S4 + S5 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review engine
+> ①: methods/curves/bindings · review engine ②: due/record/derive/rollup · measurement source + Education seams).
+> S6–S8 pending (`docs/modules/knowledge/delivery/decomposition.md`). Inherits KN-1…KN-12
 > (`docs/features/knowledge/business-rules.md`).
 
 ## S1 — Kinds + Objects + Hierarchy (legs KNO-01…09, 41)
@@ -136,9 +137,38 @@
   a manual override activates where mastery becomes writable (not built here, YAGNI). `[FACT: ADR-011 §3.2:48;
   schema/knowledge.ts:57]`
 
+## S5 — Cross-module measurement source + Education seams (legs KNO-25/26/27/42)
+
+- **BR-KN-S5-1 — `getMasterySource(subjectRef)` is the KN-10 mastery SOURCE Knowledge provides to Education.**
+  Returns `{objectMastery, assessmentResults, paceVsSyllabus}`. `subjectRef` = the Subject-level `knowledge_object`
+  id on the `parent_object_id` spine (`structure-data.md:28-30` — Subject/Unit/Topic/kinds ARE knowledge_objects),
+  **NOT** the `container_type='subject'` container. `objectMastery` = `rollupMastery(subjectRef)` (0–100 | null).
+  Knowledge exposes the source; Education owns the Program-level rollup. `[FACT: services/knowledge/service.ts
+  getMasterySource; business-rules.md KN-10:51-55; structure-data.md:28-30]`
+- **BR-KN-S5-2 — `assessmentResults` (KNO-27) + `paceVsSyllabus` (KNO-26) are deny-safe `null` seams.** Education's
+  assessments + syllabus-as-calendar entities are unbuilt (forward deps) → both signals are `null`, **never
+  fabricated** (No-Guessing; never invent a schedule to measure pace against). Visibility = the return type +
+  a cited code comment — there is **no logger seam** at `services/knowledge` (grep-verified). Computed when
+  Education's entities land. `[FACT: service.ts getMasterySource; intake:216-221; measurement/engine.ts:29-31]`
+- **BR-KN-S5-3 — KNO-42: unavailability is `null`, never guessed; mismatch-detection is provably latent.** A signal
+  not measurable across the boundary is `null` (the flag). The richer reads are unrealizable in M1.0, grounded: (a)
+  *signal-vs-signal* disagreement needs ≥2 present signals (only `objectMastery` exists); (b) *level/ref* mismatch
+  needs a level attribute to validate `subjectRef` against — none exists (Subject/Unit/Topic are **positional**;
+  kinds seed topic/concept/definition). Both fold into the KNO-26/27 forward-dep bucket. `[FACT: structure-data.md:
+  28-30; schema/knowledge.ts:44-50; measurement/engine.ts:29-31]`
+- **BR-KN-S5-4 — an unresolved `subjectRef` is rejected, not fabricated.** The existence guard rides `rollupMastery`
+  → `KnowledgeObjectNotFoundError`; a bad ref must not silently read as an all-null "unmeasured" struct. The guard
+  proves *existence*, not *Subject-level-ness* (the latter is trusted from the caller, BR-KN-S5-3). `[FACT:
+  service.ts:158-159,384 assertObjectExists]`
+- **BR-KN-S5-5 — no scalar `measurement.advertise`; no new dep; no schema.** The measurement source-registry
+  (`advertise`/`query`, `source-registry.ts:11`) is a **sync scalar** seam (`() => number|null`); mastery is
+  **async + per-subject + struct**, so it cannot be carried there, and no consumer exists (gamification is a
+  `query`-only consumer). The KN-10 exposure is the service method, not the scalar registry. `KnowledgeServiceDeps`
+  unchanged; no migration; no `@vida/types` change. `[FACT: source-registry.ts:11; gamification/service.ts:278,456]`
+
 ## Deferred to later slices
-Measurement source → Education (S5, the `getMasterySource` 3-signal seam) · pages-notes/compound/lab/search/ingestion
-(S6) · flashcards (S7) · events + journal fan-out (S8, incl. `review.recorded`/`mastery.changed`). The **SM-2 preset
-seed** (`seedPresetCurves`) + the **realm-driven default-method tier** + **non-linear decay/interval curves** defer
-(S4-adjacent / S7 / build-phase respectively). `KNO-44`/`KNO-46` excluded (Education assessment link / OS-automation
-surface, parked).
+Pages-notes/compound/lab/search/ingestion (S6) · flashcards (S7) · events + journal fan-out (S8, incl.
+`review.recorded`/`mastery.changed`). The **SM-2 preset seed** (`seedPresetCurves`) + the **realm-driven
+default-method tier** + **non-linear decay/interval curves** defer (S4-adjacent / S7 / build-phase respectively).
+The two S5 Education signals (`assessmentResults`/`paceVsSyllabus`) unlock with Education's assessments +
+syllabus-as-calendar entities. `KNO-44`/`KNO-46` excluded (Education assessment link / OS-automation surface, parked).

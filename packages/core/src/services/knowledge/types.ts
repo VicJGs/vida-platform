@@ -91,6 +91,21 @@ export interface ObjectFilter {
   difficulty?: TopicDifficulty
 }
 
+/** S5 (KNO-25) — the KN-10 cross-module mastery SOURCE Knowledge exposes to Education. The three
+ *  compounded signals from `business-rules.md` KN-10:51-55 / `intake:215-221`. Service-layer shape (not
+ *  `@vida/types`). In M1.0 only `objectMastery` is measurable; `assessmentResults` (KNO-27) +
+ *  `paceVsSyllabus` (KNO-26) are deny-safe `null` — Education's assessments + syllabus-as-calendar entities
+ *  are not built (forward deps; No-Guessing — never fabricated). `null` = unmeasured, the KNO-42 flag. */
+export interface MasterySource {
+  /** Signal 1 — Subject-level object mastery, rolled up the `parent_object_id` spine (KNO-24). 0–100 | null. */
+  objectMastery: number | null
+  /** Signal 2 (KNO-27) — assessment/self-test outcomes. `null` until Education's assessments entity exists. */
+  assessmentResults: number | null
+  /** Signal 3 (KNO-26) — acquiring on/ahead of schedule vs the subject's syllabus-as-calendar. `null` until
+   *  Education's syllabus entity exists (never invent a schedule to measure against). */
+  paceVsSyllabus: number | null
+}
+
 // --- typed errors (KNO-41) ---------------------------------------------------
 
 /** KNO-06/05/12 — a knowledge object id did not resolve. */
@@ -235,4 +250,13 @@ export interface KnowledgeService {
   /** KNO-24 — mastery rolled UP the `parent_object_id` spine (kind→Topic→Unit→Subject) via measurement.rollup;
    *  null when the node + subtree are all unmeasured. Guards an unresolved object. */
   rollupMastery(objectId: string): Promise<number | null>
+
+  // ── S5: cross-module measurement source (KNO-25/26/27/42) ───────────────────
+  /** KNO-25 — the KN-10 mastery SOURCE provided to Education (Education owns the Program-level rollup).
+   *  `subjectRef` = the Subject-level `knowledge_object` id on the `parent_object_id` spine
+   *  (`structure-data.md:28-30`) — NOT the `container_type='subject'` container. Subject-level-ness is
+   *  positional (no level attribute; kinds seed topic/concept/definition), so the ref is trusted from the
+   *  caller. Composes `rollupMastery` for `objectMastery`; the other two signals are deny-safe `null` (M1.0
+   *  forward-dep seams). Throws `KnowledgeObjectNotFoundError` on an unresolved ref (via rollupMastery). */
+  getMasterySource(subjectRef: string): Promise<MasterySource>
 }

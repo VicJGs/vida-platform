@@ -1,7 +1,7 @@
 # Current Spec — Knowledge (module)
 
 > §XXIX currency. The shipped `createKnowledgeService` contract + persistence model. Updated per slice.
-> Status: **S1 + S2 + S3 + S4 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
+> Status: **S1 + S2 + S3 + S4 + S5 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
 > `packages/core/src/foundation/review/` (D1). Types: `@vida/types/knowledge.ts` (10 entity interfaces mirror
 > `022_knowledge` + `008_knowledge_review`). Validators: `@vida/core/validators/knowledge.ts`.
 
@@ -103,6 +103,22 @@ rollupMastery(objectId): Promise<number | null>                      // measurem
 name; barrel-collision rename). Input schema: `RecordReviewSchema`. Constants: `DAY_MS`, `DEFAULT_INTERVAL_DAYS=1`
 (M1.0 fallback), `QUALITY_SCALE_MAX=5`. No new `@vida/types` (`ReviewEvent` exists). Non-linear curves = build-phase.
 
+## S5 surface — measurement source + Education seams (KNO-25/26/27/42)
+The KN-10 cross-module contract: Knowledge exposes a mastery SOURCE; Education owns the Program-level rollup + the
+syllabus-as-calendar entity. Composes S4's `rollupMastery` for the one measurable signal; **no new dep, no schema,
+no `@vida/types` change.** The scalar `measurement` source-registry is NOT bound (sync/scalar API can't carry
+async/per-subject/struct mastery, and no consumer exists) — the exposure is the service method.
+```
+getMasterySource(subjectRef): Promise<MasterySource>   // subjectRef = Subject-level knowledge_object id (NOT the
+                                                        // container_type='subject' container); trusted from caller
+                                                        // (Subject/Unit/Topic are positional, no level attribute)
+```
+`MasterySource = {objectMastery, assessmentResults, paceVsSyllabus: number|null}` (service-layer shape).
+`objectMastery` = `rollupMastery(subjectRef)`; `assessmentResults` (KNO-27) + `paceVsSyllabus` (KNO-26) are deny-safe
+`null` (Education entities unbuilt; No-Guessing). Unresolved ref → `KnowledgeObjectNotFoundError` (guard via
+`rollupMastery`). **Intent-coverage:** KNO-25 ships 🔨 BUILT (method composing S4), not 🧩 COMPOSED — the measurement
+registry is not bound; KNO-26/27 stay ⏸ DEFERRED-SEAM; KNO-42 = BUILT (null discipline).
+
 ## Verification (S1 + S2 + S3 + S4)
 Live-store (Node 24, better-sqlite3), **67 tests** — S1 (22): seed idempotency + re-seed-when-cleared · kind CRUD ·
 object CRUD + faithful echo · `key_concepts` JSON round-trip · referential-integrity + cycle rejects · mastery-
@@ -118,9 +134,11 @@ persist + `params` json round-trip (object, not string) + null params + soft-del
 engine (+7) — recordReview append + sync-enqueue + null-quality · deriveMastery null-vs-0 boundary + latest-non-null
 wins · getDue interval window + level filter + never-reviewed-due-now (no crash) · dueIn · — plus service (+6):
 rollupMastery null-exclusion (0.8→80) + 3-level tree (Unit→Topic→leaves = 90) + all-unmeasured→null + cycle-backstop
-terminates + guard + deriveMastery delegation. Full `@vida/core` suite green (**1389**), typecheck 0, eslint 0,
+terminates + guard + deriveMastery delegation. **S5 (+3):** `getMasterySource` — measured 3-level subject tree ⇒
+concrete `objectMastery=90` + both Education signals null (not tautological, NIT-1) · all-unmeasured subject ⇒ all-null
+· unresolved ref ⇒ `KnowledgeObjectNotFoundError`. Full `@vida/core` suite green (**1392**), typecheck 0, eslint 0,
 gitleaks clean.
 
 ## Not yet built
-S5–S8 per `docs/modules/knowledge/delivery/decomposition.md`. The 10 `@vida/types` interfaces are authored (DB-11
+S6–S8 per `docs/modules/knowledge/delivery/decomposition.md`. The 10 `@vida/types` interfaces are authored (DB-11
 reconcile, S1); their **validators + service methods** land in the owning slice.

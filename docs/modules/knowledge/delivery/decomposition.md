@@ -129,9 +129,9 @@ a **blocking Verification Gate** (functional + live-store, Node 24) + an indepen
 | journal registry | `createJournalRegistry`/contribution | S8 | ✅ `services/journals` |
 
 ## Intent-coverage proof (all 56 homed)
-- **🔨 BUILT-in-a-slice:** KNO-01–09,12,14,17,18,19,20,21,22,23,24,29,30,31,32,34,35,36,41,42 + FC-01,05,06,07,09,12 (module/engine code).
-- **🧩 COMPOSED (bound to a shipped substrate, still slice-homed):** KNO-10,11,13,15,16,25,28,33,38,39,40,43,45 + FC-02,03,04,08,10,11.
-- **⏸ DEFERRED-SEAM (deny-safe, forward-dep):** KNO-26,27 (Education), KNO-37 (DB-8 search). Each homed to a slice as an explicit seam, `log()`-visible, never a silent gap.
+- **🔨 BUILT-in-a-slice:** KNO-01–09,12,14,17,18,19,20,21,22,23,24,**25**,29,30,31,32,34,35,36,41,42 + FC-01,05,06,07,09,12 (module/engine code). _(KNO-25 reclassified 🧩→🔨 at S5, 2026-09-29: the measurement source-registry is a **sync/scalar** seam that cannot carry async/per-subject/struct mastery and has no consumer, so KN-10 is exposed as the `getMasterySource` **method** composing S4's `rollupMastery` — not a substrate binding. See PLAN-s5 headline #1.)_
+- **🧩 COMPOSED (bound to a shipped substrate, still slice-homed):** KNO-10,11,13,15,16,28,33,38,39,40,43,45 + FC-02,03,04,08,10,11.
+- **⏸ DEFERRED-SEAM (deny-safe, forward-dep):** KNO-26,27 (Education — assessments + syllabus-as-calendar unbuilt; S5 returns `null`, No-Guessing), KNO-37 (DB-8 search). Each homed to a slice as an explicit seam, never a silent gap. _(NB: knowledge seams are visible via return-type + comment; there is no `log()` seam at `services/knowledge` — corrected 2026-09-29, S5.)_
 - **⛔ EXCLUDED (not in the 56, accounted):** KNO-44 (Education assessment link), KNO-46 (OS automation surface, parked M2+).
 - **Partition check:** 44 KNO (01–43,45) + 12 FC = 56 = decomposition.md:65. 0 unhomed · 0 double-homed · 0 phantom.
 
@@ -139,7 +139,14 @@ a **blocking Verification Gate** (functional + live-store, Node 24) + an indepen
 - **S1 ✅ SHIPPED** (2026-09-25) — types reconcile (10 interfaces) + kinds/objects/hierarchy CRUD + cycle guard.
   Double-gated (SHIP/SHIP) + preflight + Verification Gate (22 live-store tests, @vida/core 1344 green, tsc 0,
   eslint 0) + independent code-review (SHIP, 4 MINOR folded). Currency: `current-{spec,business-rules}.md`.
-- S2–S8: pending.
+- **S2–S4 ✅ SHIPPED** (2026-09-25…27) — containers/refs/link+tag · review engine ① (methods/curves/bindings) ·
+  review engine ② (due/record/derive/rollup). See task file Route History + `current-*`.
+- **S5 ✅ SHIPPED** (2026-09-29) — measurement source + Education seams (KNO-25/26/27/42). `getMasterySource` composes
+  S4's `rollupMastery`; the two Education signals are deny-safe `null` (forward-dep). Double-gated (REVISE→SHIP folding
+  F1 Subject-disambiguation / F2 KNO-42 latency-proof / F3 no-log-claim + preflight PASSED + gate-2 SHIP/2 NITs) +
+  Verification Gate (3 live-store tests, @vida/core **1392** green, tsc 0, eslint 0) + independent code-review (SHIP, 0
+  findings). PLAN: `PLAN-s5.md`.
+- S6–S8: pending.
 
 ## Open decision for the gate
 - **D1 review-engine home** (`foundation/review/` vs `services/knowledge/`) — grounded above; the critic should confirm.

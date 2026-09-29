@@ -62,6 +62,7 @@ import {
   type AddReferenceInput,
   type ContainerFilter,
   type KnowledgeEntityRef,
+  type MasterySource,
 } from './types'
 
 /** KNO-03 — the shipped default kinds (KN-4 realms). `topic` = a spine node → realm null (not a study
@@ -400,6 +401,21 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     return result === null ? null : Math.round(result * 100) // [0,1] → 0–100
   }
 
+  /** KNO-25 — the KN-10 cross-module mastery SOURCE for Education (`business-rules.md` KN-10:51-55). Knowledge
+   *  exposes the 3-signal source; Education owns the Program-level rollup + the syllabus-as-calendar entity.
+   *  `subjectRef` = the Subject-level `knowledge_object` id on the `parent_object_id` spine (`structure-data.md:
+   *  28-30` — all of Subject/Unit/Topic/kinds ARE knowledge_objects), NOT the `container_type='subject'` container.
+   *  Subject-level-ness is positional (no level attribute), so the ref is trusted from the caller; the existence
+   *  guard rides `rollupMastery` (→ KnowledgeObjectNotFoundError, BR-S5-5). */
+  async function getMasterySource(subjectRef: string): Promise<MasterySource> {
+    const objectMastery = await rollupMastery(subjectRef) // signal 1 (KNO-24): rolls the spine up; 0–100 | null
+    // SEAM (KNO-26/27): Education's assessments + syllabus-as-calendar entities are unbuilt → both signals are
+    // null, never fabricated (BR-S5-2/3/4; No-Guessing). `null` = unmeasured = the KNO-42 flag. No logger seam
+    // exists at this service layer → the return type + this comment ARE the visibility (F3). Computed here once
+    // Education's entities land (a mismatch-detection read of KNO-42 also unlocks then).
+    return { objectMastery, assessmentResults: null, paceVsSyllabus: null }
+  }
+
   return {
     seedDefaultKinds,
     createKind,
@@ -438,5 +454,7 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     dueIn: review.dueIn,
     deriveMastery: review.deriveMastery,
     rollupMastery,
+    // S5 — cross-module measurement source (KNO-25/26/27/42)
+    getMasterySource,
   }
 }

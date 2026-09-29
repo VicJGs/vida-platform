@@ -59,12 +59,28 @@ backend over DB-4 group #10 (`022_knowledge`: 7 owned tables) + the DB-3 review 
   (13 new tests incl. 3-level rollup + cycle-backstop) → independent code-review **SHIP** (0 bugs; race ruled out —
   parent_object_id is single-parent) → §XXIX currency. @vida/core **1389 green**, tsc 0, eslint 0, gitleaks clean.
 
+- 2026-09-29: **S5 SHIPPED** — measurement source + Education seams (KNO-25/26/27/42). `getMasterySource(subjectRef)`
+  → `{objectMastery, assessmentResults, paceVsSyllabus}` composing S4's `rollupMastery` for `objectMastery`; the two
+  Education signals (`assessmentResults` KNO-27, `paceVsSyllabus` KNO-26) are **deny-safe `null`** — Education's
+  assessments + syllabus-as-calendar entities are unbuilt (forward-dep; No-Guessing, never fabricated). **Key grounded
+  resolution:** the KN-10 exposure is the service **method**, NOT a scalar `measurement.advertise` — the source-registry
+  resolver is sync/scalar (`() => number|null`) and mastery is async/per-subject/struct, plus no consumer exists (KNO-25
+  reclassified 🧩→🔨). Subject = the spine `knowledge_object` (`structure-data.md:28-30`), NOT the `container_type=
+  'subject'` container; Subject-level-ness is positional (no level attribute) → ref trusted from caller. Full Entity
+  Delivery Flow: PLAN-s5 → gate-1 **REVISE→3 folds** (F1 Subject-disambiguation · F2 KNO-42 latency PROVEN [positional
+  spine → level-mismatch unvalidatable; signal-vs-signal needs ≥2 present signals] · F3 dropped unbacked `log()`-visible
+  claim, grep-verified no logger seam) → Approval 1 → preflight PASSED (barrel-clean, guard transitive) + gate-2 **SHIP
+  →2 NITs** (concrete-value test not tautological · decomposition.md:133 reclassification) → Approval 2 → implement →
+  Verification Gate (3 live-store tests, @vida/core **1392** green, tsc 0, eslint 0) → independent code-review **SHIP**
+  (0 findings). No schema, no new dep, no `@vida/types` change. **[Victor drift-guard: "ground it on the documentation"
+  ×2 — every fold cited a doc line.]** One pre-existing full-suite timing flake (self-resolved on clean re-run; not S5).
+
 ## Slice tracker (decomposition.md — 8 slices)
 - [x] S1 Types reconcile + Kinds + Objects + Hierarchy
 - [x] S2 Containers + References + link/tag cross-cut
 - [x] S3 Review engine ①: methods + curves + bindings
 - [x] S4 Review engine ②: due + record + derive + rollup
-- [ ] S5 Measurement source + Education seams
+- [x] S5 Measurement source + Education seams
 - [ ] S6 Pages-notes + Compound sets + Lab + AI/search/ingestion seams
 - [ ] S7 Flashcards sub-service
 - [ ] S8 Event fan-out + Journal contribution
