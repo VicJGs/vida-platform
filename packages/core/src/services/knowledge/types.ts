@@ -14,6 +14,8 @@ import type {
   ObjectKind,
   KnowledgeContainer,
   Reference,
+  CompoundSet,
+  KnowledgeLabEntry,
   ReviewCurve,
   MethodBinding,
   MethodBindingTargetType,
@@ -35,6 +37,11 @@ import type {
 } from '../../foundation/review'
 import type { BacklinkResolver } from '../search/backlink-resolver'
 import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
+// S6 composed substrates (all shipped): notes (pages/entity-note), ai (extension-model), ingestion (auto-populate).
+import type { NotesService } from '../notes'
+import type { AiService, AiRequest } from '../../foundation/ai'
+import type { IngestionGuard, IngestionAct, IngestionDenyReason, LeakDisclosure } from '../../foundation/ingestion'
+import type { PageRow } from '../../db/schema/notes' // typeof pages.$inferSelect — NOT re-exported from the notes barrel
 import type {
   CreateObjectKindSchema,
   UpdateObjectKindSchema,
@@ -42,6 +49,8 @@ import type {
   UpdateKnowledgeObjectSchema,
   CreateKnowledgeContainerSchema,
   AddReferenceSchema,
+  CreateLabEntrySchema,
+  PromoteToObjectSchema,
 } from '../../validators/knowledge'
 
 /** The `entity_type` knowledge objects register in the shared taggable/pages registries
@@ -59,6 +68,15 @@ export interface KnowledgeServiceDeps {
   /** ADR-005 — the generic review engine (S3 delegates methods/curves/bindings/resolveDefaultMethod here).
    *  Required: the engine is core to Knowledge and S7/flashcards needs the SAME instance (D1). */
   review: ReviewEngine
+  /** S6 KNO-28 — pages/entity-note substrate (`openObjectNote`). REQUIRED: a knowledge note is a core capability
+   *  over the shipped `services/notes`, not a dormant seam (headline #2; the spaces/backlinks/review required-dep
+   *  precedent — mid-build required deps are wired in the test setup, no app consumes the service in M1). */
+  notes: NotesService
+  /** S6 KNO-33 — AI extension-model (`assistCompoundSet`). OPTIONAL/deny-safe: opt-in, M1-dormant (askModel throws
+   *  AiDenied → mapped to `ai-unavailable`); absent ⇒ `ai-unavailable` (the habits/gamification optional-port precedent). */
+  ai?: AiService
+  /** S6 KNO-43 — ingestion guard (`autoPopulate`). OPTIONAL/deny-safe: opt-in device-side; absent ⇒ `ingestion-unavailable`. */
+  ingestion?: IngestionGuard
 }
 
 /** S2 — a polymorphic link/tag target or member (entityType is validated fail-loud by `spaces`). Local by
@@ -76,6 +94,35 @@ export type CreateKnowledgeObjectInput = z.infer<typeof CreateKnowledgeObjectSch
 export type UpdateKnowledgeObjectInput = z.infer<typeof UpdateKnowledgeObjectSchema>
 export type CreateKnowledgeContainerInput = z.infer<typeof CreateKnowledgeContainerSchema>
 export type AddReferenceInput = z.infer<typeof AddReferenceSchema>
+// S6
+export type CreateLabEntryInput = z.infer<typeof CreateLabEntrySchema>
+export type PromoteToObjectInput = z.infer<typeof PromoteToObjectSchema>
+
+// --- S6 service-layer types (NOT @vida/types — the MasterySource precedent) --
+
+/** S6 (KNO-31) — the structured compound-set spec (rules/methods/params). Opaque by design: `@vida/types`
+ *  `CompoundSet.spec` is a `string` at rest (the [E] JSON blob); the builder accepts this structured shape and
+ *  serializes it at the write boundary. Internals are the user's open rules, not modeled here (headline #5). */
+export type CompoundSetSpec = Record<string, unknown>
+
+/** S6 (KNO-33) — the deny-safe AI-assist outcome. `ai-unavailable` is the M1 default (no `ai` dep) OR a caught
+ *  `AiDenied` (askModel throws on every deny path). `suggestion` = `AiResponse.content`. */
+export type AiAssistResult =
+  | { status: 'ready'; suggestion: string }
+  | { status: 'ai-unavailable'; reason?: string }
+
+/** S6 (KNO-37) — the DB-8 search seam. FTS5 `fts_knowledge` is unbuilt → a loud typed unavailable state (the
+ *  platform-wide `'search-unavailable'` convention, apps/web command-bar), never a silent empty list. Extends when
+ *  DB-8 lands (a `results` variant). */
+export type KnowledgeSearchResult = { status: 'search-unavailable' }
+
+/** S6 (KNO-43) — the deny-safe auto-population outcome, mapped from the ingestion guard's `IngestionDecision`.
+ *  `parser-unavailable` = a PERMITTED act with no source parser built (the real M1 seam); `refused` = the guard
+ *  denied (refuse-not-downgrade); `ingestion-unavailable` = no `ingestion` dep wired. */
+export type AutoPopulateResult =
+  | { status: 'refused'; reason: IngestionDenyReason; disclosure?: LeakDisclosure }
+  | { status: 'parser-unavailable' }
+  | { status: 'ingestion-unavailable' }
 
 /** listContainers filter (KNO-14) — the query half; the view-regroup RENDER is P6. */
 export interface ContainerFilter {
@@ -153,6 +200,30 @@ export class ReferenceNotFoundError extends Error {
   constructor(public readonly id: string) {
     super(`Reference not found: ${id}`)
     this.name = 'ReferenceNotFoundError'
+  }
+}
+
+/** KNO-35/36/41 — a `knowledge_lab_entries` row id did not resolve. */
+export class LabEntryNotFoundError extends Error {
+  constructor(public readonly id: string) {
+    super(`Knowledge lab entry not found: ${id}`)
+    this.name = 'LabEntryNotFoundError'
+  }
+}
+
+/** KNO-36/41 (BR-S6-9) — promote requires a concluded entry; `conclusion` is still null. */
+export class LabEntryNotConcludedError extends Error {
+  constructor(public readonly id: string) {
+    super(`Knowledge lab entry not concluded: ${id}`)
+    this.name = 'LabEntryNotConcludedError'
+  }
+}
+
+/** KNO-36/41 (BR-S6-9) — promote is one-shot; the entry already carries a `promoted_object_id`. */
+export class LabEntryAlreadyPromotedError extends Error {
+  constructor(public readonly id: string) {
+    super(`Knowledge lab entry already promoted: ${id}`)
+    this.name = 'LabEntryAlreadyPromotedError'
   }
 }
 
@@ -259,4 +330,48 @@ export interface KnowledgeService {
    *  caller. Composes `rollupMastery` for `objectMastery`; the other two signals are deny-safe `null` (M1.0
    *  forward-dep seams). Throws `KnowledgeObjectNotFoundError` on an unresolved ref (via rollupMastery). */
   getMasterySource(subjectRef: string): Promise<MasterySource>
+
+  // ── S6: Pages-notes (KNO-28) ──────────────────────────────────────
+  /** KNO-28 — create/return the object's knowledge note: a `pages` row keyed on `entity_type='knowledge_object'`
+   *  (the KN-5 distinguisher; PageType `'note'`), via `notes.ensureEntityNote` (idempotent). NEVER a `knowledge_notes`
+   *  insert (retired, KN-5). Guards the object → `KnowledgeObjectNotFoundError`. */
+  openObjectNote(objectId: string): Promise<PageRow>
+
+  // ── S6: Compound sets (KNO-31/32) ─────────────────────────────────
+  /** KNO-31 — build a per-consumer compound set (`is_default:false`); `spec` serialized to the opaque [E] JSON column
+   *  at the write boundary (@vida/types keeps it `string` at rest). `consumer_module` OPEN. */
+  buildCompoundSet(consumerModule: string, spec?: CompoundSetSpec | null, name?: string | null): Promise<CompoundSet>
+  /** KNO-32 — anti-lost + idempotent (KN-11): return the consumer's existing default set, else create a default
+   *  (`is_default:true`) so no user is forced to personalize. */
+  applyDefaultCompoundSet(consumerModule: string): Promise<CompoundSet>
+  /** KNO-31 companion — the consumer's live sets (soft-delete filtered). */
+  listCompoundSets(consumerModule: string): Promise<CompoundSet[]>
+
+  // ── S6: AI-assist (KNO-33) — extension-model, deny-safe ───────────
+  /** KNO-33 — opt-in, consent-gated AI-assist for the compound-set build. Composes the optional `ai` dep against the
+   *  `askModel` contract (throws `AiDenied` → mapped). Absent `ai` ⇒ `ai-unavailable`. The caller supplies the
+   *  `AiRequest` (mode + consent proof); Knowledge never auto-applies a suggestion and never holds a model key. */
+  assistCompoundSet(consumerModule: string, req: AiRequest): Promise<AiAssistResult>
+
+  // ── S6: Knowledge Lab (KNO-34/35/36) ──────────────────────────────
+  /** KNO-34 — start a lab entry (hypothesis + own-module `data_refs`). `data_refs` serialized at the boundary. */
+  createLabEntry(input: CreateLabEntryInput): Promise<KnowledgeLabEntry>
+  /** KNO-35 — set the conclusion on an entry (guards exists → `LabEntryNotFoundError`). */
+  concludeLabEntry(id: string, conclusion: string): Promise<KnowledgeLabEntry>
+  /** KNO-36 — promote a **concluded** (`LabEntryNotConcludedError` else), **un-promoted**
+   *  (`LabEntryAlreadyPromotedError` else) entry into a catalog object (title=hypothesis, description=conclusion);
+   *  stamps `promoted_object_id`. The `lab.concluded` EVENT fan-out is S8. */
+  promoteToObject(entryId: string, input: PromoteToObjectInput): Promise<KnowledgeObject>
+  /** KNO-34 companion — live lab entries (soft-delete filtered; `data_refs` parsed). */
+  listLabEntries(): Promise<KnowledgeLabEntry[]>
+
+  // ── S6: Search seam (KNO-37) — DB-8 deferred ──────────────────────
+  /** KNO-37 — FTS5 `fts_knowledge` is unbuilt (DB-8) → `{status:'search-unavailable'}` (loud, typed, never silent). */
+  searchKnowledge(query: string): Promise<KnowledgeSearchResult>
+
+  // ── S6: Auto-population seam (KNO-43) — ingestion, deny-safe ───────
+  /** KNO-43 — opt-in device-side auto-population. Maps the optional `ingestion` guard's decision: permitted ⇒
+   *  `parser-unavailable` (source parsers deferred), denied ⇒ `refused` (refuse-not-downgrade), absent ⇒
+   *  `ingestion-unavailable`. */
+  autoPopulate(act: IngestionAct): Promise<AutoPopulateResult>
 }

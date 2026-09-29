@@ -75,13 +75,32 @@ backend over DB-4 group #10 (`022_knowledge`: 7 owned tables) + the DB-3 review 
   (0 findings). No schema, no new dep, no `@vida/types` change. **[Victor drift-guard: "ground it on the documentation"
   ×2 — every fold cited a doc line.]** One pre-existing full-suite timing flake (self-resolved on clean re-run; not S5).
 
+- 2026-09-29: **S6 SHIPPED** — pages-notes + compound sets + lab + AI/search/ingestion seams (KNO-28,31,32,33,34,35,36,
+  37,43). 10 methods, 4 validators, 3 lab errors, 4 service-layer result types, 3 deps (`notes` required; `ai?`/
+  `ingestion?` optional deny-safe). **No schema, no new dep, no `@vida/types` change** (both owned tables `compound_sets`/
+  `knowledge_lab_entries` ship in `022_knowledge`; interfaces authored at S1). `openObjectNote`→`ensureEntityNote('note',
+  'knowledge_object')` (idempotent, never `knowledge_notes`, KN-5); `buildCompoundSet`/anti-lost idempotent
+  `applyDefaultCompoundSet` (`spec` opaque JSON boundary — @vida/types keeps it `string`, not re-parsed); `createLabEntry`→
+  `concludeLabEntry`→`promoteToObject` (concluded+un-promoted guards; `lab.concluded` event = S8); deny-safe seams
+  `assistCompoundSet` (ai `AiDenied`→ai-unavailable), `searchKnowledge` (DB-8 search-unavailable), `autoPopulate`
+  (ingestion permitted→parser-unavailable / denied→refused). Full Entity Delivery Flow: **gate-1 REVISE→3 blockers folded**
+  (B1 the real catch — `autoPopulate` mis-composed a phantom `checkIngestion` shape + a mediator-deny that never fires;
+  re-grounded: `checkIngestion` returns `IngestionDecision{permitted}`, never touches the mediator, permitted-act→
+  parser-unavailable is the real M1 seam · B2 `askModel` throws AiDenied · B3 `PageRow` from `db/schema/notes`) → Approval 1
+  → **preflight PASSED** → **gate-2 REVISE→1** (the permitted-act happy path is grant-gated → mapping tests use stub
+  `IngestionGuard`s, parity with the ai throwing-stub) → Approval 2 → implement → **Verification Gate** (one live-gate
+  catch: `ensureEntityNote` folds `seed.title` into page CONTENT not the title column → §XXVIII test+BR correction, code
+  was right) → **@vida/core 1413 green (+21)**, tsc 0, eslint 0, gitleaks clean → independent code-review **SHIP** (0
+  blocking, 1 NIT: promote non-atomicity = accepted no-FK eventual-consistency convention, one-line note added) → §XXIX
+  currency. **[Victor: "ground everything in the documentation" — every fold cited a doc/code line.]** PLAN: `PLAN-s6.md`.
+
 ## Slice tracker (decomposition.md — 8 slices)
 - [x] S1 Types reconcile + Kinds + Objects + Hierarchy
 - [x] S2 Containers + References + link/tag cross-cut
 - [x] S3 Review engine ①: methods + curves + bindings
 - [x] S4 Review engine ②: due + record + derive + rollup
 - [x] S5 Measurement source + Education seams
-- [ ] S6 Pages-notes + Compound sets + Lab + AI/search/ingestion seams
+- [x] S6 Pages-notes + Compound sets + Lab + AI/search/ingestion seams
 - [ ] S7 Flashcards sub-service
 - [ ] S8 Event fan-out + Journal contribution
 

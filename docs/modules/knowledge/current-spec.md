@@ -1,7 +1,7 @@
 # Current Spec — Knowledge (module)
 
 > §XXIX currency. The shipped `createKnowledgeService` contract + persistence model. Updated per slice.
-> Status: **S1 + S2 + S3 + S4 + S5 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
+> Status: **S1 + S2 + S3 + S4 + S5 + S6 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
 > `packages/core/src/foundation/review/` (D1). Types: `@vida/types/knowledge.ts` (10 entity interfaces mirror
 > `022_knowledge` + `008_knowledge_review`). Validators: `@vida/core/validators/knowledge.ts`.
 
@@ -119,7 +119,32 @@ getMasterySource(subjectRef): Promise<MasterySource>   // subjectRef = Subject-l
 `rollupMastery`). **Intent-coverage:** KNO-25 ships 🔨 BUILT (method composing S4), not 🧩 COMPOSED — the measurement
 registry is not bound; KNO-26/27 stay ⏸ DEFERRED-SEAM; KNO-42 = BUILT (null discipline).
 
-## Verification (S1 + S2 + S3 + S4)
+## S6 surface — pages-notes + compound sets + lab + AI/search/ingestion seams (KNO-28,31,32,33,34,35,36,37,43)
+`KnowledgeServiceDeps` adds `notes: NotesService` (REQUIRED — `openObjectNote`) + `ai?: AiService` / `ingestion?:
+IngestionGuard` (OPTIONAL deny-safe). **No schema, no new dep, no `@vida/types` change** — `compound_sets` +
+`knowledge_lab_entries` already ship in `022_knowledge`; `CompoundSet`/`KnowledgeLabEntry` interfaces authored at S1.
+```
+openObjectNote(objectId): Promise<PageRow>                          // ensureEntityNote('note','knowledge_object',id,{title}); idempotent; guards object; seed.title→content (not title col)
+buildCompoundSet(consumerModule, spec?, name?): Promise<CompoundSet> // is_default:false; spec JSON-serialized (opaque, not re-parsed on read)
+applyDefaultCompoundSet(consumerModule): Promise<CompoundSet>       // anti-lost idempotent default (is_default:true)
+listCompoundSets(consumerModule): Promise<CompoundSet[]>            // consumer-scoped; soft-del filtered
+assistCompoundSet(consumerModule, req): Promise<AiAssistResult>     // optional ai; deny-safe (AiDenied→ai-unavailable); caller supplies AiRequest
+createLabEntry({hypothesis, data_refs?}): Promise<KnowledgeLabEntry> // data_refs json boundary
+concludeLabEntry(id, conclusion): Promise<KnowledgeLabEntry>        // guards exists
+promoteToObject(entryId, {kind_id, parent_object_id?}): Promise<KnowledgeObject> // concluded+un-promoted; create-then-stamp promoted_object_id; lab.concluded event=S8
+listLabEntries(): Promise<KnowledgeLabEntry[]>                      // soft-del filtered; data_refs parsed
+searchKnowledge(query): Promise<KnowledgeSearchResult>             // {status:'search-unavailable'} (DB-8 seam)
+autoPopulate(act): Promise<AutoPopulateResult>                     // optional ingestion; permitted→parser-unavailable, !permitted→refused, absent→ingestion-unavailable
+```
+Service-layer result types (not `@vida/types` — the `MasterySource` precedent): `CompoundSetSpec` (opaque structured),
+`AiAssistResult` (`ready`/`ai-unavailable`), `KnowledgeSearchResult` (`search-unavailable`), `AutoPopulateResult`
+(`refused`/`parser-unavailable`/`ingestion-unavailable`). New errors: `LabEntryNotFoundError`,
+`LabEntryNotConcludedError`, `LabEntryAlreadyPromotedError`. New validators: `BuildCompoundSetSchema`,
+`CreateLabEntrySchema`, `ConcludeLabEntrySchema`, `PromoteToObjectSchema`. `spec` = opaque JSON string at rest
+(@vida/types `CompoundSet.spec: string`, not re-parsed); `data_refs` = `json<string[]>` (parsed on read, key_concepts
+precedent). Idempotency: `openObjectNote` (via `ensureEntityNote`), `applyDefaultCompoundSet` (read-DB-first).
+
+## Verification (S1 + S2 + S3 + S4 + S5 + S6)
 Live-store (Node 24, better-sqlite3), **67 tests** — S1 (22): seed idempotency + re-seed-when-cleared · kind CRUD ·
 object CRUD + faithful echo · `key_concepts` JSON round-trip · referential-integrity + cycle rejects · mastery-
 unsettable · listObjects filtering · soft-delete · sync_queue enqueue. S2 (+19): container CRUD + type-filter +
@@ -136,9 +161,16 @@ wins · getDue interval window + level filter + never-reviewed-due-now (no crash
 rollupMastery null-exclusion (0.8→80) + 3-level tree (Unit→Topic→leaves = 90) + all-unmeasured→null + cycle-backstop
 terminates + guard + deriveMastery delegation. **S5 (+3):** `getMasterySource` — measured 3-level subject tree ⇒
 concrete `objectMastery=90` + both Education signals null (not tautological, NIT-1) · all-unmeasured subject ⇒ all-null
-· unresolved ref ⇒ `KnowledgeObjectNotFoundError`. Full `@vida/core` suite green (**1392**), typecheck 0, eslint 0,
-gitleaks clean.
+· unresolved ref ⇒ `KnowledgeObjectNotFoundError`. **S6 (+21):** openObjectNote — pages row keyed on
+knowledge_object (type=note) + title-in-content + idempotent + object-guard · buildCompoundSet spec JSON round-trip +
+null-spec + is_default:false · applyDefaultCompoundSet anti-lost idempotent (one default, same set) · listCompoundSets
+consumer-scoped · assistCompoundSet no-ai/AiDenied→ai-unavailable + success→ready(content) · lab create (data_refs
+round-trip) + conclude + guard · promoteToObject (title/desc/stamp) + not-concluded + already-promoted guards ·
+listLabEntries · searchKnowledge→search-unavailable · autoPopulate no-dep/permitted→parser-unavailable/denied→refused
+(reason+disclosure passthrough) · sync_queue enqueue (compound set + lab entry). Full `@vida/core` suite green
+(**1413**), typecheck 0, eslint 0, gitleaks clean (Node 24, better-sqlite3 ABI).
 
 ## Not yet built
-S6–S8 per `docs/modules/knowledge/delivery/decomposition.md`. The 10 `@vida/types` interfaces are authored (DB-11
-reconcile, S1); their **validators + service methods** land in the owning slice.
+S7 (flashcards) + S8 (event fan-out + journal contribution) per `docs/modules/knowledge/delivery/decomposition.md`.
+The remaining `@vida/types` interfaces (`Flashcard`) are authored (DB-11 reconcile, S1); their **validators + service
+methods** land in the owning slice.

@@ -1,10 +1,10 @@
 # Current Business Rules — Knowledge (module)
 
 > §XXIX currency. Ground truth for the shipped `createKnowledgeService` backend. Updated per slice.
-> Status: **S1 + S2 + S3 + S4 + S5 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review engine
-> ①: methods/curves/bindings · review engine ②: due/record/derive/rollup · measurement source + Education seams).
-> S6–S8 pending (`docs/modules/knowledge/delivery/decomposition.md`). Inherits KN-1…KN-12
-> (`docs/features/knowledge/business-rules.md`).
+> Status: **S1 + S2 + S3 + S4 + S5 + S6 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review
+> engine ①: methods/curves/bindings · review engine ②: due/record/derive/rollup · measurement source + Education seams ·
+> pages-notes/compound sets/lab/AI/search/ingestion seams). S7–S8 pending
+> (`docs/modules/knowledge/delivery/decomposition.md`). Inherits KN-1…KN-12 (`docs/features/knowledge/business-rules.md`).
 
 ## S1 — Kinds + Objects + Hierarchy (legs KNO-01…09, 41)
 
@@ -166,9 +166,52 @@
   `query`-only consumer). The KN-10 exposure is the service method, not the scalar registry. `KnowledgeServiceDeps`
   unchanged; no migration; no `@vida/types` change. `[FACT: source-registry.ts:11; gamification/service.ts:278,456]`
 
+## S6 — Pages-notes + Compound sets + Lab + AI/search/ingestion seams (legs KNO-28,31,32,33,34,35,36,37,43)
+
+- **BR-KN-S6-1 — Knowledge note = a `pages` row keyed on `entity_type`, never `knowledge_notes` (KN-5).**
+  `openObjectNote(objectId)` guards the object (`KnowledgeObjectNotFoundError`) then delegates to
+  `notes.ensureEntityNote('note', 'knowledge_object', objectId, {title})` — **idempotent** (returns the existing note
+  or creates one). The notes service folds `seed.title` into the page **content** (an H1 via `seedContent`), NOT the
+  `title` column — the note's editable title/render is P6. `[FACT: service.ts openObjectNote; notes/service.ts:41-45,
+  159-176; _registry.ts:80 (knowledge_object pre-registered); KN-5]`
+- **BR-KN-S6-2 — Compound sets: per-consumer builder + shipped default (KN-11 anti-lost).** `buildCompoundSet(
+  consumerModule, spec?, name?)` creates a set (`is_default:false`); `applyDefaultCompoundSet(consumerModule)` is
+  **idempotent** — returns the consumer's existing default, else creates one (`is_default:true`) so no user is forced
+  to personalize. `consumer_module` is OPEN (no CHECK). `listCompoundSets` is consumer-scoped + soft-delete filtered.
+  `[FACT: service.ts buildCompoundSet/applyDefaultCompoundSet/listCompoundSets; KN-11; schema/knowledge.ts:108-121]`
+- **BR-KN-S6-3 — `spec` is an opaque JSON blob serialized at the boundary.** The builder accepts a structured
+  `CompoundSetSpec` and `JSON.stringify`s it into the `[E]` `text()` column; `@vida/types CompoundSet.spec` is a
+  `string` at rest, so `toCompoundSet` does NOT re-parse it (a consumer parses if it needs the structure). The default
+  set's `spec` contents are a design-pass (`null`, not an invented rule-set — No-Guessing). `[FACT: service.ts
+  buildCompoundSet/toCompoundSet; @vida/types/knowledge.ts:167]`
+- **BR-KN-S6-4 — Knowledge Lab: hypothesis → conclusion → promoted object.** `createLabEntry({hypothesis, data_refs?})`
+  (`data_refs` = json<string[]>, serialized/parsed at the boundary — the key_concepts precedent); `concludeLabEntry(id,
+  conclusion)` guards exists (`LabEntryNotFoundError`); `promoteToObject(entryId, {kind_id, parent_object_id?})`
+  requires a **concluded** (`LabEntryNotConcludedError` else) **un-promoted** (`LabEntryAlreadyPromotedError` else)
+  entry → creates a catalog object (title=hypothesis, description=conclusion) then stamps `promoted_object_id`
+  (create-then-stamp; eventually consistent per the no-FK app-layer convention). The `lab.concluded` **event is S8**.
+  `[FACT: service.ts createLabEntry/concludeLabEntry/promoteToObject/listLabEntries; contract.md:47-49; decomposition.md:88 vs :32,108]`
+- **BR-KN-S6-5 — AI-assist is an opt-in, deny-safe extension-model seam (KNO-33).** `assistCompoundSet(consumerModule,
+  req)` composes the OPTIONAL `ai` dep: absent ⇒ `{status:'ai-unavailable'}`; `ai.askModel(req)` **throws `AiDenied`**
+  on every deny path (M1 ports absent) → caught → `{status:'ai-unavailable', reason}`; success →
+  `{status:'ready', suggestion: content}`. The caller supplies the `AiRequest` (mode + consent); Knowledge never
+  auto-applies nor holds a model key. `[FACT: service.ts assistCompoundSet; ai/service.ts:32,72,88; ai/types.ts:72-74]`
+- **BR-KN-S6-6 — Search is a loud DB-8 seam (KNO-37).** `searchKnowledge(query)` returns `{status:'search-unavailable'}`
+  (the platform-wide convention); FTS5 `fts_knowledge` is unbuilt. Never throws, never a silent empty list.
+  `[FACT: service.ts searchKnowledge; structure-data.md:46; apps/web command-bar convention]`
+- **BR-KN-S6-7 — Auto-population is an opt-in, device-side, deny-safe ingestion seam (KNO-43).** `autoPopulate(act)`
+  maps the OPTIONAL `ingestion` guard's `IngestionDecision`: absent ⇒ `ingestion-unavailable`; `!permitted` ⇒
+  `refused` (reason + disclosure passed through, refuse-not-downgrade); `permitted` ⇒ `parser-unavailable` (source
+  parsers deferred — the real M1 seam). `checkIngestion` never touches the mediator. `[FACT: service.ts autoPopulate;
+  ingestion/guard.ts:48-81; decomposition.md:90]`
+- **BR-KN-S6-8 — Typed errors + M1.0 seams inherited.** New errors `LabEntryNotFoundError`/`LabEntryNotConcludedError`/
+  `LabEntryAlreadyPromotedError`; `encryptedFields:[]` M1.0 pass-through ([E] `spec`/`hypothesis`/`conclusion` → M3);
+  soft-delete + explicit `isNull(deleted_at)` on every S6 `findWhere` read. `[FACT: service.ts; types.ts]`
+
 ## Deferred to later slices
-Pages-notes/compound/lab/search/ingestion (S6) · flashcards (S7) · events + journal fan-out (S8, incl.
-`review.recorded`/`mastery.changed`). The **SM-2 preset seed** (`seedPresetCurves`) + the **realm-driven
-default-method tier** + **non-linear decay/interval curves** defer (S4-adjacent / S7 / build-phase respectively).
-The two S5 Education signals (`assessmentResults`/`paceVsSyllabus`) unlock with Education's assessments +
-syllabus-as-calendar entities. `KNO-44`/`KNO-46` excluded (Education assessment link / OS-automation surface, parked).
+Flashcards (S7) · events + journal fan-out (S8, incl. `object.created`/`review.recorded`/`mastery.changed`/
+`lab.concluded`). The **SM-2 preset seed** (`seedPresetCurves`) + the **realm-driven default-method tier** +
+**non-linear decay/interval curves** defer (S4-adjacent / S7 / build-phase respectively). The two S5 Education signals
+(`assessmentResults`/`paceVsSyllabus`) unlock with Education's assessments + syllabus-as-calendar entities. The S6 AI
+suggestion runtime (real spec generation) = M2/LIF-145; the ingestion source parsers = deferred. `KNO-44`/`KNO-46`
+excluded (Education assessment link / OS-automation surface, parked).

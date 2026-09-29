@@ -24,6 +24,9 @@ import { TagNotFound, UnknownEntityType } from '../../../foundation/spaces/types
 import { createCapabilityRegistry } from '../../../foundation/capability'
 import { createReviewEngine } from '../../../foundation/review'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
+import { createNotesService } from '../../notes'
+import { AiDenied, type AiService, type AiRequest } from '../../../foundation/ai'
+import type { IngestionGuard, IngestionAct, LeakDisclosure } from '../../../foundation/ingestion'
 import {
   createKnowledgeService,
   ObjectKindNotFoundError,
@@ -32,7 +35,11 @@ import {
   KnowledgeObjectNotFoundError,
   KnowledgeContainerNotFoundError,
   ReferenceNotFoundError,
+  LabEntryNotFoundError,
+  LabEntryNotConcludedError,
+  LabEntryAlreadyPromotedError,
   type KnowledgeService,
+  type KnowledgeServiceDeps,
 } from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -73,6 +80,8 @@ interface Harness {
   db: DrizzleDb
   bsql: Database.Database
   spaces: SpacesService
+  /** Base deps (notes wired; NO ai/ingestion) — S6 deny-safe/mapping tests rebuild the service with stubs. */
+  deps: KnowledgeServiceDeps
 }
 
 async function setup(): Promise<Harness> {
@@ -89,8 +98,11 @@ async function setup(): Promise<Harness> {
   // S3 deps: the review engine composes the ONE capability registry (kind='study_method' partition).
   const capability = createCapabilityRegistry(db, 'test-device')
   const review = createReviewEngine(db, 'test-device', { capability })
-  const svc = createKnowledgeService({ db, deviceId: 'test-device', spaces, backlinks, review })
-  return { svc, db, bsql, spaces }
+  // S6 dep: the REAL notes service (its own deps mirror the knowledge harness — same registry/spaces/backlinks).
+  const notes = createNotesService({ db, deviceId: 'test-device', spaces, backlinks, registry })
+  const deps: KnowledgeServiceDeps = { db, deviceId: 'test-device', spaces, backlinks, review, notes }
+  const svc = createKnowledgeService(deps)
+  return { svc, db, bsql, spaces, deps }
 }
 
 /** Helper: seed + return a usable kind id (the `topic` default). */
@@ -647,5 +659,201 @@ describe('mod-knowledge S5 — getMasterySource (Education measurement source)',
 
   it('an unresolved subjectRef throws KnowledgeObjectNotFoundError, not an all-null struct (BR-S5-5)', async () => {
     await expect(h.svc.getMasterySource('ghost')).rejects.toBeInstanceOf(KnowledgeObjectNotFoundError)
+  })
+})
+
+// ============================================================================
+// S6 — Pages-notes + Compound sets + Lab + AI/search/ingestion seams
+// (KNO-28,31,32,33,34,35,36,37,43). Notes uses the REAL service; the ai/ingestion deny-safe + mapping
+// tests inject stubs (S6 owns the mapping; the guard/model internals are #44/#45's tested territory).
+// ============================================================================
+describe('mod-knowledge S6 — pages-notes + compound sets + lab + seams', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  async function anObject(title = 'Photosynthesis'): Promise<string> {
+    const kindId = await seededTopicKindId(h.svc)
+    return (await h.svc.createObject({ kind_id: kindId, title })).id
+  }
+
+  // --- KNO-28 openObjectNote -------------------------------------------------
+  it('openObjectNote creates a pages row keyed on knowledge_object (type=note), seeded with the object title in content', async () => {
+    const objId = await anObject('Krebs cycle')
+    const page = await h.svc.openObjectNote(objId)
+    expect(page.type).toBe('note')
+    expect(page.entity_type).toBe('knowledge_object')
+    expect(page.entity_id).toBe(objId)
+    // The notes service folds seed.title into the page CONTENT (an H1), not the title column (the editable
+    // title/render is P6, KN-5). Grounded in seedContent (services/notes/service.ts:41-45).
+    expect(page.content).toContain('Krebs cycle')
+  })
+
+  it('openObjectNote is idempotent — a second call returns the same page (never a knowledge_notes insert, KN-5)', async () => {
+    const objId = await anObject()
+    const first = await h.svc.openObjectNote(objId)
+    const second = await h.svc.openObjectNote(objId)
+    expect(second.id).toBe(first.id)
+  })
+
+  it('openObjectNote guards a bogus object → KnowledgeObjectNotFoundError', async () => {
+    await expect(h.svc.openObjectNote('ghost')).rejects.toBeInstanceOf(KnowledgeObjectNotFoundError)
+  })
+
+  // --- KNO-31/32 compound sets ----------------------------------------------
+  it('buildCompoundSet persists + round-trips the structured spec (JSON boundary; not is_default)', async () => {
+    const spec = { rules: ['spaced-rep'], methods: ['flashcards'], params: { dailyCap: 20 } }
+    const cs = await h.svc.buildCompoundSet('education', spec, 'My set')
+    expect(cs.consumer_module).toBe('education')
+    expect(cs.name).toBe('My set')
+    expect(cs.is_default).toBe(false)
+    expect(JSON.parse(cs.spec!)).toEqual(spec) // opaque JSON string at rest, parses back to the structure
+  })
+
+  it('buildCompoundSet accepts a null spec (opaque column nullable)', async () => {
+    const cs = await h.svc.buildCompoundSet('skills')
+    expect(cs.spec).toBeNull()
+  })
+
+  it('applyDefaultCompoundSet is anti-lost + idempotent — creates one default, second call returns the SAME set', async () => {
+    const first = await h.svc.applyDefaultCompoundSet('education')
+    expect(first.is_default).toBe(true)
+    const second = await h.svc.applyDefaultCompoundSet('education')
+    expect(second.id).toBe(first.id) // no duplicate (KN-11 anti-lost)
+    const all = await h.svc.listCompoundSets('education')
+    expect(all.filter((s) => s.is_default).length).toBe(1)
+  })
+
+  it('listCompoundSets is consumer-scoped', async () => {
+    await h.svc.buildCompoundSet('education', { a: 1 })
+    await h.svc.buildCompoundSet('finance', { b: 2 })
+    expect(await h.svc.listCompoundSets('education')).toHaveLength(1)
+    expect(await h.svc.listCompoundSets('finance')).toHaveLength(1)
+  })
+
+  // --- KNO-33 assistCompoundSet (extension-model, deny-safe) -----------------
+  const anAiRequest: AiRequest = { defId: 'compound-assist', mode: 'on_device' }
+
+  it('assistCompoundSet with NO ai dep → ai-unavailable (M1 default)', async () => {
+    const res = await h.svc.assistCompoundSet('education', anAiRequest)
+    expect(res.status).toBe('ai-unavailable')
+  })
+
+  it('assistCompoundSet maps a thrown AiDenied → ai-unavailable with the reason (deny-safe, surfaced not swallowed)', async () => {
+    // Test stub: assistCompoundSet only calls askModel; the real service denies in M1 (ports absent).
+    const throwingAi = {
+      async askModel(): Promise<never> {
+        throw new AiDenied('compound-assist', 'model_unavailable')
+      },
+    } as unknown as AiService
+    const svc = createKnowledgeService({ ...h.deps, ai: throwingAi })
+    const res = await svc.assistCompoundSet('education', anAiRequest)
+    expect(res.status).toBe('ai-unavailable')
+    expect(res.status === 'ai-unavailable' && res.reason).toContain('model_unavailable')
+  })
+
+  it('assistCompoundSet maps a successful askModel → ready with the suggestion (= AiResponse.content)', async () => {
+    const okAi = { async askModel() { return { content: 'try interleaving' } } } as unknown as AiService
+    const svc = createKnowledgeService({ ...h.deps, ai: okAi })
+    const res = await svc.assistCompoundSet('education', anAiRequest)
+    expect(res).toEqual({ status: 'ready', suggestion: 'try interleaving' })
+  })
+
+  // --- KNO-34/35/36 Knowledge Lab -------------------------------------------
+  it('createLabEntry persists hypothesis + data_refs (JSON round-trip); conclusion/promoted null at birth', async () => {
+    const entry = await h.svc.createLabEntry({ hypothesis: 'Sleep improves recall', data_refs: ['r1', 'r2'] })
+    expect(entry.hypothesis).toBe('Sleep improves recall')
+    expect(entry.data_refs).toEqual(['r1', 'r2']) // json<string[]> parsed on read
+    expect(entry.conclusion).toBeNull()
+    expect(entry.promoted_object_id).toBeNull()
+  })
+
+  it('concludeLabEntry sets the conclusion; a bogus id → LabEntryNotFoundError', async () => {
+    const entry = await h.svc.createLabEntry({ hypothesis: 'H' })
+    const concluded = await h.svc.concludeLabEntry(entry.id, 'Confirmed')
+    expect(concluded.conclusion).toBe('Confirmed')
+    await expect(h.svc.concludeLabEntry('ghost', 'x')).rejects.toBeInstanceOf(LabEntryNotFoundError)
+  })
+
+  it('promoteToObject on a concluded entry creates an object (title=hypothesis, desc=conclusion) + stamps promoted_object_id', async () => {
+    const kindId = await seededTopicKindId(h.svc)
+    const entry = await h.svc.createLabEntry({ hypothesis: 'Caffeine and focus' })
+    await h.svc.concludeLabEntry(entry.id, 'Positive at low doses')
+    const object = await h.svc.promoteToObject(entry.id, { kind_id: kindId })
+    expect(object.title).toBe('Caffeine and focus')
+    expect(object.description).toBe('Positive at low doses')
+    const [reloaded] = (await h.svc.listLabEntries()).filter((e) => e.id === entry.id)
+    expect(reloaded!.promoted_object_id).toBe(object.id)
+  })
+
+  it('promoteToObject rejects an un-concluded entry → LabEntryNotConcludedError', async () => {
+    const kindId = await seededTopicKindId(h.svc)
+    const entry = await h.svc.createLabEntry({ hypothesis: 'Unfinished' })
+    await expect(h.svc.promoteToObject(entry.id, { kind_id: kindId })).rejects.toBeInstanceOf(
+      LabEntryNotConcludedError,
+    )
+  })
+
+  it('promoteToObject rejects a re-promote → LabEntryAlreadyPromotedError', async () => {
+    const kindId = await seededTopicKindId(h.svc)
+    const entry = await h.svc.createLabEntry({ hypothesis: 'Once' })
+    await h.svc.concludeLabEntry(entry.id, 'Done')
+    await h.svc.promoteToObject(entry.id, { kind_id: kindId })
+    await expect(h.svc.promoteToObject(entry.id, { kind_id: kindId })).rejects.toBeInstanceOf(
+      LabEntryAlreadyPromotedError,
+    )
+  })
+
+  it('listLabEntries returns live entries (soft-delete filtered by construction)', async () => {
+    await h.svc.createLabEntry({ hypothesis: 'A' })
+    await h.svc.createLabEntry({ hypothesis: 'B' })
+    expect(await h.svc.listLabEntries()).toHaveLength(2)
+  })
+
+  // --- KNO-37 search seam ----------------------------------------------------
+  it('searchKnowledge returns the loud search-unavailable state (DB-8 seam), never throws or empties silently', async () => {
+    expect(await h.svc.searchKnowledge('mitochondria')).toEqual({ status: 'search-unavailable' })
+  })
+
+  // --- KNO-43 autoPopulate seam (mapping via stub guards) --------------------
+  const anAct = {} as IngestionAct // the stub checkIngestion ignores the act (S6 tests the MAPPING)
+
+  it('autoPopulate with NO ingestion dep → ingestion-unavailable', async () => {
+    const res = await h.svc.autoPopulate(anAct)
+    expect(res).toEqual({ status: 'ingestion-unavailable' })
+  })
+
+  it('autoPopulate maps a PERMITTED decision → parser-unavailable (real M1 seam — no parsers built)', async () => {
+    const permitting = { async checkIngestion() { return { permitted: true } } } as unknown as IngestionGuard
+    const svc = createKnowledgeService({ ...h.deps, ingestion: permitting })
+    expect(await svc.autoPopulate(anAct)).toEqual({ status: 'parser-unavailable' })
+  })
+
+  it('autoPopulate maps a DENIED decision → refused, passing the reason + disclosure through (refuse-not-downgrade)', async () => {
+    const disclosure = {
+      layer: 'native',
+      whoSees: 'device only',
+      whatLeaks: 'nothing',
+      serverPosture: 'blind',
+    } as LeakDisclosure
+    const denying = {
+      async checkIngestion() {
+        return { permitted: false, reason: 'server_proxy_refused', disclosure }
+      },
+    } as unknown as IngestionGuard
+    const svc = createKnowledgeService({ ...h.deps, ingestion: denying })
+    const res = await svc.autoPopulate(anAct)
+    expect(res).toEqual({ status: 'refused', reason: 'server_proxy_refused', disclosure })
+  })
+
+  // --- co-transactional sync_queue enqueue ----------------------------------
+  it('buildCompoundSet + createLabEntry co-transactionally enqueue sync_queue rows (ADR-004 §3.4)', async () => {
+    const cs = await h.svc.buildCompoundSet('education', { a: 1 })
+    const entry = await h.svc.createLabEntry({ hypothesis: 'H' })
+    const csq = await h.db.select().from(syncQueue).where(eq(syncQueue.row_id, cs.id)).all()
+    const eq_ = await h.db.select().from(syncQueue).where(eq(syncQueue.row_id, entry.id)).all()
+    expect(csq.length).toBeGreaterThanOrEqual(1)
+    expect(eq_.length).toBeGreaterThanOrEqual(1)
   })
 })

@@ -118,3 +118,35 @@ export const RecordReviewSchema = z.object({
   methodId: z.string().min(1),
   quality: z.number().int().min(0).max(5).nullable().optional(),
 })
+
+// ---------------------------------------------------------------------------
+// mod-knowledge S6 — Compound sets + Lab (input validators)
+// ---------------------------------------------------------------------------
+
+/** buildCompoundSet (KNO-31, BR-S6-3). `consumer_module` OPEN (no CHECK — [[open-vocab-columns-take-no-sql-check]]);
+ *  `spec` = the structured rules/methods/params blob, serialized to the [E] opaque-JSON TEXT column at the service
+ *  boundary (@vida/types keeps it `string` at rest); `name` [E]/optional. */
+export const BuildCompoundSetSchema = z.object({
+  consumer_module: z.string().min(1),
+  spec: z.record(z.string(), z.unknown()).nullable().optional(),
+  name: z.string().nullable().optional(),
+})
+
+/** createLabEntry (KNO-34, BR-S6-7). `hypothesis` [E]/required; `data_refs` = own-module ref ids (json<string[]>
+ *  boundary, the key_concepts precedent). snake_case mirrors the columns (CreateKnowledgeObjectSchema convention). */
+export const CreateLabEntrySchema = z.object({
+  hypothesis: z.string().min(1),
+  data_refs: z.array(z.string()).nullable().optional(),
+})
+
+/** concludeLabEntry (KNO-35, BR-S6-8). `conclusion` [E]/required (a conclusion is the point of concluding). */
+export const ConcludeLabEntrySchema = z.object({
+  conclusion: z.string().min(1),
+})
+
+/** promoteToObject (KNO-36, BR-S6-9). The promoted catalog object needs a `kind_id` (every object has one, KNO-04);
+ *  optional `parent_object_id` (createObject validates both refs). */
+export const PromoteToObjectSchema = z.object({
+  kind_id: z.string().min(1),
+  parent_object_id: z.string().nullable().optional(),
+})

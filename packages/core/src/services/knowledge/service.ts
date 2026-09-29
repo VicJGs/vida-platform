@@ -18,17 +18,28 @@
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
-import type { KnowledgeObject, ObjectKind, KnowledgeContainer, Reference } from '@vida/types'
+import type {
+  KnowledgeObject,
+  ObjectKind,
+  KnowledgeContainer,
+  Reference,
+  CompoundSet,
+  KnowledgeLabEntry,
+} from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
   knowledgeObjects,
   objectKinds,
   knowledgeContainers,
   references,
+  compoundSets,
+  knowledgeLabEntries,
   type KnowledgeObjectRow,
   type ObjectKindRow,
   type KnowledgeContainerRow,
   type ReferenceRow,
+  type CompoundSetRow,
+  type KnowledgeLabEntryRow,
 } from '../../db/schema/knowledge'
 import {
   tags,
@@ -36,6 +47,9 @@ import {
   type EntityTagRow,
   type EntityLinkRow,
 } from '../../db/schema/foundation/spaces'
+import type { PageRow } from '../../db/schema/notes'
+import type { AiRequest } from '../../foundation/ai'
+import type { IngestionAct } from '../../foundation/ingestion'
 import { TagNotFound } from '../../foundation/spaces'
 import { rollup } from '../../foundation/measurement'
 import {
@@ -44,14 +58,22 @@ import {
   UpdateKnowledgeObjectSchema,
   CreateKnowledgeContainerSchema,
   AddReferenceSchema,
+  BuildCompoundSetSchema,
+  CreateLabEntrySchema,
+  ConcludeLabEntrySchema,
+  PromoteToObjectSchema,
 } from '../../validators/knowledge'
 import {
+  KNOWLEDGE_OBJECT_ENTITY_TYPE,
   KnowledgeObjectNotFoundError,
   ObjectKindNotFoundError,
   InvalidParentRefError,
   HierarchyCycleError,
   KnowledgeContainerNotFoundError,
   ReferenceNotFoundError,
+  LabEntryNotFoundError,
+  LabEntryNotConcludedError,
+  LabEntryAlreadyPromotedError,
   type KnowledgeService,
   type KnowledgeServiceDeps,
   type CreateObjectKindInput,
@@ -63,6 +85,12 @@ import {
   type ContainerFilter,
   type KnowledgeEntityRef,
   type MasterySource,
+  type CompoundSetSpec,
+  type CreateLabEntryInput,
+  type PromoteToObjectInput,
+  type AiAssistResult,
+  type KnowledgeSearchResult,
+  type AutoPopulateResult,
 } from './types'
 
 /** KNO-03 — the shipped default kinds (KN-4 realms). `topic` = a spine node → realm null (not a study
@@ -106,15 +134,31 @@ const toReference = (r: ReferenceRow): Reference => ({
   ...r,
   _sync_status: r._sync_status as Reference['_sync_status'],
 })
+// S6 — `spec` stays the OPAQUE JSON string (@vida/types `CompoundSet.spec: string` at rest — never parsed here;
+// the write boundary serialized it, a consumer parses if it needs the structure, headline #5). Only _sync_status casts.
+const toCompoundSet = (r: CompoundSetRow): CompoundSet => ({
+  ...r,
+  _sync_status: r._sync_status as CompoundSet['_sync_status'],
+})
+// S6 — `data_refs` is json<string[]>() ($type lie): parse on read (the key_concepts precedent), unlike `spec` which
+// @vida/types keeps a string. `hypothesis`/`conclusion` are [E] plaintext pass-through in M1.0.
+const toLabEntry = (r: KnowledgeLabEntryRow): KnowledgeLabEntry => ({
+  ...r,
+  data_refs: parseJsonArray<string>(r.data_refs as unknown as string | null),
+  _sync_status: r._sync_status as KnowledgeLabEntry['_sync_status'],
+})
 
 export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeService {
-  const { db, deviceId, spaces, backlinks, review } = deps
+  const { db, deviceId, spaces, backlinks, review, notes, ai, ingestion } = deps
 
   const kindsRepo = createRepository(db, objectKinds, { deviceId, softDelete: true, encryptedFields: [] })
   const objectsRepo = createRepository(db, knowledgeObjects, { deviceId, softDelete: true, encryptedFields: [] })
   // S2 WRITE repos (own tables).
   const containersRepo = createRepository(db, knowledgeContainers, { deviceId, softDelete: true, encryptedFields: [] })
   const referencesRepo = createRepository(db, references, { deviceId, softDelete: true, encryptedFields: [] })
+  // S6 WRITE repos (own tables). encryptedFields:[] M1.0 pass-through ([E] spec/hypothesis/conclusion → M3/DB-5).
+  const compoundSetsRepo = createRepository(db, compoundSets, { deviceId, softDelete: true, encryptedFields: [] })
+  const labEntriesRepo = createRepository(db, knowledgeLabEntries, { deviceId, softDelete: true, encryptedFields: [] })
   // S2 READ-ONLY repos (junction/tag reads; link/tag WRITES delegate to `spaces`, BR-S2-6). findWhere/findById only.
   const entityTagRepo = createRepository(db, entityTags, { deviceId, softDelete: true, encryptedFields: [] })
   const tagsRepo = createRepository(db, tags, { deviceId, softDelete: true, encryptedFields: [] })
@@ -416,6 +460,157 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     return { objectMastery, assessmentResults: null, paceVsSyllabus: null }
   }
 
+  // --- S6: pages-notes (KNO-28) ---------------------------------------------
+  /** KNO-28 (BR-S6-1/2) — the object's knowledge note is a `pages` row keyed on the knowledge `entity_type` (KN-5),
+   *  NEVER a `knowledge_notes` insert (retired). `ensureEntityNote` is idempotent (returns existing or creates);
+   *  PageType `'note'` + `entity_type='knowledge_object'` is the KN-5 distinguisher (conventions.md:14-15). Seed
+   *  title defaults to the object title. */
+  async function openObjectNote(objectId: string): Promise<PageRow> {
+    const obj = await objectsRepo.findById(objectId)
+    if (obj == null) throw new KnowledgeObjectNotFoundError(objectId)
+    return notes.ensureEntityNote('note', KNOWLEDGE_OBJECT_ENTITY_TYPE, objectId, { title: obj.title })
+  }
+
+  // --- S6: compound sets (KNO-31/32) ----------------------------------------
+  /** KNO-31 (BR-S6-3) — build a per-consumer compound set. `spec` = a structured blob serialized to the opaque [E]
+   *  JSON TEXT column at the write boundary (@vida/types keeps it `string` at rest; plain text() column → the assigned
+   *  string needs no cast, unlike json<T>() `data_refs`). `consumer_module` OPEN (no CHECK). */
+  async function buildCompoundSet(
+    consumerModule: string,
+    spec?: CompoundSetSpec | null,
+    name?: string | null,
+  ): Promise<CompoundSet> {
+    const v = BuildCompoundSetSchema.parse({ consumer_module: consumerModule, spec, name })
+    const row = await compoundSetsRepo.create({
+      consumer_module: v.consumer_module,
+      name: v.name ?? null,
+      spec: v.spec != null ? JSON.stringify(v.spec) : null, // opaque JSON blob at the boundary (headline #5)
+      is_default: false, // notNull default false — backfill (create echoes input)
+      deleted_at: null,
+    } satisfies CreateInput<typeof compoundSets>)
+    return toCompoundSet(row)
+  }
+
+  /** KNO-32 (BR-S6-4) — anti-lost + idempotent (KN-11): return the consumer's existing default set, else create one
+   *  so no user is forced to personalize. The default's `spec` contents are a design-pass (No-Guessing: null, not
+   *  an invented rule-set) — the point is the row EXISTS. */
+  async function applyDefaultCompoundSet(consumerModule: string): Promise<CompoundSet> {
+    const existing = await compoundSetsRepo.findWhere(
+      and(
+        eq(compoundSets.consumer_module, consumerModule),
+        eq(compoundSets.is_default, true),
+        isNull(compoundSets.deleted_at),
+      )!,
+    )
+    if (existing.length > 0) return toCompoundSet(existing[0]!)
+    const row = await compoundSetsRepo.create({
+      consumer_module: consumerModule,
+      name: null,
+      spec: null, // shipped-default placeholder; personalizable later (design-pass, No-Guessing)
+      is_default: true,
+      deleted_at: null,
+    } satisfies CreateInput<typeof compoundSets>)
+    return toCompoundSet(row)
+  }
+
+  /** KNO-31 companion (BR-S6-5) — the consumer's live sets (findWhere skips the soft-delete filter → add it). */
+  async function listCompoundSets(consumerModule: string): Promise<CompoundSet[]> {
+    const rows = await compoundSetsRepo.findWhere(
+      and(eq(compoundSets.consumer_module, consumerModule), isNull(compoundSets.deleted_at))!,
+    )
+    return rows.map(toCompoundSet)
+  }
+
+  // --- S6: AI-assist (KNO-33) — extension-model, deny-safe -------------------
+  /** KNO-33 (BR-S6-6) — opt-in, consent-gated AI-assist. `askModel` THROWS `AiDenied` on every deny path (the real
+   *  service denies in M1: both ports absent) → mapped to `ai-unavailable`; absent `ai` dep ⇒ `ai-unavailable`. The
+   *  caller supplies the `AiRequest` (mode + consent proof); Knowledge never auto-applies nor holds a model key.
+   *  `consumerModule` is the M2 suggestion scope (unused in M1 — no suggestion is generated; deny-safe). */
+  async function assistCompoundSet(_consumerModule: string, req: AiRequest): Promise<AiAssistResult> {
+    if (ai == null) return { status: 'ai-unavailable' }
+    try {
+      const res = await ai.askModel(req)
+      return { status: 'ready', suggestion: res.content }
+    } catch (err) {
+      return { status: 'ai-unavailable', reason: err instanceof Error ? err.message : String(err) }
+    }
+  }
+
+  // --- S6: Knowledge Lab (KNO-34/35/36) -------------------------------------
+  /** KNO-34 (BR-S6-7) — start a lab entry. `data_refs` = json<string[]>() → stringify at the boundary (the
+   *  key_concepts precedent; one cast). `conclusion`/`promoted_object_id` null at birth. */
+  async function createLabEntry(input: CreateLabEntryInput): Promise<KnowledgeLabEntry> {
+    const v = CreateLabEntrySchema.parse(input)
+    const row = await labEntriesRepo.create({
+      hypothesis: v.hypothesis,
+      data_refs: (v.data_refs != null ? JSON.stringify(v.data_refs) : null) as unknown as string[] | null,
+      conclusion: null, // birth: not concluded
+      promoted_object_id: null, // birth: not promoted
+      deleted_at: null,
+    } satisfies CreateInput<typeof knowledgeLabEntries>)
+    return toLabEntry(row)
+  }
+
+  /** KNO-35 (BR-S6-8) — set the conclusion (re-conclude allowed — no immutability rule). Re-read for a faithful full
+   *  row (update echoes only the patch). */
+  async function concludeLabEntry(id: string, conclusion: string): Promise<KnowledgeLabEntry> {
+    const v = ConcludeLabEntrySchema.parse({ conclusion })
+    if ((await labEntriesRepo.findById(id)) == null) throw new LabEntryNotFoundError(id)
+    await labEntriesRepo.update(id, { conclusion: v.conclusion } as UpdateInput<typeof knowledgeLabEntries>)
+    const updated = await labEntriesRepo.findById(id)
+    return toLabEntry(updated as KnowledgeLabEntryRow)
+  }
+
+  /** KNO-36 (BR-S6-9) — promote a concluded, un-promoted entry into a catalog object (title=hypothesis,
+   *  description=conclusion), then stamp `promoted_object_id`. `createObject` validates kind + parent (KNO-04/08). The
+   *  `lab.concluded` EVENT fan-out is S8 (decomposition.md:32,108) — NOT emitted here. */
+  async function promoteToObject(entryId: string, input: PromoteToObjectInput): Promise<KnowledgeObject> {
+    const v = PromoteToObjectSchema.parse(input)
+    const entry = await labEntriesRepo.findById(entryId)
+    if (entry == null) throw new LabEntryNotFoundError(entryId)
+    if (entry.conclusion == null) throw new LabEntryNotConcludedError(entryId)
+    if (entry.promoted_object_id != null) throw new LabEntryAlreadyPromotedError(entryId)
+    const object = await createObject({
+      kind_id: v.kind_id,
+      parent_object_id: v.parent_object_id ?? null,
+      title: entry.hypothesis,
+      description: entry.conclusion,
+    })
+    // Create-then-stamp (a failed create leaves nothing to orphan). The stamp is a separate write — eventually
+    // consistent per the platform no-FK app-layer convention (not wrapped in a tx here); a future S8 that emits
+    // `lab.concluded` post-commit could co-transact if strict atomicity is ever required.
+    await labEntriesRepo.update(entryId, {
+      promoted_object_id: object.id,
+    } as UpdateInput<typeof knowledgeLabEntries>)
+    return object
+  }
+
+  /** KNO-34 companion (BR-S6-10) — live lab entries (findWhere skips the soft-delete filter → add it). */
+  async function listLabEntries(): Promise<KnowledgeLabEntry[]> {
+    const rows = await labEntriesRepo.findWhere(isNull(knowledgeLabEntries.deleted_at))
+    return rows.map(toLabEntry)
+  }
+
+  // --- S6: search seam (KNO-37) — DB-8 deferred -----------------------------
+  /** KNO-37 (BR-S6-11) — FTS5 `fts_knowledge` is unbuilt (DB-8) → a loud typed unavailable state, never a silent
+   *  empty list (the platform-wide `'search-unavailable'` convention). `query` unused until DB-8 lands. */
+  async function searchKnowledge(_query: string): Promise<KnowledgeSearchResult> {
+    return { status: 'search-unavailable' }
+  }
+
+  // --- S6: auto-population seam (KNO-43) — ingestion, deny-safe --------------
+  /** KNO-43 (BR-S6-12) — opt-in device-side auto-population. Map the optional ingestion guard's `IngestionDecision`:
+   *  absent ⇒ `ingestion-unavailable`; `!permitted` ⇒ `refused` (refuse-not-downgrade); `permitted` ⇒
+   *  `parser-unavailable` (source parsers are deferred, decomposition.md:90 — the real M1 seam). `checkIngestion`
+   *  never touches the mediator (guard.ts:48-81). */
+  async function autoPopulate(act: IngestionAct): Promise<AutoPopulateResult> {
+    if (ingestion == null) return { status: 'ingestion-unavailable' }
+    const d = await ingestion.checkIngestion(act)
+    // `reason` is always set on a deny path (guard.ts:52/60/66/77) — a deny without a reason is unreachable.
+    if (!d.permitted) return { status: 'refused', reason: d.reason!, disclosure: d.disclosure }
+    return { status: 'parser-unavailable' }
+  }
+
   return {
     seedDefaultKinds,
     createKind,
@@ -456,5 +651,17 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     rollupMastery,
     // S5 — cross-module measurement source (KNO-25/26/27/42)
     getMasterySource,
+    // S6 — pages-notes + compound sets + lab + ai/search/ingestion seams (KNO-28,31,32,33,34,35,36,37,43)
+    openObjectNote,
+    buildCompoundSet,
+    applyDefaultCompoundSet,
+    listCompoundSets,
+    assistCompoundSet,
+    createLabEntry,
+    concludeLabEntry,
+    promoteToObject,
+    listLabEntries,
+    searchKnowledge,
+    autoPopulate,
   }
 }
