@@ -17,7 +17,7 @@
 // commented — NOT scattered `as any`. Knowledge is the first service to consume json<T>() columns.
 // ============================================================================
 
-import { and, eq, isNull, type SQL } from 'drizzle-orm'
+import { and, eq, gte, isNull, lt, type SQL } from 'drizzle-orm'
 import type {
   KnowledgeObject,
   ObjectKind,
@@ -25,6 +25,8 @@ import type {
   Reference,
   CompoundSet,
   KnowledgeLabEntry,
+  EffectType,
+  ReviewEvent,
 } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
@@ -47,7 +49,9 @@ import {
   type EntityTagRow,
   type EntityLinkRow,
 } from '../../db/schema/foundation/spaces'
+import { reviewEvents } from '../../db/schema/foundation/knowledge-review'
 import type { PageRow } from '../../db/schema/notes'
+import type { RecordReviewInput } from '../../foundation/review'
 import type { AiRequest } from '../../foundation/ai'
 import type { IngestionAct } from '../../foundation/ingestion'
 import { TagNotFound } from '../../foundation/spaces'
@@ -91,6 +95,7 @@ import {
   type AiAssistResult,
   type KnowledgeSearchResult,
   type AutoPopulateResult,
+  type KnowledgeDayDigest,
 } from './types'
 
 /** KNO-03 — the shipped default kinds (KN-4 realms). `topic` = a spine node → realm null (not a study
@@ -100,6 +105,22 @@ const SEED_KINDS: readonly CreateObjectKindInput[] = [
   { name: 'concept', learning_realm: 'understand', is_default: true },
   { name: 'definition', learning_realm: 'memorize', is_default: true },
 ]
+
+// --- S8 domain-event fan-out (KNO-38/39/40) ---------------------------------
+// Milliseconds per day. Module-LOCAL const (the review engine's DAY_MS is module-private with no shared export;
+// each consumer owns its own — habits/service.ts:78 + review/engine.ts:54 both do). Used by getDayKnowledgeDigest.
+const DAY_MS = 86_400_000
+
+// Domain event names → EffectEvent.transition (NOT effectType — H1/BR-KN-S8-4). effectType is a catalogue member.
+const EVT_REVIEW_RECORDED = 'review.recorded'
+const EVT_MASTERY_CHANGED = 'mastery.changed'
+
+// The catalogue effectType SETS each domain event fans out to (H3). review.recorded → measurement (mastery
+// re-derive, KNO-39) + gamification (award_xp, KNO-39); mastery.changed → Education measurement source (KNO-40).
+// object.created/lab.concluded push NOTHING — the Journal is pull-aggregated (ADR-004 §3.2.5:84), served by the
+// registerKnowledgeJournal digest, and no consumer names a keyed/additive effect for them (No-Guessing, H3).
+const REVIEW_RECORDED_EFFECTS: readonly EffectType[] = ['emit_measurement_signal', 'award_xp']
+const MASTERY_CHANGED_EFFECTS: readonly EffectType[] = ['emit_measurement_signal']
 
 /** Defensive JSON read (the habits/checkins boundary): degrade malformed JSON to null, never throw an
  *  opaque SyntaxError out of a read (a future sync row / manual DB edit could carry bad JSON). */
@@ -149,7 +170,7 @@ const toLabEntry = (r: KnowledgeLabEntryRow): KnowledgeLabEntry => ({
 })
 
 export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeService {
-  const { db, deviceId, spaces, backlinks, review, notes, ai, ingestion } = deps
+  const { db, deviceId, spaces, backlinks, review, notes, ai, ingestion, effects } = deps
 
   const kindsRepo = createRepository(db, objectKinds, { deviceId, softDelete: true, encryptedFields: [] })
   const objectsRepo = createRepository(db, knowledgeObjects, { deviceId, softDelete: true, encryptedFields: [] })
@@ -162,6 +183,32 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
   // S2 READ-ONLY repos (junction/tag reads; link/tag WRITES delegate to `spaces`, BR-S2-6). findWhere/findById only.
   const entityTagRepo = createRepository(db, entityTags, { deviceId, softDelete: true, encryptedFields: [] })
   const tagsRepo = createRepository(db, tags, { deviceId, softDelete: true, encryptedFields: [] })
+  // S8 READ-ONLY repo for the Journal digest count (reviews recorded that day). review_events is append-only
+  // (no softDelete — the engine's eventsRepo setup, engine.ts:98); the engine owns the WRITE path (recordReview).
+  const reviewEventsRepo = createRepository(db, reviewEvents, { deviceId, encryptedFields: [] })
+
+  // --- S8 domain-event fan-out (KNO-38/39/40) -------------------------------
+  // Emit-only PUSH onto the effect rail: post-commit, failure-isolated, rail-idempotent, dormant without a
+  // registered handler (BR-KN-S8-1/2/3; the habits/service.ts:143-158 precedent). subjectNaturalKey = the
+  // occurrence's UUIDv7 id (a review_event.id — the exactly-once grain per ADR-004 §3.2.5:100 + effects BR-2;
+  // NOT a bare transition, which would dedup distinct reviews). targetRef = the affected object.
+  const fanOut = async (
+    subjectNaturalKey: string,
+    transition: string,
+    targetRef: string,
+    effectTypes: readonly EffectType[],
+  ): Promise<void> => {
+    if (!effects) return // M1 default: no rail wired → whole fan-out dormant (BR-KN-S8-7)
+    for (const effectType of effectTypes) {
+      // Dormant guard (BR-KN-S8-2): a non-projection effect with no handler would throw NoEffectHandler.
+      if (!effects.registry.resolve(effectType)) continue
+      try {
+        await effects.rail.applyEffect({ subjectNaturalKey, transition, effectType, targetRef })
+      } catch {
+        // Post-commit, failure-isolated (BR-KN-S8-1): the persisted mutation stands; a handler throw is non-fatal.
+      }
+    }
+  }
 
   // --- kind registry (KNO-01/02/03) -----------------------------------------
 
@@ -611,6 +658,40 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     return { status: 'parser-unavailable' }
   }
 
+  // --- S8: review.recorded / mastery.changed fan-out (KNO-39/40) -------------
+  /** KNO-39/40 (BR-KN-S8-3/4) — wrap the engine's `recordReview` so a review recorded THROUGH the knowledge
+   *  service fans out post-commit. `review.recorded` fires unconditionally (a review WAS recorded); `mastery.changed`
+   *  fires ONLY when `quality != null` (H4b: it is the re-derive OUTPUT, `contract.md:70`, and per BR-KN-S4-3 the
+   *  derive-on-read mastery moves only on a non-null quality — a null-quality review would send Education a false
+   *  "changed"). Grain = the returned `ev.id` (exactly-once per review); targetRef = the reviewed object.
+   *  Flashcards' direct `review.recordReview` deliberately does NOT route here (fires nothing in M1, BR-KN-S7-5). */
+  async function recordReview(input: RecordReviewInput): Promise<ReviewEvent> {
+    const ev = await review.recordReview(input)
+    await fanOut(ev.id, EVT_REVIEW_RECORDED, ev.object_id, REVIEW_RECORDED_EFFECTS)
+    if (ev.quality != null) await fanOut(ev.id, EVT_MASTERY_CHANGED, ev.object_id, MASTERY_CHANGED_EFFECTS)
+    return ev
+  }
+
+  // --- S8: dated Journal digest (KNO-38/39) ---------------------------------
+  /** KNO-38/39 (BR-KN-S8-6) — the day's objects-created + reviews-recorded counts, over the UTC-day window of the
+   *  `YYYY-MM-DD` date (`Date.parse(`${date}T00:00:00Z`)` — the habits:79/checkins:104 date→ms convention;
+   *  per-user-tz day boundaries are a documented refinement). Feeds the `registerKnowledgeJournal` summary. This is
+   *  the PULL path by which `object.created`/`review.recorded` reach the daily dashboard (ADR-004 §3.2.5:84). */
+  async function getDayKnowledgeDigest(date: string): Promise<KnowledgeDayDigest> {
+    const from = Date.parse(`${date}T00:00:00Z`)
+    const to = from + DAY_MS
+    // count() (not findWhere) — it skips decryptAll on rows we only tally AND auto-applies the soft-delete
+    // filter (count/findAll/findById do; findWhere does not). objectsRepo is softDelete:true → deleted objects
+    // are excluded automatically; reviewEventsRepo is append-only (no deleted_at) → notDeleted() is a no-op.
+    const objectsCreated = await objectsRepo.count(
+      and(gte(knowledgeObjects.created_at, from), lt(knowledgeObjects.created_at, to)) as SQL,
+    )
+    const reviewsRecorded = await reviewEventsRepo.count(
+      and(gte(reviewEvents.reviewed_at, from), lt(reviewEvents.reviewed_at, to)) as SQL,
+    )
+    return { objectsCreated, reviewsRecorded }
+  }
+
   return {
     seedDefaultKinds,
     createKind,
@@ -644,7 +725,8 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     unbindMethod: review.unbindMethod,
     resolveDefaultMethod,
     // S4 — review engine ② (engine verbs by bare reference; rollupMastery is the knowledge-specific wrapper)
-    recordReview: review.recordReview,
+    // NB: recordReview is the S8 WRAPPER (fan-out), not the bare engine reference — see the S8 block below.
+    recordReview,
     getDue: review.getDue,
     dueIn: review.dueIn,
     deriveMastery: review.deriveMastery,
@@ -663,5 +745,7 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     listLabEntries,
     searchKnowledge,
     autoPopulate,
+    // S8 — Journal digest (KNO-38/39); the event fan-out rides recordReview above (KNO-39/40)
+    getDayKnowledgeDigest,
   }
 }

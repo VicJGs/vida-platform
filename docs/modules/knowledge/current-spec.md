@@ -1,7 +1,7 @@
 # Current Spec — Knowledge (module)
 
 > §XXIX currency. The shipped `createKnowledgeService` contract + persistence model. Updated per slice.
-> Status: **S1–S7 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
+> Status: **S1–S8 shipped — ① COMPLETE**. Home: `packages/core/src/services/knowledge/` + the review engine at
 > `packages/core/src/foundation/review/` (D1) + the flashcards sub-service at `packages/core/src/services/flashcards/`
 > (S7, `createFlashcardsService`). Types: `@vida/types/knowledge.ts` (10 entity interfaces mirror
 > `022_knowledge` + `008_knowledge_review`). Validators: `@vida/core/validators/knowledge.ts`.
@@ -201,6 +201,35 @@ CardNotBound excluded, suspended excluded) · tagCard guard (TagNotFound) + tag/
 generateCards + dangling source · sync_queue enqueue. Full `@vida/core` suite green (**1424**), typecheck 0, eslint 0,
 gitleaks clean.
 
-## Not yet built
-S8 (event fan-out + journal contribution) per `docs/modules/knowledge/delivery/decomposition.md` (the LAST slice:
-`object.created`/`review.recorded`/`mastery.changed`/`lab.concluded` domain events + `registerKnowledgeJournal`).
+## S8 surface — event fan-out + Journal contribution (KNO-38/39/40)
+Knowledge becomes an **emit-only producer** via two mechanisms, **both dormant in M1** (no consumer handler
+registered). `KnowledgeServiceDeps` adds an OPTIONAL `effects?: { rail, registry }` (the checkins/habits port; SHAPE
+inlined — `checkins` already exports `EffectsPort` and this barrel is `export *`, so a second named export collides).
+**No schema, no new required dep, no `@vida/types` change.**
+```ts
+recordReview(input): Promise<ReviewEvent>   // WRAPPED (was the bare engine ref): post-commit fan-out —
+                                            //   review.recorded → [emit_measurement_signal, award_xp] (unconditional)
+                                            //   mastery.changed → [emit_measurement_signal] (iff ev.quality != null)
+getDayKnowledgeDigest(date): Promise<{objectsCreated, reviewsRecorded}>  // UTC-day window; count() (soft-del auto)
+```
+New file `services/knowledge/journal.ts` (barrel-exported): `createKnowledgeJournalContribution(svc)` +
+`registerKnowledgeJournal(registry, svc)` — a `module:'knowledge'`/`sectionKey:'summary'` contribution;
+`summary(date)` = the dated digest, empty-safe (`state:'empty'` on an idle day), `dataPoints` `objects_created`+
+`reviews_recorded`. **PUSH vs PULL split (ADR-004 §3.2.5:84):** `review.recorded`/`mastery.changed` PUSH onto the
+rail (keyed/additive consumers — measurement/gamification); `object.created`/`lab.concluded` PUSH nothing — the
+Journal is pull-aggregated (the registry digest). Grain = the `review_event.id` (exactly-once per review; distinct
+reviews each fire, a replay dedups). Emit-only: post-commit, failure-isolated (a handler throw never rolls back the
+persisted event), dormant-guarded (`registry.resolve` before `applyEffect`). Flashcards' direct
+`review.recordReview` deliberately fires nothing in M1 (BR-KN-S7-5).
+
+## Verification (S8)
+Live-store (Node 24), **9 tests** (`__tests__/knowledge-s8-events.test.ts`): dormant no-op (no effects) · push fires
+review.recorded→[measurement,xp] + mastery.changed→[measurement] once each (non-null quality) · TWO distinct reviews
+each fire award_xp (grain proof) · same-event replay dedups (`applied:false`, handler once) · throwing-handler failure
+isolation (event still persists) · createObject+promoteToObject push ZERO rail effects (pull-only) · null-quality
+review fires review.recorded but NOT mastery.changed · dated digest (UTC-day, 2 today/1 yesterday → 2+1) · journal
+contribution success/empty + registry placement. Full `@vida/core` suite green (**1433**), typecheck 0, eslint 0,
+gitleaks clean.
+
+## ① COMPLETE
+All 8 slices shipped. Next: PR the `mod-knowledge-rebuild` branch. ② `fe-knowledge` (LIF-188) = separate P6.

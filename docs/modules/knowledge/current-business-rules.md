@@ -1,10 +1,10 @@
 # Current Business Rules — Knowledge (module)
 
 > §XXIX currency. Ground truth for the shipped `createKnowledgeService` backend. Updated per slice.
-> Status: **S1–S7 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review engine ①: methods/
-> curves/bindings · review engine ②: due/record/derive/rollup · measurement source + Education seams · pages-notes/
-> compound sets/lab/AI/search/ingestion seams · **flashcards sub-service**). S8 pending
-> (`docs/modules/knowledge/delivery/decomposition.md`). Inherits KN-1…KN-12 (`docs/features/knowledge/business-rules.md`).
+> Status: **S1–S8 shipped — ① COMPLETE** (kinds/objects/hierarchy · containers/references/link+tag · review engine ①:
+> methods/curves/bindings · review engine ②: due/record/derive/rollup · measurement source + Education seams ·
+> pages-notes/compound sets/lab/AI/search/ingestion seams · flashcards sub-service · **event fan-out + Journal
+> contribution**). Inherits KN-1…KN-12 (`docs/features/knowledge/business-rules.md`).
 > Flashcards home: `packages/core/src/services/flashcards/` (`createFlashcardsService`, the ADR-005 study-method sub-service).
 
 ## S1 — Kinds + Objects + Hierarchy (legs KNO-01…09, 41)
@@ -248,9 +248,48 @@
   `GenerateSourceUnreadable`(deferred read-variant seam)/`FlashcardNotFoundError`; `encryptedFields:[]` M1.0 pass-through
   ([E] front/back/hint/explanation → M3); soft-delete + explicit `isNull(deleted_at)` on every list read. `[FACT: types.ts; service.ts]`
 
+## S8 — Event fan-out + Journal contribution (legs KNO-38/39/40)
+> Knowledge as an **emit-only producer**: domain mutations fan out onto the effect rail (PUSH, dormant until a
+> consumer registers a handler) + a Journal contribution (PULL, pull-aggregated at render). The habits/finance/
+> gamification close-out shape. No schema, no `@vida/types` change, one OPTIONAL `effects?` dep.
+
+- **BR-KN-S8-1 — Emit-only, post-commit, failure-isolated.** Emissions run AFTER the persisted mutation returns;
+  each is `try/catch`-wrapped so a handler throw is swallowed (the write stands, LF-2). Knowledge computes no
+  mastery/xp/schedule in the fan-out. `[FACT: service.ts fanOut/recordReview; habits/service.ts:154-158]`
+- **BR-KN-S8-2 — Dormant guard before the rail.** `if (!effects || !effects.registry.resolve(effectType)) continue`
+  precedes `rail.applyEffect` — a non-projection effect with no handler would throw `NoEffectHandler`. In M1 no
+  handler is registered → the whole PUSH fan-out is a no-op. `[FACT: service.ts fanOut; effects/service.ts:39]`
+- **BR-KN-S8-3 — Exactly-once grain = the `review_event.id`.** `subjectNaturalKey = ev.id`, `targetRef =
+  ev.object_id`; distinct reviews → distinct events fire; an identical replay of one event → `applied:false`. The
+  grain follows ADR-004 §3.2.5:100 (`derive(subject ‖ transition ‖ effect)`; a habit uses `habit_id‖date` because
+  it is once-per-date, a review is once-per-`ev.id`) + effects BR-2. `[FACT: service.ts fanOut; ADR-004 §3.2.5:82-84,100]`
+- **BR-KN-S8-4 — Push map, split by consumer class (ADR-004 §3.2.5:84).** `review.recorded` (unconditional) →
+  `[emit_measurement_signal, award_xp]`; `mastery.changed` (**iff `ev.quality != null`**) → `[emit_measurement_signal]`;
+  `object.created`/`lab.concluded` → **no rail push** (journal-pull only — the Journal is pull-aggregated, no consumer
+  names a keyed/additive effect, No-Guessing). The two `emit_measurement_signal` fires carry DIFFERENT transitions
+  (distinct ledger rows) — a review-occurred re-derive signal vs an Education mastery-changed signal, not a dedup
+  collision. `[FACT: service.ts recordReview; contract.md:70; parts:54-55; ADR-004 §3.2.5:84; effects BR-1]`
+- **BR-KN-S8-5 — `mastery.changed` is the re-derive OUTPUT, quality-gated.** `contract.md:70` is a causal chain
+  (`review.recorded → mastery re-derive → …`); mastery is derive-on-read and moves ONLY on a non-null quality
+  (BR-KN-S4-3), so `mastery.changed` fires iff `ev.quality != null` — never sending Education a false "changed".
+  `[FACT: service.ts recordReview; contract.md:70,34; engine.ts deriveMastery:266-267; BR-KN-S4-3]`
+- **BR-KN-S8-6 — Journal contribution: dated, empty-safe, UTC-day.** `createKnowledgeJournalContribution` registers
+  `module:'knowledge'`/`sectionKey:'summary'`; `summary(date)` = objects-created + reviews-recorded counts over the
+  UTC-day window `[Date.parse(`${date}T00:00:00Z`), +DAY_MS)` (the habits:79/checkins:104 date→ms convention);
+  idle day → `state:'empty'`, never a throw (per-section degrade is the dashboard's); reuses `TerminalState` by TYPE.
+  Counts via `repository.count()` (skips decrypt on tallied rows + auto-applies the soft-delete filter). No `dueIn`
+  agenda. `[FACT: journal.ts; service.ts getDayKnowledgeDigest; repository.ts count:386; habits/journal.ts]`
+- **BR-KN-S8-7 — This service's mutation only; the flashcards drill fires nothing in M1.** `recordReview` is wrapped
+  in the knowledge service; the flashcards `completeReview` calls `review.recordReview` on the engine DIRECTLY and
+  fires nothing (shipped BR-KN-S7-5) — the engine stays a pure substrate (no `effects` dep). A flashcards-level
+  fan-out is a later foundation-envelope-widening seam. `[FACT: service.ts recordReview; BR-KN-S7-5]`
+- **BR-KN-S8-8 — Optional `effects` dep; SHAPE inlined, not a named `EffectsPort`.** `KnowledgeServiceDeps.effects?:
+  {rail, registry}` — the checkins/habits port mirror; the shape is inlined (not re-exporting a named `EffectsPort`)
+  because `checkins` already exports that symbol and the knowledge barrel is `export *` (the habits "EffectsPort not
+  re-exported" precedent avoids the core-index collision). `[FACT: types.ts KnowledgeServiceDeps; habits/index.ts]`
+
 ## Deferred to later slices
-Events + journal fan-out (S8, incl. `object.created`/`review.recorded`/`mastery.changed`/
-`lab.concluded`). The **SM-2 preset seed** (`seedPresetCurves`) + the **realm-driven default-method tier** +
+The **SM-2 preset seed** (`seedPresetCurves`) + the **realm-driven default-method tier** +
 **non-linear decay/interval curves** defer (S4-adjacent / S7 / build-phase respectively). The two S5 Education signals
 (`assessmentResults`/`paceVsSyllabus`) unlock with Education's assessments + syllabus-as-calendar entities. The S6 AI
 suggestion runtime (real spec generation) = M2/LIF-145; the ingestion source parsers = deferred. `KNO-44`/`KNO-46`

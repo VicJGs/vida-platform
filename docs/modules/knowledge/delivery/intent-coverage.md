@@ -79,8 +79,8 @@ legs touched, several are partial or wrong. **43 of 56 legs are entirely absent.
 ### G. Events + Journal
 | Leg | Intent | Antigravity | Rebuild |
 |---|---|---|---|
-| KNO-38 object.created · 39 review.recorded · 40 mastery.changed | effect fan-out | ❌ | S8 |
-| (journal contribution) | daily-dashboard snapshot | ❌ | S8 |
+| KNO-38 object.created · 39 review.recorded · 40 mastery.changed | effect fan-out | ❌ | ✅ S8 (PUSH review.recorded/mastery.changed onto the rail; object.created/lab.concluded = journal-pull per ADR-004 §3.2.5:84) |
+| (journal contribution) | daily-dashboard snapshot | ❌ | ✅ S8 (`registerKnowledgeJournal`, dated digest) |
 
 ## Tally
 - **✅ delivered (adequate):** 6 legs (KNO-02,04,06,12,29,30) + cycle-guard half of 08.
@@ -100,6 +100,6 @@ Each of S1–S8 runs the **full Entity Delivery Flow per-slice gate** (no except
 7. **§XXIX Currency** — promote to `docs/modules/knowledge/current-{spec,business-rules}.md`, commit together
 8. **Close-out** — pre-ship `/critique` SHIP → PR → merge → `/session-end` → LIF-128 truly Done
 
-**Status now:** S1 is at **Approval 2** (both gates SHIP, preflight PASSED). S2–S8 each repeat the full cycle.
+**Status now:** **S1–S8 all shipped — ① COMPLETE** (each ran the full cycle; S8 code-review clean + 1 efficiency fold).
 The Decomposition Gate already proved all 56 legs are homed once (independent critic SHIP) — this matrix proves the
 rebuild's slice map closes 100% of the Antigravity gap.

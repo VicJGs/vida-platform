@@ -36,6 +36,7 @@ import type {
   ReviewDueItem,
 } from '../../foundation/review'
 import type { BacklinkResolver } from '../search/backlink-resolver'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
 import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
 // S6 composed substrates (all shipped): notes (pages/entity-note), ai (extension-model), ingestion (auto-populate).
 import type { NotesService } from '../notes'
@@ -77,6 +78,13 @@ export interface KnowledgeServiceDeps {
   ai?: AiService
   /** S6 KNO-43 — ingestion guard (`autoPopulate`). OPTIONAL/deny-safe: opt-in device-side; absent ⇒ `ingestion-unavailable`. */
   ingestion?: IngestionGuard
+  /** S8 KNO-38/39/40 — the effect rail + registry (the domain-event PUSH fan-out; the registry gates the guarded
+   *  emit — a non-projection effect with no handler would throw `NoEffectHandler`; the rail is the exactly-once
+   *  dispatch). OPTIONAL: injected by the consuming modules (measurement/gamification) at M1.2; dormant without a
+   *  registered handler (BR-KN-S8-2). Mirrors the checkins/habits effects port; the SHAPE is inlined (not a named
+   *  `EffectsPort`) because `checkins` already exports that symbol and this barrel is `export *` — re-exporting a
+   *  second `EffectsPort` collides at the core index (the habits "EffectsPort not re-exported" precedent). */
+  effects?: { rail: EffectRail; registry: EffectRegistry }
 }
 
 /** S2 — a polymorphic link/tag target or member (entityType is validated fail-loud by `spaces`). Local by
@@ -123,6 +131,13 @@ export type AutoPopulateResult =
   | { status: 'refused'; reason: IngestionDenyReason; disclosure?: LeakDisclosure }
   | { status: 'parser-unavailable' }
   | { status: 'ingestion-unavailable' }
+
+/** S8 (KNO-38/39) — the dated Journal digest: the day's objects-created + reviews-recorded counts. Feeds the
+ *  `registerKnowledgeJournal` summary contribution (BR-KN-S8-5/6). Service-layer shape (not `@vida/types`). */
+export interface KnowledgeDayDigest {
+  objectsCreated: number
+  reviewsRecorded: number
+}
 
 /** listContainers filter (KNO-14) — the query half; the view-regroup RENDER is P6. */
 export interface ContainerFilter {
@@ -374,4 +389,9 @@ export interface KnowledgeService {
    *  `parser-unavailable` (source parsers deferred), denied ⇒ `refused` (refuse-not-downgrade), absent ⇒
    *  `ingestion-unavailable`. */
   autoPopulate(act: IngestionAct): Promise<AutoPopulateResult>
+
+  // ── S8: Journal digest (KNO-38/39) ────────────────────────────────
+  /** KNO-38/39 — the day's objects-created + reviews-recorded counts (UTC-day window of the `YYYY-MM-DD` date;
+   *  the habits:79/checkins:104 date→ms convention). Feeds the `registerKnowledgeJournal` summary (BR-KN-S8-5/6). */
+  getDayKnowledgeDigest(date: string): Promise<KnowledgeDayDigest>
 }
