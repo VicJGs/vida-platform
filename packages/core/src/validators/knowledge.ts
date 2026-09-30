@@ -150,3 +150,30 @@ export const PromoteToObjectSchema = z.object({
   kind_id: z.string().min(1),
   parent_object_id: z.string().nullable().optional(),
 })
+
+// ---------------------------------------------------------------------------
+// mod-knowledge S7 — Flashcards (input validators)
+// ---------------------------------------------------------------------------
+
+/** createCard (FC-01/05, BR-S7-1/2). `front`/`back` `[E]` required; `hint`/`explanation` `[E]` nullable;
+ *  `media` = `json<string[]>` boundary. `card_type` is accepted as a string here and validated in the SERVICE
+ *  against CARD_TYPE → `InvalidCardType` (a typed author-time error, not a raw ZodError) + the cloze-mask check →
+ *  `MalformedCloze` (FC-5). snake_case mirrors the columns (the module create-schema convention). */
+export const CreateCardSchema = z.object({
+  front: z.string().min(1),
+  back: z.string().min(1),
+  hint: z.string().nullable().optional(),
+  explanation: z.string().nullable().optional(),
+  card_type: z.string().min(1),
+  media: z.array(z.string()).nullable().optional(),
+  is_suspended: z.boolean().optional(),
+  sort_order: z.number().int().optional(),
+})
+export const UpdateCardSchema = CreateCardSchema.partial()
+
+/** generateCards (FC-04, BR-S7-10). A `sourceRef` (kept as an `entity_links` provenance ref) + the extracted card
+ *  contents (each validated as a card). The live-object → content extraction is the caller's (headline #5, decoupled). */
+export const GenerateCardsSchema = z.object({
+  sourceRef: z.object({ entityType: z.string().min(1), entityId: z.string().min(1) }),
+  items: z.array(CreateCardSchema).min(1),
+})

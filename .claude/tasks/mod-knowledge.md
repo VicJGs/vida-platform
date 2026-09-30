@@ -94,6 +94,23 @@ backend over DB-4 group #10 (`022_knowledge`: 7 owned tables) + the DB-3 review 
   blocking, 1 NIT: promote non-atomicity = accepted no-FK eventual-consistency convention, one-line note added) → §XXIX
   currency. **[Victor: "ground everything in the documentation" — every fold cited a doc/code line.]** PLAN: `PLAN-s6.md`.
 
+- 2026-09-29: **S7 SHIPPED** — Flashcards sub-service (FC-01…12), the ADR-005 reference study-method service. NET-NEW
+  `services/flashcards/` (`createFlashcardsService`), 13 methods, 5 errors, 3 validators. **No schema, no new dep, no
+  `@vida/types` change** (flashcards table + Flashcard interface ship from `022_knowledge`/S1). **Card→engine model
+  (gate-confirmed doc-forced, headline #1):** a card REVIEWS a `knowledge_object` (binding lives on the object —
+  `METHOD_BINDING_TARGET_TYPE` has no card level); the reviewed `objectId` is supplied EXPLICITLY per card (a card has
+  many links → no reverse-resolution). Emit-only (FC-6): `completeReview` → one `review_event`/card via direct
+  `recordReview`, never computes mastery/schedule. Full Entity Delivery Flow: **gate-1 REVISE→3 folds** (B1 wiring-fatal:
+  the `review` sub-type must register with an EMPTY effect envelope — the shipped ceiling is `{attach_pomodoro,log_time}`,
+  so XP/Journal-on-drill defers to a foundation-envelope seam · B2 thread `objectId` explicitly · B3 decomposition drift
+  on FC-10 "via effect rail" → recordReview has no rail dep, re-homed to co-tx + ADR-003/M4) → preflight PASSED →
+  gate-2 **SHIP** (all folds executable) → implement → **Verification Gate** (2 live-gate fixes: `create()` generates its
+  own id so the tag-seed must use `spaces.createTag`; §XXVIII: CardNotBound = an exclusion CONDITION not a thrown error
+  per `contract.md:36`) → **@vida/core 1424 green (+11)**, tsc 0, eslint 0, gitleaks clean → independent code-review
+  **SHIP** (0 blocking, 4 NITs; folded FC-10 retry-idempotency comment + strengthened the FC-08 dangling-ref test) →
+  §XXIX currency. **[Victor: "ground everything in the documentation" — every fold + the CardNotBound reclassification
+  cited a doc line.]** PLAN: `PLAN-s7.md`.
+
 ## Slice tracker (decomposition.md — 8 slices)
 - [x] S1 Types reconcile + Kinds + Objects + Hierarchy
 - [x] S2 Containers + References + link/tag cross-cut
@@ -101,7 +118,7 @@ backend over DB-4 group #10 (`022_knowledge`: 7 owned tables) + the DB-3 review 
 - [x] S4 Review engine ②: due + record + derive + rollup
 - [x] S5 Measurement source + Education seams
 - [x] S6 Pages-notes + Compound sets + Lab + AI/search/ingestion seams
-- [ ] S7 Flashcards sub-service
+- [x] S7 Flashcards sub-service
 - [ ] S8 Event fan-out + Journal contribution
 
 ## Dependencies

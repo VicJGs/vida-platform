@@ -1,8 +1,9 @@
 # Current Spec — Knowledge (module)
 
 > §XXIX currency. The shipped `createKnowledgeService` contract + persistence model. Updated per slice.
-> Status: **S1 + S2 + S3 + S4 + S5 + S6 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
-> `packages/core/src/foundation/review/` (D1). Types: `@vida/types/knowledge.ts` (10 entity interfaces mirror
+> Status: **S1–S7 shipped**. Home: `packages/core/src/services/knowledge/` + the review engine at
+> `packages/core/src/foundation/review/` (D1) + the flashcards sub-service at `packages/core/src/services/flashcards/`
+> (S7, `createFlashcardsService`). Types: `@vida/types/knowledge.ts` (10 entity interfaces mirror
 > `022_knowledge` + `008_knowledge_review`). Validators: `@vida/core/validators/knowledge.ts`.
 
 ## Persistence model
@@ -170,7 +171,36 @@ listLabEntries · searchKnowledge→search-unavailable · autoPopulate no-dep/pe
 (reason+disclosure passthrough) · sync_queue enqueue (compound set + lab entry). Full `@vida/core` suite green
 (**1413**), typecheck 0, eslint 0, gitleaks clean (Node 24, better-sqlite3 ABI).
 
+## S7 surface — Flashcards sub-service (`services/flashcards`, FC-01…12)
+The ADR-005 reference study-method service over Knowledge's generic engine. `createFlashcardsService({db, deviceId,
+review, spaces, backlinks, sessions, sessionRegistry})`. **No schema, no new dep, no `@vida/types` change** (the
+`flashcards` table + `Flashcard` interface ship from `022_knowledge`/S1).
+```
+registerFlashcards(): Promise<void>            // FC-02 call-once: study_method capability (roles in config_schema) + 'review' sub-type (empty envelope); idempotent
+createCard/updateCard/getCard/listCards/deleteCard  // FC-01/05/12; card_type + cloze validated (InvalidCardType/MalformedCloze); media json boundary; soft-delete
+tagCard/linkCard/listCardLinks                 // FC-11 via spaces/backlinks (entity_type='flashcard'); tagCard guards the tag resolves
+generateCards({sourceRef, items}): Flashcard[] // FC-04/08 create + link source (provenance); decoupled (caller supplies content); dangling-safe
+startReview(cardIds): Session                  // FC-03 create a 'review' session (ad_hoc/in_progress) + attach cards
+completeReview(sessionId, [{cardId, objectId, quality}]): ReviewEvent[]  // FC-03/06 one review_event/card (direct recordReview, object-keyed) + complete; ReviewEmitFailed on failure
+dueCards([{cardId, objectId}], at?): Flashcard[]  // FC-07/09 excludes suspended + unbound-object (CardNotBound) cards; includes due (review.dueIn)
+```
+Card→engine model (headline #1): a card reviews a `knowledge_object`; binding lives on the object (no card-level
+target); reviewed `objectId` supplied explicitly per card. Emit-only (FC-6). `CardNotBound` = an exclusion condition
+(not a thrown error, `contract.md:36`). Errors: `InvalidCardType`/`MalformedCloze`/`ReviewEmitFailed`/
+`GenerateSourceUnreadable`(deferred read-variant)/`FlashcardNotFoundError`. Validators: `CreateCardSchema`/
+`UpdateCardSchema`/`GenerateCardsSchema`. Constants: `FLASHCARDS_METHOD_ID='flashcards'`, `REVIEW_SESSION_SUB_TYPE=
+'review'`, `FLASHCARD_ENTITY_TYPE='flashcard'`. Deferred: XP/Journal-on-drill (foundation-envelope widening) · the
+read-source `generateCards` variant · FC-10 durable retry (ADR-003/M4).
+
+## Verification (S7)
+Live-store (Node 24), **11 flashcards tests** (`services/flashcards/__tests__`): card CRUD + faithful echo + media JSON
+round-trip · InvalidCardType · cloze mask (MalformedCloze / ok) · listCards type+suspended filter + soft-delete +
+FlashcardNotFoundError · registration (study_method roles + idempotent) · startReview+completeReview one-event-per-card
+(object-keyed) + session completed · ReviewEmitFailed (throwing-review stub) · dueCards (bound+due included, unbound
+CardNotBound excluded, suspended excluded) · tagCard guard (TagNotFound) + tag/link round-trip + card-guard ·
+generateCards + dangling source · sync_queue enqueue. Full `@vida/core` suite green (**1424**), typecheck 0, eslint 0,
+gitleaks clean.
+
 ## Not yet built
-S7 (flashcards) + S8 (event fan-out + journal contribution) per `docs/modules/knowledge/delivery/decomposition.md`.
-The remaining `@vida/types` interfaces (`Flashcard`) are authored (DB-11 reconcile, S1); their **validators + service
-methods** land in the owning slice.
+S8 (event fan-out + journal contribution) per `docs/modules/knowledge/delivery/decomposition.md` (the LAST slice:
+`object.created`/`review.recorded`/`mastery.changed`/`lab.concluded` domain events + `registerKnowledgeJournal`).

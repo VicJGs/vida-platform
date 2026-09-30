@@ -1,10 +1,11 @@
 # Current Business Rules — Knowledge (module)
 
 > §XXIX currency. Ground truth for the shipped `createKnowledgeService` backend. Updated per slice.
-> Status: **S1 + S2 + S3 + S4 + S5 + S6 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review
-> engine ①: methods/curves/bindings · review engine ②: due/record/derive/rollup · measurement source + Education seams ·
-> pages-notes/compound sets/lab/AI/search/ingestion seams). S7–S8 pending
+> Status: **S1–S7 shipped** (kinds/objects/hierarchy · containers/references/link+tag · review engine ①: methods/
+> curves/bindings · review engine ②: due/record/derive/rollup · measurement source + Education seams · pages-notes/
+> compound sets/lab/AI/search/ingestion seams · **flashcards sub-service**). S8 pending
 > (`docs/modules/knowledge/delivery/decomposition.md`). Inherits KN-1…KN-12 (`docs/features/knowledge/business-rules.md`).
+> Flashcards home: `packages/core/src/services/flashcards/` (`createFlashcardsService`, the ADR-005 study-method sub-service).
 
 ## S1 — Kinds + Objects + Hierarchy (legs KNO-01…09, 41)
 
@@ -208,8 +209,47 @@
   `LabEntryAlreadyPromotedError`; `encryptedFields:[]` M1.0 pass-through ([E] `spec`/`hypothesis`/`conclusion` → M3);
   soft-delete + explicit `isNull(deleted_at)` on every S6 `findWhere` read. `[FACT: service.ts; types.ts]`
 
+## S7 — Flashcards sub-service (`services/flashcards`, legs FC-01…12)
+> The ADR-005 reference study-method service: a thin content + interaction plugin over Knowledge's generic review
+> engine. `createFlashcardsService({db, deviceId, review, spaces, backlinks, sessions, sessionRegistry})`.
+
+- **BR-KN-S7-1 — Flashcards owns ONLY the card content entity (FC-1).** `flashcards` CRUD (front/back/hint/explanation
+  `[E]` · card_type · media · is_suspended · sort_order); NEVER scheduling/curves/review-log/mastery/grouping — those
+  are the generic engine's. `media` = `json<string[]>` serialize/parse at the boundary. `[FACT: service.ts createCard/
+  toFlashcard; ADR-005 §3.2]`
+- **BR-KN-S7-2 — Card-type validation is author-time + typed (FC-5).** `card_type ∉ CARD_TYPE` → `InvalidCardType`
+  (before the DB CHECK); a `cloze` card whose `front` lacks a `{{…}}` deletion mask → `MalformedCloze`; `updateCard`
+  re-validates against the effective (new-or-existing) type+front. `[FACT: service.ts assertCardType/assertClozeMask]`
+- **BR-KN-S7-3 — A card reviews a KNOWLEDGE OBJECT; the binding lives on the object (headline #1).** The reviewed
+  `objectId` is supplied EXPLICITLY per card (`METHOD_BINDING_TARGET_TYPE` has no card level; a card has many links →
+  no reverse-resolution). `[FACT: service.ts completeReview/dueCards; @vida/types METHOD_BINDING_TARGET_TYPE; ADR-005 §3.1.3]`
+- **BR-KN-S7-4 — Registration (FC-2, call-once idempotent).** `registerFlashcards` registers the `flashcards`
+  `study_method` capability (roles `retention`+`gathering` in `config_schema`; dup → `DuplicateCapabilityId` no-op) + the
+  `review` Session sub-type (EMPTY effect envelope — the shipped ceiling is `{attach_pomodoro, log_time}`, so
+  XP/Journal-on-drill is a deferred foundation-envelope seam; dup → `DuplicateSubType` no-op). `[FACT: service.ts
+  registerFlashcards; sessions/registry.ts:94-100; capability registerMethod]`
+- **BR-KN-S7-5 — A drill is a `review` Session; emit is one `review_event` per card (FC-3/5/6).** `startReview(cardIds)`
+  creates a `review` session (`ad_hoc`/`in_progress`) + attaches each card (`entity_type='flashcard'`); `completeReview`
+  emits one `review_event` per card via DIRECT `review.recordReview({objectId, methodId:'flashcards', quality})` (NOT a
+  session EffectType), then completes the session (fires nothing in M1). **Emit-only (FC-6): no mastery/schedule write.**
+  `[FACT: service.ts startReview/completeReview; ADR-004; ADR-005 §3.1.2/5; KNO-23]`
+- **BR-KN-S7-6 — A failed emit surfaces `ReviewEmitFailed` (FC-10).** Never silently dropped; the co-transactional
+  `sync_queue` enqueue is the M1 durability guarantee; the durable retry loop = ADR-003/M4 seam. `[FACT: service.ts
+  completeReview; repository.ts enqueue]`
+- **BR-KN-S7-7 — The due-queue reads Knowledge's provider (FC-7/9).** `dueCards(items:[{cardId, objectId}])` excludes
+  suspended cards + cards whose object has NO binding (**CardNotBound** — an exclusion CONDITION, not a thrown error,
+  `contract.md:36`; the object's level is positional → probe every `METHOD_BINDING_TARGET_TYPE`); includes those due
+  (`review.dueIn`). Flashcards owns no scheduler. `[FACT: service.ts dueCards; FC-9; contract.md:36]`
+- **BR-KN-S7-8 — Universal citizen (FC-11) + gather (FC-4/8).** `tagCard` (guards the tag resolves) / `linkCard` /
+  `listCardLinks` via `spaces`/`backlinks` (`entity_type='flashcard'`, pre-registered); `generateCards({sourceRef,
+  items})` creates cards + links each to the source (provenance, FC-7) — decoupled (caller supplies content); a source
+  delete leaves the link dangling (FC-8, no-op loud). `[FACT: service.ts tagCard/linkCard/generateCards; _registry.ts:83]`
+- **BR-KN-S7-9 — Typed errors + M1.0 seams.** `InvalidCardType`/`MalformedCloze`/`ReviewEmitFailed`/
+  `GenerateSourceUnreadable`(deferred read-variant seam)/`FlashcardNotFoundError`; `encryptedFields:[]` M1.0 pass-through
+  ([E] front/back/hint/explanation → M3); soft-delete + explicit `isNull(deleted_at)` on every list read. `[FACT: types.ts; service.ts]`
+
 ## Deferred to later slices
-Flashcards (S7) · events + journal fan-out (S8, incl. `object.created`/`review.recorded`/`mastery.changed`/
+Events + journal fan-out (S8, incl. `object.created`/`review.recorded`/`mastery.changed`/
 `lab.concluded`). The **SM-2 preset seed** (`seedPresetCurves`) + the **realm-driven default-method tier** +
 **non-linear decay/interval curves** defer (S4-adjacent / S7 / build-phase respectively). The two S5 Education signals
 (`assessmentResults`/`paceVsSyllabus`) unlock with Education's assessments + syllabus-as-calendar entities. The S6 AI

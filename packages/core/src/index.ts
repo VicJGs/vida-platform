@@ -174,5 +174,8 @@ export * from './services/habits'
 // Service — Knowledge (mod-knowledge #50 · LIF-128 · S1: kinds + objects + hierarchy + @vida/types reconcile)
 export * from './services/knowledge'
 
+// Service — Flashcards (mod-knowledge #50 · LIF-128 · S7: the ADR-005 study-method sub-service over Knowledge's engine)
+export * from './services/flashcards'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
