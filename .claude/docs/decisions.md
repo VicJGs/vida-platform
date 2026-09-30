@@ -1,8 +1,8 @@
-<!-- Last updated: 2026-09-29 by /session-end -->
+<!-- Last updated: 2026-09-30 by /session-end -->
 
-## MOD-knowledge (#50, LIF-128) — 🔨 ① REBUILD, S1–S7/8 shipped (2026-09-29)
+## MOD-knowledge (#50, LIF-128) — ✅ ① REBUILD COMPLETE, S1–S8 shipped (2026-09-30), PR #69
 Rebuild of the discarded Antigravity branch. `createKnowledgeService` over DB-4 `022_knowledge` (7 tables) +
-DB-3 `008_knowledge_review` (3 tables) + the flashcards sub-service (S7, `createFlashcardsService`); 56 legs across 8 slices. Branch `mod-knowledge-rebuild`, S1 `a433a3d`, S2 `bc88904`, S3 `9eb57cb`, S4 `09e04bf`, S5 `fb2918b`, S6 `7f9fb75`, S7 `0f89616`.
+DB-3 `008_knowledge_review` (3 tables) + the flashcards sub-service (S7, `createFlashcardsService`); 56 legs across 8 slices. Branch `mod-knowledge-rebuild`, S1 `a433a3d`, S2 `bc88904`, S3 `9eb57cb`, S4 `09e04bf`, S5 `fb2918b`, S6 `7f9fb75`, S7 `0f89616`, S8 `2354edd`. @vida/core **1433/1433**, tsc 0, eslint 0, gitleaks clean. **① COMPLETE → PR #69 (mod-knowledge-rebuild → main), awaiting merge.**
 
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
@@ -31,6 +31,12 @@ DB-3 `008_knowledge_review` (3 tables) + the flashcards sub-service (S7, `create
 | 2026-09-29 | S7 / FC-02 (gate-1 B1) | `review` session sub-type effects | **register with an EMPTY effect envelope** (`effects:[]`/`allowed_effects:[]`); XP/Journal-on-drill deferred | `sessionRegistry.register` enforces declared effects ⊆ the shipped ceiling `{attach_pomodoro,log_time}`; XP/Journal throw `CapabilityEnvelopeExceeded` at wiring → foundation-envelope seam | yes (widen envelope later) |
 | 2026-09-29 | S7 / FC-07 (§XXVIII) | CardNotBound handling | **an exclusion CONDITION, not a thrown error** — `dueCards` drops unbound cards (still browsable) | `contract.md:36` "(FC-2, not an error state)"; a card can't be bound directly (no target level) → its object must carry a binding | no (doc-fixed) |
 | 2026-09-29 | S7 / FC-10 (gate-1 B3) | review-emit failure home | **direct `recordReview` co-tx + `ReviewEmitFailed`; durable retry = ADR-003/M4** (NOT the effect rail) | `decomposition.md:102` "via the effect rail" is drift — `recordReview` has no rail dep; the rail fires only session-completion effects | no (code contract) |
+| 2026-09-30 | S8 / KNO-38-40 (routing) | domain-event delivery | **pull-vs-push split by effect class** — `review.recorded`/`mastery.changed` PUSH onto the rail (keyed/additive consumers); `object.created`/`lab.concluded` push NOTHING (journal-PULL via `registerKnowledgeJournal`) | ADR-004 §3.2.5:84 "Journal is pull-aggregated at render"; no consumer names a keyed/additive effect for object.created → inventing `award_xp` for cataloguing = No-Guessing | no (ADR-forced) |
+| 2026-09-30 | S8 / grain (gate-1 B1) | fan-out dedup grain | **`subjectNaturalKey = review_event.id`** (not a bare transition); `targetRef = ev.object_id` | ADR-004 §3.2.5:100 (`derive(subject‖transition‖effect)`; a habit uses `habit_id‖date`=once-per-date, a review is once-per-ev.id) + effects BR-2; a bare transition dedups distinct reviews to one fire | no (invariant) |
+| 2026-09-30 | S8 / KNO-40 (preflight G1) | `mastery.changed` gate | **fires iff `ev.quality != null`** (`review.recorded` unconditional) | `contract.md:70` causal chain (review.recorded → mastery re-derive → mastery.changed); derive-on-read mastery moves only on a non-null quality (BR-KN-S4-3) → a null-quality review would send Education a false "changed" | no (doc-derived) |
+| 2026-09-30 | S8 / effects (code-review) | double `emit_measurement_signal` | **KEPT — not redundant** (review.recorded AND mastery.changed both emit it) | distinct transitions → distinct `effect_event_id`s → two genuine ledger rows/signals ("re-derive" vs "Education source moved"); my collapse instinct verified WRONG (don't over-correct) | n/a |
+| 2026-09-30 | S8 / EffectsPort (§XXVIII D1) | effects dep type | **inline `{rail, registry}` shape, not a named `EffectsPort` export** | `checkins` already exports `EffectsPort` + the knowledge barrel is `export *` → a second named export collides at the core index (tsc caught); the habits "EffectsPort not re-exported" precedent | yes (code-org) |
+| 2026-09-30 | S8 / digest (§XXVIII D2, code-review F1) | day-digest read | **`repository.count(where)` not `findWhere().length`** | `count` skips `decryptAll` on tallied rows + auto-applies the soft-delete filter (dropping the manual `isNull(deleted_at)`); behaviour identical (acceptance #7) | yes (code-org) |
 
 ## MOD-finance (#47, LIF-122) — ✅ ① BACKEND COMPLETE (S1–S8), merged PR #66 (2026-09-22)
 The Finance module service tier over DB-4 `020_finance` — 48 legs (38 FIN + 10 FL) in 8 slices; `createFinanceService` (S1–S6) + `createFiscalLegalService` (S7–S8). **All 8 slices done + merged to main (`8f0c460`).** @vida/core **1247/1247**, tsc 0, eslint 0.

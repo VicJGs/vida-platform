@@ -110,6 +110,20 @@ backend over DB-4 group #10 (`022_knowledge`: 7 owned tables) + the DB-3 review 
   **SHIP** (0 blocking, 4 NITs; folded FC-10 retry-idempotency comment + strengthened the FC-08 dangling-ref test) →
   §XXIX currency. **[Victor: "ground everything in the documentation" — every fold + the CardNotBound reclassification
   cited a doc line.]** PLAN: `PLAN-s7.md`.
+- 2026-09-30: **S8 SHIPPED → ① COMPLETE (8/8).** Event fan-out + Journal contribution (KNO-38/39/40), the emit-only
+  producer. **PUSH** (rail): `recordReview` wraps the engine ref → post-commit fan-out (`review.recorded` →
+  `[emit_measurement_signal, award_xp]` unconditional; `mastery.changed` → `[emit_measurement_signal]` iff
+  `ev.quality != null`); grain = `review_event.id`; failure-isolated + dormant-guarded. **PULL** (journal registry):
+  `registerKnowledgeJournal` + dated `getDayKnowledgeDigest` (UTC-day, `count()`); `object.created`/`lab.concluded`
+  push nothing (pull-aggregated, ADR-004 §3.2.5:84). Full flow: PLAN-s8 → gate-1 REVISE (B1-B4 grain/routing/§5-
+  contradiction + S1-S2)→SHIP → Approval 1 → preflight BLOCKED (G1 `mastery.changed` unconditional)→resolved via
+  `contract.md:70` causal chain + BR-KN-S4-3 (fires iff quality!=null) → gate-2 SHIP → Approval 2 → implement →
+  Verification Gate (9 live-store) → independent code-review **clean** (correctness `[]`; the double
+  `emit_measurement_signal` verified NOT redundant — distinct transitions → distinct ledger rows; 1 efficiency fold
+  `count()`) → engineering gate PASS → §XXIX currency. 2 §XXVIII deviations: D1 inline EffectsPort (checkins owns the
+  name + `export *` collision, tsc-caught), D2 `count()` over `findWhere` (F1). @vida/core **1433 green (+9)**, tsc 0,
+  eslint 0, gitleaks clean. Committed `2354edd` → branch pushed → **PR #69**. **[Victor: "ground it in the documentation"
+  ×3 — grain, mastery-gate, and the NIT all re-grounded before each approval.]** PLAN: `PLAN-s8.md`. **① COMPLETE.**
 
 ## Slice tracker (decomposition.md — 8 slices)
 - [x] S1 Types reconcile + Kinds + Objects + Hierarchy
@@ -119,7 +133,7 @@ backend over DB-4 group #10 (`022_knowledge`: 7 owned tables) + the DB-3 review 
 - [x] S5 Measurement source + Education seams
 - [x] S6 Pages-notes + Compound sets + Lab + AI/search/ingestion seams
 - [x] S7 Flashcards sub-service
-- [ ] S8 Event fan-out + Journal contribution
+- [x] S8 Event fan-out + Journal contribution  → ① COMPLETE (all 8 slices), PR #69
 
 ## Dependencies
 - blocked by `mod-notes-and-pages`
