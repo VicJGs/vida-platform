@@ -123,6 +123,9 @@ export * from './foundation/effects'
 // Foundation substrate — the capability registry (AR-7 Increment 2 · ADR-008 + ADR-010)
 export * from './foundation/capability'
 
+// Foundation substrate — the generic review engine (ADR-005 · mod-knowledge #50 ① S3)
+export * from './foundation/review'
+
 // Foundation substrate — the egress guard (XS-egress-guard #43 · ADR-014 §3.3 · XCU-06/08)
 export * from './foundation/egress'
 
@@ -167,6 +170,12 @@ export * from './services/gamification'
 
 // Service — Habits (mod-habits #49 · LIF-125 · S1: definition CRUD + @vida/types reconcile)
 export * from './services/habits'
+
+// Service — Knowledge (mod-knowledge #50 · LIF-128 · S1: kinds + objects + hierarchy + @vida/types reconcile)
+export * from './services/knowledge'
+
+// Service — Flashcards (mod-knowledge #50 · LIF-128 · S7: the ADR-005 study-method sub-service over Knowledge's engine)
+export * from './services/flashcards'
 
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
