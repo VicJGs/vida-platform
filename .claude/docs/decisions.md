@@ -1,8 +1,8 @@
 <!-- Last updated: 2026-09-29 by /session-end -->
 
-## MOD-knowledge (#50, LIF-128) — 🔨 ① REBUILD, S1–S4/8 shipped (2026-09-27)
+## MOD-knowledge (#50, LIF-128) — 🔨 ① REBUILD, S1–S7/8 shipped (2026-09-29)
 Rebuild of the discarded Antigravity branch. `createKnowledgeService` over DB-4 `022_knowledge` (7 tables) +
-DB-3 `008_knowledge_review` (3 tables); 56 legs across 8 slices. Branch `mod-knowledge-rebuild`, S1 `a433a3d`, S2 `bc88904`, S3 `9eb57cb`, S4 `09e04bf`.
+DB-3 `008_knowledge_review` (3 tables) + the flashcards sub-service (S7, `createFlashcardsService`); 56 legs across 8 slices. Branch `mod-knowledge-rebuild`, S1 `a433a3d`, S2 `bc88904`, S3 `9eb57cb`, S4 `09e04bf`, S5 `fb2918b`, S6 `7f9fb75`, S7 `0f89616`.
 
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
@@ -22,6 +22,15 @@ DB-3 `008_knowledge_review` (3 tables); 56 legs across 8 slices. Branch `mod-kno
 | 2026-09-27 | S4 / mastery | store vs derive | **never store `mastery_level`** — `recordReview` appends an event only; mastery derived on read; override slot inert in M1.0 (no write path) | measurement BR-4 derive-by-default; `review_events` append-only = source of truth replayed on read | no (invariant) |
 | 2026-09-27 | S4 / placement | `rollupMastery` home | **`services/knowledge`** (not the generic engine) composing `measurement.rollup` | it walks `knowledge_objects.parent_object_id` — the generic engine must not know Knowledge's tables; `recordReview`/`getDue`/`deriveMastery` stay generic in the engine | yes (code-org) |
 | 2026-09-27 | S4 / barrel | `DueItem` name clash | rename knowledge's to **`ReviewDueItem`** | `services/sessions` owns `DueItem` (different shape); both `export *` from the core barrel — the recurring foundation-barrel collision | yes |
+| 2026-09-29 | S5 / KNO-25 | mastery-source exposure | **a service method `getMasterySource(subjectRef)`**, NOT a scalar `measurement.advertise` | the source-registry resolver is sync/scalar (`()=>number\|null`); mastery is async/per-subject/struct + no consumer exists → KNO-25 reclassified 🧩→🔨 | yes (add advertise later) |
+| 2026-09-29 | S6 / KNO-28 | knowledge note home | **a `pages` row keyed on `entity_type='knowledge_object'`** via `ensureEntityNote('note',…)`; NO new `PAGE_TYPE` | KN-5 keys the note on entity_type (not a page type); `knowledge_object` pre-registered; a new PageType = an unbacked @vida/types+enum-parity change | no (doc-fixed) |
+| 2026-09-29 | S6 / deps | notes vs ai/ingestion injection | **`notes` REQUIRED; `ai?`/`ingestion?` OPTIONAL deny-safe** | openObjectNote is core (notes shipped); AI-assist/auto-populate are opt-in M1-dormant (habits/gamification optional-port precedent) | yes (code-org) |
+| 2026-09-29 | S6 / KNO-43 (gate-1 B1) | autoPopulate ↔ ingestion | **map `checkIngestion`'s `IngestionDecision{permitted}`**: permitted→`parser-unavailable` (real M1 seam), !permitted→`refused` | `checkIngestion` never touches the mediator (that's `fetchThroughMediator`); a well-formed granted act PERMITS → the honest M1 gap is no-source-parsers, not a deny | no (substrate contract) |
+| 2026-09-29 | S6 / KNO-28 (live-gate, §XXVIII) | note title placement | **seed.title → page CONTENT (H1), NOT the title column** | `ensureEntityNote` folds the seed into `content` via `seedContent`; the editable title/render is P6 — asserting page.title failed | no (substrate contract) |
+| 2026-09-29 | S7 / FC (headline #1) | card ↔ review engine | **a card REVIEWS a `knowledge_object`; binding lives on the object; reviewed `objectId` supplied EXPLICITLY per card** | `METHOD_BINDING_TARGET_TYPE` has no card level (frozen DB-4); ADR-005 §3.1.3 binds to a knowledge object/container; a card has many links → no reverse-resolution | no (enum+ADR-forced) |
+| 2026-09-29 | S7 / FC-02 (gate-1 B1) | `review` session sub-type effects | **register with an EMPTY effect envelope** (`effects:[]`/`allowed_effects:[]`); XP/Journal-on-drill deferred | `sessionRegistry.register` enforces declared effects ⊆ the shipped ceiling `{attach_pomodoro,log_time}`; XP/Journal throw `CapabilityEnvelopeExceeded` at wiring → foundation-envelope seam | yes (widen envelope later) |
+| 2026-09-29 | S7 / FC-07 (§XXVIII) | CardNotBound handling | **an exclusion CONDITION, not a thrown error** — `dueCards` drops unbound cards (still browsable) | `contract.md:36` "(FC-2, not an error state)"; a card can't be bound directly (no target level) → its object must carry a binding | no (doc-fixed) |
+| 2026-09-29 | S7 / FC-10 (gate-1 B3) | review-emit failure home | **direct `recordReview` co-tx + `ReviewEmitFailed`; durable retry = ADR-003/M4** (NOT the effect rail) | `decomposition.md:102` "via the effect rail" is drift — `recordReview` has no rail dep; the rail fires only session-completion effects | no (code contract) |
 
 ## MOD-finance (#47, LIF-122) — ✅ ① BACKEND COMPLETE (S1–S8), merged PR #66 (2026-09-22)
 The Finance module service tier over DB-4 `020_finance` — 48 legs (38 FIN + 10 FL) in 8 slices; `createFinanceService` (S1–S6) + `createFiscalLegalService` (S7–S8). **All 8 slices done + merged to main (`8f0c460`).** @vida/core **1247/1247**, tsc 0, eslint 0.
