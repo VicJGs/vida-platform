@@ -1,5 +1,5 @@
 # Task: mod-knowledge
-# Status: in_progress
+# Status: done
 # Linear: LIF-128
 # Project: M1 — Whole Manual OS
 # Milestone: M1.1.2 — Feature Modules · Backend
