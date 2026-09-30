@@ -177,5 +177,8 @@ export * from './services/knowledge'
 // Service — Flashcards (mod-knowledge #50 · LIF-128 · S7: the ADR-005 study-method sub-service over Knowledge's engine)
 export * from './services/flashcards'
 
+// Service — Books (mod-books #51 · LIF-117 · S1: Works CRUD + reframe over DB-4 023_books)
+export * from './services/books'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'

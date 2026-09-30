@@ -224,6 +224,11 @@ export interface Course extends SyncableEntity {
   deleted_at: Timestamp | null
 }
 
+// DB-4 group #11 (mod-books ① S1) — reshaped to the reframed `books` table (schema/books.ts). RETIRED from the
+// stale ADR-002 floor: `format`→`book_assets` (BK-2) · `current_page`→per-asset `native_position` (BR-BK-2) ·
+// `genre`/`tags`→`entity_tags` (BK-16). `progress` → nullable derived-override (BR-BK-2; NULL ⇒ derive, never a
+// stored counter). `total_pages` nullable (work-level, TOC-only planning, BK-17). `BOOK_FORMAT`/`BookFormatSchema`
+// intentionally kept (P-6 — other consumers). `[FACT: schema/books.ts:43-63; db-4-books/_index.md:68-72]`
 export interface Book extends SyncableEntity {
   /** @encrypted */
   title: string
@@ -231,12 +236,11 @@ export interface Book extends SyncableEntity {
   author: string | null
   /** @encrypted */
   isbn: string | null
-  format: BookFormat
   status: BookStatus
-  total_pages: number
-  current_page: number
-  /** 0–100 */
-  progress: number
+  /** work-level page count, for TOC-only planning (BK-17); nullable */
+  total_pages: number | null
+  /** DERIVED override, nullable (BR-BK-2) — NULL ⇒ derive; never a stored counter */
+  progress: number | null
   start_date: string | null
   end_date: string | null
   /** 1–5 */
@@ -245,10 +249,6 @@ export interface Book extends SyncableEntity {
   review: string | null
   /** @encrypted */
   cover_url: string | null
-  /** @encrypted */
-  genre: string | null
-  /** @encrypted */
-  tags: string[]
   deleted_at: Timestamp | null
 }
 

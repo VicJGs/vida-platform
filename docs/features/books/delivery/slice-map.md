@@ -61,8 +61,14 @@ mocked test bypasses (`[FACT: visual-gate-catches-worker-rpc-bugs; repository-cr
 
 | Slice | g1 | Verification Gate | code-review | SHIP | commit |
 |---|---|---|---|---|---|
-| S1 | — | — | — | — | — |
+| S1 | ✅ (2 fixes) | ✅ 7/7 live-store | ✅ SHIP 0-block | ✅ | _(pending)_ |
 | S2–S10 | — | — | — | — | — |
+
+**Carry-forwards (code-review NITs, non-blocking):**
+- **→ S2** (N3): `getCapabilities.plannable` must also honor a TOC (chapters) without a work-level `total_pages`
+  once `book_chapters` is wired — currently `plannable = total_pages != null` (the only S1 basis).
+- **→ S3** (N1): `BookView.assets` is typed `BookAssetRow[]` (raw Drizzle row in the seam) — replace with a
+  proper `BookAsset` @vida/types interface when S3 lands (narrows `_sync_status`).
 
 ## Decomposition Gate (Approval 1)
 

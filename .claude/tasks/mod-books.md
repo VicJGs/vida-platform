@@ -25,10 +25,16 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
 (all blockers Done — #51 READY)
 
 ## Build Steps (Entity Delivery Flow — Default scenario)
-- [ ] Step 0: document-context BASELINE — ground truth for books + the seam contexts it composes
-- [ ] Step 1: Interpretation layer — delivery/interpretation.md (deps · needs · organization · implicit rules, [FACT])
-- [ ] Step 1.5: Envision Gate — N/A (pure-backend; stated)
-- [ ] Step 2: Decomposition Gate — delivery/slice-map.md + seam-contract.md + service/ spec set → Approval 1
+- [x] Step 0: document-context BASELINE — corpus read; seams verified in built @vida/core
+- [x] Step 1: Interpretation layer — delivery/interpretation.md (6 seams + 7 deny-safe ports + 8 implicit rules)
+- [x] Step 1.5: Envision Gate — N/A (pure-backend; stated)
+- [x] Step 2: Decomposition Gate — slice-map (48 legs → 10 slices) + seam-contract → **Approval 1 ✅** (critic REVISE→folded; deferrals doc+substrate grounded per Victor)
+
+### Slices (per-slice §XXVI double-gate + live-store Verification Gate + code-review + currency)
+- [x] **S1 — Works CRUD + reframe** (BOO-01/02/03/48): createBooksService + `books` table CRUD; Book interface
+  reconciled (DB-11); progress-never-settable reframe; 7/7 live-store; code-review SHIP; @vida/core 1440 green.
+- [ ] S2 chapters/TOC + ISBN port · S3 assets + mapping · S4 annotations · S5 quote-embed · S6 sessions +
+  registerBooks · S7 plans · S8 progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
 - [ ] Step 4: /api-contract (service API) approved before code
 - [ ] Step 5–6: /adr-check · /adr-new (if significant)
