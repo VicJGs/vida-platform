@@ -50,7 +50,7 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   BK-6 highlight-exclusion enforced via `assertLinkable`→`AnnotationNotLinkableError` (both endpoints — the registry
   backstops the target only; Verification-Gate-caught, §XXVIII) · `listAnnotations`/`listQuotes`. g1 (4 pts grounded)
   → 40/40 live-store (REAL spaces+notes) → 2-reviewer SHIP (1 NIT folded) → §XXIX (BR-BK-S4-1..8). @vida/core
-  **1473/1473**, tsc 0, eslint 0. Commit _(pending)_.
+  **1473/1473**, tsc 0, eslint 0. Commit `d4dfef2`.
 - [ ] S5 quote-embed · S6 sessions + registerBooks · S7 plans · S8
   progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
