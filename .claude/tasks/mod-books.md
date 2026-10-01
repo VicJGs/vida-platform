@@ -51,7 +51,14 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   backstops the target only; Verification-Gate-caught, §XXVIII) · `listAnnotations`/`listQuotes`. g1 (4 pts grounded)
   → 40/40 live-store (REAL spaces+notes) → 2-reviewer SHIP (1 NIT folded) → §XXIX (BR-BK-S4-1..8). @vida/core
   **1473/1473**, tsc 0, eslint 0. Commit `d4dfef2`.
-- [ ] S5 quote-embed · S6 sessions + registerBooks · S7 plans · S8
+- [x] **S5 — Quote-embed feed + toggles** (BOO-21/22): `getEmbeddableQuotes({bookId?})` — live `BookQuote` rows
+  (never copied, soft-delete filtered) with **per-book > global** toggle precedence (`override ?? global`) via a
+  NARROW deny-safe `preferences?` port (2 reads, NIT-3; absent ⇒ permissive fail-OPEN, the habits precedent) ·
+  SCOPED toggle-off ⇒ `QuoteEmbedDisabledError`, GLOBAL feed EXCLUDES toggle-off books (no throw) · `PreferencesPort`
+  + `QuoteEmbedDisabledError` types. Read-only, schema-less (no migration, no `@vida/types` change). g1 (SHIP, 2
+  folds) → 48/48 live-store (incl. 2 reviewer-NIT edges) → 2-reviewer SHIP (0 blockers) → §XXIX (BR-BK-S5-1..5).
+  @vida/core **1479/1479**, tsc 0, eslint 0, gitleaks clean. Commit `adc0733`.
+- [ ] S6 sessions + registerBooks · S7 plans · S8
   progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
 - [ ] Step 4: /api-contract (service API) approved before code
@@ -87,13 +94,27 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   `business-rules.md:127`; annotation-survival→S4; BOO-44 S3 throw site; `readable` live-count + target
   native_position). 31/31 live-store → 2 independent reviewers SHIP (4 NITs folded incl. realign of `addAsset`
   to the frozen bundled `{format, file?}` seam-contract shape). Branch `mod-books`.
+- 2026-10-01: S5 shipped — quote-embed feed + toggles (BOO-21/22). `getEmbeddableQuotes({bookId?})` + narrow
+  deny-safe `preferences?` port (2 reads, NIT-3) + `QuoteEmbedDisabledError`. Read-only, schema-less. Full per-slice
+  Entity Delivery Flow: g1 /critique SHIP (2 folds — §6 throw-site resolution recorded + feed global-read hoist) →
+  Approval 1 → /api-contract ratify + /adr-check (no ADR) → /preflight PASSED → Approval 2 → implement → 48/48
+  live-store Verification Gate (Node 24) → **2 independent reviewers SHIP** (correctness + doc-faithfulness; 0
+  blockers, 1 NIT folded = 2 added edge tests: global-off-no-overrides ⇒ [], empty-but-enabled ⇒ []) → §XXIX
+  currency (BR-BK-S5-1..5, current-spec + current-business-rules). Decision: single-method design (throw on scoped,
+  filter on global) — NO by-id resolve method added (frozen seam-contract honored, anti-over-engineering). @vida/core
+  **1479/1479**, tsc 0, eslint 0, gitleaks clean. Branch `mod-books`; PR when ① (all 10 slices) completes.
 
-## Next Slice — S5 (quote-embed feed + toggles)
-S5 scope (BOO-21/22, slice-map.md): `getEmbeddableQuotes(scope)` — the quote-embed provider for the `@vida/editor`
-block; **per-book > global toggle precedence** read from a deny-safe `preferences?` port (BK-7); embeds REFERENCE
-the stored quote (never copy); a toggled-off book → `QuoteEmbedDisabledError`. **New dep:** `preferences?:
-PreferencesPort` (optional, permissive default — the habits fail-OPEN precedent). Reload:
-`docs/features/books/delivery/{slice-map,seam-contract}.md` · `docs/modules/books/current-*` · `parts/books.md`
-BOO-21/22 · `business-rules.md` BK-7 · `conventions.md:22` · the S2 `ingestion?`/S3 `attachment?` deny-safe port
-shape. Env: Node 24 via nvm (if a stray non-24 `pnpm test` runs, rebuild better-sqlite3: `cd
+## Next Slice — S6 (reading sessions + Reader orchestration + registerBooks)
+S6 scope (BOO-23/24/25/26/39, slice-map.md:20): compose the ADR-004 base `sessions` `reading` sub-type +
+`sessionRegistry.register('reading', [])` + `registerBooks()` (the flashcards precedent — `createSession('reading')`
+throws `SessionTypeNotFound` without it; empty `allowed_effects` = C-E2-clean) + a Books-owned 1:1 `reading_sessions`
+extension (`session_id` key, mode-adaptive capture). `startSession`/`endSession` · `attachPhoto` (photo ALWAYS stores
++ `ai?` OCR deny-safe) · `getStatistics` derivation over the sessions ledger · `openReader` (BOO-39 service face:
+`attachment?` decrypt + auto-start session + resolve position/`NotSyncedState`; chrome → P6) · **C-E2 guard** (no
+economy grant on Books — grants ride base-`sessions`). **New required deps:** `sessions: SessionsService` +
+`sessionRegistry: SessionRegistry`; **new optional:** `ai?` (reuse the deny-safe port shape). Reload:
+`docs/features/books/delivery/{slice-map,seam-contract}.md` (S6 rows) · `docs/modules/books/current-*` ·
+`parts/books.md` BOO-23/24/25/26/39 · `business-rules.md` BK-10 · `conventions.md:24-27` · the flashcards
+`registerFlashcards` + ADR-004 Sessions sub-type precedent · `schema/books.ts` `reading_sessions` (NO `deleted_at`).
+Env: Node 24 via nvm (stray non-24 `pnpm test` → rebuild better-sqlite3: `cd
 node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release`). Branch `mod-books`.

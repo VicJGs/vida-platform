@@ -12,7 +12,7 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createBooksService } from '../service'
-import type { BooksService, AttachmentPort, FileBlob } from '../types'
+import type { BooksService, AttachmentPort, FileBlob, PreferencesPort } from '../types'
 import {
   BookNotFoundError,
   ChapterUniqueViolation,
@@ -21,6 +21,7 @@ import {
   AssetFileError,
   AnnotationNotFoundError,
   AnnotationNotLinkableError,
+  QuoteEmbedDisabledError,
 } from '../types'
 import { IngestionDenied, type IngestionGuard } from '../../../foundation/ingestion'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
@@ -655,5 +656,107 @@ describe('mod-books S4 — list reads + S3-fold survival (BOO-19/20)', () => {
     const views = await h.svc.listAnnotations(b.id)
     expect(views.map((v) => v.annotation.id)).toContain(hl.id) // highlight remains, flagged native
     expect(await h.svc.getBook(b.id)).not.toBeNull() // the book survives
+  })
+})
+
+// A narrow deny-safe PreferencesPort over fixed toggle values (M1 has no real Preferences-backed adapter).
+function mockPreferences(opts: { global?: boolean; overrides?: Record<string, boolean> } = {}): PreferencesPort {
+  return {
+    async getQuoteEmbedGlobal() {
+      return opts.global ?? true
+    },
+    async getQuoteEmbedOverride(bookId) {
+      return opts.overrides?.[bookId]
+    },
+  }
+}
+
+describe('mod-books S5 — quote-embed feed + toggles (BOO-21/22)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // (1) no port — global feed returns every non-deleted quote (permissive default, BR-BK-S5-3).
+  it('no preferences port — global feed returns all quotes (permissive)', async () => {
+    const a = await h.svc.createBook({ title: 'A' })
+    await h.svc.addQuote(a.id, 'one')
+    await h.svc.addQuote(a.id, 'two')
+    expect(await h.svc.getEmbeddableQuotes({})).toHaveLength(2)
+  })
+
+  // (2) no port — a scoped call returns that book's quotes and never throws.
+  it('no preferences port — scoped returns the book quotes, never throws', async () => {
+    const a = await h.svc.createBook({ title: 'A' })
+    await h.svc.addQuote(a.id, 'one')
+    const scoped = await h.svc.getEmbeddableQuotes({ bookId: a.id })
+    expect(scoped).toHaveLength(1)
+  })
+
+  // (3) soft-deleted quotes are excluded from both shapes (isNull(deleted_at), BR-BK-S5-1). No removeQuote method
+  // exists yet → soft-delete directly over the live store to exercise the filter.
+  it('soft-deleted quotes are excluded (both shapes)', async () => {
+    const a = await h.svc.createBook({ title: 'A' })
+    const q1 = await h.svc.addQuote(a.id, 'keep')
+    await h.svc.addQuote(a.id, 'drop')
+    // soft-delete the first via the raw store
+    h.bsql.prepare('UPDATE book_quotes SET deleted_at = ? WHERE id = ?').run(Date.now(), q1.id)
+    expect(await h.svc.getEmbeddableQuotes({})).toHaveLength(1)
+    expect(await h.svc.getEmbeddableQuotes({ bookId: a.id })).toHaveLength(1)
+  })
+
+  // (4) precedence — override ON under global OFF: the overridden book is embeddable; others throw (scoped) /
+  // are excluded (feed). BR-BK-S5-2/S5-4.
+  it('override ON under global OFF — overridden book embeddable; others throw/excluded', async () => {
+    const a = await h.svc.createBook({ title: 'A' })
+    const b = await h.svc.createBook({ title: 'B' })
+    await h.svc.addQuote(a.id, 'a1')
+    await h.svc.addQuote(a.id, 'a2')
+    await h.svc.addQuote(b.id, 'b1')
+    const svc = createBooksService({ ...booksDeps(h.db), preferences: mockPreferences({ global: false, overrides: { [a.id]: true } }) })
+    expect(await svc.getEmbeddableQuotes({})).toHaveLength(2) // only A's (B excluded)
+    expect(await svc.getEmbeddableQuotes({ bookId: a.id })).toHaveLength(2)
+    await expect(svc.getEmbeddableQuotes({ bookId: b.id })).rejects.toBeInstanceOf(QuoteEmbedDisabledError)
+  })
+
+  // (5) precedence — override OFF under global ON: the overridden book throws (scoped) / excluded (feed); others
+  // included. BR-BK-S5-2/S5-4.
+  it('override OFF under global ON — overridden book throws/excluded; others included', async () => {
+    const c = await h.svc.createBook({ title: 'C' })
+    const d = await h.svc.createBook({ title: 'D' })
+    await h.svc.addQuote(c.id, 'c1')
+    await h.svc.addQuote(d.id, 'd1')
+    const svc = createBooksService({ ...booksDeps(h.db), preferences: mockPreferences({ global: true, overrides: { [c.id]: false } }) })
+    await expect(svc.getEmbeddableQuotes({ bookId: c.id })).rejects.toBeInstanceOf(QuoteEmbedDisabledError)
+    const feed = await svc.getEmbeddableQuotes({})
+    expect(feed).toHaveLength(1) // D only; C excluded, no throw
+    expect(feed[0].book_id).toBe(d.id)
+  })
+
+  // (6) the feed references the stored row — id + text match (never a copy/transform, BR-BK-S5-5).
+  it('references the stored quote row (id + text preserved)', async () => {
+    const a = await h.svc.createBook({ title: 'A' })
+    const q = await h.svc.addQuote(a.id, 'the exact words', 'p.42')
+    const [got] = await h.svc.getEmbeddableQuotes({ bookId: a.id })
+    expect(got.id).toBe(q.id)
+    expect(got.text).toBe('the exact words')
+    expect(got.position).toBe('p.42')
+  })
+
+  // (7) global OFF, no overrides — the feed excludes everything and returns [] (never throws). Pins the
+  // `false ?? global` all-excluded branch directly (BR-BK-S5-4).
+  it('global OFF, no overrides — feed returns [] (no throw)', async () => {
+    const a = await h.svc.createBook({ title: 'A' })
+    await h.svc.addQuote(a.id, 'x')
+    const svc = createBooksService({ ...booksDeps(h.db), preferences: mockPreferences({ global: false }) })
+    expect(await svc.getEmbeddableQuotes({})).toHaveLength(0)
+  })
+
+  // (8) empty-but-ENABLED book — a scoped call on a toggle-ON book with no quotes returns [] (never throws:
+  // "empty" ≠ "disabled"). BR-BK-S5-4 boundary.
+  it('scoped on a toggle-ON book with no quotes returns [] (not a throw)', async () => {
+    const a = await h.svc.createBook({ title: 'Empty' })
+    const svc = createBooksService({ ...booksDeps(h.db), preferences: mockPreferences({ global: true }) })
+    expect(await svc.getEmbeddableQuotes({ bookId: a.id })).toHaveLength(0)
   })
 })

@@ -53,7 +53,13 @@ export interface BooksServiceDeps {
   spaces: SpacesService
   /** S4 — pages-backed notes on bookmarks/quotes (BOO-16/17) via `ensureEntityNote` (idempotent). Required. */
   notes: NotesService
-  // S5–S10 append: sessions / sessionRegistry (required) + ai? / preferences? / effects? / backlinks (S9/BOO-46).
+  /** S5 — quote-embed toggle reads (BK-7/BOO-22). Optional NARROW deny-safe port (NIT-3, `interpretation.md:60`):
+   *  Books homes two toggle reads rather than a hard dep on the full `services/preferences`. Absent ⇒ PERMISSIVE
+   *  (every quote embeddable) — the habits `backfillWindowDays` fail-OPEN precedent (a convenience policy, not a
+   *  security gate). S8 appends the conflict preset-rule read (zero signature change). Real Preferences keys land at
+   *  M2/P6 (zero-signature swap). `[FACT: interpretation.md:59-60; business-rules.md:35-37 (BK-7)]` */
+  preferences?: PreferencesPort
+  // S6–S10 append: sessions / sessionRegistry (required) + ai? / effects? / backlinks (S9/BOO-46).
 }
 
 // --- S3: asset file upload (BOO-09) — deny-safe port + service-layer types (the LookupResult precedent) ---
@@ -131,6 +137,19 @@ export type AddAssetInput = z.infer<typeof AddAssetSchema>
  *  seam-contract (`seam-contract.md:84`). The service splits `file` off before Zod-validating the metadata (the
  *  blob is raw bytes, not a validated value). */
 export type AddAssetArgs = AddAssetInput & { file?: FileBlob }
+
+// --- S5: quote-embed toggle port (BOO-21/22) — narrow deny-safe reads (the AttachmentPort precedent) -----------
+
+/** The narrow quote-embed toggle seam (BK-7). Books owns this 2-read interface (NIT-3) — NOT the full
+ *  `services/preferences` API. Precedence is applied by the service: a per-book override wins over global. A present
+ *  port owns its stored defaults; an ABSENT port is the permissive (fail-OPEN) default. M2 provides the real
+ *  Preferences-backed adapter (zero-signature swap). `[FACT: interpretation.md:59-60; conventions.md:22-23]` */
+export interface PreferencesPort {
+  /** Global quote-embed availability toggle. */
+  getQuoteEmbedGlobal(): Promise<boolean>
+  /** Per-book override; `undefined` ⇒ no override (fall through to global). */
+  getQuoteEmbedOverride(bookId: string): Promise<boolean | undefined>
+}
 
 /** listBooks filter (BOO-02) — S1 owns `status` ONLY. The `tags`/`subject`/`format-owned` keys are NOT
  *  advertised until S9/S3 build them (never advertise an unimplemented filter → no silent-wrong-result). */
@@ -264,6 +283,16 @@ export class AnnotationNotLinkableError extends Error {
   }
 }
 
+/** BK-7/BOO-22 — a SCOPED `getEmbeddableQuotes({ bookId })` whose book resolves toggle-OFF (per-book override >
+ *  global). The GLOBAL feed excludes toggle-off books instead of throwing (a feed yields a filtered list, never an
+ *  error). `[FACT: contract.md:68; seam-contract.md:60,100]` */
+export class QuoteEmbedDisabledError extends Error {
+  constructor(public readonly bookId: string) {
+    super(`Quote embedding disabled for book ${bookId}`)
+    this.name = 'QuoteEmbedDisabledError'
+  }
+}
+
 export interface BooksService {
   // ── S1: Works CRUD + reframe (BOO-01/02/03/48) ──────────────────────────────
   /** BOO-01 — create a WORK row. `progress` is never accepted (derived, BR-BK-2); `status` defaults to
@@ -332,4 +361,11 @@ export interface BooksService {
   listAnnotations(bookId: string): Promise<AnnotationView[]>
   /** BOO-20 — the All Quotes library: quotes for a book (`{bookId}`) or all (`{}`/absent). `tags?` → S9. */
   listQuotes(scope?: QuoteScope): Promise<BookQuote[]>
+
+  // ── S5: Quote-embed feed + toggles (BOO-21/22) ───────────────────────────────
+  /** BOO-21/22 — the quote-embed feed (BK-7). Returns LIVE `BookQuote` rows (never copies text) with per-book >
+   *  global toggle precedence via the deny-safe `preferences?` port (absent ⇒ permissive). A SCOPED `{ bookId }`
+   *  call for a toggle-OFF book throws `QuoteEmbedDisabledError`; the GLOBAL `{}` feed EXCLUDES toggle-off books
+   *  (no throw). Soft-delete filtered. Consumed by the `@vida/editor` quote-embed block (P6). */
+  getEmbeddableQuotes(scope: { bookId?: string }): Promise<BookQuote[]>
 }

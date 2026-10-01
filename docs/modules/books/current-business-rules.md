@@ -124,10 +124,32 @@
   (soft-delete filtered). The `tags?` filter is deferred to **S9** (`scopeTag`/BOO-04; the S1 `BookFilter`
   precedent — never advertise an unimplemented filter). `[code: service.ts listQuotes]`
 
+## Shipped invariants (as of S5 — Quote-embed feed + toggles, BOO-21/22)
+
+- **BR-BK-S5-1 (quote-embed feed — live rows, never copied / BK-7/BOO-21)** — `getEmbeddableQuotes({bookId?})`
+  returns live `BookQuote` rows (soft-delete filtered, `isNull(deleted_at)` explicit — the `findWhere`-skips-filter
+  rule). The returned row IS the reference; no text copy/transform (`toQuote` is a field projection). `[code:
+  service.ts getEmbeddableQuotes, toQuote]`
+- **BR-BK-S5-2 (toggle precedence — per-book > global / BK-7/BOO-22)** — the effective toggle resolves the per-book
+  override first, global second: scoped path `override !== undefined ? override : global`; feed path
+  `overrides.get(book_id) ?? global` (`??` not `||` — an explicit `false` override stays off). `[code: service.ts
+  resolveEmbedToggle; getEmbeddableQuotes feed filter]`
+- **BR-BK-S5-3 (deny-safe permissive default / NIT-3)** — an absent `preferences?` port ⇒ every non-deleted quote
+  is embeddable (fail-OPEN, the habits `backfillWindowDays` precedent — a convenience policy, not a security gate).
+  Narrow 2-read port (`getQuoteEmbedGlobal`/`getQuoteEmbedOverride`), not a coupling to full `services/preferences`.
+  `[code: service.ts (both `!preferences` fast-paths); types.ts PreferencesPort]`
+- **BR-BK-S5-4 (`QuoteEmbedDisabledError` — scoped throws, feed excludes / BK-7/BOO-22)** — a SCOPED
+  `getEmbeddableQuotes({bookId})` whose book resolves toggle-OFF throws `QuoteEmbedDisabledError(bookId)`; the GLOBAL
+  `{}` feed EXCLUDES toggle-off books and never throws (a feed yields a filtered list). An empty-but-ENABLED book
+  returns `[]` (empty ≠ disabled). `[code: service.ts getEmbeddableQuotes; contract.md:68]`
+- **BR-BK-S5-5 (references, never copies / BK-7/conventions.md:22)** — the feed returns the stored quote rows
+  (id/text/position preserved); the editor stores a reference (quote id) and re-reads — copying text into the embed
+  node is excluded (and a P6 concern). `[code: service.ts getEmbeddableQuotes]`
+
 ## Carry-forward (homed to a later slice)
 
-- **`listQuotes` `tags?` filter** → S9 (lands with `scopeTag`/BOO-04). *(S3 annotation-survival carry-forward
-  CLOSED by BR-BK-S4-7's test — a highlight on a removed asset survives; S2 "Chapter READ path" CLOSED by BR-BK-S3-8.)*
+- **`listQuotes` `tags?` filter** → S9 (lands with `scopeTag`/BOO-04). *(S4 "Embeddability = S5" carry-forward
+  CLOSED by BR-BK-S5-1..5; S3 annotation-survival CLOSED by BR-BK-S4-7; S2 "Chapter READ path" CLOSED by BR-BK-S3-8.)*
 
 ## Deferred (homed, not yet enforced — see delivery/slice-map.md Deferred-by-design)
 

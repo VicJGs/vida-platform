@@ -71,6 +71,7 @@ import {
   AssetFileError,
   AnnotationNotFoundError,
   AnnotationNotLinkableError,
+  QuoteEmbedDisabledError,
   BOOKS_ISBN_INTEGRATION_ID,
   type BooksService,
   type BooksServiceDeps,
@@ -128,7 +129,7 @@ const toQuote = (r: BookQuoteRow): BookQuote => ({
 })
 
 export function createBooksService(deps: BooksServiceDeps): BooksService {
-  const { db, deviceId, ingestion, attachment, spaces, notes } = deps
+  const { db, deviceId, ingestion, attachment, spaces, notes, preferences } = deps
 
   // [E] fields (title/author/isbn/review/cover_url) → encryptedFields:[] M1.0 pass-through (dormant → M3/DB-5).
   const booksRepo = createRepository(db, books, { deviceId, softDelete: true, encryptedFields: [] })
@@ -519,6 +520,38 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     return rows.map(toQuote)
   }
 
+  // --- Quote-embed feed + toggles (BOO-21/22) -------------------------------
+
+  // BK-7 precedence: a per-book override wins over global; an absent `preferences?` port is permissive (fail-OPEN,
+  // the habits `backfillWindowDays` precedent — a convenience policy, not a security gate).
+  async function resolveEmbedToggle(bookId: string): Promise<boolean> {
+    if (!preferences) return true // deny-safe permissive default (BR-BK-S5-3)
+    const override = await preferences.getQuoteEmbedOverride(bookId)
+    if (override !== undefined) return override // per-book overrides global (BR-BK-S5-2)
+    return preferences.getQuoteEmbedGlobal()
+  }
+
+  async function getEmbeddableQuotes(scope: { bookId?: string }): Promise<BookQuote[]> {
+    if (scope.bookId) {
+      // SCOPED: the "embed from this book" path — a toggle-off book throws (BR-BK-S5-4).
+      if (!(await resolveEmbedToggle(scope.bookId))) throw new QuoteEmbedDisabledError(scope.bookId)
+      const rows = await quotesRepo.findWhere(
+        and(isNull(bookQuotes.deleted_at), eq(bookQuotes.book_id, scope.bookId)) as SQL,
+      )
+      return rows.map(toQuote) // live rows; never copied (BR-BK-S5-1/5)
+    }
+    // GLOBAL feed: exclude toggle-off books; never throws (BR-BK-S5-4).
+    const rows = await quotesRepo.findWhere(isNull(bookQuotes.deleted_at))
+    if (!preferences) return rows.map(toQuote) // permissive fast-path (BR-BK-S5-3)
+    const prefs = preferences // capture for narrowing inside the nested closure
+    const global = await prefs.getQuoteEmbedGlobal() // read ONCE (not per book)
+    const distinct = [...new Set(rows.map((r) => r.book_id))]
+    const overrides = new Map(
+      await Promise.all(distinct.map(async (b) => [b, await prefs.getQuoteEmbedOverride(b)] as const)),
+    )
+    return rows.filter((r) => overrides.get(r.book_id) ?? global).map(toQuote) // override > global (BR-BK-S5-2)
+  }
+
   return {
     createBook,
     updateBook,
@@ -541,5 +574,6 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     openAnnotationNote,
     listAnnotations,
     listQuotes,
+    getEmbeddableQuotes,
   }
 }

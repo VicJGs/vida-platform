@@ -9,13 +9,14 @@
 
 `createBooksService(deps)` — the ① backend service tier for the **reading Universe** over DB-4 `023_books`
 (10 tables). The full design lives in `docs/features/books/` (aspect docs) + `docs/features/books/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **S4 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links).
+(interpretation · slice-map · seam-contract). Build state: **S5 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles).
 
-## Delivered surface (as of S4)
+## Delivered surface (as of S5)
 
-`createBooksService({ db, deviceId, spaces, notes, ingestion?, attachment? }) → BooksService`. Factory-object,
-hoisted closures, no `this.`. `spaces`+`notes` are required from S4 (annotation links/notes); deps grow per slice
-(S5–S10 add sessions/sessionRegistry + more deny-safe ports; `backlinks` → S9/BOO-46).
+`createBooksService({ db, deviceId, spaces, notes, ingestion?, attachment?, preferences? }) → BooksService`.
+Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from S4 (annotation links/notes); the
+narrow deny-safe `preferences?` port landed at **S5** (two quote-embed toggle reads). Deps grow per slice (S6–S10
+add sessions/sessionRegistry + `ai?`/`effects?`; `backlinks` → S9/BOO-46).
 
 | Method | Leg | Contract |
 |---|---|---|
@@ -40,13 +41,15 @@ hoisted closures, no `this.`. `spaces`+`notes` are required from S4 (annotation 
 | `openAnnotationNote(ref)` | BOO-16/17 | idempotent `notes.ensureEntityNote('note', 'book_'+kind, id, seed)`; rejects highlight (BK-6) |
 | `listAnnotations(bookId)` | BOO-19 | all three natures work-anchored (soft-delete filtered), ordered by `created_at`; cross-format normalization = P6 |
 | `listQuotes({bookId?})` | BOO-20 | All Quotes library per-book or all (soft-delete filtered); `tags?` → S9 |
+| `getEmbeddableQuotes({bookId?})` | BOO-21/22 | quote-embed feed; live `BookQuote` rows (never copied), soft-delete filtered; per-book > global toggle via deny-safe `preferences?` (absent ⇒ permissive); SCOPED `{bookId}` toggle-off ⇒ `QuoteEmbedDisabledError`; GLOBAL `{}` feed EXCLUDES toggle-off books (no throw) |
 
 **Types/errors:** `BooksServiceDeps`, `BooksService`, `BookView`, `BookFilter`, `BookCapabilities`, `ChapterSeed`,
 `AddAssetInput`, `FileBlob`, `AttachmentPort`, `AttachmentRef`, `MappedPosition`, `BookMetadata`, `IsbnLookupPayload`
-(the XCU-14 normalization contract Books owns), `LookupResult`, `BOOK_ENTITY_TYPE = 'book'`,
-`BOOKS_ISBN_INTEGRATION_ID = 'books.isbn_lookup'` (Books-owned integration identity, inert at M1). Errors:
-`BookNotFoundError`, `ChapterUniqueViolation`, `ChapterNotFoundError`, `BookAssetNotFoundError`, `AssetFileError`
-(thrown S3 addAsset upload-fail; decrypt site S6). Input Zod: `validators/books.ts` (`CreateBookSchema`,
+(the XCU-14 normalization contract Books owns), `LookupResult`, `PreferencesPort` (S5 — narrow quote-embed toggle
+reads), `BOOK_ENTITY_TYPE = 'book'`, `BOOKS_ISBN_INTEGRATION_ID = 'books.isbn_lookup'` (Books-owned integration
+identity, inert at M1). Errors: `BookNotFoundError`, `ChapterUniqueViolation`, `ChapterNotFoundError`,
+`BookAssetNotFoundError`, `AssetFileError` (thrown S3 addAsset upload-fail; decrypt site S6),
+`QuoteEmbedDisabledError` (S5 — scoped embed of a toggle-off book). Input Zod: `validators/books.ts` (`CreateBookSchema`,
 `UpdateBookSchema`, `ChapterSeedSchema`, `SetChaptersSchema`, `AddAssetSchema`, `UpdatePositionSchema`).
 Row→interface: `toBook` / `toChapter` / `toAsset` (single `_sync_status` union cast each — no json columns).
 
@@ -64,11 +67,12 @@ S2 chapters wired (no cross-module dep; chapters are module-local). `ingestion?`
 lookup (BOO-07/08) — deny-safe, M1-dormant (no mediator ⇒ `lookup-unavailable`; normalization = M2). `attachment?`
 port wired at **S3** for R2 file upload (BOO-09) — deny-safe (absent ⇒ `attachment-unavailable`), fail-loud on a
 present-port failure (`AssetFileError`); no R2 substrate at M1, real pipeline = M2. **`spaces` + `notes` wired at
-S4** (annotation inter-links + pages-notes; required deps, REAL substrates). Remaining:
-S5 quote-embed (`preferences?`) · S6 reading
-sessions (`sessions` + `sessionRegistry` + `registerBooks()`) · S7 plans · S8 unified-progress/conflict · S9
-Education/measurement · S10 AI integrations (`ai?` — OCR/TTS/transcription) + `registerBooksJournal`. Deferred reach
-= deny-safe ports (doc+substrate grounded; see slice-map Deferred-by-design).
+S4** (annotation inter-links + pages-notes; required deps, REAL substrates). **`preferences?` port wired at S5**
+(quote-embed toggles, BOO-22) — narrow deny-safe (two reads, NIT-3), absent ⇒ permissive (fail-OPEN, the habits
+precedent); real Preferences-backed adapter = M2/P6. S8 appends the conflict preset-rule read (zero signature
+change). Remaining: S6 reading sessions (`sessions` + `sessionRegistry` + `registerBooks()`) · S7 plans · S8
+unified-progress/conflict · S9 Education/measurement · S10 AI integrations (`ai?` — OCR/TTS/transcription) +
+`registerBooksJournal`. Deferred reach = deny-safe ports (doc+substrate grounded; see slice-map Deferred-by-design).
 
 ## Persistence (S3–S4 addendum)
 
