@@ -57,7 +57,7 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   SCOPED toggle-off ⇒ `QuoteEmbedDisabledError`, GLOBAL feed EXCLUDES toggle-off books (no throw) · `PreferencesPort`
   + `QuoteEmbedDisabledError` types. Read-only, schema-less (no migration, no `@vida/types` change). g1 (SHIP, 2
   folds) → 48/48 live-store (incl. 2 reviewer-NIT edges) → 2-reviewer SHIP (0 blockers) → §XXIX (BR-BK-S5-1..5).
-  @vida/core **1479/1479**, tsc 0, eslint 0, gitleaks clean. Commit `adc0733`.
+  @vida/core **1479/1479**, tsc 0, eslint 0, gitleaks clean. Commit `f81bd24`.
 - [ ] S6 sessions + registerBooks · S7 plans · S8
   progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
