@@ -63,8 +63,14 @@ mocked test bypasses (`[FACT: visual-gate-catches-worker-rpc-bugs; repository-cr
 |---|---|---|---|---|---|
 | S1 | ✅ (2 fixes) | ✅ 7/7 live-store | ✅ SHIP 0-block | ✅ | `df22a8d` |
 | S2 | ✅ (5 fixes) | ✅ 20/20 live-store | ✅ 3-finder (3 fixed/1 doc/1 c-fwd) | ✅ | `547c889` |
-| S3 | ✅ (4 pts grounded) | ✅ 31/31 live-store | ✅ 2-reviewer SHIP (4 NITs folded) | ✅ | _(pending)_ |
-| S4–S10 | — | — | — | — | — |
+| S3 | ✅ (4 pts grounded) | ✅ 31/31 live-store | ✅ 2-reviewer SHIP (4 NITs folded) | ✅ | `133ddef` |
+| S4 | ✅ (4 pts grounded) | ✅ 40/40 live-store (REAL spaces+notes) | ✅ 2-reviewer SHIP (1 NIT folded) | ✅ | _(pending)_ |
+| S5–S10 | — | — | — | — | — |
+
+**S4 BK-6 correction (§XXVIII, Verification-Gate-caught):** the g1 "registry-only enforcement" lean was
+incomplete — `spaces.createLink` validates only the link TARGET, not the SOURCE anchor, so a highlight *source*
+would persist a link. Books enforces the full rule via `assertLinkable` → `AnnotationNotLinkableError` (both
+endpoints); the registry remains a backstop. Grounded `conventions.md:50`.
 
 **BOO-44 note (split, recorded per the S2 F4-drift discipline):** BOO-44 (`AssetFileError`) is built in S3 — its
 S3 throw site is `addAsset` on a present-port R2 upload failure (`business-rules.md:127` fail-loud); the
@@ -74,8 +80,9 @@ decrypt/download throw site (`openReader`) lands at S6 (terminal `:112`). Fully 
 - **→ S2** (N3) ✅ CLOSED — `getCapabilities.plannable` now honors a TOC (BR-BK-S2-6).
 - **→ S3** (N1) ✅ CLOSED — `BookView.assets` is now the `BookAsset` @vida/types interface (BR-BK-S3-7).
 - **→ S3** (B1) ✅ CLOSED — `getBook` now surfaces `chapters` (the chapter READ path, BR-BK-S3-8).
-- **→ S4** (new): the annotation-survival test for `removeAsset` (BR-BK-S3-4, structural/no-FK) lands when
-  bookmarks/highlights/quotes exist.
+- **→ S4** (annotation-survival) ✅ CLOSED — a highlight on a removed asset survives (BR-BK-S4-7 test, the no-FK
+  hard case).
+- **→ S9** (new): `listQuotes` `tags?` filter lands with `scopeTag`/BOO-04.
 
 ## Decomposition Gate (Approval 1)
 

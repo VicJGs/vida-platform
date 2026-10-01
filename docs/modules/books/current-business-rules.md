@@ -93,10 +93,41 @@
   `chapters: BookChapter[]` ordered by `chapter_number`; `getCapabilities.readable` = ≥1 **live** asset
   (soft-delete-filtered; removing the last copy flips it false). `[code: service.ts getBook, getCapabilities]`
 
+## Shipped invariants (as of S4 — Annotations + notes/links, BOO-15/16/17/18/19/20)
+
+- **BR-BK-S4-1 (three annotation natures / BK-6)** — highlights, bookmarks, quotes are distinct tables. Highlights
+  are deliberately light: NO notes, NO inter-links, at EITHER endpoint. Enforced two ways: (a) the entity-type
+  registry EXCLUDES `book_highlight` (`_registry.ts:85-96`) — backstops a highlight as a link TARGET / note-entity;
+  (b) `spaces.createLink` does NOT validate the SOURCE anchor, so Books enforces the full rule via `assertLinkable`
+  → `AnnotationNotLinkableError` (fail-loud). `[code: service.ts assertLinkable; conventions.md:50]`
+- **BR-BK-S4-2 (highlight — digital span, work-anchored / BOO-15)** — `addHighlight(assetId, {captured_text,
+  position})` derives `book_id` from the asset (guards asset exists → `BookAssetNotFoundError`); `asset_id` records
+  the digital-content source; `captured_text` `[E]`. Input is **snake_case** `captured_text` (the books-surface
+  convention: `ChapterSeed`/`AddAssetInput` are snake_case; the frozen seam-contract's `capturedText` was a sketch
+  slip). `[code: service.ts addHighlight; validators AddHighlightSchema]`
+- **BR-BK-S4-3 (bookmark — work-anchored / BK-5/BOO-16)** — `addBookmark(bookId, position, label?)` anchors to the
+  work (`book_id`, no asset FK); `position` non-empty; `label` `[E]`. Guards book. `[code: service.ts addBookmark]`
+- **BR-BK-S4-4 (quote — first-class per book / BK-7/BOO-17)** — `addQuote(bookId, text, position?)`; `text` `[E]`
+  required. Guards book. (Embeddability = S5; tags = S9.) `[code: service.ts addQuote]`
+- **BR-BK-S4-5 (inter-link / BK-6/BOO-18)** — `linkAnnotations(a, b)` writes an `entity_links` row via
+  `spaces.createLink(a.id, 'book_'+b.kind, b.id)` (page_id = generic source anchor, the knowledge `linkObject`
+  precedent). Guards both exist (`AnnotationNotFoundError`) + neither is a highlight (`AnnotationNotLinkableError`).
+  `[code: service.ts linkAnnotations]`
+- **BR-BK-S4-6 (notes via pages / BK-6/BOO-16-17)** — `openAnnotationNote(ref)` = `notes.ensureEntityNote('note',
+  'book_'+ref.kind, ref.id, seed)` (idempotent; seed = bookmark label / quote text, the knowledge `openObjectNote`
+  precedent). Rejects a highlight (`AnnotationNotLinkableError`). `[code: service.ts openAnnotationNote]`
+- **BR-BK-S4-7 (annotations anchor to the WORK / BK-5/BOO-19)** — `listAnnotations(bookId)` returns all three
+  natures for the work (soft-delete filtered, `isNull(deleted_at)` explicit per table), each an `AnnotationView`
+  (`kind` + row + native `position`), ordered by `created_at`. Cross-format normalization to a viewing asset = P6
+  (composes the S3 `getMappedPosition`; BOO-19 SPLIT). `[code: service.ts listAnnotations]`
+- **BR-BK-S4-8 (All Quotes library / BOO-20)** — `listQuotes({bookId?})` returns quotes per-book or all
+  (soft-delete filtered). The `tags?` filter is deferred to **S9** (`scopeTag`/BOO-04; the S1 `BookFilter`
+  precedent — never advertise an unimplemented filter). `[code: service.ts listQuotes]`
+
 ## Carry-forward (homed to a later slice)
 
-- **Annotation-survival test** — BR-BK-S3-4's no-FK survival is structural; the delete-test lands at **S4** (when
-  bookmarks/highlights/quotes exist). *(S2 "Chapter READ path" carry-forward CLOSED by BR-BK-S3-8.)*
+- **`listQuotes` `tags?` filter** → S9 (lands with `scopeTag`/BOO-04). *(S3 annotation-survival carry-forward
+  CLOSED by BR-BK-S4-7's test — a highlight on a removed asset survives; S2 "Chapter READ path" CLOSED by BR-BK-S3-8.)*
 
 ## Deferred (homed, not yet enforced — see delivery/slice-map.md Deferred-by-design)
 

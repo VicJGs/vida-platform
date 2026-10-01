@@ -1,6 +1,12 @@
 // ============================================================================
 // services/books — the service (mod-books #51 ①)
 //
+// S4: Annotations + notes/links (BOO-15/16/17/18/19/20). Three natures (BK-6): highlights are light (NO notes/links
+// — the entity-type registry EXCLUDES `book_highlight`, so `spaces`/`notes` reject it fail-loud); bookmarks + quotes
+// take pages-notes (`notes.ensureEntityNote`) + inter-link (`spaces.createLink`, page_id = generic source anchor).
+// Bookmarks/quotes are work-anchored (BK-5); a highlight derives book_id from its asset. `listAnnotations` unions
+// the three (ordered by created_at); `listQuotes` is the All Quotes library (tags? → S9). `spaces`+`notes` required.
+//
 // S3: Assets + positions + mapping (BOO-09/10/11/12/44) + N1/B1 folds. `addAsset` uploads via the deny-safe
 // `attachment?` port FIRST (nothing persists on failure): absent port/no file ⇒ attachment-unavailable + file_ref
 // null (BK-17); present port + reject ⇒ fail-loud AssetFileError (business-rules.md:127). `updatePosition` writes
@@ -28,22 +34,33 @@
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
-import type { Book, BookAsset, BookChapter } from '@vida/types'
+import type { Book, BookAsset, BookChapter, BookBookmark, BookHighlight, BookQuote } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
   books,
   bookChapters,
   bookAssets,
+  bookBookmarks,
+  bookHighlights,
+  bookQuotes,
   type BookRow,
   type BookChapterRow,
   type BookAssetRow,
+  type BookBookmarkRow,
+  type BookHighlightRow,
+  type BookQuoteRow,
 } from '../../db/schema/books'
+import type { EntityLinkRow } from '../../db/schema/foundation/spaces'
+import type { PageRow } from '../../db/schema/notes'
 import {
   CreateBookSchema,
   UpdateBookSchema,
   SetChaptersSchema,
   AddAssetSchema,
   UpdatePositionSchema,
+  AddBookmarkSchema,
+  AddHighlightSchema,
+  AddQuoteSchema,
 } from '../../validators/books'
 import { IngestionDenied, type IngestionAct } from '../../foundation/ingestion'
 import {
@@ -52,6 +69,8 @@ import {
   ChapterNotFoundError,
   BookAssetNotFoundError,
   AssetFileError,
+  AnnotationNotFoundError,
+  AnnotationNotLinkableError,
   BOOKS_ISBN_INTEGRATION_ID,
   type BooksService,
   type BooksServiceDeps,
@@ -64,6 +83,10 @@ import {
   type AddAssetArgs,
   type AttachmentRef,
   type MappedPosition,
+  type AnnotationRef,
+  type AnnotationView,
+  type QuoteScope,
+  type BookAnnotationKind,
   type LookupResult,
   type IsbnLookupPayload,
   type BookMetadata,
@@ -90,8 +113,22 @@ const toAsset = (r: BookAssetRow): BookAsset => ({
   _sync_status: r._sync_status as BookAsset['_sync_status'],
 })
 
+// S4 annotation mappers (N-fold) — 1:1 row→interface, only the plain-text `_sync_status` casts.
+const toBookmark = (r: BookBookmarkRow): BookBookmark => ({
+  ...r,
+  _sync_status: r._sync_status as BookBookmark['_sync_status'],
+})
+const toHighlight = (r: BookHighlightRow): BookHighlight => ({
+  ...r,
+  _sync_status: r._sync_status as BookHighlight['_sync_status'],
+})
+const toQuote = (r: BookQuoteRow): BookQuote => ({
+  ...r,
+  _sync_status: r._sync_status as BookQuote['_sync_status'],
+})
+
 export function createBooksService(deps: BooksServiceDeps): BooksService {
-  const { db, deviceId, ingestion, attachment } = deps
+  const { db, deviceId, ingestion, attachment, spaces, notes } = deps
 
   // [E] fields (title/author/isbn/review/cover_url) → encryptedFields:[] M1.0 pass-through (dormant → M3/DB-5).
   const booksRepo = createRepository(db, books, { deviceId, softDelete: true, encryptedFields: [] })
@@ -101,6 +138,10 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
   // book_assets HAS deleted_at → softDelete:true (removeAsset soft-deletes; reads filter it). [E] file_ref →
   // encryptedFields:[] M1.0 pass-through.
   const assetsRepo = createRepository(db, bookAssets, { deviceId, softDelete: true, encryptedFields: [] })
+  // S4 annotation repos — all softDelete:true; [E] fields (label/captured_text/text) → encryptedFields:[] M1.0.
+  const bookmarksRepo = createRepository(db, bookBookmarks, { deviceId, softDelete: true, encryptedFields: [] })
+  const highlightsRepo = createRepository(db, bookHighlights, { deviceId, softDelete: true, encryptedFields: [] })
+  const quotesRepo = createRepository(db, bookQuotes, { deviceId, softDelete: true, encryptedFields: [] })
 
   // --- Works CRUD (BOO-01) --------------------------------------------------
 
@@ -367,6 +408,117 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     return { status: 'not-synced', nativePosition: target.native_position }
   }
 
+  // --- Annotations + notes/links (BOO-15/16/17/18/19/20) ---------------------
+
+  const annotationEntityType = (kind: BookAnnotationKind): string => `book_${kind}`
+
+  async function annotationExists(ref: AnnotationRef): Promise<boolean> {
+    // findById excludes soft-deleted rows.
+    if (ref.kind === 'bookmark') return (await bookmarksRepo.findById(ref.id)) != null
+    if (ref.kind === 'quote') return (await quotesRepo.findById(ref.id)) != null
+    return (await highlightsRepo.findById(ref.id)) != null
+  }
+  async function assertAnnotationExists(ref: AnnotationRef): Promise<void> {
+    if (!(await annotationExists(ref))) throw new AnnotationNotFoundError(ref.kind, ref.id)
+  }
+  // BK-6 — a highlight is never linkable/noteable, at EITHER endpoint. The registry backstops the TARGET /
+  // note-entity; it does NOT validate a link SOURCE anchor — so enforce the full rule here (conventions.md:50).
+  function assertLinkable(ref: AnnotationRef): void {
+    if (ref.kind === 'highlight') throw new AnnotationNotLinkableError(ref.id)
+  }
+
+  async function addBookmark(bookId: string, position: string, label?: string): Promise<BookBookmark> {
+    const v = AddBookmarkSchema.parse({ position, label: label ?? null })
+    if (!(await booksRepo.findById(bookId))) throw new BookNotFoundError(bookId)
+    const row = await bookmarksRepo.create({
+      book_id: bookId,
+      position: v.position,
+      label: v.label ?? null,
+      deleted_at: null,
+    } satisfies CreateInput<typeof bookBookmarks>)
+    return toBookmark(row)
+  }
+
+  async function addHighlight(
+    assetId: string,
+    span: { captured_text: string; position: string },
+  ): Promise<BookHighlight> {
+    const v = AddHighlightSchema.parse(span)
+    const asset = await assetsRepo.findById(assetId)
+    if (!asset) throw new BookAssetNotFoundError(assetId)
+    // book_id DERIVED from the asset (work-anchored, BK-5); asset_id records the digital-content source (BK-6).
+    const row = await highlightsRepo.create({
+      book_id: asset.book_id,
+      asset_id: assetId,
+      captured_text: v.captured_text,
+      position: v.position,
+      deleted_at: null,
+    } satisfies CreateInput<typeof bookHighlights>)
+    return toHighlight(row)
+  }
+
+  async function addQuote(bookId: string, text: string, position?: string): Promise<BookQuote> {
+    const v = AddQuoteSchema.parse({ text, position: position ?? null })
+    if (!(await booksRepo.findById(bookId))) throw new BookNotFoundError(bookId)
+    const row = await quotesRepo.create({
+      book_id: bookId,
+      text: v.text,
+      position: v.position ?? null,
+      deleted_at: null,
+    } satisfies CreateInput<typeof bookQuotes>)
+    return toQuote(row)
+  }
+
+  async function linkAnnotations(a: AnnotationRef, b: AnnotationRef): Promise<EntityLinkRow> {
+    // BK-6 — neither endpoint may be a highlight (the registry backstops the target only; the source is unchecked).
+    assertLinkable(a)
+    assertLinkable(b)
+    await assertAnnotationExists(a)
+    await assertAnnotationExists(b)
+    // entity_links.page_id = a generic SOURCE anchor (the knowledge linkObject precedent).
+    return spaces.createLink(a.id, annotationEntityType(b.kind), b.id)
+  }
+
+  async function openAnnotationNote(ref: AnnotationRef): Promise<PageRow> {
+    assertLinkable(ref) // BK-6 — no notes on highlights (the registry also backstops via createPage validation)
+    await assertAnnotationExists(ref)
+    // Seed (B3): bookmark→label, quote→text (the knowledge openObjectNote({title}) precedent; ensureEntityNote
+    // folds the seed into content, keyed idempotently on the entity). A highlight ref → 'book_highlight'
+    // (unregistered) fails loud in ensureEntityNote→createPage registry validation (BK-6; conventions.md:50).
+    const seed =
+      ref.kind === 'bookmark'
+        ? { title: (await bookmarksRepo.findById(ref.id))?.label ?? '' }
+        : ref.kind === 'quote'
+          ? { title: (await quotesRepo.findById(ref.id))?.text ?? '' }
+          : {}
+    return notes.ensureEntityNote('note', annotationEntityType(ref.kind), ref.id, seed)
+  }
+
+  async function listAnnotations(bookId: string): Promise<AnnotationView[]> {
+    // findWhere skips the soft-delete filter → explicit isNull(deleted_at) per table. Work-anchored (book_id).
+    const [bm, hl, qt] = await Promise.all([
+      bookmarksRepo.findWhere(and(isNull(bookBookmarks.deleted_at), eq(bookBookmarks.book_id, bookId)) as SQL),
+      highlightsRepo.findWhere(and(isNull(bookHighlights.deleted_at), eq(bookHighlights.book_id, bookId)) as SQL),
+      quotesRepo.findWhere(and(isNull(bookQuotes.deleted_at), eq(bookQuotes.book_id, bookId)) as SQL),
+    ])
+    const views: AnnotationView[] = [
+      ...bm.map((r): AnnotationView => ({ kind: 'bookmark', annotation: toBookmark(r), position: r.position })),
+      ...hl.map((r): AnnotationView => ({ kind: 'highlight', annotation: toHighlight(r), position: r.position })),
+      ...qt.map((r): AnnotationView => ({ kind: 'quote', annotation: toQuote(r), position: r.position })),
+    ]
+    // BOO-19 ordered by created_at (findWhere has no orderBy → sort in JS, the getBook chapters precedent).
+    return views.sort((x, y) => x.annotation.created_at - y.annotation.created_at)
+  }
+
+  async function listQuotes(scope?: QuoteScope): Promise<BookQuote[]> {
+    // bookId filter OR all; soft-delete filtered. `tags?` deferred to S9 (the S1 BookFilter precedent).
+    const where: SQL = scope?.bookId
+      ? (and(isNull(bookQuotes.deleted_at), eq(bookQuotes.book_id, scope.bookId)) as SQL)
+      : isNull(bookQuotes.deleted_at)
+    const rows = await quotesRepo.findWhere(where)
+    return rows.map(toQuote)
+  }
+
   return {
     createBook,
     updateBook,
@@ -382,5 +534,12 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     updatePosition,
     removeAsset,
     getMappedPosition,
+    addBookmark,
+    addHighlight,
+    addQuote,
+    linkAnnotations,
+    openAnnotationNote,
+    listAnnotations,
+    listQuotes,
   }
 }

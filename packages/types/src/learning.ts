@@ -280,6 +280,35 @@ export interface BookChapter extends SyncableEntity {
   sort_order: number
 }
 
+// DB-4 group #11 (mod-books ① S4, N-fold) — the three annotation natures (BK-6). Mirror the reshaped rows
+// (schema/books.ts:103-145). Highlights are deliberately light (no notes/links — enforced by the entity-type
+// registry excluding `book_highlight`); bookmarks + quotes take notes via `pages` and inter-link (bookmark↔quote).
+export interface BookBookmark extends SyncableEntity {
+  book_id: Id // work-anchored (BK-5), no asset FK
+  position: string | null
+  /** @encrypted */
+  label: string | null
+  deleted_at: Timestamp | null
+}
+
+export interface BookHighlight extends SyncableEntity {
+  book_id: Id
+  /** digital-content source asset (BK-6); nullable, no FK */
+  asset_id: Id | null
+  /** @encrypted */
+  captured_text: string | null
+  position: string | null
+  deleted_at: Timestamp | null
+}
+
+export interface BookQuote extends SyncableEntity {
+  book_id: Id
+  /** @encrypted */
+  text: string
+  position: string | null
+  deleted_at: Timestamp | null
+}
+
 export interface Skill extends SyncableEntity {
   parent_skill_id: Id | null
   /** @encrypted */

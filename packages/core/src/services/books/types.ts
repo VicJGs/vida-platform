@@ -10,14 +10,21 @@
 // ============================================================================
 
 import type { z } from 'zod'
-import type { Book, BookAsset, BookChapter, BookStatus } from '@vida/types'
+import type { Book, BookAsset, BookChapter, BookBookmark, BookHighlight, BookQuote, BookStatus } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type { IngestionGuard } from '../../foundation/ingestion'
+import type { SpacesService } from '../../foundation/spaces'
+import type { NotesService } from '../notes'
+import type { EntityLinkRow } from '../../db/schema/foundation/spaces'
+import type { PageRow } from '../../db/schema/notes'
 import type {
   CreateBookSchema,
   UpdateBookSchema,
   ChapterSeedSchema,
   AddAssetSchema,
+  AddBookmarkSchema,
+  AddHighlightSchema,
+  AddQuoteSchema,
 } from '../../validators/books'
 
 /** The `entity_type` a book registers in the shared taggable/pages/links registries (pre-seeded by DB-4
@@ -40,8 +47,13 @@ export interface BooksServiceDeps {
    *  R2 substrate exists at M1 (`grep foundation/ = none`) — the real pipeline lands at M2 (zero-signature swap).
    *  `[FACT: business-rules.md:14 (BK-1 attachments); parts/books.md:19 (BOO-09, R2=ADR-003-owned)]` */
   attachment?: AttachmentPort
-  // S4–S10 append: spaces / backlinks / notes / sessions / sessionRegistry (required) +
-  //   ai? / preferences? / effects? (optional deny-safe ports).
+  /** S4 — ADR-006 entity_links WRITE (BOO-18 inter-link) + the entity-type registry that enforces BK-6 (highlights
+   *  are unregistered → fail-loud). Required: annotation linking is core to S4, not optional (the knowledge/notes
+   *  required-dep precedent). `[FACT: foundation/spaces; _registry.ts:85-96]` */
+  spaces: SpacesService
+  /** S4 — pages-backed notes on bookmarks/quotes (BOO-16/17) via `ensureEntityNote` (idempotent). Required. */
+  notes: NotesService
+  // S5–S10 append: sessions / sessionRegistry (required) + ai? / preferences? / effects? / backlinks (S9/BOO-46).
 }
 
 // --- S3: asset file upload (BOO-09) — deny-safe port + service-layer types (the LookupResult precedent) ---
@@ -77,6 +89,35 @@ export type AttachmentRef = { status: 'stored'; fileRef: string } | { status: 'a
 export type MappedPosition =
   | { status: 'synced'; position: string; sourceAssetId: string }
   | { status: 'not-synced'; nativePosition: string | null }
+
+// --- S4: annotations (BOO-15/16/17/18/19/20) — service-layer types -----------
+
+/** The three annotation natures (BK-6). `'book_'+kind` is the registered `entity_type` for links/notes — except
+ *  `highlight` ⇒ `book_highlight` is deliberately UNregistered (`_registry.ts:85-96`), so a highlight ref to
+ *  `linkAnnotations`/`openAnnotationNote` fails loud via `spaces`/`notes` `UnknownEntityType` (the BK-6 enforcement). */
+export type BookAnnotationKind = 'bookmark' | 'highlight' | 'quote'
+/** A reference to one annotation (BOO-18/19). */
+export interface AnnotationRef {
+  kind: BookAnnotationKind
+  id: string
+}
+/** listAnnotations row (BOO-19) — a work-anchored annotation + its native position. Cross-format normalization to a
+ *  VIEWING asset is the P6 Reader composing the S3 `getMappedPosition` (BOO-19 SPLIT; mapping unbuilt at M1). */
+export interface AnnotationView {
+  kind: BookAnnotationKind
+  annotation: BookBookmark | BookHighlight | BookQuote
+  position: string | null
+}
+/** listQuotes scope (BOO-20) — S4 owns `bookId` ONLY; the `tags?` filter lands at S9 with `scopeTag` (BOO-04) —
+ *  the S1 `BookFilter` precedent (never advertise an unimplemented filter). */
+export interface QuoteScope {
+  bookId?: string
+}
+
+// Zod-inferred annotation inputs (validators/books.ts).
+export type AddBookmarkInput = z.infer<typeof AddBookmarkSchema>
+export type AddHighlightInput = z.infer<typeof AddHighlightSchema>
+export type AddQuoteInput = z.infer<typeof AddQuoteSchema>
 
 // --- Zod-inferred input shapes (validators/books.ts) ------------------------
 export type CreateBookInput = z.infer<typeof CreateBookSchema>
@@ -201,6 +242,28 @@ export class AssetFileError extends Error {
   }
 }
 
+/** BOO-16/17/18/19 — an annotation id did not resolve in its table (guard-exists at link/note/list). */
+export class AnnotationNotFoundError extends Error {
+  constructor(
+    public readonly kind: BookAnnotationKind,
+    public readonly id: string,
+  ) {
+    super(`${kind} not found: ${id}`)
+    this.name = 'AnnotationNotFoundError'
+  }
+}
+
+/** BK-6 — highlights are deliberately light: NO notes, NO inter-links, at EITHER endpoint. The entity-type registry
+ *  backstops a highlight as a link TARGET / note entity (`book_highlight` unregistered), but `spaces.createLink`
+ *  does NOT validate the SOURCE anchor — so Books enforces the full rule here, fail-loud.
+ *  `[FACT: conventions.md:50 "Never put notes/inter-links on highlights"; business-rules.md:31-34 (BK-6)]` */
+export class AnnotationNotLinkableError extends Error {
+  constructor(public readonly id: string) {
+    super(`Highlights cannot be linked or noted (BK-6): ${id}`)
+    this.name = 'AnnotationNotLinkableError'
+  }
+}
+
 export interface BooksService {
   // ── S1: Works CRUD + reframe (BOO-01/02/03/48) ──────────────────────────────
   /** BOO-01 — create a WORK row. `progress` is never accepted (derived, BR-BK-2); `status` defaults to
@@ -249,4 +312,24 @@ export interface BooksService {
    *  algorithm is unbuilt ⇒ always `{status:'not-synced', nativePosition: <target native>}` (fail-loud). Guards
    *  both assets exist + belong to the same book (`BookAssetNotFoundError`). */
   getMappedPosition(assetId: string, targetAssetId: string): Promise<MappedPosition>
+
+  // ── S4: Annotations + notes/links (BOO-15/16/17/18/19/20) ────────────────────
+  /** BOO-16 — a work-anchored bookmark (BK-5); `label` [E]. Guards the book exists (`BookNotFoundError`). */
+  addBookmark(bookId: string, position: string, label?: string): Promise<BookBookmark>
+  /** BOO-15 — a light digital-content highlight span (no notes/links, BK-6). `book_id` is derived from the asset;
+   *  guards the asset exists (`BookAssetNotFoundError`). `captured_text` [E]. */
+  addHighlight(assetId: string, span: { captured_text: string; position: string }): Promise<BookHighlight>
+  /** BOO-17 — a first-class quote stored per book (BK-7); `text` [E]. Guards the book exists. */
+  addQuote(bookId: string, text: string, position?: string): Promise<BookQuote>
+  /** BOO-18 — inter-link two annotations via `entity_links` (BK-6). Guards both exist (`AnnotationNotFoundError`);
+   *  a highlight endpoint fails loud via the registry (`book_highlight` unregistered → `UnknownEntityType`). */
+  linkAnnotations(a: AnnotationRef, b: AnnotationRef): Promise<EntityLinkRow>
+  /** BOO-16/17 — open (idempotent) the pages-backed note for a bookmark/quote. Guards exists; a highlight ref
+   *  fails loud via the registry (no notes on highlights, BK-6). */
+  openAnnotationNote(ref: AnnotationRef): Promise<PageRow>
+  /** BOO-19 — all three annotation natures for the work (soft-delete filtered), ordered by `created_at`; each with
+   *  its native position. Cross-format normalization to a viewing asset = P6 (composes S3 `getMappedPosition`). */
+  listAnnotations(bookId: string): Promise<AnnotationView[]>
+  /** BOO-20 — the All Quotes library: quotes for a book (`{bookId}`) or all (`{}`/absent). `tags?` → S9. */
+  listQuotes(scope?: QuoteScope): Promise<BookQuote[]>
 }

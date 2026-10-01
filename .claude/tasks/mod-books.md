@@ -43,8 +43,15 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   soft-delete) · `getMappedPosition`→`MappedPosition` (BK-4 never-guessed, M1 always `not-synced`+target native) ·
   N1 `BookAsset` @vida/types interface · B1 chapters on `BookView` (closes S2 chapter-READ). g1 (4 pts grounded in
   the corpus) → 31/31 live-store → 2-reviewer SHIP (4 NITs folded, incl. seam-contract realign) → §XXIX
-  (BR-BK-S3-1..8). @vida/core green, tsc 0, eslint 0. Commit _(pending)_.
-- [ ] S4 annotations · S5 quote-embed · S6 sessions + registerBooks · S7 plans · S8
+  (BR-BK-S3-1..8). @vida/core green, tsc 0, eslint 0. Commit `133ddef`.
+- [x] **S4 — Annotations + notes/links** (BOO-15/16/17/18/19/20): `book_bookmarks`/`book_highlights`/`book_quotes`
+  CRUD + N-fold @vida/types interfaces · `addHighlight` derives book_id from asset · `linkAnnotations`
+  (`spaces.createLink`) + `openAnnotationNote` (`notes.ensureEntityNote`) composing the REAL substrates ·
+  BK-6 highlight-exclusion enforced via `assertLinkable`→`AnnotationNotLinkableError` (both endpoints — the registry
+  backstops the target only; Verification-Gate-caught, §XXVIII) · `listAnnotations`/`listQuotes`. g1 (4 pts grounded)
+  → 40/40 live-store (REAL spaces+notes) → 2-reviewer SHIP (1 NIT folded) → §XXIX (BR-BK-S4-1..8). @vida/core
+  **1473/1473**, tsc 0, eslint 0. Commit _(pending)_.
+- [ ] S5 quote-embed · S6 sessions + registerBooks · S7 plans · S8
   progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
 - [ ] Step 4: /api-contract (service API) approved before code
@@ -66,6 +73,14 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
 - 2026-10-01: S2 shipped (`547c889`) — chapters/TOC + ISBN lookup port + N3 fold. Full per-slice cadence
   (g1 → 20/20 live-store Verification Gate → 3-finder code-review → §XXIX currency). Next: S3 (assets +
   positions + R2 `attachment?` port + cross-format mapping absent-state). Branch `mod-books`.
+- 2026-10-01: S4 shipped — annotations + notes/links (BOO-15/16/17/18/19/20). N-fold BookBookmark/Highlight/Quote.
+  g1 critique REVISE→3 items grounded (captured_text snake_case books-convention; highlight-survival test = the
+  no-FK hard case; openAnnotationNote seed). Composes REAL spaces+notes (live-gate exercises registry + idempotency).
+  **BK-6 correction (§XXVIII, live-gate-caught):** g1 "registry-only enforcement" was incomplete — spaces.createLink
+  validates only the link TARGET, not the SOURCE anchor → a highlight source would persist a link; added
+  `assertLinkable`→`AnnotationNotLinkableError` (both endpoints, conventions.md:50). Also fixed an ENV failure: a
+  stray Node-20 `pnpm test` recompiled better-sqlite3 to ABI 115 → rebuilt for Node 24 (ABI 137) via
+  `build-release`. 40/40 books + **1473/1473** full suite. 2 independent reviewers SHIP. Branch `mod-books`.
 - 2026-10-01: S3 shipped — assets + positions + mapping absent-state (BOO-09/10/11/12/44) + folds N1
   (`BookAsset` interface) + B1 (chapters READ path). g1 critique REVISE→4 points grounded in the corpus
   (Victor: "ground them in the documentation" — `addAsset` deny-safe-ABSENCE/fail-loud-FAILURE split via
@@ -73,13 +88,12 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   native_position). 31/31 live-store → 2 independent reviewers SHIP (4 NITs folded incl. realign of `addAsset`
   to the frozen bundled `{format, file?}` seam-contract shape). Branch `mod-books`.
 
-## Next Slice — S4 (annotations + notes/links)
-S4 scope (BOO-15/16/17/18/19/20, slice-map.md): `book_bookmarks` / `book_highlights` / `book_quotes` CRUD ·
-BK-6 three-annotation-natures asymmetry (highlights = light, NO notes/links; bookmarks + quotes take notes via
-`notes.ensureEntityNote` + inter-link bookmark↔quote via `spaces`/`entity_links`) · work-anchored (BK-5) ·
-`listAnnotations` mapping-normalized · `listQuotes` library query · `AnnotationNotFoundError`. **New deps:**
-`spaces: SpacesService` (entity_links WRITE) + `backlinks: BacklinkResolver` (entity_links READ) +
-`notes: NotesService` (pages-backed notes). **Fold carry-fwd from S3:** the annotation-survival test for
-`removeAsset` (BR-BK-S3-4) now lands here (annotations exist). Reload: `docs/features/books/delivery/*` ·
-`docs/modules/books/current-*` · `parts/books.md` BOO-15..20 · `schema/books.ts` (book_bookmarks/highlights/quotes) ·
-`services/knowledge` (spaces/notes compose precedent). Env: Node 24 via nvm. Branch `mod-books`.
+## Next Slice — S5 (quote-embed feed + toggles)
+S5 scope (BOO-21/22, slice-map.md): `getEmbeddableQuotes(scope)` — the quote-embed provider for the `@vida/editor`
+block; **per-book > global toggle precedence** read from a deny-safe `preferences?` port (BK-7); embeds REFERENCE
+the stored quote (never copy); a toggled-off book → `QuoteEmbedDisabledError`. **New dep:** `preferences?:
+PreferencesPort` (optional, permissive default — the habits fail-OPEN precedent). Reload:
+`docs/features/books/delivery/{slice-map,seam-contract}.md` · `docs/modules/books/current-*` · `parts/books.md`
+BOO-21/22 · `business-rules.md` BK-7 · `conventions.md:22` · the S2 `ingestion?`/S3 `attachment?` deny-safe port
+shape. Env: Node 24 via nvm (if a stray non-24 `pnpm test` runs, rebuild better-sqlite3: `cd
+node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release`). Branch `mod-books`.

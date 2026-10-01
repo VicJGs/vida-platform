@@ -75,3 +75,26 @@ export const AddAssetSchema = z.object({
 /** updatePosition input — the single native position per asset (SSOT, BK-2). Non-empty string (page / epub
  *  location / audio timestamp / manual), format-interpreted — Books stores it opaque. */
 export const UpdatePositionSchema = z.string().min(1)
+
+// --- Annotations (BOO-15/16/17) ----------------------------------------------
+// Field casing = snake_case mirroring the columns + the @vida/types interfaces (ChapterSeed/AddAsset precedent);
+// the frozen seam-contract's `capturedText` camelCase is a one-off sketch slip. `[FACT: schema/books.ts:103-145]`
+
+/** addBookmark input (BOO-16) — a work-anchored position marker. `position` non-empty (a bookmark marks a point);
+ *  `label` optional [E]. */
+export const AddBookmarkSchema = z.object({
+  position: z.string().min(1),
+  label: z.string().nullable().optional(),
+})
+
+/** addHighlight span (BOO-15) — a light digital-content span marker (no notes/links, BK-6). Both fields non-empty. */
+export const AddHighlightSchema = z.object({
+  captured_text: z.string().min(1),
+  position: z.string().min(1),
+})
+
+/** addQuote input (BOO-17) — a first-class quote stored per book; `text` non-empty [E]; `position` optional. */
+export const AddQuoteSchema = z.object({
+  text: z.string().min(1),
+  position: z.string().nullable().optional(),
+})

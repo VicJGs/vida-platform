@@ -19,8 +19,24 @@ import {
   ChapterNotFoundError,
   BookAssetNotFoundError,
   AssetFileError,
+  AnnotationNotFoundError,
+  AnnotationNotLinkableError,
 } from '../types'
 import { IngestionDenied, type IngestionGuard } from '../../../foundation/ingestion'
+import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSpacesService } from '../../../foundation/spaces/service'
+import { createBacklinkResolver } from '../../search/backlink-resolver'
+import { createNotesService } from '../../notes'
+
+// The REAL required deps (spaces + notes) over the live store — exercises the entity-type registry enforcement
+// (BK-6 highlight rejection) + ensureEntityNote idempotency a mock would bypass (the knowledge harness precedent).
+function booksDeps(db: DrizzleDb) {
+  const registry = createTaggableTypeRegistry()
+  const spaces = createSpacesService(db, 'test-device', registry)
+  const backlinks = createBacklinkResolver(db, 'test-device')
+  const notes = createNotesService({ db, deviceId: 'test-device', spaces, backlinks, registry })
+  return { db, deviceId: 'test-device' as const, spaces, notes }
+}
 
 // Better-sqlite3 driver adapter (verbatim from the knowledge harness — the full SqliteDriver surface).
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -68,7 +84,7 @@ async function setup(): Promise<Harness> {
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createBooksService({ db, deviceId: 'test-device' })
+  const svc = createBooksService(booksDeps(db))
   return { svc, db, bsql }
 }
 
@@ -278,7 +294,7 @@ describe('mod-books S2 — ISBN lookup port (BOO-07/08), deny-safe', () => {
   })
 
   it('no ingestion dep ⇒ lookup-unavailable(no-ingestion); manual fallback still works', async () => {
-    const svc = createBooksService({ db, deviceId: 'test-device' }) // no ingestion port
+    const svc = createBooksService(booksDeps(db)) // no ingestion port
     const res = await svc.lookupBook({ isbn: '9780135957059' })
     expect(res).toEqual({ status: 'lookup-unavailable', reason: 'no-ingestion' })
     // manual fallback (BK-14): createBook + setChapters remain callable
@@ -289,15 +305,14 @@ describe('mod-books S2 — ISBN lookup port (BOO-07/08), deny-safe', () => {
   it('an IngestionDenied folds to lookup-unavailable, preserving the deny reason (fold logic)', async () => {
     // mockIngestion default throws IngestionDenied('mediator_unavailable') → the fold preserves it. (With the REAL
     // M1 guard the UNREGISTERED def throws CapabilityNotFound → reason 'lookup-failed' — the non-deny fold below.)
-    const svc = createBooksService({ db, deviceId: 'test-device', ingestion: mockIngestion({}) })
+    const svc = createBooksService({ ...booksDeps(db), ingestion: mockIngestion({}) })
     const res = await svc.lookupBook({ text: 'Clean Code' })
     expect(res).toEqual({ status: 'lookup-unavailable', reason: 'mediator_unavailable' })
   })
 
   it('any non-deny failure (incl. CapabilityNotFound, the real M1 path) folds to lookup-unavailable(lookup-failed)', async () => {
     const svc = createBooksService({
-      db,
-      deviceId: 'test-device',
+      ...booksDeps(db),
       ingestion: mockIngestion({
         fetch: async () => {
           throw new Error('network boom')
@@ -310,8 +325,7 @@ describe('mod-books S2 — ISBN lookup port (BOO-07/08), deny-safe', () => {
 
   it('a working mediator yields ready + the normalized payload (M2-shaped path)', async () => {
     const svc = createBooksService({
-      db,
-      deviceId: 'test-device',
+      ...booksDeps(db),
       ingestion: mockIngestion({
         fetch: async () => ({
           ok: true,
@@ -334,21 +348,19 @@ describe('mod-books S2 — ISBN lookup port (BOO-07/08), deny-safe', () => {
   it('a malformed mediator payload (no metadata) folds fail-closed to lookup-unavailable', async () => {
     // The M2 ready-branch shape guard: a payload missing `metadata` never yields { status:'ready', metadata:undefined }.
     const svc = createBooksService({
-      db,
-      deviceId: 'test-device',
+      ...booksDeps(db),
       ingestion: mockIngestion({ fetch: async () => ({ ok: true, data: { toc: [] } }) }),
     })
     expect(await svc.lookupBook({ isbn: '123' })).toEqual({ status: 'lookup-unavailable', reason: 'lookup-failed' })
   })
 
   it('revokeLookupGrant — no-op without ingestion, delegates with ingestion (X9)', async () => {
-    const noDep = createBooksService({ db, deviceId: 'test-device' })
+    const noDep = createBooksService(booksDeps(db))
     await expect(noDep.revokeLookupGrant()).resolves.toBeUndefined() // no throw, no-op
 
     let revoked: string | null = null
     const withDep = createBooksService({
-      db,
-      deviceId: 'test-device',
+      ...booksDeps(db),
       ingestion: mockIngestion({ onRevoke: (defId) => (revoked = defId) }),
     })
     await withDep.revokeLookupGrant()
@@ -388,7 +400,7 @@ describe('mod-books S3 — Assets + positions (BOO-09/10/11)', () => {
   })
 
   it('addAsset with a present port + file ⇒ stored + file_ref persisted', async () => {
-    const svc = createBooksService({ db: h.db, deviceId: 'test-device', attachment: mockAttachment() })
+    const svc = createBooksService({ ...booksDeps(h.db), attachment: mockAttachment() })
     const b = await svc.createBook({ title: 'Digital' })
     const { asset, file } = await svc.addAsset(b.id, { format: 'pdf', file: blob('x.pdf') })
     expect(file).toEqual({ status: 'stored', fileRef: `r2://${b.id}/file` })
@@ -399,8 +411,7 @@ describe('mod-books S3 — Assets + positions (BOO-09/10/11)', () => {
 
   it('addAsset with a present port whose upload() rejects ⇒ AssetFileError, NOTHING persisted (fail-loud, :127)', async () => {
     const svc = createBooksService({
-      db: h.db,
-      deviceId: 'test-device',
+      ...booksDeps(h.db),
       attachment: mockAttachment({
         upload: async () => {
           throw new Error('R2 down')
@@ -511,5 +522,138 @@ describe('mod-books S3 — B1 fold: chapter READ path on getBook', () => {
     const err = new AssetFileError('decrypt failed', new Error('bad key'))
     expect(err).toBeInstanceOf(AssetFileError)
     expect(err.name).toBe('AssetFileError')
+  })
+})
+
+// --- S4: Annotations + notes/links (BOO-15/16/17/18/19/20) -------------------
+
+describe('mod-books S4 — annotations CRUD (BOO-15/16/17)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('addBookmark creates a work-anchored row ([E] label); guards book; re-reads faithfully', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const bm = await h.svc.addBookmark(b.id, 'p.42', 'to revisit')
+    expect(bm.book_id).toBe(b.id)
+    expect(bm.position).toBe('p.42')
+    expect(bm.label).toBe('to revisit')
+    await expect(h.svc.addBookmark('missing', 'p.1')).rejects.toBeInstanceOf(BookNotFoundError)
+    await expect(h.svc.addBookmark(b.id, '')).rejects.toThrow() // position non-empty
+  })
+
+  it('addQuote stores a per-book quote ([E] text, required); guards book', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const q = await h.svc.addQuote(b.id, 'words that talked', 'p.7')
+    expect(q.book_id).toBe(b.id)
+    expect(q.text).toBe('words that talked')
+    expect(q.position).toBe('p.7')
+    await expect(h.svc.addQuote(b.id, '')).rejects.toThrow() // text non-empty
+    await expect(h.svc.addQuote('missing', 'x')).rejects.toBeInstanceOf(BookNotFoundError)
+  })
+
+  it('addHighlight derives book_id from the asset + records asset_id; guards the asset', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const { asset } = await h.svc.addAsset(b.id, { format: 'pdf' })
+    const hl = await h.svc.addHighlight(asset.id, { captured_text: 'a span', position: 'p.3' })
+    expect(hl.book_id).toBe(b.id) // derived from the asset (work-anchored)
+    expect(hl.asset_id).toBe(asset.id)
+    expect(hl.captured_text).toBe('a span')
+    await expect(
+      h.svc.addHighlight('missing', { captured_text: 'x', position: 'p.1' }),
+    ).rejects.toBeInstanceOf(BookAssetNotFoundError)
+  })
+})
+
+describe('mod-books S4 — inter-links + notes (BOO-18, BK-6 highlight exclusion)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('linkAnnotations(bookmark, quote) writes an entity_link; guards both exist', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const bm = await h.svc.addBookmark(b.id, 'p.1')
+    const q = await h.svc.addQuote(b.id, 'quote')
+    const link = await h.svc.linkAnnotations({ kind: 'bookmark', id: bm.id }, { kind: 'quote', id: q.id })
+    expect(link.page_id).toBe(bm.id) // source anchor
+    expect(link.entity_type).toBe('book_quote')
+    expect(link.entity_id).toBe(q.id)
+    await expect(
+      h.svc.linkAnnotations({ kind: 'bookmark', id: 'missing' }, { kind: 'quote', id: q.id }),
+    ).rejects.toBeInstanceOf(AnnotationNotFoundError)
+  })
+
+  it('BK-6 — a highlight endpoint fails loud via the registry (book_highlight unregistered)', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const { asset } = await h.svc.addAsset(b.id, { format: 'pdf' })
+    const hl = await h.svc.addHighlight(asset.id, { captured_text: 's', position: 'p.1' })
+    const q = await h.svc.addQuote(b.id, 'quote')
+    // BK-6 enforced at the Books boundary (the registry only backstops the link TARGET / note-entity, not a link
+    // SOURCE anchor) — a highlight at EITHER endpoint fails loud with the typed error.
+    await expect(
+      h.svc.linkAnnotations({ kind: 'highlight', id: hl.id }, { kind: 'quote', id: q.id }),
+    ).rejects.toBeInstanceOf(AnnotationNotLinkableError)
+    await expect(
+      h.svc.linkAnnotations({ kind: 'bookmark', id: (await h.svc.addBookmark(b.id, 'p.1')).id }, { kind: 'highlight', id: hl.id }),
+    ).rejects.toBeInstanceOf(AnnotationNotLinkableError) // highlight as TARGET too
+    await expect(h.svc.openAnnotationNote({ kind: 'highlight', id: hl.id })).rejects.toBeInstanceOf(
+      AnnotationNotLinkableError,
+    )
+  })
+
+  it('openAnnotationNote is idempotent for a bookmark/quote; guards exists', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const bm = await h.svc.addBookmark(b.id, 'p.1', 'note me')
+    const page1 = await h.svc.openAnnotationNote({ kind: 'bookmark', id: bm.id })
+    expect(page1.type).toBe('note')
+    expect(page1.entity_type).toBe('book_bookmark')
+    expect(page1.entity_id).toBe(bm.id)
+    const page2 = await h.svc.openAnnotationNote({ kind: 'bookmark', id: bm.id })
+    expect(page2.id).toBe(page1.id) // idempotent — same page
+    await expect(h.svc.openAnnotationNote({ kind: 'quote', id: 'missing' })).rejects.toBeInstanceOf(
+      AnnotationNotFoundError,
+    )
+  })
+})
+
+describe('mod-books S4 — list reads + S3-fold survival (BOO-19/20)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('listAnnotations returns all three natures, work-anchored (soft-delete filtered)', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const { asset } = await h.svc.addAsset(b.id, { format: 'pdf' })
+    await h.svc.addBookmark(b.id, 'p.1')
+    await h.svc.addQuote(b.id, 'q')
+    await h.svc.addHighlight(asset.id, { captured_text: 's', position: 'p.2' })
+    const views = await h.svc.listAnnotations(b.id)
+    expect(views).toHaveLength(3)
+    expect(new Set(views.map((v) => v.kind))).toEqual(new Set(['bookmark', 'quote', 'highlight']))
+    expect(views.every((v) => v.annotation.book_id === b.id)).toBe(true)
+  })
+
+  it('listQuotes — per-book vs all; soft-delete filtered', async () => {
+    const b1 = await h.svc.createBook({ title: 'One' })
+    const b2 = await h.svc.createBook({ title: 'Two' })
+    await h.svc.addQuote(b1.id, 'a')
+    await h.svc.addQuote(b1.id, 'b')
+    await h.svc.addQuote(b2.id, 'c')
+    expect(await h.svc.listQuotes({ bookId: b1.id })).toHaveLength(2)
+    expect(await h.svc.listQuotes()).toHaveLength(3) // all
+    expect(await h.svc.listQuotes({})).toHaveLength(3) // absent scope = all
+  })
+
+  it('S3-fold (the HARD case) — a highlight on a removed asset SURVIVES (no cascade, no-FK, BR-BK-S3-4)', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const { asset } = await h.svc.addAsset(b.id, { format: 'pdf' })
+    const hl = await h.svc.addHighlight(asset.id, { captured_text: 'kept', position: 'p.9' })
+    await h.svc.removeAsset(asset.id) // soft-delete the asset the highlight was made in
+    const views = await h.svc.listAnnotations(b.id)
+    expect(views.map((v) => v.annotation.id)).toContain(hl.id) // highlight remains, flagged native
+    expect(await h.svc.getBook(b.id)).not.toBeNull() // the book survives
   })
 })

@@ -9,12 +9,13 @@
 
 `createBooksService(deps)` — the ① backend service tier for the **reading Universe** over DB-4 `023_books`
 (10 tables). The full design lives in `docs/features/books/` (aspect docs) + `docs/features/books/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **S3 of 10 shipped** (Works CRUD + reframe · Chapters/TOC + ISBN lookup port · Assets + positions + mapping absent-state).
+(interpretation · slice-map · seam-contract). Build state: **S4 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links).
 
-## Delivered surface (as of S3)
+## Delivered surface (as of S4)
 
-`createBooksService({ db, deviceId, ingestion?, attachment? }) → BooksService`. Factory-object, hoisted closures,
-no `this.`. Deps grow per slice (S4–S10 add spaces/backlinks/notes/sessions/sessionRegistry + more deny-safe ports).
+`createBooksService({ db, deviceId, spaces, notes, ingestion?, attachment? }) → BooksService`. Factory-object,
+hoisted closures, no `this.`. `spaces`+`notes` are required from S4 (annotation links/notes); deps grow per slice
+(S5–S10 add sessions/sessionRegistry + more deny-safe ports; `backlinks` → S9/BOO-46).
 
 | Method | Leg | Contract |
 |---|---|---|
@@ -32,6 +33,13 @@ no `this.`. Deps grow per slice (S4–S10 add spaces/backlinks/notes/sessions/se
 | `updatePosition(assetId, nativePosition)` | BOO-10 | SSOT native position (non-empty); re-read; guard-exists → `BookAssetNotFoundError` |
 | `removeAsset(id)` | BOO-11 | soft-delete; work-anchored annotations survive (no-FK); guard-exists |
 | `getMappedPosition(assetId, targetAssetId)` | BOO-12 | `MappedPosition`; M1 always `not-synced` + TARGET native position (BK-4 never guessed); guard both + same-book |
+| `addBookmark(bookId, position, label?)` | BOO-16 | work-anchored marker (`label` [E]); `position` non-empty; guard-book |
+| `addHighlight(assetId, {captured_text, position})` | BOO-15 | derives `book_id` from the asset (guard-asset); `captured_text` [E]; no notes/links (BK-6) |
+| `addQuote(bookId, text, position?)` | BOO-17 | per-book quote (`text` [E], required); guard-book |
+| `linkAnnotations(a, b)` | BOO-18 | `spaces.createLink` (page_id=source anchor); guard both exist + **neither a highlight** (`AnnotationNotLinkableError`; registry backstops target only) |
+| `openAnnotationNote(ref)` | BOO-16/17 | idempotent `notes.ensureEntityNote('note', 'book_'+kind, id, seed)`; rejects highlight (BK-6) |
+| `listAnnotations(bookId)` | BOO-19 | all three natures work-anchored (soft-delete filtered), ordered by `created_at`; cross-format normalization = P6 |
+| `listQuotes({bookId?})` | BOO-20 | All Quotes library per-book or all (soft-delete filtered); `tags?` → S9 |
 
 **Types/errors:** `BooksServiceDeps`, `BooksService`, `BookView`, `BookFilter`, `BookCapabilities`, `ChapterSeed`,
 `AddAssetInput`, `FileBlob`, `AttachmentPort`, `AttachmentRef`, `MappedPosition`, `BookMetadata`, `IsbnLookupPayload`
@@ -55,22 +63,35 @@ soft-delete filter → `listBooks` adds `isNull(deleted_at)` explicitly (chapter
 S2 chapters wired (no cross-module dep; chapters are module-local). `ingestion?` port wired at **S2** for ISBN
 lookup (BOO-07/08) — deny-safe, M1-dormant (no mediator ⇒ `lookup-unavailable`; normalization = M2). `attachment?`
 port wired at **S3** for R2 file upload (BOO-09) — deny-safe (absent ⇒ `attachment-unavailable`), fail-loud on a
-present-port failure (`AssetFileError`); no R2 substrate at M1, real pipeline = M2. Remaining:
-S4 annotations (spaces/notes) · S5 quote-embed (`preferences?`) · S6 reading
+present-port failure (`AssetFileError`); no R2 substrate at M1, real pipeline = M2. **`spaces` + `notes` wired at
+S4** (annotation inter-links + pages-notes; required deps, REAL substrates). Remaining:
+S5 quote-embed (`preferences?`) · S6 reading
 sessions (`sessions` + `sessionRegistry` + `registerBooks()`) · S7 plans · S8 unified-progress/conflict · S9
 Education/measurement · S10 AI integrations (`ai?` — OCR/TTS/transcription) + `registerBooksJournal`. Deferred reach
 = deny-safe ports (doc+substrate grounded; see slice-map Deferred-by-design).
 
-## Persistence (S3 addendum)
+## Persistence (S3–S4 addendum)
 
 `book_assets`: `createRepository(db, bookAssets, { deviceId, softDelete: true, encryptedFields: [] })` — HAS
 `deleted_at` → `removeAsset` soft-deletes; `getBook`/`getCapabilities` filter it with an explicit
 `and(isNull(deleted_at), eq(book_id,id))` (findWhere/count skip the soft-delete filter). `file_ref` is the M1.0
-dormant [E] seam.
+dormant [E] seam. **S4:** `book_bookmarks`/`book_highlights`/`book_quotes` repos (same config; [E] =
+`label`/`captured_text`/`text`); `listAnnotations`/`listQuotes` filter soft-deletes explicitly. S4 composes the
+REAL `foundation/spaces` (entity_links WRITE) + `services/notes` (`ensureEntityNote`) — exercised by the live gate.
+
+## S4 BK-6 enforcement note
+
+Highlights are never linkable/noteable (`conventions.md:50`). The entity-type registry (`_registry.ts:85-96`,
+`book_highlight` excluded) backstops a highlight as a link TARGET / note-entity — but `spaces.createLink` validates
+only the target, **not the source anchor** — so Books enforces the full rule via `assertLinkable` →
+`AnnotationNotLinkableError` (both endpoints). The registry remains a backstop. (Verification-Gate-caught, §XXVIII.)
 
 ## `@vida/types` reconcile (S1, DB-11 · S3, N1)
 
 S1: the `Book` interface was reshaped to the reframed table: dropped `format`/`current_page`/`genre`/`tags`;
 `progress: number | null`; `total_pages: number | null`. `BOOK_FORMAT`/`BookFormatSchema` kept (P-6). **S3 (N1):**
 added the `BookAsset` interface (1:1 mirror of `book_assets`: `book_id`, `format`, `file_ref` [E], `native_position`,
-`deleted_at`) — `BookView.assets` narrowed from the raw `BookAssetRow` to `BookAsset[]`.
+`deleted_at`) — `BookView.assets` narrowed from the raw `BookAssetRow` to `BookAsset[]`. **S4 (N-fold):** added
+`BookBookmark`/`BookHighlight`/`BookQuote` (1:1 mirrors of the annotation rows). Service-layer types: `AnnotationRef`,
+`AnnotationView`, `BookAnnotationKind`, `QuoteScope`. Errors: `AnnotationNotFoundError`, `AnnotationNotLinkableError`.
+Validators: `AddBookmarkSchema`/`AddHighlightSchema`/`AddQuoteSchema` (snake_case `captured_text`).
