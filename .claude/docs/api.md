@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-09-27 by /session-end -->
+<!-- Last updated: 2026-10-01 by /session-end -->
 | Method | Path | Auth | Request | Response | Notes |
 |--------|------|------|---------|----------|-------|
 | *(add rows as endpoints are built)* | | | | | |
@@ -35,3 +35,12 @@ Config provider over the DB-4 #2 schema; plaintext (`encryptedFields: []`).
 | S3 bindings | `bindMethod` · `listBindings` · `unbindMethod` (method_bindings, no-FK) · `resolveDefaultMethod(kindId)` (2-tier) |
 | S4 review ② | `recordReview` (append-only review_events, no mastery write) · `getDue`/`dueIn` (due-queue) · `deriveMastery` (0–100 or null, derive-on-read via measurement.normalize) · `rollupMastery` (up parent_object_id via measurement.rollup) |
 Errors: `ObjectKindNotFoundError` · `InvalidParentRefError` · `HierarchyCycleError` · `KnowledgeObjectNotFoundError` · `KnowledgeContainerNotFoundError` · `ReferenceNotFoundError` · (engine) `ReviewCurveNotFoundError` · `MethodBindingNotFoundError` · (delegated) `UnknownEntityType` · `TagNotFound` · `DuplicateCapabilityId`. Engine home: `foundation/review` (`createReviewEngine(db, deviceId, {capability})`). Spec/currency: `docs/modules/knowledge/current-{spec,business-rules}.md`. Not yet built: S5–S8.
+
+## @vida/core — BooksService (mod-books ①, LIF-117) — S1–S2/10
+`createBooksService({ db, deviceId, ingestion? }): BooksService` — the reading-Universe service tier over DB-4 `023_books`; factory-object, no `this.`. Persistence: DB-6 repos, `encryptedFields:[]` (M1.0); `books` softDelete:true, `book_chapters` softDelete:false (no `deleted_at` → hard delete).
+| Group | Methods |
+|-------|---------|
+| S1 works | `createBook` · `updateBook` · `softDeleteBook` · `getBook`→`BookView` · `listBooks(filter?)` · `getCapabilities`→`{plannable,readable}` (progress never settable, BR-BK-2; TOC-only first-class) |
+| S2 chapters | `setChapters(bookId, ChapterSeed[])` (declarative upsert by `chapter_number`: structural overwrite · tracking preserved · absent hard-deleted; in-array dup → `ChapterUniqueViolation`) · `markChapterComplete(chapterId, done)` |
+| S2 ISBN lookup | `lookupBook({isbn?,text?})`→`LookupResult` (deny-safe `ingestion?`; fail-closed ⇒ `lookup-unavailable`; manual fallback always callable) · `revokeLookupGrant()` (X9; no-op without dep) |
+Errors: `BookNotFoundError` · `ChapterUniqueViolation` · `ChapterNotFoundError`. Identity: `BOOK_ENTITY_TYPE='book'` · `BOOKS_ISBN_INTEGRATION_ID='books.isbn_lookup'` (Books-owned, inert at M1). Spec/currency: `docs/modules/books/current-{spec,business-rules}.md`. Not yet built: S3–S10 (assets/annotations/sessions/plans/progress/Education/Journal).
