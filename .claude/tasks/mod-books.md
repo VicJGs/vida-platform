@@ -33,8 +33,13 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
 ### Slices (per-slice §XXVI double-gate + live-store Verification Gate + code-review + currency)
 - [x] **S1 — Works CRUD + reframe** (BOO-01/02/03/48): createBooksService + `books` table CRUD; Book interface
   reconciled (DB-11); progress-never-settable reframe; 7/7 live-store; code-review SHIP; @vida/core 1440 green.
-- [ ] S2 chapters/TOC + ISBN port · S3 assets + mapping · S4 annotations · S5 quote-embed · S6 sessions +
-  registerBooks · S7 plans · S8 progress/conflict · S9 Education/measurement · S10 integrations/Journal
+- [x] **S2 — Chapters/TOC + ISBN lookup port** (BOO-05/06/07/08 + N3): `setChapters` declarative upsert (tracking
+  preserved, absent pruned, no deleted_at) + UNIQUE pre-check · `markChapterComplete` + `ChapterNotFoundError` ·
+  deny-safe `ingestion?` `lookupBook`/`revokeLookupGrant` (`BOOKS_ISBN_INTEGRATION_ID`, fail-closed, M2 normalization)
+  · `plannable` honors TOC. g1 (5 resolutions) → 20/20 live-store → 3-finder code-review (3 fixed / 1 documented /
+  1 carry-fwd) → §XXIX (BR-BK-S2-1..7 + F4 drift fixed). Commit `547c889`; books 20/20, tsc 0, eslint 0.
+- [ ] S3 assets + mapping · S4 annotations · S5 quote-embed · S6 sessions + registerBooks · S7 plans · S8
+  progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
 - [ ] Step 4: /api-contract (service API) approved before code
 - [ ] Step 5–6: /adr-check · /adr-new (if significant)
@@ -52,3 +57,15 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
 ## Route History
 - 2026-09-30: activated (was `planned`) via /begin → next `#`-order head #51. Scenario = Default (Entity
   Delivery Flow v1). Starting at Step 0 (BASELINE documentation).
+- 2026-10-01: S2 shipped (`547c889`) — chapters/TOC + ISBN lookup port + N3 fold. Full per-slice cadence
+  (g1 → 20/20 live-store Verification Gate → 3-finder code-review → §XXIX currency). Next: S3 (assets +
+  positions + R2 `attachment?` port + cross-format mapping absent-state). Branch `mod-books`.
+
+## Next Slice — S3 (assets + positions + mapping absent-state)
+S3 scope (BOO-09/10/11/12/44, slice-map.md): `book_assets` CRUD · `attachment?` deny-safe upload (⇒
+`attachment-unavailable`) · `updatePosition` SSOT (per-asset `native_position`) · `getMappedPosition` →
+`NotSyncedState` (synced|pending|failed; never guessed — fail loud, BK-4) · `AssetFileError`. **Fold carry-fwds:**
+N1 (replace `BookView.assets: BookAssetRow[]` with a proper `BookAsset` @vida/types interface) + B1 (consider
+surfacing chapters when `BookView` expands — the chapter READ path). Reload: `docs/features/books/delivery/*` ·
+`docs/modules/books/current-*` · `parts/books.md` BOO-09..12/44 · `schema/books.ts` (book_assets) ·
+`foundation/ingestion`-style `attachment?` port precedent. Env: Node 24 via nvm. Branch `mod-books`.
