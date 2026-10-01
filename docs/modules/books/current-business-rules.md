@@ -22,16 +22,54 @@
   `BookNotFoundError`; `getBook` returns `null` (nullable read). Soft-deleted rows are not resurrectable
   (`findById` excludes them). `[code: service.ts; BR-BK-6]`
 - **BR-BK-S1-6 (TOC-only first-class / BK-17)** — a book needs no asset and no page count to exist; `plannable`
-  is true on a `total_pages` basis. *(S2 carry-forward: a TOC without `total_pages` should also be plannable.)*
-  `[code: service.ts getCapabilities; business-rules.md:85-87]`
+  is true on a page basis — a `total_pages` **OR** a TOC (≥1 chapter, resolved at S2/N3). *(S2 carry-forward
+  CLOSED — see BR-BK-S2-6.)* `[code: service.ts getCapabilities; business-rules.md:85-87]`
 - **BR-BK-S1-7 (soft-delete list exclusion)** — `listBooks` excludes soft-deleted rows via an explicit
   `isNull(deleted_at)` (`findWhere` skips the soft-delete filter). `[code: service.ts listBooks]`
 - **BR-BK-S1-8 (M1.0 [E] seam)** — [E] fields (title/author/isbn/review/cover_url) use `encryptedFields:[]`
   pass-through; real field encryption is M3/DB-5. `[code: service.ts booksRepo; BK-1]`
 
+## Shipped invariants (as of S2 — Chapters/TOC + ISBN lookup, BOO-05/06/07/08)
+
+- **BR-BK-S2-1 (declarative TOC upsert / BK-9)** — `setChapters` sets the whole flat TOC, UPSERTING by
+  `chapter_number` (the UNIQUE identity): structural fields (`title`/`start_page`/`end_page`/
+  `estimated_reading_minutes`/`sort_order`) overwrite; numbers absent from the new list are **hard-deleted**
+  (`book_chapters` has no `deleted_at`). Returns the TOC ordered by `chapter_number`. `[code: service.ts setChapters]`
+- **BR-BK-S2-2 (anti-lost / BK-17)** — a re-`setChapters` **preserves tracking** (`is_completed` / `completed_at` /
+  `actual_reading_minutes`) for every surviving `chapter_number` — a TOC edit never resets reading progress. Tracking
+  is set only via `markChapterComplete` / reading sessions, never seeded (`ChapterSeed` carries structural fields
+  only). `[code: service.ts setChapters upsert branch; business-rules.md:85-87]`
+- **BR-BK-S2-3 (UNIQUE pre-check)** — a duplicate `chapter_number` WITHIN a `setChapters` input is rejected with
+  `ChapterUniqueViolation` before any write; the DB `UNIQUE(book_id,chapter_number)` is the backstop (the no-FK
+  app-layer integrity pattern). `[code: service.ts setChapters; migration 023_books.ts:85]`
+- **BR-BK-S2-4 (chapter completion / BOO-06)** — `markChapterComplete(id, done)` sets `is_completed` +
+  `completed_at` (done=false clears both); guards exists → `ChapterNotFoundError`. `[code: service.ts markChapterComplete]`
+- **BR-BK-S2-5 (deny-safe ISBN lookup / BK-14)** — `lookupBook` is a device-mediated **public-reference** fetch
+  (`sensitiveModules:[]` ⇒ never an egress act; never server-plaintext). No `ingestion` dep OR any refused/failed
+  fetch ⇒ `{status:'lookup-unavailable'}` (fail-closed); the manual fallback (`setChapters`/`createBook`) is
+  callable regardless. At M1 the substrate has no mediator ⇒ always unavailable; the `FetchResult`→`BookMetadata`
+  normalization (Books' XCU-14 contract, `IsbnLookupPayload`) lands at M2 (zero-signature swap). `[code: service.ts
+  lookupBook; foundation/ingestion; parts/books.md:138]`
+- **BR-BK-S2-6 (plannable honors a TOC / BK-17 — closes the S1-6 carry-forward)** — `getCapabilities.plannable` is
+  true when a work-level `total_pages` OR a TOC (≥1 chapter) exists; a TOC-only book with no `total_pages` is
+  plannable. `[code: service.ts getCapabilities chapterCount]`
+- **BR-BK-S2-7 (X9 revoke / BOO-08)** — `revokeLookupGrant` halts future ISBN lookups (delegates to
+  `ingestion.revokeIntegration(BOOKS_ISBN_INTEGRATION_ID)`); already-imported metadata is untouched (revoke reaches
+  only the grant). No `ingestion` dep ⇒ no-op (nothing granted at M1). `BOOKS_ISBN_INTEGRATION_ID` is Books-owned
+  identity (the `entity_type`/sub-type precedent), inert at M1. `[code: service.ts revokeLookupGrant; ADR-014:70]`
+
+## Carry-forward (homed to a later slice — surfaced by the S2 code-review)
+
+- **Chapter READ path** — S2 persists the TOC (`setChapters`) and proves it via `getCapabilities` count +
+  `markChapterComplete` re-read + a re-`setChapters`, but there is no chapter READER on the frozen S2 seam-contract
+  (`getBook`/`BookView` carry work+assets+progress, no `chapters`; no `getChapters`). The UI TOC read path is owed
+  where `BookView` expands (S3 assets, or S7/S8) — adding a reader in S2 would exceed the Approval-1 contract. Not a
+  defect; a homed gap.
+
 ## Deferred (homed, not yet enforced — see delivery/slice-map.md Deferred-by-design)
 
 Unified-progress derivation (S8) · cross-format mapping `NotSyncedState` (S3, algorithm = build-phase design pass)
-· ISBN lookup / OCR / TTS / transcription (deny-safe ports, M2) · R2 file/photo (deny-safe port, M2) · conflict
-resolution (S8, derived) · Education pace (S9, deny-safe null) · measurement source (S9) · C-E2 (no economy grant
-on Books — grants ride base-`sessions`) · C-M1 (no stored measurement axes on `reading_plans`).
+· ISBN lookup **real fetch + normalization** (M2 — mediator + registry; the S2 port is built deny-safe) · OCR / TTS
+/ transcription (deny-safe `ai?` port, S10/M2) · R2 file/photo (deny-safe port, M2) · conflict resolution (S8,
+derived) · Education pace (S9, deny-safe null) · measurement source (S9) · C-E2 (no economy grant on Books — grants
+ride base-`sessions`) · C-M1 (no stored measurement axes on `reading_plans`).

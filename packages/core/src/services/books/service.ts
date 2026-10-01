@@ -1,6 +1,11 @@
 // ============================================================================
 // services/books — the service (mod-books #51 ①)
 //
+// S2: Chapters/TOC (BOO-05/06) + ISBN lookup port (BOO-07/08) + N3 plannable fold. `setChapters` is a declarative
+// UPSERT by chapter_number (structural overwrite, tracking preserved, absent numbers hard-deleted — book_chapters
+// has NO deleted_at); UNIQUE pre-checked in-array above the DB backstop. `lookupBook`/`revokeLookupGrant` compose
+// the deny-safe `ingestion?` port (absent/no-mediator ⇒ `lookup-unavailable`/no-op; normalization = M2).
+//
 // S1: Works CRUD + the DB-4 reframe (BOO-01/02/03/48). Factory-object, hoisted closures, no `this.` (the ②
 // destructure shape; the knowledge/habits/finance precedent). Persistence: DB-6 Repository, `encryptedFields:[]`
 // M1.0 pass-through ([E] title/author/isbn/review/cover_url → M3/DB-5). `books` → softDelete:true (deleted_at;
@@ -15,12 +20,16 @@
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
-import type { Book } from '@vida/types'
+import type { Book, BookChapter } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
-import { books, type BookRow } from '../../db/schema/books'
-import { CreateBookSchema, UpdateBookSchema } from '../../validators/books'
+import { books, bookChapters, type BookRow, type BookChapterRow } from '../../db/schema/books'
+import { CreateBookSchema, UpdateBookSchema, SetChaptersSchema } from '../../validators/books'
+import { IngestionDenied, type IngestionAct } from '../../foundation/ingestion'
 import {
   BookNotFoundError,
+  ChapterUniqueViolation,
+  ChapterNotFoundError,
+  BOOKS_ISBN_INTEGRATION_ID,
   type BooksService,
   type BooksServiceDeps,
   type CreateBookInput,
@@ -28,6 +37,10 @@ import {
   type BookFilter,
   type BookView,
   type BookCapabilities,
+  type ChapterSeed,
+  type LookupResult,
+  type IsbnLookupPayload,
+  type BookMetadata,
 } from './types'
 
 // --- Row → @vida/types interface --------------------------------------------
@@ -38,11 +51,21 @@ const toBook = (r: BookRow): Book => ({
   _sync_status: r._sync_status as Book['_sync_status'],
 })
 
+// book_chapters maps 1:1 to the BookChapter interface (already reshaped in DB-4 — no S2 DB-11 reconcile); only the
+// plain-text `_sync_status` needs the union cast. `is_completed` is boolInt(mode:'boolean') → already a boolean.
+const toChapter = (r: BookChapterRow): BookChapter => ({
+  ...r,
+  _sync_status: r._sync_status as BookChapter['_sync_status'],
+})
+
 export function createBooksService(deps: BooksServiceDeps): BooksService {
-  const { db, deviceId } = deps
+  const { db, deviceId, ingestion } = deps
 
   // [E] fields (title/author/isbn/review/cover_url) → encryptedFields:[] M1.0 pass-through (dormant → M3/DB-5).
   const booksRepo = createRepository(db, books, { deviceId, softDelete: true, encryptedFields: [] })
+  // book_chapters has NO deleted_at (child, FACT floor) → softDelete:false ⇒ delete() is a HARD delete (F1). [E]
+  // title → encryptedFields:[] M1.0 pass-through.
+  const chaptersRepo = createRepository(db, bookChapters, { deviceId, softDelete: false, encryptedFields: [] })
 
   // --- Works CRUD (BOO-01) --------------------------------------------------
 
@@ -113,9 +136,124 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
   async function getCapabilities(id: string): Promise<BookCapabilities> {
     const book = await booksRepo.findById(id)
     if (!book) throw new BookNotFoundError(id)
-    // plannable = a page basis exists (TOC-only/no-copy is plannable, BK-17). readable composes S3 (≥1 asset) —
-    // false in S1 until book_assets is consumed (the honest M1 state, not a stub).
-    return { plannable: book.total_pages != null, readable: false }
+    // N3 (S2 fold) — plannable = a PAGE BASIS exists: a work-level total_pages OR a TOC (≥1 chapter). A TOC-only
+    // book with no total_pages IS plannable (BK-17). readable composes S3 (≥1 asset) — false until assets land.
+    const chapterCount = await chaptersRepo.count(eq(bookChapters.book_id, id))
+    return { plannable: book.total_pages != null || chapterCount > 0, readable: false }
+  }
+
+  // --- Chapters / TOC (BOO-05/06) -------------------------------------------
+
+  async function setChapters(bookId: string, chapters: ChapterSeed[]): Promise<BookChapter[]> {
+    // Validate input FIRST (the updateBook parse-then-guard order), then guard the book exists.
+    const seeds = SetChaptersSchema.parse(chapters)
+    if (!(await booksRepo.findById(bookId))) throw new BookNotFoundError(bookId)
+    // UNIQUE pre-check (app-layer; the DB UNIQUE(book_id,chapter_number) is the backstop): a duplicate
+    // chapter_number WITHIN the input is rejected before any write (the no-FK integrity pattern).
+    const nums = seeds.map((s) => s.chapter_number)
+    const dupe = nums.find((n, i) => nums.indexOf(n) !== i)
+    if (dupe !== undefined) throw new ChapterUniqueViolation(bookId, dupe)
+    // Declarative upsert by chapter_number (the stable identity). No deleted_at → reads are unfiltered, deletes hard.
+    // NOTE: prune + per-row upserts are separate repo transactions (no bulk-tx path on the Repository; the
+    // knowledge/habits per-row precedent). A declarative set is idempotent → a mid-loop infra failure is
+    // eventually-consistent: re-calling setChapters re-converges to the input (the no-FK app-layer convention).
+    const existing = await chaptersRepo.findWhere(eq(bookChapters.book_id, bookId))
+    const byNum = new Map(existing.map((r) => [r.chapter_number, r]))
+    const keep = new Set(nums)
+    // Prune chapters whose number is absent from the new list (HARD delete — book_chapters has no deleted_at).
+    for (const row of existing) {
+      if (!keep.has(row.chapter_number)) await chaptersRepo.delete(row.id)
+    }
+    const result: BookChapter[] = []
+    for (const seed of seeds) {
+      const prev = byNum.get(seed.chapter_number)
+      if (prev) {
+        // Surviving number: overwrite STRUCTURAL fields; PRESERVE tracking (is_completed/completed_at/
+        // actual_reading_minutes) — a TOC edit never resets reading progress (anti-lost, BK-17).
+        await chaptersRepo.update(prev.id, {
+          title: seed.title,
+          start_page: seed.start_page ?? null,
+          end_page: seed.end_page ?? null,
+          estimated_reading_minutes: seed.estimated_reading_minutes ?? null,
+          sort_order: seed.sort_order ?? prev.sort_order,
+        } as UpdateInput<typeof bookChapters>)
+        // update() echoes only the patch → re-read for a faithful full row (the updateObject seam).
+        const updated = await chaptersRepo.findById(prev.id)
+        result.push(toChapter(updated as BookChapterRow))
+      } else {
+        // New number: create() echoes input → backfill notNull-default + tracking columns for a faithful row.
+        const row = await chaptersRepo.create({
+          book_id: bookId,
+          title: seed.title,
+          chapter_number: seed.chapter_number,
+          start_page: seed.start_page ?? null,
+          end_page: seed.end_page ?? null,
+          estimated_reading_minutes: seed.estimated_reading_minutes ?? null,
+          actual_reading_minutes: null,
+          is_completed: false, // notNull default — backfill (echo)
+          completed_at: null,
+          sort_order: seed.sort_order ?? 0, // notNull default — backfill (echo)
+        } satisfies CreateInput<typeof bookChapters>)
+        result.push(toChapter(row))
+      }
+    }
+    return result.sort((a, b) => a.chapter_number - b.chapter_number)
+  }
+
+  async function markChapterComplete(chapterId: string, done: boolean): Promise<BookChapter> {
+    const existing = await chaptersRepo.findById(chapterId)
+    if (!existing) throw new ChapterNotFoundError(chapterId)
+    await chaptersRepo.update(chapterId, {
+      is_completed: done,
+      completed_at: done ? Date.now() : null,
+    } as UpdateInput<typeof bookChapters>)
+    // update() echoes only the patch → re-read for a faithful full row.
+    const updated = await chaptersRepo.findById(chapterId)
+    return toChapter(updated as BookChapterRow)
+  }
+
+  // --- ISBN/metadata lookup (BOO-07/08) — deny-safe ingestion port ----------
+
+  async function lookupBook(query: { isbn?: string; text?: string }): Promise<LookupResult> {
+    // No ingestion dep ⇒ unavailable; the manual fallback (setChapters/createBook) stays callable (BK-14).
+    if (!ingestion) return { status: 'lookup-unavailable', reason: 'no-ingestion' }
+    // A device-mediated PUBLIC-REFERENCE fetch (ADR-014 X1/X2/X3): a public dataset carries no sensitive read
+    // (sensitiveModules:[] ⇒ never an egress act) and never needs server plaintext (X1 refuse-not-downgrade).
+    const act: IngestionAct = {
+      defId: BOOKS_ISBN_INTEGRATION_ID,
+      source: {
+        integrationId: BOOKS_ISBN_INTEGRATION_ID,
+        layer: 'public-reference',
+        normalizationContractId: 'books.isbn.v1',
+      },
+      dataScope: { sensitiveModules: [] },
+      requiresServerPlaintext: false,
+    }
+    const params: Record<string, string> = query.isbn ? { isbn: query.isbn } : { q: query.text ?? '' }
+    const request = { path: 'lookup', params }
+    try {
+      const res = await ingestion.fetchThroughMediator(act, request)
+      // The mediator emits Books' XCU-14 normalization contract. UNREACHABLE at M1 (the unregistered def ⇒
+      // CapabilityNotFound, or an absent mediator ⇒ IngestionDenied — both caught below). A minimal fail-closed
+      // shape guard here; the FULL normalization/validation is the M2 adapter's (zero-signature swap).
+      const payload = res.data as Partial<IsbnLookupPayload> | null
+      if (!payload || typeof payload.metadata !== 'object' || payload.metadata === null) {
+        return { status: 'lookup-unavailable', reason: 'lookup-failed' }
+      }
+      return { status: 'ready', metadata: payload.metadata as BookMetadata, toc: payload.toc }
+    } catch (e) {
+      // Fail-closed: ANY failure (deny, unregistered grant → CapabilityNotFound, mediator-absent, network) folds to
+      // the typed absent-state. `reason` is diagnostic; the status contract (unavailable) is what callers rely on.
+      const reason = e instanceof IngestionDenied ? e.reason : 'lookup-failed'
+      return { status: 'lookup-unavailable', reason }
+    }
+  }
+
+  async function revokeLookupGrant(): Promise<void> {
+    // X9 stop-future / keep-imported: revoke reaches only the GRANT, never an imported row. No ingestion dep ⇒
+    // nothing was granted at M1 ⇒ no-op. `[FACT: ADR-014:70 (§3.4); parts/books.md BOO-08]`
+    if (!ingestion) return
+    await ingestion.revokeIntegration(BOOKS_ISBN_INTEGRATION_ID)
   }
 
   return {
@@ -125,5 +263,9 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     getBook,
     listBooks,
     getCapabilities,
+    setChapters,
+    markChapterComplete,
+    lookupBook,
+    revokeLookupGrant,
   }
 }

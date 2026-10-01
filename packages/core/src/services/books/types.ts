@@ -10,10 +10,11 @@
 // ============================================================================
 
 import type { z } from 'zod'
-import type { Book, BookStatus } from '@vida/types'
+import type { Book, BookChapter, BookStatus } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type { BookAssetRow } from '../../db/schema/books'
-import type { CreateBookSchema, UpdateBookSchema } from '../../validators/books'
+import type { IngestionGuard } from '../../foundation/ingestion'
+import type { CreateBookSchema, UpdateBookSchema, ChapterSeedSchema } from '../../validators/books'
 
 /** The `entity_type` a book registers in the shared taggable/pages/links registries (pre-seeded by DB-4
  *  `ENTITY_TYPES`, db-4-books/_index.md:116 — Books injects the registry, never re-registers). Consumed by
@@ -23,13 +24,22 @@ export const BOOK_ENTITY_TYPE = 'book'
 export interface BooksServiceDeps {
   db: DrizzleDb
   deviceId: string
-  // S2–S10 append: spaces / backlinks / notes / sessions / sessionRegistry (required) +
-  //   ai? / ingestion? / attachment? / preferences? / effects? (optional deny-safe ports).
+  /** S2 — ADR-014 ISBN/metadata public-reference lookup (BOO-07/08). Optional deny-safe port: absent ⇒
+   *  `lookupBook` returns `lookup-unavailable` and `revokeLookupGrant` is a no-op. At M1 even when injected the
+   *  fetch folds to `lookup-unavailable` (fail-closed) — the def is unregistered (⇒ CapabilityNotFound) and there
+   *  is no mediator; the real grant + normalization land at M2 (zero-signature swap). `[FACT: foundation/ingestion
+   *  CLAUDE.md; parts/books.md:138]` */
+  ingestion?: IngestionGuard
+  // S3–S10 append: spaces / backlinks / notes / sessions / sessionRegistry (required) +
+  //   ai? / attachment? / preferences? / effects? (optional deny-safe ports).
 }
 
 // --- Zod-inferred input shapes (validators/books.ts) ------------------------
 export type CreateBookInput = z.infer<typeof CreateBookSchema>
 export type UpdateBookInput = z.infer<typeof UpdateBookSchema>
+/** setChapters seed (BOO-05) — structural chapter fields only; tracking state is never seeded (preserved across
+ *  a re-set). `z.infer` of `ChapterSeedSchema`. */
+export type ChapterSeed = z.infer<typeof ChapterSeedSchema>
 
 /** listBooks filter (BOO-02) — S1 owns `status` ONLY. The `tags`/`subject`/`format-owned` keys are NOT
  *  advertised until S9/S3 build them (never advertise an unimplemented filter → no silent-wrong-result). */
@@ -56,6 +66,38 @@ export interface BookCapabilities {
   readable: boolean
 }
 
+// --- S2: ISBN/metadata lookup (BOO-07/08) — service-layer types (the MasterySource precedent, NOT @vida/types) ---
+
+/** The Books-owned integration identity for the ADR-014 "Books ISBN" public-reference dataset (X10 / XCU-14). It
+ *  names Books' OWN integration — the `entity_type='book'` / `reading` sub-type precedent — NOT a synthesized
+ *  downstream grant-map id (No-Guessing). Inert at M1 (no enforcer registration; the grant + mediator are M2). Used
+ *  as both the capability `defId` and the `IngestionSource.integrationId`. `[FACT: business-rules.md:69-76 (BK-14);
+ *  ADR-014 X1/X2/X3/X5/X9]` */
+export const BOOKS_ISBN_INTEGRATION_ID = 'books.isbn_lookup'
+
+/** The subset of book fields an ISBN/metadata lookup can populate (a `lookupBook` result shape, not a DB row). */
+export interface BookMetadata {
+  title: string
+  author?: string | null
+  isbn?: string | null
+  total_pages?: number | null
+  cover_url?: string | null
+}
+
+/** The XCU-14 normalization contract Books OWNS: the shape the ingestion mediator/adapter emits for an ISBN lookup
+ *  (both ingestion layers conform to it). At M1 UNREACHABLE (no mediator); the M2 adapter fills + validates it. */
+export interface IsbnLookupPayload {
+  metadata: BookMetadata
+  toc?: ChapterSeed[]
+}
+
+/** `lookupBook` outcome (BOO-07) — the deny-safe port result (the `AiAssistResult` precedent). `ready` carries the
+ *  normalized metadata + optional TOC; `lookup-unavailable` = no ingestion dep OR the fetch was refused/failed
+ *  (fail-closed). The manual fallback (`setChapters`/`createBook`) is callable regardless (BK-14). */
+export type LookupResult =
+  | { status: 'ready'; metadata: BookMetadata; toc?: ChapterSeed[] }
+  | { status: 'lookup-unavailable'; reason?: string }
+
 // --- typed errors (BOO-01; no-FK app-layer integrity, the knowledge precedent) ---
 
 /** BOO-01 — a book id did not resolve (guard-exists at update/get/capability). */
@@ -63,6 +105,26 @@ export class BookNotFoundError extends Error {
   constructor(public readonly id: string) {
     super(`Book not found: ${id}`)
     this.name = 'BookNotFoundError'
+  }
+}
+
+/** BOO-05 — a `chapter_number` collided within a `setChapters` call (the app-layer pre-check above the DB
+ *  `UNIQUE(book_id, chapter_number)` backstop; the no-FK integrity pattern, BR-BK-S1-5). */
+export class ChapterUniqueViolation extends Error {
+  constructor(
+    public readonly bookId: string,
+    public readonly chapterNumber: number,
+  ) {
+    super(`Duplicate chapter_number ${chapterNumber} for book ${bookId}`)
+    this.name = 'ChapterUniqueViolation'
+  }
+}
+
+/** BOO-06 — a chapter id did not resolve (guard-exists at `markChapterComplete`; the `BookNotFoundError` pattern). */
+export class ChapterNotFoundError extends Error {
+  constructor(public readonly id: string) {
+    super(`Chapter not found: ${id}`)
+    this.name = 'ChapterNotFoundError'
   }
 }
 
@@ -80,7 +142,22 @@ export interface BooksService {
   getBook(id: string): Promise<BookView | null>
   /** BOO-02 — the Bookshelf query half (soft-delete filtered). S1: `status` filter only. */
   listBooks(filter?: BookFilter): Promise<Book[]>
-  /** BOO-48 — plannable vs readable. `plannable` = a page basis exists (BK-17); `readable` composes S3 (≥1 asset;
-   *  false in S1 until assets land). Guards exists (BookNotFoundError). */
+  /** BOO-48 — plannable vs readable. `plannable` = a page basis exists — a work-level `total_pages` OR a TOC
+   *  (≥1 chapter, S2 fold); `readable` composes S3 (≥1 asset; false until assets land). Guards exists. */
   getCapabilities(id: string): Promise<BookCapabilities>
+
+  // ── S2: Chapters/TOC + ISBN lookup (BOO-05/06/07/08) ─────────────────────────
+  /** BOO-05 — set the flat TOC (declarative). UPSERTS by `chapter_number` (the UNIQUE key): structural fields
+   *  overwrite, tracking (`is_completed`/`completed_at`/`actual_reading_minutes`) is PRESERVED for surviving
+   *  numbers, absent numbers are hard-deleted (no `deleted_at`). An in-array duplicate number ⇒ `ChapterUniqueViolation`.
+   *  Guards book exists (`BookNotFoundError`). Returns the TOC ordered by `chapter_number`. */
+  setChapters(bookId: string, chapters: ChapterSeed[]): Promise<BookChapter[]>
+  /** BOO-06 — record chapter completion (`is_completed` + `completed_at`). Guards exists (`ChapterNotFoundError`). */
+  markChapterComplete(chapterId: string, done: boolean): Promise<BookChapter>
+  /** BOO-07 — device-mediated public-reference ISBN/metadata lookup. Deny-safe: no `ingestion` dep OR a
+   *  refused/failed fetch ⇒ `lookup-unavailable` (fail-closed); the manual fallback stays callable (BK-14). */
+  lookupBook(query: { isbn?: string; text?: string }): Promise<LookupResult>
+  /** BOO-08 — X9 revoke: halt future ISBN lookups; already-imported metadata is untouched (keep-imported). No
+   *  `ingestion` dep ⇒ no-op (nothing was granted at M1). */
+  revokeLookupGrant(): Promise<void>
 }

@@ -42,3 +42,22 @@ export const UpdateBookSchema = z.object({
   review: z.string().nullable().optional(),
   cover_url: z.string().nullable().optional(),
 })
+
+// --- Chapters / TOC (BOO-05) -------------------------------------------------
+
+/** A single chapter in a `setChapters(bookId, chapters[])` call — the manual-entry / lookup-TOC seed. STRUCTURAL
+ *  fields only: tracking state (`is_completed` / `completed_at` / `actual_reading_minutes`) is NEVER seeded — it is
+ *  set via `markChapterComplete` / reading sessions and PRESERVED across a re-set (anti-lost, BK-17). Chapters are a
+ *  flat list (BK-9 — nested sections not requested). `[FACT: contract.md:16-18; business-rules.md:42-44,85-87]` */
+export const ChapterSeedSchema = z.object({
+  title: z.string().min(1),
+  chapter_number: z.number().int().nonnegative(),
+  start_page: z.number().int().positive().nullable().optional(),
+  end_page: z.number().int().positive().nullable().optional(),
+  estimated_reading_minutes: z.number().int().positive().nullable().optional(),
+  sort_order: z.number().int().nonnegative().optional(),
+})
+
+/** `setChapters` input — the whole flat TOC (a declarative set). An in-array duplicate `chapter_number` is rejected
+ *  in the service (`ChapterUniqueViolation`), above the DB `UNIQUE(book_id, chapter_number)` backstop. */
+export const SetChaptersSchema = z.array(ChapterSeedSchema)
