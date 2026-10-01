@@ -252,6 +252,20 @@ export interface Book extends SyncableEntity {
   deleted_at: Timestamp | null
 }
 
+// DB-4 group #11 (mod-books ① S3, N1 fold) — the per-format copy of a WORK (BK-2). Mirrors the reshaped
+// `book_assets` row (schema/books.ts:88-100): `file_ref` [E] (encrypted R2 ref, physical/braille have none),
+// `native_position` plaintext (page/epub-location/audio-timestamp, format-interpreted, BK-1). Replaces the raw
+// `BookAssetRow` in the `BookView` seam (the Book/BookChapter DB-11 reconcile precedent). `[FACT: schema/books.ts:88-100]`
+export interface BookAsset extends SyncableEntity {
+  book_id: Id
+  format: BookAssetFormat
+  /** @encrypted — encrypted R2 file ref; null for physical/braille (no stored file) */
+  file_ref: string | null
+  /** the single native position per asset (SSOT, BK-2); plaintext */
+  native_position: string | null
+  deleted_at: Timestamp | null
+}
+
 export interface BookChapter extends SyncableEntity {
   book_id: Id
   /** @encrypted */

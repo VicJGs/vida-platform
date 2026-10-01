@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { z } from 'zod'
-import { BookStatusSchema } from './learning'
+import { BookStatusSchema, BookAssetFormatSchema } from './learning'
 
 // --- Works (BOO-01) ----------------------------------------------------------
 
@@ -61,3 +61,17 @@ export const ChapterSeedSchema = z.object({
 /** `setChapters` input — the whole flat TOC (a declarative set). An in-array duplicate `chapter_number` is rejected
  *  in the service (`ChapterUniqueViolation`), above the DB `UNIQUE(book_id, chapter_number)` backstop. */
 export const SetChaptersSchema = z.array(ChapterSeedSchema)
+
+// --- Assets / positions (BOO-09/10) ------------------------------------------
+
+/** addAsset input — a per-format copy (BK-2). `format` ∈ BOOK_ASSET_FORMAT (zod + DB CHECK); `native_position`
+ *  optional (physical/braille set it manually later via updatePosition; digital derives it). The `file` blob is
+ *  NOT in the schema — it is a runtime binary handed to the `attachment?` port, not a validated value. */
+export const AddAssetSchema = z.object({
+  format: BookAssetFormatSchema,
+  native_position: z.string().min(1).nullable().optional(),
+})
+
+/** updatePosition input — the single native position per asset (SSOT, BK-2). Non-empty string (page / epub
+ *  location / audio timestamp / manual), format-interpreted — Books stores it opaque. */
+export const UpdatePositionSchema = z.string().min(1)

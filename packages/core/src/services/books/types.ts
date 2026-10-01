@@ -10,11 +10,15 @@
 // ============================================================================
 
 import type { z } from 'zod'
-import type { Book, BookChapter, BookStatus } from '@vida/types'
+import type { Book, BookAsset, BookChapter, BookStatus } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
-import type { BookAssetRow } from '../../db/schema/books'
 import type { IngestionGuard } from '../../foundation/ingestion'
-import type { CreateBookSchema, UpdateBookSchema, ChapterSeedSchema } from '../../validators/books'
+import type {
+  CreateBookSchema,
+  UpdateBookSchema,
+  ChapterSeedSchema,
+  AddAssetSchema,
+} from '../../validators/books'
 
 /** The `entity_type` a book registers in the shared taggable/pages/links registries (pre-seeded by DB-4
  *  `ENTITY_TYPES`, db-4-books/_index.md:116 — Books injects the registry, never re-registers). Consumed by
@@ -30,9 +34,49 @@ export interface BooksServiceDeps {
    *  is no mediator; the real grant + normalization land at M2 (zero-signature swap). `[FACT: foundation/ingestion
    *  CLAUDE.md; parts/books.md:138]` */
   ingestion?: IngestionGuard
-  // S3–S10 append: spaces / backlinks / notes / sessions / sessionRegistry (required) +
-  //   ai? / attachment? / preferences? / effects? (optional deny-safe ports).
+  /** S3 — ADR-003 R2 encrypted file/photo upload (BOO-09). Optional deny-safe port: absent ⇒ `addAsset` stores
+   *  no file (`file_ref` null, `attachment-unavailable`), the asset is still created (BK-17). A PRESENT port whose
+   *  `upload()` rejects is a real R2 error ⇒ fail-loud `AssetFileError` (BR-BK-S3-2, `business-rules.md:127`). No
+   *  R2 substrate exists at M1 (`grep foundation/ = none`) — the real pipeline lands at M2 (zero-signature swap).
+   *  `[FACT: business-rules.md:14 (BK-1 attachments); parts/books.md:19 (BOO-09, R2=ADR-003-owned)]` */
+  attachment?: AttachmentPort
+  // S4–S10 append: spaces / backlinks / notes / sessions / sessionRegistry (required) +
+  //   ai? / preferences? / effects? (optional deny-safe ports).
 }
+
+// --- S3: asset file upload (BOO-09) — deny-safe port + service-layer types (the LookupResult precedent) ---
+
+/** A client-side binary handed to the `attachment?` port for encrypted R2 upload (BK-1). Opaque at M1 — the real
+ *  encrypt/store shape is the M2 ADR-003 pipeline's; Books only passes it through. NOT a validated input (it is raw
+ *  bytes, not a value) — `AddAssetSchema` validates the `format`/`native_position` metadata only. */
+export interface FileBlob {
+  bytes: Uint8Array
+  mimeType?: string
+  filename?: string
+}
+
+/** The ADR-003 R2 upload seam. A present port uploads the blob + returns the encrypted file ref; a rejection is a
+ *  real R2 error (fail-loud `AssetFileError`). Absent ⇒ the deny-safe `attachment-unavailable` path (no throw).
+ *  M1: no implementation wired; M2 provides the real R2 pipeline (zero-signature swap). */
+export interface AttachmentPort {
+  // `fileRef` is the stable R2 handle the asset row stores (and M2 GC deletes by) — so upload runs BEFORE the row
+  // is created and nothing persists on a failure. No `assetId` needed pre-creation.
+  upload(input: { blob: FileBlob; bookId: string }): Promise<{ fileRef: string }>
+}
+
+/** addAsset's file outcome (BOO-09) — the frozen 2-state `AttachmentRef`: `stored` (port present + success) or
+ *  `attachment-unavailable` (no port / no file). A real R2 FAILURE is NOT a state here — it throws `AssetFileError`
+ *  (BR-BK-S3-2). `[FACT: seam-contract.md:45-46; business-rules.md:97-98,127]` */
+export type AttachmentRef = { status: 'stored'; fileRef: string } | { status: 'attachment-unavailable' }
+
+/** getMappedPosition outcome (BOO-12, BK-4) — the honest cross-format absent-state, never a guessed position. At M1
+ *  the mapping algorithm (transcription + TOC-anchor matching) is unbuilt (design pass → build), so the result is
+ *  ALWAYS `not-synced`, carrying the TARGET asset's own `native_position` (BK-5 `:28-30`; terminal `:113`). The
+ *  `synced` variant is the M2 shape (zero-signature). At M2, `pending|failed|unavailable` collapse into
+ *  `not-synced`; M1 produces only the unconditional `not-synced` (no collapse logic exists yet). */
+export type MappedPosition =
+  | { status: 'synced'; position: string; sourceAssetId: string }
+  | { status: 'not-synced'; nativePosition: string | null }
 
 // --- Zod-inferred input shapes (validators/books.ts) ------------------------
 export type CreateBookInput = z.infer<typeof CreateBookSchema>
@@ -40,6 +84,12 @@ export type UpdateBookInput = z.infer<typeof UpdateBookSchema>
 /** setChapters seed (BOO-05) — structural chapter fields only; tracking state is never seeded (preserved across
  *  a re-set). `z.infer` of `ChapterSeedSchema`. */
 export type ChapterSeed = z.infer<typeof ChapterSeedSchema>
+/** addAsset metadata (BOO-09) — `format` + optional `native_position`; `z.infer` of `AddAssetSchema`. */
+export type AddAssetInput = z.infer<typeof AddAssetSchema>
+/** addAsset's full argument — the metadata PLUS the optional raw `file` blob, bundled in one object per the frozen
+ *  seam-contract (`seam-contract.md:84`). The service splits `file` off before Zod-validating the metadata (the
+ *  blob is raw bytes, not a validated value). */
+export type AddAssetArgs = AddAssetInput & { file?: FileBlob }
 
 /** listBooks filter (BOO-02) — S1 owns `status` ONLY. The `tags`/`subject`/`format-owned` keys are NOT
  *  advertised until S9/S3 build them (never advertise an unimplemented filter → no silent-wrong-result). */
@@ -52,9 +102,12 @@ export interface BookFilter {
  *  the incremental-slice aggregate (the knowledge getObject precedent). Service-layer shape (not @vida/types). */
 export interface BookView {
   book: Book
-  /** S1: always `[]` (assets land at S3). Typed as the schema row until S3 adds a `BookAsset` @vida/types
-   *  interface (the raw-Row-in-seam precedent, knowledge listLinks:EntityLinkRow). */
-  assets: BookAssetRow[]
+  /** S3 (N1 fold) — the per-format `BookAsset[]` (soft-delete filtered), now a proper `@vida/types` interface
+   *  (was the raw `BookAssetRow`). `[]` when the book owns no copy (TOC-only is first-class, BK-17). */
+  assets: BookAsset[]
+  /** S3 (B1 fold) — the flat TOC ordered by `chapter_number` (closes the S2 chapter-READ carry-forward). `[]`
+   *  when no TOC was set. */
+  chapters: BookChapter[]
   unifiedProgress: number | null
 }
 
@@ -128,6 +181,26 @@ export class ChapterNotFoundError extends Error {
   }
 }
 
+/** BOO-10/11/12 — an asset id did not resolve in the book's asset set (guard-exists at `updatePosition` /
+ *  `removeAsset` / `getMappedPosition`; also raised when a mapping target belongs to a different book). */
+export class BookAssetNotFoundError extends Error {
+  constructor(public readonly id: string) {
+    super(`Book asset not found: ${id}`)
+    this.name = 'BookAssetNotFoundError'
+  }
+}
+
+/** BOO-44 — a typed R2/decrypt file error; a broken file never renders as an empty book (fail-loud,
+ *  `business-rules.md:127`). Thrown at S3 by `addAsset` on a present-port `upload()` failure (an R2 write error),
+ *  and at S6 by `openReader` on a decrypt/download failure (terminal `:112`). Carries the diagnostic cause. */
+export class AssetFileError extends Error {
+  // ES2022 `Error` carries `cause` natively — set it via super, don't redeclare the field.
+  constructor(message: string, cause?: unknown) {
+    super(message, { cause })
+    this.name = 'AssetFileError'
+  }
+}
+
 export interface BooksService {
   // ── S1: Works CRUD + reframe (BOO-01/02/03/48) ──────────────────────────────
   /** BOO-01 — create a WORK row. `progress` is never accepted (derived, BR-BK-2); `status` defaults to
@@ -160,4 +233,20 @@ export interface BooksService {
   /** BOO-08 — X9 revoke: halt future ISBN lookups; already-imported metadata is untouched (keep-imported). No
    *  `ingestion` dep ⇒ no-op (nothing was granted at M1). */
   revokeLookupGrant(): Promise<void>
+
+  // ── S3: Assets + positions + mapping (BOO-09/10/11/12/44) ────────────────────
+  /** BOO-09 — add a per-format copy (BK-2). `format` ∈ BOOK_ASSET_FORMAT; a digital `file` is bundled in `input`
+   *  (frozen seam-contract) and uploads via the `attachment?` port: absent port/no file ⇒
+   *  `{status:'attachment-unavailable'}` + `file_ref` null (asset still created, BK-17); present port success ⇒
+   *  `{status:'stored', fileRef}`; present port `upload()` rejection ⇒ **`AssetFileError`** (fail-loud, nothing
+   *  persisted). Guards the book exists (`BookNotFoundError`). */
+  addAsset(bookId: string, input: AddAssetArgs): Promise<{ asset: BookAsset; file: AttachmentRef }>
+  /** BOO-10 — set the asset's single native position (SSOT). Guards exists (`BookAssetNotFoundError`). */
+  updatePosition(assetId: string, nativePosition: string): Promise<BookAsset>
+  /** BOO-11 — soft-delete a copy; work-anchored annotations survive (structural/no-FK). Guards exists. */
+  removeAsset(id: string): Promise<void>
+  /** BOO-12 — map a position from `assetId` into `targetAssetId`'s format (BK-4). NEVER guesses: at M1 the mapping
+   *  algorithm is unbuilt ⇒ always `{status:'not-synced', nativePosition: <target native>}` (fail-loud). Guards
+   *  both assets exist + belong to the same book (`BookAssetNotFoundError`). */
+  getMappedPosition(assetId: string, targetAssetId: string): Promise<MappedPosition>
 }

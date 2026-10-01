@@ -1,6 +1,14 @@
 // ============================================================================
 // services/books — the service (mod-books #51 ①)
 //
+// S3: Assets + positions + mapping (BOO-09/10/11/12/44) + N1/B1 folds. `addAsset` uploads via the deny-safe
+// `attachment?` port FIRST (nothing persists on failure): absent port/no file ⇒ attachment-unavailable + file_ref
+// null (BK-17); present port + reject ⇒ fail-loud AssetFileError (business-rules.md:127). `updatePosition` writes
+// the single per-asset native_position (SSOT, BK-2). `removeAsset` soft-deletes (annotations survive, no-FK).
+// `getMappedPosition` NEVER guesses — at M1 the mapping algorithm is unbuilt ⇒ always not-synced with the TARGET's
+// native position (BK-4/BK-5). `getBook` now carries live assets (N1 BookAsset interface) + the flat TOC (B1 — the
+// chapter READ path, closing the S2 carry-forward); `getCapabilities.readable` = ≥1 live asset.
+//
 // S2: Chapters/TOC (BOO-05/06) + ISBN lookup port (BOO-07/08) + N3 plannable fold. `setChapters` is a declarative
 // UPSERT by chapter_number (structural overwrite, tracking preserved, absent numbers hard-deleted — book_chapters
 // has NO deleted_at); UNIQUE pre-checked in-array above the DB backstop. `lookupBook`/`revokeLookupGrant` compose
@@ -20,15 +28,30 @@
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
-import type { Book, BookChapter } from '@vida/types'
+import type { Book, BookAsset, BookChapter } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
-import { books, bookChapters, type BookRow, type BookChapterRow } from '../../db/schema/books'
-import { CreateBookSchema, UpdateBookSchema, SetChaptersSchema } from '../../validators/books'
+import {
+  books,
+  bookChapters,
+  bookAssets,
+  type BookRow,
+  type BookChapterRow,
+  type BookAssetRow,
+} from '../../db/schema/books'
+import {
+  CreateBookSchema,
+  UpdateBookSchema,
+  SetChaptersSchema,
+  AddAssetSchema,
+  UpdatePositionSchema,
+} from '../../validators/books'
 import { IngestionDenied, type IngestionAct } from '../../foundation/ingestion'
 import {
   BookNotFoundError,
   ChapterUniqueViolation,
   ChapterNotFoundError,
+  BookAssetNotFoundError,
+  AssetFileError,
   BOOKS_ISBN_INTEGRATION_ID,
   type BooksService,
   type BooksServiceDeps,
@@ -38,6 +61,9 @@ import {
   type BookView,
   type BookCapabilities,
   type ChapterSeed,
+  type AddAssetArgs,
+  type AttachmentRef,
+  type MappedPosition,
   type LookupResult,
   type IsbnLookupPayload,
   type BookMetadata,
@@ -58,14 +84,23 @@ const toChapter = (r: BookChapterRow): BookChapter => ({
   _sync_status: r._sync_status as BookChapter['_sync_status'],
 })
 
+// book_assets maps 1:1 to the BookAsset interface (S3 N1 reconcile); only the plain-text `_sync_status` casts.
+const toAsset = (r: BookAssetRow): BookAsset => ({
+  ...r,
+  _sync_status: r._sync_status as BookAsset['_sync_status'],
+})
+
 export function createBooksService(deps: BooksServiceDeps): BooksService {
-  const { db, deviceId, ingestion } = deps
+  const { db, deviceId, ingestion, attachment } = deps
 
   // [E] fields (title/author/isbn/review/cover_url) → encryptedFields:[] M1.0 pass-through (dormant → M3/DB-5).
   const booksRepo = createRepository(db, books, { deviceId, softDelete: true, encryptedFields: [] })
   // book_chapters has NO deleted_at (child, FACT floor) → softDelete:false ⇒ delete() is a HARD delete (F1). [E]
   // title → encryptedFields:[] M1.0 pass-through.
   const chaptersRepo = createRepository(db, bookChapters, { deviceId, softDelete: false, encryptedFields: [] })
+  // book_assets HAS deleted_at → softDelete:true (removeAsset soft-deletes; reads filter it). [E] file_ref →
+  // encryptedFields:[] M1.0 pass-through.
+  const assetsRepo = createRepository(db, bookAssets, { deviceId, softDelete: true, encryptedFields: [] })
 
   // --- Works CRUD (BOO-01) --------------------------------------------------
 
@@ -120,8 +155,17 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
   async function getBook(id: string): Promise<BookView | null> {
     const book = await booksRepo.findById(id) // null if not found or soft-deleted
     if (!book) return null
-    // S1 aggregate: assets fill at S3, unifiedProgress derives at S8 (deny-safe not-yet-composed defaults).
-    return { book: toBook(book), assets: [], unifiedProgress: null }
+    // S3 aggregate: live assets (N1) + the flat TOC (B1, closes the S2 chapter-READ gap). unifiedProgress derives
+    // at S8. findWhere skips the soft-delete filter → isNull(deleted_at) explicit for assets (book_chapters has none).
+    const assetRows = await assetsRepo.findWhere(and(isNull(bookAssets.deleted_at), eq(bookAssets.book_id, id)) as SQL)
+    const chapterRows = await chaptersRepo.findWhere(eq(bookChapters.book_id, id))
+    chapterRows.sort((a, b) => a.chapter_number - b.chapter_number)
+    return {
+      book: toBook(book),
+      assets: assetRows.map(toAsset),
+      chapters: chapterRows.map(toChapter),
+      unifiedProgress: null,
+    }
   }
 
   async function listBooks(filter?: BookFilter): Promise<Book[]> {
@@ -137,9 +181,11 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     const book = await booksRepo.findById(id)
     if (!book) throw new BookNotFoundError(id)
     // N3 (S2 fold) — plannable = a PAGE BASIS exists: a work-level total_pages OR a TOC (≥1 chapter). A TOC-only
-    // book with no total_pages IS plannable (BK-17). readable composes S3 (≥1 asset) — false until assets land.
+    // book with no total_pages IS plannable (BK-17). readable (S3) = ≥1 LIVE asset (business-rules.md:97-98 "no
+    // assets → no Reader affordance"; removing the last copy flips it back to false).
     const chapterCount = await chaptersRepo.count(eq(bookChapters.book_id, id))
-    return { plannable: book.total_pages != null || chapterCount > 0, readable: false }
+    const assetCount = await assetsRepo.count(and(isNull(bookAssets.deleted_at), eq(bookAssets.book_id, id)) as SQL)
+    return { plannable: book.total_pages != null || chapterCount > 0, readable: assetCount > 0 }
   }
 
   // --- Chapters / TOC (BOO-05/06) -------------------------------------------
@@ -256,6 +302,71 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     await ingestion.revokeIntegration(BOOKS_ISBN_INTEGRATION_ID)
   }
 
+  // --- Assets + positions (BOO-09/10/11) — deny-safe R2 upload -----------------
+
+  async function addAsset(
+    bookId: string,
+    input: AddAssetArgs,
+  ): Promise<{ asset: BookAsset; file: AttachmentRef }> {
+    // Split the raw blob off the metadata (the blob is bytes, not a validated value) — frozen-contract bundled shape.
+    const { file, ...meta } = input
+    const v = AddAssetSchema.parse(meta)
+    if (!(await booksRepo.findById(bookId))) throw new BookNotFoundError(bookId)
+    // Upload FIRST so nothing persists on a failure (fail-loud). Absent port OR no file ⇒ deny-safe no-store
+    // (asset still created, file_ref null, BK-17). Present port + reject ⇒ AssetFileError (BR-BK-S3-2, :127).
+    let fileRef: string | null = null
+    let fileResult: AttachmentRef = { status: 'attachment-unavailable' }
+    if (file && attachment) {
+      try {
+        const res = await attachment.upload({ blob: file, bookId })
+        fileRef = res.fileRef
+        fileResult = { status: 'stored', fileRef: res.fileRef }
+      } catch (e) {
+        // A real R2 write error is NOT the deny-safe absent-state — fail loud, persist nothing.
+        throw new AssetFileError(`Asset file upload failed for book ${bookId}`, e)
+      }
+    }
+    const row = await assetsRepo.create({
+      book_id: bookId,
+      format: v.format,
+      file_ref: fileRef,
+      native_position: v.native_position ?? null,
+      deleted_at: null, // faithful echo (a new asset is not deleted)
+    } satisfies CreateInput<typeof bookAssets>)
+    return { asset: toAsset(row), file: fileResult }
+  }
+
+  async function updatePosition(assetId: string, nativePosition: string): Promise<BookAsset> {
+    const pos = UpdatePositionSchema.parse(nativePosition)
+    const existing = await assetsRepo.findById(assetId)
+    if (!existing) throw new BookAssetNotFoundError(assetId)
+    // SSOT — only native_position is written (BK-2). Progress derivation (S8) is a read-time DERIVATION, nothing to bust.
+    await assetsRepo.update(assetId, { native_position: pos } as UpdateInput<typeof bookAssets>)
+    // update() echoes only the patch → re-read for a faithful full row.
+    const updated = await assetsRepo.findById(assetId)
+    return toAsset(updated as BookAssetRow)
+  }
+
+  async function removeAsset(id: string): Promise<void> {
+    const existing = await assetsRepo.findById(id)
+    if (!existing) throw new BookAssetNotFoundError(id)
+    // Soft-delete (book_assets HAS deleted_at). Work-anchored annotations survive by construction (no FK to the
+    // asset) — BR-BK-S3-4; the survival test lands at S4. Blob GC rides the R2 pipeline (M2).
+    await assetsRepo.delete(id)
+  }
+
+  async function getMappedPosition(assetId: string, targetAssetId: string): Promise<MappedPosition> {
+    const source = await assetsRepo.findById(assetId)
+    if (!source) throw new BookAssetNotFoundError(assetId)
+    const target = await assetsRepo.findById(targetAssetId)
+    // A mapping is only meaningful between two assets of the SAME work (BK-5 annotations anchor to the work).
+    if (!target || target.book_id !== source.book_id) throw new BookAssetNotFoundError(targetAssetId)
+    // BK-4 — at M1 the cross-format mapping algorithm (transcription + TOC-anchor matching) is unbuilt (design
+    // pass → build). NEVER guess a mapped position: return the honest not-synced state carrying the TARGET's own
+    // native position (BK-5 :28-30; terminal :113). The `synced` variant is the M2 shape (zero-signature swap).
+    return { status: 'not-synced', nativePosition: target.native_position }
+  }
+
   return {
     createBook,
     updateBook,
@@ -267,5 +378,9 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     markChapterComplete,
     lookupBook,
     revokeLookupGrant,
+    addAsset,
+    updatePosition,
+    removeAsset,
+    getMappedPosition,
   }
 }

@@ -12,8 +12,14 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createBooksService } from '../service'
-import type { BooksService } from '../types'
-import { BookNotFoundError, ChapterUniqueViolation, ChapterNotFoundError } from '../types'
+import type { BooksService, AttachmentPort, FileBlob } from '../types'
+import {
+  BookNotFoundError,
+  ChapterUniqueViolation,
+  ChapterNotFoundError,
+  BookAssetNotFoundError,
+  AssetFileError,
+} from '../types'
 import { IngestionDenied, type IngestionGuard } from '../../../foundation/ingestion'
 
 // Better-sqlite3 driver adapter (verbatim from the knowledge harness — the full SqliteDriver surface).
@@ -347,5 +353,163 @@ describe('mod-books S2 — ISBN lookup port (BOO-07/08), deny-safe', () => {
     })
     await withDep.revokeLookupGrant()
     expect(revoked).toBe('books.isbn_lookup') // BOOKS_ISBN_INTEGRATION_ID
+  })
+})
+
+// --- S3: Assets + positions + mapping (BOO-09/10/11/12/44) -------------------
+
+const blob = (name: string): FileBlob => ({ bytes: new Uint8Array([1, 2, 3]), mimeType: 'application/pdf', filename: name })
+
+// A configurable mock AttachmentPort — mirrors mockIngestion. Default upload succeeds with a deterministic ref.
+function mockAttachment(opts: { upload?: AttachmentPort['upload'] } = {}): AttachmentPort {
+  return {
+    upload: opts.upload ?? (async ({ bookId }) => ({ fileRef: `r2://${bookId}/file` })),
+  }
+}
+
+describe('mod-books S3 — Assets + positions (BOO-09/10/11)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('addAsset without an attachment port ⇒ attachment-unavailable, file_ref null, asset still created (BK-17)', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const { asset, file } = await h.svc.addAsset(b.id, { format: 'physical' })
+    expect(file).toEqual({ status: 'attachment-unavailable' })
+    expect(asset.file_ref).toBeNull()
+    expect(asset.format).toBe('physical')
+    expect(asset.book_id).toBe(b.id)
+    // surfaced on the aggregate (N1) + flips readable true (BOO-48)
+    const view = await h.svc.getBook(b.id)
+    expect(view!.assets).toHaveLength(1)
+    expect(view!.assets[0]!.id).toBe(asset.id)
+    expect((await h.svc.getCapabilities(b.id)).readable).toBe(true)
+  })
+
+  it('addAsset with a present port + file ⇒ stored + file_ref persisted', async () => {
+    const svc = createBooksService({ db: h.db, deviceId: 'test-device', attachment: mockAttachment() })
+    const b = await svc.createBook({ title: 'Digital' })
+    const { asset, file } = await svc.addAsset(b.id, { format: 'pdf', file: blob('x.pdf') })
+    expect(file).toEqual({ status: 'stored', fileRef: `r2://${b.id}/file` })
+    expect(asset.file_ref).toBe(`r2://${b.id}/file`)
+    // persisted faithfully (live-store re-read)
+    expect((await svc.getBook(b.id))!.assets[0]!.file_ref).toBe(`r2://${b.id}/file`)
+  })
+
+  it('addAsset with a present port whose upload() rejects ⇒ AssetFileError, NOTHING persisted (fail-loud, :127)', async () => {
+    const svc = createBooksService({
+      db: h.db,
+      deviceId: 'test-device',
+      attachment: mockAttachment({
+        upload: async () => {
+          throw new Error('R2 down')
+        },
+      }),
+    })
+    const b = await svc.createBook({ title: 'Doomed' })
+    await expect(svc.addAsset(b.id, { format: 'epub', file: blob('x.epub') })).rejects.toBeInstanceOf(AssetFileError)
+    // no dangling asset row
+    expect((await svc.getBook(b.id))!.assets).toHaveLength(0)
+    expect((await svc.getCapabilities(b.id)).readable).toBe(false)
+  })
+
+  it('addAsset guards the book exists + validates format', async () => {
+    await expect(h.svc.addAsset('missing', { format: 'pdf' })).rejects.toBeInstanceOf(BookNotFoundError)
+    const b = await h.svc.createBook({ title: 'Book' })
+    await expect(h.svc.addAsset(b.id, { format: 'cassette' as never })).rejects.toThrow()
+  })
+
+  it('updatePosition sets the single native position (SSOT) + re-reads; guards exists', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const { asset } = await h.svc.addAsset(b.id, { format: 'audiobook' })
+    const updated = await h.svc.updatePosition(asset.id, '00:52:13')
+    expect(updated.native_position).toBe('00:52:13')
+    expect((await h.svc.getBook(b.id))!.assets[0]!.native_position).toBe('00:52:13')
+    await expect(h.svc.updatePosition('missing', '1')).rejects.toBeInstanceOf(BookAssetNotFoundError)
+    await expect(h.svc.updatePosition(asset.id, '')).rejects.toThrow() // non-empty
+  })
+
+  it('removeAsset soft-deletes; asset drops from getBook, book still resolves; guards exists', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const { asset: a1 } = await h.svc.addAsset(b.id, { format: 'physical' })
+    const { asset: a2 } = await h.svc.addAsset(b.id, { format: 'pdf' })
+    expect((await h.svc.getBook(b.id))!.assets).toHaveLength(2)
+    await h.svc.removeAsset(a1.id)
+    const view = await h.svc.getBook(b.id)
+    expect(view).not.toBeNull() // the book survives
+    expect(view!.assets.map((a) => a.id)).toEqual([a2.id]) // only the live asset
+    expect((await h.svc.getCapabilities(b.id)).readable).toBe(true) // a2 still live
+    await h.svc.removeAsset(a2.id)
+    expect((await h.svc.getCapabilities(b.id)).readable).toBe(false) // last copy gone → not readable
+    await expect(h.svc.removeAsset(a1.id)).rejects.toBeInstanceOf(BookAssetNotFoundError) // already gone
+    await expect(h.svc.removeAsset('missing')).rejects.toBeInstanceOf(BookAssetNotFoundError)
+  })
+})
+
+describe('mod-books S3 — cross-format mapping absent-state (BOO-12, BK-4 fail-loud)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('getMappedPosition NEVER guesses — always not-synced at M1, carrying the TARGET native position', async () => {
+    const b = await h.svc.createBook({ title: 'Multi-format' })
+    const { asset: audio } = await h.svc.addAsset(b.id, { format: 'audiobook' })
+    const { asset: pdf } = await h.svc.addAsset(b.id, { format: 'pdf' })
+    await h.svc.updatePosition(audio.id, '00:52:13')
+    await h.svc.updatePosition(pdf.id, '318')
+    const mapped = await h.svc.getMappedPosition(audio.id, pdf.id)
+    expect(mapped.status).toBe('not-synced') // mapping algorithm unbuilt — never a guessed `synced`
+    if (mapped.status === 'not-synced') expect(mapped.nativePosition).toBe('318') // the TARGET's own native position
+  })
+
+  it('getMappedPosition carries null when the target has no native position yet', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const { asset: a } = await h.svc.addAsset(b.id, { format: 'audiobook' })
+    const { asset: target } = await h.svc.addAsset(b.id, { format: 'pdf' }) // no position set
+    const mapped = await h.svc.getMappedPosition(a.id, target.id)
+    expect(mapped).toEqual({ status: 'not-synced', nativePosition: null })
+  })
+
+  it('getMappedPosition guards both assets exist + same book', async () => {
+    const b1 = await h.svc.createBook({ title: 'One' })
+    const b2 = await h.svc.createBook({ title: 'Two' })
+    const { asset: a } = await h.svc.addAsset(b1.id, { format: 'pdf' })
+    const { asset: foreign } = await h.svc.addAsset(b2.id, { format: 'pdf' })
+    await expect(h.svc.getMappedPosition(a.id, 'missing')).rejects.toBeInstanceOf(BookAssetNotFoundError)
+    await expect(h.svc.getMappedPosition('missing', a.id)).rejects.toBeInstanceOf(BookAssetNotFoundError)
+    // a cross-WORK map is nonsensical → target treated as not-found
+    await expect(h.svc.getMappedPosition(a.id, foreign.id)).rejects.toBeInstanceOf(BookAssetNotFoundError)
+  })
+
+  it('getMappedPosition treats a soft-deleted target as not-found (findById excludes it)', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    const { asset: a } = await h.svc.addAsset(b.id, { format: 'audiobook' })
+    const { asset: target } = await h.svc.addAsset(b.id, { format: 'pdf' })
+    await h.svc.removeAsset(target.id) // soft-delete
+    await expect(h.svc.getMappedPosition(a.id, target.id)).rejects.toBeInstanceOf(BookAssetNotFoundError)
+  })
+})
+
+describe('mod-books S3 — B1 fold: chapter READ path on getBook', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('getBook surfaces the TOC ordered by chapter_number + the AssetFileError class is constructible', async () => {
+    const b = await h.svc.createBook({ title: 'Book' })
+    await h.svc.setChapters(b.id, [
+      { title: 'Two', chapter_number: 2 },
+      { title: 'One', chapter_number: 1 },
+    ])
+    const view = await h.svc.getBook(b.id)
+    expect(view!.chapters.map((c) => c.chapter_number)).toEqual([1, 2]) // ordered (B1)
+    expect(view!.chapters[0]!.title).toBe('One')
+    // BOO-44 — the typed file error is a real, constructible class (decrypt throw site = S6)
+    const err = new AssetFileError('decrypt failed', new Error('bad key'))
+    expect(err).toBeInstanceOf(AssetFileError)
+    expect(err.name).toBe('AssetFileError')
   })
 })

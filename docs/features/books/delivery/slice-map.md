@@ -61,14 +61,21 @@ mocked test bypasses (`[FACT: visual-gate-catches-worker-rpc-bugs; repository-cr
 
 | Slice | g1 | Verification Gate | code-review | SHIP | commit |
 |---|---|---|---|---|---|
-| S1 | ✅ (2 fixes) | ✅ 7/7 live-store | ✅ SHIP 0-block | ✅ | _(pending)_ |
-| S2–S10 | — | — | — | — | — |
+| S1 | ✅ (2 fixes) | ✅ 7/7 live-store | ✅ SHIP 0-block | ✅ | `df22a8d` |
+| S2 | ✅ (5 fixes) | ✅ 20/20 live-store | ✅ 3-finder (3 fixed/1 doc/1 c-fwd) | ✅ | `547c889` |
+| S3 | ✅ (4 pts grounded) | ✅ 31/31 live-store | ✅ 2-reviewer SHIP (4 NITs folded) | ✅ | _(pending)_ |
+| S4–S10 | — | — | — | — | — |
+
+**BOO-44 note (split, recorded per the S2 F4-drift discipline):** BOO-44 (`AssetFileError`) is built in S3 — its
+S3 throw site is `addAsset` on a present-port R2 upload failure (`business-rules.md:127` fail-loud); the
+decrypt/download throw site (`openReader`) lands at S6 (terminal `:112`). Fully homed, not under-delivered.
 
 **Carry-forwards (code-review NITs, non-blocking):**
-- **→ S2** (N3): `getCapabilities.plannable` must also honor a TOC (chapters) without a work-level `total_pages`
-  once `book_chapters` is wired — currently `plannable = total_pages != null` (the only S1 basis).
-- **→ S3** (N1): `BookView.assets` is typed `BookAssetRow[]` (raw Drizzle row in the seam) — replace with a
-  proper `BookAsset` @vida/types interface when S3 lands (narrows `_sync_status`).
+- **→ S2** (N3) ✅ CLOSED — `getCapabilities.plannable` now honors a TOC (BR-BK-S2-6).
+- **→ S3** (N1) ✅ CLOSED — `BookView.assets` is now the `BookAsset` @vida/types interface (BR-BK-S3-7).
+- **→ S3** (B1) ✅ CLOSED — `getBook` now surfaces `chapters` (the chapter READ path, BR-BK-S3-8).
+- **→ S4** (new): the annotation-survival test for `removeAsset` (BR-BK-S3-4, structural/no-FK) lands when
+  bookmarks/highlights/quotes exist.
 
 ## Decomposition Gate (Approval 1)
 

@@ -58,13 +58,45 @@
   only the grant). No `ingestion` dep ⇒ no-op (nothing granted at M1). `BOOKS_ISBN_INTEGRATION_ID` is Books-owned
   identity (the `entity_type`/sub-type precedent), inert at M1. `[code: service.ts revokeLookupGrant; ADR-014:70]`
 
-## Carry-forward (homed to a later slice — surfaced by the S2 code-review)
+## Shipped invariants (as of S3 — Assets + positions + mapping, BOO-09/10/11/12/44)
 
-- **Chapter READ path** — S2 persists the TOC (`setChapters`) and proves it via `getCapabilities` count +
-  `markChapterComplete` re-read + a re-`setChapters`, but there is no chapter READER on the frozen S2 seam-contract
-  (`getBook`/`BookView` carry work+assets+progress, no `chapters`; no `getChapters`). The UI TOC read path is owed
-  where `BookView` expands (S3 assets, or S7/S8) — adding a reader in S2 would exceed the Approval-1 contract. Not a
-  defect; a homed gap.
+- **BR-BK-S3-1 (asset = per-format copy / BK-2/BOO-09)** — `addAsset(bookId, {format, native_position?, file?})`
+  (the raw `file` bundled in `input` per the frozen seam-contract; split off before Zod-validating the metadata)
+  creates a `book_assets` row (0..n per book); `format` ∈ BOOK_ASSET_FORMAT (Zod + DB CHECK). Guards the book
+  exists (`BookNotFoundError`). A book needs no asset (BK-17). `[code: service.ts addAsset; validators/books.ts AddAssetSchema]`
+- **BR-BK-S3-2 (R2 upload — deny-safe on ABSENCE, fail-loud on FAILURE / BOO-09/44)** — the digital `file`
+  uploads via the optional `attachment?` port, **upload-first so nothing persists on failure**: (a) absent port
+  **or** no file ⇒ `file:{status:'attachment-unavailable'}` + `file_ref` null, asset still created (BK-17); (b)
+  present port + success ⇒ `file:{status:'stored', fileRef}`, `file_ref` set; (c) present port + `upload()`
+  rejects ⇒ **`AssetFileError`** (fail-loud, no asset persisted — a broken file never renders as an empty book).
+  M1 ships no R2 substrate ⇒ always (a); M2 swaps the pipeline (zero-signature). `[code: service.ts addAsset;
+  business-rules.md:127,97-98]`
+- **BR-BK-S3-3 (per-asset position SSOT / BK-2/BOO-10)** — each asset owns exactly ONE `native_position`.
+  `updatePosition(assetId, nativePosition)` (non-empty) writes only that column, re-reads, returns the `BookAsset`.
+  Guards exists (`BookAssetNotFoundError`). `[code: service.ts updatePosition; validators UpdatePositionSchema]`
+- **BR-BK-S3-4 (asset removal preserves work-anchored annotations / BOO-11)** — `removeAsset(id)` soft-deletes
+  the asset (`book_assets` HAS `deleted_at`). Work-anchored annotations survive by construction (no FK to the
+  asset — `business-rules.md:99-100`); the survival test lands at S4 (annotations don't exist yet). Guards exists
+  (`BookAssetNotFoundError`). `[code: service.ts removeAsset]`
+- **BR-BK-S3-5 (cross-format mapping NEVER guessed / BK-4/BOO-12)** — `getMappedPosition(assetId, targetAssetId)`
+  returns the typed `MappedPosition`. At M1 the mapping algorithm (transcription + TOC-anchor matching) is unbuilt
+  (design pass → build), so the result is **ALWAYS `{status:'not-synced', nativePosition}`** carrying the TARGET
+  asset's own native position (BK-5 `:28-30`; terminal `:113`) — never a guessed `synced`. Guards both assets exist
+  + belong to the **same book** (`BookAssetNotFoundError`). `[code: service.ts getMappedPosition]`
+- **BR-BK-S3-6 (file error is typed + fail-loud / BOO-44)** — `AssetFileError` is the typed R2/decrypt error
+  (`business-rules.md:127`). Thrown at S3 by `addAsset` on a present-port upload failure; the decrypt/download
+  throw site (`openReader`) lands at S6 (terminal `:112`). `[code: types.ts AssetFileError; service.ts addAsset]`
+- **BR-BK-S3-7 (N1 fold — BookAsset interface)** — `BookAsset` is a proper `@vida/types` interface mirroring the
+  reshaped row (DB-11, the Book/BookChapter precedent); `BookView.assets: BookAsset[]` (was raw `BookAssetRow`).
+  `[code: @vida/types learning.ts BookAsset; service.ts toAsset]`
+- **BR-BK-S3-8 (B1 fold — chapter READ path, closes the S2 carry-forward)** — `getBook` now returns
+  `chapters: BookChapter[]` ordered by `chapter_number`; `getCapabilities.readable` = ≥1 **live** asset
+  (soft-delete-filtered; removing the last copy flips it false). `[code: service.ts getBook, getCapabilities]`
+
+## Carry-forward (homed to a later slice)
+
+- **Annotation-survival test** — BR-BK-S3-4's no-FK survival is structural; the delete-test lands at **S4** (when
+  bookmarks/highlights/quotes exist). *(S2 "Chapter READ path" carry-forward CLOSED by BR-BK-S3-8.)*
 
 ## Deferred (homed, not yet enforced — see delivery/slice-map.md Deferred-by-design)
 
