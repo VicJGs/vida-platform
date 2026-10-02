@@ -685,3 +685,17 @@ Key decisions (the Points Economy "System" service tier over `foundation/economy
 | 2026-10-02 | S9 / BOO-14 | reading measure source = a METHOD, returns null for conflicted | `getReadingMeasureSource` composes `getUnifiedProgress`; `'conflicted'`/`null` ⇒ `null` | per-book async measures are methods (KNO-25); `advertise()` = sync global scalars only. A conflict is "not measurable yet" — null, never a throw. | No (BR-BK-S9-6) |
 | 2026-10-02 | S9 / BOO-38 | `getPaceStatus` = deny-safe null at M1 | guards the book, returns `null`; `subjectId` trusted, not read | Education `#52` unbuilt → No-Guessing forbids a fabricated pace (the `MasterySource` null precedent); `subjectId` = M2-ready signature. | Yes (real derivation at M2) |
 | 2026-10-02 | S9 / BOO-46 | Books-as-linkable-target = identity only; `backlinks` dep NOT wired | no method; `'book'`/`'book_chapter'` already registered | other modules own the links pointing AT books; no Books reverse-read in the frozen surface → wiring `backlinks` = unused dep (No-Guessing). | No |
+| 2026-10-02 | S10 / BOO-42-43 | `IntegrationConsentError` = exported typed vocabulary, NO M1 throw-site | TTS/transcription map every deny to `ai-unavailable` (mirror `attachPhoto`/`assistCompoundSet`); no `checkModelCall` gate | g1 B1: a `checkModelCall`-driven throw is dead code at M1 (no consent store; on-device never egresses; only `*_unavailable` reachable) + a throw-through violating the ratified `PositionConflictPending` convention (BR-BK-S8-6) + `seam-contract.md:153`. Real consent gate = M2. | Yes (M2 consent gate) |
+| 2026-10-02 | S10 / BOO-26 / C-E2 | `effects?` fan-out = measurement-only, emit-only, dormant | `endSession` emits ONE `emit_measurement_signal` (grain=session id, targetRef=book_id); failure-isolated; dormant without `effects?`/a handler | slice-map:24 names the fan-out; C-E2 forbids any economy grant (those ride base-`sessions`). No named M1 consumer (the measure is derived-pull) ⇒ dormant seam-only, not a knowledge-style live re-derive. | Yes (the handler = M2) |
+| 2026-10-02 | S10 / BOO-40-41 | Books stamps its OWN `defId` over the caller's `AiRequest` | `runModelCall` does `{ ...req, defId }` with `BOOKS_TTS/TRANSCRIPTION_INTEGRATION_ID` | No-Guessing / the `BOOKS_*_INTEGRATION_ID` principle — Books owns its integration identity; the caller picks only the mode (AI1 per-use). | No |
+| 2026-10-02 | S10 / BOO-45 | `getPlansForConsumer` distinct from `getTodayQuotas` | raw active `ReadingPlan[]` read-provider vs the derived pace view | BK-12 boundary — Books owns plans, the Study Planner consumes a read surface, never writes. | No |
+
+## mod-books (LIF-117) — completed 2026-10-02
+
+The Books ① backend (`createBooksService`, the reading Universe over DB-4 `023_books`, 10 tables) — S1–S10, all 48
+BOO legs, merged in PR #70 (`4c73145`). Entity Delivery Flow v1: front matter (Approval 1) → 10 per-slice service
+tracks, each §XXVI double-gated + independent code-review + §XXIX currency. @vida/core **1533/1533**, tsc 0, eslint 0,
+gitleaks clean. Key decisions logged above (S1–S10 rows). Composes the real `spaces`/`notes`/`sessions`/`measurement`/
+`journals`/`effects` substrates; deny-safe M2 ports (`ingestion?`/`attachment?`/`ai?`/`preferences?`/`effects?`) swap
+with zero signature change. Derive-on-read SSOT (progress/quota/pace/stats). Scope guards honored: C-E2 (no economy),
+C-M1 (no stored measurement axes), BK-12/14/18. Currency: `docs/modules/books/current-*`. ② `fe-books` (LIF-188) = P6.
