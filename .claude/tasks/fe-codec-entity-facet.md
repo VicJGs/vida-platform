@@ -1,5 +1,6 @@
 # Task: fe-codec-entity-facet
 # Status: planned
+# Linear: LIF-209
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

@@ -1,5 +1,6 @@
 # Task: fe-codec-seams
 # Status: planned
+# Linear: LIF-212
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

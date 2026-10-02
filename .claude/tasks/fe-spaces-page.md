@@ -1,5 +1,6 @@
 # Task: fe-spaces-page
 # Status: planned
+# Linear: LIF-220
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

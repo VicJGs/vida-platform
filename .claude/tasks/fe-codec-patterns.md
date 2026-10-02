@@ -1,5 +1,6 @@
 # Task: fe-codec-patterns
 # Status: planned
+# Linear: LIF-211
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

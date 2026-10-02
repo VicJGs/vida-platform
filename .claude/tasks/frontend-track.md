@@ -1,6 +1,6 @@
 # Task: frontend-track
 # Status: in-progress
-# Linear:
+# Linear: LIF-202
 # Profile: Project Foundation  (→ Add Frontend Component per fe-X build)
 # Scenario: Milestone Delivery Planning
 # Project: M1 — Whole Manual OS

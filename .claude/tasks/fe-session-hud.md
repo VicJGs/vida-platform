@@ -1,5 +1,6 @@
 # Task: fe-session-hud
 # Status: planned
+# Linear: LIF-217
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

@@ -1,5 +1,6 @@
 # Task: fe-codec-canvas-reader
 # Status: planned
+# Linear: LIF-206
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

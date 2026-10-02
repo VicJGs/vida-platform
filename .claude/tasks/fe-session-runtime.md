@@ -1,5 +1,6 @@
 # Task: fe-session-runtime
 # Status: planned
+# Linear: LIF-218
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

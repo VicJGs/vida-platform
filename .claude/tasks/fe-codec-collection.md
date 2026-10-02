@@ -1,5 +1,6 @@
 # Task: fe-codec-collection
 # Status: planned
+# Linear: LIF-207
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

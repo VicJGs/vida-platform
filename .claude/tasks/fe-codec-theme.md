@@ -1,5 +1,6 @@
 # Task: fe-codec-theme
 # Status: planned
+# Linear: LIF-213
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

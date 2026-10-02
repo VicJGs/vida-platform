@@ -1,5 +1,6 @@
 # Task: fe-codec-flow-session
 # Status: planned
+# Linear: LIF-210
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

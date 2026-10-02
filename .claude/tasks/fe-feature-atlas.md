@@ -1,5 +1,6 @@
 # Task: fe-feature-atlas
 # Status: planned
+# Linear: LIF-215
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

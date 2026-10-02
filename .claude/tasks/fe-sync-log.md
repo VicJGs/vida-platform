@@ -1,5 +1,6 @@
 # Task: fe-sync-log
 # Status: planned
+# Linear: LIF-221
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

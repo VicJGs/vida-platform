@@ -1,5 +1,6 @@
 # Task: fe-codec-viewmodes
 # Status: planned
+# Linear: LIF-214
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS
