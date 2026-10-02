@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-09-27 by /session-end -->
+<!-- Last updated: 2026-10-01 by /session-end -->
 | Method | Path | Auth | Request | Response | Notes |
 |--------|------|------|---------|----------|-------|
 | *(add rows as endpoints are built)* | | | | | |
@@ -35,3 +35,19 @@ Config provider over the DB-4 #2 schema; plaintext (`encryptedFields: []`).
 | S3 bindings | `bindMethod` · `listBindings` · `unbindMethod` (method_bindings, no-FK) · `resolveDefaultMethod(kindId)` (2-tier) |
 | S4 review ② | `recordReview` (append-only review_events, no mastery write) · `getDue`/`dueIn` (due-queue) · `deriveMastery` (0–100 or null, derive-on-read via measurement.normalize) · `rollupMastery` (up parent_object_id via measurement.rollup) |
 Errors: `ObjectKindNotFoundError` · `InvalidParentRefError` · `HierarchyCycleError` · `KnowledgeObjectNotFoundError` · `KnowledgeContainerNotFoundError` · `ReferenceNotFoundError` · (engine) `ReviewCurveNotFoundError` · `MethodBindingNotFoundError` · (delegated) `UnknownEntityType` · `TagNotFound` · `DuplicateCapabilityId`. Engine home: `foundation/review` (`createReviewEngine(db, deviceId, {capability})`). Spec/currency: `docs/modules/knowledge/current-{spec,business-rules}.md`. Not yet built: S5–S8.
+
+## @vida/core — BooksService (mod-books ①, LIF-117) — COMPLETE (S1–S10, all 48 BOO legs)
+`createBooksService({ db, deviceId, spaces, notes, sessions, sessionRegistry, ingestion?, attachment?, preferences?, ai?, effects? }): BooksService` — the reading-Universe service tier over DB-4 `023_books` (10 tables); factory-object, no `this.`. Required from S4/S6: `spaces`/`notes`/`sessions`/`sessionRegistry`. Deny-safe M2 ports: `ingestion?`/`attachment?`/`preferences?`/`ai?`/`effects?` (zero-signature swap). Persistence: DB-6 repos, `encryptedFields:[]` (M1.0); derive-on-read SSOT (progress/quota/pace/stats). `registerBooksJournal(registry, svc)` (module fn) = the Journal `/summary` PULL. Merged PR #70 (`4c73145`).
+| Group | Methods |
+|-------|---------|
+| S1 works | `createBook` · `updateBook` · `softDeleteBook` · `getBook`→`BookView` · `listBooks(filter?)` · `getCapabilities`→`{plannable,readable}` (progress never settable, BR-BK-2; TOC-only first-class) |
+| S2 chapters/TOC | `setChapters` (declarative upsert by `chapter_number`; dup → `ChapterUniqueViolation`) · `markChapterComplete` · `lookupBook`→`LookupResult` (deny-safe `ingestion?`) · `revokeLookupGrant` (X9) |
+| S3 assets/positions | `addAsset`→`{asset,file:AttachmentRef}` (deny-safe `attachment?`; present-reject ⇒ `AssetFileError`) · `updatePosition` (SSOT) · `removeAsset` (annotations survive) · `getMappedPosition`→`MappedPosition` (BK-4 `not-synced`, never guessed) |
+| S4 annotations | `addBookmark` · `addHighlight` (no notes/links, BK-6) · `addQuote` · `linkAnnotations` (`AnnotationNotLinkableError` on a highlight) · `openAnnotationNote` · `listAnnotations` · `listQuotes` |
+| S5 quote-embed | `getEmbeddableQuotes({bookId?})` (per-book>global via deny-safe `preferences?`; `QuoteEmbedDisabledError` on scoped-off) |
+| S6 sessions/Reader | `registerBooks` (the `reading` sub-type, `effects:[]`/C-E2) · `startSession` · `endSession` · `attachPhoto` (photo always stores; OCR via `ai?`) · `getStatistics` · `openReader`→`ReaderContext` |
+| S7 plans/quota | `createPlan` (atomic; no measurement axes, C-M1) · `getTodayQuotas` · `recordQuotaProgress` · `recalculate` (`TargetUnreachableProposal` behind pace) · `getProjection` |
+| S8 progress/conflict | `getUnifiedProgress`→`number\|'conflicted'\|null` (derive-on-read) · `getConflicts` (derived queue, no table) · `resolveConflict` (preset rule via `preferences?`, absent⇒no-op) |
+| S9 Education/measure/tags | `scopeTag` · `linkSubject`/`unlinkSubject`/`listBooksForSubject` (`book_subjects`) · `getPaceStatus`→deny-safe `null` (Education `#52` unbuilt) · `getReadingMeasureSource` (method, KNO-25) |
+| S10 integrations/fan-out/Journal | `convertToSpeech`/`transcribeForMapping`→`OcrResult` (deny-safe `ai?`; Books stamps own `defId`; no M1 consent throw) · `getPlansForConsumer` (BK-12 read-provider) · `getDayBooksDigest` + `registerBooksJournal` (Journal `/summary`) · `effects?` measurement-only fan-out on `endSession` (`emit_measurement_signal` only, C-E2) |
+Errors: `BookNotFoundError` · `ChapterUniqueViolation` · `ChapterNotFoundError` · `BookAssetNotFoundError` · `AssetFileError` · `AnnotationNotFoundError` · `AnnotationNotLinkableError` · `QuoteEmbedDisabledError` · `ReadingSessionNotFoundError` · `ReadingPlanNotFoundError` · `TargetUnreachableProposal` · `PositionConflictPending` (exported, no M1 throw-site) · `IntegrationConsentError` (exported BK-14 vocabulary, no M1 throw-site). Identity: `BOOK_ENTITY_TYPE='book'` · `BOOKS_ISBN_INTEGRATION_ID` · `BOOKS_OCR_INTEGRATION_ID` · `BOOKS_TTS_INTEGRATION_ID` · `BOOKS_TRANSCRIPTION_INTEGRATION_ID` (all Books-owned, inert at M1). Spec/currency: `docs/modules/books/current-{spec,business-rules}.md`. ② `fe-books` (LIF-188) = P6.
