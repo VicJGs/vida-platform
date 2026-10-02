@@ -5797,3 +5797,24 @@ Decisions: see .claude/docs/decisions.md 2026-09-30 books rows (deferred-reach d
 Next session:
   - **FIRST ACTION:** FRESH session via /begin → **S2 — Chapters/TOC + ISBN lookup port** (BOO-05/06/07/08). book_chapters CRUD + UNIQUE(book_id, chapter_number) guard + chapter completion; ingestion? deny-safe lookupBook ⇒ lookup-unavailable + grant-revoke (X9) + manual fallback (BK-14). **Fold carry-forward N3**: getCapabilities.plannable must also honor a TOC without total_pages. (N1 → S3: BookView.assets raw-row → BookAsset @vida/types interface.)
   - Reload: docs/features/books/delivery/{slice-map,seam-contract,interpretation}.md · docs/modules/books/current-* · parts/books.md BOO-05/06/07/08 · schema/books.ts (book_chapters — NO deleted_at, F1) · services/knowledge/service.ts (setChapters-style persist) · foundation/ingestion (deny-safe guard). Env: Node 24 via nvm. Branch mod-books; per-slice cadence; PR when ① (all 10 slices) complete.
+
+---
+Date: 2026-10-02 — mod-books #51 (LIF-117) — ① BACKEND COMPLETE → S10 shipped → PR #70 merged → Done
+Task: mod-books · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow v1) · branch mod-books → PR #70 (`4c73145`) merged to main
+Goal: ship S10 (the final slice) of createBooksService ① over DB-4 023_books, completing all 48 BOO legs.
+Accomplished:
+  - **S10 SHIPPED (`c40c412`)** — Integration close-out + fan-out + Journal (BOO-40/41/42/43/45/47):
+    `convertToSpeech`/`transcribeForMapping` (deny-safe `ai?` TTS/transcription; Books stamps its own defId via BOOKS_TTS/TRANSCRIPTION_INTEGRATION_ID; NO checkModelCall gate — mirrors attachPhoto/assistCompoundSet) ·
+    `getPlansForConsumer` (BK-12 Study-Planner read-provider, active plans only) ·
+    `effects?` measurement-only fan-out on `endSession` (emit-only/post-commit/failure-isolated/dormant; ONE `emit_measurement_signal`, grain=session id, targetRef=book_id; **C-E2 — never an economy grant**) ·
+    `getDayBooksDigest` + `registerBooksJournal` (new `journal.ts`, Journal `/summary` PULL; the registerKnowledgeJournal precedent) ·
+    `IntegrationConsentError` exported BK-14 typed vocabulary (**NO M1 throw-site** — g1 B1) · BOO-47 local-first asserted.
+  - Full Entity Delivery Flow: PLAN → g1 /critique REVISE→folded → Approval 1 → /api-contract ratify + /adr-check (no ADR) → /preflight PASSED → Approval 2 → implement → tsc 0 · 100/100 books live-store (Node 24) · full @vida/core **1533/1533** · eslint 0 · gitleaks clean → independent g2 code-review SHIP (0 block, 2 nits: N1 dead-ternary collapsed, N2 shared-precedent) → /critique SHIP → §XXIX currency (BR-BK-S10-1..6; ① marked COMPLETE).
+  - **① backend COMPLETE** (S1–S10, all 48 BOO legs). PR #70 merged → main (`4c73145`); LIF-117 → Done (tracker synced). Task archived.
+Decisions / lessons:
+  - **g1 B1 (independent critic-caught, my lean was WRONG):** wiring `IntegrationConsentError` via `ai.checkModelCall` was dead code at M1 (no consent store; on-device never egresses; only `*_unavailable` reachable) AND a throw-through violating the ratified `PositionConflictPending` no-M1-throw convention (BR-BK-S8-6) + `seam-contract.md:153`. Re-grounded: exported typed vocabulary, deny-safe `ai-unavailable` mapping; the real consent gate = M2. Memory candidate: a consent/egress gate with no M1-reachable deny reason = exported-vocabulary forward-seam, not a wired throw (the PositionConflictPending precedent class).
+  - `effects?` fan-out: slice-map:24 names a "measurement-only fan-out", but the reading measure is derived-PULL (no named push consumer). Resolved = emit-only + dormant seam-only (a handler registers downstream at M2), C-E2-clean — NOT a knowledge-style live re-derive. Documented explicitly in BR-BK-S10-4.
+  - Books stamps its OWN defId over the caller's AiRequest (`{ ...req, defId }`) — No-Guessing / the BOOKS_*_INTEGRATION_ID principle; the caller picks only the mode.
+Next session:
+  - **FIRST ACTION:** next `#`-order head = **#52 mod-learning-education** (advisory `--next` agrees: highest direct-dependent count among the ready group; Books was a blocker it now unblocks). FRESH session via `/begin`. Read docs/features/learning (Education) aspect docs + the part-1.2 rerun + parts before scoping.
+  - Env: Node 24 via nvm; per-issue branch → PR → merge. Entity Delivery Flow per-slice cadence.
