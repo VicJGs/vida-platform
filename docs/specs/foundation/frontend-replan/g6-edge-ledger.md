@@ -146,8 +146,9 @@ fe-journals → **fe-home** (LIF-187) · fe-preferences → **fe-settings** (LIF
 
 ### Edges: all `## Dependencies` blocked-by wired by slug (codec → surfaces → hard-4 BR-6 = 28 surfaces). 0 dangling.
 
-### Known follow-ups (NOT part of this reshape — pre-existing)
-- **3 orphan map entries** flagged by the orphan guard (backend/foundation, no task files): LIF-79 (ar-8-foundation-services),
-  LIF-159 (m1-foundation-closeout), LIF-160 (core-vault-init-on-db-open). Out of frontend scope — map-hygiene item.
-- **Batch G (stale edges):** add-only `--sync` cannot delete the pre-reshape Linear relations from `hard-4-polish` → the
-  4 now-canceled fe issues. Moot (blocked-by a Canceled issue doesn't gate), optional manual GraphQL cleanup.
+### Follow-ups — RESOLVED (2026-10-02, Victor-authorized)
+- **3 orphan map entries** (pre-existing backend debt): **LIF-79** ar-8-foundation-services → set **Done** (work merged
+  `1da9ea9`+`fe4b70d`) · **LIF-159** m1-foundation-closeout → set **Done** (branch merged) · **LIF-160** core-vault-init-on-db-open
+  → **claimed** with a stub task file homed M3.0 (legit future issue, no longer an orphan).
+- **Batch G (stale edges):** DONE — deleted the 4 pre-reshape `hard-4-polish` → Canceled-issue relations via GraphQL
+  `issueRelationDelete` (LIF-189/186/185/184). Verified 0 Canceled blockers remain on hard-4.
