@@ -67,4 +67,10 @@ at each fe-X build.
   Executed: `--retire` ×4 (LIF-189/186/184/185 → Canceled) → `--sync --allow-orphan-create` (guard tripped on 3 pre-existing
   backend orphans LIF-79/159/160, verified unrelated) → **created LIF-202…221** (20) + milestone `M1.2+ (frontend surface
   tier — cross-milestone)` → converged 0-create/115-exist, 0 dangling → `--pull`. Executed-ledger in `g6-edge-ledger.md §6`.
-  Commits `0c06884` (merge) · `186987b` (prep) · `62e4d57` (write-back). **Next: per-surface builds, head fe-codec-theme (LIF-213).**
+  Commits `0c06884` (merge) · `186987b` (prep) · `62e4d57` (write-back) · `d39e68b` (ledger) · `cf628ee` (session) → **PR #71 MERGED** (`6240917`).
+- 2026-10-02 · **FOLLOW-UPS + CLEANUP (Victor-authorized).** 3 orphans triaged: LIF-79 (ar-8) + LIF-159 (m1-foundation-closeout)
+  → **Done** (work merged, status stuck); LIF-160 (core-vault-init) → **claimed** with an M3.0 stub (legit future issue).
+  **Batch G:** deleted the 4 stale `hard-4-polish` → Canceled-issue blocker relations via GraphQL `issueRelationDelete`
+  (verified 0 remain). Committed on `frontend-reshape-followups` → **PR #72 MERGED** (`20ba8f6`). Cleanup: removed the
+  worktree + deleted both merged branches (local + remote). Verified: 0 orphans · 0 dangling · local main == origin/main.
+  **Next: per-surface builds, head fe-codec-theme (LIF-213).**
