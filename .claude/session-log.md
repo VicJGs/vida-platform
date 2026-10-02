@@ -5818,3 +5818,20 @@ Decisions / lessons:
 Next session:
   - **FIRST ACTION:** next `#`-order head = **#52 mod-learning-education** (advisory `--next` agrees: highest direct-dependent count among the ready group; Books was a blocker it now unblocks). FRESH session via `/begin`. Read docs/features/learning (Education) aspect docs + the part-1.2 rerun + parts before scoping.
   - Env: Node 24 via nvm; per-issue branch → PR → merge. Entity Delivery Flow per-slice cadence.
+
+---
+Date: 2026-10-02 — frontend-track S3 (campaign, LIF-202) — G6 LINEAR RESHAPE EXECUTED + follow-ups + cleanup
+Task: frontend-track · Profile: Project Foundation / Milestone Delivery Planning (execution tail, Steps 6–8)
+Goal: Set up Linear properly — execute the staged G6 reshape; make the frontend track correct locally, on GitHub, on Linear.
+Accomplished:
+  - Branch disposition: mod-books already merged (PR #70) → main clean; ff-merged `worktree-frontend-track` → main (1 append-conflict resolved).
+  - Reconciled pre-staged files vs runbook §2 via `--sync --dry-run` (Step 6/7) — caught 3 gaps: spurious campaign-file creates, 4 retired files still live, 15 survivors never re-scoped. Fixed: renamed 4 survivors to surface slugs (LIF preserved + map re-keyed), archived 4 retirees + frontend-replan, reshaped hard-4 BR-6 → 28 surfaces, homed frontend-track to a new `M1.2+` cross-milestone.
+  - Executed from main: `--retire` ×4 (LIF-189/186/184/185 → Canceled) → `--sync --allow-orphan-create` → created **LIF-202…221** (20) + milestone → converged 0-create/115-exist, 0 dangling → `--pull`. **PR #71 MERGED** (`6240917`).
+  - Follow-ups (Victor-authorized): LIF-79 + LIF-159 → Done (work merged); LIF-160 → claimed with M3.0 stub; Batch G → deleted 4 stale hard-4→Canceled relations (GraphQL, verified 0 remain). **PR #72 MERGED** (`20ba8f6`).
+  - Cleanup: removed worktree + deleted both merged branches (local + remote). Local main == origin/main.
+Decisions / lessons:
+  - Run a reshape from the MAIN checkout (gitignored per-checkout `.tracker-map.json`; worktree = empty skeleton → whole-backlog duplication). The `--sync --dry-run` IS the reconciliation diagnostic — verify survivor CONTENT, not just file existence. Memory updated: [[tracker-sync-orphan-create-guard]].
+  - The harness blocks every agent-chosen external write (retire / status-set / direct-push-to-main) until targets are named + explicitly authorized — "proceed" authorizes the plan, each irreversible mutation still gets an itemized yes.
+Next session:
+  - **FIRST ACTION:** per-surface builds begin. Frontend head = **fe-codec-theme (LIF-213)** — the codec foundation everything inherits (M1.2.1). FRESH `/begin`; `--next` confirms. Each surface: add-frontend-component / Entity Delivery Flow ② (3-lens audit → build → Visual Gate → PR → merge).
+  - Env: Node 24 via nvm; per-issue branch → PR → merge. Reshape artifacts in `docs/specs/foundation/frontend-replan/`.

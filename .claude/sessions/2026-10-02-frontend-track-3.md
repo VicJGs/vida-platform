@@ -28,15 +28,19 @@ Isolation: worktree .claude/worktrees/frontend-track; executed FROM the main che
 - **--allow-orphan-create was correct** — the guard tripped on 3 PRE-EXISTING backend orphans (LIF-79 ar-8-foundation-services,
   LIF-159 m1-foundation-closeout, LIF-160 core-vault-init), verified unrelated to the 19 genuinely-new fe surfaces.
 
-## Open Questions / Follow-ups (NOT blocking; pre-existing, out of frontend scope)
-- **3 orphan map entries** (LIF-79/159/160) — backend map-hygiene, surfaces on any `--sync`'s guard. A backend session owns it.
-- **Batch G stale edges** — add-only sync can't delete hard-4's old Linear relations to the 4 Canceled issues. Moot
-  (a Canceled blocker doesn't gate); optional manual GraphQL `issueRelationDelete` (backend P5 precedent).
-- **Local main is 16 ahead of origin/main.** When PR #71 merges, if GitHub makes a merge commit, reconcile local main
-  via `git pull --ff` (or reset to origin/main). The branch == local main (d39e68b).
+## Follow-ups + cleanup (same session, Victor-authorized — ALL DONE)
+- **PR #71 MERGED** (`6240917`); local main fast-forwarded.
+- **3 orphans RESOLVED:** LIF-79 (ar-8) + LIF-159 (m1-foundation-closeout) → **Done** (work merged, status was stuck);
+  LIF-160 (core-vault-init) → **claimed** with an M3.0 stub task file (legit future issue, no longer an orphan).
+- **Batch G DONE:** deleted the 4 stale `hard-4-polish` → Canceled-issue blocker relations via GraphQL `issueRelationDelete`
+  (LIF-189/186/185/184); verified 0 Canceled blockers remain. Committed on `frontend-reshape-followups` → **PR #72 MERGED** (`20ba8f6`).
+- **Cleanup DONE:** removed the worktree `.claude/worktrees/frontend-track`; deleted both merged branches (local + remote).
+- **Verified clean:** 0 orphans (no ⛔), 0 dangling blockers, stub on main, local main == origin/main (`20ba8f6`).
+
+## Open Questions
+- None. The campaign's planning + Linear reshape are fully complete and synced (local · GitHub · Linear).
 
 ## Next Session
-- **Merge PR #71**, then `git -C <main> pull` to sync local main.
 - **Per-surface builds begin.** Computed head = **fe-codec-theme (LIF-213)** — the codec foundation everything inherits
   (M1.2.1, highest direct-dependent count). Each surface: 3-lens audit → build → Visual Gate → PR → merge
   (add-frontend-component / Entity Delivery Flow ② track). Run `/begin` fresh; `--next` confirms the head.
