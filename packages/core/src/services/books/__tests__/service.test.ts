@@ -31,6 +31,7 @@ import type { ConflictChoice } from '../types'
 import type { AiService } from '../../../foundation/ai'
 import { IngestionDenied, type IngestionGuard } from '../../../foundation/ingestion'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { TagNotFound } from '../../../foundation/spaces'
 import { createSpacesService } from '../../../foundation/spaces/service'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService } from '../../notes'
@@ -1314,11 +1315,108 @@ describe('mod-books S8 — unified progress + conflict resolution', () => {
     expect((await h.svc.getBook(b.id))!.unifiedProgress).toBe('conflicted')
   })
 
-  // §4.6 — PositionConflictPending is a forward seam: exported, an Error subclass, not thrown anywhere in S8.
-  it('PositionConflictPending is exported as a forward seam (S9 consumer), not thrown by any S8 method', () => {
+  // §4.6 — PositionConflictPending is exported typed vocabulary (no M1 backend throw-site), an Error subclass.
+  it('PositionConflictPending is exported typed vocabulary (surfaced at M1), not thrown by any S8 method', () => {
     const err = new PositionConflictPending('some-book')
     expect(err).toBeInstanceOf(Error)
     expect(err.name).toBe('PositionConflictPending')
     expect(err.bookId).toBe('some-book')
+  })
+})
+
+// ============================================================================
+// S9 — Education partition + measurement source + tags + linkable-target
+//      (BOO-04/14/36/37/38/46) — maps 1:1 to PLAN-S9 §4.
+// ============================================================================
+describe('mod-books S9 — Education partition + measure source + tags + target', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // §4.1 — scopeTag classifies a book via a live entity_tag; guards book + tag.
+  it('scopeTag tags a book; BookNotFoundError on a ghost book; TagNotFound on an unresolved tag', async () => {
+    const b = await h.svc.createBook({ title: 'Dune' })
+    const tag = await h.deps.spaces.createTag({ name: 'sci-fi' })
+    const row = await h.svc.scopeTag(b.id, tag.id)
+    expect(row.entity_id).toBe(b.id)
+    expect(row.entity_type).toBe('book')
+    expect(row.tag_id).toBe(tag.id)
+
+    await expect(h.svc.scopeTag('ghost', tag.id)).rejects.toBeInstanceOf(BookNotFoundError)
+    await expect(h.svc.scopeTag(b.id, 'no-such-tag')).rejects.toBeInstanceOf(TagNotFound)
+  })
+
+  // §4.2 — linkSubject is idempotent and returns a FAITHFUL row (B1); guards the book.
+  it('linkSubject creates + is idempotent + returns a faithful row; BookNotFoundError on a ghost', async () => {
+    const b = await h.svc.createBook({ title: 'Linear Algebra' })
+    const first = await h.svc.linkSubject(b.id, 'subject-math')
+    expect(first.book_id).toBe(b.id)
+    expect(first.subject_id).toBe('subject-math')
+    expect(first.created_at).toBeTypeOf('number') // B1 — faithful row (not a create-echo with undefined timestamps)
+    expect(first.deleted_at).toBeNull()
+
+    const second = await h.svc.linkSubject(b.id, 'subject-math')
+    expect(second.id).toBe(first.id) // idempotent — same active row, no duplicate
+
+    await expect(h.svc.linkSubject('ghost', 'subject-math')).rejects.toBeInstanceOf(BookNotFoundError)
+  })
+
+  // §4.3 — unlinkSubject soft-deletes; idempotent no-op.
+  it('unlinkSubject soft-deletes the link and is a no-op when none exists', async () => {
+    const b = await h.svc.createBook({ title: 'Physics' })
+    await h.svc.linkSubject(b.id, 'subject-phys')
+    expect(await h.svc.listBooksForSubject('subject-phys')).toHaveLength(1)
+
+    await h.svc.unlinkSubject(b.id, 'subject-phys')
+    expect(await h.svc.listBooksForSubject('subject-phys')).toHaveLength(0)
+    // second call / no active link ⇒ no-op (never throws)
+    await expect(h.svc.unlinkSubject(b.id, 'subject-phys')).resolves.toBeUndefined()
+  })
+
+  // §4.4 — listBooksForSubject returns live books, soft-delete filtered both sides.
+  it('listBooksForSubject returns the live linked books; [] when none; excludes soft-deleted books', async () => {
+    expect(await h.svc.listBooksForSubject('subject-x')).toEqual([])
+
+    const a = await h.svc.createBook({ title: 'A' })
+    const b = await h.svc.createBook({ title: 'B' })
+    await h.svc.linkSubject(a.id, 'subject-x')
+    await h.svc.linkSubject(b.id, 'subject-x')
+    expect((await h.svc.listBooksForSubject('subject-x')).map((x) => x.id).sort()).toEqual([a.id, b.id].sort())
+
+    await h.svc.softDeleteBook(a.id) // a deleted BOOK drops from the join (soft-delete filtered)
+    expect((await h.svc.listBooksForSubject('subject-x')).map((x) => x.id)).toEqual([b.id])
+  })
+
+  // §4.5 — getPaceStatus is deny-safe null at M1 (Education unbuilt); guards the book.
+  it('getPaceStatus returns null for a linked book (Education unbuilt); BookNotFoundError on a ghost', async () => {
+    const b = await h.svc.createBook({ title: 'Chemistry' })
+    await h.svc.linkSubject(b.id, 'subject-chem')
+    expect(await h.svc.getPaceStatus(b.id, 'subject-chem')).toBeNull()
+    await expect(h.svc.getPaceStatus('ghost', 'subject-chem')).rejects.toBeInstanceOf(BookNotFoundError)
+  })
+
+  // §4.6 — getReadingMeasureSource composes getUnifiedProgress; conflicted/unmeasured ⇒ null.
+  it('getReadingMeasureSource: number for a single asset; null for conflicted + unmeasured; BookNotFoundError on a ghost', async () => {
+    const measured = await h.svc.createBook({ title: 'Measured', total_pages: 200 })
+    await h.svc.addAsset(measured.id, { format: 'pdf', native_position: '50' })
+    expect(await h.svc.getReadingMeasureSource(measured.id)).toEqual({ progress: 25 })
+
+    const conflicted = await h.svc.createBook({ title: 'Conflicted', total_pages: 200 })
+    await h.svc.addAsset(conflicted.id, { format: 'pdf', native_position: '50' }) // 25
+    await h.svc.addAsset(conflicted.id, { format: 'pdf', native_position: '150' }) // 75
+    expect(await h.svc.getReadingMeasureSource(conflicted.id)).toEqual({ progress: null }) // 'conflicted' → null
+
+    const unmeasured = await h.svc.createBook({ title: 'TOC-only', total_pages: 200 })
+    expect(await h.svc.getReadingMeasureSource(unmeasured.id)).toEqual({ progress: null })
+
+    await expect(h.svc.getReadingMeasureSource('ghost')).rejects.toBeInstanceOf(BookNotFoundError)
+  })
+
+  // §4.7 — BOO-46: Books is a registered linkable TARGET (identity only; other modules own the links).
+  it('BOO-46 — book and book_chapter are registered taggable/linkable entity types', () => {
+    const registry = createTaggableTypeRegistry()
+    expect(registry.isRegistered('book')).toBe(true)
+    expect(registry.isRegistered('book_chapter')).toBe(true)
   })
 })

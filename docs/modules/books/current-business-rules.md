@@ -245,10 +245,13 @@
   miss is benign); `last_valid` ⇒ greatest `updated_at`, tie-broken by asset `id` descending (deterministic);
   `photo_valid` ⇒ `'conflicted'` (no photo-source position at M1 — OCR `ai-unavailable`; resolves automatically at M2).
   `[code: service.ts resolveClash; conventions.md:36]`
-- **BR-BK-S8-6 (`PositionConflictPending` — forward seam, not thrown in S8 / B1)** — exported as the typed signal for a
-  consumer that requires a definite number (first = S9 `getReadingMeasureSource`); **not thrown anywhere in S8**. The
-  read surfaces flag `'conflicted'`; a valid-but-not-yet-applicable preset (`photo_valid`) persists without throwing.
-  `[code: types.ts PositionConflictPending; seam-contract.md:58; BK-8]`
+- **BR-BK-S8-6 (`PositionConflictPending` — exported typed vocabulary, NO M1 backend throw-site)** — exported as the
+  typed signal for the `'conflicted'` state; **not thrown anywhere in M1 backend**. Per `contract.md:64` the only
+  intended throw-site is a position **WRITE** flow (confirming a unified truth) — a P6/M2 concern; `updatePosition`'s
+  per-asset `native_position` write is NOT that clash-write (each asset owns its SSOT, BK-2). The read surfaces flag
+  `'conflicted'`; S9 `getReadingMeasureSource` **returns `null`** for a conflicted book (the measure contract is
+  `number|null`; never throws — the `getMasterySource` precedent). *(Corrects the S8-session note that said "thrown at
+  S9"; §XXIX no-silent-drift, verified in S9.)* `[code: types.ts PositionConflictPending; contract.md:64; seam-contract.md:58; BK-8]`
 - **BR-BK-S8-7 (`getConflicts` — derived queue, no table / interpretation rule 7)** — guards the book
   (`BookNotFoundError`, fail-loud parity), then: an unresolved clash ⇒ one `ConflictItem`
   (`id='conflict:'+bookId`, `blocking: true`, competing `sources: PositionSource[]`), else `[]`. The id is
@@ -266,18 +269,55 @@
   `setConflictRule(bookId, choice)`. The two S5 quote-embed signatures are unchanged; absent port ⇒ permissive read
   (`ask`) + no-op write. Real Preferences keys = M2/P6 (zero-signature swap). `[code: types.ts PreferencesPort]`
 
+## S9 — Education partition + measurement source + tags + linkable-target (BOO-04/14/36/37/38/46)
+
+- **BR-BK-S9-1 (`scopeTag` — classification via entity_tags / BOO-04, BK-16)** — `scopeTag(bookId, scopedTag)` guards
+  the book (`BookNotFoundError`) + that `scopedTag` resolves to a live `tags` row (`tagsRepo.findById == null ⇒
+  TagNotFound` — the create-path silent-orphan guard; `spaces.tagEntity` blind-inserts the tag_id), then delegates to
+  `spaces.tagEntity(scopedTag, 'book', bookId)` → `EntityTagRow`. The book row stays lean (no inline `tags`/`genre`).
+  `[code: service.ts scopeTag; knowledge scopeTag precedent]`
+- **BR-BK-S9-2 (`linkSubject` — Education partition junction, idempotent, faithful row / BOO-36, BK-13)** — guards the
+  book (`BookNotFoundError`); `subjectId` trusted (no Education read — KNO-25). No schema `UNIQUE(book_id,subject_id)`
+  → app-layer idempotency: an existing **active** (`isNull(deleted_at)`) link is returned as-is; else create **+
+  re-read via `findById`** so both paths return a faithful `BookSubjectRow` (B1 — `create()` echoes the input).
+  `[code: service.ts linkSubject; schema/books.ts:191-199]`
+- **BR-BK-S9-3 (`unlinkSubject` — soft-delete, idempotent / BOO-36)** — soft-deletes the active `(book_id,subject_id)`
+  link; a no-op when none exists (never throws). Books-only write (BK-13 boundary). `[code: service.ts unlinkSubject]`
+- **BR-BK-S9-4 (`listBooksForSubject` — Books→Education read surface / BOO-37)** — active junction rows for a
+  `subject_id` (`findWhere` + explicit `isNull(deleted_at)`, sorted by `created_at`) → `booksRepo.findById` each
+  (soft-delete filtered — deleted books drop) → `Book[]`. The `subject_id` query is unindexed (accepted M1 cost;
+  frozen schema). `[code: service.ts listBooksForSubject]`
+- **BR-BK-S9-5 (`getPaceStatus` — deny-safe null at M1 / BOO-38, BK-13)** — guards the book (`BookNotFoundError`) then
+  returns `null`: Education's `subject_schedules`/assessments are **unbuilt** (`#52`), so a pace is never fabricated
+  (the `MasterySource` null precedent). `subjectId` trusted, not guarded (the KNO-25 cross-module boundary); it is the
+  M2-ready signature. `[code: service.ts getPaceStatus; slice-map.md:49]`
+- **BR-BK-S9-6 (`getReadingMeasureSource` — the reading measure SOURCE / BOO-14, C-M1)** — a **method** (per-book,
+  async — the KNO-25 `getMasterySource` pattern; NOT `advertise()`). Composes `getUnifiedProgress` (which guards the
+  book) and returns `ReadingMeasureSource { progress }` where `'conflicted'`/`null` ⇒ `null` (a conflict is "not
+  measurable yet", never a throw). No stored `books.measurement_kind` (C-M1 — the `quantitative`/`derived-pull`
+  vocabulary is referenced, not authored). `[code: service.ts getReadingMeasureSource]`
+- **BR-BK-S9-7 (BOO-46 — Books as a linkable TARGET, identity only)** — `'book'` + `'book_chapter'` are registered
+  `ENTITY_TYPES` → valid tag/link targets for Knowledge/review/Skills/Purposes, which own those links; Books exposes
+  the identity and authors nothing. No new method; the seam-contract's `backlinks` dep is **not wired** (no consuming
+  read-method — No-Guessing). `[code: _registry.ts:89-90; seam-contract.md:146-147]`
+- **BR-BK-S9-8 (partition boundary / BK-13)** — Books reaches Education only through the junction + (future) contract;
+  never a direct Education table read. `subjectId` trusted; no junction write is exposed to Education (Books-owned).
+  `[business-rules.md:65-68]`
+
 ## Carry-forward (homed to a later slice)
 
-- **`listQuotes` `tags?` filter** → S9 (lands with `scopeTag`/BOO-04). *(S4 "Embeddability = S5" carry-forward
-  CLOSED by BR-BK-S5-1..5; S3 annotation-survival CLOSED by BR-BK-S4-7; S2 "Chapter READ path" CLOSED by BR-BK-S3-8;
-  S1 "Derivation lands at S8" CLOSED by BR-BK-S8-1..9.)*
+- **`listBooks`/`listQuotes` tag·subject·format-owned filter completions** (BOO-02/BOO-20 query halves) → a later leg
+  (NOT S9 — the slice-map scopes S9 to entity_tags *classification*, the `scopeTag` write; "never advertise an
+  unimplemented filter"). *(S4 "Embeddability = S5" CLOSED by BR-BK-S5-1..5; S3 annotation-survival CLOSED by
+  BR-BK-S4-7; S2 "Chapter READ path" CLOSED by BR-BK-S3-8; S1 "Derivation lands at S8" CLOSED by BR-BK-S8-1..9.)*
 
 ## Deferred (homed, not yet enforced — see delivery/slice-map.md Deferred-by-design)
 
 Cross-format mapping `NotSyncedState` (S3, algorithm = build-phase design pass) · ISBN lookup **real fetch +
 normalization** (M2 — mediator + registry; the S2 port is built deny-safe) · OCR / TTS / transcription (deny-safe
-`ai?` port, S10/M2) · R2 file/photo (deny-safe port, M2) · **conflict-rule real Preferences write + `PositionConflictPending`
-throw-site** (M2/P6 adapter + S9 `getReadingMeasureSource` consumer — the S8 seams are built) · Education pace (S9,
-deny-safe null) · measurement source (S9) · C-E2 (no economy grant on Books — grants ride base-`sessions`) · C-M1 (no
-stored measurement axes on `reading_plans`). *(Unified-progress derivation + the derived conflict queue are now BUILT —
-BR-BK-S8-1..10.)*
+`ai?` port, S10/M2) · R2 file/photo (deny-safe port, M2) · **conflict-rule real Preferences write** (M2/P6 adapter — the
+S8 port seam is built) · **`PositionConflictPending` on-write block** (a P6/M2 position-write/unified-truth-confirm
+flow, `contract.md:64`; the M1 backend never throws it) · C-E2 (no economy grant on Books — grants ride base-`sessions`)
+· C-M1 (no stored measurement axes). *(Unified-progress derivation + the derived conflict queue (S8) + the Education
+partition·tags·measure-source (S9) are now BUILT — BR-BK-S8/S9-*. Education pace ships the deny-safe `null` shape; the
+real derivation awaits Education `#52`, M2.)*

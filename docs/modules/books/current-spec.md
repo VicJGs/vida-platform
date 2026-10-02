@@ -9,9 +9,9 @@
 
 `createBooksService(deps)` — the ① backend service tier for the **reading Universe** over DB-4 `023_books`
 (10 tables). The full design lives in `docs/features/books/` (aspect docs) + `docs/features/books/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **S8 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration · Reading plans / Quota Planner · Unified progress + conflict resolution).
+(interpretation · slice-map · seam-contract). Build state: **S9 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration · Reading plans / Quota Planner · Unified progress + conflict resolution · Education partition + measure source + tags + linkable-target).
 
-## Delivered surface (as of S8)
+## Delivered surface (as of S9)
 
 `createBooksService({ db, deviceId, spaces, notes, sessions, sessionRegistry, ingestion?, attachment?, preferences?, ai? }) → BooksService`.
 Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from S4 (annotation links/notes);
@@ -57,6 +57,12 @@ Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from
 | `getUnifiedProgress(bookId)` | BOO-13 | derive-on-read `number`\|`'conflicted'`\|`null`; `books.progress` override else page-unit candidates via `measurement.normalize` under the BK-8 rule; guard-book → `BookNotFoundError` |
 | `getConflicts(bookId)` | BOO-34 | derived queue (NO table); unresolved clash ⇒ one `ConflictItem` (`id='conflict:'+bookId`, `blocking:true`, competing `sources`) else `[]`; guard-book |
 | `resolveConflict(id, choice)` | BOO-34/35 | persist the preset rule via `preferences?.setConflictRule` (absent ⇒ no-op, the `revokeLookupGrant` precedent); guards book (`BookNotFoundError`) + `source_of_truth` asset (`BookAssetNotFoundError`); `photo_valid` persists without throwing |
+| `scopeTag(bookId, scopedTag)` | BOO-04 | classify via `spaces.tagEntity('book')`; guards book (`BookNotFoundError`) + tag resolves (`TagNotFound`) → `EntityTagRow` |
+| `linkSubject(bookId, subjectId)` | BOO-36 | idempotent Education-partition link (`book_subjects`); active link returned as-is else create+re-read (faithful `BookSubjectRow`); guard book; subject trusted |
+| `unlinkSubject(bookId, subjectId)` | BOO-36 | soft-delete the active link; no-op when none (never throws) |
+| `listBooksForSubject(subjectId)` | BOO-37 | live books linked to a subject (soft-delete filtered both sides), ordered by junction `created_at` |
+| `getPaceStatus(bookId, subjectId)` | BOO-38 | **deny-safe `null`** at M1 (Education `#52` unbuilt — never fabricated); guards book; `subjectId` trusted |
+| `getReadingMeasureSource(bookId)` | BOO-14 | `ReadingMeasureSource {progress}` composing `getUnifiedProgress` (`'conflicted'`⇒`null`); method not `advertise()` (KNO-25); no stored `measurement_kind` (C-M1) |
 
 **Types/errors:** `BooksServiceDeps`, `BooksService`, `BookView`, `BookFilter`, `BookCapabilities`, `ChapterSeed`,
 `AddAssetInput`, `FileBlob`, `AttachmentPort`, `AttachmentRef`, `MappedPosition`, `BookMetadata`, `IsbnLookupPayload`
@@ -79,9 +85,14 @@ errors `ReadingPlanNotFoundError` + `TargetUnreachableProposal` (thrown, carries
 exists (N-fold, for P6/consumers) but no S7 method returns the junction, so the service carries no mapper for it.
 **S8:** `ConflictRule`/`ConflictChoice`/`PositionSource`/`ConflictItem` (service-layer, not `@vida/types` — the
 `MappedPosition` precedent); the internal `Candidate = PositionSource & { updatedAt }` + the `PAGE_UNIT_FORMATS`
-set; error `PositionConflictPending` (exported forward seam — thrown at S9, not in S8); `PreferencesPort` gained
-`getConflictRule`/`setConflictRule`; `BookView.unifiedProgress` widened to `number | 'conflicted' | null`. Composes
-`foundation/measurement` `normalize` (quantitative; `resolveProgress` semantics inlined). NO new table, NO migration.
+set; error `PositionConflictPending` (exported typed vocabulary — surfaced at M1, **NO M1 backend throw-site**; the
+`contract.md:64` on-write block is P6/M2, and S9 `getReadingMeasureSource` returns `null` not a throw); `PreferencesPort`
+gained `getConflictRule`/`setConflictRule`; `BookView.unifiedProgress` widened to `number | 'conflicted' | null`.
+Composes `foundation/measurement` `normalize` (quantitative; `resolveProgress` semantics inlined). NO new table, NO migration.
+**S9:** `ReadingMeasureSource {progress}` (service-layer, the `MasterySource` named-type precedent); re-exports
+`EntityTagRow`/`BookSubjectRow`; two internal repos (`subjectsRepo` over `book_subjects`; `tagsRepo` over `tags`,
+read-only guard); reuses `TagNotFound`. NO new error, NO new dep, NO new table/migration (`book_subjects` already in
+`023_books`). Composes the existing `spaces` (tag WRITE) + S8 `getUnifiedProgress`.
 
 ## Persistence
 
@@ -105,9 +116,12 @@ change). **`sessions` + `sessionRegistry` wired at S6** (required) — the ADR-0
 the Quota Planner is self-contained over `reading_plans`/`reading_plan_books` + the existing `booksRepo`/`readingRepo`
 (NO measurement/Purpose dep per C-M1; NO Calendar — forward-dep stubbed). **S8 added NO new deps** — unified progress
 composes the already-built `foundation/measurement` engine + the S5 `preferences?` port (now also carrying the
-conflict-rule read/write seam); derive-on-read, no table. Remaining: S9 Education/measurement + `backlinks`/BOO-46 ·
-S10 AI integrations (TTS/transcription) + `effects?` fan-out + `registerBooksJournal`. Deferred reach = deny-safe ports
-(doc+substrate grounded; see slice-map Deferred-by-design).
+conflict-rule read/write seam); derive-on-read, no table. **S9 added NO new deps** — `scopeTag` composes the existing
+`spaces` + an internal read-only `tagsRepo` guard; `book_subjects` is Books-owned; `getReadingMeasureSource` composes
+S8; BOO-46 is identity-only (the `backlinks` dep is **not** wired — no consuming read-method). Remaining: **S10** —
+AI integrations (TTS/transcription via `ai?`) + consent-gate (`IntegrationConsentError`) + Study-Planner read-provider
++ `effects?` fan-out (measurement-only, C-E2) + `registerBooksJournal`. Deferred reach = deny-safe ports (doc+substrate
+grounded; see slice-map Deferred-by-design).
 
 ## Persistence (S3–S4 addendum)
 

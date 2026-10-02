@@ -55,6 +55,7 @@ import {
   readingSessions,
   readingPlans,
   readingPlanBooks,
+  bookSubjects,
   type BookRow,
   type BookChapterRow,
   type BookAssetRow,
@@ -63,8 +64,11 @@ import {
   type BookQuoteRow,
   type ReadingSessionRow,
   type ReadingPlanRow,
+  type BookSubjectRow,
 } from '../../db/schema/books'
-import type { EntityLinkRow } from '../../db/schema/foundation/spaces'
+import { tags } from '../../db/schema/foundation/spaces'
+import type { EntityLinkRow, EntityTagRow } from '../../db/schema/foundation/spaces'
+import { TagNotFound } from '../../foundation/spaces'
 import type { PageRow } from '../../db/schema/notes'
 import {
   CreateBookSchema,
@@ -130,6 +134,7 @@ import {
   type ConflictChoice,
   type ConflictItem,
   type PositionSource,
+  type ReadingMeasureSource,
 } from './types'
 import { normalize } from '../../foundation/measurement'
 import type { BookAssetFormat } from '@vida/types'
@@ -288,6 +293,10 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
   // recalculation_state) are serialized/parsed service-side (BR-BK-S7-8).
   const plansRepo = createRepository(db, readingPlans, { deviceId, softDelete: true, encryptedFields: [] })
   const planBooksRepo = createRepository(db, readingPlanBooks, { deviceId, softDelete: true, encryptedFields: [] })
+  // S9 — the Education partition junction (Books-owned; softDelete:true, no [E]) + a tags-table repo used ONLY to
+  // guard that a scopedTag resolves to a LIVE row before delegating the write to spaces (the knowledge scopeTag guard).
+  const subjectsRepo = createRepository(db, bookSubjects, { deviceId, softDelete: true, encryptedFields: [] })
+  const tagsRepo = createRepository(db, tags, { deviceId, softDelete: true, encryptedFields: [] })
 
   // --- Works CRUD (BOO-01) --------------------------------------------------
 
@@ -1082,6 +1091,70 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     await preferences.setConflictRule(bookId, choice)
   }
 
+  // ── S9: Education partition + measurement source + tags + linkable-target (BOO-04/14/36/37/38/46) ─────────────
+
+  /** BOO-04 (BK-16) — classify a book via a Books-scoped entity_tag; composes the Spaces WRITE. `spaces.tagEntity`
+   *  blind-inserts the tag_id, so verify the scoped tag resolves to a LIVE row first (the knowledge scopeTag guard). */
+  async function scopeTag(bookId: string, scopedTag: string): Promise<EntityTagRow> {
+    const book = await booksRepo.findById(bookId)
+    if (!book) throw new BookNotFoundError(bookId)
+    if ((await tagsRepo.findById(scopedTag)) == null) throw new TagNotFound(scopedTag)
+    return spaces.tagEntity(scopedTag, BOOK_ENTITY_TYPE, bookId)
+  }
+
+  /** BOO-36 (BK-13) — idempotent link to an Education subject. The schema authored no UNIQUE(book_id,subject_id),
+   *  so an active link is returned as-is; else create + RE-READ for a faithful row (create() echoes the input). */
+  async function linkSubject(bookId: string, subjectId: string): Promise<BookSubjectRow> {
+    const book = await booksRepo.findById(bookId)
+    if (!book) throw new BookNotFoundError(bookId)
+    const existing = await subjectsRepo.findWhere(
+      and(isNull(bookSubjects.deleted_at), eq(bookSubjects.book_id, bookId), eq(bookSubjects.subject_id, subjectId)) as SQL,
+    )
+    if (existing[0]) return existing[0] // idempotent — the active link (a faithful DB row)
+    const { id } = await subjectsRepo.create({ book_id: bookId, subject_id: subjectId, deleted_at: null } satisfies CreateInput<typeof bookSubjects>)
+    return (await subjectsRepo.findById(id)) as BookSubjectRow // re-read: create() echoes the input (B1 faithful row)
+  }
+
+  /** BOO-36 — soft-delete the active link; a no-op when none exists (idempotent, never throws). */
+  async function unlinkSubject(bookId: string, subjectId: string): Promise<void> {
+    const existing = await subjectsRepo.findWhere(
+      and(isNull(bookSubjects.deleted_at), eq(bookSubjects.book_id, bookId), eq(bookSubjects.subject_id, subjectId)) as SQL,
+    )
+    if (existing[0]) await subjectsRepo.delete(existing[0].id)
+  }
+
+  /** BOO-37 (BK-13) — the Books→Education read surface. Join app-layer (no FK): active junction rows → live books. */
+  async function listBooksForSubject(subjectId: string): Promise<Book[]> {
+    const links = await subjectsRepo.findWhere(
+      and(isNull(bookSubjects.deleted_at), eq(bookSubjects.subject_id, subjectId)) as SQL,
+    )
+    links.sort((a, b) => a.created_at - b.created_at) // findWhere has no orderBy (the listAnnotations precedent)
+    const books: Book[] = []
+    for (const link of links) {
+      const book = await booksRepo.findById(link.book_id) // soft-delete filtered → a deleted book drops out
+      if (book) books.push(toBook(book))
+    }
+    return books
+  }
+
+  /** BOO-38 (BK-13) — deny-safe null at M1: Education's subject_schedules/assessments are unbuilt (#52), so a pace
+   *  cannot be derived and is NEVER fabricated (the MasterySource null precedent). `_subjectId` trusted, not read. */
+  async function getPaceStatus(
+    bookId: string,
+    _subjectId: string,
+  ): Promise<'on-pace' | 'behind' | 'ahead' | null> {
+    const book = await booksRepo.findById(bookId)
+    if (!book) throw new BookNotFoundError(bookId)
+    return null // Education contract unbuilt → the deny-safe signal (BR-BK-S9-5); real derivation = M2
+  }
+
+  /** BOO-14 (C-M1) — the reading measure SOURCE (a method, the KNO-25 pattern — NOT source-registry advertise).
+   *  Composes getUnifiedProgress; a 'conflicted' book is "not measurable yet" ⇒ null (never a throw). */
+  async function getReadingMeasureSource(bookId: string): Promise<ReadingMeasureSource> {
+    const p = await getUnifiedProgress(bookId) // guards the book (BookNotFoundError)
+    return { progress: typeof p === 'number' ? p : null }
+  }
+
   return {
     createBook,
     updateBook,
@@ -1119,5 +1192,11 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     getUnifiedProgress,
     getConflicts,
     resolveConflict,
+    scopeTag,
+    linkSubject,
+    unlinkSubject,
+    listBooksForSubject,
+    getPaceStatus,
+    getReadingMeasureSource,
   }
 }

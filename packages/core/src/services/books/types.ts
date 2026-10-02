@@ -29,7 +29,8 @@ import type { NotesService } from '../notes'
 import type { SessionsService, Session } from '../sessions'
 import type { SessionRegistry } from '../../foundation/sessions'
 import type { AiService } from '../../foundation/ai'
-import type { EntityLinkRow } from '../../db/schema/foundation/spaces'
+import type { EntityLinkRow, EntityTagRow } from '../../db/schema/foundation/spaces'
+import type { BookSubjectRow } from '../../db/schema/books'
 import type { PageRow } from '../../db/schema/notes'
 import type {
   CreateBookSchema,
@@ -625,4 +626,28 @@ export interface BooksService {
    *  `revokeLookupGrant` precedent). Validates the book (`BookNotFoundError`) + a `source_of_truth` asset
    *  (`BookAssetNotFoundError`). A not-yet-applicable preset (`photo_valid` at M1) persists and does not throw. */
   resolveConflict(id: string, choice: ConflictChoice): Promise<void>
+
+  // ── S9: Education partition + measurement source + tags + linkable-target (BOO-04/14/36/37/38/46) ──
+  /** BOO-04 (BK-16) — classify a book via a Books-scoped `entity_tag` (publisher/genre/category). Composes
+   *  `spaces.tagEntity('book')`; guards the book (`BookNotFoundError`) + that `scopedTag` resolves (`TagNotFound`). */
+  scopeTag(bookId: string, scopedTag: string): Promise<EntityTagRow>
+  /** BOO-36 (BK-13) — link a book to an Education subject (the `book_subjects` partition junction). Idempotent: an
+   *  active `(book, subject)` link is returned as-is (no schema UNIQUE → app-layer). Guards the book; subject trusted. */
+  linkSubject(bookId: string, subjectId: string): Promise<BookSubjectRow>
+  /** BOO-36 — soft-delete the active `(book, subject)` link; a no-op when none exists (never throws). Books-only write. */
+  unlinkSubject(bookId: string, subjectId: string): Promise<void>
+  /** BOO-37 (BK-13) — the Books→Education read surface: the live books linked to a subject (soft-delete filtered both sides). */
+  listBooksForSubject(subjectId: string): Promise<Book[]>
+  /** BOO-38 (BK-13) — pace vs the subject's schedule. Deny-safe `null` at M1 (Education `#52` unbuilt — never a
+   *  fabricated pace). Guards the book; `subjectId` trusted (the KNO-25 cross-module boundary). */
+  getPaceStatus(bookId: string, subjectId: string): Promise<'on-pace' | 'behind' | 'ahead' | null>
+  /** BOO-14 (C-M1) — the reading measure SOURCE (a method, not source-registry `advertise`; the KNO-25 pattern).
+   *  Composes `getUnifiedProgress`; `'conflicted'` ⇒ `null` (a conflict is unmeasured, never a throw). */
+  getReadingMeasureSource(bookId: string): Promise<ReadingMeasureSource>
+}
+
+/** BOO-14 — the reading measure source shape (service-layer, the `MasterySource` named-type precedent). `progress`
+ *  is the derived unified progress collapsed to `number | null` (a `'conflicted'` book is "not measurable yet"). */
+export interface ReadingMeasureSource {
+  progress: number | null
 }
