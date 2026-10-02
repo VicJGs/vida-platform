@@ -37,14 +37,14 @@ at each fe-X build.
 
 ## Build Steps (the G0–G6 establishment sequence — see frontend-replan/_index.md)
 - [x] ESTABLISHMENT — master plan authored + gated (critique REVISE→6 fixed→SHIP · preflight PASSED)
-- [ ] **G0** — lock the process (Five Planes + 4 stages + 3-lens audit) → `frontend-replan/process.md`  ← NEXT, fresh session
-- [ ] G1 — Quality-Bar gate (reconcile STANDARDS + sketch + Vida-context; sketch=input not authority) → `frontend-quality-bar/`
-- [ ] G2 — Surface harvest (page/tab/panel map; 3-lens audit fills the unannounced) → `frontend-replan/surface-map.md`
-- [ ] G3 — Composition map (surface ↔ backend capabilities, many-to-many)
-- [ ] G4 — Coverage gate (every capability surfaces ≥1×; nothing left behind; set-cover + independent critic)
-- [ ] G5 — Order (foundation surfaces first, dependency-correct)
-- [ ] G6 — Linear reshape (edge-ledger → retire 24 module-twin fe-* → create surface issues; VICTOR-APPROVAL-GATED)
-- [ ] per-surface builds (3-lens audit → build → Visual Gate → PR → merge)
+- [x] G0 — lock the process (Five Planes + 4 stages + 3-lens audit) → `frontend-replan/process.md` ✅ 2026-09-30
+- [x] G1 — Quality-Bar gate ✅ 2026-10-01 (critic REVISE→SHIP)
+- [x] G2 — Surface harvest ✅ 2026-10-01 (~30 surfaces · 8 systemic · codec-first BUILD-SHAPE)
+- [x] G3 — Composition map + traceability ✅ 2026-10-01
+- [x] G4 — Coverage gate ✅ 2026-10-01 (set-cover 59/59 · ≥2-paths RATIFIED)
+- [x] G5 — Order (42-unit build sequence) ✅ 2026-10-01
+- [x] G6 — Linear reshape ✅ **EXECUTED 2026-10-02 from main** (20 created LIF-202…221 · 4 retired · 4 renamed · 0 dangling)
+- [ ] per-surface builds (3-lens audit → build → Visual Gate → PR → merge)  ← NEXT (head: fe-codec-theme LIF-213)
 
 ## Route History
 - 2026-09-30 · ESTABLISHMENT SESSION. Established the surface-first frontend re-plan with Victor across a long
@@ -58,3 +58,13 @@ at each fe-X build.
   merge. Authored `docs/specs/foundation/frontend-replan/_index.md`; independent adversarial critique REVISE→6
   fixed (G6 edge-ledger · "222 legs = floor not ceiling" · web-only scope · process-gated guarantee · P6 credit
   · gate output homes) → SHIP; preflight PASSED. **Next: G0 in a fresh session.**
+- 2026-10-02 · **G6 LINEAR RESHAPE EXECUTED from main.** Branch disposition: ff-merged `worktree-frontend-track` → main
+  (one append-conflict in `.claude/docs/decisions.md` resolved keep-both); mod-books already merged (PR #70) → main clean.
+  Reconciled the pre-staged files vs runbook §2 (Step 6/7): dry-run caught 3 gaps — 3 spurious creates, 4 retired files
+  still live, and 15 survivors never re-scoped. Fixes: renamed 4 survivors to surface slugs (fe-journals→fe-home,
+  fe-preferences→fe-settings, fe-shell-integration-wiring→fe-shell, fe-health-core→fe-health; LIF preserved + map re-keyed),
+  archived 4 retirees + frontend-replan, reshaped hard-4 BR-6 to 28 surfaces, homed frontend-track to a new cross-milestone.
+  Executed: `--retire` ×4 (LIF-189/186/184/185 → Canceled) → `--sync --allow-orphan-create` (guard tripped on 3 pre-existing
+  backend orphans LIF-79/159/160, verified unrelated) → **created LIF-202…221** (20) + milestone `M1.2+ (frontend surface
+  tier — cross-milestone)` → converged 0-create/115-exist, 0 dangling → `--pull`. Executed-ledger in `g6-edge-ledger.md §6`.
+  Commits `0c06884` (merge) · `186987b` (prep) · `62e4d57` (write-back). **Next: per-surface builds, head fe-codec-theme (LIF-213).**

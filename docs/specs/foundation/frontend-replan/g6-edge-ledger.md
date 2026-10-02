@@ -105,20 +105,49 @@ Each was a candidate "choice"; the docs settle all five. Victor approves or over
 
 ---
 
-## 6. EXECUTION LOG — Linear mutation SAFELY DEFERRED (2026-10-01)
+## 6. EXECUTION LOG — reshape EXECUTED from main (2026-10-02)
 
-**Plan: APPROVED by Victor.** The reshape above is ratified. **Linear writes: NOT executed from this worktree — by design.**
+**Status: DONE.** Executed from the **main checkout** (authoritative 37 KB map) after ff-merging `worktree-frontend-track`
+→ main. Sync converged: **0 creates / 115 exists · 0 dangling blockers**.
 
-**Why (verified, not guessed):**
-- This worktree's `.claude/tasks/.tracker-map.json` is an **empty skeleton** (`issues:{} projects:{} milestones:{}`).
-- The **main checkout's** map is intact — **135 issues mapped** (incl. fe-* LIF-178…201).
-- Git worktrees don't share the tracker map. So `tracker_sync.py --sync` here reports `[+ create]` for **every** issue
-  (ar-*, db-*, mod-*, fe-*, …) → running it would **create duplicate copies of the whole backlog** in Linear.
-- `--retire LIF-189/186` also failed ("not found in the issue map") for the same reason.
+### Created (20 issues + 1 milestone)
+| Unit | LIF | Milestone |
+|---|---|---|
+| frontend-track (campaign) | **LIF-202** | M1.2+ (frontend surface tier — cross-milestone) *(new, mirrors backend-replan M1.1+)* |
+| fe-calendar | LIF-203 | M1.2.1 |
+| fe-codec-canvas-board | LIF-204 | M1.2.1 |
+| fe-codec-canvas-graph | LIF-205 | M1.2.1 |
+| fe-codec-canvas-reader | LIF-206 | M1.2.1 |
+| fe-codec-collection | LIF-207 | M1.2.1 |
+| fe-codec-dashboard | LIF-208 | M1.2.1 |
+| fe-codec-entity-facet | LIF-209 | M1.2.1 |
+| fe-codec-flow-session | LIF-210 | M1.2.1 |
+| fe-codec-patterns | LIF-211 | M1.2.1 |
+| fe-codec-seams | LIF-212 | M1.2.1 |
+| fe-codec-theme | LIF-213 | M1.2.1 |
+| fe-codec-viewmodes | LIF-214 | M1.2.1 |
+| fe-feature-atlas | LIF-215 | M1.2.1 |
+| fe-onboarding | LIF-216 | M1.2.1 |
+| fe-session-hud | LIF-217 | M1.2.1 |
+| fe-session-runtime | LIF-218 | M1.2.1 |
+| fe-shell-scope | LIF-219 | M1.2.1 |
+| fe-spaces-page | LIF-220 | M1.2.1 |
+| fe-sync-log | LIF-221 | M1.2.1 |
 
-**Safe path (recommended):** finish the G0–G6 doc track, **merge `worktree-frontend-track` → main**, then execute the
-reshape **from the main checkout** (populated map), where `--retire`/`--sync` resolve the real issues and UPDATE rather
-than duplicate. Alternatives: reconcile the worktree map from main first (riskier), or apply the ledger by hand in Linear.
+### Retired (4 → Canceled, map keys dropped)
+LIF-189 fe-languages (→ Spaces) · LIF-186 fe-integrations-ai-surfaces (→ M2) · LIF-184 fe-health-nutrition (→ fold) ·
+LIF-185 fe-health-training (→ fold).
 
-**Executed-ledger (the real new IDs + what changed) will be written here when the reshape runs from main.** No Linear
-state has been modified.
+### Renamed in place (LIF preserved, map re-keyed, retitled in Linear)
+fe-journals → **fe-home** (LIF-187) · fe-preferences → **fe-settings** (LIF-193) · fe-shell-integration-wiring →
+**fe-shell** (LIF-199) · fe-health-core → **fe-health** (LIF-183, umbrella).
+
+### Superseded in place (15 survivors): edges re-wired to codec + re-milestoned (LIF unchanged).
+
+### Edges: all `## Dependencies` blocked-by wired by slug (codec → surfaces → hard-4 BR-6 = 28 surfaces). 0 dangling.
+
+### Known follow-ups (NOT part of this reshape — pre-existing)
+- **3 orphan map entries** flagged by the orphan guard (backend/foundation, no task files): LIF-79 (ar-8-foundation-services),
+  LIF-159 (m1-foundation-closeout), LIF-160 (core-vault-init-on-db-open). Out of frontend scope — map-hygiene item.
+- **Batch G (stale edges):** add-only `--sync` cannot delete the pre-reshape Linear relations from `hard-4-polish` → the
+  4 now-canceled fe issues. Moot (blocked-by a Canceled issue doesn't gate), optional manual GraphQL cleanup.
