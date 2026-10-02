@@ -1,11 +1,12 @@
 # Task: fe-health-nutrition
-# Status: planned
+# Status: retired
 # Linear: LIF-184
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS
 # Milestone: M1.2.3 — Depth & Recovered · Frontend
 # Source: decomposition-p6.md (P6) + PLAN-p6-frontend-track.md (Approval 2 SHIP) — backend-replan
+# Reshape: RETIRED — folded into fe-health (umbrella, #40) as the Nutrition sub-context.
 # Note: labels `frontend` + `P6` applied post-write via Linear API (tracker sets labels out-of-band, as P5.1 did for `backend`).
 
 ## Goal

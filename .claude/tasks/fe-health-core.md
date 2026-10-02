@@ -6,10 +6,13 @@
 # Project: M1 — Whole Manual OS
 # Milestone: M1.2.3 — Depth & Recovered · Frontend
 # Source: decomposition-p6.md (P6) + PLAN-p6-frontend-track.md (Approval 2 SHIP) — backend-replan
+# Reshape: G6 unit #40 — #40 Health (umbrella ⊕split: Core·Training·Nutrition sub-tabs). FOLDS fe-health-nutrition + fe-health-training. ⛔ blocked on the ~12 Health Core tables + Training/Nutrition schema (0%).
 # Note: labels `frontend` + `P6` applied post-write via Linear API (tracker sets labels out-of-band, as P5.1 did for `backend`).
 
 ## Goal
 ② Frontend build (add-frontend-component) for health: core — the UI/UX tier over the finished ① service (`mod-health-core`), 12 UI legs. Consumer-pull: rides its backend twin's wave 1:1. Per-slice blocking Visual Gate (Entity Delivery Flow ② track, ADR-021 §3.5).
 
 ## Dependencies
-- blocked by `mod-health-core`
+- blocked by `fe-codec-dashboard`
+- blocked by `fe-codec-collection`
+- blocked by `fe-codec-entity-facet`

@@ -1,11 +1,12 @@
 # Task: fe-integrations-ai-surfaces
-# Status: planned
+# Status: retired
 # Linear: LIF-186
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS
 # Milestone: M1.2.2 — Feature Modules · Frontend
 # Source: decomposition-p6.md (P6) + PLAN-p6-frontend-track.md (Approval 2 SHIP) — backend-replan
+# Reshape: RETIRED → DEFERRED to M2 (ADR-017 features-first; AI deferred). AI faces land as consent-gated capability blocks within modules when AI ships.
 # Note: labels `frontend` + `P6` applied post-write via Linear API (tracker sets labels out-of-band, as P5.1 did for `backend`).
 
 ## Goal
