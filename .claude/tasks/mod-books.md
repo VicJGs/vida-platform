@@ -187,7 +187,17 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   so it has NO M1 backend throw-site; fixed the S8 currency docs in this commit. g1 folded B1 (linkSubject faithful-row
   re-read) + 4 NITs. 90/90 live-store, @vida/core 1523/1523, code-review SHIP (all 10 axes). Branch `mod-books`.
 
-## Next Slice — S10 (Integration close-out + fan-out + Journal) — THE FINAL SLICE
+- 2026-10-02: **S10 shipped** (`c40c412`) — integrations + fan-out + Journal (BOO-40/41/42/43/45/47), THE FINAL
+  SLICE → **① COMPLETE, all 48 BOO legs delivered. PR #70 opened (mod-books → main), pending merge.** g1 /critique
+  REVISE→folded (B1: `IntegrationConsentError` wired via `checkModelCall` was dead-code-at-M1 + a throw-through
+  violating the ratified `PositionConflictPending` no-M1-throw convention + `seam-contract.md:153` — re-grounded to
+  exported typed vocabulary, deny-safe `ai-unavailable` mapping mirroring `attachPhoto`/`assistCompoundSet`; N1: fan-out
+  BR clarity on the no-named-M1-consumer derived-pull nuance) → Approval 1 → /api-contract ratify + /adr-check (no ADR)
+  → /preflight PASSED → Approval 2 → implement → tsc 0 · 100/100 books live-store (Node 24) · full @vida/core 1533/1533
+  · eslint 0 · gitleaks clean → independent g2 code-review SHIP (0 block; N1 dead-ternary collapsed, N2 shared-precedent
+  non-issue) → /critique SHIP → §XXIX currency (BR-BK-S10-1..6). `effects?` dep + `journal.ts`; no new table. Branch `mod-books`.
+
+## ✅ S10 COMPLETE — ① backend done (was: Next Slice — Integration close-out + fan-out + Journal — THE FINAL SLICE)
 S10 scope (BOO-40/41/42/43/45/47, slice-map.md:24): **TTS/transcription** via the deny-safe `ai?` port
 (`convertToSpeech`/`transcribeForMapping` → `OcrResult`, `ai-unavailable` when absent/denied) · **consent-gate
 invariant** (`IntegrationConsentError` — the ADR-014 X-family consent) · **Study-Planner read-provider**
