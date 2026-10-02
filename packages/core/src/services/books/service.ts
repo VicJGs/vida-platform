@@ -127,7 +127,12 @@ import {
   type RecalculationState,
   type TodayQuotas,
   type PlanProjection,
+  type ConflictChoice,
+  type ConflictItem,
+  type PositionSource,
 } from './types'
+import { normalize } from '../../foundation/measurement'
+import type { BookAssetFormat } from '@vida/types'
 
 // --- Row → @vida/types interface --------------------------------------------
 // The reshaped BookRow maps 1:1 to the reshaped Book interface (S1 @vida/types reconcile); only the plain-text
@@ -253,6 +258,13 @@ function parseState(value: unknown): RecalculationState {
   return o ?? { progressBySession: {}, pagesDone: 0 }
 }
 
+// S8 — the page-unit formats whose `native_position` normalizes against the work-level `total_pages` (BR-BK-S8-2).
+// `epub` (location) / `audiobook` (timestamp) carry non-page units that need the UNBUILT cross-format mapping (BK-4);
+// `other` is an unknown unit by definition — all three yield no candidate (unmeasured, never guessed).
+const PAGE_UNIT_FORMATS: ReadonlySet<BookAssetFormat> = new Set<BookAssetFormat>(['pdf', 'physical', 'braille'])
+// An internal progress candidate = the public PositionSource + `updatedAt` (needed for the `last_valid` tie-break).
+type Candidate = PositionSource & { updatedAt: number }
+
 export function createBooksService(deps: BooksServiceDeps): BooksService {
   const { db, deviceId, ingestion, attachment, spaces, notes, preferences, sessions, sessionRegistry, ai } =
     deps
@@ -339,7 +351,7 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
       book: toBook(book),
       assets: assetRows.map(toAsset),
       chapters: chapterRows.map(toChapter),
-      unifiedProgress: null,
+      unifiedProgress: await getUnifiedProgress(id), // S8 — composes the derived progress (BR-BK-S8-9)
     }
   }
 
@@ -970,6 +982,106 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     return { planId, projectedCompletionDate, onTrack, remainingPages, remainingDays }
   }
 
+  // ── S8: Unified progress + conflict resolution (BOO-13/34/35) ───────────────
+  // All three methods DERIVE on read — no `book_conflicts` table (interpretation rule 7). Unified progress composes
+  // `measurement.normalize` (quantitative × derived-pull, BOO-14) over page-unit asset positions under the BK-8
+  // conflict rule; the preset rule is read/written through the deny-safe `preferences?` port (absent ⇒ ask / no-op).
+
+  /** Per-asset progress candidates (BR-BK-S8-2). A page-unit asset with a strict-integer `native_position` and a
+   *  work-level `total_pages > 0` normalizes to a 0–100 value; everything else yields no candidate (unmeasured). */
+  async function computeCandidates(book: BookRow): Promise<Candidate[]> {
+    if (book.total_pages == null || book.total_pages <= 0) return [] // no page basis ⇒ nothing to derive
+    const totalPages = book.total_pages
+    // findWhere skips the soft-delete filter → isNull(deleted_at) explicit (repository-findwhere-skips-softdelete-filter).
+    const assetRows = await assetsRepo.findWhere(
+      and(isNull(bookAssets.deleted_at), eq(bookAssets.book_id, book.id)) as SQL,
+    )
+    const candidates: Candidate[] = []
+    for (const asset of assetRows) {
+      if (!PAGE_UNIT_FORMATS.has(asset.format as BookAssetFormat)) continue
+      const np = asset.native_position
+      if (np == null || !/^\d+$/.test(np)) continue // only a clean page integer; audio "01:23:45" / cfi are excluded
+      const frac = normalize({
+        kind: 'quantitative',
+        current: Number.parseInt(np, 10),
+        baseline: 0,
+        target: totalPages,
+        isHigherBetter: true,
+      })
+      if (frac == null) continue
+      candidates.push({
+        assetId: asset.id,
+        format: asset.format as BookAssetFormat,
+        nativePosition: np,
+        progress: Math.round(frac * 100),
+        updatedAt: asset.updated_at,
+      })
+    }
+    return candidates
+  }
+
+  /** Reconcile ≥1 candidates to a single value or `'conflicted'` (BR-BK-S8-4/5). Agreement (rounding absorbs
+   *  sub-point drift) ⇒ the value; a genuine clash ⇒ the preset rule resolves it, else `'conflicted'`. */
+  async function resolveClash(book: BookRow, candidates: Candidate[]): Promise<number | 'conflicted'> {
+    const distinct = new Set(candidates.map((c) => c.progress))
+    if (distinct.size === 1) return candidates[0]!.progress // single candidate or full agreement
+    // Clash — read the preset rule (absent port / unset ⇒ the BK-8 default `ask`).
+    const rule = preferences ? await preferences.getConflictRule(book.id) : undefined
+    if (rule == null || rule.rule === 'photo_valid') return 'conflicted' // no rule, or photo source absent at M1
+    if (rule.rule === 'source_of_truth') {
+      const chosen = candidates.find((c) => c.assetId === rule.assetId)
+      return chosen ? chosen.progress : 'conflicted' // asset not in this clash ⇒ honest conflicted (read-side miss)
+    }
+    // last_valid — greatest updated_at, tie-broken by asset id descending (deterministic, BR-BK-S8-5).
+    const latest = [...candidates].sort(
+      (a, b) => b.updatedAt - a.updatedAt || (a.assetId < b.assetId ? 1 : -1),
+    )[0]!
+    return latest.progress
+  }
+
+  async function getUnifiedProgress(bookId: string): Promise<number | 'conflicted' | null> {
+    const book = await booksRepo.findById(bookId)
+    if (!book) throw new BookNotFoundError(bookId)
+    // resolveProgress §3.2 semantics, inlined: a non-null stored progress is the manual-override terminal (BR-BK-S8-1).
+    // (The generic resolveProgress returns number|null and cannot carry 'conflicted', so the derive branch is inline.)
+    if (book.progress != null) return Math.max(0, Math.min(100, book.progress))
+    const candidates = await computeCandidates(book)
+    if (candidates.length === 0) return null // unmeasured (BR-2) — never coerced to 0
+    return resolveClash(book, candidates)
+  }
+
+  async function getConflicts(bookId: string): Promise<ConflictItem[]> {
+    const book = await booksRepo.findById(bookId)
+    if (!book) throw new BookNotFoundError(bookId) // fail-loud parity with getUnifiedProgress (N4)
+    const candidates = await computeCandidates(book)
+    if (candidates.length === 0) return []
+    const resolved = await resolveClash(book, candidates)
+    if (resolved !== 'conflicted') return []
+    // One book-level clash; `sources` = the competing candidates projected to the public PositionSource (drop updatedAt).
+    const sources: PositionSource[] = candidates.map(({ updatedAt: _updatedAt, ...ps }) => ps)
+    return [{ id: `conflict:${bookId}`, bookId, sources, blocking: true }]
+  }
+
+  async function resolveConflict(id: string, choice: ConflictChoice): Promise<void> {
+    // `id` is the deterministic derived key `conflict:<bookId>` (BR-BK-S8-7). Parse → fail-loud on malformed/unknown.
+    const prefix = 'conflict:'
+    const bookId = id.startsWith(prefix) ? id.slice(prefix.length) : null
+    if (bookId == null) throw new BookNotFoundError(id)
+    const book = await booksRepo.findById(bookId)
+    if (!book) throw new BookNotFoundError(bookId)
+    // Structural validation on Books-owned data (port-independent, BR-BK-S8-8): a source_of_truth asset MUST exist on
+    // this book — a non-existent/foreign asset is a structural error (distinct from a benign read-side "not in clash").
+    if (choice.rule === 'source_of_truth') {
+      const asset = await assetsRepo.findById(choice.assetId)
+      if (!asset || asset.deleted_at != null || asset.book_id !== bookId) {
+        throw new BookAssetNotFoundError(choice.assetId)
+      }
+    }
+    // Persist via the deny-safe port; absent ⇒ no-op (the revokeLookupGrant precedent, BR-BK-S2-6). Real write = M2/P6.
+    if (!preferences) return
+    await preferences.setConflictRule(bookId, choice)
+  }
+
   return {
     createBook,
     updateBook,
@@ -1004,5 +1116,8 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     recordQuotaProgress,
     recalculate,
     getProjection,
+    getUnifiedProgress,
+    getConflicts,
+    resolveConflict,
   }
 }

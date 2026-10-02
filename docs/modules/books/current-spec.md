@@ -9,9 +9,9 @@
 
 `createBooksService(deps)` — the ① backend service tier for the **reading Universe** over DB-4 `023_books`
 (10 tables). The full design lives in `docs/features/books/` (aspect docs) + `docs/features/books/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **S7 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration · Reading plans / Quota Planner).
+(interpretation · slice-map · seam-contract). Build state: **S8 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration · Reading plans / Quota Planner · Unified progress + conflict resolution).
 
-## Delivered surface (as of S7)
+## Delivered surface (as of S8)
 
 `createBooksService({ db, deviceId, spaces, notes, sessions, sessionRegistry, ingestion?, attachment?, preferences?, ai? }) → BooksService`.
 Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from S4 (annotation links/notes);
@@ -24,7 +24,7 @@ Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from
 | `createBook(input)` | BOO-01 | create a WORK; `status` default `want_to_read`; `progress` never settable (derived); `rating` 1–5; TOC-only ok (BK-17) |
 | `updateBook(id, patch)` | BOO-01 | guard-exists → `BookNotFoundError`; patch non-derived/non-retired columns; re-read for faithful row |
 | `softDeleteBook(id)` | BOO-01 | guard-exists → `BookNotFoundError`; sets `deleted_at` |
-| `getBook(id)` | BOO-03 | `BookView` (work + live `assets` [N1] + `chapters` ordered [B1] + `unifiedProgress:null` [S8]) \| `null` |
+| `getBook(id)` | BOO-03 | `BookView` (work + live `assets` [N1] + `chapters` ordered [B1] + `unifiedProgress` derived via S8 [`number`\|`'conflicted'`\|`null`]) \| `null` |
 | `listBooks(filter?)` | BOO-02 | soft-delete filtered; S1 `filter = { status? }` only |
 | `getCapabilities(id)` | BOO-48 | `{ plannable: total_pages != null \|\| chapterCount > 0, readable: liveAssetCount > 0 }`; guard-exists |
 | `setChapters(bookId, ChapterSeed[])` | BOO-05 | declarative UPSERT by `chapter_number`: structural overwrite · tracking preserved · absent pruned (hard delete, no `deleted_at`); in-array dup → `ChapterUniqueViolation`; guard-book; returns TOC ordered by number |
@@ -54,6 +54,9 @@ Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from
 | `recordQuotaProgress(planId, sessionRef)` | BOO-31 | credits a reading session's `pages_read` to the plan's running state (idempotent per `sessionRef`); guards plan (`ReadingPlanNotFoundError`) + session (`ReadingSessionNotFoundError`) |
 | `recalculate(planId, asOf?)` | BOO-32 | on/ahead of pace reshapes `dailyQuota` silently + returns the plan; BEHIND pace (or past target) throws `TargetUnreachableProposal` (`extend_date`\|`raise_quota` — never a silent rewrite, BK-11) |
 | `getProjection(planId, asOf?)` | BOO-33 | derived `{projectedCompletionDate,onTrack,remainingPages,remainingDays}`; never stored; guards plan |
+| `getUnifiedProgress(bookId)` | BOO-13 | derive-on-read `number`\|`'conflicted'`\|`null`; `books.progress` override else page-unit candidates via `measurement.normalize` under the BK-8 rule; guard-book → `BookNotFoundError` |
+| `getConflicts(bookId)` | BOO-34 | derived queue (NO table); unresolved clash ⇒ one `ConflictItem` (`id='conflict:'+bookId`, `blocking:true`, competing `sources`) else `[]`; guard-book |
+| `resolveConflict(id, choice)` | BOO-34/35 | persist the preset rule via `preferences?.setConflictRule` (absent ⇒ no-op, the `revokeLookupGrant` precedent); guards book (`BookNotFoundError`) + `source_of_truth` asset (`BookAssetNotFoundError`); `photo_valid` persists without throwing |
 
 **Types/errors:** `BooksServiceDeps`, `BooksService`, `BookView`, `BookFilter`, `BookCapabilities`, `ChapterSeed`,
 `AddAssetInput`, `FileBlob`, `AttachmentPort`, `AttachmentRef`, `MappedPosition`, `BookMetadata`, `IsbnLookupPayload`
@@ -74,6 +77,11 @@ errors `ReadingPlanNotFoundError` + `TargetUnreachableProposal` (thrown, carries
 `suggestedQuota`). Input Zod: `CreatePlanSchema` (reuses the learning plan-enum schemas). Row→interface:
 `toReadingPlan` (parses `quota_distribution`/`recalculation_state`). The `@vida/types` `ReadingPlanBook` interface
 exists (N-fold, for P6/consumers) but no S7 method returns the junction, so the service carries no mapper for it.
+**S8:** `ConflictRule`/`ConflictChoice`/`PositionSource`/`ConflictItem` (service-layer, not `@vida/types` — the
+`MappedPosition` precedent); the internal `Candidate = PositionSource & { updatedAt }` + the `PAGE_UNIT_FORMATS`
+set; error `PositionConflictPending` (exported forward seam — thrown at S9, not in S8); `PreferencesPort` gained
+`getConflictRule`/`setConflictRule`; `BookView.unifiedProgress` widened to `number | 'conflicted' | null`. Composes
+`foundation/measurement` `normalize` (quantitative; `resolveProgress` semantics inlined). NO new table, NO migration.
 
 ## Persistence
 
@@ -95,9 +103,11 @@ precedent); real Preferences-backed adapter = M2/P6. S8 appends the conflict pre
 change). **`sessions` + `sessionRegistry` wired at S6** (required) — the ADR-004 base `reading` sub-type spine +
 `registerBooks()`; the `ai?` OCR port landed at S6 (deny-safe, on_device, M1-dormant). **S7 added NO new deps** —
 the Quota Planner is self-contained over `reading_plans`/`reading_plan_books` + the existing `booksRepo`/`readingRepo`
-(NO measurement/Purpose dep per C-M1; NO Calendar — forward-dep stubbed). Remaining: S8 unified-progress/conflict ·
-S9 Education/measurement · S10 AI integrations (TTS/transcription) + `effects?` fan-out + `registerBooksJournal`.
-Deferred reach = deny-safe ports (doc+substrate grounded; see slice-map Deferred-by-design).
+(NO measurement/Purpose dep per C-M1; NO Calendar — forward-dep stubbed). **S8 added NO new deps** — unified progress
+composes the already-built `foundation/measurement` engine + the S5 `preferences?` port (now also carrying the
+conflict-rule read/write seam); derive-on-read, no table. Remaining: S9 Education/measurement + `backlinks`/BOO-46 ·
+S10 AI integrations (TTS/transcription) + `effects?` fan-out + `registerBooksJournal`. Deferred reach = deny-safe ports
+(doc+substrate grounded; see slice-map Deferred-by-design).
 
 ## Persistence (S3–S4 addendum)
 

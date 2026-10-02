@@ -25,7 +25,9 @@ import {
   ReadingSessionNotFoundError,
   ReadingPlanNotFoundError,
   TargetUnreachableProposal,
+  PositionConflictPending,
 } from '../types'
+import type { ConflictChoice } from '../types'
 import type { AiService } from '../../../foundation/ai'
 import { IngestionDenied, type IngestionGuard } from '../../../foundation/ingestion'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
@@ -684,14 +686,25 @@ describe('mod-books S4 — list reads + S3-fold survival (BOO-19/20)', () => {
   })
 })
 
-// A narrow deny-safe PreferencesPort over fixed toggle values (M1 has no real Preferences-backed adapter).
-function mockPreferences(opts: { global?: boolean; overrides?: Record<string, boolean> } = {}): PreferencesPort {
+// A narrow deny-safe PreferencesPort over fixed toggle values + a STATEFUL conflict-rule store (M1 has no real
+// Preferences-backed adapter). `setConflictRule` persists in-memory so the resolveConflict → getUnifiedProgress
+// round-trip is exercised end to end (the M2 adapter swaps zero-signature).
+function mockPreferences(
+  opts: { global?: boolean; overrides?: Record<string, boolean>; conflictRules?: Record<string, ConflictChoice> } = {},
+): PreferencesPort {
+  const rules = new Map<string, ConflictChoice>(Object.entries(opts.conflictRules ?? {}))
   return {
     async getQuoteEmbedGlobal() {
       return opts.global ?? true
     },
     async getQuoteEmbedOverride(bookId) {
       return opts.overrides?.[bookId]
+    },
+    async getConflictRule(bookId) {
+      return rules.get(bookId)
+    },
+    async setConflictRule(bookId, choice) {
+      rules.set(bookId, choice)
     },
   }
 }
@@ -1152,5 +1165,160 @@ describe('mod-books S7 — Reading plans / Quota Planner (BOO-27..33)', () => {
     expect(proj.remainingDays).toBe(10)
     expect(proj.projectedCompletionDate).toBeTruthy()
     await expect(h.svc.getProjection('ghost')).rejects.toBeInstanceOf(ReadingPlanNotFoundError)
+  })
+})
+
+// ============================================================================
+// S8 — Unified progress + conflict resolution (BOO-13/34/35) — maps 1:1 to PLAN-S8 §4.
+// ============================================================================
+describe('mod-books S8 — unified progress + conflict resolution', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // §4.1 — the three derived + override terminals.
+  it('null (TOC-only / no copy), a single page-unit asset (rounded), and the manual-override terminal', async () => {
+    const empty = await h.svc.createBook({ title: 'TOC-only', total_pages: 200 })
+    expect(await h.svc.getUnifiedProgress(empty.id)).toBeNull() // no copy ⇒ unmeasured
+
+    const b = await h.svc.createBook({ title: 'One copy', total_pages: 200 })
+    await h.svc.addAsset(b.id, { format: 'pdf', native_position: '50' })
+    expect(await h.svc.getUnifiedProgress(b.id)).toBe(25) // 50/200 → 0.25 → 25
+
+    // manual-override terminal: progress is never settable via the service (BR-BK-S1-1) → write it raw to exercise it.
+    h.bsql.prepare('UPDATE books SET progress = ? WHERE id = ?').run(88, b.id)
+    expect(await h.svc.getUnifiedProgress(b.id)).toBe(88) // override wins over derivation (resolveProgress §3.2)
+  })
+
+  // §4.1 — no page basis ⇒ unmeasured (total_pages guard).
+  it('a page-unit asset with no work-level total_pages ⇒ null (no basis to derive)', async () => {
+    const b = await h.svc.createBook({ title: 'No total' })
+    await h.svc.addAsset(b.id, { format: 'pdf', native_position: '50' })
+    expect(await h.svc.getUnifiedProgress(b.id)).toBeNull()
+  })
+
+  // §4.2 — non-page-unit formats are honestly unmeasured (the mapping is unbuilt, BK-4).
+  it('only epub/audiobook/other assets ⇒ null (unmeasured, never guessed)', async () => {
+    const b = await h.svc.createBook({ title: 'Non-page', total_pages: 300 })
+    await h.svc.addAsset(b.id, { format: 'epub', native_position: '1200' })
+    await h.svc.addAsset(b.id, { format: 'audiobook', native_position: '01:23:45' })
+    await h.svc.addAsset(b.id, { format: 'other', native_position: '7' })
+    expect(await h.svc.getUnifiedProgress(b.id)).toBeNull()
+  })
+
+  // §4.3 — agreement vs clash (no rule).
+  it('agreeing page-unit assets ⇒ the shared value; disagreeing + no rule ⇒ conflicted', async () => {
+    const agree = await h.svc.createBook({ title: 'Agree', total_pages: 200 })
+    await h.svc.addAsset(agree.id, { format: 'pdf', native_position: '50' }) // 25
+    await h.svc.addAsset(agree.id, { format: 'physical', native_position: '50' }) // 25
+    expect(await h.svc.getUnifiedProgress(agree.id)).toBe(25)
+
+    const clash = await h.svc.createBook({ title: 'Clash', total_pages: 200 })
+    await h.svc.addAsset(clash.id, { format: 'pdf', native_position: '50' }) // 25
+    await h.svc.addAsset(clash.id, { format: 'pdf', native_position: '150' }) // 75
+    expect(await h.svc.getUnifiedProgress(clash.id)).toBe('conflicted') // no port ⇒ ASK default (BK-8)
+  })
+
+  // §4.4 — the preset rules applied on read.
+  it('source_of_truth picks the named asset; last_valid resolves; photo_valid cannot apply at M1', async () => {
+    const b = await h.svc.createBook({ title: 'Ruled', total_pages: 200 })
+    const a1 = (await h.svc.addAsset(b.id, { format: 'pdf', native_position: '50' })).asset // 25
+    const a2 = (await h.svc.addAsset(b.id, { format: 'pdf', native_position: '150' })).asset // 75
+
+    const sot = createBooksService({
+      ...booksDeps(h.db),
+      preferences: mockPreferences({ conflictRules: { [b.id]: { rule: 'source_of_truth', assetId: a1.id } } }),
+    })
+    expect(await sot.getUnifiedProgress(b.id)).toBe(25) // a1 chosen
+
+    const lv = createBooksService({
+      ...booksDeps(h.db),
+      preferences: mockPreferences({ conflictRules: { [b.id]: { rule: 'last_valid' } } }),
+    })
+    // a2 is created after a1 (UUIDv7 id↑, updated_at ≥) → last_valid resolves to a2's 75 (deterministic tie-break).
+    expect(await lv.getUnifiedProgress(b.id)).toBe(75)
+    expect(a2.id > a1.id).toBe(true) // the tie-break premise holds
+
+    const pv = createBooksService({
+      ...booksDeps(h.db),
+      preferences: mockPreferences({ conflictRules: { [b.id]: { rule: 'photo_valid' } } }),
+    })
+    expect(await pv.getUnifiedProgress(b.id)).toBe('conflicted') // no photo source at M1 ⇒ cannot apply
+  })
+
+  // §4.5 — the derived conflict queue (no table).
+  it('getConflicts: [] when no clash; one blocking ConflictItem when unresolved; BookNotFoundError on a ghost', async () => {
+    const ok = await h.svc.createBook({ title: 'OK', total_pages: 200 })
+    await h.svc.addAsset(ok.id, { format: 'pdf', native_position: '50' })
+    expect(await h.svc.getConflicts(ok.id)).toEqual([]) // single candidate ⇒ no clash
+
+    const b = await h.svc.createBook({ title: 'Clash', total_pages: 200 })
+    const a1 = (await h.svc.addAsset(b.id, { format: 'pdf', native_position: '50' })).asset
+    const a2 = (await h.svc.addAsset(b.id, { format: 'pdf', native_position: '150' })).asset
+    const conflicts = await h.svc.getConflicts(b.id)
+    expect(conflicts).toHaveLength(1)
+    expect(conflicts[0]!.id).toBe(`conflict:${b.id}`)
+    expect(conflicts[0]!.blocking).toBe(true)
+    expect(conflicts[0]!.sources.map((s) => s.assetId).sort()).toEqual([a1.id, a2.id].sort())
+    expect(conflicts[0]!.sources.map((s) => s.progress).sort()).toEqual([25, 75])
+
+    await expect(h.svc.getConflicts('ghost')).rejects.toBeInstanceOf(BookNotFoundError)
+  })
+
+  // §4.6 — resolveConflict: the round-trip + the fail-loud + no-op branches.
+  it('resolveConflict persists a rule (round-trip), validates source_of_truth, no-throw photo_valid', async () => {
+    const pref = mockPreferences()
+    const svc = createBooksService({ ...booksDeps(h.db), preferences: pref })
+    const b = await svc.createBook({ title: 'Resolve', total_pages: 200 })
+    const a1 = (await svc.addAsset(b.id, { format: 'pdf', native_position: '50' })).asset // 25
+    await svc.addAsset(b.id, { format: 'pdf', native_position: '150' }) // 75
+    expect(await svc.getUnifiedProgress(b.id)).toBe('conflicted')
+
+    // round-trip: persist source_of_truth → the next read resolves to a1's 25.
+    await svc.resolveConflict(`conflict:${b.id}`, { rule: 'source_of_truth', assetId: a1.id })
+    expect(await svc.getUnifiedProgress(b.id)).toBe(25)
+    expect(await svc.getConflicts(b.id)).toEqual([]) // now resolved ⇒ queue empty
+
+    // a valid but not-yet-applicable preset persists WITHOUT throwing; the book stays conflicted.
+    await expect(svc.resolveConflict(`conflict:${b.id}`, { rule: 'photo_valid' })).resolves.toBeUndefined()
+    expect(await svc.getUnifiedProgress(b.id)).toBe('conflicted')
+
+    // source_of_truth naming a non-existent asset ⇒ structural fail-loud.
+    await expect(
+      svc.resolveConflict(`conflict:${b.id}`, { rule: 'source_of_truth', assetId: 'ghost' }),
+    ).rejects.toBeInstanceOf(BookAssetNotFoundError)
+  })
+
+  it('resolveConflict: absent port ⇒ no-op (never throws); malformed/ghost id ⇒ BookNotFoundError', async () => {
+    const b = await h.svc.createBook({ title: 'NoPort', total_pages: 200 })
+    // h.svc has no preferences port → the write is a silent no-op (the revokeLookupGrant precedent).
+    await expect(h.svc.resolveConflict(`conflict:${b.id}`, { rule: 'last_valid' })).resolves.toBeUndefined()
+    // malformed id (no `conflict:` prefix) and an unknown book both fail loud.
+    await expect(h.svc.resolveConflict('garbage', { rule: 'last_valid' })).rejects.toBeInstanceOf(BookNotFoundError)
+    await expect(h.svc.resolveConflict('conflict:ghost', { rule: 'last_valid' })).rejects.toBeInstanceOf(BookNotFoundError)
+  })
+
+  // §4.1 — getUnifiedProgress guards the book.
+  it('getUnifiedProgress on a non-existent book ⇒ BookNotFoundError', async () => {
+    await expect(h.svc.getUnifiedProgress('ghost')).rejects.toBeInstanceOf(BookNotFoundError)
+  })
+
+  // §4.7 — getBook composes S8.
+  it('getBook.unifiedProgress reflects getUnifiedProgress (null / number / conflicted)', async () => {
+    const b = await h.svc.createBook({ title: 'View', total_pages: 200 })
+    expect((await h.svc.getBook(b.id))!.unifiedProgress).toBeNull()
+    await h.svc.addAsset(b.id, { format: 'pdf', native_position: '100' })
+    expect((await h.svc.getBook(b.id))!.unifiedProgress).toBe(50)
+    await h.svc.addAsset(b.id, { format: 'pdf', native_position: '20' }) // 10 — now a clash
+    expect((await h.svc.getBook(b.id))!.unifiedProgress).toBe('conflicted')
+  })
+
+  // §4.6 — PositionConflictPending is a forward seam: exported, an Error subclass, not thrown anywhere in S8.
+  it('PositionConflictPending is exported as a forward seam (S9 consumer), not thrown by any S8 method', () => {
+    const err = new PositionConflictPending('some-book')
+    expect(err).toBeInstanceOf(Error)
+    expect(err.name).toBe('PositionConflictPending')
+    expect(err.bookId).toBe('some-book')
   })
 })

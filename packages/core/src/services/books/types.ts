@@ -13,6 +13,7 @@ import type { z } from 'zod'
 import type {
   Book,
   BookAsset,
+  BookAssetFormat,
   BookChapter,
   BookBookmark,
   BookHighlight,
@@ -182,6 +183,39 @@ export interface PreferencesPort {
   getQuoteEmbedGlobal(): Promise<boolean>
   /** Per-book override; `undefined` ⇒ no override (fall through to global). */
   getQuoteEmbedOverride(bookId: string): Promise<boolean | undefined>
+  /** S8 (BOO-35) — the conflict preset-rule READ (`types.ts` M2-swap note). The stored rule carries its `assetId`
+   *  for `source_of_truth`. `undefined` ⇒ no rule set ⇒ the BK-8 default `ask` (surface the conflict). */
+  getConflictRule(bookId: string): Promise<ConflictChoice | undefined>
+  /** S8 (BOO-34) — the `resolveConflict` WRITE seam; the real Preferences-backed write lands at M2/P6 (zero-signature
+   *  swap). An absent `preferences?` port ⇒ `resolveConflict` no-ops (the `revokeLookupGrant` precedent, BR-BK-S2-6). */
+  setConflictRule(bookId: string, choice: ConflictChoice): Promise<void>
+}
+
+// --- S8: unified progress + conflict resolution (BOO-13/34/35) — service-layer types ---
+
+/** The BK-8 conflict-rule vocabulary (`conventions.md:36`). `ask` = the default (no rule set ⇒ surface the clash). */
+export type ConflictRule = 'ask' | 'source_of_truth' | 'last_valid' | 'photo_valid'
+/** A preset resolution choice (BOO-34/35). `source_of_truth` names the authoritative asset; `last_valid`/`photo_valid`
+ *  carry no payload. `ask` is NOT a choice — it is the unset default — so it is absent from the submittable union. */
+export type ConflictChoice =
+  | { rule: 'source_of_truth'; assetId: string }
+  | { rule: 'last_valid' }
+  | { rule: 'photo_valid' }
+/** One competing progress measurement in a clash (BK-8) — a page-unit asset's derived 0–100 progress + its native
+ *  position. The public projection surfaced in `ConflictItem.sources` (the conflict-prompt UI reads it at P6). */
+export interface PositionSource {
+  assetId: string
+  format: BookAssetFormat
+  nativePosition: string
+  progress: number
+}
+/** The derived conflict queue row (BK-8, `seam-contract.md:47`) — NO table; `id` is the deterministic
+ *  `conflict:<bookId>` (one book-level clash). `blocking: true` — an unresolved conflict blocks unified progress. */
+export interface ConflictItem {
+  id: string
+  bookId: string
+  sources: PositionSource[]
+  blocking: true
 }
 
 /** listBooks filter (BOO-02) — S1 owns `status` ONLY. The `tags`/`subject`/`format-owned` keys are NOT
@@ -201,7 +235,9 @@ export interface BookView {
   /** S3 (B1 fold) — the flat TOC ordered by `chapter_number` (closes the S2 chapter-READ carry-forward). `[]`
    *  when no TOC was set. */
   chapters: BookChapter[]
-  unifiedProgress: number | null
+  /** S8 — derived unified progress (BR-BK-S8-9): `number` (0–100), `'conflicted'` (BK-8 unresolved clash), or `null`
+   *  (unmeasured — no page-unit candidate). Widened from `number | null` when `getBook` began composing S8. */
+  unifiedProgress: number | 'conflicted' | null
 }
 
 /** BOO-48 — capability gating (plannable vs readable). `plannable` = has a page basis (total_pages/TOC), so a
@@ -275,11 +311,22 @@ export class ChapterNotFoundError extends Error {
 }
 
 /** BOO-10/11/12 — an asset id did not resolve in the book's asset set (guard-exists at `updatePosition` /
- *  `removeAsset` / `getMappedPosition`; also raised when a mapping target belongs to a different book). */
+ *  `removeAsset` / `getMappedPosition`; also raised when a mapping target belongs to a different book). Also raised
+ *  by `resolveConflict` when a `source_of_truth` preset names an asset not on the book (BR-BK-S8-8). */
 export class BookAssetNotFoundError extends Error {
   constructor(public readonly id: string) {
     super(`Book asset not found: ${id}`)
     this.name = 'BookAssetNotFoundError'
+  }
+}
+
+/** BOO-13/34 (BK-8) — a DEFINITE unified progress was required but the book is `'conflicted'`. A **forward seam** at
+ *  S8: exported for the first consumer that needs a number (S9 `getReadingMeasureSource`); NOT thrown anywhere in S8
+ *  (the read surfaces flag `'conflicted'`; `resolveConflict` persists a valid preset and never throws this). */
+export class PositionConflictPending extends Error {
+  constructor(public readonly bookId: string) {
+    super(`Unified progress is conflicted for book ${bookId}; resolve the position clash first`)
+    this.name = 'PositionConflictPending'
   }
 }
 
@@ -565,4 +612,17 @@ export interface BooksService {
   recalculate(planId: string, asOf?: string): Promise<ReadingPlan>
   /** BOO-33 — the derived completion trajectory for the per-plan page + Hub alerts. Guards exists. `asOf?` seam. */
   getProjection(planId: string, asOf?: string): Promise<PlanProjection>
+
+  // ── S8: Unified progress + conflict (BOO-13/34/35) ──────────────────────────
+  /** BOO-13 (BK-3) — derive-on-read unified progress: `number` (0–100), `'conflicted'` (unresolved clash), or `null`
+   *  (unmeasured). A non-null `books.progress` is the manual-override terminal; else derived from page-unit asset
+   *  positions via `measurement.normalize` under the conflict rule. Guards the book exists (`BookNotFoundError`). */
+  getUnifiedProgress(bookId: string): Promise<number | 'conflicted' | null>
+  /** BOO-34 (BK-8) — the derived conflict queue (NO table): an unresolved clash ⇒ one `ConflictItem`
+   *  (`id='conflict:<bookId>'`, competing `sources`), else `[]`. Guards the book exists (`BookNotFoundError`). */
+  getConflicts(bookId: string): Promise<ConflictItem[]>
+  /** BOO-34/35 (BK-8) — persist the preset resolution rule via `preferences?.setConflictRule` (absent ⇒ no-op, the
+   *  `revokeLookupGrant` precedent). Validates the book (`BookNotFoundError`) + a `source_of_truth` asset
+   *  (`BookAssetNotFoundError`). A not-yet-applicable preset (`photo_valid` at M1) persists and does not throw. */
+  resolveConflict(id: string, choice: ConflictChoice): Promise<void>
 }

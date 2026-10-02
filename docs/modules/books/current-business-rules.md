@@ -221,15 +221,63 @@
   junctions ATOMICALLY (`db.transaction`+`createInTx`, both Books-local); `@vida/types` `ReadingPlan`+`ReadingPlanBook`
   N-fold; pure date helpers + `asOf?` seam (no clock dep). `[code: service.ts plansRepo/createPlan; schema/books.ts:165-188]`
 
+## S8 — Unified progress + conflict resolution (BOO-13/34/35)
+
+- **BR-BK-S8-1 (unified progress is derive-on-read / BK-3, BOO-13)** — `getUnifiedProgress(bookId)` returns
+  `number | 'conflicted' | null` (guards the book → `BookNotFoundError`). It inlines `resolveProgress` §3.2 semantics:
+  a non-null `books.progress` is the **manual-override terminal** (returned clamped 0–100); `null` ⇒ **derive**. No
+  progress column is ever written. `books.progress` stays unsettable via the service (BR-BK-S1-1), so the override slot
+  is inert at M1. `[code: service.ts getUnifiedProgress; engine.ts:56]`
+- **BR-BK-S8-2 (candidate derivation — quantitative normalize / BOO-14)** — a per-asset candidate ∈ 0–100 is computed
+  **only** for a page-unit asset: `format ∈ {pdf, physical, braille}` AND `native_position` matches `/^\d+$/` AND
+  `books.total_pages > 0`, as `round(normalize({quantitative, current: parseInt(np), baseline: 0, target: total_pages,
+  isHigherBetter: true}) × 100)` (over-100 clamps via `clamp01`). `epub`/`audiobook` (non-page units, mapping unbuilt
+  BK-4) and `other` (unknown unit) yield **no candidate** — unmeasured, never guessed. `findWhere` + explicit
+  `isNull(deleted_at)`. `[code: service.ts computeCandidates; engine.ts:14-22]`
+- **BR-BK-S8-3 (unmeasured ⇒ null / BR-2)** — zero page-unit candidates (no copy, TOC-only, no `total_pages`, or only
+  epub/audio/other) ⇒ `null`. Never coerced to 0. `[code: service.ts getUnifiedProgress; engine.ts:44]`
+- **BR-BK-S8-4 (agreement ⇒ value; rounding absorbs near-ties)** — one candidate, or ≥2 whose rounded values agree
+  (`new Set(progress).size === 1`), ⇒ that value. Rounding-to-agree is intentional (49.6 % and 50.4 % both → 50 ⇒ no
+  false conflict). `[code: service.ts resolveClash]`
+- **BR-BK-S8-5 (clash ⇒ ASK by default, RULE if set / BK-8, BOO-34/35)** — ≥2 distinct rounded values = a clash. The
+  preset rule is read via `preferences?.getConflictRule(bookId)` (absent port / `undefined` ⇒ BK-8 default `ask`):
+  `ask` ⇒ `'conflicted'`; `source_of_truth` ⇒ the named asset's value iff in the clash else `'conflicted'` (read-side
+  miss is benign); `last_valid` ⇒ greatest `updated_at`, tie-broken by asset `id` descending (deterministic);
+  `photo_valid` ⇒ `'conflicted'` (no photo-source position at M1 — OCR `ai-unavailable`; resolves automatically at M2).
+  `[code: service.ts resolveClash; conventions.md:36]`
+- **BR-BK-S8-6 (`PositionConflictPending` — forward seam, not thrown in S8 / B1)** — exported as the typed signal for a
+  consumer that requires a definite number (first = S9 `getReadingMeasureSource`); **not thrown anywhere in S8**. The
+  read surfaces flag `'conflicted'`; a valid-but-not-yet-applicable preset (`photo_valid`) persists without throwing.
+  `[code: types.ts PositionConflictPending; seam-contract.md:58; BK-8]`
+- **BR-BK-S8-7 (`getConflicts` — derived queue, no table / interpretation rule 7)** — guards the book
+  (`BookNotFoundError`, fail-loud parity), then: an unresolved clash ⇒ one `ConflictItem`
+  (`id='conflict:'+bookId`, `blocking: true`, competing `sources: PositionSource[]`), else `[]`. The id is
+  deterministic (no `book_conflicts` table). `[code: service.ts getConflicts; seam-contract.md:47]`
+- **BR-BK-S8-8 (`resolveConflict` — persist a valid preset via the deny-safe port / B2)** — parses `conflict:<bookId>`
+  (malformed/unknown ⇒ `BookNotFoundError`); validates a `source_of_truth` `assetId` ∈ the book's non-deleted assets
+  (`BookAssetNotFoundError` — a structural error, distinct from a read-side miss); persists via
+  `preferences.setConflictRule`. **Absent port ⇒ no-op** (the `revokeLookupGrant` precedent, BR-BK-S2-6; real write =
+  M2/P6). `[code: service.ts resolveConflict]`
+- **BR-BK-S8-9 (`BookView.unifiedProgress` reconcile / BOO-03)** — `getBook` composes S8 (`unifiedProgress =
+  await getUnifiedProgress(id)`), and `BookView.unifiedProgress` widened `number | null` → `number | 'conflicted' |
+  null`. `getBook` still returns `null` for a missing book (never reaches the throw). `[code: service.ts getBook; types.ts BookView]`
+- **BR-BK-S8-10 (`PreferencesPort` extension — NIT-3 narrow)** — the port gained the derivation **read**
+  `getConflictRule(bookId): Promise<ConflictChoice | undefined>` + the `resolveConflict` **write seam**
+  `setConflictRule(bookId, choice)`. The two S5 quote-embed signatures are unchanged; absent port ⇒ permissive read
+  (`ask`) + no-op write. Real Preferences keys = M2/P6 (zero-signature swap). `[code: types.ts PreferencesPort]`
+
 ## Carry-forward (homed to a later slice)
 
 - **`listQuotes` `tags?` filter** → S9 (lands with `scopeTag`/BOO-04). *(S4 "Embeddability = S5" carry-forward
-  CLOSED by BR-BK-S5-1..5; S3 annotation-survival CLOSED by BR-BK-S4-7; S2 "Chapter READ path" CLOSED by BR-BK-S3-8.)*
+  CLOSED by BR-BK-S5-1..5; S3 annotation-survival CLOSED by BR-BK-S4-7; S2 "Chapter READ path" CLOSED by BR-BK-S3-8;
+  S1 "Derivation lands at S8" CLOSED by BR-BK-S8-1..9.)*
 
 ## Deferred (homed, not yet enforced — see delivery/slice-map.md Deferred-by-design)
 
-Unified-progress derivation (S8) · cross-format mapping `NotSyncedState` (S3, algorithm = build-phase design pass)
-· ISBN lookup **real fetch + normalization** (M2 — mediator + registry; the S2 port is built deny-safe) · OCR / TTS
-/ transcription (deny-safe `ai?` port, S10/M2) · R2 file/photo (deny-safe port, M2) · conflict resolution (S8,
-derived) · Education pace (S9, deny-safe null) · measurement source (S9) · C-E2 (no economy grant on Books — grants
-ride base-`sessions`) · C-M1 (no stored measurement axes on `reading_plans`).
+Cross-format mapping `NotSyncedState` (S3, algorithm = build-phase design pass) · ISBN lookup **real fetch +
+normalization** (M2 — mediator + registry; the S2 port is built deny-safe) · OCR / TTS / transcription (deny-safe
+`ai?` port, S10/M2) · R2 file/photo (deny-safe port, M2) · **conflict-rule real Preferences write + `PositionConflictPending`
+throw-site** (M2/P6 adapter + S9 `getReadingMeasureSource` consumer — the S8 seams are built) · Education pace (S9,
+deny-safe null) · measurement source (S9) · C-E2 (no economy grant on Books — grants ride base-`sessions`) · C-M1 (no
+stored measurement axes on `reading_plans`). *(Unified-progress derivation + the derived conflict queue are now BUILT —
+BR-BK-S8-1..10.)*
