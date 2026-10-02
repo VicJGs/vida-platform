@@ -1,4 +1,4 @@
-# Task: fe-health-core
+# Task: fe-health
 # Status: planned
 # Linear: LIF-183
 # Profile: Add Frontend Component
@@ -10,7 +10,7 @@
 # Note: labels `frontend` + `P6` applied post-write via Linear API (tracker sets labels out-of-band, as P5.1 did for `backend`).
 
 ## Goal
-② Frontend build (add-frontend-component) for health: core — the UI/UX tier over the finished ① service (`mod-health-core`), 12 UI legs. Consumer-pull: rides its backend twin's wave 1:1. Per-slice blocking Visual Gate (Entity Delivery Flow ② track, ADR-021 §3.5).
+② Frontend build — the **Health** umbrella surface (G6 unit #40, ⊕split Core · Training · Nutrition sub-tabs); folds `fe-health-nutrition` + `fe-health-training`. ⛔ blocked on the ~12 Health Core + Training/Nutrition schema tables (0%). Consumes `mod-health-*` ①. Per-slice blocking Visual Gate (Entity Delivery Flow ② track, ADR-021 §3.5).
 
 ## Dependencies
 - blocked by `fe-codec-dashboard`

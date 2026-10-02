@@ -1,10 +1,10 @@
 # Task: frontend-track
 # Status: in-progress
-# Linear: (campaign — no single issue; the 24 fe-* are LIF-178…201)
+# Linear:
 # Profile: Project Foundation  (→ Add Frontend Component per fe-X build)
 # Scenario: Milestone Delivery Planning
 # Project: M1 — Whole Manual OS
-# Milestone: M1.2.* — Frontend track
+# Milestone: M1.2+ (frontend surface tier — cross-milestone)
 # Isolation: worktree .claude/worktrees/frontend-track (branch worktree-frontend-track), off main
 # Source: PLAN-p6-frontend-track.md · reconstructed-structure.md (FE #64–87) · view-intent-harvest.md
 

@@ -11,4 +11,4 @@
 ② Frontend — unit #15. SHELL · Bar 1 + the Spaces scope-selector (global scope) + 6 global surfaces redistributed.
 
 ## Dependencies
-- blocked by `fe-shell-integration-wiring`
+- blocked by `fe-shell`

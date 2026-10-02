@@ -12,4 +12,4 @@
 
 ## Dependencies
 - blocked by `fe-codec-flow-session`
-- blocked by `fe-shell-integration-wiring`
+- blocked by `fe-shell`
