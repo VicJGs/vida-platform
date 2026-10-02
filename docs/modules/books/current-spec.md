@@ -9,15 +9,16 @@
 
 `createBooksService(deps)` — the ① backend service tier for the **reading Universe** over DB-4 `023_books`
 (10 tables). The full design lives in `docs/features/books/` (aspect docs) + `docs/features/books/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **S9 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration · Reading plans / Quota Planner · Unified progress + conflict resolution · Education partition + measure source + tags + linkable-target).
+(interpretation · slice-map · seam-contract). Build state: **① COMPLETE — S10 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration · Reading plans / Quota Planner · Unified progress + conflict resolution · Education partition + measure source + tags + linkable-target · **Integrations + fan-out + Journal**). All 48 BOO legs delivered.
 
-## Delivered surface (as of S9)
+## Delivered surface (as of S10 — ① COMPLETE)
 
-`createBooksService({ db, deviceId, spaces, notes, sessions, sessionRegistry, ingestion?, attachment?, preferences?, ai? }) → BooksService`.
+`createBooksService({ db, deviceId, spaces, notes, sessions, sessionRegistry, ingestion?, attachment?, preferences?, ai?, effects? }) → BooksService`.
 Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from S4 (annotation links/notes);
 `sessions`+`sessionRegistry` are required from **S6** (the ADR-004 `reading` sub-type spine); the narrow deny-safe
-`preferences?` port landed at S5, the `ai?` OCR port at **S6**. Deps grow per slice (S7–S10 add `effects?`;
-`backlinks` → S9/BOO-46).
+`preferences?` port landed at S5, the `ai?` OCR/model port at **S6**, the deny-safe `effects?` (measurement-only
+fan-out) at **S10**. `backlinks` is intentionally NOT wired (BOO-46 identity-only, No-Guessing, BR-BK-S9-7).
+`registerBooksJournal(registry, svc)` (module fn, `journal.ts`) plugs the Journal `/summary` contribution.
 
 | Method | Leg | Contract |
 |---|---|---|
@@ -63,6 +64,18 @@ Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from
 | `listBooksForSubject(subjectId)` | BOO-37 | live books linked to a subject (soft-delete filtered both sides), ordered by junction `created_at` |
 | `getPaceStatus(bookId, subjectId)` | BOO-38 | **deny-safe `null`** at M1 (Education `#52` unbuilt — never fabricated); guards book; `subjectId` trusted |
 | `getReadingMeasureSource(bookId)` | BOO-14 | `ReadingMeasureSource {progress}` composing `getUnifiedProgress` (`'conflicted'`⇒`null`); method not `advertise()` (KNO-25); no stored `measurement_kind` (C-M1) |
+| `convertToSpeech(assetId, req)` | BOO-40 | TTS scoped model call (X11→ADR-015); deny-safe `ai?` (no dep/`AiDenied` ⇒ `ai-unavailable`; `ready`⇒`source:'ai'`); Books stamps its own `defId` (`BOOKS_TTS_INTEGRATION_ID`); **no checkModelCall gate / no M1 throw** (BR-BK-S10-2); guard-asset |
+| `transcribeForMapping(assetId, req)` | BOO-41 | audiobook→text scoped model call feeding the BK-4 map; same deny-safe shape; `defId`=`BOOKS_TRANSCRIPTION_INTEGRATION_ID`; guard-asset |
+| `getPlansForConsumer()` | BOO-45 | the BK-12 Study-Planner read-provider: active `ReadingPlan[]` (soft-delete filtered); Books exposes NO plan-write to consumers |
+| `getDayBooksDigest(date)` | BOO-30 | derived `{pagesRead,sessionsLogged,onPace,behind}` over the UTC-day (completed-session `ended_at` window, the `getStatistics` timing) + `getTodayQuotas(date)` pace tallies; feeds `registerBooksJournal` |
+
+**S10 — effect fan-out (BOO-26 / C-E2) + Journal (BOO-30):** `endSession` emits ONE `emit_measurement_signal`
+(grain = base session id, `targetRef` = book_id) via the deny-safe `effects?` port — emit-only, post-commit,
+failure-isolated, dormant without `effects?`/a registered handler; **never an economy grant** (C-E2 — `award_xp`/
+`grant_currency` ride the base-`sessions` sub-type, not Books; no named M1 consumer — the measure is derived-pull).
+`journal.ts` exports `registerBooksJournal`/`createBooksJournalContribution` (`sectionKey:'summary'`, `module:'books'`;
+`summary(date)` success-on-activity else empty; reuses `TerminalState` by TYPE — the knowledge precedent).
+**BOO-47 local-first (BK-18):** every Books write succeeds locally first (DB-6 write-through; no network dependency).
 
 **Types/errors:** `BooksServiceDeps`, `BooksService`, `BookView`, `BookFilter`, `BookCapabilities`, `ChapterSeed`,
 `AddAssetInput`, `FileBlob`, `AttachmentPort`, `AttachmentRef`, `MappedPosition`, `BookMetadata`, `IsbnLookupPayload`
@@ -93,6 +106,14 @@ Composes `foundation/measurement` `normalize` (quantitative; `resolveProgress` s
 `EntityTagRow`/`BookSubjectRow`; two internal repos (`subjectsRepo` over `book_subjects`; `tagsRepo` over `tags`,
 read-only guard); reuses `TagNotFound`. NO new error, NO new dep, NO new table/migration (`book_subjects` already in
 `023_books`). Composes the existing `spaces` (tag WRITE) + S8 `getUnifiedProgress`.
+**S10:** new optional dep `effects?: { rail: EffectRail; registry: EffectRegistry }` (measurement-only fan-out, C-E2);
+new types `BooksDayDigest`, re-export of `AiRequest` (from `foundation/ai`, cite-not-re-spec); new error
+`IntegrationConsentError` (exported BK-14 typed vocabulary, **NO M1 throw-site** — the `PositionConflictPending`
+precedent; the real consent gate is M2); new integration ids `BOOKS_TTS_INTEGRATION_ID='books.tts'` +
+`BOOKS_TRANSCRIPTION_INTEGRATION_ID='books.transcription'` (Books-owned, inert at M1). New file `journal.ts`
+(`registerBooksJournal`/`createBooksJournalContribution`). The fan-out constants `READING_COMPLETED_TRANSITION` +
+`READING_COMPLETED_EFFECTS=['emit_measurement_signal']` are module-private. NO new table, NO migration. Composes
+`foundation/effects` (`EffectRail`/`EffectRegistry`) + `services/journals` (`JournalRegistry`).
 
 ## Persistence
 

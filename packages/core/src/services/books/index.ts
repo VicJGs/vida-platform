@@ -3,3 +3,4 @@
 // progress/conflict · Education/measurement · integrations/Journal) per docs/features/books/delivery/slice-map.md.
 export * from './types'
 export * from './service'
+export * from './journal'

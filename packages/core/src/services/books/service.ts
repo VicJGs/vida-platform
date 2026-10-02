@@ -135,9 +135,13 @@ import {
   type ConflictItem,
   type PositionSource,
   type ReadingMeasureSource,
+  BOOKS_TTS_INTEGRATION_ID,
+  BOOKS_TRANSCRIPTION_INTEGRATION_ID,
+  type AiRequest,
+  type BooksDayDigest,
 } from './types'
 import { normalize } from '../../foundation/measurement'
-import type { BookAssetFormat } from '@vida/types'
+import type { BookAssetFormat, EffectType } from '@vida/types'
 
 // --- Row → @vida/types interface --------------------------------------------
 // The reshaped BookRow maps 1:1 to the reshaped Book interface (S1 @vida/types reconcile); only the plain-text
@@ -270,8 +274,16 @@ const PAGE_UNIT_FORMATS: ReadonlySet<BookAssetFormat> = new Set<BookAssetFormat>
 // An internal progress candidate = the public PositionSource + `updatedAt` (needed for the `last_valid` tie-break).
 type Candidate = PositionSource & { updatedAt: number }
 
+// S10 — the reading-session-completion MEASUREMENT fan-out (BOO-26, slice-map.md:24). Domain event (NOT an effectType
+// — the knowledge H1 grain) + the effectType SET it fans to. **C-E2 (rerun books.md:73): measurement ONLY** — the
+// ONLY member is `emit_measurement_signal` (a keyed measurement signal); NEVER `award_xp`/`grant_currency` (economy
+// rides the base-`sessions` sub-type, not Books). No named M1 consumer (the measure is derived-pull, BR-BK-S9-6) ⇒
+// emit-only + dormant seam-only (a handler registers downstream at M2). `[FACT: effects/types.ts:22; interpretation rule 3]`
+const READING_COMPLETED_TRANSITION = 'reading_session.completed'
+const READING_COMPLETED_EFFECTS: readonly EffectType[] = ['emit_measurement_signal']
+
 export function createBooksService(deps: BooksServiceDeps): BooksService {
-  const { db, deviceId, ingestion, attachment, spaces, notes, preferences, sessions, sessionRegistry, ai } =
+  const { db, deviceId, ingestion, attachment, spaces, notes, preferences, sessions, sessionRegistry, ai, effects } =
     deps
 
   // [E] fields (title/author/isbn/review/cover_url) → encryptedFields:[] M1.0 pass-through (dormant → M3/DB-5).
@@ -297,6 +309,29 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
   // guard that a scopedTag resolves to a LIVE row before delegating the write to spaces (the knowledge scopeTag guard).
   const subjectsRepo = createRepository(db, bookSubjects, { deviceId, softDelete: true, encryptedFields: [] })
   const tagsRepo = createRepository(db, tags, { deviceId, softDelete: true, encryptedFields: [] })
+
+  // --- S10 reading-session-completion measurement fan-out (BOO-26 / C-E2) ----
+  // Emit-only PUSH onto the effect rail: post-commit, failure-isolated, rail-idempotent, dormant without a registered
+  // handler (the knowledge/habits precedent, service.ts:195-211). subjectNaturalKey = the base session id (the
+  // exactly-once occurrence grain per ADR-004 §3.2.5; NOT the bare transition). targetRef = the affected book.
+  // C-E2: READING_COMPLETED_EFFECTS carries measurement signals ONLY — no economy grant is ever emitted by Books.
+  const fanOutReadingCompletion = async (sessionId: string, bookId: string): Promise<void> => {
+    if (!effects) return // M1 default: no rail wired → the whole fan-out is dormant (BR-BK-S10-4)
+    for (const effectType of READING_COMPLETED_EFFECTS) {
+      // Dormant guard: a keyed effect with no handler would throw NoEffectHandler (effects/service.ts:38-40).
+      if (!effects.registry.resolve(effectType)) continue
+      try {
+        await effects.rail.applyEffect({
+          subjectNaturalKey: sessionId,
+          transition: READING_COMPLETED_TRANSITION,
+          effectType,
+          targetRef: bookId,
+        })
+      } catch {
+        // Post-commit, failure-isolated (BR-BK-S10-4): the completed session stands; a handler throw is non-fatal.
+      }
+    }
+  }
 
   // --- Works CRUD (BOO-01) --------------------------------------------------
 
@@ -778,6 +813,8 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     const session = await sessions.getSession(id)
     if (session == null) throw new ReadingSessionNotFoundError(id) // the base row was just completed → present
     const reading = (await readingRepo.findById(existing.id))! // just updated the row found above
+    // S10 (BOO-26 / C-E2) — post-commit measurement fan-out on the completion transition (emit-only, isolated).
+    await fanOutReadingCompletion(id, existing.book_id)
     return { session, reading: toReadingSession(reading) }
   }
 
@@ -1155,6 +1192,68 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     return { progress: typeof p === 'number' ? p : null }
   }
 
+  // ── S10: Integration close-out + fan-out + Journal (BOO-40/41/42/43/45/47) ──
+  // TTS/transcription are deny-safe `ai?` model calls mirroring attachPhoto/assistCompoundSet: no M1 consent throw-site
+  // (IntegrationConsentError is exported typed vocabulary, the real gate = M2 — BR-BK-S10-2); every deny ⇒ ai-unavailable.
+  // getPlansForConsumer is the BK-12 read-provider (consumers consume, never write). getDayBooksDigest + the journal.ts
+  // contribution feed the Journal `/summary` PULL. The measurement fan-out rides endSession above (BOO-26 / C-E2).
+
+  /** BOO-40/41/42 — a scoped model call (TTS/transcription) through the deny-safe `ai?` port. No dep OR a denied/failed
+   *  `askModel` ⇒ `ai-unavailable` (the `attachPhoto`/`assistCompoundSet` shape); a `ready` result carries `source:'ai'`
+   *  (AI6). NO `checkModelCall` consent gate / NO M1 throw (BR-BK-S10-2): at M1 no consent refusal is producible, so the
+   *  method is deny-safe; the real consent gate (throwing `IntegrationConsentError`) is M2. Guards the asset first. */
+  async function runModelCall(defId: string, req: AiRequest, assetId: string): Promise<OcrResult> {
+    const asset = await assetsRepo.findById(assetId)
+    if (!asset) throw new BookAssetNotFoundError(assetId)
+    if (!ai) return { status: 'ai-unavailable', reason: 'no-ai' } // dormant: no port
+    // Books stamps its OWN integration identity (No-Guessing — the BOOKS_*_INTEGRATION_ID principle); the caller
+    // chooses only the mode/egress triple (AI1 per-use). The spread preserves the `mode` discriminant (both variants).
+    const stamped: AiRequest = { ...req, defId }
+    try {
+      const res = await ai.askModel(stamped)
+      return { status: 'ready', position: res.content, source: 'ai' } // source=ai (AI6); M2 fills the real output
+    } catch (err) {
+      return { status: 'ai-unavailable', reason: err instanceof Error ? err.message : String(err) } // AiDenied ⇒ deny-safe
+    }
+  }
+
+  async function convertToSpeech(assetId: string, req: AiRequest): Promise<OcrResult> {
+    return runModelCall(BOOKS_TTS_INTEGRATION_ID, req, assetId) // BOO-40
+  }
+
+  async function transcribeForMapping(assetId: string, req: AiRequest): Promise<OcrResult> {
+    return runModelCall(BOOKS_TRANSCRIPTION_INTEGRATION_ID, req, assetId) // BOO-41
+  }
+
+  /** BOO-45 (BK-12) — the Study-Planner read-provider: active plans only (soft-delete filtered; findWhere skips the
+   *  filter). Read-only — Books exposes no plan-write to consumers (the boundary invariant). */
+  async function getPlansForConsumer(): Promise<ReadingPlan[]> {
+    const rows = await plansRepo.findWhere(isNull(readingPlans.deleted_at))
+    return rows.map(toReadingPlan)
+  }
+
+  /** BOO-30 — the day's reading digest for the Journal `/summary` contribution. `pagesRead`/`sessionsLogged` over the
+   *  reading sessions whose BASE session completed (`ended_at`) within the UTC-day window (timing lives on the base, the
+   *  getStatistics shape — reading_sessions has no `ended_at`); `onPace`/`behind` tally the active plans' today-quotas. */
+  async function getDayBooksDigest(date: string): Promise<BooksDayDigest> {
+    const from = Date.parse(`${date}T00:00:00Z`)
+    const to = from + 86_400_000
+    const rows = await readingRepo.findAll() // softDelete:false ⇒ no deleted_at filter referenced
+    let pagesRead = 0
+    let sessionsLogged = 0
+    for (const r of rows) {
+      const s = await sessions.getSession(r.session_id) // timing on the base (R11, the getStatistics precedent)
+      const ended = s?.session.ended_at
+      if (ended == null || ended < from || ended >= to) continue // only sessions that COMPLETED this day
+      sessionsLogged += 1
+      pagesRead += r.pages_read ?? 0
+    }
+    const quotas = await getTodayQuotas(date)
+    const onPace = quotas.filter((q) => q.status === 'on-pace' || q.status === 'ahead').length
+    const behind = quotas.filter((q) => q.status === 'behind').length
+    return { pagesRead, sessionsLogged, onPace, behind }
+  }
+
   return {
     createBook,
     updateBook,
@@ -1198,5 +1297,10 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     listBooksForSubject,
     getPaceStatus,
     getReadingMeasureSource,
+    // S10 — integrations + fan-out + Journal (BOO-40/41/42/43/45/47)
+    convertToSpeech,
+    transcribeForMapping,
+    getPlansForConsumer,
+    getDayBooksDigest,
   }
 }

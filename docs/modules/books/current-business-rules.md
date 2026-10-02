@@ -304,6 +304,39 @@
   never a direct Education table read. `subjectId` trusted; no junction write is exposed to Education (Books-owned).
   `[business-rules.md:65-68]`
 
+### S10 — Integration close-out + fan-out + Journal (BOO-40/41/42/43/45/47) — THE FINAL SLICE
+
+- **BR-BK-S10-1 (BOO-40/41 — TTS/transcription deny-safe)** — `convertToSpeech`/`transcribeForMapping` are scoped model
+  calls (X11→ADR-015; NOT AI4) through the deny-safe `ai?` port, mirroring `attachPhoto`/`assistCompoundSet`: no dep OR
+  a denied/failed `askModel` ⇒ `ai-unavailable`; a `ready` result carries `source:'ai'` (AI6). Books stamps its OWN
+  `defId` (`BOOKS_TTS_INTEGRATION_ID`/`BOOKS_TRANSCRIPTION_INTEGRATION_ID` — No-Guessing); the caller picks only the
+  mode (AI1). Guards the asset (`BookAssetNotFoundError`). The manual fallback always stays callable (BK-14).
+  `[code: service.ts runModelCall; parts/books.md:50-51]`
+- **BR-BK-S10-2 (BOO-42/43 — the consent gate)** — `IntegrationConsentError` is exported BK-14 typed vocabulary with
+  **NO M1 backend throw-site** (the `PositionConflictPending`/BR-BK-S8-6 precedent): at M1 no consent refusal is
+  producible (no consent store; the deny-safe ports return `*-unavailable`, and `on_device` never egresses), so the
+  methods map every deny to the deny-safe state — **no `checkModelCall` gate, no throw-through** (`seam-contract.md:153`).
+  The real consent gate that throws it is M2. `[FACT: ai/types.ts:98-100; seam-contract.md:57,153; business-rules.md:69-76]`
+- **BR-BK-S10-3 (BOO-45 / BK-12 — Study-Planner read-provider)** — `getPlansForConsumer()` returns the active plans
+  (soft-delete filtered), read-only; Books exposes NO plan-write to consumers (the boundary invariant — Books owns
+  plans, consumers consume). Distinct from `getTodayQuotas` (the derived pace view). `[parts/books.md:55; BK-12]`
+- **BR-BK-S10-4 (BOO-26 / C-E2 — measurement-only fan-out)** — `endSession` emits ONE `emit_measurement_signal`
+  (grain = base session id, exactly-once per completion; `targetRef` = book_id) via the deny-safe `effects?` port —
+  emit-only, post-commit, failure-isolated, rail-idempotent, **dormant** without `effects?`/a registered handler.
+  **NEVER an economy grant** (C-E2 — `award_xp`/`grant_currency` ride the base-`sessions` sub-type, not Books).
+  **No named M1 consumer** (the reading measure is derived-pull, BR-BK-S9-6) ⇒ a dormant seam-only signal (a handler
+  registers downstream at M2), not a live re-derive like knowledge's `review.recorded`. `[code: service.ts
+  fanOutReadingCompletion; slice-map.md:24; effects/types.ts:22; rerun C-E2 books.md:73]`
+- **BR-BK-S10-5 (BOO-30 — Journal contribution)** — `registerBooksJournal(registry, svc)` plugs a `sectionKey:'summary'`
+  / `module:'books'` contribution; `summary(date)` composes `getDayBooksDigest` (pages read + sessions logged over the
+  day's completed-session `ended_at` window, the `getStatistics` timing; + plan pace tallies) → `state:'success'` on
+  activity, `state:'empty'` on an idle day, never a throw (the per-section degrade is the dashboard's). Reuses
+  `TerminalState` BY TYPE (the knowledge precedent). Coexists with other modules under 'summary' (registry dedups by
+  `module`). `[code: journal.ts; parts/books.md:40; knowledge/journal.ts]`
+- **BR-BK-S10-6 (BOO-47 / BK-18 — local-first)** — every Books write (position/annotation/session/plan) succeeds
+  locally first (DB-6 Repository write-through; no network dependency); LWW per entity via the sync seam. A platform
+  baseline asserted here, not a new write path. `[business-rules.md:88-89; conventions.md:41-42]`
+
 ## Carry-forward (homed to a later slice)
 
 - **`listBooks`/`listQuotes` tag·subject·format-owned filter completions** (BOO-02/BOO-20 query halves) → a later leg
@@ -314,10 +347,14 @@
 ## Deferred (homed, not yet enforced — see delivery/slice-map.md Deferred-by-design)
 
 Cross-format mapping `NotSyncedState` (S3, algorithm = build-phase design pass) · ISBN lookup **real fetch +
-normalization** (M2 — mediator + registry; the S2 port is built deny-safe) · OCR / TTS / transcription (deny-safe
-`ai?` port, S10/M2) · R2 file/photo (deny-safe port, M2) · **conflict-rule real Preferences write** (M2/P6 adapter — the
-S8 port seam is built) · **`PositionConflictPending` on-write block** (a P6/M2 position-write/unified-truth-confirm
-flow, `contract.md:64`; the M1 backend never throws it) · C-E2 (no economy grant on Books — grants ride base-`sessions`)
-· C-M1 (no stored measurement axes). *(Unified-progress derivation + the derived conflict queue (S8) + the Education
-partition·tags·measure-source (S9) are now BUILT — BR-BK-S8/S9-*. Education pace ships the deny-safe `null` shape; the
-real derivation awaits Education `#52`, M2.)*
+normalization** (M2 — mediator + registry; the S2 port is built deny-safe) · OCR / TTS / transcription **real model
+pipelines** (M2 — on-device runtime + cloud mediator + `source=ai` row authorship; the `ai?` ports are built deny-safe,
+S6/S10) · R2 file/photo (deny-safe port, M2) · **conflict-rule real Preferences write** (M2/P6 adapter — the S8 port
+seam is built) · **`PositionConflictPending` on-write block** (a P6/M2 position-write/unified-truth-confirm flow,
+`contract.md:64`; the M1 backend never throws it) · **the real consent gate** that throws `IntegrationConsentError`
+(M2 — needs the persisted consent store; the BK-14 typed vocabulary is exported now, S10) · **the `effects?`
+measurement handler** (who consumes `emit_measurement_signal` — registered downstream, M2; the fan-out is dormant
+emit-only now) · C-E2 (no economy grant on Books — grants ride base-`sessions`) · C-M1 (no stored measurement axes).
+*(Unified-progress derivation + the derived conflict queue (S8) + the Education partition·tags·measure-source (S9) +
+integrations·fan-out·Journal (S10) are now BUILT — BR-BK-S8/S9/S10-*. Education pace ships the deny-safe `null` shape;
+the real derivation awaits Education `#52`, M2. **① backend COMPLETE — all 48 BOO legs delivered.**)*

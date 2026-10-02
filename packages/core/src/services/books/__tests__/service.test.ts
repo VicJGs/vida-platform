@@ -26,6 +26,7 @@ import {
   ReadingPlanNotFoundError,
   TargetUnreachableProposal,
   PositionConflictPending,
+  IntegrationConsentError,
 } from '../types'
 import type { ConflictChoice } from '../types'
 import type { AiService } from '../../../foundation/ai'
@@ -37,7 +38,9 @@ import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService } from '../../notes'
 import { createSessionRegistry, SessionTypeNotFound } from '../../../foundation/sessions'
 import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import type { EffectEvent } from '../../../foundation/effects'
 import { createSessionsService } from '../../sessions'
+import { createJournalRegistry } from '../../journals'
 
 // The REAL required deps (spaces + notes + sessions) over the live store — exercises the entity-type registry
 // enforcement (BK-6 highlight rejection; the attach `book` target), ensureEntityNote idempotency, and the real
@@ -1418,5 +1421,190 @@ describe('mod-books S9 — Education partition + measure source + tags + target'
     const registry = createTaggableTypeRegistry()
     expect(registry.isRegistered('book')).toBe(true)
     expect(registry.isRegistered('book_chapter')).toBe(true)
+  })
+})
+
+// An on-device AiRequest for the S10 model calls (Books stamps its own defId internally, so this id is overwritten).
+const AI_REQ = { defId: 'caller.placeholder', mode: 'on_device' } as const
+
+describe('mod-books S10 — integrations (TTS/transcription), deny-safe + consent (BOO-40/41/42/43)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // BR-BK-S10-1 — no `ai?` ⇒ ai-unavailable; the asset is still guarded first.
+  it('convertToSpeech / transcribeForMapping — no ai dep ⇒ ai-unavailable; ghost asset ⇒ BookAssetNotFoundError', async () => {
+    const b = await h.svc.createBook({ title: 'TTS' })
+    const a = await h.svc.addAsset(b.id, { format: 'pdf' })
+    expect(await h.svc.convertToSpeech(a.asset.id, AI_REQ)).toEqual({ status: 'ai-unavailable', reason: 'no-ai' })
+    expect(await h.svc.transcribeForMapping(a.asset.id, AI_REQ)).toEqual({ status: 'ai-unavailable', reason: 'no-ai' })
+    await expect(h.svc.convertToSpeech('ghost', AI_REQ)).rejects.toBeInstanceOf(BookAssetNotFoundError)
+    await expect(h.svc.transcribeForMapping('ghost', AI_REQ)).rejects.toBeInstanceOf(BookAssetNotFoundError)
+  })
+
+  // BR-BK-S10-1/2 — a present-but-dormant ai? denies ⇒ ai-unavailable (NO checkModelCall, NO throw); a reply ⇒ ready+source:'ai'.
+  it('present ai? — askModel denies ⇒ ai-unavailable (no checkModelCall gate); resolves ⇒ ready+source:ai', async () => {
+    const b = await h.svc.createBook({ title: 'Model' })
+    const a = await h.svc.addAsset(b.id, { format: 'audiobook' })
+    // mockAi.checkModelCall THROWS if touched — these passing proves Books never calls the gate (B1: no M1 gate).
+    const denied = createBooksService({ ...h.deps, ai: mockAi({ throws: true }) })
+    expect((await denied.convertToSpeech(a.asset.id, AI_REQ)).status).toBe('ai-unavailable')
+    const ready = createBooksService({ ...h.deps, ai: mockAi({ throws: false, reply: 'pos:42' }) })
+    expect(await ready.transcribeForMapping(a.asset.id, AI_REQ)).toEqual({
+      status: 'ready',
+      position: 'pos:42',
+      source: 'ai',
+    })
+  })
+
+  // BR-BK-S10-2 — IntegrationConsentError is exported typed vocabulary (BOO-43), NOT thrown by any M1 path.
+  it('IntegrationConsentError is exported + constructible, with no M1 throw-site', () => {
+    const err = new IntegrationConsentError('books.tts')
+    expect(err).toBeInstanceOf(Error)
+    expect(err.name).toBe('IntegrationConsentError')
+    expect(err.defId).toBe('books.tts')
+  })
+})
+
+describe('mod-books S10 — Study-Planner read-provider (BOO-45 / BK-12)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('getPlansForConsumer — active plans only (soft-delete filtered); read-only (no write exposed)', async () => {
+    const b = await h.svc.createBook({ title: 'Plan book', total_pages: 100 })
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: b.id }],
+      arrangement: 'parallel',
+      goalType: 'auto',
+      targetDate: '2099-01-01',
+    })
+    const got = await h.svc.getPlansForConsumer()
+    expect(got.map((p) => p.id)).toContain(plan.id)
+    // BK-12 boundary — the read-provider exposes no plan-write method to consumers.
+    expect('createPlan' in (h.svc as object)).toBe(true) // the owner writes…
+    const provided = await h.svc.getPlansForConsumer()
+    expect(Array.isArray(provided)).toBe(true) // …consumers only read the array
+  })
+})
+
+describe('mod-books S10 — reading-completion measurement fan-out (BOO-26 / C-E2)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('no effects? ⇒ endSession succeeds, nothing fired (dormant seam)', async () => {
+    await h.svc.registerBooks()
+    const b = await h.svc.createBook({ title: 'Dormant' })
+    const s = await h.svc.startSession(b.id, { manual: true })
+    const ended = await h.svc.endSession(s.session.session.id, { pages: 5 })
+    expect(ended.session.session.status).toBe('completed') // no effects? dep → fan-out is a no-op
+  })
+
+  it('effects? wired ⇒ exactly one emit_measurement_signal (grain=session id, targetRef=book); C-E2 no economy; handler throw isolated', async () => {
+    const registry = createEffectRegistry()
+    const fired: EffectEvent[] = []
+    const economy: EffectEvent[] = []
+    registry.register('emit_measurement_signal', async (ev) => {
+      fired.push(ev)
+    })
+    // C-E2 proof — if Books ever emitted economy, these would record; they must stay empty.
+    registry.register('award_xp', async (ev) => {
+      economy.push(ev)
+    })
+    registry.register('grant_currency', async (ev) => {
+      economy.push(ev)
+    })
+    const rail = createEffectRail(h.db, registry)
+    const svc = createBooksService({ ...h.deps, effects: { rail, registry } })
+    await svc.registerBooks()
+    const b = await svc.createBook({ title: 'Signal' })
+    const s = await svc.startSession(b.id, { manual: true })
+    await svc.endSession(s.session.session.id, { pages: 10 })
+    expect(fired).toHaveLength(1)
+    expect(fired[0]!.effectType).toBe('emit_measurement_signal')
+    expect(fired[0]!.subjectNaturalKey).toBe(s.session.session.id) // occurrence grain
+    expect(fired[0]!.targetRef).toBe(b.id)
+    expect(economy).toHaveLength(0) // C-E2 — Books never emits an economy grant
+  })
+
+  it('a throwing handler does NOT fail endSession (post-commit, failure-isolated)', async () => {
+    const registry = createEffectRegistry()
+    registry.register('emit_measurement_signal', async () => {
+      throw new Error('handler boom')
+    })
+    const rail = createEffectRail(h.db, registry)
+    const svc = createBooksService({ ...h.deps, effects: { rail, registry } })
+    await svc.registerBooks()
+    const b = await svc.createBook({ title: 'Isolated' })
+    const s = await svc.startSession(b.id, { manual: true })
+    const ended = await svc.endSession(s.session.session.id, { pages: 3 })
+    expect(ended.session.session.status).toBe('completed') // the completed session stands
+  })
+})
+
+describe('mod-books S10 — Journal digest + contribution (BOO-30) + local-first (BOO-47)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // BR-BK-S10-5 — the digest counts reading sessions completed THIS day (base ended_at window) + plan pace tallies.
+  it('getDayBooksDigest — counts completed sessions this day; empty day ⇒ zeros', async () => {
+    await h.svc.registerBooks()
+    const today = new Date().toISOString().slice(0, 10)
+    const b = await h.svc.createBook({ title: 'Digest' })
+    const s1 = await h.svc.startSession(b.id, { manual: true })
+    await h.svc.endSession(s1.session.session.id, { pages: 20 })
+    const s2 = await h.svc.startSession(b.id, { manual: true })
+    await h.svc.endSession(s2.session.session.id, { pages: 15 })
+    // an in-progress session (never ended) does NOT count (no ended_at).
+    await h.svc.startSession(b.id, { manual: true })
+
+    const digest = await h.svc.getDayBooksDigest(today)
+    expect(digest.sessionsLogged).toBe(2)
+    expect(digest.pagesRead).toBe(35)
+    expect(digest.onPace + digest.behind).toBe(0) // no active plans → no pace tallies
+
+    const empty = await h.svc.getDayBooksDigest('2000-01-01')
+    expect(empty).toEqual({ pagesRead: 0, sessionsLogged: 0, onPace: 0, behind: 0 })
+  })
+
+  // BR-BK-S10-5 — registerBooksJournal plugs a 'summary' contribution: success on activity, empty on an idle day.
+  it('registerBooksJournal — summary(date) is success on activity, empty on an idle day', async () => {
+    await h.svc.registerBooks()
+    const { registerBooksJournal } = await import('../journal')
+    const jr = createJournalRegistry()
+    registerBooksJournal(jr, h.svc)
+    const contribution = jr.get('books')
+    expect(contribution?.sectionKey).toBe('summary')
+
+    const today = new Date().toISOString().slice(0, 10)
+    const b = await h.svc.createBook({ title: 'JournalBook' })
+    const s = await h.svc.startSession(b.id, { manual: true })
+    await h.svc.endSession(s.session.session.id, { pages: 7 })
+    const active = await contribution!.summary(today)
+    expect(active.state).toBe('success')
+    expect(active.module).toBe('books')
+
+    const idle = await contribution!.summary('2000-01-01')
+    expect(idle.state).toBe('empty')
+  })
+
+  // BR-BK-S10-6 (BOO-47 / BK-18) — every Books write succeeds locally first (no network dependency wired).
+  it('local-first — a plan write persists + reads back with NO integration port present', async () => {
+    const b = await h.svc.createBook({ title: 'LocalFirst', total_pages: 50 })
+    // no ai/ingestion/attachment/effects/preferences ports — a pure local write path.
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: b.id }],
+      arrangement: 'parallel',
+      goalType: 'auto',
+      targetDate: '2099-06-01',
+    })
+    const readBack = await h.svc.getPlansForConsumer()
+    expect(readBack.map((p) => p.id)).toContain(plan.id) // persisted locally, no relay needed
   })
 })

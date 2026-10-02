@@ -98,15 +98,25 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   `contract.md:64` + `getMasterySource`). g1 REVISE→folded (B1 faithful-row +4 NITs) → Approval 1 → adr-check ALIGNED +
   preflight PASSED → Approval 2 → tsc 0 → 90/90 live-store → code-review SHIP (all 10 axes) → /critique SHIP → §XXIX
   (BR-BK-S9-1..8). @vida/core **1523/1523**. Commit `65384a9`.
-- [ ] S10 integrations/Journal (the FINAL slice → PR when ① complete)
-- [ ] Step 3: read 3 existing MOD services — state the pattern
-- [ ] Step 4: /api-contract (service API) approved before code
-- [ ] Step 5–6: /adr-check · /adr-new (if significant)
-- [ ] Step 7: implement types → service logic → error handling → D6 birth docs/modules/books/current-*
-- [ ] Step 8: tsc --noEmit zero errors
-- [ ] Step 9: per-slice BLOCKING Verification Gate (Vitest + live-store smoke) before next slice
-- [ ] Step 10: code-review → /critique → SHIP
-- [ ] Step 11: Currency Rule (§XXIX) — refresh current-* + commit WITH code
+- [x] **S10 — Integration close-out + fan-out + Journal SHIPPED** (BOO-40/41/42/43/45/47) — THE FINAL SLICE →
+  **① COMPLETE, all 48 BOO legs delivered.** `convertToSpeech`/`transcribeForMapping` (deny-safe `ai?` TTS/transcription;
+  Books stamps its own `defId`; no checkModelCall gate) · `getPlansForConsumer` (BK-12 read-provider) · `effects?`
+  measurement-only fan-out on `endSession` (emit-only/dormant/isolated; `emit_measurement_signal` only — **C-E2 no
+  economy**; grain=session id) · `getDayBooksDigest` + `registerBooksJournal` (`journal.ts`, Journal `/summary` PULL) ·
+  `IntegrationConsentError` exported typed vocabulary (**NO M1 throw-site** — g1 B1, the `PositionConflictPending`
+  precedent) · BOO-47 local-first asserted. g1 /critique REVISE→folded (B1 consent-error no-M1-throw + N1 fan-out BR) →
+  Approval 1 → /api-contract ratify + /adr-check (no ADR) → /preflight PASSED → Approval 2 → implement → **tsc 0 ·
+  100/100 books live-store (Node 24) · full @vida/core 1533/1533 · eslint 0 · gitleaks clean** → independent g2
+  code-review SHIP (0 block, 2 nits: N1 dead-ternary collapsed, N2 shared-precedent) → /critique SHIP → §XXIX currency
+  (BR-BK-S10-1..6; Deferred reconciled; ① marked COMPLETE). New dep `effects?`; new file `journal.ts`.
+- [x] Step 3: read 3 existing MOD services — stated the pattern (knowledge fanOut/journal · habits emit-only · gamification registry)
+- [x] Step 4: /api-contract — RATIFY (frozen seam-contract, no drift)
+- [x] Step 5–6: /adr-check ALIGNED (no new ADR — composes built substrates)
+- [x] Step 7: implemented types → service logic → `journal.ts` → barrel → §XXIX current-*
+- [x] Step 8: tsc --noEmit = 0
+- [x] Step 9: BLOCKING Verification Gate — 100/100 books live-store (Node 24)
+- [x] Step 10: g2 code-review SHIP → /critique SHIP
+- [x] Step 11: Currency Rule (§XXIX) — current-* refreshed, committed WITH code
 
 ## On Failure
 1. Always invoke victor:triage first — classify before any fix attempt

@@ -68,7 +68,9 @@ mocked test bypasses (`[FACT: visual-gate-catches-worker-rpc-bugs; repository-cr
 | S5 | ✅ (SHIP, 2 folds) | ✅ 48/48 live-store | ✅ 2-reviewer SHIP (1 NIT folded) | ✅ | `f81bd24` |
 | S6 | ✅ REVISE→SHIP (5 g1 folds + doc-first re-ground, ADR-004 §3.2) | ✅ 63/63 live-store (REAL sessions) | ✅ SHIP (2 NITs folded) | ✅ | `92e5b30` |
 | S7 | ✅ REVISE→SHIP (1 fold: recalc proposal condition) + preflight (atomic createPlan · asOf seam) | ✅ 72/72 live-store (json writes · derivations) | ✅ SHIP (1 fix: recordQuotaProgress session guard) | ✅ | `a9aa79f` |
-| S8–S10 | — | — | — | — | — |
+| S8 | ✅ REVISE→folded (B1/B2 +4 NITs) | ✅ 83/83 live-store | ✅ SHIP | ✅ | `aa9edec` |
+| S9 | ✅ REVISE→folded (B1 faithful-row +4 NITs) | ✅ 90/90 live-store | ✅ SHIP (all 10 axes) | ✅ | `65384a9` |
+| S10 | ✅ REVISE→folded (B1 consent-error no-M1-throw + N1) | ✅ 100/100 live-store | ✅ SHIP (0 block, 2 nits: N1 collapsed) | ✅ | _(this commit)_ |
 
 **S4 BK-6 correction (§XXVIII, Verification-Gate-caught):** the g1 "registry-only enforcement" lean was
 incomplete — `spaces.createLink` validates only the link TARGET, not the SOURCE anchor, so a highlight *source*

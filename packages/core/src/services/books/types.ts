@@ -28,7 +28,8 @@ import type { SpacesService } from '../../foundation/spaces'
 import type { NotesService } from '../notes'
 import type { SessionsService, Session } from '../sessions'
 import type { SessionRegistry } from '../../foundation/sessions'
-import type { AiService } from '../../foundation/ai'
+import type { AiService, AiRequest } from '../../foundation/ai'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
 import type { EntityLinkRow, EntityTagRow } from '../../db/schema/foundation/spaces'
 import type { BookSubjectRow } from '../../db/schema/books'
 import type { PageRow } from '../../db/schema/notes'
@@ -89,8 +90,19 @@ export interface BooksServiceDeps {
    *  `on_device` (the photo is vault content — ZK-safe, conventions.md:57). M1 dormant (askModel denies — both ports
    *  absent); the real OCR pipeline = M2. `[ADR-015 AI5/AI6; parts/books.md:35 (BOO-25)]` */
   ai?: AiService
-  // S7–S10 append: effects? (measurement fan-out, S10) + backlinks (S9/BOO-46).
+  /** S10 — ADR-012 effect rail for the reading-session-completion MEASUREMENT fan-out (BOO-26). Optional deny-safe
+   *  port (the knowledge/habits emit-only precedent): absent ⇒ the whole fan-out is dormant (`endSession` fires
+   *  nothing). **C-E2 (rerun books.md:73): measurement signals ONLY** — Books emits `emit_measurement_signal`, NEVER
+   *  an economy grant (`award_xp`/`grant_currency` ride the base-`sessions` sub-type, not Books). Emit-only producer
+   *  (no handler ownership): post-commit, failure-isolated, rail-idempotent; a keyed effect with no registered handler
+   *  is skipped (BR-BK-S10-4). `[FACT: slice-map.md:24; seam-contract.md:28,154; knowledge/service.ts:195-211]` */
+  effects?: { rail: EffectRail; registry: EffectRegistry }
+  // S9/BOO-46 backlinks dep intentionally NOT wired (no consuming read-method — No-Guessing, BR-BK-S9-7).
 }
+
+/** S10 (BOO-40/41) — an AI request for a scoped model call (TTS/transcription). Reuse the `foundation/ai` discriminated
+ *  `cloud`/`on_device` union verbatim (cite-not-re-spec); not a Books value → no Zod (the `attachPhoto` precedent). */
+export type { AiRequest }
 
 // --- S3: asset file upload (BOO-09) — deny-safe port + service-layer types (the LookupResult precedent) ---
 
@@ -374,6 +386,30 @@ export class QuoteEmbedDisabledError extends Error {
   }
 }
 
+/** BOO-43 (BK-14, the "Books governing principle") — an integration (ISBN lookup / TTS / transcription / OCR) was
+ *  refused at the consent gate; the manual fallback path (`setChapters`/`updatePosition`/manual entry) stays callable.
+ *  **Exported typed vocabulary with NO M1 backend throw-site** — the `PositionConflictPending` precedent (BR-BK-S8-6):
+ *  at M1 no consent refusal is producible (no consent store; the deny-safe ports return `*-unavailable`, not a refusal),
+ *  so the integration methods map every deny to their deny-safe typed state (no throw-through, `seam-contract.md:153`).
+ *  The real throw-site is the M2 consent gate (the stored grant the gate reads). `[FACT: business-rules.md:69-76;
+ *  seam-contract.md:57,153; current-business-rules.md:248-254]` */
+export class IntegrationConsentError extends Error {
+  constructor(public readonly defId: string) {
+    super(`Integration consent not granted: ${defId}; the manual fallback is available`)
+    this.name = 'IntegrationConsentError'
+  }
+}
+
+/** S10 (BOO-30) — the day's reading digest feeding the Journal `/summary` PULL contribution (`registerBooksJournal`).
+ *  `pagesRead`/`sessionsLogged` over the day's completed reading sessions; `onPace`/`behind` tally the active plans'
+ *  today-quota statuses (`getTodayQuotas`). `[FACT: seam-contract.md:49,136; parts/books.md:40]` */
+export interface BooksDayDigest {
+  pagesRead: number
+  sessionsLogged: number
+  onPace: number
+  behind: number
+}
+
 // --- S6: Reading sessions + Reader (BOO-23/24/25/26/39) — service-layer types + the sub-type identity ---
 
 /** The `reading` Session sub-type Books registers (IR-1). A sentinel transcribing ADR-004 §3.2 — the full
@@ -384,6 +420,13 @@ export const READING_SESSION_SUB_TYPE = 'reading'
  *  `BOOKS_ISBN_INTEGRATION_ID` precedent — NOT a synthesized downstream id (No-Guessing). OCR runs `on_device`
  *  (the photo is vault content, ZK-safe, conventions.md:57). Inert at M1 (askModel denies). */
 export const BOOKS_OCR_INTEGRATION_ID = 'books.ocr'
+
+/** S10 (BOO-40) — Books' OWN TTS integration identity (X11 → ADR-015). Distinct from OCR/transcription (three distinct
+ *  X11 pipelines; the `BOOKS_OCR_INTEGRATION_ID` precedent, No-Guessing). Inert at M1 (askModel denies). */
+export const BOOKS_TTS_INTEGRATION_ID = 'books.tts'
+/** S10 (BOO-41) — Books' OWN transcription integration identity (X11 → ADR-015; audiobook → text feeding the BK-4 map).
+ *  Distinct from OCR (transcription ≠ OCR). Inert at M1 (askModel denies). */
+export const BOOKS_TRANSCRIPTION_INTEGRATION_ID = 'books.transcription'
 
 /** startSession target (BOO-23) — an existing asset or a manual (physical/braille) session. `z.infer` of the validator. */
 export type StartSessionTarget = z.infer<typeof StartSessionTargetSchema>
@@ -644,6 +687,22 @@ export interface BooksService {
   /** BOO-14 (C-M1) — the reading measure SOURCE (a method, not source-registry `advertise`; the KNO-25 pattern).
    *  Composes `getUnifiedProgress`; `'conflicted'` ⇒ `null` (a conflict is unmeasured, never a throw). */
   getReadingMeasureSource(bookId: string): Promise<ReadingMeasureSource>
+
+  // ── S10: Integration close-out + fan-out + Journal (BOO-40/41/42/43/45/47) ──
+  /** BOO-40 — PDF/EPUB → text-to-speech, a scoped model call (X11→ADR-015 AI1/AI3; NOT AI4). Deny-safe `ai?` (the
+   *  `attachPhoto` shape): no dep OR `AiDenied` ⇒ `ai-unavailable`; a `ready` result carries `source:'ai'` (AI6). NO M1
+   *  consent throw-site — `IntegrationConsentError` is exported vocabulary, the real gate is M2 (BR-BK-S10-2). Guards the
+   *  asset (`BookAssetNotFoundError`). The manual fallback stays callable (BK-14). */
+  convertToSpeech(assetId: string, req: AiRequest): Promise<OcrResult>
+  /** BOO-41 — audiobook → text transcription feeding the BK-4 cross-format map (X11→ADR-015). Deny-safe `ai?`, same
+   *  shape as `convertToSpeech` (distinct integration id). `ready` ⇒ `source:'ai'` (AI6). Guards the asset. */
+  transcribeForMapping(assetId: string, req: AiRequest): Promise<OcrResult>
+  /** BOO-45 (BK-12) — the Study-Planner read-provider: the active reading plans (soft-delete filtered). Books EXPOSES
+   *  plans; consumers CONSUME, never write — no plan-write method is exposed here (boundary invariant). */
+  getPlansForConsumer(): Promise<ReadingPlan[]>
+  /** BOO-30 — the day's reading digest (`pagesRead`/`sessionsLogged`/`onPace`/`behind`) over the UTC-day window; feeds
+   *  the `registerBooksJournal` `/summary` contribution. Derived on read, never stored. */
+  getDayBooksDigest(date: string): Promise<BooksDayDigest>
 }
 
 /** BOO-14 — the reading measure source shape (service-layer, the `MasterySource` named-type precedent). `progress`
