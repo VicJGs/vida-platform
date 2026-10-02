@@ -68,7 +68,7 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   effects=[] · §3.2.3 lifecycle · intake B10/B16)** → Approval 1 → /api-contract ratify + /adr-check (no ADR) →
   /preflight PASSED (R10 non-atomic compose · R11 timing read) → Approval 2 → implement → **tsc 0 · 63/63 live-store
   (REAL sessions, Node 24) · full @vida/core 1495→1496 · eslint 0 · gitleaks clean** → code-review SHIP (2 NITs
-  folded) → /critique SHIP → §XXIX currency (BR-BK-S6-1..8). Commit `_(pending)_`.
+  folded) → /critique SHIP → §XXIX currency (BR-BK-S6-1..8). Commit `92e5b30`.
 - [ ] S7 plans · S8 progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
 - [ ] Step 4: /api-contract (service API) approved before code

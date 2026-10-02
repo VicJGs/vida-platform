@@ -66,7 +66,7 @@ mocked test bypasses (`[FACT: visual-gate-catches-worker-rpc-bugs; repository-cr
 | S3 | ✅ (4 pts grounded) | ✅ 31/31 live-store | ✅ 2-reviewer SHIP (4 NITs folded) | ✅ | `133ddef` |
 | S4 | ✅ (4 pts grounded) | ✅ 40/40 live-store (REAL spaces+notes) | ✅ 2-reviewer SHIP (1 NIT folded) | ✅ | `d4dfef2` |
 | S5 | ✅ (SHIP, 2 folds) | ✅ 48/48 live-store | ✅ 2-reviewer SHIP (1 NIT folded) | ✅ | `f81bd24` |
-| S6 | ✅ REVISE→SHIP (5 g1 folds + doc-first re-ground, ADR-004 §3.2) | ✅ 63/63 live-store (REAL sessions) | ✅ SHIP (2 NITs folded) | ✅ | _(pending)_ |
+| S6 | ✅ REVISE→SHIP (5 g1 folds + doc-first re-ground, ADR-004 §3.2) | ✅ 63/63 live-store (REAL sessions) | ✅ SHIP (2 NITs folded) | ✅ | `92e5b30` |
 | S7–S10 | — | — | — | — | — |
 
 **S4 BK-6 correction (§XXVIII, Verification-Gate-caught):** the g1 "registry-only enforcement" lean was
