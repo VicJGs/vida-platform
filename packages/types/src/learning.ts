@@ -224,6 +224,11 @@ export interface Course extends SyncableEntity {
   deleted_at: Timestamp | null
 }
 
+// DB-4 group #11 (mod-books ① S1) — reshaped to the reframed `books` table (schema/books.ts). RETIRED from the
+// stale ADR-002 floor: `format`→`book_assets` (BK-2) · `current_page`→per-asset `native_position` (BR-BK-2) ·
+// `genre`/`tags`→`entity_tags` (BK-16). `progress` → nullable derived-override (BR-BK-2; NULL ⇒ derive, never a
+// stored counter). `total_pages` nullable (work-level, TOC-only planning, BK-17). `BOOK_FORMAT`/`BookFormatSchema`
+// intentionally kept (P-6 — other consumers). `[FACT: schema/books.ts:43-63; db-4-books/_index.md:68-72]`
 export interface Book extends SyncableEntity {
   /** @encrypted */
   title: string
@@ -231,12 +236,11 @@ export interface Book extends SyncableEntity {
   author: string | null
   /** @encrypted */
   isbn: string | null
-  format: BookFormat
   status: BookStatus
-  total_pages: number
-  current_page: number
-  /** 0–100 */
-  progress: number
+  /** work-level page count, for TOC-only planning (BK-17); nullable */
+  total_pages: number | null
+  /** DERIVED override, nullable (BR-BK-2) — NULL ⇒ derive; never a stored counter */
+  progress: number | null
   start_date: string | null
   end_date: string | null
   /** 1–5 */
@@ -245,10 +249,20 @@ export interface Book extends SyncableEntity {
   review: string | null
   /** @encrypted */
   cover_url: string | null
-  /** @encrypted */
-  genre: string | null
-  /** @encrypted */
-  tags: string[]
+  deleted_at: Timestamp | null
+}
+
+// DB-4 group #11 (mod-books ① S3, N1 fold) — the per-format copy of a WORK (BK-2). Mirrors the reshaped
+// `book_assets` row (schema/books.ts:88-100): `file_ref` [E] (encrypted R2 ref, physical/braille have none),
+// `native_position` plaintext (page/epub-location/audio-timestamp, format-interpreted, BK-1). Replaces the raw
+// `BookAssetRow` in the `BookView` seam (the Book/BookChapter DB-11 reconcile precedent). `[FACT: schema/books.ts:88-100]`
+export interface BookAsset extends SyncableEntity {
+  book_id: Id
+  format: BookAssetFormat
+  /** @encrypted — encrypted R2 file ref; null for physical/braille (no stored file) */
+  file_ref: string | null
+  /** the single native position per asset (SSOT, BK-2); plaintext */
+  native_position: string | null
   deleted_at: Timestamp | null
 }
 
@@ -264,6 +278,77 @@ export interface BookChapter extends SyncableEntity {
   is_completed: boolean
   completed_at: Timestamp | null
   sort_order: number
+}
+
+// DB-4 group #11 (mod-books ① S4, N-fold) — the three annotation natures (BK-6). Mirror the reshaped rows
+// (schema/books.ts:103-145). Highlights are deliberately light (no notes/links — enforced by the entity-type
+// registry excluding `book_highlight`); bookmarks + quotes take notes via `pages` and inter-link (bookmark↔quote).
+export interface BookBookmark extends SyncableEntity {
+  book_id: Id // work-anchored (BK-5), no asset FK
+  position: string | null
+  /** @encrypted */
+  label: string | null
+  deleted_at: Timestamp | null
+}
+
+export interface BookHighlight extends SyncableEntity {
+  book_id: Id
+  /** digital-content source asset (BK-6); nullable, no FK */
+  asset_id: Id | null
+  /** @encrypted */
+  captured_text: string | null
+  position: string | null
+  deleted_at: Timestamp | null
+}
+
+export interface BookQuote extends SyncableEntity {
+  book_id: Id
+  /** @encrypted */
+  text: string
+  position: string | null
+  deleted_at: Timestamp | null
+}
+
+/**
+ * The `reading` Session sub-type's Books-owned 1:1 extension (BK-10, BR-BK-4). Keyed `session_id` → the base
+ * `sessions.id` (UNIQUE, no FK); the shared timer/scheduling/lifecycle rides the base, these columns are the
+ * mode-adaptive capture. NO `deleted_at` — the base `sessions` owns lifecycle (F1). `statistics` is the dormant
+ * M2 granular-capture seam (a `json<Record>` column, parsed on read; M1 never writes it).
+ * `[FACT: schema/books.ts:147-162; db-4-books/_index.md:49,91,125]`
+ */
+export interface ReadingSession extends SyncableEntity {
+  session_id: Id
+  book_id: Id
+  asset_id: Id | null
+  pages_read: number | null
+  position_delta: string | null
+  stop_point: string | null
+  statistics: Record<string, unknown> | null
+}
+
+/**
+ * A reading plan — the Quota Planner (BK-11). Covers one or many books (via `reading_plan_books`). Holds
+ * `arrangement`/`goal_type`/target dates + the computed `quota_distribution` + `recalculation_state` (both stored
+ * json). **NO `measurement_kind`/`binding_mode`** — the pursuable goal is Purpose/target-owned, Books stores no axis
+ * (C-M1). `[FACT: schema/books.ts:165-174; rerun C-M1 books.md:71]`
+ */
+export interface ReadingPlan extends SyncableEntity {
+  arrangement: ReadingPlanArrangement
+  goal_type: ReadingPlanGoalType
+  target_date: string | null
+  target_completion_date: string | null
+  quota_distribution: Record<string, unknown> | null
+  recalculation_state: Record<string, unknown> | null
+  deleted_at: Timestamp | null
+}
+
+/** The plan↔books arrangement junction (BK-11). `sequence` orders `sequenced` plans; `quota` is the per-book target. */
+export interface ReadingPlanBook extends SyncableEntity {
+  plan_id: Id
+  book_id: Id
+  sequence: number | null
+  quota: number | null
+  deleted_at: Timestamp | null
 }
 
 export interface Skill extends SyncableEntity {
