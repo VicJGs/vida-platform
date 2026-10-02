@@ -309,6 +309,23 @@ export interface BookQuote extends SyncableEntity {
   deleted_at: Timestamp | null
 }
 
+/**
+ * The `reading` Session sub-type's Books-owned 1:1 extension (BK-10, BR-BK-4). Keyed `session_id` → the base
+ * `sessions.id` (UNIQUE, no FK); the shared timer/scheduling/lifecycle rides the base, these columns are the
+ * mode-adaptive capture. NO `deleted_at` — the base `sessions` owns lifecycle (F1). `statistics` is the dormant
+ * M2 granular-capture seam (a `json<Record>` column, parsed on read; M1 never writes it).
+ * `[FACT: schema/books.ts:147-162; db-4-books/_index.md:49,91,125]`
+ */
+export interface ReadingSession extends SyncableEntity {
+  session_id: Id
+  book_id: Id
+  asset_id: Id | null
+  pages_read: number | null
+  position_delta: string | null
+  stop_point: string | null
+  statistics: Record<string, unknown> | null
+}
+
 export interface Skill extends SyncableEntity {
   parent_skill_id: Id | null
   /** @encrypted */

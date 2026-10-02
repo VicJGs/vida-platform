@@ -146,6 +146,45 @@
   (id/text/position preserved); the editor stores a reference (quote id) and re-reads — copying text into the embed
   node is excluded (and a P6 concern). `[code: service.ts getEmbeddableQuotes]`
 
+## S6 — Reading sessions + Reader orchestration (BOO-23/24/25/26/39)
+
+- **BR-BK-S6-1 (`registerBooks()` / BOO-23, IR-1)** — a call-once, `DuplicateSubType`-guarded registration of the
+  `reading` `SessionTypeDef`, every field a transcription of **ADR-004 §3.2**: `effects:[]` (§3.2.2 — Books is a
+  non-feeder per **C-E2** `rerun books.md:73`), lifecycle `scheduled→in_progress→completed` (§3.2.3),
+  `permissions.allowed_effects:[]` (§3.2.4 — `∅` ⊆ shipped), `default_purpose:'reading'`. Idempotent. Registers ONLY
+  the sub-type (no study_method — Books isn't a review method). `createSession('reading')` throws
+  `SessionTypeNotFound` until it runs. `[code: service.ts registerBooks/READING_SESSION_TYPE_DEF; ADR-004 §3.2.2-3.2.4]`
+- **BR-BK-S6-2 (`startSession` / BOO-23, BK-10, ADR-004 §3.1/§3.2.1)** — creates a base `sessions` `reading` row
+  (`in_progress`, `started_at` stamped at creation — the engine auto-stamps only on a transition INTO in_progress) +
+  the Books `reading_sessions` extension keyed `session_id`, and attaches **the book** (`entity_type='book'`, the
+  §3.2.1 instance target; `book_asset` is an excluded ENTITY_TYPE). Guards the book (+ the asset, same-book, for
+  `{assetId}`). Never a `study_session` reuse, never a standalone table. `[code: service.ts startSession; _registry.ts:87-89]`
+- **BR-BK-S6-3 (`endSession` / BOO-24, BK-10)** — `id`=the base `session_id`; `completeSession` transitions the base
+  row in_progress→completed (stamps `ended_at`) + updates the extension's mode-adaptive capture
+  (`pages`→`pages_read`, `position`→`position_delta`, `stopPoint`→`stop_point`; `statistics` stays null — the dormant
+  M2 seam). Guards exists → `ReadingSessionNotFoundError`. `[code: service.ts endSession]`
+- **BR-BK-S6-4 (`attachPhoto` — photo ALWAYS stores / BOO-25, BK-10, conventions.md:53-54)** — stores the photo via
+  `attachment?` (absent ⇒ `attachment-unavailable`; present-port reject ⇒ fail-loud `AssetFileError`) AND OCRs it via
+  `ai?` (on_device, ZK-safe; absent/denied ⇒ `ai-unavailable`) — the two are **independent**: an OCR failure never
+  discards the photo. Durable photo row + daily-Journal feed = S10/M2. `[code: service.ts attachPhoto]`
+- **BR-BK-S6-5 (`getStatistics` / BOO-26, C-E2)** — derives `{sessionsLogged, pagesRead, minutesSpent}` over the
+  reading-sessions ledger (+ the base session `started_at`/`ended_at` clock for minutes, completed sessions only;
+  in-progress ⇒ 0 minutes but still counted). Never stored; no economy grant (grants ride base-`sessions`).
+  `[code: service.ts getStatistics]`
+- **BR-BK-S6-6 (`openReader` — the Reader service face / BOO-39, BK-15)** — decrypt the asset via
+  `attachment?.download` (absent/no `file_ref` ⇒ `attachment-unavailable`; present-port reject ⇒ `AssetFileError`,
+  the S6 decrypt throw site) + auto-start a reading session + resolve the asset's OWN position as a `MappedPosition`
+  (native ⇒ synced-to-self, null ⇒ not-synced; never a cross-format guess, BK-4). The read/listen/annotate chrome is
+  P6. `[code: service.ts openReader; parts/books.md:49]`
+- **BR-BK-S6-7 (C-E2 guard)** — Books declares no effect and emits no `award_xp`/`grant_currency` (realized by the
+  empty `reading` envelope); the reading-completion grant rides the base-`sessions` sub-type. S6 takes no `effects?`
+  dep. `[rerun C-E2 books.md:73,119,138; BK-10]`
+- **BR-BK-S6-8 (persistence / F1 + JSON boundary / N-fold)** — `reading_sessions` repo = `softDelete:false`,
+  `encryptedFields:[]`; NO `deleted_at` (session extension, BR-BK-4). `statistics` (`json<Record>`) is parsed
+  defensively on read (`toReadingSession`), write path dormant (M2). `@vida/types` `ReadingSession` interface added
+  (the S3/S4 N-fold). `AttachmentPort` extended additively with `download`. `[code: service.ts readingRepo/toReadingSession;
+  @vida/types learning.ts; schema/books.ts:147-162]`
+
 ## Carry-forward (homed to a later slice)
 
 - **`listQuotes` `tags?` filter** → S9 (lands with `scopeTag`/BOO-04). *(S4 "Embeddability = S5" carry-forward

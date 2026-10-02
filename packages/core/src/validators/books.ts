@@ -98,3 +98,21 @@ export const AddQuoteSchema = z.object({
   text: z.string().min(1),
   position: z.string().nullable().optional(),
 })
+
+// --- Reading sessions (BOO-23/24) --------------------------------------------
+
+/** startSession target (BOO-23) — the discriminated read target: an existing asset (`{assetId}`) or a manual
+ *  physical/braille session (`{manual:true}`). `[FACT: contract.md:24 (startSession bookId, assetId|manual); BK-10]` */
+export const StartSessionTargetSchema = z.union([
+  z.object({ assetId: z.string().min(1) }),
+  z.object({ manual: z.literal(true) }),
+])
+
+/** endSession mode-adaptive capture (BOO-24) — manual: `pages` + `stopPoint` (where the user stopped); digital/audio:
+ *  `position` (the position-delta). All optional — a session can end with only the base-row time logged. `statistics`
+ *  is NOT a caller field (the dormant M2 granular-capture seam). `[FACT: BK-10 business-rules.md:48-50; schema stop_point]` */
+export const EndSessionCaptureSchema = z.object({
+  pages: z.number().int().nonnegative().optional(),
+  position: z.string().min(1).optional(),
+  stopPoint: z.string().min(1).optional(),
+})

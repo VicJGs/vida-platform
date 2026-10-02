@@ -34,7 +34,15 @@
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
-import type { Book, BookAsset, BookChapter, BookBookmark, BookHighlight, BookQuote } from '@vida/types'
+import type {
+  Book,
+  BookAsset,
+  BookChapter,
+  BookBookmark,
+  BookHighlight,
+  BookQuote,
+  ReadingSession,
+} from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
   books,
@@ -43,12 +51,14 @@ import {
   bookBookmarks,
   bookHighlights,
   bookQuotes,
+  readingSessions,
   type BookRow,
   type BookChapterRow,
   type BookAssetRow,
   type BookBookmarkRow,
   type BookHighlightRow,
   type BookQuoteRow,
+  type ReadingSessionRow,
 } from '../../db/schema/books'
 import type { EntityLinkRow } from '../../db/schema/foundation/spaces'
 import type { PageRow } from '../../db/schema/notes'
@@ -61,8 +71,11 @@ import {
   AddBookmarkSchema,
   AddHighlightSchema,
   AddQuoteSchema,
+  StartSessionTargetSchema,
+  EndSessionCaptureSchema,
 } from '../../validators/books'
 import { IngestionDenied, type IngestionAct } from '../../foundation/ingestion'
+import { DuplicateSubType, type SessionTypeDef } from '../../foundation/sessions'
 import {
   BookNotFoundError,
   ChapterUniqueViolation,
@@ -72,7 +85,11 @@ import {
   AnnotationNotFoundError,
   AnnotationNotLinkableError,
   QuoteEmbedDisabledError,
+  ReadingSessionNotFoundError,
   BOOKS_ISBN_INTEGRATION_ID,
+  BOOKS_OCR_INTEGRATION_ID,
+  READING_SESSION_SUB_TYPE,
+  BOOK_ENTITY_TYPE,
   type BooksService,
   type BooksServiceDeps,
   type CreateBookInput,
@@ -91,6 +108,13 @@ import {
   type LookupResult,
   type IsbnLookupPayload,
   type BookMetadata,
+  type StartSessionTarget,
+  type ReadingCapture,
+  type ReadingSessionView,
+  type OcrResult,
+  type ReadingStatistics,
+  type ReaderContext,
+  type FileBlob,
 } from './types'
 
 // --- Row → @vida/types interface --------------------------------------------
@@ -128,8 +152,48 @@ const toQuote = (r: BookQuoteRow): BookQuote => ({
   _sync_status: r._sync_status as BookQuote['_sync_status'],
 })
 
+/** Defensive JSON read (the flashcards `parseJsonArray` boundary): degrade malformed/absent → null, never throw.
+ *  `reading_sessions.statistics` is a `json<Record>()` $type lie — the M1.0 repo does not auto-serialize. */
+function parseJsonObject(value: string | null): Record<string, unknown> | null {
+  if (value == null) return null
+  try {
+    return JSON.parse(value) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+// reading_sessions → ReadingSession (S6 N-fold). `statistics` parsed on read (dormant M2 write seam); only the
+// plain-text `_sync_status` needs the union cast. No `deleted_at` on the extension (F1).
+const toReadingSession = (r: ReadingSessionRow): ReadingSession => ({
+  ...r,
+  statistics: parseJsonObject(r.statistics as unknown as string | null),
+  _sync_status: r._sync_status as ReadingSession['_sync_status'],
+})
+
+/** IR-1 — the `reading` Session sub-type Books registers (BK-10). Every field is a TRANSCRIPTION of ADR-004 §3.2:
+ *  `effects:[]` (§3.2.2 — Books is a non-feeder per C-E2 `rerun books.md:73`, so it declares no effect; the
+ *  completion grant rides the base-`sessions` sub-type), the shared lifecycle (§3.2.3 scheduled→in_progress→
+ *  completed), `allowed_effects:[]` (§3.2.4 — a module sub-type's envelope ⊆ shipped; `∅` is subset-legal). Mirrors
+ *  the flashcards `REVIEW_SESSION_TYPE_DEF`. `[FACT: ADR-004 §3.2.2-3.2.4; rerun C-E2 books.md:73; BK-10]` */
+const READING_SESSION_TYPE_DEF: SessionTypeDef = {
+  sub_type: READING_SESSION_SUB_TYPE,
+  owner_module: 'books',
+  attachment_defaults: {},
+  effects: [],
+  lifecycle: {
+    transitions: [
+      { from: 'scheduled', to: 'in_progress', event: 'start' },
+      { from: 'in_progress', to: 'completed', event: 'complete' },
+    ],
+  },
+  permissions: { allowed_effects: [] },
+  default_purpose: 'reading',
+}
+
 export function createBooksService(deps: BooksServiceDeps): BooksService {
-  const { db, deviceId, ingestion, attachment, spaces, notes, preferences } = deps
+  const { db, deviceId, ingestion, attachment, spaces, notes, preferences, sessions, sessionRegistry, ai } =
+    deps
 
   // [E] fields (title/author/isbn/review/cover_url) → encryptedFields:[] M1.0 pass-through (dormant → M3/DB-5).
   const booksRepo = createRepository(db, books, { deviceId, softDelete: true, encryptedFields: [] })
@@ -143,6 +207,9 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
   const bookmarksRepo = createRepository(db, bookBookmarks, { deviceId, softDelete: true, encryptedFields: [] })
   const highlightsRepo = createRepository(db, bookHighlights, { deviceId, softDelete: true, encryptedFields: [] })
   const quotesRepo = createRepository(db, bookQuotes, { deviceId, softDelete: true, encryptedFields: [] })
+  // reading_sessions has NO deleted_at (session extension; the base `sessions` owns lifecycle, F1) → softDelete:false
+  // ⇒ delete() is a hard delete and findAll() skips the deleted_at filter. No [E] fields → encryptedFields:[].
+  const readingRepo = createRepository(db, readingSessions, { deviceId, softDelete: false, encryptedFields: [] })
 
   // --- Works CRUD (BOO-01) --------------------------------------------------
 
@@ -552,6 +619,161 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     return rows.filter((r) => overrides.get(r.book_id) ?? global).map(toQuote) // override > global (BR-BK-S5-2)
   }
 
+  // --- S6: Reading sessions + Reader orchestration (BOO-23/24/25/26/39) ------
+
+  // IR-1 — register the `reading` sub-type (call-once, idempotent). A 2nd call throws DuplicateSubType → no-op.
+  // `createSession('reading')` throws SessionTypeNotFound until this runs (service.ts:276, the flashcards gate).
+  async function registerBooks(): Promise<void> {
+    try {
+      await sessionRegistry.register(READING_SESSION_TYPE_DEF)
+    } catch (err) {
+      if (!(err instanceof DuplicateSubType)) throw err
+    }
+  }
+
+  // reading_sessions is keyed by `session_id` (the base session id) — the uniform S6 handle (R1). No deleted_at.
+  async function findReadingSession(sessionId: string): Promise<ReadingSessionRow> {
+    const rows = await readingRepo.findWhere(eq(readingSessions.session_id, sessionId))
+    const row = rows[0]
+    if (row == null) throw new ReadingSessionNotFoundError(sessionId)
+    return row
+  }
+
+  async function startSession(bookId: string, target: StartSessionTarget): Promise<ReadingSessionView> {
+    const v = StartSessionTargetSchema.parse(target)
+    if (!(await booksRepo.findById(bookId))) throw new BookNotFoundError(bookId)
+    let assetId: string | null = null
+    if ('assetId' in v) {
+      const asset = await assetsRepo.findById(v.assetId)
+      // same-book guard: a cross-book asset is a miss (the getMappedPosition precedent).
+      if (!asset || asset.book_id !== bookId) throw new BookAssetNotFoundError(v.assetId)
+      assetId = v.assetId
+    }
+    // Compose the base spine. R8 — stamp `started_at` at creation: the #32 engine only auto-stamps it on a
+    // transition INTO in_progress, but we create directly at in_progress, so getStatistics would have no start
+    // clock otherwise (the startFocus precedent). `reading` maps no focus/study extension (extension stays null).
+    const session = await sessions.createSession({
+      sub_type: READING_SESSION_SUB_TYPE,
+      scheduling_mode: 'ad_hoc',
+      status: 'in_progress',
+      started_at: Date.now(),
+    })
+    // Books writes its OWN 1:1 extension keyed `session_id` (the base owns lifecycle; R10 — this is a separate write
+    // from createSession's tx, the flashcards compose; an orphan base session is harmless + re-drivable, no-FK).
+    const reading = await readingRepo.create({
+      session_id: session.session.id,
+      book_id: bookId,
+      asset_id: assetId,
+      pages_read: null,
+      position_delta: null,
+      stop_point: null,
+      statistics: null,
+    } satisfies CreateInput<typeof readingSessions>)
+    // R7 — attach the BOOK as the ADR-004 §3.2.1 target ("this session is about X"); `book_asset` is an excluded
+    // ENTITY_TYPE (_registry.ts:87) → attaching it would fail loud. The asset linkage lives in `reading_sessions.asset_id`.
+    await sessions.attach(session.session.id, BOOK_ENTITY_TYPE, bookId, 'instance')
+    return { session, reading: toReadingSession(reading) }
+  }
+
+  async function endSession(id: string, capture: ReadingCapture): Promise<ReadingSessionView> {
+    const v = EndSessionCaptureSchema.parse(capture)
+    const existing = await findReadingSession(id) // guard (ReadingSessionNotFoundError) + the extension row to patch
+    // Complete the base row — the #32 lifecycle engine transitions in_progress→completed + stamps ended_at (R8).
+    await sessions.completeSession(id)
+    // Update the extension's mode-adaptive capture (R9 — `statistics` stays the dormant M2 seam; not written here).
+    const patch: Record<string, unknown> = {}
+    if (v.pages !== undefined) patch.pages_read = v.pages
+    if (v.position !== undefined) patch.position_delta = v.position
+    if (v.stopPoint !== undefined) patch.stop_point = v.stopPoint
+    if (Object.keys(patch).length > 0) {
+      await readingRepo.update(existing.id, patch as UpdateInput<typeof readingSessions>)
+    }
+    const session = await sessions.getSession(id)
+    if (session == null) throw new ReadingSessionNotFoundError(id) // the base row was just completed → present
+    const reading = (await readingRepo.findById(existing.id))! // just updated the row found above
+    return { session, reading: toReadingSession(reading) }
+  }
+
+  async function attachPhoto(
+    sessionId: string,
+    photo: FileBlob,
+  ): Promise<{ stored: AttachmentRef; ocr: OcrResult }> {
+    const reading = await findReadingSession(sessionId) // guard + yields book_id for the upload
+    // (a) store — the photo ALWAYS stores when a port is present (BK-10, conventions.md:53-54); absent ⇒
+    // attachment-unavailable; a PRESENT port whose upload rejects is a real R2 error ⇒ fail-loud AssetFileError
+    // (the addAsset precedent, BR-BK-S3-2).
+    let stored: AttachmentRef = { status: 'attachment-unavailable' }
+    if (attachment) {
+      try {
+        const res = await attachment.upload({ blob: photo, bookId: reading.book_id })
+        stored = { status: 'stored', fileRef: res.fileRef }
+      } catch (err) {
+        throw new AssetFileError(`Photo upload failed for session ${sessionId}`, err)
+      }
+    }
+    // (b) OCR — INDEPENDENT of (a): a denied/failed OCR never touches `stored` (BK-10 "the photo still stores").
+    // OCR runs on_device (the photo is vault content — ZK-safe, conventions.md:57). M1 dormant (askModel denies ⇒
+    // ai-unavailable); at M2 res.content IS the extracted position (source=ai, AI6). The real photo-encoding +
+    // position-parsing is the M2 pipeline (zero-signature swap).
+    let ocr: OcrResult = { status: 'ai-unavailable' }
+    if (ai) {
+      try {
+        const res = await ai.askModel({ defId: BOOKS_OCR_INTEGRATION_ID, mode: 'on_device' })
+        ocr = { status: 'ready', position: res.content, source: 'ai' }
+      } catch (err) {
+        ocr = { status: 'ai-unavailable', reason: err instanceof Error ? err.message : String(err) }
+      }
+    }
+    return { stored, ocr }
+  }
+
+  async function getStatistics(scope: { bookId?: string }): Promise<ReadingStatistics> {
+    // BOO-26 — derive over the reading-sessions ledger (per-book or all); never stored (C-E2 — no economy grant).
+    const rows = scope.bookId
+      ? await readingRepo.findWhere(eq(readingSessions.book_id, scope.bookId))
+      : await readingRepo.findAll() // softDelete:false ⇒ no deleted_at filter referenced
+    let pagesRead = 0
+    let minutesSpent = 0
+    for (const r of rows) {
+      pagesRead += r.pages_read ?? 0
+      // R11 — timing lives on the BASE session (started_at/ended_at), not the extension; completed sessions only
+      // (an in-progress session has ended_at=null ⇒ 0 minutes but still counts in sessionsLogged).
+      const s = await sessions.getSession(r.session_id)
+      const started = s?.session.started_at
+      const ended = s?.session.ended_at
+      if (started != null && ended != null) {
+        minutesSpent += Math.max(0, Math.round((ended - started) / 60000))
+      }
+    }
+    return { sessionsLogged: rows.length, pagesRead, minutesSpent }
+  }
+
+  async function openReader(assetId: string): Promise<ReaderContext> {
+    const asset = await assetsRepo.findById(assetId)
+    if (!asset) throw new BookAssetNotFoundError(assetId)
+    // (a) decrypt — deny-safe: absent port OR a physical asset (no file_ref) ⇒ attachment-unavailable; a PRESENT
+    // port whose download rejects ⇒ fail-loud AssetFileError (the S6 decrypt throw site, BOO-44). The decrypted
+    // bytes stream to the P6 Reader chrome; the service face returns only the access outcome.
+    let file: AttachmentRef = { status: 'attachment-unavailable' }
+    if (attachment && asset.file_ref) {
+      try {
+        await attachment.download({ fileRef: asset.file_ref })
+        file = { status: 'stored', fileRef: asset.file_ref }
+      } catch (err) {
+        throw new AssetFileError(`Reader decrypt failed for asset ${assetId}`, err)
+      }
+    }
+    // (b) auto-start a reading session for this asset's book+asset (BK-15 "auto-session tracking").
+    const reading = await startSession(asset.book_id, { assetId })
+    // (c) resolve the asset's OWN position as a MappedPosition (synced-to-self | not-synced) — never a cross-format
+    // guess (BK-4; the cross-format map stays getMappedPosition's deferred NotSyncedState).
+    const position: MappedPosition =
+      asset.native_position != null
+        ? { status: 'synced', position: asset.native_position, sourceAssetId: assetId }
+        : { status: 'not-synced', nativePosition: null }
+    return { file, sessionId: reading.session.session.id, position }
+  }
+
   return {
     createBook,
     updateBook,
@@ -575,5 +797,11 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     listAnnotations,
     listQuotes,
     getEmbeddableQuotes,
+    registerBooks,
+    startSession,
+    endSession,
+    attachPhoto,
+    getStatistics,
+    openReader,
   }
 }

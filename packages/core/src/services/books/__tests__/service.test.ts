@@ -22,21 +22,38 @@ import {
   AnnotationNotFoundError,
   AnnotationNotLinkableError,
   QuoteEmbedDisabledError,
+  ReadingSessionNotFoundError,
 } from '../types'
+import type { AiService } from '../../../foundation/ai'
 import { IngestionDenied, type IngestionGuard } from '../../../foundation/ingestion'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
 import { createSpacesService } from '../../../foundation/spaces/service'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService } from '../../notes'
+import { createSessionRegistry, SessionTypeNotFound } from '../../../foundation/sessions'
+import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import { createSessionsService } from '../../sessions'
 
-// The REAL required deps (spaces + notes) over the live store — exercises the entity-type registry enforcement
-// (BK-6 highlight rejection) + ensureEntityNote idempotency a mock would bypass (the knowledge harness precedent).
+// The REAL required deps (spaces + notes + sessions) over the live store — exercises the entity-type registry
+// enforcement (BK-6 highlight rejection; the attach `book` target), ensureEntityNote idempotency, and the real
+// ADR-004 session spine (createSession sub_type gate + completeSession lifecycle) a mock would bypass (the
+// knowledge/flashcards harness precedent). NOTE: setup() does NOT call registerBooks — each S6 test that needs a
+// live session calls it first, so Acceptance #1 can assert the pre-registration SessionTypeNotFound throw.
 function booksDeps(db: DrizzleDb) {
   const registry = createTaggableTypeRegistry()
   const spaces = createSpacesService(db, 'test-device', registry)
   const backlinks = createBacklinkResolver(db, 'test-device')
   const notes = createNotesService({ db, deviceId: 'test-device', spaces, backlinks, registry })
-  return { db, deviceId: 'test-device' as const, spaces, notes }
+  const sessionRegistry = createSessionRegistry(db, 'test-device')
+  const rail = createEffectRail(db, createEffectRegistry())
+  const sessions = createSessionsService({
+    db,
+    deviceId: 'test-device',
+    registry: sessionRegistry,
+    rail,
+    entityRegistry: registry,
+  })
+  return { db, deviceId: 'test-device' as const, spaces, notes, sessions, sessionRegistry }
 }
 
 // Better-sqlite3 driver adapter (verbatim from the knowledge harness — the full SqliteDriver surface).
@@ -77,6 +94,7 @@ interface Harness {
   svc: BooksService
   db: DrizzleDb
   bsql: Database.Database
+  deps: ReturnType<typeof booksDeps>
 }
 
 async function setup(): Promise<Harness> {
@@ -85,8 +103,9 @@ async function setup(): Promise<Harness> {
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createBooksService(booksDeps(db))
-  return { svc, db, bsql }
+  const deps = booksDeps(db)
+  const svc = createBooksService(deps)
+  return { svc, db, bsql, deps }
 }
 
 describe('mod-books S1 — Works CRUD + reframe', () => {
@@ -373,10 +392,14 @@ describe('mod-books S2 — ISBN lookup port (BOO-07/08), deny-safe', () => {
 
 const blob = (name: string): FileBlob => ({ bytes: new Uint8Array([1, 2, 3]), mimeType: 'application/pdf', filename: name })
 
-// A configurable mock AttachmentPort — mirrors mockIngestion. Default upload succeeds with a deterministic ref.
-function mockAttachment(opts: { upload?: AttachmentPort['upload'] } = {}): AttachmentPort {
+// A configurable mock AttachmentPort — mirrors mockIngestion. Default upload/download succeed deterministically;
+// `download` is the S6 Reader decrypt seam (BOO-39).
+function mockAttachment(
+  opts: { upload?: AttachmentPort['upload']; download?: AttachmentPort['download'] } = {},
+): AttachmentPort {
   return {
     upload: opts.upload ?? (async ({ bookId }) => ({ fileRef: `r2://${bookId}/file` })),
+    download: opts.download ?? (async () => ({ blob: { bytes: new Uint8Array([1, 2, 3]) } })),
   }
 }
 
@@ -758,5 +781,208 @@ describe('mod-books S5 — quote-embed feed + toggles (BOO-21/22)', () => {
     const a = await h.svc.createBook({ title: 'Empty' })
     const svc = createBooksService({ ...booksDeps(h.db), preferences: mockPreferences({ global: true }) })
     expect(await svc.getEmbeddableQuotes({ bookId: a.id })).toHaveLength(0)
+  })
+})
+
+// A configurable mock AiService (OCR). Default askModel DENIES (the M1 deny-safe state — both ports absent). Books
+// never calls checkModelCall, so it throws if touched. `[FACT: knowledge/service.ts:577-582 (ai? deny-safe)]`
+function mockAi(opts: { reply?: string; throws?: boolean } = {}): AiService {
+  return {
+    async checkModelCall() {
+      throw new Error('unused by books') // never called — Books only uses askModel
+    },
+    async askModel() {
+      if (opts.throws ?? true) throw new Error('model_unavailable') // M1 deny-safe default
+      return { content: opts.reply ?? 'page 42' }
+    },
+  }
+}
+
+describe('mod-books S6 — reading sessions + Reader orchestration (BOO-23/24/25/26/39)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // (1) Registration + the createSession gate (PLAN §4.1).
+  it('startSession throws SessionTypeNotFound until registerBooks runs; registerBooks is idempotent', async () => {
+    const b = await h.svc.createBook({ title: 'Dune' })
+    await expect(h.svc.startSession(b.id, { manual: true })).rejects.toBeInstanceOf(SessionTypeNotFound)
+    await h.svc.registerBooks()
+    const rsv = await h.svc.startSession(b.id, { manual: true })
+    expect(rsv.session.session.sub_type).toBe('reading')
+    await expect(h.svc.registerBooks()).resolves.toBeUndefined() // 2nd call = no-op (DuplicateSubType swallowed)
+  })
+
+  // C-E2 (PLAN §4.8) — the registered `reading` envelope is EMPTY (no economy grant; grants ride base-sessions).
+  it('registers the `reading` sub-type with an empty effect envelope (C-E2)', async () => {
+    await h.svc.registerBooks()
+    const def = await h.deps.sessionRegistry.get('reading')
+    expect(def.owner_module).toBe('books')
+    expect(def.effects).toEqual([])
+    expect(def.permissions.allowed_effects).toEqual([])
+  })
+
+  // (2) startSession({manual}) — base in_progress (+started_at), extension row, book attached (PLAN §4.2).
+  it('startSession(manual) — base in_progress + started_at, extension (asset_id null), book attached', async () => {
+    await h.svc.registerBooks()
+    const b = await h.svc.createBook({ title: 'Neuromancer' })
+    const rsv = await h.svc.startSession(b.id, { manual: true })
+    expect(rsv.session.session.status).toBe('in_progress')
+    expect(rsv.session.session.started_at).toBeTypeOf('number') // R8 — stamped at creation
+    expect(rsv.reading.session_id).toBe(rsv.session.session.id)
+    expect(rsv.reading.book_id).toBe(b.id)
+    expect(rsv.reading.asset_id).toBeNull()
+    // R7 — the BOOK (not an asset) is the ADR-004 §3.2.1 target.
+    const atts = h.bsql
+      .prepare('SELECT entity_type, entity_id, level FROM session_attachments WHERE session_id = ?')
+      .all(rsv.session.session.id)
+    expect(atts).toContainEqual({ entity_type: 'book', entity_id: b.id, level: 'instance' })
+  })
+
+  it('startSession — unknown book ⇒ BookNotFoundError', async () => {
+    await h.svc.registerBooks()
+    await expect(h.svc.startSession('nope', { manual: true })).rejects.toBeInstanceOf(BookNotFoundError)
+  })
+
+  // (3) startSession({assetId}) — asset_id set; unknown/cross-book asset ⇒ BookAssetNotFoundError (PLAN §4.3).
+  it('startSession({assetId}) — asset_id captured; cross-book + unknown asset reject', async () => {
+    await h.svc.registerBooks()
+    const a = await h.svc.createBook({ title: 'A' })
+    const b = await h.svc.createBook({ title: 'B' })
+    const asset = await h.svc.addAsset(a.id, { format: 'epub' })
+    const rsv = await h.svc.startSession(a.id, { assetId: asset.asset.id })
+    expect(rsv.reading.asset_id).toBe(asset.asset.id)
+    await expect(h.svc.startSession(a.id, { assetId: 'ghost' })).rejects.toBeInstanceOf(BookAssetNotFoundError)
+    // asset belongs to A, not B → same-book guard rejects.
+    await expect(h.svc.startSession(b.id, { assetId: asset.asset.id })).rejects.toBeInstanceOf(
+      BookAssetNotFoundError,
+    )
+  })
+
+  // (4) endSession — base completed (+ended_at) + capture columns; unknown id rejects; no-capture leaves nulls.
+  it('endSession — completes the base row + records mode-adaptive capture', async () => {
+    await h.svc.registerBooks()
+    const b = await h.svc.createBook({ title: 'SICP' })
+    const started = await h.svc.startSession(b.id, { manual: true })
+    const ended = await h.svc.endSession(started.session.session.id, { pages: 12, stopPoint: 'ch.2 end' })
+    expect(ended.session.session.status).toBe('completed')
+    expect(ended.session.session.ended_at).toBeTypeOf('number')
+    expect(ended.reading.pages_read).toBe(12)
+    expect(ended.reading.stop_point).toBe('ch.2 end')
+    expect(ended.reading.position_delta).toBeNull()
+    expect(ended.reading.statistics).toBeNull() // dormant M2 seam
+  })
+
+  it('endSession — unknown session id ⇒ ReadingSessionNotFoundError; no-capture leaves columns null', async () => {
+    await h.svc.registerBooks()
+    await expect(h.svc.endSession('ghost', { pages: 1 })).rejects.toBeInstanceOf(ReadingSessionNotFoundError)
+    const b = await h.svc.createBook({ title: 'Empty capture' })
+    const started = await h.svc.startSession(b.id, { manual: true })
+    const ended = await h.svc.endSession(started.session.session.id, {})
+    expect(ended.session.session.status).toBe('completed')
+    expect(ended.reading.pages_read).toBeNull()
+  })
+
+  // (5) attachPhoto — the photo ALWAYS stores; OCR is INDEPENDENT (PLAN §4.5).
+  it('attachPhoto — no ports ⇒ both unavailable (no throw)', async () => {
+    await h.svc.registerBooks()
+    const b = await h.svc.createBook({ title: 'Photo' })
+    const s = await h.svc.startSession(b.id, { manual: true })
+    const out = await h.svc.attachPhoto(s.session.session.id, { bytes: new Uint8Array([9]) })
+    expect(out.stored).toEqual({ status: 'attachment-unavailable' })
+    expect(out.ocr).toEqual({ status: 'ai-unavailable' })
+  })
+
+  it('attachPhoto — present attachment stores; a denied OCR never touches `stored`', async () => {
+    const svc = createBooksService({ ...h.deps, attachment: mockAttachment(), ai: mockAi({ throws: true }) })
+    await svc.registerBooks()
+    const b = await svc.createBook({ title: 'Photo2' })
+    const s = await svc.startSession(b.id, { manual: true })
+    const out = await svc.attachPhoto(s.session.session.id, { bytes: new Uint8Array([1]) })
+    expect(out.stored.status).toBe('stored')
+    expect(out.ocr.status).toBe('ai-unavailable') // OCR denied, but the photo still stored (BK-10)
+  })
+
+  it('attachPhoto — unknown session ⇒ ReadingSessionNotFoundError', async () => {
+    await h.svc.registerBooks()
+    await expect(h.svc.attachPhoto('ghost', { bytes: new Uint8Array([0]) })).rejects.toBeInstanceOf(
+      ReadingSessionNotFoundError,
+    )
+  })
+
+  it('attachPhoto — a present port whose upload rejects ⇒ AssetFileError (the R2 store-failure path)', async () => {
+    const svc = createBooksService({
+      ...h.deps,
+      attachment: mockAttachment({
+        upload: async () => {
+          throw new Error('r2 down')
+        },
+      }),
+    })
+    await svc.registerBooks()
+    const b = await svc.createBook({ title: 'StoreFail' })
+    const s = await svc.startSession(b.id, { manual: true })
+    await expect(svc.attachPhoto(s.session.session.id, { bytes: new Uint8Array([1]) })).rejects.toBeInstanceOf(
+      AssetFileError,
+    )
+  })
+
+  // (6) getStatistics — derived over the ledger, per-book and all (PLAN §4.6).
+  it('getStatistics — derives sessionsLogged + pagesRead per-book and all', async () => {
+    await h.svc.registerBooks()
+    const a = await h.svc.createBook({ title: 'A' })
+    const b = await h.svc.createBook({ title: 'B' })
+    const s1 = await h.svc.startSession(a.id, { manual: true })
+    await h.svc.endSession(s1.session.session.id, { pages: 10 })
+    const s2 = await h.svc.startSession(a.id, { manual: true })
+    await h.svc.endSession(s2.session.session.id, { pages: 5 })
+    await h.svc.startSession(b.id, { manual: true }) // in-progress: counts in sessionsLogged, 0 minutes
+    const statsA = await h.svc.getStatistics({ bookId: a.id })
+    expect(statsA.sessionsLogged).toBe(2)
+    expect(statsA.pagesRead).toBe(15)
+    expect(statsA.minutesSpent).toBeGreaterThanOrEqual(0)
+    const all = await h.svc.getStatistics({})
+    expect(all.sessionsLogged).toBe(3)
+    expect(all.pagesRead).toBe(15)
+  })
+
+  // (7) openReader — decrypt (deny-safe) + auto-session + position (PLAN §4.7).
+  it('openReader — no attachment ⇒ attachment-unavailable + auto-session + synced-to-self position', async () => {
+    await h.svc.registerBooks()
+    const b = await h.svc.createBook({ title: 'Reader' })
+    const asset = await h.svc.addAsset(b.id, { format: 'pdf', native_position: 'page 7' })
+    const ctx = await h.svc.openReader(asset.asset.id)
+    expect(ctx.file).toEqual({ status: 'attachment-unavailable' })
+    expect(ctx.sessionId).toBeTruthy()
+    expect(ctx.position).toEqual({ status: 'synced', position: 'page 7', sourceAssetId: asset.asset.id })
+  })
+
+  it('openReader — no native position ⇒ not-synced; unknown asset ⇒ BookAssetNotFoundError', async () => {
+    await h.svc.registerBooks()
+    const b = await h.svc.createBook({ title: 'Reader2' })
+    const asset = await h.svc.addAsset(b.id, { format: 'epub' }) // no native_position
+    const ctx = await h.svc.openReader(asset.asset.id)
+    expect(ctx.position).toEqual({ status: 'not-synced', nativePosition: null })
+    await expect(h.svc.openReader('ghost')).rejects.toBeInstanceOf(BookAssetNotFoundError)
+  })
+
+  it('openReader — present attachment whose download rejects ⇒ AssetFileError (the decrypt throw site)', async () => {
+    await h.svc.registerBooks() // shared sessionRegistry (h.deps) → 'reading' available to every service below
+    const b = await h.svc.createBook({ title: 'Broken' })
+    // Store an asset WITH a file_ref so openReader reaches the download/decrypt path.
+    const storeSvc = createBooksService({ ...h.deps, attachment: mockAttachment() })
+    const uploaded = await storeSvc.addAsset(b.id, { format: 'pdf', file: { bytes: new Uint8Array([1]) } })
+    expect(uploaded.file.status).toBe('stored')
+    // A reader whose download rejects → the S6 decrypt throw site (BOO-44).
+    const readerSvc = createBooksService({
+      ...h.deps,
+      attachment: mockAttachment({
+        download: async () => {
+          throw new Error('r2 down')
+        },
+      }),
+    })
+    await expect(readerSvc.openReader(uploaded.asset.id)).rejects.toBeInstanceOf(AssetFileError)
   })
 })

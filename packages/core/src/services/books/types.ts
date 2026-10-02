@@ -10,11 +10,23 @@
 // ============================================================================
 
 import type { z } from 'zod'
-import type { Book, BookAsset, BookChapter, BookBookmark, BookHighlight, BookQuote, BookStatus } from '@vida/types'
+import type {
+  Book,
+  BookAsset,
+  BookChapter,
+  BookBookmark,
+  BookHighlight,
+  BookQuote,
+  BookStatus,
+  ReadingSession,
+} from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type { IngestionGuard } from '../../foundation/ingestion'
 import type { SpacesService } from '../../foundation/spaces'
 import type { NotesService } from '../notes'
+import type { SessionsService, Session } from '../sessions'
+import type { SessionRegistry } from '../../foundation/sessions'
+import type { AiService } from '../../foundation/ai'
 import type { EntityLinkRow } from '../../db/schema/foundation/spaces'
 import type { PageRow } from '../../db/schema/notes'
 import type {
@@ -25,6 +37,8 @@ import type {
   AddBookmarkSchema,
   AddHighlightSchema,
   AddQuoteSchema,
+  StartSessionTargetSchema,
+  EndSessionCaptureSchema,
 } from '../../validators/books'
 
 /** The `entity_type` a book registers in the shared taggable/pages/links registries (pre-seeded by DB-4
@@ -59,7 +73,19 @@ export interface BooksServiceDeps {
    *  security gate). S8 appends the conflict preset-rule read (zero signature change). Real Preferences keys land at
    *  M2/P6 (zero-signature swap). `[FACT: interpretation.md:59-60; business-rules.md:35-37 (BK-7)]` */
   preferences?: PreferencesPort
-  // S6–S10 append: sessions / sessionRegistry (required) + ai? / effects? / backlinks (S9/BOO-46).
+  /** S6 — ADR-004 base `sessions` `reading` sub-type spine (timer/scheduling/lifecycle) + the Books 1:1 extension.
+   *  REQUIRED: reading sessions are core to S6 (the flashcards required-dep precedent). `[ADR-004 §3.1; BK-10]` */
+  sessions: SessionsService
+  /** S6 — AR-5 `SessionRegistry`: `registerBooks()` registers the `reading` sub-type; `createSession('reading')`
+   *  throws `SessionTypeNotFound` before any write until it runs (service.ts:276). REQUIRED. `[ADR-004 §3.2;
+   *  flashcards/types.ts:47]` */
+  sessionRegistry: SessionRegistry
+  /** S6 — ADR-015 OCR for page-photo position extraction (BOO-25). Optional deny-safe port (the knowledge `ai?`
+   *  precedent): absent OR a thrown deny ⇒ `ai-unavailable`; the photo stores regardless (BK-10). OCR runs
+   *  `on_device` (the photo is vault content — ZK-safe, conventions.md:57). M1 dormant (askModel denies — both ports
+   *  absent); the real OCR pipeline = M2. `[ADR-015 AI5/AI6; parts/books.md:35 (BOO-25)]` */
+  ai?: AiService
+  // S7–S10 append: effects? (measurement fan-out, S10) + backlinks (S9/BOO-46).
 }
 
 // --- S3: asset file upload (BOO-09) — deny-safe port + service-layer types (the LookupResult precedent) ---
@@ -80,6 +106,11 @@ export interface AttachmentPort {
   // `fileRef` is the stable R2 handle the asset row stores (and M2 GC deletes by) — so upload runs BEFORE the row
   // is created and nothing persists on a failure. No `assetId` needed pre-creation.
   upload(input: { blob: FileBlob; bookId: string }): Promise<{ fileRef: string }>
+  /** S6 — decrypt/download a stored file for the Reader (BOO-39). An ADDITIVE extension of the S3 port (zero break
+   *  to `upload`). The whole port is absent at M1 ⇒ `openReader` returns `attachment-unavailable`; a PRESENT port
+   *  whose `download` rejects is a real R2/decrypt error ⇒ fail-loud `AssetFileError` (the S6 decrypt throw site,
+   *  BOO-44). M2 provides the real pipeline (zero-signature swap). `[FACT: parts/books.md:49 (BOO-39); slice-map.md:77]` */
+  download(input: { fileRef: string }): Promise<{ blob: FileBlob }>
 }
 
 /** addAsset's file outcome (BOO-09) — the frozen 2-state `AttachmentRef`: `stored` (port present + success) or
@@ -293,6 +324,64 @@ export class QuoteEmbedDisabledError extends Error {
   }
 }
 
+// --- S6: Reading sessions + Reader (BOO-23/24/25/26/39) — service-layer types + the sub-type identity ---
+
+/** The `reading` Session sub-type Books registers (IR-1). A sentinel transcribing ADR-004 §3.2 — the full
+ *  `SessionTypeDef` is built in `service.ts` (the flashcards `REVIEW_SESSION_TYPE_DEF` precedent). `[ADR-004 §3.2]` */
+export const READING_SESSION_SUB_TYPE = 'reading'
+
+/** Books' OWN OCR integration identity (X11 → ADR-015; BOO-25/42). Names Books' own integration — the
+ *  `BOOKS_ISBN_INTEGRATION_ID` precedent — NOT a synthesized downstream id (No-Guessing). OCR runs `on_device`
+ *  (the photo is vault content, ZK-safe, conventions.md:57). Inert at M1 (askModel denies). */
+export const BOOKS_OCR_INTEGRATION_ID = 'books.ocr'
+
+/** startSession target (BOO-23) — an existing asset or a manual (physical/braille) session. `z.infer` of the validator. */
+export type StartSessionTarget = z.infer<typeof StartSessionTargetSchema>
+/** endSession mode-adaptive capture (BOO-24, BK-10). `z.infer` of the validator. */
+export type ReadingCapture = z.infer<typeof EndSessionCaptureSchema>
+
+/** The composed reading-session read shape (BOO-23) — the base `sessions` row (its focus/study extension is always
+ *  null for `reading`) PLUS the Books `reading_sessions` extension. `[FACT: BK-10; ADR-004 §3.1]` */
+export interface ReadingSessionView {
+  session: Session
+  reading: ReadingSession
+}
+
+/** attachPhoto OCR outcome (BOO-25) — the deny-safe port result (the `LookupResult` precedent). `ready` carries the
+ *  extracted position + `source:'ai'` provenance (AI6); `ai-unavailable` = no `ai` dep OR a denied/failed call. The
+ *  photo stores regardless (BK-10). `[FACT: conventions.md:53-54; ADR-015 AI6]` */
+export type OcrResult =
+  | { status: 'ready'; position: string; source: 'ai' }
+  | { status: 'ai-unavailable'; reason?: string }
+
+/** getStatistics derivation (BOO-26) — aggregated over the reading-sessions ledger; NEVER stored (derived-on-read,
+ *  structure-data State-management). `minutesSpent` sums completed sessions only (an in-progress session has no
+ *  `ended_at` ⇒ 0 minutes, but still counts in `sessionsLogged`). `[FACT: BK-10; rerun C-E2:73]` */
+export interface ReadingStatistics {
+  sessionsLogged: number
+  pagesRead: number
+  minutesSpent: number
+}
+
+/** openReader service face (BOO-39) — decrypt + auto-session + position orchestration; the read/listen/annotate
+ *  chrome is P6. `file` = the decrypt outcome (`attachment?` deny-safe); `sessionId` = the auto-started base
+ *  session; `position` = the asset's own native position as a `MappedPosition` (synced-to-self | not-synced, never a
+ *  cross-format guess — BK-4). `[FACT: parts/books.md:49 (BOO-39); BK-15 business-rules.md:78-79]` */
+export interface ReaderContext {
+  file: AttachmentRef
+  sessionId: string
+  position: MappedPosition
+}
+
+/** BOO-24/25 — a reading session id (the base `session_id`) did not resolve to a `reading_sessions` row (guard-exists
+ *  at `endSession`/`attachPhoto`; the `BookNotFoundError` pattern, no-FK app-layer integrity). */
+export class ReadingSessionNotFoundError extends Error {
+  constructor(public readonly sessionId: string) {
+    super(`Reading session not found: ${sessionId}`)
+    this.name = 'ReadingSessionNotFoundError'
+  }
+}
+
 export interface BooksService {
   // ── S1: Works CRUD + reframe (BOO-01/02/03/48) ──────────────────────────────
   /** BOO-01 — create a WORK row. `progress` is never accepted (derived, BR-BK-2); `status` defaults to
@@ -368,4 +457,29 @@ export interface BooksService {
    *  call for a toggle-OFF book throws `QuoteEmbedDisabledError`; the GLOBAL `{}` feed EXCLUDES toggle-off books
    *  (no throw). Soft-delete filtered. Consumed by the `@vida/editor` quote-embed block (P6). */
   getEmbeddableQuotes(scope: { bookId?: string }): Promise<BookQuote[]>
+
+  // ── S6: Reading sessions + Reader (BOO-23/24/25/26/39) ───────────────────────
+  /** IR-1 — register the `reading` Session sub-type (call-once, `DuplicateSubType`-guarded, idempotent). Every field
+   *  transcribes ADR-004 §3.2 (`effects:[]` §3.2.2 + C-E2; lifecycle §3.2.3; `allowed_effects:[]` §3.2.4).
+   *  `createSession('reading')` throws `SessionTypeNotFound` until this runs. Registers ONLY the sub-type — no
+   *  `study_method` (Books isn't a review method, unlike flashcards). */
+  registerBooks(): Promise<void>
+  /** BOO-23 — start a reading session: a base `sessions` `reading` row (`in_progress`, `started_at` stamped) + the
+   *  Books `reading_sessions` extension keyed `session_id`, with the BOOK attached as the ADR-004 §3.2.1 target
+   *  (`entity_type='book'`). Guards the book (+ the asset for `{assetId}`, same-book). `[BK-10; ADR-004 §3.1/§3.2.1]` */
+  startSession(bookId: string, target: StartSessionTarget): Promise<ReadingSessionView>
+  /** BOO-24 — end a reading session (`id` = the base `session_id`): `completeSession` (stamps `ended_at`) + update the
+   *  extension's mode-adaptive capture (`pages`/`position`/`stopPoint`). Guards exists (`ReadingSessionNotFoundError`). */
+  endSession(id: string, capture: ReadingCapture): Promise<ReadingSessionView>
+  /** BOO-25 — capture a page photo for a session: the photo ALWAYS stores (`attachment?` deny-safe; present-port
+   *  reject ⇒ `AssetFileError`) AND is OCR'd for a position (`ai?` deny-safe) — the two are independent, an OCR
+   *  failure never discards the photo (BK-10). Guards the session exists. `[conventions.md:53-54]` */
+  attachPhoto(sessionId: string, photo: FileBlob): Promise<{ stored: AttachmentRef; ocr: OcrResult }>
+  /** BOO-26 — reading statistics derived over the sessions ledger (per-book or all); never stored; no economy grant
+   *  (C-E2 — the grant rides the base-`sessions` sub-type). `[BK-10; rerun C-E2:73]` */
+  getStatistics(scope: { bookId?: string }): Promise<ReadingStatistics>
+  /** BOO-39 — the Reader service face: decrypt (`attachment?`) + auto-start a reading session + resolve the asset's
+   *  own position; the read/listen/annotate chrome is P6. A present-port decrypt failure ⇒ `AssetFileError`. Guards
+   *  the asset exists. `[parts/books.md:49; BK-15]` */
+  openReader(assetId: string): Promise<ReaderContext>
 }

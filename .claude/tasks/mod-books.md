@@ -58,8 +58,18 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   + `QuoteEmbedDisabledError` types. Read-only, schema-less (no migration, no `@vida/types` change). g1 (SHIP, 2
   folds) → 48/48 live-store (incl. 2 reviewer-NIT edges) → 2-reviewer SHIP (0 blockers) → §XXIX (BR-BK-S5-1..5).
   @vida/core **1479/1479**, tsc 0, eslint 0, gitleaks clean. Commit `f81bd24`.
-- [ ] S6 sessions + registerBooks · S7 plans · S8
-  progress/conflict · S9 Education/measurement · S10 integrations/Journal
+- [x] **S6 — reading sessions + Reader orchestration + registerBooks SHIPPED** (BOO-23/24/25/26/39):
+  `createSession('reading')` composition + Books `reading_sessions` extension + `registerBooks()` (ADR-004 §3.2
+  transcription, empty envelope C-E2) + `startSession`/`endSession`/`attachPhoto` (deny-safe `attachment?`/`ai?`,
+  photo-always-stores BK-10)/`getStatistics` (derived)/`openReader` (BOO-39 service face, decrypt+auto-session+
+  position). New required deps `sessions`+`sessionRegistry`; new optional `ai?`; `AttachmentPort.download` additive;
+  `@vida/types ReadingSession` N-fold. Full Entity Delivery Flow: PLAN → g1 /critique REVISE→SHIP (5 folds) →
+  **doc-first re-ground (Victor: "docs leave nothing to build phase" — ADR-004 §3.2.1 attach=book · §3.2.2+C-E2
+  effects=[] · §3.2.3 lifecycle · intake B10/B16)** → Approval 1 → /api-contract ratify + /adr-check (no ADR) →
+  /preflight PASSED (R10 non-atomic compose · R11 timing read) → Approval 2 → implement → **tsc 0 · 63/63 live-store
+  (REAL sessions, Node 24) · full @vida/core 1495→1496 · eslint 0 · gitleaks clean** → code-review SHIP (2 NITs
+  folded) → /critique SHIP → §XXIX currency (BR-BK-S6-1..8). Commit `_(pending)_`.
+- [ ] S7 plans · S8 progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
 - [ ] Step 4: /api-contract (service API) approved before code
 - [ ] Step 5–6: /adr-check · /adr-new (if significant)
@@ -94,6 +104,17 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   `business-rules.md:127`; annotation-survival→S4; BOO-44 S3 throw site; `readable` live-count + target
   native_position). 31/31 live-store → 2 independent reviewers SHIP (4 NITs folded incl. realign of `addAsset`
   to the frozen bundled `{format, file?}` seam-contract shape). Branch `mod-books`.
+- 2026-10-01: S6 shipped — reading sessions + Reader orchestration + registerBooks (BOO-23/24/25/26/39). Composes
+  the REAL ADR-004 `sessions` spine (`createSession`/`completeSession`/`attach`) + AR-5 `SessionRegistry`; `reading`
+  `SessionTypeDef` = a transcription of ADR-004 §3.2 (empty envelope, C-E2). **Victor drift-catch ×2 → doc-first
+  re-ground:** I framed the envelope + attachment target as "docs leave to build phase, resolved by precedent";
+  Victor "the docs leave nothing to be solved in the build phase … check." Re-grounded: attach=book (§3.2.1
+  instance "about X"), effects=[] (§3.2.2 + C-E2 feeder-list), lifecycle (§3.2.3), intake B10/B16 RESOLVED. Memory
+  [[adr-004-3.2-defines-all-session-subtype-dimensions]]. 5 g1 blockers folded (attach book-not-asset via
+  `_registry.ts:87` + started_at stamp via `lifecycle.ts:117` + statistics M2-seam + SessionTypeNotFound name +
+  minutesSpent semantics). 2 preflight resolutions (R10 non-atomic session+extension compose = eventually-consistent
+  no-FK; R11 N+1 timing read). 2 code-review NITs folded. tsc 0, 63/63 books live-store (Node 24), full @vida/core
+  1496, eslint 0, gitleaks clean. Currency BR-BK-S6-1..8. Branch `mod-books`.
 - 2026-10-01: S5 shipped — quote-embed feed + toggles (BOO-21/22). `getEmbeddableQuotes({bookId?})` + narrow
   deny-safe `preferences?` port (2 reads, NIT-3) + `QuoteEmbedDisabledError`. Read-only, schema-less. Full per-slice
   Entity Delivery Flow: g1 /critique SHIP (2 folds — §6 throw-site resolution recorded + feed global-read hoist) →
@@ -104,17 +125,15 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   filter on global) — NO by-id resolve method added (frozen seam-contract honored, anti-over-engineering). @vida/core
   **1479/1479**, tsc 0, eslint 0, gitleaks clean. Branch `mod-books`; PR when ① (all 10 slices) completes.
 
-## Next Slice — S6 (reading sessions + Reader orchestration + registerBooks)
-S6 scope (BOO-23/24/25/26/39, slice-map.md:20): compose the ADR-004 base `sessions` `reading` sub-type +
-`sessionRegistry.register('reading', [])` + `registerBooks()` (the flashcards precedent — `createSession('reading')`
-throws `SessionTypeNotFound` without it; empty `allowed_effects` = C-E2-clean) + a Books-owned 1:1 `reading_sessions`
-extension (`session_id` key, mode-adaptive capture). `startSession`/`endSession` · `attachPhoto` (photo ALWAYS stores
-+ `ai?` OCR deny-safe) · `getStatistics` derivation over the sessions ledger · `openReader` (BOO-39 service face:
-`attachment?` decrypt + auto-start session + resolve position/`NotSyncedState`; chrome → P6) · **C-E2 guard** (no
-economy grant on Books — grants ride base-`sessions`). **New required deps:** `sessions: SessionsService` +
-`sessionRegistry: SessionRegistry`; **new optional:** `ai?` (reuse the deny-safe port shape). Reload:
-`docs/features/books/delivery/{slice-map,seam-contract}.md` (S6 rows) · `docs/modules/books/current-*` ·
-`parts/books.md` BOO-23/24/25/26/39 · `business-rules.md` BK-10 · `conventions.md:24-27` · the flashcards
-`registerFlashcards` + ADR-004 Sessions sub-type precedent · `schema/books.ts` `reading_sessions` (NO `deleted_at`).
-Env: Node 24 via nvm (stray non-24 `pnpm test` → rebuild better-sqlite3: `cd
+## Next Slice — S7 (Reading plans / Quota Planner)
+S7 scope (BOO-27/28/29/30/31/32/33, slice-map.md:21): `reading_plans` + `reading_plan_books` junction CRUD +
+goal-as-Purpose-target (**NO stored measurement axes — C-M1**, `reading_plans` holds none; Books names the axes,
+stores none) + quota/auto-goal/projection derivations (Calendar reconciliation stubbed = forward dep) +
+`TargetUnreachableProposal` (recalc can't meet target → options, never a silent rewrite, BK-11). `createPlan` ·
+`getTodayQuotas` (Hub + Journal `/summary` provider) · `recordQuotaProgress` · `recalculate` · `getProjection`.
+**Books owns plans; consumers consume (BK-12)** — the Study Planner reads via a provider, never writes. Reload:
+`docs/features/books/delivery/{slice-map,seam-contract}.md` (S7 rows) · `docs/modules/books/current-*` ·
+`parts/books.md` BOO-27..33 · `business-rules.md` BK-11/BK-12 · `rerun C-M1 books.md:71` (no stored axes) ·
+`schema/books.ts` `reading_plans`/`reading_plan_books` (NO measurement_kind/binding_mode) · `foundation/measurement`
+(the goal-as-target derivation seam). Env: Node 24 via nvm (stray non-24 `pnpm test` → rebuild better-sqlite3: `cd
 node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release`). Branch `mod-books`.
