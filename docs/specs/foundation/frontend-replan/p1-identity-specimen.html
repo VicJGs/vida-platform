@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — P1 Identity Specimen · book / living journal · editorial · light</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Newsreader:ital,opsz,wght@0,6..72,200..600;1,6..72,300..500&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..600;1,8..60,400&family=Inter:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --maxw: 1180px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: #e9e6df;
+    color: #1a1a1a;
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 6rem;
+  }
+
+  /* ---------- Guide chrome (NOT part of the design — the meta layer) ---------- */
+  .guide {
+    max-width: var(--maxw); margin: 0 auto; padding: 3rem 2rem 1rem;
+  }
+  .guide .kicker { font-size: .72rem; letter-spacing: .22em; text-transform: uppercase; color: #8a8578; font-weight: 500; }
+  .guide h1 { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(1.9rem, 4vw, 2.9rem); line-height: 1.08; margin: .5rem 0 .75rem; letter-spacing: -.01em; }
+  .guide p { max-width: 62ch; color: #4a463d; font-size: .98rem; }
+  .guide .legend { margin-top: 1.25rem; font-size: .82rem; color: #6a665b; display:flex; gap:1.5rem; flex-wrap:wrap; }
+  .guide .legend b { color:#1a1a1a; font-weight:600; }
+  .jump { position: sticky; top: 0; z-index: 50; background: rgba(233,230,223,.9); backdrop-filter: blur(8px); border-bottom: 1px solid #d3cfc4; }
+  .jump-inner { max-width: var(--maxw); margin: 0 auto; padding: .7rem 2rem; display: flex; gap: 1.4rem; align-items:center; flex-wrap: wrap; }
+  .jump a { font-size: .8rem; letter-spacing: .04em; color: #4a463d; text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  .jump a:hover { border-bottom-color: #4a463d; }
+  .jump .brand { font-family:'Fraunces',serif; font-weight:500; letter-spacing:.02em; margin-right:auto; }
+
+  /* ---------- Specimen plate wrapper ---------- */
+  .plate { max-width: var(--maxw); margin: 2.5rem auto; padding: 0 2rem; }
+  .plate-label { display:flex; align-items:baseline; gap:1rem; margin-bottom: .9rem; }
+  .plate-label .no { font-family:'Fraunces',serif; font-size: 1.1rem; color:#9a9488; }
+  .plate-label .nm { font-size:.75rem; letter-spacing:.2em; text-transform:uppercase; font-weight:600; color:#1a1a1a; }
+  .plate-label .meta { font-size:.78rem; color:#8a8578; margin-left:auto; }
+  .specimen { border-radius: 4px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 30px rgba(0,0,0,.07); }
+
+  /* ======================================================= */
+  /* DIRECTION A — THE READER  (max book · warm ivory)        */
+  /* ======================================================= */
+  .dirA { background:#faf7f0; color:#211d17; padding: 3rem clamp(1.5rem,5vw,4rem); font-family:'Newsreader',serif; }
+  .dirA .masthead { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #211d17; padding-bottom:.9rem; }
+  .dirA .wordmark { font-family:'Fraunces',serif; font-weight:400; font-size:2.7rem; letter-spacing:-.02em; }
+  .dirA .folio { text-align:right; font-size:.8rem; letter-spacing:.14em; text-transform:uppercase; color:#6b6252; font-family:'Inter',sans-serif; }
+  .dirA .eyebrow { font-family:'Inter',sans-serif; font-size:.72rem; letter-spacing:.24em; text-transform:uppercase; color:#9a2a2a; font-weight:500; margin:2rem 0 .4rem; }
+  .dirA h2 { font-family:'Fraunces',serif; font-weight:400; font-size:2.1rem; line-height:1.12; letter-spacing:-.01em; margin-bottom:1.1rem; max-width:20ch; }
+  .dirA .entry { columns:2; column-gap:3rem; font-size:1.08rem; line-height:1.62; color:#2c2820; }
+  .dirA .entry p { margin-bottom:1rem; }
+  .dirA .dropcap::first-letter { font-family:'Fraunces',serif; font-size:3.4rem; line-height:.8; float:left; padding:.1rem .6rem .1rem 0; color:#9a2a2a; }
+  .dirA .rule { height:1px; background:#d8d0bf; margin:2rem 0; }
+  .dirA .figs { display:flex; gap:2.5rem; font-family:'Inter',sans-serif; }
+  .dirA .fig .n { font-family:'Fraunces',serif; font-size:1.9rem; }
+  .dirA .fig .l { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:#8a8172; }
+
+  /* ======================================================= */
+  /* DIRECTION B — THE EDITORIAL  (magazine · cool paper)     */
+  /* ======================================================= */
+  .dirB { background:#fbfbfa; color:#16181d; padding: 3rem clamp(1.5rem,5vw,4rem); font-family:'Inter',sans-serif; }
+  .dirB .masthead { display:flex; justify-content:space-between; align-items:center; }
+  .dirB .wordmark { font-family:'Spectral',serif; font-weight:500; font-size:1.8rem; letter-spacing:.01em; }
+  .dirB .nav { display:flex; gap:1.6rem; font-size:.8rem; color:#5a5f6a; }
+  .dirB .toprule { height:3px; background:#16181d; margin:1rem 0 2.2rem; }
+  .dirB .grid { display:grid; grid-template-columns: 1.6fr 1fr; gap:3rem; }
+  .dirB .eyebrow { font-size:.7rem; letter-spacing:.22em; text-transform:uppercase; color:#1d4ed8; font-weight:600; margin-bottom:.5rem; }
+  .dirB h2 { font-family:'Spectral',serif; font-weight:500; font-size:2.3rem; line-height:1.1; letter-spacing:-.01em; margin-bottom:1rem; }
+  .dirB .lede { font-family:'Spectral',serif; font-size:1.12rem; line-height:1.6; color:#3a3f48; }
+  .dirB .lede p { margin-bottom:.9rem; }
+  .dirB aside { border-left:2px solid #16181d; padding-left:1.3rem; }
+  .dirB aside .h { font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; color:#8a8f9a; margin-bottom:.9rem; }
+  .dirB .item { display:flex; justify-content:space-between; align-items:baseline; padding:.55rem 0; border-bottom:1px solid #ededeb; font-size:.92rem; }
+  .dirB .item .t { color:#16181d; }
+  .dirB .item .s { font-size:.75rem; color:#9298a3; font-variant-numeric:tabular-nums; }
+  .dirB .item .dot { width:7px; height:7px; border-radius:50%; border:1.5px solid #1d4ed8; display:inline-block; margin-right:.6rem; }
+  .dirB .figs { display:flex; gap:2rem; margin-top:1.4rem; }
+  .dirB .fig .n { font-family:'Spectral',serif; font-weight:500; font-size:1.7rem; font-variant-numeric:tabular-nums; }
+  .dirB .fig .l { font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; color:#9298a3; }
+
+  /* ======================================================= */
+  /* DIRECTION C — THE QUIET DESK  (calm · warm gray · olive) */
+  /* ======================================================= */
+  .dirC { background:#f4f2ec; color:#26251f; padding: 3.4rem clamp(1.5rem,5vw,4.5rem); font-family:'IBM Plex Sans',sans-serif; }
+  .dirC .masthead { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3rem; }
+  .dirC .wordmark { font-family:'Source Serif 4',serif; font-weight:500; font-size:1.5rem; letter-spacing:.06em; }
+  .dirC .date { font-size:.78rem; color:#908d82; letter-spacing:.05em; }
+  .dirC .eyebrow { font-size:.68rem; letter-spacing:.26em; text-transform:uppercase; color:#5a6b3f; font-weight:500; margin-bottom:.8rem; }
+  .dirC h2 { font-family:'Source Serif 4',serif; font-weight:400; font-size:1.9rem; line-height:1.2; margin-bottom:1.6rem; max-width:24ch; }
+  .dirC .entry { font-family:'Source Serif 4',serif; font-size:1.06rem; line-height:1.7; color:#423f36; max-width:60ch; }
+  .dirC .entry p { margin-bottom:1rem; }
+  .dirC .rule { height:1px; background:#ddd9ce; margin:2.4rem 0; }
+  .dirC .today .h { font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; color:#908d82; margin-bottom:1rem; }
+  .dirC .today .row { display:flex; align-items:center; gap:.8rem; padding:.5rem 0; font-size:.95rem; color:#26251f; }
+  .dirC .today .check { width:15px; height:15px; border:1.5px solid #a9a597; border-radius:3px; flex:none; }
+  .dirC .today .check.on { background:#5a6b3f; border-color:#5a6b3f; }
+  .dirC .figs { display:flex; gap:3rem; margin-top:2rem; }
+  .dirC .fig .n { font-family:'Source Serif 4',serif; font-size:1.7rem; }
+  .dirC .fig .l { font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:#908d82; }
+
+  /* ======================================================= */
+  /* DENSITY BAND — adaptive                                  */
+  /* ======================================================= */
+  .density { max-width: var(--maxw); margin: 4rem auto 2rem; padding: 0 2rem; }
+  .density .cols { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:1rem; }
+  .dcard { background:#fbf9f4; border:1px solid #ddd8cc; border-radius:4px; padding:2rem; font-family:'Source Serif 4',serif; color:#2c2820; }
+  .dcard .tag { font-family:'Inter',sans-serif; font-size:.68rem; letter-spacing:.18em; text-transform:uppercase; color:#8a8172; margin-bottom:1.3rem; display:block; }
+  /* calm */
+  .calm h3 { font-family:'Fraunces',serif; font-weight:400; font-size:1.5rem; margin-bottom:1rem; }
+  .calm p { font-size:1.05rem; line-height:1.68; color:#423f36; margin-bottom:1rem; }
+  .calm .one { margin-top:1.5rem; font-family:'Inter',sans-serif; font-size:.95rem; color:#26251f; display:flex; align-items:center; gap:.7rem; }
+  .calm .one::before { content:''; width:14px; height:14px; border:1.5px solid #9a2a2a; border-radius:3px; }
+  /* dense */
+  .dense .tag { margin-bottom:1rem; }
+  .dense .drow { display:flex; align-items:center; gap:.7rem; padding:.3rem 0; border-bottom:1px solid #eee8db; font-family:'Inter',sans-serif; font-size:.82rem; color:#2c2820; }
+  .dense .drow .c { width:12px; height:12px; border:1.3px solid #a9a597; border-radius:2px; flex:none; }
+  .dense .drow .c.on { background:#5a6b3f; border-color:#5a6b3f; }
+  .dense .drow .t { flex:1; }
+  .dense .drow .m { font-size:.72rem; color:#9298a3; font-variant-numeric:tabular-nums; }
+  .dense .drow .p { font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:#9a2a2a; }
+
+  .caption { font-size:.82rem; color:#6a665b; margin-top:1rem; max-width:70ch; font-family:'Inter',sans-serif; }
+
+  /* ---------- confirm footer ---------- */
+  .confirm { max-width: var(--maxw); margin: 4rem auto 0; padding: 2.5rem 2rem; border-top:1px solid #d3cfc4; }
+  .confirm h2 { font-family:'Fraunces',serif; font-weight:400; font-size:1.6rem; margin-bottom:1rem; }
+  .confirm table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  .confirm td { padding:.6rem 0; border-bottom:1px solid #ddd8cc; vertical-align:top; }
+  .confirm td:first-child { width:9rem; color:#8a8578; letter-spacing:.04em; }
+  .confirm td b { color:#1a1a1a; }
+  .confirm .next { margin-top:1.5rem; color:#4a463d; font-size:.92rem; }
+
+  @media (max-width: 820px) {
+    .dirA .entry, .dirB .grid, .density .cols { columns:auto; grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="jump">
+  <div class="jump-inner">
+    <span class="brand">Vida · P1 Identity</span>
+    <a href="#A">A · The Reader</a>
+    <a href="#B">B · The Editorial</a>
+    <a href="#C">C · The Quiet Desk</a>
+    <a href="#density">Adaptive density</a>
+    <a href="#confirm">Confirm</a>
+  </div>
+</div>
+
+<div class="guide">
+  <div class="kicker">Frontend Re-plan · G1 · P1 — Identity &amp; Feel</div>
+  <h1>A book you live inside — three editorial readings of the same soul.</h1>
+  <p>You said Vida should feel like <b>a book and a living journal</b> — able to show everything, yet
+  minimal and calm about whatever you are actually looking at — <b>editorial</b> in voice, <b>light</b> as its
+  primary home, with <b>density that adapts</b> to the person and the task. These are three ways to <em>be</em> that,
+  differing only in type pairing, paper warmth, and accent. This is <b>feel, not pages</b> — the content is a stand-in
+  so you can judge the voice, not the screen.</p>
+  <div class="legend">
+    <span><b>Metaphor</b> book / living journal</span>
+    <span><b>Voice</b> editorial</span>
+    <span><b>Light</b> primary home</span>
+    <span><b>Density</b> adaptive</span>
+  </div>
+</div>
+
+<!-- DIRECTION A -->
+<section class="plate" id="A">
+  <div class="plate-label"><span class="no">A</span><span class="nm">The Reader</span>
+    <span class="meta">Fraunces + Newsreader · warm ivory · oxblood · most book-like</span></div>
+  <div class="specimen dirA">
+    <div class="masthead">
+      <div class="wordmark">Vida</div>
+      <div class="folio">Vol. I · No. 274<br>Tuesday, 1 October</div>
+    </div>
+    <div class="eyebrow">Today's thread</div>
+    <h2>A quiet morning, and the week finally finding its shape.</h2>
+    <div class="entry">
+      <p class="dropcap">Mornings have started to settle. The first hour is for reading and the long
+      project; everything louder waits until the light is fully up. It is the difference between a desk
+      you dread and a page you return to.</p>
+      <p>Three things matter today, and the rest can drift. The journal remembers what the mind lets go —
+      that is the whole point of writing it down and walking away.</p>
+    </div>
+    <div class="rule"></div>
+    <div class="figs">
+      <div class="fig"><div class="n">14</div><div class="l">day streak</div></div>
+      <div class="fig"><div class="n">2h40</div><div class="l">deep focus</div></div>
+      <div class="fig"><div class="n">3 / 5</div><div class="l">done today</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DIRECTION B -->
+<section class="plate" id="B">
+  <div class="plate-label"><span class="no">B</span><span class="nm">The Editorial</span>
+    <span class="meta">Spectral headlines + Inter chrome · cool paper · ink-blue · magazine balance</span></div>
+  <div class="specimen dirB">
+    <div class="masthead">
+      <div class="wordmark">Vida</div>
+      <div class="nav"><span>Today</span><span>Journal</span><span>Spaces</span><span>Search</span></div>
+    </div>
+    <div class="toprule"></div>
+    <div class="grid">
+      <div>
+        <div class="eyebrow">Tuesday · 1 October</div>
+        <h2>The week, read as a single column.</h2>
+        <div class="lede">
+          <p>Serif headlines carry the reading; a clean grotesque carries the controls. You get the
+          composure of print with the responsiveness of a tool — dense where you work, open where you reflect.</p>
+          <p>Everything is one glance away, nothing shouts for it.</p>
+        </div>
+        <div class="figs">
+          <div class="fig"><div class="n">14</div><div class="l">streak</div></div>
+          <div class="fig"><div class="n">2h40</div><div class="l">focus</div></div>
+          <div class="fig"><div class="n">3/5</div><div class="l">done</div></div>
+        </div>
+      </div>
+      <aside>
+        <div class="h">Today</div>
+        <div class="item"><span class="t"><span class="dot"></span>Finish the re-plan draft</span><span class="s">09:30</span></div>
+        <div class="item"><span class="t"><span class="dot"></span>Review finance import</span><span class="s">—</span></div>
+        <div class="item"><span class="t"><span class="dot"></span>Spanish, daily session</span><span class="s">—</span></div>
+        <div class="item"><span class="t"><span class="dot"></span>Call Mariana</span><span class="s">17:00</span></div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- DIRECTION C -->
+<section class="plate" id="C">
+  <div class="plate-label"><span class="no">C</span><span class="nm">The Quiet Desk</span>
+    <span class="meta">Source Serif 4 + IBM Plex Sans · warm gray · olive · most calm / minimal</span></div>
+  <div class="specimen dirC">
+    <div class="masthead">
+      <div class="wordmark">Vida</div>
+      <div class="date">Tuesday · 1 October 2026</div>
+    </div>
+    <div class="eyebrow">The day</div>
+    <h2>Less surface, more attention — the page stays out of your way.</h2>
+    <div class="entry">
+      <p>The calmest reading of the three: warm paper, a soft olive accent, and generous air. It trusts
+      you to go looking when you want more, instead of putting everything in front of you at once.</p>
+    </div>
+    <div class="rule"></div>
+    <div class="today">
+      <div class="h">Today</div>
+      <div class="row"><span class="check on"></span>Finish the re-plan draft</div>
+      <div class="row"><span class="check"></span>Review finance import</div>
+      <div class="row"><span class="check"></span>Spanish, daily session</div>
+    </div>
+    <div class="figs">
+      <div class="fig"><div class="n">14</div><div class="l">day streak</div></div>
+      <div class="fig"><div class="n">2h40</div><div class="l">deep focus</div></div>
+      <div class="fig"><div class="n">3 / 5</div><div class="l">done</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DENSITY BAND -->
+<section class="density" id="density">
+  <div class="plate-label"><span class="no">—</span><span class="nm">Adaptive density</span>
+    <span class="meta">one voice, two airs · the person &amp; the task decide</span></div>
+  <div class="cols">
+    <div class="dcard calm">
+      <span class="tag">Calm — reading / reflecting</span>
+      <h3>Finish the re-plan draft</h3>
+      <p>When you're inside one thing, the OS breathes out: a single focus, wide margins, the entry you're
+      reading and nothing competing with it.</p>
+      <div class="one">The one thing that matters right now</div>
+    </div>
+    <div class="dcard dense">
+      <span class="tag">Dense — scanning / managing</span>
+      <div class="drow"><span class="c on"></span><span class="t">Finish the re-plan draft</span><span class="p">High</span><span class="m">09:30</span></div>
+      <div class="drow"><span class="c"></span><span class="t">Review finance import</span><span class="p">High</span><span class="m">—</span></div>
+      <div class="drow"><span class="c"></span><span class="t">Spanish, daily session</span><span class="p">Med</span><span class="m">—</span></div>
+      <div class="drow"><span class="c"></span><span class="t">Call Mariana</span><span class="p">Med</span><span class="m">17:00</span></div>
+      <div class="drow"><span class="c"></span><span class="t">Read chapter 4 — Systems</span><span class="p">Low</span><span class="m">—</span></div>
+      <div class="drow"><span class="c"></span><span class="t">Log yesterday's expenses</span><span class="p">Low</span><span class="m">—</span></div>
+      <div class="drow"><span class="c on"></span><span class="t">Morning check-in</span><span class="p">—</span><span class="m">done</span></div>
+    </div>
+  </div>
+  <p class="caption">Same identity, same type, same accent — only the <b>air</b> changes. "Adaptive" means the
+  surface itself leans calm when you're reading one thing and dense when you're scanning many, rather than
+  forcing one global setting. (Whether this is automatic by context, a per-view toggle, or both, is a P2/P3 question.)</p>
+</section>
+
+<!-- CONFIRM -->
+<section class="confirm" id="confirm">
+  <h2>Confirming P1 — Identity &amp; Feel</h2>
+  <table>
+    <tr><td>A1 Metaphor</td><td><b>Book / living journal</b> — see everything, calm about what you're in. ✓ captured</td></tr>
+    <tr><td>A2 Density</td><td><b>Adaptive</b> — leans to person &amp; task (shown in the density band). ✓ captured</td></tr>
+    <tr><td>A3 Personality</td><td><b>Editorial</b> — the open question is <i>which</i> reading: A · B · C below.</td></tr>
+    <tr><td>A4 Light/dark</td><td><b>Light primary</b> — all three are daylight / paper. ✓ captured</td></tr>
+  </table>
+  <p class="next"><b>Pick a direction</b> (A The Reader · B The Editorial · C The Quiet Desk) — or mix
+  (e.g. "A's warmth with B's two-column structure"). Tell me what's right and what's off, and I'll lock P1
+  and move to <b>P2 — Space &amp; Motion</b> (how the shell <em>is</em>, and how you move between modules).</p>
+</section>
+
+</body>
+</html>
