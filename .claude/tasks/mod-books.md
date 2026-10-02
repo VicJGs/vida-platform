@@ -81,7 +81,24 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   (atomic createPlan via createInTx · asOf seam no clock dep) → Approval 2 → implement → **tsc 0 · 72/72 live-store
   (Node 24) · full @vida/core 1505 · eslint 0 · gitleaks clean** → code-review SHIP (1 fix: recordQuotaProgress
   session guard) → /critique SHIP → §XXIX currency (BR-BK-S7-1..8). Commit `a9aa79f`.
-- [ ] S8 progress/conflict · S9 Education/measurement · S10 integrations/Journal
+- [x] **S8 — Unified progress + conflict resolution SHIPPED** (BOO-13/34/35): `getUnifiedProgress`→`number|'conflicted'|null`
+  (derive-on-read via `measurement.normalize`+`resolveProgress`; page-unit {pdf,physical,braille} only; override slot
+  inert) · `getConflicts` derived queue (NO table, `id=conflict:<bookId>`) · `resolveConflict` persists BK-8 preset rule
+  via `preferences?` (absent ⇒ **no-op**, revokeLookupGrant precedent) · `PositionConflictPending` exported typed
+  vocabulary (NO M1 throw-site) · `BookView.unifiedProgress` widened + `getBook` composes. **Victor "ground everything
+  in the docs" → invented `PreferencesUnavailableError` removed** ([[absent-deny-safe-port-write-is-noop-not-new-error]]).
+  g1 REVISE→folded (B1/B2 +4 NITs) → Approval 1 → adr-check ALIGNED + preflight PASSED → Approval 2 → tsc 0 → 83/83
+  live-store → code-review SHIP → /critique SHIP → §XXIX (BR-BK-S8-1..10). @vida/core **1516/1516**. Commit `aa9edec`.
+- [x] **S9 — Education partition + measure source + tags + linkable-target SHIPPED** (BOO-04/14/36/37/38/46):
+  `scopeTag` (compose `spaces.tagEntity('book')` + `TagNotFound` guard) · `linkSubject`/`unlinkSubject`/`listBooksForSubject`
+  over `book_subjects` (idempotent app-layer — **no schema UNIQUE**; faithful-row re-read) · `getPaceStatus`→**deny-safe
+  null** (Education `#52` unbuilt, never fabricated) · `getReadingMeasureSource`→`ReadingMeasureSource{progress}` METHOD
+  not advertise (KNO-25; `'conflicted'`⇒null) · BOO-46 identity-only (`backlinks` dep NOT wired). **NO new table/dep.**
+  **Bundled S8 currency correction** (no silent drift): `PositionConflictPending` has NO M1 backend throw-site (grounded
+  `contract.md:64` + `getMasterySource`). g1 REVISE→folded (B1 faithful-row +4 NITs) → Approval 1 → adr-check ALIGNED +
+  preflight PASSED → Approval 2 → tsc 0 → 90/90 live-store → code-review SHIP (all 10 axes) → /critique SHIP → §XXIX
+  (BR-BK-S9-1..8). @vida/core **1523/1523**. Commit `65384a9`.
+- [ ] S10 integrations/Journal (the FINAL slice → PR when ① complete)
 - [ ] Step 3: read 3 existing MOD services — state the pattern
 - [ ] Step 4: /api-contract (service API) approved before code
 - [ ] Step 5–6: /adr-check · /adr-new (if significant)
@@ -144,17 +161,34 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   currency (BR-BK-S5-1..5, current-spec + current-business-rules). Decision: single-method design (throw on scoped,
   filter on global) — NO by-id resolve method added (frozen seam-contract honored, anti-over-engineering). @vida/core
   **1479/1479**, tsc 0, eslint 0, gitleaks clean. Branch `mod-books`; PR when ① (all 10 slices) completes.
+- 2026-10-02: **S8 shipped** (`aa9edec`) — unified progress + conflict resolution (BOO-13/34/35). Derive-on-read via
+  `foundation/measurement` (`normalize`/`resolveProgress`); derived conflict queue (no table); conflict preset rule via
+  the deny-safe `preferences?` port. **Victor drift-catch "ground everything in the docs":** my g1 invented a fail-loud
+  `PreferencesUnavailableError` for the absent-port write; the docs resolve it to a **no-op** (the `revokeLookupGrant`
+  precedent BR-BK-S2-6 + `types.ts:77` "absent⇒permissive, real backing M2") → removed. Memory
+  [[absent-deny-safe-port-write-is-noop-not-new-error]]. g1 also folded B1 (PositionConflictPending throw-site → forward
+  seam) + B2 (source_of_truth asset validation) + 4 NITs. 83/83 live-store, @vida/core 1516/1516. Branch `mod-books`.
+- 2026-10-02: **S9 shipped** (`65384a9`) — Education partition + measure source + tags + linkable-target
+  (BOO-04/14/36/37/38/46). NO new table/dep (`book_subjects` already in `023_books`; composes `spaces` + S8). Scope =
+  the 6 numbered legs (slice-map "classification" = the `scopeTag` write); `listBooks`/`listQuotes` tag-filter
+  completions stay carry-forward. `getReadingMeasureSource` = method not advertise (KNO-25); `getPaceStatus` deny-safe
+  null (Education `#52`). **§XXIX no-silent-drift:** reading `contract.md:64` (the intent authority) corrected my S8
+  claim that `PositionConflictPending` is "thrown at S9" — the measure source returns null, the on-write block is P6/M2,
+  so it has NO M1 backend throw-site; fixed the S8 currency docs in this commit. g1 folded B1 (linkSubject faithful-row
+  re-read) + 4 NITs. 90/90 live-store, @vida/core 1523/1523, code-review SHIP (all 10 axes). Branch `mod-books`.
 
-## Next Slice — S8 (Unified progress + conflict resolution)
-S8 scope (BOO-13/34/35, slice-map.md:22): **unified-progress DERIVATION** (`getUnifiedProgress(bookId) → number |
-'conflicted' | null`; `books.progress` nullable override, NULL⇒derive from asset positions; BR-BK-2) + a **derived
-conflict queue** (no `book_conflicts` table — React-Query-derived over asset positions, BK-8) + the **conflict
-preset-rule** read via the SAME narrow deny-safe `preferences?` port (S5 precedent — zero signature change, appends
-one read) + `PositionConflictPending` (an unresolved conflict **blocks** unified progress — flagged `'conflicted'`,
-never guessed) + `getConflicts`/`resolveConflict`. Composes S3 `getMappedPosition` (cross-format normalization).
-Reload: `docs/features/books/delivery/{slice-map,seam-contract}.md` (S8 rows) · `docs/modules/books/current-*` ·
-`parts/books.md` BOO-13/34/35 · `business-rules.md` BK-8 (conflict derived, preset-rule in Preferences) · the S5
-`preferences?` port (append the preset-rule read) · `interpretation.md` implicit-rule 7 (conflict derived, not a
-table) · `schema/books.ts` (`books.progress` nullable; NO conflict table). Env: Node 24 via nvm (stray non-24 `pnpm
-test` → rebuild better-sqlite3: `cd node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run
-build-release`). Branch `mod-books`.
+## Next Slice — S10 (Integration close-out + fan-out + Journal) — THE FINAL SLICE
+S10 scope (BOO-40/41/42/43/45/47, slice-map.md:24): **TTS/transcription** via the deny-safe `ai?` port
+(`convertToSpeech`/`transcribeForMapping` → `OcrResult`, `ai-unavailable` when absent/denied) · **consent-gate
+invariant** (`IntegrationConsentError` — the ADR-014 X-family consent) · **Study-Planner read-provider**
+(`getPlansForConsumer()` → `ReadingPlan[]`; consumers consume, Books never lets them write, BK-12) · **local-first
+invariant** (BOO-47) · **`effects?` fan-out** (measurement-only signal on reading-session completion — **C-E2: NO
+economy grant on Books**; grants ride base-`sessions`) · **`registerBooksJournal`** (the Journal `/summary` PULL
+contribution composing BOO-30's `getDayBooksDigest`/`getTodayQuotas` provider + the BOO-26 reading-session signal).
+Completing S10 finishes ① → **open the PR for the whole backend track**.
+Reload: `docs/features/books/delivery/{slice-map,seam-contract}.md` (S10 rows + the Journal digest block) ·
+`docs/modules/books/current-*` · `parts/books.md` BOO-40/41/42/43/45/47 · `business-rules.md` (consent-gate, C-E2,
+BK-12) · `interpretation.md` (the `ai?`/`effects?`/Journal-registry rows) · the knowledge S8 `registerKnowledgeJournal`
++ effect fan-out precedent ([[event-fanout-pull-push-split-and-occurrence-grain]]) · `foundation/ai` (deny-safe) ·
+`foundation/effects` (rail). Env: Node 24 via nvm (stray non-24 `pnpm test` → rebuild better-sqlite3: `cd
+node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release`). Branch `mod-books`.
