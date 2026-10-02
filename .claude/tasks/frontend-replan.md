@@ -18,7 +18,7 @@ Blocked by: none (all M1.2.1 foundation backend twins merged to main).
 - [x] G0 — Lock the process (§2) as the Tier-1 flow doc → `frontend-replan/process.md` ✅ 2026-09-30 (`8472053`; critic REVISE→resolved; Victor-approved)
 - [x] G1 — Quality-Bar gate → `frontend-quality-bar/_index.md` ✅ 2026-10-01 (critic REVISE→2 must-fix+3 should-fix folded→SHIP)
 - [x] G2 ✅ Surface harvest → `frontend-replan/surface-map.md` — PASS 1 + PASS 2 (4 parallel cluster auditors a9e1/aa3e/a59d/a350) done 2026-10-01. ~30 DISCOVERED surfaces (roster §6.2); 8 confirmed SYSTEMIC findings (empty-state·sync-status·reduced-motion·theme-ability·Editor/Layout-facet·voice/honesty·≥2-paths·provider-reads §6.1); SCHEMA-BLOCKER map per module (§6.4); BUILD-SHAPE insight (§6.3) = codec-first → shell+7 cross-cutting surfaces → schema-gated per-module. Surface-map = DESIGN inventory (modules are schema-floor + 0 service/surface lines; dominant lens = MISSING).
-- [ ] G3 — Composition map → `frontend-replan/decomposition.md` + `traceability.md`
+- [x] G3 ✅ Composition map → `decomposition.md` (surfaces → codec units: 7 view-modes · 6 archetype shells · Layout/Editor facet · 8-pattern kit · composition primitives; 3 build tiers codec→shell+cross-cutting→schema-gated modules) + `traceability.md` (every surface←intent; orphan check PASS: no un-homed surface, no un-realized P1–P6; owed ADR-amendments flagged). 2026-10-01.
 - [ ] G4 — Coverage gate → `frontend-replan/coverage-report.md` + `tools/frontend-intent/` set-cover
 - [ ] G5 — Order → surface `#` sequence into `reconstructed-structure.md`
 - [ ] G6 — Linear reshape (⚠ semi-destructive, Victor-approval-gated) → `g6-edge-ledger.md`
