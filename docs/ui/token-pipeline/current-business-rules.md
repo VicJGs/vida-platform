@@ -31,7 +31,10 @@
    Card, the first shadow consumer, DEF-U5-e; an aux namespace earns a typed export the moment a TS consumer needs it,
    the `motion.ts` precedent). `[build-tokens.mjs AUX/isAuxPath + vida/shadow; vitest B9 + shadow-emit]`
 10. **[FACT] B10 — Contrast is the floor.** semantic text-on-surface pairs meet WCAG AA in both modes (caveat:
-    white-on-brand.500 = 4.47 → buttons use brand.600). Verified in the design gate. `[design.md §II; DS-2 contrast check]`
+    white-on-brand.500 = 4.47 → buttons use brand.600). Verified in the design gate. As of fe-codec-theme S1 this is
+    **enforced in-build** by a full-matrix fixture (every rendered pair × preset × mode ≥ 4.5), NOT just the design gate.
+    Symmetric caveat (fe-codec S1): the warm `reader`/`quietDesk` **dark** surfaces pin the dark `accent.400`/`neutral.400`
+    steps — ghost/muted text there is the tight constraint; tuned to ≥0.4 margin. `[design.md §II; build-tokens.test.ts B10 matrix]`
 11. **[FACT] B11 — Motion primitives, aux-routed, standard-aligned (DS-3).** `duration.*` (unitless ms numbers) and
     `easing.*` (CSS cubic-bezier/linear strings) are primitives routed to `variables.css` + `motion.ts` and **skipped**
     by both the `tokens.ts` and `themes.ts` emitters (not Tamagui categories — a third aux consumer alongside
@@ -82,6 +85,25 @@
   **authoritative at runtime**; the design.md `variables.css` (unitless `--space-*`/`--duration-*`, camelCase
   `--easing-inOut`) is a **parallel documentation / Figma-projection artifact**, not wired into the app. No runtime
   dependency on `variables.css`; the unitless-unit concern dissolves.
+
+## Rules established by fe-codec-theme S1 (IMPLEMENTED 2026-10-02)
+- **[NEW] B-codec-1 — N preset families via per-preset overlays (generalizes B7).** The pipeline emits **3 preset
+  families** (editorial · reader · quietDesk) **× light/dark = 6 Tamagui base themes + per-theme `<Comp>` sub-themes**
+  (10 comps × 6 = 60), each carrying its own palette + font-family. Mechanism = the B7 dark-overlay generalized: a
+  reusable `applyOverlay` applies `semantic.<preset>.json` (light remap) then `semantic.<preset>.dark.json` (dark delta)
+  over the editorial base, precedence `base < semantic.<preset>.json < semantic.<preset>.dark.json`, per-leaf, fail-loud
+  (isRef + resolves-to-loaded-primitive). `[build-tokens.mjs PRESETS/applyOverlay; build-tokens.test.ts B-codec-1]`
+- **[NEW] SCHEME-FIRST naming is law (Tamagui 2.6.2).** A theme's light/dark scheme = its **first `_`-segment**, and
+  only `light`/`dark` are valid schemes (`@tamagui/core` `useThemeState.cjs:312/317`). So themes are named `${mode}` /
+  `${mode}_${preset}` — the **default preset `editorial` keeps the bare `light`/`dark`** (+ `light_<Comp>`/`dark_<Comp>`),
+  non-default presets are `light_<preset>`/`dark_<preset>` + `${mode}_${preset}_<Comp>`. A `${preset}_dark` name would read
+  as scheme-less and break dark inversion/reset. Per-preset component sub-themes are **required** — the resolver tries one
+  `${base}_${componentName}` with no bare-`<Comp>` fallback. `[useThemeState.cjs:377; themes.ts]`
+- **[DONE]** editorial's bare names keep `tamagui.config.ts` + `provider.tsx` compiling **unchanged** at S1 (slice-safe;
+  config wiring of the 2 net-new presets = S2, provider/density = S3). **Density is NOT a token/theme swap** — Tamagui
+  resolves `space`/`size` against the global scale, theme swaps color only (DEF-U8-h) → density = a provider CSS data-attr
+  scale (S3); S1 authors no density tokens. Values repoint off the DS-2 placeholder to per-preset ramps anchored on the
+  P1 specimen ([[ds-2-palette-is-provisional-placeholder]] still applies — a brand pass refines VALUES, re-runs the B10 matrix).
 
 ## Boundaries (what the pipeline does NOT own — owed downstream)
 - **[INTENT: DS-5]** component-token expansion + the white-on-brand.500 contrast caveat (buttons → brand.600) +

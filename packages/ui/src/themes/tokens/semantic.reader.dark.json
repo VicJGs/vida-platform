@@ -1,0 +1,21 @@
+{
+  "_note": "PRESET DARK DELTA — reader. Loaded BY FILENAME. The dark delta over the reader light overlay. Precedence: semantic.json < semantic.reader.json < semantic.reader.dark.json.",
+  "color": {
+    "surface": {
+      "primary":   { "value": "{color.reader.neutral.900}", "type": "color" },
+      "secondary": { "value": "{color.reader.neutral.800}", "type": "color" },
+      "inverse":   { "value": "{color.white}", "type": "color" }
+    },
+    "text": {
+      "primary": { "value": "{color.reader.neutral.50}", "type": "color" },
+      "muted":   { "value": "{color.reader.neutral.400}", "type": "color" },
+      "inverse": { "value": "{color.reader.neutral.900}", "type": "color" }
+    },
+    "brand": {
+      "primary":  { "value": "{color.reader.accent.400}", "type": "color" },
+      "emphasis": { "value": "{color.reader.accent.300}", "type": "color" }
+    },
+    "focus":  { "ring": { "value": "{color.reader.accent.400}", "type": "color" } },
+    "border": { "default": { "value": "{color.reader.neutral.700}", "type": "color" } }
+  }
+}

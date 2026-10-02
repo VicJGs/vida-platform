@@ -16,10 +16,16 @@ interface ThemeSelection { preset: ThemePreset; mode: ThemeMode; density: ThemeD
 const THEME_DEFAULT: ThemeSelection            // { editorial, light, calm } — cold-start (R2/R6)
 const THEME_PRESETS: readonly ThemePreset[]    // ['reader','editorial','quietDesk'] — drives the Settings picker later
 
+// the createTamagui theme key — SCHEME-FIRST (Tamagui 2.6.2 law: a theme's scheme = its first `_`-segment, and only
+// light/dark are valid schemes; a `${preset}_dark` name reads as a scheme-less theme and breaks dark inversion/reset).
+// Default preset `editorial` keeps the bare scheme names `light`/`dark`; non-default presets prefix `${mode}_${preset}`.
+type ThemeName = ThemeMode | `${ThemeMode}_reader` | `${ThemeMode}_quietDesk`
+//  editorial→'light'|'dark'  ·  reader→'light_reader'|'dark_reader'  ·  quietDesk→'light_quietDesk'|'dark_quietDesk'
+
 // pure resolution — selection → the Tamagui theme name + density payload (no React, unit-testable)
 function resolveTheme(sel: ThemeSelection): {
-  themeName: `${ThemePreset}` | `${ThemePreset}_dark`   // the createTamagui theme key
-  density: ThemeDensity                                  // consumed by the provider's density application
+  themeName: ThemeName    // sel.preset === 'editorial' ? sel.mode : `${sel.mode}_${sel.preset}`
+  density: ThemeDensity   // consumed by the provider's density application (CSS data-attr scale, NOT a theme — S3)
 }
 
 // provider — extends today's UIProvider; `selection` replaces the `theme?: 'light'|'dark'` prop
@@ -44,10 +50,12 @@ export { useVidaTheme }  // unchanged — resolved token values for the active t
 (`routes.test.tsx`, `shell/test-router.tsx`, etc. — bare `<UIProvider>`); bare usage keeps working via the
 `THEME_DEFAULT` fallback. S3 migrates `App.tsx`; test wrappers need no change (default applies).
 
-## Density (the open technical seam → /preflight)
-`resolveTheme` returns `density`, but **how density maps to Tamagui tokens is preflight-resolved** against the installed
-`@tamagui/core` API (global `space`/`size` tokens are not per-theme): candidate = a provider-applied density-scaled
-`space.inset`/type set (data-attr or token swap). Decided at preflight, recorded here before S3. Not a Victor decision.
+## Density (preflight-RESOLVED against @tamagui/core 2.6.2)
+`resolveTheme` returns `density`. **Mechanism is settled:** Tamagui resolves `space`/`size` **dimension** props against
+the **global token scale**, swapping the theme **only for color** [DEF-U8-h, confirmed in 2.6.2]. So density is **NOT a
+Tamagui theme or token-value swap** — it is a **provider-applied CSS data-attribute scale** (`data-vida-density`, the
+injected-CSS precedent) that rescales `space.inset` + the type ramp. Built in **S3** (co-located with its mechanism);
+S1 authors **no density tokens**. Not a Victor decision — a lib-constraint fact.
 
 ## Invariants (contract-level)
 - No hard-coded palette in any consumer; all color/type via tokens (R1, themes/CLAUDE.md).

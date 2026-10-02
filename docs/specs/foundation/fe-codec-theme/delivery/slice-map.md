@@ -33,8 +33,9 @@ Newsreader, Spectral, Inter, Source Serif 4, IBM Plex Sans) with a **font-loadin
 
 ### S3 — Provider + resolution + density + app rewire · frontend/shared
 **Does:** extend `UIProvider` + `ThemeName` → a resolved **`{preset, mode, density}`** contract; a pure **resolution
-function** → the Tamagui theme name (`\`${preset}${mode==='dark'?'_dark':''}\``) + the density-scaled `space.inset`/type
-application; **reduced-motion**: preset/mode/density swap is an instant state change, no animated palette (B12);
+function** → the **scheme-first** Tamagui theme name (`preset==='editorial' ? mode : \`${mode}_${preset}\``; §2a/seam-contract)
++ the density application via a **provider CSS data-attr scale** (`data-vida-density` rescales `space.inset`/type —
+NOT a token swap, DEF-U8-h); **reduced-motion**: preset/mode/density swap is an instant state change, no animated palette (B12);
 **rewire `App.tsx`** to feed the cold-start default (Editorial/calm/light) through the new contract (W2 fix — the live
 store + switcher UI remain app/Settings-owned per R5).
 **Touches:** `provider.tsx`, `apps/web/src/App.tsx`, the typed contract export.
@@ -49,8 +50,11 @@ reduced-motion verified, against the P1 specimen; tsc 0; `@vida/ui` + `apps/web`
 ## Envision coverage (gate SATISFIED — interpretation §8)
 No per-slice re-greybox owed. Each `structural` P1 fact maps to a slice: EC "3 presets/default"→S1; "density 2-level"→S1/S3; "real fonts"→S2; "reduced-motion swap"→S3; "light-primary/dark-overlay"→S1. The P1 specimen is the Visual-Gate reference at S3.
 
-## Open technical seam → /preflight (not a Victor question)
-- **Density mechanism in Tamagui v2** — global `space`/`size` tokens are not per-theme; resolve whether density applies
-  via (a) a provider-level scaled token set, (b) a `<Theme>`-independent CSS data-attr scale, or (c) size-token swap —
-  decided at **preflight against the installed `@tamagui/core` API**, per the verify-against-installed-lib rule. Captured
-  in seam-contract.md §Density.
+## Technical seams — RESOLVED at /preflight against @tamagui/core **2.6.2** (installed) — not Victor questions
+- **Theme naming = SCHEME-FIRST** (G1): scheme is the first `_`-segment, only light/dark valid (`validSchemes` :312) →
+  editorial=bare `light`/`dark`, reader/quietDesk=`${mode}_${preset}`; sub-themes `${mode}[_preset]_<Comp>`. A
+  `${preset}_dark` name would break inversion/reset. Per-preset sub-themes CONFIRMED required (resolver :377 = one-shot,
+  no bare-`<Comp>` fallback) → ~60 sub-themes (10×3×2). Grounds S1 §2a/§3/§4 + seam-contract `ThemeName`.
+- **Density mechanism** (b) — a `<Theme>`-independent **CSS data-attr scale** at the provider; `space`/`size` dimension
+  props read the global token scale, theme swaps color only (DEF-U8-h). Built in **S3**; S1 authors no density tokens.
+  Captured in seam-contract.md §Density.

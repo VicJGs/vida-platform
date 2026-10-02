@@ -161,12 +161,24 @@ StyleDictionary.registerFormat({
   },
 })
 
+// fe-codec-theme S1 — N preset families × light/dark (B-codec-1, generalizes B7). SCHEME-FIRST names (Tamagui law:
+// a theme's scheme = its first `_`-segment, and only light/dark are valid schemes — @tamagui/core@2.6.2
+// useThemeState.cjs:312/317). The DEFAULT preset `editorial` keeps the bare `light`/`dark` (+ `light_<Comp>`/
+// `dark_<Comp>`) — today's output; non-default presets emit `${mode}_${preset}` + `${mode}_${preset}_<Comp>`. Per-preset
+// sub-themes are REQUIRED (the resolver tries ONE `${base}_${componentName}` and does NOT fall back to a bare `<Comp>`).
+const PRESETS = [
+  // scheme-first theme name ← { light overlay (over the editorial base), dark delta (over that preset's light) }
+  { light: 'light', dark: 'dark', lightOverlay: null, darkOverlay: 'semantic.dark.json' }, // editorial (default, bare)
+  { light: 'light_reader', dark: 'dark_reader', lightOverlay: 'semantic.reader.json', darkOverlay: 'semantic.reader.dark.json' },
+  { light: 'light_quietDesk', dark: 'dark_quietDesk', lightOverlay: 'semantic.quietDesk.json', darkOverlay: 'semantic.quietDesk.dark.json' },
+]
+
 StyleDictionary.registerFormat({
   name: 'vida/tamagui-themes',
   format: ({ dictionary }) => {
     const index = indexTokens(dictionary.allTokens)
-    const base = {} // semantic → base (light) keys, value = tokens.<cat>.<key>
-    const subs = {} // component name → { key: tokens.<cat>.<key> }
+    const base = {} // editorial light base: semantic key → tokens.<cat>.<key>
+    const subs = {} // component name → { key: semanticKey } (the base-theme KEY; resolved to <theme>.<key> at emit)
     for (const t of [...dictionary.allTokens].sort((a, b) => byPathSort(a.path.join('.'), b.path.join('.')))) {
       const rank = rankOfFile(t.filePath)
       const p = t.path.join('.')
@@ -176,55 +188,66 @@ StyleDictionary.registerFormat({
         const { category, key } = tamaguiRef(prim)
         base[camel(t.path)] = tokenRef(category, key)
       } else if (rank === 2) {
-        // Component sub-theme: reference the SEMANTIC base-theme key (DS-1 spec:113) so dark_<Comp>
-        // inherits the dark overlay by construction. Resolving to the PRIMITIVE here (the old drift)
-        // collapsed the light/dark indirection → dark_<Comp> ≡ light_<Comp>.
-        // See docs/specs/fixes/component-subtheme-dark-drift/.
+        // Component sub-theme: reference the SEMANTIC base-theme KEY (DS-1 spec:113) so <theme>_<Comp>
+        // inherits that theme's overlay by construction. Resolving to the PRIMITIVE here (the old drift)
+        // collapsed the light/dark indirection. See docs/specs/fixes/component-subtheme-dark-drift/.
         const ref = t.original?.value
         if (!isRef(ref)) fail(`component token "${p}" must reference a semantic token (B2), got ${JSON.stringify(ref)}`)
         const semPath = refTarget(ref) // e.g. "color.brand.emphasis"
         if (isAuxPath(toPrimitivePath(semPath, index))) continue // B9 — aux (shadow/typography) → CSS only, not the theme object
         const Comp = t.path[0].charAt(0).toUpperCase() + t.path[0].slice(1)
-        ;(subs[Comp] ??= {})[camel(t.path.slice(1))] = camel(semPath.split('.')) // store the base-theme KEY; resolve to light./dark. at emit
+        ;(subs[Comp] ??= {})[camel(t.path.slice(1))] = camel(semPath.split('.'))
       }
     }
-    // B7 — dark overlay: light = base; dark = base + semantic.dark.json overrides. The overlay is loaded BY FILENAME
-    // here (NOT via the SD source glob — F1), so checkLayers/B1 never see it and it can legitimately reuse light paths.
-    const darkBase = { ...base }
-    let darkOverrides = 0
-    try {
-      const overlay = flatten(JSON.parse(readFileSync(join(TOKENS_DIR, 'semantic.dark.json'), 'utf8')), [], new Map())
-      for (const [p, tok] of [...overlay].sort(([a], [b]) => byPathSort(a, b))) {
-        if (!isRef(tok.value)) fail(`dark overlay "${p}" holds a raw literal (${JSON.stringify(tok.value)}); it must reference a primitive [B7]`)
-        const prim = refTarget(tok.value)
-        if (!index.has(prim)) fail(`dark overlay "${p}" → {${prim}} does not resolve to a loaded primitive [B7]`)
-        if (isAuxPath(prim)) continue // dark shadow = border-based (design.md §V) → handled in CSS at DS-4, not the theme object
-        const { category, key } = tamaguiRef(toPrimitivePath(prim, index))
-        darkBase[camel(p.split('.'))] = tokenRef(category, key)
-        darkOverrides++
+    // Apply an overlay file (B7, generalized) over a theme object. Loaded BY FILENAME — NOT the SD source glob (F1) —
+    // so checkLayers/B1 never see it and it may legitimately reuse base paths. Each entry: isRef + resolves to a loaded
+    // primitive (aux → CSS only, skipped), else FAIL LOUD. Missing file → no overrides (honest placeholder). Merge is
+    // per-LEAF, so a preset overlay may partially override a group (e.g. text.primary/muted) and inherit the rest.
+    const applyOverlay = (src, filename) => {
+      const out = { ...src }
+      let count = 0
+      if (!filename) return { obj: out, count }
+      try {
+        const overlay = flatten(JSON.parse(readFileSync(join(TOKENS_DIR, filename), 'utf8')), [], new Map())
+        for (const [p, tok] of [...overlay].sort(([a], [b]) => byPathSort(a, b))) {
+          if (!isRef(tok.value)) fail(`overlay "${filename}" entry "${p}" holds a raw literal (${JSON.stringify(tok.value)}); it must reference a primitive [B7]`)
+          const prim = refTarget(tok.value)
+          if (!index.has(prim)) fail(`overlay "${filename}" entry "${p}" → {${prim}} does not resolve to a loaded primitive [B7]`)
+          if (isAuxPath(prim)) continue // e.g. dark shadow = border-based (design.md §V) → CSS at DS-4, not the theme object
+          const { category, key } = tamaguiRef(toPrimitivePath(prim, index))
+          out[camel(p.split('.'))] = tokenRef(category, key)
+          count++
+        }
+      } catch (e) {
+        if (e instanceof PipelineError) throw e // real B7 violation — fail loud
+        // else: overlay file absent → no overrides (honest placeholder)
       }
-    } catch (e) {
-      if (e instanceof PipelineError) throw e // real B7 violation — fail loud
-      // else: no semantic.dark.json yet → dark == light (honest placeholder pre-DS-2-values)
+      return { obj: out, count }
+    }
+    // Compose the 6 base themes. Precedence per non-default preset: base < semantic.<preset>.json < semantic.<preset>.dark.json.
+    const themes = {}
+    let totalOverrides = 0
+    for (const P of PRESETS) {
+      const lightTheme = P.lightOverlay ? applyOverlay(base, P.lightOverlay) : { obj: { ...base }, count: 0 }
+      const darkTheme = applyOverlay(lightTheme.obj, P.darkOverlay)
+      themes[P.light] = lightTheme.obj
+      themes[P.dark] = darkTheme.obj
+      totalOverrides += lightTheme.count + darkTheme.count
     }
     const obj = (o) => `{ ${Object.entries(o).map(([k, v]) => `${JSON.stringify(k)}: ${v}`).join(', ')} }`
-    const darkNote =
-      darkOverrides > 0
-        ? `// dark = light + ${darkOverrides} semantic.dark.json override(s) — parallel dark VALUES (B7). Theme-switch MECHANISM = DS-4.`
-        : '// PLACEHOLDER: no semantic.dark.json → dark == light. DS-2 supplies parallel dark VALUES; MECHANISM = DS-4.'
-    const out = [
-      `${BANNER}import { tokens } from './tokens'\n`,
-      darkNote,
-      `export const light = ${obj(base)}\n`,
-      `export const dark = ${obj(darkBase)}\n`,
-    ]
-    // Component sub-themes reference the base theme objects (DS-1:113): light_<Comp> → light.<semKey>,
-    // dark_<Comp> → dark.<semKey>. This is what makes dark_<Comp> dark-correct (dark holds the overlay).
+    const note =
+      totalOverrides > 0
+        ? `// ${Object.keys(themes).length} scheme-first base themes (3 presets × light/dark) + per-theme <Comp> sub-themes — parallel dark/preset VALUES (B-codec-1/B7). Theme-switch MECHANISM = DS-4/fe-codec S3.`
+        : '// PLACEHOLDER: no overlays → all themes == editorial base. Overlays supply parallel preset/dark VALUES; MECHANISM = DS-4.'
+    const out = [`${BANNER}import { tokens } from './tokens'\n`, note]
+    for (const [name, themeObj] of Object.entries(themes)) out.push(`export const ${name} = ${obj(themeObj)}\n`)
+    // Per-theme component sub-themes: <theme>_<Comp> → <theme>.<semKey> (so each resolves to ITS theme's values).
     const refBase = (sub, theme) =>
       Object.fromEntries(Object.entries(sub).map(([k, semKey]) => [k, `${theme}.${semKey}`]))
-    for (const Comp of Object.keys(subs).sort()) {
-      out.push(`export const light_${Comp} = ${obj(refBase(subs[Comp], 'light'))}`)
-      out.push(`export const dark_${Comp} = ${obj(refBase(subs[Comp], 'dark'))}\n`)
+    for (const theme of Object.keys(themes)) {
+      for (const Comp of Object.keys(subs).sort()) {
+        out.push(`export const ${theme}_${Comp} = ${obj(refBase(subs[Comp], theme))}`)
+      }
     }
     return out.join('\n')
   },

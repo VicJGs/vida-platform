@@ -2,29 +2,83 @@
   "color": {
     "white": { "value": "#FFFFFF", "type": "color" },
     "black": { "value": "#000000", "type": "color" },
-    "brand": {
-      "50":  { "value": "#EEF2FF", "type": "color" },
-      "100": { "value": "#E0E7FF", "type": "color" },
-      "200": { "value": "#C7D2FE", "type": "color" },
-      "300": { "value": "#A5B4FC", "type": "color" },
-      "400": { "value": "#818CF8", "type": "color" },
-      "500": { "value": "#6366F1", "type": "color" },
-      "600": { "value": "#4F46E5", "type": "color" },
-      "700": { "value": "#4338CA", "type": "color" },
-      "800": { "value": "#3730A3", "type": "color" },
-      "900": { "value": "#312E81", "type": "color" }
+    "editorial": {
+      "neutral": {
+        "50":  { "value": "#FBFBFA", "type": "color" },
+        "100": { "value": "#F1F1F0", "type": "color" },
+        "200": { "value": "#E2E3E2", "type": "color" },
+        "300": { "value": "#C9CBCC", "type": "color" },
+        "400": { "value": "#9A9DA2", "type": "color" },
+        "500": { "value": "#6B6E74", "type": "color" },
+        "600": { "value": "#4C4F56", "type": "color" },
+        "700": { "value": "#3A3F48", "type": "color" },
+        "800": { "value": "#272B32", "type": "color" },
+        "900": { "value": "#16181D", "type": "color" }
+      },
+      "accent": {
+        "50":  { "value": "#EFF4FF", "type": "color" },
+        "100": { "value": "#DBE6FE", "type": "color" },
+        "200": { "value": "#BFD3FE", "type": "color" },
+        "300": { "value": "#93B4FD", "type": "color" },
+        "400": { "value": "#5A8BF8", "type": "color" },
+        "500": { "value": "#2563EB", "type": "color" },
+        "600": { "value": "#1D4ED8", "type": "color" },
+        "700": { "value": "#1E40AF", "type": "color" },
+        "800": { "value": "#1E3A8A", "type": "color" },
+        "900": { "value": "#172554", "type": "color" }
+      }
     },
-    "neutral": {
-      "50":  { "value": "#F8FAFC", "type": "color" },
-      "100": { "value": "#F1F5F9", "type": "color" },
-      "200": { "value": "#E2E8F0", "type": "color" },
-      "300": { "value": "#CBD5E1", "type": "color" },
-      "400": { "value": "#94A3B8", "type": "color" },
-      "500": { "value": "#64748B", "type": "color" },
-      "600": { "value": "#475569", "type": "color" },
-      "700": { "value": "#334155", "type": "color" },
-      "800": { "value": "#1E293B", "type": "color" },
-      "900": { "value": "#0F172A", "type": "color" }
+    "reader": {
+      "neutral": {
+        "50":  { "value": "#FAF7F0", "type": "color" },
+        "100": { "value": "#F0EADE", "type": "color" },
+        "200": { "value": "#E2D9C8", "type": "color" },
+        "300": { "value": "#CDBFA6", "type": "color" },
+        "400": { "value": "#9C8E76", "type": "color" },
+        "500": { "value": "#6E6250", "type": "color" },
+        "600": { "value": "#4F4638", "type": "color" },
+        "700": { "value": "#3A352B", "type": "color" },
+        "800": { "value": "#28231C", "type": "color" },
+        "900": { "value": "#17130D", "type": "color" }
+      },
+      "accent": {
+        "50":  { "value": "#FBEDEC", "type": "color" },
+        "100": { "value": "#F5D6D4", "type": "color" },
+        "200": { "value": "#EBAFAC", "type": "color" },
+        "300": { "value": "#E09490", "type": "color" },
+        "400": { "value": "#D47B74", "type": "color" },
+        "500": { "value": "#B23733", "type": "color" },
+        "600": { "value": "#9A2A2A", "type": "color" },
+        "700": { "value": "#7E2222", "type": "color" },
+        "800": { "value": "#631B1B", "type": "color" },
+        "900": { "value": "#471313", "type": "color" }
+      }
+    },
+    "quietDesk": {
+      "neutral": {
+        "50":  { "value": "#F4F2EC", "type": "color" },
+        "100": { "value": "#E9E6DC", "type": "color" },
+        "200": { "value": "#D8D3C5", "type": "color" },
+        "300": { "value": "#BFB8A5", "type": "color" },
+        "400": { "value": "#9C977E", "type": "color" },
+        "500": { "value": "#64604D", "type": "color" },
+        "600": { "value": "#4D4A3B", "type": "color" },
+        "700": { "value": "#3A382F", "type": "color" },
+        "800": { "value": "#2A2922", "type": "color" },
+        "900": { "value": "#1A1813", "type": "color" }
+      },
+      "accent": {
+        "50":  { "value": "#F0F2EA", "type": "color" },
+        "100": { "value": "#DDE3CE", "type": "color" },
+        "200": { "value": "#C3CDA8", "type": "color" },
+        "300": { "value": "#AEBE88", "type": "color" },
+        "400": { "value": "#8FA363", "type": "color" },
+        "500": { "value": "#5F6E3E", "type": "color" },
+        "600": { "value": "#4C5832", "type": "color" },
+        "700": { "value": "#3C4628", "type": "color" },
+        "800": { "value": "#2D351E", "type": "color" },
+        "900": { "value": "#1E2415", "type": "color" }
+      }
     },
     "success": {
       "100": { "value": "#D1FAE5", "type": "color" },
@@ -82,8 +136,19 @@
     "toast":    { "value": 1400, "type": "number" }
   },
   "fontFamily": {
-    "display": { "value": "'Space Grotesk', system-ui, sans-serif", "type": "fontFamily" },
-    "body":    { "value": "'Inter', system-ui, sans-serif", "type": "fontFamily" }
+    "display": { "value": "'Spectral', Georgia, serif", "type": "fontFamily" },
+    "body":    { "value": "'Spectral', Georgia, serif", "type": "fontFamily" },
+    "chrome":  { "value": "'Inter', system-ui, sans-serif", "type": "fontFamily" },
+    "reader": {
+      "display": { "value": "'Fraunces', Georgia, serif", "type": "fontFamily" },
+      "body":    { "value": "'Newsreader', Georgia, serif", "type": "fontFamily" },
+      "chrome":  { "value": "'Inter', system-ui, sans-serif", "type": "fontFamily" }
+    },
+    "quietDesk": {
+      "display": { "value": "'Source Serif 4', Georgia, serif", "type": "fontFamily" },
+      "body":    { "value": "'Source Serif 4', Georgia, serif", "type": "fontFamily" },
+      "chrome":  { "value": "'IBM Plex Sans', system-ui, sans-serif", "type": "fontFamily" }
+    }
   },
   "fontSize": {
     "caption":      { "value": 12, "type": "fontSize" },

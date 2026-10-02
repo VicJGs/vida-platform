@@ -23,8 +23,8 @@ describe('DS-4 tamagui.config (runtime)', () => {
   it('B14 — dark is a parallel theme: resolves DIFFERENTLY from light at runtime', () => {
     const light = val(c.themes?.light?.colorSurfacePrimary)
     const dark = val(c.themes?.dark?.colorSurfacePrimary)
-    expect(light).toBe('#FFFFFF')
-    expect(dark).toBe('#0F172A')
+    expect(light).toBe('#FBFBFA') // editorial paper (default preset; fe-codec S1 repointed off the DS-2 placeholder)
+    expect(dark).toBe('#16181D') // editorial ink
     expect(light).not.toBe(dark)
   })
 

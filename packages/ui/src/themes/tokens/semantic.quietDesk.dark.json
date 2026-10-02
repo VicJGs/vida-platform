@@ -1,0 +1,21 @@
+{
+  "_note": "PRESET DARK DELTA — quietDesk. Loaded BY FILENAME. The dark delta over the quietDesk light overlay. Precedence: semantic.json < semantic.quietDesk.json < semantic.quietDesk.dark.json.",
+  "color": {
+    "surface": {
+      "primary":   { "value": "{color.quietDesk.neutral.900}", "type": "color" },
+      "secondary": { "value": "{color.quietDesk.neutral.800}", "type": "color" },
+      "inverse":   { "value": "{color.white}", "type": "color" }
+    },
+    "text": {
+      "primary": { "value": "{color.quietDesk.neutral.50}", "type": "color" },
+      "muted":   { "value": "{color.quietDesk.neutral.400}", "type": "color" },
+      "inverse": { "value": "{color.quietDesk.neutral.900}", "type": "color" }
+    },
+    "brand": {
+      "primary":  { "value": "{color.quietDesk.accent.400}", "type": "color" },
+      "emphasis": { "value": "{color.quietDesk.accent.300}", "type": "color" }
+    },
+    "focus":  { "ring": { "value": "{color.quietDesk.accent.400}", "type": "color" } },
+    "border": { "default": { "value": "{color.quietDesk.neutral.700}", "type": "color" } }
+  }
+}

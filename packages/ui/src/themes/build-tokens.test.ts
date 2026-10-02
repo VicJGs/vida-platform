@@ -77,8 +77,8 @@ describe('build — outputs (B1/B3/B4)', () => {
   })
 
   it('B3 — CSS var names follow design.md §XII (a/b/c → --a-b-c) and chain via var()', () => {
-    expect(css1).toMatch(/--color-surface-primary:\s*var\(--color-white\);/)
-    expect(css1).toMatch(/--color-white:\s*#FFFFFF;/) // primitive → literal
+    expect(css1).toMatch(/--color-surface-primary:\s*var\(--color-editorial-neutral-50\);/) // semantic → chains via var() (editorial default)
+    expect(css1).toMatch(/--color-editorial-neutral-50:\s*#FBFBFA;/) // primitive → literal
   })
 
   it('B1 — every emitted CSS custom property traces to a seed path', () => {
@@ -161,8 +161,8 @@ describe('B7/B9 — real seed outputs', () => {
     const dark = themes.match(/export const dark = (\{.*?\})\n/s)?.[1] ?? ''
     expect(light).not.toBe('')
     expect(dark).not.toBe(light) // parallel dark, not identical placeholder
-    expect(light).toContain('"colorSurfacePrimary": tokens.color.white')
-    expect(dark).toContain('"colorSurfacePrimary": tokens.color.neutral900')
+    expect(light).toContain('"colorSurfacePrimary": tokens.color.editorialNeutral50') // paper (editorial default)
+    expect(dark).toContain('"colorSurfacePrimary": tokens.color.editorialNeutral900') // ink
   })
 
   it('B9 — aux (font*/shadow) are SKIPPED from tokens.ts createTokens', () => {
@@ -273,5 +273,127 @@ describe('shadow tokens routed to CSS + shadow.ts, still skipped from tokens.ts/
   it('B4 — a second build leaves shadow.ts byte-identical', async () => {
     await build()
     expect(read('shadow.ts')).toBe(shadow)
+  })
+})
+
+// ── fe-codec-theme S1 (B-codec-1 — N preset families × light/dark, SCHEME-FIRST; generalizes B7) ───────
+describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)', () => {
+  let themes: string, fonts: string
+  beforeAll(async () => {
+    await build()
+    themes = read('themes.ts')
+    fonts = read('fonts.ts')
+  })
+  const allExports = () => [...themes.matchAll(/^export const ([a-zA-Z_]+) = \{/gm)].map((m) => m[1])
+  const bases = () => allExports().filter((n) => !/_[A-Z]/.test(n)) // base themes have no `_<Comp>` segment
+  const subs = () => allExports().filter((n) => /_[A-Z]/.test(n))
+  const grab = (name: string) => themes.match(new RegExp(`export const ${name} = (\\{.*?\\})\\n`, 's'))?.[1] ?? ''
+
+  it('emits exactly 6 scheme-first base themes', () => {
+    expect(new Set(bases())).toEqual(
+      new Set(['light', 'dark', 'light_reader', 'dark_reader', 'light_quietDesk', 'dark_quietDesk']),
+    )
+  })
+
+  it("Tamagui scheme law — every theme name's first _-segment is light or dark", () => {
+    for (const name of allExports()) expect(['light', 'dark']).toContain(name.split('_')[0])
+  })
+
+  it('exact sub-theme count = components × presets × modes (10 × 3 × 2 = 60); 20 editorial + 40 net-new', () => {
+    expect(subs().length).toBe(60)
+    expect(subs().filter((n) => /^(light|dark)_[A-Z]/.test(n)).length).toBe(20) // editorial bare light_/dark_<Comp>
+  })
+
+  it('backward-compat — editorial keeps the bare light/dark + the 10 light_/dark_<Comp> the config imports', () => {
+    for (const comp of ['Button', 'Input', 'Checkbox', 'Select', 'Card', 'Tabs', 'Menu', 'Dialog', 'Popover', 'Toast']) {
+      expect(themes).toMatch(new RegExp(`export const light_${comp} = \\{`))
+      expect(themes).toMatch(new RegExp(`export const dark_${comp} = \\{`))
+    }
+  })
+
+  it("each preset resolves to ITS OWN ramp (not the default's)", () => {
+    expect(grab('light')).toContain('editorialNeutral50')
+    expect(grab('light_reader')).toContain('readerNeutral50')
+    expect(grab('light_reader')).not.toContain('editorialNeutral')
+    expect(grab('light_quietDesk')).toContain('quietDeskNeutral50')
+  })
+
+  it('per-preset dark overlay applies — dark_reader ≠ light_reader and uses the reader ink ramp', () => {
+    expect(grab('dark_reader')).not.toBe(grab('light_reader'))
+    expect(grab('dark_reader')).toContain('readerNeutral900') // ink surface in dark
+    expect(grab('dark_reader')).not.toContain('editorialNeutral')
+  })
+
+  it('a preset sub-theme references ITS base theme key (light_reader_Button → light_reader.*, not raw tokens)', () => {
+    const sub = themes.match(/export const light_reader_Button = \{[^\n]*\}/)?.[0] ?? ''
+    expect(sub).toMatch(/light_reader\.color/)
+    expect(sub).not.toMatch(/tokens\./)
+  })
+
+  it('per-preset font-family routes to fonts.ts; shared type scales unchanged', () => {
+    expect(fonts).toMatch(/"display": "'Spectral'/) // editorial display (bare)
+    expect(fonts).toMatch(/"readerDisplay": "'Fraunces'/)
+    expect(fonts).toMatch(/"quietDeskChrome": "'IBM Plex Sans'/)
+    expect(fonts).toMatch(/fontSize: \{[^}]*"body": 16/) // shared scale unchanged
+  })
+
+  it('every preset overlay entry is a ref resolving to a loaded primitive (no raw literal / dangling — B7)', () => {
+    const { byPath } = validate() as { byPath: Map<string, unknown> }
+    const files = [
+      'semantic.dark.json',
+      'semantic.reader.json',
+      'semantic.reader.dark.json',
+      'semantic.quietDesk.json',
+      'semantic.quietDesk.dark.json',
+    ]
+    const isRef = (v: unknown): v is string => typeof v === 'string' && /^\{[^}]+\}$/.test(v)
+    const walk = (node: any, cb: (v: unknown) => void): void => {
+      if (node && typeof node === 'object') {
+        if ('value' in node) cb(node.value)
+        else for (const k of Object.keys(node)) walk(node[k], cb)
+      }
+    }
+    for (const f of files) {
+      walk(JSON.parse(read(`tokens/${f}`)).color, (v) => {
+        expect(isRef(v)).toBe(true)
+        if (isRef(v)) expect(byPath.has(v.slice(1, -1))).toBe(true)
+      })
+    }
+  })
+
+  it('B10 — AA contrast floor on EVERY rendered text pair × preset × MODE (≥ 4.5)', () => {
+    // The real semantic→primitive resolution per mode (from semantic*.json overlays + component.json button tokens).
+    // Covers light AND dark (the dark pairs are where the warm reader/quietDesk surfaces are the tight constraint).
+    const { byPath } = validate() as { byPath: Map<string, { value: string }> }
+    const hex = (p: string) => byPath.get(p)!.value
+    const lum = (h: string) => {
+      const n = h.replace('#', '')
+      const ch = [0, 2, 4].map((i) => {
+        const c = parseInt(n.slice(i, i + 2), 16) / 255
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+      })
+      return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
+    }
+    const ratio = (fg: string, bg: string) => {
+      const [l1, l2] = [lum(fg === 'white' ? '#FFFFFF' : hex(fg)), lum(bg === 'white' ? '#FFFFFF' : hex(bg))].sort((x, y) => y - x)
+      return (l1 + 0.05) / (l2 + 0.05)
+    }
+    // [label, lightFg, lightBg, darkFg, darkBg] — `P` is the preset; paths are primitive refs the semantics resolve to.
+    const pairs = [
+      ['body  text.primary/surface', 'P.neutral.900', 'P.neutral.50', 'P.neutral.50', 'P.neutral.900'],
+      ['muted text.muted/surface', 'P.neutral.500', 'P.neutral.50', 'P.neutral.400', 'P.neutral.900'],
+      ['ghost brand.primary/surface', 'P.accent.500', 'P.neutral.50', 'P.accent.400', 'P.neutral.900'],
+      ['btnPrimary text.inverse/emphasis', 'white', 'P.accent.600', 'P.neutral.900', 'P.accent.300'],
+      ['btnSecondary text.primary/surf.sec', 'P.neutral.900', 'P.neutral.100', 'P.neutral.50', 'P.neutral.800'],
+    ] as const
+    const sub = (s: string, p: string) => (s === 'white' ? 'white' : `color.${s.replace('P.', p + '.')}`)
+    for (const preset of ['editorial', 'reader', 'quietDesk']) {
+      for (const [label, lf, lb, df, db] of pairs) {
+        const light = ratio(sub(lf, preset), sub(lb, preset))
+        const dark = ratio(sub(df, preset), sub(db, preset))
+        expect(light, `${preset} ${label} (light) = ${light.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+        expect(dark, `${preset} ${label} (dark) = ${dark.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
   })
 })

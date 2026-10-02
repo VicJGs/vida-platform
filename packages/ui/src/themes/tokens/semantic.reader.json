@@ -1,0 +1,20 @@
+{
+  "_note": "PRESET OVERLAY (light) — reader. Loaded BY FILENAME in the themes.ts emitter (NOT the SD source glob). Full remap of the preset-colored semantics to color.reader.*; signal/space/radius inherit from semantic.json (per-leaf merge). Precedence: semantic.json < semantic.reader.json.",
+  "color": {
+    "surface": {
+      "primary":   { "value": "{color.reader.neutral.50}", "type": "color" },
+      "secondary": { "value": "{color.reader.neutral.100}", "type": "color" },
+      "inverse":   { "value": "{color.reader.neutral.900}", "type": "color" }
+    },
+    "text": {
+      "primary": { "value": "{color.reader.neutral.900}", "type": "color" },
+      "muted":   { "value": "{color.reader.neutral.500}", "type": "color" }
+    },
+    "brand": {
+      "primary":  { "value": "{color.reader.accent.500}", "type": "color" },
+      "emphasis": { "value": "{color.reader.accent.600}", "type": "color" }
+    },
+    "focus":  { "ring": { "value": "{color.reader.accent.500}", "type": "color" } },
+    "border": { "default": { "value": "{color.reader.neutral.200}", "type": "color" } }
+  }
+}
