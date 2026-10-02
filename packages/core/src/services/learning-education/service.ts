@@ -15,7 +15,7 @@
 // ============================================================================
 
 import { eq, and, isNull, type SQL } from 'drizzle-orm'
-import type { Institution, SelfTaughtPath, Program, Curriculum, Term } from '@vida/types'
+import type { Institution, SelfTaughtPath, Program, Curriculum, Term, Subject } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import {
   institutions,
@@ -23,11 +23,13 @@ import {
   programs,
   curricula,
   terms,
+  subjects,
   type InstitutionRow,
   type SelfTaughtRow,
   type ProgramRow,
   type CurriculumRow,
   type TermRow,
+  type SubjectRow,
 } from '../../db/schema/learning'
 import {
   CreateInstitutionSchema,
@@ -40,6 +42,8 @@ import {
   UpdateCurriculumSchema,
   CreateTermSchema,
   UpdateTermSchema,
+  CreateSubjectSchema,
+  UpdateSubjectSchema,
 } from '../../validators/learning'
 import {
   type LearningEducationService,
@@ -56,11 +60,16 @@ import {
   type UpdateCurriculumInput,
   type CreateTermInput,
   type UpdateTermInput,
+  type CreateSubjectInput,
+  type UpdateSubjectInput,
+  type SubjectFilter,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
   CurriculumNotFoundError,
   TermNotFoundError,
+  SubjectNotFoundError,
+  UnroutedSubjectError,
 } from './types'
 
 // --- row→interface mappers (only the plain-text `_sync_status` needs the union cast) ---
@@ -84,6 +93,27 @@ const toTerm = (r: TermRow): Term => ({
   ...r,
   _sync_status: r._sync_status as Term['_sync_status'],
 })
+// DEFENSIVE json-as-text parse (R10 / the books parseJsonObject · preferences · checkins precedent): `metadata`
+// is a superseded v1 generic slot most likely to hold a NON-JSON legacy string — a bare JSON.parse would crash
+// every getSubject/listSubjects read. Malformed ⇒ null, never throw. [[json-t-columns-need-service-serialize-in-m10]]
+const parseMetadata = (value: string | null): Record<string, unknown> | null => {
+  if (value == null) return null
+  try {
+    const parsed: unknown = JSON.parse(value)
+    return parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+// subjects: `status`/`course_type`/`degree_tier`/`_sync_status` are plain-text union casts; `metadata` parsed above.
+const toSubject = (r: SubjectRow): Subject => ({
+  ...r,
+  status: r.status as Subject['status'],
+  course_type: r.course_type as Subject['course_type'],
+  degree_tier: r.degree_tier as Subject['degree_tier'],
+  metadata: parseMetadata(r.metadata),
+  _sync_status: r._sync_status as Subject['_sync_status'],
+})
 
 export function createLearningEducationService(
   deps: LearningEducationServiceDeps,
@@ -97,6 +127,7 @@ export function createLearningEducationService(
   const programsRepo = createRepository(db, programs, { deviceId, softDelete: true, encryptedFields: [] })
   const curriculaRepo = createRepository(db, curricula, { deviceId, softDelete: true, encryptedFields: [] })
   const termsRepo = createRepository(db, terms, { deviceId, softDelete: true, encryptedFields: [] })
+  const subjectsRepo = createRepository(db, subjects, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- institutions (ED-2) --------------------------------------------------
   async function createInstitution(input: CreateInstitutionInput): Promise<Institution> {
@@ -305,7 +336,96 @@ export function createLearningEducationService(
     return rows.map(toTerm)
   }
 
-  // ---- routing primitive (ED-3) — S2 enforces on subjects -------------------
+  // ---- subjects (ED-3) — routing ENFORCED; progress NEVER settable (R2/M3) --
+  // Routing policy (doc-reconciled): a GIVEN routing ref (curriculum_id and/or term_id) MUST resolve to a live,
+  // consistent chain, else UnroutedSubjectError. An EMPTY routing (neither given) is ALLOWED — a lone subject,
+  // organized into a curriculum later. Grounding: the built DB-4 schema makes curriculum_id nullable "per A1
+  // optional depth" (learning.ts:100, the authoritative artifact) + subjects are "sparse and progressively
+  // fillable" (identity.md:49-50, ED-14). The pre-DB-4 "never an orphaned flat list" (business-rules ED-3)
+  // targets the v2 anti-pattern (a courses list with no routing CAPABILITY), not a creation-time mandate.
+  // Never auto-derives a ref (No-Guessing).
+  async function assertRouting(curriculumId: string | null, termId: string | null): Promise<void> {
+    if (curriculumId == null && termId == null) return // A1 collapsed — allowed
+    const chain = await resolveParentChain({ curriculumId, termId })
+    if (!chain.ok) throw new UnroutedSubjectError(`curriculum_id=${curriculumId}, term_id=${termId}`)
+  }
+  async function createSubject(input: CreateSubjectInput): Promise<Subject> {
+    const v = CreateSubjectSchema.parse(input)
+    await assertRouting(v.curriculum_id ?? null, v.term_id ?? null)
+    const row = await subjectsRepo.create({
+      title: v.title,
+      description: v.description ?? null,
+      provider: v.provider ?? null,
+      instructor: v.instructor ?? null,
+      url: v.url ?? null,
+      metadata: null, // superseded generic slot — not a write input at S2 (toSubject parses legacy reads)
+      course_type: v.course_type ?? null,
+      status: v.status ?? 'not_started', // notNull default — backfilled on the create-echo
+      progress: null, // R2/M3 — never settable; derived on read (S8)
+      total_modules: v.total_modules ?? null,
+      completed_modules: v.completed_modules ?? null,
+      start_date: v.start_date ?? null,
+      end_date: v.end_date ?? null,
+      target_completion: v.target_completion ?? null,
+      estimated_hours: v.estimated_hours ?? null,
+      rating: v.rating ?? null,
+      curriculum_id: v.curriculum_id ?? null,
+      term_id: v.term_id ?? null,
+      degree_tier: v.degree_tier ?? null,
+      deleted_at: null,
+    } satisfies CreateInput<typeof subjects>)
+    return toSubject(row)
+  }
+  async function updateSubject(id: string, input: UpdateSubjectInput): Promise<Subject> {
+    const v = UpdateSubjectSchema.parse(input)
+    const existing = await subjectsRepo.findById(id)
+    if (!existing) throw new SubjectNotFoundError(id)
+    // Re-routing: if either ref is being changed, re-validate the resulting chain (R2 — the final pair).
+    if (v.curriculum_id !== undefined || v.term_id !== undefined) {
+      const nextCurriculum = v.curriculum_id !== undefined ? (v.curriculum_id ?? null) : existing.curriculum_id
+      const nextTerm = v.term_id !== undefined ? (v.term_id ?? null) : existing.term_id
+      await assertRouting(nextCurriculum, nextTerm)
+    }
+    const row = await subjectsRepo.update(id, {
+      ...(v.title !== undefined ? { title: v.title } : {}),
+      ...(v.description !== undefined ? { description: v.description ?? null } : {}),
+      ...(v.provider !== undefined ? { provider: v.provider ?? null } : {}),
+      ...(v.instructor !== undefined ? { instructor: v.instructor ?? null } : {}),
+      ...(v.url !== undefined ? { url: v.url ?? null } : {}),
+      ...(v.course_type !== undefined ? { course_type: v.course_type ?? null } : {}),
+      ...(v.status !== undefined ? { status: v.status } : {}),
+      ...(v.total_modules !== undefined ? { total_modules: v.total_modules ?? null } : {}),
+      ...(v.completed_modules !== undefined ? { completed_modules: v.completed_modules ?? null } : {}),
+      ...(v.start_date !== undefined ? { start_date: v.start_date ?? null } : {}),
+      ...(v.end_date !== undefined ? { end_date: v.end_date ?? null } : {}),
+      ...(v.target_completion !== undefined ? { target_completion: v.target_completion ?? null } : {}),
+      ...(v.estimated_hours !== undefined ? { estimated_hours: v.estimated_hours ?? null } : {}),
+      ...(v.rating !== undefined ? { rating: v.rating ?? null } : {}),
+      ...(v.curriculum_id !== undefined ? { curriculum_id: v.curriculum_id ?? null } : {}),
+      ...(v.term_id !== undefined ? { term_id: v.term_id ?? null } : {}),
+      ...(v.degree_tier !== undefined ? { degree_tier: v.degree_tier ?? null } : {}),
+      // progress NEVER in the patch (R2/M3)
+    })
+    return toSubject(row)
+  }
+  async function deleteSubject(id: string): Promise<void> {
+    if (!(await subjectsRepo.findById(id))) throw new SubjectNotFoundError(id)
+    await subjectsRepo.delete(id)
+  }
+  async function getSubject(id: string): Promise<Subject | null> {
+    const row = await subjectsRepo.findById(id)
+    return row ? toSubject(row) : null
+  }
+  async function listSubjects(filter: SubjectFilter = {}): Promise<Subject[]> {
+    const clauses: SQL[] = [isNull(subjects.deleted_at) as SQL]
+    if (filter.curriculumId != null) clauses.push(eq(subjects.curriculum_id, filter.curriculumId) as SQL)
+    if (filter.termId != null) clauses.push(eq(subjects.term_id, filter.termId) as SQL)
+    if (filter.status != null) clauses.push(eq(subjects.status, filter.status) as SQL)
+    const rows = await subjectsRepo.findWhere(and(...clauses) as SQL)
+    return rows.map(toSubject)
+  }
+
+  // ---- routing primitive (ED-3) — enforced by createSubject/updateSubject ---
   // Resolves whatever refs are given to live rows; `ok` = every GIVEN ref resolved. The program is read via the
   // resolved curriculum (a term's curriculum takes precedence when both are given and agree). No ref given ⇒
   // ok:true, all null (A1 — the caller/S2 decides the "must have at least one" policy).
@@ -369,6 +489,11 @@ export function createLearningEducationService(
     deleteTerm,
     getTerm,
     listTermsFor,
+    createSubject,
+    updateSubject,
+    deleteSubject,
+    getSubject,
+    listSubjects,
     resolveParentChain,
   }
 }

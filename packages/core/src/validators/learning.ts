@@ -129,3 +129,45 @@ export const UpdateTermSchema = z.object({
   start_date: z.string().nullish(),
   end_date: z.string().nullish(),
 })
+
+// --- Subjects (mod-learning-education ① S2) — `progress` is NEVER an input (R2/M3,
+// derived override) and inline `tags` do not exist (SP1 → entity_tags). `metadata` is a
+// superseded generic slot, not exposed as a write input at S2. ---
+export const CreateSubjectSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().nullish(),
+  provider: z.string().nullish(),
+  instructor: z.string().nullish(),
+  url: z.string().nullish(),
+  course_type: CourseTypeSchema.nullish(),
+  status: CourseStatusSchema.optional(), // notNull — defaults to 'not_started' on create
+  total_modules: z.number().int().nonnegative().nullish(),
+  completed_modules: z.number().int().nonnegative().nullish(),
+  start_date: z.string().nullish(),
+  end_date: z.string().nullish(),
+  target_completion: z.string().nullish(),
+  estimated_hours: z.number().int().nonnegative().nullish(),
+  rating: z.number().int().min(1).max(5).nullish(),
+  curriculum_id: z.string().nullish(), // routing (ED-3); resolved via resolveParentChain
+  term_id: z.string().nullish(),
+  degree_tier: DegreeTierSchema.nullish(),
+})
+export const UpdateSubjectSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().nullish(),
+  provider: z.string().nullish(),
+  instructor: z.string().nullish(),
+  url: z.string().nullish(),
+  course_type: CourseTypeSchema.nullish(),
+  status: CourseStatusSchema.optional(),
+  total_modules: z.number().int().nonnegative().nullish(),
+  completed_modules: z.number().int().nonnegative().nullish(),
+  start_date: z.string().nullish(),
+  end_date: z.string().nullish(),
+  target_completion: z.string().nullish(),
+  estimated_hours: z.number().int().nonnegative().nullish(),
+  rating: z.number().int().min(1).max(5).nullish(),
+  curriculum_id: z.string().nullish(), // re-routing re-validates via resolveParentChain
+  term_id: z.string().nullish(),
+  degree_tier: DegreeTierSchema.nullish(),
+})

@@ -15,7 +15,16 @@
 // ============================================================================
 
 import type { z } from 'zod'
-import type { Institution, SelfTaughtPath, Program, Curriculum, Term, ProgramParentType } from '@vida/types'
+import type {
+  Institution,
+  SelfTaughtPath,
+  Program,
+  Curriculum,
+  Term,
+  Subject,
+  ProgramParentType,
+  CourseStatus,
+} from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type {
   CreateInstitutionSchema,
@@ -28,6 +37,8 @@ import type {
   UpdateCurriculumSchema,
   CreateTermSchema,
   UpdateTermSchema,
+  CreateSubjectSchema,
+  UpdateSubjectSchema,
 } from '../../validators/learning'
 
 export interface LearningEducationServiceDeps {
@@ -47,6 +58,15 @@ export type CreateCurriculumInput = z.input<typeof CreateCurriculumSchema>
 export type UpdateCurriculumInput = z.input<typeof UpdateCurriculumSchema>
 export type CreateTermInput = z.input<typeof CreateTermSchema>
 export type UpdateTermInput = z.input<typeof UpdateTermSchema>
+export type CreateSubjectInput = z.input<typeof CreateSubjectSchema>
+export type UpdateSubjectInput = z.input<typeof UpdateSubjectSchema>
+
+/** Filter for `listSubjects` (ED-3 routing). All optional — an empty filter lists every live subject. */
+export interface SubjectFilter {
+  curriculumId?: string
+  termId?: string
+  status?: CourseStatus
+}
 
 /** How a program names its parent (ED-2) — an institution OR a self_taught row. */
 export interface ParentRef {
@@ -100,7 +120,14 @@ export interface LearningEducationService {
   getTerm(id: string): Promise<Term | null>
   listTermsFor(curriculumId: string): Promise<Term[]>
 
-  // --- routing primitive (ED-3) — S2 enforces on subjects ---
+  // --- subjects (ED-3) — the study unit; routing ENFORCED via resolveParentChain ---
+  createSubject(input: CreateSubjectInput): Promise<Subject>
+  updateSubject(id: string, input: UpdateSubjectInput): Promise<Subject>
+  deleteSubject(id: string): Promise<void>
+  getSubject(id: string): Promise<Subject | null>
+  listSubjects(filter?: SubjectFilter): Promise<Subject[]>
+
+  // --- routing primitive (ED-3) — enforced by createSubject/updateSubject ---
   resolveParentChain(ref: { curriculumId?: string | null; termId?: string | null }): Promise<ParentChainResolution>
 }
 
@@ -133,5 +160,19 @@ export class TermNotFoundError extends Error {
   constructor(id: string) {
     super(`Term not found: ${id}`)
     this.name = 'TermNotFoundError'
+  }
+}
+export class SubjectNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Subject not found: ${id}`)
+    this.name = 'SubjectNotFoundError'
+  }
+}
+/** A subject's routing refs (curriculum/term) were given but do not resolve to a live, consistent chain (ED-3).
+ *  An EMPTY routing (no curriculum_id, no term_id) is allowed (A1 fully collapsed) — not an error. */
+export class UnroutedSubjectError extends Error {
+  constructor(detail: string) {
+    super(`Subject parent chain does not resolve: ${detail}`)
+    this.name = 'UnroutedSubjectError'
   }
 }

@@ -36,7 +36,29 @@
   (`Institution`/`SelfTaughtPath`/`Program`/`Curriculum`/`Term`). The `Course`→`Subject` rename + retired-column
   reconcile is S2, not S1. `[code: packages/types/src/learning.ts]`
 
+## Shipped invariants (as of S2 — subjects + routing enforcement)
+
+- **BR-LE-S2-1 (subjects always routable, routing enforced / ED-3 + A1)** — `createSubject`/`updateSubject`
+  validate a GIVEN routing ref (curriculum_id and/or term_id) resolves to a live, consistent chain, else
+  `UnroutedSubjectError`. An EMPTY routing (neither given) is **allowed** — a lone subject, organized later.
+  Grounding (doc-reconciled): schema `curriculum_id` nullable "per A1 optional depth" (learning.ts:100) + subjects
+  "sparse and progressively fillable" (ED-14, identity.md:49-50); the pre-DB-4 "never an orphaned flat list"
+  (ED-3) targets the v2 flat-list anti-pattern, not a creation mandate. `[code: service.ts assertRouting]`
+- **BR-LE-S2-2 (progress never settable / R2/M3)** — `progress` is absent from `CreateSubjectSchema`/
+  `UpdateSubjectSchema` (Zod strips a force-passed value), hardcoded `null` on create, never in the update patch.
+  Derivation lands at S8. `[code: service.ts createSubject/updateSubject; validators/learning.ts]`
+- **BR-LE-S2-3 (DB-11 `Course`→`Subject` complete)** — `@vida/types` `Course` is REPLACED by `Subject`: inline
+  `tags` retired (→ entity_tags, SP1/S9), `progress`→nullable (M3), `total_modules`/`completed_modules`→nullable,
+  +`curriculum_id`/`term_id`/`degree_tier`; `course_type` kept as a nullable subject modality (R6). The
+  `CourseType`/`CourseStatus` tuples are retained (schema + validators). No remaining `Course` interface consumer.
+  `[code: packages/types/src/learning.ts]`
+- **BR-LE-S2-4 (metadata defensive parse / R10)** — `subjects.metadata` is a superseded TEXT [E] slot; `toSubject`
+  parses it defensively (malformed/non-JSON ⇒ `null`, never throws) and S2 writes no metadata (create sets null).
+  `[code: service.ts parseMetadata/toSubject]`
+- **BR-LE-S2-5 (listSubjects filter + R4)** — `listSubjects({curriculumId?, termId?, status?})` always filters
+  `isNull(deleted_at)` (findWhere skips the auto filter); empty filter = all live subjects. `[code: service.ts listSubjects]`
+
 ## Scope guards honored (the C-* negatives — rerun-ratified)
-- **C-HIER** — hierarchy shape is DB-4-done; S1 is CRUD only, no schema redesign.
-- **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1 (no economy grant, no `advertise()`, no homework table,
+- **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
+- **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2 (no economy grant, no `advertise()`, no homework table,
   no AI agent); enforced from the slices that introduce those seams (S8/S10).

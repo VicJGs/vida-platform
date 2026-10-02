@@ -20,6 +20,8 @@ import {
   ProgramNotFoundError,
   CurriculumNotFoundError,
   TermNotFoundError,
+  SubjectNotFoundError,
+  UnroutedSubjectError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -213,5 +215,119 @@ describe('mod-learning-education S1 — hierarchy spine + routing', () => {
     expect(res.curriculum).toBeNull()
     expect(res.term).toBeNull()
     expect(res.program).toBeNull()
+  })
+})
+
+describe('mod-learning-education S2 — subjects + routing enforcement', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // a small hierarchy fixture
+  async function fixture() {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc CS' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: '2026' })
+    const term = await h.svc.createTerm(cur.id, { level: 'term', name: 'Fall' })
+    return { inst, prog, cur, term }
+  }
+
+  it('creates a lone subject with NO routing (A1 fully collapsed — allowed)', async () => {
+    const s = await h.svc.createSubject({ title: 'Loose study' })
+    expect(s.id).toBeTruthy()
+    expect(s.curriculum_id).toBeNull()
+    expect(s.term_id).toBeNull()
+    expect(s.status).toBe('not_started') // notNull default backfilled
+    const read = await h.svc.getSubject(s.id) // live persist probe
+    expect(read?.title).toBe('Loose study')
+  })
+
+  it('creates a subject routed to a curriculum', async () => {
+    const { cur } = await fixture()
+    const s = await h.svc.createSubject({ title: 'Algorithms', curriculum_id: cur.id, degree_tier: 'bachelor' })
+    expect(s.curriculum_id).toBe(cur.id)
+    expect(s.degree_tier).toBe('bachelor')
+  })
+
+  it('creates a subject routed via a term (term implies its curriculum)', async () => {
+    const { cur, term } = await fixture()
+    const s = await h.svc.createSubject({ title: 'Compilers', term_id: term.id, curriculum_id: cur.id })
+    expect(s.term_id).toBe(term.id)
+  })
+
+  it('rejects a subject whose routing does not resolve (UnroutedSubjectError)', async () => {
+    await expect(h.svc.createSubject({ title: 'orphan', curriculum_id: 'ghost' })).rejects.toThrow(
+      UnroutedSubjectError,
+    )
+    await expect(h.svc.createSubject({ title: 'orphan', term_id: 'ghost' })).rejects.toThrow(UnroutedSubjectError)
+  })
+
+  it('rejects a subject with a term/curriculum mismatch', async () => {
+    const { prog, term } = await fixture()
+    const otherCur = await h.svc.createCurriculum(prog.id, { name: 'other' })
+    await expect(
+      h.svc.createSubject({ title: 'x', term_id: term.id, curriculum_id: otherCur.id }),
+    ).rejects.toThrow(UnroutedSubjectError)
+  })
+
+  it('never lets progress be set (R2/M3 — derived, created null)', async () => {
+    const s = await h.svc.createSubject({ title: 'x' } as never)
+    expect(s.progress).toBeNull()
+    // even if a caller force-passes progress, the schema parse drops it (not in CreateSubjectSchema)
+    const s2 = await h.svc.createSubject({ title: 'y', progress: 80 } as never)
+    expect(s2.progress).toBeNull()
+  })
+
+  it('course_type is a nullable subject modality (R6)', async () => {
+    const s = await h.svc.createSubject({ title: 'x', course_type: 'hybrid' })
+    expect(s.course_type).toBe('hybrid')
+    const s2 = await h.svc.createSubject({ title: 'y' })
+    expect(s2.course_type).toBeNull()
+  })
+
+  it('updates a subject; re-routing to a bad ref is rejected; progress stays underived', async () => {
+    const { cur } = await fixture()
+    const s = await h.svc.createSubject({ title: 'x', curriculum_id: cur.id })
+    const upd = await h.svc.updateSubject(s.id, { title: 'x2', status: 'in_progress' })
+    expect(upd.title).toBe('x2')
+    expect(upd.status).toBe('in_progress')
+    expect(upd.progress).toBeNull() // never settable, even on update
+    await expect(h.svc.updateSubject(s.id, { curriculum_id: 'ghost' })).rejects.toThrow(UnroutedSubjectError)
+    await expect(h.svc.updateSubject('nope', { title: 'z' })).rejects.toThrow(SubjectNotFoundError)
+    // force-passed progress on UPDATE is stripped by Zod (not in UpdateSubjectSchema) — stays null
+    const forced = await h.svc.updateSubject(s.id, { progress: 99 } as never)
+    expect(forced.progress).toBeNull()
+  })
+
+  it('metadata read is defensive — a non-JSON legacy value parses to null, never crashes (R10)', async () => {
+    const s = await h.svc.createSubject({ title: 'x' })
+    // simulate a legacy/malformed metadata row via a raw write, then read through the mapper
+    h.bsql.prepare('UPDATE subjects SET metadata = ? WHERE id = ?').run('not-json{', s.id)
+    const read = await h.svc.getSubject(s.id)
+    expect(read?.metadata).toBeNull() // defensive parse → null, no throw
+  })
+
+  it('soft-deletes a subject; delete on a missing id throws', async () => {
+    const s = await h.svc.createSubject({ title: 'x' })
+    await h.svc.deleteSubject(s.id)
+    expect(await h.svc.getSubject(s.id)).toBeNull()
+    await expect(h.svc.deleteSubject(s.id)).rejects.toThrow(SubjectNotFoundError)
+  })
+
+  it('listSubjects filters by curriculum, term, and status (deleted_at filtered — R4)', async () => {
+    const { cur, term } = await fixture()
+    const a = await h.svc.createSubject({ title: 'A', curriculum_id: cur.id, status: 'in_progress' })
+    await h.svc.createSubject({ title: 'B', term_id: term.id, curriculum_id: cur.id })
+    const loose = await h.svc.createSubject({ title: 'C' })
+
+    expect(await h.svc.listSubjects()).toHaveLength(3)
+    expect(await h.svc.listSubjects({ curriculumId: cur.id })).toHaveLength(2)
+    expect(await h.svc.listSubjects({ termId: term.id })).toHaveLength(1)
+    expect(await h.svc.listSubjects({ status: 'in_progress' })).toHaveLength(1)
+
+    await h.svc.deleteSubject(a.id)
+    expect(await h.svc.listSubjects({ curriculumId: cur.id })).toHaveLength(1) // soft-deleted filtered out
+    void loose
   })
 })

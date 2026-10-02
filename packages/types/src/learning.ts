@@ -249,10 +249,17 @@ export interface Term extends SyncableEntity {
 }
 
 // ---------------------------------------------------------------------------
-// Course, Book, Skill
+// Subject (= `courses` reinterpreted — DB-4 #12 / mod-learning-education ① S2).
+// DB-11 reconcile of the stale `Course` interface to `schema/learning.ts` subjects:
+//   - inline `tags: string[]` RETIRED → `entity_tags` (SP1, entity_type='subject')
+//   - `progress` → nullable DERIVED override (M3; NULL ⇒ derive, never a stored counter)
+//   - `total_modules`/`completed_modules` → nullable (schema has no NOT NULL/default)
+//   - +routing (`curriculum_id`/`term_id`, nullable per A1) + `degree_tier` field (ED-3)
+//   - `course_type` kept as a nullable subject-level modality (R6, conventions L71)
+// The `CourseType`/`CourseStatus` enum TUPLES are retained (used by the schema + validators).
 // ---------------------------------------------------------------------------
 
-export interface Course extends SyncableEntity {
+export interface Subject extends SyncableEntity {
   /** @encrypted */
   title: string
   /** @encrypted */
@@ -263,12 +270,13 @@ export interface Course extends SyncableEntity {
   instructor: string | null
   /** @encrypted */
   url: string | null
+  /** Subject-level modality (not the Institution/Self-taught mode) — R6. */
   course_type: CourseType | null
   status: CourseStatus
-  /** 0–100 */
-  progress: number
-  total_modules: number
-  completed_modules: number
+  /** DERIVED override (M3) — NULL ⇒ derive on read; never settable directly. */
+  progress: number | null
+  total_modules: number | null
+  completed_modules: number | null
   start_date: string | null
   end_date: string | null
   target_completion: string | null
@@ -276,12 +284,18 @@ export interface Course extends SyncableEntity {
   estimated_hours: number | null
   /** 1–5 */
   rating: number | null
-  /** @encrypted */
-  tags: string[]
-  /** @encrypted — course-specific data (e.g. college class schedule) */
+  /** Routing (ED-3) — nullable per A1 optional depth; no FK. */
+  curriculum_id: Id | null
+  term_id: Id | null
+  degree_tier: DegreeTier | null
+  /** @encrypted — generic slot (v1 college-data superseded by the structured entities). */
   metadata: Record<string, unknown> | null
   deleted_at: Timestamp | null
 }
+
+// ---------------------------------------------------------------------------
+// Book, Skill
+// ---------------------------------------------------------------------------
 
 // DB-4 group #11 (mod-books ① S1) — reshaped to the reframed `books` table (schema/books.ts). RETIRED from the
 // stale ADR-002 floor: `format`→`book_assets` (BK-2) · `current_page`→per-asset `native_position` (BR-BK-2) ·
