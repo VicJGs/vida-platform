@@ -80,7 +80,7 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   proposal condition = behind-planned-pace) → Approval 1 → /api-contract ratify + /adr-check (no ADR) → /preflight
   (atomic createPlan via createInTx · asOf seam no clock dep) → Approval 2 → implement → **tsc 0 · 72/72 live-store
   (Node 24) · full @vida/core 1505 · eslint 0 · gitleaks clean** → code-review SHIP (1 fix: recordQuotaProgress
-  session guard) → /critique SHIP → §XXIX currency (BR-BK-S7-1..8). Commit `_(pending)_`.
+  session guard) → /critique SHIP → §XXIX currency (BR-BK-S7-1..8). Commit `a9aa79f`.
 - [ ] S8 progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
 - [ ] Step 4: /api-contract (service API) approved before code
