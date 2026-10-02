@@ -206,3 +206,15 @@ page (type·deliverable+description·attach doc/photo/audio·mark-done/proof·lo
 
 ## G1 ✅ SHIP (2026-10-01)
 Quality Bar `frontend-quality-bar/_index.md` drafted → independent adversarial critic (afab76fd) REVISE: 2 must-fix (schema-present quiet_hours mislabeled net-new; field list inflated 5→9) + 3 should-fix (page-ability cite→schema/_registry.ts; Bar1 dropped 3/6 global surfaces; optimistic=none=P4 decision) → ALL FOLDED → verdict SHIP. P1–P6 feel + org/composition/portability/archetype/session model = CAPTURED. Next head: G2 — Surface harvest (3-lens audit vs this bar → surface-map.md).
+
+## Route History — Session 2 (2026-10-01)
+- Recovered crashed G1 session `9a0446fa` → ran full P1–P6 capture (8 specimens) → captured org model (2 research passes).
+- Executed G0–G6: G1 SHIP · G2 ~30 discovered + build-shape · G3 composition+traceability · G4 PASS (set-cover tool, ≥2-paths RATIFIED) · G5 42-unit order · G6 ledger+runbook APPROVED+grounded + 43 task files PRE-STAGED. 9 gate commits (8472053→1a9c02c).
+- Linear reshape ATTEMPTED from worktree → 2 gotchas (retire-revert; network crash), **NO Linear damage** (clean baseline: 24 fe-*, all Backlog, 0 created). Clean-slate restored (worktree map→skeleton, main untouched, git clean). Linear execution DEFERRED to main (runbook rule; main busy w/ mod-books).
+
+## ▶ NEXT SESSION (Victor mandate)
+Solve the Linear problems + make everything pragmatically correct LOCALLY · GITHUB · LINEAR.
+1. Branch disposition: merge worktree-frontend-track → main (ff, planning branch) once mod-books wraps, or a non-disturbing reconcile.
+2. Execute reshape FROM MAIN per `g6-reshape-runbook.md`: pre-flight §0 → ARCHIVE the 4 retired task files (fixes retire-revert) → --retire ×4 → --sync (or surgical --task per unit) → verify → write-back real IDs to `g6-edge-ledger.md §6`.
+3. Three-way reconcile: local (committed) ↔ GitHub (branch/merge) ↔ Linear (42-unit reshape).
+All staged: runbook + 43 pre-staged task files + approved ledger. Fresh session; re-read g6-reshape-runbook.md + g6-edge-ledger.md + the Session-2 BLOCKER.
