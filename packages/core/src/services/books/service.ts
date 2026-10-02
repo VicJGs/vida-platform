@@ -42,6 +42,7 @@ import type {
   BookHighlight,
   BookQuote,
   ReadingSession,
+  ReadingPlan,
 } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
@@ -52,6 +53,8 @@ import {
   bookHighlights,
   bookQuotes,
   readingSessions,
+  readingPlans,
+  readingPlanBooks,
   type BookRow,
   type BookChapterRow,
   type BookAssetRow,
@@ -59,6 +62,7 @@ import {
   type BookHighlightRow,
   type BookQuoteRow,
   type ReadingSessionRow,
+  type ReadingPlanRow,
 } from '../../db/schema/books'
 import type { EntityLinkRow } from '../../db/schema/foundation/spaces'
 import type { PageRow } from '../../db/schema/notes'
@@ -73,6 +77,7 @@ import {
   AddQuoteSchema,
   StartSessionTargetSchema,
   EndSessionCaptureSchema,
+  CreatePlanSchema,
 } from '../../validators/books'
 import { IngestionDenied, type IngestionAct } from '../../foundation/ingestion'
 import { DuplicateSubType, type SessionTypeDef } from '../../foundation/sessions'
@@ -115,6 +120,13 @@ import {
   type ReadingStatistics,
   type ReaderContext,
   type FileBlob,
+  ReadingPlanNotFoundError,
+  TargetUnreachableProposal,
+  type CreatePlanInput,
+  type QuotaDistribution,
+  type RecalculationState,
+  type TodayQuotas,
+  type PlanProjection,
 } from './types'
 
 // --- Row → @vida/types interface --------------------------------------------
@@ -191,6 +203,56 @@ const READING_SESSION_TYPE_DEF: SessionTypeDef = {
   default_purpose: 'reading',
 }
 
+// reading_plans / reading_plan_books → @vida/types (S7 N-fold). The stored json columns are parsed on read
+// (BR-BK-S7-8); only the plain-text `_sync_status` needs the union cast.
+const toReadingPlan = (r: ReadingPlanRow): ReadingPlan => ({
+  ...r,
+  quota_distribution: parseJsonObject(r.quota_distribution as unknown as string | null),
+  recalculation_state: parseJsonObject(r.recalculation_state as unknown as string | null),
+  _sync_status: r._sync_status as ReadingPlan['_sync_status'],
+})
+// --- S7 pure date + quota helpers (BR-BK-S7-2/3/5/6) -------------------------
+/** Today as YYYY-MM-DD from the real clock — the determinism seam is each method's `asOf?`. */
+function todayISO(): string {
+  return new Date(Date.now()).toISOString().slice(0, 10)
+}
+/** Whole days from `fromISO` to `toISO` (both YYYY-MM-DD) — parsed as UTC-day so the diff is TZ-consistent. */
+function daysBetween(fromISO: string, toISO: string): number {
+  return Math.round((Date.parse(toISO + 'T00:00:00Z') - Date.parse(fromISO + 'T00:00:00Z')) / 86400000)
+}
+/** `iso` + `n` days as YYYY-MM-DD. */
+function addDaysISO(iso: string, n: number): string {
+  return new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10)
+}
+/** BR-BK-S7-2 — the auto/manual quota distribution over days-until-target (Calendar reconciliation STUBBED). A book
+ *  with no page basis contributes 0 (honest, never guessed). The sequenced/parallel ordering is carried by
+ *  `reading_plan_books.sequence`; the M1 per-book daily split is page-proportional either way (the one-at-a-time
+ *  sequenced scheduling is a P6/Calendar refinement). */
+function computeDistribution(
+  entries: { bookId: string; pages: number }[],
+  _arrangement: 'sequenced' | 'parallel',
+  goalType: 'manual' | 'auto',
+  days: number,
+  manualQuota?: number,
+): QuotaDistribution {
+  const totalPages = entries.reduce((s, e) => s + e.pages, 0)
+  const dailyQuota = goalType === 'manual' ? (manualQuota ?? 0) : Math.ceil(totalPages / Math.max(1, days))
+  const perBook: Record<string, number> = {}
+  for (const e of entries) {
+    perBook[e.bookId] = totalPages > 0 ? Math.ceil((dailyQuota * e.pages) / totalPages) : 0
+  }
+  return { dailyQuota, perBook, totalPages, calendarReconciled: false }
+}
+/** Defensive typed parse of the stored `quota_distribution` / `recalculation_state` json (the $type lie). */
+function parseDistribution(value: unknown): QuotaDistribution | null {
+  const o = parseJsonObject(value as string | null)
+  return o ? (o as unknown as QuotaDistribution) : null
+}
+function parseState(value: unknown): RecalculationState {
+  const o = parseJsonObject(value as string | null) as unknown as RecalculationState | null
+  return o ?? { progressBySession: {}, pagesDone: 0 }
+}
+
 export function createBooksService(deps: BooksServiceDeps): BooksService {
   const { db, deviceId, ingestion, attachment, spaces, notes, preferences, sessions, sessionRegistry, ai } =
     deps
@@ -210,6 +272,10 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
   // reading_sessions has NO deleted_at (session extension; the base `sessions` owns lifecycle, F1) → softDelete:false
   // ⇒ delete() is a hard delete and findAll() skips the deleted_at filter. No [E] fields → encryptedFields:[].
   const readingRepo = createRepository(db, readingSessions, { deviceId, softDelete: false, encryptedFields: [] })
+  // S7 — reading plans + the plan↔books junction; both softDelete:true, no [E]. json columns (quota_distribution /
+  // recalculation_state) are serialized/parsed service-side (BR-BK-S7-8).
+  const plansRepo = createRepository(db, readingPlans, { deviceId, softDelete: true, encryptedFields: [] })
+  const planBooksRepo = createRepository(db, readingPlanBooks, { deviceId, softDelete: true, encryptedFields: [] })
 
   // --- Works CRUD (BOO-01) --------------------------------------------------
 
@@ -774,6 +840,136 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     return { file, sessionId: reading.session.session.id, position }
   }
 
+  // --- S7: Reading plans / Quota Planner (BOO-27..33) ------------------------
+
+  async function createPlan(input: CreatePlanInput): Promise<ReadingPlan> {
+    const v = CreatePlanSchema.parse(input)
+    // Guard every book exists (no-FK app-layer integrity) + gather the page basis (no total_pages ⇒ 0, honest).
+    const pageBasis: { bookId: string; pages: number }[] = []
+    for (const b of v.books) {
+      const book = await booksRepo.findById(b.bookId)
+      if (!book) throw new BookNotFoundError(b.bookId)
+      pageBasis.push({ bookId: b.bookId, pages: book.total_pages ?? 0 })
+    }
+    const days = Math.max(1, daysBetween(todayISO(), v.targetDate))
+    const dist = computeDistribution(pageBasis, v.arrangement, v.goalType, days, v.quota)
+    const state: RecalculationState = { progressBySession: {}, pagesDone: 0 }
+    // R6 — plan row + N junction rows in ONE transaction (both tables Books-local; createInTx, repository.ts:195).
+    const planRow = await db.transaction(async (tx) => {
+      const plan = await plansRepo.createInTx(tx, {
+        arrangement: v.arrangement,
+        goal_type: v.goalType,
+        target_date: v.targetDate,
+        target_completion_date: null,
+        // json<T> write boundary (BR-BK-S7-8): stringify + one cast here only.
+        quota_distribution: JSON.stringify(dist) as unknown as Record<string, unknown>,
+        recalculation_state: JSON.stringify(state) as unknown as Record<string, unknown>,
+        deleted_at: null,
+      } satisfies CreateInput<typeof readingPlans>)
+      for (const b of v.books) {
+        await planBooksRepo.createInTx(tx, {
+          plan_id: plan.id,
+          book_id: b.bookId,
+          sequence: b.sequence ?? null,
+          quota: dist.perBook[b.bookId] ?? null,
+          deleted_at: null,
+        } satisfies CreateInput<typeof readingPlanBooks>)
+      }
+      return plan
+    })
+    return toReadingPlan(planRow)
+  }
+
+  async function getTodayQuotas(asOf?: string): Promise<TodayQuotas> {
+    const today = asOf ?? todayISO()
+    const plans = await plansRepo.findWhere(isNull(readingPlans.deleted_at)) // active plans only
+    const out: TodayQuotas = []
+    for (const p of plans) {
+      const dist = parseDistribution(p.quota_distribution)
+      if (!dist) continue
+      const state = parseState(p.recalculation_state)
+      // Cumulative expected-by-today vs cumulative done = the pace signal (derived, never stored).
+      const startISO = new Date(p.created_at).toISOString().slice(0, 10)
+      const daysElapsed = Math.max(0, daysBetween(startISO, today)) + 1 // day 1 = creation day
+      const expected = dist.dailyQuota * daysElapsed
+      const done = state.pagesDone
+      const status = done >= expected ? (done > expected ? 'ahead' : 'on-pace') : 'behind'
+      // `target` = today's daily quota (BOO-30 "today's quota"); `done` = cumulative progress; `status` = the pace.
+      out.push({ planId: p.id, target: dist.dailyQuota, done, status })
+    }
+    return out
+  }
+
+  async function recordQuotaProgress(planId: string, sessionRef: string): Promise<void> {
+    const plan = await plansRepo.findById(planId)
+    if (!plan) throw new ReadingPlanNotFoundError(planId)
+    // Guard the referenced reading session exists (fail-loud via the S6 helper) — a bogus ref is a caller error,
+    // never a silent 0-credit. `sessionRef` = the base reading session id (BR-BK-S7-4).
+    const session = await findReadingSession(sessionRef)
+    const pages = session.pages_read ?? 0
+    const state = parseState(plan.recalculation_state)
+    // Idempotent per sessionRef — OVERWRITE (not add), then recompute pagesDone from the map (BR-BK-S7-4).
+    state.progressBySession[sessionRef] = pages
+    state.pagesDone = Object.values(state.progressBySession).reduce((s, n) => s + n, 0)
+    await plansRepo.update(planId, {
+      recalculation_state: JSON.stringify(state) as unknown as Record<string, unknown>,
+    } as UpdateInput<typeof readingPlans>)
+  }
+
+  async function recalculate(planId: string, asOf?: string): Promise<ReadingPlan> {
+    const plan = await plansRepo.findById(planId)
+    if (!plan) throw new ReadingPlanNotFoundError(planId)
+    const dist = parseDistribution(plan.quota_distribution)
+    if (!dist || !plan.target_date) return toReadingPlan(plan) // no basis to reshape (TOC-only / no target)
+    const today = asOf ?? todayISO()
+    const state = parseState(plan.recalculation_state)
+    const remainingPages = Math.max(0, dist.totalPages - state.pagesDone)
+    const remainingDays = daysBetween(today, plan.target_date)
+    const requiredDailyQuota = remainingPages <= 0 ? 0 : Math.ceil(remainingPages / Math.max(1, remainingDays))
+    // BR-BK-S7-5 — behind the planned pace (or no days left with pages remaining) ⇒ PROPOSE, never silently rewrite.
+    if (remainingPages > 0 && (remainingDays <= 0 || requiredDailyQuota > dist.dailyQuota)) {
+      const options: ('extend_date' | 'raise_quota')[] =
+        remainingDays <= 0 ? ['extend_date'] : ['extend_date', 'raise_quota']
+      // suggestedDate keeps the ORIGINAL pace (extend the date to fit the remaining pages at dist.dailyQuota).
+      const suggestedDate = addDaysISO(today, Math.ceil(remainingPages / Math.max(1, dist.dailyQuota)))
+      throw new TargetUnreachableProposal(
+        planId,
+        options,
+        suggestedDate,
+        remainingDays > 0 ? requiredDailyQuota : undefined, // raise_quota keeps the date at the faster pace
+      )
+    }
+    // On/ahead of pace ⇒ reshape silently: adjust the overall `dailyQuota` pace over the remaining days. `perBook`
+    // keeps the original page-share (per-book progress isn't tracked at M1; the derivations read `dailyQuota`, so
+    // they stay correct — per-book redistribution is a P6/Calendar refinement).
+    const reshaped: QuotaDistribution = { ...dist, dailyQuota: requiredDailyQuota }
+    await plansRepo.update(planId, {
+      quota_distribution: JSON.stringify(reshaped) as unknown as Record<string, unknown>,
+    } as UpdateInput<typeof readingPlans>)
+    const updated = (await plansRepo.findById(planId))! // just updated the row guarded above
+    return toReadingPlan(updated)
+  }
+
+  async function getProjection(planId: string, asOf?: string): Promise<PlanProjection> {
+    const plan = await plansRepo.findById(planId)
+    if (!plan) throw new ReadingPlanNotFoundError(planId)
+    const today = asOf ?? todayISO()
+    const dist = parseDistribution(plan.quota_distribution)
+    const state = parseState(plan.recalculation_state)
+    const totalPages = dist?.totalPages ?? 0
+    const remainingPages = Math.max(0, totalPages - state.pagesDone)
+    const remainingDays = plan.target_date ? daysBetween(today, plan.target_date) : 0
+    const pace = dist?.dailyQuota ?? 0
+    const daysToFinish = pace > 0 ? Math.ceil(remainingPages / pace) : null
+    const projectedCompletionDate =
+      remainingPages === 0 ? today : daysToFinish != null ? addDaysISO(today, daysToFinish) : null
+    const onTrack =
+      plan.target_date != null && projectedCompletionDate != null
+        ? daysBetween(projectedCompletionDate, plan.target_date) >= 0
+        : remainingPages === 0
+    return { planId, projectedCompletionDate, onTrack, remainingPages, remainingDays }
+  }
+
   return {
     createBook,
     updateBook,
@@ -803,5 +999,10 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     attachPhoto,
     getStatistics,
     openReader,
+    createPlan,
+    getTodayQuotas,
+    recordQuotaProgress,
+    recalculate,
+    getProjection,
   }
 }

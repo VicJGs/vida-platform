@@ -19,6 +19,7 @@ import type {
   BookQuote,
   BookStatus,
   ReadingSession,
+  ReadingPlan,
 } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type { IngestionGuard } from '../../foundation/ingestion'
@@ -39,6 +40,7 @@ import type {
   AddQuoteSchema,
   StartSessionTargetSchema,
   EndSessionCaptureSchema,
+  CreatePlanSchema,
 } from '../../validators/books'
 
 /** The `entity_type` a book registers in the shared taggable/pages/links registries (pre-seeded by DB-4
@@ -382,6 +384,69 @@ export class ReadingSessionNotFoundError extends Error {
   }
 }
 
+// --- S7: Reading plans / Quota Planner (BOO-27..33) — service-layer types ---
+
+/** createPlan input (BOO-27). `z.infer` of the validator. */
+export type CreatePlanInput = z.infer<typeof CreatePlanSchema>
+
+/** The stored `quota_distribution` json shape (BR-BK-S7-2). `calendarReconciled:false` keeps the forward-dep stub
+ *  VISIBLE (BOO-28, "renders visibly stubbed"); `perBook` is the per-book daily target by page share. */
+export interface QuotaDistribution {
+  dailyQuota: number
+  perBook: Record<string, number>
+  totalPages: number
+  calendarReconciled: false
+}
+
+/** The stored `recalculation_state` json shape — the plan's running progress. `progressBySession` keys by the
+ *  reading session id (idempotent credit, BR-BK-S7-4); `pagesDone` is the running sum. */
+export interface RecalculationState {
+  progressBySession: Record<string, number>
+  pagesDone: number
+}
+
+/** getTodayQuotas row (BOO-30) — today's derived quota + pace status for one active plan. */
+export interface TodayQuota {
+  planId: string
+  target: number
+  done: number
+  status: 'on-pace' | 'behind' | 'ahead'
+}
+export type TodayQuotas = TodayQuota[]
+
+/** getProjection (BOO-33) — the derived completion trajectory. Derived on read, never stored. */
+export interface PlanProjection {
+  planId: string
+  projectedCompletionDate: string | null
+  onTrack: boolean
+  remainingPages: number
+  remainingDays: number
+}
+
+/** BOO-27 — a plan id did not resolve (guard-exists at recordQuotaProgress/recalculate/getProjection). */
+export class ReadingPlanNotFoundError extends Error {
+  constructor(public readonly id: string) {
+    super(`Reading plan not found: ${id}`)
+    this.name = 'ReadingPlanNotFoundError'
+  }
+}
+
+/** BOO-32/BK-11 — recalculation cannot meet the target at the planned pace. THROWN (never a silent target rewrite),
+ *  carrying the two options the user chooses between: `extend_date` (keep the pace → `suggestedDate`) or
+ *  `raise_quota` (keep the date → `suggestedQuota` = the faster required pace). `remainingDays<=0` ⇒ only
+ *  `extend_date` is viable. `[FACT: parts/books.md:42; conventions.md:28-29; contract.md:67]` */
+export class TargetUnreachableProposal extends Error {
+  constructor(
+    public readonly planId: string,
+    public readonly options: ReadonlyArray<'extend_date' | 'raise_quota'>,
+    public readonly suggestedDate?: string,
+    public readonly suggestedQuota?: number,
+  ) {
+    super(`Reading plan ${planId} target unreachable at the planned pace`)
+    this.name = 'TargetUnreachableProposal'
+  }
+}
+
 export interface BooksService {
   // ── S1: Works CRUD + reframe (BOO-01/02/03/48) ──────────────────────────────
   /** BOO-01 — create a WORK row. `progress` is never accepted (derived, BR-BK-2); `status` defaults to
@@ -482,4 +547,22 @@ export interface BooksService {
    *  own position; the read/listen/annotate chrome is P6. A present-port decrypt failure ⇒ `AssetFileError`. Guards
    *  the asset exists. `[parts/books.md:49; BK-15]` */
   openReader(assetId: string): Promise<ReaderContext>
+
+  // ── S7: Reading plans / Quota Planner (BOO-27..33) ───────────────────────────
+  /** BOO-27 — create a Books-owned plan (BK-12) over one-or-many books; `arrangement`/`goal`/`target`; computes +
+   *  stores the initial `quota_distribution`. NO measurement axes (C-M1). Plan row + junctions written atomically.
+   *  Guards each book exists (`BookNotFoundError`). */
+  createPlan(input: CreatePlanInput): Promise<ReadingPlan>
+  /** BOO-30 — today's derived quotas (on-pace|behind|ahead) per active plan — the Reading Hub + Journal `/summary`
+   *  provider. Derived on read, never stored. `asOf?` (YYYY-MM-DD) is the determinism seam (default: today). */
+  getTodayQuotas(asOf?: string): Promise<TodayQuotas>
+  /** BOO-31 — credit a reading session's pages to the plan's running progress (idempotent per `sessionRef`). Guards
+   *  the plan exists (`ReadingPlanNotFoundError`). */
+  recordQuotaProgress(planId: string, sessionRef: string): Promise<void>
+  /** BOO-32 — reshape the distribution over remaining pages/days; on/ahead of pace reshapes silently and returns the
+   *  plan; BEHIND pace throws `TargetUnreachableProposal` (extend_date|raise_quota — never a silent rewrite, BK-11).
+   *  Guards exists. `asOf?` = the determinism seam. */
+  recalculate(planId: string, asOf?: string): Promise<ReadingPlan>
+  /** BOO-33 — the derived completion trajectory for the per-plan page + Hub alerts. Guards exists. `asOf?` seam. */
+  getProjection(planId: string, asOf?: string): Promise<PlanProjection>
 }

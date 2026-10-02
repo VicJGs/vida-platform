@@ -9,9 +9,9 @@
 
 `createBooksService(deps)` — the ① backend service tier for the **reading Universe** over DB-4 `023_books`
 (10 tables). The full design lives in `docs/features/books/` (aspect docs) + `docs/features/books/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **S6 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration).
+(interpretation · slice-map · seam-contract). Build state: **S7 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration · Reading plans / Quota Planner).
 
-## Delivered surface (as of S6)
+## Delivered surface (as of S7)
 
 `createBooksService({ db, deviceId, spaces, notes, sessions, sessionRegistry, ingestion?, attachment?, preferences?, ai? }) → BooksService`.
 Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from S4 (annotation links/notes);
@@ -49,6 +49,11 @@ Factory-object, hoisted closures, no `this.`. `spaces`+`notes` are required from
 | `attachPhoto(sessionId, photo)` | BOO-25 | photo ALWAYS stores (`attachment?` deny-safe; present-reject ⇒ `AssetFileError`) + OCR via `ai?` on_device (deny-safe ⇒ `ai-unavailable`), the two INDEPENDENT (OCR fail never discards photo, BK-10); guard-session. Durable photo row + Journal feed = S10/M2 |
 | `getStatistics({bookId?})` | BOO-26 | derived `{sessionsLogged, pagesRead, minutesSpent}` over the reading-sessions ledger (+ base session clock for minutes, completed only); never stored; no economy grant (C-E2) |
 | `openReader(assetId)` | BOO-39 | Reader service face: decrypt (`attachment?.download` deny-safe; present-reject ⇒ `AssetFileError`) + auto-start reading session + resolve the asset's own `MappedPosition` (native⇒synced-to-self, null⇒not-synced); chrome → P6 |
+| `createPlan(input)` | BOO-27 | Books-owned plan (BK-12) over 1+ books; `arrangement`/`goalType`/`targetDate`; computes + stores `quota_distribution`; **NO measurement axes** (C-M1); plan row + junctions written ATOMICALLY; guards each book → `BookNotFoundError` |
+| `getTodayQuotas(asOf?)` | BOO-30 | derived per-active-plan `{planId,target,done,status:on-pace\|behind\|ahead}`; never stored; Reading Hub + Journal `/summary` provider |
+| `recordQuotaProgress(planId, sessionRef)` | BOO-31 | credits a reading session's `pages_read` to the plan's running state (idempotent per `sessionRef`); guards plan (`ReadingPlanNotFoundError`) + session (`ReadingSessionNotFoundError`) |
+| `recalculate(planId, asOf?)` | BOO-32 | on/ahead of pace reshapes `dailyQuota` silently + returns the plan; BEHIND pace (or past target) throws `TargetUnreachableProposal` (`extend_date`\|`raise_quota` — never a silent rewrite, BK-11) |
+| `getProjection(planId, asOf?)` | BOO-33 | derived `{projectedCompletionDate,onTrack,remainingPages,remainingDays}`; never stored; guards plan |
 
 **Types/errors:** `BooksServiceDeps`, `BooksService`, `BookView`, `BookFilter`, `BookCapabilities`, `ChapterSeed`,
 `AddAssetInput`, `FileBlob`, `AttachmentPort`, `AttachmentRef`, `MappedPosition`, `BookMetadata`, `IsbnLookupPayload`
@@ -63,7 +68,12 @@ identity, inert at M1). Errors: `BookNotFoundError`, `ChapterUniqueViolation`, `
 site). Input Zod: `validators/books.ts` (`CreateBookSchema`, `UpdateBookSchema`, `ChapterSeedSchema`,
 `SetChaptersSchema`, `AddAssetSchema`, `UpdatePositionSchema`, `StartSessionTargetSchema`, `EndSessionCaptureSchema`).
 Row→interface: `toBook` / `toChapter` / `toAsset` (single `_sync_status` cast — no json columns) + `toReadingSession`
-(S6 — parses the `statistics` json<Record> boundary + `_sync_status` cast).
+(S6 — parses the `statistics` json<Record> boundary + `_sync_status` cast). **S7:** `CreatePlanInput`,
+`QuotaDistribution`/`RecalculationState` (the stored json shapes), `TodayQuota`/`TodayQuotas`, `PlanProjection`;
+errors `ReadingPlanNotFoundError` + `TargetUnreachableProposal` (thrown, carries `options`/`suggestedDate`/
+`suggestedQuota`). Input Zod: `CreatePlanSchema` (reuses the learning plan-enum schemas). Row→interface:
+`toReadingPlan` (parses `quota_distribution`/`recalculation_state`). The `@vida/types` `ReadingPlanBook` interface
+exists (N-fold, for P6/consumers) but no S7 method returns the junction, so the service carries no mapper for it.
 
 ## Persistence
 
@@ -83,9 +93,11 @@ S4** (annotation inter-links + pages-notes; required deps, REAL substrates). **`
 (quote-embed toggles, BOO-22) — narrow deny-safe (two reads, NIT-3), absent ⇒ permissive (fail-OPEN, the habits
 precedent); real Preferences-backed adapter = M2/P6. S8 appends the conflict preset-rule read (zero signature
 change). **`sessions` + `sessionRegistry` wired at S6** (required) — the ADR-004 base `reading` sub-type spine +
-`registerBooks()`; the `ai?` OCR port landed at S6 (deny-safe, on_device, M1-dormant). Remaining: S7 plans · S8
-unified-progress/conflict · S9 Education/measurement · S10 AI integrations (TTS/transcription) + `effects?` fan-out +
-`registerBooksJournal`. Deferred reach = deny-safe ports (doc+substrate grounded; see slice-map Deferred-by-design).
+`registerBooks()`; the `ai?` OCR port landed at S6 (deny-safe, on_device, M1-dormant). **S7 added NO new deps** —
+the Quota Planner is self-contained over `reading_plans`/`reading_plan_books` + the existing `booksRepo`/`readingRepo`
+(NO measurement/Purpose dep per C-M1; NO Calendar — forward-dep stubbed). Remaining: S8 unified-progress/conflict ·
+S9 Education/measurement · S10 AI integrations (TTS/transcription) + `effects?` fan-out + `registerBooksJournal`.
+Deferred reach = deny-safe ports (doc+substrate grounded; see slice-map Deferred-by-design).
 
 ## Persistence (S3–S4 addendum)
 
@@ -105,6 +117,18 @@ read (`toReadingSession` / `parseJsonObject`) but **never written at M1** (the d
 composes the REAL `services/sessions` (`createSession`/`completeSession`/`attach`/`getSession`) + the AR-5
 `SessionRegistry` — the live gate exercises the createSession sub-type gate + the completeSession lifecycle stamp.
 
+## Persistence (S7 addendum)
+
+`reading_plans` + `reading_plan_books`: `createRepository(..., { softDelete: true, encryptedFields: [] })`. The
+`quota_distribution` + `recalculation_state` `json<Record>` columns are **WRITTEN** this slice (unlike S6's dormant
+`statistics`) → the service `JSON.stringify`s on write + parses defensively on read (`toReadingPlan` /
+`parseDistribution`/`parseState`; the knowledge `key_concepts` boundary). **`createPlan` writes the plan row + N
+junction rows ATOMICALLY** via `db.transaction` + `createInTx` (both tables Books-local — the atomic option is
+available here, unlike S6's cross-service compose). Quota/projection/today-status are **derived on read** (never a
+stored status column, `structure-data.md:38-41`); the stored columns hold the plan's config + running progress.
+**NO measurement column** (C-M1). Pure date helpers (`todayISO`/`daysBetween`/`addDaysISO`) + an `asOf?` seam on the
+derived reads (no clock dep).
+
 ## S4 BK-6 enforcement note
 
 Highlights are never linkable/noteable (`conventions.md:50`). The entity-type registry (`_registry.ts:85-96`,
@@ -123,4 +147,6 @@ added the `BookAsset` interface (1:1 mirror of `book_assets`: `book_id`, `format
 Validators: `AddBookmarkSchema`/`AddHighlightSchema`/`AddQuoteSchema` (snake_case `captured_text`). **S6 (N-fold):**
 added the `ReadingSession` interface (1:1 mirror of `reading_sessions`: `session_id`, `book_id`, `asset_id`,
 `pages_read`, `position_delta`, `stop_point`, `statistics: Record<string,unknown>|null`; NO `deleted_at` — session
-extension, F1).
+extension, F1). **S7 (N-fold):** added `ReadingPlan` (mirror `reading_plans`: `arrangement`, `goal_type`, target
+dates, `quota_distribution`/`recalculation_state: Record|null`, `deleted_at`; **NO `measurement_kind`/`binding_mode`**
+— C-M1) + `ReadingPlanBook` (mirror the junction: `plan_id`, `book_id`, `sequence`, `quota`, `deleted_at`).

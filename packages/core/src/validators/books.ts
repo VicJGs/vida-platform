@@ -10,7 +10,12 @@
 // ============================================================================
 
 import { z } from 'zod'
-import { BookStatusSchema, BookAssetFormatSchema } from './learning'
+import {
+  BookStatusSchema,
+  BookAssetFormatSchema,
+  ReadingPlanArrangementSchema,
+  ReadingPlanGoalTypeSchema,
+} from './learning'
 
 // --- Works (BOO-01) ----------------------------------------------------------
 
@@ -115,4 +120,18 @@ export const EndSessionCaptureSchema = z.object({
   pages: z.number().int().nonnegative().optional(),
   position: z.string().min(1).optional(),
   stopPoint: z.string().min(1).optional(),
+})
+
+// --- Reading plans (BOO-27) --------------------------------------------------
+
+/** createPlan input (BOO-27, BK-11) — one-or-many books (`sequence` optional, orders a `sequenced` plan),
+ *  `arrangement`/`goalType` (enum Zod reused from learning), a `targetDate` (YYYY-MM-DD), and an optional `quota`
+ *  (the per-day target for a `manual` goal; an `auto` goal derives it). NO `measurement_kind`/`binding_mode` — the
+ *  pursuable goal is Purpose-owned (C-M1). `[FACT: contract.md:28; business-rules.md:56-64; rerun C-M1 books.md:71]` */
+export const CreatePlanSchema = z.object({
+  books: z.array(z.object({ bookId: z.string().min(1), sequence: z.number().int().nonnegative().optional() })).min(1),
+  arrangement: ReadingPlanArrangementSchema,
+  goalType: ReadingPlanGoalTypeSchema,
+  targetDate: z.string().min(1),
+  quota: z.number().int().positive().optional(),
 })

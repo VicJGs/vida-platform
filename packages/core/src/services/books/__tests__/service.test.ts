@@ -23,6 +23,8 @@ import {
   AnnotationNotLinkableError,
   QuoteEmbedDisabledError,
   ReadingSessionNotFoundError,
+  ReadingPlanNotFoundError,
+  TargetUnreachableProposal,
 } from '../types'
 import type { AiService } from '../../../foundation/ai'
 import { IngestionDenied, type IngestionGuard } from '../../../foundation/ingestion'
@@ -984,5 +986,171 @@ describe('mod-books S6 — reading sessions + Reader orchestration (BOO-23/24/25
       }),
     })
     await expect(readerSvc.openReader(uploaded.asset.id)).rejects.toBeInstanceOf(AssetFileError)
+  })
+})
+
+describe('mod-books S7 — Reading plans / Quota Planner (BOO-27..33)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // date helper — a YYYY-MM-DD `offsetDays` from real today (plans compute against the real clock; derived reads
+  // take `asOf` for determinism).
+  const iso = (offsetDays: number): string =>
+    new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10)
+  type Dist = { dailyQuota: number; totalPages: number; calendarReconciled: boolean }
+
+  // (1) createPlan (auto, parallel) — plan + junction rows; distribution round-trips JSON (PLAN §4.1).
+  it('createPlan (auto, parallel) — plan + junction rows; distribution round-trips JSON', async () => {
+    const a = await h.svc.createBook({ title: 'A', total_pages: 200 })
+    const b = await h.svc.createBook({ title: 'B', total_pages: 100 })
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: a.id }, { bookId: b.id }],
+      arrangement: 'parallel',
+      goalType: 'auto',
+      targetDate: iso(10),
+    })
+    expect(plan.arrangement).toBe('parallel')
+    const dist = plan.quota_distribution as unknown as Dist
+    expect(dist.totalPages).toBe(300)
+    expect(dist.dailyQuota).toBe(30) // ceil(300 / 10)
+    expect(dist.calendarReconciled).toBe(false)
+    const junctions = h.bsql
+      .prepare('SELECT book_id FROM reading_plan_books WHERE plan_id = ?')
+      .all(plan.id)
+    expect(junctions).toHaveLength(2)
+  })
+
+  it('createPlan — unknown book ⇒ BookNotFoundError; empty books ⇒ validation reject', async () => {
+    await expect(
+      h.svc.createPlan({ books: [{ bookId: 'ghost' }], arrangement: 'parallel', goalType: 'auto', targetDate: iso(5) }),
+    ).rejects.toBeInstanceOf(BookNotFoundError)
+    await expect(
+      h.svc.createPlan({ books: [], arrangement: 'parallel', goalType: 'auto', targetDate: iso(5) }),
+    ).rejects.toThrow()
+  })
+
+  // (2) manual goal stores the caller quota (PLAN §4.2).
+  it('createPlan (manual) — stores the caller quota (no auto override)', async () => {
+    const a = await h.svc.createBook({ title: 'M', total_pages: 500 })
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: a.id }],
+      arrangement: 'sequenced',
+      goalType: 'manual',
+      targetDate: iso(30),
+      quota: 25,
+    })
+    expect((plan.quota_distribution as unknown as Dist).dailyQuota).toBe(25)
+  })
+
+  // (3) a book with no total_pages contributes 0 — honest absent-state (PLAN §4.3).
+  it('createPlan (auto) — a book with no total_pages contributes 0 (never guessed)', async () => {
+    const a = await h.svc.createBook({ title: 'TOC-only' }) // no total_pages
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: a.id }],
+      arrangement: 'parallel',
+      goalType: 'auto',
+      targetDate: iso(10),
+    })
+    const dist = plan.quota_distribution as unknown as Dist
+    expect(dist.totalPages).toBe(0)
+    expect(dist.dailyQuota).toBe(0)
+  })
+
+  // (4) getTodayQuotas — derived pace status; [] when no plan (PLAN §4.4).
+  it('getTodayQuotas — derives per-plan pace status; [] when no active plan', async () => {
+    expect(await h.svc.getTodayQuotas()).toEqual([])
+    const a = await h.svc.createBook({ title: 'A', total_pages: 100 })
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: a.id }],
+      arrangement: 'parallel',
+      goalType: 'auto',
+      targetDate: iso(10),
+    }) // dailyQuota 10
+    const q = await h.svc.getTodayQuotas() // creation day, 0 progress → expected 10 > done 0 → behind
+    expect(q).toHaveLength(1)
+    expect(q[0]!.planId).toBe(plan.id)
+    expect(q[0]!.target).toBe(10)
+    expect(q[0]!.status).toBe('behind')
+  })
+
+  // (5) recordQuotaProgress — credits a session, idempotent per sessionRef (PLAN §4.5).
+  it('recordQuotaProgress — credits a session; idempotent per sessionRef; unknown plan rejects', async () => {
+    await h.svc.registerBooks()
+    const a = await h.svc.createBook({ title: 'A', total_pages: 100 })
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: a.id }],
+      arrangement: 'parallel',
+      goalType: 'auto',
+      targetDate: iso(10),
+    })
+    const s = await h.svc.startSession(a.id, { manual: true })
+    await h.svc.endSession(s.session.session.id, { pages: 15 })
+    await h.svc.recordQuotaProgress(plan.id, s.session.session.id)
+    await h.svc.recordQuotaProgress(plan.id, s.session.session.id) // idempotent — overwrite, no double-count
+    const after = await h.svc.getTodayQuotas()
+    expect(after[0]!.done).toBe(15)
+    await expect(h.svc.recordQuotaProgress('ghost', s.session.session.id)).rejects.toBeInstanceOf(
+      ReadingPlanNotFoundError,
+    )
+    // a bogus sessionRef is a caller error, never a silent 0-credit (code-review fix).
+    await expect(h.svc.recordQuotaProgress(plan.id, 'ghost-session')).rejects.toBeInstanceOf(
+      ReadingSessionNotFoundError,
+    )
+  })
+
+  // (6) recalculate — on/ahead of pace reshapes silently (PLAN §4.6).
+  it('recalculate — ahead of pace reshapes silently to a lower daily quota', async () => {
+    await h.svc.registerBooks()
+    const a = await h.svc.createBook({ title: 'A', total_pages: 100 })
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: a.id }],
+      arrangement: 'parallel',
+      goalType: 'auto',
+      targetDate: iso(10),
+    }) // dailyQuota 10
+    const s = await h.svc.startSession(a.id, { manual: true })
+    await h.svc.endSession(s.session.session.id, { pages: 50 })
+    await h.svc.recordQuotaProgress(plan.id, s.session.session.id)
+    const reshaped = await h.svc.recalculate(plan.id, iso(2)) // remaining 50 over 8 days → ceil(50/8)=7 ≤ 10 → reshape
+    expect((reshaped.quota_distribution as unknown as Dist).dailyQuota).toBe(7)
+  })
+
+  // (7) recalculate — behind pace ⇒ TargetUnreachableProposal (never a silent rewrite) (PLAN §4.7).
+  it('recalculate — behind pace / past target ⇒ TargetUnreachableProposal with options', async () => {
+    const a = await h.svc.createBook({ title: 'A', total_pages: 100 })
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: a.id }],
+      arrangement: 'parallel',
+      goalType: 'auto',
+      targetDate: iso(10),
+    }) // dailyQuota 10
+    // day 9, no progress: remaining 100 over 1 day → required 100 > 10 → unreachable, both options.
+    await expect(h.svc.recalculate(plan.id, iso(9))).rejects.toMatchObject({
+      name: 'TargetUnreachableProposal',
+      options: ['extend_date', 'raise_quota'],
+    })
+    // past the target (remainingDays ≤ 0) → extend_date only.
+    await expect(h.svc.recalculate(plan.id, iso(11))).rejects.toMatchObject({ options: ['extend_date'] })
+    const err = await h.svc.recalculate(plan.id, iso(9)).catch((e) => e)
+    expect(err).toBeInstanceOf(TargetUnreachableProposal)
+    expect(err.suggestedQuota).toBeGreaterThan(10)
+  })
+
+  // (8) getProjection — derives the trajectory; unknown plan rejects (PLAN §4.8).
+  it('getProjection — derives the trajectory; unknown plan ⇒ ReadingPlanNotFoundError', async () => {
+    const a = await h.svc.createBook({ title: 'A', total_pages: 100 })
+    const plan = await h.svc.createPlan({
+      books: [{ bookId: a.id }],
+      arrangement: 'parallel',
+      goalType: 'auto',
+      targetDate: iso(10),
+    })
+    const proj = await h.svc.getProjection(plan.id, iso(0))
+    expect(proj.remainingPages).toBe(100)
+    expect(proj.remainingDays).toBe(10)
+    expect(proj.projectedCompletionDate).toBeTruthy()
+    await expect(h.svc.getProjection('ghost')).rejects.toBeInstanceOf(ReadingPlanNotFoundError)
   })
 })

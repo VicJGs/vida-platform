@@ -185,6 +185,42 @@
   (the S3/S4 N-fold). `AttachmentPort` extended additively with `download`. `[code: service.ts readingRepo/toReadingSession;
   @vida/types learning.ts; schema/books.ts:147-162]`
 
+## S7 — Reading plans / Quota Planner (BOO-27/28/29/30/31/32/33)
+
+- **BR-BK-S7-1 (`createPlan` — Books-owned, NO axes / BOO-27, BK-11/BK-12, C-M1)** — creates a `reading_plans` row +
+  one `reading_plan_books` row per book (sequence for `sequenced`), computes + stores the initial `quota_distribution`.
+  Validates `arrangement`/`goalType`/≥1 book (each guarded → `BookNotFoundError`). **No `measurement_kind`/`binding_mode`
+  written** — the pursuable goal is Purpose-owned (C-M1; Purpose unbuilt → no dep). `manual` takes the caller's `quota`;
+  `auto` derives it. `[code: service.ts createPlan; rerun C-M1 books.md:71]`
+- **BR-BK-S7-2 (auto-goal + distribution — arithmetic, Calendar stubbed / BOO-28/29)** — `goal='auto'` daily quota =
+  `ceil(Σ total_pages / max(1, daysUntilTarget))`; a book with no `total_pages` contributes 0 (honest, never guessed);
+  `quota_distribution.calendarReconciled=false` keeps the Calendar-slot forward-dep visibly stubbed. `[code: service.ts
+  computeDistribution; structure-data.md:48-49]`
+- **BR-BK-S7-3 (`getTodayQuotas` — derived provider / BOO-30)** — per active plan, `{target (today's daily quota),
+  done (cumulative), status}` where `status` compares cumulative done vs `dailyQuota × daysElapsed` (behind/on-pace/
+  ahead). Derived on read, never stored; feeds the Reading Hub + Journal `/summary` (wired S10). `[code: service.ts
+  getTodayQuotas; structure-data.md:38-41]`
+- **BR-BK-S7-4 (`recordQuotaProgress` — idempotent credit / BOO-31)** — credits a reading session's `pages_read` into
+  `recalculation_state.progressBySession[sessionRef]` (OVERWRITE, not add → idempotent; `pagesDone` recomputed from the
+  map). Guards the plan (`ReadingPlanNotFoundError`) AND the session (`ReadingSessionNotFoundError` — never a silent
+  0-credit). `[code: service.ts recordQuotaProgress]`
+- **BR-BK-S7-5 (`recalculate` — reshape or propose, never silent drop / BOO-32, BK-11)** — on/ahead of pace
+  (`requiredDailyQuota = ceil(remainingPages/remainingDays) ≤ original dailyQuota`) reshapes `dailyQuota` silently +
+  returns the plan; **behind** (`>` original, or `remainingDays ≤ 0` with pages left) throws `TargetUnreachableProposal`
+  (`options: ['extend_date','raise_quota']`, `suggestedDate` keeps the pace, `suggestedQuota` keeps the date;
+  `remainingDays ≤ 0` ⇒ `extend_date` only). Never a silent target rewrite. `[code: service.ts recalculate;
+  conventions.md:28-29]`
+- **BR-BK-S7-6 (`getProjection` — derived trajectory / BOO-33)** — derives `{projectedCompletionDate, onTrack,
+  remainingPages, remainingDays}` (arithmetic; Calendar stubbed). Derived on read, never stored. Guards the plan.
+  `[code: service.ts getProjection; structure-data.md:48]`
+- **BR-BK-S7-7 (BK-12 ownership)** — `createPlan`/`recordQuotaProgress`/`recalculate` are Books-only writes; no plan-
+  write surface is exposed to consumers (the Study-Planner read-provider is S10/BOO-45). `[business-rules.md:62-64]`
+- **BR-BK-S7-8 (persistence / json write boundary / atomic / N-fold)** — `reading_plans`+`reading_plan_books` repos
+  `softDelete:true`, `encryptedFields:[]`; `quota_distribution`/`recalculation_state` `json<Record>` are WRITTEN
+  (serialize on write, parse on read — `toReadingPlan`/`parseDistribution`/`parseState`); `createPlan` writes plan +
+  junctions ATOMICALLY (`db.transaction`+`createInTx`, both Books-local); `@vida/types` `ReadingPlan`+`ReadingPlanBook`
+  N-fold; pure date helpers + `asOf?` seam (no clock dep). `[code: service.ts plansRepo/createPlan; schema/books.ts:165-188]`
+
 ## Carry-forward (homed to a later slice)
 
 - **`listQuotes` `tags?` filter** → S9 (lands with `scopeTag`/BOO-04). *(S4 "Embeddability = S5" carry-forward

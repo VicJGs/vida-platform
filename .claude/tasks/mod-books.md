@@ -69,7 +69,19 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   /preflight PASSED (R10 non-atomic compose · R11 timing read) → Approval 2 → implement → **tsc 0 · 63/63 live-store
   (REAL sessions, Node 24) · full @vida/core 1495→1496 · eslint 0 · gitleaks clean** → code-review SHIP (2 NITs
   folded) → /critique SHIP → §XXIX currency (BR-BK-S6-1..8). Commit `92e5b30`.
-- [ ] S7 plans · S8 progress/conflict · S9 Education/measurement · S10 integrations/Journal
+- [x] **S7 — Reading plans / Quota Planner SHIPPED** (BOO-27/28/29/30/31/32/33): `createPlan` (Books-owned, atomic
+  plan+junctions, **NO measurement axes** per C-M1 — Purpose-owned/unbuilt) + auto-goal/quota-distribution
+  derivation (days-until-target arithmetic; Calendar reconciliation stamped-stub) + `getTodayQuotas` (derived Hub +
+  Journal provider) + `recordQuotaProgress` (idempotent per sessionRef) + `recalculate` (reshape silently on/ahead;
+  **`TargetUnreachableProposal`** behind pace — extend_date/raise_quota, never silent rewrite, BK-11) + `getProjection`.
+  **NO new deps** (self-contained). First slice to WRITE json<T> (`quota_distribution`/`recalculation_state`). New
+  `@vida/types` `ReadingPlan`+`ReadingPlanBook`; errors `ReadingPlanNotFoundError`+`TargetUnreachableProposal`. Full
+  Entity Delivery Flow (all doc-grounded per standing directive): PLAN → g1 /critique REVISE→SHIP (1 fold: recalc
+  proposal condition = behind-planned-pace) → Approval 1 → /api-contract ratify + /adr-check (no ADR) → /preflight
+  (atomic createPlan via createInTx · asOf seam no clock dep) → Approval 2 → implement → **tsc 0 · 72/72 live-store
+  (Node 24) · full @vida/core 1505 · eslint 0 · gitleaks clean** → code-review SHIP (1 fix: recordQuotaProgress
+  session guard) → /critique SHIP → §XXIX currency (BR-BK-S7-1..8). Commit `_(pending)_`.
+- [ ] S8 progress/conflict · S9 Education/measurement · S10 integrations/Journal
 - [ ] Step 3: read 3 existing MOD services — state the pattern
 - [ ] Step 4: /api-contract (service API) approved before code
 - [ ] Step 5–6: /adr-check · /adr-new (if significant)
@@ -104,6 +116,14 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   `business-rules.md:127`; annotation-survival→S4; BOO-44 S3 throw site; `readable` live-count + target
   native_position). 31/31 live-store → 2 independent reviewers SHIP (4 NITs folded incl. realign of `addAsset`
   to the frozen bundled `{format, file?}` seam-contract shape). Branch `mod-books`.
+- 2026-10-02: S7 shipped — Reading plans / Quota Planner (BOO-27/28/29/30/31/32/33). Self-contained (NO new deps);
+  first slice to WRITE json<T> columns (`quota_distribution`/`recalculation_state` — serialize/parse boundary).
+  **C-M1 grounded (standing directive):** NO stored measurement axes — the pursuable goal is Purpose-owned (rerun
+  `books.md:71`) and Purpose is unbuilt, so S7 takes no measurement/Purpose dep. `createPlan` atomic (plan+junctions
+  via `createInTx`). `TargetUnreachableProposal` fires when behind the planned pace (g1 fold: the crisp condition vs a
+  vague "sane ceiling"). code-review fix: `recordQuotaProgress` guards the session (no silent 0-credit). Calendar
+  reconciliation = stamped stub (forward-dep). tsc 0, 72/72 books live-store (Node 24), full @vida/core 1505, eslint
+  0, gitleaks clean. Currency BR-BK-S7-1..8. Branch `mod-books`.
 - 2026-10-01: S6 shipped — reading sessions + Reader orchestration + registerBooks (BOO-23/24/25/26/39). Composes
   the REAL ADR-004 `sessions` spine (`createSession`/`completeSession`/`attach`) + AR-5 `SessionRegistry`; `reading`
   `SessionTypeDef` = a transcription of ADR-004 §3.2 (empty envelope, C-E2). **Victor drift-catch ×2 → doc-first
@@ -125,15 +145,16 @@ Entity Delivery Flow (v1): front matter (interpretation + decomposition) → per
   filter on global) — NO by-id resolve method added (frozen seam-contract honored, anti-over-engineering). @vida/core
   **1479/1479**, tsc 0, eslint 0, gitleaks clean. Branch `mod-books`; PR when ① (all 10 slices) completes.
 
-## Next Slice — S7 (Reading plans / Quota Planner)
-S7 scope (BOO-27/28/29/30/31/32/33, slice-map.md:21): `reading_plans` + `reading_plan_books` junction CRUD +
-goal-as-Purpose-target (**NO stored measurement axes — C-M1**, `reading_plans` holds none; Books names the axes,
-stores none) + quota/auto-goal/projection derivations (Calendar reconciliation stubbed = forward dep) +
-`TargetUnreachableProposal` (recalc can't meet target → options, never a silent rewrite, BK-11). `createPlan` ·
-`getTodayQuotas` (Hub + Journal `/summary` provider) · `recordQuotaProgress` · `recalculate` · `getProjection`.
-**Books owns plans; consumers consume (BK-12)** — the Study Planner reads via a provider, never writes. Reload:
-`docs/features/books/delivery/{slice-map,seam-contract}.md` (S7 rows) · `docs/modules/books/current-*` ·
-`parts/books.md` BOO-27..33 · `business-rules.md` BK-11/BK-12 · `rerun C-M1 books.md:71` (no stored axes) ·
-`schema/books.ts` `reading_plans`/`reading_plan_books` (NO measurement_kind/binding_mode) · `foundation/measurement`
-(the goal-as-target derivation seam). Env: Node 24 via nvm (stray non-24 `pnpm test` → rebuild better-sqlite3: `cd
-node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release`). Branch `mod-books`.
+## Next Slice — S8 (Unified progress + conflict resolution)
+S8 scope (BOO-13/34/35, slice-map.md:22): **unified-progress DERIVATION** (`getUnifiedProgress(bookId) → number |
+'conflicted' | null`; `books.progress` nullable override, NULL⇒derive from asset positions; BR-BK-2) + a **derived
+conflict queue** (no `book_conflicts` table — React-Query-derived over asset positions, BK-8) + the **conflict
+preset-rule** read via the SAME narrow deny-safe `preferences?` port (S5 precedent — zero signature change, appends
+one read) + `PositionConflictPending` (an unresolved conflict **blocks** unified progress — flagged `'conflicted'`,
+never guessed) + `getConflicts`/`resolveConflict`. Composes S3 `getMappedPosition` (cross-format normalization).
+Reload: `docs/features/books/delivery/{slice-map,seam-contract}.md` (S8 rows) · `docs/modules/books/current-*` ·
+`parts/books.md` BOO-13/34/35 · `business-rules.md` BK-8 (conflict derived, preset-rule in Preferences) · the S5
+`preferences?` port (append the preset-rule read) · `interpretation.md` implicit-rule 7 (conflict derived, not a
+table) · `schema/books.ts` (`books.progress` nullable; NO conflict table). Env: Node 24 via nvm (stray non-24 `pnpm
+test` → rebuild better-sqlite3: `cd node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run
+build-release`). Branch `mod-books`.

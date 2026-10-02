@@ -326,6 +326,31 @@ export interface ReadingSession extends SyncableEntity {
   statistics: Record<string, unknown> | null
 }
 
+/**
+ * A reading plan — the Quota Planner (BK-11). Covers one or many books (via `reading_plan_books`). Holds
+ * `arrangement`/`goal_type`/target dates + the computed `quota_distribution` + `recalculation_state` (both stored
+ * json). **NO `measurement_kind`/`binding_mode`** — the pursuable goal is Purpose/target-owned, Books stores no axis
+ * (C-M1). `[FACT: schema/books.ts:165-174; rerun C-M1 books.md:71]`
+ */
+export interface ReadingPlan extends SyncableEntity {
+  arrangement: ReadingPlanArrangement
+  goal_type: ReadingPlanGoalType
+  target_date: string | null
+  target_completion_date: string | null
+  quota_distribution: Record<string, unknown> | null
+  recalculation_state: Record<string, unknown> | null
+  deleted_at: Timestamp | null
+}
+
+/** The plan↔books arrangement junction (BK-11). `sequence` orders `sequenced` plans; `quota` is the per-book target. */
+export interface ReadingPlanBook extends SyncableEntity {
+  plan_id: Id
+  book_id: Id
+  sequence: number | null
+  quota: number | null
+  deleted_at: Timestamp | null
+}
+
 export interface Skill extends SyncableEntity {
   parent_skill_id: Id | null
   /** @encrypted */
