@@ -19,7 +19,7 @@ Blocked by: none (all M1.2.1 foundation backend twins merged to main).
 - [x] G1 — Quality-Bar gate → `frontend-quality-bar/_index.md` ✅ 2026-10-01 (critic REVISE→2 must-fix+3 should-fix folded→SHIP)
 - [x] G2 ✅ Surface harvest → `frontend-replan/surface-map.md` — PASS 1 + PASS 2 (4 parallel cluster auditors a9e1/aa3e/a59d/a350) done 2026-10-01. ~30 DISCOVERED surfaces (roster §6.2); 8 confirmed SYSTEMIC findings (empty-state·sync-status·reduced-motion·theme-ability·Editor/Layout-facet·voice/honesty·≥2-paths·provider-reads §6.1); SCHEMA-BLOCKER map per module (§6.4); BUILD-SHAPE insight (§6.3) = codec-first → shell+7 cross-cutting surfaces → schema-gated per-module. Surface-map = DESIGN inventory (modules are schema-floor + 0 service/surface lines; dominant lens = MISSING).
 - [x] G3 ✅ Composition map → `decomposition.md` (surfaces → codec units: 7 view-modes · 6 archetype shells · Layout/Editor facet · 8-pattern kit · composition primitives; 3 build tiers codec→shell+cross-cutting→schema-gated modules) + `traceability.md` (every surface←intent; orphan check PASS: no un-homed surface, no un-realized P1–P6; owed ADR-amendments flagged). 2026-10-01.
-- [ ] G4 — Coverage gate → `frontend-replan/coverage-report.md` + `tools/frontend-intent/` set-cover
+- [x] G4 ✅ Coverage gate → `coverage-report.md` + `tools/frontend-intent/{set-cover.py,capabilities.json}` — ≥2-paths RATIFIED (open-decision #4 resolved, hard-floor+soft-signal); run: pass1 REVISE (7 single-path contextual-only) → ReachabilityRegistry remediation (+⌘K) → pass2 PASS 59/59. 2026-10-01.
 - [ ] G5 — Order → surface `#` sequence into `reconstructed-structure.md`
 - [ ] G6 — Linear reshape (⚠ semi-destructive, Victor-approval-gated) → `g6-edge-ledger.md`
 - [ ] builds — per-surface 3-lens audit → build → Visual Gate → PR → merge
@@ -28,7 +28,7 @@ Blocked by: none (all M1.2.1 foundation backend twins merged to main).
 1. Aesthetic & density direction (power-tool vs calm) — Victor input at G0/G1.
 2. Spaces bar timing — build seam now or defer (PARKED→M1.1)?
 3. Standards-bar home — repo-level extending global (recommended; confirm G1).
-4. The ≥2-paths surfacing rule — ratify as a G4 criterion, or replace.
+4. ✅ RESOLVED (G4) — ≥2-paths RATIFIED as the coverage criterion (hard floor + soft signal); enforced by tools/frontend-intent set-cover.
 5. Sketch-gaps to hunt in G1 — perf budgets, reduced-motion, i18n/RTL, empty/error copy, dark-mode, focus, offline/optimistic, responsive.
 
 ## Build Steps
