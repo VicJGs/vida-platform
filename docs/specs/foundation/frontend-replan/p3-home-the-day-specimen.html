@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — P3 The Day · Home + your 4 regions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fbfbfa; --ink:#16181d; --muted:#5a5f6a; --faint:#9298a3;
+    --line:#e7e7e4; --line2:#efefed; --accent:#1d4ed8; --accent-soft:#eef3ff;
+    --ease:cubic-bezier(0.34,1.56,0.64,1); /* soft & organic (P2) */
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#e9e6df;color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:2.5rem 1.5rem 5rem;}
+
+  .meta{max-width:1060px;margin:0 auto 1.3rem;}
+  .meta .kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8578;font-weight:500;}
+  .meta h1{font-family:'Spectral',serif;font-weight:500;font-size:clamp(1.6rem,3.5vw,2.3rem);line-height:1.1;margin:.5rem 0 .6rem;letter-spacing:-.01em;}
+  .meta p{max-width:66ch;color:#4a463d;font-size:.95rem;}
+
+  .controls{max-width:1060px;margin:0 auto 1rem;display:flex;gap:1.3rem;flex-wrap:wrap;align-items:center;background:#f3f1ea;border:1px solid #ddd8cc;border-radius:6px;padding:.9rem 1.1rem;}
+  .controls .lab{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#8a8578;margin-right:.3rem;}
+  .controls button{font-family:'Inter';font-size:.82rem;border:1px solid #ccc6b8;background:#fff;color:#4a463d;padding:.4rem .8rem;border-radius:4px;cursor:pointer;transition:all 160ms var(--ease);}
+  .controls button:hover{border-color:#9a9488;}
+  .controls button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .controls .note{margin-left:auto;font-size:.78rem;color:#6a665b;max-width:34ch;}
+
+  /* the Home surface (the shell content region) */
+  .home{max-width:1060px;margin:0 auto;background:var(--paper);border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 12px 40px rgba(0,0,0,.09);padding:2.6rem 2.8rem 2.8rem;}
+  .greet{margin-bottom:1.8rem;}
+  .greet .eyebrow{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+  .greet h2{font-family:'Spectral',serif;font-weight:500;font-size:2.3rem;line-height:1.08;letter-spacing:-.015em;margin:.35rem 0 .3rem;}
+  .greet .sub{font-family:'Spectral',serif;font-size:1.05rem;color:var(--muted);}
+
+  /* region card shell */
+  .region{}
+  .region .h{display:flex;align-items:baseline;justify-content:space-between;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:.9rem;}
+  .region .h a{color:var(--accent);text-decoration:none;letter-spacing:.04em;font-size:.72rem;text-transform:none;font-weight:500;}
+
+  /* ① schedule */
+  .sched .tl{position:relative;padding-left:1.1rem;}
+  .sched .tl::before{content:'';position:absolute;left:3px;top:4px;bottom:4px;width:1px;background:var(--line);}
+  .sched .ev{position:relative;padding:.4rem 0;display:flex;gap:.8rem;align-items:baseline;}
+  .sched .ev::before{content:'';position:absolute;left:-1.1rem;top:.75rem;width:7px;height:7px;border-radius:50%;background:#fff;border:1.5px solid var(--accent);}
+  .sched .ev .tm{font-size:.76rem;color:var(--faint);font-variant-numeric:tabular-nums;width:3.2rem;flex:none;}
+  .sched .ev .t{font-size:.92rem;color:var(--ink);}
+
+  /* ② stats */
+  .stats .figs{display:flex;gap:1.8rem;flex-wrap:wrap;}
+  .stats .fig .n{font-family:'Spectral',serif;font-weight:500;font-size:1.6rem;font-variant-numeric:tabular-nums;}
+  .stats .fig .l{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);}
+
+  /* ③ day-actions */
+  .acts .tier{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:#a38; color:#9a6a2a; margin:.2rem 0 .4rem;}
+  .acts .tier.can{color:var(--faint);margin-top:1rem;}
+  .acts .row{display:flex;align-items:center;gap:.7rem;padding:.4rem 0;font-size:.92rem;color:var(--ink);}
+  .acts .ck{width:15px;height:15px;border:1.5px solid #c3c6cc;border-radius:4px;flex:none;transition:all 180ms var(--ease);}
+  .acts .row:hover .ck{border-color:var(--accent);transform:scale(1.12);}
+
+  /* ④ quick actions */
+  .quick .chips{display:flex;gap:.5rem;flex-wrap:wrap;}
+  .quick .chip{display:inline-flex;align-items:center;gap:.4rem;font-size:.84rem;border:1px solid var(--line);background:#fff;border-radius:20px;padding:.4rem .85rem;color:#3a3f48;cursor:pointer;transition:all 180ms var(--ease);}
+  .quick .chip:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+  .quick .chip.edit{border-style:dashed;color:var(--faint);}
+
+  /* journal entry (the writing canvas) */
+  .entry{border:1px solid var(--line);border-radius:8px;background:#fff;padding:1.5rem 1.6rem;}
+  .entry .label{font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:.8rem;}
+  .entry .body{font-family:'Spectral',serif;font-size:1.08rem;line-height:1.68;color:#2c3038;}
+  .entry .body .ph{color:#b7bcc4;font-style:italic;}
+  .entry .hint{margin-top:1rem;font-size:.76rem;color:var(--faint);}
+  .entry .hint kbd{font-family:'Inter';background:#f0f0ee;border:1px solid var(--line);border-radius:3px;padding:.05rem .35rem;font-size:.72rem;}
+
+  .block{border-bottom:1px solid var(--line2);padding-bottom:1.4rem;margin-bottom:1.4rem;}
+  .block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+
+  /* ===== Arrangement A — JOURNAL-FIRST (entry is the hero) ===== */
+  .home.arrA .grid{display:grid;grid-template-columns:1.55fr 1fr;gap:2.4rem;align-items:start;}
+  .home.arrA .col-main{display:flex;flex-direction:column;}
+  .home.arrA .col-side{display:flex;flex-direction:column;gap:1.4rem;}
+  .home.arrA .col-side .region{border-bottom:1px solid var(--line2);padding-bottom:1.3rem;}
+  .home.arrA .col-side .region:last-child{border-bottom:none;padding-bottom:0;}
+
+  /* ===== Arrangement B — DASHBOARD-FIRST (4 regions up top) ===== */
+  .home.arrB .dash{display:grid;grid-template-columns:repeat(2,1fr);gap:1.6rem 2.4rem;margin-bottom:1.8rem;padding-bottom:1.8rem;border-bottom:1px solid var(--line2);}
+  .home.arrB .entry{margin-top:0;}
+
+  /* visibility per arrangement */
+  .home.arrA .for-B{display:none;}
+  .home.arrB .for-A{display:none;}
+
+  @media(max-width:780px){
+    .home.arrA .grid, .home.arrB .dash{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <div class="kicker">Frontend Re-plan · G1 · P3 — The Day</div>
+  <h1>Home — your four regions, as a living journal.</h1>
+  <p>Your captured intent (<b>① schedule · ② stats · ③ day-actions must/can · ④ quick-actions</b>) rendered in the
+  confirmed identity. The one real decision is <b>where the free-form journal entry lives</b> — toggle the two
+  arrangements to feel it. <b>This is feel, not the final surface spec.</b></p>
+</div>
+
+<div class="controls">
+  <span class="lab">Arrangement · D4</span>
+  <button data-arr="arrA" class="on">Journal-first</button>
+  <button data-arr="arrB">Dashboard-first</button>
+  <div class="note">Journal-first = you <i>write your day</i>, regions frame it. Dashboard-first = command-center, entry below.</div>
+</div>
+
+<div class="home arrA" id="home">
+
+  <div class="greet">
+    <div class="eyebrow">Tuesday · 1 October</div>
+    <h2>Good morning, Victor.</h2>
+    <div class="sub">A quiet start — three things matter today, the rest can drift.</div>
+  </div>
+
+  <!-- DASHBOARD-FIRST top grid (only shown in arrB) -->
+  <div class="dash for-B">
+    <div class="region sched">
+      <div class="h"><span>① Schedule</span><a href="#">open calendar →</a></div>
+      <div class="tl">
+        <div class="ev"><span class="tm">09:30</span><span class="t">Finish the re-plan draft</span></div>
+        <div class="ev"><span class="tm">14:00</span><span class="t">Systems Design — Lecture 4</span></div>
+        <div class="ev"><span class="tm">17:00</span><span class="t">Call Mariana</span></div>
+      </div>
+    </div>
+    <div class="region acts">
+      <div class="h"><span>③ Today — no fixed time</span></div>
+      <div class="tier">Must do</div>
+      <div class="row"><span class="ck"></span>Review finance import</div>
+      <div class="row"><span class="ck"></span>Morning check-in</div>
+      <div class="tier can">Can do</div>
+      <div class="row"><span class="ck"></span>Spanish — daily session</div>
+      <div class="row"><span class="ck"></span>Read chapter 4 — Systems</div>
+    </div>
+    <div class="region stats">
+      <div class="h"><span>② Across the OS</span><a href="#">see all stats →</a></div>
+      <div class="figs">
+        <div class="fig"><div class="n">14</div><div class="l">day streak</div></div>
+        <div class="fig"><div class="n">2h40</div><div class="l">focus</div></div>
+        <div class="fig"><div class="n">R$128k</div><div class="l">net worth</div></div>
+      </div>
+    </div>
+    <div class="region quick">
+      <div class="h"><span>④ Quick actions</span></div>
+      <div class="chips">
+        <span class="chip">＋ Task</span><span class="chip">＋ Note</span>
+        <span class="chip">◔ Check-in</span><span class="chip">$ Log expense</span>
+        <span class="chip edit">✎ Edit</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOURNAL-FIRST two-column (only shown in arrA) -->
+  <div class="grid for-A">
+    <div class="col-main">
+      <div class="entry">
+        <div class="label">Today's thread</div>
+        <div class="body">Mornings have started to settle. The first hour is for the long project; everything
+        louder waits until the light is fully up. <span class="ph">Write how the day actually went…</span></div>
+        <div class="hint">Type <kbd>/</kbd> to pull in tasks, a chart, a habit, or a <kbd>[[</kbd> link from any module.</div>
+      </div>
+      <div class="region acts" style="margin-top:1.6rem;">
+        <div class="h"><span>③ Today — no fixed time</span></div>
+        <div class="tier">Must do</div>
+        <div class="row"><span class="ck"></span>Review finance import</div>
+        <div class="row"><span class="ck"></span>Morning check-in</div>
+        <div class="tier can">Can do</div>
+        <div class="row"><span class="ck"></span>Spanish — daily session</div>
+        <div class="row"><span class="ck"></span>Read chapter 4 — Systems</div>
+        <div class="row"><span class="ck"></span>Log yesterday's expenses</div>
+      </div>
+    </div>
+    <div class="col-side">
+      <div class="region sched">
+        <div class="h"><span>① Schedule</span><a href="#">calendar →</a></div>
+        <div class="tl">
+          <div class="ev"><span class="tm">09:30</span><span class="t">Finish the re-plan draft</span></div>
+          <div class="ev"><span class="tm">14:00</span><span class="t">Systems — Lecture 4</span></div>
+          <div class="ev"><span class="tm">17:00</span><span class="t">Call Mariana</span></div>
+        </div>
+      </div>
+      <div class="region stats">
+        <div class="h"><span>② Across the OS</span><a href="#">all →</a></div>
+        <div class="figs">
+          <div class="fig"><div class="n">14</div><div class="l">streak</div></div>
+          <div class="fig"><div class="n">2h40</div><div class="l">focus</div></div>
+          <div class="fig"><div class="n">R$128k</div><div class="l">net worth</div></div>
+        </div>
+      </div>
+      <div class="region quick">
+        <div class="h"><span>④ Quick actions</span></div>
+        <div class="chips">
+          <span class="chip">＋ Task</span><span class="chip">＋ Note</span>
+          <span class="chip">◔ Check-in</span><span class="chip">$ Expense</span>
+          <span class="chip edit">✎</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- entry for dashboard-first (below the dash) -->
+  <div class="entry for-B">
+    <div class="label">Today's thread</div>
+    <div class="body">Mornings have started to settle. The first hour is for the long project; everything louder
+    waits until the light is fully up. <span class="ph">Write how the day actually went…</span></div>
+    <div class="hint">Type <kbd>/</kbd> to pull in tasks, a chart, a habit, or a <kbd>[[</kbd> link from any module.</div>
+  </div>
+
+</div>
+
+<script>
+  const home=document.getElementById('home');
+  document.querySelectorAll('[data-arr]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('[data-arr]').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      home.classList.remove('arrA','arrB');
+      home.classList.add(b.dataset.arr);
+    });
+  });
+</script>
+</body>
+</html>

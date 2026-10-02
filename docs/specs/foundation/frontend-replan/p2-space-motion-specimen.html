@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — P2 Space &amp; Motion · the shell + how you move</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fbfbfa; --ink:#16181d; --muted:#5a5f6a; --faint:#9298a3;
+    --line:#e7e7e4; --line2:#ededeb; --accent:#1d4ed8; --accent-soft:#eaf0ff;
+    --dur-micro:180ms; --dur-trans:280ms; --dur-emph:420ms;
+    --ease-out:cubic-bezier(0,0,0.3,1); --ease-in:cubic-bezier(0.7,0,1,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#e9e6df;color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:2.5rem 1.5rem 5rem;}
+
+  /* ---- meta chrome (not the design) ---- */
+  .meta{max-width:1080px;margin:0 auto 1.5rem;}
+  .meta .kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8578;font-weight:500;}
+  .meta h1{font-family:'Spectral',serif;font-weight:500;font-size:clamp(1.6rem,3.5vw,2.3rem);line-height:1.1;margin:.5rem 0 .6rem;letter-spacing:-.01em;}
+  .meta p{max-width:64ch;color:#4a463d;font-size:.95rem;}
+
+  .controls{max-width:1080px;margin:0 auto 1rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;background:#f3f1ea;border:1px solid #ddd8cc;border-radius:6px;padding:.9rem 1.1rem;}
+  .controls .grp{display:flex;gap:.4rem;align-items:center;}
+  .controls .lab{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#8a8578;margin-right:.3rem;}
+  .controls button{font-family:'Inter';font-size:.82rem;border:1px solid #ccc6b8;background:#fff;color:#4a463d;padding:.35rem .7rem;border-radius:4px;cursor:pointer;transition:all var(--dur-micro) var(--ease-out);}
+  .controls button:hover{border-color:#9a9488;}
+  .controls button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .controls .note{margin-left:auto;font-size:.78rem;color:#6a665b;max-width:30ch;}
+
+  /* ---- the shell ---- */
+  .shell{max-width:1080px;margin:0 auto;height:620px;background:var(--paper);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.05),0 12px 40px rgba(0,0,0,.09);display:grid;grid-template-columns:230px 1fr;grid-template-rows:56px 1fr;}
+
+  /* global bar */
+  .globalbar{grid-column:1 / -1;display:flex;align-items:center;padding:0 1.3rem;border-bottom:1px solid var(--line);background:#fcfcfb;}
+  .globalbar .wordmark{font-family:'Spectral',serif;font-weight:500;font-size:1.3rem;letter-spacing:.01em;}
+  .globalbar .spacer{flex:1;}
+  .globalbar .gsurf{display:flex;gap:.3rem;}
+  .globalbar .gsurf .g{width:34px;height:34px;border-radius:5px;display:grid;place-items:center;color:var(--muted);font-size:.9rem;cursor:pointer;transition:background var(--dur-micro) var(--ease-out);}
+  .globalbar .gsurf .g:hover{background:var(--accent-soft);color:var(--accent);}
+  .globalbar .cmdk{display:flex;align-items:center;gap:.5rem;border:1px solid var(--line);border-radius:6px;padding:.35rem .7rem;color:var(--faint);font-size:.82rem;margin-right:.6rem;cursor:text;}
+  .globalbar .cmdk kbd{font-family:'Inter';font-size:.7rem;background:#f0f0ee;border:1px solid var(--line);border-radius:3px;padding:.05rem .3rem;color:var(--muted);}
+
+  /* dock */
+  .dock{border-right:1px solid var(--line);padding:1rem .7rem;background:#fcfcfb;overflow-y:auto;}
+  .dock .grouplab{font-size:.63rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);padding:.8rem .6rem .35rem;}
+  .dock .item{display:flex;align-items:center;gap:.7rem;padding:.5rem .6rem;border-radius:6px;font-size:.88rem;color:#3a3f48;cursor:pointer;position:relative;transition:background var(--dur-micro) var(--ease-out),color var(--dur-micro) var(--ease-out);}
+  .dock .item .ic{width:16px;text-align:center;opacity:.65;}
+  .dock .item:hover{background:#f3f3f1;}
+  .dock .item.active{background:var(--accent-soft);color:var(--accent);font-weight:500;}
+  .dock .item.active .ic{opacity:1;}
+  .dock .item.active::before{content:'';position:absolute;left:-.7rem;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--accent);border-radius:0 2px 2px 0;transition:all var(--dur-trans) var(--ease-out);}
+
+  /* content */
+  .content{position:relative;overflow:hidden;background:var(--paper);perspective:1600px;}
+  .page{position:absolute;inset:0;padding:2.6rem 3rem;overflow-y:auto;background:var(--paper);}
+  .page .eyebrow{font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:.5rem;}
+  .page h2{font-family:'Spectral',serif;font-weight:500;font-size:2.1rem;line-height:1.1;letter-spacing:-.01em;margin-bottom:.4rem;}
+  .page .sub{font-family:'Spectral',serif;font-size:1.05rem;color:var(--muted);margin-bottom:1.8rem;max-width:52ch;line-height:1.5;}
+  .page .where{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;color:var(--faint);letter-spacing:.06em;margin-bottom:2rem;border:1px solid var(--line);border-radius:20px;padding:.25rem .75rem;}
+  .page .where b{color:var(--muted);font-weight:500;}
+  .page .rows{border-top:1px solid var(--line2);}
+  .page .row{display:flex;align-items:baseline;justify-content:space-between;padding:.7rem 0;border-bottom:1px solid var(--line2);font-size:.92rem;}
+  .page .row .t{color:var(--ink);}
+  .page .row .m{font-size:.76rem;color:var(--faint);font-variant-numeric:tabular-nums;}
+
+  /* ---- motion VOICE (B2) — easing + duration personality, applied to ALL motion ---- */
+  .voice-calm    {--anim-dur:320ms; --anim-ease:cubic-bezier(0.16,1,0.3,1);}    /* gentle expo-out, long soft tail */
+  .voice-crisp   {--anim-dur:210ms; --anim-ease:cubic-bezier(0.3,0,0.2,1);}     /* snappy, confident, nothing wasted */
+  .voice-organic {--anim-dur:440ms; --anim-ease:cubic-bezier(0.34,1.56,0.64,1);}/* spring — settles past and back */
+
+  /* ---- transition TYPE (B1) — the shape of a module change ---- */
+  .pt-turn .page.enter{animation:turnIn var(--anim-dur) var(--anim-ease);transform-origin:left center;box-shadow:-18px 0 40px rgba(0,0,0,.10);}
+  @keyframes turnIn{from{transform:rotateY(-16deg) translateX(-6%);opacity:.15;}to{transform:rotateY(0) translateX(0);opacity:1;}}
+  .pt-fade .page.enter{animation:fadeSettle var(--anim-dur) var(--anim-ease);}
+  @keyframes fadeSettle{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .pt-slide .page.enter{animation:slideIn var(--anim-dur) var(--anim-ease);}
+  @keyframes slideIn{from{opacity:.3;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}
+  .pt-none .page.enter{animation:none;} /* B3 "truly invisible" — content is simply already there */
+  /* accessibility reduced motion — ALWAYS wins, regardless of voice/transition */
+  .reduce .page.enter{animation:rmFade 120ms linear!important;box-shadow:none!important;transform:none!important;}
+  @keyframes rmFade{from{opacity:0;}to{opacity:1;}}
+
+  .caption{max-width:1080px;margin:1.2rem auto 0;font-size:.82rem;color:#6a665b;}
+  .caption b{color:#1a1a1a;}
+
+  .ask{max-width:1080px;margin:2.5rem auto 0;padding-top:1.8rem;border-top:1px solid #d3cfc4;}
+  .ask h3{font-family:'Spectral',serif;font-weight:500;font-size:1.3rem;margin-bottom:.8rem;}
+  .ask ul{list-style:none;font-size:.92rem;color:#4a463d;}
+  .ask li{padding:.3rem 0;padding-left:1.2rem;position:relative;}
+  .ask li::before{content:'—';position:absolute;left:0;color:#9a9488;}
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <div class="kicker">Frontend Re-plan · G1 · P2 — Space &amp; Motion</div>
+  <h1>The shell, and how it feels to move through it.</h1>
+  <p>This is the 5-region frame in your confirmed identity (B · The Editorial, calm). Click the dock items
+  and watch the content change — then switch the <b>motion personality</b> to feel three different "voices" of
+  movement, all inside the fixed motion budget (280–420ms). Toggle <b>reduced motion</b> to see the required
+  alternative. <b>This is feel, not real pages.</b></p>
+</div>
+
+<div class="controls">
+  <div class="grp">
+    <span class="lab">Transition · B1</span>
+    <button data-pt="turn">Page-turn</button>
+    <button data-pt="fade" class="on">Cross-fade</button>
+    <button data-pt="slide">Slide</button>
+    <button data-pt="none">None · instant</button>
+  </div>
+  <div class="grp">
+    <span class="lab">Voice · B2</span>
+    <button data-voice="calm" class="on">Calm &amp; literary</button>
+    <button data-voice="crisp">Crisp &amp; precise</button>
+    <button data-voice="organic">Soft &amp; organic</button>
+  </div>
+  <div class="grp">
+    <span class="lab">Reduced motion</span>
+    <button id="reduce">Off</button>
+  </div>
+  <div class="note"><b>B1</b> = the shape (user picks, incl. <i>None</i> = B3 "truly invisible"). <b>B2</b> = the voice of all motion. Content always paints instantly — no spinner on the instant case.</div>
+</div>
+
+<div class="shell pt-fade voice-calm" id="shell">
+  <!-- global bar -->
+  <div class="globalbar">
+    <div class="wordmark">Vida</div>
+    <div class="spacer"></div>
+    <div class="cmdk">Search or jump to… <kbd>⌘K</kbd></div>
+    <div class="gsurf">
+      <div class="g" title="Calendar">◫</div>
+      <div class="g" title="Graph">✦</div>
+      <div class="g" title="Notifications">◔</div>
+      <div class="g" title="Settings">⚙</div>
+    </div>
+  </div>
+
+  <!-- dock -->
+  <nav class="dock" id="dock">
+    <div class="grouplab">Integration</div>
+    <div class="item active" data-k="home"><span class="ic">◉</span>Home</div>
+    <div class="item" data-k="notes"><span class="ic">✎</span>Notes</div>
+    <div class="grouplab">Productivity</div>
+    <div class="item" data-k="tasks"><span class="ic">◇</span>Tasks</div>
+    <div class="item" data-k="habits"><span class="ic">↻</span>Habits</div>
+    <div class="item" data-k="projects"><span class="ic">▤</span>Projects</div>
+    <div class="grouplab">Knowledge</div>
+    <div class="item" data-k="learning"><span class="ic">❧</span>Learning</div>
+    <div class="item" data-k="books"><span class="ic">▭</span>Books</div>
+    <div class="grouplab">Life</div>
+    <div class="item" data-k="finance"><span class="ic">$</span>Finance</div>
+    <div class="item" data-k="people"><span class="ic">◍</span>Relationships</div>
+  </nav>
+
+  <!-- content -->
+  <div class="content" id="content"></div>
+</div>
+
+<p class="caption">Notice three things: <b>(1)</b> the active dock marker slides to where you are — "where am I"
+is always answered; <b>(2)</b> the content header echoes the module so the move has a destination; <b>(3)</b> nothing
+ever spins — the page is already there, motion only eases it in.</p>
+
+<div class="ask">
+  <h3>Your move — bring your mental image for movement</h3>
+  <ul>
+    <li><b>B1</b> — moving between modules: should it feel like <i>turning a page</i> (A, on-metaphor, heavier), a <i>quiet settle</i> (B, fast + calm), or <i>sliding through a space</i> (C, directional "where am I")? Or a mix (e.g. page-turn only for Home↔Journal, settle everywhere else)?</li>
+    <li><b>B2</b> — motion personality: what should motion <i>say</i> — "calm &amp; literary", "crisp &amp; precise", "soft &amp; organic"? (It will inform easing + how much, within the budget.)</li>
+    <li><b>B3</b> — expressing instant-ness: is "no spinner, just settle" right, or do you want an even more invisible feel (content truly appears with zero motion, motion reserved only for overlays)?</li>
+  </ul>
+</div>
+
+<script>
+  const PAGES = {
+    home:    {eye:'Tuesday · 1 October', h:'Good morning.', sub:'Your day, read as a single page — schedule, what matters, and a quiet place to begin.', where:'Home', group:'Integration', rows:[['Finish the re-plan draft','09:30'],['Morning check-in','done'],['Review finance import','—']]},
+    notes:   {eye:'Notes', h:'Everything, linked.', sub:'The connective tissue — notes, [[wiki-links]], and the graph that ties the OS together.', where:'Notes', group:'Integration', rows:[['Re-plan — G1 thinking','edited 2m ago'],['Reading log — Systems','yesterday'],['Ideas — Spaces bar','3 days ago']]},
+    tasks:   {eye:'Tasks', h:'What needs doing.', sub:'Aggregated across every module — one place to see and shape the work.', where:'Tasks', group:'Productivity', rows:[['Finish the re-plan draft','High · 09:30'],['Review finance import','High'],['Call Mariana','Med · 17:00'],['Log yesterday’s expenses','Low']]},
+    habits:  {eye:'Habits', h:'The quiet repetitions.', sub:'Build and break, tracked gently — streaks that encourage, never nag.', where:'Habits', group:'Productivity', rows:[['Read 20 minutes','14-day streak'],['No screens after 22:00','5-day streak'],['Walk','done today']]},
+    projects:{eye:'Projects', h:'The bigger arcs.', sub:'Vision, milestones, and the deliverables beneath them — progress that reads itself.', where:'Projects', group:'Productivity', rows:[['Vida platform','62%'],['Apartment renovation','18%'],['Spanish fluency','ongoing']]},
+    learning:{eye:'Learning', h:'This term.', sub:'Classes, schedule, syllabus and homework — the week that teaches itself.', where:'Learning', group:'Knowledge', rows:[['Systems Design — Lecture 4','Wed 14:00'],['Linear Algebra — Pset 3','due Fri'],['Spanish — daily session','—']]},
+    books:   {eye:'Books', h:'What you’re reading.', sub:'A unified shelf with a real reader — table of contents, progress, bookmarks and notes.', where:'Books', group:'Knowledge', rows:[['Thinking in Systems','Ch. 4 of 7'],['The Pragmatic Programmer','43%'],['Pedro Páramo','just started']]},
+    finance: {eye:'Finance', h:'Where it stands.', sub:'Accounts, transactions, assets and liabilities — reconciled, never guessed.', where:'Finance', group:'Life', rows:[['Net worth','R$ 128,400'],['This month — spending','R$ 3,210'],['Unreconciled','4 items']]},
+    people:  {eye:'Relationships', h:'Who matters.', sub:'The people, the last time you spoke, and a gentle nudge when it’s been too long.', where:'Relationships', group:'Life', rows:[['Mariana','call today'],['Dad','last spoke 9 days ago'],['Ana — birthday','in 3 days']]},
+  };
+
+  const content = document.getElementById('content');
+  const shell = document.getElementById('shell');
+  const dock = document.getElementById('dock');
+  let reduced = false;
+
+  function render(k){
+    const p = PAGES[k];
+    const rows = p.rows.map(r=>`<div class="row"><span class="t">${r[0]}</span><span class="m">${r[1]}</span></div>`).join('');
+    const page = document.createElement('div');
+    page.className = 'page enter';
+    page.innerHTML = `
+      <div class="eyebrow">${p.eye}</div>
+      <h2>${p.h}</h2>
+      <div class="sub">${p.sub}</div>
+      <div class="where">you are in <b>${p.group} › ${p.where}</b></div>
+      <div class="rows">${rows}</div>`;
+    // swap: new page on top, remove old after it settles
+    const old = content.querySelector('.page');
+    content.appendChild(page);
+    const clean = ()=>{ if(old && old.parentNode) old.remove(); page.classList.remove('enter'); };
+    page.addEventListener('animationend', clean, {once:true});
+    setTimeout(clean, 700); // fallback
+  }
+
+  dock.addEventListener('click', e=>{
+    const item = e.target.closest('.item'); if(!item) return;
+    dock.querySelectorAll('.item').forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+    render(item.dataset.k);
+  });
+
+  document.querySelectorAll('[data-pt]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('[data-pt]').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      shell.classList.remove('pt-turn','pt-fade','pt-slide','pt-none');
+      shell.classList.add('pt-'+b.dataset.pt);
+    });
+  });
+
+  document.querySelectorAll('[data-voice]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('[data-voice]').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      shell.classList.remove('voice-calm','voice-crisp','voice-organic');
+      shell.classList.add('voice-'+b.dataset.voice);
+    });
+  });
+
+  const rbtn = document.getElementById('reduce');
+  rbtn.addEventListener('click', ()=>{
+    reduced = !reduced;
+    rbtn.textContent = reduced ? 'On' : 'Off';
+    rbtn.classList.toggle('on', reduced);
+    shell.classList.toggle('reduce', reduced);
+  });
+
+  render('home');
+</script>
+</body>
+</html>

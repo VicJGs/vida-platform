@@ -1,5 +1,23 @@
 <!-- Last updated: 2026-10-02 by /session-end -->
 
+
+## frontend-replan (G0–G6) — surface-first frontend re-plan (2026-10-01, worktree-frontend-track)
+The whole ② UI tier re-planned surface-first (surface = the page the user navigates, not module-twin). P1–P6 experience vision captured + G0–G6 gated + committed (9 gate commits). Reshape ledger APPROVED + pre-staged; Linear execution DEFERRED to main (worktree-sync unsafe). Full detail in `.claude/tasks/frontend-replan.md` + `docs/specs/foundation/frontend-replan/*` + `frontend-quality-bar/_index.md`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-01 | P1 identity | OS look & feel | **Themeable editorial book/journal** — 3 user presets (Reader·Editorial·Quiet Desk) × user-controlled density; light primary; default Editorial+calm | Victor's vision; "the user controls their own surfaces"; Tamagui sub-themes support it (extends ds-2/ds-4 to N theme families) | yes (prefs) |
+| 2026-10-01 | P2 motion | transition + voice | **User-selectable transition** (page-turn·cross-fade·slide·none) + ONE voice **soft & organic**; settle-not-spinner | transition = a preference like themes; the voice is the brand signature | yes (prefs) |
+| 2026-10-01 | P3 home | Home shape | **User-chosen arrangement** (Journal-first/Dashboard-first) + 4 regions (schedule·stats·day-actions·quick-actions) | reconciles UX-6's 3 sections with Victor's 4-region intent; agenda splits timed/untimed | yes (prefs) |
+| 2026-10-01 | P4 trust | sync surfacing | **Sync & Activity Log** (user-controlled visibility: chip·/sync·on-change·hidden); undo-by-default + Trash; stage-honest ZK copy | local-first felt-safety; data model already has soft-delete + sync provenance | yes |
+| 2026-10-01 | P5 coverage | the ≥2-paths rule | **RATIFIED** as the G4 hard-floor coverage criterion (+ soft signal), enforced by a running set-cover tool | makes "features can't hide" testable; `tools/frontend-intent` runs it (59/59) | no (ratified gate) |
+| 2026-10-01 | organization | nav model | **Two positionable content-fit panels + Spaces-as-global-scope** (selector in Bar 1 + a Spaces page), NOT a persistent strip | Victor refinement; owed as an ADR-006/shell-layout amendment | design (owed ADR) |
+| 2026-10-01 | organization | entity surface | **Layout facet + optional Editor facet** (registry-gated, merged/tabbed) — editor is a facet, not every entity has one | rides the `pages` polymorphic pattern + ADR-006 open registry | no (doc-grounded) |
+| 2026-10-01 | organization | portability | **classic View vs mixing Capability** — the mix lives in the capability, not a multi-layout view | resolves the combinable-layouts seam without an ADR-007 change | no (resolved) |
+| 2026-10-01 | sessions | the doing layer | **Deliverable-per-stage Session runtime** (attach doc/photo/audio · mark-done/proof · logs to entity) + **persistent HUD = shell region 6** | extends ADR-004 on existing primitives (deliverable_note + note_attachments + effect rail) | yes (extends ADR-004) |
+| 2026-10-01 | codec | build shape | **The frontend codec is ~80% SHIPPED** (UI-1/2/3/4·DS-2/3/4/5·UX-2/3/4/5/6) → the re-plan EXTENDS it; only the facet system, Flow/Session runtime+HUD, N-theme, and discovered surfaces are net-new | grounded against the task index (all ancestors DONE) | no (doc fact) |
+| 2026-10-01 | G6 reshape | fe-* → 42 units | 24 fe-* reshaped to 42 ordered units (Health fold 3→1; Languages→Spaces; AI→M2 retire) — APPROVED, pre-staged, **NOT executed in Linear** (deferred to main) | surface-first supersedes the per-module P6 grain; worktree-sync would duplicate the backlog | pending (unexecuted) |
+
 ## MOD-knowledge (#50, LIF-128) — ✅ ① REBUILD COMPLETE, S1–S8 shipped (2026-09-30), PR #69
 Rebuild of the discarded Antigravity branch. `createKnowledgeService` over DB-4 `022_knowledge` (7 tables) +
 DB-3 `008_knowledge_review` (3 tables) + the flashcards sub-service (S7, `createFlashcardsService`); 56 legs across 8 slices. Branch `mod-knowledge-rebuild`, S1 `a433a3d`, S2 `bc88904`, S3 `9eb57cb`, S4 `09e04bf`, S5 `fb2918b`, S6 `7f9fb75`, S7 `0f89616`, S8 `2354edd`. @vida/core **1433/1433**, tsc 0, eslint 0, gitleaks clean. **① COMPLETE → PR #69 (mod-knowledge-rebuild → main), awaiting merge.**

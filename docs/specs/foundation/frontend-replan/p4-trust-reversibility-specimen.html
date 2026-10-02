@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — P4 Trust &amp; Reversibility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fbfbfa; --ink:#16181d; --muted:#5a5f6a; --faint:#9298a3;
+    --line:#e7e7e4; --line2:#efefed; --accent:#1d4ed8; --accent-soft:#eef3ff;
+    --ok:#3f7d5a; --ok-soft:#eaf5ee; --warn:#9a6a1a; --warn-soft:#fbf3e3; --danger:#a3312a; --danger-soft:#fbeceb;
+    --ease:cubic-bezier(0.34,1.56,0.64,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#e9e6df;color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:2.5rem 1.5rem 6rem;}
+  .wrap{max-width:1000px;margin:0 auto;}
+  .kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8578;font-weight:500;}
+  h1{font-family:'Spectral',serif;font-weight:500;font-size:clamp(1.6rem,3.5vw,2.3rem);line-height:1.1;margin:.5rem 0 .6rem;letter-spacing:-.01em;}
+  .lead{max-width:66ch;color:#4a463d;font-size:.95rem;margin-bottom:2rem;}
+
+  .card{background:var(--paper);border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 26px rgba(0,0,0,.06);padding:1.8rem 2rem;margin-bottom:1.4rem;}
+  .card .ch{display:flex;align-items:baseline;gap:.7rem;margin-bottom:1.3rem;}
+  .card .ch .code{font-family:'Spectral',serif;font-size:1rem;color:var(--faint);}
+  .card .ch h2{font-family:'Spectral',serif;font-weight:500;font-size:1.3rem;letter-spacing:-.01em;}
+  .card .ch .tag{margin-left:auto;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+  .desc{font-size:.9rem;color:var(--muted);max-width:64ch;margin-bottom:1.2rem;}
+
+  /* mini global bar for sync chip */
+  .bar{display:flex;align-items:center;gap:.8rem;border:1px solid var(--line);border-radius:7px;padding:.7rem 1rem;background:#fcfcfb;margin-bottom:1rem;}
+  .bar .wm{font-family:'Spectral',serif;font-weight:500;font-size:1.1rem;}
+  .bar .sp{flex:1;}
+  .sync{display:inline-flex;align-items:center;gap:.5rem;font-size:.82rem;padding:.35rem .75rem;border-radius:20px;border:1px solid var(--line);transition:all 240ms var(--ease);}
+  .sync .dot{width:8px;height:8px;border-radius:50%;}
+  .sync.synced{background:var(--ok-soft);border-color:#cfe6d8;color:var(--ok);} .sync.synced .dot{background:var(--ok);}
+  .sync.pending{background:#f4f4f2;border-color:var(--line);color:var(--muted);} .sync.pending .dot{background:var(--faint);animation:pulse 1.4s ease-in-out infinite;}
+  .sync.offline{background:#f4f4f2;border-color:var(--line);color:var(--muted);} .sync.offline .dot{background:#b7bcc4;}
+  .sync.conflict{background:var(--warn-soft);border-color:#ecdcb8;color:var(--warn);} .sync.conflict .dot{background:var(--warn);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .synccopy{font-size:.86rem;color:var(--muted);min-height:1.3rem;}
+  .synccopy b{color:var(--ink);font-weight:500;}
+  .btnrow{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem;}
+  .btnrow button{font-family:'Inter';font-size:.8rem;border:1px solid #ccc6b8;background:#fff;color:#4a463d;padding:.4rem .8rem;border-radius:5px;cursor:pointer;transition:all 160ms var(--ease);}
+  .btnrow button:hover{border-color:#9a9488;}
+  .btnrow button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .honesty{margin-top:1.2rem;font-size:.82rem;color:var(--muted);background:var(--accent-soft);border:1px solid #d6e2fb;border-radius:6px;padding:.8rem 1rem;}
+  .honesty b{color:var(--accent);}
+
+  /* reversibility */
+  .note-item{display:flex;align-items:center;gap:.8rem;border:1px solid var(--line);border-radius:7px;padding:.9rem 1.1rem;background:#fff;font-size:.92rem;transition:opacity 240ms var(--ease),transform 240ms var(--ease);}
+  .note-item.gone{opacity:0;transform:translateX(-10px);pointer-events:none;}
+  .note-item .t{flex:1;}
+  .act{font-size:.8rem;border:1px solid var(--line);background:#fff;border-radius:5px;padding:.35rem .7rem;cursor:pointer;color:var(--muted);transition:all 160ms var(--ease);}
+  .act:hover{border-color:var(--danger);color:var(--danger);}
+  .trash{margin-top:1rem;font-size:.84rem;color:var(--faint);display:flex;align-items:center;gap:.6rem;}
+  .trash a{color:var(--accent);text-decoration:none;}
+  .danger-btn{font-size:.8rem;border:1px solid #e3b7b3;background:var(--danger-soft);border-radius:5px;padding:.4rem .8rem;cursor:pointer;color:var(--danger);transition:all 160ms var(--ease);}
+  .danger-btn:hover{background:#f6dedc;}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:2rem;transform:translateX(-50%) translateY(140%);background:var(--ink);color:#fff;border-radius:8px;padding:.85rem 1.1rem;display:flex;align-items:center;gap:1rem;font-size:.88rem;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:transform 320ms var(--ease);z-index:100;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast .undo{color:#9ec3ff;font-weight:500;cursor:pointer;border:none;background:none;font-size:.88rem;}
+  .toast .undo:hover{color:#fff;}
+
+  /* confirm modal */
+  .scrim{position:fixed;inset:0;background:rgba(20,22,26,.4);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:90;}
+  .scrim.show{display:flex;}
+  .modal{background:var(--paper);border-radius:10px;padding:1.8rem;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:pop 260ms var(--ease);}
+  @keyframes pop{from{transform:scale(.94);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .modal h3{font-family:'Spectral',serif;font-weight:500;font-size:1.2rem;margin-bottom:.5rem;}
+  .modal p{font-size:.9rem;color:var(--muted);margin-bottom:1.4rem;}
+  .modal .mrow{display:flex;gap:.6rem;justify-content:flex-end;}
+  .modal .cancel{border:1px solid var(--line);background:#fff;border-radius:6px;padding:.5rem 1rem;cursor:pointer;color:var(--muted);font-size:.86rem;}
+  .modal .confirm{border:1px solid var(--danger);background:var(--danger);color:#fff;border-radius:6px;padding:.5rem 1rem;cursor:pointer;font-size:.86rem;}
+
+  /* privacy */
+  .priv{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;}
+  .priv .box{border:1px solid var(--line);border-radius:7px;padding:1.2rem 1.3rem;background:#fff;}
+  .priv .box .b-tag{display:inline-block;font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:.2rem .5rem;border-radius:4px;margin-bottom:.8rem;}
+  .priv .now .b-tag{background:var(--ok-soft);color:var(--ok);}
+  .priv .soon .b-tag{background:#f0eefb;color:#5b4fc0;}
+  .priv .box h4{font-family:'Spectral',serif;font-weight:500;font-size:1.05rem;margin-bottom:.5rem;}
+  .priv .box p{font-size:.86rem;color:var(--muted);line-height:1.55;}
+  .priv .box .key{margin-top:.8rem;font-size:.8rem;color:var(--ink);border-top:1px solid var(--line2);padding-top:.7rem;}
+  @media(max-width:720px){.priv{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Frontend Re-plan · G1 · P4 — Trust &amp; Reversibility</div>
+  <h1>The felt safety of a local-first, zero-knowledge OS.</h1>
+  <p class="lead">Four things make Vida *feel* trustworthy: an honest sync state, deletes you can take back,
+  confirmation only when it's truly irreversible, and privacy language that never overclaims. Interact with each.
+  <b>Feel, not pages.</b></p>
+
+  <!-- C1 / C2 sync -->
+  <div class="card">
+    <div class="ch"><span class="code">C1 · C2</span><h2>Sync status — calm, never alarming</h2><span class="tag">write is already saved locally</span></div>
+    <div class="desc">Because writes succeed on your device instantly, "pending" means <b>saved here, safe, syncing later</b> — it reassures, it doesn't warn. There is no "Saving…" spinner; the data is already real (C2 folds into this).</div>
+    <div class="bar">
+      <span class="wm">Vida</span><span class="sp"></span>
+      <span class="sync synced" id="chip"><span class="dot"></span><span id="chiplabel">Saved · up to date</span></span>
+    </div>
+    <div class="synccopy" id="synccopy"><b>All saved.</b> Everything on this device is up to date.</div>
+    <div class="btnrow">
+      <button data-s="synced" class="on">Synced</button>
+      <button data-s="pending">Pending</button>
+      <button data-s="offline">Offline</button>
+      <button data-s="conflict">Conflict</button>
+    </div>
+    <div class="honesty"><b>Copy-honesty contract.</b> Today (M1.0) Vida is <b>local-first</b> — your data lives on this device, encrypted at rest. The zero-knowledge server <b>sync</b> arrives at M3; until then the indicator says "saved on this device," never "synced to cloud."</div>
+  </div>
+
+  <!-- C3 / C4 reversibility -->
+  <div class="card">
+    <div class="ch"><span class="code">C3 · C4</span><h2>Undo first, confirm only when it's forever</h2><span class="tag">soft-delete = recoverable</span></div>
+    <div class="desc">Deleting is reversible (soft-delete → Trash), so the default is a quiet <b>undo</b>, not a friction modal. A hard confirm is reserved for the genuinely irreversible.</div>
+    <div class="note-item" id="note"><span class="t">📝 Reading log — Systems, chapter 4</span><button class="act" id="delnote">Delete</button></div>
+    <div class="trash">🗑 Trash · <span id="trashcount">2</span> items · kept 30 days · <a href="#">Restore…</a></div>
+    <div style="margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid var(--line2);">
+      <div class="desc" style="margin-bottom:.8rem;">Only the irreversible asks first:</div>
+      <button class="danger-btn" id="permdel">Empty Trash permanently</button>
+    </div>
+  </div>
+
+  <!-- C5 privacy -->
+  <div class="card">
+    <div class="ch"><span class="code">C5</span><h2>"Your data is yours" — said honestly</h2><span class="tag">stage-aware</span></div>
+    <div class="desc">The reassurance language is true at every stage — it states what's real <i>now</i> and what's coming, never overclaiming.</div>
+    <div class="priv">
+      <div class="box now">
+        <span class="b-tag">True today · M1.0</span>
+        <h4>On your device, encrypted.</h4>
+        <p>Everything lives on this device, encrypted at rest. Nothing leaves without you. No account needed to start.</p>
+        <div class="key">🔑 Your account key is shown <b>once</b> — it's the only way back in. We can't recover it for you. That's the point.</div>
+      </div>
+      <div class="box soon">
+        <span class="b-tag">Arrives · M3</span>
+        <h4>Zero-knowledge sync.</h4>
+        <p>When sync turns on, the server only ever holds encrypted blobs it can't read — not your notes, not your money, not who you know. It syncs your data without ever seeing it.</p>
+        <div class="key">🔒 Zero-knowledge: the server verifies you without your password ever being sent.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- toast + modal -->
+<div class="toast" id="toast"><span id="toastmsg">Moved to Trash</span><button class="undo" id="undo">Undo</button></div>
+<div class="scrim" id="scrim">
+  <div class="modal">
+    <h3>This can't be undone.</h3>
+    <p>Permanently delete the items in Trash? Once emptied, they're gone for good — there's no recovering them.</p>
+    <div class="mrow"><button class="cancel" id="mcancel">Cancel</button><button class="confirm" id="mconfirm">Delete forever</button></div>
+  </div>
+</div>
+
+<script>
+  const COPY={
+    synced:{label:'Saved · up to date',  cls:'synced',  copy:'<b>All saved.</b> Everything on this device is up to date.'},
+    pending:{label:'Saved · syncing…',   cls:'pending', copy:'<b>Saved on this device.</b> Changes will sync in the background — nothing is at risk.'},
+    offline:{label:'Offline · saved here',cls:'offline', copy:'<b>You\'re offline.</b> Everything still works and saves locally; it\'ll sync when you\'re back.'},
+    conflict:{label:'Needs your review', cls:'conflict',copy:'<b>One change needs a look.</b> The same item changed on two devices — pick which to keep. (Rare — single-user, last-writer-wins.)'}
+  };
+  const chip=document.getElementById('chip'), chiplabel=document.getElementById('chiplabel'), synccopy=document.getElementById('synccopy');
+  document.querySelectorAll('[data-s]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-s]').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    const c=COPY[b.dataset.s]; chip.className='sync '+c.cls; chiplabel.textContent=c.label; synccopy.innerHTML=c.copy;
+  }));
+
+  // undo flow
+  const note=document.getElementById('note'), toast=document.getElementById('toast'),
+        trashcount=document.getElementById('trashcount'); let toastTimer;
+  function showToast(msg){document.getElementById('toastmsg').textContent=msg;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),5000);}
+  document.getElementById('delnote').addEventListener('click',()=>{
+    note.classList.add('gone'); trashcount.textContent=parseInt(trashcount.textContent)+1; showToast('Note moved to Trash');
+  });
+  document.getElementById('undo').addEventListener('click',()=>{
+    note.classList.remove('gone'); trashcount.textContent=parseInt(trashcount.textContent)-1; toast.classList.remove('show');
+  });
+
+  // confirm flow
+  const scrim=document.getElementById('scrim');
+  document.getElementById('permdel').addEventListener('click',()=>scrim.classList.add('show'));
+  document.getElementById('mcancel').addEventListener('click',()=>scrim.classList.remove('show'));
+  document.getElementById('mconfirm').addEventListener('click',()=>{scrim.classList.remove('show');trashcount.textContent='0';showToast('Trash emptied — permanently');});
+</script>
+</body>
+</html>

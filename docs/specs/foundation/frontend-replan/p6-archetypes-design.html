@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — Archetypes, grounded (F3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fbfbfa; --ink:#16181d; --muted:#5a5f6a; --faint:#9298a3;
+    --line:#e7e7e4; --line2:#efefed; --accent:#1d4ed8; --accent-soft:#eef3ff;
+    --space:#7a53b8; --space-soft:#f1ecf9; --oxblood:#9a2a2a; --ease:cubic-bezier(0.34,1.56,0.64,1);
+    --plate:#f7f3ea; --ink-sepia:#4a4030;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#e9e6df;color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:2.5rem 1.5rem 6rem;}
+  .wrap{max-width:1040px;margin:0 auto;}
+  .kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8578;font-weight:500;}
+  h1{font-family:'Spectral',serif;font-weight:500;font-size:clamp(1.7rem,3.6vw,2.4rem);line-height:1.08;margin:.5rem 0 .6rem;letter-spacing:-.015em;}
+  .lead{max-width:72ch;color:#4a463d;font-size:.96rem;margin-bottom:1.3rem;}
+  code{font-family:ui-monospace,monospace;font-size:.86em;background:#f0efe9;padding:.05rem .3rem;border-radius:3px;}
+  .fromorg{display:flex;gap:.7rem;align-items:center;background:var(--accent-soft);border:1px solid #d6e2fb;border-radius:8px;padding:.8rem 1rem;font-size:.86rem;color:#2c3e66;margin-bottom:2rem;max-width:72ch;}
+  .fromorg b{color:var(--accent);}
+  .toc{display:flex;gap:1.1rem;flex-wrap:wrap;font-size:.82rem;margin-bottom:2.2rem;padding-bottom:1.2rem;border-bottom:1px solid #d3cfc4;}
+  .toc a{color:var(--muted);text-decoration:none;} .toc a:hover{color:var(--accent);}
+
+  .plate{margin-bottom:2.4rem;}
+  .plate .head{display:flex;align-items:baseline;gap:.9rem;margin-bottom:.9rem;}
+  .plate .no{font-family:'Spectral';font-style:italic;font-size:1.15rem;color:#a89a6f;}
+  .plate h2{font-family:'Spectral',serif;font-weight:500;font-size:1.45rem;letter-spacing:-.01em;}
+  .plate .kind{margin-left:auto;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+  .grid{display:grid;grid-template-columns:290px 1fr;gap:1.6rem;align-items:start;}
+  .meta .d{font-size:.9rem;color:var(--muted);margin-bottom:.8rem;}
+  .meta .props{font-size:.78rem;border-top:1px solid var(--line2);}
+  .meta .props .p{display:flex;gap:.5rem;padding:.3rem 0;border-bottom:1px solid var(--line2);}
+  .meta .props .p .k{color:var(--faint);width:5.5rem;flex:none;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding-top:.1rem;}
+  .meta .props .p .v{color:var(--muted);}
+  .meta .props .p .v b{color:var(--ink);font-weight:500;}
+  .render{background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.06);overflow:hidden;}
+  .bar{display:flex;align-items:center;gap:.6rem;padding:.6rem .9rem;border-bottom:1px solid var(--line);background:#fcfcfb;font-size:.8rem;}
+  .bar .wm{font-family:'Spectral';font-weight:500;} .bar .sp{flex:1;}
+  .modes{display:flex;gap:.25rem;} .modes span{font-size:.68rem;color:var(--faint);padding:.15rem .45rem;border-radius:4px;} .modes span.on{background:var(--space-soft);color:var(--space);}
+  .body{padding:1.1rem 1.2rem;}
+  .eyebrow{font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+  .title{font-family:'Spectral';font-weight:500;font-size:1.35rem;margin:.25rem 0 .9rem;letter-spacing:-.01em;}
+
+  /* §0 renderer / layouts */
+  .layouts{display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:1rem;}
+  .thumb{width:84px;} .thumb .box{height:54px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:7px;display:flex;overflow:hidden;} .thumb .cap{font-size:.66rem;color:var(--muted);text-align:center;margin-top:.3rem;}
+  .bars{flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center;} .bars i{height:5px;background:#d7d9de;border-radius:2px;} .bars i.a{background:var(--space);width:60%;}
+  .tbl{flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;} .tbl i{background:#edeef0;}
+  .cols{flex:1;display:flex;gap:4px;} .cols div{flex:1;background:#f0f1f3;border-radius:3px;display:flex;flex-direction:column;gap:3px;padding:3px;} .cols div i{height:6px;background:#d7d9de;border-radius:2px;}
+  .gal{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:4px;} .gal i{background:#edeef0;border-radius:3px;}
+  .cal{flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-auto-rows:1fr;gap:3px;} .cal i{background:#edeef0;border-radius:2px;} .cal i.a{background:var(--space-soft);}
+  .grph{flex:1;position:relative;} .grph i{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff;border:1.4px solid var(--ink-sepia);} .grph i:nth-child(1){top:6px;left:10px;} .grph i:nth-child(2){bottom:6px;left:28px;} .grph i:nth-child(3){top:14px;right:8px;} .grph b{position:absolute;height:1.3px;background:#cdbf9f;top:16px;left:16px;width:34px;transform:rotate(18deg);}
+  .tl{flex:1;display:flex;flex-direction:column;gap:5px;justify-content:center;} .tl i{height:5px;background:#d7d9de;border-radius:2px;} .tl i:nth-child(1){width:70%;} .tl i:nth-child(2){width:50%;margin-left:25%;} .tl i:nth-child(3){width:55%;margin-left:12%;background:var(--space);}
+  .combine{background:var(--plate);border:1px solid #cdbf9f;border-radius:7px;padding:.8rem 1rem;font-size:.84rem;color:#4a463d;} .combine b{color:var(--oxblood);}
+  .trip{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-top:1rem;}
+  .tt{border:1px solid var(--line);border-radius:7px;padding:.6rem .7rem;font-size:.76rem;text-align:center;}
+  .tt .l{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:.3rem;}
+  .tt.pg .l{color:var(--accent);} .tt.bl .l{color:var(--ink);} .tt.ln .l{color:var(--space);}
+  .tt span{color:var(--muted);}
+
+  /* collection list */
+  .lrow{display:flex;align-items:center;gap:.7rem;padding:.5rem 0;border-bottom:1px solid var(--line2);font-size:.86rem;} .lrow .ck{width:13px;height:13px;border:1.4px solid #c3c6cc;border-radius:3px;flex:none;} .lrow .t{flex:1;} .lrow .m{font-size:.72rem;color:var(--faint);}
+  .grp{font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:.7rem 0 .2rem;}
+
+  /* entity */
+  .ent-h{display:flex;align-items:center;gap:.8rem;margin-bottom:.3rem;} .ent-h .av{width:40px;height:40px;border-radius:50%;background:var(--accent-soft);border:1px solid #d6e2fb;}
+  .ent-h .nm{font-family:'Spectral';font-weight:500;font-size:1.2rem;} .ent-h .sub{font-size:.76rem;color:var(--faint);}
+  .tabrow{display:flex;gap:1rem;border-bottom:1px solid var(--line);margin:.7rem 0 .9rem;font-size:.78rem;color:var(--faint);} .tabrow span{padding-bottom:.4rem;} .tabrow span.on{color:var(--accent);border-bottom:2px solid var(--accent);}
+  .two{display:grid;grid-template-columns:1.4fr 1fr;gap:1rem;}
+  .tline .ti{display:flex;gap:.6rem;font-size:.8rem;padding:.3rem 0;} .tline .ti .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:5px;flex:none;}
+  .facts .f{font-size:.78rem;padding:.3rem 0;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;} .facts .f .k{color:var(--faint);}
+
+  /* dashboard */
+  .dash{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;}
+  .dcard{border:1px solid var(--line);border-radius:7px;padding:.7rem .8rem;background:#fff;position:relative;} .dcard .h{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:.4rem;} .dcard .big{font-family:'Spectral';font-size:1.4rem;} .dcard .li{font-size:.78rem;padding:.2rem 0;color:var(--ink);}
+  .dcard .bt{position:absolute;top:.5rem;right:.6rem;font-size:.54rem;color:var(--accent);background:var(--accent-soft);border:1px solid #d6e2fb;border-radius:4px;padding:.05rem .3rem;}
+
+  /* canvas */
+  .canvas-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;}
+  .ctile{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--paper);}
+  .ctile .cl{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;padding:.6rem .8rem .2rem;}
+  .ctile .cd{font-size:.74rem;color:var(--muted);padding:0 .8rem .6rem;}
+  .ctile .cv{height:116px;margin:0 .8rem .8rem;border:1px solid var(--line);border-radius:6px;overflow:hidden;position:relative;background:#fff;}
+  .reader{background:#faf7f0;padding:.7rem .9rem;column-count:2;column-gap:.9rem;font-family:'Spectral';font-size:.56rem;line-height:1.5;color:#5a5244;} .reader::after{content:'';position:absolute;left:0;bottom:0;height:3px;width:38%;background:var(--oxblood);}
+  .inkgraph{background:#f7f3ea;}
+  .editor{padding:.7rem .9rem;} .editor .et{font-family:'Spectral';font-weight:500;font-size:.9rem;margin-bottom:.4rem;} .editor .eb{height:6px;background:#eceef1;border-radius:3px;margin:.3rem 0;} .editor .eb.s{width:70%;} .editor .ib{border-left:2px solid var(--accent);background:var(--accent-soft);border-radius:0 4px 4px 0;height:16px;margin:.3rem 0;} .editor .slash{font-size:.62rem;color:var(--faint);margin-top:.3rem;border:1px dashed var(--line);border-radius:4px;padding:.15rem .4rem;display:inline-block;}
+  .vboard{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:32px;gap:5px;padding:.6rem;} .vboard i{border-radius:4px;background:linear-gradient(135deg,#eef3ff,#f3eef9);border:1px solid #e4e2ef;} .vboard i:nth-child(2){grid-row:span 2;background:linear-gradient(135deg,#fdf1ec,#f6f0e6);} .vboard i:nth-child(4){background:linear-gradient(135deg,#eef7f0,#eef3ff);}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;gap:3px;padding:.5rem;height:100%;} .calgrid i{background:#f1f2f4;border-radius:2px;position:relative;} .calgrid i.e::after{content:'';position:absolute;left:3px;right:3px;top:5px;height:4px;background:var(--accent);border-radius:2px;} .calgrid i.e2::before{content:'';position:absolute;left:3px;right:3px;top:12px;height:4px;background:var(--oxblood);border-radius:2px;}
+
+  /* flow */
+  .flowc{padding:1.2rem 1.3rem;text-align:center;}
+  .dots{display:flex;gap:.4rem;justify-content:center;margin-bottom:.9rem;} .dots i{width:7px;height:7px;border-radius:50%;background:#dcdee2;} .dots i.on{background:var(--accent);width:18px;border-radius:4px;}
+  .flowc h3{font-family:'Spectral';font-weight:500;font-size:1.2rem;margin-bottom:.4rem;} .flowc p{font-size:.82rem;color:var(--muted);margin-bottom:1rem;} .flowc .b{display:inline-block;font-size:.82rem;background:var(--accent);color:#fff;border-radius:6px;padding:.45rem 1.1rem;}
+  /* session */
+  .sessbody{padding:1.1rem 1.2rem;position:relative;}
+  .stg{display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:1px solid var(--line2);font-size:.85rem;}
+  .stg .sx{width:16px;height:16px;border-radius:50%;border:1.4px solid #c3c6cc;display:grid;place-items:center;font-size:.6rem;color:var(--faint);flex:none;}
+  .stg.done .sx{background:var(--ok);border-color:var(--ok);color:#fff;} .stg.on .sx{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .stg .t{flex:1;} .stg.done .t{color:var(--muted);} .stg .dl{font-size:.66rem;color:var(--faint);} .stg.done .dl{color:var(--ok);} .stg.on .dl{color:var(--accent);}
+  .logline{margin-top:.8rem;font-size:.76rem;color:var(--oxblood);font-style:italic;}
+  .hud2{position:absolute;right:12px;top:12px;background:var(--ink);color:#fff;border-radius:9px;padding:.4rem .7rem;display:flex;align-items:center;gap:.5rem;box-shadow:0 8px 24px rgba(0,0,0,.25);}
+  .hud2 .dot{width:6px;height:6px;border-radius:50%;background:#6ee7a0;} .hud2 .t{font-family:'Spectral';font-variant-numeric:tabular-nums;font-size:.95rem;} .hud2 .st{font-size:.62rem;color:#b8c4e6;}
+  .delv{border:1px solid var(--line);border-radius:8px;background:#fcfcfb;padding:.75rem .85rem;margin:.3rem 0 .6rem;}
+  .delv .dh{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:.3rem;}
+  .delv .dd{font-family:'Spectral';font-size:.9rem;color:#3a3f48;margin-bottom:.6rem;}
+  .attach{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.6rem;} .attach .at{font-size:.74rem;border:1px solid var(--line);border-radius:6px;padding:.25rem .55rem;color:var(--muted);background:#fff;cursor:pointer;} .attach .at:hover{border-color:var(--accent);color:var(--accent);}
+  .dactions{display:flex;gap:1rem;align-items:center;font-size:.8rem;} .dactions .done{color:var(--ok);font-weight:500;cursor:pointer;} .dactions .proof{color:var(--faint);}
+  .stgmini{display:flex;gap:.3rem;align-items:center;margin-bottom:.5rem;} .stgmini .m{width:26px;height:5px;border-radius:3px;background:#dcdee2;} .stgmini .m.done{background:var(--ok);} .stgmini .m.on{background:var(--accent);} .stgmini .mt{font-size:.64rem;color:var(--faint);letter-spacing:.1em;text-transform:uppercase;margin-left:.3rem;}
+
+  /* system */
+  .sys{display:grid;grid-template-columns:120px 1fr;gap:0;}
+  .sys .nav{border-right:1px solid var(--line);padding:.7rem;background:#fcfcfb;} .sys .nav .i{font-size:.76rem;padding:.35rem .5rem;border-radius:5px;color:var(--muted);} .sys .nav .i.on{background:var(--accent-soft);color:var(--accent);}
+  .sys .pane{padding:.9rem 1.1rem;} .sys .pane .srch{border:1px solid var(--line);border-radius:6px;padding:.35rem .6rem;font-size:.74rem;color:var(--faint);margin-bottom:.7rem;} .sys .pane .opt{display:flex;justify-content:space-between;font-size:.8rem;padding:.4rem 0;border-bottom:1px solid var(--line2);} .sys .pane .opt .tog{width:28px;height:16px;border-radius:10px;background:var(--accent);position:relative;} .sys .pane .opt .tog::after{content:'';position:absolute;width:12px;height:12px;background:#fff;border-radius:50%;top:2px;right:2px;}
+
+  .closer{background:var(--plate);border:1px solid #cdbf9f;border-radius:6px;padding:1.4rem 1.6rem;margin-top:1rem;}
+  .closer h3{font-family:'Spectral';font-weight:500;font-size:1.2rem;margin-bottom:.6rem;}
+  .closer p{font-size:.9rem;color:#4a463d;max-width:72ch;}
+  @media(max-width:820px){.grid,.canvas-grid,.dash,.trip{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Frontend Re-plan · G1 · P6/F3 — The Archetypes (grounded)</div>
+  <h1>The screens — each one built from the organization.</h1>
+  <p class="lead">This continues the <b>organization map</b>. There I showed the trunk: ⌘K-first nav, pages
+  composed of <b>blocks</b>, and the two primitives (<b>Saved View</b> = a lens, <b>Capability/Block</b> = a service).
+  Here are the <b>archetypes</b> — the recurring kinds of screen — each labelled with what it's <i>composed of</i>, what it
+  <i>hosts</i>, and how it's <i>reached</i>. The leaves of the same tree.</p>
+  <div class="fromorg">↘ From the organization map: every archetype below is a <b>composition of blocks</b> that <b>hosts Saved Views and Capabilities</b>, reached by the <b>dual-axis ⌘K-first nav</b>.</div>
+  <div class="toc">
+    <a href="#p0">0 · The renderer (layouts)</a><a href="#p1">1 · Collection</a><a href="#p2">2 · Entity</a>
+    <a href="#p3">3 · Dashboard</a><a href="#p4">4 · Canvas</a><a href="#p5">5 · Flow</a><a href="#p6">6 · System</a>
+  </div>
+
+  <!-- 0 LAYOUTS -->
+  <div class="plate" id="p0">
+    <div class="head"><span class="no">0</span><h2>The renderer — a Saved View's layouts</h2><span class="kind">the shared spine · ADR-007</span></div>
+    <div class="meta" style="margin-bottom:1rem"><div class="d">Not a screen — the <b>layouts a Saved View can wear</b>. ADR-007's seven canonical layouts; modules add their own (Tasks ships twelve). Your rule: they <b>shape-shift &amp; combine</b>, and the same view is a page, an embedded block, or a Space lens.</div></div>
+    <div class="render"><div class="body">
+      <div class="layouts">
+        <div class="thumb"><div class="box"><div class="bars"><i class="a"></i><i></i><i></i></div></div><div class="cap">List</div></div>
+        <div class="thumb"><div class="box"><div class="tbl"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="cap">Table</div></div>
+        <div class="thumb"><div class="box"><div class="cols"><div><i></i><i></i></div><div><i></i></div><div><i></i><i></i></div></div></div><div class="cap">Board</div></div>
+        <div class="thumb"><div class="box"><div class="gal"><i></i><i></i><i></i><i></i></div></div><div class="cap">Gallery</div></div>
+        <div class="thumb"><div class="box"><div class="cal"><i></i><i class="a"></i><i></i><i></i><i></i><i></i><i class="a"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="cap">Calendar</div></div>
+        <div class="thumb"><div class="box"><div class="grph"><i></i><i></i><i></i><b></b></div></div><div class="cap">Graph</div></div>
+        <div class="thumb"><div class="box"><div class="tl"><i></i><i></i><i></i></div></div><div class="cap">Timeline</div></div>
+      </div>
+      <div class="combine"><b>Mix &amp; combine = a Capability, not the View.</b> A classic View wears one layout; combining them (a list beside a calendar, a board of galleries, a timeline grouped as a tree) is a <b>capability block</b> — so plain views stay simple. (Seam resolved — no ADR-007 change.)</div>
+      <div class="trip">
+        <div class="tt pg"><div class="l">as a page</div><span>the module top view</span></div>
+        <div class="tt bl"><div class="l">as a block</div><span>embedded in a note (open seam)</span></div>
+        <div class="tt ln"><div class="l">as a lens</div><span>saved into a Space</span></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 1 COLLECTION -->
+  <div class="plate" id="p1">
+    <div class="head"><span class="no">1</span><h2>Collection</h2><span class="kind">a Saved View, rendered</span></div>
+    <div class="grid">
+      <div class="meta">
+        <div class="d">A module's home: a set of entities shown through a Saved View (filter × layout × group). The workhorse.</div>
+        <div class="props">
+          <div class="p"><span class="k">is a</span><span class="v"><b>Saved View</b> over entities</span></div>
+          <div class="p"><span class="k">hosts</span><span class="v">a view (passive lens, provider-read)</span></div>
+          <div class="p"><span class="k">reached</span><span class="v">dock → module · or ⌘K · or a Space</span></div>
+          <div class="p"><span class="k">used by</span><span class="v">Tasks (12 layouts) · All-Books · All-Transactions · Catalog · All-Contacts</span></div>
+        </div>
+      </div>
+      <div class="render">
+        <div class="bar"><span class="wm">Tasks</span><span class="sp"></span><div class="modes"><span class="on">List</span><span>Board</span><span>Calendar</span><span>Table</span><span>+</span></div></div>
+        <div class="body">
+          <div class="grp">Today</div>
+          <div class="lrow"><span class="ck"></span><span class="t">Finish the re-plan draft</span><span class="m">High · 09:30</span></div>
+          <div class="lrow"><span class="ck"></span><span class="t">Review finance import</span><span class="m">High</span></div>
+          <div class="grp">This week</div>
+          <div class="lrow"><span class="ck"></span><span class="t">Spanish — daily session</span><span class="m">Med</span></div>
+          <div class="lrow"><span class="ck"></span><span class="t">Read chapter 4 — Systems</span><span class="m">Low</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 ENTITY -->
+  <div class="plate" id="p2">
+    <div class="head"><span class="no">2</span><h2>Entity page</h2><span class="kind">one record · a composed page</span></div>
+    <div class="grid">
+      <div class="meta">
+        <div class="d">One record in full — <b>two facets</b>: a <b>Layout</b> (Title · bio · summary · dashboard · views) and an optional <b>Editor</b> (its linked page). You choose their relationship.</div>
+        <div class="props">
+          <div class="p"><span class="k">composed of</span><span class="v"><b>Layout facet</b> + optional <b>Editor facet</b> (page-able entities only)</span></div>
+          <div class="p"><span class="k">facets</span><span class="v"><b>merged</b> or <b>tabbed</b> (Home=layout · Content=editor) — editor is registry-gated</span></div>
+          <div class="p"><span class="k">hosts</span><span class="v">views · capabilities · blocks + widgets</span></div>
+          <div class="p"><span class="k">reached</span><span class="v">drill from a Collection · a <code>[[link]]</code> · ⌘K</span></div>
+          <div class="p"><span class="k">used by</span><span class="v">a task · project · contact · account (a note = editor-led)</span></div>
+        </div>
+      </div>
+      <div class="render"><div class="body">
+        <div class="ent-h"><div class="av"></div><div><div class="nm">Mariana Costa</div><div class="sub">Friend · São Paulo · last spoke 9 days ago</div></div></div>
+        <div class="tabrow"><span class="on">Overview</span><span>Interactions</span><span>Events</span><span>Social</span></div>
+        <div class="two">
+          <div class="tline"><div class="ti"><span class="dot"></span><span>Coffee — caught up on the move</span></div><div class="ti"><span class="dot"></span><span>Call — she started the new role</span></div><div class="ti"><span class="dot"></span><span>Message — sent the article</span></div></div>
+          <div class="facts"><div class="f"><span class="k">Birthday</span><span>12 Mar</span></div><div class="f"><span class="k">Reminder</span><span>monthly</span></div><div class="f"><span class="k">Health</span><span>good</span></div></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 3 DASHBOARD -->
+  <div class="plate" id="p3">
+    <div class="head"><span class="no">3</span><h2>Dashboard</h2><span class="kind">a page of integration blocks</span></div>
+    <div class="grid">
+      <div class="meta">
+        <div class="d">Synthesis — a page whose cards are mostly <b>integration blocks</b> pulling live data from across modules.</div>
+        <div class="props">
+          <div class="p"><span class="k">composed of</span><span class="v"><b>integration blocks</b> (/summary, /chart…)</span></div>
+          <div class="p"><span class="k">hosts</span><span class="v">capabilities (live) + pinned views</span></div>
+          <div class="p"><span class="k">reached</span><span class="v">Home <code>/</code> · a module's dashboard mode</span></div>
+          <div class="p"><span class="k">used by</span><span class="v">Home/Journal · Finance · Health · Projects · Programs</span></div>
+        </div>
+      </div>
+      <div class="render"><div class="body">
+        <div class="eyebrow">Tuesday · 1 October</div><div class="title">Good morning, Victor.</div>
+        <div class="dash">
+          <div class="dcard"><span class="bt">block</span><div class="h">Schedule</div><div class="li">09:30 · Re-plan draft</div><div class="li">14:00 · Lecture 4</div></div>
+          <div class="dcard"><span class="bt">block</span><div class="h">Across the OS</div><div class="big">14 · 2h40</div></div>
+          <div class="dcard"><span class="bt">block</span><div class="h">Must do</div><div class="li">Review finance import</div><div class="li">Morning check-in</div></div>
+          <div class="dcard"><span class="bt">block</span><div class="h">Quick</div><div class="li">＋ Task · ＋ Note · ◔ Check-in</div></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 4 CANVAS -->
+  <div class="plate" id="p4">
+    <div class="head"><span class="no">4</span><h2>Canvas</h2><span class="kind">immersive · where the soul lives</span></div>
+    <div class="meta" style="margin-bottom:1rem"><div class="d">Not lists — <b>places</b>. The Editor <i>is</i> the block canvas itself (the composition substrate); the rest are purpose-built surfaces. This is where Vida becomes an experience.</div>
+      <div class="d" style="color:var(--faint)"><b>Reached by</b> opening a note · a book · the graph · a vision board · the calendar.</div></div>
+    <div class="canvas-grid">
+      <div class="ctile"><div class="cl">The Editor — the block canvas</div><div class="cd">Where blocks compose. <code>/</code> inserts standard &amp; integration blocks.</div><div class="cv"><div class="editor"><div class="et">Today's thread</div><div class="eb"></div><div class="eb s"></div><div class="ib"></div><span class="slash">/ tasks · chart · [[link]]</span></div></div></div>
+      <div class="ctile"><div class="cl">The Graph</div><div class="cd">Connections made visible — ink on paper (Sigma.js).</div><div class="cv inkgraph"><svg viewBox="0 0 200 116" style="width:100%;height:100%"><path d="M100 58 Q70 38 55 32" fill="none" stroke="#cdbf9f" stroke-width="1"/><path d="M100 58 Q130 43 150 36" fill="none" stroke="#cdbf9f" stroke-width="1"/><path d="M100 58 Q90 86 70 94" fill="none" stroke="#cdbf9f" stroke-width="1"/><path d="M100 58 Q140 78 150 90" fill="none" stroke="#cdbf9f" stroke-width="1"/><circle cx="100" cy="58" r="13" fill="#fbf8f0" stroke="#4a4030" stroke-width="1.4"/><circle cx="55" cy="32" r="8" fill="#fbf8f0" stroke="#4a4030" stroke-width="1.3"/><circle cx="150" cy="36" r="8" fill="#fbf8f0" stroke="#4a4030" stroke-width="1.3"/><circle cx="70" cy="94" r="7" fill="#fbf8f0" stroke="#4a4030" stroke-width="1.3"/><circle cx="150" cy="90" r="6" fill="#fbf8f0" stroke="#4a4030" stroke-width="1.3"/></svg></div></div>
+      <div class="ctile"><div class="cl">The Reader</div><div class="cd">Read · listen · annotate — a book, not a PDF.</div><div class="cv"><div class="reader">The first hour is for the long project; everything louder waits until the light is up. It is the difference between a desk you dread and a page you return to, morning after morning, until the work has a rhythm of its own.</div></div></div>
+      <div class="ctile"><div class="cl">The Vision-board</div><div class="cd">Dreams &amp; purposes — a wall of what you reach for.</div><div class="cv"><div class="vboard"><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
+      <div class="ctile" style="grid-column:1 / -1"><div class="cl">The Calendar / grid</div><div class="cd">Time laid out — week · availability · agenda (one of the view layouts, made a place).</div><div class="cv"><div class="calgrid"><i></i><i class="e"></i><i></i><i class="e e2"></i><i></i><i class="e"></i><i></i><i></i><i></i><i class="e"></i><i></i><i></i><i class="e"></i><i></i></div></div></div>
+    </div>
+  </div>
+
+  <!-- 5 FLOW / SESSION -->
+  <div class="plate" id="p5">
+    <div class="head"><span class="no">5</span><h2>Flow / Session</h2><span class="kind">a deliverable per stage · logs to the entity</span></div>
+    <div class="grid">
+      <div class="meta">
+        <div class="d">The <b>doing</b> layer — a page per <b>stage</b>: the entity's title + summary, the stage's <b>deliverable</b> + a description of what it should be, a way to <b>attach</b> it (document · photo · audio), and <b>mark-done</b> or <b>require proof</b>. A persistent <b>HUD</b> follows you (class · gym · library).</div>
+        <div class="props">
+          <div class="p"><span class="k">types</span><span class="v">study · class · focus · reading · practice · workout · work · review <b>+ user-made</b> (assessment…)</span></div>
+          <div class="p"><span class="k">deliverable</span><span class="v">a page (deliverable_note) + attachment (doc/photo/audio)</span></div>
+          <div class="p"><span class="k">done when</span><span class="v">deliverable attached <b>or</b> marked done (optional proof)</span></div>
+          <div class="p"><span class="k">logs</span><span class="v">time + signals → the entity (effect rail · log_time)</span></div>
+          <div class="p"><span class="k">persistent</span><span class="v">the Session HUD, across the OS</span></div>
+        </div>
+      </div>
+      <div class="render"><div class="sessbody">
+        <div class="eyebrow">Study session · Re-plan the frontend</div>
+        <div class="title" style="font-size:1.1rem;margin-bottom:.1rem">Stage 3 of 4 — Draft the section</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.7rem">Project · 62% · on track</div>
+        <div class="delv">
+          <div class="dh">Deliverable — what it should be</div>
+          <div class="dd">A 600-word draft of the Systems section, with the diagram embedded.</div>
+          <div class="attach"><span class="at">📄 Document</span><span class="at">📷 Photo</span><span class="at">🎙 Audio</span><span class="at">＋ File</span></div>
+          <div class="dactions"><span class="done">✓ Mark done</span><span class="proof">☐ require proof</span></div>
+        </div>
+        <div class="stgmini"><span class="m done"></span><span class="m done"></span><span class="m on"></span><span class="m"></span><span class="mt">4 stages</span></div>
+        <div class="logline">↳ time + the deliverable log onto the Project (effect rail)</div>
+        <div class="hud2"><span class="dot"></span><span class="t">24:10</span><span class="st">stage 3 / 4</span></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 6 SYSTEM -->
+  <div class="plate" id="p6">
+    <div class="head"><span class="no">6</span><h2>System</h2><span class="kind">the OS about itself</span></div>
+    <div class="grid">
+      <div class="meta">
+        <div class="d">Settings, the notifications inbox, and the overlays — including ⌘K, the spine of navigation itself.</div>
+        <div class="props">
+          <div class="p"><span class="k">composed of</span><span class="v">searchable lists · the ⌘K overlay</span></div>
+          <div class="p"><span class="k">reached</span><span class="v">global bar · ⌘K · a notification</span></div>
+          <div class="p"><span class="k">used by</span><span class="v">Settings · Notifications · ⌘K · confirm/modal</span></div>
+        </div>
+      </div>
+      <div class="render"><div class="sys">
+        <div class="nav"><div class="i on">Appearance</div><div class="i">Locale</div><div class="i">Notifications</div><div class="i">Modules</div><div class="i">Data</div></div>
+        <div class="pane"><div class="srch">Search settings…</div>
+          <div class="opt"><span>Theme preset</span><span style="color:var(--faint);font-size:.74rem">Editorial</span></div>
+          <div class="opt"><span>Motion</span><span class="tog"></span></div>
+          <div class="opt"><span>Feature Atlas</span><span class="tog"></span></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="closer">
+    <h3>Both files are now consistent — narrate away.</h3>
+    <p>The <b>organization map</b> is how the user <i>enters</i> and how it's <i>structured</i> (nav · blocks · the two primitives). This file is <i>what they meet</i> (the archetypes, each composed of blocks, hosting views &amp; capabilities). Walk me through it — from the moment the user opens Vida, through the nav, into a surface, down to the blocks — and where your picture differs from this, change it as you go.</p>
+  </div>
+</div>
+</body>
+</html>

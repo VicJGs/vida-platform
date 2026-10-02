@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — P6 Voice &amp; Coherence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fbfbfa; --ink:#16181d; --muted:#5a5f6a; --faint:#9298a3;
+    --line:#e7e7e4; --line2:#efefed; --accent:#1d4ed8; --accent-soft:#eef3ff;
+    --ok:#3f7d5a; --danger:#a3312a; --ease:cubic-bezier(0.34,1.56,0.64,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#e9e6df;color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:2.5rem 1.5rem 6rem;}
+  .wrap{max-width:1000px;margin:0 auto;}
+  .kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8578;font-weight:500;}
+  h1{font-family:'Spectral',serif;font-weight:500;font-size:clamp(1.6rem,3.5vw,2.3rem);line-height:1.1;margin:.5rem 0 .6rem;letter-spacing:-.01em;}
+  .lead{max-width:66ch;color:#4a463d;font-size:.95rem;margin-bottom:1.6rem;}
+  .tabs{display:flex;gap:.3rem;margin-bottom:1.4rem;border-bottom:1px solid #d3cfc4;flex-wrap:wrap;}
+  .tabs button{font-family:'Inter';font-size:.86rem;border:none;background:none;color:var(--muted);padding:.7rem 1rem;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 160ms var(--ease);}
+  .tabs button:hover{color:var(--ink);} .tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:500;}
+  .panel{display:none;} .panel.on{display:block;}
+  .card{background:var(--paper);border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 26px rgba(0,0,0,.06);padding:1.9rem 2.1rem;}
+  .card h2{font-family:'Spectral',serif;font-weight:500;font-size:1.3rem;letter-spacing:-.01em;margin-bottom:.5rem;}
+  .card .sub{font-size:.9rem;color:var(--muted);max-width:66ch;margin-bottom:1.5rem;}
+
+  /* voice principles */
+  .principles{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem;margin-bottom:2rem;}
+  .pr{border:1px solid var(--line);border-radius:8px;padding:1rem 1.2rem;background:#fff;}
+  .pr b{font-family:'Spectral';font-weight:500;font-size:1.02rem;display:block;margin-bottom:.2rem;}
+  .pr span{font-size:.84rem;color:var(--muted);}
+
+  /* before/after */
+  .ba{border-top:1px solid var(--line2);}
+  .ba .row{display:grid;grid-template-columns:7rem 1fr 1fr;gap:1.2rem;align-items:center;padding:.9rem 0;border-bottom:1px solid var(--line2);}
+  .ba .ctx{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);}
+  .ba .gen{font-size:.92rem;color:#b05a52;}
+  .ba .gen s{opacity:.8;}
+  .ba .vida{font-family:'Spectral';font-size:1rem;color:var(--ink);}
+  .ba .vida::before{content:'→ ';color:var(--faint);}
+  .hdr{display:grid;grid-template-columns:7rem 1fr 1fr;gap:1.2rem;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600;padding-bottom:.6rem;}
+
+  /* honest copy */
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem;}
+  .box{border:1px solid var(--line);border-radius:8px;padding:1.2rem 1.3rem;background:#fff;}
+  .box.no{border-color:#e9cdc9;background:#fdf6f5;} .box.yes{border-color:#cfe6d8;background:#f4faf6;}
+  .box .lbl{font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:.6rem;}
+  .box.no .lbl{color:var(--danger);} .box.yes .lbl{color:var(--ok);}
+  .box p{font-size:.92rem;color:var(--ink);} .box.no p{color:#8a4a44;}
+  .box .why{margin-top:.6rem;font-size:.8rem;color:var(--muted);font-style:italic;}
+
+  /* archetypes */
+  .arch{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+  .ac{border:1px solid var(--line);border-radius:8px;padding:1.1rem 1.2rem;background:#fff;transition:all .2s var(--ease);}
+  .ac:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.05);}
+  .ac .ic{font-size:1.1rem;margin-bottom:.5rem;color:var(--accent);}
+  .ac b{font-family:'Spectral';font-weight:500;font-size:1.02rem;display:block;margin-bottom:.25rem;}
+  .ac span{font-size:.82rem;color:var(--muted);display:block;}
+  .ac .where{margin-top:.55rem;font-size:.72rem;color:var(--faint);}
+
+  /* language */
+  .toggle{display:flex;gap:.5rem;margin-bottom:1.3rem;}
+  .toggle button{font-family:'Inter';font-size:.82rem;border:1px solid #ccc6b8;background:#fff;color:#4a463d;padding:.4rem .9rem;border-radius:5px;cursor:pointer;}
+  .toggle button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .mini{border:1px solid var(--line);border-radius:8px;padding:1.6rem 1.8rem;background:#fff;max-width:440px;}
+  .mini .eyebrow{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+  .mini h3{font-family:'Spectral';font-weight:500;font-size:1.5rem;margin:.3rem 0 .5rem;}
+  .mini p{font-size:.92rem;color:var(--muted);margin-bottom:1rem;}
+  .mini .b{display:inline-block;font-size:.85rem;background:var(--accent);color:#fff;border-radius:6px;padding:.45rem .9rem;}
+  .note{margin-top:1.3rem;font-size:.86rem;color:var(--muted);background:var(--accent-soft);border:1px solid #d6e2fb;border-radius:6px;padding:.9rem 1.1rem;}
+  .note b{color:var(--accent);}
+  @media(max-width:760px){.principles,.pair,.arch{grid-template-columns:1fr;} .ba .row,.hdr{grid-template-columns:1fr;gap:.3rem;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Frontend Re-plan · G1 · P6 — Voice &amp; Coherence</div>
+  <h1>The finishing layer — how Vida speaks, and how it stays one thing.</h1>
+  <p class="lead">You've <i>felt</i> this voice across every specimen; here it's named. Plus the honesty rules for
+  copy, the catalog of screen kinds that keeps 18 modules coherent, and the language question. <b>Feel, not pages.</b></p>
+
+  <div class="tabs">
+    <button data-p="voice" class="on">F1 · The voice</button>
+    <button data-p="honest">F2 · Honest copy</button>
+    <button data-p="arch">F3 · Screen archetypes</button>
+    <button data-p="lang">F5 · Language</button>
+  </div>
+
+  <!-- VOICE -->
+  <div class="panel on" id="voice">
+    <div class="card">
+      <h2>Vida's voice — calm, honest, literary</h2>
+      <div class="sub">Six principles, drawn from how every phase has already been written. The voice of a good journal: it speaks plainly, never shouts, never flatters, never lies.</div>
+      <div class="principles">
+        <div class="pr"><b>Plain, not clever</b><span>Say the thing. "Save," not "Submit your changes."</span></div>
+        <div class="pr"><b>Calm, never urgent</b><span>No alarms, no "Act now." The OS waits for you.</span></div>
+        <div class="pr"><b>Honest, never overclaims</b><span>Says what's true now (local-first) vs later (ZK sync).</span></div>
+        <div class="pr"><b>Warm, not cute</b><span>Human and literary, but never twee or jokey.</span></div>
+        <div class="pr"><b>Yours, not ours</b><span>"Your data," "on your device." The user owns it.</span></div>
+        <div class="pr"><b>Sentence case, lightly punctuated</b><span>Reads like prose, not a billboard.</span></div>
+      </div>
+      <div class="hdr"><span>Context</span><span>Generic SaaS</span><span>Vida</span></div>
+      <div class="ba">
+        <div class="row"><span class="ctx">Save button</span><span class="gen"><s>Submit</s></span><span class="vida">Save</span></div>
+        <div class="row"><span class="ctx">Delete</span><span class="gen"><s>Are you sure you want to delete this item?</s></span><span class="vida">Delete this note? You can undo.</span></div>
+        <div class="row"><span class="ctx">Empty</span><span class="gen"><s>No data available.</s></span><span class="vida">Your Finance is a clean page.</span></div>
+        <div class="row"><span class="ctx">Error</span><span class="gen"><s>Error 500: request failed.</s></span><span class="vida">That didn't load. Try again.</span></div>
+        <div class="row"><span class="ctx">Saved toast</span><span class="gen"><s>Operation completed successfully!</s></span><span class="vida">Saved.</span></div>
+        <div class="row"><span class="ctx">Privacy</span><span class="gen"><s>Your data is encrypted &amp; 100% secure!</s></span><span class="vida">On your device, yours alone.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HONEST -->
+  <div class="panel" id="honest">
+    <div class="card">
+      <h2>Copy that never overclaims</h2>
+      <div class="sub">Honesty is a design constraint here, not a nicety — the process doc marks overclaiming copy as WRONG. Three rules, each a side-by-side.</div>
+      <div class="pair">
+        <div class="box no"><div class="lbl">✕ Overclaims</div><p>"Zero-knowledge encrypted sync — your data is 100% secure across all devices!"</p><div class="why">Sync is M3. In M1 this is a lie.</div></div>
+        <div class="box yes"><div class="lbl">✓ Honest &amp; staged</div><p>"On your device, encrypted. Sync between devices arrives later."</p><div class="why">True today; promises only what ships.</div></div>
+      </div>
+      <div class="pair">
+        <div class="box no"><div class="lbl">✕ Blames the user</div><p>"Invalid input. You entered the date wrong."</p><div class="why">Accusatory; no way forward.</div></div>
+        <div class="box yes"><div class="lbl">✓ Teaches the way out</div><p>"Dates look like 2026-10-01. Try that format?"</p><div class="why">Shows the fix, no blame.</div></div>
+      </div>
+      <div class="pair">
+        <div class="box no"><div class="lbl">✕ Dead end</div><p>"No results."</p><div class="why">Leaves the user lost.</div></div>
+        <div class="box yes"><div class="lbl">✓ Anti-lost</div><p>"Nothing matches "quarterly" yet. Try another word, or add one."</p><div class="why">Always a next step.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARCHETYPES -->
+  <div class="panel" id="arch">
+    <div class="card">
+      <h2>The screen archetypes — 18 modules, one grammar</h2>
+      <div class="sub">Every surface in Vida is one of a small set of recurring kinds. Build these once, well, and each module composes from them — so the OS feels like one thing, not 18 apps stitched together.</div>
+      <div class="arch">
+        <div class="ac"><div class="ic">▦</div><b>Top view</b><span>A module's home, in switchable modes (list · gallery · calendar · board).</span><div class="where">/tasks · /books · /people</div></div>
+        <div class="ac"><div class="ic">▭</div><b>Entity page</b><span>One thing in full, with tabs/sections beneath it.</span><div class="where">/books/{id} · a contact</div></div>
+        <div class="ac"><div class="ic">◉</div><b>Dashboard</b><span>Aggregated glance across sources, live.</span><div class="where">Home · a habit's page</div></div>
+        <div class="ac"><div class="ic">↦</div><b>Wizard</b><span>A guided multi-step flow with one clear action per step.</span><div class="where">Onboarding · study plan · check-in</div></div>
+        <div class="ac"><div class="ic">⌘</div><b>Overlay</b><span>Command bar, modal, confirm — mounted above, dismissible by Esc.</span><div class="where">⌘K · delete-confirm</div></div>
+        <div class="ac"><div class="ic">✦</div><b>Graph</b><span>Force-directed map — connections made visible.</span><div class="where">Neural graph · Atlas</div></div>
+        <div class="ac"><div class="ic">◷</div><b>Empty state</b><span>An inviting first-run that teaches the way in.</span><div class="where">every module, no data</div></div>
+        <div class="ac"><div class="ic">⚙</div><b>Settings / index</b><span>A searchable list of options or items.</span><div class="where">Settings · all-books</div></div>
+        <div class="ac"><div class="ic">✎</div><b>Editor</b><span>The TipTap block canvas — write, with /blocks &amp; [[links]].</span><div class="where">notes · journal · docs</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LANGUAGE -->
+  <div class="panel" id="lang">
+    <div class="card">
+      <h2>Language — your call</h2>
+      <div class="sub">`locale` is already a preference. The open question is which languages ship in M1, and whether the architecture is built i18n-ready from day one. The UI below is the same, in two tongues.</div>
+      <div class="toggle">
+        <button data-l="en" class="on">English</button>
+        <button data-l="pt">Português (BR)</button>
+      </div>
+      <div class="mini" id="langmini">
+        <div class="eyebrow">Tuesday · 1 October</div>
+        <h3>Good morning, Victor.</h3>
+        <p>A quiet start — three things matter today, the rest can drift.</p>
+        <span class="b">Save</span>
+      </div>
+      <div class="note"><b>My recommendation:</b> <b>English-first copy</b> in M1, but the architecture <b>i18n-ready from day one</b> (strings externalized, dates/numbers/currency locale-aware — you already store `number_format`, `time_format`, `locale`). That way pt-BR (and others) is a translation pass, not a rebuild. RTL isn't needed for pt/en but the layout stays logical-property-based so it's possible later. <b>Your call:</b> English-first, pt-BR-first, or ship both in M1?</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-p]').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); document.getElementById(b.dataset.p).classList.add('on');
+  }));
+  const mini=document.getElementById('langmini');
+  const EN=`<div class="eyebrow">Tuesday · 1 October</div><h3>Good morning, Victor.</h3><p>A quiet start — three things matter today, the rest can drift.</p><span class="b">Save</span>`;
+  const PT=`<div class="eyebrow">Terça · 1 de outubro</div><h3>Bom dia, Victor.</h3><p>Um começo tranquilo — três coisas importam hoje, o resto pode esperar.</p><span class="b">Salvar</span>`;
+  document.querySelectorAll('[data-l]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-l]').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    mini.innerHTML=b.dataset.l==='en'?EN:PT;
+  }));
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# G4 Coverage — ≥2 reachable paths per capability
+
+capabilities: 59  ·  PASS (≥2): 59  ·  FAIL (<2): 0
+
+## Path-type usage (set-cover spread)
+  cmdk             53
+  dock             31
+  contextual       25
+  home-quick       10
+  calendar         9
+  global-bar       7
+  link             4
+  cross-module     4
+  scope-selector   2
+  session-hud      1
+  space            1
+
+VERDICT: PASS — ≥2 paths for every capability
