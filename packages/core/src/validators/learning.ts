@@ -65,3 +65,67 @@ export const AssessmentTypeSchema = z.enum(ASSESSMENT_TYPE)
 export const AssessmentModalitySchema = z.enum(ASSESSMENT_MODALITY)
 export const MeasurementRefTypeSchema = z.enum(MEASUREMENT_REF_TYPE)
 export const RecordSourceSchema = z.enum(RECORD_SOURCE)
+
+// ---------------------------------------------------------------------------
+// Education hierarchy — create/update (mod-learning-education ① S1).
+// Structure fields validated here; [E] free-text (name/description) carried
+// as plain strings (M1.0 encryptedFields:[] pass-through). Fork (forked_from_id)
+// is set by forkCurriculum in S3 — never a create input.
+// ---------------------------------------------------------------------------
+
+export const CreateInstitutionSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullish(),
+})
+export const UpdateInstitutionSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().nullish(),
+})
+
+export const CreateSelfTaughtPathSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullish(),
+})
+export const UpdateSelfTaughtPathSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().nullish(),
+})
+
+export const CreateProgramSchema = z.object({
+  parent_type: ProgramParentTypeSchema,
+  parent_id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().nullish(),
+})
+export const UpdateProgramSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().nullish(),
+})
+
+export const CreateCurriculumSchema = z.object({
+  program_id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().nullish(),
+  is_template: z.boolean().optional(),
+})
+export const UpdateCurriculumSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().nullish(),
+  is_template: z.boolean().optional(),
+})
+
+export const CreateTermSchema = z.object({
+  curriculum_id: z.string().min(1),
+  level: TermLevelSchema,
+  parent_term_id: z.string().nullish(),
+  name: z.string().min(1),
+  start_date: z.string().nullish(),
+  end_date: z.string().nullish(),
+})
+export const UpdateTermSchema = z.object({
+  name: z.string().min(1).optional(),
+  level: TermLevelSchema.optional(),
+  parent_term_id: z.string().nullish(),
+  start_date: z.string().nullish(),
+  end_date: z.string().nullish(),
+})

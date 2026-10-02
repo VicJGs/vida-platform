@@ -190,6 +190,65 @@ export const RECORD_SOURCE = ['manual', 'ai', 'import'] as const
 export type RecordSource = (typeof RECORD_SOURCE)[number]
 
 // ---------------------------------------------------------------------------
+// Education hierarchy — DB-4 #12 (mod-learning-education ① S1). Rows map to
+// institutions / self_taught / programs / curricula / terms (schema/learning.ts).
+// No FK anywhere — refs are plain Id (app/sync-layer integrity, ADR-016 §3.4).
+// ---------------------------------------------------------------------------
+
+/** A formal institution (ED-2) — the parent of institution-granted programs. */
+export interface Institution extends SyncableEntity {
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  deleted_at: Timestamp | null
+}
+
+/** The self-taught mode container (ED-2/H2 — a SEPARATE table from institutions, never one mode flag). */
+export interface SelfTaughtPath extends SyncableEntity {
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  deleted_at: Timestamp | null
+}
+
+/** The pursuit (ED-2) — parents to an institution OR a self_taught row via `parent_type` + `parent_id`. */
+export interface Program extends SyncableEntity {
+  parent_type: ProgramParentType
+  parent_id: Id
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  deleted_at: Timestamp | null
+}
+
+/** The shaped plan (ED-11) — forkable: `forked_from_id` is the lineage pointer (null = built from scratch). */
+export interface Curriculum extends SyncableEntity {
+  program_id: Id
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  forked_from_id: Id | null
+  is_template: boolean
+  deleted_at: Timestamp | null
+}
+
+/** A hierarchical time container (ED-12) — year ⊃ semester ⊃ term via `level` + optional `parent_term_id`. */
+export interface Term extends SyncableEntity {
+  curriculum_id: Id
+  level: TermLevel
+  parent_term_id: Id | null
+  /** @encrypted */
+  name: string
+  start_date: string | null
+  end_date: string | null
+  deleted_at: Timestamp | null
+}
+
+// ---------------------------------------------------------------------------
 // Course, Book, Skill
 // ---------------------------------------------------------------------------
 

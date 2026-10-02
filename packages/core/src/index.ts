@@ -180,5 +180,8 @@ export * from './services/flashcards'
 // Service — Books (mod-books #51 · LIF-117 · S1: Works CRUD + reframe over DB-4 023_books)
 export * from './services/books'
 
+// Service — Learning: Education (mod-learning-education #52 · LIF-130 · S1: hierarchy spine over DB-4 024_learning_education)
+export * from './services/learning-education'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'

@@ -68,9 +68,13 @@ Integration points (to be confirmed at Interpretation):
 <!-- SESSION checklist — the scenario's ## Task List (what the native panel mirrors). Session-level. -->
 - [x] document-context BASELINE — schema (`learning.ts` 15 tables) + aspect docs + part-1.2 rerun + capability legs + sibling seams mapped; "INTENDED" reconciled = built @ DB-4
 - [x] Interpretation layer written — delivery/interpretation.md (deps · needs · organization · R1–R10 implicit rules · C-* guards · UNKNOWNs)
-- [~] Decomposition Gate — delivery/slice-map.md (10 slices) + seam-contract.md written; **g1 critic REVISE→folded** (B1 missing `effects?` dep + B2 entity_types already registered + NIT3/4/5); **Approval 1 pending Victor**
-- [ ] Per-slice service track (Steps 3–11) iterated from the approved slice-map
+- [x] Decomposition Gate — delivery/slice-map.md (10 slices) + seam-contract.md; g1 critic REVISE→folded (B1/B2/NIT3-5); **Approval 1 GRANTED**
+- [~] Per-slice service track — **S1 SHIPPED** (hierarchy spine + routing); S2–S10 remain
 - [ ] ① backend COMPLETE — all slices shipped, @vida/core green, §XXIX currency, PR opened
+
+### Slice log
+- [x] **S1 — hierarchy spine + routing** (`2026-10-02`): `createLearningEducationService` born; CRUD for institutions/self_taught/programs/curricula/terms + `resolveParentChain` (ED-2/3/11/12). `@vida/types` +5 interfaces; validators +10 schemas. tsc 0 · 14/14 live-store · full @vida/core **1547/1547** · eslint 0. g1-gate SHIP · independent code-review SHIP (0 defect; R4/resolveParentChain/column-fidelity verified) · §XXIX currency born (BR-LE-S1-1..8). **Next: S2 — subjects + DB-11 `Course`→`Subject` reconcile.**
+- ⚠ **Shared-tree collision (resolved):** a parallel `frontend-track` session (`fe-codec-theme`) committed my uncommitted S1 as `08f4b9a` "wip" then switched away; I moved to a dedicated worktree `.claude/worktrees/mod-learning-education` to finish without disrupting it. Lesson [[reread-task-file-before-phase-exec]].
 
 ## Build Steps
 <!-- UNIT-level — mirrors the active spec's §5 Implementation Prompt; filled when the slice spec §5 is approved. -->
@@ -83,6 +87,7 @@ Integration points (to be confirmed at Interpretation):
 | Date | What was done | Next step |
 |------|--------------|-----------|
 | 2026-10-02 | activated stub → in-progress; scaffolded spec stub + session file | Step 0 BASELINE → Step 1 Interpretation (read Education aspect docs + part-1.2 rerun + parts before scoping) |
+| 2026-10-02 | BASELINE + Interpretation + Decomposition (Approval 1); **S1 shipped** (hierarchy spine + routing, all gates green); shared-tree collision resolved via worktree | S2 — subjects + DB-11 `Course`→`Subject` reconcile |
 
 ## Notes
 Env: Node 24 via nvm. Branch `mod-learning-education` off main; per-slice §XXVI double-gate +
