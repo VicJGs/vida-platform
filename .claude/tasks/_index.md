@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none active — mod-habits ① completed 2026-09-23; next `#`-order head via `/begin`)_
+- mod-learning-education (LIF-130 · in-progress): .claude/tasks/mod-learning-education.md  (M1/M1.1.2 `#52` · add-backend-component / Default (Entity Delivery Flow). ① `createLearningEducationService` over DB-4 `024_learning_education` (15 tables: subjects/programs/curricula/terms/class_sessions/assessments/grading_*/ics_*/…). Activated from the backend-replan P5 stub — all 8 blockers Done → READY. At Step 0 BASELINE → Step 1 Interpretation. Branch `mod-learning-education` off main.)
 
 <details><summary>prior (xs-notifications-delivery completed)</summary>
 
