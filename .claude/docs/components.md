@@ -19,3 +19,9 @@ Platform-agnostic SQLite seam (`packages/core/src/db/adapter.ts`) + its browser 
 - **Web** (`apps/web/src/db/`): `web-driver.ts` (async driver on wa-sqlite `statements()`), `worker.ts` (Web Worker
   host + in-worker proof), `web-adapter.ts` (`AccessHandlePoolVFS`/OPFS). Runs in a Worker (sync OPFS handles are worker-only).
 - Tests: `web-adapter.test.ts` (Node contract over better-sqlite3, 6/6). Browser open/persist proof → LIF-103.
+
+## @vida/ui — CODEC ThemeProvider (fe-codec-theme, 2026-10-03)
+- `theme-resolution.ts` — pure `resolveTheme({preset,mode,density})` → scheme-first theme name + density; `ThemeSelection`/`ThemePreset`/`ThemeMode`/`ThemeDensity`/`ThemeName` types; `THEME_DEFAULT` (editorial+light+calm), `THEME_PRESETS`; density value tables (`DENSE_SPACE_PX`, `DENSE_TYPE_SCALE`).
+- `provider.tsx` — `UIProvider({ selection })` (replaces `theme`): `defaultTheme={mode}` (scheme on `<html>`) + a `useLayoutEffect` applying per-preset font vars + the `<body>` preset class + the `data-vida-density` toggle + the injected density stylesheet. App owns `{preset,mode,density}` state (Zustand later); the switcher UI is Settings.
+- `_codec-gate.stories.tsx` + `.storybook/preview.tsx` — the codec Visual-Gate surface (3 toolbar globals: preset × mode × density).
+- Components consume semantic tokens ($colorBrand*/$colorFocusRing/$colorSurface*/$colorText*) directly for preset-sensitive color; signal keys stay on the base `light_/dark_<Comp>` sub-themes.
