@@ -15,7 +15,16 @@
 // ============================================================================
 
 import { eq, and, or, isNull, inArray, type SQL } from 'drizzle-orm'
-import type { Institution, SelfTaughtPath, Program, Curriculum, Term, Subject } from '@vida/types'
+import type {
+  Institution,
+  SelfTaughtPath,
+  Program,
+  Curriculum,
+  Term,
+  Subject,
+  SubjectSchedule,
+  ClassSession,
+} from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import {
   institutions,
@@ -24,13 +33,18 @@ import {
   curricula,
   terms,
   subjects,
+  subjectSchedules,
+  classSessions,
   type InstitutionRow,
   type SelfTaughtRow,
   type ProgramRow,
   type CurriculumRow,
   type TermRow,
   type SubjectRow,
+  type SubjectScheduleRow,
+  type ClassSessionRow,
 } from '../../db/schema/learning'
+import { DuplicateSubType, type SessionTypeDef } from '../../foundation/sessions'
 import {
   CreateInstitutionSchema,
   UpdateInstitutionSchema,
@@ -45,6 +59,8 @@ import {
   UpdateTermSchema,
   CreateSubjectSchema,
   UpdateSubjectSchema,
+  SetScheduleSchema,
+  CreateClassSessionSchema,
 } from '../../validators/learning'
 import {
   type LearningEducationService,
@@ -65,6 +81,10 @@ import {
   type UpdateSubjectInput,
   type ForkCurriculumInput,
   type SubjectFilter,
+  type SetScheduleInput,
+  type CreateClassSessionInput,
+  type ClassSessionView,
+  type TimeRange,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -116,11 +136,40 @@ const toSubject = (r: SubjectRow): Subject => ({
   metadata: parseMetadata(r.metadata),
   _sync_status: r._sync_status as Subject['_sync_status'],
 })
+// S4 mappers — only the plain-text `source`/`_sync_status` need the union cast.
+const toSubjectSchedule = (r: SubjectScheduleRow): SubjectSchedule => ({
+  ...r,
+  source: r.source as SubjectSchedule['source'],
+  _sync_status: r._sync_status as SubjectSchedule['_sync_status'],
+})
+const toClassSession = (r: ClassSessionRow): ClassSession => ({
+  ...r,
+  _sync_status: r._sync_status as ClassSession['_sync_status'],
+})
+
+// IR/BR-LE-S4-2 — the `class` Session sub-type Education registers. A TRANSCRIPTION of ADR-004 §3.2:
+// `effects:[]` (§3.2.2 + C-E2 — Education is a non-feeder; any completion grant rides the base sub-type),
+// the shared lifecycle (§3.2.3 scheduled→in_progress→completed), `allowed_effects:[]` (§3.2.4 — a module
+// envelope ⊆ shipped; `∅` subset-legal). `default_purpose` OMITTED (no Education doc fixes a class purpose;
+// optional dim — No-Guessing). Mirrors the books `READING_SESSION_TYPE_DEF`. [slice-map.md:21; seam-contract.md:41]
+const CLASS_SESSION_TYPE_DEF: SessionTypeDef = {
+  sub_type: 'class',
+  owner_module: 'learning-education',
+  attachment_defaults: {},
+  effects: [],
+  lifecycle: {
+    transitions: [
+      { from: 'scheduled', to: 'in_progress', event: 'start' },
+      { from: 'in_progress', to: 'completed', event: 'complete' },
+    ],
+  },
+  permissions: { allowed_effects: [] },
+}
 
 export function createLearningEducationService(
   deps: LearningEducationServiceDeps,
 ): LearningEducationService {
-  const { db, deviceId } = deps
+  const { db, deviceId, sessions, sessionRegistry } = deps
 
   // All 5 hierarchy tables have `deleted_at` → softDelete:true. M1.0 encryptedFields:[] (the [E]
   // name/description fields pass through; real field-level encryption lands at M3).
@@ -130,6 +179,10 @@ export function createLearningEducationService(
   const curriculaRepo = createRepository(db, curricula, { deviceId, softDelete: true, encryptedFields: [] })
   const termsRepo = createRepository(db, terms, { deviceId, softDelete: true, encryptedFields: [] })
   const subjectsRepo = createRepository(db, subjects, { deviceId, softDelete: true, encryptedFields: [] })
+  // S4 — subject_schedules has deleted_at (softDelete:true); class_sessions is a session extension with NO
+  // deleted_at (softDelete:false; the base `sessions` owns lifecycle, BR-ED-7). `location` is [E] but M1.0 set=[].
+  const subjectSchedulesRepo = createRepository(db, subjectSchedules, { deviceId, softDelete: true, encryptedFields: [] })
+  const classSessionsRepo = createRepository(db, classSessions, { deviceId, softDelete: false, encryptedFields: [] })
 
   // ---- institutions (ED-2) --------------------------------------------------
   async function createInstitution(input: CreateInstitutionInput): Promise<Institution> {
@@ -548,6 +601,96 @@ export function createLearningEducationService(
     return { ok, curriculum, term, program }
   }
 
+  // ---- schedule & class sessions (S4 — ED-4/ED-5) ---------------------------
+
+  // BR-LE-S4-1 — register the `class` sub-type (call-once, idempotent). A 2nd call throws DuplicateSubType → no-op.
+  // `createClassSession` → `sessions.createSession('class')` throws SessionTypeNotFound until this runs (the books
+  // registerBooks precedent, service.ts registerBooks).
+  async function registerLearningEducation(): Promise<void> {
+    try {
+      await sessionRegistry.register(CLASS_SESSION_TYPE_DEF)
+    } catch (err) {
+      if (!(err instanceof DuplicateSubType)) throw err
+    }
+  }
+
+  // BR-LE-S4-3 — one schedule per subject (UNIQUE). Upsert: update the live row's source if present, else create.
+  // findWhere skips the soft-delete filter ([[repository-findwhere-skips-softdelete-filter]]) → filter deleted_at here.
+  async function setSchedule(subjectId: string, input: SetScheduleInput): Promise<SubjectSchedule> {
+    const v = SetScheduleSchema.parse(input)
+    if (!(await subjectsRepo.findById(subjectId))) throw new SubjectNotFoundError(subjectId)
+    const existing = await subjectSchedulesRepo.findWhere(
+      and(eq(subjectSchedules.subject_id, subjectId), isNull(subjectSchedules.deleted_at)) as SQL,
+    )
+    if (existing[0]) {
+      const row = await subjectSchedulesRepo.update(existing[0].id, { source: v.source })
+      return toSubjectSchedule(row)
+    }
+    const row = await subjectSchedulesRepo.create({
+      subject_id: subjectId,
+      source: v.source,
+      deleted_at: null,
+    } satisfies CreateInput<typeof subjectSchedules>)
+    return toSubjectSchedule(row)
+  }
+
+  // Resolve a base session into a ClassSessionView pair; returns null when the base no longer resolves
+  // (soft-deleted — the base owns lifecycle, BR-LE-S4-6).
+  async function toView(row: ClassSessionRow): Promise<ClassSessionView | null> {
+    const session = await sessions.getSession(row.session_id)
+    if (session == null) return null
+    return { session, classSession: toClassSession(row) }
+  }
+
+  // BR-LE-S4-4/S4-5 — a class meeting = base `sessions`(sub_type='class') + the 1:1 extension + the subject target.
+  // Three writes (createSession's own tx · the extension · the attach); an orphan is harmless + re-drivable (no-FK,
+  // eventually-consistent — the books startSession shape, BR-LE-S3-7). `started_at` carries the meeting time (B1).
+  async function createClassSession(subjectId: string, input: CreateClassSessionInput): Promise<ClassSessionView> {
+    const v = CreateClassSessionSchema.parse(input)
+    if (!(await subjectsRepo.findById(subjectId))) throw new SubjectNotFoundError(subjectId)
+    const session = await sessions.createSession({
+      sub_type: 'class',
+      scheduling_mode: v.scheduling_mode ?? 'attended',
+      status: v.status ?? 'scheduled',
+      started_at: v.started_at,
+      ended_at: v.ended_at ?? null,
+    })
+    const classSession = await classSessionsRepo.create({
+      session_id: session.session.id,
+      subject_id: subjectId,
+      schedule_id: v.schedule_id ?? null,
+      source_event_id: v.source_event_id ?? null,
+      location: v.location ?? null,
+    } satisfies CreateInput<typeof classSessions>)
+    // Attach the subject as the ADR-004 §3.2.1 target ("this session is about X"). `subject` is a registered type.
+    await sessions.attach(session.session.id, 'subject', subjectId, 'instance')
+    return { session, classSession: toClassSession(classSession) }
+  }
+
+  // BR-LE-S4-6 — a subject's class meetings (class_sessions has no deleted_at; a soft-deleted BASE is excluded via toView).
+  async function listSessions(subjectId: string): Promise<ClassSessionView[]> {
+    const rows = await classSessionsRepo.findWhere(eq(classSessions.subject_id, subjectId) as SQL)
+    const views = await Promise.all(rows.map(toView))
+    return views.filter((view): view is ClassSessionView => view !== null)
+  }
+
+  // BR-LE-S4-6 — cross-subject weekly schedule: base `started_at` ∈ [range.start, range.end], INCLUSIVE on both ends
+  // to match the shared `TimeRange` contract (sessions/types.ts:219 "both ends inclusive"; dueIn/getSessionAnalytics
+  // use gte/lte) — no silent divergence from the reused primitive. A soft-deleted base is dropped by toView; a null
+  // `started_at` is dropped here (defensive — S4's createClassSession always sets started_at, so this is reachable
+  // only via a later base-session edit, never via S4's own surface).
+  async function getWeeklySchedule(range: TimeRange): Promise<ClassSessionView[]> {
+    const rows = await classSessionsRepo.findAll()
+    const views = await Promise.all(rows.map(toView))
+    return views
+      .filter((view): view is ClassSessionView => view !== null)
+      .filter((view) => {
+        const at = view.session.session.started_at
+        return at != null && at >= range.start && at <= range.end
+      })
+      .sort((a, b) => (a.session.session.started_at ?? 0) - (b.session.session.started_at ?? 0))
+  }
+
   return {
     createInstitution,
     updateInstitution,
@@ -581,5 +724,10 @@ export function createLearningEducationService(
     getSubject,
     listSubjects,
     resolveParentChain,
+    registerLearningEducation,
+    setSchedule,
+    createClassSession,
+    listSessions,
+    getWeeklySchedule,
   }
 }

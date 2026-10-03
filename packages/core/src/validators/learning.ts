@@ -31,6 +31,9 @@ import {
   ASSESSMENT_MODALITY,
   MEASUREMENT_REF_TYPE,
   RECORD_SOURCE,
+  // S4 — base `sessions` spine enums (class-session boundary validation)
+  SESSION_STATUS,
+  SCHEDULING_MODE,
 } from '@vida/types'
 
 export const CourseTypeSchema = z.enum(COURSE_TYPE)
@@ -174,4 +177,27 @@ export const UpdateSubjectSchema = z.object({
   curriculum_id: z.string().nullish(), // re-routing re-validates via resolveParentChain
   term_id: z.string().nullish(),
   degree_tier: DegreeTierSchema.nullish(),
+})
+
+// ---------------------------------------------------------------------------
+// Schedule & class sessions (mod-learning-education ① S4 — ED-4/ED-5).
+// `ScheduleSourceSchema` already defined above (L60). Class-session spine fields
+// (status/scheduling_mode) are validated at the boundary here AND re-validated by
+// `sessions.createSession` (defense-in-depth). `started_at` = the meeting time (B1),
+// required; a scheduled class supplies its future meeting time explicitly.
+// ---------------------------------------------------------------------------
+// `SchedulingModeSchema`/`SessionStatusSchema` already live in validators/session.ts — reuse the tuples inline here
+// to avoid a duplicate export (they collide at the validators barrel).
+export const SetScheduleSchema = z.object({
+  source: ScheduleSourceSchema,
+})
+export const CreateClassSessionSchema = z.object({
+  /** The meeting time (Unix ms) — required so the weekly schedule renders scheduled meetings (B1/BR-LE-S4-4). */
+  started_at: z.number().int().positive(),
+  ended_at: z.number().int().positive().nullish(),
+  schedule_id: z.string().nullish(),
+  source_event_id: z.string().nullish(),
+  location: z.string().nullish(),
+  scheduling_mode: z.enum(SCHEDULING_MODE).optional(), // defaults to 'attended' (ED-4) in the service
+  status: z.enum(SESSION_STATUS).optional(), // defaults to 'scheduled' in the service
 })

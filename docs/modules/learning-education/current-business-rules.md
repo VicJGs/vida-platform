@@ -93,7 +93,42 @@
 - **BR-LE-S3-9 (source must resolve)** — fork on a missing or soft-deleted source throws `CurriculumNotFoundError`
   (`findById` filters `deleted_at`). `[code: service.ts forkCurriculum]`
 
+## S4 — Schedule + class sessions (ED-4/ED-5; register the `class` sub-type)
+- **BR-LE-S4-1 (register the `class` sub-type — call-once, idempotent)** — `registerLearningEducation()` registers
+  `CLASS_SESSION_TYPE_DEF` via the injected `SessionRegistry`; a 2nd call throws `DuplicateSubType` → caught → no-op.
+  `createClassSession` → `sessions.createSession('class')` surfaces `SessionTypeNotFound` until this runs.
+  `[code: service.ts registerLearningEducation; books registerBooks precedent]`
+- **BR-LE-S4-2 (`CLASS_SESSION_TYPE_DEF` = an ADR-004 §3.2 transcription)** — `sub_type:'class'`,
+  `owner_module:'learning-education'`, `attachment_defaults:{}`, **`effects:[]`** (§3.2.2 + C-E2 — Education is a
+  non-feeder; any completion grant rides the base sub-type), shared lifecycle `scheduled→in_progress→completed`
+  (§3.2.3), **`permissions.allowed_effects:[]`** (§3.2.4 — module envelope ⊆ shipped; `∅` subset-legal).
+  `default_purpose` is OMITTED (no Education doc fixes a class purpose; optional dim — No-Guessing).
+  `[code: service.ts CLASS_SESSION_TYPE_DEF]`
+- **BR-LE-S4-3 (one schedule per subject — UNIQUE, upsert)** — `setSchedule(subjectId,{source})` updates the live
+  row's `source` if one exists, else creates it (one row per subject; the DB UNIQUE is the backstop). `findWhere`
+  skips the soft-delete filter → `deleted_at` filtered explicitly. Unknown subject → `SubjectNotFoundError`.
+  `[code: service.ts setSchedule]`
+- **BR-LE-S4-4 (a class meeting = base session + 1:1 extension; `started_at` = the MEETING TIME)** —
+  `createClassSession(subjectId,input)` guards the subject exists, then `sessions.createSession({sub_type:'class',…})`
+  + writes its own `class_sessions` row keyed `session_id` + attaches the subject. `started_at` is REQUIRED and set at
+  create regardless of `status` (the spine has no other time column — sessions.ts:32-34 — and the #32 engine only
+  auto-stamps on a transition into `in_progress`). `class_sessions` has NO `deleted_at` → `softDelete:false`; the base
+  owns lifecycle (BR-ED-7). Three writes, no outer tx — an orphan is harmless + re-drivable (no-FK, eventually-consistent).
+  `[code: service.ts createClassSession]`
+- **BR-LE-S4-5 (the subject is the §3.2.1 target)** — after create, `sessions.attach(sessionId,'subject',subjectId,
+  'instance')` (`subject` is a registered ENTITY_TYPE). `[code: service.ts createClassSession]`
+- **BR-LE-S4-6 (derived reads go through the base session)** — `listSessions(subjectId)` reads its own
+  `class_sessions` then resolves each base via `sessions.getSession`; a soft-deleted base (→ null) is excluded.
+  `getWeeklySchedule(range)` is cross-subject: base `started_at` ∈ `[start,end]` (INCLUSIVE both ends — matches the
+  reused `TimeRange` contract, not a silent half-open divergence), sorted ascending; untimed/out-of-range excluded.
+  `[code: service.ts listSessions/getWeeklySchedule/toView]`
+- **BR-LE-S4-7 (schedule source is FIXED vocab)** — `source ∈ SCHEDULE_SOURCE` (ics/document/manual), Zod-validated
+  (the column is a CHECK). `[code: validators/learning.ts SetScheduleSchema]`
+- **BR-LE-S4-8 (`@vida/types` `ClassSession` + `SubjectSchedule` — net-new)** — both added `extends SyncableEntity`,
+  mirroring the schema rows; `ClassSession` OMITS `deleted_at` (session extension). `[code: packages/types/src/learning.ts]`
+
 ## Scope guards honored (the C-* negatives — rerun-ratified)
 - **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
-- **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2 (no economy grant, no `advertise()`, no homework table,
-  no AI agent); enforced from the slices that introduce those seams (S8/S10).
+- **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2/S4 (no economy grant, no `advertise()`, no homework table,
+  no AI agent); the `class` sub-type declares `effects:[]`/`allowed_effects:[]` (C-E2 honored). Enforced from the
+  slices that introduce those seams (S8/S10).

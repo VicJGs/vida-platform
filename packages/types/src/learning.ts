@@ -293,6 +293,31 @@ export interface Subject extends SyncableEntity {
   deleted_at: Timestamp | null
 }
 
+// --- Schedule & class sessions (S4 — ED-4/ED-5; DB-11 net-new interfaces) -----
+// `subject_schedules` = one row per subject (UNIQUE(subject_id)), recording the schedule's SOURCE; the
+// `class_sessions` rows ARE the schedule content (ED-5). `class_sessions` is a base-`sessions` sub-type='class'
+// 1:1 extension keyed `session_id` — the base owns lifecycle/timing, so it carries NO `deleted_at` (BR-ED-7).
+
+/** One per subject (UNIQUE) — the single schedule source, fed by ics/document/manual (ED-5). */
+export interface SubjectSchedule extends SyncableEntity {
+  subject_id: Id
+  source: ScheduleSource
+  deleted_at: Timestamp | null
+}
+
+/** A class meeting = base `sessions` (sub_type='class') + this 1:1 extension keyed `session_id` (ED-4, BR-ED-7).
+ *  NO `deleted_at` — the base session owns lifecycle. The meeting TIME lives on the base `sessions.started_at`. */
+export interface ClassSession extends SyncableEntity {
+  session_id: Id
+  subject_id: Id
+  /** Nullable, no FK — the `subject_schedules` row this meeting derives from. */
+  schedule_id: Id | null
+  /** Nullable, no FK — the `ics_synced_event` this meeting maps from (S5 forward-link). */
+  source_event_id: Id | null
+  /** @encrypted */
+  location: string | null
+}
+
 // ---------------------------------------------------------------------------
 // Book, Skill
 // ---------------------------------------------------------------------------

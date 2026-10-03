@@ -10,19 +10,20 @@
 `createLearningEducationService(deps)` — the ① backend service tier for **the Learning hub (Education)** over
 DB-4 `024_learning_education` (15 tables, the heaviest DB-4 group). The full design lives in
 `docs/features/learning/education/` (aspect docs) + `docs/features/learning/education/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **① IN PROGRESS — S3 of 10 shipped** (hierarchy
-spine + routing · subjects + DB-11 reconcile · curriculum fork + lineage). Next: S4 schedule + class sessions.
+(interpretation · slice-map · seam-contract). Build state: **① IN PROGRESS — S4 of 10 shipped** (hierarchy
+spine + routing · subjects + DB-11 reconcile · curriculum fork + lineage · schedule + class sessions). Next: S5 ICS feeds.
 
 A **pure service tier over a finished schema** (no DDL — DB-4 #12 authored all 15 tables; the aspect docs'
 "⚠ INTENDED/no schema" language is pre-DB-4 and stale). The 7 Education entity_types
 (`subject`/`institution`/`program`/`curriculum`/`term`/`assessment`/`subject_document`) are already registered
 in `db/schema/_registry.ts:100-106` — composed, never re-registered.
 
-## Delivered surface (as of S2)
+## Delivered surface (as of S4)
 
-`createLearningEducationService({ db, deviceId }) → LearningEducationService`. Factory-object, hoisted closures,
-no `this.`. Deps grow per slice (S4+ add spaces/notes/sessions/sessionRegistry/journalRegistry + deny-safe
-`ics?`/`attachment?`/`tasks?`/`ai?` + the dormant `effects?` seam).
+`createLearningEducationService({ db, deviceId, sessions, sessionRegistry }) → LearningEducationService`.
+Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added the BUILT, injected
+`sessions: SessionsService` + `sessionRegistry: SessionRegistry`; S5+ add spaces/notes/journalRegistry + deny-safe
+`ics?`/`attachment?`/`tasks?`/`ai?` + the dormant `effects?` seam.
 
 | Method | Leg | Contract |
 |---|---|---|
@@ -40,6 +41,11 @@ no `this.`. Deps grow per slice (S4+ add spaces/notes/sessions/sessionRegistry/j
 | `deleteSubject/getSubject` | ED-3 | soft-delete; `SubjectNotFoundError` |
 | `listSubjects({curriculumId?, termId?, status?})` | ED-3 | filters `deleted_at` (R4); empty filter = all live subjects |
 | `resolveParentChain({curriculumId?, termId?})` | ED-3 | routing primitive; returns `{ok, curriculum, term, program}` — `ok`=every given ref resolved + chain consistent |
+| `registerLearningEducation()` | ED-4 · S1–S7(sessions) | **S4** — registers the `class` session sub-type (`DuplicateSubType`-guarded, idempotent); must run before `createClassSession` |
+| `setSchedule(subjectId, {source})` | ED-5 | **S4** — upsert one `subject_schedules` row per subject (UNIQUE); `source ∈ ics/document/manual`; `SubjectNotFoundError` |
+| `createClassSession(subjectId, input)` | ED-4 · BR-ED-7 | **S4** — base `sessions('class')` + 1:1 `class_sessions` extension + attach subject (§3.2.1); `started_at` = required meeting time; returns `ClassSessionView {session, classSession}`; `SubjectNotFoundError` |
+| `listSessions(subjectId)` | ED-4 | **S4** — a subject's class meetings; soft-deleted base excluded (via `sessions.getSession`→null) |
+| `getWeeklySchedule(range)` | ED-4 | **S4** — cross-subject meetings with base `started_at` ∈ `[start,end]` (inclusive, matches `TimeRange`), sorted ascending; untimed/out-of-range excluded |
 
 ## Composition & conventions
 
@@ -48,12 +54,15 @@ no `this.`. Deps grow per slice (S4+ add spaces/notes/sessions/sessionRegistry/j
 - **No FK** (ADR-016 §3.4) — parent integrity is enforced in the SERVICE on create (fail-loud NotFound); a
   dangling *leaf* ref at read time is tolerated (`resolveParentChain` keeps `ok` true for a dangling program ref).
 - Row→interface mappers cast the plain-text `_sync_status` to the union.
+- **S4 session composition** — a `class` meeting composes the BUILT `SessionsService`/`SessionRegistry` (injected, never
+  reconstructed); the base `sessions` row owns lifecycle/timing/soft-delete, `class_sessions` is a 1:1 extension keyed
+  `session_id` (`softDelete:false` — no `deleted_at`), `subject_schedules` is `softDelete:true`. Derived reads resolve
+  base times via `sessions.getSession` (boundary-respecting; N+1 bounded, no second read path into the sessions tables).
 
 ## Not yet built (homed per slice-map.md)
-S4 schedule + class sessions · S5 ICS (deny-safe fetch) · S6 grading builder ·
-S7 assessments + grade/GPA compute · S8 education measurement · S9 subject vault + tags ·
-S10 cross-module fan-out + Journal. Frontend (dashboards/hub/builders) = ② `fe-learning-education` (P6).
-M2 defers: ICS live fetch, document extraction (AI), real Tasks→Education reads.
+S5 ICS (deny-safe fetch) · S6 grading builder · S7 assessments + grade/GPA compute · S8 education measurement ·
+S9 subject vault + tags · S10 cross-module fan-out + Journal. Frontend (dashboards/hub/builders) =
+② `fe-learning-education` (P6). M2 defers: ICS live fetch, document extraction (AI), real Tasks→Education reads.
 
 ## Carry-forwards
 - **S5 (ICS DB-11):** `@vida/types` `IcsFeedConfig.default_course_id` + `IcsSyncedEvent.matched_course_id` still

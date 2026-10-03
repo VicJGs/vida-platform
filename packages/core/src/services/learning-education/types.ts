@@ -22,10 +22,14 @@ import type {
   Curriculum,
   Term,
   Subject,
+  SubjectSchedule,
+  ClassSession,
   ProgramParentType,
   CourseStatus,
 } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
+import type { SessionsService, Session, TimeRange } from '../sessions'
+import type { SessionRegistry } from '../../foundation/sessions'
 import type {
   CreateInstitutionSchema,
   UpdateInstitutionSchema,
@@ -40,13 +44,22 @@ import type {
   CreateSubjectSchema,
   UpdateSubjectSchema,
   ForkCurriculumSchema,
+  SetScheduleSchema,
+  CreateClassSessionSchema,
 } from '../../validators/learning'
 
 export interface LearningEducationServiceDeps {
   db: DrizzleDb
   deviceId: string
-  // S4+ append: spaces, notes, sessions, sessionRegistry, journalRegistry, ics?, attachment?, tasks?, ai?, effects?
+  /** AR-5 SessionsService (BUILT, injected) — `createSession('class')` + `attach` + `getSession` (S4). */
+  sessions: SessionsService
+  /** AR-5 SessionRegistry (BUILT, injected) — `registerLearningEducation` registers the `class` sub-type (S4). */
+  sessionRegistry: SessionRegistry
+  // S5+ append: spaces, notes, journalRegistry, ics?, attachment?, tasks?, ai?, effects?
 }
+
+// Re-export the reused sessions `TimeRange` so S4 consumers (getWeeklySchedule) import it from this barrel.
+export type { TimeRange } from '../sessions'
 
 // --- input types (derived from the Zod schemas) ------------------------------
 export type CreateInstitutionInput = z.input<typeof CreateInstitutionSchema>
@@ -63,6 +76,17 @@ export type CreateSubjectInput = z.input<typeof CreateSubjectSchema>
 export type UpdateSubjectInput = z.input<typeof UpdateSubjectSchema>
 /** Fork options (S3). `name` overrides the copy's name; omitted ⇒ the source curriculum's name. */
 export type ForkCurriculumInput = z.input<typeof ForkCurriculumSchema>
+/** Schedule source selection (S4). One schedule per subject (UNIQUE). */
+export type SetScheduleInput = z.input<typeof SetScheduleSchema>
+/** Class-meeting creation (S4). `started_at` = the meeting time (required, B1); status/mode default in the service. */
+export type CreateClassSessionInput = z.input<typeof CreateClassSessionSchema>
+
+/** A class meeting = the base `sessions` row (lifecycle/timing) + the `class_sessions` 1:1 extension (S4).
+ *  Mirrors the books `ReadingSessionView {session, reading}` shape. */
+export interface ClassSessionView {
+  session: Session
+  classSession: ClassSession
+}
 
 /** Filter for `listSubjects` (ED-3 routing). All optional — an empty filter lists every live subject. */
 export interface SubjectFilter {
@@ -136,6 +160,20 @@ export interface LearningEducationService {
 
   // --- routing primitive (ED-3) — enforced by createSubject/updateSubject ---
   resolveParentChain(ref: { curriculumId?: string | null; termId?: string | null }): Promise<ParentChainResolution>
+
+  // --- schedule & class sessions (S4 — ED-4/ED-5) ---
+  /** Register the `class` session sub-type (call-once, idempotent; `DuplicateSubType` → no-op). Must run before
+   *  `createClassSession`, which otherwise surfaces `SessionTypeNotFound` from the registry (BR-LE-S4-1). */
+  registerLearningEducation(): Promise<void>
+  /** Upsert the subject's single schedule source (one row per subject, UNIQUE). `SubjectNotFoundError` if unknown. */
+  setSchedule(subjectId: string, input: SetScheduleInput): Promise<SubjectSchedule>
+  /** Create a class meeting: base `sessions` (`sub_type='class'`) + the 1:1 extension + attach the subject as the
+   *  §3.2.1 target. `started_at` carries the meeting time (B1). `SubjectNotFoundError` if unknown. */
+  createClassSession(subjectId: string, input: CreateClassSessionInput): Promise<ClassSessionView>
+  /** All class meetings for a subject (soft-deleted base sessions excluded). */
+  listSessions(subjectId: string): Promise<ClassSessionView[]>
+  /** Cross-subject weekly schedule — class meetings whose base `started_at` ∈ [range.start, range.end). */
+  getWeeklySchedule(range: TimeRange): Promise<ClassSessionView[]>
 }
 
 // --- typed errors (fail loud — constitution §5) ------------------------------

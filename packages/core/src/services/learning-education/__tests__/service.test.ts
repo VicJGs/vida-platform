@@ -13,6 +13,10 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createLearningEducationService } from '../service'
+import { createSessionRegistry, SessionTypeNotFound, type SessionRegistry } from '../../../foundation/sessions'
+import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSessionsService, type SessionsService } from '../../sessions'
 import {
   type LearningEducationService,
   InstitutionNotFoundError,
@@ -62,6 +66,8 @@ interface Harness {
   svc: LearningEducationService
   db: DrizzleDb
   bsql: Database.Database
+  sessions: SessionsService
+  sessionRegistry: SessionRegistry
 }
 
 async function setup(): Promise<Harness> {
@@ -70,8 +76,20 @@ async function setup(): Promise<Harness> {
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createLearningEducationService({ db, deviceId: 'test-device' })
-  return { svc, db, bsql }
+  // S4 — compose the REAL sessions substrate (the books/knowledge harness precedent): a `class` meeting is a base
+  // `sessions` row + the 1:1 `class_sessions` extension, so the service needs a live SessionsService + registry.
+  const entityRegistry = createTaggableTypeRegistry()
+  const sessionRegistry = createSessionRegistry(db, 'test-device')
+  const rail = createEffectRail(db, createEffectRegistry())
+  const sessions = createSessionsService({
+    db,
+    deviceId: 'test-device',
+    registry: sessionRegistry,
+    rail,
+    entityRegistry,
+  })
+  const svc = createLearningEducationService({ db, deviceId: 'test-device', sessions, sessionRegistry })
+  return { svc, db, bsql, sessions, sessionRegistry }
 }
 
 describe('mod-learning-education S1 — hierarchy spine + routing', () => {
@@ -497,5 +515,115 @@ describe('mod-learning-education S3 — curriculum fork + lineage (ED-11/A3/H10)
     const { cur } = await sourceTree({ isTemplate: true })
     const upd = await h.svc.updateCurriculum(cur.id, { name: 'Renamed Template' })
     expect(upd.name).toBe('Renamed Template')
+  })
+})
+
+// ===========================================================================
+// S4 — Schedule + class sessions (register `class` sub-type) · ED-4/ED-5 · BR-LE-S4-*
+// ===========================================================================
+describe('mod-learning-education S4 — schedule + class sessions', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  async function aSubject(title = 'Algorithms') {
+    return h.svc.createSubject({ title }) // empty routing allowed (A1)
+  }
+
+  // --- registration (BR-LE-S4-1/S4-2) ---------------------------------------
+  it('createClassSession before registration surfaces SessionTypeNotFound (ordering)', async () => {
+    const subj = await aSubject()
+    const err = await h.svc.createClassSession(subj.id, { started_at: Date.now() }).catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(SessionTypeNotFound)
+  })
+
+  it('registerLearningEducation is idempotent — a 2nd call is a no-op (no throw)', async () => {
+    await h.svc.registerLearningEducation()
+    await expect(h.svc.registerLearningEducation()).resolves.toBeUndefined()
+  })
+
+  it('registers the `class` sub-type as an ADR-004 §3.2 transcription (effects:[] / allowed_effects:[])', async () => {
+    await h.svc.registerLearningEducation()
+    const def = await h.sessionRegistry.get('class')
+    expect(def.sub_type).toBe('class')
+    expect(def.owner_module).toBe('learning-education')
+    expect(def.effects).toEqual([])
+    expect(def.permissions.allowed_effects).toEqual([])
+    expect(def.default_purpose).toBeUndefined() // B2 — omitted (No-Guessing)
+  })
+
+  // --- setSchedule (BR-LE-S4-3) ---------------------------------------------
+  it('setSchedule creates one row; a 2nd call UPDATES (UNIQUE honored, one row)', async () => {
+    const subj = await aSubject()
+    const s1 = await h.svc.setSchedule(subj.id, { source: 'manual' })
+    expect(s1.source).toBe('manual')
+    const s2 = await h.svc.setSchedule(subj.id, { source: 'ics' })
+    expect(s2.id).toBe(s1.id) // same row, updated
+    expect(s2.source).toBe('ics')
+  })
+
+  it('setSchedule on an unknown subject throws SubjectNotFoundError', async () => {
+    const err = await h.svc.setSchedule('missing', { source: 'manual' }).catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(SubjectNotFoundError)
+  })
+
+  // --- createClassSession (BR-LE-S4-4/S4-5) ---------------------------------
+  it('createClassSession composes a base `class` session + the 1:1 extension + the subject target', async () => {
+    await h.svc.registerLearningEducation()
+    const subj = await aSubject()
+    const at = Date.now()
+    const view = await h.svc.createClassSession(subj.id, { started_at: at, location: 'Room 101' })
+    // base spine
+    expect(view.session.session.sub_type).toBe('class')
+    expect(view.session.session.started_at).toBe(at)
+    expect(view.session.session.status).toBe('scheduled') // default
+    // extension keyed session_id
+    expect(view.classSession.session_id).toBe(view.session.session.id)
+    expect(view.classSession.subject_id).toBe(subj.id)
+    expect(view.classSession.location).toBe('Room 101')
+    // the subject is attached as the §3.2.1 target
+    const targets = await h.svc.listSessions(subj.id)
+    expect(targets).toHaveLength(1)
+  })
+
+  it('createClassSession on an unknown subject throws SubjectNotFoundError', async () => {
+    await h.svc.registerLearningEducation()
+    const err = await h.svc
+      .createClassSession('missing', { started_at: Date.now() })
+      .catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(SubjectNotFoundError)
+  })
+
+  // --- listSessions (BR-LE-S4-6) --------------------------------------------
+  it('listSessions returns a subject sessions and excludes a soft-deleted base', async () => {
+    await h.svc.registerLearningEducation()
+    const subj = await aSubject()
+    const a = await h.svc.createClassSession(subj.id, { started_at: Date.now() })
+    await h.svc.createClassSession(subj.id, { started_at: Date.now() + 1000 })
+    expect(await h.svc.listSessions(subj.id)).toHaveLength(2)
+    // soft-delete the BASE session of one meeting → excluded from the derived read (base owns lifecycle, BR-LE-S4-6).
+    await h.sessions.softDeleteSession(a.session.session.id)
+    const after = await h.svc.listSessions(subj.id)
+    expect(after).toHaveLength(1)
+    expect(after[0].session.session.id).not.toBe(a.session.session.id)
+  })
+
+  // --- getWeeklySchedule (BR-LE-S4-6) ---------------------------------------
+  it('getWeeklySchedule returns cross-subject meetings in range (inclusive both ends), sorted, excluding out-of-range', async () => {
+    await h.svc.registerLearningEducation()
+    const math = await aSubject('Math')
+    const phys = await aSubject('Physics')
+    const base = 1_700_000_000_000
+    const end = base + 5000
+    await h.svc.createClassSession(math.id, { started_at: base }) // exactly start — included (inclusive)
+    await h.svc.createClassSession(phys.id, { started_at: base + 1000 })
+    await h.svc.createClassSession(math.id, { started_at: end }) // exactly end — included (inclusive, matches TimeRange)
+    await h.svc.createClassSession(math.id, { started_at: end + 1 }) // just past end — excluded
+    const week = await h.svc.getWeeklySchedule({ start: base, end })
+    // both boundaries render; the out-of-range one does not
+    expect(week.map((v) => v.session.session.started_at)).toEqual([base, base + 1000, end])
+    // cross-subject
+    expect(new Set(week.map((v) => v.classSession.subject_id))).toEqual(new Set([math.id, phys.id]))
   })
 })
