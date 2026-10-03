@@ -1,5 +1,5 @@
 # Task: fe-codec-theme
-# Status: in-progress — ① slices S1✅ S2✅ · S3 next (Visual Gate) · 2026-10-03
+# Status: planned
 # Linear: LIF-213
 # Profile: Add Frontend Component
 # Scenario: default
@@ -21,9 +21,18 @@
 - [x] **S2 — Config + self-hosted fonts** (`feb3ab2`) — `createTamagui({themes:{...}})` (all 66) + 2 var-driven
       `createFont` keys (CSS-var seam, no per-theme font hook in TG 2.6.2); 4 faces woff2 + `@font-face`, Spectral
       preloaded (21.7 KB < 80 KB). B-codec-2. chrome faces deferred w/ chrome role.
-- [ ] **S3 — Provider + resolution + density + app rewire** — NEXT. `resolveTheme({preset,mode,density})` → scheme-first
-      theme name + sets `--vida-font-*` (S2 seam) + density CSS vars; rewire `App.tsx`; **carries the blocking Visual
-      Gate** (presets × light/dark × calm/dense, reduced-motion, a11y). Then **PR for ①**.
+- [x] **S3 — Provider + resolution + density + app rewire** — DONE (2026-10-03). `theme-resolution.ts` (pure resolver +
+      types + defaults + density tables) + `provider.tsx` (widened to `selection`; `useLayoutEffect` on documentElement/body)
+      + `index.ts` barrel + `App.tsx` rewire. Full §XXVI gate (g1 SHIP → Approval 1 → preflight+spike+Tamagui-docs → g2 SHIP
+      → Approval 2) + independent code-review (3 folded) + **blocking Visual Gate** (Storybook codec harness + Playwright/Brave,
+      all 12 cells). **2 §XXVIII deviations (Gate-driven):** density A→**A-prime** (injected attr-toggled stylesheet;
+      font-size vars are literal-redeclared by `.font_<key>`) + theme-application flat→**scheme-on-html + preset-on-body**
+      (Tamagui sub-theme CSS is nested). @vida/ui 342→ (theme-resolution +13) · apps/web 180 · tsc 0.
+      **Visual Gate GREEN:** neutrals/surfaces/text · fonts per preset (getComputedStyle) · spacing+type density · runtime
+      switch · reduced-motion · full-matrix AA contrast (muted 5.65–6.03 warm-dark).
+      **⚠ ONE GAP shipped as RESEARCH (Victor 2026-10-03):** preset ACCENT doesn't reach component sub-themes (buttons =
+      editorial accent all presets); Tamagui bakes theme values → emitter-inherit unviable; semantic accent var DOES inherit
+      to component scope. Homed → `.claude/tasks/research-preset-accent-on-components.md`. Then **PR for ①.**
 
 ## Decided seams (preflight-resolved — do not relitigate in S3)
 - **Scheme-first naming is law** (TG 2.6.2 `validSchemes={light,dark}`, scheme=first `_`-segment): editorial=bare

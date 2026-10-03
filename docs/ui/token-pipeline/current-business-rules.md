@@ -121,6 +121,40 @@
   within the `<80 KB` bundle budget, quality-bar `_index.md:58`). **chrome faces (Inter · IBM Plex Sans) deferred** with
   the chrome role (out of the "display/body pairs" slice scope).
 
+## Rules established by fe-codec-theme S3 (IMPLEMENTED 2026-10-03 — ① shipped)
+
+The provider is the codec MECHANISM; the app owns the `{preset,mode,density}` STATE (R5). `packages/ui/src/theme-resolution.ts`
+(pure) + `provider.tsx` (effect) + `apps/web/src/App.tsx` (fed `THEME_DEFAULT`). Visual-Gate-verified (Storybook codec
+harness: `preview.tsx` 3 toolbar globals + `_codec-gate.stories.tsx`) across all 12 cells (3 presets × light/dark × calm/dense).
+
+- **[NEW] B-codec-3 — scheme on `<html>`, preset on `<body>` (nested sub-theme application).** Tamagui emits sub-theme
+  color vars under a **nested** selector `:root.t_<mode> .t_<preset>` — a flat `defaultTheme="<mode>_<preset>"` (one
+  `t_<mode>_<preset>` class) matches NOTHING (Visual-Gate-proven). So the provider sets `defaultTheme={mode}` (scheme class
+  on `<html>` via `addThemeClassName:'html'`) and puts `t_<preset>` on **`<body>`** (an ancestor of the app AND the
+  body-portals Dialog/Menu/…, so the preset palette + `${mode}_${preset}_<Comp>` reach portalled surfaces). editorial =
+  the bare scheme base, no `<body>` class. `[provider.tsx applyPresetClass]`
+- **[NEW] B-codec-4 — density = one injected, attribute-toggled stylesheet (A-prime, §XXVIII).** Space tokens are
+  var-referenced (`padding:'$8'` → `var(--t-space-8)`, overridable) but font-size vars are **redeclared as literals** by
+  Tamagui's `.font_body`/`.font_display` classes, shadowing any `<html>` override (Visual-Gate-proven). So density is a
+  single `<style id="vida-density-scale">` (appended last → wins by source order at equal specificity) redefining the
+  inset-band space vars + the font-scoped size/line-height vars under `[data-vida-density="dense"]`; the provider just
+  toggles the `data-vida-density` attribute. Values from `getToken('$N','space')` + `getConfig().fontsParsed` (baked val ×
+  `DENSE_TYPE_SCALE`, round). Space band `$8/$12/$16/$24`; large layout tokens `$32+` fixed. Type co-scales size AND
+  line-height. `[provider.tsx densityCssText/ensureDensityStylesheet; theme-resolution.ts DENSE_SPACE_PX/DENSE_TYPE_SCALE]`
+- **[NEW] B-codec-5 — per-preset font-family set on `<html>` via the S2 var seam.** The provider `setProperty`s
+  `--vida-font-body/display` per preset (editorial clears → baked Spectral fallback); the swap is INSTANT (no transition →
+  reduced-motion safe, B12). `[provider.tsx applyFontFamily]`
+- **[DONE]** full-matrix AA contrast re-verified in-browser (muted text 5.65–6.03 on the warm dark surfaces, all ≥ 4.5);
+  runtime selection-change (no reload) + reduced-motion verified.
+- **[⚠ RESEARCH — known gap, flagged 2026-10-03]** **The preset ACCENT does not reach components that own a sub-theme**
+  (Button/Input/etc. render the editorial accent in every preset). Root cause: those components consume a **baked**
+  component-sub-theme key (`light_Button.backgroundPrimary → light.colorBrandEmphasis`) that chains to the scheme BASE, not
+  the active preset; Tamagui **bakes theme values at config-build time**, so the attempted emitter-inherit fix
+  (`var(--colorBrandEmphasis)` theme value) does NOT work — Tamagui bakes the var-string. The semantic accent var
+  (`--colorBrandEmphasis`) DOES inherit the preset correctly to component scope (proven), so the likely resolution =
+  components consume `$colorBrand*`/`$colorFocusRing` DIRECTLY (a DS-5/UI-1 contract change) or a nested-Theme application.
+  **Tracked as a research unit; neutrals/surfaces/text/fonts/density all swap correctly.** `[Victor 2026-10-03: ship now, research later]`
+
 ## Boundaries (what the pipeline does NOT own — owed downstream)
 - **[INTENT: DS-5]** component-token expansion + the white-on-brand.500 contrast caveat (buttons → brand.600) +
   semantic transition presets (enter/exit ease refinements via `enterStyle`/`exitStyle`) + `createFont`

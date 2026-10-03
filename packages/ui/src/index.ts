@@ -15,6 +15,16 @@ export { shadow } from './themes/shadow' // elevation box-shadow literals (typed
 // DS-4 — Tamagui config + theme-switch mechanism (composes the generated outputs above).
 export { config, media, type VidaConfig } from './tamagui.config'
 export { UIProvider, useVidaTheme, type ThemeName, type UIProviderProps } from './provider'
+// fe-codec-theme S3 — the codec selection contract (app owns the state; the provider is the mechanism).
+export {
+  resolveTheme,
+  THEME_DEFAULT,
+  THEME_PRESETS,
+  type ThemePreset,
+  type ThemeMode,
+  type ThemeDensity,
+  type ThemeSelection,
+} from './theme-resolution'
 
 // UI-1 — primitives (built against the DS-5 contracts).
 export { Button, type ButtonProps } from './components/button'
