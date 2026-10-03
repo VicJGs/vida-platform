@@ -59,10 +59,14 @@ describe('App shell — whole-shell integration (S5)', () => {
     const input = await screen.findByRole('combobox')
     expect(input).toBeTruthy()
 
-    // Running the "Notes" nav command must navigate the actual router to /notes (its lazy chunk then renders).
+    // Running the "Notes" nav command drives the ACTUAL router to /notes. The Notes MODULE route was torn down
+    // (eaf64f8 refactor(notes)! — being rebuilt as fe-notes-and-pages, M1.1+), so /notes is currently an UNBUILT
+    // target: BR-4 "degrade-never-crash" (nav-link.tsx:5) → the router lands on /notes and renders the not-found
+    // surface inside the shell, never a blank page or a crash. This still exercises the S3 command→router injection
+    // seam end-to-end. TODO(fe-notes-and-pages): once /notes is registered, assert its "Notes" heading instead.
     fireEvent.click(screen.getByRole('option', { name: 'Notes' }))
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Notes' })).toBeTruthy())
-    expect(router.state.location.pathname).toBe('/notes')
+    await waitFor(() => expect(router.state.location.pathname).toBe('/notes'))
+    expect(screen.getByRole('heading', { name: /not found/i })).toBeTruthy() // BR-4 degrade for the unbuilt route
   })
 
   it('search with no index renders the loud search-unavailable state, never a blank list (S3 + BR-4)', async () => {
