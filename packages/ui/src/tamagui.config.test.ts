@@ -33,7 +33,7 @@ describe('DS-4 tamagui.config (runtime)', () => {
       expect(c.themes?.[name], name).toBeDefined()
       expect(val(c.themes[name].colorSurfacePrimary)).toMatch(/^#/) // a real resolved color
     }
-    expect(Object.keys(c.themes).length).toBeGreaterThanOrEqual(66) // 6 base + 60 sub-themes
+    expect(Object.keys(c.themes).length).toBe(26) // 6 base + 20 editorial light_/dark_<Comp>; per-preset comp sub-themes retired (accent-inherit fix — preset color reaches components via direct semantics, not sub-themes)
   })
 
   it('fe-codec S2 — font family is the CSS-var seam (editorial family as fallback; provider swaps per preset)', () => {

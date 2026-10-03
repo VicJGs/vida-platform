@@ -25,7 +25,7 @@ import { ensureMenuStyles } from '../internal/menu-styles'
 //   the panel — ROVING DOM FOCUS on items (only the active item tabIndex=0, real .focus()), Esc returns focus to the
 //   trigger. NO aria-activedescendant.
 // - The `trigger` is a consumer SLOT (usually a <Button>): cloneElement injects aria + open handlers + a composed ref.
-// - name:'Menu' scopes the light_/dark_Menu sub-theme ($background/$border/$itemText/$itemBackgroundHover/$radius).
+// - name:'Menu' scopes the light_/dark_Menu sub-theme ($background/$border/$colorTextPrimary/$itemBackgroundHover/$radius).
 //   The portal detaches that scope, so the panel is re-wrapped in <Theme name="Menu">.
 // - Motion (B12): panel opacity + transform (translateY from the trigger edge) via injected CSS reading motion.ts; the
 //   item highlight is an `active` VARIANT (instant, state-driven — not :focus-visible). Reduced-motion via @media.
@@ -71,9 +71,9 @@ type PanelPos = { left: number; top: number; minWidth: number; maxWidth: number;
 const MenuPanel = styled(View, {
   name: 'Menu',
   position: 'fixed',
-  backgroundColor: '$background',
+  backgroundColor: '$colorSurfacePrimary',
   borderWidth: 1,
-  borderColor: '$border',
+  borderColor: '$colorBorderDefault',
   // radius.control (md) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
   borderRadius: '$md',
   paddingVertical: '$4',
@@ -91,10 +91,10 @@ const MenuItemRow = styled(View, {
   paddingHorizontal: '$12',
   borderRadius: '$md', // radius.control via the token scale (see CLAUDE.md — sub-theme radius key inert for dimensions)
   focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: -2 },
-  hoverStyle: { backgroundColor: '$itemBackgroundHover' },
+  hoverStyle: { backgroundColor: '$colorSurfaceSecondary' },
   variants: {
     // Roving highlight = the active item (keyboard focus / pointer hover both set activeIndex). Instant swap (B12).
-    active: { true: { backgroundColor: '$itemBackgroundHover' } },
+    active: { true: { backgroundColor: '$colorSurfaceSecondary' } },
     disabled: { true: { opacity: 0.5, cursor: 'not-allowed', hoverStyle: { backgroundColor: 'transparent' } } },
   } as const,
 })
@@ -105,7 +105,7 @@ const MenuItemLabel = styled(Text, {
   name: 'Menu',
   fontFamily: '$body',
   fontSize: '$small',
-  color: '$itemText',
+  color: '$colorTextPrimary',
   variants: {
     intent: { default: {}, danger: { color: '$colorSignalDanger' } },
   } as const,

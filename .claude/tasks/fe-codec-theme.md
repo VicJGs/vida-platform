@@ -30,9 +30,12 @@
       (Tamagui sub-theme CSS is nested). @vida/ui 342→ (theme-resolution +13) · apps/web 180 · tsc 0.
       **Visual Gate GREEN:** neutrals/surfaces/text · fonts per preset (getComputedStyle) · spacing+type density · runtime
       switch · reduced-motion · full-matrix AA contrast (muted 5.65–6.03 warm-dark).
-      **⚠ ONE GAP shipped as RESEARCH (Victor 2026-10-03):** preset ACCENT doesn't reach component sub-themes (buttons =
-      editorial accent all presets); Tamagui bakes theme values → emitter-inherit unviable; semantic accent var DOES inherit
-      to component scope. Homed → `.claude/tasks/research-preset-accent-on-components.md`. Then **PR for ①.**
+      **✅ GAP RESOLVED (same session, Victor-approved Option A):** preset ACCENT + neutrals now reach component sub-themes.
+      Triaged STRUCTURAL → the 21 preset-sensitive component-sub-theme-key usages across 10 primitives consume DIRECT
+      semantic tokens (inherit the preset at component scope); signal keys stay baked (preset-invariant); per-preset comp
+      sub-themes retired (themes 66→26). Re-gated: accent+neutrals swap per preset (reader oxblood, quietDesk olive), all
+      12 cells. @vida/ui 342 · apps/web 180 · tsc 0. Currency B-codec-6; bug-unit `docs/specs/fixes/preset-accent-component-subthemes`.
+      **① FULLY COMPLETE — nothing deferred. PR #74 updated.**
 
 ## Decided seams (preflight-resolved — do not relitigate in S3)
 - **Scheme-first naming is law** (TG 2.6.2 `validSchemes={light,dark}`, scheme=first `_`-segment): editorial=bare

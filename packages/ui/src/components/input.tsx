@@ -19,14 +19,14 @@ type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url'
 
 const InputFrame = styled(View, {
   name: 'Input',
-  // name:'Input' auto-applies light_Input/dark_Input ($background, $border, $borderFocus, $borderError…) [FACT:
+  // name:'Input' auto-applies light_Input/dark_Input ($background, $border, $colorFocusRing, $borderError…) [FACT:
   // theme-builder.mdx]. The sub-theme MUST be registered in tamagui.config.ts (done) or these resolve nothing.
   flexDirection: 'row',
   alignItems: 'center',
   position: 'relative',
-  backgroundColor: '$background',
+  backgroundColor: '$colorSurfacePrimary',
   borderWidth: 1,
-  borderColor: '$border',
+  borderColor: '$colorBorderDefault',
   // radius.control (md) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
   borderRadius: '$md',
   cursor: 'text',
@@ -53,7 +53,7 @@ const InputFrame = styled(View, {
     },
     // disabled dims the frame + blocks the hover swap; the native `disabled` (removed from tab order) is on the input.
     disabled: {
-      true: { opacity: 0.5, cursor: 'not-allowed', hoverStyle: { borderColor: '$border' } },
+      true: { opacity: 0.5, cursor: 'not-allowed', hoverStyle: { borderColor: '$colorBorderDefault' } },
     },
   } as const,
   defaultVariants: { size: 'md' },
@@ -70,7 +70,7 @@ const NativeInput = styled(View, {
   backgroundColor: 'transparent',
   borderWidth: 0,
   outlineStyle: 'none',
-  color: '$text',
+  color: '$colorTextPrimary',
   fontFamily: '$body',
   variants: {
     size: {

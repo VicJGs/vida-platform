@@ -53,7 +53,7 @@ function getFocusable(node: HTMLElement): HTMLElement[] {
 
 // info → brand.primary · success → signal.success · danger → signal.danger (the light_/dark_Toast sub-theme keys).
 const ACCENT: Record<ToastIntent, string> = {
-  info: '$accentInfo',
+  info: '$colorBrandPrimary',
   success: '$accentSuccess',
   danger: '$accentDanger',
 }
@@ -101,7 +101,7 @@ const ToastPanel = styled(View, {
   maxWidth: 360,
   paddingVertical: '$12',
   paddingHorizontal: '$16',
-  backgroundColor: '$background',
+  backgroundColor: '$colorSurfacePrimary',
   borderWidth: 1,
   borderColor: '$colorBorderDefault',
   borderRadius: '$lg',
@@ -206,7 +206,7 @@ function ToastItem({
       <ToastAccent aria-hidden backgroundColor={ACCENT[intent]} />
 
       <View flexGrow={1} flexShrink={1} minWidth={0} gap="$4">
-        <Text fontFamily="$body" fontSize="$small" fontWeight="600" color="$text">
+        <Text fontFamily="$body" fontSize="$small" fontWeight="600" color="$colorTextPrimary">
           {title}
         </Text>
         {description != null && (

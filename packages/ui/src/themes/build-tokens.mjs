@@ -241,10 +241,15 @@ StyleDictionary.registerFormat({
         : '// PLACEHOLDER: no overlays → all themes == editorial base. Overlays supply parallel preset/dark VALUES; MECHANISM = DS-4.'
     const out = [`${BANNER}import { tokens } from './tokens'\n`, note]
     for (const [name, themeObj] of Object.entries(themes)) out.push(`export const ${name} = ${obj(themeObj)}\n`)
-    // Per-theme component sub-themes: <theme>_<Comp> → <theme>.<semKey> (so each resolves to ITS theme's values).
+    // Component sub-themes — editorial base schemes ONLY (light/dark). The per-preset `<mode>_<preset>_<Comp>` set is
+    // NOT generated: it never resolved (Tamagui names it combined `t_<preset>_<Comp>`, the app applies `t_<preset>`+`t_<Comp>`
+    // separately) and components now read the preset via DIRECT semantic tokens ($colorBrand*/$colorSurface*/…), which
+    // inherit the active preset at component scope (a component sub-theme emits only its OWN keys, not the semantic vars).
+    // These base sub-themes remain only as scoping scaffolding so `name="<Comp>"` + portal `<Theme name="<Comp>">` resolve;
+    // their keys are no longer consumed for preset-sensitive color. [fe-codec-theme — accent-inherit fix, STRUCTURAL §XXVIII]
     const refBase = (sub, theme) =>
       Object.fromEntries(Object.entries(sub).map(([k, semKey]) => [k, `${theme}.${semKey}`]))
-    for (const theme of Object.keys(themes)) {
+    for (const theme of ['light', 'dark']) {
       for (const Comp of Object.keys(subs).sort()) {
         out.push(`export const ${theme}_${Comp} = ${obj(refBase(subs[Comp], theme))}`)
       }

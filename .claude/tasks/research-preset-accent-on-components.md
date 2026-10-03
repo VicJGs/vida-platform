@@ -1,5 +1,5 @@
 # Task: research-preset-accent-on-components
-# Status: planned — research/design (flagged 2026-10-03 from fe-codec-theme S3)
+# Status: RESOLVED (2026-10-03) — Option A implemented on fe-codec-theme (PR #74); see docs/specs/fixes/preset-accent-component-subthemes/_index.md
 # Linear: (create at pickup)
 # Profile: Add Frontend Component (or Design System — token/contract decision)
 # Source: fe-codec-theme S3 Visual Gate — the one gap left when S3 shipped

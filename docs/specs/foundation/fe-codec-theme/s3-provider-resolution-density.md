@@ -262,13 +262,16 @@ cause: Tamagui emits sub-theme vars under a **nested** selector `:root.t_<mode> 
 Re-gated → all 12 cells' neutrals/surfaces/text correct incl. dark sub-themes + portals. The registration (S1) was fine;
 only the application (S3 provider) changed.
 
-### ⚠ RESEARCH FLAG — preset ACCENT on component sub-themes (shipped WITHOUT; Victor 2026-10-03)
-The Gate's final finding: the accent does NOT reach components that own a sub-theme (buttons render editorial blue in every
-preset). Root cause + why the emitter-inherit fix is unviable (Tamagui bakes theme values at config time) + the candidate
-resolutions are captured in `docs/ui/token-pipeline/current-business-rules.md` (⚠ RESEARCH) + the research task
-`.claude/tasks/research-preset-accent-on-components.md`. **Decision: ship S3 (codec mechanism + neutrals/surfaces/text/
-fonts/density all green), home accent-on-components as a research unit** — it's a DS-5/UI-1 contract question, not
-codec-provider scope. This is the one acceptance item (§8 "correct palette") knowingly deferred, with a tracked home.
+### §XXVIII DEVIATION #3 — preset ACCENT (+ neutrals) on component sub-themes: RESOLVED (Option A, 2026-10-03)
+The Gate's final finding: accent (and the neutral component-keys) didn't reach components that own a sub-theme (buttons
+rendered editorial in every preset). Triaged STRUCTURAL (`docs/specs/fixes/preset-accent-component-subthemes/`): component
+sub-themes BAKE every key to the scheme base at Tamagui config time; the emitter-inherit fix is unviable (Tamagui bakes
+`var(--…)` theme values). **Fix (Victor-approved Option A, full scope):** the 21 preset-sensitive component-sub-theme-key
+usages across the 10 primitives now consume DIRECT semantic tokens (which inherit the preset at component scope — a
+*component* sub-theme emits only its own keys, so the semantic vars still cascade from the B-codec-3 `<body>` preset class);
+signal keys stay baked (preset-invariant); per-preset component sub-themes retired (themes 66 → 26). Re-gated: accent +
+neutrals swap per preset across all 12 cells (reader oxblood, quietDesk olive). Currency B-codec-6. **§8 acceptance now
+FULLY met — nothing deferred.**
 
 ## 9a. Preflight resolutions (G1–G6) + library grounding
 

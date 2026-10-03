@@ -299,9 +299,13 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
     for (const name of allExports()) expect(['light', 'dark']).toContain(name.split('_')[0])
   })
 
-  it('exact sub-theme count = components × presets × modes (10 × 3 × 2 = 60); 20 editorial + 40 net-new', () => {
-    expect(subs().length).toBe(60)
-    expect(subs().filter((n) => /^(light|dark)_[A-Z]/.test(n)).length).toBe(20) // editorial bare light_/dark_<Comp>
+  it('component sub-themes = editorial base only (10 comps × light/dark = 20); per-preset comps retired (accent-inherit fix)', () => {
+    // The accent-inherit fix (STRUCTURAL §XXVIII): components read preset color via DIRECT semantic tokens (which inherit
+    // the active preset at component scope), so the per-preset `<mode>_<preset>_<Comp>` set is no longer generated — only
+    // the editorial base `light_/dark_<Comp>` remain as scoping scaffolding (+ preset-invariant signal keys).
+    expect(subs().length).toBe(20)
+    expect(subs().filter((n) => /^(light|dark)_[A-Z]/.test(n)).length).toBe(20) // all are editorial bare light_/dark_<Comp>
+    expect(subs().filter((n) => /^(light|dark)_(reader|quietDesk)_/.test(n)).length).toBe(0) // no per-preset comp sub-themes
   })
 
   it('backward-compat — editorial keeps the bare light/dark + the 10 light_/dark_<Comp> the config imports', () => {
@@ -324,9 +328,12 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
     expect(grab('dark_reader')).not.toContain('editorialNeutral')
   })
 
-  it('a preset sub-theme references ITS base theme key (light_reader_Button → light_reader.*, not raw tokens)', () => {
-    const sub = themes.match(/export const light_reader_Button = \{[^\n]*\}/)?.[0] ?? ''
-    expect(sub).toMatch(/light_reader\.color/)
+  it('per-preset component sub-themes are NOT emitted (accent-inherit fix — they never resolved + are superseded by direct-semantic consumption)', () => {
+    expect(themes).not.toMatch(/export const light_reader_Button =/)
+    expect(themes).not.toMatch(/export const dark_quietDesk_Card =/)
+    // the editorial base comp sub-theme still references ITS base theme key (preset-invariant signal/scaffolding keys)
+    const sub = themes.match(/export const light_Button = \{[^\n]*\}/)?.[0] ?? ''
+    expect(sub).toMatch(/light\.color/)
     expect(sub).not.toMatch(/tokens\./)
   })
 

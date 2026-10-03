@@ -86,9 +86,9 @@ const PopoverPanel = styled(View, {
   name: 'Popover',
   position: 'fixed',
   flexDirection: 'column',
-  backgroundColor: '$background',
+  backgroundColor: '$colorSurfacePrimary',
   borderWidth: 1,
-  borderColor: '$border',
+  borderColor: '$colorBorderDefault',
   // radius.card (lg) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
   borderRadius: '$lg',
   padding: '$12',
@@ -106,8 +106,8 @@ const PopoverArrow = styled(View, {
   position: 'absolute',
   width: ARROW,
   height: ARROW,
-  backgroundColor: '$background',
-  borderColor: '$border',
+  backgroundColor: '$colorSurfacePrimary',
+  borderColor: '$colorBorderDefault',
   borderStyle: 'solid',
   // Floor ALL edges to 0 — `borderStyle:'solid'` with no width defaults to `border-width:medium` (~3px) on any edge
   // arrowStyle() doesn't override, painting spurious borders (Visual-Gate catch). arrowStyle sets the 2 outer edges to 1.

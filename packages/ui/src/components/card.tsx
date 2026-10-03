@@ -30,10 +30,10 @@ const CardFrame = styled(View, {
   position: 'relative',
   gap: '$12',
   borderWidth: 1,
-  borderColor: '$border',
+  borderColor: '$colorBorderDefault',
   // radius.card (lg) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
   borderRadius: '$lg',
-  backgroundColor: '$background',
+  backgroundColor: '$colorSurfacePrimary',
   variants: {
     // Padding drives the $space scale, NOT the `card.padding` sub-theme token — one token can't express three
     // options, and Tamagui resolves space props against the space scale, not a theme sub-theme (button.tsx lesson;

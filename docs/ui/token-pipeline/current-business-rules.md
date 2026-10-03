@@ -146,14 +146,21 @@ harness: `preview.tsx` 3 toolbar globals + `_codec-gate.stories.tsx`) across all
   reduced-motion safe, B12). `[provider.tsx applyFontFamily]`
 - **[DONE]** full-matrix AA contrast re-verified in-browser (muted text 5.65–6.03 on the warm dark surfaces, all ≥ 4.5);
   runtime selection-change (no reload) + reduced-motion verified.
-- **[⚠ RESEARCH — known gap, flagged 2026-10-03]** **The preset ACCENT does not reach components that own a sub-theme**
-  (Button/Input/etc. render the editorial accent in every preset). Root cause: those components consume a **baked**
-  component-sub-theme key (`light_Button.backgroundPrimary → light.colorBrandEmphasis`) that chains to the scheme BASE, not
-  the active preset; Tamagui **bakes theme values at config-build time**, so the attempted emitter-inherit fix
-  (`var(--colorBrandEmphasis)` theme value) does NOT work — Tamagui bakes the var-string. The semantic accent var
-  (`--colorBrandEmphasis`) DOES inherit the preset correctly to component scope (proven), so the likely resolution =
-  components consume `$colorBrand*`/`$colorFocusRing` DIRECTLY (a DS-5/UI-1 contract change) or a nested-Theme application.
-  **Tracked as a research unit; neutrals/surfaces/text/fonts/density all swap correctly.** `[Victor 2026-10-03: ship now, research later]`
+- **[NEW] B-codec-6 — components read preset color via DIRECT semantic tokens, not baked component-sub-theme keys
+  (STRUCTURAL §XXVIII fix, 2026-10-03).** Component sub-themes bake every key to the SCHEME base at Tamagui config-build
+  time (`light_Button.backgroundPrimary → light.colorBrandEmphasis`, editorial) and never follow the active preset — and
+  Tamagui bakes theme values at config time, so an emitter-inherit (`var(--…)` theme value) is unviable. BUT a *component*
+  sub-theme emits only its OWN keys, so the semantic theme vars (`--colorBrandEmphasis`, `--colorSurface*`, …) still inherit
+  the active preset at component scope (via the B-codec-3 `<body>` preset class). **Resolution:** the 21 preset-sensitive
+  component-sub-theme-key usages (accent AND neutral) across the 10 primitives now consume the DIRECT semantic token they
+  mapped to (`$colorBrandEmphasis`/`$colorBrandPrimary`/`$colorFocusRing`/`$colorSurface*`/`$colorText*`/`$colorBorderDefault`),
+  which inherit the preset. The component→semantic mapping moves from the baked *theme* layer to the *styled component*
+  layer (a documented DS-5 relaxation). Preset-invariant **signal** keys (`$accentSuccess`/`$accentDanger`/`$borderError`)
+  stay on the base `light_/dark_<Comp>` sub-themes (correct — signals don't change per preset). The emitter emits component
+  sub-themes for the editorial base schemes ONLY (20 = 10 × light/dark); the per-preset `<mode>_<preset>_<Comp>` set (40)
+  is **retired** (never resolved; superseded). Themes 66 → 26. Visual-Gate-verified: Primary button + ghost/indicator/
+  checked/focus/info accents + all neutrals swap per preset (reader oxblood, quietDesk olive) across the 12-cell matrix.
+  `[components/*.tsx direct-semantic; build-tokens.mjs component-subtheme loop = ['light','dark']; bug-unit docs/specs/fixes/preset-accent-component-subthemes]`
 
 ## Boundaries (what the pipeline does NOT own — owed downstream)
 - **[INTENT: DS-5]** component-token expansion + the white-on-brand.500 contrast caveat (buttons → brand.600) +
