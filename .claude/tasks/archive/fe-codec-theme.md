@@ -1,5 +1,5 @@
 # Task: fe-codec-theme
-# Status: planned
+# Status: done
 # Linear: LIF-213
 # Profile: Add Frontend Component
 # Scenario: default
