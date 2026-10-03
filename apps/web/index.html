@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vida Platform</title>
+    <!-- fe-codec S2: preload ONLY the Editorial default body face (Spectral 400) — the cold-start preset. The other
+         weights + the reader/quietDesk faces load via @font-face font-display:swap when needed (preset activation = S3).
+         Keeps the initial font payload a small slice of the <80KB bundle budget (quality-bar _index.md:58). -->
+    <link rel="preload" href="/fonts/spectral-400.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
     <!-- UI-4 · S1: process shim. @vida/ui runs Tamagui UNTAMED (no @tamagui/vite-plugin, the DS-4 decision), and
          @tamagui/core reads process.env.TAMAGUI_* at runtime; `process` is undefined in the browser → a
          ReferenceError crashes React to a blank page (jsdom defines process, so only a real browser surfaces it).

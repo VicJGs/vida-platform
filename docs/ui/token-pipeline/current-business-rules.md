@@ -105,6 +105,22 @@
   scale (S3); S1 authors no density tokens. Values repoint off the DS-2 placeholder to per-preset ramps anchored on the
   P1 specimen ([[ds-2-palette-is-provisional-placeholder]] still applies — a brand pass refines VALUES, re-runs the B10 matrix).
 
+## Rules established by fe-codec-theme S2 (IMPLEMENTED 2026-10-02)
+- **[NEW] B-codec-2 — per-preset font-family rides a CSS-var seam (fonts are global in Tamagui, like density).**
+  `@tamagui/core@2.6.2` bakes a STATIC `font_<key>` class whose `font-family` comes from `createFont` at config time —
+  there is **no per-theme/scope font hook** (`@tamagui/web getSplitStyles.cjs:288/687`, the DEF-U8-h class for fonts).
+  So `createFont` registers **2 var-driven keys** (`body`/`display`) with `family: var(--vida-font-<role>, <editorial
+  fallback>)`; the **3 preset families are 3 CSS-var VALUE SETS**, not 3 configs — editorial = the var fallback (renders
+  with no provider), the provider (S3) sets `--vida-font-body/display` per preset on the theme root (same CSS layer as
+  density). `[tamagui.config.ts bodyFont/displayFont; tamagui.config.test.ts fe-codec S2]`
+- **[DONE]** `createTamagui({ themes: {...themes} })` — all 66 generated themes registered via namespace-spread (no
+  hand-maintained import list). The theme-name union flows from `typeof config` (tamagui.d.ts unchanged).
+- **[DONE]** 4 body/display faces self-hosted as latin-subset woff2 + hand-authored `@font-face` (`apps/web/src/fonts.css`,
+  `apps/web/public/fonts/`), `font-display: swap`, **no new npm deps** (ADR-001 ethos). **Only Spectral 400 preloaded**
+  (`index.html`) — editorial default; others swap-in on preset activation. Preloaded payload = **21.7 KB** (measured, well
+  within the `<80 KB` bundle budget, quality-bar `_index.md:58`). **chrome faces (Inter · IBM Plex Sans) deferred** with
+  the chrome role (out of the "display/body pairs" slice scope).
+
 ## Boundaries (what the pipeline does NOT own — owed downstream)
 - **[INTENT: DS-5]** component-token expansion + the white-on-brand.500 contrast caveat (buttons → brand.600) +
   semantic transition presets (enter/exit ease refinements via `enterStyle`/`exitStyle`) + `createFont`

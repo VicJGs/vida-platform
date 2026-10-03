@@ -1,0 +1,60 @@
+/* fe-codec-theme S2 — self-hosted faces for the 3 preset families (body/display).
+ * Latin-subset woff2 in /public/fonts (OFL). family names MUST match tamagui.config.ts createFont fallbacks +
+ * fonts.ts fontFamily strings. font-display: swap (quality-bar §2.7). Only Spectral is preloaded (index.html);
+ * reader/quietDesk faces swap in when their preset activates (fe-codec S3). chrome faces (Inter · IBM Plex Sans)
+ * follow when chrome is wired (out of S2 scope). */
+
+/* Editorial (default) — Spectral, display + body, static weights (matches fontWeight 400/500/600/700). */
+@font-face {
+  font-family: 'Spectral';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/spectral-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Spectral';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/spectral-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Spectral';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/spectral-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Spectral';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/spectral-700.woff2') format('woff2');
+}
+
+/* Reader — Fraunces (display) + Newsreader (body), variable weight axis. */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/fraunces-vf.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/newsreader-vf.woff2') format('woff2-variations');
+}
+
+/* Quiet Desk — Source Serif 4 (display + body), variable weight axis. */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/source-serif-4-vf.woff2') format('woff2-variations');
+}
