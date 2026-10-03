@@ -58,6 +58,41 @@
 - **BR-LE-S2-5 (listSubjects filter + R4)** — `listSubjects({curriculumId?, termId?, status?})` always filters
   `isNull(deleted_at)` (findWhere skips the auto filter); empty filter = all live subjects. `[code: service.ts listSubjects]`
 
+## Shipped invariants (as of S3 — curriculum fork + lineage, ED-11/A3/H10)
+
+- **BR-LE-S3-1 (fork = deep copy + lineage)** — `forkCurriculum(sourceId, {name?})` creates a NEW curriculum
+  (fresh UUIDv7/`_sync_*`/timestamps) with `forked_from_id = sourceId`, `program_id = source.program_id`,
+  `name = input.name ?? source.name`, `description = source.description`; it deep-copies the source's LIVE terms
+  and LIVE subjects into the new tree. `[code: service.ts forkCurriculum]`
+- **BR-LE-S3-2 (base never mutated — by construction)** — the fork writes EXCLUSIVELY new rows; no write path
+  targets a source row, so "base never mutated on fork" is a structural invariant, not a runtime guard. `[code: service.ts forkCurriculum — every create targets newCurriculum.id; the one update targets a cloned term id]`
+- **BR-LE-S3-2b (`TemplateImmutableError` = exported vocabulary, NOT wired / R9)** — because the base is never
+  mutated by construction, there is no M1-reachable site that writes a template, so `TemplateImmutableError` is
+  EXPORTED typed vocabulary with no wired throw (the `IntegrationConsentError` precedent). It is NOT wired to
+  `updateCurriculum`, child writes, or deletion; `updateCurriculum` is unchanged from S1 (an update on a template
+  still succeeds). `[code: types.ts TemplateImmutableError (exported, never thrown); service.ts updateCurriculum unchanged]`
+- **BR-LE-S3-3 (the fork is a working instance — `is_template=false`)** — the copy is created with
+  `is_template=false` (the F5 structural default "a new curriculum is not a template"; `db-4-learning-education/_index.md:151`);
+  `is_template` is immutable on fork — written to neither the base nor `true` on the copy. `[code: service.ts forkCurriculum is_template:false]`
+- **BR-LE-S3-4 (term hierarchy remapped)** — two-pass: clone each live term with `parent_term_id:null`, build an
+  old→new id map, then set each clone's `parent_term_id` to the CLONED parent via the map. A parent not in the
+  live set (soft-deleted/absent) ⇒ clone `parent_term_id` stays `null` (no-FK leaf tolerance, R5). `[code: service.ts forkCurriculum term two-pass]`
+- **BR-LE-S3-5 (routing SHAPE preserved; refs remapped; progress reset; metadata preserved)** — a cloned subject
+  remaps ONLY refs that were set: `curriculum_id = src.curriculum_id==null ? null : new.id`,
+  `term_id = src.term_id==null ? null : map.get(src.term_id) ?? null` (a term-only subject keeps `curriculum_id`
+  null; a dangling term ref drops to null). `progress` is reset to `null` (derived override, never cloned, R2/M3);
+  `metadata` is preserved verbatim (diverges from `createSubject`'s null). `[code: service.ts forkCurriculum subject create]`
+- **BR-LE-S3-6 (the complete subject set)** — a subject belongs to the source curriculum if
+  `curriculum_id = source` OR `term_id ∈ {source live term ids}` (a subject may route by term only). Fork gathers
+  the union in one `or()` query (each row returned once; empty term set short-circuits `inArray`). `[code: service.ts forkCurriculum subject query]`
+- **BR-LE-S3-7 (per-row, eventually-consistent — NOT transactional / R5)** — the deep-copy is a sequence of
+  `repository.create`s (curriculum → terms → subjects); no-FK eventually-consistent, no transaction mandated
+  (ADR-016 §3.4). `[code: service.ts forkCurriculum]`
+- **BR-LE-S3-8 (soft-deleted children excluded)** — only LIVE (`deleted_at IS NULL`) terms/subjects are copied
+  (`findWhere` + explicit `isNull(deleted_at)`, R4). `[code: service.ts forkCurriculum term/subject queries]`
+- **BR-LE-S3-9 (source must resolve)** — fork on a missing or soft-deleted source throws `CurriculumNotFoundError`
+  (`findById` filters `deleted_at`). `[code: service.ts forkCurriculum]`
+
 ## Scope guards honored (the C-* negatives — rerun-ratified)
 - **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
 - **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2 (no economy grant, no `advertise()`, no homework table,

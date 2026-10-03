@@ -14,7 +14,7 @@
 //   BookNotFound precedent) — a dangling ref is never written, but the DB holds no constraint.
 // ============================================================================
 
-import { eq, and, isNull, type SQL } from 'drizzle-orm'
+import { eq, and, or, isNull, inArray, type SQL } from 'drizzle-orm'
 import type { Institution, SelfTaughtPath, Program, Curriculum, Term, Subject } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import {
@@ -40,6 +40,7 @@ import {
   UpdateProgramSchema,
   CreateCurriculumSchema,
   UpdateCurriculumSchema,
+  ForkCurriculumSchema,
   CreateTermSchema,
   UpdateTermSchema,
   CreateSubjectSchema,
@@ -62,6 +63,7 @@ import {
   type UpdateTermInput,
   type CreateSubjectInput,
   type UpdateSubjectInput,
+  type ForkCurriculumInput,
   type SubjectFilter,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
@@ -285,6 +287,89 @@ export function createLearningEducationService(
     return rows.map(toCurriculum)
   }
 
+  // ---- curriculum fork (ED-11 · A3 · H10 — S3) ------------------------------
+  // Deep-copies a curriculum's LIVE terms + subjects into a NEW tree with a `forked_from_id` lineage pointer.
+  // The source is NEVER mutated — every write targets a new row (BR-LE-S3-2, so "base never mutated on fork" is
+  // structural, not a runtime guard; `TemplateImmutableError` is exported vocabulary with no wired throw, R9).
+  // The copy is a working instance: `is_template:false` — a newly-created curriculum takes the F5 structural
+  // default "a new curriculum is not a template" (BR-LE-S3-3). Per-row, no-FK eventually-consistent (R5).
+  async function forkCurriculum(sourceId: string, input: ForkCurriculumInput = {}): Promise<Curriculum> {
+    const src = await curriculaRepo.findById(sourceId) // findById filters deleted_at → missing/soft-deleted ⇒ null
+    if (!src) throw new CurriculumNotFoundError(sourceId)
+    const v = ForkCurriculumSchema.parse(input)
+
+    const newCurriculum = await curriculaRepo.create({
+      program_id: src.program_id,
+      name: v.name ?? src.name,
+      description: src.description,
+      forked_from_id: sourceId, // lineage pointer (ED-11); no-FK, may dangle if the base is later deleted
+      is_template: false, // BR-LE-S3-3 — the fork is a working instance, not a template
+      deleted_at: null,
+    } satisfies CreateInput<typeof curricula>)
+
+    // Terms — two-pass so `parent_term_id` remaps to the CLONED parent's new id (no ordering assumption).
+    const srcTerms = await termsRepo.findWhere(
+      and(isNull(terms.deleted_at), eq(terms.curriculum_id, sourceId)) as SQL,
+    )
+    const termIdMap = new Map<string, string>()
+    for (const t of srcTerms) {
+      const nt = await termsRepo.create({
+        curriculum_id: newCurriculum.id,
+        level: t.level,
+        parent_term_id: null, // set in pass 2
+        name: t.name,
+        start_date: t.start_date,
+        end_date: t.end_date,
+        deleted_at: null,
+      } satisfies CreateInput<typeof terms>)
+      termIdMap.set(t.id, nt.id)
+    }
+    for (const t of srcTerms) {
+      if (t.parent_term_id == null) continue
+      const newId = termIdMap.get(t.id)
+      const newParent = termIdMap.get(t.parent_term_id) // parent not in the live set ⇒ stays null (BR-LE-S3-4)
+      if (newId != null && newParent != null) {
+        await termsRepo.update(newId, { parent_term_id: newParent })
+      }
+    }
+
+    // Subjects — the complete set: `curriculum_id = source` OR `term_id ∈ {source live terms}` (BR-LE-S3-6).
+    // One `or()` query ⇒ each row returned once (no dedupe needed); empty term set short-circuits `inArray` (N2).
+    const liveTermIds = srcTerms.map((t) => t.id)
+    const subjectClause =
+      liveTermIds.length > 0
+        ? or(eq(subjects.curriculum_id, sourceId), inArray(subjects.term_id, liveTermIds))
+        : eq(subjects.curriculum_id, sourceId)
+    const srcSubjects = await subjectsRepo.findWhere(and(isNull(subjects.deleted_at), subjectClause) as SQL)
+    for (const s of srcSubjects) {
+      await subjectsRepo.create({
+        title: s.title,
+        description: s.description,
+        provider: s.provider,
+        instructor: s.instructor,
+        url: s.url,
+        metadata: s.metadata, // PRESERVED verbatim (N1 — diverges from createSubject's null)
+        course_type: s.course_type,
+        status: s.status,
+        progress: null, // R2/M3 — a derived override, never cloned (BR-LE-S3-5)
+        total_modules: s.total_modules,
+        completed_modules: s.completed_modules,
+        start_date: s.start_date,
+        end_date: s.end_date,
+        target_completion: s.target_completion,
+        estimated_hours: s.estimated_hours,
+        rating: s.rating,
+        // SHAPE-preserving (BR-LE-S3-5): remap only refs that were SET; leave a null ref null.
+        curriculum_id: s.curriculum_id == null ? null : newCurriculum.id,
+        term_id: s.term_id == null ? null : (termIdMap.get(s.term_id) ?? null),
+        degree_tier: s.degree_tier,
+        deleted_at: null,
+      } satisfies CreateInput<typeof subjects>)
+    }
+
+    return toCurriculum(newCurriculum)
+  }
+
   // ---- terms (ED-12) — curriculum (and optional parent term) must resolve ---
   async function createTerm(
     curriculumId: string,
@@ -484,6 +569,7 @@ export function createLearningEducationService(
     deleteCurriculum,
     getCurriculum,
     listCurriculaFor,
+    forkCurriculum,
     createTerm,
     updateTerm,
     deleteTerm,

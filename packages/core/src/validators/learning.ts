@@ -113,6 +113,10 @@ export const UpdateCurriculumSchema = z.object({
   description: z.string().nullish(),
   is_template: z.boolean().optional(),
 })
+// Fork (S3): the only input is an optional name override for the copy; the deep-copy + lineage is service logic.
+export const ForkCurriculumSchema = z.object({
+  name: z.string().min(1).optional(),
+})
 
 export const CreateTermSchema = z.object({
   curriculum_id: z.string().min(1),

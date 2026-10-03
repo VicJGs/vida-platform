@@ -39,6 +39,7 @@ import type {
   UpdateTermSchema,
   CreateSubjectSchema,
   UpdateSubjectSchema,
+  ForkCurriculumSchema,
 } from '../../validators/learning'
 
 export interface LearningEducationServiceDeps {
@@ -60,6 +61,8 @@ export type CreateTermInput = z.input<typeof CreateTermSchema>
 export type UpdateTermInput = z.input<typeof UpdateTermSchema>
 export type CreateSubjectInput = z.input<typeof CreateSubjectSchema>
 export type UpdateSubjectInput = z.input<typeof UpdateSubjectSchema>
+/** Fork options (S3). `name` overrides the copy's name; omitted ⇒ the source curriculum's name. */
+export type ForkCurriculumInput = z.input<typeof ForkCurriculumSchema>
 
 /** Filter for `listSubjects` (ED-3 routing). All optional — an empty filter lists every live subject. */
 export interface SubjectFilter {
@@ -106,12 +109,16 @@ export interface LearningEducationService {
   getProgram(id: string): Promise<Program | null>
   listProgramsFor(parent: ParentRef): Promise<Program[]>
 
-  // --- curricula (ED-11) — fork lands in S3 ---
+  // --- curricula (ED-11) — CRUD (S1) + fork (S3) ---
   createCurriculum(programId: string, input: Omit<CreateCurriculumInput, 'program_id'>): Promise<Curriculum>
   updateCurriculum(id: string, input: UpdateCurriculumInput): Promise<Curriculum>
   deleteCurriculum(id: string): Promise<void>
   getCurriculum(id: string): Promise<Curriculum | null>
   listCurriculaFor(programId: string): Promise<Curriculum[]>
+  /** S3 — deep-copy a curriculum's live terms + subjects into a new tree with a `forked_from_id` lineage
+   *  pointer; the copy is a working instance (`is_template=false`, BR-LE-S3-3). The source is never mutated
+   *  (BR-LE-S3-2). Throws `CurriculumNotFoundError` if the source is missing/soft-deleted. */
+  forkCurriculum(sourceId: string, input?: ForkCurriculumInput): Promise<Curriculum>
 
   // --- terms (ED-12) — hierarchical (year ⊃ semester ⊃ term) ---
   createTerm(curriculumId: string, input: Omit<CreateTermInput, 'curriculum_id'>): Promise<Term>
@@ -174,5 +181,16 @@ export class UnroutedSubjectError extends Error {
   constructor(detail: string) {
     super(`Subject parent chain does not resolve: ${detail}`)
     this.name = 'UnroutedSubjectError'
+  }
+}
+/** Exported typed vocabulary for "a write was attempted against an immutable curriculum template" (ED-11).
+ *  Per interpretation R9, this has NO wired throw site in S3: `forkCurriculum` writes only new rows, so the
+ *  base is never mutated BY CONSTRUCTION (BR-LE-S3-2) — there is nothing to throw at. It is exported so the
+ *  ratified seam surface is complete and a future mutable-template-edit path (M2+) can wire it without a
+ *  signature change (the `IntegrationConsentError` books-S10 precedent). `[R9; slice-map.md:20; seam-contract.md:75]` */
+export class TemplateImmutableError extends Error {
+  constructor(id: string) {
+    super(`Curriculum is an immutable template: ${id}`)
+    this.name = 'TemplateImmutableError'
   }
 }

@@ -22,6 +22,7 @@ import {
   TermNotFoundError,
   SubjectNotFoundError,
   UnroutedSubjectError,
+  TemplateImmutableError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -329,5 +330,172 @@ describe('mod-learning-education S2 — subjects + routing enforcement', () => {
     await h.svc.deleteSubject(a.id)
     expect(await h.svc.listSubjects({ curriculumId: cur.id })).toHaveLength(1) // soft-deleted filtered out
     void loose
+  })
+})
+
+// ============================================================================
+// S3 — Curriculum fork + lineage (ED-11 · A3 · H10). Deep-copy terms/subjects into a new tree with a
+// `forked_from_id` lineage pointer; base never mutated (by construction); `TemplateImmutableError` exported
+// vocabulary (R9, no wired throw). Maps 1:1 to PLAN §4 acceptance (14 cases).
+// ============================================================================
+describe('mod-learning-education S3 — curriculum fork + lineage (ED-11/A3/H10)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // A program + source curriculum with 2 terms (term2 nested under term1) + 3 subjects:
+  //   sA → curriculum-only · sB → curriculum + term2 · sC → term-only (curriculum_id null, term_id=term2).
+  async function sourceTree(opts: { isTemplate?: boolean } = {}) {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc CS' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'CS Core', is_template: opts.isTemplate ?? false })
+    const term1 = await h.svc.createTerm(cur.id, { level: 'year', name: 'Year 1' })
+    const term2 = await h.svc.createTerm(cur.id, { level: 'semester', name: 'Sem 1', parent_term_id: term1.id })
+    const sA = await h.svc.createSubject({ title: 'Algorithms', curriculum_id: cur.id, status: 'in_progress' })
+    const sB = await h.svc.createSubject({ title: 'Calculus', curriculum_id: cur.id, term_id: term2.id })
+    const sC = await h.svc.createSubject({ title: 'Seminar', term_id: term2.id }) // term-only
+    return { prog, cur, term1, term2, sA, sB, sC }
+  }
+
+  it('1 — deep-copies curriculum + live terms + all subjects into a new tree', async () => {
+    const { cur } = await sourceTree()
+    const fork = await h.svc.forkCurriculum(cur.id)
+    expect(fork.id).not.toBe(cur.id)
+    expect(fork.forked_from_id).toBe(cur.id)
+    expect(fork.is_template).toBe(false)
+    expect(fork.program_id).toBe(cur.program_id)
+    expect(await h.svc.listTermsFor(fork.id)).toHaveLength(2)
+    expect(await h.svc.listSubjects()).toHaveLength(6) // 3 source + 3 cloned (incl. the term-only sC)
+    expect(await h.svc.listSubjects({ curriculumId: fork.id })).toHaveLength(2) // sA + sB clones
+  })
+
+  it('2 — remaps a nested parent_term_id to the CLONED parent id', async () => {
+    const { cur, term1 } = await sourceTree()
+    const fork = await h.svc.forkCurriculum(cur.id)
+    const newTerms = await h.svc.listTermsFor(fork.id)
+    const root = newTerms.find((t) => t.parent_term_id == null)!
+    const nested = newTerms.find((t) => t.parent_term_id != null)!
+    expect(nested.parent_term_id).toBe(root.id) // cloned parent, NOT the source's
+    expect(nested.parent_term_id).not.toBe(term1.id)
+    expect(nested.level).toBe('semester')
+  })
+
+  it('3 — remaps subject routing to the new curriculum/terms', async () => {
+    const { cur } = await sourceTree()
+    const fork = await h.svc.forkCurriculum(cur.id)
+    const nested = (await h.svc.listTermsFor(fork.id)).find((t) => t.parent_term_id != null)!
+    const curRouted = await h.svc.listSubjects({ curriculumId: fork.id })
+    expect(curRouted.map((s) => s.title).sort()).toEqual(['Algorithms', 'Calculus'])
+    for (const s of curRouted) expect(s.curriculum_id).toBe(fork.id)
+    const calc = curRouted.find((s) => s.title === 'Calculus')!
+    expect(calc.term_id).toBe(nested.id) // remapped
+  })
+
+  it('4 — every cloned row gets a fresh id (none shared with the source)', async () => {
+    const { cur, term1, term2, sA, sB } = await sourceTree()
+    const fork = await h.svc.forkCurriculum(cur.id)
+    const srcIds = new Set([cur.id, term1.id, term2.id, sA.id, sB.id])
+    expect(srcIds.has(fork.id)).toBe(false)
+    for (const t of await h.svc.listTermsFor(fork.id)) expect(srcIds.has(t.id)).toBe(false)
+    for (const s of await h.svc.listSubjects({ curriculumId: fork.id })) expect(srcIds.has(s.id)).toBe(false)
+  })
+
+  it('5 — the source tree is byte-unchanged after fork (base never mutated)', async () => {
+    const { cur, term1 } = await sourceTree()
+    await h.svc.forkCurriculum(cur.id)
+    const srcCur = await h.svc.getCurriculum(cur.id)
+    expect(srcCur?.is_template).toBe(false)
+    expect(srcCur?.forked_from_id).toBeNull() // the source is not itself a fork
+    expect(await h.svc.listTermsFor(cur.id)).toHaveLength(2)
+    expect(await h.svc.listSubjects({ curriculumId: cur.id })).toHaveLength(2)
+    const srcNested = (await h.svc.listTermsFor(cur.id)).find((t) => t.parent_term_id != null)!
+    expect(srcNested.parent_term_id).toBe(term1.id) // source linkage intact
+  })
+
+  it('6 — clone resets progress to null yet preserves metadata (load-bearing via a raw seed)', async () => {
+    const { cur, sA } = await sourceTree()
+    // Seed a NON-null progress + real metadata on the source (raw write bypasses the never-settable guard) so
+    // this test can actually distinguish "reset to null" from "copied the source value", and prove metadata
+    // survives the fork (N1). Without the seed the source progress is already null and the test is trivial.
+    h.bsql.prepare('UPDATE subjects SET progress = ?, metadata = ? WHERE id = ?').run(42, '{"note":"keep"}', sA.id)
+    const fork = await h.svc.forkCurriculum(cur.id)
+    const clone = (await h.svc.listSubjects({ curriculumId: fork.id })).find((s) => s.title === 'Algorithms')!
+    expect(clone.progress).toBeNull() // RESET (R2/M3) — not copied; the source is 42
+    expect(clone.metadata).toEqual({ note: 'keep' }) // PRESERVED verbatim (N1 — unlike createSubject's null)
+    expect((await h.svc.getSubject(sA.id))?.progress).toBe(42) // source untouched → distinguishes reset from copy
+  })
+
+  it('7 — a term-only subject keeps curriculum_id null; term_id remapped (shape preserved)', async () => {
+    const { cur } = await sourceTree()
+    const fork = await h.svc.forkCurriculum(cur.id)
+    const nested = (await h.svc.listTermsFor(fork.id)).find((t) => t.parent_term_id != null)!
+    const seminar = (await h.svc.listSubjects({ termId: nested.id })).find((s) => s.title === 'Seminar')!
+    expect(seminar.curriculum_id).toBeNull() // NOT normalized to fork.id
+    expect(seminar.term_id).toBe(nested.id)
+  })
+
+  it('8 — soft-deleted source terms/subjects are NOT copied', async () => {
+    const { cur, term2, sA } = await sourceTree()
+    await h.svc.deleteTerm(term2.id) // soft-delete the nested leaf term
+    await h.svc.deleteSubject(sA.id) // soft-delete a subject
+    const fork = await h.svc.forkCurriculum(cur.id)
+    expect(await h.svc.listTermsFor(fork.id)).toHaveLength(1) // only term1 survived
+    const curRouted = await h.svc.listSubjects({ curriculumId: fork.id })
+    expect(curRouted.map((s) => s.title)).toEqual(['Calculus']) // sB; sA deleted, sC was term-only on a dead term
+    // sB's term (term2) was soft-deleted → not in the clone map → its term_id drops to null (BR-LE-S3-5 subject-side)
+    expect(curRouted[0]!.term_id).toBeNull()
+  })
+
+  it('9 — a term whose parent was soft-deleted gets parent_term_id null on the clone', async () => {
+    const { cur, term1 } = await sourceTree()
+    await h.svc.deleteTerm(term1.id) // term2.parent_term_id now points at a soft-deleted parent
+    const fork = await h.svc.forkCurriculum(cur.id)
+    const newTerms = await h.svc.listTermsFor(fork.id)
+    expect(newTerms).toHaveLength(1) // only term2 is live
+    expect(newTerms[0]!.parent_term_id).toBeNull() // dangling parent → null (no-FK tolerance)
+  })
+
+  it('10 — name override vs source name', async () => {
+    const { cur } = await sourceTree()
+    expect((await h.svc.forkCurriculum(cur.id, { name: 'My CS Plan' })).name).toBe('My CS Plan')
+    expect((await h.svc.forkCurriculum(cur.id)).name).toBe(cur.name) // 'CS Core'
+  })
+
+  it('11 — fork on a missing or soft-deleted source throws CurriculumNotFoundError', async () => {
+    const { cur } = await sourceTree()
+    await expect(h.svc.forkCurriculum('nope')).rejects.toThrow(CurriculumNotFoundError)
+    await h.svc.deleteCurriculum(cur.id)
+    await expect(h.svc.forkCurriculum(cur.id)).rejects.toThrow(CurriculumNotFoundError)
+  })
+
+  it('12 — forking a template yields a non-template copy; the base template is unchanged', async () => {
+    const { cur } = await sourceTree({ isTemplate: true })
+    expect((await h.svc.getCurriculum(cur.id))?.is_template).toBe(true)
+    const fork = await h.svc.forkCurriculum(cur.id)
+    expect(fork.is_template).toBe(false) // BR-LE-S3-3 (F5 structural default)
+    expect(fork.forked_from_id).toBe(cur.id)
+    expect((await h.svc.getCurriculum(cur.id))?.is_template).toBe(true) // base untouched
+  })
+
+  it('13 — forking an empty curriculum copies just the curriculum (no crash)', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const empty = await h.svc.createCurriculum(prog.id, { name: 'Empty' })
+    const fork = await h.svc.forkCurriculum(empty.id)
+    expect(fork.forked_from_id).toBe(empty.id)
+    expect(await h.svc.listTermsFor(fork.id)).toHaveLength(0)
+    expect(await h.svc.listSubjects({ curriculumId: fork.id })).toHaveLength(0)
+  })
+
+  it('14 — TemplateImmutableError is exported vocabulary (R9); updateCurriculum on a template still succeeds', async () => {
+    expect(typeof TemplateImmutableError).toBe('function')
+    const err = new TemplateImmutableError('x')
+    expect(err).toBeInstanceOf(Error)
+    expect(err.name).toBe('TemplateImmutableError')
+    // No wired throw this slice: updating a template is NOT blocked (BR-LE-S3-2b / R9).
+    const { cur } = await sourceTree({ isTemplate: true })
+    const upd = await h.svc.updateCurriculum(cur.id, { name: 'Renamed Template' })
+    expect(upd.name).toBe('Renamed Template')
   })
 })

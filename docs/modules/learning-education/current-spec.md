@@ -10,8 +10,8 @@
 `createLearningEducationService(deps)` — the ① backend service tier for **the Learning hub (Education)** over
 DB-4 `024_learning_education` (15 tables, the heaviest DB-4 group). The full design lives in
 `docs/features/learning/education/` (aspect docs) + `docs/features/learning/education/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **① IN PROGRESS — S2 of 10 shipped** (hierarchy
-spine + routing · subjects + DB-11 reconcile). Next: S3 curriculum fork.
+(interpretation · slice-map · seam-contract). Build state: **① IN PROGRESS — S3 of 10 shipped** (hierarchy
+spine + routing · subjects + DB-11 reconcile · curriculum fork + lineage). Next: S4 schedule + class sessions.
 
 A **pure service tier over a finished schema** (no DDL — DB-4 #12 authored all 15 tables; the aspect docs'
 "⚠ INTENDED/no schema" language is pre-DB-4 and stale). The 7 Education entity_types
@@ -31,7 +31,8 @@ no `this.`. Deps grow per slice (S4+ add spaces/notes/sessions/sessionRegistry/j
 | `createProgram(parent, input)` | ED-2 | `parent:{type:'institution'\|'self_taught', id}`; **parent must resolve** (fail-loud) or `Institution/SelfTaughtPathNotFoundError` |
 | `updateProgram/deleteProgram/getProgram/listProgramsFor(parent)` | ED-2 | `listProgramsFor` filters `deleted_at` (R4) |
 | `createCurriculum(programId, input)` | ED-11 | program must resolve (`ProgramNotFoundError`); `forked_from_id:null` on scratch build (fork = S3); `is_template` default false |
-| `updateCurriculum/deleteCurriculum/getCurriculum/listCurriculaFor(programId)` | ED-11 | — |
+| `updateCurriculum/deleteCurriculum/getCurriculum/listCurriculaFor(programId)` | ED-11 | — (unchanged at S3; no template write-guard) |
+| `forkCurriculum(sourceId, {name?})` | ED-11 · A3 · H10 | **S3** — deep-copy live terms+subjects → new tree; `forked_from_id=source`; copy `is_template=false`; base never mutated (writes only new rows); term/subject refs remapped (shape-preserved), `progress` reset, `metadata` preserved; `CurriculumNotFoundError` on missing/deleted source. `TemplateImmutableError` is EXPORTED vocabulary, not wired (R9) |
 | `createTerm(curriculumId, input)` | ED-12 | hierarchical `level` ∈ {year,semester,term}; optional `parent_term_id` (must resolve if given); curriculum must resolve |
 | `updateTerm/deleteTerm/getTerm/listTermsFor(curriculumId)` | ED-12 | — |
 | `createSubject(input)` | ED-3 | the study unit (`subjects` = reshaped `courses`); routing ENFORCED (`UnroutedSubjectError` iff a GIVEN ref fails; empty routing allowed, A1); `progress` never settable (R2/M3); `course_type` nullable modality (R6) |
@@ -49,7 +50,7 @@ no `this.`. Deps grow per slice (S4+ add spaces/notes/sessions/sessionRegistry/j
 - Row→interface mappers cast the plain-text `_sync_status` to the union.
 
 ## Not yet built (homed per slice-map.md)
-S3 curriculum fork · S4 schedule + class sessions · S5 ICS (deny-safe fetch) · S6 grading builder ·
+S4 schedule + class sessions · S5 ICS (deny-safe fetch) · S6 grading builder ·
 S7 assessments + grade/GPA compute · S8 education measurement · S9 subject vault + tags ·
 S10 cross-module fan-out + Journal. Frontend (dashboards/hub/builders) = ② `fe-learning-education` (P6).
 M2 defers: ICS live fetch, document extraction (AI), real Tasks→Education reads.
