@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-02 by /session-end -->
+<!-- Last updated: 2026-10-03 by /session-end -->
 
 
 ## frontend-replan (G0–G6) — surface-first frontend re-plan (2026-10-01, worktree-frontend-track)
@@ -722,3 +722,19 @@ gitleaks clean. Key decisions logged above (S1–S10 rows). Composes the real `s
 `journals`/`effects` substrates; deny-safe M2 ports (`ingestion?`/`attachment?`/`ai?`/`preferences?`/`effects?`) swap
 with zero signature change. Derive-on-read SSOT (progress/quota/pace/stats). Scope guards honored: C-E2 (no economy),
 C-M1 (no stored measurement axes), BK-12/14/18. Currency: `docs/modules/books/current-*`. ② `fe-books` (LIF-188) = P6.
+
+## fe-codec-theme ② — CODEC ThemeProvider, S1+S2 (2026-10-03, branch `fe-codec-theme`)
+The M1.2.1 frontend head. Extends the ds-2/ds-4 token pipeline from 1 placeholder light/dark theme to **3 preset
+families (editorial · reader · quietDesk) × light/dark = 6 themes + 60 sub-themes**, each with its own palette + fonts.
+S1 (`b5946d7`) tokens+emitter; S2 (`feb3ab2`) config+self-hosted fonts. S3 (provider+density+Visual Gate) + PR pending.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-03 | theming | Tamagui theme naming for N presets | **scheme-first** `${mode}_${preset}` (editorial=bare `light`/`dark`) | TG 2.6.2 `validSchemes={light,dark}`, scheme=first `_`-segment; `${preset}_dark` breaks inversion/reset (verified `useThemeState.cjs:312/317/377`) | hard (API/union) |
+| 2026-10-03 | theming | per-preset component sub-themes | emit all `${mode}_${preset}_<Comp>` (~60) | resolver tries ONE `${base}_${comp}`, no bare-`<Comp>` fallback (`:377`) — O3 "no explosion" refuted | hard |
+| 2026-10-03 | theming | per-preset font-family (fonts are global in TG) | **CSS-var seam** — 2 var-driven `createFont` keys, provider sets `--vida-font-*` per preset | no per-theme font hook in TG 2.6.2 (bakes static `font_<key>` class, DEF-U8-h class) | easy |
+| 2026-10-03 | theming | density mechanism | **provider CSS data-attr scale** (NOT a token/theme swap) — deferred to S3 | `space`/`size` resolve against global token scale, theme swaps color only (DEF-U8-h) | easy |
+| 2026-10-03 | fonts | font serving | self-hosted latin-subset woff2 + hand-authored `@font-face`, **no npm font deps**; preload Spectral only (21.7 KB < 80 KB) | local-first/ZK (no CDN) + ADR-001 "no extra dependency" ethos; slice-map "@font-face" | easy |
+| 2026-10-03 | fonts | chrome role (Inter · IBM Plex Sans) | **deferred** with the chrome role — `fonts.ts` data only, unwired | slice scope = "display/body pairs"; chrome has no consumer yet | easy |
+| 2026-10-03 | process | B10 AA contrast verification | **full matrix** test (every rendered pair × preset × mode) | light-only test shipped a dark warm-surface regression (independent g2 caught it) → [[contrast-test-must-be-full-matrix-not-light-only]] | n/a |
+| 2026-10-03 | web test | stale `/notes` integration assertion (`550af2b`) | assert BR-4 degrade (not-found), not a built Notes heading | `/notes` route torn down `eaf64f8` (→ fe-notes-and-pages M1.1+); test left stale | easy |
