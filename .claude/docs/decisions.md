@@ -1,6 +1,17 @@
 <!-- Last updated: 2026-10-02 by /session-end -->
 
 
+## mod-learning-education ① (S1–S2) — the Learning hub service tier (2026-10-02, worktree mod-learning-education)
+`createLearningEducationService` over DB-4 `024_learning_education` (15 tables), Entity Delivery Flow. BASELINE reconciled the pre-DB-4 "INTENDED" aspect docs against the built schema (all resolved @ DB-4 + rerun CRITIQUE-CLEAN). Approval 1 granted (10-slice decomposition; g1 critic REVISE→folded). **S1** hierarchy spine + `resolveParentChain`; **S2** subjects + `Course`→`Subject` DB-11 reconcile. Built in a dedicated worktree after a shared-tree collision with the parallel `frontend-track` session. Full detail: `.claude/tasks/mod-learning-education.md` + `docs/features/learning/education/delivery/*` + `docs/modules/learning-education/current-*`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-02 | learning-education | subject routing minimum anchor | fully-unrouted subject ALLOWED (empty curriculum+term); a GIVEN ref must resolve | DB-4 schema `curriculum_id` nullable "per A1 optional depth" (learning.ts:100) + sparse/progressively-fillable intent (ED-14); "never orphaned flat list" = v2 anti-pattern, not a creation mandate | Yes (flip `assertRouting` to require ≥1 anchor) — flagged for Victor override |
+| 2026-10-02 | learning-education | `Course`→`Subject` DB-11 | rename + drop inline `tags`→entity_tags, progress→nullable(M3), counters→nullable, +curriculum_id/term_id/degree_tier | schema reframe; zero remaining `Course` interface consumer | Yes |
+| 2026-10-02 | learning-education | `subjects.metadata` read | defensive parse (malformed/non-JSON ⇒ null) | superseded v1 slot likely holds legacy non-JSON; R10 defensive-parse precedent (books/preferences/checkins) | Yes |
+| 2026-10-02 | learning-education | entity_type registration | compose the 7 already-registered (DB-4 #12 `_registry.ts`), no `register` | g1 B2 — DB-4 already seeded them; ① composes | Yes |
+| 2026-10-02 | learning-education | effects fan-out seam | inject `effects?:{rail,registry}` dormant at M1 (S10) | g1 B1 — emit ≠ session `allowed_effects:[]`; books/knowledge precedent | Yes |
+
 ## frontend-replan (G0–G6) — surface-first frontend re-plan (2026-10-01, worktree-frontend-track)
 The whole ② UI tier re-planned surface-first (surface = the page the user navigates, not module-twin). P1–P6 experience vision captured + G0–G6 gated + committed (9 gate commits). Reshape ledger APPROVED + pre-staged; Linear execution DEFERRED to main (worktree-sync unsafe). Full detail in `.claude/tasks/frontend-replan.md` + `docs/specs/foundation/frontend-replan/*` + `frontend-quality-bar/_index.md`.
 
