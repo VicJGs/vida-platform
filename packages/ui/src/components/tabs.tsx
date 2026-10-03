@@ -18,7 +18,7 @@ import { ensureTabsStyles } from '../internal/tabs-styles'
 
 // UI-1 · Tabs (primitive 6/10, molecular) — implements ds-5-primitive-contracts/tabs.md against Tamagui v2.
 // Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u6-tabs.md.
-// - name:'Tabs' scopes the light_/dark_Tabs sub-theme ($text/$textActive/$indicator/$border) over the whole subtree.
+// - name:'Tabs' scopes the light_/dark_Tabs sub-theme ($text/$colorTextPrimary/$colorBrandPrimary/$border) over the whole subtree.
 // - The tab strip is generated from `items`; the panels are supplied as <Tabs.Panel value> children (the ARIA
 //   contract forces a Tabs-owned role="tabpanel" wrapper — DEF-U6-a). Only the active panel is mounted (D5).
 // - WAI-ARIA APG tablist: roving tabindex, AUTOMATIC activation (arrow moves selection + panel; Tab → into panel),
@@ -67,8 +67,8 @@ const TabList = styled(View, {
   position: 'relative', // the indicator is absolutely positioned against this (offsetLeft/Top measured relative to it)
   variants: {
     orientation: {
-      horizontal: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '$border' },
-      vertical: { flexDirection: 'column', borderLeftWidth: 1, borderColor: '$border' },
+      horizontal: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '$colorBorderDefault' },
+      vertical: { flexDirection: 'column', borderLeftWidth: 1, borderColor: '$colorBorderDefault' },
     },
   } as const,
   defaultVariants: { orientation: 'horizontal' },
@@ -103,8 +103,8 @@ const TabText = styled(Text, {
   userSelect: 'none',
   variants: {
     selected: {
-      true: { color: '$textActive' },
-      false: { color: '$text' }, // hover strengthen → injected CSS (.vida-tabs-label), B12 instant swap
+      true: { color: '$colorTextPrimary' },
+      false: { color: '$colorTextMuted' }, // hover strengthen → injected CSS (.vida-tabs-label), B12 instant swap
     },
     size: {
       sm: { fontSize: '$caption' },
@@ -116,11 +116,11 @@ const TabText = styled(Text, {
 })
 
 // The selection indicator — an absolute bar; position/size set via inline style (transform animates, width/height
-// resize instantly — §12 D3). backgroundColor = $indicator.
+// resize instantly — §12 D3). backgroundColor = $colorBrandPrimary.
 const Indicator = styled(View, {
   name: 'Tabs',
   position: 'absolute',
-  backgroundColor: '$indicator',
+  backgroundColor: '$colorBrandPrimary',
   pointerEvents: 'none',
 })
 

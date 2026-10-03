@@ -1,19 +1,26 @@
 import type { Preview } from '@storybook/react-vite'
 import { View } from '@tamagui/core'
-import { UIProvider, type ThemeName } from '../src/provider'
+import { UIProvider } from '../src/provider'
+import type { ThemeDensity, ThemeMode, ThemePreset } from '../src/theme-resolution'
 
-// U0 (UI-1) — global decorator roots every story in the real @vida/ui provider, driven by a `theme`
-// toolbar global. UIProvider re-roots via TamaguiProvider `defaultTheme` (provider.tsx), so switching the
-// toolbar re-renders the whole tree under light｜dark — the exact surface the component Visual Gate approves
-// (8 states × light｜dark). This proves the DS-4 switch mechanism works through Storybook's iframe.
+// U0 (UI-1) → fe-codec-theme S3 — global decorator roots every story in the real @vida/ui provider, now driven by the
+// full CODEC selection (preset × mode × density) via three toolbar globals. UIProvider re-roots the theme (color) via
+// TamaguiProvider `defaultTheme` AND applies the per-preset font vars + density CSS scale on <html> (provider.tsx) — so
+// switching any toolbar control re-renders the whole tree under that cell. This is the S3 Visual-Gate surface: every
+// story is reviewable across the 3 presets × light｜dark × calm｜dense matrix (the prior `theme` toolbar is superseded).
 //
-// U3 — the canvas is painted with the theme's page surface ($colorSurfacePrimary: white light / navy dark) so
-// dark mode is actually reviewable. Without it, on-canvas content like a Checkbox's label (correctly light in
-// dark mode) is invisible on Storybook's default white iframe body. Benefits every story.
+// U3 — the canvas is painted with the theme's page surface ($colorSurfacePrimary) so dark mode is reviewable (on-canvas
+// light-in-dark content would be invisible on Storybook's white iframe). Benefits every story.
 const preview: Preview = {
   decorators: [
     (Story, ctx) => (
-      <UIProvider theme={ctx.globals.theme as ThemeName}>
+      <UIProvider
+        selection={{
+          preset: ctx.globals.preset as ThemePreset,
+          mode: ctx.globals.mode as ThemeMode,
+          density: ctx.globals.density as ThemeDensity,
+        }}
+      >
         <View backgroundColor="$colorSurfacePrimary" padding="$16" minHeight="100vh">
           <Story />
         </View>
@@ -21,10 +28,23 @@ const preview: Preview = {
     ),
   ],
   globalTypes: {
-    theme: {
-      description: 'Vida theme (light｜dark)',
+    preset: {
+      description: 'Vida codec preset (token family + fonts)',
       toolbar: {
-        title: 'Theme',
+        title: 'Preset',
+        icon: 'paintbrush',
+        items: [
+          { value: 'editorial', title: 'Editorial (default)' },
+          { value: 'reader', title: 'The Reader' },
+          { value: 'quietDesk', title: 'Quiet Desk' },
+        ],
+        dynamicTitle: true,
+      },
+    },
+    mode: {
+      description: 'Light｜dark scheme',
+      toolbar: {
+        title: 'Mode',
         icon: 'contrast',
         items: [
           { value: 'light', title: 'Light' },
@@ -33,8 +53,20 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
+    density: {
+      description: 'Calm｜dense air (spacing + type)',
+      toolbar: {
+        title: 'Density',
+        icon: 'component',
+        items: [
+          { value: 'calm', title: 'Calm' },
+          { value: 'dense', title: 'Dense' },
+        ],
+        dynamicTitle: true,
+      },
+    },
   },
-  initialGlobals: { theme: 'light' },
+  initialGlobals: { preset: 'editorial', mode: 'light', density: 'calm' },
 }
 
 export default preview

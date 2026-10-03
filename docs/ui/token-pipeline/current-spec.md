@@ -22,7 +22,7 @@ packages/ui/src/themes/
 ├── build-tokens.mjs       # Style Dictionary build + checkLayers (B2 + B8 4pt-grid) + 5 custom formats + AUX skip (B9/B11)
 ├── variables.css          # GENERATED — design.md §XII CSS custom properties (var() chain; incl. aux font*/shadow/motion)
 ├── tokens.ts              # GENERATED — Tamagui createTokens() (5 categories + `true` defaults; aux excluded)
-├── themes.ts              # GENERATED — light + PARALLEL DARK base + light_<Comp>/dark_<Comp> sub-themes
+├── themes.ts              # GENERATED — 6 scheme-first base themes (editorial=light/dark · reader/quietDesk=${mode}_${preset}) + 60 ${mode}[_preset]_<Comp> sub-themes (fe-codec S1, B-codec-1)
 ├── fonts.ts               # GENERATED — typography tokens as typed data for DS-4 createFont (aux not in createTokens)
 ├── motion.ts              # GENERATED (DS-3) — duration/easing tokens as typed data for DS-4 createAnimations (B11)
 └── shadow.ts              # GENERATED (UI-1) — box-shadow literals as typed data for injected component CSS (Card, DEF-U5-e)

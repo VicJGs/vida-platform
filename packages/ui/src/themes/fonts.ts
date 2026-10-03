@@ -2,7 +2,7 @@
 
 // Typography tokens as typed data — DS-4 feeds these to Tamagui createFont (fonts ⊄ createTokens categories).
 export const fonts = {
-  fontFamily: { "body": "'Inter', system-ui, sans-serif", "display": "'Space Grotesk', system-ui, sans-serif" },
+  fontFamily: { "body": "'Spectral', Georgia, serif", "chrome": "'Inter', system-ui, sans-serif", "display": "'Spectral', Georgia, serif", "quietDeskBody": "'Source Serif 4', Georgia, serif", "quietDeskChrome": "'IBM Plex Sans', system-ui, sans-serif", "quietDeskDisplay": "'Source Serif 4', Georgia, serif", "readerBody": "'Newsreader', Georgia, serif", "readerChrome": "'Inter', system-ui, sans-serif", "readerDisplay": "'Fraunces', Georgia, serif" },
   fontSize: { "body": 16, "caption": 12, "display": 36, "displayLarge": 60, "heading": 24, "small": 14, "subheading": 18 },
   fontWeight: { "bold": 700, "medium": 500, "regular": 400, "semibold": 600 },
   letterSpacing: { "normal": 0, "tight": -0.02, "wide": 0.02 },

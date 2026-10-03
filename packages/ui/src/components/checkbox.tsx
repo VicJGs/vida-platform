@@ -14,7 +14,7 @@ import { ensureCheckboxStyles } from '../internal/checkbox-styles'
 // Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u3-checkbox.md.
 // - A real <input type="checkbox"> (native role/Space-toggle/form participation/`indeterminate`) sits opacity:0,
 //   absolute-filling a styled BOX; a real <label> (render:'label') wraps both so label-click toggles natively.
-// - name:'Checkbox' establishes the .t_Checkbox sub-theme scope (light_/dark_Checkbox → $border/$backgroundChecked/
+// - name:'Checkbox' establishes the .t_Checkbox sub-theme scope (light_/dark_Checkbox → $border/$colorBrandEmphasis/
 //   $checkmark/$borderError/$radius). The state visuals (fill/checkmark/dash/ring/error) are pure CSS off the input's
 //   `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes (checkbox-styles.ts) — no re-render on toggle
 //   (perf budget). React only sets `.indeterminate` (a DOM property, not an attribute) via a layout effect.
@@ -55,7 +55,7 @@ const CheckboxBox = styled(View, {
   alignItems: 'center',
   justifyContent: 'center',
   borderWidth: 1,
-  borderColor: '$border',
+  borderColor: '$colorBorderDefault',
   // radius.control (md) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
   borderRadius: '$md',
   backgroundColor: 'transparent',
@@ -71,7 +71,7 @@ const CheckboxBox = styled(View, {
 /** Checkmark — stroke = currentColor (set to $checkmark on the wrapper). Shown/animated via CSS (checkbox-styles.ts). */
 function Check({ size }: { size: number }) {
   return (
-    <View className="vida-checkbox-check" color="$checkmark" pointerEvents="none">
+    <View className="vida-checkbox-check" color="$colorTextInverse" pointerEvents="none">
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
           d="M5 12.5 10 17.5 19 7"
@@ -88,7 +88,7 @@ function Check({ size }: { size: number }) {
 /** Indeterminate dash — a single bar, currentColor = $checkmark. Shown via CSS on :indeterminate. */
 function Dash({ size }: { size: number }) {
   return (
-    <View className="vida-checkbox-dash" color="$checkmark" pointerEvents="none" position="absolute">
+    <View className="vida-checkbox-dash" color="$colorTextInverse" pointerEvents="none" position="absolute">
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M6 12h12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
       </svg>

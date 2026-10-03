@@ -29,6 +29,8 @@ _(none active — DB-4 completed; see Completed below)_
 
 - perf-framework-chunk-split: .claude/tasks/perf-framework-chunk-split.md  (planned 2026-08-17 — hygiene follow-up from UI-4/S5. `apps/web/vite.config.ts` manualChunks to split React+Tamagui+TanStack into a `framework` chunk so the initial chunk meets performance-strategy §6 (< 80 KB / < 120 KB gz). S5 measured ~154 KB gz initial AFTER the BR-7 sigma lazy-split — the residual is framework, not sigma. NOT folded into S5 (BR-7 ≠ framework-split; per-unit discipline). Own §XXVI gate; unfiled in Linear — create at pickup.)
 
+- research-preset-accent-on-components: .claude/tasks/research-preset-accent-on-components.md  (✅ RESOLVED 2026-10-03 — flagged from fe-codec-theme S3, then triaged STRUCTURAL + solved same session on branch fe-codec-theme (Option A, Victor-approved full scope). The 21 preset-sensitive component-sub-theme-key usages across 10 primitives now consume DIRECT semantic tokens (inherit the preset at component scope); per-preset comp sub-themes retired (themes 66→26). Visual-Gate-verified; shipped in PR #74. Bug-unit: docs/specs/fixes/preset-accent-component-subthemes/.)
+
 ## Parked / Superseded
 _(none)_
 

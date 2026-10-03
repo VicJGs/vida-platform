@@ -23,9 +23,23 @@ describe('DS-4 tamagui.config (runtime)', () => {
   it('B14 — dark is a parallel theme: resolves DIFFERENTLY from light at runtime', () => {
     const light = val(c.themes?.light?.colorSurfacePrimary)
     const dark = val(c.themes?.dark?.colorSurfacePrimary)
-    expect(light).toBe('#FFFFFF')
-    expect(dark).toBe('#0F172A')
+    expect(light).toBe('#FBFBFA') // editorial paper (default preset; fe-codec S1 repointed off the DS-2 placeholder)
+    expect(dark).toBe('#16181D') // editorial ink
     expect(light).not.toBe(dark)
+  })
+
+  it('fe-codec S2 — all 6 scheme-first base themes resolve on config.themes', () => {
+    for (const name of ['light', 'dark', 'light_reader', 'dark_reader', 'light_quietDesk', 'dark_quietDesk']) {
+      expect(c.themes?.[name], name).toBeDefined()
+      expect(val(c.themes[name].colorSurfacePrimary)).toMatch(/^#/) // a real resolved color
+    }
+    expect(Object.keys(c.themes).length).toBe(26) // 6 base + 20 editorial light_/dark_<Comp>; per-preset comp sub-themes retired (accent-inherit fix — preset color reaches components via direct semantics, not sub-themes)
+  })
+
+  it('fe-codec S2 — font family is the CSS-var seam (editorial family as fallback; provider swaps per preset)', () => {
+    // Tamagui bakes this into the static .font_body/.font_display class; S3 overrides --vida-font-* per preset.
+    expect(c.fonts?.body?.family).toBe("var(--vida-font-body, 'Spectral', Georgia, serif)")
+    expect(c.fonts?.display?.family).toBe("var(--vida-font-display, 'Spectral', Georgia, serif)")
   })
 
   it('B15 — animations derive from motion.ts (duration + easing, losslessly, via the CSS driver)', () => {

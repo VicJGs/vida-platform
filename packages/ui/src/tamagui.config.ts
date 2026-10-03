@@ -9,30 +9,9 @@
 import { createFont, createTamagui } from '@tamagui/core'
 import { createAnimations } from '@tamagui/animations-css'
 import { tokens } from './themes/tokens'
-import {
-  light,
-  dark,
-  light_Button,
-  dark_Button,
-  light_Input,
-  dark_Input,
-  light_Checkbox,
-  dark_Checkbox,
-  light_Select,
-  dark_Select,
-  light_Card,
-  dark_Card,
-  light_Tabs,
-  dark_Tabs,
-  light_Menu,
-  dark_Menu,
-  light_Dialog,
-  dark_Dialog,
-  light_Popover,
-  dark_Popover,
-  light_Toast,
-  dark_Toast,
-} from './themes/themes'
+// fe-codec S1/S2: all 66 generated themes (6 scheme-first base + 60 <Comp> sub-themes). Namespace-spread so the roster
+// is the single source (themes.ts) — no hand-maintained import list to drift as presets/components are added.
+import * as themes from './themes/themes'
 import { fonts as f } from './themes/fonts'
 import { motion } from './themes/motion'
 
@@ -64,15 +43,19 @@ export const media = {
   wide: { minWidth: 1920 },
 } as const
 
+// fe-codec S2: per-preset font-family via a CSS-var seam. Tamagui bakes a STATIC `font_<key>` class whose font-family
+// comes from `family` at config time (no per-theme font hook in @tamagui/core@2.6.2 — getSplitStyles.cjs:288/687), so
+// the swap must be a CSS var the provider overrides per preset. The var FALLBACK is the editorial family (fonts.ts), so
+// with no provider override the app renders Editorial correctly (slice-safe). S3's provider sets --vida-font-* per preset.
 const bodyFont = createFont({
-  family: f.fontFamily.body,
+  family: `var(--vida-font-body, ${f.fontFamily.body})`,
   size: sizeScale,
   lineHeight: lineScale,
   weight: weightScale,
   letterSpacing: trackScale,
 })
 const displayFont = createFont({
-  family: f.fontFamily.display,
+  family: `var(--vida-font-display, ${f.fontFamily.display})`,
   size: sizeScale,
   lineHeight: lineScale,
   weight: weightScale,
@@ -92,30 +75,7 @@ const animations = createAnimations({
 
 export const config = createTamagui({
   tokens,
-  themes: {
-    light,
-    dark,
-    light_Button,
-    dark_Button,
-    light_Input,
-    dark_Input,
-    light_Checkbox,
-    dark_Checkbox,
-    light_Select,
-    dark_Select,
-    light_Card,
-    dark_Card,
-    light_Tabs,
-    dark_Tabs,
-    light_Menu,
-    dark_Menu,
-    light_Dialog,
-    dark_Dialog,
-    light_Popover,
-    dark_Popover,
-    light_Toast,
-    dark_Toast,
-  },
+  themes: { ...themes }, // all 66 (6 scheme-first base + 60 <Comp> sub-themes) — fe-codec S1/S2
   fonts: { body: bodyFont, display: displayFont },
   animations,
   media,
