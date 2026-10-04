@@ -1,4 +1,17 @@
-<!-- Last updated: 2026-10-03 by /session-end -->
+<!-- Last updated: 2026-10-04 by /session-end -->
+
+
+## fe-codec-patterns (② CODEC pattern-kit #2 · LIF-211, 2026-10-04, worktree)
+The behavioural half of the CODEC — the cross-cutting pattern-kit every `fe-*` surface inherits (decomposition §1.3). 5 slices, PR #75 merged (`c1dd1f0`). Detail in `.claude/tasks/archive/fe-codec-patterns.md` + `docs/specs/foundation/fe-codec-patterns/*`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-04 | state canon | the 8-state machine's home | **Reuse the `@vida/core` `TerminalState` canon** — `InteractionState` superset in `apps/web`, total `collapseToTerminal` back to the 4 literals; **NO new canon, NO `@vida/types` consolidation** | state-conventions.md:44-52 — the consolidation is deferred + belongs to the canon owner; a frontend unit imports/mirrors, never re-homes | n/a (grounded) |
+| 2026-10-04 | home split | where each primitive lives | **BR-2 boundary**: `@vida/ui` renders (state-as-prop, structural type); canon-importing logic + conventions → `apps/web` | `@vida/ui` can't import `@vida/core` (Tamagui-only); the `ViewState`/`list-view` precedent | n/a (grounded) |
+| 2026-10-04 | ReducedMotion | build vs ratify | **RATIFY, zero code** — the B12 enforcer already exists (`useReducedMotion` + `@media`/`motion.ts` across 8 primitives) | grep-before-net-new; a wrapper would duplicate the hook + fit Tamagui's prop-driven animation worse (over-engineering) | n/a |
+| 2026-10-04 | SyncStatus | honest M1 state set | **`saved`/`error` only** — no "saving" (writes are instant), no cloud claim; cloud states (synced/pending/offline/conflict) = M3 forward seam | P4 copy-honesty ("saved on this device, never synced to cloud"); AR-9 sync is a no-flush stub in M1 | yes (M3 extends) |
+| 2026-10-04 | ProviderRead | hook vs convention | **A `ProviderRead<T>` type + documented convention, NOT a `useProviderRead` hook** | a thin `useQuery` alias with no M1 consumer = ceremony; defer the hook to first-consumer-pull (the ReducedMotion lesson) | yes (pull the hook later) |
+| 2026-10-04 | HonestProgress | determinate fill motion | **`transform: scaleX`, never animated `width`**; indeterminate = `role=progressbar` w/ `aria-valuenow` omitted (APG) + transform-only shimmer (reduced-motion `@media`) | B12 (width is a layout prop); the W3C APG indeterminate signal | n/a (grounded) |
 
 
 ## frontend-replan (G0–G6) — surface-first frontend re-plan (2026-10-01, worktree-frontend-track)
