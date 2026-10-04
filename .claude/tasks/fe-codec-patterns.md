@@ -36,7 +36,14 @@
       **Visual Gate PASS (Brave, 6-cell preset×mode matrix + 375):** fonts swap (Spectral/Fraunces/Source Serif 4) ·
       accent reaches the Button (ink-blue/oxblood/olive) · surfaces swap · full-matrix AA (title 15.8–17.3 / body
       4.94–6.53, BOTH modes incl. warm-dark) · 375 layout clean. 8/8 unit · tsc 0 · eslint 0.
-- [ ] S4 — `SyncStatus` + `HonestProgress` (`@vida/ui`; Visual Gate)
+- [x] S4 — `SyncStatus` + `HonestProgress` (`@vida/ui`; Visual Gate) ✅
+      Spec `s4-sync-status.md` · §XXVI double-gate (g1 REVISE→3 folded: $pill→$full · indeterminate valuenow-omitted APG ·
+      B12 scaleX-not-width; preflight PASSED · g2 SHIP · pre-ship SHIP). Deferred-item RESOLVED (P4): honest M1 =
+      `saved`/`error`, no `saving`, no cloud claim; cloud states = M3 seam. `components/sync-status.tsx` +
+      `internal/sync-status-styles.ts` (+stories +test) · barrel · CLAUDE.md. Dot = direct semantic signal tokens
+      (preset-invariant); HonestProgress role=progressbar (determinate scaleX / indeterminate valuetext + shimmer).
+      **Visual Gate PASS (Brave, 6-cell):** label AA 4.52–5.22 both modes · dot preset-INVARIANT (rgb 16,185,129) ·
+      ARIA valuenow 35/80 + indeterminate omitted · no sync/cloud/saving copy. 10/10 unit · tsc 0 · eslint 0.
 - [ ] S5 — Conventions: `ReachabilityRegistry` · `ProviderRead` · `VoiceCopy` (`apps/web`; Verification Gate)
 
 ## Key resolutions (doc-grounded — interpretation §6)

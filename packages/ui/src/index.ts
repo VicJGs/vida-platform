@@ -48,6 +48,13 @@ export {
 
 // fe-codec-patterns — the cross-cutting pattern-kit (the CODEC primitives every surface inherits).
 export { EmptyState, type EmptyStateProps } from './components/empty-state'
+export {
+  SyncStatus,
+  HonestProgress,
+  type SyncStatusProps,
+  type HonestProgressProps,
+  type LocalSyncState,
+} from './components/sync-status'
 
 // UI-2 — platform views (the cross-module display surfaces; compose UI-1 primitives + base tokens).
 export { ListView, type ListViewProps, type ViewState } from './components/list-view'

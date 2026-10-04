@@ -246,9 +246,16 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   the teaching-invitation empty state (P5) — a presentational `role="group"` named by its `title` (which is ALSO a
   `role="heading"` + `aria-level`, default 2, `titleLevel`-overridable); slots `icon` (aria-hidden) · `children` (body) ·
   `action` (ui-1 Buttons) · `guidedSetup` (opt-in). Fills a data-view `empty?` slot (richer than the default `Message`);
-  direct semantic tokens (preset-inheriting, B-codec-6); non-interactive (§VIII applies to the composed Buttons). The
-  8-state machine itself lives in `apps/web` `state-conventions/interaction-state.ts` (S1 — it imports the `@vida/core`
-  canon, so it can't live here per the Tamagui-only boundary).
+  direct semantic tokens (preset-inheriting, B-codec-6); non-interactive (§VIII applies to the composed Buttons).
+  `components/sync-status.tsx`: **SyncStatus** + **HonestProgress** (S4). SyncStatus = a calm `role="status"`
+  `aria-live="polite"` pill (dot + label); **honest M1 union `'saved' | 'error'`** — copy says "Saved on this device",
+  **never "synced to cloud", no "Saving…"** (writes are instant on-device; P4 copy-honesty). The cloud states
+  (synced/pending/offline/conflict) are the **M3 forward seam**, NOT shipped. The dot uses the direct semantic SIGNAL
+  tokens (`$colorSignalSuccess`/`$colorSignalDanger`, preset-invariant). HonestProgress = `role="progressbar"`,
+  determinate (valuenow/min/max, fill via `transform: scaleX` — B12, never animated `width`) / indeterminate (valuenow
+  OMITTED per APG + `aria-valuetext` + the `internal/sync-status-styles.ts` transform-only shimmer, reduced-motion `@media`).
+  The 8-state machine itself lives in `apps/web` `state-conventions/interaction-state.ts` (S1 — it imports the
+  `@vida/core` canon, so it can't live here per the Tamagui-only boundary).
 
 ## Rules
 - **Animation driver = per ADR-001 §9, per-platform:** **web = `@tamagui/animations-css`** (CSS-on-web, no
