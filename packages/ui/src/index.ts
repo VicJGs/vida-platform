@@ -46,6 +46,9 @@ export {
   type ToastHandle,
 } from './components/toast'
 
+// fe-codec-patterns — the cross-cutting pattern-kit (the CODEC primitives every surface inherits).
+export { EmptyState, type EmptyStateProps } from './components/empty-state'
+
 // UI-2 — platform views (the cross-module display surfaces; compose UI-1 primitives + base tokens).
 export { ListView, type ListViewProps, type ViewState } from './components/list-view'
 export { GalleryView, type GalleryViewProps } from './components/gallery-view'

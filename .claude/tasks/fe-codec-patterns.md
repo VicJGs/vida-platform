@@ -28,7 +28,14 @@
       already exists — `useReducedMotion()` (exported, JS-driven `animation`-prop gate) + the `@media`/`motion.ts`
       convention in every animating `*-styles.ts` (sweep = 0 unguarded). Corrected interpretation W2→RESOLVED/R5 +
       slice-map S2 (build→ratify); named the codec primitive on the hook. No new component, no Visual Gate.
-- [ ] S3 — `EmptyState` teaching-invitation (`@vida/ui`; Visual Gate)
+- [x] S3 — `EmptyState` teaching-invitation (`@vida/ui`; Visual Gate) ✅
+      Spec `s3-empty-state.md` · §XXVI double-gate (g1 REVISE→2 folded: $subheading→$heading · title heading-semantics;
+      preflight PASSED · g2 SHIP) · pre-ship /critique SHIP (1 a11y-merge hardening, Card N1). `components/empty-state.tsx`
+      (+stories +test) · barrel · CLAUDE.md. role=group named by title (title also role=heading aria-level 2,
+      titleLevel-overridable); slots icon/children/action/guidedSetup; direct semantic tokens.
+      **Visual Gate PASS (Brave, 6-cell preset×mode matrix + 375):** fonts swap (Spectral/Fraunces/Source Serif 4) ·
+      accent reaches the Button (ink-blue/oxblood/olive) · surfaces swap · full-matrix AA (title 15.8–17.3 / body
+      4.94–6.53, BOTH modes incl. warm-dark) · 375 layout clean. 8/8 unit · tsc 0 · eslint 0.
 - [ ] S4 — `SyncStatus` + `HonestProgress` (`@vida/ui`; Visual Gate)
 - [ ] S5 — Conventions: `ReachabilityRegistry` · `ProviderRead` · `VoiceCopy` (`apps/web`; Verification Gate)
 
