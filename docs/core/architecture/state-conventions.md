@@ -51,6 +51,16 @@ speak one vocabulary.
 > a shared `@vida/types` vocabulary belongs to the canon's owner — UX-4 imports the `@vida/core` canon and does not
 > re-home it.
 
+> **The codec 8-state machine (fe-codec-patterns S1, LIF-211).** `apps/web/src/state-conventions/interaction-state.ts`
+> ships the reusable **`InteractionState`** superset `idle · typing · loading · results · empty · unavailable · error ·
+> success` — the generalized form of `SearchStatus`, so every input-bearing surface shares ONE vocabulary.
+> `collapseToTerminal` maps all 8 **back to the four canon literals** (total, exhaustive `switch`): `typing`→loading,
+> `results`→success, `unavailable`→error, `idle`→empty, the four → themselves. `deriveInteractionState(result, isEmpty,
+> input?)` extends `deriveTerminalState` with the input dimension (`idle` keyed on an empty query ALONE; `typing` on a
+> pending non-empty query; a non-empty `success` → `results`). `unavailable` is a **producer verdict** (fed from a
+> provider's status, like `search-unavailable`), never derived. Still a reuse of the `@vida/core` canon — **no new
+> canon, no `@vida/types` consolidation** (that remains the canon owner's deferred job).
+
 ## 2. The derivation — React Query result → terminal state
 
 One rule maps a React Query result to a `TerminalState`, in **strict precedence** (`apps/web/src/state-conventions/terminal-state.ts`):
@@ -81,6 +91,15 @@ implementation over React Query.
 | **empty** | A **guided** empty state — never a blank region: say what it is and offer the primary action to fill it. |
 | **error** | An **inline error + retry affordance** (compose UI-1 `Card` + `Button`; the App-boot error+retry is the shipped precedent). **Retry calls React Query `refetch()` and re-enters `loading`** — it never stacks a second error over the first. The error message is `aria-live="assertive"`. |
 | **success** | The content; no wrapper state; `aria-busy` cleared. On a **page-level navigation** that resolves, focus moves to the main heading / top-of-content (§XIV); a same-surface refetch does **not** steal focus. |
+
+**The three added `InteractionState` states** (fe-codec-patterns S1 — for input-bearing surfaces; `renderKindFor` is the canonical map, `interaction-state.ts`):
+
+| State | Convention |
+|-------|-----------|
+| **idle** | Nothing requested yet (empty query) — render the **input affordance itself**, no overlay state. A surface with a richer idle view (e.g. the command bar's recent/suggestions) renders that; degrade fallback = the **empty** convention above. |
+| **typing** | A query in flight — render **as loading** (the skeleton/§3.1 recipe); collapses to `loading`. |
+| **results** | Content present for a query — render **as success** (the content); collapses to `success`. |
+| *(unavailable)* | Not a derived state — a **producer verdict** (a capability isn't available, e.g. `search-unavailable`); render **as error** (inline, loud, never a blank); collapses to `error`. |
 
 ### 3.1 Skeleton composition recipe (no shared primitive — compose by convention)
 
