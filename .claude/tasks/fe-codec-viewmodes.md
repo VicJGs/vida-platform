@@ -14,3 +14,13 @@
 ## Dependencies
 - blocked by `fe-codec-theme`
 - blocked by `fe-codec-patterns`
+
+## Build log (Entity Delivery Flow ②)
+- **Front matter** (`8cf9fc2`) — Decomposition Gate Approval 1. Read-only-lens grounding (ADR-007 §4.3 View vs
+  ADR-008 Capability): S1 TableView + S2 BoardView, both read-only; drag-to-move = Capability (OVERFLOWING, not
+  deferred); Envision SKIP (doc-grounded). interpretation + slice-map + seam-contract.
+- **S1 — TableView** DONE. `table-view.tsx` (read-only `role="table"`, calendar-view divergence, 4 states, aria-sort
+  display-only, 375 scroll, designed empty row w/ aria-colspan) + test (11) + stories + barrel + `v8-table-view.md`.
+  Gates: contract approved · tsc 0 · @vida/ui 371/371 · 2 code-reviews (findings refuted/by-design, 0 changes) ·
+  **Visual Gate PASS** (Brave: AA 4.94–6.53 incl. warm-dark · axe 0 · 375 scroll · aria-colspan serializes) ·
+  §XXIX currency (CLAUDE.md + _index.md supersession + memory). **Next: S2 — BoardView.**

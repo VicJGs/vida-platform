@@ -215,8 +215,21 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   success regardless of WebGL (also the no-WebGL data fallback). Sigma canvas is transparent → the frame's
   `$colorSurfacePrimary` flips with the theme. States via the shared `Message`. Dangling edges skipped + dev-warn.
   Lifecycle tested by mocking `sigma`/`forceatlas2` + stubbing `getContext`. Spec: `…/v7-neural-graph.md`.
-  **⟹ ALL 7 UI-2 views shipped** (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) + the shared
-  `internal/data-view` spine.
+  **table-view** is **fe-codec-viewmodes · S1** (LIF-214) — the renderer for the **`table`** VIEW_LAYOUT, extending ui-2
+  with the 6th canonical view-mode (G6 reshape: *"add table · board"* — supersedes the 2026-08-09 "table/board = degrade,
+  not built" stance). A **READ-ONLY LENS** (quality-bar §4.3: a View renders, a Capability writes) — caller-declared
+  `columns: Column<T>[]` ({header · render · width? · align? · sort?}) × generic `items<T>`. **Follows the calendar-view
+  `role="table"` divergence**: reuses the spine PIECES (`ViewState`, `Message`, `warnMissingName`, ref-prop, base tokens)
+  but **NOT `resolveDataViewState`** — a grid's empty is a **designed row** (spanning cell w/ `aria-colspan`, headers kept),
+  not a `role="status"`. `role="table"/row/columnheader/cell`; `aria-sort` is **DISPLAY-only** (reflects `column.sort`, no
+  toggle — sort is the Collection shell's, not the renderer's); horizontal-scroll wrapper (`minWidth 560` in `overflowX:auto`)
+  for 375 (TV-6); density = cell vertical padding; 4 terminal states (loading skeleton rows + aria-busy · error status ·
+  empty designed-row · success). NO write/sort/row-click props (read-only; interactivity composes in `column.render`, LV-5).
+  Visual Gate: full-matrix AA (4.94–6.53 incl. warm-dark) · axe-clean · 375 scroll · `aria-colspan` serializes. Spec:
+  `docs/specs/components/ui-2-platform-views/v8-table-view.md`. Delivery: `docs/specs/foundation/fe-codec-viewmodes/`.
+  **⟹ 7 UI-2 views shipped** (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) **+ table** (fe-codec-viewmodes
+  S1; **board** = S2, pending) + the shared `internal/data-view` spine. Of the **7 canonical VIEW_LAYOUT renderers**,
+  **6 now ship** (list·gallery·timeline·calendar·graph·table); **board** is the last, in S2.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
