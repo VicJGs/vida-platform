@@ -5856,3 +5856,11 @@ Decisions / lessons:
 Next session:
   - **FIRST ACTION:** next M1.2.1 frontend head = **fe-codec-viewmodes** (now unblocked; also ready: fe-codec-dashboard · fe-shell · fe-codec-canvas-graph · fe-codec-canvas-reader · fe-settings). FRESH `/begin`; isolate in a worktree; add-frontend-component / Entity Delivery Flow ②.
   - Env: Node 24 via nvm; per-issue worktree+branch → PR → merge. Parallel `mod-learning-education` backend session may still be active — `git worktree list` + don't disturb its worktree.
+
+---
+Date: 2026-10-04 — PROFILE/TASK SWITCH at session open — fe-codec-viewmodes (LIF-214)
+Switch: `/begin` resolved the computed backend head (mod-learning-education, S7 next, active in its own worktree) and surfaced it; Victor redirected to the FRONTEND track ("proceed with the frontend worktree"). Mirrors the 2026-10-04 fe-codec-patterns open (backend→frontend at session start).
+Profile: Add Backend Component → **Add Frontend Component** · Scenario: default (Entity Delivery Flow ②).
+Head: next M1.2.1 frontend unit = **fe-codec-viewmodes** (#3) — both blockers Done (fe-codec-theme PR #74, fe-codec-patterns PR #75). Isolated into worktree `.claude/worktrees/fe-codec-viewmodes` (branch `worktree-fe-codec-viewmodes` off main). Parallel `mod-learning-education` backend worktree left untouched.
+Goal: ② CODEC · View-mode renderers — add table + board to the shipped 7.
+Next: §XXVII path surfaced → Step 0 (document-context BASELINE) on confirm.
