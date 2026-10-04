@@ -5835,3 +5835,24 @@ Decisions / lessons:
 Next session:
   - **FIRST ACTION:** per-surface builds begin. Frontend head = **fe-codec-theme (LIF-213)** — the codec foundation everything inherits (M1.2.1). FRESH `/begin`; `--next` confirms. Each surface: add-frontend-component / Entity Delivery Flow ② (3-lens audit → build → Visual Gate → PR → merge).
   - Env: Node 24 via nvm; per-issue branch → PR → merge. Reshape artifacts in `docs/specs/foundation/frontend-replan/`.
+
+---
+Date: 2026-10-04 — fe-codec-patterns #2 (LIF-211) — ② FRONTEND COMPLETE → PR #75 merged → Done
+Task: fe-codec-patterns · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-codec-patterns`, branch `worktree-fe-codec-patterns` → PR #75 (`c1dd1f0`) merged to main
+Goal: build the CODEC behavioural half — the cross-cutting pattern-kit every `fe-*` surface inherits (decomposition §1.3). Session opened on the backend head (mod-learning-education); Victor redirected to the frontend track; fe-codec-theme (unit #1) already Done → next head fe-codec-patterns (#2).
+Accomplished:
+  - **Profile/task switch** backend→frontend at session open; isolated into a git worktree (parallel `mod-learning-education` backend session active in its own worktree — kept untouched throughout).
+  - **Front matter** (`12a3713`, Approval 1). Load-bearing doc resolution: **no new canon / no `@vida/types` consolidation** — the 8-state machine reuses the `@vida/core` `TerminalState` canon (state-conventions.md:44-52); homes follow BR-2 (`@vida/ui` can't import `@vida/core` → rendering primitives take state as a PROP; canon-importing logic + conventions → `apps/web`).
+  - **S1** `3b35ad2` — 8-state machine (`interaction-state.ts`: `InteractionState` + total `collapseToTerminal` exhaustive-switch/never + `deriveInteractionState` + `renderKindFor`; 16 tests).
+  - **S2** `396b3c6` — ReducedMotion **RATIFY** (0 code): grep caught the B12 enforcer already shipped (`useReducedMotion` + `@media` convention) → named it the codec primitive, corrected front-matter W2.
+  - **S3** `117fd64` — EmptyState teaching-invitation (`@vida/ui`); Visual Gate (Brave 6-cell): fonts/accent swap per preset, full-matrix AA both modes incl. warm-dark.
+  - **S4** `4d8d71d` — SyncStatus + HonestProgress (`@vida/ui`); deferred item resolved from P4: honest M1 = `saved`/`error` (no "saving"/cloud; cloud=M3 seam); Visual Gate: dot preset-INVARIANT, label AA 4.52–5.22, progressbar ARIA.
+  - **S5** `48877e4` — conventions (`apps/web`): ReachabilityRegistry (≥2 floor) · ProviderRead (type+convention, not a hook) · VoiceCopy (`VOICE`+`lintCopy`); 12 tests.
+  - Each slice: §XXVI double-gate + per-slice Visual/Verification Gate + pre-ship /critique. @vida/ui **360/360** · apps/web fe-codec **41/41** · tsc 0 · eslint 0. PR #75 merged; LIF-211 → Done; worktree + branches removed.
+Decisions / lessons:
+  - **Two anti-over-engineering catches via grep-before-net-new** (S2 ReducedMotion=RATIFY; S5 ProviderRead=type-not-hook). A codec primitive is sometimes a recognition/convention, not a build. Memory candidate: a "grep the capability before building the primitive" rule for codec/pattern-kit slices.
+  - Visual Gate run programmatically (Brave via `PW_EXECUTABLE_PATH`, computed-styles + contrast across the preset×mode matrix) — verified per-preset accent/font inheritance (B-codec-6) AND the correct NON-inheritance of signal tokens (the sync dot is preset-invariant). MCP Playwright is pinned to absent Chrome; Brave is the working gate browser.
+  - Fresh worktree needs its own `pnpm install` + built dist of `@vida/types`/`core`/`ui` (workspace packages resolve via dist).
+Next session:
+  - **FIRST ACTION:** next M1.2.1 frontend head = **fe-codec-viewmodes** (now unblocked; also ready: fe-codec-dashboard · fe-shell · fe-codec-canvas-graph · fe-codec-canvas-reader · fe-settings). FRESH `/begin`; isolate in a worktree; add-frontend-component / Entity Delivery Flow ②.
+  - Env: Node 24 via nvm; per-issue worktree+branch → PR → merge. Parallel `mod-learning-education` backend session may still be active — `git worktree list` + don't disturb its worktree.

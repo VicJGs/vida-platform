@@ -1,5 +1,5 @@
 # Task: fe-codec-patterns
-# Status: ① complete (all 5 slices shipped) — pending PR
+# Status: done — LIF-211 → Done · PR #75 merged (c1dd1f0) 2026-10-04
 # Linear: LIF-211
 # Profile: Add Frontend Component
 # Scenario: default
