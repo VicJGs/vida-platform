@@ -10,15 +10,16 @@
 `createLearningEducationService(deps)` — the ① backend service tier for **the Learning hub (Education)** over
 DB-4 `024_learning_education` (15 tables, the heaviest DB-4 group). The full design lives in
 `docs/features/learning/education/` (aspect docs) + `docs/features/learning/education/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **① IN PROGRESS — S4 of 10 shipped** (hierarchy
-spine + routing · subjects + DB-11 reconcile · curriculum fork + lineage · schedule + class sessions). Next: S5 ICS feeds.
+(interpretation · slice-map · seam-contract). Build state: **① IN PROGRESS — S7 of 10 shipped** (hierarchy
+spine + routing · subjects + DB-11 reconcile · curriculum fork + lineage · schedule + class sessions · ICS feeds +
+events · grading systems + components · assessments + grade/GPA compute). Next: S8 education measurement.
 
 A **pure service tier over a finished schema** (no DDL — DB-4 #12 authored all 15 tables; the aspect docs'
 "⚠ INTENDED/no schema" language is pre-DB-4 and stale). The 7 Education entity_types
 (`subject`/`institution`/`program`/`curriculum`/`term`/`assessment`/`subject_document`) are already registered
 in `db/schema/_registry.ts:100-106` — composed, never re-registered.
 
-## Delivered surface (as of S6)
+## Delivered surface (as of S7)
 
 `createLearningEducationService({ db, deviceId, sessions, sessionRegistry, ics? }) → LearningEducationService`.
 Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added the BUILT, injected
@@ -56,6 +57,11 @@ Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added t
 | `createGradingSystem(scope, {scale_type, scale_config?, name, description?, components:[{component_type, weight?, max_points?, name?}]})` | ED-7 · H3 | **S6** — scope `{type:institution\|program\|subject, id}` must resolve (fail-loud); **weight rule**: non-null weights (if any) sum to 10000 bp or `GradingWeightError` (never normalize); `scale_config` serialized `[E]` JSON; validated before any write → `GradingSystemView {system, components}` |
 | `getGradingSystem(id)` | ED-7 | **S6** — `GradingSystemView \| null`; live components (`deleted_at`-filtered) |
 | `listGradingSystems(scope)` | ED-7 | **S6** — live systems for a scope (multiple allowed — "create or inherit"; override-resolution is S7) |
+| `createAssessment(subjectId, {type, grading_component_id?, title?, description?, date?, weight?, max_points?, modality?, source?})` | ED-8 · AI6 | **S7** — subject-attached; fail-loud subject + (given) component; `score` null at create; `source` backfills `'manual'`; `SubjectNotFoundError`/`GradingComponentNotFoundError` |
+| `recordResult(assessmentId, {score})` | ED-8 | **S7** — sets `score` ONLY (grade derives, never stored); `AssessmentNotFoundError` |
+| `listAssessments({subject_id?, type?, range?})` | ED-8 | **S7** — filters by subject/type/inclusive date range; soft-deleted excluded |
+| `computeGrade(subjectId)` | ED-7 compute | **S7** — DERIVED via the resolved system (subject→program→institution) + the measurement engine (normalize per-assessment → equal-weight rollup per component → weighted rollup); returns `GradeResult {grade [0,1]\|null, scaleType, scaleConfig, systemId, systemScope, components[], flags[]}`; flags `no-system`/`ambiguous-system`/`incomplete`/`unmapped-assessments`/`missing-scale`; never throws on missing data (`SubjectNotFoundError` only) |
+| `computeGPA({type:'term'\|'curriculum', id})` | ED-7 compute | **S7** — equal-weight rollup of per-subject grades (curriculum unions `curriculum_id` + term subjects); `GpaResult {gpa\|null, flagged, perSubject[]}`; `flagged` on any partial/missing; empty ⇒ `gpa:null, flagged:true`; `TermNotFoundError`/`CurriculumNotFoundError` |
 
 ## Composition & conventions
 

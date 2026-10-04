@@ -29,6 +29,9 @@ import type {
   GradingSystem,
   GradingComponent,
   GradingScope,
+  GradingComponentType,
+  GradingScaleType,
+  Assessment,
   ProgramParentType,
   CourseStatus,
 } from '@vida/types'
@@ -54,6 +57,9 @@ import type {
   AddFeedSchema,
   MatchEventSchema,
   CreateGradingSystemSchema,
+  CreateAssessmentSchema,
+  RecordResultSchema,
+  ListAssessmentsSchema,
 } from '../../validators/learning'
 
 /** A raw calendar event as returned by the M2 ICS fetch boundary — the parse/normalize happens device-side
@@ -126,6 +132,12 @@ export type AddFeedInput = z.input<typeof AddFeedSchema>
 export type MatchEventInput = z.input<typeof MatchEventSchema>
 /** Create a grading system + its weighted components in one call (S6). `scale_config` is an object, serialized `[E]`. */
 export type CreateGradingSystemInput = z.input<typeof CreateGradingSystemSchema>
+/** Create a subject-attached assessment (S7). `source` optional → service backfills 'manual'. */
+export type CreateAssessmentInput = z.input<typeof CreateAssessmentSchema>
+/** Record the raw result on an assessment (S7) — the grade derives, nothing stored. */
+export type RecordResultInput = z.input<typeof RecordResultSchema>
+/** Filter `listAssessments` (S7) — all optional; an empty filter lists every live assessment. */
+export type ListAssessmentsFilter = z.input<typeof ListAssessmentsSchema>
 
 /** A class meeting = the base `sessions` row (lifecycle/timing) + the `class_sessions` 1:1 extension (S4).
  *  Mirrors the books `ReadingSessionView {session, reading}` shape. */
@@ -146,6 +158,50 @@ export interface GradingScopeRef {
 export interface GradingSystemView {
   system: GradingSystem
   components: GradingComponent[]
+}
+
+// --- S7 grade/GPA compute results (the ② seam surface — PLAN §3b) ------------
+/** A reason a computed grade is partial/qualified (BR-LE-S7-4). Compute never throws on missing data — it flags
+ *  (business-rules.md:92 "a flagged partial, never a wrong number"). */
+export type GradeFlag =
+  | 'no-system' // no grading system resolves (subject→program→institution all empty)
+  | 'ambiguous-system' // >1 live system at the chosen scope; most-recent picked (BR-LE-S7-3)
+  | 'incomplete' // ≥1 component has no scored assessment (excluded from the rollup)
+  | 'unmapped-assessments' // ≥1 assessment has a null OR foreign grading_component_id (excluded, B3)
+  | 'missing-scale' // ≥1 scored assessment has no max_points anywhere (can't normalize)
+
+/** The derived grade for a subject (S7). `grade` is normalized [0,1]; the scale-label mapping (A–F/0–10) is the
+ *  display tier's (②/M-later, BR-LE-S7-6) — this carries `scaleType` + parsed `scaleConfig` for it. */
+export interface GradeResult {
+  subjectId: string
+  grade: number | null
+  scaleType: GradingScaleType | null
+  scaleConfig: Record<string, unknown> | null
+  systemId: string | null
+  systemScope: GradingScope | null
+  components: {
+    componentId: string
+    componentType: GradingComponentType
+    weight: number | null
+    progress: number | null
+    assessmentCount: number
+  }[]
+  flags: GradeFlag[]
+}
+
+/** What a GPA rolls up over (S7) — a term or a whole curriculum's subjects. */
+export interface GpaRef {
+  type: 'term' | 'curriculum'
+  id: string
+}
+
+/** The derived GPA across a term/curriculum (S7) — equal-weight rollup of per-subject grades; `flagged` whenever
+ *  any subject is missing/partial. Never a fabricated number (business-rules.md:92). */
+export interface GpaResult {
+  ref: GpaRef
+  gpa: number | null
+  flagged: boolean
+  perSubject: { subjectId: string; grade: number | null; flags: GradeFlag[] }[]
 }
 
 /** Filter for `listSubjects` (ED-3 routing). All optional — an empty filter lists every live subject. */
@@ -268,6 +324,25 @@ export interface LearningEducationService {
   getGradingSystem(id: string): Promise<GradingSystemView | null>
   /** All live grading systems for a scope (ED-7) — systems only; components via `getGradingSystem`. */
   listGradingSystems(scope: GradingScopeRef): Promise<GradingSystem[]>
+
+  // --- assessments + grade/GPA compute (S7 — ED-8 · ED-7 compute · AI6) ---
+  /** Create a subject-attached assessment (ED-8). Fail-loud: unknown subject → `SubjectNotFoundError`; a given-but-
+   *  unresolvable `grading_component_id` → `GradingComponentNotFoundError`; a null one is allowed. `score` starts null;
+   *  `source` backfills to 'manual' service-side (BR-LE-S7-1). */
+  createAssessment(subjectId: string, input: CreateAssessmentInput): Promise<Assessment>
+  /** Record the raw result on an assessment (ED-8). Sets `score` ONLY — the grade is derived, never stored
+   *  (BR-LE-S7-2). Unknown id → `AssessmentNotFoundError`. */
+  recordResult(assessmentId: string, input: RecordResultInput): Promise<Assessment>
+  /** Live assessments filtered by subject / type / date range (inclusive); soft-deleted excluded. An empty/omitted
+   *  filter lists every live assessment (the `listSubjects` precedent). */
+  listAssessments(filter?: ListAssessmentsFilter): Promise<Assessment[]>
+  /** The subject's grade, DERIVED on read via the resolved grading system + the measurement engine (BR-LE-S7-3/4).
+   *  Never throws on missing data — returns a flagged partial (`GradeResult.flags`). Unknown subject →
+   *  `SubjectNotFoundError`. */
+  computeGrade(subjectId: string): Promise<GradeResult>
+  /** The GPA across a term/curriculum (BR-LE-S7-5) — equal-weight rollup of per-subject grades, `flagged` when
+   *  partial, never fabricated. Unknown ref → `TermNotFoundError`/`CurriculumNotFoundError`. */
+  computeGPA(ref: GpaRef): Promise<GpaResult>
 }
 
 // --- typed errors (fail loud — constitution §5) ------------------------------
@@ -362,5 +437,21 @@ export class GradingWeightError extends Error {
   constructor(sumBp: number) {
     super(`Grading component weights must sum to 100% (10000 bp); got ${sumBp} bp`)
     this.name = 'GradingWeightError'
+  }
+}
+// --- S7 assessment errors (both have a real M1 throw site, unlike the dropped S4 ClassSessionNotFoundError) --------
+/** `recordResult` / `listAssessments`-adjacent — the assessment id does not resolve to a live row. */
+export class AssessmentNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Assessment not found: ${id}`)
+    this.name = 'AssessmentNotFoundError'
+  }
+}
+/** `createAssessment` was given a `grading_component_id` that does not resolve to a live `grading_components` row
+ *  (the create-time no-FK integrity convention, BR-LE-S7-1; a null id is allowed, not an error). */
+export class GradingComponentNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Grading component not found: ${id}`)
+    this.name = 'GradingComponentNotFoundError'
   }
 }

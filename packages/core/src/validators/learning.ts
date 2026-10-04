@@ -236,3 +236,30 @@ export const CreateGradingSystemSchema = z.object({
   description: z.string().nullish(),
   components: z.array(CreateGradingComponentSchema),
 })
+
+// ---------------------------------------------------------------------------
+// S7 — assessments + grade/GPA compute (ED-8 · ED-7 compute · AI6). An assessment attaches to a subject; its `score`
+// is the raw result (grade DERIVES via the grading system, never stored — BR-LE-S7-2). `source` uses `.optional()`,
+// NOT `z.default` — the 'manual' default is applied SERVICE-side so the create-echoed row is faithful (the S1–S5
+// column-fidelity + create-returns-input convention). The weight-sum rule is S6's; here `weight`/`max_points` are
+// per-assessment overrides of the component template.
+// ---------------------------------------------------------------------------
+export const CreateAssessmentSchema = z.object({
+  type: AssessmentTypeSchema,
+  grading_component_id: z.string().nullish(),
+  title: z.string().nullish(),
+  description: z.string().nullish(),
+  date: z.string().nullish(), // calendar YYYY-MM-DD
+  weight: z.number().int().nonnegative().nullish(), // BasisPoints
+  max_points: z.number().int().positive().nullish(),
+  modality: AssessmentModalitySchema.nullish(),
+  source: RecordSourceSchema.optional(), // → service backfills 'manual'
+})
+export const RecordResultSchema = z.object({
+  score: z.number().int(),
+})
+export const ListAssessmentsSchema = z.object({
+  subject_id: z.string().nullish(),
+  type: AssessmentTypeSchema.nullish(),
+  range: z.object({ start: z.string(), end: z.string() }).nullish(), // YYYY-MM-DD bounds, inclusive
+})

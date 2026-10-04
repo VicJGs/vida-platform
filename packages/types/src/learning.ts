@@ -347,6 +347,30 @@ export interface ClassSession extends SyncableEntity {
   location: string | null
 }
 
+/** A subject-attached assessment (ED-8, mod-learning-education ① S7). Mirrors `assessments` (schema/learning.ts).
+ *  `score` is the raw recorded result; the subject's grade is DERIVED from scores via the grading system
+ *  (`computeGrade`) — never stored (BR-LE-S7-2). `grading_component_id` is nullable, no FK (which weighted component
+ *  it counts toward; an unmapped assessment is excluded + flagged at compute time, BR-LE-S7-4). */
+export interface Assessment extends SyncableEntity {
+  subject_id: Id
+  type: AssessmentType
+  /** Nullable, no FK — which `grading_components` row this counts toward. */
+  grading_component_id: Id | null
+  /** @encrypted */
+  title: string | null
+  /** @encrypted */
+  description: string | null
+  /** Calendar date `YYYY-MM-DD`, nullable. */
+  date: string | null
+  weight: BasisPoints | null
+  max_points: number | null
+  modality: AssessmentModality | null
+  /** The raw recorded result; grade derives via the grading system. Nullable = not yet recorded. */
+  score: number | null
+  source: RecordSource
+  deleted_at: Timestamp | null
+}
+
 // ---------------------------------------------------------------------------
 // Book, Skill
 // ---------------------------------------------------------------------------

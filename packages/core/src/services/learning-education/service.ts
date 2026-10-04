@@ -14,7 +14,7 @@
 //   BookNotFound precedent) — a dangling ref is never written, but the DB holds no constraint.
 // ============================================================================
 
-import { eq, and, or, isNull, inArray, type SQL } from 'drizzle-orm'
+import { eq, and, or, isNull, inArray, gte, lte, type SQL } from 'drizzle-orm'
 import type {
   Institution,
   SelfTaughtPath,
@@ -28,8 +28,11 @@ import type {
   IcsSyncedEvent,
   GradingSystem,
   GradingComponent,
+  GradingScope,
+  Assessment,
 } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
+import { normalize, rollup } from '../../foundation/measurement'
 import {
   institutions,
   selfTaught,
@@ -43,6 +46,7 @@ import {
   icsSyncedEvents,
   gradingSystems,
   gradingComponents,
+  assessments,
   type InstitutionRow,
   type SelfTaughtRow,
   type ProgramRow,
@@ -55,6 +59,7 @@ import {
   type IcsSyncedEventRow,
   type GradingSystemRow,
   type GradingComponentRow,
+  type AssessmentRow,
 } from '../../db/schema/learning'
 import { DuplicateSubType, type SessionTypeDef } from '../../foundation/sessions'
 import {
@@ -76,6 +81,9 @@ import {
   AddFeedSchema,
   MatchEventSchema,
   CreateGradingSystemSchema,
+  CreateAssessmentSchema,
+  RecordResultSchema,
+  ListAssessmentsSchema,
 } from '../../validators/learning'
 import {
   type LearningEducationService,
@@ -107,6 +115,13 @@ import {
   type GradingScopeRef,
   type GradingSystemView,
   type CreateGradingSystemInput,
+  type CreateAssessmentInput,
+  type RecordResultInput,
+  type ListAssessmentsFilter,
+  type GradeResult,
+  type GradeFlag,
+  type GpaRef,
+  type GpaResult,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -119,6 +134,8 @@ import {
   IcsFeedNotFoundError,
   IcsEventNotFoundError,
   GradingWeightError,
+  AssessmentNotFoundError,
+  GradingComponentNotFoundError,
 } from './types'
 
 // --- row→interface mappers (only the plain-text `_sync_status` needs the union cast) ---
@@ -198,6 +215,15 @@ const toGradingComponent = (r: GradingComponentRow): GradingComponent => ({
   component_type: r.component_type as GradingComponent['component_type'],
   _sync_status: r._sync_status as GradingComponent['_sync_status'],
 })
+// S7 mapper — `type`/`modality`/`source`/`_sync_status` are plain-text union casts; `score`/`weight`/`max_points`
+// are plain integers (no cast); `title`/`description` are [E] text pass-through (M1.0 set=[]).
+const toAssessment = (r: AssessmentRow): Assessment => ({
+  ...r,
+  type: r.type as Assessment['type'],
+  modality: r.modality as Assessment['modality'],
+  source: r.source as Assessment['source'],
+  _sync_status: r._sync_status as Assessment['_sync_status'],
+})
 
 // IR/BR-LE-S4-2 — the `class` Session sub-type Education registers. A TRANSCRIPTION of ADR-004 §3.2:
 // `effects:[]` (§3.2.2 + C-E2 — Education is a non-feeder; any completion grant rides the base sub-type),
@@ -241,6 +267,8 @@ export function createLearningEducationService(
   // S6 — grading tables both have deleted_at → softDelete:true.
   const gradingSystemsRepo = createRepository(db, gradingSystems, { deviceId, softDelete: true, encryptedFields: [] })
   const gradingComponentsRepo = createRepository(db, gradingComponents, { deviceId, softDelete: true, encryptedFields: [] })
+  // S7 — assessments has deleted_at → softDelete:true. `title`/`description` are [E] but M1.0 set=[].
+  const assessmentsRepo = createRepository(db, assessments, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- institutions (ED-2) --------------------------------------------------
   async function createInstitution(input: CreateInstitutionInput): Promise<Institution> {
@@ -936,6 +964,218 @@ export function createLearningEducationService(
     return rows.map(toGradingSystem)
   }
 
+  // ===========================================================================
+  // S7 — assessments + grade/GPA compute (ED-8 · ED-7 compute · AI6)
+  // ===========================================================================
+
+  // BR-LE-S7-3 — the applicable grading system by NEAREST scope: subject → program → institution. Institution is
+  // DERIVED from the program (ParentChainResolution has no institution field): `program.parent_type==='institution' ?
+  // program.parent_id : none` (a self_taught-rooted program stops at program — self_taught ∉ GRADING_SCOPE). >1 live
+  // system at the chosen scope ⇒ pick most-recently-created (created_at desc, id tie-break) + `ambiguous` flag.
+  async function pickSystem(
+    systems: GradingSystem[],
+    scope: GradingScope,
+  ): Promise<{ system: GradingSystem; components: GradingComponent[]; scope: GradingScope; ambiguous: boolean }> {
+    const chosen = [...systems].sort(
+      (a, b) => b.created_at - a.created_at || (a.id < b.id ? 1 : -1),
+    )[0]!
+    const view = await getGradingSystem(chosen.id)
+    // getGradingSystem re-reads live; chosen came from a live list, so view is non-null (defensive fallback: chosen).
+    return {
+      system: view?.system ?? chosen,
+      components: view?.components ?? [],
+      scope,
+      ambiguous: systems.length > 1,
+    }
+  }
+  async function resolveGradingSystem(
+    subjectId: string,
+  ): Promise<{ system: GradingSystem; components: GradingComponent[]; scope: GradingScope; ambiguous: boolean } | null> {
+    const atSubject = await listGradingSystems({ type: 'subject', id: subjectId })
+    if (atSubject.length > 0) return pickSystem(atSubject, 'subject')
+    const subjectRow = await subjectsRepo.findById(subjectId)
+    if (!subjectRow) return null // defensive — callers guard first
+    const subject = toSubject(subjectRow)
+    const chain = await resolveParentChain({
+      curriculumId: subject.curriculum_id,
+      termId: subject.term_id,
+    })
+    const program = chain.program
+    if (program) {
+      const atProgram = await listGradingSystems({ type: 'program', id: program.id })
+      if (atProgram.length > 0) return pickSystem(atProgram, 'program')
+      if (program.parent_type === 'institution') {
+        const atInstitution = await listGradingSystems({ type: 'institution', id: program.parent_id })
+        if (atInstitution.length > 0) return pickSystem(atInstitution, 'institution')
+      }
+    }
+    return null
+  }
+
+  // ED-8 — an assessment attaches to a subject. Fail-loud on the subject + (when given) the grading component (the
+  // create-time no-FK integrity convention, BR-LE-S7-1). `source` backfilled to 'manual' so the create-echoed row is
+  // faithful (create-returns-input-row). `score` starts null — the grade derives, never stored (BR-LE-S7-2).
+  async function createAssessment(subjectId: string, input: CreateAssessmentInput): Promise<Assessment> {
+    const v = CreateAssessmentSchema.parse(input)
+    if (!(await subjectsRepo.findById(subjectId))) throw new SubjectNotFoundError(subjectId)
+    if (v.grading_component_id != null) {
+      if (!(await gradingComponentsRepo.findById(v.grading_component_id)))
+        throw new GradingComponentNotFoundError(v.grading_component_id)
+    }
+    const row = await assessmentsRepo.create({
+      subject_id: subjectId,
+      type: v.type,
+      grading_component_id: v.grading_component_id ?? null,
+      title: v.title ?? null,
+      description: v.description ?? null,
+      date: v.date ?? null,
+      weight: v.weight ?? null,
+      max_points: v.max_points ?? null,
+      modality: v.modality ?? null,
+      score: null,
+      source: v.source ?? 'manual',
+      deleted_at: null,
+    } satisfies CreateInput<typeof assessments>)
+    return toAssessment(row)
+  }
+
+  // ED-8 — record the raw result. Sets `score` ONLY; there is no stored grade to update (BR-LE-S7-2). Fail-loud on
+  // an unknown id (a real throw site — unlike the dropped S4 ClassSessionNotFoundError).
+  async function recordResult(assessmentId: string, input: RecordResultInput): Promise<Assessment> {
+    const v = RecordResultSchema.parse(input)
+    if (!(await assessmentsRepo.findById(assessmentId))) throw new AssessmentNotFoundError(assessmentId)
+    const row = await assessmentsRepo.update(assessmentId, { score: v.score })
+    return toAssessment(row)
+  }
+
+  // Live assessments by subject / type / date range (inclusive). findWhere skips the soft-delete filter → isNull
+  // explicit. `date` is nullable calendar TEXT; a range query excludes undated rows (NULL compares out — intended).
+  async function listAssessments(filter: ListAssessmentsFilter = {}): Promise<Assessment[]> {
+    const v = ListAssessmentsSchema.parse(filter)
+    const conds: SQL[] = [isNull(assessments.deleted_at) as SQL]
+    if (v.subject_id != null) conds.push(eq(assessments.subject_id, v.subject_id))
+    if (v.type != null) conds.push(eq(assessments.type, v.type))
+    if (v.range != null) {
+      conds.push(gte(assessments.date, v.range.start))
+      conds.push(lte(assessments.date, v.range.end))
+    }
+    const rows = await assessmentsRepo.findWhere(and(...conds) as SQL)
+    return rows.map(toAssessment)
+  }
+
+  // BR-LE-S7-4 — the subject's grade, DERIVED on read via the resolved system + the measurement engine's two-level
+  // rollup. Never throws on missing data (fail-soft-with-flag); throws only on an unknown subject. Partial, never
+  // fabricated (business-rules.md:92).
+  async function computeGrade(subjectId: string): Promise<GradeResult> {
+    if (!(await subjectsRepo.findById(subjectId))) throw new SubjectNotFoundError(subjectId)
+    const resolved = await resolveGradingSystem(subjectId)
+    if (!resolved) {
+      return {
+        subjectId,
+        grade: null,
+        scaleType: null,
+        scaleConfig: null,
+        systemId: null,
+        systemScope: null,
+        components: [],
+        flags: ['no-system'],
+      }
+    }
+    const flags: GradeFlag[] = []
+    if (resolved.ambiguous) flags.push('ambiguous-system')
+    const assessed = (
+      await assessmentsRepo.findWhere(
+        and(eq(assessments.subject_id, subjectId), isNull(assessments.deleted_at)) as SQL,
+      )
+    ).map(toAssessment)
+    const componentIds = new Set(resolved.components.map((c) => c.id))
+
+    // (a)+(b) per component: normalize each scored assessment to [0,1], then equal-weight rollup → component progress.
+    let hasMissingScale = false
+    const componentResults = resolved.components.map((c) => {
+      const scored = assessed.filter((a) => a.grading_component_id === c.id && a.score !== null)
+      const normalized = scored
+        .map((a) => {
+          const max = a.max_points ?? c.max_points
+          if (max == null) {
+            hasMissingScale = true
+            return null
+          }
+          // score > max (extra credit) clamps to 1.0 via the engine (no >100% fabrication, N3).
+          return normalize({
+            kind: 'quantitative',
+            current: a.score as number,
+            baseline: 0,
+            target: max,
+            isHigherBetter: true,
+          })
+        })
+        .filter((n): n is number => n !== null)
+      const progress = rollup(normalized.map((n) => ({ progress: n, weight: null })))
+      return {
+        componentId: c.id,
+        componentType: c.component_type,
+        weight: c.weight,
+        progress,
+        assessmentCount: normalized.length,
+      }
+    })
+
+    // B3 — a scored assessment whose component id is null OR ∉ the resolved system is excluded + flagged (never silent).
+    const hasUnmapped = assessed.some(
+      (a) =>
+        a.score !== null && (a.grading_component_id === null || !componentIds.has(a.grading_component_id)),
+    )
+    if (hasUnmapped) flags.push('unmapped-assessments')
+    if (hasMissingScale) flags.push('missing-scale')
+    if (componentResults.some((cr) => cr.progress === null)) flags.push('incomplete')
+
+    // (c) subject grade = weighted rollup of component progress (null-progress components excluded by the engine).
+    const grade = rollup(componentResults.map((cr) => ({ progress: cr.progress, weight: cr.weight })))
+    return {
+      subjectId,
+      grade,
+      scaleType: resolved.system.scale_type,
+      scaleConfig: resolved.system.scale_config,
+      systemId: resolved.system.id,
+      systemScope: resolved.scope,
+      components: componentResults,
+      flags,
+    }
+  }
+
+  // BR-LE-S7-5 — GPA across a term/curriculum = equal-weight rollup of per-subject grades (no credit-hours exist →
+  // equal weight is the engine default). `flagged` whenever any subject is missing/partial; never fabricated.
+  async function computeGPA(ref: GpaRef): Promise<GpaResult> {
+    let subjectRows
+    if (ref.type === 'term') {
+      if (!(await termsRepo.findById(ref.id))) throw new TermNotFoundError(ref.id)
+      subjectRows = await subjectsRepo.findWhere(
+        and(eq(subjects.term_id, ref.id), isNull(subjects.deleted_at)) as SQL,
+      )
+    } else {
+      if (!(await curriculaRepo.findById(ref.id))) throw new CurriculumNotFoundError(ref.id)
+      // The S3 fork union: curriculum_id === id OR term_id ∈ the curriculum's live terms (empty ⇒ short-circuit).
+      const liveTerms = await termsRepo.findWhere(
+        and(eq(terms.curriculum_id, ref.id), isNull(terms.deleted_at)) as SQL,
+      )
+      const liveTermIds = liveTerms.map((t) => t.id)
+      const clause =
+        liveTermIds.length > 0
+          ? or(eq(subjects.curriculum_id, ref.id), inArray(subjects.term_id, liveTermIds))
+          : eq(subjects.curriculum_id, ref.id)
+      subjectRows = await subjectsRepo.findWhere(and(clause, isNull(subjects.deleted_at)) as SQL)
+    }
+    const perSubject: GpaResult['perSubject'] = []
+    for (const sr of subjectRows) {
+      const g = await computeGrade(sr.id)
+      perSubject.push({ subjectId: sr.id, grade: g.grade, flags: g.flags })
+    }
+    const gpa = rollup(perSubject.map((p) => ({ progress: p.grade, weight: null })))
+    const flagged = perSubject.length === 0 || perSubject.some((p) => p.grade === null || p.flags.length > 0)
+    return { ref, gpa, flagged, perSubject }
+  }
+
   return {
     createInstitution,
     updateInstitution,
@@ -984,5 +1224,10 @@ export function createLearningEducationService(
     createGradingSystem,
     getGradingSystem,
     listGradingSystems,
+    createAssessment,
+    recordResult,
+    listAssessments,
+    computeGrade,
+    computeGPA,
   }
 }

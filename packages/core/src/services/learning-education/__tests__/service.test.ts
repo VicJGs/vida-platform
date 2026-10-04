@@ -34,6 +34,8 @@ import {
   IcsFeedNotFoundError,
   IcsEventNotFoundError,
   GradingWeightError,
+  AssessmentNotFoundError,
+  GradingComponentNotFoundError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -957,5 +959,334 @@ describe('mod-learning-education S6 — grading systems + components (ED-7 · H3
     await h.svc.createGradingSystem(scopeB, { name: 'B', scale_type: 'letter', components: [] })
     expect(await h.svc.listGradingSystems(scopeA)).toHaveLength(2)
     expect(await h.svc.listGradingSystems(scopeB)).toHaveLength(1)
+  })
+})
+
+describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 · ED-7 compute · AI6)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // A subject + a 2-component weighted system (hw 30% / exam 70%, both max_points 100 unless overridden).
+  async function subjectWithSystem(opts?: { weights?: [number | null, number | null]; max?: [number?, number?] }) {
+    const subj = await h.svc.createSubject({ title: 'Algorithms' })
+    const view = await h.svc.createGradingSystem(
+      { type: 'subject', id: subj.id },
+      {
+        name: 'Std',
+        scale_type: 'numeric',
+        components: [
+          { component_type: 'homework', weight: opts?.weights?.[0] ?? 3000, max_points: opts?.max?.[0] ?? 100 },
+          { component_type: 'exam', weight: opts?.weights?.[1] ?? 7000, max_points: opts?.max?.[1] ?? 100 },
+        ],
+      },
+    )
+    return { subjectId: subj.id, hw: view.components[0], exam: view.components[1], system: view.system }
+  }
+  // create + record an assessment mapped to a component.
+  async function recorded(
+    subjectId: string,
+    componentId: string | null,
+    score: number,
+    extra?: { max_points?: number; type?: 'exam' | 'quiz' | 'test' },
+  ) {
+    const a = await h.svc.createAssessment(subjectId, {
+      type: extra?.type ?? 'exam',
+      grading_component_id: componentId,
+      ...(extra?.max_points != null ? { max_points: extra.max_points } : {}),
+    })
+    return h.svc.recordResult(a.id, { score })
+  }
+
+  // --- createAssessment ------------------------------------------------------
+  it('createAssessment writes a row (score null, source defaults manual) mapped to a component', async () => {
+    const { subjectId, hw } = await subjectWithSystem()
+    const a = await h.svc.createAssessment(subjectId, { type: 'exam', grading_component_id: hw.id })
+    expect(a.subject_id).toBe(subjectId)
+    expect(a.score).toBeNull()
+    expect(a.source).toBe('manual') // service backfill, not the DB default (create-echoes-input)
+    expect(a.grading_component_id).toBe(hw.id)
+  })
+
+  it('createAssessment on an unknown subject → SubjectNotFoundError', async () => {
+    await expect(h.svc.createAssessment('ghost', { type: 'exam' })).rejects.toThrow(SubjectNotFoundError)
+  })
+
+  it('createAssessment with an unresolvable grading_component_id → GradingComponentNotFoundError', async () => {
+    const { subjectId } = await subjectWithSystem()
+    await expect(
+      h.svc.createAssessment(subjectId, { type: 'exam', grading_component_id: 'ghost' }),
+    ).rejects.toThrow(GradingComponentNotFoundError)
+  })
+
+  it('createAssessment accepts a null grading_component_id (unmapped is allowed)', async () => {
+    const { subjectId } = await subjectWithSystem()
+    const a = await h.svc.createAssessment(subjectId, { type: 'work', grading_component_id: null })
+    expect(a.grading_component_id).toBeNull()
+  })
+
+  // --- recordResult ----------------------------------------------------------
+  it('recordResult sets the score only and returns the updated assessment', async () => {
+    const { subjectId, exam } = await subjectWithSystem()
+    const a = await h.svc.createAssessment(subjectId, { type: 'exam', grading_component_id: exam.id })
+    const updated = await h.svc.recordResult(a.id, { score: 88 })
+    expect(updated.id).toBe(a.id)
+    expect(updated.score).toBe(88)
+  })
+
+  it('recordResult on an unknown id → AssessmentNotFoundError', async () => {
+    await expect(h.svc.recordResult('ghost', { score: 50 })).rejects.toThrow(AssessmentNotFoundError)
+  })
+
+  // --- listAssessments -------------------------------------------------------
+  it('listAssessments filters by subject / type / date range and excludes soft-deleted', async () => {
+    const { subjectId, hw, exam } = await subjectWithSystem()
+    await h.svc.createAssessment(subjectId, { type: 'exam', grading_component_id: exam.id, date: '2026-03-10' })
+    await h.svc.createAssessment(subjectId, { type: 'quiz', grading_component_id: hw.id, date: '2026-05-20' })
+    const other = await h.svc.createSubject({ title: 'Other' })
+    await h.svc.createAssessment(other.id, { type: 'exam' })
+
+    expect(await h.svc.listAssessments({ subject_id: subjectId })).toHaveLength(2)
+    expect(await h.svc.listAssessments({ subject_id: subjectId, type: 'quiz' })).toHaveLength(1)
+    const inRange = await h.svc.listAssessments({ subject_id: subjectId, range: { start: '2026-01-01', end: '2026-04-01' } })
+    expect(inRange).toHaveLength(1)
+    expect(inRange[0].type).toBe('exam')
+
+    // soft-delete one in the live store → drops out
+    const all = await h.svc.listAssessments({ subject_id: subjectId })
+    h.bsql.prepare('UPDATE assessments SET deleted_at = ? WHERE id = ?').run(Date.now(), all[0].id)
+    expect(await h.svc.listAssessments({ subject_id: subjectId })).toHaveLength(1)
+  })
+
+  // --- computeGrade: happy + flags ------------------------------------------
+  it('computeGrade weighted happy path: hw 80/100 ×0.3 + exam 90/100 ×0.7 = 0.87', async () => {
+    const { subjectId, hw, exam } = await subjectWithSystem()
+    await recorded(subjectId, hw.id, 80)
+    await recorded(subjectId, exam.id, 90)
+    const g = await h.svc.computeGrade(subjectId)
+    expect(g.grade).toBeCloseTo(0.87, 5)
+    expect(g.flags).toHaveLength(0)
+    expect(g.systemScope).toBe('subject')
+    expect(g.systemId).not.toBeNull()
+  })
+
+  it('computeGrade flags incomplete when a component has no scored assessment', async () => {
+    const { subjectId, exam } = await subjectWithSystem()
+    await recorded(subjectId, exam.id, 90) // hw unscored
+    const g = await h.svc.computeGrade(subjectId)
+    expect(g.flags).toContain('incomplete')
+    expect(g.grade).toBeCloseTo(0.9, 5) // only exam counted (un-rated hw excluded)
+  })
+
+  it('computeGrade with no system anywhere → grade null + no-system', async () => {
+    const subj = await h.svc.createSubject({ title: 'Ungraded' })
+    const g = await h.svc.computeGrade(subj.id)
+    expect(g.grade).toBeNull()
+    expect(g.flags).toEqual(['no-system'])
+    expect(g.systemId).toBeNull()
+  })
+
+  it('computeGrade flags unmapped-assessments for a null grading_component_id', async () => {
+    const { subjectId, exam } = await subjectWithSystem()
+    await recorded(subjectId, exam.id, 90)
+    await recorded(subjectId, null, 50) // scored but unmapped
+    const g = await h.svc.computeGrade(subjectId)
+    expect(g.flags).toContain('unmapped-assessments')
+  })
+
+  it('computeGrade flags unmapped-assessments for a FOREIGN component id (B3 — never silent)', async () => {
+    const { subjectId, exam } = await subjectWithSystem()
+    // a component that belongs to a DIFFERENT subject's system
+    const other = await subjectWithSystem()
+    await recorded(subjectId, exam.id, 90)
+    await recorded(subjectId, other.hw.id, 50) // non-null id, but ∉ this subject's resolved system
+    const g = await h.svc.computeGrade(subjectId)
+    expect(g.flags).toContain('unmapped-assessments')
+  })
+
+  it('computeGrade flags missing-scale when a scored assessment has no max anywhere', async () => {
+    // a component with NO max_points (pass_fail/points-less) + an assessment with no max → cannot normalize
+    const subj = await h.svc.createSubject({ title: 'Scaleless' })
+    const view = await h.svc.createGradingSystem(
+      { type: 'subject', id: subj.id },
+      { name: 'S', scale_type: 'pass_fail', components: [{ component_type: 'exam', weight: 10000 }] },
+    )
+    await recorded(subj.id, view.components[0].id, 90) // no assessment max either
+    const g = await h.svc.computeGrade(subj.id)
+    expect(g.flags).toContain('missing-scale')
+  })
+
+  it('computeGrade uses the assessment max_points over the component template (more-specific-wins)', async () => {
+    // single component weighted 100%, component max 100; assessment overrides max to 50 → 40/50 = 0.8 (not 0.4)
+    const subj = await h.svc.createSubject({ title: 'One' })
+    const view = await h.svc.createGradingSystem(
+      { type: 'subject', id: subj.id },
+      { name: 'S', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+    )
+    await recorded(subj.id, view.components[0].id, 40, { max_points: 50 })
+    const g = await h.svc.computeGrade(subj.id)
+    expect(g.grade).toBeCloseTo(0.8, 5)
+  })
+
+  it('computeGrade clamps score > maxPoints to 1.0 (extra credit, N3)', async () => {
+    const subj = await h.svc.createSubject({ title: 'Extra' })
+    const view = await h.svc.createGradingSystem(
+      { type: 'subject', id: subj.id },
+      { name: 'S', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+    )
+    await recorded(subj.id, view.components[0].id, 110)
+    const g = await h.svc.computeGrade(subj.id)
+    expect(g.grade).toBe(1)
+  })
+
+  it('computeGrade with a system but no assessments → grade null (never 0)', async () => {
+    const { subjectId } = await subjectWithSystem()
+    const g = await h.svc.computeGrade(subjectId)
+    expect(g.grade).toBeNull()
+    expect(g.flags).toContain('incomplete')
+  })
+
+  it('computeGrade flags ambiguous-system when >1 live system at the chosen scope (picks one, does not throw)', async () => {
+    const subj = await h.svc.createSubject({ title: 'Dup' })
+    const scope = { type: 'subject' as const, id: subj.id }
+    const s1 = await h.svc.createGradingSystem(scope, { name: 'S1', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
+    const s2 = await h.svc.createGradingSystem(scope, { name: 'S2', scale_type: 'letter', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
+    const g = await h.svc.computeGrade(subj.id)
+    expect(g.flags).toContain('ambiguous-system')
+    expect([s1.system.id, s2.system.id]).toContain(g.systemId)
+  })
+
+  it('computeGrade result shape matches §3b (components breakdown + scale metadata)', async () => {
+    const { subjectId, hw, exam } = await subjectWithSystem()
+    await recorded(subjectId, hw.id, 80)
+    await recorded(subjectId, exam.id, 90)
+    const g = await h.svc.computeGrade(subjectId)
+    expect(g).toMatchObject({ subjectId, scaleType: 'numeric', scaleConfig: null })
+    expect(g.components).toHaveLength(2)
+    const examRow = g.components.find((c) => c.componentId === exam.id)!
+    expect(examRow).toMatchObject({ componentType: 'exam', weight: 7000, assessmentCount: 1 })
+    expect(examRow.progress).toBeCloseTo(0.9, 5)
+  })
+
+  it('computeGrade on an unknown subject → SubjectNotFoundError', async () => {
+    await expect(h.svc.computeGrade('ghost')).rejects.toThrow(SubjectNotFoundError)
+  })
+
+  // --- computeGrade: scope inheritance (BR-LE-S7-3) --------------------------
+  it('computeGrade inherits the PROGRAM system when the subject has none', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    const subj = await h.svc.createSubject({ title: 'Algo', curriculum_id: cur.id })
+    const sys = await h.svc.createGradingSystem(
+      { type: 'program', id: prog.id },
+      { name: 'ProgSys', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+    )
+    await recorded(subj.id, sys.components[0].id, 70)
+    const g = await h.svc.computeGrade(subj.id)
+    expect(g.systemScope).toBe('program')
+    expect(g.systemId).toBe(sys.system.id)
+    expect(g.grade).toBeCloseTo(0.7, 5)
+  })
+
+  it('computeGrade inherits the INSTITUTION system up the chain', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    const subj = await h.svc.createSubject({ title: 'Algo', curriculum_id: cur.id })
+    await h.svc.createGradingSystem(
+      { type: 'institution', id: inst.id },
+      { name: 'InstSys', scale_type: 'letter', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+    )
+    const g = await h.svc.computeGrade(subj.id)
+    expect(g.systemScope).toBe('institution')
+  })
+
+  it('a subject-scope system WINS over program/institution', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    const subj = await h.svc.createSubject({ title: 'Algo', curriculum_id: cur.id })
+    await h.svc.createGradingSystem({ type: 'institution', id: inst.id }, { name: 'I', scale_type: 'letter', components: [] })
+    await h.svc.createGradingSystem({ type: 'subject', id: subj.id }, { name: 'Sub', scale_type: 'numeric', components: [] })
+    const g = await h.svc.computeGrade(subj.id)
+    expect(g.systemScope).toBe('subject')
+  })
+
+  it('inheritance stops at program for a self_taught-rooted program (no institution tier, no crash)', async () => {
+    const path = await h.svc.createSelfTaughtPath({ name: 'Self: Rust' })
+    const prog = await h.svc.createProgram({ type: 'self_taught', id: path.id }, { name: 'Rust track' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    const subj = await h.svc.createSubject({ title: 'Ownership', curriculum_id: cur.id })
+    const g = await h.svc.computeGrade(subj.id) // no system anywhere → no-system, resolved without touching institution
+    expect(g.flags).toEqual(['no-system'])
+  })
+
+  // --- computeGPA ------------------------------------------------------------
+  it('computeGPA over a TERM rolls up its subjects equal-weight', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    const term = await h.svc.createTerm(cur.id, { level: 'semester', name: 'Fall' })
+    const mkGraded = async (title: string, score: number) => {
+      const s = await h.svc.createSubject({ title, term_id: term.id, curriculum_id: cur.id })
+      const sys = await h.svc.createGradingSystem({ type: 'subject', id: s.id }, { name: title, scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
+      await recorded(s.id, sys.components[0].id, score)
+      return s
+    }
+    await mkGraded('A', 80) // 0.8
+    await mkGraded('B', 100) // 1.0
+    const gpa = await h.svc.computeGPA({ type: 'term', id: term.id })
+    expect(gpa.gpa).toBeCloseTo(0.9, 5) // equal-weight (0.8+1.0)/2
+    expect(gpa.flagged).toBe(false)
+    expect(gpa.perSubject).toHaveLength(2)
+  })
+
+  it('computeGPA over a CURRICULUM unions curriculum_id + term subjects', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    const term = await h.svc.createTerm(cur.id, { level: 'semester', name: 'Fall' })
+    const graded = async (opts: { curriculum_id?: string; term_id?: string }, score: number) => {
+      const s = await h.svc.createSubject({ title: 'X', ...opts })
+      const sys = await h.svc.createGradingSystem({ type: 'subject', id: s.id }, { name: 'X', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
+      await recorded(s.id, sys.components[0].id, score)
+    }
+    await graded({ curriculum_id: cur.id }, 60) // direct curriculum child
+    await graded({ term_id: term.id, curriculum_id: cur.id }, 100) // via term
+    const gpa = await h.svc.computeGPA({ type: 'curriculum', id: cur.id })
+    expect(gpa.perSubject).toHaveLength(2)
+    expect(gpa.gpa).toBeCloseTo(0.8, 5)
+  })
+
+  it('computeGPA is flagged when any subject is partial/missing', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    const term = await h.svc.createTerm(cur.id, { level: 'semester', name: 'Fall' })
+    const graded = await h.svc.createSubject({ title: 'Graded', term_id: term.id, curriculum_id: cur.id })
+    const sys = await h.svc.createGradingSystem({ type: 'subject', id: graded.id }, { name: 'G', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
+    await recorded(graded.id, sys.components[0].id, 90)
+    await h.svc.createSubject({ title: 'NoSystem', term_id: term.id, curriculum_id: cur.id }) // no system → partial
+    const gpa = await h.svc.computeGPA({ type: 'term', id: term.id })
+    expect(gpa.flagged).toBe(true)
+    expect(gpa.perSubject).toHaveLength(2)
+  })
+
+  it('computeGPA over an empty subject set → gpa null, flagged true', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    const term = await h.svc.createTerm(cur.id, { level: 'semester', name: 'Empty' })
+    const gpa = await h.svc.computeGPA({ type: 'term', id: term.id })
+    expect(gpa.gpa).toBeNull()
+    expect(gpa.flagged).toBe(true)
+    expect(gpa.perSubject).toHaveLength(0)
+  })
+
+  it('computeGPA on an unknown term/curriculum → typed NotFound', async () => {
+    await expect(h.svc.computeGPA({ type: 'term', id: 'ghost' })).rejects.toThrow(TermNotFoundError)
+    await expect(h.svc.computeGPA({ type: 'curriculum', id: 'ghost' })).rejects.toThrow(CurriculumNotFoundError)
   })
 })

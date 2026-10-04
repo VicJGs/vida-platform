@@ -182,6 +182,46 @@
 - **BR-LE-S6-7 (duplicate `component_type` allowed by design)** — no uniqueness guard on components; a system may hold
   two same-type buckets (e.g. two `exam` components), per ED-7 "each with own weight/points, per professor" (No-Guessing — no doc mandates uniqueness). `[code: service.ts createGradingSystem]`
 
+### S7 — assessments + grade/GPA compute (ED-8 · ED-7 compute · AI6)
+- **BR-LE-S7-1 (an assessment attaches to a subject; create is fail-loud)** — `createAssessment(subjectId, input)` guards
+  the subject exists (`SubjectNotFoundError`) and, when `grading_component_id` is given, that it resolves to a live
+  component (`GradingComponentNotFoundError`); a null component id is allowed (unmapped). `score` starts null; `source`
+  backfilled to `'manual'` service-side so the create-echoed row is faithful (not the DB default). `[business-rules.md
+  ED-8; code: service.ts createAssessment; [[repository-create-returns-input-row-not-db-defaults]]]`
+- **BR-LE-S7-2 (grade is DERIVED, never stored)** — `recordResult(assessmentId, {score})` writes `score` ONLY and
+  returns the updated assessment; there is no stored grade. A subject's grade is derived-on-read by `computeGrade`.
+  `[business-rules.md:37-38 "derived … never hand-set"; ED-10 M3; code: service.ts recordResult]`
+- **BR-LE-S7-3 (applicable system resolves by nearest scope: subject → program → institution)** — `resolveGradingSystem`
+  checks subject scope, then the subject's program (via `resolveParentChain`), then — only when
+  `program.parent_type==='institution'` — the institution (`program.parent_id`); a self_taught-rooted program stops at
+  program (self_taught ∉ `GRADING_SCOPE`). >1 live system at the chosen scope ⇒ most-recently-created picked +
+  `ambiguous-system` flag (never a throw); none anywhere ⇒ `grade:null` + `no-system`. `[business-rules.md:74;
+  code: service.ts resolveGradingSystem/pickSystem]`
+- **BR-LE-S7-4 (`computeGrade` = the engine's two-level rollup; partial, never fabricated)** — per scored assessment,
+  `normalize({kind:'quantitative', current:score, baseline:0, target: assessment.max_points ?? component.max_points,
+  isHigherBetter:true})` (score>max clamps to 1.0, no >100%); per component, equal-weight `rollup` of its normalized
+  assessments; subject grade = `rollup` of component progress weighted by `weight` bp (null/0 ⇒ equal-weight; null-progress
+  components excluded). Flags: `incomplete` (a component had no scored assessment), `unmapped-assessments` (a scored
+  assessment with a null OR foreign `grading_component_id` — grouping is by the resolved system's components, never a
+  silent drop), `missing-scale` (a scored assessment with no max anywhere). Empty/all-null ⇒ `grade:null`, never 0.
+  `[business-rules.md:92; engine.ts normalize/rollup; code: service.ts computeGrade]`
+- **BR-LE-S7-5 (`computeGPA(ref)` = equal-weight rollup; partial + `flagged`)** — `ref={type:'term'|'curriculum', id}`.
+  Subject set: `term` ⇒ `term_id===id`; `curriculum` ⇒ `curriculum_id===id` OR `term_id ∈ the curriculum's live terms`
+  (the S3 fork union). Guards the ref (`TermNotFoundError`/`CurriculumNotFoundError`). `gpa = rollup(per-subject grades,
+  equal-weight)` (no credit-hours in schema → engine default); `flagged` iff any subject grade is null OR any per-subject
+  flags non-empty; empty set ⇒ `gpa:null, flagged:true`. Never fabricated. `[contract.md:64; business-rules.md:92;
+  code: service.ts computeGPA]`
+- **BR-LE-S7-6 (grade returned normalized [0,1] + scale metadata; label mapping is NOT S7)** — `GradeResult.grade` is the
+  normalized value; `scaleType` + parsed `scaleConfig` ride along for the display tier. The letter/numeric boundary
+  algorithm is undefined in the aspect docs → ②/M-later, not fabricated here (No-Guessing). `[grep clean — scale named
+  only as an enum business-rules.md:37; code: service.ts computeGrade/types.ts GradeResult]`
+- **BR-LE-S7-7 (`@vida/types` `Assessment` — net-new)** — `extends SyncableEntity`, mirrors `AssessmentRow` exactly
+  (`grading_component_id`/`title`/`description`/`date`/`weight`/`max_points`/`modality`/`score` nullable; `source`
+  `RecordSource`; `deleted_at`). `assessments` is `softDelete:true`. `[code: packages/types/src/learning.ts; schema learning.ts]`
+- **BR-LE-S7-8 (compute never throws on missing data — it flags)** — `computeGrade`/`computeGPA` throw ONLY on a bad
+  REFERENCE (unknown subject/term/curriculum); a missing system / score / unmapped / missing-scale is a flag on the
+  result. `GradeResult`/`GpaResult` are result objects, not errors. `[business-rules.md:92; code: service.ts]`
+
 ## Scope guards honored (the C-* negatives — rerun-ratified)
 - **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
 - **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2/S4 (no economy grant, no `advertise()`, no homework table,
