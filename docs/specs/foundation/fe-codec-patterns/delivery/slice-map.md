@@ -9,7 +9,7 @@
 | Piece | Kind | Home | Gate |
 |---|---|---|---|
 | 8-state machine (type + collapse map + input deriver) | canon-importing logic | `apps/web` (EXTEND ux-4) | Verification |
-| `ReducedMotion` | rendering/motion primitive | `@vida/ui` | Visual |
+| `ReducedMotion` | motion contract — **ALREADY ENFORCED (RATIFY)** | `@vida/ui` (`useReducedMotion` + `@media` conv.) | — (doc ratify) |
 | `EmptyState` | rendering primitive (state-as-prop) | `@vida/ui` | Visual |
 | `SyncStatus` + `HonestProgress` | rendering primitives | `@vida/ui` | Visual |
 | `ReachabilityRegistry` · `ProviderRead` · `VoiceCopy` | pure app conventions/logic | `apps/web` | Verification |
@@ -35,13 +35,18 @@ the §3 render-mapping note in `docs/core/architecture/state-conventions.md`.
 (all 8 covered) + the documented semantics (`typing`→`loading`, `results`→`success`, `unavailable`→`error`) + precedence;
 `tsc` 0; `apps/web` tests green. *(No Visual Gate — no chrome, like ux-4.)*
 
-### S2 — `ReducedMotion` (the motion primitive the animated states use) · `@vida/ui` · rendered
-**Does:** the reusable **B12 enforcer** — `usePrefersReducedMotion()` + a `<ReducedMotion>` wrapper/helper that gives
-every animation an **instant alternative** and animates **transform/opacity/clip-path only**, reading `motion.ts`
-duration/easing tokens. Finally gives B12 its component-level enforcer (W2) [FACT: current-business-rules.md B12:44-50; motion.md §IX].
-**Touches:** `packages/ui/src/components/reduced-motion.tsx` (+ test + stories); `index.ts` barrel (DS components export).
-**Done when (Visual Gate):** reduced-motion ON vs OFF proven in a real browser (`prefers-reduced-motion: reduce` →
-instant); only safe properties animate; light/dark × 375/768/1440; `tsc` 0; `@vida/ui` tests green.
+### S2 — `ReducedMotion` · `@vida/ui` · **RATIFY (no net-new component; Victor-confirmed 2026-10-04)**
+**Why RATIFY:** the B12 enforcer already exists and covers every animation (interpretation §5 W2-CORRECTED / §6 R5):
+- **JS-driven** — `useReducedMotion()` (exported) gates the Tamagui `animation` prop (`animation={reduced ? undefined : …}`);
+  live in `button.tsx`, `app-shell.tsx`, `onboarding.tsx` [FACT: packages/ui/src/hooks/use-reduced-motion.ts].
+- **CSS-driven** — `@media (prefers-reduced-motion: reduce)` reading `motion.ts` in every animating `*-styles.ts`
+  (card/tabs/menu/dialog/popover/select/toast/interaction), transform/opacity-only [FACT: internal/card-styles.ts:32; CLAUDE.md:220-233].
+A `@vida/ui`+`apps/web` sweep found **zero unguarded animation**. A new `<ReducedMotion>` wrapper would duplicate the
+hook + fit Tamagui's prop/style-driven animation worse → over-engineering.
+**Does:** name this the codec `ReducedMotion` primitive + document the two patterns so downstream `fe-*` **inherit, not
+reinvent** (a short note in `packages/ui/src/CLAUDE.md` / the delivery docs). **No new component, no new test, no code.**
+**Done when:** the pattern is named + documented; the existing enforcement is confirmed complete (sweep = 0 unguarded).
+*(No Visual Gate — nothing new rendered; the existing primitives already Visual-Gate + unit-test their reduced-motion.)*
 
 ### S3 — `EmptyState` (teaching-invitation) · `@vida/ui` · rendered
 **Does:** a presentational **teaching empty state** — headline + teaching body (what it is, why it's empty) + a
@@ -78,8 +83,9 @@ copy carries no sync overclaim; light/dark × 375/768/1440; a11y (`aria-live` po
 raw table handle (compile-level); `lintCopy` flags the 3 honesty violations + the ZK-sync overclaim; `tsc` 0; tests green.
 
 ## Dependency order
-S1 (vocabulary) → S2 (motion primitive) → S3 (EmptyState, uses S2) → S4 (SyncStatus, uses S2) → S5 (independent conventions).
-S5 may run anytime after S1; sequenced last to keep the rendered-primitive Visual Gates contiguous.
+S1 (vocabulary) → **S2 (ReducedMotion = RATIFY, doc-only)** → S3 (EmptyState) → S4 (SyncStatus) → S5 (conventions).
+S3/S4 "honour `ReducedMotion`" = they use the already-ratified `useReducedMotion` hook / `@media` convention (nothing new
+from S2 to wait on). S5 may run anytime after S1; sequenced last to keep the rendered-primitive Visual Gates contiguous.
 
 ## Out of scope (interpretation O1–O4; doc-verified)
 - **The `/sync` page** + multi-device compare + chip/page/on-change/hidden presentation switch → `fe-sync-log` #21 / M3 (O1-O2).

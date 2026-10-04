@@ -17,7 +17,8 @@ by construction* [FACT: decomposition.md:36-40 §1.3; surface-map.md:157]:
 1. **the 8-state machine** — `idle · typing · loading · results · empty · unavailable · error · success`
 2. **`EmptyState`** — teaching-invitation
 3. **`SyncStatus` + `HonestProgress`** — calm honest local-first status + honest progress for genuinely-slow ops
-4. **`ReducedMotion`** — the wrapper that enforces the §IX / B12 reduced-motion contract
+4. **`ReducedMotion`** — the reduced-motion contract (§IX / B12). **⚠ ALREADY ENFORCED → S2 = RATIFY, not net-new**
+   (`useReducedMotion()` + the `@media`/`motion.ts` convention; see §5 W2-CORRECTED + §6 R5)
 5. **`VoiceCopy`** — voice + copy-honesty lint
 6. **`ReachabilityRegistry`** — the ≥2-reachable-paths floor, as a runtime registry
 7. **`ProviderRead`** — the "no direct cross-module tables" read convention
@@ -64,8 +65,10 @@ canon) and **passes it in** — BR-2, the package→app boundary [FACT: packages
    slot; never a blank region, never "No data available".
 3. **`SyncStatus` + `HonestProgress`** — a calm status chiplet (never alarming) + an honest determinate/indeterminate
    progress for genuinely-slow ops (FTS rebuild, export, vault unlock). The `/sync` *page* is a LATER unit (fe-sync-log).
-4. **`ReducedMotion`** — a wrapper/hook giving every animation an instant `prefers-reduced-motion` alternative over
-   transform/opacity only (the B12 contract, finally with a component-level enforcer).
+4. **`ReducedMotion`** — **ALREADY DELIVERED (S2 = RATIFY).** The instant-alternative, transform/opacity-only B12
+   contract is enforced by `useReducedMotion()` (exported) + the `@media (prefers-reduced-motion: reduce)` convention
+   reading `motion.ts` across all animating primitives. S2 names it the codec primitive + documents the pattern for
+   downstream `fe-*`; **no new component** [FACT: packages/ui/src/hooks/use-reduced-motion.ts; CLAUDE.md:220-233].
 5. **`VoiceCopy`** — the voice constants + a copy-honesty lint (dev-time) encoding the three honesty rules.
 6. **`ReachabilityRegistry`** — register a capability's reach paths (dock · ⌘K · contextual/`[[link]]` · M1.1 Spaces) +
    assert the ≥2-path floor; the runtime companion to the G4 set-cover gate.
@@ -76,9 +79,9 @@ canon) and **passes it in** — BR-2, the package→app boundary [FACT: packages
 
 ```
 @vida/core  foundation/capability/types.ts      TerminalState canon (frozen — reused, never re-homed)
-@vida/ui    components/empty-state.tsx           EmptyState        ← presentational, state/status as PROP
-            components/sync-status.tsx           SyncStatus + HonestProgress   ← presentational
-            components/reduced-motion.tsx|hook   ReducedMotion     ← Tamagui/media, no @vida/core edge
+@vida/ui    hooks/use-reduced-motion.ts          ReducedMotion = RATIFY (EXISTS) + the @media/motion.ts convention
+            components/empty-state.tsx           EmptyState        ← presentational, state/status as PROP (S3, net-new)
+            components/sync-status.tsx           SyncStatus + HonestProgress   ← presentational (S4, net-new)
             internal/… (structural 8-state mirror, if the kit components need it, à la ViewState)
 apps/web    state-conventions/terminal-state.ts  EXTEND: the 8-state type + collapse map + input-state deriver
                                                   (imports the @vida/core canon — the app side owns the edge)
@@ -120,9 +123,12 @@ apps/web    state-conventions/terminal-state.ts  EXTEND: the 8-state type + coll
   and there is **no shared machine** for the input-bearing superset — every input surface would re-invent idle/typing/
   results [state-conventions.md:49-52; command-bar/types.ts:62-73]. *(The kit resolves it as the single codec machine —
   NOT by consolidating the canon into @vida/types, which is deferred + the canon owner's job; see R1.)*
-- **W2** B12 (reduced-motion + safe-property) is a **documented contract with no component-level enforcer** — "enforced
-  at the component gate," but no reusable `ReducedMotion` exists; each animation would re-handle it ad hoc
-  [current-business-rules.md B12:44-50].
+- **W2 — CORRECTED (S2 baseline, Victor-confirmed RATIFY).** My initial claim ("B12 has no component-level enforcer")
+  was **FALSE** — grep-before-net-new caught it. The enforcer **exists**: `useReducedMotion()` (exported) for JS-driven
+  animation (the Tamagui `animation={reduced ? undefined : …}` gate, live in button/app-shell/onboarding) + the
+  `@media (prefers-reduced-motion: reduce)` convention reading `motion.ts` in every animating primitive's `*-styles.ts`
+  (card/tabs/menu/dialog/popover/select/toast/interaction). A sweep of `@vida/ui` + `apps/web` found **zero unguarded
+  animation**. So there is no W2 finding — `ReducedMotion` is RATIFIED, not built (→ R5) [FACT: packages/ui/src/hooks/use-reduced-motion.ts; packages/ui/src/internal/card-styles.ts:32; CLAUDE.md:220-233].
 
 ### MISSING — the bar requires it, nothing exists
 - **M1** **No `EmptyState` primitive** — the teaching-invitation empty state is a P5 hard requirement; today only
@@ -154,17 +160,24 @@ apps/web    state-conventions/terminal-state.ts  EXTEND: the 8-state type + coll
   as its collapse target; each of the 8 maps back to one of the 4 for the fail-loud/degrade contract. The `@vida/types`
   consolidation is explicitly **deferred** and **belongs to the canon's owner** — this unit imports/mirrors, never
   re-homes [FACT: state-conventions.md:30-52].
-- **R2 — Homes follow the BR-2 package→app boundary.** Rendering primitives (`EmptyState`, `SyncStatus`+`HonestProgress`,
-  `ReducedMotion`) → `@vida/ui`, state/status **as a prop**, structurally typed (the `ViewState`/`list-view` precedent).
-  Canon-importing logic (the 8-state type + collapse map + input deriver), `ReachabilityRegistry`, `ProviderRead`,
-  `VoiceCopy` → `apps/web` (the app owns the `@vida/core` edge) [FACT: packages/ui/src/CLAUDE.md:125; internal/data-view.tsx:9; list-view.tsx:15,34-35].
+- **R2 — Homes follow the BR-2 package→app boundary.** Rendering primitives (`EmptyState`, `SyncStatus`+`HonestProgress`)
+  → `@vida/ui`, state/status **as a prop**, structurally typed (the `ViewState`/`list-view` precedent). Canon-importing
+  logic (the 8-state type + collapse map + input deriver), `ReachabilityRegistry`, `ProviderRead`, `VoiceCopy` → `apps/web`
+  (the app owns the `@vida/core` edge). `ReducedMotion` already lives in `@vida/ui` (the `useReducedMotion` hook + the
+  `@media` convention) — ratified in place [FACT: packages/ui/src/CLAUDE.md:125; internal/data-view.tsx:9; list-view.tsx:15,34-35; hooks/use-reduced-motion.ts].
 - **R3 — `EmptyState` = teaching-invitation.** Say what it is + offer the primary action to fill it + opt-in guided
   setup; never a blank region, never "No data available" [FACT: state-conventions.md:81; frontend-quality-bar/_index.md:84 P5; p5 specimen:154-166].
 - **R4 — `SyncStatus` = calm + honest + 4 presentations exist as a user pref** (chip · /sync page · on-change · hidden);
   this unit ships the **chip/status primitive + `HonestProgress`**; the page is fe-sync-log; copy is stage-honest
   (M1 local-first, no ZK-sync claim) [FACT: frontend-quality-bar/_index.md:50-51 §2.6, 79-82 P4; p5 specimen:197].
-- **R5 — `ReducedMotion`** realizes the B12 contract as a reusable wrapper: instant alternative, transform/opacity only,
-  reads `motion.ts` tokens [FACT: current-business-rules.md B12:44-50; motion.md §IX].
+- **R5 — `ReducedMotion` is ALREADY ENFORCED → S2 = RATIFY (Victor-confirmed), no new component.** The B12 contract
+  (instant alternative, transform/opacity/clip-path only, reads `motion.ts`) is enforced two ways that together cover
+  every animation: (a) **JS-driven** — `useReducedMotion()` (exported) gating the Tamagui `animation` prop
+  (`animation={reduced ? undefined : …}`; live in button/app-shell/onboarding); (b) **CSS-driven** — the
+  `@media (prefers-reduced-motion: reduce)` block in every animating primitive's `*-styles.ts`. A `@vida/ui`+`apps/web`
+  sweep found zero unguarded animation. S2 names this the codec `ReducedMotion` primitive + documents the two patterns
+  for downstream `fe-*` inheritance; a net-new `<ReducedMotion>` wrapper would duplicate the hook and fit Tamagui's
+  prop/style-driven animation worse (over-engineering) [FACT: packages/ui/src/hooks/use-reduced-motion.ts; internal/card-styles.ts:32; CLAUDE.md:220-233; current-business-rules.md B12:44-50; motion.md §IX].
 - **R6 — `ReachabilityRegistry`** = the runtime companion to the G4 ≥2-path set-cover; reach vocabulary = dock · ⌘K ·
   contextual/`[[link]]` · (M1.1) Spaces [FACT: frontend-quality-bar/_index.md:46-47 §2.4, 84 P5].
 - **R7 — `ProviderRead`** = cross-module reads go through a provider seam (React Query over a backend provider method);
