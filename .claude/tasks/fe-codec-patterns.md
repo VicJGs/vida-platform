@@ -1,5 +1,5 @@
 # Task: fe-codec-patterns
-# Status: in-progress
+# Status: ① complete (all 5 slices shipped) — pending PR
 # Linear: LIF-211
 # Profile: Add Frontend Component
 # Scenario: default
@@ -44,7 +44,17 @@
       (preset-invariant); HonestProgress role=progressbar (determinate scaleX / indeterminate valuetext + shimmer).
       **Visual Gate PASS (Brave, 6-cell):** label AA 4.52–5.22 both modes · dot preset-INVARIANT (rgb 16,185,129) ·
       ARIA valuenow 35/80 + indeterminate omitted · no sync/cloud/saving copy. 10/10 unit · tsc 0 · eslint 0.
-- [ ] S5 — Conventions: `ReachabilityRegistry` · `ProviderRead` · `VoiceCopy` (`apps/web`; Verification Gate)
+- [x] S5 — Conventions: `ReachabilityRegistry` · `ProviderRead` · `VoiceCopy` (`apps/web`; Verification Gate) ✅
+      Spec `s5-conventions.md` · §XXVI double-gate (g1 REVISE→3 folded: **ProviderRead hook→type+convention** anti-over-eng ·
+      lintCopy regex tightened (drop bare `encrypt`) · assertReachable=dev/test assertion; preflight PASSED · g2 SHIP).
+      `reach/reachability-registry.ts` (factory, ≥2 floor, `UnreachableCapabilityError`) · `providers/provider-read.ts`
+      (`ProviderRead<T>` type + convention, no hook, dependency-free) · `voice/voice-copy.ts` (`VOICE` + `lintCopy`).
+      3 layer CLAUDE.md. Verification Gate: 12/12 unit · tsc 0 · eslint 0.
+
+## ① COMPLETE — all 5 slices shipped (2026-10-04)
+Front matter `12a3713` · S1 `3b35ad2` · S2 `396b3c6` · S3 `117fd64` · S4 `4d8d71d` · S5 (this commit).
+Two anti-over-engineering catches (S2 ReducedMotion RATIFY, S5 ProviderRead type-not-hook) — grep-before-net-new.
+Next: final currency sweep → PR `worktree-fe-codec-patterns` → merge.
 
 ## Key resolutions (doc-grounded — interpretation §6)
 - No new canon / no `@vida/types` consolidation — 8-state = the SearchStatus superset pattern, collapses to `@vida/core` `TerminalState`; consolidation deferred + is the canon owner's job [state-conventions.md:44-52].
