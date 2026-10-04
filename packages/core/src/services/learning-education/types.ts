@@ -24,6 +24,8 @@ import type {
   Subject,
   SubjectSchedule,
   ClassSession,
+  IcsFeedConfig,
+  IcsSyncedEvent,
   ProgramParentType,
   CourseStatus,
 } from '@vida/types'
@@ -46,7 +48,38 @@ import type {
   ForkCurriculumSchema,
   SetScheduleSchema,
   CreateClassSessionSchema,
+  AddFeedSchema,
+  MatchEventSchema,
 } from '../../validators/learning'
+
+/** A raw calendar event as returned by the M2 ICS fetch boundary — the parse/normalize happens device-side
+ *  (ADR-014), so the port hands the service already-shaped events. `uid` is the ICS natural key (X8 dedup). */
+export interface RawIcsEvent {
+  uid: string
+  summary?: string | null
+  description?: string | null
+  location?: string | null
+  start_time: number
+  end_time?: number | null
+  recurrence_rule?: string | null
+  /** The full serialized ICS VEVENT (stored `[E]` as `raw_event`). */
+  raw_event?: string | null
+}
+
+/** The deny-safe ICS fetch port (S5). The device-mediated network fetch + ICS parse is **M2** (ADR-014 X1);
+ *  at M1 this port is injected ABSENT ⇒ `syncFeed` throws `IcsUnavailableError`. A PRESENT port that throws
+ *  during fetch ⇒ the feed's `last_error` is written then `IcsSyncError` is thrown (never silent-stale).
+ *  `[seam-contract.md ICS; interpretation.md:52-54]` */
+export interface IcsFetchPort {
+  fetchFeed(url: string): Promise<RawIcsEvent[]>
+}
+
+/** The outcome of a `syncFeed` run (S5). `added` = net-new events inserted; `skipped` = already-present by the
+ *  UNIQUE(feed_id,uid) natural key (add-only dedup, X8). */
+export interface SyncResult {
+  added: number
+  skipped: number
+}
 
 export interface LearningEducationServiceDeps {
   db: DrizzleDb
@@ -55,7 +88,10 @@ export interface LearningEducationServiceDeps {
   sessions: SessionsService
   /** AR-5 SessionRegistry (BUILT, injected) — `registerLearningEducation` registers the `class` sub-type (S4). */
   sessionRegistry: SessionRegistry
-  // S5+ append: spaces, notes, journalRegistry, ics?, attachment?, tasks?, ai?, effects?
+  /** Deny-safe ICS fetch port (S5) — ABSENT at M1 (live fetch = M2, ADR-014 X1). `syncFeed` throws
+   *  `IcsUnavailableError` when unset. The configs/events schema + add-only dedup are fully M1. */
+  ics?: IcsFetchPort
+  // S6+ append: spaces, notes, journalRegistry, attachment?, tasks?, ai?, effects?
 }
 
 // Re-export the reused sessions `TimeRange` so S4 consumers (getWeeklySchedule) import it from this barrel.
@@ -80,6 +116,10 @@ export type ForkCurriculumInput = z.input<typeof ForkCurriculumSchema>
 export type SetScheduleInput = z.input<typeof SetScheduleSchema>
 /** Class-meeting creation (S4). `started_at` = the meeting time (required, B1); status/mode default in the service. */
 export type CreateClassSessionInput = z.input<typeof CreateClassSessionSchema>
+/** Add an ICS feed config (S5). `url` free-form `[E]`; `is_active`/`auto_create_sessions` default at the DB. */
+export type AddFeedInput = z.input<typeof AddFeedSchema>
+/** Match a synced event to a subject (S5). */
+export type MatchEventInput = z.input<typeof MatchEventSchema>
 
 /** A class meeting = the base `sessions` row (lifecycle/timing) + the `class_sessions` 1:1 extension (S4).
  *  Mirrors the books `ReadingSessionView {session, reading}` shape. */
@@ -174,6 +214,29 @@ export interface LearningEducationService {
   listSessions(subjectId: string): Promise<ClassSessionView[]>
   /** Cross-subject weekly schedule — class meetings whose base `started_at` ∈ [range.start, range.end). */
   getWeeklySchedule(range: TimeRange): Promise<ClassSessionView[]>
+
+  // --- ICS feeds + events (S5 — ED-6 · X1/X2/X5/X8/X9/X10) — add-only; fetch deny-safe ---
+  /** Register a calendar feed (ED-6/X2). Stores `auto_create_sessions` (the event→class-session auto-create fires
+   *  only on the M2 sync path — at M1 `created_session_id` stays null). `is_active`/`auto_create_sessions` default
+   *  at the DB column. */
+  addFeed(input: AddFeedInput): Promise<IcsFeedConfig>
+  /** Sync a feed's events (X1/X8/X10). **Deny-safe:** the `ics?` port absent ⇒ `IcsUnavailableError` (live fetch =
+   *  M2). A present port that throws ⇒ the feed's `last_error` is written then `IcsSyncError` (never silent-stale).
+   *  Success ⇒ `last_error` cleared, `last_synced_at` stamped, events add-only upserted on UNIQUE(feed_id,uid)
+   *  (already-present or `is_ignored` ⇒ skipped). `IcsFeedNotFoundError` if the feed is unknown. */
+  syncFeed(feedId: string): Promise<SyncResult>
+  /** Match a synced event to a subject (X5). Returns the updated event (never spawns a session at M1 — auto-create
+   *  is the M2 sync path). `IcsEventNotFoundError` if unknown. */
+  matchEvent(eventId: string, input: MatchEventInput): Promise<IcsSyncedEvent>
+  /** Ignore a synced event (X8) — sets `is_ignored` (never deletes; dedup keeps it out of future syncs).
+   *  `IcsEventNotFoundError` if unknown. */
+  ignoreEvent(eventId: string): Promise<void>
+  /** Revoke/restore a feed (X9) — sets `is_active` (never deletes). `IcsFeedNotFoundError` if unknown. */
+  setFeedActive(feedId: string, active: boolean): Promise<IcsFeedConfig>
+  /** All feed configs (active + revoked). */
+  listFeeds(): Promise<IcsFeedConfig[]>
+  /** All synced events for a feed (ignored + unmatched included — the UI surfaces unmatched for manual match, R7). */
+  listEvents(feedId: string): Promise<IcsSyncedEvent[]>
 }
 
 // --- typed errors (fail loud — constitution §5) ------------------------------
@@ -230,5 +293,34 @@ export class TemplateImmutableError extends Error {
   constructor(id: string) {
     super(`Curriculum is an immutable template: ${id}`)
     this.name = 'TemplateImmutableError'
+  }
+}
+// --- S5 ICS errors (all have a real M1 throw site) ---------------------------
+/** The deny-safe `ics?` fetch port is absent — a live sync cannot proceed (live fetch = M2, ADR-014 X1/R9).
+ *  Fail-loud: a read that cannot produce a result throws rather than silently returning stale/empty. */
+export class IcsUnavailableError extends Error {
+  constructor(feedId: string) {
+    super(`ICS fetch is unavailable (live sync is M2): ${feedId}`)
+    this.name = 'IcsUnavailableError'
+  }
+}
+/** A PRESENT `ics?` port threw during fetch/parse — the feed's `last_error` is persisted BEFORE this throws, so
+ *  the failure is never silent-stale (seam-contract.md ICS). */
+export class IcsSyncError extends Error {
+  constructor(feedId: string, cause: string) {
+    super(`ICS sync failed for feed ${feedId}: ${cause}`)
+    this.name = 'IcsSyncError'
+  }
+}
+export class IcsFeedNotFoundError extends Error {
+  constructor(id: string) {
+    super(`ICS feed not found: ${id}`)
+    this.name = 'IcsFeedNotFoundError'
+  }
+}
+export class IcsEventNotFoundError extends Error {
+  constructor(id: string) {
+    super(`ICS synced event not found: ${id}`)
+    this.name = 'IcsEventNotFoundError'
   }
 }

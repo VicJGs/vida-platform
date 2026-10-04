@@ -18,12 +18,13 @@ A **pure service tier over a finished schema** (no DDL — DB-4 #12 authored all
 (`subject`/`institution`/`program`/`curriculum`/`term`/`assessment`/`subject_document`) are already registered
 in `db/schema/_registry.ts:100-106` — composed, never re-registered.
 
-## Delivered surface (as of S4)
+## Delivered surface (as of S5)
 
-`createLearningEducationService({ db, deviceId, sessions, sessionRegistry }) → LearningEducationService`.
+`createLearningEducationService({ db, deviceId, sessions, sessionRegistry, ics? }) → LearningEducationService`.
 Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added the BUILT, injected
-`sessions: SessionsService` + `sessionRegistry: SessionRegistry`; S5+ add spaces/notes/journalRegistry + deny-safe
-`ics?`/`attachment?`/`tasks?`/`ai?` + the dormant `effects?` seam.
+`sessions: SessionsService` + `sessionRegistry: SessionRegistry`; **S5 added the deny-safe `ics?: IcsFetchPort`**
+(absent at M1 ⇒ `syncFeed` throws `IcsUnavailableError`); S6+ add spaces/notes/journalRegistry + `attachment?`/`tasks?`/`ai?`
++ the dormant `effects?` seam.
 
 | Method | Leg | Contract |
 |---|---|---|
@@ -46,6 +47,12 @@ Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added t
 | `createClassSession(subjectId, input)` | ED-4 · BR-ED-7 | **S4** — base `sessions('class')` + 1:1 `class_sessions` extension + attach subject (§3.2.1); `started_at` = required meeting time; returns `ClassSessionView {session, classSession}`; `SubjectNotFoundError` |
 | `listSessions(subjectId)` | ED-4 | **S4** — a subject's class meetings; soft-deleted base excluded (via `sessions.getSession`→null) |
 | `getWeeklySchedule(range)` | ED-4 | **S4** — cross-subject meetings with base `started_at` ∈ `[start,end]` (inclusive, matches `TimeRange`), sorted ascending; untimed/out-of-range excluded |
+| `addFeed({url, default_subject_id?, auto_create_sessions?, feed_name?})` | ED-6 · X2 | **S5** — create an `ics_feed_configs` row; `is_active`/`auto_create_sessions`/`sync_interval_hours` backfilled to DB-default values for a faithful row; `auto_create_sessions` stored but auto-create is the M2 sync path |
+| `syncFeed(feedId)` | X1 · X8 · X10 · R9 | **S5** — **deny-safe**: `ics?` absent ⇒ `IcsUnavailableError`; present+fetch-fail ⇒ `last_error` persisted then `IcsSyncError` (never silent-stale); success ⇒ clear `last_error` + stamp `last_synced_at` + add-only upsert on UNIQUE(feed_id,uid) (present/ignored ⇒ skip). Returns `SyncResult {added,skipped}`; `IcsFeedNotFoundError` |
+| `matchEvent(eventId, {subject_id})` | X5 | **S5** — set `matched_subject_id`, return the event (no session spawned at M1); `IcsEventNotFoundError` / `SubjectNotFoundError` |
+| `ignoreEvent(eventId)` | X8 | **S5** — set `is_ignored` (never delete; dedup keeps it out of re-syncs); `IcsEventNotFoundError` |
+| `setFeedActive(feedId, active)` | X9 | **S5** — revoke/restore via `is_active` (never delete); `IcsFeedNotFoundError` |
+| `listFeeds()` / `listEvents(feedId)` | R7 | **S5** — feeds (active+revoked); events (ignored+unmatched, so the UI surfaces unmatched for manual match) |
 
 ## Composition & conventions
 
@@ -59,12 +66,16 @@ Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added t
   `session_id` (`softDelete:false` — no `deleted_at`), `subject_schedules` is `softDelete:true`. Derived reads resolve
   base times via `sessions.getSession` (boundary-respecting; N+1 bounded, no second read path into the sessions tables).
 
+- **S5 ICS composition** — `ics_feed_configs` + `ics_synced_events` have NO `deleted_at` → both repos `softDelete:false`
+  (revoke via `is_active`/`is_ignored`, never delete). `syncFeed`'s live fetch is the deny-safe `ics?` port (M2); the
+  schema + add-only UNIQUE(feed_id,uid) dedup are M1 and proven via an injected stub port.
+
 ## Not yet built (homed per slice-map.md)
-S5 ICS (deny-safe fetch) · S6 grading builder · S7 assessments + grade/GPA compute · S8 education measurement ·
-S9 subject vault + tags · S10 cross-module fan-out + Journal. Frontend (dashboards/hub/builders) =
-② `fe-learning-education` (P6). M2 defers: ICS live fetch, document extraction (AI), real Tasks→Education reads.
+S6 grading builder · S7 assessments + grade/GPA compute · S8 education measurement · S9 subject vault + tags ·
+S10 cross-module fan-out + Journal. Frontend (dashboards/hub/builders) = ② `fe-learning-education` (P6).
+M2 defers: ICS live fetch, document extraction (AI), real Tasks→Education reads, the M2 sync loop (skip inactive feeds).
 
 ## Carry-forwards
-- **S5 (ICS DB-11):** `@vida/types` `IcsFeedConfig.default_course_id` + `IcsSyncedEvent.matched_course_id` still
-  carry pre-reframe names; the schema columns are `default_subject_id` / `matched_subject_id` (learning.ts:118,144,
-  "reframe F3"). Reconcile in S5's ICS mapper (the first `$inferSelect`↔interface consumer). Caught by S2 review.
+- **S5 (ICS DB-11): ✅ RESOLVED at S5** — `@vida/types` `IcsFeedConfig.default_course_id` → `default_subject_id` and
+  `IcsSyncedEvent.matched_course_id` → `matched_subject_id` (reframe F3, matching schema learning.ts:118,144); R8
+  consumer grep clean (only `dist/` + `_legacy/`). The mappers are the first `$inferSelect`↔interface consumers.

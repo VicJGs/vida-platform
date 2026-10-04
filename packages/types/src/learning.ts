@@ -690,7 +690,8 @@ export interface IcsFeedConfig extends SyncableEntity {
   feed_name: string | null
   is_active: boolean
   auto_create_sessions: boolean
-  default_course_id: Id | null
+  // DB-11 reframe (F3): was `default_course_id` — the schema column is `default_subject_id` (no FK).
+  default_subject_id: Id | null
   sync_interval_hours: number
   last_synced_at: Timestamp | null
   /** @encrypted */
@@ -711,7 +712,8 @@ export interface IcsSyncedEvent extends SyncableEntity {
   start_time: Timestamp
   end_time: Timestamp | null
   recurrence_rule: string | null
-  matched_course_id: Id | null
+  // DB-11 reframe (F3): was `matched_course_id` — the schema column is `matched_subject_id` (no FK).
+  matched_subject_id: Id | null
   created_session_id: Id | null
   is_ignored: boolean
   /** @encrypted — full ICS event data */

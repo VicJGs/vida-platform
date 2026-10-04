@@ -201,3 +201,18 @@ export const CreateClassSessionSchema = z.object({
   scheduling_mode: z.enum(SCHEDULING_MODE).optional(), // defaults to 'attended' (ED-4) in the service
   status: z.enum(SESSION_STATUS).optional(), // defaults to 'scheduled' in the service
 })
+
+// ---------------------------------------------------------------------------
+// S5 — ICS feeds + events (ED-6 · X1/X2/X5/X8/X9/X10). `feed_url` is a free-form [E] string — min(1), NOT
+// `.url()` (no doc mandates URL-format validation at M1; preflight A1). `is_active`/`auto_create_sessions`
+// default at the DB column (not re-asserted here — the S1–S4 column-fidelity pattern, preflight N2).
+// ---------------------------------------------------------------------------
+export const AddFeedSchema = z.object({
+  url: z.string().min(1),
+  default_subject_id: z.string().nullish(),
+  auto_create_sessions: z.boolean().optional(),
+  feed_name: z.string().nullish(),
+})
+export const MatchEventSchema = z.object({
+  subject_id: z.string().min(1),
+})

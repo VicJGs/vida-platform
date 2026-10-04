@@ -24,6 +24,8 @@ import type {
   Subject,
   SubjectSchedule,
   ClassSession,
+  IcsFeedConfig,
+  IcsSyncedEvent,
 } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import {
@@ -35,6 +37,8 @@ import {
   subjects,
   subjectSchedules,
   classSessions,
+  icsFeedConfigs,
+  icsSyncedEvents,
   type InstitutionRow,
   type SelfTaughtRow,
   type ProgramRow,
@@ -43,6 +47,8 @@ import {
   type SubjectRow,
   type SubjectScheduleRow,
   type ClassSessionRow,
+  type IcsFeedConfigRow,
+  type IcsSyncedEventRow,
 } from '../../db/schema/learning'
 import { DuplicateSubType, type SessionTypeDef } from '../../foundation/sessions'
 import {
@@ -61,6 +67,8 @@ import {
   UpdateSubjectSchema,
   SetScheduleSchema,
   CreateClassSessionSchema,
+  AddFeedSchema,
+  MatchEventSchema,
 } from '../../validators/learning'
 import {
   type LearningEducationService,
@@ -85,6 +93,10 @@ import {
   type CreateClassSessionInput,
   type ClassSessionView,
   type TimeRange,
+  type AddFeedInput,
+  type MatchEventInput,
+  type SyncResult,
+  type RawIcsEvent,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -92,6 +104,10 @@ import {
   TermNotFoundError,
   SubjectNotFoundError,
   UnroutedSubjectError,
+  IcsUnavailableError,
+  IcsSyncError,
+  IcsFeedNotFoundError,
+  IcsEventNotFoundError,
 } from './types'
 
 // --- row→interface mappers (only the plain-text `_sync_status` needs the union cast) ---
@@ -146,6 +162,17 @@ const toClassSession = (r: ClassSessionRow): ClassSession => ({
   ...r,
   _sync_status: r._sync_status as ClassSession['_sync_status'],
 })
+// S5 mappers — `metadata` defensive-parsed (R10, the toSubject precedent); `raw_event`/`last_error` are free-form
+// `[E]` text (pass-through); only `_sync_status` needs the union cast.
+const toIcsFeedConfig = (r: IcsFeedConfigRow): IcsFeedConfig => ({
+  ...r,
+  metadata: parseMetadata(r.metadata),
+  _sync_status: r._sync_status as IcsFeedConfig['_sync_status'],
+})
+const toIcsSyncedEvent = (r: IcsSyncedEventRow): IcsSyncedEvent => ({
+  ...r,
+  _sync_status: r._sync_status as IcsSyncedEvent['_sync_status'],
+})
 
 // IR/BR-LE-S4-2 — the `class` Session sub-type Education registers. A TRANSCRIPTION of ADR-004 §3.2:
 // `effects:[]` (§3.2.2 + C-E2 — Education is a non-feeder; any completion grant rides the base sub-type),
@@ -169,7 +196,7 @@ const CLASS_SESSION_TYPE_DEF: SessionTypeDef = {
 export function createLearningEducationService(
   deps: LearningEducationServiceDeps,
 ): LearningEducationService {
-  const { db, deviceId, sessions, sessionRegistry } = deps
+  const { db, deviceId, sessions, sessionRegistry, ics } = deps
 
   // All 5 hierarchy tables have `deleted_at` → softDelete:true. M1.0 encryptedFields:[] (the [E]
   // name/description fields pass through; real field-level encryption lands at M3).
@@ -183,6 +210,9 @@ export function createLearningEducationService(
   // deleted_at (softDelete:false; the base `sessions` owns lifecycle, BR-ED-7). `location` is [E] but M1.0 set=[].
   const subjectSchedulesRepo = createRepository(db, subjectSchedules, { deviceId, softDelete: true, encryptedFields: [] })
   const classSessionsRepo = createRepository(db, classSessions, { deviceId, softDelete: false, encryptedFields: [] })
+  // S5 — ICS tables have NO deleted_at (X8 add-only / X9 revoke-via-is_active) → softDelete:false.
+  const icsFeedConfigsRepo = createRepository(db, icsFeedConfigs, { deviceId, softDelete: false, encryptedFields: [] })
+  const icsSyncedEventsRepo = createRepository(db, icsSyncedEvents, { deviceId, softDelete: false, encryptedFields: [] })
 
   // ---- institutions (ED-2) --------------------------------------------------
   async function createInstitution(input: CreateInstitutionInput): Promise<Institution> {
@@ -691,6 +721,112 @@ export function createLearningEducationService(
       .sort((a, b) => (a.session.session.started_at ?? 0) - (b.session.session.started_at ?? 0))
   }
 
+  // ===========================================================================
+  // S5 — ICS feeds + events (ED-6 · X1/X2/X5/X8/X9/X10) — add-only; fetch deny-safe
+  // ===========================================================================
+
+  // ED-6/X2 — register a feed. All notNull-with-default columns are backfilled in the create input: `create()`
+  // echoes the input and does NOT read back DB column defaults ([[repository-create-returns-input-row-not-db-defaults]]),
+  // so omitting them would return `is_active`/`auto_create_sessions`/`sync_interval_hours` as undefined (the Row type
+  // lies). The backfilled values equal the DB defaults — no behavioural divergence (this corrects preflight N2).
+  async function addFeed(input: AddFeedInput): Promise<IcsFeedConfig> {
+    const v = AddFeedSchema.parse(input)
+    const row = await icsFeedConfigsRepo.create({
+      feed_url: v.url,
+      feed_name: v.feed_name ?? null,
+      is_active: true,
+      // Stored now; the event→class-session auto-create fires only on the M2 sync path (created_session_id stays null at M1).
+      auto_create_sessions: v.auto_create_sessions ?? false,
+      default_subject_id: v.default_subject_id ?? null,
+      sync_interval_hours: 6, // FACT default §5.18 (schema:119) — backfilled for a faithful returned row
+      last_synced_at: null,
+      last_error: null,
+      metadata: null,
+    } satisfies CreateInput<typeof icsFeedConfigs>)
+    return toIcsFeedConfig(row)
+  }
+
+  // X1/X8/X10/R9 — sync a feed. Deny-safe: the live fetch+parse is M2 (ADR-014), so an absent `ics?` port fails loud
+  // (a sync that cannot run must not silently return empty/stale). A PRESENT port that throws ⇒ persist `last_error`
+  // BEFORE throwing `IcsSyncError` (never silent-stale). Success ⇒ clear `last_error` + stamp `last_synced_at`, then
+  // add-only upsert on the UNIQUE(feed_id,uid) natural key (already-present ⇒ skip; never overwrite/delete, X8).
+  async function syncFeed(feedId: string): Promise<SyncResult> {
+    const feed = await icsFeedConfigsRepo.findById(feedId)
+    if (!feed) throw new IcsFeedNotFoundError(feedId)
+    if (!ics) throw new IcsUnavailableError(feedId)
+    let events: RawIcsEvent[]
+    try {
+      events = await ics.fetchFeed(feed.feed_url)
+    } catch (err) {
+      const cause = err instanceof Error ? err.message : String(err)
+      await icsFeedConfigsRepo.update(feedId, { last_error: cause })
+      throw new IcsSyncError(feedId, cause)
+    }
+    // Dedup against every existing event for this feed (ignored rows count — X8 keeps them out of re-sync).
+    const existing = await icsSyncedEventsRepo.findWhere(eq(icsSyncedEvents.feed_id, feedId) as SQL)
+    const seen = new Set(existing.map((e) => e.uid))
+    let added = 0
+    let skipped = 0
+    for (const ev of events) {
+      if (seen.has(ev.uid)) {
+        skipped++
+        continue
+      }
+      await icsSyncedEventsRepo.create({
+        feed_id: feedId,
+        uid: ev.uid,
+        summary: ev.summary ?? null,
+        description: ev.description ?? null,
+        location: ev.location ?? null,
+        start_time: ev.start_time,
+        end_time: ev.end_time ?? null,
+        recurrence_rule: ev.recurrence_rule ?? null,
+        matched_subject_id: null, // unmatched until matchEvent (R7)
+        created_session_id: null, // auto-create is the M2 sync path (addFeed stores the intent)
+        is_ignored: false,
+        raw_event: ev.raw_event ?? null,
+      } satisfies CreateInput<typeof icsSyncedEvents>)
+      seen.add(ev.uid)
+      added++
+    }
+    await icsFeedConfigsRepo.update(feedId, { last_error: null, last_synced_at: Date.now() })
+    return { added, skipped }
+  }
+
+  // X5 — match an event to a subject. Returns the updated event only; it never spawns a class session at M1 (the
+  // event→session path is the M2 sync). `SubjectNotFoundError` if the subject is unknown (fail-loud, no dangling ref).
+  async function matchEvent(eventId: string, input: MatchEventInput): Promise<IcsSyncedEvent> {
+    const v = MatchEventSchema.parse(input)
+    if (!(await icsSyncedEventsRepo.findById(eventId))) throw new IcsEventNotFoundError(eventId)
+    if (!(await subjectsRepo.findById(v.subject_id))) throw new SubjectNotFoundError(v.subject_id)
+    const row = await icsSyncedEventsRepo.update(eventId, { matched_subject_id: v.subject_id })
+    return toIcsSyncedEvent(row)
+  }
+
+  // X8 — ignore an event (never delete). Keeps the dedup key present so re-syncs skip it.
+  async function ignoreEvent(eventId: string): Promise<void> {
+    if (!(await icsSyncedEventsRepo.findById(eventId))) throw new IcsEventNotFoundError(eventId)
+    await icsSyncedEventsRepo.update(eventId, { is_ignored: true })
+  }
+
+  // X9 — revoke/restore a feed via `is_active` (never delete).
+  async function setFeedActive(feedId: string, active: boolean): Promise<IcsFeedConfig> {
+    if (!(await icsFeedConfigsRepo.findById(feedId))) throw new IcsFeedNotFoundError(feedId)
+    const row = await icsFeedConfigsRepo.update(feedId, { is_active: active })
+    return toIcsFeedConfig(row)
+  }
+
+  async function listFeeds(): Promise<IcsFeedConfig[]> {
+    const rows = await icsFeedConfigsRepo.findAll()
+    return rows.map(toIcsFeedConfig)
+  }
+
+  // R7 — all events (ignored + unmatched) so the UI surfaces unmatched ones for manual match.
+  async function listEvents(feedId: string): Promise<IcsSyncedEvent[]> {
+    const rows = await icsSyncedEventsRepo.findWhere(eq(icsSyncedEvents.feed_id, feedId) as SQL)
+    return rows.map(toIcsSyncedEvent)
+  }
+
   return {
     createInstitution,
     updateInstitution,
@@ -729,5 +865,12 @@ export function createLearningEducationService(
     createClassSession,
     listSessions,
     getWeeklySchedule,
+    addFeed,
+    syncFeed,
+    matchEvent,
+    ignoreEvent,
+    setFeedActive,
+    listFeeds,
+    listEvents,
   }
 }

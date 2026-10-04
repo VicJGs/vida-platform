@@ -127,6 +127,37 @@
 - **BR-LE-S4-8 (`@vida/types` `ClassSession` + `SubjectSchedule` — net-new)** — both added `extends SyncableEntity`,
   mirroring the schema rows; `ClassSession` OMITS `deleted_at` (session extension). `[code: packages/types/src/learning.ts]`
 
+### S5 — ICS feeds + events (ED-6 · X1/X2/X5/X8/X9/X10)
+- **BR-LE-S5-1 (ICS tables are add-only — no soft-delete)** — `ics_feed_configs` + `ics_synced_events` omit
+  `deleted_at` → both repos `softDelete:false`. A feed is revoked via `is_active` (X9), an event hidden via
+  `is_ignored` (X8) — **never deleted**. `[code: service.ts icsFeedConfigsRepo/icsSyncedEventsRepo; schema learning.ts:109-153]`
+- **BR-LE-S5-2 (`addFeed` backfills DB-default-equal columns for a faithful row)** — `create()` echoes the input and
+  does NOT read back DB column defaults ([[repository-create-returns-input-row-not-db-defaults]]), so `is_active=true`,
+  `auto_create_sessions` (default false) and `sync_interval_hours=6` (FACT §5.18) are set explicitly in the create
+  input (values equal the DB defaults — no divergence). `auto_create_sessions` is STORED but does not auto-create a
+  class session at M1 (that path is the M2 sync). `[code: service.ts addFeed]`
+- **BR-LE-S5-3 (`syncFeed` is deny-safe — live fetch = M2)** — the `ics?` port absent ⇒ `IcsUnavailableError`
+  (fail-loud: a sync that cannot run must not silently return empty/stale). The configs/events schema + the add-only
+  dedup logic are fully M1; only the network fetch+parse is M2 (ADR-014 X1). `[interpretation.md:52-54; code: service.ts syncFeed]`
+- **BR-LE-S5-4 (`syncFeed` never silent-stale)** — a PRESENT port that throws ⇒ the feed's `last_error` is persisted
+  BEFORE `IcsSyncError` is thrown; a successful run clears `last_error` and stamps `last_synced_at`. No path stamps
+  success on failure, nor leaves `last_error` stale on success. `[seam-contract.md:48; code: service.ts syncFeed]`
+- **BR-LE-S5-5 (add-only dedup on UNIQUE(feed_id,uid) — X8)** — `syncFeed` inserts only uids not already present for
+  the feed; the dedup set counts IGNORED rows too (an ignored event is never resurrected); in-batch duplicate uids are
+  also skipped (no UNIQUE violation under any ordering). Returns `SyncResult {added, skipped}`. `[code: service.ts syncFeed; migration 024 UNIQUE(feed_id,uid)]`
+- **BR-LE-S5-6 (`matchEvent` sets the link, spawns no session at M1 — X5)** — `matchEvent(eventId,{subject_id})` sets
+  `matched_subject_id` and returns the event; fail-loud `SubjectNotFoundError` on an unknown subject (no dangling ref);
+  the event→class-session auto-create is the M2 sync path, so `created_session_id` stays null at M1. `[code: service.ts matchEvent]`
+- **BR-LE-S5-7 (unmatched events surface — R7)** — `listEvents(feedId)` returns ALL events (ignored + unmatched) so
+  the UI can surface unmatched ones for manual match; an unmatched event stays unmatched until `matchEvent`. `[interpretation.md:104; code: service.ts listEvents]`
+- **BR-LE-S5-8 (four typed ICS errors — all with real throw sites, No-Guessing)** — `IcsUnavailableError` /
+  `IcsSyncError` / `IcsFeedNotFoundError` / `IcsEventNotFoundError`; no invented or dead error. `[code: types.ts]`
+- **BR-LE-S5-9 (DB-11 ICS reconcile — the S5 carry-forward RESOLVED)** — `@vida/types` `IcsFeedConfig.default_course_id`
+  → `default_subject_id` and `IcsSyncedEvent.matched_course_id` → `matched_subject_id` (reframe F3), now matching the
+  schema columns; the R8 consumer grep confirms zero non-legacy references to the old names. `[code: packages/types/src/learning.ts:693-716]`
+- **Forward-note (M2 sync loop):** `syncFeed` does NOT gate on `is_active` at M1 — no doc mandates it and live fetch is
+  M2. When the M2 sync loop lands, skip inactive feeds so a revoked feed is not silently re-synced (g2 NIT1).
+
 ## Scope guards honored (the C-* negatives — rerun-ratified)
 - **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
 - **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2/S4 (no economy grant, no `advertise()`, no homework table,

@@ -19,6 +19,8 @@ import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
 import { createSessionsService, type SessionsService } from '../../sessions'
 import {
   type LearningEducationService,
+  type IcsFetchPort,
+  type RawIcsEvent,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -27,6 +29,10 @@ import {
   SubjectNotFoundError,
   UnroutedSubjectError,
   TemplateImmutableError,
+  IcsUnavailableError,
+  IcsSyncError,
+  IcsFeedNotFoundError,
+  IcsEventNotFoundError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -625,5 +631,182 @@ describe('mod-learning-education S4 — schedule + class sessions', () => {
     expect(week.map((v) => v.session.session.started_at)).toEqual([base, base + 1000, end])
     // cross-subject
     expect(new Set(week.map((v) => v.classSession.subject_id))).toEqual(new Set([math.id, phys.id]))
+  })
+})
+
+describe('mod-learning-education S5 — ICS feeds + events (ED-6 · X1/X2/X5/X8/X9/X10)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // A stub `ics?` port over the SAME live store — proves the M1 add-only dedup logic (interpretation.md:54) that a
+  // port-absent service can never reach. `createLearningEducationService` is cheap to re-instantiate on the same db.
+  function withIcs(events: RawIcsEvent[] | (() => Promise<RawIcsEvent[]>)): LearningEducationService {
+    const port: IcsFetchPort = {
+      fetchFeed: async () => (typeof events === 'function' ? events() : events),
+    }
+    return createLearningEducationService({
+      db: h.db,
+      deviceId: 'test-device',
+      sessions: h.sessions,
+      sessionRegistry: h.sessionRegistry,
+      ics: port,
+    })
+  }
+
+  const anEvent = (uid: string, over: Partial<RawIcsEvent> = {}): RawIcsEvent => ({
+    uid,
+    summary: `Lecture ${uid}`,
+    start_time: 1_700_000_000_000,
+    ...over,
+  })
+
+  // --- addFeed (ED-6/X2) ----------------------------------------------------
+  it('addFeed stores the feed with DB-default-equal backfill (is_active=true, auto_create_sessions=false)', async () => {
+    const feed = await h.svc.addFeed({ url: 'webcal://calendar.ics' })
+    expect(feed.feed_url).toBe('webcal://calendar.ics')
+    expect(feed.is_active).toBe(true)
+    expect(feed.auto_create_sessions).toBe(false) // stored; auto-create is the M2 sync path
+    expect(feed.sync_interval_hours).toBe(6) // faithful returned row (create echoes input, not DB defaults)
+    expect(feed.last_synced_at).toBeNull()
+    expect(feed.default_subject_id).toBeNull()
+  })
+
+  it('addFeed persists auto_create_sessions + default_subject_id when given', async () => {
+    const subj = await h.svc.createSubject({ title: 'Chemistry' })
+    const feed = await h.svc.addFeed({ url: 'u', auto_create_sessions: true, default_subject_id: subj.id })
+    const [stored] = await h.svc.listFeeds()
+    expect(stored.id).toBe(feed.id)
+    expect(stored.auto_create_sessions).toBe(true)
+    expect(stored.default_subject_id).toBe(subj.id)
+  })
+
+  // --- syncFeed deny-safe (X1/R9) -------------------------------------------
+  it('syncFeed with the ics? port ABSENT throws IcsUnavailableError (live fetch = M2)', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    const err = await h.svc.syncFeed(feed.id).catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(IcsUnavailableError)
+  })
+
+  it('syncFeed on an unknown feed throws IcsFeedNotFoundError (before the port check)', async () => {
+    const err = await h.svc.syncFeed('missing').catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(IcsFeedNotFoundError)
+  })
+
+  // --- syncFeed success + add-only dedup (X8/X10) ---------------------------
+  it('syncFeed (stub port) adds events, stamps last_synced_at, clears last_error', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    const svcIcs = withIcs([anEvent('a'), anEvent('b')])
+    const res = await svcIcs.syncFeed(feed.id)
+    expect(res).toEqual({ added: 2, skipped: 0 })
+    const events = await h.svc.listEvents(feed.id)
+    expect(events).toHaveLength(2)
+    expect(new Set(events.map((e) => e.uid))).toEqual(new Set(['a', 'b']))
+    // events start unmatched (R7) and not ignored
+    expect(events.every((e) => e.matched_subject_id === null && !e.is_ignored)).toBe(true)
+    expect(events.every((e) => e.created_session_id === null)).toBe(true) // auto-create is M2
+    const [stored] = await h.svc.listFeeds()
+    expect(stored.last_synced_at).not.toBeNull()
+    expect(stored.last_error).toBeNull()
+  })
+
+  it('syncFeed is add-only: a re-sync skips events already present by UNIQUE(feed_id,uid)', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    await withIcs([anEvent('a'), anEvent('b')]).syncFeed(feed.id)
+    // second sync returns a+b (dup) plus a new c → only c is added
+    const res = await withIcs([anEvent('a'), anEvent('b'), anEvent('c')]).syncFeed(feed.id)
+    expect(res).toEqual({ added: 1, skipped: 2 })
+    expect(await h.svc.listEvents(feed.id)).toHaveLength(3)
+  })
+
+  it('syncFeed dedup counts an IGNORED event as present — a re-sync never resurrects it (X8)', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    await withIcs([anEvent('a')]).syncFeed(feed.id)
+    const [ev] = await h.svc.listEvents(feed.id)
+    await h.svc.ignoreEvent(ev.id)
+    const res = await withIcs([anEvent('a')]).syncFeed(feed.id)
+    expect(res).toEqual({ added: 0, skipped: 1 })
+    const events = await h.svc.listEvents(feed.id)
+    expect(events).toHaveLength(1)
+    expect(events[0].is_ignored).toBe(true)
+  })
+
+  // --- syncFeed fetch failure (never silent-stale) --------------------------
+  it('syncFeed persists last_error BEFORE throwing IcsSyncError when the port throws', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    const svcIcs = withIcs(() => Promise.reject(new Error('network down')))
+    const err = await svcIcs.syncFeed(feed.id).catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(IcsSyncError)
+    const [stored] = await h.svc.listFeeds()
+    expect(stored.last_error).toBe('network down') // written before the throw — never silent-stale
+    expect(stored.last_synced_at).toBeNull() // failure did not stamp success
+  })
+
+  // --- matchEvent (X5) ------------------------------------------------------
+  it('matchEvent sets matched_subject_id and returns the event (never spawns a session at M1)', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    await withIcs([anEvent('a')]).syncFeed(feed.id)
+    const subj = await h.svc.createSubject({ title: 'Biology' })
+    const [ev] = await h.svc.listEvents(feed.id)
+    const matched = await h.svc.matchEvent(ev.id, { subject_id: subj.id })
+    expect(matched.matched_subject_id).toBe(subj.id)
+    expect(matched.created_session_id).toBeNull() // no session spawned (M2 auto-create path)
+    // no class session was created as a side effect
+    expect(await h.svc.listSessions(subj.id)).toHaveLength(0)
+  })
+
+  it('matchEvent on an unknown event throws IcsEventNotFoundError', async () => {
+    const subj = await h.svc.createSubject({ title: 'Bio' })
+    const err = await h.svc.matchEvent('missing', { subject_id: subj.id }).catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(IcsEventNotFoundError)
+  })
+
+  it('matchEvent to an unknown subject throws SubjectNotFoundError (no dangling ref)', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    await withIcs([anEvent('a')]).syncFeed(feed.id)
+    const [ev] = await h.svc.listEvents(feed.id)
+    const err = await h.svc.matchEvent(ev.id, { subject_id: 'missing' }).catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(SubjectNotFoundError)
+  })
+
+  // --- ignoreEvent / setFeedActive (X8/X9 — never delete) -------------------
+  it('ignoreEvent sets is_ignored without deleting the row', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    await withIcs([anEvent('a')]).syncFeed(feed.id)
+    const [ev] = await h.svc.listEvents(feed.id)
+    await h.svc.ignoreEvent(ev.id)
+    const events = await h.svc.listEvents(feed.id)
+    expect(events).toHaveLength(1) // still present (X8 — never delete)
+    expect(events[0].is_ignored).toBe(true)
+  })
+
+  it('ignoreEvent on an unknown event throws IcsEventNotFoundError', async () => {
+    const err = await h.svc.ignoreEvent('missing').catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(IcsEventNotFoundError)
+  })
+
+  it('setFeedActive revokes/restores via is_active without deleting (X9)', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    const revoked = await h.svc.setFeedActive(feed.id, false)
+    expect(revoked.is_active).toBe(false)
+    expect(await h.svc.listFeeds()).toHaveLength(1) // still present (never deleted)
+    const restored = await h.svc.setFeedActive(feed.id, true)
+    expect(restored.is_active).toBe(true)
+  })
+
+  it('setFeedActive on an unknown feed throws IcsFeedNotFoundError', async () => {
+    const err = await h.svc.setFeedActive('missing', false).catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(IcsFeedNotFoundError)
+  })
+
+  // --- listEvents (R7) ------------------------------------------------------
+  it('listEvents returns ignored + unmatched events (UI surfaces unmatched for manual match)', async () => {
+    const feed = await h.svc.addFeed({ url: 'u' })
+    await withIcs([anEvent('a'), anEvent('b')]).syncFeed(feed.id)
+    const [first] = await h.svc.listEvents(feed.id)
+    await h.svc.ignoreEvent(first.id)
+    const all = await h.svc.listEvents(feed.id)
+    expect(all).toHaveLength(2) // both surface, ignored included
   })
 })
