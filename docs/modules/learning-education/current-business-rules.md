@@ -158,6 +158,30 @@
 - **Forward-note (M2 sync loop):** `syncFeed` does NOT gate on `is_active` at M1 — no doc mandates it and live fetch is
   M2. When the M2 sync loop lands, skip inactive feeds so a revoked feed is not silently re-synced (g2 NIT1).
 
+### S6 — grading systems + components (ED-7 · H3)
+- **BR-LE-S6-1 (a grading system is scoped + fail-loud on create)** — `createGradingSystem(scope,{…})` validates the
+  scope entity exists (`Institution`/`Program`/`SubjectNotFoundError` by `scope.type`) BEFORE any write (no-FK, the
+  `BR-LE-S1-2` convention). A `subject`-scoped system OVERRIDES the broader one; the override-RESOLUTION (which system
+  applies to a subject) is S7's concern, not stored here. Multiple systems per scope are allowed ("create or inherit").
+  `[code: service.ts createGradingSystem/assertScopeExists]`
+- **BR-LE-S6-2 (weight rule — flag, NEVER normalize)** — the non-null component weights, if any are given, must sum to
+  EXACTLY 10000 bp (100%); otherwise `GradingWeightError` (never normalized). An all-null set (unweighted scale —
+  `pass_fail`/points) is unconstrained. `weight: 0` is a non-null weight (a lone `0` ≠ 100% → flagged), NOT "unset".
+  Validated before any write → a rejected system leaves zero partial rows. `[contract.md:63; business-rules.md:73; code: service.ts createGradingSystem]`
+- **BR-LE-S6-3 (`scale_config` is `[E]` JSON-as-text)** — serialized via `JSON.stringify` on write (only when non-null),
+  defensive-parsed on read (malformed ⇒ null, reuses `parseMetadata`). `[R10; code: service.ts createGradingSystem/toGradingSystem]`
+- **BR-LE-S6-4 (both grading tables soft-delete)** — `grading_systems` + `grading_components` have `deleted_at` →
+  `softDelete:true`; `getGradingSystem`/`listGradingSystems` filter `deleted_at` explicitly on `findWhere`
+  ([[repository-findwhere-skips-softdelete-filter]]). `[code: service.ts]`
+- **BR-LE-S6-5 (`GradingSystemView` enriches the seam)** — `createGradingSystem`/`getGradingSystem` return
+  `{system, components}` (the created/live composite, the `ClassSessionView` precedent); `listGradingSystems` returns
+  systems only (components via `getGradingSystem`). Per-row component writes, no outer tx (eventually-consistent, re-drivable). `[code: service.ts]`
+- **BR-LE-S6-6 (`@vida/types` `GradingSystem` + `GradingComponent` — net-new)** — both `extends SyncableEntity`,
+  declare `deleted_at`; a component is weight-based (`weight` BasisPoints) OR points-based (`max_points`), both nullable;
+  `scale_config` typed `Record<string,unknown> | null` (parsed). `[code: packages/types/src/learning.ts]`
+- **BR-LE-S6-7 (duplicate `component_type` allowed by design)** — no uniqueness guard on components; a system may hold
+  two same-type buckets (e.g. two `exam` components), per ED-7 "each with own weight/points, per professor" (No-Guessing — no doc mandates uniqueness). `[code: service.ts createGradingSystem]`
+
 ## Scope guards honored (the C-* negatives — rerun-ratified)
 - **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
 - **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2/S4 (no economy grant, no `advertise()`, no homework table,

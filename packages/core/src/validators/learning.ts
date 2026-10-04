@@ -216,3 +216,23 @@ export const AddFeedSchema = z.object({
 export const MatchEventSchema = z.object({
   subject_id: z.string().min(1),
 })
+
+// ---------------------------------------------------------------------------
+// S6 — grading systems + components (ED-7 · H3). A component is weight-based (`weight` in BasisPoints, 10000 = 100%)
+// OR points-based (`max_points`) — both nullable. The weight-sum rule (non-null weights must total 100%) is enforced
+// in the SERVICE (`GradingWeightError`), not here — a cross-field sum is a service invariant, not per-row validation.
+// `scale_config` is the custom-scale definition; serialized `[E]` JSON service-side (R10).
+// ---------------------------------------------------------------------------
+export const CreateGradingComponentSchema = z.object({
+  component_type: GradingComponentTypeSchema,
+  name: z.string().nullish(),
+  weight: z.number().int().nonnegative().nullish(), // BasisPoints
+  max_points: z.number().int().positive().nullish(),
+})
+export const CreateGradingSystemSchema = z.object({
+  scale_type: GradingScaleTypeSchema,
+  scale_config: z.record(z.string(), z.unknown()).nullish(),
+  name: z.string().min(1),
+  description: z.string().nullish(),
+  components: z.array(CreateGradingComponentSchema),
+})

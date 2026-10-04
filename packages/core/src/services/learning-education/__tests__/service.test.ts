@@ -33,6 +33,7 @@ import {
   IcsSyncError,
   IcsFeedNotFoundError,
   IcsEventNotFoundError,
+  GradingWeightError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -808,5 +809,153 @@ describe('mod-learning-education S5 — ICS feeds + events (ED-6 · X1/X2/X5/X8/
     await h.svc.ignoreEvent(first.id)
     const all = await h.svc.listEvents(feed.id)
     expect(all).toHaveLength(2) // both surface, ignored included
+  })
+})
+
+describe('mod-learning-education S6 — grading systems + components (ED-7 · H3)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  async function aSubjectScope(title = 'Algorithms') {
+    const subj = await h.svc.createSubject({ title })
+    return { type: 'subject' as const, id: subj.id }
+  }
+
+  const comp = (component_type: 'homework' | 'exam' | 'quiz', weight: number | null, max_points?: number) => ({
+    component_type,
+    weight,
+    ...(max_points != null ? { max_points } : {}),
+  })
+
+  // --- createGradingSystem happy path (weights sum 100%) --------------------
+  it('createGradingSystem builds the system + components; weights summing to 100% pass', async () => {
+    const scope = await aSubjectScope()
+    const view = await h.svc.createGradingSystem(scope, {
+      name: 'Standard',
+      scale_type: 'numeric',
+      components: [comp('homework', 3000), comp('exam', 7000)],
+    })
+    expect(view.system.scope).toBe('subject')
+    expect(view.system.scope_id).toBe(scope.id)
+    expect(view.system.scale_type).toBe('numeric')
+    expect(view.components).toHaveLength(2)
+    expect(view.components.every((c) => c.grading_system_id === view.system.id)).toBe(true)
+    // persisted + readable
+    const got = await h.svc.getGradingSystem(view.system.id)
+    expect(got?.components).toHaveLength(2)
+  })
+
+  it('scale_config round-trips through JSON serialize/parse (custom scale)', async () => {
+    const scope = await aSubjectScope()
+    const cfg = { bands: [{ min: 90, grade: 'A' }, { min: 80, grade: 'B' }] }
+    const view = await h.svc.createGradingSystem(scope, {
+      name: 'Custom',
+      scale_type: 'custom',
+      scale_config: cfg,
+      components: [comp('exam', 10000)],
+    })
+    expect(view.system.scale_config).toEqual(cfg)
+    const got = await h.svc.getGradingSystem(view.system.id)
+    expect(got?.system.scale_config).toEqual(cfg)
+  })
+
+  // --- weight rule (contract.md:63 — flag, never normalize) -----------------
+  it('weights summing ≠ 100% throw GradingWeightError (never normalized)', async () => {
+    const scope = await aSubjectScope()
+    const err = await h.svc
+      .createGradingSystem(scope, {
+        name: 'Bad',
+        scale_type: 'numeric',
+        components: [comp('homework', 3000), comp('exam', 4000)], // 70%
+      })
+      .catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(GradingWeightError)
+    // nothing was persisted (validated before any write)
+    expect(await h.svc.listGradingSystems(scope)).toHaveLength(0)
+  })
+
+  it('an all-null-weight system (pass_fail / points) is unconstrained — no error', async () => {
+    const scope = await aSubjectScope()
+    const view = await h.svc.createGradingSystem(scope, {
+      name: 'Pass/Fail',
+      scale_type: 'pass_fail',
+      components: [comp('exam', null, 100), comp('quiz', null, 50)],
+    })
+    expect(view.components).toHaveLength(2)
+    expect(view.components.every((c) => c.weight === null)).toBe(true)
+  })
+
+  it('a system with no components is allowed (empty builder)', async () => {
+    const scope = await aSubjectScope()
+    const view = await h.svc.createGradingSystem(scope, { name: 'Empty', scale_type: 'letter', components: [] })
+    expect(view.components).toHaveLength(0)
+  })
+
+  it('a single weight of exactly 100% passes; a mixed weight+null set sums only the non-null weights', async () => {
+    const scope = await aSubjectScope()
+    const view = await h.svc.createGradingSystem(scope, {
+      name: 'Mixed',
+      scale_type: 'numeric',
+      components: [comp('exam', 10000), comp('homework', null, 20)], // non-null sum = 10000 → ok
+    })
+    expect(view.components).toHaveLength(2)
+  })
+
+  // --- scope validation (fail-loud, no dangling ref) ------------------------
+  it('an unknown institution/program/subject scope throws the matching NotFoundError', async () => {
+    const e1 = await h.svc
+      .createGradingSystem({ type: 'institution', id: 'ghost' }, { name: 'x', scale_type: 'letter', components: [] })
+      .catch((e: unknown) => e as Error)
+    expect(e1).toBeInstanceOf(InstitutionNotFoundError)
+    const e2 = await h.svc
+      .createGradingSystem({ type: 'program', id: 'ghost' }, { name: 'x', scale_type: 'letter', components: [] })
+      .catch((e: unknown) => e as Error)
+    expect(e2).toBeInstanceOf(ProgramNotFoundError)
+    const e3 = await h.svc
+      .createGradingSystem({ type: 'subject', id: 'ghost' }, { name: 'x', scale_type: 'letter', components: [] })
+      .catch((e: unknown) => e as Error)
+    expect(e3).toBeInstanceOf(SubjectNotFoundError)
+  })
+
+  // --- weight:0 is a non-null weighted component (distinct from unset) -------
+  it('a lone weight:0 component is flagged (0 ≠ 100%) — 0 is a weight, not "unset"', async () => {
+    const scope = await aSubjectScope()
+    const err = await h.svc
+      .createGradingSystem(scope, { name: 'Zero', scale_type: 'numeric', components: [comp('exam', 0)] })
+      .catch((e: unknown) => e as Error)
+    expect(err).toBeInstanceOf(GradingWeightError)
+  })
+
+  // --- getGradingSystem / listGradingSystems --------------------------------
+  it('getGradingSystem returns null for an unknown id', async () => {
+    expect(await h.svc.getGradingSystem('missing')).toBeNull()
+  })
+
+  it('getGradingSystem excludes a soft-deleted component (deleted_at filter)', async () => {
+    const scope = await aSubjectScope()
+    const view = await h.svc.createGradingSystem(scope, {
+      name: 'S',
+      scale_type: 'numeric',
+      components: [comp('homework', 3000), comp('exam', 7000)],
+    })
+    expect((await h.svc.getGradingSystem(view.system.id))?.components).toHaveLength(2)
+    // genuinely soft-delete one component in the live store, then assert it drops out of the view
+    const victim = view.components[0].id
+    h.bsql.prepare('UPDATE grading_components SET deleted_at = ? WHERE id = ?').run(Date.now(), victim)
+    const after = await h.svc.getGradingSystem(view.system.id)
+    expect(after?.components).toHaveLength(1)
+    expect(after?.components[0].id).not.toBe(victim)
+  })
+
+  it('listGradingSystems filters by scope + scope_id', async () => {
+    const scopeA = await aSubjectScope('Math')
+    const scopeB = await aSubjectScope('Physics')
+    await h.svc.createGradingSystem(scopeA, { name: 'A', scale_type: 'letter', components: [] })
+    await h.svc.createGradingSystem(scopeA, { name: 'A2', scale_type: 'numeric', components: [] })
+    await h.svc.createGradingSystem(scopeB, { name: 'B', scale_type: 'letter', components: [] })
+    expect(await h.svc.listGradingSystems(scopeA)).toHaveLength(2)
+    expect(await h.svc.listGradingSystems(scopeB)).toHaveLength(1)
   })
 })

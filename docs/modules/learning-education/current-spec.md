@@ -18,7 +18,7 @@ A **pure service tier over a finished schema** (no DDL — DB-4 #12 authored all
 (`subject`/`institution`/`program`/`curriculum`/`term`/`assessment`/`subject_document`) are already registered
 in `db/schema/_registry.ts:100-106` — composed, never re-registered.
 
-## Delivered surface (as of S5)
+## Delivered surface (as of S6)
 
 `createLearningEducationService({ db, deviceId, sessions, sessionRegistry, ics? }) → LearningEducationService`.
 Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added the BUILT, injected
@@ -53,6 +53,9 @@ Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added t
 | `ignoreEvent(eventId)` | X8 | **S5** — set `is_ignored` (never delete; dedup keeps it out of re-syncs); `IcsEventNotFoundError` |
 | `setFeedActive(feedId, active)` | X9 | **S5** — revoke/restore via `is_active` (never delete); `IcsFeedNotFoundError` |
 | `listFeeds()` / `listEvents(feedId)` | R7 | **S5** — feeds (active+revoked); events (ignored+unmatched, so the UI surfaces unmatched for manual match) |
+| `createGradingSystem(scope, {scale_type, scale_config?, name, description?, components:[{component_type, weight?, max_points?, name?}]})` | ED-7 · H3 | **S6** — scope `{type:institution\|program\|subject, id}` must resolve (fail-loud); **weight rule**: non-null weights (if any) sum to 10000 bp or `GradingWeightError` (never normalize); `scale_config` serialized `[E]` JSON; validated before any write → `GradingSystemView {system, components}` |
+| `getGradingSystem(id)` | ED-7 | **S6** — `GradingSystemView \| null`; live components (`deleted_at`-filtered) |
+| `listGradingSystems(scope)` | ED-7 | **S6** — live systems for a scope (multiple allowed — "create or inherit"; override-resolution is S7) |
 
 ## Composition & conventions
 
@@ -69,10 +72,14 @@ Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added t
 - **S5 ICS composition** — `ics_feed_configs` + `ics_synced_events` have NO `deleted_at` → both repos `softDelete:false`
   (revoke via `is_active`/`is_ignored`, never delete). `syncFeed`'s live fetch is the deny-safe `ics?` port (M2); the
   schema + add-only UNIQUE(feed_id,uid) dedup are M1 and proven via an injected stub port.
+- **S6 grading composition** — `grading_systems` + `grading_components` both `softDelete:true`. The weight rule is a
+  SERVICE invariant (cross-field sum, not per-row validation): non-null weights sum to 10000 bp or `GradingWeightError`,
+  flagged never normalized, enforced before any write. `scale_config` is `[E]` JSON (serialize/parse). Duplicate
+  `component_type` permitted by design; override-resolution (which scope's system applies) deferred to S7.
 
 ## Not yet built (homed per slice-map.md)
-S6 grading builder · S7 assessments + grade/GPA compute · S8 education measurement · S9 subject vault + tags ·
-S10 cross-module fan-out + Journal. Frontend (dashboards/hub/builders) = ② `fe-learning-education` (P6).
+S7 assessments + grade/GPA compute · S8 education measurement · S9 subject vault + tags · S10 cross-module fan-out +
+Journal. Frontend (dashboards/hub/builders) = ② `fe-learning-education` (P6).
 M2 defers: ICS live fetch, document extraction (AI), real Tasks→Education reads, the M2 sync loop (skip inactive feeds).
 
 ## Carry-forwards

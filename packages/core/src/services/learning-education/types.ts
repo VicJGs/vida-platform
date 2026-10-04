@@ -26,6 +26,9 @@ import type {
   ClassSession,
   IcsFeedConfig,
   IcsSyncedEvent,
+  GradingSystem,
+  GradingComponent,
+  GradingScope,
   ProgramParentType,
   CourseStatus,
 } from '@vida/types'
@@ -50,6 +53,7 @@ import type {
   CreateClassSessionSchema,
   AddFeedSchema,
   MatchEventSchema,
+  CreateGradingSystemSchema,
 } from '../../validators/learning'
 
 /** A raw calendar event as returned by the M2 ICS fetch boundary — the parse/normalize happens device-side
@@ -120,12 +124,28 @@ export type CreateClassSessionInput = z.input<typeof CreateClassSessionSchema>
 export type AddFeedInput = z.input<typeof AddFeedSchema>
 /** Match a synced event to a subject (S5). */
 export type MatchEventInput = z.input<typeof MatchEventSchema>
+/** Create a grading system + its weighted components in one call (S6). `scale_config` is an object, serialized `[E]`. */
+export type CreateGradingSystemInput = z.input<typeof CreateGradingSystemSchema>
 
 /** A class meeting = the base `sessions` row (lifecycle/timing) + the `class_sessions` 1:1 extension (S4).
  *  Mirrors the books `ReadingSessionView {session, reading}` shape. */
 export interface ClassSessionView {
   session: Session
   classSession: ClassSession
+}
+
+/** A grading system's scope (S6, ED-7) — the institution/program/subject it belongs to (no FK; a `subject` scope
+ *  OVERRIDES the broader one, resolved by the consumer not stored). */
+export interface GradingScopeRef {
+  type: GradingScope
+  id: string
+}
+
+/** A grading system + its weighted components (S6). The composite shape `createGradingSystem` returns and
+ *  `getGradingSystem` reads — enriches the seam's `→ GradingSystem` (the `ClassSessionView` precedent). */
+export interface GradingSystemView {
+  system: GradingSystem
+  components: GradingComponent[]
 }
 
 /** Filter for `listSubjects` (ED-3 routing). All optional — an empty filter lists every live subject. */
@@ -237,6 +257,17 @@ export interface LearningEducationService {
   listFeeds(): Promise<IcsFeedConfig[]>
   /** All synced events for a feed (ignored + unmatched included — the UI surfaces unmatched for manual match, R7). */
   listEvents(feedId: string): Promise<IcsSyncedEvent[]>
+
+  // --- grading systems + components (S6 — ED-7 · H3) ---
+  /** Build a grading system + its weighted components in one call (ED-7). Validates the scope entity exists
+   *  (fail-loud: `Institution`/`Program`/`SubjectNotFoundError` by `scope.type`) and the weight rule (non-null
+   *  weights, if any, must sum to 100% / 10000 bp — else `GradingWeightError`, never normalized) BEFORE any write.
+   *  `scale_config` is serialized `[E]` JSON. Returns the `{system, components}` view. */
+  createGradingSystem(scope: GradingScopeRef, input: CreateGradingSystemInput): Promise<GradingSystemView>
+  /** A grading system + its live components, or null if unknown/soft-deleted. */
+  getGradingSystem(id: string): Promise<GradingSystemView | null>
+  /** All live grading systems for a scope (ED-7) — systems only; components via `getGradingSystem`. */
+  listGradingSystems(scope: GradingScopeRef): Promise<GradingSystem[]>
 }
 
 // --- typed errors (fail loud — constitution §5) ------------------------------
@@ -322,5 +353,14 @@ export class IcsEventNotFoundError extends Error {
   constructor(id: string) {
     super(`ICS synced event not found: ${id}`)
     this.name = 'IcsEventNotFoundError'
+  }
+}
+// --- S6 grading error (real throw site in createGradingSystem) ----------------
+/** A grading system's non-null component weights do not sum to 100% (10000 bp). Flagged, never normalized
+ *  (ED-7 / contract.md:63). */
+export class GradingWeightError extends Error {
+  constructor(sumBp: number) {
+    super(`Grading component weights must sum to 100% (10000 bp); got ${sumBp} bp`)
+    this.name = 'GradingWeightError'
   }
 }

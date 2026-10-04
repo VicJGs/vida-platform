@@ -26,6 +26,8 @@ import type {
   ClassSession,
   IcsFeedConfig,
   IcsSyncedEvent,
+  GradingSystem,
+  GradingComponent,
 } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import {
@@ -39,6 +41,8 @@ import {
   classSessions,
   icsFeedConfigs,
   icsSyncedEvents,
+  gradingSystems,
+  gradingComponents,
   type InstitutionRow,
   type SelfTaughtRow,
   type ProgramRow,
@@ -49,6 +53,8 @@ import {
   type ClassSessionRow,
   type IcsFeedConfigRow,
   type IcsSyncedEventRow,
+  type GradingSystemRow,
+  type GradingComponentRow,
 } from '../../db/schema/learning'
 import { DuplicateSubType, type SessionTypeDef } from '../../foundation/sessions'
 import {
@@ -69,6 +75,7 @@ import {
   CreateClassSessionSchema,
   AddFeedSchema,
   MatchEventSchema,
+  CreateGradingSystemSchema,
 } from '../../validators/learning'
 import {
   type LearningEducationService,
@@ -97,6 +104,9 @@ import {
   type MatchEventInput,
   type SyncResult,
   type RawIcsEvent,
+  type GradingScopeRef,
+  type GradingSystemView,
+  type CreateGradingSystemInput,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -108,6 +118,7 @@ import {
   IcsSyncError,
   IcsFeedNotFoundError,
   IcsEventNotFoundError,
+  GradingWeightError,
 } from './types'
 
 // --- row→interface mappers (only the plain-text `_sync_status` needs the union cast) ---
@@ -173,6 +184,20 @@ const toIcsSyncedEvent = (r: IcsSyncedEventRow): IcsSyncedEvent => ({
   ...r,
   _sync_status: r._sync_status as IcsSyncedEvent['_sync_status'],
 })
+// S6 mappers — `scale_config` defensive-parsed (R10, the metadata precedent); `scope`/`scale_type`/`component_type`
+// are plain-text union casts; `weight`/`max_points` are plain integers (no cast).
+const toGradingSystem = (r: GradingSystemRow): GradingSystem => ({
+  ...r,
+  scope: r.scope as GradingSystem['scope'],
+  scale_type: r.scale_type as GradingSystem['scale_type'],
+  scale_config: parseMetadata(r.scale_config),
+  _sync_status: r._sync_status as GradingSystem['_sync_status'],
+})
+const toGradingComponent = (r: GradingComponentRow): GradingComponent => ({
+  ...r,
+  component_type: r.component_type as GradingComponent['component_type'],
+  _sync_status: r._sync_status as GradingComponent['_sync_status'],
+})
 
 // IR/BR-LE-S4-2 — the `class` Session sub-type Education registers. A TRANSCRIPTION of ADR-004 §3.2:
 // `effects:[]` (§3.2.2 + C-E2 — Education is a non-feeder; any completion grant rides the base sub-type),
@@ -213,6 +238,9 @@ export function createLearningEducationService(
   // S5 — ICS tables have NO deleted_at (X8 add-only / X9 revoke-via-is_active) → softDelete:false.
   const icsFeedConfigsRepo = createRepository(db, icsFeedConfigs, { deviceId, softDelete: false, encryptedFields: [] })
   const icsSyncedEventsRepo = createRepository(db, icsSyncedEvents, { deviceId, softDelete: false, encryptedFields: [] })
+  // S6 — grading tables both have deleted_at → softDelete:true.
+  const gradingSystemsRepo = createRepository(db, gradingSystems, { deviceId, softDelete: true, encryptedFields: [] })
+  const gradingComponentsRepo = createRepository(db, gradingComponents, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- institutions (ED-2) --------------------------------------------------
   async function createInstitution(input: CreateInstitutionInput): Promise<Institution> {
@@ -827,6 +855,87 @@ export function createLearningEducationService(
     return rows.map(toIcsSyncedEvent)
   }
 
+  // ===========================================================================
+  // S6 — grading systems + components (ED-7 · H3) — the grade builder
+  // ===========================================================================
+
+  // Fail-loud scope resolution (the BR-LE-S1-2 create-time convention) — a grading system never references a
+  // non-existent institution/program/subject (no-FK, so the service enforces it).
+  async function assertScopeExists(scope: GradingScopeRef): Promise<void> {
+    if (scope.type === 'institution') {
+      if (!(await institutionsRepo.findById(scope.id))) throw new InstitutionNotFoundError(scope.id)
+    } else if (scope.type === 'program') {
+      if (!(await programsRepo.findById(scope.id))) throw new ProgramNotFoundError(scope.id)
+    } else {
+      if (!(await subjectsRepo.findById(scope.id))) throw new SubjectNotFoundError(scope.id)
+    }
+  }
+
+  // ED-7/H3 — build a grading system + its components. Validates scope + the weight rule BEFORE any write, so a
+  // rejected system leaves zero partial rows. Weight rule (contract.md:63): the non-null component weights, if any
+  // are given, must sum to exactly 100% (10000 bp) — flagged (`GradingWeightError`), NEVER normalized; a fully
+  // unweighted set (all null — pass_fail/points) is unconstrained. `scale_config` serialized `[E]` JSON (R10).
+  // Per-row component writes, no outer tx — an orphan is harmless + re-drivable (no-FK eventually-consistent, the
+  // S4/S5 precedent). The scope override-resolution (which system applies to a subject) is S7's concern, not here.
+  async function createGradingSystem(
+    scope: GradingScopeRef,
+    input: CreateGradingSystemInput,
+  ): Promise<GradingSystemView> {
+    const v = CreateGradingSystemSchema.parse(input)
+    await assertScopeExists(scope)
+    const weights = v.components.map((c) => c.weight).filter((w): w is number => w != null)
+    if (weights.length > 0) {
+      const sum = weights.reduce((a, b) => a + b, 0)
+      if (sum !== 10000) throw new GradingWeightError(sum)
+    }
+    const system = await gradingSystemsRepo.create({
+      scope: scope.type,
+      scope_id: scope.id,
+      name: v.name,
+      description: v.description ?? null,
+      scale_type: v.scale_type,
+      scale_config: v.scale_config != null ? JSON.stringify(v.scale_config) : null,
+      deleted_at: null,
+    } satisfies CreateInput<typeof gradingSystems>)
+    const components: GradingComponentRow[] = []
+    for (const c of v.components) {
+      components.push(
+        await gradingComponentsRepo.create({
+          grading_system_id: system.id,
+          component_type: c.component_type,
+          name: c.name ?? null,
+          weight: c.weight ?? null,
+          max_points: c.max_points ?? null,
+          deleted_at: null,
+        } satisfies CreateInput<typeof gradingComponents>),
+      )
+    }
+    return { system: toGradingSystem(system), components: components.map(toGradingComponent) }
+  }
+
+  // A system + its live components (findWhere skips the soft-delete filter → filter deleted_at explicitly, the S4
+  // precedent [[repository-findwhere-skips-softdelete-filter]]). `findById` already excludes a soft-deleted system.
+  async function getGradingSystem(id: string): Promise<GradingSystemView | null> {
+    const system = await gradingSystemsRepo.findById(id)
+    if (!system) return null
+    const components = await gradingComponentsRepo.findWhere(
+      and(eq(gradingComponents.grading_system_id, id), isNull(gradingComponents.deleted_at)) as SQL,
+    )
+    return { system: toGradingSystem(system), components: components.map(toGradingComponent) }
+  }
+
+  // Live grading systems for a scope (multiple allowed — "create or inherit"; override-resolution is S7's).
+  async function listGradingSystems(scope: GradingScopeRef): Promise<GradingSystem[]> {
+    const rows = await gradingSystemsRepo.findWhere(
+      and(
+        eq(gradingSystems.scope, scope.type),
+        eq(gradingSystems.scope_id, scope.id),
+        isNull(gradingSystems.deleted_at),
+      ) as SQL,
+    )
+    return rows.map(toGradingSystem)
+  }
+
   return {
     createInstitution,
     updateInstitution,
@@ -872,5 +981,8 @@ export function createLearningEducationService(
     setFeedActive,
     listFeeds,
     listEvents,
+    createGradingSystem,
+    getGradingSystem,
+    listGradingSystems,
   }
 }

@@ -3,7 +3,7 @@
 // ADR-002 §5.10, §5.12, §5.18
 // ============================================================================
 
-import type { Id, Timestamp } from './common'
+import type { Id, Timestamp, BasisPoints } from './common'
 import type { SyncableEntity, SyncMetadata } from './sync'
 
 // ---------------------------------------------------------------------------
@@ -172,6 +172,35 @@ export const GRADING_COMPONENT_TYPE = [
   'work',
 ] as const
 export type GradingComponentType = (typeof GRADING_COMPONENT_TYPE)[number]
+
+/** A user-shaped grading system (ED-7). Scoped to an institution/program/subject (`scope`+`scope_id`, no FK); a
+ *  subject-scoped system OVERRIDES the broader one (resolution is the consumer's, not stored). `scale_config` holds
+ *  the custom-scale definition as JSON (parsed service-side; `[E]`). */
+export interface GradingSystem extends SyncableEntity {
+  scope: GradingScope
+  scope_id: Id
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  scale_type: GradingScaleType
+  /** @encrypted — custom scale definition (parsed from JSON-as-text) */
+  scale_config: Record<string, unknown> | null
+  deleted_at: Timestamp | null
+}
+
+/** A weighted component of a grading system (ED-7). A component is either weight-based (`weight` in basis points,
+ *  10000 = 100%) OR points-based (`max_points`) — both nullable. The weights that ARE set must sum to 100%
+ *  (never normalized; `GradingWeightError`). */
+export interface GradingComponent extends SyncableEntity {
+  grading_system_id: Id
+  component_type: GradingComponentType
+  /** @encrypted */
+  name: string | null
+  weight: BasisPoints | null
+  max_points: number | null
+  deleted_at: Timestamp | null
+}
 
 /** A subject-attached assessment's type (ED-8, conventions L31). */
 export const ASSESSMENT_TYPE = ['exam', 'quiz', 'test', 'presentation', 'work'] as const
