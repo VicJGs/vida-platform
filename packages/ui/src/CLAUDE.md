@@ -227,9 +227,26 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   empty designed-row · success). NO write/sort/row-click props (read-only; interactivity composes in `column.render`, LV-5).
   Visual Gate: full-matrix AA (4.94–6.53 incl. warm-dark) · axe-clean · 375 scroll · `aria-colspan` serializes. Spec:
   `docs/specs/components/ui-2-platform-views/v8-table-view.md`. Delivery: `docs/specs/foundation/fe-codec-viewmodes/`.
-  **⟹ 7 UI-2 views shipped** (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) **+ table** (fe-codec-viewmodes
-  S1; **board** = S2, pending) + the shared `internal/data-view` spine. Of the **7 canonical VIEW_LAYOUT renderers**,
-  **6 now ship** (list·gallery·timeline·calendar·graph·table); **board** is the last, in S2.
+  **board-view** is **fe-codec-viewmodes · S2** (LIF-214) — the renderer for the **`board`** VIEW_LAYOUT, the **LAST**
+  canonical view-mode (completes the 7). A **READ-ONLY LENS** grouped-column (kanban) grid over **PRE-GROUPED** data
+  (`groups: BoardGroup<T>[]` = `{id · title · items}`; the provider groups upstream per ADR-007 §3.3 — the renderer
+  never groups/filters/sorts). `role="group"` of **columns**, each a titled `role="list"` of cards via `renderCard(item,
+  group)` + a header (title + **per-group count = `items.length`**, derived not passed). **HYBRID spine reuse:** each
+  COLUMN reuses `resolveDataViewState` (a column IS a list → `role="list"`/`status`, per-column empty); the BOARD level
+  owns loading (fixed `SKELETON_COLUMNS`, data-independent — **no `loadingCount` prop**, the deliberate table asymmetry) /
+  error (`role="status"`) / board-empty (no groups → `role="status"`, the inverse of table's designed-empty-row — a board's
+  columns ARE the data) directly. **⚠ Per-column empty is normal in a success board** — the renderer derives each column's
+  `colState = items.length===0 ? 'empty' : 'success'` before `resolveDataViewState`, so an empty column resolves to
+  `role="status"` WITHOUT tripping the spine's "pass state=empty" dev-warn. Each column list is named via `aria-labelledby`
+  → a **`useId`-prefixed, index-keyed** DOM id (NOT `group.id`, which may hold spaces). **NO write/drag/move props** (the
+  interactive move = a Capability, ADR-008/INT-2, homed OUT — O1; card interactivity composes in `renderCard`, LV-5).
+  Bordered columns (1px `$colorBorderDefault` + `$lg`) + fixed `COLUMN_WIDTH 280` in `overflowX:auto` for 375; density =
+  between-card gap; React-19 ref-prop, no sub-theme, DIRECT semantic tokens. Visual Gate: full-matrix AA (muted 4.94–6.53
+  incl. warm-dark) · 375 scroll · 3 board-level terminal states. Spec:
+  `docs/specs/components/ui-2-platform-views/v9-board-view.md`.
+  **⟹ 8 UI-2 views shipped** (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) **+ table + board**
+  (fe-codec-viewmodes S1/S2) + the shared `internal/data-view` spine. **All 7 canonical VIEW_LAYOUT renderers now ship**
+  (list·gallery·timeline·calendar·graph·table·board) — the spine is complete.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
