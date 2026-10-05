@@ -2,6 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
+- mod-learning-education (LIF-130 · in-progress): .claude/tasks/mod-learning-education.md  (M1/M1.1.2 `#52` · add-backend-component / Default (Entity Delivery Flow). ① `createLearningEducationService` over DB-4 `024_learning_education` (15 tables: subjects/programs/curricula/terms/class_sessions/assessments/grading_*/ics_*/…). Activated from the backend-replan P5 stub — all 8 blockers Done → READY. At Step 0 BASELINE → Step 1 Interpretation. Branch `mod-learning-education` off main.)
 - mod-notifications (LIF-132 · in-progress): .claude/tasks/mod-notifications.md  (M1/M1.1.2 `#53` · add-backend-component / Default (Entity Delivery Flow). ① `createNotificationsService` over DB-4 `notifications` — the ADR-013 user-facing notification MODULE (dispatcher/surface) composing the built `foundation/notifications` delivery engine (#46) + the AR-7 effect rail. All 3 blockers Done → READY. Fresh branch `mod-notifications` off main, isolated worktree. At Step 0 BASELINE → Step 1 Interpretation.)
 
 <details><summary>prior (xs-notifications-delivery completed)</summary>

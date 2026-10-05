@@ -4,6 +4,7 @@ Registry of unit-of-work forward specs (`/documentation-component`). Each row: p
 
 | Unit | Type | Status | Last session |
 |------|------|--------|--------------|
+| [features/mod-learning-education](features/mod-learning-education/) | feature (add-backend, increment ①) | spec-draft — stub + home; M1.1.2 head #52, LIF-130; ① `createLearningEducationService` over DB-4 `024_learning_education` (15 tables); all 8 blockers Done → READY; §2–§6 written after the Decomposition Gate | 2026-10-02-mod-learning-education |
 | [features/mod-gamification](features/mod-gamification/) | feature (add-backend, increment ①) | spec-draft — stub + home; M1.1.2 head #48, LIF-124, ← mod-journals✅ + xs-{capability,effect-rail,measurement,notifications-delivery,views}✅ (all satisfied) | 2026-09-22-mod-gamification |
 | [features/mod-check-ins](features/mod-check-ins/) | feature (add-backend, increment ①) | **① COMPLETE** — M1.1.1 head #41, LIF-119; all 5 slices/28 legs shipped (validators · entry CRUD · templates · derivations · cross-module seams); §XXVI double-gated + per-slice Verification Gates; core green. ② fe-check-ins separate. | 2026-09-19-mod-check-ins |
 | [features/mod-journals](features/mod-journals/) | feature (add-backend, increment ①) | spec-draft — stub + home; M1.1.1 head #39, LIF-127, ← mod-sessions✅ + xs-measurement✅ | 2026-09-19-mod-journals |

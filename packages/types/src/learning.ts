@@ -3,8 +3,9 @@
 // ADR-002 §5.10, §5.12, §5.18
 // ============================================================================
 
-import type { Id, Timestamp } from './common'
+import type { Id, Timestamp, BasisPoints } from './common'
 import type { SyncableEntity, SyncMetadata } from './sync'
+import type { MeasurementKind, BindingMode } from './measurement'
 
 // ---------------------------------------------------------------------------
 // Course & Book enums
@@ -173,6 +174,35 @@ export const GRADING_COMPONENT_TYPE = [
 ] as const
 export type GradingComponentType = (typeof GRADING_COMPONENT_TYPE)[number]
 
+/** A user-shaped grading system (ED-7). Scoped to an institution/program/subject (`scope`+`scope_id`, no FK); a
+ *  subject-scoped system OVERRIDES the broader one (resolution is the consumer's, not stored). `scale_config` holds
+ *  the custom-scale definition as JSON (parsed service-side; `[E]`). */
+export interface GradingSystem extends SyncableEntity {
+  scope: GradingScope
+  scope_id: Id
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  scale_type: GradingScaleType
+  /** @encrypted — custom scale definition (parsed from JSON-as-text) */
+  scale_config: Record<string, unknown> | null
+  deleted_at: Timestamp | null
+}
+
+/** A weighted component of a grading system (ED-7). A component is either weight-based (`weight` in basis points,
+ *  10000 = 100%) OR points-based (`max_points`) — both nullable. The weights that ARE set must sum to 100%
+ *  (never normalized; `GradingWeightError`). */
+export interface GradingComponent extends SyncableEntity {
+  grading_system_id: Id
+  component_type: GradingComponentType
+  /** @encrypted */
+  name: string | null
+  weight: BasisPoints | null
+  max_points: number | null
+  deleted_at: Timestamp | null
+}
+
 /** A subject-attached assessment's type (ED-8, conventions L31). */
 export const ASSESSMENT_TYPE = ['exam', 'quiz', 'test', 'presentation', 'work'] as const
 export type AssessmentType = (typeof ASSESSMENT_TYPE)[number]
@@ -190,10 +220,76 @@ export const RECORD_SOURCE = ['manual', 'ai', 'import'] as const
 export type RecordSource = (typeof RECORD_SOURCE)[number]
 
 // ---------------------------------------------------------------------------
-// Course, Book, Skill
+// Education hierarchy — DB-4 #12 (mod-learning-education ① S1). Rows map to
+// institutions / self_taught / programs / curricula / terms (schema/learning.ts).
+// No FK anywhere — refs are plain Id (app/sync-layer integrity, ADR-016 §3.4).
 // ---------------------------------------------------------------------------
 
-export interface Course extends SyncableEntity {
+/** A formal institution (ED-2) — the parent of institution-granted programs. */
+export interface Institution extends SyncableEntity {
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  deleted_at: Timestamp | null
+}
+
+/** The self-taught mode container (ED-2/H2 — a SEPARATE table from institutions, never one mode flag). */
+export interface SelfTaughtPath extends SyncableEntity {
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  deleted_at: Timestamp | null
+}
+
+/** The pursuit (ED-2) — parents to an institution OR a self_taught row via `parent_type` + `parent_id`. */
+export interface Program extends SyncableEntity {
+  parent_type: ProgramParentType
+  parent_id: Id
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  deleted_at: Timestamp | null
+}
+
+/** The shaped plan (ED-11) — forkable: `forked_from_id` is the lineage pointer (null = built from scratch). */
+export interface Curriculum extends SyncableEntity {
+  program_id: Id
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  forked_from_id: Id | null
+  is_template: boolean
+  deleted_at: Timestamp | null
+}
+
+/** A hierarchical time container (ED-12) — year ⊃ semester ⊃ term via `level` + optional `parent_term_id`. */
+export interface Term extends SyncableEntity {
+  curriculum_id: Id
+  level: TermLevel
+  parent_term_id: Id | null
+  /** @encrypted */
+  name: string
+  start_date: string | null
+  end_date: string | null
+  deleted_at: Timestamp | null
+}
+
+// ---------------------------------------------------------------------------
+// Subject (= `courses` reinterpreted — DB-4 #12 / mod-learning-education ① S2).
+// DB-11 reconcile of the stale `Course` interface to `schema/learning.ts` subjects:
+//   - inline `tags: string[]` RETIRED → `entity_tags` (SP1, entity_type='subject')
+//   - `progress` → nullable DERIVED override (M3; NULL ⇒ derive, never a stored counter)
+//   - `total_modules`/`completed_modules` → nullable (schema has no NOT NULL/default)
+//   - +routing (`curriculum_id`/`term_id`, nullable per A1) + `degree_tier` field (ED-3)
+//   - `course_type` kept as a nullable subject-level modality (R6, conventions L71)
+// The `CourseType`/`CourseStatus` enum TUPLES are retained (used by the schema + validators).
+// ---------------------------------------------------------------------------
+
+export interface Subject extends SyncableEntity {
   /** @encrypted */
   title: string
   /** @encrypted */
@@ -204,12 +300,13 @@ export interface Course extends SyncableEntity {
   instructor: string | null
   /** @encrypted */
   url: string | null
+  /** Subject-level modality (not the Institution/Self-taught mode) — R6. */
   course_type: CourseType | null
   status: CourseStatus
-  /** 0–100 */
-  progress: number
-  total_modules: number
-  completed_modules: number
+  /** DERIVED override (M3) — NULL ⇒ derive on read; never settable directly. */
+  progress: number | null
+  total_modules: number | null
+  completed_modules: number | null
   start_date: string | null
   end_date: string | null
   target_completion: string | null
@@ -217,12 +314,95 @@ export interface Course extends SyncableEntity {
   estimated_hours: number | null
   /** 1–5 */
   rating: number | null
-  /** @encrypted */
-  tags: string[]
-  /** @encrypted — course-specific data (e.g. college class schedule) */
+  /** Routing (ED-3) — nullable per A1 optional depth; no FK. */
+  curriculum_id: Id | null
+  term_id: Id | null
+  degree_tier: DegreeTier | null
+  /** @encrypted — generic slot (v1 college-data superseded by the structured entities). */
   metadata: Record<string, unknown> | null
   deleted_at: Timestamp | null
 }
+
+// --- Schedule & class sessions (S4 — ED-4/ED-5; DB-11 net-new interfaces) -----
+// `subject_schedules` = one row per subject (UNIQUE(subject_id)), recording the schedule's SOURCE; the
+// `class_sessions` rows ARE the schedule content (ED-5). `class_sessions` is a base-`sessions` sub-type='class'
+// 1:1 extension keyed `session_id` — the base owns lifecycle/timing, so it carries NO `deleted_at` (BR-ED-7).
+
+/** One per subject (UNIQUE) — the single schedule source, fed by ics/document/manual (ED-5). */
+export interface SubjectSchedule extends SyncableEntity {
+  subject_id: Id
+  source: ScheduleSource
+  deleted_at: Timestamp | null
+}
+
+/** A class meeting = base `sessions` (sub_type='class') + this 1:1 extension keyed `session_id` (ED-4, BR-ED-7).
+ *  NO `deleted_at` — the base session owns lifecycle. The meeting TIME lives on the base `sessions.started_at`. */
+export interface ClassSession extends SyncableEntity {
+  session_id: Id
+  subject_id: Id
+  /** Nullable, no FK — the `subject_schedules` row this meeting derives from. */
+  schedule_id: Id | null
+  /** Nullable, no FK — the `ics_synced_event` this meeting maps from (S5 forward-link). */
+  source_event_id: Id | null
+  /** @encrypted */
+  location: string | null
+}
+
+/** A subject-attached assessment (ED-8, mod-learning-education ① S7). Mirrors `assessments` (schema/learning.ts).
+ *  `score` is the raw recorded result; the subject's grade is DERIVED from scores via the grading system
+ *  (`computeGrade`) — never stored (BR-LE-S7-2). `grading_component_id` is nullable, no FK (which weighted component
+ *  it counts toward; an unmapped assessment is excluded + flagged at compute time, BR-LE-S7-4). */
+export interface Assessment extends SyncableEntity {
+  subject_id: Id
+  type: AssessmentType
+  /** Nullable, no FK — which `grading_components` row this counts toward. */
+  grading_component_id: Id | null
+  /** @encrypted */
+  title: string | null
+  /** @encrypted */
+  description: string | null
+  /** Calendar date `YYYY-MM-DD`, nullable. */
+  date: string | null
+  weight: BasisPoints | null
+  max_points: number | null
+  modality: AssessmentModality | null
+  /** The raw recorded result; grade derives via the grading system. Nullable = not yet recorded. */
+  score: number | null
+  source: RecordSource
+  deleted_at: Timestamp | null
+}
+
+/** The Education-forged measure entity (ED-10, mod-learning-education ① S8). Mirrors `education_measurements`
+ *  (schema/learning.ts). Separate storage from Projects (C-M5, never mixed). `progress` is a nullable DERIVED
+ *  override (integer 0–100; NULL ⇒ derive-on-read via `getProgress`, M3) — never a stored counter. */
+export interface EducationMeasurement extends SyncableEntity {
+  ref_type: MeasurementRefType
+  ref_id: Id
+  measurement_kind: MeasurementKind
+  binding_mode: BindingMode | null
+  progress: number | null
+  deleted_at: Timestamp | null
+}
+
+// mod-learning-education ① S9 — the per-subject vault document (ED-13, the PJ-8 / `project_documents` pattern).
+// Inline small file (`encrypted_blob`) OR R2 `storage_ref`; NO `deleted_at` (the vault pattern, faithful §5.4).
+// `doc_type` is an OPEN vocab (syllabus/schedule/material catch-all — no CHECK). `[FACT: schema learning.ts:310-322]`
+export interface SubjectDocument extends SyncableEntity {
+  subject_id: Id
+  /** @encrypted */
+  title: string
+  /** @encrypted */
+  description: string | null
+  doc_type: string | null
+  /** inline small blob (client-encrypted bytes); null when stored in R2 (`storage_ref`) */
+  encrypted_blob: Uint8Array | null
+  /** R2 ref for a large file; null when stored inline (`encrypted_blob`) */
+  storage_ref: string | null
+}
+
+// ---------------------------------------------------------------------------
+// Book, Skill
+// ---------------------------------------------------------------------------
 
 // DB-4 group #11 (mod-books ① S1) — reshaped to the reframed `books` table (schema/books.ts). RETIRED from the
 // stale ADR-002 floor: `format`→`book_assets` (BK-2) · `current_page`→per-asset `native_position` (BR-BK-2) ·
@@ -592,7 +772,8 @@ export interface IcsFeedConfig extends SyncableEntity {
   feed_name: string | null
   is_active: boolean
   auto_create_sessions: boolean
-  default_course_id: Id | null
+  // DB-11 reframe (F3): was `default_course_id` — the schema column is `default_subject_id` (no FK).
+  default_subject_id: Id | null
   sync_interval_hours: number
   last_synced_at: Timestamp | null
   /** @encrypted */
@@ -613,7 +794,8 @@ export interface IcsSyncedEvent extends SyncableEntity {
   start_time: Timestamp
   end_time: Timestamp | null
   recurrence_rule: string | null
-  matched_course_id: Id | null
+  // DB-11 reframe (F3): was `matched_course_id` — the schema column is `matched_subject_id` (no FK).
+  matched_subject_id: Id | null
   created_session_id: Id | null
   is_ignored: boolean
   /** @encrypted — full ICS event data */
