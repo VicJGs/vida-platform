@@ -5856,3 +5856,26 @@ Decisions / lessons:
 Next session:
   - **FIRST ACTION:** next M1.2.1 frontend head = **fe-codec-viewmodes** (now unblocked; also ready: fe-codec-dashboard · fe-shell · fe-codec-canvas-graph · fe-codec-canvas-reader · fe-settings). FRESH `/begin`; isolate in a worktree; add-frontend-component / Entity Delivery Flow ②.
   - Env: Node 24 via nvm; per-issue worktree+branch → PR → merge. Parallel `mod-learning-education` backend session may still be active — `git worktree list` + don't disturb its worktree.
+
+---
+Date: 2026-10-04 — PROFILE/TASK SWITCH at session open — fe-codec-viewmodes (LIF-214)
+Switch: `/begin` resolved the computed backend head (mod-learning-education, S7 next, active in its own worktree) and surfaced it; Victor redirected to the FRONTEND track ("proceed with the frontend worktree"). Mirrors the 2026-10-04 fe-codec-patterns open (backend→frontend at session start).
+Profile: Add Backend Component → **Add Frontend Component** · Scenario: default (Entity Delivery Flow ②).
+Head: next M1.2.1 frontend unit = **fe-codec-viewmodes** (#3) — both blockers Done (fe-codec-theme PR #74, fe-codec-patterns PR #75). Isolated into worktree `.claude/worktrees/fe-codec-viewmodes` (branch `worktree-fe-codec-viewmodes` off main). Parallel `mod-learning-education` backend worktree left untouched.
+Goal: ② CODEC · View-mode renderers — add table + board to the shipped 7.
+Next: §XXVII path surfaced → Step 0 (document-context BASELINE) on confirm.
+
+---
+Date: 2026-10-04 — fe-codec-viewmodes #3 (LIF-214) — S1 TableView shipped (worktree, no PR yet)
+Task: fe-codec-viewmodes · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-codec-viewmodes`, branch `worktree-fe-codec-viewmodes` (2 commits ahead of main, NOT merged)
+Goal: ② CODEC view-mode renderers — add table + board (complete the canonical VIEW_LAYOUT 7).
+Accomplished:
+  - Profile/task switch backend→frontend at session open; isolated into a worktree (parallel mod-learning-education backend worktree untouched).
+  - **Front matter** (`8cf9fc2`, Decomposition Gate Approval 1): read-only-lens grounding — S1 TableView + S2 BoardView both read-only; drag-to-move = Capability (OVERFLOWING, not deferred); Envision SKIP.
+  - **S1 TableView** (`72f451e`): the `table` VIEW_LAYOUT renderer (6th canonical view-mode). Read-only role="table", calendar-view divergence, 4 states, aria-sort display-only, 375 scroll, designed empty row. tsc 0 · @vida/ui 371/371 · 2 code-reviews (0 changes) · Visual Gate PASS (AA 4.94–6.53 incl warm-dark · axe 0 · aria-colspan serializes) · §XXIX currency (CLAUDE.md + _index.md G6 supersession).
+Decisions / lessons:
+  - **Two drift corrections (both ungrounded until I read the docs):** v1 I manufactured a "defer pointer-DnD to M2 / ADR-001 has no DnD lib" cut; v2 (over-correction) I put full drag IN the renderer. The governing docs (ADR-007 §4.3 read-only View vs ADR-008 interactive Capability) home it: the view-mode renderer is read-only; drag-to-move (a write) is a Capability. Memory [[dont-manufacture-a-deferral-to-cut-build-phase-scope]]. Victor: "see the documentation" before asking.
+  - The G6 frontend-replan (2026-10-01) reversed the 2026-08-09 ui-2 "table/board = not built, by design" stance — currency updated so it's not re-litigated.
+Next session:
+  - **FIRST ACTION:** S2 — BoardView (7th/final canonical view-mode). FRESH `/begin`; resume in the SAME worktree. v9-board-view.md contract (g1) → implement → Visual Gate → §XXIX → commit → **then PR the unit (both slices)**.
+  - Env: Node 22 via nvm; worktree pnpm install + dist already built; Visual Gate = Brave via the /tmp/vg/gate.mjs pattern. Don't disturb the parallel mod-learning-education worktree.

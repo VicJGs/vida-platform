@@ -26,11 +26,13 @@ by every module `[FACT: m1.0-delivery-plan.md:200; capability-framework.md:112 V
 - **What it is NOT:**
   - NOT the saved-`views` DATA layer — that's AR-6 (`core/foundation/views`, DONE). These are the **renderers** a
     `views` row *picks* (ADR-007 §3.1). `[FACT: capability-framework.md:112 V1]`
-  - NOT `table`/`board` renderers. `VIEW_LAYOUT` declares 7 layouts `[FACT: packages/types/src/view.ts:17-25]`;
-    `@vida/ui` ships 5. `table`/`board` are the **allowed-vocabulary + graceful-degradation** case: a layout an
-    entity can't satisfy is "**unavailable or degraded — a declared, non-error state, never a crash**"
-    `[FACT: capability-framework.md:114 V3; ADR-007:62-64]`. This is by design, not a gap
-    (verified 2026-08-09 — [[capability-framework-resolves-enum-vs-renderer-gaps]]).
+  - ~~NOT `table`/`board` renderers.~~ **SUPERSEDED 2026-10-04 by the G6 frontend-replan** (`g6-edge-ledger.md:46`:
+    *"extend ui-2 → add table · board"*). The 2026-08-09 "table/board = graceful-degradation, by design not built"
+    stance is **reversed**: `fe-codec-viewmodes` (LIF-214) BUILDS the 2 missing canonical renderers — **`table` (V8,
+    DONE S1)** · **`board` (V9, S2)** — completing the `VIEW_LAYOUT` 7 `[FACT: packages/types/src/view.ts:17-25;
+    capability-framework.md:114 V3; g6-edge-ledger.md:46; g6-reshape-runbook.md:33]`. Graceful-degradation
+    (a layout an entity can't satisfy → "unavailable/degraded, never a crash", ADR-007:62-64) remains the View
+    Engine's concern, orthogonal to the renderers now existing. Delivery: `docs/specs/foundation/fe-codec-viewmodes/`.
   - NOT the view DATA services — search/backlink/export/graph-prep are AR-8 (`core/services/{search,export}`, DONE);
     the pomodoro session ENGINE is MOD-sessions (#35, later). These views COMPOSE that logic.
   - NOT module-specific screens (those consume these views); NOT the UI-1 primitives (those are the atoms).
@@ -110,3 +112,5 @@ component Visual Gate → next. V1 establishes the shared data-view spine (BR-1.
 |------|---------|--------|
 | 2026-08-09 | ui-2-platform-views | initial stub (task activation) |
 | 2026-08-09 | ui-2-platform-views | §1–§5 authored at PLAN: shared data-view pattern (BR-1..BR-6) + V1…V7 sequence; inventory/table-board/visual-gate UNKNOWNs resolved against capability-framework + ADR-007 |
+| 2026-10-04 | fe-codec-viewmodes | **G6 supersession:** the "NOT table/board" §1 stance reversed — `table` (V8) built + Visual-Gate PASS; `board` (V9) = S2. 6 of 7 canonical VIEW_LAYOUT renderers now ship. Spec `v8-table-view.md`; delivery `docs/specs/foundation/fe-codec-viewmodes/`. |
+| 2026-10-04 | fe-codec-viewmodes | **V9 `board-view` built (S2).** The last canonical renderer — `role="group"` of per-column `role="list"` kanban columns over PRE-GROUPED data (read-only; drag-to-move is a Capability, O1). Hybrid spine reuse: `resolveDataViewState` per column, board-level loading/error/board-empty direct. **All 7 `VIEW_LAYOUT` renderers now ship.** Spec `v9-board-view.md`. |

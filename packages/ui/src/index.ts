@@ -61,6 +61,8 @@ export { ListView, type ListViewProps, type ViewState } from './components/list-
 export { GalleryView, type GalleryViewProps } from './components/gallery-view'
 export { Timeline, type TimelineProps } from './components/timeline'
 export { CalendarView, type CalendarViewProps } from './components/calendar-view'
+export { TableView, type TableViewProps, type Column } from './components/table-view'
+export { BoardView, type BoardViewProps, type BoardGroup } from './components/board-view'
 export { PomodoroWidget, type PomodoroWidgetProps, type PomodoroPhase } from './components/pomodoro-widget'
 export { ExportDialog, type ExportDialogProps, type ExportFormat } from './components/export-dialog'
 export { NeuralGraph, type NeuralGraphProps, type GraphNode, type GraphEdge } from './components/neural-graph'
