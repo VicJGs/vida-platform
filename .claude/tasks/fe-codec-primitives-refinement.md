@@ -1,5 +1,5 @@
 # Task: fe-codec-primitives-refinement
-# Status: planned
+# Status: in-progress
 # Linear: LIF-230
 # Profile: Change Frontend Component
 # Scenario: default
@@ -67,10 +67,21 @@ is the recommended next frontend head, ahead of #5.
   **structure/shape/composition/feel** on the current token system; final brand colors are a separate M4 concern — do
   NOT churn palette values here.
 
-## Open at pickup (Victor's calls)
-1. Strict-conformance-only vs conformance + aesthetic-refinement (he leaned **refinement** — confirm).
-2. Neural Graph: defer to #8 or absorb here.
-3. Any component to exclude / add (e.g. the pomodoro-widget, export-dialog, the 10 ui-1 primitives beyond Card).
+## Scope RESOLVED (Session 1 — 2026-10-05, Step-1 audit + Victor's 3 calls)
+The Step-1 `/design-audit`-equivalent (all 6 read in full vs the model + quality bar) + Victor's decisions:
+1. **Scope depth = conformance + aesthetic refinement** (the broad quality pass). ✅
+2. **Neural Graph = DEFERRED to #8 `fe-codec-canvas-graph`** (its proper home; flagged there with the concrete audit
+   findings — 2 hard-coded colors, no empty/error slots, reduced-motion). NOT built here. ✅
+3. **Component set = the 5 views only** → **Card · Calendar · Timeline · List · Gallery**. The orphaned CONTROLS
+   (export-dialog · pomodoro-widget · 9 ui-1 primitives) split to a sibling task `fe-codec-controls-refinement`
+   (they have no refinement home in the G6 extend map but are already accent-fixed/token-conformant). ✅
+
+**Grounded audit result (code-verified):** 5 of 6 views are token-clean + preset-aware (Card/Calendar/Timeline/List/
+Gallery — 0 hard-coded colors); the data-views carry a `density` prop, Card/Calendar respond to density via the
+space-token swap. "Views use bare `Message` not `EmptyState`" is BY DESIGN (consumer composes via the `empty?` slot).
+The ONLY hard conformance gap was Neural Graph (now deferred). **So THIS pass is almost entirely AESTHETIC** — shape,
+spacing rhythm, hierarchy, elevation, motion feel — on the current token system, graded at the Visual Gate. NO palette
+churn (brand VALUES = M4/Figma). **Aesthetic-headroom rank:** Calendar > Gallery > Timeline > Card > List.
 
 ## Next session FIRST step
 Fresh `/begin` → pick this head → run the `/design-audit` + `/component-consistency` on the 6 → bring Victor the grounded
