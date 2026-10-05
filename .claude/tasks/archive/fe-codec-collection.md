@@ -1,5 +1,5 @@
 # Task: fe-codec-collection
-# Status: in-progress
+# Status: complete
 # Linear: LIF-207
 # Profile: Add Frontend Component
 # Scenario: default
