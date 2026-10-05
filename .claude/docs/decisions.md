@@ -1,5 +1,20 @@
-<!-- Last updated: 2026-10-04 by /session-end -->
+<!-- Last updated: 2026-10-05 by /session-end -->
 
+
+## mod-notifications (① backend #53 · LIF-132, 2026-10-05 — S3/5 SHIPPED, branch `mod-notifications`)
+The ADR-013 user-facing notification MODULE (dispatcher/surface) over DB-4 `notifications` — the terminal PURE
+SINK composing the BUILT delivery engine (#46) + effect rail + Sessions `dueIn` + Preferences. Detail in
+`docs/features/notifications/delivery/*` + `docs/modules/notifications/current-*` + `.claude/tasks/mod-notifications.md`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-05 | module↔engine split | who owns NF-5 gating? | **the MODULE** builds an already-gated `DeliveryDecision`; the built engine just routes it | engine `deliver(decision)` executes an already-gated decision (BR-ND-10); `channelsFor` = ZK fidelity-max, module gates DOWN | n/a (grounded) |
+| 2026-10-05 | M1 external delivery | push/email at M1? | **folds to in-app** — push needs an ADR-003 routing `userId` absent at M1; `routing` is a caller-supplied `DeliverContext` field wired at M2 | `buildWakePayload` throws on empty userId (payload.ts:27); honest content-blind M1 | yes (M2 wires routing) |
+| 2026-10-05 | dispatcher scope (S4) | which `dueIn`s fire? | **only `hard_deadline`-pinned `DueItem`s**; `occurrenceId = module:ref:hard_deadline`; un-pinned skipped | DueItem supplies no other device-stable instant; rejected an invented `todayDateKey` (TZ double-fire); un-pinned = agenda/Journals, not an alarm | n/a (grounded) |
+| 2026-10-05 | event handler failure mode | throw or skip on bad payload? | **SKIP, never throw** (PURE SINK NF-1) — unlike economy's additive handler which throws to roll back | a lost alert must NEVER roll back the triggering write; NF-1 "disable notifications, core unbroken" | n/a (grounded) |
+| 2026-10-05 | convergence guard | avoid UNIQUE-throw in the rail tx | **pre-check `effect_event_id` in-tx + skip** — the notifications UNIQUE is narrower (id-only) than the rail ledger's composite (id,type,targetRef), so a same-id/diff-targetRef event would collide + throw | closes the NF-1 hole unconditionally (g2 Nit-1); semantically right (same id = one notification, ADR-012 convergence) | n/a (hardening) |
+| 2026-10-05 | per-module push map | entity_type → push toggle | `habit/task/routine/routine_step/contact/session/subject/book/skill/knowledge_object`; unmapped → global governs | keys verified vs `_registry.ts` ENTITY_TYPES (g2 caught stale guesses `routine_action`/`course`/`study_topic`/`language`) | yes (map edit) |
+| 2026-10-05 | typed errors | throw or record? | the 6 contract errors = a record-not-throw OUTCOME vocabulary (in-app fallback/suppress/no-op), NOT exceptions | contract.md:35-42 behavior is record-not-abort; the PositionConflictPending precedent | n/a (grounded) |
 
 ## fe-codec-viewmodes (② CODEC view-modes #3 · LIF-214, 2026-10-04 — ① COMPLETE, PR #76 merged `d8b1b93`)
 The `table` (S1) + `board` (S2) view-mode renderers — **complete the canonical `VIEW_LAYOUT` 7** (all 7 now ship).

@@ -2,7 +2,7 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none active — mod-habits ① completed 2026-09-23; next `#`-order head via `/begin`)_
+- mod-notifications (LIF-132 · in-progress): .claude/tasks/mod-notifications.md  (M1/M1.1.2 `#53` · add-backend-component / Default (Entity Delivery Flow). ① `createNotificationsService` over DB-4 `notifications` — the ADR-013 user-facing notification MODULE (dispatcher/surface) composing the built `foundation/notifications` delivery engine (#46) + the AR-7 effect rail. All 3 blockers Done → READY. Fresh branch `mod-notifications` off main, isolated worktree. At Step 0 BASELINE → Step 1 Interpretation.)
 
 <details><summary>prior (xs-notifications-delivery completed)</summary>
 

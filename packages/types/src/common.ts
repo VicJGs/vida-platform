@@ -104,6 +104,15 @@ export interface Notification {
   is_archived: boolean
   archived_at: Timestamp | null
   expires_at: Timestamp | null
+  // --- build-phase AMENDMENTs (RESOLUTION N4) — delivery-audit + optional payload (DB-11 reconcile, mod-notifications S1) ---
+  /** which channels this row fired on — multi-device delivery dedup (NF-8). Structural (plaintext). */
+  delivered_in_app: boolean
+  delivered_push: boolean
+  delivered_email: boolean
+  /** @encrypted — optional entity-specific payload (stringified JSON TEXT; parsed by the reader). */
+  metadata: string | null
+  /** ADR-012 Additive cross-device convergence key — event-driven rows only; null for time-driven fires (NF-8). */
+  effect_event_id: string | null
   created_at: Timestamp
 }
 
