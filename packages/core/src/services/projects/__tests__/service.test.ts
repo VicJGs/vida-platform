@@ -13,7 +13,12 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createProjectsService } from '../service'
-import { type ProjectsService, ProjectNotFoundError } from '../types'
+import {
+  type ProjectsService,
+  ProjectNotFoundError,
+  MilestoneNotFoundError,
+  MilestoneParentError,
+} from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -158,5 +163,84 @@ describe('mod-projects S1 — projects CRUD + queries', () => {
     expect(await h.svc.listProjects({ status: 'completed' })).toHaveLength(2) // archived view
     expect(await h.svc.listProjects({ scope: 'personal' })).toHaveLength(2)
     expect(await h.svc.listProjects({ status: 'completed', scope: 'personal' })).toHaveLength(1)
+  })
+
+  // --- S2: milestones -------------------------------------------------------
+  describe('S2 — milestones', () => {
+    it('creates a milestone under a project (live persist) + defaults', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M1' })
+      expect(m.project_id).toBe(p.id)
+      expect(m.status).toBe('not_started')
+      expect(m.sort_order).toBe(0)
+      expect(m.progress).toBeNull()
+      expect(m.nesting_weight).toBeNull()
+      expect(m.parent_milestone_id).toBeNull()
+    })
+
+    it('createMilestone on a missing project throws ProjectNotFoundError (orphan guard)', async () => {
+      await expect(h.svc.createMilestone('nope', { title: 'M' })).rejects.toBeInstanceOf(ProjectNotFoundError)
+    })
+
+    it('nests a milestone; a cross-project parent is rejected', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const other = await h.svc.createProject({ title: 'Other' })
+      const root = await h.svc.createMilestone(p.id, { title: 'Root' })
+      const child = await h.svc.createMilestone(p.id, { title: 'Child', parent_milestone_id: root.id })
+      expect(child.parent_milestone_id).toBe(root.id)
+      await expect(
+        h.svc.createMilestone(other.id, { title: 'Bad', parent_milestone_id: root.id }),
+      ).rejects.toBeInstanceOf(MilestoneParentError)
+    })
+
+    it('builds the milestone tree nested + sorted by sort_order', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const a = await h.svc.createMilestone(p.id, { title: 'A', sort_order: 1 })
+      const b = await h.svc.createMilestone(p.id, { title: 'B', sort_order: 0 })
+      const a1 = await h.svc.createMilestone(p.id, { title: 'A1', parent_milestone_id: a.id })
+      const tree = await h.svc.getMilestoneTree(p.id)
+      expect(tree.map((n) => n.title)).toEqual(['B', 'A']) // sort_order 0 before 1
+      const aNode = tree.find((n) => n.id === a.id)!
+      expect(aNode.children.map((c) => c.id)).toEqual([a1.id])
+      expect(tree.find((n) => n.id === b.id)!.children).toHaveLength(0)
+    })
+
+    it('rejects a reparent that would create a cycle', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const a = await h.svc.createMilestone(p.id, { title: 'A' })
+      const b = await h.svc.createMilestone(p.id, { title: 'B', parent_milestone_id: a.id })
+      // making A a child of its own descendant B ⇒ cycle
+      await expect(h.svc.updateMilestone(a.id, { parent_milestone_id: b.id })).rejects.toBeInstanceOf(
+        MilestoneParentError,
+      )
+      // self-parent is also rejected
+      await expect(h.svc.updateMilestone(a.id, { parent_milestone_id: a.id })).rejects.toBeInstanceOf(
+        MilestoneParentError,
+      )
+    })
+
+    it('softDeleteMilestone SET-NULLs direct children + hides the row (PJ-9)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const root = await h.svc.createMilestone(p.id, { title: 'Root' })
+      const child = await h.svc.createMilestone(p.id, { title: 'Child', parent_milestone_id: root.id })
+      await h.svc.softDeleteMilestone(root.id)
+      const tree = await h.svc.getMilestoneTree(p.id)
+      // root is gone; child is reparented to top-level (parent SET NULL)
+      expect(tree.map((n) => n.id)).toEqual([child.id])
+      expect(tree[0]!.parent_milestone_id).toBeNull()
+    })
+
+    it('updateMilestone on a missing id throws MilestoneNotFoundError', async () => {
+      await expect(h.svc.updateMilestone('nope', { title: 'x' })).rejects.toBeInstanceOf(MilestoneNotFoundError)
+    })
+
+    it('softDeleteProject cascades to its milestones (PJ-9)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      await h.svc.createMilestone(p.id, { title: 'M1' })
+      await h.svc.createMilestone(p.id, { title: 'M2' })
+      expect(await h.svc.getMilestoneTree(p.id)).toHaveLength(2)
+      await h.svc.softDeleteProject(p.id)
+      expect(await h.svc.getMilestoneTree(p.id)).toHaveLength(0) // milestones cascaded
+    })
   })
 })

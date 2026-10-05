@@ -11,12 +11,15 @@
 // - findWhere skips the soft-delete filter → list via findAll (which applies isNull(deleted_at)) + JS filter.
 // - M1.0 encryptedFields:[] (the [E] title/description/vision pass through; real field encryption = M3).
 
+import { and, eq, isNull } from 'drizzle-orm'
 import { createRepository, type CreateInput } from '../../db/repository'
-import { projects } from '../../db/schema/projects'
+import { projects, milestones } from '../../db/schema/projects'
 import {
   CreateProjectSchema,
   UpdateProjectSchema,
   ListProjectsFilterSchema,
+  CreateMilestoneSchema,
+  UpdateMilestoneSchema,
 } from '../../validators/project'
 import {
   type ProjectsService,
@@ -24,15 +27,21 @@ import {
   type CreateProjectInput,
   type UpdateProjectInput,
   type ListProjectsFilter,
+  type CreateMilestoneInput,
+  type UpdateMilestoneInput,
+  type MilestoneNode,
   ProjectNotFoundError,
+  MilestoneNotFoundError,
+  MilestoneParentError,
 } from './types'
-import type { ProjectRow } from '../../db/schema/projects'
+import type { ProjectRow, MilestoneRow } from '../../db/schema/projects'
 
 export function createProjectsService(deps: ProjectsServiceDeps): ProjectsService {
   const { db, deviceId } = deps
 
-  // `projects` has deleted_at → softDelete:true.
+  // `projects` + `milestones` both have deleted_at → softDelete:true.
   const projectsRepo = createRepository(db, projects, { deviceId, softDelete: true, encryptedFields: [] })
+  const milestonesRepo = createRepository(db, milestones, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- S1: projects CRUD + queries -----------------------------------------
   async function createProject(input: CreateProjectInput): Promise<ProjectRow> {
@@ -86,8 +95,12 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
 
   async function softDeleteProject(id: string): Promise<void> {
     if (!(await projectsRepo.findById(id))) throw new ProjectNotFoundError(id)
-    // S1: soft-deletes the project row only. The PJ-9 cascade to milestones/deliverables/documents is layered
-    // in as those child repos land (S2/S3/S5) — honest incremental; no child repo exists yet at S1.
+    // PJ-9 cascade: deleting a project cascades its milestones (retrofit at S2, now that milestonesRepo exists).
+    // Deliverables + documents cascade are layered in as those repos land (S3/S5). [cascade retrofit tracker]
+    const childMilestones = await milestonesRepo.findWhere(
+      and(eq(milestones.project_id, id), isNull(milestones.deleted_at))!,
+    )
+    for (const m of childMilestones) await milestonesRepo.delete(m.id)
     await projectsRepo.delete(id)
   }
 
@@ -104,11 +117,121 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     )
   }
 
+  // ---- S2: milestones (nestable tree) --------------------------------------
+  /** Walk up from `newParentId`; a cycle exists iff we reach `id` (the milestone being reparented). */
+  async function wouldCycle(id: string, newParentId: string): Promise<boolean> {
+    let cursor: string | null = newParentId
+    const seen = new Set<string>()
+    while (cursor) {
+      if (cursor === id) return true
+      if (seen.has(cursor)) break // defensive backstop (pre-existing cycle)
+      seen.add(cursor)
+      const m: MilestoneRow | null = await milestonesRepo.findById(cursor)
+      cursor = m?.parent_milestone_id ?? null
+    }
+    return false
+  }
+
+  async function createMilestone(projectId: string, input: CreateMilestoneInput): Promise<MilestoneRow> {
+    const v = CreateMilestoneSchema.parse(input)
+    if (!(await projectsRepo.findById(projectId))) throw new ProjectNotFoundError(projectId) // fail-loud: no orphan (no-FK, PJ-9)
+    if (v.parent_milestone_id != null) {
+      const parent = await milestonesRepo.findById(v.parent_milestone_id)
+      if (!parent) throw new MilestoneNotFoundError(v.parent_milestone_id)
+      if (parent.project_id !== projectId)
+        throw new MilestoneParentError(`parent milestone ${v.parent_milestone_id} belongs to a different project`)
+    }
+    return milestonesRepo.create({
+      project_id: projectId,
+      parent_milestone_id: v.parent_milestone_id ?? null,
+      title: v.title,
+      description: v.description ?? null,
+      status: v.status ?? 'not_started',
+      progress: v.progress ?? null, // NULL ⇒ derive (PJ-3, S4)
+      nesting_weight: v.nesting_weight ?? null, // NULL ⇒ equal-weight (ADR-011 M4)
+      due_date: v.due_date ?? null,
+      sort_order: v.sort_order ?? 0,
+      deleted_at: null,
+    } satisfies CreateInput<typeof milestones>)
+  }
+
+  async function updateMilestone(id: string, patch: UpdateMilestoneInput): Promise<MilestoneRow> {
+    const v = UpdateMilestoneSchema.parse(patch)
+    const existing = await milestonesRepo.findById(id)
+    if (!existing) throw new MilestoneNotFoundError(id)
+    if (v.parent_milestone_id !== undefined && v.parent_milestone_id !== null) {
+      if (v.parent_milestone_id === id) throw new MilestoneParentError('a milestone cannot be its own parent')
+      const parent = await milestonesRepo.findById(v.parent_milestone_id)
+      if (!parent) throw new MilestoneNotFoundError(v.parent_milestone_id)
+      if (parent.project_id !== existing.project_id)
+        throw new MilestoneParentError('parent milestone belongs to a different project')
+      if (await wouldCycle(id, v.parent_milestone_id))
+        throw new MilestoneParentError('reparenting would create a cycle')
+    }
+    const data = {
+      ...(v.title !== undefined ? { title: v.title } : {}),
+      ...(v.description !== undefined ? { description: v.description ?? null } : {}),
+      ...(v.status !== undefined ? { status: v.status } : {}),
+      ...(v.progress !== undefined ? { progress: v.progress } : {}),
+      ...(v.nesting_weight !== undefined ? { nesting_weight: v.nesting_weight } : {}),
+      ...(v.due_date !== undefined ? { due_date: v.due_date ?? null } : {}),
+      ...(v.sort_order !== undefined ? { sort_order: v.sort_order } : {}),
+      ...(v.parent_milestone_id !== undefined ? { parent_milestone_id: v.parent_milestone_id } : {}),
+    }
+    if (Object.keys(data).length === 0) return existing
+    return milestonesRepo.update(id, data)
+  }
+
+  async function getMilestoneTree(projectId: string): Promise<MilestoneNode[]> {
+    // findWhere skips the soft-delete filter → add isNull(deleted_at) explicitly.
+    const rows = await milestonesRepo.findWhere(
+      and(eq(milestones.project_id, projectId), isNull(milestones.deleted_at))!,
+    )
+    const byParent = new Map<string | null, MilestoneRow[]>()
+    for (const r of rows) {
+      const key = r.parent_milestone_id ?? null
+      const bucket = byParent.get(key)
+      if (bucket) bucket.push(r)
+      else byParent.set(key, [r])
+    }
+    const idSet = new Set(rows.map((r) => r.id))
+    const bySort = (a: MilestoneRow, b: MilestoneRow) => a.sort_order - b.sort_order
+    const build = (parentId: string): MilestoneNode[] =>
+      (byParent.get(parentId) ?? [])
+        .slice()
+        .sort(bySort)
+        .map((r) => ({ ...r, children: build(r.id) }))
+    // roots = parent NULL, or a parent that's no longer in the live set (defensive — softDelete SET-NULLs children).
+    return rows
+      .filter((r) => r.parent_milestone_id == null || !idSet.has(r.parent_milestone_id))
+      .slice()
+      .sort(bySort)
+      .map((r) => ({ ...r, children: build(r.id) }))
+  }
+
+  async function softDeleteMilestone(id: string): Promise<void> {
+    const existing = await milestonesRepo.findById(id)
+    if (!existing) throw new MilestoneNotFoundError(id)
+    // PJ-9: SET NULL direct sub-milestone links (children become top-level under the project). Document links (S5)
+    // + deliverable reparent/cascade (S3) are layered in as those repos land. [g2-nit-2 cascade retrofit tracker]
+    const children = await milestonesRepo.findWhere(
+      and(eq(milestones.parent_milestone_id, id), isNull(milestones.deleted_at))!,
+    )
+    for (const c of children) await milestonesRepo.update(c.id, { parent_milestone_id: null })
+    await milestonesRepo.delete(id)
+  }
+
   return {
+    // S1 — projects
     createProject,
     updateProject,
     softDeleteProject,
     getProject,
     listProjects,
+    // S2 — milestones
+    createMilestone,
+    updateMilestone,
+    getMilestoneTree,
+    softDeleteMilestone,
   }
 }

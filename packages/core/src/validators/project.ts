@@ -70,3 +70,30 @@ export const UpdateProjectSchema = z.object({
 export const ListProjectsFilterSchema = z
   .object({ status: StatusSchema.optional(), scope: ProjectScopeSchema.optional() })
   .optional()
+
+// --- S2 — milestones ---------------------------------------------------------
+/** NULL ⇒ equal-weight (ADR-011 §3.3 M4) */
+const NestingWeightSchema = z.number().int().min(0).nullable().optional()
+const SortOrderSchema = z.number().int().min(0).optional()
+
+export const CreateMilestoneSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  status: StatusSchema.optional(), // default 'not_started'
+  progress: ProgressSchema,
+  nesting_weight: NestingWeightSchema,
+  due_date: CalendarDateSchema,
+  sort_order: SortOrderSchema,
+  parent_milestone_id: z.string().nullable().optional(),
+})
+
+export const UpdateMilestoneSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  status: StatusSchema.optional(),
+  progress: ProgressSchema,
+  nesting_weight: NestingWeightSchema,
+  due_date: CalendarDateSchema,
+  sort_order: SortOrderSchema,
+  parent_milestone_id: z.string().nullable().optional(),
+})

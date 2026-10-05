@@ -10,7 +10,7 @@
 `createProjectsService(deps)` — the ① backend service tier for **Projects** over DB-4 `016_projects`
 (4 tables: `projects` · `milestones` · `deliverables` · `project_documents`). The full design lives in
 `docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
-seam-contract). Build state: **① IN PROGRESS — S1 of 9 shipped.**
+seam-contract). Build state: **① IN PROGRESS — S2 of 9 shipped.**
 
 Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) · S3 deliverables
 (`measurement_kind`×`binding_mode`) · S4 progress-derivation engine (bottom-up rollup via
@@ -37,7 +37,25 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - `listProjects(filter?)`: reads via `findAll` (applies `isNull(deleted_at)`) then filters `status`/`scope`
   in-memory. **Archived = a status filter (completed/cancelled), not a new state** (G9).
 
-## Gates (S1)
-tsc 0 · eslint 0 · live-store Verification Gate **10/10** · full `@vida/core` **1732/1732** (no regression).
-Independent g1 Decomposition critic SHIP · independent g2 code-review SHIP (all nits folded) · pre-ship
-/critique SHIP.
+## S2 — milestones (nestable tree) (shipped)
+
+- `milestones` repo: `softDelete:true`, `encryptedFields:[]`. Surface: `createMilestone(projectId, input)` ·
+  `updateMilestone` · `getMilestoneTree(projectId)` · `softDeleteMilestone`.
+- **Orphan guard (no-FK, PJ-9):** `createMilestone` fails loud (`ProjectNotFoundError`) if the project is
+  absent; a `parent_milestone_id` must resolve to a milestone of the **same project** (else
+  `MilestoneParentError`).
+- **Nesting:** self-ref `parent_milestone_id`. `updateMilestone` reparent is guarded — non-self, parent
+  same-project, and **acyclic** (`wouldCycle` walks up from the new parent; `MilestoneParentError` on a cycle).
+- `getMilestoneTree`: reads via `findWhere(and(eq(project_id), isNull(deleted_at))!)` (explicit soft-delete
+  filter — `findWhere` skips it), builds a nested tree (roots = parent NULL **or** parent not in the live set),
+  each level ordered by `sort_order`.
+- **PJ-9 delete:** `softDeleteMilestone` SET-NULLs direct children's `parent_milestone_id` (they become
+  top-level under the project) then soft-deletes. Document-link SET-NULL (S5) + deliverable reparent/cascade
+  (S3) are layered in as those repos land.
+- `status` default backfilled (create echoes input); `progress`/`nesting_weight` NULL⇒derive/equal; no-op patch
+  is a no-write; returns `MilestoneRow`.
+
+## Gates (per slice)
+- **S1:** tsc 0 · eslint 0 · live-store **10/10** · g1 Decomposition SHIP · g2 code-review SHIP · /critique SHIP.
+- **S2:** tsc 0 · eslint 0 · live-store **18/18** (cumulative) · g2 code-review SHIP (+ cascade retrofit) · /critique SHIP.
+- Full `@vida/core` suite green (no regression).
