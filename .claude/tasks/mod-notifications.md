@@ -65,7 +65,12 @@ signals into materialized, scheduled, deliverable notifications. Entity Delivery
       Adds `sessions` dep + `TickResult`. Failure-isolated (SignalUnavailable + per-item). g1 SHIP → 2× g2 SHIP
       (split try/catch count-invariant fix + AC10; M2 entity_type forward-note NIT) → pre-ship /critique SHIP.
       tsc 0 · eslint 0 · notifications **38/38** · full @vida/core 1569/1570 (known vault-1MB flake). BR-NT-S4-1..10.
-- [ ] **S5** — Journal summary contribution + close-out (purge · dangling-subject · currency) → ① COMPLETE
+- [x] **S5** — Journal contribution + `purgeExpired` + NF-10 close-out (`4e8a9f6`) → **① COMPLETE**. New
+      `journal.ts` registers ONE summary JournalContribution (unread badge via `unreadCounts()`, no dueIn lane —
+      consumer-not-provider); `purgeExpired(before)` hard-deletes long-archived rows via `repo.hardDelete`
+      (syncs 'delete'); NF-10 dangling-subject guarantee + test. g1 SHIP (NIT-5 folded) → g2 SHIP (1 cosmetic
+      nit) → pre-ship /critique SHIP. tsc 0 · eslint 0 · notifications **44/44** · full @vida/core **1577/1577**
+      clean. BR-NT-S5-1..6 + current-spec ① COMPLETE.
 
 ### Per-slice closing steps (each slice)
 - [ ] Step 3: read 3 existing MOD services → state the pattern
@@ -127,6 +132,17 @@ signals into materialized, scheduled, deliverable notifications. Entity Delivery
   + a citation fix. tsc 0 · eslint 0 · 28/28 · full 1560/1560. Currency BR-NT-S3-1..8. **Next: S4 — dispatcher
   `tick()` + time-driven path** (reads Sessions `dueIn(range)`, fires only `hard_deadline`-pinned items,
   materialize-at-fire; adds the `sessions` dep).
+- 2026-10-05: **S5 shipped** (`4e8a9f6`) → **① BACKEND COMPLETE** (S1–S5, all slice-map legs). New
+  `services/notifications/journal.ts` (the Journal `summary` contribution — unread badge, consumer-not-provider,
+  no dueIn lane; gamification/knowledge precedent) + `purgeExpired(before)` (NF-13 retention sweep: hard-delete
+  long-archived `is_archived AND archived_at ≤ before` via `repo.hardDelete`, syncs the 'delete'; active rows
+  never purged) + NF-10 dangling-subject read-safety (① guarantee + test; `action_url` resolution is ②). g1
+  /critique SHIP (Approval 1; NIT-5 dataPoints-on-empty-branch folded) → implement → Verification Gate (tsc 0,
+  eslint 0, notifications **44/44**, full @vida/core **1577/1577** clean — an earlier full run showed 3 fails
+  that were concurrent-load timeout flakes under the parallel g2 run, confirmed green on isolated re-run, §XXIV
+  ISOLATED) → independent g2 code-review SHIP (1 cosmetic nit, no action) → pre-ship /critique SHIP. §XXIX
+  BR-NT-S5-1..6 + current-spec ① COMPLETE. **Next: push branch + open PR `mod-notifications → main`; then
+  `/task-complete` on merge. ② `fe-notifications` (LIF-192) is a separate P6 surface.**
 - 2026-10-05: **S4 shipped** (`67b33f0`) — dispatcher `tick()` + time-driven path. The time half of the single
   write path. Resolved the one real design question by FACT: time rows carry NULL `effect_event_id` (schema
   `notifications.ts:18-19` "keyed by its dueIn occurrence = dispatcher service") → in-service dedup by
