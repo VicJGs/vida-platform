@@ -1,0 +1,79 @@
+# Task: fe-codec-primitives-refinement
+# Status: planned
+# Linear: LIF-230
+# Profile: Change Frontend Component
+# Scenario: default
+# Project: M1 — Whole Manual OS
+# Milestone: M1.2.1 — Hub & Foundation · Frontend
+# Source: Victor directive 2026-10-05 (design the shipped primitives/views to fit the established CODEC model + patterns)
+# Reshape: G6 enhancement — codec-layer conformance + aesthetic-refinement pass (not a new archetype unit)
+
+## Goal
+Bring the 6 pre-CODEC primitives/views up to the **model + patterns we established** (fe-codec-theme, fe-codec-patterns,
+the conventions, the quality bar) so they fit the UI/UX coherently: **Card · Neural Graph · Calendar · Timeline · List ·
+Gallery**. They were built Aug 2026 (UI-1/UI-2) BEFORE the CODEC theme/patterns existed, so they are token-conformant but
+not fully refined/aligned to the established aesthetic + pattern vocabulary.
+
+> **Document-only task (created 2026-10-05).** NOT started. Pick up in a fresh session: run the audit FIRST (grounded
+> gap list) before touching anything.
+
+## Grounded audit at creation (2026-10-05 — quick grep, to be confirmed by `/design-audit` at pickup)
+| Component | Theme-token conformance | Pattern-kit / conventions | Real gap? |
+|---|---|---|---|
+| **Neural Graph** | ❌ **2 hard-coded WebGL colors** (`DEFAULT_NODE_COLOR='#6366f1'`, `DEFAULT_EDGE_COLOR='#cbd5e1'`; outside Tamagui theming, NG-7) → NOT preset-aware | Message-only empty; no density | **Yes — the one hard conformance gap** |
+| Card | ✅ 0 hard-coded colors | semantic tokens, elevation; no density (container — likely by-design) | token-clean; aesthetic-refinement candidate |
+| Calendar | ✅ 0 hard-coded | no density; Message empty (grid-as-empty by-design) | token-clean; aesthetic-refinement candidate |
+| List / Gallery / Timeline | ✅ 0 hard-coded | density ✓; Message default empty | token-clean; aesthetic-refinement candidate |
+
+**Two things are bundled in "make them fit the model" — separate them at pickup:**
+1. **Strict pattern-conformance** — mostly already true (all 5 views are token-clean + preset-aware; verified live in
+   Storybook across editorial·reader·quietDesk × light/dark). The **one real conformance gap is Neural Graph's
+   hard-coded colors** — and that is **already a planned unit**: `fe-codec-canvas-graph` (#8, "editorial ink voice",
+   g6-edge-ledger.md:51). *Coordinate — don't double-build the Graph; this task either defers the Graph to #8 or absorbs
+   it, Victor's call.* NB: the views defaulting to the bare `Message` (vs the richer `EmptyState`) is **by design** — the
+   consumer/shell composes the teaching-invitation empty via the `empty?` slot (the Collection does exactly that). NOT a gap.
+2. **Aesthetic refinement** — the real headroom + what Victor is after: these were built at *intent-fidelity* (correct +
+   accessible but plain). Lift them to the aesthetic bar (shape, spacing rhythm, hierarchy, motion/feel, the editorial
+   voice) — **expressed through the existing tokens + pattern-kit**, so coherence is guaranteed by construction.
+
+## Scope (6 components)
+Card (ui-1) · Neural Graph · Calendar · Timeline · List · Gallery (ui-2) — `packages/ui/src/components/`.
+**Victor's chosen reading (2026-10-05):** conformance **+** aesthetic-refinement (the broader quality pass), not
+strict-conformance-only. Confirm at pickup.
+
+## Approach (ONE dedicated pass, not folded into surface builds)
+1. **Audit** — `/design-audit` + `/component-consistency` on the 6 against: the established model (theme · pattern-kit ·
+   conventions in `packages/ui/src/CLAUDE.md`), the quality bar (`docs/specs/foundation/frontend-quality-bar/_index.md`),
+   state-conventions, and the `p1–p6` specimens (`docs/specs/foundation/frontend-replan/p*-specimen.html` +
+   `p6-archetypes-design.html`). Produce a grounded gap + refinement list. Bring it to Victor BEFORE any change.
+2. **Retrofit per component** — close conformance gaps + apply the aesthetic refinement, through tokens + the pattern-kit
+   (no hard-coded palette, DEF-U8-h dimensions-via-token-scale, DIRECT semantic tokens, reduced-motion, voice, a11y).
+3. **Per-component Visual Gate** — Brave, full matrix: preset × mode × density (+ axe + AA), the same bar every codec
+   unit cleared. Each component ships only on PASS.
+Each component change = `change-frontend-component` flow (per-component contract/audit → implement → Visual Gate →
+`/critique`). Standard worktree → PR → merge.
+
+## Sequencing
+**Before `fe-codec-dashboard` (#5) and the other surface builds** — the surfaces (#5–42) compose these primitives, so
+refining the foundation first means every surface inherits the better design (cheap now; ~20× rework later). This task
+is the recommended next frontend head, ahead of #5.
+
+## Dependencies / coordination
+- Blocked-by: none (refines shipped components).
+- **Coordinate with `fe-codec-canvas-graph` #8** (the Graph's "editorial ink voice") — either defer the Graph's restyle
+  to #8 or absorb it here (don't double-build). Victor's call at pickup.
+- **Palette caveat:** the ds-2 palette is a *provisional placeholder* (indigo/slate/emerald ≠ brand); real brand VALUES
+  land via the Figma source-of-truth, release-gated M4/P2 (`frontend-source-of-truth.md`). So this pass refines
+  **structure/shape/composition/feel** on the current token system; final brand colors are a separate M4 concern — do
+  NOT churn palette values here.
+
+## Open at pickup (Victor's calls)
+1. Strict-conformance-only vs conformance + aesthetic-refinement (he leaned **refinement** — confirm).
+2. Neural Graph: defer to #8 or absorb here.
+3. Any component to exclude / add (e.g. the pomodoro-widget, export-dialog, the 10 ui-1 primitives beyond Card).
+
+## Next session FIRST step
+Fresh `/begin` → pick this head → run the `/design-audit` + `/component-consistency` on the 6 → bring Victor the grounded
+gap+refinement list → agree scope → retrofit per component (worktree → Visual Gate → PR). Read first:
+`packages/ui/src/CLAUDE.md`, `frontend-quality-bar/_index.md`, the `p1–p6` specimens, `g6-edge-ledger.md:46-53` (extend
+map incl. #8 Graph).
