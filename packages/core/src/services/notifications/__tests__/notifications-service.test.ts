@@ -20,7 +20,9 @@ import { initVault } from '../../../encryption/vault'
 import { createRepository } from '../../../db/repository'
 import { notifications } from '../../../db/schema/notifications'
 import { syncQueue } from '../../../db/schema'
-import type { NotificationType } from '@vida/types'
+import type { NotificationType, MergedPreferences } from '@vida/types'
+import { createNotificationDeliveryEngine, type WakePayload } from '../../../foundation/notifications'
+import { USER_PREFERENCES_DEFAULTS } from '../../preferences/service'
 import { createNotificationsService, NotificationNotFoundError, type NotificationsService } from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -61,24 +63,51 @@ interface Harness {
   db: DrizzleDb
   bsql: Database.Database
   seed: (n: SeedInput) => Promise<string>
+  pushCalls: WakePayload[]
+  emailCalls: string[]
 }
 
 interface SeedInput {
   type?: NotificationType
   title?: string
+  entity_type?: string | null
+  effect_event_id?: string | null
   is_read?: boolean
   is_archived?: boolean
   expires_at?: number | null
   created_at?: number // override for deterministic ordering
 }
 
-async function setup(): Promise<Harness> {
+// The engine's off-device ports are deny-safe by default; the test injects RECORDING ports that return
+// delivered:true so a gated channel's attempt (or its absence) is observable in the audit + call log.
+async function setup(opts?: { prefs?: Partial<MergedPreferences> }): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createNotificationsService({ db, deviceId: 'test-device' })
+
+  const pushCalls: WakePayload[] = []
+  const emailCalls: string[] = []
+  const engine = createNotificationDeliveryEngine({
+    wakeRelay: {
+      async push(p) {
+        pushCalls.push(p)
+        return { delivered: true }
+      },
+    },
+    email: {
+      async sendNudge(userId) {
+        emailCalls.push(userId)
+        return { delivered: userId.length > 0 } // realistic: no routing target ⇒ can't deliver
+      },
+    },
+  })
+  const preferences = opts?.prefs
+    ? { getMergedPreferences: async (): Promise<MergedPreferences> => ({ ...USER_PREFERENCES_DEFAULTS, ...opts.prefs }) }
+    : undefined
+
+  const svc = createNotificationsService({ db, deviceId: 'test-device', engine, preferences })
   const repo = createRepository(db, notifications, {
     deviceId: 'test-device',
     encryptedFields: [],
@@ -91,6 +120,8 @@ async function setup(): Promise<Harness> {
     const row = await repo.create({
       type: n.type ?? 'info',
       title: n.title ?? 'Notice',
+      entity_type: n.entity_type ?? null,
+      effect_event_id: n.effect_event_id ?? null,
       is_read: n.is_read ?? false,
       is_archived: n.is_archived ?? false,
       expires_at: n.expires_at ?? null,
@@ -102,7 +133,7 @@ async function setup(): Promise<Harness> {
     return id
   }
 
-  return { svc, db, bsql, seed }
+  return { svc, db, bsql, seed, pushCalls, emailCalls }
 }
 
 describe('mod-notifications S1 — inbox reads + lifecycle', () => {
@@ -207,5 +238,101 @@ describe('mod-notifications S1 — inbox reads + lifecycle', () => {
     await h.svc.markRead(id)
     const q = await h.db.select().from(syncQueue).where(and(eq(syncQueue.table_name, 'notifications'), eq(syncQueue.row_id, id)))
     expect(q.length).toBeGreaterThan(0)
+  })
+})
+
+describe('mod-notifications S2 — Preferences gating + deliver + delivery-audit', () => {
+  // read the persisted delivery-audit flags straight off the row (pick only the 3 — the row has many cols)
+  const audit = async (h: Harness, id: string) => {
+    const [row] = await h.db
+      .select({
+        delivered_in_app: notifications.delivered_in_app,
+        delivered_push: notifications.delivered_push,
+        delivered_email: notifications.delivered_email,
+      })
+      .from(notifications)
+      .where(eq(notifications.id, id))
+    return row
+  }
+
+  const R = { userId: 'u1' } // a caller-supplied routing target (present at M2; absent at M1)
+
+  it('permissive + event row + routing → in-app always, push + email delivered + audited', async () => {
+    const h = await setup() // no prefs ⇒ PERMISSIVE
+    const id = await h.seed({ type: 'achievement', effect_event_id: 'a|unlocked|surface_notification' })
+    const result = await h.svc.deliver(id, { routing: R })
+    expect(result.inApp).toBe(true)
+    expect(result.delivered).toEqual(expect.arrayContaining(['push', 'email']))
+    expect(h.pushCalls.length).toBe(1)
+    expect(h.emailCalls.length).toBe(1)
+    expect(await audit(h, id)).toEqual({ delivered_in_app: true, delivered_push: true, delivered_email: true })
+  })
+
+  it('M1 honest (no routing) → external folds to in-app; delivered_push/email stay false', async () => {
+    const h = await setup()
+    const id = await h.seed({ effect_event_id: 'e|t|surface_notification' })
+    const result = await h.svc.deliver(id) // no routing ⇒ wake payload unaddressable, email no target
+    expect(result.inApp).toBe(true)
+    expect(result.delivered).toEqual([])
+    expect(result.fallbacks).toEqual(expect.arrayContaining(['push', 'email']))
+    expect(h.pushCalls.length).toBe(0) // buildWakePayload rejects the empty target before the port
+    expect(await audit(h, id)).toEqual({ delivered_in_app: true, delivered_push: false, delivered_email: false })
+  })
+
+  it('NF-6 — the wake payload carries ONLY routing, zero content/type/entity', async () => {
+    const h = await setup()
+    const id = await h.seed({ type: 'reminder', effect_event_id: 'r|due|surface_notification', title: 'secret', entity_type: 'habit' })
+    await h.svc.deliver(id, { routing: R })
+    expect(h.pushCalls[0]).toEqual({ kind: 'wake', userId: 'u1' }) // no title/type/entity ever
+  })
+
+  it('global notification_push off → push NOT attempted; in-app + email still deliver (NF-5/NF-7)', async () => {
+    const h = await setup({ prefs: { notification_push: false } })
+    const id = await h.seed({ effect_event_id: 'e|t|surface_notification' })
+    const result = await h.svc.deliver(id, { routing: R })
+    expect(h.pushCalls.length).toBe(0)
+    expect(result.delivered).not.toContain('push')
+    expect(result.delivered).toContain('email')
+    expect(result.inApp).toBe(true)
+  })
+
+  it('per-module push toggle off (push_habits=false, entity_type=habit) → push suppressed, email still sent', async () => {
+    const h = await setup({ prefs: { push_habits: false } })
+    const id = await h.seed({ effect_event_id: 'h|t|surface_notification', entity_type: 'habit' })
+    await h.svc.deliver(id, { routing: R })
+    expect(h.pushCalls.length).toBe(0)
+    expect(h.emailCalls.length).toBe(1) // email is NOT per-module gated
+  })
+
+  it('per-module mapping uses REAL entity_types (push_study=false, entity_type=subject) → push suppressed', async () => {
+    const h = await setup({ prefs: { push_study: false } })
+    const id = await h.seed({ effect_event_id: 's|t|surface_notification', entity_type: 'subject' })
+    await h.svc.deliver(id, { routing: R })
+    expect(h.pushCalls.length).toBe(0) // 'subject' → push_study (not the stale 'course')
+    expect(h.emailCalls.length).toBe(1)
+  })
+
+  it('quiet hours (spanning midnight) suppress ALL external; in-app records (NF-5)', async () => {
+    const h = await setup({ prefs: { quiet_hours_enabled: true, quiet_hours_start: '22:00', quiet_hours_end: '07:00' } })
+    const id = await h.seed({ effect_event_id: 'e|t|surface_notification' })
+    const result = await h.svc.deliver(id, { routing: R, nowMinuteOfDay: 23 * 60 }) // 23:00 — inside the window
+    expect(h.pushCalls.length).toBe(0)
+    expect(h.emailCalls.length).toBe(0)
+    expect(result.inApp).toBe(true)
+    expect(await audit(h, id)).toEqual({ delivered_in_app: true, delivered_push: false, delivered_email: false })
+  })
+
+  it('time-based row on a NATIVE platform → local_scheduled tier → in-app only (no off-device)', async () => {
+    const h = await setup() // permissive
+    const id = await h.seed({ type: 'reminder' }) // effect_event_id null ⇒ time_based
+    const result = await h.svc.deliver(id, { platform: 'ios', routing: R })
+    expect(h.pushCalls.length).toBe(0)
+    expect(h.emailCalls.length).toBe(0)
+    expect(result.inApp).toBe(true)
+  })
+
+  it('deliver throws NotificationNotFoundError on a missing id', async () => {
+    const h = await setup()
+    await expect(h.svc.deliver('nope')).rejects.toBeInstanceOf(NotificationNotFoundError)
   })
 })

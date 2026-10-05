@@ -33,10 +33,33 @@
   email` (boolean), `metadata` (string|null), `effect_event_id` (string|null), matching the DB-4 row.
   `[code: packages/types/src/common.ts]`
 
+## Shipped invariants (as of S2)
+
+- **BR-NT-S2-1 (module owns the gate / NF-5)** — the module READS `MergedPreferences` and builds an
+  already-gated `DeliveryDecision`; the engine only routes it. `channelsFor` returns the ZK fidelity-max; the
+  module gates it DOWN. `[code: service.ts gateChannels/deliver; tiers.ts channelsFor]`
+- **BR-NT-S2-2 (in-app never gated / NF-7)** — in-app is always a delivered channel regardless of prefs; only
+  external (push/email) can be suppressed. `[code: service.ts gateChannels in_app branch]`
+- **BR-NT-S2-3 (push gating)** — push fires iff global `notification_push` AND the per-module `push_<x>`
+  toggle (mapped from `entity_type` via `PUSH_TOGGLE_BY_ENTITY`, keys verified vs ENTITY_TYPES) AND not inside
+  quiet hours. An unmapped `entity_type` has no per-module gate (global governs). `[code: service.ts]`
+- **BR-NT-S2-4 (email gating)** — email fires iff global `notification_email` AND not quiet; it is NOT
+  per-module gated (no `email_<x>` toggle exists). `[code: service.ts gateChannels email branch]`
+- **BR-NT-S2-5 (quiet hours / NF-5)** — external delivery is suppressed inside the quiet window (in-app still
+  records); the window is `'HH:MM'`→minutes, spanning-midnight aware, evaluated against a CALLER-supplied
+  `nowMinuteOfDay` (the engine's TZ discipline); absent ⇒ not-quiet (permissive). `[code: service.ts hhmmToMinutes/inQuietWindow]`
+- **BR-NT-S2-6 (content-blind M1 fold / NF-6)** — a push needs a routing `userId` (ADR-003) that does not
+  exist at M1; absent `routing` ⇒ `buildWakePayload` rejects the empty target ⇒ push folds to in-app. The wake
+  payload carries ONLY routing, never `[E]` content/type/entity (engine-enforced). `[code: service.ts deliver; payload.ts:27-31]`
+- **BR-NT-S2-7 (delivery-audit / NF-8)** — `deliver` persists which channels actually FIRED
+  (`delivered_in_app` always true; `delivered_push/email` only when a port confirmed; fallbacks are NOT
+  delivered). `[code: service.ts deliver update]`
+- **BR-NT-S2-8 (permissive absent prefs)** — `preferences?` absent ⇒ `PERMISSIVE_PREFS` (every channel on, no
+  quiet window) — fail-OPEN, a user-convenience policy not a security gate. `[code: service.ts PERMISSIVE_PREFS; habits precedent]`
+
 ## Deferred to later slices (the rule exists in the corpus; not yet enforced in code)
 
 - **NF-2/NF-8 (single write path + idempotent)** — `fire` + the `surface_notification` rail handler → **S3**.
-- **NF-4/NF-5/NF-6/NF-7 (gate before deliver · ZK channel fidelity · in-app always)** → **S2**.
 - **NF-3 (derive-until-fire, no phantom inbox) + occurrence keying** — the dispatcher `tick()` → **S4**
   (fires only `hard_deadline`-pinned `DueItem`s; `occurrenceId = module:ref:hard_deadline`).
 - **NF-10 (dangling subject survives) + retention purge** → **S5**.

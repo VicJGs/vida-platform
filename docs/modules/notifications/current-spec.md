@@ -13,14 +13,15 @@ user-facing dispatcher/surface) over DB-4 `032_notifications` (1 table, `notific
 composes — and never re-implements — the BUILT `foundation/notifications` delivery engine (#46), the ADR-004
 effect rail, the Sessions `dueIn(range)` aggregator, and Preferences gating. Full design lives in
 `docs/features/notifications/` (aspect docs) + `docs/features/notifications/delivery/` (interpretation ·
-slice-map · seam-contract). Build state: **① IN PROGRESS — S1 of 5 shipped** (scaffold + inbox reads +
-lifecycle + DB-11 reconcile).
+slice-map · seam-contract). Build state: **① IN PROGRESS — S2 of 5 shipped** (S1 scaffold + inbox reads +
+lifecycle + DB-11 reconcile · S2 Preferences gating + `deliver` + delivery-audit).
 
-## Delivered surface (as of S1)
+## Delivered surface (as of S2)
 
-`createNotificationsService({ db, deviceId }) → NotificationsService`. Factory-object, hoisted closures, no
-`this.`. Deps grow per slice (the habits/books precedent): S2 adds `engine` + `preferences?`, S4 adds
-`sessions`. Persistence: DB-6 `createRepository(db, notifications, { deviceId, encryptedFields: [], softDelete:
+`createNotificationsService({ db, deviceId, engine, preferences? }) → NotificationsService`. Factory-object,
+hoisted closures, no `this.`. `engine` (the BUILT `foundation/notifications` delivery engine #46) is required
+from S2; `preferences?` is the deny-safe/fail-OPEN gating read port (absent ⇒ permissive). S4 adds `sessions`.
+Persistence: DB-6 `createRepository(db, notifications, { deviceId, encryptedFields: [], softDelete:
 false })` — the M1.0 empty-`[E]` dormant seam (title/message/action_label/metadata are `[E]`, activated at
 M3/DB-5); NO `deleted_at` (read→archive→expire→purge lifecycle).
 
@@ -33,6 +34,16 @@ M3/DB-5); NO `deleted_at` (read→archive→expire→purge lifecycle).
 - `markAllRead() → number` — marks every unread; returns count; leaves read/archived. `[code: service.ts]`
 - `archive(id) → NotificationView` — sets `is_archived`+`archived_at`; idempotent; throws on missing.
 - `archiveExpired(now?) → number` — auto-archives rows with `expires_at ≤ now` (NULL never matches, NF-13).
+- `deliver(id, ctx?: DeliverContext) → DeliveryResult` (S2) — gates the row against Preferences (NF-5), routes
+  via `engine.deliver(decision)`, persists the `delivered_{in_app,push,email}` audit. `ctx = { platform?,
+  nowMinuteOfDay?, routing? }` — all caller-supplied; platform defaults `'web'`, absent `routing` ⇒ external
+  folds to in-app (M1 content-blind). `[code: service.ts deliver/gateChannels]`
+
+**S2 gating (NF-5, the module owns it; the engine routes an already-gated decision):** in-app NEVER gated
+(NF-7); push gated by global `notification_push` + per-module `push_<x>` (`PUSH_TOGGLE_BY_ENTITY`, keys verified
+vs ENTITY_TYPES) + quiet-hours; email by `notification_email` + quiet-hours (no per-module email toggle). Quiet
+hours resolved from a caller-supplied `nowMinuteOfDay` (the engine's TZ discipline). `channelsFor` gives the ZK
+fidelity-max; the module gates it DOWN.
 
 Reads go through `findWhere`/`findAll` (real DB reads → faithful values; `boolInt` maps 0/1↔boolean).
 Mutations go through `repo.update`, which re-reads the full persisted row (faithful return). `toView()` picks
@@ -46,7 +57,6 @@ string | null` (ADR-012 Additive convergence key). `[code: packages/types/src/co
 
 ## Not yet built (homed to later slices — do not assume present)
 
-- **S2** — Preferences gating + `DeliveryDecision` builder + `deliver` + delivery-audit persistence.
 - **S3** — `fire` single write path + `applyNotificationEffect(event, tx)` rail handler + idempotency.
 - **S4** — dispatcher `tick()` + time-driven path (fires only `hard_deadline`-pinned `DueItem`s).
 - **S5** — `registerNotificationsJournal` summary + `purgeExpired` + dangling-subject read-safety → ① COMPLETE.

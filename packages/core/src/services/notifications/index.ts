@@ -5,6 +5,8 @@ export {
   INBOX_PAGE_SIZE,
   type NotificationsService,
   type NotificationsServiceDeps,
+  type NotificationsPrefsPort,
+  type DeliverContext,
   type InboxQuery,
   type UnreadCounts,
   type NotificationView,

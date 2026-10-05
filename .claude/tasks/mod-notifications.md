@@ -41,7 +41,15 @@ signals into materialized, scheduled, deliverable notifications. Entity Delivery
       NotificationView drift); pre-ship /critique SHIP. tsc 0 · eslint 0 · **12/12 S1 live-store** · full
       @vida/core **1545/1545**. Currency `docs/modules/notifications/current-*` (BR-NT-S1-1..10). Caught+fixed
       1 ISOLATED bug: a `*/` inside a JSDoc (`delivered_*/metadata`) closed the comment early.
-- [ ] **S2** — Preferences gating + `DeliveryDecision` builder + `deliver` + delivery-audit
+- [x] **S2** — Preferences gating + `DeliveryDecision` builder + `deliver` + delivery-audit. `deliver(id,ctx?)`
+      composes the BUILT engine (deps += `engine` required, `preferences?` deny-safe); `gateChannels` (in-app
+      never gated NF-7 · push by global+per-module+quiet · email by global+quiet); `PUSH_TOGGLE_BY_ENTITY`
+      (keys verified vs ENTITY_TYPES); quiet-hours `'HH:MM'`→min, caller-`nowMinuteOfDay`; routing caller-
+      supplied → absent at M1 ⇒ external folds to in-app (content-blind, NF-6); delivery-audit persisted.
+      g2 code-review REVISE→SHIP (1 blocker: stale entity_type keys `routine_action`/`course`/`study_topic`/
+      `language` → real `routine_step`/`subject`/`knowledge_object`; +regression test) + 1 nit folded; pre-ship
+      /critique SHIP. tsc 0 · eslint 0 · **21/21 notifications** · full @vida/core **1553/1553**. Currency
+      BR-NT-S2-1..8.
 - [ ] **S3** — `fire` single write path + `applyNotificationEffect` rail handler + idempotency
 - [ ] **S4** — dispatcher `tick()` + time path (hard_deadline-pinned, materialize-at-fire)
 - [ ] **S5** — Journal summary contribution + close-out (purge · dangling-subject · currency) → ① COMPLETE
@@ -90,6 +98,14 @@ signals into materialized, scheduled, deliverable notifications. Entity Delivery
   SHIP → §XXIX currency born (BR-NT-S1-1..10). 1 ISOLATED bug caught+fixed (JSDoc `*/` early-close). **Next: S2
   — Preferences gating + DeliveryDecision builder + deliver + delivery-audit** (adds `engine` + `preferences?`
   deps). Branch `mod-notifications`; per-slice cadence; PR when ① (all 5 slices) complete.
+- 2026-10-05: **S2 shipped** — Preferences gating + `deliver` + delivery-audit. Composes the BUILT delivery
+  engine (#46). Surfaced + corrected a real M1 insight: push needs an ADR-003 routing `userId` absent at M1 →
+  external honestly folds to in-app (content-blind, NF-6); `routing` is caller-supplied (M2). g2 code-review
+  caught 1 blocker (stale guessed entity_type keys in the push-toggle map — grep-the-registry lesson
+  [[db4-types-may-be-colocated-grep-name-before-net-new]]); fixed + regression test. tsc 0 · eslint 0 · 21/21 ·
+  full 1553/1553. Currency BR-NT-S2-1..8. 1 ISOLATED test-helper bug fixed (toEqual on full row). **Next: S3 —
+  `fire` single write path + `applyNotificationEffect(event, tx)` rail handler + idempotency** (registers the
+  `surface_notification` Additive handler).
 
 ## Notes
 - Env: Node 24 via nvm (a stray non-24 `pnpm test` recompiles better-sqlite3 to the wrong ABI → rebuild for

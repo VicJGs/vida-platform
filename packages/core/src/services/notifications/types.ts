@@ -10,12 +10,37 @@
 // + `preferences?`, S4 adds `sessions`. The factory signature extends; no breaking re-shape.
 // ============================================================================
 
-import type { Notification, NotificationType } from '@vida/types'
+import type { MergedPreferences, Notification, NotificationType } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
+import type { DeliveryResult, NotificationDeliveryEngine, Platform, RoutingMeta } from '../../foundation/notifications'
+
+/** The Preferences gating read seam (NF-4): the module READS channel/quiet-hours/per-module toggles,
+ *  never stores them. Deny-safe/fail-OPEN — absent ⇒ permissive (the habits prefs-port precedent;
+ *  delivery gating is a user-convenience policy, not a fail-closed security gate). */
+export interface NotificationsPrefsPort {
+  getMergedPreferences(): Promise<MergedPreferences>
+}
 
 export interface NotificationsServiceDeps {
   db: DrizzleDb
   deviceId: string
+  /** The BUILT ZK delivery engine (foundation/notifications #46). Required from S2. */
+  engine: NotificationDeliveryEngine
+  /** Preferences gating source (S2). Absent ⇒ permissive (fail-OPEN). */
+  preferences?: NotificationsPrefsPort
+}
+
+/** Runtime context for an immediate `deliver` (S2). The CALLER resolves platform + the current local
+ *  minute-of-day (the engine's TZ discipline — the backend holds no device TZ). Both optional:
+ *  platform defaults to 'web' (conservative max-channel; M1 external is deny-safe anyway); an absent
+ *  `nowMinuteOfDay` skips the quiet-hours check (permissive). */
+export interface DeliverContext {
+  platform?: Platform
+  nowMinuteOfDay?: number
+  /** Owner routing (ADR-003 per-user wake key) — the ONLY thing a push may carry (NF-6). Supplied by the
+   *  caller when known; ABSENT at M1 (no auth/routing yet) ⇒ the off-device wake payload can't be addressed,
+   *  so push honestly folds to in-app (content-blind). Wired at M2. */
+  routing?: RoutingMeta
 }
 
 /** Inbox read filter (S1). `status` collapses the read/archive lifecycle; `page` is 0-based. */
@@ -63,4 +88,8 @@ export interface NotificationsService {
   archive(id: string): Promise<NotificationView>
   /** Auto-archive rows whose expires_at ≤ now (NF-13); returns the count archived (S1). */
   archiveExpired(now?: number): Promise<number>
+  /** Gate a materialized row against Preferences, route it through the delivery engine, and persist the
+   *  delivery-audit (delivered_in_app/push/email). In-app always fires (NF-7); external channels are
+   *  gated (NF-5) + deny-safe at M1. Throws NotificationNotFoundError on a missing id (S2). */
+  deliver(id: string, ctx?: DeliverContext): Promise<DeliveryResult>
 }
