@@ -13,9 +13,15 @@
 // ============================================================================
 
 import { and, eq, lte, type SQL } from 'drizzle-orm'
-import type { MergedPreferences } from '@vida/types'
+import { NOTIFICATION_TYPE, type MergedPreferences, type NotificationType } from '@vida/types'
 import { createRepository } from '../../db/repository'
 import { notifications, type NotificationRow } from '../../db/schema/notifications'
+import {
+  deriveEffectEventId,
+  type EffectEvent,
+  type EffectRegistry,
+  type EffectTx,
+} from '../../foundation/effects'
 import {
   channelsFor,
   dedupKey,
@@ -26,14 +32,58 @@ import {
 } from '../../foundation/notifications'
 import {
   INBOX_PAGE_SIZE,
+  InvalidNotificationError,
   NotificationNotFoundError,
   type DeliverContext,
+  type FireInput,
   type InboxQuery,
   type NotificationView,
   type NotificationsService,
   type NotificationsServiceDeps,
   type UnreadCounts,
 } from './types'
+
+const NOTIFICATION_TYPE_SET: ReadonlySet<string> = new Set(NOTIFICATION_TYPE)
+
+// Extract a FireInput from an untyped effect payload (the producer supplies a FireInput-shaped payload on
+// the surface_notification effect). Returns null when the payload is unusable (bad/absent type or title) —
+// the EVENT path then SKIPS, never throws (NF-1 pure sink). `[FACT: contract.md:11; NF-1/NF-2]`
+function fireInputFromPayload(payload: Record<string, unknown> | undefined): FireInput | null {
+  if (!payload) return null
+  const type = payload.type
+  const title = payload.title
+  if (typeof type !== 'string' || !NOTIFICATION_TYPE_SET.has(type)) return null
+  if (typeof title !== 'string' || title.length === 0) return null
+  const str = (v: unknown): string | null => (typeof v === 'string' ? v : null)
+  const num = (v: unknown): number | null => (typeof v === 'number' ? v : null)
+  return {
+    type: type as NotificationType,
+    title,
+    message: str(payload.message),
+    action_url: str(payload.action_url),
+    action_label: str(payload.action_label),
+    entity_type: str(payload.entity_type),
+    entity_id: str(payload.entity_id),
+    expires_at: num(payload.expires_at),
+    metadata: str(payload.metadata),
+  }
+}
+
+// FireInput → the repo create row (effect_event_id/delivered flags set by the caller). Coalesces the
+// optional content fields to null (the create-echo seam: omitted defaults come back undefined).
+function toCreateRow(input: FireInput) {
+  return {
+    type: input.type,
+    title: input.title,
+    message: input.message ?? null,
+    action_url: input.action_url ?? null,
+    action_label: input.action_label ?? null,
+    entity_type: input.entity_type ?? null,
+    entity_id: input.entity_id ?? null,
+    expires_at: input.expires_at ?? null,
+    metadata: input.metadata ?? null,
+  }
+}
 
 // NF-4/NF-5 gating inputs the module READS from Preferences. Absent port ⇒ this permissive default
 // (fail-OPEN: every channel on, no quiet window) — delivery gating is a user convenience, not a
@@ -250,5 +300,57 @@ export function createNotificationsService(deps: NotificationsServiceDeps): Noti
     return result
   }
 
-  return { list, unreadCounts, markRead, markAllRead, archive, archiveExpired, deliver }
+  // NF-2 TIME path (public single write path): create (effect_event_id null) then dispatch. Fail-LOUD on
+  // an unusable input — this is the public API, there is no rail tx to roll back.
+  async function fire(input: FireInput, ctx?: DeliverContext): Promise<NotificationView> {
+    if (!NOTIFICATION_TYPE_SET.has(input.type)) throw new InvalidNotificationError(`unknown type '${input.type}'`)
+    if (!input.title || input.title.length === 0) throw new InvalidNotificationError('empty title')
+    const created = await repo.create(toCreateRow(input))
+    await deliver(created.id, ctx)
+    const fresh = await repo.findById(created.id)
+    return toView(fresh as NotificationRow) // just created — never null
+  }
+
+  // NF-2 EVENT path: the `surface_notification` Additive rail handler. Runs INSIDE the rail's tx (the rail
+  // already deduped on effect_event_id via its appliedEffects ledger → this fires once per id per device).
+  // Co-writes the row via createInTx (NF-8 / F1 §3B). delivered_in_app=true — the row IS the in-app channel
+  // (NF-9 notify-locally-first); external (push/email) for events is a post-commit concern (M2; folds at M1).
+  // PURE SINK (NF-1): a malformed payload is SKIPPED — NEVER thrown (unlike economy's additive handler which
+  // rolls back), because a lost alert must never roll back the triggering write. `[FACT: effects/service.ts:44-68; NF-1]`
+  async function applyNotificationEffect(event: EffectEvent, tx: EffectTx): Promise<void> {
+    const input = fireInputFromPayload(event.payload)
+    if (!input) return // NF-1 — skip, never throw into the rail
+    const effect_event_id = deriveEffectEventId(event.subjectNaturalKey, event.transition, event.effectType)
+    // NF-1 convergence guard: the notifications UNIQUE is on `effect_event_id` ALONE (ADR-012 L45/L139),
+    // but the rail ledger dedups on the composite (id, effect_type, target_ref) — so two events sharing
+    // subject+transition but differing in targetRef reach the handler twice with the SAME id. A second
+    // createInTx would hit the UNIQUE and THROW, rolling back the trigger (the exact pure-sink violation the
+    // skip-don't-throw design guards against). Pre-check in-tx + skip → converge to one row, never throw.
+    const existing = (await tx
+      .select()
+      .from(notifications)
+      .where(eq(notifications.effect_event_id, effect_event_id))
+      .all()) as unknown[]
+    if (existing.length > 0) return
+    await repo.createInTx(tx, { ...toCreateRow(input), effect_event_id, delivered_in_app: true })
+  }
+
+  return {
+    list,
+    unreadCounts,
+    markRead,
+    markAllRead,
+    archive,
+    archiveExpired,
+    deliver,
+    fire,
+    applyNotificationEffect,
+  }
+}
+
+// Module-init wiring: register the `surface_notification` Additive handler on the rail so any producer's
+// emitted alert lands as a notifications row (ADR-012 §3.1 · ADR-004 §3.2.5-A). The handler RECEIVES the
+// rail's tx (tx-correct); the `svc` form mirrors registerXJournal. `[FACT: registry.ts:12; services/gamification/journal.ts:66]`
+export function registerNotificationsEffects(registry: EffectRegistry, svc: NotificationsService): void {
+  registry.register('surface_notification', (event, tx) => svc.applyNotificationEffect(event, tx))
 }

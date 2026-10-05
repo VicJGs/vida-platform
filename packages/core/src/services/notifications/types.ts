@@ -12,6 +12,7 @@
 
 import type { MergedPreferences, Notification, NotificationType } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
+import type { EffectEvent, EffectTx } from '../../foundation/effects'
 import type { DeliveryResult, NotificationDeliveryEngine, Platform, RoutingMeta } from '../../foundation/notifications'
 
 /** The Preferences gating read seam (NF-4): the module READS channel/quiet-hours/per-module toggles,
@@ -65,12 +66,37 @@ export type NotificationView = Notification
 
 export const INBOX_PAGE_SIZE = 50
 
+/** The content a caller / producer supplies to raise a notification (S3). The single write path's input;
+ *  also the shape a producer puts on the `surface_notification` effect payload. `effect_event_id` is NOT
+ *  here — the event path derives it from the event triple; the time path leaves it null. */
+export interface FireInput {
+  type: NotificationType
+  title: string
+  message?: string | null
+  action_url?: string | null
+  action_label?: string | null
+  entity_type?: string | null
+  entity_id?: string | null
+  expires_at?: number | null
+  /** stringified JSON TEXT ([E]) — the reader parses it. */
+  metadata?: string | null
+}
+
 // --- errors -----------------------------------------------------------------
 /** A mutation targeted a notification id that does not exist. */
 export class NotificationNotFoundError extends Error {
   constructor(public readonly id: string) {
     super(`Notification not found: ${id}`)
     this.name = 'NotificationNotFoundError'
+  }
+}
+
+/** The PUBLIC `fire` (time path) rejects an unusable input (fail-loud — no rail tx to roll back). The EVENT
+ *  path never throws this (NF-1 pure sink: a malformed payload is skipped, never rolls back the trigger). */
+export class InvalidNotificationError extends Error {
+  constructor(reason: string) {
+    super(`Invalid notification: ${reason}`)
+    this.name = 'InvalidNotificationError'
   }
 }
 
@@ -92,4 +118,11 @@ export interface NotificationsService {
    *  delivery-audit (delivered_in_app/push/email). In-app always fires (NF-7); external channels are
    *  gated (NF-5) + deny-safe at M1. Throws NotificationNotFoundError on a missing id (S2). */
   deliver(id: string, ctx?: DeliverContext): Promise<DeliveryResult>
+  /** The PUBLIC single write path (time-driven, NF-2): create a row (effect_event_id null) then dispatch
+   *  per Preferences. Throws InvalidNotificationError on an unusable input. Returns the delivered view (S3). */
+  fire(input: FireInput, ctx?: DeliverContext): Promise<NotificationView>
+  /** The EVENT single write path — the `surface_notification` Additive rail handler (NF-2/NF-8). Co-writes
+   *  the row in the rail's tx via createInTx (idempotent per effect_event_id). PURE SINK (NF-1): a malformed
+   *  payload is SKIPPED, never thrown — notifications must never roll back the triggering write (S3). */
+  applyNotificationEffect(event: EffectEvent, tx: EffectTx): Promise<void>
 }

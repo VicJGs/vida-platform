@@ -57,9 +57,32 @@
 - **BR-NT-S2-8 (permissive absent prefs)** — `preferences?` absent ⇒ `PERMISSIVE_PREFS` (every channel on, no
   quiet window) — fail-OPEN, a user-convenience policy not a security gate. `[code: service.ts PERMISSIVE_PREFS; habits precedent]`
 
+## Shipped invariants (as of S3)
+
+- **BR-NT-S3-1 (single write path / NF-2)** — every row enters through `fire` (public time path) or
+  `applyNotificationEffect` (the `surface_notification` rail handler); no other insert site. `[code: service.ts]`
+- **BR-NT-S3-2 (event path co-writes in the rail tx / NF-8)** — `applyNotificationEffect` persists via
+  `createInTx(tx, …)` in the rail's transaction; `effect_event_id` derived from the event triple
+  (byte-identical to the rail's). `[code: service.ts applyNotificationEffect; foundation/effects/service.ts:42]`
+- **BR-NT-S3-3 (idempotent / NF-8)** — per-device dedup rides the rail's `appliedEffects` ledger (handler
+  fires once per id/device); cross-device convergence is the notifications `UNIQUE(effect_event_id)` resolved
+  at sync. A re-fired event converges to one row. `[code: foundation/effects/service.ts:44-56; schema UNIQUE]`
+- **BR-NT-S3-4 (PURE SINK — handler NEVER throws / NF-1)** — a malformed payload is SKIPPED (not thrown), and
+  a same-id/different-targetRef collision is pre-checked + skipped (not a UNIQUE-throw) — notifications must
+  NEVER roll back the triggering write. Deliberately unlike economy's additive handler (which throws).
+  `[code: service.ts applyNotificationEffect guard; contrast foundation/economy/handlers.ts:44]`
+- **BR-NT-S3-5 (local-first / NF-9)** — the event handler stamps `delivered_in_app: true` at creation (the
+  row IS the in-app channel); external delivery for the event path is post-commit (M2). `[code: service.ts]`
+- **BR-NT-S3-6 (public fire fail-loud)** — `fire` throws `InvalidNotificationError` on an unknown type or
+  empty title (public API; no rail tx to roll back) — the asymmetry with the fail-soft handler is intended.
+  `[code: service.ts fire; types.ts InvalidNotificationError]`
+- **BR-NT-S3-7 (6 fixed types / NF-12)** — both paths validate `type ∈ NOTIFICATION_TYPE` (the handler via
+  `fireInputFromPayload`, fire via a guard); no new type. `[code: service.ts NOTIFICATION_TYPE_SET]`
+- **BR-NT-S3-8 (achievement recorded not evaluated / NF-14)** — the handler records whatever a producer (e.g.
+  Gamification) emits on `surface_notification`; it evaluates no predicate. `[code: service.ts applyNotificationEffect]`
+
 ## Deferred to later slices (the rule exists in the corpus; not yet enforced in code)
 
-- **NF-2/NF-8 (single write path + idempotent)** — `fire` + the `surface_notification` rail handler → **S3**.
 - **NF-3 (derive-until-fire, no phantom inbox) + occurrence keying** — the dispatcher `tick()` → **S4**
   (fires only `hard_deadline`-pinned `DueItem`s; `occurrenceId = module:ref:hard_deadline`).
 - **NF-10 (dangling subject survives) + retention purge** → **S5**.

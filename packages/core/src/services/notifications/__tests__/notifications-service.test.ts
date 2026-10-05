@@ -22,8 +22,15 @@ import { notifications } from '../../../db/schema/notifications'
 import { syncQueue } from '../../../db/schema'
 import type { NotificationType, MergedPreferences } from '@vida/types'
 import { createNotificationDeliveryEngine, type WakePayload } from '../../../foundation/notifications'
+import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
 import { USER_PREFERENCES_DEFAULTS } from '../../preferences/service'
-import { createNotificationsService, NotificationNotFoundError, type NotificationsService } from '../index'
+import {
+  createNotificationsService,
+  registerNotificationsEffects,
+  NotificationNotFoundError,
+  InvalidNotificationError,
+  type NotificationsService,
+} from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -334,5 +341,93 @@ describe('mod-notifications S2 — Preferences gating + deliver + delivery-audit
   it('deliver throws NotificationNotFoundError on a missing id', async () => {
     const h = await setup()
     await expect(h.svc.deliver('nope')).rejects.toBeInstanceOf(NotificationNotFoundError)
+  })
+})
+
+describe('mod-notifications S3 — fire + surface_notification rail handler + idempotency', () => {
+  // wire the registered handler onto a real rail over the live store (the production invocation path)
+  const railFor = (h: Harness) => {
+    const registry = createEffectRegistry()
+    registerNotificationsEffects(registry, h.svc)
+    return createEffectRail(h.db, registry)
+  }
+  const evt = (over: Record<string, unknown> = {}) => ({
+    subjectNaturalKey: 'ach-1',
+    transition: 'unlocked',
+    effectType: 'surface_notification' as const,
+    targetRef: 'ach-1',
+    payload: { type: 'achievement', title: 'Level up!' },
+    ...over,
+  })
+
+  it('fire (public time path) creates a row (effect_event_id null) + delivers + returns the view', async () => {
+    const h = await setup()
+    const view = await h.svc.fire({ type: 'reminder', title: 'Pay rent' }, { routing: { userId: 'u1' } })
+    expect(view.title).toBe('Pay rent')
+    expect(view.effect_event_id).toBeNull() // time path — no ADR-012 id
+    expect(view.delivered_in_app).toBe(true)
+    expect(view.delivered_push).toBe(true) // routing present ⇒ push reached the recording port
+    expect((await h.svc.list()).length).toBe(1)
+  })
+
+  it('fire rejects an empty title (fail-loud public API)', async () => {
+    const h = await setup()
+    await expect(h.svc.fire({ type: 'info', title: '' })).rejects.toBeInstanceOf(InvalidNotificationError)
+  })
+
+  it('the rail handler creates a row with the derived effect_event_id + delivered_in_app (NF-2/NF-9)', async () => {
+    const h = await setup()
+    const rail = railFor(h)
+    const res = await rail.applyEffect(evt())
+    expect(res.applied).toBe(true)
+    const [row] = await h.svc.list()
+    expect(row.title).toBe('Level up!')
+    expect(row.type).toBe('achievement')
+    expect(row.effect_event_id).toBe('ach-1|unlocked|surface_notification') // deterministic triple
+    expect(row.delivered_in_app).toBe(true)
+  })
+
+  it('is idempotent — a re-fired event converges to ONE row (NF-8, rail ledger)', async () => {
+    const h = await setup()
+    const rail = railFor(h)
+    const first = await rail.applyEffect(evt())
+    const second = await rail.applyEffect(evt()) // same triple
+    expect(first.applied).toBe(true)
+    expect(second.applied).toBe(false) // rail ledger dedups → handler not called again
+    expect((await h.svc.list()).length).toBe(1)
+  })
+
+  it('NF-1 convergence guard — same effect_event_id, different targetRef → ONE row, never throws', async () => {
+    const h = await setup()
+    const rail = railFor(h)
+    // Same subject+transition+effectType ⇒ same derived effect_event_id; different targetRef ⇒ the rail
+    // ledger treats them as DISTINCT and calls the handler twice. The second createInTx would collide on
+    // the notifications UNIQUE(effect_event_id) and throw (rolling back the trigger) without the guard.
+    const a = await rail.applyEffect(evt({ targetRef: 'A' }))
+    const b = await rail.applyEffect(evt({ targetRef: 'B' }))
+    expect(a.applied).toBe(true)
+    expect(b.applied).toBe(true) // rail ledger: distinct → handler invoked both times
+    expect((await h.svc.list()).length).toBe(1) // but the handler converged to ONE notification, no throw
+  })
+
+  it('PURE SINK (NF-1) — a malformed payload is SKIPPED, never thrown; the trigger is not rolled back', async () => {
+    const h = await setup()
+    const rail = railFor(h)
+    // no title ⇒ unusable. The handler must NOT throw (that would roll back the triggering write).
+    const res = await rail.applyEffect(evt({ payload: { type: 'achievement' }, subjectNaturalKey: 'x' }))
+    expect(res.applied).toBe(true) // rail recorded the ledger + ran the handler
+    expect((await h.svc.list()).length).toBe(0) // but no notification row was created (skipped)
+  })
+
+  it('co-transactionally enqueues a sync_queue row for the handler-created notification', async () => {
+    const h = await setup()
+    const rail = railFor(h)
+    await rail.applyEffect(evt())
+    const [row] = await h.svc.list()
+    const q = await h.db
+      .select()
+      .from(syncQueue)
+      .where(and(eq(syncQueue.table_name, 'notifications'), eq(syncQueue.row_id, row.id)))
+    expect(q.length).toBeGreaterThan(0)
   })
 })

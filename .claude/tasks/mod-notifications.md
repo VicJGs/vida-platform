@@ -50,7 +50,14 @@ signals into materialized, scheduled, deliverable notifications. Entity Delivery
       `language` → real `routine_step`/`subject`/`knowledge_object`; +regression test) + 1 nit folded; pre-ship
       /critique SHIP. tsc 0 · eslint 0 · **21/21 notifications** · full @vida/core **1553/1553**. Currency
       BR-NT-S2-1..8.
-- [ ] **S3** — `fire` single write path + `applyNotificationEffect` rail handler + idempotency
+- [x] **S3** — `fire` single write path + `applyNotificationEffect` rail handler + idempotency. `fire(input,ctx?)`
+      (public time path, fail-loud `InvalidNotificationError`) + `applyNotificationEffect(event,tx)` (the
+      `surface_notification` Additive handler: `createInTx` co-write, id from the event triple,
+      `delivered_in_app:true`) + `registerNotificationsEffects`. Idempotent via the rail's `appliedEffects`
+      ledger + notifications `UNIQUE(effect_event_id)`. **PURE SINK (NF-1): handler NEVER throws** — malformed
+      payload skipped; a same-id/different-targetRef collision pre-checked + skipped (not a UNIQUE-throw that
+      would roll back the trigger). g2 code-review SHIP (2 nits folded: the NF-1 convergence guard +test, +
+      citation fix). tsc 0 · eslint 0 · **28/28 notifications** · full @vida/core **1560/1560**. Currency BR-NT-S3-1..8.
 - [ ] **S4** — dispatcher `tick()` + time path (hard_deadline-pinned, materialize-at-fire)
 - [ ] **S5** — Journal summary contribution + close-out (purge · dangling-subject · currency) → ① COMPLETE
 
@@ -106,6 +113,14 @@ signals into materialized, scheduled, deliverable notifications. Entity Delivery
   full 1553/1553. Currency BR-NT-S2-1..8. 1 ISOLATED test-helper bug fixed (toEqual on full row). **Next: S3 —
   `fire` single write path + `applyNotificationEffect(event, tx)` rail handler + idempotency** (registers the
   `surface_notification` Additive handler).
+- 2026-10-05: **S3 shipped** — `fire` + the `surface_notification` rail handler + idempotency. Key design: the
+  handler is a PURE SINK (NF-1) that NEVER throws into the rail (unlike economy's additive handler) — malformed
+  payload skipped; a convergence guard pre-checks `effect_event_id` in-tx so a same-id/different-targetRef event
+  converges (not a UNIQUE-throw that would roll back the trigger). g2 code-review SHIP; folded the NF-1
+  convergence guard (g2 Nit-1, a latent upstream tension → hardened the defining invariant) + a regression test
+  + a citation fix. tsc 0 · eslint 0 · 28/28 · full 1560/1560. Currency BR-NT-S3-1..8. **Next: S4 — dispatcher
+  `tick()` + time-driven path** (reads Sessions `dueIn(range)`, fires only `hard_deadline`-pinned items,
+  materialize-at-fire; adds the `sessions` dep).
 
 ## Notes
 - Env: Node 24 via nvm (a stray non-24 `pnpm test` recompiles better-sqlite3 to the wrong ABI → rebuild for

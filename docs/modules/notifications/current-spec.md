@@ -13,12 +13,14 @@ user-facing dispatcher/surface) over DB-4 `032_notifications` (1 table, `notific
 composes — and never re-implements — the BUILT `foundation/notifications` delivery engine (#46), the ADR-004
 effect rail, the Sessions `dueIn(range)` aggregator, and Preferences gating. Full design lives in
 `docs/features/notifications/` (aspect docs) + `docs/features/notifications/delivery/` (interpretation ·
-slice-map · seam-contract). Build state: **① IN PROGRESS — S2 of 5 shipped** (S1 scaffold + inbox reads +
-lifecycle + DB-11 reconcile · S2 Preferences gating + `deliver` + delivery-audit).
+slice-map · seam-contract). Build state: **① IN PROGRESS — S3 of 5 shipped** (S1 scaffold + inbox reads +
+lifecycle + DB-11 reconcile · S2 Preferences gating + `deliver` + delivery-audit · S3 `fire` + the
+`surface_notification` rail handler + idempotency).
 
-## Delivered surface (as of S2)
+## Delivered surface (as of S3)
 
-`createNotificationsService({ db, deviceId, engine, preferences? }) → NotificationsService`. Factory-object,
+`createNotificationsService({ db, deviceId, engine, preferences? }) → NotificationsService` +
+`registerNotificationsEffects(registry, svc)` (module fn — wires the rail handler). Factory-object,
 hoisted closures, no `this.`. `engine` (the BUILT `foundation/notifications` delivery engine #46) is required
 from S2; `preferences?` is the deny-safe/fail-OPEN gating read port (absent ⇒ permissive). S4 adds `sessions`.
 Persistence: DB-6 `createRepository(db, notifications, { deviceId, encryptedFields: [], softDelete:
@@ -45,6 +47,22 @@ vs ENTITY_TYPES) + quiet-hours; email by `notification_email` + quiet-hours (no 
 hours resolved from a caller-supplied `nowMinuteOfDay` (the engine's TZ discipline). `channelsFor` gives the ZK
 fidelity-max; the module gates it DOWN.
 
+- `fire(input: FireInput, ctx?) → NotificationView` (S3) — the PUBLIC single write path (time-driven, NF-2):
+  create (effect_event_id null) → `deliver` → return the delivered view. Fail-LOUD `InvalidNotificationError`
+  on an unusable input (no rail tx to roll back). `[code: service.ts fire]`
+- `applyNotificationEffect(event, tx)` (S3) — the `surface_notification` Additive rail handler (NF-2 event
+  path). Co-writes via `createInTx` in the rail's tx; `effect_event_id` from the event triple;
+  `delivered_in_app: true` (NF-9). **PURE SINK (NF-1): a malformed payload is SKIPPED, never thrown** — unlike
+  economy's additive handler, a lost alert must never roll back the triggering write. A convergence guard
+  (pre-check `effect_event_id` in-tx) keeps the same-id/different-targetRef case a skip, not a UNIQUE-throw.
+  `[code: service.ts applyNotificationEffect]`
+- `registerNotificationsEffects(registry, svc)` (S3) — registers the handler for `'surface_notification'`
+  (the sole owner; ADR-012 Additive). `[code: service.ts]`
+
+Idempotency rides the rail's `appliedEffects` ledger (per-device) + the notifications `UNIQUE(effect_event_id)`
+convergence key (cross-device, resolved at sync). External delivery for the EVENT path is a post-commit concern
+(M2); at M1 the handler records in-app only.
+
 Reads go through `findWhere`/`findAll` (real DB reads → faithful values; `boolInt` maps 0/1↔boolean).
 Mutations go through `repo.update`, which re-reads the full persisted row (faithful return). `toView()` picks
 exactly the `@vida/types Notification` fields, dropping `_sync_*` + any phantom column.
@@ -57,7 +75,6 @@ string | null` (ADR-012 Additive convergence key). `[code: packages/types/src/co
 
 ## Not yet built (homed to later slices — do not assume present)
 
-- **S3** — `fire` single write path + `applyNotificationEffect(event, tx)` rail handler + idempotency.
 - **S4** — dispatcher `tick()` + time-driven path (fires only `hard_deadline`-pinned `DueItem`s).
 - **S5** — `registerNotificationsJournal` summary + `purgeExpired` + dangling-subject read-safety → ① COMPLETE.
 
