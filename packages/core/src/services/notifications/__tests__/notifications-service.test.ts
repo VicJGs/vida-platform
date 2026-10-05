@@ -21,8 +21,9 @@ import { createRepository } from '../../../db/repository'
 import { notifications } from '../../../db/schema/notifications'
 import { syncQueue } from '../../../db/schema'
 import type { NotificationType, MergedPreferences } from '@vida/types'
-import { createNotificationDeliveryEngine, type WakePayload } from '../../../foundation/notifications'
+import { createNotificationDeliveryEngine, type WakePayload, type OsSchedulerPort } from '../../../foundation/notifications'
 import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import type { DueItem, TimeRange } from '../../sessions'
 import { USER_PREFERENCES_DEFAULTS } from '../../preferences/service'
 import {
   createNotificationsService,
@@ -78,6 +79,7 @@ interface SeedInput {
   type?: NotificationType
   title?: string
   entity_type?: string | null
+  entity_id?: string | null
   effect_event_id?: string | null
   is_read?: boolean
   is_archived?: boolean
@@ -87,7 +89,11 @@ interface SeedInput {
 
 // The engine's off-device ports are deny-safe by default; the test injects RECORDING ports that return
 // delivered:true so a gated channel's attempt (or its absence) is observable in the audit + call log.
-async function setup(opts?: { prefs?: Partial<MergedPreferences> }): Promise<Harness> {
+async function setup(opts?: {
+  prefs?: Partial<MergedPreferences>
+  dueIn?: (range: TimeRange) => Promise<DueItem[]>
+  osScheduler?: OsSchedulerPort
+}): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
@@ -109,12 +115,16 @@ async function setup(opts?: { prefs?: Partial<MergedPreferences> }): Promise<Har
         return { delivered: userId.length > 0 } // realistic: no routing target ⇒ can't deliver
       },
     },
+    ...(opts?.osScheduler ? { osScheduler: opts.osScheduler } : {}), // S4: default deny-safe unless injected
   })
   const preferences = opts?.prefs
     ? { getMergedPreferences: async (): Promise<MergedPreferences> => ({ ...USER_PREFERENCES_DEFAULTS, ...opts.prefs }) }
     : undefined
 
-  const svc = createNotificationsService({ db, deviceId: 'test-device', engine, preferences })
+  // S4: the Sessions dueIn agenda source — a controllable stub (default empty = dormant lanes at M1).
+  const sessions = { dueIn: opts?.dueIn ?? (async (): Promise<DueItem[]> => []) }
+
+  const svc = createNotificationsService({ db, deviceId: 'test-device', engine, sessions, preferences })
   const repo = createRepository(db, notifications, {
     deviceId: 'test-device',
     encryptedFields: [],
@@ -128,6 +138,7 @@ async function setup(opts?: { prefs?: Partial<MergedPreferences> }): Promise<Har
       type: n.type ?? 'info',
       title: n.title ?? 'Notice',
       entity_type: n.entity_type ?? null,
+      entity_id: n.entity_id ?? null,
       effect_event_id: n.effect_event_id ?? null,
       is_read: n.is_read ?? false,
       is_archived: n.is_archived ?? false,
@@ -429,5 +440,136 @@ describe('mod-notifications S3 — fire + surface_notification rail handler + id
       .from(syncQueue)
       .where(and(eq(syncQueue.table_name, 'notifications'), eq(syncQueue.row_id, row.id)))
     expect(q.length).toBeGreaterThan(0)
+  })
+})
+
+// ============================================================================
+// S4 — dispatcher tick() + time-driven path (fires only hard_deadline-pinned DueItems; derive-until-fire;
+// in-service occurrence dedup; deny-safe OS arm; failure-isolated). Verification Gate = PLAN §4.1-4.9.
+// ============================================================================
+describe('mod-notifications S4 — dispatcher tick() + time-driven path', () => {
+  const NOW = 10_000
+
+  function due(over?: Partial<DueItem>): DueItem {
+    return {
+      source_module: 'sessions',
+      ref_id: 'blk1',
+      label: 'Study block',
+      est_minutes: 30,
+      urgency: 0,
+      hard_deadline: 5_000, // ≤ NOW ⇒ due
+      ...over,
+    }
+  }
+
+  it('AC1 — pinned + due ⇒ one reminder row, subject-linked + delivered in-app', async () => {
+    const h = await setup({ dueIn: async () => [due()] })
+    const r = await h.svc.tick(undefined, NOW)
+    expect(r).toEqual({ evaluated: 1, fired: 1, suppressed: 0, skipped: 0 })
+    const rows = await h.svc.list()
+    expect(rows.length).toBe(1)
+    const [row] = rows
+    expect(row.type).toBe('reminder')
+    expect(row.entity_type).toBe('sessions')
+    expect(row.entity_id).toBe('blk1')
+    expect(row.delivered_in_app).toBe(true)
+    expect(row.effect_event_id).toBe(null) // time row — NULL effect_event_id (dispatcher-keyed, NF-8)
+  })
+
+  it('AC2 — un-pinned (no hard_deadline) ⇒ skipped, no row (OQ-1)', async () => {
+    const h = await setup({ dueIn: async () => [due({ hard_deadline: undefined })] })
+    const r = await h.svc.tick(undefined, NOW)
+    expect(r).toEqual({ evaluated: 1, fired: 0, suppressed: 0, skipped: 1 })
+    expect((await h.svc.list()).length).toBe(0)
+  })
+
+  it('AC3 — future hard_deadline ⇒ skipped, no phantom inbox row (NF-3)', async () => {
+    const h = await setup({ dueIn: async () => [due({ hard_deadline: NOW + 5_000 })] })
+    const r = await h.svc.tick(undefined, NOW)
+    expect(r).toEqual({ evaluated: 1, fired: 0, suppressed: 0, skipped: 1 })
+    expect((await h.svc.list()).length).toBe(0)
+  })
+
+  it('AC4 — two ticks over the same occurrence ⇒ one row (NF-8 in-service dedup)', async () => {
+    const h = await setup({ dueIn: async () => [due()] })
+    expect((await h.svc.tick(undefined, NOW)).fired).toBe(1)
+    const second = await h.svc.tick(undefined, NOW)
+    expect(second).toEqual({ evaluated: 1, fired: 0, suppressed: 0, skipped: 1 })
+    expect((await h.svc.list()).length).toBe(1)
+  })
+
+  it('AC5 — quiet hours suppress the OS alert; the row still records in-app', async () => {
+    const HD = 10 * 3_600_000 // 10:00 UTC → minuteOfDay 600, inside 09:00-11:00
+    const h = await setup({
+      prefs: { quiet_hours_enabled: true, quiet_hours_start: '09:00', quiet_hours_end: '11:00' },
+      dueIn: async () => [due({ hard_deadline: HD })],
+    })
+    const r = await h.svc.tick(undefined, HD)
+    expect(r).toEqual({ evaluated: 1, fired: 0, suppressed: 1, skipped: 0 })
+    const [row] = await h.svc.list()
+    expect(row.delivered_in_app).toBe(true)
+    expect(row.delivered_push).toBe(false)
+    expect(row.delivered_email).toBe(false)
+  })
+
+  it('AC6 — a throwing dueIn ⇒ SignalUnavailable: zeroed result, no crash, no row', async () => {
+    const h = await setup({
+      dueIn: async () => {
+        throw new Error('agenda source down')
+      },
+    })
+    const r = await h.svc.tick(undefined, NOW)
+    expect(r).toEqual({ evaluated: 0, fired: 0, suppressed: 0, skipped: 0 })
+    expect((await h.svc.list()).length).toBe(0)
+  })
+
+  it('AC7 — a bad item is isolated; the valid item still fires (per-item isolation)', async () => {
+    const h = await setup({
+      dueIn: async () => [
+        due({ ref_id: 'bad', label: '' }), // empty title ⇒ fire throws ⇒ caught + skipped
+        due({ ref_id: 'good', label: 'Good block' }),
+      ],
+    })
+    const r = await h.svc.tick(undefined, NOW)
+    expect(r.evaluated).toBe(2)
+    expect(r.fired).toBe(1)
+    expect(r.skipped).toBe(1)
+    const rows = await h.svc.list()
+    expect(rows.length).toBe(1)
+    expect(rows[0]?.entity_id).toBe('good')
+  })
+
+  it('AC8 — the fired row metadata round-trips to { occurrenceId, hard_deadline }', async () => {
+    const h = await setup({ dueIn: async () => [due({ ref_id: 'blk9', hard_deadline: 5_000 })] })
+    await h.svc.tick(undefined, NOW)
+    const [row] = await h.svc.list()
+    expect(row.metadata).not.toBeNull()
+    expect(JSON.parse(row.metadata as string)).toEqual({ occurrenceId: 'sessions:blk9:5000', hard_deadline: 5_000 })
+  })
+
+  it('AC9 — a prior EVENT row on the same subject does NOT false-skip the time fire (NIT-1)', async () => {
+    const h = await setup({ dueIn: async () => [due({ ref_id: 'blk1' })] })
+    // a prior event-path row (non-NULL effect_event_id) links the SAME subject
+    await h.seed({ type: 'reminder', entity_type: 'sessions', entity_id: 'blk1', effect_event_id: 'ev-1' })
+    const r = await h.svc.tick(undefined, NOW)
+    expect(r.fired).toBe(1) // not a duplicate — the isNull(effect_event_id) dedup clause excludes event rows
+    const timeRows = (await h.svc.list()).filter((x) => x.effect_event_id === null)
+    expect(timeRows.length).toBe(1)
+  })
+
+  it('AC10 — a materialized row is counted fired even if the OS scheduler throws (BR-NT-S4-9, g2)', async () => {
+    // M2 would wire a real OsSchedulerPort; prove the accounting invariant holds if it fails AFTER fire.
+    const h = await setup({
+      osScheduler: {
+        async register() {
+          throw new Error('os scheduler down')
+        },
+        async cancel() {},
+      },
+      dueIn: async () => [due()],
+    })
+    const r = await h.svc.tick(undefined, NOW)
+    expect(r).toEqual({ evaluated: 1, fired: 1, suppressed: 0, skipped: 0 }) // row stands → fired, not skipped
+    expect((await h.svc.list()).length).toBe(1)
   })
 })

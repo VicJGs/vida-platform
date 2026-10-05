@@ -12,7 +12,7 @@
 // fields, dropping _sync_* + any phantom column (the drizzle-row-≠-interface seam).
 // ============================================================================
 
-import { and, eq, lte, type SQL } from 'drizzle-orm'
+import { and, eq, isNull, lte, type SQL } from 'drizzle-orm'
 import { NOTIFICATION_TYPE, type MergedPreferences, type NotificationType } from '@vida/types'
 import { createRepository } from '../../db/repository'
 import { notifications, type NotificationRow } from '../../db/schema/notifications'
@@ -26,10 +26,13 @@ import {
   channelsFor,
   dedupKey,
   selectTier,
+  shouldMaterialize,
   type DeliveryChannel,
   type DeliveryDecision,
   type DeliveryResult,
+  type QuietHours,
 } from '../../foundation/notifications'
+import type { DueItem, TimeRange } from '../sessions'
 import {
   INBOX_PAGE_SIZE,
   InvalidNotificationError,
@@ -40,6 +43,7 @@ import {
   type NotificationView,
   type NotificationsService,
   type NotificationsServiceDeps,
+  type TickResult,
   type UnreadCounts,
 } from './types'
 
@@ -136,6 +140,31 @@ function inQuietWindow(minute: number, start: number, end: number): boolean {
   return start <= end ? minute >= start && minute < end : minute >= start || minute < end
 }
 
+const MS_PER_DAY = 86_400_000
+
+// UTC minute-of-day (0-1439) from a Unix-ms instant. The M1 TZ approximation (S4): the backend holds no
+// device TZ (the engine's TZ discipline is "the caller resolves"), and the OS scheduler is deny-safe at M1
+// so quiet-hours precision is moot until M2 wires a real scheduler + device TZ — zero signature change.
+// Double-mod keeps a (theoretical) negative instant in range. `[FACT: foundation/notifications/types.ts:110-111,126-127]`
+function utcMinuteOfDay(t: number): number {
+  return Math.floor((((t % MS_PER_DAY) + MS_PER_DAY) % MS_PER_DAY) / 60_000)
+}
+
+// MergedPreferences quiet-hours → the engine's QuietHours (S4, for scheduleLocal's bake). `policy` has no
+// MergedPreferences field (verified: @vida/types exposes quiet_hours_enabled/start/end only) → default
+// 'suppress' (matches S2's suppress-external semantics); the shift-vs-suppress user choice is an M2 pref.
+// A malformed/absent window disables the quiet gate (benign). `[FACT: entities/user.ts quiet_hours_*; foundation/notifications/types.ts:121]`
+function quietHoursFromPrefs(prefs: Pick<MergedPreferences, keyof typeof PERMISSIVE_PREFS>): QuietHours {
+  const start = hhmmToMinutes(prefs.quiet_hours_start)
+  const end = hhmmToMinutes(prefs.quiet_hours_end)
+  return {
+    enabled: prefs.quiet_hours_enabled && start !== null && end !== null,
+    startMinute: start ?? 0,
+    endMinute: end ?? 0,
+    policy: 'suppress',
+  }
+}
+
 // --- Row → @vida/types interface (explicit pick: drops _sync_*/phantom cols) ---
 function toView(r: NotificationRow): NotificationView {
   return {
@@ -162,7 +191,7 @@ function toView(r: NotificationRow): NotificationView {
 }
 
 export function createNotificationsService(deps: NotificationsServiceDeps): NotificationsService {
-  const { db, deviceId, engine, preferences } = deps
+  const { db, deviceId, engine, sessions, preferences } = deps
   const repo = createRepository(db, notifications, {
     deviceId,
     encryptedFields: [], // M1.0 pass-through; [E] title/message/action_label/metadata → M3/DB-5
@@ -335,6 +364,92 @@ export function createNotificationsService(deps: NotificationsServiceDeps): Noti
     await repo.createInTx(tx, { ...toCreateRow(input), effect_event_id, delivered_in_app: true })
   }
 
+  // NF-8 in-service occurrence dedup for the TIME path. The DB UNIQUE is on effect_event_id ALONE, and
+  // time rows carry NULL there (SQLite NULLs are distinct) → the schema delegates time dedup to the
+  // dispatcher. A fired due-row links (entity_type=source_module, entity_id=ref_id); the isNull clause
+  // confines the dedup to prior DISPATCHER rows so a prior EVENT-path row on the same subject (non-NULL
+  // effect_event_id) never false-skips a legitimate time fire. `[FACT: schema/notifications.ts:56,62-67]`
+  async function alreadyMaterialized(item: DueItem): Promise<boolean> {
+    const rows = await repo.findWhere(
+      and(
+        eq(notifications.entity_type, item.source_module),
+        eq(notifications.entity_id, item.ref_id),
+        isNull(notifications.effect_event_id),
+      ) as SQL,
+    )
+    return rows.length > 0
+  }
+
+  // NF-2 TIME path (headless dispatcher). Reads the Sessions `dueIn` agenda and materializes ONLY
+  // already-due, time-pinned occurrences (NF-3 derive-until-fire; OQ-1 fire only hard_deadline-pinned).
+  // Failure-isolated: a throwing dueIn ⇒ SignalUnavailable (zeroed result, never fire on fabricated data,
+  // never crash); a bad single item is caught + skipped, never aborts the batch. `[FACT: slice-map S4; contract.md:40]`
+  async function tick(range?: TimeRange, now: number = Date.now()): Promise<TickResult> {
+    const window = range ?? { start: 0, end: now }
+    let items: DueItem[]
+    try {
+      items = await sessions.dueIn(window)
+    } catch {
+      return { evaluated: 0, fired: 0, suppressed: 0, skipped: 0 } // SignalUnavailable — lane down
+    }
+    const prefs = (await preferences?.getMergedPreferences()) ?? PERMISSIVE_PREFS
+    const quietHours = quietHoursFromPrefs(prefs)
+    let evaluated = 0
+    let fired = 0
+    let suppressed = 0
+    let skipped = 0
+    for (const item of items) {
+      evaluated++
+      try {
+        const hd = item.hard_deadline
+        if (hd === undefined) {
+          skipped++ // un-pinned — no stable fire instant (OQ-1); agenda work, not an alarm
+          continue
+        }
+        if (!shouldMaterialize(hd, now)) {
+          skipped++ // future — no phantom inbox (NF-3); the OS arm is a deny-safe future concern
+          continue
+        }
+        if (await alreadyMaterialized(item)) {
+          skipped++ // already fired this occurrence (NF-8 two-ticks ⇒ one row)
+          continue
+        }
+        const occurrenceId = `${item.source_module}:${item.ref_id}:${hd}`
+        const input: FireInput = {
+          type: 'reminder',
+          title: item.label,
+          entity_type: item.source_module,
+          entity_id: item.ref_id,
+          metadata: JSON.stringify({ occurrenceId, hard_deadline: hd }),
+        }
+        try {
+          await fire(input, { nowMinuteOfDay: utcMinuteOfDay(now) }) // reuses the S2 gate + deliver + audit
+        } catch {
+          skipped++ // `fire` rejected the input (no row created) — isolate this item, nothing materialized
+          continue
+        }
+        // The row IS materialized now → it counts as fired|suppressed regardless of the OS-arm outcome
+        // (BR-NT-S4-9 invariant: fired+suppressed = new rows). The local OS alert is BEST-EFFORT: deny-safe
+        // no-op at M1, a real scheduler at M2 whose failure must NOT recount a materialized row as skipped.
+        let alertSuppressed = false
+        try {
+          const sr = await engine.scheduleLocal(
+            { occurrenceId, at: hd, minuteOfDay: utcMinuteOfDay(hd) },
+            quietHours,
+          )
+          alertSuppressed = sr.action === 'suppress' // quiet-hours baked to suppress (in-app still recorded)
+        } catch {
+          // OS scheduler threw (M2 real port) — the in-app row already stands; count it fired, not skipped.
+        }
+        if (alertSuppressed) suppressed++
+        else fired++
+      } catch {
+        skipped++ // a PRE-fire step threw (no row materialized) — per-item isolation (NF-2/NF-3)
+      }
+    }
+    return { evaluated, fired, suppressed, skipped }
+  }
+
   return {
     list,
     unreadCounts,
@@ -345,6 +460,7 @@ export function createNotificationsService(deps: NotificationsServiceDeps): Noti
     deliver,
     fire,
     applyNotificationEffect,
+    tick,
   }
 }
 

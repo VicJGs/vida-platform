@@ -12,4 +12,5 @@ export {
   type InboxQuery,
   type UnreadCounts,
   type NotificationView,
+  type TickResult,
 } from './types'

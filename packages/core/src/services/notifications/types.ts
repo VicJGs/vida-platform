@@ -14,6 +14,7 @@ import type { MergedPreferences, Notification, NotificationType } from '@vida/ty
 import type { DrizzleDb } from '../../db/adapter'
 import type { EffectEvent, EffectTx } from '../../foundation/effects'
 import type { DeliveryResult, NotificationDeliveryEngine, Platform, RoutingMeta } from '../../foundation/notifications'
+import type { SessionsService, TimeRange } from '../sessions'
 
 /** The Preferences gating read seam (NF-4): the module READS channel/quiet-hours/per-module toggles,
  *  never stores them. Deny-safe/fail-OPEN — absent ⇒ permissive (the habits prefs-port precedent;
@@ -27,6 +28,9 @@ export interface NotificationsServiceDeps {
   deviceId: string
   /** The BUILT ZK delivery engine (foundation/notifications #46). Required from S2. */
   engine: NotificationDeliveryEngine
+  /** The Sessions `dueIn(range)` aggregator — the time-path agenda source (S4). Read-only (the dispatcher
+   *  never writes to Sessions). "Deps grow per slice"; required from S4. */
+  sessions: Pick<SessionsService, 'dueIn'>
   /** Preferences gating source (S2). Absent ⇒ permissive (fail-OPEN). */
   preferences?: NotificationsPrefsPort
 }
@@ -63,6 +67,16 @@ export interface UnreadCounts {
  *  effect_event_id now live on `Notification` itself, so no extension is needed). `metadata` is raw TEXT
  *  at M1 (parsing is a frontend reader convenience). */
 export type NotificationView = Notification
+
+/** The dispatcher `tick` outcome (S4) — disjoint on outcome: `fired + suppressed` = new rows materialized
+ *  this tick; `skipped` = everything NOT materialized (un-pinned ∪ future ∪ duplicate ∪ unavailable-lane).
+ *  `suppressed` = materialized in-app but the local OS alert was quiet-hours-suppressed. */
+export interface TickResult {
+  evaluated: number
+  fired: number
+  suppressed: number
+  skipped: number
+}
 
 export const INBOX_PAGE_SIZE = 50
 
@@ -125,4 +139,10 @@ export interface NotificationsService {
    *  the row in the rail's tx via createInTx (idempotent per effect_event_id). PURE SINK (NF-1): a malformed
    *  payload is SKIPPED, never thrown — notifications must never roll back the triggering write (S3). */
   applyNotificationEffect(event: EffectEvent, tx: EffectTx): Promise<void>
+  /** The headless time-driven dispatcher (S4/NF-2). Reads `sessions.dueIn(range)` and materializes ONLY
+   *  already-due, time-pinned (`hard_deadline`) occurrences into inbox rows (NF-3 derive-until-fire — no
+   *  phantom future inbox), deduping per occurrence in-service. Arms the local OS alert via the engine
+   *  (deny-safe at M1). Failure-isolated: a throwing `dueIn` or a bad item never crashes the tick. Returns
+   *  the `TickResult` accounting. `range` defaults to `{ start: 0, end: now }`; `now` defaults to `Date.now()`. */
+  tick(range?: TimeRange, now?: number): Promise<TickResult>
 }

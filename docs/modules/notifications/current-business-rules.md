@@ -81,10 +81,48 @@
 - **BR-NT-S3-8 (achievement recorded not evaluated / NF-14)** — the handler records whatever a producer (e.g.
   Gamification) emits on `surface_notification`; it evaluates no predicate. `[code: service.ts applyNotificationEffect]`
 
+## Shipped invariants (as of S4)
+
+- **BR-NT-S4-1 (time path / NF-2)** — `tick(range?, now?)` is the headless time half of the single write
+  path; it materializes rows ONLY through the existing `fire` time entry (no new insert site). `range`
+  defaults to `{ start: 0, end: now }`, `now` to `Date.now()`. `[code: service.ts tick]`
+- **BR-NT-S4-2 (fire only time-pinned / OQ-1)** — a `DueItem` materializes ONLY if it has a `hard_deadline`;
+  an un-pinned item has no stable fire instant ⇒ **skipped** (agenda work, not an alarm).
+  `[code: service.ts tick hd-guard; sessions/types.ts:231]`
+- **BR-NT-S4-3 (derive-until-fire / NF-3)** — a pinned item materializes ONLY when
+  `shouldMaterialize(hard_deadline, now)` (deadline ≤ now). A future deadline writes NO inbox row (no phantom
+  future rows). `[code: service.ts tick; foundation/notifications/scheduling.ts:72]`
+- **BR-NT-S4-4 (occurrence identity + in-service dedup / NF-8)** — the OS schedule keys by
+  `${source_module}:${ref_id}:${hard_deadline}`; the **inbox-row** dedup is in-service — a fired row links
+  `entity_type = source_module`, `entity_id = ref_id`, and `tick` skips if a prior row with that
+  `(entity_type, entity_id)` AND `effect_event_id IS NULL` exists. The `isNull` clause confines dedup to prior
+  DISPATCHER rows, so a prior EVENT-path row on the same subject never false-skips a time fire. Remaining M1
+  window: a rescheduled block (same `ref_id`, new `hard_deadline`) converges to one row (benign — 1:1 at M1,
+  lanes dormant). `[code: service.ts alreadyMaterialized; schema/notifications.ts:56,62-67]`
+- **BR-NT-S4-5 (two ticks ⇒ one row / NF-8)** — re-running `tick` over the same due occurrence yields exactly
+  one inbox row. `[code: service.ts tick dedup; live-store AC4]`
+- **BR-NT-S4-6 (gate rides deliver / NF-5)** — a materialized row goes through `fire`→`deliver`, so S2 channel
+  gating + quiet-hours suppression apply unchanged (in-app always, NF-7); `tick` passes a `DeliverContext`
+  with `nowMinuteOfDay` derived from `now`. `[code: service.ts tick → fire]`
+- **BR-NT-S4-7 (local OS arm, deny-safe M1)** — after materializing, `tick` calls
+  `engine.scheduleLocal(occ, quietHours)` to arm the native alert (deny-safe M1 → no OS call). A quiet-hours
+  bake may `suppress` the alert (in-app still recorded). `minuteOfDay` is a UTC approximation at M1 (true
+  device TZ = M2, zero signature change). `[code: service.ts tick; foundation/notifications/service.ts:74-92]`
+- **BR-NT-S4-8 (SignalUnavailable / failure-isolated)** — a throwing `dueIn` ⇒ `tick` returns a zeroed result
+  (never fires on fabricated data, never crashes); per-item processing is isolated — one bad item is caught +
+  skipped, never aborts the batch. `[code: service.ts tick try/catch; contract.md:40]`
+- **BR-NT-S4-9 (TickResult accounting)** — `{ evaluated, fired, suppressed, skipped }`, disjoint on outcome:
+  `fired + suppressed` = new rows materialized (suppressed = OS alert quiet-hours-suppressed, in-app only);
+  `skipped` = not materialized (un-pinned ∪ future ∪ duplicate ∪ unavailable-lane). The invariant holds
+  ACROSS an OS-arm failure: once `fire` materializes the row, it is counted `fired`/`suppressed` even if
+  `engine.scheduleLocal` throws (the local alert is best-effort — a materialized row is never recounted
+  `skipped`; split try/catch, g2). `[code: service.ts tick fire/scheduleLocal split; live-store AC10]`
+- **BR-NT-S4-10 (fired row shape)** — a dispatcher fire is `type:'reminder'`, `title = DueItem.label`,
+  `entity_type/entity_id` = the subject link, `metadata = JSON.stringify({ occurrenceId, hard_deadline })`
+  (raw TEXT at this tier). `[code: service.ts tick FireInput; live-store AC8]`
+
 ## Deferred to later slices (the rule exists in the corpus; not yet enforced in code)
 
-- **NF-3 (derive-until-fire, no phantom inbox) + occurrence keying** — the dispatcher `tick()` → **S4**
-  (fires only `hard_deadline`-pinned `DueItem`s; `occurrenceId = module:ref:hard_deadline`).
-- **NF-10 (dangling subject survives) + retention purge** → **S5**.
-- **NF-14 (achievement from Gamification, recorded not evaluated)** — via the rail handler → **S3**.
-- **NF-15 (digest/batching)** → M2 (realtime at M1).
+- **NF-10 (dangling subject survives) + retention purge (`purgeExpired`)** → **S5**.
+- **OQ-3 Journal summary contribution (`registerNotificationsJournal`)** → **S5** → ① COMPLETE.
+- **NF-15 (digest/batching)** → M2 (realtime at M1). Real OS/wake/email reach → M2. `[E]` encryption → M3.

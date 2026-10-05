@@ -13,13 +13,13 @@ user-facing dispatcher/surface) over DB-4 `032_notifications` (1 table, `notific
 composes — and never re-implements — the BUILT `foundation/notifications` delivery engine (#46), the ADR-004
 effect rail, the Sessions `dueIn(range)` aggregator, and Preferences gating. Full design lives in
 `docs/features/notifications/` (aspect docs) + `docs/features/notifications/delivery/` (interpretation ·
-slice-map · seam-contract). Build state: **① IN PROGRESS — S3 of 5 shipped** (S1 scaffold + inbox reads +
+slice-map · seam-contract). Build state: **① IN PROGRESS — S4 of 5 shipped** (S1 scaffold + inbox reads +
 lifecycle + DB-11 reconcile · S2 Preferences gating + `deliver` + delivery-audit · S3 `fire` + the
-`surface_notification` rail handler + idempotency).
+`surface_notification` rail handler + idempotency · S4 dispatcher `tick()` + time-driven path).
 
-## Delivered surface (as of S3)
+## Delivered surface (as of S4)
 
-`createNotificationsService({ db, deviceId, engine, preferences? }) → NotificationsService` +
+`createNotificationsService({ db, deviceId, engine, sessions, preferences? }) → NotificationsService` +
 `registerNotificationsEffects(registry, svc)` (module fn — wires the rail handler). Factory-object,
 hoisted closures, no `this.`. `engine` (the BUILT `foundation/notifications` delivery engine #46) is required
 from S2; `preferences?` is the deny-safe/fail-OPEN gating read port (absent ⇒ permissive). S4 adds `sessions`.
@@ -58,6 +58,27 @@ fidelity-max; the module gates it DOWN.
   `[code: service.ts applyNotificationEffect]`
 - `registerNotificationsEffects(registry, svc)` (S3) — registers the handler for `'surface_notification'`
   (the sole owner; ADR-012 Additive). `[code: service.ts]`
+- `tick(range?: TimeRange, now?) → TickResult` (S4) — the headless time-driven dispatcher. Reads
+  `sessions.dueIn(range)` (`range` default `{ start: 0, end: now }`, `now` default `Date.now()`) and per
+  `DueItem`: un-pinned (no `hard_deadline`) ⇒ skip (OQ-1); future (`!shouldMaterialize`) ⇒ skip, no phantom
+  row (NF-3); already-materialized ⇒ skip (in-service dedup, NF-8); else `fire` (reuses the S2 gate+deliver+
+  audit) then `engine.scheduleLocal(occ, quietHours)` to arm the OS alert (deny-safe M1). A dispatcher fire is
+  `type:'reminder'`, links `(entity_type=source_module, entity_id=ref_id)`, carries `metadata =
+  {occurrenceId, hard_deadline}`. **Failure-isolated:** a throwing `dueIn` ⇒ zeroed `SignalUnavailable`
+  result; a bad item is caught + skipped. `TickResult {evaluated, fired, suppressed, skipped}` is disjoint
+  (`fired+suppressed` = new rows). `minuteOfDay` is a UTC M1 approximation (device TZ = M2). `[code: service.ts tick]`
+
+**S4 in-service occurrence dedup (NF-8):** time rows carry NULL `effect_event_id`; the DB UNIQUE is on that
+column alone (SQLite NULLs distinct) → the schema delegates time dedup to the dispatcher. `tick` dedups by
+`(entity_type, entity_id, effect_event_id IS NULL)` — the `isNull` clause confines dedup to prior DISPATCHER
+rows so a prior EVENT-path row on the same subject never false-skips a time fire. `[code: service.ts alreadyMaterialized]`
+
+> **M2 forward-note (g2 NIT):** a dispatcher fire sets `entity_type = DueItem.source_module` (a MODULE name,
+> e.g. `'sessions'`/`'books'`), NOT a singular registry entity-type (`'session'`). So S2's per-module
+> `PUSH_TOGGLE_BY_ENTITY` lookup misses → a time-path push is gated by the GLOBAL `notification_push` only,
+> never `push_study` (consistent with the S2 rule "unmapped `entity_type` → global governs"). This is a no-op
+> at M1 (external deny-safe, folds to in-app). Wiring per-module push gating for the time path needs a
+> `source_module → entity_type` map at M2 (when real push lands). `[code: service.ts tick entity_type; gateChannels PUSH_TOGGLE_BY_ENTITY]`
 
 Idempotency rides the rail's `appliedEffects` ledger (per-device) + the notifications `UNIQUE(effect_event_id)`
 convergence key (cross-device, resolved at sync). External delivery for the EVENT path is a post-commit concern
@@ -75,7 +96,6 @@ string | null` (ADR-012 Additive convergence key). `[code: packages/types/src/co
 
 ## Not yet built (homed to later slices — do not assume present)
 
-- **S4** — dispatcher `tick()` + time-driven path (fires only `hard_deadline`-pinned `DueItem`s).
 - **S5** — `registerNotificationsJournal` summary + `purgeExpired` + dangling-subject read-safety → ① COMPLETE.
 
 ## Out of scope (homed elsewhere)
