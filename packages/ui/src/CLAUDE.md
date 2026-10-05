@@ -265,8 +265,10 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   renderer owns loading/error/success — degrade-never-crash). Region named via `aria-label`/`aria-labelledby`→titleId
   (`warnMissingName`). DIRECT semantic tokens; no sub-theme. **State-as-prop (BR-2)** — the app derives via the 8-state
   machine + passes it. Visual Gate PASS (Brave, 3 presets × light/dark: AA 4.94–6.03 incl. warm-dark · axe 0 · 7 renderers
-  dispatch · toolbar `aria-pressed` · 375 condense + table scroll). S2 adds the Filter/Sort/`+`-new-view chrome affordances;
-  S3 the apps/web SavedView↔Collection adapter (type+convention). Spec:
+  dispatch · toolbar `aria-pressed` · 375 condense + table scroll). **S2** added the view-config chrome ENTRY POINTS
+  (`onFilter`/`filterActive` badge · `sortLabel`/`onSort` · `onNewView` the `+`, icon-only w/ aria-label) — optional,
+  right-aligned, **ACTIVE in every state** (EC-2); entry points ONLY (filter/sort/create logic = the app's/ViewsService's).
+  **S3** (next) = the apps/web SavedView↔Collection adapter (type+convention). Spec:
   `docs/specs/components/ui-2-platform-views/collection-view.md`. Delivery: `docs/specs/foundation/fe-codec-collection/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the

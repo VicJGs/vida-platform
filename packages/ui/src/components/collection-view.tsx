@@ -82,6 +82,17 @@ export interface CollectionViewProps {
   empty?: ReactNode
   /** OPTIONAL error override (default = the active renderer's own error via renderView). */
   error?: ReactNode
+  // ── S2: view-config chrome ENTRY POINTS (the logic is the app's / ViewsService's, NOT here) ──
+  /** Opens the filter editor (filtering is the View Engine's). Omit → no Filter control. */
+  onFilter?: () => void
+  /** A filter is applied → a badge on the Filter control. */
+  filterActive?: boolean
+  /** DISPLAY of the current sort, e.g. 'Due ↑' (the sort is resolved upstream). */
+  sortLabel?: ReactNode
+  /** Opens the sort control. Omit → no Sort control. */
+  onSort?: () => void
+  /** The `+` — create/clone a SavedView (ViewsService). Omit → no new-view control. */
+  onNewView?: () => void
   /** Accessible name for the region (defaults to the visible title via aria-labelledby). */
   'aria-label'?: string
   'aria-labelledby'?: string
@@ -98,6 +109,8 @@ const ChromeRow = styled(View, {
   gap: '$8',
 })
 const TitleGroup = styled(View, { flexDirection: 'row', alignItems: 'baseline', gap: '$8' })
+// The view-config entry points (S2) — right-aligned in the chrome row; wraps before crushing at narrow widths.
+const ChromeActions = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$4', flexWrap: 'wrap' })
 // The switcher toolbar (tablet+). Mobile condenses to a Menu (shell global-bar control-reflow precedent).
 const SwitcherBar = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$4' })
 
@@ -111,6 +124,11 @@ export function CollectionView({
   state,
   empty,
   error,
+  onFilter,
+  filterActive,
+  sortLabel,
+  onSort,
+  onNewView,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledby,
   ref,
@@ -146,7 +164,7 @@ export function CollectionView({
       aria-label={ariaLabel}
       aria-labelledby={resolvedLabelledby}
     >
-      {/* chrome row 1 — title + honest count (S2 adds Filter/Sort/+ on the right) */}
+      {/* chrome row 1 — title + honest count (left) · the view-config entry points (right, S2) */}
       <ChromeRow>
         <TitleGroup>
           <Text id={titleId} fontFamily="$display" fontSize="$h3" color="$colorTextPrimary">
@@ -156,6 +174,27 @@ export function CollectionView({
             {state === 'success' && count != null ? `${count} ${count === 1 ? 'item' : 'items'}` : '—'}
           </Text>
         </TitleGroup>
+        {/* S2 — Filter · Sort · + new-view. ENTRY POINTS only (logic is the app's); ACTIVE in every state (EC-2:
+            the 8-state owns no chrome rule; the honesty bar forbids fake spinners, not active controls). */}
+        {(onFilter != null || onSort != null || onNewView != null) && (
+          <ChromeActions>
+            {onFilter != null && (
+              <Button size="sm" intent="ghost" onPress={onFilter}>
+                {filterActive === true ? 'Filter •' : 'Filter'}
+              </Button>
+            )}
+            {onSort != null && (
+              <Button size="sm" intent="ghost" onPress={onSort}>
+                {sortLabel != null ? <>Sort: {sortLabel}</> : 'Sort'}
+              </Button>
+            )}
+            {onNewView != null && (
+              <Button size="sm" intent="ghost" onPress={onNewView} aria-label="New view">
+                +
+              </Button>
+            )}
+          </ChromeActions>
+        )}
       </ChromeRow>
 
       {/* chrome row 2 — the view-mode switcher: a labeled toolbar (tablet+) / a condensed Menu (<768) */}

@@ -30,4 +30,9 @@
   AA 4.94–6.03 incl warm-dark · axe 0 · 7 renderers · toolbar aria-pressed · 375 condense+scroll). Independent code-review
   **SHIP** (4 non-blocking NITs: Narrow375 story annotated · condensed-Menu menuitemradio = documented follow-up · Node-24
   runner). EC-1/3/4/5 demonstrated; EC-2/6 → S2. §XXIX: packages/ui/src/CLAUDE.md.
-- **S2 — next** (view-config chrome: Filter/Sort/+ entry points).
+- **S2 — COMPLETE.** View-config chrome ENTRY POINTS on `CollectionView` (`onFilter`/`filterActive` badge · `sortLabel`/
+  `onSort` · `onNewView` the `+`, icon-only w/ aria-label) — optional, right-aligned, ACTIVE in every state (EC-2); entry
+  points only (logic = app/ViewsService). tsc 0 · @vida/ui **398** (+4) · eslint 0 · Visual Gate PASS (AA 4.94–6.03 · axe 0
+  w/ the icon `+` · chrome active across states). Independent code-review **SHIP** (NIT-1 empty-case added to the EC-2 loop;
+  NIT-2 `•`-in-label badge kept — honest accessible name, specimen shows no discrete badge). EC-2/EC-6 demonstrated.
+- **S3 — next** (apps/web SavedView↔Collection adapter — type+convention, Verification Gate).

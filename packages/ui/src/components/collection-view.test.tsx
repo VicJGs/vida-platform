@@ -130,6 +130,57 @@ describe('CollectionView — empty ownership (the resolved contract point)', () 
   })
 })
 
+describe('CollectionView — view-config chrome affordances (S2)', () => {
+  it('renders NO chrome actions when no callbacks are given (S1 default)', () => {
+    const { fn } = spyRenderView()
+    const { queryByRole } = renderUI(
+      <CollectionView title="Tasks" count={6} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success" />,
+    )
+    expect(queryByRole('button', { name: 'Filter' })).toBeNull()
+    expect(queryByRole('button', { name: 'New view' })).toBeNull()
+  })
+
+  it('renders Filter / Sort / + entry points and fires their callbacks', () => {
+    const { fn } = spyRenderView()
+    const onFilter = vi.fn(), onSort = vi.fn(), onNewView = vi.fn()
+    const { getByRole } = renderUI(
+      <CollectionView title="Tasks" count={6} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success"
+        onFilter={onFilter} onSort={onSort} onNewView={onNewView} sortLabel="Due ↑" />,
+    )
+    fireEvent.click(getByRole('button', { name: 'Filter' }))
+    fireEvent.click(getByRole('button', { name: 'Sort: Due ↑' }))
+    fireEvent.click(getByRole('button', { name: 'New view' })) // the '+' is icon-only → named by aria-label
+    expect(onFilter).toHaveBeenCalledTimes(1)
+    expect(onSort).toHaveBeenCalledTimes(1)
+    expect(onNewView).toHaveBeenCalledTimes(1)
+  })
+
+  it('badges the Filter control when a filter is applied', () => {
+    const { fn } = spyRenderView()
+    const { getByRole } = renderUI(
+      <CollectionView title="Tasks" count={6} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success"
+        onFilter={vi.fn()} filterActive />,
+    )
+    expect(getByRole('button', { name: 'Filter •' })).not.toBeNull()
+  })
+
+  it('keeps the chrome affordances ACTIVE across loading, error and empty (EC-2)', () => {
+    for (const state of ['loading', 'error', 'empty'] as const) {
+      const { fn } = spyRenderView()
+      const onFilter = vi.fn()
+      const { getByRole } = renderUI(
+        <CollectionView title="Tasks" count={0} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state={state}
+          onFilter={onFilter} onSort={vi.fn()} onNewView={vi.fn()} />,
+      )
+      const filter = getByRole('button', { name: 'Filter' })
+      expect(filter.getAttribute('disabled')).toBeNull()
+      fireEvent.click(filter)
+      expect(onFilter).toHaveBeenCalledTimes(1)
+      cleanup()
+    }
+  })
+})
+
 describe('CollectionView — condensed switcher (<768)', () => {
   beforeEach(() => mockMatchMedia(false)) // mobile base → no toolbar
 

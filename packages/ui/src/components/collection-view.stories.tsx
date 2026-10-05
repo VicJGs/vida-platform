@@ -62,8 +62,18 @@ function renderView(layout: ViewLayout, state: ViewState) {
 const ALL: ViewLayout[] = ['list', 'table', 'board', 'gallery', 'calendar', 'graph', 'timeline']
 
 // CollectionView is CONTROLLED (layout is a prop) → a tiny stateful wrapper for the interactive stories.
-function Controlled({ state, count, width }: { state: ViewState; count?: number; width?: number }) {
+function Controlled({ state, count, width, chrome }: { state: ViewState; count?: number; width?: number; chrome?: boolean }) {
   const [layout, setLayout] = useState<ViewLayout>('list')
+  const [filterActive, setFilterActive] = useState(false)
+  const chromeProps = chrome
+    ? {
+        onFilter: () => setFilterActive((v) => !v),
+        filterActive,
+        sortLabel: 'Due ↑' as const,
+        onSort: () => {},
+        onNewView: () => {},
+      }
+    : {}
   return (
     <View width={width ?? 960} maxWidth="100%">
       <CollectionView
@@ -74,6 +84,7 @@ function Controlled({ state, count, width }: { state: ViewState; count?: number;
         onLayoutChange={setLayout}
         renderView={renderView}
         state={state}
+        {...chromeProps}
       />
     </View>
   )
@@ -87,22 +98,23 @@ const meta: Meta<Args> = {
 export default meta
 type Story = StoryObj<Args>
 
-// The shell — switch between all 7 view-modes, toggle the state arg.
-export const Playground: Story = { args: { state: 'success' }, render: (a) => <Controlled state={a.state} /> }
+// The shell — switch between all 7 view-modes + the full view-config chrome (Filter/Sort/+), toggle the state arg.
+export const Playground: Story = { args: { state: 'success' }, render: (a) => <Controlled state={a.state} chrome /> }
 
 // Narrow surface — a 375px CONTAINER (the renderer-scroll surface). NB: the switcher condense is VIEWPORT-driven
 // (window.matchMedia <768, useTabletUp) — proving it requires an actual browser resize to <768 (the Visual Gate does
 // this via a 375 viewport), not just this container width. At a real 375 viewport the switcher becomes "View: {label}".
-export const Narrow375: Story = { args: { state: 'success' }, render: (a) => <Controlled state={a.state} width={375} /> }
+export const Narrow375: Story = { args: { state: 'success' }, render: (a) => <Controlled state={a.state} width={375} chrome /> }
 
-// State coverage at a glance — the shell keeps title + switcher in every state; empty = teaching-invitation.
+// State coverage — the chrome (title · count · Filter/Sort/+ · switcher) persists + stays ACTIVE in every state (EC-2);
+// empty = teaching-invitation.
 export const StateCoverage: Story = {
   render: () => (
     <View gap="$24">
       {(['success', 'loading', 'error', 'empty'] as const).map((s) => (
         <View key={s} gap="$4">
           <Text fontSize={12} opacity={0.6} color="$colorTextPrimary">state = {s}</Text>
-          <Controlled state={s} count={s === 'success' ? ROWS.length : 0} width={720} />
+          <Controlled state={s} count={s === 'success' ? ROWS.length : 0} width={720} chrome />
         </View>
       ))}
     </View>
