@@ -755,3 +755,14 @@ gitleaks clean. Key decisions logged above (S1–S10 rows). Composes the real `s
 `journals`/`effects` substrates; deny-safe M2 ports (`ingestion?`/`attachment?`/`ai?`/`preferences?`/`effects?`) swap
 with zero signature change. Derive-on-read SSOT (progress/quota/pace/stats). Scope guards honored: C-E2 (no economy),
 C-M1 (no stored measurement axes), BK-12/14/18. Currency: `docs/modules/books/current-*`. ② `fe-books` (LIF-188) = P6.
+
+## mod-learning-education — completed 2026-10-05
+`createLearningEducationService` ① backend (S1–S10) over DB-4 `024_learning_education` (15 tables). PR #77. Key decisions:
+- **Pure service tier, no DDL** — DB-4 #12 authored all tables; the aspect docs' "⚠ INTENDED/no schema" is pre-DB-4 stale.
+- **Deny-safe optional ports for every cross-module dep** (`ics?`/`attachment?`/`tasks?`/`books?`/`knowledge?`/`effects?`) — degrade to typed-unavailable / `[]` / all-null / dormant at M1 (no composition root yet); real wiring is M2 via zero-signature swaps. NO `ai?` (no M1 consumer, No-Guessing).
+- **Deny-safe throw-vs-fallback is doc-resolved, not preference:** throw when there's no local path to the result (S5 ICS fetch → `IcsUnavailableError`); fall back when a local path exists (S9 `addDocument` absent `attachment?` → inline `encrypted_blob`, grounded in business-rules.md:89 "decrypt/R2 error → typed" + ED-16 local-first). The seam-contract's `AttachmentUnavailable` was design drift; the aspect docs outrank it.
+- **Grade + measurement are derive-on-read, never stored** (S7/S8); measurement is Education-forged with separate storage (C-M5), exposed via a method not `advertise()` (KN-10 pattern).
+- **S10 effects fan-out is emit-only + dormant** (`emit_measurement_signal` only, C-E2 never economy; grain = assessment id; post-commit/failure-isolated) — the books/knowledge S-final precedent.
+- **Journal is a PULL `/summary` contribution** (`registerLearningEducationJournal`, dedup by module), not a rail push (ADR-004 §3.2.5).
+- **§XXVIII deviations:** port types `Education*`-prefixed (flat-barrel collision with books — the `HabitDateRange` precedent); `ConflictingFileSourceError` typed (constitution §5); `encrypted_blob` mapper cast (Drizzle mode-less `blob()` infers `{}`, runtime Buffer).
+- Built in a dedicated worktree `.claude/worktrees/mod-learning-education` (shared-tree collision with a parallel `frontend-track` session).
