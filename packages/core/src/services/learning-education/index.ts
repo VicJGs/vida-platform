@@ -4,3 +4,4 @@
 // vault · cross-module+Journal) per docs/features/learning/education/delivery/slice-map.md.
 export * from './types'
 export * from './service'
+export * from './journal'

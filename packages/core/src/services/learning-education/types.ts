@@ -37,6 +37,8 @@ import type {
   MeasurementRefType,
   ProgramParentType,
   CourseStatus,
+  Task,
+  ReadingPlan,
 } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type { SessionsService, Session, TimeRange } from '../sessions'
@@ -44,6 +46,7 @@ import type { SessionRegistry } from '../../foundation/sessions'
 import type { SpacesService } from '../../foundation/spaces'
 import type { NotesService } from '../notes'
 import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
 import type { PageRow } from '../../db/schema/notes'
 import type {
   CreateInstitutionSchema,
@@ -120,7 +123,20 @@ export interface LearningEducationServiceDeps {
    *  `file` is stored INLINE (`encrypted_blob`, local-first ED-16); a PRESENT port that rejects ⇒ `DocumentFileError`
    *  (the business-rules.md:89 "decrypt/R2 error → typed" state). */
   attachment?: EducationAttachmentPort
-  // S10 append: journalRegistry, tasks?, ai?, effects?
+  /** Deny-safe Tasks→Education read port (S10) — ABSENT at M1 ⇒ `listEducationTasks` returns `[]` (Tasks owns the
+   *  entity, `services/tasks` not built, C-HW). Optional: every cross-module dep is injected absent at M1 (no
+   *  composition root wires services yet; wired at M2/P6). */
+  tasks?: TasksEducationPort
+  /** Deny-safe Books read port (S10) — `getBookPlansForSubject` passthrough to BK-12 `getPlansForConsumer`; absent ⇒
+   *  `[]`. Optional despite Books being DONE (seam-contract.md:17 marks it `?`) — M1 has no composition root. */
+  books?: BookPlansPort
+  /** Deny-safe Knowledge mastery read port (S10) — `getMasteryForSubject` consumes the KN-10 leaf; absent ⇒ an
+   *  all-null `SubjectMastery` (unmeasured). */
+  knowledge?: KnowledgeMasteryPort
+  /** Deny-safe effect rail (S10) — DORMANT at M1 (no handler/named consumer). `recordResult` emits ONE
+   *  `emit_measurement_signal` (measurement-only, C-E2 — never an economy grant); grain = assessment id. Inline shape:
+   *  the `EffectsPort` name collides at the core barrel, so don't import the symbol (the books/knowledge note). */
+  effects?: { rail: EffectRail; registry: EffectRegistry }
 }
 
 /** Raw file bytes handed to the vault (S9). NOT a validated value (the books `FileBlob` precedent — bytes, not a
@@ -159,6 +175,44 @@ export interface VaultView {
 /** `addDocument` input (S9) — validated metadata (`AddDocumentSchema`) + the raw `file` (split off before parse).
  *  `file` and `storage_ref` are mutually exclusive (enforced in the service). */
 export type AddDocumentInput = z.input<typeof AddDocumentSchema> & { file?: EducationFileBlob }
+
+// --- S10 cross-module ports + view types (service-layer, NOT @vida/types — the knowledge `MasterySource` precedent) ---
+
+/** Deny-safe Tasks→Education read port (S10, ED-9/C-HW). Returns the Tasks-owned `Task` entity (no Education-invented
+ *  shape); `subjectRef` is a subject id or the sentinel `'all'`. Absent ⇒ `listEducationTasks` returns `[]`. */
+export interface TasksEducationPort {
+  listForEducation(subjectRef: string): Promise<Task[]>
+}
+
+/** Deny-safe Books read port (S10, BK-12). `getPlansForConsumer` returns active reading plans (no subject arg) —
+ *  `getBookPlansForSubject` is a passthrough at M1 (the subject filter needs the book↔subject mapping = M2). */
+export interface BookPlansPort {
+  getPlansForConsumer(): Promise<ReadingPlan[]>
+}
+
+/** A subject's mastery reading (S10) — an Education-local structural copy of Knowledge's KN-10 `MasterySource` (NOT
+ *  imported — avoids a service→service coupling + the `MasterySource` flat-barrel collision). All-null = unmeasured. */
+export interface SubjectMastery {
+  /** Object mastery rolled up the knowledge spine (KNO-24). 0–100 | null. */
+  objectMastery: number | null
+  /** Assessment/self-test outcomes (KNO-27). */
+  assessmentResults: number | null
+  /** Acquiring on/ahead of the syllabus-as-calendar (KNO-26). */
+  paceVsSyllabus: number | null
+}
+
+/** Deny-safe Knowledge mastery read port (S10, KN-10). Absent ⇒ `getMasteryForSubject` returns an all-null
+ *  `SubjectMastery`. */
+export interface KnowledgeMasteryPort {
+  getMasterySource(subjectId: string): Promise<SubjectMastery>
+}
+
+/** The day's Education recap counts (S10) — feeds the Journal `/summary` contribution. `[FACT: contract.md:57
+ *  "today's class sessions + due assessments"]` */
+export interface EducationDayDigest {
+  classSessions: number
+  dueAssessments: number
+}
 
 // Re-export the reused sessions `TimeRange` so S4 consumers (getWeeklySchedule) import it from this barrel.
 export type { TimeRange } from '../sessions'
@@ -436,6 +490,19 @@ export interface LearningEducationService {
     to: EducationEntityRef,
     context?: string | null,
   ): Promise<EntityLinkRow>
+
+  // --- cross-module consume + Journal (S10 — ED-9 · BK-12 · KN-10 · Journal) ---
+  /** Homework via the Tasks→Education port (ED-9). **Deny-safe:** `tasks?` absent ⇒ `[]` (Tasks owns the entity,
+   *  C-HW). `subjectRef` = a subject id or `'all'`. */
+  listEducationTasks(subjectRef: string): Promise<Task[]>
+  /** The subject's reading plans (BK-12) — passthrough to Books `getPlansForConsumer`. **Deny-safe:** `books?` absent
+   *  ⇒ `[]`. `subjectId` reserved (the book↔subject filter is M2). */
+  getBookPlansForSubject(subjectId: string): Promise<ReadingPlan[]>
+  /** The subject's mastery reading (KN-10) — consumes Knowledge's leaf. **Deny-safe:** `knowledge?` absent ⇒ an
+   *  all-null `SubjectMastery`. Education owns any rollup (M1 = passthrough). */
+  getMasteryForSubject(subjectId: string): Promise<SubjectMastery>
+  /** The day's Education recap (class sessions + due assessments) — feeds the Journal `/summary` PULL. */
+  getDayEducationDigest(date: string): Promise<EducationDayDigest>
 }
 
 // --- typed errors (fail loud — constitution §5) ------------------------------

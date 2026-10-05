@@ -14,18 +14,25 @@ import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createLearningEducationService } from '../service'
 import { createSessionRegistry, SessionTypeNotFound, type SessionRegistry } from '../../../foundation/sessions'
-import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import { createEffectRegistry, createEffectRail, type EffectRegistry } from '../../../foundation/effects'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
 import { createSpacesService, type SpacesService, TagNotFound } from '../../../foundation/spaces'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService, type NotesService } from '../../notes'
 import { createSessionsService, type SessionsService } from '../../sessions'
+import { createJournalRegistry } from '../../journals'
+import { registerLearningEducationJournal } from '../journal'
+import type { Task, ReadingPlan } from '@vida/types'
 import {
   type LearningEducationService,
   type IcsFetchPort,
   type RawIcsEvent,
   type EducationAttachmentPort,
   type EducationFileBlob,
+  type TasksEducationPort,
+  type BookPlansPort,
+  type KnowledgeMasteryPort,
+  type SubjectMastery,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -100,7 +107,16 @@ function mockAttachment(opts: { upload?: EducationAttachmentPort['upload'] } = {
   }
 }
 
-async function setup(opts: { attachment?: EducationAttachmentPort } = {}): Promise<Harness> {
+async function setup(
+  opts: {
+    attachment?: EducationAttachmentPort
+    tasks?: TasksEducationPort
+    books?: BookPlansPort
+    knowledge?: KnowledgeMasteryPort
+    /** Pass a registry (with handlers pre-registered) — setup wires a rail over its OWN db so applyEffect resolves it. */
+    effectsRegistry?: EffectRegistry
+  } = {},
+): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
@@ -131,6 +147,12 @@ async function setup(opts: { attachment?: EducationAttachmentPort } = {}): Promi
     spaces,
     notes,
     attachment: opts.attachment,
+    tasks: opts.tasks,
+    books: opts.books,
+    knowledge: opts.knowledge,
+    effects: opts.effectsRegistry
+      ? { rail: createEffectRail(db, opts.effectsRegistry), registry: opts.effectsRegistry }
+      : undefined,
   })
   return { svc, db, bsql, sessions, sessionRegistry, spaces, notes }
 }
@@ -1629,5 +1651,146 @@ describe('mod-learning-education S9 — subject vault + tags/links', () => {
       { entityType: 'book', entityId: 'book-1' },
     )
     expect(b.id).toBe(a.id)
+  })
+})
+
+// ============================================================================
+// S10 — Cross-module fan-out + Journal (ED-9 · BK-12 · KN-10 · Journal · effects)
+// ============================================================================
+describe('mod-learning-education S10 — cross-module consume + Journal + effects', () => {
+  // --- deny-safe consume ports (absent ⇒ []/all-null) ------------------------
+  it('listEducationTasks with NO tasks port ⇒ [] (deny-safe C-HW)', async () => {
+    const h = await setup()
+    expect(await h.svc.listEducationTasks('all')).toEqual([])
+    const s = await h.svc.createSubject({ title: 'Calc' })
+    expect(await h.svc.listEducationTasks(s.id)).toEqual([])
+  })
+
+  it('listEducationTasks with a stub tasks port ⇒ the port rows', async () => {
+    const tasks: TasksEducationPort = {
+      listForEducation: async () => [{ id: 't1' } as unknown as Task, { id: 't2' } as unknown as Task],
+    }
+    const h = await setup({ tasks })
+    expect(await h.svc.listEducationTasks('all')).toHaveLength(2)
+  })
+
+  it('getBookPlansForSubject with NO books port ⇒ [] (deny-safe)', async () => {
+    const h = await setup()
+    expect(await h.svc.getBookPlansForSubject('subj-1')).toEqual([])
+  })
+
+  it('getBookPlansForSubject with a stub books port ⇒ the active plans (passthrough)', async () => {
+    const books: BookPlansPort = {
+      getPlansForConsumer: async () => [{ id: 'plan-1' } as unknown as ReadingPlan],
+    }
+    const h = await setup({ books })
+    const plans = await h.svc.getBookPlansForSubject('subj-1')
+    expect(plans).toHaveLength(1)
+    expect(plans[0].id).toBe('plan-1')
+  })
+
+  it('getMasteryForSubject with NO knowledge port ⇒ all-null SubjectMastery (unmeasured)', async () => {
+    const h = await setup()
+    expect(await h.svc.getMasteryForSubject('subj-1')).toEqual({
+      objectMastery: null,
+      assessmentResults: null,
+      paceVsSyllabus: null,
+    })
+  })
+
+  it('getMasteryForSubject with a stub knowledge port ⇒ the port reading', async () => {
+    const reading: SubjectMastery = { objectMastery: 55, assessmentResults: null, paceVsSyllabus: null }
+    const knowledge: KnowledgeMasteryPort = { getMasterySource: async () => reading }
+    const h = await setup({ knowledge })
+    expect(await h.svc.getMasteryForSubject('subj-1')).toEqual(reading)
+  })
+
+  // --- Journal digest + contribution -----------------------------------------
+  const DAY = '2026-05-10'
+  const DAY_MS = Date.parse(`${DAY}T12:00:00.000Z`)
+
+  async function seedActiveDay(h: Harness): Promise<string> {
+    const subj = await h.svc.createSubject({ title: 'Physics' })
+    await h.svc.registerLearningEducation()
+    await h.svc.createClassSession(subj.id, { started_at: DAY_MS })
+    await h.svc.createAssessment(subj.id, { type: 'exam', date: DAY })
+    return subj.id
+  }
+
+  it('getDayEducationDigest counts class sessions + due assessments for the day', async () => {
+    const h = await setup()
+    await seedActiveDay(h)
+    expect(await h.svc.getDayEducationDigest(DAY)).toEqual({ classSessions: 1, dueAssessments: 1 })
+  })
+
+  it('getDayEducationDigest on an idle day ⇒ {0,0}', async () => {
+    const h = await setup()
+    await seedActiveDay(h)
+    expect(await h.svc.getDayEducationDigest('2026-05-11')).toEqual({ classSessions: 0, dueAssessments: 0 })
+  })
+
+  it('registerLearningEducationJournal registers one contribution; summary success on an active day, empty when idle', async () => {
+    const h = await setup()
+    await seedActiveDay(h)
+    const registry = createJournalRegistry()
+    registerLearningEducationJournal(registry, h.svc)
+    const contribs = registry.list()
+    const edu = contribs.find((c) => c.module === 'learning-education')
+    expect(edu).toBeDefined()
+    expect(edu!.sectionKey).toBe('summary')
+    const active = await edu!.summary(DAY)
+    expect(active.state).toBe('success')
+    const idle = await edu!.summary('2026-05-11')
+    expect(idle.state).toBe('empty')
+  })
+
+  // --- effects fan-out (dormant / no-handler / fires-once / isolated) ---------
+  it('recordResult with NO effects ⇒ no throw, result recorded (dormant)', async () => {
+    const h = await setup()
+    const subj = await h.svc.createSubject({ title: 'Chem' })
+    const a = await h.svc.createAssessment(subj.id, { type: 'quiz' })
+    const rec = await h.svc.recordResult(a.id, { score: 80 })
+    expect(rec.score).toBe(80)
+  })
+
+  it('recordResult with effects but NO handler ⇒ no throw (skip)', async () => {
+    const registry = createEffectRegistry() // no handler registered
+    const h = await setup({ effectsRegistry: registry })
+    const subj = await h.svc.createSubject({ title: 'Chem' })
+    const a = await h.svc.createAssessment(subj.id, { type: 'quiz' })
+    await expect(h.svc.recordResult(a.id, { score: 80 })).resolves.toBeDefined()
+  })
+
+  it('recordResult fires ONE emit_measurement_signal (grain=assessment id, targetRef=subject); C-E2 no economy', async () => {
+    const registry = createEffectRegistry()
+    const fired: { effectType: string; subjectNaturalKey: string; targetRef: string }[] = []
+    registry.register('emit_measurement_signal', async (ev) => {
+      fired.push({ effectType: ev.effectType, subjectNaturalKey: ev.subjectNaturalKey, targetRef: ev.targetRef })
+    })
+    // C-E2 — if Education ever emitted an economy grant these would fire; assert they never do.
+    const economy: string[] = []
+    registry.register('award_xp', async () => void economy.push('award_xp'))
+    registry.register('grant_currency', async () => void economy.push('grant_currency'))
+    const h = await setup({ effectsRegistry: registry })
+    const subj = await h.svc.createSubject({ title: 'Bio' })
+    const a = await h.svc.createAssessment(subj.id, { type: 'exam' })
+    await h.svc.recordResult(a.id, { score: 90 })
+    expect(fired).toHaveLength(1)
+    expect(fired[0].effectType).toBe('emit_measurement_signal')
+    expect(fired[0].subjectNaturalKey).toBe(a.id) // occurrence grain = assessment id
+    expect(fired[0].targetRef).toBe(subj.id)
+    expect(economy).toEqual([]) // C-E2 — never an economy grant
+  })
+
+  it('a THROWING handler is failure-isolated — recordResult still succeeds (post-commit)', async () => {
+    const registry = createEffectRegistry()
+    registry.register('emit_measurement_signal', async () => {
+      throw new Error('handler boom')
+    })
+    const h = await setup({ effectsRegistry: registry })
+    const subj = await h.svc.createSubject({ title: 'Bio' })
+    const a = await h.svc.createAssessment(subj.id, { type: 'exam' })
+    const rec = await h.svc.recordResult(a.id, { score: 75 })
+    expect(rec.score).toBe(75) // the recorded result stands despite the handler throw
   })
 })

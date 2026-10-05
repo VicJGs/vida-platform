@@ -32,6 +32,9 @@ import type {
   Assessment,
   EducationMeasurement,
   SubjectDocument,
+  Task,
+  ReadingPlan,
+  EffectType,
 } from '@vida/types'
 import type { PageRow } from '../../db/schema/notes'
 import { createRepository, type CreateInput } from '../../db/repository'
@@ -138,6 +141,8 @@ import {
   type AddDocumentInput,
   type EducationEntityRef,
   type VaultView,
+  type SubjectMastery,
+  type EducationDayDigest,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -282,7 +287,8 @@ const CLASS_SESSION_TYPE_DEF: SessionTypeDef = {
 export function createLearningEducationService(
   deps: LearningEducationServiceDeps,
 ): LearningEducationService {
-  const { db, deviceId, sessions, sessionRegistry, ics, spaces, notes, attachment } = deps
+  const { db, deviceId, sessions, sessionRegistry, ics, spaces, notes, attachment, tasks, books, knowledge, effects } =
+    deps
 
   // All 5 hierarchy tables have `deleted_at` → softDelete:true. M1.0 encryptedFields:[] (the [E]
   // name/description fields pass through; real field-level encryption lands at M3).
@@ -1083,10 +1089,38 @@ export function createLearningEducationService(
 
   // ED-8 — record the raw result. Sets `score` ONLY; there is no stored grade to update (BR-LE-S7-2). Fail-loud on
   // an unknown id (a real throw site — unlike the dropped S4 ClassSessionNotFoundError).
+  // S10 emit-only measurement fan-out (BR-LE-S10-5) — mirrors books `fanOutReadingCompletion`. ONE member:
+  // `emit_measurement_signal` (a keyed measurement signal); NEVER award_xp/grant_currency (C-E2 — Education is not an
+  // economy feeder). Occurrence grain = the assessment id (exactly-once per ADR-004 §3.2.5; a re-recorded score derives
+  // the same effect_event_id → rail no-op, correct for a derive-on-read measure). DORMANT at M1 (no rail/handler wired).
+  const ASSESSMENT_RECORDED_TRANSITION = 'assessment.recorded'
+  const ASSESSMENT_RECORDED_EFFECTS: readonly EffectType[] = ['emit_measurement_signal']
+  const fanOutAssessmentRecorded = async (assessmentId: string, subjectId: string): Promise<void> => {
+    if (!effects) return // M1 default: no rail wired → the whole fan-out is dormant
+    for (const effectType of ASSESSMENT_RECORDED_EFFECTS) {
+      // Dormant guard: a keyed effect with no handler would throw NoEffectHandler (effects/service.ts).
+      if (!effects.registry.resolve(effectType)) continue
+      try {
+        await effects.rail.applyEffect({
+          subjectNaturalKey: assessmentId,
+          transition: ASSESSMENT_RECORDED_TRANSITION,
+          effectType,
+          targetRef: subjectId,
+        })
+      } catch {
+        // Post-commit, failure-isolated: the recorded result stands; a handler throw is non-fatal.
+      }
+    }
+  }
+
   async function recordResult(assessmentId: string, input: RecordResultInput): Promise<Assessment> {
     const v = RecordResultSchema.parse(input)
-    if (!(await assessmentsRepo.findById(assessmentId))) throw new AssessmentNotFoundError(assessmentId)
+    // Capture the guard row (NOT discarded) — `update` echoes only {score}, so `subject_id` for the S10 fan-out
+    // comes from here (unchanged by a score write). BR-LE-S10-5.
+    const existing = await assessmentsRepo.findById(assessmentId)
+    if (!existing) throw new AssessmentNotFoundError(assessmentId)
     const row = await assessmentsRepo.update(assessmentId, { score: v.score })
+    await fanOutAssessmentRecorded(assessmentId, existing.subject_id) // emit-only, dormant at M1, post-commit, isolated
     return toAssessment(row)
   }
 
@@ -1382,6 +1416,38 @@ export function createLearningEducationService(
     return spaces.createLink(from.entityId, to.entityType, to.entityId, context ?? null)
   }
 
+  // ---- cross-module consume + Journal digest (S10) --------------------------
+  // ED-9 — homework via the Tasks→Education port. Deny-safe: absent ⇒ [] (Tasks owns the entity, C-HW; BR-LE-S10-1).
+  async function listEducationTasks(subjectRef: string): Promise<Task[]> {
+    if (!tasks) return []
+    return tasks.listForEducation(subjectRef)
+  }
+
+  // BK-12 — passthrough to Books `getPlansForConsumer`. Deny-safe: absent ⇒ [] (BR-LE-S10-2). `subjectId` reserved (the
+  // book↔subject filter needs the mapping consumable = M2); M1 returns all active plans.
+  async function getBookPlansForSubject(_subjectId: string): Promise<ReadingPlan[]> {
+    if (!books) return []
+    return books.getPlansForConsumer()
+  }
+
+  // KN-10 — consume Knowledge's mastery leaf. Deny-safe: absent ⇒ all-null SubjectMastery (unmeasured; BR-LE-S10-3).
+  // Education owns any rollup (M1 = passthrough; enriching assessmentResults is the Knowledge-owned reverse-wire, M2).
+  async function getMasteryForSubject(subjectId: string): Promise<SubjectMastery> {
+    if (!knowledge) return { objectMastery: null, assessmentResults: null, paceVsSyllabus: null }
+    return knowledge.getMasterySource(subjectId)
+  }
+
+  // BR-LE-S10-4 — the day's Education recap: class sessions whose `started_at` ∈ the day + assessments due (dated) that
+  // day. Feeds the Journal `/summary` PULL (contract.md:57). `getWeeklySchedule` is ms-ranged; convert the calendar date
+  // to the UTC day window. `listAssessments({range})` filters the calendar `date` column (start==end == the day).
+  async function getDayEducationDigest(date: string): Promise<EducationDayDigest> {
+    const dayStart = Date.parse(`${date}T00:00:00.000Z`)
+    const dayEnd = dayStart + 86_399_999 // inclusive end of the UTC day (getWeeklySchedule is inclusive both ends)
+    const classSessions = (await getWeeklySchedule({ start: dayStart, end: dayEnd })).length
+    const dueAssessments = (await listAssessments({ range: { start: date, end: date } })).length
+    return { classSessions, dueAssessments }
+  }
+
   return {
     createInstitution,
     updateInstitution,
@@ -1441,5 +1507,9 @@ export function createLearningEducationService(
     getVault,
     tagEntity,
     linkEntities,
+    listEducationTasks,
+    getBookPlansForSubject,
+    getMasteryForSubject,
+    getDayEducationDigest,
   }
 }

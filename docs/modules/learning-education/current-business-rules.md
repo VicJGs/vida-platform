@@ -301,8 +301,48 @@
   Education's subject-keyed `upload` ≠ the books book-keyed one, so NOT reused). `[code: types.ts Deps + port interfaces;
   knowledge/types.ts:66,75]`
 
+## S10 — Cross-module fan-out + Journal (ED-9 · BK-12 · KN-10 · Journal · effects) — closes ①
+- **BR-LE-S10-1 (`listEducationTasks` deny-safe ⇒ `[]` when absent — C-HW)** — `tasks?: TasksEducationPort`
+  (`listForEducation(subjectRef): Promise<Task[]>`); absent ⇒ `[]` (no throw — Tasks owns the entity, `services/tasks`
+  not built). Returns the Tasks-owned `@vida/types` `Task` (no Education-invented shape); `subjectRef` = a subject id or
+  `'all'`. Real read lands when Tasks is built (zero-signature swap). `[contract.md:28-29; code: service.ts listEducationTasks]`
+- **BR-LE-S10-2 (`getBookPlansForSubject` deny-safe passthrough to BK-12 ⇒ `[]` when absent)** — `books?: BookPlansPort`
+  (`getPlansForConsumer(): Promise<ReadingPlan[]>`); absent ⇒ `[]`. M1 is a passthrough (BK-12 has no subject arg);
+  `subjectId` reserved (the book↔subject filter = M2). `[seam-contract.md:69; code: service.ts getBookPlansForSubject]`
+- **BR-LE-S10-3 (`getMasteryForSubject` consumes Knowledge KN-10; absent ⇒ all-null — unmeasured)** — `knowledge?:
+  KnowledgeMasteryPort` (`getMasterySource(subjectId): Promise<SubjectMastery>`); absent ⇒ `{objectMastery:null,
+  assessmentResults:null, paceVsSyllabus:null}` (a valid unmeasured reading, no throw). `SubjectMastery` is an
+  Education-local structural copy of Knowledge's leaf (NOT imported — avoids service→service coupling + the barrel
+  collision). Education owns any rollup (M1 = passthrough; the reverse-wire enriching `assessmentResults` stays
+  Knowledge-owned, M2). `[MasterySource knowledge/types.ts:161; code: service.ts getMasteryForSubject]`
+- **BR-LE-S10-4 (Journal `/summary` PULL — today's class sessions + due assessments)** — `getDayEducationDigest(date) →
+  {classSessions, dueAssessments}`: `classSessions` = class meetings whose `started_at` ∈ the UTC day (via
+  `getWeeklySchedule`, inclusive both ends); `dueAssessments` = assessments whose calendar `date` equals `date` (via
+  `listAssessments({range:{start:date,end:date}})`). `journal.ts` exports
+  `createLearningEducationJournalContribution(svc)` (`module:'learning-education'`, `sectionKey:'summary'`,
+  `DATA_POINTS=[class_sessions, due_assessments]` from contract.md:57) whose `summary(date)` ⇒ `state:'success'` iff
+  counts > 0 else `'empty'` (reuses `TerminalState` BY TYPE, never `deriveTerminalState`) + `registerLearningEducationJournal(registry, svc)`.
+  PULL path (ADR-004 §3.2.5, NOT a rail push); registry dedups by `module`; no `journalRegistry` dep. `[contract.md:57;
+  books/journal.ts precedent; code: service.ts getDayEducationDigest, journal.ts]`
+- **BR-LE-S10-5 (`effects?` emit-only fan-out on `recordResult` — dormant, isolated, C-E2)** — after the score write,
+  `fanOutAssessmentRecorded(assessmentId, subject_id)` fires ONE `emit_measurement_signal` (grain = assessment id =
+  `subjectNaturalKey`; `targetRef` = subject id; `transition='assessment.recorded'`). Dormant: `if (!effects) return`;
+  `if (!registry.resolve(effectType)) continue`; `try/catch` (post-commit, failure-isolated — the recorded result
+  stands). A re-recorded score derives the same `effect_event_id` → rail no-op (correct for a derive-on-read measure).
+  **C-E2: measurement signals ONLY — never `award_xp`/`grant_currency`.** `subject_id` captured from the `findById`
+  guard row (not the `update` echo). `[books fanOutReadingCompletion service.ts:318-334; effects/event-id.ts;
+  [[event-fanout-pull-push-split-and-occurrence-grain]]; code: service.ts recordResult/fanOutAssessmentRecorded]`
+- **BR-LE-S10-6 (deps grew by `tasks?`/`books?`/`knowledge?`/`effects?`, all deny-safe/optional; NO `ai?`)** — the `?`
+  optionality is seam-contract-specified (lines 16-24; even `books?` despite Books DONE) — M1 has no composition root, so
+  every cross-module dep is injected absent (wired at M2/P6). No S10 method consumes AI → `ai?` not added (No-Guessing).
+  No new `@vida/types`, no schema. `[seam-contract.md:16-24; code: types.ts Deps]`
+
 ## Scope guards honored (the C-* negatives — rerun-ratified)
 - **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
-- **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2/S4 (no economy grant, no `advertise()`, no homework table,
-  no AI agent); the `class` sub-type declares `effects:[]`/`allowed_effects:[]` (C-E2 honored). Enforced from the
-  slices that introduce those seams (S8/S10).
+- **C-E2 (honored at S4 + S10)** — the `class` sub-type declares `effects:[]`/`allowed_effects:[]` (S4); the S10
+  `recordResult` fan-out emits ONLY `emit_measurement_signal` (never `award_xp`/`grant_currency`) — Education is not an
+  economy feeder.
+- **C-M5 (honored at S8)** — Education-forged measure, separate storage, no `advertise()`, no Projects tables.
+- **C-HW (honored at S10)** — homework is Tasks-owned; `listEducationTasks` is a deny-safe read ⇒ `[]`, no Education
+  homework table.
+- **C-AI4 (honored — not touched)** — no AI agent/document-extraction; `ai?` not wired (no M1 consumer; M2 defer).
