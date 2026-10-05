@@ -1,5 +1,5 @@
 # Task: fe-codec-viewmodes
-# Status: in-progress
+# Status: done
 # Linear: LIF-214
 # Profile: Add Frontend Component
 # Scenario: default

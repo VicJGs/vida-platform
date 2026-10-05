@@ -1,9 +1,9 @@
 <!-- Last updated: 2026-10-04 by /session-end -->
 
 
-## fe-codec-viewmodes (② CODEC view-modes #3 · LIF-214, 2026-10-04, worktree — S1 done, S2 pending)
-The `table` + `board` view-mode renderers — complete the canonical `VIEW_LAYOUT` 7. Detail in
-`docs/specs/foundation/fe-codec-viewmodes/*` + `.claude/tasks/fe-codec-viewmodes.md`. NOT merged (PR at unit-complete).
+## fe-codec-viewmodes (② CODEC view-modes #3 · LIF-214, 2026-10-04 — ① COMPLETE, PR #76 merged `d8b1b93`)
+The `table` (S1) + `board` (S2) view-mode renderers — **complete the canonical `VIEW_LAYOUT` 7** (all 7 now ship).
+Detail in `docs/specs/foundation/fe-codec-viewmodes/*` + `.claude/tasks/archive/fe-codec-viewmodes.md`.
 
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
@@ -13,6 +13,10 @@ The `table` + `board` view-mode renderers — complete the canonical `VIEW_LAYOU
 | 2026-10-04 | aria-sort | does the renderer toggle sort? | **DISPLAY-only** — reflects `column.sort` via `aria-sort`; the sort *control* is the Collection shell (view chrome), not the renderer | read-only lens; ADR-007 sort is view-config | n/a |
 | 2026-10-04 | Envision Gate | fire or skip? | **SKIP** (doc-grounded) — read-only lenses reuse shipped patterns; the one novel affordance (drag) is a Capability | §3.75 trigger test fails | n/a |
 | 2026-10-04 | ui-2 currency | table/board "not built" (2026-08-09) | **SUPERSEDED by G6 (2026-10-01)** — now built; `_index.md` + CLAUDE.md refreshed, memory annotated | a later gated plan (G6) reverses the earlier call | n/a |
+| 2026-10-04 | board contract | prop shape (S2) | **ratify seam-contract §B verbatim** (`{groups,renderCard(item,group),getKey,state?,empty?,error?,density?}`); dropped over-proposed `columnEmpty`/`loadingCount` | §B is the gated authority (ratify-mode); count is derived/rendered + `loadingCount` deliberately omitted (vs table §A) | easy |
+| 2026-10-04 | board spine | which reuse? (S2) | **hybrid** — per-column `resolveDataViewState` (a column IS a list); board-level loading(skeleton cols)/error/board-empty direct | slice-map R4 + seam §B:90-91; the board level diverges like table/calendar | medium |
+| 2026-10-04 | board-empty | role on no groups (S2) | **`role="status"` self-heal** (not a designed grid) | a board's columns ARE the data — zero groups = nothing to keep (inverse of table's designed-empty-row) | medium |
+| 2026-10-04 | per-column empty | success board w/ an empty column (S2) | **derive `colState='empty'`** before `resolveDataViewState` | an empty kanban column is legitimate; avoids the spine's "pass state=empty" dev-warn | easy |
 
 ## fe-codec-patterns (② CODEC pattern-kit #2 · LIF-211, 2026-10-04, worktree)
 The behavioural half of the CODEC — the cross-cutting pattern-kit every `fe-*` surface inherits (decomposition §1.3). 5 slices, PR #75 merged (`c1dd1f0`). Detail in `.claude/tasks/archive/fe-codec-patterns.md` + `docs/specs/foundation/fe-codec-patterns/*`.
