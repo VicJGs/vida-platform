@@ -24,10 +24,13 @@ import type { NotificationType, MergedPreferences } from '@vida/types'
 import { createNotificationDeliveryEngine, type WakePayload, type OsSchedulerPort } from '../../../foundation/notifications'
 import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
 import type { DueItem, TimeRange } from '../../sessions'
+import { createJournalRegistry } from '../../journals'
 import { USER_PREFERENCES_DEFAULTS } from '../../preferences/service'
 import {
   createNotificationsService,
   registerNotificationsEffects,
+  createNotificationsJournalContribution,
+  registerNotificationsJournal,
   NotificationNotFoundError,
   InvalidNotificationError,
   type NotificationsService,
@@ -83,6 +86,7 @@ interface SeedInput {
   effect_event_id?: string | null
   is_read?: boolean
   is_archived?: boolean
+  archived_at?: number | null
   expires_at?: number | null
   created_at?: number // override for deterministic ordering
 }
@@ -142,6 +146,7 @@ async function setup(opts?: {
       effect_event_id: n.effect_event_id ?? null,
       is_read: n.is_read ?? false,
       is_archived: n.is_archived ?? false,
+      archived_at: n.archived_at ?? null,
       expires_at: n.expires_at ?? null,
     } as never)
     const id = (row as { id: string }).id
@@ -571,5 +576,87 @@ describe('mod-notifications S4 — dispatcher tick() + time-driven path', () => 
     const r = await h.svc.tick(undefined, NOW)
     expect(r).toEqual({ evaluated: 1, fired: 1, suppressed: 0, skipped: 0 }) // row stands → fired, not skipped
     expect((await h.svc.list()).length).toBe(1)
+  })
+})
+
+// ============================================================================
+// S5 — Journal contribution + close-out (summary recap · purgeExpired retention · NF-10 dangling-subject).
+// Verification Gate = PLAN §4.1-4.6. Completes ①.
+// ============================================================================
+describe('mod-notifications S5 — Journal contribution + close-out', () => {
+  it('AC1 — summary recap derives state:success + the unread badge from live rows', async () => {
+    const h = await setup()
+    await h.seed({ type: 'error' })
+    await h.seed({ type: 'warning' })
+    await h.seed({ type: 'reminder' })
+    await h.seed({ type: 'info' })
+    await h.seed({ type: 'error', is_read: true }) // read → excluded from unread
+    const section = await createNotificationsJournalContribution(h.svc).summary('2026-10-05')
+    expect(section.state).toBe('success')
+    expect(section.module).toBe('notifications')
+    expect(section.sectionKey).toBe('summary')
+    const counts = await h.svc.unreadCounts()
+    expect(section.items?.[0]).toEqual({
+      unread: counts.unread,
+      error: counts.error,
+      warning: counts.warning,
+      reminder: counts.reminder,
+    })
+  })
+
+  it('AC2 — empty day: state:empty, counts 0, dataPoints present, no throw', async () => {
+    const h = await setup()
+    const section = await createNotificationsJournalContribution(h.svc).summary('2026-10-05')
+    expect(section.state).toBe('empty')
+    expect(section.items?.[0]).toEqual({ unread: 0, error: 0, warning: 0, reminder: 0 })
+    expect(section.dataPoints.map((d) => d.id)).toEqual(['unread', 'error', 'warning', 'reminder']) // g1 NIT-5
+  })
+
+  it('AC3 — registerNotificationsJournal makes the contribution resolvable in the registry', async () => {
+    const h = await setup()
+    const registry = createJournalRegistry()
+    registerNotificationsJournal(registry, h.svc)
+    const c = registry.list().find((x) => x.module === 'notifications')
+    expect(c).toBeDefined()
+    expect(c?.sectionKey).toBe('summary')
+    expect(c?.dataPoints.map((d) => d.id)).toEqual(['unread', 'error', 'warning', 'reminder'])
+  })
+
+  it('AC4 — purgeExpired reclaims long-archived rows (hard-delete + sync enqueue); keeps recent + active', async () => {
+    const h = await setup()
+    const oldId = await h.seed({ title: 'old', is_archived: true, archived_at: 1000 })
+    await h.seed({ title: 'recent', is_archived: true, archived_at: 9000 })
+    await h.seed({ title: 'active' }) // unread, not archived
+    const n = await h.svc.purgeExpired(5000)
+    expect(n).toBe(1)
+    expect((await h.svc.list()).map((r) => r.title).sort()).toEqual(['active', 'recent'])
+    // the purge syncs the deletion (repo.hardDelete enqueues a 'delete')
+    const del = await h.db
+      .select()
+      .from(syncQueue)
+      .where(
+        and(
+          eq(syncQueue.table_name, 'notifications'),
+          eq(syncQueue.row_id, oldId),
+          eq(syncQueue.operation, 'delete'),
+        ),
+      )
+    expect(del.length).toBeGreaterThan(0)
+  })
+
+  it('AC5 — an active (un-archived) row is never purged regardless of age', async () => {
+    const h = await setup()
+    await h.seed({ title: 'ancient-active', created_at: 1 }) // unread, not archived
+    const n = await h.svc.purgeExpired(Number.MAX_SAFE_INTEGER)
+    expect(n).toBe(0)
+    expect((await h.svc.list()).length).toBe(1)
+  })
+
+  it('AC6 — NF-10: a notification whose subject was deleted still lists (dangling entity_id, no crash)', async () => {
+    const h = await setup()
+    await h.seed({ title: 'orphan', entity_type: 'contact', entity_id: 'deleted-subject-xyz' })
+    const rows = await h.svc.list()
+    expect(rows.length).toBe(1)
+    expect(rows[0]?.entity_id).toBe('deleted-subject-xyz')
   })
 })

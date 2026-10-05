@@ -263,6 +263,21 @@ export function createNotificationsService(deps: NotificationsServiceDeps): Noti
     return expired.length
   }
 
+  // NF-13 retention purge — reclaim LONG-ARCHIVED rows (`is_archived` AND `archived_at ≤ before`) by
+  // hard-deleting them (`repo.hardDelete` snapshots + enqueues a 'delete' sync op in one tx → the purge
+  // syncs cross-device). Only archived rows are purged: a NULL `archived_at` (active row) never matches
+  // `lte` (the `is_archived` clause is defensive). An active row is never purged regardless of age.
+  // `[FACT: business-rules.md:55; repository.ts:467-481]`
+  async function purgeExpired(before: number): Promise<number> {
+    const stale = await repo.findWhere(
+      and(eq(notifications.is_archived, true), lte(notifications.archived_at, before)) as SQL,
+    )
+    for (const r of stale) {
+      await repo.hardDelete(r.id)
+    }
+    return stale.length
+  }
+
   // NF-5 — gate the ZK fidelity-max channels down to what Preferences + quiet-hours allow. in_app is
   // NEVER gated away (NF-7, the always-on local channel); push/email are gated per global toggle +
   // (push) the per-module toggle + quiet hours. Suppression ≠ loss: in-app still records.
@@ -461,6 +476,7 @@ export function createNotificationsService(deps: NotificationsServiceDeps): Noti
     fire,
     applyNotificationEffect,
     tick,
+    purgeExpired,
   }
 }
 

@@ -13,13 +13,16 @@ user-facing dispatcher/surface) over DB-4 `032_notifications` (1 table, `notific
 composes — and never re-implements — the BUILT `foundation/notifications` delivery engine (#46), the ADR-004
 effect rail, the Sessions `dueIn(range)` aggregator, and Preferences gating. Full design lives in
 `docs/features/notifications/` (aspect docs) + `docs/features/notifications/delivery/` (interpretation ·
-slice-map · seam-contract). Build state: **① IN PROGRESS — S4 of 5 shipped** (S1 scaffold + inbox reads +
+slice-map · seam-contract). Build state: **① COMPLETE — S1–S5 shipped** (S1 scaffold + inbox reads +
 lifecycle + DB-11 reconcile · S2 Preferences gating + `deliver` + delivery-audit · S3 `fire` + the
-`surface_notification` rail handler + idempotency · S4 dispatcher `tick()` + time-driven path).
+`surface_notification` rail handler + idempotency · S4 dispatcher `tick()` + time-driven path · S5 Journal
+summary contribution + `purgeExpired` retention + NF-10 dangling-subject read-safety).
 
-## Delivered surface (as of S4)
+## Delivered surface (as of S5 — ① COMPLETE)
 
 `createNotificationsService({ db, deviceId, engine, sessions, preferences? }) → NotificationsService` +
+`registerNotificationsJournal(registry, svc)` + `createNotificationsJournalContribution(svc)` (S5 — the
+Journal `summary` contribution) +
 `registerNotificationsEffects(registry, svc)` (module fn — wires the rail handler). Factory-object,
 hoisted closures, no `this.`. `engine` (the BUILT `foundation/notifications` delivery engine #46) is required
 from S2; `preferences?` is the deny-safe/fail-OPEN gating read port (absent ⇒ permissive). S4 adds `sessions`.
@@ -36,6 +39,9 @@ M3/DB-5); NO `deleted_at` (read→archive→expire→purge lifecycle).
 - `markAllRead() → number` — marks every unread; returns count; leaves read/archived. `[code: service.ts]`
 - `archive(id) → NotificationView` — sets `is_archived`+`archived_at`; idempotent; throws on missing.
 - `archiveExpired(now?) → number` — auto-archives rows with `expires_at ≤ now` (NULL never matches, NF-13).
+- `purgeExpired(before) → number` (S5) — retention sweep: hard-deletes LONG-ARCHIVED rows (`is_archived` AND
+  `archived_at ≤ before`) via `repo.hardDelete` (enqueues a `'delete'` sync op → syncs); active rows never
+  purged. `[code: service.ts purgeExpired]`
 - `deliver(id, ctx?: DeliverContext) → DeliveryResult` (S2) — gates the row against Preferences (NF-5), routes
   via `engine.deliver(decision)`, persists the `delivered_{in_app,push,email}` audit. `ctx = { platform?,
   nowMinuteOfDay?, routing? }` — all caller-supplied; platform defaults `'web'`, absent `routing` ⇒ external
@@ -94,9 +100,14 @@ exactly the `@vida/types Notification` fields, dropping `_sync_*` + any phantom 
 `delivered_email: boolean` (delivery-audit, N4), `metadata: string | null` (`[E]` raw TEXT), `effect_event_id:
 string | null` (ADR-012 Additive convergence key). `[code: packages/types/src/common.ts]`
 
-## Not yet built (homed to later slices — do not assume present)
+## Journal contribution (S5)
 
-- **S5** — `registerNotificationsJournal` summary + `purgeExpired` + dangling-subject read-safety → ① COMPLETE.
+`registerNotificationsJournal(registry, svc)` registers ONE `JournalContribution { module:'notifications',
+sectionKey:'summary', dataPoints }` (ADR-004 §3.2.5 PULL). `summary(date)` reuses `unreadCounts()` → the unread
+badge by attention type (`state:'success'` iff unread>0, else `'empty'`; `TerminalState` by type, never a
+throw). **No `dueIn` agenda lane** — notifications CONSUMES the Sessions `dueIn` (S4 dispatcher), it is not an
+agenda provider (the gamification/knowledge summary-only precedent). Snapshot recap at M1; a per-day
+"received on `date`" delta is a documented refinement. `[code: services/notifications/journal.ts]`
 
 ## Out of scope (homed elsewhere)
 

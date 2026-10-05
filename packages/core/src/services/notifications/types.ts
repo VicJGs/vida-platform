@@ -128,6 +128,10 @@ export interface NotificationsService {
   archive(id: string): Promise<NotificationView>
   /** Auto-archive rows whose expires_at ≤ now (NF-13); returns the count archived (S1). */
   archiveExpired(now?: number): Promise<number>
+  /** Retention purge (S5/NF-13) — hard-delete LONG-ARCHIVED rows (`is_archived` AND `archived_at ≤ before`);
+   *  returns the count reclaimed. Syncs the deletion (repo.hardDelete enqueues a 'delete'). Active rows are
+   *  never purged. */
+  purgeExpired(before: number): Promise<number>
   /** Gate a materialized row against Preferences, route it through the delivery engine, and persist the
    *  delivery-audit (delivered_in_app/push/email). In-app always fires (NF-7); external channels are
    *  gated (NF-5) + deny-safe at M1. Throws NotificationNotFoundError on a missing id (S2). */

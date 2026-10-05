@@ -121,8 +121,32 @@
   `entity_type/entity_id` = the subject link, `metadata = JSON.stringify({ occurrenceId, hard_deadline })`
   (raw TEXT at this tier). `[code: service.ts tick FireInput; live-store AC8]`
 
-## Deferred to later slices (the rule exists in the corpus; not yet enforced in code)
+## Shipped invariants (as of S5) — ① COMPLETE
 
-- **NF-10 (dangling subject survives) + retention purge (`purgeExpired`)** → **S5**.
-- **OQ-3 Journal summary contribution (`registerNotificationsJournal`)** → **S5** → ① COMPLETE.
-- **NF-15 (digest/batching)** → M2 (realtime at M1). Real OS/wake/email reach → M2. `[E]` encryption → M3.
+- **BR-NT-S5-1 (one summary contribution, consumer-not-provider / OQ-3)** — notifications registers exactly ONE
+  `JournalContribution { module:'notifications', sectionKey:'summary', dataPoints: DATA_POINTS }` with a
+  `summary(date)` recap and **no `dueIn` agenda lane** (it CONSUMES `dueIn` in S4; it is not a daily-agenda
+  provider — the gamification/knowledge summary-only precedent). `[code: services/notifications/journal.ts]`
+- **BR-NT-S5-2 (summary = unread snapshot)** — `summary(date)` reuses `unreadCounts()` → the
+  `{ unread, error, warning, reminder }` badge; `state = 'success'` iff `unread > 0`, else `'empty'`; a no-data
+  day returns a well-formed `empty` SectionData, never a throw. `date` is accepted for the contract; a per-day
+  "received on `date`" delta is a documented refinement (the gamification snapshot precedent). `[code: journal.ts summary]`
+- **BR-NT-S5-3 (TerminalState by type)** — `state` reuses the `@vida/core` `TerminalState` canon BY TYPE
+  (`'success'`/`'empty'`), not `deriveTerminalState`. `[code: journal.ts; foundation/capability/types]`
+- **BR-NT-S5-4 (retention purge / NF-13)** — `purgeExpired(before)` hard-deletes LONG-ARCHIVED rows
+  (`is_archived = true AND archived_at ≤ before`) via `repo.hardDelete` (snapshots + enqueues a `'delete'` sync
+  op → the purge syncs cross-device); returns the count reclaimed. A NULL `archived_at` (active row) never
+  matches `lte`; an active row is never purged regardless of age. `[code: service.ts purgeExpired; repository.ts:467-481]`
+- **BR-NT-S5-5 (NF-10 dangling-subject survives)** — a notification whose `entity_type`/`entity_id` points at a
+  deleted subject still lists and reads at ① (no FK, reads never join); `action_url` resolution is the ②
+  concern. `[code: service.ts list/toView never join; business-rules.md:46,68-69]`
+- **BR-NT-S5-6 (① COMPLETE)** — the barrel exports `createNotificationsJournalContribution` +
+  `registerNotificationsJournal` alongside the service + `registerNotificationsEffects`; all 5 slices shipped.
+  `[code: services/notifications/index.ts]`
+
+## Deferred (homed to later milestones — not this module's ①)
+
+- **NF-15 (digest/batching)** → M2 (realtime per-notification at M1). Real OS/wake/email reach → M2.
+- `action_url` "no longer available" RESOLUTION UI → **② `fe-notifications` (LIF-192)**.
+- Per-day "received on `date`" journal delta + TZ → refinement (snapshot at M1). `[E]` encryption → M3.
+- Time-path per-module push gating (a `source_module → entity_type` map) → M2 (see current-spec M2 forward-note).

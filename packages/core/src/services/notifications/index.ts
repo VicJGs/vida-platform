@@ -1,5 +1,6 @@
 // services/notifications — barrel (mod-notifications #53 ①)
 export { createNotificationsService, registerNotificationsEffects } from './service'
+export { createNotificationsJournalContribution, registerNotificationsJournal } from './journal'
 export {
   NotificationNotFoundError,
   InvalidNotificationError,

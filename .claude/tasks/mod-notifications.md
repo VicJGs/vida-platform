@@ -58,7 +58,13 @@ signals into materialized, scheduled, deliverable notifications. Entity Delivery
       payload skipped; a same-id/different-targetRef collision pre-checked + skipped (not a UNIQUE-throw that
       would roll back the trigger). g2 code-review SHIP (2 nits folded: the NF-1 convergence guard +test, +
       citation fix). tsc 0 · eslint 0 · **28/28 notifications** · full @vida/core **1560/1560**. Currency BR-NT-S3-1..8.
-- [ ] **S4** — dispatcher `tick()` + time path (hard_deadline-pinned, materialize-at-fire)
+- [x] **S4** — dispatcher `tick()` + time-driven path (`67b33f0`). `tick(range?, now?)` reads `sessions.dueIn`
+      → materializes ONLY already-due hard_deadline-pinned occurrences (OQ-1/NF-3), in-service dedup via
+      `(entity_type=source_module, entity_id=ref_id, effect_event_id IS NULL)` (schema delegates time dedup —
+      NULL effect_event_id), reuses the S2 gate+deliver+audit via `fire`, arms deny-safe `engine.scheduleLocal`.
+      Adds `sessions` dep + `TickResult`. Failure-isolated (SignalUnavailable + per-item). g1 SHIP → 2× g2 SHIP
+      (split try/catch count-invariant fix + AC10; M2 entity_type forward-note NIT) → pre-ship /critique SHIP.
+      tsc 0 · eslint 0 · notifications **38/38** · full @vida/core 1569/1570 (known vault-1MB flake). BR-NT-S4-1..10.
 - [ ] **S5** — Journal summary contribution + close-out (purge · dangling-subject · currency) → ① COMPLETE
 
 ### Per-slice closing steps (each slice)
@@ -121,6 +127,23 @@ signals into materialized, scheduled, deliverable notifications. Entity Delivery
   + a citation fix. tsc 0 · eslint 0 · 28/28 · full 1560/1560. Currency BR-NT-S3-1..8. **Next: S4 — dispatcher
   `tick()` + time-driven path** (reads Sessions `dueIn(range)`, fires only `hard_deadline`-pinned items,
   materialize-at-fire; adds the `sessions` dep).
+- 2026-10-05: **S4 shipped** (`67b33f0`) — dispatcher `tick()` + time-driven path. The time half of the single
+  write path. Resolved the one real design question by FACT: time rows carry NULL `effect_event_id` (schema
+  `notifications.ts:18-19` "keyed by its dueIn occurrence = dispatcher service") → in-service dedup by
+  `(entity_type=source_module, entity_id=ref_id, effect_event_id IS NULL)`; the `isNull` clause (g2 NIT-1)
+  confines dedup to prior dispatcher rows so an event-path row on the same subject never false-skips. `DueItem`
+  (sessions) DOES carry `hard_deadline?` from `planned_blocks.scheduled_end` → tick fires REAL pinned items at
+  M1, not a dormant stub. PLAN persisted (first per-slice PLAN file here; S1–S3 used slice-map + Route History) →
+  g1 /critique SHIP (Approval 1) → implement → Verification Gate → **2 independent g2 reviews** (1st stalled on
+  an infra watchdog but surfaced the count/reality finding: a materialized row miscounted `skipped` if
+  `scheduleLocal` threw → folded a split try/catch + AC10 regression test; 2nd SHIP, 1 NIT folded = M2
+  `source_module→entity_type` forward-note since `entity_type='sessions'` plural misses the singular
+  `push_study` toggle, benign at M1 deny-safe) → pre-ship /critique SHIP. `minuteOfDay` = UTC M1 approximation
+  (device TZ = M2); `QuietHours.policy` default 'suppress' (no pref field, verified @vida/types). tsc 0 · eslint
+  0 · notifications **38/38** · full @vida/core 1569/1570 (known isolated vault-1MB flake, passes isolated).
+  Currency BR-NT-S4-1..10 + current-spec. **Next: S5 — `registerNotificationsJournal` summary + `purgeExpired`
+  + dangling-subject read-safety → ① COMPLETE** (adds no new dep; Journal `/summary` PULL, the gamification
+  precedent; then open the PR mod-notifications → main).
 
 ## Notes
 - Env: Node 24 via nvm (a stray non-24 `pnpm test` recompiles better-sqlite3 to the wrong ABI → rebuild for
