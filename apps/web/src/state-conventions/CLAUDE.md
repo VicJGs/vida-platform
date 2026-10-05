@@ -9,6 +9,7 @@ central DATA/logic the render layer (UI-4 + each module, M1.1+) consumes. **No c
 modules own the *rendering*.
 
 - `terminal-state.ts` — re-exports the `@vida/core` canon (`TERMINAL_STATE`, `TerminalState`) + `deriveTerminalState<T>(result, isEmpty)`, the pure React-Query-result → state derivation (`QueryResultLike<T>` slice).
+- `interaction-state.ts` — **(fe-codec-patterns S1, LIF-211)** the CODEC 8-state machine: the `InteractionState` superset (`idle·typing·loading·results·empty·unavailable·error·success`) + `collapseToTerminal` (total, exhaustive `switch`, back to the 4 canon literals) + `deriveInteractionState(result, isEmpty, input?)` (extends the derivation with the input dimension) + `renderKindFor`/`INTERACTION_RENDER` (the canonical state→primitive map). Re-exports the terminal canon for one import point. Reuses the `@vida/core` canon — **no new canon, no `@vida/types` consolidation** (the canon owner's deferred job).
 - `keyboard.ts` — `FOCUS_CONTRACT` (the §XIV focus-at-transition map) + `OVERLAY_DISMISS`, as typed data.
 
 ## Rules (do not violate)

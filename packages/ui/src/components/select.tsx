@@ -62,9 +62,9 @@ const SelectTrigger = styled(View, {
   alignItems: 'center',
   justifyContent: 'space-between',
   position: 'relative',
-  backgroundColor: '$background',
+  backgroundColor: '$colorSurfacePrimary',
   borderWidth: 1,
-  borderColor: '$border',
+  borderColor: '$colorBorderDefault',
   // radius.control (md) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
   borderRadius: '$md',
   cursor: 'pointer',
@@ -79,7 +79,7 @@ const SelectTrigger = styled(View, {
     },
     // Danger border via a Tamagui VARIANT (U3 lesson: injected CSS loses the specificity race vs Tamagui border classes).
     invalid: { true: { borderColor: '$borderError', hoverStyle: { borderColor: '$borderError' } } },
-    disabled: { true: { opacity: 0.5, cursor: 'not-allowed', hoverStyle: { borderColor: '$border' } } },
+    disabled: { true: { opacity: 0.5, cursor: 'not-allowed', hoverStyle: { borderColor: '$colorBorderDefault' } } },
   } as const,
   defaultVariants: { size: 'md' },
 })
@@ -354,7 +354,7 @@ const SelectInner = forwardRef<HTMLButtonElement, SelectProps>(function Select(
         <Text
           fontFamily="$body"
           fontSize={TRIGGER_TEXT[size]}
-          color={selectedLabel != null ? '$text' : '$placeholder'}
+          color={selectedLabel != null ? '$colorTextPrimary' : '$colorTextMuted'}
           numberOfLines={1}
         >
           {selectedLabel ?? placeholder ?? ''}
@@ -382,9 +382,9 @@ const SelectInner = forwardRef<HTMLButtonElement, SelectProps>(function Select(
               aria-labelledby={accessibleName['aria-labelledby']}
               position="fixed"
               zIndex="$dropdown"
-              backgroundColor="$panelBackground"
+              backgroundColor="$colorSurfacePrimary"
               borderWidth={1}
-              borderColor="$border"
+              borderColor="$colorBorderDefault"
               borderRadius="$md"
               paddingVertical="$4"
               style={{
@@ -413,7 +413,7 @@ const SelectInner = forwardRef<HTMLButtonElement, SelectProps>(function Select(
                     onPointerMove={() => !o.disabled && setActiveIndex(i)}
                     onClick={() => !o.disabled && commit(o.value)}
                   >
-                    <Text fontFamily="$body" fontSize={TRIGGER_TEXT[size]} color="$text" numberOfLines={1}>
+                    <Text fontFamily="$body" fontSize={TRIGGER_TEXT[size]} color="$colorTextPrimary" numberOfLines={1}>
                       {o.label}
                     </Text>
                     {selected && <Check />}

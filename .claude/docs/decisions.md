@@ -1,4 +1,49 @@
-<!-- Last updated: 2026-10-04 by /session-end -->
+<!-- Last updated: 2026-10-05 by /session-end -->
+
+
+## mod-notifications (① backend #53 · LIF-132, 2026-10-05 — S3/5 SHIPPED, branch `mod-notifications`)
+The ADR-013 user-facing notification MODULE (dispatcher/surface) over DB-4 `notifications` — the terminal PURE
+SINK composing the BUILT delivery engine (#46) + effect rail + Sessions `dueIn` + Preferences. Detail in
+`docs/features/notifications/delivery/*` + `docs/modules/notifications/current-*` + `.claude/tasks/mod-notifications.md`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-05 | module↔engine split | who owns NF-5 gating? | **the MODULE** builds an already-gated `DeliveryDecision`; the built engine just routes it | engine `deliver(decision)` executes an already-gated decision (BR-ND-10); `channelsFor` = ZK fidelity-max, module gates DOWN | n/a (grounded) |
+| 2026-10-05 | M1 external delivery | push/email at M1? | **folds to in-app** — push needs an ADR-003 routing `userId` absent at M1; `routing` is a caller-supplied `DeliverContext` field wired at M2 | `buildWakePayload` throws on empty userId (payload.ts:27); honest content-blind M1 | yes (M2 wires routing) |
+| 2026-10-05 | dispatcher scope (S4) | which `dueIn`s fire? | **only `hard_deadline`-pinned `DueItem`s**; `occurrenceId = module:ref:hard_deadline`; un-pinned skipped | DueItem supplies no other device-stable instant; rejected an invented `todayDateKey` (TZ double-fire); un-pinned = agenda/Journals, not an alarm | n/a (grounded) |
+| 2026-10-05 | event handler failure mode | throw or skip on bad payload? | **SKIP, never throw** (PURE SINK NF-1) — unlike economy's additive handler which throws to roll back | a lost alert must NEVER roll back the triggering write; NF-1 "disable notifications, core unbroken" | n/a (grounded) |
+| 2026-10-05 | convergence guard | avoid UNIQUE-throw in the rail tx | **pre-check `effect_event_id` in-tx + skip** — the notifications UNIQUE is narrower (id-only) than the rail ledger's composite (id,type,targetRef), so a same-id/diff-targetRef event would collide + throw | closes the NF-1 hole unconditionally (g2 Nit-1); semantically right (same id = one notification, ADR-012 convergence) | n/a (hardening) |
+| 2026-10-05 | per-module push map | entity_type → push toggle | `habit/task/routine/routine_step/contact/session/subject/book/skill/knowledge_object`; unmapped → global governs | keys verified vs `_registry.ts` ENTITY_TYPES (g2 caught stale guesses `routine_action`/`course`/`study_topic`/`language`) | yes (map edit) |
+| 2026-10-05 | typed errors | throw or record? | the 6 contract errors = a record-not-throw OUTCOME vocabulary (in-app fallback/suppress/no-op), NOT exceptions | contract.md:35-42 behavior is record-not-abort; the PositionConflictPending precedent | n/a (grounded) |
+
+## fe-codec-viewmodes (② CODEC view-modes #3 · LIF-214, 2026-10-04 — ① COMPLETE, PR #76 merged `d8b1b93`)
+The `table` (S1) + `board` (S2) view-mode renderers — **complete the canonical `VIEW_LAYOUT` 7** (all 7 now ship).
+Detail in `docs/specs/foundation/fe-codec-viewmodes/*` + `.claude/tasks/archive/fe-codec-viewmodes.md`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-04 | renderer scope | are view-mode renderers interactive? | **READ-ONLY LENSES** — render resolved/grouped/sorted data; no filter/group/sort/write. Interaction-that-writes (board drag-to-move) is a **Capability (ADR-008), OVERFLOWING — homed away, NOT deferred, NOT in-renderer** | ADR-007 §4.3 "classic View = read-only lens" vs ADR-008 "Capability = interactive, writes via INT-2"; quality-bar §4.3 "the mix lives in the capability, views stay simple" | n/a (grounded) |
+| 2026-10-04 | unit scope | what does this issue build? | **2 net-new renderers (table, board)** completing the canonical 7 (5 shipped) | g6-edge-ledger:46 "extend ui-2 → add table · board"; the goal-line "7" conflated 7 COMPONENTS (incl. pomodoro/export) w/ 7 VIEW-MODES | n/a (grounded) |
+| 2026-10-04 | table structure | which spine? | **Follows the `calendar-view` divergence** — `role="table"`, reuse spine pieces but NOT `resolveDataViewState` (grid empty = a designed row w/ `aria-colspan`, not `role="status"`) | a 2D grid diverges from the linear-list spine (the calendar precedent) | n/a (grounded) |
+| 2026-10-04 | aria-sort | does the renderer toggle sort? | **DISPLAY-only** — reflects `column.sort` via `aria-sort`; the sort *control* is the Collection shell (view chrome), not the renderer | read-only lens; ADR-007 sort is view-config | n/a |
+| 2026-10-04 | Envision Gate | fire or skip? | **SKIP** (doc-grounded) — read-only lenses reuse shipped patterns; the one novel affordance (drag) is a Capability | §3.75 trigger test fails | n/a |
+| 2026-10-04 | ui-2 currency | table/board "not built" (2026-08-09) | **SUPERSEDED by G6 (2026-10-01)** — now built; `_index.md` + CLAUDE.md refreshed, memory annotated | a later gated plan (G6) reverses the earlier call | n/a |
+| 2026-10-04 | board contract | prop shape (S2) | **ratify seam-contract §B verbatim** (`{groups,renderCard(item,group),getKey,state?,empty?,error?,density?}`); dropped over-proposed `columnEmpty`/`loadingCount` | §B is the gated authority (ratify-mode); count is derived/rendered + `loadingCount` deliberately omitted (vs table §A) | easy |
+| 2026-10-04 | board spine | which reuse? (S2) | **hybrid** — per-column `resolveDataViewState` (a column IS a list); board-level loading(skeleton cols)/error/board-empty direct | slice-map R4 + seam §B:90-91; the board level diverges like table/calendar | medium |
+| 2026-10-04 | board-empty | role on no groups (S2) | **`role="status"` self-heal** (not a designed grid) | a board's columns ARE the data — zero groups = nothing to keep (inverse of table's designed-empty-row) | medium |
+| 2026-10-04 | per-column empty | success board w/ an empty column (S2) | **derive `colState='empty'`** before `resolveDataViewState` | an empty kanban column is legitimate; avoids the spine's "pass state=empty" dev-warn | easy |
+
+## fe-codec-patterns (② CODEC pattern-kit #2 · LIF-211, 2026-10-04, worktree)
+The behavioural half of the CODEC — the cross-cutting pattern-kit every `fe-*` surface inherits (decomposition §1.3). 5 slices, PR #75 merged (`c1dd1f0`). Detail in `.claude/tasks/archive/fe-codec-patterns.md` + `docs/specs/foundation/fe-codec-patterns/*`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-04 | state canon | the 8-state machine's home | **Reuse the `@vida/core` `TerminalState` canon** — `InteractionState` superset in `apps/web`, total `collapseToTerminal` back to the 4 literals; **NO new canon, NO `@vida/types` consolidation** | state-conventions.md:44-52 — the consolidation is deferred + belongs to the canon owner; a frontend unit imports/mirrors, never re-homes | n/a (grounded) |
+| 2026-10-04 | home split | where each primitive lives | **BR-2 boundary**: `@vida/ui` renders (state-as-prop, structural type); canon-importing logic + conventions → `apps/web` | `@vida/ui` can't import `@vida/core` (Tamagui-only); the `ViewState`/`list-view` precedent | n/a (grounded) |
+| 2026-10-04 | ReducedMotion | build vs ratify | **RATIFY, zero code** — the B12 enforcer already exists (`useReducedMotion` + `@media`/`motion.ts` across 8 primitives) | grep-before-net-new; a wrapper would duplicate the hook + fit Tamagui's prop-driven animation worse (over-engineering) | n/a |
+| 2026-10-04 | SyncStatus | honest M1 state set | **`saved`/`error` only** — no "saving" (writes are instant), no cloud claim; cloud states (synced/pending/offline/conflict) = M3 forward seam | P4 copy-honesty ("saved on this device, never synced to cloud"); AR-9 sync is a no-flush stub in M1 | yes (M3 extends) |
+| 2026-10-04 | ProviderRead | hook vs convention | **A `ProviderRead<T>` type + documented convention, NOT a `useProviderRead` hook** | a thin `useQuery` alias with no M1 consumer = ceremony; defer the hook to first-consumer-pull (the ReducedMotion lesson) | yes (pull the hook later) |
+| 2026-10-04 | HonestProgress | determinate fill motion | **`transform: scaleX`, never animated `width`**; indeterminate = `role=progressbar` w/ `aria-valuenow` omitted (APG) + transform-only shimmer (reduced-motion `@media`) | B12 (width is a layout prop); the W3C APG indeterminate signal | n/a (grounded) |
 
 
 ## mod-learning-education ① (S1–S8) — the Learning hub service tier (2026-10-02→04, worktree mod-learning-education)
@@ -766,3 +811,29 @@ C-M1 (no stored measurement axes), BK-12/14/18. Currency: `docs/modules/books/cu
 - **Journal is a PULL `/summary` contribution** (`registerLearningEducationJournal`, dedup by module), not a rail push (ADR-004 §3.2.5).
 - **§XXVIII deviations:** port types `Education*`-prefixed (flat-barrel collision with books — the `HabitDateRange` precedent); `ConflictingFileSourceError` typed (constitution §5); `encrypted_blob` mapper cast (Drizzle mode-less `blob()` infers `{}`, runtime Buffer).
 - Built in a dedicated worktree `.claude/worktrees/mod-learning-education` (shared-tree collision with a parallel `frontend-track` session).
+## fe-codec-theme ② — CODEC ThemeProvider, S1+S2 (2026-10-03, branch `fe-codec-theme`)
+The M1.2.1 frontend head. Extends the ds-2/ds-4 token pipeline from 1 placeholder light/dark theme to **3 preset
+families (editorial · reader · quietDesk) × light/dark = 6 themes + 60 sub-themes**, each with its own palette + fonts.
+S1 (`b5946d7`) tokens+emitter; S2 (`feb3ab2`) config+self-hosted fonts. S3 (provider+density+Visual Gate) + PR pending.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-03 | theming | Tamagui theme naming for N presets | **scheme-first** `${mode}_${preset}` (editorial=bare `light`/`dark`) | TG 2.6.2 `validSchemes={light,dark}`, scheme=first `_`-segment; `${preset}_dark` breaks inversion/reset (verified `useThemeState.cjs:312/317/377`) | hard (API/union) |
+| 2026-10-03 | theming | per-preset component sub-themes | emit all `${mode}_${preset}_<Comp>` (~60) | resolver tries ONE `${base}_${comp}`, no bare-`<Comp>` fallback (`:377`) — O3 "no explosion" refuted | hard |
+| 2026-10-03 | theming | per-preset font-family (fonts are global in TG) | **CSS-var seam** — 2 var-driven `createFont` keys, provider sets `--vida-font-*` per preset | no per-theme font hook in TG 2.6.2 (bakes static `font_<key>` class, DEF-U8-h class) | easy |
+| 2026-10-03 | theming | density mechanism | **provider CSS data-attr scale** (NOT a token/theme swap) — deferred to S3 | `space`/`size` resolve against global token scale, theme swaps color only (DEF-U8-h) | easy |
+| 2026-10-03 | fonts | font serving | self-hosted latin-subset woff2 + hand-authored `@font-face`, **no npm font deps**; preload Spectral only (21.7 KB < 80 KB) | local-first/ZK (no CDN) + ADR-001 "no extra dependency" ethos; slice-map "@font-face" | easy |
+| 2026-10-03 | fonts | chrome role (Inter · IBM Plex Sans) | **deferred** with the chrome role — `fonts.ts` data only, unwired | slice scope = "display/body pairs"; chrome has no consumer yet | easy |
+| 2026-10-03 | process | B10 AA contrast verification | **full matrix** test (every rendered pair × preset × mode) | light-only test shipped a dark warm-surface regression (independent g2 caught it) → [[contrast-test-must-be-full-matrix-not-light-only]] | n/a |
+| 2026-10-03 | web test | stale `/notes` integration assertion (`550af2b`) | assert BR-4 degrade (not-found), not a built Notes heading | `/notes` route torn down `eaf64f8` (→ fe-notes-and-pages M1.1+); test left stale | easy |
+| 2026-10-03 | theming | preset sub-theme application | scheme on `<html>` (`defaultTheme`+`addThemeClassName`), preset on `<body>` | Tamagui emits sub-theme vars under nested `:root.t_<mode> .t_<preset>`; flat combined class matches nothing; `<body>` reaches app + portals | medium |
+| 2026-10-03 | theming | density mechanism (A-prime §XXVIII) | one injected attr-toggled `<style>` (`[data-vida-density]`) redefining inset-band space + font size/line-height vars | font-size vars are literal-redeclared by `.font_<key>` classes, shadowing an `<html>` override; stylesheet wins by source order | medium |
+| 2026-10-03 | theming | preset accent/neutral on components (STRUCTURAL §XXVIII) | components consume DIRECT `$colorBrand*`/`$colorSurface*` semantics, not baked component-sub-theme keys; per-preset comp sub-themes retired (66→26) | Tamagui bakes theme values at config time → component sub-themes freeze to scheme base; a component sub-theme emits only its own keys so semantics still inherit the preset | medium |
+
+## fe-codec-theme (CODEC · ThemeProvider, LIF-213) — completed 2026-10-03
+- **Scheme-first theme naming is law** (Tamagui 2.6.2): scheme = first `_`-segment, only light/dark valid. editorial = bare `light`/`dark`; reader/quietDesk = `${mode}_${preset}`.
+- **Application = scheme on `<html>` (defaultTheme + addThemeClassName), preset on `<body>`** — Tamagui emits sub-theme vars under a NESTED selector `:root.t_<mode> .t_<preset>`; a flat `t_<mode>_<preset>` class matches nothing. `<body>` is the one element ancestor of both the app and body-portals, so the preset reaches portalled surfaces.
+- **Density = one injected, attribute-toggled stylesheet (A-prime)** — font-size vars are redeclared as literals by Tamagui's `.font_<key>` classes (shadowing an `<html>` override), so density is a `<style>` (wins by source order) redefining inset-band space + font size/line-height vars under `[data-vida-density="dense"]`; the provider just toggles the attribute. Co-scales size AND line-height.
+- **Per-preset font-family rides a CSS-var seam** (S2): `createFont` bakes `var(--vida-font-*, <editorial fallback>)`; the provider sets `--vida-font-*` per preset on `<html>`. Fonts are global in Tamagui (no per-theme font hook).
+- **Components read preset color via DIRECT semantic tokens, not baked component-sub-theme keys** (STRUCTURAL §XXVIII): Tamagui bakes theme values at config time, so component sub-themes freeze to the scheme base; a component sub-theme emits only its own keys so the semantic vars still inherit the preset at component scope. The component→semantic mapping moved to the styled layer (DS-5 relaxation); per-preset component sub-themes retired (themes 66→26). Signal keys stay baked (preset-invariant).
+- **The blocking Visual Gate is load-bearing** — it caught 3 integration bugs that typecheck + 342 unit tests passed over (density literal-redeclare, flat theme-name non-resolution, accent bake). Full-matrix contrast must assert every pair × preset × BOTH modes.

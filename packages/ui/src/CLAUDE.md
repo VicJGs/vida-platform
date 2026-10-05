@@ -215,8 +215,61 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   success regardless of WebGL (also the no-WebGL data fallback). Sigma canvas is transparent → the frame's
   `$colorSurfacePrimary` flips with the theme. States via the shared `Message`. Dangling edges skipped + dev-warn.
   Lifecycle tested by mocking `sigma`/`forceatlas2` + stubbing `getContext`. Spec: `…/v7-neural-graph.md`.
-  **⟹ ALL 7 UI-2 views shipped** (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) + the shared
-  `internal/data-view` spine.
+  **table-view** is **fe-codec-viewmodes · S1** (LIF-214) — the renderer for the **`table`** VIEW_LAYOUT, extending ui-2
+  with the 6th canonical view-mode (G6 reshape: *"add table · board"* — supersedes the 2026-08-09 "table/board = degrade,
+  not built" stance). A **READ-ONLY LENS** (quality-bar §4.3: a View renders, a Capability writes) — caller-declared
+  `columns: Column<T>[]` ({header · render · width? · align? · sort?}) × generic `items<T>`. **Follows the calendar-view
+  `role="table"` divergence**: reuses the spine PIECES (`ViewState`, `Message`, `warnMissingName`, ref-prop, base tokens)
+  but **NOT `resolveDataViewState`** — a grid's empty is a **designed row** (spanning cell w/ `aria-colspan`, headers kept),
+  not a `role="status"`. `role="table"/row/columnheader/cell`; `aria-sort` is **DISPLAY-only** (reflects `column.sort`, no
+  toggle — sort is the Collection shell's, not the renderer's); horizontal-scroll wrapper (`minWidth 560` in `overflowX:auto`)
+  for 375 (TV-6); density = cell vertical padding; 4 terminal states (loading skeleton rows + aria-busy · error status ·
+  empty designed-row · success). NO write/sort/row-click props (read-only; interactivity composes in `column.render`, LV-5).
+  Visual Gate: full-matrix AA (4.94–6.53 incl. warm-dark) · axe-clean · 375 scroll · `aria-colspan` serializes. Spec:
+  `docs/specs/components/ui-2-platform-views/v8-table-view.md`. Delivery: `docs/specs/foundation/fe-codec-viewmodes/`.
+  **board-view** is **fe-codec-viewmodes · S2** (LIF-214) — the renderer for the **`board`** VIEW_LAYOUT, the **LAST**
+  canonical view-mode (completes the 7). A **READ-ONLY LENS** grouped-column (kanban) grid over **PRE-GROUPED** data
+  (`groups: BoardGroup<T>[]` = `{id · title · items}`; the provider groups upstream per ADR-007 §3.3 — the renderer
+  never groups/filters/sorts). `role="group"` of **columns**, each a titled `role="list"` of cards via `renderCard(item,
+  group)` + a header (title + **per-group count = `items.length`**, derived not passed). **HYBRID spine reuse:** each
+  COLUMN reuses `resolveDataViewState` (a column IS a list → `role="list"`/`status`, per-column empty); the BOARD level
+  owns loading (fixed `SKELETON_COLUMNS`, data-independent — **no `loadingCount` prop**, the deliberate table asymmetry) /
+  error (`role="status"`) / board-empty (no groups → `role="status"`, the inverse of table's designed-empty-row — a board's
+  columns ARE the data) directly. **⚠ Per-column empty is normal in a success board** — the renderer derives each column's
+  `colState = items.length===0 ? 'empty' : 'success'` before `resolveDataViewState`, so an empty column resolves to
+  `role="status"` WITHOUT tripping the spine's "pass state=empty" dev-warn. Each column list is named via `aria-labelledby`
+  → a **`useId`-prefixed, index-keyed** DOM id (NOT `group.id`, which may hold spaces). **NO write/drag/move props** (the
+  interactive move = a Capability, ADR-008/INT-2, homed OUT — O1; card interactivity composes in `renderCard`, LV-5).
+  Bordered columns (1px `$colorBorderDefault` + `$lg`) + fixed `COLUMN_WIDTH 280` in `overflowX:auto` for 375; density =
+  between-card gap; React-19 ref-prop, no sub-theme, DIRECT semantic tokens. Visual Gate: full-matrix AA (muted 4.94–6.53
+  incl. warm-dark) · 375 scroll · 3 board-level terminal states. Spec:
+  `docs/specs/components/ui-2-platform-views/v9-board-view.md`.
+  **⟹ 8 UI-2 views shipped** (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) **+ table + board**
+  (fe-codec-viewmodes S1/S2) + the shared `internal/data-view` spine. **All 7 canonical VIEW_LAYOUT renderers now ship**
+  (list·gallery·timeline·calendar·graph·table·board) — the spine is complete.
+  **collection-view** is **fe-codec-collection · S1** (LIF-207) — the CODEC **Collection shell** (decomposition.md:29 §1.2,
+  "the workhorse"): *a Saved View rendered in a view-mode*. **A SHELL, not a renderer** — it COMPOSES the 7 renderers via a
+  consumer **`renderView(layout, state)` render-prop** (so it stays agnostic of the 7 differing prop shapes — table→columns,
+  board→groups, graph→nodes… — AND free of any `@vida/core` type), plus a view-mode **switcher** + title/count chrome +
+  the threaded 8-state. **NON-GENERIC** (holds no `items` → no `<T>` to erase → a plain component + React-19 ref-as-prop).
+  `layout` is a **LOCAL `ViewLayout` union** ≡ `VIEW_LAYOUT` (no `@vida/types` dep — the `ViewState`-local precedent;
+  `@vida/ui` is Tamagui-only). **Switcher** = a `role="toolbar"` of inline-**label** toggle `Button`s (active =
+  `intent="primary"` + `aria-pressed`; **NOT `Tabs`** — a view-switch re-renders the *same data* in another layout, tabs
+  swap *different content*); **condenses to a UI-1 `Menu` below 768** (the shell global-bar control-reflow precedent
+  shell-layout.md:67 — NOT wrap, NOT h-scroll which is the wide-data pattern) via **`useTabletUp`**, a render-time
+  `matchMedia(min-width:768)` hook (mirrors `use-reduced-motion.ts` — Tamagui's `useMedia()` seeds media at config-import
+  so a test matchMedia mock can't move it; this is both browser-correct AND jsdom-testable). **Empty ownership** (the
+  resolved contract point): the shell owns a consistent collection-level **`EmptyState`** (teaching-invitation) on
+  `state==='empty'` EXCEPT for `DESIGNED_EMPTY_LAYOUTS = ['calendar']`, where it **delegates to `renderView(layout,'empty')`**
+  so the calendar grid is kept; a consumer `empty`/`error` prop always overrides; all other states → `renderView` (the
+  renderer owns loading/error/success — degrade-never-crash). Region named via `aria-label`/`aria-labelledby`→titleId
+  (`warnMissingName`). DIRECT semantic tokens; no sub-theme. **State-as-prop (BR-2)** — the app derives via the 8-state
+  machine + passes it. Visual Gate PASS (Brave, 3 presets × light/dark: AA 4.94–6.03 incl. warm-dark · axe 0 · 7 renderers
+  dispatch · toolbar `aria-pressed` · 375 condense + table scroll). **S2** added the view-config chrome ENTRY POINTS
+  (`onFilter`/`filterActive` badge · `sortLabel`/`onSort` · `onNewView` the `+`, icon-only w/ aria-label) — optional,
+  right-aligned, **ACTIVE in every state** (EC-2); entry points ONLY (filter/sort/create logic = the app's/ViewsService's).
+  **S3** (next) = the apps/web SavedView↔Collection adapter (type+convention). Spec:
+  `docs/specs/components/ui-2-platform-views/collection-view.md`. Delivery: `docs/specs/foundation/fe-codec-collection/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
@@ -239,7 +292,23 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
   state the styled component can't see.
-- `hooks/` — `use-reduced-motion.ts`. `icons/` — v1 stubs.
+- `hooks/` — `use-reduced-motion.ts` (**the codec `ReducedMotion` primitive**, fe-codec-patterns S2 RATIFY — gates the
+  Tamagui `animation` prop; pairs with the `@media (prefers-reduced-motion)` convention in the `internal/*-styles.ts`).
+  `icons/` — v1 stubs.
+- **fe-codec-patterns** (the CODEC behavioural pattern-kit, LIF-211) — `components/empty-state.tsx`: **EmptyState** (S3),
+  the teaching-invitation empty state (P5) — a presentational `role="group"` named by its `title` (which is ALSO a
+  `role="heading"` + `aria-level`, default 2, `titleLevel`-overridable); slots `icon` (aria-hidden) · `children` (body) ·
+  `action` (ui-1 Buttons) · `guidedSetup` (opt-in). Fills a data-view `empty?` slot (richer than the default `Message`);
+  direct semantic tokens (preset-inheriting, B-codec-6); non-interactive (§VIII applies to the composed Buttons).
+  `components/sync-status.tsx`: **SyncStatus** + **HonestProgress** (S4). SyncStatus = a calm `role="status"`
+  `aria-live="polite"` pill (dot + label); **honest M1 union `'saved' | 'error'`** — copy says "Saved on this device",
+  **never "synced to cloud", no "Saving…"** (writes are instant on-device; P4 copy-honesty). The cloud states
+  (synced/pending/offline/conflict) are the **M3 forward seam**, NOT shipped. The dot uses the direct semantic SIGNAL
+  tokens (`$colorSignalSuccess`/`$colorSignalDanger`, preset-invariant). HonestProgress = `role="progressbar"`,
+  determinate (valuenow/min/max, fill via `transform: scaleX` — B12, never animated `width`) / indeterminate (valuenow
+  OMITTED per APG + `aria-valuetext` + the `internal/sync-status-styles.ts` transform-only shimmer, reduced-motion `@media`).
+  The 8-state machine itself lives in `apps/web` `state-conventions/interaction-state.ts` (S1 — it imports the
+  `@vida/core` canon, so it can't live here per the Tamagui-only boundary).
 
 ## Rules
 - **Animation driver = per ADR-001 §9, per-platform:** **web = `@tamagui/animations-css`** (CSS-on-web, no

@@ -31,7 +31,10 @@
    Card, the first shadow consumer, DEF-U5-e; an aux namespace earns a typed export the moment a TS consumer needs it,
    the `motion.ts` precedent). `[build-tokens.mjs AUX/isAuxPath + vida/shadow; vitest B9 + shadow-emit]`
 10. **[FACT] B10 — Contrast is the floor.** semantic text-on-surface pairs meet WCAG AA in both modes (caveat:
-    white-on-brand.500 = 4.47 → buttons use brand.600). Verified in the design gate. `[design.md §II; DS-2 contrast check]`
+    white-on-brand.500 = 4.47 → buttons use brand.600). Verified in the design gate. As of fe-codec-theme S1 this is
+    **enforced in-build** by a full-matrix fixture (every rendered pair × preset × mode ≥ 4.5), NOT just the design gate.
+    Symmetric caveat (fe-codec S1): the warm `reader`/`quietDesk` **dark** surfaces pin the dark `accent.400`/`neutral.400`
+    steps — ghost/muted text there is the tight constraint; tuned to ≥0.4 margin. `[design.md §II; build-tokens.test.ts B10 matrix]`
 11. **[FACT] B11 — Motion primitives, aux-routed, standard-aligned (DS-3).** `duration.*` (unitless ms numbers) and
     `easing.*` (CSS cubic-bezier/linear strings) are primitives routed to `variables.css` + `motion.ts` and **skipped**
     by both the `tokens.ts` and `themes.ts` emitters (not Tamagui categories — a third aux consumer alongside
@@ -82,6 +85,82 @@
   **authoritative at runtime**; the design.md `variables.css` (unitless `--space-*`/`--duration-*`, camelCase
   `--easing-inOut`) is a **parallel documentation / Figma-projection artifact**, not wired into the app. No runtime
   dependency on `variables.css`; the unitless-unit concern dissolves.
+
+## Rules established by fe-codec-theme S1 (IMPLEMENTED 2026-10-02)
+- **[NEW] B-codec-1 — N preset families via per-preset overlays (generalizes B7).** The pipeline emits **3 preset
+  families** (editorial · reader · quietDesk) **× light/dark = 6 Tamagui base themes + per-theme `<Comp>` sub-themes**
+  (10 comps × 6 = 60), each carrying its own palette + font-family. Mechanism = the B7 dark-overlay generalized: a
+  reusable `applyOverlay` applies `semantic.<preset>.json` (light remap) then `semantic.<preset>.dark.json` (dark delta)
+  over the editorial base, precedence `base < semantic.<preset>.json < semantic.<preset>.dark.json`, per-leaf, fail-loud
+  (isRef + resolves-to-loaded-primitive). `[build-tokens.mjs PRESETS/applyOverlay; build-tokens.test.ts B-codec-1]`
+- **[NEW] SCHEME-FIRST naming is law (Tamagui 2.6.2).** A theme's light/dark scheme = its **first `_`-segment**, and
+  only `light`/`dark` are valid schemes (`@tamagui/core` `useThemeState.cjs:312/317`). So themes are named `${mode}` /
+  `${mode}_${preset}` — the **default preset `editorial` keeps the bare `light`/`dark`** (+ `light_<Comp>`/`dark_<Comp>`),
+  non-default presets are `light_<preset>`/`dark_<preset>` + `${mode}_${preset}_<Comp>`. A `${preset}_dark` name would read
+  as scheme-less and break dark inversion/reset. Per-preset component sub-themes are **required** — the resolver tries one
+  `${base}_${componentName}` with no bare-`<Comp>` fallback. `[useThemeState.cjs:377; themes.ts]`
+- **[DONE]** editorial's bare names keep `tamagui.config.ts` + `provider.tsx` compiling **unchanged** at S1 (slice-safe;
+  config wiring of the 2 net-new presets = S2, provider/density = S3). **Density is NOT a token/theme swap** — Tamagui
+  resolves `space`/`size` against the global scale, theme swaps color only (DEF-U8-h) → density = a provider CSS data-attr
+  scale (S3); S1 authors no density tokens. Values repoint off the DS-2 placeholder to per-preset ramps anchored on the
+  P1 specimen ([[ds-2-palette-is-provisional-placeholder]] still applies — a brand pass refines VALUES, re-runs the B10 matrix).
+
+## Rules established by fe-codec-theme S2 (IMPLEMENTED 2026-10-02)
+- **[NEW] B-codec-2 — per-preset font-family rides a CSS-var seam (fonts are global in Tamagui, like density).**
+  `@tamagui/core@2.6.2` bakes a STATIC `font_<key>` class whose `font-family` comes from `createFont` at config time —
+  there is **no per-theme/scope font hook** (`@tamagui/web getSplitStyles.cjs:288/687`, the DEF-U8-h class for fonts).
+  So `createFont` registers **2 var-driven keys** (`body`/`display`) with `family: var(--vida-font-<role>, <editorial
+  fallback>)`; the **3 preset families are 3 CSS-var VALUE SETS**, not 3 configs — editorial = the var fallback (renders
+  with no provider), the provider (S3) sets `--vida-font-body/display` per preset on the theme root (same CSS layer as
+  density). `[tamagui.config.ts bodyFont/displayFont; tamagui.config.test.ts fe-codec S2]`
+- **[DONE]** `createTamagui({ themes: {...themes} })` — all 66 generated themes registered via namespace-spread (no
+  hand-maintained import list). The theme-name union flows from `typeof config` (tamagui.d.ts unchanged).
+- **[DONE]** 4 body/display faces self-hosted as latin-subset woff2 + hand-authored `@font-face` (`apps/web/src/fonts.css`,
+  `apps/web/public/fonts/`), `font-display: swap`, **no new npm deps** (ADR-001 ethos). **Only Spectral 400 preloaded**
+  (`index.html`) — editorial default; others swap-in on preset activation. Preloaded payload = **21.7 KB** (measured, well
+  within the `<80 KB` bundle budget, quality-bar `_index.md:58`). **chrome faces (Inter · IBM Plex Sans) deferred** with
+  the chrome role (out of the "display/body pairs" slice scope).
+
+## Rules established by fe-codec-theme S3 (IMPLEMENTED 2026-10-03 — ① shipped)
+
+The provider is the codec MECHANISM; the app owns the `{preset,mode,density}` STATE (R5). `packages/ui/src/theme-resolution.ts`
+(pure) + `provider.tsx` (effect) + `apps/web/src/App.tsx` (fed `THEME_DEFAULT`). Visual-Gate-verified (Storybook codec
+harness: `preview.tsx` 3 toolbar globals + `_codec-gate.stories.tsx`) across all 12 cells (3 presets × light/dark × calm/dense).
+
+- **[NEW] B-codec-3 — scheme on `<html>`, preset on `<body>` (nested sub-theme application).** Tamagui emits sub-theme
+  color vars under a **nested** selector `:root.t_<mode> .t_<preset>` — a flat `defaultTheme="<mode>_<preset>"` (one
+  `t_<mode>_<preset>` class) matches NOTHING (Visual-Gate-proven). So the provider sets `defaultTheme={mode}` (scheme class
+  on `<html>` via `addThemeClassName:'html'`) and puts `t_<preset>` on **`<body>`** (an ancestor of the app AND the
+  body-portals Dialog/Menu/…, so the preset palette + `${mode}_${preset}_<Comp>` reach portalled surfaces). editorial =
+  the bare scheme base, no `<body>` class. `[provider.tsx applyPresetClass]`
+- **[NEW] B-codec-4 — density = one injected, attribute-toggled stylesheet (A-prime, §XXVIII).** Space tokens are
+  var-referenced (`padding:'$8'` → `var(--t-space-8)`, overridable) but font-size vars are **redeclared as literals** by
+  Tamagui's `.font_body`/`.font_display` classes, shadowing any `<html>` override (Visual-Gate-proven). So density is a
+  single `<style id="vida-density-scale">` (appended last → wins by source order at equal specificity) redefining the
+  inset-band space vars + the font-scoped size/line-height vars under `[data-vida-density="dense"]`; the provider just
+  toggles the `data-vida-density` attribute. Values from `getToken('$N','space')` + `getConfig().fontsParsed` (baked val ×
+  `DENSE_TYPE_SCALE`, round). Space band `$8/$12/$16/$24`; large layout tokens `$32+` fixed. Type co-scales size AND
+  line-height. `[provider.tsx densityCssText/ensureDensityStylesheet; theme-resolution.ts DENSE_SPACE_PX/DENSE_TYPE_SCALE]`
+- **[NEW] B-codec-5 — per-preset font-family set on `<html>` via the S2 var seam.** The provider `setProperty`s
+  `--vida-font-body/display` per preset (editorial clears → baked Spectral fallback); the swap is INSTANT (no transition →
+  reduced-motion safe, B12). `[provider.tsx applyFontFamily]`
+- **[DONE]** full-matrix AA contrast re-verified in-browser (muted text 5.65–6.03 on the warm dark surfaces, all ≥ 4.5);
+  runtime selection-change (no reload) + reduced-motion verified.
+- **[NEW] B-codec-6 — components read preset color via DIRECT semantic tokens, not baked component-sub-theme keys
+  (STRUCTURAL §XXVIII fix, 2026-10-03).** Component sub-themes bake every key to the SCHEME base at Tamagui config-build
+  time (`light_Button.backgroundPrimary → light.colorBrandEmphasis`, editorial) and never follow the active preset — and
+  Tamagui bakes theme values at config time, so an emitter-inherit (`var(--…)` theme value) is unviable. BUT a *component*
+  sub-theme emits only its OWN keys, so the semantic theme vars (`--colorBrandEmphasis`, `--colorSurface*`, …) still inherit
+  the active preset at component scope (via the B-codec-3 `<body>` preset class). **Resolution:** the 21 preset-sensitive
+  component-sub-theme-key usages (accent AND neutral) across the 10 primitives now consume the DIRECT semantic token they
+  mapped to (`$colorBrandEmphasis`/`$colorBrandPrimary`/`$colorFocusRing`/`$colorSurface*`/`$colorText*`/`$colorBorderDefault`),
+  which inherit the preset. The component→semantic mapping moves from the baked *theme* layer to the *styled component*
+  layer (a documented DS-5 relaxation). Preset-invariant **signal** keys (`$accentSuccess`/`$accentDanger`/`$borderError`)
+  stay on the base `light_/dark_<Comp>` sub-themes (correct — signals don't change per preset). The emitter emits component
+  sub-themes for the editorial base schemes ONLY (20 = 10 × light/dark); the per-preset `<mode>_<preset>_<Comp>` set (40)
+  is **retired** (never resolved; superseded). Themes 66 → 26. Visual-Gate-verified: Primary button + ghost/indicator/
+  checked/focus/info accents + all neutrals swap per preset (reader oxblood, quietDesk olive) across the 12-cell matrix.
+  `[components/*.tsx direct-semantic; build-tokens.mjs component-subtheme loop = ['light','dark']; bug-unit docs/specs/fixes/preset-accent-component-subthemes]`
 
 ## Boundaries (what the pipeline does NOT own — owed downstream)
 - **[INTENT: DS-5]** component-token expansion + the white-on-brand.500 contrast caveat (buttons → brand.600) +

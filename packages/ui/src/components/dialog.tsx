@@ -89,7 +89,7 @@ const DialogPanel = styled(View, {
   flexDirection: 'column',
   gap: '$16',
   padding: '$24',
-  backgroundColor: '$background',
+  backgroundColor: '$colorSurfacePrimary',
   // radius.card (lg) via the token scale — the sub-theme `radius` key is inert for dimension props (see CLAUDE.md).
   borderRadius: '$lg',
   variants: {

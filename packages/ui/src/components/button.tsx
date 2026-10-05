@@ -5,7 +5,7 @@ import { ensureInteractionStyles } from '../internal/interaction-styles'
 
 // UI-1 · Button (primitive 1/10) — implements ds-5-primitive-contracts/button.md against Tamagui v2.
 // Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u1-button.md.
-// - name:'Button' auto-applies the light_Button/dark_Button sub-themes ($backgroundPrimary, $textPrimary…).
+// - name:'Button' auto-applies the light_Button/dark_Button sub-themes ($colorBrandEmphasis, $colorTextInverse…).
 // - render:'button' → a real <button> (native Enter/Space, type, form submit, role). (v2 renamed tag→render.)
 // - hover/press overlay = a child whose opacity transitions via CSS descendant-hover (interaction-styles.ts),
 //   NOT Tamagui `group` — `group` sets container-type:inline-size which collapses content-based width.
@@ -40,18 +40,18 @@ const ButtonFrame = styled(View, {
   // wrapper, keyed only to the real `disabled` prop.
   variants: {
     intent: {
-      primary: { backgroundColor: '$backgroundPrimary' },
+      primary: { backgroundColor: '$colorBrandEmphasis' },
       secondary: {
-        backgroundColor: '$backgroundSecondary',
+        backgroundColor: '$colorSurfaceSecondary',
         borderWidth: 1,
-        borderColor: '$borderSecondary',
+        borderColor: '$colorBorderDefault',
       },
       // ghost: transparent fill; hover fills surface.secondary (button.md:61) — a state swap, not animated.
       ghost: {
         backgroundColor: 'transparent',
         hoverStyle: { backgroundColor: '$colorSurfaceSecondary' },
       },
-      danger: { backgroundColor: '$backgroundDanger' },
+      danger: { backgroundColor: '$colorSignalDanger' },
     },
     // Tokens only: height ← $size scale; horizontal padding ← $space scale. NB: the button.padding COMPONENT
     // token can't drive paddingHorizontal — Tamagui resolves space props against the space token scale, not the
@@ -73,10 +73,10 @@ const ButtonText = styled(Text, {
   // Text color is intent-driven — light_Button has no generic `color`, only text<Intent> keys (themes.ts).
   variants: {
     intent: {
-      primary: { color: '$textPrimary' },
-      secondary: { color: '$textSecondary' },
-      ghost: { color: '$textGhost' },
-      danger: { color: '$textDanger' },
+      primary: { color: '$colorTextInverse' },
+      secondary: { color: '$colorTextPrimary' },
+      ghost: { color: '$colorBrandPrimary' },
+      danger: { color: '$colorTextInverse' },
     },
     // On the DS-2 type scale (fonts.ts): caption 12 · small 14 · body 16.
     size: {
@@ -89,10 +89,10 @@ const ButtonText = styled(Text, {
 })
 
 const TEXT_TOKEN: Record<Intent, string> = {
-  primary: '$textPrimary',
-  secondary: '$textSecondary',
-  ghost: '$textGhost',
-  danger: '$textDanger',
+  primary: '$colorTextInverse',
+  secondary: '$colorTextPrimary',
+  ghost: '$colorBrandPrimary',
+  danger: '$colorTextInverse',
 }
 
 /** Inline SVG spinner (no spinner primitive exists yet). Static arc when reduced-motion (motion.md §Reduced). */

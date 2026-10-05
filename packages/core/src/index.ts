@@ -183,5 +183,8 @@ export * from './services/books'
 // Service — Learning: Education (mod-learning-education #52 · LIF-130 · S1: hierarchy spine over DB-4 024_learning_education)
 export * from './services/learning-education'
 
+// Service — Notifications (mod-notifications #53 · LIF-132 · S1: inbox reads + lifecycle over DB-4 032_notifications)
+export * from './services/notifications'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'

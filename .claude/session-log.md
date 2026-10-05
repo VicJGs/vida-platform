@@ -5835,3 +5835,62 @@ Decisions / lessons:
 Next session:
   - **FIRST ACTION:** per-surface builds begin. Frontend head = **fe-codec-theme (LIF-213)** — the codec foundation everything inherits (M1.2.1). FRESH `/begin`; `--next` confirms. Each surface: add-frontend-component / Entity Delivery Flow ② (3-lens audit → build → Visual Gate → PR → merge).
   - Env: Node 24 via nvm; per-issue branch → PR → merge. Reshape artifacts in `docs/specs/foundation/frontend-replan/`.
+
+---
+Date: 2026-10-04 — fe-codec-patterns #2 (LIF-211) — ② FRONTEND COMPLETE → PR #75 merged → Done
+Task: fe-codec-patterns · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-codec-patterns`, branch `worktree-fe-codec-patterns` → PR #75 (`c1dd1f0`) merged to main
+Goal: build the CODEC behavioural half — the cross-cutting pattern-kit every `fe-*` surface inherits (decomposition §1.3). Session opened on the backend head (mod-learning-education); Victor redirected to the frontend track; fe-codec-theme (unit #1) already Done → next head fe-codec-patterns (#2).
+Accomplished:
+  - **Profile/task switch** backend→frontend at session open; isolated into a git worktree (parallel `mod-learning-education` backend session active in its own worktree — kept untouched throughout).
+  - **Front matter** (`12a3713`, Approval 1). Load-bearing doc resolution: **no new canon / no `@vida/types` consolidation** — the 8-state machine reuses the `@vida/core` `TerminalState` canon (state-conventions.md:44-52); homes follow BR-2 (`@vida/ui` can't import `@vida/core` → rendering primitives take state as a PROP; canon-importing logic + conventions → `apps/web`).
+  - **S1** `3b35ad2` — 8-state machine (`interaction-state.ts`: `InteractionState` + total `collapseToTerminal` exhaustive-switch/never + `deriveInteractionState` + `renderKindFor`; 16 tests).
+  - **S2** `396b3c6` — ReducedMotion **RATIFY** (0 code): grep caught the B12 enforcer already shipped (`useReducedMotion` + `@media` convention) → named it the codec primitive, corrected front-matter W2.
+  - **S3** `117fd64` — EmptyState teaching-invitation (`@vida/ui`); Visual Gate (Brave 6-cell): fonts/accent swap per preset, full-matrix AA both modes incl. warm-dark.
+  - **S4** `4d8d71d` — SyncStatus + HonestProgress (`@vida/ui`); deferred item resolved from P4: honest M1 = `saved`/`error` (no "saving"/cloud; cloud=M3 seam); Visual Gate: dot preset-INVARIANT, label AA 4.52–5.22, progressbar ARIA.
+  - **S5** `48877e4` — conventions (`apps/web`): ReachabilityRegistry (≥2 floor) · ProviderRead (type+convention, not a hook) · VoiceCopy (`VOICE`+`lintCopy`); 12 tests.
+  - Each slice: §XXVI double-gate + per-slice Visual/Verification Gate + pre-ship /critique. @vida/ui **360/360** · apps/web fe-codec **41/41** · tsc 0 · eslint 0. PR #75 merged; LIF-211 → Done; worktree + branches removed.
+Decisions / lessons:
+  - **Two anti-over-engineering catches via grep-before-net-new** (S2 ReducedMotion=RATIFY; S5 ProviderRead=type-not-hook). A codec primitive is sometimes a recognition/convention, not a build. Memory candidate: a "grep the capability before building the primitive" rule for codec/pattern-kit slices.
+  - Visual Gate run programmatically (Brave via `PW_EXECUTABLE_PATH`, computed-styles + contrast across the preset×mode matrix) — verified per-preset accent/font inheritance (B-codec-6) AND the correct NON-inheritance of signal tokens (the sync dot is preset-invariant). MCP Playwright is pinned to absent Chrome; Brave is the working gate browser.
+  - Fresh worktree needs its own `pnpm install` + built dist of `@vida/types`/`core`/`ui` (workspace packages resolve via dist).
+Next session:
+  - **FIRST ACTION:** next M1.2.1 frontend head = **fe-codec-viewmodes** (now unblocked; also ready: fe-codec-dashboard · fe-shell · fe-codec-canvas-graph · fe-codec-canvas-reader · fe-settings). FRESH `/begin`; isolate in a worktree; add-frontend-component / Entity Delivery Flow ②.
+  - Env: Node 24 via nvm; per-issue worktree+branch → PR → merge. Parallel `mod-learning-education` backend session may still be active — `git worktree list` + don't disturb its worktree.
+
+---
+Date: 2026-10-04 — PROFILE/TASK SWITCH at session open — fe-codec-viewmodes (LIF-214)
+Switch: `/begin` resolved the computed backend head (mod-learning-education, S7 next, active in its own worktree) and surfaced it; Victor redirected to the FRONTEND track ("proceed with the frontend worktree"). Mirrors the 2026-10-04 fe-codec-patterns open (backend→frontend at session start).
+Profile: Add Backend Component → **Add Frontend Component** · Scenario: default (Entity Delivery Flow ②).
+Head: next M1.2.1 frontend unit = **fe-codec-viewmodes** (#3) — both blockers Done (fe-codec-theme PR #74, fe-codec-patterns PR #75). Isolated into worktree `.claude/worktrees/fe-codec-viewmodes` (branch `worktree-fe-codec-viewmodes` off main). Parallel `mod-learning-education` backend worktree left untouched.
+Goal: ② CODEC · View-mode renderers — add table + board to the shipped 7.
+Next: §XXVII path surfaced → Step 0 (document-context BASELINE) on confirm.
+
+---
+Date: 2026-10-04 — fe-codec-viewmodes #3 (LIF-214) — S1 TableView shipped (worktree, no PR yet)
+Task: fe-codec-viewmodes · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-codec-viewmodes`, branch `worktree-fe-codec-viewmodes` (2 commits ahead of main, NOT merged)
+Goal: ② CODEC view-mode renderers — add table + board (complete the canonical VIEW_LAYOUT 7).
+Accomplished:
+  - Profile/task switch backend→frontend at session open; isolated into a worktree (parallel mod-learning-education backend worktree untouched).
+  - **Front matter** (`8cf9fc2`, Decomposition Gate Approval 1): read-only-lens grounding — S1 TableView + S2 BoardView both read-only; drag-to-move = Capability (OVERFLOWING, not deferred); Envision SKIP.
+  - **S1 TableView** (`72f451e`): the `table` VIEW_LAYOUT renderer (6th canonical view-mode). Read-only role="table", calendar-view divergence, 4 states, aria-sort display-only, 375 scroll, designed empty row. tsc 0 · @vida/ui 371/371 · 2 code-reviews (0 changes) · Visual Gate PASS (AA 4.94–6.53 incl warm-dark · axe 0 · aria-colspan serializes) · §XXIX currency (CLAUDE.md + _index.md G6 supersession).
+Decisions / lessons:
+  - **Two drift corrections (both ungrounded until I read the docs):** v1 I manufactured a "defer pointer-DnD to M2 / ADR-001 has no DnD lib" cut; v2 (over-correction) I put full drag IN the renderer. The governing docs (ADR-007 §4.3 read-only View vs ADR-008 interactive Capability) home it: the view-mode renderer is read-only; drag-to-move (a write) is a Capability. Memory [[dont-manufacture-a-deferral-to-cut-build-phase-scope]]. Victor: "see the documentation" before asking.
+  - The G6 frontend-replan (2026-10-01) reversed the 2026-08-09 ui-2 "table/board = not built, by design" stance — currency updated so it's not re-litigated.
+Next session:
+  - **FIRST ACTION:** S2 — BoardView (7th/final canonical view-mode). FRESH `/begin`; resume in the SAME worktree. v9-board-view.md contract (g1) → implement → Visual Gate → §XXIX → commit → **then PR the unit (both slices)**.
+  - Env: Node 22 via nvm; worktree pnpm install + dist already built; Visual Gate = Brave via the /tmp/vg/gate.mjs pattern. Don't disturb the parallel mod-learning-education worktree.
+
+---
+Date: 2026-10-05 — fe-codec-collection #4 (LIF-207) — UNIT SHIPPED (PR #78) + CI un-darkened
+Task: fe-codec-collection · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree-fe-codec-collection → PR #78 merged (`752c798`).
+Goal: ② CODEC Collection shell (G6 unit #4) — a Saved View rendered in a view-mode.
+Accomplished:
+  - **fe-codec-collection SHIPPED.** The CODEC Collection shell — a SHELL not a renderer: composes the 7 shipped renderers via a `renderView(layout,state)` render-prop + view-mode switcher + title/count/Filter/Sort/`+` chrome + 8-state. Non-generic; local `ViewLayout` union (no @vida/types dep, Tamagui-only boundary). Switcher = labeled `role="toolbar"` (not Tabs) condensing to a `Menu` <768 via `useTabletUp` (render-time matchMedia hook — Tamagui `useMedia` seeds at config-import, untestable). Empty-ownership resolved: shell owns a collection-level `EmptyState` except `DESIGNED_EMPTY_LAYOUTS=['calendar']` (delegates → keeps grid). 3 slices S1 `c80332a`/S2 `e47042f`/S3 `68232f7`. Full Entity Delivery Flow ②; Envision FIRED (greybox Victor-approved, 8 ECs); Decomposition Approval 1; 4 independent reviews + /critique all SHIP. @vida/ui 398 · @vida/web collection 8 · tsc 0 · eslint 0 · Visual Gate PASS (Brave, 3 presets×light/dark: AA 4.94–6.03 incl warm-dark · axe 0 · 7 renderers · 375 condense).
+  - **CI un-darkened** (was fully red/fast-failing since ~2026-10-03; last 3 units merged blind). PR #79 pnpm double-version (drop `version:`, docs-grounded). PR #80 `@vida/ui` turbo build-race (`tokens:build` rewriting `fonts.ts` under concurrent typecheck/test → package-scoped `packages/ui/turbo.json` typecheck/test dependsOn `["^build","build"]`). PR #81 `@vida/server` test `--passWithNoTests` + `.prettierrc printWidth 100→120`. → Typecheck/Lint/E2E/Test green on main.
+Decisions / lessons:
+  - **A gate's TRIGGER is a doc test, not a human decision.** I AskUserQuestion'd "does Envision fire?"; Victor: "check the documentation before any decision, then bring me the facts." §3.75 is a mechanical one-question test → applied to facts (novel switcher) → FIRE. Memory [[envision-gate-firing-is-a-doc-test-not-a-human-decision]].
+  - **All-CI-checks-fail-<10s = ONE shared setup root cause; triage before reacting; restoring a dark pipeline surfaces pre-existing debts (expected); fix infra in SEPARATE PRs from the feature.** Memory [[ci-fast-fail-all-checks-is-one-setup-root-cause]]. Prettier: `.prettierrc` has existed since initial commit (width 100); repo never `prettier --write`'d (1275/1276 fail) → config-match insufficient; full reformat DEFERRED (collides w/ in-flight parallel work).
+Next session:
+  - **FIRST ACTION:** G6 unit #5 `fe-codec-dashboard` (dep patterns✅, lowest-# ready). FRESH `/begin`; isolate in a worktree; add-frontend-component / Entity Delivery Flow ②. Also unblocked: `fe-codec-entity-facet` #6, `fe-codec-canvas-editor` #7, `fe-codec-canvas-graph` #8, `fe-codec-canvas-reader` #9, `fe-codec-canvas-board` #10, `fe-codec-system` #12.
+  - Tracked follow-ups: `ci-prettier-reformat` (deferred repo-wide reformat), `ci-workers-build-config` (CF dashboard, needs Victor). LIF-207 → Done reconciles at `/begin --pull`.
+  - Env: Node 22 via nvm; per-unit worktree → PR → merge; Visual Gate = Brave via `/tmp/vg`. Two parallel backend sessions may be active (`mod-learning-education`, `mod-notifications`) — don't disturb their worktrees.

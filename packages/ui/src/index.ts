@@ -15,6 +15,16 @@ export { shadow } from './themes/shadow' // elevation box-shadow literals (typed
 // DS-4 — Tamagui config + theme-switch mechanism (composes the generated outputs above).
 export { config, media, type VidaConfig } from './tamagui.config'
 export { UIProvider, useVidaTheme, type ThemeName, type UIProviderProps } from './provider'
+// fe-codec-theme S3 — the codec selection contract (app owns the state; the provider is the mechanism).
+export {
+  resolveTheme,
+  THEME_DEFAULT,
+  THEME_PRESETS,
+  type ThemePreset,
+  type ThemeMode,
+  type ThemeDensity,
+  type ThemeSelection,
+} from './theme-resolution'
 
 // UI-1 — primitives (built against the DS-5 contracts).
 export { Button, type ButtonProps } from './components/button'
@@ -36,14 +46,27 @@ export {
   type ToastHandle,
 } from './components/toast'
 
+// fe-codec-patterns — the cross-cutting pattern-kit (the CODEC primitives every surface inherits).
+export { EmptyState, type EmptyStateProps } from './components/empty-state'
+export {
+  SyncStatus,
+  HonestProgress,
+  type SyncStatusProps,
+  type HonestProgressProps,
+  type LocalSyncState,
+} from './components/sync-status'
+
 // UI-2 — platform views (the cross-module display surfaces; compose UI-1 primitives + base tokens).
 export { ListView, type ListViewProps, type ViewState } from './components/list-view'
 export { GalleryView, type GalleryViewProps } from './components/gallery-view'
 export { Timeline, type TimelineProps } from './components/timeline'
 export { CalendarView, type CalendarViewProps } from './components/calendar-view'
+export { TableView, type TableViewProps, type Column } from './components/table-view'
+export { BoardView, type BoardViewProps, type BoardGroup } from './components/board-view'
 export { PomodoroWidget, type PomodoroWidgetProps, type PomodoroPhase } from './components/pomodoro-widget'
 export { ExportDialog, type ExportDialogProps, type ExportFormat } from './components/export-dialog'
 export { NeuralGraph, type NeuralGraphProps, type GraphNode, type GraphEdge } from './components/neural-graph'
+export { CollectionView, type CollectionViewProps, type ViewLayout } from './components/collection-view'
 
 // Shared hooks.
 export { useReducedMotion } from './hooks/use-reduced-motion'

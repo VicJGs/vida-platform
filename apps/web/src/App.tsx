@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
-import { ToastProvider, UIProvider } from '@vida/ui'
+import { THEME_DEFAULT, ToastProvider, UIProvider } from '@vida/ui'
 import { ensureDbReady } from './db/boot'
 import { queryClient } from './lib/query-client'
 import { Onboarding } from './onboarding/onboarding'
@@ -59,8 +59,9 @@ export function App() {
     )
   }
 
-  // UI-4 · S1: mount the design-system providers at the app root. UIProvider (Tamagui config/theme; theme STATE is
-  // app-owned, light-only in M1.0 — no theme store yet) wraps the app. ToastProvider is the singleton toast HOST —
+  // UI-4 · S1: mount the design-system providers at the app root. UIProvider (Tamagui config/theme; selection STATE is
+  // app-owned — fed the cold-start THEME_DEFAULT here, Editorial+light+calm; the Zustand store + switcher arrive with
+  // Settings — fe-codec S3 / R5) wraps the app. ToastProvider is the singleton toast HOST —
   // it takes no children and portals to <body>, so it's a SIBLING of the app tree, inside UIProvider for the theme
   // context. The shell chrome (AppShell) mounts INSIDE the router, in routes.tsx RootComponent (it wraps the Outlet).
   //
@@ -68,7 +69,7 @@ export function App() {
   // onboarding takeover (full-viewport, OUTSIDE the router/AppShell — S4-BR-h); its completion write flips
   // `status` to 'ready', mounting the app at `/`. Onboarding needs neither the router nor the query client.
   return (
-    <UIProvider theme="light">
+    <UIProvider selection={THEME_DEFAULT}>
       {firstRun.status === 'onboarding' ? (
         <Onboarding onComplete={firstRun.markComplete} />
       ) : (
