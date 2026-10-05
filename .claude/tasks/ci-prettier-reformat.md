@@ -1,5 +1,6 @@
 # Task: ci-prettier-reformat
 # Status: planned
+# Linear: LIF-228
 # Profile: Generic Coding Session
 # Created: 2026-10-05
 

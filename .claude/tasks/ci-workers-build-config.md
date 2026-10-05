@@ -1,5 +1,6 @@
 # Task: ci-workers-build-config
 # Status: planned (needs Victor — Cloudflare dashboard)
+# Linear: LIF-229
 # Profile: Generic Coding Session
 # Created: 2026-10-05
 
