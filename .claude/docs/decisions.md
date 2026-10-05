@@ -1,6 +1,19 @@
 <!-- Last updated: 2026-10-04 by /session-end -->
 
 
+## fe-codec-viewmodes (② CODEC view-modes #3 · LIF-214, 2026-10-04, worktree — S1 done, S2 pending)
+The `table` + `board` view-mode renderers — complete the canonical `VIEW_LAYOUT` 7. Detail in
+`docs/specs/foundation/fe-codec-viewmodes/*` + `.claude/tasks/fe-codec-viewmodes.md`. NOT merged (PR at unit-complete).
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-04 | renderer scope | are view-mode renderers interactive? | **READ-ONLY LENSES** — render resolved/grouped/sorted data; no filter/group/sort/write. Interaction-that-writes (board drag-to-move) is a **Capability (ADR-008), OVERFLOWING — homed away, NOT deferred, NOT in-renderer** | ADR-007 §4.3 "classic View = read-only lens" vs ADR-008 "Capability = interactive, writes via INT-2"; quality-bar §4.3 "the mix lives in the capability, views stay simple" | n/a (grounded) |
+| 2026-10-04 | unit scope | what does this issue build? | **2 net-new renderers (table, board)** completing the canonical 7 (5 shipped) | g6-edge-ledger:46 "extend ui-2 → add table · board"; the goal-line "7" conflated 7 COMPONENTS (incl. pomodoro/export) w/ 7 VIEW-MODES | n/a (grounded) |
+| 2026-10-04 | table structure | which spine? | **Follows the `calendar-view` divergence** — `role="table"`, reuse spine pieces but NOT `resolveDataViewState` (grid empty = a designed row w/ `aria-colspan`, not `role="status"`) | a 2D grid diverges from the linear-list spine (the calendar precedent) | n/a (grounded) |
+| 2026-10-04 | aria-sort | does the renderer toggle sort? | **DISPLAY-only** — reflects `column.sort` via `aria-sort`; the sort *control* is the Collection shell (view chrome), not the renderer | read-only lens; ADR-007 sort is view-config | n/a |
+| 2026-10-04 | Envision Gate | fire or skip? | **SKIP** (doc-grounded) — read-only lenses reuse shipped patterns; the one novel affordance (drag) is a Capability | §3.75 trigger test fails | n/a |
+| 2026-10-04 | ui-2 currency | table/board "not built" (2026-08-09) | **SUPERSEDED by G6 (2026-10-01)** — now built; `_index.md` + CLAUDE.md refreshed, memory annotated | a later gated plan (G6) reverses the earlier call | n/a |
+
 ## fe-codec-patterns (② CODEC pattern-kit #2 · LIF-211, 2026-10-04, worktree)
 The behavioural half of the CODEC — the cross-cutting pattern-kit every `fe-*` surface inherits (decomposition §1.3). 5 slices, PR #75 merged (`c1dd1f0`). Detail in `.claude/tasks/archive/fe-codec-patterns.md` + `docs/specs/foundation/fe-codec-patterns/*`.
 
