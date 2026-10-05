@@ -35,4 +35,10 @@
   points only (logic = app/ViewsService). tsc 0 · @vida/ui **398** (+4) · eslint 0 · Visual Gate PASS (AA 4.94–6.03 · axe 0
   w/ the icon `+` · chrome active across states). Independent code-review **SHIP** (NIT-1 empty-case added to the EC-2 loop;
   NIT-2 `•`-in-label badge kept — honest accessible name, specimen shows no discrete badge). EC-2/EC-6 demonstrated.
-- **S3 — next** (apps/web SavedView↔Collection adapter — type+convention, Verification Gate).
+- **S3 — COMPLETE.** apps/web SavedView↔Collection adapter (`apps/web/src/collection/`): pure `toCollectionChrome`
+  (ResolvedView+SavedView→chrome props) + `bindViewConfigWrites` (ViewsService updateView/cloneView — view-config, NOT
+  entity writes) + `createCollectionAdapter` + convention doc. **type+convention** (no live React hook — H4, no built
+  consumer; ProviderRead precedent). The ONLY @vida/core↔@vida/ui crossing (apps/web plane, BR-2). apps/web tsc 0 ·
+  @vida/web **collection 8 tests** · eslint 0. **Verification Gate PASS** (no Visual Gate — renders nothing new).
+  Independent code-review **SHIP** (3 by-design NITs, no action). §XXIX: apps/web/src/collection/CLAUDE.md.
+- **UNIT COMPLETE** (S1+S2+S3) → pre-ship /critique → PR → merge → task-complete.
