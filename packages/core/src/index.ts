@@ -180,5 +180,8 @@ export * from './services/flashcards'
 // Service — Books (mod-books #51 · LIF-117 · S1: Works CRUD + reframe over DB-4 023_books)
 export * from './services/books'
 
+// Service — Notifications (mod-notifications #53 · LIF-132 · S1: inbox reads + lifecycle over DB-4 032_notifications)
+export * from './services/notifications'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
