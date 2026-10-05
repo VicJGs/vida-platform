@@ -35,6 +35,9 @@ import {
   SESSION_STATUS,
   SCHEDULING_MODE,
 } from '@vida/types'
+// S8 — measurement_kind/binding_mode canonical validators (defined in ./measurement; imported for use, not re-exported
+// — the habit.ts precedent). Used by SetMeasurementSchema below.
+import { MeasurementKindSchema, BindingModeSchema } from './measurement'
 
 export const CourseTypeSchema = z.enum(COURSE_TYPE)
 export const CourseStatusSchema = z.enum(COURSE_STATUS)
@@ -262,4 +265,15 @@ export const ListAssessmentsSchema = z.object({
   subject_id: z.string().nullish(),
   type: AssessmentTypeSchema.nullish(),
   range: z.object({ start: z.string(), end: z.string() }).nullish(), // YYYY-MM-DD bounds, inclusive
+})
+
+// ---------------------------------------------------------------------------
+// S8 — education measurement (ED-10 · M1/M2/M3). The Education-forged measure: `measurement_kind` REQUIRED (R3, a
+// dedicated measure entity — no 'milestone' default), `binding_mode` nullish (omittable ⇒ derive, M2). `progress` is
+// NOT an input — it is a derive-on-read override with no M1 setter (seam). `MeasurementKindSchema`/`BindingModeSchema`
+// are canonical in ./measurement. N1: `.nullish()` (omittable) diverges deliberately from habit.ts's `.nullable()`.
+// ---------------------------------------------------------------------------
+export const SetMeasurementSchema = z.object({
+  measurement_kind: MeasurementKindSchema,
+  binding_mode: BindingModeSchema.nullish(),
 })

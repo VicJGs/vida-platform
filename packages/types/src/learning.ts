@@ -5,6 +5,7 @@
 
 import type { Id, Timestamp, BasisPoints } from './common'
 import type { SyncableEntity, SyncMetadata } from './sync'
+import type { MeasurementKind, BindingMode } from './measurement'
 
 // ---------------------------------------------------------------------------
 // Course & Book enums
@@ -368,6 +369,18 @@ export interface Assessment extends SyncableEntity {
   /** The raw recorded result; grade derives via the grading system. Nullable = not yet recorded. */
   score: number | null
   source: RecordSource
+  deleted_at: Timestamp | null
+}
+
+/** The Education-forged measure entity (ED-10, mod-learning-education ① S8). Mirrors `education_measurements`
+ *  (schema/learning.ts). Separate storage from Projects (C-M5, never mixed). `progress` is a nullable DERIVED
+ *  override (integer 0–100; NULL ⇒ derive-on-read via `getProgress`, M3) — never a stored counter. */
+export interface EducationMeasurement extends SyncableEntity {
+  ref_type: MeasurementRefType
+  ref_id: Id
+  measurement_kind: MeasurementKind
+  binding_mode: BindingMode | null
+  progress: number | null
   deleted_at: Timestamp | null
 }
 

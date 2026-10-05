@@ -32,6 +32,8 @@ import type {
   GradingComponentType,
   GradingScaleType,
   Assessment,
+  EducationMeasurement,
+  MeasurementRefType,
   ProgramParentType,
   CourseStatus,
 } from '@vida/types'
@@ -60,6 +62,7 @@ import type {
   CreateAssessmentSchema,
   RecordResultSchema,
   ListAssessmentsSchema,
+  SetMeasurementSchema,
 } from '../../validators/learning'
 
 /** A raw calendar event as returned by the M2 ICS fetch boundary — the parse/normalize happens device-side
@@ -138,6 +141,8 @@ export type CreateAssessmentInput = z.input<typeof CreateAssessmentSchema>
 export type RecordResultInput = z.input<typeof RecordResultSchema>
 /** Filter `listAssessments` (S7) — all optional; an empty filter lists every live assessment. */
 export type ListAssessmentsFilter = z.input<typeof ListAssessmentsSchema>
+/** Configure the Education-forged measure for a subject/program (S8). `measurement_kind` required; `binding_mode` omittable ⇒ derive. */
+export type SetMeasurementInput = z.input<typeof SetMeasurementSchema>
 
 /** A class meeting = the base `sessions` row (lifecycle/timing) + the `class_sessions` 1:1 extension (S4).
  *  Mirrors the books `ReadingSessionView {session, reading}` shape. */
@@ -192,6 +197,12 @@ export interface GradeResult {
 /** What a GPA rolls up over (S7) — a term or a whole curriculum's subjects. */
 export interface GpaRef {
   type: 'term' | 'curriculum'
+  id: string
+}
+
+/** What an Education measure/progress attaches to (S8) — a subject or a program (ED-10; MEASUREMENT_REF_TYPE). */
+export interface MeasurementRef {
+  type: MeasurementRefType
   id: string
 }
 
@@ -343,6 +354,16 @@ export interface LearningEducationService {
   /** The GPA across a term/curriculum (BR-LE-S7-5) — equal-weight rollup of per-subject grades, `flagged` when
    *  partial, never fabricated. Unknown ref → `TermNotFoundError`/`CurriculumNotFoundError`. */
   computeGPA(ref: GpaRef): Promise<GpaResult>
+
+  // --- education measurement (S8 — ED-10 · M1/M2/M3) ---
+  /** Configure the Education-forged measure for a subject/program (ED-10). One row per ref (upsert). `measurement_kind`
+   *  required; `binding_mode` omittable ⇒ derive. Fail-loud on the ref (`SubjectNotFoundError`/`ProgramNotFoundError`).
+   *  Separate storage from Projects (C-M5). `measurement_kind` is declared metadata — the M1 derivation is kind-agnostic. */
+  setMeasurement(ref: MeasurementRef, input: SetMeasurementInput): Promise<EducationMeasurement>
+  /** Progress for a subject/program, DERIVED on read (M3) — integer 0–100 or null (unmeasured). A stored override wins;
+   *  else: a subject with `derived-pull`/no-mode pulls `computeGrade`, `manual`/`event-trigger` ⇒ null; a program rolls
+   *  up its subjects (equal-weight). No measurement configured ⇒ null. */
+  getProgress(ref: MeasurementRef): Promise<number | null>
 }
 
 // --- typed errors (fail loud — constitution §5) ------------------------------

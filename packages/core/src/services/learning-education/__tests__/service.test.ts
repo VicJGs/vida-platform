@@ -1290,3 +1290,150 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
     await expect(h.svc.computeGPA({ type: 'curriculum', id: 'ghost' })).rejects.toThrow(CurriculumNotFoundError)
   })
 })
+
+describe('mod-learning-education S8 — education measurement (ED-10 · M1/M2/M3)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // A subject with a single-component 100% system (max 100), one assessment recorded at `score` → grade = score/100.
+  async function gradedSubject(score: number, title = 'Graded') {
+    const subj = await h.svc.createSubject({ title })
+    const view = await h.svc.createGradingSystem(
+      { type: 'subject', id: subj.id },
+      { name: 'S', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+    )
+    const a = await h.svc.createAssessment(subj.id, { type: 'exam', grading_component_id: view.components[0].id })
+    await h.svc.recordResult(a.id, { score })
+    return subj.id
+  }
+
+  // --- setMeasurement --------------------------------------------------------
+  it('setMeasurement creates one row (progress null, binding_mode null when omitted)', async () => {
+    const subj = await h.svc.createSubject({ title: 'M' })
+    const m = await h.svc.setMeasurement({ type: 'subject', id: subj.id }, { measurement_kind: 'quantitative' })
+    expect(m.ref_type).toBe('subject')
+    expect(m.ref_id).toBe(subj.id)
+    expect(m.measurement_kind).toBe('quantitative')
+    expect(m.binding_mode).toBeNull()
+    expect(m.progress).toBeNull()
+  })
+
+  it('setMeasurement is one-per-ref upsert (2nd call updates kind/mode, still one row)', async () => {
+    const subj = await h.svc.createSubject({ title: 'M' })
+    const ref = { type: 'subject' as const, id: subj.id }
+    const first = await h.svc.setMeasurement(ref, { measurement_kind: 'quantitative' })
+    const second = await h.svc.setMeasurement(ref, { measurement_kind: 'milestone', binding_mode: 'derived-pull' })
+    expect(second.id).toBe(first.id) // same row updated
+    expect(second.measurement_kind).toBe('milestone')
+    expect(second.binding_mode).toBe('derived-pull')
+  })
+
+  it('setMeasurement on an unknown subject/program → typed NotFound', async () => {
+    await expect(
+      h.svc.setMeasurement({ type: 'subject', id: 'ghost' }, { measurement_kind: 'quantitative' }),
+    ).rejects.toThrow(SubjectNotFoundError)
+    await expect(
+      h.svc.setMeasurement({ type: 'program', id: 'ghost' }, { measurement_kind: 'quantitative' }),
+    ).rejects.toThrow(ProgramNotFoundError)
+  })
+
+  it('setMeasurement requires measurement_kind (Zod parse error when omitted)', async () => {
+    const subj = await h.svc.createSubject({ title: 'M' })
+    // @ts-expect-error — measurement_kind is required; omitting it must fail at parse
+    await expect(h.svc.setMeasurement({ type: 'subject', id: subj.id }, {})).rejects.toThrow()
+  })
+
+  // --- getProgress: subject --------------------------------------------------
+  it('getProgress with no measurement row → null (unmeasured)', async () => {
+    const subj = await h.svc.createSubject({ title: 'Unconfigured' })
+    expect(await h.svc.getProgress({ type: 'subject', id: subj.id })).toBeNull()
+  })
+
+  it('getProgress subject derived-pull → round(grade×100); grade 0.87 → 87', async () => {
+    // 30/70 system, hw 80 + exam 90 → 0.87
+    const subj = await h.svc.createSubject({ title: 'G' })
+    const view = await h.svc.createGradingSystem(
+      { type: 'subject', id: subj.id },
+      {
+        name: 'S',
+        scale_type: 'numeric',
+        components: [
+          { component_type: 'homework', weight: 3000, max_points: 100 },
+          { component_type: 'exam', weight: 7000, max_points: 100 },
+        ],
+      },
+    )
+    await h.svc.recordResult((await h.svc.createAssessment(subj.id, { type: 'quiz', grading_component_id: view.components[0].id })).id, { score: 80 })
+    await h.svc.recordResult((await h.svc.createAssessment(subj.id, { type: 'exam', grading_component_id: view.components[1].id })).id, { score: 90 })
+    await h.svc.setMeasurement({ type: 'subject', id: subj.id }, { measurement_kind: 'quantitative', binding_mode: 'derived-pull' })
+    expect(await h.svc.getProgress({ type: 'subject', id: subj.id })).toBe(87)
+  })
+
+  it('getProgress subject with binding_mode null (derive-by-default) also pulls the grade', async () => {
+    const sid = await gradedSubject(70)
+    await h.svc.setMeasurement({ type: 'subject', id: sid }, { measurement_kind: 'quantitative' }) // no mode
+    expect(await h.svc.getProgress({ type: 'subject', id: sid })).toBe(70)
+  })
+
+  it('getProgress subject manual / event-trigger → null (no auto-derivation at M1)', async () => {
+    const sid = await gradedSubject(90)
+    await h.svc.setMeasurement({ type: 'subject', id: sid }, { measurement_kind: 'quantitative', binding_mode: 'manual' })
+    expect(await h.svc.getProgress({ type: 'subject', id: sid })).toBeNull()
+    await h.svc.setMeasurement({ type: 'subject', id: sid }, { measurement_kind: 'quantitative', binding_mode: 'event-trigger' })
+    expect(await h.svc.getProgress({ type: 'subject', id: sid })).toBeNull()
+  })
+
+  it('getProgress subject derived-pull but UNGRADED → null (never 0)', async () => {
+    const subj = await h.svc.createSubject({ title: 'NoGrade' })
+    await h.svc.setMeasurement({ type: 'subject', id: subj.id }, { measurement_kind: 'quantitative', binding_mode: 'derived-pull' })
+    expect(await h.svc.getProgress({ type: 'subject', id: subj.id })).toBeNull()
+  })
+
+  it('a stored progress override (0–100) wins over derivation', async () => {
+    const sid = await gradedSubject(90)
+    const m = await h.svc.setMeasurement({ type: 'subject', id: sid }, { measurement_kind: 'quantitative', binding_mode: 'derived-pull' })
+    // no M1 setter for the override → set it directly in the live store
+    h.bsql.prepare('UPDATE education_measurements SET progress = ? WHERE id = ?').run(42, m.id)
+    expect(await h.svc.getProgress({ type: 'subject', id: sid })).toBe(42) // override, not the derived 90
+  })
+
+  // --- getProgress: program rollup -------------------------------------------
+  it('getProgress program → equal-weight rollup of its subjects (80 & 100 → 90)', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    const mkMeasured = async (score: number) => {
+      const subj = await h.svc.createSubject({ title: `S${score}`, curriculum_id: cur.id })
+      const view = await h.svc.createGradingSystem(
+        { type: 'subject', id: subj.id },
+        { name: 'S', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+      )
+      await h.svc.recordResult((await h.svc.createAssessment(subj.id, { type: 'exam', grading_component_id: view.components[0].id })).id, { score })
+      await h.svc.setMeasurement({ type: 'subject', id: subj.id }, { measurement_kind: 'quantitative', binding_mode: 'derived-pull' })
+    }
+    await mkMeasured(80)
+    await mkMeasured(100)
+    await h.svc.setMeasurement({ type: 'program', id: prog.id }, { measurement_kind: 'quantitative' })
+    expect(await h.svc.getProgress({ type: 'program', id: prog.id })).toBe(90)
+  })
+
+  it('getProgress program with no subjects → null (rollup of empty)', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    await h.svc.createCurriculum(prog.id, { name: 'c' })
+    await h.svc.setMeasurement({ type: 'program', id: prog.id }, { measurement_kind: 'quantitative' })
+    expect(await h.svc.getProgress({ type: 'program', id: prog.id })).toBeNull()
+  })
+
+  it('getProgress program whose subjects all derive null → null (rollup of all-null, not 0)', async () => {
+    const inst = await h.svc.createInstitution({ name: 'MIT' })
+    const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
+    const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
+    // a subject that EXISTS under the program but has no measurement row → getProgress(subject) = null
+    await h.svc.createSubject({ title: 'Unmeasured', curriculum_id: cur.id })
+    await h.svc.setMeasurement({ type: 'program', id: prog.id }, { measurement_kind: 'quantitative' })
+    expect(await h.svc.getProgress({ type: 'program', id: prog.id })).toBeNull()
+  })
+})

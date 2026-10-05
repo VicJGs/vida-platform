@@ -222,6 +222,45 @@
   REFERENCE (unknown subject/term/curriculum); a missing system / score / unmapped / missing-scale is a flag on the
   result. `GradeResult`/`GpaResult` are result objects, not errors. `[business-rules.md:92; code: service.ts]`
 
+### S8 — education measurement (ED-10 · M1/M2/M3)
+- **BR-LE-S8-1 (Education-forged measure, one per ref, upsert, fail-loud)** — `setMeasurement(ref,{measurement_kind,
+  binding_mode?})` where `ref={type:'subject'|'program', id}` guards the ref (`SubjectNotFoundError`/`ProgramNotFoundError`)
+  then upserts the single `education_measurements` row for `(ref_type,ref_id)` (update kind/mode if present — PRESERVING
+  the `progress` override; else create). Separate storage, never Projects' (C-M5). `[schema learning.ts:324-339 non-unique
+  index; the setSchedule precedent; code: service.ts setMeasurement/findMeasurement]`
+- **BR-LE-S8-2 (`measurement_kind` REQUIRED; `binding_mode` nullable ⇒ derive; kind is declared metadata)** —
+  `measurement_kind ∈ MEASUREMENT_KIND` caller-supplied (no default — a dedicated measure entity); `binding_mode ∈
+  BINDING_MODE` nullish (omittable ⇒ null ⇒ derive, M2). **The M1 derivation does NOT branch on `measurement_kind`** —
+  it is kind-agnostic (grade/rollup); the kind is persisted for the record + the M-later direct per-kind `normalize`
+  path (a subject measured not-via-grade). `[schema learning.ts:331-334; code: validators SetMeasurementSchema, service.ts]`
+- **BR-LE-S8-3 (`getProgress` returns integer 0–100 or null; engine works in [0,1])** — the `progress` override column is
+  `integer` (can't hold a [0,1] float) → the unit is 0–100 (the `books.progress` + `subjects.progress` precedent);
+  getProgress derives in [0,1] and scales to a rounded 0–100 at the boundary; null = unmeasured (BR-2), never 0.
+  `[schema learning.ts:335 integer; books/service.ts:1093; engine.ts:11; code: service.ts getProgress]`
+- **BR-LE-S8-4 (`getProgress` inlines resolveProgress §3.2: stored-override wins, else derive)** — no measurement row ⇒
+  null (nothing configured); a non-null stored `progress` override wins (clamped 0–100); else derive. Inlined (not the
+  generic `resolveProgress`) to bridge the 0–100-stored ↔ [0,1]-derive unit gap — the books `getUnifiedProgress`
+  precedent. **At M1 the override is NEVER written** (no setter in the seam) → the derive branch always runs; the override
+  column is a forward seam (M-later manual set). `[engine.ts:55-61; books/service.ts:1091-1096; code: service.ts getProgress]`
+- **BR-LE-S8-5 (subject derivation: `derived-pull`/no-mode pull the grade; `manual`/`event-trigger` ⇒ null)** — for a
+  subject, `binding_mode==='derived-pull'` OR `null` (derive-by-default) ⇒ `computeGrade(subjectId).grade` (Education's
+  natural progress signal, [0,1]|null); `'manual'` ⇒ null (manual has no auto-derivation — the override is its only
+  source, ED-10 "manual→manual"); `'event-trigger'` ⇒ null (no event source until M2). `[business-rules.md:49;
+  BINDING_MODE measurement.ts:9; code: service.ts deriveProgress01]`
+- **BR-LE-S8-6 (program derivation: the engine's fractal `rollup` over its subjects)** — for a program, roll up its
+  subjects' [0,1] progress via `rollup` (equal-weight; null-progress subjects excluded). The subject set = the union over
+  the program's live curricula of (`curriculum_id===c.id` OR `term_id ∈ c's live terms`), deduped (the S7 computeGPA/S3
+  fork union, iterated per curriculum). Each subject contributes `getProgress(subject)/100` (honoring its own
+  override/mode) → fed to `rollup` as [0,1] (never 0–100 — that would wrongly clamp to 1). Depth 1 (subject⊂program), no
+  cycle. `[engine.ts:38-53; seam-contract.md:61; code: service.ts deriveProgress01/programSubjectIds]`
+- **BR-LE-S8-7 (`@vida/types` `EducationMeasurement` — net-new)** — `extends SyncableEntity`, mirrors
+  `EducationMeasurementRow` (`ref_type: MeasurementRefType`, `ref_id`, `measurement_kind: MeasurementKind`, `binding_mode:
+  BindingMode|null`, `progress: number|null`, `deleted_at`). `softDelete:true`. `[code: packages/types/src/learning.ts; schema learning.ts:370]`
+- **BR-LE-S8-8 (no `advertise()`, no Projects storage — C-M5)** — Education exposes progress ONLY via the `getProgress`
+  method (the KN-10 per-subject-measure-is-a-method pattern); never calls the measurement source-registry `advertise()`
+  (global scalars only) and never writes Projects' measure tables. `[seam-contract.md:13;
+  [[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]; code: service.ts — no advertise call]`
+
 ## Scope guards honored (the C-* negatives — rerun-ratified)
 - **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
 - **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2/S4 (no economy grant, no `advertise()`, no homework table,

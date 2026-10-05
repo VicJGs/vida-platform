@@ -30,6 +30,7 @@ import type {
   GradingComponent,
   GradingScope,
   Assessment,
+  EducationMeasurement,
 } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { normalize, rollup } from '../../foundation/measurement'
@@ -47,6 +48,7 @@ import {
   gradingSystems,
   gradingComponents,
   assessments,
+  educationMeasurements,
   type InstitutionRow,
   type SelfTaughtRow,
   type ProgramRow,
@@ -60,6 +62,7 @@ import {
   type GradingSystemRow,
   type GradingComponentRow,
   type AssessmentRow,
+  type EducationMeasurementRow,
 } from '../../db/schema/learning'
 import { DuplicateSubType, type SessionTypeDef } from '../../foundation/sessions'
 import {
@@ -84,6 +87,7 @@ import {
   CreateAssessmentSchema,
   RecordResultSchema,
   ListAssessmentsSchema,
+  SetMeasurementSchema,
 } from '../../validators/learning'
 import {
   type LearningEducationService,
@@ -122,6 +126,8 @@ import {
   type GradeFlag,
   type GpaRef,
   type GpaResult,
+  type MeasurementRef,
+  type SetMeasurementInput,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -224,6 +230,15 @@ const toAssessment = (r: AssessmentRow): Assessment => ({
   source: r.source as Assessment['source'],
   _sync_status: r._sync_status as Assessment['_sync_status'],
 })
+// S8 mapper — `ref_type`/`measurement_kind`/`binding_mode`/`_sync_status` are plain-text union casts; `progress` is a
+// plain integer (no cast).
+const toEducationMeasurement = (r: EducationMeasurementRow): EducationMeasurement => ({
+  ...r,
+  ref_type: r.ref_type as EducationMeasurement['ref_type'],
+  measurement_kind: r.measurement_kind as EducationMeasurement['measurement_kind'],
+  binding_mode: r.binding_mode as EducationMeasurement['binding_mode'],
+  _sync_status: r._sync_status as EducationMeasurement['_sync_status'],
+})
 
 // IR/BR-LE-S4-2 — the `class` Session sub-type Education registers. A TRANSCRIPTION of ADR-004 §3.2:
 // `effects:[]` (§3.2.2 + C-E2 — Education is a non-feeder; any completion grant rides the base sub-type),
@@ -269,6 +284,8 @@ export function createLearningEducationService(
   const gradingComponentsRepo = createRepository(db, gradingComponents, { deviceId, softDelete: true, encryptedFields: [] })
   // S7 — assessments has deleted_at → softDelete:true. `title`/`description` are [E] but M1.0 set=[].
   const assessmentsRepo = createRepository(db, assessments, { deviceId, softDelete: true, encryptedFields: [] })
+  // S8 — education_measurements has deleted_at → softDelete:true; no [E] fields.
+  const educationMeasurementsRepo = createRepository(db, educationMeasurements, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- institutions (ED-2) --------------------------------------------------
   async function createInstitution(input: CreateInstitutionInput): Promise<Institution> {
@@ -1176,6 +1193,103 @@ export function createLearningEducationService(
     return { ref, gpa, flagged, perSubject }
   }
 
+  // ===========================================================================
+  // S8 — education measurement (ED-10 · M1/M2/M3): the Education-forged measure, derive-on-read
+  // ===========================================================================
+
+  // The single live measurement row for a ref (findWhere skips the soft-delete filter → isNull explicit).
+  async function findMeasurement(ref: MeasurementRef): Promise<EducationMeasurementRow | null> {
+    const rows = await educationMeasurementsRepo.findWhere(
+      and(
+        eq(educationMeasurements.ref_type, ref.type),
+        eq(educationMeasurements.ref_id, ref.id),
+        isNull(educationMeasurements.deleted_at),
+      ) as SQL,
+    )
+    return rows[0] ?? null
+  }
+
+  // The subjects under a program = the union over the program's live curricula of (curriculum_id === c.id OR
+  // term_id ∈ c's live terms) — the S7 computeGPA / S3 fork union, iterated per curriculum (BR-LE-S8-6).
+  async function programSubjectIds(programId: string): Promise<string[]> {
+    const curriculaRows = await listCurriculaFor(programId)
+    const ids = new Set<string>()
+    for (const c of curriculaRows) {
+      const liveTerms = await termsRepo.findWhere(
+        and(eq(terms.curriculum_id, c.id), isNull(terms.deleted_at)) as SQL,
+      )
+      const liveTermIds = liveTerms.map((t) => t.id)
+      const clause =
+        liveTermIds.length > 0
+          ? or(eq(subjects.curriculum_id, c.id), inArray(subjects.term_id, liveTermIds))
+          : eq(subjects.curriculum_id, c.id)
+      const subs = await subjectsRepo.findWhere(and(clause, isNull(subjects.deleted_at)) as SQL)
+      for (const s of subs) ids.add(s.id)
+    }
+    return [...ids]
+  }
+
+  // Derive progress in [0,1] (the engine's native unit); null = unmeasured. Subject: derived-pull/no-mode ⇒ grade;
+  // manual/event-trigger ⇒ null. Program: equal-weight rollup of its subjects' [0,1] progress (BR-LE-S8-5/6).
+  // `measurement_kind` is NOT consulted — the M1 derivation is kind-agnostic (B1).
+  async function deriveProgress01(
+    ref: MeasurementRef,
+    bindingMode: EducationMeasurement['binding_mode'],
+  ): Promise<number | null> {
+    if (ref.type === 'program') {
+      const subjectIds = await programSubjectIds(ref.id)
+      const children: { progress: number | null; weight: number | null }[] = []
+      for (const sid of subjectIds) {
+        const p = await getProgress({ type: 'subject', id: sid }) // 0–100 | null
+        children.push({ progress: p === null ? null : p / 100, weight: null })
+      }
+      return rollup(children)
+    }
+    // subject
+    if (bindingMode === 'manual' || bindingMode === 'event-trigger') return null // no auto-derivation at M1
+    // 'derived-pull' or null (derive-by-default) ⇒ the grade is Education's progress signal
+    return (await computeGrade(ref.id)).grade
+  }
+
+  // ED-10 — configure the measure for a subject/program (one per ref, upsert). Guards the ref (fail-loud). Updates
+  // kind/mode on an existing row (preserves the `progress` override); creates with progress null otherwise.
+  async function setMeasurement(ref: MeasurementRef, input: SetMeasurementInput): Promise<EducationMeasurement> {
+    const v = SetMeasurementSchema.parse(input)
+    if (ref.type === 'subject') {
+      if (!(await subjectsRepo.findById(ref.id))) throw new SubjectNotFoundError(ref.id)
+    } else {
+      if (!(await programsRepo.findById(ref.id))) throw new ProgramNotFoundError(ref.id)
+    }
+    const existing = await findMeasurement(ref)
+    if (existing) {
+      const row = await educationMeasurementsRepo.update(existing.id, {
+        measurement_kind: v.measurement_kind,
+        binding_mode: v.binding_mode ?? null,
+      })
+      return toEducationMeasurement(row)
+    }
+    const row = await educationMeasurementsRepo.create({
+      ref_type: ref.type,
+      ref_id: ref.id,
+      measurement_kind: v.measurement_kind,
+      binding_mode: v.binding_mode ?? null,
+      progress: null,
+      deleted_at: null,
+    } satisfies CreateInput<typeof educationMeasurements>)
+    return toEducationMeasurement(row)
+  }
+
+  // ED-10 — progress DERIVED on read (integer 0–100 | null). Inlines resolveProgress §3.2 (stored-override wins, else
+  // derive) because the stored override is 0–100 while the engine derives in [0,1] (the books getUnifiedProgress
+  // precedent, BR-LE-S8-3/4). No measurement row ⇒ null (unmeasured).
+  async function getProgress(ref: MeasurementRef): Promise<number | null> {
+    const row = await findMeasurement(ref)
+    if (!row) return null
+    if (row.progress != null) return Math.max(0, Math.min(100, row.progress)) // stored override wins (0–100)
+    const d = await deriveProgress01(ref, row.binding_mode as EducationMeasurement['binding_mode']) // [0,1] | null
+    return d === null ? null : Math.round(d * 100)
+  }
+
   return {
     createInstitution,
     updateInstitution,
@@ -1229,5 +1343,7 @@ export function createLearningEducationService(
     listAssessments,
     computeGrade,
     computeGPA,
+    setMeasurement,
+    getProgress,
   }
 }
