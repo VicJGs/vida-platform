@@ -247,6 +247,27 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   **⟹ 8 UI-2 views shipped** (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) **+ table + board**
   (fe-codec-viewmodes S1/S2) + the shared `internal/data-view` spine. **All 7 canonical VIEW_LAYOUT renderers now ship**
   (list·gallery·timeline·calendar·graph·table·board) — the spine is complete.
+  **collection-view** is **fe-codec-collection · S1** (LIF-207) — the CODEC **Collection shell** (decomposition.md:29 §1.2,
+  "the workhorse"): *a Saved View rendered in a view-mode*. **A SHELL, not a renderer** — it COMPOSES the 7 renderers via a
+  consumer **`renderView(layout, state)` render-prop** (so it stays agnostic of the 7 differing prop shapes — table→columns,
+  board→groups, graph→nodes… — AND free of any `@vida/core` type), plus a view-mode **switcher** + title/count chrome +
+  the threaded 8-state. **NON-GENERIC** (holds no `items` → no `<T>` to erase → a plain component + React-19 ref-as-prop).
+  `layout` is a **LOCAL `ViewLayout` union** ≡ `VIEW_LAYOUT` (no `@vida/types` dep — the `ViewState`-local precedent;
+  `@vida/ui` is Tamagui-only). **Switcher** = a `role="toolbar"` of inline-**label** toggle `Button`s (active =
+  `intent="primary"` + `aria-pressed`; **NOT `Tabs`** — a view-switch re-renders the *same data* in another layout, tabs
+  swap *different content*); **condenses to a UI-1 `Menu` below 768** (the shell global-bar control-reflow precedent
+  shell-layout.md:67 — NOT wrap, NOT h-scroll which is the wide-data pattern) via **`useTabletUp`**, a render-time
+  `matchMedia(min-width:768)` hook (mirrors `use-reduced-motion.ts` — Tamagui's `useMedia()` seeds media at config-import
+  so a test matchMedia mock can't move it; this is both browser-correct AND jsdom-testable). **Empty ownership** (the
+  resolved contract point): the shell owns a consistent collection-level **`EmptyState`** (teaching-invitation) on
+  `state==='empty'` EXCEPT for `DESIGNED_EMPTY_LAYOUTS = ['calendar']`, where it **delegates to `renderView(layout,'empty')`**
+  so the calendar grid is kept; a consumer `empty`/`error` prop always overrides; all other states → `renderView` (the
+  renderer owns loading/error/success — degrade-never-crash). Region named via `aria-label`/`aria-labelledby`→titleId
+  (`warnMissingName`). DIRECT semantic tokens; no sub-theme. **State-as-prop (BR-2)** — the app derives via the 8-state
+  machine + passes it. Visual Gate PASS (Brave, 3 presets × light/dark: AA 4.94–6.03 incl. warm-dark · axe 0 · 7 renderers
+  dispatch · toolbar `aria-pressed` · 375 condense + table scroll). S2 adds the Filter/Sort/`+`-new-view chrome affordances;
+  S3 the apps/web SavedView↔Collection adapter (type+convention). Spec:
+  `docs/specs/components/ui-2-platform-views/collection-view.md`. Delivery: `docs/specs/foundation/fe-codec-collection/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
