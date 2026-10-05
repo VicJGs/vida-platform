@@ -277,3 +277,13 @@ export const SetMeasurementSchema = z.object({
   measurement_kind: MeasurementKindSchema,
   binding_mode: BindingModeSchema.nullish(),
 })
+
+// S9 — vault document metadata (the raw `file` bytes are split off BEFORE parse, the books AddAssetSchema precedent:
+// bytes are not a validated value). `doc_type` is an OPEN vocab (free string, no enum — schema has no CHECK). The
+// file-vs-storage_ref mutual exclusion is enforced in the service (file lives outside this schema).
+export const AddDocumentSchema = z.object({
+  title: z.string().min(1),
+  doc_type: z.string().nullish(),
+  description: z.string().nullish(),
+  storage_ref: z.string().nullish(),
+})

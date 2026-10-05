@@ -384,6 +384,22 @@ export interface EducationMeasurement extends SyncableEntity {
   deleted_at: Timestamp | null
 }
 
+// mod-learning-education ① S9 — the per-subject vault document (ED-13, the PJ-8 / `project_documents` pattern).
+// Inline small file (`encrypted_blob`) OR R2 `storage_ref`; NO `deleted_at` (the vault pattern, faithful §5.4).
+// `doc_type` is an OPEN vocab (syllabus/schedule/material catch-all — no CHECK). `[FACT: schema learning.ts:310-322]`
+export interface SubjectDocument extends SyncableEntity {
+  subject_id: Id
+  /** @encrypted */
+  title: string
+  /** @encrypted */
+  description: string | null
+  doc_type: string | null
+  /** inline small blob (client-encrypted bytes); null when stored in R2 (`storage_ref`) */
+  encrypted_blob: Uint8Array | null
+  /** R2 ref for a large file; null when stored inline (`encrypted_blob`) */
+  storage_ref: string | null
+}
+
 // ---------------------------------------------------------------------------
 // Book, Skill
 // ---------------------------------------------------------------------------

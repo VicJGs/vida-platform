@@ -16,11 +16,16 @@ import { createLearningEducationService } from '../service'
 import { createSessionRegistry, SessionTypeNotFound, type SessionRegistry } from '../../../foundation/sessions'
 import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSpacesService, type SpacesService, TagNotFound } from '../../../foundation/spaces'
+import { createBacklinkResolver } from '../../search/backlink-resolver'
+import { createNotesService, type NotesService } from '../../notes'
 import { createSessionsService, type SessionsService } from '../../sessions'
 import {
   type LearningEducationService,
   type IcsFetchPort,
   type RawIcsEvent,
+  type EducationAttachmentPort,
+  type EducationFileBlob,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -36,6 +41,8 @@ import {
   GradingWeightError,
   AssessmentNotFoundError,
   GradingComponentNotFoundError,
+  DocumentFileError,
+  ConflictingFileSourceError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -77,9 +84,23 @@ interface Harness {
   bsql: Database.Database
   sessions: SessionsService
   sessionRegistry: SessionRegistry
+  spaces: SpacesService
+  notes: NotesService
 }
 
-async function setup(): Promise<Harness> {
+// S9 — a configurable mock AttachmentPort (the books mockAttachment precedent). Default upload succeeds
+// deterministically; pass `upload` to simulate a real R2 rejection (→ DocumentFileError).
+function mockAttachment(opts: { upload?: EducationAttachmentPort['upload'] } = {}): EducationAttachmentPort {
+  return {
+    upload:
+      opts.upload ??
+      (async ({ subjectId }: { file: EducationFileBlob; subjectId: string }) => ({
+        fileRef: `r2://${subjectId}/${Math.random().toString(36).slice(2)}`,
+      })),
+  }
+}
+
+async function setup(opts: { attachment?: EducationAttachmentPort } = {}): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
@@ -97,8 +118,21 @@ async function setup(): Promise<Harness> {
     rail,
     entityRegistry,
   })
-  const svc = createLearningEducationService({ db, deviceId: 'test-device', sessions, sessionRegistry })
-  return { svc, db, bsql, sessions, sessionRegistry }
+  // S9 — the REAL spaces + notes substrates (the books harness precedent): the vault reads notes via NotesService and
+  // tags/links write via SpacesService over the shared taggable-type registry (pre-seeded with the Education types).
+  const spaces = createSpacesService(db, 'test-device', entityRegistry)
+  const backlinks = createBacklinkResolver(db, 'test-device')
+  const notes = createNotesService({ db, deviceId: 'test-device', spaces, backlinks, registry: entityRegistry })
+  const svc = createLearningEducationService({
+    db,
+    deviceId: 'test-device',
+    sessions,
+    sessionRegistry,
+    spaces,
+    notes,
+    attachment: opts.attachment,
+  })
+  return { svc, db, bsql, sessions, sessionRegistry, spaces, notes }
 }
 
 describe('mod-learning-education S1 — hierarchy spine + routing', () => {
@@ -654,6 +688,8 @@ describe('mod-learning-education S5 — ICS feeds + events (ED-6 · X1/X2/X5/X8/
       deviceId: 'test-device',
       sessions: h.sessions,
       sessionRegistry: h.sessionRegistry,
+      spaces: h.spaces,
+      notes: h.notes,
       ics: port,
     })
   }
@@ -1435,5 +1471,163 @@ describe('mod-learning-education S8 — education measurement (ED-10 · M1/M2/M3
     await h.svc.createSubject({ title: 'Unmeasured', curriculum_id: cur.id })
     await h.svc.setMeasurement({ type: 'program', id: prog.id }, { measurement_kind: 'quantitative' })
     expect(await h.svc.getProgress({ type: 'program', id: prog.id })).toBeNull()
+  })
+})
+
+// ============================================================================
+// S9 — Subject vault + tags/links/notes (ED-13 · ED-16 · SP1 · PJ-8)
+// ============================================================================
+describe('mod-learning-education S9 — subject vault + tags/links', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  const aFile = (byte = 7): EducationFileBlob => ({ bytes: new Uint8Array([byte, byte, byte]), mimeType: 'application/pdf' })
+  async function aSubject(title = 'Calculus'): Promise<string> {
+    return (await h.svc.createSubject({ title })).id
+  }
+
+  // --- addDocument -----------------------------------------------------------
+  it('addDocument metadata-only → a row with both blob and storage_ref null', async () => {
+    const sid = await aSubject()
+    const doc = await h.svc.addDocument(sid, { title: 'Syllabus', doc_type: 'syllabus' })
+    expect(doc.subject_id).toBe(sid)
+    expect(doc.title).toBe('Syllabus')
+    expect(doc.doc_type).toBe('syllabus')
+    expect(doc.encrypted_blob).toBeNull()
+    expect(doc.storage_ref).toBeNull()
+  })
+
+  it('addDocument unknown subject → SubjectNotFoundError', async () => {
+    await expect(h.svc.addDocument('ghost', { title: 'x' })).rejects.toThrow(SubjectNotFoundError)
+  })
+
+  it('addDocument missing title → a validation error', async () => {
+    const sid = await aSubject()
+    // @ts-expect-error — title is required by the contract
+    await expect(h.svc.addDocument(sid, { doc_type: 'material' })).rejects.toThrow()
+  })
+
+  it('addDocument with file AND storage_ref → mutually-exclusive error', async () => {
+    const sid = await aSubject()
+    await expect(
+      h.svc.addDocument(sid, { title: 'x', file: aFile(), storage_ref: 'r2://pre' }),
+    ).rejects.toThrow(ConflictingFileSourceError)
+  })
+
+  it('addDocument with storage_ref (pre-uploaded) → storage_ref set, no port consulted', async () => {
+    const sid = await aSubject()
+    const doc = await h.svc.addDocument(sid, { title: 'Big', storage_ref: 'r2://pre/abc' })
+    expect(doc.storage_ref).toBe('r2://pre/abc')
+    expect(doc.encrypted_blob).toBeNull()
+  })
+
+  it('addDocument with file + a present attachment port → R2 (storage_ref = fileRef, blob null)', async () => {
+    const h2 = await setup({ attachment: mockAttachment({ upload: async () => ({ fileRef: 'r2://up/xyz' }) }) })
+    const sid = (await h2.svc.createSubject({ title: 'Phys' })).id
+    const doc = await h2.svc.addDocument(sid, { title: 'Notes', file: aFile() })
+    expect(doc.storage_ref).toBe('r2://up/xyz')
+    expect(doc.encrypted_blob).toBeNull()
+  })
+
+  it('addDocument with file + a present port that REJECTS → DocumentFileError, nothing persisted', async () => {
+    const h2 = await setup({
+      attachment: mockAttachment({
+        upload: async () => {
+          throw new Error('R2 down')
+        },
+      }),
+    })
+    const sid = (await h2.svc.createSubject({ title: 'Chem' })).id
+    await expect(h2.svc.addDocument(sid, { title: 'x', file: aFile() })).rejects.toThrow(DocumentFileError)
+    expect((await h2.svc.getVault(sid)).documents).toHaveLength(0) // upload-first → nothing persisted
+  })
+
+  it('addDocument with file + NO attachment port → inline encrypted_blob (local-first, no throw)', async () => {
+    const sid = await aSubject() // default setup() has no attachment port
+    const doc = await h.svc.addDocument(sid, { title: 'Inline', file: aFile(9) })
+    expect(doc.storage_ref).toBeNull()
+    expect(doc.encrypted_blob).not.toBeNull()
+    expect(Array.from(doc.encrypted_blob as Uint8Array)).toEqual([9, 9, 9])
+  })
+
+  // --- getVault --------------------------------------------------------------
+  it('getVault → documents (sorted by created_at) + the subject notes together', async () => {
+    const sid = await aSubject()
+    await h.svc.addDocument(sid, { title: 'Doc A' })
+    await h.svc.addDocument(sid, { title: 'Doc B' })
+    await h.notes.ensureEntityNote('note', 'subject', sid, { title: 'My subject note' })
+    const vault = await h.svc.getVault(sid)
+    expect(vault.documents.map((d) => d.title)).toEqual(['Doc A', 'Doc B'])
+    expect(vault.notes).toHaveLength(1)
+    expect(vault.notes[0].entity_type).toBe('subject')
+    expect(vault.notes[0].entity_id).toBe(sid)
+  })
+
+  it('getVault excludes a soft-deleted note', async () => {
+    const sid = await aSubject()
+    const note = await h.notes.ensureEntityNote('note', 'subject', sid, { title: 'tmp' })
+    await h.notes.softDeletePage(note.id)
+    expect((await h.svc.getVault(sid)).notes).toHaveLength(0)
+  })
+
+  it('getVault unknown subject → SubjectNotFoundError', async () => {
+    await expect(h.svc.getVault('ghost')).rejects.toThrow(SubjectNotFoundError)
+  })
+
+  // --- tagEntity -------------------------------------------------------------
+  it('tagEntity with a real tag → an entity_tags row (Education-scoped)', async () => {
+    const sid = await aSubject()
+    const tag = await h.spaces.createTag({ name: 'math' })
+    const row = await h.svc.tagEntity({ entityType: 'subject', entityId: sid }, tag.id)
+    expect(row.tag_id).toBe(tag.id)
+    expect(row.entity_type).toBe('subject')
+    expect(row.entity_id).toBe(sid)
+  })
+
+  it('tagEntity with an unresolved tagId → TagNotFound (the blind-insert guard)', async () => {
+    const sid = await aSubject()
+    await expect(h.svc.tagEntity({ entityType: 'subject', entityId: sid }, 'ghost-tag')).rejects.toThrow(
+      TagNotFound,
+    )
+  })
+
+  it('tagEntity with an off-Education entityType → UnknownEntityType (from spaces)', async () => {
+    const tag = await h.spaces.createTag({ name: 'x' })
+    await expect(h.svc.tagEntity({ entityType: 'not_a_type', entityId: 'z' }, tag.id)).rejects.toThrow()
+  })
+
+  it('tagEntity is idempotent on repeat', async () => {
+    const sid = await aSubject()
+    const tag = await h.spaces.createTag({ name: 'math' })
+    const a = await h.svc.tagEntity({ entityType: 'subject', entityId: sid }, tag.id)
+    const b = await h.svc.tagEntity({ entityType: 'subject', entityId: sid }, tag.id)
+    expect(b.id).toBe(a.id)
+  })
+
+  // --- linkEntities ----------------------------------------------------------
+  it('linkEntities → an entity_links row with the source id in the anchor slot', async () => {
+    const sid = await aSubject()
+    const row = await h.svc.linkEntities(
+      { entityType: 'subject', entityId: sid },
+      { entityType: 'book', entityId: 'book-1' },
+    )
+    expect(row.page_id).toBe(sid) // the generic source anchor (knowledge linkObjects precedent)
+    expect(row.entity_type).toBe('book')
+    expect(row.entity_id).toBe('book-1')
+  })
+
+  it('linkEntities is idempotent on repeat', async () => {
+    const sid = await aSubject()
+    const a = await h.svc.linkEntities(
+      { entityType: 'subject', entityId: sid },
+      { entityType: 'book', entityId: 'book-1' },
+    )
+    const b = await h.svc.linkEntities(
+      { entityType: 'subject', entityId: sid },
+      { entityType: 'book', entityId: 'book-1' },
+    )
+    expect(b.id).toBe(a.id)
   })
 })

@@ -33,6 +33,7 @@ import type {
   GradingScaleType,
   Assessment,
   EducationMeasurement,
+  SubjectDocument,
   MeasurementRefType,
   ProgramParentType,
   CourseStatus,
@@ -40,6 +41,10 @@ import type {
 import type { DrizzleDb } from '../../db/adapter'
 import type { SessionsService, Session, TimeRange } from '../sessions'
 import type { SessionRegistry } from '../../foundation/sessions'
+import type { SpacesService } from '../../foundation/spaces'
+import type { NotesService } from '../notes'
+import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
+import type { PageRow } from '../../db/schema/notes'
 import type {
   CreateInstitutionSchema,
   UpdateInstitutionSchema,
@@ -63,6 +68,7 @@ import type {
   RecordResultSchema,
   ListAssessmentsSchema,
   SetMeasurementSchema,
+  AddDocumentSchema,
 } from '../../validators/learning'
 
 /** A raw calendar event as returned by the M2 ICS fetch boundary — the parse/normalize happens device-side
@@ -104,8 +110,55 @@ export interface LearningEducationServiceDeps {
   /** Deny-safe ICS fetch port (S5) — ABSENT at M1 (live fetch = M2, ADR-014 X1). `syncFeed` throws
    *  `IcsUnavailableError` when unset. The configs/events schema + add-only dedup are fully M1. */
   ics?: IcsFetchPort
-  // S6+ append: spaces, notes, journalRegistry, attachment?, tasks?, ai?, effects?
+  /** SpacesService (BUILT, injected) — the entity_tags/entity_links WRITE surface (S9). REQUIRED: tagging/linking
+   *  is core to S9, not deny-safe optional (the knowledge S2 "spaces required" precedent). */
+  spaces: SpacesService
+  /** NotesService (BUILT, injected) — `getPagesForEntity` for the vault's notes (S9). REQUIRED (the vault reads
+   *  notes + documents together, LEA-44). */
+  notes: NotesService
+  /** Deny-safe attachment/R2 upload port (S9) — ABSENT at M1 (the real R2 pipeline = M2, ADR-003). When absent a
+   *  `file` is stored INLINE (`encrypted_blob`, local-first ED-16); a PRESENT port that rejects ⇒ `DocumentFileError`
+   *  (the business-rules.md:89 "decrypt/R2 error → typed" state). */
+  attachment?: EducationAttachmentPort
+  // S10 append: journalRegistry, tasks?, ai?, effects?
 }
+
+/** Raw file bytes handed to the vault (S9). NOT a validated value (the books `FileBlob` precedent — bytes, not a
+ *  value); `mimeType`/`filename` are optional and NOT persisted (the `subject_documents` row has no mime column).
+ *  Named `EducationFileBlob` (not `FileBlob`) to avoid the flat `@vida/core` barrel collision with the books
+ *  `FileBlob` — the `HabitDateRange` rename-on-collision precedent. */
+export interface EducationFileBlob {
+  bytes: Uint8Array
+  mimeType?: string
+  filename?: string
+}
+
+/** The deny-safe R2 upload seam (S9, subject-keyed). A present port uploads the encrypted file + returns its stable
+ *  R2 ref; a rejection is a real R2/encrypt error ⇒ fail-loud `DocumentFileError`. Absent ⇒ inline fallback (no
+ *  throw). Only `upload` is needed in S9 (Education has no Reader/download slice). M2 provides the real pipeline
+ *  (zero-signature swap). Subject-keyed `upload` ≠ the books book-keyed one, so NOT reused — named
+ *  `EducationAttachmentPort` to avoid the flat-barrel collision. `[seam-contract.md:23; books/types.ts:121]` */
+export interface EducationAttachmentPort {
+  upload(input: { file: EducationFileBlob; subjectId: string }): Promise<{ fileRef: string }>
+}
+
+/** An Education-scoped entity reference for tagging/linking (S9). `entityType` must be a registered taggable type
+ *  (SpacesService backstops via `assertRegistered`). */
+export interface EducationEntityRef {
+  entityType: string
+  entityId: string
+}
+
+/** The per-subject vault read (S9, LEA-44) — documents + notes together. `documents` are the service's own mapped
+ *  entity; `notes` are foreign `pages` rows passed through raw (the NotesService convention). */
+export interface VaultView {
+  documents: SubjectDocument[]
+  notes: PageRow[]
+}
+
+/** `addDocument` input (S9) — validated metadata (`AddDocumentSchema`) + the raw `file` (split off before parse).
+ *  `file` and `storage_ref` are mutually exclusive (enforced in the service). */
+export type AddDocumentInput = z.input<typeof AddDocumentSchema> & { file?: EducationFileBlob }
 
 // Re-export the reused sessions `TimeRange` so S4 consumers (getWeeklySchedule) import it from this barrel.
 export type { TimeRange } from '../sessions'
@@ -364,6 +417,25 @@ export interface LearningEducationService {
    *  else: a subject with `derived-pull`/no-mode pulls `computeGrade`, `manual`/`event-trigger` ⇒ null; a program rolls
    *  up its subjects (equal-weight). No measurement configured ⇒ null. */
   getProgress(ref: MeasurementRef): Promise<number | null>
+
+  // --- vault + tags/links (S9 — ED-13 · ED-16 · SP1 · PJ-8) ---
+  /** Add a document to the per-subject vault (ED-13, PJ-8). `storage_ref` → stored as-is; a `file` + a present
+   *  `attachment` port → R2 (upload-first); a `file` + no port → INLINE (`encrypted_blob`, local-first ED-16); neither
+   *  → a metadata-only reference row. Fail-loud on the subject (`SubjectNotFoundError`); a present port that rejects →
+   *  `DocumentFileError`; `file` + `storage_ref` together → a validation error. No soft-delete (the vault has no `deleted_at`). */
+  addDocument(subjectId: string, input: AddDocumentInput): Promise<SubjectDocument>
+  /** Read the subject's vault (LEA-44) — documents (sorted by created_at) + its `pages` notes together. */
+  getVault(subjectId: string): Promise<VaultView>
+  /** Tag an Education-scoped entity (SP1). Guards the tag resolves (`TagNotFound`) BEFORE the idempotent
+   *  `spaces.tagEntity` blind-insert; an unregistered `entityType` → `UnknownEntityType` (from spaces). */
+  tagEntity(ref: EducationEntityRef, tagId: string): Promise<EntityTagRow>
+  /** Link two Education-scoped entities (SP4). Composes `spaces.createLink` with `from.entityId` in the generic
+   *  anchor slot (the knowledge `linkObjects` precedent); the TARGET `entityType` is registry-checked by spaces. */
+  linkEntities(
+    from: EducationEntityRef,
+    to: EducationEntityRef,
+    context?: string | null,
+  ): Promise<EntityLinkRow>
 }
 
 // --- typed errors (fail loud — constitution §5) ------------------------------
@@ -474,5 +546,25 @@ export class GradingComponentNotFoundError extends Error {
   constructor(id: string) {
     super(`Grading component not found: ${id}`)
     this.name = 'GradingComponentNotFoundError'
+  }
+}
+// --- S9 vault error (real throw site: a PRESENT attachment port whose upload rejects — unlike the dropped S4
+// ClassSessionNotFoundError, and NOT the drifted seam-contract `AttachmentUnavailable` which has no M1 throw site:
+// an absent port falls back to inline). This IS the business-rules.md:89 "decrypt/R2 error → typed" state (the
+// books `AssetFileError` precedent). ---------------------------------------------------------------------------
+export class DocumentFileError extends Error {
+  constructor(subjectId: string, cause?: unknown) {
+    super(`Vault document file upload failed for subject ${subjectId}`)
+    this.name = 'DocumentFileError'
+    if (cause !== undefined) this.cause = cause
+  }
+}
+/** `addDocument` was given BOTH an inline `file` and a pre-uploaded `storage_ref` — the two storage sources are
+ *  mutually exclusive (seam-contract.md:64 `file?|storageRef?`). Typed (not a plain Error) for constitution §5
+ *  consistency with the rest of the module. Real throw site: the pre-write guard in `addDocument`. */
+export class ConflictingFileSourceError extends Error {
+  constructor() {
+    super('addDocument: `file` and `storage_ref` are mutually exclusive')
+    this.name = 'ConflictingFileSourceError'
   }
 }

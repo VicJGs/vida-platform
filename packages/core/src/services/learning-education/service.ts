@@ -31,7 +31,9 @@ import type {
   GradingScope,
   Assessment,
   EducationMeasurement,
+  SubjectDocument,
 } from '@vida/types'
+import type { PageRow } from '../../db/schema/notes'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { normalize, rollup } from '../../foundation/measurement'
 import {
@@ -49,6 +51,7 @@ import {
   gradingComponents,
   assessments,
   educationMeasurements,
+  subjectDocuments,
   type InstitutionRow,
   type SelfTaughtRow,
   type ProgramRow,
@@ -63,8 +66,11 @@ import {
   type GradingComponentRow,
   type AssessmentRow,
   type EducationMeasurementRow,
+  type SubjectDocumentRow,
 } from '../../db/schema/learning'
+import { tags, type EntityTagRow, type EntityLinkRow } from '../../db/schema/foundation/spaces'
 import { DuplicateSubType, type SessionTypeDef } from '../../foundation/sessions'
+import { TagNotFound } from '../../foundation/spaces'
 import {
   CreateInstitutionSchema,
   UpdateInstitutionSchema,
@@ -88,6 +94,7 @@ import {
   RecordResultSchema,
   ListAssessmentsSchema,
   SetMeasurementSchema,
+  AddDocumentSchema,
 } from '../../validators/learning'
 import {
   type LearningEducationService,
@@ -128,6 +135,9 @@ import {
   type GpaResult,
   type MeasurementRef,
   type SetMeasurementInput,
+  type AddDocumentInput,
+  type EducationEntityRef,
+  type VaultView,
   InstitutionNotFoundError,
   SelfTaughtPathNotFoundError,
   ProgramNotFoundError,
@@ -142,6 +152,8 @@ import {
   GradingWeightError,
   AssessmentNotFoundError,
   GradingComponentNotFoundError,
+  DocumentFileError,
+  ConflictingFileSourceError,
 } from './types'
 
 // --- row→interface mappers (only the plain-text `_sync_status` needs the union cast) ---
@@ -239,6 +251,14 @@ const toEducationMeasurement = (r: EducationMeasurementRow): EducationMeasuremen
   binding_mode: r.binding_mode as EducationMeasurement['binding_mode'],
   _sync_status: r._sync_status as EducationMeasurement['_sync_status'],
 })
+// S9 — `_sync_status` needs the union cast; `encrypted_blob` is typed `{} | null` by Drizzle's mode-less `blob()`
+// (the DB-4 schema owns that choice, learning.ts:319) but is a `Buffer` (⊂ `Uint8Array`) at runtime from the SQLite
+// driver → a sound cast to the interface field; `storage_ref`/`doc_type`/`description` pass through.
+const toSubjectDocument = (r: SubjectDocumentRow): SubjectDocument => ({
+  ...r,
+  encrypted_blob: (r.encrypted_blob as Uint8Array | null) ?? null,
+  _sync_status: r._sync_status as SubjectDocument['_sync_status'],
+})
 
 // IR/BR-LE-S4-2 — the `class` Session sub-type Education registers. A TRANSCRIPTION of ADR-004 §3.2:
 // `effects:[]` (§3.2.2 + C-E2 — Education is a non-feeder; any completion grant rides the base sub-type),
@@ -262,7 +282,7 @@ const CLASS_SESSION_TYPE_DEF: SessionTypeDef = {
 export function createLearningEducationService(
   deps: LearningEducationServiceDeps,
 ): LearningEducationService {
-  const { db, deviceId, sessions, sessionRegistry, ics } = deps
+  const { db, deviceId, sessions, sessionRegistry, ics, spaces, notes, attachment } = deps
 
   // All 5 hierarchy tables have `deleted_at` → softDelete:true. M1.0 encryptedFields:[] (the [E]
   // name/description fields pass through; real field-level encryption lands at M3).
@@ -286,6 +306,11 @@ export function createLearningEducationService(
   const assessmentsRepo = createRepository(db, assessments, { deviceId, softDelete: true, encryptedFields: [] })
   // S8 — education_measurements has deleted_at → softDelete:true; no [E] fields.
   const educationMeasurementsRepo = createRepository(db, educationMeasurements, { deviceId, softDelete: true, encryptedFields: [] })
+  // S9 — subject_documents has NO deleted_at (the PJ-8 vault pattern) → softDelete:false. `title`/`description` are
+  // [E] but M1.0 set=[]. `tagsRepo` is READ-only (the BR-LE-S9-4 resolve guard; tag/link WRITES delegate to `spaces`,
+  // the knowledge S2 precedent).
+  const subjectDocumentsRepo = createRepository(db, subjectDocuments, { deviceId, softDelete: false, encryptedFields: [] })
+  const tagsRepo = createRepository(db, tags, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- institutions (ED-2) --------------------------------------------------
   async function createInstitution(input: CreateInstitutionInput): Promise<Institution> {
@@ -1290,6 +1315,73 @@ export function createLearningEducationService(
     return d === null ? null : Math.round(d * 100)
   }
 
+  // ---- vault + tags/links (S9 — ED-13 · ED-16 · SP1 · PJ-8) -----------------
+  // ED-13 — add a document to the per-subject vault. File routing (BR-LE-S9-2): `storage_ref` → as-is; a `file` + a
+  // present `attachment` port → R2 (upload FIRST so nothing persists on failure, the books addAsset precedent); a
+  // `file` + no port → INLINE `encrypted_blob` (local-first ED-16, no throw — the inline column IS the local path);
+  // neither → a metadata-only reference row. A PRESENT port that rejects ⇒ DocumentFileError (business-rules.md:89).
+  async function addDocument(subjectId: string, input: AddDocumentInput): Promise<SubjectDocument> {
+    const { file, ...meta } = input // split the raw bytes off the validated metadata (the books AddAssetSchema split)
+    const v = AddDocumentSchema.parse(meta)
+    if (file && v.storage_ref != null) throw new ConflictingFileSourceError()
+    if (!(await subjectsRepo.findById(subjectId))) throw new SubjectNotFoundError(subjectId)
+    let storageRef: string | null = v.storage_ref ?? null
+    let encryptedBlob: Uint8Array | null = null
+    if (file) {
+      if (attachment) {
+        try {
+          const res = await attachment.upload({ file, subjectId })
+          storageRef = res.fileRef
+        } catch (e) {
+          // A real R2/encrypt error is NOT the absent-state — fail loud, persist nothing (BR-LE-S9-2).
+          throw new DocumentFileError(subjectId, e)
+        }
+      } else {
+        encryptedBlob = file.bytes // deny-safe inline fallback (local-first ED-16)
+      }
+    }
+    const row = await subjectDocumentsRepo.create({
+      subject_id: subjectId,
+      title: v.title,
+      description: v.description ?? null,
+      doc_type: v.doc_type ?? null,
+      encrypted_blob: encryptedBlob,
+      storage_ref: storageRef,
+    } satisfies CreateInput<typeof subjectDocuments>)
+    return toSubjectDocument(row)
+  }
+
+  // LEA-44 — read the subject vault: documents (sorted by created_at — findWhere has no orderBy, the books
+  // listAnnotations precedent) + the subject's `pages` notes, together. `subject_documents` has no deleted_at, so no
+  // soft-delete filter; `getPagesForEntity` already excludes deleted pages (returned raw — the NotesService convention).
+  async function getVault(subjectId: string): Promise<VaultView> {
+    if (!(await subjectsRepo.findById(subjectId))) throw new SubjectNotFoundError(subjectId)
+    const docRows = await subjectDocumentsRepo.findWhere(eq(subjectDocuments.subject_id, subjectId))
+    const documents = [...docRows].sort((a, b) => a.created_at - b.created_at).map(toSubjectDocument)
+    const notesRows: PageRow[] = await notes.getPagesForEntity('subject', subjectId)
+    return { documents, notes: notesRows }
+  }
+
+  // SP1 — tag an Education-scoped entity. spaces.tagEntity blind-inserts an unresolved tag_id (the create-path
+  // silent-orphan gap), so guard the tag resolves FIRST (BR-LE-S9-4, the knowledge tagMembership precedent). The
+  // entityType is registry-checked inside spaces.tagEntity (UnknownEntityType). Remove stays the SpacesService surface.
+  async function tagEntity(ref: EducationEntityRef, tagId: string): Promise<EntityTagRow> {
+    if ((await tagsRepo.findById(tagId)) == null) throw new TagNotFound(tagId)
+    return spaces.tagEntity(tagId, ref.entityType, ref.entityId)
+  }
+
+  // SP4 — link two Education-scoped entities. entity_links is page→entity, so the source entity id rides the generic
+  // `page_id` anchor slot (plain TEXT, no FK — the knowledge linkObjects precedent, BR-LE-S9-5). spaces.createLink
+  // asserts the TARGET entityType is registered. NOTE: `from.entityType` is informational-only — entity_links has no
+  // companion source-type column, so only `from.entityId` is persisted (the source type is neither stored nor validated).
+  async function linkEntities(
+    from: EducationEntityRef,
+    to: EducationEntityRef,
+    context?: string | null,
+  ): Promise<EntityLinkRow> {
+    return spaces.createLink(from.entityId, to.entityType, to.entityId, context ?? null)
+  }
+
   return {
     createInstitution,
     updateInstitution,
@@ -1345,5 +1437,9 @@ export function createLearningEducationService(
     computeGPA,
     setMeasurement,
     getProgress,
+    addDocument,
+    getVault,
+    tagEntity,
+    linkEntities,
   }
 }

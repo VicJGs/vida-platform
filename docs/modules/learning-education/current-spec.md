@@ -10,16 +10,17 @@
 `createLearningEducationService(deps)` — the ① backend service tier for **the Learning hub (Education)** over
 DB-4 `024_learning_education` (15 tables, the heaviest DB-4 group). The full design lives in
 `docs/features/learning/education/` (aspect docs) + `docs/features/learning/education/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **① IN PROGRESS — S8 of 10 shipped** (hierarchy
+(interpretation · slice-map · seam-contract). Build state: **① IN PROGRESS — S9 of 10 shipped** (hierarchy
 spine + routing · subjects + DB-11 reconcile · curriculum fork + lineage · schedule + class sessions · ICS feeds +
-events · grading systems + components · assessments + grade/GPA compute · education measurement). Next: S9 subject vault + tags.
+events · grading systems + components · assessments + grade/GPA compute · education measurement · subject vault +
+tags/links/notes). Next: S10 cross-module fan-out + Journal (closes ①).
 
 A **pure service tier over a finished schema** (no DDL — DB-4 #12 authored all 15 tables; the aspect docs'
 "⚠ INTENDED/no schema" language is pre-DB-4 and stale). The 7 Education entity_types
 (`subject`/`institution`/`program`/`curriculum`/`term`/`assessment`/`subject_document`) are already registered
 in `db/schema/_registry.ts:100-106` — composed, never re-registered.
 
-## Delivered surface (as of S8)
+## Delivered surface (as of S9)
 
 `createLearningEducationService({ db, deviceId, sessions, sessionRegistry, ics? }) → LearningEducationService`.
 Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added the BUILT, injected
@@ -64,6 +65,9 @@ Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added t
 | `computeGPA({type:'term'\|'curriculum', id})` | ED-7 compute | **S7** — equal-weight rollup of per-subject grades (curriculum unions `curriculum_id` + term subjects); `GpaResult {gpa\|null, flagged, perSubject[]}`; `flagged` on any partial/missing; empty ⇒ `gpa:null, flagged:true`; `TermNotFoundError`/`CurriculumNotFoundError` |
 | `setMeasurement({type:'subject'\|'program', id}, {measurement_kind, binding_mode?})` | ED-10 · M1/M2 | **S8** — Education-forged measure, one-per-ref upsert (fail-loud ref; preserves the progress override); `measurement_kind` required (kind-agnostic at M1), `binding_mode` omittable ⇒ derive; separate storage (C-M5); `EducationMeasurement` |
 | `getProgress({type:'subject'\|'program', id})` | ED-10 · M3 | **S8** — DERIVED on read, integer 0–100 or null; stored override wins; subject `derived-pull`/no-mode ⇒ `computeGrade×100`, `manual`/`event-trigger` ⇒ null; program ⇒ equal-weight rollup of its subjects (`[0,1]`-fed); no row ⇒ null (unmeasured, never 0) |
+| `addDocument(subjectId, {title, docType?, description?, file?, storageRef?})` | ED-13 · PJ-8 | **S9** — per-subject vault; `storageRef`→as-is, `file`+port→R2 (upload-first), `file`+no-port→inline `encrypted_blob` (local-first, no throw), neither→metadata-only; present-port-reject ⇒ `DocumentFileError`; `file`+`storageRef` ⇒ `ConflictingFileSourceError`; fail-loud subject; NO soft-delete; `SubjectDocument` |
+| `getVault(subjectId)` | ED-13 · LEA-44 | **S9** — `{documents: SubjectDocument[] (sorted), notes: PageRow[]}`; notes via `getPagesForEntity('subject', id)` (soft-deleted excluded); fail-loud subject |
+| `tagEntity(ref, tagId)` / `linkEntities(from, to, context?)` | SP1 · SP4 · ED-16 | **S9** — compose SpacesService (Education-scoped); `tagEntity` guards `tagId` resolves (`TagNotFound`) before the blind insert, off-type ⇒ `UnknownEntityType`; `linkEntities` puts `from.entityId` in the `page_id` anchor (source type informational-only); inline `courses.tags` already retired at DB-4 |
 
 ## Composition & conventions
 
@@ -86,8 +90,8 @@ Factory-object, hoisted closures, no `this.`. Deps grow per slice — S4 added t
   `component_type` permitted by design; override-resolution (which scope's system applies) deferred to S7.
 
 ## Not yet built (homed per slice-map.md)
-S7 assessments + grade/GPA compute · S8 education measurement · S9 subject vault + tags · S10 cross-module fan-out +
-Journal. Frontend (dashboards/hub/builders) = ② `fe-learning-education` (P6).
+S10 cross-module fan-out + Journal (the final slice — closes ①). Frontend (dashboards/hub/builders) = ②
+`fe-learning-education` (P6).
 M2 defers: ICS live fetch, document extraction (AI), real Tasks→Education reads, the M2 sync loop (skip inactive feeds).
 
 ## Carry-forwards

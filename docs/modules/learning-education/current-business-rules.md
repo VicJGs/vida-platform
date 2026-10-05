@@ -261,6 +261,46 @@
   (global scalars only) and never writes Projects' measure tables. `[seam-contract.md:13;
   [[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]; code: service.ts — no advertise call]`
 
+## S9 — Subject vault + tags/links/notes (ED-13 · ED-16 · SP1 · PJ-8)
+- **BR-LE-S9-1 (vault write is subject-scoped, fail-loud, NO soft-delete)** — `addDocument(subjectId, input)` guards
+  `subjectsRepo.findById` live (`SubjectNotFoundError`, the no-FK app-layer integrity convention), then creates one
+  `subject_documents` row. The table has NO `deleted_at` → `softDelete:false` (the PJ-8 `project_documents` vault
+  pattern). `title` required; `description`/`doc_type` nullable; `doc_type` is an OPEN vocab (no CHECK/enum).
+  `[schema learning.ts:310-322; code: service.ts addDocument / subjectDocumentsRepo]`
+- **BR-LE-S9-2 (file routing — inline on absent port, typed only on a real R2 failure)** — the vault's typed error is a
+  "decrypt/R2 error → typed" (business-rules.md:89) and ED-16 mandates "every write succeeds locally first", so an
+  absent `attachment?` port NEVER throws: `storage_ref` given ⇒ stored as-is (no port); `file` + present port ⇒
+  `attachment.upload` FIRST (nothing persists on failure, the books addAsset precedent) → `storage_ref=fileRef`; a
+  present port that REJECTS ⇒ `DocumentFileError` (that "decrypt/R2" state); `file` + absent port ⇒ INLINE
+  `encrypted_blob = file.bytes` (local-first, no throw); neither ⇒ a metadata-only row. `file` and `storage_ref` are
+  mutually exclusive (`ConflictingFileSourceError`, pre-write). mimeType is NOT persisted (no mime column; inline/R2
+  symmetric). The seam-contract's absent-⇒`AttachmentUnavailable` wording was design-time drift, overridden by the
+  aspect authority. `[business-rules.md:64,89; ED-16; learning.ts:316-317; code: service.ts addDocument]`
+- **BR-LE-S9-3 (`getVault` = documents + notes together)** — `documents` = all `subject_documents` for the subject,
+  mapped `→ SubjectDocument`, sorted by `created_at` in JS (`findWhere` has no orderBy, non-mutating `[...rows].sort`);
+  `notes` = `notes.getPagesForEntity('subject', subjectId)` returned as `PageRow[]` raw (the NotesService convention —
+  no `toPage` mapper exists; already excludes soft-deleted pages). Guards the subject (fail-loud). `[seam-contract.md:65;
+  notes/service.ts:144-148; code: service.ts getVault]`
+- **BR-LE-S9-4 (`tagEntity` guards the tag resolves BEFORE the blind insert)** — `spaces.tagEntity` blind-inserts an
+  unresolved `tag_id`, so `tagEntity(ref, tagId)` guards `tagsRepo.findById(tagId) == null ⇒ TagNotFound` first, then
+  delegates (idempotent revive/no-op). An unregistered `entityType` ⇒ `UnknownEntityType` (from spaces). Remove stays the
+  SpacesService surface. `[knowledge/service.ts:434-437; spaces/service.ts:128-143;
+  [[spaces-junctions-split-read-write-tagentity-blind-inserts]]; code: service.ts tagEntity]`
+- **BR-LE-S9-5 (`linkEntities` reuses the `page_id` anchor slot)** — `entity_links` is page→entity, so
+  `linkEntities(from, to, context?)` delegates to `spaces.createLink(from.entityId, to.entityType, to.entityId,
+  context)` — the source entity id rides the generic `page_id` TEXT slot (no FK), the knowledge `linkObjects` precedent.
+  spaces asserts the TARGET type; `from.entityType` is informational-only (no source-type column — neither stored nor
+  validated). `[knowledge/service.ts:411-413; spaces/service.ts:158; code: service.ts linkEntities]`
+- **BR-LE-S9-6 (`@vida/types` `SubjectDocument` — net-new)** — `extends SyncableEntity`, mirrors `SubjectDocumentRow`
+  (`subject_id`, `title`, `description|null`, `doc_type|null`, `encrypted_blob: Uint8Array|null`, `storage_ref|null`);
+  NO `deleted_at` (PJ-8). The mode-less `blob()` infers `{}` on the Row → a sound `as Uint8Array` cast in the mapper
+  (runtime Buffer ⊂ Uint8Array). `[packages/types/src/learning.ts; schema learning.ts:368; code: service.ts toSubjectDocument]`
+- **BR-LE-S9-7 (deps grew by `spaces`/`notes` required + `attachment?` deny-safe)** — plus a READ-only `tagsRepo` for the
+  BR-LE-S9-4 guard. Port types named `EducationFileBlob`/`EducationAttachmentPort` (not `FileBlob`/`AttachmentPort`) to
+  avoid the flat `@vida/core` barrel collision with the books types (the `HabitDateRange` rename-on-collision precedent;
+  Education's subject-keyed `upload` ≠ the books book-keyed one, so NOT reused). `[code: types.ts Deps + port interfaces;
+  knowledge/types.ts:66,75]`
+
 ## Scope guards honored (the C-* negatives — rerun-ratified)
 - **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
 - **C-E2 / C-M5 / C-HW / C-AI4** — not yet touched at S1/S2/S4 (no economy grant, no `advertise()`, no homework table,
