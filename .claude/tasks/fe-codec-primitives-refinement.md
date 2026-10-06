@@ -83,6 +83,20 @@ The ONLY hard conformance gap was Neural Graph (now deferred). **So THIS pass is
 spacing rhythm, hierarchy, elevation, motion feel — on the current token system, graded at the Visual Gate. NO palette
 churn (brand VALUES = M4/Figma). **Aesthetic-headroom rank:** Calendar > Gallery > Timeline > Card > List.
 
+## Calendar — SPLIT to fe-calendar #19 (2026-10-05, Session 1 design pivot)
+A design session grew the Calendar from "polish the grid" into a flagship **multi-range (Year/Month/Week/Day/Agenda) +
+"Living" cross-module lens** (past-as-record · habit threads · open-time · purpose budget · drift). Victor approved
+**splitting it to `fe-calendar` #19 (LIF-203)** — its proper home (cross-module ProviderRead; `@vida/ui` primitives
+can't read modules). **This task's Calendar scope is now ONLY the month-grid aesthetic refinement**
+(`mockups/calendar-refinement.html` — serif title · eyebrow weekdays · tabular figures · restrained today mark ·
+weekend/oos shifts · accent-dot chips), same tier as the other 4 views. Flagship vision + its 2 mockups moved to
+`docs/specs/foundation/fe-calendar/` (calendar-vision.md). **So this task = 5 views, all pure aesthetic polish:**
+Calendar-grid · Card · Timeline · List · Gallery.
+
+## Next step (Session 1 → build)
+Mockups still owed before building (Victor's see-before-approve preference): **Card · Timeline · List · Gallery**
+before→after (Calendar grid mockup 1 already approved). Then per-view §XXVI gate → implement → Visual Gate.
+
 ## Next session FIRST step
 Fresh `/begin` → pick this head → run the `/design-audit` + `/component-consistency` on the 6 → bring Victor the grounded
 gap+refinement list → agree scope → retrofit per component (worktree → Visual Gate → PR). Read first:
