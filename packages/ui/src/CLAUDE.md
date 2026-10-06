@@ -131,6 +131,15 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   per-row padding (a row's inset is its renderItem's — else double-pad with Card). LV-7 dev-warns on state/items
   contradictions + a missing accessible name (card.tsx guard precedent). No motion in V1 (LV-6). Spec:
   `docs/specs/components/ui-2-platform-views/{_index,v1-list-view}.md`.
+  **fe-codec-primitives-refinement · P1 (LIF-230)** — editorial polish + alive-hooks, all PRESENTATIONAL (row CONTENT
+  stays renderItem's, LV-5): **`sections?`** = `ListSection<T>{id,title,items}` grouped render + eyebrow headers (mirrors
+  board's `BoardGroup`; a11y = the board model rotated vertical: outer `role="group"` + per-section eyebrow-`id`'d
+  `role="list"` `aria-labelledby` + per-section empty via `resolveDataViewState`; XOR `items`, now optional). **`primaryKey`**
+  (+`primaryLabel` eyebrow) = a GENERIC featured-row emphasis; **`activeKey`** = the active-row mark — both an **accent
+  LEFT-TICK** (`borderLeft` 3px `$colorBrandPrimary`) via a Tamagui VARIANT (the Toast left-accent precedent; NO bg tint —
+  no accent-surface token → token-pure, no palette churn; NO injected CSS). The "one thing" SEMANTIC is the consumer's.
+  3 new dev-warns (items⊕sections, primary/active no-match). Visual Gate PASS (Brave, 3 presets × light/dark × calm/dense:
+  AA 4.94–6.53 incl. warm-dark · 375 no-overflow · Grouped eyebrow sections + empty-section self-heal · Featured tick+eyebrow).
   **gallery-view** is **UI-2 · V2** — **list-view's spine with a responsive flex-wrap GRID** (the imagery-first /
   vision-board `gallery` layout, ADR-007:61). Reuses `type ViewState` from `./list-view` (intra-package, no 2nd copy)
   + the identical terminal-state switch, `role="list"`/`listitem` + state-dependent role, LV-7 dev-warns, React-19

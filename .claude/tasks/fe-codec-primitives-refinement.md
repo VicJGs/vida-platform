@@ -132,3 +132,15 @@ Profile note: all 5 are **change-frontend-component** (existing DS primitives be
 motion·engineering·process). The Layer-2 hooks are **contract changes** → each phase runs `/contract` first (the
 Design-System discipline) before implementing. Flag at phase start if any warrants the full Design-System profile.
 Approved target per phase = the committed mockups (`mockups/*.html`). Visual record is the acceptance oracle.
+
+## Phase log
+- **P1 · List — ✅ COMPLETE (2026-10-06).** Full §XXVI gate (spec → Approval 1 → preflight-grounded → Approval 2 →
+  implement). Delivered `sections?`/`primaryKey`+`primaryLabel`/`activeKey` + eyebrow/tick polish, all presentational,
+  token-pure (accent left-tick variant, NO bg tint). tsc 0 · list-view **25 tests** (+9) · suite **398 green** (Node 24) ·
+  **Visual Gate PASS** (Brave, 3 presets × light/dark × calm/dense: **axe 0** · AA **4.94–6.53** incl. warm-dark · 375
+  no-overflow · Grouped eyebrow-sections + empty-self-heal · Featured tick+eyebrow). Spec `phases/P1-list-view.md`;
+  currency `packages/ui/src/CLAUDE.md`. **Node 24 required** for the test/build env (jsdom30+undici≥22). Next: PR, then P2.
+- **⚑ P2 · Card — flag from P1 gate:** Card renders `header`/`footer` as **`<header>`/`<footer>` landmark elements** →
+  in a repeated-row (list) context they become **duplicate `banner`/`contentinfo` landmarks** (axe `landmark-no-duplicate-*`,
+  12 violations in the P1 story until the story composed rows via Card `children` instead). P2 must decide: Card's
+  header/footer should NOT be page-level landmarks when the Card is a list row (scope them, or drop the landmark roles).

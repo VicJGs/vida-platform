@@ -30,8 +30,14 @@ const MetaText = ({ children }: { children: React.ReactNode }) => (
     {children}
   </Text>
 )
+// Row content composes in the Card BODY (children), NOT the header/footer landmark slots — a repeated <header>/<footer>
+// per row would create duplicate banner/contentinfo landmarks (a Card-semantics concern homed to P2 Card). list-view's
+// own a11y (list/listitem/group · section headers · ticks) stays clean.
 const row = (r: Row) => (
-  <Card interactive onPress={() => {}} header={<Title>{r.title}</Title>} footer={<MetaText>{r.meta}</MetaText>} />
+  <Card interactive onPress={() => {}}>
+    <Title>{r.title}</Title>
+    <MetaText>{r.meta}</MetaText>
+  </Card>
 )
 
 const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -60,7 +66,7 @@ type Story = StoryObj<PlaygroundArgs>
 export const Playground: Story = {
   args: { state: 'success', density: 'default', dividers: false },
   render: (args) => (
-    <View width={360}>
+    <View width="100%" maxWidth={360}>
       <ListView<Row>
         items={ROWS}
         getKey={(r) => r.id}
@@ -113,6 +119,41 @@ export const Dividers: Story = {
     <Section label="dividers">
       <ListView<Row> items={ROWS} getKey={(r) => r.id} renderItem={row} dividers aria-label="Work items" />
     </Section>
+  ),
+}
+
+// P1 (LIF-230) — sections: grouped render + eyebrow headers (incl. an empty section → per-section role=status).
+export const Grouped: Story = {
+  render: () => (
+    <View width="100%" maxWidth={360}>
+      <ListView<Row>
+        sections={[
+          { id: 'today', title: 'Today', items: ROWS.slice(0, 2) },
+          { id: 'later', title: 'Later', items: ROWS.slice(2, 4) },
+          { id: 'done', title: 'Done', items: [] },
+        ]}
+        getKey={(r) => r.id}
+        renderItem={row}
+        aria-label="Work items"
+      />
+    </View>
+  ),
+}
+
+// P1 — featured row (primaryKey + eyebrow, accent tick) + a separate active row (accent tick only).
+export const Featured: Story = {
+  render: () => (
+    <View width="100%" maxWidth={360}>
+      <ListView<Row>
+        items={ROWS}
+        getKey={(r) => r.id}
+        renderItem={row}
+        primaryKey="0192-a"
+        primaryLabel="The one thing"
+        activeKey="0192-c"
+        aria-label="Work items"
+      />
+    </View>
   ),
 }
 
