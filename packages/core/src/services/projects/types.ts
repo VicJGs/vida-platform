@@ -1,0 +1,284 @@
+// services/projects — types (mod-projects #54 · LIF-135 ①)
+//
+// The ProjectsService public surface + deps, built PER SLICE (Entity Delivery Flow).
+// `ProjectsServiceDeps` GROWS per slice: S1 = { db, deviceId }; `spaces`/`notes` land at S6; the deny-safe
+// partner ports (`tasks?`/`finance?`/`attachment?`/`effects?`/…) at their slices. The seam-contract §A is the
+// S9 end-state, NOT the S1 shape (docs/features/projects/delivery/seam-contract.md).
+//
+// Return types are the Drizzle Row types (NOT @vida/types `Project` — it still carries `tags`/NN-`progress` and
+// has no `Deliverable`; the interface reconcile is DB-11 mirror-only). [[drizzle-row-not-assignable-to-vida-types-interface]]
+
+import type { DrizzleDb } from '../../db/adapter'
+import type { ProjectRow, MilestoneRow, DeliverableRow, ProjectDocumentRow } from '../../db/schema/projects'
+import type { PageRow } from '../../db/schema/notes'
+import type { SpacesService, TaggableTypeRegistry } from '../../foundation/spaces'
+import type { MeasurementSourceRegistry } from '../../foundation/measurement'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
+import type { NotesService } from '../../services/notes'
+import type { ProjectScope, ProjectComplexity, Status, Priority, MeasurementKind, BindingMode } from '@vida/types'
+
+// --- deps (S1 subset) --------------------------------------------------------
+export interface ProjectsServiceDeps {
+  db: DrizzleDb
+  deviceId: string
+  /** REQUIRED from S6 — the entity_tags WRITE surface (tags; PJ-12). */
+  spaces: SpacesService
+  /** REQUIRED from S6 — the `pages` surface (vision/mission pages; PJ-7). */
+  notes: NotesService
+  /** REQUIRED from S7 — the taggable-type registry (builds the association resolver for source-link reads). */
+  registry: TaggableTypeRegistry
+  /** Deny-safe from S7 — the ADR-011 §3.6 measurement-source read seam. ABSENT/empty at M1 (no module advertises
+   *  yet; sources + composition root = M2) ⇒ a `derived-pull` deliverable resolves `null` (unmeasured). */
+  measurementSources?: MeasurementSourceRegistry
+  /** Deny-safe from S8 — the dedicated Tasks→Projects read port (PJ-5). Tasks OWNS the entity (`services/tasks`
+   *  NOT built, #65); Projects never reads the tasks table. ABSENT at M1 ⇒ no task list/leaf/time (empty). */
+  tasks?: TasksProjectsPort
+  /** Deny-safe from S9 — the AR-7 effect rail (emit-only producer). DORMANT at M1 (no handler/named consumer) ⇒
+   *  completion fan-out is a no-op. Projects emits `emit_measurement_signal` ONLY (C-E2 — never an economy grant;
+   *  gamification's rule turns the signal into XP). Inline shape (the `EffectsPort` name collides at the barrel). */
+  effects?: { rail: EffectRail; registry: EffectRegistry }
+  // NOTE: agentic AI over the vault (ADR-015) is an M2 seam with NO M1 consumer → deferred (not a port here, YAGNI).
+}
+
+/** A project-scoped task, as surfaced by the Tasks→Projects port (PJ-5). Port-defined (Tasks owns the real shape);
+ *  Projects consumes this minimal view for the project-task list UI. */
+export interface ProjectTaskView {
+  id: string
+  title: string
+  status: string
+  /** 0-100 or null (unmeasured) — the task's own progress reading */
+  progress: number | null
+}
+
+/** The dedicated Tasks→Projects read port (PJ-5/PJ-6). Deny-safe: ABSENT at M1 ⇒ the service returns the documented
+ *  empty value. Tasks owns the entity; this is the ONLY way Projects touches tasks (never a direct table read). */
+export interface TasksProjectsPort {
+  /** Project-scoped task list (PJ-5). Absent ⇒ `[]`. */
+  listProjectTasks(projectId: string): Promise<ProjectTaskView[]>
+  /** The [0,1] completion of a scope's tasks (the Task→Deliverable rollup leaf, PJ-3). Absent/no tasks ⇒ `null`. */
+  getTaskRollup(scope: { entityType: string; entityId: string }): Promise<number | null>
+  /** Sum of focus-session minutes on a project's tasks (PJ-6 project time). Absent ⇒ `0`. */
+  getFocusMinutes(projectId: string): Promise<number>
+}
+
+// --- S1 inputs ---------------------------------------------------------------
+export interface CreateProjectInput {
+  title: string
+  description?: string | null
+  /** one-line summary only; the guiding vision is a page (PJ-7, S6) */
+  vision?: string | null
+  scope?: ProjectScope
+  complexity?: ProjectComplexity
+  status?: Status
+  priority?: Priority
+  /** 0-100 manual override; omit ⇒ NULL ⇒ derive on read (PJ-3, S4) */
+  progress?: number | null
+  start_date?: string | null
+  target_end_date?: string | null
+  actual_end_date?: string | null
+  /** minutes (despite the name) */
+  estimated_hours?: number | null
+  actual_hours?: number | null
+  color?: string | null
+  icon?: string | null
+}
+
+export interface UpdateProjectInput {
+  title?: string
+  description?: string | null
+  vision?: string | null
+  scope?: ProjectScope
+  complexity?: ProjectComplexity
+  status?: Status
+  priority?: Priority
+  progress?: number | null
+  start_date?: string | null
+  target_end_date?: string | null
+  actual_end_date?: string | null
+  estimated_hours?: number | null
+  actual_hours?: number | null
+  color?: string | null
+  icon?: string | null
+}
+
+export interface ListProjectsFilter {
+  /** archived = a status filter (completed/cancelled), not a new state (G9) */
+  status?: Status
+  scope?: ProjectScope
+}
+
+// --- S2 inputs (milestones) --------------------------------------------------
+export interface CreateMilestoneInput {
+  title: string
+  description?: string | null
+  status?: Status
+  /** 0-100 manual override; omit ⇒ NULL ⇒ derive (PJ-3, S4) */
+  progress?: number | null
+  /** ADR-011 §3.3 M4 DOWN weight; omit ⇒ NULL ⇒ equal-weight */
+  nesting_weight?: number | null
+  due_date?: string | null
+  sort_order?: number
+  /** nest under another milestone of the SAME project (self-ref, no-FK) */
+  parent_milestone_id?: string | null
+}
+
+export interface UpdateMilestoneInput {
+  title?: string
+  description?: string | null
+  status?: Status
+  progress?: number | null
+  nesting_weight?: number | null
+  due_date?: string | null
+  sort_order?: number
+  /** reparent: must resolve to a milestone of the same project, non-self, non-descendant (acyclic) */
+  parent_milestone_id?: string | null
+}
+
+/** A milestone row plus its nested children (by `parent_milestone_id`), ordered by `sort_order`. */
+export type MilestoneNode = MilestoneRow & { children: MilestoneNode[] }
+
+// --- S3 inputs (deliverables — the ADR-011 pursuable level) -------------------
+export interface CreateDeliverableInput {
+  title: string
+  description?: string | null
+  /** ADR-011 M1 — the measure shape. Omit ⇒ 'milestone' (the implicit-rollup default). */
+  measurement_kind?: MeasurementKind
+  /** ADR-011 M2 — how progress binds. Omit ⇒ NULL ⇒ derive-natural (not a column default). */
+  binding_mode?: BindingMode | null
+  /** 0-100 manual override; omit ⇒ NULL ⇒ derive (PJ-3, S4) */
+  progress?: number | null
+  /** ADR-011 §3.3 M4 DOWN weight; omit ⇒ NULL ⇒ equal-weight */
+  nesting_weight?: number | null
+  sort_order?: number
+}
+
+export interface UpdateDeliverableInput {
+  title?: string
+  description?: string | null
+  measurement_kind?: MeasurementKind
+  binding_mode?: BindingMode | null
+  progress?: number | null
+  nesting_weight?: number | null
+  sort_order?: number
+}
+
+// --- S4 — derived progress (PJ-3) --------------------------------------------
+/**
+ * A resolved progress reading (PJ-3). `value` is 0-100 or `null` (unmeasured — never coerced to 0, BR-2).
+ * `derived=false` ⇒ a manual override (the stored column); `derived=true` ⇒ rolled up from children.
+ * `partial=true` ⇒ the roll-up was computed from a measured SUBSET (some direct children were unmeasured) —
+ * the PJ-3 "flagged partial, never a wrong progress as truth" signal.
+ */
+export interface ProgressView {
+  value: number | null
+  derived: boolean
+  partial: boolean
+}
+
+// --- S5 — document vault (PJ-8) ----------------------------------------------
+/**
+ * `addDocument` input. `bytes` is the raw encrypted file content, stored INLINE in `encrypted_blob` (local-first,
+ * PJ-8). **M1 is inline-only:** `project_documents` (DB-4, faithful to ADR-002 §5.4) has **no `storage_ref`
+ * column**, so the R2 large-file pipeline (ADR-003) — which needs that column — is an M2 addition. `milestoneId`
+ * optionally scopes the document to a milestone (a secondary link; the document belongs to the project).
+ */
+export interface AddProjectDocumentInput {
+  name: string
+  file_type?: string | null
+  bytes?: Uint8Array | null
+  milestoneId?: string | null
+}
+
+// --- service surface (grows per slice) ---------------------------------------
+export interface ProjectsService {
+  // S1 — projects
+  createProject(input: CreateProjectInput): Promise<ProjectRow>
+  updateProject(id: string, patch: UpdateProjectInput): Promise<ProjectRow>
+  softDeleteProject(id: string): Promise<void>
+  getProject(id: string): Promise<ProjectRow | null>
+  listProjects(filter?: ListProjectsFilter): Promise<ProjectRow[]>
+  // S2 — milestones
+  createMilestone(projectId: string, input: CreateMilestoneInput): Promise<MilestoneRow>
+  updateMilestone(id: string, patch: UpdateMilestoneInput): Promise<MilestoneRow>
+  getMilestoneTree(projectId: string): Promise<MilestoneNode[]>
+  softDeleteMilestone(id: string): Promise<void>
+  // S3 — deliverables
+  createDeliverable(milestoneId: string, input: CreateDeliverableInput): Promise<DeliverableRow>
+  updateDeliverable(id: string, patch: UpdateDeliverableInput): Promise<DeliverableRow>
+  listDeliverables(milestoneId: string): Promise<DeliverableRow[]>
+  softDeleteDeliverable(id: string): Promise<void>
+  // S4 — derived progress (bottom-up rollup; override-wins; nesting_weight weighted)
+  getDeliverableProgress(id: string): Promise<ProgressView>
+  getMilestoneProgress(id: string): Promise<ProgressView>
+  getProjectProgress(id: string): Promise<ProgressView>
+  // S5 — document vault (inline, M1; R2 = M2)
+  addDocument(projectId: string, input: AddProjectDocumentInput): Promise<ProjectDocumentRow>
+  getDocument(id: string): Promise<ProjectDocumentRow | null>
+  listDocuments(projectId: string): Promise<ProjectDocumentRow[]>
+  // S6 — vision/mission pages + entity_tags
+  getProjectPage(projectId: string, kind: ProjectPageKind): Promise<PageRow>
+  tagEntity(entityType: string, entityId: string, tagId: string): Promise<void>
+  untagEntity(entityType: string, entityId: string, tagId: string): Promise<void>
+  // S7 — deliverable derived-pull measurement (M5/R7 source seam)
+  linkDeliverableSource(deliverableId: string, source: DeliverableSourceRef): Promise<void>
+  unlinkDeliverableSource(deliverableId: string, source: DeliverableSourceRef): Promise<void>
+  getDeliverableSources(deliverableId: string): Promise<DeliverableSourceRef[]>
+  // S8 — Tasks→Projects seam (deny-safe; Tasks owns the entity)
+  getProjectTasks(projectId: string): Promise<ProjectTaskView[]>
+  getProjectTime(projectId: string): Promise<number>
+  // S9 — Journal /summary digest (consumed by the Journals registry; cross-module fan-out is emit-only, internal)
+  getDayProjectsDigest(date: string): Promise<ProjectsDayDigest>
+}
+
+/** The Projects `/summary` recap for a day (PULL into the Journals registry, S9): active projects + milestones due
+ *  that day. Project events / global Calendar are partner-domain-owned (no events table) — out of this digest. */
+export interface ProjectsDayDigest {
+  activeProjects: number
+  dueMilestones: number
+}
+
+/** A measurement source a `derived-pull` deliverable pulls from (a Finance account, a metric, …). Bound as an
+ *  `entity_links` row (deliverable → source) per `db-4-projects/_index.md:32-33` §3c; resolved via the ADR-011
+ *  §3.6 measurement-source seam. The `entityType` must be a registered taggable type. */
+export interface DeliverableSourceRef {
+  entityType: string
+  entityId: string
+}
+
+/**
+ * The two app-managed guiding pages of a project (PJ-7/G3). Represented as `pages` rows with
+ * `entity_type='project'` (NOT a dedicated `PAGE_TYPE` — `db-4-projects/_index.md:32-33`: "mission is a page,
+ * not a column"), discriminated by a reserved title. The `projects.vision` column stays the one-line summary.
+ */
+export type ProjectPageKind = 'vision' | 'mission'
+
+// --- typed errors ------------------------------------------------------------
+export class ProjectNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Project not found: ${id}`)
+    this.name = 'ProjectNotFoundError'
+  }
+}
+
+export class MilestoneNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Milestone not found: ${id}`)
+    this.name = 'MilestoneNotFoundError'
+  }
+}
+
+/** A parent milestone resolves to a different project, or a reparent would create a cycle (PJ-2/PJ-9). */
+export class MilestoneParentError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'MilestoneParentError'
+  }
+}
+
+export class DeliverableNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Deliverable not found: ${id}`)
+    this.name = 'DeliverableNotFoundError'
+  }
+}
+
