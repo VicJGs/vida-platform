@@ -156,3 +156,93 @@ describe('ListView', () => {
     warn.mockRestore()
   })
 })
+
+// ── P1 (LIF-230) alive-hooks: sections · primaryKey/primaryLabel · activeKey ────────────────────────────
+describe('ListView · P1 alive-hooks', () => {
+  const sections = [
+    { id: 'today', title: 'Today', items: [rows[0]!, rows[1]!] },
+    { id: 'later', title: 'Later', items: [rows[2]!] },
+  ]
+
+  it('sections: outer role="group" + one role="list" per section + eyebrow headers + all rows', () => {
+    const { getByRole, getAllByRole, getByText } = renderUI(
+      <ListView sections={sections} getKey={key} renderItem={item} aria-label="Grouped" />,
+    )
+    expect(getByRole('group')).not.toBeNull()
+    expect(getAllByRole('list')).toHaveLength(2)
+    expect(getByText('Today')).not.toBeNull()
+    expect(getByText('Later')).not.toBeNull()
+    expect(getAllByRole('listitem')).toHaveLength(3)
+  })
+
+  it('sections: each section list is aria-labelledby its own header (board model)', () => {
+    const { getAllByRole } = renderUI(
+      <ListView sections={sections} getKey={key} renderItem={item} aria-label="Grouped" />,
+    )
+    const labelledby = getAllByRole('list')[0]?.getAttribute('aria-labelledby')
+    expect(labelledby).toBeTruthy()
+    expect(document.getElementById(labelledby!)?.textContent).toBe('Today')
+  })
+
+  it('sections: an empty section is a per-section role="status" (not an empty list)', () => {
+    const withEmpty = [
+      { id: 'today', title: 'Today', items: [rows[0]!] },
+      { id: 'later', title: 'Later', items: [] as Row[] },
+    ]
+    const { getByRole, getAllByRole } = renderUI(
+      <ListView sections={withEmpty} getKey={key} renderItem={item} aria-label="Grouped" />,
+    )
+    expect(getAllByRole('list')).toHaveLength(1) // only the non-empty section is a list
+    expect(getByRole('status')).not.toBeNull() // the empty section
+  })
+
+  it('primaryKey + primaryLabel: renders the eyebrow above the featured row; rows intact', () => {
+    const { getByText, getAllByRole } = renderUI(
+      <ListView
+        items={rows}
+        getKey={key}
+        renderItem={item}
+        primaryKey="b"
+        primaryLabel="The one thing"
+        aria-label="Rows"
+      />,
+    )
+    expect(getByText('The one thing')).not.toBeNull()
+    expect(getAllByRole('listitem')).toHaveLength(3)
+  })
+
+  it('activeKey: renders one listitem per row (the tick is a variant, no structural change)', () => {
+    const { getAllByRole } = renderUI(
+      <ListView items={rows} getKey={key} renderItem={item} activeKey="a" aria-label="Rows" />,
+    )
+    expect(getAllByRole('listitem')).toHaveLength(3)
+  })
+
+  it('warns when both items and sections are passed', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    renderUI(<ListView items={rows} sections={sections} getKey={key} renderItem={item} aria-label="Rows" />)
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('`items` OR `sections`'))
+    warn.mockRestore()
+  })
+
+  it('warns when primaryKey matches no row', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    renderUI(<ListView items={rows} getKey={key} renderItem={item} primaryKey="zzz" aria-label="Rows" />)
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('`primaryKey` matches no row'))
+    warn.mockRestore()
+  })
+
+  it('warns when activeKey matches no row', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    renderUI(<ListView items={rows} getKey={key} renderItem={item} activeKey="zzz" aria-label="Rows" />)
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('`activeKey` matches no row'))
+    warn.mockRestore()
+  })
+
+  it('does NOT warn for a well-formed, named sectioned list', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    renderUI(<ListView sections={sections} getKey={key} renderItem={item} aria-label="Grouped" />)
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
+  })
+})
