@@ -224,6 +224,16 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   resolves; failure → Toast, §6). Dev-warns: `defaultFormat∉formats`, empty `formats`. `role="dialog"` focus-into lands
   on the selected radio (it's `focusables[0]` — the radiogroup precedes the footer + roving). Base tokens, no
   sub-theme. Spec: `…/v6-export-dialog.md`.
+  **fe-codec-controls-refinement · P2 (LIF-231)** — radio-row refinement, all presentational, logic (ED-2…ED-5) UNTOUCHED:
+  **hover state** on `Radio` (`hoverStyle:$colorSurfaceSecondary`; the `disabled` variant cancels it to `transparent`,
+  the `select.tsx:82` precedent) — closes a §VIII hover-state gap. **Selected accent = a left BAR, NOT a brand border:**
+  removed `borderColor:$colorBrandPrimary` from the `selected` variant (the row border stays neutral `$colorBorderDefault`),
+  and an `aria-hidden` absolute 3px `AccentBar` (`$colorBrandPrimary`, `.vida-export-accent`) renders when selected — the
+  **Toast accent precedent** (`Radio` `position:relative`+`overflow:hidden`, bar clipped to the radius, NOT the focus
+  outline; **no layout shift** — a `borderLeftWidth` 1→3 would jump a bordered box 2px). The bar + filled `Dot` are the
+  sole accent (no doubled ~4px edge). Title/description stay Dialog's (→ P3). Visual Gate PASS (Brave, 3 presets ×
+  light/dark: hover bg change · accent bar flips per preset+mode [editorial blue / reader oxblood / quietDesk olive] · AA
+  4.94–6.53 · axe 0 · 375 fit). Spec: `docs/specs/foundation/fe-codec-controls-refinement/phases/P2-export-dialog.md`.
   **neural-graph** is **UI-2 · V7** (the LAST view) — a **force-directed WebGL graph** (Sigma.js) for the `graph`
   VIEW_LAYOUT. First component with **WebGL + new deps** (`sigma`·`graphology`·`graphology-layout-forceatlas2`).
   PRESENTATIONAL: `nodes`/`edges` are props (AR-8's graph-prep, uncrossable) — own minimal `GraphNode`/`GraphEdge`.

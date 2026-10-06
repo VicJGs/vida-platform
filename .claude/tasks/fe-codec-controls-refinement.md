@@ -72,7 +72,7 @@ Every phase runs the `change-frontend-component` spine (Step 0 document-context 
 |---|---|---|---|---|
 | **P0** | **tabular-figures convention** | cross-cutting | a `font-variant-numeric:tabular-nums` utility/convention so numeric UI stops jittering; consumed by P1 + any numeric meta | — (convention only) |
 | **P1** ✅ | **pomodoro-widget** | A (high) | ✅ tabular countdown · eyebrow phase · 6px hairline track · resting elevation | ✅ `progress?: 'bar'\|'ring'` (useTheme-resolved SVG ring) |
-| **P2** | **export-dialog** | A (mod) | serif/eyebrow title · hairline radio rows · accent-as-moment selected · tabular `.ext` | — (likely L1 only) |
+| **P2** ✅ | **export-dialog** | A (mod) | ✅ hover state (§VIII gap) · neutral selected border · 4pt rhythm (title/desc = P3; no tabular — .ext not numeric) | ✅ selected accent BAR (Toast model, no shift) |
 | **P3** | **Dialog · Popover · Menu** (overlay chrome) | A (mod) | serif-display titles · spacing rhythm · elevation feel · menu-item hover/active feel | — |
 | **P4** | **atoms** — Button · Input · Checkbox · Select · Tabs · Toast | B (low) | per-atom quick audit → one concrete refinement OR skip if at the bar (Toast/Checkbox likely skip) | — |
 
@@ -86,6 +86,15 @@ Every phase runs the `change-frontend-component` spine (Step 0 document-context 
   **Visual Gate PASS** (Brave, 3 presets × light/dark: tabular + eyebrow all cells · ring accent flips per preset+mode
   [editorial blue / reader oxblood / quietDesk olive] · AA 4.94–6.03 incl. warm-dark · axe 0 · 375 no-overflow). Spec
   `phases/P1-pomodoro-widget.md`; currency `packages/ui/src/CLAUDE.md` + `v5-pomodoro-widget.md`. Next: P2 export-dialog.
+- **P2 · export-dialog — ✅ COMPLETE (2026-10-06).** Full §XXVI gate (gate-1 REVISE→fold → Approval 1 → preflight
+  PASSED [R2→Toast absolute-bar not `borderLeft`, avoids a 2px shift on a bordered box] → gate-2 REVISE→fold [selected =
+  NEUTRAL border + bar as sole accent, not a doubled brand edge] → Approval 2). Grounding reshaped the speculative plan:
+  **title/description are Dialog's → P3** (not touched); **`.ext` isn't numeric → no tabular**. Delivered: **hover state**
+  (`$colorSurfaceSecondary`, disabled cancels — select.tsx:82) closing a §VIII gap + **selected accent BAR** (`aria-hidden`
+  absolute 3px `.vida-export-accent`, Toast precedent, `position:relative`+`overflow:hidden`). Logic (ED-2…ED-5)
+  UNTOUCHED. tsc 0 · @vida/ui **412 tests** (+1) · eslint 0 · **Visual Gate PASS** (Brave, 3 presets × light/dark: hover
+  bg change · bar flips per preset · 1 bar/selected · AA 4.94–6.53 · axe 0 · 375 fit). Spec `phases/P2-export-dialog.md`;
+  currency `CLAUDE.md` + `v6-export-dialog.md`. Next: P3 overlay chrome.
 
 ## Open at pickup (RESOLVED above — kept for audit trail)
 1. ~~Confirm the control set~~ → prioritized tiers (Victor call 1).
