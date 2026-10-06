@@ -81,7 +81,17 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
       bind-managed (`createTarget`/`updateTarget` reject a direct write → `BindingRefManaged`, closes a ref-corruption +
       DAG-bypass leak); misnamed 3-node-cycle test fixed. tsc 0 · eslint 0 · purposes **72/72** (+12 S6) · full
       @vida/core **1832/1832**. §XXIX BR-PG-S6-1..6. Commit `80038a1`.
-- [ ] **S7** — Reviews (target+purpose) + plan_steps + deny-safe sessions? port
+- [x] **S7** — Reviews (target+purpose) + plan_steps + the **REQUIRED** `sessions` port (the task-file "deny-safe?"
+      line was stale — seam-contract/interpretation F-2 say REQUIRED, PG-13 FACT, g1 #1/#2). `openTargetReview`/
+      `openPurposeReview` write the `target_reviews` (no `deleted_at`)/`purpose_reviews` ledgers, register the SHARED
+      `review` sub-type idempotently (catch `DuplicateSubType` — flashcards also registers it; first-wins keyed by
+      sub_type; `createSession` enforces presence only, so the lifecycle divergence is inert at M1), fire a
+      `scheduled` review session (firing M2), + (targets) compute `next_review_date` (inline UTC math, no date-fns —
+      finance precedent; month-clamp). `plan_steps` doc layer (add/toggle/list, PG-11). **All 3 doc-ambiguous calls
+      (def lifecycle · session status · attach) resolved as FACTS from the seam-contract + `createSession` code, not
+      manufactured decisions** (Victor ×2: "ground it in the documentation and code"). Independent g2 **SHIP** (2 NITs,
+      both spec-consistent, no folds). tsc 0 · eslint 0 · purposes **79/79** (+7 S7) · full @vida/core **1839/1839**.
+      §XXIX BR-PG-S7-1..7. Commit `f8f875e`.
 - [ ] **S8** — Tags/links/pages (Spaces+Notes) + entity_type value/dream additions
 - [ ] **S9** — Provider (Journal summary + dueIn) + emit-only fan-out + deletion propagation (PG-19)
 
@@ -129,6 +139,16 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
   better-sqlite3` under Node 20 in the shared worktree → ABI 115 vs my Node-22 ABI 127 → all tests failed at setup;
   fixed by recompiling against Node 22 (§XXIV ISOLATED env). **Next: S7 — reviews + plan_steps + sessions port** (same
   worktree; branch NOT pushed/PR'd yet — PR when ① complete).
+- 2026-10-06: **S7 built + committed (`f8f875e`, pushed to origin)** in the worktree. Reviews (target+purpose ledgers)
+  + plan_steps + the **REQUIRED** `sessions` port. Victor drift-catch ×2 again ("check the documentation" / "ground
+  it in the documentation and code"): I twice presented the review-session semantics (def lifecycle · session status ·
+  attach) as a recommendation table; all three are FACTS — the seam-contract specifies the def verbatim, contract.md:24
+  fixes status=`scheduled`, and `createSession` (service.ts:276/291) enforces sub-type *presence* only + stores status
+  as-given (so the shared-`review`-sub-type divergence with flashcards is inert at M1). Lesson: read the full aspect set
+  **+ the governing foundation code** before presenting anything. Independent g2 **SHIP** (no folds; 2 spec-consistent
+  NITs). Guarded the g2 agent against `pnpm rebuild` this time (the S6 ABI gotcha). tsc 0 · eslint 0 · purposes 79/79 ·
+  full @vida/core 1839/1839. §XXIX BR-PG-S7-1..7. **Next: S8 — tags/links/pages (Spaces+Notes) + value/dream
+  entity_types** (same worktree).
 
 ## Notes
 - Env: Node 24 via nvm for @vida/core tests (better-sqlite3 ABI; `.nvmrc`=22 base).
