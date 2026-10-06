@@ -1,7 +1,7 @@
 # Purposes & Goals — Current Business Rules (as-built)
 
 > §XXIX living doc — the enforced invariants of `createPurposesService`, kept current with the code. Promoted from
-> each slice's IMPLEMENTATION-PLAN. Derived from the PG-1..PG-20 corpus invariants + ADR-011. **As of: S6.**
+> each slice's IMPLEMENTATION-PLAN. Derived from the PG-1..PG-20 corpus invariants + ADR-011. **As of: S7.**
 
 ## S1 — Spine CRUD + DB-11 reconcile
 
@@ -147,3 +147,40 @@
 - **BR-PG-S6-6** — The `event-trigger` **write** path is **dormant at M1** (emit-only; the ref persists but no rail
   write fires) — the live INT-2 rail write is M2 (`effects?` port, interpretation §E). S6 ships the descriptor + the
   ref + the DAG guard; the firing is deferred.
+
+## S7 — Reviews + plan_steps + the `sessions` port
+
+- **BR-PG-S7-1** — **`sessions: { registry; service }` is a REQUIRED dep** (not deny-safe). PG-13 is a corpus FACT —
+  reviews fire as `review` SESSIONS (ADR-004), and mod-sessions is built, so the FACT is wired at M1 (g1 #1/#2;
+  interpretation F-2). Two handles are bundled: `registry.register` persists the sub-type, `service.createSession`
+  writes the session row (`createSession` lives on SessionsService, not SessionRegistry).
+- **BR-PG-S7-2** — **`openTargetReview`** records the `target_reviews` ledger (progress_rating 1-10 · reflection ·
+  next_actions · reviewed_at; `softDelete:false` — the ledger has **no `deleted_at`**, create omits it), then (a)
+  registers the `review` sub-type idempotently, (b) **computes `next_review_date`** from the target's
+  `review_frequency` and updates the target, (c) fires a scheduled `review` session. A missing target →
+  `TargetNotFoundError` **before any write**.
+- **BR-PG-S7-3** — **`openPurposeReview`** records the `purpose_reviews` alignment/fulfillment ledger (PG-12 —
+  `still_aligned` REQUIRED · alignment_notes · overall_progress · key_achievements · obstacles_faced ·
+  adjustments_needed · renewed_commitment · fulfillment_rating · clarity_rating · reviewed_at; `softDelete:true`),
+  registers `review`, fires a scheduled `review` session. **No `next_review_date`** — purposes carry no
+  `review_frequency` column (the schema asymmetry). `PurposeNotFoundError` before any write.
+- **BR-PG-S7-4** — **The `review` sub-type def** is the seam-contract transcription (`owner_module:'purposes'`,
+  `effects:[]`, `lifecycle:{scheduled→completed}`, `permissions:{allowed_effects:[]}` — empty ⊆ shipped envelope,
+  BR-4; `default_purpose:'review'`). `review` is a **SHARED canonical `SessionSubType`** (flashcards also registers
+  it with a different `owner_module`/lifecycle); the registry is **first-wins/idempotent keyed by `sub_type`**, so
+  `registerReview` catches `DuplicateSubType` → no-op. `createSession` enforces sub-type **presence** only
+  (`registry.get`), never the lifecycle — so the cross-module def divergence is **inert at M1** (purposes only
+  creates `scheduled` rows, drives no transition; the live transition engine is M2).
+- **BR-PG-S7-5** — **The review session is `status:'scheduled'`, `scheduling_mode:'planned'`**, no extension
+  (review ∉ focus/study), no attach (the seam-contract is register + createSession; the target linkage is the ledger
+  `target_id` + `next_review_date` that dueIn reads at S9). The live **Scheduler firing/completion is the only M2
+  piece** (interpretation §E); at M1 one scheduled session is created per `openReview` (dedup/completion is the M2
+  scheduler — an accepted M1 simplification).
+- **BR-PG-S7-6** — **`next_review_date` = the UTC anchor date (from `reviewed_at` ms) + one `review_frequency`
+  step**, via an inline helper (**no date-fns** — the finance `addSteps` precedent): day-based (daily/weekly/
+  biweekly) add days; month-based (monthly/quarterly/yearly) add months and **clamp the day** to the target month's
+  last day (Jan 31 +1mo → Feb 28, never a rollover). A NULL `review_frequency` leaves `next_review_date` unchanged.
+- **BR-PG-S7-7** — **`plan_steps` is a doc checklist (PG-11), not a tracked entity.** `addPlanStep(owner:{task|
+  target}, …)` appends (`is_completed:false`); `togglePlanStep` flips completion and **stamps/clears `completed_at`**
+  in sync; `listPlanSteps(owner)` returns active steps (`findWhere` + explicit `isNull(deleted_at)`, since findWhere
+  skips the soft-delete filter). A toggle on a missing id → `PlanStepNotFoundError`.

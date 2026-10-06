@@ -14,11 +14,12 @@
 
 import { and, eq, isNull } from 'drizzle-orm'
 import { CONTRIBUTION_GOAL_TYPE, CONTRIBUTION_CONTRIBUTOR_TYPE } from '@vida/types'
-import type { ContributionGoalType, ContributionContributorType, BindingMode } from '@vida/types'
+import type { ContributionGoalType, ContributionContributorType, BindingMode, Frequency } from '@vida/types'
 import { normalize, rollup, assertAcyclic, MeasurementCycle, type Binding, type EntityRef } from '../../foundation/measurement'
+import { type SessionTypeDef, DuplicateSubType } from '../../foundation/sessions'
 import { createRepository, type CreateInput } from '../../db/repository'
-import { purposes, targets, dreams, purposeMetrics, purposeMetricValues } from '../../db/schema/purposes'
-import { values, contributions } from '../../db/schema/foundation/purpose'
+import { purposes, targets, dreams, purposeMetrics, purposeMetricValues, targetReviews } from '../../db/schema/purposes'
+import { values, contributions, purposeReviews, planSteps } from '../../db/schema/foundation/purpose'
 import {
   CreateValueSchema,
   UpdateValueSchema,
@@ -34,6 +35,9 @@ import {
   LinkContributionSchema,
   ReweightContributionSchema,
   BindSchema,
+  OpenTargetReviewSchema,
+  OpenPurposeReviewSchema,
+  AddPlanStepSchema,
 } from '../../validators/purpose'
 import {
   type PurposesService,
@@ -41,6 +45,7 @@ import {
   type MetricCurrent,
   type ContributionRef,
   type PurposeProgressView,
+  type PlanStepOwnerRef,
   ValueNotFoundError,
   PurposeNotFoundError,
   TargetNotFoundError,
@@ -50,18 +55,20 @@ import {
   InvalidContributor,
   CyclicBinding,
   BindingRefManaged,
+  PlanStepNotFoundError,
 } from './types'
-import type { ValueRow, ContributionRow } from '../../db/schema/foundation/purpose'
+import type { ValueRow, ContributionRow, PurposeReviewRow, PlanStepRow } from '../../db/schema/foundation/purpose'
 import type {
   PurposeRow,
   TargetRow,
   DreamRow,
   PurposeMetricRow,
   PurposeMetricValueRow,
+  TargetReviewRow,
 } from '../../db/schema/purposes'
 
 export function createPurposesService(deps: PurposesServiceDeps): PurposesService {
-  const { db, deviceId, measurementSources } = deps
+  const { db, deviceId, measurementSources, sessions } = deps
 
   // All three spine tables carry deleted_at → softDelete:true. M1.0 encryptedFields:[] (M3 enables [E]).
   const valuesRepo = createRepository(db, values, { deviceId, softDelete: true, encryptedFields: [] })
@@ -73,6 +80,10 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
   const metricValuesRepo = createRepository(db, purposeMetricValues, { deviceId, softDelete: false, encryptedFields: [] })
   // contributions carries deleted_at → softDelete:true.
   const contributionsRepo = createRepository(db, contributions, { deviceId, softDelete: true, encryptedFields: [] })
+  // S7 ledgers: target_reviews has NO deleted_at (ledger) → softDelete:false; purpose_reviews + plan_steps carry it.
+  const targetReviewsRepo = createRepository(db, targetReviews, { deviceId, softDelete: false, encryptedFields: [] })
+  const purposeReviewsRepo = createRepository(db, purposeReviews, { deviceId, softDelete: true, encryptedFields: [] })
+  const planStepsRepo = createRepository(db, planSteps, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- S1: values CRUD ------------------------------------------------------
   async function createValue(input: Parameters<PurposesService['createValue']>[0]): Promise<ValueRow> {
@@ -598,6 +609,122 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     return targetsRepo.update(target.id, { binding_mode: v.binding_mode, measurement_method: proposedKey })
   }
 
+  // ---- S7: reviews + plan_steps (PG-11/12/13) -------------------------------
+  // PG-13 FACT — reviews fire as `review` SESSIONS (ADR-004). The def is the seam-contract transcription
+  // (owner_module:'purposes', effects:[], lifecycle scheduled→completed, allowed_effects:[] ⊆ shipped). `review`
+  // is a SHARED canonical sub-type (flashcards also registers it); register is idempotent (first-wins, keyed by
+  // sub_type) → catch DuplicateSubType. createSession only requires the sub_type be registered (service.ts:276).
+  const REVIEW_SESSION_TYPE_DEF: SessionTypeDef = {
+    sub_type: 'review',
+    owner_module: 'purposes',
+    attachment_defaults: {},
+    effects: [],
+    lifecycle: { transitions: [{ from: 'scheduled', to: 'completed', event: 'complete' }] },
+    permissions: { allowed_effects: [] },
+    default_purpose: 'review',
+  }
+  async function registerReview(): Promise<void> {
+    try {
+      await sessions.registry.register(REVIEW_SESSION_TYPE_DEF)
+    } catch (err) {
+      if (!(err instanceof DuplicateSubType)) throw err // already registered → no-op (idempotent)
+    }
+  }
+
+  // Fire the review as a SCHEDULED `review` session (PG-13; contract.md:24 "a due review is scheduled as a review
+  // session"). No extension (review ∉ focus/study), no attach (seam-contract = register + createSession; the target
+  // linkage is the ledger + next_review_date). The live Scheduler firing/completion is the only M2 piece.
+  async function fireReviewSession(): Promise<void> {
+    await sessions.service.createSession({ sub_type: 'review', scheduling_mode: 'planned', status: 'scheduled' })
+  }
+
+  async function openTargetReview(
+    targetId: string,
+    input: Parameters<PurposesService['openTargetReview']>[1],
+  ): Promise<TargetReviewRow> {
+    const v = OpenTargetReviewSchema.parse(input)
+    const t = await targetsRepo.findById(targetId)
+    if (!t) throw new TargetNotFoundError(targetId)
+    await registerReview()
+    const reviewedAt = v.reviewed_at ?? Date.now()
+    const row = await targetReviewsRepo.create({
+      target_id: targetId,
+      progress_rating: v.progress_rating ?? null,
+      reflection: v.reflection ?? null,
+      next_actions: v.next_actions ?? null,
+      reviewed_at: reviewedAt,
+    } satisfies CreateInput<typeof targetReviews>)
+    // next_review_date compute — targets carry review_frequency (purposes do not). Schedule the next review.
+    if (t.review_frequency != null) {
+      await targetsRepo.update(targetId, { next_review_date: nextReviewDate(reviewedAt, t.review_frequency) })
+    }
+    await fireReviewSession()
+    return row
+  }
+
+  async function openPurposeReview(
+    purposeId: string,
+    input: Parameters<PurposesService['openPurposeReview']>[1],
+  ): Promise<PurposeReviewRow> {
+    const v = OpenPurposeReviewSchema.parse(input)
+    if (!(await purposesRepo.findById(purposeId))) throw new PurposeNotFoundError(purposeId)
+    await registerReview()
+    const row = await purposeReviewsRepo.create({
+      purpose_id: purposeId,
+      still_aligned: v.still_aligned,
+      alignment_notes: v.alignment_notes ?? null,
+      overall_progress: v.overall_progress ?? null,
+      key_achievements: v.key_achievements ?? null,
+      obstacles_faced: v.obstacles_faced ?? null,
+      adjustments_needed: v.adjustments_needed ?? null,
+      renewed_commitment: v.renewed_commitment ?? null,
+      fulfillment_rating: v.fulfillment_rating ?? null,
+      clarity_rating: v.clarity_rating ?? null,
+      reviewed_at: v.reviewed_at ?? Date.now(),
+      deleted_at: null,
+    } satisfies CreateInput<typeof purposeReviews>)
+    await fireReviewSession()
+    return row
+  }
+
+  async function listTargetReviews(targetId: string): Promise<TargetReviewRow[]> {
+    return targetReviewsRepo.findWhere(eq(targetReviews.target_id, targetId)) // no deleted_at on this ledger
+  }
+  async function listPurposeReviews(purposeId: string): Promise<PurposeReviewRow[]> {
+    // findWhere skips the soft-delete filter → add isNull(deleted_at) explicitly.
+    return purposeReviewsRepo.findWhere(
+      and(eq(purposeReviews.purpose_id, purposeId), isNull(purposeReviews.deleted_at))!,
+    )
+  }
+
+  async function addPlanStep(
+    owner: PlanStepOwnerRef,
+    input: Parameters<PurposesService['addPlanStep']>[1],
+  ): Promise<PlanStepRow> {
+    const v = AddPlanStepSchema.parse(input)
+    return planStepsRepo.create({
+      owner_type: owner.type,
+      owner_id: owner.id,
+      title: v.title,
+      note: v.note ?? null,
+      sort_order: v.sort_order ?? 0,
+      is_completed: false,
+      completed_at: null,
+      deleted_at: null,
+    } satisfies CreateInput<typeof planSteps>)
+  }
+  async function togglePlanStep(id: string): Promise<PlanStepRow> {
+    const step = await planStepsRepo.findById(id)
+    if (!step) throw new PlanStepNotFoundError(id)
+    const nowCompleted = !step.is_completed
+    return planStepsRepo.update(id, { is_completed: nowCompleted, completed_at: nowCompleted ? Date.now() : null })
+  }
+  async function listPlanSteps(owner: PlanStepOwnerRef): Promise<PlanStepRow[]> {
+    return planStepsRepo.findWhere(
+      and(eq(planSteps.owner_type, owner.type), eq(planSteps.owner_id, owner.id), isNull(planSteps.deleted_at))!,
+    )
+  }
+
   return {
     createValue,
     updateValue,
@@ -633,7 +760,34 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     progress,
     computeProgress,
     bind,
+    openTargetReview,
+    openPurposeReview,
+    listTargetReviews,
+    listPurposeReviews,
+    addPlanStep,
+    togglePlanStep,
+    listPlanSteps,
   }
+}
+
+/** next_review_date = the anchor date (UTC from `reviewed_at` ms) + one `review_frequency` step. No date-fns
+ *  (@vida/core convention — the finance `addSteps` precedent): day-based freqs add days; month-based add months +
+ *  clamp the day to the target month's last day (Jan 31 +1mo → Feb 28, never a Mar rollover). UTC → no TZ drift. */
+function nextReviewDate(reviewedAtMs: number, freq: Frequency): string {
+  const [y, m, d] = new Date(reviewedAtMs).toISOString().slice(0, 10).split('-').map(Number)
+  if (freq === 'daily' || freq === 'weekly' || freq === 'biweekly') {
+    const days = freq === 'daily' ? 1 : freq === 'weekly' ? 7 : 14
+    const dt = new Date(Date.UTC(y, m - 1, d))
+    dt.setUTCDate(dt.getUTCDate() + days)
+    return dt.toISOString().slice(0, 10)
+  }
+  const monthsAdd = freq === 'monthly' ? 1 : freq === 'quarterly' ? 3 : 12
+  const total = m - 1 + monthsAdd
+  const ny = y + Math.floor(total / 12)
+  const nm = ((total % 12) + 12) % 12
+  const lastDay = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate()
+  const nd = Math.min(d, lastDay)
+  return `${ny}-${String(nm + 1).padStart(2, '0')}-${String(nd).padStart(2, '0')}`
 }
 
 /** The row with the greatest `recorded_at` (ties → the later `created_at`). */

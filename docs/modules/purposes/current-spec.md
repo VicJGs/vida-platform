@@ -3,7 +3,7 @@
 > §XXIX living doc — the durable contract/structure of `createPurposesService`, kept current with the code.
 > The measurability **capstone**: Values → Purposes → Targets, composing the built `foundation/measurement`
 > engine (ADR-011; Purpose = rollup APEX + consumer, NOT owner). Ground truth = `packages/core/src/services/purposes/`.
-> Built per slice (Entity Delivery Flow); this doc grows with each. **As of: S6.**
+> Built per slice (Entity Delivery Flow); this doc grows with each. **As of: S7.**
 
 ## Factory
 
@@ -19,7 +19,7 @@ DB-11, mirror-only).
 
 All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagation is app-layer, PG-19 → S9).
 
-## Surface — S1 (spine CRUD) · S2 (dreams) · S3 (metrics) · S4 (contributions) · S5 (measurability) · S6 (bindings)
+## Surface — S1 (spine CRUD) · S2 (dreams) · S3 (metrics) · S4 (contributions) · S5 (measurability) · S6 (bindings) · S7 (reviews + plan_steps)
 
 | Method | Returns | Notes |
 |--------|---------|-------|
@@ -34,8 +34,11 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 | `progress({type:'target'\|'dream',id})` | `PurposeProgressView` | the LEAF (normalize by kind; dream = override slot) |
 | `computeProgress({type:'purpose'\|'target',id})` | `PurposeProgressView` | ROLLUP: override else spine-targets + contributions (via `foundation/measurement`) |
 | `bind({type:'target',id},{binding_mode,ref?})` | `TargetRow` | S6 — sets `binding_mode`; non-manual records `ref` in `measurement_method`; `assertAcyclic` → `CyclicBinding`; `manual` clears |
+| `openTargetReview(targetId,i)` / `openPurposeReview(purposeId,i)` | `TargetReviewRow` / `PurposeReviewRow` | S7 — ledger + register `review` (idempotent) + fire a `scheduled` review session; target also computes `next_review_date` |
+| `listTargetReviews(targetId)` / `listPurposeReviews(purposeId)` | `…ReviewRow[]` | S7 — active ledger rows |
+| `addPlanStep({type:'task'\|'target',id},i)` / `togglePlanStep(id)` / `listPlanSteps(owner)` | `PlanStepRow` | S7 — PG-11 doc checklist; toggle stamps/clears `completed_at` |
 
-**Deps (as of S6):** `{ db, deviceId, measurementSources? }` — `measurementSources` deny-safe (empty M1 ⇒ cross-module contributors + derived-pull targets null). `PurposeProgressView{value(0–100\|null),derived,partial,unmeasured}` (named to avoid the projects `ProgressView` barrel collision).
+**Deps (as of S7):** `{ db, deviceId, measurementSources?, sessions }` — `measurementSources` deny-safe (empty M1 ⇒ cross-module contributors + derived-pull targets null); **`sessions: { registry; service }` REQUIRED** (reviews fire as `review` SESSIONS, PG-13). `PurposeProgressView{value(0–100\|null),derived,partial,unmeasured}` (named to avoid the projects `ProgressView` barrel collision).
 
 - **Repositories** — `createRepository(db, table, { deviceId, softDelete: true, encryptedFields: [] })` for all 3
   spine tables (each carries `deleted_at`). M1.0 `encryptedFields:[]` seam (real `[E]` = M3).
@@ -58,7 +61,8 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 `ContributionNotFoundError` (async, thrown after a failed `findById`). `InvalidContributor` (S4, two-sided vocabulary
 guard). **S6:** `CyclicBinding` (throw at author time, no save — PG-8); `BindingRefManaged` (a direct
 `measurement_method` write while a binding is live is rejected — the ref is bind-managed); `SourceUnavailable`
-(record-not-throw dormant seam, M2 outage mechanism).
+(record-not-throw dormant seam, M2 outage mechanism). **S7:** `PlanStepNotFoundError` (toggle miss). `review`
+fires via the REQUIRED `sessions` port; `openReview` on a missing target/purpose throws `*NotFoundError` before any write.
 
 ## DB-11 @vida/types reconcile (S1, mirror-only)
 
@@ -71,4 +75,4 @@ guard). **S6:** `CyclicBinding` (throw at author time, no save — PG-8); `Bindi
 
 ## Deferred (homed to later slices)
 
-S7 reviews+plan_steps+sessions · S8 tags/links/pages · S9 provider+fan-out+deletion-cascade.
+S8 tags/links/pages · S9 provider+fan-out+deletion-cascade.

@@ -234,8 +234,39 @@ export const BindSchema = z
     path: ['ref'],
   })
 
+// --- reviews + plan_steps (S7 — PG-11/12/13) --------------------------------
+/** Conduct/record a target review (ledger row). `reviewed_at` defaults to now (Unix ms). */
+export const OpenTargetReviewSchema = z.object({
+  progress_rating: z.number().int().min(1).max(10).nullable().optional(),
+  reflection: z.string().nullable().optional(),
+  next_actions: z.string().nullable().optional(),
+  reviewed_at: z.number().int().optional(),
+})
+/** Conduct/record a purpose review (the alignment/fulfillment loop, PG-12). `still_aligned` required. */
+export const OpenPurposeReviewSchema = z.object({
+  still_aligned: z.boolean(),
+  alignment_notes: z.string().nullable().optional(),
+  overall_progress: z.number().int().min(0).max(100).nullable().optional(),
+  key_achievements: z.string().nullable().optional(),
+  obstacles_faced: z.string().nullable().optional(),
+  adjustments_needed: z.string().nullable().optional(),
+  renewed_commitment: z.boolean().nullable().optional(),
+  fulfillment_rating: z.number().int().nullable().optional(),
+  clarity_rating: z.number().int().nullable().optional(),
+  reviewed_at: z.number().int().optional(),
+})
+/** A plan step (ordered doc checklist on a task/target, PG-11). The owner {type,id} is a typed arg, not here. */
+export const AddPlanStepSchema = z.object({
+  title: z.string().min(1),
+  note: z.string().nullable().optional(),
+  sort_order: z.number().int().optional(),
+})
+
 // Input types — inferred from the schemas (single source of truth; cannot drift).
 export type BindInput = z.infer<typeof BindSchema>
+export type OpenTargetReviewInput = z.infer<typeof OpenTargetReviewSchema>
+export type OpenPurposeReviewInput = z.infer<typeof OpenPurposeReviewSchema>
+export type AddPlanStepInput = z.infer<typeof AddPlanStepSchema>
 export type LinkContributionInput = z.infer<typeof LinkContributionSchema>
 export type CreateMetricInput = z.infer<typeof CreateMetricSchema>
 export type UpdateMetricInput = z.infer<typeof UpdateMetricSchema>

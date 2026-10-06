@@ -16,6 +16,10 @@ import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createPurposesService } from '../service'
 import { createMeasurementSourceRegistry, type MeasurementSourceRegistry } from '../../../foundation/measurement'
+import { createSessionRegistry, type SessionRegistry } from '../../../foundation/sessions'
+import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSessionsService } from '../../sessions'
 import {
   type PurposesService,
   ValueNotFoundError,
@@ -27,6 +31,7 @@ import {
   InvalidContributor,
   CyclicBinding,
   BindingRefManaged,
+  PlanStepNotFoundError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -66,6 +71,7 @@ interface Harness {
   svc: PurposesService
   db: DrizzleDb
   bsql: Database.Database
+  sessionRegistry: SessionRegistry
 }
 
 async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = {}): Promise<Harness> {
@@ -74,8 +80,19 @@ async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = 
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createPurposesService({ db, deviceId: 'test-device', measurementSources: opts.measurementSources })
-  return { svc, db, bsql }
+  // S7 — compose the REAL sessions substrate (the learning-education/books harness precedent): reviews fire as
+  // `review` SESSIONS, so the service needs a live SessionsService + registry over migration 002.
+  const entityRegistry = createTaggableTypeRegistry()
+  const sessionRegistry = createSessionRegistry(db, 'test-device')
+  const rail = createEffectRail(db, createEffectRegistry())
+  const sessions = createSessionsService({ db, deviceId: 'test-device', registry: sessionRegistry, rail, entityRegistry })
+  const svc = createPurposesService({
+    db,
+    deviceId: 'test-device',
+    measurementSources: opts.measurementSources,
+    sessions: { registry: sessionRegistry, service: sessions },
+  })
+  return { svc, db, bsql, sessionRegistry }
 }
 
 describe('mod-purposes S1 — values CRUD', () => {
@@ -634,5 +651,85 @@ describe('mod-purposes S6 — bindings + DAG guard + derived-pull', () => {
     // re-bind A to derive from C instead — A's old B→A edge is replaced, no phantom cycle.
     const out = await h.svc.bind({ type: 'target', id: a.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: c.id } })
     expect(out.measurement_method).toBe(`target:${c.id}`)
+  })
+})
+
+describe('mod-purposes S7 — reviews + plan_steps', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  const reviewSessions = (): Record<string, unknown>[] =>
+    h.bsql.prepare("select * from sessions where sub_type = 'review'").all() as Record<string, unknown>[]
+
+  it('openTargetReview records the ledger, computes next_review_date, registers review, fires a scheduled session', async () => {
+    const t = await h.svc.createTarget({ title: 'ship v1', review_frequency: 'weekly' })
+    const r = await h.svc.openTargetReview(t.id, { progress_rating: 7, reflection: 'on track', reviewed_at: Date.UTC(2026, 0, 1) })
+    expect(r.target_id).toBe(t.id)
+    expect(r.progress_rating).toBe(7)
+    // the `review` sub-type is now registered + a scheduled review session exists (PG-13).
+    expect((await h.sessionRegistry.get('review')).owner_module).toBe('purposes')
+    const sess = reviewSessions()
+    expect(sess.length).toBe(1)
+    expect(sess[0]!.status).toBe('scheduled')
+    expect(sess[0]!.scheduling_mode).toBe('planned')
+    // next_review_date = reviewed_at (2026-01-01 UTC) + 1 week.
+    expect((await h.svc.getTarget(t.id))?.next_review_date).toBe('2026-01-08')
+  })
+
+  it('next_review_date honours the frequency (monthly clamps the day; null frequency leaves it unset)', async () => {
+    const m = await h.svc.createTarget({ title: 'monthly', review_frequency: 'monthly' })
+    await h.svc.openTargetReview(m.id, { reviewed_at: Date.UTC(2026, 0, 31) }) // Jan 31 + 1mo → Feb 28 (clamp)
+    expect((await h.svc.getTarget(m.id))?.next_review_date).toBe('2026-02-28')
+    const n = await h.svc.createTarget({ title: 'no-freq', review_frequency: null })
+    await h.svc.openTargetReview(n.id, {})
+    expect((await h.svc.getTarget(n.id))?.next_review_date).toBeNull() // no frequency → no next date
+  })
+
+  it('openPurposeReview records the alignment ledger + fires a scheduled review session', async () => {
+    const p = await h.svc.createPurpose({ title: 'live well' })
+    const r = await h.svc.openPurposeReview(p.id, { still_aligned: true, fulfillment_rating: 8, clarity_rating: 7 })
+    expect(r.purpose_id).toBe(p.id)
+    expect(r.still_aligned).toBe(true) // boolInt round-trips to boolean
+    expect(r.fulfillment_rating).toBe(8)
+    expect(reviewSessions().length).toBe(1)
+  })
+
+  it('registering review is idempotent across many reviews (DuplicateSubType swallowed)', async () => {
+    const t = await h.svc.createTarget({ title: 't' })
+    const p = await h.svc.createPurpose({ title: 'p' })
+    await h.svc.openTargetReview(t.id, {})
+    await h.svc.openPurposeReview(p.id, { still_aligned: false })
+    await h.svc.openTargetReview(t.id, {}) // 2nd register → DuplicateSubType caught → no throw
+    expect(reviewSessions().length).toBe(3)
+    expect((await h.svc.listTargetReviews(t.id)).length).toBe(2)
+    expect((await h.svc.listPurposeReviews(p.id)).length).toBe(1)
+  })
+
+  it('open*Review on a missing entity throws the typed *NotFoundError (no ledger, no session)', async () => {
+    await expect(h.svc.openTargetReview('nope', {})).rejects.toBeInstanceOf(TargetNotFoundError)
+    await expect(h.svc.openPurposeReview('nope', { still_aligned: true })).rejects.toBeInstanceOf(PurposeNotFoundError)
+    expect(reviewSessions().length).toBe(0) // the throw was BEFORE any session write
+  })
+
+  it('plan steps: add → list (active) → toggle completion on/off', async () => {
+    const t = await h.svc.createTarget({ title: 'goal' })
+    const s1 = await h.svc.addPlanStep({ type: 'target', id: t.id }, { title: 'step 1' })
+    await h.svc.addPlanStep({ type: 'target', id: t.id }, { title: 'step 2', sort_order: 1 })
+    await h.svc.addPlanStep({ type: 'task', id: 'tk1' }, { title: 'other owner' }) // different owner → excluded
+    const steps = await h.svc.listPlanSteps({ type: 'target', id: t.id })
+    expect(steps.length).toBe(2)
+    expect(s1.is_completed).toBe(false)
+    const toggled = await h.svc.togglePlanStep(s1.id)
+    expect(toggled.is_completed).toBe(true)
+    expect(toggled.completed_at).not.toBeNull()
+    const untoggled = await h.svc.togglePlanStep(s1.id)
+    expect(untoggled.is_completed).toBe(false)
+    expect(untoggled.completed_at).toBeNull() // cleared on un-complete
+  })
+
+  it('togglePlanStep on a missing id throws PlanStepNotFoundError', async () => {
+    await expect(h.svc.togglePlanStep('nope')).rejects.toBeInstanceOf(PlanStepNotFoundError)
   })
 })

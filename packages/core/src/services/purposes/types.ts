@@ -10,6 +10,8 @@
 import type { DrizzleDb } from '../../db/adapter'
 import type { MetricValueSource } from '@vida/types'
 import type { MeasurementSourceRegistry } from '../../foundation/measurement'
+import type { SessionRegistry } from '../../foundation/sessions'
+import type { SessionsService } from '../sessions'
 import type {
   CreateValueInput,
   UpdateValueInput,
@@ -24,9 +26,18 @@ import type {
   RecordMetricValueInput,
   LinkContributionInput,
   BindInput,
+  OpenTargetReviewInput,
+  OpenPurposeReviewInput,
+  AddPlanStepInput,
 } from '../../validators/purpose'
-import type { ValueRow, ContributionRow } from '../../db/schema/foundation/purpose'
-import type { PurposeRow, TargetRow, DreamRow, PurposeMetricRow, PurposeMetricValueRow } from '../../db/schema/purposes'
+import type { ValueRow, ContributionRow, PurposeReviewRow, PlanStepRow } from '../../db/schema/foundation/purpose'
+import type { PurposeRow, TargetRow, DreamRow, PurposeMetricRow, PurposeMetricValueRow, TargetReviewRow } from '../../db/schema/purposes'
+
+/** A plan step's polymorphic owner — a task or a target (PG-11). */
+export interface PlanStepOwnerRef {
+  type: 'task' | 'target'
+  id: string
+}
 
 /** A polymorphic endpoint of a contribution edge — a goal (purpose|target) or a contributor (habit|…|check_in). */
 export interface ContributionRef {
@@ -49,6 +60,10 @@ export interface PurposesServiceDeps {
   /** Deny-safe (S5) — the ADR-011 §3.6 measurement-source READ seam. ABSENT/empty at M1 ⇒ every cross-module
    *  contributor + derived-pull resolves `null` (unmeasured, excluded from rollup). Real sources = M2. */
   measurementSources?: MeasurementSourceRegistry
+  /** REQUIRED (S7) — the ADR-004 session seam (PG-13 FACT: reviews fire as `review` SESSIONS). `registry.register`
+   *  persists the `review` sub-type (SS-5 owning-module registration); `service.createSession` writes the session
+   *  row. mod-sessions is built+Done → the FACT is wired at M1, not hedged (g1 #1/#2). */
+  sessions: { registry: SessionRegistry; service: SessionsService }
 }
 
 /** A derived progress reading in 0–100 (the engine computes in [0,1]; converted at this edge). */
@@ -124,6 +139,21 @@ export interface PurposesService {
    *  the binding graph cyclic (PG-8, both edge-types + the contributions feed-graph). `manual` clears the binding.
    *  A `derived-pull` target then reads its value from the measurement-source seam (null at M1, empty registry). */
   bind(target: { type: 'target'; id: string }, input: BindInput): Promise<TargetRow>
+
+  // ---- S7: reviews + plan_steps (PG-11/12/13) -------------------------------
+  /** Record a target review (ledger). Registers the `review` session sub-type (idempotent), writes the ledger,
+   *  computes the next `next_review_date` from the target's `review_frequency`, and fires the review as a
+   *  scheduled `review` SESSION (PG-13; the Scheduler firing is M2). */
+  openTargetReview(targetId: string, input: OpenTargetReviewInput): Promise<TargetReviewRow>
+  /** Record a purpose review (the alignment/fulfillment loop, PG-12) + fire a scheduled `review` SESSION. */
+  openPurposeReview(purposeId: string, input: OpenPurposeReviewInput): Promise<PurposeReviewRow>
+  listTargetReviews(targetId: string): Promise<TargetReviewRow[]>
+  listPurposeReviews(purposeId: string): Promise<PurposeReviewRow[]>
+  /** Append a plan step to a task/target (a doc checklist, PG-11 — not a tracked entity). */
+  addPlanStep(owner: PlanStepOwnerRef, input: AddPlanStepInput): Promise<PlanStepRow>
+  /** Flip a plan step's completion (stamps/clears `completed_at`). */
+  togglePlanStep(id: string): Promise<PlanStepRow>
+  listPlanSteps(owner: PlanStepOwnerRef): Promise<PlanStepRow[]>
 }
 
 // --- typed errors (contract.md:49-57) ---------------------------------------
@@ -168,6 +198,13 @@ export class InvalidContributor extends Error {
   constructor(side: 'goal' | 'contributor', type: string) {
     super(`Invalid contribution ${side} type: ${type}`)
     this.name = 'InvalidContributor'
+  }
+}
+/** A plan step id miss on toggle/get (PG-11). */
+export class PlanStepNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Plan step not found: ${id}`)
+    this.name = 'PlanStepNotFoundError'
   }
 }
 /** A `bind` that would make the binding graph cyclic — rejected at author time, no save (PG-8, ADR-011 §3.7). */
