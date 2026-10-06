@@ -52,7 +52,11 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
       category nullable (DB default never fires), progress_percentage override slot. Validators co-located. tsc 0 ·
       eslint 0 · purposes **12/12** (3 new). Inline pre-ship critique SHIP (mechanical CRUD; steps round-trip tested).
       §XXIX BR-PG-S2-1..5. Full @vida/core **1796/1796** (first run flaked the known vault-1MB test §XXIV; isolated re-run green).
-- [ ] **S3** — Metrics + value ledger (calculation_method derivation, source provenance)
+- [x] **S3** — Metrics + value ledger. `createMetric`/…/`deleteMetric` (hard, two-hop value cascade) + `recordMetricValue`
+      + `getMetricCurrent` (override-wins else derive via `calculation_method` sum/avg/latest/max/min/count; empty⇒null
+      unmeasured; provenance manual-iff-all-manual). Both tables `softDelete:false`. `enumText`→union so the aggregate
+      switch is exhaustive. tsc 0 · eslint 0 · purposes **17/17** (5 new; two-hop cascade proven via raw ledger count 2→0).
+      Inline pre-ship /critique SHIP. §XXIX BR-PG-S3-1..5.
 - [ ] **S4** — Contributions edge (link/unlink/reweight + InvalidContributor)
 - [ ] **S5** — Measurability core (progress/computeProgress rollup + ProgressView + qualitative→null)
 - [ ] **S6** — Bindings + DAG guard + derived-pull source resolution

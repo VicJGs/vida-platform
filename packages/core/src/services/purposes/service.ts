@@ -12,8 +12,9 @@
 // - findWhere skips the soft-delete filter → list active via findAll (applies isNull(deleted_at)) + JS filter.
 // - M1.0 encryptedFields:[] (the [E] title/description/vision/why/… pass through; real field encryption = M3).
 
+import { eq } from 'drizzle-orm'
 import { createRepository, type CreateInput } from '../../db/repository'
-import { purposes, targets, dreams } from '../../db/schema/purposes'
+import { purposes, targets, dreams, purposeMetrics, purposeMetricValues } from '../../db/schema/purposes'
 import { values } from '../../db/schema/foundation/purpose'
 import {
   CreateValueSchema,
@@ -24,17 +25,28 @@ import {
   UpdateTargetSchema,
   CreateDreamSchema,
   UpdateDreamSchema,
+  CreateMetricSchema,
+  UpdateMetricSchema,
+  RecordMetricValueSchema,
 } from '../../validators/purpose'
 import {
   type PurposesService,
   type PurposesServiceDeps,
+  type MetricCurrent,
   ValueNotFoundError,
   PurposeNotFoundError,
   TargetNotFoundError,
   DreamNotFoundError,
+  MetricNotFoundError,
 } from './types'
 import type { ValueRow } from '../../db/schema/foundation/purpose'
-import type { PurposeRow, TargetRow, DreamRow } from '../../db/schema/purposes'
+import type {
+  PurposeRow,
+  TargetRow,
+  DreamRow,
+  PurposeMetricRow,
+  PurposeMetricValueRow,
+} from '../../db/schema/purposes'
 
 export function createPurposesService(deps: PurposesServiceDeps): PurposesService {
   const { db, deviceId } = deps
@@ -44,6 +56,9 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
   const purposesRepo = createRepository(db, purposes, { deviceId, softDelete: true, encryptedFields: [] })
   const targetsRepo = createRepository(db, targets, { deviceId, softDelete: true, encryptedFields: [] })
   const dreamsRepo = createRepository(db, dreams, { deviceId, softDelete: true, encryptedFields: [] })
+  // Metrics + the value ledger carry NO deleted_at → softDelete:false (delete = hard).
+  const metricsRepo = createRepository(db, purposeMetrics, { deviceId, softDelete: false, encryptedFields: [] })
+  const metricValuesRepo = createRepository(db, purposeMetricValues, { deviceId, softDelete: false, encryptedFields: [] })
 
   // ---- S1: values CRUD ------------------------------------------------------
   async function createValue(input: Parameters<PurposesService['createValue']>[0]): Promise<ValueRow> {
@@ -258,6 +273,85 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     return purposeId === undefined ? all : all.filter((d) => d.purpose_id === purposeId)
   }
 
+  // ---- S3: metrics + value ledger (PG-15) -----------------------------------
+  async function createMetric(input: Parameters<PurposesService['createMetric']>[0]): Promise<PurposeMetricRow> {
+    const v = CreateMetricSchema.parse(input)
+    return metricsRepo.create({
+      purpose_id: v.purpose_id ?? null,
+      name: v.name,
+      description: v.description ?? null,
+      unit: v.unit ?? null,
+      target_value: v.target_value ?? null,
+      current_value: v.current_value ?? null, // override slot — NULL ⇒ derive (PG-4)
+      calculation_method: v.calculation_method ?? 'latest', // NN default backfill
+      is_higher_better: v.is_higher_better ?? null,
+      baseline_value: v.baseline_value ?? null,
+    } satisfies CreateInput<typeof purposeMetrics>)
+  }
+
+  async function updateMetric(id: string, patch: Parameters<PurposesService['updateMetric']>[1]): Promise<PurposeMetricRow> {
+    const v = UpdateMetricSchema.parse(patch)
+    if (!(await metricsRepo.findById(id))) throw new MetricNotFoundError(id)
+    const data = stripUndefined({
+      purpose_id: v.purpose_id,
+      name: v.name,
+      description: v.description,
+      unit: v.unit,
+      target_value: v.target_value,
+      current_value: v.current_value,
+      calculation_method: v.calculation_method,
+      is_higher_better: v.is_higher_better,
+      baseline_value: v.baseline_value,
+    })
+    return Object.keys(data).length === 0 ? (await metricsRepo.findById(id))! : metricsRepo.update(id, data)
+  }
+
+  async function getMetric(id: string): Promise<PurposeMetricRow | null> {
+    return metricsRepo.findById(id)
+  }
+  async function listMetrics(purposeId?: string): Promise<PurposeMetricRow[]> {
+    const all = await metricsRepo.findAll()
+    return purposeId === undefined ? all : all.filter((m) => m.purpose_id === purposeId)
+  }
+
+  async function deleteMetric(id: string): Promise<void> {
+    if (!(await metricsRepo.findById(id))) throw new MetricNotFoundError(id)
+    // Two-hop app-layer cascade (no FK): hard-delete the metric's value ledger first, then the metric.
+    const vals = await metricValuesRepo.findWhere(eq(purposeMetricValues.metric_id, id))
+    for (const row of vals) await metricValuesRepo.hardDelete(row.id)
+    await metricsRepo.hardDelete(id)
+  }
+
+  async function recordMetricValue(
+    metricId: string,
+    value: number,
+    opts?: Parameters<PurposesService['recordMetricValue']>[2],
+  ): Promise<PurposeMetricValueRow> {
+    const o = RecordMetricValueSchema.parse(opts ?? {})
+    if (!(await metricsRepo.findById(metricId))) throw new MetricNotFoundError(metricId)
+    return metricValuesRepo.create({
+      metric_id: metricId,
+      value,
+      recorded_at: o.recorded_at ?? Date.now(),
+      source: o.source ?? 'manual', // NN default backfill
+      context_notes: o.context_notes ?? null,
+    } satisfies CreateInput<typeof purposeMetricValues>)
+  }
+
+  async function getMetricCurrent(metricId: string): Promise<MetricCurrent> {
+    const m = await metricsRepo.findById(metricId)
+    if (!m) throw new MetricNotFoundError(metricId)
+    // Override slot wins (PG-4): a user-set current_value is an explicit manual override.
+    if (m.current_value !== null) return { value: m.current_value, source: 'manual', override: true }
+    const rows = await metricValuesRepo.findWhere(eq(purposeMetricValues.metric_id, metricId))
+    if (rows.length === 0) return { value: null, source: 'manual', override: false } // unmeasured
+    const value = aggregate(m.calculation_method, rows)
+    // Provenance: manual iff EVERY contributing point is manual (for 'latest', the one latest point).
+    const contributing = m.calculation_method === 'latest' ? [latestRow(rows)] : rows
+    const source = contributing.every((r) => r.source === 'manual') ? 'manual' : 'auto'
+    return { value, source, override: false }
+  }
+
   return {
     createValue,
     updateValue,
@@ -279,6 +373,39 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     archiveDream,
     getDream,
     listDreams,
+    createMetric,
+    updateMetric,
+    getMetric,
+    listMetrics,
+    deleteMetric,
+    recordMetricValue,
+    getMetricCurrent,
+  }
+}
+
+/** The row with the greatest `recorded_at` (ties → the later `created_at`). */
+function latestRow(rows: PurposeMetricValueRow[]): PurposeMetricValueRow {
+  return rows.reduce((a, b) =>
+    b.recorded_at > a.recorded_at || (b.recorded_at === a.recorded_at && b.created_at > a.created_at) ? b : a,
+  )
+}
+
+/** Aggregate a metric's value ledger by its calculation_method (the derived current value). */
+function aggregate(method: PurposeMetricRow['calculation_method'], rows: PurposeMetricValueRow[]): number {
+  const vals = rows.map((r) => r.value)
+  switch (method) {
+    case 'sum':
+      return vals.reduce((a, b) => a + b, 0)
+    case 'average':
+      return vals.reduce((a, b) => a + b, 0) / vals.length
+    case 'max':
+      return Math.max(...vals)
+    case 'min':
+      return Math.min(...vals)
+    case 'count':
+      return vals.length
+    case 'latest':
+      return latestRow(rows).value
   }
 }
 

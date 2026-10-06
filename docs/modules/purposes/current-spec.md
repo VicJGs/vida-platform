@@ -3,7 +3,7 @@
 > §XXIX living doc — the durable contract/structure of `createPurposesService`, kept current with the code.
 > The measurability **capstone**: Values → Purposes → Targets, composing the built `foundation/measurement`
 > engine (ADR-011; Purpose = rollup APEX + consumer, NOT owner). Ground truth = `packages/core/src/services/purposes/`.
-> Built per slice (Entity Delivery Flow); this doc grows with each. **As of: S2.**
+> Built per slice (Entity Delivery Flow); this doc grows with each. **As of: S3.**
 
 ## Factory
 
@@ -19,7 +19,7 @@ DB-11, mirror-only).
 
 All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagation is app-layer, PG-19 → S9).
 
-## Surface — S1 (spine CRUD) · S2 (dreams)
+## Surface — S1 (spine CRUD) · S2 (dreams) · S3 (metrics)
 
 | Method | Returns | Notes |
 |--------|---------|-------|
@@ -27,6 +27,9 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 | `createPurpose/updatePurpose/archivePurpose/getPurpose/listPurposes` | `PurposeRow` | rollup apex; `progress` override slot |
 | `createTarget/updateTarget/archiveTarget/getTarget/listTargets(purposeId?)` | `TargetRow` | the pursuable entity; `measurement_kind` |
 | `createDream/updateDream/archiveDream/getDream/listDreams(purposeId?)` | `DreamRow` | single aspiration (PG-16); `steps` = JSON-in-TEXT (service serializes) |
+| `createMetric/updateMetric/getMetric/listMetrics(purposeId?)/deleteMetric` | `PurposeMetricRow` | `softDelete:false`; `deleteMetric` = two-hop hard-cascade of values |
+| `recordMetricValue(metricId,value,opts?)` | `PurposeMetricValueRow` | ledger append (hard); provenance `source` |
+| `getMetricCurrent(metricId)` | `MetricCurrent{value,source,override}` | override slot OR derive via `calculation_method`; empty ⇒ null |
 
 - **Repositories** — `createRepository(db, table, { deviceId, softDelete: true, encryptedFields: [] })` for all 3
   spine tables (each carries `deleted_at`). M1.0 `encryptedFields:[]` seam (real `[E]` = M3).
@@ -58,5 +61,5 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 
 ## Deferred (homed to later slices)
 
-S3 metrics+value-ledger · S4 contributions · S5 measurability core (`progress`/`computeProgress`) ·
-S6 bindings+DAG · S7 reviews+plan_steps+sessions · S8 tags/links/pages · S9 provider+fan-out+deletion-cascade.
+S4 contributions · S5 measurability core (`progress`/`computeProgress`) · S6 bindings+DAG ·
+S7 reviews+plan_steps+sessions · S8 tags/links/pages · S9 provider+fan-out+deletion-cascade.

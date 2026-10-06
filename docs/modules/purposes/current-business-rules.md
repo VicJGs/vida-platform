@@ -45,3 +45,21 @@
   `measurement_kind` on dreams (the widen list omits it — a dream's progress is an override or a rollup, S5).
 - **BR-PG-S2-5** — `estimated_cost` is INTEGER cents; `dreams` has `deleted_at` → soft delete; `listDreams(purposeId?)`
   scopes active dreams by purpose (JS-filter over `findAll()`); `DreamNotFoundError` on an unknown id.
+
+## S3 — Metrics + value ledger (PG-15)
+
+- **BR-PG-S3-1** — `purpose_metrics` and `purpose_metric_values` carry **no `deleted_at`** → `softDelete:false` (every
+  delete is hard). `createMetric` backfills `calculation_method='latest'` (NN default); `is_higher_better`/`baseline_value`
+  nullable (PG-15 direction).
+- **BR-PG-S3-2** — `getMetricCurrent` resolves a metric's current value **derive-by-default** (PG-4/PG-17): the
+  `current_value` override slot wins when non-null (`override:true, source:'manual'`); otherwise it derives from the
+  value ledger via `calculation_method` (`sum`/`average`/`latest`/`max`/`min`/`count`). An **empty ledger ⇒ `value:null`
+  (unmeasured), never `0`**.
+- **BR-PG-S3-3** — Derived provenance: `source='manual'` iff **every contributing ledger point** is manual, else
+  `'auto'`. For `'latest'` the contributing set is the single most-recent point (greatest `recorded_at`, tie → later
+  `created_at`); for the aggregates it is all the metric's points.
+- **BR-PG-S3-4** — `recordMetricValue(metricId, value, {source?, context_notes?, recorded_at?})` appends a hard ledger
+  row; it rejects an unknown `metricId` with `MetricNotFoundError`. `source` backfills `'manual'`; `recorded_at` defaults
+  to now (Unix ms) when omitted.
+- **BR-PG-S3-5** — `deleteMetric` is a **two-hop app-layer cascade** (no FK, PG-19 locally): it hard-deletes the
+  metric's `purpose_metric_values` ledger rows first (found by `metric_id`), then the metric — no orphaned points.

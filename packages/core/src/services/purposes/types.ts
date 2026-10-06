@@ -8,6 +8,7 @@
 // @vida/types interface reconcile is DB-11 (mirror-only, S1).
 
 import type { DrizzleDb } from '../../db/adapter'
+import type { MetricValueSource } from '@vida/types'
 import type {
   CreateValueInput,
   UpdateValueInput,
@@ -17,9 +18,21 @@ import type {
   UpdateTargetInput,
   CreateDreamInput,
   UpdateDreamInput,
+  CreateMetricInput,
+  UpdateMetricInput,
+  RecordMetricValueInput,
 } from '../../validators/purpose'
 import type { ValueRow } from '../../db/schema/foundation/purpose'
-import type { PurposeRow, TargetRow, DreamRow } from '../../db/schema/purposes'
+import type { PurposeRow, TargetRow, DreamRow, PurposeMetricRow, PurposeMetricValueRow } from '../../db/schema/purposes'
+
+/** The current value of a metric: the override slot if set, else derived from the ledger via calculation_method. */
+export interface MetricCurrent {
+  value: number | null
+  /** Provenance: 'manual' iff every contributing ledger point (or the override) is manual; else 'auto'. */
+  source: MetricValueSource
+  /** true when `value` came from the stored override slot, false when derived from the ledger. */
+  override: boolean
+}
 
 export interface PurposesServiceDeps {
   db: DrizzleDb
@@ -54,6 +67,18 @@ export interface PurposesService {
   getDream(id: string): Promise<DreamRow | null>
   /** Active dreams; optionally scoped to one purpose. */
   listDreams(purposeId?: string): Promise<DreamRow[]>
+
+  // ---- S3: metrics + value ledger (PG-15) ----------------------------------
+  createMetric(input: CreateMetricInput): Promise<PurposeMetricRow>
+  updateMetric(id: string, patch: UpdateMetricInput): Promise<PurposeMetricRow>
+  getMetric(id: string): Promise<PurposeMetricRow | null>
+  listMetrics(purposeId?: string): Promise<PurposeMetricRow[]>
+  /** Hard delete (no deleted_at) + two-hop hard-cascade of this metric's value ledger. */
+  deleteMetric(id: string): Promise<void>
+  /** Append a time-series point to a metric's ledger (hard insert). */
+  recordMetricValue(metricId: string, value: number, opts?: RecordMetricValueInput): Promise<PurposeMetricValueRow>
+  /** The metric's current value: override slot if set, else derived via calculation_method over the ledger. */
+  getMetricCurrent(metricId: string): Promise<MetricCurrent>
 }
 
 // --- typed errors (contract.md:49-57) ---------------------------------------
@@ -79,5 +104,11 @@ export class DreamNotFoundError extends Error {
   constructor(id: string) {
     super(`Dream not found: ${id}`)
     this.name = 'DreamNotFoundError'
+  }
+}
+export class MetricNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Purpose metric not found: ${id}`)
+    this.name = 'MetricNotFoundError'
   }
 }

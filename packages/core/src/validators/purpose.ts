@@ -11,6 +11,8 @@ import {
   BINDING_MODE,
   BUCKET_LIST_CATEGORY,
   BUCKET_LIST_STATUS,
+  CALCULATION_METHOD,
+  METRIC_VALUE_SOURCE,
 } from '@vida/types'
 
 // Canonical validators for the Purpose & Goals substrate enums (DB-3 · ADR-011).
@@ -172,7 +174,43 @@ export const UpdateDreamSchema = z.object({
   project_id: z.string().nullable().optional(),
 })
 
+// --- metrics + value ledger (S3 — PG-15) -------------------------------------
+const CalculationMethodSchema = z.enum(CALCULATION_METHOD)
+const MetricValueSourceSchema = z.enum(METRIC_VALUE_SOURCE)
+
+export const CreateMetricSchema = z.object({
+  purpose_id: z.string().nullable().optional(),
+  name: z.string().min(1),
+  description: z.string().nullable().optional(),
+  unit: z.string().nullable().optional(),
+  target_value: z.number().nullable().optional(),
+  current_value: z.number().nullable().optional(), // override slot — NULL ⇒ derive via calculation_method (PG-4)
+  calculation_method: CalculationMethodSchema.optional(), // default 'latest'
+  is_higher_better: z.boolean().nullable().optional(), // progress direction (PG-15)
+  baseline_value: z.number().nullable().optional(),
+})
+export const UpdateMetricSchema = z.object({
+  purpose_id: z.string().nullable().optional(),
+  name: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  unit: z.string().nullable().optional(),
+  target_value: z.number().nullable().optional(),
+  current_value: z.number().nullable().optional(),
+  calculation_method: CalculationMethodSchema.optional(),
+  is_higher_better: z.boolean().nullable().optional(),
+  baseline_value: z.number().nullable().optional(),
+})
+/** Record a time-series point on a metric's ledger. `recorded_at` defaults to now (Unix ms) if omitted. */
+export const RecordMetricValueSchema = z.object({
+  source: MetricValueSourceSchema.optional(), // default 'manual'
+  context_notes: z.string().nullable().optional(),
+  recorded_at: z.number().int().optional(),
+})
+
 // Input types — inferred from the schemas (single source of truth; cannot drift).
+export type CreateMetricInput = z.infer<typeof CreateMetricSchema>
+export type UpdateMetricInput = z.infer<typeof UpdateMetricSchema>
+export type RecordMetricValueInput = z.infer<typeof RecordMetricValueSchema>
 export type CreateValueInput = z.infer<typeof CreateValueSchema>
 export type UpdateValueInput = z.infer<typeof UpdateValueSchema>
 export type CreatePurposeInput = z.infer<typeof CreatePurposeSchema>

@@ -9,7 +9,9 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import Database from 'better-sqlite3'
+import { eq } from 'drizzle-orm'
 import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../db/adapter'
+import { purposeMetricValues } from '../../../db/schema/purposes'
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createPurposesService } from '../service'
@@ -19,6 +21,7 @@ import {
   PurposeNotFoundError,
   TargetNotFoundError,
   DreamNotFoundError,
+  MetricNotFoundError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -221,5 +224,75 @@ describe('mod-purposes S2 — dreams CRUD', () => {
     await h.svc.archiveDream(d1.id)
     expect(await h.svc.listDreams()).toHaveLength(1)
     await expect(h.svc.updateDream('nope', {})).rejects.toBeInstanceOf(DreamNotFoundError)
+  })
+})
+
+describe('mod-purposes S3 — metrics + value ledger', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('backfills calculation_method=latest + leaves current_value as a NULL override; empty ledger is unmeasured', async () => {
+    const m = await h.svc.createMetric({ name: 'Weight', unit: 'kg' })
+    expect(m.calculation_method).toBe('latest')
+    expect(m.current_value).toBeNull()
+    expect(m.is_higher_better).toBeNull()
+    const cur = await h.svc.getMetricCurrent(m.id)
+    expect(cur).toEqual({ value: null, source: 'manual', override: false }) // no points ⇒ unmeasured, never 0
+  })
+
+  it("derives current via 'latest' (value + the latest point's source)", async () => {
+    const m = await h.svc.createMetric({ name: 'Weight' }) // default latest
+    await h.svc.recordMetricValue(m.id, 80, { recorded_at: 1000, source: 'manual' })
+    await h.svc.recordMetricValue(m.id, 78, { recorded_at: 3000, source: 'auto' })
+    await h.svc.recordMetricValue(m.id, 79, { recorded_at: 2000, source: 'manual' })
+    const cur = await h.svc.getMetricCurrent(m.id)
+    expect(cur.value).toBe(78) // the recorded_at=3000 point
+    expect(cur.source).toBe('auto') // that point's provenance
+    expect(cur.override).toBe(false)
+  })
+
+  it('derives sum/average/max/min/count; provenance is manual iff every contributing point is manual', async () => {
+    const mk = async (method: 'sum' | 'average' | 'max' | 'min' | 'count') =>
+      h.svc.createMetric({ name: method, calculation_method: method })
+    const seed = async (id: string, auto = false) => {
+      await h.svc.recordMetricValue(id, 10, { source: 'manual' })
+      await h.svc.recordMetricValue(id, 20, { source: auto ? 'auto' : 'manual' })
+      await h.svc.recordMetricValue(id, 30, { source: 'manual' })
+    }
+    const sum = await mk('sum'); await seed(sum.id)
+    expect((await h.svc.getMetricCurrent(sum.id)).value).toBe(60)
+    expect((await h.svc.getMetricCurrent(sum.id)).source).toBe('manual') // all manual
+    const avg = await mk('average'); await seed(avg.id, true)
+    expect((await h.svc.getMetricCurrent(avg.id)).value).toBe(20)
+    expect((await h.svc.getMetricCurrent(avg.id)).source).toBe('auto') // one auto point ⇒ auto
+    const max = await mk('max'); await seed(max.id)
+    expect((await h.svc.getMetricCurrent(max.id)).value).toBe(30)
+    const min = await mk('min'); await seed(min.id)
+    expect((await h.svc.getMetricCurrent(min.id)).value).toBe(10)
+    const count = await mk('count'); await seed(count.id)
+    expect((await h.svc.getMetricCurrent(count.id)).value).toBe(3)
+  })
+
+  it('honours the current_value override slot over the ledger (PG-4)', async () => {
+    const m = await h.svc.createMetric({ name: 'Mood', current_value: 7, calculation_method: 'average' })
+    await h.svc.recordMetricValue(m.id, 1)
+    const cur = await h.svc.getMetricCurrent(m.id)
+    expect(cur).toEqual({ value: 7, source: 'manual', override: true }) // override wins, ledger ignored
+  })
+
+  it('deleteMetric hard-cascades its value ledger (two-hop, no-FK); rejects unknown ids', async () => {
+    const m = await h.svc.createMetric({ name: 'Steps' })
+    await h.svc.recordMetricValue(m.id, 5000)
+    await h.svc.recordMetricValue(m.id, 6000)
+    // the ledger has the 2 points pre-delete
+    expect(await h.db.select().from(purposeMetricValues).where(eq(purposeMetricValues.metric_id, m.id))).toHaveLength(2)
+    await h.svc.deleteMetric(m.id)
+    expect(await h.svc.getMetric(m.id)).toBeNull()
+    // two-hop cascade proof: the metric's ledger rows are hard-deleted (no orphans)
+    expect(await h.db.select().from(purposeMetricValues).where(eq(purposeMetricValues.metric_id, m.id))).toHaveLength(0)
+    await expect(h.svc.deleteMetric('nope')).rejects.toBeInstanceOf(MetricNotFoundError)
+    await expect(h.svc.recordMetricValue('nope', 1)).rejects.toBeInstanceOf(MetricNotFoundError)
   })
 })
