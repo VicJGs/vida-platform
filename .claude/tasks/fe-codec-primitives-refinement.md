@@ -93,12 +93,26 @@ weekend/oos shifts · accent-dot chips), same tier as the other 4 views. Flagshi
 `docs/specs/foundation/fe-calendar/` (calendar-vision.md). **So this task = 5 views, all pure aesthetic polish:**
 Calendar-grid · Card · Timeline · List · Gallery.
 
-## Next step (Session 1 → build)
-Mockups still owed before building (Victor's see-before-approve preference): **Card · Timeline · List · Gallery**
-before→after (Calendar grid mockup 1 already approved). Then per-view §XXVI gate → implement → Visual Gate.
+## APPROVED build vocabulary (Session 1 — 2026-10-05, all mockups Victor-approved)
+Two layers per view, BOTH presentational (buildable here, no cross-module reads → no split):
+- **Layer 1 — aesthetic polish** (low-risk CSS/variant): serif display titles · eyebrow labels · tabular figures ·
+  hairline structure · accent-as-moment · softer/intentional elevation. Mockups: `mockups/calendar-refinement.html`
+  (grid) + `mockups/views-refinement.html` (Card/Timeline/List/Gallery before→after).
+- **Layer 2 — alive-hooks** (new presentational API/behavior; the primitive ships the hook, surfaces feed data).
+  Mockup: `mockups/views-alive-concept.html`. Per view:
+  - **Card** — status-tint variant · progress-ring slot · last-touched/link-hint slots (ambient micro-dashboard).
+  - **Timeline** — **now-fulcrum**: past=record / future=intention (the primitive is now-aware; a render variant).
+  - **List** — `primary`/"the one thing" emphasis + a per-row **ambient-signal slot** (streak/drift/purpose/due).
+  - **Gallery** — **cover-intelligence** (generated editorial cover for imageless entities) + **weight-sized** tiles.
+  - **Calendar-grid** — stays Layer-1 only here (the alive multi-range/living flagship is fe-calendar #19).
 
-## Next session FIRST step
-Fresh `/begin` → pick this head → run the `/design-audit` + `/component-consistency` on the 6 → bring Victor the grounded
-gap+refinement list → agree scope → retrofit per component (worktree → Visual Gate → PR). Read first:
-`packages/ui/src/CLAUDE.md`, `frontend-quality-bar/_index.md`, the `p1–p6` specimens, `g6-edge-ledger.md:46-53` (extend
-map incl. #8 Graph).
+**Honest scope note:** Layer 2 grew this past from "aesthetic polish" into "polish + new presentational capabilities."
+Still presentational, so it stays HERE (unlike the Calendar flagship). Each Layer-2 hook is a CONTRACT change → its
+own forward spec + §XXVI gate + Visual Gate. Layer 1 can ship fast; Layer 2 is real feature work.
+
+## Build plan
+Per-view, through the change-frontend-component §XXVI gate → implement → full-matrix Visual Gate (preset×mode×density) →
+§XXIX currency. Recommended order (most-composed first, so downstream surfaces inherit soonest):
+**List → Card → Timeline → Gallery** (Calendar-grid polish folds in with List/Card or standalone).
+Open sequencing choice for Victor: (a) ship all 5 Layer-1 polishes first (fast coherent win) then a Layer-2 wave; or
+(b) per-view do Layer-1 + Layer-2 together. Lead view TBD at build start.
