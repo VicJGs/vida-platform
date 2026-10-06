@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — Calendar concept board · the living week</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --maxw:1240px; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#e9e6df;color:#16181d;font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:5rem;}
+  .guide{max-width:var(--maxw);margin:0 auto;padding:3rem 2rem 1rem;}
+  .guide .kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8578;font-weight:500;}
+  .guide h1{font-family:'Spectral',serif;font-weight:500;font-size:clamp(1.8rem,4vw,2.5rem);line-height:1.1;margin:.5rem 0 .6rem;letter-spacing:-.01em;}
+  .guide p{max-width:70ch;color:#4a463d;font-size:.95rem;}
+  .guide .mk{display:inline-flex;align-items:center;justify-content:center;width:1.1rem;height:1.1rem;border-radius:50%;background:#16181d;color:#fff;font-size:.66rem;font-weight:700;margin:0 .15rem;vertical-align:middle;}
+
+  .board{max-width:var(--maxw);margin:1.6rem auto;padding:0 2rem;}
+  /* editorial surface */
+  .surface{
+    --paper:#fbfbfa;--ink:#16181d;--muted:#5a5f6a;--faint:#9298a3;--accent:#1d4ed8;--rule:#e7e7e4;
+    --record:#f2f1ec;--recink:#6a6a63;--future:#fcfcfb;--band:#f6f6f4;--today:#f3f6ff;
+    --career:#1d4ed8;--health:#5a6b3f;--growth:#9a2a2a;--admin:#64748b;
+    background:var(--paper);color:var(--ink);font-family:'Inter';border-radius:7px;padding:1.6rem 1.7rem 2rem;box-shadow:0 1px 2px rgba(0,0,0,.05),0 10px 40px rgba(0,0,0,.08);
+  }
+  .mk{display:inline-flex;align-items:center;justify-content:center;width:1.05rem;height:1.05rem;border-radius:50%;background:var(--accent);color:#fff;font-size:.62rem;font-weight:700;vertical-align:middle;}
+
+  /* header */
+  .bhead{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+  .btitle{font-family:'Spectral',serif;font-weight:500;font-size:1.45rem;letter-spacing:-.01em;}
+  .btitle .sub{font-family:'Inter';font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-left:.6rem;}
+  .switch{display:flex;gap:.1rem;border:1px solid var(--rule);border-radius:7px;padding:.2rem;}
+  .switch button{font-size:.74rem;color:var(--muted);background:transparent;border:0;border-radius:5px;padding:.3rem .62rem;cursor:pointer;}
+  .switch button.on{color:var(--accent);background:var(--band);font-weight:600;box-shadow:inset 0 0 0 1px var(--rule);}
+
+  /* ④ alignment strip — purpose budget */
+  .align{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;padding:.7rem .9rem;background:var(--band);border-radius:6px;margin-bottom:.4rem;}
+  .align .lab{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:700;}
+  .pbudget{display:flex;align-items:center;gap:.5rem;}
+  .pbudget .pdot{width:8px;height:8px;border-radius:2px;}
+  .pbudget .pn{font-size:.78rem;color:var(--ink);}
+  .pbudget .pbar{width:52px;height:5px;border-radius:3px;background:#e4e4e1;position:relative;overflow:hidden;}
+  .pbudget .pbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;}
+  .pbudget .ph{font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .pbudget.warn .pn{color:var(--growth);} .pbudget.warn .ph{color:var(--growth);}
+  .annot{font-size:.64rem;color:var(--faint);margin:.1rem 0 1rem;}
+
+  /* ② habit threads band */
+  .threads{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:.7rem 0;margin-bottom:.2rem;}
+  .thread{display:grid;grid-template-columns:8.5rem repeat(7,1fr);align-items:center;height:1.7rem;}
+  .thread .tl{font-size:.74rem;color:var(--ink);display:flex;align-items:center;gap:.4rem;}
+  .thread .tl .sq{width:8px;height:8px;border-radius:2px;}
+  .node{position:relative;display:flex;align-items:center;justify-content:center;height:100%;}
+  .node::before{content:'';position:absolute;left:-50%;right:50%;top:50%;height:2px;background:var(--line,#dcdcd8);transform:translateY(-50%);}
+  .node:first-of-type::before{display:none;}
+  .node .d{width:11px;height:11px;border-radius:50%;z-index:1;border:1.5px solid var(--c,#cbd5e1);background:#fff;}
+  .node.on .d{background:var(--c);}
+  .node.miss .d{border-style:dotted;}
+  .node.future .d{opacity:.4;}
+  .thread .streak{font-size:.64rem;color:var(--faint);letter-spacing:.04em;text-align:left;padding-left:.5rem;}
+
+  /* week columns */
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:.5rem;margin-top:.9rem;}
+  .col{border:1px solid var(--rule);border-radius:6px;overflow:hidden;min-height:230px;display:flex;flex-direction:column;}
+  .col .ch{padding:.5rem .55rem;border-bottom:1px solid var(--rule);}
+  .col .ch .dow{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:700;}
+  .col .ch .n{font-family:'Spectral',serif;font-size:1.3rem;font-variant-numeric:tabular-nums;line-height:1;}
+  .col .body{padding:.5rem .55rem;display:flex;flex-direction:column;gap:.4rem;flex:1;}
+
+  /* past = written record */
+  .col.past{background:var(--record);}
+  .col.past .ch .n{color:var(--recink);}
+  .col.past .rec{font-family:'Spectral',serif;font-style:italic;font-size:.82rem;color:var(--recink);line-height:1.3;border-left:2px solid #dcdad2;padding-left:.5rem;}
+  .col.past .done{font-size:.72rem;color:#8a897f;display:flex;align-items:center;gap:.4rem;text-decoration:line-through;text-decoration-color:#c3c1b6;}
+  .col.past .focus{margin-top:auto;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  .pdotc{width:6px;height:6px;border-radius:50%;flex:none;}
+
+  /* today = live */
+  .col.today{background:var(--today);box-shadow:inset 0 0 0 1.5px var(--accent);}
+  .col.today .ch{border-bottom-color:#cdd9f7;}
+  .col.today .ch .n{color:var(--accent);}
+  .col.today .ch .tp{font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;}
+  .live{font-size:.76rem;color:var(--ink);display:flex;align-items:center;gap:.4rem;}
+  .live .tm{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.68rem;}
+  /* ③ open-time */
+  .open{border:1px dashed var(--accent);border-radius:5px;padding:.4rem .5rem;background:#fff;}
+  .open .ot{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700;}
+  .open .os{font-size:.72rem;color:var(--muted);}
+  /* ⑤ drift */
+  .drift{display:inline-flex;align-items:center;gap:.25rem;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:var(--growth);font-weight:700;}
+
+  /* future = intention */
+  .col.future{background:var(--future);}
+  .col.future .ch .n{color:var(--faint);}
+  .col.future .intent{font-family:'Spectral',serif;font-style:italic;font-size:.8rem;color:var(--muted);line-height:1.3;}
+  .col.future .plan{font-size:.72rem;color:#8b8f98;display:flex;align-items:center;gap:.4rem;}
+
+  /* marker chips inline */
+  .mkc{display:inline-flex;align-items:center;justify-content:center;width:.95rem;height:.95rem;border-radius:50%;background:var(--ink);color:#fff;font-size:.58rem;font-weight:700;margin-left:.3rem;vertical-align:middle;}
+
+  /* legend */
+  .legend{max-width:var(--maxw);margin:1.2rem auto 0;padding:0 2rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem 2rem;}
+  @media(max-width:800px){.legend{grid-template-columns:1fr;}}
+  .legend .li{display:flex;gap:.6rem;align-items:flex-start;font-size:.86rem;color:#4a463d;}
+  .legend .li b{color:#16181d;}
+  .legend .n{flex:none;display:inline-flex;align-items:center;justify-content:center;width:1.2rem;height:1.2rem;border-radius:50%;background:#1d4ed8;color:#fff;font-size:.68rem;font-weight:700;margin-top:.05rem;}
+  .plegend{max-width:var(--maxw);margin:.9rem auto 0;padding:0 2rem;display:flex;gap:1.3rem;flex-wrap:wrap;font-size:.78rem;color:#6a665b;}
+  .plegend span{display:flex;align-items:center;gap:.4rem;}
+  .plegend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+</style>
+</head>
+<body>
+
+<div class="guide">
+  <div class="kicker">fe-codec-primitives-refinement · LIF-230 · Calendar · concept board</div>
+  <h1>The living week — a calendar that reads your life.</h1>
+  <p>The signature stack on one surface. Past days are a <b>written record</b><span class="mk">1</span> you read;
+  <b>habit threads</b><span class="mk">2</span> run unbroken across the week; today surfaces your <b>open time</b><span class="mk">3</span>;
+  a <b>purpose budget</b><span class="mk">4</span> shows where your hours actually go; and a slipping must-do carries a
+  <b>drift</b><span class="mk">5</span> flag. The Year/Month/Week/Day/Agenda essentials stay underneath — this is the lens on top.</p>
+</div>
+
+<div class="board">
+  <div class="surface">
+    <div class="bhead">
+      <div class="btitle">This week <span class="sub">Oct 5–11 · 2026</span></div>
+      <div class="switch"><button>Year</button><button>Month</button><button>Week</button><button>Day</button><button>Agenda</button><button class="on">Living</button></div>
+    </div>
+
+    <!-- ④ purpose budget -->
+    <div class="align">
+      <span class="lab">This week <span class="mkc">4</span></span>
+      <div class="pbudget"><span class="pdot" style="background:var(--career)"></span><span class="pn">Career</span><span class="pbar"><i style="width:100%;background:var(--career)"></i></span><span class="ph">6h</span></div>
+      <div class="pbudget warn"><span class="pdot" style="background:var(--growth)"></span><span class="pn">Health</span><span class="pbar"><i style="width:0%;background:var(--growth)"></i></span><span class="ph">0h · none yet</span></div>
+      <div class="pbudget"><span class="pdot" style="background:var(--growth)"></span><span class="pn">Growth</span><span class="pbar"><i style="width:80%;background:var(--growth)"></i></span><span class="ph">4h</span></div>
+      <div class="pbudget"><span class="pdot" style="background:var(--admin)"></span><span class="pn">Admin</span><span class="pbar"><i style="width:40%;background:var(--admin)"></i></span><span class="ph">2h</span></div>
+    </div>
+    <div class="annot">Hours this week by the purpose each block serves — the OS quietly flags a value with none.</div>
+
+    <!-- ② habit threads -->
+    <div class="threads" id="threads"></div>
+    <div class="annot"><span class="mkc">2</span>&nbsp; Habits as unbroken threads — a filled node is a kept day, a dotted one a miss; the streak reads at a glance.</div>
+
+    <!-- week columns -->
+    <div class="week" id="week"></div>
+  </div>
+</div>
+
+<div class="plegend">
+  <span><i style="background:#1d4ed8"></i> Career</span>
+  <span><i style="background:#5a6b3f"></i> Health</span>
+  <span><i style="background:#9a2a2a"></i> Growth</span>
+  <span><i style="background:#64748b"></i> Admin</span>
+  <span style="color:#9298a3">· purpose colour on every item + the thread</span>
+</div>
+
+<div class="legend">
+  <div class="li"><span class="n">1</span><div><b>Past as written record.</b> Mon–Wed are tinted like a filled page — an auto-composed "how it went" line + the day's completions (struck, muted) + focus logged. You scroll back and read your life, not empty cells.</div></div>
+  <div class="li"><span class="n">2</span><div><b>Habit threads.</b> Each habit is one continuous line across the week; kept days are filled nodes, misses are dotted gaps. The thread you don't want to break, made visible.</div></div>
+  <div class="li"><span class="n">3</span><div><b>Open-time surfacing.</b> Today shows a genuinely free block and offers to place your deep work / a study session / a habit into it — the calendar plans <i>with</i> you.</div></div>
+  <div class="li"><span class="n">4</span><div><b>Purpose budget.</b> Hours this week by the purpose each block serves, with a gentle flag on a value you've given none — time measured against what matters.</div></div>
+  <div class="li"><span class="n">5</span><div><b>Drift flag.</b> A must-do that keeps getting pushed shows "moved 3×" — honest about slippage, nudging a real decision instead of silently rotting.</div></div>
+  <div class="li"><span class="n" style="background:#16181d">·</span><div><b>Temporal asymmetry.</b> Past = record (warm, written) · Today = live (ringed) · Future = intention (light) — the book you live inside, read by date.</div></div>
+</div>
+
+<script>
+  const P={career:'#1d4ed8',health:'#5a6b3f',growth:'#9a2a2a',admin:'#64748b'};
+  // ② threads: states per day Mon..Sun — on | miss | today | future
+  const threads=[
+    {name:'Meditate', c:P.health, days:['on','on','on','today','future','future','future'], streak:'12-day streak'},
+    {name:'Read 20 min', c:P.growth, days:['on','miss','on','today','future','future','future'], streak:'broke Tue · back on'},
+  ];
+  (function(){
+    const h=document.getElementById('threads'); let html='';
+    threads.forEach(t=>{
+      html+=`<div class="thread" style="--c:${t.c};--line:${t.c}55"><div class="tl"><span class="sq" style="background:${t.c}"></span>${t.name}</div>`;
+      t.days.forEach((s,i)=>{
+        const cls = s==='on'?'on':s==='miss'?'miss':s==='future'?'future':'today';
+        html+=`<div class="node ${cls}"><span class="d"></span></div>`;
+      });
+      html+=`</div>`;
+      // streak label row piggybacks under last — simpler: append inline after
+    });
+    h.innerHTML=html;
+  })();
+
+  // week columns
+  const days=[
+    {dow:'Mon',n:5,kind:'past',rec:'Shipped the re-plan draft — a good, quiet start.',done:[['Re-plan draft',P.career],['Morning check-in',P.health],['Spanish',P.growth]],focus:'2h40 deep focus'},
+    {dow:'Tue',n:6,kind:'past',rec:'Caught the finance import up; lighter afternoon.',done:[['1:1 with Ana',P.career],['Weekly review',P.admin]],focus:'1h10 focus'},
+    {dow:'Wed',n:7,kind:'past',rec:'A slow one — read, and let the rest drift.',done:[['Read ch. 4',P.growth]],focus:'0h focus'},
+    {dow:'Thu',n:8,kind:'today'},
+    {dow:'Fri',n:9,kind:'future',intent:'Wrap the week, review what moved.',plan:[['11:00 Design sync',P.career],['Read',P.growth]]},
+    {dow:'Sat',n:10,kind:'future',intent:'Rest. Nothing owed.',plan:[['Family lunch',P.health]]},
+    {dow:'Sun',n:11,kind:'future',intent:'Plan the week ahead.',plan:[['Weekly review',P.admin]]},
+  ];
+  (function(){
+    const w=document.getElementById('week'); let html='';
+    days.forEach(d=>{
+      if(d.kind==='past'){
+        html+=`<div class="col past"><div class="ch"><div class="dow">${d.dow}</div><div class="n">${d.n}</div></div><div class="body">`
+          + `<div class="rec">${d.rec}</div>`
+          + d.done.map(([t,c])=>`<div class="done"><span class="pdotc" style="background:${c}"></span>${t}</div>`).join('')
+          + `<div class="focus">${d.focus}</div></div></div>`;
+      } else if(d.kind==='today'){
+        html+=`<div class="col today"><div class="ch"><div class="dow">${d.dow} · <span class="tp">Today</span></div><div class="n">${d.n}</div></div><div class="body">`
+          + `<div class="live"><span class="tm">09:00</span><span class="pdotc" style="background:${P.career}"></span>Deep work</div>`
+          + `<div class="open"><div class="ot">◇ 2h open</div><div class="os">slot deep work or a study session?</div></div>`
+          + `<div class="live"><span class="pdotc" style="background:${P.career}"></span>Send proposal &nbsp;<span class="drift">⤻ moved 3×</span></div>`
+          + `<div class="live"><span class="tm">18:00</span><span class="pdotc" style="background:${P.health}"></span>Gym</div>`
+          + `</div></div>`;
+      } else {
+        html+=`<div class="col future"><div class="ch"><div class="dow">${d.dow}</div><div class="n">${d.n}</div></div><div class="body">`
+          + `<div class="intent">${d.intent}</div>`
+          + d.plan.map(([t,c])=>`<div class="plan"><span class="pdotc" style="background:${c}"></span>${t}</div>`).join('')
+          + `</div></div>`;
+      }
+    });
+    w.innerHTML=html;
+  })();
+</script>
+</body>
+</html>

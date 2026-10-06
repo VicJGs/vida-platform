@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — Card · Timeline · List · Gallery refinement (before → after)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--maxw:1180px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#e9e6df;color:#16181d;font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:5rem;}
+  .guide{max-width:var(--maxw);margin:0 auto;padding:3rem 2rem 1rem;}
+  .guide .kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8578;font-weight:500;}
+  .guide h1{font-family:'Spectral',serif;font-weight:500;font-size:clamp(1.8rem,4vw,2.4rem);line-height:1.1;margin:.5rem 0 .6rem;letter-spacing:-.01em;}
+  .guide p{max-width:68ch;color:#4a463d;font-size:.95rem;}
+  .plate{max-width:var(--maxw);margin:2rem auto;padding:0 2rem;}
+  .plate-label{display:flex;align-items:baseline;gap:1rem;margin-bottom:.7rem;}
+  .plate-label .no{font-family:'Spectral',serif;font-size:1.05rem;color:#9a9488;}
+  .plate-label .nm{font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:#1a1a1a;}
+  .plate-label .meta{font-size:.77rem;color:#8a8578;margin-left:auto;}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;}
+  @media(max-width:860px){.pair{grid-template-columns:1fr;}}
+  .tag{display:inline-block;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding:.2rem .5rem;border-radius:3px;margin-bottom:.6rem;}
+  .tag.b{background:#efe7e0;color:#8a5a4a;} .tag.a{background:#e3ece3;color:#4a6b4a;}
+
+  .surface{
+    --paper:#fbfbfa;--ink:#16181d;--muted:#5a5f6a;--faint:#9298a3;--accent:#1d4ed8;--rule:#e7e7e4;--surf2:#f4f4f2;
+    background:var(--paper);color:var(--ink);font-family:'Inter';border-radius:6px;padding:1.3rem;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 30px rgba(0,0,0,.06);min-height:100%;
+  }
+
+  /* ============ CARD ============ */
+  .card{border:1px solid var(--rule);border-radius:8px;background:var(--paper);padding:1.1rem;}
+  /* before */
+  .card.before{box-shadow:none;}
+  .card.before .ct{font-size:1rem;font-weight:600;margin-bottom:.3rem;}
+  .card.before .cm{font-size:.8rem;color:var(--muted);margin-bottom:.6rem;}
+  .card.before .cb{font-size:.86rem;color:var(--ink);}
+  .card.before .cf{margin-top:.8rem;font-size:.82rem;color:var(--accent);}
+  /* after */
+  .card.after{box-shadow:0 1px 2px rgba(0,0,0,.03),0 6px 16px rgba(0,0,0,.05);}
+  .card.after .eyebrow{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:.35rem;}
+  .card.after .ct{font-family:'Spectral',serif;font-weight:500;font-size:1.22rem;letter-spacing:-.01em;margin-bottom:.3rem;}
+  .card.after .cm{font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums;padding-bottom:.7rem;border-bottom:1px solid var(--rule);margin-bottom:.7rem;}
+  .card.after .cb{font-size:.88rem;color:#2c2f36;line-height:1.55;}
+  .card.after .cf{margin-top:.9rem;display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:var(--accent);font-weight:500;}
+
+  /* ============ TIMELINE ============ */
+  .tl{display:flex;flex-direction:column;}
+  .tli{display:grid;grid-template-columns:5.5rem 1.7rem 1fr;gap:.2rem;}
+  .tli .when{text-align:right;padding-right:.7rem;padding-top:.05rem;}
+  .tli .rail{position:relative;}
+  .tli .line{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;}
+  .tli .dot{position:absolute;left:50%;top:6px;width:11px;height:11px;border-radius:50%;margin-left:-5.5px;z-index:1;}
+  .tli .c{padding-bottom:1.1rem;}
+  /* before */
+  .before .tli .when{font-size:.78rem;color:var(--muted);}
+  .before .tli .line{background:var(--rule);}
+  .before .tli .dot{background:#b8bcc4;}
+  .before .tli .tt{font-size:.9rem;}
+  /* after */
+  .after .tli .when .d{font-family:'Spectral',serif;font-size:.95rem;font-variant-numeric:tabular-nums;}
+  .after .tli .when .t{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  .after .tli .line{background:var(--rule);}
+  .after .tli .dot{background:var(--paper);border:2px solid #c7cbd2;}
+  .after .tli.now .dot{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent);}
+  .after .tli .tt{font-size:.92rem;color:var(--ink);}
+  .after .tli .ts{font-size:.78rem;color:var(--muted);margin-top:.1rem;}
+
+  /* ============ LIST ============ */
+  .list .gh{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:600;margin:.2rem 0 .5rem;}
+  .row{display:flex;align-items:center;gap:.6rem;padding:.55rem 0;border-bottom:1px solid var(--rule);}
+  .row:last-child{border-bottom:0;}
+  .row .t{flex:1;font-size:.9rem;}
+  /* before */
+  .before .list .lh{font-size:.9rem;font-weight:600;margin-bottom:.4rem;}
+  .before .row .m{font-size:.78rem;color:var(--muted);}
+  .before .row .ck{width:15px;height:15px;border:1.5px solid #b8bcc4;border-radius:4px;}
+  /* after */
+  .after .row{position:relative;padding-left:.7rem;}
+  .after .row .tick{position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:0;background:var(--accent);border-radius:2px;transition:none;}
+  .after .row.active{background:color-mix(in srgb,var(--accent) 5%,transparent);border-radius:5px;}
+  .after .row.active .tick{height:60%;}
+  .after .row.active .t{color:var(--accent);}
+  .after .row .ck{width:15px;height:15px;border:1.5px solid var(--faint);border-radius:4px;}
+  .after .row.done .ck{background:var(--accent);border-color:var(--accent);}
+  .after .row.done .t{color:var(--faint);text-decoration:line-through;text-decoration-color:var(--faint);}
+  .after .row .m{font-size:.74rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+
+  /* ============ GALLERY ============ */
+  .gal{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;}
+  .tile .cover{aspect-ratio:4/3;border-radius:6px;background:linear-gradient(135deg,#dfe3ea,#eef1f5);}
+  /* before */
+  .before .tile .cover{border-radius:4px;}
+  .before .tile .tt{font-size:.86rem;font-weight:600;margin-top:.45rem;}
+  .before .tile .tm{font-size:.76rem;color:var(--muted);}
+  /* after */
+  .after .tile .cover{border:1px solid var(--rule);box-shadow:0 1px 2px rgba(0,0,0,.04);position:relative;overflow:hidden;}
+  .after .tile .cover .kick{position:absolute;left:.5rem;top:.5rem;font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;color:#fff;background:rgba(22,24,29,.55);padding:.12rem .4rem;border-radius:3px;font-weight:600;}
+  .after .tile .tt{font-family:'Spectral',serif;font-weight:500;font-size:1rem;letter-spacing:-.01em;margin-top:.5rem;line-height:1.2;}
+  .after .tile .tm{font-size:.72rem;color:var(--faint);font-variant-numeric:tabular-nums;letter-spacing:.02em;margin-top:.15rem;text-transform:uppercase;}
+
+  .note{max-width:var(--maxw);margin:.6rem auto 0;padding:0 2rem;}
+  .note ul{margin:.3rem 0 0 1.1rem;color:#4a463d;font-size:.86rem;}
+  .note b{color:#16181d;}
+</style>
+</head>
+<body>
+
+<div class="guide">
+  <div class="kicker">fe-codec-primitives-refinement · LIF-230 · views 2–5</div>
+  <h1>Card · Timeline · List · Gallery — the same editorial vocabulary.</h1>
+  <p>All four are token-clean already; this is the aesthetic lift, applying the vocabulary the Calendar set: <b>serif
+  display</b> for titles, <b>eyebrow</b> labels, <b>tabular figures</b>, <b>hairline</b> structure, accent as a sparing
+  <b>moment</b> mark, and a softer, more intentional elevation. Editorial preset; same tokens, no new palette.</p>
+</div>
+
+<!-- CARD -->
+<section class="plate">
+  <div class="plate-label"><span class="no">2</span><span class="nm">Card</span><span class="meta">eyebrow + serif title · tabular meta · hairline header · softer elevation</span></div>
+  <div class="pair">
+    <div><span class="tag b">Before</span><div class="surface"><div class="card before">
+      <div class="ct">Vida — Frontend re-plan</div>
+      <div class="cm">Updated 2 days ago · 3 milestones</div>
+      <div class="cb">The ② UI tier over the finished ① services. Codec foundation shipped; surfaces next.</div>
+      <div class="cf">Open →</div>
+    </div></div></div>
+    <div><span class="tag a">After</span><div class="surface"><div class="card after">
+      <div class="eyebrow">Project · Active</div>
+      <div class="ct">Vida — Frontend re-plan</div>
+      <div class="cm">Updated 2 days ago · 3 milestones · 68%</div>
+      <div class="cb">The ② UI tier over the finished ① services. Codec foundation shipped; surfaces next.</div>
+      <div class="cf">Open <span>→</span></div>
+    </div></div></div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section class="plate">
+  <div class="plate-label"><span class="no">3</span><span class="nm">Timeline</span><span class="meta">accent "now" moment · eyebrow+serif dates · lighter rail</span></div>
+  <div class="pair">
+    <div><span class="tag b">Before</span><div class="surface"><div class="tl before">
+      <div class="tli"><div class="when">09:30</div><div class="rail"><div class="line"></div><div class="dot"></div></div><div class="c"><div class="tt">Shipped the re-plan draft</div></div></div>
+      <div class="tli"><div class="when">Yesterday</div><div class="rail"><div class="line"></div><div class="dot"></div></div><div class="c"><div class="tt">Reviewed finance import</div></div></div>
+      <div class="tli"><div class="when">Mon</div><div class="rail"><div class="line" style="bottom:auto;height:6px"></div><div class="dot"></div></div><div class="c"><div class="tt">1:1 with Ana</div></div></div>
+    </div></div></div>
+    <div><span class="tag a">After</span><div class="surface"><div class="tl after">
+      <div class="tli now"><div class="when"><div class="d">09:30</div><div class="t">Today</div></div><div class="rail"><div class="line"></div><div class="dot"></div></div><div class="c"><div class="tt">Shipped the re-plan draft</div><div class="ts">2h40 of deep focus before noon.</div></div></div>
+      <div class="tli"><div class="when"><div class="d">4</div><div class="t">Yesterday</div></div><div class="rail"><div class="line"></div><div class="dot"></div></div><div class="c"><div class="tt">Reviewed finance import</div></div></div>
+      <div class="tli"><div class="when"><div class="d">2</div><div class="t">Monday</div></div><div class="rail"><div class="line" style="bottom:auto;height:6px"></div><div class="dot"></div></div><div class="c"><div class="tt">1:1 with Ana</div></div></div>
+    </div></div></div>
+  </div>
+</section>
+
+<!-- LIST -->
+<section class="plate">
+  <div class="plate-label"><span class="no">4</span><span class="nm">List</span><span class="meta">eyebrow groups · tabular meta · accent tick on active · hairlines</span></div>
+  <div class="pair">
+    <div><span class="tag b">Before</span><div class="surface"><div class="list before">
+      <div class="lh">Today</div>
+      <div class="row"><span class="ck"></span><span class="t">Finish the re-plan draft</span><span class="m">09:30</span></div>
+      <div class="row"><span class="ck"></span><span class="t">Review finance import</span><span class="m">—</span></div>
+      <div class="row"><span class="ck"></span><span class="t">Spanish, daily session</span><span class="m">—</span></div>
+      <div class="row"><span class="ck"></span><span class="t">Call Mariana</span><span class="m">17:00</span></div>
+    </div></div></div>
+    <div><span class="tag a">After</span><div class="surface"><div class="list after">
+      <div class="gh">Today</div>
+      <div class="row done"><span class="ck"></span><span class="t">Morning check-in</span><span class="m">done</span></div>
+      <div class="row active"><span class="tick"></span><span class="ck"></span><span class="t">Finish the re-plan draft</span><span class="m">09:30</span></div>
+      <div class="row"><span class="ck"></span><span class="t">Review finance import</span><span class="m">—</span></div>
+      <div class="row"><span class="ck"></span><span class="t">Call Mariana</span><span class="m">17:00</span></div>
+    </div></div></div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="plate">
+  <div class="plate-label"><span class="no">5</span><span class="nm">Gallery</span><span class="meta">framed cover + kicker · serif title · tabular caption</span></div>
+  <div class="pair">
+    <div><span class="tag b">Before</span><div class="surface"><div class="gal before">
+      <div class="tile"><div class="cover"></div><div class="tt">Systems thinking</div><div class="tm">Book · 42%</div></div>
+      <div class="tile"><div class="cover"></div><div class="tt">Field notes</div><div class="tm">Note · 3 days ago</div></div>
+    </div></div></div>
+    <div><span class="tag a">After</span><div class="surface"><div class="gal after">
+      <div class="tile"><div class="cover"><span class="kick">Book</span></div><div class="tt">Systems thinking</div><div class="tm">42% · ch. 4 of 9</div></div>
+      <div class="tile"><div class="cover"><span class="kick">Note</span></div><div class="tt">Field notes</div><div class="tm">3 days ago</div></div>
+    </div></div></div>
+  </div>
+</section>
+
+<div class="note">
+  <ul>
+    <li><b>Card</b> — an optional <b>eyebrow kicker</b> + <b>serif title</b>, a <b>hairline</b> under the header, <b>tabular</b> meta, and a softer two-layer shadow. Reads composed, not boxed.</li>
+    <li><b>Timeline</b> — the <b>"now"</b> moment is an accent dot with a soft ring; past dots are hollow/muted; dates become <b>serif numerals + an eyebrow</b> (Today/Yesterday). A lighter rail.</li>
+    <li><b>List</b> — <b>eyebrow group headers</b>, an <b>accent tick</b> on the active row, <b>tabular</b> trailing meta, refined hairlines + a clear done-state.</li>
+    <li><b>Gallery</b> — <b>framed covers</b> with a corner <b>kicker</b>, <b>serif titles</b>, and a <b>tabular caption</b>; consistent 4:3, generous gutters.</li>
+  </ul>
+</div>
+</body>
+</html>

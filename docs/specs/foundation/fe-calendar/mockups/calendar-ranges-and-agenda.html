@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — Calendar ranges + the Agenda "another way"</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --maxw:1180px; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#e9e6df;color:#1a1a1a;font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:5rem;}
+  .guide{max-width:var(--maxw);margin:0 auto;padding:3rem 2rem 1rem;}
+  .guide .kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8578;font-weight:500;}
+  .guide h1{font-family:'Spectral',serif;font-weight:500;font-size:clamp(1.8rem,4vw,2.5rem);line-height:1.1;margin:.5rem 0 .75rem;letter-spacing:-.01em;}
+  .guide p{max-width:66ch;color:#4a463d;font-size:.96rem;}
+  .guide .legend{margin-top:1.1rem;font-size:.82rem;color:#6a665b;display:flex;gap:1.4rem;flex-wrap:wrap;}
+  .guide .legend b{color:#1a1a1a;font-weight:600;}
+  .plate{max-width:var(--maxw);margin:2.2rem auto;padding:0 2rem;}
+  .plate-label{display:flex;align-items:baseline;gap:1rem;margin-bottom:.8rem;}
+  .plate-label .no{font-family:'Spectral',serif;font-size:1.05rem;color:#9a9488;}
+  .plate-label .nm{font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:#1a1a1a;}
+  .plate-label .meta{font-size:.77rem;color:#8a8578;margin-left:auto;}
+
+  /* Editorial preset surface */
+  .surface{
+    --paper:#fbfbfa;--ink:#16181d;--muted:#5a5f6a;--faint:#9298a3;--accent:#1d4ed8;
+    --rule:#e7e7e4;--weekend:#f4f4f2;--oos:#faf9f6;--band:#f6f6f4;
+    --display:'Spectral',serif;--body:'Inter',sans-serif;
+    background:var(--paper);color:var(--ink);font-family:var(--body);
+    border-radius:6px;padding:1.5rem 1.6rem 1.8rem;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 30px rgba(0,0,0,.06);
+  }
+
+  /* ---- shared chrome: title + range switcher ---- */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;gap:1rem;flex-wrap:wrap;}
+  .cal-title{font-family:var(--display);font-weight:500;font-size:1.4rem;letter-spacing:-.01em;}
+  .switch{display:flex;gap:.1rem;border:1px solid var(--rule);border-radius:7px;padding:.2rem;}
+  .switch button{font-family:var(--body);font-size:.76rem;letter-spacing:.02em;color:var(--muted);background:transparent;border:0;border-radius:5px;padding:.34rem .7rem;cursor:pointer;}
+  .switch button.on{color:var(--accent);background:var(--band);font-weight:600;box-shadow:inset 0 0 0 1px var(--rule);}
+  .nav{display:flex;gap:.4rem;align-items:center;}
+  .nav button{width:28px;height:28px;border:1px solid var(--rule);background:transparent;border-radius:5px;color:var(--muted);cursor:pointer;}
+  .nav .today{width:auto;padding:0 .7rem;font-size:.76rem;}
+
+  /* ================= AGENDA (the "another way") ================= */
+  .agenda{display:flex;flex-direction:column;}
+  .agenda .day{display:grid;grid-template-columns:7.5rem 1fr;gap:1rem;padding:1.1rem 0;border-top:1px solid var(--rule);}
+  .agenda .day:first-of-type{border-top:0;}
+  .agenda .day.is-today .dnum{color:var(--accent);}
+  .agenda .drail{position:relative;}
+  .agenda .dnum{font-family:var(--display);font-weight:500;font-size:1.7rem;line-height:1;font-variant-numeric:tabular-nums;}
+  .agenda .ddow{font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-top:.35rem;}
+  .agenda .dmo{font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  .agenda .today-pill{display:inline-block;margin-top:.5rem;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;}
+
+  .part{margin-bottom:.5rem;}
+  .part .ph{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);font-weight:600;margin:.5rem 0 .3rem;}
+  .item{display:grid;grid-template-columns:3.2rem 1fr auto;align-items:center;gap:.7rem;padding:.33rem 0;}
+  .item .tm{font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;}
+  .item .tm.allday{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);}
+  .item .ttl{display:flex;align-items:center;gap:.5rem;font-size:.92rem;color:var(--ink);}
+  .item .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none;}
+  .item .dot.soft{background:var(--faint);}
+  .item.done .ttl{color:var(--faint);text-decoration:line-through;text-decoration-color:var(--faint);}
+  .item .wt{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--faint);}
+  .item .wt.must{color:var(--accent);}
+  .item .ck{width:15px;height:15px;border:1.5px solid var(--faint);border-radius:4px;flex:none;}
+  .item.done .ck{background:var(--accent);border-color:var(--accent);}
+
+  /* ================= WEEK (time-column) ================= */
+  .week{display:grid;grid-template-columns:3rem repeat(7,1fr);border-top:1px solid var(--rule);border-left:1px solid var(--rule);}
+  .week .cell{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);min-height:34px;position:relative;}
+  .week .colhead{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:.45rem .5rem;}
+  .week .colhead .dow{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  .week .colhead .n{font-family:var(--display);font-size:1.05rem;font-variant-numeric:tabular-nums;}
+  .week .colhead.today .n{color:var(--accent);}
+  .week .gut{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);font-size:.6rem;color:var(--faint);text-align:right;padding:.1rem .35rem;font-variant-numeric:tabular-nums;}
+  .week .ev{position:absolute;left:3px;right:3px;top:3px;background:color-mix(in srgb,var(--accent) 12%,var(--paper));border-left:2px solid var(--accent);border-radius:3px;padding:.18rem .35rem;font-size:.68rem;color:var(--ink);line-height:1.2;overflow:hidden;}
+  .week .ev .et{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.6rem;}
+  .week .allday-strip{grid-column:2 / span 7;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:.3rem .5rem;display:flex;gap:.5rem;flex-wrap:wrap;}
+  .week .allday-lbl{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:.35rem .35rem;text-align:right;}
+  .week .chip-ad{font-size:.66rem;color:var(--ink);display:flex;align-items:center;gap:.35rem;}
+  .week .chip-ad .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);}
+
+  /* ================= YEAR (overview) ================= */
+  .year{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem 1.4rem;}
+  @media(max-width:760px){.year{grid-template-columns:repeat(2,1fr);}}
+  .ym .ymh{font-family:var(--display);font-size:.95rem;margin-bottom:.4rem;color:var(--ink);}
+  .ym.cur .ymh{color:var(--accent);}
+  .ymg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .ymg .d{aspect-ratio:1;border-radius:2px;background:var(--band);position:relative;}
+  .ymg .d.oos{background:transparent;}
+  .ymg .d.has::after{content:'';position:absolute;inset:0;margin:auto;width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:.55;}
+  .ymg .d.busy::after{opacity:1;width:5px;height:5px;}
+  .ymg .d.today{box-shadow:inset 0 0 0 1.5px var(--accent);}
+
+  .note{max-width:var(--maxw);margin:1rem auto 0;padding:0 2rem;}
+  .note p.k{font-family:'Spectral',serif;font-size:1.12rem;color:#1a1a1a;margin-bottom:.3rem;}
+  .note ul{margin:.3rem 0 0 1.1rem;color:#4a463d;font-size:.9rem;}
+  .note li{margin:.22rem 0;}
+  .note b{color:#1a1a1a;}
+</style>
+</head>
+<body>
+
+<div class="guide">
+  <div class="kicker">fe-codec-primitives-refinement · LIF-230 · Calendar · ranges + agenda exploration</div>
+  <h1>The calendar, five ways — and an Agenda that shows what to <em>do</em>.</h1>
+  <p>Two things you flagged: the calendar needs <b>Year · Month · Week · Day · Agenda</b> ranges, and the month grid
+  alone crushes information — it shows <i>when</i>, not <i>what you need to do</i>. So the headline isn't a prettier
+  grid, it's the <b>Agenda</b> range: the same dated data read as an actionable, daypart-grouped schedule (your P3
+  "① Schedule · must/can" capture). A single <b>range switcher</b> swaps all five; Month stays the refined grid from
+  mockup 1. Editorial preset only here — once the shape is right, I render the full preset × mode × density matrix.</p>
+  <div class="legend">
+    <span><b>Hero</b> the Agenda "another way"</span>
+    <span><b>Ranges</b> Year · Month · Week · Day · Agenda</span>
+    <span><b>Still</b> a read-only lens (ADR-007); write = the module's</span>
+  </div>
+</div>
+
+<!-- ============ AGENDA ============ -->
+<section class="plate">
+  <div class="plate-label"><span class="no">A</span><span class="nm">Agenda — the actionable range</span>
+    <span class="meta">daypart-grouped · timed + all-day · must/can · done-state</span></div>
+  <div class="surface">
+    <div class="cal-head">
+      <div class="cal-title">This week · Oct 5–11</div>
+      <div class="switch">
+        <button>Year</button><button>Month</button><button>Week</button><button>Day</button><button class="on">Agenda</button>
+      </div>
+      <div class="nav"><button>‹</button><button class="today">Today</button><button>›</button></div>
+    </div>
+    <div class="agenda">
+      <div class="day is-today">
+        <div class="drail"><div class="dnum">5</div><div class="ddow">Monday</div><div class="dmo">October</div><div class="today-pill">Today</div></div>
+        <div class="items">
+          <div class="part"><div class="ph">Morning</div>
+            <div class="item done"><div class="tm allday">daypart</div><div class="ttl"><span class="dot soft"></span>Morning check-in</div><span class="ck"></span></div>
+            <div class="item"><div class="tm">09:30</div><div class="ttl"><span class="dot"></span>Finish the re-plan draft</div><span class="wt must">Must</span></div>
+            <div class="item"><div class="tm allday">daypart</div><div class="ttl"><span class="dot"></span>Spanish, daily session</div><span class="wt">Can</span></div>
+          </div>
+          <div class="part"><div class="ph">Afternoon</div>
+            <div class="item"><div class="tm">17:00</div><div class="ttl"><span class="dot"></span>Call Mariana</div><span class="ck"></span></div>
+          </div>
+          <div class="part"><div class="ph">Evening</div>
+            <div class="item"><div class="tm allday">daypart</div><div class="ttl"><span class="dot soft"></span>Read ch. 4 — Systems</div><span class="wt">Can</span></div>
+            <div class="item"><div class="tm allday">daypart</div><div class="ttl"><span class="dot soft"></span>Log yesterday's expenses</div><span class="wt">Can</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="day">
+        <div class="drail"><div class="dnum">6</div><div class="ddow">Tuesday</div></div>
+        <div class="items">
+          <div class="item"><div class="tm">11:00</div><div class="ttl"><span class="dot"></span>1:1 with Ana</div><span class="ck"></span></div>
+          <div class="item"><div class="tm allday">daypart</div><div class="ttl"><span class="dot soft"></span>Weekly review</div><span class="wt">Can</span></div>
+        </div>
+      </div>
+      <div class="day">
+        <div class="drail"><div class="dnum">8</div><div class="ddow">Thursday</div></div>
+        <div class="items">
+          <div class="item"><div class="tm">18:00</div><div class="ttl"><span class="dot"></span>Gym</div><span class="ck"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WEEK ============ -->
+<section class="plate">
+  <div class="plate-label"><span class="no">B</span><span class="nm">Week — the time-column range</span>
+    <span class="meta">hour grid · timed blocks · all-day strip on top</span></div>
+  <div class="surface">
+    <div class="cal-head">
+      <div class="cal-title">Oct 5–11, 2026</div>
+      <div class="switch">
+        <button>Year</button><button>Month</button><button class="on">Week</button><button>Day</button><button>Agenda</button>
+      </div>
+      <div class="nav"><button>‹</button><button class="today">Today</button><button>›</button></div>
+    </div>
+    <div class="week" id="week"></div>
+  </div>
+</section>
+
+<!-- ============ YEAR ============ -->
+<section class="plate">
+  <div class="plate-label"><span class="no">C</span><span class="nm">Year — the overview range</span>
+    <span class="meta">12 mini-months · activity density dots · today ringed</span></div>
+  <div class="surface">
+    <div class="cal-head">
+      <div class="cal-title">2026</div>
+      <div class="switch">
+        <button class="on">Year</button><button>Month</button><button>Week</button><button>Day</button><button>Agenda</button>
+      </div>
+      <div class="nav"><button>‹</button><button class="today">Today</button><button>›</button></div>
+    </div>
+    <div class="year" id="year"></div>
+  </div>
+</section>
+
+<div class="note">
+  <p class="k">The model (one renderer, five ranges)</p>
+  <ul>
+    <li><b>Agenda</b> is the answer to "see what I need to do": timed items show a time, dayparted items group under <b>Morning / Afternoon / Evening</b>, each carries a <b>Must / Can</b> weight + done checkbox. The crush is gone — nothing hides behind "+2 more".</li>
+    <li><b>Week / Day</b> = a time-column for precise scheduling; all-day / dayparted items sit in a strip on top. (Day = Week zoomed to one column — not mocked separately.)</li>
+    <li><b>Month</b> = the refined grid (mockup 1). <b>Year</b> = a zoom-out overview; density dots show busy days, click a month to drill in.</li>
+    <li><b>Still a read-only lens</b> (ADR-007): checking a box / moving an event is a <i>write</i> = the owning module's capability, composed in — the renderer only displays.</li>
+    <li>One <b>range switcher</b> (toolbar, `aria-pressed`) swaps ranges; the switcher reflows to a dropdown under 768 (the Collection precedent).</li>
+  </ul>
+</div>
+
+<script>
+  const accentHours = {1:[['09:30','Re-plan draft',2]], 2:[['11:00','1:1 Ana',1]], 4:[['18:00','Gym',1]]}; // dayIdx(0=Mon)->[time,title,rows]
+  // WEEK
+  (function(){
+    const host=document.getElementById('week'); if(!host) return;
+    const days=['Mon 5','Tue 6','Wed 7','Thu 8','Fri 9','Sat 10','Sun 11']; const todayIdx=0;
+    let h='<div class="gut"></div>';
+    days.forEach((d,i)=>{const[dow,n]=d.split(' ');h+=`<div class="colhead ${i===todayIdx?'today':''}"><div class="dow">${dow}</div><div class="n">${n}</div></div>`;});
+    // all-day strip
+    h+='<div class="allday-lbl">all-day</div><div class="allday-strip"><span class="chip-ad"><span class="dot"></span>Spanish session</span><span class="chip-ad"><span class="dot"></span>Read ch.4</span></div>';
+    const hours=['08','09','10','11','12','13','14','15','16','17','18','19'];
+    hours.forEach((hr,row)=>{
+      h+=`<div class="gut">${hr}:00</div>`;
+      for(let c=0;c<7;c++){
+        let ev='';
+        (accentHours[c]||[]).forEach(([t,ttl,span])=>{ if(parseInt(t)===parseInt(hr)){ ev=`<div class="ev" style="height:${span*34-6}px"><div class="et">${t}</div>${ttl}</div>`; }});
+        h+=`<div class="cell">${ev}</div>`;
+      }
+    });
+    host.innerHTML=h;
+  })();
+  // YEAR
+  (function(){
+    const host=document.getElementById('year'); if(!host) return;
+    const MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const firstDow=[3,6,6,2,4,0,2,5,1,3,6,1]; // Mon=0 index of day 1 for 2026 (approx, mock)
+    const dim=[31,28,31,30,31,30,31,31,30,31,30,31];
+    let h='';
+    MO.forEach((m,mi)=>{
+      const cur = mi===9;
+      h+=`<div class="ym ${cur?'cur':''}"><div class="ymh">${m}</div><div class="ymg">`;
+      for(let i=0;i<firstDow[mi];i++) h+='<div class="d oos"></div>';
+      for(let d=1;d<=dim[mi];d++){
+        const busy = Math.random()>0.78; const has = !busy && Math.random()>0.6;
+        const today = cur && d===5;
+        h+=`<div class="d ${busy?'busy has':has?'has':''} ${today?'today':''}"></div>`;
+      }
+      h+='</div></div>';
+    });
+    host.innerHTML=h;
+  })();
+</script>
+</body>
+</html>
