@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida — views alive · Card · Timeline · List · Gallery signature set</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--maxw:1200px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#e9e6df;color:#16181d;font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:5rem;}
+  .guide{max-width:var(--maxw);margin:0 auto;padding:3rem 2rem 1rem;}
+  .guide .kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8578;font-weight:500;}
+  .guide h1{font-family:'Spectral',serif;font-weight:500;font-size:clamp(1.8rem,4vw,2.4rem);line-height:1.1;margin:.5rem 0 .6rem;letter-spacing:-.01em;}
+  .guide p{max-width:70ch;color:#4a463d;font-size:.95rem;}
+  .plate{max-width:var(--maxw);margin:1.8rem auto;padding:0 2rem;}
+  .plate-label{display:flex;align-items:baseline;gap:1rem;margin-bottom:.7rem;}
+  .plate-label .no{font-family:'Spectral',serif;font-size:1.05rem;color:#9a9488;}
+  .plate-label .nm{font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:#1a1a1a;}
+  .plate-label .meta{font-size:.77rem;color:#8a8578;margin-left:auto;}
+
+  .surface{
+    --paper:#fbfbfa;--ink:#16181d;--muted:#5a5f6a;--faint:#9298a3;--accent:#1d4ed8;--rule:#e7e7e4;--surf2:#f4f4f2;
+    --record:#f3f2ec;--recink:#6a6a63;--warm:#9a2a2a;--career:#1d4ed8;--health:#5a6b3f;--growth:#9a2a2a;--admin:#64748b;
+    background:var(--paper);color:var(--ink);font-family:'Inter';border-radius:7px;padding:1.5rem;box-shadow:0 1px 2px rgba(0,0,0,.05),0 10px 36px rgba(0,0,0,.07);
+  }
+  .annot{font-size:.74rem;color:#6a665b;margin-top:.7rem;}
+  .annot b{color:#16181d;}
+  .mk{display:inline-flex;align-items:center;justify-content:center;width:1rem;height:1rem;border-radius:50%;background:#1d4ed8;color:#fff;font-size:.6rem;font-weight:700;vertical-align:middle;}
+
+  /* ===== CARD — ambient micro-dashboards ===== */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+  .card{position:relative;border:1px solid var(--rule);border-radius:9px;background:var(--paper);padding:1rem 1rem 1.1rem;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.03),0 5px 14px rgba(0,0,0,.045);}
+  .card .edge{position:absolute;left:0;top:0;bottom:0;width:3px;}
+  .card.calm .edge{background:var(--health);}
+  .card.warm .edge{background:var(--warm);}
+  .card.faded{opacity:.62;}
+  .card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:.6rem;}
+  .card .eyebrow{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:700;}
+  .card .ct{font-family:'Spectral',serif;font-weight:500;font-size:1.12rem;letter-spacing:-.01em;margin:.25rem 0 .1rem;}
+  .card .cm{font-size:.74rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .card .cm.warm{color:var(--warm);}
+  .ring{position:relative;width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--rc,var(--accent)) calc(var(--p,0)*1%), #e6e6e3 0);}
+  .ring::before{content:'';position:absolute;width:30px;height:30px;border-radius:50%;background:var(--paper);}
+  .ring span{position:relative;font-size:.6rem;font-weight:700;font-variant-numeric:tabular-nums;}
+  .hhint{display:flex;align-items:center;gap:.35rem;margin-top:.7rem;font-size:.66rem;color:var(--faint);}
+  .hhint .lk{color:var(--muted);}
+
+  /* ===== TIMELINE — now fulcrum ===== */
+  .tl{max-width:460px;}
+  .ti{display:grid;grid-template-columns:5.2rem 1.6rem 1fr;gap:.2rem;}
+  .ti .when{text-align:right;padding-right:.7rem;}
+  .ti .when .d{font-family:'Spectral',serif;font-size:.92rem;font-variant-numeric:tabular-nums;}
+  .ti .when .t{font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  .ti .rail{position:relative;}
+  .ti .line{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--rule);}
+  .ti .dot{position:absolute;left:50%;top:5px;width:10px;height:10px;border-radius:50%;margin-left:-5px;z-index:1;background:var(--paper);border:2px solid #c7cbd2;}
+  .ti .c{padding-bottom:1rem;}
+  .ti.past .c .tt{font-family:'Spectral',serif;font-style:italic;color:var(--recink);font-size:.92rem;}
+  .ti.past .c .ts{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-top:.15rem;}
+  .ti.future .dot{opacity:.55;}
+  .ti.future .c .tt{color:var(--muted);font-size:.9rem;}
+  .ti.future .when .d,.ti.future .when .t{opacity:.7;}
+  /* the fulcrum */
+  .fulcrum{display:grid;grid-template-columns:5.2rem 1.6rem 1fr;align-items:center;margin:.1rem 0 .8rem;}
+  .fulcrum .lab{text-align:right;padding-right:.7rem;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700;}
+  .fulcrum .rail{position:relative;height:1.1rem;}
+  .fulcrum .dot{position:absolute;left:50%;top:50%;width:14px;height:14px;border-radius:50%;margin:-7px 0 0 -7px;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent);z-index:1;}
+  .fulcrum .ln{height:2px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 10%,transparent));}
+
+  /* ===== LIST — the one thing ===== */
+  .list{max-width:480px;}
+  .one-lab{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:.4rem;}
+  .one{border:1px solid color-mix(in srgb,var(--accent) 35%,var(--rule));background:color-mix(in srgb,var(--accent) 5%,var(--paper));border-radius:8px;padding:.8rem .9rem;display:flex;align-items:center;gap:.7rem;}
+  .one .ck{width:18px;height:18px;border:1.5px solid var(--accent);border-radius:5px;flex:none;}
+  .one .ot{font-family:'Spectral',serif;font-size:1.12rem;font-weight:500;flex:1;}
+  .one .om{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums;}
+  .then-lab{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);font-weight:700;margin:1rem 0 .3rem;}
+  .lrow{display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--rule);}
+  .lrow:last-child{border-bottom:0;}
+  .lrow .ck{width:15px;height:15px;border:1.5px solid var(--faint);border-radius:4px;flex:none;}
+  .lrow .t{flex:1;font-size:.9rem;color:var(--ink);}
+  .lrow .sig{display:inline-flex;align-items:center;gap:.3rem;font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;}
+  .sig .pdot{width:7px;height:7px;border-radius:50%;}
+  .sig.streak{color:var(--health);} .sig.drift{color:var(--warm);} .sig.due{color:var(--muted);}
+  .lrow .tm{font-size:.74rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+
+  /* ===== GALLERY — covers + weight masonry ===== */
+  .gal{columns:4;column-gap:.9rem;}
+  @media(max-width:820px){.gal{columns:2;}}
+  .gtile{break-inside:avoid;margin-bottom:.9rem;}
+  .gcover{border-radius:7px;border:1px solid var(--rule);overflow:hidden;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.05);}
+  .gcover .kick{position:absolute;left:.5rem;top:.5rem;font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding:.12rem .4rem;border-radius:3px;background:rgba(255,255,255,.8);color:#16181d;z-index:2;}
+  .gcover.img{height:var(--h,120px);background:linear-gradient(135deg,#dfe3ea,#eef1f5);}
+  /* generated editorial cover for imageless entities */
+  .gcover.gen{height:var(--h,120px);display:flex;align-items:flex-end;padding:.7rem;}
+  .gcover.gen .gt{font-family:'Spectral',serif;font-weight:500;font-size:1.02rem;line-height:1.15;color:#fff;}
+  .gcover.prog{position:absolute;}
+  .gbar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.3);}
+  .gbar i{position:absolute;left:0;top:0;bottom:0;background:#fff;}
+  .gtt{font-family:'Spectral',serif;font-weight:500;font-size:.92rem;margin-top:.4rem;line-height:1.15;}
+  .gtm{font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-variant-numeric:tabular-nums;margin-top:.1rem;}
+
+  .legend{max-width:var(--maxw);margin:1rem auto 0;padding:0 2rem;}
+  .legend ul{margin:.3rem 0 0 1.1rem;color:#4a463d;font-size:.88rem;}
+  .legend b{color:#16181d;}
+</style>
+</head>
+<body>
+
+<div class="guide">
+  <div class="kicker">fe-codec-primitives-refinement · LIF-230 · views alive</div>
+  <h1>The four views, alive — now-aware and ambient.</h1>
+  <p>The same data, made to <em>feel alive</em> without a single extra label: cards carry a pulse of their entity,
+  the timeline reads around <b>now</b>, the list has an opinion, the gallery is always beautiful. All presentational —
+  the primitive exposes the hooks, a surface fills them. Editorial preset.</p>
+</div>
+
+<!-- CARD -->
+<section class="plate">
+  <div class="plate-label"><span class="no">2</span><span class="nm">Card · ambient micro-dashboard</span><span class="meta">status tint · progress ring · last-touched · link hint</span></div>
+  <div class="surface">
+    <div class="cards">
+      <div class="card calm"><div class="edge"></div>
+        <div class="top"><div><div class="eyebrow">Project · On track</div><div class="ct">Frontend re-plan</div><div class="cm">Updated 2d · 3 milestones</div></div>
+          <div class="ring" style="--p:68;--rc:var(--career)"><span>68</span></div></div>
+        <div class="hhint">◇ <span class="lk">7 links</span> · touched today</div>
+      </div>
+      <div class="card warm"><div class="edge"></div>
+        <div class="top"><div><div class="eyebrow">Person · Cooling</div><div class="ct">Mariana Alves</div><div class="cm warm">Last talked 12 days ago</div></div>
+          <div class="ring" style="--p:30;--rc:var(--warm)"><span>!</span></div></div>
+        <div class="hhint">◇ <span class="lk">reconnect?</span></div>
+      </div>
+      <div class="card"><div class="edge" style="background:var(--growth)"></div>
+        <div class="top"><div><div class="eyebrow">Book · Reading</div><div class="ct">Systems thinking</div><div class="cm">ch. 4 of 9</div></div>
+          <div class="ring" style="--p:42;--rc:var(--growth)"><span>42</span></div></div>
+        <div class="hhint">◇ <span class="lk">3 notes</span> · touched 3d ago</div>
+      </div>
+    </div>
+    <div class="annot"><span class="mk">alive</span>&nbsp; A card is a glanceable <b>micro-dashboard</b> of its entity — a <b>status tint</b> (green on-track · oxblood cooling), a <b>progress ring</b>, a <b>tabular last-touched</b>, and a <b>link hint</b>. Faded = neglected. The primitive ships the slots; the surface feeds the data.</div>
+  </div>
+</section>
+
+<!-- TIMELINE + LIST side by side -->
+<section class="plate">
+  <div class="plate-label"><span class="no">3 · 4</span><span class="nm">Timeline · now-fulcrum &nbsp;&nbsp; / &nbsp;&nbsp; List · the one thing</span><span class="meta">past = record · future = intention &nbsp; / &nbsp; one thing lifted · ambient row-signals</span></div>
+  <div class="surface" style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;">
+    <div class="tl">
+      <div class="ti past"><div class="when"><div class="d">09:30</div><div class="t">Today</div></div><div class="rail"><div class="line"></div><div class="dot"></div></div><div class="c"><div class="tt">Shipped the re-plan draft</div><div class="ts">2h40 deep focus</div></div></div>
+      <div class="ti past"><div class="when"><div class="d">4</div><div class="t">Yesterday</div></div><div class="rail"><div class="line"></div><div class="dot"></div></div><div class="c"><div class="tt">Reviewed the finance import</div></div></div>
+      <div class="fulcrum"><div class="lab">now</div><div class="rail"><div class="dot"></div></div><div class="ln"></div></div>
+      <div class="ti future"><div class="when"><div class="d">11:00</div><div class="t">Today</div></div><div class="rail"><div class="line"></div><div class="dot"></div></div><div class="c"><div class="tt">Design sync</div></div></div>
+      <div class="ti future"><div class="when"><div class="d">18:00</div><div class="t">Today</div></div><div class="rail"><div class="line"></div><div class="dot"></div></div><div class="c"><div class="tt">Gym</div></div></div>
+      <div class="ti future"><div class="when"><div class="d">7</div><div class="t">Tomorrow</div></div><div class="rail"><div class="line" style="bottom:auto;height:6px"></div><div class="dot"></div></div><div class="c"><div class="tt">Weekly review</div></div></div>
+    </div>
+    <div class="list">
+      <div class="one-lab">◆ The one thing</div>
+      <div class="one"><span class="ck"></span><span class="ot">Finish the re-plan draft</span><span class="om">09:30 · Must</span></div>
+      <div class="then-lab">Then, if there's room</div>
+      <div class="lrow"><span class="ck"></span><span class="t">Review finance import</span><span class="sig due"><span class="pdot" style="background:var(--admin)"></span>Admin</span></div>
+      <div class="lrow"><span class="ck"></span><span class="t">Spanish, daily session</span><span class="sig streak">▲ 12-day</span></div>
+      <div class="lrow"><span class="ck"></span><span class="t">Send proposal</span><span class="sig drift">⤻ moved 3×</span></div>
+      <div class="lrow"><span class="ck"></span><span class="t">Call Mariana</span><span class="tm">17:00</span></div>
+    </div>
+  </div>
+  <div class="annot"><span class="mk">alive</span>&nbsp; <b>Timeline</b> reads around a <b>now fulcrum</b> — past is written record (italic, toned), future is light intention. <b>List</b> lifts <b>the one thing</b> and quiets the rest; each quiet row carries an <b>ambient signal</b> (streak · drift · purpose) so the row is alive, not inert.</div>
+</section>
+
+<!-- GALLERY -->
+<section class="plate">
+  <div class="plate-label"><span class="no">5</span><span class="nm">Gallery · cover intelligence + weight masonry</span><span class="meta">generated editorial covers · tiles sized by weight/progress</span></div>
+  <div class="surface">
+    <div class="gal">
+      <div class="gtile"><div class="gcover img" style="--h:170px"><span class="kick">Dream</span><div class="gbar"><i style="width:20%"></i></div></div><div class="gtt">Kyoto in autumn</div><div class="gtm">Bucket list · 1 of 5 steps</div></div>
+      <div class="gtile"><div class="gcover gen" style="--h:130px;background:linear-gradient(145deg,#5a6b3f,#6f8150)"><span class="kick">Purpose</span><div class="gt">Health &amp; energy</div></div><div class="gtt">Health &amp; energy</div><div class="gtm">4h this week · 2 habits</div></div>
+      <div class="gtile"><div class="gcover img" style="--h:210px"><span class="kick">Book</span><div class="gbar"><i style="width:42%"></i></div></div><div class="gtt">Systems thinking</div><div class="gtm">42% · ch. 4 of 9</div></div>
+      <div class="gtile"><div class="gcover gen" style="--h:110px;background:linear-gradient(145deg,#1d4ed8,#3b63e0)"><span class="kick">Project</span><div class="gt">Frontend re-plan</div></div><div class="gtt">Frontend re-plan</div><div class="gtm">68% · active</div></div>
+      <div class="gtile"><div class="gcover gen" style="--h:150px;background:linear-gradient(145deg,#8a5a4a,#a06b58)"><span class="kick">Note</span><div class="gt">Field notes — week 40</div></div><div class="gtt">Field notes — week 40</div><div class="gtm">3 days ago</div></div>
+      <div class="gtile"><div class="gcover img" style="--h:120px"><span class="kick">Person</span></div><div class="gtt">Mariana Alves</div><div class="gtm">Last talked 12d</div></div>
+      <div class="gtile"><div class="gcover gen" style="--h:120px;background:linear-gradient(145deg,#64748b,#7c8798)"><span class="kick">Language</span><div class="gt">Español</div></div><div class="gtt">Español</div><div class="gtm">B1 · 842 words</div></div>
+      <div class="gtile"><div class="gcover img" style="--h:160px"><span class="kick">Dream</span></div><div class="gtt">Learn the piano</div><div class="gtm">Bucket list</div></div>
+    </div>
+    <div class="annot"><span class="mk">alive</span>&nbsp; Imageless entities get a <b>generated editorial cover</b> — the title in the preset serif on a field coloured from the entity (olive = health, ink = project…), with a kicker. Tiles are <b>sized by weight/progress</b> — a masonry of <i>meaning</i>, never a broken-image grid.</div>
+  </div>
+</section>
+
+<div class="legend">
+  <ul>
+    <li><b>Card</b> — status tint + progress ring + tabular last-touched + link hint → a glanceable micro-dashboard of any entity.</li>
+    <li><b>Timeline</b> — a <b>now fulcrum</b>: past = written record (toned, italic), future = light intention. The journal spine, reusable on any entity.</li>
+    <li><b>List</b> — lifts <b>the one thing</b>, quiets the rest; each row carries an ambient signal (streak · drift · purpose · due).</li>
+    <li><b>Gallery</b> — <b>cover intelligence</b> (generated editorial covers) + <b>weight masonry</b> (tiles sized by importance/progress).</li>
+    <li><b>All presentational</b> — the primitive ships the hooks (slots, variants, now-awareness); surfaces feed the data. No module reads baked in → no flagship-and-split.</li>
+  </ul>
+</div>
+</body>
+</html>
