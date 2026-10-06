@@ -7,13 +7,15 @@ import { PomodoroWidget, type PomodoroPhase } from './pomodoro-widget'
 // A self-timing countdown WIDGET; the session engine (sequencing/persistence/effects) is deferred (MOD-sessions) —
 // here the callbacks are the seam.
 //
-// MEASURE (v5-pomodoro-widget.md §4): the mm:ss counts DOWN drift-free after Start · progress fill grows · controls
-// swap by status (Start → Pause/Skip → Resume/Reset/Skip) · Skip/Reset return to idle · completion shows a message +
-// the timer holds 00:00 · phase label · dark mode · a short `durationSec` makes it watchable at the gate.
+// MEASURE (v5 §4 + fe-codec-controls-refinement P1): mm:ss counts DOWN drift-free after Start · progress indicator
+// (bar OR ring) grows · controls swap by status · Skip/Reset → idle · completion message + holds 00:00 · phase label ·
+// dark mode. P1 REFINEMENT to grade at the gate: **tabular figures** (the countdown holds a fixed digit advance, no
+// jitter) · **eyebrow phase** (uppercase/tracked/caption) · **ring** (progress=ring; accent arc FLIPS with preset+mode —
+// reader oxblood / quietDesk olive / dark — proving useTheme-resolved, not frozen) · **resting elevation**.
 
 const PHASES: PomodoroPhase[] = ['focus', 'short-break', 'long-break']
 
-type PlaygroundArgs = { phase: PomodoroPhase; durationSec: number; autoStart: boolean; label: string }
+type PlaygroundArgs = { phase: PomodoroPhase; durationSec: number; autoStart: boolean; label: string; progress: 'bar' | 'ring' }
 const meta: Meta<PlaygroundArgs> = {
   title: 'Platform Views/Pomodoro',
   argTypes: {
@@ -21,6 +23,7 @@ const meta: Meta<PlaygroundArgs> = {
     durationSec: { control: { type: 'range', min: 5, max: 1500, step: 5 } },
     autoStart: { control: 'boolean' },
     label: { control: 'text' },
+    progress: { control: 'inline-radio', options: ['bar', 'ring'] },
   },
 }
 export default meta
@@ -28,7 +31,7 @@ type Story = StoryObj<PlaygroundArgs>
 
 // Playground — click Start and watch it count down (set a short durationSec, e.g. 10, to see completion quickly).
 export const Playground: Story = {
-  args: { phase: 'focus', durationSec: 60, autoStart: false, label: 'Design review' },
+  args: { phase: 'focus', durationSec: 60, autoStart: false, label: 'Design review', progress: 'bar' },
   render: (args) => (
     <View width={280}>
       <PomodoroWidget
@@ -36,8 +39,25 @@ export const Playground: Story = {
         phase={args.phase}
         label={args.label || undefined}
         autoStart={args.autoStart}
+        progress={args.progress}
         aria-label="Pomodoro"
       />
+    </View>
+  ),
+}
+
+// P1 Visual-Gate surface — bar vs ring side by side (idle). The gate drives Start/Pause to sample running/paused and
+// reads the ring's computed `stroke` (accent, flips with preset+mode) + `stroke-dashoffset` (arc grows). autoStart so a
+// partial arc/fill is visible in a static capture.
+export const ProgressForms: Story = {
+  render: () => (
+    <View flexDirection="row" gap={32} flexWrap="wrap">
+      <View width={260}>
+        <PomodoroWidget durationMs={60_000} phase="focus" label="Linear bar" autoStart progress="bar" aria-label="Pomodoro bar" />
+      </View>
+      <View width={260}>
+        <PomodoroWidget durationMs={60_000} phase="focus" label="Progress ring" autoStart progress="ring" aria-label="Pomodoro ring" />
+      </View>
     </View>
   ),
 }
