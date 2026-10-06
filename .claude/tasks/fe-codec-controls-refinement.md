@@ -73,7 +73,7 @@ Every phase runs the `change-frontend-component` spine (Step 0 document-context 
 | **P0** | **tabular-figures convention** | cross-cutting | a `font-variant-numeric:tabular-nums` utility/convention so numeric UI stops jittering; consumed by P1 + any numeric meta | — (convention only) |
 | **P1** ✅ | **pomodoro-widget** | A (high) | ✅ tabular countdown · eyebrow phase · 6px hairline track · resting elevation | ✅ `progress?: 'bar'\|'ring'` (useTheme-resolved SVG ring) |
 | **P2** ✅ | **export-dialog** | A (mod) | ✅ hover state (§VIII gap) · neutral selected border · 4pt rhythm (title/desc = P3; no tabular — .ext not numeric) | ✅ selected accent BAR (Toast model, no shift) |
-| **P3** | **Dialog · Popover · Menu** (overlay chrome) | A (mod) | serif-display titles · spacing rhythm · elevation feel · menu-item hover/active feel | — |
+| **P3** ✅ | **Dialog · Popover · Menu** (overlay chrome) | A (mod) | ✅ Level-3 elevation (`shadow.overlay`); serif titles + menu hover = RATIFY (already shipped) | — |
 | **P4** | **atoms** — Button · Input · Checkbox · Select · Tabs · Toast | B (low) | per-atom quick audit → one concrete refinement OR skip if at the bar (Toast/Checkbox likely skip) | — |
 
 ## Phase log
@@ -95,6 +95,23 @@ Every phase runs the `change-frontend-component` spine (Step 0 document-context 
   UNTOUCHED. tsc 0 · @vida/ui **412 tests** (+1) · eslint 0 · **Visual Gate PASS** (Brave, 3 presets × light/dark: hover
   bg change · bar flips per preset · 1 bar/selected · AA 4.94–6.53 · axe 0 · 375 fit). Spec `phases/P2-export-dialog.md`;
   currency `CLAUDE.md` + `v6-export-dialog.md`. Next: P3 overlay chrome.
+- **P3 · overlay chrome (Dialog · Popover · Menu) — ✅ COMPLETE (2026-10-06).** Audit found most bullets already shipped
+  (**RATIFY**: Dialog title `$display` serif; Menu item hover+active+disabled — the P2 pattern). The one real design §V
+  gap: **no overlay panel had elevation**; `shadow.overlay` (the token named for it) was unused. Applied a **static
+  `box-shadow:shadow.overlay`** to each panel's base rule in `internal/{dialog,popover,menu}-styles.ts` (Card precedent;
+  transition stays explicit opacity,transform so no B12 shadow-animation). Dark self-cancels (hue = dark surface, §XI).
+  Full §XXVI gate (gate-1 REVISE→fold [dark = self-cancel by construction] → Approval 1 → preflight PASSED → gate-2 SHIP →
+  Approval 2). tsc 0 · @vida/ui **412 tests** · eslint 0 · **Visual Gate PASS** (3 overlays × 3 presets × light/dark:
+  shadow present all 18 · light lift · dark self-cancel screenshot-confirmed · axe 0 bar 1 pre-existing). Spec
+  `phases/P3-overlay-chrome.md`; currency `CLAUDE.md`. **⚠ Pre-existing follow-up filed below.** Next: P4 atoms.
+
+
+## Follow-ups (pre-existing, surfaced during this task — NOT regressions)
+- **danger-signal contrast (M4/Figma):** the danger label `#ef4444` on surface = **3.63** contrast (< 4.5 AA) — surfaced
+  by the P3 Menu Visual Gate (axe). It's the **provisional ds-2 signal palette** (indigo/slate/emerald placeholder); real
+  brand/signal VALUES land via the Figma source-of-truth, release-gated M4/P2 (`frontend-source-of-truth.md`). Fixing it =
+  palette-VALUE churn, explicitly out of scope for this whole refinement task. Affects every danger-red-on-surface usage
+  (menu danger item, etc.), not just Menu. Home: the M4 Figma palette pass. Unfiled in Linear (like `ci-prettier-reformat`).
 
 ## Open at pickup (RESOLVED above — kept for audit trail)
 1. ~~Confirm the control set~~ → prioritized tiers (Victor call 1).
