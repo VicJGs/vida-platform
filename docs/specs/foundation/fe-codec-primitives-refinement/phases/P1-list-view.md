@@ -37,28 +37,44 @@ list-view we break its generic spine. So the contract splits cleanly:
   what `renderItem` returns. list-view exposes the structure; the row is the consumer's. *(This is why "List alive" is
   mostly a consumer pattern — honest scope, smaller primitive surface than the mockup implies.)*
 
-## 3. Contract (the exact diff to `ListViewProps<T>`)
+## 3. Contract (the exact diff to `ListViewProps<T>`) — PREFLIGHT-GROUNDED
 ```
-+ sections?: readonly { label: string; items: readonly T[] }[]  // XOR items; grouped render + eyebrow headers
-+ primaryKey?: string            // getKey value of the lifted "one thing"; emphasis affordance
-+ primaryLabel?: string          // optional eyebrow above the primary row (e.g. "The one thing")
-+ activeKey?: string             // getKey value of the active row; accent left-tick
++ export interface ListSection<T> { id: string; title: ReactNode; items: readonly T[] }  // MIRRORS board's
++                                   // BoardGroup<T> [FACT: board-view.tsx:26-33] — one grouped shape across renderers
++ sections?: readonly ListSection<T>[]  // XOR `items`; grouped render + eyebrow headers (provider groups upstream, ADR-007 §3.3)
++ primaryKey?: string      // getKey of the FEATURED row → emphasis = accent left-tick + fontWeight (NO bg tint — no
++                          //   accent-surface token exists; stay token-pure/no palette churn). "one-thing" = consumer semantic.
++ primaryLabel?: string    // optional eyebrow above the featured row
++ activeKey?: string       // getKey of the active row → accent left-tick (Toast 3px-bar precedent [FACT: CLAUDE.md Toast])
 ```
-Rules: `items` XOR `sections` (dev-warn if both); `primaryKey`/`activeKey` that match no row = no-op (dev-warn);
-grouping preserves the state-dependent role + LV-7 warns per the spine; all new treatment via **variants + DIRECT
-semantic tokens** (no injected CSS, DEF-U8-h for dimensions). React-19 ref-prop unchanged. `ViewState` union unchanged.
+Rules: `items` XOR `sections` (dev-warn if both, LV-7 style); `primaryKey`/`activeKey` matching no row = no-op + dev-warn;
+all new treatment via **Tamagui variants + DIRECT semantic tokens** (NOT injected CSS — [FACT: CLAUDE.md Rules "prop-driven
+state = variant"]; Menu `active` variant + card `interactive` variant precedent); dimensions via the token scale (DEF-U8-h).
+React-19 ref-prop + `ViewState` union unchanged.
 
 ## 4. Acceptance
 - **Visual Gate (blocking):** Brave, full matrix **3 presets × light/dark × 3 densities** — list renders; eyebrow
   section headers; primary emphasis (accent tint + tick + eyebrow); active tick; hairline dividers; skeleton; empty via
   slot. **Full-matrix AA** on every text pair incl. warm-dark (muted ≥ 4.5). 375 no-overflow. Matches the mockup oracle.
-- **a11y:** axe 0; **grouped-list pattern finalized at /preflight** (candidate: `role=list` of `role=group`s, each
-  `aria-labelledby` its eyebrow header — vs separate labelled lists; pick the axe-clean one); primary/active are
-  visual-only (no false ARIA — not aria-selected unless the consumer owns a selection semantic); accessible name
-  preserved; LV-7 warns intact. [critique g1: nail the grouped a11y at preflight]
+- **a11y (grouped pattern RESOLVED at preflight — the board model, rotated vertical):** flat `items` = the current
+  single `role="list"` [FACT: list-view.tsx:130], unchanged. `sections` mode = an outer **`role="group"`** (named by the
+  list's aria-label/labelledby) containing, per section: an **eyebrow header `Text` with a `useId`-prefixed `id`** + a
+  **`role="list"` `aria-labelledby`=that id**, each section's role via **`resolveDataViewState`** (per-section empty →
+  `role="status"`). This is exactly board-view's column model [FACT: board-view.tsx:137,193,199,204-221] — reuse, don't
+  re-solve. axe 0. primary/active = visual-only (no false `aria-selected`). accessible name + LV-7 warns intact.
 - **Tests:** sections render + header text; primaryKey/activeKey apply to the right row + no-op+warn on miss; items⊕sections
   XOR warn; existing list-view tests green. `@vida/ui` suite green; tsc 0; eslint 0.
 - **§XXIX currency:** `packages/ui/src/CLAUDE.md` (list-view paragraph: +sections/primary/active) + the v1-list-view spec.
+
+## 4a. Preflight + gate-2 critique (grounded in code; 2026-10-05)
+Every spec claim verified against the repo — SOUND, no blockers. Resolutions folded above:
+- **F1** `sections` shape → `ListSection<T> = {id, title, items}`, mirrors `BoardGroup<T>` [FACT: board-view.tsx:26-33] (one grouped shape across renderers; not the earlier `{label}`).
+- **F2** grouped a11y = the board model (outer `role="group"` + per-section eyebrow-`id`'d `role="list"` + `resolveDataViewState`) [FACT: board-view.tsx:193-221] — reuse, don't invent.
+- **F3** primary/active emphasis = **accent left-tick** (Toast 3px-bar precedent [FACT: CLAUDE.md Toast]) + fontWeight/eyebrow — **NO bg tint** (no accent-surface token exists → no palette churn; the mockup's `color-mix` tint was a mock-only shortcut).
+- **F4** all emphasis via Tamagui **variant**, not injected CSS [FACT: CLAUDE.md Rules; Menu/card variant precedent].
+- **F5** per-section empty reuses `resolveDataViewState` (the board per-column-empty precedent [FACT: board-view.tsx:203-209]).
+- Preserved: LV-6 no-motion, LV-7 warns, density scale `$8/$12/$24` [FACT: list-view.tsx:59-62], state-as-prop (BR-2).
+Gate-2 /critique: SHIP (the mock→spec delta — tint dropped, shape aligned to board — is the only correction; scope is bounded + consistent with the 7-renderer family).
 
 ## 5. Implementation prompt
 Types-first: extend `ListViewProps<T>` (§3) in `list-view.tsx`. Add a `SectionHeader` styled host (eyebrow) + a
