@@ -13,6 +13,7 @@
 
 import { and, eq, isNull } from 'drizzle-orm'
 import { createRepository, type CreateInput } from '../../db/repository'
+import type { EffectType } from '@vida/types'
 import { rollup } from '../../foundation/measurement'
 import { createAssociationResolver } from '../../foundation/spaces'
 import { projects, milestones, deliverables, projectDocuments } from '../../db/schema/projects'
@@ -42,6 +43,7 @@ import {
   type ProjectPageKind,
   type DeliverableSourceRef,
   type ProjectTaskView,
+  type ProjectsDayDigest,
   ProjectNotFoundError,
   MilestoneNotFoundError,
   MilestoneParentError,
@@ -54,10 +56,30 @@ import type { PageRow } from '../../db/schema/notes'
 const PROJECT_PAGE_TITLE: Record<ProjectPageKind, string> = { vision: 'Vision', mission: 'Mission' }
 
 export function createProjectsService(deps: ProjectsServiceDeps): ProjectsService {
-  const { db, deviceId, spaces, notes, registry, measurementSources, tasks } = deps
+  const { db, deviceId, spaces, notes, registry, measurementSources, tasks, effects } = deps
   // READ-only association resolver (entity_links/entity_tags) — the read half of the split (WRITES go via spaces).
   const associations = createAssociationResolver(db, deviceId, registry)
   const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n)
+
+  // S9 — completion fan-out: emit-only, measurement-signal ONLY (C-E2 — never award_xp/grant_currency; gamification's
+  // rule turns the signal into XP). Projects + milestones carry `status`; a deliverable has none (S3) → no deliverable
+  // completion signal. The natural key is the entity id (a project/milestone completes once; rail-idempotent via
+  // effect_event_id = derive(key‖transition‖type)). post-commit, failure-isolated, DORMANT without a handler.
+  const COMPLETION_EFFECTS: readonly EffectType[] = ['emit_measurement_signal']
+  // `TERMINAL_STATUSES` (completed|cancelled) gates the digest's "active" count; the completion fan-out below keys on
+  // 'completed' ONLY — a 'cancelled' terminal is not a completion achievement and emits no signal.
+  const TERMINAL_STATUSES = new Set(['completed', 'cancelled'])
+  async function fanOutCompletion(entityId: string, transition: string): Promise<void> {
+    if (!effects) return // M1 default: no rail wired → dormant
+    for (const effectType of COMPLETION_EFFECTS) {
+      if (!effects.registry.resolve(effectType)) continue // dormant guard: no handler ⇒ skip (would throw NoEffectHandler)
+      try {
+        await effects.rail.applyEffect({ subjectNaturalKey: entityId, transition, effectType, targetRef: entityId })
+      } catch {
+        // post-commit, failure-isolated: the completed entity stands; a handler throw is non-fatal.
+      }
+    }
+  }
 
   // `projects` + `milestones` + `deliverables` all have deleted_at → softDelete:true.
   const projectsRepo = createRepository(db, projects, { deviceId, softDelete: true, encryptedFields: [] })
@@ -113,7 +135,12 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     }
     // No-op patch (all fields undefined) ⇒ skip the write — avoids a wasted updated_at bump + sync_queue row (g2-nit-1).
     if (Object.keys(data).length === 0) return existing
-    return projectsRepo.update(id, data)
+    const updated = await projectsRepo.update(id, data)
+    // S9 post-commit: fan-out on the not-completed → completed transition (idempotent on re-complete).
+    if (existing.status !== 'completed' && updated.status === 'completed') {
+      await fanOutCompletion(id, 'project_completed')
+    }
+    return updated
   }
 
   async function softDeleteProject(id: string): Promise<void> {
@@ -207,7 +234,12 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
       ...(v.parent_milestone_id !== undefined ? { parent_milestone_id: v.parent_milestone_id } : {}),
     }
     if (Object.keys(data).length === 0) return existing
-    return milestonesRepo.update(id, data)
+    const updated = await milestonesRepo.update(id, data)
+    // S9 post-commit: fan-out on the not-completed → completed transition (idempotent on re-complete).
+    if (existing.status !== 'completed' && updated.status === 'completed') {
+      await fanOutCompletion(id, 'milestone_completed')
+    }
+    return updated
   }
 
   async function getMilestoneTree(projectId: string): Promise<MilestoneNode[]> {
@@ -403,6 +435,18 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     return tasks ? tasks.getFocusMinutes(projectId) : 0 // PJ-6: project time = sum of task focus minutes
   }
 
+  // ---- S9: Journal /summary digest -----------------------------------------
+  // active projects (non-terminal, live) + milestones due on `date` (live, non-completed). Project events / global
+  // Calendar are partner-domain-owned (no events table) → not in this digest. PULL path (the Journals registry calls
+  // this at render; NOT a rail push — the completion fan-out is measurement-only, C-E2).
+  async function getDayProjectsDigest(date: string): Promise<ProjectsDayDigest> {
+    const allProjects = await projectsRepo.findAll() // applies isNull(deleted_at)
+    const activeProjects = allProjects.filter((p) => !TERMINAL_STATUSES.has(p.status)).length
+    const due = await milestonesRepo.findWhere(and(eq(milestones.due_date, date), isNull(milestones.deleted_at))!)
+    const dueMilestones = due.filter((m) => m.status !== 'completed').length
+    return { activeProjects, dueMilestones }
+  }
+
   // ---- S4: derived progress (bottom-up rollup, override-wins, nesting_weight) ----
   // All internal resolvers work in the measurement engine's [0,1] space (columns are 0-100 → scale at the
   // boundary). A null is UNMEASURED and is excluded from the rollup (never coerced to 0, BR-2). The chain is
@@ -546,5 +590,7 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     // S8 — Tasks→Projects seam
     getProjectTasks,
     getProjectTime,
+    // S9 — Journal digest
+    getDayProjectsDigest,
   }
 }

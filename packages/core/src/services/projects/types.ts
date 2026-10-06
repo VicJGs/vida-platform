@@ -13,6 +13,7 @@ import type { ProjectRow, MilestoneRow, DeliverableRow, ProjectDocumentRow } fro
 import type { PageRow } from '../../db/schema/notes'
 import type { SpacesService, TaggableTypeRegistry } from '../../foundation/spaces'
 import type { MeasurementSourceRegistry } from '../../foundation/measurement'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
 import type { NotesService } from '../../services/notes'
 import type { ProjectScope, ProjectComplexity, Status, Priority, MeasurementKind, BindingMode } from '@vida/types'
 
@@ -32,7 +33,11 @@ export interface ProjectsServiceDeps {
   /** Deny-safe from S8 — the dedicated Tasks→Projects read port (PJ-5). Tasks OWNS the entity (`services/tasks`
    *  NOT built, #65); Projects never reads the tasks table. ABSENT at M1 ⇒ no task list/leaf/time (empty). */
   tasks?: TasksProjectsPort
-  // grows per slice — effects? lands at S9.
+  /** Deny-safe from S9 — the AR-7 effect rail (emit-only producer). DORMANT at M1 (no handler/named consumer) ⇒
+   *  completion fan-out is a no-op. Projects emits `emit_measurement_signal` ONLY (C-E2 — never an economy grant;
+   *  gamification's rule turns the signal into XP). Inline shape (the `EffectsPort` name collides at the barrel). */
+  effects?: { rail: EffectRail; registry: EffectRegistry }
+  // NOTE: agentic AI over the vault (ADR-015) is an M2 seam with NO M1 consumer → deferred (not a port here, YAGNI).
 }
 
 /** A project-scoped task, as surfaced by the Tasks→Projects port (PJ-5). Port-defined (Tasks owns the real shape);
@@ -221,6 +226,15 @@ export interface ProjectsService {
   // S8 — Tasks→Projects seam (deny-safe; Tasks owns the entity)
   getProjectTasks(projectId: string): Promise<ProjectTaskView[]>
   getProjectTime(projectId: string): Promise<number>
+  // S9 — Journal /summary digest (consumed by the Journals registry; cross-module fan-out is emit-only, internal)
+  getDayProjectsDigest(date: string): Promise<ProjectsDayDigest>
+}
+
+/** The Projects `/summary` recap for a day (PULL into the Journals registry, S9): active projects + milestones due
+ *  that day. Project events / global Calendar are partner-domain-owned (no events table) — out of this digest. */
+export interface ProjectsDayDigest {
+  activeProjects: number
+  dueMilestones: number
 }
 
 /** A measurement source a `derived-pull` deliverable pulls from (a Finance account, a metric, …). Bound as an

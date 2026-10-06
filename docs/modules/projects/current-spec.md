@@ -10,7 +10,7 @@
 `createProjectsService(deps)` — the ① backend service tier for **Projects** over DB-4 `016_projects`
 (4 tables: `projects` · `milestones` · `deliverables` · `project_documents`). The full design lives in
 `docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
-seam-contract). Build state: **① IN PROGRESS — S8 of 9 shipped.**
+seam-contract). Build state: **① COMPLETE — S9 of 9 shipped.**
 
 > **Test runtime: Node 24** (better-sqlite3 ABI = NODE_MODULE_VERSION 137). Run `nvm use 24` before vitest.
 
@@ -149,7 +149,22 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
   from its measurement backend"); `getTaskRollup({entityType:'deliverable', entityId})` returns [0,1]|null (null ⇒
   falls through to the S7 source). At M1 (tasks absent) the leaf is task-free → source → null, unchanged.
 
-## Gates (per slice)
+## S9 — cross-module fan-out + Journal (shipped)
+
+- **Deny-safe `effects?: { rail, registry }`** — emit-only producer (no `registerProjectsEffects`; Projects
+  registers no handler). On a **project/milestone** not-completed→completed transition (post-commit, in
+  `updateProject`/`updateMilestone`), fans out **`emit_measurement_signal` ONLY** (C-E2 — never `award_xp`/
+  `grant_currency`; gamification's rule turns the signal into XP). Deliverables have no `status` → no deliverable
+  completion signal. Natural key = entity id (grain: completes once; rail-idempotent via `effect_event_id`).
+  Dormant without a handler (guard skips, no `NoEffectHandler`); failure-isolated (a handler throw doesn't fail
+  the update). Absent rail ⇒ no-op (M1 default).
+- **Journal** (`journal.ts`): `getDayProjectsDigest(date)` = active projects (non-terminal, live) + milestones due
+  that day (live, non-completed). `createProjectsJournalContribution`/`registerProjectsJournal` — PULL into the
+  Journals registry (`module='projects'`, `sectionKey='summary'`), state success/empty by TYPE, idle⇒empty (no
+  throw), dedup by module. Project events / global Calendar = partner-owned (no events table) → out of the digest.
+- **Deferred M2 seam:** agentic AI over the vault (ADR-015) — no M1 consumer, not a port (YAGNI).
+
+## ① COMPLETE — all 9 slices shipped. Gates (per slice)
 - **S1:** tsc 0 · eslint 0 · live-store **10/10** · g1 Decomposition SHIP · g2 code-review SHIP · /critique SHIP.
 - **S2:** tsc 0 · eslint 0 · live-store **18/18** (cumulative) · g2 code-review SHIP (+ cascade retrofit) · /critique SHIP.
 - **S3:** tsc 0 · eslint 0 · live-store **25/25** (cumulative) · g2 code-review SHIP · /critique SHIP.
@@ -158,4 +173,5 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - **S6:** tsc 0 · eslint 0 · live-store **44/44** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - **S7:** tsc 0 · eslint 0 · live-store **50/50** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - **S8:** tsc 0 · eslint 0 · live-store **56/56** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
-- Full `@vida/core` suite green (no regression).
+- **S9:** tsc 0 · eslint 0 · live-store **61/61** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
+- Full `@vida/core` suite green (no regression; 1 known vault-1MB flake, ISOLATED).

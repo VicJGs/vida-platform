@@ -125,6 +125,22 @@
   null**. The task leaf (`getTaskRollup`, [0,1]|null) is consulted first (PJ-3/PJ-4); a null leaf falls through to
   the S7 source. `getProjectTasks`/`getProjectTime` fail loud on a missing project.
 
+## S9 — cross-module fan-out + Journal
+
+- **BR-PJ-S9-1** — On a project/milestone not-completed→completed transition, the service emits
+  `emit_measurement_signal` ONLY (C-E2 — never an economy grant; gamification's rule awards XP). Emit-only
+  producer; deliverables (no status) emit nothing.
+- **BR-PJ-S9-2** — Fan-out is post-commit, failure-isolated, and DORMANT without a registered handler (no
+  `NoEffectHandler`); absent `effects` ⇒ no-op. Fires only on the transition INTO completed (not re-complete, not
+  non-completion edits, not the no-op patch). Grain = entity id; rail-idempotent via `effect_event_id`.
+- **BR-PJ-S9-3** — `getDayProjectsDigest(date)` = active (non-terminal, live) projects + milestones due that day
+  (live, non-completed). PULL into the Journals registry via `registerProjectsJournal` (`module='projects'`,
+  `sectionKey='summary'`); activity⇒success, idle⇒empty (no throw); dedup by module. Project events/Calendar are
+  partner-owned (out of the digest).
+- **BR-PJ-S9-4** — Agentic AI over the vault (ADR-015) is a deferred M2 seam (no M1 consumer; not a port, YAGNI).
+
+## ① backend COMPLETE — all 9 slices shipped (S1–S9).
+
 ## Deferred (homed, not dropped)
 PJ-9 cascade completion (S2/S3/S5) · tags via `entity_tags` (S6) · vision/mission/notes pages (S6) · progress
 derivation (S4) · deliverable measurement source seam (S7) · Tasks→Projects seam + project time (S8) · effects

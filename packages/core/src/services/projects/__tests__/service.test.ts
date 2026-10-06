@@ -19,6 +19,8 @@ import { createAssociationResolver } from '../../../foundation/spaces/associatio
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService, type NotesService } from '../../notes'
 import { createMeasurementSourceRegistry, type MeasurementSourceRegistry } from '../../../foundation/measurement'
+import { createEffectRegistry, createEffectRail, type EffectRegistry } from '../../../foundation/effects'
+import { createProjectsJournalContribution } from '../journal'
 import {
   type ProjectsService,
   type TasksProjectsPort,
@@ -71,7 +73,12 @@ interface Harness {
 }
 
 async function setup(
-  opts: { measurementSources?: MeasurementSourceRegistry; tasks?: TasksProjectsPort } = {},
+  opts: {
+    measurementSources?: MeasurementSourceRegistry
+    tasks?: TasksProjectsPort
+    /** Pass a registry (handlers pre-registered); setup wires a rail over its OWN db so applyEffect resolves it. */
+    effectsRegistry?: EffectRegistry
+  } = {},
 ): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
@@ -94,6 +101,9 @@ async function setup(
     registry: entityRegistry,
     measurementSources: opts.measurementSources,
     tasks: opts.tasks,
+    effects: opts.effectsRegistry
+      ? { rail: createEffectRail(db, opts.effectsRegistry), registry: opts.effectsRegistry }
+      : undefined,
   })
   return { svc, db, bsql, spaces, notes, associations }
 }
@@ -672,6 +682,72 @@ describe('mod-projects S1 — projects CRUD + queries', () => {
       const m = await hh.svc.createMilestone(p.id, { title: 'M' })
       const d = await hh.svc.createDeliverable(m.id, { title: 'D', progress: 88 })
       expect(await hh.svc.getDeliverableProgress(d.id)).toEqual({ value: 88, derived: false, partial: false })
+    })
+  })
+
+  // --- S9: Journal digest + completion fan-out ------------------------------
+  describe('S9 — Journal /summary + completion fan-out', () => {
+    it('getDayProjectsDigest counts active projects + milestones due that day', async () => {
+      const a = await h.svc.createProject({ title: 'A', status: 'in_progress' })
+      await h.svc.createProject({ title: 'B', status: 'not_started' })
+      await h.svc.createProject({ title: 'C', status: 'completed' }) // terminal → not active
+      await h.svc.createMilestone(a.id, { title: 'due today', due_date: '2026-01-05' })
+      await h.svc.createMilestone(a.id, { title: 'other day', due_date: '2026-02-01' })
+      expect(await h.svc.getDayProjectsDigest('2026-01-05')).toEqual({ activeProjects: 2, dueMilestones: 1 })
+      expect(await h.svc.getDayProjectsDigest('2030-12-31')).toEqual({ activeProjects: 2, dueMilestones: 0 })
+    })
+
+    it('the Journal contribution maps activity → success, idle → empty', async () => {
+      const contrib = createProjectsJournalContribution(h.svc)
+      expect(contrib.module).toBe('projects')
+      expect(contrib.sectionKey).toBe('summary')
+      await h.svc.createProject({ title: 'A', status: 'in_progress' })
+      expect((await contrib.summary('2026-01-05')).state).toBe('success') // an active project exists
+      // a store with nothing active ⇒ empty
+      const hh = await setup()
+      const idle = createProjectsJournalContribution(hh.svc)
+      expect((await idle.summary('2026-01-05')).state).toBe('empty')
+    })
+
+    it('completion fan-out is dormant without an effects rail (no throw)', async () => {
+      const p = await h.svc.createProject({ title: 'P' }) // h has no effects
+      await expect(h.svc.updateProject(p.id, { status: 'completed' })).resolves.toBeTruthy()
+    })
+
+    it('project + milestone completion emit ONE emit_measurement_signal each (C-E2: no economy grant)', async () => {
+      const signals: Array<{ key: string; transition: string }> = []
+      const economy: string[] = []
+      const registry = createEffectRegistry()
+      registry.register('emit_measurement_signal', async (ev) => {
+        signals.push({ key: ev.subjectNaturalKey, transition: ev.transition })
+      })
+      registry.register('award_xp', async () => void economy.push('award_xp'))
+      registry.register('grant_currency', async () => void economy.push('grant_currency'))
+      const hh = await setup({ effectsRegistry: registry })
+      const p = await hh.svc.createProject({ title: 'P', status: 'in_progress' })
+      const m = await hh.svc.createMilestone(p.id, { title: 'M', status: 'in_progress' })
+
+      await hh.svc.updateProject(p.id, { status: 'completed' })
+      await hh.svc.updateMilestone(m.id, { status: 'completed' })
+      expect(signals).toEqual([
+        { key: p.id, transition: 'project_completed' },
+        { key: m.id, transition: 'milestone_completed' },
+      ])
+      expect(economy).toEqual([]) // C-E2 — Projects never emits an economy grant
+    })
+
+    it('fan-out fires only on the transition INTO completed (not on re-complete or other edits)', async () => {
+      const signals: string[] = []
+      const registry = createEffectRegistry()
+      registry.register('emit_measurement_signal', async (ev) => void signals.push(ev.subjectNaturalKey))
+      const hh = await setup({ effectsRegistry: registry })
+      const p = await hh.svc.createProject({ title: 'P', status: 'in_progress' })
+      await hh.svc.updateProject(p.id, { title: 'renamed' }) // non-completion edit ⇒ no fire
+      expect(signals).toHaveLength(0)
+      await hh.svc.updateProject(p.id, { status: 'completed' }) // transition ⇒ fire once
+      await hh.svc.updateProject(p.id, { status: 'completed' }) // already completed ⇒ no re-fire
+      await hh.svc.updateProject(p.id, { priority: 'high' }) // still completed, non-transition ⇒ no fire
+      expect(signals).toEqual([p.id])
     })
   })
 })
