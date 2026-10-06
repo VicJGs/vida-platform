@@ -71,7 +71,16 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
       MAJOR #2 weight-scale asymmetry → two-channel equal-combine; #3 6 test gaps added [metric-only/mixed-75/weight-0/
       all-unmeasured/nested]; #4 doc `?? 0`→null PG-3 reconcile; #5 per-entity key note). tsc 0 · eslint 0 · purposes
       **60/60** (16 S5 tests). Pre-ship /critique SHIP. §XXIX BR-PG-S5-1..7.
-- [ ] **S6** — Bindings + DAG guard + derived-pull source resolution
+- [x] **S6** — Bindings + DAG guard + derived-pull source resolution. `bind(target,{binding_mode,ref?})` persists
+      `binding_mode` + the source ref in `measurement_method` (`${type}:${id}`, the PG-11/PG-15 restored column;
+      `manual` clears both). Composes the built `assertAcyclic` over the BINDING graph (other bound targets' edges
+      reconstructed from `measurement_method` + the proposed `source→target` edge, both modes) → `CyclicBinding` at
+      author time (PG-8). `derived-pull` targets route their leaf through `measurementSources` (override `current_value`,
+      §3.6) → null at M1 (empty registry), live M2. **Independent g2 review SHIP** → 3 folds: DAG = binding edges ONLY
+      (contributions can't close a binding cycle → removed inert edges, matches seam-contract §3); `measurement_method`
+      bind-managed (`createTarget`/`updateTarget` reject a direct write → `BindingRefManaged`, closes a ref-corruption +
+      DAG-bypass leak); misnamed 3-node-cycle test fixed. tsc 0 · eslint 0 · purposes **72/72** (+12 S6) · full
+      @vida/core **1832/1832**. §XXIX BR-PG-S6-1..6. Commit `80038a1`.
 - [ ] **S7** — Reviews (target+purpose) + plan_steps + deny-safe sessions? port
 - [ ] **S8** — Tags/links/pages (Spaces+Notes) + entity_type value/dream additions
 - [ ] **S9** — Provider (Journal summary + dueIn) + emit-only fan-out + deletion propagation (PG-19)
@@ -109,6 +118,17 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
   (feature branch = my work on origin/main) + `git branch -f main origin/main` (realign) + pushed the branch. Nothing
   lost. Lesson re-confirmed [[parallel-session-shared-tree-collision-use-worktree]] → **S6 should use a git worktree.**
   **Next: S6 bindings + DAG + derived-pull** in a FRESH session (`git checkout mod-purposes-and-goals`).
+- 2026-10-06: **S6 built + committed (`80038a1`)** in an isolated worktree `.claude/worktrees/mod-purposes-and-goals`
+  (root parked on `main`; sibling fe-codec-controls-refinement WIP stashed `stash@{0}` for recovery). Victor
+  drift-catch at the start: I framed the `ref`-persistence as an options-menu decision → he directed "check the
+  documentation, this is a clear drift of a question." Reading the full aspect set (`structure-data.md` "binding_mode
+  (+ ref)" + measurement_method restore) + ADR-011 §3.5/§3.6/§3.7 (delegates only traversal/perf to build-phase,
+  NOT storage) resolved it as FACT: `measurement_method` is the source-key home. [[dont-frame-a-doc-resolved-handling-as-a-decision-nor-over-correct]].
+  Built → Verification Gate green → independent g2 SHIP (3 folds: inert contributions-graph removed; `BindingRefManaged`
+  bind-managed guard; misnamed test) → §XXIX BR-PG-S6-1..6. **Env gotcha:** the parallel g2 agent ran `pnpm rebuild
+  better-sqlite3` under Node 20 in the shared worktree → ABI 115 vs my Node-22 ABI 127 → all tests failed at setup;
+  fixed by recompiling against Node 22 (§XXIV ISOLATED env). **Next: S7 — reviews + plan_steps + sessions port** (same
+  worktree; branch NOT pushed/PR'd yet — PR when ① complete).
 
 ## Notes
 - Env: Node 24 via nvm for @vida/core tests (better-sqlite3 ABI; `.nvmrc`=22 base).
