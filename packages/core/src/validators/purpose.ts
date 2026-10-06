@@ -207,7 +207,19 @@ export const RecordMetricValueSchema = z.object({
   recorded_at: z.number().int().optional(),
 })
 
+// --- contributions edge (S4 — PG-10, weighted polymorphic goal-edge) ---------
+/** The weight + optional notes on a contribution. The goal/contributor TYPE membership is a domain guard
+ *  (InvalidContributor), not a Zod enum here — so an out-of-vocabulary ref is a typed domain error, not a ZodError. */
+export const LinkContributionSchema = z.object({
+  weight: z.number().int().min(0).max(100), // 0–100; never a copied progress value (PG-10)
+  notes: z.string().nullable().optional(),
+})
+export const ReweightContributionSchema = z.object({
+  weight: z.number().int().min(0).max(100),
+})
+
 // Input types — inferred from the schemas (single source of truth; cannot drift).
+export type LinkContributionInput = z.infer<typeof LinkContributionSchema>
 export type CreateMetricInput = z.infer<typeof CreateMetricSchema>
 export type UpdateMetricInput = z.infer<typeof UpdateMetricSchema>
 export type RecordMetricValueInput = z.infer<typeof RecordMetricValueSchema>

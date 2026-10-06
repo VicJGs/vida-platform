@@ -22,6 +22,8 @@ import {
   TargetNotFoundError,
   DreamNotFoundError,
   MetricNotFoundError,
+  ContributionNotFoundError,
+  InvalidContributor,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -294,5 +296,57 @@ describe('mod-purposes S3 — metrics + value ledger', () => {
     expect(await h.db.select().from(purposeMetricValues).where(eq(purposeMetricValues.metric_id, m.id))).toHaveLength(0)
     await expect(h.svc.deleteMetric('nope')).rejects.toBeInstanceOf(MetricNotFoundError)
     await expect(h.svc.recordMetricValue('nope', 1)).rejects.toBeInstanceOf(MetricNotFoundError)
+  })
+})
+
+describe('mod-purposes S4 — contributions edge', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('links a contributor into a goal holding only the weight (never a copied value, PG-10)', async () => {
+    const p = await h.svc.createPurpose({ title: 'Fitness' })
+    const c = await h.svc.linkContribution(
+      { type: 'purpose', id: p.id },
+      { type: 'habit', id: 'habit-123' },
+      { weight: 40, notes: 'daily run' },
+    )
+    expect(c.goal_type).toBe('purpose')
+    expect(c.goal_id).toBe(p.id)
+    expect(c.contributor_type).toBe('habit')
+    expect(c.contributor_id).toBe('habit-123')
+    expect(c.contribution_percentage).toBe(40)
+    expect(c.contribution_notes).toBe('daily run')
+    // no progress value field exists on the row — the edge holds weight only
+    expect('progress' in c).toBe(false)
+  })
+
+  it('throws InvalidContributor (two-sided) for an out-of-vocabulary goal OR contributor type', async () => {
+    await expect(
+      h.svc.linkContribution({ type: 'note', id: 'x' }, { type: 'habit', id: 'h' }, { weight: 10 }),
+    ).rejects.toBeInstanceOf(InvalidContributor) // bad goal type
+    await expect(
+      h.svc.linkContribution({ type: 'target', id: 't' }, { type: 'contact', id: 'c' }, { weight: 10 }),
+    ).rejects.toBeInstanceOf(InvalidContributor) // bad contributor type (contact ∉ CONTRIBUTION_CONTRIBUTOR_TYPE)
+  })
+
+  it("lists a goal's contributions, reweights, and soft-deletes (unlink hides it)", async () => {
+    const p = await h.svc.createPurpose({ title: 'Wealth' })
+    const t = await h.svc.createTarget({ title: 'Net worth' })
+    const c1 = await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'finance_target', id: 'ft1' }, { weight: 60 })
+    await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'project', id: 'pr1' }, { weight: 40 })
+    await h.svc.linkContribution({ type: 'target', id: t.id }, { type: 'task', id: 'tk1' }, { weight: 100 })
+    expect(await h.svc.listContributions({ type: 'purpose', id: p.id })).toHaveLength(2)
+    expect(await h.svc.listContributions({ type: 'target', id: t.id })).toHaveLength(1)
+    const re = await h.svc.reweightContribution(c1.id, 75)
+    expect(re.contribution_percentage).toBe(75)
+    await h.svc.unlinkContribution(c1.id)
+    expect(await h.svc.listContributions({ type: 'purpose', id: p.id })).toHaveLength(1) // soft-deleted hidden
+  })
+
+  it('rejects unlink/reweight of an unknown contribution', async () => {
+    await expect(h.svc.unlinkContribution('nope')).rejects.toBeInstanceOf(ContributionNotFoundError)
+    await expect(h.svc.reweightContribution('nope', 10)).rejects.toBeInstanceOf(ContributionNotFoundError)
   })
 })

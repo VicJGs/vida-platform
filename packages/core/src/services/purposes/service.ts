@@ -12,10 +12,12 @@
 // - findWhere skips the soft-delete filter → list active via findAll (applies isNull(deleted_at)) + JS filter.
 // - M1.0 encryptedFields:[] (the [E] title/description/vision/why/… pass through; real field encryption = M3).
 
-import { eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
+import { CONTRIBUTION_GOAL_TYPE, CONTRIBUTION_CONTRIBUTOR_TYPE } from '@vida/types'
+import type { ContributionGoalType, ContributionContributorType } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { purposes, targets, dreams, purposeMetrics, purposeMetricValues } from '../../db/schema/purposes'
-import { values } from '../../db/schema/foundation/purpose'
+import { values, contributions } from '../../db/schema/foundation/purpose'
 import {
   CreateValueSchema,
   UpdateValueSchema,
@@ -28,18 +30,23 @@ import {
   CreateMetricSchema,
   UpdateMetricSchema,
   RecordMetricValueSchema,
+  LinkContributionSchema,
+  ReweightContributionSchema,
 } from '../../validators/purpose'
 import {
   type PurposesService,
   type PurposesServiceDeps,
   type MetricCurrent,
+  type ContributionRef,
   ValueNotFoundError,
   PurposeNotFoundError,
   TargetNotFoundError,
   DreamNotFoundError,
   MetricNotFoundError,
+  ContributionNotFoundError,
+  InvalidContributor,
 } from './types'
-import type { ValueRow } from '../../db/schema/foundation/purpose'
+import type { ValueRow, ContributionRow } from '../../db/schema/foundation/purpose'
 import type {
   PurposeRow,
   TargetRow,
@@ -59,6 +66,8 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
   // Metrics + the value ledger carry NO deleted_at → softDelete:false (delete = hard).
   const metricsRepo = createRepository(db, purposeMetrics, { deviceId, softDelete: false, encryptedFields: [] })
   const metricValuesRepo = createRepository(db, purposeMetricValues, { deviceId, softDelete: false, encryptedFields: [] })
+  // contributions carries deleted_at → softDelete:true.
+  const contributionsRepo = createRepository(db, contributions, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- S1: values CRUD ------------------------------------------------------
   async function createValue(input: Parameters<PurposesService['createValue']>[0]): Promise<ValueRow> {
@@ -352,6 +361,53 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     return { value, source, override: false }
   }
 
+  // ---- S4: contributions edge (PG-10) ---------------------------------------
+  const isGoalType = (t: string): t is ContributionGoalType => (CONTRIBUTION_GOAL_TYPE as readonly string[]).includes(t)
+  const isContributorType = (t: string): t is ContributionContributorType =>
+    (CONTRIBUTION_CONTRIBUTOR_TYPE as readonly string[]).includes(t)
+
+  async function linkContribution(
+    goal: ContributionRef,
+    contributor: ContributionRef,
+    opts: Parameters<PurposesService['linkContribution']>[2],
+  ): Promise<ContributionRow> {
+    // Two-sided domain guard (PG-10): BOTH ends must be in vocabulary (a typed error, not a ZodError).
+    if (!isGoalType(goal.type)) throw new InvalidContributor('goal', goal.type)
+    if (!isContributorType(contributor.type)) throw new InvalidContributor('contributor', contributor.type)
+    const v = LinkContributionSchema.parse(opts)
+    return contributionsRepo.create({
+      goal_type: goal.type, // narrowed by the guard
+      goal_id: goal.id,
+      contributor_type: contributor.type,
+      contributor_id: contributor.id,
+      contribution_percentage: v.weight, // the weight ONLY — never a copied progress value (PG-10)
+      contribution_notes: v.notes ?? null,
+      deleted_at: null,
+    } satisfies CreateInput<typeof contributions>)
+  }
+
+  async function unlinkContribution(id: string): Promise<void> {
+    if (!(await contributionsRepo.findById(id))) throw new ContributionNotFoundError(id)
+    await contributionsRepo.delete(id) // soft
+  }
+
+  async function reweightContribution(id: string, weight: number): Promise<ContributionRow> {
+    const v = ReweightContributionSchema.parse({ weight })
+    if (!(await contributionsRepo.findById(id))) throw new ContributionNotFoundError(id)
+    return contributionsRepo.update(id, { contribution_percentage: v.weight })
+  }
+
+  async function listContributions(goal: ContributionRef): Promise<ContributionRow[]> {
+    // findWhere skips the soft-delete filter → add isNull(deleted_at) explicitly.
+    return contributionsRepo.findWhere(
+      and(
+        eq(contributions.goal_type, goal.type as ContributionGoalType),
+        eq(contributions.goal_id, goal.id),
+        isNull(contributions.deleted_at),
+      )!,
+    )
+  }
+
   return {
     createValue,
     updateValue,
@@ -380,6 +436,10 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     deleteMetric,
     recordMetricValue,
     getMetricCurrent,
+    linkContribution,
+    unlinkContribution,
+    reweightContribution,
+    listContributions,
   }
 }
 

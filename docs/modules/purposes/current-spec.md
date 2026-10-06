@@ -3,7 +3,7 @@
 > §XXIX living doc — the durable contract/structure of `createPurposesService`, kept current with the code.
 > The measurability **capstone**: Values → Purposes → Targets, composing the built `foundation/measurement`
 > engine (ADR-011; Purpose = rollup APEX + consumer, NOT owner). Ground truth = `packages/core/src/services/purposes/`.
-> Built per slice (Entity Delivery Flow); this doc grows with each. **As of: S3.**
+> Built per slice (Entity Delivery Flow); this doc grows with each. **As of: S4.**
 
 ## Factory
 
@@ -30,6 +30,7 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 | `createMetric/updateMetric/getMetric/listMetrics(purposeId?)/deleteMetric` | `PurposeMetricRow` | `softDelete:false`; `deleteMetric` = two-hop hard-cascade of values |
 | `recordMetricValue(metricId,value,opts?)` | `PurposeMetricValueRow` | ledger append (hard); provenance `source` |
 | `getMetricCurrent(metricId)` | `MetricCurrent{value,source,override}` | override slot OR derive via `calculation_method`; empty ⇒ null |
+| `linkContribution(goal,contributor,{weight,notes?})/unlinkContribution/reweightContribution/listContributions(goal)` | `ContributionRow` | PG-10 weighted edge; two-sided `InvalidContributor`; weight-only |
 
 - **Repositories** — `createRepository(db, table, { deviceId, softDelete: true, encryptedFields: [] })` for all 3
   spine tables (each carries `deleted_at`). M1.0 `encryptedFields:[]` seam (real `[E]` = M3).
@@ -61,5 +62,5 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 
 ## Deferred (homed to later slices)
 
-S4 contributions · S5 measurability core (`progress`/`computeProgress`) · S6 bindings+DAG ·
+S5 measurability core (`progress`/`computeProgress`) · S6 bindings+DAG ·
 S7 reviews+plan_steps+sessions · S8 tags/links/pages · S9 provider+fan-out+deletion-cascade.

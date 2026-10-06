@@ -21,9 +21,16 @@ import type {
   CreateMetricInput,
   UpdateMetricInput,
   RecordMetricValueInput,
+  LinkContributionInput,
 } from '../../validators/purpose'
-import type { ValueRow } from '../../db/schema/foundation/purpose'
+import type { ValueRow, ContributionRow } from '../../db/schema/foundation/purpose'
 import type { PurposeRow, TargetRow, DreamRow, PurposeMetricRow, PurposeMetricValueRow } from '../../db/schema/purposes'
+
+/** A polymorphic endpoint of a contribution edge — a goal (purpose|target) or a contributor (habit|…|check_in). */
+export interface ContributionRef {
+  type: string
+  id: string
+}
 
 /** The current value of a metric: the override slot if set, else derived from the ledger via calculation_method. */
 export interface MetricCurrent {
@@ -79,6 +86,14 @@ export interface PurposesService {
   recordMetricValue(metricId: string, value: number, opts?: RecordMetricValueInput): Promise<PurposeMetricValueRow>
   /** The metric's current value: override slot if set, else derived via calculation_method over the ledger. */
   getMetricCurrent(metricId: string): Promise<MetricCurrent>
+
+  // ---- S4: contributions edge (weighted polymorphic goal-edge, PG-10) -------
+  /** Link a contributor into a goal with a weight. Throws InvalidContributor if either end is out of vocabulary. */
+  linkContribution(goal: ContributionRef, contributor: ContributionRef, opts: LinkContributionInput): Promise<ContributionRow>
+  unlinkContribution(id: string): Promise<void>
+  reweightContribution(id: string, weight: number): Promise<ContributionRow>
+  /** Active contributions whose goal is the given (type,id). */
+  listContributions(goal: ContributionRef): Promise<ContributionRow[]>
 }
 
 // --- typed errors (contract.md:49-57) ---------------------------------------
@@ -110,5 +125,18 @@ export class MetricNotFoundError extends Error {
   constructor(id: string) {
     super(`Purpose metric not found: ${id}`)
     this.name = 'MetricNotFoundError'
+  }
+}
+export class ContributionNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Contribution not found: ${id}`)
+    this.name = 'ContributionNotFoundError'
+  }
+}
+/** A contribution references a goal or contributor type outside the ADR-011 vocabulary (PG-10). */
+export class InvalidContributor extends Error {
+  constructor(side: 'goal' | 'contributor', type: string) {
+    super(`Invalid contribution ${side} type: ${type}`)
+    this.name = 'InvalidContributor'
   }
 }

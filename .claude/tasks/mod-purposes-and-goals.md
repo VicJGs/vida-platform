@@ -57,7 +57,11 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
       unmeasured; provenance manual-iff-all-manual). Both tables `softDelete:false`. `enumText`→union so the aggregate
       switch is exhaustive. tsc 0 · eslint 0 · purposes **17/17** (5 new; two-hop cascade proven via raw ledger count 2→0).
       Inline pre-ship /critique SHIP. §XXIX BR-PG-S3-1..5.
-- [ ] **S4** — Contributions edge (link/unlink/reweight + InvalidContributor)
+- [x] **S4** — Contributions edge. `linkContribution`/`unlinkContribution`/`reweightContribution`/`listContributions`
+      over `contributions` (softDelete:true). Two-sided `InvalidContributor` domain guard (goal_type ∈ GOAL_TYPE AND
+      contributor_type ∈ CONTRIBUTOR_TYPE; typed, not ZodError). Weight-only edge (contribution_percentage), never a
+      copied value (PG-10). listContributions = findWhere + explicit isNull(deleted_at). tsc 0 · eslint 0 · purposes
+      **45/45** (4 new). Inline pre-ship /critique SHIP. §XXIX BR-PG-S4-1..3.
 - [ ] **S5** — Measurability core (progress/computeProgress rollup + ProgressView + qualitative→null)
 - [ ] **S6** — Bindings + DAG guard + derived-pull source resolution
 - [ ] **S7** — Reviews (target+purpose) + plan_steps + deny-safe sessions? port

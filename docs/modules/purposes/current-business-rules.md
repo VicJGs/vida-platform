@@ -63,3 +63,17 @@
   to now (Unix ms) when omitted.
 - **BR-PG-S3-5** — `deleteMetric` is a **two-hop app-layer cascade** (no FK, PG-19 locally): it hard-deletes the
   metric's `purpose_metric_values` ledger rows first (found by `metric_id`), then the metric — no orphaned points.
+
+## S4 — Contributions edge (weighted polymorphic goal-edge, PG-10)
+
+- **BR-PG-S4-1** — `linkContribution(goal, contributor, {weight, notes?})` creates a `contributions` row holding the
+  **weight ONLY** (`contribution_percentage`, 0–100) — **never a copied progress value** (PG-10). The contributor's
+  live progress is read through a measure at rollup time (S5), never stored here.
+- **BR-PG-S4-2** — Two-sided `InvalidContributor` guard: BOTH ends must be in vocabulary — `goal.type` ∈
+  `CONTRIBUTION_GOAL_TYPE` (`purpose`|`target`) AND `contributor.type` ∈ `CONTRIBUTION_CONTRIBUTOR_TYPE`
+  (`habit`|`routine`|`project`|`task`|`dream`|`finance_target`|`check_in`). An out-of-vocabulary ref is a **typed
+  domain error** (`InvalidContributor`), not a ZodError.
+- **BR-PG-S4-3** — `contributions` carries `deleted_at` → `softDelete:true`; `unlinkContribution` soft-deletes;
+  `listContributions(goal)` reads the active edges for a goal via `findWhere` with an **explicit** `isNull(deleted_at)`
+  (findWhere skips the soft-delete filter). `reweightContribution` updates only the weight. `ContributionNotFoundError`
+  on an unknown id.
