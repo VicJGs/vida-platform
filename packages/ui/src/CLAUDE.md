@@ -195,6 +195,21 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   aria-live=off, no per-second spam) + a **polite `role="status"` completion one-shot** (cleared on transition-out).
   Self-names (composed aria-label). `mm:ss` via `$display`; progress fill clamped [0,1]. Base tokens, no sub-theme, no
   new dep. Spec: `…/v5-pomodoro-widget.md`.
+  **fe-codec-controls-refinement · P1 (LIF-231)** — aesthetic refinement + the v5 §6-deferred progress RING, all
+  presentational: **tabular figures** on the countdown (`style={{fontVariantNumeric:'tabular-nums'}}` on `Time` — a v5
+  §4:144 spec'd-but-unbuilt invariant now completed; Tamagui forwards the style key, verified at the gate; the DS-wide
+  **tabular-numeric convention** for numeric UI — adopt on Select numeric/timeline dates/table cells, extract a shared
+  helper only at the rule of three); **eyebrow phase label** (`$caption`·uppercase·`$wide`); **6px hairline track**;
+  **resting elevation** (`shadow.resting` inline on `Root`, self-cancels in dark — the Card mechanism). **`progress?:
+  'bar' | 'ring'`** (default `'bar'`, non-breaking): `'ring'` renders a local `ProgressRing` (thin two-circle `<svg>`,
+  `aria-hidden`, round cap, −90° start, stepped `strokeDashoffset` — no CSS transition) around the time. **⚠ Ring colors
+  via `useTheme().get('web')`** — `theme.colorBrandPrimary?.get('web')`/`colorSurfaceSecondary?.get('web')`, the
+  **Tamagui-documented SVG call** [getThemeProxied.d.ts ThemeGettable.get]; a `$token` SVG attr renders colorless and a
+  hard-coded hex would **reintroduce the Neural-Graph conformance gap** — so the ring stays preset/theme-aware + token-
+  pure. Internal `progress` fraction renamed `fraction` (frees the prop name). Timer/latch/controls logic UNTOUCHED.
+  Visual Gate PASS (Brave, 3 presets × light/dark: tabular + eyebrow all cells · ring accent FLIPS per preset+mode —
+  editorial blue / reader oxblood / quietDesk olive · AA 4.94–6.03 incl. warm-dark · axe 0 · 375 no-overflow). Spec:
+  `docs/specs/foundation/fe-codec-controls-refinement/phases/P1-pomodoro-widget.md`.
   **export-dialog** is **UI-2 · V6** — the reusable export modal. **Composes UI-1 `Dialog`** (via its `footer` +
   `description` props — NOT children: `footer` renders the actions in a non-scrolling `<footer>`, `description` wires
   `aria-describedby`) + a **hand-rolled APG `role="radiogroup"`** format picker + `Button`. **PRESENTATIONAL (the V1

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactElement, type ReactNode, type Ref } from 'react'
-import { styled, Text, View } from '@tamagui/core'
+import { styled, Text, useTheme, View } from '@tamagui/core'
 import { Button } from './button'
+import { shadow } from '../themes/shadow'
 
 // UI-2 · V5 · pomodoro-widget — the interactive timer widget @vida/ui ships (ADR-008:35). A single-interval,
 // self-timing countdown with a DEFERRED session-engine seam. Implements
@@ -15,6 +16,11 @@ import { Button } from './button'
 // - The SESSION (lifecycle/persistence/effects/phase-sequencing) is MOD-sessions' (ADR-004) — this widget only emits
 //   lifecycle intents via callbacks (PW-3) + owns the ephemeral countdown. It self-names (composed aria-label), so
 //   warnMissingName is moot here.
+// - fe-codec-controls-refinement P1 (LIF-231): aesthetic refinement + the v5-deferred (§6) progress RING.
+//   L1 polish: tabular-figure countdown (v5 §4:144 spec'd-but-unbuilt), eyebrow phase label, 6px hairline track,
+//   resting card elevation. L2: `progress?: 'bar' | 'ring'` (default 'bar', non-breaking). The ring colors resolve via
+//   useTheme().get('web') — the Tamagui-documented call for SVG (a $token attr renders colorless; a hard-coded hex would
+//   reintroduce the Neural-Graph conformance gap). Timer/latch/controls logic UNTOUCHED.
 
 export type PomodoroPhase = 'focus' | 'short-break' | 'long-break'
 type Status = 'idle' | 'running' | 'paused'
@@ -38,6 +44,9 @@ export interface PomodoroWidgetProps {
   onSkip?: () => void
   /** Fires once when remaining reaches 0 (the engine persists the completed session + effects + picks next phase). */
   onComplete?: () => void
+  /** Progress indicator FORM (presentation only — same stepped update either way). 'bar' = the linear track (default,
+   *  non-breaking); 'ring' = a circular progress ring around the time (the v5 §6 deferred visual). */
+  progress?: 'bar' | 'ring'
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
 }
@@ -55,13 +64,56 @@ const Root = styled(View, {
   borderRadius: '$lg',
   backgroundColor: '$colorSurfacePrimary',
 })
-const PhaseLabel = styled(Text, { fontFamily: '$body', fontSize: '$small', color: '$colorTextMuted', textTransform: 'capitalize' })
+// PhaseLabel = the editorial EYEBROW (caption · uppercase · wide tracking · muted) — the codec views-pass vocabulary.
+const PhaseLabel = styled(Text, { fontFamily: '$body', fontSize: '$caption', letterSpacing: '$wide', color: '$colorTextMuted', textTransform: 'uppercase' })
 const ContextLabel = styled(Text, { fontFamily: '$body', fontSize: '$caption', color: '$colorTextMuted' })
 const Time = styled(Text, { fontFamily: '$display', fontSize: '$display', fontWeight: '600', color: '$colorTextPrimary' })
-const Track = styled(View, { width: '100%', height: 8, borderRadius: '$full', backgroundColor: '$colorSurfaceSecondary', overflow: 'hidden' })
+// 6px hairline track (L1c; was 8). Progress fill steps per tick (no CSS transition, PW-5/B12-safe).
+const Track = styled(View, { width: '100%', height: 6, borderRadius: '$full', backgroundColor: '$colorSurfaceSecondary', overflow: 'hidden' })
 const Fill = styled(View, { height: '100%', borderRadius: '$full', backgroundColor: '$colorBrandPrimary' })
 const Controls = styled(View, { flexDirection: 'row', gap: '$8' })
 const Complete = styled(Text, { fontFamily: '$body', fontSize: '$small', fontWeight: '600', color: '$colorBrandPrimary' })
+
+// ── ProgressRing (L2) — a circular progress indicator around the time. aria-hidden (role="timer" + mm:ss announce
+// progress). Colors via useTheme().get('web') — the Tamagui-documented SVG call [getThemeProxied.d.ts ThemeGettable.get];
+// a $token SVG attr renders colorless, a hard-coded hex would reintroduce the Neural-Graph conformance gap. The arc
+// steps per tick (React value update of strokeDashoffset — never a CSS transition, so no motion/reduced-motion concern).
+const RING_SIZE = 120
+const RING_STROKE = 8
+
+function ProgressRing({ value, children }: { value: number; children: ReactNode }): ReactElement {
+  const theme = useTheme()
+  const r = (RING_SIZE - RING_STROKE) / 2
+  const circumference = 2 * Math.PI * r
+  const center = RING_SIZE / 2
+  const track = theme.colorSurfaceSecondary?.get('web')
+  const accent = theme.colorBrandPrimary?.get('web')
+  return (
+    <View width={RING_SIZE} height={RING_SIZE} alignItems="center" justifyContent="center">
+      <svg
+        width={RING_SIZE}
+        height={RING_SIZE}
+        viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+        aria-hidden
+        style={{ position: 'absolute', transform: 'rotate(-90deg)' }}
+      >
+        <circle cx={center} cy={center} r={r} fill="none" stroke={track} strokeWidth={RING_STROKE} />
+        <circle
+          cx={center}
+          cy={center}
+          r={r}
+          fill="none"
+          stroke={accent}
+          strokeWidth={RING_STROKE}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - value)}
+        />
+      </svg>
+      {children}
+    </View>
+  )
+}
 
 export function PomodoroWidget({
   durationMs = DEFAULT_DURATION,
@@ -74,6 +126,7 @@ export function PomodoroWidget({
   onReset,
   onSkip,
   onComplete,
+  progress = 'bar',
   ref,
   ...rest
 }: PomodoroWidgetProps): ReactElement {
@@ -184,17 +237,27 @@ export function PomodoroWidget({
 
   const totalSec = Math.ceil(remainingMs / 1000)
   const display = `${pad2(Math.floor(totalSec / 60))}:${pad2(totalSec % 60)}`
-  const progress = durationMs > 0 ? Math.min(1, Math.max(0, 1 - remainingMs / durationMs)) : 0
+  // fraction = the 0–1 elapsed ratio (renamed from `progress` to free that name for the indicator-form prop).
+  const fraction = durationMs > 0 ? Math.min(1, Math.max(0, 1 - remainingMs / durationMs)) : 0
   const ariaLabel = (rest as { 'aria-label'?: string })['aria-label'] ?? `${phase} timer — ${status}`
 
+  // Tabular figures so the serif-display countdown holds a fixed digit advance (v5 §4:144; no horizontal jitter per tick).
+  const time = <Time style={{ fontVariantNumeric: 'tabular-nums' }}>{display}</Time>
+
   return (
-    <Root ref={ref} {...rest} role="timer" aria-label={ariaLabel}>
+    <Root ref={ref} {...rest} role="timer" aria-label={ariaLabel} style={{ boxShadow: shadow.resting }}>
       <PhaseLabel>{phase.replace('-', ' ')}</PhaseLabel>
       {label != null && <ContextLabel>{label}</ContextLabel>}
-      <Time>{display}</Time>
-      <Track>
-        <Fill className="vida-pomo-fill" style={{ width: `${progress * 100}%` }} />
-      </Track>
+      {progress === 'ring' ? (
+        <ProgressRing value={fraction}>{time}</ProgressRing>
+      ) : (
+        <>
+          {time}
+          <Track>
+            <Fill className="vida-pomo-fill" style={{ width: `${fraction * 100}%` }} />
+          </Track>
+        </>
+      )}
       <Controls>
         {status === 'idle' && (
           <Button intent="primary" onPress={start}>
