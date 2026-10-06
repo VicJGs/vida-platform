@@ -1,10 +1,14 @@
 <!-- Last updated: 2026-10-05 by /session-end -->
 
 
-## mod-notifications (① backend #53 · LIF-132, 2026-10-05 — S3/5 SHIPPED, branch `mod-notifications`)
+## mod-notifications (① backend #53 · LIF-132 → Done, 2026-10-06 — ① COMPLETE (S1–S5), PR #83 merged `797886e`)
 The ADR-013 user-facing notification MODULE (dispatcher/surface) over DB-4 `notifications` — the terminal PURE
 SINK composing the BUILT delivery engine (#46) + effect rail + Sessions `dueIn` + Preferences. Detail in
-`docs/features/notifications/delivery/*` + `docs/modules/notifications/current-*` + `.claude/tasks/mod-notifications.md`.
+`docs/features/notifications/delivery/*` + `docs/modules/notifications/current-*` + `.claude/tasks/archive/mod-notifications.md`.
+**Close-out (2026-10-06):** build + PR #83 merge completed in a prior session that stopped before the LOCAL close-out
+(same pattern as mod-projects). This session verified PR #83 merged on `origin/main` (all 5 slice commits ancestors,
+local `main` == `origin/main` @ `d98966f`) + ran the suite green (90/90 notifications, Node 24) before touching the
+ledger, then synced LIF-132 → Done and archived. Oracle = commits on `origin/main` + green suite, never the glyph.
 
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
