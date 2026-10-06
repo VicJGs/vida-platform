@@ -41,6 +41,7 @@ import {
   type AddProjectDocumentInput,
   type ProjectPageKind,
   type DeliverableSourceRef,
+  type ProjectTaskView,
   ProjectNotFoundError,
   MilestoneNotFoundError,
   MilestoneParentError,
@@ -53,7 +54,7 @@ import type { PageRow } from '../../db/schema/notes'
 const PROJECT_PAGE_TITLE: Record<ProjectPageKind, string> = { vision: 'Vision', mission: 'Mission' }
 
 export function createProjectsService(deps: ProjectsServiceDeps): ProjectsService {
-  const { db, deviceId, spaces, notes, registry, measurementSources } = deps
+  const { db, deviceId, spaces, notes, registry, measurementSources, tasks } = deps
   // READ-only association resolver (entity_links/entity_tags) — the read half of the split (WRITES go via spaces).
   const associations = createAssociationResolver(db, deviceId, registry)
   const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n)
@@ -389,6 +390,19 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     return links.map((l) => ({ entityType: l.target.entityType, entityId: l.target.entityId }))
   }
 
+  // ---- S8: Tasks→Projects seam (deny-safe; Tasks owns the entity, PJ-5/PJ-6) -----
+  // The dedicated read port is the ONLY way Projects touches tasks (never a direct table read). ABSENT at M1
+  // (services/tasks #65 not built) ⇒ documented empty values. The Task→Deliverable rollup leaf is wired in
+  // deriveDeliverableLeaf (above).
+  async function getProjectTasks(projectId: string): Promise<ProjectTaskView[]> {
+    if (!(await projectsRepo.findById(projectId))) throw new ProjectNotFoundError(projectId)
+    return tasks ? tasks.listProjectTasks(projectId) : []
+  }
+  async function getProjectTime(projectId: string): Promise<number> {
+    if (!(await projectsRepo.findById(projectId))) throw new ProjectNotFoundError(projectId)
+    return tasks ? tasks.getFocusMinutes(projectId) : 0 // PJ-6: project time = sum of task focus minutes
+  }
+
   // ---- S4: derived progress (bottom-up rollup, override-wins, nesting_weight) ----
   // All internal resolvers work in the measurement engine's [0,1] space (columns are 0-100 → scale at the
   // boundary). A null is UNMEASURED and is excluded from the rollup (never coerced to 0, BR-2). The chain is
@@ -403,13 +417,21 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
    *  unadvertised source ⇒ null (unmeasured — never fabricated, BR-2; last-known+flag on outage is M2 runtime).
    *  `manual`/`event-trigger` (no override) ⇒ null; the task-rollup leaf (S8) is a further input. */
   async function deriveDeliverableLeaf(d: DeliverableRow): Promise<number | null> {
-    if (d.binding_mode !== 'derived-pull' || !measurementSources) return null
-    const sources = await getDeliverableSources(d.id)
-    for (const s of sources) {
-      const v = measurementSources.query(`${s.entityType}:${s.entityId}`)
-      if (v !== null) return clamp01(v) // a [0,1] queryable measure; raw-value normalization (baseline/target) = M2 DDL
+    // (a) Task leaf first (PJ-3 Task→Deliverable; PJ-4 "a deliverable with no tasks derives from its measurement
+    //     backend"): a deliverable with tasks derives from their completion via the deny-safe Tasks port (S8).
+    if (tasks) {
+      const t = await tasks.getTaskRollup({ entityType: 'deliverable', entityId: d.id })
+      if (t !== null) return clamp01(t)
     }
-    return null
+    // (b) else a `derived-pull` deliverable measures from its bound measurement source (S7, ADR-011 §3.6).
+    if (d.binding_mode === 'derived-pull' && measurementSources) {
+      const sources = await getDeliverableSources(d.id)
+      for (const s of sources) {
+        const v = measurementSources.query(`${s.entityType}:${s.entityId}`)
+        if (v !== null) return clamp01(v) // a [0,1] queryable measure; raw-value normalization (baseline/target) = M2 DDL
+      }
+    }
+    return null // unmeasured (never fabricated, BR-2)
   }
 
   /** Resolve a deliverable to [0,1]|null — stored override wins (ADR-011 §3.2), else the derived leaf (S7). */
@@ -521,5 +543,8 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     linkDeliverableSource,
     unlinkDeliverableSource,
     getDeliverableSources,
+    // S8 — Tasks→Projects seam
+    getProjectTasks,
+    getProjectTime,
   }
 }

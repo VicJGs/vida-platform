@@ -116,6 +116,15 @@
 - **BR-PJ-S7-4** — Real source advertisement (Finance etc.) + composition root, and raw→[0,1] normalization
   (baseline/target columns — the deferred taxonomy DDL) are M2. The binding persistence + resolution path are M1.
 
+## S8 — Tasks→Projects seam
+
+- **BR-PJ-S8-1** — Tasks are reached ONLY through the deny-safe `tasks?: TasksProjectsPort` (PJ-5); Projects never
+  reads the tasks table. ABSENT at M1 ⇒ `getProjectTasks`=[], `getProjectTime`=0, no task leaf.
+- **BR-PJ-S8-2** — `getProjectTime` = sum of task focus-session minutes via the port (PJ-6); no project-level timer.
+- **BR-PJ-S8-3** — Deliverable progress precedence: **manual override > task rollup leaf > derived-pull source >
+  null**. The task leaf (`getTaskRollup`, [0,1]|null) is consulted first (PJ-3/PJ-4); a null leaf falls through to
+  the S7 source. `getProjectTasks`/`getProjectTime` fail loud on a missing project.
+
 ## Deferred (homed, not dropped)
 PJ-9 cascade completion (S2/S3/S5) · tags via `entity_tags` (S6) · vision/mission/notes pages (S6) · progress
 derivation (S4) · deliverable measurement source seam (S7) · Tasks→Projects seam + project time (S8) · effects

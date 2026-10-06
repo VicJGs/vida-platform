@@ -21,6 +21,7 @@ import { createNotesService, type NotesService } from '../../notes'
 import { createMeasurementSourceRegistry, type MeasurementSourceRegistry } from '../../../foundation/measurement'
 import {
   type ProjectsService,
+  type TasksProjectsPort,
   ProjectNotFoundError,
   MilestoneNotFoundError,
   MilestoneParentError,
@@ -69,7 +70,9 @@ interface Harness {
   associations: ReturnType<typeof createAssociationResolver>
 }
 
-async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = {}): Promise<Harness> {
+async function setup(
+  opts: { measurementSources?: MeasurementSourceRegistry; tasks?: TasksProjectsPort } = {},
+): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
@@ -90,6 +93,7 @@ async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = 
     notes,
     registry: entityRegistry,
     measurementSources: opts.measurementSources,
+    tasks: opts.tasks,
   })
   return { svc, db, bsql, spaces, notes, associations }
 }
@@ -590,6 +594,84 @@ describe('mod-projects S1 — projects CRUD + queries', () => {
       await hh.svc.linkDeliverableSource(d.id, { entityType: 'account', entityId: 'acc-1' })
       // manual + no override ⇒ unmeasured (the advertised source is NOT pulled for a manual binding)
       expect((await hh.svc.getDeliverableProgress(d.id)).value).toBeNull()
+    })
+  })
+
+  // --- S8: Tasks→Projects seam ----------------------------------------------
+  describe('S8 — Tasks→Projects seam (deny-safe)', () => {
+    it('absent Tasks port ⇒ empty task list + zero project time (M1 default)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      expect(await h.svc.getProjectTasks(p.id)).toEqual([])
+      expect(await h.svc.getProjectTime(p.id)).toBe(0)
+    })
+
+    it('getProjectTasks/getProjectTime throw on a missing project', async () => {
+      await expect(h.svc.getProjectTasks('nope')).rejects.toBeInstanceOf(ProjectNotFoundError)
+      await expect(h.svc.getProjectTime('nope')).rejects.toBeInstanceOf(ProjectNotFoundError)
+    })
+
+    it('a present Tasks port feeds the task list, project time, and the deliverable rollup leaf', async () => {
+      const tasks: TasksProjectsPort = {
+        listProjectTasks: async () => [{ id: 't1', title: 'Do it', status: 'in_progress', progress: 60 }],
+        getTaskRollup: async () => 0.4, // [0,1] completion of the deliverable's tasks
+        getFocusMinutes: async () => 125,
+      }
+      const hh = await setup({ tasks })
+      const p = await hh.svc.createProject({ title: 'P' })
+      const m = await hh.svc.createMilestone(p.id, { title: 'M' })
+      const d = await hh.svc.createDeliverable(m.id, { title: 'D' }) // no binding_mode → task leaf drives it
+      expect((await hh.svc.getProjectTasks(p.id)).map((t) => t.id)).toEqual(['t1'])
+      expect(await hh.svc.getProjectTime(p.id)).toBe(125)
+      // the task rollup feeds the deliverable leaf → milestone rolls it up
+      expect((await hh.svc.getDeliverableProgress(d.id)).value).toBe(40)
+      expect((await hh.svc.getMilestoneProgress(m.id)).value).toBe(40)
+    })
+
+    it('the task leaf takes precedence over a derived-pull source (PJ-4: tasks first)', async () => {
+      const sources = createMeasurementSourceRegistry()
+      sources.advertise('account:acc-1', () => 0.9)
+      const tasks: TasksProjectsPort = {
+        listProjectTasks: async () => [],
+        getTaskRollup: async () => 0.25, // tasks present for this deliverable
+        getFocusMinutes: async () => 0,
+      }
+      const hh = await setup({ measurementSources: sources, tasks })
+      const p = await hh.svc.createProject({ title: 'P' })
+      const m = await hh.svc.createMilestone(p.id, { title: 'M' })
+      const d = await hh.svc.createDeliverable(m.id, { title: 'D', binding_mode: 'derived-pull' })
+      await hh.svc.linkDeliverableSource(d.id, { entityType: 'account', entityId: 'acc-1' })
+      // tasks (0.25 → 25) win over the bound source (0.9 → 90)
+      expect((await hh.svc.getDeliverableProgress(d.id)).value).toBe(25)
+    })
+
+    it('a present Tasks port with no tasks for a deliverable falls through to the bound source (PJ-4 hinge)', async () => {
+      const sources = createMeasurementSourceRegistry()
+      sources.advertise('account:acc-1', () => 0.8)
+      const tasks: TasksProjectsPort = {
+        listProjectTasks: async () => [],
+        getTaskRollup: async () => null, // tasks port present, but this deliverable has no tasks
+        getFocusMinutes: async () => 0,
+      }
+      const hh = await setup({ measurementSources: sources, tasks })
+      const p = await hh.svc.createProject({ title: 'P' })
+      const m = await hh.svc.createMilestone(p.id, { title: 'M' })
+      const d = await hh.svc.createDeliverable(m.id, { title: 'D', binding_mode: 'derived-pull' })
+      await hh.svc.linkDeliverableSource(d.id, { entityType: 'account', entityId: 'acc-1' })
+      // null task rollup ⇒ falls through to the bound source (0.8 → 80)
+      expect((await hh.svc.getDeliverableProgress(d.id)).value).toBe(80)
+    })
+
+    it('a manual override still wins over the task leaf', async () => {
+      const tasks: TasksProjectsPort = {
+        listProjectTasks: async () => [],
+        getTaskRollup: async () => 0.1,
+        getFocusMinutes: async () => 0,
+      }
+      const hh = await setup({ tasks })
+      const p = await hh.svc.createProject({ title: 'P' })
+      const m = await hh.svc.createMilestone(p.id, { title: 'M' })
+      const d = await hh.svc.createDeliverable(m.id, { title: 'D', progress: 88 })
+      expect(await hh.svc.getDeliverableProgress(d.id)).toEqual({ value: 88, derived: false, partial: false })
     })
   })
 })

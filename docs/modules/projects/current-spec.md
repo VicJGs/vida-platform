@@ -10,7 +10,7 @@
 `createProjectsService(deps)` — the ① backend service tier for **Projects** over DB-4 `016_projects`
 (4 tables: `projects` · `milestones` · `deliverables` · `project_documents`). The full design lives in
 `docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
-seam-contract). Build state: **① IN PROGRESS — S7 of 9 shipped.**
+seam-contract). Build state: **① IN PROGRESS — S8 of 9 shipped.**
 
 > **Test runtime: Node 24** (better-sqlite3 ABI = NODE_MODULE_VERSION 137). Run `nvm use 24` before vitest.
 
@@ -138,6 +138,17 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - Deliverable-leaf resolution is now **async** (DB read of the binding); the S4 rollup math is unchanged
   (override-wins, nesting_weight, partial, all-null) — `milestoneChildFracs` `Promise.all`s the deliverable fracs.
 
+## S8 — Tasks→Projects seam (shipped)
+
+- **Deny-safe `tasks?: TasksProjectsPort`** (Tasks owns the entity; `services/tasks` #65 not built; Projects never
+  reads the tasks table — PJ-5). ABSENT at M1 ⇒ documented empty values.
+- `getProjectTasks(projectId)` → `tasks.listProjectTasks ?? []` (PJ-5 list). `getProjectTime(projectId)` →
+  `tasks.getFocusMinutes ?? 0` (PJ-6 — project time = task focus sum; no project-level timer). Both orphan-guarded.
+- **Task rollup leaf** (wired into `deriveDeliverableLeaf`): a deliverable's progress precedence is **manual
+  override > task leaf > derived-pull source > null**. Tasks-first per PJ-4 ("a deliverable with no tasks derives
+  from its measurement backend"); `getTaskRollup({entityType:'deliverable', entityId})` returns [0,1]|null (null ⇒
+  falls through to the S7 source). At M1 (tasks absent) the leaf is task-free → source → null, unchanged.
+
 ## Gates (per slice)
 - **S1:** tsc 0 · eslint 0 · live-store **10/10** · g1 Decomposition SHIP · g2 code-review SHIP · /critique SHIP.
 - **S2:** tsc 0 · eslint 0 · live-store **18/18** (cumulative) · g2 code-review SHIP (+ cascade retrofit) · /critique SHIP.
@@ -146,4 +157,5 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - **S5:** tsc 0 · eslint 0 · live-store **39/39** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - **S6:** tsc 0 · eslint 0 · live-store **44/44** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - **S7:** tsc 0 · eslint 0 · live-store **50/50** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
+- **S8:** tsc 0 · eslint 0 · live-store **56/56** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - Full `@vida/core` suite green (no regression).

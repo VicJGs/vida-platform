@@ -29,7 +29,31 @@ export interface ProjectsServiceDeps {
   /** Deny-safe from S7 — the ADR-011 §3.6 measurement-source read seam. ABSENT/empty at M1 (no module advertises
    *  yet; sources + composition root = M2) ⇒ a `derived-pull` deliverable resolves `null` (unmeasured). */
   measurementSources?: MeasurementSourceRegistry
-  // grows per slice — deny-safe partner ports (tasks?/effects?/…) land at S8–S9.
+  /** Deny-safe from S8 — the dedicated Tasks→Projects read port (PJ-5). Tasks OWNS the entity (`services/tasks`
+   *  NOT built, #65); Projects never reads the tasks table. ABSENT at M1 ⇒ no task list/leaf/time (empty). */
+  tasks?: TasksProjectsPort
+  // grows per slice — effects? lands at S9.
+}
+
+/** A project-scoped task, as surfaced by the Tasks→Projects port (PJ-5). Port-defined (Tasks owns the real shape);
+ *  Projects consumes this minimal view for the project-task list UI. */
+export interface ProjectTaskView {
+  id: string
+  title: string
+  status: string
+  /** 0-100 or null (unmeasured) — the task's own progress reading */
+  progress: number | null
+}
+
+/** The dedicated Tasks→Projects read port (PJ-5/PJ-6). Deny-safe: ABSENT at M1 ⇒ the service returns the documented
+ *  empty value. Tasks owns the entity; this is the ONLY way Projects touches tasks (never a direct table read). */
+export interface TasksProjectsPort {
+  /** Project-scoped task list (PJ-5). Absent ⇒ `[]`. */
+  listProjectTasks(projectId: string): Promise<ProjectTaskView[]>
+  /** The [0,1] completion of a scope's tasks (the Task→Deliverable rollup leaf, PJ-3). Absent/no tasks ⇒ `null`. */
+  getTaskRollup(scope: { entityType: string; entityId: string }): Promise<number | null>
+  /** Sum of focus-session minutes on a project's tasks (PJ-6 project time). Absent ⇒ `0`. */
+  getFocusMinutes(projectId: string): Promise<number>
 }
 
 // --- S1 inputs ---------------------------------------------------------------
@@ -194,6 +218,9 @@ export interface ProjectsService {
   linkDeliverableSource(deliverableId: string, source: DeliverableSourceRef): Promise<void>
   unlinkDeliverableSource(deliverableId: string, source: DeliverableSourceRef): Promise<void>
   getDeliverableSources(deliverableId: string): Promise<DeliverableSourceRef[]>
+  // S8 — Tasks→Projects seam (deny-safe; Tasks owns the entity)
+  getProjectTasks(projectId: string): Promise<ProjectTaskView[]>
+  getProjectTime(projectId: string): Promise<number>
 }
 
 /** A measurement source a `derived-pull` deliverable pulls from (a Finance account, a metric, …). Bound as an
