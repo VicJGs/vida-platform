@@ -10,13 +10,20 @@
 
 import type { DrizzleDb } from '../../db/adapter'
 import type { ProjectRow, MilestoneRow, DeliverableRow, ProjectDocumentRow } from '../../db/schema/projects'
+import type { PageRow } from '../../db/schema/notes'
+import type { SpacesService } from '../../foundation/spaces'
+import type { NotesService } from '../../services/notes'
 import type { ProjectScope, ProjectComplexity, Status, Priority, MeasurementKind, BindingMode } from '@vida/types'
 
 // --- deps (S1 subset) --------------------------------------------------------
 export interface ProjectsServiceDeps {
   db: DrizzleDb
   deviceId: string
-  // grows per slice — see file header.
+  /** REQUIRED from S6 — the entity_tags WRITE surface (tags; PJ-12). */
+  spaces: SpacesService
+  /** REQUIRED from S6 — the `pages` surface (vision/mission pages; PJ-7). */
+  notes: NotesService
+  // grows per slice — deny-safe partner ports (tasks?/finance?/effects?/…) land at S7–S9.
 }
 
 // --- S1 inputs ---------------------------------------------------------------
@@ -173,7 +180,18 @@ export interface ProjectsService {
   addDocument(projectId: string, input: AddProjectDocumentInput): Promise<ProjectDocumentRow>
   getDocument(id: string): Promise<ProjectDocumentRow | null>
   listDocuments(projectId: string): Promise<ProjectDocumentRow[]>
+  // S6 — vision/mission pages + entity_tags
+  getProjectPage(projectId: string, kind: ProjectPageKind): Promise<PageRow>
+  tagEntity(entityType: string, entityId: string, tagId: string): Promise<void>
+  untagEntity(entityType: string, entityId: string, tagId: string): Promise<void>
 }
+
+/**
+ * The two app-managed guiding pages of a project (PJ-7/G3). Represented as `pages` rows with
+ * `entity_type='project'` (NOT a dedicated `PAGE_TYPE` — `db-4-projects/_index.md:32-33`: "mission is a page,
+ * not a column"), discriminated by a reserved title. The `projects.vision` column stays the one-line summary.
+ */
+export type ProjectPageKind = 'vision' | 'mission'
 
 // --- typed errors ------------------------------------------------------------
 export class ProjectNotFoundError extends Error {

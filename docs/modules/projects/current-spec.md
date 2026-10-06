@@ -10,7 +10,7 @@
 `createProjectsService(deps)` — the ① backend service tier for **Projects** over DB-4 `016_projects`
 (4 tables: `projects` · `milestones` · `deliverables` · `project_documents`). The full design lives in
 `docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
-seam-contract). Build state: **① IN PROGRESS — S5 of 9 shipped.**
+seam-contract). Build state: **① IN PROGRESS — S6 of 9 shipped.**
 
 > **Test runtime: Node 24** (better-sqlite3 ABI = NODE_MODULE_VERSION 137). Run `nvm use 24` before vitest.
 
@@ -106,10 +106,25 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - Barrel: `AddProjectDocumentInput`/`AddProjectDocumentSchema` (renamed to avoid the learning-education
   `AddDocument*` flat-barrel collision — HabitDateRange precedent).
 
+## S6 — vision/mission pages + entity_tags (shipped)
+
+- **Deps change:** `ProjectsServiceDeps` now REQUIRES `spaces: SpacesService` + `notes: NotesService` (the
+  entity_tags WRITE + `pages` surfaces). The test harness constructs both over a shared taggable-type registry.
+- `getProjectPage(projectId, 'vision'|'mission')`: **title-keyed** find-or-create. Vision/mission are `pages` with
+  `entity_type='project'`, **NOT a dedicated `PAGE_TYPE`** (`db-4-projects/_index.md:32-33` — "mission is a page,
+  not a column"; `PAGE_TYPE` has no vision/mission slot, and `ensureEntityNote` can't hold two distinct pages per
+  entity). Each is a `type='note'` page discriminated by a reserved app-managed title ('Vision'/'Mission');
+  idempotent (second call returns the same row). The `projects.vision` column stays the one-line summary (PJ-7).
+- `tagEntity`/`untagEntity(entityType, entityId, tagId)`: thin scoped wrappers delegating to
+  `SpacesService.tagEntity`/`untagEntity` (which validate `entity_type` against the registry — project/milestone/
+  deliverable pre-seeded; unregistered ⇒ throws). General project/milestone/deliverable **notes** are the FE's to
+  manage via NotesService directly (entity_type registered); the service owns only the two guiding pages + tags.
+
 ## Gates (per slice)
 - **S1:** tsc 0 · eslint 0 · live-store **10/10** · g1 Decomposition SHIP · g2 code-review SHIP · /critique SHIP.
 - **S2:** tsc 0 · eslint 0 · live-store **18/18** (cumulative) · g2 code-review SHIP (+ cascade retrofit) · /critique SHIP.
 - **S3:** tsc 0 · eslint 0 · live-store **25/25** (cumulative) · g2 code-review SHIP · /critique SHIP.
 - **S4:** tsc 0 · eslint 0 · live-store **33/33** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - **S5:** tsc 0 · eslint 0 · live-store **39/39** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
+- **S6:** tsc 0 · eslint 0 · live-store **44/44** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - Full `@vida/core` suite green (no regression).

@@ -90,6 +90,17 @@
   survives under the project); project delete **hard-deletes** its documents (§5.4). Cascade chain complete for all
   4 tables.
 
+## S6 — vision/mission pages + entity_tags
+
+- **BR-PJ-S6-1** — `spaces: SpacesService` + `notes: NotesService` are REQUIRED deps (entity_tags WRITE + `pages`).
+- **BR-PJ-S6-2** — Vision & Mission are `pages` with `entity_type='project'` (NOT a dedicated `PAGE_TYPE` —
+  `db-4-projects/_index.md:32-33`). `getProjectPage(id, kind)` find-or-creates a `type='note'` page keyed by a
+  reserved app-managed title ('Vision'/'Mission'); idempotent; orphan-guarded (`ProjectNotFoundError`). The
+  `projects.vision` column remains the one-line summary (PJ-7).
+- **BR-PJ-S6-3** — `tagEntity`/`untagEntity(entityType, entityId, tagId)` delegate to SpacesService (PJ-12); the
+  registry validates `entity_type` (project/milestone/deliverable registered; unregistered ⇒ throws). Idempotent
+  write / resolve-then-soft-delete. General entity notes are FE-managed via NotesService.
+
 ## Deferred (homed, not dropped)
 PJ-9 cascade completion (S2/S3/S5) · tags via `entity_tags` (S6) · vision/mission/notes pages (S6) · progress
 derivation (S4) · deliverable measurement source seam (S7) · Tasks→Projects seam + project time (S8) · effects

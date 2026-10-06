@@ -38,15 +38,20 @@ import {
   type UpdateDeliverableInput,
   type ProgressView,
   type AddProjectDocumentInput,
+  type ProjectPageKind,
   ProjectNotFoundError,
   MilestoneNotFoundError,
   MilestoneParentError,
   DeliverableNotFoundError,
 } from './types'
 import type { ProjectRow, MilestoneRow, DeliverableRow, ProjectDocumentRow } from '../../db/schema/projects'
+import type { PageRow } from '../../db/schema/notes'
+
+/** App-managed reserved titles for the two guiding project pages (PJ-7; db-4-projects/_index.md:32-33). */
+const PROJECT_PAGE_TITLE: Record<ProjectPageKind, string> = { vision: 'Vision', mission: 'Mission' }
 
 export function createProjectsService(deps: ProjectsServiceDeps): ProjectsService {
-  const { db, deviceId } = deps
+  const { db, deviceId, spaces, notes } = deps
 
   // `projects` + `milestones` + `deliverables` all have deleted_at → softDelete:true.
   const projectsRepo = createRepository(db, projects, { deviceId, softDelete: true, encryptedFields: [] })
@@ -333,6 +338,30 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     return rows.slice().sort((a, b) => a.created_at - b.created_at)
   }
 
+  // ---- S6: vision/mission pages + entity_tags ------------------------------
+  // Vision & Mission are `pages` with entity_type='project' — NOT a dedicated PAGE_TYPE (db-4-projects/_index.md:32-33
+  // "mission is a page, not a column"). The service find-or-creates each by a reserved, app-managed title (type='note').
+  // General project/milestone/deliverable notes are the FE's to manage via NotesService directly (entity_type is
+  // registered); the projects service only owns the two guiding pages + tag writes.
+  async function getProjectPage(projectId: string, kind: ProjectPageKind): Promise<PageRow> {
+    if (!(await projectsRepo.findById(projectId))) throw new ProjectNotFoundError(projectId)
+    const title = PROJECT_PAGE_TITLE[kind]
+    const existing = (await notes.getPagesForEntity('project', projectId)).find(
+      (p) => p.type === 'note' && p.title === title,
+    )
+    if (existing) return existing
+    return notes.createPage({ type: 'note', title, entity_type: 'project', entity_id: projectId })
+  }
+
+  // entity_tags WRITES delegate to SpacesService (the READ/registry owner); spaces validates entity_type against the
+  // taggable-type registry (project/milestone/deliverable are pre-seeded). Thin scoped wrappers (PJ-12).
+  async function tagEntity(entityType: string, entityId: string, tagId: string): Promise<void> {
+    await spaces.tagEntity(tagId, entityType, entityId)
+  }
+  async function untagEntity(entityType: string, entityId: string, tagId: string): Promise<void> {
+    await spaces.untagEntity(tagId, entityType, entityId)
+  }
+
   // ---- S4: derived progress (bottom-up rollup, override-wins, nesting_weight) ----
   // All internal resolvers work in the measurement engine's [0,1] space (columns are 0-100 → scale at the
   // boundary). A null is UNMEASURED and is excluded from the rollup (never coerced to 0, BR-2). The chain is
@@ -445,5 +474,9 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     addDocument,
     getDocument,
     listDocuments,
+    // S6 — pages + tags
+    getProjectPage,
+    tagEntity,
+    untagEntity,
   }
 }

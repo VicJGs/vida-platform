@@ -13,6 +13,11 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createProjectsService } from '../service'
+import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSpacesService, type SpacesService } from '../../../foundation/spaces'
+import { createAssociationResolver } from '../../../foundation/spaces/association-resolver'
+import { createBacklinkResolver } from '../../search/backlink-resolver'
+import { createNotesService, type NotesService } from '../../notes'
 import {
   type ProjectsService,
   ProjectNotFoundError,
@@ -58,6 +63,9 @@ interface Harness {
   svc: ProjectsService
   db: DrizzleDb
   bsql: Database.Database
+  spaces: SpacesService
+  notes: NotesService
+  associations: ReturnType<typeof createAssociationResolver>
 }
 
 async function setup(): Promise<Harness> {
@@ -66,8 +74,16 @@ async function setup(): Promise<Harness> {
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createProjectsService({ db, deviceId: 'test-device' })
-  return { svc, db, bsql }
+  // S6 — the REAL spaces + notes substrates (the learning-education harness precedent): tags/links WRITE via
+  // SpacesService, pages via NotesService, over the shared taggable-type registry (pre-seeds project/milestone/
+  // deliverable from ENTITY_TYPES). The association resolver reads back entity_tags for verification.
+  const entityRegistry = createTaggableTypeRegistry()
+  const spaces = createSpacesService(db, 'test-device', entityRegistry)
+  const backlinks = createBacklinkResolver(db, 'test-device')
+  const notes = createNotesService({ db, deviceId: 'test-device', spaces, backlinks, registry: entityRegistry })
+  const associations = createAssociationResolver(db, 'test-device', entityRegistry)
+  const svc = createProjectsService({ db, deviceId: 'test-device', spaces, notes })
+  return { svc, db, bsql, spaces, notes, associations }
 }
 
 describe('mod-projects S1 — projects CRUD + queries', () => {
@@ -447,6 +463,58 @@ describe('mod-projects S1 — projects CRUD + queries', () => {
       await h.svc.softDeleteProject(p.id)
       expect(await h.svc.getDocument(doc.id)).toBeNull() // hard-deleted with the project
       expect(await h.svc.listDocuments(p.id)).toHaveLength(0)
+    })
+  })
+
+  // --- S6: pages (vision/mission) + entity_tags -----------------------------
+  describe('S6 — pages + tags', () => {
+    it('getProjectPage find-or-creates vision + mission as distinct project pages (idempotent)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const vision = await h.svc.getProjectPage(p.id, 'vision')
+      const mission = await h.svc.getProjectPage(p.id, 'mission')
+      expect(vision.entity_type).toBe('project')
+      expect(vision.entity_id).toBe(p.id)
+      expect(vision.type).toBe('note')
+      expect(vision.title).toBe('Vision')
+      expect(mission.title).toBe('Mission')
+      expect(vision.id).not.toBe(mission.id) // two distinct pages on the same project
+      // idempotent: second call returns the same row, not a duplicate
+      const visionAgain = await h.svc.getProjectPage(p.id, 'vision')
+      expect(visionAgain.id).toBe(vision.id)
+    })
+
+    it('getProjectPage on a missing project throws ProjectNotFoundError', async () => {
+      await expect(h.svc.getProjectPage('nope', 'vision')).rejects.toBeInstanceOf(ProjectNotFoundError)
+    })
+
+    it('tagEntity + untagEntity write/remove an entity_tag (delegates to Spaces)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const tag = await h.spaces.createTag({ name: 'important' })
+      await h.svc.tagEntity('project', p.id, tag.id)
+      let assoc = await h.associations.resolveAssociations({ entityType: 'project', entityId: p.id }, 'separate')
+      expect(assoc.mode === 'separate' && assoc.tags.map((t) => t.tagId)).toContain(tag.id)
+      await h.svc.untagEntity('project', p.id, tag.id)
+      assoc = await h.associations.resolveAssociations({ entityType: 'project', entityId: p.id }, 'separate')
+      expect(assoc.mode === 'separate' && assoc.tags).toHaveLength(0)
+    })
+
+    it('tagEntity rejects an unregistered entity_type (Spaces registry guard)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const tag = await h.spaces.createTag({ name: 't' })
+      await expect(h.svc.tagEntity('bogus_type', p.id, tag.id)).rejects.toThrow()
+    })
+
+    it('tags a milestone and a deliverable (registered entity types)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M' })
+      const d = await h.svc.createDeliverable(m.id, { title: 'D' })
+      const tag = await h.spaces.createTag({ name: 'x' })
+      await h.svc.tagEntity('milestone', m.id, tag.id)
+      await h.svc.tagEntity('deliverable', d.id, tag.id)
+      const mAssoc = await h.associations.resolveAssociations({ entityType: 'milestone', entityId: m.id }, 'separate')
+      const dAssoc = await h.associations.resolveAssociations({ entityType: 'deliverable', entityId: d.id }, 'separate')
+      expect(mAssoc.mode === 'separate' && mAssoc.tags).toHaveLength(1)
+      expect(dAssoc.mode === 'separate' && dAssoc.tags).toHaveLength(1)
     })
   })
 })
