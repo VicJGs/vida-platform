@@ -12,14 +12,20 @@ interface ProjectsServiceDeps {
   deviceId: string
   spaces: SpacesService           // REQUIRED — entity_tags/entity_links WRITE (tags, source-link, note-link)
   notes: NotesService             // REQUIRED — pages (vision/mission/notes)
+  // --- REQUIRED from S7 ---
+  registry: TaggableTypeRegistry  // builds the read-only association resolver (entity_links source-link reads)
   // --- deny-safe partner ports (ABSENT at M1; no composition root wires services yet) ---
+  measurementSources?: MeasurementSourceRegistry  // S7 — the ADR-011 §3.6 source seam. SUPERSEDES the provisional
+                                                  //   finance?/external? typed-port sketch below: all derived-pull
+                                                  //   sources resolve through the ONE §3.6 registry by "type:id" key
+                                                  //   (g2-S7-nit-1). absent/unadvertised ⇒ null (unmeasured, BR-2).
   tasks?: TasksProjectsPort       // S8 — absent ⇒ no task leaf; progress rolls up from deliverables only
-  finance?: FinanceSourcePort     // S7 — absent ⇒ a financial derived-pull deliverable ⇒ last-known/unmeasured + flag
   attachment?: AttachmentPort     // S5 — absent ⇒ store INLINE (encrypted_blob); present+reject ⇒ DocumentFileError
   effects?: { rail: EffectRail; registry: EffectRegistry }  // S9 — DORMANT at M1 (no handler); emit-only
                                                             //   (EffectRail/EffectRegistry from foundation/effects; apply barrel-collision guard, g1-nit-1)
-  external?: ExternalMetricPort   // S7/S9 — ADR-014 device-mediated; absent/refuse server-plaintext (M2)
   ai?: AiPort                     // S9 — ADR-015 on_device/cloud; M2-facing
+  // ~~finance?: FinanceSourcePort~~ / ~~external?: ExternalMetricPort~~ — SUPERSEDED by measurementSources (S7).
+  // Real Finance/external advertisers register INTO the §3.6 registry at M2; no per-domain typed port on Projects.
 }
 ```
 > `foundation/measurement` (`normalize`/`rollup`/`resolveProgress`/`assertAcyclic`) is **imported directly**,

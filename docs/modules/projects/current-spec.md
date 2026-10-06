@@ -10,7 +10,7 @@
 `createProjectsService(deps)` — the ① backend service tier for **Projects** over DB-4 `016_projects`
 (4 tables: `projects` · `milestones` · `deliverables` · `project_documents`). The full design lives in
 `docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
-seam-contract). Build state: **① IN PROGRESS — S6 of 9 shipped.**
+seam-contract). Build state: **① IN PROGRESS — S7 of 9 shipped.**
 
 > **Test runtime: Node 24** (better-sqlite3 ABI = NODE_MODULE_VERSION 137). Run `nvm use 24` before vitest.
 
@@ -120,6 +120,24 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
   deliverable pre-seeded; unregistered ⇒ throws). General project/milestone/deliverable **notes** are the FE's to
   manage via NotesService directly (entity_type registered); the service owns only the two guiding pages + tags.
 
+## S7 — deliverable derived-pull measurement (M5/R7 seam) (shipped)
+
+- **Deps:** `registry: TaggableTypeRegistry` now REQUIRED (builds the read-only association resolver);
+  `measurementSources?: MeasurementSourceRegistry` deny-safe (ADR-011 §3.6).
+- **Binding** (`linkDeliverableSource`/`unlinkDeliverableSource`/`getDeliverableSources`): a deliverable→source
+  binding is an **`entity_links` row** (`_index §3c`), WRITTEN via `spaces.createLink(deliverableId, sourceType,
+  sourceId)` (page_id=deliverableId as the source anchor — plain-TEXT, no page-existence requirement), READ via the
+  association resolver's outbound links. Source `entityType` must be registered (account/asset/investment/… are).
+- **Resolution** (`deriveDeliverableLeaf`, wiring the S4 leaf): a `derived-pull` deliverable reads its bound
+  source(s) and queries `measurementSources` by key `"${entityType}:${entityId}"` (ADR-011 §3.6); first
+  bound+advertised [0,1] measure wins (clamped). **M1 deny-safe:** absent registry / unadvertised key / no binding
+  ⇒ `null` (unmeasured — never fabricated, BR-2). `manual`/`event-trigger` bindings don't pull a source.
+- **Deferred to M2:** real source advertisement (Finance net_worth etc.) + the composition root; raw-value →
+  [0,1] normalization needing baseline/target columns (the deferred measurement-taxonomy DDL); last-known+flag on
+  source outage (runtime). The resolution PATH + binding persistence are fully M1.
+- Deliverable-leaf resolution is now **async** (DB read of the binding); the S4 rollup math is unchanged
+  (override-wins, nesting_weight, partial, all-null) — `milestoneChildFracs` `Promise.all`s the deliverable fracs.
+
 ## Gates (per slice)
 - **S1:** tsc 0 · eslint 0 · live-store **10/10** · g1 Decomposition SHIP · g2 code-review SHIP · /critique SHIP.
 - **S2:** tsc 0 · eslint 0 · live-store **18/18** (cumulative) · g2 code-review SHIP (+ cascade retrofit) · /critique SHIP.
@@ -127,4 +145,5 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - **S4:** tsc 0 · eslint 0 · live-store **33/33** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - **S5:** tsc 0 · eslint 0 · live-store **39/39** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - **S6:** tsc 0 · eslint 0 · live-store **44/44** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
+- **S7:** tsc 0 · eslint 0 · live-store **50/50** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - Full `@vida/core` suite green (no regression).

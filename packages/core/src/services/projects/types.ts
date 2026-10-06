@@ -11,7 +11,8 @@
 import type { DrizzleDb } from '../../db/adapter'
 import type { ProjectRow, MilestoneRow, DeliverableRow, ProjectDocumentRow } from '../../db/schema/projects'
 import type { PageRow } from '../../db/schema/notes'
-import type { SpacesService } from '../../foundation/spaces'
+import type { SpacesService, TaggableTypeRegistry } from '../../foundation/spaces'
+import type { MeasurementSourceRegistry } from '../../foundation/measurement'
 import type { NotesService } from '../../services/notes'
 import type { ProjectScope, ProjectComplexity, Status, Priority, MeasurementKind, BindingMode } from '@vida/types'
 
@@ -23,7 +24,12 @@ export interface ProjectsServiceDeps {
   spaces: SpacesService
   /** REQUIRED from S6 — the `pages` surface (vision/mission pages; PJ-7). */
   notes: NotesService
-  // grows per slice — deny-safe partner ports (tasks?/finance?/effects?/…) land at S7–S9.
+  /** REQUIRED from S7 — the taggable-type registry (builds the association resolver for source-link reads). */
+  registry: TaggableTypeRegistry
+  /** Deny-safe from S7 — the ADR-011 §3.6 measurement-source read seam. ABSENT/empty at M1 (no module advertises
+   *  yet; sources + composition root = M2) ⇒ a `derived-pull` deliverable resolves `null` (unmeasured). */
+  measurementSources?: MeasurementSourceRegistry
+  // grows per slice — deny-safe partner ports (tasks?/effects?/…) land at S8–S9.
 }
 
 // --- S1 inputs ---------------------------------------------------------------
@@ -184,6 +190,18 @@ export interface ProjectsService {
   getProjectPage(projectId: string, kind: ProjectPageKind): Promise<PageRow>
   tagEntity(entityType: string, entityId: string, tagId: string): Promise<void>
   untagEntity(entityType: string, entityId: string, tagId: string): Promise<void>
+  // S7 — deliverable derived-pull measurement (M5/R7 source seam)
+  linkDeliverableSource(deliverableId: string, source: DeliverableSourceRef): Promise<void>
+  unlinkDeliverableSource(deliverableId: string, source: DeliverableSourceRef): Promise<void>
+  getDeliverableSources(deliverableId: string): Promise<DeliverableSourceRef[]>
+}
+
+/** A measurement source a `derived-pull` deliverable pulls from (a Finance account, a metric, …). Bound as an
+ *  `entity_links` row (deliverable → source) per `db-4-projects/_index.md:32-33` §3c; resolved via the ADR-011
+ *  §3.6 measurement-source seam. The `entityType` must be a registered taggable type. */
+export interface DeliverableSourceRef {
+  entityType: string
+  entityId: string
 }
 
 /**

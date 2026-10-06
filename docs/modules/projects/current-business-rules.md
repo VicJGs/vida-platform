@@ -101,6 +101,21 @@
   registry validates `entity_type` (project/milestone/deliverable registered; unregistered ⇒ throws). Idempotent
   write / resolve-then-soft-delete. General entity notes are FE-managed via NotesService.
 
+## S7 — deliverable derived-pull measurement (M5/R7 seam)
+
+- **BR-PJ-S7-1** — A deliverable→source binding is an `entity_links` row (`_index §3c`), WRITTEN via
+  `spaces.createLink(deliverableId, sourceType, sourceId)` (deliverable id as the source anchor); source
+  `entityType` must be registered. `linkDeliverableSource` fails loud if the deliverable is absent
+  (`DeliverableNotFoundError`); `getDeliverableSources` reads the outbound links.
+- **BR-PJ-S7-2** — A `derived-pull` deliverable derives its progress by querying `measurementSources` (ADR-011
+  §3.6) by key `"${entityType}:${entityId}"`; the first bound+advertised [0,1] measure wins (clamped). It overrides
+  nothing — a stored `progress` still wins (S4).
+- **BR-PJ-S7-3** — Deny-safe/unmeasured (BR-2): absent `measurementSources`, an unadvertised key, or no binding ⇒
+  `null` (never fabricated). `manual`/`event-trigger` bindings do not pull a source. Last-known+flag on source
+  outage is deferred runtime (M2).
+- **BR-PJ-S7-4** — Real source advertisement (Finance etc.) + composition root, and raw→[0,1] normalization
+  (baseline/target columns — the deferred taxonomy DDL) are M2. The binding persistence + resolution path are M1.
+
 ## Deferred (homed, not dropped)
 PJ-9 cascade completion (S2/S3/S5) · tags via `entity_tags` (S6) · vision/mission/notes pages (S6) · progress
 derivation (S4) · deliverable measurement source seam (S7) · Tasks→Projects seam + project time (S8) · effects

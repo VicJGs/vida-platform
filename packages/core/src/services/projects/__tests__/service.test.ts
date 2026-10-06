@@ -18,6 +18,7 @@ import { createSpacesService, type SpacesService } from '../../../foundation/spa
 import { createAssociationResolver } from '../../../foundation/spaces/association-resolver'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService, type NotesService } from '../../notes'
+import { createMeasurementSourceRegistry, type MeasurementSourceRegistry } from '../../../foundation/measurement'
 import {
   type ProjectsService,
   ProjectNotFoundError,
@@ -68,21 +69,28 @@ interface Harness {
   associations: ReturnType<typeof createAssociationResolver>
 }
 
-async function setup(): Promise<Harness> {
+async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = {}): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  // S6 — the REAL spaces + notes substrates (the learning-education harness precedent): tags/links WRITE via
+  // S6/S7 — the REAL spaces + notes substrates (the learning-education harness precedent): tags/links WRITE via
   // SpacesService, pages via NotesService, over the shared taggable-type registry (pre-seeds project/milestone/
-  // deliverable from ENTITY_TYPES). The association resolver reads back entity_tags for verification.
+  // deliverable from ENTITY_TYPES). The association resolver reads back entity_tags/links for verification.
   const entityRegistry = createTaggableTypeRegistry()
   const spaces = createSpacesService(db, 'test-device', entityRegistry)
   const backlinks = createBacklinkResolver(db, 'test-device')
   const notes = createNotesService({ db, deviceId: 'test-device', spaces, backlinks, registry: entityRegistry })
   const associations = createAssociationResolver(db, 'test-device', entityRegistry)
-  const svc = createProjectsService({ db, deviceId: 'test-device', spaces, notes })
+  const svc = createProjectsService({
+    db,
+    deviceId: 'test-device',
+    spaces,
+    notes,
+    registry: entityRegistry,
+    measurementSources: opts.measurementSources,
+  })
   return { svc, db, bsql, spaces, notes, associations }
 }
 
@@ -515,6 +523,73 @@ describe('mod-projects S1 — projects CRUD + queries', () => {
       const dAssoc = await h.associations.resolveAssociations({ entityType: 'deliverable', entityId: d.id }, 'separate')
       expect(mAssoc.mode === 'separate' && mAssoc.tags).toHaveLength(1)
       expect(dAssoc.mode === 'separate' && dAssoc.tags).toHaveLength(1)
+    })
+  })
+
+  // --- S7: deliverable derived-pull measurement -----------------------------
+  describe('S7 — deliverable source binding + derived-pull', () => {
+    async function deliverable(bindingMode?: 'manual' | 'derived-pull' | 'event-trigger') {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M' })
+      const d = await h.svc.createDeliverable(m.id, { title: 'D', binding_mode: bindingMode })
+      return { p, m, d }
+    }
+
+    it('links + lists + unlinks a deliverable source (entity_links binding)', async () => {
+      const { d } = await deliverable('derived-pull')
+      await h.svc.linkDeliverableSource(d.id, { entityType: 'account', entityId: 'acc-1' })
+      expect(await h.svc.getDeliverableSources(d.id)).toEqual([{ entityType: 'account', entityId: 'acc-1' }])
+      await h.svc.unlinkDeliverableSource(d.id, { entityType: 'account', entityId: 'acc-1' })
+      expect(await h.svc.getDeliverableSources(d.id)).toHaveLength(0)
+    })
+
+    it('linkDeliverableSource on a missing deliverable throws', async () => {
+      await expect(
+        h.svc.linkDeliverableSource('nope', { entityType: 'account', entityId: 'x' }),
+      ).rejects.toBeInstanceOf(DeliverableNotFoundError)
+    })
+
+    it('a derived-pull deliverable resolves its progress from an ADVERTISED bound source', async () => {
+      const sources = createMeasurementSourceRegistry()
+      sources.advertise('account:acc-1', () => 0.5) // a [0,1] measure
+      const hh = await setup({ measurementSources: sources })
+      const p = await hh.svc.createProject({ title: 'P' })
+      const m = await hh.svc.createMilestone(p.id, { title: 'M' })
+      const d = await hh.svc.createDeliverable(m.id, { title: 'D', binding_mode: 'derived-pull' })
+      await hh.svc.linkDeliverableSource(d.id, { entityType: 'account', entityId: 'acc-1' })
+      expect(await hh.svc.getDeliverableProgress(d.id)).toEqual({ value: 50, derived: true, partial: false })
+      // the milestone rolls up the resolved derived-pull leaf
+      expect((await hh.svc.getMilestoneProgress(m.id)).value).toBe(50)
+    })
+
+    it('derived-pull is unmeasured (null) when the source registry is ABSENT at M1', async () => {
+      const { m, d } = await deliverable('derived-pull')
+      await h.svc.linkDeliverableSource(d.id, { entityType: 'account', entityId: 'acc-1' })
+      // h was built with no measurementSources (M1 default) ⇒ unmeasured
+      expect(await h.svc.getDeliverableProgress(d.id)).toEqual({ value: null, derived: true, partial: false })
+      expect((await h.svc.getMilestoneProgress(m.id)).value).toBeNull()
+    })
+
+    it('an unadvertised bound source ⇒ unmeasured (never fabricated, BR-2)', async () => {
+      const sources = createMeasurementSourceRegistry() // empty
+      const hh = await setup({ measurementSources: sources })
+      const p = await hh.svc.createProject({ title: 'P' })
+      const m = await hh.svc.createMilestone(p.id, { title: 'M' })
+      const d = await hh.svc.createDeliverable(m.id, { title: 'D', binding_mode: 'derived-pull' })
+      await hh.svc.linkDeliverableSource(d.id, { entityType: 'account', entityId: 'acc-404' })
+      expect((await hh.svc.getDeliverableProgress(d.id)).value).toBeNull()
+    })
+
+    it('a manual deliverable ignores sources (only its override counts)', async () => {
+      const sources = createMeasurementSourceRegistry()
+      sources.advertise('account:acc-1', () => 0.9)
+      const hh = await setup({ measurementSources: sources })
+      const p = await hh.svc.createProject({ title: 'P' })
+      const m = await hh.svc.createMilestone(p.id, { title: 'M' })
+      const d = await hh.svc.createDeliverable(m.id, { title: 'D', binding_mode: 'manual' })
+      await hh.svc.linkDeliverableSource(d.id, { entityType: 'account', entityId: 'acc-1' })
+      // manual + no override ⇒ unmeasured (the advertised source is NOT pulled for a manual binding)
+      expect((await hh.svc.getDeliverableProgress(d.id)).value).toBeNull()
     })
   })
 })

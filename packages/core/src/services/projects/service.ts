@@ -13,7 +13,8 @@
 
 import { and, eq, isNull } from 'drizzle-orm'
 import { createRepository, type CreateInput } from '../../db/repository'
-import { rollup, resolveProgress } from '../../foundation/measurement'
+import { rollup } from '../../foundation/measurement'
+import { createAssociationResolver } from '../../foundation/spaces'
 import { projects, milestones, deliverables, projectDocuments } from '../../db/schema/projects'
 import {
   CreateProjectSchema,
@@ -39,6 +40,7 @@ import {
   type ProgressView,
   type AddProjectDocumentInput,
   type ProjectPageKind,
+  type DeliverableSourceRef,
   ProjectNotFoundError,
   MilestoneNotFoundError,
   MilestoneParentError,
@@ -51,7 +53,10 @@ import type { PageRow } from '../../db/schema/notes'
 const PROJECT_PAGE_TITLE: Record<ProjectPageKind, string> = { vision: 'Vision', mission: 'Mission' }
 
 export function createProjectsService(deps: ProjectsServiceDeps): ProjectsService {
-  const { db, deviceId, spaces, notes } = deps
+  const { db, deviceId, spaces, notes, registry, measurementSources } = deps
+  // READ-only association resolver (entity_links/entity_tags) — the read half of the split (WRITES go via spaces).
+  const associations = createAssociationResolver(db, deviceId, registry)
+  const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n)
 
   // `projects` + `milestones` + `deliverables` all have deleted_at → softDelete:true.
   const projectsRepo = createRepository(db, projects, { deviceId, softDelete: true, encryptedFields: [] })
@@ -362,6 +367,28 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     await spaces.untagEntity(tagId, entityType, entityId)
   }
 
+  // ---- S7: deliverable derived-pull measurement (M5/R7 source seam) --------
+  // Binding = an entity_links row (deliverable → source), WRITTEN via spaces.createLink (page_id=deliverableId as
+  // the source anchor; db-4-projects/_index.md:32-33 §3c). Resolution = the ADR-011 §3.6 measurement-source seam
+  // (deriveDeliverableLeaf, above). The source `entityType` must be a registered taggable type (spaces validates).
+  async function linkDeliverableSource(deliverableId: string, source: DeliverableSourceRef): Promise<void> {
+    if (!(await deliverablesRepo.findById(deliverableId))) throw new DeliverableNotFoundError(deliverableId)
+    // NOTE (g2-S7-nit-2): the ADR-011 §3.7 author-time cycle guard on binding edges is homed to S4/measurement
+    // (assertAcyclic) + M2 (when real advertisers land) — at M1 sources are opaque external ids that can't back-
+    // reference a deliverable, so no binding DAG can form. Not enforced here by design.
+    await spaces.createLink(deliverableId, source.entityType, source.entityId)
+  }
+  async function unlinkDeliverableSource(deliverableId: string, source: DeliverableSourceRef): Promise<void> {
+    if (!(await deliverablesRepo.findById(deliverableId))) throw new DeliverableNotFoundError(deliverableId)
+    await spaces.removeLink(deliverableId, source.entityType, source.entityId)
+  }
+  async function getDeliverableSources(deliverableId: string): Promise<DeliverableSourceRef[]> {
+    // outbound entity_links where page_id=deliverableId (the association resolver's read half).
+    const res = await associations.resolveAssociations({ entityType: 'deliverable', entityId: deliverableId }, 'separate')
+    const links = res.mode === 'separate' ? res.links : []
+    return links.map((l) => ({ entityType: l.target.entityType, entityId: l.target.entityId }))
+  }
+
   // ---- S4: derived progress (bottom-up rollup, override-wins, nesting_weight) ----
   // All internal resolvers work in the measurement engine's [0,1] space (columns are 0-100 → scale at the
   // boundary). A null is UNMEASURED and is excluded from the rollup (never coerced to 0, BR-2). The chain is
@@ -371,14 +398,24 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
 
   const toPct = (frac: number | null): number | null => (frac === null ? null : Math.round(frac * 100))
 
-  /** The derived leaf for a deliverable (S4 = none yet): S7 wires the `derived-pull` source + S8 the task rollup. */
-  function deriveDeliverableLeaf(_d: DeliverableRow): number | null {
+  /** The derived leaf for a deliverable (S7): a `derived-pull` deliverable reads its bound measurement source(s)
+   *  via the ADR-011 §3.6 seam. First bound+advertised source (a [0,1] measure) wins. Absent registry / no bound /
+   *  unadvertised source ⇒ null (unmeasured — never fabricated, BR-2; last-known+flag on outage is M2 runtime).
+   *  `manual`/`event-trigger` (no override) ⇒ null; the task-rollup leaf (S8) is a further input. */
+  async function deriveDeliverableLeaf(d: DeliverableRow): Promise<number | null> {
+    if (d.binding_mode !== 'derived-pull' || !measurementSources) return null
+    const sources = await getDeliverableSources(d.id)
+    for (const s of sources) {
+      const v = measurementSources.query(`${s.entityType}:${s.entityId}`)
+      if (v !== null) return clamp01(v) // a [0,1] queryable measure; raw-value normalization (baseline/target) = M2 DDL
+    }
     return null
   }
 
-  /** Resolve a deliverable to [0,1]|null — stored override wins (ADR-011 §3.2), else the (S7/S8) leaf. */
-  function resolveDeliverableFrac(d: DeliverableRow): number | null {
-    return resolveProgress(d.progress === null ? null : d.progress / 100, () => deriveDeliverableLeaf(d))
+  /** Resolve a deliverable to [0,1]|null — stored override wins (ADR-011 §3.2), else the derived leaf (S7). */
+  async function resolveDeliverableFrac(d: DeliverableRow): Promise<number | null> {
+    if (d.progress !== null) return d.progress / 100 // manual override wins (resolveProgress semantics)
+    return deriveDeliverableLeaf(d)
   }
 
   /** Resolve a milestone to [0,1]|null — override wins, else a weighted rollup of sub-milestones + deliverables. */
@@ -404,7 +441,9 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     const subFracs = await Promise.all(
       subMs.map(async (sm) => ({ progress: await resolveMilestoneFrac(sm, seen), weight: sm.nesting_weight })),
     )
-    const delivFracs = delivs.map((d) => ({ progress: resolveDeliverableFrac(d), weight: d.nesting_weight }))
+    const delivFracs = await Promise.all(
+      delivs.map(async (d) => ({ progress: await resolveDeliverableFrac(d), weight: d.nesting_weight })),
+    )
     return [...subFracs, ...delivFracs]
   }
 
@@ -422,7 +461,7 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     const d = await deliverablesRepo.findById(id)
     if (!d) throw new DeliverableNotFoundError(id)
     if (d.progress !== null) return { value: d.progress, derived: false, partial: false }
-    return { value: toPct(deriveDeliverableLeaf(d)), derived: true, partial: false }
+    return { value: toPct(await deriveDeliverableLeaf(d)), derived: true, partial: false }
   }
 
   async function getMilestoneProgress(id: string): Promise<ProgressView> {
@@ -478,5 +517,9 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     getProjectPage,
     tagEntity,
     untagEntity,
+    // S7 — deliverable derived-pull measurement
+    linkDeliverableSource,
+    unlinkDeliverableSource,
+    getDeliverableSources,
   }
 }
