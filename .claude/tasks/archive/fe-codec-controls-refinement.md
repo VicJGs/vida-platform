@@ -1,5 +1,5 @@
 # Task: fe-codec-controls-refinement
-# Status: in-progress
+# Status: done
 # Linear: LIF-231
 # Profile: Change Frontend Component
 # Scenario: default

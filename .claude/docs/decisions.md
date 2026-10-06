@@ -1,6 +1,25 @@
 <!-- Last updated: 2026-10-06 by /session-end -->
 
 
+## fe-codec-controls-refinement (② frontend · LIF-231 · DONE — all 4 phases, 2026-10-06)
+The pre-CODEC CONTROLS aesthetic pass (orphan-control sibling of LIF-230). PRs #90–93 + close-out #94. Key decisions:
+- **Ground conformance/RATIFY audits in the durable CONTRACT, not just code-grep.** P4: a code-grep marked all 6 atoms
+  RATIFY; cross-checking vs `ds-5-primitive-contracts/<atom>.md` revealed Toast's hover "slight elevation" (`toast.md:27`)
+  was a contract-MISSING state → a BUILD slice. Grounding beat assumption both ways all pass (scope shrank where already
+  refined — P2 title→P3, P3/P4 mostly RATIFY; real gaps where not — P2 §VIII hover, P3 §V elevation, P4 Toast).
+- **SVG/WebGL colors via `useTheme().get('web')`** (the Tamagui-documented SVG call) — NOT a `$token` attr (colorless) nor
+  a hard-coded hex (re-opens the Neural-Graph conformance gap). P1 pomodoro ring; reusable for any SVG in @vida/ui.
+- **`progress?: 'bar' | 'ring'` opt-in variant** (non-breaking; §VI widget-internal, not a slot). Realizes v5 §6's deferred ring.
+- **Accent-as-moment on a BORDERED row = an absolute bar (Toast model), not `borderLeftWidth`** (a width change shifts a
+  bordered box 2px). Selected border stays neutral; bar + indicator carry the accent. (P2 export-dialog radios.)
+- **Overlay elevation (P3) + Toast hover elevation (P4b) self-cancel in dark by construction** (shadow hue = dark surface,
+  §XI); the perceptible dark cue is a `$colorTextMuted` border-strengthen (the `card.tsx:52` precedent) — §VIII hover must
+  be perceivable in both modes, and a self-cancelling shadow isn't.
+- **Mechanisms grounded in precedents, not invented:** Toast accent-bar (P2), Card overlay-opacity + dark border (P4b),
+  list-view tick, injected-stylesheet elevation (P3, the Card pattern). Worktree-isolated vs a parallel main-committing session.
+- **Pre-existing M4 follow-up (NOT fixed — palette-VALUE churn out of scope):** danger `#ef4444` on surface = 3.63 AA-fail;
+  the provisional ds-2 signal palette → real values via Figma M4/P2 (`frontend-source-of-truth.md`).
+
 ## fe-codec-primitives-refinement (② frontend · LIF-230 · P1 List shipped PR #88, 2026-10-06)
 G6 enhancement: bring the 5 pre-CODEC `@vida/ui` views to the editorial model + patterns. Key decisions:
 - **Calendar flagship → `fe-calendar` #19, NOT this task.** The multi-range (Year/Month/Week/Day/Agenda) + "living"
