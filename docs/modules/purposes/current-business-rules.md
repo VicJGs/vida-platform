@@ -30,3 +30,18 @@
   `PurposeHabit`/`PurposeRoutine`/`PurposeProject`, `TARGET_TYPE`/`TargetType`/`TargetTypeSchema`) have zero live
   consumers; `contributions` (weighted polymorphic edge) supersedes the three bare junctions, and `dreams` absorbs
   `bucket_list_items`. The service returns Row types; the interfaces are the mirror (not consumed at M1).
+
+## S2 — Dreams (single aspiration; absorbs bucket_list_items, PG-16)
+
+- **BR-PG-S2-1** — `dreams` is the single aspiration entity (the retired `bucket_list_items` collapsed in): one
+  table carries category/status/priority/imagery/steps/location/progress/target/project — no separate bucket-list
+  table. "Bucket List" is a Space over `dreams` (a tag + Gallery view), not service machinery.
+- **BR-PG-S2-2** — `dreams.steps` is a plain TEXT column holding a JSON string (`[{id,text,completed}]`), **never
+  `json<T>()`** — the service `JSON.stringify`s on write; the Row read returns the raw string (the consumer parses).
+  Update distinguishes an omitted `steps` (untouched) from an explicit `null` (clear) from a value (reserialize).
+- **BR-PG-S2-3** — Backfills: `status='dream'`, `priority='medium'` (NN defaults). `category` is nullable — its DB
+  `DEFAULT 'other'` never fires under create-echo, so an omit persists `NULL` (the S1 `review_frequency` family).
+- **BR-PG-S2-4** — `dreams.progress_percentage` is a nullable **override slot** (⇒ derive, PG-4), never `0`; no
+  `measurement_kind` on dreams (the widen list omits it — a dream's progress is an override or a rollup, S5).
+- **BR-PG-S2-5** — `estimated_cost` is INTEGER cents; `dreams` has `deleted_at` → soft delete; `listDreams(purposeId?)`
+  scopes active dreams by purpose (JS-filter over `findAll()`); `DreamNotFoundError` on an unknown id.

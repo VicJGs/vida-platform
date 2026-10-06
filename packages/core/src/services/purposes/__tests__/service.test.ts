@@ -13,7 +13,13 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createPurposesService } from '../service'
-import { type PurposesService, ValueNotFoundError, PurposeNotFoundError, TargetNotFoundError } from '../types'
+import {
+  type PurposesService,
+  ValueNotFoundError,
+  PurposeNotFoundError,
+  TargetNotFoundError,
+  DreamNotFoundError,
+} from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -171,5 +177,49 @@ describe('mod-purposes S1 — targets CRUD', () => {
     await h.svc.archiveTarget(t.id)
     expect(await h.svc.listTargets()).toHaveLength(0)
     await expect(h.svc.archiveTarget('nope')).rejects.toBeInstanceOf(TargetNotFoundError)
+  })
+})
+
+describe('mod-purposes S2 — dreams CRUD', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('backfills status/priority + leaves category NULL and progress_percentage as an override slot', async () => {
+    const d = await h.svc.createDream({ title: 'See the aurora' })
+    expect(d.status).toBe('dream') // NN default backfill
+    expect(d.priority).toBe('medium')
+    expect(d.category).toBeNull() // nullable; DB default 'other' never fires under create-echo
+    expect(d.progress_percentage).toBeNull() // override slot (PG-4), never 0
+    expect(d.steps).toBeNull()
+    expect(d.purpose_id).toBeNull()
+  })
+
+  it('serializes steps to a JSON string in the TEXT column (never json<T>()) and round-trips', async () => {
+    const steps = [
+      { id: 's1', text: 'save', completed: false },
+      { id: 's2', text: 'book flights', completed: true },
+    ]
+    const d = await h.svc.createDream({ title: 'Japan', category: 'travel', estimated_cost: 500000, steps })
+    expect(d.category).toBe('travel')
+    expect(d.estimated_cost).toBe(500000) // cents
+    expect(typeof d.steps).toBe('string')
+    const read = await h.svc.getDream(d.id)
+    expect(JSON.parse(read!.steps!)).toEqual(steps) // stored as JSON text, parses back
+  })
+
+  it('reserializes steps on update, scopes listDreams, soft-deletes, rejects unknown ids', async () => {
+    const p = await h.svc.createPurpose({ title: 'Adventure' })
+    const d1 = await h.svc.createDream({ title: 'bound', purpose_id: p.id })
+    await h.svc.createDream({ title: 'standalone' })
+    const upd = await h.svc.updateDream(d1.id, { steps: [{ id: 'x', text: 'go', completed: true }], progress_percentage: 30 })
+    expect(JSON.parse(upd.steps!)).toHaveLength(1)
+    expect(upd.progress_percentage).toBe(30)
+    expect(await h.svc.listDreams(p.id)).toHaveLength(1)
+    expect(await h.svc.listDreams()).toHaveLength(2)
+    await h.svc.archiveDream(d1.id)
+    expect(await h.svc.listDreams()).toHaveLength(1)
+    await expect(h.svc.updateDream('nope', {})).rejects.toBeInstanceOf(DreamNotFoundError)
   })
 })

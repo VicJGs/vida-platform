@@ -9,6 +9,8 @@ import {
   FREQUENCY,
   MEASUREMENT_KIND,
   BINDING_MODE,
+  BUCKET_LIST_CATEGORY,
+  BUCKET_LIST_STATUS,
 } from '@vida/types'
 
 // Canonical validators for the Purpose & Goals substrate enums (DB-3 · ADR-011).
@@ -122,6 +124,54 @@ export const UpdateTargetSchema = z.object({
   sort_order: z.number().int().optional(),
 })
 
+// --- dreams (S2 — single aspiration; absorbs bucket_list_items, PG-16) -------
+const CategorySchema = z.enum(BUCKET_LIST_CATEGORY)
+const BucketStatusSchema = z.enum(BUCKET_LIST_STATUS)
+/** A dream checklist step — stored as a JSON string in the `steps` TEXT column (never json<T>()). */
+const DreamStepSchema = z.object({ id: z.string(), text: z.string(), completed: z.boolean() })
+const StepsSchema = z.array(DreamStepSchema).nullable().optional()
+
+export const CreateDreamSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  domain: DomainSchema.nullable().optional(),
+  category: CategorySchema.nullable().optional(), // default 'other'
+  status: BucketStatusSchema.optional(), // default 'dream'
+  priority: PrioritySchema.optional(), // default 'medium'
+  target_age: z.number().int().nullable().optional(),
+  target_date: CalendarDate,
+  completed_date: CalendarDate,
+  estimated_cost: z.number().int().nullable().optional(), // cents
+  location: z.string().nullable().optional(),
+  image_url: z.string().nullable().optional(),
+  cover_image_url: z.string().nullable().optional(),
+  inspiration_url: z.string().nullable().optional(),
+  progress_percentage: Progress, // override slot (PG-4)
+  steps: StepsSchema,
+  purpose_id: z.string().nullable().optional(),
+  project_id: z.string().nullable().optional(),
+})
+export const UpdateDreamSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  domain: DomainSchema.nullable().optional(),
+  category: CategorySchema.nullable().optional(),
+  status: BucketStatusSchema.optional(),
+  priority: PrioritySchema.optional(),
+  target_age: z.number().int().nullable().optional(),
+  target_date: CalendarDate,
+  completed_date: CalendarDate,
+  estimated_cost: z.number().int().nullable().optional(),
+  location: z.string().nullable().optional(),
+  image_url: z.string().nullable().optional(),
+  cover_image_url: z.string().nullable().optional(),
+  inspiration_url: z.string().nullable().optional(),
+  progress_percentage: Progress,
+  steps: StepsSchema,
+  purpose_id: z.string().nullable().optional(),
+  project_id: z.string().nullable().optional(),
+})
+
 // Input types — inferred from the schemas (single source of truth; cannot drift).
 export type CreateValueInput = z.infer<typeof CreateValueSchema>
 export type UpdateValueInput = z.infer<typeof UpdateValueSchema>
@@ -129,3 +179,5 @@ export type CreatePurposeInput = z.infer<typeof CreatePurposeSchema>
 export type UpdatePurposeInput = z.infer<typeof UpdatePurposeSchema>
 export type CreateTargetInput = z.infer<typeof CreateTargetSchema>
 export type UpdateTargetInput = z.infer<typeof UpdateTargetSchema>
+export type CreateDreamInput = z.infer<typeof CreateDreamSchema>
+export type UpdateDreamInput = z.infer<typeof UpdateDreamSchema>

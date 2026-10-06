@@ -47,7 +47,11 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
       (Node 24). Independent g2 code-review **SHIP** (2 NITs folded: validator file merged to one-per-domain; review_frequency
       create-echo→NULL asserted) → pre-ship /critique **SHIP**. §XXIX currency born (`docs/modules/purposes/current-*`,
       BR-PG-S1-1..10). Caught: @vida/types src edit needs a dist rebuild before @vida/core typecheck [[editing-vida-types-needs-dist-rebuild-before-core-typecheck]].
-- [ ] **S2** — Dreams CRUD (absorbed bucket_list fields)
+- [x] **S2** — Dreams CRUD (absorbed bucket_list fields). `createDream`/… 5 methods; `steps` = JSON-in-TEXT (service
+      serializes, never json<T>; update distinguishes omit/null/value); backfills status='dream'/priority='medium',
+      category nullable (DB default never fires), progress_percentage override slot. Validators co-located. tsc 0 ·
+      eslint 0 · purposes **12/12** (3 new). Inline pre-ship critique SHIP (mechanical CRUD; steps round-trip tested).
+      §XXIX BR-PG-S2-1..5. Full @vida/core **1796/1796** (first run flaked the known vault-1MB test §XXIV; isolated re-run green).
 - [ ] **S3** — Metrics + value ledger (calculation_method derivation, source provenance)
 - [ ] **S4** — Contributions edge (link/unlink/reweight + InvalidContributor)
 - [ ] **S5** — Measurability core (progress/computeProgress rollup + ProgressView + qualitative→null)

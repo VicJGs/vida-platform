@@ -13,7 +13,7 @@
 // - M1.0 encryptedFields:[] (the [E] title/description/vision/why/… pass through; real field encryption = M3).
 
 import { createRepository, type CreateInput } from '../../db/repository'
-import { purposes, targets } from '../../db/schema/purposes'
+import { purposes, targets, dreams } from '../../db/schema/purposes'
 import { values } from '../../db/schema/foundation/purpose'
 import {
   CreateValueSchema,
@@ -22,6 +22,8 @@ import {
   UpdatePurposeSchema,
   CreateTargetSchema,
   UpdateTargetSchema,
+  CreateDreamSchema,
+  UpdateDreamSchema,
 } from '../../validators/purpose'
 import {
   type PurposesService,
@@ -29,9 +31,10 @@ import {
   ValueNotFoundError,
   PurposeNotFoundError,
   TargetNotFoundError,
+  DreamNotFoundError,
 } from './types'
 import type { ValueRow } from '../../db/schema/foundation/purpose'
-import type { PurposeRow, TargetRow } from '../../db/schema/purposes'
+import type { PurposeRow, TargetRow, DreamRow } from '../../db/schema/purposes'
 
 export function createPurposesService(deps: PurposesServiceDeps): PurposesService {
   const { db, deviceId } = deps
@@ -40,6 +43,7 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
   const valuesRepo = createRepository(db, values, { deviceId, softDelete: true, encryptedFields: [] })
   const purposesRepo = createRepository(db, purposes, { deviceId, softDelete: true, encryptedFields: [] })
   const targetsRepo = createRepository(db, targets, { deviceId, softDelete: true, encryptedFields: [] })
+  const dreamsRepo = createRepository(db, dreams, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- S1: values CRUD ------------------------------------------------------
   async function createValue(input: Parameters<PurposesService['createValue']>[0]): Promise<ValueRow> {
@@ -186,6 +190,74 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     return purposeId === undefined ? all : all.filter((t) => t.purpose_id === purposeId)
   }
 
+  // ---- S2: dreams CRUD ------------------------------------------------------
+  // `steps` is a plain TEXT column holding a JSON string (never json<T>()) → serialize on write; the Row read
+  // returns the raw string (the consumer parses). The DreamRow this service returns carries `steps: string | null`.
+  async function createDream(input: Parameters<PurposesService['createDream']>[0]): Promise<DreamRow> {
+    const v = CreateDreamSchema.parse(input)
+    return dreamsRepo.create({
+      title: v.title,
+      description: v.description ?? null,
+      domain: v.domain ?? null,
+      category: v.category ?? null, // nullable (DB default 'other' never fires under create-echo)
+      status: v.status ?? 'dream', // NN default backfill
+      priority: v.priority ?? 'medium',
+      target_age: v.target_age ?? null,
+      target_date: v.target_date ?? null,
+      completed_date: v.completed_date ?? null,
+      estimated_cost: v.estimated_cost ?? null,
+      location: v.location ?? null,
+      image_url: v.image_url ?? null,
+      cover_image_url: v.cover_image_url ?? null,
+      inspiration_url: v.inspiration_url ?? null,
+      progress_percentage: v.progress_percentage ?? null, // override slot (PG-4)
+      steps: v.steps == null ? null : JSON.stringify(v.steps),
+      purpose_id: v.purpose_id ?? null,
+      project_id: v.project_id ?? null,
+      deleted_at: null,
+    } satisfies CreateInput<typeof dreams>)
+  }
+
+  async function updateDream(id: string, patch: Parameters<PurposesService['updateDream']>[1]): Promise<DreamRow> {
+    const v = UpdateDreamSchema.parse(patch)
+    if (!(await dreamsRepo.findById(id))) throw new DreamNotFoundError(id)
+    const data = stripUndefined({
+      title: v.title,
+      description: v.description,
+      domain: v.domain,
+      category: v.category,
+      status: v.status,
+      priority: v.priority,
+      target_age: v.target_age,
+      target_date: v.target_date,
+      completed_date: v.completed_date,
+      estimated_cost: v.estimated_cost,
+      location: v.location,
+      image_url: v.image_url,
+      cover_image_url: v.cover_image_url,
+      inspiration_url: v.inspiration_url,
+      progress_percentage: v.progress_percentage,
+      // steps: an omitted key ⇒ untouched; an explicit value (incl. null) ⇒ reserialize/clear.
+      steps: v.steps === undefined ? undefined : v.steps === null ? null : JSON.stringify(v.steps),
+      purpose_id: v.purpose_id,
+      project_id: v.project_id,
+    })
+    return Object.keys(data).length === 0 ? (await dreamsRepo.findById(id))! : dreamsRepo.update(id, data)
+  }
+
+  async function archiveDream(id: string): Promise<void> {
+    if (!(await dreamsRepo.findById(id))) throw new DreamNotFoundError(id)
+    await dreamsRepo.delete(id)
+  }
+
+  async function getDream(id: string): Promise<DreamRow | null> {
+    return dreamsRepo.findById(id)
+  }
+  async function listDreams(purposeId?: string): Promise<DreamRow[]> {
+    const all = await dreamsRepo.findAll() // active only
+    return purposeId === undefined ? all : all.filter((d) => d.purpose_id === purposeId)
+  }
+
   return {
     createValue,
     updateValue,
@@ -202,6 +274,11 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     archiveTarget,
     getTarget,
     listTargets,
+    createDream,
+    updateDream,
+    archiveDream,
+    getDream,
+    listDreams,
   }
 }
 

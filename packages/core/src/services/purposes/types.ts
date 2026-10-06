@@ -15,9 +15,11 @@ import type {
   UpdatePurposeInput,
   CreateTargetInput,
   UpdateTargetInput,
+  CreateDreamInput,
+  UpdateDreamInput,
 } from '../../validators/purpose'
 import type { ValueRow } from '../../db/schema/foundation/purpose'
-import type { PurposeRow, TargetRow } from '../../db/schema/purposes'
+import type { PurposeRow, TargetRow, DreamRow } from '../../db/schema/purposes'
 
 export interface PurposesServiceDeps {
   db: DrizzleDb
@@ -44,6 +46,14 @@ export interface PurposesService {
   getTarget(id: string): Promise<TargetRow | null>
   /** Active targets; optionally scoped to one purpose (nullable purpose_id ⇒ standalone targets, PG-9). */
   listTargets(purposeId?: string): Promise<TargetRow[]>
+
+  // ---- S2: dreams (single aspiration; absorbs bucket_list, PG-16) -----------
+  createDream(input: CreateDreamInput): Promise<DreamRow>
+  updateDream(id: string, patch: UpdateDreamInput): Promise<DreamRow>
+  archiveDream(id: string): Promise<void>
+  getDream(id: string): Promise<DreamRow | null>
+  /** Active dreams; optionally scoped to one purpose. */
+  listDreams(purposeId?: string): Promise<DreamRow[]>
 }
 
 // --- typed errors (contract.md:49-57) ---------------------------------------
@@ -63,5 +73,11 @@ export class TargetNotFoundError extends Error {
   constructor(id: string) {
     super(`Target not found: ${id}`)
     this.name = 'TargetNotFoundError'
+  }
+}
+export class DreamNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Dream not found: ${id}`)
+    this.name = 'DreamNotFoundError'
   }
 }
