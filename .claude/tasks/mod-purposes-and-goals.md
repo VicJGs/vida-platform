@@ -39,7 +39,14 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
       citation anchors. → **awaiting Approval 1.**
 
 ### Slices (per-slice §XXVI double-gate + live-store Verification Gate + code-review + currency)
-- [ ] **S1** — Spine CRUD (values/purposes/targets) + DB-11 @vida/types reconcile
+- [x] **S1** — Spine CRUD (values/purposes/targets) + DB-11 @vida/types reconcile. `createPurposesService({db,deviceId})`
+      + 3 repos + 15 CRUD methods (returning Row types); validators merged into `validators/purpose.ts`; DB-11 reconcile
+      in `project.ts` (amend Purpose/Target/PurposeMetric/PurposeMetricValue/TargetReview/Dream + add Value/Contribution/
+      PurposeReview/PlanStep + retire BucketListItem/3-junctions/TARGET_TYPE — zero live consumers verified). Verification
+      Gate: tsc 0 · eslint 0 · enum-parity 159 · introspection 24 · **9/9 S1 service** · full @vida/core **1793/1793**
+      (Node 24). Independent g2 code-review **SHIP** (2 NITs folded: validator file merged to one-per-domain; review_frequency
+      create-echo→NULL asserted) → pre-ship /critique **SHIP**. §XXIX currency born (`docs/modules/purposes/current-*`,
+      BR-PG-S1-1..10). Caught: @vida/types src edit needs a dist rebuild before @vida/core typecheck [[editing-vida-types-needs-dist-rebuild-before-core-typecheck]].
 - [ ] **S2** — Dreams CRUD (absorbed bucket_list fields)
 - [ ] **S3** — Metrics + value ledger (calculation_method derivation, source provenance)
 - [ ] **S4** — Contributions edge (link/unlink/reweight + InvalidContributor)
