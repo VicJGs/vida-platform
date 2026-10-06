@@ -5894,3 +5894,20 @@ Next session:
   - **FIRST ACTION:** G6 unit #5 `fe-codec-dashboard` (dep patterns✅, lowest-# ready). FRESH `/begin`; isolate in a worktree; add-frontend-component / Entity Delivery Flow ②. Also unblocked: `fe-codec-entity-facet` #6, `fe-codec-canvas-editor` #7, `fe-codec-canvas-graph` #8, `fe-codec-canvas-reader` #9, `fe-codec-canvas-board` #10, `fe-codec-system` #12.
   - Tracked follow-ups: `ci-prettier-reformat` (deferred repo-wide reformat), `ci-workers-build-config` (CF dashboard, needs Victor). LIF-207 → Done reconciles at `/begin --pull`.
   - Env: Node 22 via nvm; per-unit worktree → PR → merge; Visual Gate = Brave via `/tmp/vg`. Two parallel backend sessions may be active (`mod-learning-education`, `mod-notifications`) — don't disturb their worktrees.
+
+---
+Date: 2026-10-05 — mod-projects (LIF-135) — CLOSE-OUT RECOVERY → COMPLETE (PR #86)
+Task: mod-projects · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow) · the build + PR #85 were a prior session; this session finished the local close-out only.
+Goal: Finish what a prior session left midway on mod-projects.
+Accomplished:
+  - **Diagnosed a PR-merged-but-locally-absent state.** On `/begin` the TASKS.md note read "COMPLETE / PR #85 merged", but local `main` was one merge behind (`53b6b61`), `createProjectsService` was absent locally, and the task file on origin/main was still `# Status: planned`. Verified (not assumed): all 9 slice commits existed but were NOT on local `main`; `gh` + `git fetch` showed PR #85 genuinely merged at `origin/main` `1b07a15` (contains `services/projects/service.ts` + tests) — local was simply un-pulled.
+  - **Integrated + verified.** Stashed the half-written bookkeeping → `git pull --ff-only` (clean FF to `1b07a15`) → stash pop (conflict-free; incoming merge = 2378 ins / 12 files all under `services/projects/`, touches none of the bookkeeping files). Ran `pnpm --filter @vida/core test projects` on Node 24 → **77/77** (16 introspection + 61 service).
+  - **Proper close-out** (`/task-complete`): `# Status: done`; tracker `--sync` → **LIF-135 → DONE** (8 blocker edges); `_index.md` Completed entry; `decisions.md` mod-projects section (+ close-out-recovery lesson); TASKS.md completed row; task archived → `.claude/tasks/archive/mod-projects.md`; per-task session file `2026-10-05-mod-projects.md`.
+  - **Landed bookkeeping** via the #82/#84 docs-PR convention: branch → commit (`e8ae131`, after an amend — `git add` had aborted on a stale pathspec and committed only the rename; caught by `git show --stat`) → **PR #86 merged** to `main` (`34e3395`), branch deleted, tree clean.
+Decisions / lessons:
+  - **Verify a merge is on `origin/main`, not just the PR state, before trusting a "COMPLETE" note.** A merged PR + a stale local `main` reads as done in the task file while the code is absent locally. Oracle = commits reachable from `origin/main` + green suite, never the glyph. Ref [[slice-map-checkmark-is-ratified-not-shipped]].
+  - `git add <multiple paths>` aborts the WHOLE invocation on one bad pathspec → always `git show --stat` after a multi-path add rather than trusting exit status.
+  - Ship gate (§XXIV): session changes were docs-only bookkeeping, already §XXVI-gated at build time (prior session, PR #85) and already merged via PR #86 → a fresh `/critique` is moot here (nothing left to gate pre-commit).
+Next session:
+  - **FIRST ACTION:** next `#`-order backend head = **#55 `mod-purposes-and-goals`** (M1.1.2; `--next` agrees — highest direct-dependent count 6). FRESH `/begin`; add-backend-component / Entity Delivery Flow ①; fresh branch/worktree off main. Alternatives: Victor-directive FE `fe-codec-primitives-refinement` (LIF-230, worktree already exists) or FE `#5 fe-codec-dashboard`.
+  - Env: Node 24 via nvm for @vida/core tests (better-sqlite3 ABI). Parallel worktree `fe-codec-primitives-refinement` may be active — don't disturb it.
