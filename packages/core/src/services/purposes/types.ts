@@ -9,6 +9,7 @@
 
 import type { DrizzleDb } from '../../db/adapter'
 import type { MetricValueSource } from '@vida/types'
+import type { MeasurementSourceRegistry } from '../../foundation/measurement'
 import type {
   CreateValueInput,
   UpdateValueInput,
@@ -44,6 +45,21 @@ export interface MetricCurrent {
 export interface PurposesServiceDeps {
   db: DrizzleDb
   deviceId: string
+  /** Deny-safe (S5) — the ADR-011 §3.6 measurement-source READ seam. ABSENT/empty at M1 ⇒ every cross-module
+   *  contributor + derived-pull resolves `null` (unmeasured, excluded from rollup). Real sources = M2. */
+  measurementSources?: MeasurementSourceRegistry
+}
+
+/** A derived progress reading in 0–100 (the engine computes in [0,1]; converted at this edge). */
+export interface PurposeProgressView {
+  /** 0–100, or null when unmeasured (a qualitative with no rating, or no measured child — never coerced to 0). */
+  value: number | null
+  /** true when derived (rollup/normalize); false when read straight from an override slot. */
+  derived: boolean
+  /** true when some child of a rollup was unmeasured (excluded) — the value reflects only the measured subset. */
+  partial: boolean
+  /** true when `value` is null because nothing was measurable. */
+  unmeasured: boolean
 }
 
 export interface PurposesService {
@@ -94,6 +110,12 @@ export interface PurposesService {
   reweightContribution(id: string, weight: number): Promise<ContributionRow>
   /** Active contributions whose goal is the given (type,id). */
   listContributions(goal: ContributionRef): Promise<ContributionRow[]>
+
+  // ---- S5: measurability core (derive-on-read; compose foundation/measurement) ----
+  /** The LEAF progress of a pursuable (target via normalize; dream via its override slot). 0–100 or null. */
+  progress(entity: { type: 'target' | 'dream'; id: string }): Promise<PurposeProgressView>
+  /** The ROLLUP progress of a goal: override slot if set, else weighted rollup of spine-targets + contributions. */
+  computeProgress(goal: { type: 'purpose' | 'target'; id: string }): Promise<PurposeProgressView>
 }
 
 // --- typed errors (contract.md:49-57) ---------------------------------------

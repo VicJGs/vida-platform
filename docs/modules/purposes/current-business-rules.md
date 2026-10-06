@@ -77,3 +77,37 @@
   `listContributions(goal)` reads the active edges for a goal via `findWhere` with an **explicit** `isNull(deleted_at)`
   (findWhere skips the soft-delete filter). `reweightContribution` updates only the weight. `ContributionNotFoundError`
   on an unknown id.
+
+## S5 — Measurability core (derive-on-read; composes foundation/measurement)
+
+- **BR-PG-S5-1** — `progress(entity)` is the LEAF. A **target** leaf = `normalize()` by `measurement_kind`:
+  `quantitative` ⇒ `clamp(current_value/target_value)` with **baseline 0, higher-better** (the schema split — targets
+  carry no baseline/direction column, those live on metrics; null current/target ⇒ unmeasured); `milestone` ⇒
+  `status==='completed' ? 1 : 0`; `rate` ⇒ `clamp(current_value)` (null ⇒ unmeasured); `qualitative` ⇒ **null**
+  (no rating/scale column on targets ⇒ unmeasured at M1, **never 0**, PG-3). A **dream** leaf = its
+  `progress_percentage` override slot or null (no `measurement_kind` ⇒ no derive).
+- **BR-PG-S5-2** — All rollup/normalize math is in **[0,1]** (the engine's unit); the stored/override columns
+  (`purposes.progress`, `dreams.progress_percentage`, 0–100) are converted only at the `PurposeProgressView` edge
+  (`toPct` out / `fromPct` when a child view feeds a parent rollup). `measurementSources.query` returns [0,1] directly.
+- **BR-PG-S5-3** — `computeProgress(purpose)` = the `purposes.progress` override (0–100, `derived:false`) when set;
+  else a **two-channel** rollup (build-phase resolution, ADR-011 §3.8 — the docs don't fix cross-channel mixing):
+  **Channel A** = in-module LEAVES (spine-targets via `purpose_id` each `computeProgress(target)` + `purpose_metrics`
+  each `metricLeaf01`), equal-weight peers; **Channel B** = direct CONTRIBUTIONS, weighted by `contribution_percentage`.
+  Each channel rolls up on its own scale, then the two channel-results combine **equal-weight**. This keeps
+  `contribution_percentage` meaningful *within* B and stops a weight-1 in-module leaf drowning under a weight-60
+  contribution. Targets + metrics feed a purpose via the direct `purpose_id` channel (PG-5 "contributor→target→purpose";
+  `target`/`purpose_metric` ∉ contributor vocabulary, so never via contributions). A `purpose_metric` leaf is
+  **direction-aware** (it carries `baseline_value` + `is_higher_better`, unlike a target), reading its current value
+  via `getMetricCurrent`. `partial` reflects the raw leaves (a channel that excluded a null child), not the two channels.
+- **BR-PG-S5-4** — `computeProgress(target)` = its **leaf** (measurement override) when measured; else the `rollup` of
+  **its contributions**. Leaf/override wins over contributions (PG-4). A target never contributes to a target → no cycle.
+- **BR-PG-S5-5** — Unmeasured children (null progress) are **excluded** from a rollup (the engine drops null-progress
+  children) so an un-rated goal never drags a parent to 0 (PG-3); `partial:true` flags that some child was excluded.
+  An all-unmeasured / empty set ⇒ `value:null, unmeasured:true` (never 0).
+- **BR-PG-S5-6** — A **dream** contributor resolves in-module (its override slot); a **cross-module** contributor
+  (`habit`/`routine`/`project`/`task`/`finance_target`/`check_in`) resolves through the deny-safe `measurementSources`
+  seam keyed `${contributor_type}:${contributor_id}` — **empty at M1 ⇒ null (unmeasured, excluded)**; real sources are
+  advertised by their modules at M2 (zero-signature swap). A deleted dream contributor degrades to null, never throws.
+- **BR-PG-S5-7** — The mixed-weight math is **delegated to the built `rollup` engine** (`weight == null || 0 ⇒ 1`,
+  `engine.ts:48`) — composed, never reinterpreted. `progress`/`computeProgress` reject an unknown id with the typed
+  `*NotFoundError`.

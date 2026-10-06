@@ -15,6 +15,7 @@ import { purposeMetricValues } from '../../../db/schema/purposes'
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createPurposesService } from '../service'
+import { createMeasurementSourceRegistry, type MeasurementSourceRegistry } from '../../../foundation/measurement'
 import {
   type PurposesService,
   ValueNotFoundError,
@@ -65,13 +66,13 @@ interface Harness {
   bsql: Database.Database
 }
 
-async function setup(): Promise<Harness> {
+async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = {}): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createPurposesService({ db, deviceId: 'test-device' })
+  const svc = createPurposesService({ db, deviceId: 'test-device', measurementSources: opts.measurementSources })
   return { svc, db, bsql }
 }
 
@@ -348,5 +349,164 @@ describe('mod-purposes S4 — contributions edge', () => {
   it('rejects unlink/reweight of an unknown contribution', async () => {
     await expect(h.svc.unlinkContribution('nope')).rejects.toBeInstanceOf(ContributionNotFoundError)
     await expect(h.svc.reweightContribution('nope', 10)).rejects.toBeInstanceOf(ContributionNotFoundError)
+  })
+})
+
+describe('mod-purposes S5 — measurability core (leaf progress)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('quantitative target leaf = current/target (baseline 0, higher-better); unmeasured without current', async () => {
+    const t = await h.svc.createTarget({ title: 'Read', measurement_kind: 'quantitative', target_value: 24, current_value: 6 })
+    expect((await h.svc.progress({ type: 'target', id: t.id })).value).toBe(25) // 6/24 = 25%
+    const t2 = await h.svc.createTarget({ title: 'noCurrent', measurement_kind: 'quantitative', target_value: 10 })
+    const v2 = await h.svc.progress({ type: 'target', id: t2.id })
+    expect(v2.value).toBeNull()
+    expect(v2.unmeasured).toBe(true) // no current_value ⇒ unmeasured, never 0
+  })
+
+  it('milestone target leaf = status (completed→100 else 0); rate clamps; qualitative is unmeasured (never 0)', async () => {
+    const done = await h.svc.createTarget({ title: 'ship', measurement_kind: 'milestone', status: 'completed' })
+    expect((await h.svc.progress({ type: 'target', id: done.id })).value).toBe(100)
+    const todo = await h.svc.createTarget({ title: 'todo', measurement_kind: 'milestone' })
+    expect((await h.svc.progress({ type: 'target', id: todo.id })).value).toBe(0)
+    const rate = await h.svc.createTarget({ title: 'rate', measurement_kind: 'rate', current_value: 0.8 })
+    expect((await h.svc.progress({ type: 'target', id: rate.id })).value).toBe(80)
+    const qual = await h.svc.createTarget({ title: 'feel', measurement_kind: 'qualitative' })
+    const q = await h.svc.progress({ type: 'target', id: qual.id })
+    expect(q.value).toBeNull() // PG-3: qualitative with no rating ⇒ unmeasured, never 0
+    expect(q.unmeasured).toBe(true)
+  })
+
+  it('dream progress = its override slot (0–100) or null', async () => {
+    const d = await h.svc.createDream({ title: 'trip', progress_percentage: 30 })
+    const v = await h.svc.progress({ type: 'dream', id: d.id })
+    expect(v).toEqual({ value: 30, derived: false, partial: false, unmeasured: false })
+    const d2 = await h.svc.createDream({ title: 'someday' })
+    expect((await h.svc.progress({ type: 'dream', id: d2.id })).unmeasured).toBe(true)
+  })
+})
+
+describe('mod-purposes S5 — measurability core (rollup)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('purpose override slot wins over any rollup (PG-4)', async () => {
+    const p = await h.svc.createPurpose({ title: 'x', progress: 42 })
+    await h.svc.createTarget({ title: 't', purpose_id: p.id, measurement_kind: 'milestone', status: 'completed' })
+    expect(await h.svc.computeProgress({ type: 'purpose', id: p.id })).toEqual({
+      value: 42, derived: false, partial: false, unmeasured: false,
+    })
+  })
+
+  it('purpose with no children/override is unmeasured (never 0)', async () => {
+    const p = await h.svc.createPurpose({ title: 'empty' })
+    const v = await h.svc.computeProgress({ type: 'purpose', id: p.id })
+    expect(v.value).toBeNull()
+    expect(v.unmeasured).toBe(true)
+  })
+
+  it('purpose rolls up its spine-targets (equal weight) — weighted average of target leaves', async () => {
+    const p = await h.svc.createPurpose({ title: 'learn' })
+    await h.svc.createTarget({ title: 'a', purpose_id: p.id, measurement_kind: 'quantitative', target_value: 10, current_value: 10 }) // 100%
+    await h.svc.createTarget({ title: 'b', purpose_id: p.id, measurement_kind: 'milestone' }) // 0%
+    const v = await h.svc.computeProgress({ type: 'purpose', id: p.id })
+    expect(v.value).toBe(50) // (100 + 0) / 2, equal weight
+    expect(v.derived).toBe(true)
+  })
+
+  it('a qualitative (unmeasured) spine-target is EXCLUDED from the rollup (never drags to 0), flags partial', async () => {
+    const p = await h.svc.createPurpose({ title: 'mix' })
+    await h.svc.createTarget({ title: 'done', purpose_id: p.id, measurement_kind: 'milestone', status: 'completed' }) // 100
+    await h.svc.createTarget({ title: 'vibe', purpose_id: p.id, measurement_kind: 'qualitative' }) // unmeasured → excluded
+    const v = await h.svc.computeProgress({ type: 'purpose', id: p.id })
+    expect(v.value).toBe(100) // only the measured child counts
+    expect(v.partial).toBe(true) // one child was unmeasured
+  })
+
+  it('contributions weight the rollup by contribution_percentage; cross-module is null at M1 (empty registry)', async () => {
+    const p = await h.svc.createPurpose({ title: 'fit' })
+    // a dream contributor resolves in-module; a habit contributor is cross-module (null at M1)
+    const d = await h.svc.createDream({ title: 'marathon', progress_percentage: 60 })
+    await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'dream', id: d.id }, { weight: 50 })
+    await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'habit', id: 'h1' }, { weight: 50 })
+    const v = await h.svc.computeProgress({ type: 'purpose', id: p.id })
+    expect(v.value).toBe(60) // only the dream (60%) is measured; the habit is null (excluded) at M1
+    expect(v.partial).toBe(true)
+  })
+
+  it('target leaf wins; an unmeasured-leaf target rolls up its own contributions', async () => {
+    const t = await h.svc.createTarget({ title: 'net worth', measurement_kind: 'qualitative' }) // leaf unmeasured
+    const d = await h.svc.createDream({ title: 'house', progress_percentage: 40 })
+    await h.svc.linkContribution({ type: 'target', id: t.id }, { type: 'dream', id: d.id }, { weight: 100 })
+    expect((await h.svc.computeProgress({ type: 'target', id: t.id })).value).toBe(40) // leaf null → rollup contributions
+    // a measured leaf wins over contributions:
+    const t2 = await h.svc.createTarget({ title: 'books', measurement_kind: 'quantitative', target_value: 4, current_value: 2 })
+    await h.svc.linkContribution({ type: 'target', id: t2.id }, { type: 'dream', id: d.id }, { weight: 100 })
+    expect((await h.svc.computeProgress({ type: 'target', id: t2.id })).value).toBe(50) // leaf (2/4) wins, not the dream's 40
+  })
+
+  it('resolves a cross-module contributor through an injected measurement-source registry (the M2 seam)', async () => {
+    const sources = createMeasurementSourceRegistry()
+    sources.advertise('habit:h1', () => 0.9) // a habit streak measure (the M2 shape), [0,1]
+    const hh = await setup({ measurementSources: sources })
+    const p = await hh.svc.createPurpose({ title: 'health' })
+    await hh.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'habit', id: 'h1' }, { weight: 100 })
+    expect((await hh.svc.computeProgress({ type: 'purpose', id: p.id })).value).toBe(90) // 0.9 → 90%
+  })
+
+  it('a purpose_metric feeds the purpose rollup via the direct channel (g2 #1), direction-aware', async () => {
+    const p = await h.svc.createPurpose({ title: 'weight-goal' })
+    // lose weight: 90 (baseline) → 70 (target), currently 80 → halfway, higher-better=false
+    const m = await h.svc.createMetric({
+      name: 'bodyweight', purpose_id: p.id, calculation_method: 'latest',
+      target_value: 70, baseline_value: 90, is_higher_better: false,
+    })
+    await h.svc.recordMetricValue(m.id, 80)
+    const v = await h.svc.computeProgress({ type: 'purpose', id: p.id })
+    expect(v.value).toBe(50) // (90-80)/(90-70) = 0.5, direction-aware
+    expect(v.unmeasured).toBe(false)
+  })
+
+  it('mixes a spine-target and a contribution on ONE scale (two-channel equal-combine, g2 #2)', async () => {
+    const p = await h.svc.createPurpose({ title: 'balanced' })
+    await h.svc.createTarget({ title: 'done', purpose_id: p.id, measurement_kind: 'milestone', status: 'completed' }) // channel A = 100
+    const d = await h.svc.createDream({ title: 'half', progress_percentage: 50 })
+    await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'dream', id: d.id }, { weight: 40 }) // channel B = 50
+    const v = await h.svc.computeProgress({ type: 'purpose', id: p.id })
+    expect(v.value).toBe(75) // (channelA 100 + channelB 50) / 2 — NOT drowned by the weight-40 contribution
+    expect(v.partial).toBe(false)
+  })
+
+  it('a weight-0 contribution is treated as equal-weight (engine), not dropped', async () => {
+    const p = await h.svc.createPurpose({ title: 'zeros' })
+    const d1 = await h.svc.createDream({ title: 'a', progress_percentage: 100 })
+    const d2 = await h.svc.createDream({ title: 'b', progress_percentage: 0 })
+    await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'dream', id: d1.id }, { weight: 0 })
+    await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'dream', id: d2.id }, { weight: 0 })
+    expect((await h.svc.computeProgress({ type: 'purpose', id: p.id })).value).toBe(50) // both weight-0 → equal → (100+0)/2
+  })
+
+  it('an all-unmeasured purpose is unmeasured with partial:false (0 measured, not a partial subset)', async () => {
+    const p = await h.svc.createPurpose({ title: 'foggy' })
+    await h.svc.createTarget({ title: 'q1', purpose_id: p.id, measurement_kind: 'qualitative' }) // null
+    await h.svc.createTarget({ title: 'q2', purpose_id: p.id, measurement_kind: 'qualitative' }) // null
+    const v = await h.svc.computeProgress({ type: 'purpose', id: p.id })
+    expect(v.value).toBeNull()
+    expect(v.unmeasured).toBe(true)
+    expect(v.partial).toBe(false) // 0 measured ⇒ not "partial", fully unmeasured
+  })
+
+  it("rolls up two levels: a purpose → an unmeasured-leaf spine-target → that target's own contribution", async () => {
+    const p = await h.svc.createPurpose({ title: 'deep' })
+    const t = await h.svc.createTarget({ title: 'via-contrib', purpose_id: p.id, measurement_kind: 'qualitative' }) // leaf null
+    const d = await h.svc.createDream({ title: 'feeds-target', progress_percentage: 80 })
+    await h.svc.linkContribution({ type: 'target', id: t.id }, { type: 'dream', id: d.id }, { weight: 100 })
+    // target leaf null → rolls up its contribution (80); purpose rolls up that target (80)
+    expect((await h.svc.computeProgress({ type: 'purpose', id: p.id })).value).toBe(80)
   })
 })

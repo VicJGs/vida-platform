@@ -15,6 +15,7 @@
 import { and, eq, isNull } from 'drizzle-orm'
 import { CONTRIBUTION_GOAL_TYPE, CONTRIBUTION_CONTRIBUTOR_TYPE } from '@vida/types'
 import type { ContributionGoalType, ContributionContributorType } from '@vida/types'
+import { normalize, rollup } from '../../foundation/measurement'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { purposes, targets, dreams, purposeMetrics, purposeMetricValues } from '../../db/schema/purposes'
 import { values, contributions } from '../../db/schema/foundation/purpose'
@@ -38,6 +39,7 @@ import {
   type PurposesServiceDeps,
   type MetricCurrent,
   type ContributionRef,
+  type PurposeProgressView,
   ValueNotFoundError,
   PurposeNotFoundError,
   TargetNotFoundError,
@@ -56,7 +58,7 @@ import type {
 } from '../../db/schema/purposes'
 
 export function createPurposesService(deps: PurposesServiceDeps): PurposesService {
-  const { db, deviceId } = deps
+  const { db, deviceId, measurementSources } = deps
 
   // All three spine tables carry deleted_at → softDelete:true. M1.0 encryptedFields:[] (M3 enables [E]).
   const valuesRepo = createRepository(db, values, { deviceId, softDelete: true, encryptedFields: [] })
@@ -408,6 +410,134 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     )
   }
 
+  // ---- S5: measurability core (compose foundation/measurement; derive-on-read) ----
+  // All math is in [0,1] (the engine's unit); stored/override columns are 0–100 → convert only at this edge (F-1).
+  const toPct = (n: number): number => Math.round(n * 100)
+  const fromPct = (n: number): number => n / 100
+
+  /** The LEAF [0,1] progress of a target from its measurement_kind (the schema-split: targets carry no
+   *  baseline/direction col → quantitative defaults baseline 0 / higher-better; qualitative has no rating col →
+   *  unmeasured at M1; milestone reads `status`; rate reads current_value). Returns null = unmeasured. */
+  function leafTarget01(t: TargetRow): number | null {
+    switch (t.measurement_kind) {
+      case 'quantitative':
+        return t.current_value == null || t.target_value == null
+          ? null
+          : normalize({ kind: 'quantitative', current: t.current_value, baseline: 0, target: t.target_value, isHigherBetter: true })
+      case 'milestone':
+        return normalize({ kind: 'milestone', done: t.status === 'completed' })
+      case 'rate':
+        return t.current_value == null ? null : normalize({ kind: 'rate', value: t.current_value })
+      case 'qualitative':
+        return null // no rating/scale column on targets → unmeasured at M1 (PG-3), never 0
+    }
+  }
+
+  /** The [0,1] leaf of a purpose_metric — direction-aware (metrics carry baseline_value + is_higher_better, unlike
+   *  targets). Reads the current value via getMetricCurrent (override slot or calculation_method over the ledger). */
+  async function metricLeaf01(m: PurposeMetricRow): Promise<number | null> {
+    if (m.target_value == null) return null
+    const cur = await getMetricCurrent(m.id)
+    if (cur.value == null) return null
+    return normalize({
+      kind: 'quantitative',
+      current: cur.value,
+      baseline: m.baseline_value ?? 0,
+      target: m.target_value,
+      isHigherBetter: m.is_higher_better ?? true,
+    })
+  }
+
+  /** Resolve a contribution's contributor to a [0,1] progress. In-module dream = its override slot; cross-module
+   *  (habit/routine/project/task/finance_target/check_in) = the measurement-source seam (empty at M1 ⇒ null). */
+  async function contributorProgress01(c: ContributionRow): Promise<number | null> {
+    if (c.contributor_type === 'dream') {
+      const d = await dreamsRepo.findById(c.contributor_id)
+      return d && d.progress_percentage != null ? fromPct(d.progress_percentage) : null
+    }
+    // Per-entity key convention; the empty M1 registry returns null (unmeasured). Real sources = M2.
+    return measurementSources?.query(`${c.contributor_type}:${c.contributor_id}`) ?? null
+  }
+
+  const rollupView = (children: { progress: number | null; weight: number | null }[]): PurposeProgressView => {
+    const rolled = rollup(children)
+    const measured = children.filter((c) => c.progress !== null).length
+    return {
+      value: rolled == null ? null : toPct(rolled),
+      derived: true,
+      partial: measured > 0 && measured < children.length,
+      unmeasured: rolled == null,
+    }
+  }
+
+  async function progress(entity: { type: 'target' | 'dream'; id: string }): Promise<PurposeProgressView> {
+    if (entity.type === 'dream') {
+      const d = await dreamsRepo.findById(entity.id)
+      if (!d) throw new DreamNotFoundError(entity.id)
+      // Dream progress = its override slot (0–100) or null (no measurement_kind → no derive).
+      return { value: d.progress_percentage, derived: false, partial: false, unmeasured: d.progress_percentage == null }
+    }
+    const t = await targetsRepo.findById(entity.id)
+    if (!t) throw new TargetNotFoundError(entity.id)
+    const leaf = leafTarget01(t)
+    return { value: leaf == null ? null : toPct(leaf), derived: true, partial: false, unmeasured: leaf == null }
+  }
+
+  async function computeProgress(goal: { type: 'purpose' | 'target'; id: string }): Promise<PurposeProgressView> {
+    if (goal.type === 'purpose') {
+      const p = await purposesRepo.findById(goal.id)
+      if (!p) throw new PurposeNotFoundError(goal.id)
+      if (p.progress != null) return { value: p.progress, derived: false, partial: false, unmeasured: false } // override (0–100)
+      // Two-channel rollup (build-phase resolution, ADR-011 §3.8 — the docs don't fix cross-channel mixing):
+      //   Channel A = in-module LEAVES (spine-targets via purpose_id + purpose_metrics), equal-weight peers.
+      //   Channel B = direct CONTRIBUTIONS (heterogeneous contributors), weighted by contribution_percentage.
+      // Each channel rolls up on its OWN scale; the two channel-results then combine EQUAL-weight. This keeps
+      // contribution_percentage meaningful *within* B and stops a weight-1 target drowning under a weight-60
+      // contribution (g2 #2). A metric can only feed via this direct channel (purpose_metric ∉ contributor vocab, g2 #1).
+      const spineTargets = await listTargets(goal.id)
+      const targetChildren = await Promise.all(
+        spineTargets.map(async (t) => {
+          const view = await computeProgress({ type: 'target', id: t.id })
+          return { progress: view.value == null ? null : fromPct(view.value), weight: null as number | null }
+        }),
+      )
+      const metrics = await listMetrics(goal.id)
+      const metricChildren = await Promise.all(
+        metrics.map(async (m) => ({ progress: await metricLeaf01(m), weight: null as number | null })),
+      )
+      const channelA = [...targetChildren, ...metricChildren]
+      const contribs = await listContributions({ type: 'purpose', id: goal.id })
+      const channelB = await Promise.all(
+        contribs.map(async (c) => ({ progress: await contributorProgress01(c), weight: c.contribution_percentage })),
+      )
+      const aRolled = channelA.length ? rollup(channelA) : null
+      const bRolled = channelB.length ? rollup(channelB) : null
+      const combined = rollup([
+        { progress: aRolled, weight: null },
+        { progress: bRolled, weight: null },
+      ])
+      // `partial` reflects the RAW leaves (a channel that excluded a null child), not the two combined channels.
+      const allChildren = [...channelA, ...channelB]
+      const measured = allChildren.filter((c) => c.progress !== null).length
+      return {
+        value: combined == null ? null : toPct(combined),
+        derived: true,
+        partial: measured > 0 && measured < allChildren.length,
+        unmeasured: combined == null,
+      }
+    }
+    // target: its own leaf (override/measurement) wins; else roll up its contributions.
+    const t = await targetsRepo.findById(goal.id)
+    if (!t) throw new TargetNotFoundError(goal.id)
+    const leaf = leafTarget01(t)
+    if (leaf != null) return { value: toPct(leaf), derived: true, partial: false, unmeasured: false }
+    const contribs = await listContributions({ type: 'target', id: goal.id })
+    const children = await Promise.all(
+      contribs.map(async (c) => ({ progress: await contributorProgress01(c), weight: c.contribution_percentage })),
+    )
+    return rollupView(children)
+  }
+
   return {
     createValue,
     updateValue,
@@ -440,6 +570,8 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     unlinkContribution,
     reweightContribution,
     listContributions,
+    progress,
+    computeProgress,
   }
 }
 

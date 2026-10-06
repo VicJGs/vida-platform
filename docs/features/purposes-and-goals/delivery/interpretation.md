@@ -121,10 +121,10 @@ Typed errors (record-not-throw where the contract says so): `CyclicBinding`, `In
 - **F-1b — quantitative `target` leaf has no baseline/direction column (g1 #3). — RESOLVED.** `targets` carries
   `target_value`+`current_value` but **no `baseline_value`/`is_higher_better`** (`schema/purposes.ts:74-103`); those
   live only on `purpose_metrics` (`:119-120`). This is the schema's deliberate split: a **target** leaf is a simple
-  ratio — `normalize({kind:'quantitative', current: current_value ?? 0, baseline: 0, target: target_value,
-  isHigherBetter: true})` = `clamp(current/target)`; **rich direction-aware/baselined** quantitative measurement is
-  modeled via a linked `purpose_metric` (S3). The coercion (baseline 0, higher-better) is written in the seam-contract.
-  `[RESOLVED: FACT schema split]`
+  ratio when both values are set — `normalize({kind:'quantitative', current: current_value, baseline: 0, target:
+  target_value, isHigherBetter: true})` = `clamp(current/target)`; a NULL `current_value`/`target_value` ⇒ `null`
+  (unmeasured, **never `?? 0`** — PG-3, g2 #4); **rich direction-aware/baselined** quantitative measurement is
+  modeled via a linked `purpose_metric` (S3). `[RESOLVED: FACT schema split]`
 - **F-2 — Do reviews create `review` SESSIONS at M1? — RESOLVED: YES, honouring the corpus FACT.** PG-13 is a
   corpus `[FACT: ADR-004 SS-1]` — "reviews fire as `review` SESSIONS, not a bespoke reminder" (`business-rules.md:77-80`,
   `contract.md:24`). My first draft demoted this to a deny-safe *optional* port (an `[INTERP]` overriding a `[FACT]`

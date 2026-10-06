@@ -62,7 +62,15 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
       contributor_type ∈ CONTRIBUTOR_TYPE; typed, not ZodError). Weight-only edge (contribution_percentage), never a
       copied value (PG-10). listContributions = findWhere + explicit isNull(deleted_at). tsc 0 · eslint 0 · purposes
       **45/45** (4 new). Inline pre-ship /critique SHIP. §XXIX BR-PG-S4-1..3.
-- [ ] **S5** — Measurability core (progress/computeProgress rollup + ProgressView + qualitative→null)
+- [x] **S5** — Measurability core (the keystone). `progress(entity)` leaf (normalize by kind; quantitative=current/target
+      baseline0 higher-better, milestone=status, rate=current, qualitative→null-never-0; dream=override slot) +
+      `computeProgress(goal)` **two-channel** rollup (A: spine-targets+metrics equal-weight; B: contributions
+      percentage-weight; combine equal — keystone g2 catch #2) + `PurposeProgressView`. Composes `foundation/measurement`
+      (normalize/rollup); [0,1] internal, 0–100 at edge (toPct/fromPct); `measurementSources?` deny-safe (empty M1⇒null).
+      **Independent g2 keystone review REVISE→folded** (BLOCKER #1 metrics never fed rollup → metric channel added;
+      MAJOR #2 weight-scale asymmetry → two-channel equal-combine; #3 6 test gaps added [metric-only/mixed-75/weight-0/
+      all-unmeasured/nested]; #4 doc `?? 0`→null PG-3 reconcile; #5 per-entity key note). tsc 0 · eslint 0 · purposes
+      **60/60** (16 S5 tests). Pre-ship /critique SHIP. §XXIX BR-PG-S5-1..7.
 - [ ] **S6** — Bindings + DAG guard + derived-pull source resolution
 - [ ] **S7** — Reviews (target+purpose) + plan_steps + deny-safe sessions? port
 - [ ] **S8** — Tags/links/pages (Spaces+Notes) + entity_type value/dream additions
