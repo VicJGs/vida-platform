@@ -77,6 +77,19 @@
   source wires at S7, the task rollup at S8. Hierarchy recursion is cycle-guarded (S2 write-time + a `seen`
   backstop). `getXProgress` throws the typed not-found error on an unknown id.
 
+## S5 — document vault (PJ-8)
+
+- **BR-PJ-S5-1** — `project_documents` has no `deleted_at` → `softDelete:false`; `addDocument`/`getDocument`/
+  `listDocuments`. A document belongs to a project; `milestone_id` is a secondary scope.
+- **BR-PJ-S5-2** — **M1 vault is INLINE-ONLY.** The schema has no `storage_ref` column, so the R2 large-file
+  pipeline (ADR-003) is deferred to M2. `addDocument` stores already-encrypted `bytes` inline in `encrypted_blob`
+  (`Buffer`); metadata-only (no bytes) ⇒ null blob + null `file_size`. Server never sees plaintext (ZK, PJ-11).
+- **BR-PJ-S5-3** — `addDocument` fails loud if the project is absent (`ProjectNotFoundError`); an optional
+  `milestoneId` must resolve to a milestone of the same project (`MilestoneNotFoundError`/`MilestoneParentError`).
+- **BR-PJ-S5-4** — **PJ-9 document cascade:** milestone delete SET-NULLs its documents' `milestone_id` (document
+  survives under the project); project delete **hard-deletes** its documents (§5.4). Cascade chain complete for all
+  4 tables.
+
 ## Deferred (homed, not dropped)
 PJ-9 cascade completion (S2/S3/S5) · tags via `entity_tags` (S6) · vision/mission/notes pages (S6) · progress
 derivation (S4) · deliverable measurement source seam (S7) · Tasks→Projects seam + project time (S8) · effects

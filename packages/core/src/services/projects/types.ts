@@ -9,7 +9,7 @@
 // has no `Deliverable`; the interface reconcile is DB-11 mirror-only). [[drizzle-row-not-assignable-to-vida-types-interface]]
 
 import type { DrizzleDb } from '../../db/adapter'
-import type { ProjectRow, MilestoneRow, DeliverableRow } from '../../db/schema/projects'
+import type { ProjectRow, MilestoneRow, DeliverableRow, ProjectDocumentRow } from '../../db/schema/projects'
 import type { ProjectScope, ProjectComplexity, Status, Priority, MeasurementKind, BindingMode } from '@vida/types'
 
 // --- deps (S1 subset) --------------------------------------------------------
@@ -133,6 +133,20 @@ export interface ProgressView {
   partial: boolean
 }
 
+// --- S5 — document vault (PJ-8) ----------------------------------------------
+/**
+ * `addDocument` input. `bytes` is the raw encrypted file content, stored INLINE in `encrypted_blob` (local-first,
+ * PJ-8). **M1 is inline-only:** `project_documents` (DB-4, faithful to ADR-002 §5.4) has **no `storage_ref`
+ * column**, so the R2 large-file pipeline (ADR-003) — which needs that column — is an M2 addition. `milestoneId`
+ * optionally scopes the document to a milestone (a secondary link; the document belongs to the project).
+ */
+export interface AddProjectDocumentInput {
+  name: string
+  file_type?: string | null
+  bytes?: Uint8Array | null
+  milestoneId?: string | null
+}
+
 // --- service surface (grows per slice) ---------------------------------------
 export interface ProjectsService {
   // S1 — projects
@@ -155,6 +169,10 @@ export interface ProjectsService {
   getDeliverableProgress(id: string): Promise<ProgressView>
   getMilestoneProgress(id: string): Promise<ProgressView>
   getProjectProgress(id: string): Promise<ProgressView>
+  // S5 — document vault (inline, M1; R2 = M2)
+  addDocument(projectId: string, input: AddProjectDocumentInput): Promise<ProjectDocumentRow>
+  getDocument(id: string): Promise<ProjectDocumentRow | null>
+  listDocuments(projectId: string): Promise<ProjectDocumentRow[]>
 }
 
 // --- typed errors ------------------------------------------------------------
@@ -186,3 +204,4 @@ export class DeliverableNotFoundError extends Error {
     this.name = 'DeliverableNotFoundError'
   }
 }
+

@@ -10,7 +10,7 @@
 `createProjectsService(deps)` — the ① backend service tier for **Projects** over DB-4 `016_projects`
 (4 tables: `projects` · `milestones` · `deliverables` · `project_documents`). The full design lives in
 `docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
-seam-contract). Build state: **① IN PROGRESS — S4 of 9 shipped.**
+seam-contract). Build state: **① IN PROGRESS — S5 of 9 shipped.**
 
 > **Test runtime: Node 24** (better-sqlite3 ABI = NODE_MODULE_VERSION 137). Run `nvm use 24` before vitest.
 
@@ -88,9 +88,28 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - Hierarchy acyclicity is enforced at write (S2 `wouldCycle`) + a `seen`-set recursion backstop; the
   measurement `assertAcyclic` guard is reserved for S7 source bindings.
 
+## S5 — document vault (PJ-8) (shipped)
+
+- `project_documents` repo: **`softDelete:false`** (no `deleted_at` — §5.4 faithful; `delete()` = hard-delete).
+  Surface: `addDocument(projectId, input)` · `getDocument(id)` · `listDocuments(projectId)`.
+- **M1 is INLINE-ONLY (schema-grounded scope).** `project_documents` has **no `storage_ref` column**, so the
+  ADR-003 R2 large-file pipeline (which needs it) is deferred to **M2** — no `attachment?` port is wired at S5
+  (nothing to persist a ref to). `addDocument` stores already-encrypted `bytes` inline in `encrypted_blob`
+  (`Buffer.from`, buffer-mode column); metadata-only (no bytes) ⇒ null blob + null size. ZK holds: bytes are
+  ciphertext content, server never sees plaintext (PJ-8/PJ-11).
+- **Guards:** project orphan guard; an optional `milestoneId` must resolve to a milestone of the same project.
+- `listDocuments`: `findWhere(eq(project_id))` (no soft-delete filter — table has no `deleted_at`), sorted by
+  `created_at`.
+- **PJ-9 document cascade:** `softDeleteMilestone` SET-NULLs its documents' `milestone_id` (the document survives
+  under the project — a milestone link is secondary); `softDeleteProject` **hard-deletes** its documents
+  (§5.4 "deleting a project cascades … project_documents"). The cascade chain is now complete for all 4 tables.
+- Barrel: `AddProjectDocumentInput`/`AddProjectDocumentSchema` (renamed to avoid the learning-education
+  `AddDocument*` flat-barrel collision — HabitDateRange precedent).
+
 ## Gates (per slice)
 - **S1:** tsc 0 · eslint 0 · live-store **10/10** · g1 Decomposition SHIP · g2 code-review SHIP · /critique SHIP.
 - **S2:** tsc 0 · eslint 0 · live-store **18/18** (cumulative) · g2 code-review SHIP (+ cascade retrofit) · /critique SHIP.
 - **S3:** tsc 0 · eslint 0 · live-store **25/25** (cumulative) · g2 code-review SHIP · /critique SHIP.
 - **S4:** tsc 0 · eslint 0 · live-store **33/33** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
+- **S5:** tsc 0 · eslint 0 · live-store **39/39** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - Full `@vida/core` suite green (no regression).

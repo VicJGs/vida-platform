@@ -388,4 +388,65 @@ describe('mod-projects S1 — projects CRUD + queries', () => {
       await expect(h.svc.getDeliverableProgress('nope')).rejects.toBeInstanceOf(DeliverableNotFoundError)
     })
   })
+
+  // --- S5: document vault ---------------------------------------------------
+  describe('S5 — document vault', () => {
+    const bytes = () => new Uint8Array([1, 2, 3, 4])
+
+    it('adds a document with inline encrypted_blob + reads it back (live persist)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const doc = await h.svc.addDocument(p.id, { name: 'spec.pdf', file_type: 'application/pdf', bytes: bytes() })
+      expect(doc.project_id).toBe(p.id)
+      expect(doc.name).toBe('spec.pdf')
+      expect(doc.file_size).toBe(4)
+      expect(doc.encrypted_blob).not.toBeNull()
+      const read = await h.svc.getDocument(doc.id)
+      expect(read?.name).toBe('spec.pdf')
+    })
+
+    it('a metadata-only document (no bytes) has null blob + null size', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const doc = await h.svc.addDocument(p.id, { name: 'link-only' })
+      expect(doc.encrypted_blob).toBeNull()
+      expect(doc.file_size).toBeNull()
+    })
+
+    it('addDocument orphan + cross-project-milestone guards', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const other = await h.svc.createProject({ title: 'Other' })
+      const mOther = await h.svc.createMilestone(other.id, { title: 'M' })
+      await expect(h.svc.addDocument('nope', { name: 'x' })).rejects.toBeInstanceOf(ProjectNotFoundError)
+      await expect(h.svc.addDocument(p.id, { name: 'x', milestoneId: 'nope' })).rejects.toBeInstanceOf(
+        MilestoneNotFoundError,
+      )
+      await expect(h.svc.addDocument(p.id, { name: 'x', milestoneId: mOther.id })).rejects.toBeInstanceOf(
+        MilestoneParentError,
+      )
+    })
+
+    it('lists a project documents ordered by created_at', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      await h.svc.addDocument(p.id, { name: 'a' })
+      await h.svc.addDocument(p.id, { name: 'b' })
+      expect((await h.svc.listDocuments(p.id)).map((d) => d.name)).toEqual(['a', 'b'])
+    })
+
+    it('milestone delete SET-NULLs its document links (document survives under the project)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M' })
+      const doc = await h.svc.addDocument(p.id, { name: 'scoped', milestoneId: m.id })
+      await h.svc.softDeleteMilestone(m.id)
+      const read = await h.svc.getDocument(doc.id)
+      expect(read).not.toBeNull() // document survives
+      expect(read?.milestone_id).toBeNull() // link SET NULL
+    })
+
+    it('project delete hard-deletes its documents (no deleted_at)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const doc = await h.svc.addDocument(p.id, { name: 'd', bytes: bytes() })
+      await h.svc.softDeleteProject(p.id)
+      expect(await h.svc.getDocument(doc.id)).toBeNull() // hard-deleted with the project
+      expect(await h.svc.listDocuments(p.id)).toHaveLength(0)
+    })
+  })
 })

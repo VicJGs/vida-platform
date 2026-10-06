@@ -14,7 +14,7 @@
 import { and, eq, isNull } from 'drizzle-orm'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { rollup, resolveProgress } from '../../foundation/measurement'
-import { projects, milestones, deliverables } from '../../db/schema/projects'
+import { projects, milestones, deliverables, projectDocuments } from '../../db/schema/projects'
 import {
   CreateProjectSchema,
   UpdateProjectSchema,
@@ -23,6 +23,7 @@ import {
   UpdateMilestoneSchema,
   CreateDeliverableSchema,
   UpdateDeliverableSchema,
+  AddProjectDocumentSchema,
 } from '../../validators/project'
 import {
   type ProjectsService,
@@ -36,12 +37,13 @@ import {
   type CreateDeliverableInput,
   type UpdateDeliverableInput,
   type ProgressView,
+  type AddProjectDocumentInput,
   ProjectNotFoundError,
   MilestoneNotFoundError,
   MilestoneParentError,
   DeliverableNotFoundError,
 } from './types'
-import type { ProjectRow, MilestoneRow, DeliverableRow } from '../../db/schema/projects'
+import type { ProjectRow, MilestoneRow, DeliverableRow, ProjectDocumentRow } from '../../db/schema/projects'
 
 export function createProjectsService(deps: ProjectsServiceDeps): ProjectsService {
   const { db, deviceId } = deps
@@ -50,6 +52,8 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
   const projectsRepo = createRepository(db, projects, { deviceId, softDelete: true, encryptedFields: [] })
   const milestonesRepo = createRepository(db, milestones, { deviceId, softDelete: true, encryptedFields: [] })
   const deliverablesRepo = createRepository(db, deliverables, { deviceId, softDelete: true, encryptedFields: [] })
+  // `project_documents` has NO deleted_at (faithful §5.4, the PJ-8 vault pattern) → softDelete:false (delete = hard).
+  const projectDocumentsRepo = createRepository(db, projectDocuments, { deviceId, softDelete: false, encryptedFields: [] })
 
   // ---- S1: projects CRUD + queries -----------------------------------------
   async function createProject(input: CreateProjectInput): Promise<ProjectRow> {
@@ -103,8 +107,7 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
 
   async function softDeleteProject(id: string): Promise<void> {
     if (!(await projectsRepo.findById(id))) throw new ProjectNotFoundError(id)
-    // PJ-9 cascade: deleting a project cascades its milestones AND their deliverables (S3). Document cascade is
-    // layered in at S5. [cascade retrofit tracker]
+    // PJ-9 cascade: deleting a project cascades its milestones + their deliverables (S3) + its documents (S5).
     const childMilestones = await milestonesRepo.findWhere(
       and(eq(milestones.project_id, id), isNull(milestones.deleted_at))!,
     )
@@ -112,6 +115,9 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
       await cascadeDeliverables(m.id)
       await milestonesRepo.delete(m.id)
     }
+    // project_documents has no deleted_at → HARD-delete with the project (§5.4 "deleting a project cascades … documents").
+    const docs = await projectDocumentsRepo.findWhere(eq(projectDocuments.project_id, id))
+    for (const d of docs) await projectDocumentsRepo.delete(d.id)
     await projectsRepo.delete(id)
   }
 
@@ -239,6 +245,9 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     )
     for (const c of children) await milestonesRepo.update(c.id, { parent_milestone_id: null })
     await cascadeDeliverables(id)
+    // PJ-9: SET NULL document links (a document belongs to the project; milestone_id is a secondary scope — S5).
+    const docs = await projectDocumentsRepo.findWhere(eq(projectDocuments.milestone_id, id))
+    for (const d of docs) await projectDocumentsRepo.update(d.id, { milestone_id: null })
     await milestonesRepo.delete(id)
   }
 
@@ -286,6 +295,42 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
   async function softDeleteDeliverable(id: string): Promise<void> {
     if (!(await deliverablesRepo.findById(id))) throw new DeliverableNotFoundError(id)
     await deliverablesRepo.delete(id)
+  }
+
+  // ---- S5: document vault (inline encrypted_blob; R2 large-file pipeline = M2) ----
+  // M1 is INLINE-ONLY: project_documents (DB-4, §5.4) has no `storage_ref` column, so the ADR-003 R2 pipeline —
+  // which needs that column — is deferred to M2 (zero-signature addDocument when it lands). Documents are ZK: the
+  // bytes are already-encrypted content stored locally; the server never sees plaintext (PJ-8/PJ-11).
+  async function addDocument(projectId: string, input: AddProjectDocumentInput): Promise<ProjectDocumentRow> {
+    const { bytes, ...meta } = input // split the raw bytes off the validated metadata
+    const v = AddProjectDocumentSchema.parse(meta)
+    if (!(await projectsRepo.findById(projectId))) throw new ProjectNotFoundError(projectId) // orphan guard
+    if (v.milestoneId != null) {
+      const m = await milestonesRepo.findById(v.milestoneId)
+      if (!m) throw new MilestoneNotFoundError(v.milestoneId)
+      if (m.project_id !== projectId)
+        throw new MilestoneParentError(`milestone ${v.milestoneId} belongs to a different project`)
+    }
+    // buffer-mode blob column → Buffer (Buffer.from accepts a Uint8Array); null when metadata-only.
+    const blob = bytes ? Buffer.from(bytes) : null
+    return projectDocumentsRepo.create({
+      project_id: projectId,
+      milestone_id: v.milestoneId ?? null,
+      name: v.name,
+      file_type: v.file_type ?? null,
+      file_size: blob ? blob.byteLength : null,
+      encrypted_blob: blob,
+    } satisfies CreateInput<typeof projectDocuments>)
+  }
+
+  async function getDocument(id: string): Promise<ProjectDocumentRow | null> {
+    return projectDocumentsRepo.findById(id)
+  }
+
+  async function listDocuments(projectId: string): Promise<ProjectDocumentRow[]> {
+    // project_documents has no deleted_at → no soft-delete filter; findWhere has no orderBy, so sort in-memory.
+    const rows = await projectDocumentsRepo.findWhere(eq(projectDocuments.project_id, projectId))
+    return rows.slice().sort((a, b) => a.created_at - b.created_at)
   }
 
   // ---- S4: derived progress (bottom-up rollup, override-wins, nesting_weight) ----
@@ -396,5 +441,9 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     getDeliverableProgress,
     getMilestoneProgress,
     getProjectProgress,
+    // S5 — document vault
+    addDocument,
+    getDocument,
+    listDocuments,
   }
 }

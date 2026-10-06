@@ -123,3 +123,10 @@ export const UpdateDeliverableSchema = z.object({
   nesting_weight: NestingWeightSchema,
   sort_order: SortOrderSchema,
 })
+
+// --- S5 — document vault (metadata; the raw `bytes` are split off before parse) ---
+export const AddProjectDocumentSchema = z.object({
+  name: z.string().min(1),
+  file_type: z.string().nullable().optional(),
+  milestoneId: z.string().nullable().optional(),
+})
