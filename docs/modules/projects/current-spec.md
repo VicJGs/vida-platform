@@ -10,7 +10,9 @@
 `createProjectsService(deps)` — the ① backend service tier for **Projects** over DB-4 `016_projects`
 (4 tables: `projects` · `milestones` · `deliverables` · `project_documents`). The full design lives in
 `docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
-seam-contract). Build state: **① IN PROGRESS — S3 of 9 shipped.**
+seam-contract). Build state: **① IN PROGRESS — S4 of 9 shipped.**
+
+> **Test runtime: Node 24** (better-sqlite3 ABI = NODE_MODULE_VERSION 137). Run `nvm use 24` before vitest.
 
 Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) · S3 deliverables
 (`measurement_kind`×`binding_mode`) · S4 progress-derivation engine (bottom-up rollup via
@@ -70,8 +72,25 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
   (a deliverable belongs to exactly one milestone — cascade, not reparent) via `cascadeDeliverables`;
   `softDeleteProject` cascades milestones **and** their deliverables. Document cascade lands at S5.
 
+## S4 — derived progress (PJ-3) (shipped)
+
+- Surface: `getDeliverableProgress` · `getMilestoneProgress` · `getProjectProgress`, each → `ProgressView
+  { value: number|null, derived: boolean, partial: boolean }` (the g1-nit-2 DECIDE, resolved here).
+- Composes `foundation/measurement`: `rollup` (weighted mean of measured children, NULL/0 weight⇒equal,
+  all-null⇒null) + `resolveProgress` (stored override wins). Internal resolvers work in **[0,1]**; the stored
+  0-100 column is scaled at the boundary (`/100` in, `Math.round(*100)` out).
+- **Chain:** Task → Deliverable → Milestone → Project. A milestone rolls up its **sub-milestones + its
+  deliverables** (each weighted by `nesting_weight`); a project rolls up its **top-level** milestones
+  (`parent_milestone_id` NULL). The deliverable **leaf** (`deriveDeliverableLeaf`) is `null` at S4 — the
+  derived-pull source plugs in at S7, the task rollup at S8.
+- **Override wins** (`derived=false`); an unmeasured child is **excluded** (never coerced to 0, BR-2); a rollup
+  over a measured subset sets `partial=true` (PJ-3 flagged-partial); all-null ⇒ `value:null`, not partial.
+- Hierarchy acyclicity is enforced at write (S2 `wouldCycle`) + a `seen`-set recursion backstop; the
+  measurement `assertAcyclic` guard is reserved for S7 source bindings.
+
 ## Gates (per slice)
 - **S1:** tsc 0 · eslint 0 · live-store **10/10** · g1 Decomposition SHIP · g2 code-review SHIP · /critique SHIP.
 - **S2:** tsc 0 · eslint 0 · live-store **18/18** (cumulative) · g2 code-review SHIP (+ cascade retrofit) · /critique SHIP.
 - **S3:** tsc 0 · eslint 0 · live-store **25/25** (cumulative) · g2 code-review SHIP · /critique SHIP.
+- **S4:** tsc 0 · eslint 0 · live-store **33/33** (cumulative, Node 24) · g2 code-review SHIP · /critique SHIP.
 - Full `@vida/core` suite green (no regression).

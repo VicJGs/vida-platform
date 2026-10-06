@@ -120,6 +120,19 @@ export interface UpdateDeliverableInput {
   sort_order?: number
 }
 
+// --- S4 — derived progress (PJ-3) --------------------------------------------
+/**
+ * A resolved progress reading (PJ-3). `value` is 0-100 or `null` (unmeasured — never coerced to 0, BR-2).
+ * `derived=false` ⇒ a manual override (the stored column); `derived=true` ⇒ rolled up from children.
+ * `partial=true` ⇒ the roll-up was computed from a measured SUBSET (some direct children were unmeasured) —
+ * the PJ-3 "flagged partial, never a wrong progress as truth" signal.
+ */
+export interface ProgressView {
+  value: number | null
+  derived: boolean
+  partial: boolean
+}
+
 // --- service surface (grows per slice) ---------------------------------------
 export interface ProjectsService {
   // S1 — projects
@@ -138,6 +151,10 @@ export interface ProjectsService {
   updateDeliverable(id: string, patch: UpdateDeliverableInput): Promise<DeliverableRow>
   listDeliverables(milestoneId: string): Promise<DeliverableRow[]>
   softDeleteDeliverable(id: string): Promise<void>
+  // S4 — derived progress (bottom-up rollup; override-wins; nesting_weight weighted)
+  getDeliverableProgress(id: string): Promise<ProgressView>
+  getMilestoneProgress(id: string): Promise<ProgressView>
+  getProjectProgress(id: string): Promise<ProgressView>
 }
 
 // --- typed errors ------------------------------------------------------------

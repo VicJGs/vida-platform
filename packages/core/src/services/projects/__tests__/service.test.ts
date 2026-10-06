@@ -319,4 +319,73 @@ describe('mod-projects S1 — projects CRUD + queries', () => {
       expect(await h.svc.listDeliverables(m2.id)).toHaveLength(0)
     })
   })
+
+  // --- S4: derived progress -------------------------------------------------
+  describe('S4 — derived progress', () => {
+    it('a manual override wins (derived=false)', async () => {
+      const p = await h.svc.createProject({ title: 'P', progress: 42 })
+      expect(await h.svc.getProjectProgress(p.id)).toEqual({ value: 42, derived: false, partial: false })
+    })
+
+    it('a deliverable with no override and no leaf is unmeasured (null, derived)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M' })
+      const d = await h.svc.createDeliverable(m.id, { title: 'D', binding_mode: 'derived-pull' })
+      expect(await h.svc.getDeliverableProgress(d.id)).toEqual({ value: null, derived: true, partial: false })
+      // an explicit override on a deliverable reads back as a non-derived value
+      const d2 = await h.svc.createDeliverable(m.id, { title: 'D2', progress: 70 })
+      expect(await h.svc.getDeliverableProgress(d2.id)).toEqual({ value: 70, derived: false, partial: false })
+    })
+
+    it('a milestone derives an equal-weight rollup of its deliverable overrides', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M' })
+      await h.svc.createDeliverable(m.id, { title: 'A', progress: 100 })
+      await h.svc.createDeliverable(m.id, { title: 'B', progress: 0 })
+      expect(await h.svc.getMilestoneProgress(m.id)).toEqual({ value: 50, derived: true, partial: false })
+    })
+
+    it('nesting_weight weights the rollup', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M' })
+      await h.svc.createDeliverable(m.id, { title: 'A', progress: 100, nesting_weight: 3 })
+      await h.svc.createDeliverable(m.id, { title: 'B', progress: 0, nesting_weight: 1 })
+      // (100*3 + 0*1) / 4 = 75
+      expect((await h.svc.getMilestoneProgress(m.id)).value).toBe(75)
+    })
+
+    it('unmeasured children are excluded and flag partial (PJ-3)', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M' })
+      await h.svc.createDeliverable(m.id, { title: 'measured', progress: 50 })
+      await h.svc.createDeliverable(m.id, { title: 'unmeasured' }) // no override, no leaf ⇒ null
+      const pv = await h.svc.getMilestoneProgress(m.id)
+      expect(pv.value).toBe(50) // only the measured one counts (not dragged to 25)
+      expect(pv.partial).toBe(true)
+    })
+
+    it('a milestone with only unmeasured children is unmeasured (null), not partial', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M' })
+      await h.svc.createDeliverable(m.id, { title: 'x' })
+      expect(await h.svc.getMilestoneProgress(m.id)).toEqual({ value: null, derived: true, partial: false })
+    })
+
+    it('project rolls up nested milestones → deliverables bottom-up', async () => {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m1 = await h.svc.createMilestone(p.id, { title: 'M1' })
+      await h.svc.createDeliverable(m1.id, { title: 'a', progress: 100 })
+      const m2 = await h.svc.createMilestone(p.id, { title: 'M2' })
+      const sub = await h.svc.createMilestone(p.id, { title: 'sub', parent_milestone_id: m2.id })
+      await h.svc.createDeliverable(sub.id, { title: 'b', progress: 0 })
+      // M1 = 100 ; M2 = (sub=0) = 0 ; project = (100 + 0)/2 = 50
+      expect((await h.svc.getProjectProgress(p.id)).value).toBe(50)
+    })
+
+    it('progress getters throw on an unknown id', async () => {
+      await expect(h.svc.getProjectProgress('nope')).rejects.toBeInstanceOf(ProjectNotFoundError)
+      await expect(h.svc.getMilestoneProgress('nope')).rejects.toBeInstanceOf(MilestoneNotFoundError)
+      await expect(h.svc.getDeliverableProgress('nope')).rejects.toBeInstanceOf(DeliverableNotFoundError)
+    })
+  })
 })

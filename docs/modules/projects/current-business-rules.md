@@ -61,6 +61,22 @@
   reparent — a deliverable has no project-level existence); deleting a project cascades its milestones and their
   deliverables. Document cascade lands at S5.
 
+## S4 — derived progress (PJ-3)
+
+- **BR-PJ-S4-1** — `getDeliverableProgress`/`getMilestoneProgress`/`getProjectProgress` return `ProgressView
+  {value, derived, partial}`. `value` is 0-100 or `null` (unmeasured — never 0, BR-2).
+- **BR-PJ-S4-2** — A non-null stored `progress` is a **manual override** and wins (`derived=false`,
+  `partial=false`); a null stored value is **derived** on read (`derived=true`).
+- **BR-PJ-S4-3** — Derivation rolls up bottom-up: a milestone = weighted rollup of its sub-milestones +
+  deliverables; a project = weighted rollup of its top-level milestones. Weight = `nesting_weight` (NULL⇒equal).
+  Internal math is [0,1]; the 0-100 column is scaled at the boundary.
+- **BR-PJ-S4-4** — Unmeasured children are **excluded** from the rollup (an unrated child can't drag a parent
+  down); a rollup drawn from a measured **subset** sets `partial=true` (PJ-3 flagged-partial); an all-unmeasured
+  set yields `value:null` (not partial).
+- **BR-PJ-S4-5** — The deliverable **leaf** is `null` at S4 (no measured source/tasks yet) — the derived-pull
+  source wires at S7, the task rollup at S8. Hierarchy recursion is cycle-guarded (S2 write-time + a `seen`
+  backstop). `getXProgress` throws the typed not-found error on an unknown id.
+
 ## Deferred (homed, not dropped)
 PJ-9 cascade completion (S2/S3/S5) · tags via `entity_tags` (S6) · vision/mission/notes pages (S6) · progress
 derivation (S4) · deliverable measurement source seam (S7) · Tasks→Projects seam + project time (S8) · effects

@@ -13,6 +13,7 @@
 
 import { and, eq, isNull } from 'drizzle-orm'
 import { createRepository, type CreateInput } from '../../db/repository'
+import { rollup, resolveProgress } from '../../foundation/measurement'
 import { projects, milestones, deliverables } from '../../db/schema/projects'
 import {
   CreateProjectSchema,
@@ -34,6 +35,7 @@ import {
   type MilestoneNode,
   type CreateDeliverableInput,
   type UpdateDeliverableInput,
+  type ProgressView,
   ProjectNotFoundError,
   MilestoneNotFoundError,
   MilestoneParentError,
@@ -286,6 +288,93 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     await deliverablesRepo.delete(id)
   }
 
+  // ---- S4: derived progress (bottom-up rollup, override-wins, nesting_weight) ----
+  // All internal resolvers work in the measurement engine's [0,1] space (columns are 0-100 → scale at the
+  // boundary). A null is UNMEASURED and is excluded from the rollup (never coerced to 0, BR-2). The chain is
+  // Task → Deliverable → Milestone → Project; the Task leaf (S8) + the derived-pull source (S7) plug into
+  // `deriveDeliverableLeaf` later. Hierarchy acyclicity is enforced at write-time (S2 `wouldCycle`); the `seen`
+  // set here is a defensive recursion backstop (the measurement `assertAcyclic` guard is for S7 source bindings).
+
+  const toPct = (frac: number | null): number | null => (frac === null ? null : Math.round(frac * 100))
+
+  /** The derived leaf for a deliverable (S4 = none yet): S7 wires the `derived-pull` source + S8 the task rollup. */
+  function deriveDeliverableLeaf(_d: DeliverableRow): number | null {
+    return null
+  }
+
+  /** Resolve a deliverable to [0,1]|null — stored override wins (ADR-011 §3.2), else the (S7/S8) leaf. */
+  function resolveDeliverableFrac(d: DeliverableRow): number | null {
+    return resolveProgress(d.progress === null ? null : d.progress / 100, () => deriveDeliverableLeaf(d))
+  }
+
+  /** Resolve a milestone to [0,1]|null — override wins, else a weighted rollup of sub-milestones + deliverables. */
+  async function resolveMilestoneFrac(m: MilestoneRow, seen: Set<string>): Promise<number | null> {
+    if (seen.has(m.id)) return null // defensive cycle backstop
+    seen.add(m.id)
+    if (m.progress !== null) return m.progress / 100 // manual override wins
+    const children = await milestoneChildFracs(m.id, seen)
+    return rollup(children)
+  }
+
+  /** The direct rollup children of a milestone: its sub-milestones + its deliverables, each with its nesting_weight. */
+  async function milestoneChildFracs(
+    milestoneId: string,
+    seen: Set<string>,
+  ): Promise<{ progress: number | null; weight: number | null }[]> {
+    const subMs = await milestonesRepo.findWhere(
+      and(eq(milestones.parent_milestone_id, milestoneId), isNull(milestones.deleted_at))!,
+    )
+    const delivs = await deliverablesRepo.findWhere(
+      and(eq(deliverables.milestone_id, milestoneId), isNull(deliverables.deleted_at))!,
+    )
+    const subFracs = await Promise.all(
+      subMs.map(async (sm) => ({ progress: await resolveMilestoneFrac(sm, seen), weight: sm.nesting_weight })),
+    )
+    const delivFracs = delivs.map((d) => ({ progress: resolveDeliverableFrac(d), weight: d.nesting_weight }))
+    return [...subFracs, ...delivFracs]
+  }
+
+  /** A rollup that also reports whether it drew on a measured SUBSET (PJ-3 partial flag). */
+  function rollWithPartial(children: { progress: number | null; weight: number | null }[]): {
+    rolled: number | null
+    partial: boolean
+  } {
+    const rolled = rollup(children)
+    const measured = children.filter((c) => c.progress !== null).length
+    return { rolled, partial: rolled !== null && measured < children.length }
+  }
+
+  async function getDeliverableProgress(id: string): Promise<ProgressView> {
+    const d = await deliverablesRepo.findById(id)
+    if (!d) throw new DeliverableNotFoundError(id)
+    if (d.progress !== null) return { value: d.progress, derived: false, partial: false }
+    return { value: toPct(deriveDeliverableLeaf(d)), derived: true, partial: false }
+  }
+
+  async function getMilestoneProgress(id: string): Promise<ProgressView> {
+    const m = await milestonesRepo.findById(id)
+    if (!m) throw new MilestoneNotFoundError(id)
+    if (m.progress !== null) return { value: m.progress, derived: false, partial: false }
+    const children = await milestoneChildFracs(m.id, new Set([m.id]))
+    const { rolled, partial } = rollWithPartial(children)
+    return { value: toPct(rolled), derived: true, partial }
+  }
+
+  async function getProjectProgress(id: string): Promise<ProgressView> {
+    const p = await projectsRepo.findById(id)
+    if (!p) throw new ProjectNotFoundError(id)
+    if (p.progress !== null) return { value: p.progress, derived: false, partial: false }
+    // top-level milestones = parent_milestone_id NULL (sub-milestones roll up inside their parent).
+    const topMs = await milestonesRepo.findWhere(
+      and(eq(milestones.project_id, id), isNull(milestones.parent_milestone_id), isNull(milestones.deleted_at))!,
+    )
+    const children = await Promise.all(
+      topMs.map(async (m) => ({ progress: await resolveMilestoneFrac(m, new Set()), weight: m.nesting_weight })),
+    )
+    const { rolled, partial } = rollWithPartial(children)
+    return { value: toPct(rolled), derived: true, partial }
+  }
+
   return {
     // S1 — projects
     createProject,
@@ -303,5 +392,9 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     updateDeliverable,
     listDeliverables,
     softDeleteDeliverable,
+    // S4 — derived progress
+    getDeliverableProgress,
+    getMilestoneProgress,
+    getProjectProgress,
   }
 }
