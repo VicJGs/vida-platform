@@ -1,6 +1,8 @@
 # Task: mod-projects
-# Status: planned
+# Status: done
 # Linear: LIF-135
+# Profile: add-backend-component
+# Scenario: Default (Entity Delivery Flow)
 # Project: M1 — Whole Manual OS
 # Milestone: M1.1.2 — Feature Modules · Backend
 # Source: reconstructed-structure.md (Phase V, LIF-110; ADR-016 model)

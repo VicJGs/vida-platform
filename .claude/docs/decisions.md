@@ -1,10 +1,14 @@
 <!-- Last updated: 2026-10-05 by /session-end -->
 
 
-## mod-notifications (① backend #53 · LIF-132, 2026-10-05 — S3/5 SHIPPED, branch `mod-notifications`)
+## mod-notifications (① backend #53 · LIF-132 → Done, 2026-10-06 — ① COMPLETE (S1–S5), PR #83 merged `797886e`)
 The ADR-013 user-facing notification MODULE (dispatcher/surface) over DB-4 `notifications` — the terminal PURE
 SINK composing the BUILT delivery engine (#46) + effect rail + Sessions `dueIn` + Preferences. Detail in
-`docs/features/notifications/delivery/*` + `docs/modules/notifications/current-*` + `.claude/tasks/mod-notifications.md`.
+`docs/features/notifications/delivery/*` + `docs/modules/notifications/current-*` + `.claude/tasks/archive/mod-notifications.md`.
+**Close-out (2026-10-06):** build + PR #83 merge completed in a prior session that stopped before the LOCAL close-out
+(same pattern as mod-projects). This session verified PR #83 merged on `origin/main` (all 5 slice commits ancestors,
+local `main` == `origin/main` @ `d98966f`) + ran the suite green (90/90 notifications, Node 24) before touching the
+ledger, then synced LIF-132 → Done and archived. Oracle = commits on `origin/main` + green suite, never the glyph.
 
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
@@ -837,3 +841,15 @@ S1 (`b5946d7`) tokens+emitter; S2 (`feb3ab2`) config+self-hosted fonts. S3 (prov
 - **Per-preset font-family rides a CSS-var seam** (S2): `createFont` bakes `var(--vida-font-*, <editorial fallback>)`; the provider sets `--vida-font-*` per preset on `<html>`. Fonts are global in Tamagui (no per-theme font hook).
 - **Components read preset color via DIRECT semantic tokens, not baked component-sub-theme keys** (STRUCTURAL §XXVIII): Tamagui bakes theme values at config time, so component sub-themes freeze to the scheme base; a component sub-theme emits only its own keys so the semantic vars still inherit the preset at component scope. The component→semantic mapping moved to the styled layer (DS-5 relaxation); per-preset component sub-themes retired (themes 66→26). Signal keys stay baked (preset-invariant).
 - **The blocking Visual Gate is load-bearing** — it caught 3 integration bugs that typecheck + 342 unit tests passed over (density literal-redeclare, flat theme-name non-resolution, accent bake). Full-matrix contrast must assert every pair × preset × BOTH modes.
+
+## mod-projects — completed 2026-10-06 (LIF-135)
+
+The Projects module ① backend — `createProjectsService` over DB-4 `016_projects` (projects › milestones › deliverables › tasks). PR #85 merged (`1b07a15`); 9 slices, each full Entity Delivery Flow; every doc-unresolved call grounded in docs (Victor directive). Key decisions:
+
+- **Progress is derived, never stored (S4)** — a bottom-up rollup engine composes `foundation/measurement`: deliverable → milestone → project. Override-wins (an explicit value beats the rollup), `nesting_weight`-weighted across children, with a partial-flag when any leaf is unmeasured. No `progress` column is persisted.
+- **Document vault is inline `encrypted_blob` in M1 (S5)** — no `storage_ref` column; the R2 large-file pipeline is M2. The schema carries only the inline blob now so the M2 swap is additive.
+- **Vision/mission use the `pages` table, not a new PAGE_TYPE (S6)** — title-keyed `entity_type='project'` pages (per `_index §3c`), tagged via Spaces `entity_tags`. No bespoke columns, no new page type — consistent with the no-inline-notes convention.
+- **Deliverable measurement binds via an `entity_links` row (S7)** — derived-pull; resolution goes through the ADR-011 §3.6 source registry with a deny-safe port (absent source ⇒ null/unmeasured, not an error).
+- **Tasks→Projects is a deny-safe seam with a precedence ladder (S8)** — task rollup is a leaf contributor; the value precedence is `override > task > source > null`. The Tasks port is optional (absent ⇒ no task leg), so Projects builds without a hard Tasks dependency.
+- **Cross-module fan-out is emit-only (S9, C-E2)** — `emit_measurement_signal` on measurement change (no economy coupling) + a Journal `/summary` contribution. Producer-only; no consumer wiring owned here.
+- **Close-out recovery lesson** — the build + PR #85 merge completed in a prior session that stopped before the LOCAL close-out (pull main · archive · Linear sync). GitHub showed PR MERGED while local `main` was a merge behind and `createProjectsService` was absent locally — the "COMPLETE" note was ahead of the local tree. Resolution: verify the merge is on `origin/main` (not just the PR state), fast-forward, re-run the suite, then finish the bookkeeping. See [[slice-map-checkmark-is-ratified-not-shipped]].

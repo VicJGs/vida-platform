@@ -1,5 +1,5 @@
 # Task: mod-notifications
-# Status: in-progress
+# Status: done
 # Linear: LIF-132
 # Profile: Add Backend Component
 # Scenario: Default (Entity Delivery Flow v1)

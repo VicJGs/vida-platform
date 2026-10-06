@@ -186,5 +186,8 @@ export * from './services/learning-education'
 // Service — Notifications (mod-notifications #53 · LIF-132 · S1: inbox reads + lifecycle over DB-4 032_notifications)
 export * from './services/notifications'
 
+// Service — Projects (mod-projects #54 · LIF-135 · S1: projects CRUD + queries over DB-4 016_projects)
+export * from './services/projects'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
