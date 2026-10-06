@@ -1,7 +1,7 @@
 <!-- Last updated: 2026-10-06 by /session-end -->
 
 
-## mod-purposes-and-goals (① backend #55 · LIF-136, 2026-10-06 — S1–S5 of 9 on branch `mod-purposes-and-goals`)
+## mod-purposes-and-goals (① backend #55 · LIF-136, 2026-10-06 — S1–S7 of 9 on branch `mod-purposes-and-goals`)
 The measurability CAPSTONE over DB-4 `019_purposes` (6 tables) + DB-3 `007_purpose` (4 substrate tables), composing
 the built `foundation/measurement` engine (ADR-011; Purpose = rollup APEX + consumer, NOT owner). Detail in
 `docs/features/purposes-and-goals/delivery/*` + `docs/modules/purposes/current-*` + `.claude/tasks/mod-purposes-and-goals.md`.
@@ -16,6 +16,12 @@ the built `foundation/measurement` engine (ADR-011; Purpose = rollup APEX + cons
 | 2026-10-06 | metric/contribution delete | cascade shape | `deleteMetric` two-hop hard-cascade of its value ledger; contribution unlink = soft | ledgers have no deleted_at (hard); PG-19 app-layer cascade (no FK) | n/a (grounded) |
 | 2026-10-06 | **purpose rollup composition (S5 keystone)** | how a purpose aggregates its children | **two-channel**: A = spine-targets + metrics (equal-weight), B = contributions (`contribution_percentage`), combine the channel-results equal-weight | g2 keystone catch: targets/metrics feed via the `purpose_id` direct channel (not contributor vocab); a single scale drowned in-module leaves under weighted contributions; two-channel gives the intuitive number + keeps weight meaningful within B | yes (build-phase, ADR-011 §3.8) |
 | 2026-10-06 | cross-module contributor progress | how a habit/task/etc. feeds a goal at M1 | via the `measurementSources` seam keyed `${type}:${id}`; empty M1 registry ⇒ null (excluded); real sources advertised by modules at M2 | PG-7 no direct table reads; deny-safe, zero-signature M2 swap | n/a (grounded) |
+| 2026-10-06 | **S6 binding ref storage** | no dedicated `binding_ref` column exists — where does `bind`'s source ref live? | the restored **`measurement_method`** column (`${type}:${id}`) | **Victor drift-catch** ("check the documentation") — `structure-data.md` "binding_mode (+ ref)" + measurement_method restore + ADR-011 §3.7 (delegates only traversal/perf to build-phase, NOT storage) resolve it as FACT, not a decision | n/a (grounded) |
+| 2026-10-06 | S6 DAG graph scope | what edges feed `assertAcyclic`? | **binding edges ONLY** (other bound targets' reconstructed edges + the proposed edge) | seam-contract §3 = binding edges; contributions can't close a binding cycle (contributor vocab excludes target/purpose) → inert, removed (g2 fold) | n/a (grounded) |
+| 2026-10-06 | S6 `measurement_method` writes | a direct create/update write to it while bound | rejected (`BindingRefManaged`) — the ref is bind-managed | g2 fold: closes a silent ref-corruption + DAG-bypass leak; free "how measured" text only on a manual target | n/a (grounded) |
+| 2026-10-06 | **S7 review session semantics** | def lifecycle · status · attach | **all FACTS, not decisions** — def = seam-contract verbatim; status=`scheduled`/`planned` (contract.md:24); no attach (seam-contract = register+createSession) | **Victor drift-catch ×2** ("ground it in the documentation and code") — `createSession` (service.ts:276/291) enforces sub-type *presence* only + stores status as-given; the shared-`review`-sub-type divergence with flashcards is inert at M1 | n/a (grounded) |
+| 2026-10-06 | S7 `review` sub-type | `review` is a SHARED canonical SessionSubType (flashcards also registers it) | register idempotently (catch `DuplicateSubType`, first-wins keyed by sub_type) | the registry keys by sub_type; `createSession` needs only presence → divergent `owner_module`/lifecycle is inert at M1 (M2 reconcile if a live transition engine reads it) | n/a (grounded) |
+| 2026-10-06 | S7 `next_review_date` | compute without date-fns (@vida/core has none) | inline UTC math (finance `addSteps` precedent): day-based add days, month-based add months + clamp day; targets only (purposes have no `review_frequency`) | no date-fns dep in core; schema asymmetry is faithful (frequency col on targets only) | n/a (grounded) |
 
 ## fe-codec-primitives-refinement (② frontend · LIF-230 · P1 List shipped PR #88, 2026-10-06)
 G6 enhancement: bring the 5 pre-CODEC `@vida/ui` views to the editorial model + patterns. Key decisions:
