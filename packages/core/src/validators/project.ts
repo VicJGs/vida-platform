@@ -8,6 +8,8 @@ import {
   BUCKET_LIST_STATUS,
   STATUS,
   PRIORITY,
+  MEASUREMENT_KIND,
+  BINDING_MODE,
 } from '@vida/types'
 
 export const ProjectScopeSchema = z.enum(PROJECT_SCOPE)
@@ -96,4 +98,28 @@ export const UpdateMilestoneSchema = z.object({
   due_date: CalendarDateSchema,
   sort_order: SortOrderSchema,
   parent_milestone_id: z.string().nullable().optional(),
+})
+
+// --- S3 — deliverables (ADR-011 pursuable) -----------------------------------
+const MeasurementKindSchema = z.enum(MEASUREMENT_KIND)
+const BindingModeSchema = z.enum(BINDING_MODE)
+
+export const CreateDeliverableSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  measurement_kind: MeasurementKindSchema.optional(), // NN, default 'milestone'
+  binding_mode: BindingModeSchema.nullable().optional(), // nullable, no default (NULL ⇒ derive-natural)
+  progress: ProgressSchema,
+  nesting_weight: NestingWeightSchema,
+  sort_order: SortOrderSchema,
+})
+
+export const UpdateDeliverableSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  measurement_kind: MeasurementKindSchema.optional(),
+  binding_mode: BindingModeSchema.nullable().optional(),
+  progress: ProgressSchema,
+  nesting_weight: NestingWeightSchema,
+  sort_order: SortOrderSchema,
 })

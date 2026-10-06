@@ -18,6 +18,7 @@ import {
   ProjectNotFoundError,
   MilestoneNotFoundError,
   MilestoneParentError,
+  DeliverableNotFoundError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -241,6 +242,81 @@ describe('mod-projects S1 — projects CRUD + queries', () => {
       expect(await h.svc.getMilestoneTree(p.id)).toHaveLength(2)
       await h.svc.softDeleteProject(p.id)
       expect(await h.svc.getMilestoneTree(p.id)).toHaveLength(0) // milestones cascaded
+    })
+  })
+
+  // --- S3: deliverables -----------------------------------------------------
+  describe('S3 — deliverables', () => {
+    async function milestone() {
+      const p = await h.svc.createProject({ title: 'P' })
+      const m = await h.svc.createMilestone(p.id, { title: 'M' })
+      return { p, m }
+    }
+
+    it('creates a deliverable with ADR-011 defaults (live persist)', async () => {
+      const { m } = await milestone()
+      const d = await h.svc.createDeliverable(m.id, { title: 'Ship v1' })
+      expect(d.milestone_id).toBe(m.id)
+      expect(d.measurement_kind).toBe('milestone') // M1 default
+      expect(d.binding_mode).toBeNull() // M2 NULL ⇒ derive-natural
+      expect(d.progress).toBeNull()
+      expect(d.nesting_weight).toBeNull()
+      expect(d.sort_order).toBe(0)
+    })
+
+    it('honours explicit measurement_kind + binding_mode', async () => {
+      const { m } = await milestone()
+      const d = await h.svc.createDeliverable(m.id, {
+        title: '$ raised',
+        measurement_kind: 'quantitative',
+        binding_mode: 'derived-pull',
+      })
+      expect(d.measurement_kind).toBe('quantitative')
+      expect(d.binding_mode).toBe('derived-pull')
+    })
+
+    it('createDeliverable on a missing milestone throws MilestoneNotFoundError (orphan guard)', async () => {
+      await expect(h.svc.createDeliverable('nope', { title: 'D' })).rejects.toBeInstanceOf(MilestoneNotFoundError)
+    })
+
+    it('lists deliverables of a milestone ordered by sort_order', async () => {
+      const { m } = await milestone()
+      await h.svc.createDeliverable(m.id, { title: 'B', sort_order: 1 })
+      await h.svc.createDeliverable(m.id, { title: 'A', sort_order: 0 })
+      const list = await h.svc.listDeliverables(m.id)
+      expect(list.map((d) => d.title)).toEqual(['A', 'B'])
+    })
+
+    it('updates a deliverable; missing id throws DeliverableNotFoundError', async () => {
+      const { m } = await milestone()
+      const d = await h.svc.createDeliverable(m.id, { title: 'D', measurement_kind: 'milestone' })
+      const u = await h.svc.updateDeliverable(d.id, { measurement_kind: 'rate', binding_mode: 'manual' })
+      expect(u.measurement_kind).toBe('rate')
+      expect(u.binding_mode).toBe('manual')
+      await expect(h.svc.updateDeliverable('nope', { title: 'x' })).rejects.toBeInstanceOf(DeliverableNotFoundError)
+    })
+
+    it('softDeleteDeliverable hides it; missing id throws', async () => {
+      const { m } = await milestone()
+      const d = await h.svc.createDeliverable(m.id, { title: 'D' })
+      await h.svc.softDeleteDeliverable(d.id)
+      expect(await h.svc.listDeliverables(m.id)).toHaveLength(0)
+      await expect(h.svc.softDeleteDeliverable('nope')).rejects.toBeInstanceOf(DeliverableNotFoundError)
+    })
+
+    it('milestone delete cascades its deliverables; project delete cascades milestones+deliverables (PJ-9)', async () => {
+      const { p, m } = await milestone()
+      await h.svc.createDeliverable(m.id, { title: 'D1' })
+      await h.svc.createDeliverable(m.id, { title: 'D2' })
+      expect(await h.svc.listDeliverables(m.id)).toHaveLength(2)
+      await h.svc.softDeleteMilestone(m.id)
+      expect(await h.svc.listDeliverables(m.id)).toHaveLength(0) // cascaded with the milestone
+
+      // project-level cascade reaches deliverables too
+      const m2 = await h.svc.createMilestone(p.id, { title: 'M2' })
+      await h.svc.createDeliverable(m2.id, { title: 'D3' })
+      await h.svc.softDeleteProject(p.id)
+      expect(await h.svc.listDeliverables(m2.id)).toHaveLength(0)
     })
   })
 })

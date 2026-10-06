@@ -13,13 +13,15 @@
 
 import { and, eq, isNull } from 'drizzle-orm'
 import { createRepository, type CreateInput } from '../../db/repository'
-import { projects, milestones } from '../../db/schema/projects'
+import { projects, milestones, deliverables } from '../../db/schema/projects'
 import {
   CreateProjectSchema,
   UpdateProjectSchema,
   ListProjectsFilterSchema,
   CreateMilestoneSchema,
   UpdateMilestoneSchema,
+  CreateDeliverableSchema,
+  UpdateDeliverableSchema,
 } from '../../validators/project'
 import {
   type ProjectsService,
@@ -30,18 +32,22 @@ import {
   type CreateMilestoneInput,
   type UpdateMilestoneInput,
   type MilestoneNode,
+  type CreateDeliverableInput,
+  type UpdateDeliverableInput,
   ProjectNotFoundError,
   MilestoneNotFoundError,
   MilestoneParentError,
+  DeliverableNotFoundError,
 } from './types'
-import type { ProjectRow, MilestoneRow } from '../../db/schema/projects'
+import type { ProjectRow, MilestoneRow, DeliverableRow } from '../../db/schema/projects'
 
 export function createProjectsService(deps: ProjectsServiceDeps): ProjectsService {
   const { db, deviceId } = deps
 
-  // `projects` + `milestones` both have deleted_at → softDelete:true.
+  // `projects` + `milestones` + `deliverables` all have deleted_at → softDelete:true.
   const projectsRepo = createRepository(db, projects, { deviceId, softDelete: true, encryptedFields: [] })
   const milestonesRepo = createRepository(db, milestones, { deviceId, softDelete: true, encryptedFields: [] })
+  const deliverablesRepo = createRepository(db, deliverables, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- S1: projects CRUD + queries -----------------------------------------
   async function createProject(input: CreateProjectInput): Promise<ProjectRow> {
@@ -95,12 +101,15 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
 
   async function softDeleteProject(id: string): Promise<void> {
     if (!(await projectsRepo.findById(id))) throw new ProjectNotFoundError(id)
-    // PJ-9 cascade: deleting a project cascades its milestones (retrofit at S2, now that milestonesRepo exists).
-    // Deliverables + documents cascade are layered in as those repos land (S3/S5). [cascade retrofit tracker]
+    // PJ-9 cascade: deleting a project cascades its milestones AND their deliverables (S3). Document cascade is
+    // layered in at S5. [cascade retrofit tracker]
     const childMilestones = await milestonesRepo.findWhere(
       and(eq(milestones.project_id, id), isNull(milestones.deleted_at))!,
     )
-    for (const m of childMilestones) await milestonesRepo.delete(m.id)
+    for (const m of childMilestones) {
+      await cascadeDeliverables(m.id)
+      await milestonesRepo.delete(m.id)
+    }
     await projectsRepo.delete(id)
   }
 
@@ -209,16 +218,72 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
       .map((r) => ({ ...r, children: build(r.id) }))
   }
 
+  /** PJ-9 — cascade-soft-delete a milestone's deliverables (a deliverable belongs to exactly one milestone; it
+   *  has no project-level existence, so it cascades rather than reparenting like a sub-milestone). */
+  async function cascadeDeliverables(milestoneId: string): Promise<void> {
+    const ds = await deliverablesRepo.findWhere(
+      and(eq(deliverables.milestone_id, milestoneId), isNull(deliverables.deleted_at))!,
+    )
+    for (const d of ds) await deliverablesRepo.delete(d.id)
+  }
+
   async function softDeleteMilestone(id: string): Promise<void> {
     const existing = await milestonesRepo.findById(id)
     if (!existing) throw new MilestoneNotFoundError(id)
-    // PJ-9: SET NULL direct sub-milestone links (children become top-level under the project). Document links (S5)
-    // + deliverable reparent/cascade (S3) are layered in as those repos land. [g2-nit-2 cascade retrofit tracker]
+    // PJ-9: SET NULL direct sub-milestone links (children become top-level under the project); cascade this
+    // milestone's deliverables (S3). Document links are layered in at S5. [cascade retrofit tracker]
     const children = await milestonesRepo.findWhere(
       and(eq(milestones.parent_milestone_id, id), isNull(milestones.deleted_at))!,
     )
     for (const c of children) await milestonesRepo.update(c.id, { parent_milestone_id: null })
+    await cascadeDeliverables(id)
     await milestonesRepo.delete(id)
+  }
+
+  // ---- S3: deliverables (ADR-011 pursuable) --------------------------------
+  async function createDeliverable(milestoneId: string, input: CreateDeliverableInput): Promise<DeliverableRow> {
+    const v = CreateDeliverableSchema.parse(input)
+    if (!(await milestonesRepo.findById(milestoneId))) throw new MilestoneNotFoundError(milestoneId) // orphan guard
+    return deliverablesRepo.create({
+      milestone_id: milestoneId,
+      title: v.title,
+      description: v.description ?? null,
+      measurement_kind: v.measurement_kind ?? 'milestone', // ADR-011 M1 (NN; create echoes input)
+      binding_mode: v.binding_mode ?? null, // ADR-011 M2 (NULL ⇒ derive-natural)
+      progress: v.progress ?? null, // NULL ⇒ derive (PJ-3, S4)
+      nesting_weight: v.nesting_weight ?? null, // NULL ⇒ equal-weight (ADR-011 M4)
+      sort_order: v.sort_order ?? 0,
+      deleted_at: null,
+    } satisfies CreateInput<typeof deliverables>)
+  }
+
+  async function updateDeliverable(id: string, patch: UpdateDeliverableInput): Promise<DeliverableRow> {
+    const v = UpdateDeliverableSchema.parse(patch)
+    const existing = await deliverablesRepo.findById(id)
+    if (!existing) throw new DeliverableNotFoundError(id)
+    const data = {
+      ...(v.title !== undefined ? { title: v.title } : {}),
+      ...(v.description !== undefined ? { description: v.description ?? null } : {}),
+      ...(v.measurement_kind !== undefined ? { measurement_kind: v.measurement_kind } : {}),
+      ...(v.binding_mode !== undefined ? { binding_mode: v.binding_mode } : {}),
+      ...(v.progress !== undefined ? { progress: v.progress } : {}),
+      ...(v.nesting_weight !== undefined ? { nesting_weight: v.nesting_weight } : {}),
+      ...(v.sort_order !== undefined ? { sort_order: v.sort_order } : {}),
+    }
+    if (Object.keys(data).length === 0) return existing
+    return deliverablesRepo.update(id, data)
+  }
+
+  async function listDeliverables(milestoneId: string): Promise<DeliverableRow[]> {
+    const rows = await deliverablesRepo.findWhere(
+      and(eq(deliverables.milestone_id, milestoneId), isNull(deliverables.deleted_at))!,
+    )
+    return rows.slice().sort((a, b) => a.sort_order - b.sort_order)
+  }
+
+  async function softDeleteDeliverable(id: string): Promise<void> {
+    if (!(await deliverablesRepo.findById(id))) throw new DeliverableNotFoundError(id)
+    await deliverablesRepo.delete(id)
   }
 
   return {
@@ -233,5 +298,10 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     updateMilestone,
     getMilestoneTree,
     softDeleteMilestone,
+    // S3 — deliverables
+    createDeliverable,
+    updateDeliverable,
+    listDeliverables,
+    softDeleteDeliverable,
   }
 }

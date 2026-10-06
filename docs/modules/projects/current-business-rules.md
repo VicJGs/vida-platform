@@ -45,6 +45,22 @@
 - **BR-PJ-S2-6** — `status` backfills to `not_started` on create; `progress` NULL⇒derive (S4), `nesting_weight`
   NULL⇒equal-weight (ADR-011 M4); a no-op patch is a no-write; methods return `MilestoneRow`.
 
+## S3 — deliverables (ADR-011 pursuable)
+
+- **BR-PJ-S3-1** — A deliverable cannot be created without an existing milestone (`MilestoneNotFoundError`;
+  orphan guard, no-FK). Deliverables sit under exactly one milestone (PJ-2).
+- **BR-PJ-S3-2** — `measurement_kind` (ADR-011 M1) is NN, defaulting to `'milestone'` on create; `binding_mode`
+  (M2) is nullable with **no default** (NULL ⇒ derive-natural). These live on `deliverables` ONLY — projects and
+  milestones are pure rollups with an implicit `'milestone'` kind (PJ-4).
+- **BR-PJ-S3-3** — A deliverable carries **no `status`/`due_date`/`source`** (deliberate asymmetry vs milestones);
+  measurement + progress carry its state, and source binding is an `entity_links` row + the M5/R7 seam (S7).
+- **BR-PJ-S3-4** — `listDeliverables` returns a milestone's live deliverables ordered by `sort_order` (explicit
+  soft-delete filter). `updateDeliverable`/`softDeleteDeliverable` fail loud on an unknown id
+  (`DeliverableNotFoundError`); a no-op patch is a no-write; methods return `DeliverableRow`.
+- **BR-PJ-S3-5** — **PJ-9 cascade:** deleting a milestone cascade-soft-deletes its deliverables (cascade, not
+  reparent — a deliverable has no project-level existence); deleting a project cascades its milestones and their
+  deliverables. Document cascade lands at S5.
+
 ## Deferred (homed, not dropped)
 PJ-9 cascade completion (S2/S3/S5) · tags via `entity_tags` (S6) · vision/mission/notes pages (S6) · progress
 derivation (S4) · deliverable measurement source seam (S7) · Tasks→Projects seam + project time (S8) · effects

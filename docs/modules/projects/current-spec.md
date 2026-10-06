@@ -10,7 +10,7 @@
 `createProjectsService(deps)` — the ① backend service tier for **Projects** over DB-4 `016_projects`
 (4 tables: `projects` · `milestones` · `deliverables` · `project_documents`). The full design lives in
 `docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
-seam-contract). Build state: **① IN PROGRESS — S2 of 9 shipped.**
+seam-contract). Build state: **① IN PROGRESS — S3 of 9 shipped.**
 
 Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) · S3 deliverables
 (`measurement_kind`×`binding_mode`) · S4 progress-derivation engine (bottom-up rollup via
@@ -55,7 +55,23 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - `status` default backfilled (create echoes input); `progress`/`nesting_weight` NULL⇒derive/equal; no-op patch
   is a no-write; returns `MilestoneRow`.
 
+## S3 — deliverables (ADR-011 pursuable) (shipped)
+
+- `deliverables` repo: `softDelete:true`, `encryptedFields:[]`. Surface: `createDeliverable(milestoneId, input)` ·
+  `updateDeliverable` · `listDeliverables(milestoneId)` · `softDeleteDeliverable`.
+- **Orphan guard:** `createDeliverable` fails loud (`MilestoneNotFoundError`) if the milestone is absent.
+- **ADR-011 fields:** `measurement_kind` NN, backfilled to `'milestone'` (create echoes input); `binding_mode`
+  nullable, **no default** (NULL ⇒ derive-natural); `progress` NULL⇒derive (S4); `nesting_weight` NULL⇒equal.
+  **No `status`/`due_date`/`source`** — deliberate asymmetry vs milestones (`db-4-projects/_index.md §3c`);
+  source binding is an `entity_links` row + the M5/R7 seam (S7), not a column.
+- `listDeliverables`: `findWhere(and(eq(milestone_id), isNull(deleted_at))!)` sorted by `sort_order`.
+- `updateDeliverable`: existence → `DeliverableNotFoundError`; no-op patch is a no-write; returns `DeliverableRow`.
+- **PJ-9 cascade completed for live repos:** `softDeleteMilestone` now cascade-soft-deletes its deliverables
+  (a deliverable belongs to exactly one milestone — cascade, not reparent) via `cascadeDeliverables`;
+  `softDeleteProject` cascades milestones **and** their deliverables. Document cascade lands at S5.
+
 ## Gates (per slice)
 - **S1:** tsc 0 · eslint 0 · live-store **10/10** · g1 Decomposition SHIP · g2 code-review SHIP · /critique SHIP.
 - **S2:** tsc 0 · eslint 0 · live-store **18/18** (cumulative) · g2 code-review SHIP (+ cascade retrofit) · /critique SHIP.
+- **S3:** tsc 0 · eslint 0 · live-store **25/25** (cumulative) · g2 code-review SHIP · /critique SHIP.
 - Full `@vida/core` suite green (no regression).

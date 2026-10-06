@@ -9,8 +9,8 @@
 // has no `Deliverable`; the interface reconcile is DB-11 mirror-only). [[drizzle-row-not-assignable-to-vida-types-interface]]
 
 import type { DrizzleDb } from '../../db/adapter'
-import type { ProjectRow, MilestoneRow } from '../../db/schema/projects'
-import type { ProjectScope, ProjectComplexity, Status, Priority } from '@vida/types'
+import type { ProjectRow, MilestoneRow, DeliverableRow } from '../../db/schema/projects'
+import type { ProjectScope, ProjectComplexity, Status, Priority, MeasurementKind, BindingMode } from '@vida/types'
 
 // --- deps (S1 subset) --------------------------------------------------------
 export interface ProjectsServiceDeps {
@@ -95,6 +95,31 @@ export interface UpdateMilestoneInput {
 /** A milestone row plus its nested children (by `parent_milestone_id`), ordered by `sort_order`. */
 export type MilestoneNode = MilestoneRow & { children: MilestoneNode[] }
 
+// --- S3 inputs (deliverables — the ADR-011 pursuable level) -------------------
+export interface CreateDeliverableInput {
+  title: string
+  description?: string | null
+  /** ADR-011 M1 — the measure shape. Omit ⇒ 'milestone' (the implicit-rollup default). */
+  measurement_kind?: MeasurementKind
+  /** ADR-011 M2 — how progress binds. Omit ⇒ NULL ⇒ derive-natural (not a column default). */
+  binding_mode?: BindingMode | null
+  /** 0-100 manual override; omit ⇒ NULL ⇒ derive (PJ-3, S4) */
+  progress?: number | null
+  /** ADR-011 §3.3 M4 DOWN weight; omit ⇒ NULL ⇒ equal-weight */
+  nesting_weight?: number | null
+  sort_order?: number
+}
+
+export interface UpdateDeliverableInput {
+  title?: string
+  description?: string | null
+  measurement_kind?: MeasurementKind
+  binding_mode?: BindingMode | null
+  progress?: number | null
+  nesting_weight?: number | null
+  sort_order?: number
+}
+
 // --- service surface (grows per slice) ---------------------------------------
 export interface ProjectsService {
   // S1 — projects
@@ -108,6 +133,11 @@ export interface ProjectsService {
   updateMilestone(id: string, patch: UpdateMilestoneInput): Promise<MilestoneRow>
   getMilestoneTree(projectId: string): Promise<MilestoneNode[]>
   softDeleteMilestone(id: string): Promise<void>
+  // S3 — deliverables
+  createDeliverable(milestoneId: string, input: CreateDeliverableInput): Promise<DeliverableRow>
+  updateDeliverable(id: string, patch: UpdateDeliverableInput): Promise<DeliverableRow>
+  listDeliverables(milestoneId: string): Promise<DeliverableRow[]>
+  softDeleteDeliverable(id: string): Promise<void>
 }
 
 // --- typed errors ------------------------------------------------------------
@@ -130,5 +160,12 @@ export class MilestoneParentError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'MilestoneParentError'
+  }
+}
+
+export class DeliverableNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Deliverable not found: ${id}`)
+    this.name = 'DeliverableNotFoundError'
   }
 }
