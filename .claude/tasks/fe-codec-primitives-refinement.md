@@ -110,9 +110,25 @@ Two layers per view, BOTH presentational (buildable here, no cross-module reads 
 Still presentational, so it stays HERE (unlike the Calendar flagship). Each Layer-2 hook is a CONTRACT change → its
 own forward spec + §XXVI gate + Visual Gate. Layer 1 can ship fast; Layer 2 is real feature work.
 
-## Build plan
-Per-view, through the change-frontend-component §XXVI gate → implement → full-matrix Visual Gate (preset×mode×density) →
-§XXIX currency. Recommended order (most-composed first, so downstream surfaces inherit soonest):
-**List → Card → Timeline → Gallery** (Calendar-grid polish folds in with List/Card or standalone).
-Open sequencing choice for Victor: (a) ship all 5 Layer-1 polishes first (fast coherent win) then a Layer-2 wave; or
-(b) per-view do Layer-1 + Layer-2 together. Lead view TBD at build start.
+## Build Steps — PHASED (Victor 2026-10-05: "each component its own profile + phase")
+Each component = its own **phase**, under its **declared profile**, through its **own §XXVI gate**, shipping as its
+**own PR**. No batching. Order = most-composed first (downstream surfaces inherit soonest).
+
+**Every phase runs the same spine** (change-frontend-component default · Entity Delivery Flow ②):
+Step 0 `/document-context` BASELINE (@vida/ui current-*) → forward spec `/documentation-component` (incl. `/contract`
+for the Layer-2 API change) → `/critique` → **Approval 1** → `/preflight` → `/critique` → **Approval 2** → implement
+(types-first) → **Visual Gate** (Brave, preset × mode × density + axe + AA) → `/critique` SHIP + independent code-review
+→ §XXIX currency (CLAUDE.md + current-*) → **PR → merge**.
+
+| Phase | Component | Profile | Layer-1 polish | Layer-2 alive-hook (contract change) |
+|---|---|---|---|---|
+| **P1** | **List** | change-frontend-component | eyebrow groups · tabular meta · accent tick · hairlines | `primary`/"one-thing" emphasis + per-row **ambient-signal slot** |
+| **P2** | **Card** | change-frontend-component | eyebrow kicker · serif title · hairline header · softer elevation | status-tint variant · progress-ring slot · last-touched/link-hint slots |
+| **P3** | **Timeline** | change-frontend-component | accent "now" dot · serif+eyebrow dates · lighter rail | **now-fulcrum** variant (past=record / future=intention) |
+| **P4** | **Gallery** | change-frontend-component | framed cover + kicker · serif title · tabular caption | **cover-intelligence** (generated covers) + **weight-sized** tiles |
+| **P5** | **Calendar-grid** | change-frontend-component | serif title · eyebrow weekdays · tabular figures · today mark · weekend/oos · accent-dot chips | — (Layer-1 only; alive multi-range/living = fe-calendar #19) |
+
+Profile note: all 5 are **change-frontend-component** (existing DS primitives being changed; loads design·components·
+motion·engineering·process). The Layer-2 hooks are **contract changes** → each phase runs `/contract` first (the
+Design-System discipline) before implementing. Flag at phase start if any warrants the full Design-System profile.
+Approved target per phase = the committed mockups (`mockups/*.html`). Visual record is the acceptance oracle.
