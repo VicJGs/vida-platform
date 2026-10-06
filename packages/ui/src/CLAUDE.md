@@ -111,6 +111,16 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Toast). `borderRadius:'$lg'` via the token scale (DEF-U8-h); no `toast.border` token → base `$colorBorderDefault`.
   No `loading` prop (consumer-composed: `duration:0` + spinner in `description`; `aria-busy` unsettable, DEF-U10-b).
   Motion (B12): enter `moderate`/`out`, exit `fast`/`in`, opacity + translateY slide from the stack edge only.
+  **fe-codec-controls-refinement · P4b (LIF-231) — hover "slight elevation"** (the `toast.md:27` contract state, was
+  MISSING). A **non-clipping `ToastWrapper`** holds a sibling `aria-hidden` `ToastElevation` overlay (absolute, inset 0,
+  `$lg` radius, `box-shadow:shadow.raised`, `opacity:0`) + the existing `ToastPanel` (keeps its `overflow:hidden` for the
+  accent bar). `.vida-toast-wrap:hover .vida-toast-elevation{opacity:1}` fades the raised shadow in — **opacity-only
+  transition (B12); the shadow is static**; the shadow paints OUTSIDE the panel (wrapper doesn't clip) and the opaque
+  panel covers the overlay body (only the drop-shadow shows). The Card overlay-opacity precedent. **Dark:** the raised
+  shadow self-cancels (hue = dark surface), so a `ToastPanel` `hoverStyle:{borderColor:'$colorTextMuted'}` border-strengthen
+  carries §VIII hover-perceptibility in dark (the `card.tsx:52` precedent). Panel timer/focus/accent/motion/live-region
+  behavior UNTOUCHED. Visual Gate PASS (Brave, 3 presets × light/dark: elevation opacity 0→1 on hover all cells · dark
+  border-change · `shadow.raised` · reads "slight"). Spec: `…/fe-codec-controls-refinement/phases/P4b-toast-hover-elevation.md`.
   **fe-codec-controls-refinement · P3 (LIF-231) — overlay Level-3 elevation.** The three overlay panels (Dialog · Popover ·
   Menu) gained a **static `box-shadow: shadow.overlay`** (design §V Level 3; first consumer of the `overlay` token) added
   to each panel's base rule in `internal/{dialog,popover,menu}-styles.ts` (the `card-styles.ts` precedent). **Static only**

@@ -257,4 +257,15 @@ describe('Toast — F6 + single-provider', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('more than one instance'))
     warn.mockRestore()
   })
+
+  // fe-codec-controls-refinement P4b — the hover "slight elevation" overlay (toast.md:27)
+  it('P4b: each toast renders an aria-hidden elevation overlay (the hover slight-elevation)', () => {
+    renderProvider()
+    act(() => {
+      toast({ title: 'Saved' })
+    })
+    const overlays = document.querySelectorAll('.vida-toast-elevation')
+    expect(overlays).toHaveLength(1)
+    expect(overlays[0]?.getAttribute('aria-hidden')).toBe('true')
+  })
 })

@@ -74,7 +74,7 @@ Every phase runs the `change-frontend-component` spine (Step 0 document-context 
 | **P1** ✅ | **pomodoro-widget** | A (high) | ✅ tabular countdown · eyebrow phase · 6px hairline track · resting elevation | ✅ `progress?: 'bar'\|'ring'` (useTheme-resolved SVG ring) |
 | **P2** ✅ | **export-dialog** | A (mod) | ✅ hover state (§VIII gap) · neutral selected border · 4pt rhythm (title/desc = P3; no tabular — .ext not numeric) | ✅ selected accent BAR (Toast model, no shift) |
 | **P3** ✅ | **Dialog · Popover · Menu** (overlay chrome) | A (mod) | ✅ Level-3 elevation (`shadow.overlay`); serif titles + menu hover = RATIFY (already shipped) | — |
-| **P4** | **atoms** — Button · Input · Checkbox · Select · Tabs · Toast | B (low) | per-atom quick audit → one concrete refinement OR skip if at the bar (Toast/Checkbox likely skip) | — |
+| **P4** ✅ | **atoms** — Button · Input · Checkbox · Select · Tabs · Toast | B | ✅ 5 RATIFY (at the bar — code + DS-5 contract verified); ✅ **Toast BUILD** = hover "slight elevation" (contract-MISSING, caught by the doc grounding) | ✅ Toast hover-elevation (Card overlay-opacity) |
 
 ## Phase log
 - **P1 · pomodoro-widget — ✅ COMPLETE (2026-10-06).** Full §XXVI gate (spec → gate-1 REVISE→fold → Approval 1 →
@@ -104,6 +104,18 @@ Every phase runs the `change-frontend-component` spine (Step 0 document-context 
   Approval 2). tsc 0 · @vida/ui **412 tests** · eslint 0 · **Visual Gate PASS** (3 overlays × 3 presets × light/dark:
   shadow present all 18 · light lift · dark self-cancel screenshot-confirmed · axe 0 bar 1 pre-existing). Spec
   `phases/P3-overlay-chrome.md`; currency `CLAUDE.md`. **⚠ Pre-existing follow-up filed below.** Next: P4 atoms.
+- **P4 · atoms — ✅ COMPLETE (2026-10-06).** Audit of the 6 atoms vs code AND their DS-5 contracts (Victor "ground it in
+  the documentation"). **5 RATIFY** (Button/Input/Checkbox/Select/Tabs — token-clean, §VIII/§XIV-complete, contract hover
+  rows delivered, focus-ring uniform [§1a], density/preset-aware; 0 code — the `xs-backlinks` shape). **Toast = BUILD**:
+  the documentation grounding caught a contract-MISSING state — `toast.md:27` hover "slight elevation | overlay opacity"
+  was NOT shipped (only the functional pause). My code-grep had rubber-stamped it "n/a"; the contract revealed the gap.
+  → **P4b** built it (own §XXVI gate): a non-clipping `ToastWrapper` + `aria-hidden` `ToastElevation` overlay
+  (`shadow.raised`, opacity 0→1 on hover, B12-safe Card precedent, past ToastPanel's `overflow:hidden`) + a
+  `$colorTextMuted` border-strengthen `hoverStyle` for dark §VIII-perceptibility (shadow self-cancels in dark). Victor
+  chose build-now + the Card mechanism. tsc 0 · @vida/ui **413 tests** (+1) · eslint 0 · **Visual Gate PASS** (3 presets
+  × light/dark: elevation opacity 0→1 all cells · dark border-change · reads "slight", screenshot-confirmed). Specs
+  `phases/P4-atoms-ratify.md` + `phases/P4b-toast-hover-elevation.md`; currency `CLAUDE.md`.
+  **🎉 ALL 4 PHASES COMPLETE — fe-codec-controls-refinement DONE** (P1 #90 · P2 #91 · P3 #92 · P4 PR pending).
 
 
 ## Follow-ups (pre-existing, surfaced during this task — NOT regressions)
