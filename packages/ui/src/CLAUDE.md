@@ -111,6 +111,17 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Toast). `borderRadius:'$lg'` via the token scale (DEF-U8-h); no `toast.border` token → base `$colorBorderDefault`.
   No `loading` prop (consumer-composed: `duration:0` + spinner in `description`; `aria-busy` unsettable, DEF-U10-b).
   Motion (B12): enter `moderate`/`out`, exit `fast`/`in`, opacity + translateY slide from the stack edge only.
+  **fe-codec-controls-refinement · P3 (LIF-231) — overlay Level-3 elevation.** The three overlay panels (Dialog · Popover ·
+  Menu) gained a **static `box-shadow: shadow.overlay`** (design §V Level 3; first consumer of the `overlay` token) added
+  to each panel's base rule in `internal/{dialog,popover,menu}-styles.ts` (the `card-styles.ts` precedent). **Static only**
+  — each stylesheet's transition is explicit `opacity,transform` (never `all`), so the shadow never animates (B12). **Dark:
+  self-cancels** — `shadow.overlay`'s hue = the dark surface `rgba(15,23,42,·)`, so it blends on the dark scrim/page and
+  the 1px border carries elevation (§XI, the Card mechanism; Visual-Gate-confirmed the 0.18 alpha reads as subtle
+  elevation, not a halo). RATIFY (already shipped, no work): Dialog title `$display` serif · Menu item hover+active+disabled.
+  Visual Gate PASS (Brave, 3 overlays × 3 presets × light/dark: shadow present all 18 cells · light lift · dark self-cancel ·
+  axe 0 bar one PRE-EXISTING flag). **⚠ Pre-existing (NOT P3): the danger menu item label `#ef4444` on surface = 3.63
+  contrast** (< 4.5) — the provisional ds-2 signal palette; real values land via Figma at M4/P2 (`frontend-source-of-truth.md`).
+  Unrelated to the shadow; fixing it = palette-VALUE churn (M4). Spec: `docs/specs/foundation/fe-codec-controls-refinement/phases/P3-overlay-chrome.md`.
   **list-view** is **UI-2 · V1** — the first platform view (`list` VIEW_LAYOUT renderer) and the **DATA-VIEW SPINE**
   V2–V4 reuse. A pure **presentational** generic `ListView<T>`: `items` + `renderItem` + `getKey` → a `role="list"`
   of `role="listitem"` rows. **Row interactivity is NOT list-view's** — the consumer's `renderItem` composes an

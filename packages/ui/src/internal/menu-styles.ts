@@ -1,4 +1,5 @@
 import { motion } from '../themes/motion'
+import { shadow } from '../themes/shadow'
 
 // Injected CSS for the Menu primitive — the panel ENTER animation a Tamagui styled(View) can't express across a
 // react-dom portal (the shipped Select/Checkbox precedent; NOT Tamagui enterStyle, unverified across the portal).
@@ -17,7 +18,8 @@ export function ensureMenuStyles(): void {
   style.setAttribute('data-vida-menu', '')
   style.textContent = [
     // enter: opacity + a small translate from the trigger edge (sign by resolved side) → settle. transform/opacity only.
-    `.vida-menu-panel{opacity:0;transition:opacity ${t},transform ${t}}`,
+    // Level-3 overlay elevation (design §V; P3). STATIC box-shadow — transition is opacity,transform ONLY (B12).
+    `.vida-menu-panel{opacity:0;transition:opacity ${t},transform ${t};box-shadow:${shadow.overlay}}`,
     '.vida-menu-panel[data-side="bottom"]{transform:translateY(-4px) scale(0.98)}',
     '.vida-menu-panel[data-side="top"]{transform:translateY(4px) scale(0.98)}',
     '.vida-menu-panel.is-open{opacity:1;transform:none}',
