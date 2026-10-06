@@ -25,6 +25,8 @@ import {
   MetricNotFoundError,
   ContributionNotFoundError,
   InvalidContributor,
+  CyclicBinding,
+  BindingRefManaged,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -508,5 +510,129 @@ describe('mod-purposes S5 — measurability core (rollup)', () => {
     await h.svc.linkContribution({ type: 'target', id: t.id }, { type: 'dream', id: d.id }, { weight: 100 })
     // target leaf null → rolls up its contribution (80); purpose rolls up that target (80)
     expect((await h.svc.computeProgress({ type: 'purpose', id: p.id })).value).toBe(80)
+  })
+})
+
+describe('mod-purposes S6 — bindings + DAG guard + derived-pull', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('bind(derived-pull) persists binding_mode + the source ref in measurement_method', async () => {
+    const t = await h.svc.createTarget({ title: 'net worth' })
+    const out = await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull', ref: { type: 'finance_target', id: 'f1' } })
+    expect(out.binding_mode).toBe('derived-pull')
+    expect(out.measurement_method).toBe('finance_target:f1') // the ${type}:${id} source key (S5 convention)
+    // re-read confirms it persisted (not just the returned row)
+    const re = await h.svc.getTarget(t.id)
+    expect(re?.measurement_method).toBe('finance_target:f1')
+  })
+
+  it('bind(event-trigger) persists the ref too (the write path is dormant at M1)', async () => {
+    const t = await h.svc.createTarget({ title: 'auto-complete on paid' })
+    const out = await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'event-trigger', ref: { type: 'task', id: 'tk1' } })
+    expect(out.binding_mode).toBe('event-trigger')
+    expect(out.measurement_method).toBe('task:tk1')
+  })
+
+  it('bind(manual) clears the binding (mode + measurement_method)', async () => {
+    const t = await h.svc.createTarget({ title: 'x' })
+    await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull', ref: { type: 'habit', id: 'h1' } })
+    const out = await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'manual' })
+    expect(out.binding_mode).toBe('manual')
+    expect(out.measurement_method).toBeNull()
+  })
+
+  it('a non-manual bind without a ref is rejected (ZodError)', async () => {
+    const t = await h.svc.createTarget({ title: 'x' })
+    await expect(h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull' })).rejects.toThrow()
+  })
+
+  it('bind on a missing target throws TargetNotFoundError', async () => {
+    await expect(
+      h.svc.bind({ type: 'target', id: 'nope' }, { binding_mode: 'derived-pull', ref: { type: 'habit', id: 'h1' } }),
+    ).rejects.toBeInstanceOf(TargetNotFoundError)
+  })
+
+  it('a derived-pull target leaf resolves NULL at M1 (empty source registry) — honest unmeasured, never 0', async () => {
+    const t = await h.svc.createTarget({ title: 'net worth', target_value: 100, current_value: 50 }) // would be 50% if manual
+    await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull', ref: { type: 'finance_target', id: 'f1' } })
+    const v = await h.svc.progress({ type: 'target', id: t.id })
+    expect(v.value).toBeNull() // derived-pull overrides the stored current_value → reads the (empty) source → null
+    expect(v.unmeasured).toBe(true)
+  })
+
+  it('a derived-pull target leaf resolves through an injected measurement-source registry (the M2 seam)', async () => {
+    const sources = createMeasurementSourceRegistry()
+    sources.advertise('finance_target:f1', () => 0.75) // Finance advertises a normalized measure, [0,1]
+    const hh = await setup({ measurementSources: sources })
+    const t = await hh.svc.createTarget({ title: 'net worth' })
+    await hh.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull', ref: { type: 'finance_target', id: 'f1' } })
+    expect((await hh.svc.progress({ type: 'target', id: t.id })).value).toBe(75) // 0.75 → 75%
+  })
+
+  it('a derived-pull target also feeds a purpose rollup via the source seam (null at M1, live at M2)', async () => {
+    const sources = createMeasurementSourceRegistry()
+    sources.advertise('habit:h1', () => 0.6)
+    const hh = await setup({ measurementSources: sources })
+    const p = await hh.svc.createPurpose({ title: 'fitness' })
+    const t = await hh.svc.createTarget({ title: 'streak-bound', purpose_id: p.id })
+    await hh.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull', ref: { type: 'habit', id: 'h1' } })
+    expect((await hh.svc.computeProgress({ type: 'purpose', id: p.id })).value).toBe(60) // the derived leaf rolls up
+  })
+
+  it('rejects a target↔target binding cycle with CyclicBinding (both edges counted, §3.7)', async () => {
+    const a = await h.svc.createTarget({ title: 'A' })
+    const b = await h.svc.createTarget({ title: 'B' })
+    // A derives from B (edge B→A) — fine, the only edge.
+    await h.svc.bind({ type: 'target', id: a.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: b.id } })
+    // B derives from A (edge A→B) — now B→A→B is a cycle → rejected at author time, no save.
+    await expect(
+      h.svc.bind({ type: 'target', id: b.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: a.id } }),
+    ).rejects.toBeInstanceOf(CyclicBinding)
+    // the rejected bind did not persist: B is still unbound.
+    expect((await h.svc.getTarget(b.id))?.binding_mode).not.toBe('derived-pull')
+  })
+
+  it('rejects a 3-node binding chain cycle (T1←T2←T3←T1), accumulated across bind calls', async () => {
+    // The DAG guard reconstructs existing binding edges from each bound target's stored measurement_method, so a
+    // cycle that only closes on the THIRD bind is still caught (no contributions involved — binding edges only).
+    const t1 = await h.svc.createTarget({ title: 'T1' })
+    const t2 = await h.svc.createTarget({ title: 'T2' })
+    const t3 = await h.svc.createTarget({ title: 'T3' })
+    await h.svc.bind({ type: 'target', id: t1.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: t2.id } }) // T2→T1
+    await h.svc.bind({ type: 'target', id: t2.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: t3.id } }) // T3→T2
+    // T3 derives from T1 → T1→T3, closing T1←T2←T3←T1 → cycle.
+    await expect(
+      h.svc.bind({ type: 'target', id: t3.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: t1.id } }),
+    ).rejects.toBeInstanceOf(CyclicBinding)
+  })
+
+  it('measurement_method is bind-managed: a direct create/update write while a binding is live is rejected', async () => {
+    // A human "how it is measured" description is fine on a manual target …
+    const t = await h.svc.createTarget({ title: 'manual', measurement_method: 'weekly self-survey' })
+    expect(t.measurement_method).toBe('weekly self-survey')
+    // … but once a binding is live, measurement_method IS the source ref → not directly writable (would corrupt it).
+    await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull', ref: { type: 'habit', id: 'h1' } })
+    await expect(h.svc.updateTarget(t.id, { measurement_method: 'oops' })).rejects.toBeInstanceOf(BindingRefManaged)
+    // smuggling a ref past the DAG guard via create is likewise rejected.
+    await expect(
+      h.svc.createTarget({ title: 'smuggle', binding_mode: 'derived-pull', measurement_method: 'target:x' }),
+    ).rejects.toBeInstanceOf(BindingRefManaged)
+    // clearing the binding (→ manual) frees the column again.
+    await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'manual' })
+    const re = await h.svc.updateTarget(t.id, { measurement_method: 'back to a description' })
+    expect(re.measurement_method).toBe('back to a description')
+  })
+
+  it('re-binding the same target replaces its own edge (not a self-reported cycle)', async () => {
+    const a = await h.svc.createTarget({ title: 'A' })
+    const b = await h.svc.createTarget({ title: 'B' })
+    const c = await h.svc.createTarget({ title: 'C' })
+    await h.svc.bind({ type: 'target', id: a.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: b.id } })
+    // re-bind A to derive from C instead — A's old B→A edge is replaced, no phantom cycle.
+    const out = await h.svc.bind({ type: 'target', id: a.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: c.id } })
+    expect(out.measurement_method).toBe(`target:${c.id}`)
   })
 })

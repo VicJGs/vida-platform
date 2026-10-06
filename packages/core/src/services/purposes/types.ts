@@ -23,6 +23,7 @@ import type {
   UpdateMetricInput,
   RecordMetricValueInput,
   LinkContributionInput,
+  BindInput,
 } from '../../validators/purpose'
 import type { ValueRow, ContributionRow } from '../../db/schema/foundation/purpose'
 import type { PurposeRow, TargetRow, DreamRow, PurposeMetricRow, PurposeMetricValueRow } from '../../db/schema/purposes'
@@ -116,6 +117,13 @@ export interface PurposesService {
   progress(entity: { type: 'target' | 'dream'; id: string }): Promise<PurposeProgressView>
   /** The ROLLUP progress of a goal: override slot if set, else weighted rollup of spine-targets + contributions. */
   computeProgress(goal: { type: 'purpose' | 'target'; id: string }): Promise<PurposeProgressView>
+
+  // ---- S6: bindings + DAG guard + derived-pull (ADR-011 §3.5/§3.6/§3.7) ----
+  /** Declare a target's `binding_mode` (manual | derived-pull | event-trigger). A non-manual mode records its
+   *  source `ref` in `measurement_method` (`${type}:${id}`) and is rejected with `CyclicBinding` if it would make
+   *  the binding graph cyclic (PG-8, both edge-types + the contributions feed-graph). `manual` clears the binding.
+   *  A `derived-pull` target then reads its value from the measurement-source seam (null at M1, empty registry). */
+  bind(target: { type: 'target'; id: string }, input: BindInput): Promise<TargetRow>
 }
 
 // --- typed errors (contract.md:49-57) ---------------------------------------
@@ -160,5 +168,29 @@ export class InvalidContributor extends Error {
   constructor(side: 'goal' | 'contributor', type: string) {
     super(`Invalid contribution ${side} type: ${type}`)
     this.name = 'InvalidContributor'
+  }
+}
+/** A `bind` that would make the binding graph cyclic — rejected at author time, no save (PG-8, ADR-011 §3.7). */
+export class CyclicBinding extends Error {
+  constructor(detail: string) {
+    super(`Binding would create a cycle: ${detail}`)
+    this.name = 'CyclicBinding'
+  }
+}
+/** `measurement_method` doubles as the binding source ref on a non-manual target — it is managed via `bind()`,
+ *  never writable directly through create/updateTarget (that would silently corrupt the ref + bypass the DAG
+ *  guard). Set `binding_mode` to `manual` (via bind) first to free the column for a human description. */
+export class BindingRefManaged extends Error {
+  constructor() {
+    super('measurement_method is bind-managed while a binding is live — set binding_mode to manual first')
+    this.name = 'BindingRefManaged'
+  }
+}
+/** A `derived-pull` source outage — surfaced as last-known + a flag, never fabricated (PG-6). Record-not-throw:
+ *  the measurable degrades to null (unmeasured) rather than failing the read. */
+export class SourceUnavailable extends Error {
+  constructor(key: string) {
+    super(`Measurement source unavailable: ${key}`)
+    this.name = 'SourceUnavailable'
   }
 }

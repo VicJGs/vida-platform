@@ -14,8 +14,8 @@
 
 import { and, eq, isNull } from 'drizzle-orm'
 import { CONTRIBUTION_GOAL_TYPE, CONTRIBUTION_CONTRIBUTOR_TYPE } from '@vida/types'
-import type { ContributionGoalType, ContributionContributorType } from '@vida/types'
-import { normalize, rollup } from '../../foundation/measurement'
+import type { ContributionGoalType, ContributionContributorType, BindingMode } from '@vida/types'
+import { normalize, rollup, assertAcyclic, MeasurementCycle, type Binding, type EntityRef } from '../../foundation/measurement'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { purposes, targets, dreams, purposeMetrics, purposeMetricValues } from '../../db/schema/purposes'
 import { values, contributions } from '../../db/schema/foundation/purpose'
@@ -33,6 +33,7 @@ import {
   RecordMetricValueSchema,
   LinkContributionSchema,
   ReweightContributionSchema,
+  BindSchema,
 } from '../../validators/purpose'
 import {
   type PurposesService,
@@ -47,6 +48,8 @@ import {
   MetricNotFoundError,
   ContributionNotFoundError,
   InvalidContributor,
+  CyclicBinding,
+  BindingRefManaged,
 } from './types'
 import type { ValueRow, ContributionRow } from '../../db/schema/foundation/purpose'
 import type {
@@ -156,6 +159,9 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
   // ---- S1: targets CRUD -----------------------------------------------------
   async function createTarget(input: Parameters<PurposesService['createTarget']>[0]): Promise<TargetRow> {
     const v = CreateTargetSchema.parse(input)
+    // measurement_method is bind-managed on a non-manual target (its binding ref) — a live binding goes through
+    // bind() so the DAG guard runs; reject a direct create that would smuggle a ref past it (g2 MINOR).
+    if (v.measurement_method != null && v.binding_mode != null && v.binding_mode !== 'manual') throw new BindingRefManaged()
     return targetsRepo.create({
       purpose_id: v.purpose_id ?? null, // nullable spine joint (PG-9)
       title: v.title,
@@ -180,7 +186,12 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
 
   async function updateTarget(id: string, patch: Parameters<PurposesService['updateTarget']>[1]): Promise<TargetRow> {
     const v = UpdateTargetSchema.parse(patch)
-    if (!(await targetsRepo.findById(id))) throw new TargetNotFoundError(id)
+    const existing = await targetsRepo.findById(id)
+    if (!existing) throw new TargetNotFoundError(id)
+    // measurement_method is bind-managed on a non-manual target (its binding ref) — reject a direct write that
+    // would corrupt the ref / bypass the DAG guard (g2 MINOR). Clear the binding (bind → manual) first.
+    const effectiveMode = v.binding_mode !== undefined ? v.binding_mode : existing.binding_mode
+    if (v.measurement_method !== undefined && effectiveMode != null && effectiveMode !== 'manual') throw new BindingRefManaged()
     const data = stripUndefined({
       purpose_id: v.purpose_id,
       title: v.title,
@@ -200,7 +211,7 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
       review_frequency: v.review_frequency,
       sort_order: v.sort_order,
     })
-    return Object.keys(data).length === 0 ? (await targetsRepo.findById(id))! : targetsRepo.update(id, data)
+    return Object.keys(data).length === 0 ? existing : targetsRepo.update(id, data)
   }
 
   async function archiveTarget(id: string): Promise<void> {
@@ -419,6 +430,13 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
    *  baseline/direction col → quantitative defaults baseline 0 / higher-better; qualitative has no rating col →
    *  unmeasured at M1; milestone reads `status`; rate reads current_value). Returns null = unmeasured. */
   function leafTarget01(t: TargetRow): number | null {
+    // S6 derived-pull (ADR-011 §3.6): the value is READ from the measurement-source seam, keyed by the bound
+    // source ref stored in measurement_method. The seam returns a [0,1] fraction directly (BR-PG-S5-2). Empty
+    // registry at M1 — or a source outage (SourceUnavailable, record-not-throw) — degrades to null (unmeasured,
+    // never fabricated, PG-6); real sources advertised by Finance/Habits/Health at M2 (zero-signature swap).
+    if (t.binding_mode === 'derived-pull') {
+      return t.measurement_method == null ? null : (measurementSources?.query(t.measurement_method) ?? null)
+    }
     switch (t.measurement_kind) {
       case 'quantitative':
         return t.current_value == null || t.target_value == null
@@ -538,6 +556,48 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     return rollupView(children)
   }
 
+  // ---- S6: bindings + DAG guard + derived-pull source resolution ------------
+  // A binding records its source `ref` as the target's `measurement_method` (`${type}:${id}`, the PG-11/PG-15
+  // restored column) and sets `binding_mode`; `manual` clears both. The feed direction is always source→measurable
+  // (a derived-pull target READS its source; an event-trigger target is SET when its source fires — both "ref feeds
+  // target", ADR-011 §3.5). Before persisting a non-manual binding the DAG guard (§3.7, seam-contract §3) composes
+  // `assertAcyclic` over the BINDING graph — every OTHER non-manual bound target's edge (reconstructed from its
+  // stored measurement_method) + the proposed edge. A cycle (incl. target↔target) → CyclicBinding. (Contributions
+  // are NOT in this graph: their contributor vocabulary excludes `target`/`purpose`, so a contribution can never be
+  // an outgoing edge from a binding node — it cannot close a binding cycle. The graph is binding edges only.)
+  const refKey = (r: { type: string; id: string }): string => `${r.type}:${r.id}`
+  const parseRefKey = (key: string): EntityRef | null => {
+    const i = key.indexOf(':')
+    return i <= 0 || i === key.length - 1 ? null : { type: key.slice(0, i), id: key.slice(i + 1) }
+  }
+
+  async function bind(target: { type: 'target'; id: string }, input: Parameters<PurposesService['bind']>[1]): Promise<TargetRow> {
+    const v = BindSchema.parse(input)
+    if (!(await targetsRepo.findById(target.id))) throw new TargetNotFoundError(target.id)
+    if (v.binding_mode === 'manual') {
+      // Clear the binding: manual measurables carry no source.
+      return targetsRepo.update(target.id, { binding_mode: 'manual', measurement_method: null })
+    }
+    // Non-manual: validate acyclicity before persisting (author-time rejection, PG-8).
+    const proposedKey = refKey(v.ref!)
+    const edges: Binding[] = []
+    // Existing binding edges — exclude the target being (re)bound, its old edge is replaced by the proposed one.
+    for (const t of await targetsRepo.findAll()) {
+      if (t.id === target.id || t.binding_mode == null || t.binding_mode === 'manual' || t.measurement_method == null) continue
+      const src = parseRefKey(t.measurement_method)
+      if (src) edges.push({ mode: t.binding_mode as BindingMode, source: src, target: { type: 'target', id: t.id } })
+    }
+    // The proposed edge: the source feeds the measurable (both modes).
+    edges.push({ mode: v.binding_mode, source: v.ref!, target: { type: 'target', id: target.id } })
+    try {
+      assertAcyclic(edges)
+    } catch (e) {
+      if (e instanceof MeasurementCycle) throw new CyclicBinding(e.message)
+      throw e
+    }
+    return targetsRepo.update(target.id, { binding_mode: v.binding_mode, measurement_method: proposedKey })
+  }
+
   return {
     createValue,
     updateValue,
@@ -572,6 +632,7 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     listContributions,
     progress,
     computeProgress,
+    bind,
   }
 }
 

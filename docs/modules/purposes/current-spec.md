@@ -3,7 +3,7 @@
 > §XXIX living doc — the durable contract/structure of `createPurposesService`, kept current with the code.
 > The measurability **capstone**: Values → Purposes → Targets, composing the built `foundation/measurement`
 > engine (ADR-011; Purpose = rollup APEX + consumer, NOT owner). Ground truth = `packages/core/src/services/purposes/`.
-> Built per slice (Entity Delivery Flow); this doc grows with each. **As of: S5.**
+> Built per slice (Entity Delivery Flow); this doc grows with each. **As of: S6.**
 
 ## Factory
 
@@ -19,7 +19,7 @@ DB-11, mirror-only).
 
 All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagation is app-layer, PG-19 → S9).
 
-## Surface — S1 (spine CRUD) · S2 (dreams) · S3 (metrics)
+## Surface — S1 (spine CRUD) · S2 (dreams) · S3 (metrics) · S4 (contributions) · S5 (measurability) · S6 (bindings)
 
 | Method | Returns | Notes |
 |--------|---------|-------|
@@ -33,8 +33,9 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 | `linkContribution(goal,contributor,{weight,notes?})/unlinkContribution/reweightContribution/listContributions(goal)` | `ContributionRow` | PG-10 weighted edge; two-sided `InvalidContributor`; weight-only |
 | `progress({type:'target'\|'dream',id})` | `PurposeProgressView` | the LEAF (normalize by kind; dream = override slot) |
 | `computeProgress({type:'purpose'\|'target',id})` | `PurposeProgressView` | ROLLUP: override else spine-targets + contributions (via `foundation/measurement`) |
+| `bind({type:'target',id},{binding_mode,ref?})` | `TargetRow` | S6 — sets `binding_mode`; non-manual records `ref` in `measurement_method`; `assertAcyclic` → `CyclicBinding`; `manual` clears |
 
-**Deps (as of S5):** `{ db, deviceId, measurementSources? }` — `measurementSources` deny-safe (empty M1 ⇒ cross-module contributors null). `PurposeProgressView{value(0–100\|null),derived,partial,unmeasured}` (named to avoid the projects `ProgressView` barrel collision).
+**Deps (as of S6):** `{ db, deviceId, measurementSources? }` — `measurementSources` deny-safe (empty M1 ⇒ cross-module contributors + derived-pull targets null). `PurposeProgressView{value(0–100\|null),derived,partial,unmeasured}` (named to avoid the projects `ProgressView` barrel collision).
 
 - **Repositories** — `createRepository(db, table, { deviceId, softDelete: true, encryptedFields: [] })` for all 3
   spine tables (each carries `deleted_at`). M1.0 `encryptedFields:[]` seam (real `[E]` = M3).
@@ -51,9 +52,13 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 - **Update** — async, typed `*NotFoundError` after `findById`; `stripUndefined` drops omitted keys (preserves an
   explicit `null` = clear-to-null); empty patch ⇒ returns the existing row (no wasted write).
 
-## Typed errors (S1)
+## Typed errors (S1 · S4 · S6)
 
-`ValueNotFoundError` · `PurposeNotFoundError` · `TargetNotFoundError` (async, thrown after a failed `findById`).
+`ValueNotFoundError` · `PurposeNotFoundError` · `TargetNotFoundError` · `DreamNotFoundError` · `MetricNotFoundError` ·
+`ContributionNotFoundError` (async, thrown after a failed `findById`). `InvalidContributor` (S4, two-sided vocabulary
+guard). **S6:** `CyclicBinding` (throw at author time, no save — PG-8); `BindingRefManaged` (a direct
+`measurement_method` write while a binding is live is rejected — the ref is bind-managed); `SourceUnavailable`
+(record-not-throw dormant seam, M2 outage mechanism).
 
 ## DB-11 @vida/types reconcile (S1, mirror-only)
 
@@ -66,4 +71,4 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 
 ## Deferred (homed to later slices)
 
-S6 bindings+DAG · S7 reviews+plan_steps+sessions · S8 tags/links/pages · S9 provider+fan-out+deletion-cascade.
+S7 reviews+plan_steps+sessions · S8 tags/links/pages · S9 provider+fan-out+deletion-cascade.

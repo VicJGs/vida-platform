@@ -218,7 +218,24 @@ export const ReweightContributionSchema = z.object({
   weight: z.number().int().min(0).max(100),
 })
 
+// --- bindings (S6 — ADR-011 §3.5/§3.7, PG-6/8) -------------------------------
+/** A binding's source endpoint — any pursuable/source entity (habit · finance_target · another target · …).
+ *  Not enum-guarded (the source vocabulary is cross-module/open); validated as a non-empty {type,id}. */
+const BindingRefSchema = z.object({ type: z.string().min(1), id: z.string().min(1) })
+/** Declare a target's binding_mode. A non-manual mode (`derived-pull`/`event-trigger`) REQUIRES a `ref` (the
+ *  source it reads / is fed by); `manual` ignores ref and clears the binding. */
+export const BindSchema = z
+  .object({
+    binding_mode: BindingModeSchema,
+    ref: BindingRefSchema.optional(),
+  })
+  .refine((v) => v.binding_mode === 'manual' || v.ref != null, {
+    message: 'a derived-pull / event-trigger binding requires a ref',
+    path: ['ref'],
+  })
+
 // Input types — inferred from the schemas (single source of truth; cannot drift).
+export type BindInput = z.infer<typeof BindSchema>
 export type LinkContributionInput = z.infer<typeof LinkContributionSchema>
 export type CreateMetricInput = z.infer<typeof CreateMetricSchema>
 export type UpdateMetricInput = z.infer<typeof UpdateMetricSchema>

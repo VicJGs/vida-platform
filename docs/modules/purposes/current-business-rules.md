@@ -1,7 +1,7 @@
 # Purposes & Goals — Current Business Rules (as-built)
 
 > §XXIX living doc — the enforced invariants of `createPurposesService`, kept current with the code. Promoted from
-> each slice's IMPLEMENTATION-PLAN. Derived from the PG-1..PG-20 corpus invariants + ADR-011. **As of: S1.**
+> each slice's IMPLEMENTATION-PLAN. Derived from the PG-1..PG-20 corpus invariants + ADR-011. **As of: S6.**
 
 ## S1 — Spine CRUD + DB-11 reconcile
 
@@ -111,3 +111,39 @@
 - **BR-PG-S5-7** — The mixed-weight math is **delegated to the built `rollup` engine** (`weight == null || 0 ⇒ 1`,
   `engine.ts:48`) — composed, never reinterpreted. `progress`/`computeProgress` reject an unknown id with the typed
   `*NotFoundError`.
+
+## S6 — Bindings + DAG guard + derived-pull
+
+- **BR-PG-S6-1** — `bind(target, { binding_mode, ref? })` declares a target's `binding_mode` (ADR-011 §3.5).
+  A non-manual mode (`derived-pull`/`event-trigger`) **requires** a `ref` (ZodError otherwise) and records it as the
+  target's **`measurement_method`** = `${ref.type}:${ref.id}` (the PG-11/PG-15 restored column is the binding
+  source key — structure-data.md "binding_mode (+ ref)"; no dedicated column, ADR-011 §3.7 leaves storage to
+  build-phase). `manual` clears both (`binding_mode='manual'`, `measurement_method=null`). A missing target →
+  `TargetNotFoundError`. Returns the updated `TargetRow`.
+- **BR-PG-S6-2** — **Bindings are acyclic (PG-8, ADR-011 §3.7), rejected at author time.** Before persisting a
+  non-manual binding, the service composes the built `assertAcyclic` (`engine.ts:65`) over the **binding graph**:
+  every OTHER non-manual bound target's edge (reconstructed `source=parse(measurement_method) → target`) + the
+  proposed edge (`source=ref → target` — the source feeds the measurable in BOTH modes). A cycle (2-node or any
+  N-node chain accumulated across calls) throws `CyclicBinding` (wrapping the engine's `MeasurementCycle`) and does
+  **not** save. `contributions` are **not** in this graph — the contributor vocabulary excludes `target`/`purpose`,
+  so a contribution can never be an outgoing edge from a binding node and cannot close a binding cycle (seam-contract
+  §3 = binding edges only). Re-binding a target **replaces** its own edge (self excluded), so a legitimate re-bind or
+  linear chain is never a false positive.
+- **BR-PG-S6-3** — **`derived-pull` reads the measurement-source seam (§3.6), overriding the stored value.** A
+  `binding_mode==='derived-pull'` target's leaf resolves via `measurementSources?.query(measurement_method)` **before**
+  the `measurement_kind` switch — so it overrides any stored `current_value` (PG-6). The seam returns a [0,1] fraction
+  directly (BR-PG-S5-2). **Empty registry at M1 ⇒ `null`** (honest unmeasured, never coerced to `0` — PG-3); real
+  sources advertised by Finance/Habits/Health **at M2** (zero-signature swap). A derived-pull leaf feeds `progress`
+  AND the `computeProgress` rollup identically.
+- **BR-PG-S6-4** — **`SourceUnavailable` is record-not-throw (PG-6):** a source outage degrades the measurable to
+  `null` (last-known + flag, never fabricated). At M1 `query()` cannot distinguish "unadvertised" from "outage" (both
+  ⇒ `null`), so the error type is a **dormant seam** — defined now for a zero-signature M2 swap when real sources add
+  the outage mechanism (`source-registry.ts:8`, runtime-deferred).
+- **BR-PG-S6-5** — **`measurement_method` is bind-managed on a non-manual target.** Because it doubles as the binding
+  source ref, `createTarget`/`updateTarget` **reject** a direct write to `measurement_method` while a binding is live
+  (`BindingRefManaged`) — this prevents silent ref corruption AND a smuggled ref bypassing the S6-2 DAG guard. On a
+  `manual`/unbound target it stays free "how it is measured" text (its PG-11 role). Clear the binding (`bind → manual`)
+  to free the column.
+- **BR-PG-S6-6** — The `event-trigger` **write** path is **dormant at M1** (emit-only; the ref persists but no rail
+  write fires) — the live INT-2 rail write is M2 (`effects?` port, interpretation §E). S6 ships the descriptor + the
+  ref + the DAG guard; the firing is deferred.
