@@ -1,6 +1,22 @@
 <!-- Last updated: 2026-10-06 by /session-end -->
 
 
+## mod-purposes-and-goals (① backend #55 · LIF-136, 2026-10-06 — S1–S5 of 9 on branch `mod-purposes-and-goals`)
+The measurability CAPSTONE over DB-4 `019_purposes` (6 tables) + DB-3 `007_purpose` (4 substrate tables), composing
+the built `foundation/measurement` engine (ADR-011; Purpose = rollup APEX + consumer, NOT owner). Detail in
+`docs/features/purposes-and-goals/delivery/*` + `docs/modules/purposes/current-*` + `.claude/tasks/mod-purposes-and-goals.md`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-06 | sessions port (F-2) | reviews fire as `review` sessions — optional or required at M1? | **REQUIRED** `sessions:{registry,service}` port, session row written at M1 | PG-13 is a corpus FACT; mod-sessions is built → honour it, don't hedge to optional (g1 #2). Only the live Scheduler firing defers to M2 | n/a (grounded) |
+| 2026-10-06 | DB-11 reconcile | where do the Purpose interfaces + retirements live? | amend-in-place in `project.ts`; retire `TARGET_TYPE`/`BucketListItem`/3 junctions (zero live consumers verified) | reconcile-and-extend, no double-export; `contributions` supersedes junctions, `dreams` absorbs bucket_list | n/a (grounded) |
+| 2026-10-06 | target quantitative leaf (F-1b) | targets have no baseline/direction column | simple `clamp(current/target)`, baseline 0 / higher-better; rich direction-aware = via a `purpose_metric` | the schema's deliberate split (direction cols are metric-only) | yes (add cols later) |
+| 2026-10-06 | unmeasured handling | a qualitative/no-current measurable | returns `null`, EXCLUDED from rollup — never coerced to `0` | PG-3; an un-rated goal must not drag a parent down (engine drops null children) | n/a (grounded) |
+| 2026-10-06 | metric current value | override vs derive | `getMetricCurrent` = override slot wins, else aggregate the ledger via `calculation_method`; empty ⇒ null | PG-4/PG-17 derive-by-default; provenance = manual iff every contributing point is manual | n/a (grounded) |
+| 2026-10-06 | metric/contribution delete | cascade shape | `deleteMetric` two-hop hard-cascade of its value ledger; contribution unlink = soft | ledgers have no deleted_at (hard); PG-19 app-layer cascade (no FK) | n/a (grounded) |
+| 2026-10-06 | **purpose rollup composition (S5 keystone)** | how a purpose aggregates its children | **two-channel**: A = spine-targets + metrics (equal-weight), B = contributions (`contribution_percentage`), combine the channel-results equal-weight | g2 keystone catch: targets/metrics feed via the `purpose_id` direct channel (not contributor vocab); a single scale drowned in-module leaves under weighted contributions; two-channel gives the intuitive number + keeps weight meaningful within B | yes (build-phase, ADR-011 §3.8) |
+| 2026-10-06 | cross-module contributor progress | how a habit/task/etc. feeds a goal at M1 | via the `measurementSources` seam keyed `${type}:${id}`; empty M1 registry ⇒ null (excluded); real sources advertised by modules at M2 | PG-7 no direct table reads; deny-safe, zero-signature M2 swap | n/a (grounded) |
+
 ## fe-codec-primitives-refinement (② frontend · LIF-230 · P1 List shipped PR #88, 2026-10-06)
 G6 enhancement: bring the 5 pre-CODEC `@vida/ui` views to the editorial model + patterns. Key decisions:
 - **Calendar flagship → `fe-calendar` #19, NOT this task.** The multi-range (Year/Month/Week/Day/Agenda) + "living"

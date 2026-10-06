@@ -99,6 +99,16 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
   off main @ `a27aaa8` (front-matter phase in the main tree; worktree if the Verification Gate needs it). All 7
   blockers Done. Step 0 BASELINE + Step 1 Interpretation + Step 2 decomposition (slice-map 9 slices + seam-contract)
   authored; g1 /critique dispatched (independent critic) → awaiting Approval 1.
+- 2026-10-06: Approval 1 GRANTED ("ground everything in the documentation") → **S1–S5 built + committed** (front
+  matter `5ce324e` · S1 `666ac3d` · S2 `08fc4c3` · S3 `ece5018` · S4 `1904555` · S5 `d94ceba`). Each slice full
+  Entity Delivery Flow; S1 + the S5 keystone ran independent g2 reviews (keystone caught 2 real rollup bugs →
+  two-channel rollup). purposes 60/60, full @vida/core 1819 green (vault-1MB flake §XXIV ISOLATED).
+- 2026-10-06 (session-end): **STRUCTURAL recovery** — a parallel fe-codec session switched the shared working tree to
+  `main` (its session-end `e073178`, already on origin/main), so my 6 commits landed on local main. Facts gathered
+  (origin/main=e073178; `origin/main..main` = exactly my 6 commits) → `git branch -f mod-purposes-and-goals d94ceba`
+  (feature branch = my work on origin/main) + `git branch -f main origin/main` (realign) + pushed the branch. Nothing
+  lost. Lesson re-confirmed [[parallel-session-shared-tree-collision-use-worktree]] → **S6 should use a git worktree.**
+  **Next: S6 bindings + DAG + derived-pull** in a FRESH session (`git checkout mod-purposes-and-goals`).
 
 ## Notes
 - Env: Node 24 via nvm for @vida/core tests (better-sqlite3 ABI; `.nvmrc`=22 base).
