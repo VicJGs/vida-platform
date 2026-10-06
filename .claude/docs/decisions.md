@@ -1,5 +1,23 @@
-<!-- Last updated: 2026-10-05 by /session-end -->
+<!-- Last updated: 2026-10-06 by /session-end -->
 
+
+## fe-codec-primitives-refinement (② frontend · LIF-230 · P1 List shipped PR #88, 2026-10-06)
+G6 enhancement: bring the 5 pre-CODEC `@vida/ui` views to the editorial model + patterns. Key decisions:
+- **Calendar flagship → `fe-calendar` #19, NOT this task.** The multi-range (Year/Month/Week/Day/Agenda) + "living"
+  cross-module lens (past-as-record · habit threads · open-time · purpose budget · drift) is a SURFACE flagship —
+  `@vida/ui` primitives are presentational and can't read modules, so the cross-module data lives at the Global
+  Calendar surface. Vision + mockups homed to `docs/specs/foundation/fe-calendar/`. This task keeps only the Calendar
+  month-grid aesthetic; kept the aesthetic quick-wins unblocked.
+- **Each component = own profile + phase + §XXVI gate + PR** (Victor directive) — P1 List→P2 Card→P3 Timeline→P4
+  Gallery→P5 Calendar-grid; two presentational layers (aesthetic polish + "alive"-hooks). No batching.
+- **Alive-hooks are BOUNDED at the primitive** — list-view is layout-only, so most "alive" (row typography, ambient
+  signal) is the consumer's `renderItem`; the primitive's real additions are `sections`/`primaryKey`/`activeKey` only.
+- **Emphasis = accent left-tick via a Tamagui VARIANT, NO bg tint** — the mockup's `color-mix` tint has no backing
+  token (a tint = hard-coded palette churn OR an invented token, both out of scope); the token-pure tick (Toast
+  precedent) gives the same "featured" read. Caught at preflight by grounding in code/docs.
+- **Neural Graph conformance → #8 `fe-codec-canvas-graph`; orphan controls → sibling `fe-codec-controls-refinement`.**
+- **P1 gate finding → P2:** Card renders `header`/`footer` as `<header>`/`<footer>` landmarks → duplicate
+  banner/contentinfo in a repeated-row list (axe); P2 Card must scope/drop those roles for list rows.
 
 ## mod-notifications (① backend #53 · LIF-132 → Done, 2026-10-06 — ① COMPLETE (S1–S5), PR #83 merged `797886e`)
 The ADR-013 user-facing notification MODULE (dispatcher/surface) over DB-4 `notifications` — the terminal PURE
