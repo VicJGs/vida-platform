@@ -2,8 +2,12 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-- fe-codec-primitives-refinement (LIF-230 · in-progress): .claude/tasks/fe-codec-primitives-refinement.md  (M1/M1.2.1 · change-frontend-component / Entity Delivery Flow ②. CODEC aesthetic-refinement pass, 5 views, per-component phased build. **P1 List ✅ COMPLETE** (PR #88 — sections/primary/active + polish, Visual Gate PASS); **P2 Card next** (landmark flag + draft spec ready). Graph→#8, Calendar flagship→#19, orphan controls→sibling `fe-codec-controls-refinement`. Worktree branch off main.)
-_(backend: none active — **mod-purposes-and-goals #55 completed 2026-10-07 (LIF-136 → Done, PR #98 merged)**; mod-notifications #53 + mod-learning-education + mod-projects completed 2026-10-06. Next `#`-order backend head = next M1.1.2 module via `/begin`. frontend-track campaign ongoing, tracked in TASKS.md.)_
+_(none active. **fe-codec-primitives-refinement (LIF-230 → Done, 2026-10-07)** — the last active frontend unit — completed; see below. backend: **mod-purposes-and-goals #55 completed 2026-10-07 (LIF-136 → Done, PR #98 merged)**; mod-notifications #53 + mod-learning-education + mod-projects completed 2026-10-06. Next `#`-order backend head = next M1.1.2 module via `/begin`. frontend-track campaign ongoing, tracked in TASKS.md.)_
+
+<details><summary>prior (fe-codec-primitives-refinement completed)</summary>
+
+- fe-codec-primitives-refinement (LIF-230 → Done): .claude/tasks/fe-codec-primitives-refinement.md  (M1/M1.2.1 · change-frontend-component / Entity Delivery Flow ②. CODEC aesthetic-refinement pass — all 5 views SHIPPED, each its own §XXVI double-gate + Visual Gate + PR: **P1 List #88 · P2 Card #96 · P3 Timeline #97 · P4 Gallery #99 · P5 Calendar #101**. Graph conformance → #8; Calendar living/multi-range → fe-calendar #19. Worktree-isolated throughout.)
+</details>
 
 <details><summary>prior (xs-notifications-delivery completed)</summary>
 
