@@ -1,5 +1,5 @@
 # Task: mod-purposes-and-goals
-# Status: in-progress  (① backend COMPLETE S1–S9; PR open → merge → /task-complete)
+# Status: done
 # Linear: LIF-136
 # Profile: Add Backend Component
 # Scenario: Default (Entity Delivery Flow v1)
