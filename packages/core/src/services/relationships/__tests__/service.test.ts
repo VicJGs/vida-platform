@@ -304,3 +304,57 @@ describe('mod-relationships S2 — interactions ledger + derived stats', () => {
     await expect(h.svc.updateInteraction(i.id, { sentiment: 'meh' as any })).rejects.toThrow()
   })
 })
+
+describe('mod-relationships S3 — events', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('creates an event with NN-default backfill + reminder_days JSON round-trip', async () => {
+    const c = await h.svc.createContact({ first_name: 'Ada' })
+    const e = await h.svc.createEvent({ contact_id: c.id, event_date: '11-15', reminder_days: [1, 7] })
+    expect(e.event_type).toBe('custom') // backfill
+    expect(e.is_recurring).toBe(true) // backfill
+    expect(e.reminder_days).toEqual([1, 7]) // parsed array, not JSON string
+    const all = await h.svc.getAllEvents()
+    expect(all).toHaveLength(1)
+    expect(all[0].reminder_days).toEqual([1, 7])
+  })
+
+  it('guards createEvent against a missing/soft-deleted contact + a bad event_type', async () => {
+    await expect(h.svc.createEvent({ contact_id: 'nope', event_date: '01-01' })).rejects.toBeInstanceOf(
+      ContactNotFoundError,
+    )
+    const c = await h.svc.createContact({ first_name: 'Gone' })
+    await h.svc.softDeleteContact(c.id)
+    await expect(h.svc.createEvent({ contact_id: c.id, event_date: '01-01' })).rejects.toBeInstanceOf(
+      ContactNotFoundError,
+    )
+    const live = await h.svc.createContact({ first_name: 'Live' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(h.svc.createEvent({ contact_id: live.id, event_date: '01-01', event_type: 'nope' as any })).rejects.toThrow()
+  })
+
+  it('getAllEvents returns every event, event_date asc', async () => {
+    const c = await h.svc.createContact({ first_name: 'Multi' })
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '11-15' })
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'anniversary', event_date: '03-02' })
+    const all = await h.svc.getAllEvents()
+    expect(all.map((e) => e.event_date)).toEqual(['03-02', '11-15'])
+  })
+
+  it('getUpcomingEvents projects recurring MM-DD into the range, filters, and sorts by occurrence', async () => {
+    const c = await h.svc.createContact({ first_name: 'Cal' })
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '11-15' }) // recurring
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '01-10' }) // recurring, wraps
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'custom', event_date: '2026-11-20', is_recurring: false }) // one-time
+
+    const q4 = await h.svc.getUpcomingEvents({ from: '2026-10-01', to: '2026-12-31' })
+    // 11-15 → 2026-11-15, one-time 2026-11-20; 01-10 wraps to 2027-01-10 (out of range)
+    expect(q4.map((u) => u.occurrence)).toEqual(['2026-11-15', '2026-11-20'])
+
+    const wrap = await h.svc.getUpcomingEvents({ from: '2026-12-01', to: '2027-02-01' })
+    expect(wrap.map((u) => u.occurrence)).toEqual(['2027-01-10']) // the wrapped birthday
+  })
+})

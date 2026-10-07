@@ -23,17 +23,21 @@ import {
   reminderGroupContacts,
   networkGroupContacts,
   type ContactRow,
+  type ContactEventRow,
 } from '../../db/schema/relationships'
 import {
   CreateContactSchema,
   UpdateContactSchema,
   CreateInteractionSchema,
   UpdateInteractionSchema,
+  CreateEventSchema,
 } from '../../validators/relationship'
 import {
   type RelationshipsService,
   type RelationshipsServiceDeps,
   type ContactView,
+  type EventView,
+  type UpcomingEvent,
   ContactNotFoundError,
   InteractionNotFoundError,
 } from './types'
@@ -53,6 +57,16 @@ const frequencyToDays = (f: Frequency | null | undefined): number | null => (f ?
 const addDaysISO = (iso: string, n: number): string =>
   new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10)
 
+// --- event-occurrence helpers (RL-8; S3) ------------------------------------
+/** The MM-DD of an event date (whether stored as `YYYY-MM-DD` or already `MM-DD`). */
+const mmdd = (date: string): string => (date.length >= 10 ? date.slice(5) : date)
+/** The first `YYYY-${md}` occurrence on/after `from` (wraps to next year if this year's has passed). */
+const nextOccurrence = (md: string, from: string): string => {
+  const year = from.slice(0, 4)
+  const candidate = `${year}-${md}`
+  return candidate >= from ? candidate : `${Number(year) + 1}-${md}`
+}
+
 export function createRelationshipsService(deps: RelationshipsServiceDeps): RelationshipsService {
   const { db, deviceId } = deps
 
@@ -70,6 +84,10 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
   function toView(row: ContactRow): ContactView {
     const { social_links, ...rest } = row
     return { ...rest, social_links: social_links != null ? (JSON.parse(social_links) as SocialLinks) : null }
+  }
+  function toEventView(row: ContactEventRow): EventView {
+    const { reminder_days, ...rest } = row
+    return { ...rest, reminder_days: reminder_days != null ? (JSON.parse(reminder_days) as number[]) : null }
   }
 
   // --- intra-service closures (hoisted, not `this.`) -------------------------
@@ -219,6 +237,45 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       return rows.sort((a, b) =>
         a.date === b.date ? b.created_at - a.created_at : a.date < b.date ? 1 : -1,
       )
+    },
+
+    // --- REL-26 createEvent (RL-8; read-surfaced, never auto-completes/spawns) ---
+    createEvent: async (input) => {
+      const parsed = CreateEventSchema.parse(input)
+      const contact = await contactsRepo.findById(parsed.contact_id) // soft-delete-aware guard
+      if (!contact) throw new ContactNotFoundError(parsed.contact_id)
+      const { reminder_days, ...rest } = parsed
+      const row: CreateInput<typeof contactEvents> = {
+        ...rest,
+        event_type: parsed.event_type ?? 'custom', // NN-default backfill
+        is_recurring: parsed.is_recurring ?? true, // NN-default backfill
+        reminder_days: reminder_days != null ? JSON.stringify(reminder_days) : null,
+      }
+      const created = await eventsRepo.create(row)
+      const persisted = await eventsRepo.findById(created.id) // re-read → faithful
+      if (!persisted) throw new Error(`Event vanished after create: ${created.id}`)
+      return toEventView(persisted)
+    },
+
+    // --- REL-27 getUpcomingEvents (recurring MM-DD projected into the range) ---
+    getUpcomingEvents: async (range) => {
+      const rows = await eventsRepo.findAll()
+      const out: UpcomingEvent[] = []
+      for (const row of rows) {
+        const occurrence = row.is_recurring ? nextOccurrence(mmdd(row.event_date), range.from) : row.event_date
+        if (occurrence >= range.from && occurrence <= range.to) {
+          out.push({ event: toEventView(row), occurrence })
+        }
+      }
+      return out.sort((a, b) => (a.occurrence < b.occurrence ? -1 : a.occurrence > b.occurrence ? 1 : 0))
+    },
+
+    // --- REL-28 getAllEvents (feeds All-Events page + Calendar) --------------
+    getAllEvents: async () => {
+      const rows = await eventsRepo.findAll()
+      return rows
+        .sort((a, b) => (a.event_date < b.event_date ? -1 : a.event_date > b.event_date ? 1 : 0))
+        .map(toEventView)
     },
   }
 }

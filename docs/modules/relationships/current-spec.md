@@ -22,7 +22,13 @@ logInteraction(input: LogInteractionInput): Promise<InteractionRow>          // 
 updateInteraction(id, patch: UpdateInteractionInput): Promise<InteractionRow> // InteractionNotFoundError; recomputes
 deleteInteraction(id: string): Promise<void>                                 // InteractionNotFoundError; recomputes
 getTimeline(contactId: string): Promise<InteractionRow[]>                     // date desc
+// S3 — events (read-surfaced; never auto-complete/spawn — RL-8)
+createEvent(input: CreateEventInput): Promise<EventView>                      // ContactNotFoundError
+getUpcomingEvents(range: EventDateRange): Promise<UpcomingEvent[]>            // {event, occurrence}; recurring MM-DD projected
+getAllEvents(): Promise<EventView[]>                                          // event_date asc
 ```
+`EventView` = `ContactEventRow` with `reminder_days` parsed. `UpcomingEvent = {event, occurrence}`;
+`EventDateRange = {from,to}` (YYYY-MM-DD). `CreateEventSchema` (contact_id+event_date required).
 Derived stats (RL-3): `recomputeContactStats` keeps `contacts.{last_interaction_date,interaction_count,next_contact_date}`
 a ledger-derived cache. `InteractionRow` has no JSON columns → no view type. Validators: `CreateInteractionSchema`
 (contact_id+date required)/`UpdateInteractionSchema` (partial, omits contact_id).

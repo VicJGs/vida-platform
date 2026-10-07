@@ -56,7 +56,24 @@
 - **BR-RL-S2-5** — `interaction_type`(8)/`sentiment`(3) validated via canonical Zod; `date` required `YYYY-MM-DD`.
 - **BR-RL-S2-6** — health recompute (contract "stats + health") is **S6** (derived health engine); S2 does STATS only.
 
+## S3 — Events (built · REL-26…29)
+- **BR-RL-S3-1 (REL-26)** — `createEvent` over `contact_events` (child, no `deleted_at`); backfills `event_type:'custom'`
+  / `is_recurring:true`; `reminder_days` JSON serialize/parse → `EventView`; re-reads; guards a live `contact_id`
+  (`ContactNotFoundError`).
+- **BR-RL-S3-2 (REL-28)** — `getAllEvents(): EventView[]` — all events (soft-deleted contacts' events were
+  cascade-purged), `event_date` asc (lexicographic; `MM-DD` groups before `YYYY-MM-DD`).
+- **BR-RL-S3-3 (REL-27)** — `getUpcomingEvents(range): UpcomingEvent[]` (`{event, occurrence}`). Recurring events
+  recur on their `MM-DD` (`nextOccurrence` projects to the range's year, wrapping to next year if passed); one-time
+  (`is_recurring=false`) use the literal `YYYY-MM-DD`. Included iff `from <= occurrence <= to`; sorted by occurrence.
+  Feb-29 projected literally (documented approximation).
+- **BR-RL-S3-4 (REL-29, RL-8)** — events occur, never "complete", and S3 **never auto-creates a Task/reminder**. The
+  event is read-surfaced for consumers (Calendar, Journal `/summary`, future Tasks) to act on; the spawn mechanism is
+  the deferred cross-module Tasks contract (Tasks unbuilt). **Un-homed surface gap (noted, not invented):**
+  `updateEvent`/`deleteEvent`/per-contact event read (contract REL-26/27/28 = create + 2 reads; events removed via
+  contact cascade).
+- **BR-RL-S3-5** — `event_type`(4) validated; `event_date` required (`MM-DD` or `YYYY-MM-DD`).
+
 ## Forward slices (not yet built)
-S3 events · S4 reminders + groups + `dueIn` seam · S5 networks + graph data-prep ·
+S4 reminders + groups + `dueIn` seam · S5 networks + graph data-prep ·
 S6 health engine (derived, NOT a measurement — C1) · S7 device import (deny-safe X1/X8) · S8 tags/pages/links ·
 S9 fan-out + Journal `/summary` + deny-safe seams.

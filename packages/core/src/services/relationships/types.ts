@@ -12,12 +12,13 @@
 
 import type { DrizzleDb } from '../../db/adapter'
 import type { RelationshipType, SocialLinks } from '@vida/types'
-import type { ContactRow, InteractionRow } from '../../db/schema/relationships'
+import type { ContactRow, InteractionRow, ContactEventRow } from '../../db/schema/relationships'
 import type {
   CreateContactInput,
   UpdateContactInput,
   LogInteractionInput,
   UpdateInteractionInput,
+  CreateEventInput,
 } from '../../validators/relationship'
 
 /** A contact as returned by the service: the Drizzle Row with `social_links` parsed to the object (BR-RL-S1-4b).
@@ -28,6 +29,21 @@ export type ContactView = Omit<ContactRow, 'social_links'> & { social_links: Soc
 export interface ListContactsFilter {
   relationship_type?: RelationshipType
   is_favorite?: boolean
+}
+
+/** A contact_event with `reminder_days` parsed from JSON (S3 view boundary, like ContactView). */
+export type EventView = Omit<ContactEventRow, 'reminder_days'> & { reminder_days: number[] | null }
+
+/** An inclusive calendar-date range (YYYY-MM-DD) for `getUpcomingEvents`. */
+export interface EventDateRange {
+  from: string
+  to: string
+}
+
+/** An event + its concrete next-occurrence date inside the queried range (S3; recurring MM-DD projected to a year). */
+export interface UpcomingEvent {
+  event: EventView
+  occurrence: string
 }
 
 export interface RelationshipsServiceDeps {
@@ -49,6 +65,11 @@ export interface RelationshipsService {
   updateInteraction(id: string, patch: UpdateInteractionInput): Promise<InteractionRow>
   deleteInteraction(id: string): Promise<void>
   getTimeline(contactId: string): Promise<InteractionRow[]>
+
+  // --- S3: events (REL-26…29) ----------------------------------------------
+  createEvent(input: CreateEventInput): Promise<EventView>
+  getUpcomingEvents(range: EventDateRange): Promise<UpcomingEvent[]>
+  getAllEvents(): Promise<EventView[]>
 }
 
 /** A contact id did not resolve to a live (non-soft-deleted) contact (REL-02/06; preflight G1). */

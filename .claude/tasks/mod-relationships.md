@@ -35,7 +35,7 @@ L23-27, "settled intent"). **The schema is the floor — networks/snooze/anchor/
 ## Build Steps (slice map — Approval 1 granted 2026-10-07; 59 legs REL-01…59)
 - [x] **S1** Contact spine + DB-11 reconcile — REL-01…06,17,54,55,58 ✅ (fully gated + 2 independent SHIP; 10/10 live-store)
 - [x] **S2** Interactions + derived stats — REL-12…16,19,20,21 ✅ (ledger + recompute engine; 17/17 live-store)
-- [ ] **S3** Events — REL-26,27,28,29 (createEvent, upcoming/all, occur-not-complete; spawn = surfaced trigger)
+- [x] **S3** Events — REL-26,27,28,29 ✅ (createEvent + upcoming/all, recurring MM-DD projection; 25/25 live-store)
 - [ ] **S4** Reminders + groups + dueIn seam — REL-30…42 (reminders, snooze, groups, birthday-anchor, getDueReminders, never-auto-send)
 - [ ] **S5** Networks + graph data-prep — REL-43…46 (network CRUD, m2m membership idempotent, getNetworkGraph membership-only)
 - [ ] **S6** Health engine (derived) — REL-22,23,24,25,47 (getContactHealth {band,score,factors} closeness-weighted + network rollup; formula designed)
@@ -68,4 +68,10 @@ branch `mod-relationships` off `main`. Node 22 (tests Node 24, better-sqlite3 AB
   InteractionNotFoundError. Gate: spec critique+preflight inline (3 impl folds: NN-default backfill, re-read,
   defensive null-guard) → impl → **17/17 live-store** → inline g2 SHIP → currency BR-RL-S2-*. tsc 0 · eslint 0.
   (Full @vida/core suite deferred to the S3 checkpoint — S2 touched only relationships files.)
-- (S3 next — events)
+- **S3 — Events (✅ 2026-10-07).** `createEvent`/`getUpcomingEvents`/`getAllEvents` over `contact_events`.
+  `reminder_days` JSON→`EventView` boundary; recurring MM-DD projection (`nextOccurrence`/`mmdd`, year-wrap);
+  one-time literal dates. REL-29: read-surfaced, never auto-complete/spawn (Tasks unbuilt). Un-homed gap noted
+  (updateEvent/deleteEvent — not in REL-26/27/28). Gate: spec critique+preflight inline → **25/25 live-store** →
+  inline g2 SHIP → currency BR-RL-S3-*. tsc 0 · eslint 0. **S3 full-suite checkpoint: 1873/1874** (1 = load-induced
+  vitest-worker timeout flake; relationships isolated 25/25 green).
+- (S4 next — reminders + groups + dueIn seam)

@@ -90,3 +90,19 @@ export const UpdateInteractionSchema = InteractionFields.omit({ contact_id: true
 
 export type LogInteractionInput = z.infer<typeof CreateInteractionSchema>
 export type UpdateInteractionInput = z.infer<typeof UpdateInteractionSchema>
+
+// --- contact_events (REL-26 · S3) -------------------------------------------
+const EventFields = z.object({
+  contact_id: z.string(),
+  event_type: ContactEventTypeSchema,
+  event_date: z.string(), // YYYY-MM-DD or MM-DD (year-agnostic recurring, RL-8)
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  is_recurring: z.boolean(),
+  reminder_days: z.array(z.number().int()).nullable(), // JSON [1,3,7]; service serializes
+})
+export const CreateEventSchema = EventFields.partial().extend({
+  contact_id: z.string(), // required (notNull)
+  event_date: z.string(), // required (notNull)
+})
+export type CreateEventInput = z.infer<typeof CreateEventSchema>
