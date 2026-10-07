@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties, type ReactElement, type ReactNode, type Ref } from 'react'
 import { styled, Text, View } from '@tamagui/core'
-import { addDays, addMonths, format, isSameDay, isSameMonth, startOfMonth, startOfWeek, subMonths } from 'date-fns'
+import { addDays, addMonths, format, isSameDay, isSameMonth, isWeekend, startOfMonth, startOfWeek, subMonths } from 'date-fns'
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
 import { Button } from './button'
 
@@ -12,6 +12,11 @@ import { Button } from './button'
 // wrong here). Pure display: `month` is CONTROLLED (no useState); nav buttons render only when `onMonthChange` is given.
 // - TZ-SAFE keying (B1): a 'YYYY-MM-DD' string is the day key AS-IS (never new Date(str) — UTC-midnight off-by-one in
 //   a negative-offset zone); a Date → format(d,'yyyy-MM-dd') (local). Grid cell key = the same local format.
+// - fe-codec-primitives-refinement P5 (LIF-230): editorial Layer-1 refinement (chrome only, no interface change) —
+//   serif $heading/500 title · uppercase tracked weekday eyebrows (CSS textTransform, DOM stays "Mon") · $small tabular
+//   day figures · today = accent number + underline (vida-cal-today) in $colorBrandEmphasis (the higher-contrast brand
+//   step — brandPrimary fell < 4.5 AA on a weekend/oos $colorSurfaceSecondary cell, Visual-Gate-caught), not a filled blob · weekend/oos paper tone via
+//   $colorSurfaceSecondary (number colour differentiates) · "+K more" eyebrow. TZ keying / 42-cell grid / roles untouched.
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
 
@@ -47,28 +52,33 @@ const CalRoot = styled(View, { flexDirection: 'column', gap: '$12' })
 const CalHeader = styled(View, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '$8' })
 const Table = styled(View, { flexDirection: 'column', minWidth: 560 }) // 7×80 → forces the 375 horizontal scroll (CV-8)
 const Row = styled(View, { flexDirection: 'row' })
-const HeadCell = styled(View, { flexGrow: 1, flexBasis: 0, minWidth: 80, paddingVertical: '$8', alignItems: 'center' })
+const HeadCell = styled(View, { flexGrow: 1, flexBasis: 0, minWidth: 80, paddingVertical: '$8', paddingHorizontal: '$8', alignItems: 'flex-start' })
 const Day = styled(View, {
   flexGrow: 1,
   flexBasis: 0,
   minWidth: 80,
-  minHeight: 84,
+  minHeight: 92,
   padding: '$8',
   gap: '$4',
   borderWidth: 0.5,
   borderColor: '$colorBorderDefault',
+  // P5: a 3-state paper tone from the 2-step surface scale (oos > weekend). Both land on $colorSurfaceSecondary — the
+  // mockup's "$colorSurfaceSecondary family" (calendar-refinement.html:152); the DAY NUMBER colour differentiates
+  // weekend (primary ink = this month) from out-of-month (muted = faint). A plain in-month weekday passes no tone.
   variants: {
-    muted: { true: { backgroundColor: '$colorSurfaceSecondary' } },
+    tone: {
+      weekend: { backgroundColor: '$colorSurfaceSecondary' },
+      oos: { backgroundColor: '$colorSurfaceSecondary' },
+    },
   } as const,
 })
-const TodayBadge = styled(View, {
+// P5: today = an editorial "moment" mark — the accent number carries a short accent underline (the wrapper's
+// borderBottom under the digit; RN has no ::after), REPLACING the filled brand blob. Keeps `vida-cal-today` (test hook).
+const TodayMark = styled(View, {
   alignSelf: 'flex-start',
-  width: 22,
-  height: 22,
-  borderRadius: '$full',
-  backgroundColor: '$colorBrandPrimary',
-  alignItems: 'center',
-  justifyContent: 'center',
+  borderBottomWidth: 2,
+  borderBottomColor: '$colorBrandEmphasis',
+  paddingBottom: 2,
 })
 const SkeletonBar = styled(View, { height: '$12', borderRadius: '$md', backgroundColor: '$colorSurfaceSecondary' })
 
@@ -132,7 +142,7 @@ export function CalendarView<T>({
   return (
     <CalRoot ref={ref} {...rest} role="table" aria-busy={loading ? true : undefined}>
       <CalHeader>
-        <Text fontFamily="$display" fontSize="$body" fontWeight="600" color="$colorTextPrimary">
+        <Text className="vida-cal-title" fontFamily="$display" fontSize="$heading" fontWeight="500" letterSpacing={-0.3} color="$colorTextPrimary">
           {format(month, 'MMMM yyyy')}
         </Text>
         {onMonthChange && (
@@ -152,7 +162,14 @@ export function CalendarView<T>({
           <Row role="row">
             {weekdayLabels.map((w, i) => (
               <HeadCell key={i} role="columnheader">
-                <Text fontSize="$caption" color="$colorTextMuted" fontWeight="600">
+                <Text
+                  className="vida-cal-weekday"
+                  fontSize="$caption"
+                  color="$colorTextMuted"
+                  fontWeight="600"
+                  textTransform="uppercase"
+                  letterSpacing={0.8}
+                >
                   {w}
                 </Text>
               </HeadCell>
@@ -164,18 +181,30 @@ export function CalendarView<T>({
               {days.slice(week * 7, week * 7 + 7).map((day) => {
                 const inMonth = isSameMonth(day, month)
                 const isToday = isSameDay(day, today)
+                const tone = !inMonth ? 'oos' : isWeekend(day) ? 'weekend' : undefined
                 const dayItems = buckets.get(format(day, 'yyyy-MM-dd')) ?? EMPTY
                 const overflow = dayItems.length - maxPerDay
                 return (
-                  <Day key={day.getTime()} role="cell" aria-label={format(day, 'd MMMM yyyy')} muted={!inMonth}>
+                  <Day key={day.getTime()} role="cell" aria-label={format(day, 'd MMMM yyyy')} tone={tone}>
                     {isToday ? (
-                      <TodayBadge className="vida-cal-today">
-                        <Text fontSize="$caption" color="$colorTextInverse" fontWeight="600">
+                      <TodayMark className="vida-cal-today">
+                        <Text
+                          className="vida-cal-daynum"
+                          fontSize="$small"
+                          color="$colorBrandEmphasis"
+                          fontWeight="600"
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
+                        >
                           {format(day, 'd')}
                         </Text>
-                      </TodayBadge>
+                      </TodayMark>
                     ) : (
-                      <Text fontSize="$caption" color={inMonth ? '$colorTextPrimary' : '$colorTextMuted'}>
+                      <Text
+                        className="vida-cal-daynum"
+                        fontSize="$small"
+                        color={inMonth ? '$colorTextPrimary' : '$colorTextMuted'}
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
                         {format(day, 'd')}
                       </Text>
                     )}
@@ -187,7 +216,14 @@ export function CalendarView<T>({
                           <View key={getKey(item, index)}>{renderItem(item, index)}</View>
                         ))}
                         {overflow > 0 && (
-                          <Text fontSize="$caption" color="$colorTextMuted">
+                          <Text
+                            className="vida-cal-more"
+                            fontSize="$caption"
+                            color="$colorTextMuted"
+                            fontWeight="600"
+                            textTransform="uppercase"
+                            letterSpacing={0.8}
+                          >
                             +{overflow} more
                           </Text>
                         )}

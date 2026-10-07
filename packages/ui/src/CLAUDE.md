@@ -247,6 +247,26 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Terminal states: loading→skeleton grid+aria-busy · error→`role="status"` Message · success/empty→the grid. Spec:
   `…/v4-calendar-view.md`. (V4 also extracted **`warnMissingName`** into `internal/data-view` — the accessible-name
   warn shared with `resolveDataViewState`, whose STATE GATE stays put.)
+  **fe-codec-primitives-refinement · P5 (LIF-230)** — editorial Layer-1 refinement (chrome only, NO interface/behavior
+  change; TZ keying · 42-cell grid · `role="table"` roles UNTOUCHED): serif `$heading`/500/`-0.3` **month title** ·
+  **weekday eyebrows** (`textTransform:'uppercase'` **CSS not `.toUpperCase()`** so the `columnheader` DOM name stays
+  "Mon" — SR-correct; `letterSpacing:0.8` raw [the `$wide:0.02` token is ~invisible px — `list-view.tsx:106` house
+  precedent], left-set) · day number `$caption`→**`$small`** + **tabular** figures (so the date outranks its `$caption`
+  chrome) · **today = accent number + a short accent underline** (`TodayMark`: a `borderBottom` under the digit, keeps
+  `className="vida-cal-today"` — the test:85 + Gate hook), REPLACING the filled `TodayBadge` blob · **weekend +
+  out-of-month = `$colorSurfaceSecondary` paper** via a `tone:{weekend,oos}` variant (the boolean `muted` retired; both
+  land on the single secondary step — the mockup's "`$colorSurfaceSecondary` family", `calendar-refinement.html:152`),
+  the day-number COLOUR differentiates (oos → `$colorTextMuted`, weekend/in-month → `$colorTextPrimary`; **oos > weekend**
+  precedence) · "+K more" eyebrow. **⚠ Today number = `$colorBrandEmphasis`, NOT `$colorBrandPrimary`** — `brandPrimary`
+  (accent500/400) fell to **4.39/4.44 < 4.5 AA** on a weekend/oos `$colorSurfaceSecondary` cell (editorial-dark +
+  quietDesk-light), **Visual-Gate-caught**; `brandEmphasis` (accent600 light / accent300 dark) is the higher-contrast
+  brand step in BOTH modes (no new palette — the ramp's emphasis step, as Button-primary uses) → 5.93–8.89 AA. The chip
+  (accent category dot + caption) is the **consumer's `renderItem`** (GV-1/LV-5), shown in the story, NOT renderer code.
+  Visual Gate PASS (Brave, 2 stories × 3 presets × light/dark: serif title AA 15.84–17.29 · weekday eyebrow 4.94–6.53 ·
+  day-number MIN 4.52–5.22 incl. warm-dark · today number 5.93–8.89 on BOTH paper + secondary · axe 0 · 42 cells · 375
+  no-overflow). **⟹ P5 ships the FINAL primitives-refinement phase — all 5 views (list·gallery·timeline·calendar) +
+  pomodoro refined.** The living/multi-range calendar is the separate `fe-calendar #19` (NO Layer-2 here). Spec:
+  `docs/specs/foundation/fe-codec-primitives-refinement/phases/P5-calendar.md`.
   **pomodoro-widget** is **UI-2 · V5** — the interactive timer WIDGET `@vida/ui` ships (ADR-008:35). NOT a data-view: a
   self-timing single-interval countdown with a **DEFERRED session-engine seam** — the pomodoro *session*
   (lifecycle/persistence/effects/phase-sequencing) is a `sessions` sub-type owned by MOD-sessions (ADR-004); the widget
