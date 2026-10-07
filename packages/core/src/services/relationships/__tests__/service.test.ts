@@ -24,7 +24,7 @@ import {
   networkGroupContacts,
 } from '../../../db/schema/relationships'
 import { createRelationshipsService } from '../service'
-import { type RelationshipsService, ContactNotFoundError } from '../types'
+import { type RelationshipsService, ContactNotFoundError, InteractionNotFoundError } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -205,5 +205,102 @@ describe('mod-relationships S1 — contact CRUD spine', () => {
     const c = await h.svc.createContact({ first_name: 'Twice' })
     await h.svc.softDeleteContact(c.id)
     await expect(h.svc.softDeleteContact(c.id)).resolves.toBeUndefined()
+  })
+})
+
+describe('mod-relationships S2 — interactions ledger + derived stats', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('logs interactions and recomputes count + last_interaction_date from the ledger', async () => {
+    const c = await h.svc.createContact({ first_name: 'Ada' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-09-01' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'email', date: '2026-10-05' })
+    const contact = await h.svc.getContact(c.id)
+    expect(contact?.interaction_count).toBe(2)
+    expect(contact?.last_interaction_date).toBe('2026-10-05') // MAX date
+  })
+
+  it('derives next_contact_date: days override, frequency fallback, days-precedence, neither→null', async () => {
+    // stay_in_touch_days exact override
+    const a = await h.svc.createContact({ first_name: 'Days', stay_in_touch_days: 10 })
+    await h.svc.logInteraction({ contact_id: a.id, interaction_type: 'call', date: '2026-10-01' })
+    expect((await h.svc.getContact(a.id))?.next_contact_date).toBe('2026-10-11') // +10
+
+    // frequency fallback (weekly = 7)
+    const b = await h.svc.createContact({ first_name: 'Weekly', stay_in_touch_frequency: 'weekly' })
+    await h.svc.logInteraction({ contact_id: b.id, interaction_type: 'call', date: '2026-10-01' })
+    expect((await h.svc.getContact(b.id))?.next_contact_date).toBe('2026-10-08') // +7
+
+    // days takes precedence over frequency
+    const d = await h.svc.createContact({ first_name: 'Both', stay_in_touch_days: 3, stay_in_touch_frequency: 'yearly' })
+    await h.svc.logInteraction({ contact_id: d.id, interaction_type: 'call', date: '2026-10-01' })
+    expect((await h.svc.getContact(d.id))?.next_contact_date).toBe('2026-10-04') // +3, not +365
+
+    // neither → not tracked (null)
+    const n = await h.svc.createContact({ first_name: 'None' })
+    await h.svc.logInteraction({ contact_id: n.id, interaction_type: 'call', date: '2026-10-01' })
+    expect((await h.svc.getContact(n.id))?.next_contact_date).toBeNull()
+  })
+
+  it('updateInteraction moves last/next when the latest date changes', async () => {
+    const c = await h.svc.createContact({ first_name: 'Mut', stay_in_touch_days: 5 })
+    const i = await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' })
+    await h.svc.updateInteraction(i.id, { date: '2026-10-20', sentiment: 'positive' })
+    const contact = await h.svc.getContact(c.id)
+    expect(contact?.last_interaction_date).toBe('2026-10-20')
+    expect(contact?.next_contact_date).toBe('2026-10-25') // +5
+  })
+
+  it('deleteInteraction recomputes; deleting the last clears count + dates', async () => {
+    const c = await h.svc.createContact({ first_name: 'Del', stay_in_touch_days: 7 })
+    const i1 = await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-09-01' })
+    const i2 = await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'text', date: '2026-10-01' })
+    await h.svc.deleteInteraction(i2.id)
+    let contact = await h.svc.getContact(c.id)
+    expect(contact?.interaction_count).toBe(1)
+    expect(contact?.last_interaction_date).toBe('2026-09-01') // reverts to the remaining one
+    await h.svc.deleteInteraction(i1.id)
+    contact = await h.svc.getContact(c.id)
+    expect(contact?.interaction_count).toBe(0)
+    expect(contact?.last_interaction_date).toBeNull()
+    expect(contact?.next_contact_date).toBeNull()
+  })
+
+  it('getTimeline returns the contact interactions date-desc', async () => {
+    const c = await h.svc.createContact({ first_name: 'TL' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-08-01' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'email', date: '2026-10-01' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'text', date: '2026-09-01' })
+    const tl = await h.svc.getTimeline(c.id)
+    expect(tl.map((i) => i.date)).toEqual(['2026-10-01', '2026-09-01', '2026-08-01'])
+  })
+
+  it('guards: log on missing/soft-deleted contact → ContactNotFoundError; update/delete unknown → InteractionNotFoundError', async () => {
+    await expect(
+      h.svc.logInteraction({ contact_id: 'nope', interaction_type: 'call', date: '2026-10-01' }),
+    ).rejects.toBeInstanceOf(ContactNotFoundError)
+    const c = await h.svc.createContact({ first_name: 'Gone' })
+    await h.svc.softDeleteContact(c.id)
+    await expect(
+      h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' }),
+    ).rejects.toBeInstanceOf(ContactNotFoundError)
+    await expect(h.svc.updateInteraction('nope', { sentiment: 'positive' })).rejects.toBeInstanceOf(
+      InteractionNotFoundError,
+    )
+    await expect(h.svc.deleteInteraction('nope')).rejects.toBeInstanceOf(InteractionNotFoundError)
+  })
+
+  it('rejects a bad interaction_type / sentiment enum', async () => {
+    const c = await h.svc.createContact({ first_name: 'Enum' })
+    await expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      h.svc.logInteraction({ contact_id: c.id, interaction_type: 'bogus' as any, date: '2026-10-01' }),
+    ).rejects.toThrow()
+    const i = await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(h.svc.updateInteraction(i.id, { sentiment: 'meh' as any })).rejects.toThrow()
   })
 })

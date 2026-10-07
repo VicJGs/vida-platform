@@ -17,7 +17,15 @@ softDeleteContact(id: string): Promise<void>                                  //
 listContacts(filter?: ListContactsFilter): Promise<ContactView[]>            // active-only (findAll+JS filter); relationship_type?, is_favorite?
 getContact(id: string): Promise<ContactView | null>                          // soft-delete-aware
 toggleFavorite(id: string): Promise<ContactView>                             // ContactNotFoundError (missing/soft-deleted)
+// S2 — interactions ledger + derived stats
+logInteraction(input: LogInteractionInput): Promise<InteractionRow>          // ContactNotFoundError; recomputes stats
+updateInteraction(id, patch: UpdateInteractionInput): Promise<InteractionRow> // InteractionNotFoundError; recomputes
+deleteInteraction(id: string): Promise<void>                                 // InteractionNotFoundError; recomputes
+getTimeline(contactId: string): Promise<InteractionRow[]>                     // date desc
 ```
+Derived stats (RL-3): `recomputeContactStats` keeps `contacts.{last_interaction_date,interaction_count,next_contact_date}`
+a ledger-derived cache. `InteractionRow` has no JSON columns → no view type. Validators: `CreateInteractionSchema`
+(contact_id+date required)/`UpdateInteractionSchema` (partial, omits contact_id).
 - `ContactView = Omit<ContactRow,'social_links'> & { social_links: SocialLinks | null }` (JSON boundary; `types.ts`).
 - `CreateContactInput`/`UpdateContactInput` = Zod-inferred (`validators/relationship.ts`): `CreateContactSchema`
   requires `first_name` only; `UpdateContactSchema` = full partial. `SocialLinksSchema` = typed object.

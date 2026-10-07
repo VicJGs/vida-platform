@@ -12,8 +12,13 @@
 
 import type { DrizzleDb } from '../../db/adapter'
 import type { RelationshipType, SocialLinks } from '@vida/types'
-import type { ContactRow } from '../../db/schema/relationships'
-import type { CreateContactInput, UpdateContactInput } from '../../validators/relationship'
+import type { ContactRow, InteractionRow } from '../../db/schema/relationships'
+import type {
+  CreateContactInput,
+  UpdateContactInput,
+  LogInteractionInput,
+  UpdateInteractionInput,
+} from '../../validators/relationship'
 
 /** A contact as returned by the service: the Drizzle Row with `social_links` parsed to the object (BR-RL-S1-4b).
  *  The `text()` column stores JSON (M1.0 [E]=[]); the service owns the serialize/parse boundary. */
@@ -38,6 +43,12 @@ export interface RelationshipsService {
   listContacts(filter?: ListContactsFilter): Promise<ContactView[]>
   getContact(id: string): Promise<ContactView | null>
   toggleFavorite(id: string): Promise<ContactView>
+
+  // --- S2: interactions ledger + derived contact stats (REL-12…16) ---------
+  logInteraction(input: LogInteractionInput): Promise<InteractionRow>
+  updateInteraction(id: string, patch: UpdateInteractionInput): Promise<InteractionRow>
+  deleteInteraction(id: string): Promise<void>
+  getTimeline(contactId: string): Promise<InteractionRow[]>
 }
 
 /** A contact id did not resolve to a live (non-soft-deleted) contact (REL-02/06; preflight G1). */
@@ -45,5 +56,13 @@ export class ContactNotFoundError extends Error {
   constructor(id: string) {
     super(`Contact not found: ${id}`)
     this.name = 'ContactNotFoundError'
+  }
+}
+
+/** An interaction id did not resolve (REL-13/14 · S2). */
+export class InteractionNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Interaction not found: ${id}`)
+    this.name = 'InteractionNotFoundError'
   }
 }

@@ -37,7 +37,26 @@
   `energy_given`/`energy_received`/`key_takeaways` (Interaction), `is_snoozed`/`snoozed_until`/`priority`
   (ContactReminder), `anchor_type`/`anchor_days_before` (ReminderGroup), and `NetworkGroup`/`NetworkGroupContact`.
 
+## S2 — Interactions ledger + derived contact stats (built · REL-12…16, REL-19/20/21)
+- **BR-RL-S2-1** — `logInteraction`/`updateInteraction`/`deleteInteraction`/`getTimeline` over the `interactions`
+  ledger (no `deleted_at` → `deleteInteraction` is hard-delete). `getTimeline` = contact's interactions, `date` desc
+  (`created_at` desc tiebreak). `logInteraction` backfills `interaction_type`('in_person')/`follow_up_needed`(false)
+  NN-defaults + re-reads for a faithful row.
+- **BR-RL-S2-2** — `logInteraction` guards a live contact (`ContactNotFoundError` on missing/soft-deleted); an
+  interaction never dangles off a non-live contact.
+- **BR-RL-S2-3** — `updateInteraction`/`deleteInteraction` on an unknown id → `InteractionNotFoundError`. `contact_id`
+  is NOT patchable (an interaction never migrates contacts).
+- **BR-RL-S2-4 (RL-3, the derivation)** — every interaction mutation calls `recomputeContactStats(contactId)` (pure
+  over the ledger, never hand-maintained): `interaction_count`=COUNT; `last_interaction_date`=MAX `date`;
+  `next_contact_date`=`last + cadenceDays` where `cadenceDays = stay_in_touch_days ?? frequencyToDays(frequency)`
+  (daily1/weekly7/biweekly14/monthly30/quarterly90/yearly365; `stay_in_touch_days` is the exact override, takes
+  precedence). null `last` OR null `cadenceDays` ⇒ `next_contact_date` null (REL-21, a contact with no cadence is not
+  tracked for overdue). Empties to count0/null-dates when the last interaction is deleted. `addDaysISO` is UTC-day-safe.
+  Null-guards a vanished contact (defensive no-op). Persisted via `contactsRepo.update` (patch — `social_links` untouched).
+- **BR-RL-S2-5** — `interaction_type`(8)/`sentiment`(3) validated via canonical Zod; `date` required `YYYY-MM-DD`.
+- **BR-RL-S2-6** — health recompute (contract "stats + health") is **S6** (derived health engine); S2 does STATS only.
+
 ## Forward slices (not yet built)
-S2 interactions + derived stats · S3 events · S4 reminders + groups + `dueIn` seam · S5 networks + graph data-prep ·
+S3 events · S4 reminders + groups + `dueIn` seam · S5 networks + graph data-prep ·
 S6 health engine (derived, NOT a measurement — C1) · S7 device import (deny-safe X1/X8) · S8 tags/pages/links ·
 S9 fan-out + Journal `/summary` + deny-safe seams.

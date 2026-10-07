@@ -65,3 +65,28 @@ export const UpdateContactSchema = ContactFields.partial()
 export type CreateContactInput = z.infer<typeof CreateContactSchema>
 export type UpdateContactInput = z.infer<typeof UpdateContactSchema>
 export type SocialLinksInput = z.infer<typeof SocialLinksSchema>
+
+// --- interactions (REL-12…16 · S2) ------------------------------------------
+const InteractionFields = z.object({
+  contact_id: z.string(),
+  interaction_type: InteractionTypeSchema,
+  date: z.string(), // YYYY-MM-DD
+  duration_minutes: z.number().int().nullable(),
+  summary: z.string().nullable(),
+  sentiment: SentimentSchema.nullable(),
+  follow_up_needed: z.boolean(),
+  follow_up_date: z.string().nullable(),
+  follow_up_notes: z.string().nullable(),
+  energy_given: z.number().int().nullable(), // G8 analytic
+  energy_received: z.number().int().nullable(), // G8 analytic
+  key_takeaways: z.string().nullable(), // G8 [E]
+})
+export const CreateInteractionSchema = InteractionFields.partial().extend({
+  contact_id: z.string(), // required — the owning contact (notNull)
+  date: z.string(), // required (notNull)
+})
+// contact_id is NOT patchable — an interaction never migrates contacts.
+export const UpdateInteractionSchema = InteractionFields.omit({ contact_id: true }).partial()
+
+export type LogInteractionInput = z.infer<typeof CreateInteractionSchema>
+export type UpdateInteractionInput = z.infer<typeof UpdateInteractionSchema>

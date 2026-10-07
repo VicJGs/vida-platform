@@ -13,7 +13,7 @@
 //   [[json-t-columns-need-service-serialize-in-m10]]; reads return a ContactView (not the raw Row).
 
 import { eq, type SQL } from 'drizzle-orm'
-import type { SocialLinks, RelationshipType } from '@vida/types'
+import type { SocialLinks, RelationshipType, Frequency } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
   contacts,
@@ -24,13 +24,34 @@ import {
   networkGroupContacts,
   type ContactRow,
 } from '../../db/schema/relationships'
-import { CreateContactSchema, UpdateContactSchema } from '../../validators/relationship'
+import {
+  CreateContactSchema,
+  UpdateContactSchema,
+  CreateInteractionSchema,
+  UpdateInteractionSchema,
+} from '../../validators/relationship'
 import {
   type RelationshipsService,
   type RelationshipsServiceDeps,
   type ContactView,
   ContactNotFoundError,
+  InteractionNotFoundError,
 } from './types'
+
+// --- derived-stats helpers (RL-3; S2) ---------------------------------------
+// frequency → approximate day-count; stay_in_touch_days is the exact override (precedence).
+const FREQ_DAYS: Record<Frequency, number> = {
+  daily: 1,
+  weekly: 7,
+  biweekly: 14,
+  monthly: 30,
+  quarterly: 90,
+  yearly: 365,
+}
+const frequencyToDays = (f: Frequency | null | undefined): number | null => (f ? FREQ_DAYS[f] : null)
+/** `iso` (YYYY-MM-DD) + n days, UTC-day-parsed so the diff is TZ-consistent (books addDaysISO precedent). */
+const addDaysISO = (iso: string, n: number): string =>
+  new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10)
 
 export function createRelationshipsService(deps: RelationshipsServiceDeps): RelationshipsService {
   const { db, deviceId } = deps
@@ -72,6 +93,24 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
     await kill(remindersRepo, eq(contactReminders.contact_id, id))
     await kill(reminderGroupContactsRepo, eq(reminderGroupContacts.contact_id, id))
     await kill(networkGroupContactsRepo, eq(networkGroupContacts.contact_id, id))
+  }
+
+  // --- S2: derived contact stats recompute (REL-19/20/21, RL-3) --------------
+  /** Recompute the contact's denormalized stat cache from the interactions ledger (never hand-maintained).
+   *  Pure over the ledger + the contact's cadence; null-guards a vanished contact (defensive no-op). */
+  async function recomputeContactStats(contactId: string): Promise<void> {
+    const contact = await contactsRepo.findById(contactId)
+    if (!contact) return // a live interaction always has a live contact (cascade) — defensive
+    const rows = await interactionsRepo.findWhere(eq(interactions.contact_id, contactId))
+    const interaction_count = rows.length
+    const last_interaction_date = rows.length
+      ? rows.reduce((max, r) => (r.date > max ? r.date : max), rows[0].date) // MAX date (ISO lexicographic = chrono)
+      : null
+    const cadenceDays =
+      contact.stay_in_touch_days ?? frequencyToDays(contact.stay_in_touch_frequency as Frequency | null)
+    const next_contact_date =
+      last_interaction_date != null && cadenceDays != null ? addDaysISO(last_interaction_date, cadenceDays) : null
+    await contactsRepo.update(contactId, { last_interaction_date, next_contact_date, interaction_count })
   }
 
   return {
@@ -137,6 +176,49 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       if (!cur) throw new ContactNotFoundError(id)
       const updated = await contactsRepo.update(id, { is_favorite: !cur.is_favorite })
       return toView(updated)
+    },
+
+    // --- REL-12 logInteraction (append ledger + recompute stats) -------------
+    logInteraction: async (input) => {
+      const parsed = CreateInteractionSchema.parse(input)
+      const contact = await contactsRepo.findById(parsed.contact_id) // soft-delete-aware guard
+      if (!contact) throw new ContactNotFoundError(parsed.contact_id)
+      const row: CreateInput<typeof interactions> = {
+        ...parsed,
+        interaction_type: parsed.interaction_type ?? 'in_person', // NN-default backfill
+        follow_up_needed: parsed.follow_up_needed ?? false, // NN-default backfill
+      }
+      const created = await interactionsRepo.create(row)
+      await recomputeContactStats(parsed.contact_id)
+      const persisted = await interactionsRepo.findById(created.id) // re-read → faithful nulls
+      if (!persisted) throw new Error(`Interaction vanished after create: ${created.id}`)
+      return persisted
+    },
+
+    // --- REL-13 updateInteraction --------------------------------------------
+    updateInteraction: async (id, patch) => {
+      const existing = await interactionsRepo.findById(id)
+      if (!existing) throw new InteractionNotFoundError(id)
+      const parsed = UpdateInteractionSchema.parse(patch)
+      const updated = await interactionsRepo.update(id, parsed)
+      await recomputeContactStats(existing.contact_id) // date change may move last/next
+      return updated
+    },
+
+    // --- REL-14 deleteInteraction (hard — ledger has no deleted_at) -----------
+    deleteInteraction: async (id) => {
+      const existing = await interactionsRepo.findById(id)
+      if (!existing) throw new InteractionNotFoundError(id)
+      await interactionsRepo.hardDelete(id)
+      await recomputeContactStats(existing.contact_id) // emptying the ledger → count 0, dates null
+    },
+
+    // --- REL-16 getTimeline (date desc, created_at desc tiebreak) ------------
+    getTimeline: async (contactId) => {
+      const rows = await interactionsRepo.findWhere(eq(interactions.contact_id, contactId))
+      return rows.sort((a, b) =>
+        a.date === b.date ? b.created_at - a.created_at : a.date < b.date ? 1 : -1,
+      )
     },
   }
 }

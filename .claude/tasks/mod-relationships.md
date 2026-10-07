@@ -34,7 +34,7 @@ L23-27, "settled intent"). **The schema is the floor — networks/snooze/anchor/
 
 ## Build Steps (slice map — Approval 1 granted 2026-10-07; 59 legs REL-01…59)
 - [x] **S1** Contact spine + DB-11 reconcile — REL-01…06,17,54,55,58 ✅ (fully gated + 2 independent SHIP; 10/10 live-store)
-- [ ] **S2** Interactions + derived stats — REL-12…16,19,20,21 (ledger → recompute last/count/next_contact_date; timeline)
+- [x] **S2** Interactions + derived stats — REL-12…16,19,20,21 ✅ (ledger + recompute engine; 17/17 live-store)
 - [ ] **S3** Events — REL-26,27,28,29 (createEvent, upcoming/all, occur-not-complete; spawn = surfaced trigger)
 - [ ] **S4** Reminders + groups + dueIn seam — REL-30…42 (reminders, snooze, groups, birthday-anchor, getDueReminders, never-auto-send)
 - [ ] **S5** Networks + graph data-prep — REL-43…46 (network CRUD, m2m membership idempotent, getNetworkGraph membership-only)
@@ -62,4 +62,10 @@ branch `mod-relationships` off `main`. Node 22 (tests Node 24, better-sqlite3 AB
   full @vida/core **1866/1867** (1 = vitest worker-RPC timeout, infra flake under the 329s run — not a relationships
   test; re-confirm at pre-ship suite). Currency born: `docs/modules/relationships/current-*`. One refinement vs spec:
   createContact re-reads after insert (faithful nulls) instead of echo+reattach — same contract, strictly more correct.
-- (S2 next — interactions ledger + derived contact stats)
+- **S2 — Interactions ledger + derived stats (✅ 2026-10-07).** `logInteraction`/`updateInteraction`/
+  `deleteInteraction`/`getTimeline` + `recomputeContactStats` (count/MAX-date/cadence `stay_in_touch_days ??
+  frequencyToDays`, UTC-safe addDaysISO). Guards: ContactNotFoundError (log on non-live contact),
+  InteractionNotFoundError. Gate: spec critique+preflight inline (3 impl folds: NN-default backfill, re-read,
+  defensive null-guard) → impl → **17/17 live-store** → inline g2 SHIP → currency BR-RL-S2-*. tsc 0 · eslint 0.
+  (Full @vida/core suite deferred to the S3 checkpoint — S2 touched only relationships files.)
+- (S3 next — events)
