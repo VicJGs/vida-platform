@@ -68,6 +68,81 @@ describe('Timeline', () => {
     expect(label.closest('[aria-hidden="true"]')).toBeNull()
   })
 
+  // ── P3: gutter eyebrow + temporal dot tones + now-fulcrum ───────────────────
+  it('renders getEyebrow as real content in the gutter', () => {
+    const { getByText } = renderUI(
+      <Timeline items={events} getKey={key} renderItem={item} getLabel={(e) => e.when} getEyebrow={(e) => `day-${e.id}`} aria-label="History" />,
+    )
+    const eyebrow = getByText('day-b') // unique per row; real content, not aria-hidden
+    expect(eyebrow).not.toBeNull()
+    expect(eyebrow.closest('[aria-hidden="true"]')).toBeNull()
+  })
+
+  it('getTemporalState tones each dot; future fades the DOT only (date not faded)', () => {
+    const states: Record<string, 'past' | 'present' | 'future'> = { a: 'past', b: 'present', c: 'future' }
+    const { container, getByText } = renderUI(
+      <Timeline
+        items={events}
+        getKey={key}
+        renderItem={item}
+        getLabel={(e) => e.when}
+        getTemporalState={(e) => states[e.id]!}
+        aria-label="History"
+      />,
+    )
+    const ds = dots(container) as NodeListOf<HTMLElement>
+    expect(ds).toHaveLength(3)
+    // future dot carries the fade; the date text does NOT (held at full opacity for AA — BR-C-7a)
+    const futureDot = ds[2]!
+    expect(futureDot.style.opacity).toBe('0.55')
+    expect((getByText('Aug 10') as HTMLElement).style.opacity).toBe('') // date not faded
+  })
+
+  it('nowFulcrum splices ONE accent divider before the first non-past item (no extra listitem)', () => {
+    const states: Record<string, 'past' | 'present' | 'future'> = { a: 'past', b: 'future', c: 'future' }
+    const { container, getAllByRole, getByText } = renderUI(
+      <Timeline
+        items={events}
+        getKey={key}
+        renderItem={item}
+        getLabel={(e) => e.when}
+        getTemporalState={(e) => states[e.id]!}
+        nowFulcrum
+        aria-label="History"
+      />,
+    )
+    expect(getAllByRole('listitem')).toHaveLength(3) // fulcrum is NOT a listitem
+    expect(dots(container)).toHaveLength(4) // 3 items + the fulcrum dot
+    expect(getByText('now')).not.toBeNull()
+    // the fulcrum row sits BETWEEN the last-past and the first-future → it is aria-hidden
+    expect(getByText('now').closest('[aria-hidden="true"]')).not.toBeNull()
+  })
+
+  it('nowFulcrum with all-past → no-op + dev-warn (no divider, no phantom gutter)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { queryByText, getAllByRole, container } = renderUI(
+      <Timeline items={events} getKey={key} renderItem={item} getTemporalState={() => 'past'} nowFulcrum aria-label="History" />,
+    )
+    expect(queryByText('now')).toBeNull()
+    expect(getAllByRole('listitem')).toHaveLength(3)
+    // a no-op nowFulcrum (no label/eyebrow, fulcrum doesn't render) must NOT force an empty gutter onto rows
+    expect(container.querySelectorAll('.vida-timeline-gutter')).toHaveLength(0)
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('no non-past item'))
+    warn.mockRestore()
+  })
+
+  it('nowFulcrum with all-future → divider at the top (index 0)', () => {
+    const { getAllByRole, container, getByText } = renderUI(
+      <Timeline items={events} getKey={key} renderItem={item} getTemporalState={() => 'future'} nowFulcrum aria-label="History" />,
+    )
+    expect(getByText('now')).not.toBeNull()
+    expect(dots(container)).toHaveLength(4)
+    // the fulcrum is the FIRST row → its line trims to the dot (top=18); the last item ends at the dot (height=18)
+    const ls = lines(container) as NodeListOf<HTMLElement>
+    expect(ls[0]!.style.top).toBe('18px')
+    expect(getAllByRole('listitem')).toHaveLength(3)
+  })
+
   // ── loading ──────────────────────────────────────────────────────────────
   it('loading: role="list" + aria-busy + N dot-only skeleton rows (default 5), no lines', () => {
     const { getByRole, container } = renderUI(

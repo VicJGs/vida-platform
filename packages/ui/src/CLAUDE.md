@@ -190,6 +190,26 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   lone → NO line [else a dangling nub]; first `{top:18,bottom:0}`; last `{top:0,height:18}`; middle `{top:0,bottom:0}`).
   The `getLabel` temporal label is **real content** (first in the listitem, NOT aria-hidden); only the rail column
   (line+dot) is `aria-hidden`. Reuses the whole spine via `internal/data-view`. Spec: `…/v3-timeline.md`.
+  **fe-codec-primitives-refinement · P3 (LIF-230)** — editorial lift + the now-fulcrum alive-hook, all presentational:
+  **date GUTTER** — a 3rd left column `[when | rail | content]` (`When` 80px, right-aligned, `className="vida-timeline-gutter"`),
+  rendered only when `getLabel`/`getEyebrow` is given OR the fulcrum renders (else the 2-col layout, back-compat); the
+  date (`getLabel`) is **serif `$display` FAMILY at `$small`** (NOT the 36px display SIZE) + **tabular** (`style={{fontVariantNumeric}}`,
+  the pomodoro precedent) + an optional **`getEyebrow`** kicker (the P1 SectionHeader recipe). **Hollow resting dot**
+  (`RailDot` variant `hollow` = `$colorSurfacePrimary` fill + 2px `$colorTextMuted` border, replacing the old solid fill).
+  **`getTemporalState`** (`'past'|'present'|'future'`, consumer-computed — the renderer never reads a clock) tones the
+  **rail DOT**: `present` = accent fill + a **soft ring** (a static `box-shadow` composed inline from `useTheme().get('web')`
+  — the pomodoro precedent; jsdom/no-web → accent fill, no ring, F2 fallback); `future` = a faded dot (**inline `opacity:0.55`
+  on the DOT ONLY** — the date is held at full `$colorTextMuted` so AA holds, the Card **BR-C-7a** "dim the chrome, hold the
+  text" pattern; the past/future TITLE tone is the consumer's renderItem, LV-5). **`nowFulcrum`** (+ `nowLabel`, default "now")
+  splices ONE accent "now" divider **before the first non-`past` item** (`fulcrumAt`; all-past / no `getTemporalState` →
+  no-op + dev-warn); the 4-branch trim runs over the **COMBINED render sequence** (items + a fulcrum pseudo-row, keyed by a
+  NUL sentinel `FULCRUM_KEY` so it can't collide with `getKey`) so the rail connects THROUGH the fulcrum; the fulcrum is an
+  `aria-hidden` NON-listitem (a decorative boundary, correctly excluded from the list — axe-clean). Fulcrum rail segment =
+  **solid accent** (`RailLine` `tone="accent"`), NOT the mock's gradient (off-pipeline). `TemporalState` exported from the
+  barrel. Visual Gate PASS (Brave, 3 presets × light/dark: serif date AA 15.84–17.29 · eyebrow AA 4.94–6.53 incl. warm-dark ·
+  present accent FLIPS per preset [editorial blue / reader oxblood / quietDesk olive] + ring · future dot 0.55 w/ date held AA ·
+  "now" AA 4.95–6.41 · dots=items+1 · axe 0 on editorial+fulcrum · 375 no-overflow). Spec:
+  `docs/specs/foundation/fe-codec-primitives-refinement/phases/P3-timeline.md`.
   **V3 also extracted `internal/data-view.tsx`** (rule of three) — the shared `ViewState` type + the `Message`
   default empty/error copy + `resolveDataViewState({state,itemCount,ariaLabel,ariaLabelledby,name})` (role +
   effectiveEmpty + the 3 dev-warns). list-view + gallery-view + timeline all consume it; list-view **re-exports
