@@ -1,0 +1,142 @@
+// services/relationships — service (mod-relationships #56 · LIF-137 ①)
+//
+// createRelationshipsService over DB-4 025_relationships. Built PER SLICE (Entity Delivery Flow);
+// S1 = contact CRUD spine (REL-01…06) + enum validation (REL-17) + social_links JSON boundary (REL-58).
+//
+// Patterns (precedent: services/purposes · services/projects):
+// - factory → object literal; intra-service calls hoist to closures, NOT `this.` [[factory-service-no-this]].
+// - Repository.create() RETURNS THE INPUT ROW (not DB defaults) → backfill NN-default cols in the create input
+//   (relationship_type/interaction_count/is_favorite) [[repository-create-returns-input-row-not-db-defaults]].
+// - findWhere skips the soft-delete filter → list active via findAll [[repository-findwhere-skips-softdelete-filter]].
+// - M1.0 encryptedFields:[] (the [E] PII passes through; real field encryption = M3) [[m10-repos-use-empty-encryptedfields-seam]].
+// - social_links is a text() column holding JSON (M1.0 [E]=[]) → service serialize/parse boundary
+//   [[json-t-columns-need-service-serialize-in-m10]]; reads return a ContactView (not the raw Row).
+
+import { eq, type SQL } from 'drizzle-orm'
+import type { SocialLinks, RelationshipType } from '@vida/types'
+import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
+import {
+  contacts,
+  contactEvents,
+  interactions,
+  contactReminders,
+  reminderGroupContacts,
+  networkGroupContacts,
+  type ContactRow,
+} from '../../db/schema/relationships'
+import { CreateContactSchema, UpdateContactSchema } from '../../validators/relationship'
+import {
+  type RelationshipsService,
+  type RelationshipsServiceDeps,
+  type ContactView,
+  ContactNotFoundError,
+} from './types'
+
+export function createRelationshipsService(deps: RelationshipsServiceDeps): RelationshipsService {
+  const { db, deviceId } = deps
+
+  // contacts is the only soft-delete table (§5.9 floor); children/junctions hard-delete on cascade (RL-2).
+  const contactsRepo = createRepository(db, contacts, { encryptedFields: [], deviceId, softDelete: true })
+  const eventsRepo = createRepository(db, contactEvents, { encryptedFields: [], deviceId })
+  const interactionsRepo = createRepository(db, interactions, { encryptedFields: [], deviceId })
+  const remindersRepo = createRepository(db, contactReminders, { encryptedFields: [], deviceId })
+  const reminderGroupContactsRepo = createRepository(db, reminderGroupContacts, { encryptedFields: [], deviceId })
+  const networkGroupContactsRepo = createRepository(db, networkGroupContacts, { encryptedFields: [], deviceId })
+
+  // --- social_links JSON boundary (BR-RL-S1-4) -------------------------------
+  const serializeLinks = (v: SocialLinks | null | undefined): string | null =>
+    v != null ? JSON.stringify(v) : null
+  function toView(row: ContactRow): ContactView {
+    const { social_links, ...rest } = row
+    return { ...rest, social_links: social_links != null ? (JSON.parse(social_links) as SocialLinks) : null }
+  }
+
+  // --- intra-service closures (hoisted, not `this.`) -------------------------
+  async function getContact(id: string): Promise<ContactView | null> {
+    const row = await contactsRepo.findById(id) // soft-delete-aware (isNull(deleted_at))
+    return row ? toView(row) : null
+  }
+
+  /** App-layer cascade (RL-2, no-FK): hard-delete every child/junction keyed on contact_id. Defensive + idempotent
+   *  (critic advisory #1 — all 8 tables exist at S1, so the cascade is complete now). */
+  async function purgeChildren(id: string): Promise<void> {
+    const kill = async (
+      repo: { findWhere(w: SQL): Promise<{ id: string }[]>; hardDelete(rowId: string): Promise<void> },
+      where: SQL,
+    ): Promise<void> => {
+      const rows = await repo.findWhere(where)
+      for (const r of rows) await repo.hardDelete(r.id)
+    }
+    await kill(eventsRepo, eq(contactEvents.contact_id, id))
+    await kill(interactionsRepo, eq(interactions.contact_id, id))
+    await kill(remindersRepo, eq(contactReminders.contact_id, id))
+    await kill(reminderGroupContactsRepo, eq(reminderGroupContacts.contact_id, id))
+    await kill(networkGroupContactsRepo, eq(networkGroupContacts.contact_id, id))
+  }
+
+  return {
+    // --- REL-01 createContact ------------------------------------------------
+    createContact: async (input) => {
+      const parsed = CreateContactSchema.parse(input) // async method → ZodError rejects (not sync throw)
+      const { social_links, ...rest } = parsed
+      const row: CreateInput<typeof contacts> = {
+        ...rest,
+        first_name: parsed.first_name,
+        relationship_type: parsed.relationship_type ?? 'acquaintance', // backfill NN-default (echoed row faithful)
+        interaction_count: 0,
+        is_favorite: parsed.is_favorite ?? false,
+        social_links: serializeLinks(social_links),
+      }
+      const created = await contactsRepo.create(row)
+      // create() echoes the INPUT row → omitted nullable PII cols come back `undefined`, not the DB `null`
+      // ([[repository-create-returns-input-row-not-db-defaults]]). Re-read for a faithful ContactView (all nulls
+      // authoritative + social_links parsed) — the update()-returns-re-read precedent.
+      const view = await getContact(created.id)
+      if (!view) throw new Error(`Contact vanished after create: ${created.id}`)
+      return view
+    },
+
+    // --- REL-02 updateContact ------------------------------------------------
+    updateContact: async (id, patch) => {
+      const cur = await getContact(id) // soft-delete-aware guard (preflight G1)
+      if (!cur) throw new ContactNotFoundError(id)
+      const parsed = UpdateContactSchema.parse(patch)
+      const { social_links, ...rest } = parsed
+      const data: UpdateInput<typeof contacts> = { ...rest }
+      if ('social_links' in parsed) data.social_links = serializeLinks(social_links)
+      const updated = await contactsRepo.update(id, data)
+      return toView(updated)
+    },
+
+    // --- REL-03 softDeleteContact (cascade, RL-2) ----------------------------
+    softDeleteContact: async (id) => {
+      const existing = await contactsRepo.findById(id) // soft-delete-aware → null if missing/already-deleted
+      if (!existing) return // idempotent no-op (children already purged on the first delete)
+      await contactsRepo.delete(id) // soft (sets deleted_at; row still syncs)
+      await purgeChildren(id)
+    },
+
+    // --- REL-04 listContacts (active-only + JS filter) -----------------------
+    listContacts: async (filter) => {
+      const all = await contactsRepo.findAll() // applies isNull(deleted_at) — NOT findWhere (soft-delete trap)
+      const matched = all.filter(
+        (c) =>
+          (filter?.relationship_type === undefined ||
+            (c.relationship_type as RelationshipType) === filter.relationship_type) &&
+          (filter?.is_favorite === undefined || Boolean(c.is_favorite) === filter.is_favorite),
+      )
+      return matched.map(toView)
+    },
+
+    // --- REL-05 getContact ---------------------------------------------------
+    getContact,
+
+    // --- REL-06 toggleFavorite -----------------------------------------------
+    toggleFavorite: async (id) => {
+      const cur = await getContact(id) // soft-delete-aware guard (preflight G1)
+      if (!cur) throw new ContactNotFoundError(id)
+      const updated = await contactsRepo.update(id, { is_favorite: !cur.is_favorite })
+      return toView(updated)
+    },
+  }
+}
