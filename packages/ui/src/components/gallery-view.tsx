@@ -33,6 +33,9 @@ export interface GalleryViewProps<T> {
   loadingCount?: number
   /** Min tile width (px) — the enforced FLOOR (minWidth + flexBasis); tiles grow to [min, 2·min] + wrap. Default 200. */
   minTileWidth?: number
+  /** Width-weight per tile (≥1) — a featured tile is proportionally bigger. Default 1. The "which tile is featured"
+   *  SEMANTIC is the consumer's (a ready affordance — no M1 surface wires it yet). `<1`/non-finite → 1 + dev-warn. */
+  getWeight?: (item: T, index: number) => number
   /** Grid gap. Default 'default'. */
   density?: Density
   /** React 19 ref-as-prop → the container element. */
@@ -66,6 +69,30 @@ const SkeletonTile = styled(View, {
   borderRadius: '$md',
 })
 
+// Per-tile flex sizing by width-weight `w` (≥1). `minWidth` stays the BASE floor (NOT w·min) + **explicit `flexShrink:1`**
+// so a weighted tile PREFERS w× (flexBasis w·min) and grows w× faster, but SHRINKS to the base floor on a narrow row →
+// no 375 overflow / graceful mobile collapse. ⚠ flexShrink MUST be explicit: Tamagui/react-native-web defaults it to 0
+// (RN semantics, not CSS's 1), so without it a `flexBasis: w·min > viewport` tile can't shrink and overflows (GV-2's
+// "flexShrink:1 … minWidth floor" model made real). A layout-number style (tabs/gallery `style={}` precedent), not
+// tokens. w=1 === the pre-P4 `tileStyle` + the now-explicit flexShrink (base tiles never needed to shrink — min<viewport).
+function weightStyle(w: number, minTileWidth: number): CSSProperties {
+  return { flexGrow: w, flexShrink: 1, flexBasis: w * minTileWidth, minWidth: minTileWidth, maxWidth: w * minTileWidth * 2 }
+}
+// A sane upper bound — a featured tile wider than this is almost certainly a consumer bug (an un-normalized score /
+// pixel count / timestamp passed as a weight), which would blow out flexGrow/flexBasis and starve every sibling.
+const MAX_WEIGHT = 8
+// Clamp a consumer weight to a finite [1, MAX_WEIGHT]; coerce + dev-warn otherwise (LV-7 guard style — SYMMETRIC, both ends).
+function clampWeight(raw: number | undefined): number {
+  if (raw == null) return 1
+  if (!Number.isFinite(raw) || raw < 1 || raw > MAX_WEIGHT) {
+    if (process.env.NODE_ENV !== 'production')
+      console.warn(`[vida/ui] GalleryView: getWeight returned ${raw} — weights must be finite in [1, ${MAX_WEIGHT}]; clamping.`)
+    if (!Number.isFinite(raw) || raw < 1) return 1
+    return MAX_WEIGHT
+  }
+  return raw
+}
+
 // A plain GENERIC function component — preserves <T> (forwardRef would erase it). React 19 spreads `ref` as a prop.
 export function GalleryView<T>({
   items,
@@ -76,6 +103,7 @@ export function GalleryView<T>({
   error,
   loadingCount = 6,
   minTileWidth = 200,
+  getWeight,
   density = 'default',
   ref,
   ...rest
@@ -90,12 +118,9 @@ export function GalleryView<T>({
     name: 'GalleryView',
   })
 
-  // Per-tile flex sizing — style object (layout params, not tokens; tabs `style={indicatorStyle}` precedent).
-  const tileStyle = useMemo<CSSProperties>(
-    () => ({ flexGrow: 1, flexBasis: minTileWidth, minWidth: minTileWidth, maxWidth: minTileWidth * 2 }),
-    [minTileWidth],
-  )
-  const skeletonStyle = useMemo<CSSProperties>(() => ({ ...tileStyle, aspectRatio: 3 / 2 }), [tileStyle])
+  // Skeleton sizing is always weight-1 (uniform, data-independent — a weighted skeleton would imply data we don't have
+  // while loading; the board SKELETON_COLUMNS precedent). Base weighted styles are per-tile (getWeight may differ each).
+  const skeletonStyle = useMemo<CSSProperties>(() => ({ ...weightStyle(1, minTileWidth), aspectRatio: 3 / 2 }), [minTileWidth])
 
   let body: ReactNode
   if (state === 'loading') {
@@ -108,7 +133,7 @@ export function GalleryView<T>({
     body = empty ?? <Message>Nothing here yet.</Message>
   } else {
     body = items.map((item, i) => (
-      <GalleryTile key={getKey(item, i)} role="listitem" style={tileStyle}>
+      <GalleryTile key={getKey(item, i)} role="listitem" style={weightStyle(clampWeight(getWeight?.(item, i)), minTileWidth)}>
         {renderItem(item, i)}
       </GalleryTile>
     ))

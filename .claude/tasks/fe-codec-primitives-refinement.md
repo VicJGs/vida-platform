@@ -171,4 +171,16 @@ Approved target per phase = the committed mockups (`mockups/*.html`). Visual rec
   `fulcrumAt` so `hasGutter` keys on actual render) · key collision (NUL sentinel) · `TemporalState` barrel gap; refuted
   a hypothesized fulcrum-axe violation (axe 0, now gate-covered). **Gate gap found + closed:** my gate only ran axe on
   the editorial story → added fulcrum-story axe. Spec `phases/P3-timeline.md`; currency `packages/ui/src/CLAUDE.md` +
-  `v3-timeline.md` change-log. **Next: P4 · Gallery** (framed cover + kicker · serif title · tabular caption + cover-intelligence).
+  `v3-timeline.md` change-log.
+- **P4 · Gallery — ✅ COMPLETE (2026-10-07).** Full §XXVI double-gate (spec → /critique SHIP → Approval 1 → GROUNDED [the
+  masonry-vs-flex fork was doc-RESOLVED, not mine to ask: GV-2/ADR-001:111 bind a RN-safe flex grid, "not CSS grid" →
+  masonry foreclosed] → /preflight BLOCKED→resolved [G1 story tile = plain composition, Card has no cover slot] → /critique
+  SHIP → Approval 2) + blocking Visual Gate + independent code-review. **Honest-scope (P1 pattern): the renderer adds ONE
+  prop** — **`getWeight?`** (width-weight, a ready affordance; the editorial cover/kicker/title/caption = consumer renderItem,
+  cover-intelligence = view engine, masonry = foreclosed). `weightStyle(w,min)` per-tile; **`flexShrink:1` explicit** (RNW
+  defaults 0 → the Gate caught a 375 overflow); `clampWeight` symmetric `[1,8]`. tsc 0 · eslint 0 · gallery-view **16 tests**
+  (+5) · build ✓ · **Visual Gate PASS** (3 presets × light/dark: title AA 15.84–17.29 + caption/kicker 4.94–6.53 incl.
+  warm-dark · axe 0 · **featured 496px vs base 248px = 2×** · 375 no-overflow). **Review-caught:** one-sided clampWeight →
+  added the upper bound. **Lesson: grounding resolved the fork** (don't hand Victor a decision the binding spec already
+  settles — RN-safe forecloses masonry). Spec `phases/P4-gallery.md`; currency CLAUDE.md + `v2-gallery-view.md`.
+  **Next: P5 · Calendar-grid** (serif title · eyebrow weekdays · tabular figures · today mark · weekend/oos · accent-dot chips — Layer-1 only).

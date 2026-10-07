@@ -182,6 +182,22 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   list on mobile — expected). Skeleton tiles reuse `tileStyle` + **`aspectRatio:3/2`** (tracks the grown width, no
   jump on load; jsdom CSSOM serializes it `"1.5 / 1"`). **Cover-field degradation is the VIEW ENGINE's**
   (ADR-007:62-64), NOT this renderer. No sub-theme/motion/new-dep. Spec: `…/ui-2-platform-views/v2-gallery-view.md`.
+  **fe-codec-primitives-refinement · P4 (LIF-230)** — **`getWeight?(item,index)→number`**, a width-weight so a *featured*
+  tile is proportionally bigger within the flex grid (a **ready affordance** — the "which tile is featured" semantic is the
+  consumer's, no M1 surface wires it yet; the P1 `primaryKey` precedent). The single memoized `tileStyle` became a per-tile
+  `weightStyle(w,minTileWidth)` = `{flexGrow:w, flexShrink:1, flexBasis:w·min, minWidth:min, maxWidth:w·min·2}`; **`minWidth`
+  stays the BASE floor** (NOT w·min) so a weighted tile PREFERS w× but SHRINKS to the base on a narrow row. **⚠ `flexShrink:1`
+  MUST be explicit** — Tamagui/react-native-web defaults flexShrink to **0** (RN semantics, not CSS's 1), so without it a
+  `flexBasis: w·min > viewport` tile can't shrink → **375 overflow** (the Visual Gate caught it; base tiles hid it since
+  `min<viewport`). `clampWeight` is a **symmetric** guard — coerces to `[1, MAX_WEIGHT=8]` (+dev-warn; `<1`/non-finite → 1,
+  `>8` → 8 [a bogus large weight would starve siblings — review-caught]; absent/null → 1, no warn). **Skeleton tiles stay
+  `w=1`** (uniform, data-independent — the board `SKELETON_COLUMNS` precedent). The editorial tile LOOK (framed cover +
+  kicker + serif title + tabular caption) + **cover-intelligence (generated covers)** remain the consumer's `renderItem` /
+  the **view engine's** (GV-1; ADR-007:62) — NOT built here; **true variable-height masonry is FORECLOSED** by the RN-safe
+  flex grid (GV-2 / ADR-001:111 — "not CSS grid"). Visual Gate PASS (Brave, 3 presets × light/dark: editorial tile serif
+  title AA 15.84–17.29 + tabular caption/kicker 4.94–6.53 incl. warm-dark · axe 0 · **featured 496px vs base 248px = 2×** on
+  desktop · 375 no-overflow [weighted shrinks to fit]). Spec:
+  `docs/specs/foundation/fe-codec-primitives-refinement/phases/P4-gallery.md`.
   **timeline** is **UI-2 · V3** — V1's spine laid out as a **CONTINUOUS vertical rail** (the `timeline` layout: temporal
   sequence). **The rail-continuity trick:** `TimelineRoot` has NO gap; the between-row spacing is the Content column's
   `paddingBottom` (skipped on the last row), so the rail columns sit **flush** and their full-height lines meet — an
