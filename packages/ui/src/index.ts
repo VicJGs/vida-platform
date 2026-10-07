@@ -67,6 +67,7 @@ export { PomodoroWidget, type PomodoroWidgetProps, type PomodoroPhase } from './
 export { ExportDialog, type ExportDialogProps, type ExportFormat } from './components/export-dialog'
 export { NeuralGraph, type NeuralGraphProps, type GraphNode, type GraphEdge } from './components/neural-graph'
 export { CollectionView, type CollectionViewProps, type ViewLayout } from './components/collection-view'
+export { DashboardView, type DashboardViewProps, type DashboardBlock, type CellSize } from './components/dashboard-view'
 
 // Shared hooks.
 export { useReducedMotion } from './hooks/use-reduced-motion'

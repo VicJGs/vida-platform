@@ -392,6 +392,28 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   right-aligned, **ACTIVE in every state** (EC-2); entry points ONLY (filter/sort/create logic = the app's/ViewsService's).
   **S3** (next) = the apps/web SavedView↔Collection adapter (type+convention). Spec:
   `docs/specs/components/ui-2-platform-views/collection-view.md`. Delivery: `docs/specs/foundation/fe-codec-collection/`.
+  **dashboard-view** is **fe-codec-dashboard · S1** (LIF-208) — the CODEC **Dashboard shell** (decomposition.md:30 §1.2,
+  "a grid of integration blocks"), the 2nd archetype shell. Like Collection, a **SHELL not a renderer** — it COMPOSES
+  blocks the consumer supplies via a **`renderBlock(block)` render-prop** (the `standalone` integration-block widgets ship
+  elsewhere; types-only today — `editor.ts:28-40`), over an **RN-safe flex grid** (the gallery-view precedent:
+  `flexDirection:'row'`+`flexWrap:'wrap'`+density→`gap`). **NON-GENERIC** (holds no block data → no `<T>`), React-19
+  ref-prop. **`CellSize`** = a LOCAL `sm|md|lg|full` union → a per-cell `SPAN` flex style `{flexGrow, **flexShrink:1
+  explicit** (RNW defaults 0), flexBasis %, minWidth FLOOR, maxWidth CAP}`; the **`maxWidth` cap stops a lone non-`full`
+  cell growing to full** (EC-6 — gate-proven lg 760 < 1136 grid); `full` has no cap; floors < 375 content width → single
+  column at 375 (EC-8). Each cell = a **`Card`** frame (`header` = block title `$subheading` + the `⋯` action SLOT +
+  `headerDivider`; body via `renderBlock`). **Per-block state** reuses the intra-package `ViewState` canon, threaded as a
+  PROP (BR-2). **⚠ TERMINAL-STATE OWNERSHIP (the pinned contract): the SHELL owns the generic loading/empty/error** —
+  uniform skeleton (`aria-busy`), teaching empty, calm **`role="status"` error with MUTED text** (NOT `$colorSignalDanger`
+  — fails AA 4.5 in light, the known ds-2 M4 fix; the `Message` precedent) — and `renderBlock` is called **only for
+  `success`** (a block is CONTENT, not a self-stated component); per-block `blockLoading`/`blockEmpty`/`blockError` are
+  optional overrides (EXTENDS Collection's shell-owned-empty to all 3 generic states). Empty dashboard → a teaching
+  `EmptyState` (EC-5). `warnMissingName`+`useId` region name; DIRECT semantic tokens; `data-size`/`.vida-dash-cell` =
+  the gate hook. **The `$h3`/`$h4` font tokens DON'T EXIST** (scale = `display/heading/subheading/body/small/caption`) —
+  use `$heading`/`$subheading` (collection-view.tsx:170 carries the latent `$h3` defect → M4 sibling fix). Visual Gate
+  PASS (Brave, 3 presets × light/dark: heading serif AA 15.84–17.29 · cell text MIN 4.52–5.22 incl. warm-dark · axe 0 ·
+  EC-1..EC-8). **S2** (next) = the apps/web placement↔Dashboard adapter (pure `block_instances`→cell mapping + convention,
+  live `useDashboard` hook deferred). Spec: `docs/specs/components/ui-2-platform-views/dashboard-view.md`. Delivery:
+  `docs/specs/foundation/fe-codec-dashboard/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
