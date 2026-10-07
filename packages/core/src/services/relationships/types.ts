@@ -18,6 +18,7 @@ import type {
   ContactEventRow,
   ContactReminderRow,
   ReminderGroupRow,
+  NetworkGroupRow,
 } from '../../db/schema/relationships'
 import type {
   CreateContactInput,
@@ -27,6 +28,7 @@ import type {
   CreateEventInput,
   CreateReminderInput,
   CreateGroupInput,
+  CreateNetworkInput,
 } from '../../validators/relationship'
 import type { TimeRange, DueItem } from '../sessions'
 
@@ -57,6 +59,23 @@ export interface UpcomingEvent {
 
 /** A reminder_group with `days_of_week` parsed from JSON (S4 view boundary). */
 export type ReminderGroupView = Omit<ReminderGroupRow, 'days_of_week'> & { days_of_week: number[] | null }
+
+/** A neural-graph node (S5) — a contact or a network. */
+export interface GraphNode {
+  id: string
+  kind: 'contact' | 'network'
+  label: string
+}
+/** A membership edge (S5) — contact → network. No contact↔contact edges (RL-4). */
+export interface GraphEdge {
+  source: string
+  target: string
+}
+/** The network⇄contact membership graph, Sigma-ready (REL-46). */
+export interface NetworkGraph {
+  nodes: GraphNode[]
+  edges: GraphEdge[]
+}
 
 export interface RelationshipsServiceDeps {
   db: DrizzleDb
@@ -94,6 +113,12 @@ export interface RelationshipsService {
   deleteGroup(groupId: string): Promise<void>
   /** The R7 `dueIn` producer seam — Notifications' dispatcher + Calendar + Journal read it (S9 registers the lane). */
   getDueReminders(range: TimeRange): Promise<DueItem[]>
+
+  // --- S5: networks + neural-graph data-prep (REL-43…46) -------------------
+  createNetwork(input: CreateNetworkInput): Promise<NetworkGroupRow>
+  addToNetwork(networkId: string, contactId: string): Promise<void>
+  removeFromNetwork(networkId: string, contactId: string): Promise<void>
+  getNetworkGraph(): Promise<NetworkGraph>
 }
 
 /** A contact id did not resolve to a live (non-soft-deleted) contact (REL-02/06; preflight G1). */
@@ -125,5 +150,13 @@ export class ReminderGroupNotFoundError extends Error {
   constructor(id: string) {
     super(`Reminder group not found: ${id}`)
     this.name = 'ReminderGroupNotFoundError'
+  }
+}
+
+/** A network_group id did not resolve (REL-44 · S5). */
+export class NetworkNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Network not found: ${id}`)
+    this.name = 'NetworkNotFoundError'
   }
 }

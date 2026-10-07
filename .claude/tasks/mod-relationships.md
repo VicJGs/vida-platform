@@ -37,7 +37,7 @@ L23-27, "settled intent"). **The schema is the floor — networks/snooze/anchor/
 - [x] **S2** Interactions + derived stats — REL-12…16,19,20,21 ✅ (ledger + recompute engine; 17/17 live-store)
 - [x] **S3** Events — REL-26,27,28,29 ✅ (createEvent + upcoming/all, recurring MM-DD projection; 25/25 live-store)
 - [x] **S4** Reminders + groups + dueIn seam — REL-30…42 ✅ (9 methods + getDueReminders producer; 28/28 live-store)
-- [ ] **S5** Networks + graph data-prep — REL-43…46 (network CRUD, m2m membership idempotent, getNetworkGraph membership-only)
+- [x] **S5** Networks + graph data-prep — REL-43…46 ✅ (network CRUD, m2m membership, getNetworkGraph; 32/32 live-store)
 - [ ] **S6** Health engine (derived) — REL-22,23,24,25,47 (getContactHealth {band,score,factors} closeness-weighted + network rollup; formula designed)
 - [ ] **S7** Device import (deny-safe X1/X8) — REL-07…11 (importDeviceContacts facade + import_staging + ContactsPermissionError)
 - [ ] **S8** Tags + pages + links — REL-48,49,50 (entity_tags via Spaces contact+network parent_tag_id; pages via Notes; entity-link target)
@@ -81,4 +81,9 @@ branch `mod-relationships` off `main`. Node 22 (tests Node 24, better-sqlite3 AB
   (days_of_week JSON). N2/N7 honored downstream (Notifications/Prefs). Gate: spec critique+preflight inline (biweekly
   gap surfaced, dueIn seam grounded vs sessions DueItem) → impl → **28/28 live-store** → independent g2 (dispatched) →
   currency BR-RL-S4-*. tsc 0 · eslint 0. [S9 registers getDueReminders as a sessions DueProvider lane.]
-- (S5 next — networks + graph data-prep)
+- **S5 — Networks + graph data-prep (✅ 2026-10-07).** `createNetwork`/`addToNetwork`/`removeFromNetwork`/
+  `getNetworkGraph` over network_groups + network_group_contacts. Many-to-many (RL-4, idempotent); graph =
+  membership-only node/edge set (no contact↔contact), dangling-edge-guarded, isolated networks included. Gate: spec
+  critique+preflight inline (dangling-edge fix) → **32/32 live-store** → inline g2 SHIP → currency BR-RL-S5-*.
+  tsc 0 · eslint 0. (Un-homed noted: deleteNetwork.)
+- (S6 next — health engine, derived; network health rollup REL-47)

@@ -93,7 +93,18 @@
 - **BR-RL-S4-6 (REL-37/38)** — N2 content-free push + N7 quiet-hours are honored DOWNSTREAM (Notifications NF-6 /
   Preferences; S9 light-honor). The local dueIn `label` may carry the decrypted title/name (on-device consumers).
 
+## S5 — Networks + graph data-prep (built · REL-43…46)
+- **BR-RL-S5-1 (REL-43)** — `createNetwork` over `network_groups` (no `deleted_at`, is_active governs lifecycle);
+  backfill is_active; re-read.
+- **BR-RL-S5-2 (REL-44/45, RL-4)** — `addToNetwork(networkId, contactId)` guards a live network
+  (`NetworkNotFoundError`) + live contact (`ContactNotFoundError`), **idempotent** (UNIQUE(network,contact) — skip if
+  present). A contact may join MANY networks. `removeFromNetwork` guards the network, removes the junction row.
+- **BR-RL-S5-3 (REL-46)** — `getNetworkGraph(): {nodes, edges}` — nodes = active networks (`kind:'network'`) + member
+  contacts (`kind:'contact'`); edges = one per membership (`contact → network`). **No contact↔contact edges** (RL-4).
+  Edges to inactive/absent networks are dropped (no dangling); member contacts are always live (cascade).
+- **BR-RL-S5-4** — `name` required (`[E]`). **Un-homed (noted):** `deleteNetwork` (not in REL-43/44/46); network
+  health = REL-47 (S6); network notes/tags = S8.
+
 ## Forward slices (not yet built)
-S5 networks + graph data-prep ·
 S6 health engine (derived, NOT a measurement — C1) · S7 device import (deny-safe X1/X8) · S8 tags/pages/links ·
 S9 fan-out + Journal `/summary` + deny-safe seams.

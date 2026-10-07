@@ -36,7 +36,14 @@ removeMembers(groupId, contactIds: string[]): Promise<void>                 // R
 setBirthdayAnchor(groupId, daysBefore: number): Promise<ReminderGroupView>  // ReminderGroupNotFoundError
 deleteGroup(groupId): Promise<void>                                         // SET NULL members + purge junction (REL-34)
 getDueReminders(range: TimeRange): Promise<DueItem[]>                        // S9 registers as a sessions DueProvider lane
+// S5 — networks + neural-graph data-prep
+createNetwork(input: CreateNetworkInput): Promise<NetworkGroupRow>
+addToNetwork(networkId, contactId): Promise<void>                          // NetworkNotFoundError + ContactNotFoundError; idempotent
+removeFromNetwork(networkId, contactId): Promise<void>                     // NetworkNotFoundError
+getNetworkGraph(): Promise<NetworkGraph>                                   // {nodes,edges} membership-only (no contact↔contact)
 ```
+`NetworkGraph = {nodes: GraphNode[], edges: GraphEdge[]}`; `GraphNode = {id, kind:'contact'|'network', label}`;
+`GraphEdge = {source, target}` (contact→network). `CreateNetworkSchema` (name required).
 `ReminderGroupView` = `ReminderGroupRow` with `days_of_week` parsed. `TimeRange`/`DueItem` from `../sessions`.
 `getDueReminders` producers: explicit reminders · stay-in-touch overdue · birthday-anchor + daily/weekly schedule
 groups (biweekly+ = flagged schema gap). Validators: `CreateReminderSchema` (contact_id+title)/`CreateGroupSchema` (name).

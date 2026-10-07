@@ -137,3 +137,13 @@ export const CreateGroupSchema = GroupFields.partial().extend({
   name: z.string(), // required (notNull)
 })
 export type CreateGroupInput = z.infer<typeof CreateGroupSchema>
+
+// --- network_groups (REL-43 · S5) -------------------------------------------
+const NetworkFields = z.object({
+  name: z.string(),
+  is_active: z.boolean(),
+})
+export const CreateNetworkSchema = NetworkFields.partial().extend({
+  name: z.string(), // required (notNull)
+})
+export type CreateNetworkInput = z.infer<typeof CreateNetworkSchema>

@@ -30,6 +30,7 @@ import {
   InteractionNotFoundError,
   ReminderNotFoundError,
   ReminderGroupNotFoundError,
+  NetworkNotFoundError,
 } from '../types'
 
 /** YYYY-MM-DD → Unix ms at UTC midnight (for TimeRange windows). */
@@ -483,5 +484,67 @@ describe('mod-relationships S4 — reminders, groups, and the dueIn producer', (
     await h.svc.addMembers(biweekly.id, [c.id])
     const dueBi = await h.svc.getDueReminders({ start: ms('2026-11-01'), end: ms('2026-11-30') })
     expect(dueBi.filter((d) => d.ref_id.startsWith(`${biweekly.id}:`))).toHaveLength(0)
+  })
+})
+
+describe('mod-relationships S5 — networks + graph data-prep', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('creates a network (backfill is_active) and a contact joins MULTIPLE networks (RL-4)', async () => {
+    const n1 = await h.svc.createNetwork({ name: 'Family' })
+    expect(n1.is_active).toBe(true) // backfill
+    const n2 = await h.svc.createNetwork({ name: 'Work' })
+    const c = await h.svc.createContact({ first_name: 'Multi' })
+    await h.svc.addToNetwork(n1.id, c.id)
+    await h.svc.addToNetwork(n2.id, c.id) // same contact, two networks
+    const graph = await h.svc.getNetworkGraph()
+    expect(graph.edges.filter((e) => e.source === c.id)).toHaveLength(2)
+  })
+
+  it('addToNetwork is idempotent + guards unknown network / non-live contact', async () => {
+    const n = await h.svc.createNetwork({ name: 'N' })
+    const c = await h.svc.createContact({ first_name: 'C' })
+    await h.svc.addToNetwork(n.id, c.id)
+    await h.svc.addToNetwork(n.id, c.id) // dup → still 1
+    const graph = await h.svc.getNetworkGraph()
+    expect(graph.edges).toHaveLength(1)
+    await expect(h.svc.addToNetwork('nope', c.id)).rejects.toBeInstanceOf(NetworkNotFoundError)
+    await expect(h.svc.addToNetwork(n.id, 'nope')).rejects.toBeInstanceOf(ContactNotFoundError)
+    const gone = await h.svc.createContact({ first_name: 'Gone' })
+    await h.svc.softDeleteContact(gone.id)
+    await expect(h.svc.addToNetwork(n.id, gone.id)).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+
+  it('removeFromNetwork removes the membership; unknown network → NetworkNotFoundError', async () => {
+    const n = await h.svc.createNetwork({ name: 'N' })
+    const c = await h.svc.createContact({ first_name: 'C' })
+    await h.svc.addToNetwork(n.id, c.id)
+    await h.svc.removeFromNetwork(n.id, c.id)
+    expect((await h.svc.getNetworkGraph()).edges).toHaveLength(0)
+    await expect(h.svc.removeFromNetwork('nope', c.id)).rejects.toBeInstanceOf(NetworkNotFoundError)
+  })
+
+  it('getNetworkGraph: membership edges only (no contact↔contact), isolated network is a node', async () => {
+    const n1 = await h.svc.createNetwork({ name: 'N1' })
+    const n2 = await h.svc.createNetwork({ name: 'N2' })
+    const n3 = await h.svc.createNetwork({ name: 'Isolated' }) // no members
+    const c1 = await h.svc.createContact({ first_name: 'C1' })
+    const c2 = await h.svc.createContact({ first_name: 'C2' })
+    await h.svc.addToNetwork(n1.id, c1.id)
+    await h.svc.addToNetwork(n2.id, c1.id)
+    await h.svc.addToNetwork(n1.id, c2.id)
+
+    const graph = await h.svc.getNetworkGraph()
+    const networkIds = new Set(graph.nodes.filter((n) => n.kind === 'network').map((n) => n.id))
+    expect(networkIds.size).toBe(3) // n1, n2, n3 (isolated included)
+    expect(networkIds.has(n3.id)).toBe(true) // the member-less network is still a node
+    expect(graph.nodes.filter((n) => n.kind === 'contact')).toHaveLength(2) // only members
+    expect(graph.edges).toHaveLength(3)
+    // every edge targets a network (membership only — no contact↔contact)
+    expect(graph.edges.every((e) => networkIds.has(e.target))).toBe(true)
+    expect(graph.edges.filter((e) => e.source === c1.id)).toHaveLength(2)
   })
 })

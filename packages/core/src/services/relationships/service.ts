@@ -12,7 +12,7 @@
 // - social_links is a text() column holding JSON (M1.0 [E]=[]) → service serialize/parse boundary
 //   [[json-t-columns-need-service-serialize-in-m10]]; reads return a ContactView (not the raw Row).
 
-import { eq, type SQL } from 'drizzle-orm'
+import { eq, and, type SQL } from 'drizzle-orm'
 import type { SocialLinks, RelationshipType, Frequency } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
@@ -22,6 +22,7 @@ import {
   contactReminders,
   reminderGroups,
   reminderGroupContacts,
+  networkGroups,
   networkGroupContacts,
   type ContactRow,
   type ContactEventRow,
@@ -35,6 +36,7 @@ import {
   CreateEventSchema,
   CreateReminderSchema,
   CreateGroupSchema,
+  CreateNetworkSchema,
 } from '../../validators/relationship'
 import type { DueItem } from '../sessions'
 import {
@@ -44,10 +46,13 @@ import {
   type EventView,
   type UpcomingEvent,
   type ReminderGroupView,
+  type GraphNode,
+  type GraphEdge,
   ContactNotFoundError,
   InteractionNotFoundError,
   ReminderNotFoundError,
   ReminderGroupNotFoundError,
+  NetworkNotFoundError,
 } from './types'
 
 // --- derived-stats helpers (RL-3; S2) ---------------------------------------
@@ -93,6 +98,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
   const remindersRepo = createRepository(db, contactReminders, { encryptedFields: [], deviceId })
   const reminderGroupsRepo = createRepository(db, reminderGroups, { encryptedFields: [], deviceId })
   const reminderGroupContactsRepo = createRepository(db, reminderGroupContacts, { encryptedFields: [], deviceId })
+  const networkGroupsRepo = createRepository(db, networkGroups, { encryptedFields: [], deviceId })
   const networkGroupContactsRepo = createRepository(db, networkGroupContacts, { encryptedFields: [], deviceId })
 
   // --- social_links JSON boundary (BR-RL-S1-4) -------------------------------
@@ -456,6 +462,55 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       }
 
       return items.sort((a, b) => (a.hard_deadline ?? 0) - (b.hard_deadline ?? 0))
+    },
+
+    // --- REL-43 createNetwork ------------------------------------------------
+    createNetwork: async (input) => {
+      const parsed = CreateNetworkSchema.parse(input)
+      const created = await networkGroupsRepo.create({ ...parsed, is_active: true }) // NN-default backfill
+      const persisted = await networkGroupsRepo.findById(created.id) // re-read → faithful
+      if (!persisted) throw new Error(`Network vanished after create: ${created.id}`)
+      return persisted
+    },
+
+    // --- REL-44/45 addToNetwork (many-to-many, idempotent) -------------------
+    addToNetwork: async (networkId, contactId) => {
+      const network = await networkGroupsRepo.findById(networkId)
+      if (!network) throw new NetworkNotFoundError(networkId)
+      const contact = await contactsRepo.findById(contactId) // soft-delete-aware
+      if (!contact) throw new ContactNotFoundError(contactId)
+      const existing = await networkGroupContactsRepo.findWhere(
+        and(eq(networkGroupContacts.network_group_id, networkId), eq(networkGroupContacts.contact_id, contactId))!,
+      )
+      if (existing.length > 0) return // idempotent (UNIQUE(network,contact), REL-45)
+      await networkGroupContactsRepo.create({ network_group_id: networkId, contact_id: contactId })
+    },
+
+    // --- REL-44 removeFromNetwork --------------------------------------------
+    removeFromNetwork: async (networkId, contactId) => {
+      const network = await networkGroupsRepo.findById(networkId)
+      if (!network) throw new NetworkNotFoundError(networkId)
+      const rows = await networkGroupContactsRepo.findWhere(
+        and(eq(networkGroupContacts.network_group_id, networkId), eq(networkGroupContacts.contact_id, contactId))!,
+      )
+      for (const r of rows) await networkGroupContactsRepo.hardDelete(r.id)
+    },
+
+    // --- REL-46 getNetworkGraph (membership edges only — no contact↔contact) -
+    getNetworkGraph: async () => {
+      const networks = (await networkGroupsRepo.findAll()).filter((n) => n.is_active)
+      const activeIds = new Set(networks.map((n) => n.id))
+      const junctions = await networkGroupContactsRepo.findAll()
+      const edges: GraphEdge[] = junctions
+        .filter((j) => activeIds.has(j.network_group_id)) // drop edges to inactive/absent networks (no dangling)
+        .map((j) => ({ source: j.contact_id, target: j.network_group_id }))
+      const memberIds = new Set(edges.map((e) => e.source))
+      const members = (await contactsRepo.findAll()).filter((c) => memberIds.has(c.id))
+      const nodes: GraphNode[] = [
+        ...networks.map((n) => ({ id: n.id, kind: 'network' as const, label: n.name })),
+        ...members.map((c) => ({ id: c.id, kind: 'contact' as const, label: c.first_name })),
+      ]
+      return { nodes, edges }
     },
   }
 }
