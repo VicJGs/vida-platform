@@ -17,8 +17,12 @@ export interface PurposesServiceDeps {
   spaces: SpacesService
   // REQUIRED from S8 — the `pages` surface for standalone notes (PG-18).
   notes: NotesService
-  // REQUIRED from S8 — the taggable/linkable entity_type registry (adds `value`/`dream`).
-  registry: TaggableTypeRegistry
+  // ⊘ SUPERSEDED at S8 build — NOT a dep. S8 is write-ONLY (no association-read method on the surface), so
+  //   registry validation lives INSIDE the composed spaces/notes services (each holds its own registry; spaces
+  //   `assertRegistered`, notes `createPage` validates entity_type). `value`/`purpose`/`target`/`dream`/
+  //   `purpose_metric_value` are already seeded in `_registry.ts:13,50-53` (DB-4) → no `register()`, no per-layer
+  //   registry dep. (If S9 adds an association-READ lane like projects' resolver, it pulls `registry` first-consumer.)
+  // registry: TaggableTypeRegistry   // ← dropped, see above
   // REQUIRED from S9 — Journal provider registration (summary(date)) + the DueProvider lane (dueIn).
   journal: JournalRegistry
   // REQUIRED from S7 — the ADR-004 session seam (honours PG-13 FACT: reviews fire as `review` SESSIONS).

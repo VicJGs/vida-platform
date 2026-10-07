@@ -19,7 +19,7 @@ DB-11, mirror-only).
 
 All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagation is app-layer, PG-19 → S9).
 
-## Surface — S1 (spine CRUD) · S2 (dreams) · S3 (metrics) · S4 (contributions) · S5 (measurability) · S6 (bindings) · S7 (reviews + plan_steps)
+## Surface — S1 (spine CRUD) · S2 (dreams) · S3 (metrics) · S4 (contributions) · S5 (measurability) · S6 (bindings) · S7 (reviews + plan_steps) · S8 (tags · links · pages)
 
 | Method | Returns | Notes |
 |--------|---------|-------|
@@ -37,8 +37,11 @@ All cross-table refs are plain TEXT, **no FK** (SR-003 relaxed; delete-propagati
 | `openTargetReview(targetId,i)` / `openPurposeReview(purposeId,i)` | `TargetReviewRow` / `PurposeReviewRow` | S7 — ledger + register `review` (idempotent) + fire a `scheduled` review session; target also computes `next_review_date` |
 | `listTargetReviews(targetId)` / `listPurposeReviews(purposeId)` | `…ReviewRow[]` | S7 — active ledger rows |
 | `addPlanStep({type:'task'\|'target',id},i)` / `togglePlanStep(id)` / `listPlanSteps(owner)` | `PlanStepRow` | S7 — PG-11 doc checklist; toggle stamps/clears `completed_at` |
+| `tagEntity(t,id,tagId)` / `untagEntity(t,id,tagId)` | `void` | S8 — scoped tag wrappers → `spaces.tagEntity`/`untagEntity` (write-through; spaces validates entity_type); `t ∈ PurposeTagLinkType` |
+| `linkEntity(pageId,{t,id},ctx?)` / `unlinkEntity(pageId,{t,id})` | `void` | S8 — `entity_links` WRITE → `spaces.createLink`/`removeLink` (pageId = source anchor; idempotent) |
+| `ensureEntityNote({value\|purpose\|target\|dream},id)` | `PageRow` | S8 — find-or-create the TITLED standalone note (`type:'note'`, no new PAGE_TYPE); seeds the owned entity's `title`/`name`; `*NotFound` guard; idempotent (find-first) |
 
-**Deps (as of S7):** `{ db, deviceId, measurementSources?, sessions }` — `measurementSources` deny-safe (empty M1 ⇒ cross-module contributors + derived-pull targets null); **`sessions: { registry; service }` REQUIRED** (reviews fire as `review` SESSIONS, PG-13). `PurposeProgressView{value(0–100\|null),derived,partial,unmeasured}` (named to avoid the projects `ProgressView` barrel collision).
+**Deps (as of S8):** `{ db, deviceId, measurementSources?, sessions, spaces, notes }` — `measurementSources` deny-safe (empty M1 ⇒ cross-module contributors + derived-pull targets null); **`sessions: { registry; service }` REQUIRED** (reviews fire as `review` SESSIONS, PG-13); **`spaces: SpacesService` + `notes: NotesService` REQUIRED (S8)** — all tag/link/page writes delegate through them (the read/write split). **No `registry` dep** (S8 is write-only; `spaces`/`notes` self-validate `entity_type` against the registry they hold; `value`/`purpose`/`target`/`dream`/`purpose_metric_value` pre-seeded in `_registry.ts`). Typed unions: `PurposeTagLinkType = value|purpose|target|dream|purpose_metric_value` (tag/link, PG-18); `PurposeNoteType = value|purpose|target|dream` (note — titled entities only; a metric-value ledger row has no title). `PurposeProgressView{value(0–100\|null),derived,partial,unmeasured}` (named to avoid the projects `ProgressView` barrel collision).
 
 - **Repositories** — `createRepository(db, table, { deviceId, softDelete: true, encryptedFields: [] })` for all 3
   spine tables (each carries `deleted_at`). M1.0 `encryptedFields:[]` seam (real `[E]` = M3).

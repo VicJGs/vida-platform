@@ -46,6 +46,8 @@ import {
   type ContributionRef,
   type PurposeProgressView,
   type PlanStepOwnerRef,
+  type PurposeTagLinkType,
+  type PurposeNoteType,
   ValueNotFoundError,
   PurposeNotFoundError,
   TargetNotFoundError,
@@ -66,9 +68,10 @@ import type {
   PurposeMetricValueRow,
   TargetReviewRow,
 } from '../../db/schema/purposes'
+import type { PageRow } from '../../db/schema/notes'
 
 export function createPurposesService(deps: PurposesServiceDeps): PurposesService {
-  const { db, deviceId, measurementSources, sessions } = deps
+  const { db, deviceId, measurementSources, sessions, spaces, notes } = deps
 
   // All three spine tables carry deleted_at → softDelete:true. M1.0 encryptedFields:[] (M3 enables [E]).
   const valuesRepo = createRepository(db, values, { deviceId, softDelete: true, encryptedFields: [] })
@@ -725,6 +728,65 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     )
   }
 
+  // ---- S8: tags · links · pages ---------------------------------------------
+  // Thin SCOPED wrappers over the built SpacesService / NotesService (the WRITE owners). Purposes never touches
+  // entity_tags/entity_links/pages directly — the read/write split ([[spaces-junctions-split-read-write-tagentity-blind-inserts]]).
+  // `spaces.*` validate entity_type against the shared taggable-type registry they hold; value/purpose/target/dream/
+  // purpose_metric_value are all pre-seeded in ENTITY_TYPES (_registry.ts) → no `register()` call here (PG-18).
+  async function tagEntity(entityType: PurposeTagLinkType, entityId: string, tagId: string): Promise<void> {
+    await spaces.tagEntity(tagId, entityType, entityId)
+  }
+  async function untagEntity(entityType: PurposeTagLinkType, entityId: string, tagId: string): Promise<void> {
+    await spaces.untagEntity(tagId, entityType, entityId)
+  }
+  async function linkEntity(
+    pageId: string,
+    target: { type: PurposeTagLinkType; id: string },
+    context?: string | null,
+  ): Promise<void> {
+    await spaces.createLink(pageId, target.type, target.id, context ?? null)
+  }
+  async function unlinkEntity(pageId: string, target: { type: PurposeTagLinkType; id: string }): Promise<void> {
+    await spaces.removeLink(pageId, target.type, target.id)
+  }
+
+  // The title seed is a read of the OWNED entity (not cross-module) → in-contract per EntityNoteSeed. Guards the
+  // owner exists with the entity's own *NotFoundError (the getProjectPage find-or-create guard precedent).
+  async function resolveOwnedTitle(entityType: PurposeNoteType, entityId: string): Promise<string> {
+    switch (entityType) {
+      case 'value': {
+        const v = await valuesRepo.findById(entityId)
+        if (!v) throw new ValueNotFoundError(entityId)
+        return v.name
+      }
+      case 'purpose': {
+        const p = await purposesRepo.findById(entityId)
+        if (!p) throw new PurposeNotFoundError(entityId)
+        return p.title
+      }
+      case 'target': {
+        const t = await targetsRepo.findById(entityId)
+        if (!t) throw new TargetNotFoundError(entityId)
+        return t.title
+      }
+      case 'dream': {
+        const d = await dreamsRepo.findById(entityId)
+        if (!d) throw new DreamNotFoundError(entityId)
+        return d.title
+      }
+    }
+  }
+  // Find-or-create the standalone note for a titled entity (the projects `getProjectPage` mechanism — NOT
+  // `notes.ensureEntityNote`, which seeds the `content` column, not `title` [notes/service.ts:171-175]). We want a
+  // TITLED page, so find the entity's existing note-page else `createPage` with the owned entity's title. No new
+  // PAGE_TYPE (type='note'); idempotent (find-first by type+entity); spaces/notes validate the entity_type.
+  async function ensureEntityNote(entityType: PurposeNoteType, entityId: string): Promise<PageRow> {
+    const title = await resolveOwnedTitle(entityType, entityId)
+    const existing = (await notes.getPagesForEntity(entityType, entityId)).find((p) => p.type === 'note')
+    if (existing) return existing
+    return notes.createPage({ type: 'note', title, entity_type: entityType, entity_id: entityId })
+  }
+
   return {
     createValue,
     updateValue,
@@ -767,6 +829,11 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     addPlanStep,
     togglePlanStep,
     listPlanSteps,
+    tagEntity,
+    untagEntity,
+    linkEntity,
+    unlinkEntity,
+    ensureEntityNote,
   }
 }
 

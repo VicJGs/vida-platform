@@ -12,6 +12,9 @@ import type { MetricValueSource } from '@vida/types'
 import type { MeasurementSourceRegistry } from '../../foundation/measurement'
 import type { SessionRegistry } from '../../foundation/sessions'
 import type { SessionsService } from '../sessions'
+import type { SpacesService } from '../../foundation/spaces'
+import type { NotesService } from '../notes'
+import type { PageRow } from '../../db/schema/notes'
 import type {
   CreateValueInput,
   UpdateValueInput,
@@ -45,6 +48,15 @@ export interface ContributionRef {
   id: string
 }
 
+/** The purposes-owned entity types that are valid `entity_tags`/`entity_links` targets (PG-18). All are already
+ *  seeded in the shared `ENTITY_TYPES` (`_registry.ts:13,50-53`), so `SpacesService` validates them without any
+ *  `register()` call from here. Includes `purpose_metric_value` (a ledger row is a tag/link target per PG-18). */
+export type PurposeTagLinkType = 'value' | 'purpose' | 'target' | 'dream' | 'purpose_metric_value'
+
+/** The titled first-class purposes entities that can carry a standalone note page (PG-18). A
+ *  `purpose_metric_value` ledger row has no title, so it is a tag/link target only — never a note subject. */
+export type PurposeNoteType = 'value' | 'purpose' | 'target' | 'dream'
+
 /** The current value of a metric: the override slot if set, else derived from the ledger via calculation_method. */
 export interface MetricCurrent {
   value: number | null
@@ -64,6 +76,13 @@ export interface PurposesServiceDeps {
    *  persists the `review` sub-type (SS-5 owning-module registration); `service.createSession` writes the session
    *  row. mod-sessions is built+Done → the FACT is wired at M1, not hedged (g1 #1/#2). */
   sessions: { registry: SessionRegistry; service: SessionsService }
+  /** REQUIRED (S8) — the entity_tags + entity_links WRITE surface (PG-18). Purposes delegates ALL tag/link writes
+   *  here (the read/write split); spaces validates entity_type against the shared registry it holds internally, so
+   *  purposes needs NO own `registry` dep (the DB-4 seed already covers value/purpose/target/dream/metric_value). */
+  spaces: SpacesService
+  /** REQUIRED (S8) — the `pages` surface for standalone entity notes (PG-18). Purposes OWNS a standalone-note
+   *  find-or-create for its titled entities (unlike projects, which punts general notes to the FE). */
+  notes: NotesService
 }
 
 /** A derived progress reading in 0–100 (the engine computes in [0,1]; converted at this edge). */
@@ -154,6 +173,21 @@ export interface PurposesService {
   /** Flip a plan step's completion (stamps/clears `completed_at`). */
   togglePlanStep(id: string): Promise<PlanStepRow>
   listPlanSteps(owner: PlanStepOwnerRef): Promise<PlanStepRow[]>
+
+  // ---- S8: tags · links · pages (compose SpacesService WRITE + NotesService) ----
+  /** Attach a tag to a purposes-owned entity (idempotent; delegates to SpacesService, which validates the
+   *  entity_type against the shared taggable-type registry). Thin scoped wrapper (the read/write split). */
+  tagEntity(entityType: PurposeTagLinkType, entityId: string, tagId: string): Promise<void>
+  /** Detach a tag (resolve-then-soft-delete; no-op if absent). */
+  untagEntity(entityType: PurposeTagLinkType, entityId: string, tagId: string): Promise<void>
+  /** Link a page OUT to a purposes-owned entity (`entity_links`; idempotent). `pageId` is the source anchor. */
+  linkEntity(pageId: string, target: { type: PurposeTagLinkType; id: string }, context?: string | null): Promise<void>
+  /** Remove an `entity_links` edge (resolve-then-soft-delete; no-op if absent). */
+  unlinkEntity(pageId: string, target: { type: PurposeTagLinkType; id: string }): Promise<void>
+  /** Find-or-create the standalone note page for a titled purposes entity, seeded with the entity's own title
+   *  (a client-side read of OWNED data, in-contract per `EntityNoteSeed`). No new PAGE_TYPE (`type:'note'`).
+   *  Throws the entity's `*NotFoundError` if the owner is missing. */
+  ensureEntityNote(entityType: PurposeNoteType, entityId: string): Promise<PageRow>
 }
 
 // --- typed errors (contract.md:49-57) ---------------------------------------

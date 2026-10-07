@@ -19,9 +19,14 @@ import { createMeasurementSourceRegistry, type MeasurementSourceRegistry } from 
 import { createSessionRegistry, type SessionRegistry } from '../../../foundation/sessions'
 import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSpacesService, UnknownEntityType, type SpacesService } from '../../../foundation/spaces'
+import { createAssociationResolver } from '../../../foundation/spaces/association-resolver'
+import { createBacklinkResolver } from '../../search/backlink-resolver'
+import { createNotesService, type NotesService } from '../../notes'
 import { createSessionsService } from '../../sessions'
 import {
   type PurposesService,
+  type PurposeTagLinkType,
   ValueNotFoundError,
   PurposeNotFoundError,
   TargetNotFoundError,
@@ -72,6 +77,9 @@ interface Harness {
   db: DrizzleDb
   bsql: Database.Database
   sessionRegistry: SessionRegistry
+  spaces: SpacesService
+  notes: NotesService
+  associations: ReturnType<typeof createAssociationResolver>
 }
 
 async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = {}): Promise<Harness> {
@@ -86,13 +94,22 @@ async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = 
   const sessionRegistry = createSessionRegistry(db, 'test-device')
   const rail = createEffectRail(db, createEffectRegistry())
   const sessions = createSessionsService({ db, deviceId: 'test-device', registry: sessionRegistry, rail, entityRegistry })
+  // S8 — the REAL spaces + notes substrates (the projects/learning-education harness precedent): tags/links WRITE
+  // via SpacesService, pages via NotesService, over the shared taggable-type registry (value/purpose/target/dream/
+  // purpose_metric_value pre-seeded from ENTITY_TYPES). The association resolver reads back entity_tags/links.
+  const spaces = createSpacesService(db, 'test-device', entityRegistry)
+  const backlinks = createBacklinkResolver(db, 'test-device')
+  const notes = createNotesService({ db, deviceId: 'test-device', spaces, backlinks, registry: entityRegistry })
+  const associations = createAssociationResolver(db, 'test-device', entityRegistry)
   const svc = createPurposesService({
     db,
     deviceId: 'test-device',
     measurementSources: opts.measurementSources,
     sessions: { registry: sessionRegistry, service: sessions },
+    spaces,
+    notes,
   })
-  return { svc, db, bsql, sessionRegistry }
+  return { svc, db, bsql, sessionRegistry, spaces, notes, associations }
 }
 
 describe('mod-purposes S1 — values CRUD', () => {
@@ -731,5 +748,86 @@ describe('mod-purposes S7 — reviews + plan_steps', () => {
 
   it('togglePlanStep on a missing id throws PlanStepNotFoundError', async () => {
     await expect(h.svc.togglePlanStep('nope')).rejects.toBeInstanceOf(PlanStepNotFoundError)
+  })
+})
+
+// ============================================================================
+// S8 — tags · links · pages (compose SpacesService WRITE + NotesService). Live-store: real entity_tags/entity_links/
+// pages writes through the built substrates, read back via the association resolver + NotesService. Maps 1:1 to
+// slice-map S8 + seam-contract composition-seam-5 (PG-18).
+// ============================================================================
+describe('mod-purposes S8 — tags · links · pages', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('tagEntity attaches a tag to a purpose (live) and untagEntity removes it', async () => {
+    const p = await h.svc.createPurpose({ title: 'Health' })
+    const tag = await h.spaces.createTag({ name: 'core' })
+    await h.svc.tagEntity('purpose', p.id, tag.id)
+    const after = await h.associations.resolveAssociations({ entityType: 'purpose', entityId: p.id }, 'separate')
+    if (after.mode === 'separate') expect(after.tags.map((t) => t.tagId)).toContain(tag.id)
+    await h.svc.untagEntity('purpose', p.id, tag.id)
+    const removed = await h.associations.resolveAssociations({ entityType: 'purpose', entityId: p.id }, 'separate')
+    if (removed.mode === 'separate') expect(removed.tags.map((t) => t.tagId)).not.toContain(tag.id)
+  })
+
+  it('linkEntity writes an outbound entity_link from a page to a target; unlinkEntity removes it', async () => {
+    const p = await h.svc.createPurpose({ title: 'Career' })
+    const t = await h.svc.createTarget({ title: 'Ship v1', purpose_id: p.id })
+    const page = await h.svc.ensureEntityNote('purpose', p.id) // a real page to anchor the outbound link
+    await h.svc.linkEntity(page.id, { type: 'target', id: t.id }, 'see target')
+    const after = await h.associations.resolveAssociations({ entityType: 'page', entityId: page.id }, 'separate')
+    if (after.mode === 'separate') {
+      expect(after.links.some((l) => l.target.entityType === 'target' && l.target.entityId === t.id)).toBe(true)
+    }
+    await h.svc.unlinkEntity(page.id, { type: 'target', id: t.id })
+    const removed = await h.associations.resolveAssociations({ entityType: 'page', entityId: page.id }, 'separate')
+    if (removed.mode === 'separate') expect(removed.links.some((l) => l.target.entityId === t.id)).toBe(false)
+  })
+
+  it('ensureEntityNote find-or-creates the standalone note seeded with the entity title + is idempotent', async () => {
+    const p = await h.svc.createPurpose({ title: 'Family first' })
+    const page1 = await h.svc.ensureEntityNote('purpose', p.id)
+    expect(page1.entity_type).toBe('purpose')
+    expect(page1.entity_id).toBe(p.id)
+    expect(page1.type).toBe('note') // no new PAGE_TYPE
+    expect(page1.title).toBe('Family first') // seeded from the owned entity's title
+    const page2 = await h.svc.ensureEntityNote('purpose', p.id)
+    expect(page2.id).toBe(page1.id) // idempotent — same page, not a duplicate
+    expect((await h.notes.getPagesForEntity('purpose', p.id)).length).toBe(1)
+  })
+
+  it('ensureEntityNote seeds a value note from its name column', async () => {
+    const v = await h.svc.createValue({ name: 'Integrity' })
+    const page = await h.svc.ensureEntityNote('value', v.id)
+    expect(page.entity_type).toBe('value')
+    expect(page.title).toBe('Integrity')
+  })
+
+  it('ensureEntityNote throws the owner *NotFoundError when the entity is missing', async () => {
+    await expect(h.svc.ensureEntityNote('purpose', 'missing-id')).rejects.toBeInstanceOf(PurposeNotFoundError)
+    await expect(h.svc.ensureEntityNote('dream', 'missing-id')).rejects.toBeInstanceOf(DreamNotFoundError)
+  })
+
+  it('tag/link delegate registry validation — an unregistered entity_type is rejected by spaces (BR-2)', async () => {
+    const tag = await h.spaces.createTag({ name: 'x' })
+    // bypass the typed union to prove the write-through preserves spaces' registry guard
+    await expect(h.svc.tagEntity('not_a_real_type' as PurposeTagLinkType, 'id', tag.id)).rejects.toBeInstanceOf(
+      UnknownEntityType,
+    )
+  })
+
+  it('purpose_metric_value is a valid tag target (PG-18) — a ledger row carries no note but is taggable', async () => {
+    const m = await h.svc.createMetric({ name: 'Weight', unit: 'kg' })
+    const mv = await h.svc.recordMetricValue(m.id, 80, { source: 'manual' })
+    const tag = await h.spaces.createTag({ name: 'body' })
+    await h.svc.tagEntity('purpose_metric_value', mv.id, tag.id)
+    const after = await h.associations.resolveAssociations(
+      { entityType: 'purpose_metric_value', entityId: mv.id },
+      'separate',
+    )
+    if (after.mode === 'separate') expect(after.tags.map((t) => t.tagId)).toContain(tag.id)
   })
 })

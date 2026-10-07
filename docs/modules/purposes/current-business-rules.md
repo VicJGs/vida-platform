@@ -184,3 +184,33 @@
   target}, …)` appends (`is_completed:false`); `togglePlanStep` flips completion and **stamps/clears `completed_at`**
   in sync; `listPlanSteps(owner)` returns active steps (`findWhere` + explicit `isNull(deleted_at)`, since findWhere
   skips the soft-delete filter). A toggle on a missing id → `PlanStepNotFoundError`.
+
+## S8 — tags · links · pages (compose SpacesService + NotesService)
+
+- **BR-PG-S8-1** — **All tag/link/page writes delegate THROUGH the composed `spaces`/`notes` services — the module
+  never touches `entity_tags`/`entity_links`/`pages` directly** (the read/write split, SP1/SP4). `tagEntity`/
+  `untagEntity`/`linkEntity`/`unlinkEntity` are thin SCOPED wrappers over `spaces.tagEntity`/`untagEntity`/
+  `createLink`/`removeLink` (arg-reordered to spaces' `(tagId, entityType, entityId)` / `(pageId, entityType,
+  entityId, context)`); each delegated write is idempotent (resolve-then-revive / resolve-then-soft-delete, BR-14/15).
+- **BR-PG-S8-2** — **No `registry` dep (write-only slice).** `spaces`/`notes` self-validate `entity_type` against the
+  taggable-type registry they are constructed with (`spaces.assertRegistered`; `notes.createPage` validates too). The
+  purposes entity_types (`value`/`purpose`/`target`/`dream`/`purpose_metric_value`) are **already seeded** in the
+  shared `ENTITY_TYPES` (`_registry.ts:13,50-53`, DB-4) → no `register()` call, no per-layer registry. The
+  seam-contract's "registry REQUIRED" line is superseded here (write-only; if S9 adds an association-READ lane it pulls
+  `registry` first-consumer). An unregistered type passed to a wrapper surfaces `spaces`' `UnknownEntityType` (BR-2) —
+  the write-through preserves validation, proven by test.
+- **BR-PG-S8-3** — **Two typed entity-type unions, grounded in PG-18.** `PurposeTagLinkType =
+  value|purpose|target|dream|purpose_metric_value` governs tag/link (the full PG-18 target set, incl. the
+  `purpose_metric_value` ledger row). `PurposeNoteType = value|purpose|target|dream` governs `ensureEntityNote` — a
+  `purpose_metric_value` ledger row has **no title**, so it is a tag/link target only, never a standalone-note subject.
+- **BR-PG-S8-4** — **`ensureEntityNote` find-or-creates a TITLED standalone note** (`type:'note'`, **no new
+  PAGE_TYPE**). It uses `notes.getPagesForEntity` + `notes.createPage` (NOT `notes.ensureEntityNote`, which seeds the
+  `content` column not `title` — `notes/service.ts:171-175`); the title seed is the owned entity's own `title` (`name`
+  for `value`), a client-side read of OWNED data (in-contract, not cross-module). Idempotent: a second call returns the
+  SAME page (find-first by `type:'note'` + entity), never a duplicate. Guards the owner exists with its own
+  `*NotFoundError` (`ValueNotFoundError`/`PurposeNotFoundError`/`TargetNotFoundError`/`DreamNotFoundError`) — the
+  projects `getProjectPage` guard precedent.
+- **BR-PG-S8-5** — **Standalone general notes beyond the owned find-or-create are the FE's to manage** via
+  `NotesService` directly (the entity_types are registered). The Bucket List **Space** over `dreams`, the vision-board/
+  Gallery view, and the neural graph are **② `fe-purposes`/Spaces-view** concerns (`contract.md:40-41`), not ① S8; the
+  Journal/due aggregation is S9.
