@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-06 by /session-end -->
+<!-- Last updated: 2026-10-07 by /session-end -->
 
 
 ## mod-purposes-and-goals (① backend #55 · LIF-136, 2026-10-06 — S1–S7 of 9 on branch `mod-purposes-and-goals`)
@@ -933,3 +933,17 @@ The Projects module ① backend — `createProjectsService` over DB-4 `016_proje
 - **Tasks→Projects is a deny-safe seam with a precedence ladder (S8)** — task rollup is a leaf contributor; the value precedence is `override > task > source > null`. The Tasks port is optional (absent ⇒ no task leg), so Projects builds without a hard Tasks dependency.
 - **Cross-module fan-out is emit-only (S9, C-E2)** — `emit_measurement_signal` on measurement change (no economy coupling) + a Journal `/summary` contribution. Producer-only; no consumer wiring owned here.
 - **Close-out recovery lesson** — the build + PR #85 merge completed in a prior session that stopped before the LOCAL close-out (pull main · archive · Linear sync). GitHub showed PR MERGED while local `main` was a merge behind and `createProjectsService` was absent locally — the "COMPLETE" note was ahead of the local tree. Resolution: verify the merge is on `origin/main` (not just the PR state), fast-forward, re-run the suite, then finish the bookkeeping. See [[slice-map-checkmark-is-ratified-not-shipped]].
+
+## fe-codec-primitives-refinement (LIF-230 · P3 Timeline + P4 Gallery, 2026-10-07 — PRs #97, #99 merged)
+CODEC aesthetic-refinement of the pre-CODEC view primitives, per-component phased build. Detail in
+`docs/specs/foundation/fe-codec-primitives-refinement/phases/P{3,4}-*.md` + `packages/ui/src/CLAUDE.md`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-07 | P3 timeline — now-awareness | how does the renderer learn "now" (masonry/clock)? | consumer `getTemporalState(item)→past\|present\|future`; renderer never reads a clock; tones the DOT only | presentational (BR-2); the title tone is the consumer's renderItem (LV-5) | reversible (additive prop) |
+| 2026-10-07 | P3 timeline — future fade | fade the future row? | DOT opacity only; the DATE held at full `$colorTextMuted` | fading muted text composites < AA (shipped Card BR-C-7a, measured 2.4–2.6) | n/a (AA floor) |
+| 2026-10-07 | P3 timeline — fulcrum continuity | how does the rail stay continuous through a spliced "now" divider? | 4-branch trim runs over the COMBINED render sequence (items + fulcrum pseudo-row) | the rail connects through the fulcrum in every case (interior / top-of-list) | n/a (geometry) |
+| 2026-10-07 | P4 gallery — weight mechanism | realize "weight-sized tiles" as masonry (mockup) or width-span? | **width-span** (`getWeight`→flex sizing); masonry FORECLOSED | GV-2 + ADR-001:111 + ui-2 _index:96 bind a RN-safe flex grid, "not CSS grid" — masonry is not buildable, not a choice | n/a (binding spec) |
+| 2026-10-07 | P4 gallery — flexShrink | why set flexShrink explicitly? | `flexShrink:1` explicit in `weightStyle` | Tamagui/RNW defaults flexShrink to **0** (not CSS's 1) → a `flexBasis:w·min>viewport` tile can't shrink → 375 overflow (Visual Gate caught it) | n/a (platform default) |
+| 2026-10-07 | P4 gallery — weight guard | clamp consumer weight? | symmetric `clampWeight [1,8]` + dev-warn | a one-sided (low-only) guard let a bogus large weight starve siblings (code-review caught) | reversible (ceiling tunable) |
+| 2026-10-07 | P3/P4 scope | cover-intelligence / editorial tile look — build in the renderer? | NO — consumer `renderItem` + view engine (ADR-007:62) | GV-1/LV-5 content boundary; the renderer owns layout + chrome it generates, not tile content | n/a (grounded) |
