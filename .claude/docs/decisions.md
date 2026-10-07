@@ -1,6 +1,19 @@
 <!-- Last updated: 2026-10-07 by /session-end -->
 
 
+## fe-codec-dashboard (② frontend CODEC #5 · LIF-208 → Done, 2026-10-07 — COMPLETE S1+S2, PR #104 open)
+The CODEC **Dashboard shell** ("a grid of integration blocks", decomposition.md:30 §1.2) — the 2nd archetype shell.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-07 | fe-codec-dashboard | How the shell renders blocks | A `renderBlock` render-prop; the shell composes, never renders a block's internals | Blocks are types-only (11 `standalone` widgets ship elsewhere); the Collection agnostic-composition precedent + the `@vida/ui` Tamagui-only boundary | yes |
+| 2026-10-07 | fe-codec-dashboard | Cell span model | A `size` enum (`sm/md/lg/full`) → RN-safe flex with a per-span `maxWidth` cap | Intent-sized blocks read cleaner than numeric/weight; the cap stops a lone non-`full` cell filling the row (EC-6, caught live in the greybox) | yes |
+| 2026-10-07 | fe-codec-dashboard | Terminal-state ownership | SHELL owns generic loading/empty/error; `renderBlock` is success-only; per-block override hatches | A block is CONTENT not a self-stated component → a dashboard-wide consistent degrade; extends Collection's shell-owned-empty to all three | yes |
+| 2026-10-07 | fe-codec-dashboard | Error text color | Muted `$colorTextMuted` + `role="status"` (the `Message` precedent), NOT `$colorSignalDanger` | Signal-danger as text fails light-mode AA (3.63, ds-2 M4 palette); the role carries the semantics — Visual-Gate caught it | yes |
+| 2026-10-07 | fe-codec-dashboard | Placement editing (drag/resize/reorder) | Homed OUT → a Capability (`block_instances` write, ADR-008/O1) | The whole CODEC tier is read-only (quality-bar §4.3); the board-drag precedent | n/a (scope) |
+| 2026-10-07 | fe-codec-dashboard | S2 adapter input types | Structural `BlockInstanceLike`/`CapabilityDefLike` projections (not `schema.BlockInstanceRow`) | The `SavedViewLike` precedent — decoupled + testable; `CapabilityDefinition` has no `title` so the contract's `def.title` was ahead of canon (g2-confirmed more-correct) | yes |
+| 2026-10-07 | fe-codec-dashboard | Font-size tokens | `$heading`/`$subheading` (scale = display/heading/subheading/body/small/caption) | `$h3`/`$h4` are UNDEFINED tokens (collapse the hierarchy); `collection-view.tsx:170` carries the same latent defect → sibling fix | yes |
+
 ## mod-purposes-and-goals (① backend #55 · LIF-136 → Done, 2026-10-07 — COMPLETE S1–S9, PR #98 merged)
 The measurability CAPSTONE over DB-4 `019_purposes` (6 tables) + DB-3 `007_purpose` (4 substrate tables), composing
 the built `foundation/measurement` engine (ADR-011; Purpose = rollup APEX + consumer, NOT owner). **① backend done
