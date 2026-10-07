@@ -26,7 +26,20 @@ getTimeline(contactId: string): Promise<InteractionRow[]>                     //
 createEvent(input: CreateEventInput): Promise<EventView>                      // ContactNotFoundError
 getUpcomingEvents(range: EventDateRange): Promise<UpcomingEvent[]>            // {event, occurrence}; recurring MM-DD projected
 getAllEvents(): Promise<EventView[]>                                          // event_date asc
+// S4 — reminders + groups + the R7 dueIn producer
+createReminder(input: CreateReminderInput): Promise<ContactReminderRow>      // ContactNotFoundError
+completeReminder(id): Promise<ContactReminderRow>                            // ReminderNotFoundError
+snoozeReminder(id, until: string): Promise<ContactReminderRow>              // ReminderNotFoundError
+createGroup(input: CreateGroupInput): Promise<ReminderGroupView>
+addMembers(groupId, contactIds: string[]): Promise<void>                    // ReminderGroupNotFoundError; idempotent
+removeMembers(groupId, contactIds: string[]): Promise<void>                 // ReminderGroupNotFoundError
+setBirthdayAnchor(groupId, daysBefore: number): Promise<ReminderGroupView>  // ReminderGroupNotFoundError
+deleteGroup(groupId): Promise<void>                                         // SET NULL members + purge junction (REL-34)
+getDueReminders(range: TimeRange): Promise<DueItem[]>                        // S9 registers as a sessions DueProvider lane
 ```
+`ReminderGroupView` = `ReminderGroupRow` with `days_of_week` parsed. `TimeRange`/`DueItem` from `../sessions`.
+`getDueReminders` producers: explicit reminders · stay-in-touch overdue · birthday-anchor + daily/weekly schedule
+groups (biweekly+ = flagged schema gap). Validators: `CreateReminderSchema` (contact_id+title)/`CreateGroupSchema` (name).
 `EventView` = `ContactEventRow` with `reminder_days` parsed. `UpcomingEvent = {event, occurrence}`;
 `EventDateRange = {from,to}` (YYYY-MM-DD). `CreateEventSchema` (contact_id+event_date required).
 Derived stats (RL-3): `recomputeContactStats` keeps `contacts.{last_interaction_date,interaction_count,next_contact_date}`

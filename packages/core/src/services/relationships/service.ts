@@ -20,10 +20,12 @@ import {
   contactEvents,
   interactions,
   contactReminders,
+  reminderGroups,
   reminderGroupContacts,
   networkGroupContacts,
   type ContactRow,
   type ContactEventRow,
+  type ReminderGroupRow,
 } from '../../db/schema/relationships'
 import {
   CreateContactSchema,
@@ -31,15 +33,21 @@ import {
   CreateInteractionSchema,
   UpdateInteractionSchema,
   CreateEventSchema,
+  CreateReminderSchema,
+  CreateGroupSchema,
 } from '../../validators/relationship'
+import type { DueItem } from '../sessions'
 import {
   type RelationshipsService,
   type RelationshipsServiceDeps,
   type ContactView,
   type EventView,
   type UpcomingEvent,
+  type ReminderGroupView,
   ContactNotFoundError,
   InteractionNotFoundError,
+  ReminderNotFoundError,
+  ReminderGroupNotFoundError,
 } from './types'
 
 // --- derived-stats helpers (RL-3; S2) ---------------------------------------
@@ -67,6 +75,14 @@ const nextOccurrence = (md: string, from: string): string => {
   return candidate >= from ? candidate : `${Number(year) + 1}-${md}`
 }
 
+// --- dueIn window helpers (S4) ----------------------------------------------
+/** Unix ms → UTC-day YYYY-MM-DD (the dueIn window bound as a calendar day). */
+const msToISO = (ms: number): string => new Date(ms).toISOString().slice(0, 10)
+/** YYYY-MM-DD → Unix ms at UTC midnight (the DueItem due moment). */
+const isoToMs = (iso: string): number => Date.parse(iso + 'T00:00:00Z')
+/** UTC weekday (0=Sun..6=Sat) of a YYYY-MM-DD. */
+const isoWeekday = (iso: string): number => new Date(iso + 'T00:00:00Z').getUTCDay()
+
 export function createRelationshipsService(deps: RelationshipsServiceDeps): RelationshipsService {
   const { db, deviceId } = deps
 
@@ -75,6 +91,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
   const eventsRepo = createRepository(db, contactEvents, { encryptedFields: [], deviceId })
   const interactionsRepo = createRepository(db, interactions, { encryptedFields: [], deviceId })
   const remindersRepo = createRepository(db, contactReminders, { encryptedFields: [], deviceId })
+  const reminderGroupsRepo = createRepository(db, reminderGroups, { encryptedFields: [], deviceId })
   const reminderGroupContactsRepo = createRepository(db, reminderGroupContacts, { encryptedFields: [], deviceId })
   const networkGroupContactsRepo = createRepository(db, networkGroupContacts, { encryptedFields: [], deviceId })
 
@@ -88,6 +105,10 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
   function toEventView(row: ContactEventRow): EventView {
     const { reminder_days, ...rest } = row
     return { ...rest, reminder_days: reminder_days != null ? (JSON.parse(reminder_days) as number[]) : null }
+  }
+  function toGroupView(row: ReminderGroupRow): ReminderGroupView {
+    const { days_of_week, ...rest } = row
+    return { ...rest, days_of_week: days_of_week != null ? (JSON.parse(days_of_week) as number[]) : null }
   }
 
   // --- intra-service closures (hoisted, not `this.`) -------------------------
@@ -276,6 +297,165 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       return rows
         .sort((a, b) => (a.event_date < b.event_date ? -1 : a.event_date > b.event_date ? 1 : 0))
         .map(toEventView)
+    },
+
+    // --- REL-30 createReminder (per-contact) ---------------------------------
+    createReminder: async (input) => {
+      const parsed = CreateReminderSchema.parse(input)
+      const contact = await contactsRepo.findById(parsed.contact_id) // soft-delete-aware guard
+      if (!contact) throw new ContactNotFoundError(parsed.contact_id)
+      const created = await remindersRepo.create({
+        ...parsed,
+        is_recurring: parsed.is_recurring ?? false, // NN-default backfills
+        is_completed: false,
+        is_snoozed: false,
+      })
+      const persisted = await remindersRepo.findById(created.id) // re-read → faithful
+      if (!persisted) throw new Error(`Reminder vanished after create: ${created.id}`)
+      return persisted
+    },
+
+    // --- REL-31 completeReminder ---------------------------------------------
+    completeReminder: async (id) => {
+      const existing = await remindersRepo.findById(id)
+      if (!existing) throw new ReminderNotFoundError(id)
+      return remindersRepo.update(id, { is_completed: true })
+    },
+
+    // --- REL-32 snoozeReminder (G8) ------------------------------------------
+    snoozeReminder: async (id, until) => {
+      const existing = await remindersRepo.findById(id)
+      if (!existing) throw new ReminderNotFoundError(id)
+      return remindersRepo.update(id, { is_snoozed: true, snoozed_until: until })
+    },
+
+    // --- REL-39 createGroup --------------------------------------------------
+    createGroup: async (input) => {
+      const parsed = CreateGroupSchema.parse(input)
+      const { days_of_week, ...rest } = parsed
+      const created = await reminderGroupsRepo.create({
+        ...rest,
+        is_active: true, // NN-default backfills
+        anchor_type: parsed.anchor_type ?? 'schedule',
+        days_of_week: days_of_week != null ? JSON.stringify(days_of_week) : null,
+      })
+      const persisted = await reminderGroupsRepo.findById(created.id)
+      if (!persisted) throw new Error(`Group vanished after create: ${created.id}`)
+      return toGroupView(persisted)
+    },
+
+    // --- REL-40 addMembers (idempotent — UNIQUE(group,contact)) --------------
+    addMembers: async (groupId, contactIds) => {
+      const group = await reminderGroupsRepo.findById(groupId)
+      if (!group) throw new ReminderGroupNotFoundError(groupId)
+      const existing = await reminderGroupContactsRepo.findWhere(
+        eq(reminderGroupContacts.reminder_group_id, groupId),
+      )
+      const have = new Set(existing.map((m) => m.contact_id))
+      for (const cid of contactIds) {
+        if (have.has(cid)) continue // skip existing (idempotent)
+        await reminderGroupContactsRepo.create({ reminder_group_id: groupId, contact_id: cid })
+      }
+    },
+
+    // --- REL-40 removeMembers ------------------------------------------------
+    removeMembers: async (groupId, contactIds) => {
+      const group = await reminderGroupsRepo.findById(groupId)
+      if (!group) throw new ReminderGroupNotFoundError(groupId)
+      const drop = new Set(contactIds)
+      const existing = await reminderGroupContactsRepo.findWhere(
+        eq(reminderGroupContacts.reminder_group_id, groupId),
+      )
+      for (const m of existing) {
+        if (drop.has(m.contact_id)) await reminderGroupContactsRepo.hardDelete(m.id)
+      }
+    },
+
+    // --- REL-41 setBirthdayAnchor (G11) --------------------------------------
+    setBirthdayAnchor: async (groupId, daysBefore) => {
+      const group = await reminderGroupsRepo.findById(groupId)
+      if (!group) throw new ReminderGroupNotFoundError(groupId)
+      const updated = await reminderGroupsRepo.update(groupId, {
+        anchor_type: 'birthday',
+        anchor_days_before: daysBefore,
+      })
+      return toGroupView(updated)
+    },
+
+    // --- REL-34 deleteGroup (SET NULL member reminders; purge junction) ------
+    deleteGroup: async (groupId) => {
+      const group = await reminderGroupsRepo.findById(groupId)
+      if (!group) return // idempotent no-op
+      // the reminder survives, ungrouped (RL-2/REL-34 SET NULL)
+      const grouped = await remindersRepo.findWhere(eq(contactReminders.reminder_group_id, groupId))
+      for (const r of grouped) await remindersRepo.update(r.id, { reminder_group_id: null })
+      const junctions = await reminderGroupContactsRepo.findWhere(
+        eq(reminderGroupContacts.reminder_group_id, groupId),
+      )
+      for (const j of junctions) await reminderGroupContactsRepo.hardDelete(j.id)
+      await reminderGroupsRepo.hardDelete(groupId)
+    },
+
+    // --- REL-33/36 getDueReminders — the R7 dueIn producer -------------------
+    getDueReminders: async (range) => {
+      const fromISO = msToISO(range.start)
+      const toISO = msToISO(range.end)
+      const items: DueItem[] = []
+      const push = (ref_id: string, label: string, dueISO: string): void => {
+        items.push({
+          source_module: 'relationships',
+          ref_id,
+          label,
+          est_minutes: 0,
+          urgency: 0, // no urgency algorithm at M1 (sessions dueIn precedent — deferred)
+          hard_deadline: isoToMs(dueISO),
+        })
+      }
+
+      // 1. explicit contact_reminders (effective-due = snoozed_until if snoozed, else reminder_date)
+      const reminders = await remindersRepo.findAll()
+      for (const r of reminders) {
+        if (r.is_completed) continue
+        const due = r.is_snoozed && r.snoozed_until ? r.snoozed_until : r.reminder_date
+        if (due != null && due >= fromISO && due <= toISO) push(r.id, r.title, due)
+      }
+
+      // 2. stay-in-touch overdue nudge (REL-36 — the canonical local-scheduled case; overdue carries forward)
+      const activeContacts = await contactsRepo.findAll()
+      for (const c of activeContacts) {
+        if (c.next_contact_date != null && c.next_contact_date <= toISO) {
+          push(c.id, c.first_name, c.next_contact_date)
+        }
+      }
+
+      // 3 + 4. groups (birthday-anchor + daily/weekly schedule; biweekly+ = flagged gap, not projected)
+      const groups = await reminderGroupsRepo.findAll()
+      for (const g of groups) {
+        if (!g.is_active) continue
+        const members = await reminderGroupContactsRepo.findWhere(
+          eq(reminderGroupContacts.reminder_group_id, g.id),
+        )
+        if (g.anchor_type === 'birthday') {
+          const before = g.anchor_days_before ?? 0
+          for (const m of members) {
+            const bdays = (await eventsRepo.findWhere(eq(contactEvents.contact_id, m.contact_id))).filter(
+              (e) => e.event_type === 'birthday',
+            )
+            for (const b of bdays) {
+              const occ = addDaysISO(nextOccurrence(mmdd(b.event_date), fromISO), -before)
+              if (occ >= fromISO && occ <= toISO) push(`${g.id}:${m.contact_id}`, g.name, occ)
+            }
+          }
+        } else if (g.frequency === 'daily' || g.frequency === 'weekly') {
+          const dow = g.days_of_week ? (JSON.parse(g.days_of_week) as number[]) : null
+          for (let iso = fromISO; iso <= toISO; iso = addDaysISO(iso, 1)) {
+            if (g.frequency === 'daily' || (dow && dow.includes(isoWeekday(iso)))) push(`${g.id}:${iso}`, g.name, iso)
+          }
+        }
+        // biweekly/monthly/quarterly/yearly schedule groups: no phase-anchor column → not projected (flagged forward)
+      }
+
+      return items.sort((a, b) => (a.hard_deadline ?? 0) - (b.hard_deadline ?? 0))
     },
   }
 }

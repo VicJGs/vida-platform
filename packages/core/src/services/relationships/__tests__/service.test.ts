@@ -24,7 +24,16 @@ import {
   networkGroupContacts,
 } from '../../../db/schema/relationships'
 import { createRelationshipsService } from '../service'
-import { type RelationshipsService, ContactNotFoundError, InteractionNotFoundError } from '../types'
+import {
+  type RelationshipsService,
+  ContactNotFoundError,
+  InteractionNotFoundError,
+  ReminderNotFoundError,
+  ReminderGroupNotFoundError,
+} from '../types'
+
+/** YYYY-MM-DD → Unix ms at UTC midnight (for TimeRange windows). */
+const ms = (iso: string): number => Date.parse(iso + 'T00:00:00Z')
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -356,5 +365,123 @@ describe('mod-relationships S3 — events', () => {
 
     const wrap = await h.svc.getUpcomingEvents({ from: '2026-12-01', to: '2027-02-01' })
     expect(wrap.map((u) => u.occurrence)).toEqual(['2027-01-10']) // the wrapped birthday
+  })
+})
+
+describe('mod-relationships S4 — reminders, groups, and the dueIn producer', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('creates/completes/snoozes a reminder; unknown id → ReminderNotFoundError', async () => {
+    const c = await h.svc.createContact({ first_name: 'Rem' })
+    const r = await h.svc.createReminder({ contact_id: c.id, title: 'ring' })
+    expect(r.is_completed).toBe(false) // backfill
+    expect(r.is_snoozed).toBe(false)
+    const done = await h.svc.completeReminder(r.id)
+    expect(done.is_completed).toBe(true)
+    const snoozed = await h.svc.snoozeReminder(r.id, '2026-12-01')
+    expect(snoozed.is_snoozed).toBe(true)
+    expect(snoozed.snoozed_until).toBe('2026-12-01')
+    await expect(h.svc.completeReminder('nope')).rejects.toBeInstanceOf(ReminderNotFoundError)
+    await expect(h.svc.snoozeReminder('nope', '2026-12-01')).rejects.toBeInstanceOf(ReminderNotFoundError)
+  })
+
+  it('createReminder guards a live contact', async () => {
+    await expect(h.svc.createReminder({ contact_id: 'nope', title: 'x' })).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+
+  it('creates a group (days_of_week JSON round-trip + backfill), manages members idempotently, sets anchor', async () => {
+    const c1 = await h.svc.createContact({ first_name: 'A' })
+    const c2 = await h.svc.createContact({ first_name: 'B' })
+    const g = await h.svc.createGroup({ name: 'Inner', days_of_week: [1, 3] })
+    expect(g.is_active).toBe(true) // backfill
+    expect(g.anchor_type).toBe('schedule') // backfill
+    expect(g.days_of_week).toEqual([1, 3]) // parsed array
+    await h.svc.addMembers(g.id, [c1.id, c2.id])
+    await h.svc.addMembers(g.id, [c1.id]) // idempotent — no duplicate
+    await h.svc.removeMembers(g.id, [c2.id])
+    const anchored = await h.svc.setBirthdayAnchor(g.id, 3)
+    expect(anchored.anchor_type).toBe('birthday')
+    expect(anchored.anchor_days_before).toBe(3)
+    await expect(h.svc.addMembers('nope', [c1.id])).rejects.toBeInstanceOf(ReminderGroupNotFoundError)
+    await expect(h.svc.setBirthdayAnchor('nope', 1)).rejects.toBeInstanceOf(ReminderGroupNotFoundError)
+  })
+
+  it('deleteGroup: group gone, member reminders SET NULL (survive), junctions purged (REL-34)', async () => {
+    const c = await h.svc.createContact({ first_name: 'Grp' })
+    const g = await h.svc.createGroup({ name: 'Doomed' })
+    await h.svc.addMembers(g.id, [c.id])
+    const r = await h.svc.createReminder({ contact_id: c.id, title: 'grouped', reminder_group_id: g.id })
+
+    const rgRepo = createRepository(h.db, reminderGroups, { encryptedFields: [], deviceId: DEVICE })
+    const remRepo = createRepository(h.db, contactReminders, { encryptedFields: [], deviceId: DEVICE })
+    const rgcRepo = createRepository(h.db, reminderGroupContacts, { encryptedFields: [], deviceId: DEVICE })
+
+    await h.svc.deleteGroup(g.id)
+
+    expect(await rgRepo.findById(g.id)).toBeNull() // group gone
+    const survivor = await remRepo.findById(r.id)
+    expect(survivor).not.toBeNull() // reminder survives
+    expect(survivor?.reminder_group_id).toBeNull() // ungrouped (SET NULL, REL-34)
+    expect(await rgcRepo.findWhere(eq(reminderGroupContacts.reminder_group_id, g.id))).toHaveLength(0) // junction purged
+    await expect(h.svc.deleteGroup(g.id)).resolves.toBeUndefined() // idempotent
+  })
+
+  it('getDueReminders: explicit (snoozed uses snoozed_until; completed excluded) + stay-in-touch overdue', async () => {
+    const c = await h.svc.createContact({ first_name: 'Due', stay_in_touch_days: 7 })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' }) // next = 2026-10-08
+    const r = await h.svc.createReminder({ contact_id: c.id, title: 'call back', reminder_date: '2026-10-15' })
+    await h.svc.createReminder({ contact_id: c.id, title: 'done one', reminder_date: '2026-10-16' }).then((x) => h.svc.completeReminder(x.id))
+
+    const due = await h.svc.getDueReminders({ start: ms('2026-10-01'), end: ms('2026-10-31') })
+    const refs = due.map((d) => d.ref_id)
+    expect(refs).toContain(r.id) // explicit due in window
+    expect(refs).toContain(c.id) // stay-in-touch overdue (next_contact_date 2026-10-08 <= toISO)
+    expect(due.find((d) => d.label === 'done one')).toBeUndefined() // completed excluded
+
+    // snoozed reminder surfaces at snoozed_until, not reminder_date
+    await h.svc.snoozeReminder(r.id, '2026-11-20')
+    const octo = await h.svc.getDueReminders({ start: ms('2026-10-01'), end: ms('2026-10-31') })
+    expect(octo.map((d) => d.ref_id)).not.toContain(r.id) // snoozed out of October
+    const novo = await h.svc.getDueReminders({ start: ms('2026-11-01'), end: ms('2026-11-30') })
+    expect(novo.map((d) => d.ref_id)).toContain(r.id) // now due in November
+  })
+
+  it('getDueReminders: birthday-anchor group fires at birthday − daysBefore', async () => {
+    const c = await h.svc.createContact({ first_name: 'Bday' })
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '11-15' })
+    const g = await h.svc.createGroup({ name: 'Bdays' })
+    await h.svc.addMembers(g.id, [c.id])
+    await h.svc.setBirthdayAnchor(g.id, 3) // fire on 11-12
+    const due = await h.svc.getDueReminders({ start: ms('2026-11-01'), end: ms('2026-11-30') })
+    const item = due.find((d) => d.ref_id === `${g.id}:${c.id}`)
+    expect(item).toBeDefined()
+    expect(item?.hard_deadline).toBe(ms('2026-11-12')) // 11-15 − 3
+  })
+
+  it('getDueReminders: daily/weekly schedule groups project; biweekly is NOT projected (flagged gap)', async () => {
+    const c = await h.svc.createContact({ first_name: 'Sched' })
+    const daily = await h.svc.createGroup({ name: 'Daily', frequency: 'daily' })
+    await h.svc.addMembers(daily.id, [c.id])
+    const dueDaily = await h.svc.getDueReminders({ start: ms('2026-11-01'), end: ms('2026-11-03') })
+    expect(dueDaily.filter((d) => d.ref_id.startsWith(`${daily.id}:`))).toHaveLength(3) // 3 days
+
+    // weekly on a specific weekday (compute it so the test is deterministic)
+    const anchorDate = '2026-11-16'
+    const weekday = new Date(anchorDate + 'T00:00:00Z').getUTCDay()
+    const weekly = await h.svc.createGroup({ name: 'Weekly', frequency: 'weekly', days_of_week: [weekday] })
+    await h.svc.addMembers(weekly.id, [c.id])
+    const dueWeekly = await h.svc.getDueReminders({ start: ms('2026-11-15'), end: ms('2026-11-21') })
+    const weeklyItems = dueWeekly.filter((d) => d.ref_id.startsWith(`${weekly.id}:`))
+    expect(weeklyItems).toHaveLength(1)
+    expect(weeklyItems[0].hard_deadline).toBe(ms(anchorDate))
+
+    // biweekly → flagged gap, not projected
+    const biweekly = await h.svc.createGroup({ name: 'Biweekly', frequency: 'biweekly', days_of_week: [weekday] })
+    await h.svc.addMembers(biweekly.id, [c.id])
+    const dueBi = await h.svc.getDueReminders({ start: ms('2026-11-01'), end: ms('2026-11-30') })
+    expect(dueBi.filter((d) => d.ref_id.startsWith(`${biweekly.id}:`))).toHaveLength(0)
   })
 })

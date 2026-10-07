@@ -73,7 +73,27 @@
   contact cascade).
 - **BR-RL-S3-5** — `event_type`(4) validated; `event_date` required (`MM-DD` or `YYYY-MM-DD`).
 
+## S4 — Reminders + groups + dueIn producer (built · REL-30…42)
+- **BR-RL-S4-1 (REL-30/31/32)** — `createReminder` (guard live contact; backfill is_recurring/is_completed/is_snoozed
+  false; re-read), `completeReminder` (is_completed), `snoozeReminder(id,until)` (is_snoozed + snoozed_until). Unknown →
+  `ReminderNotFoundError`. `contact_reminders` has no `deleted_at` (child).
+- **BR-RL-S4-2 (REL-39/40/41)** — `createGroup` (days_of_week JSON→`ReminderGroupView`; backfill is_active/anchor_type),
+  `addMembers`/`removeMembers` (idempotent over the UNIQUE junction), `setBirthdayAnchor(groupId,daysBefore)`
+  (anchor_type='birthday'). Group ops unknown → `ReminderGroupNotFoundError`.
+- **BR-RL-S4-3 (REL-34)** — `deleteGroup` hard-deletes the group, **SET NULL** reminder_group_id on member reminders
+  (they survive, ungrouped), purges the junction. App-layer, idempotent.
+- **BR-RL-S4-4 (REL-33/36 — the R7 dueIn producer)** — `getDueReminders(range: TimeRange): DueItem[]`
+  (`{source_module:'relationships', ref_id, label, est_minutes:0, urgency:0, hard_deadline:dueMs}`). Producers:
+  (1) explicit reminders (effective-due = snoozed_until if snoozed else reminder_date; skip completed); (2) stay-in-touch
+  overdue (next_contact_date <= toISO, the canonical case — overdue carries forward, Notifications dedups firing);
+  (3) birthday-anchor groups (birthday − anchor_days_before); (4) daily/weekly schedule groups. Sorted by due asc.
+  **⚠ Grounded gap:** biweekly/monthly/quarterly/yearly SCHEDULE groups need a phase-anchor the schema lacks (no
+  start_date) → not projected (homed forward: FE/Notifications scheduling or ADR-002 amendment). NOT a manufactured cut.
+- **BR-RL-S4-5 (REL-42)** — a group reminder NEVER auto-sends; `getDueReminders` only surfaces (no write/transmit).
+- **BR-RL-S4-6 (REL-37/38)** — N2 content-free push + N7 quiet-hours are honored DOWNSTREAM (Notifications NF-6 /
+  Preferences; S9 light-honor). The local dueIn `label` may carry the decrypted title/name (on-device consumers).
+
 ## Forward slices (not yet built)
-S4 reminders + groups + `dueIn` seam · S5 networks + graph data-prep ·
+S5 networks + graph data-prep ·
 S6 health engine (derived, NOT a measurement — C1) · S7 device import (deny-safe X1/X8) · S8 tags/pages/links ·
 S9 fan-out + Journal `/summary` + deny-safe seams.

@@ -12,14 +12,23 @@
 
 import type { DrizzleDb } from '../../db/adapter'
 import type { RelationshipType, SocialLinks } from '@vida/types'
-import type { ContactRow, InteractionRow, ContactEventRow } from '../../db/schema/relationships'
+import type {
+  ContactRow,
+  InteractionRow,
+  ContactEventRow,
+  ContactReminderRow,
+  ReminderGroupRow,
+} from '../../db/schema/relationships'
 import type {
   CreateContactInput,
   UpdateContactInput,
   LogInteractionInput,
   UpdateInteractionInput,
   CreateEventInput,
+  CreateReminderInput,
+  CreateGroupInput,
 } from '../../validators/relationship'
+import type { TimeRange, DueItem } from '../sessions'
 
 /** A contact as returned by the service: the Drizzle Row with `social_links` parsed to the object (BR-RL-S1-4b).
  *  The `text()` column stores JSON (M1.0 [E]=[]); the service owns the serialize/parse boundary. */
@@ -46,6 +55,9 @@ export interface UpcomingEvent {
   occurrence: string
 }
 
+/** A reminder_group with `days_of_week` parsed from JSON (S4 view boundary). */
+export type ReminderGroupView = Omit<ReminderGroupRow, 'days_of_week'> & { days_of_week: number[] | null }
+
 export interface RelationshipsServiceDeps {
   db: DrizzleDb
   deviceId: string
@@ -70,6 +82,18 @@ export interface RelationshipsService {
   createEvent(input: CreateEventInput): Promise<EventView>
   getUpcomingEvents(range: EventDateRange): Promise<UpcomingEvent[]>
   getAllEvents(): Promise<EventView[]>
+
+  // --- S4: reminders + groups + dueIn producer (REL-30…42) -----------------
+  createReminder(input: CreateReminderInput): Promise<ContactReminderRow>
+  completeReminder(id: string): Promise<ContactReminderRow>
+  snoozeReminder(id: string, until: string): Promise<ContactReminderRow>
+  createGroup(input: CreateGroupInput): Promise<ReminderGroupView>
+  addMembers(groupId: string, contactIds: string[]): Promise<void>
+  removeMembers(groupId: string, contactIds: string[]): Promise<void>
+  setBirthdayAnchor(groupId: string, daysBefore: number): Promise<ReminderGroupView>
+  deleteGroup(groupId: string): Promise<void>
+  /** The R7 `dueIn` producer seam — Notifications' dispatcher + Calendar + Journal read it (S9 registers the lane). */
+  getDueReminders(range: TimeRange): Promise<DueItem[]>
 }
 
 /** A contact id did not resolve to a live (non-soft-deleted) contact (REL-02/06; preflight G1). */
@@ -85,5 +109,21 @@ export class InteractionNotFoundError extends Error {
   constructor(id: string) {
     super(`Interaction not found: ${id}`)
     this.name = 'InteractionNotFoundError'
+  }
+}
+
+/** A contact_reminder id did not resolve (REL-31/32 · S4). */
+export class ReminderNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Reminder not found: ${id}`)
+    this.name = 'ReminderNotFoundError'
+  }
+}
+
+/** A reminder_group id did not resolve (REL-40/41 · S4). */
+export class ReminderGroupNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Reminder group not found: ${id}`)
+    this.name = 'ReminderGroupNotFoundError'
   }
 }

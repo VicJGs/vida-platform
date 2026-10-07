@@ -36,7 +36,7 @@ L23-27, "settled intent"). **The schema is the floor — networks/snooze/anchor/
 - [x] **S1** Contact spine + DB-11 reconcile — REL-01…06,17,54,55,58 ✅ (fully gated + 2 independent SHIP; 10/10 live-store)
 - [x] **S2** Interactions + derived stats — REL-12…16,19,20,21 ✅ (ledger + recompute engine; 17/17 live-store)
 - [x] **S3** Events — REL-26,27,28,29 ✅ (createEvent + upcoming/all, recurring MM-DD projection; 25/25 live-store)
-- [ ] **S4** Reminders + groups + dueIn seam — REL-30…42 (reminders, snooze, groups, birthday-anchor, getDueReminders, never-auto-send)
+- [x] **S4** Reminders + groups + dueIn seam — REL-30…42 ✅ (9 methods + getDueReminders producer; 28/28 live-store)
 - [ ] **S5** Networks + graph data-prep — REL-43…46 (network CRUD, m2m membership idempotent, getNetworkGraph membership-only)
 - [ ] **S6** Health engine (derived) — REL-22,23,24,25,47 (getContactHealth {band,score,factors} closeness-weighted + network rollup; formula designed)
 - [ ] **S7** Device import (deny-safe X1/X8) — REL-07…11 (importDeviceContacts facade + import_staging + ContactsPermissionError)
@@ -74,4 +74,11 @@ branch `mod-relationships` off `main`. Node 22 (tests Node 24, better-sqlite3 AB
   (updateEvent/deleteEvent — not in REL-26/27/28). Gate: spec critique+preflight inline → **25/25 live-store** →
   inline g2 SHIP → currency BR-RL-S3-*. tsc 0 · eslint 0. **S3 full-suite checkpoint: 1873/1874** (1 = load-induced
   vitest-worker timeout flake; relationships isolated 25/25 green).
-- (S4 next — reminders + groups + dueIn seam)
+- **S4 — Reminders + groups + dueIn producer (✅ 2026-10-07).** 9 methods: createReminder/completeReminder/
+  snoozeReminder · createGroup/addMembers/removeMembers/setBirthdayAnchor/deleteGroup (REL-34 SET-NULL) ·
+  `getDueReminders(TimeRange): DueItem[]` (the R7 producer — explicit + stay-in-touch overdue + birthday-anchor +
+  daily/weekly schedule groups; **biweekly+ = grounded schema gap, flagged forward, not invented**). `ReminderGroupView`
+  (days_of_week JSON). N2/N7 honored downstream (Notifications/Prefs). Gate: spec critique+preflight inline (biweekly
+  gap surfaced, dueIn seam grounded vs sessions DueItem) → impl → **28/28 live-store** → independent g2 (dispatched) →
+  currency BR-RL-S4-*. tsc 0 · eslint 0. [S9 registers getDueReminders as a sessions DueProvider lane.]
+- (S5 next — networks + graph data-prep)

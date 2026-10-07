@@ -21,7 +21,7 @@ import {
   CONTACT_EVENT_TYPE,
   REMINDER_GROUP_ANCHOR,
 } from '@vida/types'
-import { FrequencySchema } from './common'
+import { FrequencySchema, PrioritySchema } from './common'
 
 export const RelationshipTypeSchema = z.enum(RELATIONSHIP_TYPE)
 export const InteractionTypeSchema = z.enum(INTERACTION_TYPE)
@@ -106,3 +106,34 @@ export const CreateEventSchema = EventFields.partial().extend({
   event_date: z.string(), // required (notNull)
 })
 export type CreateEventInput = z.infer<typeof CreateEventSchema>
+
+// --- contact_reminders (REL-30 · S4) ----------------------------------------
+const ReminderFields = z.object({
+  contact_id: z.string(),
+  reminder_group_id: z.string().nullable(),
+  title: z.string(),
+  reminder_date: z.string().nullable(), // YYYY-MM-DD
+  is_recurring: z.boolean(),
+  frequency: FrequencySchema.nullable(),
+  priority: PrioritySchema.nullable(), // G8
+})
+export const CreateReminderSchema = ReminderFields.partial().extend({
+  contact_id: z.string(), // required (notNull)
+  title: z.string(), // required (notNull)
+})
+export type CreateReminderInput = z.infer<typeof CreateReminderSchema>
+
+// --- reminder_groups (REL-39 · S4) ------------------------------------------
+const GroupFields = z.object({
+  name: z.string(),
+  message_template: z.string().nullable(),
+  time_of_day: z.string().nullable(), // HH:MM
+  frequency: FrequencySchema.nullable(),
+  days_of_week: z.array(z.number().int()).nullable(), // [0-6]; service serializes
+  anchor_type: ReminderGroupAnchorSchema,
+  anchor_days_before: z.number().int().nullable(),
+})
+export const CreateGroupSchema = GroupFields.partial().extend({
+  name: z.string(), // required (notNull)
+})
+export type CreateGroupInput = z.infer<typeof CreateGroupSchema>
