@@ -20,7 +20,7 @@ The pre-CODEC CONTROLS aesthetic pass (orphan-control sibling of LIF-230). PRs #
 - **Pre-existing M4 follow-up (NOT fixed — palette-VALUE churn out of scope):** danger `#ef4444` on surface = 3.63 AA-fail;
   the provisional ds-2 signal palette → real values via Figma M4/P2 (`frontend-source-of-truth.md`).
 
-## fe-codec-primitives-refinement (② frontend · LIF-230 · P1 List shipped PR #88, 2026-10-06)
+## fe-codec-primitives-refinement (② frontend · LIF-230 · P1 List PR #88 · P2 Card PR #96, 2026-10-06)
 G6 enhancement: bring the 5 pre-CODEC `@vida/ui` views to the editorial model + patterns. Key decisions:
 - **Calendar flagship → `fe-calendar` #19, NOT this task.** The multi-range (Year/Month/Week/Day/Agenda) + "living"
   cross-module lens (past-as-record · habit threads · open-time · purpose budget · drift) is a SURFACE flagship —
@@ -37,6 +37,27 @@ G6 enhancement: bring the 5 pre-CODEC `@vida/ui` views to the editorial model + 
 - **Neural Graph conformance → #8 `fe-codec-canvas-graph`; orphan controls → sibling `fe-codec-controls-refinement`.**
 - **P1 gate finding → P2:** Card renders `header`/`footer` as `<header>`/`<footer>` landmarks → duplicate
   banner/contentinfo in a repeated-row list (axe); P2 Card must scope/drop those roles for list rows.
+
+### P2 Card (PR #96, 2026-10-06)
+- **Landmark fix = DROP the tags (Option B), not frame→`<article>` (Option A).** Grounded reversal: `card.md:6` Intent
+  ("not a page section landmark by default") GOVERNS the `:45` mechanism; and `card.md:21`/`u5-card.md:82` fix the ref to
+  a `<div>`/`HTMLDivElement` (Option A violated both FACTs). `header`/`footer` → plain `<div>`s; a descoped `<header>` had
+  zero AT value anyway. DEF-U5-g reconciles the frozen contract. [[dont-manufacture-a-deferral-to-cut-build-phase-scope]]
+- **`faded` = dim the CHROME, hold the TEXT** (BR-C-7a). A blanket frame `opacity:0.62` composites the subtree over the
+  page → drops muted text to ~2.4 (Visual-Gate composited probe + axe both caught it; faded≠WCAG-1.4.3-inactive so no
+  exemption). Faded → recessed `$colorSurfaceSecondary` + flat (`vida-card-flat`, no elevation), text at full opacity →
+  AA = baseline. disabled stays the 0.5 WCAG-exempt case (precedence: disabled wins).
+- **Status edge = absolute `StatusEdge` child, NOT `borderLeftWidth`, no frame `overflow:hidden`** (toast.tsx:133-135:
+  border-left fights the 1px border + radius; overflow:hidden would clip `CardElevation`'s raised shadow). Left-corner
+  radius, `aria-hidden`, preset-invariant signal tokens.
+- **DEF-U5-h (pre-existing shipped bug):** the Card `padding` variant NEVER applied (0px on every card incl. the Padding
+  story) — a `styled()` variant key named `padding` collides with Tamagui's built-in `padding` style prop. Renamed the
+  variant `padding`→`pad`, public prop unchanged. tsc can't catch it; only the live gate did. [[tamagui-variant-name-collides-with-builtin-style-prop]]
+- **Soft resting elevation via the `shadow.resting` TOKEN** (primitive.json, 2-layer), not a hard-coded literal in
+  card-styles.ts — Card is resting's sole consumer, so the blast radius is Card-only.
+- **Visual Gate rigor:** the first gate script false-greened (empty arrays → vacuous pass from a Playwright
+  `evaluate(string-of-fns)` parse error) → hardened with a `MEASURED_OK` assertion + component-scoped probe +
+  composited-opacity contrast. [[visual-gate-must-assert-measurement-and-composite-opacity]] **Next: P3 Timeline.**
 
 ## mod-notifications (① backend #53 · LIF-132 → Done, 2026-10-06 — ① COMPLETE (S1–S5), PR #83 merged `797886e`)
 The ADR-013 user-facing notification MODULE (dispatcher/surface) over DB-4 `notifications` — the terminal PURE
