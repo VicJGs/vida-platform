@@ -68,6 +68,7 @@ export { ExportDialog, type ExportDialogProps, type ExportFormat } from './compo
 export { NeuralGraph, type NeuralGraphProps, type GraphNode, type GraphEdge } from './components/neural-graph'
 export { CollectionView, type CollectionViewProps, type ViewLayout } from './components/collection-view'
 export { DashboardView, type DashboardViewProps, type DashboardBlock, type CellSize } from './components/dashboard-view'
+export { EntityView, type EntityViewProps, type FacetMode, type Facet } from './components/entity-view'
 
 // Shared hooks.
 export { useReducedMotion } from './hooks/use-reduced-motion'
