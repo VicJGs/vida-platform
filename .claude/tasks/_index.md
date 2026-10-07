@@ -2,7 +2,9 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none active. **fe-codec-primitives-refinement (LIF-230 → Done, 2026-10-07)** — the last active frontend unit — completed; see below. backend: **mod-purposes-and-goals #55 completed 2026-10-07 (LIF-136 → Done, PR #98 merged)**; mod-notifications #53 + mod-learning-education + mod-projects completed 2026-10-06. Next `#`-order backend head = next M1.1.2 module via `/begin`. frontend-track campaign ongoing, tracked in TASKS.md.)_
+- fix-entity-view-header (unfiled · in-progress): .claude/tasks/fix-entity-view-header.md  (M1/M1.2.1 · change-frontend-component / Entity Delivery Flow ②. §XXVI-gated fix on the shipped `EntityView` #6 (LIF-209): the `$display` title + `$small` subtitle cram flush — `TitleGroup` (`entity-view.tsx:72`) has no `gap`. Pin the canonical shell-header typographic pattern + apply. Worktree `fix-entity-view-header` off origin/main @ 39ccdab. From the 2026-10-07 flow-session Envision review.)
+
+_(**fe-codec-primitives-refinement (LIF-230 → Done, 2026-10-07)** — the last active frontend unit — completed; see below. backend: **mod-purposes-and-goals #55 completed 2026-10-07 (LIF-136 → Done, PR #98 merged)**; mod-notifications #53 + mod-learning-education + mod-projects completed 2026-10-06. Next `#`-order backend head = next M1.1.2 module via `/begin`. frontend-track campaign ongoing, tracked in TASKS.md.)_
 
 <details><summary>prior (fe-codec-primitives-refinement completed)</summary>
 

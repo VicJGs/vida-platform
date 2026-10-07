@@ -437,6 +437,16 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   · **axe 0** · 375 no overflow). **S2** (next) = the apps/web entity↔EntityView adapter (`offersEditor` gate + merged/tabbed
   memory convention; live `useEntity` hook deferred). Spec: `docs/specs/components/ui-2-platform-views/entity-view.md`.
   Delivery: `docs/specs/foundation/fe-codec-entity-facet/`.
+  **fix-entity-view-header (2026-10-07) — the title-hero canonical header.** `TitleGroup` gained **`gap:'$16'`** (was
+  missing → the `$display` title + `$small` subtitle rendered flush; `design.md §IV` 4pt rhythm / §I breathing room).
+  The pattern (EC-5, `fe-codec-flow-session/envision.md:53`; the flow shell mirrors it): the serif `$display` title
+  **carries alone — NO eyebrow, NO middle-dot meta-string**; `subtitle` = **ONE quiet `$small` muted plain-language
+  line** (enforced by the `<Text>` wrap — a block child is invalid), so a **quantity → a `HonestProgress` bar is
+  SEPARATE header chrome the consumer composes** (the flow-shell `HeaderAside` precedent), never crammed into the
+  subtitle; `$16` title→metadata rhythm (review-2 value; `flow-session-view.tsx:97`, on branch `fe-codec-flow-session`).
+  No API change. **EntityView is the only archetype shell with a stacked title+subtitle** → the cram is unique to it:
+  `collection-view` has a horizontal title+count `TitleGroup` (`gap:'$8'`, no subtitle) and `dashboard-view` a
+  title-only header, so there is nothing to sweep there. The shared convention is the quiet-line subtitle (no dot-pile).
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
