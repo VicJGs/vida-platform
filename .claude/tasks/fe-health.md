@@ -1,6 +1,6 @@
 # Task: fe-health
 # Status: planned
-# Linear: LIF-183
+# Linear: LIF-223
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS
