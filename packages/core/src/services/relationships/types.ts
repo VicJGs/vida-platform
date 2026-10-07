@@ -104,6 +104,38 @@ export interface NetworkHealth {
   factors: Record<HealthBand, number>
 }
 
+// --- S7: device import (X1/X8, deny-safe) -----------------------------------
+/** A device-parsed contact row (the device did the on-device parse/normalize/encrypt — X1; no server-plaintext). */
+export interface RawContact {
+  sourceRowId: string
+  first_name: string
+  last_name?: string | null
+  email?: string | null
+  phone?: string | null
+  company?: string | null
+}
+export type ImportRowStatus = 'new' | 'matched' | 'parse_error'
+/** A staged (parsed-but-uncommitted) import row + its match metadata (X8 — never auto-committed). */
+export interface StagedContact {
+  sourceRowId: string
+  raw: RawContact
+  status: ImportRowStatus
+  matchId?: string
+  error?: string
+}
+export interface ContactImportResult {
+  staged: StagedContact[]
+}
+export interface ContactCommitResult {
+  created: string[]
+  matched: string[]
+  skipped: string[]
+}
+/** The deny-safe device seam (X1) — M2 supplies the real on-device bridge; absent at M1 ⇒ ContactsPermissionError. */
+export interface DeviceContactsPort {
+  readContacts(): Promise<RawContact[]>
+}
+
 export interface RelationshipsServiceDeps {
   db: DrizzleDb
   deviceId: string
@@ -150,6 +182,10 @@ export interface RelationshipsService {
   // --- S6: derived health engine (REL-22…25, 47) — NOT a measurement (C1) --
   getContactHealth(id: string, asOf?: string): Promise<ContactHealth>
   getNetworkHealth(networkId: string, asOf?: string): Promise<NetworkHealth>
+
+  // --- S7: device import (REL-07…11, deny-safe X1/X8) ----------------------
+  importDeviceContacts(device?: DeviceContactsPort): Promise<ContactImportResult>
+  commitContactImport(staged: StagedContact[]): Promise<ContactCommitResult>
 }
 
 /** A contact id did not resolve to a live (non-soft-deleted) contact (REL-02/06; preflight G1). */
@@ -189,5 +225,13 @@ export class NetworkNotFoundError extends Error {
   constructor(id: string) {
     super(`Network not found: ${id}`)
     this.name = 'NetworkNotFoundError'
+  }
+}
+
+/** Device-contact import attempted without a device port / permission (REL-10 · S7) — no partial silent import. */
+export class ContactsPermissionError extends Error {
+  constructor() {
+    super('Device contacts unavailable or permission denied')
+    this.name = 'ContactsPermissionError'
   }
 }

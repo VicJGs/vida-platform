@@ -31,7 +31,13 @@ import {
   ReminderNotFoundError,
   ReminderGroupNotFoundError,
   NetworkNotFoundError,
+  ContactsPermissionError,
+  type RawContact,
+  type DeviceContactsPort,
 } from '../types'
+
+/** A stub device-contacts port returning fixture rows (the M2 bridge is real; this stands in for tests). */
+const stubDevice = (rows: RawContact[]): DeviceContactsPort => ({ readContacts: async () => rows })
 
 /** YYYY-MM-DD → Unix ms at UTC midnight (for TimeRange windows). */
 const ms = (iso: string): number => Date.parse(iso + 'T00:00:00Z')
@@ -624,5 +630,62 @@ describe('mod-relationships S6 — derived health engine', () => {
 
   it('getContactHealth guards an unknown contact', async () => {
     await expect(h.svc.getContactHealth('nope')).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+})
+
+describe('mod-relationships S7 — device import (deny-safe X1/X8)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('importDeviceContacts with no device port → ContactsPermissionError (no partial silent import)', async () => {
+    await expect(h.svc.importDeviceContacts()).rejects.toBeInstanceOf(ContactsPermissionError)
+  })
+
+  it('stages device rows: matched (email case-insensitive / phone / exact-name), new, parse_error', async () => {
+    await h.svc.createContact({ first_name: 'Ada', last_name: 'Lovelace', email: 'ada@x.com', phone: '+1555' })
+    await h.svc.createContact({ first_name: 'Grace', last_name: 'Hopper' }) // no email/phone → name-matchable
+    const device = stubDevice([
+      { sourceRowId: '1', first_name: 'Ada', last_name: 'L', email: 'ADA@X.COM' }, // email match (case-insensitive)
+      { sourceRowId: '2', first_name: 'X', email: null, phone: '+1555' }, // phone match
+      { sourceRowId: '3', first_name: 'Grace', last_name: 'Hopper' }, // exact-name match
+      { sourceRowId: '4', first_name: 'New', last_name: 'Person', email: 'new@x.com' }, // new
+      { sourceRowId: '5', first_name: '' }, // parse_error
+    ])
+    const { staged } = await h.svc.importDeviceContacts(device)
+    const byId = Object.fromEntries(staged.map((s) => [s.sourceRowId, s.status]))
+    expect(byId['1']).toBe('matched')
+    expect(byId['2']).toBe('matched')
+    expect(byId['3']).toBe('matched')
+    expect(byId['4']).toBe('new')
+    expect(byId['5']).toBe('parse_error')
+  })
+
+  it('commitContactImport writes `new` rows, NEVER overwrites `matched`, partitions the result', async () => {
+    const ada = await h.svc.createContact({ first_name: 'Ada', email: 'ada@x.com', company: 'OG' })
+    const device = stubDevice([
+      { sourceRowId: '1', first_name: 'Ada', email: 'ada@x.com', company: 'CHANGED' }, // matched → must NOT overwrite
+      { sourceRowId: '2', first_name: 'Fresh', last_name: 'Face', email: 'fresh@x.com' }, // new
+      { sourceRowId: '3', first_name: '' }, // parse_error
+    ])
+    const { staged } = await h.svc.importDeviceContacts(device)
+    const result = await h.svc.commitContactImport(staged)
+    expect(result.created).toHaveLength(1)
+    expect(result.matched).toEqual(['1'])
+    expect(result.skipped).toEqual(['3'])
+    // the existing Ada is untouched (no silent overwrite)
+    expect((await h.svc.getContact(ada.id))?.company).toBe('OG')
+    // the new contact is now live
+    expect(await h.svc.listContacts()).toHaveLength(2)
+    expect((await h.svc.listContacts()).some((c) => c.first_name === 'Fresh')).toBe(true)
+  })
+
+  it('a soft-deleted existing contact does NOT match (findAll active only) → row stages as new', async () => {
+    const gone = await h.svc.createContact({ first_name: 'Ghost', email: 'ghost@x.com' })
+    await h.svc.softDeleteContact(gone.id)
+    const device = stubDevice([{ sourceRowId: '1', first_name: 'Ghost', email: 'ghost@x.com' }])
+    const { staged } = await h.svc.importDeviceContacts(device)
+    expect(staged[0].status).toBe('new') // the soft-deleted contact is not a match target
   })
 })

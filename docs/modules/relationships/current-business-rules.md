@@ -122,6 +122,20 @@
   `measurement_kind`/`binding_mode`, never advertised to the measurement source registry. `asOf` = determinism seam.
   The formula is a documented, tunable design choice (the UNKNOWN homed to this [F] spec — resolved now).
 
+## S7 — Device import (deny-safe X1/X8 · built · REL-07…11)
+- **BR-RL-S7-1 (REL-07/10/11, X1)** — `importDeviceContacts(device?)` is deny-safe: absent port ⇒
+  `ContactsPermissionError` (no partial silent import); present port supplies on-device-parsed `RawContact[]` (X1 —
+  server-plaintext never exists in this shape, refuse-not-downgrade inherent). Returns STAGING, never auto-commits.
+- **BR-RL-S7-2 (REL-08, X8 matcher)** — `stageContacts(incoming, existing)` (pure, exported): per row →
+  `parse_error` (no first_name) · `matched` (natural key: case-folded email OR phone OR exact first+last name vs a
+  live contact) · `new`. Never overwrites.
+- **BR-RL-S7-3 (REL-08, commit-on-confirm)** — `commitContactImport(staged)` writes `new` rows (via the shared
+  `createContactImpl`) → `created`; `matched` rows are SKIPPED (existing contact never overwritten — merge is P6/M2)
+  → `matched`; `parse_error` → `skipped`. Caller passes the user-reviewed staging.
+- **BR-RL-S7-4 (REL-09, X2/X5 — deferred M2)** — the real device bridge, the durable `import_staging` store, and the
+  ingestion-guard grant enforcement (X2/X5 via `foundation/ingestion`) wire at M2; M1 = pure pipeline + deny-safe port
+  ([[XS security services share a deny-safe-port build shape]]).
+
 ## Forward slices (not yet built)
 S6 health engine (derived, NOT a measurement — C1) · S7 device import (deny-safe X1/X8) · S8 tags/pages/links ·
 S9 fan-out + Journal `/summary` + deny-safe seams.

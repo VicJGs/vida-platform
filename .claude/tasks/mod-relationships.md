@@ -39,7 +39,7 @@ L23-27, "settled intent"). **The schema is the floor — networks/snooze/anchor/
 - [x] **S4** Reminders + groups + dueIn seam — REL-30…42 ✅ (9 methods + getDueReminders producer; 28/28 live-store)
 - [x] **S5** Networks + graph data-prep — REL-43…46 ✅ (network CRUD, m2m membership, getNetworkGraph; 32/32 live-store)
 - [x] **S6** Health engine (derived) — REL-22,23,24,25,47 ✅ (formula designed; closeness-weighted + network rollup; 39/39)
-- [ ] **S7** Device import (deny-safe X1/X8) — REL-07…11 (importDeviceContacts facade + import_staging + ContactsPermissionError)
+- [x] **S7** Device import (deny-safe X1/X8) — REL-07…11 ✅ (deny-safe facade + pure matcher + commit-on-confirm; 43/43)
 - [ ] **S8** Tags + pages + links — REL-48,49,50 (entity_tags via Spaces contact+network parent_tag_id; pages via Notes; entity-link target)
 - [ ] **S9** Fan-out + Journal + seams — REL-51,52,53,57,33/36/38,N7 (DueProvider reg, Journal /summary + digest, deny-safe tasks?/gamification?/preferences?, quiet-hours honor)
 
@@ -98,4 +98,10 @@ branch `mod-relationships` off `main`. Node 22 (tests Node 24, better-sqlite3 AB
   better-sqlite3 to Node-24 ABI (137) in the shared worktree → broke Node-22 runs (1645 setup-fails, pure ABI
   mismatch, not code). **Resolution: session standardized on Node 24** (matches the binary); future review agents
   must be forbidden from native rebuilds.
-- (S7 next — device import, deny-safe X1/X8)
+- **S7 — Device import, deny-safe X1/X8 (✅ 2026-10-07).** `importDeviceContacts(device?)` (deny-safe →
+  ContactsPermissionError), pure `stageContacts` natural-key matcher (email case-fold/phone/exact-name/parse_error),
+  `commitContactImport` (writes new, never overwrites matched, commit-on-confirm). `createContactImpl` hoisted +
+  reused. X1 refuse-not-downgrade inherent; X2/X5 grant + device bridge + import_staging store = M2. Gate: spec
+  critique+preflight inline → **43/43 live-store** → inline g2 SHIP (no agent — avoids native-rebuild hazard).
+  tsc 0 · eslint 0. Node 24 for tests.
+- (S8 next — tags/pages/links via Spaces+Notes)

@@ -44,7 +44,12 @@ getNetworkGraph(): Promise<NetworkGraph>                                   // {n
 // S6 — derived health engine (NOT an ADR-011 measurement — C1)
 getContactHealth(id, asOf?): Promise<ContactHealth>                        // ContactNotFoundError; {band,score,factors,partial?}
 getNetworkHealth(networkId, asOf?): Promise<NetworkHealth>                 // NetworkNotFoundError; rollup of members
+// S7 — device import (deny-safe X1/X8)
+importDeviceContacts(device?: DeviceContactsPort): Promise<ContactImportResult>  // ContactsPermissionError if absent
+commitContactImport(staged: StagedContact[]): Promise<ContactCommitResult>       // commit-on-confirm; never overwrites
 ```
++ exported pure `stageContacts(incoming, existing)` (X8 natural-key matcher). `DeviceContactsPort` = deny-safe seam
+(M2 device bridge). M1 = pure pipeline; device bridge + import_staging store + X2/X5 grant = M2.
 `HealthBand = 'new'|'healthy'|'at_risk'|'overdue'`. Health = derived-on-read, closeness-weighted
 (relationship_type+is_favorite onion), never stored, no measurement_kind. `asOf` = determinism seam.
 `NetworkGraph = {nodes: GraphNode[], edges: GraphEdge[]}`; `GraphNode = {id, kind:'contact'|'network', label}`;

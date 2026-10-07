@@ -50,12 +50,44 @@ import {
   type GraphEdge,
   type ContactHealth,
   type HealthBand,
+  type RawContact,
+  type StagedContact,
   ContactNotFoundError,
   InteractionNotFoundError,
   ReminderNotFoundError,
   ReminderGroupNotFoundError,
   NetworkNotFoundError,
+  ContactsPermissionError,
 } from './types'
+import type { CreateContactInput } from '../../validators/relationship'
+
+// --- S7: contact-import natural-key matcher (X8; pure, device-shape-agnostic) ---
+/** The existing-contact fields the matcher compares (ContactRow satisfies this). */
+interface MatchableContact {
+  id: string
+  first_name: string
+  last_name: string | null
+  email: string | null
+  phone: string | null
+}
+/** Stage device-parsed rows against existing contacts (X8 reconcile): natural-key match (email/phone/exact-name),
+ *  `parse_error` on a missing name, else `new`. Pure — never writes, never overwrites. */
+export function stageContacts(incoming: RawContact[], existing: MatchableContact[]): StagedContact[] {
+  return incoming.map((raw) => {
+    if (!raw.first_name || raw.first_name.trim() === '') {
+      return { sourceRowId: raw.sourceRowId, raw, status: 'parse_error', error: 'missing first_name' }
+    }
+    const match = existing.find(
+      (e) =>
+        (raw.email != null && e.email != null && e.email.toLowerCase() === raw.email.toLowerCase()) ||
+        (raw.phone != null && e.phone != null && e.phone === raw.phone) ||
+        (e.first_name === raw.first_name && (e.last_name ?? '') === (raw.last_name ?? '')),
+    )
+    return match
+      ? { sourceRowId: raw.sourceRowId, raw, status: 'matched', matchId: match.id }
+      : { sourceRowId: raw.sourceRowId, raw, status: 'new' }
+  })
+}
 
 // --- health-engine constants (S6; derived analytic, NOT a measurement — C1) -
 /** Closeness "onion" weight by relationship_type — inner tiers penalize neglect more (REL-25). */
@@ -146,6 +178,25 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
     const row = await contactsRepo.findById(id) // soft-delete-aware (isNull(deleted_at))
     return row ? toView(row) : null
   }
+  /** Hoisted so S7 commitContactImport reuses the exact create path (backfill + social_links + re-read), not `this.`. */
+  async function createContactImpl(input: CreateContactInput): Promise<ContactView> {
+    const parsed = CreateContactSchema.parse(input) // async → ZodError rejects (not sync throw)
+    const { social_links, ...rest } = parsed
+    const row: CreateInput<typeof contacts> = {
+      ...rest,
+      first_name: parsed.first_name,
+      relationship_type: parsed.relationship_type ?? 'acquaintance', // backfill NN-default (echoed row faithful)
+      interaction_count: 0,
+      is_favorite: parsed.is_favorite ?? false,
+      social_links: serializeLinks(social_links),
+    }
+    const created = await contactsRepo.create(row)
+    // create() echoes the INPUT row → omitted nullable cols come back undefined, not the DB null
+    // ([[repository-create-returns-input-row-not-db-defaults]]). Re-read for a faithful ContactView.
+    const view = await getContact(created.id)
+    if (!view) throw new Error(`Contact vanished after create: ${created.id}`)
+    return view
+  }
 
   /** App-layer cascade (RL-2, no-FK): hard-delete every child/junction keyed on contact_id. Defensive + idempotent
    *  (critic advisory #1 — all 8 tables exist at S1, so the cascade is complete now). */
@@ -224,25 +275,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
 
   return {
     // --- REL-01 createContact ------------------------------------------------
-    createContact: async (input) => {
-      const parsed = CreateContactSchema.parse(input) // async method → ZodError rejects (not sync throw)
-      const { social_links, ...rest } = parsed
-      const row: CreateInput<typeof contacts> = {
-        ...rest,
-        first_name: parsed.first_name,
-        relationship_type: parsed.relationship_type ?? 'acquaintance', // backfill NN-default (echoed row faithful)
-        interaction_count: 0,
-        is_favorite: parsed.is_favorite ?? false,
-        social_links: serializeLinks(social_links),
-      }
-      const created = await contactsRepo.create(row)
-      // create() echoes the INPUT row → omitted nullable PII cols come back `undefined`, not the DB `null`
-      // ([[repository-create-returns-input-row-not-db-defaults]]). Re-read for a faithful ContactView (all nulls
-      // authoritative + social_links parsed) — the update()-returns-re-read precedent.
-      const view = await getContact(created.id)
-      if (!view) throw new Error(`Contact vanished after create: ${created.id}`)
-      return view
-    },
+    createContact: (input) => createContactImpl(input),
 
     // --- REL-02 updateContact ------------------------------------------------
     updateContact: async (id, patch) => {
@@ -598,6 +631,38 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       }
       const score = scores.length ? Math.round(scores.reduce((s, n) => s + n, 0) / scores.length) : null
       return { band: worst, score, memberCount: members.length, factors: counts }
+    },
+
+    // --- REL-07 importDeviceContacts (X1 device-mediated; deny-safe) ---------
+    importDeviceContacts: async (device) => {
+      if (!device) throw new ContactsPermissionError() // no device/permission → no partial silent import (REL-10)
+      const incoming = await device.readContacts() // device parsed/normalized/encrypted on-device (X1)
+      const existing = await contactsRepo.findAll() // active only (soft-deleted don't match)
+      return { staged: stageContacts(incoming, existing) } // staged, NOT committed (commit-on-confirm, X8)
+    },
+
+    // --- REL-08 commitContactImport (commit-on-confirm; never overwrites) ----
+    commitContactImport: async (staged) => {
+      const created: string[] = []
+      const matched: string[] = []
+      const skipped: string[] = []
+      for (const s of staged) {
+        if (s.status === 'new') {
+          const c = await createContactImpl({
+            first_name: s.raw.first_name,
+            last_name: s.raw.last_name,
+            email: s.raw.email,
+            phone: s.raw.phone,
+            company: s.raw.company,
+          } as CreateContactInput)
+          created.push(c.id)
+        } else if (s.status === 'matched') {
+          matched.push(s.sourceRowId) // the existing contact is NEVER overwritten (merge = P6/M2)
+        } else {
+          skipped.push(s.sourceRowId) // parse_error
+        }
+      }
+      return { created, matched, skipped }
     },
   }
 }
