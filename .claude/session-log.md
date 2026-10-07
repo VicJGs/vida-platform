@@ -1,4 +1,28 @@
 ---
+Date: 2026-10-07 — fix-entity-view-header SHIPPED (PR #110 merged); EntityView title-hero header rhythm
+Task: fix-entity-view-header (unfiled — no Linear) · Profile: Change Frontend Component / default (Entity Delivery Flow ②) · worktree off origin/main → PR #110 → merged (`23e9e74`)
+Goal: fix the shipped EntityView header cram (serif $display title flush against the $small subtitle); pin + apply the canonical title-hero header pattern.
+
+Completed:
+  - **EntityView `TitleGroup` → `gap:'$16'`** (the title-hero rhythm, EC-5/review-2; mirrors flow-session-view.tsx:97). Story
+    dot-pile subtitle → one quiet plain-language line. §XXIX currency (packages/ui/src/CLAUDE.md + components.md EntityView row).
+    Forward spec docs/specs/fixes/entity-view-header/. No eyebrow (EC-5 rejects it), no API change.
+  - Gates: tsc 0 · @vida/ui tests green (2 ISOLATED load-timeout flakes in untouched collection-view, pass in isolation) ·
+    Visual Gate PASS (Brave, 3 presets × L/D + 375: title→sub 16px · subtitle AA 5.65–6.03 · title serif AA 15.84 · axe 0 ·
+    no 375 overflow) · independent pre-ship review SHIP (2 nits folded — corrected a false "siblings share the cram" claim).
+  - PR #110 merged to main; worktree + branches cleaned; local main FF-pulled (was 33 behind).
+
+Decisions:
+  - Fix scope doc-resolved by the flow-session EC-5 greybox (Victor: "follow the flow-session"), NOT re-opened: minimal gap
+    fix, $16 (not the draft $12), no eyebrow. EntityView is the only archetype shell with a stacked title+subtitle → no
+    sibling (collection/dashboard) sweep. A quantity → a consumer-composed HonestProgress bar, never crammed into subtitle.
+  - Worktree isolation off origin/main (local main lacked entity-view.tsx — entity-facet merged after it); caught + avoided
+    a stale storybook-server collision on :6099 from the parallel flow-session worktree.
+
+Next session — Victor's call at /begin (based on the docs). Computed #-order head = backend #64 mod-routines (LIF-138);
+alternative = continue the frontend G6 track (next CODEC canvas unit).
+
+---
 Date: 2026-08-16 — UI-3 / E8 DOCX serializer IMPLEMENTED (full §XXVI double-gate + preflight + post-impl critique); serializer suite COMPLETE
 Task: ui-3-vida-editor (LIF-88) · Profile: New Feature / Default · branch `ui-3-e8-docx-serializer` off clean main (pending PR)
 Goal: build E8 (the last serializer — DOCX via `docx` npm) under the full §XXVI gate; refresh §XXIX currency; ready E8 for its own PR.

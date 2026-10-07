@@ -998,3 +998,10 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-07 | P5 calendar — eyebrow tracking | `letterSpacing="$wide"` token or a raw number? | **raw `0.8`** (eyebrows), `-0.3` (title) | `$wide:0.02` is a design ratio → ~invisible as px; the shipped house eyebrows use raw `0.8` (`list-view.tsx:106`) | reversible (value) |
 | 2026-10-07 | P5 calendar — today mark | keep the filled brand blob or restrained mark? | **accent number + short accent underline** (`TodayMark`), blob removed | the mockup's editorial "moment" mark (restraint, mirrors P3 hollow-dot); keeps `vida-cal-today` test hook | reversible (shape) |
 | 2026-10-07 | P5 calendar — figure hierarchy | day number vs its eyebrow chrome — same size? | day number `$caption`→**`$small`** (eyebrow stays `$caption`) | the mockup sizes the number above its chrome; our 12px floor forbids shrinking the eyebrow, so lift the number | reversible (token) |
+
+## fix-entity-view-header (② frontend · unfiled → Done, 2026-10-07 — PR #110 merged `23e9e74`)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-07 | EntityView header — fix scope | minimal gap fix vs add an eyebrow prop for the "canonical header"? | **minimal: `TitleGroup gap:'$16'`, NO eyebrow, no API change** | doc-resolved by the flow-session **EC-5** title-hero greybox (title carries alone — the eyebrow is the "generic tell" Victor dropped); `$16` = review-2 value (`flow-session-view.tsx:97`), not the draft `$12` | reversible (value) |
+| 2026-10-07 | EntityView subtitle — pattern | dot-pile meta-string vs a quiet line? a quantity shown how? | **one quiet `$small` muted line** (EC-5); a quantity → a `HonestProgress` bar the CONSUMER composes (never crammed into subtitle — the `<Text>` wrap forbids a block child) | EC-5 rejects the middle-dot meta-string; EntityView is the only archetype shell with a stacked title+subtitle (collection=title+count row, dashboard=title-only) → no sibling sweep | n/a (convention) |
