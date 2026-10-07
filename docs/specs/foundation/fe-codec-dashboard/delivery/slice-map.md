@@ -1,5 +1,8 @@
 # fe-codec-dashboard — Slice Map (Decomposition Gate, Step 2)
 
+> **STATUS (2026-10-07): BOTH SLICES SHIPPED.** S1 `DashboardView` (commit `01e4964`, Visual Gate PASS, EC-1..EC-8) ·
+> S2 adapter (apps/web, 11 tests, g2 SHIP). Unit complete → PR.
+
 > The buildable slices + the backend/frontend split, grounded in interpretation §1–§6 + the pinned envision EC-1…EC-8.
 > **Mode:** Decide (net-new shell; the split is NOT doc-fixed, so decided here per entity-delivery-flow.md §8) — but the
 > SHAPE ratifies the fe-codec-collection sibling (S1 presentational shell → `@vida/ui`; adapter → `apps/web`). Approved

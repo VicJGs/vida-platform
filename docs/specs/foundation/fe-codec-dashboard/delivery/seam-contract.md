@@ -68,6 +68,12 @@ tokens · reduced-motion honored.
 
 ## Seam B — the placement↔Dashboard adapter (`apps/web`, pure mapping + types + convention; S2)
 
+> **S2 shipped — /contract refinements (currency):** the impl projects a structural `BlockInstanceLike`
+> (`id · capability_def_id · config`) instead of importing `schema.BlockInstanceRow` (the `SavedViewLike` precedent —
+> decoupled + testable), and `CapabilityDefLike` drops the `title` below because the shipped `CapabilityDefinition` has
+> **no `title`** (so `toCellDescriptor` falls back `config.title ?? def.id`). See `apps/web/src/dashboard/adapter.ts` +
+> `apps/web/src/dashboard/CLAUDE.md`.
+
 ```ts
 // imports @vida/core/@vida/types — lives in apps/web (the Tamagui-only boundary forbids this in @vida/ui).
 // ⚠ the DB row type ships, but the @vida/core barrel exposes the schema as a NAMESPACE (index.ts:62 `export * as schema`),
