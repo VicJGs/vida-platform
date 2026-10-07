@@ -128,4 +128,12 @@ describe('ExportDialog', () => {
     )
     expect(ref.current).not.toBeNull()
   })
+
+  // fe-codec-controls-refinement P2 (LIF-231)
+  it('P2: exactly one accent bar renders — on the selected row — and it follows selection', () => {
+    const { getByRole } = renderUI() // default: first format (md) selected
+    expect(document.querySelectorAll('.vida-export-accent')).toHaveLength(1)
+    fireEvent.click(getByRole('radio', { name: /PDF/ }))
+    expect(document.querySelectorAll('.vida-export-accent')).toHaveLength(1) // moved, still single
+  })
 })

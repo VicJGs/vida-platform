@@ -107,6 +107,27 @@ const ToastPanel = styled(View, {
   borderRadius: '$lg',
   overflow: 'hidden',
   pointerEvents: 'auto',
+  // fe-codec-controls-refinement P4b: the contract hover "slight elevation" (toast.md:27). LIGHT = the shadow overlay
+  // (ToastElevation) fades in; DARK = this border-strengthen carries perceptibility (the shadow self-cancels in dark —
+  // the Card card.tsx:52 precedent: $colorBorderDefault→$colorTextMuted). Instant swap = B12-safe.
+  hoverStyle: { borderColor: '$colorTextMuted' },
+})
+
+// fe-codec-controls-refinement P4b — the hover-elevation wrapper + overlay (the Card elevation precedent, past
+// ToastPanel's overflow:hidden). The wrapper does NOT clip, so the overlay's drop-shadow paints outside the panel; the
+// opaque panel covers the overlay's body (only the shadow shows). Wrapper keeps default pointerEvents (needs :hover) +
+// is a tight box (no bg/padding) so it eats no clicks.
+const ToastWrapper = styled(View, { name: 'Toast', position: 'relative' })
+const ToastElevation = styled(View, {
+  name: 'Toast',
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  borderRadius: '$lg',
+  opacity: 0,
+  pointerEvents: 'none',
 })
 
 // The left accent bar (DEF-U10-c: fixed 3px inline, no accent-width token). Absolutely positioned + clipped by the
@@ -191,19 +212,22 @@ function ToastItem({
   const fromVar = placement === 'bottom' ? '16px' : '-16px'
 
   return (
-    <ToastPanel
-      ref={nodeRef}
-      className="vida-toast"
-      data-phase={phase}
-      tabIndex={-1}
-      onMouseEnter={pause}
-      onMouseLeave={resume}
-      onFocus={pause}
-      onBlur={onBlur}
-      onKeyDown={onKeyDown}
-      style={{ ['--vida-toast-from' as keyof CSSProperties]: fromVar } as CSSProperties}
-    >
-      <ToastAccent aria-hidden backgroundColor={ACCENT[intent]} />
+    <ToastWrapper className="vida-toast-wrap">
+      {/* P4b: the hover-elevation overlay (behind the opaque panel; shadow paints outside, un-clipped). */}
+      <ToastElevation className="vida-toast-elevation" aria-hidden />
+      <ToastPanel
+        ref={nodeRef}
+        className="vida-toast"
+        data-phase={phase}
+        tabIndex={-1}
+        onMouseEnter={pause}
+        onMouseLeave={resume}
+        onFocus={pause}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
+        style={{ ['--vida-toast-from' as keyof CSSProperties]: fromVar } as CSSProperties}
+      >
+        <ToastAccent aria-hidden backgroundColor={ACCENT[intent]} />
 
       <View flexGrow={1} flexShrink={1} minWidth={0} gap="$4">
         <Text fontFamily="$body" fontSize="$small" fontWeight="600" color="$colorTextPrimary">
@@ -225,7 +249,8 @@ function ToastItem({
       <Button intent="ghost" size="sm" aria-label="Dismiss" onPress={() => dismissToast(id)}>
         ✕
       </Button>
-    </ToastPanel>
+      </ToastPanel>
+    </ToastWrapper>
   )
 }
 

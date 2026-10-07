@@ -59,7 +59,7 @@ export {
 // UI-2 — platform views (the cross-module display surfaces; compose UI-1 primitives + base tokens).
 export { ListView, type ListViewProps, type ViewState } from './components/list-view'
 export { GalleryView, type GalleryViewProps } from './components/gallery-view'
-export { Timeline, type TimelineProps } from './components/timeline'
+export { Timeline, type TimelineProps, type TemporalState } from './components/timeline'
 export { CalendarView, type CalendarViewProps } from './components/calendar-view'
 export { TableView, type TableViewProps, type Column } from './components/table-view'
 export { BoardView, type BoardViewProps, type BoardGroup } from './components/board-view'

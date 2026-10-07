@@ -40,7 +40,11 @@ export interface ExportDialogProps {
 }
 
 const RadioGroup = styled(View, { flexDirection: 'column', gap: '$8' })
+// fe-codec-controls-refinement P2 (LIF-231): hover state (§VIII gap) + the selected accent is a left BAR (Toast model,
+// no layout shift) with a NEUTRAL border — the bar + filled Dot are the sole accent (not a doubled brand border + bar).
 const Radio = styled(View, {
+  position: 'relative',
+  overflow: 'hidden',
   flexDirection: 'row',
   alignItems: 'center',
   gap: '$12',
@@ -49,12 +53,16 @@ const Radio = styled(View, {
   borderColor: '$colorBorderDefault',
   borderRadius: '$md',
   cursor: 'pointer',
+  hoverStyle: { backgroundColor: '$colorSurfaceSecondary' },
   focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: 2 },
   variants: {
-    selected: { true: { borderColor: '$colorBrandPrimary' } },
-    disabled: { true: { opacity: 0.5, cursor: 'not-allowed' } },
+    // selected: no border change — the accent is the AccentBar + the filled Dot (P2 R2).
+    disabled: { true: { opacity: 0.5, cursor: 'not-allowed', hoverStyle: { backgroundColor: 'transparent' } } },
   } as const,
 })
+// The 3px left accent bar for the selected row (aria-hidden; clipped to the radius by Radio's overflow:hidden — the
+// Toast accent precedent). Only the bar + Dot carry selection, so the row's border stays quiet.
+const AccentBar = styled(View, { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: '$colorBrandPrimary' })
 const Dot = styled(View, {
   width: 16,
   height: 16,
@@ -160,10 +168,10 @@ export function ExportDialog({
               aria-checked={isSel}
               aria-disabled={busy || undefined}
               tabIndex={!busy && isSel ? 0 : -1}
-              selected={isSel}
               disabled={busy}
               onClick={busy ? undefined : () => setSelState(fmt)}
             >
+              {isSel ? <AccentBar className="vida-export-accent" aria-hidden /> : null}
               <Dot selected={isSel}>{isSel ? <DotInner /> : null}</Dot>
               <Text fontFamily="$body" fontSize="$body" color="$colorTextPrimary">
                 {meta.label}

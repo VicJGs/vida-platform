@@ -79,6 +79,14 @@ optional **header bar** (`<header>` on the left + `actions` top-right), the **bo
 // `stop` = (e)=>e.stopPropagation() — nested actions/footer controls activate independently, never firing the card's onClick (§2.1).
 ```
 
+> **⚠ SUPERSEDED in part by fe-codec-primitives-refinement P2 (DEF-U5-g/h).** This doc is the UI-1 AS-BUILT record;
+> two things below changed in P2: (1) **`header`/`footer` no longer `render:'header'`/`'footer'`** — they are plain
+> `<div>` regions (a `<header>` nested in the `<div>` frame is a `banner`/`contentinfo` LANDMARK, duplicated in a list;
+> `card.md:6` Intent governs — DEF-U5-g). The `<div>` frame + `HTMLDivElement` ref below are UNCHANGED (the fix preserved
+> them). (2) **Inset padding is the `pad` variant**, not a variant named `padding` (the latter collided with Tamagui's
+> built-in `padding` style prop → 0px inset shipped — DEF-U5-h); the public prop stays `padding`. Also added (additive,
+> optional): `status`/`metric`/`headerDivider` + a 2-layer resting shadow. See `card.md` Addendum.
+
 - **Host = `<div>` (default render), `role="group"`|`"button"` by `interactive`; NEVER a native `<button>` even when
   interactive.** [FACT: card.md:21 `forwardRef<HTMLDivElement | View>` fixes the ref to a div.] Also **semantically
   required**: an interactive card contains its `actions` slot + a `footer` with focusable controls, and **nesting

@@ -27,6 +27,9 @@ export function ensureCardStyles(): void {
   const ease = `${motion.duration.fast}ms ${motion.easing.out}`
   style.textContent = [
     `.vida-card{box-shadow:${shadow.resting}}`,
+    // faded = flat/dormant: suppress the resting elevation (after .vida-card so it wins at equal specificity). The
+    // recessed surface + flatness signal "neglected" WITHOUT dimming text (B-C-7a: hold the text, dim the chrome).
+    `.vida-card-flat{box-shadow:none}`,
     `.vida-card-elevation{opacity:0;box-shadow:${shadow.raised};transition:opacity ${ease}}`,
     `.vida-card-interactive:hover>.vida-card-elevation,.vida-card-interactive:active>.vida-card-elevation{opacity:1}`,
     `@media (prefers-reduced-motion: reduce){.vida-card-elevation{transition:none}}`,

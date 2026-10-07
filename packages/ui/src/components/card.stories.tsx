@@ -23,7 +23,9 @@ const Body = ({ children }: { children: React.ReactNode }) => (
 )
 const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <View gap={8} marginBottom={24}>
-    <Text fontSize={12} opacity={0.6} color="$colorTextPrimary">
+    {/* Story-label scaffolding — a muted token at FULL opacity (opacity:0.6 dipped to ~4.48 in quietDesk/light, an
+        axe color-contrast flag on the harness chrome, not the Card). */}
+    <Text fontSize={12} color="$colorTextMuted">
       {label}
     </Text>
     <View flexDirection="row" alignItems="flex-start" gap={24} flexWrap="wrap">
@@ -158,5 +160,134 @@ export const Loading: Story = {
         </Card>
       </View>
     </Section>
+  ),
+}
+
+// ── fe-codec-primitives-refinement · P2 — the editorial content vocabulary + the Layer-2 alive-hooks ──────────────
+// The editorial typography (eyebrow · serif title · tabular meta) is CONSUMER-COMPOSED via slots (Card ships the chrome);
+// the Ring is a consumer-fed `metric`. Token-driven (conic-gradient reads the CSS vars → reacts to preset + mode).
+const Eyebrow = ({ children }: { children: React.ReactNode }) => (
+  <Text
+    fontFamily="$body"
+    fontSize={11}
+    fontWeight="700"
+    color="$colorTextMuted"
+    textTransform="uppercase"
+    letterSpacing={1.4}
+  >
+    {children}
+  </Text>
+)
+const SerifTitle = ({ children }: { children: React.ReactNode }) => (
+  <Text fontFamily="$display" fontSize={18} fontWeight="500" color="$colorTextPrimary" letterSpacing={-0.2}>
+    {children}
+  </Text>
+)
+const TabularMeta = ({ children }: { children: React.ReactNode }) => (
+  <Text fontSize={13} color="$colorTextMuted" style={{ fontVariantNumeric: 'tabular-nums' }}>
+    {children}
+  </Text>
+)
+// A glanceable progress ring (the `metric` slot). Conic-gradient reads token CSS vars; the hole uses the surface token.
+const Ring = ({ value }: { value: number }) => (
+  <View
+    width={40}
+    height={40}
+    borderRadius={9999}
+    alignItems="center"
+    justifyContent="center"
+    style={{ background: `conic-gradient(var(--color-brand-primary) ${value}%, var(--color-surface-secondary) 0)` }}
+  >
+    <View
+      width={30}
+      height={30}
+      borderRadius={9999}
+      backgroundColor="$colorSurfacePrimary"
+      alignItems="center"
+      justifyContent="center"
+    >
+      <Text fontSize={11} fontWeight="700" color="$colorTextPrimary" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        {value}
+      </Text>
+    </View>
+  </View>
+)
+
+// Editorial composition — eyebrow + serif title (in header) · Ring metric (top-right) · headerDivider · tabular footer.
+export const EditorialComposition: Story = {
+  render: () => (
+    <Section label="editorial — eyebrow · serif title · ring metric · header divider · tabular meta">
+      <View width={360}>
+        <Card
+          status="calm"
+          headerDivider
+          header={
+            <View gap={2}>
+              <Eyebrow>Career</Eyebrow>
+              <SerifTitle>Ship the primitives</SerifTitle>
+            </View>
+          }
+          metric={<Ring value={68} />}
+          footer={<TabularMeta>Updated 2 hours ago · 12 tasks</TabularMeta>}
+        >
+          <Body>Revenue is up 12% versus last month across all tracked accounts.</Body>
+        </Card>
+      </View>
+    </Section>
+  ),
+}
+
+// Alive — the `status` signal set + the `metric` ring (the micro-dashboard). calm · warm · faded · neutral.
+export const Alive: Story = {
+  render: () => (
+    <Section label="alive — status: calm · warm · faded · neutral (+ ring metric)">
+      <View width={240}>
+        <Card status="calm" header={<SerifTitle>On track</SerifTitle>} metric={<Ring value={68} />}>
+          <TabularMeta>Last touched 1d ago</TabularMeta>
+        </Card>
+      </View>
+      <View width={240}>
+        <Card status="warm" header={<SerifTitle>Cooling</SerifTitle>} metric={<Ring value={30} />}>
+          <TabularMeta>Last touched 12d ago</TabularMeta>
+        </Card>
+      </View>
+      <View width={240}>
+        <Card status="faded" header={<SerifTitle>Neglected</SerifTitle>}>
+          <TabularMeta>Last touched 94d ago</TabularMeta>
+        </Card>
+      </View>
+      <View width={240}>
+        <Card status="neutral" header={<SerifTitle>Neutral</SerifTitle>}>
+          <TabularMeta>No signal</TabularMeta>
+        </Card>
+      </View>
+    </Section>
+  ),
+}
+
+// Repeated rows — the BR-C-11 landmark cell: N interactive cards each with header + footer. header/footer are plain
+// <div>s now, so there are NO duplicate banner/contentinfo landmarks (the exact P1-gate violation shape). axe must be 0.
+export const RepeatedRows: Story = {
+  render: () => (
+    <View role="list" aria-label="Projects" width={420} gap={12}>
+      {[
+        { id: '1', title: 'Primitives', meta: '3 of 5 complete', status: 'calm' as const },
+        { id: '2', title: 'App shell', meta: '1 of 4 complete', status: 'warm' as const },
+        { id: '3', title: 'Sync scaffolding', meta: 'not started', status: 'neutral' as const },
+        { id: '4', title: 'Archived spike', meta: 'closed', status: 'faded' as const },
+      ].map((row) => (
+        <View key={row.id} role="listitem">
+          <Card
+            interactive
+            onPress={() => {}}
+            status={row.status}
+            header={<SerifTitle>{row.title}</SerifTitle>}
+            footer={<TabularMeta>{row.meta}</TabularMeta>}
+          >
+            <Body>A repeated row — header/footer are non-landmark regions (BR-C-11).</Body>
+          </Card>
+        </View>
+      ))}
+    </View>
   ),
 }

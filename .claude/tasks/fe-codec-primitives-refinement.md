@@ -140,7 +140,35 @@ Approved target per phase = the committed mockups (`mockups/*.html`). Visual rec
   **Visual Gate PASS** (Brave, 3 presets × light/dark × calm/dense: **axe 0** · AA **4.94–6.53** incl. warm-dark · 375
   no-overflow · Grouped eyebrow-sections + empty-self-heal · Featured tick+eyebrow). Spec `phases/P1-list-view.md`;
   currency `packages/ui/src/CLAUDE.md`. **Node 24 required** for the test/build env (jsdom30+undici≥22). Next: PR, then P2.
-- **⚑ P2 · Card — flag from P1 gate:** Card renders `header`/`footer` as **`<header>`/`<footer>` landmark elements** →
-  in a repeated-row (list) context they become **duplicate `banner`/`contentinfo` landmarks** (axe `landmark-no-duplicate-*`,
-  12 violations in the P1 story until the story composed rows via Card `children` instead). P2 must decide: Card's
-  header/footer should NOT be page-level landmarks when the Card is a list row (scope them, or drop the landmark roles).
+- **P2 · Card — ✅ COMPLETE (2026-10-06, PR #96 open, branch `fe-codec-primitives-p2-card`).** Full §XXVI double-gate
+  (spec Approval 1 → preflight → Approval 2) + blocking Visual Gate + independent code-review + pre-ship /critique SHIP.
+  Delivered: **BR-C-11 landmark fix** (`header`/`footer` → plain `<div>` — Option B, grounded in `card.md:6` Intent +
+  the `card.md:21`/`u5-card.md:82` ref-fixed-to-div FACTs; resolved the P1 flag, 0 duplicate landmarks in a repeated
+  row); **alive-hooks** `status`(calm/warm StatusEdge · faded recessed+flat)/`metric`/`headerDivider` (additive, neutral
+  = prior render); **BR-C-5** 2-layer `shadow.resting` token (Card sole consumer). tsc 0 · eslint 0 · **@vida/ui 420**
+  (card.test 23, +new) · **Visual Gate PASS** (Brave, 24 cells = 3 presets × light/dark × calm/dense + landmark +
+  editorial — AA worst **4.52** incl. warm-dark & composited faded · axe 0 · 0 landmarks · edges preset-invariant).
+  Currency: `packages/ui/src/CLAUDE.md` + `card.md` (DEF-U5-g/h) + `u5-card.md`. **The Visual Gate earned its keep —
+  caught 4 things code-gates missed:** (1) `faded` opacity:0.62 failed AA (muted text 2.4, axe-confirmed) → "dim chrome,
+  hold text" per BR-C-7a; (2) **DEF-U5-h** — a pre-existing shipped bug: the `padding` variant NEVER applied (0px on
+  every card, incl. the Padding story) because the variant name collides with Tamagui's built-in `padding` style prop →
+  renamed `padding`→`pad`, public prop unchanged; (3) my first gate script false-greened (Playwright `evaluate(string)`
+  parse error → empty arrays → vacuous pass) → hardened to assert measurement; (4) a story-scaffolding axe flag.
+  **Lesson: ground before assuming** — the landmark fix REVERSED from `<article>` (my instinct) to drop-the-tags once
+  the ref-fixed-to-div FACTs were read; and the gate's composited-opacity contrast probe was essential to measure faded
+  honestly (getComputedStyle ignores ancestor opacity).
+- **P3 · Timeline — ✅ COMPLETE (2026-10-06).** Full §XXVI double-gate (spec → /critique REVISE→fixed R1–R4 → Approval 1
+  → grounded §4b ledger → /preflight BLOCKED→resolved G1–G3 → /critique REVISE→fixed fulcrum-continuity → Approval 2) +
+  blocking Visual Gate + **2 independent code-reviews**. Delivered (all optional, back-compat, presentational): date
+  **GUTTER** (3-col, serif `$display`@`$small` + tabular + `getEyebrow`), **hollow dots**, **`getTemporalState`**
+  (present accent+ring via `useTheme().get('web')` · future faded DOT-only, date held AA per Card BR-C-7a; past/future
+  TITLE tone = consumer renderItem, LV-5), **`nowFulcrum`** (accent "now" divider before first non-past; 4-branch trim
+  over the COMBINED render sequence so the rail connects through it; `aria-hidden` non-listitem; NUL-sentinel key).
+  `TemporalState` exported. tsc 0 · eslint 0 · timeline **14 tests** (+5) · build ✓ · **Visual Gate PASS** (Brave, 3
+  presets × light/dark: serif AA 15.84–17.29 · eyebrow 4.94–6.53 incl. warm-dark · accent FLIPS per preset [editorial
+  blue/reader oxblood/quietDesk olive] + ring · future 0.55 dot w/ date held AA · "now" 4.95–6.41 · dots=items+1 · **axe
+  0** on editorial+fulcrum · 375 no-overflow). **Reviews caught + fixed:** phantom-gutter on a no-op `nowFulcrum` (hoist
+  `fulcrumAt` so `hasGutter` keys on actual render) · key collision (NUL sentinel) · `TemporalState` barrel gap; refuted
+  a hypothesized fulcrum-axe violation (axe 0, now gate-covered). **Gate gap found + closed:** my gate only ran axe on
+  the editorial story → added fulcrum-story axe. Spec `phases/P3-timeline.md`; currency `packages/ui/src/CLAUDE.md` +
+  `v3-timeline.md` change-log. **Next: P4 · Gallery** (framed cover + kicker · serif title · tabular caption + cover-intelligence).

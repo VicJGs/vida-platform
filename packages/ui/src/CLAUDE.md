@@ -30,9 +30,20 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   `<div>` (`role="group"`, or `role="button"` + hand-rolled Enter/keydown/Space-keyup when `interactive`; NEVER a
   native `<button>`, which can't legally contain the focusable `actions`/`footer`). Elevation = the OPACITY of a
   raised-shadow overlay child (B12); the resting shadow **self-cancels in dark** (its colour = the dark surface) so the
-  border carries dark elevation (design §V) — no theme detection. `header`/`footer` are real `<header>`/`<footer>`
-  (`render:'header'`/`'footer'`). No `loading` prop (the contract authors none — loading/empty are consumer-composed:
-  skeleton/empty-state as `children`; DEF-U5-f). **Tabs** is the B12 showcase: a `role="tablist"` of `render:'button'`
+  border carries dark elevation (design §V) — no theme detection. Resting elevation is a **2-layer** (ambient+tight)
+  low-opacity `shadow.resting` token (Card is its sole consumer; fe-codec P2 BR-C-5). `header`/`footer` are plain
+  `<div>` regions (**NOT** `<header>`/`<footer>` — a `<header>` nested in the `<div>` frame is a `banner`/`contentinfo`
+  LANDMARK, duplicated N× in a list row; `card.md:6` Intent "not a landmark" governs; **DEF-U5-g**, fe-codec P2 BR-C-11).
+  Inset `padding` is the `pad` **variant** (compact/default/spacious → `$space` scale), NOT a variant literally named
+  `padding` — that collided with Tamagui's built-in `padding` style prop so `padding="default"` applied 0px (**DEF-U5-h**,
+  the shipped Card had no inset until fe-codec P2); public prop stays `padding`, mapped to `pad`. **Alive-hooks** (fe-codec
+  P2, all optional, `neutral`/absent = prior render): `status` (`calm`/`warm` = a 3px left `StatusEdge` accent — an
+  absolute aria-hidden child, left-corner-radiused, NOT `borderLeftWidth`/no frame `overflow:hidden` so `CardElevation`'s
+  raised shadow isn't clipped, toast.tsx:133-135 precedent; `faded` = recessed `$colorSurfaceSecondary` surface + flat
+  `vida-card-flat` (no shadow), **text held at full opacity** so AA is the baseline — BR-C-7a, a blanket frame opacity
+  dropped muted text below 4.5), `metric` (a non-interactive readout top-right of the header, before `actions`),
+  `headerDivider` (a hairline rule). Signal tokens are preset-invariant (`$colorSignalSuccess`/`Danger`). No `loading`
+  prop (the contract authors none — loading/empty are consumer-composed: skeleton/empty-state as `children`; DEF-U5-f). **Tabs** is the B12 showcase: a `role="tablist"` of `render:'button'`
   `role="tab"`s (roving tabindex, AUTOMATIC activation, arrows WRAP + skip disabled, Home/End) + a selection
   **indicator** — an absolute bar whose **transform** animates (250/inOut) while its **width/height resize is an
   INSTANT inline-style swap** (the B12 asymmetry: animate transform, never left/width). Measured via the active tab's
@@ -111,6 +122,27 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Toast). `borderRadius:'$lg'` via the token scale (DEF-U8-h); no `toast.border` token → base `$colorBorderDefault`.
   No `loading` prop (consumer-composed: `duration:0` + spinner in `description`; `aria-busy` unsettable, DEF-U10-b).
   Motion (B12): enter `moderate`/`out`, exit `fast`/`in`, opacity + translateY slide from the stack edge only.
+  **fe-codec-controls-refinement · P4b (LIF-231) — hover "slight elevation"** (the `toast.md:27` contract state, was
+  MISSING). A **non-clipping `ToastWrapper`** holds a sibling `aria-hidden` `ToastElevation` overlay (absolute, inset 0,
+  `$lg` radius, `box-shadow:shadow.raised`, `opacity:0`) + the existing `ToastPanel` (keeps its `overflow:hidden` for the
+  accent bar). `.vida-toast-wrap:hover .vida-toast-elevation{opacity:1}` fades the raised shadow in — **opacity-only
+  transition (B12); the shadow is static**; the shadow paints OUTSIDE the panel (wrapper doesn't clip) and the opaque
+  panel covers the overlay body (only the drop-shadow shows). The Card overlay-opacity precedent. **Dark:** the raised
+  shadow self-cancels (hue = dark surface), so a `ToastPanel` `hoverStyle:{borderColor:'$colorTextMuted'}` border-strengthen
+  carries §VIII hover-perceptibility in dark (the `card.tsx:52` precedent). Panel timer/focus/accent/motion/live-region
+  behavior UNTOUCHED. Visual Gate PASS (Brave, 3 presets × light/dark: elevation opacity 0→1 on hover all cells · dark
+  border-change · `shadow.raised` · reads "slight"). Spec: `…/fe-codec-controls-refinement/phases/P4b-toast-hover-elevation.md`.
+  **fe-codec-controls-refinement · P3 (LIF-231) — overlay Level-3 elevation.** The three overlay panels (Dialog · Popover ·
+  Menu) gained a **static `box-shadow: shadow.overlay`** (design §V Level 3; first consumer of the `overlay` token) added
+  to each panel's base rule in `internal/{dialog,popover,menu}-styles.ts` (the `card-styles.ts` precedent). **Static only**
+  — each stylesheet's transition is explicit `opacity,transform` (never `all`), so the shadow never animates (B12). **Dark:
+  self-cancels** — `shadow.overlay`'s hue = the dark surface `rgba(15,23,42,·)`, so it blends on the dark scrim/page and
+  the 1px border carries elevation (§XI, the Card mechanism; Visual-Gate-confirmed the 0.18 alpha reads as subtle
+  elevation, not a halo). RATIFY (already shipped, no work): Dialog title `$display` serif · Menu item hover+active+disabled.
+  Visual Gate PASS (Brave, 3 overlays × 3 presets × light/dark: shadow present all 18 cells · light lift · dark self-cancel ·
+  axe 0 bar one PRE-EXISTING flag). **⚠ Pre-existing (NOT P3): the danger menu item label `#ef4444` on surface = 3.63
+  contrast** (< 4.5) — the provisional ds-2 signal palette; real values land via Figma at M4/P2 (`frontend-source-of-truth.md`).
+  Unrelated to the shadow; fixing it = palette-VALUE churn (M4). Spec: `docs/specs/foundation/fe-codec-controls-refinement/phases/P3-overlay-chrome.md`.
   **list-view** is **UI-2 · V1** — the first platform view (`list` VIEW_LAYOUT renderer) and the **DATA-VIEW SPINE**
   V2–V4 reuse. A pure **presentational** generic `ListView<T>`: `items` + `renderItem` + `getKey` → a `role="list"`
   of `role="listitem"` rows. **Row interactivity is NOT list-view's** — the consumer's `renderItem` composes an
@@ -158,6 +190,26 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   lone → NO line [else a dangling nub]; first `{top:18,bottom:0}`; last `{top:0,height:18}`; middle `{top:0,bottom:0}`).
   The `getLabel` temporal label is **real content** (first in the listitem, NOT aria-hidden); only the rail column
   (line+dot) is `aria-hidden`. Reuses the whole spine via `internal/data-view`. Spec: `…/v3-timeline.md`.
+  **fe-codec-primitives-refinement · P3 (LIF-230)** — editorial lift + the now-fulcrum alive-hook, all presentational:
+  **date GUTTER** — a 3rd left column `[when | rail | content]` (`When` 80px, right-aligned, `className="vida-timeline-gutter"`),
+  rendered only when `getLabel`/`getEyebrow` is given OR the fulcrum renders (else the 2-col layout, back-compat); the
+  date (`getLabel`) is **serif `$display` FAMILY at `$small`** (NOT the 36px display SIZE) + **tabular** (`style={{fontVariantNumeric}}`,
+  the pomodoro precedent) + an optional **`getEyebrow`** kicker (the P1 SectionHeader recipe). **Hollow resting dot**
+  (`RailDot` variant `hollow` = `$colorSurfacePrimary` fill + 2px `$colorTextMuted` border, replacing the old solid fill).
+  **`getTemporalState`** (`'past'|'present'|'future'`, consumer-computed — the renderer never reads a clock) tones the
+  **rail DOT**: `present` = accent fill + a **soft ring** (a static `box-shadow` composed inline from `useTheme().get('web')`
+  — the pomodoro precedent; jsdom/no-web → accent fill, no ring, F2 fallback); `future` = a faded dot (**inline `opacity:0.55`
+  on the DOT ONLY** — the date is held at full `$colorTextMuted` so AA holds, the Card **BR-C-7a** "dim the chrome, hold the
+  text" pattern; the past/future TITLE tone is the consumer's renderItem, LV-5). **`nowFulcrum`** (+ `nowLabel`, default "now")
+  splices ONE accent "now" divider **before the first non-`past` item** (`fulcrumAt`; all-past / no `getTemporalState` →
+  no-op + dev-warn); the 4-branch trim runs over the **COMBINED render sequence** (items + a fulcrum pseudo-row, keyed by a
+  NUL sentinel `FULCRUM_KEY` so it can't collide with `getKey`) so the rail connects THROUGH the fulcrum; the fulcrum is an
+  `aria-hidden` NON-listitem (a decorative boundary, correctly excluded from the list — axe-clean). Fulcrum rail segment =
+  **solid accent** (`RailLine` `tone="accent"`), NOT the mock's gradient (off-pipeline). `TemporalState` exported from the
+  barrel. Visual Gate PASS (Brave, 3 presets × light/dark: serif date AA 15.84–17.29 · eyebrow AA 4.94–6.53 incl. warm-dark ·
+  present accent FLIPS per preset [editorial blue / reader oxblood / quietDesk olive] + ring · future dot 0.55 w/ date held AA ·
+  "now" AA 4.95–6.41 · dots=items+1 · axe 0 on editorial+fulcrum · 375 no-overflow). Spec:
+  `docs/specs/foundation/fe-codec-primitives-refinement/phases/P3-timeline.md`.
   **V3 also extracted `internal/data-view.tsx`** (rule of three) — the shared `ViewState` type + the `Message`
   default empty/error copy + `resolveDataViewState({state,itemCount,ariaLabel,ariaLabelledby,name})` (role +
   effectiveEmpty + the 3 dev-warns). list-view + gallery-view + timeline all consume it; list-view **re-exports
@@ -195,6 +247,21 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   aria-live=off, no per-second spam) + a **polite `role="status"` completion one-shot** (cleared on transition-out).
   Self-names (composed aria-label). `mm:ss` via `$display`; progress fill clamped [0,1]. Base tokens, no sub-theme, no
   new dep. Spec: `…/v5-pomodoro-widget.md`.
+  **fe-codec-controls-refinement · P1 (LIF-231)** — aesthetic refinement + the v5 §6-deferred progress RING, all
+  presentational: **tabular figures** on the countdown (`style={{fontVariantNumeric:'tabular-nums'}}` on `Time` — a v5
+  §4:144 spec'd-but-unbuilt invariant now completed; Tamagui forwards the style key, verified at the gate; the DS-wide
+  **tabular-numeric convention** for numeric UI — adopt on Select numeric/timeline dates/table cells, extract a shared
+  helper only at the rule of three); **eyebrow phase label** (`$caption`·uppercase·`$wide`); **6px hairline track**;
+  **resting elevation** (`shadow.resting` inline on `Root`, self-cancels in dark — the Card mechanism). **`progress?:
+  'bar' | 'ring'`** (default `'bar'`, non-breaking): `'ring'` renders a local `ProgressRing` (thin two-circle `<svg>`,
+  `aria-hidden`, round cap, −90° start, stepped `strokeDashoffset` — no CSS transition) around the time. **⚠ Ring colors
+  via `useTheme().get('web')`** — `theme.colorBrandPrimary?.get('web')`/`colorSurfaceSecondary?.get('web')`, the
+  **Tamagui-documented SVG call** [getThemeProxied.d.ts ThemeGettable.get]; a `$token` SVG attr renders colorless and a
+  hard-coded hex would **reintroduce the Neural-Graph conformance gap** — so the ring stays preset/theme-aware + token-
+  pure. Internal `progress` fraction renamed `fraction` (frees the prop name). Timer/latch/controls logic UNTOUCHED.
+  Visual Gate PASS (Brave, 3 presets × light/dark: tabular + eyebrow all cells · ring accent FLIPS per preset+mode —
+  editorial blue / reader oxblood / quietDesk olive · AA 4.94–6.03 incl. warm-dark · axe 0 · 375 no-overflow). Spec:
+  `docs/specs/foundation/fe-codec-controls-refinement/phases/P1-pomodoro-widget.md`.
   **export-dialog** is **UI-2 · V6** — the reusable export modal. **Composes UI-1 `Dialog`** (via its `footer` +
   `description` props — NOT children: `footer` renders the actions in a non-scrolling `<footer>`, `description` wires
   `aria-describedby`) + a **hand-rolled APG `role="radiogroup"`** format picker + `Button`. **PRESENTATIONAL (the V1
@@ -209,6 +276,16 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   resolves; failure → Toast, §6). Dev-warns: `defaultFormat∉formats`, empty `formats`. `role="dialog"` focus-into lands
   on the selected radio (it's `focusables[0]` — the radiogroup precedes the footer + roving). Base tokens, no
   sub-theme. Spec: `…/v6-export-dialog.md`.
+  **fe-codec-controls-refinement · P2 (LIF-231)** — radio-row refinement, all presentational, logic (ED-2…ED-5) UNTOUCHED:
+  **hover state** on `Radio` (`hoverStyle:$colorSurfaceSecondary`; the `disabled` variant cancels it to `transparent`,
+  the `select.tsx:82` precedent) — closes a §VIII hover-state gap. **Selected accent = a left BAR, NOT a brand border:**
+  removed `borderColor:$colorBrandPrimary` from the `selected` variant (the row border stays neutral `$colorBorderDefault`),
+  and an `aria-hidden` absolute 3px `AccentBar` (`$colorBrandPrimary`, `.vida-export-accent`) renders when selected — the
+  **Toast accent precedent** (`Radio` `position:relative`+`overflow:hidden`, bar clipped to the radius, NOT the focus
+  outline; **no layout shift** — a `borderLeftWidth` 1→3 would jump a bordered box 2px). The bar + filled `Dot` are the
+  sole accent (no doubled ~4px edge). Title/description stay Dialog's (→ P3). Visual Gate PASS (Brave, 3 presets ×
+  light/dark: hover bg change · accent bar flips per preset+mode [editorial blue / reader oxblood / quietDesk olive] · AA
+  4.94–6.53 · axe 0 · 375 fit). Spec: `docs/specs/foundation/fe-codec-controls-refinement/phases/P2-export-dialog.md`.
   **neural-graph** is **UI-2 · V7** (the LAST view) — a **force-directed WebGL graph** (Sigma.js) for the `graph`
   VIEW_LAYOUT. First component with **WebGL + new deps** (`sigma`·`graphology`·`graphology-layout-forceatlas2`).
   PRESENTATIONAL: `nodes`/`edges` are props (AR-8's graph-prep, uncrossable) — own minimal `GraphNode`/`GraphEdge`.

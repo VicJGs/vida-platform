@@ -166,4 +166,41 @@ describe('PomodoroWidget', () => {
     advance(2000) // completes with no onComplete wired — must not throw
     expect(getByText('00:00')).not.toBeNull()
   })
+
+  // ── fe-codec-controls-refinement P1 (LIF-231) ──────────────────────────────────────────────────────────
+  it('L1a: the time uses tabular figures (the V1 passthrough oracle — fixed digit advance)', () => {
+    const { getByText } = renderUI({ durationMs: 60_000, 'aria-label': 'Focus' })
+    expect(getByText('01:00').style.fontVariantNumeric).toBe('tabular-nums')
+  })
+
+  it('L2 bar (default): linear track fill, no ring svg', () => {
+    const { container } = renderUI({ durationMs: 60_000, 'aria-label': 'Focus' })
+    expect(container.querySelector('.vida-pomo-fill')).not.toBeNull()
+    expect(container.querySelector('svg')).toBeNull()
+  })
+
+  it('L2 ring: renders an svg progress ring (replaces the bar); offset tracks remaining', () => {
+    const { getByText, container } = renderUI({ durationMs: 10_000, progress: 'ring', 'aria-label': 'Focus' })
+    expect(container.querySelector('svg')).not.toBeNull()
+    expect(container.querySelector('.vida-pomo-fill')).toBeNull() // ring replaces the linear track
+    const circles = container.querySelectorAll('circle')
+    expect(circles.length).toBe(2) // track + progress
+    const progressCircle = circles[1] as SVGCircleElement
+    const dash = Number(progressCircle.getAttribute('stroke-dasharray'))
+    const offset = () => Number(progressCircle.getAttribute('stroke-dashoffset'))
+    expect(offset()).toBeCloseTo(dash, 1) // idle → fraction 0 → full offset (empty arc)
+    expect(progressCircle.getAttribute('stroke')).not.toBe('') // theme-resolved, not colorless (NG anti-regression)
+    fireEvent.click(getByText('Start'))
+    advance(5000) // ~50%
+    expect(offset()).toBeLessThan(dash) // arc grew (offset shrank) as time elapsed
+  })
+
+  it('L2 ring: renders across idle/running/paused (status-driven controls unchanged)', () => {
+    const { getByText } = renderUI({ durationMs: 60_000, progress: 'ring', 'aria-label': 'Focus' })
+    expect(getByText('Start')).not.toBeNull() // idle
+    fireEvent.click(getByText('Start'))
+    expect(getByText('Pause')).not.toBeNull() // running
+    fireEvent.click(getByText('Pause'))
+    expect(getByText('Resume')).not.toBeNull() // paused
+  })
 })

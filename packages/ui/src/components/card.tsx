@@ -21,8 +21,22 @@ import { ensureCardStyles } from '../internal/card-styles'
 // - No `loading` prop: the contract's CardProps (card.md:10-20) authors none. The §VIII loading state is achieved by
 //   composition (consumer renders a skeleton as `children` + passes `aria-busy`), exactly like `empty`. Matrix-vs-API
 //   gap flagged for DS as DEF-U5-f. [[deliverable-is-the-doc-not-my-discretion]]
+//
+// fe-codec-primitives-refinement · P2 (LIF-230) — aesthetic refinement + alive-hooks, all PRESENTATIONAL:
+//  · BR-C-11 landmark fix: `header`/`footer` are plain <div> regions, NOT <header>/<footer> — a <header> nested in the
+//    <div> frame is exposed as a banner/contentinfo LANDMARK (duplicated N× in a list row). card.md:6 Intent ("NOT a
+//    page section landmark by default") governs the :45 mechanism; a descoped <header> had no AT value. Frame stays a
+//    <div> → the HTMLDivElement ref contract (card.md:21 / u5-card.md:82-83) is preserved.
+//  · `status` (neutral|calm|warm|faded): an entity-state signal. calm/warm = a 3px left ACCENT bar (an absolute
+//    StatusEdge child — NOT borderLeftWidth, which fights the 1px border + radius per toast.tsx:133-135; NOT frame
+//    overflow:hidden, which would clip CardElevation's raised shadow). faded = a dimmed frame (disabled's 0.5 wins if
+//    both). Edge is aria-hidden/decorative; the state meaning lives in content. Signal tokens are preset-invariant.
+//  · `metric` slot: a non-interactive glanceable readout (e.g. a progress ring), top-right of the header, before actions.
+//  · `headerDivider`: an optional hairline under the header bar.
+//  · softer resting elevation = the 2-layer `shadow.resting` token (primitive.json; Card is its sole consumer).
 
 type Padding = 'compact' | 'default' | 'spacious'
+type Status = 'neutral' | 'calm' | 'warm' | 'faded'
 
 const CardFrame = styled(View, {
   name: 'Card',
@@ -35,10 +49,14 @@ const CardFrame = styled(View, {
   borderRadius: '$lg',
   backgroundColor: '$colorSurfacePrimary',
   variants: {
-    // Padding drives the $space scale, NOT the `card.padding` sub-theme token — one token can't express three
+    // Inset padding drives the $space scale, NOT the `card.padding` sub-theme token — one token can't express three
     // options, and Tamagui resolves space props against the space scale, not a theme sub-theme (button.tsx lesson;
     // u5-card.md §1.1 / DEF-U5-b). Values = the semantic space.inset.{compact,default,spacious} the token references.
-    padding: {
+    // DEF-U5-h (P2 bug-fix): the variant key is `pad`, NOT `padding` — a variant named `padding` COLLIDES with
+    // Tamagui's built-in `padding` style prop, so `padding="default"` was applied as an invalid CSS value → 0px inset
+    // (the shipped Card rendered with NO padding; every card's content sat flush-left — latent until the status edge
+    // exposed it by clipping). The public prop stays `padding` (contract), mapped to `pad` in the component.
+    pad: {
       compact: { padding: '$8' },
       default: { padding: '$12' },
       spacious: { padding: '$24' },
@@ -59,7 +77,7 @@ const CardFrame = styled(View, {
       },
     },
   } as const,
-  defaultVariants: { padding: 'default' },
+  defaultVariants: { pad: 'default' },
 })
 
 // Absolute overlay carrying the RAISED shadow at opacity 0 → 1 on hover/active (via .vida-card-elevation, B12).
@@ -75,29 +93,60 @@ const CardElevation = styled(View, {
   pointerEvents: 'none',
 })
 
-// Real <header>/<footer> landmark regions (render:'<tag>' = a semantic HTML element — Tamagui docs; checkbox.tsx
-// render:'label' precedent). Header lays content left + actions top-right.
+// BR-C-7c — the `status` accent: an absolute 3px LEFT bar (calm/warm). NOT borderLeftWidth (toast.tsx:133-135: a
+// border-left fights Card's 1px border + $lg radius) and NOT via frame overflow:hidden (would clip CardElevation's
+// raised box-shadow). Left corners radiused to follow the card corner; aria-hidden + pointerEvents:none. Being a
+// separate element, it is immune to the interactive hover border-strengthen (card.tsx hoverStyle) — hover can't
+// clobber the status colour. Signal tokens are preset-invariant (the SyncStatus precedent). Only rendered calm/warm.
+const StatusEdge = styled(View, {
+  name: 'Card',
+  position: 'absolute',
+  left: 0,
+  top: 0,
+  bottom: 0,
+  width: 3,
+  borderTopLeftRadius: '$lg',
+  borderBottomLeftRadius: '$lg',
+  pointerEvents: 'none',
+  variants: {
+    tone: {
+      calm: { backgroundColor: '$colorSignalSuccess' },
+      warm: { backgroundColor: '$colorSignalDanger' },
+    },
+  } as const,
+})
+
+// BR-C-11 — header/footer are plain <div> regions (NO render:'header'/'footer'). A real <header>/<footer> nested in
+// the <div> frame is exposed as a banner/contentinfo LANDMARK (duplicated N× in a list); card.md:6 Intent forbids it.
+// Header lays content left + metric/actions top-right. `divider` adds the optional hairline rule (BR-C-6).
 const CardHeader = styled(View, {
   name: 'Card',
-  render: 'header',
   flexDirection: 'row',
   alignItems: 'flex-start',
   justifyContent: 'space-between',
   gap: '$8',
+  variants: {
+    divider: {
+      true: { borderBottomWidth: 1, borderBottomColor: '$colorBorderDefault', paddingBottom: '$8' },
+    },
+  } as const,
 })
 
-const CardFooter = styled(View, {
-  name: 'Card',
-  render: 'footer',
-})
+const CardFooter = styled(View, { name: 'Card' })
 
-export interface CardProps extends Omit<GetProps<typeof CardFrame>, 'children'> {
+export interface CardProps extends Omit<GetProps<typeof CardFrame>, 'children' | 'pad'> {
   /** Slot rendered in the header bar (left). */
   header?: ReactNode
-  /** Slot rendered as a `<footer>` region. */
+  /** Slot rendered as a footer region (a plain <div>, never a <footer> landmark — BR-C-11). */
   footer?: ReactNode
-  /** Slot rendered top-right in the header bar (controls). */
+  /** Slot rendered top-right in the header bar (interactive controls). */
   actions?: ReactNode
+  /** Non-interactive glanceable readout (e.g. a progress ring), top-right of the header, before `actions` (BR-C-8). */
+  metric?: ReactNode
+  /** Entity-state signal: `calm`/`warm` = a left accent bar; `faded` = a dimmed frame. Default 'neutral' (BR-C-7). */
+  status?: Status
+  /** Hairline rule under the header bar. Default false (BR-C-6). */
+  headerDivider?: boolean
   /** Makes the whole card a single pressable target (adds `role=button` + keyboard). */
   interactive?: boolean
   /** Activation handler — only meaningful with `interactive`. Wired to click + Enter/Space. */
@@ -111,7 +160,20 @@ export interface CardProps extends Omit<GetProps<typeof CardFrame>, 'children'> 
 }
 
 export const Card = forwardRef<ComponentRef<typeof CardFrame>, CardProps>(function Card(
-  { header, footer, actions, interactive = false, onPress, disabled = false, padding = 'default', children, ...rest },
+  {
+    header,
+    footer,
+    actions,
+    metric,
+    status = 'neutral',
+    headerDivider = false,
+    interactive = false,
+    onPress,
+    disabled = false,
+    padding = 'default',
+    children,
+    ...rest
+  },
   ref,
 ) {
   // Dev-time contract guards (NODE_ENV-replaced by the bundler → dead-code-eliminated in prod, per button.tsx).
@@ -141,6 +203,14 @@ export const Card = forwardRef<ComponentRef<typeof CardFrame>, CardProps>(functi
   ensureCardStyles()
 
   const active = interactive && !disabled
+  const showEdge = status === 'calm' || status === 'warm'
+  const faded = status === 'faded'
+  // BR-C-7a (Gate-proven): a blanket frame opacity drops the muted/meta text below AA (opacity composites the whole
+  // subtree over the page; measured 2.4–2.6, axe-confirmed). So faded "dims the CHROME, holds the TEXT": a recessed
+  // surface + FLAT (no resting elevation, `vida-card-flat`), with text + its surface-contrast UNCHANGED → text AA is the
+  // baseline (guaranteed). disabled stays WCAG-1.4.3-exempt at 0.5 (BR-C-7b precedence: disabled wins if both).
+  const frameOpacity = interactive && disabled ? 0.5 : 1
+  const showHeader = header != null || actions != null || metric != null
   // role=button is driven by the RAW `interactive` (kept even when disabled, just aria-disabled + out of tab order);
   // the VISUAL `interactive` variant is gated to `active` so a disabled card gains no hover/focus affordance.
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -161,7 +231,10 @@ export const Card = forwardRef<ComponentRef<typeof CardFrame>, CardProps>(functi
   // Nested actions/footer controls activate independently — stop their events reaching the card's onClick/onKeyDown.
   const stop = (e: MouseEvent | KeyboardEvent) => e.stopPropagation()
 
-  const baseClass = active ? 'vida-card vida-card-interactive' : 'vida-card'
+  // faded is FLAT (recessed/dormant) — vida-card-flat suppresses the resting elevation (card-styles.ts). Text held.
+  const baseClass = [active ? 'vida-card vida-card-interactive' : 'vida-card', faded ? 'vida-card-flat' : null]
+    .filter(Boolean)
+    .join(' ')
   const className = [baseClass, (rest as { className?: string }).className].filter(Boolean).join(' ')
 
   return (
@@ -173,9 +246,13 @@ export const Card = forwardRef<ComponentRef<typeof CardFrame>, CardProps>(functi
       role={interactive ? 'button' : 'group'}
       tabIndex={interactive ? (disabled ? -1 : 0) : undefined}
       aria-disabled={interactive && disabled ? true : undefined}
-      padding={padding}
+      pad={padding}
       interactive={active}
-      opacity={interactive && disabled ? 0.5 : 1}
+      // faded recesses the surface (chrome dim); text + its contrast are untouched (BR-C-7a). Conditional spread so a
+      // NON-faded card never pins backgroundColor — a consumer's `backgroundColor` (via {...rest}) + the styled default
+      // ($colorSurfacePrimary) both survive (an unconditional override after {...rest} clobbered them — review BLOCKER).
+      {...(faded ? { backgroundColor: '$colorSurfaceSecondary' as const } : null)}
+      opacity={frameOpacity}
       onClick={active ? onPress : undefined}
       onKeyDown={active ? handleKeyDown : undefined}
       onKeyUp={active ? handleKeyUp : undefined}
@@ -183,12 +260,21 @@ export const Card = forwardRef<ComponentRef<typeof CardFrame>, CardProps>(functi
       {/* Elevation overlay — raised shadow, opacity 0→1 on hover/active (card-styles.ts). Behind content (first child). */}
       <CardElevation className="vida-card-elevation" aria-hidden />
 
-      {(header != null || actions != null) && (
-        <CardHeader>
+      {/* Status accent bar (calm/warm) — decorative; the state meaning lives in content. */}
+      {showEdge && <StatusEdge className="vida-card-edge" aria-hidden tone={status === 'calm' ? 'calm' : 'warm'} />}
+
+      {showHeader && (
+        <CardHeader divider={headerDivider}>
           <View flex={1}>{header}</View>
-          {actions != null && (
-            <View flexDirection="row" alignItems="center" gap="$8" onClick={stop} onKeyDown={stop}>
-              {actions}
+          {(metric != null || actions != null) && (
+            <View flexDirection="row" alignItems="center" gap="$8">
+              {/* metric = a non-interactive readout (no stopPropagation needed); rendered BEFORE actions (BR-C-8). */}
+              {metric != null && <View>{metric}</View>}
+              {actions != null && (
+                <View flexDirection="row" alignItems="center" gap="$8" onClick={stop} onKeyDown={stop}>
+                  {actions}
+                </View>
+              )}
             </View>
           )}
         </CardHeader>
