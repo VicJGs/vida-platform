@@ -25,8 +25,10 @@ function CodecSpecimen() {
         Muted secondary text — must hold ≥ 4.5:1 on every preset × mode.
       </Text>
 
-      {/* A card on the secondary surface — its $16 padding visibly tightens in dense (the space-band override). */}
-      <Card id="spec-card" backgroundColor="$colorSurfaceSecondary" padding="$16" gap="$8">
+      {/* A card on the secondary surface — `spacious` inset (a $space-scale variant) visibly tightens in dense. NB
+          `padding` takes the Card enum (compact|default|spacious), NOT a raw space token — the old `padding="$16"`
+          leaked through a now-fixed variant/style-prop collision (DEF-U5-h) and no longer applies. */}
+      <Card id="spec-card" backgroundColor="$colorSurfaceSecondary" padding="spacious" gap="$8">
         <Text id="spec-card-text" fontFamily="$body" fontSize="$body" color="$colorTextPrimary">
           Card on the secondary surface — inset padding follows the density air.
         </Text>

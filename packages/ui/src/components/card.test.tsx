@@ -34,27 +34,101 @@ describe('Card', () => {
     expect(ref.current?.tagName).toBe('DIV')
   })
 
-  it('renders header and footer as <header>/<footer> landmark regions', () => {
-    const { container } = renderCard(
+  // BR-C-11 — header/footer render their content but are NOT <header>/<footer> landmark elements (a <header> nested in
+  // the <div> frame is exposed as a banner/contentinfo landmark, duplicated N× in a list — card.md:6 Intent forbids it).
+  it('renders header/footer content as non-landmark regions (no <header>/<footer>, no banner/contentinfo)', () => {
+    const { container, getByText, queryByRole } = renderCard(
       <Card header="Title" footer="Foot">
         Body
       </Card>,
     )
-    expect(container.querySelector('header')).not.toBeNull()
-    expect(container.querySelector('footer')).not.toBeNull()
-    expect(container.querySelector('header')?.textContent).toContain('Title')
-    expect(container.querySelector('footer')?.textContent).toContain('Foot')
+    expect(getByText('Title')).not.toBeNull()
+    expect(getByText('Foot')).not.toBeNull()
+    // No landmark elements + no landmark roles — the P1-gate fix.
+    expect(container.querySelector('header')).toBeNull()
+    expect(container.querySelector('footer')).toBeNull()
+    expect(queryByRole('banner')).toBeNull()
+    expect(queryByRole('contentinfo')).toBeNull()
   })
 
-  it('renders the actions slot in the header', () => {
-    const { getByText, container } = renderCard(
+  it('renders many header/footer cards with zero duplicate landmarks (the repeated-row shape)', () => {
+    const { container } = renderCard(
+      <>
+        {[1, 2, 3].map((n) => (
+          <Card key={n} header={`H${n}`} footer={`F${n}`}>
+            Body
+          </Card>
+        ))}
+      </>,
+    )
+    expect(container.querySelectorAll('header')).toHaveLength(0)
+    expect(container.querySelectorAll('footer')).toHaveLength(0)
+  })
+
+  it('renders the actions slot (independently clickable) alongside header content', () => {
+    const { getByText, getByRole } = renderCard(
       <Card header="Title" actions={<button type="button">Edit</button>}>
         Body
       </Card>,
     )
-    const action = getByText('Edit')
-    expect(action).not.toBeNull()
-    expect(container.querySelector('header')?.contains(action)).toBe(true)
+    expect(getByText('Edit')).not.toBeNull()
+    // The card is a role=group container that contains the action.
+    expect(getByRole('group').contains(getByText('Edit'))).toBe(true)
+  })
+
+  // ── P2 alive-hooks: status edge · metric · headerDivider · neutral baseline ─────────────────────────────
+  it('renders a status accent edge for calm/warm, and none for neutral/faded', () => {
+    const calm = renderCard(<Card status="calm">Body</Card>)
+    expect(calm.container.querySelector('.vida-card-edge')).not.toBeNull()
+    cleanup()
+    const warm = renderCard(<Card status="warm">Body</Card>)
+    expect(warm.container.querySelector('.vida-card-edge')).not.toBeNull()
+    cleanup()
+    const neutral = renderCard(<Card status="neutral">Body</Card>)
+    expect(neutral.container.querySelector('.vida-card-edge')).toBeNull()
+    cleanup()
+    const faded = renderCard(<Card status="faded">Body</Card>)
+    expect(faded.container.querySelector('.vida-card-edge')).toBeNull()
+  })
+
+  it('status edge is decorative (aria-hidden) — not announced', () => {
+    const { container } = renderCard(<Card status="calm">Body</Card>)
+    expect(container.querySelector('.vida-card-edge')?.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('neutral (default) === baseline: no edge, same role=group container', () => {
+    const { container, getByRole } = renderCard(<Card>Body</Card>)
+    expect(getByRole('group')).not.toBeNull()
+    expect(container.querySelector('.vida-card-edge')).toBeNull()
+  })
+
+  it('renders the metric slot in the header, coexisting with actions', () => {
+    const { getByText } = renderCard(
+      <Card header="Title" metric={<span>metric-x</span>} actions={<button type="button">Edit</button>}>
+        Body
+      </Card>,
+    )
+    expect(getByText('metric-x')).not.toBeNull()
+    expect(getByText('Edit')).not.toBeNull()
+  })
+
+  it('renders a header with headerDivider without breaking header content', () => {
+    const { getByText } = renderCard(
+      <Card header="Title" headerDivider>
+        Body
+      </Card>,
+    )
+    expect(getByText('Title')).not.toBeNull()
+  })
+
+  it('a faded card is flat/recessed (chrome dim, text held) — role=group, content rendered, vida-card-flat class', () => {
+    const { getByRole, getByText } = renderCard(<Card status="faded">Neglected body</Card>)
+    const el = getByRole('group')
+    expect(el).not.toBeNull()
+    expect(getByText('Neglected body')).not.toBeNull()
+    // BR-C-7a: faded dims the chrome (flat class suppresses elevation + recessed surface), NOT the text (no opacity).
+    expect(el.className).toContain('vida-card-flat')
+    expect(el.style.opacity === '' || el.style.opacity === '1').toBe(true)
   })
 
   // ── interactive activation ────────────────────────────────────────────────
