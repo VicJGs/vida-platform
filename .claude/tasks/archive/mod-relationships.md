@@ -1,5 +1,5 @@
 # Task: mod-relationships
-# Status: in-progress
+# Status: done
 # Linear: LIF-137
 # Profile: Add Backend Component
 # Scenario: default (Entity Delivery Flow ①)
