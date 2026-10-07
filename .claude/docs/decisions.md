@@ -959,3 +959,16 @@ CODEC aesthetic-refinement of the pre-CODEC view primitives, per-component phase
 | 2026-10-07 | P4 gallery — flexShrink | why set flexShrink explicitly? | `flexShrink:1` explicit in `weightStyle` | Tamagui/RNW defaults flexShrink to **0** (not CSS's 1) → a `flexBasis:w·min>viewport` tile can't shrink → 375 overflow (Visual Gate caught it) | n/a (platform default) |
 | 2026-10-07 | P4 gallery — weight guard | clamp consumer weight? | symmetric `clampWeight [1,8]` + dev-warn | a one-sided (low-only) guard let a bogus large weight starve siblings (code-review caught) | reversible (ceiling tunable) |
 | 2026-10-07 | P3/P4 scope | cover-intelligence / editorial tile look — build in the renderer? | NO — consumer `renderItem` + view engine (ADR-007:62) | GV-1/LV-5 content boundary; the renderer owns layout + chrome it generates, not tile content | n/a (grounded) |
+
+## fe-codec-primitives-refinement (LIF-230 · P5 Calendar — FINAL phase, LIF-230 → Done, 2026-10-07 — PR #101 merged)
+Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 views refined). Detail in
+`docs/specs/foundation/fe-codec-primitives-refinement/phases/P5-calendar.md` + `packages/ui/src/CLAUDE.md`.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-07 | P5 calendar — weekend/oos paper | 3 mockup tints vs our 2-step surface scale — an Approval fork? | **NO — doc-resolved**: both → `$colorSurfaceSecondary`, day-number colour differentiates (oos muted, weekend ink) | the mockup ledger (`calendar-refinement.html:150,152`) already says "`$colorSurfaceSecondary` family" + "no new palette"; I mis-framed it as a fork, Victor "ground it in the docs" | n/a (grounded) |
+| 2026-10-07 | P5 calendar — today AA | today's accent number fell < 4.5 on a weekend/oos secondary surface | **`$colorBrandEmphasis`** (not `brandPrimary`) | emphasis (accent600/300) is the higher-contrast ramp step in both modes; no new palette; `brandPrimary` tuned for fills/3:1 not 4.5 text. Visual-Gate caught 4.39/4.44 → 5.93–8.89 | n/a (AA floor) |
+| 2026-10-07 | P5 calendar — weekday case | uppercase the weekday eyebrow via `.toUpperCase()` or CSS? | **CSS `textTransform`** (DOM text stays "Mon") | the `columnheader` accessible name must stay the real word for SR; the house eyebrow mechanism (`list-view.tsx:105`) | n/a (a11y) |
+| 2026-10-07 | P5 calendar — eyebrow tracking | `letterSpacing="$wide"` token or a raw number? | **raw `0.8`** (eyebrows), `-0.3` (title) | `$wide:0.02` is a design ratio → ~invisible as px; the shipped house eyebrows use raw `0.8` (`list-view.tsx:106`) | reversible (value) |
+| 2026-10-07 | P5 calendar — today mark | keep the filled brand blob or restrained mark? | **accent number + short accent underline** (`TodayMark`), blob removed | the mockup's editorial "moment" mark (restraint, mirrors P3 hollow-dot); keeps `vida-cal-today` test hook | reversible (shape) |
+| 2026-10-07 | P5 calendar — figure hierarchy | day number vs its eyebrow chrome — same size? | day number `$caption`→**`$small`** (eyebrow stays `$caption`) | the mockup sizes the number above its chrome; our 12px floor forbids shrinking the eyebrow, so lift the number | reversible (token) |
