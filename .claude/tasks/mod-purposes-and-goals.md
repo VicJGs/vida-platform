@@ -92,7 +92,47 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
       manufactured decisions** (Victor ×2: "ground it in the documentation and code"). Independent g2 **SHIP** (2 NITs,
       both spec-consistent, no folds). tsc 0 · eslint 0 · purposes **79/79** (+7 S7) · full @vida/core **1839/1839**.
       §XXIX BR-PG-S7-1..7. Commit `f8f875e`.
-- [ ] **S8** — Tags/links/pages (Spaces+Notes) + entity_type value/dream additions
+- [x] **S8** — Tags · links · pages (Spaces + Notes). ✅ **BUILT** — tsc 0 · eslint 0 · purposes **86/86** (62 service
+      [+7 S8] + 24 introspection, live SQLite Node 22) · full @vida/core **1845/1846** (1 = known vault-1MB flake,
+      encryption untouched §XXIV). g1 /critique REVISE→folded · g2 code-review **SHIP** ("exemplary thin-wrapper slice",
+      2 NITs folded: `void p` test smell + stale seam-contract:20) · pre-ship /critique SHIP. §XXIX currency written
+      (current-spec S8 surface+deps · BR-PG-S8-1..5). **1 §XXVIII deviation (gate-caught):** note method uses
+      `getPagesForEntity`+`createPage` (titled page) not `notes.ensureEntityNote` (which seeds `content` not `title`) —
+      the critic's pre-vetted option (a). **PLAN v2 (REVISED after g1 /critique REVISE — folded 1 BLOCKER + 2 MAJOR + NITs):**
+      **Scope (PG-18, seam-contract composition-seam-5):** wire universal tagging + entity-linking + a standalone-note
+      surface for the purposes-owned entities, composing the BUILT `SpacesService` (WRITE) + `NotesService` (`pages`).
+      Read/write split holds — purposes never touches `entity_tags`/`entity_links`/`pages` tables directly; all go THROUGH
+      spaces/notes ([[spaces-junctions-split-read-write-tagentity-blind-inserts]]).
+      **Deps (factory):** ADD `spaces: SpacesService` + `notes: NotesService` (both REQUIRED — seam-contract.md:16-21).
+      **DEVIATION — DROP `registry: TaggableTypeRegistry` (g1 UPHELD, premise corrected):** [FACT:
+      `value`/`purpose`/`target`/`dream`/`purpose_metric_value` already in shared `ENTITY_TYPES` (`_registry.ts:13,50-53`);
+      `createTaggableTypeRegistry` seeds from it (`registry.ts:15-16`) → "add value+dream" is RATIFY-done at DB-4, no
+      `register()`.] [FACT: `spaces.*` validate `entityType` INTERNALLY against the registry injected at its construction
+      (`spaces/service.ts:76-78,128-129,158-159`; `createSpacesService(db,deviceId,registry)`) — S8 writes THROUGH spaces,
+      so it inherits validation + needs no own registry.] Correction: projects DOES take `registry` (`projects/types.ts:29`)
+      — but only to build a READ `createAssociationResolver` at its S7 (`projects/service.ts:61`), NOT for tag/link writes.
+      S8 specs no link-READ surface → no resolver → no registry. (If S9 needs link reads, it pulls registry first-consumer.)
+      **Methods (factory-no-`this`):**
+      · tag/link WRITES = projects-precedent-exact thin wrappers → `tagEntity(t,id,tagId)`→`spaces.tagEntity(tagId,t,id)` ·
+        `untagEntity(t,id,tagId)`→`spaces.untagEntity` · `linkEntity(pageId,{t,id},ctx?)`→`spaces.createLink(pageId,t,id,ctx)`
+        · `unlinkEntity(pageId,{t,id})`→`spaces.removeLink` (arg-orders verified vs `spaces/service.ts:44,47-53`).
+      · note surface (NOT projects-precedent — purposes OWNS it by ratified seam-contract, unlike projects which punts
+        general notes to FE): **`ensureEntityNote(t,id)`** → findById the owned entity (throws `*NotFound` — getProjectPage
+        guard precedent `projects/service.ts:385`) → `notes.ensureEntityNote('note', t, id, { title })` (the real 4-arg
+        sig `notes/types.ts:68-73`; `title` = the owned entity's `title`/`name`, a client-side read of OWNED data, in-contract
+        per `EntityNoteSeed` `notes/types.ts:38-45`). No new PAGE_TYPE. (DROPPED `getEntityPages` — no consumer; FE reads
+        via NotesService directly, scope-creep NIT.)
+      **Typed entity_type unions (MAJOR #2 — PG-18 outranks the slice-map roster, [[aspect-docs-outrank-rebuild-decomposition-artifacts]]):**
+      `PurposeTagLinkType = 'value'|'purpose'|'target'|'dream'|'purpose_metric_value'` (full PG-18 set `business-rules.md:99-102`,
+      `purpose_metric_value` seeded `_registry.ts:53`) for tag/link; `PurposeNoteType = 'value'|'purpose'|'target'|'dream'`
+      for `ensureEntityNote` (the titled first-class entities; a `purpose_metric_value` ledger row has no title → not a
+      standalone-note subject, only a tag/link target).
+      **OUT of S8 (NIT #6 boundary):** the Bucket List Space over `dreams` + vision-board/Gallery + neural graph = ②
+      `fe-purposes`/Spaces-view (`contract.md:40-41`, `slice-map.md:54`); S9 owns the provider. No creep here.
+      **Verification Gate (blocking):** tag/untag + link/unlink round-trips · `ensureEntityNote` idempotency (2nd call = same
+      page id) + `*NotFound` on a missing owner · tag/link rejects an out-of-set type (spaces registry) · live-store smoke
+      (real SQLite junction + pages writes) · tsc 0 · eslint 0 · @vida/core green (Node 24).
+      **Then:** independent g2 code-review → /critique SHIP → §XXIX currency (current-spec S8 + BR-PG-S8-*).
 - [ ] **S9** — Provider (Journal summary + dueIn) + emit-only fan-out + deletion propagation (PG-19)
 
 ## Open Questions
@@ -139,6 +179,20 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
   better-sqlite3` under Node 20 in the shared worktree → ABI 115 vs my Node-22 ABI 127 → all tests failed at setup;
   fixed by recompiling against Node 22 (§XXIV ISOLATED env). **Next: S7 — reviews + plan_steps + sessions port** (same
   worktree; branch NOT pushed/PR'd yet — PR when ① complete).
+- 2026-10-07: **S8 built** (tags · links · pages) in the worktree. Compose `SpacesService` (tag/link WRITE wrappers) +
+  `NotesService` (titled standalone note find-or-create). Full Entity Delivery Flow: Step 0–2 grounding (3 grounded
+  findings surfaced vs the slice-map prose: entity_types already seeded = RATIFY not build; `contract.md:42` "⚠
+  INTENDED" stale vs shipped `_registry`; projects takes `spaces`+`notes`) → g1 /critique **REVISE** (1 BLOCKER
+  `ensureEntityNote` 4-arg/misattributed + 2 MAJOR [union omits `purpose_metric_value`; drop-registry premise false —
+  projects DOES take registry for a READ resolver] + NITs) → all folded → Approval 1 (Victor) → preflight PASSED →
+  **implemented** (deps `+spaces +notes`, **no `registry`** write-only; `PurposeTagLinkType`/`PurposeNoteType` split per
+  PG-18) → Verification Gate (tsc 0, eslint 0, purposes 86/86 live, full core 1845/1846) → g2 code-review **SHIP** (2
+  NITs folded) → pre-ship /critique SHIP → §XXIX currency (BR-PG-S8-1..5). **§XXVIII deviation (gate-caught):**
+  `notes.ensureEntityNote` seeds `content` not `title` → switched to `getPagesForEntity`+`createPage` (critic's option a,
+  titled). **Env churn (§XXIV ISOLATED):** the g1/g2 agents rebuilt `better-sqlite3` to Node 20 ABI 115 → `node-gyp
+  rebuild` under Node 22 restored ABI 127; tests pass only when the binding ABI matches the running Node (Node 22 ⇄ 127).
+  **Next: S9 — provider (Journal summary + dueIn) + emit-only fan-out + deletion propagation (PG-19), the ① closer; then
+  PR the whole ① build.**
 - 2026-10-06: **S7 built + committed (`f8f875e`, pushed to origin)** in the worktree. Reviews (target+purpose ledgers)
   + plan_steps + the **REQUIRED** `sessions` port. Victor drift-catch ×2 again ("check the documentation" / "ground
   it in the documentation and code"): I twice presented the review-session semantics (def lifecycle · session status ·
