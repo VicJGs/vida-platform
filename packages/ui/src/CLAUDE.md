@@ -447,6 +447,27 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   No API change. **EntityView is the only archetype shell with a stacked title+subtitle** → the cram is unique to it:
   `collection-view` has a horizontal title+count `TitleGroup` (`gap:'$8'`, no subtitle) and `dashboard-view` a
   title-only header, so there is nothing to sweep there. The shared convention is the quiet-line subtitle (no dot-pile).
+  **flow-session-view** is **fe-codec-flow-session · S1** (LIF-210) — the CODEC **Flow/Session shell**
+  (decomposition.md:33 §4.5), the **4th archetype shell**. A flow FRAME for any staged do-this-then-that surface (a session
+  run · routine step · wizard · drill · onboarding · check-in entry): a **title-hero header** (serif `$display` + a
+  `HonestProgress` **bar** for progress — NOT a text subtitle · a quiet context line **16px** below the title · a saveStatus
+  slot + `⋯`) + a **staged progression** over the shipped **`Timeline`** (`getTemporalState` done→past·current→present·
+  upcoming→future + `nowFulcrum` = the "current stage" boundary; done ✓/proof collapsed · current emphasized · upcoming
+  faded) + a per-stage body **`renderStage` slot** + the **standardized stage affordances** (attach document/photo/audio ·
+  mark-done · require-proof — the shell renders these for the CURRENT stage and **EMITS intents**, never a write; the
+  pomodoro-widget precedent) + a read-only **effect-rail log** (`ListView`; empty → teaching `EmptyState`). **NON-GENERIC**
+  (FlowStage is concrete → React-19 ref-prop), **presentational** (@vida/ui Tamagui-only; all types LOCAL). **State-as-prop
+  (BR-2)** — each stage threads its own `loading`/`empty`/`error`/`success`; degrade-never-crash (loading skeleton · errored
+  `role="status"` muted). **Typography = the semantic SCALE, no arbitrary px** (`design.md:103`; EC-11): title `$display` ·
+  current `$heading` · done/upcoming `$subheading` · body `$body` · labels `$caption`/`$small`; **accent spent in ONE place**
+  (the current stage + the bar). **⚠ The affordances live in ONE wrapping `AffordanceRow`** — a nested non-wrapping sub-row
+  overflowed the narrow card column at 375 (RNW `flexShrink` defaults to **0** → can't shrink; the gallery-view lesson,
+  Visual-Gate-caught). NOT the timer/HUD (#16 + pomodoro V5), NOT the runtime page (#23), NOT the effect WRITES (@vida/core).
+  Visual Gate PASS (Brave, 3 presets × light/dark + 375: title serif AA 15.84 · text MIN 4.95–4.96 incl. warm-dark · progress
+  bar · current affordances · fulcrum · effect-rail · axe 0 · no overflow). **S2** = the apps/web flow↔FlowSessionView
+  adapter (`toFlowProps` + `mapEffectLog` [ADR-004 applied_effects → effect-rail] + `bindFlowIntents` against a
+  `SessionsPort`; live `useFlowSession` hook deferred, R3). Spec:
+  `docs/specs/components/ui-2-platform-views/flow-session-view.md`. Delivery: `docs/specs/foundation/fe-codec-flow-session/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
