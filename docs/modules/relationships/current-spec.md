@@ -41,7 +41,12 @@ createNetwork(input: CreateNetworkInput): Promise<NetworkGroupRow>
 addToNetwork(networkId, contactId): Promise<void>                          // NetworkNotFoundError + ContactNotFoundError; idempotent
 removeFromNetwork(networkId, contactId): Promise<void>                     // NetworkNotFoundError
 getNetworkGraph(): Promise<NetworkGraph>                                   // {nodes,edges} membership-only (no contact↔contact)
+// S6 — derived health engine (NOT an ADR-011 measurement — C1)
+getContactHealth(id, asOf?): Promise<ContactHealth>                        // ContactNotFoundError; {band,score,factors,partial?}
+getNetworkHealth(networkId, asOf?): Promise<NetworkHealth>                 // NetworkNotFoundError; rollup of members
 ```
+`HealthBand = 'new'|'healthy'|'at_risk'|'overdue'`. Health = derived-on-read, closeness-weighted
+(relationship_type+is_favorite onion), never stored, no measurement_kind. `asOf` = determinism seam.
 `NetworkGraph = {nodes: GraphNode[], edges: GraphEdge[]}`; `GraphNode = {id, kind:'contact'|'network', label}`;
 `GraphEdge = {source, target}` (contact→network). `CreateNetworkSchema` (name required).
 `ReminderGroupView` = `ReminderGroupRow` with `days_of_week` parsed. `TimeRange`/`DueItem` from `../sessions`.

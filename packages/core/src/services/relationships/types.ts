@@ -77,6 +77,33 @@ export interface NetworkGraph {
   edges: GraphEdge[]
 }
 
+/** Relationship-health band (S6, RL-5) — a derived analytic, NOT an ADR-011 measurement (C1). */
+export type HealthBand = 'new' | 'healthy' | 'at_risk' | 'overdue'
+
+/** The inputs that produced a health band (transparency — why this score). */
+export interface HealthFactors {
+  daysOverdue: number
+  tracked: boolean
+  closenessWeight: number
+  recentSentiment: number | null
+}
+
+/** A contact's derived health (REL-22/23/24). `score` null for `new`; `partial` flags a degraded compute (REL-24). */
+export interface ContactHealth {
+  band: HealthBand
+  score: number | null
+  factors: HealthFactors
+  partial?: boolean
+}
+
+/** A network's rolled-up health (REL-47) — worst member band + mean member score + per-band counts. */
+export interface NetworkHealth {
+  band: HealthBand
+  score: number | null
+  memberCount: number
+  factors: Record<HealthBand, number>
+}
+
 export interface RelationshipsServiceDeps {
   db: DrizzleDb
   deviceId: string
@@ -119,6 +146,10 @@ export interface RelationshipsService {
   addToNetwork(networkId: string, contactId: string): Promise<void>
   removeFromNetwork(networkId: string, contactId: string): Promise<void>
   getNetworkGraph(): Promise<NetworkGraph>
+
+  // --- S6: derived health engine (REL-22…25, 47) — NOT a measurement (C1) --
+  getContactHealth(id: string, asOf?: string): Promise<ContactHealth>
+  getNetworkHealth(networkId: string, asOf?: string): Promise<NetworkHealth>
 }
 
 /** A contact id did not resolve to a live (non-soft-deleted) contact (REL-02/06; preflight G1). */

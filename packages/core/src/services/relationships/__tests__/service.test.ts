@@ -548,3 +548,81 @@ describe('mod-relationships S5 — networks + graph data-prep', () => {
     expect(graph.edges.filter((e) => e.source === c1.id)).toHaveLength(2)
   })
 })
+
+describe('mod-relationships S6 — derived health engine', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('a contact with no interactions is `new` (no baseline, never overdue)', async () => {
+    const c = await h.svc.createContact({ first_name: 'Fresh' })
+    const health = await h.svc.getContactHealth(c.id)
+    expect(health.band).toBe('new')
+    expect(health.score).toBeNull()
+  })
+
+  it('bands track recency vs cadence: healthy → at_risk (grace) → overdue', async () => {
+    const c = await h.svc.createContact({ first_name: 'Cadence', stay_in_touch_days: 7 }) // acquaintance, weight 0.75
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' }) // next = 2026-10-08
+    expect((await h.svc.getContactHealth(c.id, '2026-10-05')).band).toBe('healthy') // before cadence
+    expect((await h.svc.getContactHealth(c.id, '2026-10-12')).band).toBe('at_risk') // 4 days over, within grace (10)
+    expect((await h.svc.getContactHealth(c.id, '2026-11-15')).band).toBe('overdue') // far past
+  })
+
+  it('closeness onion: an inner-tier (family+favorite) contact is penalized MORE than an acquaintance at the same daysOverdue', async () => {
+    const fam = await h.svc.createContact({ first_name: 'Mom', relationship_type: 'family', is_favorite: true, stay_in_touch_days: 10 })
+    const acq = await h.svc.createContact({ first_name: 'Guy', relationship_type: 'acquaintance', stay_in_touch_days: 10 })
+    for (const id of [fam.id, acq.id]) await h.svc.logInteraction({ contact_id: id, interaction_type: 'call', date: '2026-10-01' }) // next = 2026-10-11
+    const famH = await h.svc.getContactHealth(fam.id, '2026-10-16') // 5 days over
+    const acqH = await h.svc.getContactHealth(acq.id, '2026-10-16') // 5 days over
+    expect(famH.score! < acqH.score!).toBe(true) // inner tier scores lower
+    expect(famH.band).toBe('overdue') // grace ceil(7/2.5)=3 → 5 > 3
+    expect(acqH.band).toBe('at_risk') // grace ceil(7/0.75)=10 → 5 <= 10
+    expect(famH.factors.closenessWeight).toBe(2.5)
+  })
+
+  it('recent sentiment shifts band/score (negative → at_risk even when not overdue)', async () => {
+    const neg = await h.svc.createContact({ first_name: 'Neg', stay_in_touch_days: 30 })
+    await h.svc.logInteraction({ contact_id: neg.id, interaction_type: 'call', date: '2026-10-01', sentiment: 'negative' })
+    const negH = await h.svc.getContactHealth(neg.id, '2026-10-15') // daysOverdue 0 (next 2026-10-31)
+    expect(negH.band).toBe('at_risk')
+    expect(negH.factors.recentSentiment).toBe(-1)
+
+    const pos = await h.svc.createContact({ first_name: 'Pos', stay_in_touch_days: 30 })
+    await h.svc.logInteraction({ contact_id: pos.id, interaction_type: 'call', date: '2026-10-01', sentiment: 'positive' })
+    const posH = await h.svc.getContactHealth(pos.id, '2026-10-15')
+    expect(posH.band).toBe('healthy')
+    expect(posH.score! > negH.score!).toBe(true)
+  })
+
+  it('an untracked contact (no cadence) is never overdue', async () => {
+    const c = await h.svc.createContact({ first_name: 'Loose' }) // no stay_in_touch
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-01-01' })
+    const health = await h.svc.getContactHealth(c.id, '2027-06-01') // far future
+    expect(health.factors.tracked).toBe(false)
+    expect(health.band).toBe('healthy') // never overdue without a cadence (REL-21/RL-5)
+  })
+
+  it('getNetworkHealth rolls up: worst band + mean score + per-band counts', async () => {
+    const overdue = await h.svc.createContact({ first_name: 'Over', stay_in_touch_days: 5 })
+    await h.svc.logInteraction({ contact_id: overdue.id, interaction_type: 'call', date: '2026-09-01' }) // next 2026-09-06
+    const healthy = await h.svc.createContact({ first_name: 'Well', stay_in_touch_days: 60 })
+    await h.svc.logInteraction({ contact_id: healthy.id, interaction_type: 'call', date: '2026-10-01' })
+    const n = await h.svc.createNetwork({ name: 'Mixed' })
+    await h.svc.addToNetwork(n.id, overdue.id)
+    await h.svc.addToNetwork(n.id, healthy.id)
+
+    const nh = await h.svc.getNetworkHealth(n.id, '2026-10-15')
+    expect(nh.memberCount).toBe(2)
+    expect(nh.band).toBe('overdue') // worst member
+    expect(nh.factors.overdue).toBe(1)
+    expect(nh.factors.healthy).toBe(1)
+    expect(nh.score).not.toBeNull() // mean of the two scores
+    await expect(h.svc.getNetworkHealth('nope')).rejects.toBeInstanceOf(NetworkNotFoundError)
+  })
+
+  it('getContactHealth guards an unknown contact', async () => {
+    await expect(h.svc.getContactHealth('nope')).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+})

@@ -13,7 +13,7 @@
 //   [[json-t-columns-need-service-serialize-in-m10]]; reads return a ContactView (not the raw Row).
 
 import { eq, and, type SQL } from 'drizzle-orm'
-import type { SocialLinks, RelationshipType, Frequency } from '@vida/types'
+import type { SocialLinks, RelationshipType, Frequency, Sentiment } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
   contacts,
@@ -48,12 +48,36 @@ import {
   type ReminderGroupView,
   type GraphNode,
   type GraphEdge,
+  type ContactHealth,
+  type HealthBand,
   ContactNotFoundError,
   InteractionNotFoundError,
   ReminderNotFoundError,
   ReminderGroupNotFoundError,
   NetworkNotFoundError,
 } from './types'
+
+// --- health-engine constants (S6; derived analytic, NOT a measurement — C1) -
+/** Closeness "onion" weight by relationship_type — inner tiers penalize neglect more (REL-25). */
+const TYPE_WEIGHT: Record<RelationshipType, number> = {
+  family: 2.0,
+  romantic: 2.0,
+  mentor: 1.5,
+  mentee: 1.5,
+  friend: 1.5,
+  colleague: 1.0,
+  professional: 1.0,
+  acquaintance: 0.75,
+  other: 0.75,
+}
+const closenessWeight = (type: RelationshipType, favorite: boolean): number =>
+  TYPE_WEIGHT[type] + (favorite ? 0.5 : 0)
+const SENTIMENT_SCORE: Record<Sentiment, number> = { positive: 1, neutral: 0, negative: -1 }
+const BAND_RANK: Record<HealthBand, number> = { new: 0, healthy: 1, at_risk: 2, overdue: 3 }
+/** Whole days from `a` to `b` (both YYYY-MM-DD; UTC-day-parsed). */
+const daysBetweenISO = (a: string, b: string): number =>
+  Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000)
+const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n))
 
 // --- derived-stats helpers (RL-3; S2) ---------------------------------------
 // frequency → approximate day-count; stay_in_touch_days is the exact override (precedence).
@@ -138,6 +162,46 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
     await kill(remindersRepo, eq(contactReminders.contact_id, id))
     await kill(reminderGroupContactsRepo, eq(reminderGroupContacts.contact_id, id))
     await kill(networkGroupContactsRepo, eq(networkGroupContacts.contact_id, id))
+  }
+
+  // --- S6: derived health engine (REL-22…25/47; hoisted so getNetworkHealth reuses it, not `this.`) ---
+  /** Mean sentiment of a contact's last 5 rated interactions (positive +1/neutral 0/negative −1); null if none. */
+  async function recentSentiment(contactId: string): Promise<number | null> {
+    const rows = await interactionsRepo.findWhere(eq(interactions.contact_id, contactId))
+    const rated = rows
+      .filter((r) => r.sentiment != null)
+      // date desc, created_at desc tiebreak — the getTimeline convention (deterministic window, g2 S6 note)
+      .sort((a, b) => (a.date === b.date ? b.created_at - a.created_at : a.date < b.date ? 1 : -1))
+      .slice(0, 5)
+    if (rated.length === 0) return null
+    const sum = rated.reduce((s, r) => s + SENTIMENT_SCORE[r.sentiment as Sentiment], 0)
+    return sum / rated.length
+  }
+  async function computeContactHealth(id: string, asOf?: string): Promise<ContactHealth> {
+    const c = await contactsRepo.findById(id)
+    if (!c) throw new ContactNotFoundError(id)
+    const weight = closenessWeight(c.relationship_type as RelationshipType, Boolean(c.is_favorite))
+    const tracked = c.next_contact_date != null
+    if (c.interaction_count === 0) {
+      // no baseline → `new`, never "overdue" (REL-23)
+      return { band: 'new', score: null, factors: { daysOverdue: 0, tracked, closenessWeight: weight, recentSentiment: null } }
+    }
+    const today = asOf ?? new Date(Date.now()).toISOString().slice(0, 10)
+    const daysOverdue = c.next_contact_date != null ? Math.max(0, daysBetweenISO(c.next_contact_date, today)) : 0
+    const sentiment = await recentSentiment(id)
+    const raw = Math.round(100 - daysOverdue * weight * 1.5 + (sentiment ?? 0) * 15)
+    const factors = { daysOverdue, tracked, closenessWeight: weight, recentSentiment: sentiment }
+    if (!Number.isFinite(raw)) return { band: 'new', score: null, factors, partial: true } // REL-24 fail-loud
+    const score = clamp(raw, 0, 100)
+    const negative = sentiment != null && sentiment < 0
+    const band: HealthBand = !tracked
+      ? negative ? 'at_risk' : 'healthy' // untracked → sentiment-only, never overdue
+      : daysOverdue === 0
+        ? negative ? 'at_risk' : 'healthy'
+        : daysOverdue <= Math.ceil(7 / weight) // grace — shorter for inner tiers (onion)
+          ? 'at_risk'
+          : 'overdue'
+    return { band, score, factors }
   }
 
   // --- S2: derived contact stats recompute (REL-19/20/21, RL-3) --------------
@@ -511,6 +575,29 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
         ...members.map((c) => ({ id: c.id, kind: 'contact' as const, label: c.first_name })),
       ]
       return { nodes, edges }
+    },
+
+    // --- REL-22…25 getContactHealth (derived; NOT a measurement — C1) --------
+    getContactHealth: (id, asOf) => computeContactHealth(id, asOf),
+
+    // --- REL-47 getNetworkHealth (rollup of members' health) -----------------
+    getNetworkHealth: async (networkId, asOf) => {
+      const network = await networkGroupsRepo.findById(networkId)
+      if (!network) throw new NetworkNotFoundError(networkId)
+      const members = await networkGroupContactsRepo.findWhere(
+        eq(networkGroupContacts.network_group_id, networkId),
+      )
+      const counts: Record<HealthBand, number> = { new: 0, healthy: 0, at_risk: 0, overdue: 0 }
+      const scores: number[] = []
+      let worst: HealthBand = 'new'
+      for (const m of members) {
+        const h = await computeContactHealth(m.contact_id, asOf)
+        counts[h.band] += 1
+        if (h.score != null) scores.push(h.score)
+        if (BAND_RANK[h.band] > BAND_RANK[worst]) worst = h.band
+      }
+      const score = scores.length ? Math.round(scores.reduce((s, n) => s + n, 0) / scores.length) : null
+      return { band: worst, score, memberCount: members.length, factors: counts }
     },
   }
 }

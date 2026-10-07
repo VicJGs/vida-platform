@@ -38,7 +38,7 @@ L23-27, "settled intent"). **The schema is the floor — networks/snooze/anchor/
 - [x] **S3** Events — REL-26,27,28,29 ✅ (createEvent + upcoming/all, recurring MM-DD projection; 25/25 live-store)
 - [x] **S4** Reminders + groups + dueIn seam — REL-30…42 ✅ (9 methods + getDueReminders producer; 28/28 live-store)
 - [x] **S5** Networks + graph data-prep — REL-43…46 ✅ (network CRUD, m2m membership, getNetworkGraph; 32/32 live-store)
-- [ ] **S6** Health engine (derived) — REL-22,23,24,25,47 (getContactHealth {band,score,factors} closeness-weighted + network rollup; formula designed)
+- [x] **S6** Health engine (derived) — REL-22,23,24,25,47 ✅ (formula designed; closeness-weighted + network rollup; 39/39)
 - [ ] **S7** Device import (deny-safe X1/X8) — REL-07…11 (importDeviceContacts facade + import_staging + ContactsPermissionError)
 - [ ] **S8** Tags + pages + links — REL-48,49,50 (entity_tags via Spaces contact+network parent_tag_id; pages via Notes; entity-link target)
 - [ ] **S9** Fan-out + Journal + seams — REL-51,52,53,57,33/36/38,N7 (DueProvider reg, Journal /summary + digest, deny-safe tasks?/gamification?/preferences?, quiet-hours honor)
@@ -86,4 +86,16 @@ branch `mod-relationships` off `main`. Node 22 (tests Node 24, better-sqlite3 AB
   membership-only node/edge set (no contact↔contact), dangling-edge-guarded, isolated networks included. Gate: spec
   critique+preflight inline (dangling-edge fix) → **32/32 live-store** → inline g2 SHIP → currency BR-RL-S5-*.
   tsc 0 · eslint 0. (Un-homed noted: deleteNetwork.)
-- (S6 next — health engine, derived; network health rollup REL-47)
+- **S6 — Health engine, derived (✅ 2026-10-07).** The build-phase DESIGN-PASS: `getContactHealth(id,asOf?)` →
+  {band,score,factors,partial?} — new/healthy/at_risk/overdue; score = clamp(100 − daysOverdue·weight·1.5 +
+  sentiment·15); closeness onion from relationship_type+is_favorite (closeness_tier OPEN → display-only);
+  recentSentiment = last 5 rated; grace shorter for inner tiers. `getNetworkHealth` = worst-band + mean-score rollup.
+  **C1 honored: NOT an ADR-011 measurement** (no measurement_kind, no registry advertise). `asOf` determinism seam.
+  Gate: spec critique+preflight inline → **39/39 live-store** → independent **g2 SHIP** (C1 grep-confirmed: no
+  measurement import/advertise/kind; formula + partial-guard + rollup verified) → folded g2 note (recentSentiment
+  created_at tiebreak). tsc 0 · eslint 0. Currency BR-RL-S6-*. **S6 full-suite checkpoint: 1893/1896 under Node 24**
+  (3 non-relationships flakes; relationships isolated 39/39). ⚠ **ABI incident:** the S6 g2 agent rebuilt
+  better-sqlite3 to Node-24 ABI (137) in the shared worktree → broke Node-22 runs (1645 setup-fails, pure ABI
+  mismatch, not code). **Resolution: session standardized on Node 24** (matches the binary); future review agents
+  must be forbidden from native rebuilds.
+- (S7 next — device import, deny-safe X1/X8)

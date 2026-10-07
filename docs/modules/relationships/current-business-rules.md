@@ -105,6 +105,23 @@
 - **BR-RL-S5-4** — `name` required (`[E]`). **Un-homed (noted):** `deleteNetwork` (not in REL-43/44/46); network
   health = REL-47 (S6); network notes/tags = S8.
 
+## S6 — Health engine (derived · REL-22…25, 47) — the build-phase design-pass
+- **BR-RL-S6-1 (REL-22/23)** — `getContactHealth(id, asOf?): {band, score, factors, partial?}`. `new` iff
+  interaction_count=0 (score null, never overdue). Else: `daysOverdue = max(0, daysBetween(next_contact_date, today))`
+  (today = asOf ?? realToday); `weight = closenessWeight(relationship_type, is_favorite)` (onion — family/romantic 2.0 ·
+  mentor/mentee/friend 1.5 · colleague/professional 1.0 · acquaintance/other 0.75; +0.5 if favorite; `closeness_tier`
+  is OPEN vocab → NOT a weight input, stays display-only); `recentSentiment` = mean of last 5 rated interactions
+  (±1/0). **score = clamp(round(100 − daysOverdue·weight·1.5 + recentSentiment·15), 0, 100)**. Band: untracked →
+  sentiment-only (never overdue); daysOverdue 0 → healthy (at_risk if neg sentiment); ≤ ceil(7/weight) grace →
+  at_risk; else overdue. `factors` exposes the inputs.
+- **BR-RL-S6-2 (REL-24)** — a non-finite compute → `{band:'new', score:null, partial:true}` (fail-loud flagged
+  partial, never a wrong score as real).
+- **BR-RL-S6-3 (REL-47)** — `getNetworkHealth(networkId, asOf?)` rolls up members: band = worst member
+  (overdue>at_risk>healthy>new); score = mean of scored members (null if none); memberCount + per-band counts.
+- **BR-RL-S6-4 (C1 — load-bearing)** — health is a **pure derived read, NOT an ADR-011 measurement**: no
+  `measurement_kind`/`binding_mode`, never advertised to the measurement source registry. `asOf` = determinism seam.
+  The formula is a documented, tunable design choice (the UNKNOWN homed to this [F] spec — resolved now).
+
 ## Forward slices (not yet built)
 S6 health engine (derived, NOT a measurement — C1) · S7 device import (deny-safe X1/X8) · S8 tags/pages/links ·
 S9 fan-out + Journal `/summary` + deny-safe seams.
