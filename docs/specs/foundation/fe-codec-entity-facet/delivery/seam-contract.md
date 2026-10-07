@@ -9,24 +9,27 @@
 ## Seam A — `EntityView` props (`@vida/ui`, presentational; S1)
 
 ```ts
-// LOCAL unions — @vida/ui is Tamagui-only (no @vida/core/@vida/types dep); the ViewLayout/CellSize-local precedent.
+// LOCAL union — @vida/ui is Tamagui-only. Editor state reuses the SHIPPED intra-package ViewState (dashboard-view.tsx:5
+// imports it the same way) — NOT a parallel-named alias (critique B3).
 type FacetMode = 'merged' | 'tabbed'
-// structurally ≡ internal/data-view.tsx `ViewState` (byte-identical) — a PARALLEL local declaration (the Tamagui-only
-// boundary forbids importing it across packages, but the renderer-state canon is identical).
-type FacetState = 'loading' | 'empty' | 'error' | 'success'
+import type { ViewState } from '../internal/data-view'   // 'loading' | 'empty' | 'error' | 'success'
 
 interface EntityViewProps {
-  title: string                                  // the entity title — names the region + renders as the serif heading
+  title: string                                  // the entity title — names the region + renders as the $display serif H1
   subtitle?: ReactNode                           // bio/summary line (type · counts · updated) — a slot
   action?: ReactNode                             // the ⋯ entity-action SLOT (a Menu trigger etc.)
   // ── the facet composition mode (EC-4) — CONTROLLED (the app owns + persists; per-instance memory R5/O4) ──
   mode: FacetMode
   onModeChange: (next: FacetMode) => void
+  // ── the active facet in tabbed mode (critique B1) — deep-link to the Editor; hold position across a mode round-trip ──
+  defaultFacet?: 'layout' | 'editor'             // default 'layout' (seeds Tabs defaultValue)
+  activeFacet?: 'layout' | 'editor'              // optional controlled; + onActiveFacetChange. Ignored merged/page-less.
+  onActiveFacetChange?: (next: 'layout' | 'editor') => void
   // ── the Layout facet (always present) — a composite the consumer builds (SummaryStrip + DashboardView + CollectionView) ──
   layout: ReactNode                              // the Layout body — self-states via its sub-shells (EC-1/EC-2)
   // ── the OPTIONAL Editor facet — PRESENCE is the registry gate (EC-3): offered iff the app passes it (Seam B) ──
   editor?: ReactNode                             // the Editor body (the entity's linked page = Canvas: Editor #7, composed)
-  editorState?: FacetState                       // the Editor facet's own state (BR-2) — shell owns a calm page skeleton/
+  editorState?: ViewState                        // the Editor facet's own state (BR-2) — shell owns a calm page skeleton/
                                                  // teaching-empty/role="status" error; renders `editor` for success (EC-5)
   // ── tabbed-mode labels ──────────────────────────────────────────────────────────────────
   layoutLabel?: string                           // default 'Home'

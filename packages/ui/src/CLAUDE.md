@@ -414,6 +414,29 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   EC-1..EC-8). **S2** (next) = the apps/web placement↔Dashboard adapter (pure `block_instances`→cell mapping + convention,
   live `useDashboard` hook deferred). Spec: `docs/specs/components/ui-2-platform-views/dashboard-view.md`. Delivery:
   `docs/specs/foundation/fe-codec-dashboard/`.
+  **entity-view** is **fe-codec-entity-facet · S1** (LIF-209) — the CODEC **Entity shell** (decomposition.md:31 §1.2, "the
+  facet system"), the **3rd archetype shell**. A **SHELL not a renderer** — a facet FRAME composing a **Layout facet** (always
+  present — the consumer's Title·bio·summary + `DashboardView` #5 + `CollectionView` #4) + an **OPTIONAL Editor facet** (the
+  entity's linked page = Canvas: Editor #7, composed later) in a user-chosen **`mode`: merged | tabbed**. **NON-GENERIC**,
+  React-19 ref-prop. **`FacetMode`** is a LOCAL union; editor state reuses the shipped intra-package **`ViewState`** (imported
+  from `internal/data-view`, NOT a new alias — critique B3). **The "registry-gated editor" resolves in apps/web (S2), NEVER in
+  the shell:** `isEntityType()`/`ENTITY_TYPES` live in `@vida/core` (uncrossable), so the gate = **`editor`-slot presence** —
+  the shell offers the Editor facet iff an `editor` node is passed (the `collection-view.tsx:179` `onFilter != null`
+  precedent). **merged** = Layout + an `aria-hidden` divider + Editor, **each facet a labeled `role="region"`** via `aria-label`
+  (`layoutLabel`/`editorLabel`; NOT `aria-labelledby` — no shell-rendered heading; critique B2); **tabbed** = ui-1 **`Tabs`**
+  `[Home|Content]`, **only the active panel mounts** — Tabs is correct here because facets are *different content* (the INVERSE
+  of collection-view's toolbar-over-Tabs). **Deep-link** to the Editor via `defaultFacet`/`activeFacet`+`onActiveFacetChange`
+  (critique B1 — else the active facet is lost on a mode round-trip). **Shell owns the Editor facet's generic terminal states**
+  (`editorState`: calm skeleton / teaching-empty / `role="status"` **muted** error — NOT `$colorSignalDanger`, the AA/ds-2
+  fix), renders `editor` only for `success`; the Layout composite self-states. **Page-less** (no `editor`) ⇒ Layout rendered
+  DIRECTLY (no Tabs/toggle) — **DISTINCT from empty-editor** (`editorState:'empty'` → the Content tab IS shown with a teaching
+  body). Mode toggle = a `role="toolbar"` of `aria-pressed` Buttons (collection-view switcher precedent); mode switch is
+  INSTANT. `$display` serif H1; DIRECT tokens; `warnMissingName`. Visual Gate PASS (Brave, 3 presets × light/dark: title serif
+  AA **15.84** · facet text MIN **5.65–6.03** incl. warm-dark · 3 regions · toolbar aria-pressed · tabbed active-only
+  (inactive editor NOT mounted) · page-less no toolbar/tablist · empty-editor≠page-less · loading=aria-busy · error=role=status
+  · **axe 0** · 375 no overflow). **S2** (next) = the apps/web entity↔EntityView adapter (`offersEditor` gate + merged/tabbed
+  memory convention; live `useEntity` hook deferred). Spec: `docs/specs/components/ui-2-platform-views/entity-view.md`.
+  Delivery: `docs/specs/foundation/fe-codec-entity-facet/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
