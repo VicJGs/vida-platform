@@ -261,7 +261,11 @@ describe('shadow tokens routed to CSS + shadow.ts, still skipped from tokens.ts/
     expect(shadow).toMatch(/\} as const/)
     // flattened (single namespace) — no nested `shadow:` key
     expect(shadow).not.toMatch(/shadow: \{/)
-    expect(shadow).toMatch(/"resting": "0 1px 2px 0 rgba\(15,23,42,0\.06\)"/)
+    // fe-codec-primitives-refinement P2 (BR-C-5): resting softened to a 2-layer (ambient+tight) low-opacity shadow —
+    // still rgba(15,23,42,·) so it self-cancels in dark. Card is resting's sole consumer (DEF-U5-e).
+    expect(shadow).toMatch(
+      /"resting": "0 1px 2px 0 rgba\(15,23,42,0\.04\), 0 6px 16px -4px rgba\(15,23,42,0\.06\)"/,
+    )
     expect(shadow).toMatch(/"raised": "0 4px 12px -2px rgba\(15,23,42,0\.10\)"/)
     expect(shadow).toMatch(/"overlay": "0 12px 32px -4px rgba\(15,23,42,0\.18\)"/)
   })

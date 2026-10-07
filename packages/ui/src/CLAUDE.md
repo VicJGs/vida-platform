@@ -30,9 +30,20 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   `<div>` (`role="group"`, or `role="button"` + hand-rolled Enter/keydown/Space-keyup when `interactive`; NEVER a
   native `<button>`, which can't legally contain the focusable `actions`/`footer`). Elevation = the OPACITY of a
   raised-shadow overlay child (B12); the resting shadow **self-cancels in dark** (its colour = the dark surface) so the
-  border carries dark elevation (design §V) — no theme detection. `header`/`footer` are real `<header>`/`<footer>`
-  (`render:'header'`/`'footer'`). No `loading` prop (the contract authors none — loading/empty are consumer-composed:
-  skeleton/empty-state as `children`; DEF-U5-f). **Tabs** is the B12 showcase: a `role="tablist"` of `render:'button'`
+  border carries dark elevation (design §V) — no theme detection. Resting elevation is a **2-layer** (ambient+tight)
+  low-opacity `shadow.resting` token (Card is its sole consumer; fe-codec P2 BR-C-5). `header`/`footer` are plain
+  `<div>` regions (**NOT** `<header>`/`<footer>` — a `<header>` nested in the `<div>` frame is a `banner`/`contentinfo`
+  LANDMARK, duplicated N× in a list row; `card.md:6` Intent "not a landmark" governs; **DEF-U5-g**, fe-codec P2 BR-C-11).
+  Inset `padding` is the `pad` **variant** (compact/default/spacious → `$space` scale), NOT a variant literally named
+  `padding` — that collided with Tamagui's built-in `padding` style prop so `padding="default"` applied 0px (**DEF-U5-h**,
+  the shipped Card had no inset until fe-codec P2); public prop stays `padding`, mapped to `pad`. **Alive-hooks** (fe-codec
+  P2, all optional, `neutral`/absent = prior render): `status` (`calm`/`warm` = a 3px left `StatusEdge` accent — an
+  absolute aria-hidden child, left-corner-radiused, NOT `borderLeftWidth`/no frame `overflow:hidden` so `CardElevation`'s
+  raised shadow isn't clipped, toast.tsx:133-135 precedent; `faded` = recessed `$colorSurfaceSecondary` surface + flat
+  `vida-card-flat` (no shadow), **text held at full opacity** so AA is the baseline — BR-C-7a, a blanket frame opacity
+  dropped muted text below 4.5), `metric` (a non-interactive readout top-right of the header, before `actions`),
+  `headerDivider` (a hairline rule). Signal tokens are preset-invariant (`$colorSignalSuccess`/`Danger`). No `loading`
+  prop (the contract authors none — loading/empty are consumer-composed: skeleton/empty-state as `children`; DEF-U5-f). **Tabs** is the B12 showcase: a `role="tablist"` of `render:'button'`
   `role="tab"`s (roving tabindex, AUTOMATIC activation, arrows WRAP + skip disabled, Home/End) + a selection
   **indicator** — an absolute bar whose **transform** animates (250/inOut) while its **width/height resize is an
   INSTANT inline-style swap** (the B12 asymmetry: animate transform, never left/width). Measured via the active tab's

@@ -140,7 +140,20 @@ Approved target per phase = the committed mockups (`mockups/*.html`). Visual rec
   **Visual Gate PASS** (Brave, 3 presets × light/dark × calm/dense: **axe 0** · AA **4.94–6.53** incl. warm-dark · 375
   no-overflow · Grouped eyebrow-sections + empty-self-heal · Featured tick+eyebrow). Spec `phases/P1-list-view.md`;
   currency `packages/ui/src/CLAUDE.md`. **Node 24 required** for the test/build env (jsdom30+undici≥22). Next: PR, then P2.
-- **⚑ P2 · Card — flag from P1 gate:** Card renders `header`/`footer` as **`<header>`/`<footer>` landmark elements** →
-  in a repeated-row (list) context they become **duplicate `banner`/`contentinfo` landmarks** (axe `landmark-no-duplicate-*`,
-  12 violations in the P1 story until the story composed rows via Card `children` instead). P2 must decide: Card's
-  header/footer should NOT be page-level landmarks when the Card is a list row (scope them, or drop the landmark roles).
+- **P2 · Card — ✅ COMPLETE (2026-10-06, PR #96 open, branch `fe-codec-primitives-p2-card`).** Full §XXVI double-gate
+  (spec Approval 1 → preflight → Approval 2) + blocking Visual Gate + independent code-review + pre-ship /critique SHIP.
+  Delivered: **BR-C-11 landmark fix** (`header`/`footer` → plain `<div>` — Option B, grounded in `card.md:6` Intent +
+  the `card.md:21`/`u5-card.md:82` ref-fixed-to-div FACTs; resolved the P1 flag, 0 duplicate landmarks in a repeated
+  row); **alive-hooks** `status`(calm/warm StatusEdge · faded recessed+flat)/`metric`/`headerDivider` (additive, neutral
+  = prior render); **BR-C-5** 2-layer `shadow.resting` token (Card sole consumer). tsc 0 · eslint 0 · **@vida/ui 420**
+  (card.test 23, +new) · **Visual Gate PASS** (Brave, 24 cells = 3 presets × light/dark × calm/dense + landmark +
+  editorial — AA worst **4.52** incl. warm-dark & composited faded · axe 0 · 0 landmarks · edges preset-invariant).
+  Currency: `packages/ui/src/CLAUDE.md` + `card.md` (DEF-U5-g/h) + `u5-card.md`. **The Visual Gate earned its keep —
+  caught 4 things code-gates missed:** (1) `faded` opacity:0.62 failed AA (muted text 2.4, axe-confirmed) → "dim chrome,
+  hold text" per BR-C-7a; (2) **DEF-U5-h** — a pre-existing shipped bug: the `padding` variant NEVER applied (0px on
+  every card, incl. the Padding story) because the variant name collides with Tamagui's built-in `padding` style prop →
+  renamed `padding`→`pad`, public prop unchanged; (3) my first gate script false-greened (Playwright `evaluate(string)`
+  parse error → empty arrays → vacuous pass) → hardened to assert measurement; (4) a story-scaffolding axe flag.
+  **Lesson: ground before assuming** — the landmark fix REVERSED from `<article>` (my instinct) to drop-the-tags once
+  the ref-fixed-to-div FACTs were read; and the gate's composited-opacity contrast probe was essential to measure faded
+  honestly (getComputedStyle ignores ancestor opacity). **Next: P3 · Timeline** (now-fulcrum variant + accent now-dot).
