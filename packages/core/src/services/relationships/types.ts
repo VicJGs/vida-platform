@@ -31,6 +31,10 @@ import type {
   CreateNetworkInput,
 } from '../../validators/relationship'
 import type { TimeRange, DueItem } from '../sessions'
+import type { SpacesService } from '../../foundation/spaces'
+import type { EntityTagRow } from '../../db/schema/foundation/spaces'
+import type { NotesService } from '../notes'
+import type { PageRow } from '../../db/schema/notes'
 
 /** A contact as returned by the service: the Drizzle Row with `social_links` parsed to the object (BR-RL-S1-4b).
  *  The `text()` column stores JSON (M1.0 [E]=[]); the service owns the serialize/parse boundary. */
@@ -139,6 +143,11 @@ export interface DeviceContactsPort {
 export interface RelationshipsServiceDeps {
   db: DrizzleDb
   deviceId: string
+  /** REQUIRED (S8) — the entity_tags + entity_links WRITE surface (ADR-006). Relationships delegates ALL tag writes
+   *  here (read/write split); spaces validates entity_type against the shared registry (contact/network seeded). */
+  spaces: SpacesService
+  /** REQUIRED (S8) — the `pages` surface for standalone contact/network notes (G9). */
+  notes: NotesService
 }
 
 export interface RelationshipsService {
@@ -186,6 +195,14 @@ export interface RelationshipsService {
   // --- S7: device import (REL-07…11, deny-safe X1/X8) ----------------------
   importDeviceContacts(device?: DeviceContactsPort): Promise<ContactImportResult>
   commitContactImport(staged: StagedContact[]): Promise<ContactCommitResult>
+
+  // --- S8: tags (entity_tags) + pages + links (REL-48/49/50) ---------------
+  tagContact(contactId: string, tagId: string): Promise<EntityTagRow>
+  untagContact(contactId: string, tagId: string): Promise<void>
+  tagNetwork(networkId: string, tagId: string): Promise<EntityTagRow>
+  untagNetwork(networkId: string, tagId: string): Promise<void>
+  ensureContactNote(contactId: string): Promise<PageRow>
+  ensureNetworkNote(networkId: string): Promise<PageRow>
 }
 
 /** A contact id did not resolve to a live (non-soft-deleted) contact (REL-02/06; preflight G1). */

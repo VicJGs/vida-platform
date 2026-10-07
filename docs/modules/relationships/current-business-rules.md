@@ -136,6 +136,18 @@
   ingestion-guard grant enforcement (X2/X5 via `foundation/ingestion`) wire at M2; M1 = pure pipeline + deny-safe port
   ([[XS security services share a deny-safe-port build shape]]).
 
+## S8 — Tags + pages + links (built · REL-48/49/50)
+- **BR-RL-S8-1 (REL-48)** — `tagContact`/`untagContact`/`tagNetwork`/`untagNetwork` delegate ALL tag writes to
+  `spaces.tagEntity`/`untagEntity` (read/write split; Spaces owns the junction, idempotent SP1 BR-14).
+  Relationships guards the owned entity (`ContactNotFoundError`/`NetworkNotFoundError`); tag-id validation is Spaces'.
+  `contact`+`network` are pre-seeded in `ENTITY_TYPES` → no register().
+- **BR-RL-S8-2 (REL-49)** — `ensureContactNote`/`ensureNetworkNote` = titled find-or-create standalone `pages` row
+  (`type:'note'`, `title`=first_name/name, `entity_type`=contact/network) via `notes.getPagesForEntity` else
+  `notes.createPage` (the purposes/projects mechanism, NOT content-seeding `notes.ensureEntityNote`). Idempotent.
+- **BR-RL-S8-3 (REL-50) — RATIFY** — `contact` is a valid `entity_links` target (seeded registry + `spaces.createLink`
+  validates); the link is written note-side, not a relationships method.
+- **Deps grew** (S8): `RelationshipsServiceDeps` += REQUIRED `spaces: SpacesService` + `notes: NotesService`.
+
 ## Forward slices (not yet built)
 S6 health engine (derived, NOT a measurement — C1) · S7 device import (deny-safe X1/X8) · S8 tags/pages/links ·
 S9 fan-out + Journal `/summary` + deny-safe seams.

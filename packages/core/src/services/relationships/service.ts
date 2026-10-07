@@ -145,7 +145,7 @@ const isoToMs = (iso: string): number => Date.parse(iso + 'T00:00:00Z')
 const isoWeekday = (iso: string): number => new Date(iso + 'T00:00:00Z').getUTCDay()
 
 export function createRelationshipsService(deps: RelationshipsServiceDeps): RelationshipsService {
-  const { db, deviceId } = deps
+  const { db, deviceId, spaces, notes } = deps
 
   // contacts is the only soft-delete table (§5.9 floor); children/junctions hard-delete on cascade (RL-2).
   const contactsRepo = createRepository(db, contacts, { encryptedFields: [], deviceId, softDelete: true })
@@ -663,6 +663,38 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
         }
       }
       return { created, matched, skipped }
+    },
+
+    // --- REL-48 tags (delegate to Spaces; guard the owned entity) -----------
+    tagContact: async (contactId, tagId) => {
+      if (!(await contactsRepo.findById(contactId))) throw new ContactNotFoundError(contactId)
+      return spaces.tagEntity(tagId, 'contact', contactId) // idempotent (SP1 BR-14)
+    },
+    untagContact: async (contactId, tagId) => {
+      if (!(await contactsRepo.findById(contactId))) throw new ContactNotFoundError(contactId)
+      await spaces.untagEntity(tagId, 'contact', contactId)
+    },
+    tagNetwork: async (networkId, tagId) => {
+      if (!(await networkGroupsRepo.findById(networkId))) throw new NetworkNotFoundError(networkId)
+      return spaces.tagEntity(tagId, 'network', networkId)
+    },
+    untagNetwork: async (networkId, tagId) => {
+      if (!(await networkGroupsRepo.findById(networkId))) throw new NetworkNotFoundError(networkId)
+      await spaces.untagEntity(tagId, 'network', networkId)
+    },
+
+    // --- REL-49 pages (titled find-or-create; purposes ensureEntityNote mechanism) ---
+    ensureContactNote: async (contactId) => {
+      const c = await contactsRepo.findById(contactId)
+      if (!c) throw new ContactNotFoundError(contactId)
+      const existing = (await notes.getPagesForEntity('contact', contactId)).find((p) => p.type === 'note')
+      return existing ?? notes.createPage({ type: 'note', title: c.first_name, entity_type: 'contact', entity_id: contactId })
+    },
+    ensureNetworkNote: async (networkId) => {
+      const n = await networkGroupsRepo.findById(networkId)
+      if (!n) throw new NetworkNotFoundError(networkId)
+      const existing = (await notes.getPagesForEntity('network', networkId)).find((p) => p.type === 'note')
+      return existing ?? notes.createPage({ type: 'note', title: n.name, entity_type: 'network', entity_id: networkId })
     },
   }
 }

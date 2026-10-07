@@ -50,6 +50,15 @@ commitContactImport(staged: StagedContact[]): Promise<ContactCommitResult>      
 ```
 + exported pure `stageContacts(incoming, existing)` (X8 natural-key matcher). `DeviceContactsPort` = deny-safe seam
 (M2 device bridge). M1 = pure pipeline; device bridge + import_staging store + X2/X5 grant = M2.
+
+### S8 — tags + pages + links (deps grew: +spaces, +notes)
+```ts
+tagContact(contactId, tagId): Promise<EntityTagRow>    // ContactNotFoundError; untagContact(…): void
+tagNetwork(networkId, tagId): Promise<EntityTagRow>    // NetworkNotFoundError; untagNetwork(…): void
+ensureContactNote(contactId): Promise<PageRow>         // titled find-or-create; ensureNetworkNote(networkId)
+```
+`RelationshipsServiceDeps` = `{ db, deviceId, spaces: SpacesService, notes: NotesService }`. Tags delegate to Spaces
+(contact/network seeded in ENTITY_TYPES); pages via Notes. REL-50 (contact as entity_links target) = RATIFY.
 `HealthBand = 'new'|'healthy'|'at_risk'|'overdue'`. Health = derived-on-read, closeness-weighted
 (relationship_type+is_favorite onion), never stored, no measurement_kind. `asOf` = determinism seam.
 `NetworkGraph = {nodes: GraphNode[], edges: GraphEdge[]}`; `GraphNode = {id, kind:'contact'|'network', label}`;

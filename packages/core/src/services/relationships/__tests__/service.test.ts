@@ -23,6 +23,10 @@ import {
   networkGroups,
   networkGroupContacts,
 } from '../../../db/schema/relationships'
+import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSpacesService } from '../../../foundation/spaces'
+import { createBacklinkResolver } from '../../search/backlink-resolver'
+import { createNotesService } from '../../notes'
 import { createRelationshipsService } from '../service'
 import {
   type RelationshipsService,
@@ -81,6 +85,8 @@ interface Harness {
   svc: RelationshipsService
   db: DrizzleDb
   bsql: Database.Database
+  spaces: ReturnType<typeof createSpacesService>
+  notes: ReturnType<typeof createNotesService>
 }
 
 async function setup(): Promise<Harness> {
@@ -89,8 +95,13 @@ async function setup(): Promise<Harness> {
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createRelationshipsService({ db, deviceId: DEVICE })
-  return { svc, db, bsql }
+  // S8 — the REAL spaces + notes substrates (purposes harness precedent); contact/network are seeded in ENTITY_TYPES.
+  const registry = createTaggableTypeRegistry()
+  const spaces = createSpacesService(db, DEVICE, registry)
+  const backlinks = createBacklinkResolver(db, DEVICE)
+  const notes = createNotesService({ db, deviceId: DEVICE, spaces, backlinks, registry })
+  const svc = createRelationshipsService({ db, deviceId: DEVICE, spaces, notes })
+  return { svc, db, bsql, spaces, notes }
 }
 
 describe('mod-relationships S1 — contact CRUD spine', () => {
@@ -687,5 +698,55 @@ describe('mod-relationships S7 — device import (deny-safe X1/X8)', () => {
     const device = stubDevice([{ sourceRowId: '1', first_name: 'Ghost', email: 'ghost@x.com' }])
     const { staged } = await h.svc.importDeviceContacts(device)
     expect(staged[0].status).toBe('new') // the soft-deleted contact is not a match target
+  })
+})
+
+describe('mod-relationships S8 — tags (entity_tags) + pages', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('tagContact delegates to entity_tags (entity_type=contact), idempotent; guards unknown contact; untag removes', async () => {
+    const c = await h.svc.createContact({ first_name: 'Tagged' })
+    const tag = await h.spaces.createTag({ name: 'vip', color: null, parent_tag_id: null })
+    const et = await h.svc.tagContact(c.id, tag.id)
+    expect(et.entity_type).toBe('contact')
+    expect(et.entity_id).toBe(c.id)
+    const again = await h.svc.tagContact(c.id, tag.id)
+    expect(again.id).toBe(et.id) // idempotent (SP1 BR-14)
+    await expect(h.svc.tagContact('nope', tag.id)).rejects.toBeInstanceOf(ContactNotFoundError)
+    await expect(h.svc.untagContact(c.id, tag.id)).resolves.toBeUndefined()
+    await expect(h.svc.untagContact('nope', tag.id)).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+
+  it('tagNetwork delegates (entity_type=network); guards unknown network', async () => {
+    const n = await h.svc.createNetwork({ name: 'Crew' })
+    const tag = await h.spaces.createTag({ name: 'close', color: null, parent_tag_id: null })
+    const et = await h.svc.tagNetwork(n.id, tag.id)
+    expect(et.entity_type).toBe('network')
+    await expect(h.svc.tagNetwork('nope', tag.id)).rejects.toBeInstanceOf(NetworkNotFoundError)
+  })
+
+  it('ensureContactNote creates a titled page (entity_type=contact), idempotent; guards unknown contact', async () => {
+    const c = await h.svc.createContact({ first_name: 'Noted' })
+    const page = await h.svc.ensureContactNote(c.id)
+    expect(page.type).toBe('note')
+    expect(page.title).toBe('Noted')
+    expect(page.entity_type).toBe('contact')
+    expect(page.entity_id).toBe(c.id)
+    const again = await h.svc.ensureContactNote(c.id)
+    expect(again.id).toBe(page.id) // idempotent (find-or-create)
+    await expect(h.svc.ensureContactNote('nope')).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+
+  it('ensureNetworkNote creates a titled page (title=network name), idempotent', async () => {
+    const n = await h.svc.createNetwork({ name: 'Family Net' })
+    const page = await h.svc.ensureNetworkNote(n.id)
+    expect(page.title).toBe('Family Net')
+    expect(page.entity_type).toBe('network')
+    const again = await h.svc.ensureNetworkNote(n.id)
+    expect(again.id).toBe(page.id)
+    await expect(h.svc.ensureNetworkNote('nope')).rejects.toBeInstanceOf(NetworkNotFoundError)
   })
 })
