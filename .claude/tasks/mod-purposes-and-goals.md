@@ -1,5 +1,5 @@
 # Task: mod-purposes-and-goals
-# Status: in-progress
+# Status: in-progress  (① backend COMPLETE S1–S9; PR open → merge → /task-complete)
 # Linear: LIF-136
 # Profile: Add Backend Component
 # Scenario: Default (Entity Delivery Flow v1)
@@ -133,7 +133,57 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
       page id) + `*NotFound` on a missing owner · tag/link rejects an out-of-set type (spaces registry) · live-store smoke
       (real SQLite junction + pages writes) · tsc 0 · eslint 0 · @vida/core green (Node 24).
       **Then:** independent g2 code-review → /critique SHIP → §XXIX currency (current-spec S8 + BR-PG-S8-*).
-- [ ] **S9** — Provider (Journal summary + dueIn) + emit-only fan-out + deletion propagation (PG-19)
+- [x] **S9** — Provider + fan-out + deletion propagation (the ① closer). ✅ **BUILT — ① COMPLETE.** tsc 0 · eslint 0 ·
+      purposes **97/97** (+11 S9, live SQLite Node 22) · full @vida/core **1856/1857** (1 = known vault-1MB flake, passes
+      isolated 36/36, encryption untouched §XXIV). g1 /critique REVISE→folded (urgency=0 not proximity; composite-key
+      cascades; archiveValue findWhere+isNull; UTC-midnight parse) · g2 code-review **SHIP** ("clean, faithful closer", 3
+      NITs, NIT-1 folded) · pre-ship /critique SHIP · /adr-check no new ADR. §XXIX currency (current-spec S9 · BR-PG-S9-1..6).
+      New `journal.ts` (registerPurposesJournal + registerPurposesDueProvider — registry/sessions are PARAMS not deps,
+      projects precedent; only `effects?` added to deps). **g1-caught doc error:** critic claimed target∈contributor —
+      FALSE (CONTRIBUTION_CONTRIBUTOR_TYPE={habit,routine,project,task,dream,finance_target,check_in}); code is authority,
+      cascade helper correct (empty-leg queries harmless). **PLAN (g1 REVISE folded; Approval 1 granted):**
+      **Deps (factory):** ADD `journal: JournalRegistry` (REQUIRED, PG-14); ADD `effects?: { rail: EffectRail; registry: EffectRegistry }`
+      (deny-safe, dormant M1). The **DueProvider registers via the EXISTING `sessions.service.registerDueProvider`** —
+      no new dep (SessionsService:164,720; purposes = FIRST SS-7 consumer, the `dueProviders:[]` empty seam N5).
+      **(1) Journal provider (PG-14, mirror projects/journal.ts):** new `services/purposes/journal.ts` —
+      `createPurposesJournalContribution(svc)` + `registerPurposesJournal(registry, svc)`. Service adds
+      `getDayPurposesDigest(date): PurposesDayDigest` = `{ activePurposes, reviewsDue }` (active = non-terminal live
+      purposes; reviewsDue = targets whose `next_review_date == date`). `summary(date)→SectionData` state success/empty.
+      **Deltas come from Journal snapshots, NOT here** (BR:48 no stored propagation) → digest = counts only.
+      **(2) DueProvider lane (SS-7, canonical DueItem):** `dueIn(range: TimeRange): DueItem[]` — **targets ONLY** with
+      `next_review_date` in `[range.start,range.end]` → `DueItem{ source_module:'purposes', ref_id:target.id,
+      label:target.title, est_minutes:15, urgency:0, hard_deadline:<utc-midnight ms> }`. `registerPurposesDueProvider(sessionsService, svc)`
+      calls `registerDueProvider({ module:'purposes', fetch:dueIn })`. **g1 RESOLVED:** `est_minutes=15` (documented default,
+      no doc field) · **`urgency=0`** (the ranking algorithm is deferred to M1.2 platform-wide, `sessions/service.ts:705` —
+      a bespoke formula would fork the shared `DueItem` contract; `hard_deadline` carries proximity losslessly). **M1:**
+      targets-only is FORCED by schema — `purposes` carry no `next_review_date`/`review_frequency` (`schema/purposes.ts:52-70`,
+      `service.ts:660`); add that justifying comment. **M2:** `next_review_date` is `YYYY-MM-DD` TEXT → parse as **UTC-midnight
+      ms** (`Date.parse(d+'T00:00:00Z')`, matching the S7 UTC anchor `service.ts:840`) for the range test + `hard_deadline`.
+      **(3) emit-only fan-out (C-E2, mirror projects `fanOutCompletion` service.ts:72):** `emit_measurement_signal` on a
+      **status→'completed' TRANSITION** of a target OR purpose (both carry stored `status`, shared `STATUS` enum;
+      "completion → XP" contract:47, structure-data:72-73). Fire from `updateTarget`/`updatePurpose` ONLY when
+      `existing.status !== 'completed' && next === 'completed'` (transition, not every save). `if (!effects) return`
+      dormant M1; resolve-handler-else-skip; post-commit try/catch failure-isolated (PG-14). Keyed by entity id.
+      **(4) PG-19 deletion propagation (app-layer, no-FK; precedent projects `softDeleteProject`). B2: EVERY contribution
+      cascade keys on the COMPOSITE `(type,id)` leg — `goal_id`/`contributor_id` are bare polymorphic TEXT, both UUIDv7
+      (`schema/foundation/purpose.ts:38,40`, idx on `(type,id)`). All child sweeps use `findWhere(and(..., isNull(deleted_at)))`
+      (findWhere skips the soft-delete filter, [[repository-findwhere-skips-softdelete-filter]]):**
+      · `archivePurpose` — SET NULL child `targets.purpose_id` (survive standalone, SR-003); soft-cascade `contributions`
+        where `(goal_type='purpose', goal_id=id)` **AND** `(contributor_type='purpose', contributor_id=id)` (contributor-side,
+        g1 D2 — `business-rules.md:123`) + `purpose_reviews(purpose_id=id)`; hard-cascade `purpose_metrics` **by reusing S3
+        `deleteMetric` (two-hop → values)**; then soft-delete. (Targets survive ⇒ their `target_reviews` survive — NOT here.)
+      · `archiveTarget` — soft-cascade `contributions` where `(goal_type='target',goal_id=id)` **AND**
+        `(contributor_type='target',contributor_id=id)`; hard-cascade `target_reviews(target_id=id)`; soft-delete.
+      · **g1 D3 RESOLVED — `archiveValue`:** SET NULL `purposes.value_id` on child purposes (PG-9 standalone-survival) via
+        `findWhere(and(eq(value_id,id), isNull(deleted_at)))` → `purposesRepo.update(pid,{value_id:null})` (B1 — update not
+        delete; filter explicit); then soft-delete the value.
+      · `archiveDream` — leaf: soft-cascade `contributions` where `(contributor_type='dream',contributor_id=id)` (dream ∈
+        contributor vocab, not a goal — `purpose.ts:12`); soft-delete. No children, no SET NULL.
+      **Verification Gate:** journal summary success/empty + registration; dueIn range filter + DueItem shape + registration;
+      fan-out dormant-no-op (no effects) AND fires-on-transition (with a stub rail+handler, assert applied) + no-fire on
+      non-transition; PG-19 each cascade path (SET NULL survives, soft/hard cascades, two-hop metric reuse, contributor-side);
+      live SQLite · tsc 0 · eslint 0 · @vida/core green (Node 22 ABI).
+      **Then:** independent g2 code-review → /critique SHIP → §XXIX currency (current-spec S9 + BR-PG-S9-*) → **PR the whole ① build.**
 
 ## Open Questions
 - F-1 progress 0–100↔[0,1] → RESOLVED (Projects `toPct` boundary precedent)
@@ -203,6 +253,20 @@ Purposes & Goals (measurability capstone; rolls up every MEASURED module → 1st
   NITs). Guarded the g2 agent against `pnpm rebuild` this time (the S6 ABI gotcha). tsc 0 · eslint 0 · purposes 79/79 ·
   full @vida/core 1839/1839. §XXIX BR-PG-S7-1..7. **Next: S8 — tags/links/pages (Spaces+Notes) + value/dream
   entity_types** (same worktree).
+- 2026-10-07: **S8 built + committed (`862cc84` feat + `021dace` docs, pushed)** — tags/links/pages via Spaces+Notes.
+  Full Entity Delivery Flow: grounding surfaced entity_types already seeded (RATIFY) → g1 /critique REVISE (ensureEntityNote
+  4-arg BLOCKER + union-omits-metric_value + registry-drop premise) → folded → Approval 1 → g2 code-review SHIP (2 NITs) →
+  §XXIX (BR-PG-S8-1..5). §XXVIII deviation (gate-caught): note method = getPagesForEntity+createPage (titled) not
+  ensureEntityNote (content-seeded). purposes 86/86.
+- 2026-10-07: **S9 built + committed — ① COMPLETE (S1–S9).** Provider (registerPurposesJournal summary + SS-7
+  registerPurposesDueProvider dueIn) + emit-only fan-out (emit_measurement_signal on status→completed transition, dormant
+  M1) + PG-19 deletion propagation (archivePurpose SET-NULL targets + composite-key cascades + two-hop deleteMetric reuse;
+  archiveTarget/archiveValue/archiveDream). Explore agent mapped the 4 seams; g1 /critique REVISE (urgency=0 per
+  sessions:705 not proximity; composite (type,id) cascade keys; UTC-midnight parse; archiveValue findWhere+isNull) → folded
+  → Approval 1 → g2 code-review SHIP → §XXIX (BR-PG-S9-1..6). purposes 97/97, full core 1856/1857 (vault flake isolated).
+  **Env churn again (§XXIV):** the g1 g2 Explore agents' test runs flipped the better-sqlite3 ABI (Node 20 ABI 115);
+  `node-gyp rebuild` under Node 22 restored ABI 127 (guarded the final g2 against rebuild — it reviewed statically). **Next:
+  PR the whole ① build (`mod-purposes-and-goals` → main) → merge → /task-complete → LIF-136 Done. ② fe-purposes = P6.**
 
 ## Notes
 - Env: Node 24 via nvm for @vida/core tests (better-sqlite3 ABI; `.nvmrc`=22 base).
