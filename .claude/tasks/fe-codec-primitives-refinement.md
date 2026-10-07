@@ -1,6 +1,7 @@
 # Task: fe-codec-primitives-refinement
-# Status: in-progress
+# Status: done
 # Linear: LIF-230
+# Completed: 2026-10-07 — all 5 phases shipped (P1 List #88 · P2 Card #96 · P3 Timeline #97 · P4 Gallery #99 · P5 Calendar #101). Graph conformance homed to #8; Calendar living/multi-range to fe-calendar #19.
 # Profile: Change Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS
