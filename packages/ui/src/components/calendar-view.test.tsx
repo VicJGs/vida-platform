@@ -145,4 +145,77 @@ describe('CalendarView', () => {
     expect(warn).not.toHaveBeenCalled()
     warn.mockRestore()
   })
+
+  // ── P5 editorial refinement (LIF-230) ────────────────────────────────────────
+  // Tamagui compiles styled props to atomic classes (not inline styles), so tone/colour are asserted via the
+  // deterministic class substrings (`_backgroundColor-colorSurfac…`, `_col-colorTextPr/Mu/BrandP…`); `fontVariantNumeric`
+  // is a raw `style={}` so it lands on `.style`. The VISUAL rendering (actual AA, the "muddy vs rhythm" tint) is the
+  // blocking Storybook Visual Gate's job — jsdom can't compute Tamagui theme vars. Aug 2026: Aug 1 = Sat; today = Mon Aug 10.
+  const dayNum = (cell: HTMLElement) =>
+    (cell.querySelector('.vida-cal-today')?.firstElementChild ?? cell.firstElementChild) as HTMLElement
+
+  it('today mark = accent number + underline, NOT a filled blob', () => {
+    const { getByRole } = renderUI(
+      <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} aria-label="Cal" />,
+    )
+    const mark = getByRole('cell', { name: '10 August 2026' }).querySelector('.vida-cal-today') as HTMLElement
+    expect(mark).not.toBeNull()
+    // the mark is an underline wrapper (border-bottom), NOT a filled brand blob (no backgroundColor on the wrapper)
+    expect(mark.className).toContain('_borderBottomWidth-2px')
+    expect(mark.className).not.toContain('_backgroundColor-colorBrand')
+    // the number itself is the brand accent (emphasis step — higher-contrast, AA on secondary surfaces) + tabular
+    const num = mark.firstElementChild as HTMLElement
+    expect(num.className).toContain('col-colorBrandE')
+    expect(num.style.fontVariantNumeric).toBe('tabular-nums')
+  })
+
+  it('day figures are tabular', () => {
+    const { getByRole } = renderUI(
+      <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} aria-label="Cal" />,
+    )
+    expect(dayNum(getByRole('cell', { name: '11 August 2026' })).style.fontVariantNumeric).toBe('tabular-nums')
+  })
+
+  it('weekday eyebrow uppercase is CSS (DOM label stays "Mon" — SR-correct columnheader name)', () => {
+    const { getAllByRole } = renderUI(
+      <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} weekStartsOn={1} aria-label="Cal" />,
+    )
+    // DOM text is the real word (not ".toUpperCase()"); the uppercase is a visual textTransform (Visual-Gate verified)
+    expect(getAllByRole('columnheader')[0]?.textContent).toBe('Mon')
+    expect(getAllByRole('columnheader')[0]?.textContent).not.toBe('MON')
+  })
+
+  it('weekend-in-month cell = secondary tone + a PRIMARY (ink) number', () => {
+    const { getByRole } = renderUI(
+      <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} aria-label="Cal" />,
+    )
+    const sat = getByRole('cell', { name: '8 August 2026' }) // Sat, in-month
+    expect(sat.className).toContain('_backgroundColor-colorSurfac')
+    expect(dayNum(sat).className).toContain('col-colorTextPr')
+  })
+
+  it('out-of-month cell = secondary tone + a MUTED (faint) number', () => {
+    const { getByRole } = renderUI(
+      <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} aria-label="Cal" />,
+    )
+    const oos = getByRole('cell', { name: '27 July 2026' }) // Mon, out-of-month
+    expect(oos.className).toContain('_backgroundColor-colorSurfac')
+    expect(dayNum(oos).className).toContain('col-colorTextMu')
+  })
+
+  it('plain in-month weekday has no paper tone', () => {
+    const { getByRole } = renderUI(
+      <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} aria-label="Cal" />,
+    )
+    expect(getByRole('cell', { name: '11 August 2026' }).className).not.toContain('_backgroundColor-colorSurfac')
+  })
+
+  it('oos precedence over weekend — an out-of-month weekend is oos-toned (muted number)', () => {
+    const { getByRole } = renderUI(
+      <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} aria-label="Cal" />,
+    )
+    const sepSat = getByRole('cell', { name: '5 September 2026' }) // Sat but out-of-month → oos wins
+    expect(sepSat.className).toContain('_backgroundColor-colorSurfac')
+    expect(dayNum(sepSat).className).toContain('col-colorTextMu') // muted (oos), NOT primary (weekend)
+  })
 })

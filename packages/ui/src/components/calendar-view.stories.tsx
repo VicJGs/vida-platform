@@ -8,27 +8,32 @@ import { type ViewState } from './list-view'
 // A month grid (role="table") that buckets dated items onto days. Diverges from the linear spine: empty = the grid
 // with no chips (not a message); a table, not a list.
 //
-// MEASURE (v4-calendar-view.md §4): 6×7 grid (stable height) · weekday headers · muted out-of-month days · TODAY
-// marker (brand badge) · item chips + "+K more" overflow · month nav (WithNav story) · loading skeleton grid · error
-// status message · empty = grid (not a message) · dark mode · resize narrow → horizontal scroll (375, CV-8).
+// MEASURE (v4-calendar-view.md §4 + P5 refinement): 6×7 grid (stable height) · serif $heading title · UPPERCASE tracked
+// weekday eyebrows (left-set) · $small tabular day figures · TODAY = accent number + underline (not a filled blob) ·
+// weekend + out-of-month = $colorSurfaceSecondary paper (oos number muted, weekend ink) · accent-dot chips + eyebrow
+// "+K more" · month nav (WithNav) · loading skeleton grid · error status · empty = grid (not a message) · dark mode ·
+// narrow → horizontal scroll (375, CV-8).
 
-type Evt = { id: string; on: string; title: string; hue: string }
+type Evt = { id: string; on: string; title: string; soft?: boolean }
 // August 2026 (today = Aug 10) — a deterministic month for the gate.
 const MONTH = new Date(2026, 7, 1)
 const TODAY = new Date(2026, 7, 10)
 const EVENTS: Evt[] = [
-  { id: '1', on: '2026-08-03', title: 'Kickoff', hue: '#6366f1' },
-  { id: '2', on: '2026-08-10', title: 'Design review', hue: '#10b981' },
-  { id: '3', on: '2026-08-10', title: 'Standup', hue: '#f59e0b' },
-  { id: '4', on: '2026-08-10', title: 'Ship V3', hue: '#06b6d4' },
-  { id: '5', on: '2026-08-10', title: 'Retro', hue: '#ef4444' },
-  { id: '6', on: '2026-08-18', title: 'Demo', hue: '#8b5cf6' },
-  { id: '7', on: '2026-08-27', title: 'Release', hue: '#ec4899' },
-  { id: '8', on: '2026-08-01', title: 'Month start', hue: '#14b8a6' }, // boundary — must land on Aug 1
+  { id: '1', on: '2026-08-03', title: 'Kickoff' },
+  { id: '2', on: '2026-08-10', title: 'Design review' },
+  { id: '3', on: '2026-08-10', title: 'Standup', soft: true },
+  { id: '4', on: '2026-08-10', title: 'Ship V3' },
+  { id: '5', on: '2026-08-10', title: 'Retro', soft: true },
+  { id: '6', on: '2026-08-18', title: 'Demo' },
+  { id: '7', on: '2026-08-27', title: 'Release', soft: true },
+  { id: '8', on: '2026-08-01', title: 'Month start' }, // boundary — must land on Aug 1
 ]
+// The event chip is the CONSUMER's renderItem (GV-1/LV-5 boundary) — NOT calendar-view code. The refined editorial
+// chip: an accent category DOT + a sans caption in ink (token-pure, no hard-coded hue — a `soft` event gets a muted dot).
 const chip = (e: Evt) => (
-  <View backgroundColor={e.hue} borderRadius={4} paddingHorizontal={4} paddingVertical={1}>
-    <Text fontSize={11} color="#fff" numberOfLines={1}>
+  <View flexDirection="row" alignItems="center" gap={5}>
+    <View width={5} height={5} borderRadius={999} backgroundColor={e.soft ? '$colorTextMuted' : '$colorBrandPrimary'} />
+    <Text fontSize="$caption" color="$colorTextPrimary" numberOfLines={1}>
       {e.title}
     </Text>
   </View>
@@ -85,6 +90,24 @@ function NavDemo() {
   )
 }
 export const WithNav: Story = { render: () => <NavDemo /> }
+
+// Today on a weekend cell — exercises the brand ACCENT NUMBER on a $colorSurfaceSecondary (weekend) surface, the P5 AA
+// case the default month (today = Mon, paper) doesn't cover. Aug 8 2026 is a Saturday.
+export const TodayOnWeekend: Story = {
+  render: () => (
+    <View width={760} maxWidth="100%">
+      <CalendarView<Evt>
+        items={EVENTS}
+        getDate={(e) => e.on}
+        getKey={(e) => e.id}
+        renderItem={chip}
+        month={MONTH}
+        today={new Date(2026, 7, 8)}
+        aria-label="Schedule"
+      />
+    </View>
+  ),
+}
 
 export const TerminalStates: Story = {
   render: () => (
