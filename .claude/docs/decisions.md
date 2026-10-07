@@ -1,10 +1,12 @@
 <!-- Last updated: 2026-10-07 by /session-end -->
 
 
-## mod-purposes-and-goals (① backend #55 · LIF-136, 2026-10-06 — S1–S7 of 9 on branch `mod-purposes-and-goals`)
+## mod-purposes-and-goals (① backend #55 · LIF-136 → Done, 2026-10-07 — COMPLETE S1–S9, PR #98 merged)
 The measurability CAPSTONE over DB-4 `019_purposes` (6 tables) + DB-3 `007_purpose` (4 substrate tables), composing
-the built `foundation/measurement` engine (ADR-011; Purpose = rollup APEX + consumer, NOT owner). Detail in
-`docs/features/purposes-and-goals/delivery/*` + `docs/modules/purposes/current-*` + `.claude/tasks/mod-purposes-and-goals.md`.
+the built `foundation/measurement` engine (ADR-011; Purpose = rollup APEX + consumer, NOT owner). **① backend done
+S1–S9, PR #98 merged to main** (tsc 0 · eslint 0 · purposes 97/97 · full @vida/core 1856/1857, 1 = vault-1MB flake
+isolated; CI Lint/Typecheck/Test/E2E green, Format/Workers pre-existing). ② `fe-purposes` separate P6. Detail in
+`docs/features/purposes-and-goals/delivery/*` + `docs/modules/purposes/current-*` + the archived task file.
 
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
@@ -22,6 +24,16 @@ the built `foundation/measurement` engine (ADR-011; Purpose = rollup APEX + cons
 | 2026-10-06 | **S7 review session semantics** | def lifecycle · status · attach | **all FACTS, not decisions** — def = seam-contract verbatim; status=`scheduled`/`planned` (contract.md:24); no attach (seam-contract = register+createSession) | **Victor drift-catch ×2** ("ground it in the documentation and code") — `createSession` (service.ts:276/291) enforces sub-type *presence* only + stores status as-given; the shared-`review`-sub-type divergence with flashcards is inert at M1 | n/a (grounded) |
 | 2026-10-06 | S7 `review` sub-type | `review` is a SHARED canonical SessionSubType (flashcards also registers it) | register idempotently (catch `DuplicateSubType`, first-wins keyed by sub_type) | the registry keys by sub_type; `createSession` needs only presence → divergent `owner_module`/lifecycle is inert at M1 (M2 reconcile if a live transition engine reads it) | n/a (grounded) |
 | 2026-10-06 | S7 `next_review_date` | compute without date-fns (@vida/core has none) | inline UTC math (finance `addSteps` precedent): day-based add days, month-based add months + clamp day; targets only (purposes have no `review_frequency`) | no date-fns dep in core; schema asymmetry is faithful (frequency col on targets only) | n/a (grounded) |
+| 2026-10-07 | S8 note method | `ensureEntityNote` via `notes.ensureEntityNote` vs find-or-create | **`getPagesForEntity` + `createPage`** (titled page) — NOT `notes.ensureEntityNote` | gate-caught §XXVIII: `notes.ensureEntityNote` seeds `content` not `title`; a TITLED standalone note needs explicit `createPage` (the critic's pre-vetted option a) | n/a (grounded) |
+| 2026-10-07 | S8 `registry` dep | seam-contract lists `registry: TaggableTypeRegistry` REQUIRED | **DROP it** — S8 is write-only | spaces/notes self-validate entity_type against the registry they hold; `value`/`purpose`/`target`/`dream`/`purpose_metric_value` pre-seeded in `_registry.ts` (DB-4) → no `register()`, no per-layer dep (g1 upheld; projects takes registry only for a READ resolver) | n/a (grounded) |
+| 2026-10-07 | S8 entity_type unions | one union or split? | **two**: `PurposeTagLinkType` (incl. `purpose_metric_value`) for tag/link; `PurposeNoteType` (titled entities) for notes | PG-18 reserves `purpose_metric_value` as a tag/link target but a ledger row has no title → not a note subject; PG-18 (invariant) outranks the slice-map roster | n/a (grounded) |
+| 2026-10-07 | S9 `journal`/`sessions` registration | service deps or register-fn params? | **params** to standalone `registerPurposesJournal`/`registerPurposesDueProvider` (only `effects?` is a dep) | projects precedent; avoids an unused `journal` dep (the S8 registry-drop parallel) | n/a (grounded) |
+| 2026-10-07 | S9 DueItem `urgency` | compute a proximity value? | **`urgency: 0`** (`est_minutes: 15` default) | g1-caught: the ranking algorithm is deferred to M1.2 platform-wide (`sessions/service.ts:705`); a bespoke formula forks the shared `DueItem` contract — `hard_deadline` carries proximity losslessly | yes (M1.2 ranker) |
+| 2026-10-07 | S9 emit fan-out trigger | when does purposes emit `emit_measurement_signal`? | on a status→`completed` **transition** of a target OR purpose (`existing.status !== 'completed' && next === 'completed'`); emit-only, dormant M1 | both carry stored `status`; "completion → XP" (contract.md:47) — gamification's rule turns the signal into XP; C-E2 measurement-only (never award_xp). Mirrors projects `fanOutCompletion` | n/a (grounded) |
+| 2026-10-07 | S9 PG-19 cascade keys | polymorphic contribution cascade | key on the **composite `(type,id)`** both goal + contributor legs; `findWhere` + explicit `isNull(deleted_at)` | `goal_id`/`contributor_id` are bare polymorphic TEXT (collision risk); contributor-side required by `business-rules.md:123`; findWhere skips the soft-delete filter | n/a (grounded) |
+| 2026-10-07 | S9 deletion optionality | purpose/value delete | **SET NULL** child `targets.purpose_id` + `purposes.value_id` (survive standalone); soft/hard cascade the owned ledgers (two-hop metrics via reuse of `deleteMetric`) | PG-19 + PG-9 (SR-003 relaxed — spine joints optional, standalone-survivable) | n/a (grounded) |
+
+**Close-out (2026-10-07):** S8 (`862cc84`) + S9 (`6457d6d`) built this session (resumed at S8); merged `main` into the branch (DB-9 enum interaction auto-merged clean, purposes 97/97 on merged tree); **PR #98 merged** to main; LIF-136 → Done; task archived. Recurring §XXIV env note: review/Explore subagents that run tests rebuild `better-sqlite3` to their own Node ABI → `node-gyp rebuild` under Node 22 (ABI 127) restores it; tests pass only when the binding ABI matches the running Node.
 
 ## fe-codec-controls-refinement (② frontend · LIF-231 · DONE — all 4 phases, 2026-10-06)
 The pre-CODEC CONTROLS aesthetic pass (orphan-control sibling of LIF-230). PRs #90–93 + close-out #94. Key decisions:
