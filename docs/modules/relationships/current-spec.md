@@ -59,6 +59,15 @@ ensureContactNote(contactId): Promise<PageRow>         // titled find-or-create;
 ```
 `RelationshipsServiceDeps` = `{ db, deviceId, spaces: SpacesService, notes: NotesService }`. Tags delegate to Spaces
 (contact/network seeded in ENTITY_TYPES); pages via Notes. REL-50 (contact as entity_links target) = RATIFY.
+
+### S9 — fan-out + Journal /summary (the ① closer)
+```ts
+getDayRelationshipsDigest(date): Promise<RelationshipsDayDigest>   // {interactionsToday, eventsToday, remindersDue}
+```
+`journal.ts` (register helpers — params, not deps): `createRelationshipsJournalContribution(svc)` /
+`registerRelationshipsJournal(registry, svc)` / `registerRelationshipsDueProvider(sessions, svc)` (wires S4
+`getDueReminders` into `sessions.dueIn`). PULL-only + DueProvider; no effect-rail PUSH (C1 no measurement, C2 no
+economy). REL-51/52/57/N7 = documented seams. **① backend COMPLETE (S1–S9, 50 tests).**
 `HealthBand = 'new'|'healthy'|'at_risk'|'overdue'`. Health = derived-on-read, closeness-weighted
 (relationship_type+is_favorite onion), never stored, no measurement_kind. `asOf` = determinism seam.
 `NetworkGraph = {nodes: GraphNode[], edges: GraphEdge[]}`; `GraphNode = {id, kind:'contact'|'network', label}`;

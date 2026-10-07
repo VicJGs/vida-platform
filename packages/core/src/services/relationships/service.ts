@@ -696,5 +696,22 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       const existing = (await notes.getPagesForEntity('network', networkId)).find((p) => p.type === 'note')
       return existing ?? notes.createPage({ type: 'note', title: n.name, entity_type: 'network', entity_id: networkId })
     },
+
+    // --- REL-53 getDayRelationshipsDigest (Journal /summary PULL; counts only) ---
+    getDayRelationshipsDigest: async (date) => {
+      const interactionsToday = (await interactionsRepo.findWhere(eq(interactions.date, date))).length
+      const events = await eventsRepo.findAll()
+      const target = mmdd(date)
+      const eventsToday = events.filter((e) =>
+        e.is_recurring ? mmdd(e.event_date) === target : e.event_date === date,
+      ).length
+      const reminders = await remindersRepo.findAll()
+      const remindersDue = reminders.filter((r) => {
+        if (r.is_completed) return false
+        const due = r.is_snoozed && r.snoozed_until ? r.snoozed_until : r.reminder_date
+        return due === date
+      }).length
+      return { interactionsToday, eventsToday, remindersDue }
+    },
   }
 }

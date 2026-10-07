@@ -140,6 +140,13 @@ export interface DeviceContactsPort {
   readContacts(): Promise<RawContact[]>
 }
 
+/** The day's relationship activity for the Journal `/summary` recap (REL-53 · S9). */
+export interface RelationshipsDayDigest {
+  interactionsToday: number
+  eventsToday: number
+  remindersDue: number
+}
+
 export interface RelationshipsServiceDeps {
   db: DrizzleDb
   deviceId: string
@@ -203,6 +210,9 @@ export interface RelationshipsService {
   untagNetwork(networkId: string, tagId: string): Promise<void>
   ensureContactNote(contactId: string): Promise<PageRow>
   ensureNetworkNote(networkId: string): Promise<PageRow>
+
+  // --- S9: Journal /summary digest (REL-53) — PULL (register helpers in journal.ts) ---
+  getDayRelationshipsDigest(date: string): Promise<RelationshipsDayDigest>
 }
 
 /** A contact id did not resolve to a live (non-soft-deleted) contact (REL-02/06; preflight G1). */

@@ -41,7 +41,7 @@ L23-27, "settled intent"). **The schema is the floor — networks/snooze/anchor/
 - [x] **S6** Health engine (derived) — REL-22,23,24,25,47 ✅ (formula designed; closeness-weighted + network rollup; 39/39)
 - [x] **S7** Device import (deny-safe X1/X8) — REL-07…11 ✅ (deny-safe facade + pure matcher + commit-on-confirm; 43/43)
 - [x] **S8** Tags + pages + links — REL-48,49,50 ✅ (entity_tags via Spaces, pages via Notes, REL-50 RATIFY; 47/47)
-- [ ] **S9** Fan-out + Journal + seams — REL-51,52,53,57,33/36/38,N7 (DueProvider reg, Journal /summary + digest, deny-safe tasks?/gamification?/preferences?, quiet-hours honor)
+- [x] **S9** Fan-out + Journal + seams — REL-51,52,53,57,33/36/38,N7 ✅ (Journal /summary + DueProvider lane; PULL-only; 50/50)
 
 Each slice: full Entity Delivery Flow (§XXVI double-gate → implement types-first → blocking live-store Verification
 Gate [Node 24] → independent g2 code-review + pre-ship /critique → §XXIX currency). Whole ① ships as one PR.
@@ -110,4 +110,10 @@ branch `mod-relationships` off `main`. Node 22 (tests Node 24, better-sqlite3 AB
   RATIFY (seeded registry; link written note-side). contact/network pre-seeded in ENTITY_TYPES → no register().
   Harness widened (real spaces+notes); 43 prior tests unaffected. Gate: spec critique+preflight inline → **47/47
   live-store** → inline g2 SHIP → currency BR-RL-S8-*. tsc 0 · eslint 0.
-- (S9 next — fan-out + Journal /summary + deny-safe seams; the ① closer; then PR)
+- **S9 — Fan-out + Journal + seams, the ① closer (✅ 2026-10-07).** `getDayRelationshipsDigest` (counts) +
+  `journal.ts` (`createRelationshipsJournalContribution`/`registerRelationshipsJournal`/
+  `registerRelationshipsDueProvider`). PULL-only Journal contribution + sessions DueProvider lane (wires S4
+  `getDueReminders` → `sessions.dueIn`, verified end-to-end). **NO effect-rail PUSH** (C1 no measurement, C2 no
+  economy). REL-51/52/57/N7 = documented seams (owners consume / deferred). Gate: spec critique+preflight inline →
+  **50/50 live-store** → inline g2 SHIP → currency BR-RL-S9-*. tsc 0 · eslint 0.
+- **① BACKEND COMPLETE — S1–S9, 9 commits, 50 live-store tests, 59 legs REL-01…59.** Next: pre-PR full-suite gate → PR.

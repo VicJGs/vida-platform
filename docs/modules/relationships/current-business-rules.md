@@ -148,6 +148,20 @@
   validates); the link is written note-side, not a relationships method.
 - **Deps grew** (S8): `RelationshipsServiceDeps` += REQUIRED `spaces: SpacesService` + `notes: NotesService`.
 
-## Forward slices (not yet built)
+## S9 — Fan-out + Journal + seams (built · the ① closer · REL-51/52/53/57, 33/36/38, N7)
+- **BR-RL-S9-1 (REL-53)** — `getDayRelationshipsDigest(date)` → `{interactionsToday, eventsToday, remindersDue}`
+  (direct counts: interactions on date; events occurring that day via MM-DD match / one-time date; explicit reminders
+  effective-due that day, completed excluded). `journal.ts`: `createRelationshipsJournalContribution(svc)` (summary,
+  `state:'success'` iff any activity else `'empty'`, TerminalState canon by TYPE) + `registerRelationshipsJournal`.
+- **BR-RL-S9-2 (REL-33/36/38)** — `registerRelationshipsDueProvider(sessions, svc)` wires `getDueReminders` (S4) as a
+  sessions SS-7 DueProvider lane; Notifications' dispatcher + Calendar read it via `sessions.dueIn`.
+- **BR-RL-S9-3 — PULL-only + DueProvider, NO effect-rail PUSH.** Relationships has no measurement (C1) and no economy
+  (C2) → it never pushes onto the AR-7 rail. Journal is PULL (registry), due-work is a provider lane.
+- **BR-RL-S9-4 (REL-51/52/57/N7 — documented seams)** — follow-ups are Tasks-owned (relationships surfaces the
+  `follow_up_*` S2 fields, Tasks consumes); interaction-streak→Gamification deferred (C2, no economy this pass);
+  Preferences overrides (reminder defaults / closeness) + N7 quiet-hours are M2 / Notifications-Preferences-owned. No
+  M1 relationships code for these.
+
+## ① backend COMPLETE — all 9 slices (S1–S9) · 50 live-store tests · 59 legs REL-01…59.
 S6 health engine (derived, NOT a measurement — C1) · S7 device import (deny-safe X1/X8) · S8 tags/pages/links ·
 S9 fan-out + Journal `/summary` + deny-safe seams.

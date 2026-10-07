@@ -27,7 +27,16 @@ import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
 import { createSpacesService } from '../../../foundation/spaces'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService } from '../../notes'
+import { createSessionRegistry } from '../../../foundation/sessions'
+import { createSessionsService } from '../../sessions'
+import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import { createJournalRegistry } from '../../journals'
 import { createRelationshipsService } from '../service'
+import {
+  createRelationshipsJournalContribution,
+  registerRelationshipsJournal,
+  registerRelationshipsDueProvider,
+} from '../journal'
 import {
   type RelationshipsService,
   ContactNotFoundError,
@@ -748,5 +757,54 @@ describe('mod-relationships S8 — tags (entity_tags) + pages', () => {
     const again = await h.svc.ensureNetworkNote(n.id)
     expect(again.id).toBe(page.id)
     await expect(h.svc.ensureNetworkNote('nope')).rejects.toBeInstanceOf(NetworkNotFoundError)
+  })
+})
+
+describe('mod-relationships S9 — Journal /summary + DueProvider fan-out', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('getDayRelationshipsDigest counts interactions, events, and reminders due that day', async () => {
+    const c = await h.svc.createContact({ first_name: 'Day' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-15' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'text', date: '2026-10-14' }) // not today
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '10-15' }) // recurring, today's MM-DD
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'custom', event_date: '2026-10-15', is_recurring: false }) // one-time today
+    await h.svc.createReminder({ contact_id: c.id, title: 'due', reminder_date: '2026-10-15' })
+    await h.svc.createReminder({ contact_id: c.id, title: 'done', reminder_date: '2026-10-15' }).then((r) => h.svc.completeReminder(r.id))
+
+    const digest = await h.svc.getDayRelationshipsDigest('2026-10-15')
+    expect(digest.interactionsToday).toBe(1)
+    expect(digest.eventsToday).toBe(2) // recurring MM-DD + one-time
+    expect(digest.remindersDue).toBe(1) // the completed one excluded
+  })
+
+  it('the Journal contribution yields success on an active day, empty on an idle day', async () => {
+    const contribution = createRelationshipsJournalContribution(h.svc)
+    expect(contribution.module).toBe('relationships')
+    const idle = await contribution.summary('2026-01-01')
+    expect(idle.state).toBe('empty')
+    const c = await h.svc.createContact({ first_name: 'Active' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-15' })
+    const active = await contribution.summary('2026-10-15')
+    expect(active.state).toBe('success')
+    // registers into a real JournalRegistry without throwing
+    const registry = createJournalRegistry()
+    expect(() => registerRelationshipsJournal(registry, h.svc)).not.toThrow()
+  })
+
+  it('registerRelationshipsDueProvider wires getDueReminders into sessions.dueIn', async () => {
+    const entityRegistry = createTaggableTypeRegistry()
+    const sessionRegistry = createSessionRegistry(h.db, DEVICE)
+    const rail = createEffectRail(h.db, createEffectRegistry())
+    const sessions = createSessionsService({ db: h.db, deviceId: DEVICE, registry: sessionRegistry, rail, entityRegistry })
+    registerRelationshipsDueProvider(sessions, h.svc)
+
+    const c = await h.svc.createContact({ first_name: 'Due' })
+    const r = await h.svc.createReminder({ contact_id: c.id, title: 'ring', reminder_date: '2026-10-20' })
+    const items = await sessions.dueIn({ start: ms('2026-10-01'), end: ms('2026-10-31') })
+    expect(items.some((i) => i.source_module === 'relationships' && i.ref_id === r.id)).toBe(true)
   })
 })
