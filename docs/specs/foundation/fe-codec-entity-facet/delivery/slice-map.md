@@ -1,7 +1,9 @@
 # fe-codec-entity-facet — Slice Map (Decomposition Gate, Step 2)
 
-> **STATUS (2026-10-07): S1 SHIPPED.** `EntityView` (`@vida/ui`, 10 jsdom tests, Visual Gate PASS — title serif AA 15.84 ·
-> facet text MIN 5.65–6.03 · axe 0 · all EC-1…EC-7 across 3 presets × light/dark + 375). **S2 (the apps/web adapter) next.**
+> **STATUS (2026-10-07): BOTH SLICES SHIPPED.** S1 `EntityView` (`@vida/ui`, 10 jsdom tests, Visual Gate PASS — title serif
+> AA 15.84 · facet text MIN 5.65–6.03 · axe 0 · EC-1…EC-7 × 3 presets × light/dark + 375) · S2 entity↔EntityView adapter
+> (`apps/web`, 9 tests, `offersEditor` gate + merged/tabbed memory convention; live `useEntity` hook deferred, R3). Unit
+> complete → PR.
 
 > The buildable slices + the backend/frontend split, grounded in interpretation §1–§6 + the pinned envision EC-1…EC-8
 > (APPROVED 2026-10-07). **Mode:** Decide (net-new shell; the split is NOT doc-fixed, so decided here per
