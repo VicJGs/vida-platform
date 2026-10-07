@@ -1,0 +1,104 @@
+# Relationships (CRM) — current spec (contract/structure)
+# Durable §XXIX currency doc. Module: mod-relationships #56 · LIF-137 · `createRelationshipsService`.
+
+## Service: `createRelationshipsService(deps): RelationshipsService`
+`services/relationships/{service.ts, types.ts, index.ts}` — object-literal factory; intra-service calls hoisted to
+closures (not `this.`). Deps GROW per slice. **S1 deps:** `{ db: DrizzleDb; deviceId: string }`.
+
+Composes DB-4 `025_relationships` (8 tables): `contacts` (soft-delete) · `contact_events` · `interactions` ·
+`contact_reminders` · `reminder_groups` · `reminder_group_contacts` · `network_groups` · `network_group_contacts`
+(children/junctions hard-delete). Repos built with `encryptedFields:[]` (M1.0 pass-through).
+
+## Surface — S1 (built)
+```ts
+createContact(input: CreateContactInput): Promise<ContactView>
+updateContact(id: string, patch: UpdateContactInput): Promise<ContactView>   // ContactNotFoundError (missing/soft-deleted)
+softDeleteContact(id: string): Promise<void>                                  // soft + app-layer cascade (RL-2); idempotent
+listContacts(filter?: ListContactsFilter): Promise<ContactView[]>            // active-only (findAll+JS filter); relationship_type?, is_favorite?
+getContact(id: string): Promise<ContactView | null>                          // soft-delete-aware
+toggleFavorite(id: string): Promise<ContactView>                             // ContactNotFoundError (missing/soft-deleted)
+// S2 — interactions ledger + derived stats
+logInteraction(input: LogInteractionInput): Promise<InteractionRow>          // ContactNotFoundError; recomputes stats
+updateInteraction(id, patch: UpdateInteractionInput): Promise<InteractionRow> // InteractionNotFoundError; recomputes
+deleteInteraction(id: string): Promise<void>                                 // InteractionNotFoundError; recomputes
+getTimeline(contactId: string): Promise<InteractionRow[]>                     // date desc
+// S3 — events (read-surfaced; never auto-complete/spawn — RL-8)
+createEvent(input: CreateEventInput): Promise<EventView>                      // ContactNotFoundError
+getUpcomingEvents(range: EventDateRange): Promise<UpcomingEvent[]>            // {event, occurrence}; recurring MM-DD projected
+getAllEvents(): Promise<EventView[]>                                          // event_date asc
+// S4 — reminders + groups + the R7 dueIn producer
+createReminder(input: CreateReminderInput): Promise<ContactReminderRow>      // ContactNotFoundError
+completeReminder(id): Promise<ContactReminderRow>                            // ReminderNotFoundError
+snoozeReminder(id, until: string): Promise<ContactReminderRow>              // ReminderNotFoundError
+createGroup(input: CreateGroupInput): Promise<ReminderGroupView>
+addMembers(groupId, contactIds: string[]): Promise<void>                    // ReminderGroupNotFoundError; idempotent
+removeMembers(groupId, contactIds: string[]): Promise<void>                 // ReminderGroupNotFoundError
+setBirthdayAnchor(groupId, daysBefore: number): Promise<ReminderGroupView>  // ReminderGroupNotFoundError
+deleteGroup(groupId): Promise<void>                                         // SET NULL members + purge junction (REL-34)
+getDueReminders(range: TimeRange): Promise<DueItem[]>                        // S9 registers as a sessions DueProvider lane
+// S5 — networks + neural-graph data-prep
+createNetwork(input: CreateNetworkInput): Promise<NetworkGroupRow>
+addToNetwork(networkId, contactId): Promise<void>                          // NetworkNotFoundError + ContactNotFoundError; idempotent
+removeFromNetwork(networkId, contactId): Promise<void>                     // NetworkNotFoundError
+getNetworkGraph(): Promise<NetworkGraph>                                   // {nodes,edges} membership-only (no contact↔contact)
+// S6 — derived health engine (NOT an ADR-011 measurement — C1)
+getContactHealth(id, asOf?): Promise<ContactHealth>                        // ContactNotFoundError; {band,score,factors,partial?}
+getNetworkHealth(networkId, asOf?): Promise<NetworkHealth>                 // NetworkNotFoundError; rollup of members
+// S7 — device import (deny-safe X1/X8)
+importDeviceContacts(device?: DeviceContactsPort): Promise<ContactImportResult>  // ContactsPermissionError if absent
+commitContactImport(staged: StagedContact[]): Promise<ContactCommitResult>       // commit-on-confirm; never overwrites
+```
++ exported pure `stageContacts(incoming, existing)` (X8 natural-key matcher). `DeviceContactsPort` = deny-safe seam
+(M2 device bridge). M1 = pure pipeline; device bridge + import_staging store + X2/X5 grant = M2.
+
+### S8 — tags + pages + links (deps grew: +spaces, +notes)
+```ts
+tagContact(contactId, tagId): Promise<EntityTagRow>    // ContactNotFoundError; untagContact(…): void
+tagNetwork(networkId, tagId): Promise<EntityTagRow>    // NetworkNotFoundError; untagNetwork(…): void
+ensureContactNote(contactId): Promise<PageRow>         // titled find-or-create; ensureNetworkNote(networkId)
+```
+`RelationshipsServiceDeps` = `{ db, deviceId, spaces: SpacesService, notes: NotesService }`. Tags delegate to Spaces
+(contact/network seeded in ENTITY_TYPES); pages via Notes. REL-50 (contact as entity_links target) = RATIFY.
+
+### S9 — fan-out + Journal /summary (the ① closer)
+```ts
+getDayRelationshipsDigest(date): Promise<RelationshipsDayDigest>   // {interactionsToday, eventsToday, remindersDue}
+```
+`journal.ts` (register helpers — params, not deps): `createRelationshipsJournalContribution(svc)` /
+`registerRelationshipsJournal(registry, svc)` / `registerRelationshipsDueProvider(sessions, svc)` (wires S4
+`getDueReminders` into `sessions.dueIn`). PULL-only + DueProvider; no effect-rail PUSH (C1 no measurement, C2 no
+economy). REL-51/52/57/N7 = documented seams. **① backend COMPLETE (S1–S9, 50 tests).**
+`HealthBand = 'new'|'healthy'|'at_risk'|'overdue'`. Health = derived-on-read, closeness-weighted
+(relationship_type+is_favorite onion), never stored, no measurement_kind. `asOf` = determinism seam.
+`NetworkGraph = {nodes: GraphNode[], edges: GraphEdge[]}`; `GraphNode = {id, kind:'contact'|'network', label}`;
+`GraphEdge = {source, target}` (contact→network). `CreateNetworkSchema` (name required).
+`ReminderGroupView` = `ReminderGroupRow` with `days_of_week` parsed. `TimeRange`/`DueItem` from `../sessions`.
+`getDueReminders` producers: explicit reminders · stay-in-touch overdue · birthday-anchor + daily/weekly schedule
+groups (biweekly+ = flagged schema gap). Validators: `CreateReminderSchema` (contact_id+title)/`CreateGroupSchema` (name).
+`EventView` = `ContactEventRow` with `reminder_days` parsed. `UpcomingEvent = {event, occurrence}`;
+`EventDateRange = {from,to}` (YYYY-MM-DD). `CreateEventSchema` (contact_id+event_date required).
+Derived stats (RL-3): `recomputeContactStats` keeps `contacts.{last_interaction_date,interaction_count,next_contact_date}`
+a ledger-derived cache. `InteractionRow` has no JSON columns → no view type. Validators: `CreateInteractionSchema`
+(contact_id+date required)/`UpdateInteractionSchema` (partial, omits contact_id).
+- `ContactView = Omit<ContactRow,'social_links'> & { social_links: SocialLinks | null }` (JSON boundary; `types.ts`).
+- `CreateContactInput`/`UpdateContactInput` = Zod-inferred (`validators/relationship.ts`): `CreateContactSchema`
+  requires `first_name` only; `UpdateContactSchema` = full partial. `SocialLinksSchema` = typed object.
+- Error: `ContactNotFoundError` (`types.ts`).
+- Barrel: `export * from './services/relationships'` in `@vida/core` index.
+
+## Validators (`validators/relationship.ts`)
+Enum schemas (`RelationshipTypeSchema`/`InteractionTypeSchema`/`SentimentSchema`/`ContactEventTypeSchema`/
+`ReminderGroupAnchorSchema`) + `SocialLinksSchema` + `CreateContactSchema`/`UpdateContactSchema`. `FrequencySchema`
+re-imported from `./common` (canonical; no redefine). `PRIORITY` canonical in `./common` (ContactReminder, S4).
+
+## @vida/types (`relationship.ts`) — DB-11 reconciled to the schema floor
+Enums: `RELATIONSHIP_TYPE`(9) · `INTERACTION_TYPE`(8) · `SENTIMENT`(3) · `CONTACT_EVENT_TYPE`(4) ·
+`REMINDER_GROUP_ANCHOR`(2). Interfaces: `Contact` (no `tags`; +`how_we_met`/`closeness_tier`) · `ContactEvent` ·
+`Interaction` (+energy/key_takeaways) · `ContactReminder` (+snooze/priority) · `ReminderGroup` (+anchor) ·
+`ReminderGroupContact` · `NetworkGroup` · `NetworkGroupContact`. `SocialLinks` typed JSON.
+
+## Test / Verification Gate
+`services/relationships/__tests__/service.test.ts` — better-sqlite3 live-store (Node-ABI-matched; `migrate()` applies
+`025_relationships`). S1: 10/10 green. **Note:** the better-sqlite3 prebuilt binary is pinned to one
+NODE_MODULE_VERSION — run the gate under the Node the install compiled it against (here Node 22, ABI 127); an ABI
+error is environment, not a code failure (`pnpm rebuild better-sqlite3` to switch Node).

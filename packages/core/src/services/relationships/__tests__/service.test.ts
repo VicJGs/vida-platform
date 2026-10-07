@@ -1,0 +1,810 @@
+// ============================================================================
+// mod-relationships #56 ① · S1 — contact CRUD spine (REL-01…06, DB-11 reconcile)
+//
+// Node / better-sqlite3 live-store harness (mirrors purposes/projects): REAL store, UNLOCKED vault,
+// migrate() applies 025_relationships so the 8 tables exist. Exercises the create-echoes-input backfill,
+// the social_links JSON serialize/parse boundary, the soft-delete + app-layer cascade (RL-2), and the
+// ContactNotFoundError guard on soft-deleted/unknown ids. Maps 1:1 to slice-map S1 + spec §4 acceptance.
+// ============================================================================
+
+import { describe, it, expect, beforeEach } from 'vitest'
+import Database from 'better-sqlite3'
+import { eq } from 'drizzle-orm'
+import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../db/adapter'
+import { migrate } from '../../../db/migrations/runner'
+import { initVault } from '../../../encryption/vault'
+import { createRepository } from '../../../db/repository'
+import {
+  contactEvents,
+  interactions,
+  contactReminders,
+  reminderGroups,
+  reminderGroupContacts,
+  networkGroups,
+  networkGroupContacts,
+} from '../../../db/schema/relationships'
+import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSpacesService } from '../../../foundation/spaces'
+import { createBacklinkResolver } from '../../search/backlink-resolver'
+import { createNotesService } from '../../notes'
+import { createSessionRegistry } from '../../../foundation/sessions'
+import { createSessionsService } from '../../sessions'
+import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import { createJournalRegistry } from '../../journals'
+import { createRelationshipsService } from '../service'
+import {
+  createRelationshipsJournalContribution,
+  registerRelationshipsJournal,
+  registerRelationshipsDueProvider,
+} from '../journal'
+import {
+  type RelationshipsService,
+  ContactNotFoundError,
+  InteractionNotFoundError,
+  ReminderNotFoundError,
+  ReminderGroupNotFoundError,
+  NetworkNotFoundError,
+  ContactsPermissionError,
+  type RawContact,
+  type DeviceContactsPort,
+} from '../types'
+
+/** A stub device-contacts port returning fixture rows (the M2 bridge is real; this stands in for tests). */
+const stubDevice = (rows: RawContact[]): DeviceContactsPort => ({ readContacts: async () => rows })
+
+/** YYYY-MM-DD → Unix ms at UTC midnight (for TimeRange windows). */
+const ms = (iso: string): number => Date.parse(iso + 'T00:00:00Z')
+
+function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
+  return {
+    async exec(sqlText, params) {
+      const stmt = db.prepare(sqlText)
+      if (stmt.reader) {
+        const rows = stmt.all(...(params ?? [])) as Record<string, unknown>[]
+        return { rows, changes: 0, lastInsertRowId: 0 }
+      }
+      const info = stmt.run(...(params ?? []))
+      return { rows: [], changes: info.changes, lastInsertRowId: info.lastInsertRowid }
+    },
+    async run(sqlText, params) {
+      if (!params || params.length === 0) db.exec(sqlText)
+      else db.prepare(sqlText).run(...params)
+    },
+    async query(sqlText, params) {
+      return db.prepare(sqlText).all(...(params ?? [])) as never
+    },
+    async values(sqlText, params) {
+      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+    },
+    async batch(statements) {
+      for (const s of statements) {
+        if (s.params && s.params.length > 0) db.prepare(s.sql).run(...s.params)
+        else db.exec(s.sql)
+      }
+    },
+    async close() {
+      db.close()
+    },
+  }
+}
+
+const DEVICE = 'test-device'
+
+interface Harness {
+  svc: RelationshipsService
+  db: DrizzleDb
+  bsql: Database.Database
+  spaces: ReturnType<typeof createSpacesService>
+  notes: ReturnType<typeof createNotesService>
+}
+
+async function setup(): Promise<Harness> {
+  await initVault()
+  const bsql = new Database(':memory:')
+  const driver = createBetterSqlite3Driver(bsql)
+  await migrate(driver)
+  const db = createDrizzleProxy(driver)
+  // S8 — the REAL spaces + notes substrates (purposes harness precedent); contact/network are seeded in ENTITY_TYPES.
+  const registry = createTaggableTypeRegistry()
+  const spaces = createSpacesService(db, DEVICE, registry)
+  const backlinks = createBacklinkResolver(db, DEVICE)
+  const notes = createNotesService({ db, deviceId: DEVICE, spaces, backlinks, registry })
+  const svc = createRelationshipsService({ db, deviceId: DEVICE, spaces, notes })
+  return { svc, db, bsql, spaces, notes }
+}
+
+describe('mod-relationships S1 — contact CRUD spine', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('creates a contact with NN-default backfill + reads it back (live persist probe)', async () => {
+    const c = await h.svc.createContact({ first_name: 'Ada' })
+    expect(c.id).toBeTruthy()
+    expect(c.first_name).toBe('Ada')
+    expect(c.relationship_type).toBe('acquaintance') // backfilled NN default (create echoes input)
+    expect(c.interaction_count).toBe(0)
+    expect(Boolean(c.is_favorite)).toBe(false)
+    expect(c.deleted_at).toBeNull()
+    const read = await h.svc.getContact(c.id)
+    expect(read?.first_name).toBe('Ada')
+  })
+
+  it('round-trips social_links through the JSON boundary (object in → object out)', async () => {
+    const c = await h.svc.createContact({
+      first_name: 'Grace',
+      social_links: { linkedin: 'grace', whatsapp: '+1' },
+    })
+    expect(c.social_links).toEqual({ linkedin: 'grace', whatsapp: '+1' }) // parsed object, not JSON string
+    const read = await h.svc.getContact(c.id)
+    expect(read?.social_links).toEqual({ linkedin: 'grace', whatsapp: '+1' })
+    // null stays null
+    const d = await h.svc.createContact({ first_name: 'None', social_links: null })
+    expect(d.social_links).toBeNull()
+  })
+
+  it('accepts a free-form closeness_tier (OPEN vocab, no enum)', async () => {
+    const c = await h.svc.createContact({ first_name: 'Inner', closeness_tier: 'inner-circle' })
+    expect(c.closeness_tier).toBe('inner-circle')
+  })
+
+  it('updates a contact, bumps sync version, and patches social_links', async () => {
+    const c = await h.svc.createContact({ first_name: 'Linus', company: 'old' })
+    const upd = await h.svc.updateContact(c.id, { company: 'new', social_links: { twitter: 't' } })
+    expect(upd.company).toBe('new')
+    expect(upd.social_links).toEqual({ twitter: 't' })
+    expect(upd._sync_version).toBe(2) // bumped from 1
+  })
+
+  it('toggles is_favorite', async () => {
+    const c = await h.svc.createContact({ first_name: 'Fav' })
+    const on = await h.svc.toggleFavorite(c.id)
+    expect(Boolean(on.is_favorite)).toBe(true)
+    const off = await h.svc.toggleFavorite(c.id)
+    expect(Boolean(off.is_favorite)).toBe(false)
+  })
+
+  it('rejects update/toggleFavorite of an unknown OR soft-deleted contact (ContactNotFoundError)', async () => {
+    await expect(h.svc.updateContact('nope', { company: 'x' })).rejects.toBeInstanceOf(ContactNotFoundError)
+    await expect(h.svc.toggleFavorite('nope')).rejects.toBeInstanceOf(ContactNotFoundError)
+    const c = await h.svc.createContact({ first_name: 'Gone' })
+    await h.svc.softDeleteContact(c.id)
+    // soft-deleted → not a silent resurrect-edit (preflight G1)
+    await expect(h.svc.updateContact(c.id, { company: 'x' })).rejects.toBeInstanceOf(ContactNotFoundError)
+    await expect(h.svc.toggleFavorite(c.id)).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+
+  it('rejects createContact without first_name + a bad relationship_type enum', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(h.svc.createContact({} as any)).rejects.toThrow()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(h.svc.createContact({ first_name: 'x', relationship_type: 'bogus' } as any)).rejects.toThrow()
+  })
+
+  it('lists active contacts only, honoring relationship_type + is_favorite filters', async () => {
+    const fam = await h.svc.createContact({ first_name: 'Mom', relationship_type: 'family', is_favorite: true })
+    await h.svc.createContact({ first_name: 'Bob', relationship_type: 'colleague' })
+    const gone = await h.svc.createContact({ first_name: 'Zed', relationship_type: 'family' })
+    await h.svc.softDeleteContact(gone.id)
+
+    expect(await h.svc.listContacts()).toHaveLength(2) // Zed hidden
+    const family = await h.svc.listContacts({ relationship_type: 'family' })
+    expect(family.map((c) => c.first_name)).toEqual(['Mom'])
+    const favs = await h.svc.listContacts({ is_favorite: true })
+    expect(favs.map((c) => c.id)).toEqual([fam.id])
+  })
+
+  it('soft-deletes a contact: hidden from list/get, children cascade-purged, groups survive', async () => {
+    const c = await h.svc.createContact({ first_name: 'Hub' })
+    const other = await h.svc.createContact({ first_name: 'Keep' })
+
+    // seed children + group memberships via repos (S1 exposes only contact methods)
+    const eventsRepo = createRepository(h.db, contactEvents, { encryptedFields: [], deviceId: DEVICE })
+    const interactionsRepo = createRepository(h.db, interactions, { encryptedFields: [], deviceId: DEVICE })
+    const remindersRepo = createRepository(h.db, contactReminders, { encryptedFields: [], deviceId: DEVICE })
+    const rgRepo = createRepository(h.db, reminderGroups, { encryptedFields: [], deviceId: DEVICE })
+    const rgcRepo = createRepository(h.db, reminderGroupContacts, { encryptedFields: [], deviceId: DEVICE })
+    const ngRepo = createRepository(h.db, networkGroups, { encryptedFields: [], deviceId: DEVICE })
+    const ngcRepo = createRepository(h.db, networkGroupContacts, { encryptedFields: [], deviceId: DEVICE })
+
+    await eventsRepo.create({ contact_id: c.id, event_type: 'birthday', event_date: '01-15' })
+    await interactionsRepo.create({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' })
+    await remindersRepo.create({ contact_id: c.id, title: 'ring Hub' })
+    const rg = await rgRepo.create({ name: 'Inner', anchor_type: 'schedule' })
+    await rgcRepo.create({ reminder_group_id: rg.id, contact_id: c.id })
+    await rgcRepo.create({ reminder_group_id: rg.id, contact_id: other.id }) // a sibling membership survives
+    const ng = await ngRepo.create({ name: 'Family Net' })
+    await ngcRepo.create({ network_group_id: ng.id, contact_id: c.id })
+
+    await h.svc.softDeleteContact(c.id)
+
+    // contact hidden, Keep still present
+    expect(await h.svc.getContact(c.id)).toBeNull()
+    expect(await h.svc.listContacts()).toHaveLength(1)
+
+    // children of Hub purged
+    expect(await eventsRepo.findWhere(eq(contactEvents.contact_id, c.id))).toHaveLength(0)
+    expect(await interactionsRepo.findWhere(eq(interactions.contact_id, c.id))).toHaveLength(0)
+    expect(await remindersRepo.findWhere(eq(contactReminders.contact_id, c.id))).toHaveLength(0)
+    expect(await rgcRepo.findWhere(eq(reminderGroupContacts.contact_id, c.id))).toHaveLength(0)
+    expect(await ngcRepo.findWhere(eq(networkGroupContacts.contact_id, c.id))).toHaveLength(0)
+
+    // the GROUPS themselves survive (not children of a contact), and the sibling membership survives
+    expect(await rgRepo.findById(rg.id)).not.toBeNull()
+    expect(await ngRepo.findById(ng.id)).not.toBeNull()
+    expect(await rgcRepo.findWhere(eq(reminderGroupContacts.contact_id, other.id))).toHaveLength(1)
+  })
+
+  it('soft-delete of a missing/already-deleted contact is an idempotent no-op', async () => {
+    await expect(h.svc.softDeleteContact('ghost')).resolves.toBeUndefined()
+    const c = await h.svc.createContact({ first_name: 'Twice' })
+    await h.svc.softDeleteContact(c.id)
+    await expect(h.svc.softDeleteContact(c.id)).resolves.toBeUndefined()
+  })
+})
+
+describe('mod-relationships S2 — interactions ledger + derived stats', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('logs interactions and recomputes count + last_interaction_date from the ledger', async () => {
+    const c = await h.svc.createContact({ first_name: 'Ada' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-09-01' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'email', date: '2026-10-05' })
+    const contact = await h.svc.getContact(c.id)
+    expect(contact?.interaction_count).toBe(2)
+    expect(contact?.last_interaction_date).toBe('2026-10-05') // MAX date
+  })
+
+  it('derives next_contact_date: days override, frequency fallback, days-precedence, neither→null', async () => {
+    // stay_in_touch_days exact override
+    const a = await h.svc.createContact({ first_name: 'Days', stay_in_touch_days: 10 })
+    await h.svc.logInteraction({ contact_id: a.id, interaction_type: 'call', date: '2026-10-01' })
+    expect((await h.svc.getContact(a.id))?.next_contact_date).toBe('2026-10-11') // +10
+
+    // frequency fallback (weekly = 7)
+    const b = await h.svc.createContact({ first_name: 'Weekly', stay_in_touch_frequency: 'weekly' })
+    await h.svc.logInteraction({ contact_id: b.id, interaction_type: 'call', date: '2026-10-01' })
+    expect((await h.svc.getContact(b.id))?.next_contact_date).toBe('2026-10-08') // +7
+
+    // days takes precedence over frequency
+    const d = await h.svc.createContact({ first_name: 'Both', stay_in_touch_days: 3, stay_in_touch_frequency: 'yearly' })
+    await h.svc.logInteraction({ contact_id: d.id, interaction_type: 'call', date: '2026-10-01' })
+    expect((await h.svc.getContact(d.id))?.next_contact_date).toBe('2026-10-04') // +3, not +365
+
+    // neither → not tracked (null)
+    const n = await h.svc.createContact({ first_name: 'None' })
+    await h.svc.logInteraction({ contact_id: n.id, interaction_type: 'call', date: '2026-10-01' })
+    expect((await h.svc.getContact(n.id))?.next_contact_date).toBeNull()
+  })
+
+  it('updateInteraction moves last/next when the latest date changes', async () => {
+    const c = await h.svc.createContact({ first_name: 'Mut', stay_in_touch_days: 5 })
+    const i = await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' })
+    await h.svc.updateInteraction(i.id, { date: '2026-10-20', sentiment: 'positive' })
+    const contact = await h.svc.getContact(c.id)
+    expect(contact?.last_interaction_date).toBe('2026-10-20')
+    expect(contact?.next_contact_date).toBe('2026-10-25') // +5
+  })
+
+  it('deleteInteraction recomputes; deleting the last clears count + dates', async () => {
+    const c = await h.svc.createContact({ first_name: 'Del', stay_in_touch_days: 7 })
+    const i1 = await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-09-01' })
+    const i2 = await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'text', date: '2026-10-01' })
+    await h.svc.deleteInteraction(i2.id)
+    let contact = await h.svc.getContact(c.id)
+    expect(contact?.interaction_count).toBe(1)
+    expect(contact?.last_interaction_date).toBe('2026-09-01') // reverts to the remaining one
+    await h.svc.deleteInteraction(i1.id)
+    contact = await h.svc.getContact(c.id)
+    expect(contact?.interaction_count).toBe(0)
+    expect(contact?.last_interaction_date).toBeNull()
+    expect(contact?.next_contact_date).toBeNull()
+  })
+
+  it('getTimeline returns the contact interactions date-desc', async () => {
+    const c = await h.svc.createContact({ first_name: 'TL' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-08-01' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'email', date: '2026-10-01' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'text', date: '2026-09-01' })
+    const tl = await h.svc.getTimeline(c.id)
+    expect(tl.map((i) => i.date)).toEqual(['2026-10-01', '2026-09-01', '2026-08-01'])
+  })
+
+  it('guards: log on missing/soft-deleted contact → ContactNotFoundError; update/delete unknown → InteractionNotFoundError', async () => {
+    await expect(
+      h.svc.logInteraction({ contact_id: 'nope', interaction_type: 'call', date: '2026-10-01' }),
+    ).rejects.toBeInstanceOf(ContactNotFoundError)
+    const c = await h.svc.createContact({ first_name: 'Gone' })
+    await h.svc.softDeleteContact(c.id)
+    await expect(
+      h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' }),
+    ).rejects.toBeInstanceOf(ContactNotFoundError)
+    await expect(h.svc.updateInteraction('nope', { sentiment: 'positive' })).rejects.toBeInstanceOf(
+      InteractionNotFoundError,
+    )
+    await expect(h.svc.deleteInteraction('nope')).rejects.toBeInstanceOf(InteractionNotFoundError)
+  })
+
+  it('rejects a bad interaction_type / sentiment enum', async () => {
+    const c = await h.svc.createContact({ first_name: 'Enum' })
+    await expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      h.svc.logInteraction({ contact_id: c.id, interaction_type: 'bogus' as any, date: '2026-10-01' }),
+    ).rejects.toThrow()
+    const i = await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(h.svc.updateInteraction(i.id, { sentiment: 'meh' as any })).rejects.toThrow()
+  })
+})
+
+describe('mod-relationships S3 — events', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('creates an event with NN-default backfill + reminder_days JSON round-trip', async () => {
+    const c = await h.svc.createContact({ first_name: 'Ada' })
+    const e = await h.svc.createEvent({ contact_id: c.id, event_date: '11-15', reminder_days: [1, 7] })
+    expect(e.event_type).toBe('custom') // backfill
+    expect(e.is_recurring).toBe(true) // backfill
+    expect(e.reminder_days).toEqual([1, 7]) // parsed array, not JSON string
+    const all = await h.svc.getAllEvents()
+    expect(all).toHaveLength(1)
+    expect(all[0].reminder_days).toEqual([1, 7])
+  })
+
+  it('guards createEvent against a missing/soft-deleted contact + a bad event_type', async () => {
+    await expect(h.svc.createEvent({ contact_id: 'nope', event_date: '01-01' })).rejects.toBeInstanceOf(
+      ContactNotFoundError,
+    )
+    const c = await h.svc.createContact({ first_name: 'Gone' })
+    await h.svc.softDeleteContact(c.id)
+    await expect(h.svc.createEvent({ contact_id: c.id, event_date: '01-01' })).rejects.toBeInstanceOf(
+      ContactNotFoundError,
+    )
+    const live = await h.svc.createContact({ first_name: 'Live' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(h.svc.createEvent({ contact_id: live.id, event_date: '01-01', event_type: 'nope' as any })).rejects.toThrow()
+  })
+
+  it('getAllEvents returns every event, event_date asc', async () => {
+    const c = await h.svc.createContact({ first_name: 'Multi' })
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '11-15' })
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'anniversary', event_date: '03-02' })
+    const all = await h.svc.getAllEvents()
+    expect(all.map((e) => e.event_date)).toEqual(['03-02', '11-15'])
+  })
+
+  it('getUpcomingEvents projects recurring MM-DD into the range, filters, and sorts by occurrence', async () => {
+    const c = await h.svc.createContact({ first_name: 'Cal' })
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '11-15' }) // recurring
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '01-10' }) // recurring, wraps
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'custom', event_date: '2026-11-20', is_recurring: false }) // one-time
+
+    const q4 = await h.svc.getUpcomingEvents({ from: '2026-10-01', to: '2026-12-31' })
+    // 11-15 → 2026-11-15, one-time 2026-11-20; 01-10 wraps to 2027-01-10 (out of range)
+    expect(q4.map((u) => u.occurrence)).toEqual(['2026-11-15', '2026-11-20'])
+
+    const wrap = await h.svc.getUpcomingEvents({ from: '2026-12-01', to: '2027-02-01' })
+    expect(wrap.map((u) => u.occurrence)).toEqual(['2027-01-10']) // the wrapped birthday
+  })
+})
+
+describe('mod-relationships S4 — reminders, groups, and the dueIn producer', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('creates/completes/snoozes a reminder; unknown id → ReminderNotFoundError', async () => {
+    const c = await h.svc.createContact({ first_name: 'Rem' })
+    const r = await h.svc.createReminder({ contact_id: c.id, title: 'ring' })
+    expect(r.is_completed).toBe(false) // backfill
+    expect(r.is_snoozed).toBe(false)
+    const done = await h.svc.completeReminder(r.id)
+    expect(done.is_completed).toBe(true)
+    const snoozed = await h.svc.snoozeReminder(r.id, '2026-12-01')
+    expect(snoozed.is_snoozed).toBe(true)
+    expect(snoozed.snoozed_until).toBe('2026-12-01')
+    await expect(h.svc.completeReminder('nope')).rejects.toBeInstanceOf(ReminderNotFoundError)
+    await expect(h.svc.snoozeReminder('nope', '2026-12-01')).rejects.toBeInstanceOf(ReminderNotFoundError)
+  })
+
+  it('createReminder guards a live contact', async () => {
+    await expect(h.svc.createReminder({ contact_id: 'nope', title: 'x' })).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+
+  it('creates a group (days_of_week JSON round-trip + backfill), manages members idempotently, sets anchor', async () => {
+    const c1 = await h.svc.createContact({ first_name: 'A' })
+    const c2 = await h.svc.createContact({ first_name: 'B' })
+    const g = await h.svc.createGroup({ name: 'Inner', days_of_week: [1, 3] })
+    expect(g.is_active).toBe(true) // backfill
+    expect(g.anchor_type).toBe('schedule') // backfill
+    expect(g.days_of_week).toEqual([1, 3]) // parsed array
+    await h.svc.addMembers(g.id, [c1.id, c2.id])
+    await h.svc.addMembers(g.id, [c1.id]) // idempotent — no duplicate
+    await h.svc.removeMembers(g.id, [c2.id])
+    const anchored = await h.svc.setBirthdayAnchor(g.id, 3)
+    expect(anchored.anchor_type).toBe('birthday')
+    expect(anchored.anchor_days_before).toBe(3)
+    await expect(h.svc.addMembers('nope', [c1.id])).rejects.toBeInstanceOf(ReminderGroupNotFoundError)
+    await expect(h.svc.setBirthdayAnchor('nope', 1)).rejects.toBeInstanceOf(ReminderGroupNotFoundError)
+  })
+
+  it('deleteGroup: group gone, member reminders SET NULL (survive), junctions purged (REL-34)', async () => {
+    const c = await h.svc.createContact({ first_name: 'Grp' })
+    const g = await h.svc.createGroup({ name: 'Doomed' })
+    await h.svc.addMembers(g.id, [c.id])
+    const r = await h.svc.createReminder({ contact_id: c.id, title: 'grouped', reminder_group_id: g.id })
+
+    const rgRepo = createRepository(h.db, reminderGroups, { encryptedFields: [], deviceId: DEVICE })
+    const remRepo = createRepository(h.db, contactReminders, { encryptedFields: [], deviceId: DEVICE })
+    const rgcRepo = createRepository(h.db, reminderGroupContacts, { encryptedFields: [], deviceId: DEVICE })
+
+    await h.svc.deleteGroup(g.id)
+
+    expect(await rgRepo.findById(g.id)).toBeNull() // group gone
+    const survivor = await remRepo.findById(r.id)
+    expect(survivor).not.toBeNull() // reminder survives
+    expect(survivor?.reminder_group_id).toBeNull() // ungrouped (SET NULL, REL-34)
+    expect(await rgcRepo.findWhere(eq(reminderGroupContacts.reminder_group_id, g.id))).toHaveLength(0) // junction purged
+    await expect(h.svc.deleteGroup(g.id)).resolves.toBeUndefined() // idempotent
+  })
+
+  it('getDueReminders: explicit (snoozed uses snoozed_until; completed excluded) + stay-in-touch overdue', async () => {
+    const c = await h.svc.createContact({ first_name: 'Due', stay_in_touch_days: 7 })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' }) // next = 2026-10-08
+    const r = await h.svc.createReminder({ contact_id: c.id, title: 'call back', reminder_date: '2026-10-15' })
+    await h.svc.createReminder({ contact_id: c.id, title: 'done one', reminder_date: '2026-10-16' }).then((x) => h.svc.completeReminder(x.id))
+
+    const due = await h.svc.getDueReminders({ start: ms('2026-10-01'), end: ms('2026-10-31') })
+    const refs = due.map((d) => d.ref_id)
+    expect(refs).toContain(r.id) // explicit due in window
+    expect(refs).toContain(c.id) // stay-in-touch overdue (next_contact_date 2026-10-08 <= toISO)
+    expect(due.find((d) => d.label === 'done one')).toBeUndefined() // completed excluded
+
+    // snoozed reminder surfaces at snoozed_until, not reminder_date
+    await h.svc.snoozeReminder(r.id, '2026-11-20')
+    const octo = await h.svc.getDueReminders({ start: ms('2026-10-01'), end: ms('2026-10-31') })
+    expect(octo.map((d) => d.ref_id)).not.toContain(r.id) // snoozed out of October
+    const novo = await h.svc.getDueReminders({ start: ms('2026-11-01'), end: ms('2026-11-30') })
+    expect(novo.map((d) => d.ref_id)).toContain(r.id) // now due in November
+  })
+
+  it('getDueReminders: birthday-anchor group fires at birthday − daysBefore', async () => {
+    const c = await h.svc.createContact({ first_name: 'Bday' })
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '11-15' })
+    const g = await h.svc.createGroup({ name: 'Bdays' })
+    await h.svc.addMembers(g.id, [c.id])
+    await h.svc.setBirthdayAnchor(g.id, 3) // fire on 11-12
+    const due = await h.svc.getDueReminders({ start: ms('2026-11-01'), end: ms('2026-11-30') })
+    const item = due.find((d) => d.ref_id === `${g.id}:${c.id}`)
+    expect(item).toBeDefined()
+    expect(item?.hard_deadline).toBe(ms('2026-11-12')) // 11-15 − 3
+  })
+
+  it('getDueReminders: daily/weekly schedule groups project; biweekly is NOT projected (flagged gap)', async () => {
+    const c = await h.svc.createContact({ first_name: 'Sched' })
+    const daily = await h.svc.createGroup({ name: 'Daily', frequency: 'daily' })
+    await h.svc.addMembers(daily.id, [c.id])
+    const dueDaily = await h.svc.getDueReminders({ start: ms('2026-11-01'), end: ms('2026-11-03') })
+    expect(dueDaily.filter((d) => d.ref_id.startsWith(`${daily.id}:`))).toHaveLength(3) // 3 days
+
+    // weekly on a specific weekday (compute it so the test is deterministic)
+    const anchorDate = '2026-11-16'
+    const weekday = new Date(anchorDate + 'T00:00:00Z').getUTCDay()
+    const weekly = await h.svc.createGroup({ name: 'Weekly', frequency: 'weekly', days_of_week: [weekday] })
+    await h.svc.addMembers(weekly.id, [c.id])
+    const dueWeekly = await h.svc.getDueReminders({ start: ms('2026-11-15'), end: ms('2026-11-21') })
+    const weeklyItems = dueWeekly.filter((d) => d.ref_id.startsWith(`${weekly.id}:`))
+    expect(weeklyItems).toHaveLength(1)
+    expect(weeklyItems[0].hard_deadline).toBe(ms(anchorDate))
+
+    // biweekly → flagged gap, not projected
+    const biweekly = await h.svc.createGroup({ name: 'Biweekly', frequency: 'biweekly', days_of_week: [weekday] })
+    await h.svc.addMembers(biweekly.id, [c.id])
+    const dueBi = await h.svc.getDueReminders({ start: ms('2026-11-01'), end: ms('2026-11-30') })
+    expect(dueBi.filter((d) => d.ref_id.startsWith(`${biweekly.id}:`))).toHaveLength(0)
+  })
+})
+
+describe('mod-relationships S5 — networks + graph data-prep', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('creates a network (backfill is_active) and a contact joins MULTIPLE networks (RL-4)', async () => {
+    const n1 = await h.svc.createNetwork({ name: 'Family' })
+    expect(n1.is_active).toBe(true) // backfill
+    const n2 = await h.svc.createNetwork({ name: 'Work' })
+    const c = await h.svc.createContact({ first_name: 'Multi' })
+    await h.svc.addToNetwork(n1.id, c.id)
+    await h.svc.addToNetwork(n2.id, c.id) // same contact, two networks
+    const graph = await h.svc.getNetworkGraph()
+    expect(graph.edges.filter((e) => e.source === c.id)).toHaveLength(2)
+  })
+
+  it('addToNetwork is idempotent + guards unknown network / non-live contact', async () => {
+    const n = await h.svc.createNetwork({ name: 'N' })
+    const c = await h.svc.createContact({ first_name: 'C' })
+    await h.svc.addToNetwork(n.id, c.id)
+    await h.svc.addToNetwork(n.id, c.id) // dup → still 1
+    const graph = await h.svc.getNetworkGraph()
+    expect(graph.edges).toHaveLength(1)
+    await expect(h.svc.addToNetwork('nope', c.id)).rejects.toBeInstanceOf(NetworkNotFoundError)
+    await expect(h.svc.addToNetwork(n.id, 'nope')).rejects.toBeInstanceOf(ContactNotFoundError)
+    const gone = await h.svc.createContact({ first_name: 'Gone' })
+    await h.svc.softDeleteContact(gone.id)
+    await expect(h.svc.addToNetwork(n.id, gone.id)).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+
+  it('removeFromNetwork removes the membership; unknown network → NetworkNotFoundError', async () => {
+    const n = await h.svc.createNetwork({ name: 'N' })
+    const c = await h.svc.createContact({ first_name: 'C' })
+    await h.svc.addToNetwork(n.id, c.id)
+    await h.svc.removeFromNetwork(n.id, c.id)
+    expect((await h.svc.getNetworkGraph()).edges).toHaveLength(0)
+    await expect(h.svc.removeFromNetwork('nope', c.id)).rejects.toBeInstanceOf(NetworkNotFoundError)
+  })
+
+  it('getNetworkGraph: membership edges only (no contact↔contact), isolated network is a node', async () => {
+    const n1 = await h.svc.createNetwork({ name: 'N1' })
+    const n2 = await h.svc.createNetwork({ name: 'N2' })
+    const n3 = await h.svc.createNetwork({ name: 'Isolated' }) // no members
+    const c1 = await h.svc.createContact({ first_name: 'C1' })
+    const c2 = await h.svc.createContact({ first_name: 'C2' })
+    await h.svc.addToNetwork(n1.id, c1.id)
+    await h.svc.addToNetwork(n2.id, c1.id)
+    await h.svc.addToNetwork(n1.id, c2.id)
+
+    const graph = await h.svc.getNetworkGraph()
+    const networkIds = new Set(graph.nodes.filter((n) => n.kind === 'network').map((n) => n.id))
+    expect(networkIds.size).toBe(3) // n1, n2, n3 (isolated included)
+    expect(networkIds.has(n3.id)).toBe(true) // the member-less network is still a node
+    expect(graph.nodes.filter((n) => n.kind === 'contact')).toHaveLength(2) // only members
+    expect(graph.edges).toHaveLength(3)
+    // every edge targets a network (membership only — no contact↔contact)
+    expect(graph.edges.every((e) => networkIds.has(e.target))).toBe(true)
+    expect(graph.edges.filter((e) => e.source === c1.id)).toHaveLength(2)
+  })
+})
+
+describe('mod-relationships S6 — derived health engine', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('a contact with no interactions is `new` (no baseline, never overdue)', async () => {
+    const c = await h.svc.createContact({ first_name: 'Fresh' })
+    const health = await h.svc.getContactHealth(c.id)
+    expect(health.band).toBe('new')
+    expect(health.score).toBeNull()
+  })
+
+  it('bands track recency vs cadence: healthy → at_risk (grace) → overdue', async () => {
+    const c = await h.svc.createContact({ first_name: 'Cadence', stay_in_touch_days: 7 }) // acquaintance, weight 0.75
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' }) // next = 2026-10-08
+    expect((await h.svc.getContactHealth(c.id, '2026-10-05')).band).toBe('healthy') // before cadence
+    expect((await h.svc.getContactHealth(c.id, '2026-10-12')).band).toBe('at_risk') // 4 days over, within grace (10)
+    expect((await h.svc.getContactHealth(c.id, '2026-11-15')).band).toBe('overdue') // far past
+  })
+
+  it('closeness onion: an inner-tier (family+favorite) contact is penalized MORE than an acquaintance at the same daysOverdue', async () => {
+    const fam = await h.svc.createContact({ first_name: 'Mom', relationship_type: 'family', is_favorite: true, stay_in_touch_days: 10 })
+    const acq = await h.svc.createContact({ first_name: 'Guy', relationship_type: 'acquaintance', stay_in_touch_days: 10 })
+    for (const id of [fam.id, acq.id]) await h.svc.logInteraction({ contact_id: id, interaction_type: 'call', date: '2026-10-01' }) // next = 2026-10-11
+    const famH = await h.svc.getContactHealth(fam.id, '2026-10-16') // 5 days over
+    const acqH = await h.svc.getContactHealth(acq.id, '2026-10-16') // 5 days over
+    expect(famH.score! < acqH.score!).toBe(true) // inner tier scores lower
+    expect(famH.band).toBe('overdue') // grace ceil(7/2.5)=3 → 5 > 3
+    expect(acqH.band).toBe('at_risk') // grace ceil(7/0.75)=10 → 5 <= 10
+    expect(famH.factors.closenessWeight).toBe(2.5)
+  })
+
+  it('recent sentiment shifts band/score (negative → at_risk even when not overdue)', async () => {
+    const neg = await h.svc.createContact({ first_name: 'Neg', stay_in_touch_days: 30 })
+    await h.svc.logInteraction({ contact_id: neg.id, interaction_type: 'call', date: '2026-10-01', sentiment: 'negative' })
+    const negH = await h.svc.getContactHealth(neg.id, '2026-10-15') // daysOverdue 0 (next 2026-10-31)
+    expect(negH.band).toBe('at_risk')
+    expect(negH.factors.recentSentiment).toBe(-1)
+
+    const pos = await h.svc.createContact({ first_name: 'Pos', stay_in_touch_days: 30 })
+    await h.svc.logInteraction({ contact_id: pos.id, interaction_type: 'call', date: '2026-10-01', sentiment: 'positive' })
+    const posH = await h.svc.getContactHealth(pos.id, '2026-10-15')
+    expect(posH.band).toBe('healthy')
+    expect(posH.score! > negH.score!).toBe(true)
+  })
+
+  it('an untracked contact (no cadence) is never overdue', async () => {
+    const c = await h.svc.createContact({ first_name: 'Loose' }) // no stay_in_touch
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-01-01' })
+    const health = await h.svc.getContactHealth(c.id, '2027-06-01') // far future
+    expect(health.factors.tracked).toBe(false)
+    expect(health.band).toBe('healthy') // never overdue without a cadence (REL-21/RL-5)
+  })
+
+  it('getNetworkHealth rolls up: worst band + mean score + per-band counts', async () => {
+    const overdue = await h.svc.createContact({ first_name: 'Over', stay_in_touch_days: 5 })
+    await h.svc.logInteraction({ contact_id: overdue.id, interaction_type: 'call', date: '2026-09-01' }) // next 2026-09-06
+    const healthy = await h.svc.createContact({ first_name: 'Well', stay_in_touch_days: 60 })
+    await h.svc.logInteraction({ contact_id: healthy.id, interaction_type: 'call', date: '2026-10-01' })
+    const n = await h.svc.createNetwork({ name: 'Mixed' })
+    await h.svc.addToNetwork(n.id, overdue.id)
+    await h.svc.addToNetwork(n.id, healthy.id)
+
+    const nh = await h.svc.getNetworkHealth(n.id, '2026-10-15')
+    expect(nh.memberCount).toBe(2)
+    expect(nh.band).toBe('overdue') // worst member
+    expect(nh.factors.overdue).toBe(1)
+    expect(nh.factors.healthy).toBe(1)
+    expect(nh.score).not.toBeNull() // mean of the two scores
+    await expect(h.svc.getNetworkHealth('nope')).rejects.toBeInstanceOf(NetworkNotFoundError)
+  })
+
+  it('getContactHealth guards an unknown contact', async () => {
+    await expect(h.svc.getContactHealth('nope')).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+})
+
+describe('mod-relationships S7 — device import (deny-safe X1/X8)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('importDeviceContacts with no device port → ContactsPermissionError (no partial silent import)', async () => {
+    await expect(h.svc.importDeviceContacts()).rejects.toBeInstanceOf(ContactsPermissionError)
+  })
+
+  it('stages device rows: matched (email case-insensitive / phone / exact-name), new, parse_error', async () => {
+    await h.svc.createContact({ first_name: 'Ada', last_name: 'Lovelace', email: 'ada@x.com', phone: '+1555' })
+    await h.svc.createContact({ first_name: 'Grace', last_name: 'Hopper' }) // no email/phone → name-matchable
+    const device = stubDevice([
+      { sourceRowId: '1', first_name: 'Ada', last_name: 'L', email: 'ADA@X.COM' }, // email match (case-insensitive)
+      { sourceRowId: '2', first_name: 'X', email: null, phone: '+1555' }, // phone match
+      { sourceRowId: '3', first_name: 'Grace', last_name: 'Hopper' }, // exact-name match
+      { sourceRowId: '4', first_name: 'New', last_name: 'Person', email: 'new@x.com' }, // new
+      { sourceRowId: '5', first_name: '' }, // parse_error
+    ])
+    const { staged } = await h.svc.importDeviceContacts(device)
+    const byId = Object.fromEntries(staged.map((s) => [s.sourceRowId, s.status]))
+    expect(byId['1']).toBe('matched')
+    expect(byId['2']).toBe('matched')
+    expect(byId['3']).toBe('matched')
+    expect(byId['4']).toBe('new')
+    expect(byId['5']).toBe('parse_error')
+  })
+
+  it('commitContactImport writes `new` rows, NEVER overwrites `matched`, partitions the result', async () => {
+    const ada = await h.svc.createContact({ first_name: 'Ada', email: 'ada@x.com', company: 'OG' })
+    const device = stubDevice([
+      { sourceRowId: '1', first_name: 'Ada', email: 'ada@x.com', company: 'CHANGED' }, // matched → must NOT overwrite
+      { sourceRowId: '2', first_name: 'Fresh', last_name: 'Face', email: 'fresh@x.com' }, // new
+      { sourceRowId: '3', first_name: '' }, // parse_error
+    ])
+    const { staged } = await h.svc.importDeviceContacts(device)
+    const result = await h.svc.commitContactImport(staged)
+    expect(result.created).toHaveLength(1)
+    expect(result.matched).toEqual(['1'])
+    expect(result.skipped).toEqual(['3'])
+    // the existing Ada is untouched (no silent overwrite)
+    expect((await h.svc.getContact(ada.id))?.company).toBe('OG')
+    // the new contact is now live
+    expect(await h.svc.listContacts()).toHaveLength(2)
+    expect((await h.svc.listContacts()).some((c) => c.first_name === 'Fresh')).toBe(true)
+  })
+
+  it('a soft-deleted existing contact does NOT match (findAll active only) → row stages as new', async () => {
+    const gone = await h.svc.createContact({ first_name: 'Ghost', email: 'ghost@x.com' })
+    await h.svc.softDeleteContact(gone.id)
+    const device = stubDevice([{ sourceRowId: '1', first_name: 'Ghost', email: 'ghost@x.com' }])
+    const { staged } = await h.svc.importDeviceContacts(device)
+    expect(staged[0].status).toBe('new') // the soft-deleted contact is not a match target
+  })
+})
+
+describe('mod-relationships S8 — tags (entity_tags) + pages', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('tagContact delegates to entity_tags (entity_type=contact), idempotent; guards unknown contact; untag removes', async () => {
+    const c = await h.svc.createContact({ first_name: 'Tagged' })
+    const tag = await h.spaces.createTag({ name: 'vip', color: null, parent_tag_id: null })
+    const et = await h.svc.tagContact(c.id, tag.id)
+    expect(et.entity_type).toBe('contact')
+    expect(et.entity_id).toBe(c.id)
+    const again = await h.svc.tagContact(c.id, tag.id)
+    expect(again.id).toBe(et.id) // idempotent (SP1 BR-14)
+    await expect(h.svc.tagContact('nope', tag.id)).rejects.toBeInstanceOf(ContactNotFoundError)
+    await expect(h.svc.untagContact(c.id, tag.id)).resolves.toBeUndefined()
+    await expect(h.svc.untagContact('nope', tag.id)).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+
+  it('tagNetwork delegates (entity_type=network); guards unknown network', async () => {
+    const n = await h.svc.createNetwork({ name: 'Crew' })
+    const tag = await h.spaces.createTag({ name: 'close', color: null, parent_tag_id: null })
+    const et = await h.svc.tagNetwork(n.id, tag.id)
+    expect(et.entity_type).toBe('network')
+    await expect(h.svc.tagNetwork('nope', tag.id)).rejects.toBeInstanceOf(NetworkNotFoundError)
+  })
+
+  it('ensureContactNote creates a titled page (entity_type=contact), idempotent; guards unknown contact', async () => {
+    const c = await h.svc.createContact({ first_name: 'Noted' })
+    const page = await h.svc.ensureContactNote(c.id)
+    expect(page.type).toBe('note')
+    expect(page.title).toBe('Noted')
+    expect(page.entity_type).toBe('contact')
+    expect(page.entity_id).toBe(c.id)
+    const again = await h.svc.ensureContactNote(c.id)
+    expect(again.id).toBe(page.id) // idempotent (find-or-create)
+    await expect(h.svc.ensureContactNote('nope')).rejects.toBeInstanceOf(ContactNotFoundError)
+  })
+
+  it('ensureNetworkNote creates a titled page (title=network name), idempotent', async () => {
+    const n = await h.svc.createNetwork({ name: 'Family Net' })
+    const page = await h.svc.ensureNetworkNote(n.id)
+    expect(page.title).toBe('Family Net')
+    expect(page.entity_type).toBe('network')
+    const again = await h.svc.ensureNetworkNote(n.id)
+    expect(again.id).toBe(page.id)
+    await expect(h.svc.ensureNetworkNote('nope')).rejects.toBeInstanceOf(NetworkNotFoundError)
+  })
+})
+
+describe('mod-relationships S9 — Journal /summary + DueProvider fan-out', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('getDayRelationshipsDigest counts interactions, events, and reminders due that day', async () => {
+    const c = await h.svc.createContact({ first_name: 'Day' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-15' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'text', date: '2026-10-14' }) // not today
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '10-15' }) // recurring, today's MM-DD
+    await h.svc.createEvent({ contact_id: c.id, event_type: 'custom', event_date: '2026-10-15', is_recurring: false }) // one-time today
+    await h.svc.createReminder({ contact_id: c.id, title: 'due', reminder_date: '2026-10-15' })
+    await h.svc.createReminder({ contact_id: c.id, title: 'done', reminder_date: '2026-10-15' }).then((r) => h.svc.completeReminder(r.id))
+
+    const digest = await h.svc.getDayRelationshipsDigest('2026-10-15')
+    expect(digest.interactionsToday).toBe(1)
+    expect(digest.eventsToday).toBe(2) // recurring MM-DD + one-time
+    expect(digest.remindersDue).toBe(1) // the completed one excluded
+  })
+
+  it('the Journal contribution yields success on an active day, empty on an idle day', async () => {
+    const contribution = createRelationshipsJournalContribution(h.svc)
+    expect(contribution.module).toBe('relationships')
+    const idle = await contribution.summary('2026-01-01')
+    expect(idle.state).toBe('empty')
+    const c = await h.svc.createContact({ first_name: 'Active' })
+    await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-15' })
+    const active = await contribution.summary('2026-10-15')
+    expect(active.state).toBe('success')
+    // registers into a real JournalRegistry without throwing
+    const registry = createJournalRegistry()
+    expect(() => registerRelationshipsJournal(registry, h.svc)).not.toThrow()
+  })
+
+  it('registerRelationshipsDueProvider wires getDueReminders into sessions.dueIn', async () => {
+    const entityRegistry = createTaggableTypeRegistry()
+    const sessionRegistry = createSessionRegistry(h.db, DEVICE)
+    const rail = createEffectRail(h.db, createEffectRegistry())
+    const sessions = createSessionsService({ db: h.db, deviceId: DEVICE, registry: sessionRegistry, rail, entityRegistry })
+    registerRelationshipsDueProvider(sessions, h.svc)
+
+    const c = await h.svc.createContact({ first_name: 'Due' })
+    const r = await h.svc.createReminder({ contact_id: c.id, title: 'ring', reminder_date: '2026-10-20' })
+    const items = await sessions.dueIn({ start: ms('2026-10-01'), end: ms('2026-10-31') })
+    expect(items.some((i) => i.source_module === 'relationships' && i.ref_id === r.id)).toBe(true)
+  })
+})

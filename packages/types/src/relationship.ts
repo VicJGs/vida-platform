@@ -3,7 +3,7 @@
 // ADR-002 §5.9
 // ============================================================================
 
-import type { Id, Timestamp, Frequency } from './common'
+import type { Id, Timestamp, Frequency, Priority } from './common'
 import type { SyncableEntity, SyncMetadata } from './sync'
 
 // ---------------------------------------------------------------------------
@@ -86,10 +86,12 @@ export interface Contact extends SyncableEntity {
   location: string | null
   /** @encrypted — PII, YYYY-MM-DD */
   birthday: string | null
-  /** @encrypted */
-  tags: string[]
+  /** @encrypted — NEW (G8) */
+  how_we_met: string | null
   /** @encrypted */
   social_links: SocialLinks | null
+  /** OPEN vocab (Preferences-defined onion tier, G4) — nullable, no CHECK */
+  closeness_tier: string | null
   stay_in_touch_frequency: Frequency | null
   stay_in_touch_days: number | null
   last_interaction_date: string | null
@@ -126,6 +128,12 @@ export interface Interaction extends SyncableEntity {
   follow_up_date: string | null
   /** @encrypted */
   follow_up_notes: string | null
+  /** NEW (G8) — plaintext analytic, feeds derived health */
+  energy_given: number | null
+  /** NEW (G8) — plaintext analytic */
+  energy_received: number | null
+  /** @encrypted — NEW (G8) */
+  key_takeaways: string | null
 }
 
 export interface ContactReminder extends SyncableEntity {
@@ -137,6 +145,12 @@ export interface ContactReminder extends SyncableEntity {
   is_recurring: boolean
   frequency: Frequency | null
   is_completed: boolean
+  /** NEW (G8) */
+  is_snoozed: boolean
+  /** NEW (G8) — YYYY-MM-DD */
+  snoozed_until: string | null
+  /** NEW (G8) */
+  priority: Priority | null
 }
 
 export interface ReminderGroup extends SyncableEntity {
@@ -150,9 +164,26 @@ export interface ReminderGroup extends SyncableEntity {
   /** [0-6] */
   days_of_week: number[] | null
   is_active: boolean
+  /** NEW (G11) — `schedule` (fixed cadence) | `birthday` (event-anchored) */
+  anchor_type: ReminderGroupAnchor
+  /** NEW (G11) — days before a member's birthday when anchor_type='birthday' */
+  anchor_days_before: number | null
 }
 
 export interface ReminderGroupContact extends SyncMetadata {
   reminder_group_id: Id
+  contact_id: Id
+}
+
+/** A network of people (net-new, G2/RL-4). Description → a `pages` row (entity_type='network'); health is derived. */
+export interface NetworkGroup extends SyncableEntity {
+  /** @encrypted */
+  name: string
+  is_active: boolean
+}
+
+/** network↔contact membership junction (net-new, G2/RL-4) — a contact may belong to many networks. */
+export interface NetworkGroupContact extends SyncMetadata {
+  network_group_id: Id
   contact_id: Id
 }

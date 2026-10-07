@@ -1,6 +1,19 @@
 <!-- Last updated: 2026-10-07 by /session-end -->
 
 
+## mod-relationships (① backend · #56 · LIF-137 → Done, 2026-10-07 — COMPLETE S1–S9, PR #107 merged `39ccdab`)
+The personal CRM (PII-heaviest), `createRelationshipsService` over DB-4 `025_relationships` (8 tables), 59 legs.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-07 | baseline | Intake docs flagged networks/closeness/snooze/anchor/G8 as "INTENDED/ADR-002-amendment" | Treat the DB-4 schema as the floor → BUILD them (not deferred) | The rerun was a pre-schema doc-realignment unit; the schema authored all of it (`relationships.ts` header) | n/a |
+| 2026-10-07 | health (S6) | How to model relationship health | Derived analytic, NOT an ADR-011 measurement (C1) — no measurement_kind, no registry advertise | Contacts are framework-excluded reference data; health is recomputed, never stored/pursuable | yes (formula tunable) |
+| 2026-10-07 | health (S6) | Closeness weight source | Derive from `relationship_type`+`is_favorite` (onion), not `closeness_tier` | `closeness_tier` is OPEN vocab → not deterministically weightable; stays display-only | yes |
+| 2026-10-07 | reminders (S4) | `getDueReminders` shape + biweekly schedule groups | Returns sessions `DueItem[]`; biweekly+ schedule groups NOT projected | No phase-anchor column in `reminder_groups` → can't project deterministically (grounded gap, flagged forward) | yes (M2 amendment) |
+| 2026-10-07 | import (S7) | Device import scope at M1 | Deny-safe pure pipeline (natural-key matcher + commit-on-confirm) behind a `DeviceContactsPort` | Device bridge + import_staging store + X2/X5 grant = M2; finance-shaped reconcile doesn't fit contacts | yes |
+| 2026-10-07 | fan-out (S9) | Cross-module fan-out model | PULL-only (Journal registry + DueProvider lane); NO effect-rail PUSH | C1 (no measurement) + C2 (no economy) → nothing to push | yes |
+| 2026-10-07 | env | better-sqlite3 Node ABI | Standardize @vida/core tests on Node 24 | A review agent rebuilt the binary to Node-24 ABI mid-session → Node-22 runs mass-failed (pure ABI, not code) | yes |
+
 ## fe-codec-dashboard (② frontend CODEC #5 · LIF-208 → Done, 2026-10-07 — COMPLETE S1+S2, PR #104 open)
 The CODEC **Dashboard shell** ("a grid of integration blocks", decomposition.md:30 §1.2) — the 2nd archetype shell.
 
