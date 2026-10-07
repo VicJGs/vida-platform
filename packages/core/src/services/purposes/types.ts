@@ -15,6 +15,8 @@ import type { SessionsService } from '../sessions'
 import type { SpacesService } from '../../foundation/spaces'
 import type { NotesService } from '../notes'
 import type { PageRow } from '../../db/schema/notes'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
+import type { DueItem, TimeRange } from '../sessions'
 import type {
   CreateValueInput,
   UpdateValueInput,
@@ -83,6 +85,20 @@ export interface PurposesServiceDeps {
   /** REQUIRED (S8) — the `pages` surface for standalone entity notes (PG-18). Purposes OWNS a standalone-note
    *  find-or-create for its titled entities (unlike projects, which punts general notes to the FE). */
   notes: NotesService
+  /** Deny-safe (S9) — the AR-7 effect rail (emit-only producer, C-E2 measurement-signal). DORMANT at M1 (no
+   *  handler/named consumer) ⇒ the completion fan-out is a no-op (`if (!effects) return`). Purposes emits
+   *  `emit_measurement_signal` ONLY on a goal/target completion; gamification's rule turns it into XP (projects
+   *  precedent). The Journal registry + sessions DueProvider are NOT service deps — they are params to the standalone
+   *  `registerPurposesJournal(registry, svc)` / `registerPurposesDueProvider(sessions, svc)` helpers (projects pattern;
+   *  avoids an unused `journal` dep — the seam-contract's "journal dep" is satisfied by the register-fn param). */
+  effects?: { rail: EffectRail; registry: EffectRegistry }
+}
+
+/** The Purposes daily-recap digest for the Journal `summary` provider (S9, PG-14): active purposes + reviews due
+ *  on the day. Counts only — "what changed" deltas come from Journal snapshots, not a stored propagation (PG-14). */
+export interface PurposesDayDigest {
+  activePurposes: number
+  reviewsDue: number
 }
 
 /** A derived progress reading in 0–100 (the engine computes in [0,1]; converted at this edge). */
@@ -188,6 +204,16 @@ export interface PurposesService {
    *  (a client-side read of OWNED data, in-contract per `EntityNoteSeed`). No new PAGE_TYPE (`type:'note'`).
    *  Throws the entity's `*NotFoundError` if the owner is missing. */
   ensureEntityNote(entityType: PurposeNoteType, entityId: string): Promise<PageRow>
+
+  // ---- S9: provider (Journal summary + DueProvider lane) --------------------
+  /** The day's recap digest (active purposes + targets whose `next_review_date == date`). PULL path — the Journals
+   *  registry calls it at render via the `registerPurposesJournal` contribution (PG-14). */
+  getDayPurposesDigest(date: string): Promise<PurposesDayDigest>
+  /** The sessions SS-7 due-work lane: targets whose `next_review_date` falls in `range` (Unix-ms window) → canonical
+   *  `DueItem[]`. Registered via `registerPurposesDueProvider` (purposes = first SS-7 consumer). Purposes-level
+   *  reviews are not surfaced (purposes carry no `next_review_date` — schema). `urgency` = 0 (ranking deferred to M1.2,
+   *  `sessions/service.ts:705`); `est_minutes` = 15 (documented default). */
+  dueIn(range: TimeRange): Promise<DueItem[]>
 }
 
 // --- typed errors (contract.md:49-57) ---------------------------------------

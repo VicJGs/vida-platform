@@ -5,3 +5,4 @@
 // provider+fan-out — per docs/features/purposes-and-goals/delivery/slice-map.md.
 export * from './types'
 export * from './service'
+export * from './journal'

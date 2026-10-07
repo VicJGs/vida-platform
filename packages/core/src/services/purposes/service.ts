@@ -12,7 +12,7 @@
 // - findWhere skips the soft-delete filter → list active via findAll (applies isNull(deleted_at)) + JS filter.
 // - M1.0 encryptedFields:[] (the [E] title/description/vision/why/… pass through; real field encryption = M3).
 
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq, isNull, isNotNull } from 'drizzle-orm'
 import { CONTRIBUTION_GOAL_TYPE, CONTRIBUTION_CONTRIBUTOR_TYPE } from '@vida/types'
 import type { ContributionGoalType, ContributionContributorType, BindingMode, Frequency } from '@vida/types'
 import { normalize, rollup, assertAcyclic, MeasurementCycle, type Binding, type EntityRef } from '../../foundation/measurement'
@@ -48,6 +48,7 @@ import {
   type PlanStepOwnerRef,
   type PurposeTagLinkType,
   type PurposeNoteType,
+  type PurposesDayDigest,
   ValueNotFoundError,
   PurposeNotFoundError,
   TargetNotFoundError,
@@ -69,9 +70,63 @@ import type {
   TargetReviewRow,
 } from '../../db/schema/purposes'
 import type { PageRow } from '../../db/schema/notes'
+import type { EffectType } from '@vida/types'
+import type { DueItem, TimeRange } from '../sessions'
 
 export function createPurposesService(deps: PurposesServiceDeps): PurposesService {
-  const { db, deviceId, measurementSources, sessions, spaces, notes } = deps
+  const { db, deviceId, measurementSources, sessions, spaces, notes, effects } = deps
+
+  // S9 — a goal/target is "complete" at status 'completed'; 'cancelled' is terminal-but-not-an-achievement (no
+  // signal). Mirrors projects TERMINAL_STATUSES (projects/service.ts:69); STATUS = common.ts:32.
+  const TERMINAL_STATUSES = new Set(['completed', 'cancelled'])
+  // Emit-only measurement signal (C-E2): NEVER award_xp/grant_currency — gamification's rule turns the signal into
+  // XP. keyed class ⇒ rail-idempotent via effect_event_id = derive(key‖transition‖type).
+  const COMPLETION_EFFECTS: readonly EffectType[] = ['emit_measurement_signal']
+  // Fire the completion fan-out for a goal/target that just transitioned INTO 'completed'. Emit-only, dormant at M1
+  // (no rail wired / no handler ⇒ no-op), post-commit + failure-isolated (the completed entity stands). The
+  // projects/service.ts:72 pattern.
+  async function fanOutCompletion(entityId: string, transition: string): Promise<void> {
+    if (!effects) return // M1 default: no rail wired → dormant
+    for (const effectType of COMPLETION_EFFECTS) {
+      if (!effects.registry.resolve(effectType)) continue // dormant guard: no handler ⇒ skip (would throw NoEffectHandler)
+      try {
+        // `{applied}` result ignored — emit is fire-and-forget (rail-idempotent via effect_event_id).
+        await effects.rail.applyEffect({ subjectNaturalKey: entityId, transition, effectType, targetRef: entityId })
+      } catch {
+        // post-commit, failure-isolated: a handler throw is non-fatal; the completion stands (PG-14).
+      }
+    }
+  }
+  // A status patch that crosses INTO 'completed' (was not completed before) is a completion transition → emit.
+  const isCompletionTransition = (prev: string, next: string | undefined): boolean =>
+    next === 'completed' && prev !== 'completed'
+
+  // S9 PG-19 — soft-cascade every contribution where (type,id) is EITHER the goal (business-rules.md:105) OR the
+  // contributor (business-rules.md:123). Keys on the COMPOSITE (type,id) leg — goal_id/contributor_id are polymorphic
+  // bare TEXT, so an id alone could collide across types. findWhere skips the soft-delete filter → add isNull
+  // explicitly ([[repository-findwhere-skips-softdelete-filter]]). Cast mirrors S4 listContributions.
+  async function cascadeContributionsFor(type: string, id: string): Promise<void> {
+    const asGoal = await contributionsRepo.findWhere(
+      and(
+        eq(contributions.goal_type, type as ContributionGoalType),
+        eq(contributions.goal_id, id),
+        isNull(contributions.deleted_at),
+      )!,
+    )
+    const asContributor = await contributionsRepo.findWhere(
+      and(
+        eq(contributions.contributor_type, type as ContributionContributorType),
+        eq(contributions.contributor_id, id),
+        isNull(contributions.deleted_at),
+      )!,
+    )
+    const seen = new Set<string>()
+    for (const c of [...asGoal, ...asContributor]) {
+      if (seen.has(c.id)) continue
+      seen.add(c.id)
+      await contributionsRepo.delete(c.id) // soft (contributions carry deleted_at)
+    }
+  }
 
   // All three spine tables carry deleted_at → softDelete:true. M1.0 encryptedFields:[] (M3 enables [E]).
   const valuesRepo = createRepository(db, values, { deviceId, softDelete: true, encryptedFields: [] })
@@ -108,6 +163,10 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
 
   async function archiveValue(id: string): Promise<void> {
     if (!(await valuesRepo.findById(id))) throw new ValueNotFoundError(id)
+    // PG-19/PG-9: purposes referencing this value SURVIVE standalone → SET NULL their value_id (no-FK; findWhere
+    // skips the soft-delete filter so add isNull explicitly). Update, not delete.
+    const childPurposes = await purposesRepo.findWhere(and(eq(purposes.value_id, id), isNull(purposes.deleted_at))!)
+    for (const p of childPurposes) await purposesRepo.update(p.id, { value_id: null })
     await valuesRepo.delete(id) // soft (deleted_at)
   }
 
@@ -140,7 +199,8 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
 
   async function updatePurpose(id: string, patch: Parameters<PurposesService['updatePurpose']>[1]): Promise<PurposeRow> {
     const v = UpdatePurposeSchema.parse(patch)
-    if (!(await purposesRepo.findById(id))) throw new PurposeNotFoundError(id)
+    const existing = await purposesRepo.findById(id)
+    if (!existing) throw new PurposeNotFoundError(id)
     const data = stripUndefined({
       title: v.title,
       description: v.description,
@@ -155,12 +215,29 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
       is_primary: v.is_primary,
       sort_order: v.sort_order,
     })
-    return Object.keys(data).length === 0 ? (await purposesRepo.findById(id))! : purposesRepo.update(id, data)
+    const updated = Object.keys(data).length === 0 ? existing : await purposesRepo.update(id, data)
+    // S9 — emit a measurement signal on a completion transition (emit-only, dormant M1).
+    if (isCompletionTransition(existing.status, v.status)) await fanOutCompletion(id, 'purpose.completed')
+    return updated
   }
 
   async function archivePurpose(id: string): Promise<void> {
     if (!(await purposesRepo.findById(id))) throw new PurposeNotFoundError(id)
-    await purposesRepo.delete(id)
+    // PG-19: child targets SURVIVE standalone → SET NULL their purpose_id (SR-003 relaxed), not cascade-delete.
+    const childTargets = await targetsRepo.findWhere(and(eq(targets.purpose_id, id), isNull(targets.deleted_at))!)
+    for (const t of childTargets) await targetsRepo.update(t.id, { purpose_id: null })
+    // PG-19: cascade contributions (goal + contributor legs) + the purpose_reviews ledger (soft). The surviving
+    // targets keep their own target_reviews → NOT cascaded here.
+    await cascadeContributionsFor('purpose', id)
+    const prevs = await purposeReviewsRepo.findWhere(
+      and(eq(purposeReviews.purpose_id, id), isNull(purposeReviews.deleted_at))!,
+    )
+    for (const r of prevs) await purposeReviewsRepo.delete(r.id)
+    // PG-19 two-hop: hard-cascade purpose_metrics + their value ledger — reuse S3 deleteMetric (metrics carry no
+    // deleted_at → hard; it also hard-deletes the metric's purpose_metric_values).
+    const metrics = await metricsRepo.findWhere(eq(purposeMetrics.purpose_id, id))
+    for (const m of metrics) await deleteMetric(m.id)
+    await purposesRepo.delete(id) // soft
   }
 
   async function getPurpose(id: string): Promise<PurposeRow | null> {
@@ -225,12 +302,20 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
       review_frequency: v.review_frequency,
       sort_order: v.sort_order,
     })
-    return Object.keys(data).length === 0 ? existing : targetsRepo.update(id, data)
+    const updated = Object.keys(data).length === 0 ? existing : await targetsRepo.update(id, data)
+    // S9 — emit a measurement signal on a completion transition (emit-only, dormant M1).
+    if (isCompletionTransition(existing.status, v.status)) await fanOutCompletion(id, 'target.completed')
+    return updated
   }
 
   async function archiveTarget(id: string): Promise<void> {
     if (!(await targetsRepo.findById(id))) throw new TargetNotFoundError(id)
-    await targetsRepo.delete(id)
+    // PG-19: cascade contributions (goal + contributor legs, soft) + hard-cascade the target_reviews ledger
+    // (no deleted_at → delete() is hard). Then soft-delete the target.
+    await cascadeContributionsFor('target', id)
+    const trevs = await targetReviewsRepo.findWhere(eq(targetReviews.target_id, id))
+    for (const r of trevs) await targetReviewsRepo.delete(r.id)
+    await targetsRepo.delete(id) // soft
   }
 
   async function getTarget(id: string): Promise<TargetRow | null> {
@@ -298,7 +383,10 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
 
   async function archiveDream(id: string): Promise<void> {
     if (!(await dreamsRepo.findById(id))) throw new DreamNotFoundError(id)
-    await dreamsRepo.delete(id)
+    // PG-19: a dream is never a GOAL (not in CONTRIBUTION_GOAL_TYPE) → only its contributor-side contributions
+    // cascade (business-rules.md:123). No children, no SET NULL. Then soft-delete.
+    await cascadeContributionsFor('dream', id)
+    await dreamsRepo.delete(id) // soft
   }
 
   async function getDream(id: string): Promise<DreamRow | null> {
@@ -787,6 +875,41 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     return notes.createPage({ type: 'note', title, entity_type: entityType, entity_id: entityId })
   }
 
+  // ---- S9: provider (Journal summary digest + the SS-7 DueProvider lane) -----
+  // The day's recap (PULL — the Journals registry calls this at render via registerPurposesJournal). Active purposes
+  // (non-terminal, live) + targets whose next_review_date is this day. Deltas come from Journal snapshots, not here
+  // (PG-14, business-rules.md:48) → counts only.
+  async function getDayPurposesDigest(date: string): Promise<PurposesDayDigest> {
+    const allPurposes = await purposesRepo.findAll() // applies isNull(deleted_at)
+    const activePurposes = allPurposes.filter((p) => !TERMINAL_STATUSES.has(p.status)).length
+    const due = await targetsRepo.findWhere(and(eq(targets.next_review_date, date), isNull(targets.deleted_at))!)
+    return { activePurposes, reviewsDue: due.length }
+  }
+
+  // Parse a YYYY-MM-DD calendar date to its UTC-midnight ms instant (matches the S7 next_review_date UTC anchor,
+  // service.ts next_review_date math — a local-tz parse would drift the boundary up to a day).
+  const toUtcMidnightMs = (ymd: string): number => Date.parse(`${ymd}T00:00:00Z`)
+  // The SS-7 due-work lane (canonical DueItem). TARGETS ONLY — purposes carry no next_review_date (schema/purposes.ts
+  // :52-70), so review-due is target-grained. urgency=0 (M1.2 ranking, sessions/service.ts:705); est_minutes=15 default.
+  async function dueIn(range: TimeRange): Promise<DueItem[]> {
+    const withReview = await targetsRepo.findWhere(and(isNotNull(targets.next_review_date), isNull(targets.deleted_at))!)
+    const items: DueItem[] = []
+    for (const t of withReview) {
+      if (!t.next_review_date) continue
+      const dueMs = toUtcMidnightMs(t.next_review_date)
+      if (Number.isNaN(dueMs) || dueMs < range.start || dueMs > range.end) continue
+      items.push({
+        source_module: 'purposes',
+        ref_id: t.id,
+        label: t.title,
+        est_minutes: 15,
+        urgency: 0,
+        hard_deadline: dueMs,
+      })
+    }
+    return items
+  }
+
   return {
     createValue,
     updateValue,
@@ -834,6 +957,8 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     linkEntity,
     unlinkEntity,
     ensureEntityNote,
+    getDayPurposesDigest,
+    dueIn,
   }
 }
 

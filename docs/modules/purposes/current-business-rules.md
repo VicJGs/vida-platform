@@ -214,3 +214,39 @@
   `NotesService` directly (the entity_types are registered). The Bucket List **Space** over `dreams`, the vision-board/
   Gallery view, and the neural graph are **② `fe-purposes`/Spaces-view** concerns (`contract.md:40-41`), not ① S8; the
   Journal/due aggregation is S9.
+
+## S9 — provider (Journal summary + DueProvider) + emit-only fan-out + PG-19 deletion (the ① closer)
+
+- **BR-PG-S9-1** — **Purposes registers as a PROVIDER (PG-14), naming no consumer.** `registerPurposesJournal(registry,
+  svc)` registers a `summary(date)` `JournalContribution` (`sectionKey:'summary'`); `registerPurposesDueProvider(sessions,
+  svc)` registers a `DueProvider` into the sessions SS-7 lane. Both registry handles are PARAMS to the standalone
+  helpers (`journal.ts`), NOT service deps — the projects precedent; avoids an unused `journal` dep (the S8 registry-drop
+  parallel). The summary is PULL (the Journals registry calls it at render, ADR-004 §3.2.5), never a rail push.
+- **BR-PG-S9-2** — **`getDayPurposesDigest(date) = {activePurposes, reviewsDue}` is COUNTS only.** `activePurposes` =
+  live purposes whose `status` ∉ `{completed, cancelled}`; `reviewsDue` = targets with `next_review_date == date`. "What
+  changed" deltas come from **Journal snapshots**, never a stored propagation (PG-14, `business-rules.md:48`). `summary`
+  state = `success` iff `activePurposes + reviewsDue > 0`, else `empty`; reuses the `TerminalState` canon BY TYPE.
+- **BR-PG-S9-3** — **`dueIn(range)` surfaces TARGET reviews only, as canonical `DueItem`s.** Targets whose
+  `next_review_date` (a `YYYY-MM-DD`) parsed at **UTC-midnight** falls in `[range.start, range.end]` (Unix ms, both ends
+  inclusive). Purposes carry no `next_review_date` column → purpose-level reviews are not surfaced (schema-forced, not a
+  choice). `est_minutes = 15` (documented default — no review-duration field); **`urgency = 0`** (the ranking algorithm
+  is deferred to M1.2 platform-wide, `sessions/service.ts:705`; `hard_deadline` carries the proximity signal).
+- **BR-PG-S9-4** — **Completion fan-out is EMIT-ONLY + dormant at M1 (C-E2).** `updateTarget`/`updatePurpose` fire
+  `emit_measurement_signal` (ONLY — never `award_xp`/`grant_currency`; gamification's rule turns the signal into XP) on a
+  status→`completed` **transition** (`existing.status !== 'completed' && patch.status === 'completed'`), keyed by the
+  entity id (transition `target.completed`/`purpose.completed`). `if (!effects) return` (no rail wired ⇒ no-op);
+  `registry.resolve` skip-if-no-handler (avoids `NoEffectHandler` on the keyed type); post-commit try/catch
+  failure-isolated (the completion stands, PG-14). Re-saving an already-completed entity does NOT re-fire.
+- **BR-PG-S9-5** — **PG-19 deletion is app-layer (no FK), composite-keyed, and respects optionality.** `archivePurpose`:
+  child `targets.purpose_id` **SET NULL** (survive standalone, SR-003) — not cascade-deleted; soft-cascade `contributions`
+  (both legs) + `purpose_reviews`; **hard** two-hop `purpose_metrics` → `purpose_metric_values` by **reusing S3
+  `deleteMetric`**; then soft-delete. The surviving targets keep their own `target_reviews`. `archiveTarget`: soft-cascade
+  `contributions` (both legs) + **hard**-cascade `target_reviews` (no `deleted_at`); soft-delete. `archiveValue`: **SET
+  NULL** `purposes.value_id` on child purposes (survive); soft-delete. `archiveDream`: contributor-side `contributions`
+  only (a dream is never a GOAL); soft-delete.
+- **BR-PG-S9-6** — **`cascadeContributionsFor(type, id)` keys on the COMPOSITE `(type, id)` leg** — both
+  `(goal_type, goal_id)` and `(contributor_type, contributor_id)` — because `goal_id`/`contributor_id` are polymorphic
+  bare TEXT (an id alone could collide across types). Each sweep filters `isNull(deleted_at)` explicitly (findWhere
+  skips the soft-delete filter) and dedups by id. Empty-leg queries are harmless: a `purpose`/`target` is a GOAL only
+  (contributor-leg matches nothing); a `dream` is a CONTRIBUTOR only (goal-leg matches nothing) — vocab
+  `CONTRIBUTION_GOAL_TYPE={purpose,target}` / `CONTRIBUTION_CONTRIBUTOR_TYPE={habit,routine,project,task,dream,finance_target,check_in}`.

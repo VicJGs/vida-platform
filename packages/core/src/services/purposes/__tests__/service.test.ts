@@ -17,13 +17,15 @@ import { initVault } from '../../../encryption/vault'
 import { createPurposesService } from '../service'
 import { createMeasurementSourceRegistry, type MeasurementSourceRegistry } from '../../../foundation/measurement'
 import { createSessionRegistry, type SessionRegistry } from '../../../foundation/sessions'
-import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
+import { createEffectRegistry, createEffectRail, type EffectRegistry, type EffectEvent } from '../../../foundation/effects'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
 import { createSpacesService, UnknownEntityType, type SpacesService } from '../../../foundation/spaces'
 import { createAssociationResolver } from '../../../foundation/spaces/association-resolver'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService, type NotesService } from '../../notes'
-import { createSessionsService } from '../../sessions'
+import { createSessionsService, type SessionsService } from '../../sessions'
+import { createJournalRegistry } from '../../journals'
+import { registerPurposesJournal, registerPurposesDueProvider } from '../journal'
 import {
   type PurposesService,
   type PurposeTagLinkType,
@@ -77,12 +79,15 @@ interface Harness {
   db: DrizzleDb
   bsql: Database.Database
   sessionRegistry: SessionRegistry
+  sessions: SessionsService
   spaces: SpacesService
   notes: NotesService
   associations: ReturnType<typeof createAssociationResolver>
 }
 
-async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = {}): Promise<Harness> {
+async function setup(
+  opts: { measurementSources?: MeasurementSourceRegistry; effectsRegistry?: EffectRegistry } = {},
+): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
@@ -108,8 +113,12 @@ async function setup(opts: { measurementSources?: MeasurementSourceRegistry } = 
     sessions: { registry: sessionRegistry, service: sessions },
     spaces,
     notes,
+    // S9 — deny-safe effect rail (emit-only). Wired only when a test supplies a registry (handlers pre-registered).
+    effects: opts.effectsRegistry
+      ? { rail: createEffectRail(db, opts.effectsRegistry), registry: opts.effectsRegistry }
+      : undefined,
   })
-  return { svc, db, bsql, sessionRegistry, spaces, notes, associations }
+  return { svc, db, bsql, sessionRegistry, sessions, spaces, notes, associations }
 }
 
 describe('mod-purposes S1 — values CRUD', () => {
@@ -829,5 +838,180 @@ describe('mod-purposes S8 — tags · links · pages', () => {
       'separate',
     )
     if (after.mode === 'separate') expect(after.tags.map((t) => t.tagId)).toContain(tag.id)
+  })
+})
+
+// ============================================================================
+// S9 — provider (Journal summary + DueProvider lane) + emit-only fan-out + PG-19 deletion. Live-store: real journal/
+// sessions/effects substrates; cascades verified via raw reads. Maps 1:1 to slice-map S9 + seam-contract seam-6.
+// ============================================================================
+describe('mod-purposes S9 — Journal provider + getDayPurposesDigest', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('getDayPurposesDigest counts active (non-terminal) purposes + targets with a review due that day', async () => {
+    const p = await h.svc.createPurpose({ title: 'Health' }) // status default in_progress (active)
+    const done = await h.svc.createPurpose({ title: 'Old' })
+    await h.svc.updatePurpose(done.id, { status: 'completed' }) // terminal → excluded
+    const rm = await h.svc.createTarget({ title: 'Review me', purpose_id: p.id })
+    await h.svc.updateTarget(rm.id, { next_review_date: '2026-10-10' }) // next_review_date is set via update (not a create field)
+    const lt = await h.svc.createTarget({ title: 'Later', purpose_id: p.id })
+    await h.svc.updateTarget(lt.id, { next_review_date: '2026-11-01' })
+    const digest = await h.svc.getDayPurposesDigest('2026-10-10')
+    expect(digest.activePurposes).toBe(1) // 'Health' only; 'Old' is completed
+    expect(digest.reviewsDue).toBe(1) // the '2026-10-10' target only
+  })
+
+  it('registerPurposesJournal registers a summary contribution; success when active, empty when idle', async () => {
+    const registry = createJournalRegistry()
+    registerPurposesJournal(registry, h.svc)
+    const contrib = registry.get('purposes')
+    expect(contrib?.module).toBe('purposes')
+    expect(contrib?.sectionKey).toBe('summary')
+    const empty = await contrib!.summary('2026-10-10')
+    expect(empty.state).toBe('empty') // nothing created yet
+    await h.svc.createPurpose({ title: 'Active' })
+    const active = await contrib!.summary('2026-10-10')
+    expect(active.state).toBe('success')
+    expect(active.module).toBe('purposes')
+  })
+})
+
+describe('mod-purposes S9 — DueProvider lane (SS-7)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('dueIn returns targets whose next_review_date falls in the UTC-ms window, as canonical DueItems', async () => {
+    const t = await h.svc.createTarget({ title: 'Quarterly review' })
+    await h.svc.updateTarget(t.id, { next_review_date: '2026-10-15' })
+    const oor = await h.svc.createTarget({ title: 'Out of range' })
+    await h.svc.updateTarget(oor.id, { next_review_date: '2026-12-01' })
+    await h.svc.createTarget({ title: 'No review date' }) // excluded (null next_review_date)
+    const range = { start: Date.parse('2026-10-01T00:00:00Z'), end: Date.parse('2026-10-31T00:00:00Z') }
+    const items = await h.svc.dueIn(range)
+    expect(items.length).toBe(1)
+    const it = items[0]!
+    expect(it.source_module).toBe('purposes')
+    expect(it.ref_id).toBe(t.id)
+    expect(it.label).toBe('Quarterly review')
+    expect(it.est_minutes).toBe(15)
+    expect(it.urgency).toBe(0) // ranking deferred to M1.2
+    expect(it.hard_deadline).toBe(Date.parse('2026-10-15T00:00:00Z'))
+  })
+
+  it('registerPurposesDueProvider wires the lane into the sessions aggregator (sessions.dueIn surfaces it)', async () => {
+    const dt = await h.svc.createTarget({ title: 'Due target' })
+    await h.svc.updateTarget(dt.id, { next_review_date: '2026-10-20' })
+    registerPurposesDueProvider(h.sessions, h.svc)
+    const agg = await h.sessions.dueIn({
+      start: Date.parse('2026-10-01T00:00:00Z'),
+      end: Date.parse('2026-10-31T00:00:00Z'),
+    })
+    expect(agg.some((d) => d.source_module === 'purposes' && d.label === 'Due target')).toBe(true)
+  })
+})
+
+describe('mod-purposes S9 — emit-only completion fan-out', () => {
+  it('is a dormant no-op when no effect rail is wired (M1 default)', async () => {
+    const h = await setup() // no effectsRegistry
+    const t = await h.svc.createTarget({ title: 'Goal' })
+    await expect(h.svc.updateTarget(t.id, { status: 'completed' })).resolves.toBeTruthy() // no throw
+  })
+
+  it('emits emit_measurement_signal on a status→completed TRANSITION of a target (with a wired handler)', async () => {
+    const registry = createEffectRegistry()
+    const fired: EffectEvent[] = []
+    registry.register('emit_measurement_signal', async (event) => {
+      fired.push(event)
+    })
+    const h = await setup({ effectsRegistry: registry })
+    const t = await h.svc.createTarget({ title: 'Goal' }) // not_started
+    await h.svc.updateTarget(t.id, { status: 'in_progress' }) // not a completion → no emit
+    expect(fired.length).toBe(0)
+    await h.svc.updateTarget(t.id, { status: 'completed' }) // transition → emit
+    expect(fired.length).toBe(1)
+    expect(fired[0]!.effectType).toBe('emit_measurement_signal')
+    expect(fired[0]!.transition).toBe('target.completed')
+    expect(fired[0]!.subjectNaturalKey).toBe(t.id)
+    // re-saving an already-completed target does NOT re-fire (no transition)
+    await h.svc.updateTarget(t.id, { status: 'completed' })
+    expect(fired.length).toBe(1)
+  })
+
+  it('emits on a purpose completion transition too (transition = purpose.completed)', async () => {
+    const registry = createEffectRegistry()
+    const fired: EffectEvent[] = []
+    registry.register('emit_measurement_signal', async (event) => {
+      fired.push(event)
+    })
+    const h = await setup({ effectsRegistry: registry })
+    const p = await h.svc.createPurpose({ title: 'Big goal' })
+    await h.svc.updatePurpose(p.id, { status: 'completed' })
+    expect(fired.length).toBe(1)
+    expect(fired[0]!.transition).toBe('purpose.completed')
+  })
+})
+
+describe('mod-purposes S9 — PG-19 deletion propagation', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('archivePurpose SET-NULLs child targets (survive), cascades contributions/reviews, two-hop metrics', async () => {
+    const p = await h.svc.createPurpose({ title: 'Parent' })
+    const t = await h.svc.createTarget({ title: 'Child', purpose_id: p.id })
+    const contribDream = await h.svc.createDream({ title: 'Contributor' }) // dream ∈ CONTRIBUTION_CONTRIBUTOR_TYPE
+    await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'dream', id: contribDream.id }, { weight: 50 })
+    await h.svc.openPurposeReview(p.id, { still_aligned: true, overall_progress: 5 })
+    const m = await h.svc.createMetric({ purpose_id: p.id, name: 'M', unit: 'x' })
+    await h.svc.recordMetricValue(m.id, 1, { source: 'manual' })
+
+    await h.svc.archivePurpose(p.id)
+
+    expect(await h.svc.getPurpose(p.id)).toBeNull() // soft-deleted
+    const survived = await h.svc.getTarget(t.id)
+    expect(survived).not.toBeNull() // target SURVIVES
+    expect(survived!.purpose_id).toBeNull() // …standalone (SET NULL)
+    expect((await h.svc.listContributions({ type: 'purpose', id: p.id })).length).toBe(0) // contributions cascaded
+    expect((await h.svc.listPurposeReviews(p.id)).length).toBe(0) // reviews cascaded
+    expect(await h.svc.getMetric(m.id)).toBeNull() // metric hard-cascaded (two-hop)
+  })
+
+  it('archiveTarget cascades its goal-side contributions + hard-cascades target_reviews', async () => {
+    // (target is a GOAL type, never a contributor — contributor-side cleanup is covered by archiveDream below.)
+    const t = await h.svc.createTarget({ title: 'Target' })
+    const feeder = await h.svc.createDream({ title: 'Feeder' }) // dream contributes to the target
+    await h.svc.linkContribution({ type: 'target', id: t.id }, { type: 'dream', id: feeder.id }, { weight: 40 })
+    await h.svc.openTargetReview(t.id, { progress_rating: 7 })
+
+    await h.svc.archiveTarget(t.id)
+
+    expect(await h.svc.getTarget(t.id)).toBeNull()
+    expect((await h.svc.listContributions({ type: 'target', id: t.id })).length).toBe(0) // goal-leg cascaded
+    expect((await h.svc.listTargetReviews(t.id)).length).toBe(0) // ledger hard-cascaded
+  })
+
+  it('archiveValue SET-NULLs purposes.value_id on child purposes (they survive)', async () => {
+    const v = await h.svc.createValue({ name: 'Integrity' })
+    const p = await h.svc.createPurpose({ title: 'Lives by it', value_id: v.id })
+    await h.svc.archiveValue(v.id)
+    expect(await h.svc.getValue(v.id)).toBeNull()
+    const survived = await h.svc.getPurpose(p.id)
+    expect(survived).not.toBeNull()
+    expect(survived!.value_id).toBeNull()
+  })
+
+  it('archiveDream cascades its contributor-side contributions only (a dream is never a goal)', async () => {
+    const purpose = await h.svc.createPurpose({ title: 'Goal' })
+    const d = await h.svc.createDream({ title: 'Someday' })
+    await h.svc.linkContribution({ type: 'purpose', id: purpose.id }, { type: 'dream', id: d.id }, { weight: 20 })
+    await h.svc.archiveDream(d.id)
+    expect(await h.svc.getDream(d.id)).toBeNull()
+    expect((await h.svc.listContributions({ type: 'purpose', id: purpose.id })).length).toBe(0)
   })
 })
