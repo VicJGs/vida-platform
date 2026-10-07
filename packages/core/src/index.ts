@@ -192,5 +192,8 @@ export * from './services/projects'
 // Service — Purposes & Goals (mod-purposes-and-goals #55 · LIF-136 · S1: spine CRUD over DB-4 019_purposes + DB-3 007_purpose)
 export * from './services/purposes'
 
+// Service — Relationships / CRM (mod-relationships #56 · LIF-137 · S1: contact CRUD spine over DB-4 025_relationships)
+export * from './services/relationships'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
