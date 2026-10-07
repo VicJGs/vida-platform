@@ -69,7 +69,10 @@ export interface EntityViewProps {
 const EntityRoot = styled(View, { flexDirection: 'column', gap: '$16', width: '100%', maxWidth: 1136, marginHorizontal: 'auto' })
 const Header = styled(View, { flexDirection: 'column', gap: '$8' })
 const TitleRow = styled(View, { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: '$12' })
-const TitleGroup = styled(View, { flexShrink: 1 })
+// $16 title→metadata rhythm (EC-5 / review-2 — the title-hero canonical header; mirrors flow-session-view.tsx:97,
+// on branch fe-codec-flow-session).
+// Without it the $display title + $small subtitle render flush (fix-entity-view-header).
+const TitleGroup = styled(View, { flexShrink: 1, gap: '$16' })
 // The merged⇄tabbed toggle — a role="toolbar" of aria-pressed buttons (the collection-view switcher precedent).
 const ModeToolbar = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$4' })
 const MergedStack = styled(View, { flexDirection: 'column', gap: '$24' })

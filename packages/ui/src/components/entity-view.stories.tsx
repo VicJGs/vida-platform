@@ -76,7 +76,9 @@ function Controlled({
   return (
     <EntityView
       title="Redesign the onboarding"
-      subtitle={`Project · 3 milestones · updated 2h ago${pageAble ? '' : ' · no page'}`}
+      // Title-hero canonical subtitle (EC-5): ONE quiet plain-language line — NOT a middle-dot meta-string.
+      // Page-less-ness is signalled by the ABSENT Content facet, not a "· no page" dot-tack.
+      subtitle="In the Q3 Launch project"
       action={
         <Button size="sm" intent="ghost" aria-label="Entity actions">
           ⋯
