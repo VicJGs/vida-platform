@@ -5,6 +5,13 @@
 
 import type { Id, Timestamp, Status, Priority, Frequency, LifeDomain, Money } from './common'
 import type { SyncableEntity, SyncMetadata } from './sync'
+import type { MeasurementKind, BindingMode } from './measurement'
+import type {
+  MetricValueSource,
+  ContributionGoalType,
+  ContributionContributorType,
+  PlanStepOwnerType,
+} from './purpose'
 
 // ---------------------------------------------------------------------------
 // Project enums
@@ -20,8 +27,8 @@ export type ProjectComplexity = (typeof PROJECT_COMPLEXITY)[number]
 // Purpose & Goals enums
 // ---------------------------------------------------------------------------
 
-export const TARGET_TYPE = ['quantitative', 'qualitative', 'milestone', 'habit_based'] as const
-export type TargetType = (typeof TARGET_TYPE)[number]
+// TARGET_TYPE retired (DB-11, ADR-011) → `measurement_kind` (MEASUREMENT_KIND, measurement.ts) splits the
+// v1 target_type's conflated how-measured/what-feeds axes; `habit_based` = `rate` + a contribution to the habit.
 
 export const CALCULATION_METHOD = ['sum', 'average', 'latest', 'max', 'min', 'count'] as const
 export type CalculationMethod = (typeof CALCULATION_METHOD)[number]
@@ -117,6 +124,16 @@ export interface ProjectDocument extends SyncableEntity {
 // Purpose & Goals
 // ---------------------------------------------------------------------------
 
+/** A first-class core-belief above purposes (PG-9, DB-3 `values`). */
+export interface Value extends SyncableEntity {
+  /** @encrypted */
+  name: string
+  /** @encrypted */
+  description: string | null
+  sort_order: number
+  deleted_at: Timestamp | null
+}
+
 export interface Purpose extends SyncableEntity {
   /** @encrypted */
   title: string
@@ -126,10 +143,11 @@ export interface Purpose extends SyncableEntity {
   vision: string | null
   /** @encrypted */
   why: string | null
+  value_id: Id | null
   domain: LifeDomain | null
   status: Status
-  /** 0–100 */
-  progress: number
+  /** 0–100 override slot — NULL ⇒ derive (PG-4) */
+  progress: number | null
   start_date: string | null
   target_date: string | null
   is_primary: boolean
@@ -138,16 +156,24 @@ export interface Purpose extends SyncableEntity {
 }
 
 export interface Target extends SyncableEntity {
-  purpose_id: Id
+  /** nullable spine joint — SR-003 relaxed (PG-9) */
+  purpose_id: Id | null
   /** @encrypted */
   title: string
   /** @encrypted */
   description: string | null
-  target_type: TargetType
+  measurement_kind: MeasurementKind
+  /** NULL ⇒ derive (ADR-011 M2) */
+  binding_mode: BindingMode | null
   target_value: number | null
+  /** override slot — NULL ⇒ derive (PG-4) */
   current_value: number | null
   /** @encrypted */
   unit: string | null
+  /** @encrypted — PG-11 (restored) */
+  success_criteria: string | null
+  /** PG-11 (restored) — how it is measured */
+  measurement_method: string | null
   status: Status
   priority: Priority
   start_date: string | null
@@ -159,7 +185,7 @@ export interface Target extends SyncableEntity {
 }
 
 export interface PurposeMetric extends SyncableEntity {
-  purpose_id: Id
+  purpose_id: Id | null
   /** @encrypted */
   name: string
   /** @encrypted */
@@ -169,17 +195,23 @@ export interface PurposeMetric extends SyncableEntity {
   target_value: number | null
   current_value: number | null
   calculation_method: CalculationMethod
+  /** PG-15 (restored) — progress direction */
+  is_higher_better: boolean | null
+  /** PG-15 (restored) */
+  baseline_value: number | null
 }
 
-export interface PurposeMetricValue extends SyncMetadata {
-  id: Id
+export interface PurposeMetricValue extends SyncableEntity {
   metric_id: Id
   value: number
   recorded_at: Timestamp
+  /** PG-15 — value provenance (distinct from a measurable's binding_mode) */
+  source: MetricValueSource
+  /** @encrypted — PG-15 */
+  context_notes: string | null
 }
 
-export interface TargetReview extends SyncMetadata {
-  id: Id
+export interface TargetReview extends SyncableEntity {
   target_id: Id
   /** 1–10 */
   progress_rating: number | null
@@ -190,31 +222,64 @@ export interface TargetReview extends SyncMetadata {
   reviewed_at: Timestamp
 }
 
+/** The alignment/fulfillment loop, distinct from a target review (PG-12, DB-3 `purpose_reviews`). */
+export interface PurposeReview extends SyncableEntity {
+  purpose_id: Id
+  still_aligned: boolean
+  /** @encrypted */
+  alignment_notes: string | null
+  /** 0–100 */
+  overall_progress: number | null
+  /** @encrypted */
+  key_achievements: string | null
+  /** @encrypted */
+  obstacles_faced: string | null
+  /** @encrypted */
+  adjustments_needed: string | null
+  renewed_commitment: boolean | null
+  fulfillment_rating: number | null
+  clarity_rating: number | null
+  reviewed_at: Timestamp
+  deleted_at: Timestamp | null
+}
+
+/** A weighted polymorphic goal-edge — Purpose-domain, NOT a Spaces primitive (PG-10, DB-3 `contributions`). */
+export interface Contribution extends SyncableEntity {
+  goal_type: ContributionGoalType
+  goal_id: Id
+  contributor_type: ContributionContributorType
+  contributor_id: Id
+  /** 0–100 weight; never a copied progress value (PG-10) */
+  contribution_percentage: number
+  /** @encrypted */
+  contribution_notes: string | null
+  deleted_at: Timestamp | null
+}
+
+/** A lightweight DOC checklist on a task/target — NOT a tracked entity (PG-11, DB-3 `plan_steps`). */
+export interface PlanStep extends SyncableEntity {
+  owner_type: PlanStepOwnerType
+  owner_id: Id
+  /** @encrypted */
+  title: string
+  /** @encrypted */
+  note: string | null
+  sort_order: number
+  is_completed: boolean
+  completed_at: Timestamp | null
+  deleted_at: Timestamp | null
+}
+
 export interface Dream extends SyncableEntity {
   /** @encrypted */
   title: string
   /** @encrypted */
   description: string | null
   domain: LifeDomain | null
-  target_age: number | null
-  /** @encrypted — in cents */
-  estimated_cost: Money | null
-  purpose_id: Id | null
-  deleted_at: Timestamp | null
-}
-
-// ---------------------------------------------------------------------------
-// Bucket List
-// ---------------------------------------------------------------------------
-
-export interface BucketListItem extends SyncableEntity {
-  /** @encrypted */
-  title: string
-  /** @encrypted */
-  description: string | null
-  category: BucketListCategory
+  category: BucketListCategory | null
   status: BucketListStatus
   priority: Priority
+  target_age: number | null
   target_date: string | null
   completed_date: string | null
   /** @encrypted — in cents */
@@ -226,36 +291,29 @@ export interface BucketListItem extends SyncableEntity {
   /** @encrypted */
   cover_image_url: string | null
   /** @encrypted */
-  tags: string[]
-  /** 0–100 */
-  progress_percentage: number
-  /** @encrypted */
+  inspiration_url: string | null
+  /** 0–100 override slot — NULL ⇒ derive (PG-4) */
+  progress_percentage: number | null
+  /** @encrypted — JSON [{id,text,completed}] (stored as TEXT) */
   steps: BucketListStep[]
   purpose_id: Id | null
   project_id: Id | null
-  /** @encrypted */
-  inspiration_url: string | null
   deleted_at: Timestamp | null
 }
+
+// ---------------------------------------------------------------------------
+// Bucket List — RETIRED (DB-11, PG-16): `bucket_list_items` collapsed into `Dream`
+// (category/status/priority/imagery/steps/location/progress/project_id absorbed above).
+// "Bucket List" is now a Space over `dreams` (a `#before-i-die` tag + Gallery view), not a table.
+// `BUCKET_LIST_CATEGORY`/`BUCKET_LIST_STATUS`/`BucketListStep` are retained — `Dream` uses them.
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Cross-domain junctions
 // ---------------------------------------------------------------------------
 
-export interface PurposeHabit extends SyncMetadata {
-  purpose_id: Id
-  habit_id: Id
-}
-
-export interface PurposeRoutine extends SyncMetadata {
-  purpose_id: Id
-  routine_action_id: Id
-}
-
-export interface PurposeProject extends SyncMetadata {
-  purpose_id: Id
-  project_id: Id
-}
+// PurposeHabit / PurposeRoutine / PurposeProject RETIRED (DB-11, PG-10) → the weighted polymorphic
+// `Contribution` edge (above) supersedes the three bare FK-pair junctions.
 
 export interface ProjectHabit extends SyncMetadata {
   project_id: Id

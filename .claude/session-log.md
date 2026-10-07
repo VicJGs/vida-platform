@@ -5911,3 +5911,19 @@ Decisions / lessons:
 Next session:
   - **FIRST ACTION:** next `#`-order backend head = **#55 `mod-purposes-and-goals`** (M1.1.2; `--next` agrees — highest direct-dependent count 6). FRESH `/begin`; add-backend-component / Entity Delivery Flow ①; fresh branch/worktree off main. Alternatives: Victor-directive FE `fe-codec-primitives-refinement` (LIF-230, worktree already exists) or FE `#5 fe-codec-dashboard`.
   - Env: Node 24 via nvm for @vida/core tests (better-sqlite3 ABI). Parallel worktree `fe-codec-primitives-refinement` may be active — don't disturb it.
+
+---
+Date: 2026-10-06 — mod-purposes-and-goals (LIF-136, #55) — S6 + S7 built (worktree; branch pushed, NOT PR'd)
+Task: mod-purposes-and-goals · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow ①) · worktree `.claude/worktrees/mod-purposes-and-goals`, branch `mod-purposes-and-goals` @ `3f11818` (pushed to origin, 8 of 11 units)
+Goal: ① backend — the measurability capstone. This session: S6 + S7 of 9 slices.
+Accomplished:
+  - **Worktree isolation** set up first (Session-1 carry-forward from the shared-tree collision): parked root on `main`, stashed the sibling fe-codec stray file (`stash@{0}`), `git worktree add` + `pnpm install` + `@vida/types` dist. All work in the worktree.
+  - **S6 — bindings + DAG guard + derived-pull** (`80038a1`): `bind` persists `binding_mode` + the ref in `measurement_method`; composes `assertAcyclic` → `CyclicBinding`; derived-pull reads the source seam (override current_value) → null M1. g2 SHIP → 3 folds (DAG = binding edges only; `BindingRefManaged` guard; misnamed test). purposes 72/72.
+  - **S7 — reviews + plan_steps + REQUIRED sessions port** (`f8f875e`): ledgers + register shared `review` sub-type idempotently + fire a `scheduled` review session + next_review_date (inline UTC math, no date-fns) + plan_steps (PG-11). g2 SHIP (no folds). purposes 79/79 · full @vida/core 1839/1839.
+Decisions / lessons:
+  - **2 Victor drift-catches, same pattern:** I presented a doc-resolved mechanism as a decision table twice (S6 `measurement_method`-as-ref-store, S7 review-session semantics). "Check the documentation" / "ground it in the documentation and code." Both resolved as FACTS from the full aspect set + the foundation code (`structure-data.md` + ADR-011 §3.7 for S6; seam-contract + `createSession` service.ts:276/291 for S7). Lesson: read the FULL corpus **+ governing code** before presenting; present facts, not options. Refs [[dont-frame-a-doc-resolved-handling-as-a-decision-nor-over-correct]] · [[envision-gate-firing-is-a-doc-test-not-a-human-decision]].
+  - **Env/ABI gotcha:** a parallel g2 agent's `pnpm rebuild better-sqlite3` under Node 20 broke the Node-22 ABI mid-session (all tests failed at setup) — recompiled against Node 22. For S7 I forbade the g2 agent from running rebuild/tests (review-by-reading-only). When dispatching a review agent into a SHARED worktree, forbid native-module rebuilds.
+  - `review` is a SHARED canonical SessionSubType (flashcards also registers it) → register idempotently (catch DuplicateSubType); the def divergence is inert at M1 (createSession enforces presence only).
+Next session:
+  - **FIRST ACTION:** **S8 — tags/links/pages** — `entity_tags`/`entity_links` WRITE via `SpacesService` + `pages` via `NotesService` + add `value`/`dream` to the taggable entity_type registry (PG-18). Deps grow: `spaces`/`notes`/`registry` become REQUIRED (seam-contract §Factory). **Resume IN the worktree** `.claude/worktrees/mod-purposes-and-goals` (root is parked on `main`); `/begin` then continue. Then S9 provider+fan-out+deletion-cascade → PR the whole ①.
+  - Env: Node 22 via nvm for @vida/core tests; the test-runner Node must match the better-sqlite3 ABI (don't let a parallel agent rebuild it under a different Node). Read the Spaces/Notes precedent (`services/projects/service.ts` S6 + [[spaces-junctions-split-read-write-tagentity-blind-inserts]]) BEFORE scoping S8.

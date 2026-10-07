@@ -189,5 +189,8 @@ export * from './services/notifications'
 // Service — Projects (mod-projects #54 · LIF-135 · S1: projects CRUD + queries over DB-4 016_projects)
 export * from './services/projects'
 
+// Service — Purposes & Goals (mod-purposes-and-goals #55 · LIF-136 · S1: spine CRUD over DB-4 019_purposes + DB-3 007_purpose)
+export * from './services/purposes'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
