@@ -156,4 +156,19 @@ Approved target per phase = the committed mockups (`mockups/*.html`). Visual rec
   parse error → empty arrays → vacuous pass) → hardened to assert measurement; (4) a story-scaffolding axe flag.
   **Lesson: ground before assuming** — the landmark fix REVERSED from `<article>` (my instinct) to drop-the-tags once
   the ref-fixed-to-div FACTs were read; and the gate's composited-opacity contrast probe was essential to measure faded
-  honestly (getComputedStyle ignores ancestor opacity). **Next: P3 · Timeline** (now-fulcrum variant + accent now-dot).
+  honestly (getComputedStyle ignores ancestor opacity).
+- **P3 · Timeline — ✅ COMPLETE (2026-10-06).** Full §XXVI double-gate (spec → /critique REVISE→fixed R1–R4 → Approval 1
+  → grounded §4b ledger → /preflight BLOCKED→resolved G1–G3 → /critique REVISE→fixed fulcrum-continuity → Approval 2) +
+  blocking Visual Gate + **2 independent code-reviews**. Delivered (all optional, back-compat, presentational): date
+  **GUTTER** (3-col, serif `$display`@`$small` + tabular + `getEyebrow`), **hollow dots**, **`getTemporalState`**
+  (present accent+ring via `useTheme().get('web')` · future faded DOT-only, date held AA per Card BR-C-7a; past/future
+  TITLE tone = consumer renderItem, LV-5), **`nowFulcrum`** (accent "now" divider before first non-past; 4-branch trim
+  over the COMBINED render sequence so the rail connects through it; `aria-hidden` non-listitem; NUL-sentinel key).
+  `TemporalState` exported. tsc 0 · eslint 0 · timeline **14 tests** (+5) · build ✓ · **Visual Gate PASS** (Brave, 3
+  presets × light/dark: serif AA 15.84–17.29 · eyebrow 4.94–6.53 incl. warm-dark · accent FLIPS per preset [editorial
+  blue/reader oxblood/quietDesk olive] + ring · future 0.55 dot w/ date held AA · "now" 4.95–6.41 · dots=items+1 · **axe
+  0** on editorial+fulcrum · 375 no-overflow). **Reviews caught + fixed:** phantom-gutter on a no-op `nowFulcrum` (hoist
+  `fulcrumAt` so `hasGutter` keys on actual render) · key collision (NUL sentinel) · `TemporalState` barrel gap; refuted
+  a hypothesized fulcrum-axe violation (axe 0, now gate-covered). **Gate gap found + closed:** my gate only ran axe on
+  the editorial story → added fulcrum-story axe. Spec `phases/P3-timeline.md`; currency `packages/ui/src/CLAUDE.md` +
+  `v3-timeline.md` change-log. **Next: P4 · Gallery** (framed cover + kicker · serif title · tabular caption + cover-intelligence).
