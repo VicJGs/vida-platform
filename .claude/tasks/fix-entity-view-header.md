@@ -1,5 +1,5 @@
 # Task: fix-entity-view-header
-# Status: in-progress
+# Status: done
 # Profile: Change Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS
