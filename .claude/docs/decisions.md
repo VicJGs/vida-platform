@@ -1,6 +1,26 @@
 <!-- Last updated: 2026-10-07 by /session-end -->
 
 
+## fe-codec-flow-session (② frontend · #11 · LIF-210 → Done, 2026-10-07 — WHOLE UNIT, PR #109 merged `928f0f6`)
+The CODEC Flow/Session shell (4th archetype) — `FlowSessionView` (@vida/ui, S1) + flow adapter (apps/web, S2).
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-07 | shell scope | shell owns standardized affordances; consumer owns the stage body | affordances (attach/mark-done/proof) in the shell + `renderStage` for the body | makes it an archetype vs a generic slot (collection/dashboard own chrome, delegate bodies) | yes |
+| 2026-10-07 | scope boundary | the "stages" backend structure | design-intent extension, homed OUT to #23 / a schema amendment | shell is presentational; quality-bar:139 = staged-deliverable is an ADR-004 extension | yes |
+| 2026-10-07 | scope boundary | timer + persistent HUD | separate units (#16 + pomodoro V5), NOT #11 | #11 owns the staged-deliverable frame + effect-log only (decomposition:57) | n/a |
+| 2026-10-07 | header | progress presentation | a `HonestProgress` BAR, not a text subtitle | Victor review — the dot-string subtitle was a generic tell + crammed | yes |
+| 2026-10-07 | typography | the whole shell's text | semantic type scale only, no px; 16px title→meta; accent in one place | design.md:103 + Victor's 2-round Envision correction (EC-11) | yes |
+| 2026-10-07 | require-proof | gate-flag vs intent | a distinct `onRequireProof` intent | the proof-gate is the consuming flow's config, not the shell's | yes |
+| 2026-10-07 | adapter | live data hook | deferred (R3) — ship `toFlowProps`/`mapEffectLog`/`bindFlowIntents` + convention | no built consumer yet (sibling-adapter precedent) | yes |
+
+## tracker-selector-archived-done-blocker (toolkit fix · LIF-232 → Done, 2026-10-07 — `~/dev-toolkit` `2c808fd`)
+The `--next`/`--plan` selector false-blocked dependents of completed-then-archived blockers (surfaced here, mis-reporting fe-home as the lone ready FE head).
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-07 | tracker | fix layer | selector-entry map injection + a shared `scan_archived_done` (build_census + selector consume it) | keeps `--sync`/`--pull` archive-blind (the invariant); DRY | yes |
+
 ## mod-relationships (① backend · #56 · LIF-137 → Done, 2026-10-07 — COMPLETE S1–S9, PR #107 merged `39ccdab`)
 The personal CRM (PII-heaviest), `createRelationshipsService` over DB-4 `025_relationships` (8 tables), 59 legs.
 

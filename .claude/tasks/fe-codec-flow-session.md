@@ -1,5 +1,5 @@
 # Task: fe-codec-flow-session
-# Status: in-progress
+# Status: done — LIF-210 → Done · PR #109 merged (928f0f6) 2026-10-07
 # Linear: LIF-210
 # Profile: Add Frontend Component
 # Scenario: default
