@@ -2,7 +2,9 @@
 # Detailed version of TASKS.md. Claude reads individual task files.
 
 ## Active Tasks
-_(none active. **fix-entity-view-header (unfiled → done, 2026-10-07, PR #110 merged)** — EntityView title-hero header rhythm (`TitleGroup gap:'$16'`); see Completed below.)_
+- fe-codec-canvas-graph (LIF-205 · #8 · in-progress): .claude/tasks/fe-codec-canvas-graph.md  (M1/M1.2.1 · add-frontend-component / Entity Delivery Flow ② · started 2026-10-08. G6 CODEC unit #8 — the Canvas: Graph / Neural Graph archetype. EXTEND the shipped `@vida/ui` NeuralGraph primitive (ink voice + 3 LIF-230 conformance findings) + apps/web adapter. Branch `fe-codec-canvas-graph` off main @ `08ff2ef`; deps theme✅ patterns✅ viewmodes✅. Spec stub `docs/specs/foundation/fe-codec-canvas-graph/`.)
+
+_(**fix-entity-view-header (unfiled → done, 2026-10-07, PR #110 merged)** — EntityView title-hero header rhythm (`TitleGroup gap:'$16'`); see Completed below.)_
 
 _(**fe-codec-primitives-refinement (LIF-230 → Done, 2026-10-07)** — the last active frontend unit — completed; see below. backend: **mod-purposes-and-goals #55 completed 2026-10-07 (LIF-136 → Done, PR #98 merged)**; mod-notifications #53 + mod-learning-education + mod-projects completed 2026-10-06. Next `#`-order backend head = next M1.1.2 module via `/begin`. frontend-track campaign ongoing, tracked in TASKS.md.)_
 
