@@ -78,12 +78,24 @@ hardest (WebGL + new deps). Consumed by **HARD-3** (backlinks + neural graph com
   TRANSPARENT** (no Sigma-side bg) → the frame's `$colorSurfacePrimary` shows through AND **flips with the theme** for
   free (m2). RESOLVED: **no sub-theme** (Sigma colors aren't Tamagui tokens; the frame uses base tokens); dimension
   props via the token scale (DEF-U8-h). `[FACT: Sigma WebGL ≠ Tamagui theming; Sigma default transparent bg]`
+  **UPDATED — fe-codec-canvas-graph / LIF-205 (editorial ink voice):** the node/edge DEFAULT is no longer a fixed hex
+  nor "consumer-supplied" — the component now resolves its OWN themed default (node = `$colorBrandPrimary`, edge =
+  `$colorBorderDefault`, per-preset) via `useTheme().get('web')` → a probe-`<span>` `getComputedStyle` read that
+  collapses the CSS-var chain to a concrete `rgb(...)` Sigma can parse (WebGL has no CSS context; a `var(--x)` renders
+  colorless — a custom property's computed value doesn't substitute nested var() refs, hence the probe). Still **no
+  sub-theme** — it reads the resolved SEMANTIC value, not a component sub-theme key. A per-item `GraphNode.color` still
+  overrides. See `docs/specs/foundation/fe-codec-canvas-graph/` BR-7/BR-9.
 - **NG-8 · Reduced motion + layout is SYNCHRONOUS, so BOUND the input (M4).** The forceatlas2 layout runs a FIXED
   iteration count synchronously (not a live animation) → no continuous motion to disable (B12-safe by construction). But
   synchronous FA2 (even Barnes-Hut O(n log n)) blocks the main thread; ADR-001's 10K+ ambition would freeze it. **V7 is
   validated to ~a few hundred nodes** (the realistic per-Space/backlink graph); above that, layout jank is expected and
   the **webworker layout (§6) is required** — a documented V7 ceiling, not a silent freeze. `[FACT: engineering.md §XIII
   INP; ADR-001:125 10K ambition → §6 webworker]`
+  **UPDATED — fe-codec-canvas-graph / LIF-205:** a reduced-motion iteration-gate now EXISTS — `useReducedMotion()`
+  caps `forceatlas2.assign` to **0 iterations** when `prefers-reduced-motion` is set (the nodes stay on the
+  deterministic circular seed — an instant, predictable, non-organic layout), vs `layoutIterations` normally;
+  `reduced` is in the effect deps. The continuous-motion axis stays B12-safe-by-construction; this gate serves the
+  calm-layout preference on the synchronous-settle axis. See `fe-codec-canvas-graph/` BR-12.
 
 ## 3. Contract
 ```ts

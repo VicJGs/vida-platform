@@ -14,6 +14,7 @@ const h = vi.hoisted(() => {
 vi.mock('sigma', () => ({ default: h.Sigma }))
 vi.mock('graphology-layout-forceatlas2', () => ({ default: { assign: h.assign } }))
 
+import Graph from 'graphology' // NOT mocked — the real graph is passed to the Sigma mock (A4 inspects its attributes)
 import { UIProvider } from '../provider'
 import { NeuralGraph, type GraphNode, type GraphEdge } from './neural-graph'
 
@@ -138,5 +139,51 @@ describe('NeuralGraph', () => {
     const { unmount } = renderUI(<NeuralGraph nodes={NODES} edges={EDGES} aria-label="Map" />)
     unmount()
     expect(h.kill).toHaveBeenCalledTimes(1)
+  })
+
+  // ── fe-codec-canvas-graph: ink voice + consumer slots + reduced-motion ──────
+  it('A3: a consumer slot overrides the default terminal message; absent → default copy', () => {
+    const custom = renderUI(<NeuralGraph nodes={[]} edges={[]} state="empty" empty={<div>graph is waiting</div>} />)
+    expect(custom.getByText('graph is waiting')).not.toBeNull()
+    expect(custom.queryByText(/no connections/i)).toBeNull() // the default Message is replaced, not appended
+    cleanup()
+    const dflt = renderUI(<NeuralGraph nodes={[]} edges={[]} state="empty" />)
+    expect(dflt.getByRole('status').textContent).toMatch(/no connections/i) // absent slot → verbatim default
+  })
+
+  it('A4: a per-item GraphNode.color overrides the themed default (BR-8)', () => {
+    // The EXACT themed default (per-preset accent) is a real-browser concern → the Visual Gate (A2). Here we assert
+    // the stable contract: a per-item color wins; a node without one gets a DIFFERENT, non-empty default.
+    enableWebGL()
+    renderUI(
+      <NeuralGraph
+        nodes={[
+          { id: 'a', label: 'A', color: '#ff0000' },
+          { id: 'b', label: 'B' },
+        ]}
+        edges={[]}
+        aria-label="Map"
+      />,
+    )
+    const graph = h.Sigma.mock.calls[0]?.[0] as Graph // the real graphology graph the effect built
+    expect(graph.getNodeAttribute('a', 'color')).toBe('#ff0000') // per-item override wins (BR-8)
+    const bColor = graph.getNodeAttribute('b', 'color') as string // themed default (BR-7)
+    expect(bColor).toBeTruthy()
+    expect(bColor).not.toBe('#ff0000') // the default is NOT the override — it's the themed/fallback value
+  })
+
+  it('A7: reduced-motion → forceatlas2 runs with 0 iterations (circular seed); normal → layoutIterations', () => {
+    // normal path — no matchMedia in jsdom → useReducedMotion() false
+    enableWebGL()
+    renderUI(<NeuralGraph nodes={NODES} edges={EDGES} layoutIterations={150} aria-label="Map" />)
+    expect(h.assign).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ iterations: 150 }))
+    cleanup()
+    h.assign.mockClear()
+    // reduced-motion ON → 0 iterations (the nodes stay on the deterministic circular seed)
+    const mql = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }
+    vi.spyOn(window, 'matchMedia').mockReturnValue(mql as unknown as MediaQueryList)
+    enableWebGL()
+    renderUI(<NeuralGraph nodes={NODES} edges={EDGES} layoutIterations={150} aria-label="Map" />)
+    expect(h.assign).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ iterations: 0 }))
   })
 })
