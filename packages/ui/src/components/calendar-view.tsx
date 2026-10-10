@@ -32,6 +32,9 @@ export interface CalendarViewProps<T> {
   month?: Date
   /** When provided, prev/next nav buttons render + call this; when absent, no buttons (pure display). */
   onMonthChange?: (month: Date) => void
+  /** Suppress the grid's own month title + nav — for hosting inside a frame that owns the period title (the
+   *  fe-calendar #19 CanvasView, D4). Default false (standalone grid shows its title). */
+  hideHeader?: boolean
   /** Injection seam for "today" (marker + default month). Default new Date(), evaluated once. */
   today?: Date
   /** Week start: 0=Sun, 1=Mon. Default 1. */
@@ -92,6 +95,7 @@ export function CalendarView<T>({
   getKey,
   month: monthProp,
   onMonthChange,
+  hideHeader = false,
   today: todayProp,
   weekStartsOn = 1,
   maxPerDay = 3,
@@ -141,21 +145,23 @@ export function CalendarView<T>({
 
   return (
     <CalRoot ref={ref} {...rest} role="table" aria-busy={loading ? true : undefined}>
-      <CalHeader>
-        <Text className="vida-cal-title" fontFamily="$display" fontSize="$heading" fontWeight="500" letterSpacing={-0.3} color="$colorTextPrimary">
-          {format(month, 'MMMM yyyy')}
-        </Text>
-        {onMonthChange && (
-          <View flexDirection="row" gap="$8">
-            <Button intent="ghost" size="sm" aria-label="Previous month" onPress={() => onMonthChange(subMonths(month, 1))}>
-              ‹
-            </Button>
-            <Button intent="ghost" size="sm" aria-label="Next month" onPress={() => onMonthChange(addMonths(month, 1))}>
-              ›
-            </Button>
-          </View>
-        )}
-      </CalHeader>
+      {!hideHeader && (
+        <CalHeader>
+          <Text className="vida-cal-title" fontFamily="$display" fontSize="$heading" fontWeight="500" letterSpacing={-0.3} color="$colorTextPrimary">
+            {format(month, 'MMMM yyyy')}
+          </Text>
+          {onMonthChange && (
+            <View flexDirection="row" gap="$8">
+              <Button intent="ghost" size="sm" aria-label="Previous month" onPress={() => onMonthChange(subMonths(month, 1))}>
+                ‹
+              </Button>
+              <Button intent="ghost" size="sm" aria-label="Next month" onPress={() => onMonthChange(addMonths(month, 1))}>
+                ›
+              </Button>
+            </View>
+          )}
+        </CalHeader>
+      )}
 
       <View style={SCROLL_X}>
         <Table>

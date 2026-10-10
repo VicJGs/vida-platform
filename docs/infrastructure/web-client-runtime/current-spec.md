@@ -110,7 +110,36 @@ facts (routing tree + store inventory) that the AR-4 snapshot above no longer de
   the AR-4 UI-only pattern (ADR-020; no vanilla-in-core until an M4 cross-platform consumer). `[FACT: stores/command-bar-ui-store.ts:1-4]`
 - The command-bar itself is an **overlay**, not a route (⌘K launcher composed by UI-4·S3), so it adds no route node.
 
+## CODEC frontend seams — IMPLEMENTED (runtime deltas · fe-codec-* units · baseline-refreshed 2026-10-10 by fe-calendar #19)
+The `fe-codec-*` frontend wave added three **cross-module read + view-adapter seams** under `apps/web/src/` that the
+AR-4/UI-4 snapshots above predate. Recorded here because `fe-calendar` #19 (LIF-203) is the **first consumer** of one
+of their deferred hooks. The UI mechanics live in their own convention docs (`apps/web/src/{canvas,collection}/CLAUDE.md`
++ `docs/specs/foundation/fe-codec-{patterns,canvas-board,collection}/`); recorded here are the **runtime-level** seams:
+- **ProviderRead convention** (`providers/provider-read.ts`) — `export type ProviderRead<T> = () => Promise<T>`; the
+  "no direct cross-module tables" read seam. Shipped as a **type + documented convention, NOT a hook** — a
+  `useProviderRead` wrapper would be a thin `useQuery` alias with no M1 consumer (ReducedMotion/first-consumer lesson).
+  Consumed as `useQuery({ queryKey, queryFn: provider })` where `provider satisfies ProviderRead<T>`. `[FACT: providers/provider-read.ts:9,15]`
+- **Canvas adapter** (`canvas/adapter.ts`) — pure convention for the `CanvasView` immersive frame (fe-codec-canvas-board
+  S2): `toCanvasHeader(view, eyebrow, meta?)` (title = user-named surface, never the month, avoids duplication),
+  `resolveMeasureProgress(m)` (ADR-011 measure-driven progress descriptor), `createCanvasAdapter()`. `[FACT: canvas/adapter.ts:44,81,107]`
+  - **DEFERRED hook — #19's build:** `useCalendar(spaceId)` / `useVisionBoard(spaceId)` (React Query → cross-module
+    `dueIn` fan-out via `ProviderRead`) are explicitly "built at the first consumer". `fe-calendar` #19 **is** that
+    first consumer for `useCalendar`. `[INTENT: canvas/adapter.ts:22-24]`
+- **Collection adapter** (`collection/adapter.ts`) — pure convention for the 7-renderer `CollectionView` (fe-codec-collection
+  S3): `toCollectionChrome(view, resolved)`, `bindViewConfigWrites(views)`, `createCollectionAdapter(views)`. The deferred
+  `useCollection(viewId)` hook (React Query → `ViewEngine.resolve`) is built at its first consumer (fe-notes #27, not #19). `[FACT: collection/adapter.ts:60,74,92; :14]`
+- **View dispatch** — `ViewLayout` union (`'list'|'table'|'board'|'gallery'|'calendar'|'timeline'|'graph'`) in `@vida/types`
+  routes a saved-view's `layout` to its renderer; `'calendar'` → the `@vida/ui` `CalendarView` (month grid, LIF-230-refined,
+  TZ-safe). The other 5 calendar ranges (Year/Week/Day/Agenda/Living) are **net-new renderers #19 builds**. `[FACT: packages/types/src/view.ts; packages/ui/src/components/calendar-view.tsx]`
+
 ## Downstream (INTENT — consumers)
 - **UI-3** (`@vida/editor`, LIF-88) ← UI-1, **AR-4** — the editor mounts in routes + issues React Query reads.
 - **UI-4** (app shell, LIF-89) ← UI-1, UX-3 — implements the UX-3 layout on AR-4's router.
-`[FACT: delivery-plan §5 rows 185, 252-253]`
+- **fe-calendar #19** (LIF-203) ← AR-4, ProviderRead, canvas adapter — the Global Calendar surface.
+  **S1 SHIPPED (2026-10-10):** `app/calendar/index.tsx` **`CalendarSurface`** (the FIRST real apps/web surface —
+  `CanvasView` frame · period title per range · `role="toolbar"` range switcher + nav · dispatches to the active range)
+  + `stores/calendar-ui-store.ts` (Zustand UI-only: `range` + `focusedDate`, BR-RT-6; a saved default range would be a
+  `user_preferences` write = owning capability, NOT here) + a lazy `/calendar` route (the `/graph` split precedent).
+  Month = `@vida/ui` `CalendarView` with the new **`hideHeader`** mode (D4 — frame owns the period title). S1 uses a
+  local fixture; the live **`useCalendar`** ProviderRead fan-out + the other range renderers land in S2–S7.
+  `[FACT: apps/web/src/app/calendar/index.tsx · stores/calendar-ui-store.ts · routes.tsx:calendarRoute · packages/ui/src/components/calendar-view.tsx hideHeader; docs/specs/foundation/fe-calendar/delivery/slice-map.md]`

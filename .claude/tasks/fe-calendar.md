@@ -1,5 +1,5 @@
 # Task: fe-calendar
-# Status: planned
+# Status: in-progress
 # Linear: LIF-203
 # Profile: Add Frontend Component
 # Scenario: default
@@ -30,3 +30,15 @@ Scope this surface should build:
    ProviderRead cross-module fan-out feeding them. Still a read-only lens (ADR-007); writes = owning-module capabilities.
 This is why #19 was always "dueIn cross-module lane, ProviderRead" — the vision now makes it concrete. Pick up the
 vision doc FIRST when #19 is sequenced.
+
+## Progress (Entity Delivery Flow ② · add-frontend-component / default)
+- **Step 0 Baseline** ✅ — refreshed `docs/infrastructure/web-client-runtime/current-spec.md` (CODEC seams + #19).
+- **Step 1 Interpretation** ✅ — `delivery/interpretation.md` (11 deps · 6 needs · 10 IRs).
+- **Step 1.5 Envision Gate** ✅ PASS (Victor, 2026-10-10; v1→v2 OS-rebuild→v3 Month-consistency+Agenda-tidy). Checkpoints EC-1…EC-14 + EC-F1…F4 locked in `delivery/envision.md`; evidence in `mockups/greybox/*.png` (greybox deleted).
+- **Step 2 Decomposition Gate** ✅ APPROVED (Victor) — `delivery/slice-map.md` (7 slices) + `delivery/seam-contract.md`. Decisions D1–D5 resolved (Daypart · reuse buildDashboard · first-consumer reads · CalendarView hideHeader · drift=slip-flag).
+- **S1** ✅ PASS (2026-10-10) — `CalendarSurface` + `calendar-ui-store` + `/calendar` route + `CalendarView.hideHeader`. Full Visual Gate green (AA matrix, axe 0). Month uses a fixture (live data = S7).
+
+## Next session (resume here)
+- **FIRST ACTION:** fresh `/begin` on the `fe-calendar` branch/worktree. Next slice = **S2 (Agenda renderer, `@vida/ui`)** per `delivery/slice-map.md`; then S3 Week/Day · S4 Year · S5 Living · S6 backend reads · S7 useCalendar fan-out.
+- Env: Node 24 for @vida/ui + @vida/web; Visual Gate = Brave via `/tmp/vg-calendar/s1-gate.mjs` pattern (poll past "Loading…" → complete onboarding → **client-side** nav `history.pushState`+popstate to the route, NOT page.goto which re-triggers onboarding; measure the digit TEXT node, not the wrapper div). Rebuild @vida/ui dist before an apps/web typecheck consuming new exports.
+- The slice-map ledger is the authoritative progress oracle (S1 ✅, S2–S7 ☐).

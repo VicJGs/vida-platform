@@ -93,6 +93,16 @@ describe('CalendarView', () => {
     expect(queryByLabelText('Previous month')).toBeNull()
   })
 
+  it('hideHeader suppresses the month title + nav (frame owns the period — D4), grid still renders', () => {
+    const onMonthChange = vi.fn()
+    const { queryByText, queryByLabelText, getByRole } = renderUI(
+      <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} onMonthChange={onMonthChange} hideHeader aria-label="Cal" />,
+    )
+    expect(queryByText('August 2026')).toBeNull() // no internal title
+    expect(queryByLabelText('Previous month')).toBeNull() // no internal nav even with onMonthChange
+    expect(getByRole('table')).toBeTruthy() // the grid still renders
+  })
+
   it('nav buttons fire onMonthChange(prev/next) when provided', () => {
     const onMonthChange = vi.fn()
     const { getByLabelText } = renderUI(

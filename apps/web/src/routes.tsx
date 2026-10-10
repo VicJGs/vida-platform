@@ -60,7 +60,15 @@ const graphRoute = createRoute({
   component: lazyRouteComponent(() => import('./app/graph')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, graphRoute])
+// fe-calendar #19 · S1 — the Global Calendar surface (lazy-split; the CalendarView/date-fns weight stays out of the
+// initial bundle, the /graph precedent).
+const calendarRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/calendar',
+  component: lazyRouteComponent(() => import('./app/calendar')),
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, graphRoute, calendarRoute])
 
 export const router = createRouter({
   routeTree,
