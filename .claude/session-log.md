@@ -1,4 +1,53 @@
 ---
+Date: 2026-10-10 — fe-codec-canvas-reader COMPLETE (S5 + S6 shipped); PR #117 merged to main
+Task: fe-codec-canvas-reader (LIF-206) · Profile: Add Frontend Component / Default (Entity Delivery Flow ②) · branch `fe-codec-canvas-reader` → PR #117 → merged (`6569d5c3`)
+Goal: finish the CODEC Canvas: Reader unit — build S5 (listen control) + S6 (apps/web adapter), then PR the whole S1–S6 unit.
+Completed:
+  - **S5 listen control** (`c55d4f2`) — a slim persistent `ListenBar` ON `CanvasReaderProps` (the INVERSE of S4: book-level
+    chrome, no `Range` to anchor → NOT an exported piece; the seam-contract homes the props on the shell). `listen?: ListenMode`
+    ('idle'|'playing'|'unavailable') drives idle (reused `ListenIcon` toggle) / playing (new `PauseIcon` + `HonestProgress`
+    only-when-progress, `aria-pressed`) / unavailable (calm `role=status` muted, no button, never `$colorSignalDanger` — IR-7);
+    all 3 states named `role=group aria-label="Listen"` (button-less state never empty-named); `size="lg"` 56×48; barrel +`type
+    ListenMode`. `packages/ui/src/components/canvas-reader.tsx` + stories + 9 tests. Visual Gate PASS (Brave, 3 presets × L/D +
+    375: icon 3:1 4.39–5.27 · label AA 4.52–5.22 incl. muted-on-secondary · axe 0). @vida/ui 503→512.
+  - **S6 apps/web Books↔Reader adapter** (`3d43d2b`, `apps/web/src/reader/adapter.ts` + 28 tests + CLAUDE.md) — type+convention
+    (the flow/collection/dashboard/entity precedent). Display-resolve (the heart, EC-14): `resolveLocation` parses a page
+    (M1 leading-int; CFI/timestamp = deferred BK-4) → the `BookChapter` whose `[start_page,end_page]` holds it → "Ch. N · p. P"
+    + `{chapterId,page}`; degrade-never-crash (unparseable→raw, null→"Location unknown", no guessed page). `groupAnnotations`
+    (TOC order + trailing "Unplaced"), `mapChapters`, `mapReaderState` (access-outcome only, B3), `mapPositionNote`, `mapListen`,
+    `toReaderProps`, `BooksReaderPort` + `bindReaderIntents`. Live `useReader` hook deferred to fe-books #36. Verification Gate
+    PASS (28/28).
+  - Each slice: g1 `/critique` + g2 code-review (independent agents, both SHIP; **S6 g1 REVISE→B1/B2/B3 fixed** — convertToSpeech
+    2-arg AiRequest · shipped-shell `annotationGroups` not stale §A · state boundary) + the per-slice blocking gate.
+  - Merged `origin/main` into the branch (was 16 behind): conflicts in `packages/ui/src/CLAUDE.md` + `index.ts` resolved by
+    KEEPING BOTH the sibling `canvas-view` (canvas-board) and my `canvas-reader` blocks/exports. §XXIX currency: `canvas-reader.md`
+    (S5+S6 sections), slice-map ledger (S5/S6 ✅), ui CLAUDE.md, `apps/web/src/reader/CLAUDE.md`.
+  - PR #117 merged (`--merge`); remote branch deleted. CI: Lint/Typecheck/Test/E2E green; Format + Workers = the two documented
+    deferred reds (`ci-prettier-reformat` global · `ci-workers-build-config`) — my 5 files prettier-formatted clean (`e770a98`).
+Decisions:
+  - S5 is shell-rendered (on `CanvasReaderProps`), the deliberate inverse of S4's exported pieces — doc-grounded (no Range
+    constraint + seam-contract §A:55-59 homes the props on the shell). S6 is "type + convention" with the live hook deferred
+    (no M1 reader consumer; fe-books #36 is first). Both resolved at g1, not invented.
+  - `toReaderProps` threads the FULL shipped `CanvasReaderProps` surface (the g2 note) — the shipped shell is the oracle, not
+    the illustrative §4 sketch.
+Lessons (for memory):
+  - The **Visual Gate caught its own measurement bug**: `iconRatio` read `getComputedStyle(button).color` (the button default,
+    18.58 light / 1.48 dark — implausible swing) instead of the `<svg>`'s resolved `currentColor`; fixed to target the svg →
+    real 4.39–5.27. A swing that implausible is the probe lying, not the component failing.
+  - **Stale @vida/core dist**: a phantom `schema.isEntityType` TS2339 in an untouched sibling file (identical to main) survived
+    an incremental `tsc --build`; only `rm -rf packages/core/dist + *.tsbuildinfo` then rebuild fixed it. @vida/web resolves
+    @vida/ui AND @vida/core via dist. (Sharper variant of [[editing-vida-types-needs-dist-rebuild-before-core-typecheck]].)
+  - Full-suite `@vida/web` flaked 2 shell-integration files (module-dock · App.integration) under parallel load (timeout);
+    green 9/9 in isolation — the *set* of failing files changed between runs = flake signature, not a regression.
+  - 9 pre-session dirty `.claude/` files (another session's) stashed (kept, recoverable) to merge main, then restored.
+Next session:
+  - **`/task-complete fe-codec-canvas-reader` ON MAIN** — the tracker archival (archive the task file + move the TASKS.md row to
+    Completed) belongs on main; it couldn't land here because `main` is held by the `fe-codec-controls-refinement` worktree and
+    the local branch is the merged (now dead) `fe-codec-canvas-reader`. Also delete the stale local branch after switching off it.
+  - Then the computed next head (`tracker_sync --next`): backend **mod-routines** (#64, LIF-138) — or continue the G6 frontend
+    track (remaining CODEC canvas units). Victor's call at `/begin`.
+
+---
 Date: 2026-10-07 — fix-entity-view-header SHIPPED (PR #110 merged); EntityView title-hero header rhythm
 Task: fix-entity-view-header (unfiled — no Linear) · Profile: Change Frontend Component / default (Entity Delivery Flow ②) · worktree off origin/main → PR #110 → merged (`23e9e74`)
 Goal: fix the shipped EntityView header cram (serif $display title flush against the $small subtitle); pin + apply the canonical title-hero header pattern.
@@ -6045,3 +6094,23 @@ Next session:
   - **FIRST ACTION:** fresh `/begin` off `main`; next FE head that does NOT collide with the two active sessions = **`fe-shell` #14** (dep `fe-codec-patterns` ✅). canvas-reader #9 / canvas-board #10 are taken.
   - CAUTION: do not run `tracker_sync.py --sync` from a stale worktree while the parallel sessions are in flight — `--pull` is safe, `--sync` waits for their PRs to merge.
   - Env: Node 24 via nvm for @vida/ui + @vida/web; Visual Gate = Brave via `/tmp/vg/*-gate.mjs` + `http.server 6099` on `storybook-static`; rebuild @vida/ui dist before an apps/web typecheck consuming new @vida/ui exports.
+
+---
+Date: 2026-10-07 — SESSION TYPE: operational / triage (Linear backend reconcile + local env cleanup) — no single build task
+Task: maintenance (LIF-136 Linear fix · duplicate-issue retirement · worktree/branch cleanup). Entered on branch `mod-relationships` but root had already been handed back to `main` by a parallel session.
+Goal: (1) solve "the situation in Linear about the backend", (2) feedback on both fronts, (3) clean/organize the local env so nothing is left behind (worktrees, stale docs).
+Accomplished:
+  - **LIF-136 (mod-purposes-and-goals) — status drift fixed.** Linear showed `In Progress` while code was merged (PR #98/#100) + local=Done; it was the ONLY drifted backend issue of 26 (direct GraphQL audit of all done-locally backend LIF#s). Pushed → `Done` (reused LIF-137's Done stateId).
+  - **The "blocked warning" = 3 stale relations, pruned.** `LIF-142 mod-tasks` + `LIF-138 mod-routines` each `--blocks--> LIF-136` (DF-3 violations: #64/#65 blocking #55) + a dangling `blocks→LIF-118 bucket-list [Canceled]`. All deleted via `issueRelationDelete`. Build was correct (ADR-011 deny-safe first-consumer-pull seams → purposes ships before routines/tasks); only Linear's relation layer lagged the P5 reshape.
+  - **Duplicate-issue discovery + retirement (the deeper find).** `222–226` were orphan-create duplicates of canonical `71/183/187/193/199`, minted when the G6 reshape (`186987b`) renamed task files (fe-health-core→fe-health, fe-journals→fe-home, fe-preferences→fe-settings, fe-shell-integration-wiring→fe-shell) without updating `# Linear:` headers → dangling-header orphan-create. Proven 4 ways incl. a strict edge-SUBSET check (every dup's edges ⊂ its canonical twin's → zero unique wiring lost). Fixed: 5 dups → `Canceled` + audit comments pointing to canonical; 4 canonical titles renamed to match slugs; the misdirected header remaps (stranded uncommitted in the dashboard worktree) discarded (main already references canonical IDs).
+  - **Local env cleanup.** `main` was 34 behind origin → `git pull --ff-only` to current (discarded 4 redundant status edits origin already had). Worktrees 4→2: removed dead+merged `fe-codec-dashboard` + `fe-codec-primitives-refinement`; kept the LIVE `fe-codec-flow-session` (controls) worktree; `fix-entity-view-header` self-cleaned. Pruned 25 stale merged local branches (24 `-d` + `ar-4` via `-D` after confirming 0 unique commits) + 3 stale remote-tracking refs. Preserved a live parallel session's uncommitted close-out (it committed mid-cleanup).
+  - **Feedback delivered (Part 2):** backend ~26/33 units done incl. full XS foundation; 7 feature modules left (routines, tasks, health×3, languages, skills). Frontend CODEC vocabulary near-complete (theme→patterns→viewmodes→collection→dashboard→entity-facet); flow-session in flight.
+Decisions / lessons:
+  - **`tracker_sync --verify` catches NEITHER status drift NOR stale Linear relations** (identity/existence only). A "blocked warning" on a done-built issue = status stuck (rate-limited push, never retried) + unpruned DF-3 relations the tracker never touches. Fix via direct Linear GraphQL (key from `~/dev-toolkit/.env`). Memory [[verify-misses-status-drift-and-stale-linear-relations]].
+  - **Oracle discipline held twice:** the glyph (task file) and the status (Linear) disagreed on LIF-136/relationships — the tie-breaker is commits reachable from `origin/main` + green suite, not either artifact. Same mod-projects recovery pattern.
+  - **Edge-subset is what makes a retire SAFE, not just likely-right** — only retire a duplicate once its relations are proven a subset of the survivor's.
+  - **Dynamic multi-session env:** respected active parallel sessions throughout (never touched live worktree/root edits); git's own `-d`/`worktree remove` refusals were the backstop.
+Next session:
+  - **Next backend head = `mod-routines` (#64)** (computed `#`-order == `--next`; all blockers done) or `mod-tasks` (#65). Fresh `/begin`; add-backend-component / Entity Delivery Flow ①; fresh branch/worktree off main; Node 24 for @vida/core tests.
+  - **Open follow-ups (Victor's call):** 3 unmerged stale branches `mod-knowledge` (PR #69 DID merge; ref stale), `mod-notes-2a-data-plane`, `mod-notes-rebuild` (discontinued Antigravity) → `-D` candidates once confirmed dead. Doc hygiene: `reconstructed-structure.md:241` legacy chain contradicts the `#` numbers (seeded the "purposes out of order?" confusion) — one-line fix. `main` may be a few commits behind origin (parallel merges) → next `/begin` fast-forwards.
+  - NB: did NOT run `tracker_sync --sync` this session (Linear already reconciled via direct writes; avoided re-triggering orphan-create while parallel sessions hold renamed files).
