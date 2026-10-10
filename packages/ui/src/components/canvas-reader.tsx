@@ -130,21 +130,61 @@ export interface CanvasReaderProps {
 }
 
 // ── styled hosts (unnamed → base theme; no sub-theme — the LV-3 convention; DIRECT semantic tokens) ───────────
-const CanvasRoot = styled(View, { flexDirection: 'column', gap: '$24', width: '100%', maxWidth: 1280, marginHorizontal: 'auto', padding: '$16' })
+const CanvasRoot = styled(View, {
+  flexDirection: 'column',
+  gap: '$24',
+  width: '100%',
+  maxWidth: 1280,
+  marginHorizontal: 'auto',
+  padding: '$16',
+})
 // flexWrap: at 375 the aside wraps BELOW the title so the title keeps full width (else the RNW min-width:0 flex-collapse
 // squeezes the serif $display title into mid-word breaks — Visual-Gate caught). TitleGroup floors at 240 + grows.
-const Header = styled(View, { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: '$16', flexWrap: 'wrap' })
+const Header = styled(View, {
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: '$16',
+  flexWrap: 'wrap',
+})
 const TitleGroup = styled(View, { flexGrow: 1, flexShrink: 1, flexBasis: 240, minWidth: 240, gap: '$16' }) // 16px title→meta rhythm (EC-2)
 const MetaGroup = styled(View, { gap: '$8', maxWidth: 480 })
 const HeaderAside = styled(View, { flexShrink: 0, alignItems: 'flex-end', gap: '$8' })
 // S1 Body centers the lone reading column; S2 (Contents) + S3 (rail) turn it into the 3-zone living-margin row.
-const Body = styled(View, { flexDirection: 'row', flexWrap: 'wrap', gap: '$24', alignItems: 'flex-start', justifyContent: 'center' })
-const ReadingColumn = styled(View, { flexGrow: 1, flexShrink: 1, flexBasis: 440, minWidth: 280, maxWidth: 660, gap: '$16' })
+const Body = styled(View, {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  gap: '$24',
+  alignItems: 'flex-start',
+  justifyContent: 'center',
+})
+const ReadingColumn = styled(View, {
+  flexGrow: 1,
+  flexShrink: 1,
+  flexBasis: 440,
+  minWidth: 280,
+  maxWidth: 660,
+  gap: '$16',
+})
 const SkeletonRow = styled(View, { height: 12, borderRadius: '$sm', backgroundColor: '$colorSurfaceSecondary' })
 const MetaToggles = styled(View, { flexDirection: 'row', gap: '$8', flexWrap: 'wrap' })
 // Contents panel (S2) — the left zone; flexShrink:1 (RNW never-collapse) so it stacks above the column at 375 (BR-S2-5).
-const ContentsZone = styled(View, { flexGrow: 0, flexShrink: 1, flexBasis: 260, minWidth: 220, gap: '$12', borderRightWidth: 1, borderRightColor: '$colorBorderDefault', paddingRight: '$16' })
-const PanelLabel = styled(Text, { fontFamily: '$body', fontSize: '$small', fontWeight: '500', color: '$colorTextMuted' })
+const ContentsZone = styled(View, {
+  flexGrow: 0,
+  flexShrink: 1,
+  flexBasis: 260,
+  minWidth: 220,
+  gap: '$12',
+  borderRightWidth: 1,
+  borderRightColor: '$colorBorderDefault',
+  paddingRight: '$16',
+})
+const PanelLabel = styled(Text, {
+  fontFamily: '$body',
+  fontSize: '$small',
+  fontWeight: '500',
+  color: '$colorTextMuted',
+})
 const SummaryText = styled(Text, { fontFamily: '$body', fontSize: '$small', color: '$colorTextMuted', lineHeight: 20 })
 const ChapterRowHost = styled(View, {
   flexDirection: 'row',
@@ -153,12 +193,32 @@ const ChapterRowHost = styled(View, {
   paddingVertical: '$4',
   borderRadius: '$sm',
   variants: {
-    interactive: { true: { cursor: 'pointer', hoverStyle: { backgroundColor: '$colorSurfaceSecondary' }, focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: 2 } } },
+    interactive: {
+      true: {
+        cursor: 'pointer',
+        hoverStyle: { backgroundColor: '$colorSurfaceSecondary' },
+        focusVisibleStyle: {
+          outlineColor: '$colorFocusRing',
+          outlineWidth: 2,
+          outlineStyle: 'solid',
+          outlineOffset: 2,
+        },
+      },
+    },
   } as const,
 })
 // Annotations rail (S3) — the RIGHT zone; mirrors ContentsZone (RNW never-collapse) with a LEFT divider so it stacks
 // below the column at 375 (BR-S3-8). flexShrink:1 so the title/column keep width when the rail is present.
-const RailZone = styled(View, { flexGrow: 0, flexShrink: 1, flexBasis: 280, minWidth: 220, gap: '$12', borderLeftWidth: 1, borderLeftColor: '$colorBorderDefault', paddingLeft: '$16' })
+const RailZone = styled(View, {
+  flexGrow: 0,
+  flexShrink: 1,
+  flexBasis: 280,
+  minWidth: 220,
+  gap: '$12',
+  borderLeftWidth: 1,
+  borderLeftColor: '$colorBorderDefault',
+  paddingLeft: '$16',
+})
 // Per-nature accent marker — a GRAPHICAL object (≥3:1, BR-S3-3): shape/fill distinguishes the three natures; the
 // label is the non-colour signal. All-accent ($colorBrandPrimary, the calendar-dot / list-tick graphical token).
 const NatureMarker = styled(View, {
@@ -176,10 +236,35 @@ const NatureMarker = styled(View, {
 })
 const AnnotationRowHost = styled(View, { flexDirection: 'row', gap: '$8', paddingVertical: '$8' })
 // Chapter group header = the group eyebrow (primary) + a per-chapter count (muted) — the SectionHeader eyebrow recipe.
-const ChapterEyebrow = styled(Text, { fontFamily: '$body', fontSize: '$caption', fontWeight: '600', color: '$colorTextPrimary', textTransform: 'uppercase', letterSpacing: 0.6, flexShrink: 1 })
-const NatureLabel = styled(Text, { fontFamily: '$body', fontSize: '$caption', fontWeight: '600', color: '$colorTextMuted', textTransform: 'uppercase', letterSpacing: 0.6 })
-const LocationText = styled(Text, { fontFamily: '$body', fontSize: '$caption', color: '$colorTextMuted', flexShrink: 0 })
-const AnnotationText = styled(Text, { fontFamily: '$body', fontSize: '$small', color: '$colorTextPrimary', lineHeight: 20 })
+const ChapterEyebrow = styled(Text, {
+  fontFamily: '$body',
+  fontSize: '$caption',
+  fontWeight: '600',
+  color: '$colorTextPrimary',
+  textTransform: 'uppercase',
+  letterSpacing: 0.6,
+  flexShrink: 1,
+})
+const NatureLabel = styled(Text, {
+  fontFamily: '$body',
+  fontSize: '$caption',
+  fontWeight: '600',
+  color: '$colorTextMuted',
+  textTransform: 'uppercase',
+  letterSpacing: 0.6,
+})
+const LocationText = styled(Text, {
+  fontFamily: '$body',
+  fontSize: '$caption',
+  color: '$colorTextMuted',
+  flexShrink: 0,
+})
+const AnnotationText = styled(Text, {
+  fontFamily: '$body',
+  fontSize: '$small',
+  color: '$colorTextPrimary',
+  lineHeight: 20,
+})
 const CountText = styled(Text, { fontFamily: '$body', fontSize: '$caption', color: '$colorTextMuted' })
 
 // The reading column body — degrade-never-crash. renderContent runs ONLY on success (a block is CONTENT, not self-stating).
@@ -216,7 +301,9 @@ function ReadingBody({
     return (
       <Card padding="spacious">
         <View role="status">
-          <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">Couldn’t open this book. Try again.</Text>
+          <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">
+            Couldn’t open this book. Try again.
+          </Text>
         </View>
       </Card>
     )
@@ -225,7 +312,9 @@ function ReadingBody({
     return (
       <Card padding="spacious">
         <View role="status">
-          <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">This is a physical copy — there’s no file to open here.</Text>
+          <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">
+            This is a physical copy — there’s no file to open here.
+          </Text>
         </View>
       </Card>
     )
@@ -376,7 +465,9 @@ function RailBody({
   if (state === 'error')
     return (
       <View role="status">
-        <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">Couldn’t load annotations. Try again.</Text>
+        <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">
+          Couldn’t load annotations. Try again.
+        </Text>
       </View>
     )
   const hasGroups = groups != null && groups.length > 0 && total > 0
@@ -429,7 +520,14 @@ function AnnotationRail({
   return (
     <RailZone role="region" aria-label="Annotations">
       <PanelLabel>Annotations</PanelLabel>
-      <RailBody state={state} groups={groups} total={total} railId={railId} onAddNote={onAddNote} onLinkAnnotation={onLinkAnnotation} />
+      <RailBody
+        state={state}
+        groups={groups}
+        total={total}
+        railId={railId}
+        onAddNote={onAddNote}
+        onLinkAnnotation={onLinkAnnotation}
+      />
     </RailZone>
   )
 }
@@ -475,7 +573,13 @@ function ListenBar({
   return (
     <ListenBarRow role="group" aria-label="Listen">
       {onListenToggle != null && (
-        <Button intent="ghost" size="lg" aria-label={playing ? 'Pause' : 'Listen'} aria-pressed={playing} onPress={onListenToggle}>
+        <Button
+          intent="ghost"
+          size="lg"
+          aria-label={playing ? 'Pause' : 'Listen'}
+          aria-pressed={playing}
+          onPress={onListenToggle}
+        >
           {playing ? <PauseIcon /> : <ListenIcon />}
         </Button>
       )}
@@ -550,17 +654,30 @@ export function CanvasReader({
               </Text>
             )}
             {progress != null && (
-              <HonestProgress value={progress} label={progressLabel ?? `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}% read`} />
+              <HonestProgress
+                value={progress}
+                label={progressLabel ?? `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}% read`}
+              />
             )}
             {((onToggleContents != null && hasContents) || (onToggleRail != null && hasAnnotations)) && (
               <MetaToggles>
                 {onToggleContents != null && hasContents && (
-                  <Button intent={showContents ? 'primary' : 'secondary'} size="sm" aria-pressed={showContents} onPress={onToggleContents}>
+                  <Button
+                    intent={showContents ? 'primary' : 'secondary'}
+                    size="sm"
+                    aria-pressed={showContents}
+                    onPress={onToggleContents}
+                  >
                     Contents
                   </Button>
                 )}
                 {onToggleRail != null && hasAnnotations && (
-                  <Button intent={showRail ? 'primary' : 'secondary'} size="sm" aria-pressed={showRail} onPress={onToggleRail}>
+                  <Button
+                    intent={showRail ? 'primary' : 'secondary'}
+                    size="sm"
+                    aria-pressed={showRail}
+                    onPress={onToggleRail}
+                  >
                     Annotations
                   </Button>
                 )}
@@ -578,7 +695,12 @@ export function CanvasReader({
 
       {/* Listen bar (S5) — slim persistent book-level chrome; renders only when `listen` is provided (BR-S5-1). */}
       {listen != null && (
-        <ListenBar listen={listen} listenProgress={listenProgress} listenLabel={listenLabel} onListenToggle={onListenToggle} />
+        <ListenBar
+          listen={listen}
+          listenProgress={listenProgress}
+          listenLabel={listenLabel}
+          onListenToggle={onListenToggle}
+        />
       )}
 
       {/* Body — the living-margin row: Contents panel (S2, left) ∣ reading column ∣ annotations rail (S3, right).
@@ -589,7 +711,12 @@ export function CanvasReader({
           <ReadingBody state={state} renderContent={renderContent} emptyTitle={emptyTitle} emptyAction={emptyAction} />
         </ReadingColumn>
         {showRail && (
-          <AnnotationRail groups={annotationGroups} state={annotationsState} onAddNote={onAddNote} onLinkAnnotation={onLinkAnnotation} />
+          <AnnotationRail
+            groups={annotationGroups}
+            state={annotationsState}
+            onAddNote={onAddNote}
+            onLinkAnnotation={onLinkAnnotation}
+          />
         )}
       </Body>
     </CanvasRoot>
@@ -713,7 +840,11 @@ export interface ReaderHighlightMarkProps {
 
 /** The inline highlight mark (EC-3) — a highlighted span reads as marked within the text. Use inside a <Text>. */
 export function ReaderHighlightMark({ children, ref }: ReaderHighlightMarkProps) {
-  return <HighlightMarkText ref={ref} className="vida-reader-highlight">{children}</HighlightMarkText>
+  return (
+    <HighlightMarkText ref={ref} className="vida-reader-highlight">
+      {children}
+    </HighlightMarkText>
+  )
 }
 
 export default CanvasReader

@@ -3,7 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, within } from '@testing-library/react'
 import { UIProvider } from '../provider'
 import { Text } from '@tamagui/core'
-import { CanvasReader, SelectionActions, ReaderHighlightMark, type ReaderChapter, type AnnotationGroup } from './canvas-reader'
+import {
+  CanvasReader,
+  SelectionActions,
+  ReaderHighlightMark,
+  type ReaderChapter,
+  type AnnotationGroup,
+} from './canvas-reader'
 
 // First jsdom render bears the whole Tamagui compile; scope a generous timeout (the flow-session precedent).
 vi.setConfig({ testTimeout: 15000 })
@@ -49,7 +55,9 @@ describe('CanvasReader — the Canvas: Reader shell (S1)', () => {
   })
   // access-unavailable is DISTINCT from empty (IR-NEEDS-4): a status line, NOT the EmptyState heading.
   it('unavailable ≠ empty — a distinct access status', () => {
-    const { getByRole, getByText, queryByText } = renderUI(<CanvasReader title="T" state="unavailable" aria-label="R" />)
+    const { getByRole, getByText, queryByText } = renderUI(
+      <CanvasReader title="T" state="unavailable" aria-label="R" />,
+    )
     expect(getByRole('status')).not.toBeNull()
     expect(getByText(/physical copy/)).not.toBeNull()
     expect(queryByText('Nothing to read yet')).toBeNull()
@@ -59,7 +67,11 @@ describe('CanvasReader — the Canvas: Reader shell (S1)', () => {
   it('renders a progress bar only when progress is given', () => {
     const { queryByRole, rerender } = renderUI(<CanvasReader title="T" aria-label="R" />)
     expect(queryByRole('progressbar')).toBeNull()
-    rerender(<UIProvider><CanvasReader title="T" progress={0.4} aria-label="R" /></UIProvider>)
+    rerender(
+      <UIProvider>
+        <CanvasReader title="T" progress={0.4} aria-label="R" />
+      </UIProvider>,
+    )
     expect(queryByRole('progressbar')).not.toBeNull()
   })
 
@@ -79,7 +91,9 @@ const CHAPTERS: ReaderChapter[] = [
 describe('CanvasReader — Contents panel (S2)', () => {
   // ── BR-S2-1/2: the panel renders the summary + the TOC ──────────────────────────────
   it('renders the About summary + every chapter', () => {
-    const { getByText } = renderUI(<CanvasReader title="T" aria-label="R" summary="A short synopsis." chapters={CHAPTERS} />)
+    const { getByText } = renderUI(
+      <CanvasReader title="T" aria-label="R" summary="A short synopsis." chapters={CHAPTERS} />,
+    )
     expect(getByText('A short synopsis.')).not.toBeNull()
     expect(getByText('2. Beta')).not.toBeNull()
     expect(getByText('3. Gamma')).not.toBeNull()
@@ -95,7 +109,9 @@ describe('CanvasReader — Contents panel (S2)', () => {
   // ── BR-S2-3: rows are pressable ONLY when onJumpToChapter is given ───────────────────
   it('emits onJumpToChapter when a row is pressed', () => {
     const onJump = vi.fn()
-    const { getByText } = renderUI(<CanvasReader title="T" aria-label="R" chapters={CHAPTERS} onJumpToChapter={onJump} />)
+    const { getByText } = renderUI(
+      <CanvasReader title="T" aria-label="R" chapters={CHAPTERS} onJumpToChapter={onJump} />,
+    )
     const btn = getByText('3. Gamma').closest('[role="button"]') as HTMLElement
     expect(btn).not.toBeNull()
     fireEvent.click(btn)
@@ -111,13 +127,19 @@ describe('CanvasReader — Contents panel (S2)', () => {
     const onToggle = vi.fn()
     const { getByRole, queryByRole, rerender } = renderUI(<CanvasReader title="T" aria-label="R" chapters={CHAPTERS} />)
     expect(queryByRole('button', { name: 'Contents' })).toBeNull()
-    rerender(<UIProvider><CanvasReader title="T" aria-label="R" chapters={CHAPTERS} onToggleContents={onToggle} /></UIProvider>)
+    rerender(
+      <UIProvider>
+        <CanvasReader title="T" aria-label="R" chapters={CHAPTERS} onToggleContents={onToggle} />
+      </UIProvider>,
+    )
     const toggle = getByRole('button', { name: 'Contents' })
     fireEvent.click(toggle)
     expect(onToggle).toHaveBeenCalled()
   })
   it('hides the panel when contentsOpen is false', () => {
-    const { queryByText } = renderUI(<CanvasReader title="T" aria-label="R" summary="S" chapters={CHAPTERS} contentsOpen={false} />)
+    const { queryByText } = renderUI(
+      <CanvasReader title="T" aria-label="R" summary="S" chapters={CHAPTERS} contentsOpen={false} />,
+    )
     expect(queryByText('2. Beta')).toBeNull()
   })
 
@@ -131,13 +153,18 @@ describe('CanvasReader — Contents panel (S2)', () => {
 
 const ANNOS: AnnotationGroup[] = [
   {
-    id: 'c1', title: 'Chapter One',
+    id: 'c1',
+    title: 'Chapter One',
     annotations: [
       { id: 'h1', nature: 'highlight', text: 'Highlighted span', location: 'Ch. 1 · p. 3' },
       { id: 'b1', nature: 'bookmark', text: 'Bookmark here', location: 'Ch. 1 · p. 5' },
     ],
   },
-  { id: 'c2', title: 'Chapter Two', annotations: [{ id: 'q1', nature: 'quote', text: 'A quote', location: 'Ch. 2 · p. 12' }] },
+  {
+    id: 'c2',
+    title: 'Chapter Two',
+    annotations: [{ id: 'q1', nature: 'quote', text: 'A quote', location: 'Ch. 2 · p. 12' }],
+  },
 ]
 
 describe('CanvasReader — margin rail (S3)', () => {
@@ -153,7 +180,13 @@ describe('CanvasReader — margin rail (S3)', () => {
   // ── BR-S3-2 (IR-1, EC-5): a highlight is NEVER linkable, even with the handlers passed ──
   it('IR-1: a highlight shows NO Add-note/Link; a bookmark & a quote show both', () => {
     const { getByText } = renderUI(
-      <CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} onAddNote={() => {}} onLinkAnnotation={() => {}} />,
+      <CanvasReader
+        title="T"
+        aria-label="R"
+        annotationGroups={ANNOS}
+        onAddNote={() => {}}
+        onLinkAnnotation={() => {}}
+      />,
     )
     const hiRow = getByText('Highlighted span').closest('[role="listitem"]') as HTMLElement
     expect(within(hiRow).queryByRole('button', { name: 'Add note' })).toBeNull()
@@ -168,7 +201,13 @@ describe('CanvasReader — margin rail (S3)', () => {
     const onAddNote = vi.fn()
     const onLink = vi.fn()
     const { getByText } = renderUI(
-      <CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} onAddNote={onAddNote} onLinkAnnotation={onLink} />,
+      <CanvasReader
+        title="T"
+        aria-label="R"
+        annotationGroups={ANNOS}
+        onAddNote={onAddNote}
+        onLinkAnnotation={onLink}
+      />,
     )
     const bmRow = getByText('Bookmark here').closest('[role="listitem"]') as HTMLElement
     fireEvent.click(within(bmRow).getByRole('button', { name: 'Add note' }))
@@ -201,7 +240,9 @@ describe('CanvasReader — margin rail (S3)', () => {
   // ── BR-S3-7: the toggle renders only with a handler; railOpen hides the rail; aria-pressed reflects state ──
   it('renders the Annotations toggle only with a handler + fires it (aria-pressed)', () => {
     const onToggle = vi.fn()
-    const { getByRole, queryByRole, rerender } = renderUI(<CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} />)
+    const { getByRole, queryByRole, rerender } = renderUI(
+      <CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} />,
+    )
     expect(queryByRole('button', { name: 'Annotations' })).toBeNull()
     rerender(
       <UIProvider>
@@ -214,7 +255,9 @@ describe('CanvasReader — margin rail (S3)', () => {
     expect(onToggle).toHaveBeenCalled()
   })
   it('hides the rail when railOpen is false', () => {
-    const { queryByText } = renderUI(<CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} railOpen={false} />)
+    const { queryByText } = renderUI(
+      <CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} railOpen={false} />,
+    )
     expect(queryByText('Bookmark here')).toBeNull()
   })
 
@@ -238,12 +281,19 @@ describe('CanvasReader — selection affordance (S4)', () => {
 
   // ── BR-S4-1: each action emits its intent ──
   it('emits each selection intent on press', () => {
-    const h = vi.fn(), q = vi.fn(), b = vi.fn(), l = vi.fn()
+    const h = vi.fn(),
+      q = vi.fn(),
+      b = vi.fn(),
+      l = vi.fn()
     const { getByRole } = renderUI(<SelectionActions onHighlight={h} onQuote={q} onBookmark={b} onListenFrom={l} />)
-    fireEvent.click(getByRole('button', { name: 'Highlight' })); expect(h).toHaveBeenCalled()
-    fireEvent.click(getByRole('button', { name: 'Quote' })); expect(q).toHaveBeenCalled()
-    fireEvent.click(getByRole('button', { name: 'Bookmark' })); expect(b).toHaveBeenCalled()
-    fireEvent.click(getByRole('button', { name: 'Listen from here' })); expect(l).toHaveBeenCalled()
+    fireEvent.click(getByRole('button', { name: 'Highlight' }))
+    expect(h).toHaveBeenCalled()
+    fireEvent.click(getByRole('button', { name: 'Quote' }))
+    expect(q).toHaveBeenCalled()
+    fireEvent.click(getByRole('button', { name: 'Bookmark' }))
+    expect(b).toHaveBeenCalled()
+    fireEvent.click(getByRole('button', { name: 'Listen from here' }))
+    expect(l).toHaveBeenCalled()
   })
 
   // ── BR-S4-1: render-when-handler — an action is absent without its handler ──
@@ -319,7 +369,9 @@ describe('CanvasReader — listen bar (S5)', () => {
   })
 
   it('playing omits the progressbar when listenProgress is absent (honest, no fake fill)', () => {
-    const { queryByRole } = renderUI(<CanvasReader title="T" aria-label="R" listen="playing" onListenToggle={() => {}} />)
+    const { queryByRole } = renderUI(
+      <CanvasReader title="T" aria-label="R" listen="playing" onListenToggle={() => {}} />,
+    )
     expect(queryByRole('progressbar')).toBeNull()
   })
 

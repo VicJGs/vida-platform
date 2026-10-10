@@ -85,7 +85,9 @@ describe('mapChapters — the TOC (EC-13)', () => {
   })
 
   it('omits pageRef when start_page is null', () => {
-    const out = mapChapters([{ id: 'x', chapter_number: 1, title: 'No pages', start_page: null, end_page: null, is_completed: false }])
+    const out = mapChapters([
+      { id: 'x', chapter_number: 1, title: 'No pages', start_page: null, end_page: null, is_completed: false },
+    ])
     expect(out[0].pageRef).toBeUndefined()
   })
 })
@@ -172,12 +174,16 @@ describe('toReaderProps — the assembler → the shipped CanvasReaderProps surf
   })
 
   it('explicit state overrides the access-derived state; absent file → undefined state', () => {
-    expect(toReaderProps({ title: 'T', state: 'loading', file: { status: 'stored', fileRef: 'x' } }).state).toBe('loading')
+    expect(toReaderProps({ title: 'T', state: 'loading', file: { status: 'stored', fileRef: 'x' } }).state).toBe(
+      'loading',
+    )
     expect(toReaderProps({ title: 'T' }).state).toBeUndefined()
   })
 
   it('explicit listen (runtime idle/playing) wins over the availability map', () => {
-    expect(toReaderProps({ title: 'T', listen: 'playing', listenResult: { status: 'ai-unavailable' } }).listen).toBe('playing')
+    expect(toReaderProps({ title: 'T', listen: 'playing', listenResult: { status: 'ai-unavailable' } }).listen).toBe(
+      'playing',
+    )
   })
 })
 

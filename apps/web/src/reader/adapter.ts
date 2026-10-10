@@ -39,7 +39,9 @@ export type MappedPosition =
   | { status: 'synced'; position: string; sourceAssetId: string }
   | { status: 'not-synced'; nativePosition: string | null }
 /** `convertToSpeech`/`attachPhoto` outcome (types.ts:446-448). */
-export type OcrResult = { status: 'ready'; position: string; source: 'ai' } | { status: 'ai-unavailable'; reason?: string }
+export type OcrResult =
+  | { status: 'ready'; position: string; source: 'ai' }
+  | { status: 'ai-unavailable'; reason?: string }
 /** The three annotation natures (types.ts:151) — identity-equal to the shell's `Nature`. */
 export type AnnKind = 'bookmark' | 'highlight' | 'quote'
 
@@ -82,7 +84,9 @@ function parsePage(position: string | null): number | undefined {
 /** Find the chapter whose `[start_page, end_page]` holds `page` (`end_page` null ⇒ open-ended). */
 function chapterForPage(page: number | undefined, chapters: readonly ChapterInput[]): ChapterInput | undefined {
   if (page == null) return undefined
-  return chapters.find((c) => c.start_page != null && page >= c.start_page && (c.end_page == null || page <= c.end_page))
+  return chapters.find(
+    (c) => c.start_page != null && page >= c.start_page && (c.end_page == null || page <= c.end_page),
+  )
 }
 
 /** `position` + TOC → a pre-resolved "Ch. N · p. P" breadcrumb + `{chapterId, page}` (EC-14 / decision 3 middle-dot).
@@ -125,7 +129,10 @@ const UNPLACED_GROUP_ID = 'unplaced'
 
 /** Annotations → `AnnotationGroup[]` PRE-GROUPED by resolved chapter in TOC order (the shell never groups, BR-S3-1); an
  *  unresolved / range-unmatched annotation falls into a trailing "Unplaced" group. */
-export function groupAnnotations(anns: readonly AnnotationInput[], chapters: readonly ChapterInput[]): AnnotationGroup[] {
+export function groupAnnotations(
+  anns: readonly AnnotationInput[],
+  chapters: readonly ChapterInput[],
+): AnnotationGroup[] {
   const byChapter = new Map<string, ReaderAnnotation[]>()
   const unplaced: ReaderAnnotation[] = []
   for (const a of anns) {
