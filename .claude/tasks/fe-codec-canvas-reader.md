@@ -30,4 +30,10 @@ Delivery docs: `docs/specs/foundation/fe-codec-canvas-reader/delivery/`
 - [ ] S6 — apps/web Books↔Reader adapter (display-resolve) — EC-14 (Verification Gate)
 
 ## Route History
-- 2026-10-09 — front matter (interpretation·envision·decomposition) gated + approved; building S1.
+| Step | Detour | Why | Resolved |
+|------|--------|-----|----------|
+| Envision | Greybox capture: Brave CLI `--screenshot` hangs | Known env issue (repo gate uses Playwright/CDP, not CLI) | Switched to Playwright (`playwright@1.62.1`) driving Brave via `executablePath`; full-page screenshots |
+| Envision | Victor added 3 shape reqs (icons not emoji · summary+TOC · N-annotations anchored book→chapter→page→line) | Vision review | Folded into greybox round-2; surfaced 2 schema realities (summary=Notes page · anchor=display-resolve) — both doc-fixed |
+| S2 Visual Gate | serif `$display` title broke MID-WORD at 375 | RNW `min-width:0` flex-collapse squeezed TitleGroup under the aside | Header `flexWrap` + `TitleGroup minWidth:240` + aside `flexShrink:0` (benefits S1 too) |
+
+- 2026-10-09 — front matter gated+approved → S1 built+gated (`a9dfe21`) → S2 built+gated (`fcad3b8`). Next: S3 margin rail.
