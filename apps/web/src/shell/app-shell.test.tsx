@@ -3,8 +3,8 @@
 // top strip (banner) + full-bleed centered Content + an overlay host. `__bp` drives the breakpoint deterministically
 // (jsdom has no layout engine). We assert the frame regions/landmarks (EC-7/8/9), the serif wordmark, the System/Modules
 // panel toggles + their pressed state wiring, the injection slots (#15/#16/#17), and the reserved-strip reflow.
-import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { AppShell } from './app-shell'
 import { useAppShellUIStore } from '../stores/app-shell-ui-store'
 import { renderInShell } from './test-router'
@@ -180,6 +180,63 @@ describe('AppShell — docked panel composition (S3)', () => {
     fireEvent.keyDown(screen.getByRole('dialog', { name: 'Modules' }), { key: 'Escape' })
     expect(container.querySelector('[data-panel="modules"]')).toBeNull() // closed
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Modules' }))
+  })
+})
+
+describe('AppShell — dock-together + persist seam (S5)', () => {
+  it('docks two panels at the SAME edge together as ONE cluster, content beside (EC-4)', async () => {
+    useAppShellUIStore.setState({
+      placement: {
+        system: { mode: 'dock', edge: 'left', open: true },
+        modules: { mode: 'dock', edge: 'left', open: true },
+      },
+    })
+    const { container } = await renderShell('desktop')
+    const clusters = container.querySelectorAll('[data-dock-edge="left"]')
+    expect(clusters.length).toBe(1) // one shared-edge cluster, not two independent strips
+    const cluster = clusters[0]!
+    expect(cluster.querySelector('[data-panel="system"]')).not.toBeNull()
+    expect(cluster.querySelector('[data-panel="modules"]')).not.toBeNull()
+    expect(screen.getByTestId('outlet')).not.toBeNull() // Content still beside
+  })
+
+  it('keeps panels at DIFFERENT edges in separate clusters', async () => {
+    useAppShellUIStore.setState({
+      placement: {
+        system: { mode: 'dock', edge: 'left', open: true },
+        modules: { mode: 'dock', edge: 'top', open: true },
+      },
+    })
+    const { container } = await renderShell('desktop')
+    expect(container.querySelector('[data-dock-edge="left"]')).not.toBeNull()
+    expect(container.querySelector('[data-dock-edge="top"]')).not.toBeNull()
+  })
+
+  it('hydrates placement from shellPrefs on COLD boot (persist-read seam wired)', async () => {
+    const prefs = vi.fn(() =>
+      Promise.resolve({ ...DEFAULT_PLACEMENT, modules: { mode: 'dock' as const, edge: 'left' as const, open: true } }),
+    )
+    await renderInShell(
+      <AppShell __bp="desktop" shellPrefs={prefs}>
+        <div data-testid="outlet">content</div>
+      </AppShell>,
+    )
+    await waitFor(() => expect(useAppShellUIStore.getState().placement.modules.open).toBe(true))
+    expect(prefs).toHaveBeenCalledTimes(1)
+  })
+
+  it('does NOT clobber an already-set arrangement — the cold-boot guard skips the read (B1)', async () => {
+    useAppShellUIStore.setState({
+      placement: { ...DEFAULT_PLACEMENT, system: { mode: 'dock', edge: 'right', open: true } },
+    })
+    const prefs = vi.fn(() => Promise.resolve(DEFAULT_PLACEMENT)) // would reset system if it ran
+    await renderInShell(
+      <AppShell __bp="desktop" shellPrefs={prefs}>
+        <div data-testid="outlet">content</div>
+      </AppShell>,
+    )
+    expect(prefs).not.toHaveBeenCalled() // guard saw a non-default arrangement → skipped the read
+    expect(useAppShellUIStore.getState().placement.system.open).toBe(true) // not clobbered
   })
 
   it('the panel ✕-close toggles the panel shut (focus returns to the bar toggle, N2)', async () => {

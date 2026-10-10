@@ -49,6 +49,14 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   bar toggles go `tabIndex={-1}` (complete the drawer's trap; keyboard/SR dismiss = Esc; pointer re-toggle still works) +
   `aria-haspopup="dialog"` in float mode; the disclosure widened to `aria-expanded={open}` (both modes render a region).
   Concurrent floats are UI-unreachable (inert blocks reaching a 2nd Float control) → coordinated multi-float is S5.
+  **S5 (finale):** `foldDocked` groups docked panels **by edge** → **dock-together** (EC-4): panels sharing an edge render
+  as ONE `data-dock-edge` cluster stacked along the cross axis (L/R→column, T/B→row), content-fit, Content beside;
+  different edges nest (PANEL_IDS-first-seen order). The **persist-read seam** is wired: `AppShell` gains `shellPrefs?:
+  ShellPrefsRead` (default `stubShellPrefs`) + a **once, cold-boot-only** hydration effect (`hydratedRef` + applies only
+  while `getState().placement === DEFAULT_PLACEMENT` — never clobbers a set arrangement; no `active`-cleanup so it's
+  StrictMode-safe). Live `nav_preferences` read/write = first consumer (envision L5). One responsive model, **no mobile
+  auto-switch** (dock/float choice IS the model; M7) — a docked panel at 375 stays content-fit-narrow (user floats for a
+  near-full sheet). _(fe-shell ②/#14 COMPLETE — S1–S5; PR merges to main.)_
 - `shell-panel.tsx` (fe-shell #14, S3) — **`ShellPanel`**, the DOCKED nav panel (A). Presentational + state-as-prop
   (reads `placement`, emits `onSetMode`/`onSetEdge`/`onClose`; app wires the store). `modules` → `<nav aria-label>`,
   `system` → `<aside aria-label>` (semantic landmark via `styled(View,{render})`). **Inline flush** at its edge

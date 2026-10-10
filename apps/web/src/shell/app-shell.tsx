@@ -11,8 +11,9 @@ import { styled, Text, View, useMedia } from '@tamagui/core'
 import { Button } from '@vida/ui'
 import { useAppShellUIStore } from '../stores/app-shell-ui-store'
 import { type Breakpoint } from './breakpoints'
-import { CONTENT_MAX_WIDTH, LAYERING, PANEL_IDS, contentGutterAt, overlayModeAt, reservedTopInset, type PanelId } from './regions'
+import { CONTENT_MAX_WIDTH, DEFAULT_PLACEMENT, LAYERING, PANEL_IDS, contentGutterAt, overlayModeAt, reservedTopInset, type PanelEdge, type PanelId } from './regions'
 import { ShellPanel, panelDomId } from './shell-panel'
+import { stubShellPrefs, type ShellPrefsRead } from './shell-prefs'
 
 // Semantic landmarks — `render: '<tag>'` makes the styled View emit a real HTML element (the UI-1 Card header/footer
 // precedent; a runtime `tag` prop is NOT honoured). The top strip is a top-level `<header>` → `role="banner"`; the
@@ -50,6 +51,9 @@ export interface AppShellProps {
   hudSlot?: ReactNode
   /** #17 — ⌘K / modals. Mounted in the overlay host; self-portaling overlays still render to `<body>` (S3-BR-i). */
   overlaySlot?: ReactNode
+  /** The `nav_preferences` placement-read seam (S5). Default = the M1 stub (→ DEFAULT). The live `nav_preferences`
+   *  provider swaps in here at the first consumer (envision L5); write-back is deferred (seam-contract §D). */
+  shellPrefs?: ShellPrefsRead
   /** Test/story-only breakpoint override — bypasses `useMedia()` so jsdom can assert reflow deterministically. */
   __bp?: Breakpoint
 }
@@ -64,7 +68,7 @@ function useActiveBreakpoint(override?: Breakpoint): Breakpoint {
   return 'mobile'
 }
 
-export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, __bp }: AppShellProps) {
+export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, shellPrefs = stubShellPrefs, __bp }: AppShellProps) {
   const bp = useActiveBreakpoint(__bp)
   const gutter = contentGutterAt(bp)
   const topInset = reservedTopInset(bp) // EC-7 — the reserved strip's height; content insets below it
@@ -76,6 +80,23 @@ export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, __bp }: App
   const togglePanel = useAppShellUIStore((s) => s.togglePanel)
   const setPanelMode = useAppShellUIStore((s) => s.setPanelMode)
   const setPanelEdge = useAppShellUIStore((s) => s.setPanelEdge)
+  const setPlacement = useAppShellUIStore((s) => s.setPlacement)
+
+  // S5 · persist-read seam — hydrate the store from `shellPrefs` (nav_preferences) ONCE, COLD-BOOT ONLY (B1): apply the
+  // read result only while the store is still at the initial DEFAULT_PLACEMENT ref, so an already-set arrangement (a
+  // live consumer or a test that setState'd placement) is NEVER clobbered by the async stub. M1 stub → DEFAULT (a
+  // functional no-op that activates the read path); the live provider + write-back land at the first consumer (L5).
+  const hydratedRef = useRef(false)
+  useEffect(() => {
+    if (hydratedRef.current) return // run once (also survives StrictMode's dev double-invoke)
+    hydratedRef.current = true
+    if (useAppShellUIStore.getState().placement !== DEFAULT_PLACEMENT) return // untouched-only
+    // No `active`/cleanup cancel — StrictMode's fake cleanup would cancel the real read; the re-check below is the guard
+    // (a zustand write is safe regardless of mount state), so the live seam hydrates in dev AND prod.
+    void shellPrefs().then((p) => {
+      if (useAppShellUIStore.getState().placement === DEFAULT_PLACEMENT) setPlacement(p)
+    })
+  }, [shellPrefs, setPlacement])
 
   // Refs to the bar toggles so a docked panel's ✕-close returns focus to its originating toggle (§XIV focus mgmt, N2).
   const toggleRefs = useRef<Record<PanelId, HTMLButtonElement | null>>({ system: null, modules: null })
@@ -103,38 +124,55 @@ export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, __bp }: App
     }
   }, [anyFloatOpen])
 
-  // Fold the open+docked panels AROUND the content so it sits beside them (EC-2). Each wrapper is a flex row (L/R edges)
-  // or column (T/B edges); the panel is content-fit (flexGrow/Shrink:0, set in ShellPanel) and Content keeps the free
-  // space. ⚠ RNW flex-collapse guard (BR-S3-9): every content-carrying flex child keeps `flex=1 minHeight=0 minWidth=0`
-  // so a `column` flip can't collapse it to height 0 ([[flex1-child-collapses-to-height-0-in-column-under-rnw]]).
+  // Render one DOCKED panel (ShellPanel, dock branch). Used inside an edge cluster.
+  function renderDockedPanel(id: PanelId): ReactNode {
+    return (
+      <ShellPanel
+        key={id}
+        id={id}
+        title={PANEL_LABEL[id]}
+        placement={placement[id]}
+        onSetMode={(m) => setPanelMode(id, m)}
+        onSetEdge={(e) => setPanelEdge(id, e)}
+        onClose={() => {
+          togglePanel(id)
+          toggleRefs.current[id]?.focus()
+        }}
+      >
+        <PanelBodyPlaceholder id={id} />
+      </ShellPanel>
+    )
+  }
+
+  // Fold the open+docked panels AROUND the content so it sits beside them (EC-2), DOCK-TOGETHER by edge (EC-4): panels
+  // sharing an edge render as ONE cluster, stacked along the cross axis (L/R edge → a column of panels; T/B → a row);
+  // the cluster is content-fit (flexGrow/Shrink:0) and sits flush at the edge, Content beside. Different-edge groups nest
+  // (PANEL_IDS-first-seen edge order). ⚠ RNW flex-collapse guard (BR-S3-9): every content-carrying flex child keeps
+  // `flex=1 minHeight=0 minWidth=0` so a `column` flip can't collapse it to height 0.
   function foldDocked(base: ReactNode): ReactNode {
-    let node = base
+    const byEdge = new Map<PanelEdge, PanelId[]>()
     for (const id of PANEL_IDS) {
       const p = placement[id]
       if (p.mode !== 'dock' || !p.open) continue // float render = S4; closed panels don't mount
-      const isSideBySide = p.edge === 'left' || p.edge === 'right' // row; top/bottom → column
-      const panelFirst = p.edge === 'left' || p.edge === 'top'
-      const panel = (
-        <ShellPanel
-          key={id}
-          id={id}
-          title={PANEL_LABEL[id]}
-          placement={p}
-          onSetMode={(m) => setPanelMode(id, m)}
-          onSetEdge={(e) => setPanelEdge(id, e)}
-          onClose={() => {
-            togglePanel(id)
-            toggleRefs.current[id]?.focus()
-          }}
-        >
-          <PanelBodyPlaceholder id={id} />
-        </ShellPanel>
+      const list = byEdge.get(p.edge)
+      if (list) list.push(id)
+      else byEdge.set(p.edge, [id])
+    }
+    let node = base
+    for (const [edge, ids] of byEdge) {
+      const isSideBySide = edge === 'left' || edge === 'right' // container row; T/B → column
+      const panelFirst = edge === 'left' || edge === 'top'
+      // The dock-together cluster: panels at this edge stacked along the CROSS axis of the container.
+      const cluster = (
+        <View key={edge} data-dock-edge={edge} flexGrow={0} flexShrink={0} flexDirection={isSideBySide ? 'column' : 'row'}>
+          {ids.map((id) => renderDockedPanel(id))}
+        </View>
       )
       node = (
         <View flex={1} minHeight={0} minWidth={0} flexDirection={isSideBySide ? 'row' : 'column'}>
-          {panelFirst ? panel : null}
+          {panelFirst ? cluster : null}
           {node}
-          {panelFirst ? null : panel}
+          {panelFirst ? null : cluster}
         </View>
       )
     }
