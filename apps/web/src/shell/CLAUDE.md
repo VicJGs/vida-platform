@@ -21,6 +21,15 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 - `shell-prefs.ts` (fe-shell #14, S1) — `ShellPrefsRead = ProviderRead<ShellPlacement>` + `stubShellPrefs` (M1 → DEFAULT;
   live `nav_preferences` read/write = first consumer, envision L5). Panel *arrangement* is ephemeral Zustand
   (`app-shell-ui-store.placement`, BR-RT-6 "panel state"); *persistence* is this deferred seam (never a raw table).
+- `spaces-scope.ts` (fe-shell-scope #15, S1) — `SpacesScopeRead = ProviderRead<SpaceOption[]>` + `stubSpacesScope`
+  (M1 → `[]` ⇒ global-only). The scope selector's space-list read seam; `SpacesService` has no `listSpaces` yet, so the
+  live provider swaps in at the first consumer (the `shell-prefs` deferred-seam precedent). Active scope state is the
+  ephemeral `stores/scope-store.ts` (`activeSpaceId|null`, null = global; emit-to-seam — no live view consumer in M1.0).
+- `scope-selector.tsx` (fe-shell-scope #15, S1) — the `Spaces:` switcher (EC-1/EC-2). Composes `@vida/ui` `Menu`+`Button`
+  (adds NO component); reads the list via `SpacesScopeRead` (React Query) + the scope store. DEGRADES never crashes:
+  populated(Menu) / loading(busy) / empty(global-only disabled) / error(calm `role=status`). **Not yet wired into the
+  bar — S3 mounts it in `bar1Slot` + the System panel body** (`systemPanelSlot` seam). Visual Gate PASS (5 states ×
+  light/dark/warm-dark × 375/1440, measured 0 AA fails).
 
 **Chrome (UI-4 — the rendered app shell):**
 - `app-shell.tsx` — **fe-shell #14 · S2 reshaped the frame** to the CODEC dock⇄float inspector model (envision M1–M7).
