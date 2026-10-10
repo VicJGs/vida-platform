@@ -40,3 +40,41 @@ describe('app-shell UI store (Zustand — UI state only, BR-RT-6)', () => {
     expect(useAppShellUIStore.getState().isMobileNavOpen).toBe(true)
   })
 })
+
+// fe-shell (#14) — the dock⇄float panel arrangement half of the store (ephemeral UI; nav_preferences persistence deferred)
+describe('app-shell UI store — panel placement (fe-shell #14)', () => {
+  beforeEach(() =>
+    useAppShellUIStore.setState({
+      placement: { system: { mode: 'dock', edge: 'left', open: false }, modules: { mode: 'dock', edge: 'left', open: false } },
+    }),
+  )
+
+  it('defaults both panels closed, docked left', () => {
+    expect(useAppShellUIStore.getState().placement.modules).toEqual({ mode: 'dock', edge: 'left', open: false })
+  })
+
+  it('toggles one panel open without touching the other', () => {
+    useAppShellUIStore.getState().togglePanel('modules')
+    expect(useAppShellUIStore.getState().placement.modules.open).toBe(true)
+    expect(useAppShellUIStore.getState().placement.system.open).toBe(false)
+  })
+
+  it('sets a panel mode (dock⇄float) independently', () => {
+    useAppShellUIStore.getState().setPanelMode('modules', 'float')
+    expect(useAppShellUIStore.getState().placement.modules.mode).toBe('float')
+    expect(useAppShellUIStore.getState().placement.system.mode).toBe('dock')
+  })
+
+  it('rearranges a panel to any edge (incl. bottom)', () => {
+    useAppShellUIStore.getState().setPanelEdge('system', 'bottom')
+    expect(useAppShellUIStore.getState().placement.system.edge).toBe('bottom')
+  })
+
+  it('hydrates the whole placement (the nav_preferences stub path)', () => {
+    useAppShellUIStore.getState().setPlacement({
+      system: { mode: 'float', edge: 'right', open: true },
+      modules: { mode: 'dock', edge: 'top', open: false },
+    })
+    expect(useAppShellUIStore.getState().placement.system).toEqual({ mode: 'float', edge: 'right', open: true })
+  })
+})

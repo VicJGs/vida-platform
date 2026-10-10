@@ -13,11 +13,76 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   `SIDE_PADDING`, `TOUCH_TARGET`, `PADDING_SCALE`, `breakpointForWidth()`, `TAMAGUI_MEDIA` (the reserved createMedia seam).
 - `regions.ts` — `ShellRegion`, `DockState`, `OverlayMode`, `DOCK_STATE`, `OVERLAY_MODE`, `GLOBAL_BAR_MODE`,
   `REGION_VISIBILITY`, `LAYERING`, `ShellUIStateContract`, the `*At()` predicates, `SHELL_REGIONS`.
+  **fe-shell #14 (dock⇄float panel model, S1):** `PanelId`/`PanelMode`/`PanelEdge`/`PanelPlacement`/`ShellPlacement` ·
+  `DEFAULT_PLACEMENT` (both closed, docked-left — M1/L1) · `PANEL_IDS` · `panelAxis` (L/R=vertical, T/B=horizontal) ·
+  `isOverlay` (float⇒overlay) · `reservedTopInset(bp)` (the EC-7 top strip, 52/56 on-grid). The two nav bars are
+  macOS/iPadOS-inspector panels: each toggles docked (inline, content beside) ⇄ floating (overlay+scrim), rearrangeable
+  to any edge. Governing model: `docs/specs/foundation/fe-shell/delivery/envision.md` M1–M7.
+- `shell-prefs.ts` (fe-shell #14, S1) — `ShellPrefsRead = ProviderRead<ShellPlacement>` + `stubShellPrefs` (M1 → DEFAULT;
+  live `nav_preferences` read/write = first consumer, envision L5). Panel *arrangement* is ephemeral Zustand
+  (`app-shell-ui-store.placement`, BR-RT-6 "panel state"); *persistence* is this deferred seam (never a raw table).
 
 **Chrome (UI-4 — the rendered app shell):**
-- `app-shell.tsx` (S1) — the `AppShell` frame: 5 regions in the responsive layout, `useMedia()` breakpoint resolution,
-  the bounded-viewport frame (`height:100vh`+`overflow:hidden`; dock & content scroll independently), the mobile
-  drawer's open-transform + scrim. Mounted in `routes.tsx` `RootComponent` wrapping `<Outlet/>`.
+- `app-shell.tsx` — **fe-shell #14 · S2 reshaped the frame** to the CODEC dock⇄float inspector model (envision M1–M7).
+  The `AppShell` is now a bounded-viewport column (`height:100vh`+`overflow:hidden`): a **reserved top strip** (`<header>`
+  → `role="banner"`, `reservedTopInset(bp)` 52/56 tall, `data-top-inset`) carrying the serif `$display` **"Vida"** wordmark +
+  **System/Modules** panel toggles (`aria-pressed`←`placement[id].open`, `onPress`→`togglePanel`, S1 store) + the `bar1Slot`
+  (#15) / `hudSlot` (#16) slots → a full-bleed **Content** `<main>` (`children`, 1280-centered + per-bp gutters, independent
+  scroll) → an **overlay host** (`overlaySlot`, `pointerEvents:none`, `$overlay` z). Props: `children`/`bar1Slot`/`hudSlot`/
+  `overlaySlot`/`__bp` (seam-contract §C). Mounted in `routes.tsx` `RootComponent` with `overlaySlot={<CommandBar/>}`
+  (⌘K reuses ui-4/ux-2 — CommandBar owns its keybind + self-portals). The **dock⇄float PANELS** the toggles reveal are
+  S3 (docked-inline) / S4 (floating-overlay); #15/#16/#17 contents + live `nav_preferences` persistence are deferred.
+  _(Superseded S1 five-region frame: left module dock + global bar + spaces bar + mobile drawer — `module-dock.tsx`/
+  `global-bar.tsx` stay as files, to be re-homed as panel bodies / #15 content in S3+.)_
+  **fe-shell #14 · S3 reshaped app-shell to COMPOSE the docked panels** (`shell-panel.tsx`, below): the below-strip
+  region now folds every open+**docked** panel AROUND the Content (`foldDocked`) so Content sits beside it — a flex
+  **row** (left/right edges) or **column** (top/bottom edges), panel-first for left/top. Content stays `flex=1
+  minHeight=0 minWidth=0` + the panel is content-fit (`flexGrow/Shrink=0`) — the RNW flex-collapse guard for the
+  row↔column flip ([[flex1-child-collapses-to-height-0-in-column-under-rnw]], BR-S3-9). The System/Modules bar toggles
+  upgraded from `aria-pressed` to a **disclosure**: `aria-expanded={dockedOpen}` (honest — true iff a docked panel is
+  actually rendered) + `aria-controls={panelDomId(id)}` when docked-open; app-shell holds `toggleRefs` so a panel's
+  ✕-close returns focus to its bar toggle (§XIV). Panel bodies in #14 = an empty-but-functional `PanelBodyPlaceholder`
+  (envision L4; real module nav / #15 surfaces deferred). Float render = S4.
+  **S4:** the below-strip region wraps the content/docked composition in a ref'd wrapper (`bgRef`) + adds an absolute
+  **float layer** (`$overlay`) that mounts a `ShellPanel` (float) per open+floating panel. While any float is open:
+  the `bgRef` wrapper is `inert`+`aria-hidden` (modal background, NOT the top strip → re-toggle stays live, G1), and the
+  bar toggles go `tabIndex={-1}` (complete the drawer's trap; keyboard/SR dismiss = Esc; pointer re-toggle still works) +
+  `aria-haspopup="dialog"` in float mode; the disclosure widened to `aria-expanded={open}` (both modes render a region).
+  Concurrent floats are UI-unreachable (inert blocks reaching a 2nd Float control) → coordinated multi-float is S5.
+  **S5 (finale):** `foldDocked` groups docked panels **by edge** → **dock-together** (EC-4): panels sharing an edge render
+  as ONE `data-dock-edge` cluster stacked along the cross axis (L/R→column, T/B→row), content-fit, Content beside;
+  different edges nest (PANEL_IDS-first-seen order). The **persist-read seam** is wired: `AppShell` gains `shellPrefs?:
+  ShellPrefsRead` (default `stubShellPrefs`) + a **once, cold-boot-only** hydration effect (`hydratedRef` + applies only
+  while `getState().placement === DEFAULT_PLACEMENT` — never clobbers a set arrangement; no `active`-cleanup so it's
+  StrictMode-safe). Live `nav_preferences` read/write = first consumer (envision L5). One responsive model, **no mobile
+  auto-switch** (dock/float choice IS the model; M7) — a docked panel at 375 stays content-fit-narrow (user floats for a
+  near-full sheet). _(fe-shell ②/#14 COMPLETE — S1–S5; PR merges to main.)_
+- `shell-panel.tsx` (fe-shell #14, S3) — **`ShellPanel`**, the DOCKED nav panel (A). Presentational + state-as-prop
+  (reads `placement`, emits `onSetMode`/`onSetEdge`/`onClose`; app wires the store). `modules` → `<nav aria-label>`,
+  `system` → `<aside aria-label>` (semantic landmark via `styled(View,{render})`). **Inline flush** at its edge
+  (`BORDER_FACING` map = the 1px separator toward Content; **no scrim, no elevation** — docked, EC-2), **content-fit**
+  (`flexGrow/Shrink=0`; body axis = `panelAxis(edge)`, vertical L/R · horizontal T/B, EC-5), **two-row CONTAINED header**
+  (⠿ grip aria-hidden + `$display` title + ✕ close · `Dock`/`Float` mode toggles + the 4-edge picker [lucide
+  `PanelLeft/Right/Top/Bottom`, `aria-pressed`], `$8` gaps per §X). The **edge picker is LIVE** (`onSetEdge`→`setPanelEdge`,
+  store from S1; BR-S3-11) — repositions the docked panel to any edge. **Float is DISABLED until S4** (overlay render = S4;
+  shown-but-disabled keeps the dock⇄float control visible per EC-1 without a reachable float dead-end / dishonest
+  disclosure — g2 S3 fold, a §XXVIII deviation from the live-Float plan). Composes `@vida/ui` `Button` + `lucide-react`;
+  every value a DS token. `panelDomId(id)` = the `aria-controls` target. One consumer ⇒ stays here, NOT `@vida/ui`
+  (ui-4 BR-1). Delivery: `docs/specs/foundation/fe-shell/delivery/` (+ `sessions/PLAN-s3-docked-panel.md`).
+  **S4 added the FLOATING branch** (`FloatShellPanel`): when `placement.mode==='float'` the SAME chrome renders as an
+  edge-anchored **modal drawer** — a scrim (`$colorSurfaceInverse` @ **0.5**, the Dialog scrim value; click→close) + a
+  `role="dialog" aria-modal="true"` panel (NOT the `<nav>`/`<aside>` landmark — that's docked; B4) anchored per
+  `EDGE_ANCHOR` within the below-strip float layer, Level-3 elevation (the injected `.vida-shell-panel` `shadow.overlay`;
+  dark self-cancels → the 1px border carries it). **Dismiss** = Esc / click-scrim / re-toggle → `onClose`; **focus** moves
+  IN on open (first focusable) and RETURNS to the bar toggle on dismiss (app-shell's `onClose`, reliable for every open
+  path incl. the in-panel Dock→Float switch — capturing `document.activeElement` would grab `<body>` there, g2 #1). The
+  Tab **trap** mirrors Dialog's algorithm. Motion = the fail-safe-visible injected keyframes (reduced-motion `@media`).
+  Float is now ENABLED (S3's `disabled` removed).
+- `shell-panel-styles.ts` (fe-shell #14, S4) — `ensureShellPanelStyles()`: the injected `<style>` (mirrors `@vida/ui`
+  `internal/dialog-styles.ts`) for the float scrim-in + per-edge panel slide-in `@keyframes` + the `.vida-shell-panel`
+  `box-shadow:shadow.overlay`. **Visible resting base** (scrim 0.5 / panel opacity 1, transform none) so a missed
+  animation FAILS SAFE VISIBLE (a modal must never render invisible); reduced-motion `@media`→`animation:none`. B12:
+  opacity/transform only.
 - `module-dock.tsx` (S2) — the dock content: `MODULE_MAP` grouped, drawer/rail/sidebar forms, empty-group skip,
   collapse toggle. `global-bar.tsx` (S2) — `GLOBAL_SURFACES` condensed/full + ⌘K→`commandBar.open()` + overflow Menu.
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact

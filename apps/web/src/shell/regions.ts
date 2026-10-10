@@ -112,3 +112,52 @@ export const SHELL_REGIONS: readonly ShellRegion[] = [
 
 /** Re-export the breakpoint order so the renderer can drive both from one import. */
 export { BREAKPOINT_ORDER }
+
+// ── fe-shell (#14) · the dock⇄float panel placement model ─────────────────────────────────────────────────────────
+// The CODEC reshape of the shell nav: the two bars become macOS/iPadOS-inspector panels — each toggles between DOCKED
+// (inline, content beside) and FLOATING (overlay over full-bleed content), rearrangeable to any edge, content-fit.
+// `[FACT: delivery/envision.md M1–M7; frontend-quality-bar §4.1:103; p6-organization-map.html:135]`. Data-only (as the
+// rest of this file); the chrome (app-shell.tsx / shell-panel.tsx) renders against it. Bar 1/HUD/⌘K CONTENT is #15/#16/#17.
+
+/** The two user-rearrangeable nav panels. `system` = scope + global surfaces (#15 content); `modules` = the grouped nav. */
+export type PanelId = 'system' | 'modules'
+/** Docked = inline flush in the frame (content beside); floating = overlay over full-bleed content (scrim + elevation). */
+export type PanelMode = 'dock' | 'float'
+/** The edge a panel is pinned/floated at — any of the four (M4 / EC-4, incl. bottom). */
+export type PanelEdge = 'left' | 'right' | 'top' | 'bottom'
+
+/** One panel's placement: its mode, its edge, and whether it is currently open. */
+export interface PanelPlacement {
+  mode: PanelMode
+  edge: PanelEdge
+  open: boolean
+}
+/** Per-panel placement — the session arrangement (app-owned, R5); hydrated from `nav_preferences` (M1 stub → DEFAULT). */
+export type ShellPlacement = Record<PanelId, PanelPlacement>
+
+/** Cold-start default (M1 / envision L1): both panels CLOSED, docked to the left — content full-bleed until toggled. */
+export const DEFAULT_PLACEMENT: ShellPlacement = {
+  system: { mode: 'dock', edge: 'left', open: false },
+  modules: { mode: 'dock', edge: 'left', open: false },
+}
+
+/** All panel ids, stable order, for iteration by the renderer. */
+export const PANEL_IDS: readonly PanelId[] = ['system', 'modules']
+
+/** A panel's content axis: Left/Right stack vertically; Top/Bottom lay out horizontally (content-fit, EC-5). */
+export function panelAxis(edge: PanelEdge): 'vertical' | 'horizontal' {
+  return edge === 'top' || edge === 'bottom' ? 'horizontal' : 'vertical'
+}
+
+/** Whether a placement renders as an OVERLAY (floating, scrim + elevation) vs INLINE (docked, content beside). */
+export function isOverlay(p: PanelPlacement): boolean {
+  return p.mode === 'float'
+}
+
+/**
+ * The reserved top strip (the persistent bar). Content AND any DOCKED-panel header inset below it, so a control never
+ * collides with content (M7 / EC-7). On the §IV 4pt grid; the condensed mobile bar is a touch shorter.
+ */
+export function reservedTopInset(bp: Breakpoint): number {
+  return bp === 'mobile' ? 52 : 56 // 13×4 · 14×4
+}

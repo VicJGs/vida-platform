@@ -20,7 +20,9 @@ import { router } from './routes'
 import { useCommandBarUIStore } from './stores/command-bar-ui-store'
 import { useAppShellUIStore } from './stores/app-shell-ui-store'
 
-const shellNav = () => document.querySelector('nav[aria-label="Modules"]')
+// The always-present frame signal — the reserved top strip is present iff the shell mounted. (fe-shell #14 reshape: the
+// Modules nav became a dock⇄float panel built in S3; the top strip / banner is the stable whole-shell-mounted marker.)
+const shellChrome = () => document.querySelector('[data-region="topStrip"]')
 // Open the command bar the way a user does — the document-level ⌘K keybind (use-command-keybind), NOT by poking the
 // store. This proves the S3 keybind seam is live inside the mounted shell.
 const pressCmdK = () => fireEvent.keyDown(document.body, { key: 'k', metaKey: true })
@@ -42,18 +44,19 @@ afterEach(() => {
 describe('App shell — whole-shell integration (S5)', () => {
   it('composes the shell around the index route on a returning launch (S1 regions + first-run seam)', async () => {
     render(<App />)
-    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
-    // The five-region frame is present: module dock (nav), the global bar (banner/header), the content main.
-    expect(shellNav()).not.toBeNull()
+    await waitFor(() => expect(shellChrome()).not.toBeNull())
+    // The CODEC frame is present: the reserved top strip (banner/header) + the content main, with the wired
+    // System/Modules panel toggles. (The Modules nav itself is a dock⇄float panel built in S3.)
     expect(document.querySelector('header')).not.toBeNull()
     expect(document.querySelector('main')).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Modules' })).toBeTruthy()
     // No onboarding leaked into the returning-launch path.
     expect(screen.queryByRole('button', { name: 'Get started' })).toBeNull()
   })
 
   it('⌘K opens the command bar and a nav command drives the REAL router (S3 router-injection seam)', async () => {
     render(<App />)
-    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
+    await waitFor(() => expect(shellChrome()).not.toBeNull())
 
     pressCmdK()
     const input = await screen.findByRole('combobox')
@@ -71,7 +74,7 @@ describe('App shell — whole-shell integration (S5)', () => {
 
   it('search with no index renders the loud search-unavailable state, never a blank list (S3 + BR-4)', async () => {
     render(<App />)
-    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
+    await waitFor(() => expect(shellChrome()).not.toBeNull())
 
     pressCmdK()
     const input = await screen.findByRole('combobox')
@@ -82,7 +85,7 @@ describe('App shell — whole-shell integration (S5)', () => {
 
   it('the /graph route is lazy-split and degrades to the empty graph (BR-7 + BR-4-S5)', async () => {
     render(<App />)
-    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
+    await waitFor(() => expect(shellChrome()).not.toBeNull())
 
     pressCmdK()
     await screen.findByRole('combobox')
