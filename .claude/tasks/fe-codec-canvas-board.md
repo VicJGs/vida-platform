@@ -34,4 +34,5 @@ add-frontend-component / Default (Entity Delivery Flow ②). Worktree `.claude/w
   union. Pure (imports `@vida/types` only); live `useVisionBoard`/`useCalendar` hooks deferred to first consumer
   (fe-purposes / #19). tsc 0 (web, after building types/core/ui dists) · eslint 0 · **10/10 tests**. Currency:
   `apps/web/src/canvas/CLAUDE.md`. Covers EC-2,5,9 (as convention; EC-2/EC-5 visual proof in S1 stories).
-- **① COMPLETE** — both slices shipped. Next: PR fe-codec-canvas-board → main.
+- **① COMPLETE** — both slices shipped. **PR #116 open** (`fe-codec-canvas-board → main`, commits `749fe16`+`cc0bc13`).
+  Merge criterion: Typecheck/Lint/Test/E2E green (2 pre-existing infra reds tolerated — Format/Workers). Then LIF-204 → Done + worktree cleanup.
