@@ -37,7 +37,12 @@ export function ensureEditorStyles(): void {
   style.setAttribute('data-vida-editor', '')
   style.textContent = [
     // 3) editable host — no native outline, wrap long content, clickable empty body.
-    '.vida-editor-frame .ProseMirror{outline:none;white-space:pre-wrap;word-break:break-word;min-height:1.5em}',
+    //    `color` binds the base text token so content is readable in BOTH schemes — the contenteditable otherwise
+    //    inherits the UA default (black) which does NOT flip in dark mode (fe-codec-canvas-editor #7, EC-7 — the
+    //    dark-mode bug the Envision greybox caught; every mount benefits). `line-height` is writing-grade rhythm;
+    //    font-size/family stay host/preset-owned (NOT set here — they must not leak into inline/compact mounts).
+    '.vida-editor-frame .ProseMirror{color:var(--colorTextPrimary);line-height:1.7;' +
+      'outline:none;white-space:pre-wrap;word-break:break-word;min-height:1.5em}',
     '.vida-editor-frame .ProseMirror[contenteditable="false"]{cursor:default}',
     // 1) focus-visible ring on the frame (2px, 2px offset — §VIII).
     '.vida-editor-frame:has(.ProseMirror:focus-visible){outline:2px solid var(--colorFocusRing);outline-offset:2px}',

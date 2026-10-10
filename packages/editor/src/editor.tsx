@@ -31,6 +31,10 @@ export interface VidaEditorProps {
   editable?: boolean
   /** Render the formatting toolbar (E3). Default true. Ignored when `editable` is false (no formatting affordance). */
   toolbar?: boolean
+  /** Chrome treatment (fe-codec-canvas-editor #7, S1). `'framed'` (default) = the bordered EditorFrame box.
+   *  `'bare'` = transparent, no border/radius/padding — the HOST supplies the surface (the Canvas: Editor notebook
+   *  page); the focus-ring-on-frame host + writing flow are preserved. Additive + back-compat (omit ⇒ `'framed'`). */
+  chrome?: 'framed' | 'bare'
   /** Placeholder text for the empty state. */
   placeholder?: string
   /** Accessible name for the textbox (a11y — BR-6). One of these is REQUIRED. */
@@ -81,6 +85,24 @@ const EditorFrame = styled(View, {
   paddingHorizontal: '$12',
   paddingVertical: '$8',
   minHeight: 120,
+
+  // S1 (#7): `chrome` opens the box for a host-supplied page surface. NOT a built-in style-prop name, so the variant
+  // resolves (contrast the DEF-U5-h `padding`-variant collision). `bare` zeroes border/bg/radius/padding; the
+  // `.vida-editor-frame` class stays, so the injected focus-ring (`:has(.ProseMirror:focus-visible)`) is untouched.
+  variants: {
+    chrome: {
+      framed: {},
+      bare: {
+        backgroundColor: 'transparent',
+        borderWidth: 0,
+        borderRadius: 0,
+        paddingHorizontal: 0,
+        paddingVertical: 0,
+      },
+    },
+  } as const,
+
+  defaultVariants: { chrome: 'framed' },
 })
 
 function warnMissingName(ariaLabel?: string, ariaLabelledby?: string): void {
@@ -92,7 +114,7 @@ function warnMissingName(ariaLabel?: string, ariaLabelledby?: string): void {
 }
 
 function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEditorHandle>): React.ReactElement {
-  const { defaultValue, onChange, editable = true, toolbar = true, placeholder } = props
+  const { defaultValue, onChange, editable = true, toolbar = true, chrome = 'framed', placeholder } = props
   const ariaLabel = props['aria-label']
   const ariaLabelledby = props['aria-labelledby']
 
@@ -175,7 +197,7 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
   )
 
   return (
-    <EditorFrame className="vida-editor-frame">
+    <EditorFrame className="vida-editor-frame" chrome={chrome}>
       {/* E3 toolbar — rendered ONLY when editor is non-null (useEditor is Editor|null under immediatelyRender:false,
           the null-editor gate, BR-E3-1) and the editor is editable + toolbar-enabled. A sibling ABOVE EditorContent,
           NOT inside the contenteditable (the role=textbox is on the inner .ProseMirror). */}
