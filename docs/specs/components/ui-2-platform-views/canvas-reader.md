@@ -14,8 +14,12 @@ Consumes the shipped `@vida/core` Books service via the apps/web adapter (S6) �
 - **S2 ✅ — Contents panel (summary + TOC).** `ReaderChapter` + `summary`/`chapters`/`contentsOpen`/`onToggleContents`/
   `onJumpToChapter`; shell-owned TOC (completion ✓ · current accent+`aria-current` · pressable-when-jump) · "Contents"
   toggle (`aria-pressed`) · realizes the living-margin layout · Header `flexWrap`+floor fix (375 word-wrap).
-- S3 — margin rail (annotations, IR-1). · S4 — selection affordance.
-- S5 — listen control (SVG icons). · S6 — apps/web Books↔Reader adapter (display-resolve; `apps/web`).
+- **S3 ✅ — margin rail (annotations).** `Nature`/`ReaderAnnotation`/`AnnotationGroup` + `annotationGroups`/
+  `annotationsState`/`railOpen`/`onToggleRail`/`onAddNote`/`onLinkAnnotation`; the right Body zone (completes the
+  living margin): annotations **pre-grouped by chapter** (counts total + per-chapter) · three natures visually distinct
+  (shape-differentiated accent markers + labels) · pre-resolved location · **IR-1 shell-enforced** (highlight never
+  linkable) · 4-state `RailBody` · "Annotations" toggle.
+- S4 — selection affordance. · S5 — listen control (SVG icons). · S6 — apps/web Books↔Reader adapter (display-resolve).
 
 ## S1 contract
 ```ts
@@ -49,3 +53,48 @@ interface CanvasReaderProps {
 ## S1 verification
 Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 375: title-hero · serif column · 5 states
 unavailable≠empty · accent flip · **AA MEASURED 0-fail incl. warm-dark** · 375 reflow). tsc 0 · eslint 0 · 9/9 tests.
+
+## S3 contract (added to `CanvasReaderProps`)
+```ts
+type Nature = 'highlight' | 'bookmark' | 'quote'
+interface ReaderAnnotation { id: string; nature: Nature; text: ReactNode; location: ReactNode } // location pre-resolved (S6)
+interface AnnotationGroup  { id: string; title: ReactNode; annotations: ReaderAnnotation[] }     // pre-grouped by chapter
+// + on CanvasReaderProps:
+annotationGroups?: AnnotationGroup[]
+annotationsState?: ViewState            // loading|empty|error|success; default 'success' (NOT ReaderState)
+railOpen?: boolean                      // default true when annotations exist; app owns the state
+onToggleRail?: () => void
+onAddNote?: (annotationId: string) => void        // IR-1: never offered on a highlight row
+onLinkAnnotation?: (annotationId: string) => void // bookmark & quote only
+```
+
+## S3 business rules
+- **BR-S3-1 (pre-grouped, EC-14):** renders `annotationGroups` the **adapter** builds (S6); the shell NEVER groups/sorts/
+  parses (board-view/list-view `sections` precedent). Chapter derivation + an "Unplaced" bucket are S6's.
+- **BR-S3-2 (IR-1 shell-enforced, EC-5):** `linkable = nature !== 'highlight'` gates both affordances BEFORE handler
+  presence → a highlight shows neither Add-note nor Link even if the handlers are passed (`AnnotationNotLinkableError`
+  is thus UI-unreachable dead defence).
+- **BR-S3-3 (three distinct natures, EC-6/EC-11):** a `$caption` uppercase **nature label** (non-colour signal) + a
+  per-nature **accent marker** (graphical object, ≥3:1): highlight = filled block · bookmark = outlined · quote =
+  accent bar. Token-pure (no accent-surface tint).
+- **BR-S3-3a (bounded text):** the excerpt is `numberOfLines={3}` clamped (house idiom) — the full text lives in the
+  opened annotation note, not the rail.
+- **BR-S3-4 (location, EC-14/IR-8):** `annotation.location` is a ready `ReactNode` — the shell never parses `position`.
+- **BR-S3-5 (counts + scale, EC-14/IR-10):** total count + per-chapter count; non-virtualized (>100 → data layer,
+  consistent with every UI-2 renderer).
+- **BR-S3-6 (states, BR-2):** `annotationsState` loading (`aria-busy`) / empty (teaching `EmptyState` `titleLevel=3`) /
+  error (`role=status` muted) / success (success+no-groups degrades to empty).
+- **BR-S3-7 (toggle, R5):** `railOpen` (default true) + `onToggleRail`; an "Annotations" header toggle (`aria-pressed`).
+- **BR-S3-8 (layout/reflow, EC-9):** the right Body zone mirrors `ContentsZone` (`borderLeftWidth` + `flexShrink:1`);
+  stacks below the column at 375/768; Body `justifyContent` → `flex-start` when either zone is present.
+- **BR-S3-9 (intents, IR-5):** `onAddNote`/`onLinkAnnotation` emit ids only; the shell never writes.
+- **BR-S3-10 (a11y):** `role="region"` "Annotations" → per-chapter `role="list"` `aria-labelledby` a `useId`-prefixed,
+  index-keyed eyebrow id (NOT `group.id` — may hold spaces) → `role="listitem"` rows; markers `aria-hidden`.
+- **BR-S3-11 (tokens/type/motion):** DIRECT semantic tokens; semantic scale; designed dark; accent flips per preset;
+  AA full-matrix incl. warm-dark; no new motion.
+
+## S3 verification
+Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 390 + 768: grouped-by-chapter · counts · 3 distinct
+markers · **IR-1 highlight-no-affordance every cell** · text AA 0-fail (worst 4.52) · **marker 3:1 0-fail (4.95–6.41,
+incl. warm-dark)** · rail states · rail stacks below at 390/768 · no overflow · **axe 0**). tsc 0 · eslint 0 · 26/26
+canvas-reader tests · full `@vida/ui` **496/496** (2 concurrency flakes in untouched files, green on isolation + re-run).

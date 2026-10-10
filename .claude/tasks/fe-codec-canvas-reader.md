@@ -24,7 +24,7 @@ Delivery docs: `docs/specs/foundation/fe-codec-canvas-reader/delivery/`
 ## Build Steps (per-slice §XXVI double-gate + blocking Visual Gate)
 - [x] S1 — CanvasReader frame + reading column + states (@vida/ui) — EC-1/2/3/8/9/10/11 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 9/9 tests · AA 0-fail incl warm-dark); §XXIX CLAUDE.md + canvas-reader.md current
 - [x] S2 — Contents panel (summary + TOC) (@vida/ui) — EC-13 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 16/16 · AA 0-fail incl warm-dark; living-margin realized; Header flexWrap fix for 375 word-wrap, benefits S1)
-- [ ] S3 — Margin rail (annotations, IR-1) (@vida/ui) — EC-5/6/14
+- [x] S3 — Margin rail (annotations, IR-1) (@vida/ui) — EC-5/6/14 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 26/26 · text AA 0-fail worst 4.52 · marker 3:1 0-fail 4.95–6.41 incl. warm-dark · IR-1 every cell · axe 0 · stacks 390/768); pre-grouped `annotationGroups` + `annotationsState:ViewState` (§3 /contract refinements); g2 review SHIP; §XXIX CLAUDE.md + canvas-reader.md current
 - [ ] S4 — Selection affordance (@vida/ui) — EC-4/3
 - [ ] S5 — Listen control (SVG icons) (@vida/ui) — EC-7/15
 - [ ] S6 — apps/web Books↔Reader adapter (display-resolve) — EC-14 (Verification Gate)
@@ -36,4 +36,6 @@ Delivery docs: `docs/specs/foundation/fe-codec-canvas-reader/delivery/`
 | Envision | Victor added 3 shape reqs (icons not emoji · summary+TOC · N-annotations anchored book→chapter→page→line) | Vision review | Folded into greybox round-2; surfaced 2 schema realities (summary=Notes page · anchor=display-resolve) — both doc-fixed |
 | S2 Visual Gate | serif `$display` title broke MID-WORD at 375 | RNW `min-width:0` flex-collapse squeezed TitleGroup under the aside | Header `flexWrap` + `TitleGroup minWidth:240` + aside `flexShrink:0` (benefits S1 too) |
 
-- 2026-10-09 — front matter gated+approved → S1 built+gated (`a9dfe21`) → S2 built+gated (`fcad3b8`). Next: S3 margin rail.
+- 2026-10-09 — front matter gated+approved → S1 built+gated (`a9dfe21`) → S2 built+gated (`fcad3b8`) → S3 margin rail
+  built+gated (full §XXVI double-gate: critique REVISE→folded [marker 3:1 · 3-line clamp] · preflight PASSED→2 folds
+  [numberOfLines · titleLevel] · critique SHIP; g2 review SHIP; blocking Visual Gate PASS). Next: S4 selection affordance.

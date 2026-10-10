@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { cleanup, fireEvent, render, within } from '@testing-library/react'
 import { UIProvider } from '../provider'
-import { CanvasReader, type ReaderChapter } from './canvas-reader'
+import { CanvasReader, type ReaderChapter, type AnnotationGroup } from './canvas-reader'
 
 // First jsdom render bears the whole Tamagui compile; scope a generous timeout (the flow-session precedent).
 vi.setConfig({ testTimeout: 15000 })
@@ -125,5 +125,101 @@ describe('CanvasReader — Contents panel (S2)', () => {
     const { queryByRole } = renderUI(<CanvasReader title="T" aria-label="R" />)
     const regions = queryByRole('region', { name: 'Contents' })
     expect(regions).toBeNull()
+  })
+})
+
+const ANNOS: AnnotationGroup[] = [
+  {
+    id: 'c1', title: 'Chapter One',
+    annotations: [
+      { id: 'h1', nature: 'highlight', text: 'Highlighted span', location: 'Ch. 1 · p. 3' },
+      { id: 'b1', nature: 'bookmark', text: 'Bookmark here', location: 'Ch. 1 · p. 5' },
+    ],
+  },
+  { id: 'c2', title: 'Chapter Two', annotations: [{ id: 'q1', nature: 'quote', text: 'A quote', location: 'Ch. 2 · p. 12' }] },
+]
+
+describe('CanvasReader — margin rail (S3)', () => {
+  // ── BR-S3-1/10: chapter groups render as labeled role=list; the three nature labels show ──
+  it('renders chapter groups (role=list) with the three nature labels', () => {
+    const { getAllByRole, getByText } = renderUI(<CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} />)
+    expect(getAllByRole('list').length).toBe(2) // one role=list per chapter group (no Contents panel here)
+    expect(getByText('Highlight')).not.toBeNull()
+    expect(getByText('Bookmark')).not.toBeNull()
+    expect(getByText('Quote')).not.toBeNull()
+  })
+
+  // ── BR-S3-2 (IR-1, EC-5): a highlight is NEVER linkable, even with the handlers passed ──
+  it('IR-1: a highlight shows NO Add-note/Link; a bookmark & a quote show both', () => {
+    const { getByText } = renderUI(
+      <CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} onAddNote={() => {}} onLinkAnnotation={() => {}} />,
+    )
+    const hiRow = getByText('Highlighted span').closest('[role="listitem"]') as HTMLElement
+    expect(within(hiRow).queryByRole('button', { name: 'Add note' })).toBeNull()
+    expect(within(hiRow).queryByRole('button', { name: 'Link' })).toBeNull()
+    const bmRow = getByText('Bookmark here').closest('[role="listitem"]') as HTMLElement
+    expect(within(bmRow).queryByRole('button', { name: 'Add note' })).not.toBeNull()
+    expect(within(bmRow).queryByRole('button', { name: 'Link' })).not.toBeNull()
+  })
+
+  // ── BR-S3-9: the affordances emit the annotation id ──
+  it('emits onAddNote / onLinkAnnotation with the annotation id', () => {
+    const onAddNote = vi.fn()
+    const onLink = vi.fn()
+    const { getByText } = renderUI(
+      <CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} onAddNote={onAddNote} onLinkAnnotation={onLink} />,
+    )
+    const bmRow = getByText('Bookmark here').closest('[role="listitem"]') as HTMLElement
+    fireEvent.click(within(bmRow).getByRole('button', { name: 'Add note' }))
+    expect(onAddNote).toHaveBeenCalledWith('b1')
+    fireEvent.click(within(bmRow).getByRole('button', { name: 'Link' }))
+    expect(onLink).toHaveBeenCalledWith('b1')
+  })
+
+  // ── BR-S3-5: the total count line ──
+  it('shows the total annotation count', () => {
+    const { getByText } = renderUI(<CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} />)
+    expect(getByText('3 annotations')).not.toBeNull()
+  })
+
+  // ── BR-S3-6: the rail terminal states ──
+  it('rail loading → aria-busy within the Annotations region', () => {
+    const { getByRole } = renderUI(<CanvasReader title="T" aria-label="R" annotationsState="loading" railOpen />)
+    const rail = getByRole('region', { name: 'Annotations' })
+    expect(rail.querySelector('[aria-busy="true"]')).not.toBeNull()
+  })
+  it('rail empty → teaching EmptyState', () => {
+    const { getByText } = renderUI(<CanvasReader title="T" aria-label="R" annotationsState="empty" railOpen />)
+    expect(getByText('No annotations yet')).not.toBeNull()
+  })
+  it('rail error → role=status', () => {
+    const { getByText } = renderUI(<CanvasReader title="T" aria-label="R" annotationsState="error" railOpen />)
+    expect(getByText(/Couldn’t load annotations/)).not.toBeNull()
+  })
+
+  // ── BR-S3-7: the toggle renders only with a handler; railOpen hides the rail; aria-pressed reflects state ──
+  it('renders the Annotations toggle only with a handler + fires it (aria-pressed)', () => {
+    const onToggle = vi.fn()
+    const { getByRole, queryByRole, rerender } = renderUI(<CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} />)
+    expect(queryByRole('button', { name: 'Annotations' })).toBeNull()
+    rerender(
+      <UIProvider>
+        <CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} onToggleRail={onToggle} />
+      </UIProvider>,
+    )
+    const toggle = getByRole('button', { name: 'Annotations' })
+    expect(toggle.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(toggle)
+    expect(onToggle).toHaveBeenCalled()
+  })
+  it('hides the rail when railOpen is false', () => {
+    const { queryByText } = renderUI(<CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} railOpen={false} />)
+    expect(queryByText('Bookmark here')).toBeNull()
+  })
+
+  // ── BR-S3-10: the rail is a named region ──
+  it('names the rail region Annotations', () => {
+    const { getByRole } = renderUI(<CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} />)
+    expect(getByRole('region', { name: 'Annotations' })).not.toBeNull()
   })
 })

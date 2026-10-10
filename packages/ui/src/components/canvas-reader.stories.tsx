@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Text, View } from '@tamagui/core'
-import { CanvasReader, type ReaderChapter } from './canvas-reader'
+import { CanvasReader, type ReaderChapter, type AnnotationGroup } from './canvas-reader'
 import { Button } from './button'
 import { SyncStatus } from './sync-status'
 
@@ -73,6 +73,59 @@ export const ContentsMany: Story = {
     chapters: [...CHAPTERS, ...CH_TITLES.map((t, i) => ({ id: `c${i + 11}`, number: i + 11, title: t, pageRef: `p. ${(i + 10) * 20 + 1}`, done: false }))],
     contentsOpen: true, onJumpToChapter: () => {},
   },
+}
+
+// ── S3 · Margin rail ─────────────────────────────────────────────────────────────────────────────────────────
+// A highlight (NO Add-note/Link — IR-1) beside a quote & a bookmark (both affordances). location pre-resolved (S6).
+const GROUPS: AnnotationGroup[] = [
+  {
+    id: 'c4', title: 'Chapter 4 · A Lady of Little Faith',
+    annotations: [
+      { id: 'a1', nature: 'highlight', text: 'He was simply an early lover of humanity.', location: 'Ch. 4 · p. 56 · line 12' },
+      { id: 'a2', nature: 'quote', text: 'The awful thing is that beauty is mysterious as well as terrible. God and the devil are fighting there, and the battlefield is the heart of man.', location: 'Ch. 4 · p. 58' },
+    ],
+  },
+  {
+    id: 'c5', title: 'Chapter 5 · So Be It!',
+    annotations: [{ id: 'a3', nature: 'bookmark', text: 'Return here — the argument on free will and the Grand Inquisitor.', location: 'Ch. 5 · p. 71' }],
+  },
+]
+const marginRailArgs = {
+  ...common, state: 'success', renderContent: readingBody,
+  annotationGroups: GROUPS, annotationsState: 'success', railOpen: true,
+  onToggleRail: () => {}, onAddNote: () => {}, onLinkAnnotation: () => {},
+} as const
+
+/** S3 — the living margin: 3 distinct natures grouped by chapter · IR-1 (highlight has no link/note) · counts. */
+export const MarginRail: Story = { args: marginRailArgs }
+
+/** S3 — the rail stacks below the column at 375 (view at the 390 viewport). */
+export const Rail375: Story = { args: marginRailArgs }
+
+/** S3 — N-scale (IR-10): many annotations of each nature, grouped by chapter, counted. */
+const MANY: AnnotationGroup[] = CH_TITLES.slice(0, 4).map((t, gi) => ({
+  id: `g${gi}`, title: `Chapter ${gi + 1} · ${t}`,
+  annotations: Array.from({ length: 6 }, (_, i) => {
+    const nature = (['highlight', 'bookmark', 'quote'] as const)[i % 3]
+    return { id: `g${gi}a${i}`, nature, text: PARAS[i % PARAS.length], location: `Ch. ${gi + 1} · p. ${gi * 20 + i * 3 + 1}` }
+  }),
+}))
+export const RailManyAnnotations: Story = {
+  args: { ...common, state: 'success', renderContent: readingBody, annotationGroups: MANY, annotationsState: 'success', onAddNote: () => {}, onLinkAnnotation: () => {} },
+}
+
+/** S3 — the rail terminal states: loading · empty · error. */
+export const RailStates: Story = {
+  render: () => (
+    <View gap="$32">
+      {(['loading', 'empty', 'error'] as const).map((s) => (
+        <View key={s} gap="$8">
+          <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">{s}</Text>
+          <CanvasReader {...common} state="success" renderContent={readingBody} annotationsState={s} railOpen aria-label={`Reader ${s} rail`} />
+        </View>
+      ))}
+    </View>
+  ),
 }
 
 /** The 5 states — loading · empty · error · unavailable (access, ≠ empty). */

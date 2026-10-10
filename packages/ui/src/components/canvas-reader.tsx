@@ -34,6 +34,29 @@ export interface ReaderChapter {
   current?: boolean
 }
 
+/** The three annotation natures (S3 / IR-2). Highlights are NEVER linkable (IR-1 / BR-S3-2). */
+export type Nature = 'highlight' | 'bookmark' | 'quote'
+
+/** One annotation row (S3). `location` is ALREADY RESOLVED by the adapter (S6) — the shell only renders it,
+ *  it never parses `position` or derives the chapter (EC-14 / IR-8 / BR-S3-4). */
+export interface ReaderAnnotation {
+  id: string
+  nature: Nature
+  /** @encrypted-origin — the annotation excerpt (3-line clamped in the rail, BR-S3-3a). */
+  text: ReactNode
+  /** a ready "Ch. 4 · p. 56 · line 12" node (the adapter resolves it; the shell renders it). */
+  location: ReactNode
+}
+
+/** Annotations PRE-GROUPED by chapter (S3 / EC-14). The adapter (S6) builds the groups — the shell never groups,
+ *  sorts, or parses (BR-S3-1; the board-view / list-view `sections` precedent). `id`/`title` = chapter id/title;
+ *  an unresolved-position bucket ("Unplaced") is the adapter's concern. */
+export interface AnnotationGroup {
+  id: string
+  title: ReactNode
+  annotations: ReaderAnnotation[]
+}
+
 export interface CanvasReaderProps {
   /** The book title — names the region + renders as the serif $display H1 (BR-S1-1 / EC-2). */
   title: string
@@ -71,6 +94,20 @@ export interface CanvasReaderProps {
   /** Chapter rows become pressable only when provided (the `collection onFilter` precedent, BR-S2-3). */
   onJumpToChapter?: (chapterId: string) => void
 
+  // ── Margin rail (S3) ──
+  /** Annotations PRE-GROUPED by chapter (BR-S3-1); the adapter (S6) builds the groups. */
+  annotationGroups?: AnnotationGroup[]
+  /** The rail state (BR-2 / BR-S3-6); default 'success'. `ViewState` — annotations have no access-`unavailable` concept. */
+  annotationsState?: ViewState
+  /** Rail visibility; app-owned (R5). Default: open when annotations exist. */
+  railOpen?: boolean
+  /** Wire the "Annotations" header toggle; the toggle renders only when provided (BR-S3-7). */
+  onToggleRail?: () => void
+  /** Add-note intent — the SHELL ENFORCES IR-1: never offered on a highlight row (BR-S3-2 / BR-S3-9). */
+  onAddNote?: (annotationId: string) => void
+  /** Link intent — bookmark & quote only (IR-1 shell-enforced). */
+  onLinkAnnotation?: (annotationId: string) => void
+
   'aria-label'?: string
   'aria-labelledby'?: string
   /** React-19 ref-as-prop → the region element. */
@@ -104,6 +141,31 @@ const ChapterRowHost = styled(View, {
     interactive: { true: { cursor: 'pointer', hoverStyle: { backgroundColor: '$colorSurfaceSecondary' }, focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: 2 } } },
   } as const,
 })
+// Annotations rail (S3) — the RIGHT zone; mirrors ContentsZone (RNW never-collapse) with a LEFT divider so it stacks
+// below the column at 375 (BR-S3-8). flexShrink:1 so the title/column keep width when the rail is present.
+const RailZone = styled(View, { flexGrow: 0, flexShrink: 1, flexBasis: 280, minWidth: 220, gap: '$12', borderLeftWidth: 1, borderLeftColor: '$colorBorderDefault', paddingLeft: '$16' })
+// Per-nature accent marker — a GRAPHICAL object (≥3:1, BR-S3-3): shape/fill distinguishes the three natures; the
+// label is the non-colour signal. All-accent ($colorBrandPrimary, the calendar-dot / list-tick graphical token).
+const NatureMarker = styled(View, {
+  width: 10,
+  height: 10,
+  borderRadius: '$sm',
+  marginTop: '$4',
+  variants: {
+    nature: {
+      highlight: { backgroundColor: '$colorBrandPrimary' }, // filled block — a marked span
+      bookmark: { borderWidth: 2, borderColor: '$colorBrandPrimary', backgroundColor: 'transparent' }, // outlined
+      quote: { width: 3, height: 16, borderRadius: 0, backgroundColor: '$colorBrandPrimary', marginTop: '$2' }, // accent bar
+    },
+  } as const,
+})
+const AnnotationRowHost = styled(View, { flexDirection: 'row', gap: '$8', paddingVertical: '$8' })
+// Chapter group header = the group eyebrow (primary) + a per-chapter count (muted) — the SectionHeader eyebrow recipe.
+const ChapterEyebrow = styled(Text, { fontFamily: '$body', fontSize: '$caption', fontWeight: '600', color: '$colorTextPrimary', textTransform: 'uppercase', letterSpacing: 0.6, flexShrink: 1 })
+const NatureLabel = styled(Text, { fontFamily: '$body', fontSize: '$caption', fontWeight: '600', color: '$colorTextMuted', textTransform: 'uppercase', letterSpacing: 0.6 })
+const LocationText = styled(Text, { fontFamily: '$body', fontSize: '$caption', color: '$colorTextMuted', flexShrink: 0 })
+const AnnotationText = styled(Text, { fontFamily: '$body', fontSize: '$small', color: '$colorTextPrimary', lineHeight: 20 })
+const CountText = styled(Text, { fontFamily: '$body', fontSize: '$caption', color: '$colorTextMuted' })
 
 // The reading column body — degrade-never-crash. renderContent runs ONLY on success (a block is CONTENT, not self-stating).
 function ReadingBody({
@@ -227,6 +289,136 @@ function ContentsPanel({
   )
 }
 
+const NATURE_LABEL: Record<Nature, string> = { highlight: 'Highlight', bookmark: 'Bookmark', quote: 'Quote' }
+
+// One annotation row. IR-1 (BR-S3-2) is enforced BY CONSTRUCTION: `linkable` is gated on the nature BEFORE the
+// handler, so a highlight renders NO Add-note/Link affordance even if the handlers are passed.
+function AnnotationRow({
+  a,
+  onAddNote,
+  onLinkAnnotation,
+}: {
+  a: ReaderAnnotation
+  onAddNote?: (id: string) => void
+  onLinkAnnotation?: (id: string) => void
+}) {
+  const linkable = a.nature !== 'highlight'
+  const showAddNote = linkable && onAddNote != null
+  const showLink = linkable && onLinkAnnotation != null
+  return (
+    <AnnotationRowHost role="listitem">
+      <NatureMarker nature={a.nature} className={`vida-anno-marker vida-anno-${a.nature}`} aria-hidden />
+      <View flexGrow={1} flexShrink={1} gap="$4">
+        <View flexDirection="row" gap="$8" justifyContent="space-between" alignItems="baseline">
+          <NatureLabel>{NATURE_LABEL[a.nature]}</NatureLabel>
+          <LocationText>{a.location}</LocationText>
+        </View>
+        {/* 3-line clamp (BR-S3-3a) — the full text lives in the opened annotation note, not the rail. */}
+        <AnnotationText numberOfLines={3}>{a.text}</AnnotationText>
+        {(showAddNote || showLink) && (
+          <View flexDirection="row" gap="$8">
+            {showAddNote && (
+              <Button intent="ghost" size="sm" onPress={() => onAddNote?.(a.id)}>
+                Add note
+              </Button>
+            )}
+            {showLink && (
+              <Button intent="ghost" size="sm" onPress={() => onLinkAnnotation?.(a.id)}>
+                Link
+              </Button>
+            )}
+          </View>
+        )}
+      </View>
+    </AnnotationRowHost>
+  )
+}
+
+// The rail body — degrade-never-crash, mirrors ReadingBody. `total` + `railId` thread down from AnnotationRail.
+function RailBody({
+  state,
+  groups,
+  total,
+  railId,
+  onAddNote,
+  onLinkAnnotation,
+}: {
+  state: ViewState
+  groups?: AnnotationGroup[]
+  total: number
+  railId: string
+  onAddNote?: (id: string) => void
+  onLinkAnnotation?: (id: string) => void
+}) {
+  if (state === 'loading')
+    return (
+      <View aria-busy="true" gap="$12">
+        <SkeletonRow width="60%" />
+        <SkeletonRow width="90%" />
+        <SkeletonRow width="80%" />
+      </View>
+    )
+  if (state === 'error')
+    return (
+      <View role="status">
+        <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">Couldn’t load annotations. Try again.</Text>
+      </View>
+    )
+  const hasGroups = groups != null && groups.length > 0 && total > 0
+  // empty (or success with nothing) → the teaching invitation (titleLevel 3: a nested sub-region, BR-S3-6).
+  if (state === 'empty' || !hasGroups)
+    return (
+      <EmptyState title="No annotations yet" titleLevel={3}>
+        Highlight a passage, add a bookmark, or save a quote and it appears here.
+      </EmptyState>
+    )
+  // success — grouped by chapter (counts: total + per-chapter). Each chapter is its OWN role=list (aria-labelledby its
+  // eyebrow); do NOT wrap them in a single outer list — that nests lists + breaks the per-chapter labelling (BR-S3-5/10).
+  return (
+    <View gap="$12">
+      <CountText>{total === 1 ? '1 annotation' : `${total} annotations`}</CountText>
+      {groups.map((g, i) => {
+        const headingId = `${railId}-g${i}` // useId-prefixed, index-keyed (group.id may hold spaces — board-view lesson)
+        return (
+          <View key={g.id} gap="$8">
+            <View flexDirection="row" gap="$8" justifyContent="space-between" alignItems="baseline">
+              <ChapterEyebrow id={headingId}>{g.title}</ChapterEyebrow>
+              <CountText>{g.annotations.length}</CountText>
+            </View>
+            <View role="list" aria-labelledby={headingId} gap="$4">
+              {g.annotations.map((a) => (
+                <AnnotationRow key={a.id} a={a} onAddNote={onAddNote} onLinkAnnotation={onLinkAnnotation} />
+              ))}
+            </View>
+          </View>
+        )
+      })}
+    </View>
+  )
+}
+
+// The annotations rail (S3) — a labeled region: "Annotations" + the state-driven body. The living margin.
+function AnnotationRail({
+  groups,
+  state = 'success',
+  onAddNote,
+  onLinkAnnotation,
+}: {
+  groups?: AnnotationGroup[]
+  state?: ViewState
+  onAddNote?: (id: string) => void
+  onLinkAnnotation?: (id: string) => void
+}) {
+  const railId = useId()
+  const total = groups?.reduce((n, g) => n + g.annotations.length, 0) ?? 0
+  return (
+    <RailZone role="region" aria-label="Annotations">
+      <PanelLabel>Annotations</PanelLabel>
+      <RailBody state={state} groups={groups} total={total} railId={railId} onAddNote={onAddNote} onLinkAnnotation={onLinkAnnotation} />
+    </RailZone>
+  )
+}
+
 // A plain component — non-generic → React 19 spreads `ref` as a prop (no forwardRef).
 export function CanvasReader({
   title,
@@ -245,6 +437,12 @@ export function CanvasReader({
   contentsOpen,
   onToggleContents,
   onJumpToChapter,
+  annotationGroups,
+  annotationsState,
+  railOpen,
+  onToggleRail,
+  onAddNote,
+  onLinkAnnotation,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledby,
   ref,
@@ -255,6 +453,8 @@ export function CanvasReader({
 
   const hasContents = summary != null || (chapters != null && chapters.length > 0)
   const showContents = hasContents && (contentsOpen ?? true)
+  const hasAnnotations = annotationGroups != null || annotationsState != null
+  const showRail = hasAnnotations && (railOpen ?? true)
 
   return (
     <CanvasRoot ref={ref} role="region" aria-label={ariaLabel} aria-labelledby={resolvedLabelledby}>
@@ -278,11 +478,18 @@ export function CanvasReader({
             {progress != null && (
               <HonestProgress value={progress} label={progressLabel ?? `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}% read`} />
             )}
-            {onToggleContents != null && hasContents && (
+            {((onToggleContents != null && hasContents) || (onToggleRail != null && hasAnnotations)) && (
               <MetaToggles>
-                <Button intent={showContents ? 'primary' : 'secondary'} size="sm" aria-pressed={showContents} onPress={onToggleContents}>
-                  Contents
-                </Button>
+                {onToggleContents != null && hasContents && (
+                  <Button intent={showContents ? 'primary' : 'secondary'} size="sm" aria-pressed={showContents} onPress={onToggleContents}>
+                    Contents
+                  </Button>
+                )}
+                {onToggleRail != null && hasAnnotations && (
+                  <Button intent={showRail ? 'primary' : 'secondary'} size="sm" aria-pressed={showRail} onPress={onToggleRail}>
+                    Annotations
+                  </Button>
+                )}
               </MetaToggles>
             )}
           </MetaGroup>
@@ -295,13 +502,16 @@ export function CanvasReader({
         )}
       </Header>
 
-      {/* Body — the living-margin row: Contents panel (S2, left) ∣ reading column. The rail (S3) adds the right zone.
-          Lone column centers (S1); with the panel it left-aligns (BR-S2-5). */}
-      <Body justifyContent={showContents ? 'flex-start' : 'center'}>
+      {/* Body — the living-margin row: Contents panel (S2, left) ∣ reading column ∣ annotations rail (S3, right).
+          Lone column centers (S1); with either zone it left-aligns (BR-S2-5 / BR-S3-8). */}
+      <Body justifyContent={showContents || showRail ? 'flex-start' : 'center'}>
         {showContents && <ContentsPanel summary={summary} chapters={chapters} onJumpToChapter={onJumpToChapter} />}
         <ReadingColumn>
           <ReadingBody state={state} renderContent={renderContent} emptyTitle={emptyTitle} emptyAction={emptyAction} />
         </ReadingColumn>
+        {showRail && (
+          <AnnotationRail groups={annotationGroups} state={annotationsState} onAddNote={onAddNote} onLinkAnnotation={onLinkAnnotation} />
+        )}
       </Body>
     </CanvasRoot>
   )

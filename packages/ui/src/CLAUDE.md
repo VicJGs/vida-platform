@@ -486,9 +486,28 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   `onJumpToChapter` given, the `collection onFilter` precedent) + a "Contents" header toggle (`aria-pressed`, app-owned
   `contentsOpen`). **Header fix (benefits S1 too): `flexWrap` + `TitleGroup minWidth:240` + aside `flexShrink:0`** so the
   serif `$display` title word-wraps at 375 instead of mid-word-breaking (the RNW `min-width:0` flex-collapse; Visual-Gate
-  caught). S2 Visual Gate PASS (AA 0-fail incl. warm-dark · 375 panel-stacks + title word-wraps). IR-1 (highlight never
-  linkable) is shell-enforced at S3. Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`.
-  Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
+  caught). S2 Visual Gate PASS (AA 0-fail incl. warm-dark · 375 panel-stacks + title word-wraps).
+  **S3** adds the **margin rail** (the right Body zone — completes the living margin): `annotationGroups:AnnotationGroup[]`
+  (`{id,title,annotations}`, **PRE-GROUPED by chapter** — the shell never groups/sorts/parses; the adapter S6 builds them,
+  the board-view/list-view `sections` precedent) + `ReaderAnnotation{id,nature,text,location}` (`location` a pre-resolved
+  `ReactNode`, IR-8) + `annotationsState:ViewState` (NOT ReaderState — annotations have no access-`unavailable`) + `railOpen`/
+  `onToggleRail`/`onAddNote`/`onLinkAnnotation`. **IR-1 shell-enforced BY CONSTRUCTION (EC-5):** `linkable = nature !==
+  'highlight'` gates Add-note/Link BEFORE handler presence → a highlight NEVER shows an affordance even if the handlers are
+  passed (`AnnotationNotLinkableError` is UI-unreachable dead defence). The **three natures are visually distinct** (EC-6):
+  a `$caption` uppercase **nature label** (the non-colour signal) + a per-nature **`NatureMarker`** — a GRAPHICAL object
+  (≥3:1, NOT text 4.5): `highlight`=filled block · `bookmark`=outlined · `quote`=accent bar, all `$colorBrandPrimary`
+  (the calendar-dot/list-tick graphical token), **token-pure (no accent-surface tint, the list-view P1 lesson)**. Annotations
+  **grouped by chapter** with **counts** (total + per-chapter, EC-14); excerpt `numberOfLines={3}` clamped (house idiom;
+  the full text lives in the opened note). `RailBody` = the ReadingBody-mirror 4-state switch (loading `aria-busy` · empty
+  teaching `EmptyState` `titleLevel=3` · error `role=status` muted · success → grouped lists; success+no-groups degrades to
+  empty). A11y: `role="region"` "Annotations" → per-chapter `role="list"` `aria-labelledby` a **`useId`-prefixed index-keyed**
+  eyebrow id (NOT `group.id` — spaces, the board-view lesson) → `role="listitem"`; markers `aria-hidden`; affordances = ui-1
+  ghost `Button`s. "Annotations" header toggle (`aria-pressed`, beside Contents); Body `justifyContent`→`flex-start` when
+  EITHER zone present; the rail stacks below the column at 375/768 (mirrors `ContentsZone`, `borderLeftWidth`+`flexShrink:1`).
+  S3 Visual Gate PASS (Brave, 3 presets × light/dark + 390 + 768: IR-1 highlight-no-affordance every cell · text AA 0-fail
+  worst 4.52 · **marker 3:1 0-fail 4.95–6.41 incl. warm-dark** · 3 distinct markers · grouped+counts · rail states · stacks
+  below at 390/768 · no overflow · axe 0). 26/26 canvas-reader · full @vida/ui 496/496. IR-1 realized (was "shell-enforced
+  at S3"). Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`. Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
