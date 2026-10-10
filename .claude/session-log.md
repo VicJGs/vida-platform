@@ -6025,3 +6025,23 @@ Decisions / lessons:
 Next session:
   - **FIRST ACTION:** next ready FE head — `fe-codec-canvas-reader` #9 / `fe-codec-canvas-board` #10 (deps patterns/theme/viewmodes ✅) OR `fe-shell` #14. Fresh `/begin`; add-frontend-component / Entity Delivery Flow ②; fresh branch off main.
   - Env: Node 24 via nvm for @vida/ui test/build; Visual Gate = Brave via `/tmp/vg/*-gate.mjs` + `python3 -m http.server 6099` on `storybook-static` (reinstall playwright-core+axe-core in /tmp/vg if the install is stale; import playwright-core as a CJS default). Rebuild @vida/ui dist before an apps/web typecheck consuming new @vida/ui exports.
+
+---
+Date: 2026-10-09 — Linear / tracker reconciliation (frontend-track campaign LIF-202)
+Task: Linear housekeeping · Profile: Milestone Delivery Planning · worktree `fe-codec-controls-refinement`, branch `session-end-canvas-graph`.
+Goal: reconcile Linear with reality — clear status drift + reflect the two active parallel sessions.
+Accomplished:
+  - Full drift sweep (local task files active+archive vs Linear). Fixes:
+    - **LIF-207 `fe-codec-collection` Backlog→Done** (direct GraphQL — archived file, `--sync` can't reach it; PR #78 push had dropped).
+    - **LIF-233 `fix-entity-view-header` created→Done** (`--sync --allow-orphan-create`; PR #110, had no issue; guard verified non-duplicate first; header written back to task file).
+    - **LIF-110 `delivery-structure-model` In Progress→Done** (operating manual, done 2026-08-01).
+    - **LIF-161 `envision-gate` In Progress→Done** (codified 2026-08-23, in production use).
+    - **LIF-206 `fe-codec-canvas-reader` + LIF-204 `fe-codec-canvas-board` Backlog→In Progress** — two active parallel sessions; local `# Status:` aligned to `in_progress` so `--sync` can't revert.
+  - End state: In Progress = LIF-202 (campaign) + LIF-206 + LIF-204 only.
+Decisions / lessons:
+  - Archived-done drift is unreachable by `--sync` (reads active files only) → hand-patch via `issueUpdate`. [[verify-misses-status-drift-and-stale-linear-relations]]
+  - `--sync` pushes local status→Linear; a direct GraphQL status flip is invisible to it, so stale local status silently reverts the flip — align the local file. [[tracker-sync-orphan-create-guard]]
+Next session:
+  - **FIRST ACTION:** fresh `/begin` off `main`; next FE head that does NOT collide with the two active sessions = **`fe-shell` #14** (dep `fe-codec-patterns` ✅). canvas-reader #9 / canvas-board #10 are taken.
+  - CAUTION: do not run `tracker_sync.py --sync` from a stale worktree while the parallel sessions are in flight — `--pull` is safe, `--sync` waits for their PRs to merge.
+  - Env: Node 24 via nvm for @vida/ui + @vida/web; Visual Gate = Brave via `/tmp/vg/*-gate.mjs` + `http.server 6099` on `storybook-static`; rebuild @vida/ui dist before an apps/web typecheck consuming new @vida/ui exports.
