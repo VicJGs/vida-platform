@@ -6006,3 +6006,42 @@ Decisions / lessons:
 Next session:
   - **FIRST ACTION:** next ready FE head — codec canvas units `fe-codec-canvas-graph` #8 / `canvas-reader` #9 / `canvas-board` #10 (deps patterns/theme/viewmodes ✅ — now correctly readable after the tracker fix) OR `fe-shell` #14. Fresh `/begin`; add-frontend-component / Entity Delivery Flow ②; fresh branch off main. (`--next` prefers backend `mod-routines`/`mod-tasks` by dependent-count — a lane choice.)
   - Env: Node 24 via nvm for @vida/ui + @vida/web; Visual Gate = Brave via `/tmp/vg/*-gate.mjs` + `http.server 6099` on `storybook-static`; rebuild `@vida/ui` dist before an `apps/web` typecheck consuming new @vida/ui exports.
+
+---
+Date: 2026-10-09 — fe-codec-canvas-graph (#8, LIF-205) — WHOLE UNIT shipped + MERGED (PR #112)
+Task: fe-codec-canvas-graph · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree `fe-codec-controls-refinement`, branch `fe-codec-canvas-graph` off main `08ff2ef`.
+Goal: build the next ready FE head — the CODEC Canvas: Graph (Neural Graph archetype), the editorial "ink voice".
+Accomplished:
+  - **fe-codec-canvas-graph #8 — WHOLE UNIT, PR #112 merged** → origin/main `1fa181a`. EXTEND the shipped @vida/ui `NeuralGraph` (UI-2 V7) in place — one slice S1 (apps/web `/graph` route = RATIFY no-code). Resolved the 3 LIF-230 audit findings:
+    1. **Ink voice** — node=`$colorBrandPrimary`, edge=`$colorBorderDefault` per-preset (blue/oxblood/olive), replacing the fixed `#6366f1` "blue SaaS". Per-item `GraphNode.color` still overrides; tokens kept OUT of effect deps (stale-until-re-topology, NG-2).
+    2. **Consumer slots** — `loading?`/`error?`/`empty?: ReactNode` override the default `Message` (back-compat).
+    3. **Reduced-motion** — `useReducedMotion()` gates forceatlas2 (`reduced ? 0 : layoutIterations`; 0 = circular seed); `reduced` in deps.
+  - Full Entity Delivery Flow ②: baseline → interpretation (every [FACT:] cited) → **Envision Gate SKIP** (§3.75 = no novel affordance, Victor-confirmed) → Decomposition ratify-mode (gate-1 critic SHIP, Approval 1) → /contract → /preflight PASSED (reconciled NG-2/7/8) → **gate-2 critic REVISE→fixed** (Approval 2) → implement S1 → code-review SHIP → **blocking Visual Gate PASS** → §XXIX currency.
+  - tsc 0 · eslint 0 err · @vida/ui **473/473** (+3: A3 slots · A4 per-item color · A7 reduced-motion) · Visual Gate PASS (Brave, 3 presets × light/dark: node ink concrete+distinct blue/oxblood/olive · edges hairline · canvas mounts · 12-node a11y list · empty/loading/error AA 5.76–6.53 incl. warm reader-dark · slot override · axe 0 · 375 no overflow). CI: Typecheck/Lint/Test/E2E green; 2 pre-existing reds (Format/Workers). Merged `--admin`.
+Decisions / lessons:
+  - **gate-2 caught a silent flip of an approved decision** — my spec converted finding #3 from the approved slice-map's "BUILD a useReducedMotion gate" to a comment-only RATIFY (over-reading NG-8). The critic flagged it as the "manufacture a deferral to cut scope" failure; Victor chose BUILD → spec reverted to match the gated decomposition. [[dont-manufacture-a-deferral-to-cut-build-phase-scope]].
+  - **The live Visual Gate caught the real bug** unit tests missed: `useTheme().get('web')` returns a CSS-var ref (`var(--colorBrandPrimary)`), and a custom property's computed value doesn't substitute nested var() refs — so WebGL/Sigma renders colorless (the exact "blue SaaS → colorless" trap). Fixed with a probe-`<span>` getComputedStyle read that collapses the chain to concrete preset-aware `rgb` (the WebGL analogue of the pomodoro SVG `stroke="var()"` pattern). §XXVIII deviation, documented. [[visual-gate-catches-worker-rpc-bugs-unit-tests-bypass]].
+  - Finding #3 near-RATIFY on the continuous-motion axis (NG-8 B12-safe) but the gated decomposition said BUILD → built the 0-iteration circular-seed gate; honest, not a degradation.
+Next session:
+  - **FIRST ACTION:** next ready FE head — `fe-codec-canvas-reader` #9 / `fe-codec-canvas-board` #10 (deps patterns/theme/viewmodes ✅) OR `fe-shell` #14. Fresh `/begin`; add-frontend-component / Entity Delivery Flow ②; fresh branch off main.
+  - Env: Node 24 via nvm for @vida/ui test/build; Visual Gate = Brave via `/tmp/vg/*-gate.mjs` + `python3 -m http.server 6099` on `storybook-static` (reinstall playwright-core+axe-core in /tmp/vg if the install is stale; import playwright-core as a CJS default). Rebuild @vida/ui dist before an apps/web typecheck consuming new @vida/ui exports.
+
+---
+Date: 2026-10-09 — Linear / tracker reconciliation (frontend-track campaign LIF-202)
+Task: Linear housekeeping · Profile: Milestone Delivery Planning · worktree `fe-codec-controls-refinement`, branch `session-end-canvas-graph`.
+Goal: reconcile Linear with reality — clear status drift + reflect the two active parallel sessions.
+Accomplished:
+  - Full drift sweep (local task files active+archive vs Linear). Fixes:
+    - **LIF-207 `fe-codec-collection` Backlog→Done** (direct GraphQL — archived file, `--sync` can't reach it; PR #78 push had dropped).
+    - **LIF-233 `fix-entity-view-header` created→Done** (`--sync --allow-orphan-create`; PR #110, had no issue; guard verified non-duplicate first; header written back to task file).
+    - **LIF-110 `delivery-structure-model` In Progress→Done** (operating manual, done 2026-08-01).
+    - **LIF-161 `envision-gate` In Progress→Done** (codified 2026-08-23, in production use).
+    - **LIF-206 `fe-codec-canvas-reader` + LIF-204 `fe-codec-canvas-board` Backlog→In Progress** — two active parallel sessions; local `# Status:` aligned to `in_progress` so `--sync` can't revert.
+  - End state: In Progress = LIF-202 (campaign) + LIF-206 + LIF-204 only.
+Decisions / lessons:
+  - Archived-done drift is unreachable by `--sync` (reads active files only) → hand-patch via `issueUpdate`. [[verify-misses-status-drift-and-stale-linear-relations]]
+  - `--sync` pushes local status→Linear; a direct GraphQL status flip is invisible to it, so stale local status silently reverts the flip — align the local file. [[tracker-sync-orphan-create-guard]]
+Next session:
+  - **FIRST ACTION:** fresh `/begin` off `main`; next FE head that does NOT collide with the two active sessions = **`fe-shell` #14** (dep `fe-codec-patterns` ✅). canvas-reader #9 / canvas-board #10 are taken.
+  - CAUTION: do not run `tracker_sync.py --sync` from a stale worktree while the parallel sessions are in flight — `--pull` is safe, `--sync` waits for their PRs to merge.
+  - Env: Node 24 via nvm for @vida/ui + @vida/web; Visual Gate = Brave via `/tmp/vg/*-gate.mjs` + `http.server 6099` on `storybook-static`; rebuild @vida/ui dist before an apps/web typecheck consuming new @vida/ui exports.

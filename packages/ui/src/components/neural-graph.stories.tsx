@@ -1,30 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { View } from '@tamagui/core'
+import { Text, View } from '@tamagui/core'
 import { NeuralGraph, type GraphNode, type GraphEdge } from './neural-graph'
 
-// UI-2 · V7 · neural-graph stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark).
-// A Sigma.js WebGL force-directed graph. (Renders the real WebGL graph in the browser; jsdom/tests use the guarded
-// fallback + the accessible node list.)
+// UI-2 · V7 · neural-graph stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark)
+// + preset (editorial｜reader｜quietDesk). A Sigma.js WebGL force-directed graph. (Renders the real WebGL graph in
+// the browser; jsdom/tests use the guarded fallback + the accessible node list.)
 //
-// MEASURE (v7-neural-graph.md §4): a force-directed layout (nodes spread, edges connect) · pan/zoom/drag (Sigma
-// camera) · click a node → logs onNodeClick · empty state · dark mode (the transparent canvas sits on the frame's
-// surface, which flips with the theme). NOTE: nodes/edges are STABLE module constants (B1 — a new array each render
-// would kill+rebuild the WebGL context).
+// INK VOICE (fe-codec-canvas-graph, BR-7): the DEFAULT node color is the per-preset `$colorBrandPrimary` and the
+// default edge is the muted `$colorBorderDefault` — NO per-item color. So the `Playground` graph wears each preset's
+// voice (editorial blue · reader oxblood · quietDesk olive) and flips light/dark. `PerItemColors` shows a consumer
+// overriding per node (BR-8). NOTE: nodes/edges are STABLE module constants (B1 — a new array each render would
+// kill+rebuild the WebGL context).
 
-// A small knowledge graph: notes/people/projects with connections.
+// A small knowledge graph: notes/people/projects with connections. NO per-item color → the themed ink voice (BR-7).
 const NODES: GraphNode[] = [
-  { id: 'vida', label: 'Vida', size: 12, color: '#6366f1' },
-  { id: 'ui2', label: 'UI-2 views', size: 9, color: '#8b5cf6' },
-  { id: 'list', label: 'List', color: '#10b981' },
-  { id: 'gallery', label: 'Gallery', color: '#10b981' },
-  { id: 'timeline', label: 'Timeline', color: '#10b981' },
-  { id: 'calendar', label: 'Calendar', color: '#10b981' },
-  { id: 'pomodoro', label: 'Pomodoro', color: '#f59e0b' },
-  { id: 'export', label: 'Export', color: '#f59e0b' },
-  { id: 'graph', label: 'Neural graph', color: '#ef4444' },
-  { id: 'hard3', label: 'HARD-3', size: 9, color: '#06b6d4' },
-  { id: 'ar8', label: 'AR-8 graph-prep', color: '#06b6d4' },
-  { id: 'spaces', label: 'Spaces', color: '#ec4899' },
+  { id: 'vida', label: 'Vida', size: 12 },
+  { id: 'ui2', label: 'UI-2 views', size: 9 },
+  { id: 'list', label: 'List' },
+  { id: 'gallery', label: 'Gallery' },
+  { id: 'timeline', label: 'Timeline' },
+  { id: 'calendar', label: 'Calendar' },
+  { id: 'pomodoro', label: 'Pomodoro' },
+  { id: 'export', label: 'Export' },
+  { id: 'graph', label: 'Neural graph' },
+  { id: 'hard3', label: 'HARD-3', size: 9 },
+  { id: 'ar8', label: 'AR-8 graph-prep' },
+  { id: 'spaces', label: 'Spaces' },
 ]
 const EDGES: GraphEdge[] = [
   { source: 'vida', target: 'ui2' },
@@ -42,10 +43,17 @@ const EDGES: GraphEdge[] = [
   { source: 'graph', target: 'ar8' },
 ]
 
+// A consumer overriding per-node color by category (BR-8 — the per-item override still wins over the themed default).
+const NODES_COLORED: GraphNode[] = NODES.map((n) => ({
+  ...n,
+  color: n.id === 'vida' || n.id === 'ui2' ? '#8b5cf6' : n.id === 'graph' ? '#ef4444' : '#10b981',
+}))
+
 const meta: Meta = { title: 'Platform Views/NeuralGraph' }
 export default meta
 type Story = StoryObj
 
+// Ink voice — themed default node/edge colors (BR-7). The KEY Visual-Gate surface: nodes = per-preset accent.
 export const Playground: Story = {
   render: () => (
     <View width={640} maxWidth="100%">
@@ -61,10 +69,59 @@ export const Playground: Story = {
   ),
 }
 
+// Per-item color override (BR-8) — the consumer's data colors still win over the themed default.
+export const PerItemColors: Story = {
+  render: () => (
+    <View width={640} maxWidth="100%">
+      <NeuralGraph nodes={NODES_COLORED} edges={EDGES} height={440} aria-label="Colored knowledge graph" />
+    </View>
+  ),
+}
+
 export const Empty: Story = {
   render: () => (
     <View width={640} maxWidth="100%">
       <NeuralGraph nodes={[]} edges={[]} height={440} />
+    </View>
+  ),
+}
+
+export const Loading: Story = {
+  render: () => (
+    <View width={640} maxWidth="100%">
+      <NeuralGraph nodes={[]} edges={[]} state="loading" height={440} />
+    </View>
+  ),
+}
+
+export const Error: Story = {
+  render: () => (
+    <View width={640} maxWidth="100%">
+      <NeuralGraph nodes={[]} edges={[]} state="error" height={440} />
+    </View>
+  ),
+}
+
+// Consumer slot override (BR-11) — a teaching empty replaces the default "No connections yet." Message.
+export const EmptyWithSlot: Story = {
+  render: () => (
+    <View width={640} maxWidth="100%">
+      <NeuralGraph
+        nodes={[]}
+        edges={[]}
+        state="empty"
+        height={440}
+        empty={
+          <View alignItems="center" gap="$8" padding="$24">
+            <Text fontFamily="$display" fontSize="$heading" color="$colorTextPrimary">
+              No connections yet
+            </Text>
+            <Text fontSize="$small" color="$colorTextMuted">
+              Link notes, people, and projects to grow your graph.
+            </Text>
+          </View>
+        }
+      />
     </View>
   ),
 }

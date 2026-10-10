@@ -337,6 +337,25 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   success regardless of WebGL (also the no-WebGL data fallback). Sigma canvas is transparent → the frame's
   `$colorSurfacePrimary` flips with the theme. States via the shared `Message`. Dangling edges skipped + dev-warn.
   Lifecycle tested by mocking `sigma`/`forceatlas2` + stubbing `getContext`. Spec: `…/v7-neural-graph.md`.
+  **fe-codec-canvas-graph · S1 (LIF-205) — the editorial "ink voice" extension** (#8; EXTEND, no new file). Three
+  conformance fixes, all back-compat: **(1) themed node/edge default colours** — node = `$colorBrandPrimary`, edge =
+  `$colorBorderDefault` (per-preset: editorial blue · reader oxblood · quietDesk olive), replacing the deleted fixed
+  `#6366f1`/`#cbd5e1` ("blue SaaS", surface-map.md:28 WRONG-risk). **⚠ Sigma renders in WebGL — a `var(--x)` is
+  uncolorable there**, and a CSS custom property's *computed* value does NOT substitute nested var() refs, so
+  `useTheme().get('web')` (which returns `var(--colorBrandPrimary)`) is resolved to a CONCRETE `rgb(...)` via a **probe
+  `<span>`**: append to the Sigma host, set a REAL `style.color = token`, read `getComputedStyle(probe).color`
+  (`try/finally` removes it) — the browser then applies the full cascade incl. the active preset's `<body>`-class
+  override. jsdom (no CSS var engine) → fallback literal. This is the WebGL analogue of the pomodoro-ring SVG
+  `stroke="var(…)"` pattern — SVG resolves var() via CSS, WebGL can't. A per-item `GraphNode.color` still overrides.
+  The colour tokens are read in the effect but kept OUT of its deps (stale-until-re-topology; NG-2 color-deferral) —
+  fine in M1 where the `/graph` route renders empty; surgical live-recolor is a first-consumer follow-up. **(2)
+  consumer slots** — `loading?`/`error?`/`empty?: ReactNode` override the default `Message` (`{slot ?? <Message>}`,
+  the board/calendar precedent), `content` widened to `ReactNode`; absent → verbatim copy. **(3) reduced-motion** —
+  `useReducedMotion()` gates the forceatlas2 iterations (`reduced ? 0 : layoutIterations`; 0 = the deterministic
+  circular seed, no force-settling); `reduced` IS in the effect deps. Visual Gate PASS (Brave, 3 presets × light/dark:
+  node ink concrete + DISTINCT per preset [blue/oxblood/olive] · edges hairline · canvas mounts · 12-node a11y list ·
+  empty/loading/error AA 5.76–6.53 incl. warm reader-dark · slot override · axe 0 · 375 no overflow). @vida/ui 473 tests.
+  Spec: `docs/specs/foundation/fe-codec-canvas-graph/`.
   **table-view** is **fe-codec-viewmodes · S1** (LIF-214) — the renderer for the **`table`** VIEW_LAYOUT, extending ui-2
   with the 6th canonical view-mode (G6 reshape: *"add table · board"* — supersedes the 2026-08-09 "table/board = degrade,
   not built" stance). A **READ-ONLY LENS** (quality-bar §4.3: a View renders, a Capability writes) — caller-declared
