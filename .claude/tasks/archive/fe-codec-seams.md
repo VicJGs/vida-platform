@@ -1,5 +1,5 @@
 # Task: fe-codec-seams
-# Status: in-progress
+# Status: done
 # Linear: LIF-212
 # Profile: Add Frontend Component
 # Scenario: default

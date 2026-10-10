@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-09 by /session-end -->
+<!-- Last updated: 2026-10-10 by /session-end -->
 
 ## Linear / tracker reconciliation (2026-10-09 — frontend-track campaign LIF-202)
 
@@ -1078,3 +1078,10 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-10 | S6 port | import the concrete BooksService? | **a `BooksReaderPort` (subset), mirror-by-value shapes; the `@vida/core` edge lives in the deferred hook** | keeps S6 pure + testable (the flow `SessionsPort` precedent); g2 proved the future binding typechecks | reversible |
 
 **Lessons:** the Visual Gate caught its own icon-measurement bug (measured the button's default color, not the SVG's `currentColor`); a stale `@vida/core` dist threw a phantom `isEntityType` error that only `rm -rf dist` cleared (incremental `tsc --build` insufficient); the full `@vida/web` suite flaked 2 shell-integration files under parallel load (green in isolation — the *changing set* of failures is the flake signature).
+## fe-codec-seams #13 (② frontend · LIF-212 → Done, 2026-10-10 — PR #119 merged `2887e21`)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-10 | #13 scope posture | build the live service bootstrap, or ship convention + defer live? | **Option A — convention + defer live** (seam contracts + consumption conventions + Templates barrel fix; live bootstrap deferred) | doc-resolved: `db/CLAUDE.md` homes the live main-thread Drizzle-proxy to UI-3/first-consumer; `reconstructed-structure.md:44` tags #19→#13 "(ProviderRead)" = the convention seam; `s5-conventions.md` ProviderRead = type+convention. Not a judgment call. | n/a (doc-homed) |
+| 2026-10-10 | Templates barrel export | `export *` vs named re-export on the @vida/core barrel? | **named re-export, omitting `CreateTemplateInput`** | `export *` collides with services/checkins' same-named export (TS2308); the templates create/capture input isn't needed on the public surface (capture = deferred core S3–S5). §XXVIII deviation D1, build-gate-caught. | reversible (add/alias later) |
+| 2026-10-10 | service-access shape | ship a `ServiceAccess` interface naming the engine getters? | **NO — convention doc only** | /critique R1: a concrete 7-getter interface prescribes the consumer's injection architecture with no consumer to validate (home-the-tier-forward). The first consumer (UI-3/#27) chooses the mechanism; reuse the existing `ProviderRead<T>`. | n/a (convention) |
