@@ -1,5 +1,5 @@
 # Task: fe-codec-canvas-graph
-# Status: in-progress
+# Status: done (PR #112 merged → main 1fa181a, 2026-10-09)
 # Linear: LIF-205
 # Profile: Add Frontend Component
 # Scenario: default
@@ -77,6 +77,7 @@ This is BOTH the conformance fix AND the aesthetic "ink voice" — do them toget
 | Date | What was done | Next step |
 |------|--------------|-----------|
 | 2026-10-08 | initialized task (augmented existing stub) + cut branch off main @ 08ff2ef | Step 0 document-context BASELINE |
+| 2026-10-09 | WHOLE UNIT shipped: full Entity Delivery Flow ② (baseline→interpretation→Envision SKIP→decomposition→gate-1 SHIP→Approval 1→contract→preflight→gate-2 REVISE→fixed→Approval 2→implement S1→code-review SHIP→Visual Gate PASS→§XXIX). PR #112 merged → main 1fa181a. LIF-205 → Done | next FE head: canvas-reader #9 / canvas-board #10 / fe-shell #14 |
 
 ## Notes
 Next ready FE head by `#` order (#8). Deps: patterns✅ theme✅ viewmodes✅. Env: Node 24 via nvm;
