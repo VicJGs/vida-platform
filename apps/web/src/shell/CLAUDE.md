@@ -30,6 +30,19 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   populated(Menu) / loading(busy) / empty(global-only disabled) / error(calm `role=status`). **Not yet wired into the
   bar — S3 mounts it in `bar1Slot` + the System panel body** (`systemPanelSlot` seam). Visual Gate PASS (5 states ×
   light/dark/warm-dark × 375/1440, measured 0 AA fails).
+- `global-surfaces-strip.tsx` (fe-shell-scope #15, S2) — the 6 `GLOBAL_SURFACES` in Bar 1's TOP-STRIP form, mode-prop
+  (parent-resolved) driven: `full` (≥768) = Search launcher + route surfaces as icon-nav · `condensed` (≤375) = Search
+  icon + overflow `Menu`. **Supersedes `global-bar.tsx`** (deleted at S3) — the one refinement: NO hamburger (app-shell
+  #14 owns panel toggles). Search = ⌘K action, never a link (EC-3). Composes `NavLink`+`Button`+`Menu`. Covers EC-3/EC-6.
+- `global-surfaces-list.tsx` (fe-shell-scope #15, S2) — the 6 surfaces as a LABELED vertical nav for the expanded System
+  panel body (EC-4). Carries its OWN `render:'nav'` landmark inside the `<aside>` (IR6); route surfaces = `NavLink` rows
+  (aria-current + active fill, EC-6); Search = a raw `render:'button'` row (mirrors NavLink dims, `type="button"`) with a
+  ⌘K hint (`aria-hidden`). Scope sits ABOVE this in the S3 assembly, not here.
+- **S2 Visual Gate PASS** (Brave, 3 presets × 2 modes = 132 elements MEASURED, 0 AA fails incl. warm-dark; focus rings
+  2px). Surfaced + fixed TWO shipped-primitive AA bugs (Victor-approved, both roots): **(a)** `@vida/ui` Button slot
+  icons rendered black in dark → Button frame now carries a per-intent `color` so `leading`/`trailing` icons tint (also
+  fixed scope-selector's `ChevronDown` + global-bar); **(b)** `nav-link.tsx` active brand-on-secondary = 4.39/4.44 < 4.5
+  → active color `$colorBrandPrimary` → **`$colorBrandEmphasis`** (also fixed the module-dock active item). [[accent-text-on-secondary]]
 
 **Chrome (UI-4 — the rendered app shell):**
 - `app-shell.tsx` — **fe-shell #14 · S2 reshaped the frame** to the CODEC dock⇄float inspector model (envision M1–M7).
@@ -95,7 +108,9 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 - `module-dock.tsx` (S2) — the dock content: `MODULE_MAP` grouped, drawer/rail/sidebar forms, empty-group skip,
   collapse toggle. `global-bar.tsx` (S2) — `GLOBAL_SURFACES` condensed/full + ⌘K→`commandBar.open()` + overflow Menu.
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact
-  `aria-current`; `currentColor` icon tint). `nav-icons.ts` — key→`lucide-react` glyph (+ fallback).
+  `aria-current`; `currentColor` icon tint). **Active colour = `$colorBrandEmphasis`** (not brandPrimary — brand-as-text
+  on the active `$colorSurfaceSecondary` fill fell to 4.39/4.44 < 4.5 AA; fe-shell-scope #15 S2 Visual-Gate fix, benefits
+  the module-dock active item too). `nav-icons.ts` — key→`lucide-react` glyph (+ fallback).
   `feature-flags.ts` — `isFeatureEnabled` (M1.0 fail-closed stub). `use-nav-drawer.ts` — drawer focus/Esc/`inert`.
 - **Onboarding (S4) renders OUTSIDE this shell** — the first-run screens live in `apps/web/src/onboarding/*` and mount
   from `App.tsx`'s first-run branch BEFORE `<RouterProvider>`, so no shell chrome exists during onboarding (S4-BR-h).

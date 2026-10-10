@@ -31,7 +31,16 @@
   (`SpacesScopeRead = ProviderRead<SpaceOption[]>` + stub→[]) · `shell/scope-selector.tsx` (Menu switcher, 5 states) +
   `.test.tsx` (7). Covers EC-1/EC-2. tsc 0 · lint 0 err · @vida/web **345/345** · code-review SHIP · **Visual Gate PASS**
   (5 states × light/dark/warm dark_reader × 375/1440, measured 0 AA fails). Currency: `shell/CLAUDE.md`. _(commit pending)_
-- [ ] **S2 — Global surfaces, re-homed** (both forms) — EC-3/EC-4/EC-6.
+- [x] **S2 — Global surfaces, re-homed** (both forms) — `shell/global-surfaces-strip.tsx` (mode-prop: full icon-nav /
+  condensed Search+overflow; NO hamburger — app-shell owns toggles) + `shell/global-surfaces-list.tsx` (labeled
+  `render:'nav'` landmark IR6; `NavLink` rows + raw `<button>` Search row w/ ⌘K hint) + 2 `.test.tsx` (8). Search = ⌘K
+  action, never a link; account stays dropped. Covers EC-3/EC-4/EC-6. tsc 0 · lint 0 err · @vida/ui **524/524** ·
+  @vida/web **353/353** · independent code-review **SHIP** (2 nits applied: `type="button"`, EC-6 aria-current test) ·
+  **Visual Gate PASS** (Brave, 3 presets × 2 modes = **132 measured, 0 AA fails** incl. warm-dark; focus rings 2px).
+  **⚠ Gate surfaced + fixed 2 shipped-primitive AA bugs (Victor-approved "fix both roots"):** (a) `@vida/ui` Button slot
+  icons black in dark → Button frame per-intent `color` (also fixed scope-selector `ChevronDown` + global-bar); (b)
+  `nav-link.tsx` active brand-on-secondary 4.39/4.44 < 4.5 → `$colorBrandPrimary`→`$colorBrandEmphasis` (also fixed
+  module-dock active). Currency: `shell/CLAUDE.md` + `packages/ui/src/CLAUDE.md`. _(commit pending)_
 - [ ] **S3 — Bar 1 assembly + dual-home wiring** (`systemPanelSlot` seam + routes + delete `global-bar.tsx`) — EC-5.
 
 ## Deferred (homed)

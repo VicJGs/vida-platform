@@ -21,7 +21,11 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - `index.ts` — package barrel; re-exports the generated token data + `config`/`UIProvider`/`useVidaTheme` + a
   side-effect import of `tamagui.d.ts` (ships the augmentation to consumers).
 - `components/` — **UI-1 primitives** (built against the DS-5 contracts): `button.tsx`, `input.tsx`, `checkbox.tsx`,
-  `select.tsx`, `card.tsx` (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). **Select** is the first
+  `select.tsx`, `card.tsx` (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). **Button** — the frame
+  carries a per-intent `color` (mirrors ButtonText) so raw `leading`/`trailing` icon slots (lucide `currentColor`) tint
+  per intent+theme instead of inheriting document black (invisible in dark); ButtonText still sets its own colour, so
+  label text is unchanged (fe-shell-scope #15 S2 Visual-Gate fix — a COLOR prop, resolves against the theme, unlike the
+  dimension/sub-theme trap). **Select** is the first
   molecular + first floating primitive: a `<button role="combobox">` trigger + a listbox panel PORTALLED to
   `document.body` (react-dom `createPortal`, `zIndex.dropdown`) re-wrapped in `<Theme name="Select">` (the portal
   detaches the `name:'Select'` sub-theme scope; the base light/dark theme still crosses via `<html>`). Focus STAYS on
