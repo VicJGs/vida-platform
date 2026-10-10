@@ -42,6 +42,23 @@ The `--next`/`--plan` selector false-blocked dependents of completed-then-archiv
 |------|------|----------|--------|--------|------------|
 | 2026-10-07 | tracker | fix layer | selector-entry map injection + a shared `scan_archived_done` (build_census + selector consume it) | keeps `--sync`/`--pull` archive-blind (the invariant); DRY | yes |
 
+## fe-codec-canvas-reader (② frontend · #9 · LIF-206 — IN PROGRESS, 2026-10-09 — front matter + S1–S4 shipped, branch `fe-codec-canvas-reader`)
+The CODEC Canvas: Reader shell (read·listen·annotate) in `@vida/ui`. Presentational, consumes shipped Books; no `@vida/core` change.
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-09 | summary | A book "summary" has no schema column | Home it as a **book-level Notes page** (`entity_type='book'`) the Reader consumes | `conventions.md:20` "summary/… = pages, never inline columns"; `_registry.ts:89` registers `book` | n/a (doc-fixed) |
+| 2026-10-09 | anchor | Annotation location (book→chapter→page→line) | **Display-resolve** from free-text `position` + the TOC page-range (S6 adapter); NO structured columns | `conventions.md:6-8` + `structure-data.md:73` "mapping anchors point at the TOC, never duplicate it"; structured cols = doc-contrary | n/a (doc-fixed) |
+| 2026-10-09 | typography | Middle-dot in strings | Keep for **location breadcrumbs** (rail); **plain-language** header context | No repo rule (VoiceCopy lints only overclaims/dead-ends); flow-session Envision precedent | yes |
+| 2026-10-09 | color | Accent (oxblood) spend | **BOTH** — the live reading signal AND the annotation nature-markers (not concentrated) | Victor's call; `design.md:123` principle points either way, taste decision | yes |
+| 2026-10-09 | a11y/IR-1 | Where to enforce "highlight never linkable" | **Shell-enforced** (S3): a highlight row renders no link/note by construction | Makes the backend `AnnotationNotLinkableError` unreachable from the UI; Visual Gate (EC-5) guards it | n/a |
+| 2026-10-09 | layout | serif `$display` title mid-word-breaks at 375 | Header **`flexWrap` + `TitleGroup minWidth:240` + aside `flexShrink:0`** | RNW `min-width:0` flex-collapse squeezed the title; Visual-Gate caught (benefits S1) | yes |
+| 2026-10-09 | contract (S3) | How the rail receives chapter-grouped annotations | **Pre-grouped `annotationGroups`** (the adapter S6 groups); the shell never groups/sorts/parses | A flat `{location:ReactNode}[]` has no chapter key; board/list-view `sections` precedent; shell stays presentational | yes (/contract refine) |
+| 2026-10-09 | contract (S3) | The rail state type | `annotationsState: **ViewState**` (not `ReaderState`) | `unavailable` is a reading-file access concept, inapplicable to annotations | yes |
+| 2026-10-09 | surfacing (S4) | How the selection action set is surfaced | **Exported `SelectionActions` + `ReaderHighlightMark`** the consumer composes in `renderContent`; the 4 `on*Selection` move OFF `CanvasReaderProps` | The body is a `renderContent` slot the shell can't own/anchor into (IR-NEEDS-3); EC-12 "in-place" needs the consumer's Range; critic upheld as doc-forced | yes (/contract refine) |
+| 2026-10-09 | a11y (S4) | Icon-button touch target | **`size="lg"` (48px, ≈56×48 ≥ 44×44)**, not `sm` (32px) | §X / WCAG 2.5.5; critic caught the sm floor miss | yes |
+| 2026-10-09 | color (S4) | The inline highlight mark | **2px accent `borderBottom`**, text held at primary; NO accent-surface bg | Token-pure (no accent-surface token — list-view P1 lesson); mark = graphical 3:1, text AA unaffected | yes |
+
 ## mod-relationships (① backend · #56 · LIF-137 → Done, 2026-10-07 — COMPLETE S1–S9, PR #107 merged `39ccdab`)
 The personal CRM (PII-heaviest), `createRelationshipsService` over DB-4 `025_relationships` (8 tables), 59 legs.
 
