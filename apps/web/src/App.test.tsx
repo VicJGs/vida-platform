@@ -13,7 +13,9 @@ vi.mock('./onboarding/first-run-repo', () => ({
 
 import { App } from './App'
 
-const shellNav = () => document.querySelector('nav[aria-label="Modules"]')
+// "Is the app shell mounted?" — the reserved top strip is present iff the shell frame mounted. (fe-shell #14 reshape:
+// the Modules nav is now a dock⇄float panel built in S3; the always-present frame signal is the top strip / banner.)
+const shellChrome = () => document.querySelector('[data-region="topStrip"]')
 
 beforeEach(() => {
   h.ensureDbReady.mockReset().mockResolvedValue(undefined)
@@ -31,14 +33,14 @@ describe('App first-run branch', () => {
     render(<App />)
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Get started' })).toBeTruthy()
-    expect(shellNav()).toBeNull() // the dock/shell never mounts during onboarding (S4-BR-h)
+    expect(shellChrome()).toBeNull() // the dock/shell never mounts during onboarding (S4-BR-h)
   })
 
   it('goes straight to the app (shell + index route) on a returning launch', async () => {
     h.read.mockResolvedValue(true)
     render(<App />)
-    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
-    expect(shellNav()).not.toBeNull()
+    await waitFor(() => expect(shellChrome()).not.toBeNull())
+    expect(document.querySelector('[data-region="content"]')).not.toBeNull()
     expect(screen.queryByRole('button', { name: 'Get started' })).toBeNull()
   })
 
@@ -52,12 +54,12 @@ describe('App first-run branch', () => {
     render(<App />)
     // dbReady settles but the marker read is still pending → Loading, and crucially NO shell chrome.
     await waitFor(() => expect(screen.getByText('Loading…')).toBeTruthy())
-    expect(shellNav()).toBeNull()
+    expect(shellChrome()).toBeNull()
     expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
     // Only once the read resolves does onboarding appear — the app chrome was never committed.
     resolveRead(false)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Get started' })).toBeTruthy())
-    expect(shellNav()).toBeNull()
+    expect(shellChrome()).toBeNull()
   })
 
   it('writes the completion marker then mounts the app', async () => {
@@ -70,6 +72,6 @@ describe('App first-run branch', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
     fireEvent.click(screen.getByRole('button', { name: 'Enter Vida' }))
     await waitFor(() => expect(h.write).toHaveBeenCalledTimes(1))
-    await waitFor(() => expect(screen.getByText('Vida')).toBeTruthy())
+    await waitFor(() => expect(shellChrome()).not.toBeNull())
   })
 })

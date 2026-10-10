@@ -1,45 +1,36 @@
-// UI-4 · S1 (LIF-89) — the app-shell frame. Renders the five shell regions (shell/regions.ts) in the documented
-// responsive layout on @vida/ui tokens. S1 is the SCAFFOLD: each region is a labeled placeholder slot that the later
-// units fill — S2 (module dock + global bar content), S3 (command-bar overlay), S4 (onboarding). The active breakpoint
-// is read reactively via Tamagui `useMedia()` (never stored — regions.ts:67); `__bp` is a test/story override so jsdom
-// can assert per-breakpoint reflow without a `matchMedia` layout engine. Chrome only — no module content, no routing.
+// fe-shell (#14) · S2 (LIF-199) — the CODEC shell FRAME. Reshapes the ui-4/ux-3 five-region shell into the
+// macOS/iPadOS dock⇄float inspector model (`delivery/envision.md` M1–M7). S2 builds the FRAME ONLY:
+//   • a reserved top strip (the persistent bar — serif wordmark + System/Modules panel toggles + #15/#16 slots) — EC-7,
+//   • a full-bleed, 1280-centered Content <Outlet/> inset below the strip — EC-9,
+//   • an overlay host for ⌘K/modals — EC-8.
+// The dock⇄float PANELS the toggles open are S3 (docked-inline) / S4 (floating-overlay); their bodies + the Bar-1
+// content (#15) / Session HUD (#16) / ⌘K registry (#17) inject through the slots — empty-but-functional in #14.
+// `[FACT: delivery/slice-map.md:19 S2; seam-contract.md §C; envision.md EC-7/8/9]`. Chrome only — composes @vida/ui + DS tokens.
 import type { ReactNode } from 'react'
-import { styled, View, useMedia } from '@tamagui/core'
-import { useReducedMotion } from '@vida/ui'
+import { styled, Text, View, useMedia } from '@tamagui/core'
+import { Button } from '@vida/ui'
 import { useAppShellUIStore } from '../stores/app-shell-ui-store'
 import { type Breakpoint } from './breakpoints'
-import {
-  CONTENT_MAX_WIDTH,
-  GLOBAL_BAR_MODE,
-  LAYERING,
-  contentGutterAt,
-  dockStateAt,
-  isRegionVisibleAt,
-  overlayModeAt,
-} from './regions'
-import { GlobalBar } from './global-bar'
-import { ModuleDock } from './module-dock'
-import { CommandBar } from './command-bar'
-import { useNavDrawer } from './use-nav-drawer'
+import { CONTENT_MAX_WIDTH, LAYERING, PANEL_IDS, contentGutterAt, overlayModeAt, reservedTopInset, type PanelId } from './regions'
 
-// The shell's own structural dimensions (px) — layout constants of the chrome design, not DS spacing tokens
-// (the gallery `minTileWidth` / tabs-indicator precedent: layout numbers stay numbers). Spacing/gutter/z/color/radius
-// resolve to DS tokens (BR-2); these region sizes are the frame's geometry.
-const DOCK_WIDTH = { sidebar: 240, rail: 64 } as const
-const GLOBAL_BAR_HEIGHT = 56
-const SPACES_BAR_HEIGHT = 40
-
-// Semantic landmark regions — `render: '<tag>'` makes the styled View emit a real HTML element (the UI-1 Card
-// header/footer precedent; a runtime `tag` prop is NOT honoured). `<nav>` for the dock + spaces bar, `<header>` for
-// the global bar, `<main>` for the content region — the app-shell landmark structure (§XIV / shell-layout.md).
-const DockNav = styled(View, { render: 'nav' })
+// Semantic landmarks — `render: '<tag>'` makes the styled View emit a real HTML element (the UI-1 Card header/footer
+// precedent; a runtime `tag` prop is NOT honoured). The top strip is a top-level `<header>` → `role="banner"`; the
+// content region is `<main>`. (The panels' own `<nav>` landmarks arrive with S3/S4.)
 const BarHeader = styled(View, { render: 'header' })
-const SpacesNav = styled(View, { render: 'nav' })
 const ContentMain = styled(View, { render: 'main' })
 
+/** Human label for each nav-panel toggle (envision M1: System · Modules). */
+const PANEL_LABEL: Record<PanelId, string> = { system: 'System', modules: 'Modules' }
+
 export interface AppShellProps {
-  /** Rendered into the `content` region — the router `<Outlet/>` (mounted from routes.tsx RootComponent). */
+  /** The routed `<Outlet/>` — rendered full-bleed, 1280-centered, inset below the reserved top strip. */
   children?: ReactNode
+  /** #15 (fe-shell-scope) — scope selector + global surfaces (incl. the ⌘K trigger). Injected into the bar; empty in #14. */
+  bar1Slot?: ReactNode
+  /** #16 (fe-session-hud) — the Session HUD. Injected into the bar; empty in #14. */
+  hudSlot?: ReactNode
+  /** #17 — ⌘K / modals. Mounted in the overlay host; self-portaling overlays still render to `<body>` (S3-BR-i). */
+  overlaySlot?: ReactNode
   /** Test/story-only breakpoint override — bypasses `useMedia()` so jsdom can assert reflow deterministically. */
   __bp?: Breakpoint
 }
@@ -54,124 +45,82 @@ function useActiveBreakpoint(override?: Breakpoint): Breakpoint {
   return 'mobile'
 }
 
-export function AppShell({ children, __bp }: AppShellProps) {
+export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, __bp }: AppShellProps) {
   const bp = useActiveBreakpoint(__bp)
-  const dock = dockStateAt(bp) // 'drawer' | 'rail' | 'sidebar'
-  const overlay = overlayModeAt(bp) // 'sheet' | 'centered'
-  const globalBarMode = GLOBAL_BAR_MODE[bp] // 'condensed' | 'full'
-  const showSpaces = isRegionVisibleAt('spacesBar', bp)
   const gutter = contentGutterAt(bp)
+  const topInset = reservedTopInset(bp) // EC-7 — the reserved strip's height; content insets below it
+  const overlay = overlayModeAt(bp) // 'sheet' (mobile) | 'centered' (tablet+)
 
-  // S2: mobile drawer open/close + its focus/inert/Esc a11y (the hook is idle unless the drawer form is active).
-  const isMobileNavOpen = useAppShellUIStore((s) => s.isMobileNavOpen)
-  const setMobileNavOpen = useAppShellUIStore((s) => s.setMobileNavOpen)
-  const reduced = useReducedMotion()
-  const drawerOpen = dock === 'drawer' && isMobileNavOpen
-  const { drawerRef } = useNavDrawer(drawerOpen, () => setMobileNavOpen(false))
+  // The dock⇄float arrangement (S1 store, app-owned R5). S2 only needs `open` (to drive the toggles' pressed state);
+  // the panels those toggles reveal are rendered in S3/S4.
+  const placement = useAppShellUIStore((s) => s.placement)
+  const togglePanel = useAppShellUIStore((s) => s.togglePanel)
 
   return (
-    // The frame is bounded to the viewport (height 100vh + overflow hidden) so each region scrolls INDEPENDENTLY —
-    // the dock and content have their own overflow, the global bar stays put, and the off-canvas drawer is clipped
-    // when closed. (S1 used minHeight:100vh to FILL; S2's real dock content can exceed the viewport, so it must also
-    // BOUND — else the bottom modules fall below the fold with no scroll. Visual-Gate finding, 2026-08-16.)
-    <View flex={1} height="100vh" overflow="hidden" flexDirection="row" backgroundColor="$colorSurfacePrimary">
-      {/* Module dock. Drawer (mobile): off-canvas (absolute) — S2 slides it in on `isMobileNavOpen` (transform x,
-          animated moderate / instant under reduced-motion) with a scrim behind; `inert` while closed (useNavDrawer)
-          so its links leave the tab order. Rail/sidebar (tablet+): an in-flow aside whose width reflows 64 → 240. */}
-      {dock === 'drawer' ? (
-        <>
-          {drawerOpen ? (
-            <View
-              data-region="navScrim"
-              position="absolute"
-              top={0}
-              left={0}
-              right={0}
-              bottom={0}
-              backgroundColor="$colorSurfaceInverse"
-              opacity={0.4}
-              zIndex={LAYERING.overlayHost}
-              onPress={() => setMobileNavOpen(false)}
-            />
-          ) : null}
-          <DockNav
-            ref={drawerRef}
-            aria-label="Modules"
-            aria-hidden={drawerOpen ? undefined : true}
-            data-region="moduleDock"
-            data-dock-state={dock}
-            position="absolute"
-            top={0}
-            bottom={0}
-            left={0}
-            width={DOCK_WIDTH.sidebar}
-            x={drawerOpen ? 0 : -DOCK_WIDTH.sidebar}
-            animation={reduced ? undefined : 'moderate'}
-            overflowY="auto"
-            backgroundColor="$colorSurfaceSecondary"
-            zIndex={LAYERING.modalHost}
-          >
-            <ModuleDock dock={dock} bp={bp} />
-          </DockNav>
-        </>
-      ) : (
-        <DockNav
-          aria-label="Modules"
-          data-region="moduleDock"
-          data-dock-state={dock}
-          width={DOCK_WIDTH[dock]}
-          borderRightWidth={1}
-          borderColor="$colorBorderDefault"
-          overflowY="auto"
-          backgroundColor="$colorSurfaceSecondary"
-          zIndex={LAYERING.stickyBars}
-        >
-          <ModuleDock dock={dock} bp={bp} />
-        </DockNav>
-      )}
+    // Bounded to the viewport (height 100vh + overflow hidden) so Content scrolls INDEPENDENTLY beneath the pinned
+    // top strip — the strip stays put, Content owns its own overflow, and floating panels/overlays (S4/#17) layer on top.
+    <View height="100vh" overflow="hidden" flexDirection="column" backgroundColor="$colorSurfacePrimary">
+      {/* EC-7 · the reserved top strip — the persistent bar. A top-level <header> ⇒ role="banner". Content and any
+          docked-panel header (S3) inset BELOW it, so a control never collides with content. */}
+      <BarHeader
+        data-region="topStrip"
+        data-top-inset={topInset}
+        height={topInset}
+        flexDirection="row"
+        alignItems="center"
+        gap="$12"
+        paddingHorizontal={gutter}
+        borderBottomWidth={1}
+        borderColor="$colorBorderDefault"
+        backgroundColor="$colorSurfacePrimary"
+        zIndex={LAYERING.stickyBars}
+      >
+        {/* Serif wordmark — EC-11 preset identity: `$display` flips Spectral/Fraunces/Source-Serif per preset. */}
+        <Text data-region="wordmark" fontFamily="$display" fontSize="$subheading" color="$colorTextPrimary" userSelect="none">
+          Vida
+        </Text>
 
-      {/* Main column: global bar → optional spaces bar → content outlet. minWidth 0 lets it shrink beside the dock. */}
-      <View flex={1} flexDirection="column" minWidth={0}>
-        <BarHeader
-          data-region="globalBar"
-          data-bar-mode={globalBarMode}
-          height={GLOBAL_BAR_HEIGHT}
-          paddingHorizontal={gutter}
-          justifyContent="center"
-          borderBottomWidth={1}
-          borderColor="$colorBorderDefault"
-          backgroundColor="$colorSurfacePrimary"
-          zIndex={LAYERING.stickyBars}
-        >
-          <GlobalBar mode={globalBarMode} onOpenMobileNav={() => setMobileNavOpen(true)} />
-        </BarHeader>
+        {/* System / Modules panel toggles — flip `placement[id].open` (S1 store). The panels they reveal are S3/S4;
+            at S2 the toggle is a valid stand-alone toggle button (`aria-pressed`), wired but opening nothing yet. */}
+        <View flexDirection="row" alignItems="center" gap="$8" data-region="panelToggles">
+          {PANEL_IDS.map((id) => (
+            <Button key={id} intent="ghost" size="md" aria-pressed={placement[id].open} onPress={() => togglePanel(id)}>
+              {PANEL_LABEL[id]}
+            </Button>
+          ))}
+        </View>
 
-        {/* Spaces bar — a reserved, empty seam, present tablet+ (unmounted on mobile per REGION_VISIBILITY). Content
-            lands with the Spaces module (M1.1); S2 renders it labeled but content-free (S2-BR-i). */}
-        {showSpaces ? (
-          <SpacesNav
-            aria-label="Spaces"
-            data-region="spacesBar"
-            height={SPACES_BAR_HEIGHT}
-            paddingHorizontal={gutter}
-            justifyContent="center"
-            borderBottomWidth={1}
-            borderColor="$colorBorderDefault"
-          />
-        ) : null}
+        {/* #15 — Bar-1 content (scope selector + global surfaces incl. the ⌘K trigger). Empty-but-functional in #14:
+            `flex={1}` claims the row's free space so the HUD sits hard-right even while the slot is empty. */}
+        <View flex={1} minWidth={0} flexDirection="row" alignItems="center" data-region="bar1Slot">
+          {bar1Slot}
+        </View>
 
-        {/* Content — the routed Outlet, centered to the 1280 max-width with per-breakpoint gutters. */}
-        <ContentMain data-region="content" flex={1} minHeight={0} overflowY="auto" paddingHorizontal={gutter} alignItems="center">
-          <View width="100%" maxWidth={CONTENT_MAX_WIDTH} flex={1}>
-            {children}
-          </View>
-        </ContentMain>
-      </View>
+        {/* #16 — the Session HUD. Empty-but-functional slot in #14. */}
+        <View flexDirection="row" alignItems="center" data-region="hudSlot">
+          {hudSlot}
+        </View>
+      </BarHeader>
 
-      {/* Overlay/modal host — a RESERVED empty marker. UI-1 overlays (incl. S3's command bar) SELF-PORTAL to <body>
-          (Dialog's own portal root), so nothing renders INTO this region; it stays the reserved seam S1 shipped
-          (S3-BR-i). Unlabeled: an empty landmark would announce falsely (S1-BR-h). pointerEvents none so it never
-          blocks the content beneath. */}
+      {/* EC-9 · Content — the routed Outlet, full-bleed, centered to the 1280 max-width with per-breakpoint gutters.
+          `minHeight:0` lets it shrink inside the bounded column so its own `overflowY:auto` (not the page) scrolls. */}
+      <ContentMain
+        data-region="content"
+        flex={1}
+        minHeight={0}
+        overflowY="auto"
+        paddingHorizontal={gutter}
+        alignItems="center"
+      >
+        <View width="100%" maxWidth={CONTENT_MAX_WIDTH} flex={1}>
+          {children}
+        </View>
+      </ContentMain>
+
+      {/* EC-8 · Overlay host — ⌘K / modals mount here at the `$overlay` z, above Content (and above the S4 panels).
+          `data-overlay-mode` drives sheet (mobile) vs centered (tablet+). UI-1 overlays SELF-PORTAL to <body> (Dialog's
+          own portal root), so this region's DOM stays empty (S3-BR-i); `pointerEvents:none` keeps the empty marker from
+          ever blocking the content beneath. Unlabeled: an empty landmark would announce falsely. */}
       <View
         data-region="overlayHost"
         data-overlay-mode={overlay}
@@ -182,11 +131,9 @@ export function AppShell({ children, __bp }: AppShellProps) {
         bottom={0}
         pointerEvents="none"
         zIndex={LAYERING.overlayHost}
-      />
-
-      {/* S3 · the ⌘K command-bar overlay. Mounted inside AppShell (router + store context for useShellNavigate);
-          renders null while closed + self-portals to <body> when open, so its position in the flow is layout-irrelevant. */}
-      <CommandBar />
+      >
+        {overlaySlot}
+      </View>
     </View>
   )
 }

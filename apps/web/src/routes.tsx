@@ -18,6 +18,7 @@ import {
   Outlet,
 } from '@tanstack/react-router'
 import { AppShell } from './shell/app-shell'
+import { CommandBar } from './shell/command-bar'
 
 const rootRoute = createRootRoute({
   component: RootComponent,
@@ -26,9 +27,11 @@ const rootRoute = createRootRoute({
 
 // UI-4 · S1: the app-shell chrome wraps the routed content. AppShell mounts HERE (inside the router) — not above
 // <RouterProvider> — because it hosts the <Outlet/>, which is only legal inside a route component.
+// fe-shell #14 · S2: the ⌘K launcher rides the frame's `overlaySlot` (envision #17; "⌘K reuses ui-4/ux-2"). CommandBar
+// owns its own global keybind + self-portals to <body>, so it keeps working through the dock⇄float reshape.
 function RootComponent() {
   return (
-    <AppShell>
+    <AppShell overlaySlot={<CommandBar />}>
       <Outlet />
     </AppShell>
   )

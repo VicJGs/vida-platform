@@ -23,9 +23,17 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   (`app-shell-ui-store.placement`, BR-RT-6 "panel state"); *persistence* is this deferred seam (never a raw table).
 
 **Chrome (UI-4 — the rendered app shell):**
-- `app-shell.tsx` (S1) — the `AppShell` frame: 5 regions in the responsive layout, `useMedia()` breakpoint resolution,
-  the bounded-viewport frame (`height:100vh`+`overflow:hidden`; dock & content scroll independently), the mobile
-  drawer's open-transform + scrim. Mounted in `routes.tsx` `RootComponent` wrapping `<Outlet/>`.
+- `app-shell.tsx` — **fe-shell #14 · S2 reshaped the frame** to the CODEC dock⇄float inspector model (envision M1–M7).
+  The `AppShell` is now a bounded-viewport column (`height:100vh`+`overflow:hidden`): a **reserved top strip** (`<header>`
+  → `role="banner"`, `reservedTopInset(bp)` 52/56 tall, `data-top-inset`) carrying the serif `$display` **"Vida"** wordmark +
+  **System/Modules** panel toggles (`aria-pressed`←`placement[id].open`, `onPress`→`togglePanel`, S1 store) + the `bar1Slot`
+  (#15) / `hudSlot` (#16) slots → a full-bleed **Content** `<main>` (`children`, 1280-centered + per-bp gutters, independent
+  scroll) → an **overlay host** (`overlaySlot`, `pointerEvents:none`, `$overlay` z). Props: `children`/`bar1Slot`/`hudSlot`/
+  `overlaySlot`/`__bp` (seam-contract §C). Mounted in `routes.tsx` `RootComponent` with `overlaySlot={<CommandBar/>}`
+  (⌘K reuses ui-4/ux-2 — CommandBar owns its keybind + self-portals). The **dock⇄float PANELS** the toggles reveal are
+  S3 (docked-inline) / S4 (floating-overlay); #15/#16/#17 contents + live `nav_preferences` persistence are deferred.
+  _(Superseded S1 five-region frame: left module dock + global bar + spaces bar + mobile drawer — `module-dock.tsx`/
+  `global-bar.tsx` stay as files, to be re-homed as panel bodies / #15 content in S3+.)_
 - `module-dock.tsx` (S2) — the dock content: `MODULE_MAP` grouped, drawer/rail/sidebar forms, empty-group skip,
   collapse toggle. `global-bar.tsx` (S2) — `GLOBAL_SURFACES` condensed/full + ⌘K→`commandBar.open()` + overflow Menu.
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact
