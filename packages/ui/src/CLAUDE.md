@@ -487,6 +487,78 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   adapter (`toFlowProps` + `mapEffectLog` [ADR-004 applied_effects → effect-rail] + `bindFlowIntents` against a
   `SessionsPort`; live `useFlowSession` hook deferred, R3). Spec:
   `docs/specs/components/ui-2-platform-views/flow-session-view.md`. Delivery: `docs/specs/foundation/fe-codec-flow-session/`.
+  **canvas-reader** is **fe-codec-canvas-reader · S1** (LIF-206) — the CODEC **Canvas: Reader shell**, the **5th archetype
+  shell**. A long-form **read·listen·annotate** FRAME; S1 ships the frame + header + reading column + states (Contents
+  panel S2 · margin rail S3 · selection S4 · listen bar S5 EXTEND it). A SHELL (the flow-session pattern) — **NON-GENERIC**
+  (React-19 ref-prop), **presentational/state-as-prop (BR-2)**, @vida/ui-only LOCAL types. Header = **title-hero** (serif
+  `$display` title alone · ONE plain-language `context` line · a `HonestProgress` reading-% **bar only when `progress` is
+  given** — a reader has no stages to derive from · `saveStatus` slot + `⋯`; `TitleGroup gap:'$16'`) + the honest
+  **`positionNote`** line (IR-3 not-synced). Body (S1) = the centered **reading column** (serif measure `maxWidth:660`) via
+  a **`renderContent` slot** (success-only). **Five states** via local **`ReaderState = ViewState | 'unavailable'`**:
+  loading (skeleton `aria-busy`) · empty (teaching `EmptyState`+`emptyAction`) · error (`role=status` MUTED) ·
+  **`unavailable` (access — a DISTINCT calm status, NOT empty: physical copy / no openable file, IR-NEEDS-4)** · success.
+  DIRECT tokens; region named via `warnMissingName`+`useId`. Visual Gate PASS (Brave, 3 presets × light/dark + 375:
+  title-hero · serif column · 5 states unavailable≠empty · accent flips · **AA MEASURED 0-fail incl. warm-dark**).
+  **S2** adds the toggleable **Contents panel** (the left zone — realizes the living-margin layout): an "About" `summary`
+  slot (the book-level Notes page, decision 1) + a shell-owned **TOC** from `chapters:ReaderChapter[]` (completion ✓ ·
+  **current chapter `$colorBrandEmphasis` + `aria-current`** · rows pressable `role=button`+keyboard ONLY when
+  `onJumpToChapter` given, the `collection onFilter` precedent) + a "Contents" header toggle (`aria-pressed`, app-owned
+  `contentsOpen`). **Header fix (benefits S1 too): `flexWrap` + `TitleGroup minWidth:240` + aside `flexShrink:0`** so the
+  serif `$display` title word-wraps at 375 instead of mid-word-breaking (the RNW `min-width:0` flex-collapse; Visual-Gate
+  caught). S2 Visual Gate PASS (AA 0-fail incl. warm-dark · 375 panel-stacks + title word-wraps).
+  **S3** adds the **margin rail** (the right Body zone — completes the living margin): `annotationGroups:AnnotationGroup[]`
+  (`{id,title,annotations}`, **PRE-GROUPED by chapter** — the shell never groups/sorts/parses; the adapter S6 builds them,
+  the board-view/list-view `sections` precedent) + `ReaderAnnotation{id,nature,text,location}` (`location` a pre-resolved
+  `ReactNode`, IR-8) + `annotationsState:ViewState` (NOT ReaderState — annotations have no access-`unavailable`) + `railOpen`/
+  `onToggleRail`/`onAddNote`/`onLinkAnnotation`. **IR-1 shell-enforced BY CONSTRUCTION (EC-5):** `linkable = nature !==
+  'highlight'` gates Add-note/Link BEFORE handler presence → a highlight NEVER shows an affordance even if the handlers are
+  passed (`AnnotationNotLinkableError` is UI-unreachable dead defence). The **three natures are visually distinct** (EC-6):
+  a `$caption` uppercase **nature label** (the non-colour signal) + a per-nature **`NatureMarker`** — a GRAPHICAL object
+  (≥3:1, NOT text 4.5): `highlight`=filled block · `bookmark`=outlined · `quote`=accent bar, all `$colorBrandPrimary`
+  (the calendar-dot/list-tick graphical token), **token-pure (no accent-surface tint, the list-view P1 lesson)**. Annotations
+  **grouped by chapter** with **counts** (total + per-chapter, EC-14); excerpt `numberOfLines={3}` clamped (house idiom;
+  the full text lives in the opened note). `RailBody` = the ReadingBody-mirror 4-state switch (loading `aria-busy` · empty
+  teaching `EmptyState` `titleLevel=3` · error `role=status` muted · success → grouped lists; success+no-groups degrades to
+  empty). A11y: `role="region"` "Annotations" → per-chapter `role="list"` `aria-labelledby` a **`useId`-prefixed index-keyed**
+  eyebrow id (NOT `group.id` — spaces, the board-view lesson) → `role="listitem"`; markers `aria-hidden`; affordances = ui-1
+  ghost `Button`s. "Annotations" header toggle (`aria-pressed`, beside Contents); Body `justifyContent`→`flex-start` when
+  EITHER zone present; the rail stacks below the column at 375/768 (mirrors `ContentsZone`, `borderLeftWidth`+`flexShrink:1`).
+  S3 Visual Gate PASS (Brave, 3 presets × light/dark + 390 + 768: IR-1 highlight-no-affordance every cell · text AA 0-fail
+  worst 4.52 · **marker 3:1 0-fail 4.95–6.41 incl. warm-dark** · 3 distinct markers · grouped+counts · rail states · stacks
+  below at 390/768 · no overflow · axe 0). 26/26 canvas-reader · full @vida/ui 496/496. IR-1 realized (was "shell-enforced
+  at S3").
+  **S4** adds the **selection affordance** — the way an annotation is born. Because the reading body is the consumer's
+  `renderContent` slot the shell can't own/anchor into (IR-NEEDS-3 / EC-12), S4 ships **two exported pieces the consumer
+  composes INSIDE `renderContent`** (the 4 `on*Selection` move OFF `CanvasReaderProps`): **`SelectionActions`** — a
+  `role="toolbar"` (Tab-stops, the collection-switcher precedent) of **real inline-SVG icon buttons** (Highlight · Quote ·
+  Bookmark · Listen-from-here; EC-15 never emoji; `currentColor` → the ghost `$colorBrandPrimary` via `ButtonText`, the
+  Button-spinner precedent), each **render-when-handler**, **`size="lg"` (48px ≈ 56×48 ≥ 44×44, §X touch)**, Listen gated by
+  `listenAvailable` (IR-7 degrade), emits intents never writes; **`ReaderHighlightMark`** — a **2px accent `borderBottom`**
+  inline mark (EC-3) whose font+colour **inherit** from the enclosing paragraph (hold the text), token-pure (no
+  accent-surface bg — use inside a `<Text>`). The live selection Range→rect anchoring is the **apps/web consumer's** (S6 /
+  fe-books #36) — the shipped `Popover` is trigger-anchored, not Range-anchored. **Barrel also closes the S3 gap** (now
+  exports `Nature`/`ReaderAnnotation`/`AnnotationGroup` + the two S4 components + prop types). S4 Visual Gate PASS (Brave,
+  3 presets × light/dark + 390: EC-15 SVG 0-emoji · icon 3:1 0-fail 4.95–6.41 incl. warm-dark · 56×48 · mark underline 3:1
+  5.63–6.41@2px + mark text AA held 15.84–17.29 · axe 0). 33/33 canvas-reader · full @vida/ui 503/503.
+  **S5** adds the slim persistent **listen bar** — book-level chrome (the INVERSE of S4's exported pieces: no `Range` to
+  anchor, so it lives ON `CanvasReaderProps` per the seam-contract, NOT a consumer-composed export). `listen?: ListenMode`
+  (`'idle'|'playing'|'unavailable'`, LOCAL union, the `ReaderState` precedent) + `listenProgress?`/`listenLabel?`/
+  `onListenToggle?`; the `ListenBar` renders between `Header` and `Body` **only when `listen != null`** (the `progress`
+  render-when-provided precedent). Three honest EC-7 states: **idle** → `ListenIcon` toggle (reused from S4) + label,
+  starts; **playing** → a new `PauseIcon` (S4 icon recipe) toggle + `HonestProgress` shown **only when `listenProgress`
+  given** (honest, no fake fill) + `aria-pressed`; **unavailable** → a CALM `role="status"` muted line "Listening isn't
+  available on this device", **NO button, never `$colorSignalDanger`** (IR-7, the reading-column `unavailable` precedent).
+  The toggle renders on idle/playing only when `onListenToggle` passed (render-when-handler), `size="lg"` (56×48 ≥44×44).
+  **A11y: all three states are a `role="group" aria-label="Listen"`** so `unavailable` (no button to carry a name) is never
+  an empty-named region. Single `flexWrap` row (375 wrap, RNW `flexShrink:0` default lesson); `$colorSurfaceSecondary` bar
+  surface, DIRECT tokens; barrel adds `type ListenMode`. S5 Visual Gate PASS (Brave, 3 presets × light/dark + 375: 3 named
+  groups · toggle 56×48 · real SVG 0-emoji · **icon 3:1 4.39–5.27 incl warm-dark** · label AA 4.52–5.22 incl the
+  muted-on-secondary line · progressbar in playing · calm unavailable · axe 0 · no overflow). 42/42 canvas-reader · full
+  @vida/ui 512/512. **S6 ✅** = the apps/web Books↔Reader adapter (`apps/web/src/reader/adapter.ts`, type+convention): the
+  display-resolve mappers (parse `position`→chapter via TOC page-range → "Ch. N · p. P"; Unplaced bucket; degrade-never-crash)
+  + `BooksReaderPort` + `bindReaderIntents`; live `useReader` hook deferred to fe-books #36. Verification Gate PASS (28/28).
+  **⟹ fe-codec-canvas-reader COMPLETE — all 6 slices.**
+  Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`. Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
   **canvas-view** is **fe-codec-canvas-board · S1** (LIF-204) — the CODEC **Canvas shell** (decomposition.md:32 §1.2,
   "where the soul lives"), the **5th archetype shell**. A read-only, immersive editorial FRAME that hosts exactly ONE
   view-mode renderer at canvas scale; the two worked examples — **Vision-board** (GalleryView over dreams, imagery-first)

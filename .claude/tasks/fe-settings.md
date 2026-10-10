@@ -1,6 +1,6 @@
 # Task: fe-settings
 # Status: planned
-# Linear: LIF-225
+# Linear: LIF-193
 # Profile: Add Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

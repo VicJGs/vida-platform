@@ -7,7 +7,7 @@
 # Milestone: M1.0 — Boot & Connective Base
 # Phase: 1.0 — Structural Foundation
 # Source: docs/roadmap/m1.0-delivery-plan.md → DB-9 (roadmap issue LIF-71)
-# Linear: LIF-222
+# Linear: LIF-71
 # Created: 2026-07-28
 # Activated: 2026-07-28 (M1.0 delivery campaign — ready head off DB-1; strong next after DB-6)
 

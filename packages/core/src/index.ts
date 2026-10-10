@@ -123,6 +123,21 @@ export * from './foundation/effects'
 // Foundation substrate — the capability registry (AR-7 Increment 2 · ADR-008 + ADR-010)
 export * from './foundation/capability'
 
+// Foundation substrate — Templates base (XS-templates #36 · ADR-009; fork-on-instantiate).
+// Surfaced on the public barrel by fe-codec-seams #13 S2 (the composition-primitive consumption seam).
+// NAMED re-export (not `export *`): templates' `CreateTemplateInput` collides with services/checkins' same-named
+// export on this barrel. Templates' create/capture input is not needed on the public surface yet (capture = the
+// deferred @vida/core S3–S5 seam), so it is intentionally omitted here; a future capture consumer imports it from
+// `@vida/core/foundation/templates` (or we alias it then). The reuse-via-re-export shape (XS-security precedent).
+export {
+  type TemplatesService,
+  type InstantiationResult,
+  type FlaggedMember,
+  createTemplatesService,
+  TemplateNotFound,
+  TemplateCaptureError,
+} from './foundation/templates'
+
 // Foundation substrate — the generic review engine (ADR-005 · mod-knowledge #50 ① S3)
 export * from './foundation/review'
 
