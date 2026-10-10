@@ -1,5 +1,5 @@
 # Task: fe-codec-canvas-editor
-# Status: in-progress
+# Status: done — LIF-234 → Done · PR #123 merged (2026-10-10, `9cd2a37`)
 # Linear: LIF-234 (created 2026-10-10 — reshape gap closed; blocked-by LIF-211, blocks LIF-187/LIF-191)
 # Activated: 2026-10-10 (G6 unit #7; sole remaining unbuilt CODEC archetype shell after shell #14 merged; dep fe-codec-patterns ✅)
 # Branch: fe-codec-canvas-editor (off origin/main @ f540b83) · worktree: .claude/worktrees/fe-codec-canvas-editor · Node 24 for @vida/ui
