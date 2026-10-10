@@ -19,6 +19,7 @@ import {
 } from '@tanstack/react-router'
 import { AppShell } from './shell/app-shell'
 import { CommandBar } from './shell/command-bar'
+import { HomeSurface } from './home/home-surface'
 
 const rootRoute = createRootRoute({
   component: RootComponent,
@@ -49,7 +50,8 @@ function NotFoundComponent() {
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => <h2>Vida</h2>,
+  // fe-home #18 · S3: the Home surface renders inside the UI-4 shell <Outlet/> (home-journal-dashboard.md:9,63).
+  component: HomeSurface,
 })
 
 // UI-4 · S5 — the neural-graph route is lazy-split so sigma/graphology never enter the
