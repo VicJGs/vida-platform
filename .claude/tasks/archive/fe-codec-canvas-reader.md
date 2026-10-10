@@ -1,5 +1,5 @@
 # Task: fe-codec-canvas-reader
-# Status: in-progress (all 6 slices built — PR #117 open 2026-10-10)
+# Status: done (all 6 slices · PR #117 MERGED to main `6569d5c3` 2026-10-10)
 # Linear: LIF-206
 # Profile: Add Frontend Component
 # Scenario: default
@@ -26,8 +26,8 @@ Delivery docs: `docs/specs/foundation/fe-codec-canvas-reader/delivery/`
 - [x] S2 — Contents panel (summary + TOC) (@vida/ui) — EC-13 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 16/16 · AA 0-fail incl warm-dark; living-margin realized; Header flexWrap fix for 375 word-wrap, benefits S1)
 - [x] S3 — Margin rail (annotations, IR-1) (@vida/ui) — EC-5/6/14 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 26/26 · text AA 0-fail worst 4.52 · marker 3:1 0-fail 4.95–6.41 incl. warm-dark · IR-1 every cell · axe 0 · stacks 390/768); pre-grouped `annotationGroups` + `annotationsState:ViewState` (§3 /contract refinements); g2 review SHIP; §XXIX CLAUDE.md + canvas-reader.md current
 - [x] S4 — Selection affordance (@vida/ui) — EC-4/3 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 33/33 · EC-15 real SVG icons 0-emoji · icon 3:1 0-fail 4.95–6.41 incl. warm-dark · 56×48 ≥44×44 · mark underline 3:1@2px + text AA held · axe 0); `SelectionActions`+`ReaderHighlightMark` exported (consumer-composed, surfacing doc-resolved IR-NEEDS-3/EC-12; callbacks off `CanvasReaderProps`); barrel closed S3 gap; g2 review SHIP; §XXIX current
-- [ ] S5 — Listen control (SVG icons) (@vida/ui) — EC-7/15
-- [ ] S6 — apps/web Books↔Reader adapter (display-resolve) — EC-14 (Verification Gate)
+- [x] S5 — Listen control (SVG icons) (@vida/ui) — EC-7/15 — ✅ Visual Gate PASS (`c55d4f2`; tsc 0 · eslint 0 · 42/42 · 3 named Listen groups · idle/playing(HonestProgress)/unavailable(calm role=status, IR-7) · reused ListenIcon + new PauseIcon · icon 3:1 4.39–5.27 · label AA 4.52–5.22 incl muted-on-secondary · 56×48 · axe 0); shell-rendered ListenBar on CanvasReaderProps (inverse of S4, doc-grounded); g1+g2 SHIP; §XXIX current
+- [x] S6 — apps/web Books↔Reader adapter (display-resolve) (@vida/web) — EC-14 — ✅ Verification Gate PASS (`3d43d2b`; tsc 0 · eslint 0 · 28/28; resolveLocation/groupAnnotations/mapChapters/state·position·listen mappers/toReaderProps/BooksReaderPort/bindReaderIntents; type+convention, live useReader hook deferred to fe-books #36); g1 REVISE→B1/B2/B3 fixed→SHIP · g2 SHIP (port fidelity proved); §XXIX current
 
 ## Route History
 | Step | Detour | Why | Resolved |
