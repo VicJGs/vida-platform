@@ -25,7 +25,7 @@ Delivery docs: `docs/specs/foundation/fe-codec-canvas-reader/delivery/`
 - [x] S1 — CanvasReader frame + reading column + states (@vida/ui) — EC-1/2/3/8/9/10/11 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 9/9 tests · AA 0-fail incl warm-dark); §XXIX CLAUDE.md + canvas-reader.md current
 - [x] S2 — Contents panel (summary + TOC) (@vida/ui) — EC-13 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 16/16 · AA 0-fail incl warm-dark; living-margin realized; Header flexWrap fix for 375 word-wrap, benefits S1)
 - [x] S3 — Margin rail (annotations, IR-1) (@vida/ui) — EC-5/6/14 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 26/26 · text AA 0-fail worst 4.52 · marker 3:1 0-fail 4.95–6.41 incl. warm-dark · IR-1 every cell · axe 0 · stacks 390/768); pre-grouped `annotationGroups` + `annotationsState:ViewState` (§3 /contract refinements); g2 review SHIP; §XXIX CLAUDE.md + canvas-reader.md current
-- [ ] S4 — Selection affordance (@vida/ui) — EC-4/3
+- [x] S4 — Selection affordance (@vida/ui) — EC-4/3 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 33/33 · EC-15 real SVG icons 0-emoji · icon 3:1 0-fail 4.95–6.41 incl. warm-dark · 56×48 ≥44×44 · mark underline 3:1@2px + text AA held · axe 0); `SelectionActions`+`ReaderHighlightMark` exported (consumer-composed, surfacing doc-resolved IR-NEEDS-3/EC-12; callbacks off `CanvasReaderProps`); barrel closed S3 gap; g2 review SHIP; §XXIX current
 - [ ] S5 — Listen control (SVG icons) (@vida/ui) — EC-7/15
 - [ ] S6 — apps/web Books↔Reader adapter (display-resolve) — EC-14 (Verification Gate)
 
@@ -38,4 +38,9 @@ Delivery docs: `docs/specs/foundation/fe-codec-canvas-reader/delivery/`
 
 - 2026-10-09 — front matter gated+approved → S1 built+gated (`a9dfe21`) → S2 built+gated (`fcad3b8`) → S3 margin rail
   built+gated (full §XXVI double-gate: critique REVISE→folded [marker 3:1 · 3-line clamp] · preflight PASSED→2 folds
-  [numberOfLines · titleLevel] · critique SHIP; g2 review SHIP; blocking Visual Gate PASS). Next: S4 selection affordance.
+  [numberOfLines · titleLevel] · critique SHIP; g2 review SHIP; blocking Visual Gate PASS).
+- 2026-10-09 — S4 selection affordance built+gated (full §XXVI: critique REVISE→folded [B1 44×44 touch · B2 Popover not
+  Range-anchored · N1 2px · N3 Tab-stops · N4 wrap · N5 S3 barrel gap] · preflight PASSED [icon currentColor via ButtonText] ·
+  critique SHIP; g2 review SHIP +2 nit folds [mark ref · empty-toolbar test]; blocking Visual Gate PASS). The surfacing
+  model (exported consumer-composed pieces, callbacks off CanvasReaderProps) was doc-resolved (IR-NEEDS-3/EC-12) + Victor-
+  approved at Approval 1. Next: S5 listen control.

@@ -507,7 +507,21 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   S3 Visual Gate PASS (Brave, 3 presets × light/dark + 390 + 768: IR-1 highlight-no-affordance every cell · text AA 0-fail
   worst 4.52 · **marker 3:1 0-fail 4.95–6.41 incl. warm-dark** · 3 distinct markers · grouped+counts · rail states · stacks
   below at 390/768 · no overflow · axe 0). 26/26 canvas-reader · full @vida/ui 496/496. IR-1 realized (was "shell-enforced
-  at S3"). Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`. Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
+  at S3").
+  **S4** adds the **selection affordance** — the way an annotation is born. Because the reading body is the consumer's
+  `renderContent` slot the shell can't own/anchor into (IR-NEEDS-3 / EC-12), S4 ships **two exported pieces the consumer
+  composes INSIDE `renderContent`** (the 4 `on*Selection` move OFF `CanvasReaderProps`): **`SelectionActions`** — a
+  `role="toolbar"` (Tab-stops, the collection-switcher precedent) of **real inline-SVG icon buttons** (Highlight · Quote ·
+  Bookmark · Listen-from-here; EC-15 never emoji; `currentColor` → the ghost `$colorBrandPrimary` via `ButtonText`, the
+  Button-spinner precedent), each **render-when-handler**, **`size="lg"` (48px ≈ 56×48 ≥ 44×44, §X touch)**, Listen gated by
+  `listenAvailable` (IR-7 degrade), emits intents never writes; **`ReaderHighlightMark`** — a **2px accent `borderBottom`**
+  inline mark (EC-3) whose font+colour **inherit** from the enclosing paragraph (hold the text), token-pure (no
+  accent-surface bg — use inside a `<Text>`). The live selection Range→rect anchoring is the **apps/web consumer's** (S6 /
+  fe-books #36) — the shipped `Popover` is trigger-anchored, not Range-anchored. **Barrel also closes the S3 gap** (now
+  exports `Nature`/`ReaderAnnotation`/`AnnotationGroup` + the two S4 components + prop types). S4 Visual Gate PASS (Brave,
+  3 presets × light/dark + 390: EC-15 SVG 0-emoji · icon 3:1 0-fail 4.95–6.41 incl. warm-dark · 56×48 · mark underline 3:1
+  5.63–6.41@2px + mark text AA held 15.84–17.29 · axe 0). 33/33 canvas-reader · full @vida/ui 503/503.
+  Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`. Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +

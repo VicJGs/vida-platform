@@ -2,7 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, within } from '@testing-library/react'
 import { UIProvider } from '../provider'
-import { CanvasReader, type ReaderChapter, type AnnotationGroup } from './canvas-reader'
+import { Text } from '@tamagui/core'
+import { CanvasReader, SelectionActions, ReaderHighlightMark, type ReaderChapter, type AnnotationGroup } from './canvas-reader'
 
 // First jsdom render bears the whole Tamagui compile; scope a generous timeout (the flow-session precedent).
 vi.setConfig({ testTimeout: 15000 })
@@ -221,5 +222,67 @@ describe('CanvasReader — margin rail (S3)', () => {
   it('names the rail region Annotations', () => {
     const { getByRole } = renderUI(<CanvasReader title="T" aria-label="R" annotationGroups={ANNOS} />)
     expect(getByRole('region', { name: 'Annotations' })).not.toBeNull()
+  })
+})
+
+describe('CanvasReader — selection affordance (S4)', () => {
+  // ── BR-S4-1: the birth action set — a named toolbar of the 4 actions ──
+  it('renders the 4 actions (toolbar) when every handler is passed', () => {
+    const { getByRole } = renderUI(
+      <SelectionActions onHighlight={() => {}} onQuote={() => {}} onBookmark={() => {}} onListenFrom={() => {}} />,
+    )
+    expect(getByRole('toolbar', { name: 'Turn selection into' })).not.toBeNull()
+    for (const name of ['Highlight', 'Quote', 'Bookmark', 'Listen from here'])
+      expect(getByRole('button', { name })).not.toBeNull()
+  })
+
+  // ── BR-S4-1: each action emits its intent ──
+  it('emits each selection intent on press', () => {
+    const h = vi.fn(), q = vi.fn(), b = vi.fn(), l = vi.fn()
+    const { getByRole } = renderUI(<SelectionActions onHighlight={h} onQuote={q} onBookmark={b} onListenFrom={l} />)
+    fireEvent.click(getByRole('button', { name: 'Highlight' })); expect(h).toHaveBeenCalled()
+    fireEvent.click(getByRole('button', { name: 'Quote' })); expect(q).toHaveBeenCalled()
+    fireEvent.click(getByRole('button', { name: 'Bookmark' })); expect(b).toHaveBeenCalled()
+    fireEvent.click(getByRole('button', { name: 'Listen from here' })); expect(l).toHaveBeenCalled()
+  })
+
+  // ── BR-S4-1: render-when-handler — an action is absent without its handler ──
+  it('omits an action when its handler is not passed', () => {
+    const { queryByRole } = renderUI(<SelectionActions onHighlight={() => {}} />)
+    expect(queryByRole('button', { name: 'Highlight' })).not.toBeNull()
+    expect(queryByRole('button', { name: 'Quote' })).toBeNull()
+    expect(queryByRole('button', { name: 'Bookmark' })).toBeNull()
+    expect(queryByRole('button', { name: 'Listen from here' })).toBeNull()
+  })
+
+  // ── BR-S4-3 (IR-7): Listen-from-here degrades to omitted when TTS is unavailable ──
+  it('omits Listen-from-here when listenAvailable is false', () => {
+    const { queryByRole } = renderUI(<SelectionActions onListenFrom={() => {}} listenAvailable={false} />)
+    expect(queryByRole('button', { name: 'Listen from here' })).toBeNull()
+  })
+
+  // ── BR-S4-2 (EC-15): real inline SVG icons, never emoji ──
+  it('uses inline SVG icons with no emoji text', () => {
+    const { getByRole } = renderUI(<SelectionActions onHighlight={() => {}} />)
+    const btn = getByRole('button', { name: 'Highlight' })
+    expect(btn.querySelector('svg')).not.toBeNull()
+    expect(btn.textContent?.trim()).toBe('') // name is from aria-label, not emoji/text content
+  })
+
+  // ── BR-S4-1: with no handlers the toolbar renders empty + valid (consumer controls which actions exist) ──
+  it('renders an empty named toolbar when no handlers are passed', () => {
+    const { getByRole, queryByRole } = renderUI(<SelectionActions />)
+    expect(getByRole('toolbar', { name: 'Turn selection into' })).not.toBeNull()
+    expect(queryByRole('button')).toBeNull()
+  })
+
+  // ── BR-S4-4 (EC-3): the inline mark wraps its children + carries the mark class ──
+  it('ReaderHighlightMark renders children with the mark class', () => {
+    const { getByText } = renderUI(
+      <Text>
+        <ReaderHighlightMark>marked words</ReaderHighlightMark>
+      </Text>,
+    )
+    expect(getByText('marked words').className).toContain('vida-reader-highlight')
   })
 })

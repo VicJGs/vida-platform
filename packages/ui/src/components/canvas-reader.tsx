@@ -517,4 +517,115 @@ export function CanvasReader({
   )
 }
 
+// ============================================================================
+// S4 · Selection affordance — the way an annotation is BORN. Presentational pieces the CONSUMER composes INSIDE
+// `renderContent` (the shell doesn't own/parse the body → it can't anchor to a Range; IR-NEEDS-3). `SelectionActions`
+// is the birth action set; `ReaderHighlightMark` is the inline marked span (EC-3). Both exported to the barrel.
+// ============================================================================
+
+// Inline SVG icons (EC-15, NEVER emoji). `currentColor` inherits the Button ghost colour ($colorBrandPrimary) via the
+// ButtonText wrapper — the button.tsx Spinner precedent (a $token SVG attr renders colorless). aria-hidden; the Button
+// aria-label carries the name.
+function HighlightIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9 17l8-8-3-3-8 8v3h3z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M4 21h6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+function QuoteIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M7 15V9h4v4c0 2-1.3 3.4-3.2 4l-.6-1.1c1-.4 1.6-.9 1.7-1.9H7zM15 15V9h4v4c0 2-1.3 3.4-3.2 4l-.6-1.1c1-.4 1.6-.9 1.7-1.9H15z" />
+    </svg>
+  )
+}
+function BookmarkIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 3h12v18l-6-4-6 4V3z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  )
+}
+function ListenIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+      <path d="M17 9a3.5 3.5 0 0 1 0 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+const SelectionBar = styled(View, { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: '$8' })
+
+export interface SelectionActionsProps {
+  /** Births a highlight (a marked span). */
+  onHighlight?: () => void
+  /** Births a first-class quote. */
+  onQuote?: () => void
+  /** Births a bookmark (a saved position). */
+  onBookmark?: () => void
+  /** Listen from the selection (TTS). */
+  onListenFrom?: () => void
+  /** false ⇒ Listen-from-here is OMITTED (IR-7 TTS degrade). Default true. */
+  listenAvailable?: boolean
+  /** Names the toolbar. Default "Turn selection into". */
+  'aria-label'?: string
+  ref?: Ref<HTMLDivElement>
+}
+
+// The select-passage action set (EC-4). A `role="toolbar"` of icon Buttons (Tab-stops — the collection-view switcher
+// precedent). Each action renders ONLY when its handler is passed (render-when-handler); emits an intent, never writes
+// (IR-5). Icon buttons are `size="lg"` → 48px ≥ 44×44 (§X touch target). The CONSUMER anchors this at the selection.
+export function SelectionActions({
+  onHighlight,
+  onQuote,
+  onBookmark,
+  onListenFrom,
+  listenAvailable = true,
+  'aria-label': ariaLabel = 'Turn selection into',
+  ref,
+}: SelectionActionsProps) {
+  return (
+    <SelectionBar ref={ref} role="toolbar" aria-label={ariaLabel}>
+      {onHighlight != null && (
+        <Button intent="ghost" size="lg" aria-label="Highlight" onPress={onHighlight}>
+          <HighlightIcon />
+        </Button>
+      )}
+      {onQuote != null && (
+        <Button intent="ghost" size="lg" aria-label="Quote" onPress={onQuote}>
+          <QuoteIcon />
+        </Button>
+      )}
+      {onBookmark != null && (
+        <Button intent="ghost" size="lg" aria-label="Bookmark" onPress={onBookmark}>
+          <BookmarkIcon />
+        </Button>
+      )}
+      {onListenFrom != null && listenAvailable && (
+        <Button intent="ghost" size="lg" aria-label="Listen from here" onPress={onListenFrom}>
+          <ListenIcon />
+        </Button>
+      )}
+    </SelectionBar>
+  )
+}
+
+// A 2px accent underline added to the span; font + colour INHERIT from the enclosing paragraph (BR-S4-4 "mark the chrome,
+// hold the text" → don't recolour/resize, just mark). Use INSIDE a parent <Text> so RNW renders it inline.
+const HighlightMarkText = styled(Text, { borderBottomWidth: 2, borderBottomColor: '$colorBrandPrimary' })
+
+export interface ReaderHighlightMarkProps {
+  children: ReactNode
+  /** React-19 ref-as-prop → the mark span (the package ref-as-prop convention; lets a consumer measure/scroll-to it). */
+  ref?: Ref<HTMLElement>
+}
+
+/** The inline highlight mark (EC-3) — a highlighted span reads as marked within the text. Use inside a <Text>. */
+export function ReaderHighlightMark({ children, ref }: ReaderHighlightMarkProps) {
+  return <HighlightMarkText ref={ref} className="vida-reader-highlight">{children}</HighlightMarkText>
+}
+
 export default CanvasReader

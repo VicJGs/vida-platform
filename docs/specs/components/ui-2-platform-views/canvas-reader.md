@@ -19,7 +19,12 @@ Consumes the shipped `@vida/core` Books service via the apps/web adapter (S6) �
   living margin): annotations **pre-grouped by chapter** (counts total + per-chapter) · three natures visually distinct
   (shape-differentiated accent markers + labels) · pre-resolved location · **IR-1 shell-enforced** (highlight never
   linkable) · 4-state `RailBody` · "Annotations" toggle.
-- S4 — selection affordance. · S5 — listen control (SVG icons). · S6 — apps/web Books↔Reader adapter (display-resolve).
+- **S4 ✅ — selection affordance.** two exported pieces the consumer composes in `renderContent` (the shell can't own/
+  anchor into the body it doesn't render): **`SelectionActions`** (a `role="toolbar"` of real-SVG icon buttons —
+  Highlight · Quote · Bookmark · Listen-from-here, `size="lg"` 44×44, render-when-handler, emits intents) +
+  **`ReaderHighlightMark`** (a 2px accent-underline inline mark, text held). The 4 `on*Selection` live on `SelectionActions`,
+  NOT `CanvasReaderProps`.
+- S5 — listen control (SVG icons). · S6 — apps/web Books↔Reader adapter (display-resolve).
 
 ## S1 contract
 ```ts
@@ -98,3 +103,38 @@ Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 390 + 768: g
 markers · **IR-1 highlight-no-affordance every cell** · text AA 0-fail (worst 4.52) · **marker 3:1 0-fail (4.95–6.41,
 incl. warm-dark)** · rail states · rail stacks below at 390/768 · no overflow · **axe 0**). tsc 0 · eslint 0 · 26/26
 canvas-reader tests · full `@vida/ui` **496/496** (2 concurrency flakes in untouched files, green on isolation + re-run).
+
+## S4 contract (NEW exports — NOT on `CanvasReaderProps`)
+```ts
+type Nature = 'highlight' | 'bookmark' | 'quote'   // (also now barrel-exported; was shipped in S3)
+interface SelectionActionsProps {
+  onHighlight?: () => void; onQuote?: () => void; onBookmark?: () => void; onListenFrom?: () => void
+  listenAvailable?: boolean        // default true; false ⇒ Listen-from-here omitted (IR-7)
+  'aria-label'?: string            // default "Turn selection into"
+  ref?: Ref<HTMLDivElement>
+}
+function SelectionActions(p: SelectionActionsProps): JSX.Element
+interface ReaderHighlightMarkProps { children: ReactNode; ref?: Ref<HTMLElement> }
+function ReaderHighlightMark(p: ReaderHighlightMarkProps): JSX.Element
+```
+
+## S4 business rules
+- **BR-S4-surfacing (IR-NEEDS-3 / EC-12):** the reading body is the consumer's `renderContent` slot — the shell can't own
+  it, detect a selection, or anchor an overlay. So S4 ships `SelectionActions` + `ReaderHighlightMark` as **pieces the
+  consumer composes INSIDE `renderContent`** (anchored at the `Range` they own); the 4 callbacks move off `CanvasReaderProps`.
+- **BR-S4-1 (action set, EC-4):** `role="toolbar"` (Tab-stops, the collection-view switcher precedent) of icon Buttons —
+  Highlight · Quote · Bookmark · Listen-from-here; each renders **only when its handler is passed**; emits intent, never
+  writes (IR-5).
+- **BR-S4-2 (real icons, EC-15):** inline SVGs (no icon-set dep; no emoji), `aria-hidden`, `currentColor` → the ghost
+  `$colorBrandPrimary` via `ButtonText` (the Button-spinner precedent).
+- **BR-S4-3 (listen degrade, IR-7):** Listen-from-here renders iff `onListenFrom && listenAvailable !== false`.
+- **BR-S4-4 (inline mark, EC-3):** `ReaderHighlightMark` = a **2px accent `borderBottom`** (`$colorBrandPrimary`); font +
+  colour **inherit** from the enclosing paragraph (hold the text); token-pure (no accent-surface bg). Use inside a `<Text>`.
+- **BR-S4-6a (touch target, §X):** icon buttons `size="lg"` → 48px (icon-only ≈ 56×48 ≥ 44×44).
+- **BR-S4-6b (375):** the toolbar is a `flexWrap` row (no mid-control overflow — the flow-session `AffordanceRow` lesson).
+
+## S4 verification
+Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 390: **EC-15 real SVG icons, 0 emoji** · **icon 3:1
+0-fail 4.95–6.41 incl. warm-dark** · 56×48 ≥ 44×44 · **mark underline 3:1 5.63–6.41@2px · mark text AA 15.84–17.29 held** ·
+body text AA 0-fail · **axe 0**). tsc 0 · eslint 0 (S4 files) · 33/33 canvas-reader tests · full `@vida/ui` **503/503**
+(the known untouched-file concurrency flake, green on re-run). Live Range→rect anchoring = apps/web (S6 / fe-books #36).

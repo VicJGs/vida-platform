@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Text, View } from '@tamagui/core'
-import { CanvasReader, type ReaderChapter, type AnnotationGroup } from './canvas-reader'
+import { CanvasReader, SelectionActions, ReaderHighlightMark, type ReaderChapter, type AnnotationGroup } from './canvas-reader'
 import { Button } from './button'
 import { SyncStatus } from './sync-status'
 
@@ -124,6 +124,52 @@ export const RailStates: Story = {
           <CanvasReader {...common} state="success" renderContent={readingBody} annotationsState={s} railOpen aria-label={`Reader ${s} rail`} />
         </View>
       ))}
+    </View>
+  ),
+}
+
+// ── S4 · Selection affordance ────────────────────────────────────────────────────────────────────────────────
+/** S4 — the birth action set: Highlight · Quote · Bookmark · Listen-from-here (real SVG icons, no emoji). */
+export const SelectionActionSet: Story = {
+  render: () => <SelectionActions onHighlight={() => {}} onQuote={() => {}} onBookmark={() => {}} onListenFrom={() => {}} />,
+}
+
+/** S4 — the inline highlight mark (EC-3): marked spans read as marked within the text. */
+export const HighlightMark: Story = {
+  render: () => (
+    <View maxWidth={660} gap="$16">
+      <Text fontFamily="$body" fontSize="$body" color="$colorTextPrimary" lineHeight={28}>
+        He was by no means a fanatic, and, in my opinion at least,{' '}
+        <ReaderHighlightMark>was not even a mystic</ReaderHighlightMark>. He was simply{' '}
+        <ReaderHighlightMark>an early lover of humanity</ReaderHighlightMark>, and that he adopted the monastic life it
+        struck him as the ideal escape for his soul.
+      </Text>
+    </View>
+  ),
+}
+
+/** S4 — the EC-12 feel: the action set placed in-place over a selected span (a REPRESENTATIVE box — the live
+ *  Range→rect anchoring is the apps/web consumer's, not the shipped trigger-anchored Popover). */
+export const SelectionInPlace: Story = {
+  render: () => (
+    <View maxWidth={660} position="relative" paddingTop="$64">
+      <View
+        position="absolute"
+        top={0}
+        left={100}
+        backgroundColor="$colorSurfacePrimary"
+        borderWidth={1}
+        borderColor="$colorBorderDefault"
+        borderRadius="$lg"
+        paddingHorizontal="$4"
+      >
+        <SelectionActions onHighlight={() => {}} onQuote={() => {}} onBookmark={() => {}} onListenFrom={() => {}} />
+      </View>
+      <Text fontFamily="$body" fontSize="$body" color="$colorTextPrimary" lineHeight={28}>
+        And this life struck him only because at that time he met{' '}
+        <ReaderHighlightMark>a remarkable being</ReaderHighlightMark>, our celebrated elder, Zossima, to whom he became
+        attached with all the warm first love of his ardent heart.
+      </Text>
     </View>
   ),
 }
