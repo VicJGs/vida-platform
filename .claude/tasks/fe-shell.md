@@ -1,5 +1,5 @@
 # Task: fe-shell
-# Status: in-review
+# Status: done
 # Linear: LIF-199
 # Profile: Add Frontend Component
 # Scenario: default

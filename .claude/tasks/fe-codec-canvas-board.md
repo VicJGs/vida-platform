@@ -1,5 +1,5 @@
 # Task: fe-codec-canvas-board
-# Status: in-progress
+# Status: done
 # Linear: LIF-204
 # Profile: Add Frontend Component
 # Scenario: default
