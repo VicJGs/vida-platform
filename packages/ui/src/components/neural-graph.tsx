@@ -1,9 +1,19 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type Ref } from 'react'
-import { styled, View } from '@tamagui/core'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+  type Ref,
+} from 'react'
+import { styled, useTheme, View } from '@tamagui/core'
 import Graph from 'graphology'
 import Sigma from 'sigma'
 import forceAtlas2 from 'graphology-layout-forceatlas2'
 import { type ViewState, Message } from '../internal/data-view'
+import { useReducedMotion } from '../hooks/use-reduced-motion'
 
 // UI-2 · V7 · neural-graph — the renderer for the `graph` VIEW_LAYOUT. A force-directed WebGL graph (Sigma.js).
 // Implements docs/specs/components/ui-2-platform-views/v7-neural-graph.md. The last + hardest UI-2 view.
@@ -37,15 +47,17 @@ export interface NeuralGraphProps {
   state?: ViewState
   /** Frame height (px). Default 400. */
   height?: number
-  /** forceatlas2 iterations. Default 200. */
+  /** forceatlas2 iterations. Default 200. Capped to 0 under prefers-reduced-motion (BR-12). */
   layoutIterations?: number
+  /** Slot overriding the default "Loading…" message (e.g. a teaching component). */
+  loading?: ReactNode
+  /** Slot overriding the default "Couldn't load." error message. */
+  error?: ReactNode
+  /** Slot overriding the default "No connections yet." empty message (e.g. a teaching <EmptyState/>). */
+  empty?: ReactNode
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
 }
-
-// Documented default Sigma colors (WebGL, outside Tamagui theming — NG-7).
-const DEFAULT_NODE_COLOR = '#6366f1'
-const DEFAULT_EDGE_COLOR = '#cbd5e1'
 
 // sr-only (visually hidden but FOCUSABLE — never display:none/visibility:hidden). NG-5/m-B.
 const SR_ONLY: CSSProperties = {
@@ -77,9 +89,27 @@ export function NeuralGraph({
   state = 'success',
   height = 400,
   layoutIterations = 200,
+  loading,
+  error,
+  empty,
   ref,
   ...rest
 }: NeuralGraphProps): ReactElement {
+  // Ink voice (NG-7, BR-7): node/edge DEFAULT colors come from the live theme — the editorial per-preset accent +
+  // the muted hairline, NOT a fixed blue-SaaS hex. `useTheme().get('web')` returns a CSS-var REFERENCE
+  // (`var(--colorBrandPrimary)`) — fine for an SVG attr (the pomodoro-ring pattern), but Sigma renders in WebGL and
+  // can't parse `var(...)` (it would render colorless). AND the CODEC preset is applied as a `<body>` class that
+  // overrides the var's VALUE — so the concrete, preset-aware colour must be resolved from the CSS cascade at a DOM
+  // node via getComputedStyle (done in the effect, below), NOT from `.val` (which would miss the body-class override).
+  // The literals are the no-theme-resolution fallback (jsdom). A per-item node.color still overrides (BR-8).
+  const theme = useTheme()
+  const nodeColorToken = theme.colorBrandPrimary?.get('web') ?? '#6366f1'
+  const edgeColorToken = theme.colorBorderDefault?.get('web') ?? '#cbd5e1'
+
+  // Reduced motion (BR-12, NG-8): the force-settling is synchronous, but a reduced-motion user gets the deterministic
+  // circular seed (0 iterations) instead of the force-clustered layout — instant, predictable, no organic settling.
+  const reduced = useReducedMotion()
+
   // WebGL availability — once, client-only (false in jsdom → the effect skips; false in a no-WebGL browser → NG-6).
   const [webglAvailable] = useState(() => {
     try {
@@ -121,6 +151,27 @@ export function NeuralGraph({
 
   useEffect(() => {
     if (!webglAvailable || !containerRef.current || nodes.length === 0) return
+    // Resolve the themed colour tokens to a CONCRETE value Sigma's WebGL colour parser accepts (BR-7/9). A CSS
+    // custom property's COMPUTED value does not substitute nested var() refs (`--colorBrandPrimary` → the chained
+    // `var(--c-...)`, not a hex), so read it through a REAL property on a throwaway probe in THIS DOM subtree — the
+    // browser then applies the full cascade (incl. the active preset's `<body>`-class override + light/dark) and
+    // returns a concrete `rgb(...)`. jsdom has no CSS var engine → the probe yields a var/empty → the literal fallback.
+    const host = containerRef.current
+    const resolveColor = (token: string, fallback: string): string => {
+      if (!token.startsWith('var(')) return token || fallback // already concrete (a literal)
+      const probe = document.createElement('span')
+      probe.style.position = 'absolute'
+      probe.style.color = token
+      host.appendChild(probe)
+      try {
+        const resolved = getComputedStyle(probe).color
+        return resolved && !resolved.startsWith('var(') ? resolved : fallback
+      } finally {
+        probe.remove() // never leak the probe, even if getComputedStyle throws (review N1)
+      }
+    }
+    const nodeColor = resolveColor(nodeColorToken, '#6366f1')
+    const edgeColor = resolveColor(edgeColorToken, '#cbd5e1')
     const graph = new Graph()
     const n = nodes.length
     nodes.forEach((node, i) => {
@@ -129,31 +180,36 @@ export function NeuralGraph({
         x: Math.cos((2 * Math.PI * i) / n), // deterministic circular seed (m1)
         y: Math.sin((2 * Math.PI * i) / n),
         size: node.size ?? 6,
-        color: node.color ?? DEFAULT_NODE_COLOR,
+        color: node.color ?? nodeColor, // themed default (BR-7); per-item override wins (BR-8)
       })
     })
     edges.forEach((e) => {
       if (graph.hasNode(e.source) && graph.hasNode(e.target) && !graph.hasEdge(e.source, e.target))
-        graph.addEdge(e.source, e.target, { color: e.color ?? DEFAULT_EDGE_COLOR })
+        graph.addEdge(e.source, e.target, { color: e.color ?? edgeColor })
     })
-    forceAtlas2.assign(graph, { iterations: layoutIterations, settings: { barnesHutOptimize: true } })
+    // reduced-motion → 0 iterations = the nodes stay on their deterministic circular seed (no force-settling); BR-12.
+    const iterations = reduced ? 0 : layoutIterations
+    forceAtlas2.assign(graph, { iterations, settings: { barnesHutOptimize: true } })
     const sigma = new Sigma(graph, containerRef.current, {})
     sigma.on('clickNode', ({ node }) => onNodeClickRef.current?.(node))
     return () => {
       sigma.kill()
     }
-    // deps on graphKey (content) NOT [nodes, edges] refs — B1. The body reads current nodes/edges.
-  }, [graphKey, webglAvailable, layoutIterations])
+    // deps on graphKey (content) NOT [nodes, edges] refs — B1. The body reads current nodes/edges + nodeColor/edgeColor
+    // (the colors are intentionally OUT of deps — BR-10 stale-until-re-topology; `reduced` IS in → a toggle re-lays-out).
+  }, [graphKey, webglAvailable, layoutIterations, reduced])
 
   const effectiveEmpty = state === 'empty' || (state === 'success' && nodes.length === 0)
   const ariaLabel =
     (rest as { 'aria-label'?: string })['aria-label'] ??
     `Network graph: ${nodes.length} nodes, ${validEdges} connections`
 
-  let content: ReactElement
-  if (state === 'loading') content = <Message role="status">Loading…</Message>
-  else if (state === 'error') content = <Message role="status">Couldn&rsquo;t load.</Message>
-  else if (effectiveEmpty) content = <Message role="status">No connections yet.</Message>
+  // Terminal states (NG-3): each accepts an optional consumer slot that OVERRIDES the default Message (BR-11);
+  // absent → the current copy verbatim (back-compat). Mirrors board-view / calendar-view `{slot ?? <Message>}`.
+  let content: ReactNode
+  if (state === 'loading') content = loading ?? <Message role="status">Loading…</Message>
+  else if (state === 'error') content = error ?? <Message role="status">Couldn&rsquo;t load.</Message>
+  else if (effectiveEmpty) content = empty ?? <Message role="status">No connections yet.</Message>
   else
     // success + nodes: the VISUAL is the WebGL canvas (or a "needs WebGL" message if unavailable — NG-6); the
     // accessible node list renders EITHER WAY (it's the a11y equivalent AND the no-WebGL data fallback).

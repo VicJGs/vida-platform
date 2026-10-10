@@ -1,5 +1,6 @@
 # Task: fix-entity-view-header
 # Status: done
+# Linear: LIF-233
 # Profile: Change Frontend Component
 # Scenario: default
 # Project: M1 — Whole Manual OS

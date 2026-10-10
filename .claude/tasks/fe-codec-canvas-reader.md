@@ -1,5 +1,5 @@
 # Task: fe-codec-canvas-reader
-# Status: in-progress
+# Status: in-progress (all 6 slices built — PR #117 open 2026-10-10)
 # Linear: LIF-206
 # Profile: Add Frontend Component
 # Scenario: default

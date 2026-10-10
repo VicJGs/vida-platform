@@ -337,6 +337,25 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   success regardless of WebGL (also the no-WebGL data fallback). Sigma canvas is transparent → the frame's
   `$colorSurfacePrimary` flips with the theme. States via the shared `Message`. Dangling edges skipped + dev-warn.
   Lifecycle tested by mocking `sigma`/`forceatlas2` + stubbing `getContext`. Spec: `…/v7-neural-graph.md`.
+  **fe-codec-canvas-graph · S1 (LIF-205) — the editorial "ink voice" extension** (#8; EXTEND, no new file). Three
+  conformance fixes, all back-compat: **(1) themed node/edge default colours** — node = `$colorBrandPrimary`, edge =
+  `$colorBorderDefault` (per-preset: editorial blue · reader oxblood · quietDesk olive), replacing the deleted fixed
+  `#6366f1`/`#cbd5e1` ("blue SaaS", surface-map.md:28 WRONG-risk). **⚠ Sigma renders in WebGL — a `var(--x)` is
+  uncolorable there**, and a CSS custom property's *computed* value does NOT substitute nested var() refs, so
+  `useTheme().get('web')` (which returns `var(--colorBrandPrimary)`) is resolved to a CONCRETE `rgb(...)` via a **probe
+  `<span>`**: append to the Sigma host, set a REAL `style.color = token`, read `getComputedStyle(probe).color`
+  (`try/finally` removes it) — the browser then applies the full cascade incl. the active preset's `<body>`-class
+  override. jsdom (no CSS var engine) → fallback literal. This is the WebGL analogue of the pomodoro-ring SVG
+  `stroke="var(…)"` pattern — SVG resolves var() via CSS, WebGL can't. A per-item `GraphNode.color` still overrides.
+  The colour tokens are read in the effect but kept OUT of its deps (stale-until-re-topology; NG-2 color-deferral) —
+  fine in M1 where the `/graph` route renders empty; surgical live-recolor is a first-consumer follow-up. **(2)
+  consumer slots** — `loading?`/`error?`/`empty?: ReactNode` override the default `Message` (`{slot ?? <Message>}`,
+  the board/calendar precedent), `content` widened to `ReactNode`; absent → verbatim copy. **(3) reduced-motion** —
+  `useReducedMotion()` gates the forceatlas2 iterations (`reduced ? 0 : layoutIterations`; 0 = the deterministic
+  circular seed, no force-settling); `reduced` IS in the effect deps. Visual Gate PASS (Brave, 3 presets × light/dark:
+  node ink concrete + DISTINCT per preset [blue/oxblood/olive] · edges hairline · canvas mounts · 12-node a11y list ·
+  empty/loading/error AA 5.76–6.53 incl. warm reader-dark · slot override · axe 0 · 375 no overflow). @vida/ui 473 tests.
+  Spec: `docs/specs/foundation/fe-codec-canvas-graph/`.
   **table-view** is **fe-codec-viewmodes · S1** (LIF-214) — the renderer for the **`table`** VIEW_LAYOUT, extending ui-2
   with the 6th canonical view-mode (G6 reshape: *"add table · board"* — supersedes the 2026-08-09 "table/board = degrade,
   not built" stance). A **READ-ONLY LENS** (quality-bar §4.3: a View renders, a Capability writes) — caller-declared
@@ -535,8 +554,38 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   surface, DIRECT tokens; barrel adds `type ListenMode`. S5 Visual Gate PASS (Brave, 3 presets × light/dark + 375: 3 named
   groups · toggle 56×48 · real SVG 0-emoji · **icon 3:1 4.39–5.27 incl warm-dark** · label AA 4.52–5.22 incl the
   muted-on-secondary line · progressbar in playing · calm unavailable · axe 0 · no overflow). 42/42 canvas-reader · full
-  @vida/ui 512/512. **S6** (next, last) = the apps/web Books↔Reader adapter (display-resolve + intents).
+  @vida/ui 512/512. **S6 ✅** = the apps/web Books↔Reader adapter (`apps/web/src/reader/adapter.ts`, type+convention): the
+  display-resolve mappers (parse `position`→chapter via TOC page-range → "Ch. N · p. P"; Unplaced bucket; degrade-never-crash)
+  + `BooksReaderPort` + `bindReaderIntents`; live `useReader` hook deferred to fe-books #36. Verification Gate PASS (28/28).
+  **⟹ fe-codec-canvas-reader COMPLETE — all 6 slices.**
   Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`. Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
+  **canvas-view** is **fe-codec-canvas-board · S1** (LIF-204) — the CODEC **Canvas shell** (decomposition.md:32 §1.2,
+  "where the soul lives"), the **5th archetype shell**. A read-only, immersive editorial FRAME that hosts exactly ONE
+  view-mode renderer at canvas scale; the two worked examples — **Vision-board** (GalleryView over dreams, imagery-first)
+  and **Calendar-grid** (shipped month CalendarView) — are consumer compositions (apps/web, S2), and **#19 later drops
+  its multi-range renderer into the same frame** (R3 — `children` is renderer-agnostic). A FRAME not a renderer:
+  masthead (**`eyebrow`** uppercase-via-CSS · **`title`** REQUIRED serif `$display`, the **user-named surface** NOT the
+  month, EC-5/A — so no duplication of the renderer's own month header · **`meta`** `$small` muted · a **`progress`
+  SLOT** the consumer fills (board-level meter, EC-3) · a read-only **`actions`** slot, EC-6/R1 · a hairline) + a hosted
+  **`children`** region. **NON-GENERIC** (holds no renderer data → no `<T>`), React-19 ref-prop; LOCAL types
+  (`CanvasState` = the intra-package `ViewState` alias, no `@vida/core`/`@vida/types`, R6). **⚠ STATE RULE (the pinned
+  seam divergence, BR-CB-S1-6): the frame does NOT re-implement states — it SELECTS an optional override slot by `state`,
+  else delegates to `children`:** `state==='empty'&&empty → empty` (vision-board teaching) · `state==='error'&&error →
+  error` (calm `role="status"` muted) · **else → `children`** (loading/success/un-overridden empty+error show the hosted
+  renderer's OWN tuned state — calendar's designed 42-cell grid for empty, R2/R5). The consumer still threads `state` to
+  the child. (Divergence from dashboard/entity, which OWN generic states because their bodies are success-only; here the
+  hosted renderers carry state.) **Progress is MEASURE-DRIVEN and lives in the consumer `renderItem`, NOT the frame
+  (R9/R9a):** a tile's bar STYLE **and** its label/units follow the entity's `measurement_kind` (`milestone`→steps bar ·
+  `quantitative`→value/target · `rate`→ratio/streak · `qualitative`→state · **unmeasured→none**) via ADR-011 `progress()`
+  — the frame bakes no style (the GV-1 boundary; baking the steps-bar in would break every non-milestone entity).
+  **Responsive (BR-CB-S1-12):** the masthead is a `flexWrap` row (title-group · actions) so actions reflow below /
+  title-group shrinks at 375 — no collision. `role="region"` named by the title (`useId`+`warnMissingName`); DIRECT
+  semantic tokens, no sub-theme. Read-only (R1 — overflow reveal / multi-range = `fe-calendar #19`, parked
+  `calendar-vision.md §6`). Visual Gate PASS (Brave, 3 presets × light/dark × 375/768/1440: title serif AA 15.84–17.29 ·
+  eyebrow/meta 4.94–6.53 incl. warm-dark · no overflow · empty-teaching vs empty-delegate vs error). **S2** (next) = the
+  apps/web `VisionBoardCanvas`/`CalendarGridCanvas` compositions (type+convention; measure-driven reference tile; live
+  hooks deferred to first consumer — fe-purposes / #19). Spec:
+  `docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md` (delivery: `docs/specs/foundation/fe-codec-canvas-board/delivery/`).
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +

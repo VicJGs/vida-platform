@@ -1,5 +1,46 @@
 <!-- Last updated: 2026-10-09 by /session-end -->
 
+## Linear / tracker reconciliation (2026-10-09 — frontend-track campaign LIF-202)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-09 | Status drift | fix archived-done drift (LIF-207) via `--sync` or direct API? | **direct GraphQL `issueUpdate`** | `--sync` reads only *active* task files; an archived done task's correct status is invisible to it, so a dropped push never retries | reversible |
+| 2026-10-09 | Orphan create | create LIF-233 `fix-entity-view-header` blind, or verify first? | **verify non-duplicate, then `--allow-orphan-create`** | the guard refuses blind create when open unclaimed issues exist — a "new" file is often a rename; confirmed none of 7 unclaimed matched | n/a |
+| 2026-10-09 | Stale In Progress | LIF-110 + LIF-161 — leave or close? | **both → Done** | LIF-110 = operating manual (done 2026-08-01); LIF-161 envision-gate codified 2026-08-23 + in production use | reversible |
+| 2026-10-09 | Parallel sessions | reflect canvas-reader/board work in tracker? | **LIF-206 + LIF-204 → In Progress; align local `# Status:`** | two active parallel sessions; local status is `--sync`'s source-of-truth, so a direct flip alone would silently revert | reversible |
+
+
+## fe-codec-canvas-graph (② frontend · LIF-205 → Done, 2026-10-09 — PR #112 merged `1fa181a`)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-09 | Envision Gate | fire or skip for the graph canvas? | **SKIP** | §3.75 doc test = no novel affordance (graph already shipped + rendering; aesthetic/conformance refinement); fe-codec-primitives-refinement precedent used Visual Gates not Envision | n/a (gate result) |
+| 2026-10-09 | Scope shape | new canvas shell vs EXTEND-in-place? | **EXTEND `neural-graph.tsx` in place** (one slice; apps/web route = RATIFY) | g6-edge-ledger:51 "extend → editorial ink voice" + runbook:38 "ext UI-2"; the Graph canvas IS one renderer, not a composing shell | reversible |
+| 2026-10-09 | Ink mapping | node color = brand accent vs ink/text? | **node=`$colorBrandPrimary` (per-preset), edge=`$colorBorderDefault`** | Victor-chosen; the graph wears each preset's voice (blue/oxblood/olive), directly replacing the fixed `#6366f1` "blue SaaS"; Visual-Gate-validated | reversible (value) |
+| 2026-10-09 | Finding #3 reduced-motion | RATIFY (comment-only) vs BUILD the gate? | **BUILD the `useReducedMotion` iteration-gate** (reduced → 0 = circular seed) | gate-2 critic caught my RATIFY silently flipping the approved slice-map; Victor chose BUILD to honor the gated decomposition (the continuous-motion axis is B12-safe, but the decomposition is authoritative) | reversible |
+| 2026-10-09 | WebGL color resolution (§XXVIII) | `.get('web')` value vs probe resolution? | **probe-`<span>` getComputedStyle read → concrete `rgb`** | `.get('web')` returns a CSS-var ref unusable by WebGL (Sigma→colorless); custom-prop computed values don't substitute nested var(); live-Visual-Gate-caught. Preset-aware. [[webgl-canvas-color-needs-getcomputedstyle-probe-not-get-web]] | reversible |
+| 2026-10-09 | Live preset-switch recolor | re-init on preset change vs stale? | **stale-until-re-topology** (colors OUT of effect deps) | NG-2 "color-only change deferred"; M1 graph is empty (no consumer); surgical live-recolor homed to first-consumer | reversible |
+
+
+## fe-codec-flow-session (② frontend · #11 · LIF-210 → Done, 2026-10-07 — WHOLE UNIT, PR #109 merged `928f0f6`)
+The CODEC Flow/Session shell (4th archetype) — `FlowSessionView` (@vida/ui, S1) + flow adapter (apps/web, S2).
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-07 | shell scope | shell owns standardized affordances; consumer owns the stage body | affordances (attach/mark-done/proof) in the shell + `renderStage` for the body | makes it an archetype vs a generic slot (collection/dashboard own chrome, delegate bodies) | yes |
+| 2026-10-07 | scope boundary | the "stages" backend structure | design-intent extension, homed OUT to #23 / a schema amendment | shell is presentational; quality-bar:139 = staged-deliverable is an ADR-004 extension | yes |
+| 2026-10-07 | scope boundary | timer + persistent HUD | separate units (#16 + pomodoro V5), NOT #11 | #11 owns the staged-deliverable frame + effect-log only (decomposition:57) | n/a |
+| 2026-10-07 | header | progress presentation | a `HonestProgress` BAR, not a text subtitle | Victor review — the dot-string subtitle was a generic tell + crammed | yes |
+| 2026-10-07 | typography | the whole shell's text | semantic type scale only, no px; 16px title→meta; accent in one place | design.md:103 + Victor's 2-round Envision correction (EC-11) | yes |
+| 2026-10-07 | require-proof | gate-flag vs intent | a distinct `onRequireProof` intent | the proof-gate is the consuming flow's config, not the shell's | yes |
+| 2026-10-07 | adapter | live data hook | deferred (R3) — ship `toFlowProps`/`mapEffectLog`/`bindFlowIntents` + convention | no built consumer yet (sibling-adapter precedent) | yes |
+
+## tracker-selector-archived-done-blocker (toolkit fix · LIF-232 → Done, 2026-10-07 — `~/dev-toolkit` `2c808fd`)
+The `--next`/`--plan` selector false-blocked dependents of completed-then-archived blockers (surfaced here, mis-reporting fe-home as the lone ready FE head).
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-07 | tracker | fix layer | selector-entry map injection + a shared `scan_archived_done` (build_census + selector consume it) | keeps `--sync`/`--pull` archive-blind (the invariant); DRY | yes |
 
 ## fe-codec-canvas-reader (② frontend · #9 · LIF-206 — IN PROGRESS, 2026-10-09 — front matter + S1–S4 shipped, branch `fe-codec-canvas-reader`)
 The CODEC Canvas: Reader shell (read·listen·annotate) in `@vida/ui`. Presentational, consumes shipped Books; no `@vida/core` change.
