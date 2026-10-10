@@ -6211,3 +6211,47 @@ Decisions / lessons:
 Next session:
   - **FIRST ACTION:** next ready, non-colliding FE head — `fe-codec-system` #12 (dep patterns ✅) if untaken; shell #14 is PR #118 (Victor's parallel session, merging — clean over #13, zero file overlap). Fresh `/begin` off main; add-frontend-component / Entity Delivery Flow ②; fresh branch off main.
   - Env: Node 24 via nvm for @vida/core build + @vida/web typecheck/test; rebuild @vida/core dist before an apps/web typecheck consuming new @vida/core exports (barrel change inert until built; CI = turbo dependsOn:build).
+
+---
+Date: 2026-10-10
+Task: fe-shell-scope (#15, LIF-219) — ② Frontend · M1.2.1 · add-frontend-component / Entity Delivery Flow ②
+Goal: Build the CODEC **Bar 1** — the `Spaces:` global scope selector + the 6 global surfaces redistributed — into the
+  shipped fe-shell (#14) frame. Started the full Entity Delivery Flow; completed front matter + slice S1.
+Completed:
+  - **Worktree repurposed + branch cut:** `.claude/worktrees/fe-codec-controls-refinement` was parked on the merged
+    `session-docs-fe-home` branch; cut fresh `fe-shell-scope` off origin/main @ 329e9cb (WIP preserved).
+  - **Step 0 BASELINE** — shell/CLAUDE.md + nav/CLAUDE.md + docs/core/spaces/current-* all confirmed current. 5 findings:
+    no `listSpaces`/`getSpace` read API (SpacesService service.ts:38-61) · net-new scope state · owed ADR-006 amendment
+    (surface-map:29) · Bar-1 placement conflict (bar1Slot vs System panel body) · fe-spaces-page #20 is distinct.
+  - **Step 1 Interpretation** — docs/specs/foundation/fe-shell-scope/delivery/interpretation.md (D1–D9·N1–N5·O1–O5·IR1–IR7).
+  - **Step 1.5 Envision Gate FIRED + APPROVED** — greybox (apps/web/src/__envision__, deleted after) driven in Brave;
+    Victor approved EC-1…EC-8 + direction **"Both — responsive split"** (persistent condensed top strip + expanded
+    System panel) + **ADR-006 amendment homed forward**. envision.md.
+  - **Step 2 Decomposition APPROVED (Approval 1)** — slice-map.md (3 slices) + seam-contract.md; independent gate-1 SHIP.
+    Decisions: drop "account" row (no backing, redundant w/ Settings) · delete dead global-bar.tsx · scope = emit-to-seam ·
+    one additive AppShell seam `systemPanelSlot` (S3).
+  - **S1 SHIPPED + committed (88f80a2):** stores/scope-store.ts (Zustand activeSpaceId|null) · shell/spaces-scope.ts
+    (SpacesScopeRead = ProviderRead<SpaceOption[]> + stub→[]) · shell/scope-selector.tsx (Menu switcher, 5 degrade states)
+    + scope-selector.test.tsx (7). tsc 0 · lint 0 err · @vida/web **345/345** · code-review SHIP · **Visual Gate PASS**
+    (5 states × light/dark/warm dark_reader × 375/1440, measured 0 AA fails). Currency shell/CLAUDE.md. Covers EC-1/EC-2.
+Decisions:
+  - Bar-1 placement (IR1) = **Both — responsive split** (Victor, AskUserQuestion). ADR-006 amendment **homed forward**.
+  - Drop the "account" affordance from #15 (no route backing, redundant with Settings — reviewer-confirmed No-Guessing).
+  - Scope selector reads the space list via a `ProviderRead` **stub** (no `listSpaces` yet) — live provider = first consumer.
+In progress:
+  - fe-shell-scope: S1 done; **S2 + S3 remain** (see Next session).
+Next session:
+  - **FIRST ACTION:** `/begin` fresh → resume fe-shell-scope at **S2 — global surfaces, re-homed (both forms)**.
+    Build `shell/global-surfaces-strip.tsx` (full ≥768 icon-nav / condensed ≤375 Search+overflow) +
+    `shell/global-surfaces-list.tsx` (labeled nav list for the panel body; labelled <nav> inside the <aside>, IR6).
+    Reuse NavLink + navIcon; **Search = ⌘K action, never a link** (GLOBAL_SURFACES command-palette routePath:null).
+    Covers EC-3/EC-4/EC-6. Then S3 (assembly + `systemPanelSlot` seam + routes wire-in + delete global-bar.tsx).
+  - Context to resume WITHOUT re-explaining: slice-map.md + seam-contract.md are APPROVED (Approval 1 done — do NOT
+    re-gate decomposition). Branch `fe-shell-scope` already cut off origin/main in THIS worktree; S1 committed (88f80a2).
+  - Env/gate recipe: Node 24 via nvm; vite dev on :5174; Visual Gate = Brave via playwright-core (store path), complete
+    onboarding (Get started→Continue→Continue→Enter Vida, wait-for-button long timeout — WASM DB init is slow), then a
+    THROWAWAY `__vg__` route wrapped in Tamagui `<Theme name=?theme=>` (UIProvider is pinned to THEME_DEFAULT; the local
+    Theme is how to sweep light/dark/dark_reader). Contrast measure MUST skip: container (non-direct-text) elements,
+    disabled controls (AA-exempt), and effective-opacity-0 text (loading width-holder) — else false fails.
+  - ⚠ Harness caveat: a portal'd Menu escapes the local <Theme> in isolation — the dark panel is faithfully re-tested at
+    S3 (real shell, one UIProvider theme). Menu panel theming is the shipped primitive's own (already-gated) concern.
