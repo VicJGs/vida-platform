@@ -1,5 +1,15 @@
 <!-- Last updated: 2026-10-09 by /session-end -->
 
+## Linear / tracker reconciliation (2026-10-09 — frontend-track campaign LIF-202)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-09 | Status drift | fix archived-done drift (LIF-207) via `--sync` or direct API? | **direct GraphQL `issueUpdate`** | `--sync` reads only *active* task files; an archived done task's correct status is invisible to it, so a dropped push never retries | reversible |
+| 2026-10-09 | Orphan create | create LIF-233 `fix-entity-view-header` blind, or verify first? | **verify non-duplicate, then `--allow-orphan-create`** | the guard refuses blind create when open unclaimed issues exist — a "new" file is often a rename; confirmed none of 7 unclaimed matched | n/a |
+| 2026-10-09 | Stale In Progress | LIF-110 + LIF-161 — leave or close? | **both → Done** | LIF-110 = operating manual (done 2026-08-01); LIF-161 envision-gate codified 2026-08-23 + in production use | reversible |
+| 2026-10-09 | Parallel sessions | reflect canvas-reader/board work in tracker? | **LIF-206 + LIF-204 → In Progress; align local `# Status:`** | two active parallel sessions; local status is `--sync`'s source-of-truth, so a direct flip alone would silently revert | reversible |
+
+
 ## fe-codec-canvas-graph (② frontend · LIF-205 → Done, 2026-10-09 — PR #112 merged `1fa181a`)
 
 | Date | Area | Decision | Choice | Reason | Reversible |
