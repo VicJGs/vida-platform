@@ -45,7 +45,7 @@ Visual Gate rows (S4/S5), never a greybox MUST.
 | Slice | Gate | Status |
 |-------|------|--------|
 | S1 | Visual Gate (frame · states · 375 · dark × 3 presets · AA) | ✅ PASS (2026-10-09 — tsc 0 · eslint 0 · 9/9 · AA 0-fail incl warm-dark) |
-| S2 | Visual Gate (TOC scale · completion · current · 375) | ⏳ |
+| S2 | Visual Gate (TOC scale · completion · current · 375) | ✅ PASS (2026-10-09 — tsc 0 · eslint 0 · 16/16 · AA 0-fail incl warm-dark · 375 panel-stack + title word-wrap; Header flexWrap fix) |
 | S3 | Visual Gate (IR-1 highlight-no-link · 3 natures · grouped · location · AA) | ⏳ |
 | S4 | Visual Gate (action set · highlight mark · feel EC-12) | ⏳ |
 | S5 | Visual Gate (3 listen states · SVG icons · feel EC-12) | ⏳ |

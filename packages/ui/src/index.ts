@@ -77,7 +77,7 @@ export {
   type StageStatus,
   type AttachKind,
 } from './components/flow-session-view'
-export { CanvasReader, type CanvasReaderProps, type ReaderState } from './components/canvas-reader'
+export { CanvasReader, type CanvasReaderProps, type ReaderState, type ReaderChapter } from './components/canvas-reader'
 
 // Shared hooks.
 export { useReducedMotion } from './hooks/use-reduced-motion'

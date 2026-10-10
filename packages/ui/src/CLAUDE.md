@@ -479,8 +479,15 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   loading (skeleton `aria-busy`) · empty (teaching `EmptyState`+`emptyAction`) · error (`role=status` MUTED) ·
   **`unavailable` (access — a DISTINCT calm status, NOT empty: physical copy / no openable file, IR-NEEDS-4)** · success.
   DIRECT tokens; region named via `warnMissingName`+`useId`. Visual Gate PASS (Brave, 3 presets × light/dark + 375:
-  title-hero · serif column · 5 states unavailable≠empty · accent flips · **AA MEASURED 0-fail incl. warm-dark**). IR-1
-  (highlight never linkable) is shell-enforced at S3. Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`.
+  title-hero · serif column · 5 states unavailable≠empty · accent flips · **AA MEASURED 0-fail incl. warm-dark**).
+  **S2** adds the toggleable **Contents panel** (the left zone — realizes the living-margin layout): an "About" `summary`
+  slot (the book-level Notes page, decision 1) + a shell-owned **TOC** from `chapters:ReaderChapter[]` (completion ✓ ·
+  **current chapter `$colorBrandEmphasis` + `aria-current`** · rows pressable `role=button`+keyboard ONLY when
+  `onJumpToChapter` given, the `collection onFilter` precedent) + a "Contents" header toggle (`aria-pressed`, app-owned
+  `contentsOpen`). **Header fix (benefits S1 too): `flexWrap` + `TitleGroup minWidth:240` + aside `flexShrink:0`** so the
+  serif `$display` title word-wraps at 375 instead of mid-word-breaking (the RNW `min-width:0` flex-collapse; Visual-Gate
+  caught). S2 Visual Gate PASS (AA 0-fail incl. warm-dark · 375 panel-stacks + title word-wraps). IR-1 (highlight never
+  linkable) is shell-enforced at S3. Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`.
   Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the

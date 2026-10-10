@@ -23,7 +23,7 @@ Delivery docs: `docs/specs/foundation/fe-codec-canvas-reader/delivery/`
 
 ## Build Steps (per-slice §XXVI double-gate + blocking Visual Gate)
 - [x] S1 — CanvasReader frame + reading column + states (@vida/ui) — EC-1/2/3/8/9/10/11 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 9/9 tests · AA 0-fail incl warm-dark); §XXIX CLAUDE.md + canvas-reader.md current
-- [ ] S2 — Contents panel (summary + TOC) (@vida/ui) — EC-13
+- [x] S2 — Contents panel (summary + TOC) (@vida/ui) — EC-13 — ✅ Visual Gate PASS (tsc 0 · eslint 0 · 16/16 · AA 0-fail incl warm-dark; living-margin realized; Header flexWrap fix for 375 word-wrap, benefits S1)
 - [ ] S3 — Margin rail (annotations, IR-1) (@vida/ui) — EC-5/6/14
 - [ ] S4 — Selection affordance (@vida/ui) — EC-4/3
 - [ ] S5 — Listen control (SVG icons) (@vida/ui) — EC-7/15

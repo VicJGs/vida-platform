@@ -11,7 +11,10 @@ Consumes the shipped `@vida/core` Books service via the apps/web adapter (S6) �
 
 ## Slices
 - **S1 ✅ — frame + reading column + states.** title-hero header · `renderContent` slot (success-only) · the 5 states.
-- S2 — Contents panel (summary + TOC). · S3 — margin rail (annotations, IR-1). · S4 — selection affordance.
+- **S2 ✅ — Contents panel (summary + TOC).** `ReaderChapter` + `summary`/`chapters`/`contentsOpen`/`onToggleContents`/
+  `onJumpToChapter`; shell-owned TOC (completion ✓ · current accent+`aria-current` · pressable-when-jump) · "Contents"
+  toggle (`aria-pressed`) · realizes the living-margin layout · Header `flexWrap`+floor fix (375 word-wrap).
+- S3 — margin rail (annotations, IR-1). · S4 — selection affordance.
 - S5 — listen control (SVG icons). · S6 — apps/web Books↔Reader adapter (display-resolve; `apps/web`).
 
 ## S1 contract
