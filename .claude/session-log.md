@@ -1,4 +1,46 @@
 ---
+Date: 2026-10-10 — fe-shell (CODEC #14) front matter LOCKED + S1 shipped (committed `df0cf8a`, branch `fe-shell`)
+Task: fe-shell (LIF-226) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · M1.2.1 · worktree `.claude/worktrees/fe-shell` off origin/main (a4f8962)
+Goal: pick up fe-shell (canvas-reader taken by another session); run the Entity Delivery Flow front matter, then build.
+
+Completed:
+  - **Routing:** canvas-reader owned by a parallel session → chose fe-shell (Victor). Checked fe-shell deps clean
+    (blocker fe-codec-patterns Done; ext-targets ui-4/ux-3 Done; db-8 is a documented M1.4 forward-ref, not a blocker).
+    Isolated worktree off origin/main; `pnpm install` in-worktree (Node 24); task → in-progress.
+  - **Step 0 Baseline:** confirmed the ui-4/ux-3 shell is BUILT + intact (`shell/{app-shell,regions,breakpoints}`,
+    stores, nav; all CODEC primitives shipped in @vida/ui). fe-shell = `ext UI-4/UX-3 (sup LIF-199)` = RESHAPE, not greenfield.
+  - **Step 1 Interpretation** — `delivery/interpretation.md` (all [FACT]-cited).
+  - **Step 1.5 Envision — FIRED + LOCKED by Victor over 6 greybox rounds** (`delivery/envision.md`). Final model =
+    the **macOS/iPadOS inspector dock⇄detach** (M1–M7): each nav panel (System·Modules) toggles **docked** (inline,
+    content beside = "A") ⇄ **floating** (overlay + scrim = "B"), **rearrangeable to any edge L·R·T·B** (incl. bottom),
+    content-fit, one responsive model, reserved top strip. **EC-1…EC-12 pinned.** Greybox DELETED. (Visual gate harness
+    `/tmp/gate-shell-envision.mjs`; Storybook on :6107 worktree.)
+  - **Step 2 Decomposition** — `delivery/slice-map.md` (5 frontend slices) + `seam-contract.md`; EC-1…EC-10 → ≥1 slice.
+  - **S1 built + gated** (data/logic only, no JSX): `regions.ts` placement model · `app-shell-ui-store` placement +
+    actions · `shell/shell-prefs.ts` ProviderRead stub. tsc 0 · lint 0 · 27 new tests · full @vida/web 267/268 (1 =
+    module-dock load-timeout flake, passes isolated). §XXIX currency in `shell/CLAUDE.md`. Committed `df0cf8a`.
+
+In progress:
+  - S2–S5 unbuilt. Next = **S2 — frame reshape** (`app-shell.tsx`): persistent bar (wordmark · System/Modules toggles ·
+    ⌘K slot · HUD slot) + Content `<Outlet/>` full-bleed 1280-centered + Overlay host mount + reserved top strip. EC-7/8/9.
+
+Decisions:
+  - **Scenario = default (Victor's call)** despite baseline showing an already-built shell (I'd leaned Entity Re-scope).
+  - **A and B are NOT a choice** — they are the dock⇄float placement states of ONE panel (the inspector model). Both ship.
+  - Panel *arrangement* = ephemeral Zustand (BR-RT-6 "panel state"); *persistence* to `nav_preferences` = deferred
+    ProviderRead seam, M1→DEFAULT (envision L5). #14 ships Bar 1 content/HUD/⌘K as SLOTS → #15/#16/#17.
+  - Recurring lesson this session (Victor ×4): **ground the design in the OS specimens before proposing** — do not
+    manufacture design alternatives the docs/decisions already fix. The p1-identity/p2-space-motion/p6-archetypes/
+    p6-organization-map specimens + design.md §IV/§V/§X ARE the OS pattern; study them, bring facts, render to SEE.
+
+Next session (FRESH — clean context):
+  - cd into the worktree `.claude/worktrees/fe-shell` (branch `fe-shell`); Node 24 (`nvm use 24`). Deps installed.
+  - Read `delivery/envision.md` (M1–M7 + EC-1…EC-12) + `slice-map.md` S2 row + `seam-contract.md` §C before building.
+  - Build **S2** per slice-map; §XXVI double-gate + blocking Visual Gate (Brave via `/tmp/gate-shell-envision.mjs`
+    pattern, Storybook :6107, 3 presets × light/dark + 375/768/1440). PR at S5.
+  - Note: `app-shell.tsx` still uses the old `isSidebarOpen`/`isMobileNavOpen`; S2 migrates it onto `placement`.
+
+---
 Date: 2026-10-07 — fix-entity-view-header SHIPPED (PR #110 merged); EntityView title-hero header rhythm
 Task: fix-entity-view-header (unfiled — no Linear) · Profile: Change Frontend Component / default (Entity Delivery Flow ②) · worktree off origin/main → PR #110 → merged (`23e9e74`)
 Goal: fix the shipped EntityView header cram (serif $display title flush against the $small subtitle); pin + apply the canonical title-hero header pattern.
