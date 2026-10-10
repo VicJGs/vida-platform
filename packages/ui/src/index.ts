@@ -69,6 +69,7 @@ export { NeuralGraph, type NeuralGraphProps, type GraphNode, type GraphEdge } fr
 export { CollectionView, type CollectionViewProps, type ViewLayout } from './components/collection-view'
 export { DashboardView, type DashboardViewProps, type DashboardBlock, type CellSize } from './components/dashboard-view'
 export { EntityView, type EntityViewProps, type FacetMode, type Facet } from './components/entity-view'
+export { CanvasView, type CanvasViewProps, type CanvasState } from './components/canvas-view'
 export {
   FlowSessionView,
   type FlowSessionViewProps,

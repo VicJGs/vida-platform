@@ -468,6 +468,33 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   adapter (`toFlowProps` + `mapEffectLog` [ADR-004 applied_effects → effect-rail] + `bindFlowIntents` against a
   `SessionsPort`; live `useFlowSession` hook deferred, R3). Spec:
   `docs/specs/components/ui-2-platform-views/flow-session-view.md`. Delivery: `docs/specs/foundation/fe-codec-flow-session/`.
+  **canvas-view** is **fe-codec-canvas-board · S1** (LIF-204) — the CODEC **Canvas shell** (decomposition.md:32 §1.2,
+  "where the soul lives"), the **5th archetype shell**. A read-only, immersive editorial FRAME that hosts exactly ONE
+  view-mode renderer at canvas scale; the two worked examples — **Vision-board** (GalleryView over dreams, imagery-first)
+  and **Calendar-grid** (shipped month CalendarView) — are consumer compositions (apps/web, S2), and **#19 later drops
+  its multi-range renderer into the same frame** (R3 — `children` is renderer-agnostic). A FRAME not a renderer:
+  masthead (**`eyebrow`** uppercase-via-CSS · **`title`** REQUIRED serif `$display`, the **user-named surface** NOT the
+  month, EC-5/A — so no duplication of the renderer's own month header · **`meta`** `$small` muted · a **`progress`
+  SLOT** the consumer fills (board-level meter, EC-3) · a read-only **`actions`** slot, EC-6/R1 · a hairline) + a hosted
+  **`children`** region. **NON-GENERIC** (holds no renderer data → no `<T>`), React-19 ref-prop; LOCAL types
+  (`CanvasState` = the intra-package `ViewState` alias, no `@vida/core`/`@vida/types`, R6). **⚠ STATE RULE (the pinned
+  seam divergence, BR-CB-S1-6): the frame does NOT re-implement states — it SELECTS an optional override slot by `state`,
+  else delegates to `children`:** `state==='empty'&&empty → empty` (vision-board teaching) · `state==='error'&&error →
+  error` (calm `role="status"` muted) · **else → `children`** (loading/success/un-overridden empty+error show the hosted
+  renderer's OWN tuned state — calendar's designed 42-cell grid for empty, R2/R5). The consumer still threads `state` to
+  the child. (Divergence from dashboard/entity, which OWN generic states because their bodies are success-only; here the
+  hosted renderers carry state.) **Progress is MEASURE-DRIVEN and lives in the consumer `renderItem`, NOT the frame
+  (R9/R9a):** a tile's bar STYLE **and** its label/units follow the entity's `measurement_kind` (`milestone`→steps bar ·
+  `quantitative`→value/target · `rate`→ratio/streak · `qualitative`→state · **unmeasured→none**) via ADR-011 `progress()`
+  — the frame bakes no style (the GV-1 boundary; baking the steps-bar in would break every non-milestone entity).
+  **Responsive (BR-CB-S1-12):** the masthead is a `flexWrap` row (title-group · actions) so actions reflow below /
+  title-group shrinks at 375 — no collision. `role="region"` named by the title (`useId`+`warnMissingName`); DIRECT
+  semantic tokens, no sub-theme. Read-only (R1 — overflow reveal / multi-range = `fe-calendar #19`, parked
+  `calendar-vision.md §6`). Visual Gate PASS (Brave, 3 presets × light/dark × 375/768/1440: title serif AA 15.84–17.29 ·
+  eyebrow/meta 4.94–6.53 incl. warm-dark · no overflow · empty-teaching vs empty-delegate vs error). **S2** (next) = the
+  apps/web `VisionBoardCanvas`/`CalendarGridCanvas` compositions (type+convention; measure-driven reference tile; live
+  hooks deferred to first consumer — fe-purposes / #19). Spec:
+  `docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md` (delivery: `docs/specs/foundation/fe-codec-canvas-board/delivery/`).
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
