@@ -468,6 +468,20 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   adapter (`toFlowProps` + `mapEffectLog` [ADR-004 applied_effects → effect-rail] + `bindFlowIntents` against a
   `SessionsPort`; live `useFlowSession` hook deferred, R3). Spec:
   `docs/specs/components/ui-2-platform-views/flow-session-view.md`. Delivery: `docs/specs/foundation/fe-codec-flow-session/`.
+  **canvas-reader** is **fe-codec-canvas-reader · S1** (LIF-206) — the CODEC **Canvas: Reader shell**, the **5th archetype
+  shell**. A long-form **read·listen·annotate** FRAME; S1 ships the frame + header + reading column + states (Contents
+  panel S2 · margin rail S3 · selection S4 · listen bar S5 EXTEND it). A SHELL (the flow-session pattern) — **NON-GENERIC**
+  (React-19 ref-prop), **presentational/state-as-prop (BR-2)**, @vida/ui-only LOCAL types. Header = **title-hero** (serif
+  `$display` title alone · ONE plain-language `context` line · a `HonestProgress` reading-% **bar only when `progress` is
+  given** — a reader has no stages to derive from · `saveStatus` slot + `⋯`; `TitleGroup gap:'$16'`) + the honest
+  **`positionNote`** line (IR-3 not-synced). Body (S1) = the centered **reading column** (serif measure `maxWidth:660`) via
+  a **`renderContent` slot** (success-only). **Five states** via local **`ReaderState = ViewState | 'unavailable'`**:
+  loading (skeleton `aria-busy`) · empty (teaching `EmptyState`+`emptyAction`) · error (`role=status` MUTED) ·
+  **`unavailable` (access — a DISTINCT calm status, NOT empty: physical copy / no openable file, IR-NEEDS-4)** · success.
+  DIRECT tokens; region named via `warnMissingName`+`useId`. Visual Gate PASS (Brave, 3 presets × light/dark + 375:
+  title-hero · serif column · 5 states unavailable≠empty · accent flips · **AA MEASURED 0-fail incl. warm-dark**). IR-1
+  (highlight never linkable) is shell-enforced at S3. Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`.
+  Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
