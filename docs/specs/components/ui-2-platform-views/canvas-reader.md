@@ -179,3 +179,35 @@ Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 375: 3 named
 line on `$colorSurfaceSecondary`) · progressbar in playing · calm `role=status` unavailable · no 375 overflow · **axe 0**).
 tsc 0 · eslint 0 (S5 files) · 42/42 canvas-reader tests · full `@vida/ui` **512/512**. Live TTS wiring
 (`convertToSpeech` + playback position) = apps/web (S6 / fe-books #36).
+
+## S6 — apps/web Books↔Reader adapter (`apps/web/src/reader/adapter.ts`)
+A **type + convention** unit (the flow/collection/dashboard/entity precedent) — the single `@vida/core`↔`@vida/ui`
+crossing for the Reader; pure mappers + a `BooksReaderPort` + `bindReaderIntents` ship + test NOW, the live
+`useReader(assetId)` hook deferred to the first consumer (fe-books #36). **Verification Gate** (unit tests), NOT Visual.
+
+### S6 business rules
+- **BR-S6-1 (display-resolve, EC-14):** `resolveLocation(position, chapters)` parses a page (M1: leading integer; CFI/
+  timestamp = deferred BK-4) → the `BookChapter` whose `[start_page,end_page]` holds it → "Ch. N · p. P" (decision 3) +
+  `{chapterId, page}`. Degrade-never-crash: unparseable → raw string; null → "Location unknown"; never a guessed page.
+- **BR-S6-2 (group by chapter):** `groupAnnotations` PRE-GROUPS by resolved chapter in TOC order + a trailing "Unplaced"
+  group; nature identity; per-nature text (`label`/`captured_text`/`text`; null → '').
+- **BR-S6-3 (TOC):** `mapChapters` → `ReaderChapter[]` (number/title/pageRef/done/current), ordered by `chapter_number`.
+- **BR-S6-4 (state boundary):** `mapReaderState(file)` maps the ACCESS outcome ONLY (`attachment-unavailable →
+  'unavailable'`, `stored → 'success'`); loading/empty/error for BOTH column + rail are the deferred hook's
+  `deriveTerminalState` (the rail is `ViewState`, not `ReaderState`). `mapPositionNote` = the IR-3 not-synced line.
+- **BR-S6-5 (listen, IR-7):** `mapListen(OcrResult)` — `ai-unavailable → 'unavailable'`, else undefined; `convertToSpeech`
+  carries the real `AiRequest` (hook-built; M1 `ai?` dormant → always `ai-unavailable`).
+- **BR-S6-6 (summary = a Notes page, decision 1):** fed as a resolved `summary?` ReactNode (book-level Notes page), no column.
+- **BR-S6-7 (intents via a PORT, IR-5):** `bindReaderIntents` — `onAddNote→openAnnotationNote({kind,id})` (nature from
+  `natureById`; a highlight never reaches here, IR-1 shell-enforced); `onLinkAnnotation→opts.onLink` (consumer picker →
+  `linkAnnotations`, which needs TWO refs); `onListenToggle→opts.onListenToggle` (runtime playback); selection writes
+  (`addHighlight`/`addQuote`/`addBookmark`) bound for `SelectionActions`. Degrade-never-crash (missing opts / unknown id → no-op).
+- **BR-S6-8 (deferred hook):** `useReader(assetId)` (React Query → openReader + getBook + listAnnotations + the summary Notes
+  page, binding the real `BooksService` to `BooksReaderPort`, flattening `AnnotationView → AnnotationInput`) = fe-books #36.
+
+### S6 verification
+Verification Gate PASS (2026-10-10): `@vida/web` tsc 0 · eslint 0 (S6 files) · **28/28 reader adapter** tests (display-resolve
+boundary/open-ended/unparseable/null/Unplaced · nature identity + per-nature text · state/position/listen mappers ·
+`toReaderProps` assembler · `bindReaderIntents` + degrade-never-crash). Full `@vida/web` suite green bar 2 pre-existing
+shell-integration timeout flakes (module-dock · App.integration — green 9/9 in isolation; unrelated to the pure adapter).
+**⟹ fe-codec-canvas-reader COMPLETE — all 6 slices shipped; PR for the whole unit.** Layer doc: `apps/web/src/reader/CLAUDE.md`.
