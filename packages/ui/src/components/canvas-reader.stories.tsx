@@ -174,6 +174,50 @@ export const SelectionInPlace: Story = {
   ),
 }
 
+// ── S5 · Listen control ──────────────────────────────────────────────────────────────────────────────────────
+// MEASURE (PLAN-S5-listen.md §5): EC-7 three states (idle · playing+HonestProgress · unavailable calm) · EC-15 real
+// SVG icons (0 emoji) · icon/progress ≥3:1 · label AA · toggle ≥44×44 · EC-1 persistent-in-context · 375 wrap.
+
+/** S5 — listen idle: a Listen affordance (real SVG speaker icon) + label; toggle starts playback. */
+export const ListenIdle: Story = {
+  render: () => (
+    <CanvasReader title="The Brothers Karamazov" context="Chapter 4 of 10, page 56" state="success" renderContent={readingBody}
+      listen="idle" onListenToggle={() => {}} aria-label="Reader listen idle" />
+  ),
+}
+
+/** S5 — listen playing: a Pause toggle + a live HonestProgress bar. */
+export const ListenPlaying: Story = {
+  render: () => (
+    <CanvasReader title="The Brothers Karamazov" context="Chapter 4 of 10, page 56" state="success" renderContent={readingBody}
+      listen="playing" listenProgress={0.42} onListenToggle={() => {}} aria-label="Reader listen playing" />
+  ),
+}
+
+/** S5 — listen unavailable: a CALM status line (IR-7), never an error — no control. */
+export const ListenUnavailable: Story = {
+  render: () => (
+    <CanvasReader title="The Brothers Karamazov" context="Physical copy" state="success" renderContent={readingBody}
+      listen="unavailable" aria-label="Reader listen unavailable" />
+  ),
+}
+
+/** S5 — the three listen states side by side (the Visual-Gate matrix cell for EC-7). */
+export const ListenStates: Story = {
+  render: () => (
+    <View gap="$24">
+      {(['idle', 'playing', 'unavailable'] as const).map((m) => (
+        <View key={m} gap="$8">
+          <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">{m}</Text>
+          <CanvasReader title="The Brothers Karamazov" state="success" renderContent={readingBody} listen={m}
+            listenProgress={m === 'playing' ? 0.42 : undefined} onListenToggle={m === 'unavailable' ? undefined : () => {}}
+            aria-label={`Reader listen ${m}`} />
+        </View>
+      ))}
+    </View>
+  ),
+}
+
 /** The 5 states — loading · empty · error · unavailable (access, ≠ empty). */
 export const States: Story = {
   render: () => (

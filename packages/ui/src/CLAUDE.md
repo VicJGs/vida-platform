@@ -521,6 +521,21 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   exports `Nature`/`ReaderAnnotation`/`AnnotationGroup` + the two S4 components + prop types). S4 Visual Gate PASS (Brave,
   3 presets × light/dark + 390: EC-15 SVG 0-emoji · icon 3:1 0-fail 4.95–6.41 incl. warm-dark · 56×48 · mark underline 3:1
   5.63–6.41@2px + mark text AA held 15.84–17.29 · axe 0). 33/33 canvas-reader · full @vida/ui 503/503.
+  **S5** adds the slim persistent **listen bar** — book-level chrome (the INVERSE of S4's exported pieces: no `Range` to
+  anchor, so it lives ON `CanvasReaderProps` per the seam-contract, NOT a consumer-composed export). `listen?: ListenMode`
+  (`'idle'|'playing'|'unavailable'`, LOCAL union, the `ReaderState` precedent) + `listenProgress?`/`listenLabel?`/
+  `onListenToggle?`; the `ListenBar` renders between `Header` and `Body` **only when `listen != null`** (the `progress`
+  render-when-provided precedent). Three honest EC-7 states: **idle** → `ListenIcon` toggle (reused from S4) + label,
+  starts; **playing** → a new `PauseIcon` (S4 icon recipe) toggle + `HonestProgress` shown **only when `listenProgress`
+  given** (honest, no fake fill) + `aria-pressed`; **unavailable** → a CALM `role="status"` muted line "Listening isn't
+  available on this device", **NO button, never `$colorSignalDanger`** (IR-7, the reading-column `unavailable` precedent).
+  The toggle renders on idle/playing only when `onListenToggle` passed (render-when-handler), `size="lg"` (56×48 ≥44×44).
+  **A11y: all three states are a `role="group" aria-label="Listen"`** so `unavailable` (no button to carry a name) is never
+  an empty-named region. Single `flexWrap` row (375 wrap, RNW `flexShrink:0` default lesson); `$colorSurfaceSecondary` bar
+  surface, DIRECT tokens; barrel adds `type ListenMode`. S5 Visual Gate PASS (Brave, 3 presets × light/dark + 375: 3 named
+  groups · toggle 56×48 · real SVG 0-emoji · **icon 3:1 4.39–5.27 incl warm-dark** · label AA 4.52–5.22 incl the
+  muted-on-secondary line · progressbar in playing · calm unavailable · axe 0 · no overflow). 42/42 canvas-reader · full
+  @vida/ui 512/512. **S6** (next, last) = the apps/web Books↔Reader adapter (display-resolve + intents).
   Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`. Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the

@@ -286,3 +286,69 @@ describe('CanvasReader — selection affordance (S4)', () => {
     expect(getByText('marked words').className).toContain('vida-reader-highlight')
   })
 })
+
+describe('CanvasReader — listen bar (S5)', () => {
+  // ── BR-S5-1: the bar renders ONLY when `listen` is provided ──
+  it('renders no listen bar when `listen` is absent', () => {
+    const { queryByRole } = renderUI(<CanvasReader title="T" aria-label="R" renderContent={body} />)
+    expect(queryByRole('group', { name: 'Listen' })).toBeNull()
+  })
+
+  it('renders the named listen bar when `listen` is provided', () => {
+    const { getByRole } = renderUI(<CanvasReader title="T" aria-label="R" listen="idle" onListenToggle={() => {}} />)
+    expect(getByRole('group', { name: 'Listen' })).not.toBeNull()
+  })
+
+  // ── BR-S5-2 (EC-7): idle shows a Listen toggle that emits onListenToggle ──
+  it('idle shows a Listen toggle that emits onListenToggle', () => {
+    const toggle = vi.fn()
+    const { getByRole } = renderUI(<CanvasReader title="T" aria-label="R" listen="idle" onListenToggle={toggle} />)
+    const btn = getByRole('button', { name: 'Listen' })
+    expect(btn.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(btn)
+    expect(toggle).toHaveBeenCalledTimes(1)
+  })
+
+  // ── BR-S5-2 (EC-7): playing shows a Pause toggle + a progressbar when listenProgress is given ──
+  it('playing shows a Pause toggle (aria-pressed) and a progressbar', () => {
+    const { getByRole } = renderUI(
+      <CanvasReader title="T" aria-label="R" listen="playing" listenProgress={0.42} onListenToggle={() => {}} />,
+    )
+    expect(getByRole('button', { name: 'Pause' }).getAttribute('aria-pressed')).toBe('true')
+    expect(getByRole('progressbar')).not.toBeNull()
+  })
+
+  it('playing omits the progressbar when listenProgress is absent (honest, no fake fill)', () => {
+    const { queryByRole } = renderUI(<CanvasReader title="T" aria-label="R" listen="playing" onListenToggle={() => {}} />)
+    expect(queryByRole('progressbar')).toBeNull()
+  })
+
+  // ── BR-S5-2 (IR-7): unavailable is a CALM status line, with NO control ──
+  it('unavailable shows a calm status line and no toggle', () => {
+    const { getByRole, queryByRole } = renderUI(<CanvasReader title="T" aria-label="R" listen="unavailable" />)
+    expect(getByRole('status').textContent).toContain('isn’t available')
+    expect(queryByRole('button', { name: 'Listen' })).toBeNull()
+    expect(queryByRole('button', { name: 'Pause' })).toBeNull()
+  })
+
+  // ── nit 1: the status line renders independent of handler presence ──
+  it('unavailable shows the calm line even without onListenToggle', () => {
+    const { getByRole } = renderUI(<CanvasReader title="T" aria-label="R" listen="unavailable" />)
+    expect(getByRole('group', { name: 'Listen' })).not.toBeNull()
+    expect(getByRole('status')).not.toBeNull()
+  })
+
+  // ── BR-S5-4: the toggle is absent when onListenToggle is omitted (render-when-handler) ──
+  it('omits the toggle when onListenToggle is not passed', () => {
+    const { queryByRole } = renderUI(<CanvasReader title="T" aria-label="R" listen="idle" />)
+    expect(queryByRole('button', { name: 'Listen' })).toBeNull()
+  })
+
+  // ── BR-S5-3 (EC-15): real inline SVG icon, never emoji ──
+  it('uses an inline SVG icon with no emoji text on the toggle', () => {
+    const { getByRole } = renderUI(<CanvasReader title="T" aria-label="R" listen="idle" onListenToggle={() => {}} />)
+    const btn = getByRole('button', { name: 'Listen' })
+    expect(btn.querySelector('svg')).not.toBeNull()
+    expect(btn.textContent?.trim()).toBe('')
+  })
+})

@@ -24,7 +24,10 @@ Consumes the shipped `@vida/core` Books service via the apps/web adapter (S6) �
   Highlight · Quote · Bookmark · Listen-from-here, `size="lg"` 44×44, render-when-handler, emits intents) +
   **`ReaderHighlightMark`** (a 2px accent-underline inline mark, text held). The 4 `on*Selection` live on `SelectionActions`,
   NOT `CanvasReaderProps`.
-- S5 — listen control (SVG icons). · S6 — apps/web Books↔Reader adapter (display-resolve).
+- **S5 ✅ — listen control.** a slim persistent **listen bar** (book-level chrome ON `CanvasReaderProps` — the inverse of
+  S4's exported pieces: no `Range` to anchor): `listen?: ListenMode` drives idle (Listen toggle) / playing (Pause +
+  `HonestProgress`) / unavailable (calm `role=status`, IR-7); real SVG icons, `onListenToggle` intent. · S6 — apps/web
+  Books↔Reader adapter (display-resolve).
 
 ## S1 contract
 ```ts
@@ -138,3 +141,41 @@ Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 390: **EC-15
 0-fail 4.95–6.41 incl. warm-dark** · 56×48 ≥ 44×44 · **mark underline 3:1 5.63–6.41@2px · mark text AA 15.84–17.29 held** ·
 body text AA 0-fail · **axe 0**). tsc 0 · eslint 0 (S4 files) · 33/33 canvas-reader tests · full `@vida/ui` **503/503**
 (the known untouched-file concurrency flake, green on re-run). Live Range→rect anchoring = apps/web (S6 / fe-books #36).
+
+## S5 contract (added to `CanvasReaderProps`)
+```ts
+type ListenMode = 'idle' | 'playing' | 'unavailable'   // LOCAL union (the ReaderState precedent); barrel-exported
+// + on CanvasReaderProps:
+listen?: ListenMode            // the slim listen bar renders ONLY when provided (the `progress` render-when-provided precedent)
+listenProgress?: number        // 0..1; the HonestProgress bar shows in 'playing' ONLY + only when provided (honest, no fake fill)
+listenLabel?: ReactNode        // default "Listen to this book"
+onListenToggle?: () => void    // intent only; the control renders on idle/playing only when provided
+```
+
+## S5 business rules
+- **BR-S5-surfacing (inverse of S4):** the listen bar is **book-level persistent chrome** — there is no `Range` to anchor,
+  so (unlike S4) it lives ON `CanvasReaderProps` (the seam-contract §A homing), NOT a consumer-composed export. `ListenBar`
+  renders between `Header` and `Body` **only when `listen != null`**.
+- **BR-S5-1 (the bar, EC-1):** a slim `flexWrap` row (`$colorSurfaceSecondary` surface); `ListenMode` is a LOCAL union.
+- **BR-S5-2 (three honest states, EC-7):** idle → `ListenIcon` toggle (reused from S4) + `listenLabel`, starts; playing →
+  `PauseIcon` toggle (`aria-pressed`) + `listenLabel` + `HonestProgress` (shown only when `listenProgress` given);
+  unavailable → a CALM `role="status"` muted line "Listening isn't available on this device", **no button, never
+  `$colorSignalDanger`** (IR-7; the reading-column `unavailable` precedent).
+- **BR-S5-3 (real icons, EC-15):** reuse `ListenIcon` + a new inline `PauseIcon` (the S4 icon recipe: 16px, `aria-hidden`,
+  `currentColor`); never an emoji.
+- **BR-S5-4 (intent only, IR-5):** the toggle renders on idle/playing only when `onListenToggle` passed (render-when-handler);
+  emits, never writes.
+- **BR-S5-5 (a11y, §XIV):** **all three states are a `role="group" aria-label="Listen"`** so `unavailable` (no button to
+  carry a name) is never an empty-named region; the toggle is a ui-1 `Button size="lg"` (56×48 ≥ 44×44); `HonestProgress`
+  is `role="progressbar"`; no new motion (determinate `transform:scaleX`, B12-safe).
+- **BR-S5-6 (375, EC-9):** single `flexWrap` row; the label wraps under the control, never a mid-control overflow (the
+  flow-session `AffordanceRow` / RNW `flexShrink:0`-default lesson).
+- **BR-S5-7 (tokens/type, EC-10/11):** DIRECT semantic tokens; the icon + the progress fill carry accent (flips per preset);
+  AA full-matrix incl. warm-dark; the icon is a graphical object ≥3:1.
+
+## S5 verification
+Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 375: 3 named Listen groups every cell · toggle 56×48 ≥
+44×44 · **real SVG 0-emoji** · **icon 3:1 0-fail 4.39–5.27 incl. warm-dark** · label AA 0-fail 4.52–5.22 (incl. the muted
+line on `$colorSurfaceSecondary`) · progressbar in playing · calm `role=status` unavailable · no 375 overflow · **axe 0**).
+tsc 0 · eslint 0 (S5 files) · 42/42 canvas-reader tests · full `@vida/ui` **512/512**. Live TTS wiring
+(`convertToSpeech` + playback position) = apps/web (S6 / fe-books #36).

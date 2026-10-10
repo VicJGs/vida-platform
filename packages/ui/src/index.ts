@@ -83,6 +83,7 @@ export {
   ReaderHighlightMark,
   type CanvasReaderProps,
   type ReaderState,
+  type ListenMode,
   type ReaderChapter,
   type Nature,
   type ReaderAnnotation,

@@ -22,6 +22,10 @@ import { warnMissingName, type ViewState } from '../internal/data-view'
  *  no openable file), a calm state DISTINCT from `empty` (IR-NEEDS-4). */
 export type ReaderState = ViewState | 'unavailable'
 
+/** The listen-bar state (S5 / EC-7 / BR-S5-1): `idle` (ready) · `playing` (live, HonestProgress) · `unavailable` (TTS
+ *  deny-safe — a CALM status, never an error, IR-7). A LOCAL union (the `ReaderState` precedent; no @vida/core import). */
+export type ListenMode = 'idle' | 'playing' | 'unavailable'
+
 /** A flat-TOC chapter (S2 / EC-13) — mirrors `book_chapters` by VALUE (no @vida/core import). */
 export interface ReaderChapter {
   id: string
@@ -107,6 +111,17 @@ export interface CanvasReaderProps {
   onAddNote?: (annotationId: string) => void
   /** Link intent — bookmark & quote only (IR-1 shell-enforced). */
   onLinkAnnotation?: (annotationId: string) => void
+
+  // ── Listen bar (S5) ──
+  /** The listen state (BR-S5-1); the slim persistent bar renders ONLY when provided (the `progress` render-when-provided
+   *  precedent). Drives the three honest states (idle · playing · unavailable). */
+  listen?: ListenMode
+  /** 0..1 playback fraction → the HonestProgress bar, shown in `playing` ONLY and only when provided (honest, no fake fill). */
+  listenProgress?: number
+  /** The listen label; default "Listen to this book". */
+  listenLabel?: ReactNode
+  /** Toggle intent — emits, never writes (IR-5). The control renders on idle/playing only when provided (BR-S5-4). */
+  onListenToggle?: () => void
 
   'aria-label'?: string
   'aria-labelledby'?: string
@@ -419,6 +434,61 @@ function AnnotationRail({
   )
 }
 
+// The slim persistent listen bar (S5) — book-level chrome between the header and the body. A single flexWrap row so the
+// label wraps under the control at 375 (BR-S5-6; RNW flexShrink defaults to 0 — the flow-session AffordanceRow lesson).
+const ListenBarRow = styled(View, {
+  flexDirection: 'row',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: '$12',
+  paddingVertical: '$8',
+  paddingHorizontal: '$12',
+  borderRadius: '$md',
+  backgroundColor: '$colorSurfaceSecondary',
+})
+const ListenLabel = styled(Text, { fontFamily: '$body', fontSize: '$small', color: '$colorTextPrimary', flexShrink: 1 })
+const ListenMuted = styled(Text, { fontFamily: '$body', fontSize: '$small', color: '$colorTextMuted', flexShrink: 1 })
+
+// Named uniformly as a `role="group"` "Listen" across ALL three states so the `unavailable` state (no button to carry a
+// name) is never an empty-named region (BR-S5-5). The toggle renders on idle/playing only when `onListenToggle` is given
+// (render-when-handler, IR-5); `unavailable` shows a CALM role=status line (IR-7), never an error colour.
+function ListenBar({
+  listen,
+  listenProgress,
+  listenLabel,
+  onListenToggle,
+}: {
+  listen: ListenMode
+  listenProgress?: number
+  listenLabel?: ReactNode
+  onListenToggle?: () => void
+}) {
+  if (listen === 'unavailable')
+    return (
+      <ListenBarRow role="group" aria-label="Listen">
+        <View role="status">
+          <ListenMuted>Listening isn’t available on this device.</ListenMuted>
+        </View>
+      </ListenBarRow>
+    )
+  const playing = listen === 'playing'
+  return (
+    <ListenBarRow role="group" aria-label="Listen">
+      {onListenToggle != null && (
+        <Button intent="ghost" size="lg" aria-label={playing ? 'Pause' : 'Listen'} aria-pressed={playing} onPress={onListenToggle}>
+          {playing ? <PauseIcon /> : <ListenIcon />}
+        </Button>
+      )}
+      <ListenLabel>{listenLabel ?? 'Listen to this book'}</ListenLabel>
+      {playing && listenProgress != null && (
+        <View flexGrow={1} flexShrink={1} minWidth={120}>
+          <HonestProgress value={listenProgress} label="Listening progress" />
+        </View>
+      )}
+    </ListenBarRow>
+  )
+}
+
 // A plain component — non-generic → React 19 spreads `ref` as a prop (no forwardRef).
 export function CanvasReader({
   title,
@@ -443,6 +513,10 @@ export function CanvasReader({
   onToggleRail,
   onAddNote,
   onLinkAnnotation,
+  listen,
+  listenProgress,
+  listenLabel,
+  onListenToggle,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledby,
   ref,
@@ -502,6 +576,11 @@ export function CanvasReader({
         )}
       </Header>
 
+      {/* Listen bar (S5) — slim persistent book-level chrome; renders only when `listen` is provided (BR-S5-1). */}
+      {listen != null && (
+        <ListenBar listen={listen} listenProgress={listenProgress} listenLabel={listenLabel} onListenToggle={onListenToggle} />
+      )}
+
       {/* Body — the living-margin row: Contents panel (S2, left) ∣ reading column ∣ annotations rail (S3, right).
           Lone column centers (S1); with either zone it left-aligns (BR-S2-5 / BR-S3-8). */}
       <Body justifyContent={showContents || showRail ? 'flex-start' : 'center'}>
@@ -553,6 +632,15 @@ function ListenIcon() {
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
       <path d="M17 9a3.5 3.5 0 0 1 0 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+// S5 — the pause glyph for the playing listen state (two bars). Same recipe: 16px, aria-hidden, currentColor.
+function PauseIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
     </svg>
   )
 }
