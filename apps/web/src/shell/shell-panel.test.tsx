@@ -51,13 +51,13 @@ describe('ShellPanel — docked (S3)', () => {
     expect(screen.getByTestId('body')).not.toBeNull()
   })
 
-  it('shows the ▣ Dock | ⧉ Float control reflecting the mode (EC-1); Float is disabled until S4', () => {
+  it('shows the ▣ Dock | ⧉ Float control reflecting the mode (EC-1); both enabled from S4', () => {
     renderPanel({ placement: dock({ mode: 'dock' }) })
     expect(screen.getByRole('button', { name: 'Dock' }).getAttribute('aria-pressed')).toBe('true')
     const float = screen.getByRole('button', { name: 'Float' })
     expect(float.getAttribute('aria-pressed')).toBe('false')
-    // Float render (overlay) is S4 — the control is SHOWN but disabled, so no float dead-end is reachable (g2 S3).
-    expect((float as HTMLButtonElement).disabled).toBe(true)
+    // S4 built the float render → Float is now ENABLED (S3's `disabled` removed).
+    expect((float as HTMLButtonElement).disabled).toBe(false)
   })
 
   it('shows the four-edge picker with the active edge pressed (EC-4)', () => {
@@ -70,14 +70,13 @@ describe('ShellPanel — docked (S3)', () => {
     }
   })
 
-  it('emits onSetMode from the (enabled) Dock control; the disabled Float does not fire (intent only, R5)', () => {
+  it('emits onSetMode from both mode controls (intent only, R5)', () => {
     const onSetMode = vi.fn()
     renderPanel({ onSetMode })
     fireEvent.click(screen.getByRole('button', { name: 'Dock' }))
     expect(onSetMode).toHaveBeenCalledWith('dock')
-    onSetMode.mockClear()
-    fireEvent.click(screen.getByRole('button', { name: 'Float' })) // disabled in S3 — no-op
-    expect(onSetMode).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Float' })) // enabled from S4
+    expect(onSetMode).toHaveBeenCalledWith('float')
   })
 
   it('emits onSetEdge when an edge is picked', () => {
@@ -92,5 +91,61 @@ describe('ShellPanel — docked (S3)', () => {
     renderPanel({ onClose })
     fireEvent.click(screen.getByRole('button', { name: 'Close Modules panel' }))
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('ShellPanel — floating (S4)', () => {
+  const float = (overrides?: Partial<PanelPlacement>): PanelPlacement => ({ mode: 'float', edge: 'left', open: true, ...overrides })
+
+  function renderFloat(props?: Partial<React.ComponentProps<typeof ShellPanel>>) {
+    return render(
+      <UIProvider>
+        <ShellPanel id="modules" title="Modules" placement={float()} {...props}>
+          <button type="button">body action</button>
+        </ShellPanel>
+      </UIProvider>,
+    )
+  }
+
+  it('renders a modal dialog (role=dialog, aria-modal) named by the title — NOT a landmark (B4)', () => {
+    renderFloat()
+    const dialog = screen.getByRole('dialog', { name: 'Modules' })
+    expect(dialog.getAttribute('aria-modal')).toBe('true')
+    expect(dialog.getAttribute('data-mode')).toBe('float')
+    // The docked landmark role is NOT used in float mode.
+    expect(screen.queryByRole('navigation', { name: 'Modules' })).toBeNull()
+  })
+
+  it('renders a scrim + carries the panel DOM id (aria-controls target)', () => {
+    const { container } = renderFloat()
+    expect(container.querySelector('.vida-shell-scrim')).not.toBeNull()
+    expect(container.querySelector('#shell-panel-modules')).not.toBeNull()
+  })
+
+  it('anchors to its edge (EC-3)', () => {
+    const { container } = renderFloat({ placement: float({ edge: 'bottom' }) })
+    expect(container.querySelector('[data-panel="modules"]')?.getAttribute('data-edge')).toBe('bottom')
+  })
+
+  it('dismisses on Esc (EC-6)', () => {
+    const onClose = vi.fn()
+    renderFloat({ onClose })
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Modules' }), { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('dismisses on scrim click (EC-6)', () => {
+    const onClose = vi.fn()
+    const { container } = renderFloat({ onClose })
+    const scrim = container.querySelector('.vida-shell-scrim')
+    expect(scrim).not.toBeNull()
+    fireEvent.click(scrim as Element)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('moves focus into the panel on open — the first focusable (✕ close) is focused (EC-6)', () => {
+    renderFloat()
+    // The first focusable inside the panel is the ✕ close (header row 1 leads the controls).
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Close Modules panel')
   })
 })

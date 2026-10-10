@@ -43,6 +43,12 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   actually rendered) + `aria-controls={panelDomId(id)}` when docked-open; app-shell holds `toggleRefs` so a panel's
   ✕-close returns focus to its bar toggle (§XIV). Panel bodies in #14 = an empty-but-functional `PanelBodyPlaceholder`
   (envision L4; real module nav / #15 surfaces deferred). Float render = S4.
+  **S4:** the below-strip region wraps the content/docked composition in a ref'd wrapper (`bgRef`) + adds an absolute
+  **float layer** (`$overlay`) that mounts a `ShellPanel` (float) per open+floating panel. While any float is open:
+  the `bgRef` wrapper is `inert`+`aria-hidden` (modal background, NOT the top strip → re-toggle stays live, G1), and the
+  bar toggles go `tabIndex={-1}` (complete the drawer's trap; keyboard/SR dismiss = Esc; pointer re-toggle still works) +
+  `aria-haspopup="dialog"` in float mode; the disclosure widened to `aria-expanded={open}` (both modes render a region).
+  Concurrent floats are UI-unreachable (inert blocks reaching a 2nd Float control) → coordinated multi-float is S5.
 - `shell-panel.tsx` (fe-shell #14, S3) — **`ShellPanel`**, the DOCKED nav panel (A). Presentational + state-as-prop
   (reads `placement`, emits `onSetMode`/`onSetEdge`/`onClose`; app wires the store). `modules` → `<nav aria-label>`,
   `system` → `<aside aria-label>` (semantic landmark via `styled(View,{render})`). **Inline flush** at its edge
@@ -55,6 +61,20 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   disclosure — g2 S3 fold, a §XXVIII deviation from the live-Float plan). Composes `@vida/ui` `Button` + `lucide-react`;
   every value a DS token. `panelDomId(id)` = the `aria-controls` target. One consumer ⇒ stays here, NOT `@vida/ui`
   (ui-4 BR-1). Delivery: `docs/specs/foundation/fe-shell/delivery/` (+ `sessions/PLAN-s3-docked-panel.md`).
+  **S4 added the FLOATING branch** (`FloatShellPanel`): when `placement.mode==='float'` the SAME chrome renders as an
+  edge-anchored **modal drawer** — a scrim (`$colorSurfaceInverse` @ **0.5**, the Dialog scrim value; click→close) + a
+  `role="dialog" aria-modal="true"` panel (NOT the `<nav>`/`<aside>` landmark — that's docked; B4) anchored per
+  `EDGE_ANCHOR` within the below-strip float layer, Level-3 elevation (the injected `.vida-shell-panel` `shadow.overlay`;
+  dark self-cancels → the 1px border carries it). **Dismiss** = Esc / click-scrim / re-toggle → `onClose`; **focus** moves
+  IN on open (first focusable) and RETURNS to the bar toggle on dismiss (app-shell's `onClose`, reliable for every open
+  path incl. the in-panel Dock→Float switch — capturing `document.activeElement` would grab `<body>` there, g2 #1). The
+  Tab **trap** mirrors Dialog's algorithm. Motion = the fail-safe-visible injected keyframes (reduced-motion `@media`).
+  Float is now ENABLED (S3's `disabled` removed).
+- `shell-panel-styles.ts` (fe-shell #14, S4) — `ensureShellPanelStyles()`: the injected `<style>` (mirrors `@vida/ui`
+  `internal/dialog-styles.ts`) for the float scrim-in + per-edge panel slide-in `@keyframes` + the `.vida-shell-panel`
+  `box-shadow:shadow.overlay`. **Visible resting base** (scrim 0.5 / panel opacity 1, transform none) so a missed
+  animation FAILS SAFE VISIBLE (a modal must never render invisible); reduced-motion `@media`→`animation:none`. B12:
+  opacity/transform only.
 - `module-dock.tsx` (S2) — the dock content: `MODULE_MAP` grouped, drawer/rail/sidebar forms, empty-group skip,
   collapse toggle. `global-bar.tsx` (S2) — `GLOBAL_SURFACES` condensed/full + ⌘K→`commandBar.open()` + overflow Menu.
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact

@@ -122,17 +122,64 @@ describe('AppShell — docked panel composition (S3)', () => {
     expect(screen.getByTestId('outlet')).not.toBeNull()
   })
 
-  it('does NOT render a FLOATING panel in S3 (overlay=S4); its toggle stays honest (aria-expanded false, no controls)', async () => {
-    // The Float control is disabled in the panel, so this float+open placement is only reachable via the hydration
-    // seam (setPlacement) — never the UI. The disclosure must stay HONEST: nothing rendered ⇒ not expanded (g2 S3).
+  it('renders a FLOATING panel as a modal drawer (S4) + widens the toggle disclosure', async () => {
     useAppShellUIStore.setState({
       placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'float', edge: 'left', open: true } },
     })
     const { container } = await renderShell('desktop')
-    expect(container.querySelector('[data-panel="modules"]')).toBeNull() // float render deferred to S4
+    // The drawer mounts (role=dialog, data-mode=float) in the float layer.
+    const drawer = container.querySelector('[data-panel="modules"][data-mode="float"]')
+    expect(drawer).not.toBeNull()
+    expect(screen.getByRole('dialog', { name: 'Modules' })).not.toBeNull()
+    expect(container.querySelector('[data-region="floatLayer"]')).not.toBeNull()
+    // The disclosure widened to BOTH modes (S4): open ⇒ expanded + controls, regardless of mode.
     const modules = screen.getByRole('button', { name: 'Modules' })
-    expect(modules.getAttribute('aria-expanded')).toBe('false') // honest — no controlled region is rendered
-    expect(modules.getAttribute('aria-controls')).toBeNull()
+    expect(modules.getAttribute('aria-expanded')).toBe('true')
+    expect(modules.getAttribute('aria-controls')).toBe('shell-panel-modules')
+  })
+
+  it('inerts the content/docked wrapper while a float drawer is open (G1 modal background)', async () => {
+    useAppShellUIStore.setState({
+      placement: { ...DEFAULT_PLACEMENT, system: { mode: 'float', edge: 'right', open: true } },
+    })
+    const { container } = await renderShell('desktop')
+    // The content region sits inside the inert wrapper; the top strip (banner) is OUTSIDE it (stays live for re-toggle).
+    const content = container.querySelector('[data-region="content"]')
+    const inertWrapper = content?.closest('[inert]')
+    expect(inertWrapper).not.toBeNull()
+    expect(screen.getByRole('banner').closest('[inert]')).toBeNull() // top strip NOT inert
+  })
+
+  it('a docked panel is NOT inert (no float open)', async () => {
+    useAppShellUIStore.setState({
+      placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'dock', edge: 'left', open: true } },
+    })
+    const { container } = await renderShell('desktop')
+    expect(container.querySelector('[inert]')).toBeNull()
+  })
+
+  it('takes the bar toggles out of the tab order while a float is open (complete trap) + signals aria-haspopup', async () => {
+    useAppShellUIStore.setState({
+      placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'float', edge: 'left', open: true } },
+    })
+    await renderShell('desktop')
+    const modules = screen.getByRole('button', { name: 'Modules' })
+    const system = screen.getByRole('button', { name: 'System' })
+    // Both toggles leave the keyboard tab order (the drawer trap is complete); still pointer-clickable.
+    expect(modules.getAttribute('tabindex')).toBe('-1')
+    expect(system.getAttribute('tabindex')).toBe('-1')
+    // The floating panel's toggle announces the modal popup.
+    expect(modules.getAttribute('aria-haspopup')).toBe('dialog')
+  })
+
+  it('returns focus to the bar toggle when the float drawer is dismissed (EC-6)', async () => {
+    useAppShellUIStore.setState({
+      placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'float', edge: 'left', open: true } },
+    })
+    const { container } = await renderShell('desktop')
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Modules' }), { key: 'Escape' })
+    expect(container.querySelector('[data-panel="modules"]')).toBeNull() // closed
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Modules' }))
   })
 
   it('the panel ✕-close toggles the panel shut (focus returns to the bar toggle, N2)', async () => {

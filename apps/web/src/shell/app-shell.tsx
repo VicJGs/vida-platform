@@ -6,7 +6,7 @@
 // The dock⇄float PANELS the toggles open are S3 (docked-inline) / S4 (floating-overlay); their bodies + the Bar-1
 // content (#15) / Session HUD (#16) / ⌘K registry (#17) inject through the slots — empty-but-functional in #14.
 // `[FACT: delivery/slice-map.md:19 S2; seam-contract.md §C; envision.md EC-7/8/9]`. Chrome only — composes @vida/ui + DS tokens.
-import { useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { styled, Text, View, useMedia } from '@tamagui/core'
 import { Button } from '@vida/ui'
 import { useAppShellUIStore } from '../stores/app-shell-ui-store'
@@ -80,6 +80,29 @@ export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, __bp }: App
   // Refs to the bar toggles so a docked panel's ✕-close returns focus to its originating toggle (§XIV focus mgmt, N2).
   const toggleRefs = useRef<Record<PanelId, HTMLButtonElement | null>>({ system: null, modules: null })
 
+  // The open+floating panels (S4) — rendered as modal drawers in the below-strip float layer (NOT docked). The float
+  // panel self-owns scrim + focus capture/trap/restore; app-shell owns the inert background (below).
+  const floatPanels = PANEL_IDS.filter((id) => placement[id].mode === 'float' && placement[id].open)
+  const anyFloatOpen = floatPanels.length > 0
+
+  // G1 — while a float drawer is open, the content/docked wrapper (NOT the top strip) is inert + aria-hidden (modal
+  // background). Applied imperatively via a ref (the Dialog `setAttribute` precedent — RNW may not forward `inert`).
+  const bgRef = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    const bg = bgRef.current
+    if (!bg) return
+    if (!anyFloatOpen) return
+    const prevAriaHidden = bg.getAttribute('aria-hidden')
+    const hadInert = bg.hasAttribute('inert')
+    bg.setAttribute('aria-hidden', 'true')
+    bg.setAttribute('inert', '')
+    return () => {
+      if (prevAriaHidden === null) bg.removeAttribute('aria-hidden')
+      else bg.setAttribute('aria-hidden', prevAriaHidden)
+      if (!hadInert) bg.removeAttribute('inert')
+    }
+  }, [anyFloatOpen])
+
   // Fold the open+docked panels AROUND the content so it sits beside them (EC-2). Each wrapper is a flex row (L/R edges)
   // or column (T/B edges); the panel is content-fit (flexGrow/Shrink:0, set in ShellPanel) and Content keeps the free
   // space. ⚠ RNW flex-collapse guard (BR-S3-9): every content-carrying flex child keeps `flex=1 minHeight=0 minWidth=0`
@@ -148,7 +171,6 @@ export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, __bp }: App
         <View flexDirection="row" alignItems="center" gap="$8" data-region="panelToggles">
           {PANEL_IDS.map((id) => {
             const p = placement[id]
-            const dockedOpen = p.mode === 'dock' && p.open
             return (
               <Button
                 key={id}
@@ -157,11 +179,16 @@ export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, __bp }: App
                 }}
                 intent="ghost"
                 size="md"
-                // Honest disclosure (g2 S3): expanded iff a controlled region is actually rendered. In S3 only docked
-                // panels render, so `dockedOpen` is the truth; Float is disabled in the panel, so `open` can't drift to
-                // a floated-but-unrendered state via the UI anyway. S4 widens this when the float overlay renders.
-                aria-expanded={dockedOpen}
-                aria-controls={dockedOpen ? panelDomId(id) : undefined}
+                // Disclosure — S4 widened from docked-only to BOTH modes: an open panel always renders a region
+                // (docked inline OR floating drawer), both carrying `panelDomId(id)`. `aria-expanded` is honest for both.
+                aria-expanded={p.open}
+                aria-controls={p.open ? panelDomId(id) : undefined}
+                // A float panel is a modal dialog ⇒ signal it (g2 S4 CONFIRMED-6).
+                aria-haspopup={p.mode === 'float' ? 'dialog' : undefined}
+                // While ANY float drawer is open, the bar leaves the keyboard tab order so the drawer's focus trap is
+                // COMPLETE (no tabbable sibling) + consistent with aria-modal (g2 S4 CONFIRMED-1/2). Still pointer-
+                // clickable (re-toggle) + `.focus()`-able (focus-return on close).
+                tabIndex={anyFloatOpen ? -1 : undefined}
                 onPress={() => togglePanel(id)}
               >
                 {PANEL_LABEL[id]}
@@ -182,25 +209,69 @@ export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, __bp }: App
         </View>
       </BarHeader>
 
-      {/* EC-2/EC-9 · Content — the routed Outlet, full-bleed, centered to the 1280 max-width with per-breakpoint gutters.
-          `minHeight:0`+`minWidth:0` let it shrink inside the bounded column AND beside a docked panel (so its own
-          `overflowY:auto` scrolls, and a `column` flip can't collapse it — BR-S3-9). `foldDocked` wraps it so every
-          open+docked panel sits flush at its edge with Content beside (EC-2); no docked panels ⇒ Content is the region. */}
-      {foldDocked(
-        <ContentMain
-          data-region="content"
+      {/* The below-strip region (position:relative) hosts the docked composition + the float drawer layer. */}
+      <View flex={1} minHeight={0} position="relative">
+        {/* EC-2/EC-9 · the content/docked wrapper — the inert target while a float drawer is open (G1). `foldDocked`
+            wraps Content so every open+docked panel sits flush at its edge with Content beside (EC-2); no docked panels ⇒
+            Content is the wrapper's sole child. `minHeight/minWidth:0` let Content shrink beside a docked panel + survive
+            a `column` flip (BR-S3-9). */}
+        <View
+          ref={(el) => {
+            bgRef.current = (el as unknown as HTMLElement | null) ?? null
+          }}
           flex={1}
           minHeight={0}
           minWidth={0}
-          overflowY="auto"
-          paddingHorizontal={gutter}
-          alignItems="center"
+          flexDirection="column"
         >
-          <View width="100%" maxWidth={CONTENT_MAX_WIDTH} flex={1}>
-            {children}
+          {foldDocked(
+            <ContentMain
+              data-region="content"
+              flex={1}
+              minHeight={0}
+              minWidth={0}
+              overflowY="auto"
+              paddingHorizontal={gutter}
+              alignItems="center"
+            >
+              <View width="100%" maxWidth={CONTENT_MAX_WIDTH} flex={1}>
+                {children}
+              </View>
+            </ContentMain>,
+          )}
+        </View>
+
+        {/* EC-3/EC-6 · the FLOAT drawer layer — an absolute overlay over the below-strip region (so Content keeps its
+            width underneath, M3). Each open+floating panel brings its own scrim + modal drawer (ShellPanel float). At
+            `$overlay` (above content; ⌘K's Dialog self-portals to <body> at `$modal`, so it still wins). Mounted only
+            when a float panel is open.
+            ⚠ Concurrent floats (two scrims/traps) are a KNOWN S5 concern but UI-UNREACHABLE in S4: once one panel floats,
+            the inert wrapper (G1) covers the docked region, so a 2nd panel can only be opened DOCKED-inside-inert — its
+            Float control is never reachable. Two floats are only state-reachable via the hydration seam; S5 coordinates
+            dock-together + multi-panel. (So we render every floatPanel — no silent-drop guard that S5 would have to undo.) */}
+        {anyFloatOpen ? (
+          <View data-region="floatLayer" position="absolute" top={0} left={0} right={0} bottom={0} zIndex={LAYERING.overlayHost}>
+            {floatPanels.map((id) => (
+              <ShellPanel
+                key={id}
+                id={id}
+                title={PANEL_LABEL[id]}
+                placement={placement[id]}
+                onSetMode={(m) => setPanelMode(id, m)}
+                onSetEdge={(e) => setPanelEdge(id, e)}
+                // Dismiss (Esc/scrim/✕ all route here) → close + RETURN focus to the bar toggle. Reliable for every open
+                // path incl. the in-panel Dock→Float switch (g2 S4 #1 — capture-restore would grab <body> there).
+                onClose={() => {
+                  togglePanel(id)
+                  toggleRefs.current[id]?.focus()
+                }}
+              >
+                <PanelBodyPlaceholder id={id} />
+              </ShellPanel>
+            ))}
           </View>
-        </ContentMain>,
-      )}
+        ) : null}
+      </View>
 
       {/* EC-8 · Overlay host — ⌘K / modals mount here at the `$overlay` z, above Content (and above the S4 panels).
           `data-overlay-mode` drives sheet (mobile) vs centered (tablet+). UI-1 overlays SELF-PORTAL to <body> (Dialog's
