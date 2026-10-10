@@ -6,6 +6,7 @@
 > `apps/web/src/shell`. Every claim [FACT: path:line] or labeled INTERPRETATION. No-Guessing Principle binds.
 
 ## §1. Context (ground truth)
+
 - **Frame (S2, shipped):** `app-shell.tsx` is a bounded-viewport **column** — reserved top strip (`<header>`/banner,
   `reservedTopInset(bp)` 52/56) → full-bleed Content `<main>` (1280-centered + gutters, independent scroll) → overlay
   host. It reads the store `placement` + `togglePanel`; the **System/Modules toggles carry `aria-pressed`←`placement[id].open`**
@@ -20,6 +21,7 @@
   component stays in `apps/web/src/shell`, NOT `@vida/ui` (ui-4 BR-1). `[FACT: shell/module-dock.tsx, shell/global-bar.tsx, shell/app-shell.tsx:19-20]`
 
 ## §2. What S3 builds (scope) + the one scope decision
+
 S3 covers **EC-1 · EC-2 · EC-4 · EC-5 (docked)** `[FACT: slice-map.md:20,27-31]`.
 
 1. **NEW `shell/shell-panel.tsx` — `ShellPanel` (docked render).** The seam-contract §B component, DOCKED mode only:
@@ -28,17 +30,17 @@ S3 covers **EC-1 · EC-2 · EC-4 · EC-5 (docked)** `[FACT: slice-map.md:20,27-3
    `[FACT: seam-contract.md:24-40; envision.md EC-1/2/4/5]`
    **Edge control is LIVE in S3 (B3):** app-shell wires `onSetEdge`→`setPanelEdge` (the store action shipped in S1) so
    the docked panel actually appears at each edge — required to prove EC-4's "rearrangeable to any edge" **render** at
-   the S3 gate (symmetric with the mode toggle, which BR-S3-7 wires live). **S5 adds only the `nav_preferences` PERSIST
-   + dock-together + full reflow** — so §7's "rearrange → S5" means *persist*, not *wiring*. `[FACT: slice-map.md:22,30; regions.ts; store:45]`
-   **⠿ grip (N4):** a **decorative, `aria-hidden`** affordance only — it signals repositionable (EC-12 `feel`); the
-   rearrange MECHANISM is the edge-picker buttons (`onSetEdge`), NOT drag. No drag handler is wired in any slice.
+   the S3 gate (symmetric with the mode toggle, which BR-S3-7 wires live). \*\*S5 adds only the `nav_preferences` PERSIST
+   - dock-together + full reflow** — so §7's "rearrange → S5" means *persist*, not *wiring*. `[FACT: slice-map.md:22,30; regions.ts; store:45]`
+     **⠿ grip (N4):** a **decorative, `aria-hidden`\*\* affordance only — it signals repositionable (EC-12 `feel`); the
+     rearrange MECHANISM is the edge-picker buttons (`onSetEdge`), NOT drag. No drag handler is wired in any slice.
 2. **`app-shell.tsx` — docked composition (the scope decision, resolved from the docs).** For each **open + docked**
    panel, render `ShellPanel` **flush at its edge with Content beside it**. The region below the top strip becomes a
    flex row/column arranged per the panel's `panelAxis`: left ⇒ `[panel | content]`, right ⇒ `[content | panel]`,
    top ⇒ `[panel / content]`, bottom ⇒ `[content / panel]`.
    - **Why this is in S3, not deferred:** `slice-map.md:28` assigns **EC-2 "docked inline, content beside"** to S3, and
      envision **M2** requires content-beside — **provable only in the frame**. The S3 home column under-lists app-shell
-     (S4 re-lists it for the *floating* host); the docked composition is S3's by EC ownership. INTERPRETATION grounded
+     (S4 re-lists it for the _floating_ host); the docked composition is S3's by EC ownership. INTERPRETATION grounded
      in `slice-map.md:28` + `envision.md:44` — NOT manufactured scope, NOT a deferral to cut scope.
 
 **Panel BODY in #14 = empty-but-functional slot (DEFERRED real bodies).** `envision L4`: "#14 ships the panels as
@@ -54,17 +56,19 @@ mounts only `mode==='dock' && open` panels; toggling a panel to Float sets state
 until S4 wires the overlay. Documented interim, clean slice boundary `[FACT: slice-map.md:20-21]`.
 
 ## §3. `ShellPanel` contract (seam-contract §B, refined)
+
 ```ts
 interface ShellPanelProps {
-  id: PanelId                          // 'system' | 'modules'
-  title: ReactNode                     // 'System' | 'Modules'
-  placement: PanelPlacement            // {mode,edge,open} from the store (BR-2 state-as-prop)
-  children: ReactNode                  // the panel BODY slot (empty-but-functional in #14)
-  onSetMode?: (m: PanelMode) => void   // Dock ⇄ Float — intent only (R5/IR-5); undefined ⇒ control omitted
-  onSetEdge?: (e: PanelEdge) => void   // rearrange to an edge — intent only
-  onClose?: () => void                 // ✕ / toggle-off — intent only
+  id: PanelId // 'system' | 'modules'
+  title: ReactNode // 'System' | 'Modules'
+  placement: PanelPlacement // {mode,edge,open} from the store (BR-2 state-as-prop)
+  children: ReactNode // the panel BODY slot (empty-but-functional in #14)
+  onSetMode?: (m: PanelMode) => void // Dock ⇄ Float — intent only (R5/IR-5); undefined ⇒ control omitted
+  onSetEdge?: (e: PanelEdge) => void // rearrange to an edge — intent only
+  onClose?: () => void // ✕ / toggle-off — intent only
 }
 ```
+
 - **Docked** (`mode:'dock'`): inline flush, **no scrim, no elevation**; content beside (EC-2). `[FACT: seam-contract.md:36]`
 - **Content-fit** (EC-5): sizes to `children` — **vertical stack on L/R, horizontal on T/B** via `panelAxis(edge)`;
   reaches the viewport edge only when content needs it (no forced full-span). `[FACT: envision.md:47; regions.ts:148-150]`
@@ -85,6 +89,7 @@ interface ShellPanelProps {
   controls a disclosed region). `[FACT: .claude/tasks/fe-shell.md:44]`
 
 ## §4. Business rules (BR-S3-n)
+
 - **BR-S3-1** `ShellPanel` is presentational + state-as-prop; it emits intents, never touches the store/DB (BR-2/R5).
 - **BR-S3-2** Docked = **no scrim, no elevation** (the calm grouped look); scrim/elevation are float-only (S4). [EC-2]
 - **BR-S3-3** Content-fit: panel sizes to `children`; axis from `panelAxis(edge)`; never a forced full-span. [EC-5]
@@ -108,6 +113,7 @@ interface ShellPanelProps {
   is via the picker buttons, never drag (N4). [EC-4]
 
 ## §5. Implementation order (types → states → dark → responsive → motion)
+
 1. **Types** — `ShellPanelProps` (local to `shell/shell-panel.tsx`; imports `PanelId/PanelMode/PanelEdge/PanelPlacement`
    from `./regions`). No `@vida/types` edge (the ViewLayout-local precedent).
 2. **`ShellPanel` docked render** — landmark frame (`styled(View,{render:'nav'|'aside'})`) + two-row header + body slot;
@@ -134,8 +140,10 @@ interface ShellPanelProps {
    extend `shell/app-shell.test.tsx` (open+docked ⇒ panel mounts beside content; toggle `aria-expanded`/`aria-controls`).
 
 ## §6. Acceptance (§4 of the gate — the blocking Visual Gate musts)
+
 tsc 0 · eslint 0 · `@vida/web` green · **blocking Visual Gate PASS** (Brave real app via onboarding→shell, 3 presets ×
 light/dark × 375/768/1440):
+
 - **EC-1** each panel shows the `▣/⧉` control; toggling reflects state.
 - **EC-2** docked panel is flush at its edge with **Content beside it**, no scrim/elevation.
 - **EC-4** the two-row header (mode + 4-edge picker) is **contained — no overflow** into content, at every edge.
@@ -144,7 +152,8 @@ light/dark × 375/768/1440):
 - EC-11/EC-12 (`feel`) observed at the live gate.
 
 ## §7. Out of scope (homed)
+
 Floating overlay render + scrim/elevation/dismiss/focus (**S4**) · edge-rearrange **PERSIST** to `nav_preferences` +
-dock-together + full reflow + full-matrix gate + Verification (**S5** — the in-session edge *wiring* IS S3, BR-S3-11) ·
+dock-together + full reflow + full-matrix gate + Verification (**S5** — the in-session edge _wiring_ IS S3, BR-S3-11) ·
 real panel bodies (module nav / #15 global surfaces) + live `nav_preferences` (first-consumer follow-up) · PR (**at
 S5**). `[FACT: slice-map.md:21-22,30,47]`

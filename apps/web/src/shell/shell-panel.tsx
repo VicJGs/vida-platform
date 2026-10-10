@@ -25,7 +25,10 @@ export function panelDomId(id: PanelId): string {
 }
 
 /** The border edge that FACES Content when docked (the only separator — docked has no elevation, EC-2). */
-const BORDER_FACING: Record<PanelEdge, 'borderRightWidth' | 'borderLeftWidth' | 'borderBottomWidth' | 'borderTopWidth'> = {
+const BORDER_FACING: Record<
+  PanelEdge,
+  'borderRightWidth' | 'borderLeftWidth' | 'borderBottomWidth' | 'borderTopWidth'
+> = {
   left: 'borderRightWidth',
   right: 'borderLeftWidth',
   top: 'borderBottomWidth',
@@ -106,20 +109,43 @@ export function ShellPanel({ id, title, placement, children, onSetMode, onSetEdg
           <View aria-hidden="true" alignItems="center" justifyContent="center" color="$colorTextMuted">
             <GripVertical size={16} />
           </View>
-          <Text flex={1} minWidth={0} fontFamily="$display" fontSize="$subheading" color="$colorTextPrimary" userSelect="none">
+          <Text
+            flex={1}
+            minWidth={0}
+            fontFamily="$display"
+            fontSize="$subheading"
+            color="$colorTextPrimary"
+            userSelect="none"
+          >
             {title}
           </Text>
-          <Button intent="ghost" size="sm" aria-label={`Close ${titleStr} panel`} onPress={onClose} leading={<X size={16} />} />
+          <Button
+            intent="ghost"
+            size="sm"
+            aria-label={`Close ${titleStr} panel`}
+            onPress={onClose}
+            leading={<X size={16} />}
+          />
         </View>
 
         {/* Row 2 — Dock | Float mode control + the four-edge picker. Active = intent 'secondary' (a fill/border, a
             non-colour signal per §VIII) + aria-pressed; inactive = ghost. Both mode buttons are live from S4. */}
         <View flexDirection="row" alignItems="center" gap="$8">
           <View role="group" aria-label="Panel mode" flexDirection="row" gap="$8">
-            <Button intent={mode === 'dock' ? 'secondary' : 'ghost'} size="sm" aria-pressed={mode === 'dock'} onPress={() => onSetMode?.('dock')}>
+            <Button
+              intent={mode === 'dock' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={mode === 'dock'}
+              onPress={() => onSetMode?.('dock')}
+            >
               Dock
             </Button>
-            <Button intent={mode === 'float' ? 'secondary' : 'ghost'} size="sm" aria-pressed={mode === 'float'} onPress={() => onSetMode?.('float')}>
+            <Button
+              intent={mode === 'float' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={mode === 'float'}
+              onPress={() => onSetMode?.('float')}
+            >
               Float
             </Button>
           </View>

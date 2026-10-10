@@ -95,7 +95,12 @@ describe('ShellPanel — docked (S3)', () => {
 })
 
 describe('ShellPanel — floating (S4)', () => {
-  const float = (overrides?: Partial<PanelPlacement>): PanelPlacement => ({ mode: 'float', edge: 'left', open: true, ...overrides })
+  const float = (overrides?: Partial<PanelPlacement>): PanelPlacement => ({
+    mode: 'float',
+    edge: 'left',
+    open: true,
+    ...overrides,
+  })
 
   function renderFloat(props?: Partial<React.ComponentProps<typeof ShellPanel>>) {
     return render(

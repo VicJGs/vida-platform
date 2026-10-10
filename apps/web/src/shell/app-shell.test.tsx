@@ -18,7 +18,10 @@ afterEach(() => {
   useAppShellUIStore.setState({ placement: DEFAULT_PLACEMENT })
 })
 
-function renderShell(bp: Breakpoint, props?: { bar1Slot?: React.ReactNode; hudSlot?: React.ReactNode; overlaySlot?: React.ReactNode }) {
+function renderShell(
+  bp: Breakpoint,
+  props?: { bar1Slot?: React.ReactNode; hudSlot?: React.ReactNode; overlaySlot?: React.ReactNode },
+) {
   return renderInShell(
     <AppShell __bp={bp} {...props}>
       <div data-testid="outlet">content</div>
@@ -101,10 +104,14 @@ describe('AppShell — CODEC frame (S2)', () => {
 
   it('drives the overlay host mode: sheet on mobile, centered from tablet up (EC-8)', async () => {
     const mobile = await renderShell('mobile')
-    expect(mobile.container.querySelector('[data-region="overlayHost"]')?.getAttribute('data-overlay-mode')).toBe('sheet')
+    expect(mobile.container.querySelector('[data-region="overlayHost"]')?.getAttribute('data-overlay-mode')).toBe(
+      'sheet',
+    )
     cleanup()
     const desktop = await renderShell('desktop')
-    expect(desktop.container.querySelector('[data-region="overlayHost"]')?.getAttribute('data-overlay-mode')).toBe('centered')
+    expect(desktop.container.querySelector('[data-region="overlayHost"]')?.getAttribute('data-overlay-mode')).toBe(
+      'centered',
+    )
   })
 })
 

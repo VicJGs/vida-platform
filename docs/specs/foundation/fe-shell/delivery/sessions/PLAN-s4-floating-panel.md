@@ -5,6 +5,7 @@
 > or labeled INTERPRETATION. No-Guessing binds.
 
 ## §1. Context (ground truth)
+
 - **S3 (shipped):** `ShellPanel` renders the DOCKED state (inline flush, content beside) + the two-row contained header;
   **Float is DISABLED** in the mode control (S4 enables it). `app-shell.foldDocked` composes docked+open panels; the
   bar toggles are a disclosure (`aria-expanded={dockedOpen}`). `[FACT: shell/shell-panel.tsx; shell/app-shell.tsx]`
@@ -17,6 +18,7 @@
 - **Reusable from `@vida/ui`:** `shadow` (overlay token), `motion` tokens, `useReducedMotion`. `[FACT: packages/ui/src/index.ts:12-13,83]`
 
 ## §2. What S4 builds (scope)
+
 S4 covers **EC-1 (enable Float) · EC-3 (floating overlay) · EC-6 (dismiss + focus)** + **EC-12 (feel, motion — live gate)**
 `[FACT: slice-map.md:21,27-32]`. Home: `shell/shell-panel.tsx` + `shell/app-shell.tsx`.
 
@@ -53,7 +55,7 @@ S4 covers **EC-1 (enable Float) · EC-3 (floating overlay) · EC-6 (dismiss + fo
      `shadow.overlay`. The **resting base is VISIBLE** (scrim 0.5 / panel opacity 1, `transform:none`) so a missed/absent
      animation FAILS SAFE VISIBLE — a modal must never render invisible. **NOT Tamagui `enterStyle`** (which would strand
      the panel at `opacity:0` if the CSS-animation driver no-ops — the fail-UNSAFE path). Reduced-motion → `@media
-     (prefers-reduced-motion:reduce){animation:none}` (the visible base shows instantly). `[FACT: internal/dialog-styles.ts:6-30]`
+(prefers-reduced-motion:reduce){animation:none}` (the visible base shows instantly). `[FACT: internal/dialog-styles.ts:6-30]`
 2. **`shell-panel.tsx` — enable Float.** Remove `disabled` from the Float mode button (S3 deviation reversed — the overlay
    now renders). Dock/Float both live; `aria-pressed` reflects `mode`.
 3. **`app-shell.tsx` — mount float panels + widen the disclosure.** `foldDocked` stays docked-only. The **below-strip
@@ -65,8 +67,10 @@ S4 covers **EC-1 (enable Float) · EC-3 (floating overlay) · EC-6 (dismiss + fo
    capture-restore (N3) — it captures the bar toggle on open; app-shell's `toggleRefs` stays the docked ✕-close path (S3).
 
 ## §3. Contract delta (seam-contract §B — no prop changes)
+
 `ShellPanelProps` is UNCHANGED (S3 already defined `onClose`/`onSetMode`/etc.). S4 adds behavior to the `mode==='float'`
 branch only. The panel keeps the SAME `id`/`panelDomId` so the toggle's `aria-controls` resolves in both modes.
+
 - **Docked** (`mode:'dock'`): unchanged (S3) — a `<nav>`/`<aside>` **landmark** (persistent inline chrome).
 - **Floating** (`mode:'float'`): scrim + edge-anchored fixed panel + Level-3 elevation + dismiss/focus/motion. **A11y
   role differs by mode (B4):** the float branch is a **`role="dialog"` + `aria-modal="true"`** overlay named by the title
@@ -76,6 +80,7 @@ branch only. The panel keeps the SAME `id`/`panelDomId` so the toggle's `aria-co
   `aria-haspopup="dialog"` in float mode.)_
 
 ## §4. Business rules (BR-S4-n)
+
 - **BR-S4-1** Float render = a modal drawer: scrim (click-close) + edge-anchored fixed panel; **content keeps its width**
   (the panel floats OVER, never reflows content). [EC-3]
 - **BR-S4-2** Level-3 elevation via `shadow.overlay` (static, B12 — never animated); dark self-cancels → border carries it. [EC-3]
@@ -106,11 +111,12 @@ branch only. The panel keeps the SAME `id`/`panelDomId` so the toggle's `aria-co
   content/docked wrapper, never the whole body.
 
 ## §5. Implementation order
+
 1. **Extract the shared panel chrome** — refactor `ShellPanel` so the header + body render once, wrapped by either the
    docked frame (S3) or the new floating overlay. Keep the docked path byte-identical in behavior.
 2. **Float overlay** — an absolute layer in the below-strip region (NOT a body portal, G1): scrim (0.5, `$colorSurfaceInverse`)
-   + edge-anchored fixed panel (`EDGE_ANCHOR` map, all 4 edges inset below the strip) + `shadow.overlay` + the same
-   landmark/header/body as docked.
+   - edge-anchored fixed panel (`EDGE_ANCHOR` map, all 4 edges inset below the strip) + `shadow.overlay` + the same
+     landmark/header/body as docked.
 3. **Focus + dismiss** — capture `document.activeElement`→focus-in→trap→guarded-restore (mirror Dialog's algorithm) +
    Esc + scrim-pointerdown + re-toggle; `inert`+`aria-hidden` the content/docked wrapper (NOT the top strip).
 4. **Motion** — `enterStyle` opacity+translate per edge, `animation` gated by `useReducedMotion`.
@@ -118,15 +124,17 @@ branch only. The panel keeps the SAME `id`/`panelDomId` so the toggle's `aria-co
 6. **app-shell** — mount float+open panels (self-portaling) + widen the disclosure (`aria-expanded={open}`, `aria-controls`
    when `open`). Keep `foldDocked` docked-only.
 7. **Responsive (N2 — S4/S5 boundary).** S4 renders the FLOATING panel's natural content-fit → **near-full sheet at 375**
-   (envision M7 — this is a *float render* behavior, so it's S4's); no horizontal overflow. **S5 owns** dock-together +
-   any docked↔float responsive *policy* (e.g. preferring float/sheet on mobile) + the full-matrix gate. _(The S3 B1 note
+   (envision M7 — this is a _float render_ behavior, so it's S4's); no horizontal overflow. **S5 owns** dock-together +
+   any docked↔float responsive _policy_ (e.g. preferring float/sheet on mobile) + the full-matrix gate. _(The S3 B1 note
    "mobile near-full-sheet = S5" referred to the awkward DOCKED column at 375, which S5 may resolve by preferring float —
    not a contradiction: S4 builds the float sheet; S5 decides WHEN to force it.)_
 8. **Tests** — extend `shell-panel.test.tsx` (float render: scrim present, role/aria, Esc/scrim/re-toggle → onClose, focus
    trap) + `app-shell.test.tsx` (float+open mounts the overlay; toggle `aria-expanded`/`aria-controls`; focus-return).
 
 ## §6. Acceptance (§4 — blocking Visual Gate musts)
+
 tsc 0 · eslint 0 · `@vida/web` green · **blocking Visual Gate PASS** (Brave real app, 3 presets × light/dark × 375/768/1440):
+
 - **EC-1** Float is enabled; toggling dock⇄float reflects state.
 - **EC-3** floating panel = scrim over content (content keeps width) + Level-3 elevation (light lift / dark self-cancel+border).
 - **EC-6** Esc / click-scrim / re-toggle closes; focus returns to the bar toggle; Tab trapped within; background inert.
@@ -134,5 +142,6 @@ tsc 0 · eslint 0 · `@vida/web` green · **blocking Visual Gate PASS** (Brave r
 - EC-12 (`feel`) motion observed (transform/opacity from edge; reduced-motion instant).
 
 ## §7. Out of scope (homed)
+
 Rearrange→`nav_preferences` PERSIST + dock-together cluster + full-matrix reflow + Verification Gate (**S5**) · real panel
 bodies + live `nav_preferences` (first-consumer) · PR (**at S5**). `[FACT: slice-map.md:22,47]`

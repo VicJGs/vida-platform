@@ -11,7 +11,17 @@ import { styled, Text, View, useMedia } from '@tamagui/core'
 import { Button } from '@vida/ui'
 import { useAppShellUIStore } from '../stores/app-shell-ui-store'
 import { type Breakpoint } from './breakpoints'
-import { CONTENT_MAX_WIDTH, DEFAULT_PLACEMENT, LAYERING, PANEL_IDS, contentGutterAt, overlayModeAt, reservedTopInset, type PanelEdge, type PanelId } from './regions'
+import {
+  CONTENT_MAX_WIDTH,
+  DEFAULT_PLACEMENT,
+  LAYERING,
+  PANEL_IDS,
+  contentGutterAt,
+  overlayModeAt,
+  reservedTopInset,
+  type PanelEdge,
+  type PanelId,
+} from './regions'
 import { ShellPanel, panelDomId } from './shell-panel'
 import { stubShellPrefs, type ShellPrefsRead } from './shell-prefs'
 
@@ -68,7 +78,14 @@ function useActiveBreakpoint(override?: Breakpoint): Breakpoint {
   return 'mobile'
 }
 
-export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, shellPrefs = stubShellPrefs, __bp }: AppShellProps) {
+export function AppShell({
+  children,
+  bar1Slot,
+  hudSlot,
+  overlaySlot,
+  shellPrefs = stubShellPrefs,
+  __bp,
+}: AppShellProps) {
   const bp = useActiveBreakpoint(__bp)
   const gutter = contentGutterAt(bp)
   const topInset = reservedTopInset(bp) // EC-7 — the reserved strip's height; content insets below it
@@ -164,7 +181,13 @@ export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, shellPrefs 
       const panelFirst = edge === 'left' || edge === 'top'
       // The dock-together cluster: panels at this edge stacked along the CROSS axis of the container.
       const cluster = (
-        <View key={edge} data-dock-edge={edge} flexGrow={0} flexShrink={0} flexDirection={isSideBySide ? 'column' : 'row'}>
+        <View
+          key={edge}
+          data-dock-edge={edge}
+          flexGrow={0}
+          flexShrink={0}
+          flexDirection={isSideBySide ? 'column' : 'row'}
+        >
           {ids.map((id) => renderDockedPanel(id))}
         </View>
       )
@@ -199,7 +222,13 @@ export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, shellPrefs 
         zIndex={LAYERING.stickyBars}
       >
         {/* Serif wordmark — EC-11 preset identity: `$display` flips Spectral/Fraunces/Source-Serif per preset. */}
-        <Text data-region="wordmark" fontFamily="$display" fontSize="$subheading" color="$colorTextPrimary" userSelect="none">
+        <Text
+          data-region="wordmark"
+          fontFamily="$display"
+          fontSize="$subheading"
+          color="$colorTextPrimary"
+          userSelect="none"
+        >
           Vida
         </Text>
 
@@ -288,7 +317,15 @@ export function AppShell({ children, bar1Slot, hudSlot, overlaySlot, shellPrefs 
             Float control is never reachable. Two floats are only state-reachable via the hydration seam; S5 coordinates
             dock-together + multi-panel. (So we render every floatPanel — no silent-drop guard that S5 would have to undo.) */}
         {anyFloatOpen ? (
-          <View data-region="floatLayer" position="absolute" top={0} left={0} right={0} bottom={0} zIndex={LAYERING.overlayHost}>
+          <View
+            data-region="floatLayer"
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            zIndex={LAYERING.overlayHost}
+          >
             {floatPanels.map((id) => (
               <ShellPanel
                 key={id}
