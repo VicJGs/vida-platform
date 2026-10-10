@@ -5,6 +5,20 @@ Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-st
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
+## Shipped (fe-codec-canvas-editor #7 · S1 — `chrome` prop + dark-text bind)
+Minimal extension so a host can present `<VidaEditor>` as a page surface + the content is readable in dark:
+- **`chrome?: 'framed' | 'bare'`** on `VidaEditorProps` (default `'framed'` = back-compat). An `EditorFrame`
+  Tamagui `variants.chrome`: `bare` zeroes border/bg/radius/padding so the HOST supplies the surface (the
+  Canvas: Editor notebook page). The `.vida-editor-frame` class is kept in BOTH treatments, so the injected
+  focus-ring (`:has(.ProseMirror:focus-visible)`) + all `editor-styles` still apply. `defaultVariants:{chrome:'framed'}`.
+  `chrome` is not a built-in Tamagui style-prop name → the variant resolves (the DEF-U5-h collision avoided).
+- **EC-7 (dark-mode readability):** `editor-styles.ts` binds `.ProseMirror{color:var(--colorTextPrimary);line-height:1.7}`.
+  The contenteditable otherwise inherited the UA default (black), unreadable in dark — a real bug every mount shared.
+  `--colorTextPrimary` is a BASE semantic var (emitted on every theme/preset, like the focus-ring/placeholder tokens —
+  NOT a sub-theme-only var). `font-size`/`font-family` stay host/preset-owned (not set here → no leak into inline mounts).
+- Tests: `editor.test.tsx` — `chrome` default-framed + `bare` keeps the frame host (focus-ring survives). Visual Gate:
+  framed + bare × light/dark, text readable both modes. The apps/web composition is `apps/web/src/canvas-editor/`.
+
 ## Shipped (E8 — DOCX serializer)
 The **DOCX serializer** (ADR-001:102 — `docx@9.7.1`, Node + browser). **Emit-only, no round-trip.** The LAST serializer —
 the suite (md · PDF · DOCX) is COMPLETE. Durable: `docs/editor/serialization-spec.md`. **v0.8.0.** ONE new top-level
