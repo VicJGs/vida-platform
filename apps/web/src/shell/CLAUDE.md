@@ -13,6 +13,14 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   `SIDE_PADDING`, `TOUCH_TARGET`, `PADDING_SCALE`, `breakpointForWidth()`, `TAMAGUI_MEDIA` (the reserved createMedia seam).
 - `regions.ts` — `ShellRegion`, `DockState`, `OverlayMode`, `DOCK_STATE`, `OVERLAY_MODE`, `GLOBAL_BAR_MODE`,
   `REGION_VISIBILITY`, `LAYERING`, `ShellUIStateContract`, the `*At()` predicates, `SHELL_REGIONS`.
+  **fe-shell #14 (dock⇄float panel model, S1):** `PanelId`/`PanelMode`/`PanelEdge`/`PanelPlacement`/`ShellPlacement` ·
+  `DEFAULT_PLACEMENT` (both closed, docked-left — M1/L1) · `PANEL_IDS` · `panelAxis` (L/R=vertical, T/B=horizontal) ·
+  `isOverlay` (float⇒overlay) · `reservedTopInset(bp)` (the EC-7 top strip, 52/56 on-grid). The two nav bars are
+  macOS/iPadOS-inspector panels: each toggles docked (inline, content beside) ⇄ floating (overlay+scrim), rearrangeable
+  to any edge. Governing model: `docs/specs/foundation/fe-shell/delivery/envision.md` M1–M7.
+- `shell-prefs.ts` (fe-shell #14, S1) — `ShellPrefsRead = ProviderRead<ShellPlacement>` + `stubShellPrefs` (M1 → DEFAULT;
+  live `nav_preferences` read/write = first consumer, envision L5). Panel *arrangement* is ephemeral Zustand
+  (`app-shell-ui-store.placement`, BR-RT-6 "panel state"); *persistence* is this deferred seam (never a raw table).
 
 **Chrome (UI-4 — the rendered app shell):**
 - `app-shell.tsx` (S1) — the `AppShell` frame: 5 regions in the responsive layout, `useMedia()` breakpoint resolution,
