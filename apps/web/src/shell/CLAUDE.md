@@ -34,6 +34,27 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   S3 (docked-inline) / S4 (floating-overlay); #15/#16/#17 contents + live `nav_preferences` persistence are deferred.
   _(Superseded S1 five-region frame: left module dock + global bar + spaces bar + mobile drawer — `module-dock.tsx`/
   `global-bar.tsx` stay as files, to be re-homed as panel bodies / #15 content in S3+.)_
+  **fe-shell #14 · S3 reshaped app-shell to COMPOSE the docked panels** (`shell-panel.tsx`, below): the below-strip
+  region now folds every open+**docked** panel AROUND the Content (`foldDocked`) so Content sits beside it — a flex
+  **row** (left/right edges) or **column** (top/bottom edges), panel-first for left/top. Content stays `flex=1
+  minHeight=0 minWidth=0` + the panel is content-fit (`flexGrow/Shrink=0`) — the RNW flex-collapse guard for the
+  row↔column flip ([[flex1-child-collapses-to-height-0-in-column-under-rnw]], BR-S3-9). The System/Modules bar toggles
+  upgraded from `aria-pressed` to a **disclosure**: `aria-expanded={dockedOpen}` (honest — true iff a docked panel is
+  actually rendered) + `aria-controls={panelDomId(id)}` when docked-open; app-shell holds `toggleRefs` so a panel's
+  ✕-close returns focus to its bar toggle (§XIV). Panel bodies in #14 = an empty-but-functional `PanelBodyPlaceholder`
+  (envision L4; real module nav / #15 surfaces deferred). Float render = S4.
+- `shell-panel.tsx` (fe-shell #14, S3) — **`ShellPanel`**, the DOCKED nav panel (A). Presentational + state-as-prop
+  (reads `placement`, emits `onSetMode`/`onSetEdge`/`onClose`; app wires the store). `modules` → `<nav aria-label>`,
+  `system` → `<aside aria-label>` (semantic landmark via `styled(View,{render})`). **Inline flush** at its edge
+  (`BORDER_FACING` map = the 1px separator toward Content; **no scrim, no elevation** — docked, EC-2), **content-fit**
+  (`flexGrow/Shrink=0`; body axis = `panelAxis(edge)`, vertical L/R · horizontal T/B, EC-5), **two-row CONTAINED header**
+  (⠿ grip aria-hidden + `$display` title + ✕ close · `Dock`/`Float` mode toggles + the 4-edge picker [lucide
+  `PanelLeft/Right/Top/Bottom`, `aria-pressed`], `$8` gaps per §X). The **edge picker is LIVE** (`onSetEdge`→`setPanelEdge`,
+  store from S1; BR-S3-11) — repositions the docked panel to any edge. **Float is DISABLED until S4** (overlay render = S4;
+  shown-but-disabled keeps the dock⇄float control visible per EC-1 without a reachable float dead-end / dishonest
+  disclosure — g2 S3 fold, a §XXVIII deviation from the live-Float plan). Composes `@vida/ui` `Button` + `lucide-react`;
+  every value a DS token. `panelDomId(id)` = the `aria-controls` target. One consumer ⇒ stays here, NOT `@vida/ui`
+  (ui-4 BR-1). Delivery: `docs/specs/foundation/fe-shell/delivery/` (+ `sessions/PLAN-s3-docked-panel.md`).
 - `module-dock.tsx` (S2) — the dock content: `MODULE_MAP` grouped, drawer/rail/sidebar forms, empty-group skip,
   collapse toggle. `global-bar.tsx` (S2) — `GLOBAL_SURFACES` condensed/full + ⌘K→`commandBar.open()` + overflow Menu.
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact

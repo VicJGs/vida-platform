@@ -53,14 +53,19 @@ describe('AppShell — CODEC frame (S2)', () => {
     expect(screen.getByRole('button', { name: 'Modules' })).not.toBeNull()
   })
 
-  it('a panel toggle flips its pressed state via the placement store (envision M1)', async () => {
+  it('a panel toggle is a disclosure — aria-expanded flips + aria-controls points at the docked panel (S3)', async () => {
     await renderShell('desktop')
     const modules = screen.getByRole('button', { name: 'Modules' })
-    expect(modules.getAttribute('aria-pressed')).toBe('false')
+    expect(modules.getAttribute('aria-expanded')).toBe('false')
+    expect(modules.getAttribute('aria-controls')).toBeNull() // no controlled region while closed
     fireEvent.click(modules)
-    expect(screen.getByRole('button', { name: 'Modules' }).getAttribute('aria-pressed')).toBe('true')
+    const opened = screen.getByRole('button', { name: 'Modules' })
+    expect(opened.getAttribute('aria-expanded')).toBe('true')
+    expect(opened.getAttribute('aria-controls')).toBe('shell-panel-modules')
+    // The docked panel mounted as the Modules navigation landmark (EC-2 content beside).
+    expect(screen.getByRole('navigation', { name: 'Modules' })).not.toBeNull()
     // Independent per panel — toggling Modules leaves System closed (envision L3).
-    expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-expanded')).toBe('false')
   })
 
   it('reflects an externally-set placement (hydration seam — stubShellPrefs / setPlacement)', async () => {
@@ -68,7 +73,11 @@ describe('AppShell — CODEC frame (S2)', () => {
       placement: { ...DEFAULT_PLACEMENT, system: { ...DEFAULT_PLACEMENT.system, open: true } },
     })
     await renderShell('desktop')
-    expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe('true')
+    const system = screen.getByRole('button', { name: 'System' })
+    expect(system.getAttribute('aria-expanded')).toBe('true')
+    expect(system.getAttribute('aria-controls')).toBe('shell-panel-system')
+    // System is complementary chrome ⇒ an <aside> landmark.
+    expect(screen.getByRole('complementary', { name: 'System' })).not.toBeNull()
   })
 
   it('renders the #15/#16/#17 injection slots when provided (empty-but-functional in #14)', async () => {
@@ -96,5 +105,52 @@ describe('AppShell — CODEC frame (S2)', () => {
     cleanup()
     const desktop = await renderShell('desktop')
     expect(desktop.container.querySelector('[data-region="overlayHost"]')?.getAttribute('data-overlay-mode')).toBe('centered')
+  })
+})
+
+describe('AppShell — docked panel composition (S3)', () => {
+  it('mounts an open+docked panel beside the content, at its edge (EC-2)', async () => {
+    useAppShellUIStore.setState({
+      placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'dock', edge: 'left', open: true } },
+    })
+    const { container } = await renderShell('desktop')
+    const panel = container.querySelector('[data-panel="modules"]')
+    expect(panel).not.toBeNull()
+    expect(panel?.getAttribute('data-mode')).toBe('dock')
+    expect(panel?.getAttribute('data-edge')).toBe('left')
+    // Content still renders (beside the panel, not replaced).
+    expect(screen.getByTestId('outlet')).not.toBeNull()
+  })
+
+  it('does NOT render a FLOATING panel in S3 (overlay=S4); its toggle stays honest (aria-expanded false, no controls)', async () => {
+    // The Float control is disabled in the panel, so this float+open placement is only reachable via the hydration
+    // seam (setPlacement) — never the UI. The disclosure must stay HONEST: nothing rendered ⇒ not expanded (g2 S3).
+    useAppShellUIStore.setState({
+      placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'float', edge: 'left', open: true } },
+    })
+    const { container } = await renderShell('desktop')
+    expect(container.querySelector('[data-panel="modules"]')).toBeNull() // float render deferred to S4
+    const modules = screen.getByRole('button', { name: 'Modules' })
+    expect(modules.getAttribute('aria-expanded')).toBe('false') // honest — no controlled region is rendered
+    expect(modules.getAttribute('aria-controls')).toBeNull()
+  })
+
+  it('the panel ✕-close toggles the panel shut (focus returns to the bar toggle, N2)', async () => {
+    useAppShellUIStore.setState({
+      placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'dock', edge: 'left', open: true } },
+    })
+    const { container } = await renderShell('desktop')
+    fireEvent.click(screen.getByRole('button', { name: 'Close Modules panel' }))
+    expect(container.querySelector('[data-panel="modules"]')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Modules' }).getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('the edge picker is live — repositions the docked panel (EC-4, onSetEdge→setPanelEdge)', async () => {
+    useAppShellUIStore.setState({
+      placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'dock', edge: 'left', open: true } },
+    })
+    const { container } = await renderShell('desktop')
+    fireEvent.click(screen.getByRole('button', { name: 'Dock bottom' }))
+    expect(container.querySelector('[data-panel="modules"]')?.getAttribute('data-edge')).toBe('bottom')
   })
 })
