@@ -28,5 +28,10 @@ add-frontend-component / Default (Entity Delivery Flow ②). Worktree `.claude/w
   (B1 state-rule contradiction · B2 responsive). tsc 0 · eslint 0 · **9/9 tests** · **Visual Gate PASS** (3 presets ×
   light/dark × 375/768/1440; AA title 15.84–17.29 / eyebrow+meta 4.94–6.53 warm-dark; no overflow). Currency: ui CLAUDE.md
   digest + s1-canvas-view.md. Covers EC-1,3,4,6,7,8.
-- **S2 compositions — NEXT**: apps/web `VisionBoardCanvas` + `CalendarGridCanvas` (type+convention; measure-driven
-  reference tile; live hooks deferred). Covers EC-2,5,9.
+- **S2 compositions — DONE** (uncommitted): `apps/web/src/canvas/adapter.ts` — `toCanvasHeader` (title = user-named
+  surface, EC-5/A) + **`resolveMeasureProgress`** (the measure-driven R9/R9a reference convention: bar style + label
+  follow `measurement_kind`; unmeasured → no bar) + `createCanvasAdapter` + structural `SavedViewLike`/`MeasureProgress`
+  union. Pure (imports `@vida/types` only); live `useVisionBoard`/`useCalendar` hooks deferred to first consumer
+  (fe-purposes / #19). tsc 0 (web, after building types/core/ui dists) · eslint 0 · **10/10 tests**. Currency:
+  `apps/web/src/canvas/CLAUDE.md`. Covers EC-2,5,9 (as convention; EC-2/EC-5 visual proof in S1 stories).
+- **① COMPLETE** — both slices shipped. Next: PR fe-codec-canvas-board → main.
