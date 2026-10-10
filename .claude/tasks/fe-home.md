@@ -1,5 +1,5 @@
 # Task: fe-home
-# Status: in-progress
+# Status: done
 # Linear: LIF-187
 # Profile: Add Frontend Component
 # Scenario: default
@@ -35,4 +35,8 @@
 - **Currency:** `apps/web/src/home/CLAUDE.md` updated (rendered surface + seams).
 - **Deferred (homed):** real standalone widget bodies (per-capability) · real `@vida/editor` mount + inline node-views
   (first consumer) · live data (`buildDashboard`/registry) · arrangement toggle CONTROL + persisted write (fe-settings).
-- **Status: COMPLETE, pending commit + PR** (branch `fe-home` off `origin/main` `a50408e`).
+- **Status: COMPLETE — PR #121 MERGED** (`f540b83` on `origin/main`; branch deleted). Commit `f298c5e`.
+- **Canonical Linear = LIF-187** (original P6 issue, 09-16; the commit/PR cite it CORRECTLY). The deep-check inverted an
+  earlier mis-read: **LIF-224 is the orphan-create DUPLICATE** (10-03, edge-subset of 187), one of a 5-issue orphan batch
+  (LIF-222/223/224/225/226) minted by dangling headers + mis-remapped by `12761a7`. Header + tracker-map re-pointed to
+  187. Dup LIF-224 → Canceled in the tracker reconcile (see `docs/specs/foundation/fe-home/delivery/` + session log).
