@@ -6087,3 +6087,40 @@ Next session:
   - **FIRST ACTION:** fresh `/begin` off `main`; next FE head that does NOT collide with the two active sessions = **`fe-shell` #14** (dep `fe-codec-patterns` ✅). canvas-reader #9 / canvas-board #10 are taken.
   - CAUTION: do not run `tracker_sync.py --sync` from a stale worktree while the parallel sessions are in flight — `--pull` is safe, `--sync` waits for their PRs to merge.
   - Env: Node 24 via nvm for @vida/ui + @vida/web; Visual Gate = Brave via `/tmp/vg/*-gate.mjs` + `http.server 6099` on `storybook-static`; rebuild @vida/ui dist before an apps/web typecheck consuming new @vida/ui exports.
+
+---
+Date: 2026-10-10 — fe-shell (#14, LIF-226/199) — S2 CODEC shell frame shipped
+Task: fe-shell · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-shell`, branch `fe-shell`.
+Goal: build S2 — the CODEC dock⇄float shell FRAME (reshape `app-shell.tsx`), per the gated slice-map (EC-7/8/9).
+Accomplished:
+  - **S2 ✅ committed `e51c0b8`** (2/5 slices). Reshaped `apps/web/src/shell/app-shell.tsx` from the superseded 5-region
+    ui-4/ux-3 frame → the macOS/iPadOS dock⇄float inspector frame. S2 = FRAME ONLY (panels are S3/S4):
+      • reserved top strip (`<header>`/banner, `reservedTopInset(bp)` 52/56, `data-top-inset`): serif `$display` "Vida"
+        wordmark + System/Modules toggles (`aria-pressed`←`placement[id].open`→`togglePanel`, S1 store) + bar1Slot(#15)/hudSlot(#16)
+      • full-bleed Content `<main>` (1280-centered + per-bp gutters, independent scroll)
+      • overlay host (`overlaySlot`, `pointerEvents:none`, `$overlay` z)
+    Props `children`/`bar1Slot`/`hudSlot`/`overlaySlot`/`__bp` (seam-contract §C). Added `data-region="wordmark"` gate hook.
+  - **`routes.tsx`** mounts `overlaySlot={<CommandBar/>}` → ⌘K survives the reshape (CommandBar owns its keybind + self-portals).
+  - **4 tests reconciled**: `app-shell.test.tsx` rewritten for the frame; `App.test`/`App.integration`/`routes.test` swap the
+    old mount-detector (`nav[aria-label="Modules"]` + ambiguous `getByText('Vida')`) → stable `[data-region="topStrip"]`/banner
+    (nav→S3; ⌘K kept green via overlaySlot; coverage strengthened not gutted).
+  - Gates: tsc 0 · eslint 0 err · **@vida/web 267/267** (47 files) · **Visual Gate PASS** (Brave, REAL app via onboarding→shell;
+    3 presets × light/dark + 390/768/1440: wordmark serif-swap Spectral/Fraunces/Source-Serif AA 15.84–17.29 · toggle labels
+    AA 4.95–6.41 incl. warm-dark · content ≤1280 · 0 overflow everywhere · inset 52/56 · axe 0) · **g2 SHIP** (0 blockers) · /critique SHIP.
+  - Currency: `apps/web/src/shell/CLAUDE.md` (app-shell.tsx → CODEC frame) + task-file S2 slice-log.
+Decisions / lessons:
+  - The reshape moves nav/⌘K/surfaces OUT of the frame into toggle-able panels/slots (S3/S4/#15/#17) per the gated slice-map;
+    nav leaves the frame at S2 (envision L1 default = both panels closed, content full-bleed) and returns via panels in S3/S4.
+  - ⌘K kept alive by riding the new `overlaySlot` at the routes mount (task goal "⌘K reuses ui-4/ux-2") — the honest way to
+    reshape without a mid-build ⌘K regression; 3 of 4 integration tests stayed green untouched.
+  - First `apps/web` live Visual Gate (no Storybook — boundary): drive the real vite app → complete onboarding → switch
+    preset×mode via `applySelection` DOM classes. Saved as memory [[apps-web-visual-gate-drive-real-app]].
+  - SKIPPED `tracker_sync --sync` per the standing CAUTION (stale worktree + parallel sessions canvas-reader #117 / canvas-board
+    in flight). `--pull` is safe; reconcile fe-shell status when those PRs merge.
+Next session:
+  - **FIRST ACTION:** fresh `/begin`, enter worktree `.claude/worktrees/fe-shell`, `nvm use 24`; build **S3 — Docked panel (A)**:
+    new `apps/web/src/shell/shell-panel.tsx` `ShellPanel` rendered inline-flush at its edge, content-fit, body slot + the two-row
+    contained header (`▣ Dock | ⧉ Float` + `◧ ⬒ ◨ ⬓` edge picker, no overflow); content sits beside it (EC-1/2/4/5).
+  - Upgrade the bar toggles `aria-pressed` → `aria-expanded`+`aria-controls={panelId}` once the panel renders (g2 forward-note).
+  - Keep the overlay-host self-portal invariant (g2 nit). Env: Node 24; Visual Gate = Brave driving the real vite app
+    (onboarding→shell + `t_<mode>`/`t_<preset>` class switching), per [[apps-web-visual-gate-drive-real-app]]. PR at S5.
