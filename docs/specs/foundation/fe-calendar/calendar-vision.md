@@ -53,3 +53,17 @@ splits across two homes:
   (the aesthetic layer; **stays with LIF-230**).
 - `./mockups/calendar-ranges-and-agenda.html` — the 6-range model + the Agenda "another way" (**#19**).
 - `./mockups/calendar-concept-board.html` — the "living week" signature stack, labelled ①–⑤ (**#19**).
+
+## 6. Day overflow — design input (parked here from the fe-codec-canvas-board #10 session, 2026-10-09)
+The month grid's dense-day handling (the shipped `CalendarView` `+N more` truncation is a **dead, non-interactive
+count**) is the **grid's info-crush** this doc homes to the **Agenda range (§1.2)** — i.e., **#19's** job, not #10's.
+During the #10 greybox review three Vida-native treatments were explored and liked; parked here as #19 month-range
+design input (read-only lens throughout — reveal only displays; writes stay owning-module Capabilities, §2):
+1. **Unfurl the day in place** — `+N more` is focusable; activating it grows that week-row inline so the day shows
+   every item as a dayparted list. No modal / no navigation (stay "in the book"); Esc/blur collapses. Most
+   distinctive; medium complexity.
+2. **Density as ink + peek** — beyond the visible chips, the remainder render as a compact row of accent ticks so a
+   heavy day *looks* heavy (matches the graph's "ink voice"); hover/focus shows a quiet inline peek. Lower complexity.
+3. **Read-the-day panel** — a quiet read-only side panel/sheet reading like a journal page for the date (dayparted);
+   closest to the familiar popover but in Vida's book voice, and nearest the Agenda idea.
+These are month-**range** overflow behaviors; build under #19 with the Agenda range (they complement, not replace, it).
