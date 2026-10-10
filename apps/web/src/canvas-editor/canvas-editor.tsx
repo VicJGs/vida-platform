@@ -76,9 +76,7 @@ export function CanvasEditor({
         actions={syncState ? <SyncStatus state={syncState} /> : undefined}
         state={state}
         empty={
-          <EmptyState title="A blank page">
-            Start writing — or press “/” for a block. Nothing's required.
-          </EmptyState>
+          <EmptyState title="A blank page">Start writing — or press “/” for a block. Nothing's required.</EmptyState>
         }
         error={
           <View role="status" paddingVertical="$16">
@@ -107,7 +105,13 @@ export function CanvasEditor({
             shadowOpacity={0.5}
             shadowOffset={{ width: 0, height: 6 }}
           >
-            <VidaEditor chrome="bare" defaultValue={doc} onChange={onChange} editable={editable} aria-label={editorLabel} />
+            <VidaEditor
+              chrome="bare"
+              defaultValue={doc}
+              onChange={onChange}
+              editable={editable}
+              aria-label={editorLabel}
+            />
           </View>
         )}
       </CanvasView>

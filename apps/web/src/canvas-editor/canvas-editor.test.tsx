@@ -7,7 +7,10 @@ import { CanvasEditor, type CanvasEditorProps } from './canvas-editor'
 
 afterEach(cleanup)
 
-const DOC: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'seeded body' }] }] }
+const DOC: EditorDocument = {
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text: 'seeded body' }] }],
+}
 
 function renderCanvas(props: Partial<CanvasEditorProps> = {}) {
   return render(
