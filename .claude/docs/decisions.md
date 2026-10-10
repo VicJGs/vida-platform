@@ -1,4 +1,15 @@
-<!-- Last updated: 2026-10-07 by /session-end -->
+<!-- Last updated: 2026-10-09 by /session-end -->
+
+## fe-codec-canvas-graph (② frontend · LIF-205 → Done, 2026-10-09 — PR #112 merged `1fa181a`)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-09 | Envision Gate | fire or skip for the graph canvas? | **SKIP** | §3.75 doc test = no novel affordance (graph already shipped + rendering; aesthetic/conformance refinement); fe-codec-primitives-refinement precedent used Visual Gates not Envision | n/a (gate result) |
+| 2026-10-09 | Scope shape | new canvas shell vs EXTEND-in-place? | **EXTEND `neural-graph.tsx` in place** (one slice; apps/web route = RATIFY) | g6-edge-ledger:51 "extend → editorial ink voice" + runbook:38 "ext UI-2"; the Graph canvas IS one renderer, not a composing shell | reversible |
+| 2026-10-09 | Ink mapping | node color = brand accent vs ink/text? | **node=`$colorBrandPrimary` (per-preset), edge=`$colorBorderDefault`** | Victor-chosen; the graph wears each preset's voice (blue/oxblood/olive), directly replacing the fixed `#6366f1` "blue SaaS"; Visual-Gate-validated | reversible (value) |
+| 2026-10-09 | Finding #3 reduced-motion | RATIFY (comment-only) vs BUILD the gate? | **BUILD the `useReducedMotion` iteration-gate** (reduced → 0 = circular seed) | gate-2 critic caught my RATIFY silently flipping the approved slice-map; Victor chose BUILD to honor the gated decomposition (the continuous-motion axis is B12-safe, but the decomposition is authoritative) | reversible |
+| 2026-10-09 | WebGL color resolution (§XXVIII) | `.get('web')` value vs probe resolution? | **probe-`<span>` getComputedStyle read → concrete `rgb`** | `.get('web')` returns a CSS-var ref unusable by WebGL (Sigma→colorless); custom-prop computed values don't substitute nested var(); live-Visual-Gate-caught. Preset-aware. [[webgl-canvas-color-needs-getcomputedstyle-probe-not-get-web]] | reversible |
+| 2026-10-09 | Live preset-switch recolor | re-init on preset change vs stale? | **stale-until-re-topology** (colors OUT of effect deps) | NG-2 "color-only change deferred"; M1 graph is empty (no consumer); surgical live-recolor homed to first-consumer | reversible |
 
 
 ## fe-codec-flow-session (② frontend · #11 · LIF-210 → Done, 2026-10-07 — WHOLE UNIT, PR #109 merged `928f0f6`)
