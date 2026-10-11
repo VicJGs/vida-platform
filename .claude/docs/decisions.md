@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-10 by /session-end -->
+<!-- Last updated: 2026-10-11 by /session-end -->
 
 ## Linear / tracker reconciliation (2026-10-09 — frontend-track campaign LIF-202)
 
@@ -1093,6 +1093,11 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-10 | #7 persistence scope | ship live page persistence, or defer? | **thin + defer** — pure `pages`↔doc convention; no live hook, no runtime `@vida/core` | doc-resolved (Victor "check the docs"): #7 is "canvas"/presentational; runtime wiring = #13 seams; live hook = first consumer #27, per ProviderRead. | n/a (first-consumer swap) |
 | 2026-10-10 | #7 EC-7 dark-text fix | `@vida/editor` edit, or apps/web CSS override? | **UI-3 `editor-styles.ts`** — `.ProseMirror{color:var(--colorTextPrimary)}` | a real dark-mode bug EVERY editor mount shared (contenteditable inherited UA-black); the token bind fixes all; CSS-override-fighting is fragile. Mirrors #8 extending UI-2. | reversible |
 | 2026-10-10 | #7 editor feel | bordered widget, or notebook page? | **notebook page** — `<VidaEditor chrome="bare">` on a paper sheet floating on a desk, airy serif body | Victor's Envision gate correction ("should feel like an editor / a notebook page"); the greybox proved it + caught EC-7. | reversible (presentation) |
+| 2026-10-11 | tech/a11y | @vida/ui Button/Menu slot-icon theming | ButtonFrame per-intent `color` + MenuItemRow resting `color` | leading/trailing lucide icons inherited document black → invisible in dark; root fix tints via currentColor, benefits scope-selector/dock/global-bar; a COLOR prop resolves against the theme (unlike the dimension/sub-theme trap) | reversible |
+| 2026-10-11 | design/a11y | NavLink active colour | `$colorBrandPrimary` → `$colorBrandEmphasis` | brand-as-text on the active `$colorSurfaceSecondary` fill = 4.39/4.44 < 4.5 AA; emphasis step passes both modes, no palette change; also fixes module-dock active | reversible |
+| 2026-10-11 | ux | 375 top-strip co-fit | condense #14 System/Modules toggles to icon-only <768 + scope-selector `compact` | 172px text toggles left ~125px for Bar 1 (needs ~148px even icon-only); icon-only frees room, scope name kept in aria-label (EC-1) | reversible |
+| 2026-10-11 | ux | account affordance in Bar 1 | dropped | no route backing + redundant with Settings (No-Guessing) | reversible |
+| 2026-10-11 | process | merge #15 with 2 CI reds | merged on green unit gates | Format (repo-wide md/doc debt) + Workers (Cloudflare) are pre-existing infra, unrelated to this FE PR; policy merges when Typecheck/Lint/Test/E2E green | n/a |
 
 ## fe-notes-and-pages ② (2026-10-10 — LIF-191, #27 — front matter + S1)
 
