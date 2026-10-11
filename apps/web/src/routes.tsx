@@ -62,7 +62,14 @@ const graphRoute = createRoute({
   component: lazyRouteComponent(() => import('./app/graph')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, graphRoute])
+// fe-notes-and-pages #27 · S1 — the Notes Top view (lazy-split, the /graph precedent; BR-RT-8).
+const notesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notes',
+  component: lazyRouteComponent(() => import('./notes/notes-surface')),
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, graphRoute, notesRoute])
 
 export const router = createRouter({
   routeTree,
