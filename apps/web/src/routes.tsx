@@ -9,14 +9,7 @@
 // (/graph). Per-module routes land with each module's own wave (M1.1+).
 // ============================================================================
 
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-  lazyRouteComponent,
-  Link,
-  Outlet,
-} from '@tanstack/react-router'
+import { createRootRoute, createRoute, createRouter, lazyRouteComponent, Link, Outlet } from '@tanstack/react-router'
 import { AppShell } from './shell/app-shell'
 import { CommandBar } from './shell/command-bar'
 import { GlobalBar1 } from './shell/global-bar-1'

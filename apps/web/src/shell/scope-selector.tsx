@@ -60,7 +60,14 @@ export function ScopeSelector({ read = stubSpacesScope, compact }: ScopeSelector
   if (isError) {
     return (
       <View role="status" flexDirection="row" alignItems="center" gap="$4">
-        <Button intent="secondary" size="sm" disabled aria-label="Scope: All (spaces unavailable)" leading={globeLead} {...compactCap}>
+        <Button
+          intent="secondary"
+          size="sm"
+          disabled
+          aria-label="Scope: All (spaces unavailable)"
+          leading={globeLead}
+          {...compactCap}
+        >
           {label(ALL_LABEL)}
         </Button>
         {!compact ? (
@@ -75,7 +82,14 @@ export function ScopeSelector({ read = stubSpacesScope, compact }: ScopeSelector
   // Empty — no Spaces yet ⇒ global-only. A disabled trigger (nothing to switch to) that still reads "All".
   if (!spaces || spaces.length === 0) {
     return (
-      <Button intent="secondary" size="sm" disabled aria-label="Scope: All (no spaces yet)" leading={globeLead} {...compactCap}>
+      <Button
+        intent="secondary"
+        size="sm"
+        disabled
+        aria-label="Scope: All (no spaces yet)"
+        leading={globeLead}
+        {...compactCap}
+      >
         {label(ALL_LABEL)}
       </Button>
     )

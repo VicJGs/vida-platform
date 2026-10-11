@@ -180,9 +180,7 @@ export const Button = forwardRef<ComponentRef<typeof ButtonFrame>, ButtonProps>(
     const ariaLabel = (rest as Record<string, unknown>)['aria-label']
     if (!hasText && (leading != null || trailing != null) && ariaLabel == null) {
       // eslint-disable-next-line no-console
-      console.warn(
-        '[vida/ui] Button: an icon-only button requires an `aria-label` for accessibility.',
-      )
+      console.warn('[vida/ui] Button: an icon-only button requires an `aria-label` for accessibility.')
     }
   }
 

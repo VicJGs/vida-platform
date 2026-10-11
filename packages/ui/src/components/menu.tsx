@@ -184,11 +184,15 @@ export const Menu = forwardRef<HTMLButtonElement, MenuProps>(function Menu(
     }
     if (ariaLabel == null && ariaLabelledby == null) {
       // eslint-disable-next-line no-console
-      console.warn('[vida/ui] Menu: provide an `aria-label` or `aria-labelledby` — a role="menu" needs an accessible name.')
+      console.warn(
+        '[vida/ui] Menu: provide an `aria-label` or `aria-labelledby` — a role="menu" needs an accessible name.',
+      )
     }
     if (items.length === 0) {
       // eslint-disable-next-line no-console
-      console.warn('[vida/ui] Menu: `items` is empty — rendering a disabled "No actions" row (usually a call-site bug).')
+      console.warn(
+        '[vida/ui] Menu: `items` is empty — rendering a disabled "No actions" row (usually a call-site bug).',
+      )
     }
     const ids = items.map((it) => it.id)
     if (new Set(ids).size !== ids.length) {
