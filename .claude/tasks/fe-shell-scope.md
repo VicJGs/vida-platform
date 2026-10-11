@@ -1,5 +1,5 @@
 # Task: fe-shell-scope
-# Status: in_progress
+# Status: done
 # Linear: LIF-219
 # Profile: Add Frontend Component
 # Scenario: default
