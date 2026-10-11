@@ -20,6 +20,10 @@ const ALL_LABEL = 'All'
 export interface ScopeSelectorProps {
   /** The space-list read seam. Default = the M1 stub (→ [] ⇒ global-only). Live provider swaps here at first consumer. */
   read?: SpacesScopeRead
+  /** Condensed form (≤375 top strip): drop the `Spaces: ` prefix + lead with a Globe glyph so the control co-fits the
+   *  narrow strip beside the wordmark + panel toggles (fe-shell-scope #15 S3, Visual-Gate-caught). Still shows the active
+   *  scope (EC-1) + carries the full name in `aria-label`. */
+  compact?: boolean
 }
 
 /** Icon for a Space row: its `icon` key via navIcon(), else the neutral fallback. */
@@ -28,7 +32,7 @@ function spaceIcon(opt: SpaceOption) {
   return <Icon size={16} aria-hidden="true" />
 }
 
-export function ScopeSelector({ read = stubSpacesScope }: ScopeSelectorProps) {
+export function ScopeSelector({ read = stubSpacesScope, compact }: ScopeSelectorProps) {
   const { data: spaces, isLoading, isError } = useQuery({ queryKey: ['spaces', 'scope-list'], queryFn: read })
   const activeSpaceId = useScopeStore((s) => s.activeSpaceId)
   const setScope = useScopeStore((s) => s.setScope)
@@ -37,25 +41,33 @@ export function ScopeSelector({ read = stubSpacesScope }: ScopeSelectorProps) {
   const activeName =
     activeSpaceId === null ? ALL_LABEL : (spaces?.find((s) => s.id === activeSpaceId)?.name ?? ALL_LABEL)
 
+  // Compact form (≤375): no `Spaces: ` prefix, a Globe leading glyph, a width cap so a long space name can't re-overflow.
+  const label = (name: string) => (compact ? name : `Spaces: ${name}`)
+  const globeLead = compact ? <Globe size={16} aria-hidden="true" /> : undefined
+  const compactCap = compact ? { maxWidth: 140 } : undefined
+
   // Loading — a busy trigger (holds width, aria-busy via Button `loading`).
   if (isLoading) {
     return (
-      <Button intent="secondary" size="sm" loading aria-label="Loading spaces">
-        {`Spaces: ${ALL_LABEL}`}
+      <Button intent="secondary" size="sm" loading aria-label="Loading spaces" {...compactCap}>
+        {label(ALL_LABEL)}
       </Button>
     )
   }
 
-  // Error — calm, still global-usable. role=status announces the degrade; scope stays global ("All").
+  // Error — calm, still global-usable. role=status announces the degrade; scope stays global ("All"). The visible
+  // "offline" word is dropped in compact (width); the aria-label + role=status still carry the degrade to SR.
   if (isError) {
     return (
       <View role="status" flexDirection="row" alignItems="center" gap="$4">
-        <Button intent="secondary" size="sm" disabled aria-label="Scope: All (spaces unavailable)">
-          {`Spaces: ${ALL_LABEL}`}
+        <Button intent="secondary" size="sm" disabled aria-label="Scope: All (spaces unavailable)" leading={globeLead} {...compactCap}>
+          {label(ALL_LABEL)}
         </Button>
-        <Text fontFamily="$body" fontSize="$caption" color="$colorTextMuted">
-          offline
-        </Text>
+        {!compact ? (
+          <Text fontFamily="$body" fontSize="$caption" color="$colorTextMuted">
+            offline
+          </Text>
+        ) : null}
       </View>
     )
   }
@@ -63,8 +75,8 @@ export function ScopeSelector({ read = stubSpacesScope }: ScopeSelectorProps) {
   // Empty — no Spaces yet ⇒ global-only. A disabled trigger (nothing to switch to) that still reads "All".
   if (!spaces || spaces.length === 0) {
     return (
-      <Button intent="secondary" size="sm" disabled aria-label="Scope: All (no spaces yet)">
-        {`Spaces: ${ALL_LABEL}`}
+      <Button intent="secondary" size="sm" disabled aria-label="Scope: All (no spaces yet)" leading={globeLead} {...compactCap}>
+        {label(ALL_LABEL)}
       </Button>
     )
   }
@@ -88,8 +100,15 @@ export function ScopeSelector({ read = stubSpacesScope }: ScopeSelectorProps) {
   return (
     <Menu
       trigger={
-        <Button intent="secondary" size="sm" trailing={<ChevronDown size={16} aria-hidden="true" />}>
-          {`Spaces: ${activeName}`}
+        <Button
+          intent="secondary"
+          size="sm"
+          leading={globeLead}
+          trailing={<ChevronDown size={16} aria-hidden="true" />}
+          aria-label={compact ? `Scope: ${activeName}` : undefined}
+          {...compactCap}
+        >
+          {label(activeName)}
         </Button>
       }
       items={items}

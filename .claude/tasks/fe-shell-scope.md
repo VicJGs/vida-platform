@@ -41,7 +41,19 @@
   icons black in dark → Button frame per-intent `color` (also fixed scope-selector `ChevronDown` + global-bar); (b)
   `nav-link.tsx` active brand-on-secondary 4.39/4.44 < 4.5 → `$colorBrandPrimary`→`$colorBrandEmphasis` (also fixed
   module-dock active). Currency: `shell/CLAUDE.md` + `packages/ui/src/CLAUDE.md`. _(commit pending)_
-- [ ] **S3 — Bar 1 assembly + dual-home wiring** (`systemPanelSlot` seam + routes + delete `global-bar.tsx`) — EC-5.
+- [x] **S3 — Bar 1 assembly + dual-home wiring** — `shell/global-bar-1.tsx` (`variant="strip"|"panel"`; composes
+  scope + surfaces into both homes) + `.test.tsx` (3). `app-shell.tsx` gained the `systemPanelSlot?` seam (system body
+  renders it, docked + float; modules keeps placeholder) + **System/Modules toggles condense to icon-only ≤375**
+  (`PANEL_ICON`) so Bar 1 co-fits. `routes.tsx` wires `bar1Slot` + `systemPanelSlot` (+ test harness gets QueryClient +
+  teardown-safe await). `scope-selector.tsx` gained **`compact`** (≤375, drops prefix + Globe lead) + 2 tests. Deleted
+  the superseded `global-bar.tsx` (+ test). Covers EC-5/EC-6. tsc 0 · lint 0 err · @vida/ui **524/524** · @vida/web
+  **355/355** (exit 0, no teardown errors). **Visual Gate PASS (REAL shell):** Bar 1 in top strip + System panel (dock
+  + float) × 3 presets × 2 modes = 0 AA fails incl. warm-dark · 375 co-fit 0 overflow · dark portal menu 0 fails · axe 0.
+  **⚠ 375 co-fit required condensing #14's toggles (Victor-approved) + a 3rd primitive fix:** `@vida/ui` Menu item
+  `leading` icons were black in dark → `MenuItemRow` resting `color` (also fixed scope-selector's menu icons). Currency:
+  `shell/CLAUDE.md` + `packages/ui/src/CLAUDE.md`. _(commit pending)_
+
+**⟹ fe-shell-scope #15 COMPLETE — all 3 slices (S1·S2·S3). Deferred items below stay homed.**
 
 ## Deferred (homed)
 - Live `listSpaces` read + dangling-`activeSpaceId` reconcile → first consumer (seam-contract §E).

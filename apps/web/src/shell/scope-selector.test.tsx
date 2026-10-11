@@ -77,3 +77,30 @@ describe('ScopeSelector — read states', () => {
     expect(await screen.findByRole('button', { name: 'Spaces: Work' })).toBeTruthy()
   })
 })
+
+describe('ScopeSelector — compact (≤375 strip)', () => {
+  function renderCompact(read: SpacesScopeRead) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    return render(
+      <QueryClientProvider client={client}>
+        <UIProvider>
+          <ScopeSelector read={read} compact />
+        </UIProvider>
+      </QueryClientProvider>,
+    )
+  }
+
+  it('populated: trigger drops the "Spaces: " prefix but keeps the full name in aria-label (EC-1)', async () => {
+    renderCompact(() => Promise.resolve(SPACES))
+    const trigger = await screen.findByRole('button', { name: 'Scope: All' }) // aria-label, not visible text
+    expect(trigger.textContent).toContain('All')
+    expect(trigger.textContent).not.toContain('Spaces:')
+  })
+
+  it('empty: still global-only, aria-label unchanged, no prefix', async () => {
+    renderCompact(() => Promise.resolve([]))
+    const btn = await screen.findByLabelText('Scope: All (no spaces yet)')
+    expect(btn.textContent).not.toContain('Spaces:')
+    expect((btn as HTMLButtonElement).disabled).toBe(true)
+  })
+})

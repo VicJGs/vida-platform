@@ -27,9 +27,10 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   ephemeral `stores/scope-store.ts` (`activeSpaceId|null`, null = global; emit-to-seam — no live view consumer in M1.0).
 - `scope-selector.tsx` (fe-shell-scope #15, S1) — the `Spaces:` switcher (EC-1/EC-2). Composes `@vida/ui` `Menu`+`Button`
   (adds NO component); reads the list via `SpacesScopeRead` (React Query) + the scope store. DEGRADES never crashes:
-  populated(Menu) / loading(busy) / empty(global-only disabled) / error(calm `role=status`). **Not yet wired into the
-  bar — S3 mounts it in `bar1Slot` + the System panel body** (`systemPanelSlot` seam). Visual Gate PASS (5 states ×
-  light/dark/warm-dark × 375/1440, measured 0 AA fails).
+  populated(Menu) / loading(busy) / empty(global-only disabled) / error(calm `role=status`). **Wired in at S3** —
+  `GlobalBar1` mounts it in `bar1Slot` + the System panel body. Visual Gate PASS (5 states × light/dark/warm-dark ×
+  375/1440, measured 0 AA fails). **`compact` prop (S3):** drops the `Spaces: ` prefix + leads with a Globe glyph for the
+  ≤375 strip (co-fit beside the condensed toggles) — still shows the active scope (EC-1) + full name in `aria-label`.
 - `global-surfaces-strip.tsx` (fe-shell-scope #15, S2) — the 6 `GLOBAL_SURFACES` in Bar 1's TOP-STRIP form, mode-prop
   (parent-resolved) driven: `full` (≥768) = Search launcher + route surfaces as icon-nav · `condensed` (≤375) = Search
   icon + overflow `Menu`. **Supersedes `global-bar.tsx`** (deleted at S3) — the one refinement: NO hamburger (app-shell
@@ -106,7 +107,15 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   animation FAILS SAFE VISIBLE (a modal must never render invisible); reduced-motion `@media`→`animation:none`. B12:
   opacity/transform only.
 - `module-dock.tsx` (S2) — the dock content: `MODULE_MAP` grouped, drawer/rail/sidebar forms, empty-group skip,
-  collapse toggle. `global-bar.tsx` (S2) — `GLOBAL_SURFACES` condensed/full + ⌘K→`commandBar.open()` + overflow Menu.
+  collapse toggle. _(`global-bar.tsx` was DELETED at fe-shell-scope #15 S3 — superseded by `global-bar-1.tsx` +
+  `global-surfaces-{strip,list}.tsx`.)_
+- `global-bar-1.tsx` (fe-shell-scope #15, S3) — **Bar 1 assembly.** `variant="strip"` = the top-strip chrome (bar1Slot):
+  scope (left, `compact` ≤375) · spacer · surfaces strip (mode resolved from the breakpoint). `variant="panel"` = the
+  System-panel body (systemPanelSlot): scope above the labeled surfaces list. Composition only (ui-4 BR-1); mounted in
+  `routes.tsx` `RootComponent`. app-shell gained a `systemPanelSlot?` seam (the `system` panel body renders it, both docked
+  + float; `modules` keeps the placeholder) + the **System/Modules toggles condense to icon-only at ≤375** (`PANEL_ICON`,
+  label → aria-label) so Bar 1 co-fits the strip (S3 Visual-Gate-caught). EC-5. Visual Gate PASS (real shell: both homes
+  × 3 presets × 2 modes = 0 AA fails incl. warm-dark · float dialog · 375 no-overflow · dark portal menu · axe 0).
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact
   `aria-current`; `currentColor` icon tint). **Active colour = `$colorBrandEmphasis`** (not brandPrimary — brand-as-text
   on the active `$colorSurfaceSecondary` fill fell to 4.39/4.44 < 4.5 AA; fe-shell-scope #15 S2 Visual-Gate fix, benefits
@@ -157,6 +166,6 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   `isMobileNavOpen`) lives on `stores/app-shell-ui-store.ts`; the chrome reads/toggles it, the model never touches it.
   The current breakpoint is read via `useMedia()`, never stored.
 - **`MODULE_MAP` import: the CHROME renders it (dock/global bar); the MODEL must not** — the layout model is
-  orthogonal to the nav data. `module-dock.tsx`/`global-bar.tsx` are the renderers.
+  orthogonal to the nav data. `module-dock.tsx` / `global-surfaces-{strip,list}.tsx` are the renderers.
 - **No barrel** (`index.ts`) — import specific files (STANDARDS §XX).
 - **Mobile-first.** Every rule is base→up; `mobile` is the baseline, larger widths enhance; `wide` is a max-width cap.

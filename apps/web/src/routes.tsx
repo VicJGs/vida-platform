@@ -19,6 +19,7 @@ import {
 } from '@tanstack/react-router'
 import { AppShell } from './shell/app-shell'
 import { CommandBar } from './shell/command-bar'
+import { GlobalBar1 } from './shell/global-bar-1'
 import { HomeSurface } from './home/home-surface'
 
 const rootRoute = createRootRoute({
@@ -32,7 +33,11 @@ const rootRoute = createRootRoute({
 // owns its own global keybind + self-portals to <body>, so it keeps working through the dock⇄float reshape.
 function RootComponent() {
   return (
-    <AppShell overlaySlot={<CommandBar />}>
+    <AppShell
+      overlaySlot={<CommandBar />}
+      bar1Slot={<GlobalBar1 variant="strip" />}
+      systemPanelSlot={<GlobalBar1 variant="panel" />}
+    >
       <Outlet />
     </AppShell>
   )

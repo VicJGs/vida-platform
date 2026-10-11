@@ -87,6 +87,10 @@ const MenuItemRow = styled(View, {
   alignItems: 'center',
   gap: '$8',
   cursor: 'pointer',
+  // Resting text colour for the row's `leading`/`trailing` icon slots (lucide `currentColor`) — else a raw icon inherits
+  // document black (invisible in dark). MenuItemLabel sets its OWN colour (default/danger), so the label is unchanged;
+  // this only tints un-wrapped icon slots. The Button-frame-colour precedent (fe-shell-scope #15 S3 Visual-Gate fix).
+  color: '$colorTextPrimary',
   paddingVertical: '$8',
   paddingHorizontal: '$12',
   borderRadius: '$md', // radius.control via the token scale (see CLAUDE.md — sub-theme radius key inert for dimensions)
