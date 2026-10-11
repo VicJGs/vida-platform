@@ -14,6 +14,13 @@ describe('NotesSurface (S1)', () => {
     expect(getByRole('region', { name: 'Notes collection' })).not.toBeNull()
   })
 
+  it('S7 — mounts the notes search box above the collection (EC-12)', () => {
+    const { getByRole } = renderUI(<NotesSurface />)
+    // the search landmark is distinct from the collection region → both resolve
+    expect(getByRole('search', { name: 'Search notes' })).not.toBeNull()
+    expect(getByRole('region', { name: 'Notes collection' })).not.toBeNull()
+  })
+
   it('EC-1 — exposes the view-mode switcher (condensed Menu in jsdom; the full 4-layout toolbar ≥768 is a Visual-Gate MUST)', () => {
     const { getByText } = renderUI(<NotesSurface />)
     // jsdom reports < 768 → CollectionView condenses the switcher to a "View: <layout>" Menu trigger.

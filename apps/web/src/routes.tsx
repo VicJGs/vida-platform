@@ -69,7 +69,14 @@ const notesRoute = createRoute({
   component: lazyRouteComponent(() => import('./notes/notes-surface')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, graphRoute, notesRoute])
+// fe-notes-and-pages #27 · S2 — the note-entity page (editor-led frame + Layout-facet slot), lazy-split.
+const noteEntityRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notes/$id',
+  component: lazyRouteComponent(() => import('./notes/note-entity')),
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, graphRoute, notesRoute, noteEntityRoute])
 
 export const router = createRouter({
   routeTree,

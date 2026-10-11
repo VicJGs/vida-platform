@@ -9,8 +9,10 @@
 // ============================================================================
 import type { ResolvedView } from '@vida/core'
 import type { ViewLayout } from '@vida/types'
+import { View } from '@tamagui/core'
 import { CollectionView } from '@vida/ui'
 import { useCollection } from '../collection/use-collection'
+import { NotesSearch } from './notes-search'
 import { renderNotesView } from './note-renderers'
 import { useNotesRows } from './use-notes-rows'
 
@@ -23,17 +25,24 @@ export function NotesSurface() {
   // useQuery(['views','resolve','notes-default']) → ViewEngine.resolve — drop-in, no render change.
   const resolved: ResolvedView = { rows: rows as unknown[], groups: [], state, degraded: [] }
 
+  // S7: the notes search box rides ABOVE the collection in a column; the collection keeps flex:1/minHeight:0 so it
+  // still fills (the RNW flex-collapse guard — a flex:1 child collapses to 0 height in a column parent).
   return (
-    <CollectionView
-      title="Notes"
-      aria-label="Notes collection"
-      {...col.chromeFor(resolved)}
-      onLayoutChange={col.onLayoutChange}
-      onFilter={col.onFilter}
-      onSort={col.onSort}
-      onNewView={col.onNewView}
-      renderView={(layout, viewState) => renderNotesView(layout, viewState, rows)}
-    />
+    <View flex={1} minHeight={0} gap="$12">
+      <NotesSearch />
+      <View flex={1} minHeight={0}>
+        <CollectionView
+          title="Notes"
+          aria-label="Notes collection"
+          {...col.chromeFor(resolved)}
+          onLayoutChange={col.onLayoutChange}
+          onFilter={col.onFilter}
+          onSort={col.onSort}
+          onNewView={col.onNewView}
+          renderView={(layout, viewState) => renderNotesView(layout, viewState, rows)}
+        />
+      </View>
+    </View>
   )
 }
 
