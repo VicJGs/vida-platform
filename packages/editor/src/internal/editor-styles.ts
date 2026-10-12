@@ -51,12 +51,20 @@ export function ensureEditorStyles(): void {
       'color:var(--colorTextMuted);content:attr(data-placeholder);float:left;height:0;pointer-events:none;opacity:1}',
 
     // ── E2 standard blocks ──────────────────────────────────────────────────────────────────────
-    // taskList — unstyled list turned into a checkbox column; native checkbox tinted with the info accent.
-    '.vida-editor-frame ul[data-type="taskList"]{list-style:none;margin-left:0;padding-left:0}',
-    '.vida-editor-frame ul[data-type="taskList"] li{display:flex;align-items:flex-start;gap:0.5em}',
-    '.vida-editor-frame ul[data-type="taskList"] li>label{margin-top:0.15em;user-select:none}',
-    '.vida-editor-frame ul[data-type="taskList"] li>div{flex:1 1 auto}',
-    '.vida-editor-frame ul[data-type="taskList"] input[type="checkbox"]{accent-color:var(--colorBrandPrimary);cursor:pointer}',
+    // taskList — a checkbox column. align-items:flex-start on the ROW + a line-height-matched LABEL (inline-flex,
+    // min-height:1.7em, align-items:center) centers the checkbox to the first text line — fixes the "checkbox floats
+    // above the text" misalignment at the writing-grade 18px/1.7 host size. The item paragraph loses its margin so
+    // rows sit as a tight list (it is not a direct `.ProseMirror` child, so the block rhythm never reached it).
+    '.vida-editor-frame ul[data-type="taskList"]{list-style:none;margin:0.25em 0;padding-left:0}',
+    '.vida-editor-frame ul[data-type="taskList"] li{display:flex;align-items:flex-start;gap:0.5em;margin:0.15em 0}',
+    '.vida-editor-frame ul[data-type="taskList"] li>label{display:inline-flex;align-items:center;min-height:1.7em;margin:0;user-select:none}',
+    '.vida-editor-frame ul[data-type="taskList"] li>div{flex:1 1 auto;min-width:0}',
+    '.vida-editor-frame ul[data-type="taskList"] li>div>p{margin:0}',
+    '.vida-editor-frame ul[data-type="taskList"] input[type="checkbox"]{accent-color:var(--colorBrandPrimary);cursor:pointer;width:1em;height:1em}',
+    // blockquote (StarterKit node) — was UNSTYLED, so `/quote` rendered as a bare browser indent ("nothing happened").
+    // A tokened left bar + muted italic voice, matching the callout/table token discipline (no raw hex).
+    '.vida-editor-frame .ProseMirror blockquote{border-left:3px solid var(--colorBorderDefault);padding-left:0.75em;margin:0.5em 0;color:var(--colorTextMuted);font-style:italic}',
+    '.vida-editor-frame .ProseMirror blockquote>*{margin-top:0}',
     // table — collapsed borders from the border token; header fill from surface-secondary; selected-cell tint.
     '.vida-editor-frame table{border-collapse:collapse;table-layout:fixed;width:100%;margin:0.5em 0}',
     '.vida-editor-frame table td,.vida-editor-frame table th{' +
