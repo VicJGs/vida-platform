@@ -1,5 +1,5 @@
 # Task: fe-notes-and-pages
-# Status: in-review (PR #128 fe-notes + #127 ui-3/EC-24, opened 2026-10-11; all 9 slices ✅)
+# Status: DONE — MERGED to main 2026-10-12 (PR #128 fe-notes `d8d2150` + PR #127 ui-3/EC-24 `4ca354f`); all 9 slices ✅. Linear LIF-191 → Done (reconcile next `/begin --pull`).
 # Worktree: .claude/worktrees/fe-notes-and-pages (branch fe-notes-and-pages off main @ 8392e06, Node 24)
 # Linear: LIF-191
 # Profile: Add Frontend Component
