@@ -12,6 +12,7 @@ vi.mock('./onboarding/first-run-repo', () => ({
 }))
 
 import { App } from './App'
+import { useGuidedSetupStore } from './onboarding/guided-setup-store'
 
 // "Is the app shell mounted?" — the reserved top strip is present iff the shell frame mounted. (fe-shell #14 reshape:
 // the Modules nav is now a dock⇄float panel built in S3; the always-present frame signal is the top strip / banner.)
@@ -21,6 +22,7 @@ beforeEach(() => {
   h.ensureDbReady.mockReset().mockResolvedValue(undefined)
   h.read.mockReset()
   h.write.mockReset()
+  useGuidedSetupStore.setState({ phase: 'none' }) // the launch phase is a module-global store — reset between tests
 })
 
 afterEach(() => {
@@ -62,16 +64,47 @@ describe('App first-run branch', () => {
     expect(shellChrome()).toBeNull()
   })
 
-  it('writes the completion marker then mounts the app', async () => {
-    h.read.mockResolvedValue(false)
-    h.write.mockResolvedValue(undefined)
-    render(<App />)
+  // Walk the 4-screen first-run onboarding to completion. markComplete writes the marker + flips to the app.
+  const completeOnboarding = async () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Get started' })).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
     fireEvent.click(screen.getByRole('button', { name: 'Enter Vida' }))
     await waitFor(() => expect(h.write).toHaveBeenCalledTimes(1))
-    await waitFor(() => expect(shellChrome()).not.toBeNull())
+  }
+  const invitationHeading = () => screen.queryByRole('heading', { name: /make vida yours/i })
+
+  // fe-onboarding S4 — reach path (a): completing onboarding offers the guided-setup invitation OVER the app (opt-in,
+  // never a wall). The app (shell) mounts behind it; the invitation is a fixed overlay, not a replacement.
+  it('writes the completion marker, mounts the app, and offers the guided-setup invitation', async () => {
+    h.read.mockResolvedValue(false)
+    h.write.mockResolvedValue(undefined)
+    render(<App />)
+    await completeOnboarding()
+    await waitFor(() => expect(shellChrome()).not.toBeNull()) // the app is mounted behind the overlay
+    await waitFor(() => expect(invitationHeading()).not.toBeNull()) // the opt-in invitation is offered
+  })
+
+  it('skipping the invitation returns to the app (never a wall)', async () => {
+    h.read.mockResolvedValue(false)
+    h.write.mockResolvedValue(undefined)
+    render(<App />)
+    await completeOnboarding()
+    await waitFor(() => expect(invitationHeading()).not.toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: /skip for now/i }))
+    await waitFor(() => expect(invitationHeading()).toBeNull()) // overlay gone
+    expect(shellChrome()).not.toBeNull() // the app remains
+  })
+
+  it('starting from the invitation opens the guided-setup flow (modules step first)', async () => {
+    h.read.mockResolvedValue(false)
+    h.write.mockResolvedValue(undefined)
+    render(<App />)
+    await completeOnboarding()
+    await waitFor(() => expect(invitationHeading()).not.toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: /set up your workspace/i }))
+    // the flow's first step is the module enable-set picker (Notes toggle present)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Notes', pressed: true })).toBeTruthy())
   })
 })
