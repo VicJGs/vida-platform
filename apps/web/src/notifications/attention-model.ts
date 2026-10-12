@@ -48,6 +48,8 @@ export interface AttentionEntry {
   dangling: boolean
   isRead: boolean
   anticipated: boolean
+  /** the raw instant (settled = created_at · anticipated = dueAt) — lenses bucket/sort on it. */
+  at: number
 }
 
 export interface AttentionArea {
@@ -142,6 +144,7 @@ function settledEntry(row: Notification, now: number): AttentionEntry {
     dangling: isDangling(row),
     isRead: row.is_read,
     anticipated: false,
+    at: row.created_at,
   }
 }
 
@@ -159,6 +162,7 @@ function upcomingEntry(item: UpcomingItem, now: number): AttentionEntry {
     dangling: false,
     isRead: false,
     anticipated: true,
+    at: item.dueAt,
   }
 }
 

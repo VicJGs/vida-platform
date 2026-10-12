@@ -30,9 +30,13 @@ they hear it (Margin · Dispatches · Constellation). ② UI/UX over the finishe
   dark (title 15.8–17.3 · voice/chip 4.9–6.5 — Visual Gate). The surface inherits the AppShell's
   `$colorSurfacePrimary` background (the gate harness paints it to match prod).
 
-## Lenses
-- **S1 — The Margin** (default) ✅ built.
-- **S2 — Dispatches** · **S3 — Constellation** — switcher shows them as honest "arrives soon" until built.
+## Lenses (all built — the user chooses via the switcher)
+- **`lens-margin.tsx` — The Margin** (default): time-spine + now-line.
+- **`lens-dispatches.tsx` — Dispatches**: serif briefing, narrative groups (Today / Earlier / Still ahead).
+- **`lens-constellation.tsx` — Constellation**: life-area hubs + severity-dotted orbits + "you" at center.
+  **§XXVIII deviation** (slice-map said "shipped NeuralGraph"): a CSS/SVG constellation — a Sigma/WebGL
+  force graph is built for 10K nodes + carries the WebGL color seam; for ~8 hubs the CSS/SVG map is lighter
+  and IS the greybox Victor approved. Live drill-down (tap area → its alerts) deferred with the data plane.
 
 ## Verify
 - Unit: `pnpm --filter @vida/web test -- notifications` (pure model).

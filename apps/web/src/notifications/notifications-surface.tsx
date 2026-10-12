@@ -9,6 +9,8 @@ import { Text, View } from '@tamagui/core'
 import { Button, EmptyState } from '@vida/ui'
 import type { Notification } from '@vida/types'
 import { toAttentionModel, type NotificationLens } from './attention-model'
+import { ConstellationLens } from './lens-constellation'
+import { DispatchesLens } from './lens-dispatches'
 import { MarginLens } from './lens-margin'
 import { useNotificationLens } from './use-notification-lens'
 import { useNotifications } from './use-notifications'
@@ -101,21 +103,6 @@ function ErrorView() {
   )
 }
 
-function LensComingSoon({ lens, onBack }: { lens: NotificationLens; onBack: () => void }) {
-  return (
-    <EmptyState title={`${LENS_LABEL[lens]} arrives soon`} titleLevel={3}>
-      <Text fontSize="$small" color="$colorTextMuted">
-        For now, The Margin shows everything your System is tending.
-      </Text>
-      <View flexDirection="row">
-        <Button intent="secondary" size="small" onPress={onBack}>
-          Back to The Margin
-        </Button>
-      </View>
-    </EmptyState>
-  )
-}
-
 export function NotificationsSurface() {
   const data = useNotifications()
   const { lens, setLens } = useNotificationLens()
@@ -131,11 +118,13 @@ export function NotificationsSurface() {
   )
   const unread = useMemo(() => rows.filter((r) => !r.is_read && !r.is_archived).length, [rows])
 
-  const filtered = useMemo(() => rows.filter((r) => matchesStatus(r, status)), [rows, status])
+  // the status filter is a Margin-only control; the other lenses always show the active inbox.
+  const effectiveStatus: StatusFilter = lens === 'margin' ? status : 'all'
+  const filtered = useMemo(() => rows.filter((r) => matchesStatus(r, effectiveStatus)), [rows, effectiveStatus])
   const model = useMemo(
     // anticipations only belong to the active inbox, not the archived/read views.
-    () => toAttentionModel(filtered, status === 'all' ? data.upcoming : [], data.now),
-    [filtered, data.upcoming, data.now, status],
+    () => toAttentionModel(filtered, effectiveStatus === 'all' ? data.upcoming : [], data.now),
+    [filtered, data.upcoming, data.now, effectiveStatus],
   )
 
   const onMarkRead = (id: string) => setOverlay((o) => ({ ...o, read: new Set(o.read).add(id) }))
@@ -149,8 +138,6 @@ export function NotificationsSurface() {
     body = <Skeleton />
   } else if (data.state === 'error') {
     body = <ErrorView />
-  } else if (lens !== 'margin') {
-    body = <LensComingSoon lens={lens} onBack={() => setLens('margin')} />
   } else if (totallyEmpty) {
     body = (
       <EmptyState title={status === 'archived' ? 'Nothing archived' : "You're all caught up"} titleLevel={3}>
@@ -159,6 +146,10 @@ export function NotificationsSurface() {
         </Text>
       </EmptyState>
     )
+  } else if (lens === 'dispatches') {
+    body = <DispatchesLens model={model} now={data.now} onMarkRead={onMarkRead} onArchive={onArchive} />
+  } else if (lens === 'constellation') {
+    body = <ConstellationLens model={model} />
   } else {
     body = <MarginLens model={model} nowLabel={hhmm(data.now)} onMarkRead={onMarkRead} onArchive={onArchive} />
   }
