@@ -1,5 +1,5 @@
 # Task: fe-onboarding
-# Status: in-review (PR #130 — S1–S4 complete, LIF-216)
+# Status: done (merged PR #130 → main 293129f, LIF-216)
 # Worktree: .claude/worktrees/fe-onboarding (branch fe-onboarding off origin/main @ 5ef0ce7, Node 24)
 # Linear: LIF-216
 # Profile: Add Frontend Component
