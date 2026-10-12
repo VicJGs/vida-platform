@@ -4,12 +4,13 @@
 import { useEffect, useState } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
-import { THEME_DEFAULT, ToastProvider, UIProvider } from '@vida/ui'
+import { ToastProvider, UIProvider } from '@vida/ui'
 import { ensureDbReady } from './db/boot'
 import { queryClient } from './lib/query-client'
 import { Onboarding } from './onboarding/onboarding'
 import { useFirstRun } from './onboarding/use-first-run'
 import { router } from './routes'
+import { useThemeStore } from './stores/theme-store'
 
 export function App() {
   // Gate rendering on the local DB being open+migrated: React Query reads local
@@ -22,6 +23,11 @@ export function App() {
   // UI-4 · S4: resolve first-run against the device-local marker once the DB is open. Called among the hooks
   // (before the early returns) — Rules of Hooks. `status` gates the branch below (S4-BR-c).
   const firstRun = useFirstRun(dbReady)
+
+  // fe-settings S2 (EC-5): the theme selection is app-owned (AR-4) and lives in the Zustand theme store, so the Settings
+  // Appearance controls (S3) re-theme the whole app instantly. Boots at THEME_DEFAULT; hydrate-on-boot is a deferred
+  // seam (seam-contract §A0 — blocked by the worker `values` seam, first-consumer home).
+  const selection = useThemeStore((s) => s.selection)
 
   useEffect(() => {
     let active = true
@@ -60,8 +66,8 @@ export function App() {
   }
 
   // UI-4 · S1: mount the design-system providers at the app root. UIProvider (Tamagui config/theme; selection STATE is
-  // app-owned — fed the cold-start THEME_DEFAULT here, Editorial+light+calm; the Zustand store + switcher arrive with
-  // Settings — fe-codec S3 / R5) wraps the app. ToastProvider is the singleton toast HOST —
+  // app-owned — now fed from the Zustand theme store (fe-settings S2 / R5), so the Settings switcher (S3) re-themes the
+  // app live; boots at THEME_DEFAULT). ToastProvider is the singleton toast HOST —
   // it takes no children and portals to <body>, so it's a SIBLING of the app tree, inside UIProvider for the theme
   // context. The shell chrome (AppShell) mounts INSIDE the router, in routes.tsx RootComponent (it wraps the Outlet).
   //
@@ -69,7 +75,7 @@ export function App() {
   // onboarding takeover (full-viewport, OUTSIDE the router/AppShell — S4-BR-h); its completion write flips
   // `status` to 'ready', mounting the app at `/`. Onboarding needs neither the router nor the query client.
   return (
-    <UIProvider selection={THEME_DEFAULT}>
+    <UIProvider selection={selection}>
       {firstRun.status === 'onboarding' ? (
         <Onboarding onComplete={firstRun.markComplete} />
       ) : (

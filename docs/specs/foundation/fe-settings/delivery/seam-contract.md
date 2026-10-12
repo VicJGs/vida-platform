@@ -3,7 +3,28 @@
 > The interfaces fe-settings consumes/exposes. All backend methods are SHIPPED on `mod-preferences` ①
 > `[FACT: packages/core/src/services/preferences/service.ts:208]`. No new service method, no schema change.
 
-## A. mod-preferences service (consumed via ProviderRead / React-Query)
+## A0. ⚠ VERIFIED RUNTIME CONSTRAINT (S2 map) — the live DB path is a deferred seam
+
+The apps/web worker-RPC driver implements `query`/`run`; `values`/`batch`/`exec` **throw `SEAM`**
+`[FACT: apps/web/src/db/client.ts:154-162]`. The Drizzle proxy maps `method==='run'`→`driver.run()` (works) but
+`'all'/'get'/'values'`→`driver.values()` (throws) `[FACT: packages/core/src/db/adapter.ts:185-194]`. `repo.findAll`
+uses `.select()…all()` `[FACT: packages/core/src/db/repository.ts:362]` → `values` → **throws**; and
+`updatePreferences` does a `findAll()` before writing `[FACT: services/preferences/service.ts:263]`. ⟹ **every
+preferences DB op from apps/web is blocked today** by the `values` worker seam — the "live Drizzle-proxy bootstrap →
+UI-3/first-consumer" home (fe-codec-seams db/CLAUDE.md) that **fe-notes also deferred** (shipped `useNotesRows` stubbed
+`[FACT: apps/web/src/notes/use-notes-rows.ts]`).
+
+**Resolution (the established fe-* deferred-data pattern — NOT a new decision):**
+- **EC-5 live-apply needs NO DB** — it flows through the Zustand theme store → `UIProvider selection` (AR-4). S2/S3
+  apply theme/mode/density/motion live **in-session**, for real.
+- **Hydrate-on-boot + persistence = deferred seams** — `usePreferences` (read) + `useUpdatePreferences`/
+  `setModuleVisibility` (write) are WIRED hooks that return defaults / no-op in M1 (the store is the in-session source
+  of truth), live-activated when the worker `values` seam lands (same first-consumer home as fe-notes' `useCollection`).
+  In M1 the theme does not survive reload (consistent with fe-notes: no real data persists yet).
+- **EC-7 ReadError** is still BUILT (the surface handles a real read error) — it's simply not triggered while the read
+  is a deferred-default seam. The `dashboard_layout` merge invariant (§B) still governs once the write seam activates.
+
+## A. mod-preferences service (consumed via ProviderRead / React-Query — live-activated per A0)
 
 ```ts
 // reads (useQuery({ queryFn })) — never touch tables directly (ProviderRead convention)
