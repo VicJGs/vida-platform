@@ -6255,3 +6255,43 @@ Next session:
     disabled controls (AA-exempt), and effective-opacity-0 text (loading width-holder) — else false fails.
   - ⚠ Harness caveat: a portal'd Menu escapes the local <Theme> in isolation — the dark panel is faithfully re-tested at
     S3 (real shell, one UIProvider theme). Menu panel theming is the shipped primitive's own (already-gated) concern.
+
+Date: 2026-10-12 — fe-notifications ② (#25, LIF-192) — WHOLE UNIT shipped + MERGED (PR #132) + closed out (PR #133)
+Task: fe-notifications · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree off origin/main @ 5ef0ce7, Node 24.
+Goal: the UI/UX ② tier over the finished mod-notifications ① (#53). Gated legs NOT-24 (inbox UI) + NOT-25 (dangling).
+Accomplished:
+  - **Shipped a multi-lens notifications surface — the System's out-loud voice, user-selectable. PR #132 → main `f31fc4b`; LIF-192 → Done.** Pure ②, no @vida/core/@vida/types change.
+  - **Envision Gate drove the architecture:** the baseline inbox greybox was rejected ("too normal — not a Vida OS experience"); Victor's steer "the user chooses" → ONE surface, THREE lenses. Three greybox concepts rendered LIVE in Brave for the human review; all approved.
+  - **S1 Foundation + The Margin** (`c0abc2e`) — shared seam (pure `attention-model` one-model-three-renderers · honest-empty `use-notifications` + `?sample`/`?force` · local `use-notification-lens`) + the time-spine/now-line lens (anticipations from `dueIn` agenda [NF-3], settled below) + chrome + 8-state + optimistic-local lifecycle; `/notifications` route via the shipped Bell link. **S2 Dispatches + S3 Constellation** (`33ebeac`) — serif briefing + life-area map over the same model.
+  - tsc 0 · eslint 0 · @vida/web suite green · notifications 5/5 · **Visual/contrast Gate PASS** (Brave, 3 presets × L/D incl warm/olive dark: titles 15.8–17.3 · voice/prose/caption 4.9–6.5 AA, MEASURED). CI Typecheck/Lint/Test/E2E green; 2 pre-existing reds (Format/Workers).
+  - Close-out: PR #133 (`67576a9`) reconciled the tracker (task archived · _index · TASKS.md). Both worktrees removed, branches deleted; __envision__ harness stripped before the PR.
+Decisions / lessons:
+  - **Ground scope in the gated decomposition, not the drifted task-header** — "channel-matrix" was NOT a traced leg (a Preferences concern) → out of scope. Re-confirmed [[envision-gate-firing-is-a-doc-test-not-a-human-decision]] (I AskUserQuestion'd a doc-settled scope; Victor: "check the documentation, this is not supposed to be a question").
+  - **Measure a Visual-Gate failure before fixing** — the "ghosted warm-dark titles" (EC-8) were a HARNESS bg artifact (standalone entry not painting the AppShell surface), not a prod AA bug; a getComputedStyle probe showed the title was already `rgb(250,247,240)`. [[measure-browser-bugs-dont-hypothesize]]
+  - **Anticipations derive from `dueIn`, not notification rows** (NF-3 no phantom future inbox). **Constellation = CSS/SVG not Sigma/WebGL** (§XXVIII; overkill for ~8 hubs, = approved greybox). **Lifecycle optimistic-local** at M1 (no fake "saved"). **Lens pref local** (no @vida/core change).
+  - **apps/web Visual Gate** = real surface in a standalone `__envision__` entry (bypasses onboarding/DB), ?sample/?force/?lens params, Brave via `playwright-core`; the harness MUST paint `$colorSurfacePrimary` to match the AppShell or dark-mode near-white text ghosts. [[apps-web-visual-gate-standalone-entry-bypass]]
+Next session:
+  - **Next head = `mod-routines`** (backend, M1.1.2 — computed `--next`; add-backend-component / Entity Delivery Flow ①; fresh worktree off main, Node 24).
+  - Parallel sessions hold fe-calendar/fe-notes-and-pages/fe-onboarding/fe-settings worktrees — don't disturb; shared root left behind origin/main (fast-forwards at next /begin).
+  - NB: did NOT run `tracker_sync --sync` (parallel-session orphan-create CAUTION); LIF-192 reconciled Done via the merged oracle + it was already Done in Linear.
+
+---
+Date: 2026-10-12 — M1 local-dev unblock + MVP-0 doc honesty + CF Preview-Builds resolution (PR #136)
+Task: unfiled housekeeping (relates LIF-228 prettier, LIF-229 CF) · Profile: bug-fix / Generic Coding Session (engineering + process) · branch `fix/m1-local-dev-and-doc-honesty` off main `7657574`.
+Goal: Victor ran `pnpm dev` to test the built app — it failed; home/journal/notes didn't work. Triage + solve, plus the two tracked CI reds (Cloudflare LIF-229, prettier LIF-228).
+Accomplished:
+  - **Triaged `pnpm dev` failure → TWO unrelated things.** (1) `@vida/server` (`wrangler dev`→`workerd`) hard-crashes on macOS 12.7 (needs 13.5+) → Turbo marks the whole run failed though `@vida/web` was up on :5174. (2) home/journal/notes "not working" = **by design, not a bug** — an Explore agent proved with file:line evidence that the data plane is an intentional stub: `apps/web/src/db/client.ts:157` throws on the Drizzle `values`/`batch`/`exec` path, NO `createNotesService`/`createJournalsService` composition root in apps/web, all data hooks return empty (`use-notes-rows`/`use-note-entity`/`use-journal-summary`). CRUD cannot persist.
+  - **Grounded everything in MVP-PATH.md (updated today):** §1/§6 — the server is an **M4** concern; M1 = "local-only, no-sync, **no server**." So the server has no M1 role; its presence in the dev loop + the CF build gating M1 PRs are both premature. Same root cause.
+  - **1a SHIPPED:** `pnpm dev:app` = `turbo run dev --filter='!@vida/server'` (verified via `turbo --dry-run`: server excluded, 5 pkgs run). Documented in CLAUDE.md with the macOS/workerd constraint. `.gitignore` += `.wrangler/`.
+  - **Doc honesty SHIPPED:** corrected MVP-PATH.md's overstated "you can actually journal / take notes" headlines (callout + §4 header + Landed line + §2 "drop-in swap") — MVP-0 is **build-complete** (screens/pattern merged) but **CRUD is NOT live**; the worker-side Drizzle seam is a real unbuilt unit (UI-3/M1.1+), not a drop-in.
+  - **2 (CF LIF-229) RESOLVED-PENDING-ACTION:** chose Option 2 (disable CF Preview Builds until M4), plan-grounded; wrote exact dashboard steps (Settings→Build→Branch control→uncheck Enable Preview Builds) verified vs current CF docs 2026-10-12. ~1-min dashboard action for Victor — no repo change delivers it.
+  - PR #136 opened (base main). 2 commits (fix + gitignore chore). No code logic → Typecheck/Lint/Test/E2E unaffected; 2 known pre-existing reds remain (Format LIF-228 deferred; Workers LIF-229 cleared by the dashboard action).
+Decisions / lessons:
+  - **Check the docs before deciding — again.** I AskUserQuestion'd 3 routing questions; Victor: "check the documentation" for all three. The plan (MVP-PATH §1/§6) resolved 1a + 2 mechanically; the code (db/client.ts) resolved 1b. [[envision-gate-firing-is-a-doc-test-not-a-human-decision]].
+  - **The MVP-PATH headline drifted from the code** — it claimed usability the stub doesn't deliver. The agent's file:line facts are ground truth over the celebratory summary. [[discontinued-impl-and-frozen-decomposition-are-reference-not-authority]] / verify-vs-reality.
+  - **`mod-notes-2a-data-plane`/`mod-notes-rebuild` branches are August pre-`backend-replan` vertical-grain — superseded, reference-only.** Do NOT point at them as the live data-plane work.
+Next session:
+  - **Victor action:** apply the CF dashboard change (steps in `.claude/tasks/ci-workers-build-config.md`) → LIF-229 Done.
+  - **Decide 1b:** scope the notes/journal **data-plane** unit (worker-side Drizzle `values`/`batch`/`exec` seam + composition root) — the real work that makes MVP-0 usable. Highest VALUE, genuine Entity Delivery Flow build.
+  - **prettier LIF-228** stays deferred until the 5 active worktrees (fe-calendar/-gamification/-notes-and-pages/-onboarding/-settings) flush.
+  - Computed next backend head remains `mod-routines` (M1.1.2).

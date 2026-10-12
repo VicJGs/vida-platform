@@ -1,5 +1,16 @@
 <!-- Last updated: 2026-10-12 by /session-end -->
 
+## fe-notifications ② (2026-10-12 — LIF-192, PR #132)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-12 | Notifications UX | inbox list, or something OS-native? | **multi-lens surface (Margin · Dispatches · Constellation), user picks** | Envision review rejected the plain inbox as "too normal"; "the user chooses" is the Vida-native answer (the System's out-loud voice, your way) | reversible |
+| 2026-10-12 | Scope | include "channel-matrix" controls (per the task-header)? | **no — NOT-24 (inbox) + NOT-25 (dangling) only** | the gated decomposition homes exactly 2 legs; "channel-matrix" is a Preferences-config concern, an untraced drift | reversible |
+| 2026-10-12 | The Margin data | where do "anticipations" (above the now-line) come from? | **the Sessions `dueIn` agenda, NOT notification rows** | NF-3: the dispatcher never writes a row before fire time (no phantom future inbox); honest-empty at M1, live swap deferred | n/a (contract) |
+| 2026-10-12 | Constellation render | Sigma/WebGL `NeuralGraph` (per slice-map) or CSS/SVG? | **CSS/SVG map (§XXVIII deviation)** | a force graph is built for 10K nodes + carries the WebGL color seam; overkill for ~8 hubs; = the approved greybox | reversible |
+| 2026-10-12 | M1 lifecycle | dead no-op buttons, or fake "saved"? | **optimistic-local (session-only), no persistence claim** | honest at M1 (resets on reload like all M1 data), avoids dead affordances; durable write binds at the first consumer | reversible |
+| 2026-10-12 | Lens persistence | new `user_preferences` field, or local? | **local (localStorage), no `@vida/core` change** | keeps the unit pure-② frontend; a synced pref is a later concern | reversible |
+
 ## Linear / tracker reconciliation (2026-10-09 — frontend-track campaign LIF-202)
 
 | Date | Area | Decision | Choice | Reason | Reversible |
@@ -1113,3 +1124,9 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-11 | S9 add-menu scope | build a fe-notes palette, or RATIFY? | **RATIFY / consume-verify** — the editor E4 palette is consumed on the note page | EC-14 met by consumption; CAP-13 compute (#29) + CAP-12 placement (#31) deferred, no `VidaEditor` seam; inline-non-restrictive consumption IS CAP-13-compliant; building one = NOT-52 violation (F-S9-1). | n/a (RATIFY) |
 | 2026-10-11 | EC-24 PR split | bundle the `@vida/editor` fix, or separate PR? | **separate ui-3 PR #127** (off main, scratch worktree + revert on the fe-notes branch) | the delivery parking-lot mandate: a `@vida/editor` change must not bundle into the apps/web PR #128; keeps two review surfaces distinct. | n/a (process) |
 | 2026-10-12 | ship reconcile | rebase or merge to resolve stale origin/main? | **merge `origin/main` into the branch** (no force-push) | fe-shell-scope #15 (#126) advanced main mid-flight; merge-resolved `routes.tsx` (auto) + digest docs (union); re-verified @vida/web 473/473. | n/a (process) |
+| 2026-10-12 | fe-onboarding scope | re-skin onboarding, or add a new flow? | **net-new optional guided-setup flow; RATIFY the shipped first-run render + copy model** | `ext UX-5` + interpretation IR5/IR7: the first-run onboarding already ships; the net-new is the skippable "pick modules & theme" flow (surface-map:34). | Envision EC-1…EC-10 |
+| 2026-10-12 | S1 Scene-F | consume `FlowSessionView` #11, or a lighter frame? | **lighter purpose-built frame** | FlowSessionView bakes unsuppressable SESSION affordances (Mark done · attach · Timeline) + a stacked layout that misfits EC-3's left-rail; the dep is build-order blocked-by, not an import mandate. | slice-map Scene-F |
+| 2026-10-12 | S2 module default | what is the default enable-set? | **all visible-dock modules ON (= today's behavior)** | mirrors `module-dock.tsx` `visibleDockGroups()` exactly (placement:dock + `isFeatureEnabled` fail-closed) so the preview can't lie; gamification + empty platform-services drop. | n/a (grounded) |
+| 2026-10-12 | S3 theme preview | how to render a NON-active preset's palette inline? | **`getComputedStyle` probe under `<html>`, in a post-paint effect** | the active `<body class="t_<preset>">` scope `:root.t_mode .t_preset` out-specifies any nested `<Theme>` → bands collapse; a probe outside `<body>` resolves concrete colors. No hardcoded hex. | [[preview-nonactive-preset-needs-html-probe-postpaint]] |
+| 2026-10-12 | S4 app-mount | nav route, boot gate, or overlay? | **opt-in fixed OVERLAY over the still-mounted router** | IR2: not a mandatory boot gate; overlay (not replace) preserves route state; App.tsx selection made minimally stateful so live preview is real (full switcher deferred to Settings). | interpretation D6/IR2 |
+| 2026-10-12 | S4 reach | how to meet the ≥2-path floor? | **2 distinct ReachPaths: `link` (invitation) + `contextual` (EmptyState slot)** | the registry dedupes by path category — two same-category would collapse to 1 and fail the floor; onboarding.tsx left untouched (invitation is a store-driven post-completion overlay). | ReachabilityRegistry |

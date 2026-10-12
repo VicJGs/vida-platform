@@ -82,7 +82,22 @@ const settingsRoute = createRoute({
   component: lazyRouteComponent(() => import('./settings/settings-surface')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, graphRoute, notesRoute, noteEntityRoute, settingsRoute])
+// fe-notifications #25 (LIF-192) · S1 — the notifications surface (multi-lens: Margin · Dispatches ·
+// Constellation), lazy-split. Mounts into the shipped global `/notifications` Bell nav link.
+const notificationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notifications',
+  component: lazyRouteComponent(() => import('./notifications/notifications-surface')),
+})
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  graphRoute,
+  notesRoute,
+  noteEntityRoute,
+  settingsRoute,
+  notificationsRoute,
+])
 
 export const router = createRouter({
   routeTree,

@@ -1,9 +1,20 @@
 # MVP Path — from today's state to a usable OS
 
-> **Last updated:** 2026-10-10
+> **Last updated:** 2026-10-12
 > **Purpose:** the single view of *what is built*, *what each remaining issue makes usable*, and *the
 > minimal dependency-closed path to a daily-usable single-device OS*. Derived from the live Linear
 > dependency graph (initiative `vida-platform`) reconciled against the merged-PR oracle.
+>
+> **🟢 MILESTONE (2026-10-12): MVP-0 is build-complete** — every planned MVP-0 *issue* is merged.
+> `fe-notes-and-pages` (LIF-191) merged (PRs #128/#129), joining the last of its CODEC-canvas prereqs.
+> The first feature surface — the notes/journal **screens, patterns and UI wiring** — now exists in the
+> app. ⚠️ **It is not yet usable for real data:** the local data-plane is still a documented stub
+> (`apps/web/src/db/client.ts` — the worker-side Drizzle `values`/`batch`/`exec` seam **throws**; no
+> `createNotesService`/`createJournalsService` composition root is wired in `apps/web`), so you can open
+> and navigate the screens but **cannot yet persist a note or journal entry.** Making CRUD live is the
+> remaining work (the data-plane seam, homed at UI-3 / M1.1+ — see § 4 · MVP-0 below).
+> The frontend "usable layer" (M1.2.2) has opened at 1/6. Also shipped since the last refresh:
+> `fe-onboarding` guided setup (LIF-216) and the `fe-notifications` ② surface (LIF-192).
 >
 > **How to refresh (important):** Linear archives completed issues, and its default `issues` query
 > **excludes archived** — so `tracker_sync.py --plan`/`--next` are *forward-looking* (what's left), never a
@@ -30,7 +41,7 @@ M2–M4.
 
 ## 2. What is built today (and the honest caveat)
 
-Two large, well-built halves that are **not yet joined by live data**:
+Two large, well-built halves — now **joined at the first seam** (notes/journal); the rest still awaits wiring:
 
 - **Backend engine (`@vida/core`) — ~complete.** Full XS foundation (M1.1.1) + 15 feature-module
   services (M1.1.2): finance, gamification, habits, knowledge, books, learning-education, projects,
@@ -38,32 +49,39 @@ Two large, well-built halves that are **not yet joined by live data**:
 - **Design system (`@vida/ui` CODEC) — ~complete.** theme, patterns, viewmodes, collection, dashboard,
   entity-facet, flow-session, seams, home, canvas-graph, canvas-reader, **canvas-board**, **canvas-editor**,
   **shell** + primitives/controls refinement. Lives in Storybook, **data-less**.
-- **App plumbing (`apps/web`).** Live local SQLite (worker + wa-sqlite + OPFS), onboarding, app-shell
-  chrome, ⌘K. **Only one end-to-end live hook exists** (`useSchemaVersion`); every other data hook is
-  deferred to its "first consumer."
+- **App plumbing (`apps/web`).** Live local SQLite (worker + wa-sqlite + OPFS), guided onboarding (first-run
+  + opt-in module/theme setup), app-shell chrome + shell-scope, ⌘K.
+- **🟢 First wired feature surface — `fe-notes-and-pages` (LIF-191).** The notes collection, note pages,
+  backlinks, `[[` picker, `/summary` block, metadata/attachments, search UI and block menu are all built
+  and merged. This is the surface that **invents the reusable `useCollection` live-hook pattern** every
+  later `fe-*` surface copies — so the hardest *UI* wiring is now done once. (⚠️ The live DB data-plane is
+  **not** wired yet: the worker-side Drizzle `values`/`batch`/`exec` seam still throws and there is no
+  service composition root in `apps/web`, so notes/journal CRUD does not persist. The UI hooks are
+  swap-ready; the worker-side seam is a real unbuilt unit — homed UI-3 / M1.1+.)
 
-> **The gap:** the layer that joins the two halves — the wired `fe-*` module surfaces (M1.2.2 / M1.2.3)
-> and M1.4 integration — is where "usable" is created. The hard architectural work is done; what remains
-> is wiring.
+> **The gap (narrowed):** MVP-0 is joined. What remains for "daily driver" is the wired `fe-*` module
+> surfaces (M1.2.2 / M1.2.3) and M1.4 integration — and most of those now *copy* the notes pattern rather
+> than invent it. The hard architectural work is done; what remains is mostly repetition.
 
 ---
 
-## 3. Milestone census (true, archived-inclusive — 2026-10-10)
+## 3. Milestone census (true, archived-inclusive — 2026-10-12)
 
 | Milestone | Done / Total | State |
 |---|---|---|
-| M1.0 — Boot & Connective Base | 30/31 | ✅ closed |
-| M1.1.1 — Hub & Foundation · Backend | 11/12 | ✅ done |
+| M1.0 — Boot & Connective Base | 31/31 | ✅ closed |
+| M1.1.1 — Hub & Foundation · Backend | 11/11 | ✅ closed |
 | M1.1.2 — Feature Modules · Backend | 15/17 | 🟡 2 left (`mod-tasks`, `mod-routines`) |
 | M1.1.3 — Depth & Recovered · Backend | 0/5 | 🔴 not started |
-| M1.2.1 — Hub & Foundation · Frontend | 17/27 | 🟡 ~10 backlog |
-| M1.2.2 — Feature Modules · Frontend | 0/6 | 🔴 not started ← **the usable layer** |
+| M1.2.1 — Hub & Foundation · Frontend | 20/27 | 🟡 ~7 backlog |
+| M1.2.2 — Feature Modules · Frontend | 1/6 | 🟡 **opened** ← the usable layer |
 | M1.2.3 — Depth & Recovered · Frontend | 0/10 | 🔴 not started |
 | M1.4 — Internal-Integration Hardening | 0/8 | 🔴 not started |
 | M2.0 / M3.0 / M4.0 | 0/8 · 0/6 · 0/9 | 🔴 post-MVP |
 
-> Cancelled issues (15 in M1) are reshape artifacts (renamed/folded during the backend-replan, ADR-021),
-> not lost work. The orphan-create duplicates (LIF-223/224/225/226) are retired.
+> Cancelled issues in M1 are reshape artifacts (renamed/folded during the backend-replan, ADR-021), not
+> lost work. The orphan-create duplicates (LIF-223/224/225/226) were retired → **Canceled** in the
+> 2026-10-12 reconcile (they were logged as canceled earlier but the write never stuck — see Maintenance).
 
 ---
 
@@ -73,7 +91,7 @@ Difficulty: 🟢 Low · 🟡 Medium · 🟠 High · 🔴 Very High. Difficulty t
 yet**, not raw size: the first wired surface *invents* the `useCollection` live-hook pattern (hard);
 every surface after it *copies* it (easy).
 
-### 🟢 MVP-0 — "notes & daily journal on my device"
+### ✅ MVP-0 — "notes & daily journal on my device" — **BUILD-COMPLETE (2026-10-12)** · ⚠️ data-plane stubbed (not yet live)
 
 | Issue | Status | What you can DO | Difficulty |
 |---|---|---|---|
@@ -81,11 +99,17 @@ every surface after it *copies* it (easy).
 | fe-codec-canvas-graph (LIF-205) | ✅ done | Backlink / neural view | — |
 | fe-shell (LIF-199) | ✅ done | Real navigation + spaces bar | — |
 | fe-home (LIF-187) | ✅ done | Daily journal dashboard | — |
-| fe-shell-scope (LIF-219) | 🟢 ready | Scope the shell to a Space/context (optional for MVP-0) | 🟢 Low |
-| **fe-notes-and-pages (LIF-191)** | 🟢 **ready — all prereqs done** | **Create, edit, read & link your own notes** — first real feature; builds the reusable `useCollection` hook | 🟠 High (pattern-maker) |
+| fe-shell-scope (LIF-219) | ✅ done | Scope the shell to a Space/context (PR #125) | 🟢 Low |
+| **fe-notes-and-pages (LIF-191)** | ✅ **done (PRs #128/#129)** | **Create, edit, read & link your own notes** — first real feature; built the reusable `useCollection` hook | 🟠 High (pattern-maker) |
 
-→ **Lands: open Vida daily and actually journal / take notes on your device.** All CODEC-canvas prereqs
-are now done — **`fe-notes-and-pages` is the single remaining issue for the first usable screen.**
+→ **Landed (build): every MVP-0 issue is merged — the screens, the `useCollection` pattern, and the UI
+wiring all exist.** ⚠️ **Not yet landed (runtime): real journaling / note-taking does not work.** The data
+plane is a documented stub: `apps/web/src/db/client.ts` throws on the Drizzle `values`/`batch`/`exec` path,
+and no `createNotesService`/`createJournalsService` composition root is wired into `apps/web` (all data
+hooks return empty by design — `use-notes-rows.ts`, `use-note-entity.ts`, `use-journal-summary.ts`). To
+*preview* the populated layouts today, the routes accept a `?sample` dev param. Making it real = building
+the worker-side Drizzle-proxy seam + the composition root (homed UI-3 / M1.1+). This is a genuine build,
+**not** a one-line hook swap: the UI hooks are swap-ready, but the worker-side seam is unimplemented.
 
 ### 🟡 MVP-1 — "life-management daily driver"
 
@@ -144,8 +168,10 @@ desktop/mobile).
 - `mod-tasks` → `fe-tasks`, `mod-routines`, `mod-projects` + M1.4 (**24 transitive downstream — highest-leverage open issue**)
 - `hard-1`/`db-10`/`db-11`/`mig-1` ⛔ the 7 remaining backends (`mod-tasks`, `mod-routines`, `mod-health-*`, `mod-skills`)
 
-**Critical path to MVP-0:** all CODEC-canvas prereqs (editor ✅ / graph ✅ / board ✅ / shell ✅) are done →
-`fe-notes-and-pages` is the **sole remaining issue** for the first usable state.
+**Critical path to MVP-0:** ✅ **cleared** — all CODEC-canvas prereqs + `fe-notes-and-pages` are merged.
+**Next critical path (MVP-1):** the funnel is now the per-module frontends — most are 🟢 (they copy the
+notes `useCollection` pattern); the one 🟠 remaining is the `mod-tasks` backend (24 transitive downstream,
+the highest-leverage open issue), which unblocks `fe-tasks`, `mod-routines`, and the M1.4 hardening tier.
 
 ---
 
@@ -182,3 +208,13 @@ Linear status reconciled 2026-10-10 — `fe-shell` (LIF-199), `fe-codec-canvas-b
 `fe-codec-canvas-graph` (LIF-205) and `fe-codec-canvas-editor` (LIF-234) all pushed to **Done** via GraphQL
 `issueUpdate`. If future drift appears, prefer surgical `issueUpdate` over `tracker_sync.py --sync` while
 parallel sessions are in flight (see memory `tracker-sync-orphan-create-guard`).
+
+**Reconcile 2026-10-12** (merged-PR oracle vs live Linear, `includeArchived:true`, all 80+ merged feature
+branches swept). Of ~45 merged units only one was status-drifted: `fe-onboarding` (LIF-216) Backlog → **Done**
+(merged PR #130). Four orphan-create duplicates — `fe-health` LIF-223, `fe-home` LIF-224, `fe-settings`
+LIF-225, `fe-shell` LIF-226 — were **Canceled** with pointer comments to their canonicals (LIF-183/187/193/199);
+a prior session had *logged* this cancel but the write never stuck, so re-verify cancellations against live
+Linear, not the session log. Local `.tracker-map.json` also lagged *behind* Linear (205/207 stale) — drift
+cuts both directions. Everything else (all MOD backends, XS foundation, CODEC units, ui/ux/ds) was already
+correctly Done. `frontend-track` (LIF-202) stays **In Progress** — it's the campaign umbrella; per-module
+`fe-*` tracks remain legitimately Backlog. Do not "fix" it.
