@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { Input } from '@vida/ui'
 import { AppearancePane } from './appearance-pane'
+import { SettingsSearchResults } from './settings-search-results'
 import { SETTINGS_CATEGORIES, type SettingsCategoryId } from './settings-model'
 import { usePreferences } from './use-preferences'
 
@@ -51,7 +52,9 @@ function Placeholder({ label }: { label: string }) {
 
 export function SettingsSurface() {
   const [active, setActive] = useState<SettingsCategoryId>('appearance')
+  const [query, setQuery] = useState('')
   const { state } = usePreferences()
+  const searching = query.trim() !== ''
 
   return (
     <View
@@ -94,8 +97,13 @@ export function SettingsSurface() {
 
       {/* Right pane — search chrome (filtering = S4) + the active category content. */}
       <View flexGrow={1} flexShrink={1} gap="$16" minWidth={0}>
-        {/* EC-6 lives in S4; the box is rendered as chrome and disabled until S4 wires the index filter. */}
-        <Input placeholder="Search settings…" aria-label="Search settings" disabled />
+        {/* EC-6 — the search box filters the one index; a non-empty query replaces the pane with grouped results. */}
+        <Input
+          placeholder="Search settings…"
+          aria-label="Search settings"
+          value={query}
+          onChangeText={setQuery}
+        />
 
         {state === 'error' ? (
           <View role="status" paddingVertical="$24">
@@ -103,6 +111,14 @@ export function SettingsSurface() {
               Couldn’t load your saved settings — showing defaults, read-only. Your data is safe on this device.
             </Text>
           </View>
+        ) : searching ? (
+          <SettingsSearchResults
+            query={query}
+            onNavigate={(category) => {
+              setActive(category)
+              setQuery('')
+            }}
+          />
         ) : active === 'appearance' ? (
           <AppearancePane />
         ) : (

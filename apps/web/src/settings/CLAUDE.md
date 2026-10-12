@@ -21,6 +21,13 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
   the control owns the accessible name.
 - `settings-model.ts` — `SETTINGS_CATEGORIES` (rail, `built` flag) + `SETTINGS_INDEX` (the searchable index entries:
   label·description·keywords — S4's search + grouping both read this, conventions.md:16 G7).
+- `settings-search.ts` — **S4 (EC-6):** `searchSettings(query)` pure case-insensitive substring filter over
+  `SETTINGS_INDEX` (label+description+keywords; empty→[]) + `groupResults()` (by category, index order). One index drives
+  both the box and the grouping.
+- `settings-search-results.tsx` — **S4:** the results view — matches grouped by category with an uppercase eyebrow +
+  an "N settings" count; each result row (`role=button`) navigates to its category + clears the query. No match → a calm
+  `EmptyState` in `role="status"` ("No setting matches '<q>'" + hint). The search box (settings-surface) is now LIVE
+  (controlled `query`; non-empty → results replace the pane; clearing restores it).
 - `use-preferences.ts` — the read/write SEAM: `usePreferences()` (in-session stores over defaults; `state`) +
   `useUpdatePreferences()` (optimistic store setters). The live DB read/write is DEFERRED (see below).
 

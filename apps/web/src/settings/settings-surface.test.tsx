@@ -41,10 +41,38 @@ describe('SettingsSurface (fe-settings S3 — EC-1/EC-7/EC-8)', () => {
     expect(queryByLabelText('Theme preset')).toBeNull()
   })
 
-  it('EC-6 chrome — a disabled search box is present (filtering arrives in S4)', () => {
-    const { getByLabelText } = renderUI(<SettingsSurface />)
-    const search = getByLabelText('Search settings') as HTMLInputElement
-    expect(search).not.toBeNull()
-    expect(search.disabled).toBe(true)
+  it('EC-6 — a matching query replaces the pane with grouped results (category eyebrow)', () => {
+    const { getByLabelText, getByRole } = renderUI(<SettingsSurface />)
+    fireEvent.change(getByLabelText('Search settings'), { target: { value: 'motion' } })
+    const results = within(getByRole('region', { name: 'Search results' }))
+    expect(results.getByText('Reduce motion')).not.toBeNull()
+    // the category eyebrow groups the match
+    expect(results.getByRole('list', { name: 'Appearance' })).not.toBeNull()
+  })
+
+  it('EC-6 — a non-matching query shows the calm no-match status', () => {
+    const { getByLabelText, getByRole } = renderUI(<SettingsSurface />)
+    fireEvent.change(getByLabelText('Search settings'), { target: { value: 'xyzzy' } })
+    const status = within(getByRole('status'))
+    expect(status.getByText(/No setting matches/)).not.toBeNull()
+  })
+
+  it('EC-6 — clearing the query restores the Appearance pane', () => {
+    const { getByLabelText, queryByRole } = renderUI(<SettingsSurface />)
+    const search = getByLabelText('Search settings')
+    fireEvent.change(search, { target: { value: 'motion' } })
+    expect(queryByRole('region', { name: 'Search results' })).not.toBeNull()
+    fireEvent.change(search, { target: { value: '' } })
+    expect(queryByRole('region', { name: 'Search results' })).toBeNull()
+    expect(getByLabelText('Theme preset')).not.toBeNull()
+  })
+
+  it('EC-6 — selecting a result navigates to its category and clears the query', () => {
+    const { getByLabelText, getByText, queryByRole } = renderUI(<SettingsSurface />)
+    fireEvent.change(getByLabelText('Search settings'), { target: { value: 'density' } })
+    fireEvent.click(getByText('Density'))
+    // query cleared → results region gone, Appearance pane (Density's category) shown
+    expect(queryByRole('region', { name: 'Search results' })).toBeNull()
+    expect(getByLabelText('Density')).not.toBeNull()
   })
 })
