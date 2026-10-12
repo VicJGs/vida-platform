@@ -74,7 +74,15 @@ const noteEntityRoute = createRoute({
   component: lazyRouteComponent(() => import('./notes/note-entity')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, graphRoute, notesRoute, noteEntityRoute])
+// fe-settings #24 · S3 — the Settings System surface (lazy-split, the /notes precedent; BR-RT-8). Reachable from the
+// shell Bar-1 + ⌘K (nav/module-map.ts:104 already registers the entry); this is its route target.
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/settings',
+  component: lazyRouteComponent(() => import('./settings/settings-surface')),
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, graphRoute, notesRoute, noteEntityRoute, settingsRoute])
 
 export const router = createRouter({
   routeTree,
