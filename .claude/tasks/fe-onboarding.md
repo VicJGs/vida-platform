@@ -68,8 +68,24 @@
   0 overflow · 14 chips/5 groups, gamification excluded). **g2 independent review = SHIP** (1 NIT folded: `type="button"`
   on the raw render:'button' chip, `global-surfaces-list.tsx:53` precedent). Honesty guard test uses an independent oracle
   (`MODULE_MAP.filter`). Cross-step state persistence + commit-into-flow deferred to S4 (forward-only flow). Next: **S3 — theme picker**.
-- [ ] S3 — Step 2 theme picker + live preview (EC-5).
-- [ ] S4 — Reach wiring (≥2-path) + app-mount + unit PR (EC-1).
+- [x] **S3 — Step 2 theme picker + live preview ✅** (EC-5). Built `apps/web/src/onboarding/{use-theme-selection.ts,
+  theme-picker.tsx}` + test. `use-theme-selection.ts` = selected preset + the deferred `ThemePersistWrite` seam
+  (`preview` drives the app-owned `UIProvider selection` lever, injected as `onPreview` — live in M1, IR4; `commit`
+  stubbed no-op). `theme-picker.tsx` = `ThemePickerView` (PURE, state-as-prop) + `ThemePicker` hook shell; the shipped
+  `THEME_PRESETS` as `aria-pressed` single-select swatches, each with a 4-token palette band. **Load-bearing mechanism:**
+  a non-active preset's palette can't be shown via nested `<Theme>` (the active `<body class="t_<preset>">` scope
+  `:root.t_<mode> .t_<preset>` out-specifies any in-tree wrapper → bands collapse to the active preset); resolved via a
+  throwaway `getComputedStyle` probe under `<html>` (`resolvePresetPalette`, [[webgl-canvas-color-needs-getcomputedstyle-probe]])
+  in a POST-PAINT effect (the provider applies theme classes in its own layout effect → a render-time read sees undefined
+  vars). tsc 0 · eslint 0 · **onboarding suite 55/55** (8 new; 2 jsdom load-timeout flakes resolved environmental —
+  pass isolated + at `--testTimeout=20000`). **Visual Gate PASS** (Brave; 3 presets × L/D × 375/768/1440: bands DISTINCT
+  per preset 3/3 · label AA 13.0–15.7 · selected ring 3:1 = 5.93–7.31 · **live preview re-roots the surface** t_light→
+  t_reader + Reader pressed · 0 overflow). **g2 independent review = SHIP** (3 NITs: try/finally probe cleanup folded ·
+  stale header comment fixed · S4-must-pass-provider's-active-mode noted below). Next: **S4 — reach + app-mount + PR**.
+- [ ] S4 — Reach wiring (≥2-path) + app-mount + unit PR (EC-1). **NB (g2 S3 NIT-3):** when wiring the live preview,
+  pass the ThemePicker/ThemePickerView `mode` from the PROVIDER's active `selection.mode` (not an independent source),
+  so the swatch bands' probe-resolved scheme matches the labeled mode. Also lift module + theme selection to the flow
+  (cross-step persistence) + wire `onPreview` to the app-owned selection setter + `commit` on finalize.
 
 ## Parking lot
 _(none yet)_
@@ -93,3 +109,10 @@ _(none yet)_
   visible-dock ON); `aria-pressed` toggle chips grouped by `ModuleGroup`. tsc 0 · eslint 0 · onboarding 47/47 · Visual
   Gate PASS (AA 4.94–6.03 · state-diff 4.39–5.27 · 0 overflow, Brave 3×2×3) · g2 SHIP (type="button" NIT folded) · onboarding
   CLAUDE.md currency added (guided-setup §). Throwaway harness deleted. Next: **S3 — theme picker + live preview (EC-5)**.
+- 2026-10-12 — **S3 theme picker + live preview ✅** (`use-theme-selection.ts`/`theme-picker.tsx` + test; PLAN-s3-theme-picker.md).
+  `aria-pressed` single-select preset swatches; `preview` drives the injected app-owned selection lever (live in M1).
+  **Key find (Visual-Gate-caught twice):** per-preset palette bands need a `getComputedStyle` probe under `<html>` (the
+  active `<body>` preset scope out-specifies nested `<Theme>`), run in a POST-PAINT effect (render-time read sees
+  undefined vars → cells=0/0/0 → 4/4/4 after moving useMemo→useEffect). tsc 0 · eslint 0 · onboarding 55/55 · Visual Gate
+  PASS (bands distinct 3/3 · AA 13.0–15.7 · ring ≥5.93 · live-preview re-root · 0 overflow) · g2 SHIP (3 NITs folded/noted)
+  · onboarding CLAUDE.md currency added. Throwaway harness deleted. Next: **S4 — reach wiring + app-mount + unit PR (EC-1)**.
