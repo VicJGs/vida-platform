@@ -17,16 +17,32 @@ interface PreferencesStoreState {
   reduceMotion: boolean
   /** Home layout arrangement — read live by useHomeArrangement (home-surface.tsx) so the toggle applies in-session. */
   arrangement: HomeArrangement
+  /** S5 — per-module nav show/hide (key → visible). Absent key ⇒ visible (default true). Persist seam → module_visibility. */
+  moduleVisibility: Record<string, boolean>
+  /** S5 — per-module custom name (key → label). Absent ⇒ the canonical module-map label. Persist seam → dashboard_layout.moduleNames. */
+  moduleNames: Record<string, string>
   setReduceMotion: (on: boolean) => void
   setArrangement: (arrangement: HomeArrangement) => void
+  setModuleVisible: (key: string, visible: boolean) => void
+  setModuleName: (key: string, name: string) => void
   /** Deferred-seam activation point — the read hook calls this with the persisted values once the DB seam lands. */
-  hydrate: (patch: Partial<Pick<PreferencesStoreState, 'reduceMotion' | 'arrangement'>>) => void
+  hydrate: (
+    patch: Partial<
+      Pick<PreferencesStoreState, 'reduceMotion' | 'arrangement' | 'moduleVisibility' | 'moduleNames'>
+    >,
+  ) => void
 }
 
 export const usePreferencesStore = create<PreferencesStoreState>()((set) => ({
   reduceMotion: false,
   arrangement: 'journalFirst',
+  moduleVisibility: {},
+  moduleNames: {},
   setReduceMotion: (reduceMotion) => set({ reduceMotion }),
   setArrangement: (arrangement) => set({ arrangement }),
+  // read-merge-write into the map (the §B dashboard_layout/module_visibility merge discipline, applied in-session).
+  setModuleVisible: (key, visible) =>
+    set((s) => ({ moduleVisibility: { ...s.moduleVisibility, [key]: visible } })),
+  setModuleName: (key, name) => set((s) => ({ moduleNames: { ...s.moduleNames, [key]: name } })),
   hydrate: (patch) => set((s) => ({ ...s, ...patch })),
 }))

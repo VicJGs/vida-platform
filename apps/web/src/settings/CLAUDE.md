@@ -28,14 +28,19 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
   an "N settings" count; each result row (`role=button`) navigates to its category + clears the query. No match → a calm
   `EmptyState` in `role="status"` ("No setting matches '<q>'" + hint). The search box (settings-surface) is now LIVE
   (controlled `query`; non-empty → results replace the pane; clearing restores it).
+- `modules-pane.tsx` — **S5 (EC-4 module controls · EC-8 escape hatch · EC-12 rename):** a **Modules** Card of
+  per-module rows (show/hide `Switch` + inline rename: pencil → `Input` + save/cancel icon buttons, Enter/Esc) over
+  `HIDEABLE_MODULES`, plus a **Surfaces** Card (Feature Atlas · Sync log toggles). All state → the in-session
+  `preferences-store` (`moduleVisibility`/`moduleNames`); persist = deferred seam. The hideable list EXCLUDES the
+  always-reachable surfaces (Settings/Home) — the escape hatch is UI-enforced here (the service doesn't guard it).
 - `use-preferences.ts` — the read/write SEAM: `usePreferences()` (in-session stores over defaults; `state`) +
   `useUpdatePreferences()` (optimistic store setters). The live DB read/write is DEFERRED (see below).
 
 ## Stores (app-owned theme/pref state — AR-4)
 - `../stores/theme-store.ts` (S2) — `{preset,mode,density}` → `<UIProvider selection>`; the EC-5 keystone (replaced the
   `THEME_DEFAULT` constant in `App.tsx`). Theme changes apply live with NO DB.
-- `../stores/preferences-store.ts` (S3) — `reduceMotion` + `arrangement` (read live by `useHomeArrangement`). S5 extends
-  it with `moduleVisibility`/`moduleNames` for the Modules pane.
+- `../stores/preferences-store.ts` (S3 + S5) — `reduceMotion` + `arrangement` (read live by `useHomeArrangement`) +
+  `moduleVisibility`/`moduleNames` (S5 Modules pane; read-merge-write setters, absent key ⇒ visible/canonical label).
 
 ## ⚠ The deferred-DB-seam constraint (seam-contract §A0 — verified in code)
 The apps/web worker-RPC driver implements `query`/`run`; `values`/`batch`/`exec` throw `SEAM` (db/client.ts:154).
@@ -45,10 +50,10 @@ home fe-notes also deferred (useNotesRows is stubbed). **Consequence:** theme/pr
 UIProvider / useHomeArrangement) but do **not survive reload** in M1. Hydrate-on-boot + persistence activate (drop-in)
 when the worker `values` seam lands — the store `hydrate()` + the use-preferences `persist` are the activation points.
 
-## ECs covered by S1–S3
+## ECs covered by S1–S5
 S1 `Switch` primitive (EC-3) · S2 theme store (EC-5 mechanism) · S3 shell+route+Appearance (EC-1,2,5-live,7,8,10) +
-gate-1 #1 (activated `useHomeArrangement`). Remaining: S4 search (EC-6) · S5 Modules+escape-hatch (EC-4 rem,8,12) ·
-S6 Locale/Notifications/delegated placeholders (EC-4,9). EC-11/12 = feel (live Visual Gate).
+gate-1 #1 (activated `useHomeArrangement`) · S4 search (EC-6) · S5 Modules show/hide+rename+Surfaces (EC-4 rem · EC-8
+escape hatch · EC-12 rename). Remaining: S6 Locale/Notifications/delegated placeholders (EC-4,9). EC-11 = feel (live gate).
 
 ## Rules
 - Theme/pref changes go through the STORES (live apply); never hardcode a palette or call the throwing live DB path in M1.

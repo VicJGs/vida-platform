@@ -1,3 +1,5 @@
+import { MODULE_MAP } from '../nav/module-map'
+
 // fe-settings S3 — the Settings index model. The category list drives the left rail; the per-setting index entries
 // (label · description · keywords) are the SEARCHABLE INDEX that both the search box and the section grouping consume
 // (conventions.md:16 G7 — one index drives both). S4 filters SETTINGS_INDEX; S3 renders the rail + Appearance pane.
@@ -22,9 +24,37 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
   { id: 'appearance', label: 'Appearance', built: true },
   { id: 'locale', label: 'Locale', built: false },
   { id: 'notifications', label: 'Notifications', built: false },
-  { id: 'modules', label: 'Modules', built: false },
+  { id: 'modules', label: 'Modules', built: true },
   { id: 'data', label: 'Data', built: false },
   { id: 'account', label: 'Account', built: false },
+]
+
+// S5 — the Modules pane list. EC-8 escape hatch (seam-contract §E): the nav show/hide list is the DOCK content modules,
+// MINUS any surface that would hide the path back to Settings/Home. The service does NOT guard this (`setModuleVisibility`
+// persists anything) — it's UI-enforced here. `preferences` (Settings) + `journals` (Home) are `global`, so the dock
+// filter already excludes them; the explicit set documents the escape-hatch intent (belt + suspenders).
+export const ALWAYS_REACHABLE_KEYS: ReadonlySet<string> = new Set(['preferences', 'journals'])
+
+export interface HideableModule {
+  key: string
+  label: string
+}
+
+export const HIDEABLE_MODULES: readonly HideableModule[] = MODULE_MAP.filter(
+  (m) => m.placement === 'dock' && !ALWAYS_REACHABLE_KEYS.has(m.key),
+).map((m) => ({ key: m.key, label: m.label }))
+
+// S5 — the "Surfaces" subsection: discovered global surfaces the user enables/disables (not dock modules).
+// Keys map to module_visibility['features'|'sync'] (seam-contract §B). Match the greybox "Surfaces".
+export interface ManageableSurface {
+  key: string
+  label: string
+  description: string
+}
+
+export const MANAGEABLE_SURFACES: readonly ManageableSurface[] = [
+  { key: 'features', label: 'Feature Atlas', description: 'The map of how your modules connect' },
+  { key: 'sync', label: 'Sync & Activity log', description: 'Show the local change log' },
 ]
 
 /** One searchable entry per control (the S4 search + section grouping both read this; keywords aid fuzzy matching). */
@@ -72,5 +102,34 @@ export const SETTINGS_INDEX: readonly SettingIndexEntry[] = [
     label: 'Home arrangement',
     description: 'What leads the daily screen',
     keywords: ['home', 'arrangement', 'journal', 'dashboard', 'layout'],
+  },
+  // Modules (S5)
+  {
+    id: 'module-visibility',
+    category: 'modules',
+    label: 'Show or hide modules',
+    description: 'Choose which modules appear in the nav',
+    keywords: ['module', 'modules', 'nav', 'navigation', 'show', 'hide', 'visibility', 'dock'],
+  },
+  {
+    id: 'module-rename',
+    category: 'modules',
+    label: 'Rename a module',
+    description: 'Give a module your own name',
+    keywords: ['module', 'rename', 'name', 'label', 'custom'],
+  },
+  {
+    id: 'feature-atlas',
+    category: 'modules',
+    label: 'Feature Atlas',
+    description: 'The map of how your modules connect',
+    keywords: ['feature', 'atlas', 'map', 'surfaces', 'graph', 'discover'],
+  },
+  {
+    id: 'sync-log',
+    category: 'modules',
+    label: 'Sync & Activity log',
+    description: 'Show the local change log',
+    keywords: ['sync', 'activity', 'log', 'changes', 'history', 'surfaces'],
   },
 ]

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { Input } from '@vida/ui'
 import { AppearancePane } from './appearance-pane'
+import { ModulesPane } from './modules-pane'
 import { SettingsSearchResults } from './settings-search-results'
 import { SETTINGS_CATEGORIES, type SettingsCategoryId } from './settings-model'
 import { usePreferences } from './use-preferences'
@@ -121,6 +122,8 @@ export function SettingsSurface() {
           />
         ) : active === 'appearance' ? (
           <AppearancePane />
+        ) : active === 'modules' ? (
+          <ModulesPane />
         ) : (
           <Placeholder label={SETTINGS_CATEGORIES.find((c) => c.id === active)?.label ?? 'Settings'} />
         )}

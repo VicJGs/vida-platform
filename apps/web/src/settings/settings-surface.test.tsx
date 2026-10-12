@@ -34,11 +34,18 @@ describe('SettingsSurface (fe-settings S3 — EC-1/EC-7/EC-8)', () => {
     expect(getByLabelText('Theme preset')).not.toBeNull()
   })
 
-  it('switching to a not-yet-built category shows the calm placeholder, not the Appearance controls', () => {
+  it('switching to a not-yet-built category (Locale) shows the calm placeholder, not the Appearance controls', () => {
     const { getByText, queryByLabelText } = renderUI(<SettingsSurface />)
-    fireEvent.click(getByText('Modules'))
+    fireEvent.click(getByText('Locale'))
     expect(getByText('These settings arrive in a later release.')).not.toBeNull()
     expect(queryByLabelText('Theme preset')).toBeNull()
+  })
+
+  it('switching to Modules renders the real Modules pane (S5), not the placeholder', () => {
+    const { getByText, getAllByText, queryByText } = renderUI(<SettingsSurface />)
+    fireEvent.click(getAllByText('Modules')[0]!) // the rail item
+    expect(getByText('Surfaces')).not.toBeNull() // the Surfaces subsection = the real pane
+    expect(queryByText('These settings arrive in a later release.')).toBeNull()
   })
 
   it('EC-6 — a matching query replaces the pane with grouped results (category eyebrow)', () => {
