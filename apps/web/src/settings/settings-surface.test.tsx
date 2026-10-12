@@ -34,18 +34,31 @@ describe('SettingsSurface (fe-settings S3 — EC-1/EC-7/EC-8)', () => {
     expect(getByLabelText('Theme preset')).not.toBeNull()
   })
 
-  it('switching to a not-yet-built category (Locale) shows the calm placeholder, not the Appearance controls', () => {
-    const { getByText, queryByLabelText } = renderUI(<SettingsSurface />)
+  it('switching to Modules renders the real Modules pane (S5)', () => {
+    const { getByText, getAllByText } = renderUI(<SettingsSurface />)
+    fireEvent.click(getAllByText('Modules')[0]!) // the rail item
+    expect(getByText('Surfaces')).not.toBeNull() // the Surfaces subsection = the real pane
+  })
+
+  it('S6 — Locale renders its real controls (not a placeholder)', () => {
+    const { getByText, getByLabelText, queryByLabelText } = renderUI(<SettingsSurface />)
     fireEvent.click(getByText('Locale'))
-    expect(getByText('These settings arrive in a later release.')).not.toBeNull()
+    expect(getByLabelText('Date format')).not.toBeNull()
     expect(queryByLabelText('Theme preset')).toBeNull()
   })
 
-  it('switching to Modules renders the real Modules pane (S5), not the placeholder', () => {
-    const { getByText, getAllByText, queryByText } = renderUI(<SettingsSurface />)
-    fireEvent.click(getAllByText('Modules')[0]!) // the rail item
-    expect(getByText('Surfaces')).not.toBeNull() // the Surfaces subsection = the real pane
-    expect(queryByText('These settings arrive in a later release.')).toBeNull()
+  it('S6 — Notifications renders its channel toggles', () => {
+    const { getByText, getByLabelText } = renderUI(<SettingsSurface />)
+    fireEvent.click(getByText('Notifications'))
+    expect(getByLabelText('In-app notifications')).not.toBeNull()
+  })
+
+  it('S6/EC-9 — Data + Account render calm delegated placeholders', () => {
+    const { getByText, getAllByText } = renderUI(<SettingsSurface />)
+    fireEvent.click(getByText('Data'))
+    expect(getByText(/part of Data & Sync/)).not.toBeNull()
+    fireEvent.click(getAllByText('Account')[0]!)
+    expect(getByText(/managed separately/)).not.toBeNull()
   })
 
   it('EC-6 — a matching query replaces the pane with grouped results (category eyebrow)', () => {

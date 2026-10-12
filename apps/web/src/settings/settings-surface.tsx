@@ -3,6 +3,9 @@ import { styled, Text, View } from '@tamagui/core'
 import { Input } from '@vida/ui'
 import { AppearancePane } from './appearance-pane'
 import { ModulesPane } from './modules-pane'
+import { LocalePane } from './locale-pane'
+import { NotificationsPane } from './notifications-pane'
+import { DelegatedPane, DELEGATED_PANES } from './delegated-pane'
 import { SettingsSearchResults } from './settings-search-results'
 import { SETTINGS_CATEGORIES, type SettingsCategoryId } from './settings-model'
 import { usePreferences } from './use-preferences'
@@ -38,17 +41,22 @@ const RailItem = styled(View, {
   } as const,
 })
 
-function Placeholder({ label }: { label: string }) {
-  return (
-    <View role="status" paddingVertical="$24" gap="$8">
-      <Text fontFamily="$display" fontSize="$subheading" fontWeight="600" color="$colorTextPrimary">
-        {label}
-      </Text>
-      <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">
-        These settings arrive in a later release.
-      </Text>
-    </View>
-  )
+// All six categories are built (S3 Appearance · S5 Modules · S6 Locale/Notifications + delegated Data/Account).
+function renderPane(active: SettingsCategoryId) {
+  switch (active) {
+    case 'appearance':
+      return <AppearancePane />
+    case 'modules':
+      return <ModulesPane />
+    case 'locale':
+      return <LocalePane />
+    case 'notifications':
+      return <NotificationsPane />
+    case 'data':
+      return <DelegatedPane {...DELEGATED_PANES.data} />
+    case 'account':
+      return <DelegatedPane {...DELEGATED_PANES.account} />
+  }
 }
 
 export function SettingsSurface() {
@@ -120,12 +128,8 @@ export function SettingsSurface() {
               setQuery('')
             }}
           />
-        ) : active === 'appearance' ? (
-          <AppearancePane />
-        ) : active === 'modules' ? (
-          <ModulesPane />
         ) : (
-          <Placeholder label={SETTINGS_CATEGORIES.find((c) => c.id === active)?.label ?? 'Settings'} />
+          renderPane(active)
         )}
       </View>
     </View>

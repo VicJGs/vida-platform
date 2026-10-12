@@ -22,11 +22,12 @@ export interface SettingsCategory {
 // Rail order mirrors the OS System specimen (p6-archetypes-design.html:298) + decomposition.md:71.
 export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
   { id: 'appearance', label: 'Appearance', built: true },
-  { id: 'locale', label: 'Locale', built: false },
-  { id: 'notifications', label: 'Notifications', built: false },
+  { id: 'locale', label: 'Locale', built: true },
+  { id: 'notifications', label: 'Notifications', built: true },
   { id: 'modules', label: 'Modules', built: true },
-  { id: 'data', label: 'Data', built: false },
-  { id: 'account', label: 'Account', built: false },
+  // data/account render delegated placeholders (owners = Data/Sync + Auth/Account, M3/M4) — "built" as placeholders (EC-9).
+  { id: 'data', label: 'Data', built: true },
+  { id: 'account', label: 'Account', built: true },
 ]
 
 // S5 — the Modules pane list. EC-8 escape hatch (seam-contract §E): the nav show/hide list is the DOCK content modules,
@@ -131,5 +132,42 @@ export const SETTINGS_INDEX: readonly SettingIndexEntry[] = [
     label: 'Sync & Activity log',
     description: 'Show the local change log',
     keywords: ['sync', 'activity', 'log', 'changes', 'history', 'surfaces'],
+  },
+  // Locale (S6)
+  {
+    id: 'date-format',
+    category: 'locale',
+    label: 'Date format',
+    description: 'How dates are written across the app',
+    keywords: ['date', 'format', 'locale', 'day', 'month', 'year'],
+  },
+  {
+    id: 'time-format',
+    category: 'locale',
+    label: 'Time format',
+    description: '12-hour or 24-hour clock',
+    keywords: ['time', 'format', 'clock', '12', '24', 'hour', 'locale'],
+  },
+  {
+    id: 'week-starts-on',
+    category: 'locale',
+    label: 'Week starts on',
+    description: 'The first day of the week in calendars',
+    keywords: ['week', 'start', 'monday', 'sunday', 'calendar', 'locale'],
+  },
+  // Notifications (S6)
+  {
+    id: 'notif-channels',
+    category: 'notifications',
+    label: 'Notification channels',
+    description: 'In-app, push, and email notifications',
+    keywords: ['notification', 'notifications', 'in-app', 'push', 'email', 'channel', 'alerts'],
+  },
+  {
+    id: 'quiet-hours',
+    category: 'notifications',
+    label: 'Quiet hours',
+    description: 'Pause notifications overnight',
+    keywords: ['quiet', 'hours', 'do not disturb', 'dnd', 'pause', 'notifications'],
   },
 ]
