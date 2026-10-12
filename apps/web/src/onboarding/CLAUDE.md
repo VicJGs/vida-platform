@@ -19,7 +19,18 @@ rendered screens, the boot-resolution hook, the marker DB access). UX-5 owns the
 - `use-first-run.ts` — `useFirstRun(dbReady)` → `{status: 'resolving'|'onboarding'|'ready', markComplete}`. The 3-state boot resolution (no app-flash before onboarding); `markComplete` writes THEN flips (a reload never re-shows a completed onboarding).
 - `first-run-repo.ts` — `readFirstRunComplete`/`writeFirstRunComplete`: the device-local `app_state` marker I/O over `getDbClient().driver`, mirroring `@vida/core`'s `get/setSchemaVersion` idiom (`SELECT` / `INSERT OR REPLACE`).
 
+**Guided setup (fe-onboarding · LIF-216 — the NET-NEW optional flow, `ext UX-5`):**
+A second, OPTIONAL surface distinct from the first-run boot gate above — "pick your modules & theme", skippable,
+reachable opt-in (never a second mandatory gate). RATIFIES the first-run render + copy model above (does not re-skin).
+- `guided-setup-steps.ts` — the ordered step model (`modules · theme · done`; `pick`|`complete` kinds) + copy. Data-only.
+- `use-guided-setup.ts` — the flow state machine (index nav + skip + the re-entrant `complete`/`skipAll` finalize). No persistence.
+- `step-rail.tsx` — the persistent LEFT-rail vertical stage indicator (EC-3): a decorative `role=list` progress MAP, not nav.
+- `guided-setup.tsx` — the flow FRAME (two columns: `StepRail` + the step body + a never-a-wall footer). Step bodies inject via `renderStepBody`.
+- **S2 — module enable-set picker (EC-4):** `modules.ts` (pure projection: the visible-dock roster grouped by `ModuleGroup`, MIRRORING `shell/module-dock.tsx` `visibleDockGroups()` — `placement:'dock'` + the `isFeatureEnabled` fail-closed gate, so gamification/empty-group drop) · `use-module-selection.ts` (the in-memory enable-set + the deferred `ModuleEnablementWrite` SEAM — `commit` is a stubbed no-op, no "saved" claim) · `module-picker.tsx` (`ModulePickerView` PURE/state-as-prop + the `ModulePicker` hook shell; grouped `aria-pressed` toggle chips).
+
 ## Rules (do not violate)
+- **Guided setup ≠ first-run gate.** The guided-setup flow is OPTIONAL + skippable + reachable opt-in; it is NOT a second mandatory boot gate. Default module enable-set = every visible-dock module ON (= today's behavior) so the preview never lies. Live module/theme persistence is a deferred M1.1 seam (`commit` stubs no-op now).
+- **The picker mirrors the dock, never forks it.** `modules.ts` re-derives the SAME filter as `shell/module-dock.tsx` `visibleDockGroups()` (each chrome surface composes `MODULE_MAP` + the `isFeatureEnabled` seam itself); group labels are a local mirror by the documented key-vs-label split (`module-map.ts:17-18`). If the dock's visibility logic changes, update both.
 - **Model files are data-only; the chrome files render them.** `steps.ts`/`first-run.ts` (UX-5) carry NO JSX; UX-5 builds no screen and no `@vida/ui` primitive. `onboarding.tsx`/`use-first-run.ts`/`first-run-repo.ts` (UI-4) are the render + wiring. Do not put layout/JSX in the model files; do not put step-order/copy the model owns into the chrome.
 - **Crypto/auth is a deferred seam — never presumed.** No code here reads or creates a vault key. The `vault` step is present in the model (`deferredImpl: 'vault-key'`) but its M1.0 copy is a **confirmation**, never a "create" (BR-4). Real key creation + passphrase → AR-3 / UX-5b / M3.
 - **Copy honesty (BR-4).** No `m1` string may claim encryption or zero-knowledge (encryption is off in M1.0). M1.0 claims **local-first** only; the ZK claim lives in `m3?`, gated to when AR-3 lands.

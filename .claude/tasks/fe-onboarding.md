@@ -56,7 +56,18 @@
   reflow). **g2 code-review REVISE→folded**: B1 harness-delete · B2 flex-collapse guard (drop flex-grow when column) ·
   N1 marker convention reconciled in PLAN · N2 muted-error documented (AA-safe vs danger 3.63). Re-entrancy = useRef latch
   (same-tick, gate-caught). Next: **S2 — module picker**.
-- [ ] S2 — Step 1 module enable-set picker (EC-4).
+- [x] **S2 — Step 1 module enable-set picker ✅** (EC-4). Built `apps/web/src/onboarding/{modules.ts,use-module-selection.ts,
+  module-picker.tsx}` + test. `modules.ts` = pure projection: the visible-dock roster grouped by `ModuleGroup`, MIRRORING
+  `shell/module-dock.tsx` `visibleDockGroups()` (`placement:'dock'` + `isFeatureEnabled` fail-closed gate → 14 modules / 5
+  groups; gamification + empty `platform-services` drop) + `defaultModuleEnableSet()` (all visible-dock ON = today's
+  behavior, the anti-lie default). `use-module-selection.ts` = in-memory enable-set + the deferred `ModuleEnablementWrite`
+  seam (`commit` stubbed no-op, no "saved" claim — EC-7). `module-picker.tsx` = `ModulePickerView` (PURE, state-as-prop) +
+  `ModulePicker` hook shell; grouped `aria-pressed` toggle chips (local `ToggleChip`, `type="button"`, §VIII focus ring,
+  decorative aria-hidden ✓ marker). tsc 0 · eslint 0 · **onboarding suite 47/47** (10 new) · **Visual Gate PASS** (Brave;
+  3 presets × L/D × 375/768/1440: text AA 4.94–6.03 incl warm-dark · on/off state-indicator fill-diff 4.39–5.27 ≥3:1 ·
+  0 overflow · 14 chips/5 groups, gamification excluded). **g2 independent review = SHIP** (1 NIT folded: `type="button"`
+  on the raw render:'button' chip, `global-surfaces-list.tsx:53` precedent). Honesty guard test uses an independent oracle
+  (`MODULE_MAP.filter`). Cross-step state persistence + commit-into-flow deferred to S4 (forward-only flow). Next: **S3 — theme picker**.
 - [ ] S3 — Step 2 theme picker + live preview (EC-5).
 - [ ] S4 — Reach wiring (≥2-path) + app-mount + unit PR (EC-1).
 
@@ -77,3 +88,8 @@ _(none yet)_
   `/tmp/envision/*.png`. **Load-bearing design finding surfaced:** `FlowSessionView` #11 bakes SESSION affordances
   (Mark done · Require proof · Attach doc/photo/audio + deliverable Timeline) into the current stage → misfits a setup
   flow; scene F shows it as-is. **AWAITING Victor's Envision review + EC-n pin** (BLOCKING) — he designs on this foundation.
+- 2026-10-12 — **S2 module enable-set picker ✅** (`9c7d218` is S1; this = S2). `modules.ts`/`use-module-selection.ts`/
+  `module-picker.tsx` + test (PLAN-s2-module-picker.md). Mirrors the dock's `visibleDockGroups()` → honest default (all
+  visible-dock ON); `aria-pressed` toggle chips grouped by `ModuleGroup`. tsc 0 · eslint 0 · onboarding 47/47 · Visual
+  Gate PASS (AA 4.94–6.03 · state-diff 4.39–5.27 · 0 overflow, Brave 3×2×3) · g2 SHIP (type="button" NIT folded) · onboarding
+  CLAUDE.md currency added (guided-setup §). Throwaway harness deleted. Next: **S3 — theme picker + live preview (EC-5)**.
