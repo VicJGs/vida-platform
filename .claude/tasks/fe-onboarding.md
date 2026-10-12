@@ -82,10 +82,21 @@
   per preset 3/3 · label AA 13.0–15.7 · selected ring 3:1 = 5.93–7.31 · **live preview re-roots the surface** t_light→
   t_reader + Reader pressed · 0 overflow). **g2 independent review = SHIP** (3 NITs: try/finally probe cleanup folded ·
   stale header comment fixed · S4-must-pass-provider's-active-mode noted below). Next: **S4 — reach + app-mount + PR**.
-- [ ] S4 — Reach wiring (≥2-path) + app-mount + unit PR (EC-1). **NB (g2 S3 NIT-3):** when wiring the live preview,
-  pass the ThemePicker/ThemePickerView `mode` from the PROVIDER's active `selection.mode` (not an independent source),
-  so the swatch bands' probe-resolved scheme matches the labeled mode. Also lift module + theme selection to the flow
-  (cross-step persistence) + wire `onPreview` to the app-owned selection setter + `commit` on finalize.
+- [x] **S4 — Reach wiring (≥2-path) + app-mount + unit PR ✅** (EC-1). Built `apps/web/src/onboarding/{guided-setup-store.ts,
+  guided-setup-reach.ts,guided-setup-entry.tsx,guided-setup-mount.tsx}` + test; wired `App.tsx`. **Reach (≥2 distinct paths):**
+  `guided-setup-reach.ts` registers `link` (post-first-run invitation) + `contextual` (EmptyState slot) → floor met.
+  **Surfaces:** `GuidedSetupInvitation` (post-first-run opt-in, EmptyState-composed, "Set up" + "Skip for now") +
+  `GuidedSetupSlotButton` (the `EmptyState.guidedSetup` slot content for empty module surfaces). **Mount:** `guided-setup-store.ts`
+  (`none|invited|running` phase, Zustand/ephemeral BR-RT-6) + `GuidedSetupTakeover` (lifts module+theme selections to the
+  flow · `renderStepBody` modules→ModulePickerView/theme→ThemePickerView-with-active-mode · live preview via `onPreview` ·
+  commit→onClose). **App.tsx**: fixed opaque overlay over the still-mounted router (no route-state loss) + minimally
+  stateful `UIProvider selection` (live preview real; full switcher stays deferred) + onboarding handoff `invite()`s once
+  post-completion (reject → no invite, onboarding retry preserved). `onboarding.tsx` NOT edited. tsc 0 · eslint 0 ·
+  **onboarding 61/61 · App.tsx 6/6 · App.integration 4/4 · full @vida/web 508/508**. **Visual Gate PASS** (Brave; invitation
+  AA 4.94–17.29 × 3 presets × L/D × 375/768/1440 · 0 overflow · **E2E live preview** — picking a theme re-roots the whole
+  flow through App's selection). **g2 independent review = SHIP** (NIT-1/2 folded: added 3 `<App/>`-level tests covering
+  reach-path-(a) — invitation appears post-completion · Skip returns to app · Set up opens the flow; NIT-3 cosmetic, by design).
+- **✅ UNIT COMPLETE (S1–S4).** All 4 slices built + gated + Visual-Gate-PASS + g2-SHIP. **Next: push branch → open PR → LIF-216 in-review.**
 
 ## Parking lot
 _(none yet)_
@@ -116,3 +127,8 @@ _(none yet)_
   undefined vars → cells=0/0/0 → 4/4/4 after moving useMemo→useEffect). tsc 0 · eslint 0 · onboarding 55/55 · Visual Gate
   PASS (bands distinct 3/3 · AA 13.0–15.7 · ring ≥5.93 · live-preview re-root · 0 overflow) · g2 SHIP (3 NITs folded/noted)
   · onboarding CLAUDE.md currency added. Throwaway harness deleted. Next: **S4 — reach wiring + app-mount + unit PR (EC-1)**.
+- 2026-10-12 — **S4 reach + app-mount ✅ — UNIT COMPLETE.** `guided-setup-{store,reach,entry,mount}.tsx` + test; `App.tsx`
+  wired (stateful selection + fixed overlay + post-completion `invite()`). 2 reach paths (`link`+`contextual`) clear the
+  ≥2 floor; live preview re-roots the app via App's selection. tsc 0 · eslint 0 · onboarding 61/61 · App 6/6 · full
+  @vida/web 508/508 · Visual Gate PASS (invitation AA + E2E live preview) · g2 SHIP (added 3 `<App/>` seam tests for
+  reach-path-(a); onboarding.tsx untouched). CLAUDE.md currency + PLAN-s4 written. **Next: push → PR → LIF-216 in-review.**
