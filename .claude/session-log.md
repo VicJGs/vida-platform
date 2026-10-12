@@ -6255,3 +6255,22 @@ Next session:
     disabled controls (AA-exempt), and effective-opacity-0 text (loading width-holder) — else false fails.
   - ⚠ Harness caveat: a portal'd Menu escapes the local <Theme> in isolation — the dark panel is faithfully re-tested at
     S3 (real shell, one UIProvider theme). Menu panel theming is the shipped primitive's own (already-gated) concern.
+
+Date: 2026-10-12 — fe-notifications ② (#25, LIF-192) — WHOLE UNIT shipped + MERGED (PR #132) + closed out (PR #133)
+Task: fe-notifications · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree off origin/main @ 5ef0ce7, Node 24.
+Goal: the UI/UX ② tier over the finished mod-notifications ① (#53). Gated legs NOT-24 (inbox UI) + NOT-25 (dangling).
+Accomplished:
+  - **Shipped a multi-lens notifications surface — the System's out-loud voice, user-selectable. PR #132 → main `f31fc4b`; LIF-192 → Done.** Pure ②, no @vida/core/@vida/types change.
+  - **Envision Gate drove the architecture:** the baseline inbox greybox was rejected ("too normal — not a Vida OS experience"); Victor's steer "the user chooses" → ONE surface, THREE lenses. Three greybox concepts rendered LIVE in Brave for the human review; all approved.
+  - **S1 Foundation + The Margin** (`c0abc2e`) — shared seam (pure `attention-model` one-model-three-renderers · honest-empty `use-notifications` + `?sample`/`?force` · local `use-notification-lens`) + the time-spine/now-line lens (anticipations from `dueIn` agenda [NF-3], settled below) + chrome + 8-state + optimistic-local lifecycle; `/notifications` route via the shipped Bell link. **S2 Dispatches + S3 Constellation** (`33ebeac`) — serif briefing + life-area map over the same model.
+  - tsc 0 · eslint 0 · @vida/web suite green · notifications 5/5 · **Visual/contrast Gate PASS** (Brave, 3 presets × L/D incl warm/olive dark: titles 15.8–17.3 · voice/prose/caption 4.9–6.5 AA, MEASURED). CI Typecheck/Lint/Test/E2E green; 2 pre-existing reds (Format/Workers).
+  - Close-out: PR #133 (`67576a9`) reconciled the tracker (task archived · _index · TASKS.md). Both worktrees removed, branches deleted; __envision__ harness stripped before the PR.
+Decisions / lessons:
+  - **Ground scope in the gated decomposition, not the drifted task-header** — "channel-matrix" was NOT a traced leg (a Preferences concern) → out of scope. Re-confirmed [[envision-gate-firing-is-a-doc-test-not-a-human-decision]] (I AskUserQuestion'd a doc-settled scope; Victor: "check the documentation, this is not supposed to be a question").
+  - **Measure a Visual-Gate failure before fixing** — the "ghosted warm-dark titles" (EC-8) were a HARNESS bg artifact (standalone entry not painting the AppShell surface), not a prod AA bug; a getComputedStyle probe showed the title was already `rgb(250,247,240)`. [[measure-browser-bugs-dont-hypothesize]]
+  - **Anticipations derive from `dueIn`, not notification rows** (NF-3 no phantom future inbox). **Constellation = CSS/SVG not Sigma/WebGL** (§XXVIII; overkill for ~8 hubs, = approved greybox). **Lifecycle optimistic-local** at M1 (no fake "saved"). **Lens pref local** (no @vida/core change).
+  - **apps/web Visual Gate** = real surface in a standalone `__envision__` entry (bypasses onboarding/DB), ?sample/?force/?lens params, Brave via `playwright-core`; the harness MUST paint `$colorSurfacePrimary` to match the AppShell or dark-mode near-white text ghosts. [[apps-web-visual-gate-standalone-entry-bypass]]
+Next session:
+  - **Next head = `mod-routines`** (backend, M1.1.2 — computed `--next`; add-backend-component / Entity Delivery Flow ①; fresh worktree off main, Node 24).
+  - Parallel sessions hold fe-calendar/fe-notes-and-pages/fe-onboarding/fe-settings worktrees — don't disturb; shared root left behind origin/main (fast-forwards at next /begin).
+  - NB: did NOT run `tracker_sync --sync` (parallel-session orphan-create CAUTION); LIF-192 reconciled Done via the merged oracle + it was already Done in Linear.

@@ -1,5 +1,16 @@
 <!-- Last updated: 2026-10-12 by /session-end -->
 
+## fe-notifications ② (2026-10-12 — LIF-192, PR #132)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-12 | Notifications UX | inbox list, or something OS-native? | **multi-lens surface (Margin · Dispatches · Constellation), user picks** | Envision review rejected the plain inbox as "too normal"; "the user chooses" is the Vida-native answer (the System's out-loud voice, your way) | reversible |
+| 2026-10-12 | Scope | include "channel-matrix" controls (per the task-header)? | **no — NOT-24 (inbox) + NOT-25 (dangling) only** | the gated decomposition homes exactly 2 legs; "channel-matrix" is a Preferences-config concern, an untraced drift | reversible |
+| 2026-10-12 | The Margin data | where do "anticipations" (above the now-line) come from? | **the Sessions `dueIn` agenda, NOT notification rows** | NF-3: the dispatcher never writes a row before fire time (no phantom future inbox); honest-empty at M1, live swap deferred | n/a (contract) |
+| 2026-10-12 | Constellation render | Sigma/WebGL `NeuralGraph` (per slice-map) or CSS/SVG? | **CSS/SVG map (§XXVIII deviation)** | a force graph is built for 10K nodes + carries the WebGL color seam; overkill for ~8 hubs; = the approved greybox | reversible |
+| 2026-10-12 | M1 lifecycle | dead no-op buttons, or fake "saved"? | **optimistic-local (session-only), no persistence claim** | honest at M1 (resets on reload like all M1 data), avoids dead affordances; durable write binds at the first consumer | reversible |
+| 2026-10-12 | Lens persistence | new `user_preferences` field, or local? | **local (localStorage), no `@vida/core` change** | keeps the unit pure-② frontend; a synced pref is a later concern | reversible |
+
 ## Linear / tracker reconciliation (2026-10-09 — frontend-track campaign LIF-202)
 
 | Date | Area | Decision | Choice | Reason | Reversible |
