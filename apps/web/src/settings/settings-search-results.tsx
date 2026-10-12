@@ -66,14 +66,17 @@ export function SettingsSearchResults({ query, onNavigate }: SettingsSearchResul
             {categoryLabel(g.category)}
           </Text>
           {g.entries.map((e) => (
-            <ResultRow key={e.id} role="listitem" onPress={() => onNavigate(e.category)}>
-              <Text fontFamily="$body" fontSize="$body" color="$colorTextPrimary">
-                {e.label}
-              </Text>
-              <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">
-                {e.description}
-              </Text>
-            </ResultRow>
+            // role="listitem" on a wrapper so the button keeps its native button role (don't clobber it — critique NIT).
+            <View key={e.id} role="listitem">
+              <ResultRow onPress={() => onNavigate(e.category)}>
+                <Text fontFamily="$body" fontSize="$body" color="$colorTextPrimary">
+                  {e.label}
+                </Text>
+                <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted">
+                  {e.description}
+                </Text>
+              </ResultRow>
+            </View>
           ))}
         </View>
       ))}
