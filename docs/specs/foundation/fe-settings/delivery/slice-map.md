@@ -51,6 +51,22 @@ no-schema-change claim, the theme-store keystone, and the Switch contract — al
 - **#3 (S5)** — escape-hatch is UI-enforced not service-enforced; S5 excludes `preferences`/`home` from the hideable
   list (source: `nav/module-map.ts`). seam §E.
 
+## ✅ BUILD COMPLETE (2026-10-12) — all 6 slices shipped, each gate-passed
+
+| # | Slice | Commit | Gate |
+|---|---|---|---|
+| S1 | `Switch` primitive (@vida/ui) | `445894d` | Visual 9/9 + g2 SHIP |
+| S2 | theme store + App.tsx rewire | `f8df47c` | Verification |
+| S3 | Settings shell + /settings route + Appearance (live apply) | `e919309` | Visual PASS |
+| S4 | searchable index | `8eec9ae` | Visual PASS |
+| S5 | Modules pane (show/hide · rename · Surfaces · escape-hatch) | `9af6381` | Visual PASS |
+| S6 | Locale · Notifications · delegated Account/Data | `16414b1` | Visual PASS |
+
+All 12 ECs delivered (EC-5 theme live-apply proven in the real app; EC-3 Switch; EC-6 search; EC-8 escape hatch;
+EC-9 delegated placeholders; EC-11/12 feel confirmed at the live Visual Gates). Persistence = the deferred worker-`values`
+seam (§A0), consistent with every fe-* surface. apps/web typecheck 0 · eslint clean · settings/stores tests green
+(isolated) · axe 0 across presets × light/dark incl. warm reader-dark.
+
 ## Out of scope (homed)
 
 - **Backend/schema change** — none (pure ②). A dedicated `home_arrangement`/`feature_atlas`/`sync_visibility` column would be a `mod-preferences` ① amendment; not needed (open JSON fields absorb them, R-2).
