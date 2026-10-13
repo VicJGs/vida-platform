@@ -3,7 +3,7 @@
 
 # Routines — Current Business Rules
 
-> Status: ① backend in progress — **S1 (routine CRUD + `@vida/types` reconcile) landed**. S2–S8 append.
+> Status: ① backend in progress — **S1–S2 landed** (routine CRUD + `@vida/types` reconcile; step CRUD + cascade). S3–S8 append.
 > Authority for intent: `docs/features/routines/{identity,business-rules,contract,structure-data,conventions}.md`
 > (RT-1…RT-19) + `delivery/interpretation.md` (IR-1…IR-10). This doc records what the CODE enforces.
 
@@ -31,6 +31,30 @@
   `[FACT: services/routines/service.ts:78-84]`
 - **BR-RT-S1-7 · Local-first enqueue (RT-18).** A create/update/archive co-transactionally enqueues a `sync_queue`
   row (verified by the persistence probe); every write succeeds locally first. `[FACT: routines-service.test.ts persistence probe]`
+
+## S2 — Step CRUD + ordering + app-cascade
+
+- **BR-RT-S2-1 · Polymorphic step, OPEN vocab (RT-3/RT-4).** `step_type` is a plain string (NOT enum-validated —
+  user-extensible, registry's job); `entity_type`/`entity_id` are nullable (an actionable "alarm" step has no driven
+  entity). `[FACT: validators/routine.ts RoutineStepFields; services/routines/service.ts serializeStep]`
+- **BR-RT-S2-2 · Add guards the parent exists (no orphan step, IR-3).** `addStep` throws `RoutineNotFoundError` if
+  the routine is missing or archived (`findById` excludes soft-deleted) — no FK guards this.
+  `[FACT: services/routines/service.ts loadRoutineOrThrow; addStep]`
+- **BR-RT-S2-3 · Faithful step echo (IR-8) + skip_dates JSON (IR-6).** `serializeStep` backfills `step_order:0`,
+  `is_required:false` and coalesces every nullable; `skip_dates` is `JSON.stringify`'d to the plain-TEXT column and
+  parsed back via `parseJsonArray` (never `json<T>()`). `[FACT: services/routines/service.ts serializeStep, toRoutineStep]`
+- **BR-RT-S2-4 · Partial step update never blanks.** `serializeStepUpdate` sets only passed keys (Zod `.partial()`
+  omits absent keys); `skip_dates` set/clear both honored via the `'skip_dates' in p` guard.
+  `[FACT: services/routines/service.ts serializeStepUpdate]`
+- **BR-RT-S2-5 · Archive cascades to steps (RT-17/IR-3).** `archiveRoutine` soft-deletes the routine then its live
+  steps (no FK; reads `isNull(deleted_at)` so it won't re-touch already-deleted). The step→completion hard-delete
+  closer is S8 (ledger ships S3). `[FACT: services/routines/service.ts archiveRoutine]`
+- **BR-RT-S2-6 · Reorder is ownership-scoped + contiguous.** `reorderSteps` assigns `step_order` from 0 in list
+  position for ids OWNED by the routine; foreign/unknown ids are ignored (no gaps); owned steps omitted from the
+  list keep their prior order (callers pass the full set). `[FACT: services/routines/service.ts reorderSteps]`
+- **Known behavior (ratified pattern, g2 N1):** `updateStep`/`removeStep` act by raw id without a soft-delete guard
+  (mirrors the twin repos' `update`/`delete`); updating a soft-deleted step re-stamps it. Step-lifecycle hardening
+  (resurrect semantics) is homed forward, not S2's scope.
 
 ## Deferred (homed forward — not enforced in S1; see interpretation.md §1)
 Completion/miss/acceptance POLICY → Preferences/Spaces (X1). `routine_step_membership` step-scoping → Spaces

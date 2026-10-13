@@ -1,9 +1,9 @@
 <!-- CURRENT spec — module: routines · living doc (§XXIX). Promoted from the MOD-routines ① build (LIF-138).
-     As-built service contract; refreshed per slice. Scope so far: S1. -->
+     As-built service contract; refreshed per slice. Scope so far: S1–S2. -->
 
 # Routines — Current Spec (① backend service tier)
 
-> Status: ① in progress — S1 landed. Home: `packages/core/src/services/routines/`. Schema:
+> Status: ① in progress — S1–S2 landed. Home: `packages/core/src/services/routines/`. Schema:
 > `db/schema/routines.ts` (`018_routines` — the orchestration REFRAME). Types/validators:
 > `@vida/types/routine.ts` + `@vida/core/validators/routine.ts`. ② `fe-routines` (P6) owns the UI.
 > Intent authority: the `docs/features/routines/` aspect corpus + `delivery/{interpretation,slice-map,seam-contract}.md`.
@@ -36,10 +36,22 @@ encryptedFields: [], softDelete: true })`. The `[E]` fields (`name`/`description
 | `getRoutine` | `(id) => Promise<Routine \| null>` | excludes soft-deleted (`findById`) |
 | `listRoutines` | `(filter?: { lifecycle? }) => Promise<Routine[]>` | explicit `isNull(deleted_at)` (findWhere gotcha, IR-10) |
 
-### S2–S8 — appended per slice (not yet built)
-Steps CRUD + app-cascade (S2) · completion ledger + skip (S3) · `runStep` drive-the-entity (S4) · evaluate +
-derived analytics (S5) · lifecycle + reschedule (S6) · tags/pages/links (S7) · provider + fan-out + deletion closer
-(S8). Surface frozen in `delivery/seam-contract.md`.
+### S2 — step CRUD + ordering + app-cascade
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `addStep` | `(routineId, step: AddStepInput) => Promise<RoutineStep>` | guards routine exists (`RoutineNotFoundError`, no orphan); faithful echo; polymorphic `step_type` OPEN-vocab + nullable entity ref (RT-3/RT-4); `skip_dates` JSON serialize |
+| `updateStep` | `(stepId, patch: UpdateStepInput) => Promise<RoutineStep>` | partial (no blanking); skip_dates set/clear |
+| `removeStep` | `(stepId) => Promise<void>` | soft-delete; ledger cascade = S3/S8 |
+| `reorderSteps` | `(routineId, orderedStepIds) => Promise<void>` | contiguous step_order from 0 in list position; foreign ids ignored; pass the FULL set |
+| `listSteps` | `(routineId) => Promise<RoutineStep[]>` | live steps sorted by step_order |
+
+`archiveRoutine` extended (S2): soft-deletes the routine THEN cascade-soft-deletes its live steps (IR-3, no FK). The
+full routine→step→completion hard-delete closer lands in S8 (the ledger ships in S3).
+
+### S3–S8 — appended per slice (not yet built)
+Completion ledger + skip (S3) · `runStep` drive-the-entity (S4) · evaluate + derived analytics (S5) · lifecycle +
+reschedule (S6) · tags/pages/links (S7) · provider + fan-out + deletion closer (S8). Surface frozen in
+`delivery/seam-contract.md`.
 
 ## `@vida/types` reconcile (DB-11, S1)
 Authored `Routine`/`RoutineStep` + re-keyed `RoutineCompletion` (`routine_action_id`→`routine_step_id`,

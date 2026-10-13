@@ -25,7 +25,13 @@ Sessions; XP application → Gamification. Delivery: `docs/features/routines/del
   (faithful echo · partial update · soft-delete · filter · 2 failure paths · sync_queue probe) · full @vida/core
   **1916/1916** (DB-11 enum retirement 0 regression) · **g2 SHIP** (3 nits, all deferred) · /critique SHIP ·
   §XXIX `docs/modules/routines/current-*` born.
-- S2–S8: pending (steps · ledger · runStep · evaluate · lifecycle · tags/pages/links · provider+fan-out closer).
+- **S2 — Step CRUD + app-cascade ✅** — `routine_step` CRUD (`addStep`/`updateStep`/`removeStep`/`reorderSteps`/
+  `listSteps`); polymorphic `step_type` OPEN-vocab + nullable entity ref (RT-3/RT-4); `is_required`; `skip_dates`
+  JSON serialize/parse (IR-6); `addStep` guards parent (`RoutineNotFoundError`, no orphan); `archiveRoutine`
+  cascade-soft-deletes steps (IR-3); `reorderSteps` ownership-scoped + contiguous. tsc 0 · eslint 0 · **routines
+  18/18** · full @vida/core **1925/1925** · **g2 SHIP** (2 nits: N1 step-lifecycle-resurrect = ratified pattern,
+  homed forward · N2 partial-reorder = doc-clarified) · /critique SHIP · §XXIX refreshed.
+- S3–S8: pending (ledger · runStep · evaluate · lifecycle · tags/pages/links · provider+fan-out closer).
 
 ## Dependencies
 - blocked by `mod-journals`

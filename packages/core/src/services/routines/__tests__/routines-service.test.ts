@@ -15,7 +15,7 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
-import { createRoutinesService, type RoutinesService } from '../index'
+import { createRoutinesService, RoutineNotFoundError, type RoutinesService } from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -157,5 +157,105 @@ describe('mod-routines S1 — routine definition CRUD', () => {
     const r = await h.svc.createRoutine({ name: 'Sync me' })
     const rows = await h.db.select().from(syncQueue).all()
     expect(rows.filter((x) => x.row_id === r.id).length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('mod-routines S2 — step CRUD + ordering + cascade', () => {
+  let h: Harness
+  let routineId: string
+  beforeEach(async () => {
+    h = await setup()
+    routineId = (await h.svc.createRoutine({ name: 'Morning' })).id
+  })
+
+  it('addStep echoes a FAITHFUL step — defaults backfilled, nullables → null, skip_dates round-trips (RT-3/RT-8, IR-8)', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Stretch', skip_dates: ['2026-10-20', '2026-10-21'] })
+    expect(s.id).toBeTruthy()
+    expect(s.routine_id).toBe(routineId)
+    expect(s.title).toBe('Stretch')
+    expect(s.step_order).toBe(0) // default backfilled
+    expect(s.is_required).toBe(false) // default backfilled
+    expect(s.step_type).toBeNull() // nullable coalesced
+    expect(s.entity_type).toBeNull()
+    expect(s.entity_id).toBeNull()
+    expect(s.description).toBeNull()
+    expect(s.time_of_day).toBeNull()
+    expect(s.skip_dates).toEqual(['2026-10-20', '2026-10-21']) // JSON round-trip (IR-6)
+    expect(s.deleted_at).toBeNull()
+    expect(s._sync_status).toBe('pending')
+  })
+
+  it('addStep honours an explicit polymorphic driven step (RT-3)', async () => {
+    const s = await h.svc.addStep(routineId, {
+      title: 'Workout',
+      step_type: 'workout', // OPEN vocab — no enum validation
+      entity_type: 'session',
+      entity_id: 'sess-123',
+      is_required: true,
+      time_of_day: 'morning',
+      step_order: 2,
+    })
+    expect(s.step_type).toBe('workout')
+    expect(s.entity_type).toBe('session')
+    expect(s.entity_id).toBe('sess-123')
+    expect(s.is_required).toBe(true)
+    expect(s.time_of_day).toBe('morning')
+    expect(s.step_order).toBe(2)
+  })
+
+  it('addStep allows an alarm-like actionable step with NO driven entity (RT-4)', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Drink water', step_type: 'task' })
+    expect(s.entity_type).toBeNull()
+    expect(s.entity_id).toBeNull()
+  })
+
+  it('addStep on a missing/archived routine throws RoutineNotFoundError — no orphan step (RT-3, IR-3)', async () => {
+    await expect(h.svc.addStep('no-such-routine', { title: 'X' })).rejects.toBeInstanceOf(RoutineNotFoundError)
+    await h.svc.archiveRoutine(routineId)
+    await expect(h.svc.addStep(routineId, { title: 'Y' })).rejects.toBeInstanceOf(RoutineNotFoundError)
+  })
+
+  it('updateStep patches only passed keys; skip_dates can be set then cleared (no blanking)', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'keep', step_type: 'habit' })
+    const up = await h.svc.updateStep(s.id, { is_required: true })
+    expect(up.is_required).toBe(true)
+    expect(up.step_type).toBe('habit') // untouched
+    expect(up.title).toBe('keep')
+    const withSkips = await h.svc.updateStep(s.id, { skip_dates: ['2026-11-01'] })
+    expect(withSkips.skip_dates).toEqual(['2026-11-01'])
+    const cleared = await h.svc.updateStep(s.id, { skip_dates: null })
+    expect(cleared.skip_dates).toBeNull()
+  })
+
+  it('removeStep soft-deletes — listSteps excludes it', async () => {
+    const a = await h.svc.addStep(routineId, { title: 'A' })
+    const b = await h.svc.addStep(routineId, { title: 'B' })
+    await h.svc.removeStep(a.id)
+    const steps = await h.svc.listSteps(routineId)
+    expect(steps.map((s) => s.id)).toEqual([b.id])
+  })
+
+  it('listSteps returns the steps sorted by step_order', async () => {
+    await h.svc.addStep(routineId, { title: 'third', step_order: 3 })
+    await h.svc.addStep(routineId, { title: 'first', step_order: 1 })
+    await h.svc.addStep(routineId, { title: 'second', step_order: 2 })
+    expect((await h.svc.listSteps(routineId)).map((s) => s.title)).toEqual(['first', 'second', 'third'])
+  })
+
+  it('reorderSteps sets step_order by position; foreign/unknown ids are ignored (IR-3)', async () => {
+    const a = await h.svc.addStep(routineId, { title: 'A', step_order: 0 })
+    const b = await h.svc.addStep(routineId, { title: 'B', step_order: 1 })
+    const c = await h.svc.addStep(routineId, { title: 'C', step_order: 2 })
+    await h.svc.reorderSteps(routineId, [c.id, 'foreign-id', a.id, b.id]) // foreign-id skipped
+    const steps = await h.svc.listSteps(routineId)
+    expect(steps.map((s) => s.title)).toEqual(['C', 'A', 'B']) // C→0, A→1, B→2
+  })
+
+  it('archiveRoutine cascade-soft-deletes its steps (RT-17, IR-3)', async () => {
+    await h.svc.addStep(routineId, { title: 'A' })
+    await h.svc.addStep(routineId, { title: 'B' })
+    expect((await h.svc.listSteps(routineId)).length).toBe(2)
+    await h.svc.archiveRoutine(routineId)
+    expect((await h.svc.listSteps(routineId)).length).toBe(0) // steps cascaded
   })
 })
