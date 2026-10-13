@@ -210,5 +210,8 @@ export * from './services/purposes'
 // Service — Relationships / CRM (mod-relationships #56 · LIF-137 · S1: contact CRUD spine over DB-4 025_relationships)
 export * from './services/relationships'
 
+// Service — Routines (mod-routines #64 · LIF-138 · S1: routine CRUD + @vida/types reconcile over DB-4 018_routines reframe)
+export * from './services/routines'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
