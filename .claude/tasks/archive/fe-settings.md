@@ -1,5 +1,5 @@
 # Task: fe-settings
-# Status: in-progress
+# Status: done
 # Linear: LIF-193
 # Profile: Add Frontend Component
 # Scenario: default
