@@ -1,9 +1,9 @@
 <!-- CURRENT spec — module: routines · living doc (§XXIX). Promoted from the MOD-routines ① build (LIF-138).
-     As-built service contract; refreshed per slice. Scope so far: S1–S2. -->
+     As-built service contract; refreshed per slice. Scope so far: S1–S3. -->
 
 # Routines — Current Spec (① backend service tier)
 
-> Status: ① in progress — S1–S2 landed. Home: `packages/core/src/services/routines/`. Schema:
+> Status: ① in progress — S1–S3 landed. Home: `packages/core/src/services/routines/`. Schema:
 > `db/schema/routines.ts` (`018_routines` — the orchestration REFRAME). Types/validators:
 > `@vida/types/routine.ts` + `@vida/core/validators/routine.ts`. ② `fe-routines` (P6) owns the UI.
 > Intent authority: the `docs/features/routines/` aspect corpus + `delivery/{interpretation,slice-map,seam-contract}.md`.
@@ -48,10 +48,24 @@ encryptedFields: [], softDelete: true })`. The `[E]` fields (`name`/`description
 `archiveRoutine` extended (S2): soft-deletes the routine THEN cascade-soft-deletes its live steps (IR-3, no FK). The
 full routine→step→completion hard-delete closer lands in S8 (the ledger ships in S3).
 
-### S3–S8 — appended per slice (not yet built)
-Completion ledger + skip (S3) · `runStep` drive-the-entity (S4) · evaluate + derived analytics (S5) · lifecycle +
-reschedule (S6) · tags/pages/links (S7) · provider + fan-out + deletion closer (S8). Surface frozen in
-`delivery/seam-contract.md`.
+### S3 — completion ledger + skip
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `completeStep` | `(stepId, input?: {date?, actual_duration_minutes?}) => Promise<RoutineCompletion>` | DONE occurrence (skipped=false); UPSERT per (step,date); clears skip_reason on flip; `StepNotFoundError` if step missing |
+| `skipStep` | `(stepId, input?: {date?, reason?}) => Promise<RoutineCompletion>` | LOGGED skip on the day (skipped=true + reason); UPSERT per (step,date) (RT-8) |
+| `planSkipDates` | `(stepId, dates[]) => Promise<RoutineStep>` | PRE-PLANNED skips → merged into `step.skip_dates` (dedup+sort); NOT a completion row (RT-8) |
+| `editCompletion` | `(stepId, date, patch) => Promise<RoutineCompletion>` | patches an existing (step,date); `CompletionNotFoundError` if absent |
+| `deleteCompletion` | `(stepId, date) => Promise<void>` | HARD delete (ledger has no deleted_at, RT-14) |
+| `listCompletions` | `(stepId) => Promise<RoutineCompletion[]>` | date-sorted ledger — the derive-on-read source for S5 |
+
+**§XXVIII deviation (grounded, g2-APPROVED):** the Approval-1 seam-contract had a single `skipStep({kind})`; RT-8
+defines two distinct skip mechanisms with different storage (logged completion row vs pre-planned `skip_dates`, a
+possibly-future date with no row). Corrected to `skipStep` (logged) + `planSkipDates` (pre-planned). The frozen
+`seam-contract.md`/`slice-map.md` text still shows the old single method; this note supersedes it.
+
+### S4–S8 — appended per slice (not yet built)
+`runStep` drive-the-entity (S4) · evaluate + derived analytics (S5) · lifecycle + reschedule (S6) · tags/pages/links
+(S7) · provider + fan-out + deletion closer (S8). Surface frozen in `delivery/seam-contract.md`.
 
 ## `@vida/types` reconcile (DB-11, S1)
 Authored `Routine`/`RoutineStep` + re-keyed `RoutineCompletion` (`routine_action_id`→`routine_step_id`,

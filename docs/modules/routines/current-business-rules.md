@@ -3,7 +3,7 @@
 
 # Routines — Current Business Rules
 
-> Status: ① backend in progress — **S1–S2 landed** (routine CRUD + `@vida/types` reconcile; step CRUD + cascade). S3–S8 append.
+> Status: ① backend in progress — **S1–S3 landed** (routine CRUD + reconcile; step CRUD + cascade; completion ledger + skip). S4–S8 append.
 > Authority for intent: `docs/features/routines/{identity,business-rules,contract,structure-data,conventions}.md`
 > (RT-1…RT-19) + `delivery/interpretation.md` (IR-1…IR-10). This doc records what the CODE enforces.
 
@@ -55,6 +55,25 @@
 - **Known behavior (ratified pattern, g2 N1):** `updateStep`/`removeStep` act by raw id without a soft-delete guard
   (mirrors the twin repos' `update`/`delete`); updating a soft-deleted step re-stamps it. Step-lifecycle hardening
   (resurrect semantics) is homed forward, not S2's scope.
+
+## S3 — Completion ledger + skip
+
+- **BR-RT-S3-1 · Upsert per (step,date) (RT-18 UNIQUE).** `completeStep`/`skipStep` share `upsertCompletion`:
+  find by `(routine_step_id, completed_date)` → update-or-create; never a duplicate row. `completed_date` defaults
+  to `clock()` (today). `[FACT: services/routines/service.ts upsertCompletion, findCompletion]`
+- **BR-RT-S3-2 · Done clears skip; skip carries reason (RT-5/RT-8).** `completeStep` always writes `skipped:false,
+  skip_reason:null` (a skip→done flip clears the reason); `skipStep` writes `skipped:true` + `reason`. Same row
+  flips in place. `[FACT: services/routines/service.ts completeStep, skipStep]`
+- **BR-RT-S3-3 · Two skip mechanisms, distinct storage (RT-8, §XXVIII).** A LOGGED skip = a completion row
+  (`skipStep`); a PRE-PLANNED skip = `step.skip_dates` (`planSkipDates`, merged/deduped/sorted, no completion row —
+  may be a future date). `[FACT: services/routines/service.ts skipStep, planSkipDates; business-rules.md RT-8]`
+- **BR-RT-S3-4 · Fail-loud, no orphan completion (RT-3/IR-3).** `loadStepOrThrow` throws `StepNotFoundError` before
+  any write (missing OR soft-deleted step); `editCompletion`/`deleteCompletion` throw `CompletionNotFoundError` when
+  the (step,date) row is absent — no FK guards these. `[FACT: services/routines/service.ts loadStepOrThrow, editCompletion, deleteCompletion]`
+- **BR-RT-S3-5 · Ledger hard-delete (RT-14).** `completionsRepo` is `softDelete:false`; `deleteCompletion` is a
+  real DELETE; `routine_completions` has no `deleted_at`. `[FACT: services/routines/service.ts completionsRepo]`
+- **Note for S5 (g2 N2):** `editCompletion` patches only sent keys and may leave an incoherent `skipped:false` with
+  a stale `skip_reason`; the S5 derive MUST key on `skipped` (authoritative), not on `skip_reason` presence.
 
 ## Deferred (homed forward — not enforced in S1; see interpretation.md §1)
 Completion/miss/acceptance POLICY → Preferences/Spaces (X1). `routine_step_membership` step-scoping → Spaces

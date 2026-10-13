@@ -31,7 +31,14 @@ Sessions; XP application → Gamification. Delivery: `docs/features/routines/del
   cascade-soft-deletes steps (IR-3); `reorderSteps` ownership-scoped + contiguous. tsc 0 · eslint 0 · **routines
   18/18** · full @vida/core **1925/1925** · **g2 SHIP** (2 nits: N1 step-lifecycle-resurrect = ratified pattern,
   homed forward · N2 partial-reorder = doc-clarified) · /critique SHIP · §XXIX refreshed.
-- S3–S8: pending (ledger · runStep · evaluate · lifecycle · tags/pages/links · provider+fan-out closer).
+- **S3 — Completion ledger + skip ✅** — `completeStep`/`skipStep`(logged)/`editCompletion`/`deleteCompletion`/
+  `listCompletions` over `routine_completions` (upsert UNIQUE(step,date); hard-delete ledger RT-14) + `planSkipDates`
+  → `step.skip_dates` (pre-planned, RT-8). **§XXVIII deviation (g2-APPROVED):** RT-8 two-mechanism split corrected
+  the seam-contract's single `skipStep({kind})` (logged=row vs planned=skip_dates). `StepNotFoundError`/
+  `CompletionNotFoundError` fail-loud. Fixed a barrel collision (`EditCompletion*`→`EditRoutineCompletion*`,
+  [[barrel-export-star-collides-with-services-on-generic-names]]). tsc 0 · eslint 0 · **routines 28/28** · full
+  @vida/core **1935/1935** · **g2 SHIP** (deviation APPROVED-sound; 4 cosmetic nits) · /critique SHIP · §XXIX refreshed.
+- S4–S8: pending (runStep · evaluate · lifecycle · tags/pages/links · provider+fan-out closer).
 
 ## Dependencies
 - blocked by `mod-journals`

@@ -15,17 +15,30 @@
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
-import type { Routine, RoutineStep } from '@vida/types'
+import type { Routine, RoutineStep, RoutineCompletion } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
-import { routines, routineStep, type RoutineRow, type RoutineStepRow } from '../../db/schema/routines'
+import {
+  routines,
+  routineStep,
+  routineCompletions,
+  type RoutineRow,
+  type RoutineStepRow,
+  type RoutineCompletionRow,
+} from '../../db/schema/routines'
 import {
   CreateRoutineSchema,
   UpdateRoutineSchema,
   AddStepSchema,
   UpdateStepSchema,
+  CompleteStepSchema,
+  SkipStepSchema,
+  EditRoutineCompletionSchema,
+  PlanSkipDatesSchema,
 } from '../../validators/routine'
 import {
   RoutineNotFoundError,
+  StepNotFoundError,
+  CompletionNotFoundError,
   type RoutinesService,
   type RoutinesServiceDeps,
   type CreateRoutineInput,
@@ -55,18 +68,63 @@ const toRoutineStep = (r: RoutineStepRow): RoutineStep => ({
   skip_dates: parseJsonArray<string>(r.skip_dates), // JSON TEXT → string[] | null (IR-6)
   _sync_status: r._sync_status as RoutineStep['_sync_status'],
 })
+const toRoutineCompletion = (r: RoutineCompletionRow): RoutineCompletion => ({
+  ...r,
+  _sync_status: r._sync_status as RoutineCompletion['_sync_status'],
+})
 
 export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService {
   const { db, deviceId } = deps
+  const clock = deps.clock ?? (() => new Date().toISOString().slice(0, 10)) // YYYY-MM-DD, default today
   const cfg = { deviceId, encryptedFields: [] as string[] } // M1.0: [E] fields dormant (→ M3/DB-5)
 
   const routinesRepo = createRepository(db, routines, { ...cfg, softDelete: true })
   const stepsRepo = createRepository(db, routineStep, { ...cfg, softDelete: true })
+  const completionsRepo = createRepository(db, routineCompletions, { ...cfg, softDelete: false }) // ledger — hard delete
 
   const loadRoutineOrThrow = async (routineId: string): Promise<RoutineRow> => {
     const r = await routinesRepo.findById(routineId) // excludes soft-deleted
     if (!r) throw new RoutineNotFoundError(routineId) // fail-loud — no orphan step (no FK guards this, IR-3)
     return r
+  }
+
+  const loadStepOrThrow = async (stepId: string): Promise<RoutineStepRow> => {
+    const s = await stepsRepo.findById(stepId) // excludes soft-deleted
+    if (!s) throw new StepNotFoundError(stepId) // fail-loud — no orphan completion (no FK guards this, IR-3)
+    return s
+  }
+
+  const findCompletion = async (stepId: string, date: string): Promise<RoutineCompletionRow | undefined> => {
+    const rows = await completionsRepo.findWhere(
+      and(eq(routineCompletions.routine_step_id, stepId), eq(routineCompletions.completed_date, date)) as SQL,
+    )
+    return rows[0]
+  }
+
+  // Shared complete/skip path — UPSERT per (step,date) (RT-18 UNIQUE); the step must exist (fail-loud).
+  const upsertCompletion = async (
+    stepId: string,
+    date: string,
+    fields: { skipped: boolean; skip_reason: string | null; actual_duration_minutes: number | null },
+  ): Promise<RoutineCompletion> => {
+    await loadStepOrThrow(stepId)
+    const existing = await findCompletion(stepId, date)
+    const row = existing
+      ? await completionsRepo.update(existing.id, {
+          skipped: fields.skipped,
+          skip_reason: fields.skip_reason,
+          actual_duration_minutes: fields.actual_duration_minutes,
+          completed_at: Date.now(),
+        })
+      : await completionsRepo.create({
+          routine_step_id: stepId,
+          completed_date: date,
+          completed_at: Date.now(),
+          skipped: fields.skipped,
+          skip_reason: fields.skip_reason,
+          actual_duration_minutes: fields.actual_duration_minutes,
+        })
+    return toRoutineCompletion(row)
   }
 
   // --- S1 serialize (faithful echo — backfill every notNull-default column) ---
@@ -175,6 +233,60 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         and(eq(routineStep.routine_id, routineId), isNull(routineStep.deleted_at)) as SQL,
       )
       return rows.sort((a, b) => a.step_order - b.step_order).map(toRoutineStep)
+    },
+
+    // ── S3 ──────────────────────────────────────────────────────────
+    completeStep: async (stepId, input = {}) => {
+      const p = CompleteStepSchema.parse(input)
+      // RT-5 — a DONE occurrence. skipped=false; a prior logged-skip on the same date flips to done (upsert).
+      return upsertCompletion(stepId, p.date ?? clock(), {
+        skipped: false,
+        skip_reason: null,
+        actual_duration_minutes: p.actual_duration_minutes ?? null,
+      })
+    },
+
+    skipStep: async (stepId, input = {}) => {
+      const p = SkipStepSchema.parse(input)
+      // RT-8 — a LOGGED skip on the day (completion row, skipped=true + reason). Distinct from a pre-planned skip.
+      return upsertCompletion(stepId, p.date ?? clock(), {
+        skipped: true,
+        skip_reason: p.reason ?? null,
+        actual_duration_minutes: null,
+      })
+    },
+
+    planSkipDates: async (stepId, dates) => {
+      const { dates: parsed } = PlanSkipDatesSchema.parse({ dates })
+      const step = await loadStepOrThrow(stepId)
+      // RT-8 — pre-planned skips live in step.skip_dates (declared ahead, may be future). Merge, dedupe, sort.
+      const merged = [...new Set([...(parseJsonArray<string>(step.skip_dates) ?? []), ...parsed])].sort()
+      const row = await stepsRepo.update(stepId, { skip_dates: JSON.stringify(merged) })
+      return toRoutineStep(row)
+    },
+
+    editCompletion: async (stepId, date, patch) => {
+      const p = EditRoutineCompletionSchema.parse(patch)
+      await loadStepOrThrow(stepId)
+      const existing = await findCompletion(stepId, date)
+      if (!existing) throw new CompletionNotFoundError(stepId, date) // fail-loud (RT-5 edit path)
+      const out: UpdateInput<typeof routineCompletions> = {}
+      if ('skipped' in p) out.skipped = p.skipped
+      if ('skip_reason' in p) out.skip_reason = p.skip_reason
+      if ('actual_duration_minutes' in p) out.actual_duration_minutes = p.actual_duration_minutes
+      return toRoutineCompletion(await completionsRepo.update(existing.id, out))
+    },
+
+    deleteCompletion: async (stepId, date) => {
+      const existing = await findCompletion(stepId, date)
+      if (!existing) throw new CompletionNotFoundError(stepId, date)
+      await completionsRepo.delete(existing.id) // HARD delete (softDelete:false — ledger has no deleted_at)
+    },
+
+    listCompletions: async (stepId) => {
+      // No soft-delete filter needed — the ledger has no deleted_at (RT-14 hard-delete table).
+      const rows = await completionsRepo.findWhere(eq(routineCompletions.routine_step_id, stepId) as SQL)
+      return rows.sort((a, b) => a.completed_date.localeCompare(b.completed_date)).map(toRoutineCompletion)
     },
   }
 

@@ -15,7 +15,13 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
-import { createRoutinesService, RoutineNotFoundError, type RoutinesService } from '../index'
+import {
+  createRoutinesService,
+  RoutineNotFoundError,
+  StepNotFoundError,
+  CompletionNotFoundError,
+  type RoutinesService,
+} from '../index'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -257,5 +263,97 @@ describe('mod-routines S2 — step CRUD + ordering + cascade', () => {
     expect((await h.svc.listSteps(routineId)).length).toBe(2)
     await h.svc.archiveRoutine(routineId)
     expect((await h.svc.listSteps(routineId)).length).toBe(0) // steps cascaded
+  })
+})
+
+describe('mod-routines S3 — completion ledger + skip', () => {
+  let h: Harness
+  let stepId: string
+  beforeEach(async () => {
+    h = await setup()
+    const routineId = (await h.svc.createRoutine({ name: 'Morning' })).id
+    stepId = (await h.svc.addStep(routineId, { title: 'Stretch' })).id
+  })
+
+  it('completeStep records a DONE occurrence (skipped=false, completed_at stamped) (RT-5)', async () => {
+    const c = await h.svc.completeStep(stepId, { date: '2026-10-13', actual_duration_minutes: 12 })
+    expect(c.routine_step_id).toBe(stepId)
+    expect(c.completed_date).toBe('2026-10-13')
+    expect(c.skipped).toBe(false)
+    expect(c.skip_reason).toBeNull()
+    expect(c.actual_duration_minutes).toBe(12)
+    expect(c.completed_at).toBeGreaterThan(0)
+    expect(c._sync_status).toBe('pending')
+  })
+
+  it('completeStep UPSERTs per (step,date) — no duplicate row (RT-18 UNIQUE)', async () => {
+    await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    await h.svc.completeStep(stepId, { date: '2026-10-13', actual_duration_minutes: 30 })
+    const ledger = await h.svc.listCompletions(stepId)
+    expect(ledger.length).toBe(1) // upsert, not insert
+    expect(ledger[0]!.actual_duration_minutes).toBe(30)
+  })
+
+  it('skipStep logs a skip on the day (skipped=true + reason) distinct from a done (RT-8)', async () => {
+    const c = await h.svc.skipStep(stepId, { date: '2026-10-13', reason: 'sick' })
+    expect(c.skipped).toBe(true)
+    expect(c.skip_reason).toBe('sick')
+  })
+
+  it('complete→skip and skip→complete flip the SAME (step,date) row (upsert)', async () => {
+    await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    const skipped = await h.svc.skipStep(stepId, { date: '2026-10-13', reason: 'changed mind' })
+    expect(skipped.skipped).toBe(true)
+    const redone = await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    expect(redone.skipped).toBe(false)
+    expect(redone.skip_reason).toBeNull() // done clears the skip reason
+    expect((await h.svc.listCompletions(stepId)).length).toBe(1)
+  })
+
+  it('planSkipDates writes step.skip_dates (deduped+sorted), NOT a completion row (RT-8 pre-planned)', async () => {
+    const step = await h.svc.planSkipDates(stepId, ['2026-12-25', '2026-10-20', '2026-12-25'])
+    expect(step.skip_dates).toEqual(['2026-10-20', '2026-12-25']) // deduped + sorted
+    expect((await h.svc.listCompletions(stepId)).length).toBe(0) // no ledger row written
+    // merges with a subsequent call
+    const again = await h.svc.planSkipDates(stepId, ['2026-10-19'])
+    expect(again.skip_dates).toEqual(['2026-10-19', '2026-10-20', '2026-12-25'])
+  })
+
+  it('editCompletion patches an existing (step,date); CompletionNotFoundError if absent (RT-5)', async () => {
+    await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    const edited = await h.svc.editCompletion(stepId, '2026-10-13', { actual_duration_minutes: 45, skipped: true, skip_reason: 'late' })
+    expect(edited.actual_duration_minutes).toBe(45)
+    expect(edited.skipped).toBe(true)
+    expect(edited.skip_reason).toBe('late')
+    await expect(h.svc.editCompletion(stepId, '2099-01-01', {})).rejects.toBeInstanceOf(CompletionNotFoundError)
+  })
+
+  it('deleteCompletion HARD-deletes; CompletionNotFoundError if absent (RT-14 ledger)', async () => {
+    await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    await h.svc.deleteCompletion(stepId, '2026-10-13')
+    expect((await h.svc.listCompletions(stepId)).length).toBe(0)
+    await expect(h.svc.deleteCompletion(stepId, '2026-10-13')).rejects.toBeInstanceOf(CompletionNotFoundError)
+  })
+
+  it('listCompletions returns the ledger sorted by date', async () => {
+    await h.svc.completeStep(stepId, { date: '2026-10-15' })
+    await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    await h.svc.skipStep(stepId, { date: '2026-10-14', reason: 'x' })
+    expect((await h.svc.listCompletions(stepId)).map((c) => c.completed_date)).toEqual([
+      '2026-10-13',
+      '2026-10-14',
+      '2026-10-15',
+    ])
+  })
+
+  // ── failure paths ──────────────────────────────────────────────────
+  it('completeStep/skipStep on a missing or archived step throw StepNotFoundError — no orphan completion (RT-3)', async () => {
+    await expect(h.svc.completeStep('no-such-step', { date: '2026-10-13' })).rejects.toBeInstanceOf(StepNotFoundError)
+    await h.svc.removeStep(stepId) // soft-delete the step
+    await expect(h.svc.skipStep(stepId, { date: '2026-10-13' })).rejects.toBeInstanceOf(StepNotFoundError)
+  })
+
+  it('planSkipDates on a missing step throws StepNotFoundError', async () => {
+    await expect(h.svc.planSkipDates('no-such-step', ['2026-10-20'])).rejects.toBeInstanceOf(StepNotFoundError)
   })
 })

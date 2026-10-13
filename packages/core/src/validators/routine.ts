@@ -57,3 +57,27 @@ export const AddStepSchema = RoutineStepFields.partial().extend({
   title: z.string(),
 })
 export const UpdateStepSchema = RoutineStepFields.partial()
+
+// --- routine_completions (RT-5/RT-8 · S3) -----------------------------------
+// The per-step ledger. `completeStep` = a DONE occurrence (skipped=false); `skipStep` = a LOGGED skip on the day
+// (skipped=true + reason, RT-8). `completed_date` defaults to today (clock) in the service. Pre-planned skips are a
+// DISTINCT mechanism (step.skip_dates) → `planSkipDates`, not a completion row (RT-8).
+const CalendarDate = z.string() // YYYY-MM-DD
+export const CompleteStepSchema = z.object({
+  date: CalendarDate.optional(),
+  actual_duration_minutes: z.number().int().nullable().optional(),
+})
+export const SkipStepSchema = z.object({
+  date: CalendarDate.optional(),
+  reason: z.string().nullable().optional(),
+})
+// Namespaced to avoid the `export *` barrel collision with habits' EditCompletionSchema (both re-exported
+// from validators/index.ts + the @vida/core barrel) — [[barrel-export-star-collides-with-services-on-generic-names]].
+export const EditRoutineCompletionSchema = z.object({
+  skipped: z.boolean().optional(),
+  skip_reason: z.string().nullable().optional(),
+  actual_duration_minutes: z.number().int().nullable().optional(),
+})
+export const PlanSkipDatesSchema = z.object({
+  dates: z.array(CalendarDate),
+})
