@@ -238,7 +238,7 @@ StyleDictionary.registerFormat({
     const obj = (o) => `{ ${Object.entries(o).map(([k, v]) => `${JSON.stringify(k)}: ${v}`).join(', ')} }`
     const note =
       totalOverrides > 0
-        ? `// ${Object.keys(themes).length} scheme-first base themes (3 presets × light/dark) + per-theme <Comp> sub-themes — parallel dark/preset VALUES (B-codec-1/B7). Theme-switch MECHANISM = DS-4/fe-codec S3.`
+        ? `// ${Object.keys(themes).length} scheme-first base themes (${PRESETS.length} presets × light/dark) + per-theme <Comp> sub-themes — parallel dark/preset VALUES (B-codec-1/B7). Theme-switch MECHANISM = DS-4/fe-codec S3.`
         : '// PLACEHOLDER: no overlays → all themes == editorial base. Overlays supply parallel preset/dark VALUES; MECHANISM = DS-4.'
     const out = [`${BANNER}import { tokens } from './tokens'\n`, note]
     for (const [name, themeObj] of Object.entries(themes)) out.push(`export const ${name} = ${obj(themeObj)}\n`)
