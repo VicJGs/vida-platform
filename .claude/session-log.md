@@ -1,4 +1,32 @@
 ---
+Date: 2026-10-12 — fe-settings (#24, LIF-193) SHIPPED — Settings surface, 6 slices, PR #137 merged
+Task: fe-settings (LIF-193) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · M1.2.1 · worktree off origin/main (5ef0ce7), Node 24
+Goal: ② Frontend build of the net-new Settings System surface at /settings (all 7 control groups + searchable index).
+Completed:
+  - **fe-settings COMPLETE — PR #137 merged (`95036bd`), LIF-193 → Done.** Two-pane System surface at /settings.
+  - Full Entity Delivery Flow ②: Baseline → Interpretation → Envision (12 ECs; D-ENV-1 net-new `Switch`) →
+    Decomposition (gate-1 SHIP, 3 refinements) → 6 gated slices: S1 `Switch` primitive (@vida/ui, `445894d`) ·
+    S2 theme store + App.tsx rewire (EC-5 keystone, `f8df47c`) · S3 shell+route+Appearance live re-theme (`e919309`) ·
+    S4 searchable index (`8eec9ae`) · S5 Modules show/hide+rename+Surfaces+escape-hatch (`9af6381`) ·
+    S6 Locale/Notifications+delegated (`16414b1`).
+  - typecheck 0 · eslint clean · @vida/web 524/525 (1 jsdom flake) · axe 0 across presets×modes · Visual Gate PASS
+    every slice (real vite app, Brave) · pre-ship /critique SHIP (1 a11y NIT folded).
+  - Close-out: branch + worktree removed · task archived (PR #138) · session file written.
+Decisions:
+  - **Merged on local-green** — CI repo-wide dark (exhausted GitHub Actions minutes, infra not code; main `94aeea1`
+    triage); Victor approved.
+  - **Persistence = deferred worker-`values` DB seam** (verified in code) — surface applies live in-session, persists
+    drop-in when the seam lands (same home fe-notes deferred). Saved memory [[apps-web-worker-values-seam-blocks-live-db-ops]].
+  - Net-new `Switch` primitive (Victor's Envision call); two-store split; Mode=Light/Dark only; all 7 controls in scope
+    (doc-resolved) via dashboard_layout/module_visibility, zero schema change.
+  - Merge-conflict: App.tsx unified on the theme store with fe-onboarding's guided-setup preview + kept both routes.
+Next session:
+  - **First: `mod-routines`** (backend, M1.1.2) — the computed next head. `/begin` reconciles + fast-forwards main
+    past the parallel-session WIP.
+  - NB: 4 parallel sessions were live this session (fe-calendar/gamification/notes-and-pages/onboarding worktrees);
+    close-out (archival + this log) was done in isolated worktrees off origin/main + docs PRs to avoid the contended tree.
+
+---
 Date: 2026-10-10 — fe-shell (CODEC #14) front matter LOCKED + S1 shipped (committed `df0cf8a`, branch `fe-shell`)
 Task: fe-shell (LIF-226) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · M1.2.1 · worktree `.claude/worktrees/fe-shell` off origin/main (a4f8962)
 Goal: pick up fe-shell (canvas-reader taken by another session); run the Entity Delivery Flow front matter, then build.
