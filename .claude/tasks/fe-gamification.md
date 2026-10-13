@@ -16,13 +16,21 @@
 - blocked by `fe-codec-dashboard` ✅ (LIF-208 Done)
 - blocked by `fe-codec-flow-session` ✅ (LIF-210 Done)
 
-## Downstream dependency — adaptive register (FLAGGED 2026-10-12, verified)
-The documented intent is a **dual, user-adaptive register** (game-like for students/teens · calm for adults
-turning their life around — `gamification/identity.md:11,6`). v1 builds the **calm/editorial baseline + a
-`RegisterMode`/intensity seam**; the game-like register is NOT buildable in this unit and is a genuine
-cross-unit dependency. See `docs/specs/foundation/fe-gamification/delivery/interpretation.md §7`.
-- **D-REG-1 · vivid/game `ThemePreset`** — does NOT exist (`theme-resolution.ts:6` = reader·editorial·quietDesk,
-  all calm). Owner: fe-codec-theme follow-up. **UNTRACKED in Linear → recommend filing an issue.**
-- **D-REG-2 · `motivation_style` setter** — `fe-settings` (LIF-193, Backlog); the field reads `null` with no
-  live setter today. This unit builds a deny-safe Preferences read port (absent/`null` ⇒ `calm`); live swap
-  at fe-settings.
+## Register architecture — DOC-RESOLVED (GM-16; interpretation.md §7)
+Dual, user-adaptive register (game for students/teens · calm for adults). **`game` is a GLOBAL preset**
+(built in G0), applied via the Preferences/Onboarding theme picker (GM-16 — the System does NOT own theming);
+persona → suggest-`game`-at-onboarding is Onboarding's hand-off. The System reads persona only for **reward
+COPY** (EC-10). D-REG-1 (the game preset) is **RESOLVED in-unit (G0)**; D-REG-2 (`motivation_style` setter) =
+`fe-settings` (LIF-193, in progress) — this unit reads it deny-safe (absent ⇒ neutral framing).
+
+## Build Steps (slice log)
+- **G0 · Game global preset ✅ DONE** (`3a7d525` + `0306eb0`) — the manhwa-"System" register: `color.game` ramp
+  (cool-violet accent + slate neutral) + `fontFamily.game` (geometric sans) + `semantic.game(.dark).json`
+  overlays + `build-tokens.mjs` PRESETS + `theme-resolution.ts`/`provider.tsx` extended; regenerated themes.ts
+  (8 base) + fonts.ts. **tsc 0 · @vida/ui 526/526 · B10 AA matrix includes game · Visual Gate PASS** (Brave,
+  measured: surface/accent resolve to game ramp both modes · sans voice swaps · AA muted-light 4.88 / body
+  16.91 / accent-on-tinted 6.32–8.38 ≥ 4.5 · danger preset-invariant). §XXIX currency updated. EC-1, EC-2.
+- **S1 · Multi-mode shell + Overview + wiring** — next (EC-3, EC-4, EC-10).
+- S2 Currencies · S3 Achievements · S4 Rules+Flow · S5 Activity — pending.
+- NB: worktree consumes @vida/ui via node_modules symlinks → main; the Visual Gate aliased @vida/ui → worktree
+  src via a throwaway `vite.vg.config.ts` (deleted). Commit with explicit paths (never stage the symlinks).
