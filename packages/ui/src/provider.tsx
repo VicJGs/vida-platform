@@ -43,6 +43,7 @@ export interface UIProviderProps extends Omit<TamaguiProviderProps, 'config' | '
 const PRESET_FONTS: Record<Exclude<ThemePreset, 'editorial'>, { body: string; display: string }> = {
   reader: { body: fonts.fontFamily.readerBody, display: fonts.fontFamily.readerDisplay },
   quietDesk: { body: fonts.fontFamily.quietDeskBody, display: fonts.fontFamily.quietDeskDisplay },
+  game: { body: fonts.fontFamily.gameBody, display: fonts.fontFamily.gameDisplay }, // fe-gamification G0 — the sans "System" voice
 }
 
 const DENSITY_STYLE_ID = 'vida-density-scale'

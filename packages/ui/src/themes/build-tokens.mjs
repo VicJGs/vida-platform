@@ -171,6 +171,7 @@ const PRESETS = [
   { light: 'light', dark: 'dark', lightOverlay: null, darkOverlay: 'semantic.dark.json' }, // editorial (default, bare)
   { light: 'light_reader', dark: 'dark_reader', lightOverlay: 'semantic.reader.json', darkOverlay: 'semantic.reader.dark.json' },
   { light: 'light_quietDesk', dark: 'dark_quietDesk', lightOverlay: 'semantic.quietDesk.json', darkOverlay: 'semantic.quietDesk.dark.json' },
+  { light: 'light_game', dark: 'dark_game', lightOverlay: 'semantic.game.json', darkOverlay: 'semantic.game.dark.json' }, // fe-gamification G0 (LIF-181) — the motivating manhwa-"System" register
 ]
 
 StyleDictionary.registerFormat({

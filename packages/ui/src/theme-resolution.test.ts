@@ -12,7 +12,7 @@ import {
 } from './theme-resolution'
 
 describe('resolveTheme', () => {
-  // The exhaustive 6 (preset × mode) → scheme-first name matrix. Each name MUST be a base theme registered in themes.ts.
+  // The exhaustive 8 (preset × mode) → scheme-first name matrix. Each name MUST be a base theme registered in themes.ts.
   const cases: Array<[ThemePreset, ThemeMode, ThemeName]> = [
     ['editorial', 'light', 'light'],
     ['editorial', 'dark', 'dark'],
@@ -20,6 +20,8 @@ describe('resolveTheme', () => {
     ['reader', 'dark', 'dark_reader'],
     ['quietDesk', 'light', 'light_quietDesk'],
     ['quietDesk', 'dark', 'dark_quietDesk'],
+    ['game', 'light', 'light_game'],
+    ['game', 'dark', 'dark_game'],
   ]
 
   it.each(cases)('%s + %s → theme "%s" (scheme-first)', (preset, mode, expected) => {
@@ -37,7 +39,7 @@ describe('resolveTheme', () => {
   })
 
   it('non-default presets prefix the mode (scheme is the FIRST segment)', () => {
-    for (const preset of ['reader', 'quietDesk'] as const) {
+    for (const preset of ['reader', 'quietDesk', 'game'] as const) {
       for (const mode of ['light', 'dark'] as const) {
         const { themeName } = resolveTheme({ preset, mode, density: 'calm' })
         expect(themeName.split('_')[0]).toBe(mode) // scheme first
@@ -52,8 +54,8 @@ describe('defaults + constants', () => {
     expect(THEME_DEFAULT).toEqual({ preset: 'editorial', mode: 'light', density: 'calm' })
   })
 
-  it('THEME_PRESETS lists all three presets', () => {
-    expect([...THEME_PRESETS].sort()).toEqual(['editorial', 'quietDesk', 'reader'])
+  it('THEME_PRESETS lists all four presets', () => {
+    expect([...THEME_PRESETS].sort()).toEqual(['editorial', 'game', 'quietDesk', 'reader'])
   })
 
   it('the density space band + dense px map agree on keys (inset band only, no large layout tokens)', () => {
