@@ -26,8 +26,16 @@ change**; the UI renders the seam's shapes and holds no business logic (IR-G3). 
   Level · Currencies (balances) · Recent achievements. Each block threads its OWN state (BR-2); block-empties are
   honest teaching lines, **NO action buttons** (each mode's working entry points arrive with its slice).
 - **`gamification-surface.tsx`** — the route (default export): title-hero + the 5-mode `Tabs` switcher (EC-3) +
-  the Overview panel (its 8-state) + the not-yet-built modes as honest `EmptyState` (the governed guideline —
-  ADR-007 §3.6 / 8-state canon, NOT an ad-hoc placeholder). S4–S5 replace Rules(+Flow) · Activity.
+  the Overview panel (its 8-state) + the not-yet-built mode(s) as honest `EmptyState` (the governed guideline —
+  ADR-007 §3.6 / 8-state canon, NOT an ad-hoc placeholder). S5 replaces Activity.
+- **`use-rules.ts` + `rules-mode.tsx` + `rule-authoring-flow.tsx`** (S4 · EC-7/EC-9) — the Rules mode + authoring Flow.
+  Rules mode = `CollectionView` list + per-rule condition/consequence summary + Enabled/Disabled toggle + delete +
+  `+ New <rule>` (register-aware EC-10 Rules↔Quests). The Flow = the novel wizard over `FlowSessionView`: 3 stages
+  condition→reward→review, `renderStage` forms + own Back/Next/Create. Condition = the honest empty-seam measures
+  (the ADR-011 §3.6 registry ships empty + has no enumeration API → no measures to pick at M1, EC-9) + an
+  event_trigger; reward = grant/lock a currency (money·allowance·time) + a deny-safe Dream earmark (GM-7, empty at
+  M1); review → optimistic-local `createRule`. Data stubbed (IR-G1). **NB:** the Flow passes NO `FlowSessionView`
+  affordance handlers (it owns its own Back/Next/Create) — which required the `@vida/ui` render-when-handler fix.
 - **`use-achievements.ts` + `achievements-mode.tsx`** (S3 · EC-6) — the Achievements mode, the FIRST genuine
   2-layout `CollectionView`: **calm = list · game = trophy wall**, the default PRESET-keyed (game→gallery, else list —
   the S1 ring idiom via `useActivePreset`) + the switcher lets the user override. Data = `listAchievements`×

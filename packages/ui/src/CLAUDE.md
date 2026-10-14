@@ -498,6 +498,11 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   adapter (`toFlowProps` + `mapEffectLog` [ADR-004 applied_effects → effect-rail] + `bindFlowIntents` against a
   `SessionsPort`; live `useFlowSession` hook deferred, R3). Spec:
   `docs/specs/components/ui-2-platform-views/flow-session-view.md`. Delivery: `docs/specs/foundation/fe-codec-flow-session/`.
+  **fe-gamification S4 — affordances are render-when-handler:** the standardized current-stage affordances (Mark done ·
+  Require proof · Attach Document/Photo/Audio) now render PER-HANDLER (each only when its `onMarkDone`/`onRequireProof`/
+  `onAttach` is passed; the row is omitted entirely when none are) — the DS `onFilter != null` idiom. A deliverable flow
+  passing handlers is unchanged; a NON-deliverable flow (the rule-authoring create-wizard, whose `renderStage` body owns
+  its own Back/Next/Create) passes none and gets a clean staged frame instead of dead no-op buttons.
   **canvas-reader** is **fe-codec-canvas-reader · S1** (LIF-206) — the CODEC **Canvas: Reader shell**, the **5th archetype
   shell**. A long-form **read·listen·annotate** FRAME; S1 ships the frame + header + reading column + states (Contents
   panel S2 · margin rail S3 · selection S4 · listen bar S5 EXTEND it). A SHELL (the flow-session pattern) — **NON-GENERIC**

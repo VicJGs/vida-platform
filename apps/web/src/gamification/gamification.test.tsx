@@ -79,11 +79,11 @@ describe('GamificationSurface (S1 — EC-3 switcher + EC-4 Overview)', () => {
   })
 
   it('EC-3 — switching to a still-not-built mode shows the honest EmptyState (no dead action)', () => {
-    // Currencies (S2) + Achievements (S3) are built; Rules/Activity remain honest EmptyState placeholders (S4–S5).
+    // Currencies (S2) + Achievements (S3) + Rules (S4) are built; Activity remains the honest EmptyState (S5).
     const { getByText, getAllByRole } = renderUI(<GamificationSurface />)
-    const rulesTab = getAllByRole('tab').find((t) => t.textContent === 'Rules')!
-    fireEvent.click(rulesTab)
-    expect(getByText('Author a rule: when something happens, grant a reward.')).not.toBeNull()
+    const activityTab = getAllByRole('tab').find((t) => t.textContent === 'Activity')!
+    fireEvent.click(activityTab)
+    expect(getByText('A running history of everything your System has earned, locked, spent, and shared.')).not.toBeNull()
   })
 
   it('EC-10 — the game register renames the Rules tab to Quests (copy only)', () => {

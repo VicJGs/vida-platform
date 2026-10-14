@@ -78,6 +78,24 @@ COPY** (EC-10). D-REG-1 (the game preset) is **RESOLVED in-unit (G0)**; D-REG-2 
   light/dark × {desktop,375}: calm list grouped-by-category [editorial 4.94] · game trophy-wall gallery [light 4.88 /
   dark@375 6.5] · **earned medal ring 5.38 light / 6.58 dark ≥3:1** · locked ring = decorative border, state via text ·
   progress bars · honest empty [shell EmptyState, count —] · no 375 overflow).
-- S4 Rules+Flow · S5 Activity — pending.
+- **S4 · Rules mode + Rule-authoring Flow ✅ DONE** (uncommitted — awaiting commit) — EC-7, EC-9. `apps/web/src/
+  gamification/`: `use-rules` (data seam — `listRules` stubbed, honest M1 default EMPTY [user-authored]; enable/
+  disable/delete/create optimistic-local; the Flow's three reads grounded: `availableMeasures` EMPTY [the ADR-011
+  §3.6 registry ships empty + exposes only query(key), no enumeration → honest empty-seam EC-9] · `rewardCurrencies`
+  [listCurrencies] · `dreams` EMPTY [deny-safe Purposes read, GM-7]) · `rules-mode` (CollectionView list + per-rule
+  condition/consequence summary + Enabled/Disabled toggle + delete + `+ New <rule>`; register-aware EC-10 Rules↔Quests)
+  · `rule-authoring-flow` (the novel wizard over `FlowSessionView`: 3 stages condition→reward→review, renderStage
+  forms + own Back/Next/Create; condition = honest empty-seam measures + an event_trigger; reward = grant/lock a
+  currency [money·allowance·time] + deny-safe Dream earmark; review → optimistic-local `createRule`). Wired into
+  `gamification-surface` (replaced the Rules `EmptyState`).
+  **@vida/ui root-fix (the fix-the-root precedent, like S1 Tabs):** `FlowSessionView` rendered its standardized
+  affordances (Mark done · Require proof · Attach Document/Photo/Audio) UNCONDITIONALLY for the current stage →
+  dead no-op buttons in a create-wizard. Now **render-when-handler** (per-affordance, the DS `onFilter != null`
+  idiom): a deliverable flow passing handlers is unchanged; a wizard passing none gets a clean frame. +1 @vida/ui test.
+  **Gates:** tsc 0 (@vida/ui + @vida/web) · eslint 0 · **@vida/web 540/540 · @vida/ui 527/527** · **Visual Gate PASS**
+  (Brave, editorial/light + game/dark@375: rules list EC-7 · the 3-stage Flow EC-9 [honest empty-seam measures ·
+  reward money/allowance/time · deny-safe Dream · done-stage collapsed proof] · **NO dead affordances** · AA 4.94/6.5 ·
+  no 375 overflow).
+- S5 Activity — pending (the last mode).
 - NB: worktree consumes @vida/ui via node_modules symlinks → main; the Visual Gate aliased @vida/ui → worktree
   src via a throwaway `vite.vg.config.ts` (deleted). Commit with explicit paths (never stage the symlinks).

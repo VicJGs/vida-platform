@@ -18,6 +18,7 @@ import { Button, EmptyState, Tabs } from '@vida/ui'
 import { AchievementsMode } from './achievements-mode'
 import { CurrenciesMode } from './currencies-mode'
 import { GamificationOverviewPanel } from './gamification-overview'
+import { RulesMode } from './rules-mode'
 import { rewardCopy } from './reward-copy'
 import { useGamification } from './use-gamification'
 import { usePersona } from './use-persona'
@@ -107,7 +108,7 @@ export function GamificationSurface() {
           <AchievementsMode />
         </Tabs.Panel>
         <Tabs.Panel value="rules">
-          <ModeEmpty title={copy.rules} body={`Author a ${copy.rules.toLowerCase().replace(/s$/, '')}: when something happens, grant a ${copy.reward.toLowerCase()}.`} />
+          <RulesMode />
         </Tabs.Panel>
         <Tabs.Panel value="activity">
           <ModeEmpty title="Activity" body="A running history of everything your System has earned, locked, spent, and shared." />
