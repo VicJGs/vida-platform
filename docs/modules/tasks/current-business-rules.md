@@ -31,7 +31,25 @@
 - **BR-TK-S1-8 (M1.0 encryption seam).** `[E]` `title`/`description` pass through (`encryptedFields:[]`); real
   field encryption is M3/DB-5. The seam is present but dormant.
 
+## S2 — Sub-tasks + M4 rollup (BUILT 2026-10-14)
+- **BR-TK-S2-1 (single-level nesting, TK-3).** `addSubtask(parentId, …)` requires the parent to be top-level
+  (`parent.parent_task_id == null`) else `SubtaskNestingError`; a missing parent ⇒ `TaskNotFoundError`. A sub-task may
+  still carry one parent-module FK (a different axis — the S1 ≤1 guard still runs via the delegated create).
+  **Enforcement boundary:** the guard lives at the `addSubtask` entry only. A raw `createTask`/`updateTask` with an
+  arbitrary `parent_task_id` is NOT data-layer-guarded against depth (createTask is a deliberate low-level primitive);
+  reads stay single-level (`getSubtasks`/`getRollup` look one level down). When a non-`addSubtask` write surface is
+  exposed (② UI / import), that surface must route through `addSubtask` or re-assert the invariant.
+- **BR-TK-S2-2 (rollup derives — no stored progress, TK-11/M3).** `getRollup(parentId)` computes `{done,total,progress}`
+  on read and writes nothing. `done`/`total` = completed/total direct-child counts; `progress` = the ADR-011 M4
+  weighted `rollup()` (composed from `foundation/measurement`, not hand-rolled) over each child's milestone-from-status
+  leaf (`normalize({kind:'milestone', done})`), weighted by `nesting_weight` (NULL/0 ⇒ equal-weight). **No children ⇒
+  `progress:null`** (unmeasured, BR-2 — never coerced to 0).
+- **BR-TK-S2-3 (independence, TK-3).** Completing a parent never force-completes its children, and vice-versa —
+  `getRollup` is a read-only display derivation. Soft-deleted children are excluded from `getSubtasks` + `getRollup`.
+- **BR-TK-S2-4 (leaf measure scope).** In M1 a task's only measurable leaf signal is completion (binary milestone);
+  richer per-kind task measures (quantitative/rate/qualitative) are S6. `measurement_kind` is carried but the rollup
+  leaf reads completion status.
+
 ## Not yet enforced (designed, downstream)
-TK-3 single-level sub-task nesting-at-create + M4 rollup (S2) · TK-6 completion effects (S3) · TK-5 timer/`log_time`/
-`actual_minutes` (S4) · TK-7 obligation recurrence (S5) · TK-11 contribution emit (S6) · TK-9 aggregation R7 (S7) ·
-TK-8 tags (S8).
+TK-6 completion effects (S3) · TK-5 timer/`log_time`/`actual_minutes` (S4) · TK-7 obligation recurrence (S5) ·
+TK-11 per-kind measure + contribution emit (S6) · TK-9 aggregation R7 (S7) · TK-8 tags (S8).

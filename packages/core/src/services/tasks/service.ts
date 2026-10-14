@@ -14,6 +14,7 @@
 
 import { and, eq, isNull } from 'drizzle-orm'
 import { createRepository, type CreateInput } from '../../db/repository'
+import { normalize, rollup } from '../../foundation/measurement'
 import { tasks, taskTimeLogs } from '../../db/schema/tasks'
 import { CreateTaskSchema, UpdateTaskSchema, ListTasksFilterSchema } from '../../validators/task'
 import {
@@ -22,8 +23,11 @@ import {
   type CreateTaskInput,
   type UpdateTaskInput,
   type ListTasksFilter,
+  type AddSubtaskInput,
+  type TaskRollup,
   TaskNotFoundError,
   MultipleParentError,
+  SubtaskNestingError,
 } from './types'
 import type { TaskRow } from '../../db/schema/tasks'
 
@@ -164,11 +168,47 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     })
   }
 
+  // ---- S2: sub-tasks + M4 rollup -------------------------------------------
+  async function addSubtask(parentId: string, input: AddSubtaskInput): Promise<TaskRow> {
+    const parent = await tasksRepo.findById(parentId)
+    if (!parent) throw new TaskNotFoundError(parentId)
+    // Single-level nesting (TK-3): a sub-task may not have sub-tasks of its own.
+    if (parent.parent_task_id != null) throw new SubtaskNestingError(parentId)
+    // Delegate to the S1 create path — the ≤1-parent-module guard + NN-default backfill still apply.
+    return createTask({ ...input, parent_task_id: parentId })
+  }
+
+  async function getSubtasks(parentId: string): Promise<TaskRow[]> {
+    // findWhere skips the soft-delete filter → pass isNull(deleted_at) explicitly.
+    const rows = await tasksRepo.findWhere(
+      and(eq(tasks.parent_task_id, parentId), isNull(tasks.deleted_at))!,
+    )
+    return rows.sort((a, b) => a.sort_order - b.sort_order || a.created_at - b.created_at)
+  }
+
+  /** Sub-task rollup (TAS-10) — DERIVED on read (no stored progress, TK-11/M3). A task's measurable leaf signal in
+   *  M1 is completion (binary milestone); richer per-kind task measures are S6. Completing a parent never
+   *  force-completes children — this is a read-only display derivation. */
+  async function getRollup(parentId: string): Promise<TaskRollup> {
+    const children = await getSubtasks(parentId)
+    const done = children.filter((c) => c.status === 'completed').length
+    const progress = rollup(
+      children.map((c) => ({
+        progress: normalize({ kind: 'milestone', done: c.status === 'completed' }),
+        weight: c.nesting_weight,
+      })),
+    )
+    return { done, total: children.length, progress }
+  }
+
   return {
     createTask,
     updateTask,
     softDeleteTask,
     getTask,
     listTasks,
+    addSubtask,
+    getSubtasks,
+    getRollup,
   }
 }

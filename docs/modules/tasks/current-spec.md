@@ -11,7 +11,7 @@
 | Slice | State | Surface |
 |-------|-------|---------|
 | **S1 Foundation** | ✅ BUILT (2026-10-14) | CRUD · ≤1-parent guard · app-layer cascade · list filters · DB-11 reconcile |
-| S2 Sub-tasks + M4 rollup | ⬜ designed | `getRollup` derived-on-read |
+| **S2 Sub-tasks + M4 rollup** | ✅ BUILT (2026-10-14) | `addSubtask` (single-level) · `getSubtasks` · `getRollup` derived-on-read |
 | S3 Completion + effects | ⬜ designed | `completeTask`/`reopenTask` + S4 effect fan-out |
 | S4 Timer + log_time | ⬜ designed | `startTimer`/`stopTimer`, `actual_minutes` |
 | S5 Obligations + recurrence | ⬜ designed | `setRecurrence`, regenerate (the routines RT-4 seam) |
@@ -41,6 +41,15 @@
 - `listTasks(filter?): TaskRow[]` — `findAll` (soft-delete filtered) + JS filter by status/priority/parent/project/
   completed/due_before. (Pagination is ② P6.)
 - **Returns Drizzle `TaskRow`** (not `@vida/types.Task` — the interface is the mirror; `_sync_status` string≠union).
+
+## S2 surface — sub-tasks + rollup
+- `addSubtask(parentId, input): TaskRow` — `TaskNotFoundError` if parent absent; **single-level** (`SubtaskNestingError`
+  if the parent is itself a sub-task, TK-3); delegates to `createTask` with `parent_task_id=parentId` (S1 guards apply).
+- `getSubtasks(parentId): TaskRow[]` — direct children, soft-delete filtered, ordered `sort_order` then `created_at`.
+- `getRollup(parentId): { done, total, progress }` — DERIVED (no stored column): `done`/`total` = completed/child
+  counts; `progress` = ADR-011 M4 `rollup()` over each child's milestone-from-status leaf (`normalize`), weighted by
+  `nesting_weight` (NULL ⇒ equal); **no children ⇒ `progress:null`** (unmeasured, never 0). Read-only — a parent's
+  completion never force-completes children.
 
 ## DB-11 reconcile (shipped S1)
 `@vida/types/task.ts`: `Task` dropped `tags`, gained `scheduled_date`/`completed_at`/`kind`/`recurrence_rule`/

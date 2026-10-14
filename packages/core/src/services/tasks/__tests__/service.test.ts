@@ -16,7 +16,12 @@ import { initVault } from '../../../encryption/vault'
 import { createRepository } from '../../../db/repository'
 import { taskTimeLogs } from '../../../db/schema/tasks'
 import { createTasksService } from '../service'
-import { type TasksService, TaskNotFoundError, MultipleParentError } from '../types'
+import {
+  type TasksService,
+  TaskNotFoundError,
+  MultipleParentError,
+  SubtaskNestingError,
+} from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -221,6 +226,79 @@ describe('mod-tasks S1 — tasks CRUD + queries', () => {
 
       await h.svc.softDeleteTask(b.id)
       expect((await h.svc.listTasks()).map((t) => t.id).sort()).toEqual([a.id, sub.id].sort())
+    })
+  })
+})
+
+describe('mod-tasks S2 — sub-tasks + M4 rollup', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  describe('addSubtask', () => {
+    it('adds a child under a top-level parent', async () => {
+      const p = await h.svc.createTask({ title: 'Parent' })
+      const c = await h.svc.addSubtask(p.id, { title: 'Child' })
+      expect(c.parent_task_id).toBe(p.id)
+      expect((await h.svc.getSubtasks(p.id)).map((t) => t.id)).toEqual([c.id])
+    })
+    it('rejects nesting under a sub-task (single-level, TK-3)', async () => {
+      const p = await h.svc.createTask({ title: 'Parent' })
+      const c = await h.svc.addSubtask(p.id, { title: 'Child' })
+      await expect(h.svc.addSubtask(c.id, { title: 'Grandchild' })).rejects.toBeInstanceOf(
+        SubtaskNestingError,
+      )
+    })
+    it('rejects a missing parent', async () => {
+      await expect(h.svc.addSubtask('nope', { title: 'x' })).rejects.toBeInstanceOf(TaskNotFoundError)
+    })
+    it('a sub-task may carry one module FK (different axis); two → MultipleParentError', async () => {
+      const p = await h.svc.createTask({ title: 'Parent' })
+      await expect(h.svc.addSubtask(p.id, { title: 'ok', project_id: 'pr' })).resolves.toBeTruthy()
+      await expect(
+        h.svc.addSubtask(p.id, { title: 'bad', project_id: 'pr', course_id: 'co' }),
+      ).rejects.toBeInstanceOf(MultipleParentError)
+    })
+  })
+
+  describe('getRollup', () => {
+    it('no children → {0, 0, null} (unmeasured, never 0)', async () => {
+      const p = await h.svc.createTask({ title: 'P' })
+      expect(await h.svc.getRollup(p.id)).toEqual({ done: 0, total: 0, progress: null })
+    })
+    it('equal-weight: 1 of 2 complete → 0.5', async () => {
+      const p = await h.svc.createTask({ title: 'P' })
+      const c1 = await h.svc.addSubtask(p.id, { title: 'c1' })
+      await h.svc.addSubtask(p.id, { title: 'c2' })
+      await h.svc.updateTask(c1.id, { status: 'completed' })
+      expect(await h.svc.getRollup(p.id)).toEqual({ done: 1, total: 2, progress: 0.5 })
+    })
+    it('weighted: weight-3 (done) + weight-1 (not) → 0.75', async () => {
+      const p = await h.svc.createTask({ title: 'P' })
+      const big = await h.svc.addSubtask(p.id, { title: 'big', nesting_weight: 3 })
+      await h.svc.addSubtask(p.id, { title: 'small', nesting_weight: 1 })
+      await h.svc.updateTask(big.id, { status: 'completed' })
+      const r = await h.svc.getRollup(p.id)
+      expect(r.done).toBe(1)
+      expect(r.total).toBe(2)
+      expect(r.progress).toBeCloseTo(0.75, 5)
+    })
+    it('completing the parent does not complete children, and vice-versa', async () => {
+      const p = await h.svc.createTask({ title: 'P' })
+      const c = await h.svc.addSubtask(p.id, { title: 'c' })
+      await h.svc.updateTask(p.id, { status: 'completed' })
+      expect((await h.svc.getTask(c.id))?.status).toBe('not_started') // child untouched
+      expect((await h.svc.getRollup(p.id)).done).toBe(0)
+    })
+    it('excludes soft-deleted children', async () => {
+      const p = await h.svc.createTask({ title: 'P' })
+      const c1 = await h.svc.addSubtask(p.id, { title: 'c1' })
+      const c2 = await h.svc.addSubtask(p.id, { title: 'c2' })
+      await h.svc.updateTask(c1.id, { status: 'completed' })
+      await h.svc.softDeleteTask(c2.id)
+      expect(await h.svc.getRollup(p.id)).toEqual({ done: 1, total: 1, progress: 1 })
+      expect((await h.svc.getSubtasks(p.id)).map((t) => t.id)).toEqual([c1.id])
     })
   })
 })

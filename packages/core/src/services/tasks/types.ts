@@ -86,6 +86,21 @@ export interface ListTasksFilter {
   due_before?: string | null
 }
 
+// --- S2 inputs (sub-tasks + rollup) ------------------------------------------
+/** A sub-task body — the create surface minus `parent_task_id` (addSubtask sets it to the parent). */
+export type AddSubtaskInput = Omit<CreateTaskInput, 'parent_task_id'>
+
+/**
+ * The sub-task progress rollup (TAS-10). `done`/`total` are the completed/total child counts; `progress` is the
+ * ADR-011 M4 weighted rollup (Σ child×weight / Σ weight) over the children's milestone-from-status leaf progress,
+ * `null` when there are no (measured) children — DERIVED on read, never a stored column (TK-11/M3).
+ */
+export interface TaskRollup {
+  done: number
+  total: number
+  progress: number | null
+}
+
 // --- service surface (grows per slice) ---------------------------------------
 export interface TasksService {
   // S1 — tasks CRUD + queries
@@ -94,6 +109,10 @@ export interface TasksService {
   softDeleteTask(id: string): Promise<void>
   getTask(id: string): Promise<TaskRow | null>
   listTasks(filter?: ListTasksFilter): Promise<TaskRow[]>
+  // S2 — sub-tasks + M4 rollup
+  addSubtask(parentId: string, input: AddSubtaskInput): Promise<TaskRow>
+  getSubtasks(parentId: string): Promise<TaskRow[]>
+  getRollup(parentId: string): Promise<TaskRollup>
 }
 
 // --- typed errors ------------------------------------------------------------
@@ -109,5 +128,13 @@ export class MultipleParentError extends Error {
   constructor(message = 'A task may set at most one parent module (project / milestone / course / contact)') {
     super(message)
     this.name = 'MultipleParentError'
+  }
+}
+
+/** addSubtask under a task that is itself a sub-task — sub-tasks are single-level (TK-3). */
+export class SubtaskNestingError extends Error {
+  constructor(parentId: string) {
+    super(`Cannot nest under a sub-task (single-level only, TK-3): ${parentId}`)
+    this.name = 'SubtaskNestingError'
   }
 }
