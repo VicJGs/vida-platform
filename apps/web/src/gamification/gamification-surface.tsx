@@ -15,6 +15,7 @@
 import type { ReactNode } from 'react'
 import { Text, View } from '@tamagui/core'
 import { Button, EmptyState, Tabs } from '@vida/ui'
+import { CurrenciesMode } from './currencies-mode'
 import { GamificationOverviewPanel } from './gamification-overview'
 import { rewardCopy } from './reward-copy'
 import { useGamification } from './use-gamification'
@@ -99,7 +100,7 @@ export function GamificationSurface() {
       <Tabs items={items} defaultValue="overview" aria-label="System views">
         <Tabs.Panel value="overview">{overviewBody}</Tabs.Panel>
         <Tabs.Panel value="currencies">
-          <ModeEmpty title="Currencies" body="Your points — real-money, measured-time, and self-granted — will live here, grouped by kind." />
+          <CurrenciesMode />
         </Tabs.Panel>
         <Tabs.Panel value="achievements">
           <ModeEmpty title="Achievements" body="Every achievement by category and tier, with progress toward the ones still locked." />

@@ -51,6 +51,19 @@ COPY** (EC-10). D-REG-1 (the game preset) is **RESOLVED in-unit (G0)**; D-REG-2 
   indicator tracks] · honest EmptyState no dead action · axe-structure clean). Throwaway VG harness removed.
   **⚠ Worktree:** apps/web's `@vida/ui` symlink canonicalizes to MAIN (no `game`) — re-pointed to the worktree +
   rebuilt dist for the gates; a `pnpm install` reverts it (see `apps/web/src/gamification/CLAUDE.md`).
-- S2 Currencies · S3 Achievements · S4 Rules+Flow · S5 Activity — pending.
+- **S2 · Currencies mode ✅ DONE** (uncommitted — awaiting commit) — EC-5. `apps/web/src/gamification/`:
+  `use-currencies` (data seam — `listCurrencies`×`getBalances` join, STUBBED IR-G1; honest M1 default = the shipped
+  XP currency; paginated 50/page; optimistic-local `create`; `?sample`/`?big`/`?force=loading|error|empty`) ·
+  `currencies-mode` (the mandated `CollectionView` shell — title/count/8-state — + a grouped `ListView` `sections`,
+  one per backing kind [Real money · Measured time · Self-granted], each row = name + current + 🔒 **Lucide** Lock +
+  locked + the balance-composition "ledger snippet" [no per-currency ledger op in the seam — S5 owns the ledger];
+  a `Pager` + the `+ New currency` optimistic-local inline create live in the BODY — NOT `onNewView` [SavedView-
+  semantic, hardcoded "New view"]). Wired into `gamification-surface` (replaced the Currencies `EmptyState`).
+  **Gates:** tsc 0 · eslint 0 · **@vida/web 530/530** (+7) · **Visual Gate PASS** (Brave, Currencies tab, 3 presets ×
+  light/dark × {desktop,375}: AA 4.94/6.50/5.76 incl. warm game-dark · grouped 3 kinds · Lucide lock · pager "1–50 of
+  120" multi-page at `?big` · optimistic-local create form at 375 no-overflow · honest empty [shell EmptyState + create
+  still reachable]). §XXVIII note: `CollectionView` with `layouts=['list']` shows a lone "List" switcher — accepted
+  (the slice-map mandates `CollectionView`; proposing `ListView`-direct was drift, Victor-corrected).
+- S3 Achievements · S4 Rules+Flow · S5 Activity — pending.
 - NB: worktree consumes @vida/ui via node_modules symlinks → main; the Visual Gate aliased @vida/ui → worktree
   src via a throwaway `vite.vg.config.ts` (deleted). Commit with explicit paths (never stage the symlinks).

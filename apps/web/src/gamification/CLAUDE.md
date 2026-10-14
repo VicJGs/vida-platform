@@ -26,9 +26,14 @@ change**; the UI renders the seam's shapes and holds no business logic (IR-G3). 
   Level · Currencies (balances) · Recent achievements. Each block threads its OWN state (BR-2); block-empties are
   honest teaching lines, **NO action buttons** (each mode's working entry points arrive with its slice).
 - **`gamification-surface.tsx`** — the route (default export): title-hero + the 5-mode `Tabs` switcher (EC-3) +
-  the Overview panel (its 8-state) + the 4 not-yet-built modes as honest `EmptyState` (the governed guideline —
-  ADR-007 §3.6 / 8-state canon, NOT an ad-hoc placeholder). S2–S5 replace Currencies · Achievements · Rules(+Flow) ·
-  Activity with their real `CollectionView` shells.
+  the Overview panel (its 8-state) + the not-yet-built modes as honest `EmptyState` (the governed guideline —
+  ADR-007 §3.6 / 8-state canon, NOT an ad-hoc placeholder). S3–S5 replace Achievements · Rules(+Flow) · Activity.
+- **`use-currencies.ts` + `currencies-mode.tsx`** (S2 · EC-5) — the Currencies mode. Data seam = `listCurrencies`×
+  `getBalances` join, STUBBED (honest M1 default = the shipped XP currency), paginated 50/page, optimistic-local
+  `create`. The mode = the mandated `CollectionView` shell (title/count/8-state) + a grouped `ListView` `sections`
+  (one per backing kind), each row = name + current + 🔒 **Lucide** Lock + locked + the balance-composition snippet
+  (no per-currency ledger op in the seam — S5 owns the ledger). The `Pager` + the `+ New currency` optimistic-local
+  create live in the BODY, NOT `onNewView` (that `+` is SavedView-semantic, hardcoded "New view").
 
 ## Key invariants (why, not what)
 - **The switcher is `Tabs` (role=tablist), not a toolbar.** The modes are DIFFERENT content (the entity-view
