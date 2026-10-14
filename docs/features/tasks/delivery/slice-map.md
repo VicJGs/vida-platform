@@ -1,0 +1,40 @@
+<!-- Slice Map — features/tasks · Entity Delivery Flow ① · Step 2 Decomposition Gate -->
+<!-- Each slice tagged backend. ① = backend (this task). ② UI = P6. -->
+
+# Slice Map — Tasks (① backend)
+
+> **Scope:** the `@vida/core` TasksService over the BUILT schema (migration 015, 2 tables, all INTENDED cols authored). 0 service code today.
+> **Why first:** pulled ahead of mod-routines (Victor, 2026-10-14) — routines drives task-type steps + the RT-4 recurrent task.
+> **Out of scope (② UI / P6, ADR-020):** 12 layouts, view-builder chrome, board drag, running-timer indicator, optimistic apply/revert. Full V1 view anatomy = deferred ADR-007 pass.
+> **Envision Gate:** N/A (pure backend).
+
+## Gate decisions (from interpretation.md §5 — Victor approves)
+- **D1** — `surface_calendar` is NOT an effect type; calendar = read-seam over `due_date`/`scheduled_date`/`dueIn`. Don't invent it.
+- **D2** — `task_time_logs` ↔ session-extension ownership (TAS-18): keep the ledger; `log_time` writes it; decide exact ownership jointly with Sessions **at S4**.
+- **D3** — aggregation providers deny-safe per source (built: projects/relationships; absent degrade that group).
+
+## Factory
+`createTasksService(deps): TasksService` — `deps = { db, deviceId, spaces: SpacesService, notes: NotesService,
+registry: TaggableTypeRegistry, sessions: SessionsService, effects?: EffectsPort, measurementSources?: MeasurementSourceRegistry,
+providers?: AggregationProviderPort }`. Foundation services required; rail + aggregation providers deny-safe optional.
+
+## Slices (all `backend`; each closes with the per-slice Verification Gate — live-store, no batching)
+
+| # | Slice | TAS rows | Why this boundary |
+|---|-------|----------|-------------------|
+| **S1** | **Foundation — CRUD, ≤1-parent guard, enums, DB-11 reconcile, type registration** | 01,02,03,04,33,34,35,37,38 | The floor. `@vida/types` reconcile (Task +7 cols −`tags`; TaskTimeLog +`updated_at`) + factory + `tasks` repo + create/update/softDelete/list + `MultipleParentError` + enum validation + app-layer cascade + register `'task'`. |
+| **S2** | **Sub-tasks + M4 rollup** | 08,09,10,11 | `addSubtask` (single-level, TK-3) + `getSubtasks` + `getRollup`→{done,total} via `measurement.rollup` weighted by `nesting_weight`, **derived on read, no stored progress** (C6 guard). Parent never force-completes children. |
+| **S3** | **Completion + effect fan-out** | 06,07,19,20,26 | `completeTask` (status + `completed_at`) / `reopenTask`; on status→completed emit the S4 catalogue (`award_xp`, `contribute_purpose_metric`, `surface_journal`, `emit_measurement_signal`) via the rail — **producer only**. D1: no `surface_calendar`. |
+| **S4** | **Timer + `log_time` + `actual_minutes`** | 12,13,14,15,16,17,18 | `startTimer` (sessions sub-type; `TimerAlreadyRunningError`) / `stopTimer` (idempotent); `log_time` effect writes `task_time_logs`; `actual_minutes` = SUM (one write path); opt-out. **D2 resolved here** (jointly with Sessions). |
+| **S5** | **Obligations + recurrence** | 21,22,23,24 | `setRecurrence` (obligations only); regenerate next occurrence on completion; `RecurrenceRegenError` (complete-but-flag). The user-extensible `type` registry (duty/…) validated. **The seam routines' RT-4 recurrent task consumes.** |
+| **S6** | **Measurability axes + contribution** | 25,26 | Expose/validate `measurement_kind`×`binding_mode`; completion = event-trigger advancing the measure; UP-contribution via `contribute_purpose_metric` + guard (no M5 source C1, no M7 tables C2). |
+| **S7** | **Aggregation — R7 fan-out** | 05,32 | `getAggregatedTasks(grouping)` groups by parent + resolves labels via the deny-safe `providers` port (D3); standalone/Inbox group always included; per-group degradation, never a direct cross-module table read. |
+| **S8** | **Tags + Notes + Views** | 27,28,30,31 | `entity_tags` via `spaces.tagEntity`; task notes via `notes.ensureEntityNote(...,'task',...)`; `saveView`/`listViews`/`reorderViews`/`pinView` over the `views` primitive (cite-as-consumed; full anatomy deferred). |
+| **S9** | **Journal summary + DueProvider closer (the ① closer)** | 29(config),32,36(errors) | `summary(date)` ("completed today" via `completed_at` + due via `due_date`/`scheduled_date`) + `getDueReminders(range)` + `registerTasksJournal` + `registerTasksDueProvider`; the one config schema the 12 renderers consume. |
+
+**Coverage:** TAS-01…38 homed (29 config schema → S9; 36 optimistic-UI = ②/P6, only its typed-error half lands ①). ✓
+
+## Sequencing rationale
+- Spine S1→S2→S3; S4 timer composes Sessions; S5 obligations is the **routines-critical seam**; S6 measurability; S7 aggregation; S8 cross-cutting; S9 provider closer.
+- Each slice live-store verifiable; per-slice Verification Gate blocking.
+- **Worktree-isolated** — a peer session was active; build in `.claude/worktrees/mod-tasks`. [[parallel-session-shared-tree-collision-use-worktree]]

@@ -12,5 +12,8 @@ Follows the service data-flow pattern GOVERNED by docs/core/architecture/data-fl
 (validate -> repository -> encrypt-seam -> return). Rides foundation/ substrates; does not re-implement them.
 
 ## Status
-Directory home only (ADR-018). Service logic is authored PER-FEATURE at build phase (ADR-017).
-Types + Zod live in @vida/types. No feature code lives here yet.
+S1 BUILT (mod-tasks #65 · LIF-142 · 2026-10-14): `createTasksService` — CRUD + ≤1-parent guard + app-layer cascade +
+list filters, over DB-4 `tasks`/`task_time_logs` (migration 015). DB-11 reconcile shipped (`@vida/types.Task` +7 cols
+−`tags`). S2–S9 designed (sub-tasks/rollup · completion/effects · timer · obligations · measurability · aggregation ·
+tags/notes/views · Journal). Durable docs: `docs/modules/tasks/current-{spec,business-rules}.md`. Delivery:
+`docs/features/tasks/delivery/`.
