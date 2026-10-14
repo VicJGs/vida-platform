@@ -6295,3 +6295,25 @@ Next session:
   - **Env gotcha (critical):** the worktree consumes `@vida/ui` via `node_modules` symlinks → the MAIN repo's built `dist`, so edits to `@vida/ui` (e.g. the game preset) are NOT loaded by vite/tests unless aliased. The G0 Visual Gate used a throwaway `apps/web/vite.vg.config.ts` aliasing `@vida/ui` → worktree `src` (deleted). S1 mostly edits `apps/web` (consumes unchanged shells + the game preset) — rebuild the worktree `@vida/ui` dist OR re-add the src alias for any gate that must see the game preset. Node 24 via nvm. Commit with EXPLICIT paths (never stage the node_modules symlinks).
   - Symlinks created this session (worktree): `node_modules`, `apps/web/node_modules`, `packages/{ui,types,core,editor}/node_modules` → main. `stash@{0}` on main holds superseded tracker edits.
 ---
+
+---
+Date: 2026-10-14
+Task: fe-gamification (LIF-181)
+Goal: Build the ② "System" surface slices over the finished mod-gamification ①. This session: S1–S4, each §XXVI-gated + committed.
+Completed:
+  - S1 multi-mode shell + Overview (commit 79295c1) — 5-mode Tabs switcher + Overview over DashboardView (XP bar/ring PRESET-keyed via useActivePreset) + deny-safe persona→reward-copy (EC-3/4/10). apps/web/src/gamification/{use-gamification,use-active-preset,use-persona,reward-copy,xp-hero,gamification-overview,gamification-surface}.tsx + /gamification lazy route. In-issue fixes: provider PRESET_CLASSES += 'game' (stale-class bug the ring surfaced); onboarding theme-picker 'game' label; @vida/ui Tabs TabList scrollable (first 5-tab consumer at 375).
+  - S2 Currencies mode (1fbaa15) — CollectionView + grouped ListView (3 backing kinds) + Lucide Lock + pager 50/page + optimistic-local + New currency (EC-5).
+  - S3 Achievements mode (b253f9b) — the first 2-layout CollectionView: calm=list / game=trophy-wall gallery (PRESET-keyed default + switcher override), Lucide Medal ring ≥3:1, progress-toward-locked deny-safe (EC-6).
+  - S4 Rules mode + rule-authoring Flow (075393a) — CollectionView list + enable/disable/delete + the 3-stage FlowSessionView wizard (condition→reward→review; honest empty-seam measures [registry empty + no enumeration API]; reward money/allowance/time + deny-safe Dream earmark) (EC-7/9). @vida/ui fix: FlowSessionView affordances now render-when-handler (no dead buttons in a wizard).
+  - Per slice: tsc 0 · eslint 0 · unit tests · blocking real-browser Visual Gate PASS (Brave, presets × light/dark × {desktop,375}: AA ≥4.88 incl. warm game-dark, no overflow, tier ring/medal ≥3:1). Final suites: @vida/web 540/540 · @vida/ui 527/527.
+In progress:
+  - S5 Activity mode — NOT started. The LAST mode: the consequence-ledger history, paginated — a CollectionView list like S2 (EC-8).
+Decisions:
+  - Honored the slice-map's MANDATED shells (CollectionView, FlowSessionView) over swapping them — my "it doesn't fit" instincts were drift (Victor-corrected ×3: "check the documentation, everything is described"). Awkward fits resolved by body-composition + two backwards-compatible @vida/ui fix-the-roots (Tabs scrollable strip; FlowSessionView render-when-handler affordances), never a shell swap.
+  - Tier colors = label + a brand-accent medal ring, NOT bronze/silver/gold (no metal tokens; EC-11 token-purity → a Figma/M4 concern).
+  - The ring (S1) + register (EC-10) are preset-keyed-default idioms; reused for S3's calm=list/game=gallery default.
+Next session:
+  - FIRST ACTION: build S5 Activity. /begin → resume fe-gamification in this worktree (branch fe-gamification, 4 commits S1–S4). Read slice-map.md S5 + envision EC-8 first. GROUND the ledger read: the S1 seam subset exposes no listLedger — check the full gamification seam / whether a consequence-ledger read exists; if not, honest-empty/stub per IR-G1.
+  - Env: Node 24 via nvm. apps/web's @vida/ui symlink canonicalizes to MAIN (no 'game') — if S5 touches @vida/ui, re-point `ln -sfn "$PWD/packages/ui" apps/web/node_modules/@vida/ui` + `pnpm --filter @vida/ui build` before gates ([[worktree-apps-web-ui-symlink-resolves-to-main]]). Visual Gate = throwaway harness apps/web/vg.html + src/__vg__/gamification-entry.tsx (recreate; deleted after) + the window.process shim; drive /gamification, click the Activity tab.
+  - After S5 the unit is COMPLETE → open the PR (per-issue-branch workflow).
+---
