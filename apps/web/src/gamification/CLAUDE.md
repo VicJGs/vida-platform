@@ -27,7 +27,14 @@ change**; the UI renders the seam's shapes and holds no business logic (IR-G3). 
   honest teaching lines, **NO action buttons** (each mode's working entry points arrive with its slice).
 - **`gamification-surface.tsx`** — the route (default export): title-hero + the 5-mode `Tabs` switcher (EC-3) +
   the Overview panel (its 8-state) + the not-yet-built modes as honest `EmptyState` (the governed guideline —
-  ADR-007 §3.6 / 8-state canon, NOT an ad-hoc placeholder). S3–S5 replace Achievements · Rules(+Flow) · Activity.
+  ADR-007 §3.6 / 8-state canon, NOT an ad-hoc placeholder). S4–S5 replace Rules(+Flow) · Activity.
+- **`use-achievements.ts` + `achievements-mode.tsx`** (S3 · EC-6) — the Achievements mode, the FIRST genuine
+  2-layout `CollectionView`: **calm = list · game = trophy wall**, the default PRESET-keyed (game→gallery, else list —
+  the S1 ring idiom via `useActivePreset`) + the switcher lets the user override. Data = `listAchievements`×
+  `getUserAchievements` join (honest M1 default EMPTY — nothing seeded yet); progress-toward-locked NORMALIZED
+  {current,target}, deny-safe (the raw Record + condition target is a later backend slice). Tier = a LABEL +
+  a ringed **Lucide Medal** (brand accent earned / muted locked); NO bronze/silver/gold palette (EC-11 token-purity;
+  a Figma/M4 concern). List groups by category (`ListView` sections); gallery is flat medal tiles (`GalleryView`).
 - **`use-currencies.ts` + `currencies-mode.tsx`** (S2 · EC-5) — the Currencies mode. Data seam = `listCurrencies`×
   `getBalances` join, STUBBED (honest M1 default = the shipped XP currency), paginated 50/page, optimistic-local
   `create`. The mode = the mandated `CollectionView` shell (title/count/8-state) + a grouped `ListView` `sections`

@@ -15,6 +15,7 @@
 import type { ReactNode } from 'react'
 import { Text, View } from '@tamagui/core'
 import { Button, EmptyState, Tabs } from '@vida/ui'
+import { AchievementsMode } from './achievements-mode'
 import { CurrenciesMode } from './currencies-mode'
 import { GamificationOverviewPanel } from './gamification-overview'
 import { rewardCopy } from './reward-copy'
@@ -103,7 +104,7 @@ export function GamificationSurface() {
           <CurrenciesMode />
         </Tabs.Panel>
         <Tabs.Panel value="achievements">
-          <ModeEmpty title="Achievements" body="Every achievement by category and tier, with progress toward the ones still locked." />
+          <AchievementsMode />
         </Tabs.Panel>
         <Tabs.Panel value="rules">
           <ModeEmpty title={copy.rules} body={`Author a ${copy.rules.toLowerCase().replace(/s$/, '')}: when something happens, grant a ${copy.reward.toLowerCase()}.`} />

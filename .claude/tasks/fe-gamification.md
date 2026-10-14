@@ -64,6 +64,20 @@ COPY** (EC-10). D-REG-1 (the game preset) is **RESOLVED in-unit (G0)**; D-REG-2 
   120" multi-page at `?big` · optimistic-local create form at 375 no-overflow · honest empty [shell EmptyState + create
   still reachable]). §XXVIII note: `CollectionView` with `layouts=['list']` shows a lone "List" switcher — accepted
   (the slice-map mandates `CollectionView`; proposing `ListView`-direct was drift, Victor-corrected).
-- S3 Achievements · S4 Rules+Flow · S5 Activity — pending.
+- **S3 · Achievements mode ✅ DONE** (uncommitted — awaiting commit) — EC-6. `apps/web/src/gamification/`:
+  `use-achievements` (data seam — `listAchievements`×`getUserAchievements` join; honest M1 default = EMPTY [nothing
+  seeded until app init]; `progress`-toward-locked NORMALIZED {current,target} deny-safe [the raw Record + condition
+  target is a later backend slice, current-business-rules.md:96]; grouped by category; `?sample`/`?force`) ·
+  `achievements-mode` (the FIRST genuine 2-layout `CollectionView` — **calm = list · game = trophy wall**; default
+  layout PRESET-keyed [game→gallery, else list — the S1 ring idiom] + switcher override; list = `ListView` sections by
+  category; gallery = `GalleryView` tiles = ringed **Lucide Medal** [brand accent earned / muted locked] + title +
+  tier label + earned/progress; tier conveyed by LABEL [not a bronze/silver/gold palette — none exists, EC-11 token-
+  purity; a Figma/M4 concern]). Wired into `gamification-surface` (replaced the Achievements `EmptyState`).
+  **Gates:** tsc 0 · eslint 0 · **@vida/web 532/535** (+5; the 3 reds = known shell-integration flakes under
+  parallel load — **127/127 shell in isolation**, fe-notes lesson) · **Visual Gate PASS** (Brave, 3 presets ×
+  light/dark × {desktop,375}: calm list grouped-by-category [editorial 4.94] · game trophy-wall gallery [light 4.88 /
+  dark@375 6.5] · **earned medal ring 5.38 light / 6.58 dark ≥3:1** · locked ring = decorative border, state via text ·
+  progress bars · honest empty [shell EmptyState, count —] · no 375 overflow).
+- S4 Rules+Flow · S5 Activity — pending.
 - NB: worktree consumes @vida/ui via node_modules symlinks → main; the Visual Gate aliased @vida/ui → worktree
   src via a throwaway `vite.vg.config.ts` (deleted). Commit with explicit paths (never stage the symlinks).
