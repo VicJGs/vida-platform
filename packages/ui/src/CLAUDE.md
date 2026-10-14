@@ -58,6 +58,11 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Panels are **`<Tabs.Panel value>`** children (the ARIA contract forces a Tabs-owned `role="tabpanel"` wrapper —
   DEF-U6-a); **only the active panel mounts** (keyed → enter-fade keyframe; no fade-out). `aria-controls` binds only
   to the active tab so every referenced id exists (axe-clean). No `loading` prop (consumer-composed, DEF-U6-c).
+  **fe-gamification S1 — scrollable strip:** the horizontal `TabList` is now `overflowX:auto`/`overflowY:hidden` +
+  `maxWidth:100%` and each `Tab` is `flexShrink:0`, so when the tabs can't fit (the first 5-tab consumer at 375) the
+  **strip scrolls** (a scrollable tab bar) instead of overflowing the viewport — the panel is a sibling, unaffected;
+  the indicator tracks (it scrolls with the list); `overflow:auto` only engages when needed, so 2-tab consumers
+  (entity-view) never see a scrollbar. Backwards-compatible (Visual-Gate-caught: 5 tabs overflowed 375 → 523px).
   **Menu** is the second FLOATING primitive (reuses Select's portal + single-`top` positioning + dismiss handlers) but
   the WAI-ARIA **menu-button** model: trigger `role="button"`+`aria-haspopup="menu"`+`aria-expanded`; a `role="menu"`
   panel portalled to body under `<Theme name="Menu">`; items `role="menuitem"` with **ROVING DOM FOCUS** — only the

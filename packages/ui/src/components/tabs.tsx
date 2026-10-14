@@ -67,7 +67,11 @@ const TabList = styled(View, {
   position: 'relative', // the indicator is absolutely positioned against this (offsetLeft/Top measured relative to it)
   variants: {
     orientation: {
-      horizontal: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '$colorBorderDefault' },
+      // horizontal: the STRIP scrolls when the tabs can't fit (a scrollable tab bar) — the tabs keep their size
+      // (Tab flexShrink:0) and the list scrolls, instead of overflowing the viewport. overflow:auto only engages
+      // when needed, so 2-tab consumers never see a scrollbar. The panel is a sibling (unaffected). maxWidth:100%
+      // bounds the list to its container so the scroll is contained, not a document overflow.
+      horizontal: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '$colorBorderDefault', maxWidth: '100%', overflowX: 'auto', overflowY: 'hidden' },
       vertical: { flexDirection: 'column', borderLeftWidth: 1, borderColor: '$colorBorderDefault' },
     },
   } as const,
@@ -84,6 +88,7 @@ const Tab = styled(View, {
   borderWidth: 0,
   cursor: 'pointer',
   userSelect: 'none',
+  flexShrink: 0, // keep each tab its natural size so the STRIP scrolls (TabList overflowX) rather than squishing
   focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: -2 },
   variants: {
     size: {

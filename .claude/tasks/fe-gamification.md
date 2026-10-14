@@ -30,7 +30,27 @@ COPY** (EC-10). D-REG-1 (the game preset) is **RESOLVED in-unit (G0)**; D-REG-2 
   (8 base) + fonts.ts. **tsc 0 · @vida/ui 526/526 · B10 AA matrix includes game · Visual Gate PASS** (Brave,
   measured: surface/accent resolve to game ramp both modes · sans voice swaps · AA muted-light 4.88 / body
   16.91 / accent-on-tinted 6.32–8.38 ≥ 4.5 · danger preset-invariant). §XXIX currency updated. EC-1, EC-2.
-- **S1 · Multi-mode shell + Overview + wiring** — next (EC-3, EC-4, EC-10).
+- **S1 · Multi-mode shell + Overview + wiring ✅ DONE** (uncommitted — awaiting Victor's commit) — EC-3, EC-4, EC-10.
+  `apps/web/src/gamification/`: `use-gamification` (Overview data seam — type-correct vs the shipped `GamificationService`,
+  data STUBBED IR-G1, `?sample`/`?force`) · `use-active-preset` (reads the provider's `t_<preset>` body class + MutationObserver)
+  · `use-persona` (deny-safe → register, absent⇒neutral) · `reward-copy` (EC-10, Rules↔Quests/Reward↔Loot, copy only) ·
+  `xp-hero` (EC-4 — `HonestProgress` **bar** for calm presets, SVG **ring** for `game`, keyed to the active preset;
+  ring via `useVidaTheme().get('web')`, aria-hidden + SR caption) · `gamification-overview` (EC-4 over `DashboardView`:
+  Level · balances · recent unlocks, per-block state, honest block-empties no dead actions) · `gamification-surface`
+  (title-hero + 5-mode ui-1 `Tabs` switcher + Overview + 4× honest `EmptyState` for the not-yet-built modes — the
+  governed 8-state guideline, ADR-007 §3.6, NOT ad-hoc placeholders) · tests · `CLAUDE.md`. Wiring: `/gamification`
+  lazy route (notifications precedent); `feature_gamification` dock gate already module-map-owned.
+  **In-issue fixes forced by G0 (kept green):** `provider.tsx` `PRESET_CLASSES += 'game'` (G0 omitted it → stale
+  `t_game` on switch-away); `onboarding/theme-picker.tsx` (+test) `game` label (picker iterates `THEME_PRESETS`; game
+  is pickable per GM-16). **Responsive root-fix:** `@vida/ui` `Tabs` `TabList` now scrolls (overflowX:auto + Tab
+  flexShrink:0) — gamification is the first 5-tab consumer and the strip overflowed 375; backwards-compatible
+  (2-tab consumers never trigger it). **Gates:** tsc 0 (@vida/ui + @vida/web) · eslint 0 · **@vida/web 523/523 ·
+  @vida/ui 526/526** · g2 independent review **SHIP** (2 NITs folded: static caption role=status→plain; persona-table
+  doc note) · g1 /critique SHIP · **Visual Gate PASS** (Brave, 4 presets × light/dark × {desktop,375}: AA 4.88–6.53
+  incl. warm game-dark · ring-for-game/bar-for-calm · EC-10 Quests · no page overflow at 375 [Tabs strip scrolls,
+  indicator tracks] · honest EmptyState no dead action · axe-structure clean). Throwaway VG harness removed.
+  **⚠ Worktree:** apps/web's `@vida/ui` symlink canonicalizes to MAIN (no `game`) — re-pointed to the worktree +
+  rebuilt dist for the gates; a `pnpm install` reverts it (see `apps/web/src/gamification/CLAUDE.md`).
 - S2 Currencies · S3 Achievements · S4 Rules+Flow · S5 Activity — pending.
 - NB: worktree consumes @vida/ui via node_modules symlinks → main; the Visual Gate aliased @vida/ui → worktree
   src via a throwaway `vite.vg.config.ts` (deleted). Commit with explicit paths (never stage the symlinks).

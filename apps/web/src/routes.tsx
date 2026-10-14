@@ -82,7 +82,16 @@ const notificationsRoute = createRoute({
   component: lazyRouteComponent(() => import('./notifications/notifications-surface')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, graphRoute, notesRoute, noteEntityRoute, notificationsRoute])
+// fe-gamification #32 (LIF-181) · S1 — "the System" multi-mode top view (Overview built; Currencies/
+// Achievements/Rules/Activity land S2–S5), lazy-split. The `feature_gamification` dock gate (conditional
+// dock) is module-map-owned (fe-shell); this only wires the route.
+const gamificationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/gamification',
+  component: lazyRouteComponent(() => import('./gamification/gamification-surface')),
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, graphRoute, notesRoute, noteEntityRoute, notificationsRoute, gamificationRoute])
 
 export const router = createRouter({
   routeTree,
