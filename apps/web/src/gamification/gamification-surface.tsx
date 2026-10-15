@@ -14,8 +14,9 @@
 // ============================================================================
 import type { ReactNode } from 'react'
 import { Text, View } from '@tamagui/core'
-import { Button, EmptyState, Tabs } from '@vida/ui'
+import { Button, Tabs } from '@vida/ui'
 import { AchievementsMode } from './achievements-mode'
+import { ActivityMode } from './activity-mode'
 import { CurrenciesMode } from './currencies-mode'
 import { GamificationOverviewPanel } from './gamification-overview'
 import { RulesMode } from './rules-mode'
@@ -54,17 +55,6 @@ function OverviewError() {
         </Button>
       </View>
     </View>
-  )
-}
-
-/** An honest not-yet-built mode: the governed 8-state `EmptyState` describing what the mode holds (no action). */
-function ModeEmpty({ title, body }: { title: string; body: string }) {
-  return (
-    <EmptyState title={title} titleLevel={3}>
-      <Text fontSize="$small" color="$colorTextMuted">
-        {body}
-      </Text>
-    </EmptyState>
   )
 }
 
@@ -111,7 +101,7 @@ export function GamificationSurface() {
           <RulesMode />
         </Tabs.Panel>
         <Tabs.Panel value="activity">
-          <ModeEmpty title="Activity" body="A running history of everything your System has earned, locked, spent, and shared." />
+          <ActivityMode />
         </Tabs.Panel>
       </Tabs>
     </View>

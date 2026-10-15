@@ -43,6 +43,19 @@ change**; the UI renders the seam's shapes and holds no business logic (IR-G3). 
   {current,target}, deny-safe (the raw Record + condition target is a later backend slice). Tier = a LABEL +
   a ringed **Lucide Medal** (brand accent earned / muted locked); NO bronze/silver/gold palette (EC-11 token-purity;
   a Figma/M4 concern). List groups by category (`ListView` sections); gallery is flat medal tiles (`GalleryView`).
+- **`use-activity.ts` + `activity-mode.tsx`** (S5 · EC-8) — the Activity mode: the **consequence-ledger history**,
+  flat reverse-chronological, paginated 50/page over the mandated `CollectionView` (`ListView` flat `items` body +
+  the S2 `Pager` shape). **Read-only** — a history has no create affordance, so no `+ New` AND an **activity-honest
+  `empty` override** ("No activity yet", read-framed) replacing the shell default's "Items you add…" (which would
+  promise an affordance Activity lacks — g2 #1). Each row: kind **label** (Earned/Locked/Spent/Distributed) +
+  aria-hidden Lucide glyph (`Plus`/`Lock`/`Minus`/`Share2`) + the **positive-magnitude** amount (tabular) +
+  currency; secondary caption = an **absolute `Intl.DateTimeFormat`** date-time (apps/web convention, NOT date-fns —
+  not in apps/web deps; the year shows only for out-of-`now`-year entries) + the `source` chip. **No ± sign** —
+  direction rides the label, grounded in `balance.ts` (`current = earned − locked − spent`; `distribute` draws the
+  to-distribute ceiling, not `current`). Data STUBBED (IR-G1); honest M1 default = EMPTY. **F-S5-1:** the enriched
+  ledger-history read is an UNBUILT ①-tier first-consumer-pull seam (seam-contract has only `getBalance`, which reads
+  the ledger privately) — `use-activity.ts` documents the one-binding `listConsequences` live swap; **no `@vida/core`
+  change**. The surface now has all 5 modes built → `ModeEmpty`/`EmptyState` removed from `gamification-surface.tsx`.
 - **`use-currencies.ts` + `currencies-mode.tsx`** (S2 · EC-5) — the Currencies mode. Data seam = `listCurrencies`×
   `getBalances` join, STUBBED (honest M1 default = the shipped XP currency), paginated 50/page, optimistic-local
   `create`. The mode = the mandated `CollectionView` shell (title/count/8-state) + a grouped `ListView` `sections`

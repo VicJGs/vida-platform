@@ -56,10 +56,16 @@ states its stub; no faked DB. `[FACT: TASKS.md fe-notes S1 D2]`
 - **Stub:** the measurement-registry read + rule mutations = type-correct, stubbed.
 - **Gate:** Visual Gate — rules list + the flow (both presets), empty-seam condition state honest.
 
-### S5 · Activity mode — `apps/web` — **EC-8**
+### S5 · Activity mode — `apps/web` — **EC-8** — ✅ BUILT
 - **Owns:** the Activity mode over `CollectionView` (paginated) — the consequence-ledger history (earn/lock/
   spend/distribute across modules, timestamped).
 - **Gate:** Visual Gate — paginated ledger, both presets.
+- **Built:** `use-activity.ts` + `activity-mode.tsx` + `activity.test.tsx` + surface wire-in (PLAN-S5-activity.md).
+  Flat reverse-chron list, 50/page; label-led direction (no ± — balance.ts grounded); absolute `Intl` date-time
+  (year only out-of-year); read-only honest `empty` (no "add" promise, g2 #1). Data STUBBED (IR-G1); honest default
+  = empty. **F-S5-1:** enriched ledger-history read = unbuilt ①-tier first-consumer-pull seam (no `@vida/core`
+  change; live swap documented in `use-activity.ts`). tsc 0 · eslint 0 · gamification 31/31 · @vida/web 546/546 ·
+  Visual Gate PASS (editorial/game × L/D, AA 4.88–6.53, 0 overflow, empty+populated). **Completes the unit → PR.**
 
 ---
 

@@ -78,12 +78,14 @@ describe('GamificationSurface (S1 — EC-3 switcher + EC-4 Overview)', () => {
     expect(getByText('Level')).not.toBeNull()
   })
 
-  it('EC-3 — switching to a still-not-built mode shows the honest EmptyState (no dead action)', () => {
-    // Currencies (S2) + Achievements (S3) + Rules (S4) are built; Activity remains the honest EmptyState (S5).
-    const { getByText, getAllByRole } = renderUI(<GamificationSurface />)
+  it('EC-8 — Activity is now a built mode; switching to it mounts the ledger collection (empty by default)', () => {
+    // All five modes are built (S5 completed the surface); Activity renders its own CollectionView, not a placeholder.
+    const { getAllByText, queryByText, getAllByRole } = renderUI(<GamificationSurface />)
     const activityTab = getAllByRole('tab').find((t) => t.textContent === 'Activity')!
     fireEvent.click(activityTab)
-    expect(getByText('A running history of everything your System has earned, locked, spent, and shared.')).not.toBeNull()
+    // the old not-yet-built placeholder is gone; the in-panel CollectionView title makes "Activity" appear ≥ twice
+    expect(queryByText('A running history of everything your System has earned, locked, spent, and shared.')).toBeNull()
+    expect(getAllByText('Activity').length).toBeGreaterThanOrEqual(2)
   })
 
   it('EC-10 — the game register renames the Rules tab to Quests (copy only)', () => {
