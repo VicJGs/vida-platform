@@ -6304,6 +6304,75 @@ Next session:
   - NB: did NOT run `tracker_sync --sync` (parallel-session orphan-create CAUTION); LIF-192 reconciled Done via the merged oracle + it was already Done in Linear.
 
 ---
+Date: 2026-10-12 — fe-gamification (LIF-181) ② — front matter + Envision gate (approved) + slice G0 shipped. Also earlier blocks: Linear reconcile · main realign · MVP roadmap.
+Task: fe-gamification · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-gamification`, branch `fe-gamification` off main `7657574`.
+Goal: start the next FRONTEND head to pair a wired surface with a finished backend; took it through the full Entity Delivery Flow front matter and built the first slice.
+Completed:
+  - **(earlier) Linear reconciled to merged reality** — `fe-onboarding` LIF-216 Backlog→Done; 4 orphan-dups LIF-223/224/225/226 → Canceled w/ canonical pointers (a prior session LOGGED the cancel but it never stuck — re-verify cancellations live); local `.tracker-map.json` de-staled. Oracle = merged-PR on origin/main > Linear > local. [[verify-misses-status-drift-and-stale-linear-relations]]
+  - **(earlier) local `main` realigned** (was 32 behind, pure stale) + **`docs/roadmap/MVP-PATH.md` refreshed** (MVP-0 complete — fe-notes-and-pages shipped; census M1.0 31/31, M1.2.2 opened 1/6) → **PR #135 merged**. Stale edits in `stash@{0}`.
+  - **fe-gamification ② front matter (all gated):** BASELINE (seam-contract + mod-gamification/current-*) → `interpretation.md` → **Envision Gate APPROVED after 6 doc-grounding iterations** (`envision.md`, EC-1…EC-12 pinned) → **Decomposition Approval 1** (`slice-map.md`, G0 + S1–S5). Delivery `docs/specs/foundation/fe-gamification/delivery/`.
+  - **Slice G0 ✅ — the `game` GLOBAL theme preset** (`3a7d525` + `0306eb0`): `color.game` ramp (cool-violet accent + slate neutral) + `fontFamily.game` (geometric sans) + `semantic.game(.dark).json` overlays + `build-tokens.mjs` PRESETS + `theme-resolution.ts`/`provider.tsx`; regenerated themes.ts (8 base) + fonts.ts. **tsc 0 · @vida/ui 526/526 · B10 AA matrix includes game · Visual Gate PASS** (Brave, MEASURED: surface/accent resolve to game ramp both modes · sans voice swaps · AA muted-light 4.88/body 16.91/accent-on-tinted 6.32–8.38 ≥ 4.5 · danger preset-invariant). §XXIX currency updated. Task slice-log recorded (`1a31452`).
+In progress:
+  - **S1 next** — multi-mode shell (`apps/web/src/gamification/`) + `/gamification` lazy route + `feature_gamification` dock gate + the Overview·Currencies·Achievements·Rules·Activity switcher + Overview mode over `DashboardView` + deny-safe Preferences `persona` read → reward-COPY framing. EC-3, EC-4, EC-10. Data stubbed type-correct against the seam (fe-notes precedent). Per-slice Visual Gate (both presets × L/D × 375/768/1440 + 8 states + no-overflow).
+Decisions:
+  - **Scope is doc-exact (not a judgment):** the gamification ② = a MULTI-MODE top view (IA §4, `hasMultiModeTopView:true`/`hasStandalonePages:false`) over currencies·levels·achievements + a rule-authoring Flow; lists paginate 50/page. quests/challenges = Spaces INTENDED-later (GM-17, OUT); Dreams/boxes/streaks = compose/read, never rebuild. Register = `game` is a GLOBAL preset applied by Preferences/Onboarding (GM-16 — System reads persona only for REWARD COPY). Icons lucide, never emoji.
+  - **Recurring drift the gate caught (all doc-resolved):** invented "Today's quests" widget; register mis-read as theming (it's reward framing); Dreams as a tile (it's a reward target); single-dashboard (it's multi-mode). Each was settled by grounding in the docs — the Envision greybox's job was to surface them pre-code.
+  - **Game preset = built in-unit** (Victor's call) as a global preset; sans "System" voice via Inter (bespoke face = M4/Figma per frontend-source-of-truth).
+Next session:
+  - **FIRST ACTION: build S1** (multi-mode shell + Overview + wiring). `/begin` → resume fe-gamification in this worktree (branch `fe-gamification`). Read `interpretation.md §2` (the 5 modes) + `slice-map.md` S1 + `envision.md` EC-3/4/10 first.
+  - **Env gotcha (critical):** the worktree consumes `@vida/ui` via `node_modules` symlinks → the MAIN repo's built `dist`, so edits to `@vida/ui` (e.g. the game preset) are NOT loaded by vite/tests unless aliased. The G0 Visual Gate used a throwaway `apps/web/vite.vg.config.ts` aliasing `@vida/ui` → worktree `src` (deleted). S1 mostly edits `apps/web` (consumes unchanged shells + the game preset) — rebuild the worktree `@vida/ui` dist OR re-add the src alias for any gate that must see the game preset. Node 24 via nvm. Commit with EXPLICIT paths (never stage the node_modules symlinks).
+  - Symlinks created this session (worktree): `node_modules`, `apps/web/node_modules`, `packages/{ui,types,core,editor}/node_modules` → main. `stash@{0}` on main holds superseded tracker edits.
+---
+
+---
+Date: 2026-10-14
+Task: fe-gamification (LIF-181)
+Goal: Build the ② "System" surface slices over the finished mod-gamification ①. This session: S1–S4, each §XXVI-gated + committed.
+Completed:
+  - S1 multi-mode shell + Overview (commit 79295c1) — 5-mode Tabs switcher + Overview over DashboardView (XP bar/ring PRESET-keyed via useActivePreset) + deny-safe persona→reward-copy (EC-3/4/10). apps/web/src/gamification/{use-gamification,use-active-preset,use-persona,reward-copy,xp-hero,gamification-overview,gamification-surface}.tsx + /gamification lazy route. In-issue fixes: provider PRESET_CLASSES += 'game' (stale-class bug the ring surfaced); onboarding theme-picker 'game' label; @vida/ui Tabs TabList scrollable (first 5-tab consumer at 375).
+  - S2 Currencies mode (1fbaa15) — CollectionView + grouped ListView (3 backing kinds) + Lucide Lock + pager 50/page + optimistic-local + New currency (EC-5).
+  - S3 Achievements mode (b253f9b) — the first 2-layout CollectionView: calm=list / game=trophy-wall gallery (PRESET-keyed default + switcher override), Lucide Medal ring ≥3:1, progress-toward-locked deny-safe (EC-6).
+  - S4 Rules mode + rule-authoring Flow (075393a) — CollectionView list + enable/disable/delete + the 3-stage FlowSessionView wizard (condition→reward→review; honest empty-seam measures [registry empty + no enumeration API]; reward money/allowance/time + deny-safe Dream earmark) (EC-7/9). @vida/ui fix: FlowSessionView affordances now render-when-handler (no dead buttons in a wizard).
+  - Per slice: tsc 0 · eslint 0 · unit tests · blocking real-browser Visual Gate PASS (Brave, presets × light/dark × {desktop,375}: AA ≥4.88 incl. warm game-dark, no overflow, tier ring/medal ≥3:1). Final suites: @vida/web 540/540 · @vida/ui 527/527.
+In progress:
+  - S5 Activity mode — NOT started. The LAST mode: the consequence-ledger history, paginated — a CollectionView list like S2 (EC-8).
+Decisions:
+  - Honored the slice-map's MANDATED shells (CollectionView, FlowSessionView) over swapping them — my "it doesn't fit" instincts were drift (Victor-corrected ×3: "check the documentation, everything is described"). Awkward fits resolved by body-composition + two backwards-compatible @vida/ui fix-the-roots (Tabs scrollable strip; FlowSessionView render-when-handler affordances), never a shell swap.
+  - Tier colors = label + a brand-accent medal ring, NOT bronze/silver/gold (no metal tokens; EC-11 token-purity → a Figma/M4 concern).
+  - The ring (S1) + register (EC-10) are preset-keyed-default idioms; reused for S3's calm=list/game=gallery default.
+Next session:
+  - FIRST ACTION: build S5 Activity. /begin → resume fe-gamification in this worktree (branch fe-gamification, 4 commits S1–S4). Read slice-map.md S5 + envision EC-8 first. GROUND the ledger read: the S1 seam subset exposes no listLedger — check the full gamification seam / whether a consequence-ledger read exists; if not, honest-empty/stub per IR-G1.
+  - Env: Node 24 via nvm. apps/web's @vida/ui symlink canonicalizes to MAIN (no 'game') — if S5 touches @vida/ui, re-point `ln -sfn "$PWD/packages/ui" apps/web/node_modules/@vida/ui` + `pnpm --filter @vida/ui build` before gates ([[worktree-apps-web-ui-symlink-resolves-to-main]]). Visual Gate = throwaway harness apps/web/vg.html + src/__vg__/gamification-entry.tsx (recreate; deleted after) + the window.process shim; drive /gamification, click the Activity tab.
+  - After S5 the unit is COMPLETE → open the PR (per-issue-branch workflow).
+---
+
+---
+Date: 2026-10-14 — fe-gamification S5 (Activity) COMPLETE → unit done → PR #140 open
+Task: fe-gamification (LIF-181) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-gamification` branch `fe-gamification` · Node 24
+Goal: build the LAST mode — S5 Activity (the consequence-ledger history) — then open the PR for the whole unit (G0 + S1–S5).
+Completed:
+  - **Baseline + seam grounding (Step 1):** the ① `GamificationService` exposes NO ledger-history read — `getBalance`/`getBalances` read `consequence_ledger` PRIVATELY inside `computeBalance`. Triple-confirmed: seam-contract.md surface · currencies-mode.tsx:26 · CLAUDE.md:50 ("S5 Activity owns the ledger"). Resolution (doc-grounded, IR-G1 + fe-notes F-S8-1 precedent): build the ②-side hook type-correct + STUBBED; file the enriched read as **F-S5-1** (unbuilt ①-tier first-consumer-pull; no @vida/core change).
+  - **PLAN gate (§XXVI g1):** persisted `PLAN-S5-activity.md` (forward spec: BR-S5-1..8, ActivityEntry §3, acceptance §4). /critique REVISE→fixed 2 blocking (timestamp under-spec'd; tabular alignment) + 2 nits → Approval 1. Grouping = flat reverse-chron (EC-8 silent on grouping; recommended default, Victor approved).
+  - **IMPL-PLAN gate (§XXVI g2):** /preflight PASSED (ListView flat `items` API confirmed; amount color pinned `$colorTextPrimary` = AA-by-construction, closed the one open assumption) → /critique SHIP → Approval 2.
+  - **§XXVIII deviation (date-fns → native `Intl.DateTimeFormat`):** the approved PLAN mandated date-fns, but it is NOT in apps/web's deps (phantom under pnpm-strict). "Check the documentation" → the apps/web convention is `Intl.DateTimeFormat` (home-surface.tsx:36) + hand-rolled relative-from-`now` (gamification-overview.tsx:23 `agoLabel`); date-fns unused in apps/web. Doc-resolved, spec updated.
+  - **Sign-semantics grounding (balance.ts):** `current = earned − locked − spent`; `distribute` does NOT affect `current` (draws the to-distribute ceiling). So NO uniform ± sign — direction is label-led (Earned/Locked/Spent/Distributed). Corrected the PLAN (my earlier "earn/distribute additive" was wrong).
+  - **Build (Step 4):** `use-activity.ts` (stubbed seam, honest-empty default, `?sample`/`?force`) · `activity-mode.tsx` (CollectionView + flat ListView + S2 pager; label+glyph rows; Intl timestamp, year only out-of-year) · `activity.test.tsx` · wired into `gamification-surface.tsx` (removed now-dead `ModeEmpty`/`EmptyState`) · updated the stale S1 Activity-placeholder test.
+  - **g2 independent review REVISE→fixed:** finding #1 (blocking) — the empty ledger fell back to the shell default "Items you add will show up here", a false create-promise for a read-only history → added an activity-honest `empty` override ("No activity yet"). Nits #2+#3 resolved together (consume `now` to show the year only for out-of-year entries) + #4 (comment the sample-builder `!` modulo-indexes). Added a unit test locking the honest-empty copy.
+  - **Gates:** tsc 0 · eslint 0 · gamification 31/31 · **@vida/web 546/546** · **Visual Gate PASS** on final code (Brave, editorial/game × light/dark, populated AA 4.88–6.53 + empty-state honest-copy + AA, 0 overflow 1280/375). Pre-ship /critique SHIP.
+  - **§XXIX currency:** `apps/web/src/gamification/CLAUDE.md` (S5 + F-S5-1) + slice-map.md (S5 ✅) — shipped in the build commit `a76f985`.
+  - **Committed `a76f985`, pushed, PR #140 opened** (base main; carries the whole unit G0 + S1–S5). TASKS.md → IN REVIEW.
+Decisions:
+  - Did NOT ask Victor stub-vs-build-the-read — the docs resolve it (seam has no read + IR-G1 + fe-notes precedent). Brought the facts, filed F-S5-1.
+  - Direction label-led, not ±-signed — grounded in balance.ts, not assumed.
+  - The @vida/ui symlink already resolved to the WORKTREE's packages/ui (not main) this session; S5 is apps/web-only (no @vida/ui edit) so no re-point needed, but I rebuilt @vida/ui dist for the gate to be safe.
+Lessons (for memory):
+  - A ② "render a history" slice whose ① has no history read = stub + F-finding (first-consumer-pull), NEVER invent the read. Three in-repo docs said "S5 owns the ledger" before I wrote a line.
+  - `Intl.DateTimeFormat` is the apps/web date convention; date-fns (REPO.md "repo date lib") is @vida/core-only, phantom in apps/web. Check the consuming workspace's deps, not the monorepo claim.
+  - Ledger sign = balance.ts truth (distribute ≠ a `current` delta) → label-led display, not a two-way ±.
+Next session:
+  - Merge PR #140 when CI green → LIF-181 Done (reconcile via `/begin --pull`); `/task-complete fe-gamification`. 2 pre-existing CI reds expected (Format repo-wide · Workers CF-config).
+  - Next head = `mod-routines` (backend, M1.1.2) OR `mod-tasks` S3 (backend, in-progress worktree) — Victor's call at `/begin`.
+---
 Date: 2026-10-12 — M1 local-dev unblock + MVP-0 doc honesty + CF Preview-Builds resolution (PR #136)
 Task: unfiled housekeeping (relates LIF-228 prettier, LIF-229 CF) · Profile: bug-fix / Generic Coding Session (engineering + process) · branch `fix/m1-local-dev-and-doc-honesty` off main `7657574`.
 Goal: Victor ran `pnpm dev` to test the built app — it failed; home/journal/notes didn't work. Triage + solve, plus the two tracked CI reds (Cloudflare LIF-229, prettier LIF-228).

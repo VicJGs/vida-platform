@@ -75,6 +75,11 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Panels are **`<Tabs.Panel value>`** children (the ARIA contract forces a Tabs-owned `role="tabpanel"` wrapper —
   DEF-U6-a); **only the active panel mounts** (keyed → enter-fade keyframe; no fade-out). `aria-controls` binds only
   to the active tab so every referenced id exists (axe-clean). No `loading` prop (consumer-composed, DEF-U6-c).
+  **fe-gamification S1 — scrollable strip:** the horizontal `TabList` is now `overflowX:auto`/`overflowY:hidden` +
+  `maxWidth:100%` and each `Tab` is `flexShrink:0`, so when the tabs can't fit (the first 5-tab consumer at 375) the
+  **strip scrolls** (a scrollable tab bar) instead of overflowing the viewport — the panel is a sibling, unaffected;
+  the indicator tracks (it scrolls with the list); `overflow:auto` only engages when needed, so 2-tab consumers
+  (entity-view) never see a scrollbar. Backwards-compatible (Visual-Gate-caught: 5 tabs overflowed 375 → 523px).
   **Menu** is the second FLOATING primitive (reuses Select's portal + single-`top` positioning + dismiss handlers) but
   the WAI-ARIA **menu-button** model: trigger `role="button"`+`aria-haspopup="menu"`+`aria-expanded`; a `role="menu"`
   panel portalled to body under `<Theme name="Menu">`; items `role="menuitem"` with **ROVING DOM FOCUS** — only the
@@ -510,6 +515,11 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   adapter (`toFlowProps` + `mapEffectLog` [ADR-004 applied_effects → effect-rail] + `bindFlowIntents` against a
   `SessionsPort`; live `useFlowSession` hook deferred, R3). Spec:
   `docs/specs/components/ui-2-platform-views/flow-session-view.md`. Delivery: `docs/specs/foundation/fe-codec-flow-session/`.
+  **fe-gamification S4 — affordances are render-when-handler:** the standardized current-stage affordances (Mark done ·
+  Require proof · Attach Document/Photo/Audio) now render PER-HANDLER (each only when its `onMarkDone`/`onRequireProof`/
+  `onAttach` is passed; the row is omitted entirely when none are) — the DS `onFilter != null` idiom. A deliverable flow
+  passing handlers is unchanged; a NON-deliverable flow (the rule-authoring create-wizard, whose `renderStage` body owns
+  its own Back/Next/Create) passes none and gets a clean staged frame instead of dead no-op buttons.
   **canvas-reader** is **fe-codec-canvas-reader · S1** (LIF-206) — the CODEC **Canvas: Reader shell**, the **5th archetype
   shell**. A long-form **read·listen·annotate** FRAME; S1 ships the frame + header + reading column + states (Contents
   panel S2 · margin rail S3 · selection S4 · listen bar S5 EXTEND it). A SHELL (the flow-session pattern) — **NON-GENERIC**
