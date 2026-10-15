@@ -17,5 +17,6 @@ filters (DB-4 `tasks`/`task_time_logs`, migration 015; DB-11 reconcile) · S2 su
 `completeTask`/`reopenTask` + deny-safe completion fan-out (`[award_xp, contribute_purpose_metric,
 emit_measurement_signal]`; Tasks IS a §4 feeder) · **S4 `startTimer`/`stopTimer`/`getActualMinutes` + `registerTasksTimer`
 + `log_time` handler** (timer = a `'work'` session sub-type; `log_time` writes the kept `task_time_logs` ledger via the
-rail, never direct — G-S4; + the read-only Sessions `findOpenSessionForEntity`). S5–S9 designed (obligations ·
-measurability · aggregation · tags/notes/views · Journal). Durable docs: `docs/modules/tasks/current-{spec,business-rules}.md`.
+rail, never direct — G-S4; + the read-only Sessions `findOpenSessionForEntity`) · **S5 `setRecurrence` + `completeTask`
+obligation-regen** (RRULE via canonical `ical.js`; three outcomes: spawn / exhausted-end / `RecurrenceRegenError`).
+S6–S9 designed (measurability · aggregation · tags/notes/views · Journal). Durable docs: `docs/modules/tasks/current-{spec,business-rules}.md`.

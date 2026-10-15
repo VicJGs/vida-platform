@@ -132,6 +132,8 @@ export interface TasksService {
   startTimer(taskId: string): Promise<SessionRow>
   stopTimer(sessionId: string): Promise<void>
   getActualMinutes(taskId: string): Promise<number>
+  // S5 — obligations + recurrence
+  setRecurrence(taskId: string, rule: string | null): Promise<TaskRow>
 }
 
 // --- typed errors ------------------------------------------------------------
@@ -179,5 +181,25 @@ export class TimerNotWiredError extends Error {
   constructor() {
     super('Task timer requires `effects` (rail+registry) and `sessions` deps to be wired (registerTasksTimer)')
     this.name = 'TimerNotWiredError'
+  }
+}
+
+/** A non-null `recurrence_rule` on a non-`obligation` task — only obligations recur (TK-7 / TAS-21). */
+export class RecurrenceNotAllowedError extends Error {
+  constructor(taskId: string) {
+    super(`Only an obligation may carry a recurrence rule (TK-7): ${taskId}`)
+    this.name = 'RecurrenceNotAllowedError'
+  }
+}
+
+/** An obligation completed but its next occurrence could not be regenerated — the rule is INVALID (TAS-23). The task
+ *  IS completed (durably); this is the loud "complete-but-flag" signal, NOT a completion failure — do not retry. */
+export class RecurrenceRegenError extends Error {
+  constructor(
+    public readonly taskId: string,
+    public readonly reason: string,
+  ) {
+    super(`Obligation ${taskId} completed, but regenerating the next occurrence failed: ${reason}`)
+    this.name = 'RecurrenceRegenError'
   }
 }

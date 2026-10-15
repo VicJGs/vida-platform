@@ -106,6 +106,36 @@
   revisited when the pomodoro lens lands. F2 cross-device sub-type dedup = AR-9/M4; F4 mis-wiring surfaces
   `SessionTypeNotFound` — both low, deferred.)
 
+## S5 — Obligations + recurrence (BUILT 2026-10-15)
+- **BR-TK-S5-1 (obligation-only recurrence, TK-7/TAS-21, enforced at EVERY write path).** A non-null `recurrence_rule`
+  requires `kind='obligation'` — `createTask`/`updateTask`/`setRecurrence` all reject it on a non-obligation
+  (`RecurrenceNotAllowedError`; `assertRecurrenceAllowed`). `updateTask` checks the MERGED kind/rule (flipping an
+  obligation-with-rule to `standard` without clearing the rule throws). `setRecurrence(id, null)` clears it (the
+  obligation then behaves standard). No stray inert rule on a standard task.
+- **BR-TK-S5-2 (RRULE format + canonical parser).** `recurrence_rule` is RFC-5545 **RRULE** (ADR-002:1160); the
+  next-occurrence is computed via the **canonical `ical.js`** (ADR-001:137; `@vida/core` dep `ical.js@2.2.1`,
+  `/verify`'d). No `rrule` npm (a forbidden alternative, ADR-001:15); no hand-rolled parser.
+- **BR-TK-S5-3 (regeneration = the three outcomes, TAS-22/23).** A FRESH completion of an obligation with a rule
+  computes the next `due_date` anchored at the current `due_date` (null ⇒ local today): (1) a next instance ⇒ spawn one
+  `not_started` occurrence; (2) a valid but **exhausted** rule (`COUNT`/`UNTIL`) ⇒ complete, **no spawn, no error**
+  (legitimate end — NOT a failure); (3) an **invalid/unparseable** rule ⇒ complete + `RecurrenceRegenError`.
+- **BR-TK-S5-4 (complete-but-flag, TAS-23 — caller contract).** The S3 completion (status + `completed_at` + fan-out)
+  commits BEFORE regen, so it is durable regardless of regen outcome. `completeTask` returns the completed task on
+  outcomes 1 & 2; on outcome 3 it **throws `RecurrenceRegenError`** (carrying the completed task id) — this is NOT a
+  completion failure; the caller must **not** retry `completeTask` (the task is already completed).
+- **BR-TK-S5-5 (carry-over, exhaustive).** The spawned occurrence CARRIES `title`/`description`/the one parent-module
+  FK/`priority`/`difficulty`/`estimated_minutes`/`kind:'obligation'`/`recurrence_rule`/`measurement_kind`/
+  `binding_mode`/`nesting_weight`/`sort_order`; RESETS `due_date:=next`, `status:'not_started'`, `completed_at:null`,
+  `actual_minutes:null`, `scheduled_date:null` (only the deadline recurs); DROPS `parent_task_id` (recurrence is
+  top-level only). Each occurrence is a distinct row → the S3 effects fire anew when it completes (each grants).
+- **BR-TK-S5-6 (timezone-independent dates — g2 B1).** `nextOccurrence` builds `YYYY-MM-DD` from `ICAL.Time`'s own
+  calendar fields, NOT `toJSDate()/toISOString()` (which renders local midnight in UTC → one day early in UTC-positive
+  zones). The BRT/UTC gate can't see that drift; a `TZ=Asia/Tokyo` regression test guards it.
+- **BR-TK-S5-7 (known M1 edge — reopen→re-complete double-spawn).** `completeTask` regenerates on every
+  not-completed→completed transition; the fan-out is rail-deduped but the SPAWN is not. So reopening a completed
+  obligation then re-completing spawns a SECOND future occurrence. Spec-literal (TAS-22 "completing spawns next");
+  accepted for M1 (g2-reviewed), a spawn-dedup is deferred. The ② UI should avoid/guard the reopen-obligation path.
+
 ## Not yet enforced (designed, downstream)
-TK-7 obligation recurrence (S5) · TK-11 per-kind measure + contribution emit (S6) · TK-9 aggregation R7 (S7) · TK-8
-tags (S8). The S3 completion catalogue's **handlers** are registered by consumer modules later (M1 = dormant seam).
+TK-11 per-kind measure + contribution emit (S6) · TK-9 aggregation R7 (S7) · TK-8 tags (S8). TAS-24 `duty`/open-vocab
+type registry = ADR-002 amendment (deferred). The S3 completion catalogue's **handlers** are consumer-registered later.

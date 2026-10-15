@@ -13,6 +13,7 @@
 // - NO FK: parent-module links + cascade are the app layer's (TK-2/TK-4). `'task'` is pre-seeded in ENTITY_TYPES.
 
 import { and, eq, isNull } from 'drizzle-orm'
+import ICAL from 'ical.js'
 import type { EffectType } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { normalize, rollup } from '../../foundation/measurement'
@@ -35,6 +36,8 @@ import {
   TimerAlreadyRunningError,
   TimerNotFoundError,
   TimerNotWiredError,
+  RecurrenceNotAllowedError,
+  RecurrenceRegenError,
 } from './types'
 import type { TaskRow } from '../../db/schema/tasks'
 import type { SessionRow } from '../../db/schema/foundation/sessions'
@@ -102,6 +105,39 @@ export async function registerTasksTimer(deps: {
 /** The four mutually-exclusive parent-module FKs (TK-2). `parent_task_id` is a separate (sub-task) axis. */
 const PARENT_MODULE_KEYS = ['project_id', 'milestone_id', 'course_id', 'contact_id'] as const
 
+/** Only an obligation may carry a recurrence rule (TK-7 / TAS-21). Enforced at EVERY write path (create/update/
+ *  setRecurrence), like the ≤1-parent guard — no stray inert rule on a standard task. Clearing to null is always ok. */
+function assertRecurrenceAllowed(kind: string | undefined, rule: string | null | undefined, taskId: string): void {
+  if (rule != null && kind !== 'obligation') throw new RecurrenceNotAllowedError(taskId)
+}
+
+/** Next occurrence (YYYY-MM-DD) STRICTLY after `fromYmd`, from an RFC-5545 RRULE (ADR-002:1160), via the canonical
+ *  `ical.js` parser (ADR-001:137). THREE channels (PLAN-S5 outcomes): a date ⇒ outcome 1 (spawn); `null` ⇒ outcome 2
+ *  (valid rule, exhausted — legitimate end, no spawn); THROWS ⇒ outcome 3 (invalid rule — RecurrenceRegenError). The
+ *  iterator yields DTSTART first, so we advance strictly past the anchor. */
+function nextOccurrence(rule: string, fromYmd: string): string | null {
+  const recur = ICAL.Recur.fromString(rule) // throws on an invalid rule → outcome 3
+  const iter = recur.iterator(ICAL.Time.fromDateString(fromYmd))
+  let occ: InstanceType<typeof ICAL.Time> | null = iter.next()
+  while (occ) {
+    // Build YYYY-MM-DD from the ICAL.Time's OWN calendar fields (month is 1-based) — NOT toJSDate()/toISOString(),
+    // which renders local-midnight in UTC and drifts one day early in any UTC-positive zone (g2 B1: silently wrong on
+    // Victor's BRT machine + UTC CI, which is exactly why the live gate can't see it).
+    const ymd = `${occ.year}-${pad2(occ.month)}-${pad2(occ.day)}`
+    if (ymd > fromYmd) return ymd
+    occ = iter.next() // null when exhausted → outcome 2
+  }
+  return null
+}
+
+const pad2 = (n: number): string => String(n).padStart(2, '0')
+
+/** Today as YYYY-MM-DD in LOCAL time (the anchor fallback for a null `due_date`; g2 N4 — local, not UTC). */
+function todayYmd(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+
 export function createTasksService(deps: TasksServiceDeps): TasksService {
   const { db, deviceId, effects, sessions } = deps
 
@@ -150,6 +186,7 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
   async function createTask(input: CreateTaskInput): Promise<TaskRow> {
     const v = CreateTaskSchema.parse(input)
     assertSingleParent(v)
+    assertRecurrenceAllowed(v.kind, v.recurrence_rule, '(new task)') // N1 — recurrence_rule ⇒ obligation (TK-7)
     // Backfill NN-default cols (create() echoes the input row, not SQL defaults).
     return tasksRepo.create({
       project_id: v.project_id ?? null,
@@ -188,6 +225,10 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
       if (v[k] !== undefined) merged[k] = v[k]
     }
     assertSingleParent(merged)
+    // N1 — recurrence_rule ⇒ obligation, on the MERGED kind/rule (a patch may change either).
+    const mergedKind = (v.kind ?? existing.kind) as string
+    const mergedRule = v.recurrence_rule !== undefined ? v.recurrence_rule : existing.recurrence_rule
+    assertRecurrenceAllowed(mergedKind, mergedRule, id)
 
     const data = {
       ...(v.title !== undefined ? { title: v.title } : {}),
@@ -307,7 +348,48 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     // Post-commit fan-out, only on the not-completed → completed transition (a plain re-complete skips it; PLAN-S3
     // D-S3-2 guard (a)). The rail dedup is the backstop on the reopen→re-complete path (guard (b)).
     if (!wasCompleted) await fanOutCompletion(id, 'task_completed')
+    // S5 — obligation regeneration (TAS-22): a FRESH completion of an obligation WITH a rule spawns the next
+    // occurrence. The completion above is already durable (TAS-23 complete-but-flag); a regen failure throws AFTER.
+    // NB: a reopen→re-complete is a fresh transition (wasCompleted=false) so it regenerates again — a known M1 edge
+    // (BR-TK-S5-7); there is no spawn-dedup ledger. Standard tasks + ruleless obligations never regenerate.
+    if (!wasCompleted && existing.kind === 'obligation' && existing.recurrence_rule != null) {
+      await regenerateObligation(existing)
+    }
     return updated
+  }
+
+  /** Spawn the next occurrence of a completed obligation (TAS-22). Outcome 1 ⇒ a new task; outcome 2 (exhausted) ⇒
+   *  no-op; outcome 3 (invalid rule) ⇒ `RecurrenceRegenError` (the completion stands — TAS-23). */
+  async function regenerateObligation(src: TaskRow): Promise<void> {
+    const anchor = src.due_date ?? todayYmd()
+    let next: string | null
+    try {
+      next = nextOccurrence(src.recurrence_rule!, anchor) // src is an obligation with a rule (caller-guarded)
+    } catch {
+      throw new RecurrenceRegenError(src.id, `unparseable recurrence rule: ${src.recurrence_rule}`)
+    }
+    if (next == null) return // outcome 2 — valid rule, no future instance: the recurrence legitimately ended
+    // Outcome 1 — spawn a fresh occurrence (carry-over table, PLAN-S5 R2). createTask resets status/completed_at/
+    // actual_minutes (NN-backfill) and re-checks the ≤1-parent + recurrence-allowed guards. parent_task_id is NOT
+    // carried — recurrence is top-level only.
+    await createTask({
+      title: src.title,
+      description: src.description,
+      project_id: src.project_id,
+      milestone_id: src.milestone_id,
+      course_id: src.course_id,
+      contact_id: src.contact_id,
+      priority: src.priority,
+      difficulty: src.difficulty,
+      due_date: next,
+      estimated_minutes: src.estimated_minutes,
+      kind: 'obligation',
+      recurrence_rule: src.recurrence_rule,
+      measurement_kind: src.measurement_kind,
+      binding_mode: src.binding_mode,
+      nesting_weight: src.nesting_weight,
+      sort_order: src.sort_order,
+    })
   }
 
   async function reopenTask(id: string): Promise<TaskRow> {
@@ -318,6 +400,16 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     // Reset to the neutral non-completed state (PLAN-S3 R3 — 'not_started' over 'in_progress': reopen conveys no
     // progress info; the user re-sets it). TAS-07 mandates only clearing completed_at. Fires NO effects.
     return tasksRepo.update(id, { status: 'not_started', completed_at: null })
+  }
+
+  // ---- S5: obligations + recurrence ----------------------------------------
+  /** Attach/clear an obligation's recurrence rule (TAS-21). Obligation-only (TK-7) — a non-obligation ⇒
+   *  `RecurrenceNotAllowedError`; `null` clears it (the obligation then behaves standard). */
+  async function setRecurrence(taskId: string, rule: string | null): Promise<TaskRow> {
+    const existing = await tasksRepo.findById(taskId)
+    if (!existing) throw new TaskNotFoundError(taskId)
+    assertRecurrenceAllowed(existing.kind, rule, taskId)
+    return tasksRepo.update(taskId, { recurrence_rule: rule })
   }
 
   // ---- S4: timer + log_time + actual_minutes -------------------------------
@@ -389,5 +481,6 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     startTimer,
     stopTimer,
     getActualMinutes,
+    setRecurrence,
   }
 }

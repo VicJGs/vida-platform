@@ -14,7 +14,7 @@
 | **S2 Sub-tasks + M4 rollup** | ✅ BUILT (2026-10-14) | `addSubtask` (single-level) · `getSubtasks` · `getRollup` derived-on-read |
 | **S3 Completion + effects** | ✅ BUILT (2026-10-14) | `completeTask`/`reopenTask` + deny-safe completion effect fan-out |
 | **S4 Timer + log_time** | ✅ BUILT (2026-10-15) | `startTimer`/`stopTimer`/`getActualMinutes` over a `'work'` session sub-type; `log_time` → kept ledger |
-| S5 Obligations + recurrence | ⬜ designed | `setRecurrence`, regenerate (the routines RT-4 seam) |
+| **S5 Obligations + recurrence** | ✅ BUILT (2026-10-15) | `setRecurrence` (obligation-only) + `completeTask` regen hook; RRULE via `ical.js` |
 | S6 Measurability + contribution | ⬜ designed | axes + `contribute_purpose_metric` |
 | S7 Aggregation | ⬜ designed | `getAggregatedTasks` R7 fan-out |
 | S8 Tags + Notes + Views | ⬜ designed | `entity_tags` · pages · `views` |
@@ -86,17 +86,34 @@
 - **Sessions addition (read-only):** `SessionsService.findOpenSessionForEntity(subType, entityType, entityId)` — the one
   substrate touch (the `fireCompletionEffects`-payload edit was rejected for write-side blast radius).
 
+## S5 surface — obligations + recurrence (TAS-21/22/23; the routines RT-4 seam)
+- `setRecurrence(taskId, rule): TaskRow` — obligation-only (`RecurrenceNotAllowedError` on a non-obligation, TK-7);
+  `null` clears it (the obligation then behaves standard). The `recurrence_rule ⇒ kind='obligation'` invariant is
+  enforced at **every** write path (create/update/setRecurrence).
+- `completeTask` **regen hook (extends S3):** a fresh completion of an obligation WITH a rule computes the next
+  occurrence (`nextOccurrence`, below) and spawns one. **Three outcomes:** (1) next instance → spawn a fresh
+  `not_started` occurrence (exhaustive carry-over; `parent_task_id` dropped — top-level only; `completed_at`/
+  `actual_minutes`/`scheduled_date` reset); (2) valid rule, **exhausted** (`COUNT`/`UNTIL`) → complete, no spawn, no
+  error; (3) **invalid** rule → complete + `RecurrenceRegenError` (the task IS completed — complete-but-flag, TAS-23;
+  do not retry). Completion commits BEFORE regen (durable).
+- **`nextOccurrence(rule, fromYmd)`** — RFC-5545 RRULE (ADR-002:1160) via the **canonical `ical.js`** (ADR-001:137;
+  `@vida/core` dep, verified v2.2.1). Anchors a DTSTART at the current `due_date` (null ⇒ local today), iterates past
+  the anchor, returns the next `YYYY-MM-DD`. **Built from `ICAL.Time`'s own calendar fields, NOT `toJSDate()/UTC`** —
+  the latter drifts one day early in UTC-positive zones (g2 B1; a `TZ=Asia/Tokyo` test guards it).
+
 ## DB-11 reconcile (shipped S1)
 `@vida/types/task.ts`: `Task` dropped `tags`, gained `scheduled_date`/`completed_at`/`kind`/`recurrence_rule`/
 `measurement_kind`/`binding_mode`/`nesting_weight`; `TaskTimeLog` gained `updated_at`. `validators/task.ts` gained
 `CreateTaskSchema`/`UpdateTaskSchema`/`ListTasksFilterSchema`.
 
-## Verification (through S4)
-tsc 0 · eslint clean · tasks suite **43/43** + sessions **41/41** live-store (better-sqlite3, Node 24) · full
-`@vida/core` **1950/1950** · g2 SHIP (S4: F1 bogus-row landmine + F3 over-broad catch fixed + tested) · /critique SHIP.
+## Verification (through S5)
+tsc 0 · eslint clean · tasks suite **54/54** + sessions **41/41** live-store (better-sqlite3, Node 24; incl. a
+`TZ=Asia/Tokyo` recurrence regression) · full `@vida/core` **1962/1962** · g2 SHIP (S5: B1 timezone-drift fixed +
+proven; S4 F1/F3 fixed) · /critique SHIP. New dep: `ical.js@2.2.1` (ADR-001-canonical RRULE parser).
 
 ## Deferred / downstream
-Recurrence/obligations (S5) · measurability axes + contribution (S6) · aggregation R7 (S7) · tags/notes/views (S8) ·
-Journal/DueProvider (S9). The S3 completion catalogue's **handlers** are registered by consumer modules later (M1 =
-dormant seam). **S4 deferrals:** the `work_session` extension table (P2 schema-reconcile), `setTimeTrackingEnabled`
-(no sanctioned column), `attach_pomodoro` focus-mode (TAS-17). `[E]` field encryption → M3/DB-5. ② UI → P6.
+Measurability axes + contribution (S6) · aggregation R7 (S7) · tags/notes/views (S8) · Journal/DueProvider (S9). The
+S3 completion catalogue's **handlers** are registered by consumer modules later (M1 = dormant seam). **S4 deferrals:**
+`work_session` extension table (P2 schema-reconcile), `setTimeTrackingEnabled` (no column), `attach_pomodoro` (TAS-17).
+**S5 deferrals:** TAS-24 `duty`/open-vocab type registry (ADR-002 amendment); reopen→re-complete spawn-dedup
+(BR-TK-S5-7 M1 edge). `[E]` field encryption → M3/DB-5. ② UI → P6.

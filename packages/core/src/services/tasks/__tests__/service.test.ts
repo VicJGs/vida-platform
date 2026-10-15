@@ -35,6 +35,8 @@ import {
   TimerAlreadyRunningError,
   TimerNotFoundError,
   TimerNotWiredError,
+  RecurrenceNotAllowedError,
+  RecurrenceRegenError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -624,5 +626,136 @@ describe('mod-tasks S4 — timer + log_time + actual_minutes', () => {
     })
     expect(applied).toBe(true) // the rail ran the handler (ledger key written)…
     expect(await h.svc.getActualMinutes(t.id)).toBe(0) // …but the handler skipped — no bogus 0-minute row
+  })
+})
+
+describe('mod-tasks S5 — obligations + recurrence', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  // find the spawned next occurrence (a fresh not_started obligation that isn't the source).
+  async function spawnedOccurrence(sourceId: string) {
+    const all = await h.svc.listTasks()
+    return all.find((t) => t.id !== sourceId && t.status === 'not_started' && t.kind === 'obligation') ?? null
+  }
+
+  it('1 — setRecurrence on an obligation stores the rule; on a standard task → RecurrenceNotAllowedError', async () => {
+    const ob = await h.svc.createTask({ title: 'Taxes', kind: 'obligation' })
+    const up = await h.svc.setRecurrence(ob.id, 'FREQ=YEARLY')
+    expect(up.recurrence_rule).toBe('FREQ=YEARLY')
+    const std = await h.svc.createTask({ title: 'Buy milk' }) // kind defaults 'standard'
+    await expect(h.svc.setRecurrence(std.id, 'FREQ=DAILY')).rejects.toBeInstanceOf(RecurrenceNotAllowedError)
+  })
+
+  it('2 — setRecurrence(null) clears the rule; the obligation then completes without a spawn', async () => {
+    const ob = await h.svc.createTask({ title: 'Taxes', kind: 'obligation', recurrence_rule: 'FREQ=YEARLY', due_date: '2024-04-15' })
+    await h.svc.setRecurrence(ob.id, null)
+    await h.svc.completeTask(ob.id)
+    expect(await spawnedOccurrence(ob.id)).toBeNull()
+  })
+
+  it('3 — (outcome 1) completing a monthly obligation spawns the next occurrence; original stays completed', async () => {
+    const ob = await h.svc.createTask({ title: 'Rent', kind: 'obligation', recurrence_rule: 'FREQ=MONTHLY', due_date: '2024-02-15' })
+    const done = await h.svc.completeTask(ob.id)
+    expect(done.status).toBe('completed')
+    const next = await spawnedOccurrence(ob.id)
+    expect(next?.due_date).toBe('2024-03-15')
+    expect(next?.recurrence_rule).toBe('FREQ=MONTHLY')
+    expect(next?.title).toBe('Rent')
+  })
+
+  it('4 — the spawned occurrence is a distinct row; completing IT spawns the next (chain self-sustains)', async () => {
+    const ob = await h.svc.createTask({ title: 'Rent', kind: 'obligation', recurrence_rule: 'FREQ=MONTHLY', due_date: '2024-02-15' })
+    await h.svc.completeTask(ob.id)
+    const occ2 = await spawnedOccurrence(ob.id)
+    expect(occ2!.id).not.toBe(ob.id)
+    await h.svc.completeTask(occ2!.id)
+    const all = await h.svc.listTasks({ completed: false })
+    const occ3 = all.find((t) => t.kind === 'obligation' && t.due_date === '2024-04-15')
+    expect(occ3).toBeTruthy()
+  })
+
+  it('5 — (outcome 3) an invalid rule → the task completes AND throws RecurrenceRegenError; no new row', async () => {
+    const ob = await h.svc.createTask({ title: 'Weird', kind: 'obligation', recurrence_rule: 'not a valid rrule at all', due_date: '2024-02-15' })
+    await expect(h.svc.completeTask(ob.id)).rejects.toBeInstanceOf(RecurrenceRegenError)
+    expect((await h.svc.getTask(ob.id))?.status).toBe('completed') // completion is durable (complete-but-flag)
+    expect(await spawnedOccurrence(ob.id)).toBeNull()
+  })
+
+  it('6 — (outcome 2) a valid but exhausted rule → completes, NO spawn, NO error (legitimate end)', async () => {
+    const ob = await h.svc.createTask({ title: 'Once', kind: 'obligation', recurrence_rule: 'FREQ=DAILY;COUNT=1', due_date: '2024-02-15' })
+    const done = await h.svc.completeTask(ob.id) // must NOT throw
+    expect(done.status).toBe('completed')
+    expect(await spawnedOccurrence(ob.id)).toBeNull()
+  })
+
+  it('7 — a standard task and a ruleless obligation complete with no spawn, no error (S3 parity)', async () => {
+    const std = await h.svc.createTask({ title: 'Buy milk' })
+    await h.svc.completeTask(std.id)
+    const ob = await h.svc.createTask({ title: 'Someday', kind: 'obligation' }) // no rule
+    await h.svc.completeTask(ob.id)
+    expect(await spawnedOccurrence(ob.id)).toBeNull()
+  })
+
+  it('8 — YEARLY + biweekly rules compute the correct next due_date (ical.js)', async () => {
+    const yearly = await h.svc.createTask({ title: 'Taxes', kind: 'obligation', recurrence_rule: 'FREQ=YEARLY', due_date: '2024-04-15' })
+    await h.svc.completeTask(yearly.id)
+    expect((await spawnedOccurrence(yearly.id))?.due_date).toBe('2025-04-15')
+
+    const h2 = await setup()
+    const biweekly = await h2.svc.createTask({ title: 'Report', kind: 'obligation', recurrence_rule: 'FREQ=WEEKLY;INTERVAL=2', due_date: '2024-02-01' })
+    await h2.svc.completeTask(biweekly.id)
+    const occ = (await h2.svc.listTasks()).find((t) => t.id !== biweekly.id && t.status === 'not_started')
+    expect(occ?.due_date).toBe('2024-02-15') // +14 days
+  })
+
+  it('9 — the spawned occurrence carries obligation fields, resets completed_at/actual/scheduled, drops parent_task_id', async () => {
+    const parent = await h.svc.createTask({ title: 'P' })
+    const ob = await h.svc.createTask({
+      title: 'Sub-obligation', kind: 'obligation', recurrence_rule: 'FREQ=MONTHLY', due_date: '2024-02-15',
+      estimated_minutes: 30, scheduled_date: '2024-02-10', parent_task_id: parent.id, priority: 'high',
+    })
+    await h.svc.completeTask(ob.id)
+    const next = await spawnedOccurrence(ob.id)
+    expect(next?.kind).toBe('obligation')
+    expect(next?.estimated_minutes).toBe(30)
+    expect(next?.priority).toBe('high')
+    expect(next?.completed_at).toBeNull()
+    expect(next?.actual_minutes).toBeNull()
+    expect(next?.scheduled_date).toBeNull() // only the deadline recurs
+    expect(next?.parent_task_id).toBeNull() // recurrence is top-level
+  })
+
+  it('10 — (N1) recurrence_rule on a non-obligation at create/update → RecurrenceNotAllowedError', async () => {
+    await expect(
+      h.svc.createTask({ title: 'bad', kind: 'standard', recurrence_rule: 'FREQ=DAILY' }),
+    ).rejects.toBeInstanceOf(RecurrenceNotAllowedError)
+    const std = await h.svc.createTask({ title: 'ok' })
+    await expect(
+      h.svc.updateTask(std.id, { recurrence_rule: 'FREQ=DAILY' }),
+    ).rejects.toBeInstanceOf(RecurrenceNotAllowedError)
+  })
+
+  it('11 — (g2 B1) next due_date is TIMEZONE-INDEPENDENT under a UTC-positive zone (Asia/Tokyo)', async () => {
+    const orig = process.env.TZ
+    process.env.TZ = 'Asia/Tokyo' // Node Date picks up TZ at runtime; the old toJSDate/UTC path drifted to -14 here
+    try {
+      const h2 = await setup()
+      // date drift: MONTHLY must land on the 15th, NOT the 14th
+      const ob = await h2.svc.createTask({ title: 'Rent', kind: 'obligation', recurrence_rule: 'FREQ=MONTHLY', due_date: '2024-02-15' })
+      await h2.svc.completeTask(ob.id)
+      const next = (await h2.svc.listTasks()).find((t) => t.id !== ob.id && t.status === 'not_started')
+      expect(next?.due_date).toBe('2024-03-15')
+      // outcome flip: a COUNT=2 rule must still SPAWN (not drop to outcome-2 "exhausted") under Tokyo
+      const ob2 = await h2.svc.createTask({ title: 'Twice', kind: 'obligation', recurrence_rule: 'FREQ=DAILY;COUNT=2', due_date: '2024-02-15' })
+      await h2.svc.completeTask(ob2.id) // must not throw
+      const next2 = (await h2.svc.listTasks()).find((t) => t.id !== ob2.id && t.status === 'not_started' && t.due_date === '2024-02-16')
+      expect(next2).toBeTruthy()
+    } finally {
+      if (orig === undefined) delete process.env.TZ
+      else process.env.TZ = orig
+    }
   })
 })
