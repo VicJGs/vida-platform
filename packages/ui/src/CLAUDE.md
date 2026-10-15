@@ -21,12 +21,29 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - `index.ts` — package barrel; re-exports the generated token data + `config`/`UIProvider`/`useVidaTheme` + a
   side-effect import of `tamagui.d.ts` (ships the augmentation to consumers).
 - `components/` — **UI-1 primitives** (built against the DS-5 contracts): `button.tsx`, `input.tsx`, `checkbox.tsx`,
-  `select.tsx`, `card.tsx` (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). **Button** — the frame
+  `switch.tsx`, `select.tsx`, `card.tsx` (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). **Button** — the frame
   carries a per-intent `color` (mirrors ButtonText) so raw `leading`/`trailing` icon slots (lucide `currentColor`) tint
   per intent+theme instead of inheriting document black (invisible in dark); ButtonText still sets its own colour, so
   label text is unchanged (fe-shell-scope #15 S2 Visual-Gate fix — a COLOR prop, resolves against the theme, unlike the
   dimension/sub-theme trap). **`MenuItemRow` got the same treatment** (a resting `color:$colorTextPrimary` so item
   `leading`/`trailing` icons tint; the label keeps its own default/danger colour — #15 S3 dark-portal Visual-Gate fix).
+  **Switch** (fe-settings S1, EC-3) is the pill **on/off toggle** — the OS System-specimen's toggle. Mirrors the
+  Checkbox recipe EXACTLY: a real `<input type="checkbox" role="switch">` (opacity:0, absolute-filling the track;
+  native role/Space/focus/form) inside a `render:'label'` root; state visuals are pure CSS off `:checked`/`:focus-visible`
+  (`internal/switch-styles.ts`) → **no re-render on toggle**. **DIRECT semantic tokens, NO sub-theme** (the fe-codec-theme
+  accent-fix direction): ON track = injected `var(--colorBrandPrimary)` (preset-flips blue/oxblood/olive), off =
+  `$colorSurfaceSecondary`+`$colorBorderDefault`, knob = `$colorSurfacePrimary`, focus ring = `var(--colorFocusRing)`.
+  **Knob travel is size-dependent → an inline `--vida-switch-travel` custom prop on the track** (the toast `--vida-toast-from`
+  precedent), inherited by the knob; `:checked` does `translateX(var(--vida-switch-travel))` (B12 transform-only, reduced-motion
+  `@media` drops it). **⚠ `invalid` uses the BASE token `$colorSignalDanger`, NOT the sub-theme key `$borderError`** — the
+  latter exists only in `light_Checkbox/Input/Select` (`themes.ts:19`); Switch has no `light_Switch` theme so `$borderError`
+  would resolve to nothing + the danger border silently falls back to default (**Visual-Gate-caught**; tsc + 10 unit tests
+  passed over it — sub-theme keys only resolve when a `light_<Name>` theme exists, direct tokens always do). Binary (no
+  `indeterminate`), so `ref` goes straight to the input (no callback-merge — the checkbox merge exists only for the imperative
+  `indeterminate` DOM prop). Hover = border-strengthen to `$colorTextMuted` (§VIII; no overflow-clipped overlay). Spec:
+  `docs/specs/foundation/fe-settings/delivery/s1-switch.md`. Visual Gate PASS (Brave, 3 presets × light/dark: ON-track
+  flips blue(37,99,235)/oxblood(178,55,51)/olive(95,110,62) · knob slides 16px · focus ring · disabled 0.5 · invalid
+  rgb(239,68,68) · label AA = `$colorTextPrimary` primary pairing · lg 44×24 · axe 0).
   **Select** is the first
   molecular + first floating primitive: a `<button role="combobox">` trigger + a listbox panel PORTALLED to
   `document.body` (react-dom `createPortal`, `zIndex.dropdown`) re-wrapped in `<Theme name="Select">` (the portal

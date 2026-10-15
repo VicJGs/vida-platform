@@ -192,7 +192,8 @@ This is NOT just another module — it is the **unifying layer** of the entire p
 
 ## Commands
 
-- `pnpm dev` — Start all apps in dev mode
+- `pnpm dev` — Start all apps in dev mode (includes `@vida/server` via `wrangler dev` — requires macOS 13.5+ / `workerd`)
+- `pnpm dev:app` — Local-first dev **without** the server (web + package watchers). Use this for M1 work: M1 is local-only/no-server (the server is an M4 concern per `docs/roadmap/MVP-PATH.md`), and `workerd` cannot run on macOS < 13.5.
 - `pnpm build` — Build all packages and apps
 - `pnpm typecheck` — Type-check all packages
 - `pnpm lint` — Lint all packages

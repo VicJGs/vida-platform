@@ -1,4 +1,32 @@
 ---
+Date: 2026-10-12 — fe-settings (#24, LIF-193) SHIPPED — Settings surface, 6 slices, PR #137 merged
+Task: fe-settings (LIF-193) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · M1.2.1 · worktree off origin/main (5ef0ce7), Node 24
+Goal: ② Frontend build of the net-new Settings System surface at /settings (all 7 control groups + searchable index).
+Completed:
+  - **fe-settings COMPLETE — PR #137 merged (`95036bd`), LIF-193 → Done.** Two-pane System surface at /settings.
+  - Full Entity Delivery Flow ②: Baseline → Interpretation → Envision (12 ECs; D-ENV-1 net-new `Switch`) →
+    Decomposition (gate-1 SHIP, 3 refinements) → 6 gated slices: S1 `Switch` primitive (@vida/ui, `445894d`) ·
+    S2 theme store + App.tsx rewire (EC-5 keystone, `f8df47c`) · S3 shell+route+Appearance live re-theme (`e919309`) ·
+    S4 searchable index (`8eec9ae`) · S5 Modules show/hide+rename+Surfaces+escape-hatch (`9af6381`) ·
+    S6 Locale/Notifications+delegated (`16414b1`).
+  - typecheck 0 · eslint clean · @vida/web 524/525 (1 jsdom flake) · axe 0 across presets×modes · Visual Gate PASS
+    every slice (real vite app, Brave) · pre-ship /critique SHIP (1 a11y NIT folded).
+  - Close-out: branch + worktree removed · task archived (PR #138) · session file written.
+Decisions:
+  - **Merged on local-green** — CI repo-wide dark (exhausted GitHub Actions minutes, infra not code; main `94aeea1`
+    triage); Victor approved.
+  - **Persistence = deferred worker-`values` DB seam** (verified in code) — surface applies live in-session, persists
+    drop-in when the seam lands (same home fe-notes deferred). Saved memory [[apps-web-worker-values-seam-blocks-live-db-ops]].
+  - Net-new `Switch` primitive (Victor's Envision call); two-store split; Mode=Light/Dark only; all 7 controls in scope
+    (doc-resolved) via dashboard_layout/module_visibility, zero schema change.
+  - Merge-conflict: App.tsx unified on the theme store with fe-onboarding's guided-setup preview + kept both routes.
+Next session:
+  - **First: `mod-routines`** (backend, M1.1.2) — the computed next head. `/begin` reconciles + fast-forwards main
+    past the parallel-session WIP.
+  - NB: 4 parallel sessions were live this session (fe-calendar/gamification/notes-and-pages/onboarding worktrees);
+    close-out (archival + this log) was done in isolated worktrees off origin/main + docs PRs to avoid the contended tree.
+
+---
 Date: 2026-10-10 — fe-shell (CODEC #14) front matter LOCKED + S1 shipped (committed `df0cf8a`, branch `fe-shell`)
 Task: fe-shell (LIF-226) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · M1.2.1 · worktree `.claude/worktrees/fe-shell` off origin/main (a4f8962)
 Goal: pick up fe-shell (canvas-reader taken by another session); run the Entity Delivery Flow front matter, then build.
@@ -6345,3 +6373,22 @@ Next session:
   - Merge PR #140 when CI green → LIF-181 Done (reconcile via `/begin --pull`); `/task-complete fe-gamification`. 2 pre-existing CI reds expected (Format repo-wide · Workers CF-config).
   - Next head = `mod-routines` (backend, M1.1.2) OR `mod-tasks` S3 (backend, in-progress worktree) — Victor's call at `/begin`.
 ---
+Date: 2026-10-12 — M1 local-dev unblock + MVP-0 doc honesty + CF Preview-Builds resolution (PR #136)
+Task: unfiled housekeeping (relates LIF-228 prettier, LIF-229 CF) · Profile: bug-fix / Generic Coding Session (engineering + process) · branch `fix/m1-local-dev-and-doc-honesty` off main `7657574`.
+Goal: Victor ran `pnpm dev` to test the built app — it failed; home/journal/notes didn't work. Triage + solve, plus the two tracked CI reds (Cloudflare LIF-229, prettier LIF-228).
+Accomplished:
+  - **Triaged `pnpm dev` failure → TWO unrelated things.** (1) `@vida/server` (`wrangler dev`→`workerd`) hard-crashes on macOS 12.7 (needs 13.5+) → Turbo marks the whole run failed though `@vida/web` was up on :5174. (2) home/journal/notes "not working" = **by design, not a bug** — an Explore agent proved with file:line evidence that the data plane is an intentional stub: `apps/web/src/db/client.ts:157` throws on the Drizzle `values`/`batch`/`exec` path, NO `createNotesService`/`createJournalsService` composition root in apps/web, all data hooks return empty (`use-notes-rows`/`use-note-entity`/`use-journal-summary`). CRUD cannot persist.
+  - **Grounded everything in MVP-PATH.md (updated today):** §1/§6 — the server is an **M4** concern; M1 = "local-only, no-sync, **no server**." So the server has no M1 role; its presence in the dev loop + the CF build gating M1 PRs are both premature. Same root cause.
+  - **1a SHIPPED:** `pnpm dev:app` = `turbo run dev --filter='!@vida/server'` (verified via `turbo --dry-run`: server excluded, 5 pkgs run). Documented in CLAUDE.md with the macOS/workerd constraint. `.gitignore` += `.wrangler/`.
+  - **Doc honesty SHIPPED:** corrected MVP-PATH.md's overstated "you can actually journal / take notes" headlines (callout + §4 header + Landed line + §2 "drop-in swap") — MVP-0 is **build-complete** (screens/pattern merged) but **CRUD is NOT live**; the worker-side Drizzle seam is a real unbuilt unit (UI-3/M1.1+), not a drop-in.
+  - **2 (CF LIF-229) RESOLVED-PENDING-ACTION:** chose Option 2 (disable CF Preview Builds until M4), plan-grounded; wrote exact dashboard steps (Settings→Build→Branch control→uncheck Enable Preview Builds) verified vs current CF docs 2026-10-12. ~1-min dashboard action for Victor — no repo change delivers it.
+  - PR #136 opened (base main). 2 commits (fix + gitignore chore). No code logic → Typecheck/Lint/Test/E2E unaffected; 2 known pre-existing reds remain (Format LIF-228 deferred; Workers LIF-229 cleared by the dashboard action).
+Decisions / lessons:
+  - **Check the docs before deciding — again.** I AskUserQuestion'd 3 routing questions; Victor: "check the documentation" for all three. The plan (MVP-PATH §1/§6) resolved 1a + 2 mechanically; the code (db/client.ts) resolved 1b. [[envision-gate-firing-is-a-doc-test-not-a-human-decision]].
+  - **The MVP-PATH headline drifted from the code** — it claimed usability the stub doesn't deliver. The agent's file:line facts are ground truth over the celebratory summary. [[discontinued-impl-and-frozen-decomposition-are-reference-not-authority]] / verify-vs-reality.
+  - **`mod-notes-2a-data-plane`/`mod-notes-rebuild` branches are August pre-`backend-replan` vertical-grain — superseded, reference-only.** Do NOT point at them as the live data-plane work.
+Next session:
+  - **Victor action:** apply the CF dashboard change (steps in `.claude/tasks/ci-workers-build-config.md`) → LIF-229 Done.
+  - **Decide 1b:** scope the notes/journal **data-plane** unit (worker-side Drizzle `values`/`batch`/`exec` seam + composition root) — the real work that makes MVP-0 usable. Highest VALUE, genuine Entity Delivery Flow build.
+  - **prettier LIF-228** stays deferred until the 5 active worktrees (fe-calendar/-gamification/-notes-and-pages/-onboarding/-settings) flush.
+  - Computed next backend head remains `mod-routines` (M1.1.2).

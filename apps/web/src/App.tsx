@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { View } from '@tamagui/core'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
-import { THEME_DEFAULT, ToastProvider, UIProvider, type ThemePreset, type ThemeSelection } from '@vida/ui'
+import { ToastProvider, UIProvider, type ThemePreset } from '@vida/ui'
 import { ensureDbReady } from './db/boot'
 import { queryClient } from './lib/query-client'
 import { Onboarding } from './onboarding/onboarding'
@@ -14,6 +14,7 @@ import { useGuidedSetupStore } from './onboarding/guided-setup-store'
 import { GuidedSetupInvitation } from './onboarding/guided-setup-entry'
 import { GuidedSetupTakeover } from './onboarding/guided-setup-mount'
 import { router } from './routes'
+import { useThemeStore } from './stores/theme-store'
 
 export function App() {
   // Gate rendering on the local DB being open+migrated: React Query reads local
@@ -27,10 +28,16 @@ export function App() {
   // (before the early returns) — Rules of Hooks. `status` gates the branch below (S4-BR-c).
   const firstRun = useFirstRun(dbReady)
 
-  // fe-onboarding S4 — the app-owned theme selection STATE (minimal; the full Zustand switcher store stays deferred to
-  // Settings/fe-codec). Making it stateful here is what lets the guided-setup theme picker LIVE-PREVIEW across the app.
-  const [selection, setSelection] = useState<ThemeSelection>(THEME_DEFAULT)
-  const previewPreset = useCallback((preset: ThemePreset) => setSelection((s) => ({ ...s, preset })), [])
+  // fe-settings S2 (EC-5): the theme selection is app-owned (AR-4) and lives in the Zustand theme store — the SINGLE
+  // source of truth. The Settings Appearance controls (S3) and the guided-setup theme picker (fe-onboarding S4) both
+  // dispatch here, so the whole app re-themes live. Boots at THEME_DEFAULT; hydrate-on-boot is a deferred seam
+  // (seam-contract §A0 — blocked by the worker `values` seam, first-consumer home).
+  const selection = useThemeStore((s) => s.selection)
+  const setPreset = useThemeStore((s) => s.setPreset)
+
+  // fe-onboarding S4 — the guided-setup theme picker live-previews across the app by driving the SAME store (not a
+  // separate local state), so its preview and Settings never diverge.
+  const previewPreset = useCallback((preset: ThemePreset) => setPreset(preset), [setPreset])
 
   // fe-onboarding S4 — the guided-setup launch phase (opt-in overlay; both reach paths drive it). The post-first-run
   // invitation is offered once, right after onboarding completes.
@@ -83,8 +90,8 @@ export function App() {
   }
 
   // UI-4 · S1: mount the design-system providers at the app root. UIProvider (Tamagui config/theme; selection STATE is
-  // app-owned — fed the cold-start THEME_DEFAULT here, Editorial+light+calm; the Zustand store + switcher arrive with
-  // Settings — fe-codec S3 / R5) wraps the app. ToastProvider is the singleton toast HOST —
+  // app-owned — fed from the Zustand theme store (fe-settings S2 / R5), so the Settings switcher (S3) + the guided-setup
+  // picker re-theme the app live; boots at THEME_DEFAULT). ToastProvider is the singleton toast HOST —
   // it takes no children and portals to <body>, so it's a SIBLING of the app tree, inside UIProvider for the theme
   // context. The shell chrome (AppShell) mounts INSIDE the router, in routes.tsx RootComponent (it wraps the Outlet).
   //

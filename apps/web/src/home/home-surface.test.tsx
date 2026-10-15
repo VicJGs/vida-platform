@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, render, renderHook } from '@testing-library/react'
 import { UIProvider } from '@vida/ui'
 import { HomeSurface, useHomeArrangement } from './home-surface'
+import { usePreferencesStore } from '../stores/preferences-store'
 
 afterEach(cleanup)
 const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
@@ -35,6 +36,15 @@ describe('HomeSurface (S3)', () => {
   })
 
   it('defaults to the persisted arrangement seam (journalFirst)', () => {
-    expect(useHomeArrangement()).toBe('journalFirst')
+    // fe-settings S3 activated the read seam: useHomeArrangement now reads the app preferences store (a real hook).
+    usePreferencesStore.setState({ arrangement: 'journalFirst', reduceMotion: false })
+    const { result } = renderHook(() => useHomeArrangement())
+    expect(result.current).toBe('journalFirst')
+  })
+
+  it('reflects the Settings arrangement toggle live (gate-1 #1 — read-seam activated)', () => {
+    usePreferencesStore.setState({ arrangement: 'dashboardFirst', reduceMotion: false })
+    const { result } = renderHook(() => useHomeArrangement())
+    expect(result.current).toBe('dashboardFirst')
   })
 })

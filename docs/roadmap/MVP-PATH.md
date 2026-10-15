@@ -5,11 +5,16 @@
 > minimal dependency-closed path to a daily-usable single-device OS*. Derived from the live Linear
 > dependency graph (initiative `vida-platform`) reconciled against the merged-PR oracle.
 >
-> **🟢 MILESTONE (2026-10-12): MVP-0 is complete.** `fe-notes-and-pages` (LIF-191) merged (PRs #128/#129),
-> joining the last of its CODEC-canvas prereqs. The first usable screen exists — you can open Vida and
-> actually journal / take notes on your device. The frontend "usable layer" (M1.2.2) has opened at 1/6.
-> Also shipped since the last refresh: `fe-onboarding` guided setup (LIF-216) and the `fe-notifications` ②
-> surface (LIF-192).
+> **🟢 MILESTONE (2026-10-12): MVP-0 is build-complete** — every planned MVP-0 *issue* is merged.
+> `fe-notes-and-pages` (LIF-191) merged (PRs #128/#129), joining the last of its CODEC-canvas prereqs.
+> The first feature surface — the notes/journal **screens, patterns and UI wiring** — now exists in the
+> app. ⚠️ **It is not yet usable for real data:** the local data-plane is still a documented stub
+> (`apps/web/src/db/client.ts` — the worker-side Drizzle `values`/`batch`/`exec` seam **throws**; no
+> `createNotesService`/`createJournalsService` composition root is wired in `apps/web`), so you can open
+> and navigate the screens but **cannot yet persist a note or journal entry.** Making CRUD live is the
+> remaining work (the data-plane seam, homed at UI-3 / M1.1+ — see § 4 · MVP-0 below).
+> The frontend "usable layer" (M1.2.2) has opened at 1/6. Also shipped since the last refresh:
+> `fe-onboarding` guided setup (LIF-216) and the `fe-notifications` ② surface (LIF-192).
 >
 > **How to refresh (important):** Linear archives completed issues, and its default `issues` query
 > **excludes archived** — so `tracker_sync.py --plan`/`--next` are *forward-looking* (what's left), never a
@@ -49,8 +54,10 @@ Two large, well-built halves — now **joined at the first seam** (notes/journal
 - **🟢 First wired feature surface — `fe-notes-and-pages` (LIF-191).** The notes collection, note pages,
   backlinks, `[[` picker, `/summary` block, metadata/attachments, search UI and block menu are all built
   and merged. This is the surface that **invents the reusable `useCollection` live-hook pattern** every
-  later `fe-*` surface copies — so the hardest wiring is now done once. (Live DB data-plane for notes is
-  the remaining drop-in swap, deferred to its worker-RPC Drizzle seam.)
+  later `fe-*` surface copies — so the hardest *UI* wiring is now done once. (⚠️ The live DB data-plane is
+  **not** wired yet: the worker-side Drizzle `values`/`batch`/`exec` seam still throws and there is no
+  service composition root in `apps/web`, so notes/journal CRUD does not persist. The UI hooks are
+  swap-ready; the worker-side seam is a real unbuilt unit — homed UI-3 / M1.1+.)
 
 > **The gap (narrowed):** MVP-0 is joined. What remains for "daily driver" is the wired `fe-*` module
 > surfaces (M1.2.2 / M1.2.3) and M1.4 integration — and most of those now *copy* the notes pattern rather
@@ -84,7 +91,7 @@ Difficulty: 🟢 Low · 🟡 Medium · 🟠 High · 🔴 Very High. Difficulty t
 yet**, not raw size: the first wired surface *invents* the `useCollection` live-hook pattern (hard);
 every surface after it *copies* it (easy).
 
-### ✅ MVP-0 — "notes & daily journal on my device" — **COMPLETE (2026-10-12)**
+### ✅ MVP-0 — "notes & daily journal on my device" — **BUILD-COMPLETE (2026-10-12)** · ⚠️ data-plane stubbed (not yet live)
 
 | Issue | Status | What you can DO | Difficulty |
 |---|---|---|---|
@@ -95,9 +102,14 @@ every surface after it *copies* it (easy).
 | fe-shell-scope (LIF-219) | ✅ done | Scope the shell to a Space/context (PR #125) | 🟢 Low |
 | **fe-notes-and-pages (LIF-191)** | ✅ **done (PRs #128/#129)** | **Create, edit, read & link your own notes** — first real feature; built the reusable `useCollection` hook | 🟠 High (pattern-maker) |
 
-→ **Landed: open Vida daily and actually journal / take notes on your device.** Every MVP-0 issue is
-merged. The only residual is swapping the notes data-plane from stub to the live worker-RPC Drizzle seam
-(a drop-in, deferred by design) — the screen, the pattern, and the wiring all exist.
+→ **Landed (build): every MVP-0 issue is merged — the screens, the `useCollection` pattern, and the UI
+wiring all exist.** ⚠️ **Not yet landed (runtime): real journaling / note-taking does not work.** The data
+plane is a documented stub: `apps/web/src/db/client.ts` throws on the Drizzle `values`/`batch`/`exec` path,
+and no `createNotesService`/`createJournalsService` composition root is wired into `apps/web` (all data
+hooks return empty by design — `use-notes-rows.ts`, `use-note-entity.ts`, `use-journal-summary.ts`). To
+*preview* the populated layouts today, the routes accept a `?sample` dev param. Making it real = building
+the worker-side Drizzle-proxy seam + the composition root (homed UI-3 / M1.1+). This is a genuine build,
+**not** a one-line hook swap: the UI hooks are swap-ready, but the worker-side seam is unimplemented.
 
 ### 🟡 MVP-1 — "life-management daily driver"
 
