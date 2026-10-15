@@ -6317,3 +6317,31 @@ Next session:
   - Env: Node 24 via nvm. apps/web's @vida/ui symlink canonicalizes to MAIN (no 'game') — if S5 touches @vida/ui, re-point `ln -sfn "$PWD/packages/ui" apps/web/node_modules/@vida/ui` + `pnpm --filter @vida/ui build` before gates ([[worktree-apps-web-ui-symlink-resolves-to-main]]). Visual Gate = throwaway harness apps/web/vg.html + src/__vg__/gamification-entry.tsx (recreate; deleted after) + the window.process shim; drive /gamification, click the Activity tab.
   - After S5 the unit is COMPLETE → open the PR (per-issue-branch workflow).
 ---
+
+---
+Date: 2026-10-14 — fe-gamification S5 (Activity) COMPLETE → unit done → PR #140 open
+Task: fe-gamification (LIF-181) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-gamification` branch `fe-gamification` · Node 24
+Goal: build the LAST mode — S5 Activity (the consequence-ledger history) — then open the PR for the whole unit (G0 + S1–S5).
+Completed:
+  - **Baseline + seam grounding (Step 1):** the ① `GamificationService` exposes NO ledger-history read — `getBalance`/`getBalances` read `consequence_ledger` PRIVATELY inside `computeBalance`. Triple-confirmed: seam-contract.md surface · currencies-mode.tsx:26 · CLAUDE.md:50 ("S5 Activity owns the ledger"). Resolution (doc-grounded, IR-G1 + fe-notes F-S8-1 precedent): build the ②-side hook type-correct + STUBBED; file the enriched read as **F-S5-1** (unbuilt ①-tier first-consumer-pull; no @vida/core change).
+  - **PLAN gate (§XXVI g1):** persisted `PLAN-S5-activity.md` (forward spec: BR-S5-1..8, ActivityEntry §3, acceptance §4). /critique REVISE→fixed 2 blocking (timestamp under-spec'd; tabular alignment) + 2 nits → Approval 1. Grouping = flat reverse-chron (EC-8 silent on grouping; recommended default, Victor approved).
+  - **IMPL-PLAN gate (§XXVI g2):** /preflight PASSED (ListView flat `items` API confirmed; amount color pinned `$colorTextPrimary` = AA-by-construction, closed the one open assumption) → /critique SHIP → Approval 2.
+  - **§XXVIII deviation (date-fns → native `Intl.DateTimeFormat`):** the approved PLAN mandated date-fns, but it is NOT in apps/web's deps (phantom under pnpm-strict). "Check the documentation" → the apps/web convention is `Intl.DateTimeFormat` (home-surface.tsx:36) + hand-rolled relative-from-`now` (gamification-overview.tsx:23 `agoLabel`); date-fns unused in apps/web. Doc-resolved, spec updated.
+  - **Sign-semantics grounding (balance.ts):** `current = earned − locked − spent`; `distribute` does NOT affect `current` (draws the to-distribute ceiling). So NO uniform ± sign — direction is label-led (Earned/Locked/Spent/Distributed). Corrected the PLAN (my earlier "earn/distribute additive" was wrong).
+  - **Build (Step 4):** `use-activity.ts` (stubbed seam, honest-empty default, `?sample`/`?force`) · `activity-mode.tsx` (CollectionView + flat ListView + S2 pager; label+glyph rows; Intl timestamp, year only out-of-year) · `activity.test.tsx` · wired into `gamification-surface.tsx` (removed now-dead `ModeEmpty`/`EmptyState`) · updated the stale S1 Activity-placeholder test.
+  - **g2 independent review REVISE→fixed:** finding #1 (blocking) — the empty ledger fell back to the shell default "Items you add will show up here", a false create-promise for a read-only history → added an activity-honest `empty` override ("No activity yet"). Nits #2+#3 resolved together (consume `now` to show the year only for out-of-year entries) + #4 (comment the sample-builder `!` modulo-indexes). Added a unit test locking the honest-empty copy.
+  - **Gates:** tsc 0 · eslint 0 · gamification 31/31 · **@vida/web 546/546** · **Visual Gate PASS** on final code (Brave, editorial/game × light/dark, populated AA 4.88–6.53 + empty-state honest-copy + AA, 0 overflow 1280/375). Pre-ship /critique SHIP.
+  - **§XXIX currency:** `apps/web/src/gamification/CLAUDE.md` (S5 + F-S5-1) + slice-map.md (S5 ✅) — shipped in the build commit `a76f985`.
+  - **Committed `a76f985`, pushed, PR #140 opened** (base main; carries the whole unit G0 + S1–S5). TASKS.md → IN REVIEW.
+Decisions:
+  - Did NOT ask Victor stub-vs-build-the-read — the docs resolve it (seam has no read + IR-G1 + fe-notes precedent). Brought the facts, filed F-S5-1.
+  - Direction label-led, not ±-signed — grounded in balance.ts, not assumed.
+  - The @vida/ui symlink already resolved to the WORKTREE's packages/ui (not main) this session; S5 is apps/web-only (no @vida/ui edit) so no re-point needed, but I rebuilt @vida/ui dist for the gate to be safe.
+Lessons (for memory):
+  - A ② "render a history" slice whose ① has no history read = stub + F-finding (first-consumer-pull), NEVER invent the read. Three in-repo docs said "S5 owns the ledger" before I wrote a line.
+  - `Intl.DateTimeFormat` is the apps/web date convention; date-fns (REPO.md "repo date lib") is @vida/core-only, phantom in apps/web. Check the consuming workspace's deps, not the monorepo claim.
+  - Ledger sign = balance.ts truth (distribute ≠ a `current` delta) → label-led display, not a two-way ±.
+Next session:
+  - Merge PR #140 when CI green → LIF-181 Done (reconcile via `/begin --pull`); `/task-complete fe-gamification`. 2 pre-existing CI reds expected (Format repo-wide · Workers CF-config).
+  - Next head = `mod-routines` (backend, M1.1.2) OR `mod-tasks` S3 (backend, in-progress worktree) — Victor's call at `/begin`.
+---
