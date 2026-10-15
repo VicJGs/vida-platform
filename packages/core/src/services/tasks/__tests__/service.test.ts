@@ -20,13 +20,21 @@ import {
   createEffectRegistry,
   createEffectRail,
   type EffectRegistry,
+  type EffectHandler,
+  NoEffectHandler,
 } from '../../../foundation/effects'
-import { createTasksService } from '../service'
+import { createSessionRegistry } from '../../../foundation/sessions/registry'
+import { createTaggableTypeRegistry } from '../../../foundation/spaces'
+import { createSessionsService, type SessionsService } from '../../sessions'
+import { createTasksService, registerTasksTimer, WORK_SESSION_TYPE } from '../service'
 import {
   type TasksService,
   TaskNotFoundError,
   MultipleParentError,
   SubtaskNestingError,
+  TimerAlreadyRunningError,
+  TimerNotFoundError,
+  TimerNotWiredError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -446,5 +454,175 @@ describe('mod-tasks S3 — completion + effect fan-out', () => {
     const reopened = await h.svc.reopenTask(t.id)
     expect(reopened.updated_at).toBe(t.updated_at) // no write → updated_at unchanged
     expect(reopened._sync_version).toBe(t._sync_version)
+  })
+})
+
+// --- S4 harness: compose SessionsService + TasksService + the tasks timer wiring (work type + log_time handler) ----
+interface TimerHarness {
+  svc: TasksService
+  sessions: SessionsService
+  db: DrizzleDb
+  rail: ReturnType<typeof createEffectRail>
+}
+// opts.handler: omitted ⇒ the real handler via registerTasksTimer; null ⇒ 'work' type only, NO handler (test 8);
+// a fn ⇒ 'work' type + that custom handler (test 10 flaky).
+async function setupWithTimer(opts: { handler?: EffectHandler | null } = {}): Promise<TimerHarness> {
+  await initVault()
+  const bsql = new Database(':memory:')
+  const driver = createBetterSqlite3Driver(bsql)
+  await migrate(driver)
+  const db = createDrizzleProxy(driver)
+  const sessionRegistry = createSessionRegistry(db, 'test-device')
+  const effectRegistry = createEffectRegistry()
+  const rail = createEffectRail(db, effectRegistry)
+  const entityRegistry = createTaggableTypeRegistry()
+  const sessions = createSessionsService({
+    db,
+    deviceId: 'test-device',
+    registry: sessionRegistry,
+    rail,
+    entityRegistry,
+  })
+  if (!('handler' in opts)) {
+    await registerTasksTimer({ sessionRegistry, effectRegistry, db, deviceId: 'test-device' })
+  } else {
+    await sessionRegistry.register(WORK_SESSION_TYPE) // type only (so createSession works)
+    if (opts.handler) effectRegistry.register('log_time', opts.handler)
+  }
+  const svc = createTasksService({
+    db,
+    deviceId: 'test-device',
+    sessions,
+    effects: { rail, registry: effectRegistry },
+  })
+  return { svc, sessions, db, rail }
+}
+
+describe('mod-tasks S4 — timer + log_time + actual_minutes', () => {
+  it('1 — startTimer opens a running work session; getActualMinutes still 0 (running does not count)', async () => {
+    const h = await setupWithTimer()
+    const t = await h.svc.createTask({ title: 'Write' })
+    const s = await h.svc.startTimer(t.id)
+    expect(s.sub_type).toBe('work')
+    expect(s.status).toBe('in_progress')
+    expect(await h.svc.getActualMinutes(t.id)).toBe(0)
+  })
+
+  it('2 — startTimer while one runs → TimerAlreadyRunningError', async () => {
+    const h = await setupWithTimer()
+    const t = await h.svc.createTask({ title: 'Write' })
+    await h.svc.startTimer(t.id)
+    await expect(h.svc.startTimer(t.id)).rejects.toBeInstanceOf(TimerAlreadyRunningError)
+  })
+
+  it('3 — stopTimer completes the session + writes ONE ledger row via the handler; getActualMinutes = duration', async () => {
+    const h = await setupWithTimer()
+    const t = await h.svc.createTask({ title: 'Write' })
+    const s = await h.svc.startTimer(t.id)
+    // backdate start by 5m so the duration is non-zero (a fast start/stop rounds to 0 — test 7).
+    await h.sessions.updateSession(s.id, { started_at: Date.now() - 5 * 60000 })
+    await h.svc.stopTimer(s.id)
+    expect((await h.sessions.getSession(s.id))?.session.status).toBe('completed')
+    expect(await countAppliedEffects(h.db)).toBe(1) // one log_time applied
+    expect(await h.svc.getActualMinutes(t.id)).toBe(5)
+  })
+
+  it('4 — stopTimer on an already-completed session → idempotent no-op (no second ledger row)', async () => {
+    const h = await setupWithTimer()
+    const t = await h.svc.createTask({ title: 'Write' })
+    const s = await h.svc.startTimer(t.id)
+    await h.svc.stopTimer(s.id)
+    await h.svc.stopTimer(s.id) // already completed → no-op
+    expect(await countAppliedEffects(h.db)).toBe(1)
+  })
+
+  it('5 — stopTimer on a missing session → TimerNotFoundError; startTimer on a missing task → TaskNotFoundError', async () => {
+    const h = await setupWithTimer()
+    await expect(h.svc.stopTimer('nope')).rejects.toBeInstanceOf(TimerNotFoundError)
+    await expect(h.svc.startTimer('nope')).rejects.toBeInstanceOf(TaskNotFoundError)
+  })
+
+  it('6 — two timers start→stop→start→stop → getActualMinutes = sum; a running third adds nothing', async () => {
+    const h = await setupWithTimer()
+    const t = await h.svc.createTask({ title: 'Write' })
+    const s1 = await h.svc.startTimer(t.id)
+    await h.sessions.updateSession(s1.id, { started_at: Date.now() - 3 * 60000 })
+    await h.svc.stopTimer(s1.id)
+    const s2 = await h.svc.startTimer(t.id)
+    await h.sessions.updateSession(s2.id, { started_at: Date.now() - 2 * 60000 })
+    await h.svc.stopTimer(s2.id)
+    expect(await h.svc.getActualMinutes(t.id)).toBe(5)
+    await h.svc.startTimer(t.id) // running, not stopped
+    expect(await h.svc.getActualMinutes(t.id)).toBe(5) // unchanged until stopped
+  })
+
+  it('7 — duration rounding: a <60s run → a 0-minute closed row, counts 0', async () => {
+    const h = await setupWithTimer()
+    const t = await h.svc.createTask({ title: 'Write' })
+    const s = await h.svc.startTimer(t.id)
+    await h.svc.stopTimer(s.id) // ~0ms elapsed → rounds to 0
+    expect(await h.svc.getActualMinutes(t.id)).toBe(0)
+    expect(await countAppliedEffects(h.db)).toBe(1) // a 0-minute row IS written
+  })
+
+  it('8 — ledger write rides the rail (G-S4): no log_time handler → stopTimer throws NoEffectHandler', async () => {
+    const h = await setupWithTimer({ handler: null }) // 'work' type registered, handler NOT
+    const t = await h.svc.createTask({ title: 'Write' })
+    const s = await h.svc.startTimer(t.id)
+    await expect(h.svc.stopTimer(s.id)).rejects.toBeInstanceOf(NoEffectHandler)
+  })
+
+  it('9 — the work sub-type auto-fires nothing: only the explicit emit writes the ledger (exactly 1 applied)', async () => {
+    const h = await setupWithTimer()
+    const t = await h.svc.createTask({ title: 'Write' })
+    const s = await h.svc.startTimer(t.id)
+    await h.svc.stopTimer(s.id)
+    // if completeSession ALSO fired log_time (effects:[] guards it), there would be 2 applies / a dup — there is 1.
+    expect(await countAppliedEffects(h.db)).toBe(1)
+  })
+
+  it('10 — fire-first/commit-last: a throwing handler leaves the session in_progress (recoverable, no partial)', async () => {
+    const h = await setupWithTimer({
+      handler: async () => {
+        throw new Error('ledger boom')
+      },
+    })
+    const t = await h.svc.createTask({ title: 'Write' })
+    const s = await h.svc.startTimer(t.id)
+    await expect(h.svc.stopTimer(s.id)).rejects.toThrow('ledger boom')
+    // fire-first: the fire threw BEFORE completeSession → the session is NOT completed → a retry is possible.
+    expect((await h.sessions.getSession(s.id))?.session.status).toBe('in_progress')
+    expect(await h.sessions.findOpenSessionForEntity('work', 'task', t.id)).not.toBeNull()
+  })
+
+  it('11 — the running guard uses the Sessions reverse read; cleared after stop', async () => {
+    const h = await setupWithTimer()
+    const t = await h.svc.createTask({ title: 'Write' })
+    const s = await h.svc.startTimer(t.id)
+    expect(await h.sessions.findOpenSessionForEntity('work', 'task', t.id)).not.toBeNull()
+    await h.svc.stopTimer(s.id)
+    expect(await h.sessions.findOpenSessionForEntity('work', 'task', t.id)).toBeNull()
+    // a fresh timer is allowed again
+    await expect(h.svc.startTimer(t.id)).resolves.toMatchObject({ sub_type: 'work' })
+  })
+
+  it('12 — timer deps not wired → TimerNotWiredError (S4 is fail-loud, not S3-dormant)', async () => {
+    const h = await setup() // the S1 harness: no sessions, no effects
+    const t = await h.svc.createTask({ title: 'Write' })
+    await expect(h.svc.startTimer(t.id)).rejects.toBeInstanceOf(TimerNotWiredError)
+  })
+
+  it('13 — payload-less log_time (another producer) writes NO bogus ledger row (g2 F1 guard)', async () => {
+    const h = await setupWithTimer() // real tasks log_time handler registered (claims the global slot)
+    const t = await h.svc.createTask({ title: 'Write' })
+    // Simulate a non-tasks producer firing log_time with NO payload (e.g. a future focus auto-fire, TAS-17).
+    const { applied } = await h.rail.applyEffect({
+      subjectNaturalKey: 'some-focus-session',
+      transition: 'completed',
+      effectType: 'log_time',
+      targetRef: t.id,
+    })
+    expect(applied).toBe(true) // the rail ran the handler (ledger key written)…
+    expect(await h.svc.getActualMinutes(t.id)).toBe(0) // …but the handler skipped — no bogus 0-minute row
   })
 })

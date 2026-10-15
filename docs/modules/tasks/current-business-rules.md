@@ -78,7 +78,34 @@
   `'completed'` and fires. Accepted: completion is an explicit user action and the spec imposes no restriction
   (recorded as a decision, not an oversight).
 
+## S4 — Timer + log_time + actual_minutes (BUILT 2026-10-15) — the decided model (G-S1/G-S4/C4)
+- **BR-TK-S4-1 (timer IS a `'work'` sessions sub-type, G-S1/TK-5).** `startTimer(taskId)` opens a `'work'` session
+  (`in_progress`) and attaches the task (`entity_type='task'`, instance level) — the timed-run reference, **not** a
+  bespoke task timer. `'work'` is a tasks-registered sub-type (`WORK_SESSION_TYPE`, `effects:[]`, spine-only), via
+  `registerTasksTimer` (SS-5 — owning module registers its own; the def persists, guarded by `SessionTypeNotFound`).
+- **BR-TK-S4-2 (running state lives in the session; one-open-per-task, TAS-12).** The guard uses
+  `sessions.findOpenSessionForEntity('work','task',taskId)` — a reverse attachment read (tasks can't read
+  `session_attachments`, §6). A second `startTimer` while one is open ⇒ `TimerAlreadyRunningError`. There is **no**
+  running `task_time_logs` row (that would be a forbidden direct write) — the ledger row is written only on stop.
+- **BR-TK-S4-3 (ledger written ONLY via the `log_time` rail handler, G-S4 — never direct, TAS-16/XCU-23).** `stopTimer`
+  is **fire-first, commit-last**: fire `log_time` through the rail (`payload:{started_at,ended_at}`, `targetRef`=the
+  attached task) → the tasks-owned handler writes one `task_time_logs` row `{task_id, start_time, end_time,
+  duration_minutes=max(0, round((end−start)/60000))}` → **then** `completeSession`. A crash between leaves the session
+  `in_progress` → a re-`stopTimer` retries; the rail dedups the written row (grain = session id ‖ `'time_logged'`).
+  `stopTimer` on an already-completed session ⇒ idempotent no-op.
+- **BR-TK-S4-4 (`actual_minutes` derives on read, TAS-15/C6).** `getActualMinutes(taskId)` = SUM of the task's
+  `task_time_logs.duration_minutes`; the `actual_minutes` column is never written. Running sessions contribute nothing
+  (no closed row yet). Per-task opt-out (TAS-14) is **deferred** — no sanctioned column (db-4-tasks:441).
+- **BR-TK-S4-5 (timer is fail-loud, not S3-dormant).** `startTimer`/`stopTimer` assert `sessions` + `effects` are wired
+  (`TimerNotWiredError`); the `log_time` handler is tasks' OWN (not a deferred consumer effect), so a missing handler
+  is a wiring error (`NoEffectHandler`), not a silent no-op.
+- **BR-TK-S4-6 (`log_time` is a GLOBAL one-per-type slot — guard against bogus rows, g2 F1).** The tasks handler
+  receives ANY producer's `log_time`. It writes a row **only** for a well-formed timer emission (numeric
+  `started_at`/`ended_at` payload); a payload-less `log_time` (e.g. a future focus/`attach_pomodoro` auto-fire, TAS-17)
+  is skipped — no bogus 0-minute row. (Note: the rail still marks such an event `applied`; by-design per XCU-23 at M1,
+  revisited when the pomodoro lens lands. F2 cross-device sub-type dedup = AR-9/M4; F4 mis-wiring surfaces
+  `SessionTypeNotFound` — both low, deferred.)
+
 ## Not yet enforced (designed, downstream)
-TK-5 timer/`log_time`/`actual_minutes` (S4) · TK-7 obligation recurrence (S5) · TK-11 per-kind measure + contribution
-emit (S6) · TK-9 aggregation R7 (S7) · TK-8 tags (S8). The completion catalogue's **handlers** are registered by
-consumer modules later (M1 = dormant seam).
+TK-7 obligation recurrence (S5) · TK-11 per-kind measure + contribution emit (S6) · TK-9 aggregation R7 (S7) · TK-8
+tags (S8). The S3 completion catalogue's **handlers** are registered by consumer modules later (M1 = dormant seam).

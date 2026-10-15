@@ -12,9 +12,10 @@ Follows the service data-flow pattern GOVERNED by docs/core/architecture/data-fl
 (validate -> repository -> encrypt-seam -> return). Rides foundation/ substrates; does not re-implement them.
 
 ## Status
-S1–S3 BUILT (mod-tasks #65 · LIF-142 · 2026-10-14): `createTasksService` — S1 CRUD + ≤1-parent guard + app-layer
-cascade + list filters (over DB-4 `tasks`/`task_time_logs`, migration 015; DB-11 reconcile shipped) · S2 sub-tasks +
-M4 derived rollup · **S3 `completeTask`/`reopenTask` + deny-safe completion effect fan-out** (keyed/additive catalogue
-`[award_xp, contribute_purpose_metric, emit_measurement_signal]`; projections pull-realized; Tasks IS a §4 feeder).
-S4–S9 designed (timer · obligations · measurability · aggregation · tags/notes/views · Journal). Durable docs:
-`docs/modules/tasks/current-{spec,business-rules}.md`. Delivery: `docs/features/tasks/delivery/`.
+S1–S4 BUILT (mod-tasks #65 · LIF-142): `createTasksService` — S1 CRUD + ≤1-parent guard + app-layer cascade + list
+filters (DB-4 `tasks`/`task_time_logs`, migration 015; DB-11 reconcile) · S2 sub-tasks + M4 derived rollup · S3
+`completeTask`/`reopenTask` + deny-safe completion fan-out (`[award_xp, contribute_purpose_metric,
+emit_measurement_signal]`; Tasks IS a §4 feeder) · **S4 `startTimer`/`stopTimer`/`getActualMinutes` + `registerTasksTimer`
++ `log_time` handler** (timer = a `'work'` session sub-type; `log_time` writes the kept `task_time_logs` ledger via the
+rail, never direct — G-S4; + the read-only Sessions `findOpenSessionForEntity`). S5–S9 designed (obligations ·
+measurability · aggregation · tags/notes/views · Journal). Durable docs: `docs/modules/tasks/current-{spec,business-rules}.md`.

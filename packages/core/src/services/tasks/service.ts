@@ -17,6 +17,9 @@ import type { EffectType } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { normalize, rollup } from '../../foundation/measurement'
 import { tasks, taskTimeLogs } from '../../db/schema/tasks'
+import type { DrizzleDb } from '../../db/adapter'
+import type { EffectHandler, EffectRegistry } from '../../foundation/effects'
+import { SessionTypeNotFound, type SessionRegistry, type SessionTypeDef } from '../../foundation/sessions'
 import { CreateTaskSchema, UpdateTaskSchema, ListTasksFilterSchema } from '../../validators/task'
 import {
   type TasksService,
@@ -29,14 +32,78 @@ import {
   TaskNotFoundError,
   MultipleParentError,
   SubtaskNestingError,
+  TimerAlreadyRunningError,
+  TimerNotFoundError,
+  TimerNotWiredError,
 } from './types'
 import type { TaskRow } from '../../db/schema/tasks'
+import type { SessionRow } from '../../db/schema/foundation/sessions'
+
+/** The `'work'` session sub-type — the task-timer timed-run reference (G-S1). Spine-only (no 1:1 extension; C4 keeps
+ *  `task_time_logs` as the ledger). `effects: []` — the timer does NOT auto-fire on completion; tasks fires `log_time`
+ *  itself on `stopTimer` (TAS-16 "tasks service (emit)"). Modeled on the shipped `focus` def. */
+export const WORK_SESSION_TYPE: SessionTypeDef = {
+  sub_type: 'work',
+  owner_module: 'tasks',
+  attachment_defaults: {},
+  effects: [],
+  lifecycle: {
+    transitions: [
+      { from: 'scheduled', to: 'in_progress', event: 'start' },
+      { from: 'in_progress', to: 'completed', event: 'complete' },
+    ],
+    hooks: {},
+  },
+  permissions: { allowed_effects: [] },
+  default_purpose: 'maintenance',
+}
+
+/** The tasks-owned `log_time` effect handler (XCU-23 — the single documented writer of `task_time_logs`; never a
+ *  direct client write, G-S4). Co-writes through the rail tx (F1 §3B). `payload` carries the run's start/end. */
+function createLogTimeHandler(db: DrizzleDb, deviceId: string): EffectHandler {
+  const repo = createRepository(db, taskTimeLogs, { deviceId, softDelete: false, encryptedFields: [] })
+  return async (event, tx) => {
+    // `log_time` is a GLOBAL one-handler-per-type slot; this tasks handler also receives any OTHER producer's
+    // `log_time` (e.g. a future focus/pomodoro auto-fire, TAS-17). Those are fired by the session lifecycle WITHOUT a
+    // payload — writing then would create a bogus 0-minute row. Guard: act ONLY on a well-formed tasks-timer emission
+    // (numeric start/end payload). A payload-less `log_time` is not ours → skip (g2 F1; also closes the unsafe cast).
+    const p = event.payload as { started_at?: unknown; ended_at?: unknown } | undefined
+    if (!p || typeof p.started_at !== 'number' || typeof p.ended_at !== 'number') return
+    const duration = Math.max(0, Math.round((p.ended_at - p.started_at) / 60000))
+    await repo.createInTx(tx, {
+      task_id: event.targetRef,
+      start_time: p.started_at,
+      end_time: p.ended_at,
+      duration_minutes: duration,
+    })
+  }
+}
+
+/** Composition wiring (NOT a service method, SS-5): register the `'work'` session sub-type (into the SESSION registry,
+ *  persisted — guard re-registration) + the tasks `log_time` handler (into the EFFECT registry, in-memory). Call once
+ *  at the composition root with the SAME registries `SessionsService` + `TasksService` are built against. */
+export async function registerTasksTimer(deps: {
+  sessionRegistry: SessionRegistry
+  effectRegistry: EffectRegistry
+  db: DrizzleDb
+  deviceId: string
+}): Promise<void> {
+  try {
+    await deps.sessionRegistry.get('work') // resolves shipped ∪ persisted; throws SessionTypeNotFound if absent
+  } catch (err) {
+    if (!(err instanceof SessionTypeNotFound)) throw err // g2 F3: only register on genuine absence, not a DB error
+    await deps.sessionRegistry.register(WORK_SESSION_TYPE)
+  }
+  if (!deps.effectRegistry.resolve('log_time')) {
+    deps.effectRegistry.register('log_time', createLogTimeHandler(deps.db, deps.deviceId))
+  }
+}
 
 /** The four mutually-exclusive parent-module FKs (TK-2). `parent_task_id` is a separate (sub-task) axis. */
 const PARENT_MODULE_KEYS = ['project_id', 'milestone_id', 'course_id', 'contact_id'] as const
 
 export function createTasksService(deps: TasksServiceDeps): TasksService {
-  const { db, deviceId, effects } = deps
+  const { db, deviceId, effects, sessions } = deps
 
   // S3 — completion fan-out catalogue (TAS-19). The KEYED/ADDITIVE subset is PUSHED through the rail; the two
   // PROJECTION effects are realized by their class, not a push (PLAN-S3 D-S3-1):
@@ -253,6 +320,61 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     return tasksRepo.update(id, { status: 'not_started', completed_at: null })
   }
 
+  // ---- S4: timer + log_time + actual_minutes -------------------------------
+  // The timer is a `'work'` sessions sub-type referencing the task (G-S1); on stop, tasks fires `log_time` through the
+  // rail (TAS-16 "tasks service (emit)"), and the tasks-owned handler writes the kept `task_time_logs` ledger
+  // (G-S4 — never a direct write). `actual_minutes` derives via getActualMinutes (TAS-15). The `log_time` handler is
+  // tasks' OWN (registerTasksTimer), so these methods assert the deps are wired (fail-loud, not S3-dormant).
+  function assertTimerWired(): { sessions: NonNullable<typeof sessions>; effects: NonNullable<typeof effects> } {
+    if (!sessions || !effects) throw new TimerNotWiredError()
+    return { sessions, effects }
+  }
+
+  async function startTimer(taskId: string): Promise<SessionRow> {
+    const t = assertTimerWired()
+    if (!(await tasksRepo.findById(taskId))) throw new TaskNotFoundError(taskId)
+    // Running-timer guard (TAS-12): the running state lives only in the open session (no running ledger row).
+    if (await t.sessions.findOpenSessionForEntity('work', 'task', taskId)) {
+      throw new TimerAlreadyRunningError(taskId)
+    }
+    const created = await t.sessions.createSession({
+      sub_type: 'work',
+      scheduling_mode: 'ad_hoc',
+      status: 'in_progress',
+      started_at: Date.now(),
+    })
+    await t.sessions.attach(created.session.id, 'task', taskId, 'instance')
+    return created.session
+  }
+
+  async function stopTimer(sessionId: string): Promise<void> {
+    const t = assertTimerWired()
+    const found = await t.sessions.getSession(sessionId)
+    if (!found || found.session.sub_type !== 'work') throw new TimerNotFoundError(sessionId)
+    if (found.session.status === 'completed') return // idempotent no-op
+    // Resolve the attached task (a `'work'` timer is always task-attached via startTimer).
+    const targets = await t.sessions.resolveTargets(sessionId)
+    const taskTarget = targets.find((x) => x.entityType === 'task')
+    if (!taskTarget) throw new TimerNotFoundError(sessionId)
+    const startedAt = found.session.started_at ?? found.session.created_at
+    const endedAt = Date.now()
+    // FIRE-FIRST, COMMIT-LAST (lifecycle.ts discipline): write the ledger via the rail, THEN complete the session.
+    // A throw/crash between leaves the session in_progress → a re-stopTimer retries; the rail dedups the written row.
+    await t.effects.rail.applyEffect({
+      subjectNaturalKey: sessionId,
+      transition: 'time_logged',
+      effectType: 'log_time',
+      targetRef: taskTarget.entityId,
+      payload: { started_at: startedAt, ended_at: endedAt },
+    })
+    await t.sessions.completeSession(sessionId) // 'work' declares effects:[] → fires nothing here
+  }
+
+  async function getActualMinutes(taskId: string): Promise<number> {
+    const logs = await timeLogsRepo.findWhere(eq(taskTimeLogs.task_id, taskId))
+    return logs.reduce((sum, l) => sum + (l.duration_minutes ?? 0), 0)
+  }
+
   return {
     createTask,
     updateTask,
@@ -264,5 +386,8 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     getRollup,
     completeTask,
     reopenTask,
+    startTimer,
+    stopTimer,
+    getActualMinutes,
   }
 }

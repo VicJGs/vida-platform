@@ -13,7 +13,7 @@
 | **S1 Foundation** | ✅ BUILT (2026-10-14) | CRUD · ≤1-parent guard · app-layer cascade · list filters · DB-11 reconcile |
 | **S2 Sub-tasks + M4 rollup** | ✅ BUILT (2026-10-14) | `addSubtask` (single-level) · `getSubtasks` · `getRollup` derived-on-read |
 | **S3 Completion + effects** | ✅ BUILT (2026-10-14) | `completeTask`/`reopenTask` + deny-safe completion effect fan-out |
-| S4 Timer + log_time | ⬜ designed | `startTimer`/`stopTimer`, `actual_minutes` |
+| **S4 Timer + log_time** | ✅ BUILT (2026-10-15) | `startTimer`/`stopTimer`/`getActualMinutes` over a `'work'` session sub-type; `log_time` → kept ledger |
 | S5 Obligations + recurrence | ⬜ designed | `setRecurrence`, regenerate (the routines RT-4 seam) |
 | S6 Measurability + contribution | ⬜ designed | axes + `contribute_purpose_metric` |
 | S7 Aggregation | ⬜ designed | `getAggregatedTasks` R7 fan-out |
@@ -67,17 +67,36 @@
   `NoEffectHandler`); handler throws ⇒ swallowed, the completed task stands (post-commit, failure-isolated). Rail
   dedups via `effect_event_id = derive(taskId‖'task_completed'‖type)` — complete→reopen→re-complete grants once ever.
 
+## S4 surface — timer + log_time + actual_minutes (the decided model: G-S1/G-S4/C4)
+- **Deps (as of S4):** `+ sessions?: SessionsService` (required for the timer — the timer composes it) and `effects?`
+  (S3's optional rail; the timer **asserts both are wired** → `TimerNotWiredError`, fail-loud, not S3-dormant).
+- `registerTasksTimer({ sessionRegistry, effectRegistry, db, deviceId })` — **composition wiring** (not a service
+  method, SS-5): registers the `'work'` `SessionTypeDef` (`effects:[]`, spine-only; into the SESSION registry,
+  persisted, guarded by `SessionTypeNotFound`) + the tasks `log_time` **handler** (into the EFFECT registry, in-memory).
+- `startTimer(taskId): SessionRow` — `TaskNotFoundError` if absent; `TimerAlreadyRunningError` if an open `'work'`
+  session is attached (via `sessions.findOpenSessionForEntity`); else opens a `'work'` session (`in_progress`) + attaches
+  the task. The timer is a **sessions sub-type referencing the task** (G-S1) — no bespoke task timer, no running ledger row.
+- `stopTimer(sessionId): void` — `TimerNotFoundError` if missing/non-`work`; already-completed ⇒ idempotent no-op; else
+  **fire-first, commit-last**: fire `log_time` through the rail (`payload:{started_at,ended_at}`, `targetRef`=the
+  attached task) → the tasks handler writes ONE `task_time_logs` row → then `completeSession`. A crash between leaves the
+  session `in_progress` (recoverable; rail dedups the written row).
+- `getActualMinutes(taskId): number` — SUM of the task's `task_time_logs.duration_minutes` (TAS-15, derived; opt-out
+  deferred — no sanctioned column).
+- **G-S4 — never a direct write:** the ONLY writer of `task_time_logs` is the rail-invoked `log_time` handler (XCU-23).
+- **Sessions addition (read-only):** `SessionsService.findOpenSessionForEntity(subType, entityType, entityId)` — the one
+  substrate touch (the `fireCompletionEffects`-payload edit was rejected for write-side blast radius).
+
 ## DB-11 reconcile (shipped S1)
 `@vida/types/task.ts`: `Task` dropped `tags`, gained `scheduled_date`/`completed_at`/`kind`/`recurrence_rule`/
 `measurement_kind`/`binding_mode`/`nesting_weight`; `TaskTimeLog` gained `updated_at`. `validators/task.ts` gained
 `CreateTaskSchema`/`UpdateTaskSchema`/`ListTasksFilterSchema`.
 
-## Verification (through S3)
-tsc 0 · eslint clean · tasks suite **30/30** live-store (better-sqlite3, Node 24) · full `@vida/core` **1937/1937** ·
-g2 SHIP (F1 test-fidelity fixed — guard tests spy on `applyEffect` call-count) · /critique SHIP.
+## Verification (through S4)
+tsc 0 · eslint clean · tasks suite **43/43** + sessions **41/41** live-store (better-sqlite3, Node 24) · full
+`@vida/core` **1950/1950** · g2 SHIP (S4: F1 bogus-row landmine + F3 over-broad catch fixed + tested) · /critique SHIP.
 
 ## Deferred / downstream
-Timer + `log_time` + `actual_minutes` (S4) · recurrence/obligations (S5) · measurability axes + contribution (S6) ·
-aggregation R7 (S7) · tags/notes/views (S8) · Journal/DueProvider (S9). The completion catalogue's **handlers** are
-registered by consumer modules later (M1 = dormant seam). `[E]` field encryption → M3/DB-5 (M1.0 empty-set
-pass-through). ② UI → P6.
+Recurrence/obligations (S5) · measurability axes + contribution (S6) · aggregation R7 (S7) · tags/notes/views (S8) ·
+Journal/DueProvider (S9). The S3 completion catalogue's **handlers** are registered by consumer modules later (M1 =
+dormant seam). **S4 deferrals:** the `work_session` extension table (P2 schema-reconcile), `setTimeTrackingEnabled`
+(no sanctioned column), `attach_pomodoro` focus-mode (TAS-17). `[E]` field encryption → M3/DB-5. ② UI → P6.

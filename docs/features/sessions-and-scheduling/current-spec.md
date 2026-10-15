@@ -80,6 +80,10 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   reappears intact).
 - **`attach`/`detach`** — idempotent structural attach over `session_attachments` (findWhere-key → no-op-or-
   create, **no revive** — no `deleted_at`); `detach` = **hard delete**; `resolveTargets` re-exports the #32 reader.
+- **`findOpenSessionForEntity(subType, entityType, entityId): SessionRow | null`** (added by mod-tasks #65 S4,
+  2026-10-15) — the REVERSE of `resolveTargets`: the in_progress session of `subType` attached to `(entityType,
+  entityId)`, or null. Read-only (attachment read + spine `status`/`sub_type` filter, soft-delete-filtered via
+  `findById`); the running-timer guard a consuming module needs when it can't read `session_attachments` directly (§6).
 - **Repos:** `sessions` `softDelete:true`; `focus_sessions`/`study_sessions`/`session_attachments`
   `softDelete:false` (no `deleted_at`). All `encryptedFields:[]` (M1.0 pass-through). Structural validation
   (`CreateSessionSchema`, fail-loud `InvalidSessionInput`).

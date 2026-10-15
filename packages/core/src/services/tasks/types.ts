@@ -11,7 +11,9 @@
 
 import type { DrizzleDb } from '../../db/adapter'
 import type { TaskRow } from '../../db/schema/tasks'
+import type { SessionRow } from '../../db/schema/foundation/sessions'
 import type { EffectRail, EffectRegistry } from '../../foundation/effects'
+import type { SessionsService } from '../sessions'
 import type {
   Status,
   Priority,
@@ -25,10 +27,15 @@ import type {
 export interface TasksServiceDeps {
   db: DrizzleDb
   deviceId: string
-  /** Deny-safe from S3 — the AR-7 effect rail (emit-only producer). DORMANT at M1 (no handler/named consumer) ⇒ the
-   *  completion fan-out is a no-op. Tasks IS an economy feeder (framework §4 L242) so it emits `award_xp` — unlike
-   *  Projects/Books/Education (C-E2). Inline shape (the `EffectsPort` name collides at the barrel; projects precedent). */
+  /** Deny-safe from S3 — the AR-7 effect rail (emit-only producer). DORMANT at M1 for the completion catalogue (no
+   *  handler/named consumer) ⇒ fan-out is a no-op. Tasks IS an economy feeder (framework §4 L242) so it emits
+   *  `award_xp` — unlike Projects/Books/Education (C-E2). Inline shape (the `EffectsPort` name collides at the barrel).
+   *  S4 ALSO rides this: the timer's `log_time` is tasks' OWN handler (registered via `registerTasksTimer`), so the
+   *  timer methods assert it is wired (fail-loud, not dormant). */
   effects?: { rail: EffectRail; registry: EffectRegistry }
+  /** Required from S4 — the Sessions supertype. The timer is a `'work'` session sub-type (G-S1); `startTimer`/
+   *  `stopTimer` open/close it and `getActualMinutes` reads the `task_time_logs` ledger `log_time` writes (G-S4). */
+  sessions?: SessionsService
 }
 
 // --- S1 inputs ---------------------------------------------------------------
@@ -121,6 +128,10 @@ export interface TasksService {
   // S3 — completion + effect fan-out
   completeTask(id: string): Promise<TaskRow>
   reopenTask(id: string): Promise<TaskRow>
+  // S4 — timer + log_time + actual_minutes
+  startTimer(taskId: string): Promise<SessionRow>
+  stopTimer(sessionId: string): Promise<void>
+  getActualMinutes(taskId: string): Promise<number>
 }
 
 // --- typed errors ------------------------------------------------------------
@@ -144,5 +155,29 @@ export class SubtaskNestingError extends Error {
   constructor(parentId: string) {
     super(`Cannot nest under a sub-task (single-level only, TK-3): ${parentId}`)
     this.name = 'SubtaskNestingError'
+  }
+}
+
+/** startTimer while a `'work'` timer session is already open for the task (TK-5 / TAS-12). */
+export class TimerAlreadyRunningError extends Error {
+  constructor(taskId: string) {
+    super(`A timer is already running for task: ${taskId}`)
+    this.name = 'TimerAlreadyRunningError'
+  }
+}
+
+/** stopTimer on a missing / non-`'work'` / task-unattached session (TAS-13). */
+export class TimerNotFoundError extends Error {
+  constructor(sessionId: string) {
+    super(`No task timer session found: ${sessionId}`)
+    this.name = 'TimerNotFoundError'
+  }
+}
+
+/** The timer requires the effect rail (its `log_time` handler) + the Sessions service to be wired. */
+export class TimerNotWiredError extends Error {
+  constructor() {
+    super('Task timer requires `effects` (rail+registry) and `sessions` deps to be wired (registerTasksTimer)')
+    this.name = 'TimerNotWiredError'
   }
 }
