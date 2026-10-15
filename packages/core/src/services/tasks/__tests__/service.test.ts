@@ -15,6 +15,12 @@ import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createRepository } from '../../../db/repository'
 import { taskTimeLogs } from '../../../db/schema/tasks'
+import { appliedEffects } from '../../../db/schema/foundation/effects'
+import {
+  createEffectRegistry,
+  createEffectRail,
+  type EffectRegistry,
+} from '../../../foundation/effects'
 import { createTasksService } from '../service'
 import {
   type TasksService,
@@ -90,6 +96,39 @@ async function seedTimeLog(db: DrizzleDb, taskId: string): Promise<string> {
 
 async function countTimeLogs(db: DrizzleDb, taskId: string): Promise<number> {
   const rows = await db.select().from(taskTimeLogs).where(eq(taskTimeLogs.task_id, taskId)).all()
+  return rows.length
+}
+
+// --- S3 harness: compose the REAL effect rail + registry (empty seam) so completion fan-out is live-testable ----
+// The rail is wrapped with an `applyEffect` call-counter so a test can prove the TASK-SIDE guards (wasCompleted /
+// resolve) independently of the rail's own dedup — counting handler runs alone can't tell the guard from the backstop.
+interface RailHarness {
+  svc: TasksService
+  db: DrizzleDb
+  registry: EffectRegistry
+  /** how many times the service invoked `rail.applyEffect` (the fan-out's actual reach into the rail) */
+  applyCount: () => number
+}
+async function setupWithRail(): Promise<RailHarness> {
+  await initVault()
+  const bsql = new Database(':memory:')
+  const driver = createBetterSqlite3Driver(bsql)
+  await migrate(driver)
+  const db = createDrizzleProxy(driver)
+  const registry = createEffectRegistry()
+  const baseRail = createEffectRail(db, registry)
+  let applyCalls = 0
+  const rail = {
+    applyEffect: (event: Parameters<typeof baseRail.applyEffect>[0]) => {
+      applyCalls += 1
+      return baseRail.applyEffect(event)
+    },
+  }
+  const svc = createTasksService({ db, deviceId: 'test-device', effects: { rail, registry } })
+  return { svc, db, registry, applyCount: () => applyCalls }
+}
+async function countAppliedEffects(db: DrizzleDb): Promise<number> {
+  const rows = await db.select().from(appliedEffects).all()
   return rows.length
 }
 
@@ -300,5 +339,112 @@ describe('mod-tasks S2 — sub-tasks + M4 rollup', () => {
       expect(await h.svc.getRollup(p.id)).toEqual({ done: 1, total: 1, progress: 1 })
       expect((await h.svc.getSubtasks(p.id)).map((t) => t.id)).toEqual([c1.id])
     })
+  })
+})
+
+describe('mod-tasks S3 — completion + effect fan-out', () => {
+  // Gate 1-3 + 8 + 10 use the default (no-rail) harness; the effect tests compose the real rail.
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  it('1 — completeTask sets status + completed_at; getTask reflects it', async () => {
+    const t = await h.svc.createTask({ title: 'Do' })
+    const before = Date.now()
+    const done = await h.svc.completeTask(t.id)
+    expect(done.status).toBe('completed')
+    expect(done.completed_at).toBeGreaterThanOrEqual(before)
+    const read = await h.svc.getTask(t.id)
+    expect(read?.status).toBe('completed')
+    expect(read?.completed_at).toBe(done.completed_at)
+  })
+
+  it('2 — reopenTask clears completed_at + resets status', async () => {
+    const t = await h.svc.createTask({ title: 'Do', status: 'in_progress' })
+    await h.svc.completeTask(t.id)
+    const reopened = await h.svc.reopenTask(t.id)
+    expect(reopened.status).toBe('not_started')
+    expect(reopened.completed_at).toBeNull()
+  })
+
+  it('3 — dormant rail (no effects dep): completeTask succeeds, no throw', async () => {
+    const t = await h.svc.createTask({ title: 'Do' })
+    await expect(h.svc.completeTask(t.id)).resolves.toMatchObject({ status: 'completed' })
+  })
+
+  it('4 — effects present but no handler registered: the resolve() guard skips applyEffect entirely', async () => {
+    const r = await setupWithRail()
+    const t = await r.svc.createTask({ title: 'Do' })
+    await r.svc.completeTask(t.id)
+    // The task-side resolve() guard must skip BEFORE the rail — if it were gone, applyEffect would be called 3× and
+    // each would throw NoEffectHandler (swallowed). Asserting applyCount===0 proves the guard, not just the no-throw.
+    expect(r.applyCount()).toBe(0)
+    expect(await countAppliedEffects(r.db)).toBe(0)
+  })
+
+  it('5 — wasCompleted guard: a plain re-complete does NOT reach the rail (fanOut skipped at source)', async () => {
+    const r = await setupWithRail()
+    let calls = 0
+    r.registry.register('emit_measurement_signal', async () => {
+      calls += 1
+    })
+    const t = await r.svc.createTask({ title: 'Do' })
+    await r.svc.completeTask(t.id) // fires once → applyEffect called once
+    await r.svc.completeTask(t.id) // status already 'completed' → wasCompleted guard → fanOut not called
+    // applyCount===1 (not 2) is what discriminates the guard: without it the 2nd complete would call applyEffect
+    // again (the rail would dedup → {applied:false}, masking the guard's absence if we only counted handler runs).
+    expect(r.applyCount()).toBe(1)
+    expect(calls).toBe(1)
+    expect(await countAppliedEffects(r.db)).toBe(1)
+  })
+
+  it('6 — rail dedup backstop: reopen→re-complete calls fanOut but the ledger keeps it to once', async () => {
+    const r = await setupWithRail()
+    let calls = 0
+    r.registry.register('emit_measurement_signal', async () => {
+      calls += 1
+    })
+    const t = await r.svc.createTask({ title: 'Do' })
+    await r.svc.completeTask(t.id)
+    await r.svc.reopenTask(t.id)
+    await r.svc.completeTask(t.id) // wasCompleted === false ⇒ fanOut IS called; same derived key ⇒ {applied:false}
+    expect(r.applyCount()).toBe(2) // fanOut reached the rail BOTH times (vs test 5's 1) — here the dedup is the backstop
+    expect(calls).toBe(1) // handler ran exactly once total (the ledger dedup, not the guard, is what held here)
+    expect(await countAppliedEffects(r.db)).toBe(1)
+  })
+
+  it('7 — failure isolation: a throwing handler does not fail completeTask', async () => {
+    const r = await setupWithRail()
+    r.registry.register('emit_measurement_signal', async () => {
+      throw new Error('handler boom')
+    })
+    const t = await r.svc.createTask({ title: 'Do' })
+    const done = await r.svc.completeTask(t.id) // throw is swallowed post-commit
+    expect(done.status).toBe('completed')
+    expect((await r.svc.getTask(t.id))?.status).toBe('completed')
+  })
+
+  it('8 — completeTask / reopenTask on a missing id → TaskNotFoundError', async () => {
+    await expect(h.svc.completeTask('missing')).rejects.toBeInstanceOf(TaskNotFoundError)
+    await expect(h.svc.reopenTask('missing')).rejects.toBeInstanceOf(TaskNotFoundError)
+  })
+
+  it('9 — feeder legitimacy: completion fires award_xp (the economy effect a non-feeder must not emit)', async () => {
+    const r = await setupWithRail()
+    let xp = 0
+    r.registry.register('award_xp', async () => {
+      xp += 1
+    })
+    const t = await r.svc.createTask({ title: 'Do' })
+    await r.svc.completeTask(t.id)
+    expect(xp).toBe(1)
+  })
+
+  it('10 — reopen no-op guard: reopening a never-completed task does not write', async () => {
+    const t = await h.svc.createTask({ title: 'Do' }) // status not_started, completed_at null
+    const reopened = await h.svc.reopenTask(t.id)
+    expect(reopened.updated_at).toBe(t.updated_at) // no write → updated_at unchanged
+    expect(reopened._sync_version).toBe(t._sync_version)
   })
 })

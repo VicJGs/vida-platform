@@ -11,6 +11,7 @@
 
 import type { DrizzleDb } from '../../db/adapter'
 import type { TaskRow } from '../../db/schema/tasks'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
 import type {
   Status,
   Priority,
@@ -20,10 +21,14 @@ import type {
   BindingMode,
 } from '@vida/types'
 
-// --- deps (S1 subset) --------------------------------------------------------
+// --- deps (grows per slice) --------------------------------------------------
 export interface TasksServiceDeps {
   db: DrizzleDb
   deviceId: string
+  /** Deny-safe from S3 — the AR-7 effect rail (emit-only producer). DORMANT at M1 (no handler/named consumer) ⇒ the
+   *  completion fan-out is a no-op. Tasks IS an economy feeder (framework §4 L242) so it emits `award_xp` — unlike
+   *  Projects/Books/Education (C-E2). Inline shape (the `EffectsPort` name collides at the barrel; projects precedent). */
+  effects?: { rail: EffectRail; registry: EffectRegistry }
 }
 
 // --- S1 inputs ---------------------------------------------------------------
@@ -113,6 +118,9 @@ export interface TasksService {
   addSubtask(parentId: string, input: AddSubtaskInput): Promise<TaskRow>
   getSubtasks(parentId: string): Promise<TaskRow[]>
   getRollup(parentId: string): Promise<TaskRollup>
+  // S3 — completion + effect fan-out
+  completeTask(id: string): Promise<TaskRow>
+  reopenTask(id: string): Promise<TaskRow>
 }
 
 // --- typed errors ------------------------------------------------------------

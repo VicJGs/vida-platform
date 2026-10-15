@@ -12,7 +12,7 @@
 |-------|-------|---------|
 | **S1 Foundation** | ✅ BUILT (2026-10-14) | CRUD · ≤1-parent guard · app-layer cascade · list filters · DB-11 reconcile |
 | **S2 Sub-tasks + M4 rollup** | ✅ BUILT (2026-10-14) | `addSubtask` (single-level) · `getSubtasks` · `getRollup` derived-on-read |
-| S3 Completion + effects | ⬜ designed | `completeTask`/`reopenTask` + S4 effect fan-out |
+| **S3 Completion + effects** | ✅ BUILT (2026-10-14) | `completeTask`/`reopenTask` + deny-safe completion effect fan-out |
 | S4 Timer + log_time | ⬜ designed | `startTimer`/`stopTimer`, `actual_minutes` |
 | S5 Obligations + recurrence | ⬜ designed | `setRecurrence`, regenerate (the routines RT-4 seam) |
 | S6 Measurability + contribution | ⬜ designed | axes + `contribute_purpose_metric` |
@@ -29,7 +29,8 @@
   `deleted_at`** (hard-deletes with the task).
 
 ## S1 surface — `createTasksService(deps)`
-- **Deps (S1):** `{ db, deviceId }`. (Grows per slice — `sessions`/`effects`/`spaces`/`notes`/`registry`/`providers` land later.)
+- **Deps (as of S3):** `{ db, deviceId, effects? }` where `effects?: { rail: EffectRail; registry: EffectRegistry }`
+  (deny-safe, S3). (Still grows — `sessions`/`spaces`/`notes`/`registry`/`providers` land later.)
 - `createTask(input): TaskRow` — validates (Zod); **≤1 parent-module FK** or `MultipleParentError`; backfills every
   NN-default col (create() echoes input, not SQL defaults).
 - `updateTask(id, patch): TaskRow` — `TaskNotFoundError` if absent; re-enforces ≤1-parent on the **merged** set;
@@ -51,14 +52,32 @@
   `nesting_weight` (NULL ⇒ equal); **no children ⇒ `progress:null`** (unmeasured, never 0). Read-only — a parent's
   completion never force-completes children.
 
+## S3 surface — completion + effect fan-out
+- `completeTask(id): TaskRow` — `TaskNotFoundError` if absent. Sets `status='completed'` + `completed_at=Date.now()`
+  via **`tasksRepo.update`** (the repo primitive — `updateTask` cannot write `completed_at`, BR-TK-S1-5). On the
+  not-completed→completed transition, **post-commit**, fans out the completion catalogue (below). Sole writer of
+  `completed_at` (TK-6).
+- `reopenTask(id): TaskRow` — `TaskNotFoundError` if absent. Resets `status='not_started'` + `completed_at=null`;
+  **no-op guard** (already non-completed with `completed_at==null` ⇒ returns existing, no write); fires **no** effects.
+- **Completion catalogue** = `[award_xp, contribute_purpose_metric, emit_measurement_signal]` — the keyed/additive
+  subset, pushed through the rail. The two **projection** effects are realized by their class, not a push:
+  `surface_journal` ⇒ S9 pull registry; `surface_calendar` ⇒ read-seam (D1). `award_xp` is legitimate because Tasks
+  **is** a framework §4 economy feeder (unlike Projects/Books/Education, C-E2).
+- **Deny-safe + dormant:** no `effects` dep ⇒ no-op; dep present but handler unregistered ⇒ skipped (no
+  `NoEffectHandler`); handler throws ⇒ swallowed, the completed task stands (post-commit, failure-isolated). Rail
+  dedups via `effect_event_id = derive(taskId‖'task_completed'‖type)` — complete→reopen→re-complete grants once ever.
+
 ## DB-11 reconcile (shipped S1)
 `@vida/types/task.ts`: `Task` dropped `tags`, gained `scheduled_date`/`completed_at`/`kind`/`recurrence_rule`/
 `measurement_kind`/`binding_mode`/`nesting_weight`; `TaskTimeLog` gained `updated_at`. `validators/task.ts` gained
 `CreateTaskSchema`/`UpdateTaskSchema`/`ListTasksFilterSchema`.
 
-## Verification (S1)
-tsc 0 · eslint clean · tasks suite **11/11** live-store (better-sqlite3, Node 24) · full `@vida/core` **1918/1918** · g2 SHIP · /critique SHIP.
+## Verification (through S3)
+tsc 0 · eslint clean · tasks suite **30/30** live-store (better-sqlite3, Node 24) · full `@vida/core` **1937/1937** ·
+g2 SHIP (F1 test-fidelity fixed — guard tests spy on `applyEffect` call-count) · /critique SHIP.
 
 ## Deferred / downstream
-Completion effects (S3) · rollup (S2) · timer (S4) · recurrence/obligations (S5) · aggregation R7 (S7) · tags/notes/
-views (S8) · Journal/DueProvider (S9). `[E]` field encryption → M3/DB-5 (M1.0 empty-set pass-through). ② UI → P6.
+Timer + `log_time` + `actual_minutes` (S4) · recurrence/obligations (S5) · measurability axes + contribution (S6) ·
+aggregation R7 (S7) · tags/notes/views (S8) · Journal/DueProvider (S9). The completion catalogue's **handlers** are
+registered by consumer modules later (M1 = dormant seam). `[E]` field encryption → M3/DB-5 (M1.0 empty-set
+pass-through). ② UI → P6.

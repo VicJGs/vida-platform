@@ -50,6 +50,35 @@
   richer per-kind task measures (quantitative/rate/qualitative) are S6. `measurement_kind` is carried but the rollup
   leaf reads completion status.
 
+## S3 — Completion + effect fan-out (BUILT 2026-10-14)
+- **BR-TK-S3-1 (completion = status + timestamp, repo-written, TK-6).** `completeTask(id)` sets `status='completed'` +
+  `completed_at=Date.now()` via the **repo primitive `tasksRepo.update`**, NOT the service `updateTask` (which has no
+  `completed_at` path — BR-TK-S1-5). `completeTask`/`reopenTask` are `completed_at`'s sole writers. A missing/soft-deleted
+  id ⇒ `TaskNotFoundError` (findById is soft-delete filtered).
+- **BR-TK-S3-2 (reopen clears + resets, no effects, TK-6/TAS-07).** `reopenTask(id)` sets `status='not_started'` +
+  `completed_at=null` and fires **no** effects. `'not_started'` (not `'in_progress'`) is the chosen reset — reopen
+  conveys no progress; the user re-sets it. **No-op guard:** already non-completed with `completed_at==null` ⇒ returns
+  the existing row with no write (no `updated_at`/`_sync_version` bump; mirrors BR-TK-S1-5).
+- **BR-TK-S3-3 (completion catalogue = keyed/additive only, TAS-19).** On the not-completed→completed transition the
+  task is an EFFECT PRODUCER, emitting `[award_xp, contribute_purpose_metric, emit_measurement_signal]` through the
+  rail. The two **projection** effects are realized by class, not pushed: `surface_journal` ⇒ the S9 pull registry;
+  `surface_calendar` ⇒ a read-seam over `due_date`/`scheduled_date`/`dueIn` (**D1** — `surface_calendar` IS a valid
+  `EffectType`, but Tasks does not emit it). Tasks never writes XP/ledger/metric directly.
+- **BR-TK-S3-4 (`award_xp` is feeder-legitimate, TAS-20).** Tasks IS a framework §4 economy feeder (L242), so emitting
+  `award_xp` is correct here — the intended divergence from Projects/Books/Education, which are not feeders (C-E2).
+  `award_xp` is the XP case; ADR-012 generalizes the slot to `grant_currency(XP)` (Gamification-owned layering).
+- **BR-TK-S3-5 (deny-safe, dormant, failure-isolated).** No `effects` dep ⇒ fan-out is a no-op (M1 default). Dep
+  present but a handler unregistered ⇒ that effect is skipped (the `registry.resolve` guard — no `NoEffectHandler`
+  throw). The column write commits BEFORE the fan-out; a throwing handler is swallowed, so the completed task stands.
+- **BR-TK-S3-6 (idempotent grain = occurrence id, TAS-19/R1).** Dedup key = `derive(taskId‖'task_completed'‖type)`.
+  A plain re-complete is short-circuited by the `wasCompleted` guard (fan-out not called); a reopen→re-complete re-calls
+  the fan-out but the rail ledger holds each effect to once → **one task, one completion grant, ever**. Recurring
+  obligations (S5) spawn new task rows (fresh ids) so each occurrence grants.
+- **BR-TK-S3-7 (terminal-status note).** `completeTask` does not guard against a `'cancelled'` task — it forces
+  `'completed'` and fires. Accepted: completion is an explicit user action and the spec imposes no restriction
+  (recorded as a decision, not an oversight).
+
 ## Not yet enforced (designed, downstream)
-TK-6 completion effects (S3) · TK-5 timer/`log_time`/`actual_minutes` (S4) · TK-7 obligation recurrence (S5) ·
-TK-11 per-kind measure + contribution emit (S6) · TK-9 aggregation R7 (S7) · TK-8 tags (S8).
+TK-5 timer/`log_time`/`actual_minutes` (S4) · TK-7 obligation recurrence (S5) · TK-11 per-kind measure + contribution
+emit (S6) · TK-9 aggregation R7 (S7) · TK-8 tags (S8). The completion catalogue's **handlers** are registered by
+consumer modules later (M1 = dormant seam).

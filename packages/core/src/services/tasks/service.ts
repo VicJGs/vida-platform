@@ -13,6 +13,7 @@
 // - NO FK: parent-module links + cascade are the app layer's (TK-2/TK-4). `'task'` is pre-seeded in ENTITY_TYPES.
 
 import { and, eq, isNull } from 'drizzle-orm'
+import type { EffectType } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { normalize, rollup } from '../../foundation/measurement'
 import { tasks, taskTimeLogs } from '../../db/schema/tasks'
@@ -35,7 +36,34 @@ import type { TaskRow } from '../../db/schema/tasks'
 const PARENT_MODULE_KEYS = ['project_id', 'milestone_id', 'course_id', 'contact_id'] as const
 
 export function createTasksService(deps: TasksServiceDeps): TasksService {
-  const { db, deviceId } = deps
+  const { db, deviceId, effects } = deps
+
+  // S3 — completion fan-out catalogue (TAS-19). The KEYED/ADDITIVE subset is PUSHED through the rail; the two
+  // PROJECTION effects are realized by their class, not a push (PLAN-S3 D-S3-1):
+  //   • award_xp (additive) — Tasks IS an economy feeder (framework §4 L242; TAS-20), unlike Projects (C-E2).
+  //   • contribute_purpose_metric (keyed, TAS-26) — dormant: no M7 purpose handler at M1 (guard C2).
+  //   • emit_measurement_signal (keyed) — completion advances the measure (binding_mode='event-trigger', TAS-06).
+  //   • surface_journal (projection) — NOT pushed; realized by the S9 pull registry (rail no-ops projections, BR-6).
+  //   • surface_calendar (projection) — D1: a valid EffectType but Tasks does NOT emit it (calendar = read-seam).
+  const COMPLETION_EFFECTS: readonly EffectType[] = [
+    'award_xp',
+    'contribute_purpose_metric',
+    'emit_measurement_signal',
+  ]
+  // The projects completion-fan-out pattern (services/projects/service.ts:72). DORMANT without a wired rail/handler;
+  // post-commit, failure-isolated — the completed task stands even if a handler throws. Rail-idempotent via
+  // effect_event_id = derive(taskId‖transition‖type) (PLAN-S3 D-S3-2 — one task, one completion grant).
+  async function fanOutCompletion(taskId: string, transition: string): Promise<void> {
+    if (!effects) return // M1 default: no rail wired → dormant
+    for (const effectType of COMPLETION_EFFECTS) {
+      if (!effects.registry.resolve(effectType)) continue // dormant guard: no handler ⇒ skip (would throw NoEffectHandler)
+      try {
+        await effects.rail.applyEffect({ subjectNaturalKey: taskId, transition, effectType, targetRef: taskId })
+      } catch {
+        // post-commit, failure-isolated: the completed task stands; a handler throw is non-fatal.
+      }
+    }
+  }
 
   // `tasks` has deleted_at → softDelete:true. `task_time_logs` is a ledger (no deleted_at) → hard delete.
   const tasksRepo = createRepository(db, tasks, { deviceId, softDelete: true, encryptedFields: [] })
@@ -201,6 +229,30 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     return { done, total: children.length, progress }
   }
 
+  // ---- S3: completion + effect fan-out -------------------------------------
+  // completeTask/reopenTask are `completed_at`'s SOLE writers (TK-6) — they write via the repo primitive, NOT the
+  // service `updateTask` (whose UpdateTaskInput has no `completed_at` and whose BR-TK-S1-5 contract forbids it).
+  async function completeTask(id: string): Promise<TaskRow> {
+    const existing = await tasksRepo.findById(id)
+    if (!existing) throw new TaskNotFoundError(id)
+    const wasCompleted = existing.status === 'completed'
+    const updated = await tasksRepo.update(id, { status: 'completed', completed_at: Date.now() })
+    // Post-commit fan-out, only on the not-completed → completed transition (a plain re-complete skips it; PLAN-S3
+    // D-S3-2 guard (a)). The rail dedup is the backstop on the reopen→re-complete path (guard (b)).
+    if (!wasCompleted) await fanOutCompletion(id, 'task_completed')
+    return updated
+  }
+
+  async function reopenTask(id: string): Promise<TaskRow> {
+    const existing = await tasksRepo.findById(id)
+    if (!existing) throw new TaskNotFoundError(id)
+    // No-op guard: already non-completed with no timestamp ⇒ skip the write (avoid a wasted updated_at/sync bump).
+    if (existing.status !== 'completed' && existing.completed_at == null) return existing
+    // Reset to the neutral non-completed state (PLAN-S3 R3 — 'not_started' over 'in_progress': reopen conveys no
+    // progress info; the user re-sets it). TAS-07 mandates only clearing completed_at. Fires NO effects.
+    return tasksRepo.update(id, { status: 'not_started', completed_at: null })
+  }
+
   return {
     createTask,
     updateTask,
@@ -210,5 +262,7 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     addSubtask,
     getSubtasks,
     getRollup,
+    completeTask,
+    reopenTask,
   }
 }
