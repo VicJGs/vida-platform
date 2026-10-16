@@ -136,6 +136,36 @@
   obligation then re-completing spawns a SECOND future occurrence. Spec-literal (TAS-22 "completing spawns next");
   accepted for M1 (g2-reviewed), a spawn-dedup is deferred. The ② UI should avoid/guard the reopen-obligation path.
 
+## S6 — Measurability axes + contribution (BUILT 2026-10-15) — TAS-25/26
+- **BR-TK-S6-1 (`getTaskProgress` = the pursuable `progress()` contract, derived-on-read, TAS-25/XCU-08/BR-8).** A task's
+  OWN progress ∈ [0,1] | null is computed on read; no stored progress column (C6). Tasks has **no override slot**, so it
+  always derives (Projects-faithful): a **parent** (has sub-tasks) ⇒ the M4 `getRollup().progress` (container rollup
+  wins, regardless of `binding_mode`); a **childless** task ⇒ the `binding_mode` branch (BR-TK-S6-2).
+- **BR-TK-S6-2 (`binding_mode` governs the childless read, TAS-25).** `resolveBindingMode = binding_mode ?? 'event-trigger'`
+  (NULL ⇒ the task's natural mode — `015_tasks.ts:21` "NULL ⇒ derive-natural" ∘ interpretation.md:33 "event-trigger
+  (completion)"). A childless **`derived-pull`** task ⇒ **`null`** (its measure is source-fed, not completion-fed; no
+  task↔source binding exists in M1 → nothing to read, never fabricated — BR-2). Any other childless task
+  (`event-trigger`/`manual`/NULL) ⇒ the milestone-from-completion leaf (`normalize({kind:'milestone', done})`).
+- **BR-TK-S6-3 (milestone is the only leaf; `measurement_kind` is carried, not leaf-applied, BR-TK-S2-4).** A childless
+  task's leaf is its completion as a `milestone` for ALL declared `measurement_kind` values — a task carries no
+  quantitative/rate/qualitative value inputs (those home to value-bearing entities, XCU-15). The declared kind governs
+  how the value composes UP a ladder (contributions/M4), not the leaf.
+- **BR-TK-S6-4 (`manual` is inert in M1, not a special-case).** Without an override column (deferred — XCU-16) a `manual`
+  task has no stored value, so it derives the milestone leaf like any other. No `manual⇒null` rule is fabricated; once the
+  override column lands, `resolveProgress` will give a stored `manual` value precedence.
+- **BR-TK-S6-5 (not-found ≠ unmeasured).** `getTaskProgress` on a missing/soft-deleted id ⇒ `TaskNotFoundError`, never
+  `null` — `null` is reserved for the *unmeasured* measure (BR-2); the two signals never collide.
+- **BR-TK-S6-6 (pure read — C2 guard).** `getTaskProgress` writes nothing (no row/`_sync_version`/ledger change); tasks
+  owns no Purpose-apex table (`contributions`/`values`/`purpose_reviews`/`plan_steps` are Purpose-domain, §3.8).
+- **BR-TK-S6-7 (not an M5 source — C1 guard, by construction).** `TasksServiceDeps` holds no `MeasurementSourceRegistry`,
+  so tasks cannot `advertise`; `progress(task)` is not a queryable measure source (tasks absent from the M5 applies-to
+  set). S6 adds no `advertise` call anywhere.
+- **BR-TK-S6-8 (S3 emission unchanged).** S6 adds no push-side `binding_mode` gate: `emit_measurement_signal` +
+  `contribute_purpose_metric` fire on completion exactly as S3 built them (unconditional, bare, dormant) — the
+  Projects/Habits convention (the event-trigger write IS the effect, ADR-011 §3.5 / XCU-09).
+
 ## Not yet enforced (designed, downstream)
-TK-11 per-kind measure + contribution emit (S6) · TK-9 aggregation R7 (S7) · TK-8 tags (S8). TAS-24 `duty`/open-vocab
-type registry = ADR-002 amendment (deferred). The S3 completion catalogue's **handlers** are consumer-registered later.
+TK-9 aggregation R7 (S7) · TK-8 tags (S8). TAS-24 `duty`/open-vocab type registry = ADR-002 amendment (deferred). The S3
+completion catalogue's **handlers** (incl. the live `contribute_purpose_metric` consumer) are consumer-registered later
+(verified dormant at M1). The S6 `derived-pull` source read + task↔source binding + `measurementSources` dep = a later
+slice (XCU-13); a manual stored-progress override column = ADR-002 amendment (XCU-16).

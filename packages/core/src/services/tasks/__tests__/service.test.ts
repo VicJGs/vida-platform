@@ -26,9 +26,11 @@ import {
 import { createSessionRegistry } from '../../../foundation/sessions/registry'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces'
 import { createSessionsService, type SessionsService } from '../../sessions'
-import { createTasksService, registerTasksTimer, WORK_SESSION_TYPE } from '../service'
+import { readFileSync } from 'node:fs'
+import { createTasksService, registerTasksTimer, WORK_SESSION_TYPE, resolveBindingMode, deriveTaskLeaf } from '../service'
 import {
   type TasksService,
+  type TasksServiceDeps,
   TaskNotFoundError,
   MultipleParentError,
   SubtaskNestingError,
@@ -757,5 +759,138 @@ describe('mod-tasks S5 — obligations + recurrence', () => {
       if (orig === undefined) delete process.env.TZ
       else process.env.TZ = orig
     }
+  })
+})
+
+// ============================================================================
+// mod-tasks #65 ① · S6 — Measurability axes + contribution (TAS-25,26)
+//
+// getTaskProgress = the pursuable progress() contract (XCU-08/BR-8), derived-on-read honoring measurement_kind ×
+// binding_mode. Faithful to the Projects resolver: no stored override column (C6) ⇒ always derive; parent ⇒ M4 rollup;
+// childless derived-pull ⇒ null (source-fed, no binding in M1); else ⇒ milestone-from-completion leaf. C1 (no M5
+// advertise) is by construction — TasksServiceDeps has no MeasurementSourceRegistry. C2 (no M7 tables) ⇒ pure read.
+// Maps 1:1 to slice-map S6 + PLAN-S6 Verification Gate.
+// ============================================================================
+describe('mod-tasks S6 — measurability (getTaskProgress)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup() // plain deps {db, deviceId} — S6 needs no effects/sessions/measurementSources
+  })
+
+  it('(1) childless NULL-natural leaf: not completed ⇒ 0, completed ⇒ 1 (milestone via the engine)', async () => {
+    const t = await h.svc.createTask({ title: 'Leaf' }) // binding_mode null (natural event-trigger), no children
+    expect(await h.svc.getTaskProgress(t.id)).toBe(0)
+    await h.svc.completeTask(t.id)
+    expect(await h.svc.getTaskProgress(t.id)).toBe(1)
+  })
+
+  it('(2) parent (NULL-natural): equals the M4 getRollup().progress — 1 of 2 equal-weight ⇒ 0.5', async () => {
+    const parent = await h.svc.createTask({ title: 'Parent' })
+    const a = await h.svc.addSubtask(parent.id, { title: 'a' })
+    await h.svc.addSubtask(parent.id, { title: 'b' })
+    await h.svc.completeTask(a.id)
+    const roll = await h.svc.getRollup(parent.id)
+    expect(roll.total).toBe(2)
+    expect(await h.svc.getTaskProgress(parent.id)).toBe(roll.progress)
+    expect(await h.svc.getTaskProgress(parent.id)).toBe(0.5)
+  })
+
+  it('(2b) parent rollup honours nesting_weight (weighted rollup, not a naive ratio)', async () => {
+    const parent = await h.svc.createTask({ title: 'Weighted' })
+    const heavy = await h.svc.addSubtask(parent.id, { title: 'heavy', nesting_weight: 3 })
+    await h.svc.addSubtask(parent.id, { title: 'light', nesting_weight: 1 })
+    await h.svc.completeTask(heavy.id) // 3 of (3+1) ⇒ 0.75
+    expect(await h.svc.getTaskProgress(parent.id)).toBe(0.75)
+  })
+
+  it('(3) childless derived-pull ⇒ null (source-fed, no binding in M1; does NOT fall to the completion leaf)', async () => {
+    const t = await h.svc.createTask({ title: 'Pulled', binding_mode: 'derived-pull' })
+    expect(await h.svc.getTaskProgress(t.id)).toBeNull()
+    await h.svc.completeTask(t.id) // even completed, a derived-pull measure is NOT completion-fed
+    expect(await h.svc.getTaskProgress(t.id)).toBeNull()
+  })
+
+  it('(4) childless manual ⇒ derives the milestone leaf (inert in M1 — no override column, XCU-16)', async () => {
+    const t = await h.svc.createTask({ title: 'Manual', binding_mode: 'manual' })
+    expect(await h.svc.getTaskProgress(t.id)).toBe(0)
+    await h.svc.completeTask(t.id)
+    expect(await h.svc.getTaskProgress(t.id)).toBe(1) // no manual⇒null special-case; derives like any other
+  })
+
+  it('(5) explicit event-trigger leaf == NULL-natural; a derived-pull PARENT still returns the rollup (container wins)', async () => {
+    const et = await h.svc.createTask({ title: 'ET', binding_mode: 'event-trigger' })
+    expect(await h.svc.getTaskProgress(et.id)).toBe(0)
+    await h.svc.completeTask(et.id)
+    expect(await h.svc.getTaskProgress(et.id)).toBe(1)
+
+    const parent = await h.svc.createTask({ title: 'PulledParent', binding_mode: 'derived-pull' })
+    const a = await h.svc.addSubtask(parent.id, { title: 'a' })
+    await h.svc.addSubtask(parent.id, { title: 'b' })
+    await h.svc.completeTask(a.id)
+    expect(await h.svc.getTaskProgress(parent.id)).toBe(0.5) // total>0 ⇒ rollup, regardless of binding_mode
+  })
+
+  it('(6) childless non-completed statuses ⇒ 0 (milestone not done): in_progress + cancelled', async () => {
+    const ip = await h.svc.createTask({ title: 'IP', status: 'in_progress' })
+    const ca = await h.svc.createTask({ title: 'CA', status: 'cancelled' })
+    expect(await h.svc.getTaskProgress(ip.id)).toBe(0)
+    expect(await h.svc.getTaskProgress(ca.id)).toBe(0)
+  })
+
+  it('(7) C1 — tasks advertises NO measurement source: no deps handle (compile-time) + no advertise/source-registry use (source)', () => {
+    // (a) compile-time: TasksServiceDeps cannot carry a MeasurementSourceRegistry. If this stops erroring, C1 broke.
+    // @ts-expect-error — a MeasurementSourceRegistry is NOT a valid dep: tasks is not an M5 source (C1 guard).
+    const bad: TasksServiceDeps = { db: h.db, deviceId: 'test-device', measurementSources: {} }
+    void bad
+    // (b) structural (this one BITES at runtime): the service never calls `.advertise(` and imports nothing from the
+    //     measurement source-registry, so it cannot register an M5 source even via a hardcoded registry. Catches the
+    //     real C1 regression a factory smoke-build would miss. Import-scoped so prose/comments can't false-match.
+    const src = readFileSync(new URL('../service.ts', import.meta.url), 'utf8')
+    const importLines = src.split('\n').filter((l) => l.trimStart().startsWith('import'))
+    expect(src).not.toMatch(/\.advertise\s*\(/)
+    expect(importLines.some((l) => /source-registry/.test(l))).toBe(false)
+    expect(createTasksService({ db: h.db, deviceId: 'test-device' })).toBeDefined()
+  })
+
+  it('(8) C2 — no Purpose-apex write: getTaskProgress is a pure read + the service imports no apex schema; S3 stays additive', async () => {
+    // Pure read: two getTaskProgress calls bump no row/version and write no ledger row.
+    const t = await h.svc.createTask({ title: 'Pure' })
+    const before = await h.svc.getTask(t.id)
+    const logsBefore = await countTimeLogs(h.db, t.id)
+    await h.svc.getTaskProgress(t.id)
+    await h.svc.getTaskProgress(t.id)
+    const after = await h.svc.getTask(t.id)
+    expect(after?._sync_version).toBe(before?._sync_version) // no write → no version bump
+    expect(after?.updated_at).toBe(before?.updated_at)
+    expect(await countTimeLogs(h.db, t.id)).toBe(logsBefore)
+    // Structural C2: tasks owns no Purpose-apex table — the service IMPORTS none of the Purpose-domain schema (§3.8).
+    // Import-scoped so the getTaskProgress JSDoc (which names the apex tables as what tasks does NOT own) can't false-match.
+    const importLines = readFileSync(new URL('../service.ts', import.meta.url), 'utf8')
+      .split('\n')
+      .filter((l) => l.trimStart().startsWith('import'))
+    expect(importLines.some((l) => /contributions|purpose_reviews|plan_steps|purposes/.test(l))).toBe(false)
+    // S3 stays additive: a getTaskProgress read does not disturb the completion path.
+    expect((await h.svc.completeTask(t.id)).completed_at).not.toBeNull()
+  })
+
+  it('(9) not-found + soft-deleted ⇒ TaskNotFoundError (never null — null is the distinct unmeasured signal)', async () => {
+    await expect(h.svc.getTaskProgress('does-not-exist')).rejects.toThrow(TaskNotFoundError)
+    const t = await h.svc.createTask({ title: 'Doomed' })
+    await h.svc.softDeleteTask(t.id)
+    await expect(h.svc.getTaskProgress(t.id)).rejects.toThrow(TaskNotFoundError)
+  })
+
+  it('(10) unit — resolveBindingMode: NULL ⇒ event-trigger (natural), explicit values pass through', () => {
+    expect(resolveBindingMode({ binding_mode: null })).toBe('event-trigger')
+    expect(resolveBindingMode({ binding_mode: 'event-trigger' })).toBe('event-trigger')
+    expect(resolveBindingMode({ binding_mode: 'manual' })).toBe('manual')
+    expect(resolveBindingMode({ binding_mode: 'derived-pull' })).toBe('derived-pull')
+  })
+
+  it('(11) unit — deriveTaskLeaf: completed ⇒ 1, otherwise ⇒ 0 (milestone leaf via the engine)', () => {
+    expect(deriveTaskLeaf({ status: 'completed' })).toBe(1)
+    expect(deriveTaskLeaf({ status: 'not_started' })).toBe(0)
+    expect(deriveTaskLeaf({ status: 'in_progress' })).toBe(0)
+    expect(deriveTaskLeaf({ status: 'cancelled' })).toBe(0)
   })
 })

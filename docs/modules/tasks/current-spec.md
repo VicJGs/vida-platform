@@ -15,7 +15,7 @@
 | **S3 Completion + effects** | ✅ BUILT (2026-10-14) | `completeTask`/`reopenTask` + deny-safe completion effect fan-out |
 | **S4 Timer + log_time** | ✅ BUILT (2026-10-15) | `startTimer`/`stopTimer`/`getActualMinutes` over a `'work'` session sub-type; `log_time` → kept ledger |
 | **S5 Obligations + recurrence** | ✅ BUILT (2026-10-15) | `setRecurrence` (obligation-only) + `completeTask` regen hook; RRULE via `ical.js` |
-| S6 Measurability + contribution | ⬜ designed | axes + `contribute_purpose_metric` |
+| **S6 Measurability + contribution** | ✅ BUILT (2026-10-15) | `getTaskProgress` (pursuable `progress()`, derived-on-read honoring `binding_mode`) + C1/C2 guards |
 | S7 Aggregation | ⬜ designed | `getAggregatedTasks` R7 fan-out |
 | S8 Tags + Notes + Views | ⬜ designed | `entity_tags` · pages · `views` |
 | S9 Journal + DueProvider | ⬜ designed | `summary`/`getDueReminders` closer |
@@ -101,18 +101,47 @@
   the anchor, returns the next `YYYY-MM-DD`. **Built from `ICAL.Time`'s own calendar fields, NOT `toJSDate()/UTC`** —
   the latter drifts one day early in UTC-positive zones (g2 B1; a `TZ=Asia/Tokyo` test guards it).
 
+## S6 surface — measurability (TAS-25/26; the pursuable `progress()` contract)
+- `getTaskProgress(id): number | null` — a task's OWN progress ∈ [0,1] | null, DERIVED on read (XCU-08/BR-8). No deps
+  added (`{db, deviceId, effects?, sessions?}` unchanged). `TaskNotFoundError` on a missing/soft-deleted id (never
+  `null` — `null` is the distinct *unmeasured* signal). Resolution (Projects-faithful; tasks has **no** stored override
+  column, C6, so it always derives):
+  - **parent (has sub-tasks)** ⇒ the M4 `getRollup().progress` (container rollup wins, regardless of `binding_mode`);
+  - **childless `binding_mode='derived-pull'`** ⇒ `null` (source-fed, not completion-fed; no task↔source binding in M1
+    → nothing to read, never fabricated — BR-2);
+  - **childless else** (`event-trigger` / `manual` / NULL-natural) ⇒ the milestone-from-completion leaf
+    (`normalize({kind:'milestone', done})`). A task's only leaf signal is completion (BR-TK-S2-4); the declared
+    `measurement_kind` governs ladder composition, not the leaf.
+- **`binding_mode` resolution:** `resolveBindingMode = binding_mode ?? 'event-trigger'` (NULL ⇒ the task's natural mode;
+  `015_tasks.ts:21` "NULL ⇒ derive-natural" ∘ interpretation.md:33). `manual` is **inert in M1** (no override column
+  until XCU-16 lands) — it derives like any other, no `manual⇒null` special case.
+- **S3 emission UNCHANGED** — S6 adds no push-side gate: `emit_measurement_signal`/`contribute_purpose_metric` fire on
+  completion exactly as S3 built them (unconditional, bare, dormant), matching the Projects/Habits convention.
+- **C1 (no M5 source) — by construction:** `TasksServiceDeps` holds no `MeasurementSourceRegistry`, so tasks cannot
+  `advertise`; `progress(task)` is not an advertised queryable measure (tasks absent from the M5 applies-to set).
+- **C2 (no M7 tables):** `getTaskProgress` is a pure read; tasks owns no Purpose-apex table (`contributions`/`values`/
+  `purpose_reviews`/`plan_steps` are Purpose-domain, §3.8).
+
 ## DB-11 reconcile (shipped S1)
 `@vida/types/task.ts`: `Task` dropped `tags`, gained `scheduled_date`/`completed_at`/`kind`/`recurrence_rule`/
 `measurement_kind`/`binding_mode`/`nesting_weight`; `TaskTimeLog` gained `updated_at`. `validators/task.ts` gained
 `CreateTaskSchema`/`UpdateTaskSchema`/`ListTasksFilterSchema`.
 
-## Verification (through S5)
-tsc 0 · eslint clean · tasks suite **54/54** + sessions **41/41** live-store (better-sqlite3, Node 24; incl. a
-`TZ=Asia/Tokyo` recurrence regression) · full `@vida/core` **1962/1962** · g2 SHIP (S5: B1 timezone-drift fixed +
-proven; S4 F1/F3 fixed) · /critique SHIP. New dep: `ical.js@2.2.1` (ADR-001-canonical RRULE parser).
+## Verification (through S6)
+tsc 0 · eslint clean · tasks suite **66/66** (+12 S6) + sessions **41/41** live-store (better-sqlite3, Node 24; incl. a
+`TZ=Asia/Tokyo` recurrence regression) · full `@vida/core` **1972 pass / 2 env-timeouts** — the 2 reds are the
+pre-existing, self-documented marginal-perf `encryptBytes 1MB` + DB-6 encryption tests timing out under sustained load
+on this hardware (passed in the session's first full run; DB-6 green in isolation; both in `encryption/`, unrelated to
+S6 which touches no encryption/repository file). g2 SHIP (S6: F1/F2 test-rigor + F3 doc + F4 helper-unit-tests fixed;
+F5 perf-NIT accepted — DRY over a micro-opt on bounded single-level children) · /critique SHIP. **No new dep** (S6 adds
+no dependency). Prior through S5: g2 SHIP (S5 B1 timezone-drift fixed; S4 F1/F3). dep `ical.js@2.2.1` (S5, RRULE parser).
 
 ## Deferred / downstream
-Measurability axes + contribution (S6) · aggregation R7 (S7) · tags/notes/views (S8) · Journal/DueProvider (S9). The
+Aggregation R7 (S7) · tags/notes/views (S8) · Journal/DueProvider (S9). **S6 deferrals (homed):** the `derived-pull`
+source read + its task↔source binding store + the `measurementSources` dep (XCU-13, build-phase — M1 yields `null`);
+value-bearing per-kind measures + columns (XCU-15, value-bearing entities' DB-4, not tasks); the live
+`contribute_purpose_metric`/`emit_measurement_signal` handlers + `contributions` write (XCU-12, MOD-purposes /
+first-consumer-pull — verified dormant); a manual stored-progress override column (XCU-16, ADR-002 amendment). The
 S3 completion catalogue's **handlers** are registered by consumer modules later (M1 = dormant seam). **S4 deferrals:**
 `work_session` extension table (P2 schema-reconcile), `setTimeTrackingEnabled` (no column), `attach_pomodoro` (TAS-17).
 **S5 deferrals:** TAS-24 `duty`/open-vocab type registry (ADR-002 amendment); reopen→re-complete spawn-dedup

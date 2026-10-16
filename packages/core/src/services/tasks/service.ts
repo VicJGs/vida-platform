@@ -14,7 +14,7 @@
 
 import { and, eq, isNull } from 'drizzle-orm'
 import ICAL from 'ical.js'
-import type { EffectType } from '@vida/types'
+import type { BindingMode, EffectType } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { normalize, rollup } from '../../foundation/measurement'
 import { tasks, taskTimeLogs } from '../../db/schema/tasks'
@@ -136,6 +136,26 @@ const pad2 = (n: number): string => String(n).padStart(2, '0')
 function todayYmd(): string {
   const d = new Date()
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+
+// ---- S6: measurability helpers (pure; exported for direct unit test) --------
+/** The task's effective `binding_mode` (TAS-25). NULL ⇒ the task's natural mode = `event-trigger` (completion is the
+ *  state change): `migrations/015_tasks.ts:21` "NULL ⇒ derive-natural" ∘ `delivery/interpretation.md:33`
+ *  "binding_mode='event-trigger' (completion)". Mirrors the per-module NULL-natural convention (habits=event-trigger,
+ *  routines=derived-pull). NOTE: in M1 `getTaskProgress` only observes the `=== 'derived-pull'` branch, so the
+ *  `event-trigger` default is forward-looking (it documents the grounded natural mode for a future consumer that keys
+ *  on it) — directly unit-tested below so the default can't silently drift. */
+export function resolveBindingMode(task: Pick<TaskRow, 'binding_mode'>): BindingMode {
+  return task.binding_mode ?? 'event-trigger'
+}
+
+/** A childless task's own measurable leaf = its completion as a `milestone` (BR-TK-S2-4 — the only leaf signal in M1;
+ *  a task carries no quantitative/rate/qualitative value inputs, those home to value-bearing entities per XCU-15). The
+ *  declared `measurement_kind` governs how the value composes UP a ladder, not the leaf. The `milestone` branch of
+ *  `normalize` yields 0|1; the return mirrors the engine's `number | null` contract (it does not assert non-null, so no
+ *  dead `?? 0` default) — `getTaskProgress` already handles `null`. */
+export function deriveTaskLeaf(task: Pick<TaskRow, 'status'>): number | null {
+  return normalize({ kind: 'milestone', done: task.status === 'completed' })
 }
 
 export function createTasksService(deps: TasksServiceDeps): TasksService {
@@ -467,6 +487,23 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     return logs.reduce((sum, l) => sum + (l.duration_minutes ?? 0), 0)
   }
 
+  // ---- S6: measurability — the pursuable progress() contract (XCU-08/BR-8) --
+  /** A task's own progress ∈ [0,1] | null, DERIVED on read honoring the axes (TAS-25). Faithful to the Projects
+   *  resolver (`projects/service.ts:465-530`): tasks has NO stored override column (C6) so it always derives —
+   *  a parent's measure is its M4 sub-task rollup (reuse `getRollup`); a childless `derived-pull` task yields `null`
+   *  (its measure is source-fed, not completion-fed — no task↔source binding exists in M1, so nothing to read, never
+   *  fabricated per BR-2); any other childless task yields the milestone-from-completion leaf. Not an advertised M5
+   *  source (C1 — tasks holds no MeasurementSourceRegistry). A missing/soft-deleted id ⇒ `TaskNotFoundError` (NOT
+   *  `null`, which is the distinct *unmeasured* signal). */
+  async function getTaskProgress(id: string): Promise<number | null> {
+    const task = await tasksRepo.findById(id) // soft-delete filtered
+    if (!task) throw new TaskNotFoundError(id)
+    const roll = await getRollup(id) // single children fetch; total>0 ⇒ this is a parent
+    if (roll.total > 0) return roll.progress
+    if (resolveBindingMode(task) === 'derived-pull') return null // source read deferred (no binding in M1)
+    return deriveTaskLeaf(task)
+  }
+
   return {
     createTask,
     updateTask,
@@ -482,5 +519,6 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     stopTimer,
     getActualMinutes,
     setRecurrence,
+    getTaskProgress,
   }
 }

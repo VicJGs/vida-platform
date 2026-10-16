@@ -134,6 +134,8 @@ export interface TasksService {
   getActualMinutes(taskId: string): Promise<number>
   // S5 — obligations + recurrence
   setRecurrence(taskId: string, rule: string | null): Promise<TaskRow>
+  // S6 — measurability: the pursuable progress() contract (XCU-08/BR-8), derived-on-read honoring the axes.
+  getTaskProgress(id: string): Promise<number | null>
 }
 
 // --- typed errors ------------------------------------------------------------
