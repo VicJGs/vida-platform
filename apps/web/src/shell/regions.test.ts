@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { BREAKPOINT_ORDER, type Breakpoint } from './breakpoints'
 import {
   contentGutterAt,
+  contentVInsetAt,
   CONTENT_MAX_WIDTH,
   DEFAULT_PLACEMENT,
   dockStateAt,
@@ -76,6 +77,13 @@ describe('content — per-bp gutters, global 1280 cap', () => {
     expect(contentGutterAt('tablet')).toBe(24)
     expect(contentGutterAt('desktop')).toBe(32)
     expect(contentGutterAt('wide')).toBe(32)
+  })
+
+  it('vertical inset resolves 24 / 32 / 40 (wide shares desktop)', () => {
+    expect(contentVInsetAt('mobile')).toBe(24)
+    expect(contentVInsetAt('tablet')).toBe(32)
+    expect(contentVInsetAt('desktop')).toBe(40)
+    expect(contentVInsetAt('wide')).toBe(40)
   })
 
   it('content max-width is the single global cap constant', () => {

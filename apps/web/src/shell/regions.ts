@@ -2,7 +2,7 @@
 // and reflows across the design.md §X breakpoints. (The breakpoint/container VALUES live in breakpoints.ts, applied
 // from design.md; the reflow BEHAVIOUR here is not in any standard — it is the shell's own layout design.)
 // Data-only, imports ONLY ./breakpoints. Rendering is UI-4; this is the typed model UI-4 renders against.
-import { type Breakpoint, BREAKPOINT_ORDER, CONTENT_MAX_WIDTH, SIDE_PADDING } from './breakpoints'
+import { type Breakpoint, BREAKPOINT_ORDER, CONTENT_MAX_WIDTH, CONTENT_V_INSET, SIDE_PADDING } from './breakpoints'
 
 /** The persistent regions of the shell frame. `[FACT: ia.md:98-107,152-154]` */
 export type ShellRegion = 'moduleDock' | 'globalBar' | 'spacesBar' | 'content' | 'overlayHost'
@@ -96,6 +96,14 @@ export function isRegionVisibleAt(region: ShellRegion, bp: Breakpoint): boolean 
  */
 export function contentGutterAt(bp: Breakpoint): number {
   return SIDE_PADDING[bp === 'wide' ? 'desktop' : bp]
+}
+
+/**
+ * Content VERTICAL inset at a breakpoint (top+bottom breathing room below the top strip). The {@link contentGutterAt}
+ * twin; `wide` shares the desktop inset. Shell-owned model (design.md §X has no vertical inset). `[FACT: shell-layout.md container]`
+ */
+export function contentVInsetAt(bp: Breakpoint): number {
+  return CONTENT_V_INSET[bp === 'wide' ? 'desktop' : bp]
 }
 
 /** Re-export so consumers get the global content cap alongside the region model. */
