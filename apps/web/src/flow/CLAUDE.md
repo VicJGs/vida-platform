@@ -15,9 +15,18 @@ collection/dashboard/entity adapter precedent.
   attach → `attach(...)` to the consumer-resolved target, require-proof → the consumer's proof flow.
 - **`SessionsPort`** — the subset of the `@vida/core` sessions service the flow needs; defined as a PORT (not a concrete
   import) so S2 stays pure + testable. The `@vida/core` edge lives in the deferred hook.
-- **Deferred:** the live `useFlowSession(sessionId)` hook (React Query → the session + its attachments + the effect log,
-  binding the real `@vida/core` sessions service to `SessionsPort`) is built at the FIRST consumer — fe-session-runtime #23 /
-  fe-session-hud #16 / fe-onboarding #26 / fe-check-ins #31 (R3).
+- **`toFlowSource(input)`** (`flow-source.ts`, fe-session-runtime #23 S1) — the pure RAW→`FlowSource` assembler: a
+  `SessionLike` (+ its resolved `deliverable_note` page, `session_attachments`, `applied_effects`) → `FlowSource`.
+  Single-stage by default (EC-9; the session IS one stage); total `SESSION_STATUS→StageStatus` map (unknown→upcoming
+  +dev-warn); proof = skipped/missed label else attachment-count on a done stage; effects via `mapEffectLog`. No
+  `@vida/core` import (mirror-by-value inputs — the reader-adapter precedent).
+- **`useFlowSession(sessionId)`** (`use-flow-session.ts`, #23 S1 — the FIRST flow consumer, R3) — the data hook.
+  **M1 stub** (the sibling discipline: no apps/web `@vida/core` composition root + the worker-RPC `values` seam
+  throws, S1-D2/F3): default honest-empty; `?sample` (DEV) seeds a single-stage `FlowSource`; a no-op-safe
+  `SessionsPort`; `state: TerminalState` (app canon, structurally assignable to the shell's `ViewState`). The **live
+  swap is zero-signature** (documented in the hook header): `useQuery → sessions.getSession + resolveTargets +
+  applied_effects → toFlowSource`, `deriveTerminalState`, the real service bound to `SessionsPort`.
+  Remaining first-consumers reuse it: fe-session-hud #16 / fe-onboarding #26 / fe-check-ins #31.
 
 ## Out (homed elsewhere)
 The "stages" backend realization is a **design-intent extension** the CONSUMER resolves from its backend (deliverable_note
