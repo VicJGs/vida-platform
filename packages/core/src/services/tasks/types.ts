@@ -13,6 +13,7 @@ import type { DrizzleDb } from '../../db/adapter'
 import type { TaskRow } from '../../db/schema/tasks'
 import type { SessionRow } from '../../db/schema/foundation/sessions'
 import type { EffectRail, EffectRegistry } from '../../foundation/effects'
+import type { ViewProviderRegistry } from '../../foundation/views'
 import type { SessionsService } from '../sessions'
 import type {
   Status,
@@ -36,6 +37,13 @@ export interface TasksServiceDeps {
   /** Required from S4 — the Sessions supertype. The timer is a `'work'` session sub-type (G-S1); `startTimer`/
    *  `stopTimer` open/close it and `getActualMinutes` reads the `task_time_logs` ledger `log_time` writes (G-S4). */
   sessions?: SessionsService
+  /** Deny-safe from S7 — the SHARED R7/V4 read-provider seam (`foundation/views` ViewProviderRegistry, ADR-007 §3.4;
+   *  the slice-map's `AggregationProviderPort` placeholder resolved to this type — tasks consumes the one OS seam, it
+   *  defines no port of its own). `getAggregatedTasks` resolves cross-module PARENTS through it (never a direct
+   *  cross-module table read, TK-9/C5). Absent, or a parent type with no registered `ReadProvider` ⇒ that group is
+   *  `degraded` (TAS-32 / BR-11). Ships EMPTY at M1 (providers register per-module at their build; no composition
+   *  root until M2/P6). */
+  providers?: ViewProviderRegistry
 }
 
 // --- S1 inputs ---------------------------------------------------------------
@@ -113,6 +121,43 @@ export interface TaskRollup {
   progress: number | null
 }
 
+// --- S7 — aggregation (R7 fan-out over the shared ViewProviderRegistry) -------
+/** TAS-05 "by module/project/status/…". `parent` = by parent ENTITY (the R7 lookup — the ONLY provider-consuming
+ *  grouping); `parent_type` = by parent MODULE (own-table data, provider-free); `status` = flat, provider-free.
+ *  Additive-extensible (a new `by` is non-breaking). */
+export type AggGrouping = { by: 'parent' } | { by: 'parent_type' } | { by: 'status' }
+
+/** The 4 mutually-exclusive parent modules a task may belong to (TK-2) — the aggregator's cross-module axis. */
+export type ParentType = 'project' | 'milestone' | 'course' | 'contact'
+
+/**
+ * One group of the aggregated view. Degradation is explicit PER-GROUP (TAS-32 — a down source degrades its group,
+ * never the view). For `by:'parent'` the parent is resolved through the shared seam and attached OPAQUE
+ * (`parentRow: unknown`, exactly as the ViewEngine returns `unknown[]` rows) — the ② render maps it to a display
+ * label per type (SPLIT leg). `label` is a deterministic FALLBACK (`'<type>:<id>'` / `'standalone'` / the status /
+ * the type), NEVER a name fabricated from an unknown row shape (No-Guessing; the predicate-DSL + per-layout field
+ * declarations are the deferred 007 pass).
+ */
+export interface AggregatedGroup {
+  /** `'project:<id>'` · `'parent_type:project'` · `'status:completed'` · `'standalone'` */
+  key: string
+  /** deterministic fallback; ② upgrades from `parentRow` when it knows the type */
+  label: string
+  /** the resolved parent ref for `by:'parent'`; `null` for the standalone group and the non-parent groupings */
+  parent: { type: ParentType; id: string } | null
+  /** the provider's row (opaque `object` — still no shape asserted) when `by:'parent'` resolved through the seam;
+   *  `null` otherwise / when degraded. `object | null` (not `unknown | null`, which collapses to `unknown`) so the ②
+   *  render can narrow on `!== null` (g2 F7). */
+  parentRow: object | null
+  /** `'degraded'` ⇒ no `providers` / no provider for the type / no matching row / provider threw (TAS-32, BR-11) */
+  state: 'ok' | 'degraded'
+  tasks: TaskRow[]
+}
+export interface AggregatedTasks {
+  /** stable order — standalone/Inbox LAST, others by key; includes the standalone group whenever any exist (G2) */
+  groups: AggregatedGroup[]
+}
+
 // --- service surface (grows per slice) ---------------------------------------
 export interface TasksService {
   // S1 — tasks CRUD + queries
@@ -136,6 +181,9 @@ export interface TasksService {
   setRecurrence(taskId: string, rule: string | null): Promise<TaskRow>
   // S6 — measurability: the pursuable progress() contract (XCU-08/BR-8), derived-on-read honoring the axes.
   getTaskProgress(id: string): Promise<number | null>
+  // S7 — aggregation: the cross-module aggregated view over the shared R7/V4 seam (TAS-05); per-group degradation
+  // (TAS-32); never rejects for a source outage.
+  getAggregatedTasks(grouping: AggGrouping): Promise<AggregatedTasks>
 }
 
 // --- typed errors ------------------------------------------------------------

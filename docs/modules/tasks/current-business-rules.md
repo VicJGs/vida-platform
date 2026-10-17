@@ -164,8 +164,50 @@
   `contribute_purpose_metric` fire on completion exactly as S3 built them (unconditional, bare, dormant) — the
   Projects/Habits convention (the event-trigger write IS the effect, ADR-011 §3.5 / XCU-09).
 
+## S7 — Aggregation, R7 fan-out over the shared seam (BUILT 2026-10-16) — TAS-05/32
+- **BR-TK-S7-1 (own table only — TK-9/C5).** `getAggregatedTasks` reads ONLY the own `tasks` table (the soft-delete-
+  filtered `listTasks` path) and partitions in JS. It never reads a cross-module table; every cross-module parent
+  comes through the `providers` seam. The 4 parent FKs stay the aggregator mechanism (C5 — untouched).
+- **BR-TK-S7-2 (the seam IS the shared `ViewProviderRegistry` — no bespoke port).** Parents resolve through the
+  `foundation/views` R7/V4 read-provider seam (ADR-007 §3.4, XCU-07/08) — `providers.get(type).list({predicates:{id}})`.
+  Tasks defines no provider port of its own (the slice-map's `AggregationProviderPort` was a placeholder for this
+  type; a second registry would fork the one OS seam). `ViewEngine.resolve` is not used (saved-view-driven,
+  single-field grouping ≠ a 4-FK partition + parent lookup).
+- **BR-TK-S7-3 (defensive id match — correct regardless of the deferred predicate grammar).** The by-id lookup passes
+  `predicates:{id}` as a best-effort hint, then selects `rows.find(r => r.id === id)`. A provider that ignores the
+  predicate (ADR-007:67-68 — unrecognized predicates are ignored per type) still resolves the CORRECT row (never
+  `rows[0]`); rows with no matching `id` ⇒ `degraded`, never a wrong parent. `id` is the one universal field read
+  (ADR-002 PK); the row is attached OPAQUE (`parentRow: unknown`) — ① never reads a `name`/`title` off an unknown shape.
+- **BR-TK-S7-4 (one lookup per DISTINCT parent).** N tasks under the same parent ⇒ exactly one `list` call for that
+  parent (spy-proven). `by:'parent_type'` and `by:'status'` make ZERO provider calls (own-table data).
+- **BR-TK-S7-5 (per-group degradation — TAS-32 / BR-11 / BR-12; the view never blanks).** No `providers`, no provider
+  registered for the type (BR-11 "declared, never dropped"), no matching row, or a `list` that THROWS (BR-12, caught
+  per-group) ⇒ that group is `state:'degraded'` with `parentRow:null` and the deterministic fallback label — its
+  tasks are STILL PRESENT. A down source degrades its own group only; the method **never rejects** for a source
+  outage. A malformed `grouping` is a caller bug ⇒ Zod error (distinct from an outage).
+- **BR-TK-S7-6 (standalone / Inbox = the ungrouped bucket, G2 / BR-10).** Tasks with no parent FK form the
+  `'standalone'` group (`parent:null`) under both parent groupings: included whenever any exist, omitted when none,
+  always `state:'ok'`, always LAST in the stable order (others by key) — never dropped.
+- **BR-TK-S7-7 (deterministic, platform-independent order; never-fabricated labels — g2 F2/F5/F7).** Group order =
+  standalone LAST, the rest by **codepoint** key compare (not `localeCompare` — ICU/locale collation differs across
+  web/Node/Hermes); tasks within a group by `sort_order` then `created_at` (the `getSubtasks` order — `findAll` has no
+  ORDER BY, so rowid order is not stable across devices/plans). `label` is a fallback (`'<type>:<id>'`,
+  `'standalone'`, the status, the type) in ① for every group; the ② render upgrades it from `parentRow` (typed
+  `object | null` so `!== null` narrows) per type (SPLIT leg). Two calls on the same data ⇒ identical output.
+- **BR-TK-S7-8 (grain = TOP-LEVEL tasks — g2 F1).** `getAggregatedTasks` aggregates tasks with `parent_task_id == null`
+  under EVERY grouping. A sub-task is a decomposition of its parent task (TK-3, S2-owned — reachable via
+  `getSubtasks`/`getRollup`), not an independent cross-module item; a child with no module FK of its own must never be
+  misrouted to the Inbox as "standalone". (Recurrence, S5, is likewise top-level only.) The contract was silent on
+  sub-tasks; resolved from TK-3/S2 ownership, not by inventing an FK-inheritance rule.
+- **BR-TK-S7-9 (every failure path degrades — g2 F6; lookups in parallel — g2 F8).** The registry `get`, the provider
+  `list`, and the id match all run INSIDE the per-group try: a registry whose `get` throws degrades the parented groups
+  (never rejects the view). Distinct-parent lookups run via `Promise.all` (independent, self-contained) — one latency,
+  not N serial round-trips. One table (`PARENT_MODULES`) drives both the ≤1-parent guard and the aggregator axis (g2 F3).
+
 ## Not yet enforced (designed, downstream)
-TK-9 aggregation R7 (S7) · TK-8 tags (S8). TAS-24 `duty`/open-vocab type registry = ADR-002 amendment (deferred). The S3
+TK-8 tags + the `views` primitive (S8 — incl. tasks registering as a `ReadProvider` for views). TAS-24 `duty`/open-vocab
+type registry = ADR-002 amendment (deferred). S7's provider REGISTRATION (projects/relationships/learning) + composition
+root = M2/P6 (registry EMPTY at M1). The S3
 completion catalogue's **handlers** (incl. the live `contribute_purpose_metric` consumer) are consumer-registered later
 (verified dormant at M1). The S6 `derived-pull` source read + task↔source binding + `measurementSources` dep = a later
 slice (XCU-13); a manual stored-progress override column = ADR-002 amendment (XCU-16).

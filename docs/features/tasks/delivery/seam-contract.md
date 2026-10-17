@@ -18,7 +18,8 @@ interface TasksServiceDeps {
   sessions: SessionsService      // timer sub-type (S4)
   effects?: EffectsPort          // deny-safe — completion/log_time effects
   measurementSources?: MeasurementSourceRegistry
-  providers?: AggregationProviderPort   // deny-safe — R7 parent-label resolution (S7)
+  providers?: ViewProviderRegistry      // deny-safe — the SHARED R7/V4 seam (foundation/views); resolved at S7 from the
+                                        // `AggregationProviderPort` placeholder — tasks consumes the one OS seam, no port of its own
 }
 ```
 

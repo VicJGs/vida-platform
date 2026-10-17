@@ -16,7 +16,7 @@
 | **S4 Timer + log_time** | ✅ BUILT (2026-10-15) | `startTimer`/`stopTimer`/`getActualMinutes` over a `'work'` session sub-type; `log_time` → kept ledger |
 | **S5 Obligations + recurrence** | ✅ BUILT (2026-10-15) | `setRecurrence` (obligation-only) + `completeTask` regen hook; RRULE via `ical.js` |
 | **S6 Measurability + contribution** | ✅ BUILT (2026-10-15) | `getTaskProgress` (pursuable `progress()`, derived-on-read honoring `binding_mode`) + C1/C2 guards |
-| S7 Aggregation | ⬜ designed | `getAggregatedTasks` R7 fan-out |
+| **S7 Aggregation** | ✅ BUILT (2026-10-16) | `getAggregatedTasks` over the SHARED `ViewProviderRegistry` (R7/V4); standalone Inbox; per-group degradation |
 | S8 Tags + Notes + Views | ⬜ designed | `entity_tags` · pages · `views` |
 | S9 Journal + DueProvider | ⬜ designed | `summary`/`getDueReminders` closer |
 
@@ -122,6 +122,36 @@
 - **C2 (no M7 tables):** `getTaskProgress` is a pure read; tasks owns no Purpose-apex table (`contributions`/`values`/
   `purpose_reviews`/`plan_steps` are Purpose-domain, §3.8).
 
+## S7 surface — aggregation (TAS-05/32; R7 fan-out over the shared seam)
+- **Deps (as of S7):** `+ providers?: ViewProviderRegistry` — the **shared** `foundation/views` R7/V4 read-provider
+  seam (ADR-007 §3.4; XCU-07/08), deny-safe optional. The slice-map's `AggregationProviderPort` placeholder resolved to
+  this type: tasks **consumes the one OS seam and defines no provider port of its own** (a second registry = a fork).
+  Ships EMPTY at M1 (providers register per-module at their build; no composition root until M2/P6).
+- `getAggregatedTasks(grouping: AggGrouping): AggregatedTasks` — groups **own TOP-LEVEL** tasks (`parent_task_id == null`
+  — the grain, BR-TK-S7-8; sub-tasks are S2's via `getSubtasks`/`getRollup`; soft-delete-filtered `listTasks` read;
+  **never a cross-module table**, TK-9/C5). `AggGrouping = {by:'parent'} | {by:'parent_type'} | {by:'status'}`
+  (TAS-05 "by module/project/status"), Zod-validated at the boundary (a malformed `by` ⇒ Zod error = caller bug).
+  - **`by:'parent'`** (the only provider-consuming grouping): partition by the single set parent FK → group
+    `'<type>:<id>'`; for each **distinct** parent (one lookup, not per task): `providers.get(type)` →
+    `provider.list({ predicates: { id } })` → a **defensive `row.id` match** (correct whether or not the provider
+    honours the deferred predicate grammar, ADR-007:67-68; `id` is the one universal field read in ①). The resolved
+    row is attached **opaque** (`parentRow: unknown`, as the ViewEngine returns `unknown[]`) for the ② render to map to
+    a display label per type (SPLIT). `label` is a deterministic fallback (`'<type>:<id>'`), never a fabricated name.
+  - **`by:'parent_type'`** (by module) and **`by:'status'`**: own-table partitions, **zero provider calls**, all `ok`.
+  - **standalone / Inbox group** (`key:'standalone'`, `parent:null`): top-level tasks with no parent FK — BR-10's
+    "ungrouped bucket, never dropped" (G2); included whenever any exist; always `state:'ok'`; **always last**.
+  - **Order (platform-independent):** groups by **codepoint** key (not `localeCompare`), standalone last; tasks within
+    a group by `sort_order` then `created_at`. Distinct-parent lookups run in **parallel** (`Promise.all`), every
+    failure path (incl. a throwing registry `get`) caught per group. `parentRow` is `object | null` (narrowable).
+  - **Per-group degradation (TAS-32 / BR-11 / BR-12):** no `providers`, no provider for the type, no matching row, or
+    a throwing `list` ⇒ THAT group `state:'degraded'` (`parentRow:null`, fallback label, **tasks still present**);
+    the method **never rejects for a source outage** — the view never blanks. A throw is caught per-group.
+  - **Not `ViewEngine.resolve`** (grounded non-reuse): `resolve(viewRow)` is saved-view-driven with single-field
+    grouping; `getAggregatedTasks` is an ad-hoc derivation over one type with a 4-FK partition + a parent *lookup* —
+    tasks consumes the registry (the seam), not the engine.
+- Result types `AggregatedGroup { key, label, parent, parentRow, state, tasks }` + `AggregatedTasks { groups }` in
+  `services/tasks/types.ts`; `AggGroupingSchema` in `validators/task.ts`.
+
 ## DB-11 reconcile (shipped S1)
 `@vida/types/task.ts`: `Task` dropped `tags`, gained `scheduled_date`/`completed_at`/`kind`/`recurrence_rule`/
 `measurement_kind`/`binding_mode`/`nesting_weight`; `TaskTimeLog` gained `updated_at`. `validators/task.ts` gained
@@ -137,7 +167,14 @@ F5 perf-NIT accepted — DRY over a micro-opt on bounded single-level children) 
 no dependency). Prior through S5: g2 SHIP (S5 B1 timezone-drift fixed; S4 F1/F3). dep `ical.js@2.2.1` (S5, RRULE parser).
 
 ## Deferred / downstream
-Aggregation R7 (S7) · tags/notes/views (S8) · Journal/DueProvider (S9). **S6 deferrals (homed):** the `derived-pull`
+Tags/notes/views (S8) · Journal/DueProvider (S9). **S7 deferrals (homed):** provider **registration/wiring**
+(projects/relationships/learning registering their `ReadProvider` — "per-module at their build", XCU-07; "M1 has no
+composition root — wired at M2/P6", projects/types.ts:31; M1 ⇒ registry EMPTY ⇒ cross-module groups `degraded`);
+**tasks-as-a-`ReadProvider`** (registering `'task'` so saved views fan out OVER tasks — XCU-07 registrant, TAS-05
+"views = rider") → **S8**; `getTaskRollup`/`getFocusMinutes` (Projects' own optional port, projects/types.ts:55 — no
+tasks TAS row → a separate cross-module unit); the ② grouped-view render + parent-row→label mapping (SPLIT, P6);
+saved-view grouping / `views` config + the V1 anatomy (S8 / the deferred ADR-007 pass, C8); the predicate-DSL grammar
+(build-time — S7's defensive id-match is correct regardless). **S6 deferrals (homed):** the `derived-pull`
 source read + its task↔source binding store + the `measurementSources` dep (XCU-13, build-phase — M1 yields `null`);
 value-bearing per-kind measures + columns (XCU-15, value-bearing entities' DB-4, not tasks); the live
 `contribute_purpose_metric`/`emit_measurement_signal` handlers + `contributions` write (XCU-12, MOD-purposes /

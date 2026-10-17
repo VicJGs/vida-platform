@@ -8,6 +8,7 @@
 // ============================================================================
 
 import { describe, it, expect, beforeEach } from 'vitest'
+import { ZodError } from 'zod'
 import Database from 'better-sqlite3'
 import { eq } from 'drizzle-orm'
 import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../db/adapter'
@@ -28,9 +29,12 @@ import { createTaggableTypeRegistry } from '../../../foundation/spaces'
 import { createSessionsService, type SessionsService } from '../../sessions'
 import { readFileSync } from 'node:fs'
 import { createTasksService, registerTasksTimer, WORK_SESSION_TYPE, resolveBindingMode, deriveTaskLeaf } from '../service'
+import { createViewProviderRegistry, type ReadProvider, type ViewProviderRegistry } from '../../../foundation/views'
 import {
   type TasksService,
   type TasksServiceDeps,
+  type AggregatedTasks,
+  type AggregatedGroup,
   TaskNotFoundError,
   MultipleParentError,
   SubtaskNestingError,
@@ -892,5 +896,211 @@ describe('mod-tasks S6 — measurability (getTaskProgress)', () => {
     expect(deriveTaskLeaf({ status: 'not_started' })).toBe(0)
     expect(deriveTaskLeaf({ status: 'in_progress' })).toBe(0)
     expect(deriveTaskLeaf({ status: 'cancelled' })).toBe(0)
+  })
+})
+
+// ============================================================================
+// mod-tasks #65 ① · S7 — Aggregation (R7 fan-out over the SHARED ViewProviderRegistry) (TAS-05, TAS-32)
+//
+// getAggregatedTasks groups OWN TOP-LEVEL tasks (TK-9/C5; grain = BR-TK-S7-8) and resolves cross-module PARENTS
+// through the real `foundation/views` seam (`providers.get(type).list({predicates:{id}})` + a defensive `row.id`
+// match) — one lookup per distinct parent, in parallel; per-group degradation (BR-11/BR-12/TAS-32 — never rejects);
+// the standalone/Inbox group is BR-10's ungrouped bucket (G2), always last; platform-independent codepoint order.
+// Uses the REAL createViewProviderRegistry + test ReadProviders (not a mock of our own port). Maps to PLAN-S7 gate.
+// ============================================================================
+describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 seam)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+
+  /** A second service over the SAME live db, wired with a registry (the deny-safe `providers?` dep). */
+  const withProviders = (providers: ViewProviderRegistry): TasksService =>
+    createTasksService({ db: h.db, deviceId: 'test-device', providers })
+
+  /** A test ReadProvider for one entity type. `rows` are the module's (opaque) rows; `honourId` applies the predicate. */
+  const provider = (
+    entityType: string,
+    rows: { id: string; name: string }[],
+    opts: { honourId?: boolean; calls?: { n: number }; throwOn?: string } = {},
+  ): ReadProvider => ({
+    entityType,
+    async list(filter) {
+      if (opts.calls) opts.calls.n += 1
+      const id = (filter.predicates as { id?: unknown } | undefined)?.id
+      if (opts.throwOn !== undefined && id === opts.throwOn) throw new Error(`${entityType} source down`)
+      return opts.honourId === false ? rows : rows.filter((r) => r.id === id)
+    },
+  })
+
+  /** All 4 parent types (g2 F4) + 2 standalone: 8 top-level tasks. */
+  async function seed(): Promise<{ pA: string; pB: string; cC: string; mM: string; kK: string }> {
+    const pA = 'proj-A', pB = 'proj-B', cC = 'contact-C', mM = 'ms-M', kK = 'course-K'
+    await h.svc.createTask({ title: 'a1', project_id: pA })
+    await h.svc.createTask({ title: 'a2', project_id: pA })
+    await h.svc.createTask({ title: 'b1', project_id: pB })
+    await h.svc.createTask({ title: 'c1', contact_id: cC })
+    await h.svc.createTask({ title: 'm1', milestone_id: mM })
+    await h.svc.createTask({ title: 'k1', course_id: kK })
+    await h.svc.createTask({ title: 's1' })
+    await h.svc.createTask({ title: 's2' })
+    return { pA, pB, cC, mM, kK }
+  }
+  const byKey = (r: AggregatedTasks, key: string): AggregatedGroup | undefined => r.groups.find((g) => g.key === key)
+  const titles = (g: AggregatedGroup | undefined): string[] => (g ? g.tasks.map((t) => t.title) : [])
+
+  it('(1) by:parent with NO providers — every cross-module group degraded (fallback label), standalone ok + last, view intact', async () => {
+    const { pA, pB, cC, mM, kK } = await seed()
+    const r = await h.svc.getAggregatedTasks({ by: 'parent' })
+    // codepoint order (not locale): contact < course < milestone < project; standalone LAST
+    expect(r.groups.map((g) => g.key)).toEqual([
+      `contact:${cC}`, `course:${kK}`, `milestone:${mM}`, `project:${pA}`, `project:${pB}`, 'standalone',
+    ])
+    for (const k of [`project:${pA}`, `project:${pB}`, `contact:${cC}`, `milestone:${mM}`, `course:${kK}`]) {
+      const g = byKey(r, k)
+      expect(g).toMatchObject({ state: 'degraded', parentRow: null, label: k }) // fallback, never a fabricated name
+    }
+    expect(byKey(r, `milestone:${mM}`)).toMatchObject({ parent: { type: 'milestone', id: mM } }) // g2 F4: both branches
+    expect(byKey(r, `course:${kK}`)).toMatchObject({ parent: { type: 'course', id: kK } })
+    expect(byKey(r, 'standalone')).toMatchObject({ state: 'ok', parent: null, label: 'standalone' })
+    expect(r.groups.flatMap((g) => g.tasks).length).toBe(8) // TAS-32: nothing dropped, the view never blanks
+    expect(titles(byKey(r, `project:${pA}`))).toEqual(['a1', 'a2'])
+  })
+
+  it('(2) REAL registry: a project provider resolves (parentRow = the row), the missing contact provider degrades ONLY its group', async () => {
+    const { pA, pB, cC } = await seed()
+    const reg = createViewProviderRegistry()
+    reg.register(provider('project', [{ id: pA, name: 'Alpha' }, { id: pB, name: 'Beta' }]))
+    const r = await withProviders(reg).getAggregatedTasks({ by: 'parent' })
+    expect(byKey(r, `project:${pA}`)).toMatchObject({ state: 'ok', parentRow: { id: pA, name: 'Alpha' } })
+    expect(byKey(r, `project:${pB}`)).toMatchObject({ state: 'ok', parentRow: { id: pB, name: 'Beta' } })
+    expect(byKey(r, `contact:${cC}`)).toMatchObject({ state: 'degraded', parentRow: null }) // BR-11 per-source
+    expect(byKey(r, `project:${pA}`)?.label).toBe(`project:${pA}`) // ① never fabricates a display name from the row
+  })
+
+  it('(3) a provider that IGNORES the id predicate still resolves via the defensive row.id match; no matching id ⇒ degraded', async () => {
+    const { pA, pB } = await seed()
+    const reg = createViewProviderRegistry()
+    // returns its FULL list regardless of the predicate (ADR-007:67-68 — an unrecognized predicate is ignored)
+    reg.register(provider('project', [{ id: pB, name: 'Beta' }, { id: pA, name: 'Alpha' }], { honourId: false }))
+    const r = await withProviders(reg).getAggregatedTasks({ by: 'parent' })
+    expect(byKey(r, `project:${pA}`)?.parentRow).toEqual({ id: pA, name: 'Alpha' }) // the CORRECT row, not rows[0]
+    expect(byKey(r, `project:${pB}`)?.parentRow).toEqual({ id: pB, name: 'Beta' })
+    const reg2 = createViewProviderRegistry()
+    reg2.register(provider('project', [{ id: 'someone-else', name: 'X' }], { honourId: false }))
+    const r2 = await withProviders(reg2).getAggregatedTasks({ by: 'parent' })
+    expect(byKey(r2, `project:${pA}`)?.state).toBe('degraded') // rows present but none match ⇒ degraded, never wrong
+  })
+
+  it('(4) a provider that THROWS for one parent degrades that group only; a registry whose get() THROWS degrades all parented groups; never rejects', async () => {
+    const { pA, pB, cC } = await seed()
+    const reg = createViewProviderRegistry()
+    reg.register(provider('project', [{ id: pA, name: 'Alpha' }, { id: pB, name: 'Beta' }], { throwOn: pB }))
+    const r = await withProviders(reg).getAggregatedTasks({ by: 'parent' })
+    expect(byKey(r, `project:${pA}`)?.state).toBe('ok')
+    expect(byKey(r, `project:${pB}`)).toMatchObject({ state: 'degraded', parentRow: null }) // BR-12, isolated
+    expect(titles(byKey(r, `project:${pB}`))).toEqual(['b1']) // tasks still present
+    // g2 F6 — a registry whose `get` itself throws must degrade, not reject the whole view
+    const throwingGet: ViewProviderRegistry = {
+      register: () => undefined,
+      list: () => [],
+      get: () => {
+        throw new Error('registry exploded')
+      },
+    }
+    const r2 = await withProviders(throwingGet).getAggregatedTasks({ by: 'parent' }) // resolves
+    expect(byKey(r2, `project:${pA}`)?.state).toBe('degraded')
+    expect(byKey(r2, `contact:${cC}`)?.state).toBe('degraded')
+    expect(byKey(r2, 'standalone')?.state).toBe('ok')
+    expect(r2.groups.flatMap((g) => g.tasks).length).toBe(8)
+  })
+
+  it('(5) ONE lookup per DISTINCT parent, not per task', async () => {
+    const { pA, pB } = await seed() // pA has 2 tasks, pB has 1
+    const calls = { n: 0 }
+    const reg = createViewProviderRegistry()
+    reg.register(provider('project', [{ id: pA, name: 'Alpha' }, { id: pB, name: 'Beta' }], { calls }))
+    await withProviders(reg).getAggregatedTasks({ by: 'parent' })
+    expect(calls.n).toBe(2) // 2 distinct projects ⇒ 2 calls (3 tasks)
+  })
+
+  it('(6) standalone/Inbox group: present iff standalone tasks exist, always ok, key standalone, parent null', async () => {
+    await h.svc.createTask({ title: 'only-parented', project_id: 'p' })
+    expect(byKey(await h.svc.getAggregatedTasks({ by: 'parent' }), 'standalone')).toBeUndefined()
+    await h.svc.createTask({ title: 'loose' })
+    const g = byKey(await h.svc.getAggregatedTasks({ by: 'parent' }), 'standalone')
+    expect(g).toMatchObject({ state: 'ok', parent: null, parentRow: null, label: 'standalone' })
+    expect(titles(g)).toEqual(['loose'])
+  })
+
+  it('(6b) GRAIN = top-level (BR-TK-S7-8, g2 F1): a sub-task is NOT routed to the Inbox nor counted in its parent\'s module group; it stays reachable via getSubtasks', async () => {
+    const a1 = await h.svc.createTask({ title: 'a1', project_id: 'proj-A' })
+    const child = await h.svc.addSubtask(a1.id, { title: 'a1.1' }) // no module FK of its own
+    const byParent = await h.svc.getAggregatedTasks({ by: 'parent' })
+    expect(titles(byKey(byParent, 'project:proj-A'))).toEqual(['a1'])
+    expect(byKey(byParent, 'standalone')).toBeUndefined() // the child must NOT masquerade as standalone
+    expect(byParent.groups.flatMap((g) => g.tasks.map((t) => t.id))).not.toContain(child.id)
+    const byStatus = await h.svc.getAggregatedTasks({ by: 'status' })
+    expect(byStatus.groups.flatMap((g) => g.tasks.map((t) => t.id))).not.toContain(child.id) // one grain, all groupings
+    expect((await h.svc.getSubtasks(a1.id)).map((t) => t.title)).toEqual(['a1.1']) // S2 owns sub-task display
+  })
+
+  it('(7) by:parent_type + by:status are own-table partitions — ZERO provider calls, all ok', async () => {
+    await seed()
+    const neverCalled: ViewProviderRegistry = {
+      register: () => undefined,
+      list: () => [],
+      get: () => {
+        throw new Error('provider seam must NOT be consulted for own-table groupings')
+      },
+    }
+    const svc = withProviders(neverCalled)
+    const byType = await svc.getAggregatedTasks({ by: 'parent_type' })
+    expect(byType.groups.map((g) => g.key)).toEqual([
+      'parent_type:contact', 'parent_type:course', 'parent_type:milestone', 'parent_type:project', 'standalone',
+    ])
+    expect(titles(byKey(byType, 'parent_type:project'))).toEqual(['a1', 'a2', 'b1'])
+    expect(byType.groups.every((g) => g.state === 'ok' && g.parent === null)).toBe(true)
+    const first = (await h.svc.listTasks())[0]
+    expect(first).toBeDefined()
+    await h.svc.completeTask(first?.id ?? '')
+    const byStatus = await svc.getAggregatedTasks({ by: 'status' })
+    expect(byStatus.groups.map((g) => g.key)).toEqual(['status:completed', 'status:not_started'])
+    expect(byKey(byStatus, 'status:completed')?.tasks).toHaveLength(1)
+    expect(byStatus.groups.every((g) => g.state === 'ok')).toBe(true)
+  })
+
+  it('(8) soft-deleted excluded; within-group order = sort_order then created_at (g2 F2); deterministic; malformed grouping ⇒ ZodError', async () => {
+    const { pA } = await seed()
+    const doomed = await h.svc.createTask({ title: 'doomed', project_id: pA })
+    await h.svc.softDeleteTask(doomed.id)
+    // explicit sort_order beats insertion/rowid order within a group (SortOrderSchema is min 0, so raise the siblings
+    // and create the newcomer at the default 0 — created LAST, must sort FIRST)
+    const sibs = await h.svc.listTasks({ project_id: pA })
+    const a1 = sibs.find((t) => t.title === 'a1')
+    const a2 = sibs.find((t) => t.title === 'a2')
+    expect(a1 && a2).toBeTruthy()
+    await h.svc.updateTask(a1?.id ?? '', { sort_order: 10 })
+    await h.svc.updateTask(a2?.id ?? '', { sort_order: 20 })
+    await h.svc.createTask({ title: 'a0-first', project_id: pA })
+    const r1 = await h.svc.getAggregatedTasks({ by: 'parent' })
+    const r2 = await h.svc.getAggregatedTasks({ by: 'parent' })
+    expect(r1.groups.flatMap((g) => g.tasks.map((t) => t.title))).not.toContain('doomed')
+    expect(titles(byKey(r1, `project:${pA}`))).toEqual(['a0-first', 'a1', 'a2'])
+    expect(r1.groups.map((g) => [g.key, g.tasks.map((t) => t.id)])).toEqual(r2.groups.map((g) => [g.key, g.tasks.map((t) => t.id)]))
+    expect(r1.groups.at(-1)?.key).toBe('standalone')
+    await expect(h.svc.getAggregatedTasks({ by: 'nope' } as unknown as { by: 'parent' })).rejects.toBeInstanceOf(ZodError) // g2 F9
+  })
+
+  it('(9) C5/TK-9 structural — the service imports ONLY its own + foundation schema (no db/schema barrel, no other module), parents flow only through `providers`', () => {
+    const importLines = readFileSync(new URL('../service.ts', import.meta.url), 'utf8')
+      .split('\n')
+      .filter((l) => l.trimStart().startsWith('import'))
+    // g2 F10: any `db/schema` import must be the tasks schema or a foundation substrate — the barrel (which re-exports
+    // every module's tables) and any other module's schema are forbidden.
+    const schemaImports = importLines.filter((l) => /db\/schema/.test(l))
+    expect(schemaImports.length).toBeGreaterThan(0)
+    expect(schemaImports.every((l) => /db\/schema\/(tasks|foundation\/)/.test(l))).toBe(true)
+    expect(importLines.some((l) => /services\/(projects|relationships|learning|languages)/.test(l))).toBe(false)
   })
 })

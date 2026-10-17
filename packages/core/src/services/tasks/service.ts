@@ -21,7 +21,7 @@ import { tasks, taskTimeLogs } from '../../db/schema/tasks'
 import type { DrizzleDb } from '../../db/adapter'
 import type { EffectHandler, EffectRegistry } from '../../foundation/effects'
 import { SessionTypeNotFound, type SessionRegistry, type SessionTypeDef } from '../../foundation/sessions'
-import { CreateTaskSchema, UpdateTaskSchema, ListTasksFilterSchema } from '../../validators/task'
+import { CreateTaskSchema, UpdateTaskSchema, ListTasksFilterSchema, AggGroupingSchema } from '../../validators/task'
 import {
   type TasksService,
   type TasksServiceDeps,
@@ -30,6 +30,10 @@ import {
   type ListTasksFilter,
   type AddSubtaskInput,
   type TaskRollup,
+  type AggGrouping,
+  type AggregatedGroup,
+  type AggregatedTasks,
+  type ParentType,
   TaskNotFoundError,
   MultipleParentError,
   SubtaskNestingError,
@@ -102,8 +106,26 @@ export async function registerTasksTimer(deps: {
   }
 }
 
-/** The four mutually-exclusive parent-module FKs (TK-2). `parent_task_id` is a separate (sub-task) axis. */
-const PARENT_MODULE_KEYS = ['project_id', 'milestone_id', 'course_id', 'contact_id'] as const
+/** The four mutually-exclusive parent-module FKs (TK-2) → their cross-module type. ONE table drives BOTH the ≤1-parent
+ *  guard (`PARENT_MODULE_KEYS`) and the S7 aggregator axis (`parentOf`) — a 5th module added here is seen by both
+ *  (g2 F3: no second source of truth). `parent_task_id` is a separate (sub-task) axis. */
+const PARENT_MODULES = [
+  { key: 'project_id', type: 'project' },
+  { key: 'milestone_id', type: 'milestone' },
+  { key: 'course_id', type: 'course' },
+  { key: 'contact_id', type: 'contact' },
+] as const
+const PARENT_MODULE_KEYS = PARENT_MODULES.map((m) => m.key)
+
+/** S7 — the task's set parent-module FK → its cross-module ref, or `null` = standalone (G2). Reads the 4 FKs (the
+ *  aggregator mechanism, C5 — untouched); the ≤1-parent guard (create + update) guarantees at most one is set. */
+function parentOf(t: TaskRow): { type: ParentType; id: string } | null {
+  for (const m of PARENT_MODULES) {
+    const id = t[m.key]
+    if (id != null) return { type: m.type, id }
+  }
+  return null
+}
 
 /** Only an obligation may carry a recurrence rule (TK-7 / TAS-21). Enforced at EVERY write path (create/update/
  *  setRecurrence), like the ≤1-parent guard — no stray inert rule on a standard task. Clearing to null is always ok. */
@@ -158,8 +180,14 @@ export function deriveTaskLeaf(task: Pick<TaskRow, 'status'>): number | null {
   return normalize({ kind: 'milestone', done: task.status === 'completed' })
 }
 
+// ---- S7: aggregation constants ---------------------------------------------
+const STANDALONE = 'standalone'
+/** Platform-independent string order (g2 F5): plain codepoint compare — `localeCompare` is ICU/locale-dependent and
+ *  differs between web (full ICU), Node, and RN/Hermes, which would reorder the ② render per platform. */
+const byCodepoint = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
+
 export function createTasksService(deps: TasksServiceDeps): TasksService {
-  const { db, deviceId, effects, sessions } = deps
+  const { db, deviceId, effects, sessions, providers } = deps
 
   // S3 — completion fan-out catalogue (TAS-19). The KEYED/ADDITIVE subset is PUSHED through the rail; the two
   // PROJECTION effects are realized by their class, not a push (PLAN-S3 D-S3-1):
@@ -504,6 +532,73 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     return deriveTaskLeaf(task)
   }
 
+  // ---- S7: aggregation — R7 fan-out over the SHARED ViewProviderRegistry -----
+  /** The cross-module aggregated view (TAS-05) over OWN tasks only (TK-9/C5). Parents are resolved through the shared
+   *  `foundation/views` seam — `providers.get(type).list({ predicates: { id } })` + a DEFENSIVE `row.id` match, so it
+   *  is correct whether or not a provider honours the (deferred) predicate grammar (ADR-007:67-68 — an unrecognized
+   *  predicate is ignored per type) — ONE lookup per distinct parent, never per task. `id` is the one universal field
+   *  read in ① (ADR-002 PK); the row is attached OPAQUE for the ② render (SPLIT). Per-group degradation (TAS-32 /
+   *  BR-11 / BR-12): no registry, no provider for the type, no matching row, or a throw ⇒ THAT group is `degraded`
+   *  (fallback label, tasks still present); the method never rejects for a source outage. The standalone (Inbox)
+   *  group is BR-10's "ungrouped bucket — never dropped" (G2), always last. `parent_type` / `status` are own-table
+   *  partitions with NO provider call. NOT `ViewEngine.resolve` (that is ViewRow-driven, single-field grouping —
+   *  not a 4-FK partition + parent lookup); tasks consumes the registry seam, not the engine. */
+  async function getAggregatedTasks(grouping: AggGrouping): Promise<AggregatedTasks> {
+    const g = AggGroupingSchema.parse(grouping)
+    // GRAIN = TOP-LEVEL tasks (BR-TK-S7-8, g2 F1): a sub-task is a decomposition of its parent task (TK-3, S2-owned —
+    // reachable via getSubtasks/getRollup), not an independent cross-module item. A child with no module FK of its
+    // own would otherwise be misrouted to the Inbox as "standalone". Recurrence (S5) is likewise top-level only.
+    const all = (await listTasks()).filter((t) => t.parent_task_id == null) // soft-delete filtered
+    const buckets = new Map<string, AggregatedGroup>()
+    const put = (key: string, label: string, parent: AggregatedGroup['parent'], t: TaskRow): void => {
+      const b = buckets.get(key) ?? { key, label, parent, parentRow: null, state: 'ok', tasks: [] }
+      b.tasks.push(t)
+      buckets.set(key, b)
+    }
+    for (const t of all) {
+      const p = parentOf(t)
+      if (g.by === 'status') put(`status:${t.status}`, t.status, null, t)
+      else if (p === null) put(STANDALONE, STANDALONE, null, t) // the ungrouped bucket (BR-10), both parent groupings
+      else if (g.by === 'parent_type') put(`parent_type:${p.type}`, p.type, null, t)
+      else put(`${p.type}:${p.id}`, `${p.type}:${p.id}`, p, t)
+    }
+    if (g.by === 'parent') {
+      // Resolve each DISTINCT parent through the shared seam — in PARALLEL (each lookup is independent and
+      // self-contained; one latency instead of N serial round-trips, g2 F8). EVERY failure path — a throwing
+      // registry `get` (g2 F6), no provider (BR-11), a throwing `list` (BR-12), no matching row — is caught PER
+      // GROUP: the method never rejects for a source outage (TAS-32).
+      await Promise.all(
+        [...buckets.values()].map(async (b) => {
+          const parent = b.parent
+          if (parent === null) return // standalone — no provider involved, always ok
+          try {
+            const provider = providers?.get(parent.type)
+            if (!provider) {
+              b.state = 'degraded' // BR-11: no provider for the type → declared, never dropped
+              return
+            }
+            const rows = await provider.list({ predicates: { id: parent.id } })
+            const match = rows.find((r) => (r as { id?: unknown }).id === parent.id)
+            // A matched row is an object (only an object can carry an `id`); anything else ⇒ degraded, never a wrong
+            // parent. Stored OPAQUE (`object`) for the ② render — ① reads no other field.
+            if (typeof match === 'object' && match !== null) b.parentRow = match
+            else b.state = 'degraded'
+          } catch {
+            b.state = 'degraded' // BR-12: a down source degrades ITS group only
+          }
+        }),
+      )
+    }
+    // Stable, PLATFORM-INDEPENDENT order: standalone LAST, the rest by codepoint key (g2 F5); tasks within a group by
+    // sort_order then created_at — the getSubtasks order (findAll issues no ORDER BY; rowid order is not stable across
+    // devices or query plans, g2 F2).
+    const groups = [...buckets.values()].sort((a, b) =>
+      a.key === STANDALONE ? 1 : b.key === STANDALONE ? -1 : byCodepoint(a.key, b.key),
+    )
+    for (const grp of groups) grp.tasks.sort((a, b) => a.sort_order - b.sort_order || a.created_at - b.created_at)
+    return { groups }
+  }
+
   return {
     createTask,
     updateTask,
@@ -520,5 +615,6 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     getActualMinutes,
     setRecurrence,
     getTaskProgress,
+    getAggregatedTasks,
   }
 }

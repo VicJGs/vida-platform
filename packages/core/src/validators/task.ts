@@ -83,3 +83,11 @@ export const ListTasksFilterSchema = z
     due_before: CalendarDateSchema,
   })
   .optional()
+
+/** S7 — the aggregated-view grouping (TAS-05 "by module/project/status"). Boundary-validated like every S1 enum; a
+ *  malformed `by` is a caller bug (Zod error), distinct from a source outage (a per-group `state`, never a throw). */
+export const AggGroupingSchema = z.discriminatedUnion('by', [
+  z.object({ by: z.literal('parent') }),
+  z.object({ by: z.literal('parent_type') }),
+  z.object({ by: z.literal('status') }),
+])
