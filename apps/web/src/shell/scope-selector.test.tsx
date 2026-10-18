@@ -90,11 +90,11 @@ describe('ScopeSelector — compact (≤375 strip)', () => {
     )
   }
 
-  it('populated: trigger drops the "Spaces: " prefix but keeps the full name in aria-label (EC-1)', async () => {
+  it('populated: trigger is GLOBE-ONLY — no visible text, full name in aria-label (EC-1; #16 strip-budget)', async () => {
     renderCompact(() => Promise.resolve(SPACES))
-    const trigger = await screen.findByRole('button', { name: 'Scope: All' }) // aria-label, not visible text
-    expect(trigger.textContent).toContain('All')
-    expect(trigger.textContent).not.toContain('Spaces:')
+    const trigger = await screen.findByRole('button', { name: 'Scope: All' }) // aria-label carries the name
+    expect(trigger.textContent).toBe('') // the 375 strip yields the label to fit the HUD (Victor 2026-10-18)
+    expect(trigger.querySelector('svg')).not.toBeNull() // the globe glyph remains
   })
 
   it('empty: still global-only, aria-label unchanged, no prefix', async () => {
