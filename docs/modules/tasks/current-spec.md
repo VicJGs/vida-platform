@@ -17,7 +17,7 @@
 | **S5 Obligations + recurrence** | ✅ BUILT (2026-10-15) | `setRecurrence` (obligation-only) + `completeTask` regen hook; RRULE via `ical.js` |
 | **S6 Measurability + contribution** | ✅ BUILT (2026-10-15) | `getTaskProgress` (pursuable `progress()`, derived-on-read honoring `binding_mode`) + C1/C2 guards |
 | **S7 Aggregation** | ✅ BUILT (2026-10-16) | `getAggregatedTasks` over the SHARED `ViewProviderRegistry` (R7/V4); standalone Inbox; per-group degradation |
-| S8 Tags + Notes + Views | ⬜ designed | `entity_tags` · pages · `views` |
+| **S8 Tags + Notes + Views + ReadProvider** | ✅ BUILT (2026-10-18) | `tagTask`/`untagTask`/`getTaskTags` · `getTaskNote` (`task_note` page) · `saveView`/`listViews` (exact-`['task']` views) · `TASK_VIEW_PRESETS` + `kind` filter · tasks registered as a `ReadProvider` (nested tags) |
 | S9 Journal + DueProvider | ⬜ designed | `summary`/`getDueReminders` closer |
 
 ## Persistence (built floor — migration 015)
@@ -152,13 +152,73 @@
 - Result types `AggregatedGroup { key, label, parent, parentRow, state, tasks }` + `AggregatedTasks { groups }` in
   `services/tasks/types.ts`; `AggGroupingSchema` in `validators/task.ts`.
 
+## S8 surface — tags · notes · views · the tasks ReadProvider (TAS-27/28/30/31 · XCU-07/08)
+- **Deps (as of S8):** `+ spaces?: SpacesService` · `+ notes?: NotesService` · `+ views?: ViewsService` — optional +
+  **fail-loud** (`TasksDepNotWiredError(dep)`; the S4 `TimerNotWiredError` is kept). **No `registry` dep:** `'task'` is
+  pre-seeded in `_registry.ts` ENTITY_TYPES, so the taggable registry needs no tasks `register()` (the seam-contract's
+  `registry` line was pre-S1). Reads that need no dep (`getTaskTags`) work unwired.
+- **Tags (TAS-27 · ADR-006 SP1/SP2):** `tagTask(taskId, tagId): EntityTagRow` → `spaces.tagEntity(tagId,'task',id)`
+  (idempotent BR-14; re-tag-after-untag REVIVES the same row BR-15) after a task-exists guard (`TaskNotFoundError`) and
+  a **live-tag guard** (read-only `tags` `findById`, soft-delete filtered ⇒ unknown OR soft-deleted tag ⇒ `TagNotFound`
+  from `foundation/spaces` — `tagEntity` itself blind-inserts an unresolved `tag_id`). `untagTask` → `untagEntity`
+  (absent ⇒ no-op; **no tag guard** so a soft-deleted tag stays cleanable). `getTaskTags` = a raw read-only
+  `entity_tags` scan with the hand-appended `isNull(deleted_at)`; unknown id ⇒ `[]`.
+- **Task note (TAS-31):** `getTaskNote(taskId): PageRow` → `notes.ensureEntityNote('task_note','task',id,{ title })`
+  — the dedicated `PAGE_TYPE` member; idempotent find-or-create; the seed is creation-only (the title lands in the
+  `content` H1, `pages.title` stays NULL; a renamed task does not retitle its note). ONE guiding page per task; other
+  pages/attachments are the ②'s via `NotesService`.
+- **Saved views (TAS-28, cite-level · ADR-007 V1/V2/§3.5):** a task view IS a `views` row whose `filter.entity_types`
+  is **exactly** `['task']` — tasks STAMPS it (`SaveTaskViewSchema` is a `z.strictObject`; a caller `entity_types` is a
+  Zod error). `saveView(input)` without `id` → `views.createView` (`space_id` null = global); with `id` → **REPLACE the
+  config**: `views.getView` first (`ViewNotFound` → `TaskViewNotFoundError`; required — `repo.update` on a missing row
+  throws a generic Error), the row must be exactly a task view (a foreign `['page']` or MIXED `['task','page']` view ⇒
+  `TaskViewNotFoundError`, row untouched — one JSON `filter` column would lose the other types), then
+  `views.updateView` with name · layout · filter (re-stamped) · `grouping ?? null` · `sort ?? null` written in full
+  (omitted optional keys ⇒ CLEARED); `space_id` is OWNERSHIP, written only when given. `listViews()` =
+  `views.listViews()` filtered to exact task views (tolerant filter parse: malformed JSON ⇒ excluded), substrate order.
+  `predicates`/`grouping`/`sort` pass through opaque — the predicate DSL is the deferred ADR-007 pass.
+- **Presets data (TAS-30 · ADR-009 T4):** `TASK_VIEW_PRESETS: readonly TaskViewPreset[]` = `today` (list, open) ·
+  `board` (board, open, grouped by status) · `all_by_project` (list, grouped by `project_id`), each `kind:null`; a
+  kind-bound preset sets `kind` + `predicates.kind` from the same shape. **`+ ListTasksFilter.kind`** (own-table,
+  additive) so a kind-bound preset is expressible through the provider. The preset PRIMITIVE + tab = Spaces/P6
+  (first-consumer-pull); row seeding = XCU-06 pipeline (db-10).
+- **Tasks as a `ReadProvider` (XCU-07/08 — the other direction of the S7 seam):** `createTasksReadProvider({svc, db,
+  deviceId}): ReadProvider` + `registerTasksReadProvider(providers, deps)` (the `registerTasksTimer` composition shape;
+  no composition root at M1). `list(filter)` honours what it understands, ignores the rest, never throws for a bad
+  predicate (ADR-007 §3.3.4 / XCU-13): (1) a present `predicates.id` SHORT-CIRCUITS → string ⇒ `[getTask(id)]` (a
+  sub-task IS returned by id), non-string ⇒ `[]`; (2) `PROVIDER_KEYS` (`status · priority · project_id · parent_task_id · completed · due_before · kind`) picked
+  from `predicates`, validated PER KEY via `ListTasksFilterFieldsSchema.shape[k].safeParse` (invalid ⇒ key dropped;
+  unknown keys ignored); (3) grain = TOP-LEVEL unless `parent_task_id` given (BR-TK-S7-8); (4) `filter.tags`
+  (array-of-strings only, else ignored) = **membership incl. nested** (ADR-007:57 / ADR-006 `#a ⊃ #a/b`) — the ids are
+  expanded — LIVE ids only — to themselves ∪ all LIVE descendants (`expandTagIds`: one `tags` read, a worklist walk
+  over `parent_tag_id`, `seen` set; a soft-deleted node — requested or intermediate — stops the walk and contributes
+  nothing; unknown id matches nothing), then ONE `entity_tags` scan + a JS `Set` (not
+  `inArray` — SQLite bound-variable cap); several tags = **union** (the only interpretation in S8 — an intersection
+  combinator is a 007-DSL predicate); (5) returns `TaskRow[]`, soft-deleted excluded. Proven end-to-end through the
+  REAL `ViewEngine.resolve` (a saved task view ⇒ `success`, `degraded:[]`; a mixed view degrades only the missing type).
+- **Substrate addition (first-consumer-pull):** `ViewsService.listViews()` (live rows, `created_at` then `id` order) +
+  `CreateViewInput.grouping?: ViewGrouping | null` (type-accuracy: the runtime already wrote NULL for `== null`).
+- **Doc-resolved (C8): `pinView`/`reorderViews` are Preferences-OWNED** — intake G1 "named, reorderable, pinnable" =
+  nav placement; ADR-007 §3.5 + IA §6 + XCU-21 home nav placement / default-view preference in Preferences (which has
+  no view surface yet: a first-consumer-pull gap, pulled when the ② view-switcher lands). Not a tasks op; not built on
+  `spaces.default_view_id` (a Space's single opener ≠ a pinned set); no columns added to `views`.
+- Types `SaveTaskViewInput` · `TaskViewPreset` · `TasksDepNotWiredError` · `TaskViewNotFoundError` in `types.ts`
+  (`PageRow` is imported THERE — the structural gate admits only `db/schema/(tasks|foundation/)` in `service.ts`);
+  `SaveTaskViewSchema` · `ListTasksFilterFieldsSchema` (+ `ListTasksFilterSchema = …optional()`) in `validators/task.ts`.
+
 ## DB-11 reconcile (shipped S1)
 `@vida/types/task.ts`: `Task` dropped `tags`, gained `scheduled_date`/`completed_at`/`kind`/`recurrence_rule`/
 `measurement_kind`/`binding_mode`/`nesting_weight`; `TaskTimeLog` gained `updated_at`. `validators/task.ts` gained
 `CreateTaskSchema`/`UpdateTaskSchema`/`ListTasksFilterSchema`.
 
-## Verification (through S6)
-tsc 0 · eslint clean · tasks suite **66/66** (+12 S6) + sessions **41/41** live-store (better-sqlite3, Node 24; incl. a
+## Verification (through S8)
+**S8:** tsc 0 · eslint 0 · tasks suite **87/87** (+11 S8: tags ×2 · note · views ×3 · provider ×4 incl. the REAL
+`ViewEngine` end-to-end + nested-tag hierarchy · presets · structural) + spaces substrate **23/23** (+2 `listViews`)
+live-store (better-sqlite3, Node 24; REAL `SpacesService`/`NotesService`/`ViewsService`/`ViewProviderRegistry`/
+`ViewEngine` over the same store). Gate: PLAN-S8 gate-1 REVISE→SHIP (independent critic, 3 rounds) · preflight PASSED
+(ADR-006/007/009/002 conform) · gate-2 SHIP · g2 code review (see task file). One ISOLATED test-baseline fix (F004:
+`create()` echo vs DB read). **No new dep, no migration, no `@vida/types` change.**
+**Through S6:** tsc 0 · eslint clean · tasks suite **66/66** (+12 S6) + sessions **41/41** live-store (better-sqlite3, Node 24; incl. a
 `TZ=Asia/Tokyo` recurrence regression) · full `@vida/core` **1972 pass / 2 env-timeouts** — the 2 reds are the
 pre-existing, self-documented marginal-perf `encryptBytes 1MB` + DB-6 encryption tests timing out under sustained load
 on this hardware (passed in the session's first full run; DB-6 green in isolation; both in `encryption/`, unrelated to
@@ -167,7 +227,14 @@ F5 perf-NIT accepted — DRY over a micro-opt on bounded single-level children) 
 no dependency). Prior through S5: g2 SHIP (S5 B1 timezone-drift fixed; S4 F1/F3). dep `ical.js@2.2.1` (S5, RRULE parser).
 
 ## Deferred / downstream
-Tags/notes/views (S8) · Journal/DueProvider (S9). **S7 deferrals (homed):** provider **registration/wiring**
+Journal/DueProvider (S9). **S8 deferrals (homed):** `pinView`/`reorderViews` → **Preferences-owned** (ADR-007 §3.5 ·
+IA §6 · XCU-21; a first-consumer-pull gap against the Preferences corpus — "per-view nav placement: pinned set + order,
+per-Space, consumed by the ② view-switcher (fe-tasks)"); a multi-tag INTERSECTION combinator + the predicate-DSL
+grammar + per-layout field declarations + the 12→7 layout mapping → the dedicated ADR-007 pass; the preset PRIMITIVE +
+tab (XCU-12/13) → Spaces first-consumer-pull / P6, preset ROW seeding → XCU-06 (db-10); a partial-patch `updateView`
+form (no ① caller); `registerTasksReadProvider` CALLER (composition root) → M2/P6; `[E]` on `entity_tags`/`views.name`
+→ M3; tag/link unify⇄separate surface (XCU-SP-27) → design pass; the ② view-builder / tag picker / note render → P6.
+**S7 deferrals (homed):** provider **registration/wiring**
 (projects/relationships/learning registering their `ReadProvider` — "per-module at their build", XCU-07; "M1 has no
 composition root — wired at M2/P6", projects/types.ts:31; M1 ⇒ registry EMPTY ⇒ cross-module groups `degraded`);
 **tasks-as-a-`ReadProvider`** (registering `'task'` so saved views fan out OVER tasks — XCU-07 registrant, TAS-05

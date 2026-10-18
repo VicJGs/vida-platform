@@ -18,7 +18,8 @@ export interface CreateViewInput {
   name: string
   layout: ViewLayout
   filter?: ViewFilter
-  grouping?: ViewGrouping
+  /** `null` clears on update — `encodePatch`/`createView` already treat `== null` as a NULL write (S8 type-accuracy). */
+  grouping?: ViewGrouping | null
   sort?: unknown
 }
 
@@ -27,6 +28,13 @@ export interface ViewsService {
   updateView(id: string, patch: Partial<CreateViewInput>): Promise<ViewRow>
   deleteView(id: string): Promise<void>
   getView(id: string): Promise<ViewRow>
+  /**
+   * List every LIVE saved view (first-consumer-pull — mod-tasks S8, the first module authoring a saved surface;
+   * every XCU-01 contributor needs "list views"). Soft-deleted rows excluded; deterministic order `created_at`
+   * then `id` (`findAll` issues no ORDER BY). Callers scope by `filter`/`space_id` themselves (a task view =
+   * `entity_types` exactly `['task']`, ADR-007 §3.5).
+   */
+  listViews(): Promise<ViewRow[]>
   /**
    * Clone a saved view into an independent copy (XCU-05 · ADR-007:50-51 · ADR-009 fork stance).
    * `targetSpaceId` redirects ownership — a string re-homes into that Space, `null` makes it global.
@@ -75,6 +83,11 @@ export function createViewsService(db: DrizzleDb, deviceId: string): ViewsServic
       const row = await repo.findById(id)
       if (!row) throw new ViewNotFound(id)
       return row
+    },
+
+    async listViews() {
+      const rows = await repo.findAll() // softDelete:true ⇒ isNull(deleted_at) applied
+      return rows.sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     },
 
     async cloneView(sourceId, targetSpaceId) {

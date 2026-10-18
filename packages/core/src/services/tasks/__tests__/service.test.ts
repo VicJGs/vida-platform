@@ -7,7 +7,7 @@
 // Maps 1:1 to slice-map S1 + seam-contract (tasks CRUD + queries).
 // ============================================================================
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ZodError } from 'zod'
 import Database from 'better-sqlite3'
 import { eq } from 'drizzle-orm'
@@ -25,11 +25,30 @@ import {
   NoEffectHandler,
 } from '../../../foundation/effects'
 import { createSessionRegistry } from '../../../foundation/sessions/registry'
-import { createTaggableTypeRegistry } from '../../../foundation/spaces'
+import { createTaggableTypeRegistry, createSpacesService, TagNotFound } from '../../../foundation/spaces'
 import { createSessionsService, type SessionsService } from '../../sessions'
+import { createNotesService } from '../../notes'
+import { createBacklinkResolver } from '../../search/backlink-resolver'
+import { views as viewsTable } from '../../../db/schema/foundation/spaces'
 import { readFileSync } from 'node:fs'
-import { createTasksService, registerTasksTimer, WORK_SESSION_TYPE, resolveBindingMode, deriveTaskLeaf } from '../service'
-import { createViewProviderRegistry, type ReadProvider, type ViewProviderRegistry } from '../../../foundation/views'
+import {
+  createTasksService,
+  registerTasksTimer,
+  WORK_SESSION_TYPE,
+  resolveBindingMode,
+  deriveTaskLeaf,
+  createTasksReadProvider,
+  registerTasksReadProvider,
+  TASK_VIEW_PRESETS,
+} from '../service'
+import { SaveTaskViewSchema } from '../../../validators/task'
+import {
+  createViewProviderRegistry,
+  createViewsService,
+  createViewEngine,
+  type ReadProvider,
+  type ViewProviderRegistry,
+} from '../../../foundation/views'
 import {
   type TasksService,
   type TasksServiceDeps,
@@ -43,6 +62,8 @@ import {
   TimerNotWiredError,
   RecurrenceNotAllowedError,
   RecurrenceRegenError,
+  TasksDepNotWiredError,
+  TaskViewNotFoundError,
 } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -1102,5 +1123,290 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
     expect(schemaImports.length).toBeGreaterThan(0)
     expect(schemaImports.every((l) => /db\/schema\/(tasks|foundation\/)/.test(l))).toBe(true)
     expect(importLines.some((l) => /services\/(projects|relationships|learning|languages)/.test(l))).toBe(false)
+  })
+})
+
+// ============================================================================
+// S8 — Tags + Notes + Views + tasks-as-ReadProvider (TAS-27/28/30/31 · XCU-07/08) — maps 1:1 to PLAN-S8 gate 1–10.
+// REAL substrates over the SAME live store: SpacesService (writes), NotesService (ensureEntityNote), ViewsService
+// (views rows), the REAL ViewProviderRegistry + ViewEngine (the seam, both directions).
+// ============================================================================
+async function setupWithSubstrates() {
+  await initVault()
+  const bsql = new Database(':memory:')
+  const driver = createBetterSqlite3Driver(bsql)
+  await migrate(driver)
+  const db = createDrizzleProxy(driver)
+  const deviceId = 'test-device'
+  const registry = createTaggableTypeRegistry()
+  const spaces = createSpacesService(db, deviceId, registry)
+  const backlinks = createBacklinkResolver(db, deviceId)
+  const notes = createNotesService({ db, deviceId, spaces, backlinks, registry })
+  const views = createViewsService(db, deviceId)
+  const providers = createViewProviderRegistry()
+  const engine = createViewEngine(providers)
+  const svc = createTasksService({ db, deviceId, spaces, notes, views, providers })
+  registerTasksReadProvider(providers, { svc, db, deviceId })
+  return { svc, db, bsql, spaces, notes, views, providers, engine, deviceId }
+}
+type SubstrateHarness = Awaited<ReturnType<typeof setupWithSubstrates>>
+
+const parseJson = (s: string | null): unknown => (s == null ? null : JSON.parse(s))
+
+describe('mod-tasks S8 — tags (TAS-27 over spaces.tagEntity)', () => {
+  let h: SubstrateHarness
+  beforeEach(async () => {
+    h = await setupWithSubstrates()
+  })
+
+  it('(1) tag → row {tag_id, entity_type:task, entity_id}; re-tag idempotent; untag → []; re-tag revives SAME row; unknown id ⇒ []', async () => {
+    const t = await h.svc.createTask({ title: 'Write' })
+    const tag = await h.spaces.createTag({ name: 'deep' })
+    const row = await h.svc.tagTask(t.id, tag.id)
+    expect(row).toMatchObject({ tag_id: tag.id, entity_type: 'task', entity_id: t.id })
+    expect((await h.svc.getTaskTags(t.id)).map((r) => r.id)).toEqual([row.id])
+    expect((await h.svc.tagTask(t.id, tag.id)).id).toBe(row.id) // idempotent (BR-14)
+    await h.svc.untagTask(t.id, tag.id)
+    expect(await h.svc.getTaskTags(t.id)).toEqual([])
+    expect((await h.svc.tagTask(t.id, tag.id)).id).toBe(row.id) // revived, not a 2nd row (BR-14/BR-15)
+    expect((await h.svc.getTaskTags(t.id)).map((r) => r.id)).toEqual([row.id])
+    expect(await h.svc.getTaskTags('no-such-task')).toEqual([])
+  })
+
+  it('(2) guards: unknown/soft-deleted tag ⇒ TagNotFound + no row; unknown/soft-deleted task ⇒ TaskNotFoundError; not-wired; untag no-op; soft-deleted tag stays cleanable', async () => {
+    const t = await h.svc.createTask({ title: 'Write' })
+    await expect(h.svc.tagTask(t.id, 'ghost-tag')).rejects.toBeInstanceOf(TagNotFound)
+    expect(await h.svc.getTaskTags(t.id)).toEqual([]) // orphan guard — nothing inserted
+    const dead = await h.spaces.createTag({ name: 'dead' })
+    await h.spaces.deleteTag(dead.id)
+    await expect(h.svc.tagTask(t.id, dead.id)).rejects.toBeInstanceOf(TagNotFound)
+    const tag = await h.spaces.createTag({ name: 'live' })
+    await expect(h.svc.tagTask('no-such-task', tag.id)).rejects.toBeInstanceOf(TaskNotFoundError)
+    const gone = await h.svc.createTask({ title: 'gone' })
+    await h.svc.softDeleteTask(gone.id)
+    await expect(h.svc.tagTask(gone.id, tag.id)).rejects.toBeInstanceOf(TaskNotFoundError)
+    const unwired = createTasksService({ db: h.db, deviceId: h.deviceId })
+    await expect(unwired.tagTask(t.id, tag.id)).rejects.toBeInstanceOf(TasksDepNotWiredError)
+    await expect(unwired.tagTask(t.id, tag.id)).rejects.toMatchObject({ dep: 'spaces' })
+    await expect(h.svc.untagTask(t.id, tag.id)).resolves.toBeUndefined() // never tagged → no-op
+    // cleanable: tag, then soft-delete the TAG, then untag still succeeds (no guard on remove)
+    await h.svc.tagTask(t.id, tag.id)
+    await h.spaces.deleteTag(tag.id)
+    await expect(h.svc.untagTask(t.id, tag.id)).resolves.toBeUndefined()
+    expect(await h.svc.getTaskTags(t.id)).toEqual([])
+  })
+})
+
+describe('mod-tasks S8 — task note (TAS-31 over notes.ensureEntityNote)', () => {
+  it('(3) task_note page, entity_type task, seeded H1 in content; idempotent; unknown task; not-wired', async () => {
+    const h = await setupWithSubstrates()
+    const t = await h.svc.createTask({ title: 'Write the brief' })
+    const page = await h.svc.getTaskNote(t.id)
+    expect(page).toMatchObject({ type: 'task_note', entity_type: 'task', entity_id: t.id })
+    expect(page.content ?? '').toContain('Write the brief') // the seed title becomes the content H1 (title column stays NULL)
+    expect((await h.svc.getTaskNote(t.id)).id).toBe(page.id) // find-or-create, same page
+    await expect(h.svc.getTaskNote('no-such-task')).rejects.toBeInstanceOf(TaskNotFoundError)
+    const unwired = createTasksService({ db: h.db, deviceId: h.deviceId })
+    await expect(unwired.getTaskNote(t.id)).rejects.toMatchObject({ dep: 'notes' })
+  })
+})
+
+describe('mod-tasks S8 — saved views (TAS-28 over the views primitive)', () => {
+  let h: SubstrateHarness
+  beforeEach(async () => {
+    h = await setupWithSubstrates()
+  })
+
+  it('(4) create: filter stamped {entity_types:[task], …}, space_id null; caller entity_types/bad layout ⇒ ZodError; not-wired', async () => {
+    const v = await h.svc.saveView({ name: 'Open', layout: 'list', predicates: { completed: false }, tags: ['t1'] })
+    expect(v.space_id).toBeNull()
+    expect(parseJson(v.filter)).toEqual({ entity_types: ['task'], tags: ['t1'], predicates: { completed: false } })
+    await expect(
+      h.svc.saveView({ name: 'x', layout: 'list', entity_types: ['page'] } as unknown as Parameters<typeof h.svc.saveView>[0]),
+    ).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.saveView({ name: 'x', layout: 'kanban' as 'list' })).rejects.toBeInstanceOf(ZodError)
+    const unwired = createTasksService({ db: h.db, deviceId: h.deviceId })
+    await expect(unwired.saveView({ name: 'x', layout: 'list' })).rejects.toMatchObject({ dep: 'views' })
+  })
+
+  it('(5) update = REPLACE the config; space_id = ownership; non-task / MIXED / unknown ⇒ TaskViewNotFoundError, row untouched', async () => {
+    const v = await h.svc.saveView({
+      name: 'Open',
+      layout: 'list',
+      space_id: 'sp1',
+      tags: ['a'],
+      predicates: { status: 'not_started' },
+      grouping: { field: 'status' },
+      sort: { by: 'due_date' },
+    })
+    const r = await h.svc.saveView({ id: v.id, name: 'renamed', layout: 'board' })
+    expect(r.id).toBe(v.id)
+    expect(r.name).toBe('renamed')
+    expect(r.layout).toBe('board')
+    expect(parseJson(r.filter)).toEqual({ entity_types: ['task'] }) // tags/predicates CLEARED
+    expect(r.grouping).toBeNull()
+    expect(r.sort).toBeNull()
+    expect(r.space_id).toBe('sp1') // omitted ⇒ ownership unchanged
+    const rehomed = await h.svc.saveView({ id: v.id, name: 'renamed', layout: 'board', space_id: null })
+    expect(rehomed.space_id).toBeNull()
+
+    const foreign = await h.views.createView({ name: 'pages', layout: 'list', filter: { entity_types: ['page'] } })
+    await expect(h.svc.saveView({ id: foreign.id, name: 'hijack', layout: 'list' })).rejects.toBeInstanceOf(TaskViewNotFoundError)
+    const mixed = await h.views.createView({
+      name: 'calendar',
+      layout: 'calendar',
+      filter: { entity_types: ['task', 'page'], predicates: { range: 'week' } },
+    })
+    // Compare DB-read to DB-read: create() echoes the INPUT row (no `deleted_at`), a read carries `deleted_at: null`
+    // ([[repository-create-returns-input-row-not-db-defaults]]).
+    const before = await h.views.getView(mixed.id)
+    await expect(h.svc.saveView({ id: mixed.id, name: 'hijack', layout: 'list' })).rejects.toBeInstanceOf(TaskViewNotFoundError)
+    expect(await h.views.getView(mixed.id)).toEqual(before) // byte-for-byte unchanged (g1 F1)
+    await expect(h.svc.saveView({ id: 'no-such-view', name: 'x', layout: 'list' })).rejects.toBeInstanceOf(TaskViewNotFoundError)
+  })
+
+  it('(6) listViews: only EXACT task views (foreign/mixed/soft-deleted/malformed excluded); equal-ms rows ordered by id; stable', async () => {
+    await h.views.createView({ name: 'pages', layout: 'list', filter: { entity_types: ['page'] } })
+    await h.views.createView({ name: 'mixed', layout: 'calendar', filter: { entity_types: ['task', 'page'] } })
+    const dead = await h.svc.saveView({ name: 'dead', layout: 'list' })
+    await h.views.deleteView(dead.id)
+    await createRepository(h.db, viewsTable, { deviceId: h.deviceId, softDelete: true, encryptedFields: [] }).create({
+      space_id: null,
+      name: 'malformed',
+      layout: 'list',
+      filter: '{not json',
+      grouping: null,
+      sort: null,
+    })
+    // pinned clock ⇒ equal created_at ⇒ the id tiebreak decides (findAll has no ORDER BY)
+    vi.useFakeTimers({ toFake: ['Date'] })
+    let a: { id: string }
+    let b: { id: string }
+    try {
+      vi.setSystemTime(new Date('2026-10-18T12:00:00Z'))
+      a = await h.svc.saveView({ name: 'a', layout: 'list' })
+      b = await h.svc.saveView({ name: 'b', layout: 'board' })
+    } finally {
+      vi.useRealTimers()
+    }
+    const rows = await h.svc.listViews()
+    expect(rows.map((r) => r.name)).toEqual(expect.not.arrayContaining(['pages', 'mixed', 'dead', 'malformed']))
+    expect(rows.map((r) => r.id)).toEqual([a.id, b.id].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0)))
+    expect((await h.svc.listViews()).map((r) => r.id)).toEqual(rows.map((r) => r.id))
+  })
+})
+
+describe('mod-tasks S8 — tasks as a ReadProvider (XCU-07/08) through the REAL ViewEngine', () => {
+  let h: SubstrateHarness
+  beforeEach(async () => {
+    h = await setupWithSubstrates()
+  })
+  const list = (filter: Parameters<ReadProvider['list']>[0]) => h.providers.get('task')!.list(filter) as Promise<{ id: string }[]>
+  const ids = (rows: { id: string }[]) => rows.map((r) => r.id).sort()
+
+  it('(7) a saved task view resolves end-to-end: success, completed top-level only, degraded []; a mixed view degrades the missing type only', async () => {
+    const done1 = await h.svc.createTask({ title: 'd1' })
+    const done2 = await h.svc.createTask({ title: 'd2' })
+    const open = await h.svc.createTask({ title: 'open' })
+    const child = await h.svc.addSubtask(open.id, { title: 'child' })
+    await h.svc.completeTask(done1.id)
+    await h.svc.completeTask(done2.id)
+    await h.svc.completeTask(child.id)
+    const view = await h.svc.saveView({ name: 'Done', layout: 'list', predicates: { status: 'completed' } })
+    const resolved = await h.engine.resolve(view)
+    expect(resolved.state).toBe('success')
+    expect(resolved.degraded).toEqual([])
+    expect(ids(resolved.rows as { id: string }[])).toEqual([done1.id, done2.id].sort())
+
+    const mixed = await h.views.createView({ name: 'cal', layout: 'calendar', filter: { entity_types: ['task', 'page'] } })
+    const r2 = await h.engine.resolve(mixed)
+    expect(r2.state).toBe('success') // a MISSING provider is degraded, not error (BR-11)
+    expect(r2.degraded).toHaveLength(1)
+    expect(r2.degraded[0]).toContain('page')
+    expect(ids(r2.rows as { id: string }[])).toEqual([done1.id, done2.id, open.id].sort())
+  })
+
+  it('(8) predicates: by-id short-circuit (incl. a sub-task); unknown key ignored; invalid value dropped; grain; parent_task_id; kind; grouping', async () => {
+    const top = await h.svc.createTask({ title: 'top', priority: 'high' })
+    const child = await h.svc.addSubtask(top.id, { title: 'child' })
+    const duty = await h.svc.createTask({ title: 'duty', kind: 'obligation' })
+    const gone = await h.svc.createTask({ title: 'gone' })
+    await h.svc.softDeleteTask(gone.id)
+
+    expect(ids(await list({ predicates: { id: top.id } }))).toEqual([top.id])
+    expect(ids(await list({ predicates: { id: child.id } }))).toEqual([child.id]) // by-id skips the grain
+    expect(await list({ predicates: { id: 'nope' } })).toEqual([])
+    expect(ids(await list({ predicates: { colour: 'red' } }))).toEqual([top.id, duty.id].sort()) // unknown key ignored
+    expect(ids(await list({ predicates: { status: 'bogus' } }))).toEqual([top.id, duty.id].sort()) // invalid dropped, no throw
+    expect(ids(await list({}))).toEqual([top.id, duty.id].sort()) // default grain: no sub-tasks, no soft-deleted
+    expect(ids(await list({ predicates: { parent_task_id: top.id } }))).toEqual([child.id])
+    expect(ids(await list({ predicates: { kind: 'obligation' } }))).toEqual([duty.id])
+    expect(ids(await list({ predicates: { priority: 'high' } }))).toEqual([top.id])
+
+    expect(await list({ predicates: { id: 5 } })).toEqual([]) // non-string id matches nothing (g2 F4)
+
+    await h.svc.completeTask(top.id) // so the partition has TWO buckets (g2 F5)
+    const grouped = await h.svc.saveView({ name: 'by status', layout: 'board', grouping: { field: 'status' } })
+    const r = await h.engine.resolve(grouped)
+    expect(r.groups.map((g) => g.key).sort()).toEqual(['completed', 'not_started']) // BR-10: rows carry the field
+    expect(r.groups.find((g) => g.key === 'completed')?.rows.map((x) => (x as { id: string }).id)).toEqual([top.id])
+  })
+
+  it('(8b) tags: membership incl. NESTED (up, never down); union across the list; soft-deleted child/intermediate cut; unknown ⇒ []; malformed ignored', async () => {
+    const a = await h.spaces.createTag({ name: 'a' })
+    const ax = await h.spaces.createTag({ name: 'a/x', parent_tag_id: a.id })
+    const axy = await h.spaces.createTag({ name: 'a/x/y', parent_tag_id: ax.id })
+    const b = await h.spaces.createTag({ name: 'b' })
+    const tA = await h.svc.createTask({ title: 'tA' })
+    const tAX = await h.svc.createTask({ title: 'tAX' })
+    const tAXY = await h.svc.createTask({ title: 'tAXY' })
+    const tB = await h.svc.createTask({ title: 'tB' })
+    const none = await h.svc.createTask({ title: 'none' })
+    await h.svc.tagTask(tA.id, a.id)
+    await h.svc.tagTask(tAX.id, ax.id)
+    await h.svc.tagTask(tAXY.id, axy.id)
+    await h.svc.tagTask(tB.id, b.id)
+
+    expect(ids(await list({ tags: [a.id] }))).toEqual([tA.id, tAX.id, tAXY.id].sort()) // nested, up the hierarchy
+    expect(ids(await list({ tags: [ax.id] }))).toEqual([tAX.id, tAXY.id].sort()) // tA NOT returned (never down)
+    expect(ids(await list({ tags: [axy.id] }))).toEqual([tAXY.id])
+    expect(ids(await list({ tags: [ax.id, b.id] }))).toEqual([tAX.id, tAXY.id, tB.id].sort()) // union
+    expect(await list({ tags: ['ghost'] })).toEqual([])
+    expect(ids(await list({ tags: 'abc' as unknown as string[] }))).toEqual([tA.id, tAX.id, tAXY.id, tB.id, none.id].sort()) // ignored
+    // soft-deleted tasks excluded
+    await h.svc.softDeleteTask(tB.id)
+    expect(await list({ tags: [b.id] })).toEqual([])
+    // intermediate soft-deleted tag cuts the subtree: a/x gone ⇒ tAXY no longer reachable from a
+    await h.spaces.deleteTag(ax.id)
+    expect(ids(await list({ tags: [a.id] }))).toEqual([tA.id])
+    expect(ids(await list({ tags: [axy.id] }))).toEqual([tAXY.id]) // still reachable by its own live tag
+    // a soft-deleted REQUESTED tag matches nothing — its stale junction rows do not resurrect membership (g2 F2)
+    expect(await list({ tags: [ax.id] })).toEqual([])
+  })
+
+  it('(9) presets: valid against the schema and the live primitive; each resolves with degraded []', async () => {
+    expect(TASK_VIEW_PRESETS.map((p) => p.key)).toEqual(['today', 'board', 'all_by_project'])
+    for (const p of TASK_VIEW_PRESETS) {
+      expect(SaveTaskViewSchema.safeParse(p.view).success).toBe(true)
+      const row = await h.svc.saveView(p.view)
+      expect(parseJson(row.filter)).toMatchObject({ entity_types: ['task'] })
+      const r = await h.engine.resolve(row)
+      expect(r.degraded).toEqual([])
+    }
+    // set equality — three real-clock saves may share a ms, where the id tiebreak is random (g2 F1)
+    expect((await h.svc.listViews()).map((v) => v.name).sort()).toEqual(['All by project', 'Board', 'Today'])
+  })
+
+  it('(10) structural: service.ts imports the foundation spaces schema + the spaces/views/notes barrels type-safely, still no other module', () => {
+    const importLines = readFileSync(new URL('../service.ts', import.meta.url), 'utf8')
+      .split('\n')
+      .filter((l) => l.trimStart().startsWith('import'))
+    expect(importLines.some((l) => /db\/schema\/foundation\/spaces/.test(l))).toBe(true)
+    expect(importLines.some((l) => /foundation\/spaces'/.test(l))).toBe(true)
+    expect(importLines.some((l) => /foundation\/views'/.test(l))).toBe(true)
+    expect(importLines.some((l) => /db\/schema\/notes/.test(l))).toBe(false) // PageRow lives in types.ts (preflight A1)
+    expect(importLines.some((l) => /services\/(projects|relationships|learning|languages)/.test(l))).toBe(false)
+    expect(importLines.some((l) => /db\/schema'/.test(l))).toBe(false)
+    expect(createTasksReadProvider({ svc: h.svc, db: h.db, deviceId: h.deviceId }).entityType).toBe('task')
   })
 })

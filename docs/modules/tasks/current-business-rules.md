@@ -204,8 +204,59 @@
   (never rejects the view). Distinct-parent lookups run via `Promise.all` (independent, self-contained) — one latency,
   not N serial round-trips. One table (`PARENT_MODULES`) drives both the ≤1-parent guard and the aggregator axis (g2 F3).
 
+## S8 — Tags · Notes · Views · the tasks ReadProvider (BUILT 2026-10-18) — TAS-27/28/30/31 · XCU-07/08
+- **BR-TK-S8-1 (tags ride the shared primitive — TK-8 / SP1 / SP2).** Tag WRITES go ONLY through `SpacesService`
+  (`tagEntity`/`untagEntity`: idempotent BR-14, resolve-then-soft-delete BR-15, `entity_type` registry-validated BR-2).
+  `'task'` is pre-seeded in `_registry.ts` ⇒ no tasks `register()`, no `registry` dep. Tasks never writes `entity_tags`
+  directly and never re-creates an inline tag column. Enforced: `service.ts` `tagTask`/`untagTask`.
+- **BR-TK-S8-2 (live-tag orphan guard on the CREATE path; the remove path stays cleanable).** `tagTask` requires an
+  existing, non-soft-deleted task (`TaskNotFoundError`) and a LIVE tag (`tags` `findById`, soft-delete filtered ⇒
+  unknown OR soft-deleted ⇒ `TagNotFound`, nothing inserted — `tagEntity` itself blind-inserts an unresolved `tag_id`).
+  `untagTask` guards the task only: removing creates no orphan, and a soft-deleted tag must remain removable.
+- **BR-TK-S8-3 (tag READ is raw + soft-delete-filtered; a read never throws for an unknown id).** `getTaskTags` =
+  `entity_tags` `findWhere(entity_type='task' ∧ entity_id ∧ isNull(deleted_at))` (BR-TK-S1-4 discipline); unknown task
+  ⇒ `[]`; no dep needed.
+- **BR-TK-S8-4 (ONE guiding note per task — TAS-31).** `getTaskNote` = `notes.ensureEntityNote('task_note','task',id,
+  { title })`: the dedicated `PAGE_TYPE` member, `entity_type='task'`; idempotent (second call ⇒ same page id); the seed
+  is CREATION-ONLY (title → the content H1; `pages.title` NULL; a rename does not retitle). Task-exists guard first.
+- **BR-TK-S8-5 (task-view identity = `entity_types` EXACTLY `['task']`, stamped — ADR-007 §3.5).** `saveView` always
+  writes `filter.entity_types = ['task']`; `SaveTaskViewSchema` is a `strictObject` so a caller-supplied `entity_types`
+  is a Zod error. A row whose filter selects anything else — another type, or a MIXED list — is NOT a task view.
+- **BR-TK-S8-6 (`saveView` with `id` = REPLACE the config; `space_id` = ownership; foreign/mixed rows untouched).**
+  `views.getView(id)` runs FIRST (`ViewNotFound` ⇒ `TaskViewNotFoundError`; `repo.update` on a missing row would throw
+  a generic Error); a non-task or mixed view ⇒ `TaskViewNotFoundError` with the row byte-for-byte unchanged (tasks never
+  rewrites a view it does not own — one JSON `filter` column would lose the other types); otherwise name · layout ·
+  filter · grouping · sort are written IN FULL from the input (omitted optional keys ⇒ cleared: no tags/predicates,
+  `grouping`/`sort` NULL). `space_id` changes ONLY when given (omitted ⇒ ownership unchanged; `null` ⇒ re-homed global).
+- **BR-TK-S8-7 (`listViews` = exact task views in substrate order).** `views.listViews()` (live rows, `created_at`
+  then `id`) filtered by BR-TK-S8-5 with a tolerant filter parse (malformed JSON ⇒ `{}` ⇒ excluded — the engine's own
+  discipline); foreign, mixed and soft-deleted rows excluded; deterministic across calls.
+- **BR-TK-S8-8 (the ReadProvider honours what it understands and NEVER throws for a bad predicate — XCU-13).**
+  a present `predicates.id` SHORT-CIRCUITS: a string ⇒ `[getTask(id)]` (a sub-task IS returned by id; `tags`/grain
+  skipped); a present-but-non-string id ⇒ `[]` (an identity predicate that can match nothing returns nothing, never
+  "all tasks" — g2 F4); otherwise only `PROVIDER_KEYS` are read, each validated PER KEY (`ListTasksFilterFieldsSchema.shape[k]`): an invalid
+  value drops THAT key, unknown keys are ignored, nothing is thrown. Default grain = TOP-LEVEL tasks (BR-TK-S7-8)
+  unless `parent_task_id` is given. Soft-deleted excluded. A non-object `predicates` ⇒ `{}`.
+- **BR-TK-S8-9 (`tags` = membership INCL. NESTED, upward only, union across the list — ADR-007:57 / ADR-006 §3.2).**
+  `filter.tags` is honoured only as an array of strings (anything else ⇒ ignored, never iterated); the LIVE ids among
+  them expand to themselves ∪ all LIVE descendants (a worklist walk over `parent_tag_id`, `seen` set); membership flows
+  UP (`#a/x/y` tagged ⇒ in the `#a` and `#a/x` views), never down; ONLY live nodes expand — a soft-deleted node STOPS
+  the walk whether it is intermediate (its live descendants drop out of the ancestor view) or REQUESTED (a view saved
+  on `#x` after `#x` was deleted matches nothing; `deleteTag` does not cascade the junction, so stale `entity_tags`
+  rows never resurrect membership — g2 F2); an unknown id matches nothing. Several tags ⇒ UNION (the only
+  interpretation in S8; intersection = a 007-DSL predicate). Implementation = one `entity_tags` scan + a JS `Set`, not
+  `inArray` (SQLite bound-variable cap).
+- **BR-TK-S8-10 (substrate deps are optional + FAIL-LOUD).** `spaces?`/`notes?`/`views?` absent ⇒ the dependent op
+  throws `TasksDepNotWiredError(dep)` — never a silent no-op (a swallowed tag write would be data loss). Reads that
+  need no dep keep working. The S4 timer keeps its own `TimerNotWiredError` (a shipped error is a seam).
+- **BR-TK-S8-11 (presets are DATA bound to `kind`; `kind` is a provider-honoured filter — TAS-30 / T4).**
+  `TASK_VIEW_PRESETS` are valid `SaveTaskViewInput`s (proven against the live primitive + engine); a kind-bound preset
+  carries `kind` AND `predicates.kind`; `ListTasksFilter.kind` is additive and own-table. The preset primitive + tab are
+  NOT tasks' (first-consumer-pull / P6). `pinView`/`reorderViews` are Preferences-OWNED (ADR-007 §3.5) — not enforced
+  here by design, not a gap.
+
 ## Not yet enforced (designed, downstream)
-TK-8 tags + the `views` primitive (S8 — incl. tasks registering as a `ReadProvider` for views). TAS-24 `duty`/open-vocab
+`pinView`/`reorderViews` = Preferences (first-consumer-pull gap filed). TAS-24 `duty`/open-vocab
 type registry = ADR-002 amendment (deferred). S7's provider REGISTRATION (projects/relationships/learning) + composition
 root = M2/P6 (registry EMPTY at M1). The S3
 completion catalogue's **handlers** (incl. the live `contribute_purpose_metric` consumer) are consumer-registered later

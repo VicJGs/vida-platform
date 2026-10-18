@@ -12,10 +12,11 @@ function createTasksService(deps: TasksServiceDeps): TasksService
 interface TasksServiceDeps {
   db: DrizzleDb
   deviceId: string
-  spaces: SpacesService          // tags
-  notes: NotesService            // pages
-  registry: TaggableTypeRegistry // 'task' registered
-  sessions: SessionsService      // timer sub-type (S4)
+  spaces?: SpacesService         // tags (S8) — optional + fail-loud (TasksDepNotWiredError), the built post-S1 shape
+  notes?: NotesService           // pages (S8) — optional + fail-loud
+  views?: ViewsService           // the `views` primitive (S8) — optional + fail-loud
+  // registry: TaggableTypeRegistry — DROPPED at S8: 'task' is pre-seeded in `_registry.ts` ENTITY_TYPES (no register())
+  sessions?: SessionsService     // timer sub-type (S4) — built optional + fail-loud (TimerNotWiredError)
   effects?: EffectsPort          // deny-safe — completion/log_time effects
   measurementSources?: MeasurementSourceRegistry
   providers?: ViewProviderRegistry      // deny-safe — the SHARED R7/V4 seam (foundation/views); resolved at S7 from the
@@ -63,7 +64,16 @@ setRecurrence(taskId: Id, rule: string | null): Promise<Task>   // obligations o
 ## Measurability (S6) · Tags/Notes/Views (S8) · Provider (S9)
 ```ts
 // axes exposed on Task.measurement_kind / binding_mode; progress derives (no advertise — guard)
-saveView(config: ViewConfig): Promise<View>; listViews(): Promise<View[]>; reorderViews(ids: Id[]): Promise<void>; pinView(id: Id): Promise<void>
+// S8 (built): tags · note · views — the ROW half of the view surface; pin/reorder are Preferences-OWNED (see below)
+tagTask(taskId: Id, tagId: Id): Promise<EntityTagRow>; untagTask(taskId: Id, tagId: Id): Promise<void>; getTaskTags(taskId: Id): Promise<EntityTagRow[]>
+getTaskNote(taskId: Id): Promise<PageRow>                                  // 'task_note' page, find-or-create
+saveView(input: SaveTaskViewInput): Promise<ViewRow>; listViews(): Promise<ViewRow[]>  // a task view = views row with entity_types EXACTLY ['task']; id ⇒ REPLACE
+export function createTasksReadProvider(deps: { svc; db; deviceId }): ReadProvider   // tasks AS a ReadProvider (XCU-07/08)
+export function registerTasksReadProvider(providers: ViewProviderRegistry, deps): void
+export const TASK_VIEW_PRESETS: readonly TaskViewPreset[]                  // TAS-30 data (today · board · all_by_project)
+// reorderViews(ids) · pinView(id) — AMENDED at S8 (PLAN-S8 §Resolved): nav placement of views is Preferences-OWNED
+// (ADR-007 §3.5 · IA §6 · XCU-21; origin = intake G1 "named, reorderable, pinnable"). NOT a tasks op; filed as a
+// Preferences first-consumer-pull gap (pulled when the ② view-switcher lands).
 summary(date: string): Promise<SectionData>; getDueReminders(range: TimeRange): Promise<DueItem[]>
 function registerTasksJournal(registry: JournalRegistry, svc: TasksService): void
 function registerTasksDueProvider(sessions: SessionsService, svc: TasksService): void

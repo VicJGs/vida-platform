@@ -18,10 +18,22 @@ import type { BindingMode, EffectType } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { normalize, rollup } from '../../foundation/measurement'
 import { tasks, taskTimeLogs } from '../../db/schema/tasks'
+// S8 — the foundation `tags` row (live-tag guard + nested expansion) and the `entity_tags` junction (raw READ only;
+// writes go through SpacesService). Foundation schema, not another module's (C5/TK-9 gate).
+import { tags, entityTags } from '../../db/schema/foundation/spaces'
 import type { DrizzleDb } from '../../db/adapter'
 import type { EffectHandler, EffectRegistry } from '../../foundation/effects'
 import { SessionTypeNotFound, type SessionRegistry, type SessionTypeDef } from '../../foundation/sessions'
-import { CreateTaskSchema, UpdateTaskSchema, ListTasksFilterSchema, AggGroupingSchema } from '../../validators/task'
+import { TagNotFound } from '../../foundation/spaces'
+import { ViewNotFound, type ReadProvider, type ViewFilter, type ViewProviderRegistry } from '../../foundation/views'
+import {
+  CreateTaskSchema,
+  UpdateTaskSchema,
+  ListTasksFilterSchema,
+  ListTasksFilterFieldsSchema,
+  AggGroupingSchema,
+  SaveTaskViewSchema,
+} from '../../validators/task'
 import {
   type TasksService,
   type TasksServiceDeps,
@@ -34,6 +46,8 @@ import {
   type AggregatedGroup,
   type AggregatedTasks,
   type ParentType,
+  type SaveTaskViewInput,
+  type TaskViewPreset,
   TaskNotFoundError,
   MultipleParentError,
   SubtaskNestingError,
@@ -42,9 +56,12 @@ import {
   TimerNotWiredError,
   RecurrenceNotAllowedError,
   RecurrenceRegenError,
+  TasksDepNotWiredError,
+  TaskViewNotFoundError,
 } from './types'
 import type { TaskRow } from '../../db/schema/tasks'
 import type { SessionRow } from '../../db/schema/foundation/sessions'
+import type { ViewRow } from '../../db/schema/foundation/spaces'
 
 /** The `'work'` session sub-type — the task-timer timed-run reference (G-S1). Spine-only (no 1:1 extension; C4 keeps
  *  `task_time_logs` as the ledger). `effects: []` — the timer does NOT auto-fire on completion; tasks fires `log_time`
@@ -187,7 +204,7 @@ const STANDALONE = 'standalone'
 const byCodepoint = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
 
 export function createTasksService(deps: TasksServiceDeps): TasksService {
-  const { db, deviceId, effects, sessions, providers } = deps
+  const { db, deviceId, effects, sessions, providers, spaces, notes, views } = deps
 
   // S3 — completion fan-out catalogue (TAS-19). The KEYED/ADDITIVE subset is PUSHED through the rail; the two
   // PROJECTION effects are realized by their class, not a push (PLAN-S3 D-S3-1):
@@ -219,6 +236,8 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
   // `tasks` has deleted_at → softDelete:true. `task_time_logs` is a ledger (no deleted_at) → hard delete.
   const tasksRepo = createRepository(db, tasks, { deviceId, softDelete: true, encryptedFields: [] })
   const timeLogsRepo = createRepository(db, taskTimeLogs, { deviceId, softDelete: false, encryptedFields: [] })
+  // S8 — READ-ONLY readers over the foundation tag tables (the notes/knowledge/flashcards precedent); never written here.
+  const { tagsRepo, entityTagRepo } = createTagReaders(db, deviceId)
 
   /** Reject if more than one parent-module FK is non-null (TK-2 / TAS-34). */
   function assertSingleParent(row: Record<string, unknown>): void {
@@ -348,6 +367,7 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
       if (f.due_before != null) {
         if (t.due_date == null || t.due_date > f.due_before) return false
       }
+      if (f.kind !== undefined && t.kind !== f.kind) return false // S8 — kind-bound presets (TAS-30)
       return true
     })
   }
@@ -599,6 +619,91 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     return { groups }
   }
 
+  // ---- S8: tags (TAS-27 · ADR-006 SP1/SP2) ----------------------------------
+  // WRITES delegate to SpacesService (idempotent BR-14 / resolve-then-soft-delete BR-15; `entity_type` validated
+  // against the registry, where `'task'` is pre-seeded). `tagEntity` blind-inserts an unresolved tag_id, so the CREATE
+  // path guards a LIVE tag (the flashcards precedent — `findById` is soft-delete filtered); the remove path stays
+  // unguarded (removing creates no orphan; a soft-deleted tag must stay cleanable). The READ is a raw repo scan.
+  async function requireTask(id: string): Promise<TaskRow> {
+    const t = await tasksRepo.findById(id)
+    if (!t) throw new TaskNotFoundError(id)
+    return t
+  }
+
+  async function tagTask(taskId: string, tagId: string) {
+    await requireTask(taskId)
+    if (!spaces) throw new TasksDepNotWiredError('spaces')
+    if ((await tagsRepo.findById(tagId)) == null) throw new TagNotFound(tagId)
+    return spaces.tagEntity(tagId, TASK_ENTITY_TYPE, taskId)
+  }
+
+  async function untagTask(taskId: string, tagId: string): Promise<void> {
+    await requireTask(taskId)
+    if (!spaces) throw new TasksDepNotWiredError('spaces')
+    await spaces.untagEntity(tagId, TASK_ENTITY_TYPE, taskId)
+  }
+
+  async function getTaskTags(taskId: string) {
+    // findWhere skips the soft-delete filter → hand-appended (BR-TK-S1-4). An unknown id ⇒ [] (a read, never a throw).
+    return entityTagRepo.findWhere(
+      and(eq(entityTags.entity_type, TASK_ENTITY_TYPE), eq(entityTags.entity_id, taskId), isNull(entityTags.deleted_at))!,
+    )
+  }
+
+  // ---- S8: the task note (TAS-31) --------------------------------------------
+  // ONE guiding page per task: `pages.type='task_note'` (the dedicated PAGE_TYPE member), `entity_type='task'`, reached
+  // through the Notes contract (`ensureEntityNote` = idempotent find-or-create; the seed is creation-only — a renamed
+  // task does not retitle its note). Other pages/attachments are the ②'s to manage via NotesService directly.
+  async function getTaskNote(taskId: string) {
+    const task = await requireTask(taskId)
+    if (!notes) throw new TasksDepNotWiredError('notes')
+    return notes.ensureEntityNote('task_note', TASK_ENTITY_TYPE, taskId, { title: task.title })
+  }
+
+  // ---- S8: saved views (TAS-28, cite-level · ADR-007 V1/V2/§3.5) -------------
+  // A task view IS a `views` row whose filter selects EXACTLY ['task'] (§3.5) — tasks stamps it, never the caller.
+  // `id` ⇒ REPLACE the config (name · layout · filter · grouping · sort written in full; omitted ⇒ cleared); `space_id`
+  // is ownership, changed only when given. A mixed or foreign view is never rewritten (its one JSON `filter` column
+  // would lose the other types) ⇒ TaskViewNotFoundError.
+  async function saveView(input: SaveTaskViewInput): Promise<ViewRow> {
+    const v = SaveTaskViewSchema.parse(input)
+    if (!views) throw new TasksDepNotWiredError('views')
+    const filter: ViewFilter = { entity_types: [TASK_ENTITY_TYPE] }
+    if (v.tags !== undefined) filter.tags = v.tags
+    if (v.predicates !== undefined) filter.predicates = v.predicates
+    if (v.id === undefined) {
+      return views.createView({
+        space_id: v.space_id ?? null,
+        name: v.name,
+        layout: v.layout,
+        filter,
+        grouping: v.grouping ?? null,
+        sort: v.sort ?? null,
+      })
+    }
+    let existing: ViewRow
+    try {
+      existing = await views.getView(v.id) // required: repo.update on a missing row throws a generic Error
+    } catch (err) {
+      if (err instanceof ViewNotFound) throw new TaskViewNotFoundError(v.id)
+      throw err
+    }
+    if (!isTaskView(existing)) throw new TaskViewNotFoundError(v.id)
+    return views.updateView(v.id, {
+      name: v.name,
+      layout: v.layout,
+      filter,
+      grouping: v.grouping ?? null,
+      sort: v.sort ?? null,
+      ...(v.space_id !== undefined ? { space_id: v.space_id } : {}),
+    })
+  }
+
+  async function listViews(): Promise<ViewRow[]> {
+    if (!views) throw new TasksDepNotWiredError('views')
+    return (await views.listViews()).filter(isTaskView) // substrate order (created_at, id)
+  }
+
   return {
     createTask,
     updateTask,
@@ -616,5 +721,164 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     setRecurrence,
     getTaskProgress,
     getAggregatedTasks,
+    tagTask,
+    untagTask,
+    getTaskTags,
+    getTaskNote,
+    saveView,
+    listViews,
   }
 }
+
+// ============================================================================
+// S8 — module-level helpers + the tasks ReadProvider (XCU-07/08) + the preset data (TAS-30)
+// ============================================================================
+
+const TASK_ENTITY_TYPE = 'task'
+
+/** Read-only readers over the foundation tag tables (M1.0 empty-[E] pass-through; `softDelete:true` so `findById`/
+ *  `findAll` filter soft-deletes — `findWhere` does NOT). Shared by the service closure and the ReadProvider. */
+function createTagReaders(db: DrizzleDb, deviceId: string) {
+  const cfg = { deviceId, softDelete: true, encryptedFields: [] as string[] }
+  return { tagsRepo: createRepository(db, tags, cfg), entityTagRepo: createRepository(db, entityTags, cfg) }
+}
+
+/** Tolerant filter parse — the engine's own discipline (`engine.ts` parse()): malformed JSON ⇒ `{}`. */
+function parseFilter(json: string | null): ViewFilter {
+  if (json == null) return {}
+  try {
+    const parsed: unknown = JSON.parse(json)
+    return typeof parsed === 'object' && parsed !== null ? (parsed as ViewFilter) : {}
+  } catch {
+    return {}
+  }
+}
+
+/** ADR-007 §3.5 — a task view is a `views` row whose `filter.entity_types` is EXACTLY ['task']. */
+function isTaskView(row: ViewRow): boolean {
+  const types = parseFilter(row.filter).entity_types
+  return Array.isArray(types) && types.length === 1 && types[0] === TASK_ENTITY_TYPE
+}
+
+/** ADR-007:57 — `tags` means membership **incl. nested** (ADR-006: `#a ⊃ #a/b`, a Space's contents = everything
+ *  carrying the root tag). Expands the requested ids to the LIVE ones among them ∪ all their LIVE descendants: one read
+ *  of the live `tags` rows, then a worklist walk (stack) over `parent_tag_id` with a `seen` set (cycle-safe even
+ *  though BR-3 forbids cycles on write). ONLY live nodes expand — a soft-deleted node, whether requested (a view saved
+ *  on `#x` after `#x` was deleted) or intermediate, STOPS the walk and contributes nothing; an unknown id likewise
+ *  matches nothing. (Spaces has no delete-reparent rule; `deleteTag` does not cascade the junction, so a dead tag's
+ *  stale `entity_tags` rows must not resurrect membership — g2 F2.) */
+async function expandTagIds(
+  tagsRepo: ReturnType<typeof createTagReaders>['tagsRepo'],
+  ids: readonly string[],
+): Promise<Set<string>> {
+  const live = await tagsRepo.findAll()
+  const liveIds = new Set(live.map((t) => t.id))
+  const children = new Map<string, string[]>()
+  for (const t of live) {
+    if (t.parent_tag_id == null) continue
+    const bucket = children.get(t.parent_tag_id) ?? []
+    bucket.push(t.id)
+    children.set(t.parent_tag_id, bucket)
+  }
+  const seen = new Set<string>()
+  const worklist = ids.filter((id) => liveIds.has(id))
+  while (worklist.length > 0) {
+    const id = worklist.pop()
+    if (id === undefined) break
+    if (seen.has(id)) continue
+    seen.add(id)
+    for (const child of children.get(id) ?? []) worklist.push(child) // children of a live node are live by construction
+  }
+  return seen
+}
+
+/** The `ListTasksFilter` keys the provider honours from `filter.predicates` (XCU-13: apply what it understands, ignore
+ *  the rest). A `const` tuple narrows `k` so `ListTasksFilterFieldsSchema.shape[k]` is typed per key. */
+const PROVIDER_KEYS = [
+  'status',
+  'priority',
+  'project_id',
+  'parent_task_id',
+  'completed',
+  'due_before',
+  'kind',
+] as const satisfies readonly (keyof ListTasksFilter)[]
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/**
+ * Tasks as a `ReadProvider` (ADR-007 §3.4 / XCU-07/08) — the OTHER direction of the seam S7 consumed: saved views fan
+ * out OVER tasks through this documented read API (INT-1, never a table read). Per ADR-007 §3.3.4 / XCU-13 the
+ * provider applies the predicates it understands and IGNORES the rest; it never throws for a bad predicate (a bad
+ * value drops that key). Rules:
+ *   1. `predicates.id` (string) SHORT-CIRCUITS → `[getTask(id)]` (a sub-task IS returned by id; `tags`/grain skipped).
+ *   2. known keys are picked + validated PER KEY; unknown keys ignored; invalid values dropped.
+ *   3. grain = TOP-LEVEL tasks unless `parent_task_id` was given (BR-TK-S7-8).
+ *   4. `tags` (array of strings only; anything else ignored) = membership incl. nested, UNION across the list.
+ *   5. returns `TaskRow[]`, soft-deleted excluded (via `listTasks`).
+ * Takes `db`/`deviceId` like `registerTasksTimer` — the membership read is a raw foundation-junction scan.
+ */
+export function createTasksReadProvider(deps: { svc: TasksService; db: DrizzleDb; deviceId: string }): ReadProvider {
+  const { svc, db, deviceId } = deps
+  const { tagsRepo, entityTagRepo } = createTagReaders(db, deviceId)
+  return {
+    entityType: TASK_ENTITY_TYPE,
+    async list(filter) {
+      const predicates = isRecord(filter.predicates) ? filter.predicates : {}
+      if ('id' in predicates) {
+        // By-id short-circuit. A present-but-non-string id can match nothing — return nothing rather than fall through
+        // to "all top-level tasks" (g2 F4; XCU-13 "ignore" would be surprising for an identity predicate).
+        if (typeof predicates.id !== 'string') return []
+        const t = await svc.getTask(predicates.id)
+        return t ? [t] : []
+      }
+      const picked: Record<string, unknown> = {}
+      for (const k of PROVIDER_KEYS) {
+        if (!(k in predicates)) continue
+        const r = ListTasksFilterFieldsSchema.shape[k].safeParse(predicates[k])
+        if (r.success && r.data !== undefined) picked[k] = r.data
+      }
+      if (!('parent_task_id' in picked)) picked.parent_task_id = null // top-level grain (BR-TK-S7-8)
+      let rows = await svc.listTasks(picked as ListTasksFilter)
+      const tagIds = Array.isArray(filter.tags) ? filter.tags.filter((x): x is string => typeof x === 'string') : []
+      if (tagIds.length > 0) {
+        const expanded = await expandTagIds(tagsRepo, tagIds)
+        // One junction scan + a JS Set (the listTasks JS-filter precedent) — not inArray(), which hits SQLite's
+        // bound-variable cap on a wide hierarchy.
+        const members = await entityTagRepo.findWhere(
+          and(eq(entityTags.entity_type, TASK_ENTITY_TYPE), isNull(entityTags.deleted_at))!,
+        )
+        const taskIds = new Set(members.filter((m) => expanded.has(m.tag_id)).map((m) => m.entity_id))
+        rows = rows.filter((t) => taskIds.has(t.id))
+      }
+      return rows
+    },
+  }
+}
+
+/** Composition wiring (NOT a service method — the `registerTasksTimer` shape): register tasks into the SHARED
+ *  `ViewProviderRegistry` keyed `'task'`; re-registration replaces (registry semantics). No composition root at M1. */
+export function registerTasksReadProvider(
+  providers: ViewProviderRegistry,
+  deps: { svc: TasksService; db: DrizzleDb; deviceId: string },
+): void {
+  providers.register(createTasksReadProvider(deps))
+}
+
+/**
+ * The shipped task presets (TAS-30 · ADR-009 T4) — DATA only (type + config); the preset primitive + tab are the
+ * Spaces/P6 first-consumer-pull seam, and row seeding is the XCU-06 seed pipeline. `kind:null` = all kinds; a
+ * kind-bound preset (the Duties/obligation case) sets `kind` AND `predicates.kind` from the same shape. "Today" is the
+ * open-tasks list the ② scopes to the day (`due_before` is a per-day literal, not a constant).
+ */
+export const TASK_VIEW_PRESETS: readonly TaskViewPreset[] = [
+  { key: 'today', kind: null, view: { name: 'Today', layout: 'list', predicates: { completed: false } } },
+  {
+    key: 'board',
+    kind: null,
+    view: { name: 'Board', layout: 'board', predicates: { completed: false }, grouping: { field: 'status' } },
+  },
+  { key: 'all_by_project', kind: null, view: { name: 'All by project', layout: 'list', grouping: { field: 'project_id' } } },
+]

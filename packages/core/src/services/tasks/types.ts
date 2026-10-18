@@ -12,8 +12,14 @@
 import type { DrizzleDb } from '../../db/adapter'
 import type { TaskRow } from '../../db/schema/tasks'
 import type { SessionRow } from '../../db/schema/foundation/sessions'
+import type { EntityTagRow, ViewRow } from '../../db/schema/foundation/spaces'
+// S8: `PageRow` lives HERE (ungated) — the structural gate admits only `db/schema/(tasks|foundation/)` imports in
+// service.ts, and the notes barrel does not re-export it (PLAN-S8 preflight A1).
+import type { PageRow } from '../../db/schema/notes'
 import type { EffectRail, EffectRegistry } from '../../foundation/effects'
-import type { ViewProviderRegistry } from '../../foundation/views'
+import type { SpacesService } from '../../foundation/spaces'
+import type { ViewGrouping, ViewProviderRegistry, ViewsService } from '../../foundation/views'
+import type { NotesService } from '../notes'
 import type { SessionsService } from '../sessions'
 import type {
   Status,
@@ -22,6 +28,7 @@ import type {
   TaskKind,
   MeasurementKind,
   BindingMode,
+  ViewLayout,
 } from '@vida/types'
 
 // --- deps (grows per slice) --------------------------------------------------
@@ -44,6 +51,16 @@ export interface TasksServiceDeps {
    *  `degraded` (TAS-32 / BR-11). Ships EMPTY at M1 (providers register per-module at their build; no composition
    *  root until M2/P6). */
   providers?: ViewProviderRegistry
+  /** S8 — the Spaces substrate (ADR-006): tag WRITES delegate to `spaces.tagEntity`/`untagEntity` (BR-14/BR-15;
+   *  `'task'` is pre-seeded in the taggable registry — no `registry` dep). Optional + fail-loud: `tagTask`/`untagTask`
+   *  throw `TasksDepNotWiredError('spaces')` when absent; `getTaskTags` is a raw read and needs no dep. */
+  spaces?: SpacesService
+  /** S8 — Notes & Pages: the task's note is a `pages` row (`type:'task_note'`, `entity_type:'task'`, TAS-31) reached
+   *  through `notes.ensureEntityNote` (idempotent find-or-create). Optional + fail-loud (`getTaskNote`). */
+  notes?: NotesService
+  /** S8 — the `views` primitive (ADR-007 V1): a task view IS a `views` row with `entity_types` exactly `['task']`
+   *  (§3.5). `saveView`/`listViews` ride `ViewsService`. Optional + fail-loud. */
+  views?: ViewsService
 }
 
 // --- S1 inputs ---------------------------------------------------------------
@@ -104,6 +121,45 @@ export interface ListTasksFilter {
   completed?: boolean
   /** YYYY-MM-DD — due on or before this date */
   due_before?: string | null
+  /** S8 — the `kind` discriminator (`standard` | `obligation`); lets a T4 preset bound to a kind be expressed as a
+   *  provider predicate (TAS-30). Own-table, additive. */
+  kind?: TaskKind
+}
+
+// --- S8 — tags · notes · views (TAS-27/28/30/31) + the tasks ReadProvider (XCU-07/08) ----
+/**
+ * The tasks-side saved-view input = the WHOLE config (the view-builder draft). `entity_types` is NOT accepted — tasks
+ * STAMPS `['task']` (ADR-007 §3.5: a task view IS a `views` row with `entity_types=[task]`); `predicates`/`grouping`/
+ * `sort` pass through OPAQUE as JSON TEXT (the predicate DSL is the deferred ADR-007 pass). With `id`, the CONFIG is
+ * REPLACED (name · layout · filter · grouping · sort written in full; omitted optional keys ⇒ cleared) — `space_id` is
+ * OWNERSHIP, not config, and changes only when given.
+ */
+export interface SaveTaskViewInput {
+  /** present ⇒ replace that task view's config (the row must be a task view, else `TaskViewNotFoundError`) */
+  id?: string
+  name: string
+  /** VIEW_LAYOUT (BR-10) */
+  layout: ViewLayout
+  /** create: NULL (default) = the global All-Tasks view (V2); update: omitted ⇒ ownership unchanged */
+  space_id?: string | null
+  /** tag ids → `filter.tags` (membership incl. nested, ADR-007:57) */
+  tags?: string[]
+  /** → `filter.predicates`, opaque */
+  predicates?: Record<string, unknown>
+  grouping?: ViewGrouping
+  sort?: unknown
+}
+
+/**
+ * A shipped task preset (TAS-30 · ADR-009 T4) = a task view config BOUND to the `kind` discriminator — the preset
+ * does NOT own a discriminator of its own (T4 anti-signal). `kind` is both the tab binding (which preset shows for
+ * which kind) and, when non-null, the preset's `predicates.kind`. Tasks provides the TYPE + the DATA; the preset
+ * primitive + tab are Spaces/P6 (first-consumer-pull seam).
+ */
+export interface TaskViewPreset {
+  key: 'today' | 'board' | 'all_by_project'
+  kind: TaskKind | null
+  view: Omit<SaveTaskViewInput, 'id' | 'space_id'>
 }
 
 // --- S2 inputs (sub-tasks + rollup) ------------------------------------------
@@ -184,6 +240,16 @@ export interface TasksService {
   // S7 — aggregation: the cross-module aggregated view over the shared R7/V4 seam (TAS-05); per-group degradation
   // (TAS-32); never rejects for a source outage.
   getAggregatedTasks(grouping: AggGrouping): Promise<AggregatedTasks>
+  // S8 — tags via the shared `entity_tags` primitive (TAS-27 / SP1): writes delegate to SpacesService (idempotent
+  // BR-14 / resolve-then-soft-delete BR-15); the create path guards a live tag (orphan guard); the read is raw.
+  tagTask(taskId: string, tagId: string): Promise<EntityTagRow>
+  untagTask(taskId: string, tagId: string): Promise<void>
+  getTaskTags(taskId: string): Promise<EntityTagRow[]>
+  // S8 — the task's note = a `pages` row (`task_note`, TAS-31), find-or-create through the Notes contract.
+  getTaskNote(taskId: string): Promise<PageRow>
+  // S8 — saved views over the `views` primitive (TAS-28, cite-level — V1 anatomy is the deferred 007 pass).
+  saveView(input: SaveTaskViewInput): Promise<ViewRow>
+  listViews(): Promise<ViewRow[]>
 }
 
 // --- typed errors ------------------------------------------------------------
@@ -239,6 +305,24 @@ export class RecurrenceNotAllowedError extends Error {
   constructor(taskId: string) {
     super(`Only an obligation may carry a recurrence rule (TK-7): ${taskId}`)
     this.name = 'RecurrenceNotAllowedError'
+  }
+}
+
+/** S8 — an operation needs a substrate dep (`spaces` | `notes` | `views`) that was not wired at composition. Fail-loud,
+ *  never a silent no-op (a swallowed tag write would be data loss). The S4 timer keeps its own `TimerNotWiredError`. */
+export class TasksDepNotWiredError extends Error {
+  constructor(public readonly dep: 'spaces' | 'notes' | 'views') {
+    super(`Tasks operation requires the \`${dep}\` dep to be wired (createTasksService deps.${dep})`)
+    this.name = 'TasksDepNotWiredError'
+  }
+}
+
+/** S8 — `saveView` with an `id` that is absent, soft-deleted, or NOT a task view (`filter.entity_types` ≠ exactly
+ *  `['task']` — tasks never rewrites another module's or a mixed view, ADR-007 §3.3/§3.5). */
+export class TaskViewNotFoundError extends Error {
+  constructor(public readonly viewId: string) {
+    super(`No task view found for id: ${viewId}`)
+    this.name = 'TaskViewNotFoundError'
   }
 }
 

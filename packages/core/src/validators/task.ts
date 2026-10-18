@@ -7,6 +7,7 @@ import {
   MEASUREMENT_KIND,
   BINDING_MODE,
 } from '@vida/types'
+import { ViewLayoutSchema } from './view'
 
 export const TaskDifficultySchema = z.enum(TASK_DIFFICULTY)
 export const TaskKindSchema = z.enum(TASK_KIND)
@@ -73,16 +74,33 @@ export const UpdateTaskSchema = z.object({
   sort_order: SortOrderSchema,
 })
 
-export const ListTasksFilterSchema = z
-  .object({
-    status: StatusSchema.optional(),
-    priority: PrioritySchema.optional(),
-    parent_task_id: z.string().nullable().optional(),
-    project_id: z.string().nullable().optional(),
-    completed: z.boolean().optional(),
-    due_before: CalendarDateSchema,
-  })
-  .optional()
+/** The list-filter FIELDS (S8 split): the tasks ReadProvider validates provider predicates PER KEY through
+ *  `ListTasksFilterFieldsSchema.shape[k]` — a `ZodOptional` (the wrapped form below) exposes `.unwrap()` but no
+ *  `.shape` in zod v4, so the inner object is exported on its own. `listTasks` keeps the optional wrapper. */
+export const ListTasksFilterFieldsSchema = z.object({
+  status: StatusSchema.optional(),
+  priority: PrioritySchema.optional(),
+  parent_task_id: z.string().nullable().optional(),
+  project_id: z.string().nullable().optional(),
+  completed: z.boolean().optional(),
+  due_before: CalendarDateSchema,
+  kind: TaskKindSchema.optional(), // S8 — TAS-30 kind-bound presets
+})
+export const ListTasksFilterSchema = ListTasksFilterFieldsSchema.optional()
+
+/** S8 — the tasks-side saved-view input (TAS-28). `strictObject`: a caller-supplied `entity_types` is REJECTED — tasks
+ *  stamps `['task']` (ADR-007 §3.5) and the stamp is not overridable. `predicates`/`sort` are opaque (the predicate DSL
+ *  is the deferred ADR-007 pass). */
+export const SaveTaskViewSchema = z.strictObject({
+  id: z.string().min(1).optional(),
+  name: z.string().min(1),
+  layout: ViewLayoutSchema,
+  space_id: z.string().nullable().optional(),
+  tags: z.array(z.string()).optional(),
+  predicates: z.record(z.string(), z.unknown()).optional(),
+  grouping: z.object({ field: z.string().optional() }).optional(),
+  sort: z.unknown().optional(),
+})
 
 /** S7 — the aggregated-view grouping (TAS-05 "by module/project/status"). Boundary-validated like every S1 enum; a
  *  malformed `by` is a caller bug (Zod error), distinct from a source outage (a per-group `state`, never a throw). */
