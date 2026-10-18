@@ -21,7 +21,30 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - `index.ts` — package barrel; re-exports the generated token data + `config`/`UIProvider`/`useVidaTheme` + a
   side-effect import of `tamagui.d.ts` (ships the augmentation to consumers).
 - `components/` — **UI-1 primitives** (built against the DS-5 contracts): `button.tsx`, `input.tsx`, `checkbox.tsx`,
-  `select.tsx`, `card.tsx` (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). **Select** is the first
+  `switch.tsx`, `select.tsx`, `card.tsx` (+ `*.stories.tsx` = the Visual-Gate surface, `*.test.tsx` = jsdom). **Button** — the frame
+  carries a per-intent `color` (mirrors ButtonText) so raw `leading`/`trailing` icon slots (lucide `currentColor`) tint
+  per intent+theme instead of inheriting document black (invisible in dark); ButtonText still sets its own colour, so
+  label text is unchanged (fe-shell-scope #15 S2 Visual-Gate fix — a COLOR prop, resolves against the theme, unlike the
+  dimension/sub-theme trap). **`MenuItemRow` got the same treatment** (a resting `color:$colorTextPrimary` so item
+  `leading`/`trailing` icons tint; the label keeps its own default/danger colour — #15 S3 dark-portal Visual-Gate fix).
+  **Switch** (fe-settings S1, EC-3) is the pill **on/off toggle** — the OS System-specimen's toggle. Mirrors the
+  Checkbox recipe EXACTLY: a real `<input type="checkbox" role="switch">` (opacity:0, absolute-filling the track;
+  native role/Space/focus/form) inside a `render:'label'` root; state visuals are pure CSS off `:checked`/`:focus-visible`
+  (`internal/switch-styles.ts`) → **no re-render on toggle**. **DIRECT semantic tokens, NO sub-theme** (the fe-codec-theme
+  accent-fix direction): ON track = injected `var(--colorBrandPrimary)` (preset-flips blue/oxblood/olive), off =
+  `$colorSurfaceSecondary`+`$colorBorderDefault`, knob = `$colorSurfacePrimary`, focus ring = `var(--colorFocusRing)`.
+  **Knob travel is size-dependent → an inline `--vida-switch-travel` custom prop on the track** (the toast `--vida-toast-from`
+  precedent), inherited by the knob; `:checked` does `translateX(var(--vida-switch-travel))` (B12 transform-only, reduced-motion
+  `@media` drops it). **⚠ `invalid` uses the BASE token `$colorSignalDanger`, NOT the sub-theme key `$borderError`** — the
+  latter exists only in `light_Checkbox/Input/Select` (`themes.ts:19`); Switch has no `light_Switch` theme so `$borderError`
+  would resolve to nothing + the danger border silently falls back to default (**Visual-Gate-caught**; tsc + 10 unit tests
+  passed over it — sub-theme keys only resolve when a `light_<Name>` theme exists, direct tokens always do). Binary (no
+  `indeterminate`), so `ref` goes straight to the input (no callback-merge — the checkbox merge exists only for the imperative
+  `indeterminate` DOM prop). Hover = border-strengthen to `$colorTextMuted` (§VIII; no overflow-clipped overlay). Spec:
+  `docs/specs/foundation/fe-settings/delivery/s1-switch.md`. Visual Gate PASS (Brave, 3 presets × light/dark: ON-track
+  flips blue(37,99,235)/oxblood(178,55,51)/olive(95,110,62) · knob slides 16px · focus ring · disabled 0.5 · invalid
+  rgb(239,68,68) · label AA = `$colorTextPrimary` primary pairing · lg 44×24 · axe 0).
+  **Select** is the first
   molecular + first floating primitive: a `<button role="combobox">` trigger + a listbox panel PORTALLED to
   `document.body` (react-dom `createPortal`, `zIndex.dropdown`) re-wrapped in `<Theme name="Select">` (the portal
   detaches the `name:'Select'` sub-theme scope; the base light/dark theme still crosses via `<html>`). Focus STAYS on
@@ -52,6 +75,11 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Panels are **`<Tabs.Panel value>`** children (the ARIA contract forces a Tabs-owned `role="tabpanel"` wrapper —
   DEF-U6-a); **only the active panel mounts** (keyed → enter-fade keyframe; no fade-out). `aria-controls` binds only
   to the active tab so every referenced id exists (axe-clean). No `loading` prop (consumer-composed, DEF-U6-c).
+  **fe-gamification S1 — scrollable strip:** the horizontal `TabList` is now `overflowX:auto`/`overflowY:hidden` +
+  `maxWidth:100%` and each `Tab` is `flexShrink:0`, so when the tabs can't fit (the first 5-tab consumer at 375) the
+  **strip scrolls** (a scrollable tab bar) instead of overflowing the viewport — the panel is a sibling, unaffected;
+  the indicator tracks (it scrolls with the list); `overflow:auto` only engages when needed, so 2-tab consumers
+  (entity-view) never see a scrollbar. Backwards-compatible (Visual-Gate-caught: 5 tabs overflowed 375 → 523px).
   **Menu** is the second FLOATING primitive (reuses Select's portal + single-`top` positioning + dismiss handlers) but
   the WAI-ARIA **menu-button** model: trigger `role="button"`+`aria-haspopup="menu"`+`aria-expanded`; a `role="menu"`
   panel portalled to body under `<Theme name="Menu">`; items `role="menuitem"` with **ROVING DOM FOCUS** — only the
@@ -487,6 +515,11 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   adapter (`toFlowProps` + `mapEffectLog` [ADR-004 applied_effects → effect-rail] + `bindFlowIntents` against a
   `SessionsPort`; live `useFlowSession` hook deferred, R3). Spec:
   `docs/specs/components/ui-2-platform-views/flow-session-view.md`. Delivery: `docs/specs/foundation/fe-codec-flow-session/`.
+  **fe-gamification S4 — affordances are render-when-handler:** the standardized current-stage affordances (Mark done ·
+  Require proof · Attach Document/Photo/Audio) now render PER-HANDLER (each only when its `onMarkDone`/`onRequireProof`/
+  `onAttach` is passed; the row is omitted entirely when none are) — the DS `onFilter != null` idiom. A deliverable flow
+  passing handlers is unchanged; a NON-deliverable flow (the rule-authoring create-wizard, whose `renderStage` body owns
+  its own Back/Next/Create) passes none and gets a clean staged frame instead of dead no-op buttons.
   **canvas-reader** is **fe-codec-canvas-reader · S1** (LIF-206) — the CODEC **Canvas: Reader shell**, the **5th archetype
   shell**. A long-form **read·listen·annotate** FRAME; S1 ships the frame + header + reading column + states (Contents
   panel S2 · margin rail S3 · selection S4 · listen bar S5 EXTEND it). A SHELL (the flow-session pattern) — **NON-GENERIC**

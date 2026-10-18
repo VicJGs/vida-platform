@@ -8,6 +8,7 @@
 // `[FACT: delivery/slice-map.md:19 S2; seam-contract.md §C; envision.md EC-7/8/9]`. Chrome only — composes @vida/ui + DS tokens.
 import { useEffect, useRef, type ReactNode } from 'react'
 import { styled, Text, View, useMedia } from '@tamagui/core'
+import { LayoutDashboard, LayoutGrid, type LucideIcon } from 'lucide-react'
 import { Button } from '@vida/ui'
 import { useAppShellUIStore } from '../stores/app-shell-ui-store'
 import { type Breakpoint } from './breakpoints'
@@ -17,6 +18,7 @@ import {
   LAYERING,
   PANEL_IDS,
   contentGutterAt,
+  contentVInsetAt,
   overlayModeAt,
   reservedTopInset,
   type PanelEdge,
@@ -33,6 +35,11 @@ const ContentMain = styled(View, { render: 'main' })
 
 /** Human label for each nav-panel toggle (envision M1: System · Modules). */
 const PANEL_LABEL: Record<PanelId, string> = { system: 'System', modules: 'Modules' }
+
+/** Toggle glyph for the CONDENSED (mobile <768) icon-only form — a real lucide icon (shell icon pattern, tints via the
+ *  ghost Button's `currentColor`), never emoji. The label stays visible at ≥768; at ≤375 it collapses to the icon so
+ *  Bar 1 (#15) co-fits the strip. System = the global/inspector surface · Modules = the module grid. (fe-shell-scope S3.) */
+const PANEL_ICON: Record<PanelId, LucideIcon> = { system: LayoutDashboard, modules: LayoutGrid }
 
 /**
  * The #14 panel BODY = an empty-but-functional placeholder (envision L4): two muted lines so the panel has real
@@ -57,6 +64,9 @@ export interface AppShellProps {
   children?: ReactNode
   /** #15 (fe-shell-scope) — scope selector + global surfaces (incl. the ⌘K trigger). Injected into the bar; empty in #14. */
   bar1Slot?: ReactNode
+  /** #15 (fe-shell-scope, S3) — the expanded System-panel BODY (scope + labeled surfaces). Default ⇒ PanelBodyPlaceholder.
+   *  Additive + defaulted ⇒ existing callers + shell tests stay green; `modules` keeps the placeholder (separate re-home). */
+  systemPanelSlot?: ReactNode
   /** #16 (fe-session-hud) — the Session HUD. Injected into the bar; empty in #14. */
   hudSlot?: ReactNode
   /** #17 — ⌘K / modals. Mounted in the overlay host; self-portaling overlays still render to `<body>` (S3-BR-i). */
@@ -81,6 +91,7 @@ function useActiveBreakpoint(override?: Breakpoint): Breakpoint {
 export function AppShell({
   children,
   bar1Slot,
+  systemPanelSlot,
   hudSlot,
   overlaySlot,
   shellPrefs = stubShellPrefs,
@@ -88,6 +99,7 @@ export function AppShell({
 }: AppShellProps) {
   const bp = useActiveBreakpoint(__bp)
   const gutter = contentGutterAt(bp)
+  const vinset = contentVInsetAt(bp) // top+bottom content breathing room below the strip (24/32/40, 4pt grid)
   const topInset = reservedTopInset(bp) // EC-7 — the reserved strip's height; content insets below it
   const overlay = overlayModeAt(bp) // 'sheet' (mobile) | 'centered' (tablet+)
 
@@ -142,6 +154,12 @@ export function AppShell({
   }, [anyFloatOpen])
 
   // Render one DOCKED panel (ShellPanel, dock branch). Used inside an edge cluster.
+  // The `system` panel renders the injected #15 body (scope + surfaces); `modules` keeps the placeholder (its module-nav
+  // re-home is a separate unit). Shared by the docked + float render sites so both homes stay in lockstep (seam-contract §C).
+  function panelBody(id: PanelId): ReactNode {
+    return id === 'system' ? (systemPanelSlot ?? <PanelBodyPlaceholder id={id} />) : <PanelBodyPlaceholder id={id} />
+  }
+
   function renderDockedPanel(id: PanelId): ReactNode {
     return (
       <ShellPanel
@@ -156,7 +174,7 @@ export function AppShell({
           toggleRefs.current[id]?.focus()
         }}
       >
-        <PanelBodyPlaceholder id={id} />
+        {panelBody(id)}
       </ShellPanel>
     )
   }
@@ -238,6 +256,10 @@ export function AppShell({
         <View flexDirection="row" alignItems="center" gap="$8" data-region="panelToggles">
           {PANEL_IDS.map((id) => {
             const p = placement[id]
+            // ≤375 the strip is tight (wordmark + both toggles + Bar 1 #15 + HUD #16): collapse the toggle to its icon
+            // (label → aria-label) so Bar 1 co-fits (S3 Visual-Gate-caught). Text label stays at ≥768 (desktop unchanged).
+            const ToggleIcon = PANEL_ICON[id]
+            const iconOnly = bp === 'mobile'
             return (
               <Button
                 key={id}
@@ -246,6 +268,8 @@ export function AppShell({
                 }}
                 intent="ghost"
                 size="md"
+                aria-label={iconOnly ? PANEL_LABEL[id] : undefined}
+                leading={iconOnly ? <ToggleIcon size={18} aria-hidden="true" /> : undefined}
                 // Disclosure — S4 widened from docked-only to BOTH modes: an open panel always renders a region
                 // (docked inline OR floating drawer), both carrying `panelDomId(id)`. `aria-expanded` is honest for both.
                 aria-expanded={p.open}
@@ -258,7 +282,7 @@ export function AppShell({
                 tabIndex={anyFloatOpen ? -1 : undefined}
                 onPress={() => togglePanel(id)}
               >
-                {PANEL_LABEL[id]}
+                {iconOnly ? undefined : PANEL_LABEL[id]}
               </Button>
             )
           })}
@@ -299,6 +323,7 @@ export function AppShell({
               minWidth={0}
               overflowY="auto"
               paddingHorizontal={gutter}
+              paddingVertical={vinset}
               alignItems="center"
             >
               <View width="100%" maxWidth={CONTENT_MAX_WIDTH} flex={1}>
@@ -341,7 +366,7 @@ export function AppShell({
                   toggleRefs.current[id]?.focus()
                 }}
               >
-                <PanelBodyPlaceholder id={id} />
+                {panelBody(id)}
               </ShellPanel>
             ))}
           </View>

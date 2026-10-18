@@ -104,6 +104,22 @@ describe('VidaEditor', () => {
     expect(lastDoc.type).toBe('doc')
     expect(Array.isArray(lastDoc.content)).toBe(true)
   })
+
+  // S1 (#7) — the `chrome` prop. The visual border difference is a Visual-Gate concern; here we assert the
+  // load-bearing BEHAVIORAL invariants: both treatments render the editor AND keep the `.vida-editor-frame`
+  // host, so the injected focus-ring (`:has(.ProseMirror:focus-visible)`) + all editor-styles still apply.
+  it('default chrome is framed (back-compat) — the .vida-editor-frame host renders', async () => {
+    const { container } = renderEditor()
+    await findTextbox(container)
+    expect(container.querySelector('.vida-editor-frame')).not.toBeNull()
+  })
+
+  it('chrome="bare" still renders the editor + preserves the .vida-editor-frame host (focus-ring survives)', async () => {
+    const { container } = renderEditor({ chrome: 'bare' })
+    const pm = await findTextbox(container)
+    expect(pm.getAttribute('role')).toBe('textbox')
+    expect(container.querySelector('.vida-editor-frame')).not.toBeNull()
+  })
 })
 
 // The material §6 gate: the RUNTIME structural assertion (NOT a bare cast) that stops a Tiptap JSONContent shape

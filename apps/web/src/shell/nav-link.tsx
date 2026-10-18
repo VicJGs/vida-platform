@@ -58,7 +58,10 @@ export function NavLink({ to, label, icon: Icon, iconOnly, children }: NavLinkPr
   // plain string compare, independent of the registered route union).
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const active = pathname === to
-  const color = active ? '$colorBrandPrimary' : '$colorTextPrimary'
+  // Active = brandEMPHASIS, not brandPrimary: brand-as-TEXT on the active row's `$colorSurfaceSecondary` fill fell to
+  // 4.39/4.44 < 4.5 AA (brandPrimary is tuned for fills/3:1). brandEmphasis (accent600/300) is the higher-contrast brand
+  // step in both modes — no palette change. Afflicts the module-dock active item identically. Visual-Gate-caught (#15 S2).
+  const color = active ? '$colorBrandEmphasis' : '$colorTextPrimary'
 
   return (
     <NavAnchorLink

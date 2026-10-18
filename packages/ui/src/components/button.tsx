@@ -39,19 +39,26 @@ const ButtonFrame = styled(View, {
   // (loading sets aria-disabled but must keep its full fill). The disabled dim is applied manually in the
   // wrapper, keyed only to the real `disabled` prop.
   variants: {
+    // `color` on the FRAME is the resting text colour for slot content — it mirrors ButtonText's per-intent colour so a
+    // raw `leading`/`trailing` icon (lucide `stroke="currentColor"`) tints per intent+theme instead of inheriting the
+    // document default (black → invisible in dark). ButtonText still sets its own colour (same token), so label text is
+    // unchanged; this only tints un-wrapped icon slots that were previously untinted. A COLOR prop (resolves against the
+    // theme, unlike the dimension-prop/sub-theme trap). Visual-Gate-caught (fe-shell-scope #15 S2).
     intent: {
-      primary: { backgroundColor: '$colorBrandEmphasis' },
+      primary: { backgroundColor: '$colorBrandEmphasis', color: '$colorTextInverse' },
       secondary: {
         backgroundColor: '$colorSurfaceSecondary',
         borderWidth: 1,
         borderColor: '$colorBorderDefault',
+        color: '$colorTextPrimary',
       },
       // ghost: transparent fill; hover fills surface.secondary (button.md:61) — a state swap, not animated.
       ghost: {
         backgroundColor: 'transparent',
+        color: '$colorBrandPrimary',
         hoverStyle: { backgroundColor: '$colorSurfaceSecondary' },
       },
-      danger: { backgroundColor: '$colorSignalDanger' },
+      danger: { backgroundColor: '$colorSignalDanger', color: '$colorTextInverse' },
     },
     // Tokens only: height ← $size scale; horizontal padding ← $space scale. NB: the button.padding COMPONENT
     // token can't drive paddingHorizontal — Tamagui resolves space props against the space token scale, not the
@@ -173,9 +180,7 @@ export const Button = forwardRef<ComponentRef<typeof ButtonFrame>, ButtonProps>(
     const ariaLabel = (rest as Record<string, unknown>)['aria-label']
     if (!hasText && (leading != null || trailing != null) && ariaLabel == null) {
       // eslint-disable-next-line no-console
-      console.warn(
-        '[vida/ui] Button: an icon-only button requires an `aria-label` for accessibility.',
-      )
+      console.warn('[vida/ui] Button: an icon-only button requires an `aria-label` for accessibility.')
     }
   }
 

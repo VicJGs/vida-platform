@@ -162,19 +162,30 @@ function StageBody({
     )
 
   // CURRENT — the active deliverable + the standardized affordances. The ONE prominent surface (accent spent here).
+  // The affordance row renders ONLY when at least one affordance handler is provided — the DS render-when-handler
+  // idiom (collection `onFilter != null`, canvas-reader ListenBar): a deliverable flow passes handlers + gets the
+  // row; a non-deliverable flow (e.g. a create-wizard whose body owns its own Back/Next/Create) passes none + gets
+  // no dead no-op buttons. (fe-gamification S4: the rule-authoring flow uses the staged frame, not attach/mark-done.)
+  const hasAffordances = onMarkDone != null || onRequireProof != null || onAttach != null
   return (
     <Card
       padding="spacious"
       header={<Text fontFamily="$display" fontSize="$heading" color="$colorTextPrimary">{stage.title}</Text>}
       footer={
-        <AffordanceRow>
-          <Button intent="primary" size="sm" onPress={() => onMarkDone?.(stage.id)}>Mark done</Button>
-          <Button intent="secondary" size="sm" onPress={() => onRequireProof?.(stage.id)}>Require proof</Button>
-          <Text fontSize="$small" color="$colorTextMuted" marginLeft="$4">Attach</Text>
-          <Button intent="ghost" size="sm" onPress={() => onAttach?.(stage.id, 'document')}>Document</Button>
-          <Button intent="ghost" size="sm" onPress={() => onAttach?.(stage.id, 'photo')}>Photo</Button>
-          <Button intent="ghost" size="sm" onPress={() => onAttach?.(stage.id, 'audio')}>Audio</Button>
-        </AffordanceRow>
+        hasAffordances ? (
+          <AffordanceRow>
+            {onMarkDone != null ? <Button intent="primary" size="sm" onPress={() => onMarkDone(stage.id)}>Mark done</Button> : null}
+            {onRequireProof != null ? <Button intent="secondary" size="sm" onPress={() => onRequireProof(stage.id)}>Require proof</Button> : null}
+            {onAttach != null ? (
+              <>
+                <Text fontSize="$small" color="$colorTextMuted" marginLeft="$4">Attach</Text>
+                <Button intent="ghost" size="sm" onPress={() => onAttach(stage.id, 'document')}>Document</Button>
+                <Button intent="ghost" size="sm" onPress={() => onAttach(stage.id, 'photo')}>Photo</Button>
+                <Button intent="ghost" size="sm" onPress={() => onAttach(stage.id, 'audio')}>Audio</Button>
+              </>
+            ) : null}
+          </AffordanceRow>
+        ) : undefined
       }
     >
       {renderStage != null ? renderStage(stage) : null}

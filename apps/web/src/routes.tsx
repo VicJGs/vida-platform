@@ -9,16 +9,12 @@
 // (/graph). Per-module routes land with each module's own wave (M1.1+).
 // ============================================================================
 
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-  lazyRouteComponent,
-  Link,
-  Outlet,
-} from '@tanstack/react-router'
+import { createRootRoute, createRoute, createRouter, lazyRouteComponent, Link, Outlet } from '@tanstack/react-router'
 import { AppShell } from './shell/app-shell'
 import { CommandBar } from './shell/command-bar'
+import { GlobalBar1 } from './shell/global-bar-1'
+import { SessionHudSurface } from './session-hud/session-hud-surface'
+import { HomeSurface } from './home/home-surface'
 
 const rootRoute = createRootRoute({
   component: RootComponent,
@@ -31,7 +27,14 @@ const rootRoute = createRootRoute({
 // owns its own global keybind + self-portals to <body>, so it keeps working through the dock⇄float reshape.
 function RootComponent() {
   return (
-    <AppShell overlaySlot={<CommandBar />}>
+    <AppShell
+      overlaySlot={<CommandBar />}
+      bar1Slot={<GlobalBar1 variant="strip" />}
+      systemPanelSlot={<GlobalBar1 variant="panel" />}
+      // fe-session-hud #16 · S3 — the Session HUD fills the #14-reserved hudSlot (hard-right in the strip).
+      // M1 prod: the stub resolves `hidden` ⇒ renders nothing; DEV `?sample` demos the forms (EC-7).
+      hudSlot={<SessionHudSurface />}
+    >
       <Outlet />
     </AppShell>
   )
@@ -49,7 +52,8 @@ function NotFoundComponent() {
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => <h2>Vida</h2>,
+  // fe-home #18 · S3: the Home surface renders inside the UI-4 shell <Outlet/> (home-journal-dashboard.md:9,63).
+  component: HomeSurface,
 })
 
 // UI-4 · S5 — the neural-graph route is lazy-split so sigma/graphology never enter the
@@ -68,7 +72,64 @@ const calendarRoute = createRoute({
   component: lazyRouteComponent(() => import('./app/calendar')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, graphRoute, calendarRoute])
+// fe-notes-and-pages #27 · S1 — the Notes Top view (lazy-split, the /graph precedent; BR-RT-8).
+const notesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notes',
+  component: lazyRouteComponent(() => import('./notes/notes-surface')),
+})
+
+// fe-notes-and-pages #27 · S2 — the note-entity page (editor-led frame + Layout-facet slot), lazy-split.
+const noteEntityRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notes/$id',
+  component: lazyRouteComponent(() => import('./notes/note-entity')),
+})
+
+// fe-settings #24 · S3 — the Settings System surface (lazy-split, the /notes precedent; BR-RT-8). Reachable from the
+// shell Bar-1 + ⌘K (nav/module-map.ts:104 already registers the entry); this is its route target.
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/settings',
+  component: lazyRouteComponent(() => import('./settings/settings-surface')),
+})
+
+// fe-notifications #25 (LIF-192) · S1 — the notifications surface (multi-lens: Margin · Dispatches ·
+// Constellation), lazy-split. Mounts into the shipped global `/notifications` Bell nav link.
+// fe-session-runtime #23 (LIF-218) · S2 — the Session runtime page (`/sessions/$id`), lazy-split (the
+// /notes/$id precedent; BR-RT-8). The routed wrapper reads the param → the router-free runtime surface.
+const sessionRuntimeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sessions/$id',
+  component: lazyRouteComponent(() => import('./session-runtime/session-runtime-page')),
+})
+
+const notificationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notifications',
+  component: lazyRouteComponent(() => import('./notifications/notifications-surface')),
+})
+
+// fe-gamification #32 (LIF-181) · S1 — "the System" multi-mode top view (Overview built; Currencies/
+// Achievements/Rules/Activity land S2–S5), lazy-split. The `feature_gamification` dock gate (conditional
+// dock) is module-map-owned (fe-shell); this only wires the route.
+const gamificationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/gamification',
+  component: lazyRouteComponent(() => import('./gamification/gamification-surface')),
+})
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  graphRoute,
+  calendarRoute,
+  notesRoute,
+  noteEntityRoute,
+  settingsRoute,
+  sessionRuntimeRoute,
+  notificationsRoute,
+  gamificationRoute,
+])
 
 export const router = createRouter({
   routeTree,

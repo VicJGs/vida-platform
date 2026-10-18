@@ -10,7 +10,10 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 
 **Model (UX-3 — data/logic only, no JSX):**
 - `breakpoints.ts` — `Breakpoint`, `BREAKPOINTS`, `BREAKPOINT_ORDER`, `PRIMARY_TEST_WIDTHS`, `CONTENT_MAX_WIDTH`,
-  `SIDE_PADDING`, `TOUCH_TARGET`, `PADDING_SCALE`, `breakpointForWidth()`, `TAMAGUI_MEDIA` (the reserved createMedia seam).
+  `SIDE_PADDING`, `CONTENT_V_INSET` (content vertical inset 24/32/40 — the shell-owned top+bottom breathing room below
+  the strip; design.md §X has only the horizontal gutter, so this is shell-owned, documented in shell-layout.md), `TOUCH_TARGET`,
+  `PADDING_SCALE`, `breakpointForWidth()`, `TAMAGUI_MEDIA` (the reserved createMedia seam). Accessor: `regions.ts contentVInsetAt()`
+  (the `contentGutterAt` twin) → `app-shell.tsx` `ContentMain paddingVertical`.
 - `regions.ts` — `ShellRegion`, `DockState`, `OverlayMode`, `DOCK_STATE`, `OVERLAY_MODE`, `GLOBAL_BAR_MODE`,
   `REGION_VISIBILITY`, `LAYERING`, `ShellUIStateContract`, the `*At()` predicates, `SHELL_REGIONS`.
   **fe-shell #14 (dock⇄float panel model, S1):** `PanelId`/`PanelMode`/`PanelEdge`/`PanelPlacement`/`ShellPlacement` ·
@@ -21,6 +24,32 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 - `shell-prefs.ts` (fe-shell #14, S1) — `ShellPrefsRead = ProviderRead<ShellPlacement>` + `stubShellPrefs` (M1 → DEFAULT;
   live `nav_preferences` read/write = first consumer, envision L5). Panel *arrangement* is ephemeral Zustand
   (`app-shell-ui-store.placement`, BR-RT-6 "panel state"); *persistence* is this deferred seam (never a raw table).
+- `spaces-scope.ts` (fe-shell-scope #15, S1) — `SpacesScopeRead = ProviderRead<SpaceOption[]>` + `stubSpacesScope`
+  (M1 → `[]` ⇒ global-only). The scope selector's space-list read seam; `SpacesService` has no `listSpaces` yet, so the
+  live provider swaps in at the first consumer (the `shell-prefs` deferred-seam precedent). Active scope state is the
+  ephemeral `stores/scope-store.ts` (`activeSpaceId|null`, null = global; emit-to-seam — no live view consumer in M1.0).
+- `scope-selector.tsx` (fe-shell-scope #15, S1) — the `Spaces:` switcher (EC-1/EC-2). Composes `@vida/ui` `Menu`+`Button`
+  (adds NO component); reads the list via `SpacesScopeRead` (React Query) + the scope store. DEGRADES never crashes:
+  populated(Menu) / loading(busy) / empty(global-only disabled) / error(calm `role=status`). **Wired in at S3** —
+  `GlobalBar1` mounts it in `bar1Slot` + the System panel body. Visual Gate PASS (5 states × light/dark/warm-dark ×
+  375/1440, measured 0 AA fails). **`compact` prop (S3; re-tightened by fe-session-hud #16, Victor 2026-10-18):** GLOBE-ONLY for the ≤375
+  strip — the active name lives in `aria-label` (EC-1 held via SR). With the HUD filling the #16 slot the 375
+  strip overcommitted ~80px (Bar-1 scrollWidth 179 vs clientWidth 87, painting over the HUD); the scope yields
+  its text and Search folds into the More menu (see global-surfaces-strip).
+- `global-surfaces-strip.tsx` (fe-shell-scope #15, S2) — the 6 `GLOBAL_SURFACES` in Bar 1's TOP-STRIP form, mode-prop
+  (parent-resolved) driven: `full` (≥768) = Search launcher + route surfaces as icon-nav · `condensed` (≤375) = a More-only
+  overflow `Menu` whose FIRST row is Search (the ⌘K action, never a link — EC-3; the standalone Search button
+  folded in at fe-session-hud #16's strip-budget fix, Victor 2026-10-18). **Supersedes `global-bar.tsx`** (deleted at S3) — the one refinement: NO hamburger (app-shell
+  #14 owns panel toggles). Search = ⌘K action, never a link (EC-3). Composes `NavLink`+`Button`+`Menu`. Covers EC-3/EC-6.
+- `global-surfaces-list.tsx` (fe-shell-scope #15, S2) — the 6 surfaces as a LABELED vertical nav for the expanded System
+  panel body (EC-4). Carries its OWN `render:'nav'` landmark inside the `<aside>` (IR6); route surfaces = `NavLink` rows
+  (aria-current + active fill, EC-6); Search = a raw `render:'button'` row (mirrors NavLink dims, `type="button"`) with a
+  ⌘K hint (`aria-hidden`). Scope sits ABOVE this in the S3 assembly, not here.
+- **S2 Visual Gate PASS** (Brave, 3 presets × 2 modes = 132 elements MEASURED, 0 AA fails incl. warm-dark; focus rings
+  2px). Surfaced + fixed TWO shipped-primitive AA bugs (Victor-approved, both roots): **(a)** `@vida/ui` Button slot
+  icons rendered black in dark → Button frame now carries a per-intent `color` so `leading`/`trailing` icons tint (also
+  fixed scope-selector's `ChevronDown` + global-bar); **(b)** `nav-link.tsx` active brand-on-secondary = 4.39/4.44 < 4.5
+  → active color `$colorBrandPrimary` → **`$colorBrandEmphasis`** (also fixed the module-dock active item). [[accent-text-on-secondary]]
 
 **Chrome (UI-4 — the rendered app shell):**
 - `app-shell.tsx` — **fe-shell #14 · S2 reshaped the frame** to the CODEC dock⇄float inspector model (envision M1–M7).
@@ -84,9 +113,19 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   animation FAILS SAFE VISIBLE (a modal must never render invisible); reduced-motion `@media`→`animation:none`. B12:
   opacity/transform only.
 - `module-dock.tsx` (S2) — the dock content: `MODULE_MAP` grouped, drawer/rail/sidebar forms, empty-group skip,
-  collapse toggle. `global-bar.tsx` (S2) — `GLOBAL_SURFACES` condensed/full + ⌘K→`commandBar.open()` + overflow Menu.
+  collapse toggle. _(`global-bar.tsx` was DELETED at fe-shell-scope #15 S3 — superseded by `global-bar-1.tsx` +
+  `global-surfaces-{strip,list}.tsx`.)_
+- `global-bar-1.tsx` (fe-shell-scope #15, S3) — **Bar 1 assembly.** `variant="strip"` = the top-strip chrome (bar1Slot):
+  scope (left, `compact` ≤375) · spacer · surfaces strip (mode resolved from the breakpoint). `variant="panel"` = the
+  System-panel body (systemPanelSlot): scope above the labeled surfaces list. Composition only (ui-4 BR-1); mounted in
+  `routes.tsx` `RootComponent`. app-shell gained a `systemPanelSlot?` seam (the `system` panel body renders it, both docked
+  + float; `modules` keeps the placeholder) + the **System/Modules toggles condense to icon-only at ≤375** (`PANEL_ICON`,
+  label → aria-label) so Bar 1 co-fits the strip (S3 Visual-Gate-caught). EC-5. Visual Gate PASS (real shell: both homes
+  × 3 presets × 2 modes = 0 AA fails incl. warm-dark · float dialog · 375 no-overflow · dark portal menu · axe 0).
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact
-  `aria-current`; `currentColor` icon tint). `nav-icons.ts` — key→`lucide-react` glyph (+ fallback).
+  `aria-current`; `currentColor` icon tint). **Active colour = `$colorBrandEmphasis`** (not brandPrimary — brand-as-text
+  on the active `$colorSurfaceSecondary` fill fell to 4.39/4.44 < 4.5 AA; fe-shell-scope #15 S2 Visual-Gate fix, benefits
+  the module-dock active item too). `nav-icons.ts` — key→`lucide-react` glyph (+ fallback).
   `feature-flags.ts` — `isFeatureEnabled` (M1.0 fail-closed stub). `use-nav-drawer.ts` — drawer focus/Esc/`inert`.
 - **Onboarding (S4) renders OUTSIDE this shell** — the first-run screens live in `apps/web/src/onboarding/*` and mount
   from `App.tsx`'s first-run branch BEFORE `<RouterProvider>`, so no shell chrome exists during onboarding (S4-BR-h).
@@ -133,6 +172,6 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   `isMobileNavOpen`) lives on `stores/app-shell-ui-store.ts`; the chrome reads/toggles it, the model never touches it.
   The current breakpoint is read via `useMedia()`, never stored.
 - **`MODULE_MAP` import: the CHROME renders it (dock/global bar); the MODEL must not** — the layout model is
-  orthogonal to the nav data. `module-dock.tsx`/`global-bar.tsx` are the renderers.
+  orthogonal to the nav data. `module-dock.tsx` / `global-surfaces-{strip,list}.tsx` are the renderers.
 - **No barrel** (`index.ts`) — import specific files (STANDARDS §XX).
 - **Mobile-first.** Every rule is base→up; `mobile` is the baseline, larger widths enhance; `wide` is a max-width cap.

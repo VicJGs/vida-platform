@@ -43,6 +43,7 @@ export interface UIProviderProps extends Omit<TamaguiProviderProps, 'config' | '
 const PRESET_FONTS: Record<Exclude<ThemePreset, 'editorial'>, { body: string; display: string }> = {
   reader: { body: fonts.fontFamily.readerBody, display: fonts.fontFamily.readerDisplay },
   quietDesk: { body: fonts.fontFamily.quietDeskBody, display: fonts.fontFamily.quietDeskDisplay },
+  game: { body: fonts.fontFamily.gameBody, display: fonts.fontFamily.gameDisplay }, // fe-gamification G0 — the sans "System" voice
 }
 
 const DENSITY_STYLE_ID = 'vida-density-scale'
@@ -122,7 +123,10 @@ function applyFontFamily(preset: ThemePreset) {
 }
 
 // The non-default presets that ride a <body> sub-theme class (editorial = the bare scheme base, no class).
-const PRESET_CLASSES: ReadonlyArray<Exclude<ThemePreset, 'editorial'>> = ['reader', 'quietDesk']
+// MUST list EVERY non-editorial preset — the cleanup loops below remove exactly these, so an omitted preset
+// leaves a STALE `t_<preset>` on <body> after switching away (fe-gamification: `game` was omitted in G0 →
+// `t_game` stuck, which the XP-ring preset read would mis-report). Keep in sync with ThemePreset.
+const PRESET_CLASSES: ReadonlyArray<Exclude<ThemePreset, 'editorial'>> = ['reader', 'quietDesk', 'game']
 
 /** Put the preset sub-theme class on <body> (editorial clears it). WHY <body> not <html>: Tamagui emits sub-theme vars
  *  under a NESTED selector `:root.t_<mode> .t_<preset>` (an ancestor scheme class + a DESCENDANT preset class), so a flat

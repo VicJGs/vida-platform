@@ -87,8 +87,10 @@
   dependency on `variables.css`; the unitless-unit concern dissolves.
 
 ## Rules established by fe-codec-theme S1 (IMPLEMENTED 2026-10-02)
-- **[NEW] B-codec-1 — N preset families via per-preset overlays (generalizes B7).** The pipeline emits **3 preset
-  families** (editorial · reader · quietDesk) **× light/dark = 6 Tamagui base themes + per-theme `<Comp>` sub-themes**
+- **[NEW] B-codec-1 — N preset families via per-preset overlays (generalizes B7).** The pipeline emits **4 preset
+  families** (editorial · reader · quietDesk · **game** — the motivating manhwa-"System" register, fe-gamification G0
+  LIF-181: cool-violet accent + slate neutral + geometric sans voice; AA-verified both modes) **× light/dark = 8
+  Tamagui base themes + per-theme `<Comp>` sub-themes**
   (10 comps × 6 = 60), each carrying its own palette + font-family. Mechanism = the B7 dark-overlay generalized: a
   reusable `applyOverlay` applies `semantic.<preset>.json` (light remap) then `semantic.<preset>.dark.json` (dark delta)
   over the editorial base, precedence `base < semantic.<preset>.json < semantic.<preset>.dark.json`, per-leaf, fail-loud

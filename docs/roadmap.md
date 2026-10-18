@@ -12,6 +12,10 @@
 > `.claude/tasks/build-roadmap-resequence.md`. Source-of-truth precedence: ADRs + code over architecture docs
 > (`docs/core/business-rules.md`).
 
+> **Current state + MVP path.** For the live "what's done / what each remaining issue makes usable /
+> difficulty / the minimal path to a daily-usable OS" view, see **[`roadmap/MVP-PATH.md`](roadmap/MVP-PATH.md)**
+> (status-dated; this file SETS deliverables, MVP-PATH tracks progress against them).
+
 ---
 
 ## The spine — four milestones (features-first)
