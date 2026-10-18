@@ -84,6 +84,14 @@ const settingsRoute = createRoute({
 
 // fe-notifications #25 (LIF-192) · S1 — the notifications surface (multi-lens: Margin · Dispatches ·
 // Constellation), lazy-split. Mounts into the shipped global `/notifications` Bell nav link.
+// fe-session-runtime #23 (LIF-218) · S2 — the Session runtime page (`/sessions/$id`), lazy-split (the
+// /notes/$id precedent; BR-RT-8). The routed wrapper reads the param → the router-free runtime surface.
+const sessionRuntimeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sessions/$id',
+  component: lazyRouteComponent(() => import('./session-runtime/session-runtime-page')),
+})
+
 const notificationsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/notifications',
@@ -105,6 +113,7 @@ const routeTree = rootRoute.addChildren([
   notesRoute,
   noteEntityRoute,
   settingsRoute,
+  sessionRuntimeRoute,
   notificationsRoute,
   gamificationRoute,
 ])
