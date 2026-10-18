@@ -21,13 +21,14 @@ interface CalChip { id: string; title: ReactNode; color?: string } // a dated it
 // — D4: CalendarView gains a headerless mode so the canvas frame owns the period title once (EC-2). —
 interface CalendarViewProps<T> { /* …existing… */ hideHeader?: boolean }  // true → suppress its month title + nav
 
-// — S2 · AgendaView (EC-3) —
+// — S2 · AgendaView (EC-3) — SHIPPED (ratified + refined: readonly arrays, empty?/error? slots; v10-agenda-view.md) —
 interface AgendaItem { id: string; title: ReactNode; color?: string; time?: string; daypart: Daypart;
-                       weight?: 'must' | 'can'; done?: boolean }
-interface AgendaDay  { date: string; items: AgendaItem[] }          // date = 'YYYY-MM-DD' (TZ-safe, IR-4)
-interface AgendaViewProps { days: AgendaDay[]; today?: string; state?: CalState
-                            onToggleItem?: (id: string) => void     // INTENT — the owning module writes (EC-12)
-                            'aria-label'?: string; ref?: Ref<HTMLDivElement> }
+                       weight?: 'must' | 'can'; done?: boolean }   // done undefined = not completable
+interface AgendaDay  { date: string; items: readonly AgendaItem[] } // date = 'YYYY-MM-DD' (TZ-safe, IR-4)
+interface AgendaViewProps { days: readonly AgendaDay[]; today?: string; state?: CalState
+                            onToggleItem?: (id: string) => void     // INTENT — the owning module writes (EC-12); absent ⇒ no control
+                            empty?: ReactNode; error?: ReactNode
+                            'aria-label'?: string; 'aria-labelledby'?: string; ref?: Ref<HTMLDivElement> }
 
 // — S3 · WeekView / Day (EC-4) —
 interface TimedBlock { id: string; title: ReactNode; color?: string; startHour: number; endHour?: number; day: string }
@@ -79,7 +80,8 @@ function useCalendar(range: Range, focusedDate: string): {
 ```
 Surface = `CalendarSurface` composing `CanvasView` (eyebrow · period title per `range` · switcher+nav in `actions`) →
 dispatches `useCalendar(...)` output to the S1–S5 renderer for the active range. Intents from renderers route to the
-owning module's capability (ADR-008) — M1 may no-op an absent capability (deny-safe), never fabricate a write.
+owning module's capability (ADR-008) — M1 OMITS the handler for an absent capability (deny-safe — no dead control),
+never fabricates a write.
 
 ## C · `@vida/core` first-consumer reads (S6 — thin, additive, no schema change; honest-null on absence)
 
@@ -94,8 +96,14 @@ purposes.registerMeasures(reg: MeasurementSourceRegistry): void  // reg.advertis
 ```
 
 ## Open at build (ratify per slice)
-- The exact `Daypart` clock-bands (D1) + the all-day-task default band — settle at S2 `/contract`.
+- ~~The exact `Daypart` clock-bands (D1) + the all-day-task default band — settle at S2 `/contract`.~~ **SETTLED
+  (S2, 2026-10-18):** `<12:00` morning · `12:00–17:59` afternoon · `≥18:00` evening (grounded in the approved
+  greybox: 09:30→Morning, 17:00→Afternoon); an all-day task defaults to **morning**, configurable at `useCalendar`.
+  Applied by `useCalendar` (S7), never by the renderer. Canonical `DAYPART` minted in `@vida/types` `common.ts`.
+  [PLAN-S2-agenda-renderer.md §3 · v10-agenda-view.md §3]
 - Whether `tasks.getSlipping` is a tasks-service method or a derivation folded into `useCalendar` from a plain
   `tasks` list read — settle at S6 (both honest-null; no schema either way).
-- `onToggleItem`/`onSlotOpenTime` target capabilities — M1 wiring is deny-safe no-op until the owning capability
-  ships; the intent surface is fixed here so the renderer never changes when it lands.
+- `onToggleItem`/`onSlotOpenTime` target capabilities — **M1 wiring = the handler is ABSENT (deny-safe) until the
+  owning capability ships** (amended S2, D-S2-DEV-3: a no-op handler renders dead focusable controls; absent ⇒ the
+  renderer's read-only state). The intent surface is fixed here so the renderer never changes when it lands — S7/the
+  owning capability just passes the handler.

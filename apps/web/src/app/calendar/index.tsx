@@ -4,7 +4,7 @@
 // S1 fixture with the live `useCalendar` ProviderRead fan-out. Read-only: nav/switch are navigation, no writes (EC-12).
 import { useMemo } from 'react'
 import { Text, View } from '@tamagui/core'
-import { Button, CalendarView, CanvasView, EmptyState } from '@vida/ui'
+import { AgendaView, type AgendaDay, Button, CalendarView, CanvasView, EmptyState } from '@vida/ui'
 import { type CalendarRange, useCalendarUIStore } from '../../stores/calendar-ui-store'
 
 const RANGES: CalendarRange[] = ['year', 'month', 'week', 'day', 'agenda', 'living']
@@ -68,6 +68,45 @@ function monthFixture(focused: Date): MonthEv[] {
   ]
 }
 
+// S2 agenda fixture — the focused Mon–Sun week, shaped like the approved greybox: a dayparted "today" mix (timed ·
+// all-day · Must/Can · done), sparser flat days, one empty day (skipped by the renderer). Dayparts are pre-assigned
+// here exactly as S7's useCalendar will (bands <12 / 12–17:59 / ≥18; all-day default = morning).
+function agendaFixture(focused: Date): { days: AgendaDay[]; today: string } {
+  const mon = mondayOf(focused)
+  const on = (offset: number) => {
+    const d = new Date(mon)
+    d.setDate(mon.getDate() + offset)
+    return toKey(d)
+  }
+  const today = toKey(new Date())
+  // The rich mix sits on TODAY when today is in the focused week, so its daypart grouping shows. In any other week it
+  // sits on Thursday and renders FLAT — correct: no day there is today, and only today is dayparted (BR-CAL-S2-2).
+  const todayOffset = [0, 1, 2, 3, 4, 5, 6].find((o) => on(o) === today)
+  const rich = todayOffset ?? 3
+  const sparse = [0, 1, 2, 3, 4, 5, 6].filter((o) => o !== rich)
+  const day = (offset: number, items: AgendaDay['items']): AgendaDay => ({ date: on(offset), items })
+  const days: AgendaDay[] = [
+    day(sparse[0], [{ id: 'm1', title: '1:1 with Ana', daypart: 'morning', time: '11:00', done: false, color: PURPOSE.career }]),
+    day(sparse[1], []),
+    day(sparse[3], [
+      { id: 'f1', title: 'Design sync', daypart: 'morning', time: '11:00', done: false, color: PURPOSE.career },
+      { id: 'f2', title: 'Weekly review', daypart: 'morning', weight: 'can', color: PURPOSE.admin },
+    ]),
+    day(sparse[4], [{ id: 's1', title: 'Family lunch', daypart: 'afternoon', time: '12:00', done: false, color: PURPOSE.health }]),
+    day(rich, [
+      { id: 't1', title: 'Morning check-in', daypart: 'morning', done: true },
+      { id: 't2', title: 'Finish the re-plan draft', daypart: 'morning', time: '09:30', weight: 'must', color: PURPOSE.career },
+      { id: 't3', title: 'Spanish, daily session', daypart: 'morning', weight: 'can', color: PURPOSE.growth },
+      { id: 't4', title: 'Call Mariana', daypart: 'afternoon', time: '17:00', done: false, color: PURPOSE.career },
+      { id: 't5', title: 'Read ch. 4 — Systems', daypart: 'evening', weight: 'can', color: PURPOSE.growth },
+      { id: 't6', title: 'Log yesterday’s expenses', daypart: 'evening', weight: 'can', color: PURPOSE.admin },
+    ]),
+  ]
+  // Display order = date order (the provider orders upstream; the renderer never sorts).
+  days.sort((a, b) => a.date.localeCompare(b.date))
+  return { today, days }
+}
+
 export default function CalendarSurface() {
   const { range, focusedDate, setRange, setFocusedDate } = useCalendarUIStore()
   const focused = useMemo(() => parseKey(focusedDate), [focusedDate])
@@ -114,9 +153,14 @@ export default function CalendarSurface() {
               </View>
             )}
           />
+        ) : range === 'agenda' ? (
+          // No onToggleItem: the completion capability (Tasks/Habits/Routines) isn't wired in M1, and a no-op handler
+          // would render focusable checkboxes that do nothing. Absent ⇒ the renderer's read-only done-state (deny-safe);
+          // the intent surface is fixed in AgendaView, so S7 just passes the owning capability (seam-contract.md:100).
+          <AgendaView {...agendaFixture(focused)} aria-label="Agenda" />
         ) : (
           <EmptyState title={`${RANGE_LABEL[range]} view`} titleLevel={3}>
-            <Text fontSize="$small" color="$colorTextMuted">This range ships in a later slice of #19 (S2–S5). The frame, switcher, and Month are live.</Text>
+            <Text fontSize="$small" color="$colorTextMuted">This range ships in a later slice of #19 (S3–S5). The frame, switcher, Month, and Agenda are live.</Text>
           </EmptyState>
         )}
       </CanvasView>

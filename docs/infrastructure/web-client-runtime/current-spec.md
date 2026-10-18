@@ -130,7 +130,8 @@ of their deferred hooks. The UI mechanics live in their own convention docs (`ap
   `useCollection(viewId)` hook (React Query → `ViewEngine.resolve`) is built at its first consumer (fe-notes #27, not #19). `[FACT: collection/adapter.ts:60,74,92; :14]`
 - **View dispatch** — `ViewLayout` union (`'list'|'table'|'board'|'gallery'|'calendar'|'timeline'|'graph'`) in `@vida/types`
   routes a saved-view's `layout` to its renderer; `'calendar'` → the `@vida/ui` `CalendarView` (month grid, LIF-230-refined,
-  TZ-safe). The other 5 calendar ranges (Year/Week/Day/Agenda/Living) are **net-new renderers #19 builds**. `[FACT: packages/types/src/view.ts; packages/ui/src/components/calendar-view.tsx]`
+  TZ-safe). The other 5 calendar ranges are **net-new renderers #19 builds** — Agenda = `AgendaView` (S2, shipped);
+  Week/Day · Year · Living = S3–S5. `[FACT: packages/types/src/view.ts; packages/ui/src/components/calendar-view.tsx]`
 
 ## Downstream (INTENT — consumers)
 - **UI-3** (`@vida/editor`, LIF-88) ← UI-1, **AR-4** — the editor mounts in routes + issues React Query reads.
@@ -143,3 +144,12 @@ of their deferred hooks. The UI mechanics live in their own convention docs (`ap
   Month = `@vida/ui` `CalendarView` with the new **`hideHeader`** mode (D4 — frame owns the period title). S1 uses a
   local fixture; the live **`useCalendar`** ProviderRead fan-out + the other range renderers land in S2–S7.
   `[FACT: apps/web/src/app/calendar/index.tsx · stores/calendar-ui-store.ts · routes.tsx:calendarRoute · packages/ui/src/components/calendar-view.tsx hideHeader; docs/specs/foundation/fe-calendar/delivery/slice-map.md]`
+  **S2 SHIPPED (2026-10-18):** the **Agenda** range dispatches to `@vida/ui` **`AgendaView`** fed by a local
+  `agendaFixture(focused)` (the focused Mon–Sun week; the rich dayparted mix sits on TODAY when today is in the focused
+  week, else Thursday — rendering FLAT, since only today is dayparted). Items arrive **pre-dayparted** — the D1 bands
+  `useCalendar` (S7) will apply are fixed: `<12:00` morning · `12:00–17:59` afternoon · `≥18:00` evening; an all-day task
+  defaults to morning. **No `onToggleItem` is passed** — the completion capability (Tasks/Habits/Routines) isn't wired in
+  M1, and a no-op handler would render dead focusable checkboxes; absent ⇒ the renderer's read-only done-state
+  (deny-safe). Week/Day/Year/Living still render the S1 placeholder. ⚠ Known S1 chrome defects (filed, fixed before S3):
+  the switcher doesn't condense <768 (375 page overflow) and the wrapping period title overlaps itself at 375.
+  `[FACT: apps/web/src/app/calendar/index.tsx agendaFixture + range==='agenda' dispatch; packages/ui/src/components/agenda-view.tsx; docs/specs/foundation/fe-calendar/delivery/PLAN-S2-agenda-renderer.md §3, §5a]`

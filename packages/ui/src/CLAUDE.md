@@ -295,6 +295,30 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   no-overflow). **⟹ P5 ships the FINAL primitives-refinement phase — all 5 views (list·gallery·timeline·calendar) +
   pomodoro refined.** The living/multi-range calendar is the separate `fe-calendar #19` (NO Layer-2 here). Spec:
   `docs/specs/foundation/fe-codec-primitives-refinement/phases/P5-calendar.md`.
+  **fe-calendar #19 · S1 (LIF-203)** — **`hideHeader?: boolean`** (slice-map D4): suppresses the grid's own month
+  title + nav so a hosting frame (the #19 `CanvasView` Global Calendar surface) owns the period title ONCE (envision
+  EC-2 double-title fix). Default `false` — standalone grids unchanged; grid/roles/states untouched (+1 test, 22).
+  **agenda-view** is **UI-2 · V10** (fe-calendar #19 · S2, LIF-203) — the Global Calendar's **Agenda range** renderer
+  (a calendar RANGE dispatched by the #19 surface, NOT a `VIEW_LAYOUT`). Presentational read-only lens: `days:AgendaDay[]`
+  of **pre-dayparted, pre-ordered** items (the app's `useCalendar` maps dayparts, S7) — it arranges, never derives/sorts.
+  **Temporal asymmetry:** ONLY the `today` day (string-equal, no Date math) is grouped Morning→Afternoon→Evening; other
+  days are one flat list (the approved mockup + greybox). Rows: 64px gutter (tabular `time` | "ALL DAY" eyebrow) ·
+  purpose dot (user-data hex, aria-hidden) · title (`flexShrink:1 minWidth:0`; done = struck + muted) · Must
+  (`$colorBrandEmphasis`) / Can (muted) tag. Spine PIECES (`ViewState`/`Message`/`warnMissingName`), NOT
+  `resolveDataViewState` (outer `role="group"` of per-day `role="list"`s, names via `aria-labelledby` `[dayId]` or
+  `[dayId partId]`, `useId` index-keyed; day keys `${date}-${i}`). **Completion = intent, render-when-handler:** a native
+  `<button type="button" role="checkbox">` only when `onToggleItem` AND `done!==undefined` (named by the title's id);
+  `focusVisibleStyle` ring + `hoverStyle` are **Tamagui pseudo-styles on the host — no injected sheet** (injected CSS is
+  only for cross-element `:has` cases like checkbox-styles). **⚠ Resting border = `$colorTextMuted`, NOT
+  `$colorBorderDefault`** — the hairline is 1.2–1.7:1 on the surface, below WCAG 1.4.11's 3:1 for a control boundary
+  (Visual-Gate-caught; reuse this for any bordered control). **⚠ Hit-area insets resolve from the PADDING box** — a
+  1.5px border shrinks a 20px box's padding box to 17px, so −12 gave 42 (<44); −14 → 46. The HitArea is a
+  `render:'span'` (a `<div>` is invalid inside `<button>`). No handler + completable → inert `aria-hidden` box + sr-only
+  "(done)" — **a consumer with no wired capability passes NO handler** (a no-op handler = dead focusable checkboxes).
+  TZ: date parsed by parts. Narrow reflow = `DayRow flexWrap` + items `minWidth:240` (rail stacks above at 375). Also:
+  Chrome snaps a 1.5px border to 1px in `getComputedStyle` (Visual-Gate probes must not match `'1.5px'`). Visual Gate
+  PASS (Brave, real CalendarSurface, 3 presets × L/D × 375/768/1440: AA 4.94–6.53 · box 3:1 · 46×46 · ring · real
+  Space/Enter toggle · axe 0). 21 tests. Spec: `docs/specs/components/ui-2-platform-views/v10-agenda-view.md`.
   **pomodoro-widget** is **UI-2 · V5** — the interactive timer WIDGET `@vida/ui` ships (ADR-008:35). NOT a data-view: a
   self-timing single-interval countdown with a **DEFERRED session-engine seam** — the pomodoro *session*
   (lifecycle/persistence/effects/phase-sequencing) is a `sessions` sub-type owned by MOD-sessions (ADR-004); the widget

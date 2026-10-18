@@ -62,6 +62,13 @@ export { ListView, type ListViewProps, type ViewState } from './components/list-
 export { GalleryView, type GalleryViewProps } from './components/gallery-view'
 export { Timeline, type TimelineProps, type TemporalState } from './components/timeline'
 export { CalendarView, type CalendarViewProps } from './components/calendar-view'
+export {
+  AgendaView,
+  type AgendaViewProps,
+  type AgendaItem,
+  type AgendaDay,
+  type Daypart,
+} from './components/agenda-view'
 export { TableView, type TableViewProps, type Column } from './components/table-view'
 export { BoardView, type BoardViewProps, type BoardGroup } from './components/board-view'
 export { PomodoroWidget, type PomodoroWidgetProps, type PomodoroPhase } from './components/pomodoro-widget'
