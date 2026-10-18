@@ -41,15 +41,16 @@ export function ScopeSelector({ read = stubSpacesScope, compact }: ScopeSelector
   const activeName =
     activeSpaceId === null ? ALL_LABEL : (spaces?.find((s) => s.id === activeSpaceId)?.name ?? ALL_LABEL)
 
-  // Compact form (≤375): no `Spaces: ` prefix, a Globe leading glyph, a width cap so a long space name can't re-overflow.
-  const label = (name: string) => (compact ? name : `Spaces: ${name}`)
+  // Compact form (≤375): GLOBE-ONLY — the name lives in the aria-label (fe-session-hud #16 strip-budget
+  // decision, Victor 2026-10-18: with the HUD filling the slot, the 375 strip overcommits ~80px; the scope
+  // yields its text, Search folds into More, the HUD keeps ring+time). Was: globe + name, maxWidth 140.
+  const label = (name: string) => (compact ? undefined : `Spaces: ${name}`)
   const globeLead = compact ? <Globe size={16} aria-hidden="true" /> : undefined
-  const compactCap = compact ? { maxWidth: 140 } : undefined
 
   // Loading — a busy trigger (holds width, aria-busy via Button `loading`).
   if (isLoading) {
     return (
-      <Button intent="secondary" size="sm" loading aria-label="Loading spaces" {...compactCap}>
+      <Button intent="secondary" size="sm" loading aria-label="Loading spaces">
         {label(ALL_LABEL)}
       </Button>
     )
@@ -66,7 +67,6 @@ export function ScopeSelector({ read = stubSpacesScope, compact }: ScopeSelector
           disabled
           aria-label="Scope: All (spaces unavailable)"
           leading={globeLead}
-          {...compactCap}
         >
           {label(ALL_LABEL)}
         </Button>
@@ -88,7 +88,6 @@ export function ScopeSelector({ read = stubSpacesScope, compact }: ScopeSelector
         disabled
         aria-label="Scope: All (no spaces yet)"
         leading={globeLead}
-        {...compactCap}
       >
         {label(ALL_LABEL)}
       </Button>
@@ -120,7 +119,6 @@ export function ScopeSelector({ read = stubSpacesScope, compact }: ScopeSelector
           leading={globeLead}
           trailing={<ChevronDown size={16} aria-hidden="true" />}
           aria-label={compact ? `Scope: ${activeName}` : undefined}
-          {...compactCap}
         >
           {label(activeName)}
         </Button>

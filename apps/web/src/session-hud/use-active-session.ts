@@ -49,9 +49,9 @@ const HIDDEN: HudRead = { kind: 'hidden' }
 export type HudSampleForm = 'idle' | 'focus' | 'break' | 'elapsed' | 'paused' | 'complete'
 
 /** DEV/gate sample gate (NOT live data) — the use-flow-session idiom, value-carrying. */
-function devSampleForm(): HudSampleForm | null {
+function devSampleForm(search?: string): HudSampleForm | null {
   if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null
-  const value = new URLSearchParams(window.location.search).get('sample')
+  const value = new URLSearchParams(search ?? window.location.search).get('sample')
   switch (value) {
     case 'idle':
     case 'focus':
@@ -145,9 +145,14 @@ function cachedSampleRead(form: HudSampleForm): HudRead {
 /**
  * The HUD's data hook. M1: `hidden` by default; DEV `?sample=<form>` seeds the designed forms.
  * The live swap keeps this exact signature (see the header).
+ *
+ * `search` (optional): the CURRENT search string from a REACTIVE source (the surface passes the router's
+ * subscribed `location.searchStr`). A bare `window.location.search` read is render-time-only — a client-side
+ * pushState re-renders NOTHING, so the live-shell sample walk never mounted (S3 gate catch); jsdom tests
+ * missed it because every mount started with the URL pre-set.
  */
-export function useActiveSession(): UseActiveSession {
-  const form = devSampleForm()
+export function useActiveSession(search?: string): UseActiveSession {
+  const form = devSampleForm(search)
   if (form) {
     return { read: cachedSampleRead(form), port: noopPort }
   }

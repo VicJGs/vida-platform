@@ -32,11 +32,14 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   (adds NO component); reads the list via `SpacesScopeRead` (React Query) + the scope store. DEGRADES never crashes:
   populated(Menu) / loading(busy) / empty(global-only disabled) / error(calm `role=status`). **Wired in at S3** —
   `GlobalBar1` mounts it in `bar1Slot` + the System panel body. Visual Gate PASS (5 states × light/dark/warm-dark ×
-  375/1440, measured 0 AA fails). **`compact` prop (S3):** drops the `Spaces: ` prefix + leads with a Globe glyph for the
-  ≤375 strip (co-fit beside the condensed toggles) — still shows the active scope (EC-1) + full name in `aria-label`.
+  375/1440, measured 0 AA fails). **`compact` prop (S3; re-tightened by fe-session-hud #16, Victor 2026-10-18):** GLOBE-ONLY for the ≤375
+  strip — the active name lives in `aria-label` (EC-1 held via SR). With the HUD filling the #16 slot the 375
+  strip overcommitted ~80px (Bar-1 scrollWidth 179 vs clientWidth 87, painting over the HUD); the scope yields
+  its text and Search folds into the More menu (see global-surfaces-strip).
 - `global-surfaces-strip.tsx` (fe-shell-scope #15, S2) — the 6 `GLOBAL_SURFACES` in Bar 1's TOP-STRIP form, mode-prop
-  (parent-resolved) driven: `full` (≥768) = Search launcher + route surfaces as icon-nav · `condensed` (≤375) = Search
-  icon + overflow `Menu`. **Supersedes `global-bar.tsx`** (deleted at S3) — the one refinement: NO hamburger (app-shell
+  (parent-resolved) driven: `full` (≥768) = Search launcher + route surfaces as icon-nav · `condensed` (≤375) = a More-only
+  overflow `Menu` whose FIRST row is Search (the ⌘K action, never a link — EC-3; the standalone Search button
+  folded in at fe-session-hud #16's strip-budget fix, Victor 2026-10-18). **Supersedes `global-bar.tsx`** (deleted at S3) — the one refinement: NO hamburger (app-shell
   #14 owns panel toggles). Search = ⌘K action, never a link (EC-3). Composes `NavLink`+`Button`+`Menu`. Covers EC-3/EC-6.
 - `global-surfaces-list.tsx` (fe-shell-scope #15, S2) — the 6 surfaces as a LABELED vertical nav for the expanded System
   panel body (EC-4). Carries its OWN `render:'nav'` landmark inside the `<aside>` (IR6); route surfaces = `NavLink` rows

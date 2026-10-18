@@ -13,6 +13,7 @@ import { createRootRoute, createRoute, createRouter, lazyRouteComponent, Link, O
 import { AppShell } from './shell/app-shell'
 import { CommandBar } from './shell/command-bar'
 import { GlobalBar1 } from './shell/global-bar-1'
+import { SessionHudSurface } from './session-hud/session-hud-surface'
 import { HomeSurface } from './home/home-surface'
 
 const rootRoute = createRootRoute({
@@ -30,6 +31,9 @@ function RootComponent() {
       overlaySlot={<CommandBar />}
       bar1Slot={<GlobalBar1 variant="strip" />}
       systemPanelSlot={<GlobalBar1 variant="panel" />}
+      // fe-session-hud #16 · S3 — the Session HUD fills the #14-reserved hudSlot (hard-right in the strip).
+      // M1 prod: the stub resolves `hidden` ⇒ renders nothing; DEV `?sample` demos the forms (EC-7).
+      hudSlot={<SessionHudSurface />}
     >
       <Outlet />
     </AppShell>

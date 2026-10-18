@@ -13,7 +13,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SessionHud } from './session-hud'
 import type { HudRead, HudSessionsPort, HudSource, HudTiming } from './types'
 
-const T_FAR = Date.now() + 1_062_000 // 17:42 out — stable across the test run (no fake timers needed)
+// 17:42 out, captured FRESH per fixture call — a module-level capture drifts as the suite's wall-clock
+// advances (the rendered remaining slid under the assertion regex once the file grew). Assertions use a
+// one-minute-tolerant regex for the same reason.
+const farEnd = () => Date.now() + 1_062_000
 
 const port = (): HudSessionsPort & { calls: string[] } => {
   const calls: string[] = []
@@ -45,7 +48,7 @@ const active = (timing: HudTiming, over: Partial<HudSource> = {}): HudRead => ({
 const focusCountdown = (over: Partial<Extract<HudTiming, { kind: 'countdown' }>> = {}): HudTiming => ({
   kind: 'countdown',
   phase: 'focus',
-  endAt: T_FAR,
+  endAt: farEnd(),
   durationSeconds: 1500,
   ...over,
 })
@@ -103,15 +106,15 @@ describe('SessionHud forms', () => {
     const link = container.querySelector('a')!
     expect(link).toBeTruthy()
     expect(link.getAttribute('href')).toContain('/sessions/s-1')
-    expect(link.getAttribute('aria-label')).toMatch(/Active session: Focus — Deep work.*17:4\d remaining/)
-    expect(screen.getByText(/17:4\d/)).toBeTruthy()
+    expect(link.getAttribute('aria-label')).toMatch(/Active session: Focus — Deep work.*17:(3|4)\d remaining/)
+    expect(screen.getByText(/17:(3|4)\d/)).toBeTruthy()
     expect(screen.getByText('Focus')).toBeTruthy() // eyebrow (CSS uppercases — SR-correct)
     expect(screen.getByText('Deep work — Vida platform')).toBeTruthy()
   })
 
   it('compact active: ring + time only — no eyebrow, title or pause control (EC-6)', async () => {
     const { container } = await renderHud(<SessionHud read={active(focusCountdown())} port={port()} __compact />)
-    expect(screen.getByText(/17:4\d/)).toBeTruthy()
+    expect(screen.getByText(/17:(3|4)\d/)).toBeTruthy()
     expect(screen.queryByText('Deep work — Vida platform')).toBeNull()
     expect(container.querySelector('button')).toBeNull()
   })

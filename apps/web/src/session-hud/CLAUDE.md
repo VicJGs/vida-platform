@@ -32,4 +32,18 @@ runtime this HUD surfaces; ADR-004 (sessions framework); the V5 pomodoro-widget 
 - **Honest time only** — no invented remaining-time (EC-3b), no overtime (EC-3c), no phantom loading pill.
 - **Pause is focus-runtime-only** — generic sessions never show a pause control (`SESSION_STATUS` has no
   `paused`; `canPause` gates it).
-- S2 (the pill) + S3 (shell mount via `AppShell.hudSlot`) build on this slice — see the slice map.
+
+## S2 — the pill (`session-hud.tsx`)
+`SessionHud({read, port, __compact?})` renders `HudRead`: hidden→null · idle invitation (presentational in
+M1 — no dead begin-affordance) · active = preset-aware SVG ring + tabular time + (≥tablet) PHASE eyebrow
+(`FOCUS`/`BREAK`/`PAUSED`/`<Phase> · Done`) + truncated title; the body is ONE real SPA link →
+`/sessions/$id` (createLink; `?sample` param carried in DEV); pause/resume ghost = a DOM SIBLING of the
+anchor, only `canPause && !complete && ≥tablet`; ONE sr-only polite status announces TRANSITIONS only
+(empty on mount). ⚠ UA `:any-link` paints an anchor-level underline/blue ACROSS in-flow children — reset
+at the ANCHOR (`style textDecoration/color`); a child's `textDecorationLine:'none'` cannot cancel it.
+
+## S3 — the shell mount (`session-hud-surface.tsx` + routes.tsx hudSlot)
+The hudSlot composition: subscribes to the ROUTER's search (`useRouterState` → `location.searchStr`) and
+feeds `useActiveSession(search)` — a bare `window.location` read is render-time-only and never updates on
+client-side pushState (the S3 Visual-Gate catch). M1 prod: hidden ⇒ the strip is unchanged. No per-unit
+tabIndex (the Bar-1 trap precedent). Deferred work: `delivery/findings.md` F-HUD-1.
