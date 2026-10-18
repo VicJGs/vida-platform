@@ -74,6 +74,14 @@ const noteEntityRoute = createRoute({
   component: lazyRouteComponent(() => import('./notes/note-entity')),
 })
 
+// fe-settings #24 · S3 — the Settings System surface (lazy-split, the /notes precedent; BR-RT-8). Reachable from the
+// shell Bar-1 + ⌘K (nav/module-map.ts:104 already registers the entry); this is its route target.
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/settings',
+  component: lazyRouteComponent(() => import('./settings/settings-surface')),
+})
+
 // fe-notifications #25 (LIF-192) · S1 — the notifications surface (multi-lens: Margin · Dispatches ·
 // Constellation), lazy-split. Mounts into the shipped global `/notifications` Bell nav link.
 // fe-session-runtime #23 (LIF-218) · S2 — the Session runtime page (`/sessions/$id`), lazy-split (the
@@ -90,7 +98,25 @@ const notificationsRoute = createRoute({
   component: lazyRouteComponent(() => import('./notifications/notifications-surface')),
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, graphRoute, notesRoute, noteEntityRoute, sessionRuntimeRoute, notificationsRoute])
+// fe-gamification #32 (LIF-181) · S1 — "the System" multi-mode top view (Overview built; Currencies/
+// Achievements/Rules/Activity land S2–S5), lazy-split. The `feature_gamification` dock gate (conditional
+// dock) is module-map-owned (fe-shell); this only wires the route.
+const gamificationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/gamification',
+  component: lazyRouteComponent(() => import('./gamification/gamification-surface')),
+})
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  graphRoute,
+  notesRoute,
+  noteEntityRoute,
+  settingsRoute,
+  sessionRuntimeRoute,
+  notificationsRoute,
+  gamificationRoute,
+])
 
 export const router = createRouter({
   routeTree,

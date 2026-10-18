@@ -10,7 +10,10 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 
 **Model (UX-3 — data/logic only, no JSX):**
 - `breakpoints.ts` — `Breakpoint`, `BREAKPOINTS`, `BREAKPOINT_ORDER`, `PRIMARY_TEST_WIDTHS`, `CONTENT_MAX_WIDTH`,
-  `SIDE_PADDING`, `TOUCH_TARGET`, `PADDING_SCALE`, `breakpointForWidth()`, `TAMAGUI_MEDIA` (the reserved createMedia seam).
+  `SIDE_PADDING`, `CONTENT_V_INSET` (content vertical inset 24/32/40 — the shell-owned top+bottom breathing room below
+  the strip; design.md §X has only the horizontal gutter, so this is shell-owned, documented in shell-layout.md), `TOUCH_TARGET`,
+  `PADDING_SCALE`, `breakpointForWidth()`, `TAMAGUI_MEDIA` (the reserved createMedia seam). Accessor: `regions.ts contentVInsetAt()`
+  (the `contentGutterAt` twin) → `app-shell.tsx` `ContentMain paddingVertical`.
 - `regions.ts` — `ShellRegion`, `DockState`, `OverlayMode`, `DOCK_STATE`, `OVERLAY_MODE`, `GLOBAL_BAR_MODE`,
   `REGION_VISIBILITY`, `LAYERING`, `ShellUIStateContract`, the `*At()` predicates, `SHELL_REGIONS`.
   **fe-shell #14 (dock⇄float panel model, S1):** `PanelId`/`PanelMode`/`PanelEdge`/`PanelPlacement`/`ShellPlacement` ·

@@ -1,5 +1,17 @@
 <!-- Last updated: 2026-10-12 by /session-end -->
 
+## fe-settings ② (2026-10-12 — LIF-193, PR #137)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-12 | Settings controls | booleans — Checkbox or a toggle? | **net-new `Switch` pill-toggle primitive (@vida/ui)** | Envision call (D-ENV-1) — matches the OS System specimen's toggle; a reusable DS primitive every later surface needs | reversible |
+| 2026-10-12 | Theme state | where does the app-owned theme selection live? | **a Zustand theme-store → `UIProvider selection`** (replaced the `THEME_DEFAULT` const in App.tsx) | AR-4 (app owns theme state); makes preset/mode/density re-theme the whole app live (EC-5); needs no DB | reversible |
+| 2026-10-12 | Persistence | preferences persist to SQLite now, or defer? | **deferred seam — apply live in-session, persist drop-in later** | verified in code the apps/web worker-`values` DB seam blocks every live preferences op (repo.findAll → `.all()` → `values`); same first-consumer home fe-notes deferred | reversible (activates when the seam lands) |
+| 2026-10-12 | Store shape | one prefs store or two? | **two — theme-store + preferences-store** | theme-store is consumed at the provider root (minimal, independently subscribable); preferences-store holds the rest | reversible |
+| 2026-10-12 | Mode control | offer a "System" option? | **Light/Dark only** | `ThemeMode` has no `system`; honest over a fake 3rd value | reversible |
+| 2026-10-12 | Control scope | all 7 control groups, or cut the unbacked ones? | **all 7** (doc-resolved, not a judgment) | `decomposition.md:71` + `reconstructed-structure.md:49` home all 7; storage shape is a build-phase call (`structure-data.md:18`) → ride the open `dashboard_layout`/`module_visibility` fields, zero schema change | — |
+| 2026-10-12 | Merge | merge with CI dark? | **merge on local-green** | CI repo-wide dark (exhausted GitHub Actions minutes, infra not code; main `94aeea1` triage); fe-settings exhaustively locally-verified; Victor approved | reversible |
+
 ## fe-notifications ② (2026-10-12 — LIF-192, PR #132)
 
 | Date | Area | Decision | Choice | Reason | Reversible |

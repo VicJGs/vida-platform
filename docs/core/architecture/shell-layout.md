@@ -81,12 +81,15 @@ region honors **≥44×44px touch targets with ≥8px gaps at all widths** `[des
 All metrics come from `design.md §IV/§X` — the shell invents no spacing values; every value is a DS-2 4pt-grid token,
 each pinned to the correct scale (dimensions → `$size`, gaps/padding → `$space`):
 
-- **Container:** content **max-width 1280px, centered**; side padding **16 / 24 / 32** (mobile/tablet/desktop).
+- **Container:** content **max-width 1280px, centered**; side padding **16 / 24 / 32** (mobile/tablet/desktop);
+  **content vertical inset 24 / 32 / 40** (top+bottom breathing room below the reserved top strip — a shell-owned
+  constant, design.md §X specifies only the horizontal gutter; decided 2026-10-15).
 - **Region padding** uses the named §IV scale — **Compact 8/12 · Default 12/16 · Loose 16/24 · Spacious 24/32** (v/h).
   M1.0 chrome uses **Default/Loose**; **Compact** is the reserved denser variant (a seam, not built).
 - **Touch targets:** every dock item / global-bar action / drawer trigger ≥ **44×44px**, ≥ **8px** apart, at all widths.
 
-Code: `breakpoints.ts` (`CONTENT_MAX_WIDTH`, `SIDE_PADDING`, `TOUCH_TARGET`, `PADDING_SCALE`).
+Code: `breakpoints.ts` (`CONTENT_MAX_WIDTH`, `SIDE_PADDING`, `CONTENT_V_INSET`, `TOUCH_TARGET`, `PADDING_SCALE`);
+`regions.ts` (`contentGutterAt`, `contentVInsetAt`).
 
 ---
 
