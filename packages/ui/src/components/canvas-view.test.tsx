@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render } from '@testing-library/react'
 import { createRef } from 'react'
-import { View } from '@tamagui/core'
+import { Text, View } from '@tamagui/core'
 import { UIProvider } from '../provider'
 import { CanvasView } from './canvas-view'
 
@@ -27,6 +27,25 @@ describe('CanvasView — frame', () => {
     expect(getByText('Before I die')).not.toBeNull()
     expect(container.querySelector('.vida-canvas-eyebrow')?.textContent).toBe('Vision board')
     expect(container.querySelector('.vida-canvas-title')).not.toBeNull()
+  })
+
+  it('the title pairs a display line-height with its display size (wrapped lines must not overlap)', () => {
+    const { container } = renderUI(
+      <>
+        <CanvasView title="This week · Oct 12 – Oct 18, 2026">{child}</CanvasView>
+        <Text data-ref="display" fontFamily="$display" fontSize="$display" lineHeight="$display">ref</Text>
+        <Text data-ref="body" fontFamily="$display" fontSize="$display" lineHeight="$body">ref</Text>
+      </>,
+    )
+    // jsdom resolves no CSS vars, so assert the pairing STRUCTURALLY: Tamagui emits a font-scoped line-height atomic
+    // class per token. The title must carry the SAME class as a reference `lineHeight="$display"` Text — not merely any
+    // line-height (a `$body` pairing would reproduce the 24px overlap). The resolved px (≈41) is measured in the browser.
+    const lhClass = (el: Element | null) => (el?.className.split(/\s+/) ?? []).find((c) => c.startsWith('_lh-'))
+    const title = container.querySelector('.vida-canvas-title')
+    const displayLh = lhClass(container.querySelector('[data-ref="display"]'))
+    expect(displayLh).toBeDefined()
+    expect(lhClass(title)).toBe(displayLh)
+    expect(lhClass(container.querySelector('[data-ref="body"]'))).not.toBe(displayLh)
   })
 
   it('renders the meta + progress slots when provided (meta then progress)', () => {

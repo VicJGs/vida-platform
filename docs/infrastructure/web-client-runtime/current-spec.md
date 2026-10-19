@@ -150,6 +150,11 @@ of their deferred hooks. The UI mechanics live in their own convention docs (`ap
   `useCalendar` (S7) will apply are fixed: `<12:00` morning · `12:00–17:59` afternoon · `≥18:00` evening; an all-day task
   defaults to morning. **No `onToggleItem` is passed** — the completion capability (Tasks/Habits/Routines) isn't wired in
   M1, and a no-op handler would render dead focusable checkboxes; absent ⇒ the renderer's read-only done-state
-  (deny-safe). Week/Day/Year/Living still render the S1 placeholder. ⚠ Known S1 chrome defects (filed, fixed before S3):
-  the switcher doesn't condense <768 (375 page overflow) and the wrapping period title overlaps itself at 375.
+  (deny-safe). Week/Day/Year/Living still render the S1 placeholder.
+  **S1 chrome fix (2026-10-18, `docs/specs/fixes/fe-calendar-s1-chrome-375/`):** the range switcher now condenses to a
+  `Menu` ("Range: <active>") below 768 (EC-1), the breakpoint read via Tamagui `useMedia()` + a `__bp` test override (the
+  shell contract, regions.ts:66-69); all range chrome is `Button size="lg"` (48px ≥ the 44×44 floor, decisions.md:82)
+  with ≥8px gaps, passed as the CanvasView actions slot's direct children (which now wraps); "This week ·" only on the
+  current week; month/year ‹/› clamp the day (Jan 31 › = February). The period title no longer overlaps when wrapped
+  (CanvasView pairs `lineHeight="$display"`).
   `[FACT: apps/web/src/app/calendar/index.tsx agendaFixture + range==='agenda' dispatch; packages/ui/src/components/agenda-view.tsx; docs/specs/foundation/fe-calendar/delivery/PLAN-S2-agenda-renderer.md §3, §5a]`

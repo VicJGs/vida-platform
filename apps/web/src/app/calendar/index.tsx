@@ -3,8 +3,9 @@
 // the switcher/nav, and Month (CalendarView headerless, D4); S2–S5 plug in the other range renderers; S7 replaces the
 // S1 fixture with the live `useCalendar` ProviderRead fan-out. Read-only: nav/switch are navigation, no writes (EC-12).
 import { useMemo } from 'react'
-import { Text, View } from '@tamagui/core'
-import { AgendaView, type AgendaDay, Button, CalendarView, CanvasView, EmptyState } from '@vida/ui'
+import { Text, useMedia, View } from '@tamagui/core'
+import { AgendaView, type AgendaDay, Button, CalendarView, CanvasView, EmptyState, Menu } from '@vida/ui'
+import type { Breakpoint } from '../../shell/breakpoints'
 import { type CalendarRange, useCalendarUIStore } from '../../stores/calendar-ui-store'
 
 const RANGES: CalendarRange[] = ['year', 'month', 'week', 'day', 'agenda', 'living']
@@ -40,13 +41,23 @@ function periodLabel(range: CalendarRange, focused: Date): string {
   const sun = new Date(mon)
   sun.setDate(mon.getDate() + 6)
   const span = `${new Intl.DateTimeFormat('en-US', DM).format(mon)} – ${new Intl.DateTimeFormat('en-US', DM).format(sun)}, ${sun.getFullYear()}`
-  return range === 'week' ? span : `This week · ${span}` // agenda / living
+  // "This week" is a claim about the CURRENT week — any other focused week gets the bare span (the Week range's form).
+  const isCurrentWeek = toKey(mon) === toKey(mondayOf(new Date()))
+  return range !== 'week' && isCurrentWeek ? `This week · ${span}` : span
+}
+
+// Month/year steps clamp the day to the target month's length — a bare setMonth on Jan 31 lands on "Feb 31" = Mar 3
+// and skips February.
+function addMonthsClamped(d: Date, months: number): Date {
+  const first = new Date(d.getFullYear(), d.getMonth() + months, 1)
+  const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
+  return new Date(first.getFullYear(), first.getMonth(), Math.min(d.getDate(), last))
 }
 
 function shift(range: CalendarRange, focused: Date, dir: -1 | 1): Date {
   const r = new Date(focused)
-  if (range === 'year') r.setFullYear(focused.getFullYear() + dir)
-  else if (range === 'month') r.setMonth(focused.getMonth() + dir)
+  if (range === 'year') return addMonthsClamped(focused, dir * 12)
+  else if (range === 'month') return addMonthsClamped(focused, dir)
   else if (range === 'day') r.setDate(focused.getDate() + dir)
   else r.setDate(focused.getDate() + dir * 7) // week / agenda / living
   return r
@@ -107,25 +118,47 @@ function agendaFixture(focused: Date): { days: AgendaDay[]; today: string } {
   return { today, days }
 }
 
-export default function CalendarSurface() {
+export interface CalendarSurfaceProps {
+  /** Test/story-only breakpoint override (mirrors AppShell.__bp) — bypasses useMedia so jsdom can assert the condense. */
+  __bp?: Breakpoint
+}
+
+export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
   const { range, focusedDate, setRange, setFocusedDate } = useCalendarUIStore()
+  const media = useMedia()
+  const isTabletUp = __bp ? __bp !== 'mobile' : media.tablet
   const focused = useMemo(() => parseKey(focusedDate), [focusedDate])
   const title = periodLabel(range, focused)
 
-  const switcher = (
-    <View role="toolbar" aria-label="Calendar range" flexDirection="row" gap="$4" flexWrap="wrap" borderWidth={1} borderColor="$colorBorderDefault" borderRadius="$md" padding="$4">
+  // Range chrome: lg buttons (48px ≥ the 44×44 touch floor at every width, decisions.md:82) with ≥8px gaps. Below 768
+  // the 6-range toolbar condenses to a Menu (EC-1, the CollectionView condense) so the actions slot fits a 375 masthead.
+  const switcher = isTabletUp ? (
+    <View role="toolbar" aria-label="Calendar range" flexDirection="row" gap="$8" flexWrap="wrap" borderWidth={1} borderColor="$colorBorderDefault" borderRadius="$md" padding="$4">
       {RANGES.map((r) => (
-        <Button key={r} size="sm" intent={r === range ? 'primary' : 'ghost'} aria-pressed={r === range} onPress={() => setRange(r)}>
+        <Button key={r} size="lg" intent={r === range ? 'primary' : 'ghost'} aria-pressed={r === range} onPress={() => setRange(r)}>
           {RANGE_LABEL[r]}
         </Button>
       ))}
     </View>
+  ) : (
+    <Menu
+      aria-label="Calendar range"
+      trigger={<Button size="lg" intent="ghost">{`Range: ${RANGE_LABEL[range]}`}</Button>}
+      items={RANGES.map((r) => ({
+        id: r,
+        label: RANGE_LABEL[r],
+        // the active range carries a check (the toolbar's aria-pressed has no menu-item equivalent; the trigger label
+        // names the active range for assistive tech)
+        leading: r === range ? <Text color="$colorTextPrimary">✓</Text> : <Text> </Text>,
+        onSelect: () => setRange(r),
+      }))}
+    />
   )
   const nav = (
-    <View flexDirection="row" gap="$4" alignItems="center">
-      <Button size="sm" intent="ghost" aria-label="Previous" onPress={() => setFocusedDate(toKey(shift(range, focused, -1)))}>‹</Button>
-      <Button size="sm" intent="ghost" onPress={() => setFocusedDate(toKey(new Date()))}>Today</Button>
-      <Button size="sm" intent="ghost" aria-label="Next" onPress={() => setFocusedDate(toKey(shift(range, focused, 1)))}>›</Button>
+    <View flexDirection="row" gap="$8" alignItems="center">
+      <Button size="lg" intent="ghost" aria-label="Previous" onPress={() => setFocusedDate(toKey(shift(range, focused, -1)))}>‹</Button>
+      <Button size="lg" intent="ghost" onPress={() => setFocusedDate(toKey(new Date()))}>Today</Button>
+      <Button size="lg" intent="ghost" aria-label="Next" onPress={() => setFocusedDate(toKey(shift(range, focused, 1)))}>›</Button>
     </View>
   )
 
@@ -135,7 +168,9 @@ export default function CalendarSurface() {
         eyebrow="Calendar"
         title={title}
         aria-label={`Calendar — ${title}`}
-        actions={<View flexDirection="row" gap="$12" alignItems="center" flexWrap="wrap">{switcher}{nav}</View>}
+        // Direct children of the frame's wrapping actions slot, so the nav reflows under the switcher when they don't
+        // fit on one row (768 toolbar; 375 in wide-chrome presets).
+        actions={<>{switcher}{nav}</>}
       >
         {range === 'month' ? (
           <CalendarView<MonthEv>

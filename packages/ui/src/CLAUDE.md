@@ -643,6 +643,13 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   apps/web `VisionBoardCanvas`/`CalendarGridCanvas` compositions (type+convention; measure-driven reference tile; live
   hooks deferred to first consumer — fe-purposes / #19). Spec:
   `docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md` (delivery: `docs/specs/foundation/fe-codec-canvas-board/delivery/`).
+  **fe-calendar S1-chrome fix (2026-10-18) — two frame corrections the #19 Visual Gate surfaced:** (1) the **title pairs
+  `lineHeight="$display"`** (was the 24px body line box → wrapped titles overlapped; see the Rules line-height entry);
+  (2) the **`Actions` slot now `maxWidth:'100%'` + `flexWrap:'wrap'`** (keeps `flexShrink:0`) — before, wide action
+  content (the calendar's 6-button 48px toolbar + nav at 768; quietDesk at 375) could never reflow and overflowed the
+  page, breaking BR-CB-S1-12's own "no overflow at 375/768/1440". Consumers pass actions as the slot's DIRECT children
+  so they wrap below each other. Visual Gate PASS (Victor-reviewed; calendar · CanvasView · CanvasEditor, 3 presets ×
+  L/D × 375/768/1440: 0 page overflow · title 36/41 · no wrap overlap · axe 0).
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
@@ -702,6 +709,16 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   `radius.control → '$md'` (Button/Input/Checkbox/Select/Menu) · `radius.card → '$lg'` (Card/Dialog/Popover/Toast). This
   is the radius analogue of the space lesson (Card `padding` uses `$8/$12/$24`, not the `card.padding` sub-theme key,
   DEF-U5-b). The three-layer component→semantic indirection is NOT expressible for dimensions through Tamagui theming.
+- **⚠ Large type PAIRS its line-height — `fontSize="$<role>"` ⇒ `lineHeight="$<role>"` (fe-calendar S1-chrome fix,
+  2026-10-18):** `@tamagui/core`'s `Text` never derives line-height from `fontSize` (its only variants are
+  `numberOfLines`/`ellipsis`; no `SizableText` — core-only, ADR-001), so an unpaired `$display`/`$heading`/`$subheading`
+  Text falls back to the font's `$true` = BODY line box (**24px**) — a 36px title that wraps overlaps itself (DS-4 §1.1-D
+  fixed the `fontSize` convention only; its render assertion checked size, never line-height). The role-keyed `lineScale`
+  already holds the paired values (`display` 41 · `heading` 31 · `subheading` 25) — just select them. design.md §III pairs
+  every size with its leading. Never a raw px (`lineHeight={40}` breaks "semantic type scale only, no px", decisions.md:57).
+  jsdom can't resolve the value: assert the `_lh-` atomic class equals a reference `lineHeight="$<role>"` Text's; measure
+  px in the browser. Applied so far: the CanvasView title. Remaining unpaired sites = recorded sibling fixes
+  (`docs/specs/fixes/ds-type-lineheight-unpaired/`).
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify
