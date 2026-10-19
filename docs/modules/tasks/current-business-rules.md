@@ -255,10 +255,58 @@
   NOT tasks' (first-consumer-pull / P6). `pinView`/`reorderViews` are Preferences-OWNED (ADR-007 §3.5) — not enforced
   here by design, not a gap.
 
+## S9 — Journal summary + DueProvider, the ① closer (BUILT 2026-10-19) — TAS-19 (`surface_journal` PULL) · TAS-29/32/36
+- **BR-TK-S9-1 (the journal is PULL; S9 emits nothing — ADR-004 §3.2.5).** `surface_journal`/`surface_calendar` are
+  projection effects ("writes no row — pull-aggregated at render"); tasks registers READERS (`registerTasksJournal`,
+  `registerTasksDueProvider`) and never pushes either. Enforced: `service.ts` `COMPLETION_EFFECTS` unchanged; `journal.ts`.
+- **BR-TK-S9-2 (the summary CONTENT is the governing doc's row — `cross-module-integration.md` §2 ∘ `contract.md:32`).**
+  `getDayTasksSummary(date)` = the SET of tasks `{ due_date = date ∨ scheduled_date = date ∨ utcDay(completed_at) =
+  date }` over EVERY live row (no grain filter — a sub-task completion is a completion), projected to `{ id, title,
+  status, priority, completedToday, dueToday }`. A set UNION: a task completed-on AND due-on the date is one member with
+  both flags; nothing is excluded for being completed (its `status` is carried). `completedToday` requires the
+  TIMESTAMP (`completed_at != null`, TK-6) — a `status:'completed'` label with no timestamp is not "completed on date".
+  Never throws for data; idle/malformed `date` ⇒ `[]`. Order: `sort_order` → `created_at` → `id` codepoint.
+- **BR-TK-S9-3 ("the date" of a timestamp = the UTC calendar day — the platform convention).** `utcDay(ms)` =
+  `toISOString().slice(0,10)`, identical to the 7 shipped day-derivation sites across 6 modules (habits · finance ×2 · books · check-ins ·
+  purposes · relationships) and `cross-module-integration.md:70`; timezone-INDEPENDENT (proven under Tokyo + São Paulo).
+  The designed `user_profile.timezone` (ADR-002:3381, unbuilt) re-points this one seam later. **Known divergence, NOT
+  changed here:** `todayYmd()` (BR-TK-S5-3, local day) — a §XXVIII change to a shipped rule, Victor's call.
+- **BR-TK-S9-4 (the due-work lane = the SS-7 due-bucket; both dates qualify; the deadline rides as `hard_deadline`).**
+  `getDueReminders(range)` returns OPEN tasks (`status !== 'completed'` — the agenda is the forward "what's due" half,
+  JR-5; relationships `:521` likewise) whose
+  **[OPEN = the inherited S1 `completed:false` definition (`listTasks`, the S8 `Today` preset) — so a `cancelled`/
+  `on_hold` task with a date IS listed as due work. No doc fixes whether those statuses are "open" ANYWHERE (S1 filter ·
+  S8 preset · S9 lane); a platform-wide UNKNOWN flagged for Victor like `todayYmd`, not special-cased in S9.]** `due_date` OR `scheduled_date` (G6: deadline / "plan to work on it — drives
+  Today/Calendar"; TAS-19 `surface_calendar (due/scheduled)`; the Calendar is the dueIn aggregator) falls in the
+  inclusive ms window, converting a calendar date at UTC midnight (the purposes/relationships convention = the callers'
+  bound convention). `hard_deadline` = the `due_date` moment, OMITTED when none (never `NaN`); `est_minutes` =
+  `estimated_minutes ?? 0`; `urgency:0` (G5 design-pass, ADR-004 §3.3). `DueItem` has no position field — consumers
+  place by their range query or by `hard_deadline`. Never throws; soft-deleted excluded.
+- **BR-TK-S9-5 (a TOTAL, deterministic lane order).** `hard_deadline` ascending with no-deadline LAST (dated work leads;
+  `sessions.dueIn` concatenates lanes unsorted), then `sort_order`, `created_at`, `id` codepoint — never rowid order.
+- **BR-TK-S9-6 (ONE due-work registration, on Sessions — SS-7 "never duplicator").** The contribution is summary-only
+  (no `JournalContribution.dueIn`); the lane registers via `sessions.registerDueProvider` (journals contract:27-32 +
+  JR-3/JR-5: the agenda reads the shared `dueIn()` primitive). Registry handles are PARAMS to the helpers, never service
+  deps. Consequence: `buildDashboard().agenda` has no tasks section until journals reads Sessions (journals' contract).
+- **BR-TK-S9-7 (the contribution never throws for data; degrade is the engine's).** `summary(date)` ⇒ `state:'success'`
+  iff the set is non-empty, else `'empty'` (the precedent rule); a rejecting day-read degrades the tasks section only
+  (journals BR-S2-2); a rejecting lane is skipped by `dueIn` (sessions BR-34). Both proven through the REAL engines.
+- **BR-TK-S9-8 (TAS-29 — the one config schema is NAMED, not re-authored).** `TaskViewConfig` (type) +
+  `TaskViewConfigSchema` (strict Zod: rejects `id`/`space_id`/`entity_types`/a bad `layout`) = `SaveTaskViewSchema` minus
+  identity/ownership; every shipped preset parses. The 12→7 mapping stays the 007 pass.
+- **BR-TK-S9-9 (TAS-32/36 — the ① typed-error halves are RATIFIED, not extended).** TAS-32's per-group error = the S7
+  `state:'degraded'` (BR-TK-S7-5); TAS-36's revert signal = the 10 shipped `Error` subclasses with stable `.name`
+  (surface-guarded). No new error.
+- **BR-TK-S9-10 (structural).** `journal.ts` imports ONLY the `../journals`/`../sessions` barrels + `./types`;
+  `service.ts` adds one type-only `../sessions` import (no cycle) and still no other module's service or schema.
+
 ## Not yet enforced (designed, downstream)
-`pinView`/`reorderViews` = Preferences (first-consumer-pull gap filed). TAS-24 `duty`/open-vocab
-type registry = ADR-002 amendment (deferred). S7's provider REGISTRATION (projects/relationships/learning) + composition
-root = M2/P6 (registry EMPTY at M1). The S3
-completion catalogue's **handlers** (incl. the live `contribute_purpose_metric` consumer) are consumer-registered later
-(verified dormant at M1). The S6 `derived-pull` source read + task↔source binding + `measurementSources` dep = a later
-slice (XCU-13); a manual stored-progress override column = ADR-002 amendment (XCU-16).
+**① backend complete.** `pinView`/`reorderViews` = Preferences (first-consumer-pull gap filed). TAS-24 `duty`/open-vocab
+type registry = ADR-002 amendment (deferred). S7's provider REGISTRATION (projects/relationships/learning) + the
+composition root that CALLS `registerTasks{Timer,ReadProvider,Journal,DueProvider}` = UI-3 / M1.1+ (MVP-PATH:108-111;
+registries EMPTY at M1). The S3 completion catalogue's **handlers** (incl. the live `contribute_purpose_metric`
+consumer) are consumer-registered later (verified dormant at M1). The S6 `derived-pull` source read + task↔source
+binding + `measurementSources` dep = a later slice (XCU-13); a manual stored-progress override column = ADR-002
+amendment (XCU-16). S9: urgency ranking = the G5 placement design-pass (ADR-004 §3.3); a user-timezone day bucket =
+`user_profile.timezone` (ADR-002, unbuilt) + journals BR-S3-4; `todayYmd()` local-day alignment = Victor's call;
+whether `cancelled`/`on_hold` count as "open" (S1 filter · S8 preset · S9 lane) = Victor's call (no doc fixes it).

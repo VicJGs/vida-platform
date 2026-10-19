@@ -4,3 +4,4 @@
 // tags+notes+views · Journal+DueProvider — per docs/features/tasks/delivery/slice-map.md.
 export * from './types'
 export * from './service'
+export * from './journal'

@@ -26,6 +26,8 @@ import type { EffectHandler, EffectRegistry } from '../../foundation/effects'
 import { SessionTypeNotFound, type SessionRegistry, type SessionTypeDef } from '../../foundation/sessions'
 import { TagNotFound } from '../../foundation/spaces'
 import { ViewNotFound, type ReadProvider, type ViewFilter, type ViewProviderRegistry } from '../../foundation/views'
+// S9 — the SS-7 due-work shapes (sessions-owned; type-only — no runtime edge, and sessions imports nothing from tasks).
+import type { DueItem, TimeRange } from '../sessions'
 import {
   CreateTaskSchema,
   UpdateTaskSchema,
@@ -48,6 +50,7 @@ import {
   type ParentType,
   type SaveTaskViewInput,
   type TaskViewPreset,
+  type TasksDaySummaryItem,
   TaskNotFoundError,
   MultipleParentError,
   SubtaskNestingError,
@@ -171,10 +174,36 @@ function nextOccurrence(rule: string, fromYmd: string): string | null {
 
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 
-/** Today as YYYY-MM-DD in LOCAL time (the anchor fallback for a null `due_date`; g2 N4 — local, not UTC). */
+/** Today as YYYY-MM-DD in LOCAL time (the anchor fallback for a null `due_date`; g2 N4 — local, not UTC).
+ *  NB (S9): this is the ONLY local-day helper in `@vida/core` — the platform convention for "the day of a timestamp" is
+ *  the UTC calendar day (`utcDay` below, the shipped platform convention (6 modules, 7 sites)). Aligning it is a §XXVIII change to the
+ *  shipped BR-TK-S5 rule, flagged for Victor and deliberately NOT made in S9. */
 function todayYmd(): string {
   const d = new Date()
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+
+// ---- S9: day/window helpers (pure; exported for direct unit test) ---------------
+/** Unix ms → the UTC calendar day `YYYY-MM-DD` — the platform's shipped convention for "the date" of a timestamp
+ *  (habits `clock`, finance, books, check-ins, purposes, relationships all derive a day as `toISOString().slice(0,10)`;
+ *  `cross-module-integration.md:70` writes `date(started_at)` for the same). Timezone-INDEPENDENT by construction. When
+ *  the designed `user_profile.timezone` (ADR-002:3381, unbuilt) lands, this is the one seam to re-point.
+ *  Precondition: a finite ms (`toISOString` throws RangeError on NaN/±Infinity) — the only caller passes a stored
+ *  `completed_at`, which is always a `Date.now()` stamp. */
+export function utcDay(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 10)
+}
+
+/** `YYYY-MM-DD` → Unix ms at UTC midnight — the moment a calendar date occupies in a `TimeRange` (the purposes/
+ *  relationships provider convention = the convention every `TimeRange` caller builds its bounds with). `null`/
+ *  `undefined` ⇒ `undefined`; a malformed string ⇒ `NaN` (callers test with `inWindow`, which rejects NaN). */
+function utcMidnightMs(ymd: string | null | undefined): number | undefined {
+  return ymd == null ? undefined : Date.parse(`${ymd}T00:00:00Z`)
+}
+
+/** Inclusive membership of a moment in a `TimeRange` (both ends inclusive); `undefined`/`NaN` ⇒ false (purposes `:900`). */
+function inWindow(ms: number | undefined, range: TimeRange): boolean {
+  return ms !== undefined && !Number.isNaN(ms) && ms >= range.start && ms <= range.end
 }
 
 // ---- S6: measurability helpers (pure; exported for direct unit test) --------
@@ -704,6 +733,81 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     return (await views.listViews()).filter(isTaskView) // substrate order (created_at, id)
   }
 
+  // ---- S9: the Journal `/summary` set + the SS-7 due-bucket (the ① closer) ----
+  // Journal = PULL (ADR-004 §3.2.5: `surface_journal` is a projection — "writes no row, pull-aggregated at render");
+  // S3 pushes nothing for it. The CONTENT is the governing doc's row verbatim (cross-module-integration.md §2:68 —
+  // "Tasks completed or due on the date: title, status, priority | tasks WHERE due_date = ? OR completed on date"),
+  // with `contract.md:32` adding `scheduled_date` to "due". A SET (every row, no grain filter, no exclusion clause):
+  // a task completed-on AND due-on the date is one member with both flags. Never throws for data — an idle or
+  // malformed `date` matches nothing (the shipped providers validate nothing either).
+  async function getDayTasksSummary(date: string): Promise<TasksDaySummaryItem[]> {
+    const all = await listTasks() // soft-delete filtered (findAll)
+    const items: Array<TasksDaySummaryItem & { sort_order: number; created_at: number }> = []
+    for (const t of all) {
+      const completedToday = t.completed_at != null && utcDay(t.completed_at) === date
+      const dueToday = t.due_date === date || t.scheduled_date === date
+      if (!completedToday && !dueToday) continue
+      items.push({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        completedToday,
+        dueToday,
+        sort_order: t.sort_order,
+        created_at: t.created_at,
+      })
+    }
+    // Deterministic, platform-independent order (the S7 lesson): sort_order, created_at, then id codepoint.
+    items.sort((a, b) => a.sort_order - b.sort_order || a.created_at - b.created_at || byCodepoint(a.id, b.id))
+    return items.map(({ sort_order: _s, created_at: _c, ...item }) => item)
+  }
+
+  // The SS-7 lane producer (sessions intake G2-shape: "a module-owned due-bucket resolved LIVE by its owner …
+  // hard_deadline?"). A task is due work in the window when its `due_date` (the deadline, G6) OR its `scheduled_date`
+  // ("plan to work on it — drives Today/Calendar", G6) falls in it — the calendar is the dueIn aggregator (IA §4) and
+  // surfaces BOTH dates (TAS-19 `surface_calendar (due/scheduled)`). OPEN tasks only: the agenda is the FORWARD half,
+  // "what's due" (JR-5); the shipped relationships lane skips completed reminders the same way. `DueItem` carries no
+  // position field — consumers place by their own range query (Journals: one day) or by `hard_deadline` (Calendar).
+  // Calendar dates convert at UTC midnight (the purposes/relationships convention = how every caller builds bounds).
+  // Never throws for data; a `NaN` never reaches the payload.
+  async function getDueReminders(range: TimeRange): Promise<DueItem[]> {
+    const all = await listTasks() // soft-delete filtered
+    const picked: Array<{ item: DueItem; sort_order: number; created_at: number; id: string }> = []
+    for (const t of all) {
+      // OPEN = the S1 `completed:false` definition (`status !== 'completed'`). `cancelled`/`on_hold` are NOT special-cased:
+      // no doc defines them for due work (BR-TK-S3-7 likewise does not guard `cancelled`) — flagged, not invented.
+      if (t.status === 'completed') continue // not due work (the forward half)
+      const dueMs = utcMidnightMs(t.due_date)
+      const schedMs = utcMidnightMs(t.scheduled_date)
+      if (!inWindow(dueMs, range) && !inWindow(schedMs, range)) continue
+      const hardDeadline = dueMs !== undefined && !Number.isNaN(dueMs) ? dueMs : undefined
+      picked.push({
+        item: {
+          source_module: 'tasks',
+          ref_id: t.id,
+          label: t.title,
+          est_minutes: t.estimated_minutes ?? 0,
+          urgency: 0, // no urgency algorithm at M1 — the deferred G5 placement design-pass (ADR-004 §3.3; sessions:729)
+          ...(hardDeadline !== undefined ? { hard_deadline: hardDeadline } : {}),
+        },
+        sort_order: t.sort_order,
+        created_at: t.created_at,
+        id: t.id,
+      })
+    }
+    // A TOTAL, deterministic order (sessions.dueIn concatenates lanes unsorted): deadline ascending with NO deadline
+    // LAST so dated work leads (relationships `:561` coerces an absent deadline to 0 = first; tasks places it last),
+    // then sort_order, created_at, id codepoint.
+    picked.sort((a, b) => {
+      const da = a.item.hard_deadline ?? Number.POSITIVE_INFINITY
+      const db = b.item.hard_deadline ?? Number.POSITIVE_INFINITY
+      // Two no-deadline items: ∞ − ∞ = NaN, which is falsy ⇒ `||` falls through to the next tier (a tie, as intended).
+      return da - db || a.sort_order - b.sort_order || a.created_at - b.created_at || byCodepoint(a.id, b.id)
+    })
+    return picked.map((p) => p.item)
+  }
+
   return {
     createTask,
     updateTask,
@@ -727,6 +831,8 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     getTaskNote,
     saveView,
     listViews,
+    getDayTasksSummary,
+    getDueReminders,
   }
 }
 

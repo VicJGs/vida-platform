@@ -102,6 +102,12 @@ export const SaveTaskViewSchema = z.strictObject({
   sort: z.unknown().optional(),
 })
 
+/** S9 · TAS-29 (RATIFY) — the Zod half of the one saved-view config schema: `SaveTaskViewSchema` minus identity
+ *  (`id`) and ownership (`space_id`). `.omit` on a `strictObject` keeps the `never` catchall (zod 4.4.3), so a
+ *  caller-supplied `entity_types`/`id`/`space_id` is still rejected — the stamp stays non-overridable. The ② validates
+ *  a view-builder draft against this before `saveView`. */
+export const TaskViewConfigSchema = SaveTaskViewSchema.omit({ id: true, space_id: true })
+
 /** S7 — the aggregated-view grouping (TAS-05 "by module/project/status"). Boundary-validated like every S1 enum; a
  *  malformed `by` is a caller bug (Zod error), distinct from a source outage (a per-group `state`, never a throw). */
 export const AggGroupingSchema = z.discriminatedUnion('by', [

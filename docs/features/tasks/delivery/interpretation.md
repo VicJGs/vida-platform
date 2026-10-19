@@ -91,3 +91,23 @@
 - **Measurement CHECK defaults** (`milestone` × nullable `binding_mode`) + `nesting_weight` are already in the schema — **verify-only**, no decision. `[FACT: schema/tasks.ts:67-69]`
 - **Out of ① scope (② UI / P6, ADR-020):** the 12 layouts, view-builder chrome, board drag, running-timer indicator, optimistic apply/revert. Full V1 view anatomy = deferred ADR-007 pass. `[FACT: backend-intent/parts/tasks.md:5]`
 - **Routines seam** — ensure S1/S3/S5 expose a clean `createTask`(+recurrence)/`completeTask`/`getTask`/`listTasks` surface routines' task-step driver will consume (the whole reason Tasks is first).
+
+## 6. Build-phase record — S9 (2026-10-19): NO S9 interpretation; one inherited UNKNOWN flagged; one convention FACT
+- **S9 carries no interpretation of its own.** Every S9 rule is doc-fixed: the summary CONTENT = `docs/core/architecture/
+  cross-module-integration.md` §2 (the GOVERNING daily-summary spec; tasks row verbatim) ∘ `contract.md:32`; "the date"
+  of a timestamp = the UTC calendar day (the shipped platform convention (6 modules, 7 sites) + `cross-module-integration.md:70`); the lane =
+  the sessions intake G2-shape due-bucket ∪ intake G6 (both dates), open-only per JR-5; one due-work registration on
+  Sessions per journals contract:27-32 + JR-5 + SS-7. Rev 1–2 of PLAN-S9 had labelled four "interpretations" (local day ·
+  placement · grain · completed∉due) — drift from reading precedents instead of the governing doc; Victor's "nothing is
+  open, check the documentation" was correct on each. Record: PLAN-S9 §Gate record.
+- **Convention FACT the lane relies on (for the first ② caller):** a calendar-date item lives at UTC midnight
+  (`Date.parse(ymd+'T00:00:00Z')`) — every shipped `TimeRange` caller builds its bounds the same way (relationships/
+  purposes tests). A caller building "today" from LOCAL midnight in a UTC-negative zone (BRT = 03:00Z, window
+  `[D 03:00Z, D+1 02:59Z]`) would SHIFT every calendar-date item by one day — it misses D's item at `D 00:00Z` and shows
+  D+1's as "today"; Sessions' own `planned_blocks` lane compares real instants. Build bounds at UTC midnight.
+- **Flagged for Victor (not S9 changes — shipped-rule / doc-silent):** (a) `todayYmd()` (S5 regen anchor,
+  BR-TK-S5-3) is the only LOCAL-day helper in `@vida/core`; aligning it to the UTC convention is a §XXVIII change to a
+  shipped rule. (b) **One inherited UNKNOWN:** "open" = the S1 `completed:false` definition (`status !== 'completed'`),
+  reused by the S8 `Today` preset and the S9 lane, so a `cancelled`/`on_hold` dated task is listed as due work; no doc
+  fixes whether those statuses are open anywhere — a platform-wide question, not an S9 choice (S9 inherits, does not
+  special-case).

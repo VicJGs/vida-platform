@@ -40,8 +40,11 @@ import {
   createTasksReadProvider,
   registerTasksReadProvider,
   TASK_VIEW_PRESETS,
+  utcDay,
 } from '../service'
-import { SaveTaskViewSchema } from '../../../validators/task'
+import { createTasksJournalContribution, registerTasksJournal, registerTasksDueProvider } from '../journal'
+import { createJournalRegistry, buildDashboard } from '../../journals'
+import { SaveTaskViewSchema, TaskViewConfigSchema } from '../../../validators/task'
 import {
   createViewProviderRegistry,
   createViewsService,
@@ -54,6 +57,7 @@ import {
   type TasksServiceDeps,
   type AggregatedTasks,
   type AggregatedGroup,
+  type TaskViewConfig,
   TaskNotFoundError,
   MultipleParentError,
   SubtaskNestingError,
@@ -1408,5 +1412,275 @@ describe('mod-tasks S8 — tasks as a ReadProvider (XCU-07/08) through the REAL 
     expect(importLines.some((l) => /services\/(projects|relationships|learning|languages)/.test(l))).toBe(false)
     expect(importLines.some((l) => /db\/schema'/.test(l))).toBe(false)
     expect(createTasksReadProvider({ svc: h.svc, db: h.db, deviceId: h.deviceId }).entityType).toBe('task')
+  })
+})
+
+// ============================================================================
+// S9 — Journal summary + DueProvider (the ① closer) — maps 1:1 to PLAN-S9 gate 1–10.
+// The summary SET is the governing cross-module-integration.md §2 row ("completed or due on the date: title, status,
+// priority"); the day of a timestamp is the UTC calendar day (the shipped 6-module platform convention); the lane is the SS-7
+// due-bucket (G2-shape ∪ G6). REAL JournalRegistry + buildDashboard + SessionsService over the same live store.
+// ============================================================================
+const ms = (iso: string): number => Date.parse(iso + 'T00:00:00Z')
+const codepoint = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
+/** Pin the fake clock at UTC noon of a calendar day (the S8 pattern: AFTER setup, around writes only). */
+function pinNoonUtc(ymd: string): void {
+  vi.setSystemTime(new Date(`${ymd}T12:00:00Z`))
+}
+function withTz<T>(tz: string, fn: () => Promise<T>): Promise<T> {
+  const orig = process.env.TZ
+  process.env.TZ = tz // Node Date picks up TZ at runtime (the S5 test-11 pattern)
+  return fn().finally(() => {
+    if (orig === undefined) delete process.env.TZ
+    else process.env.TZ = orig
+  })
+}
+
+describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () => {
+  it('(1) getDayTasksSummary = the §2 set: exact membership + flags + fields + order; idle/malformed ⇒ []', async () => {
+    const h = await setup()
+    const D = '2026-10-17'
+    vi.useFakeTimers({ toFake: ['Date'] })
+    let ids: Record<string, string>
+    try {
+      // the one D-1 seed FIRST (two-pin sequence): completed yesterday, due today
+      pinNoonUtc('2026-10-16')
+      const dMinus1 = await h.svc.createTask({ title: 'completed D-1 due D', due_date: D })
+      await h.svc.completeTask(dMinus1.id)
+      pinNoonUtc(D)
+      const top = await h.svc.createTask({ title: 'completed D top' })
+      await h.svc.completeTask(top.id)
+      const sub = await h.svc.addSubtask(top.id, { title: 'completed D sub-task' }) // parent ≠ the soft-deleted seed (A4)
+      await h.svc.completeTask(sub.id)
+      const both = await h.svc.createTask({ title: 'completed D + due D', due_date: D })
+      await h.svc.completeTask(both.id)
+      const due = await h.svc.createTask({ title: 'open due D', due_date: D })
+      const sched = await h.svc.createTask({ title: 'open scheduled D', scheduled_date: D })
+      const dueSched = await h.svc.createTask({ title: 'open due+sched D', due_date: D, scheduled_date: D })
+      const duePlus1 = await h.svc.createTask({ title: 'open due D+1', due_date: '2026-10-18' })
+      await h.svc.createTask({ title: 'open due D-1', due_date: '2026-10-16' })
+      const dead = await h.svc.createTask({ title: 'completed D then deleted' })
+      await h.svc.completeTask(dead.id)
+      await h.svc.softDeleteTask(dead.id)
+      const reopened = await h.svc.createTask({ title: 'completed D then reopened' })
+      await h.svc.completeTask(reopened.id)
+      await h.svc.reopenTask(reopened.id)
+      const label = await h.svc.createTask({ title: 'status label only', status: 'completed', due_date: D })
+      expect(label.completed_at).toBeNull() // create never writes the timestamp (BR-TK-S1-5)
+      const so1 = await h.svc.createTask({ title: 'open due D sort_order 1', due_date: D, sort_order: 1 }) // the sort_order tier
+      ids = {
+        dMinus1: dMinus1.id, top: top.id, sub: sub.id, both: both.id, due: due.id, sched: sched.id,
+        dueSched: dueSched.id, duePlus1: duePlus1.id, label: label.id, so1: so1.id,
+      }
+    } finally {
+      vi.useRealTimers()
+    }
+    const set = await h.svc.getDayTasksSummary(D)
+    expect(set).toHaveLength(9)
+    const byId = new Map(set.map((i) => [i.id, i]))
+    const flags = (id: string) => [byId.get(id)?.completedToday, byId.get(id)?.dueToday]
+    expect(flags(ids.top)).toEqual([true, false])
+    expect(flags(ids.sub)).toEqual([true, false]) // every row — a sub-task completion is a completion
+    expect(flags(ids.both)).toEqual([true, true]) // one member, both flags (a set union, no exclusion clause)
+    expect(flags(ids.due)).toEqual([false, true])
+    expect(flags(ids.sched)).toEqual([false, true])
+    expect(flags(ids.dueSched)).toEqual([false, true])
+    expect(flags(ids.label)).toEqual([false, true]) // status label ≠ a completion; still due D
+    expect(flags(ids.dMinus1)).toEqual([false, true]) // completed yesterday, due today
+    expect(byId.get(ids.dMinus1)?.status).toBe('completed')
+    expect(byId.has(ids.duePlus1)).toBe(false)
+    // the §2 fields
+    const member = byId.get(ids.due)!
+    expect(member).toEqual({ id: ids.due, title: 'open due D', status: 'not_started', priority: 'medium', completedToday: false, dueToday: true })
+    // order: sort_order (the so1 seed LAST) → created_at (the D-1 seed FIRST) → id codepoint for the pinned rest
+    expect(set[0]!.id).toBe(ids.dMinus1)
+    expect(set.at(-1)!.id).toBe(ids.so1)
+    const rest = set.slice(1, -1).map((i) => i.id)
+    expect(rest).toEqual([...rest].sort(codepoint))
+    // D+1 ⇒ exactly the due-D+1 row; idle ⇒ []; malformed ⇒ [] (no throw)
+    expect((await h.svc.getDayTasksSummary('2026-10-18')).map((i) => i.id)).toEqual([ids.duePlus1])
+    expect(await h.svc.getDayTasksSummary('2030-01-01')).toEqual([])
+    expect(await h.svc.getDayTasksSummary('not-a-date')).toEqual([])
+  })
+
+  it('(2) utcDay + the day bucket are TIMEZONE-INDEPENDENT (the platform convention) under Tokyo and São Paulo', async () => {
+    const instant = Date.UTC(2026, 9, 17, 20, 0, 0) // 2026-10-17 20:00Z = Tokyo 10-18 05:00 · São Paulo 10-17 17:00
+    for (const tz of ['Asia/Tokyo', 'America/Sao_Paulo']) {
+      await withTz(tz, async () => {
+        // prove the zone switch actually took (otherwise the TZ-independence claim is unfalsifiable — g2 N2)
+        expect(new Date(instant).getDate()).toBe(tz === 'Asia/Tokyo' ? 18 : 17)
+        expect(utcDay(instant)).toBe('2026-10-17') // (a) direct unit — a local bucket would differ between the two zones
+        const h = await setup()
+        vi.useFakeTimers({ toFake: ['Date'] })
+        let id: string
+        try {
+          vi.setSystemTime(new Date(instant))
+          const t = await h.svc.createTask({ title: `done under ${tz}` })
+          await h.svc.completeTask(t.id)
+          id = t.id
+        } finally {
+          vi.useRealTimers()
+        }
+        // (b) live: filed under the UTC day in BOTH zones
+        expect((await h.svc.getDayTasksSummary('2026-10-17')).map((i) => i.id)).toEqual([id])
+        expect(await h.svc.getDayTasksSummary('2026-10-18')).toEqual([])
+      })
+    }
+  })
+
+  it('(3) the contribution + the REAL JournalRegistry/buildDashboard: summary-only, success/empty, dedup, per-section degrade', async () => {
+    const h = await setup()
+    const D = '2026-10-17'
+    const c = createTasksJournalContribution(h.svc)
+    expect(c.module).toBe('tasks')
+    expect(c.sectionKey).toBe('summary')
+    expect(c.dataPoints.map((p) => p.id)).toEqual(['completed_today', 'due_today'])
+    expect('dueIn' in c).toBe(false) // the agenda rides the Sessions lane (SS-7: one registration)
+    const idle = await c.summary(D)
+    expect(idle).toMatchObject({ sectionKey: 'summary', module: 'tasks', state: 'empty', items: [] })
+    const t = await h.svc.createTask({ title: 'due today', due_date: D })
+    const active = await c.summary(D)
+    expect(active.state).toBe('success')
+    expect((active.items as { id: string }[]).map((i) => i.id)).toEqual([t.id])
+    // a completion (not just a date) also makes the day non-empty — the spec's "after one completion ⇒ success"
+    vi.useFakeTimers({ toFake: ['Date'] })
+    let done: string
+    try {
+      pinNoonUtc(D)
+      done = (await h.svc.createTask({ title: 'done today' })).id
+      await h.svc.completeTask(done)
+    } finally {
+      vi.useRealTimers()
+    }
+    expect(((await c.summary(D)).items as { id: string; completedToday: boolean }[]).find((i) => i.id === done)?.completedToday).toBe(true)
+    // through the REAL engine
+    const registry = createJournalRegistry()
+    registerTasksJournal(registry, h.svc)
+    registerTasksJournal(registry, h.svc) // overwrite-dedup by module (BR-S1-3)
+    const dash = await buildDashboard(registry, D)
+    const tasksSections = dash.summary.filter((s) => s.module === 'tasks')
+    expect(tasksSections).toHaveLength(1)
+    expect(tasksSections[0]!.state).toBe('success')
+    expect((tasksSections[0]!.items as { id: string }[]).map((i) => i.id).sort(codepoint)).toEqual([t.id, done].sort(codepoint))
+    expect(dash.agenda.some((s) => s.module === 'tasks')).toBe(false) // no JournalContribution.dueIn — by design
+    // degrade: a rejecting day-read degrades the tasks section only; the dashboard still resolves (BR-S2-2)
+    const broken = { getDayTasksSummary: () => Promise.reject(new Error('boom')) } as unknown as TasksService
+    const registry2 = createJournalRegistry()
+    registerTasksJournal(registry2, broken)
+    const dash2 = await buildDashboard(registry2, D)
+    expect(dash2.summary.find((s) => s.module === 'tasks')?.state).toBe('error')
+  })
+
+  it('(4) getDueReminders — the SS-7 due-bucket: due OR scheduled in the window, open only, hard_deadline = due_date', async () => {
+    const h = await setup()
+    const range = { start: ms('2026-10-10'), end: ms('2026-10-20') }
+    const mk = (title: string, input: Partial<Parameters<TasksService['createTask']>[0]> = {}) =>
+      h.svc.createTask({ ...input, title })
+    const dueIn = await mk('due in', { due_date: '2026-10-15', estimated_minutes: 25 })
+    const schedInDueOut = await mk('sched in, due out', { scheduled_date: '2026-10-12', due_date: '2026-10-30' })
+    const schedOutDueIn = await mk('sched out, due in', { scheduled_date: '2026-10-05', due_date: '2026-10-15' })
+    await mk('both before', { scheduled_date: '2026-10-05', due_date: '2026-10-08' })
+    const schedOnly = await mk('sched only', { scheduled_date: '2026-10-12' })
+    await mk('no dates')
+    const done = await mk('completed due in', { due_date: '2026-10-15' })
+    await h.svc.completeTask(done.id)
+    const dead = await mk('deleted due in', { due_date: '2026-10-15' })
+    await h.svc.softDeleteTask(dead.id)
+    const parent = await mk('parent')
+    const sub = await h.svc.addSubtask(parent.id, { title: 'dated sub-task', due_date: '2026-10-16' })
+    const lo = await mk('bound lo', { due_date: '2026-10-10' })
+    const hi = await mk('bound hi', { due_date: '2026-10-20' })
+    await mk('past hi', { due_date: '2026-10-21' })
+
+    const items = await h.svc.getDueReminders(range)
+    const by = new Map(items.map((i) => [i.ref_id, i]))
+    expect([...by.keys()].sort()).toEqual([dueIn.id, schedInDueOut.id, schedOutDueIn.id, schedOnly.id, sub.id, lo.id, hi.id].sort())
+    expect(by.get(dueIn.id)).toEqual({ source_module: 'tasks', ref_id: dueIn.id, label: 'due in', est_minutes: 25, urgency: 0, hard_deadline: ms('2026-10-15') })
+    expect(by.get(schedInDueOut.id)?.hard_deadline).toBe(ms('2026-10-30')) // surfaced by the scheduled day; deadline rides along
+    expect(by.get(schedOutDueIn.id)?.hard_deadline).toBe(ms('2026-10-15')) // surfaced by the deadline
+    expect(by.get(schedOnly.id)).not.toHaveProperty('hard_deadline') // no deadline ⇒ absent, never NaN
+    expect(by.get(schedOnly.id)?.est_minutes).toBe(0) // null estimate ⇒ 0
+    expect(items.every((i) => i.hard_deadline === undefined || !Number.isNaN(i.hard_deadline))).toBe(true)
+  })
+
+  it('(5) getDueReminders — a total, deterministic order: deadline asc, no-deadline LAST, then sort_order, created_at, id', async () => {
+    const h = await setup()
+    const range = { start: ms('2026-10-10'), end: ms('2026-10-20') }
+    vi.useFakeTimers({ toFake: ['Date'] })
+    let s2: string, s0: string, s1: string, e1: string, e2: string, later: string, noDl: string
+    try {
+      pinNoonUtc('2026-10-01')
+      s2 = (await h.svc.createTask({ title: 'd15 so2', due_date: '2026-10-15', sort_order: 2 })).id
+      s0 = (await h.svc.createTask({ title: 'd15 so0', due_date: '2026-10-15', sort_order: 0 })).id
+      s1 = (await h.svc.createTask({ title: 'd15 so1', due_date: '2026-10-15', sort_order: 1 })).id
+      e1 = (await h.svc.createTask({ title: 'd12 eq a', due_date: '2026-10-12', sort_order: 5 })).id
+      e2 = (await h.svc.createTask({ title: 'd12 eq b', due_date: '2026-10-12', sort_order: 5 })).id
+      later = (await h.svc.createTask({ title: 'd18', due_date: '2026-10-18' })).id
+      noDl = (await h.svc.createTask({ title: 'sched only', scheduled_date: '2026-10-11' })).id
+    } finally {
+      vi.useRealTimers()
+    }
+    const first = (await h.svc.getDueReminders(range)).map((i) => i.ref_id)
+    const eq = [e1, e2].sort(codepoint) // equal deadline + sort_order + pinned created_at ⇒ id codepoint
+    expect(first).toEqual([...eq, s0, s1, s2, later, noDl])
+    expect((await h.svc.getDueReminders(range)).map((i) => i.ref_id)).toEqual(first) // stable
+  })
+
+  it('(6) registerTasksDueProvider wires the lane into the REAL sessions.dueIn; a rejecting lane is skipped (BR-34)', async () => {
+    const h = await setupWithTimer()
+    registerTasksDueProvider(h.sessions, h.svc)
+    const t = await h.svc.createTask({ title: 'ring', due_date: '2026-10-20' })
+    const broken = { getDueReminders: () => Promise.reject(new Error('lane down')) } as unknown as TasksService
+    h.sessions.registerDueProvider({ module: 'broken', fetch: (r) => broken.getDueReminders(r) })
+    const items = await h.sessions.dueIn({ start: ms('2026-10-01'), end: ms('2026-10-31') })
+    expect(items.some((i) => i.source_module === 'tasks' && i.ref_id === t.id)).toBe(true)
+    expect(items.some((i) => i.source_module === 'broken')).toBe(false)
+  })
+
+  it('(7) TAS-36 surface guard — every exported typed error is an Error with a stable `.name`', () => {
+    const errors: Array<[string, Error]> = [
+      ['TaskNotFoundError', new TaskNotFoundError('x')],
+      ['MultipleParentError', new MultipleParentError()],
+      ['SubtaskNestingError', new SubtaskNestingError('x')],
+      ['TimerAlreadyRunningError', new TimerAlreadyRunningError('x')],
+      ['TimerNotFoundError', new TimerNotFoundError('x')],
+      ['TimerNotWiredError', new TimerNotWiredError()],
+      ['RecurrenceNotAllowedError', new RecurrenceNotAllowedError('x')],
+      ['TasksDepNotWiredError', new TasksDepNotWiredError('spaces')],
+      ['TaskViewNotFoundError', new TaskViewNotFoundError('x')],
+      ['RecurrenceRegenError', new RecurrenceRegenError('x', 'bad rule')],
+    ]
+    expect(errors).toHaveLength(10)
+    for (const [name, err] of errors) {
+      expect(err).toBeInstanceOf(Error)
+      expect(err.name).toBe(name)
+      expect(err.message.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('(8) TAS-29 RATIFY — TaskViewConfig (type) + TaskViewConfigSchema (strict Zod) are the one config schema', () => {
+    const draft = { name: 'Mine', layout: 'board', tags: ['t1'], predicates: { completed: false }, grouping: { field: 'status' } } satisfies TaskViewConfig
+    expect(TaskViewConfigSchema.safeParse(draft).success).toBe(true)
+    expect(TaskViewConfigSchema.safeParse({ ...draft, id: 'v1' }).success).toBe(false)
+    expect(TaskViewConfigSchema.safeParse({ ...draft, space_id: null }).success).toBe(false)
+    expect(TaskViewConfigSchema.safeParse({ ...draft, entity_types: ['task'] }).success).toBe(false) // the stamp stays non-overridable
+    expect(TaskViewConfigSchema.safeParse({ ...draft, layout: 'bogus' }).success).toBe(false)
+    for (const p of TASK_VIEW_PRESETS) expect(TaskViewConfigSchema.safeParse(p.view).success).toBe(true)
+  })
+
+  it('(9) structural — journal.ts imports only the journals/sessions barrels + ./types; service.ts gates unchanged', () => {
+    const journalImports = readFileSync(new URL('../journal.ts', import.meta.url), 'utf8')
+      .split('\n')
+      .filter((l) => l.trimStart().startsWith('import'))
+    expect(journalImports.length).toBeGreaterThan(0)
+    expect(journalImports.every((l) => /from '(\.\.\/journals|\.\.\/sessions|\.\/types)'/.test(l))).toBe(true)
+    const serviceImports = readFileSync(new URL('../service.ts', import.meta.url), 'utf8')
+      .split('\n')
+      .filter((l) => l.trimStart().startsWith('import'))
+    const sessionsImports = serviceImports.filter((l) => /from '\.\.\/sessions'/.test(l))
+    expect(sessionsImports.length).toBeGreaterThanOrEqual(1)
+    expect(sessionsImports.every((l) => /^\s*import type/.test(l))).toBe(true) // EVERY `../sessions` import is type-only (no runtime edge)
+    expect(serviceImports.some((l) => /services\/(projects|relationships|learning|languages)/.test(l))).toBe(false)
+    expect(serviceImports.filter((l) => /db\/schema/.test(l)).every((l) => /db\/schema\/(tasks|foundation\/)/.test(l))).toBe(true)
   })
 })

@@ -18,7 +18,7 @@ interface TasksServiceDeps {
   // registry: TaggableTypeRegistry — DROPPED at S8: 'task' is pre-seeded in `_registry.ts` ENTITY_TYPES (no register())
   sessions?: SessionsService     // timer sub-type (S4) — built optional + fail-loud (TimerNotWiredError)
   effects?: EffectsPort          // deny-safe — completion/log_time effects
-  measurementSources?: MeasurementSourceRegistry
+  // measurementSources?: MeasurementSourceRegistry — DROPPED at S9 currency: never wired (S6: derived-pull → null, XCU-13 later slice)
   providers?: ViewProviderRegistry      // deny-safe — the SHARED R7/V4 seam (foundation/views); resolved at S7 from the
                                         // `AggregationProviderPort` placeholder — tasks consumes the one OS seam, no port of its own
 }
@@ -74,9 +74,17 @@ export const TASK_VIEW_PRESETS: readonly TaskViewPreset[]                  // TA
 // reorderViews(ids) · pinView(id) — AMENDED at S8 (PLAN-S8 §Resolved): nav placement of views is Preferences-OWNED
 // (ADR-007 §3.5 · IA §6 · XCU-21; origin = intake G1 "named, reorderable, pinnable"). NOT a tasks op; filed as a
 // Preferences first-consumer-pull gap (pulled when the ② view-switcher lands).
-summary(date: string): Promise<SectionData>; getDueReminders(range: TimeRange): Promise<DueItem[]>
-function registerTasksJournal(registry: JournalRegistry, svc: TasksService): void
-function registerTasksDueProvider(sessions: SessionsService, svc: TasksService): void
+// S9 (built 2026-10-19) — the ① closer. AMENDED to the BUILT shape: `summary(date)` lives on the JournalContribution in
+// journal.ts (the precedent file), NOT on the service; the service exposes the day-read + the lane producer:
+getDayTasksSummary(date: string): Promise<TasksDaySummaryItem[]>   // the cross-module-integration.md §2 journal SET: every task due OR scheduled OR completed (utcDay) on the date → { id, title, status, priority, completedToday, dueToday }
+getDueReminders(range: TimeRange): Promise<DueItem[]>              // the SS-7 due-bucket: OPEN tasks whose due_date OR scheduled_date ∈ window (UTC-midnight); hard_deadline = due_date (omitted when none); total order
+export function utcDay(ms: number): string                         // Unix ms → UTC calendar day (the platform convention); the one seam a future user_profile.timezone re-points
+export type TaskViewConfig = TaskViewPreset['view']                 // TAS-29 — the ONE saved-view config schema (type half)
+export const TaskViewConfigSchema                                   // TAS-29 — the Zod half (validators/task.ts): SaveTaskViewSchema minus id/space_id, still strict
+// journal.ts — exported helpers (composition wiring, not service methods; registry handles are PARAMS):
+export function createTasksJournalContribution(svc: TasksService): JournalContribution   // module 'tasks' · summary-only (no dueIn — SS-7 one registration)
+export function registerTasksJournal(registry: JournalRegistry, svc: TasksService): void
+export function registerTasksDueProvider(sessions: SessionsService, svc: TasksService): void   // sessions.registerDueProvider({ module:'tasks', fetch: svc.getDueReminders })
 ```
 
 ## Typed errors

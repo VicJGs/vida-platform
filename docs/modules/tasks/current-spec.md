@@ -18,7 +18,7 @@
 | **S6 Measurability + contribution** | ✅ BUILT (2026-10-15) | `getTaskProgress` (pursuable `progress()`, derived-on-read honoring `binding_mode`) + C1/C2 guards |
 | **S7 Aggregation** | ✅ BUILT (2026-10-16) | `getAggregatedTasks` over the SHARED `ViewProviderRegistry` (R7/V4); standalone Inbox; per-group degradation |
 | **S8 Tags + Notes + Views + ReadProvider** | ✅ BUILT (2026-10-18) | `tagTask`/`untagTask`/`getTaskTags` · `getTaskNote` (`task_note` page) · `saveView`/`listViews` (exact-`['task']` views) · `TASK_VIEW_PRESETS` + `kind` filter · tasks registered as a `ReadProvider` (nested tags) |
-| S9 Journal + DueProvider | ⬜ designed | `summary`/`getDueReminders` closer |
+| **S9 Journal summary + DueProvider (the ① closer)** | ✅ BUILT (2026-10-19) | `getDayTasksSummary` (the §2 journal set) · `getDueReminders` (the SS-7 due-bucket) · `journal.ts` (`registerTasksJournal` + `registerTasksDueProvider` on Sessions) · `utcDay` · TAS-29 `TaskViewConfig`/`TaskViewConfigSchema` · TAS-32/36 RATIFY — **① BACKEND COMPLETE** |
 
 ## Persistence (built floor — migration 015)
 - `tasks` — 5 parent refs (`project_id`/`milestone_id`/`course_id`/`contact_id`/`parent_task_id`, plain TEXT no FK),
@@ -206,12 +206,68 @@
   (`PageRow` is imported THERE — the structural gate admits only `db/schema/(tasks|foundation/)` in `service.ts`);
   `SaveTaskViewSchema` · `ListTasksFilterFieldsSchema` (+ `ListTasksFilterSchema = …optional()`) in `validators/task.ts`.
 
+## S9 surface — Journal summary + DueProvider (TAS-19 `surface_journal` PULL · TAS-29/32/36 RATIFY · the ① closer)
+- **Governing doc:** `docs/core/architecture/cross-module-integration.md` §2 ("Governs: the daily-summary aggregation")
+  — the tasks row verbatim: "Tasks completed or due on the date: title, status, priority | `tasks` WHERE `due_date = ?`
+  OR completed on date"; `docs/features/tasks/contract.md:32` adds `scheduled_date` to "due". Journal = PULL
+  (ADR-004 §3.2.5: `surface_journal`/`surface_calendar` are projections — "writes no row, pull-aggregated at render");
+  S3 pushes neither. No rail emission in S9.
+- **`getDayTasksSummary(date): TasksDaySummaryItem[]`** — the day's journal SET over `listTasks()` (every row, soft-
+  delete filtered, no grain filter): a task is a member when `completed_at != null && utcDay(completed_at) === date`
+  (`completedToday`) or `due_date === date || scheduled_date === date` (`dueToday`); projected to `{ id, title, status,
+  priority, completedToday, dueToday }`. A set union — a task completed-on AND due-on the date is ONE member with both
+  flags; a `status:'completed'` row with no timestamp is NOT "completed on date" (TK-6: a completion is status +
+  timestamp) but still a member via its date. Order `sort_order` → `created_at` → `id` codepoint. Never throws for
+  data; an idle or malformed `date` ⇒ `[]`.
+- **`utcDay(ms)`** (exported helper) — Unix ms → the UTC calendar day `YYYY-MM-DD` (`toISOString().slice(0,10)`): the
+  platform's shipped convention for "the date" of a timestamp (habits `clock` · finance · books · check-ins · purposes ·
+  relationships; `cross-module-integration.md:70` `date(started_at)`). Timezone-INDEPENDENT. The designed
+  `user_profile.timezone` (ADR-002:3381, unbuilt) will re-point this one seam. **Flagged divergence (not changed):**
+  `todayYmd()` (S5 regen anchor, local day) is the only local-day helper in `@vida/core` — aligning it is a §XXVIII
+  change to BR-TK-S5-3, Victor's call. **Second flag:** the lane's OPEN inherits the S1 `completed:false` definition
+  (`status !== 'completed'`), so a `cancelled`/`on_hold` dated task is listed as due work — no doc fixes whether those
+  statuses are "open" (S1 filter · S8 `Today` preset · S9 lane); Victor's call, not special-cased.
+- **`getDueReminders(range: TimeRange): DueItem[]`** — the SS-7 lane producer (sessions intake G2-shape: "a module-
+  owned due-bucket resolved LIVE by its owner … `hard_deadline?`"; the Calendar is the dueIn aggregator and surfaces
+  BOTH dates, TAS-19 `surface_calendar (due/scheduled)` + G6). OPEN tasks only (the agenda is the forward "what's due"
+  half, JR-5); a task is in the window when `utcMidnightMs(due_date)` OR `utcMidnightMs(scheduled_date)` ∈ `[start,end]`
+  (inclusive; `Date.parse(ymd+'T00:00:00Z')` — the purposes/relationships convention = how every caller builds bounds;
+  `NaN`/absent ⇒ not in window). Item `{ source_module:'tasks', ref_id, label:title, est_minutes: estimated_minutes ?? 0,
+  urgency:0, hard_deadline?: dueMs }` — `hard_deadline` OMITTED when the task has no (valid) `due_date`, never NaN;
+  `urgency:0` = the deferred G5 placement algorithm (ADR-004 §3.3). A TOTAL deterministic order: `hard_deadline` asc
+  with none LAST, then `sort_order`, `created_at`, `id` codepoint. Never throws; soft-deleted excluded.
+- **`journal.ts`** — `createTasksJournalContribution(svc)` (`module:'tasks'`, `sectionKey:'summary'`, dataPoints
+  `completed_today 'Completed'` · `due_today 'Due today'`; `summary(date)` ⇒ `state = items.length>0 ? 'success' :
+  'empty'`, `items` = the set; **summary-only — no `dueIn`**) · `registerTasksJournal(registry, svc)` (overwrite-dedup
+  by module) · `registerTasksDueProvider(sessions, svc)` ⇒ `sessions.registerDueProvider({ module:'tasks', fetch })`.
+  ONE registration for due work, on Sessions (journals contract:27-32 + JR-3/JR-5 "agenda reads the shared `dueIn()`"
+  + SS-7 "never duplicator"); consequence: `buildDashboard().agenda` carries no tasks section in M1 (the built engine
+  reads only `JournalContribution.dueIn`; the journals→Sessions bridge is journals' contract). Registry handles are
+  PARAMS (no new dep). The file imports only the `../journals`/`../sessions` barrels + `./types` (structural gate).
+- **TAS-29 RATIFY + name:** `TaskViewConfig = TaskViewPreset['view']` (types.ts) + `TaskViewConfigSchema =
+  SaveTaskViewSchema.omit({ id, space_id })` (validators/task.ts; `strictObject().omit` keeps the `never` catchall on
+  zod 4.4.3 ⇒ `entity_types`/`id`/`space_id` still rejected) — the ONE saved-view config schema the 12 renderers consume.
+  **TAS-32 RATIFY:** the per-group typed-error half is the S7 group `state:'degraded'` (BR-TK-S7-5). **TAS-36 RATIFY:**
+  the ② reverts optimistic state on the 10 typed errors (stable `.name`), surface-guarded by test.
+- **Deps unchanged.** `service.ts` gains one type-only `../sessions` import (no cycle — sessions imports nothing from
+  tasks) + the `utcDay` helper. No schema, no `@vida/types` change, no new dep, no new error.
+
 ## DB-11 reconcile (shipped S1)
 `@vida/types/task.ts`: `Task` dropped `tags`, gained `scheduled_date`/`completed_at`/`kind`/`recurrence_rule`/
 `measurement_kind`/`binding_mode`/`nesting_weight`; `TaskTimeLog` gained `updated_at`. `validators/task.ts` gained
 `CreateTaskSchema`/`UpdateTaskSchema`/`ListTasksFilterSchema`.
 
-## Verification (through S8)
+## Verification (through S9)
+**S9:** tsc 0 · eslint 0 · tasks suite **96/96** (+9 S9: the 9-member §2 set with flags/fields/order + idle/malformed ·
+`utcDay` + the day bucket timezone-INDEPENDENT under `TZ=Asia/Tokyo` and `America/Sao_Paulo` · the contribution through
+the REAL `createJournalRegistry` + `buildDashboard` (success/empty, dedup, no agenda section, per-section degrade) ·
+`getDueReminders` 12-case predicate incl. bounds, open-only, soft-delete, sub-task, omitted `hard_deadline` · total
+order under a pinned clock · the REAL `sessions.dueIn` lane + a rejecting lane skipped (BR-34) · TAS-36 10-error
+surface guard · TAS-29 both halves incl. strictness · structural read of `journal.ts`). Gate: PLAN-S9 gate-1
+REVISE→SHIP → Victor ×2 "ground in the documentation" → rev 3 on the GOVERNING docs → SHIP · preflight PASSED (A1–A6)
+· gate-2 SHIP · g2 code review SHIP (9 NITs, 7 folded; N1 `cancelled`/`on_hold`-as-open + N7 `CalendarDateSchema`
+rollover flagged — PLAN-S9 §Gate record) · /critique REVISE(docs)→folded→SHIP. **No new dep, no migration, no
+`@vida/types` change.**
 **S8:** tsc 0 · eslint 0 · tasks suite **87/87** (+11 S8: tags ×2 · note · views ×3 · provider ×4 incl. the REAL
 `ViewEngine` end-to-end + nested-tag hierarchy · presets · structural) + spaces substrate **23/23** (+2 `listViews`)
 live-store (better-sqlite3, Node 24; REAL `SpacesService`/`NotesService`/`ViewsService`/`ViewProviderRegistry`/
@@ -227,7 +283,15 @@ F5 perf-NIT accepted — DRY over a micro-opt on bounded single-level children) 
 no dependency). Prior through S5: g2 SHIP (S5 B1 timezone-drift fixed; S4 F1/F3). dep `ical.js@2.2.1` (S5, RRULE parser).
 
 ## Deferred / downstream
-Journal/DueProvider (S9). **S8 deferrals (homed):** `pinView`/`reorderViews` → **Preferences-owned** (ADR-007 §3.5 ·
+**① BACKEND COMPLETE (S1–S9).** **S9 deferrals (each homed in a DOC):** urgency ranking (`urgency:0`) → ADR-004 §3.3
+L139 + `parts/xcut-sessions.md` UNKNOWN-1 (G5 placement design-pass) · a user-timezone day bucket → the designed
+`user_profile.timezone` (ADR-002:3370-3381, unbuilt) + journals BR-S3-4 ("strict tz-aware today = design-pass");
+`utcDay` is the one seam · composition-root CALLS of `registerTasksJournal`/`registerTasksDueProvider` → MVP-PATH:
+108-111 (UI-3 / M1.1+) · the 12→7 layout mapping → `schema-audit-deferred-homes.md:281-282` (007 anatomy pass).
+**Flagged for Victor (not a deferral — a shipped-rule alignment):** `todayYmd()` local-day vs the UTC convention
+(BR-TK-S5-3). **Closed by the docs (not deferrals):** "overdue carry-forward" (the lane's window IS the SS-7 contract;
+overdue reads ship as `listTasks({ completed:false, due_before })`) · recap lists vs counts (§2 names the fields — a
+list) · `JournalContribution.dueIn` (SS-7 one registration, on Sessions). **S8 deferrals (homed):** `pinView`/`reorderViews` → **Preferences-owned** (ADR-007 §3.5 ·
 IA §6 · XCU-21; a first-consumer-pull gap against the Preferences corpus — "per-view nav placement: pinned set + order,
 per-Space, consumed by the ② view-switcher (fe-tasks)"); a multi-tag INTERSECTION combinator + the predicate-DSL
 grammar + per-layout field declarations + the 12→7 layout mapping → the dedicated ADR-007 pass; the preset PRIMITIVE +

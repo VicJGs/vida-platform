@@ -20,7 +20,8 @@ import type { EffectRail, EffectRegistry } from '../../foundation/effects'
 import type { SpacesService } from '../../foundation/spaces'
 import type { ViewGrouping, ViewProviderRegistry, ViewsService } from '../../foundation/views'
 import type { NotesService } from '../notes'
-import type { SessionsService } from '../sessions'
+// S9 — the SS-7 due-work shapes (sessions-owned platform primitive; never redeclared here).
+import type { DueItem, SessionsService, TimeRange } from '../sessions'
 import type {
   Status,
   Priority,
@@ -162,6 +163,33 @@ export interface TaskViewPreset {
   view: Omit<SaveTaskViewInput, 'id' | 'space_id'>
 }
 
+/**
+ * S9 · TAS-29 (RATIFY) — the ONE saved-view config schema the 12 renderers consume: a `views` row config minus
+ * identity/ownership (name · layout · tags · predicates · grouping · sort). Shipped at S8 as `TaskViewPreset['view']`;
+ * named here so the ② imports it by its TAS-29 name (the Zod half is `TaskViewConfigSchema` in validators/task.ts).
+ * The 12→7 layout mapping is the deferred ADR-007 anatomy pass.
+ */
+export type TaskViewConfig = TaskViewPreset['view']
+
+// --- S9 — the journal set (cross-module-integration.md §2 · contract.md:32 · TAS-19 surface_journal = PULL) ---------
+/**
+ * One member of a day's journal set — the governing doc's row verbatim: "Tasks completed or due on the date: title,
+ * status, priority" (`tasks WHERE due_date = ? OR completed on date`; `contract.md:32` adds `scheduled_date`). `id` is
+ * the ADR-002 universal key; the two membership flags carry WHY the task is in the set so the ② honours the JR-4
+ * data-point selection without re-deriving the day (the day of `completed_at` is the UTC calendar day — the platform
+ * convention, `utcDay`). A task both completed-on and due-on the date is ONE member with both flags.
+ */
+export interface TasksDaySummaryItem {
+  id: string
+  title: string
+  status: Status
+  priority: Priority
+  /** `completed_at != null && utcDay(completed_at) === date` — a status label alone never counts (TK-6: a completion is status + timestamp) */
+  completedToday: boolean
+  /** `due_date === date || scheduled_date === date` (calendar-string equality) */
+  dueToday: boolean
+}
+
 // --- S2 inputs (sub-tasks + rollup) ------------------------------------------
 /** A sub-task body — the create surface minus `parent_task_id` (addSubtask sets it to the parent). */
 export type AddSubtaskInput = Omit<CreateTaskInput, 'parent_task_id'>
@@ -250,6 +278,13 @@ export interface TasksService {
   // S8 — saved views over the `views` primitive (TAS-28, cite-level — V1 anatomy is the deferred 007 pass).
   saveView(input: SaveTaskViewInput): Promise<ViewRow>
   listViews(): Promise<ViewRow[]>
+  // S9 — the Journal `/summary` set for a date (PULL — the Journals registry calls this at render via
+  // `registerTasksJournal`; cross-module-integration.md §2): every task due OR scheduled OR completed on the date.
+  getDayTasksSummary(date: string): Promise<TasksDaySummaryItem[]>
+  // S9 — the SS-7 due-bucket (sessions intake G2-shape): OPEN tasks whose `due_date` OR `scheduled_date` falls in the
+  // ms window; `hard_deadline` = the `due_date` (absent when none). Registered as the tasks lane via
+  // `registerTasksDueProvider`; the Calendar (the dueIn aggregator, IA §4) sees tasks only through it.
+  getDueReminders(range: TimeRange): Promise<DueItem[]>
 }
 
 // --- typed errors ------------------------------------------------------------
