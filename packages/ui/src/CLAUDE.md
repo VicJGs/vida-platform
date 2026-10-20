@@ -340,6 +340,24 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   `timeFormat` mirrors `user_preferences.time_format`. 45 tests. Visual Gate PASS (Brave, real CalendarSurface, 3 presets
   × L/D × 375/768/1440 + overlap + states + 12h + Sunday: AA min 4.52–5.22 · 0 page overflow · lanes never intersect ·
   ring unclipped · axe 0). Spec: `docs/specs/components/ui-2-platform-views/v11-week-view.md`.
+  **year-view** is **UI-2 · V12** (fe-calendar #19 · S4, LIF-203) — the Global Calendar's **Year range**: 12 mini-months of
+  activity-density dots (pre-derived `level` 0/1/2 — the renderer never thresholds). Layout = the RN-safe flex-wrap grid
+  (`flexBasis:'22%'` caps a row at 4, `minWidth:128` → 2-up at 375). Mini-month = 7-slot rows: leading blanks from
+  `weekStartsOn` + TRAILING `aria-hidden` spacers (so a short last row never stretches); square cells (`aspectRatio` in
+  `style`), `$8` gap (the greybox governs), no day numbers / weekday row. Dots: has = 4px @ **.75** (the mockup's .55 failed
+  3:1 in 4/6 preset×mode — D-S4-DEV-1), busy = 6px solid, `$colorBrandEmphasis`. Today = an absolute `aria-hidden` 2px ring
+  in a `position:relative` cell; the current-month accent is computed from the built day keys so it can never appear without
+  the ring. A11y: 12 `role="table"` (`aria-colcount=7`, offset-aware `aria-colindex`, cells labelled
+  `format(d,'EEEE, d MMMM')` + density + today). Drill-in = a render-when-handler native `<button>` heading (UA chrome reset,
+  44px, hover paper, ring) emitting `onPickMonth(0–11)` — a NAVIGATION intent, so the #19 surface wires it in M1. **⚠ accname
+  drops a LEADING space inside an sr-only span** ("January2026") — put the space in a SIBLING text node (`{' '}<span sr>`).
+  **⚠ jsdom atomic-class prefixes are the long names** (`_minHeight-`, not `_mih-`) — compare against a reference element.
+  Geometry pure in `internal/year-layout.ts` (`resolveYear` · `buildYear` · `indexDensity` · `localDate` — `setFullYear` at
+  local noon). 19 + 11 tests. Visual Gate PASS (Brave, real CalendarSurface, 29 cells: has 3:1 min 3.54 · busy/ring 5.93 ·
+  names 6.47 · 0 page overflow · Tab Jan→Dec · drill focus on "Month grid"). Spec:
+  `docs/specs/components/ui-2-platform-views/v12-year-view.md`.
+  **fe-calendar S4 — `calendar-view` `tabIndex?`** (D-S4-DEV-2): an opt-in programmatic focus target; `CalRoot` carries the
+  house 2px ring (renders only when opted in + focused). The surface focuses the Month grid after a Year drill-in.
   **pomodoro-widget** is **UI-2 · V5** — the interactive timer WIDGET `@vida/ui` ships (ADR-008:35). NOT a data-view: a
   self-timing single-interval countdown with a **DEFERRED session-engine seam** — the pomodoro *session*
   (lifecycle/persistence/effects/phase-sequencing) is a `sessions` sub-type owned by MOD-sessions (ADR-004); the widget

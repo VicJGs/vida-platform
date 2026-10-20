@@ -14,6 +14,8 @@ import { usePreferencesStore } from '../../stores/preferences-store'
 // "Now" = Sunday 2026-10-18 23:30 in Brasília — already Monday 02:30 in UTC. Locally the current week is Oct 12–18; a
 // UTC slip would make it Oct 19–25 and the label assertions below fail.
 const NOW = new Date('2026-10-18T23:30:00-03:00')
+// The Year range mounts ~500 Tamagui nodes per render — past the 5s default under a loaded suite (week-view precedent).
+vi.setConfig({ testTimeout: 15000 })
 
 beforeAll(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -108,6 +110,59 @@ describe('CalendarSurface — month/year nav clamps the day', () => {
     const { getByRole } = renderSurface('tablet')
     fireEvent.click(getByRole('button', { name: 'Next' }))
     expect(useCalendarUIStore.getState().focusedDate).toBe('2029-02-28')
+  })
+})
+
+describe('CalendarSurface — Year dispatch + drill-in (S4)', () => {
+  it('Year renders YearView: a named group of 12 month tables', () => {
+    useCalendarUIStore.setState({ range: 'year', focusedDate: '2026-10-18' })
+    const { getByRole, getAllByRole, container } = renderSurface('tablet')
+    expect(titleOf(container)).toBe('2026')
+    expect(getByRole('group', { name: 'Year' })).toBeTruthy()
+    expect(getAllByRole('table')).toHaveLength(12)
+    expect(getAllByRole('button', { name: /, open month$/ })).toHaveLength(12)
+    expect(container.textContent).not.toContain('ships in a later slice of #19 (S4')
+  })
+
+  it('the placeholder now covers Living only', () => {
+    useCalendarUIStore.setState({ range: 'living', focusedDate: '2026-10-18' })
+    const { container } = renderSurface('tablet')
+    expect(container.textContent).toContain('ships in a later slice of #19 (S5)')
+  })
+
+  it('weekStartsOn=0 reaches the grid (Oct 1 2026 = Thursday → column 5)', () => {
+    usePreferencesStore.setState({ weekStartsOn: 0 })
+    useCalendarUIStore.setState({ range: 'year', focusedDate: '2026-10-18' })
+    const { getByRole } = renderSurface('tablet')
+    const oct1 = getByRole('table', { name: 'October 2026' }).querySelector('[role="cell"]')
+    expect(oct1?.getAttribute('aria-colindex')).toBe('5')
+  })
+
+  it('pressing a month drills into Month, keeps the day clamped, and lands focus on the Month grid', () => {
+    useCalendarUIStore.setState({ range: 'year', focusedDate: '2026-01-31' })
+    const { getByRole, container } = renderSurface('tablet')
+    fireEvent.click(getByRole('button', { name: 'March 2026, open month' }))
+    expect(useCalendarUIStore.getState().range).toBe('month')
+    expect(useCalendarUIStore.getState().focusedDate).toBe('2026-03-31')
+    expect(titleOf(container)).toBe('March 2026')
+    expect(document.activeElement).toBe(getByRole('table', { name: 'Month grid' }))
+  })
+
+  it('the drill clamps a long day into a short month (Mar 31 → February = Feb 28)', () => {
+    useCalendarUIStore.setState({ range: 'year', focusedDate: '2026-03-31' })
+    const { getByRole } = renderSurface('tablet')
+    fireEvent.click(getByRole('button', { name: 'February 2026, open month' }))
+    expect(useCalendarUIStore.getState().focusedDate).toBe('2026-02-28')
+  })
+
+  it('switching to Month via the range switcher does NOT move focus (only the drill does)', () => {
+    useCalendarUIStore.setState({ range: 'year', focusedDate: '2026-10-18' })
+    const { getByRole } = renderSurface('tablet')
+    const monthToggle = getByRole('button', { name: 'Month' })
+    monthToggle.focus()
+    fireEvent.click(monthToggle)
+    expect(useCalendarUIStore.getState().range).toBe('month')
+    expect(document.activeElement).toBe(getByRole('button', { name: 'Month' }))
   })
 })
 

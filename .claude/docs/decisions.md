@@ -1,5 +1,16 @@
 <!-- Last updated: 2026-10-12 by /session-end -->
 
+## fe-calendar ② S4 — Year renderer (2026-10-20 — LIF-203)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-20 | Year drill target | what does "a month drills in" press? | **the month HEADING (a `<button>`)**, no extra box press | doc-DERIVED (EC-5 / mockup:205 name no target): a button WRAPPING the mini-month flattens its table for AT; the heading is the only control that keeps the grid (Victor-approved at Approval 1) | yes |
+| 2026-10-20 | Drill wiring | wire `onPickMonth` in M1 or leave absent like `onToggleItem`? | **wired now** | it is NAVIGATION (calendar-ui-store), not an owning-module write — the deny-safe-absent rule covers write intents only | yes |
+| 2026-10-20 | Focus after drill | where does focus go when the pressed button unmounts? | **the Month grid** (`CalendarView tabIndex={-1}`, D-S4-DEV-2) | FOCUS_CONTRACT `tabChange → panel` (state-conventions §5) — never drop to `<body>`; the switcher keeps its own focus | yes |
+| 2026-10-20 | Has-dot opacity | mockup .55? | **.75** (D-S4-DEV-1) | .55 = 2.39–3.27:1 vs the paper cell (fails 1.4.11 in 4/6); .75 → min 3.54 measured | yes |
+| 2026-10-20 | Cell gap | mockup 2px vs greybox? | **`$8` — the greybox governs** | envision.md:60-61: greybox/*.png is the approved record; ratio ≈0.38× cell | yes |
+| 2026-10-20 | Month headings | `role="heading"` on the 12 names? | **no** — each table is NAMED via labelledby | sibling convention (Agenda/Week/Board/Calendar group titles aren't headings); a heading role was an ADD (grounding pass) | yes |
+
 ## fe-calendar ② S3 — Week/Day renderer (2026-10-19 — LIF-203)
 
 | Date | Area | Decision | Choice | Reason | Reversible |

@@ -1,9 +1,9 @@
 // Global Calendar surface — fe-calendar #19 · S1. The read-only lens (ADR-007) composed in the CanvasView frame:
 // a period title per range + a range switcher + nav, dispatching to the active range's renderer. S1 ships the frame,
-// the switcher/nav, and Month (CalendarView headerless, D4); S2 Agenda; S3 Week/Day (WeekView); S4–S5 plug in the
-// rest; S7 replaces the fixtures with the live `useCalendar` ProviderRead fan-out. Read-only: nav/switch are
+// the switcher/nav, and Month (CalendarView headerless, D4); S2 Agenda; S3 Week/Day (WeekView); S4 Year (YearView,
+// a month drills into Month); S5 plugs in Living; S7 replaces the fixtures with the live `useCalendar` ProviderRead fan-out. Read-only: nav/switch are
 // navigation, no writes (EC-12). Locale is READ from the Settings prefs (time_format · week_starts_on — PLAN-S3 BR-16).
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Text, useMedia, View } from '@tamagui/core'
 import {
   AgendaView,
@@ -16,6 +16,8 @@ import {
   Menu,
   type TimedBlock,
   WeekView,
+  type YearDensity,
+  YearView,
 } from '@vida/ui'
 import type { Breakpoint } from '../../shell/breakpoints'
 import { type CalendarRange, useCalendarUIStore } from '../../stores/calendar-ui-store'
@@ -71,10 +73,14 @@ function periodLabel(range: CalendarRange, focused: Date, weekStartsOn: WeekStar
 
 // Month/year steps clamp the day to the target month's length — a bare setMonth on Jan 31 lands on "Feb 31" = Mar 3
 // and skips February.
+// The same clamp serves the Year drill-in (`clampToMonth`): Mar 31 → February lands on Feb 28, not Mar 3.
+function clampToMonth(d: Date, year: number, month: number): Date {
+  const last = new Date(year, month + 1, 0).getDate()
+  return new Date(year, month, Math.min(d.getDate(), last))
+}
 function addMonthsClamped(d: Date, months: number): Date {
   const first = new Date(d.getFullYear(), d.getMonth() + months, 1)
-  const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
-  return new Date(first.getFullYear(), first.getMonth(), Math.min(d.getDate(), last))
+  return clampToMonth(d, first.getFullYear(), first.getMonth())
 }
 
 function shift(range: CalendarRange, focused: Date, dir: -1 | 1): Date {
@@ -161,6 +167,23 @@ function weekFixture(focused: Date, weekStartsOn: WeekStartsOn): { days: string[
   return { days, blocks, chips, today }
 }
 
+// S4 year fixture — the approved greybox's weekday stripes over the focused year: busy Wednesdays, activity on
+// Thursdays + Fridays, a few scattered days. S7's useCalendar derives the real has/busy levels.
+function yearFixture(focused: Date): YearDensity[] {
+  const y = focused.getFullYear()
+  const out: YearDensity[] = []
+  for (let m = 0; m < 12; m++) {
+    const days = new Date(y, m + 1, 0).getDate()
+    for (let d = 1; d <= days; d++) {
+      const wd = new Date(y, m, d).getDay()
+      const date = toKey(new Date(y, m, d))
+      if (wd === 3) out.push({ date, level: 2 })
+      else if (wd === 4 || wd === 5 || (d * (m + 1)) % 11 === 0) out.push({ date, level: 1 })
+    }
+  }
+  return out
+}
+
 export interface CalendarSurfaceProps {
   /** Test/story-only breakpoint override (mirrors AppShell.__bp) — bypasses useMedia so jsdom can assert the condense. */
   __bp?: Breakpoint
@@ -174,6 +197,23 @@ export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
   const isTabletUp = __bp ? __bp !== 'mobile' : media.tablet
   const focused = useMemo(() => parseKey(focusedDate), [focusedDate])
   const title = periodLabel(range, focused, weekStartsOn)
+
+  // Year drill-in → Month. The pressed month button unmounts with YearView, so focus would fall to <body>; per the
+  // FOCUS_CONTRACT (state-conventions §5 — an in-surface view swap is the `tabChange → panel` transition) the Month grid
+  // takes focus once it renders. Only the drill moves focus; the range switcher keeps focus on its own toggle.
+  const monthRef = useRef<HTMLDivElement>(null)
+  const focusMonthAfterDrill = useRef(false)
+  useEffect(() => {
+    if (range === 'month' && focusMonthAfterDrill.current) {
+      focusMonthAfterDrill.current = false
+      monthRef.current?.focus()
+    }
+  }, [range])
+  const pickMonth = (month: number) => {
+    focusMonthAfterDrill.current = true
+    setFocusedDate(toKey(clampToMonth(focused, focused.getFullYear(), month)))
+    setRange('month')
+  }
 
   // Range chrome: lg buttons (48px ≥ the 44×44 touch floor at every width, decisions.md:82) with ≥8px gaps. Below 768
   // the 6-range toolbar condenses to a Menu (EC-1, the CollectionView condense) so the actions slot fits a 375 masthead.
@@ -219,6 +259,9 @@ export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
       >
         {range === 'month' ? (
           <CalendarView<MonthEv>
+            ref={monthRef}
+            // programmatic focus target for the Year drill-in (not a tab stop); CalendarView rings it when focused
+            tabIndex={-1}
             items={monthFixture(focused)}
             getDate={(i) => i.date}
             getKey={(i) => i.id}
@@ -239,11 +282,20 @@ export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
           // would render focusable checkboxes that do nothing. Absent ⇒ the renderer's read-only done-state (deny-safe);
           // the intent surface is fixed in AgendaView, so S7 just passes the owning capability (seam-contract.md:100).
           <AgendaView {...agendaFixture(focused, weekStartsOn)} aria-label="Agenda" />
+        ) : range === 'year' ? (
+          <YearView
+            year={focused.getFullYear()}
+            density={yearFixture(focused)}
+            today={toKey(new Date())}
+            weekStartsOn={weekStartsOn}
+            onPickMonth={pickMonth}
+            aria-label="Year"
+          />
         ) : range === 'week' || range === 'day' ? (
           <WeekRange range={range} focused={focused} weekStartsOn={weekStartsOn} timeFormat={timeFormat} />
         ) : (
           <EmptyState title={`${RANGE_LABEL[range]} view`} titleLevel={3}>
-            <Text fontSize="$small" color="$colorTextMuted">This range ships in a later slice of #19 (S4–S5). The frame, switcher, Month, Week, Day, and Agenda are live.</Text>
+            <Text fontSize="$small" color="$colorTextMuted">This range ships in a later slice of #19 (S5). The frame, switcher, Year, Month, Week, Day, and Agenda are live.</Text>
           </EmptyState>
         )}
       </CanvasView>

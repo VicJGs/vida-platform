@@ -130,8 +130,8 @@ of their deferred hooks. The UI mechanics live in their own convention docs (`ap
   `useCollection(viewId)` hook (React Query → `ViewEngine.resolve`) is built at its first consumer (fe-notes #27, not #19). `[FACT: collection/adapter.ts:60,74,92; :14]`
 - **View dispatch** — `ViewLayout` union (`'list'|'table'|'board'|'gallery'|'calendar'|'timeline'|'graph'`) in `@vida/types`
   routes a saved-view's `layout` to its renderer; `'calendar'` → the `@vida/ui` `CalendarView` (month grid, LIF-230-refined,
-  TZ-safe). The other 5 calendar ranges are **net-new renderers #19 builds** — Agenda = `AgendaView` (S2, shipped);
-  Week/Day · Year · Living = S3–S5. `[FACT: packages/types/src/view.ts; packages/ui/src/components/calendar-view.tsx]`
+  TZ-safe). The other 5 calendar ranges are **net-new renderers #19 builds** — Agenda = `AgendaView` (S2) · Week/Day =
+  `WeekView` (S3) · Year = `YearView` (S4), shipped; Living = S5. `[FACT: packages/types/src/view.ts; packages/ui/src/components/calendar-view.tsx]`
 
 ## Downstream (INTENT — consumers)
 - **UI-3** (`@vida/editor`, LIF-88) ← UI-1, **AR-4** — the editor mounts in routes + issues React Query reads.
@@ -166,3 +166,12 @@ of their deferred hooks. The UI mechanics live in their own convention docs (`ap
   `weekFixture`, and Month passes the shipped `CalendarView weekStartsOn`, so every range agrees on the week start; S7's
   `useCalendar` must take `weekStartsOn` too (seam-contract §B). Year/Living still render the placeholder.
   `[FACT: apps/web/src/app/calendar/index.tsx weekStartOf · weekKeys · weekFixture · WeekRange; stores/preferences-store.ts; docs/specs/foundation/fe-calendar/delivery/PLAN-S3-week-day-renderer.md BR-16, §5a]`
+  **S4 SHIPPED (2026-10-20):** **Year** dispatches to `@vida/ui` **`YearView`** fed by `yearFixture(focused)` (the greybox
+  weekday stripes over the focused year; S7 derives the real has/busy) with `weekStartsOn` read from the prefs. **The drill-in
+  is wired now** — it is NAVIGATION (UI state in `calendar-ui-store`), not a module write, unlike the deny-safe-absent
+  `onToggleItem`: `onPickMonth(m)` → `setFocusedDate(clampToMonth(focused, year, m))` + `setRange('month')`
+  (`clampToMonth` extracted from `addMonthsClamped`; Mar 31 → February = Feb 28). **Focus after the drill** (FOCUS_CONTRACT
+  `tabChange → panel`, state-conventions §5): the pressed button unmounts with YearView, so a `focusMonthAfterDrill` ref +
+  a `useEffect` on `range` focuses the Month grid (`CalendarView ref` + `tabIndex={-1}`, D-S4-DEV-2); the range switcher
+  never moves focus. Only Living renders the placeholder now.
+  `[FACT: apps/web/src/app/calendar/index.tsx clampToMonth · yearFixture · pickMonth · range==='year' dispatch; packages/ui/src/components/year-view.tsx; docs/specs/foundation/fe-calendar/delivery/PLAN-S4-year-renderer.md BR-12, §5a]`

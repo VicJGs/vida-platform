@@ -35,6 +35,9 @@ export interface CalendarViewProps<T> {
   /** Suppress the grid's own month title + nav — for hosting inside a frame that owns the period title (the
    *  fe-calendar #19 CanvasView, D4). Default false (standalone grid shows its title). */
   hideHeader?: boolean
+  /** Make the grid a PROGRAMMATIC focus target (pass -1) — e.g. the #19 Year drill-in lands focus here when the button
+   *  that triggered it unmounts (FOCUS_CONTRACT). Absent = not focusable (the default). A focus ring shows when focused. */
+  tabIndex?: number
   /** Injection seam for "today" (marker + default month). Default new Date(), evaluated once. */
   today?: Date
   /** Week start: 0=Sun, 1=Mon. Default 1. */
@@ -51,7 +54,13 @@ export interface CalendarViewProps<T> {
 }
 
 // ── styled hosts (unnamed → base theme; no sub-theme) ───────────────────────────────────────────────────
-const CalRoot = styled(View, { flexDirection: 'column', gap: '$12' })
+// The focus ring only ever shows when a consumer opts in via `tabIndex` and focuses the grid (S4 drill-in).
+const CalRoot = styled(View, {
+  flexDirection: 'column',
+  gap: '$12',
+  borderRadius: '$sm',
+  focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: 2 },
+})
 const CalHeader = styled(View, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '$8' })
 const Table = styled(View, { flexDirection: 'column', minWidth: 560 }) // 7×80 → forces the 375 horizontal scroll (CV-8)
 const Row = styled(View, { flexDirection: 'row' })

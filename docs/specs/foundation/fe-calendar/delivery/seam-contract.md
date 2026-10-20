@@ -38,11 +38,14 @@ interface WeekViewProps { days: readonly string[]; blocks: readonly TimedBlock[]
                           timeFormat?: '12h' | '24h'; state?: CalState; empty?: ReactNode; error?: ReactNode
                           'aria-label'?: string; 'aria-labelledby'?: string; ref?: Ref<HTMLDivElement> }
 
-// — S4 · YearView (EC-5) —
-interface YearDensity { date: string; level: 0 | 1 | 2 }           // 0 none · 1 has · 2 busy
-interface YearViewProps { year: number; density: YearDensity[]; today?: string; state?: CalState
-                          onPickMonth?: (month: number) => void     // INTENT (navigate)
-                          'aria-label'?: string; ref?: Ref<HTMLDivElement> }
+// — S4 · YearView (EC-5) — SHIPPED (ratified + refined: readonly density, empty?/error? slots, aria-labelledby,
+//   weekStartsOn [BR-16], onPickMonth index pinned 0–11; v12-year-view.md). The drill is NAVIGATION — the surface wires it
+//   in M1 (unlike the deny-safe-absent write intents) and focuses the Month grid after it (CalendarView tabIndex, D-S4-DEV-2). —
+interface YearDensity { date: string; level: 0 | 1 | 2 }           // 0 none · 1 has · 2 busy (S7 derives)
+interface YearViewProps { year: number; density: readonly YearDensity[]; today?: string; weekStartsOn?: 0 | 1
+                          onPickMonth?: (month: number) => void     // INTENT (navigate), 0–11
+                          state?: CalState; empty?: ReactNode; error?: ReactNode
+                          'aria-label'?: string; 'aria-labelledby'?: string; ref?: Ref<HTMLDivElement> }
 
 // — S5 · LivingView (EC-6..EC-10) — the signature, all data-prop; each lane degrades independently (honest-null) —
 interface PurposeBudget { id: string; name: ReactNode; color: string; hours: number | null; fraction: number | null } // null ⇒ unmeasured (EC-6)

@@ -75,6 +75,7 @@ export {
   type TimedBlock,
   type CalChip,
 } from './components/week-view'
+export { YearView, type YearViewProps, type YearDensity } from './components/year-view'
 export { TableView, type TableViewProps, type Column } from './components/table-view'
 export { BoardView, type BoardViewProps, type BoardGroup } from './components/board-view'
 export { PomodoroWidget, type PomodoroWidgetProps, type PomodoroPhase } from './components/pomodoro-widget'

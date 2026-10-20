@@ -103,6 +103,22 @@ describe('CalendarView', () => {
     expect(getByRole('table')).toBeTruthy() // the grid still renders
   })
 
+  it('tabIndex opts the grid in as a programmatic focus target (S4 drill-in); absent = not focusable', () => {
+    const { getByRole, rerender } = renderUI(
+      <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} tabIndex={-1} aria-label="Cal" />,
+    )
+    const table = getByRole('table')
+    expect(table.getAttribute('tabindex')).toBe('-1')
+    table.focus()
+    expect(document.activeElement).toBe(table)
+    rerender(
+      <UIProvider>
+        <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} aria-label="Cal" />
+      </UIProvider>,
+    )
+    expect(getByRole('table').hasAttribute('tabindex')).toBe(false)
+  })
+
   it('nav buttons fire onMonthChange(prev/next) when provided', () => {
     const onMonthChange = vi.fn()
     const { getByLabelText } = renderUI(
