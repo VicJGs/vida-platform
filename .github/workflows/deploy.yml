@@ -1,8 +1,10 @@
 name: Deploy
 
+# Gated for M1 (2026-10-20). Cloud deploy (Venues) + the server are M4 per
+# docs/roadmap/MVP-PATH.md §1/§6 (M1 is local-only, no server, no hosting).
+# Manual-only until M4; to re-enable at M4, restore `on: push: branches: [main]`.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: deploy-${{ github.ref }}
