@@ -3,7 +3,7 @@
 // (provider.tsx) consumes these; the app owns the SELECTION state + persistence + switcher UI (R5, seam-contract.md).
 
 /** A swappable token family = {palette + accent + display/body font-family} (R1). */
-export type ThemePreset = 'reader' | 'editorial' | 'quietDesk'
+export type ThemePreset = 'reader' | 'editorial' | 'quietDesk' | 'game'
 /** Light is primary; dark is the mechanical B7 overlay per preset (R7). */
 export type ThemeMode = 'light' | 'dark'
 /** Two "airs" — calm (base) / dense (tighter spacing + type). Maps to compact_mode + font_size (R8). */
@@ -21,13 +21,13 @@ export interface ThemeSelection {
  * `light`/`dark` are valid schemes; a `${preset}_dark` name reads as scheme-less and breaks dark inversion/reset).
  * Default preset `editorial` keeps the bare `light`/`dark`; non-default presets prefix `${mode}_${preset}`.
  */
-export type ThemeName = ThemeMode | `${ThemeMode}_reader` | `${ThemeMode}_quietDesk`
+export type ThemeName = ThemeMode | `${ThemeMode}_reader` | `${ThemeMode}_quietDesk` | `${ThemeMode}_game`
 
 /** Cold-start default (R2/R6): The Editorial + light + calm. */
 export const THEME_DEFAULT: ThemeSelection = { preset: 'editorial', mode: 'light', density: 'calm' }
 
 /** Drives the Settings picker later; editorial is the default (listed first is not significant — the picker labels it). */
-export const THEME_PRESETS: readonly ThemePreset[] = ['reader', 'editorial', 'quietDesk']
+export const THEME_PRESETS: readonly ThemePreset[] = ['reader', 'editorial', 'quietDesk', 'game']
 
 /**
  * Pure resolution: selection → the Tamagui theme name + the density payload.

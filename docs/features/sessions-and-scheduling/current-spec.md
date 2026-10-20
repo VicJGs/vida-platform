@@ -80,6 +80,10 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   reappears intact).
 - **`attach`/`detach`** — idempotent structural attach over `session_attachments` (findWhere-key → no-op-or-
   create, **no revive** — no `deleted_at`); `detach` = **hard delete**; `resolveTargets` re-exports the #32 reader.
+- **`findOpenSessionForEntity(subType, entityType, entityId): SessionRow | null`** (added by mod-tasks #65 S4,
+  2026-10-15) — the REVERSE of `resolveTargets`: the in_progress session of `subType` attached to `(entityType,
+  entityId)`, or null. Read-only (attachment read + spine `status`/`sub_type` filter, soft-delete-filtered via
+  `findById`); the running-timer guard a consuming module needs when it can't read `session_attachments` directly (§6).
 - **Repos:** `sessions` `softDelete:true`; `focus_sessions`/`study_sessions`/`session_attachments`
   `softDelete:false` (no `deleted_at`). All `encryptedFields:[]` (M1.0 pass-through). Structural validation
   (`CreateSessionSchema`, fail-loud `InvalidSessionInput`).
@@ -157,7 +161,12 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
 - **`dueIn(range): DueItem[]`** — the shared platform primitive (IR-2; Journals + future Calendar consume it):
   own `planned_blocks` in range (`deleted_at`-filtered) ∪ live provider reads. **SS-7 degrade:** a throwing
   provider lane is caught + skipped; `dueIn` never throws. Empty registry + no blocks (M1.1) → `[]`.
-- **`registerDueProvider(provider)`** — the empty provider seam (N5); owning modules register lanes later.
+- **`registerDueProvider(provider)`** — the empty provider seam (N5); owning modules register lanes at their build.
+  **Registered lanes (first-consumer-pull, composition root = UI-3/M1.1+):** purposes (`registerPurposesDueProvider`,
+  target reviews) · relationships (`registerRelationshipsDueProvider`, reminders/nudges/groups) · **tasks
+  (`registerTasksDueProvider`, S9 2026-10-19 — OPEN tasks whose `due_date` OR `scheduled_date` ∈ window, `hard_deadline`
+  = due date; the Calendar sees tasks only through this lane)**. All three convert calendar dates at UTC midnight —
+  callers build `TimeRange` bounds the same way.
 - **`getSessionAnalytics(range): SessionAnalytics`** — derived-on-read (SS-12/IR-6, no stored aggregate):
   `{total, completed, completionRate, avgFocusRating, totalFocusSeconds}`, `deleted_at`-filtered. Richer cuts
   (per-module time, planned-vs-actual, streaks) → later getters.
@@ -168,6 +177,22 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
 `services/sessions/` is the full MOD-sessions ① service tier over the AR-5 spine + #32 rail + DB-4 schema:
 session CRUD+attach · registry-validation+completion-wiring · Pomodoro focus runtime · availability · plan-batch
 endpoints · templates · dueIn+analytics. `@vida/core` 879/879. Next: ② UI = `fe-sessions`.
+
+## ② FRONTEND — Session runtime page (fe-session-runtime #23, LIF-218 · built 2026-10-15)
+The first frontend consumer of the Flow/Session codec seam — the `/sessions/$id` runtime page (deliverable-per-stage).
+- **S1 — data leg** (`apps/web/src/flow/`): `toFlowSource(session, deliverable?, attachments?, effects?)` assembles a
+  single-stage `FlowSource` (EC-9; total `SESSION_STATUS→StageStatus` map; proof from `session_attachments`; effects via
+  `mapEffectLog`); `useFlowSession(sessionId)` is the data hook. **M1 data leg is a stub** (no apps/web `@vida/core`
+  composition root + the worker-RPC Drizzle `values` seam throws, S1-D2): empty default + `?sample` DEV seed, **zero-signature
+  live swap** documented (`useQuery → sessions.getSession + resolveTargets + applied_effects`). `state: TerminalState`.
+- **S2 — surface** (`apps/web/src/session-runtime/`): `session-runtime-surface.tsx` (router-free: hook → terminal-state
+  ladder → `FlowSessionView` via `toFlowProps` + `bindFlowIntents`; effect rail always renders, EC-4) + the thin routed
+  `session-runtime-page.tsx` (`/sessions/$id`, lazy) in `routes.tsx`.
+- **Verification:** tsc 0 · eslint 0 · apps/web flow+surface tests green · **Visual Gate PASS** (standalone entry, Brave,
+  3 presets × light/dark × 375/768/1440: AA 4.94–6.03 incl. warm-dark · no 375 overflow · axe clean). EC-2/4/5/7/8/9/11
+  confirmed live; EC-1/3 shell-inherited (single-stage per O7); EC-10 (advance feel) live-deferred (M1 no-op port).
+- **Deferred (not #23):** multi-stage per-module assembly (O7) · effect WRITES/lifecycle consumption handlers (#46/MOD-*) ·
+  the session HUD (#16). Spec: `docs/specs/foundation/fe-session-runtime/`.
 
 ## What is DEFERRED (NOT built — homed beyond MOD-sessions ①)
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate

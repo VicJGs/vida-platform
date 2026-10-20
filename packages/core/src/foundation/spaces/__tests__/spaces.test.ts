@@ -270,6 +270,32 @@ describe('AR-6 — ViewEngine resolution (V3/V4/V5)', () => {
   })
 })
 
+describe('XS-views — ViewsService.listViews (first-consumer-pull, mod-tasks S8)', () => {
+  it('returns LIVE rows only, ordered by created_at then id (findAll has no ORDER BY)', async () => {
+    const { db, driver } = await setup()
+    const svc = createViewsService(db, 'test-device')
+    const a = await svc.createView({ name: 'a', layout: 'list' })
+    const b = await svc.createView({ name: 'b', layout: 'board', filter: { entity_types: ['task'] } })
+    const gone = await svc.createView({ name: 'gone', layout: 'list' })
+    await svc.deleteView(gone.id) // soft-delete → excluded
+
+    const rows = await svc.listViews()
+    expect(rows.map((r) => r.id)).not.toContain(gone.id)
+    expect(rows.map((r) => r.id)).toEqual(
+      [a, b].sort((x, y) => x.created_at - y.created_at || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0)).map((r) => r.id),
+    )
+    // deterministic across calls
+    expect((await svc.listViews()).map((r) => r.id)).toEqual(rows.map((r) => r.id))
+    await driver.close()
+  })
+
+  it('empty store → []', async () => {
+    const { db, driver } = await setup()
+    expect(await createViewsService(db, 'test-device').listViews()).toEqual([])
+    await driver.close()
+  })
+})
+
 describe('XS-views — ViewsService.cloneView (XCU-05)', () => {
   it('clone a global view into a Space → new id, space_id set, content copied verbatim (BR-clone-2/3)', async () => {
     const { db, driver } = await setup()

@@ -14,6 +14,10 @@ const PRESET_LABELS: Record<ThemePreset, string> = {
   editorial: 'Editorial',
   reader: 'Reader',
   quietDesk: 'Quiet Desk',
+  // fe-gamification G0 added the `game` preset to THEME_PRESETS (the manhwa-"System" register); the picker
+  // iterates THEME_PRESETS, so it needs this label. Game is meant to be picked here (GM-16: applied via the
+  // theme picker; persona → suggest-game-at-onboarding). Its palette band resolves generically via the probe.
+  game: 'Game',
 }
 
 // A swatch = a real <button> (native Enter/Space) carrying `aria-pressed`. Single-select: only the chosen preset is

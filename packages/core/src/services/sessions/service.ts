@@ -129,6 +129,14 @@ export interface SessionsService {
   ): Promise<SessionAttachmentRow>
   detach(attachmentId: string): Promise<void>
   resolveTargets(sessionId: string): Promise<ResolvedTarget[]>
+  /** Reverse attachment lookup: the in_progress session of `subType` attached to `(entityType, entityId)`, or null.
+   *  Read-only; the running-timer guard a consuming module (e.g. Tasks `startTimer`) needs (it cannot read
+   *  `session_attachments` directly, §6). Returns the first match (the one-open-per-entity invariant is the caller's). */
+  findOpenSessionForEntity(
+    subType: string,
+    entityType: string,
+    entityId: string,
+  ): Promise<SessionRow | null>
   /** Complete a session — routes through the #32 transition engine (fires declared effects). */
   completeSession(id: string): Promise<TransitionResult>
   /** Apply any declared lifecycle event via the #32 transition engine. */
@@ -405,6 +413,22 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
 
     resolveTargets(sessionId) {
       return resolveTargets(db, sessionId)
+    },
+
+    // --- reverse attachment lookup (the running-timer guard seam; read-only) --
+    async findOpenSessionForEntity(subType, entityType, entityId) {
+      // attachments carry no deleted_at; the spine does (findById applies isNull(deleted_at)).
+      const atts = await attachmentRepo.findWhere(
+        and(
+          eq(sessionAttachments.entity_type, entityType),
+          eq(sessionAttachments.entity_id, entityId),
+        )!,
+      )
+      for (const a of atts) {
+        const s = await sessionRepo.findById(a.session_id) // null if soft-deleted / missing
+        if (s && s.sub_type === subType && s.status === 'in_progress') return s
+      }
+      return null
     },
 
     // --- completion / lifecycle — delegate to the #32 engine (IR-1, no second path) --

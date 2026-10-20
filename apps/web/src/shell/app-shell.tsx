@@ -18,6 +18,7 @@ import {
   LAYERING,
   PANEL_IDS,
   contentGutterAt,
+  contentVInsetAt,
   overlayModeAt,
   reservedTopInset,
   type PanelEdge,
@@ -98,6 +99,7 @@ export function AppShell({
 }: AppShellProps) {
   const bp = useActiveBreakpoint(__bp)
   const gutter = contentGutterAt(bp)
+  const vinset = contentVInsetAt(bp) // top+bottom content breathing room below the strip (24/32/40, 4pt grid)
   const topInset = reservedTopInset(bp) // EC-7 — the reserved strip's height; content insets below it
   const overlay = overlayModeAt(bp) // 'sheet' (mobile) | 'centered' (tablet+)
 
@@ -321,6 +323,7 @@ export function AppShell({
               minWidth={0}
               overflowY="auto"
               paddingHorizontal={gutter}
+              paddingVertical={vinset}
               alignItems="center"
             >
               <View width="100%" maxWidth={CONTENT_MAX_WIDTH} flex={1}>
