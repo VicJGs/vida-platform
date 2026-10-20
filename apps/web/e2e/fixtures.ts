@@ -51,6 +51,18 @@ export const test = base.extend<{ db: VidaDbBackdoor }>({
           string,
           unknown[] | undefined,
         ]),
+      values: (sql, params) =>
+        page.evaluate((a) => window.__vidaDb.values(a[0], a[1]), [sql, params] as [
+          string,
+          unknown[] | undefined,
+        ]),
+      exec: (sql, params) =>
+        page.evaluate((a) => window.__vidaDb.exec(a[0], a[1]), [sql, params] as [
+          string,
+          unknown[] | undefined,
+        ]),
+      batch: (statements) =>
+        page.evaluate((s) => window.__vidaDb.batch(s), statements),
       close: () => page.evaluate(() => window.__vidaDb.close()),
     }
 

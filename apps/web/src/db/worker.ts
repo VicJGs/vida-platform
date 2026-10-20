@@ -30,18 +30,22 @@ async function open(dbName: string): Promise<void> {
 
 // AR-4 extends AR-2's minimal `open|exec|query|close` proof to the surface the
 // main-thread client (client.ts) needs: `run` (write), `migrate` (explicit),
-// `exists` (per-name first-run detection). `exec` is KEPT as an alias of `run`
-// (do not remove — AR-2 compatibility, R7).
-// SEAM — `values` / `batch` (the Drizzle-proxy repository path) are deferred to
-// when module entity-CRUD lands (UI-3 / M1.1+); add the ops here + on the client
-// driver then. AR-4 grain = mechanism + one reference read, not the full data path.
+// `exists` (per-name first-run detection).
+// data-plane-wiring (2026-10-20) lands AR-4's reserved seam: `values` (positional
+// arrays — the Drizzle sqlite-proxy read path), `exec` (→ RawQueryResult), and
+// `batch` are now exposed over the RPC, calling the in-worker `web-driver.ts`
+// methods that already implement them. (`exec` was an AR-2 `run`-alias; no RPC
+// caller used the alias — the client's `exec` slot was a throwing seam — so it is
+// upgraded to the real `driver.exec` → RawQueryResult.)
 type WorkerRequest =
   | { id: number; op: 'open'; dbName: string }
   | { id: number; op: 'exists'; dbName: string }
   | { id: number; op: 'migrate' }
   | { id: number; op: 'run'; sql: string; params?: unknown[] }
-  | { id: number; op: 'exec'; sql: string; params?: unknown[] } // alias of 'run' (AR-2 compat)
+  | { id: number; op: 'exec'; sql: string; params?: unknown[] }
   | { id: number; op: 'query'; sql: string; params?: unknown[] }
+  | { id: number; op: 'values'; sql: string; params?: unknown[] }
+  | { id: number; op: 'batch'; statements: Array<{ sql: string; params?: unknown[] }> }
   | { id: number; op: 'close' }
 
 type WorkerResponse =
@@ -83,9 +87,27 @@ workerScope.onmessage = async (event: MessageEvent<WorkerRequest>): Promise<void
         break
       }
       case 'run':
-      case 'exec': // alias — AR-2 compat (R7)
         assertOpen(driver)
         await driver.run(msg.sql, msg.params)
+        response = { id: msg.id, ok: true }
+        break
+      case 'exec': {
+        // Real exec → RawQueryResult (data-plane-wiring; was an AR-2 run-alias).
+        assertOpen(driver)
+        const result = await driver.exec(msg.sql, msg.params)
+        response = { id: msg.id, ok: true, result }
+        break
+      }
+      case 'values': {
+        // Positional-array rows — the Drizzle sqlite-proxy read path.
+        assertOpen(driver)
+        const result = await driver.values(msg.sql, msg.params)
+        response = { id: msg.id, ok: true, result }
+        break
+      }
+      case 'batch':
+        assertOpen(driver)
+        await driver.batch(msg.statements)
         response = { id: msg.id, ok: true }
         break
       case 'query': {

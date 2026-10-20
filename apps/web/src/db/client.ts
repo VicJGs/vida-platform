@@ -9,9 +9,10 @@
 //   - `driver`: an `SqliteDriver` proxy so `getSchemaVersion(client.driver)` and
 //     (later) `createDrizzleProxy` work unchanged across the worker boundary.
 //
-// GRAIN (AR-4): query · run · close are live; `exec`/`values`/`batch` (the richer
-// RawQueryResult + Drizzle-proxy path) THROW a documented seam error — they land
-// with module entity-CRUD (UI-3 / M1.1+), together with the worker-side ops.
+// GRAIN: query · run · close are live. `exec` · `values` · `batch` (the richer
+// RawQueryResult + Drizzle-proxy read path) were AR-4's reserved seam; data-plane-
+// wiring (2026-10-20) landed them — they now RPC to the worker ops that call the
+// in-worker web-driver. `createDrizzleProxy(client.driver)` works end-to-end.
 // ============================================================================
 
 import type { SqliteDriver, RawQueryResult } from '@vida/core'
@@ -25,6 +26,9 @@ type RequestBody =
   | { op: 'migrate' }
   | { op: 'run'; sql: string; params?: unknown[] }
   | { op: 'query'; sql: string; params?: unknown[] }
+  | { op: 'exec'; sql: string; params?: unknown[] }
+  | { op: 'values'; sql: string; params?: unknown[] }
+  | { op: 'batch'; statements: Array<{ sql: string; params?: unknown[] }> }
   | { op: 'close' }
 
 type WorkerRequest = RequestBody & { id: number }
@@ -41,7 +45,6 @@ export interface WorkerLike {
   terminate(): void
 }
 
-const SEAM = 'AR-4 seam: exec/values/batch use the Drizzle-proxy path, deferred to entity CRUD (UI-3/M1.1+).'
 // A worker RPC that never replies (worker crash, WASM load failure, killed
 // worker) must fail loud, not hang the boot gate. 15s is generous vs a local read.
 const RPC_TIMEOUT_MS = 15_000
@@ -149,16 +152,18 @@ export class WorkerDbClient {
     close: async (): Promise<void> => {
       await this.close()
     },
-    // Deferred seam — see file header. Present to satisfy the interface; throw
-    // loudly rather than silently no-op if a consumer reaches them early.
-    exec: (): Promise<RawQueryResult> => {
-      throw new Error(SEAM)
+    // data-plane-wiring (2026-10-20) — the reserved Drizzle-proxy path, now live:
+    // RPC to the worker ops that call the in-worker web-driver.
+    exec: async (sql: string, params?: unknown[]): Promise<RawQueryResult> => {
+      const res = await this.call({ op: 'exec', sql, params })
+      return res.result as RawQueryResult
     },
-    values: (): Promise<unknown[][]> => {
-      throw new Error(SEAM)
+    values: async (sql: string, params?: unknown[]): Promise<unknown[][]> => {
+      const res = await this.call({ op: 'values', sql, params })
+      return res.result as unknown[][]
     },
-    batch: (): Promise<void> => {
-      throw new Error(SEAM)
+    batch: async (statements: Array<{ sql: string; params?: unknown[] }>): Promise<void> => {
+      await this.call({ op: 'batch', statements })
     },
   }
 }
