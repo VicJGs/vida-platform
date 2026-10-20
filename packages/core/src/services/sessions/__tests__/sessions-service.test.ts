@@ -647,3 +647,28 @@ describe('S7 — dueIn aggregator + analytics (finale)', () => {
     await driver.close()
   })
 })
+
+describe('findOpenSessionForEntity — reverse attachment lookup (the Tasks timer-guard seam)', () => {
+  it('returns the in_progress session attached to the entity; null on completed / wrong type / wrong entity', async () => {
+    const { svc, registry, driver } = await setup()
+    await registry.register(NOTE_TYPE) // effects:[] → completes cleanly, no handler needed
+    const s = await svc.createSession({
+      sub_type: 'note_session',
+      scheduling_mode: 'ad_hoc',
+      status: 'in_progress',
+      started_at: Date.now(),
+    })
+    await svc.attach(s.session.id, 'task', 'task-1', 'instance')
+
+    // open + attached → found
+    expect((await svc.findOpenSessionForEntity('note_session', 'task', 'task-1'))?.id).toBe(s.session.id)
+    // wrong sub_type / wrong entity → null
+    expect(await svc.findOpenSessionForEntity('focus', 'task', 'task-1')).toBeNull()
+    expect(await svc.findOpenSessionForEntity('note_session', 'task', 'task-2')).toBeNull()
+
+    // once completed (no longer in_progress) → null
+    await svc.completeSession(s.session.id)
+    expect(await svc.findOpenSessionForEntity('note_session', 'task', 'task-1')).toBeNull()
+    await driver.close()
+  })
+})

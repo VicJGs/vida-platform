@@ -12,6 +12,10 @@ V1 V2 V3 V4 V5
 
 ## Status
 Built by AR-6 (2026-07-29). `views` table (schema/foundation/spaces.ts + migration 003) + `ViewsService`
-(CRUD, M1.0 empty-[E] pass-through) + `ViewProviderRegistry` (V4/R7 seam, ships EMPTY) + `ViewEngine.resolve`
-(V3 cross-type resolution: ungrouped bucket, never-drop; V5 terminal states). Real read-providers register
-per-module at their build. Deferred: predicate-DSL grammar + per-layout visual specs (build-time).
+(CRUD + `cloneView` + **`listViews()`** [first-consumer-pull, mod-tasks S8 2026-10-18 — live rows, `created_at`/`id`
+order; `CreateViewInput.grouping` accepts `null`], M1.0 empty-[E] pass-through) + `ViewProviderRegistry` (V4/R7 seam,
+ships EMPTY) + `ViewEngine.resolve` (V3 cross-type resolution: ungrouped bucket, never-drop; V5 terminal states).
+Real read-providers register per-module at their build — **first registrant: tasks** (`services/tasks`
+`registerTasksReadProvider`, S8; its tests drive `resolve` end-to-end incl. nested-tag membership). Nav placement /
+pin / order of views = Preferences (ADR-007 §3.5), never a `views` column. Deferred: predicate-DSL grammar
+(incl. a multi-tag intersection combinator) + per-layout visual specs (build-time).
