@@ -174,14 +174,18 @@ function nextOccurrence(rule: string, fromYmd: string): string | null {
 
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 
-/** Today as YYYY-MM-DD in LOCAL time (the anchor fallback for a null `due_date`; g2 N4 — local, not UTC).
- *  NB (S9): this is the ONLY local-day helper in `@vida/core` — the platform convention for "the day of a timestamp" is
- *  the UTC calendar day (`utcDay` below, the shipped platform convention (6 modules, 7 sites)). Aligning it is a §XXVIII change to the
- *  shipped BR-TK-S5 rule, flagged for Victor and deliberately NOT made in S9. */
+/** Today as YYYY-MM-DD — the anchor fallback for a null `due_date` (BR-TK-S5-3). The UTC calendar day: the platform
+ *  convention for "the day of a timestamp" (`utcDay` below — habits' `clock`, finance, books, check-ins, purposes,
+ *  relationships; ADR-002:62 / `user_profile.timezone DEFAULT 'UTC'`). Re-pointed from a LOCAL day at S9 (§XXVIII):
+ *  the S5 local choice was a review-time decision, not doc-grounded, and made tasks the only local-day helper in core. */
 function todayYmd(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+  return utcDay(Date.now())
 }
+
+/** The shared `STATUS` enum's TERMINAL set (`@vida/types` common.ts:32) — the platform convention: projects:71 ·
+ *  purposes:81 · sessions; projects intake G9 "archived = completed/cancelled". `on_hold` is NOT terminal (paused, still
+ *  owed). "Open" work = status ∉ this set (the S9 lane + the `open` list filter). */
+const TERMINAL_STATUSES: ReadonlySet<string> = new Set(['completed', 'cancelled'])
 
 // ---- S9: day/window helpers (pure; exported for direct unit test) ---------------
 /** Unix ms → the UTC calendar day `YYYY-MM-DD` — the platform's shipped convention for "the date" of a timestamp
@@ -397,6 +401,8 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
         if (t.due_date == null || t.due_date > f.due_before) return false
       }
       if (f.kind !== undefined && t.kind !== f.kind) return false // S8 — kind-bound presets (TAS-30)
+      // S9 — open (non-terminal) work: status ∉ {completed, cancelled} (the platform TERMINAL convention)
+      if (f.open !== undefined && TERMINAL_STATUSES.has(t.status) === f.open) return false
       return true
     })
   }
@@ -775,9 +781,9 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     const all = await listTasks() // soft-delete filtered
     const picked: Array<{ item: DueItem; sort_order: number; created_at: number; id: string }> = []
     for (const t of all) {
-      // OPEN = the S1 `completed:false` definition (`status !== 'completed'`). `cancelled`/`on_hold` are NOT special-cased:
-      // no doc defines them for due work (BR-TK-S3-7 likewise does not guard `cancelled`) — flagged, not invented.
-      if (t.status === 'completed') continue // not due work (the forward half)
+      // OPEN = non-terminal (the platform TERMINAL convention: completed | cancelled — projects/purposes/sessions,
+      // projects intake G9). `on_hold` stays due work (paused, still owed).
+      if (TERMINAL_STATUSES.has(t.status)) continue // not due work (the forward half)
       const dueMs = utcMidnightMs(t.due_date)
       const schedMs = utcMidnightMs(t.scheduled_date)
       if (!inWindow(dueMs, range) && !inWindow(schedMs, range)) continue
@@ -908,6 +914,7 @@ const PROVIDER_KEYS = [
   'completed',
   'due_before',
   'kind',
+  'open',
 ] as const satisfies readonly (keyof ListTasksFilter)[]
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -980,11 +987,11 @@ export function registerTasksReadProvider(
  * open-tasks list the ② scopes to the day (`due_before` is a per-day literal, not a constant).
  */
 export const TASK_VIEW_PRESETS: readonly TaskViewPreset[] = [
-  { key: 'today', kind: null, view: { name: 'Today', layout: 'list', predicates: { completed: false } } },
+  { key: 'today', kind: null, view: { name: 'Today', layout: 'list', predicates: { open: true } } },
   {
     key: 'board',
     kind: null,
-    view: { name: 'Board', layout: 'board', predicates: { completed: false }, grouping: { field: 'status' } },
+    view: { name: 'Board', layout: 'board', predicates: { open: true }, grouping: { field: 'status' } },
   },
   { key: 'all_by_project', kind: null, view: { name: 'All by project', layout: 'list', grouping: { field: 'project_id' } } },
 ]

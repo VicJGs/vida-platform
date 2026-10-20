@@ -92,7 +92,7 @@
 - **Out of ① scope (② UI / P6, ADR-020):** the 12 layouts, view-builder chrome, board drag, running-timer indicator, optimistic apply/revert. Full V1 view anatomy = deferred ADR-007 pass. `[FACT: backend-intent/parts/tasks.md:5]`
 - **Routines seam** — ensure S1/S3/S5 expose a clean `createTask`(+recurrence)/`completeTask`/`getTask`/`listTasks` surface routines' task-step driver will consume (the whole reason Tasks is first).
 
-## 6. Build-phase record — S9 (2026-10-19): NO S9 interpretation; one inherited UNKNOWN flagged; one convention FACT
+## 6. Build-phase record — S9 (2026-10-19): NO interpretation; every rule doc-fixed; one convention FACT
 - **S9 carries no interpretation of its own.** Every S9 rule is doc-fixed: the summary CONTENT = `docs/core/architecture/
   cross-module-integration.md` §2 (the GOVERNING daily-summary spec; tasks row verbatim) ∘ `contract.md:32`; "the date"
   of a timestamp = the UTC calendar day (the shipped platform convention (6 modules, 7 sites) + `cross-module-integration.md:70`); the lane =
@@ -105,9 +105,10 @@
   purposes tests). A caller building "today" from LOCAL midnight in a UTC-negative zone (BRT = 03:00Z, window
   `[D 03:00Z, D+1 02:59Z]`) would SHIFT every calendar-date item by one day — it misses D's item at `D 00:00Z` and shows
   D+1's as "today"; Sessions' own `planned_blocks` lane compares real instants. Build bounds at UTC midnight.
-- **Flagged for Victor (not S9 changes — shipped-rule / doc-silent):** (a) `todayYmd()` (S5 regen anchor,
-  BR-TK-S5-3) is the only LOCAL-day helper in `@vida/core`; aligning it to the UTC convention is a §XXVIII change to a
-  shipped rule. (b) **One inherited UNKNOWN:** "open" = the S1 `completed:false` definition (`status !== 'completed'`),
-  reused by the S8 `Today` preset and the S9 lane, so a `cancelled`/`on_hold` dated task is listed as due work; no doc
-  fixes whether those statuses are open anywhere — a platform-wide question, not an S9 choice (S9 inherits, does not
-  special-case).
+- **Three items first carried as "Victor's calls" were drift — closed by the docs (Victor: "these calls are clear
+  drifts … ground everything in the documentation"):** (a) `todayYmd()` (BR-TK-S5-3 null-due anchor) → the UTC day,
+  the same platform convention as `utcDay` (the S5 local choice was review-time, not doc-grounded); (b) "open" work =
+  status ∉ `{completed, cancelled}` — the shared `STATUS` enum's shipped TERMINAL convention (projects:71 · purposes:81 ·
+  sessions) + projects intake G9 ("archived = completed/cancelled"); `on_hold` stays open — applied to the S9 lane and,
+  via a new `open` filter, the S8 Today/Board presets; (c) calendar-date validity = ADR-002 §2.8 (`YYYY-MM-DD` TEXT
+  format), shape-validated like every module's date validator — no change.

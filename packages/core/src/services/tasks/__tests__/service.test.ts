@@ -1586,6 +1586,8 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
     await h.svc.completeTask(done.id)
     const dead = await mk('deleted due in', { due_date: '2026-10-15' })
     await h.svc.softDeleteTask(dead.id)
+    await mk('cancelled due in', { due_date: '2026-10-15', status: 'cancelled' }) // terminal ⇒ not due work
+    const onHold = await mk('on hold due in', { due_date: '2026-10-15', status: 'on_hold' }) // paused, still owed ⇒ due
     const parent = await mk('parent')
     const sub = await h.svc.addSubtask(parent.id, { title: 'dated sub-task', due_date: '2026-10-16' })
     const lo = await mk('bound lo', { due_date: '2026-10-10' })
@@ -1594,7 +1596,7 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
 
     const items = await h.svc.getDueReminders(range)
     const by = new Map(items.map((i) => [i.ref_id, i]))
-    expect([...by.keys()].sort()).toEqual([dueIn.id, schedInDueOut.id, schedOutDueIn.id, schedOnly.id, sub.id, lo.id, hi.id].sort())
+    expect([...by.keys()].sort()).toEqual([dueIn.id, schedInDueOut.id, schedOutDueIn.id, schedOnly.id, onHold.id, sub.id, lo.id, hi.id].sort())
     expect(by.get(dueIn.id)).toEqual({ source_module: 'tasks', ref_id: dueIn.id, label: 'due in', est_minutes: 25, urgency: 0, hard_deadline: ms('2026-10-15') })
     expect(by.get(schedInDueOut.id)?.hard_deadline).toBe(ms('2026-10-30')) // surfaced by the scheduled day; deadline rides along
     expect(by.get(schedOutDueIn.id)?.hard_deadline).toBe(ms('2026-10-15')) // surfaced by the deadline
@@ -1635,6 +1637,43 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
     const items = await h.sessions.dueIn({ start: ms('2026-10-01'), end: ms('2026-10-31') })
     expect(items.some((i) => i.source_module === 'tasks' && i.ref_id === t.id)).toBe(true)
     expect(items.some((i) => i.source_module === 'broken')).toBe(false)
+  })
+
+  it('(6b) `open` = non-terminal (status ∉ {completed, cancelled}; on_hold is open) — listTasks, the provider, the Today/Board presets', async () => {
+    const h = await setup()
+    const ids: Record<string, string> = {}
+    for (const s of ['not_started', 'in_progress', 'on_hold', 'completed', 'cancelled'] as const) {
+      ids[s] = (await h.svc.createTask({ title: s, status: s })).id
+    }
+    const open = (await h.svc.listTasks({ open: true })).map((t) => t.id).sort()
+    expect(open).toEqual([ids.not_started!, ids.in_progress!, ids.on_hold!].sort())
+    const terminal = (await h.svc.listTasks({ open: false })).map((t) => t.id).sort()
+    expect(terminal).toEqual([ids.completed!, ids.cancelled!].sort())
+    const provider = createTasksReadProvider({ svc: h.svc, db: h.db, deviceId: 'test-device' })
+    const viaProvider = ((await provider.list({ predicates: { open: true } })) as { id: string }[]).map((t) => t.id).sort()
+    expect(viaProvider).toEqual(open)
+    expect(TASK_VIEW_PRESETS.find((p) => p.key === 'today')?.view.predicates).toEqual({ open: true })
+    expect(TASK_VIEW_PRESETS.find((p) => p.key === 'board')?.view.predicates).toEqual({ open: true })
+  })
+
+  it('(6c) BR-TK-S5-3 re-pointed: a null-due obligation regenerates from the UTC day (the platform convention), not the local day', async () => {
+    const instant = Date.UTC(2026, 9, 17, 20, 0, 0) // UTC 10-17 · Tokyo local 10-18
+    await withTz('Asia/Tokyo', async () => {
+      expect(new Date(instant).getDate()).toBe(18) // the zone took
+      const h = await setup()
+      vi.useFakeTimers({ toFake: ['Date'] })
+      let id: string
+      try {
+        vi.setSystemTime(new Date(instant))
+        const ob = await h.svc.createTask({ title: 'Daily', kind: 'obligation', recurrence_rule: 'FREQ=DAILY' })
+        await h.svc.completeTask(ob.id)
+        id = ob.id
+      } finally {
+        vi.useRealTimers()
+      }
+      const next = (await h.svc.listTasks()).find((t) => t.id !== id)
+      expect(next?.due_date).toBe('2026-10-18') // anchor = UTC 10-17 ⇒ next 10-18 (a local anchor would give 10-19)
+    })
   })
 
   it('(7) TAS-36 surface guard — every exported typed error is an Error with a stable `.name`', () => {

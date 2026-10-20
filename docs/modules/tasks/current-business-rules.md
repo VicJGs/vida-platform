@@ -116,7 +116,7 @@
   next-occurrence is computed via the **canonical `ical.js`** (ADR-001:137; `@vida/core` dep `ical.js@2.2.1`,
   `/verify`'d). No `rrule` npm (a forbidden alternative, ADR-001:15); no hand-rolled parser.
 - **BR-TK-S5-3 (regeneration = the three outcomes, TAS-22/23).** A FRESH completion of an obligation with a rule
-  computes the next `due_date` anchored at the current `due_date` (null ⇒ local today): (1) a next instance ⇒ spawn one
+  computes the next `due_date` anchored at the current `due_date` (null ⇒ today as the UTC calendar day — re-pointed at S9 from a local day to the platform convention, see BR-TK-S9-3): (1) a next instance ⇒ spawn one
   `not_started` occurrence; (2) a valid but **exhausted** rule (`COUNT`/`UNTIL`) ⇒ complete, **no spawn, no error**
   (legitimate end — NOT a failure); (3) an **invalid/unparseable** rule ⇒ complete + `RecurrenceRegenError`.
 - **BR-TK-S5-4 (complete-but-flag, TAS-23 — caller contract).** The S3 completion (status + `completed_at` + fan-out)
@@ -269,14 +269,10 @@
 - **BR-TK-S9-3 ("the date" of a timestamp = the UTC calendar day — the platform convention).** `utcDay(ms)` =
   `toISOString().slice(0,10)`, identical to the 7 shipped day-derivation sites across 6 modules (habits · finance ×2 · books · check-ins ·
   purposes · relationships) and `cross-module-integration.md:70`; timezone-INDEPENDENT (proven under Tokyo + São Paulo).
-  The designed `user_profile.timezone` (ADR-002:3381, unbuilt) re-points this one seam later. **Known divergence, NOT
-  changed here:** `todayYmd()` (BR-TK-S5-3, local day) — a §XXVIII change to a shipped rule, Victor's call.
+  The designed `user_profile.timezone` (ADR-002:3381, unbuilt) re-points this one seam later. **`todayYmd()` (the BR-TK-S5-3 null-due anchor) now rides the same helper** — re-pointed at S9 (§XXVIII) from a LOCAL day, which was a review-time S5 choice, not doc-grounded; proven by a `TZ=Asia/Tokyo` regen test.
 - **BR-TK-S9-4 (the due-work lane = the SS-7 due-bucket; both dates qualify; the deadline rides as `hard_deadline`).**
-  `getDueReminders(range)` returns OPEN tasks (`status !== 'completed'` — the agenda is the forward "what's due" half,
-  JR-5; relationships `:521` likewise) whose
-  **[OPEN = the inherited S1 `completed:false` definition (`listTasks`, the S8 `Today` preset) — so a `cancelled`/
-  `on_hold` task with a date IS listed as due work. No doc fixes whether those statuses are "open" ANYWHERE (S1 filter ·
-  S8 preset · S9 lane); a platform-wide UNKNOWN flagged for Victor like `todayYmd`, not special-cased in S9.]** `due_date` OR `scheduled_date` (G6: deadline / "plan to work on it — drives
+  `getDueReminders(range)` returns OPEN tasks (status ∉ the platform TERMINAL set `{completed, cancelled}` — projects:71 · purposes:81 · sessions; projects intake G9 "archived = completed/cancelled"; `on_hold` is open, paused but still owed — the agenda is the forward "what's due" half,
+  JR-5; relationships `:521` likewise) whose `due_date` OR `scheduled_date` (G6: deadline / "plan to work on it — drives
   Today/Calendar"; TAS-19 `surface_calendar (due/scheduled)`; the Calendar is the dueIn aggregator) falls in the
   inclusive ms window, converting a calendar date at UTC midnight (the purposes/relationships convention = the callers'
   bound convention). `hard_deadline` = the `due_date` moment, OMITTED when none (never `NaN`); `est_minutes` =
@@ -308,5 +304,4 @@ registries EMPTY at M1). The S3 completion catalogue's **handlers** (incl. the l
 consumer) are consumer-registered later (verified dormant at M1). The S6 `derived-pull` source read + task↔source
 binding + `measurementSources` dep = a later slice (XCU-13); a manual stored-progress override column = ADR-002
 amendment (XCU-16). S9: urgency ranking = the G5 placement design-pass (ADR-004 §3.3); a user-timezone day bucket =
-`user_profile.timezone` (ADR-002, unbuilt) + journals BR-S3-4; `todayYmd()` local-day alignment = Victor's call;
-whether `cancelled`/`on_hold` count as "open" (S1 filter · S8 preset · S9 lane) = Victor's call (no doc fixes it).
+`user_profile.timezone` (ADR-002, unbuilt) + journals BR-S3-4; the calendar-date FORMAT rule is ADR-002 §2.8 (`YYYY-MM-DD` TEXT) and every date validator is shape-only (task · project · purpose · note) — the lane parses dates exactly as the purposes/relationships lanes do (platform convention, no S9 change).

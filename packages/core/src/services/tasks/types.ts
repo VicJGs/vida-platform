@@ -125,6 +125,9 @@ export interface ListTasksFilter {
   /** S8 — the `kind` discriminator (`standard` | `obligation`); lets a T4 preset bound to a kind be expressed as a
    *  provider predicate (TAS-30). Own-table, additive. */
   kind?: TaskKind
+  /** S9 — true ⇒ OPEN work only (status ∉ {completed, cancelled}, the platform TERMINAL convention; `on_hold` is open);
+   *  false ⇒ terminal only. The Today/Board presets bind it. (`completed` stays the literal completion filter.) */
+  open?: boolean
 }
 
 // --- S8 — tags · notes · views (TAS-27/28/30/31) + the tasks ReadProvider (XCU-07/08) ----

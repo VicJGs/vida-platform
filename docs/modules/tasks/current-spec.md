@@ -97,7 +97,7 @@
   error; (3) **invalid** rule → complete + `RecurrenceRegenError` (the task IS completed — complete-but-flag, TAS-23;
   do not retry). Completion commits BEFORE regen (durable).
 - **`nextOccurrence(rule, fromYmd)`** — RFC-5545 RRULE (ADR-002:1160) via the **canonical `ical.js`** (ADR-001:137;
-  `@vida/core` dep, verified v2.2.1). Anchors a DTSTART at the current `due_date` (null ⇒ local today), iterates past
+  `@vida/core` dep, verified v2.2.1). Anchors a DTSTART at the current `due_date` (null ⇒ the UTC day — re-pointed at S9, BR-TK-S9-3), iterates past
   the anchor, returns the next `YYYY-MM-DD`. **Built from `ICAL.Time`'s own calendar fields, NOT `toJSDate()/UTC`** —
   the latter drifts one day early in UTC-positive zones (g2 B1; a `TZ=Asia/Tokyo` test guards it).
 
@@ -222,11 +222,7 @@
 - **`utcDay(ms)`** (exported helper) — Unix ms → the UTC calendar day `YYYY-MM-DD` (`toISOString().slice(0,10)`): the
   platform's shipped convention for "the date" of a timestamp (habits `clock` · finance · books · check-ins · purposes ·
   relationships; `cross-module-integration.md:70` `date(started_at)`). Timezone-INDEPENDENT. The designed
-  `user_profile.timezone` (ADR-002:3381, unbuilt) will re-point this one seam. **Flagged divergence (not changed):**
-  `todayYmd()` (S5 regen anchor, local day) is the only local-day helper in `@vida/core` — aligning it is a §XXVIII
-  change to BR-TK-S5-3, Victor's call. **Second flag:** the lane's OPEN inherits the S1 `completed:false` definition
-  (`status !== 'completed'`), so a `cancelled`/`on_hold` dated task is listed as due work — no doc fixes whether those
-  statuses are "open" (S1 filter · S8 `Today` preset · S9 lane); Victor's call, not special-cased.
+  `user_profile.timezone` (ADR-002:3381, unbuilt) will re-point this one seam. **`todayYmd()`** (the S5 null-due regen anchor) now rides `utcDay` too — re-pointed at S9 (§XXVIII) from a local day (a review-time S5 choice, not doc-grounded). **OPEN** = status ∉ the platform TERMINAL set `{completed, cancelled}` (projects:71 · purposes:81 · sessions; projects intake G9); `on_hold` stays open. A new `ListTasksFilter.open` (+ provider key) carries it; the S8 `Today`/`Board` presets bind `{ open: true }` (they used the literal `completed:false`, which listed cancelled tasks).
 - **`getDueReminders(range: TimeRange): DueItem[]`** — the SS-7 lane producer (sessions intake G2-shape: "a module-
   owned due-bucket resolved LIVE by its owner … `hard_deadline?`"; the Calendar is the dueIn aggregator and surfaces
   BOTH dates, TAS-19 `surface_calendar (due/scheduled)` + G6). OPEN tasks only (the agenda is the forward "what's due"
@@ -265,8 +261,7 @@ the REAL `createJournalRegistry` + `buildDashboard` (success/empty, dedup, no ag
 order under a pinned clock · the REAL `sessions.dueIn` lane + a rejecting lane skipped (BR-34) · TAS-36 10-error
 surface guard · TAS-29 both halves incl. strictness · structural read of `journal.ts`). Gate: PLAN-S9 gate-1
 REVISE→SHIP → Victor ×2 "ground in the documentation" → rev 3 on the GOVERNING docs → SHIP · preflight PASSED (A1–A6)
-· gate-2 SHIP · g2 code review SHIP (9 NITs, 7 folded; N1 `cancelled`/`on_hold`-as-open + N7 `CalendarDateSchema`
-rollover flagged — PLAN-S9 §Gate record) · /critique REVISE(docs)→folded→SHIP. **No new dep, no migration, no
+· gate-2 SHIP · g2 code review SHIP (9 NITs, 7 folded; N1/N7 then grounded in the docs — PLAN-S9 §Gate record) · /critique REVISE(docs)→folded→SHIP. **No new dep, no migration, no
 `@vida/types` change.**
 **S8:** tsc 0 · eslint 0 · tasks suite **87/87** (+11 S8: tags ×2 · note · views ×3 · provider ×4 incl. the REAL
 `ViewEngine` end-to-end + nested-tag hierarchy · presets · structural) + spaces substrate **23/23** (+2 `listViews`)
@@ -288,9 +283,10 @@ L139 + `parts/xcut-sessions.md` UNKNOWN-1 (G5 placement design-pass) · a user-t
 `user_profile.timezone` (ADR-002:3370-3381, unbuilt) + journals BR-S3-4 ("strict tz-aware today = design-pass");
 `utcDay` is the one seam · composition-root CALLS of `registerTasksJournal`/`registerTasksDueProvider` → MVP-PATH:
 108-111 (UI-3 / M1.1+) · the 12→7 layout mapping → `schema-audit-deferred-homes.md:281-282` (007 anatomy pass).
-**Flagged for Victor (not a deferral — a shipped-rule alignment):** `todayYmd()` local-day vs the UTC convention
-(BR-TK-S5-3). **Closed by the docs (not deferrals):** "overdue carry-forward" (the lane's window IS the SS-7 contract;
-overdue reads ship as `listTasks({ completed:false, due_before })`) · recap lists vs counts (§2 names the fields — a
+**Closed by the docs (not deferrals, not calls):** `todayYmd()` → the UTC day (the platform convention, re-pointed) ·
+"open" = status ∉ `{completed, cancelled}` (the shipped TERMINAL convention + projects intake G9) · calendar-date
+validity = the ADR-002 §2.8 format, shape-validated like every module · "overdue carry-forward" (the lane's window IS
+the SS-7 contract; overdue reads ship as `listTasks({ open:true, due_before })`) · recap lists vs counts (§2 names the fields — a
 list) · `JournalContribution.dueIn` (SS-7 one registration, on Sessions). **S8 deferrals (homed):** `pinView`/`reorderViews` → **Preferences-owned** (ADR-007 §3.5 ·
 IA §6 · XCU-21; a first-consumer-pull gap against the Preferences corpus — "per-view nav placement: pinned set + order,
 per-Space, consumed by the ② view-switcher (fe-tasks)"); a multi-tag INTERSECTION combinator + the predicate-DSL

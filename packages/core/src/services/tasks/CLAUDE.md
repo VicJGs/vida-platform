@@ -33,8 +33,7 @@ is in the window, `hard_deadline` = due date, UTC-midnight conversion, total det
 registration, on Sessions, SS-7) · TAS-29 `TaskViewConfig` + `TaskViewConfigSchema` · TAS-32/36 RATIFY.**
 Deps after S1 are optional + fail-loud (`TimerNotWiredError`, `TasksDepNotWiredError`); `'task'` is pre-seeded (no
 `registry` dep); S9 adds no dep (registry handles are PARAMS to the register helpers). `pinView`/`reorderViews` are
-Preferences-owned (ADR-007 §3.5) — not here. **Flagged, not changed:** `todayYmd()` (S5 regen anchor) is the only
-LOCAL-day helper in `@vida/core` vs the UTC convention — Victor's call (BR-TK-S5-3). Composition root (the CALLS of the
+Preferences-owned (ADR-007 §3.5) — not here. `todayYmd()` (S5 regen anchor) rides `utcDay` (re-pointed at S9); "open" = status ∉ `{completed, cancelled}` (`ListTasksFilter.open`; the platform TERMINAL convention). Composition root (the CALLS of the
 four `registerTasks*` helpers) = UI-3 / M1.1+.
 Durable docs: `docs/modules/tasks/current-{spec,business-rules}.md` (BR-TK-S1..S9); slice specs
 `docs/features/tasks/delivery/PLAN-S*.md`. **Test gate:** better-sqlite3 live-store, Node 24 ONLY (ABI 137 — never

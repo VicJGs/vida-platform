@@ -85,6 +85,7 @@ export const ListTasksFilterFieldsSchema = z.object({
   completed: z.boolean().optional(),
   due_before: CalendarDateSchema,
   kind: TaskKindSchema.optional(), // S8 — TAS-30 kind-bound presets
+  open: z.boolean().optional(), // S9 — non-terminal work (status ∉ {completed, cancelled})
 })
 export const ListTasksFilterSchema = ListTasksFilterFieldsSchema.optional()
 

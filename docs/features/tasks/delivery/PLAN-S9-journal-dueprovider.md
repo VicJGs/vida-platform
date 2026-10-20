@@ -333,3 +333,20 @@ design-pass) · composition-root calls (UI-3 / M1.1+) · the 12→7 mapping (007
 (SS-7: one registration, on Sessions) · any rail emission for `surface_journal`/`surface_calendar` (projections,
 ADR-004:84) · aligning `todayYmd` to UTC (a shipped S5 BR — Victor's call, separate) · the ② `/summary` block, Today
 renderer (reads `due_before` for overdue) and Calendar render.
+
+## Addendum — §XXVIII post-commit (2026-10-19): the three "Victor's calls" were drift, grounded in the docs
+Victor: "These calls are clear drifts and should be solved by grounding everything in the documentation." Each closed:
+- **"Open" work** = status ∉ `{completed, cancelled}` — the shared `STATUS` enum's shipped TERMINAL convention
+  (`projects/service.ts:71` · `purposes/service.ts:81` · `sessions/service.ts:492`) + projects intake G9 ("archived =
+  completed/cancelled"); `on_hold` is open (paused, still owed). Applied: the S9 lane skips TERMINAL; new
+  `ListTasksFilter.open` (+ Zod + provider key); the S8 `Today`/`Board` presets bind `{ open: true }` (their literal
+  `completed:false` listed cancelled tasks). `completed` stays the literal completion filter. Tests: gate 4 +cancelled
+  OUT / on_hold IN; new (6b).
+- **`todayYmd()`** (BR-TK-S5-3 null-due regen anchor) → `utcDay(Date.now())`, the platform UTC-day convention
+  (ADR-002:62 / `user_profile.timezone DEFAULT 'UTC'` / 6 modules). The S5 local choice was a review-time decision, not
+  doc-grounded. Test (6c): under `TZ=Asia/Tokyo` at 2026-10-17T20:00Z a daily obligation regenerates to 10-18.
+- **Calendar-date validity** — ADR-002 §2.8 fixes the format (`YYYY-MM-DD` TEXT); every module's date validator is
+  shape-only and the purposes/relationships lanes parse identically → conforms to the platform convention; no change.
+tsc 0 · eslint 0 · tasks **98/98**. Currency: BR-TK-S5-3 / S9-3 / S9-4 · current-spec S5/S9/Deferred · interpretation
+§6 · CLAUDE.md. Memory: [[ground-every-deferral-and-interpretation-before-presenting]] (a "call for Victor" is the
+same drift as an interpretation — grep the shipped convention + intakes first).
