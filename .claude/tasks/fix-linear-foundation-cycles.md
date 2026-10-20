@@ -1,6 +1,6 @@
 # Task: fix-linear-foundation-cycles
 # Status: planned
-# Linear: (unfiled — create at pickup)
+# Linear: LIF-235
 # Profile: Project Foundation / Milestone Delivery Planning
 # Project: M1 — Whole Manual OS
 

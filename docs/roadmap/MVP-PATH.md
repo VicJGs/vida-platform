@@ -119,7 +119,7 @@ the worker-side Drizzle-proxy seam + the composition root (homed UI-3 / M1.1+). 
 | fe-check-ins (LIF-179) | · ready | Daily morning/evening check-ins, mood/energy (backend ✅) | 🟢 Low |
 | fe-gamification (LIF-181) | · ready | XP, levels, achievements (backend ✅) | 🟢 Low |
 | fe-projects (LIF-194) | · ready | Projects, milestones, progress (backend ✅) | 🟡 Medium |
-| fe-calendar (LIF-203) | 🟢 ready (canvas-board done) | Month/week calendar of your data | 🟡 Medium |
+| fe-calendar (LIF-203) | ✅ done (canvas-board done) | Month/week calendar of your data | 🟡 Medium |
 | fe-purposes-and-goals (LIF-195) | 🟢 ready (canvas-board done) | Life purposes, goals, metrics (backend ✅) | 🟡 Medium |
 | **mod-tasks (LIF-201 backend)** | · ready | *(backend)* the tasks engine — aggregates tasks across modules | 🟠 High (aggregator hub) |
 | fe-tasks | · (⛔ mod-tasks) | Create/track tasks & sub-tasks | 🟡 Medium |

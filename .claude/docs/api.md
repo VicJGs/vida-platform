@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-01 by /session-end -->
+<!-- Last updated: 2026-10-20 by /session-end -->
 | Method | Path | Auth | Request | Response | Notes |
 |--------|------|------|---------|----------|-------|
 | *(add rows as endpoints are built)* | | | | | |
@@ -51,3 +51,18 @@ Errors: `ObjectKindNotFoundError` · `InvalidParentRefError` · `HierarchyCycleE
 | S9 Education/measure/tags | `scopeTag` · `linkSubject`/`unlinkSubject`/`listBooksForSubject` (`book_subjects`) · `getPaceStatus`→deny-safe `null` (Education `#52` unbuilt) · `getReadingMeasureSource` (method, KNO-25) |
 | S10 integrations/fan-out/Journal | `convertToSpeech`/`transcribeForMapping`→`OcrResult` (deny-safe `ai?`; Books stamps own `defId`; no M1 consent throw) · `getPlansForConsumer` (BK-12 read-provider) · `getDayBooksDigest` + `registerBooksJournal` (Journal `/summary`) · `effects?` measurement-only fan-out on `endSession` (`emit_measurement_signal` only, C-E2) |
 Errors: `BookNotFoundError` · `ChapterUniqueViolation` · `ChapterNotFoundError` · `BookAssetNotFoundError` · `AssetFileError` · `AnnotationNotFoundError` · `AnnotationNotLinkableError` · `QuoteEmbedDisabledError` · `ReadingSessionNotFoundError` · `ReadingPlanNotFoundError` · `TargetUnreachableProposal` · `PositionConflictPending` (exported, no M1 throw-site) · `IntegrationConsentError` (exported BK-14 vocabulary, no M1 throw-site). Identity: `BOOK_ENTITY_TYPE='book'` · `BOOKS_ISBN_INTEGRATION_ID` · `BOOKS_OCR_INTEGRATION_ID` · `BOOKS_TTS_INTEGRATION_ID` · `BOOKS_TRANSCRIPTION_INTEGRATION_ID` (all Books-owned, inert at M1). Spec/currency: `docs/modules/books/current-{spec,business-rules}.md`. ② `fe-books` (LIF-188) = P6.
+
+## @vida/core — TasksService (mod-tasks ①, LIF-142) — COMPLETE (S1–S9) · PR #145 (`e1fc356`)
+`createTasksService({ db, deviceId, effects?, sessions?, providers?, spaces?, notes?, views? }): TasksService` — over DB-4 `015_tasks` (`tasks` · `task_time_logs`); factory-object, no `this.`; deps after S1 optional + fail-loud (`TimerNotWiredError`, `TasksDepNotWiredError`). Durable docs: `docs/modules/tasks/current-{spec,business-rules}.md` (BR-TK-S1..S9).
+| Slice | Surface |
+|---|---|
+| S1 CRUD | `createTask` · `updateTask` · `softDeleteTask` (app-layer cascade) · `getTask` · `listTasks(filter)` (status·priority·parent·project·completed·due_before·kind·**open**) |
+| S2 sub-tasks | `addSubtask` (single level) · `getSubtasks` · `getRollup` (M4, derived) |
+| S3 completion | `completeTask` / `reopenTask` + deny-safe fan-out `[award_xp, contribute_purpose_metric, emit_measurement_signal]` |
+| S4 timer | `startTimer` / `stopTimer` (`'work'` session sub-type) · `getActualMinutes` · `registerTasksTimer(deps)` |
+| S5 obligations | `setRecurrence` (obligation-only) + regen on complete (RRULE via `ical.js`; null-due anchor = UTC day) |
+| S6 measurability | `getTaskProgress` (pursuable `progress()`, derived on read) |
+| S7 aggregation | `getAggregatedTasks({by})` over the shared `ViewProviderRegistry`, per-group degradation |
+| S8 tags/notes/views | `tagTask`/`untagTask`/`getTaskTags` · `getTaskNote` · `saveView`/`listViews` · `TASK_VIEW_PRESETS` · `createTasksReadProvider`/`registerTasksReadProvider` |
+| S9 journal/due | `getDayTasksSummary(date)` (cross-module-integration §2 set) · `getDueReminders(range)` (SS-7 lane) · `utcDay` · `registerTasksJournal` / `registerTasksDueProvider` · `TaskViewConfig`/`TaskViewConfigSchema` |
+Errors: `TaskNotFoundError` · `MultipleParentError` · `SubtaskNestingError` · `TimerAlreadyRunningError` · `TimerNotFoundError` · `TimerNotWiredError` · `RecurrenceNotAllowedError` · `RecurrenceRegenError` · `TasksDepNotWiredError` · `TaskViewNotFoundError`.
