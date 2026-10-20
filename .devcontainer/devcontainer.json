@@ -3,7 +3,8 @@
   "//": "Lets the OPFS/Playwright E2E run on a Playwright-supported OS (Linux) — the coverage macOS 12 can't give (e2e/CLAUDE.md). Works as a GitHub Codespace OR a local Docker DevContainer (VS Code 'Reopen in Container'), so verification never depends on paid CI.",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
   "features": {
-    "ghcr.io/devcontainers/features/git:1": {}
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {}
   },
   "postCreateCommand": "corepack enable && corepack prepare pnpm@9.15.9 --activate && pnpm install --frozen-lockfile && pnpm --filter @vida/web exec playwright install --with-deps chromium",
   "remoteUser": "node",
