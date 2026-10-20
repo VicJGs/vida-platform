@@ -52,9 +52,16 @@
 - **[FACT] BR-RT-HOME — RESOLVED:** homes are `stores/`·`hooks/`·`routes.tsx`·`App.tsx`·`lib/`·`db/` (architecture
   docs over the §149 shorthand). `[FACT: apps/web/src/* as-built]`
 - **[FACT] BR-RT-D5 — the DB is reached via the worker client.** The main thread never holds a driver directly; all
-  reads/writes go through `db/client.ts` (an `SqliteDriver` proxy over the worker RPC). `exec`/`values`/`batch` are a
-  declared deferred seam (throw until entity-CRUD lands, UI-3/M1.1+). The client is spawned once + opened once
-  (`db/boot.ts`, StrictMode-safe). `[FACT: db/{client,boot}.ts]`
+  reads/writes go through `db/client.ts` (an `SqliteDriver` proxy over the worker RPC). **`exec`/`values`/`batch`
+  landed via `data-plane-wiring` (2026-10-20)** — they RPC to the worker `exec`/`values`/`batch` ops, which call the
+  in-worker `web-driver.ts` (`values` → positional arrays, the Drizzle sqlite-proxy read path). So
+  `createDrizzleProxy(client.driver)` works end-to-end. The client is spawned once + opened once (`db/boot.ts`,
+  StrictMode-safe). `[FACT: db/{worker,client,boot}.ts]`
+- **[FACT] BR-RT-COMPROOT — the live services are a module singleton.** `db/composition-root.ts` lazily constructs
+  `DrizzleDb = createDrizzleProxy(client.driver)` + the module services (notes/journals + deps) ONCE, after the
+  DB-ready gate, exposed as a `getServices()` singleton (not a React provider — App.tsx untouched; `seams/CLAUDE.md`
+  sanctions the singleton). `deviceId` is read from / generated into `app_state['device_id']` (ADR-002 §5.0; `uuidv7()`).
+  Per-module go-live (`register + flip`) consumes it; adding a module appends its construction. `[FACT: db/composition-root.ts]`
 - **[FACT] BR-RT-BOOT — no query before DB-ready.** `App.tsx` gates rendering (and thus any React Query read) on the
   one-time `open`+`migrate` resolving; the worker's `open` migrates internally (no double-migrate). `[FACT: App.tsx; boot.ts]`
 

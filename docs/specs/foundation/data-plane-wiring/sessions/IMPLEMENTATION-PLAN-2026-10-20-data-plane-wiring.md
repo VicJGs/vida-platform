@@ -1,7 +1,8 @@
 # IMPLEMENTATION-PLAN (§XXVI gate 2 — build steps) — data-plane-wiring
 
 > **Session:** 2026-10-20-data-plane-wiring · **Follows:** Approval 1 · **Revised 2026-10-20** per Victor: the foundation must be PURELY ADDITIVE — **zero already-done-task files modified.**
-> **Status:** awaiting /critique → Approval 2 (nothing built until Approval 2) · **Node 24** · fresh worktree off main.
+> **Status:** APPROVED 2 · building · **Node 24** · worktree `.claude/worktrees/data-plane-wiring`.
+> **⛔ FINAL APPROACH (2026-10-20, Victor-confirmed after a docs check): DOCUMENTED IN-PLACE completion — NOT a new `live-driver.ts`.** The docs show the design is already complete: `SqliteDriver` contract (`adapter.ts:60-83`) + `web-driver.ts` ALREADY implements `values`(positional)/`exec`/`batch`; `client.ts:140-161` has the throwing proxy SLOTS reserved for this unit; `worker.ts:35-37` says "add the ops here + on the client driver." So: (S1) add `values`/`exec`/`batch` ops to `worker.ts` (call the existing in-worker driver), (S2) implement `client.ts`'s three throwing slots to RPC them, (S4) UPDATE the placeholder `client.test.ts:74-77` (was asserting the deferred throw → now asserts they work). A separate `live-driver.ts` would DUPLICATE the client proxy + re-implement `values` fragilely = the net-new drift we rejected. The `client.ts`/`worker.ts`/test edits are the AR-4-RESERVED seam (deferred placeholders for THIS unit), NOT done frontend work. **Frontend done tasks (fe-notes/fe-home flips) stay OUT.**
 
 ## ⛔ HARD INVARIANT — nothing on done tasks changes
 This unit builds the foundation as **NEW code only**. It MUST NOT edit any file owned by a done/merged task, and MUST NOT change any existing behavior or break any existing test. Explicitly UNTOUCHED:

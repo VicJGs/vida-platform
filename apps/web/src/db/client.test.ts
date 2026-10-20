@@ -71,10 +71,26 @@ describe('WorkerDbClient', () => {
     await expect(client.exists('vida')).resolves.toBe(true)
   })
 
-  it('throws the deferred-seam error for exec/values/batch', () => {
-    const client = new WorkerDbClient(mockWorker(() => ({ ok: true })))
-    expect(() => client.driver.values('x')).toThrow(/seam/i)
-    expect(() => client.driver.batch([])).toThrow(/seam/i)
+  it('RPCs exec/values/batch to the worker (the landed data-plane-wiring seam)', async () => {
+    const client = new WorkerDbClient(
+      mockWorker((req) => {
+        if (req.op === 'values') return { ok: true, result: [[1, 'a']] }
+        if (req.op === 'exec') {
+          return { ok: true, result: { rows: [{ n: 1 }], changes: 1, lastInsertRowId: 7 } }
+        }
+        return { ok: true } // batch (+ anything else) → void
+      }),
+    )
+    // values → positional arrays (the Drizzle sqlite-proxy read path)
+    await expect(client.driver.values('SELECT a, b FROM t')).resolves.toEqual([[1, 'a']])
+    // exec → RawQueryResult
+    await expect(client.driver.exec('INSERT INTO t ...')).resolves.toEqual({
+      rows: [{ n: 1 }],
+      changes: 1,
+      lastInsertRowId: 7,
+    })
+    // batch → void
+    await expect(client.driver.batch([{ sql: 'UPDATE t SET a = 1' }])).resolves.toBeUndefined()
   })
 
   it('rejects (does not hang) when the worker never replies (timeout)', async () => {
