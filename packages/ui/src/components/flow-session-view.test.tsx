@@ -53,13 +53,21 @@ describe('FlowSessionView — the Flow/Session shell', () => {
   })
 
   // ── BR-FS-4/EC-2: the CURRENT stage shows the standardized affordances ──────────────────────
-  it('current stage renders Mark done / Require proof / Attach Document·Photo·Audio', () => {
-    const { getByRole } = renderUI(<FlowSessionView title="F" stages={STAGES} />)
+  it('current stage renders Mark done / Require proof / Attach Document·Photo·Audio (when handlers given)', () => {
+    // render-when-handler: the affordance row renders only when a handler is provided (not unconditionally).
+    const { getByRole } = renderUI(<FlowSessionView title="F" stages={STAGES} onMarkDone={() => {}} onRequireProof={() => {}} onAttach={() => {}} />)
     expect(getByRole('button', { name: 'Mark done' })).not.toBeNull()
     expect(getByRole('button', { name: 'Require proof' })).not.toBeNull()
     expect(getByRole('button', { name: 'Document' })).not.toBeNull()
     expect(getByRole('button', { name: 'Photo' })).not.toBeNull()
     expect(getByRole('button', { name: 'Audio' })).not.toBeNull()
+  })
+
+  it('no affordance handlers → no affordance row (render-when-handler; a wizard owns its own controls)', () => {
+    const { queryByRole } = renderUI(<FlowSessionView title="F" stages={STAGES} renderStage={() => null} />)
+    expect(queryByRole('button', { name: 'Mark done' })).toBeNull()
+    expect(queryByRole('button', { name: 'Require proof' })).toBeNull()
+    expect(queryByRole('button', { name: 'Document' })).toBeNull()
   })
 
   // ── BR-FS-2: the affordances EMIT intents (never a write) ───────────────────────────────────
@@ -133,7 +141,7 @@ describe('FlowSessionView — the Flow/Session shell', () => {
   // ── EC-9: a single-stage flow renders sanely ───────────────────────────────────────────────
   it('single-stage flow renders the one current stage + its affordances', () => {
     const one: FlowStage[] = [{ id: 'o', label: 'Today', title: 'Evening check-in', status: 'current' }]
-    const { getByText, getByRole } = renderUI(<FlowSessionView title="Check-in" stages={one} />)
+    const { getByText, getByRole } = renderUI(<FlowSessionView title="Check-in" stages={one} onMarkDone={() => {}} />)
     expect(getByText('Evening check-in')).not.toBeNull()
     expect(getByRole('button', { name: 'Mark done' })).not.toBeNull()
   })

@@ -31,6 +31,14 @@ export const CONTENT_MAX_WIDTH = 1280
 /** Content side padding (gutters) per breakpoint. `[FACT: design.md §X:225-227]` */
 export const SIDE_PADDING = { mobile: 16, tablet: 24, desktop: 32 } as const
 
+/**
+ * Content VERTICAL inset (top+bottom breathing room below the reserved top strip) per breakpoint. A shell-owned layout
+ * constant (like `reservedTopInset`) — design.md §X specifies only the horizontal gutter, so the vertical inset is the
+ * shell's own model, documented in `shell-layout.md`. A touch more generous than the side gutter so the top strip has
+ * clear separation. On the 4pt grid. `[decided 2026-10-15, Victor — closes the shell-layout.md container spec gap]`
+ */
+export const CONTENT_V_INSET = { mobile: 24, tablet: 32, desktop: 40 } as const
+
 /** Minimum touch-target size + gap — enforced at ALL widths, not just mobile. `[FACT: design.md §X:218-219]` */
 export const TOUCH_TARGET = { minSize: 44, minGap: 8 } as const
 

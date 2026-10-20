@@ -28,12 +28,12 @@ describe('DS-4 tamagui.config (runtime)', () => {
     expect(light).not.toBe(dark)
   })
 
-  it('fe-codec S2 — all 6 scheme-first base themes resolve on config.themes', () => {
-    for (const name of ['light', 'dark', 'light_reader', 'dark_reader', 'light_quietDesk', 'dark_quietDesk']) {
+  it('fe-codec S2 — all 8 scheme-first base themes resolve on config.themes', () => {
+    for (const name of ['light', 'dark', 'light_reader', 'dark_reader', 'light_quietDesk', 'dark_quietDesk', 'light_game', 'dark_game']) {
       expect(c.themes?.[name], name).toBeDefined()
       expect(val(c.themes[name].colorSurfacePrimary)).toMatch(/^#/) // a real resolved color
     }
-    expect(Object.keys(c.themes).length).toBe(26) // 6 base + 20 editorial light_/dark_<Comp>; per-preset comp sub-themes retired (accent-inherit fix — preset color reaches components via direct semantics, not sub-themes)
+    expect(Object.keys(c.themes).length).toBe(28) // 8 base (+game, fe-gamification G0) + 20 editorial light_/dark_<Comp>; per-preset comp sub-themes retired (accent-inherit fix — preset color reaches components via direct semantics, not sub-themes)
   })
 
   it('fe-codec S2 — font family is the CSS-var seam (editorial family as fallback; provider swaps per preset)', () => {

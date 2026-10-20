@@ -144,6 +144,17 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
 
 ## ✅ ① BACKEND COMPLETE — S1–S7 enforced (BR-13..BR-35). Next: ② UI (fe-sessions).
 
+## ENFORCED now (② FRONTEND · fe-session-runtime #23 — the runtime page, `apps/web/src/{flow,session-runtime}/`)
+- **FE-BR-1** — the runtime page NEVER writes directly; `mark-done`/`attach`/`require-proof` are intents bound to the
+  `SessionsPort` via `bindFlowIntents` (the shell emits, never writes). `@vida/core` is imported only in the (deferred) hook.
+- **FE-BR-2** — stages are assembled from EXISTING primitives (no new plumbing, frontend-quality-bar §4.5): single-stage
+  by default (EC-9); multi-stage is a driving module's concern (O7). The page invents no stages model.
+- **FE-BR-3** — the effect rail ALWAYS renders (teaching-empty when a session fired nothing — EC-4), never a blank.
+- **FE-BR-4** — degrade-never-crash: `useFlowSession` returns a `TerminalState`; the surface owns the loading/empty/error
+  ladder before the frame; a missing session → honest-empty, never a throw.
+- **M1 reality:** the live data leg is a stub (no apps/web composition root + the worker `values` seam throws); `?sample`
+  seeds the gate; the live swap is zero-signature. Mark-done is a no-op in M1 (stage-advance feel, EC-10, is live-deferred).
+
 ## NOT YET enforced (deferred — do not claim)
 - Per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + fire-time sensitive-consent
   enforcement + consent-threading → #46 / MOD-*. The gate utility (`assertEffectPermitted`) ships; its callers do not.

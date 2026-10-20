@@ -14,14 +14,16 @@
 import { styled, Text, View } from '@tamagui/core'
 import { HomeDashboard, useHomeWidgets, renderHomeWidget, type HomeWidget, type HomeWidgetId } from './home-dashboard'
 import { JournalPageRegion } from './journal-page-region'
+import { usePreferencesStore, type HomeArrangement as PrefArrangement } from '../stores/preferences-store'
 
 /** The Home arrangement — a user personalization chosen in Settings (decomposition.md:71). */
 export type HomeArrangement = 'journalFirst' | 'dashboardFirst'
 
-/** The useHomeArrangement READ seam (A). M1 = the default 'journalFirst'; the live read + the toggle CONTROL are
- *  Preferences'/fe-settings' (home-journal-dashboard.md:50-54). ProviderRead — no direct table. */
+/** The useHomeArrangement READ seam (A). fe-settings S3 ACTIVATED the read: it now reads the app-owned preferences
+ *  store (the Settings arrangement control writes it, so the toggle applies in-session). The default is 'journalFirst'.
+ *  Cross-reload PERSISTENCE is still a deferred seam (seam-contract §A0 — the worker `values` seam blocks the live DB). */
 export function useHomeArrangement(): HomeArrangement {
-  return 'journalFirst'
+  return usePreferencesStore((s): PrefArrangement => s.arrangement)
 }
 
 // Time-of-day greeting. The user NAME is a user_profile seam (deferred); M1 greets without a name.

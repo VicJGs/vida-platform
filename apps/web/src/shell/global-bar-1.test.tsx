@@ -29,10 +29,10 @@ describe('GlobalBar1 assembly', () => {
     expect(getByRole('link', { name: 'Home' })).not.toBeNull()
   })
 
-  it('strip (condensed ≤375) = scope + Search icon + overflow Menu (no inline links)', async () => {
+  it('strip (condensed ≤375) = globe-only scope + More-only overflow (no inline links; #16 strip-budget)', async () => {
     const { getByRole, queryByRole, findByLabelText } = await renderBar(<GlobalBar1 variant="strip" __bp="mobile" />)
     expect(await findByLabelText(/Scope: All/)).not.toBeNull()
-    expect(getByRole('button', { name: 'Search' })).not.toBeNull()
+    expect(queryByRole('button', { name: 'Search' })).toBeNull() // folded into More (Victor 2026-10-18)
     expect(getByRole('button', { name: 'More' })).not.toBeNull()
     expect(queryByRole('link', { name: 'Home' })).toBeNull() // surfaces are in the overflow, not inline links
   })

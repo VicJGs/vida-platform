@@ -32,18 +32,28 @@ export function GlobalSurfacesStrip({ mode }: GlobalSurfacesStripProps) {
 
   if (mode === 'condensed') {
     // Overflow Menu — `MenuItem` has an `onSelect` only (no link slot), so route via the shared imperative navigator.
-    const overflowItems: MenuItem[] = ROUTE_SURFACES.map((s) => {
-      const Icon = navIcon(s.key)
-      return {
-        id: s.key,
-        label: s.label,
-        leading: <Icon size={18} aria-hidden="true" />,
-        onSelect: () => shellNavigate(s.routePath ?? '/'),
-      }
-    })
+    // fe-session-hud #16 strip-budget decision (Victor 2026-10-18): the standalone Search button folds into the
+    // More menu as its FIRST row (the HUD fills the slot and the 375 strip overcommitted ~80px). Search stays
+    // the ⌘K ACTION, never a link (EC-3) — the menu row flips the same commandBar.open().
+    const overflowItems: MenuItem[] = [
+      {
+        id: SEARCH_KEY,
+        label: 'Search',
+        leading: <Search size={18} aria-hidden="true" />,
+        onSelect: openCommandBar,
+      },
+      ...ROUTE_SURFACES.map((s) => {
+        const Icon = navIcon(s.key)
+        return {
+          id: s.key,
+          label: s.label,
+          leading: <Icon size={18} aria-hidden="true" />,
+          onSelect: () => shellNavigate(s.routePath ?? '/'),
+        }
+      }),
+    ]
     return (
       <View flexDirection="row" alignItems="center" gap="$8">
-        <Button intent="ghost" size="sm" aria-label="Search" onPress={openCommandBar} leading={<Search size={20} />} />
         <Menu
           trigger={<Button intent="ghost" size="sm" aria-label="More" leading={<Ellipsis size={20} />} />}
           items={overflowItems}
