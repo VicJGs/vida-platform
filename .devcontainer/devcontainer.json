@@ -6,7 +6,8 @@
     "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/sshd:1": {}
   },
-  "postCreateCommand": "corepack enable && corepack prepare pnpm@9.15.9 --activate && pnpm install --frozen-lockfile && pnpm --filter @vida/web exec playwright install --with-deps chromium",
+  "//postCreate": "the typescript-node:24 image ships pnpm; corepack prepare was flaky (signature verify) so we use the image's pnpm directly, falling back to an npm global install if absent.",
+  "postCreateCommand": "sh -c 'command -v pnpm >/dev/null || npm i -g pnpm@9.15.9; pnpm install --frozen-lockfile && pnpm --filter @vida/web exec playwright install --with-deps chromium'",
   "remoteUser": "node",
   "forwardPorts": [5173],
   "customizations": {

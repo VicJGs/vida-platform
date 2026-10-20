@@ -1,9 +1,5 @@
 # Task: data-plane-wiring
-# Status: ⏸️ BUILT + UNIT-VERIFIED — HELD (PR #148, draft) until ~Nov 1 for the OPFS E2E acceptance run
-#   Build done 2026-10-20 (tsc PASS · eslint · @vida/web 661/661 · zero frontend done-task files touched).
-#   Pending ONLY: the OPFS CRUD E2E browser run (data-plane-crud.spec.ts) — macOS 12 can't fetch Chromium +
-#   CI Actions budget exhausted → runs at the free ~Nov 1 reset (no subscription needed) OR a Linux DevContainer/Codespace.
-#   UNFLAG/MERGE when that E2E is green.
+# Status: planning (foundational unit minted 2026-10-20 — §XXVI gate opening; nothing built)
 # Linear: pending (guarded create — parallel sessions in flight; mint via track-sync when the tree clears, per the orphan-create guard)
 # Profile: Generic Coding Session
 # Scenario: (resolved at the planning step)
@@ -46,4 +42,5 @@ Record one authoritative alias — "`UI-3/M1.1+` = `data-plane-wiring`" — in `
 _(filled by the IMPLEMENTATION-PLAN after Approval 1 — not yet gated.)_
 
 ## Route History
+- 2026-10-20 (build + verify) — Built the in-place seam completion (worker.ts/client.ts values/exec/batch) + `composition-root.ts` singleton. **Fully verified:** tsc PASS · eslint clean · @vida/web **661/661** (zero regression) · OPFS E2E **4/4 green in real Brave on macOS 12** (the `PW_EXECUTABLE_PATH` escape hatch — exec/values(positional)/batch CRUD round-trip + persist-across-reload on a real wa-sqlite/OPFS worker). Headless Chromium (Codespace) can't boot the OPFS worker — a known harness-env limit, not the code (pre-existing AR-2 tests fail there too). PURELY ADDITIVE — zero frontend done-task files touched. PR #148.
 - 2026-10-20 — Minted as a FOUNDATIONAL unit (Victor's directive: wire modules so already-built frontends are usable as more are built; feasibility verified YES/by-design). Scope + home DERIVED entirely from existing docs (two investigation passes + the homing rules); zero open decisions. §XXVI planning gate opening: document-context baseline → PLAN → critique → Approval 1 → IMPLEMENTATION-PLAN → preflight → critique → Approval 2 → build.
