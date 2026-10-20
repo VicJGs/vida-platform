@@ -1,5 +1,9 @@
 # Task: data-plane-wiring
-# Status: planning (foundational unit minted 2026-10-20 — §XXVI gate opening; nothing built)
+# Status: ⏸️ BUILT + UNIT-VERIFIED — HELD (PR #148, draft) until ~Nov 1 for the OPFS E2E acceptance run
+#   Build done 2026-10-20 (tsc PASS · eslint · @vida/web 661/661 · zero frontend done-task files touched).
+#   Pending ONLY: the OPFS CRUD E2E browser run (data-plane-crud.spec.ts) — macOS 12 can't fetch Chromium +
+#   CI Actions budget exhausted → runs at the free ~Nov 1 reset (no subscription needed) OR a Linux DevContainer/Codespace.
+#   UNFLAG/MERGE when that E2E is green.
 # Linear: pending (guarded create — parallel sessions in flight; mint via track-sync when the tree clears, per the orphan-create guard)
 # Profile: Generic Coding Session
 # Scenario: (resolved at the planning step)
