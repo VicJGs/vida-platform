@@ -12,6 +12,9 @@
 // Visual Gate — gated behind `?sample` in DEV only, off in prod.
 // ============================================================================
 import type { PageType } from '@vida/types'
+import { useQuery } from '@tanstack/react-query'
+import { getServices } from '../db/composition-root'
+import { toNotesRow } from './live-mappers'
 
 /** The row projection the notes collection renderers consume (a `pages`-row view; live mapping at the data-plane slice). */
 export interface NotesRow {
@@ -45,8 +48,17 @@ export interface NotesRowsResult {
   state: NotesDataState
 }
 
-/** M1 default (empty) + the DEV/gate sample. Live swap → React Query over `NotesService.listPages()`. */
+/** Live: React Query over `NotesService.listPages()` (zero signature change) + the DEV/gate sample. */
 export function useNotesRows(): NotesRowsResult {
-  if (devSampleActive()) return { rows: DEV_SAMPLE, state: 'success' }
-  return { rows: [], state: 'empty' }
+  const sample = devSampleActive()
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['notes', 'pages'],
+    queryFn: async () => (await getServices()).notes.listPages(),
+    enabled: !sample,
+  })
+  if (sample) return { rows: DEV_SAMPLE, state: 'success' }
+  if (isError) return { rows: [], state: 'error' }
+  if (isLoading) return { rows: [], state: 'loading' }
+  const rows = (data ?? []).map(toNotesRow)
+  return { rows, state: rows.length ? 'success' : 'empty' }
 }
