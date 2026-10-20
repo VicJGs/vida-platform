@@ -1,5 +1,5 @@
 # Task: fe-gamification
-# Status: planned
+# Status: in_progress — started 2026-10-12 (blockers fe-codec-dashboard ✅ + fe-codec-flow-session ✅ both Done)
 # Linear: LIF-181
 # Profile: Add Frontend Component
 # Scenario: default

@@ -34,3 +34,28 @@
 **Documented:** 2026-08-05 | Session: 2026-08-05-ds-5-primitive-contracts
 
 ---
+
+## F004 — horizontal scroller widens the PAGE although `overflow:auto` contains the grid
+
+**Symptom:** Visual Gate at 375: `document.scrollWidth` 616 > 375 on the fe-calendar Week range, while the scroll region itself measured 311px wide with `overflow-x:auto`. jsdom tests all green (no layout engine).
+**Root cause:** ISOLATED. A visually-hidden (sr-only) span is `position:absolute`. An absolute element is clipped by an `overflow:auto` ancestor ONLY if that ancestor is (or contains) its containing block; with no positioned ancestor inside the scroller, the ", today" span positioned against an ancestor OUTSIDE it and escaped the clip at its in-grid x (~600px).
+**Fix:** `position:'relative'` on the scroll region (and the renderer root) so it is the containing block. `packages/ui/src/components/week-view.tsx` (`WeekRoot`, `ScrollRegion`).
+**Prevention:** any horizontal scroller that holds sr-only text gets `position:relative`. Score PAGE overflow separately from REGION overflow in every Visual Gate; a region probe that treats scroller descendants as contained assumes the clip works.
+**Documented:** 2026-10-20 | Session: 2026-10-20-fe-calendar-1
+
+---
+
+## F005 — list accessible name differs by engine ("Thu8" in jsdom vs "Thu 8" in a browser)
+
+**Symptom:** `getByRole('list', { name: 'Thu 8, today' })` fails in jsdom; the computed name is "Thu8" / "Thu 8 , today". A whitespace-only sr-only separator span is dropped.
+**Root cause:** ISOLATED. `aria-labelledby` pointed at a visual header whose eyebrow + number are separate inline spans; the accname algorithm concatenates their text without a separator in jsdom, while a browser's flex column blockifies them. Deriving a NAME from visual layout is engine-dependent.
+**Fix:** point `aria-labelledby` at ONE explicit sr-only string (`"Thu 8, today"`) and mark the visual header `aria-hidden`. `week-view.tsx` column headers.
+**Prevention:** when a name is composed from several visual pieces, author the name as a single string; assert it with an exact `name:` in tests (a `\s*` regex hides the defect).
+**Documented:** 2026-10-20 | Session: 2026-10-20-fe-calendar-1
+
+---
+
+## F006 — `encryption/vault.test.ts` Argon2id / "large data (1 MB)" timeouts read as a regression
+**Symptom:** full `@vida/core` run shows 1–4 reds in `src/encryption/__tests__/vault.test.ts` (`deriveMasterKey`, `unlockKeyChain`, `encryptBytes … handles large data (1 MB)`) taking 6–143 s against a 20 s budget.
+**Root cause:** ENVIRONMENTAL. CPU-bound Argon2id + 1 MB XChaCha tests are marginal on this Mac; they time out when the full suite runs concurrently or another session runs vitest (load avg 100–400). Not a code regression — appears on branches that touch no encryption file.
+**Fix:** check `uptime` + `pgrep -fl vitest`; re-run `npx vitest run src/encryption/__tests__/vault.test.ts` alone on an idle machine (expect 36/36, seen 2026-10-20). Record, don't patch. Candidate follow-up outside any module: mark the 1 MB test `slow`/raise its timeout.

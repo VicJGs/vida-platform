@@ -6295,3 +6295,261 @@ Next session:
   - **Decide 1b:** scope the notes/journal **data-plane** unit (worker-side Drizzle `values`/`batch`/`exec` seam + composition root) — the real work that makes MVP-0 usable. Highest VALUE, genuine Entity Delivery Flow build.
   - **prettier LIF-228** stays deferred until the 5 active worktrees (fe-calendar/-gamification/-notes-and-pages/-onboarding/-settings) flush.
   - Computed next backend head remains `mod-routines` (M1.1.2).
+
+---
+Date: 2026-10-14
+Task: mod-tasks (LIF-142 · #65) — ① backend, Add Backend Component / Entity Delivery Flow ①
+Goal: Build the Tasks module ① service tier. PULLED AHEAD of mod-routines (Victor's call): routines drives
+  task-type steps + the RT-4 recurrent task, so Tasks is routines' driven-entity dependency → build Tasks first.
+
+Completed:
+  - **PIVOT recorded.** Session opened on `mod-routines`: did its full Entity Delivery Flow front matter +
+    Decomposition Gate (Approval 1 — 9 slices, D1/D2/D3). Victor then chose "build tasks first." mod-routines
+    PAUSED: delivery docs at `docs/features/routines/delivery/{interpretation,slice-map,seam-contract}.md` (in
+    main, untracked), task file `.claude/tasks/mod-routines.md` = `Status: paused` + `blocked by mod-tasks`. D1 for
+    routines resolved: on resume `tasks` is a REQUIRED `TasksService` dep (not the deny-safe port).
+  - **mod-tasks front matter + Decomposition Gate APPROVED.** `docs/features/tasks/delivery/{interpretation,
+    slice-map,seam-contract,PLAN-S1,PLAN-S2}.md`. 9-slice plan (S1 foundation · S2 sub-tasks+rollup · S3 completion+
+    effects · S4 timer+log_time · S5 obligations · S6 measurability · S7 aggregation · S8 tags/notes/views · S9
+    Journal/DueProvider). Gate decisions: D1 `surface_calendar` is NOT a built effect type (calendar = read-seam);
+    D2 `task_time_logs`↔session-extension ownership deferred to S4; D3 aggregation providers deny-safe per source.
+  - **S1 BUILT + COMMITTED** (`8b60047`): `createTasksService` — CRUD + ≤1-parent-module guard (MultipleParentError,
+    re-checked on merged set at update) + app-layer cascade (sub-tasks soft, time_logs hard) + list filters.
+    **DB-11 reconcile**: `@vida/types.Task` +7 cols −`tags`; `TaskTimeLog` +`updated_at`; validators. `'task'`
+    pre-seeded in ENTITY_TYPES (no registry dep). Returns Drizzle `TaskRow`.
+  - **S2 BUILT + COMMITTED** (`158ca5b`): addSubtask (single-level TK-3, SubtaskNestingError, delegates to createTask)
+    · getSubtasks · getRollup → {done,total,progress} DERIVED (no stored col) via `foundation/measurement`
+    rollup()+normalize(), nesting_weight weighted, no-children⇒null. Read-only; parent completion ≠ child completion.
+  - Each slice gate stack PASSED: tsc 0 · eslint 0 · live-store tests (**20/20** total, better-sqlite3 Node 24) ·
+    full @vida/core **1918/1918** (S1 no-regression) · independent g2 review SHIP · /critique SHIP · currency docs
+    `docs/modules/tasks/current-{spec,business-rules}.md` + service CLAUDE.md.
+
+In progress:
+  - **mod-tasks S3–S9 remain.** All work is in the git worktree `.claude/worktrees/mod-tasks` on branch
+    `mod-tasks` (off main @ 1458b67). S1+S2 committed there; NOT pushed, NO PR yet. Build under **Node 24**
+    (`source ~/.nvm/nvm.sh && nvm use 24`) from inside the worktree.
+
+Decisions:
+  - Build Tasks before Routines (Victor, 2026-10-14) — Tasks is routines' driven-entity dep.
+  - mod-tasks gate D1/D2/D3 (above). Per-slice gate stack = forward spec `PLAN-S<n>` (§XXVI) → implement →
+    tsc/eslint/live-store test → g2 review → /critique → currency docs → commit.
+  - S1 nit (g2): PLAN said difficulty:null, code correctly uses 'medium' (schema DEFAULT) → doc fixed.
+  - S2 note (g2 L1): TK-3 single-level enforced at the `addSubtask` entry only; raw createTask/updateTask
+    parent_task_id is NOT data-layer-guarded (recorded in current-business-rules BR-TK-S2-1).
+
+Next session:
+  - **FIRST ACTION: resume mod-tasks S3** (Completion + effect fan-out). `cd .claude/worktrees/mod-tasks`,
+    `nvm use 24`. Read the slice-map + seam-contract in `docs/features/tasks/delivery/`.
+  - S3 = completeTask (status + completed_at) / reopenTask (clear) + on status→completed emit the S4 catalogue
+    (award_xp, contribute_purpose_metric, surface_journal, emit_measurement_signal) via the DENY-SAFE effect rail
+    (dormant without a handler — projects' `fanOutCompletion` precedent at `services/projects/service.ts:72`).
+    **Resolve D1**: verify `foundation/effects/types.ts` `EFFECT_CLASS_OF` has NO `surface_calendar` before relying
+    on it; the `effects?: EffectsPort` dep enters `TasksServiceDeps` this slice (deny-safe optional).
+  - Write `PLAN-S3-completion-effects.md` first (§XXVI). Same gate stack. Commit on the `mod-tasks` branch.
+  - mod-routines stays PAUSED until mod-tasks ships (then resume with `tasks: TasksService` required dep).
+---
+Date: 2026-10-15
+Task: mod-tasks (LIF-142 · #65) — ① backend, Add Backend Component / Entity Delivery Flow ①
+Goal: Build the Tasks module ① service tier, slices S3→S5 (completion+effects · timer+log_time · obligations+recurrence).
+  All in the git worktree `.claude/worktrees/mod-tasks` (branch `mod-tasks`, off main @ 1458b67, Node 24).
+
+Completed (3 slices, each: forward spec → /critique → /preflight → implement → tsc/eslint/live-store → g2 → /critique → eng-gate → currency → commit):
+  - **S3 Completion + effect fan-out** (`602ab63`): `completeTask`/`reopenTask` + a deny-safe completion fan-out.
+    Catalogue = the keyed/additive subset `[award_xp, contribute_purpose_metric, emit_measurement_signal]` (Tasks IS a
+    framework §4 economy feeder → `award_xp` legit, UNLIKE projects/books/education C-E2). The two projection effects
+    are pull-realized: `surface_journal` → S9 registry, `surface_calendar` → read-seam (D1 resolved: it IS a valid
+    EffectType but Tasks doesn't emit it). g2 F1 (test-fidelity) fixed: guard tests spy on `applyEffect` call-count.
+  - **S4 Timer + log_time + actual_minutes** (`302e4e6`): built to the DECIDED model (gap-overview
+    `part-1.2-reruns/tasks.md` G-S1/G-S4/C4 + interpretation §5 D2) — timer = a `'work'` sessions sub-type referencing
+    the task; `stopTimer` fires `log_time` via the rail (fire-first/commit-last); the tasks-owned `log_time` handler
+    writes the KEPT `task_time_logs` ledger (never a direct write, G-S4); `getActualMinutes` = SUM. One read-only
+    Sessions addition: `findOpenSessionForEntity`. g2 F1 (bogus-row landmine on the global log_time slot) + F3 fixed.
+  - **S5 Obligations + recurrence** (`f5c7430`): `setRecurrence` (obligation-only, guarded at every write path) +
+    `completeTask` regen hook; RRULE next-occurrence via canonical `ical.js@2.2.1` (ADR-001:137). Three outcomes:
+    spawn / exhausted-end (no error) / `RecurrenceRegenError` (invalid). g2 B1 (TIMEZONE drift) fixed + proven.
+  - Per-slice verification: tasks live-store 30→43→54, sessions 41, full `@vida/core` 1937→1950→1962, all green.
+    Currency docs refreshed each slice: `docs/modules/tasks/current-{spec,business-rules}.md` (BR-TK-S3..S5) + the
+    Sessions `current-spec` (findOpenSessionForEntity).
+
+In progress:
+  - **mod-tasks S6–S9 remain.** All work committed on branch `mod-tasks` in the worktree. NOT pushed, NO PR yet.
+
+Decisions / lessons (THE theme of this session — 3 Victor drift-catches, all "ground in the docs FIRST"):
+  - **A `[DEFERRED — build phase]` / `D<n>` marker is usually already DECIDED** in the campaign gap-overview
+    (`realignment-master-plan/part-1.2-reruns/<module>.md`), the `xcut-*.md` (Part B cross-cutting homing), and
+    `schema-audit-deferred-homes.md` — ground there before proposing a model OR asking Victor. S4 cost 3 corrections
+    (direct-write→log_time effect; "my call"→doc-decided; focus_sessions→'work' sub-type). [[deferred-build-marker-resolved-in-gap-overview-not-a-decision]]
+  - **A library choice is settled by the ADR-001 canonical-choice lock** — reuse the canonical lib (`ical.js`/`date-fns`);
+    a new lib needs a new ADR. Don't offer A/B/C. (S5 — Victor: "check the documentation and procedure".)
+  - **Date code needs TZ-forced tests — the BRT/UTC gate is timezone-blind.** g2 caught S5 B1 (toJSDate/UTC drift, one
+    day early in UTC-positive zones) that the gate structurally could not. [[date-code-needs-tz-forced-tests-gate-is-tz-blind]]
+  - **Run g2 (independent, read-only, no native rebuild) on every load-bearing emitter/date change** — it caught a
+    real bug in each of S3/S4/S5 that the code-gates passed.
+
+Next session (S6 — Measurability axes + contribution):
+  - **FIRST ACTION: `cd .claude/worktrees/mod-tasks`, `nvm use 24`.** Read `docs/features/tasks/delivery/{slice-map,
+    seam-contract,interpretation}.md` S6 row + TAS-25,26 + the governing ADR-011 (M1/M2/M5) / `contributions` ladder.
+  - S6 = expose/validate `measurement_kind`×`binding_mode` axes; completion = the event-trigger advancing the measure;
+    UP-contribution via the `contribute_purpose_metric` effect (already in the S3 catalogue — S6 wires its meaning) +
+    the guards: **C1 no M5 queryable-measure source** (tasks NOT in the M5 applies-to set), **C2 no M7 purpose tables**
+    (tasks is a CONTRIBUTOR, never owns Purpose rollup/apex). GROUND the homing in part-1.2-reruns/tasks.md + the
+    deferred-homes BEFORE proposing (the lesson above).
+  - Same per-slice gate stack. Commit on `mod-tasks`. mod-routines stays blocked until mod-tasks ships.
+---
+
+## 2026-10-15 — fe-session-runtime #23 (+ fe-shell content-inset)
+Shipped **fe-session-runtime #23** (LIF-218 → Done): `/sessions/$id` runtime page, first consumer of the Flow/Session
+codec seam. S1 `1e9f2e2` (toFlowSource + useFlowSession) + S2 `e9c9bff` (page + route). Visual Gate PASS (Victor-reviewed).
+PR #143 (base main). Entity Delivery Flow ②; Envision ratified; stages realization doc-fixed (no new plumbing).
+Spawned + shipped **fe-shell content vertical inset** (24/32/40, whole-OS fix Victor flagged): `815bd20`, PR #142,
+closed the shell-layout.md spec gap. Both branches pushed (worktrees kept). task-switched from mod-tasks (paused, S5 next).
+3 self-drifts caught by Victor → memory (stages fork · "engine deferred" · wrong ViewState import).
+
+---
+Date: 2026-10-16 (session opened 2026-10-15)
+Task: mod-tasks (LIF-142 · #65) — Tasks ① backend, Entity Delivery Flow, worktree `.claude/worktrees/mod-tasks` (branch `mod-tasks` off main @ 1458b67, Node 24)
+Goal: Resume at S6 and ship as many of the remaining ① slices as the per-slice gate allows (S6 → S7), each through the full §XXVI loop.
+Completed:
+  - **S6 — Measurability axes + contribution** (`6d96e31`): `getTaskProgress(id)` = the pursuable `progress()` contract (XCU-08/BR-8), derived-on-read (parent → M4 rollup; childless derived-pull → null; else milestone leaf; not-found → TaskNotFoundError); C1 by construction (no MeasurementSourceRegistry handle), C2 pure read. S3 emission untouched. No schema/enum/dep. Files: `packages/core/src/services/tasks/{service,types}.ts`, `__tests__/service.test.ts` (+12), `docs/features/tasks/delivery/PLAN-S6-measurability-contribution.md`, `docs/modules/tasks/current-{spec,business-rules}.md` (BR-TK-S6-1..8).
+  - **S7 — Aggregation, R7 fan-out** (`6d04285`): `getAggregatedTasks(grouping)` over own TOP-LEVEL tasks, parents resolved through the SHARED `foundation/views` `ViewProviderRegistry` (one parallel lookup per distinct parent, `predicates:{id}` + defensive `row.id` match, row attached opaque `object|null`); `AggGrouping = parent|parent_type|status`; standalone/Inbox = BR-10 ungrouped bucket, last; every failure path degrades its group only (never rejects); codepoint order. `providers?: ViewProviderRegistry` dep. Files: same + `packages/core/src/validators/task.ts` (`AggGroupingSchema`), `docs/features/tasks/delivery/{PLAN-S7-aggregation-r7,seam-contract}.md`, currency BR-TK-S7-1..9, `services/tasks/CLAUDE.md` (S1–S7).
+  - Verification: tsc 0 · eslint 0 · tasks **76/76** · full `@vida/core` **1984/1984** (unqualified, ran alone). Each slice: PLAN double-gated (Approval 1+2) · preflight · g2 code-review SHIP (S6: 5 findings, 4 fixed/1 accepted; S7: 10 findings all folded incl. 2 real bugs) · /critique SHIP · §XXIX currency committed with the code.
+  - Memories saved: `binding-mode-null-resolves-to-per-module-natural` (S6), `r7-read-seam-is-the-shared-view-provider-registry-not-a-per-module-port` (S7).
+In progress:
+  - Nothing mid-flight. Worktree clean at `6d04285`. NOT pushed, no PR (branch merges after S9).
+Decisions:
+  - **S6 — binding_mode is READ-side, not a push gate.** My first PLAN gated `emit_measurement_signal` by `binding_mode`; grounding against the shipped Projects resolver (`projects/service.ts:465-530`, emits unconditionally, resolves via binding_mode on read) + ADR-011 §3.5 corrected it. NULL binding_mode ⇒ the task's natural `event-trigger` = doc-FACT (`015_tasks.ts:21` ∘ `interpretation.md:33`), not an interpretation. `manual` is inert in M1 (no override column, XCU-16) — no `manual⇒null` special case.
+  - **S7 — consume the ONE shared R7/V4 seam; no bespoke port.** My first PLAN defined an `AggregationProviderPort` — a fork of `foundation/views` `ViewProviderRegistry` (XCU-07/08, ADR-007:78-80 "reuses the pattern, does not build a registry"); the slice-map's port name was a placeholder. `ViewEngine.resolve` is NOT used (saved-view-driven, single-field grouping ≠ a 4-FK partition + parent lookup) — grounded non-reuse.
+  - **S7 grain = top-level tasks (BR-TK-S7-8)** — g2 F1 exposed a contract silence (sub-tasks w/o a module FK were misrouted to the Inbox); resolved from TK-3/S2 ownership (sub-tasks via getSubtasks/getRollup), not by inventing FK inheritance. Recorded in the PLAN addendum (§XXVIII).
+  - Deferrals (all traced to homing docs, none manufactured): value-bearing measure columns → XCU-15 (not tasks); derived-pull source read + task↔source binding + `measurementSources` → XCU-13 (M1 null); live measurement/purpose handlers → verified dormant (zero `register()` sites), `contributions` → XCU-12 MOD-purposes; manual override column → XCU-16; provider REGISTRATION + composition root → "per-module at their build", M2/P6 (`projects/types.ts:31`); tasks-as-ReadProvider → S8; `getTaskRollup`/`getFocusMinutes` → Projects' own port, no TAS row.
+  - Environmental: `encryptBytes 1MB` (20s limit) + DB-6 time out under sustained concurrent suite runs on this older Mac (self-documented marginal-perf test, `7f90c9b`); green when the full suite runs alone. Not a tasks concern — a candidate 1-line timeout/`slow` follow-up outside mod-tasks.
+Next session:
+  - **Run S8 in a FRESH session** (`/clear` → `/begin` → pick mod-tasks). First action: `cd .claude/worktrees/mod-tasks` (the harness switches cwd when the worktree is selected) + `nvm use 24` (better-sqlite3 ABI; Node 20 fails every live test) → confirm `git log -1` = `6d04285`, clean tree.
+  - **S8 scope (slice-map):** TAS-27,28,30,31 — `entity_tags` via `spaces.tagEntity` (register `'task'`, cite-as-consumed, inline `tasks.tags` already dropped at DB-11); task notes via `notes.ensureEntityNote(...,'task',...)`; `saveView`/`listViews`/`reorderViews`/`pinView` over the `views` primitive (cite-level — the full V1 anatomy is the deferred ADR-007 pass, C8 → surface the scope call); **+ tasks registers itself as a `ReadProvider`** (`entityType:'task'`, XCU-07 — the other direction of the seam S7 consumed). Deps grow: `spaces`, `notes`, `registry` (TaggableTypeRegistry) — the seam-contract factory lists them.
+  - **Ground FIRST, per the pattern that caught two forks this session:** read `docs/features/tasks/delivery/{slice-map,seam-contract,interpretation}.md` S8 lines, `parts/tasks.md` TAS-27/28/30/31, `docs/specs/foundation/backend-intent/parts/xcut-{spaces,views}.md`, the built `foundation/{spaces,views}` (`SpacesService.tagEntity`/`createLink`, `ViewsService` CRUD + `cloneView`, `ViewProviderRegistry.register`), and how a shipped module already registers a `ReadProvider` or consumes `spaces.tagEntity`/`notes.ensureEntityNote` (grep `tagEntity|ensureEntityNote|ReadProvider` in `services/`). Memories: [[spaces-junctions-split-read-write-tagentity-blind-inserts]], [[r7-read-seam-is-the-shared-view-provider-registry-not-a-per-module-port]], [[barrel-export-star-collides-with-services-on-generic-names]].
+  - Per-slice loop unchanged: PLAN-S8 → /critique → Approval 1 → /preflight → /critique → Approval 2 → build (types→validators→service→tests) → tsc/eslint/tasks-suite → g2 code-review → /critique → currency (`current-{spec,business-rules}` BR-TK-S8-*, `services/tasks/CLAUDE.md`) → commit (same shape as `6d04285`). Run the full `@vida/core` suite ALONE at the end.
+  - After S8: S9 (Journal summary + DueProvider closer) → then merge PR → LIF-142 Done → `mod-routines` unblocks.
+---
+
+---
+Date: 2026-10-18 (session opened 2026-10-16)
+Task: mod-tasks (LIF-142 · #65) — Tasks ① backend, Entity Delivery Flow, worktree `.claude/worktrees/mod-tasks` (branch `mod-tasks`, Node 24)
+Goal: Build S8 (tags + notes + views + tasks-as-ReadProvider) through the full §XXVI loop.
+Completed:
+  - **S8** (`c7eafa6`): `tagTask`/`untagTask`/`getTaskTags` (spaces.tagEntity + live-tag orphan guard; `'task'` pre-seeded ⇒ no `registry` dep) · `getTaskNote` (`task_note` page via `notes.ensureEntityNote`) · `saveView`/`listViews` (a task view = `views` row with `entity_types` EXACTLY `['task']`, stamped; `id` ⇒ REPLACE the config, `space_id` = ownership; foreign/mixed rows untouched) + substrate `ViewsService.listViews()` (first-consumer-pull) · `TASK_VIEW_PRESETS` + `ListTasksFilter.kind` · `createTasksReadProvider`/`registerTasksReadProvider` (by-id short-circuit, per-key validation, top-level grain, `tags` = membership incl. NESTED over live tags, union) · deps `spaces?`/`notes?`/`views?` optional + fail-loud. Files: `services/tasks/{service,types}.ts`, `validators/task.ts`, `foundation/views/service.ts`, tests (tasks +11, spaces +2), `docs/features/tasks/delivery/PLAN-S8-tags-notes-views.md`, currency (tasks current-{spec,BR} BR-TK-S8-1..11 · spaces current-{spec,BR} BR-22 · 2 CLAUDE.md), amendments (seam-contract · slice-map · interpretation · TAS-28).
+  - Verification: tsc 0 · eslint 0 · tasks 87/87 · spaces 23/23 · full `@vida/core` 1996/1997 alone (+ `encryptBytes 1MB` green in isolation — F003 env). Gate: gate-1 REVISE→SHIP (3 rounds) · preflight PASSED · gate-2 SHIP · g2 REVISE→folded (1 blocking test-determinism + 5 nits) · /critique SHIP.
+Decisions:
+  - **Victor: "check the documentation"** — I had asked two calls (pin/reorder home; tag ANY/ALL) that the corpus fixes: `pinView`/`reorderViews` are Preferences-OWNED (ADR-007 §3.5 · IA §6 · XCU-21; intake G1 "named, reorderable, pinnable" = nav placement) → not a tasks op, filed as a Preferences first-consumer-pull gap; `tags` = membership incl. nested (ADR-007:57) → BUILT, not deferred. Memory `decide-dont-ask-when-docs-give-the-answer` extended ("surface" = present the doc answer).
+  - g2 F2 sharpened a semantic: a soft-deleted REQUESTED tag matches nothing (`deleteTag` does not cascade `entity_tags`) → memory `deletetag-does-not-cascade-entity-tags-filter-membership-by-live-tags`.
+  - The only INTERPRETATION in S8: several tags = UNION (docs fix only the single-root-tag case); recorded in interpretation.md.
+Next session:
+  - **S9 — Journal summary + DueProvider closer** (slice-map: TAS-29 config · 32 · 36 errors): `summary(date)` + `getDueReminders(range)` + `registerTasksJournal`/`registerTasksDueProvider`. GROUND FIRST: slice-map/seam-contract S9 lines, `parts/tasks.md` TAS-29/32/36, xcut-sessions `dueIn`, the Journals registry (`services/journals`), the shipped `registerProjectsJournal` (`projects/journal.ts`) + `registerGamificationJournal` precedents, Sessions `dueIn` provider shape. Same per-slice loop; commit on `mod-tasks`; then PR → LIF-142 Done → mod-routines unblocks.
+  - First action in a fresh session: `cd .claude/worktrees/mod-tasks` + `nvm use 24`; confirm `git log -1` = `c7eafa6`, clean tree.
+---
+
+## 2026-10-18 — fe-session-hud #16 shipped + the 142→143→144 stack merged
+Shipped **fe-session-hud #16** (LIF-217 → Done, PR #144 `33278c1`): the Session HUD (strip region 6) — S1
+substrate (tri-state HudRead · drift-free value-keyed clock · pause-freeze/hold-complete per PD-4/5/7 + the
+V5 precedent) · S2 pill (5 forms, sibling pause ghost, anchor-decoration reset) · S3 shell mount
+(router-subscribed `?sample`; D-S3-1 Victor-approved 375 strip-budget: scope globe-only + Search→first More
+row + HUD keeps time). Envision + Decomposition + 2 Visual Gates Victor-approved; grounding pass overturned
+my zero-cross-overtime → the doc-fixed hold-complete; F-HUD-1 filed (findActiveSession ① + focus-runtime
+client store ②). **Merged the whole blocked stack** (Victor-authorized over the CI billing outage, order
+142→143→144, two routes.tsx union conflicts resolved) — LIF-218 confirmed Done; 3 worktrees+branches cleaned.
+**fe-codec-system #12 CLOSED: ratified-by-consumption, dissolved** (reuse-UI-4 unit; all System-type
+consumers shipped; no residual scope; no Linear issue needed). 3 memories saved (anchor decoration ·
+location-read reactivity · overlap-vs-overflow). Sessions file: .claude/sessions/2026-10-16-fe-session-hud-1.md.
+Next FE heads: fe-calendar #19 (worktree exists — check state) / fe-projects; backend: mod-tasks S7 (in
+flight in a parallel session).
+
+## 2026-10-18 (close) — next head DECIDED: fe-calendar #19 resume
+Victor picked **fe-calendar** (resume S2+ over the approved S1/front matter) as the next session's head; the
+three small foundation closers (fe-spaces-page · fe-sync-log · fe-feature-atlas) queue after it — all four
+live-verified READY (the tracker's "blocked" is the archived-Done-blocker blind spot; **7 units false-blocked
+as of today** — fix tracker_sync's blocker-state read [includeArchived] before it misroutes a /begin).
+Foundation census at close: CODEC 13/13 · M1.2.1 shell/cross-cutting 10 done + 4 remaining (#19 in-flight,
+#20/#21/#22 untouched) · M1.2.2 3/6 (fe-projects/fe-habits/fe-check-ins ready; fe-tasks ⛔ mod-tasks S7).
+Main-checkout toolkit state left UNCOMMITTED (parallel-session entanglement; fe-gamification precedent).
+
+---
+Date: 2026-10-18
+Task: fe-calendar (LIF-203 · #19) — Global Calendar, Entity Delivery Flow ②, worktree `.claude/worktrees/fe-calendar` (branch `fe-calendar`, Node 24)
+Goal: Resume #19 (merge main, re-verify S1) → build S2 (Agenda) through the full §XXVI stack.
+Completed:
+  - **Resume:** merged origin/main into the worktree (`12639ee`, routes.tsx union); S1 re-verified (tsc 0 · lint 0 · calendar-view 22/22 · apps/web 661/661). Closed an S1 §XXIX lag (`hideHeader` missing from `v4-calendar-view.md` + ui CLAUDE.md).
+  - **S2 Agenda renderer** (`614c6b9`): `@vida/ui` `AgendaView` (UI-2 · V10; `packages/ui/src/components/agenda-view{,.test,.stories}.tsx`, 21 tests) + `@vida/types` `DAYPART`/`Daypart` (`common.ts`, slice-map D1) + surface `agendaFixture` + agenda dispatch (`apps/web/src/app/calendar/index.tsx`). PLAN `docs/specs/foundation/fe-calendar/delivery/PLAN-S2-agenda-renderer.md`; durable spec `docs/specs/components/ui-2-platform-views/v10-agenda-view.md`. Visual Gate PASS (Victor-reviewed).
+  - **S1 chrome fix** (`5e261ff`, bug unit `docs/specs/fixes/fe-calendar-s1-chrome-375/` RESOLVED): <768 `Range:` Menu condense (EC-1, `useMedia()` + `__bp`) · all range chrome `lg` 48px + ≥8px gaps · CanvasView title `lineHeight="$display"` + `Actions` `maxWidth:100%`/`flexWrap` (BR-CB-S1-12) · honest "This week ·" · clamped month/year nav. Visual Gate PASS (Victor-reviewed, 60 cells, 0 page overflow). S1 ledger's false "375 no-overflow ✓" CORRECTED.
+  - Verification at close: tsc 0 (@vida/ui · apps/web) · eslint 0 · @vida/ui 560/560 · calendar-surface 10/10 · canvas-view 10/10 · canvas-editor+calendar 21/21.
+  - Siblings recorded (NOT folded): `docs/specs/fixes/ds-type-lineheight-unpaired/` §Sibling records — 24 unpaired large-type sites (incl. lens-dispatches raw px) · `sm` 32px shell/Collection controls + Menu rows ~37px under the ≥44 floor · focus drop at the 768 condense swap.
+In progress:
+  - Nothing mid-flight. Worktree clean at `5e261ff`. NOT pushed, no PR (branch merges after the slices).
+Decisions:
+  - **Victor: "ground everything in the documentation" (×2) + "the decisions are in there".** S2: the D1 `Daypart` mint is homed IN S2 (slice-map:14-17 — my S7 deferral was manufactured); today-only daypart grouping = doc FACT (mockup + greybox); D1 bands settled (<12 / 12–17:59 / ≥18; all-day → morning). Fix unit: touch floor = `lg` (decisions.md:82); a shared defect a unit's own gate surfaces = ROOT fix in that unit (decisions.md:1117/1119/1120); latent siblings found by inspection = "→ sibling fix" (decisions.md:109); apps/web breakpoint = `useMedia()` + `__bp` (regions.ts:66-69), not a promoted @vida/ui hook.
+  - §XXVIII deviations (all Victor-approved): S2 DEV-1 Tamagui focus/hover pseudo-styles (not injected CSS) · DEV-2 375 rail reflow · DEV-3 surface passes NO `onToggleItem` (a no-op handler = dead focusable checkboxes; seam-contract:100 amended) · fix D-FIX-DEV-1 CanvasView actions wrap (BR-CB-S1-12) after the 48px toolbar overflowed at 768.
+  - Line-height root cause: `@tamagui/core` 2.6.2 `Text` never derives line-height from `fontSize` (no SizableText; core-only, ADR-001) → convention Rule "large type pairs `lineHeight="$<role>"`" in `packages/ui/src/CLAUDE.md`.
+  - Memories: `decide-dont-ask…` (+ decisions.md ledger variant) · `dont-manufacture-a-deferral…` (+ slice-map D-row homing) · visual-gate-playbook (+ region-vs-page overflow, false prior-ledger PASS, Chrome 1.5px→1px snap) · NEW `mutation-check-restore-from-copy-never-git-checkout`.
+Next session:
+  - **Start S3 — Week/Day renderer** (slice-map S3: `@vida/ui` `WeekView` time-column · hour gutter · all-day strip · timed blocks · Day = 1-column variant · fixtures; EC-4 + EC-11/12/13/14). Seam: seam-contract §A `TimedBlock`/`WeekViewProps`. Greybox evidence: `docs/specs/foundation/fe-calendar/mockups/greybox/{week,day}.png`.
+  - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git log -1` = `5e261ff`, clean tree. Then §XXVI: PLAN-S3 (GROUND FIRST — interpretation IR-6 "never assume time", envision EC-4, slice-map S3, seam-contract §A, `.claude/docs/decisions.md`, v10-agenda-view as the sibling renderer pattern) → /critique → Approval 1 → /preflight → /critique → Approval 2 → build → g2 review → Visual Gate (standalone-entry harness on the real CalendarSurface; score PAGE + REGION overflow; ≥44 controls) → currency (v11 spec + ui CLAUDE.md + slice-map) → commit.
+  - Apply the new Rule: any large type in WeekView pairs `lineHeight="$<role>"`.
+---
+
+---
+Date: 2026-10-19 (session opened 2026-10-18)
+Task: mod-tasks (LIF-142 · #65) — Tasks ① backend, Entity Delivery Flow, worktree `.claude/worktrees/mod-tasks` (branch `mod-tasks`, Node 24)
+Goal: Build S9 (Journal summary + DueProvider closer) through the full §XXVI loop → ① backend complete.
+Completed:
+  - **S9** built + gated + committed `88afb38`: `getDayTasksSummary(date)` (the Journal `/summary` SET per the GOVERNING
+    `docs/core/architecture/cross-module-integration.md` §2 row — every task due/scheduled/completed-on-date with
+    title·status·priority + membership flags; set union; no grain filter) · `utcDay` (the 7-module UTC-day convention,
+    TZ-independent) · `getDueReminders(range)` (the SS-7 due-bucket: OPEN tasks whose due_date OR scheduled_date ∈ the
+    window, `hard_deadline` = due date, UTC-midnight conversion, total order) · `services/tasks/journal.ts`
+    (summary-only contribution · `registerTasksJournal` · `registerTasksDueProvider` — ONE due-work registration, on
+    Sessions, SS-7) · TAS-29 `TaskViewConfig` + `TaskViewConfigSchema` · TAS-32/36 RATIFY. 9 gate tests through the
+    REAL journals engine + REAL `sessions.dueIn`. tsc 0 · eslint 0 · tasks **96/96** · full `@vida/core` alone
+    2004/2006 (F003 env flake, see below). Currency: BR-TK-S9-1..10, current-spec S9, CLAUDE.md, seam-contract:77
+    rewritten, slice-map S9 ✅, interpretation §6, journals + sessions current-spec registrant notes.
+  - Gates: PLAN-S9 g1 REVISE→SHIP (3 rounds) · preflight PASSED (A1–A6) · g2-critique SHIP · Approval 1+2 · g2 code
+    review SHIP (9 NITs; 7 folded) · /critique pre-ship.
+Decisions:
+  - **Victor ×2: "ground in the documentation" → "nothing is open, this is drift".** Rev 1–2 of the PLAN had four
+    labelled INTERPRETATIONS (local day · agenda placement · sub-task grain · completed∉due) + a counts-only
+    convention + a manufactured "overdue carry-forward" deferral — all reasoned from the three module precedents and
+    the five tasks aspect docs. The GOVERNING doc (`cross-module-integration.md` §2, "Governs: the daily-summary
+    aggregation") fixes the tasks row verbatim; the UTC-day convention ships in 7 modules; the sessions intake
+    G2-shape + tasks intake G6 fix the lane; JR-5 fixes open-only; "overdue" had zero doc hits. Rev 3 carries ZERO
+    interpretations. Memory `ground-every-deferral-and-interpretation-before-presenting` (read the "Governs:" core
+    doc + both intakes' resolved G-items + the shipped cross-module convention BEFORE precedents).
+  - Flagged for Victor, NOT changed (shipped-rule or doc-silent): `todayYmd()` local-day (BR-TK-S5-3) vs the UTC
+    convention · `cancelled`/`on_hold` dated tasks count as due work (the S1 `completed:false` open definition; no doc
+    defines them) · `CalendarDateSchema` regex-only (V8 rolls `2026-02-30` over; pre-existing, shared with projects).
+  - F005 env: `encryption/vault.test.ts` timeouts while a PARALLEL session ran the ui/web suites (load avg ~395→117);
+    isolated re-run 35/36 with only the self-documented `encryptBytes 1MB` marginal-perf test red (28.7 s / 20 s) —
+    the F003 pattern, green when idle in prior sessions; S9 touches no encryption file.
+Next session:
+  - **Push `mod-tasks` → open the PR (S1–S9, ① complete) → merge → LIF-142 Done → `mod-routines` unblocks.** First
+    action: `cd .claude/worktrees/mod-tasks`, Node 24 via `PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`,
+    confirm `git log -1` = the S9 commit, clean tree. Re-run `encryption/vault.test.ts` alone on an idle machine
+    before the PR (expect 36/36). Surface the three Victor-call flags at pickup.
+---
+
+---
+Date: 2026-10-20
+Task: fe-calendar (LIF-203 · #19) — Global Calendar, Entity Delivery Flow ②, worktree `.claude/worktrees/fe-calendar` (branch `fe-calendar`, Node 24)
+Goal: Build S3 (Week/Day renderer) through the full §XXVI stack.
+Completed:
+  - **S3 Week/Day renderer** (`84ce041`): `@vida/ui` `WeekView` (UI-2 · V11; Week AND Day = one component) + `internal/week-layout.ts` (pure, 23 tests) + 22 component tests + stories; surface Week/Day dispatch (`WeekRange`/`weekFixture`). PLAN `docs/specs/foundation/fe-calendar/delivery/PLAN-S3-week-day-renderer.md`; durable spec `docs/specs/components/ui-2-platform-views/v11-week-view.md`.
+  - **BR-16 root fix:** surface reads `timeFormat`/`weekStartsOn` from `preferences-store`; `weekStartOf` replaced `mondayOf` (periodLabel span + "This week", agenda, week) and Month passes `CalendarView weekStartsOn`.
+  - Verification: tsc 0 · eslint 0 (changed files) · @vida/ui 605/605 · @vida/web 677/677 · Visual Gate PASS (Victor-reviewed; Brave, real CalendarSurface, Week+Day × 3 presets × L/D × 375/768/1440 + overlap + states + 12h + Sunday: AA min 4.52–5.22, 0 page overflow, lanes never intersect, ring unclipped, axe 0).
+  - Currency: v11 spec · ui-2 `_index` V10 (missing since S2) + V11 rows · ui CLAUDE.md · web-client-runtime current-spec · slice-map ledger · seam-contract §A (WeekView ratified, `range` dropped) + §B (`useCalendar` takes `weekStartsOn`) · decisions ledger (5 rows) · components.md WeekView row.
+In progress:
+  - Nothing mid-flight. Worktree clean. NOT pushed, no PR.
+Decisions:
+  - **Victor: "check the documentation" ×3** on the 3 AskUserQuestion interpretations — I had read only the fe-calendar delivery folder. Sweep of the governing corpus: `/calendar` is Sessions-owned (IA); window auto-extend + overlap lanes = doc-DERIVED (EC-3/vision §6 no-hidden-items charter; Sessions intake :113-115 + SS-9); undated chips = doc-FIXED (a per-chip day was an ADD); + a missed BR (user locale prefs already live). Memory `ground-every-deferral…` extended: for a SURFACE find its IA owner + shipped stores first; never AskUserQuestion an interpretation pre-sweep.
+  - §XXVIII D-S3-DEV-1 (Victor-approved): shared-lane blocks show the start only; full range sr-only.
+  - Gate-caught: sr-only `position:absolute` spans escape an `overflow:auto` scroller whose containing block is outside it (→ `position:relative`, known-failures F004); engine-dependent accnames (→ explicit sr-only name, F005).
+Next session:
+  - **Start S4 — Year renderer** (slice-map S4: `@vida/ui` `YearView` — 12 mini-months · activity-density dots · today ringed · fixtures; EC-5 + EC-11/12/13/14; seam §A `YearDensity`/`YearViewProps` incl. the `onPickMonth` navigate intent). Greybox: `docs/specs/foundation/fe-calendar/mockups/greybox/year.png`.
+  - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git log -1`. GROUND FIRST (owner docs + shipped stores + decisions ledger) → PLAN-S4 → full §XXVI stack. Reuse `CalendarView weekStartsOn` + `preferences-store`; the Visual Gate driver pattern lives in the scratchpad `vg/week-gate.mjs` (re-create the standalone entry).
+  - Run full suites sequentially (ui, then web) — the machine reaps parallel runs under memory pressure.
+---
+
