@@ -1,12 +1,25 @@
 // Global Calendar surface — fe-calendar #19 · S1. The read-only lens (ADR-007) composed in the CanvasView frame:
 // a period title per range + a range switcher + nav, dispatching to the active range's renderer. S1 ships the frame,
-// the switcher/nav, and Month (CalendarView headerless, D4); S2–S5 plug in the other range renderers; S7 replaces the
-// S1 fixture with the live `useCalendar` ProviderRead fan-out. Read-only: nav/switch are navigation, no writes (EC-12).
+// the switcher/nav, and Month (CalendarView headerless, D4); S2 Agenda; S3 Week/Day (WeekView); S4–S5 plug in the
+// rest; S7 replaces the fixtures with the live `useCalendar` ProviderRead fan-out. Read-only: nav/switch are
+// navigation, no writes (EC-12). Locale is READ from the Settings prefs (time_format · week_starts_on — PLAN-S3 BR-16).
 import { useMemo } from 'react'
 import { Text, useMedia, View } from '@tamagui/core'
-import { AgendaView, type AgendaDay, Button, CalendarView, CanvasView, EmptyState, Menu } from '@vida/ui'
+import {
+  AgendaView,
+  type AgendaDay,
+  Button,
+  type CalChip,
+  CalendarView,
+  CanvasView,
+  EmptyState,
+  Menu,
+  type TimedBlock,
+  WeekView,
+} from '@vida/ui'
 import type { Breakpoint } from '../../shell/breakpoints'
 import { type CalendarRange, useCalendarUIStore } from '../../stores/calendar-ui-store'
+import { usePreferencesStore, type WeekStartsOn } from '../../stores/preferences-store'
 
 const RANGES: CalendarRange[] = ['year', 'month', 'week', 'day', 'agenda', 'living']
 const RANGE_LABEL: Record<CalendarRange, string> = {
@@ -23,26 +36,36 @@ function parseKey(key: string): Date {
 function toKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
-function mondayOf(d: Date): Date {
+/** The first day of `d`'s week per the user's week_starts_on (0 = Sunday, 1 = Monday). */
+function weekStartOf(d: Date, weekStartsOn: WeekStartsOn): Date {
   const r = new Date(d)
-  r.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  r.setDate(d.getDate() - ((d.getDay() - weekStartsOn + 7) % 7))
   return r
+}
+/** The 7 'YYYY-MM-DD' keys of `focused`'s week, in display order. */
+function weekKeys(focused: Date, weekStartsOn: WeekStartsOn): string[] {
+  const start = weekStartOf(focused, weekStartsOn)
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start)
+    d.setDate(start.getDate() + i)
+    return toKey(d)
+  })
 }
 const MON = { month: 'long', year: 'numeric' } as const
 const WD = { weekday: 'long', month: 'short', day: 'numeric' } as const
 const DM = { month: 'short', day: 'numeric' } as const
 
-function periodLabel(range: CalendarRange, focused: Date): string {
+function periodLabel(range: CalendarRange, focused: Date, weekStartsOn: WeekStartsOn): string {
   if (range === 'year') return String(focused.getFullYear())
   if (range === 'month') return new Intl.DateTimeFormat('en-US', MON).format(focused)
   if (range === 'day') return new Intl.DateTimeFormat('en-US', WD).format(focused)
-  // week / agenda / living → the Mon–Sun span
-  const mon = mondayOf(focused)
-  const sun = new Date(mon)
-  sun.setDate(mon.getDate() + 6)
-  const span = `${new Intl.DateTimeFormat('en-US', DM).format(mon)} – ${new Intl.DateTimeFormat('en-US', DM).format(sun)}, ${sun.getFullYear()}`
+  // week / agenda / living → the 7-day span from the user's week start
+  const first = weekStartOf(focused, weekStartsOn)
+  const last = new Date(first)
+  last.setDate(first.getDate() + 6)
+  const span = `${new Intl.DateTimeFormat('en-US', DM).format(first)} – ${new Intl.DateTimeFormat('en-US', DM).format(last)}, ${last.getFullYear()}`
   // "This week" is a claim about the CURRENT week — any other focused week gets the bare span (the Week range's form).
-  const isCurrentWeek = toKey(mon) === toKey(mondayOf(new Date()))
+  const isCurrentWeek = toKey(first) === toKey(weekStartOf(new Date(), weekStartsOn))
   return range !== 'week' && isCurrentWeek ? `This week · ${span}` : span
 }
 
@@ -79,19 +102,15 @@ function monthFixture(focused: Date): MonthEv[] {
   ]
 }
 
-// S2 agenda fixture — the focused Mon–Sun week, shaped like the approved greybox: a dayparted "today" mix (timed ·
+// S2 agenda fixture — the focused week (from the user's week start), shaped like the approved greybox: a dayparted "today" mix (timed ·
 // all-day · Must/Can · done), sparser flat days, one empty day (skipped by the renderer). Dayparts are pre-assigned
 // here exactly as S7's useCalendar will (bands <12 / 12–17:59 / ≥18; all-day default = morning).
-function agendaFixture(focused: Date): { days: AgendaDay[]; today: string } {
-  const mon = mondayOf(focused)
-  const on = (offset: number) => {
-    const d = new Date(mon)
-    d.setDate(mon.getDate() + offset)
-    return toKey(d)
-  }
+function agendaFixture(focused: Date, weekStartsOn: WeekStartsOn): { days: AgendaDay[]; today: string } {
+  const keys = weekKeys(focused, weekStartsOn)
+  const on = (offset: number) => keys[offset]
   const today = toKey(new Date())
   // The rich mix sits on TODAY when today is in the focused week, so its daypart grouping shows. In any other week it
-  // sits on Thursday and renders FLAT — correct: no day there is today, and only today is dayparted (BR-CAL-S2-2).
+  // sits on the 4th day and renders FLAT — correct: no day there is today, and only today is dayparted (BR-CAL-S2-2).
   const todayOffset = [0, 1, 2, 3, 4, 5, 6].find((o) => on(o) === today)
   const rich = todayOffset ?? 3
   const sparse = [0, 1, 2, 3, 4, 5, 6].filter((o) => o !== rich)
@@ -118,6 +137,30 @@ function agendaFixture(focused: Date): { days: AgendaDay[]; today: string } {
   return { today, days }
 }
 
+// S3 week/day fixture — the approved greybox shape (Re-plan draft · Deep work · Design sync, a Gym evening, an overlap
+// pair + a short block on the rich day) over the focused week. Chips are DATED here only so the Day range can filter
+// them — the renderer's chips are undated (the approved one-row strip); S7's useCalendar does this selection.
+type DatedChip = CalChip & { day: string }
+function weekFixture(focused: Date, weekStartsOn: WeekStartsOn): { days: string[]; blocks: TimedBlock[]; chips: DatedChip[]; today: string } {
+  const days = weekKeys(focused, weekStartsOn)
+  const today = toKey(new Date())
+  const rich = days.includes(today) ? today : days[3]
+  const others = days.filter((d) => d !== rich)
+  const blocks: TimedBlock[] = [
+    { id: 'w1', title: 'Re-plan draft', day: others[0], startHour: 9, color: PURPOSE.career },
+    { id: 'w2', title: 'Gym', day: others[2], startHour: 18, color: PURPOSE.health },
+    { id: 'w3', title: 'Design sync', day: others[3], startHour: 11, color: PURPOSE.career },
+    { id: 'r1', title: 'Deep work', day: rich, startHour: 9, endHour: 10.5, color: PURPOSE.admin },
+    { id: 'r2', title: 'Call Mariana', day: rich, startHour: 10, endHour: 11, color: PURPOSE.career },
+    { id: 'r3', title: 'Stand-up', day: rich, startHour: 14, endHour: 14.5, color: PURPOSE.career },
+  ]
+  const chips: DatedChip[] = [
+    { id: 'c1', title: 'Spanish session', color: PURPOSE.growth, day: rich },
+    { id: 'c2', title: 'Read ch. 4', color: PURPOSE.growth, day: others[1] },
+  ]
+  return { days, blocks, chips, today }
+}
+
 export interface CalendarSurfaceProps {
   /** Test/story-only breakpoint override (mirrors AppShell.__bp) — bypasses useMedia so jsdom can assert the condense. */
   __bp?: Breakpoint
@@ -125,10 +168,12 @@ export interface CalendarSurfaceProps {
 
 export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
   const { range, focusedDate, setRange, setFocusedDate } = useCalendarUIStore()
+  const weekStartsOn = usePreferencesStore((s) => s.weekStartsOn)
+  const timeFormat = usePreferencesStore((s) => s.timeFormat)
   const media = useMedia()
   const isTabletUp = __bp ? __bp !== 'mobile' : media.tablet
   const focused = useMemo(() => parseKey(focusedDate), [focusedDate])
-  const title = periodLabel(range, focused)
+  const title = periodLabel(range, focused, weekStartsOn)
 
   // Range chrome: lg buttons (48px ≥ the 44×44 touch floor at every width, decisions.md:82) with ≥8px gaps. Below 768
   // the 6-range toolbar condenses to a Menu (EC-1, the CollectionView condense) so the actions slot fits a 375 masthead.
@@ -179,6 +224,7 @@ export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
             getKey={(i) => i.id}
             month={new Date(focused.getFullYear(), focused.getMonth(), 1)}
             today={new Date()}
+            weekStartsOn={weekStartsOn}
             hideHeader
             aria-label="Month grid"
             renderItem={(i) => (
@@ -192,13 +238,49 @@ export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
           // No onToggleItem: the completion capability (Tasks/Habits/Routines) isn't wired in M1, and a no-op handler
           // would render focusable checkboxes that do nothing. Absent ⇒ the renderer's read-only done-state (deny-safe);
           // the intent surface is fixed in AgendaView, so S7 just passes the owning capability (seam-contract.md:100).
-          <AgendaView {...agendaFixture(focused)} aria-label="Agenda" />
+          <AgendaView {...agendaFixture(focused, weekStartsOn)} aria-label="Agenda" />
+        ) : range === 'week' || range === 'day' ? (
+          <WeekRange range={range} focused={focused} weekStartsOn={weekStartsOn} timeFormat={timeFormat} />
         ) : (
           <EmptyState title={`${RANGE_LABEL[range]} view`} titleLevel={3}>
-            <Text fontSize="$small" color="$colorTextMuted">This range ships in a later slice of #19 (S3–S5). The frame, switcher, Month, and Agenda are live.</Text>
+            <Text fontSize="$small" color="$colorTextMuted">This range ships in a later slice of #19 (S4–S5). The frame, switcher, Month, Week, Day, and Agenda are live.</Text>
           </EmptyState>
         )}
       </CanvasView>
     </View>
+  )
+}
+
+// Week = the 7 days; Day = the focused day alone (WeekView with one column — EC-4). The Day branch selects that day's
+// blocks + chips (the provider's job in S7); the renderer gets undated chips either way.
+function WeekRange({
+  range,
+  focused,
+  weekStartsOn,
+  timeFormat,
+}: {
+  range: 'week' | 'day'
+  focused: Date
+  weekStartsOn: WeekStartsOn
+  timeFormat: '12h' | '24h'
+}) {
+  const fx = weekFixture(focused, weekStartsOn)
+  const focusedKey = toKey(focused)
+  const days = range === 'week' ? fx.days : [focusedKey]
+  const blocks = range === 'week' ? fx.blocks : fx.blocks.filter((b) => b.day === focusedKey)
+  const chips = (range === 'week' ? fx.chips : fx.chips.filter((c) => c.day === focusedKey)).map(
+    ({ id, title, color }): CalChip => ({ id, title, color }),
+  )
+  return (
+    <WeekView
+      days={days}
+      blocks={blocks}
+      allDay={chips}
+      today={fx.today}
+      timeFormat={timeFormat}
+      // a Day with nothing on it is the designed empty grid, not a success-with-nothing
+      state={blocks.length + chips.length === 0 ? 'empty' : 'success'}
+      aria-label={range === 'week' ? 'Week' : 'Day'}
+    />
   )
 }

@@ -9,6 +9,7 @@ import { cleanup, fireEvent, render } from '@testing-library/react'
 import { UIProvider } from '@vida/ui'
 import CalendarSurface from './index'
 import { useCalendarUIStore } from '../../stores/calendar-ui-store'
+import { usePreferencesStore } from '../../stores/preferences-store'
 
 // "Now" = Sunday 2026-10-18 23:30 in Brasília — already Monday 02:30 in UTC. Locally the current week is Oct 12–18; a
 // UTC slip would make it Oct 19–25 and the label assertions below fail.
@@ -22,6 +23,8 @@ afterAll(() => vi.useRealTimers())
 afterEach(() => {
   cleanup()
   useCalendarUIStore.setState({ range: 'month', focusedDate: '2026-10-18' })
+  // every store a test mutates is reset — a leftover Sunday week start would make the label tests order-dependent
+  usePreferencesStore.setState({ weekStartsOn: 1, timeFormat: '24h' })
 })
 
 function renderSurface(bp: 'mobile' | 'tablet') {
@@ -105,5 +108,57 @@ describe('CalendarSurface — month/year nav clamps the day', () => {
     const { getByRole } = renderSurface('tablet')
     fireEvent.click(getByRole('button', { name: 'Next' }))
     expect(useCalendarUIStore.getState().focusedDate).toBe('2029-02-28')
+  })
+})
+
+describe('CalendarSurface — Week/Day dispatch (S3)', () => {
+  it('Week renders WeekView: 7 headed columns in a keyboard-reachable scroll region', () => {
+    useCalendarUIStore.setState({ range: 'week', focusedDate: '2026-10-18' })
+    const { getByRole } = renderSurface('tablet')
+    expect(getByRole('group', { name: 'Week' })).toBeTruthy()
+    expect(getByRole('region', { name: 'Week grid' })).toBeTruthy()
+    // today (Sun 18, the last day of a Monday week) carries the rich fixture day
+    expect(getByRole('list', { name: 'Sun 18, today' })).toBeTruthy()
+  })
+
+  it('Day renders WeekView with one column — the focused day only, no scroll region', () => {
+    useCalendarUIStore.setState({ range: 'day', focusedDate: '2026-10-18' })
+    const { getByRole, queryByRole, getAllByRole } = renderSurface('tablet')
+    expect(getByRole('group', { name: 'Day' })).toBeTruthy()
+    expect(queryByRole('region', { name: 'Week grid' })).toBeNull()
+    expect(getAllByRole('list').map((l) => l.getAttribute('aria-labelledby') != null)).toContain(true)
+    expect(getByRole('list', { name: 'All day' }).textContent).toBe('Spanish session')
+  })
+})
+
+describe('CalendarSurface — locale prefs are READ (BR-16)', () => {
+  it('weekStartsOn=0: Agenda on Sun Oct 18 reads "This week · Oct 18 – Oct 24, 2026"', () => {
+    usePreferencesStore.setState({ weekStartsOn: 0 })
+    useCalendarUIStore.setState({ range: 'agenda', focusedDate: '2026-10-18' })
+    const { container } = renderSurface('tablet')
+    expect(titleOf(container)).toBe('This week · Oct 18 – Oct 24, 2026')
+  })
+
+  it('weekStartsOn=0: the Month grid starts on Sunday', () => {
+    usePreferencesStore.setState({ weekStartsOn: 0 })
+    useCalendarUIStore.setState({ range: 'month', focusedDate: '2026-10-18' })
+    const { getAllByRole } = renderSurface('tablet')
+    expect(getAllByRole('columnheader')[0].textContent).toBe('Sun')
+  })
+
+  it('weekStartsOn=0: Week columns start on Sunday', () => {
+    usePreferencesStore.setState({ weekStartsOn: 0 })
+    useCalendarUIStore.setState({ range: 'week', focusedDate: '2026-10-18' })
+    const { container, getByRole } = renderSurface('tablet')
+    expect(titleOf(container)).toBe('Oct 18 – Oct 24, 2026')
+    // the COLUMNS (not just the label) start on Sunday: column 0's header names Sun 18's list
+    expect(getByRole('list', { name: 'Sun 18, today' }).getAttribute('aria-labelledby')).toMatch(/-h-0$/)
+  })
+
+  it('timeFormat=12h reaches WeekView', () => {
+    usePreferencesStore.setState({ timeFormat: '12h' })
+    useCalendarUIStore.setState({ range: 'day', focusedDate: '2026-10-18' })
+    const { getAllByText } = renderSurface('tablet')
+    expect(getAllByText('8 am').length).toBeGreaterThan(0)
   })
 })

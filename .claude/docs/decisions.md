@@ -1,5 +1,15 @@
 <!-- Last updated: 2026-10-12 by /session-end -->
 
+## fe-calendar ② S3 — Week/Day renderer (2026-10-19 — LIF-203)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-19 | Week/Day window | fixed 08–20, or extend to fit? | **auto-extend** — `hours` is a MINIMUM, grows to floor(earliest)…ceil(latest), clamped 0–24 | doc-DERIVED: #19's charter is "nothing behind +N more" (EC-3, vision §6) + IR-6; a fixed window re-creates the hidden-item defect | yes |
+| 2026-10-19 | Week/Day overlap | stack, cascade, or lanes? | **side-by-side lanes** (drawn-extent clusters, lowest free lane) | doc-DERIVED: co-timed items are real data (Sessions intake :113-115 Calendar = reader beside ICS/tasks/reminders; SS-9; overlapping windows valid) — occlusion hides an item | yes |
+| 2026-10-19 | All-day chips | add a per-chip day ("Thu ·")? | **NO — undated, as mocked** | doc-FIXED: mockup + greybox + seam `CalChip`; a per-chip day is an ADD beyond the approved visual (Victor: "check the documentation") | yes |
+| 2026-10-19 | Locale | calendar assumes Monday + 24h? | **READ `weekStartsOn`/`timeFormat` from preferences-store**; `weekStartOf` replaced `mondayOf` across every range (Month via `CalendarView weekStartsOn`) | ADR-002 `user_preferences` + the fe-settings store already live; fe-home READ precedent; shared defect → root fix in-unit (:1119-1121) | yes |
+| 2026-10-19 | Shared-lane time label | show the range in a ½-column lane? | **start-only visible, full range sr-only** (D-S3-DEV-1) | the range wrapped and clipped the title (screenshot-caught); height still shows duration | yes |
+
 ## fe-settings ② (2026-10-12 — LIF-193, PR #137)
 
 | Date | Area | Decision | Choice | Reason | Reversible |

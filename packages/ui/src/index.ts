@@ -69,6 +69,12 @@ export {
   type AgendaDay,
   type Daypart,
 } from './components/agenda-view'
+export {
+  WeekView,
+  type WeekViewProps,
+  type TimedBlock,
+  type CalChip,
+} from './components/week-view'
 export { TableView, type TableViewProps, type Column } from './components/table-view'
 export { BoardView, type BoardViewProps, type BoardGroup } from './components/board-view'
 export { PomodoroWidget, type PomodoroWidgetProps, type PomodoroPhase } from './components/pomodoro-widget'

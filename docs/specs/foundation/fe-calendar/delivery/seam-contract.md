@@ -30,11 +30,13 @@ interface AgendaViewProps { days: readonly AgendaDay[]; today?: string; state?: 
                             empty?: ReactNode; error?: ReactNode
                             'aria-label'?: string; 'aria-labelledby'?: string; ref?: Ref<HTMLDivElement> }
 
-// — S3 · WeekView / Day (EC-4) —
-interface TimedBlock { id: string; title: ReactNode; color?: string; startHour: number; endHour?: number; day: string }
-interface WeekViewProps { days: string[]; allDay?: CalChip[]; blocks: TimedBlock[]; today?: string
-                          range?: 'week' | 'day'; hours?: [number, number]; state?: CalState
-                          'aria-label'?: string; ref?: Ref<HTMLDivElement> }
+// — S3 · WeekView / Day (EC-4) — SHIPPED (ratified + refined: `range` DROPPED — days.length decides Week vs Day;
+//   readonly arrays, empty?/error? slots, aria-labelledby, timeFormat; CalChip stays UNDATED; v11-week-view.md) —
+interface TimedBlock { id: string; title: ReactNode; color?: string; day: string; startHour: number; endHour?: number }
+interface WeekViewProps { days: readonly string[]; blocks: readonly TimedBlock[]; allDay?: readonly CalChip[]
+                          today?: string; hours?: readonly [number, number]   // a MINIMUM window, auto-extends
+                          timeFormat?: '12h' | '24h'; state?: CalState; empty?: ReactNode; error?: ReactNode
+                          'aria-label'?: string; 'aria-labelledby'?: string; ref?: Ref<HTMLDivElement> }
 
 // — S4 · YearView (EC-5) —
 interface YearDensity { date: string; level: 0 | 1 | 2 }           // 0 none · 1 has · 2 busy
@@ -67,7 +69,9 @@ type Range = 'year' | 'month' | 'week' | 'day' | 'agenda' | 'living'
 interface CalendarUIState { range: Range; focusedDate: string; setRange(r: Range): void; setFocusedDate(d: string): void }
 
 // The hook: React Query over ProviderRead; returns the per-range renderer feed (each field honest-null on absence).
-function useCalendar(range: Range, focusedDate: string): {
+// S3 amendment: the week start is the user's `week_starts_on` (read from preferences-store) — useCalendar takes it so
+// it never re-hard-codes Monday (the surface root-fixed `mondayOf` → `weekStartOf` in S3, PLAN-S3 BR-16).
+function useCalendar(range: Range, focusedDate: string, weekStartsOn: 0 | 1): {
   state: CalState
   month?: CalChip[]                       // EC-2 — buildDashboard per-day (D2) mapped to chips
   agenda?: AgendaDay[]                    // EC-3 — buildDashboard per-day + daypart mapping (D1)

@@ -158,3 +158,11 @@ of their deferred hooks. The UI mechanics live in their own convention docs (`ap
   current week; month/year ‹/› clamp the day (Jan 31 › = February). The period title no longer overlaps when wrapped
   (CanvasView pairs `lineHeight="$display"`).
   `[FACT: apps/web/src/app/calendar/index.tsx agendaFixture + range==='agenda' dispatch; packages/ui/src/components/agenda-view.tsx; docs/specs/foundation/fe-calendar/delivery/PLAN-S2-agenda-renderer.md §3, §5a]`
+  **S3 SHIPPED (2026-10-19):** **Week** and **Day** dispatch to `@vida/ui` **`WeekView`** (`WeekRange`: Week = the 7 days,
+  Day = `[focused]` with that day's blocks + chips) fed by `weekFixture(focused, weekStartsOn)` (dated chips filtered per
+  Day, then passed undated); a Day with nothing → `state="empty"`. **Locale prefs are READ (BR-16):** the surface reads
+  `timeFormat`/`weekStartsOn` from the fe-settings `preferences-store` (the fe-home READ precedent) — `weekStartOf(d,
+  weekStartsOn)` replaced the hard-coded `mondayOf` in `periodLabel` (span + "This week"), `agendaFixture`,
+  `weekFixture`, and Month passes the shipped `CalendarView weekStartsOn`, so every range agrees on the week start; S7's
+  `useCalendar` must take `weekStartsOn` too (seam-contract §B). Year/Living still render the placeholder.
+  `[FACT: apps/web/src/app/calendar/index.tsx weekStartOf · weekKeys · weekFixture · WeekRange; stores/preferences-store.ts; docs/specs/foundation/fe-calendar/delivery/PLAN-S3-week-day-renderer.md BR-16, §5a]`

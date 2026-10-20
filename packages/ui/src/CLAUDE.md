@@ -319,6 +319,27 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Chrome snaps a 1.5px border to 1px in `getComputedStyle` (Visual-Gate probes must not match `'1.5px'`). Visual Gate
   PASS (Brave, real CalendarSurface, 3 presets × L/D × 375/768/1440: AA 4.94–6.53 · box 3:1 · 46×46 · ring · real
   Space/Enter toggle · axe 0). 21 tests. Spec: `docs/specs/components/ui-2-platform-views/v10-agenda-view.md`.
+  **week-view** is **UI-2 · V11** (fe-calendar #19 · S3, LIF-203) — the Global Calendar's **Week AND Day ranges** (Day =
+  `days.length === 1`, one component). Time-column grid: 64px `aria-hidden` hour gutter · headed day columns · ONE
+  all-day strip of undated `CalChip`s · `TimedBlock`s positioned by `startHour`/`endHour` at 48px/h. **Geometry is pure
+  in `internal/week-layout.ts`** (unit-tested): `formatHour(h, fmt, kind)` (minute-rounded; start ≤23:59, end may be
+  24:00; 12h gutter drops ":00") · `normalizeSpan` (absent end → +1h, contradictory end → +1h flagged, start ∉ [0,24) →
+  skipped) · `windowFor` (hours = a MINIMUM, auto-extends to fit, clamped [0,24]) · `layoutDay` (late clamp BEFORE
+  clustering; drawn-extent transitive clusters; lowest free lane, every lane checked; output in INPUT order). Order:
+  validate → renderable set → window → layout (NaN-safe). Lane `left`/`width` go in inline `style` (gallery `tileStyle`
+  precedent — Tamagui would atomic-class every fraction). Compact (`h<44 || lanes≥3`) = one row; **short time**
+  (`compact || lanes≥2`) = start-only visible time, full range in an sr-only span (D-S3-DEV-1 — a range wrapped in a
+  ½-column lane and pushed the title out; screenshot-caught). A contradictory end is never LABELLED (IR-6). A11y: the
+  hour-line layer is an `aria-hidden` SIBLING of each column's positioned `role="list"` (never a parent); column lists
+  are named by ONE explicit sr-only string ("Thu 8, today") with the visual header `aria-hidden` — jsdom joins inline
+  header spans ("Thu8"). Week wraps the grid in a keyboard-reachable `role="region"` (`tabIndex 0`, 2px ring; axe
+  scrollable-region-focusable); Day has none. **⚠ `position:relative` on the root + scroll region:** an sr-only
+  `position:absolute` span whose containing block is OUTSIDE an `overflow:auto` scroller escapes the clip and widens the
+  PAGE (616px at 375, Visual-Gate-caught; jsdom can't see it) — reuse for any horizontal scroller holding sr-only text.
+  Empty (explicit or nothing renderable) = the designed empty grid + sr "Nothing scheduled", items never drawn under it.
+  `timeFormat` mirrors `user_preferences.time_format`. 45 tests. Visual Gate PASS (Brave, real CalendarSurface, 3 presets
+  × L/D × 375/768/1440 + overlap + states + 12h + Sunday: AA min 4.52–5.22 · 0 page overflow · lanes never intersect ·
+  ring unclipped · axe 0). Spec: `docs/specs/components/ui-2-platform-views/v11-week-view.md`.
   **pomodoro-widget** is **UI-2 · V5** — the interactive timer WIDGET `@vida/ui` ships (ADR-008:35). NOT a data-view: a
   self-timing single-interval countdown with a **DEFERRED session-engine seam** — the pomodoro *session*
   (lifecycle/persistence/effects/phase-sequencing) is a `sessions` sub-type owned by MOD-sessions (ADR-004); the widget
