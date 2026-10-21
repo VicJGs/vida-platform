@@ -106,6 +106,21 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
     expect(found?.journal_date).toBe('2026-09-19')
   })
 
+  it('ensureJournal creates the day page once, titled by its date (NP-8/NP-2)', async () => {
+    const first = await h.svc.ensureJournal('2026-10-21')
+    expect(first.type).toBe('journal')
+    expect(first.journal_date).toBe('2026-10-21')
+    expect(first.title).toBe('2026-10-21')
+    const second = await h.svc.ensureJournal('2026-10-21')
+    expect(second.id).toBe(first.id) // idempotent — returns the same row, never a clash
+  })
+
+  it('ensureJournal returns a pre-existing journal page for the date', async () => {
+    const created = await h.svc.createPage({ type: 'journal', journal_date: '2026-10-22' })
+    const ensured = await h.svc.ensureJournal('2026-10-22')
+    expect(ensured.id).toBe(created.id)
+  })
+
   it('createPage throws JournalExistsError on a live journal-date clash (BR-S1-1)', async () => {
     await h.svc.createPage({ type: 'journal', journal_date: '2026-09-19' })
     await expect(h.svc.createPage({ type: 'journal', journal_date: '2026-09-19' })).rejects.toBeInstanceOf(
@@ -152,6 +167,20 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
     await expect(
       h.svc.updatePage(p.id, { bogus: 1 } as unknown as UpdatePageInput),
     ).rejects.toBeTruthy()
+    // BR-NEU-4 (IR-7): `content` is NOT a metadata patch — it is excluded from updatePage's strict whitelist.
+    await expect(
+      h.svc.updatePage(p.id, { content: '{}' } as unknown as UpdatePageInput),
+    ).rejects.toBeTruthy()
+  })
+
+  it('writePageContent persists the editor body via its own path (BR-NEU-3/4)', async () => {
+    const p = await h.svc.createPage({ type: 'note', title: 'writable' })
+    const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hello' }] }] }
+    const saved = await h.svc.writePageContent(p.id, doc as unknown as Parameters<typeof h.svc.writePageContent>[1])
+    expect(saved.content).toBe(JSON.stringify(doc))
+    const reread = await h.svc.getPage(p.id)
+    expect(reread?.content).toBe(JSON.stringify(doc))
+    expect(reread?.updated_at).toBeGreaterThanOrEqual(p.updated_at)
   })
 
   it('soft-deleted pages are excluded from reads (BR-S1-7 findWhere filter)', async () => {

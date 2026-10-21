@@ -6,7 +6,7 @@
 # Project: M1 — Whole Manual OS
 # Milestone: M1.2.3 — Depth & Recovered · Frontend
 # Source: decomposition-p6.md (P6) + PLAN-p6-frontend-track.md (Approval 2 SHIP) — backend-replan
-# Reshape: G6 unit #42 — #42 Relationships — Dash⇄Graph⇄Contacts · contact Entity(health band) · Network · Reminders · All-Events. ⛔ blocked on network_groups·closeness_tier schema.
+# Reshape: G6 unit #42 — #42 Relationships — Dash⇄Graph⇄Contacts · contact Entity(health band) · Network · Reminders · All-Events. (schema landed: 025_relationships.ts; ① done PR #107 — GAP-2 resolved, gap2-schema-gates.md)
 # Note: labels `frontend` + `P6` applied post-write via Linear API (tracker sets labels out-of-band, as P5.1 did for `backend`).
 
 ## Goal

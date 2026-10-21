@@ -1,0 +1,997 @@
+// services/tasks — service (mod-tasks #65 · LIF-142 ①)
+//
+// createTasksService over the 2 DB-4 tables (tasks · task_time_logs).
+// Built PER SLICE (Entity Delivery Flow); S1 = tasks CRUD + queries + the ≤1-parent guard + app-layer cascade.
+//
+// Patterns (precedent: services/projects):
+// - factory → object literal; intra-service calls hoist to closures, NOT `this.`.
+// - validating methods are async (reject, not sync throw).
+// - Repository.create() RETURNS THE INPUT ROW (not DB defaults) → backfill NN-default cols in the create input
+//   (status/priority/kind/measurement_kind/difficulty/sort_order) [[repository-create-returns-input-row]].
+// - findWhere skips the soft-delete filter → list via findAll (which applies isNull(deleted_at)) + JS filter.
+// - M1.0 encryptedFields:[] (the [E] title/description pass through; real field encryption = M3).
+// - NO FK: parent-module links + cascade are the app layer's (TK-2/TK-4). `'task'` is pre-seeded in ENTITY_TYPES.
+
+import { and, eq, isNull } from 'drizzle-orm'
+import ICAL from 'ical.js'
+import type { BindingMode, EffectType } from '@vida/types'
+import { createRepository, type CreateInput } from '../../db/repository'
+import { normalize, rollup } from '../../foundation/measurement'
+import { tasks, taskTimeLogs } from '../../db/schema/tasks'
+// S8 — the foundation `tags` row (live-tag guard + nested expansion) and the `entity_tags` junction (raw READ only;
+// writes go through SpacesService). Foundation schema, not another module's (C5/TK-9 gate).
+import { tags, entityTags } from '../../db/schema/foundation/spaces'
+import type { DrizzleDb } from '../../db/adapter'
+import type { EffectHandler, EffectRegistry } from '../../foundation/effects'
+import { SessionTypeNotFound, type SessionRegistry, type SessionTypeDef } from '../../foundation/sessions'
+import { TagNotFound } from '../../foundation/spaces'
+import { ViewNotFound, type ReadProvider, type ViewFilter, type ViewProviderRegistry } from '../../foundation/views'
+// S9 — the SS-7 due-work shapes (sessions-owned; type-only — no runtime edge, and sessions imports nothing from tasks).
+import type { DueItem, TimeRange } from '../sessions'
+import {
+  CreateTaskSchema,
+  UpdateTaskSchema,
+  ListTasksFilterSchema,
+  ListTasksFilterFieldsSchema,
+  AggGroupingSchema,
+  SaveTaskViewSchema,
+} from '../../validators/task'
+import {
+  type TasksService,
+  type TasksServiceDeps,
+  type CreateTaskInput,
+  type UpdateTaskInput,
+  type ListTasksFilter,
+  type AddSubtaskInput,
+  type TaskRollup,
+  type AggGrouping,
+  type AggregatedGroup,
+  type AggregatedTasks,
+  type ParentType,
+  type SaveTaskViewInput,
+  type TaskViewPreset,
+  type TasksDaySummaryItem,
+  TaskNotFoundError,
+  MultipleParentError,
+  SubtaskNestingError,
+  TimerAlreadyRunningError,
+  TimerNotFoundError,
+  TimerNotWiredError,
+  RecurrenceNotAllowedError,
+  RecurrenceRegenError,
+  TasksDepNotWiredError,
+  TaskViewNotFoundError,
+} from './types'
+import type { TaskRow } from '../../db/schema/tasks'
+import type { SessionRow } from '../../db/schema/foundation/sessions'
+import type { ViewRow } from '../../db/schema/foundation/spaces'
+
+/** The `'work'` session sub-type — the task-timer timed-run reference (G-S1). Spine-only (no 1:1 extension; C4 keeps
+ *  `task_time_logs` as the ledger). `effects: []` — the timer does NOT auto-fire on completion; tasks fires `log_time`
+ *  itself on `stopTimer` (TAS-16 "tasks service (emit)"). Modeled on the shipped `focus` def. */
+export const WORK_SESSION_TYPE: SessionTypeDef = {
+  sub_type: 'work',
+  owner_module: 'tasks',
+  attachment_defaults: {},
+  effects: [],
+  lifecycle: {
+    transitions: [
+      { from: 'scheduled', to: 'in_progress', event: 'start' },
+      { from: 'in_progress', to: 'completed', event: 'complete' },
+    ],
+    hooks: {},
+  },
+  permissions: { allowed_effects: [] },
+  default_purpose: 'maintenance',
+}
+
+/** The tasks-owned `log_time` effect handler (XCU-23 — the single documented writer of `task_time_logs`; never a
+ *  direct client write, G-S4). Co-writes through the rail tx (F1 §3B). `payload` carries the run's start/end. */
+function createLogTimeHandler(db: DrizzleDb, deviceId: string): EffectHandler {
+  const repo = createRepository(db, taskTimeLogs, { deviceId, softDelete: false, encryptedFields: [] })
+  return async (event, tx) => {
+    // `log_time` is a GLOBAL one-handler-per-type slot; this tasks handler also receives any OTHER producer's
+    // `log_time` (e.g. a future focus/pomodoro auto-fire, TAS-17). Those are fired by the session lifecycle WITHOUT a
+    // payload — writing then would create a bogus 0-minute row. Guard: act ONLY on a well-formed tasks-timer emission
+    // (numeric start/end payload). A payload-less `log_time` is not ours → skip (g2 F1; also closes the unsafe cast).
+    const p = event.payload as { started_at?: unknown; ended_at?: unknown } | undefined
+    if (!p || typeof p.started_at !== 'number' || typeof p.ended_at !== 'number') return
+    const duration = Math.max(0, Math.round((p.ended_at - p.started_at) / 60000))
+    await repo.createInTx(tx, {
+      task_id: event.targetRef,
+      start_time: p.started_at,
+      end_time: p.ended_at,
+      duration_minutes: duration,
+    })
+  }
+}
+
+/** Composition wiring (NOT a service method, SS-5): register the `'work'` session sub-type (into the SESSION registry,
+ *  persisted — guard re-registration) + the tasks `log_time` handler (into the EFFECT registry, in-memory). Call once
+ *  at the composition root with the SAME registries `SessionsService` + `TasksService` are built against. */
+export async function registerTasksTimer(deps: {
+  sessionRegistry: SessionRegistry
+  effectRegistry: EffectRegistry
+  db: DrizzleDb
+  deviceId: string
+}): Promise<void> {
+  try {
+    await deps.sessionRegistry.get('work') // resolves shipped ∪ persisted; throws SessionTypeNotFound if absent
+  } catch (err) {
+    if (!(err instanceof SessionTypeNotFound)) throw err // g2 F3: only register on genuine absence, not a DB error
+    await deps.sessionRegistry.register(WORK_SESSION_TYPE)
+  }
+  if (!deps.effectRegistry.resolve('log_time')) {
+    deps.effectRegistry.register('log_time', createLogTimeHandler(deps.db, deps.deviceId))
+  }
+}
+
+/** The four mutually-exclusive parent-module FKs (TK-2) → their cross-module type. ONE table drives BOTH the ≤1-parent
+ *  guard (`PARENT_MODULE_KEYS`) and the S7 aggregator axis (`parentOf`) — a 5th module added here is seen by both
+ *  (g2 F3: no second source of truth). `parent_task_id` is a separate (sub-task) axis. */
+const PARENT_MODULES = [
+  { key: 'project_id', type: 'project' },
+  { key: 'milestone_id', type: 'milestone' },
+  { key: 'course_id', type: 'course' },
+  { key: 'contact_id', type: 'contact' },
+] as const
+const PARENT_MODULE_KEYS = PARENT_MODULES.map((m) => m.key)
+
+/** S7 — the task's set parent-module FK → its cross-module ref, or `null` = standalone (G2). Reads the 4 FKs (the
+ *  aggregator mechanism, C5 — untouched); the ≤1-parent guard (create + update) guarantees at most one is set. */
+function parentOf(t: TaskRow): { type: ParentType; id: string } | null {
+  for (const m of PARENT_MODULES) {
+    const id = t[m.key]
+    if (id != null) return { type: m.type, id }
+  }
+  return null
+}
+
+/** Only an obligation may carry a recurrence rule (TK-7 / TAS-21). Enforced at EVERY write path (create/update/
+ *  setRecurrence), like the ≤1-parent guard — no stray inert rule on a standard task. Clearing to null is always ok. */
+function assertRecurrenceAllowed(kind: string | undefined, rule: string | null | undefined, taskId: string): void {
+  if (rule != null && kind !== 'obligation') throw new RecurrenceNotAllowedError(taskId)
+}
+
+/** Next occurrence (YYYY-MM-DD) STRICTLY after `fromYmd`, from an RFC-5545 RRULE (ADR-002:1160), via the canonical
+ *  `ical.js` parser (ADR-001:137). THREE channels (PLAN-S5 outcomes): a date ⇒ outcome 1 (spawn); `null` ⇒ outcome 2
+ *  (valid rule, exhausted — legitimate end, no spawn); THROWS ⇒ outcome 3 (invalid rule — RecurrenceRegenError). The
+ *  iterator yields DTSTART first, so we advance strictly past the anchor. */
+function nextOccurrence(rule: string, fromYmd: string): string | null {
+  const recur = ICAL.Recur.fromString(rule) // throws on an invalid rule → outcome 3
+  const iter = recur.iterator(ICAL.Time.fromDateString(fromYmd))
+  let occ: InstanceType<typeof ICAL.Time> | null = iter.next()
+  while (occ) {
+    // Build YYYY-MM-DD from the ICAL.Time's OWN calendar fields (month is 1-based) — NOT toJSDate()/toISOString(),
+    // which renders local-midnight in UTC and drifts one day early in any UTC-positive zone (g2 B1: silently wrong on
+    // Victor's BRT machine + UTC CI, which is exactly why the live gate can't see it).
+    const ymd = `${occ.year}-${pad2(occ.month)}-${pad2(occ.day)}`
+    if (ymd > fromYmd) return ymd
+    occ = iter.next() // null when exhausted → outcome 2
+  }
+  return null
+}
+
+const pad2 = (n: number): string => String(n).padStart(2, '0')
+
+/** Today as YYYY-MM-DD — the anchor fallback for a null `due_date` (BR-TK-S5-3). The UTC calendar day: the platform
+ *  convention for "the day of a timestamp" (`utcDay` below — habits' `clock`, finance, books, check-ins, purposes,
+ *  relationships; ADR-002:62 / `user_profile.timezone DEFAULT 'UTC'`). Re-pointed from a LOCAL day at S9 (§XXVIII):
+ *  the S5 local choice was a review-time decision, not doc-grounded, and made tasks the only local-day helper in core. */
+function todayYmd(): string {
+  return utcDay(Date.now())
+}
+
+/** The shared `STATUS` enum's TERMINAL set (`@vida/types` common.ts:32) — the platform convention: projects:71 ·
+ *  purposes:81 · sessions; projects intake G9 "archived = completed/cancelled". `on_hold` is NOT terminal (paused, still
+ *  owed). "Open" work = status ∉ this set (the S9 lane + the `open` list filter). */
+const TERMINAL_STATUSES: ReadonlySet<string> = new Set(['completed', 'cancelled'])
+
+// ---- S9: day/window helpers (pure; exported for direct unit test) ---------------
+/** Unix ms → the UTC calendar day `YYYY-MM-DD` — the platform's shipped convention for "the date" of a timestamp
+ *  (habits `clock`, finance, books, check-ins, purposes, relationships all derive a day as `toISOString().slice(0,10)`;
+ *  `cross-module-integration.md:70` writes `date(started_at)` for the same). Timezone-INDEPENDENT by construction. When
+ *  the designed `user_profile.timezone` (ADR-002:3381, unbuilt) lands, this is the one seam to re-point.
+ *  Precondition: a finite ms (`toISOString` throws RangeError on NaN/±Infinity) — the only caller passes a stored
+ *  `completed_at`, which is always a `Date.now()` stamp. */
+export function utcDay(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 10)
+}
+
+/** `YYYY-MM-DD` → Unix ms at UTC midnight — the moment a calendar date occupies in a `TimeRange` (the purposes/
+ *  relationships provider convention = the convention every `TimeRange` caller builds its bounds with). `null`/
+ *  `undefined` ⇒ `undefined`; a malformed string ⇒ `NaN` (callers test with `inWindow`, which rejects NaN). */
+function utcMidnightMs(ymd: string | null | undefined): number | undefined {
+  return ymd == null ? undefined : Date.parse(`${ymd}T00:00:00Z`)
+}
+
+/** Inclusive membership of a moment in a `TimeRange` (both ends inclusive); `undefined`/`NaN` ⇒ false (purposes `:900`). */
+function inWindow(ms: number | undefined, range: TimeRange): boolean {
+  return ms !== undefined && !Number.isNaN(ms) && ms >= range.start && ms <= range.end
+}
+
+// ---- S6: measurability helpers (pure; exported for direct unit test) --------
+/** The task's effective `binding_mode` (TAS-25). NULL ⇒ the task's natural mode = `event-trigger` (completion is the
+ *  state change): `migrations/015_tasks.ts:21` "NULL ⇒ derive-natural" ∘ `delivery/interpretation.md:33`
+ *  "binding_mode='event-trigger' (completion)". Mirrors the per-module NULL-natural convention (habits=event-trigger,
+ *  routines=derived-pull). NOTE: in M1 `getTaskProgress` only observes the `=== 'derived-pull'` branch, so the
+ *  `event-trigger` default is forward-looking (it documents the grounded natural mode for a future consumer that keys
+ *  on it) — directly unit-tested below so the default can't silently drift. */
+export function resolveBindingMode(task: Pick<TaskRow, 'binding_mode'>): BindingMode {
+  return task.binding_mode ?? 'event-trigger'
+}
+
+/** A childless task's own measurable leaf = its completion as a `milestone` (BR-TK-S2-4 — the only leaf signal in M1;
+ *  a task carries no quantitative/rate/qualitative value inputs, those home to value-bearing entities per XCU-15). The
+ *  declared `measurement_kind` governs how the value composes UP a ladder, not the leaf. The `milestone` branch of
+ *  `normalize` yields 0|1; the return mirrors the engine's `number | null` contract (it does not assert non-null, so no
+ *  dead `?? 0` default) — `getTaskProgress` already handles `null`. */
+export function deriveTaskLeaf(task: Pick<TaskRow, 'status'>): number | null {
+  return normalize({ kind: 'milestone', done: task.status === 'completed' })
+}
+
+// ---- S7: aggregation constants ---------------------------------------------
+const STANDALONE = 'standalone'
+/** Platform-independent string order (g2 F5): plain codepoint compare — `localeCompare` is ICU/locale-dependent and
+ *  differs between web (full ICU), Node, and RN/Hermes, which would reorder the ② render per platform. */
+const byCodepoint = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
+
+export function createTasksService(deps: TasksServiceDeps): TasksService {
+  const { db, deviceId, effects, sessions, providers, spaces, notes, views } = deps
+
+  // S3 — completion fan-out catalogue (TAS-19). The KEYED/ADDITIVE subset is PUSHED through the rail; the two
+  // PROJECTION effects are realized by their class, not a push (PLAN-S3 D-S3-1):
+  //   • award_xp (additive) — Tasks IS an economy feeder (framework §4 L242; TAS-20), unlike Projects (C-E2).
+  //   • contribute_purpose_metric (keyed, TAS-26) — dormant: no M7 purpose handler at M1 (guard C2).
+  //   • emit_measurement_signal (keyed) — completion advances the measure (binding_mode='event-trigger', TAS-06).
+  //   • surface_journal (projection) — NOT pushed; realized by the S9 pull registry (rail no-ops projections, BR-6).
+  //   • surface_calendar (projection) — D1: a valid EffectType but Tasks does NOT emit it (calendar = read-seam).
+  const COMPLETION_EFFECTS: readonly EffectType[] = [
+    'award_xp',
+    'contribute_purpose_metric',
+    'emit_measurement_signal',
+  ]
+  // The projects completion-fan-out pattern (services/projects/service.ts:72). DORMANT without a wired rail/handler;
+  // post-commit, failure-isolated — the completed task stands even if a handler throws. Rail-idempotent via
+  // effect_event_id = derive(taskId‖transition‖type) (PLAN-S3 D-S3-2 — one task, one completion grant).
+  async function fanOutCompletion(taskId: string, transition: string): Promise<void> {
+    if (!effects) return // M1 default: no rail wired → dormant
+    for (const effectType of COMPLETION_EFFECTS) {
+      if (!effects.registry.resolve(effectType)) continue // dormant guard: no handler ⇒ skip (would throw NoEffectHandler)
+      try {
+        await effects.rail.applyEffect({ subjectNaturalKey: taskId, transition, effectType, targetRef: taskId })
+      } catch {
+        // post-commit, failure-isolated: the completed task stands; a handler throw is non-fatal.
+      }
+    }
+  }
+
+  // `tasks` has deleted_at → softDelete:true. `task_time_logs` is a ledger (no deleted_at) → hard delete.
+  const tasksRepo = createRepository(db, tasks, { deviceId, softDelete: true, encryptedFields: [] })
+  const timeLogsRepo = createRepository(db, taskTimeLogs, { deviceId, softDelete: false, encryptedFields: [] })
+  // S8 — READ-ONLY readers over the foundation tag tables (the notes/knowledge/flashcards precedent); never written here.
+  const { tagsRepo, entityTagRepo } = createTagReaders(db, deviceId)
+
+  /** Reject if more than one parent-module FK is non-null (TK-2 / TAS-34). */
+  function assertSingleParent(row: Record<string, unknown>): void {
+    const set = PARENT_MODULE_KEYS.filter((k) => row[k] != null)
+    if (set.length > 1) {
+      throw new MultipleParentError(
+        `A task may set at most one parent module; got: ${set.join(', ')}`,
+      )
+    }
+  }
+
+  // ---- S1: tasks CRUD + queries --------------------------------------------
+  async function createTask(input: CreateTaskInput): Promise<TaskRow> {
+    const v = CreateTaskSchema.parse(input)
+    assertSingleParent(v)
+    assertRecurrenceAllowed(v.kind, v.recurrence_rule, '(new task)') // N1 — recurrence_rule ⇒ obligation (TK-7)
+    // Backfill NN-default cols (create() echoes the input row, not SQL defaults).
+    return tasksRepo.create({
+      project_id: v.project_id ?? null,
+      milestone_id: v.milestone_id ?? null,
+      course_id: v.course_id ?? null,
+      contact_id: v.contact_id ?? null,
+      parent_task_id: v.parent_task_id ?? null,
+      title: v.title,
+      description: v.description ?? null,
+      status: v.status ?? 'not_started',
+      priority: v.priority ?? 'medium',
+      difficulty: v.difficulty !== undefined ? v.difficulty : 'medium', // nullable w/ SQL default 'medium'
+      due_date: v.due_date ?? null,
+      scheduled_date: v.scheduled_date ?? null,
+      estimated_minutes: v.estimated_minutes ?? null,
+      actual_minutes: null, // derived via log_time (S4); never create-set
+      completed_at: null, // set on completion (S3)
+      kind: v.kind ?? 'standard',
+      recurrence_rule: v.recurrence_rule ?? null, // obligations only (enforced S5)
+      measurement_kind: v.measurement_kind ?? 'milestone',
+      binding_mode: v.binding_mode ?? null, // NULL ⇒ derive-natural
+      nesting_weight: v.nesting_weight ?? null, // NULL ⇒ equal-weight (M4)
+      sort_order: v.sort_order ?? 0,
+      deleted_at: null,
+    } satisfies CreateInput<typeof tasks>)
+  }
+
+  async function updateTask(id: string, patch: UpdateTaskInput): Promise<TaskRow> {
+    const v = UpdateTaskSchema.parse(patch)
+    const existing = await tasksRepo.findById(id)
+    if (!existing) throw new TaskNotFoundError(id)
+
+    // Re-enforce ≤1-parent on the MERGED parent set (existing ⊕ patch; a patch may null one out).
+    const merged = { ...(existing as Record<string, unknown>) }
+    for (const k of PARENT_MODULE_KEYS) {
+      if (v[k] !== undefined) merged[k] = v[k]
+    }
+    assertSingleParent(merged)
+    // N1 — recurrence_rule ⇒ obligation, on the MERGED kind/rule (a patch may change either).
+    const mergedKind = (v.kind ?? existing.kind) as string
+    const mergedRule = v.recurrence_rule !== undefined ? v.recurrence_rule : existing.recurrence_rule
+    assertRecurrenceAllowed(mergedKind, mergedRule, id)
+
+    const data = {
+      ...(v.title !== undefined ? { title: v.title } : {}),
+      ...(v.description !== undefined ? { description: v.description ?? null } : {}),
+      ...(v.project_id !== undefined ? { project_id: v.project_id ?? null } : {}),
+      ...(v.milestone_id !== undefined ? { milestone_id: v.milestone_id ?? null } : {}),
+      ...(v.course_id !== undefined ? { course_id: v.course_id ?? null } : {}),
+      ...(v.contact_id !== undefined ? { contact_id: v.contact_id ?? null } : {}),
+      ...(v.parent_task_id !== undefined ? { parent_task_id: v.parent_task_id ?? null } : {}),
+      ...(v.status !== undefined ? { status: v.status } : {}),
+      ...(v.priority !== undefined ? { priority: v.priority } : {}),
+      ...(v.difficulty !== undefined ? { difficulty: v.difficulty } : {}),
+      ...(v.due_date !== undefined ? { due_date: v.due_date ?? null } : {}),
+      ...(v.scheduled_date !== undefined ? { scheduled_date: v.scheduled_date ?? null } : {}),
+      ...(v.estimated_minutes !== undefined ? { estimated_minutes: v.estimated_minutes ?? null } : {}),
+      ...(v.kind !== undefined ? { kind: v.kind } : {}),
+      ...(v.recurrence_rule !== undefined ? { recurrence_rule: v.recurrence_rule ?? null } : {}),
+      ...(v.measurement_kind !== undefined ? { measurement_kind: v.measurement_kind } : {}),
+      ...(v.binding_mode !== undefined ? { binding_mode: v.binding_mode ?? null } : {}),
+      ...(v.nesting_weight !== undefined ? { nesting_weight: v.nesting_weight ?? null } : {}),
+      ...(v.sort_order !== undefined ? { sort_order: v.sort_order } : {}),
+    }
+    // No-op patch ⇒ skip the write (avoid a wasted updated_at bump + sync_queue row).
+    // NOTE: S1 is a plain column writer — `actual_minutes` (S4) and `completed_at`/completion effects (S3) are NOT here.
+    if (Object.keys(data).length === 0) return existing
+    return tasksRepo.update(id, data)
+  }
+
+  async function softDeleteTask(id: string): Promise<void> {
+    if (!(await tasksRepo.findById(id))) throw new TaskNotFoundError(id)
+    // App-layer cascade (no FK, TK-4): direct sub-tasks (single level) + time_logs of the task AND its sub-tasks.
+    const subtasks = await tasksRepo.findWhere(
+      and(eq(tasks.parent_task_id, id), isNull(tasks.deleted_at))!,
+    )
+    for (const sub of subtasks) {
+      await hardDeleteTimeLogs(sub.id)
+      await tasksRepo.delete(sub.id) // soft delete
+    }
+    await hardDeleteTimeLogs(id)
+    await tasksRepo.delete(id) // soft delete
+  }
+
+  /** Hard-delete a task's time_logs ledger (no deleted_at — TK-4 hard cascade). */
+  async function hardDeleteTimeLogs(taskId: string): Promise<void> {
+    const logs = await timeLogsRepo.findWhere(eq(taskTimeLogs.task_id, taskId))
+    for (const log of logs) {
+      await timeLogsRepo.hardDelete(log.id)
+    }
+  }
+
+  async function getTask(id: string): Promise<TaskRow | null> {
+    return tasksRepo.findById(id)
+  }
+
+  async function listTasks(filter?: ListTasksFilter): Promise<TaskRow[]> {
+    const f = ListTasksFilterSchema.parse(filter)
+    // findAll applies the soft-delete filter (findWhere does not) → filter in JS.
+    const all = await tasksRepo.findAll()
+    if (!f) return all
+    return all.filter((t) => {
+      if (f.status !== undefined && t.status !== f.status) return false
+      if (f.priority !== undefined && t.priority !== f.priority) return false
+      if (f.parent_task_id !== undefined && t.parent_task_id !== f.parent_task_id) return false
+      if (f.project_id !== undefined && t.project_id !== f.project_id) return false
+      if (f.completed !== undefined) {
+        const isCompleted = t.status === 'completed'
+        if (isCompleted !== f.completed) return false
+      }
+      if (f.due_before != null) {
+        if (t.due_date == null || t.due_date > f.due_before) return false
+      }
+      if (f.kind !== undefined && t.kind !== f.kind) return false // S8 — kind-bound presets (TAS-30)
+      // S9 — open (non-terminal) work: status ∉ {completed, cancelled} (the platform TERMINAL convention)
+      if (f.open !== undefined && TERMINAL_STATUSES.has(t.status) === f.open) return false
+      return true
+    })
+  }
+
+  // ---- S2: sub-tasks + M4 rollup -------------------------------------------
+  async function addSubtask(parentId: string, input: AddSubtaskInput): Promise<TaskRow> {
+    const parent = await tasksRepo.findById(parentId)
+    if (!parent) throw new TaskNotFoundError(parentId)
+    // Single-level nesting (TK-3): a sub-task may not have sub-tasks of its own.
+    if (parent.parent_task_id != null) throw new SubtaskNestingError(parentId)
+    // Delegate to the S1 create path — the ≤1-parent-module guard + NN-default backfill still apply.
+    return createTask({ ...input, parent_task_id: parentId })
+  }
+
+  async function getSubtasks(parentId: string): Promise<TaskRow[]> {
+    // findWhere skips the soft-delete filter → pass isNull(deleted_at) explicitly.
+    const rows = await tasksRepo.findWhere(
+      and(eq(tasks.parent_task_id, parentId), isNull(tasks.deleted_at))!,
+    )
+    return rows.sort((a, b) => a.sort_order - b.sort_order || a.created_at - b.created_at)
+  }
+
+  /** Sub-task rollup (TAS-10) — DERIVED on read (no stored progress, TK-11/M3). A task's measurable leaf signal in
+   *  M1 is completion (binary milestone); richer per-kind task measures are S6. Completing a parent never
+   *  force-completes children — this is a read-only display derivation. */
+  async function getRollup(parentId: string): Promise<TaskRollup> {
+    const children = await getSubtasks(parentId)
+    const done = children.filter((c) => c.status === 'completed').length
+    const progress = rollup(
+      children.map((c) => ({
+        progress: normalize({ kind: 'milestone', done: c.status === 'completed' }),
+        weight: c.nesting_weight,
+      })),
+    )
+    return { done, total: children.length, progress }
+  }
+
+  // ---- S3: completion + effect fan-out -------------------------------------
+  // completeTask/reopenTask are `completed_at`'s SOLE writers (TK-6) — they write via the repo primitive, NOT the
+  // service `updateTask` (whose UpdateTaskInput has no `completed_at` and whose BR-TK-S1-5 contract forbids it).
+  async function completeTask(id: string): Promise<TaskRow> {
+    const existing = await tasksRepo.findById(id)
+    if (!existing) throw new TaskNotFoundError(id)
+    const wasCompleted = existing.status === 'completed'
+    const updated = await tasksRepo.update(id, { status: 'completed', completed_at: Date.now() })
+    // Post-commit fan-out, only on the not-completed → completed transition (a plain re-complete skips it; PLAN-S3
+    // D-S3-2 guard (a)). The rail dedup is the backstop on the reopen→re-complete path (guard (b)).
+    if (!wasCompleted) await fanOutCompletion(id, 'task_completed')
+    // S5 — obligation regeneration (TAS-22): a FRESH completion of an obligation WITH a rule spawns the next
+    // occurrence. The completion above is already durable (TAS-23 complete-but-flag); a regen failure throws AFTER.
+    // NB: a reopen→re-complete is a fresh transition (wasCompleted=false) so it regenerates again — a known M1 edge
+    // (BR-TK-S5-7); there is no spawn-dedup ledger. Standard tasks + ruleless obligations never regenerate.
+    if (!wasCompleted && existing.kind === 'obligation' && existing.recurrence_rule != null) {
+      await regenerateObligation(existing)
+    }
+    return updated
+  }
+
+  /** Spawn the next occurrence of a completed obligation (TAS-22). Outcome 1 ⇒ a new task; outcome 2 (exhausted) ⇒
+   *  no-op; outcome 3 (invalid rule) ⇒ `RecurrenceRegenError` (the completion stands — TAS-23). */
+  async function regenerateObligation(src: TaskRow): Promise<void> {
+    const anchor = src.due_date ?? todayYmd()
+    let next: string | null
+    try {
+      next = nextOccurrence(src.recurrence_rule!, anchor) // src is an obligation with a rule (caller-guarded)
+    } catch {
+      throw new RecurrenceRegenError(src.id, `unparseable recurrence rule: ${src.recurrence_rule}`)
+    }
+    if (next == null) return // outcome 2 — valid rule, no future instance: the recurrence legitimately ended
+    // Outcome 1 — spawn a fresh occurrence (carry-over table, PLAN-S5 R2). createTask resets status/completed_at/
+    // actual_minutes (NN-backfill) and re-checks the ≤1-parent + recurrence-allowed guards. parent_task_id is NOT
+    // carried — recurrence is top-level only.
+    await createTask({
+      title: src.title,
+      description: src.description,
+      project_id: src.project_id,
+      milestone_id: src.milestone_id,
+      course_id: src.course_id,
+      contact_id: src.contact_id,
+      priority: src.priority,
+      difficulty: src.difficulty,
+      due_date: next,
+      estimated_minutes: src.estimated_minutes,
+      kind: 'obligation',
+      recurrence_rule: src.recurrence_rule,
+      measurement_kind: src.measurement_kind,
+      binding_mode: src.binding_mode,
+      nesting_weight: src.nesting_weight,
+      sort_order: src.sort_order,
+    })
+  }
+
+  async function reopenTask(id: string): Promise<TaskRow> {
+    const existing = await tasksRepo.findById(id)
+    if (!existing) throw new TaskNotFoundError(id)
+    // No-op guard: already non-completed with no timestamp ⇒ skip the write (avoid a wasted updated_at/sync bump).
+    if (existing.status !== 'completed' && existing.completed_at == null) return existing
+    // Reset to the neutral non-completed state (PLAN-S3 R3 — 'not_started' over 'in_progress': reopen conveys no
+    // progress info; the user re-sets it). TAS-07 mandates only clearing completed_at. Fires NO effects.
+    return tasksRepo.update(id, { status: 'not_started', completed_at: null })
+  }
+
+  // ---- S5: obligations + recurrence ----------------------------------------
+  /** Attach/clear an obligation's recurrence rule (TAS-21). Obligation-only (TK-7) — a non-obligation ⇒
+   *  `RecurrenceNotAllowedError`; `null` clears it (the obligation then behaves standard). */
+  async function setRecurrence(taskId: string, rule: string | null): Promise<TaskRow> {
+    const existing = await tasksRepo.findById(taskId)
+    if (!existing) throw new TaskNotFoundError(taskId)
+    assertRecurrenceAllowed(existing.kind, rule, taskId)
+    return tasksRepo.update(taskId, { recurrence_rule: rule })
+  }
+
+  // ---- S4: timer + log_time + actual_minutes -------------------------------
+  // The timer is a `'work'` sessions sub-type referencing the task (G-S1); on stop, tasks fires `log_time` through the
+  // rail (TAS-16 "tasks service (emit)"), and the tasks-owned handler writes the kept `task_time_logs` ledger
+  // (G-S4 — never a direct write). `actual_minutes` derives via getActualMinutes (TAS-15). The `log_time` handler is
+  // tasks' OWN (registerTasksTimer), so these methods assert the deps are wired (fail-loud, not S3-dormant).
+  function assertTimerWired(): { sessions: NonNullable<typeof sessions>; effects: NonNullable<typeof effects> } {
+    if (!sessions || !effects) throw new TimerNotWiredError()
+    return { sessions, effects }
+  }
+
+  async function startTimer(taskId: string): Promise<SessionRow> {
+    const t = assertTimerWired()
+    if (!(await tasksRepo.findById(taskId))) throw new TaskNotFoundError(taskId)
+    // Running-timer guard (TAS-12): the running state lives only in the open session (no running ledger row).
+    if (await t.sessions.findOpenSessionForEntity('work', 'task', taskId)) {
+      throw new TimerAlreadyRunningError(taskId)
+    }
+    const created = await t.sessions.createSession({
+      sub_type: 'work',
+      scheduling_mode: 'ad_hoc',
+      status: 'in_progress',
+      started_at: Date.now(),
+    })
+    await t.sessions.attach(created.session.id, 'task', taskId, 'instance')
+    return created.session
+  }
+
+  async function stopTimer(sessionId: string): Promise<void> {
+    const t = assertTimerWired()
+    const found = await t.sessions.getSession(sessionId)
+    if (!found || found.session.sub_type !== 'work') throw new TimerNotFoundError(sessionId)
+    if (found.session.status === 'completed') return // idempotent no-op
+    // Resolve the attached task (a `'work'` timer is always task-attached via startTimer).
+    const targets = await t.sessions.resolveTargets(sessionId)
+    const taskTarget = targets.find((x) => x.entityType === 'task')
+    if (!taskTarget) throw new TimerNotFoundError(sessionId)
+    const startedAt = found.session.started_at ?? found.session.created_at
+    const endedAt = Date.now()
+    // FIRE-FIRST, COMMIT-LAST (lifecycle.ts discipline): write the ledger via the rail, THEN complete the session.
+    // A throw/crash between leaves the session in_progress → a re-stopTimer retries; the rail dedups the written row.
+    await t.effects.rail.applyEffect({
+      subjectNaturalKey: sessionId,
+      transition: 'time_logged',
+      effectType: 'log_time',
+      targetRef: taskTarget.entityId,
+      payload: { started_at: startedAt, ended_at: endedAt },
+    })
+    await t.sessions.completeSession(sessionId) // 'work' declares effects:[] → fires nothing here
+  }
+
+  async function getActualMinutes(taskId: string): Promise<number> {
+    const logs = await timeLogsRepo.findWhere(eq(taskTimeLogs.task_id, taskId))
+    return logs.reduce((sum, l) => sum + (l.duration_minutes ?? 0), 0)
+  }
+
+  // ---- S6: measurability — the pursuable progress() contract (XCU-08/BR-8) --
+  /** A task's own progress ∈ [0,1] | null, DERIVED on read honoring the axes (TAS-25). Faithful to the Projects
+   *  resolver (`projects/service.ts:465-530`): tasks has NO stored override column (C6) so it always derives —
+   *  a parent's measure is its M4 sub-task rollup (reuse `getRollup`); a childless `derived-pull` task yields `null`
+   *  (its measure is source-fed, not completion-fed — no task↔source binding exists in M1, so nothing to read, never
+   *  fabricated per BR-2); any other childless task yields the milestone-from-completion leaf. Not an advertised M5
+   *  source (C1 — tasks holds no MeasurementSourceRegistry). A missing/soft-deleted id ⇒ `TaskNotFoundError` (NOT
+   *  `null`, which is the distinct *unmeasured* signal). */
+  async function getTaskProgress(id: string): Promise<number | null> {
+    const task = await tasksRepo.findById(id) // soft-delete filtered
+    if (!task) throw new TaskNotFoundError(id)
+    const roll = await getRollup(id) // single children fetch; total>0 ⇒ this is a parent
+    if (roll.total > 0) return roll.progress
+    if (resolveBindingMode(task) === 'derived-pull') return null // source read deferred (no binding in M1)
+    return deriveTaskLeaf(task)
+  }
+
+  // ---- S7: aggregation — R7 fan-out over the SHARED ViewProviderRegistry -----
+  /** The cross-module aggregated view (TAS-05) over OWN tasks only (TK-9/C5). Parents are resolved through the shared
+   *  `foundation/views` seam — `providers.get(type).list({ predicates: { id } })` + a DEFENSIVE `row.id` match, so it
+   *  is correct whether or not a provider honours the (deferred) predicate grammar (ADR-007:67-68 — an unrecognized
+   *  predicate is ignored per type) — ONE lookup per distinct parent, never per task. `id` is the one universal field
+   *  read in ① (ADR-002 PK); the row is attached OPAQUE for the ② render (SPLIT). Per-group degradation (TAS-32 /
+   *  BR-11 / BR-12): no registry, no provider for the type, no matching row, or a throw ⇒ THAT group is `degraded`
+   *  (fallback label, tasks still present); the method never rejects for a source outage. The standalone (Inbox)
+   *  group is BR-10's "ungrouped bucket — never dropped" (G2), always last. `parent_type` / `status` are own-table
+   *  partitions with NO provider call. NOT `ViewEngine.resolve` (that is ViewRow-driven, single-field grouping —
+   *  not a 4-FK partition + parent lookup); tasks consumes the registry seam, not the engine. */
+  async function getAggregatedTasks(grouping: AggGrouping): Promise<AggregatedTasks> {
+    const g = AggGroupingSchema.parse(grouping)
+    // GRAIN = TOP-LEVEL tasks (BR-TK-S7-8, g2 F1): a sub-task is a decomposition of its parent task (TK-3, S2-owned —
+    // reachable via getSubtasks/getRollup), not an independent cross-module item. A child with no module FK of its
+    // own would otherwise be misrouted to the Inbox as "standalone". Recurrence (S5) is likewise top-level only.
+    const all = (await listTasks()).filter((t) => t.parent_task_id == null) // soft-delete filtered
+    const buckets = new Map<string, AggregatedGroup>()
+    const put = (key: string, label: string, parent: AggregatedGroup['parent'], t: TaskRow): void => {
+      const b = buckets.get(key) ?? { key, label, parent, parentRow: null, state: 'ok', tasks: [] }
+      b.tasks.push(t)
+      buckets.set(key, b)
+    }
+    for (const t of all) {
+      const p = parentOf(t)
+      if (g.by === 'status') put(`status:${t.status}`, t.status, null, t)
+      else if (p === null) put(STANDALONE, STANDALONE, null, t) // the ungrouped bucket (BR-10), both parent groupings
+      else if (g.by === 'parent_type') put(`parent_type:${p.type}`, p.type, null, t)
+      else put(`${p.type}:${p.id}`, `${p.type}:${p.id}`, p, t)
+    }
+    if (g.by === 'parent') {
+      // Resolve each DISTINCT parent through the shared seam — in PARALLEL (each lookup is independent and
+      // self-contained; one latency instead of N serial round-trips, g2 F8). EVERY failure path — a throwing
+      // registry `get` (g2 F6), no provider (BR-11), a throwing `list` (BR-12), no matching row — is caught PER
+      // GROUP: the method never rejects for a source outage (TAS-32).
+      await Promise.all(
+        [...buckets.values()].map(async (b) => {
+          const parent = b.parent
+          if (parent === null) return // standalone — no provider involved, always ok
+          try {
+            const provider = providers?.get(parent.type)
+            if (!provider) {
+              b.state = 'degraded' // BR-11: no provider for the type → declared, never dropped
+              return
+            }
+            const rows = await provider.list({ predicates: { id: parent.id } })
+            const match = rows.find((r) => (r as { id?: unknown }).id === parent.id)
+            // A matched row is an object (only an object can carry an `id`); anything else ⇒ degraded, never a wrong
+            // parent. Stored OPAQUE (`object`) for the ② render — ① reads no other field.
+            if (typeof match === 'object' && match !== null) b.parentRow = match
+            else b.state = 'degraded'
+          } catch {
+            b.state = 'degraded' // BR-12: a down source degrades ITS group only
+          }
+        }),
+      )
+    }
+    // Stable, PLATFORM-INDEPENDENT order: standalone LAST, the rest by codepoint key (g2 F5); tasks within a group by
+    // sort_order then created_at — the getSubtasks order (findAll issues no ORDER BY; rowid order is not stable across
+    // devices or query plans, g2 F2).
+    const groups = [...buckets.values()].sort((a, b) =>
+      a.key === STANDALONE ? 1 : b.key === STANDALONE ? -1 : byCodepoint(a.key, b.key),
+    )
+    for (const grp of groups) grp.tasks.sort((a, b) => a.sort_order - b.sort_order || a.created_at - b.created_at)
+    return { groups }
+  }
+
+  // ---- S8: tags (TAS-27 · ADR-006 SP1/SP2) ----------------------------------
+  // WRITES delegate to SpacesService (idempotent BR-14 / resolve-then-soft-delete BR-15; `entity_type` validated
+  // against the registry, where `'task'` is pre-seeded). `tagEntity` blind-inserts an unresolved tag_id, so the CREATE
+  // path guards a LIVE tag (the flashcards precedent — `findById` is soft-delete filtered); the remove path stays
+  // unguarded (removing creates no orphan; a soft-deleted tag must stay cleanable). The READ is a raw repo scan.
+  async function requireTask(id: string): Promise<TaskRow> {
+    const t = await tasksRepo.findById(id)
+    if (!t) throw new TaskNotFoundError(id)
+    return t
+  }
+
+  async function tagTask(taskId: string, tagId: string) {
+    await requireTask(taskId)
+    if (!spaces) throw new TasksDepNotWiredError('spaces')
+    if ((await tagsRepo.findById(tagId)) == null) throw new TagNotFound(tagId)
+    return spaces.tagEntity(tagId, TASK_ENTITY_TYPE, taskId)
+  }
+
+  async function untagTask(taskId: string, tagId: string): Promise<void> {
+    await requireTask(taskId)
+    if (!spaces) throw new TasksDepNotWiredError('spaces')
+    await spaces.untagEntity(tagId, TASK_ENTITY_TYPE, taskId)
+  }
+
+  async function getTaskTags(taskId: string) {
+    // findWhere skips the soft-delete filter → hand-appended (BR-TK-S1-4). An unknown id ⇒ [] (a read, never a throw).
+    return entityTagRepo.findWhere(
+      and(eq(entityTags.entity_type, TASK_ENTITY_TYPE), eq(entityTags.entity_id, taskId), isNull(entityTags.deleted_at))!,
+    )
+  }
+
+  // ---- S8: the task note (TAS-31) --------------------------------------------
+  // ONE guiding page per task: `pages.type='task_note'` (the dedicated PAGE_TYPE member), `entity_type='task'`, reached
+  // through the Notes contract (`ensureEntityNote` = idempotent find-or-create; the seed is creation-only — a renamed
+  // task does not retitle its note). Other pages/attachments are the ②'s to manage via NotesService directly.
+  async function getTaskNote(taskId: string) {
+    const task = await requireTask(taskId)
+    if (!notes) throw new TasksDepNotWiredError('notes')
+    return notes.ensureEntityNote('task_note', TASK_ENTITY_TYPE, taskId, { title: task.title })
+  }
+
+  // ---- S8: saved views (TAS-28, cite-level · ADR-007 V1/V2/§3.5) -------------
+  // A task view IS a `views` row whose filter selects EXACTLY ['task'] (§3.5) — tasks stamps it, never the caller.
+  // `id` ⇒ REPLACE the config (name · layout · filter · grouping · sort written in full; omitted ⇒ cleared); `space_id`
+  // is ownership, changed only when given. A mixed or foreign view is never rewritten (its one JSON `filter` column
+  // would lose the other types) ⇒ TaskViewNotFoundError.
+  async function saveView(input: SaveTaskViewInput): Promise<ViewRow> {
+    const v = SaveTaskViewSchema.parse(input)
+    if (!views) throw new TasksDepNotWiredError('views')
+    const filter: ViewFilter = { entity_types: [TASK_ENTITY_TYPE] }
+    if (v.tags !== undefined) filter.tags = v.tags
+    if (v.predicates !== undefined) filter.predicates = v.predicates
+    if (v.id === undefined) {
+      return views.createView({
+        space_id: v.space_id ?? null,
+        name: v.name,
+        layout: v.layout,
+        filter,
+        grouping: v.grouping ?? null,
+        sort: v.sort ?? null,
+      })
+    }
+    let existing: ViewRow
+    try {
+      existing = await views.getView(v.id) // required: repo.update on a missing row throws a generic Error
+    } catch (err) {
+      if (err instanceof ViewNotFound) throw new TaskViewNotFoundError(v.id)
+      throw err
+    }
+    if (!isTaskView(existing)) throw new TaskViewNotFoundError(v.id)
+    return views.updateView(v.id, {
+      name: v.name,
+      layout: v.layout,
+      filter,
+      grouping: v.grouping ?? null,
+      sort: v.sort ?? null,
+      ...(v.space_id !== undefined ? { space_id: v.space_id } : {}),
+    })
+  }
+
+  async function listViews(): Promise<ViewRow[]> {
+    if (!views) throw new TasksDepNotWiredError('views')
+    return (await views.listViews()).filter(isTaskView) // substrate order (created_at, id)
+  }
+
+  // ---- S9: the Journal `/summary` set + the SS-7 due-bucket (the ① closer) ----
+  // Journal = PULL (ADR-004 §3.2.5: `surface_journal` is a projection — "writes no row, pull-aggregated at render");
+  // S3 pushes nothing for it. The CONTENT is the governing doc's row verbatim (cross-module-integration.md §2:68 —
+  // "Tasks completed or due on the date: title, status, priority | tasks WHERE due_date = ? OR completed on date"),
+  // with `contract.md:32` adding `scheduled_date` to "due". A SET (every row, no grain filter, no exclusion clause):
+  // a task completed-on AND due-on the date is one member with both flags. Never throws for data — an idle or
+  // malformed `date` matches nothing (the shipped providers validate nothing either).
+  async function getDayTasksSummary(date: string): Promise<TasksDaySummaryItem[]> {
+    const all = await listTasks() // soft-delete filtered (findAll)
+    const items: Array<TasksDaySummaryItem & { sort_order: number; created_at: number }> = []
+    for (const t of all) {
+      const completedToday = t.completed_at != null && utcDay(t.completed_at) === date
+      const dueToday = t.due_date === date || t.scheduled_date === date
+      if (!completedToday && !dueToday) continue
+      items.push({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        completedToday,
+        dueToday,
+        sort_order: t.sort_order,
+        created_at: t.created_at,
+      })
+    }
+    // Deterministic, platform-independent order (the S7 lesson): sort_order, created_at, then id codepoint.
+    items.sort((a, b) => a.sort_order - b.sort_order || a.created_at - b.created_at || byCodepoint(a.id, b.id))
+    return items.map(({ sort_order: _s, created_at: _c, ...item }) => item)
+  }
+
+  // The SS-7 lane producer (sessions intake G2-shape: "a module-owned due-bucket resolved LIVE by its owner …
+  // hard_deadline?"). A task is due work in the window when its `due_date` (the deadline, G6) OR its `scheduled_date`
+  // ("plan to work on it — drives Today/Calendar", G6) falls in it — the calendar is the dueIn aggregator (IA §4) and
+  // surfaces BOTH dates (TAS-19 `surface_calendar (due/scheduled)`). OPEN tasks only: the agenda is the FORWARD half,
+  // "what's due" (JR-5); the shipped relationships lane skips completed reminders the same way. `DueItem` carries no
+  // position field — consumers place by their own range query (Journals: one day) or by `hard_deadline` (Calendar).
+  // Calendar dates convert at UTC midnight (the purposes/relationships convention = how every caller builds bounds).
+  // Never throws for data; a `NaN` never reaches the payload.
+  async function getDueReminders(range: TimeRange): Promise<DueItem[]> {
+    const all = await listTasks() // soft-delete filtered
+    const picked: Array<{ item: DueItem; sort_order: number; created_at: number; id: string }> = []
+    for (const t of all) {
+      // OPEN = non-terminal (the platform TERMINAL convention: completed | cancelled — projects/purposes/sessions,
+      // projects intake G9). `on_hold` stays due work (paused, still owed).
+      if (TERMINAL_STATUSES.has(t.status)) continue // not due work (the forward half)
+      const dueMs = utcMidnightMs(t.due_date)
+      const schedMs = utcMidnightMs(t.scheduled_date)
+      if (!inWindow(dueMs, range) && !inWindow(schedMs, range)) continue
+      const hardDeadline = dueMs !== undefined && !Number.isNaN(dueMs) ? dueMs : undefined
+      picked.push({
+        item: {
+          source_module: 'tasks',
+          ref_id: t.id,
+          label: t.title,
+          est_minutes: t.estimated_minutes ?? 0,
+          urgency: 0, // no urgency algorithm at M1 — the deferred G5 placement design-pass (ADR-004 §3.3; sessions:729)
+          ...(hardDeadline !== undefined ? { hard_deadline: hardDeadline } : {}),
+        },
+        sort_order: t.sort_order,
+        created_at: t.created_at,
+        id: t.id,
+      })
+    }
+    // A TOTAL, deterministic order (sessions.dueIn concatenates lanes unsorted): deadline ascending with NO deadline
+    // LAST so dated work leads (relationships `:561` coerces an absent deadline to 0 = first; tasks places it last),
+    // then sort_order, created_at, id codepoint.
+    picked.sort((a, b) => {
+      const da = a.item.hard_deadline ?? Number.POSITIVE_INFINITY
+      const db = b.item.hard_deadline ?? Number.POSITIVE_INFINITY
+      // Two no-deadline items: ∞ − ∞ = NaN, which is falsy ⇒ `||` falls through to the next tier (a tie, as intended).
+      return da - db || a.sort_order - b.sort_order || a.created_at - b.created_at || byCodepoint(a.id, b.id)
+    })
+    return picked.map((p) => p.item)
+  }
+
+  return {
+    createTask,
+    updateTask,
+    softDeleteTask,
+    getTask,
+    listTasks,
+    addSubtask,
+    getSubtasks,
+    getRollup,
+    completeTask,
+    reopenTask,
+    startTimer,
+    stopTimer,
+    getActualMinutes,
+    setRecurrence,
+    getTaskProgress,
+    getAggregatedTasks,
+    tagTask,
+    untagTask,
+    getTaskTags,
+    getTaskNote,
+    saveView,
+    listViews,
+    getDayTasksSummary,
+    getDueReminders,
+  }
+}
+
+// ============================================================================
+// S8 — module-level helpers + the tasks ReadProvider (XCU-07/08) + the preset data (TAS-30)
+// ============================================================================
+
+const TASK_ENTITY_TYPE = 'task'
+
+/** Read-only readers over the foundation tag tables (M1.0 empty-[E] pass-through; `softDelete:true` so `findById`/
+ *  `findAll` filter soft-deletes — `findWhere` does NOT). Shared by the service closure and the ReadProvider. */
+function createTagReaders(db: DrizzleDb, deviceId: string) {
+  const cfg = { deviceId, softDelete: true, encryptedFields: [] as string[] }
+  return { tagsRepo: createRepository(db, tags, cfg), entityTagRepo: createRepository(db, entityTags, cfg) }
+}
+
+/** Tolerant filter parse — the engine's own discipline (`engine.ts` parse()): malformed JSON ⇒ `{}`. */
+function parseFilter(json: string | null): ViewFilter {
+  if (json == null) return {}
+  try {
+    const parsed: unknown = JSON.parse(json)
+    return typeof parsed === 'object' && parsed !== null ? (parsed as ViewFilter) : {}
+  } catch {
+    return {}
+  }
+}
+
+/** ADR-007 §3.5 — a task view is a `views` row whose `filter.entity_types` is EXACTLY ['task']. */
+function isTaskView(row: ViewRow): boolean {
+  const types = parseFilter(row.filter).entity_types
+  return Array.isArray(types) && types.length === 1 && types[0] === TASK_ENTITY_TYPE
+}
+
+/** ADR-007:57 — `tags` means membership **incl. nested** (ADR-006: `#a ⊃ #a/b`, a Space's contents = everything
+ *  carrying the root tag). Expands the requested ids to the LIVE ones among them ∪ all their LIVE descendants: one read
+ *  of the live `tags` rows, then a worklist walk (stack) over `parent_tag_id` with a `seen` set (cycle-safe even
+ *  though BR-3 forbids cycles on write). ONLY live nodes expand — a soft-deleted node, whether requested (a view saved
+ *  on `#x` after `#x` was deleted) or intermediate, STOPS the walk and contributes nothing; an unknown id likewise
+ *  matches nothing. (Spaces has no delete-reparent rule; `deleteTag` does not cascade the junction, so a dead tag's
+ *  stale `entity_tags` rows must not resurrect membership — g2 F2.) */
+async function expandTagIds(
+  tagsRepo: ReturnType<typeof createTagReaders>['tagsRepo'],
+  ids: readonly string[],
+): Promise<Set<string>> {
+  const live = await tagsRepo.findAll()
+  const liveIds = new Set(live.map((t) => t.id))
+  const children = new Map<string, string[]>()
+  for (const t of live) {
+    if (t.parent_tag_id == null) continue
+    const bucket = children.get(t.parent_tag_id) ?? []
+    bucket.push(t.id)
+    children.set(t.parent_tag_id, bucket)
+  }
+  const seen = new Set<string>()
+  const worklist = ids.filter((id) => liveIds.has(id))
+  while (worklist.length > 0) {
+    const id = worklist.pop()
+    if (id === undefined) break
+    if (seen.has(id)) continue
+    seen.add(id)
+    for (const child of children.get(id) ?? []) worklist.push(child) // children of a live node are live by construction
+  }
+  return seen
+}
+
+/** The `ListTasksFilter` keys the provider honours from `filter.predicates` (XCU-13: apply what it understands, ignore
+ *  the rest). A `const` tuple narrows `k` so `ListTasksFilterFieldsSchema.shape[k]` is typed per key. */
+const PROVIDER_KEYS = [
+  'status',
+  'priority',
+  'project_id',
+  'parent_task_id',
+  'completed',
+  'due_before',
+  'kind',
+  'open',
+] as const satisfies readonly (keyof ListTasksFilter)[]
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/**
+ * Tasks as a `ReadProvider` (ADR-007 §3.4 / XCU-07/08) — the OTHER direction of the seam S7 consumed: saved views fan
+ * out OVER tasks through this documented read API (INT-1, never a table read). Per ADR-007 §3.3.4 / XCU-13 the
+ * provider applies the predicates it understands and IGNORES the rest; it never throws for a bad predicate (a bad
+ * value drops that key). Rules:
+ *   1. `predicates.id` (string) SHORT-CIRCUITS → `[getTask(id)]` (a sub-task IS returned by id; `tags`/grain skipped).
+ *   2. known keys are picked + validated PER KEY; unknown keys ignored; invalid values dropped.
+ *   3. grain = TOP-LEVEL tasks unless `parent_task_id` was given (BR-TK-S7-8).
+ *   4. `tags` (array of strings only; anything else ignored) = membership incl. nested, UNION across the list.
+ *   5. returns `TaskRow[]`, soft-deleted excluded (via `listTasks`).
+ * Takes `db`/`deviceId` like `registerTasksTimer` — the membership read is a raw foundation-junction scan.
+ */
+export function createTasksReadProvider(deps: { svc: TasksService; db: DrizzleDb; deviceId: string }): ReadProvider {
+  const { svc, db, deviceId } = deps
+  const { tagsRepo, entityTagRepo } = createTagReaders(db, deviceId)
+  return {
+    entityType: TASK_ENTITY_TYPE,
+    async list(filter) {
+      const predicates = isRecord(filter.predicates) ? filter.predicates : {}
+      if ('id' in predicates) {
+        // By-id short-circuit. A present-but-non-string id can match nothing — return nothing rather than fall through
+        // to "all top-level tasks" (g2 F4; XCU-13 "ignore" would be surprising for an identity predicate).
+        if (typeof predicates.id !== 'string') return []
+        const t = await svc.getTask(predicates.id)
+        return t ? [t] : []
+      }
+      const picked: Record<string, unknown> = {}
+      for (const k of PROVIDER_KEYS) {
+        if (!(k in predicates)) continue
+        const r = ListTasksFilterFieldsSchema.shape[k].safeParse(predicates[k])
+        if (r.success && r.data !== undefined) picked[k] = r.data
+      }
+      if (!('parent_task_id' in picked)) picked.parent_task_id = null // top-level grain (BR-TK-S7-8)
+      let rows = await svc.listTasks(picked as ListTasksFilter)
+      const tagIds = Array.isArray(filter.tags) ? filter.tags.filter((x): x is string => typeof x === 'string') : []
+      if (tagIds.length > 0) {
+        const expanded = await expandTagIds(tagsRepo, tagIds)
+        // One junction scan + a JS Set (the listTasks JS-filter precedent) — not inArray(), which hits SQLite's
+        // bound-variable cap on a wide hierarchy.
+        const members = await entityTagRepo.findWhere(
+          and(eq(entityTags.entity_type, TASK_ENTITY_TYPE), isNull(entityTags.deleted_at))!,
+        )
+        const taskIds = new Set(members.filter((m) => expanded.has(m.tag_id)).map((m) => m.entity_id))
+        rows = rows.filter((t) => taskIds.has(t.id))
+      }
+      return rows
+    },
+  }
+}
+
+/** Composition wiring (NOT a service method — the `registerTasksTimer` shape): register tasks into the SHARED
+ *  `ViewProviderRegistry` keyed `'task'`; re-registration replaces (registry semantics). No composition root at M1. */
+export function registerTasksReadProvider(
+  providers: ViewProviderRegistry,
+  deps: { svc: TasksService; db: DrizzleDb; deviceId: string },
+): void {
+  providers.register(createTasksReadProvider(deps))
+}
+
+/**
+ * The shipped task presets (TAS-30 · ADR-009 T4) — DATA only (type + config); the preset primitive + tab are the
+ * Spaces/P6 first-consumer-pull seam, and row seeding is the XCU-06 seed pipeline. `kind:null` = all kinds; a
+ * kind-bound preset (the Duties/obligation case) sets `kind` AND `predicates.kind` from the same shape. "Today" is the
+ * open-tasks list the ② scopes to the day (`due_before` is a per-day literal, not a constant).
+ */
+export const TASK_VIEW_PRESETS: readonly TaskViewPreset[] = [
+  { key: 'today', kind: null, view: { name: 'Today', layout: 'list', predicates: { open: true } } },
+  {
+    key: 'board',
+    kind: null,
+    view: { name: 'Board', layout: 'board', predicates: { open: true }, grouping: { field: 'status' } },
+  },
+  { key: 'all_by_project', kind: null, view: { name: 'All by project', layout: 'list', grouping: { field: 'project_id' } } },
+]

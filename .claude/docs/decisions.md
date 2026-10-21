@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-12 by /session-end -->
+<!-- Last updated: 2026-10-20 by /session-end -->
 
 ## fe-calendar ② S5 — Living lens renderer (2026-10-21 — LIF-203)
 
@@ -1174,3 +1174,39 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-12 | S3 theme preview | how to render a NON-active preset's palette inline? | **`getComputedStyle` probe under `<html>`, in a post-paint effect** | the active `<body class="t_<preset>">` scope `:root.t_mode .t_preset` out-specifies any nested `<Theme>` → bands collapse; a probe outside `<body>` resolves concrete colors. No hardcoded hex. | [[preview-nonactive-preset-needs-html-probe-postpaint]] |
 | 2026-10-12 | S4 app-mount | nav route, boot gate, or overlay? | **opt-in fixed OVERLAY over the still-mounted router** | IR2: not a mandatory boot gate; overlay (not replace) preserves route state; App.tsx selection made minimally stateful so live preview is real (full switcher deferred to Settings). | interpretation D6/IR2 |
 | 2026-10-12 | S4 reach | how to meet the ≥2-path floor? | **2 distinct ReachPaths: `link` (invitation) + `contextual` (EmptyState slot)** | the registry dedupes by path category — two same-category would collapse to 1 and fail the floor; onboarding.tsx left untouched (invitation is a store-driven post-completion overlay). | ReachabilityRegistry |
+
+## fe-session-runtime #23 ② + fe-shell content-inset (2026-10-15 — LIF-218, PRs #143/#142)
+- **Stages realization is doc-fixed, not a fork** — the "deliverable-per-stage" structure assembles existing primitives (`deliverable_note` pages + `note_attachments` + ADR-004 effect rail), **no new plumbing** (frontend-quality-bar §4.5); multi-stage per-module assembly homed OUT of #23 (slice-map O7). #23 renders single-stage generically (EC-9).
+- **The apps/web data leg is deferred (repo-wide), not the sessions engine** — `@vida/core`'s sessions service (getSession/completeSession/transitionSession + the #32 transition engine) is LIVE; the web app can't reach it in M1 (no composition root + worker-RPC Drizzle `values` seam). So `useFlowSession` ships the shape + `?sample` seed + **zero-signature live swap**, mirroring every sibling hook.
+- **Gate the surface standalone, split the component** — `SessionRuntimeSurface` is router-free so the standalone Visual-Gate entry mounts it directly; the routed wrapper (`getRouteApi`) can't be. (Shell variant: AppShell + a memory router.)
+- **Shell content vertical inset is a spec gap, now closed** — `ContentMain` had no `paddingVertical`; `CONTENT_V_INSET {24,32,40}` + `contentVInsetAt()` added (shell-owned, like `reservedTopInset`; design.md §X has only the horizontal gutter) and `shell-layout.md` container rule extended.
+
+## fe-session-hud #16 ② (2026-10-16→18 — LIF-217, PR #144; stack 142→143→144 merged)
+- **Zero-cross = hold-complete, never overtime (EC-3c, doc-grounded over my proposal)** — the V5 widget holds `00:00` + announces "${phase} complete"; boundary behaviour is PD-7 preference-owned and engine-driven; intervals are fixed-length (PD-4) and overrun ≠ focus credit (PD-5). The grounding pass (Victor-directed) overturned the drafted `+m:ss` overtime.
+- **The live interval clock is client-ephemeral BY DESIGN** — V5 owns the ephemeral countdown; the service persists summary facts (PD-11). F-HUD-1 = the ① `findActiveSession` read + a ② shared focus-runtime client store (ships with the first live timer driver); interval-start persistence NOTED, never assumed.
+- **D-S3-1 (Victor): the 375 strip-budget redistribution** — filling the reserved hudSlot overcommitted the strip ~80px (element OVERLAP, invisible to scrollWidth probes; Bar-1 scrollW 179 vs clientW 87). Chosen "keep the time": scope compact → globe-only · Search → first More-menu row (still the ⌘K action) · HUD keeps ring+time. #15-owned files changed under the shipped-primitive-fix precedent.
+- **`fe-codec-system` #12 dissolved — ratified-by-consumption** — a "reuse UI-4" unit; no SystemView/spec intended; all System-type consumers (#24/#25/#32/#17/#15) shipped gated; zero residual scope, no Linear issue needed.
+
+## mod-tasks ① — completed 2026-10-20 (LIF-142, #65; PR #145 `e1fc356`)
+- **Tasks pulled ahead of mod-routines** — routines drives task-type steps through `createTask`/`completeTask`/`getTask`/`listTasks`.
+- **D1 `surface_calendar` is a read-seam, not an emitted effect**; `surface_journal` likewise PULL (ADR-004 §3.2.5 projections).
+- **D2 timer = `'work'` session sub-type; `log_time` writes the KEPT `task_time_logs` via the rail**, never direct (G-S4).
+- **binding_mode is READ-side** (Projects precedent) — S3 emission unconditional; NULL ⇒ the natural `event-trigger`.
+- **R7 aggregation consumes the ONE shared `ViewProviderRegistry`** — a bespoke provider port was a fork; aggregation grain = top-level tasks.
+- **`pinView`/`reorderViews` are Preferences-owned** (ADR-007 §3.5 / XCU-21) — a Preferences first-consumer-pull gap, not a tasks op.
+- **`tags` filter = membership incl. nested, live-only, union.**
+- **S9 summary = the GOVERNING `docs/core/architecture/cross-module-integration.md` §2 row** (a LIST of tasks due/scheduled/completed on the date, title·status·priority); "the date" of a timestamp = the UTC calendar day (platform convention); due work registers ONCE, on the Sessions `dueIn` lane (SS-7).
+- **"Open" = status ∉ {completed, cancelled}** (platform TERMINAL convention + projects intake G9) — `open` filter, Today/Board presets, the due lane; S5 regen anchor re-pointed to the UTC day.
+- **Lesson (×4 Victor corrections):** interpretations, deferrals and "calls for Victor" were drift each time — ground in the "Governs:" core doc, both intakes' resolved G-items and the shipped cross-module convention before precedents (memory `ground-every-deferral-and-interpretation-before-presenting`).
+
+## golive-replan G0 — the Entity Live Close (2026-10-21 · Victor Approval 2 · `docs/specs/foundation/golive-replan/process.md`)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-21 | Unit of delivery | what makes a frontend unit "done"? | **the ENTITY closes once, live** — ① merged → ② on the seam contract → registered + hooks live + interactions wired → verified live on real OPFS (ELC-1…9) | ratified from entity-delivery-flow §1/§2 ENTITY CLOSE + ADR-019 §3.2 "usable"; Victor: "group work … so I can use it live and test it until the end of M1" | no (M1 bar) |
+| 2026-10-21 | Stubs | may a data leg ship stubbed? | **planning convenience only; at close an unwired leg needs a proven issue home (DF-12)** | "real or stubbed" (EDF:53) is for parallel tracks, never a close state | no |
+| 2026-10-21 | "Go-live" | keep go-lives as a unit type? | **retired** — half-wired shipped entities run the existing Entity Re-scope Flow (EDF §6); unmet ELC = ⛔ ungated-owed | out-of-structure go-lives were the drift (golive-replan triage F1–F9) | — |
+| 2026-10-21 | CODEC #13 | does #13 owe live engine wiring? | **no — met through consumers**; each engine is wired in its first consuming entity's closing slice | recorded #13 decision "Option A — convention + defer live" (this file, fe-codec-seams #13) | — |
+| 2026-10-21 | Envision | are pinned ECs checked at the end? | **yes — Envision is a contract to the end**: SKIP skips the greybox, never the ECs (inherited ECs are carried); ENTITY CLOSE re-verifies every EC live (feel ECs first become checkable here); a divergence is corrected or explicitly re-pinned | Victor 2026-10-21: features "diverging from the route I established on the envision"; #150 carried 0 of fe-notes' 30 ECs, #151 SKIPped without carrying fe-home's | no |
+
+- **Lesson:** the three "open G0 decisions" were doc-answered (Victor's correction at Approval 1) — a planning doc's open-decisions list must be empty of anything the governing docs already settle.

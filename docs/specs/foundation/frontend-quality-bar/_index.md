@@ -22,7 +22,8 @@ Every surface harvested in G2 is audited against this document with the **3-lens
 - **WRONG** — contradicts a standard or a decision in this bar (an off-grid layout, a state outside the 8-state
   machine, copy that overclaims ZK, a non-themeable hard-coded palette, a capability reachable only one way).
 - **MISSING** — an intended slot/state/behaviour absent (no empty state, no reduced-motion alt, no sync status,
-  a surface not reachable ≥2 ways, a composition slot the schema requires).
+  a surface not reachable ≥2 ways, a composition slot the schema requires, **a data leg stubbed with no proven issue
+  home**, an inherited Envision EC not carried).
 - **OVERFLOWING** — scope beyond the surface's job (a module reading another's tables, a view doing a capability's
   interactive work, a bespoke screen that should be an archetype).
 
@@ -49,7 +50,8 @@ additions below are *only* what this re-plan adds on top.
    from a small set of shells + renderers, so consistency can't drift. (P6/F3-F4)
 6. **Offline / local-first state** — honest **sync status** (calm, never alarming); **no fake spinners** (writes are
    instantly real locally — optimistic layer = none, a **P4-derived decision**, not an inherited standard); **honest progress** for genuinely-slow ops (FTS rebuild, sync,
-   export, vault unlock); the full **8-state** component machine. (P4)
+   export, vault unlock); the full **8-state** component machine. (P4) **Enforced at entity close** — the Entity Live
+   Close, `golive-replan/process.md` ELC-6/7/9 (real data, live on OPFS, every pinned EC re-verified).
 7. **Reduced motion** — every animation ships a `prefers-reduced-motion` alternative (both designed + tested).
 8. **Performance** — motion budget 150–450ms (>500ms justified); **< 80 KB initial bundle** (route lazy-split);
    a **font-loading budget** for the N-theme system (serving ~5 families + live type-ramp swap).

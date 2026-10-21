@@ -7,7 +7,7 @@
 # Source: decomposition.md (P3) + coverage-report.md (P4 SHIP) — backend-replan
 
 ## Goal
-Health: Nutrition — meals, plans, nutrition goals (the fuel pillar; health split).
+Health: Nutrition — meals, plans, nutrition goals (the fuel pillar; health split). Incl. `nutrition_ingredients.name_bidx` + index (schema-audit-deferred-homes.md P2 defer-add #2).
 
 ## Dependencies
 - blocked by `mod-journals`

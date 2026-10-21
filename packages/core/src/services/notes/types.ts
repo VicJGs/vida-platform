@@ -8,7 +8,7 @@
 // ============================================================================
 
 import type { z } from 'zod'
-import type { PageType } from '@vida/types'
+import type { EditorDocument, PageType } from '@vida/types'
 import type { PageRow, PageLinkRow, NoteAttachmentRow } from '../../db/schema/notes'
 import type { EntityLinkRow, EntityTagRow } from '../../db/schema/foundation/spaces'
 import type { DrizzleDb } from '../../db/adapter'
@@ -58,8 +58,13 @@ export interface NotesService {
   createPage(input: CreatePageInput): Promise<PageRow>
   getPage(id: string): Promise<PageRow | null>
   updatePage(id: string, patch: UpdatePageInput): Promise<PageRow>
+  /** IR-7: write the editor body via its own path (NOT updatePage's LWW metadata patch). M1 local write; M4 CRDT. */
+  writePageContent(id: string, content: EditorDocument): Promise<PageRow>
   softDeletePage(id: string): Promise<void>
   getPageByJournalDate(date: string): Promise<PageRow | null>
+  /** NP-8 idempotent get-or-create for a day's journal page (mirrors ensureEntityNote). Title = the YYYY-MM-DD
+   *  date (non-empty, deterministic, locale-free). The home/journal go-live's materialization seam. */
+  ensureJournal(date: string): Promise<PageRow>
   getPagesByType(type: PageType): Promise<PageRow[]>
   getPagesForEntity(entityType: string, entityId: string): Promise<PageRow[]>
   listPages(filters?: { favorite?: boolean; archived?: boolean }): Promise<PageRow[]>

@@ -10,6 +10,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 
 const h = vi.hoisted(() => ({ ensureDbReady: vi.fn(), read: vi.fn(), write: vi.fn() }))
 vi.mock('./db/boot', () => ({ ensureDbReady: h.ensureDbReady }))
+// The live notes hooks read via the composition root; stub it so no worker spawns.
+vi.mock('./db/composition-root', () => ({
+  getServices: () => Promise.resolve({ notes: { listPages: async () => [] } }),
+}))
 vi.mock('./onboarding/first-run-repo', () => ({
   readFirstRunComplete: h.read,
   writeFirstRunComplete: h.write,

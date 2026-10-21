@@ -1,6 +1,6 @@
 # Task: ci-actions-minutes-exhausted
 # Status: diagnosed-needs-victor (account/billing — not repo-fixable)
-# Linear: unfiled
+# Linear: LIF-236
 # Profile: Generic Coding Session (triage only)
 # Created: 2026-10-12
 

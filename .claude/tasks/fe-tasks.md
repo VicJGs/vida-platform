@@ -12,6 +12,10 @@
 ## Goal
 ② Frontend build (add-frontend-component) for tasks — the UI/UX tier over the finished ① service (`mod-tasks`), 11 UI legs. Consumer-pull: rides its backend twin's wave 1:1. Per-slice blocking Visual Gate (Entity Delivery Flow ② track, ADR-021 §3.5).
 
+## golive-replan absorption (G4, 2026-10-21)
+Debt this issue absorbs (`docs/specs/foundation/golive-replan/debt-plan.md` §2 · coverage-report.md): fe-notes EC-18b/c + EC-20/21 (task_note / task_group_note overviews, ⏳ RIDE) · the collection entity-write Capability (first board-consuming entity) · consumes notes-rescope's page-type `offersEditor` fix.
+
 ## Dependencies
 - blocked by `fe-codec-collection`
 - blocked by `fe-codec-entity-facet`
+- blocked by `notes-rescope`

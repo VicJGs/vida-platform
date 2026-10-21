@@ -12,6 +12,9 @@ rebuild-on-vault-unlock, since the plaintext index can only exist while the vaul
 keyed blind index (`category_bidx`, BLAKE2b, F7/D7) for equality lookups over encrypted columns
 without leaking plaintext. Feeds the AR-8 search service.
 
+## golive-replan absorption (G4, 2026-10-21)
+Debt this issue absorbs (`docs/specs/foundation/golive-replan/debt-plan.md` §2 · coverage-report.md): live FTS for ⌘K + notes search. shell-rescope swaps the SearchProvider seam; **re-verify ⌘K/notes search live at this unit's close**.
+
 ## Dependencies
 - blocked by `db-4-per-domain-schema`
 - blocked by `db-7-migrations-runner`  <!-- was db-6: FTS5 tables are DDL via the runner; populate-on-unlock (db-6 decrypt seam) is gated on a vault-unlock that is M3 (UX-5b) — illegal M1.0←M3 edge removed 2026-07-28 dep-graph-validation -->

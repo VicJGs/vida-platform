@@ -44,11 +44,12 @@ export const createPageSchema = z
     path: ['journal_date'],
   })
 
-/** updatePage input — partial; journal-type/date are not remapped via update (NP-2 owned by create). */
+/** updatePage input — partial; journal-type/date are not remapped via update (NP-2 owned by create).
+ *  `content` is EXCLUDED (IR-7): the editor body is written via `writePageContent`, never an LWW metadata
+ *  patch — so the eventual M4 CRDT merge is never clobbered. */
 export const updatePageSchema = z
   .object({
     title: z.string().nullish(),
-    content: z.string().nullish(),
     parent_id: z.string().nullish(),
     is_favorite: z.boolean().optional(),
     is_archived: z.boolean().optional(),

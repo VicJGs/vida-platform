@@ -42,7 +42,7 @@ An issue runs the Visual Gate **iff it produces a rendered visual surface**. Pre
 |---|---|---|---|
 | **Design tokens** (DS-2/DS-3) | self-contained `preview.html` gallery from the generated `variables.css` — color swatches (all ramps + semantics), type-scale samples, spacing/size/radius boxes, shadow samples; light/dark toggle | `pnpm preview:tokens` → open `packages/ui/src/themes/preview.html` | **built now** (`tools/scripts/render-token-preview.mjs`) |
 | **Components** (DS-5/UI-*) | Storybook story (or a preview page) per component, all 8 states | `pnpm storybook` | deferred — Storybook stands up at DS-5/UI-1 (out of scope here) |
-| **Screens/layout** (UX/app-shell) | running app screenshot at the 3 breakpoints (375/768/1440) | `pnpm dev` + capture | deferred to those units |
+| **Screens/layout** (UX/app-shell) | running app screenshot at the 3 breakpoints (375/768/1440) | `pnpm dev` + capture | deferred to those units · **+ the LIVE leg on the entity's closing slice:** the running app on real OPFS, not `?sample` — write → reload → persist, every pinned EC re-verified (golive-replan ELC-7/9) |
 
 The token render is the concrete mechanism built now; the others are named so the gate is complete-by-design, built
 at their first-consumer unit (matches the roadmap's "substrates by first-consumer pull").

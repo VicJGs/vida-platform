@@ -1,5 +1,5 @@
 # Task: fe-gamification
-# Status: in_review — COMPLETE (G0 + S1–S5, 5/5 modes); PR #140 open (2026-10-14). Merge when CI green → Done.
+# Status: done — merged PR #140 (8c1070d)
 # Linear: LIF-181
 # Profile: Add Frontend Component
 # Scenario: default

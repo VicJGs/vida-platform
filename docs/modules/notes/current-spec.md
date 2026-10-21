@@ -21,7 +21,8 @@ Deps `{db, deviceId, spaces, backlinks, registry}` [FACT: services/notes/types.t
 ## Contract (S1 — built)
 Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `Page` interface (DB-11 reconcile) [FACT: schema/notes.ts:110].
 - `createPage(input: CreatePageInput): Promise<PageRow>` — validate → NP-2 clash check → registry-validate `entity_type` → create [FACT: service.ts:53-74].
-- `getPage(id): Promise<PageRow|null>` · `updatePage(id, patch: UpdatePageInput): Promise<PageRow>` · `softDeletePage(id): Promise<void>` [FACT: service.ts:76-86].
+- `getPage(id): Promise<PageRow|null>` · `updatePage(id, patch: UpdatePageInput): Promise<PageRow>` (metadata only — `content` is NOT in the `.strict()` whitelist) · `softDeletePage(id): Promise<void>` [FACT: service.ts:76-86].
+- `writePageContent(id, content: EditorDocument): Promise<PageRow>` — the IR-7 editor-body write path (serializes to the `content` text column via the repo), SEPARATE from `updatePage`'s LWW metadata patch so M4 can re-home `content` to the CRDT merge without touching callers (added 2026-10-20, notes-entity-usability S2) [FACT: service.ts writePageContent; interpretation.md:159].
 - `getPageByJournalDate(date): Promise<PageRow|null>` · `getPagesByType(type): Promise<PageRow[]>` · `getPagesForEntity(entityType, entityId): Promise<PageRow[]>` · `listPages({favorite?,archived?}): Promise<PageRow[]>` [FACT: service.ts:48-52,88-107].
 - Errors: `JournalExistsError(journalDate)`, `UnregisteredEntityTypeError(entityType)` — bespoke `extends Error`, stable `.name` [FACT: types.ts:49-64]. `ServiceError` reconcile → DB-11.
 - Input types: `CreatePageInput`/`UpdatePageInput` = `z.infer` of `validators/note.ts` [FACT: types.ts:33-36].

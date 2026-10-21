@@ -16,3 +16,4 @@
 - blocked by `fe-codec-collection`
 - blocked by `fe-session-runtime`
 - blocked by `fe-session-hud`
+- blocked by `sessions-rescope`
