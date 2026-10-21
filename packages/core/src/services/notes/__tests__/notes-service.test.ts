@@ -106,6 +106,21 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
     expect(found?.journal_date).toBe('2026-09-19')
   })
 
+  it('ensureJournal creates the day page once, titled by its date (NP-8/NP-2)', async () => {
+    const first = await h.svc.ensureJournal('2026-10-21')
+    expect(first.type).toBe('journal')
+    expect(first.journal_date).toBe('2026-10-21')
+    expect(first.title).toBe('2026-10-21')
+    const second = await h.svc.ensureJournal('2026-10-21')
+    expect(second.id).toBe(first.id) // idempotent — returns the same row, never a clash
+  })
+
+  it('ensureJournal returns a pre-existing journal page for the date', async () => {
+    const created = await h.svc.createPage({ type: 'journal', journal_date: '2026-10-22' })
+    const ensured = await h.svc.ensureJournal('2026-10-22')
+    expect(ensured.id).toBe(created.id)
+  })
+
   it('createPage throws JournalExistsError on a live journal-date clash (BR-S1-1)', async () => {
     await h.svc.createPage({ type: 'journal', journal_date: '2026-09-19' })
     await expect(h.svc.createPage({ type: 'journal', journal_date: '2026-09-19' })).rejects.toBeInstanceOf(

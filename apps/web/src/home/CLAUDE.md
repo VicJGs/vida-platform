@@ -12,9 +12,14 @@ entities (ADR-008 render-targets) — it owns no block body and no live data (al
   widgets (summary·finance·tasks·habits·projects·purposes·dreams·schedule) over the shipped `@vida/ui` `DashboardView`.
   `renderHomeWidget` = the standalone widget SUCCESS-body seam (M1 placeholder; real bodies ship per-capability).
   `useHomeWidgets` = the READ seam (M1 default set; live data = `buildDashboard`/registry, deferred to first consumer).
-- `journal-page-region.tsx` — **JournalPageRegion** (S2, EC-3): the **inline**-block editor page (prose + inline block
-  regions + the "/" affordance). The real `@vida/editor` `<VidaEditor>` mount is the **N6 seam** (deferred; `@vida/editor`
-  is not an apps/web dep). Shell owns the page terminal states.
+- `journal-page-region.tsx` — **JournalPageRegion** (S2 → **LIVE, home-journal-go-live**): today's journal **entry** as a
+  real editor. `useJournalEntry` (`use-journal-entry.ts`) reads today's `type:'journal'` page via
+  `NotesService.ensureJournal(todayLocalYmd())` (NP-8 get-or-create, IN-SERVICE — mirrors `ensureEntityNote`); on
+  `success` it mounts the reused `../notes/note-editor-body` `<VidaEditor chrome='bare'>` + `useNoteContent` persistence
+  (debounced `writePageContent`, mount-echo deduped incl. blank pages — BR-NEU-5). `today` is a **local** `YYYY-MM-DD`
+  (never `toISOString()`/UTC). Shell owns the terminal frames (loading/empty/error); `editorState?` is a test/gate override.
+  Inline integration-block node-views (`/dailySummary`, …) remain the deferred #31 seam INSIDE the editor; multi-device
+  CRDT is M4. The **Dashboard** rail stays the honest stub (no journal providers registered — future module go-lives).
 - `home-surface.tsx` — **HomeSurface** (S3, EC-1/EC-2/EC-6/EC-7): the greet header + the **arrangement** layer composing
   S1+S2. `useHomeArrangement` = the READ seam (default `journalFirst`; the toggle CONTROL + persisted write = Settings/
   `fe-settings`, `decomposition.md:71`). fe-home OWNS the arrangement layout (RP4): Journal-first = page hero + a compact

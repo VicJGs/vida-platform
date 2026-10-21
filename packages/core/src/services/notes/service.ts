@@ -182,6 +182,17 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       })
     },
 
+    // NP-8 idempotent get-or-create for a day's journal page (mirrors ensureEntityNote). The home/journal
+    // surface's materialization seam: return the day's existing journal, else create it. Title = the YYYY-MM-DD
+    // date — non-empty (accname-safe for a borderless editor's aria-label) + deterministic + locale-free (keeps
+    // @vida/core Intl-free; the UI formats a prettier label for display). createPage's in-service NP-2 pre-check
+    // is the single-writer backstop (no explicit race-catch — single-user-local, same as ensureEntityNote).
+    ensureJournal: async (date: string): Promise<PageRow> => {
+      const existing = await getPageByJournalDate(date)
+      if (existing) return existing
+      return service.createPage({ type: 'journal', journal_date: date, title: date })
+    },
+
     addAttachment: async (pageId: string, file: NewAttachment): Promise<NoteAttachmentRow> => {
       const f = newAttachmentSchema.parse(file)
       return attachRepo.create({

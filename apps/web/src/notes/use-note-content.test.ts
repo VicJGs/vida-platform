@@ -13,6 +13,13 @@ vi.mock('../db/composition-root', () => ({
 }))
 
 const doc: EditorDocument = { type: 'doc', content: [] }
+// A loaded baseline (the editor's normalized empty seed) vs a real user edit. Using distinct docs makes each
+// test exercise the EDIT-writes path, separate from the blank-page mount-echo case (its own test below).
+const loaded: EditorDocument = { type: 'doc', content: [{ type: 'paragraph' }] }
+const edited: EditorDocument = {
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hi' }] }],
+}
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -31,18 +38,37 @@ describe('useNoteContent (S2 — debounced content write, IR-7)', () => {
   })
 
   it('debounces rapid edits to a single write (BR-NEU-3)', async () => {
-    const { result } = renderHook(() => useNoteContent('p1'), { wrapper })
+    const { result } = renderHook(() => useNoteContent('p1', loaded), { wrapper }) // baseline set
     act(() => {
-      result.current.save(doc)
-      result.current.save(doc)
-      result.current.save(doc)
+      result.current.save(edited)
+      result.current.save(edited)
+      result.current.save(edited)
     })
     expect(writeSpy).not.toHaveBeenCalled() // still within the debounce window
     await act(async () => {
       await vi.advanceTimersByTimeAsync(600)
     })
     expect(writeSpy).toHaveBeenCalledTimes(1)
-    expect(writeSpy).toHaveBeenCalledWith('p1', doc)
+    expect(writeSpy).toHaveBeenCalledWith('p1', edited)
+  })
+
+  it('a blank-loaded page does NOT write its mount-echo; only a real edit writes (BR-NEU-5)', async () => {
+    const { result } = renderHook(() => useNoteContent('p5'), { wrapper }) // initialContent = null (blank page)
+    act(() => {
+      result.current.save(loaded) // the editor's mount-echo (normalized empty seed) — NOT a user edit
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(600)
+    })
+    expect(writeSpy).not.toHaveBeenCalled() // mere open never writes
+    act(() => {
+      result.current.save(edited) // now a real keystroke → a genuine change from the adopted baseline
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(600)
+    })
+    expect(writeSpy).toHaveBeenCalledTimes(1)
+    expect(writeSpy).toHaveBeenCalledWith('p5', edited)
   })
 
   it('dedupes: a save equal to the loaded content does not write (open-echo guard)', async () => {
@@ -57,9 +83,9 @@ describe('useNoteContent (S2 — debounced content write, IR-7)', () => {
   })
 
   it('flushes the pending write on unmount — never drops the last edit', async () => {
-    const { result, unmount } = renderHook(() => useNoteContent('p2'), { wrapper })
+    const { result, unmount } = renderHook(() => useNoteContent('p2', loaded), { wrapper })
     act(() => {
-      result.current.save(doc)
+      result.current.save(edited)
     })
     expect(writeSpy).not.toHaveBeenCalled()
     await act(async () => {
@@ -72,9 +98,9 @@ describe('useNoteContent (S2 — debounced content write, IR-7)', () => {
   it('surfaces a failed write as saveState="error" (BR-NEU-5)', async () => {
     writeSpy.mockRejectedValue(new Error('boom'))
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const { result } = renderHook(() => useNoteContent('p3'), { wrapper })
+    const { result } = renderHook(() => useNoteContent('p3', loaded), { wrapper })
     act(() => {
-      result.current.save(doc)
+      result.current.save(edited)
     })
     // waitFor hangs under fake timers — advance + flush the mutation's microtask chain, then assert directly.
     await act(async () => {
