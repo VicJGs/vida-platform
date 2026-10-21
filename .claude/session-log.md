@@ -6650,3 +6650,41 @@ Next session:
   - Run full suites sequentially (ui, then web) — the machine reaps parallel runs under memory pressure.
 ---
 
+
+---
+Date: 2026-10-20
+Task: fe-calendar (LIF-203 · #19) — Global Calendar, Entity Delivery Flow ②, worktree `.claude/worktrees/fe-calendar` (branch `fe-calendar`, Node 24)
+Goal: Build S4 (Year renderer) through the full §XXVI stack.
+Completed:
+  - **S4 committed `60dfde9`**: `packages/ui/src/components/year-view.tsx` (V12, 19 tests + stories) · `packages/ui/src/internal/year-layout.ts` (11 tests: resolveYear · buildYear · indexDensity) · `calendar-view.tsx` opt-in `tabIndex` + ring (D-S4-DEV-2, +1 test) · `apps/web/src/app/calendar/index.tsx` Year dispatch + `yearFixture` + `clampToMonth` + drill-in with focus-after-drill (+6 surface tests). PLAN `docs/specs/foundation/fe-calendar/delivery/PLAN-S4-year-renderer.md`; durable spec `docs/specs/components/ui-2-platform-views/v12-year-view.md`.
+  - Gates: gate-1 REVISE (12) → re-critique SHIP (+4) · Approval 1 · preflight PASSED · gate-2 REVISE (11) · grounding pass · Approval 2 · g2 code review SHIP (9 folded) · mutation check (drill focus killed) · Visual Gate PASS (Victor-reviewed; 29 cells: has 3:1 min 3.54 · names 6.47 · 0 page overflow · 2-up/4-up · Tab Jan→Dec · focus on "Month grid").
+  - Verification: tsc 0 (ui · web) · eslint 0 changed files (`index.ts:1` pre-existing) · @vida/ui 636/636 · @vida/web 683/683 · Verified against @tamagui/core 2.6.2 · date-fns 4.4.0 · React 19.2.4 (installed types; Context7 unauthenticated).
+  - Currency: v12 spec · v4 `tabIndex` row · ui-2 `_index` V12 · `packages/ui/src/CLAUDE.md` · web-client-runtime current-spec S4 · slice-map S4 ledger ✅ · seam-contract §A YearView ratified · decisions.md S4 section · components.md V12 row. Memory: visual-gate-playbook (harness imports app CSS) · tamagui gotchas (accname leading space + real atomic-class prefixes).
+In progress:
+  - Nothing mid-flight. Worktree clean at `60dfde9`. NOT pushed, no PR (branch merges after the slices).
+Decisions:
+  - Month HEADING is the drill target (a wrapping button would flatten the table for AT) — Victor-approved (F5).
+  - Drill-in wired in M1: it is NAVIGATION (calendar-ui-store), not a write; focus → Month grid per FOCUS_CONTRACT `tabChange → panel`.
+  - D-S4-DEV-1 has-dot .75 (mockup .55 failed 3:1 in 4/6) · D-S4-DEV-2 CalendarView `tabIndex` · `$8` gap (greybox governs, envision:60-61) · no `role=heading` (sibling convention; grounding pass reversed gate-2 G11).
+  - Feel notes kept as-is (Victor, no change): 375 cells ≈12.5px · names 4px inside the grid edge.
+Next session:
+  - **Start S5 — Living lens renderer** (slice-map S5: `@vida/ui` `LivingView` — ④ purpose-budget strip (honest-null) · ② habit threads (kept/miss/future + streak) · the 7 temporal day-columns as `Card`s with alive-hooks (past record · today live + ③ open-time + ⑤ slip-flag · future intention); EC-6..EC-10 + EC-11/12/13/14; seam §A `PurposeBudget`/`HabitThread`/`LivingDay`/`LivingViewProps` incl. the `onSlotOpenTime` intent (deny-safe absent in M1)). Greybox: `mockups/greybox/living{,-dark,-reader}.png` + `calendar-concept-board.html`.
+  - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git log -1` = `60dfde9`. GROUND FIRST (owner docs + Card alive-hooks + shipped stores + decisions ledger + calendar-vision §1-§6 + ADR-011 §3.6 honest-null) → PLAN-S5 → full §XXVI stack. S5 is the rule-of-three point for extracting `SR_ONLY`/`warn`/`parseLocalDate` (PLAN-S3 §5.2).
+  - Visual Gate harness: re-create `apps/web/vg-calendar.html` + `src/__envision__/vg-calendar.tsx` (MUST import `../fonts.css` + `../index.css`); driver pattern `scratchpad/vg-s4.mjs`. Run full suites sequentially.
+---
+
+---
+Date: 2026-10-20 — CI drifts resolved + the live data plane BUILT & MERGED (data-plane-wiring, PR #148)
+Task: started on CI problems (Cloudflare + prettier); expanded into the notes/journal data-plane foundational build. Profile: bug-fix → Generic Coding / foundation.
+Accomplished:
+  - **CI drifts (all grounded in "server = M4, not M1" per MVP-PATH §1/§6):** `pnpm dev:app` server-free dev + MVP-0 doc-honesty (PR #136, merged); CF "Workers Builds" = disable Preview Builds, steps documented (LIF-229); prettier reformat stays deferred (5 worktrees); **M4 deploy/server CI gated out of M1** — `deploy.yml`→`workflow_dispatch` + `ci.yml` paths-ignore docs (PR #147, merged; ~70-80% Actions-minutes reduction). Actions fully dark = account minutes/budget exhausted (LIF-236; $0 budgets, payment issue) → self-heals Nov 1; Codespaces NOT blocked.
+  - **notes-dataplane-orphan-deferral DIAGNOSED (PR #141):** the data plane was homed to a PHANTOM ("UI-3/M1.1+" = a CLOSED editor unit); no real owner. DF-12 orphan-deferral.
+  - **data-plane-wiring foundational unit — BUILT, VERIFIED, MERGED (PR #148, `67253648`).** Full §XXVI gate (baseline → PLAN → Approval 1 → IMPL-PLAN → Approval 2; §XXVIII re-gate; a docs-check course-correction that rejected a drifting net-new `live-driver.ts` for the documented in-place completion). Lands AR-4's reserved worker Drizzle seam (`values`/`exec`/`batch` on worker.ts+client.ts, calling the already-built `web-driver`) + a module-singleton `composition-root.ts` (deviceId from app_state). **PURELY ADDITIVE — zero frontend done-task files touched; per-module hook flips kept OUT** (Victor's "nothing changed on done tasks").
+  - **Verified:** tsc PASS · eslint clean · @vida/web **661/661** (zero regression) · OPFS CRUD **E2E 4/4 green in real Brave on macOS 12** (PW_EXECUTABLE_PATH escape hatch). Codespace headless Chromium CAN'T boot the OPFS worker (all e2e incl. pre-existing AR-2 timeout) — harness-env limit, not code; added `.devcontainer` for the non-OPFS case.
+Decisions / lessons:
+  - **Check the docs before treating anything as a decision** — recurring all session. The milestone home (M1.1.3) is DERIVED by first-consumer-pull, not chosen ([[deferred-substrate-home-is-derived-not-chosen]]); the composition mechanism/batch/deviceId were all doc-resolved; the `live-driver.ts` was a net-new substitute the docs made unnecessary.
+  - **The OPFS E2E's faithful env = a real local browser (Brave), not headless Chromium** (Codespace/CI). Reproduce locally via PW_EXECUTABLE_PATH, as QA-1 did. [[playwright-is-the-visual-gate-substrate-not-ci-cost]]
+  - **Purely-additive discipline:** the db-layer seam is AR-4's RESERVED hand-off (throwing placeholders commented for this unit) — completing it ≠ changing done work; the protected "done tasks" are the frontend surfaces (untouched).
+Next session:
+  - **Make the merged surfaces usable: per-module `register + flip`** on the data plane — start with **notes go-live** (register NotesService + flip the notes hooks) as its own additive unit; then home/journal, gamification, notifications, etc. Each is swap-ready. Residual seams: notes BODY = separate Yjs unit; search = FTS5/DB-8.
+  - Victor: apply the CF "disable Preview Builds" toggle; CI returns free on the Nov 1 Actions reset.

@@ -27,6 +27,10 @@ export function useCreateNote(): CreateNoteResult {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['notes', 'pages'] }) // BR-RT-2: re-read the list
     },
+    onError: (e) => {
+      // Surface create failures (they were silently captured before) — M1 has no toast wired yet.
+      console.error('[createNote failed]', e)
+    },
   })
   return { createNote: (input = {}) => mutation.mutate(input), isPending: mutation.isPending }
 }
