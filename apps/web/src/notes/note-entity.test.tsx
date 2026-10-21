@@ -1,12 +1,25 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UIProvider } from '@vida/ui'
 import { NoteEntityView } from './note-entity'
 import type { NoteEntityData } from './use-note-entity'
 
+// The editor body persists content via the composition root (useNoteContent); mock it (no write in these tests).
+vi.mock('../db/composition-root', () => ({
+  getServices: () => Promise.resolve({ notes: { writePageContent: async () => undefined } }),
+}))
+
 afterEach(cleanup)
-const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
+const renderUI = (ui: React.ReactNode) => {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <UIProvider>
+      <QueryClientProvider client={qc}>{ui}</QueryClientProvider>
+    </UIProvider>,
+  )
+}
 
 const notePage: NoteEntityData = {
   id: '1',
