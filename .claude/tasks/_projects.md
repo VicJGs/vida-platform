@@ -11,6 +11,7 @@ The entire OS, every module operable by hand, unified by the internal connective
 - M1.0 — Boot & Connective Base
 - M1.1.1 — Hub & Foundation · Backend
 - M1.1.2 — Feature Modules · Backend
+- M1.2.4 — Live Close: shipped-surface debt
 - M1.1.3 — Depth & Recovered · Backend
 - M1.2.1 — Hub & Foundation · Frontend
 - M1.2.2 — Feature Modules · Frontend
