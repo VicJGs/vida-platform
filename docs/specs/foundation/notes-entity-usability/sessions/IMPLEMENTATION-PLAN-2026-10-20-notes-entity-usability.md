@@ -126,7 +126,9 @@ Decisions from the PLAN (Approval 1): BR-NEU-2 = create-and-open **in place**; c
 - /critique (IMPLEMENTATION-PLAN):  REVISE → 5 items folded (invalidate-on-write · IR-7 M4 note · word_count OUT · test non-regression · keyboard verify) · 2026-10-20
 - /preflight (IMPLEMENTATION-PLAN): PASSED (1 precondition folded: add EditorDocument import to types.ts) · 2026-10-20
 - Approval 1 (direction): Victor · 2026-10-20
-- Approval 2 (cleared to implement): <pending>
+- Approval 2 (cleared to implement): Victor · 2026-10-20
+- **BUILT + verified** · 2026-10-20 — S1 (open-on-click + create-and-open) + S2 (writePageContent + onChange persistence) on branch `notes-entity-usability`. tsc 0 · eslint 0 · core 31/31 (notes) · web notes tests pass · verified live in Brave (real OPFS): open/create/type→Saved→reload persists; console clean.
+- **§XXVIII DEVIATION (approved by Victor)** · 2026-10-20 — added a dedupe guard to `useNoteContent` (not in the approved plan): the live gate surfaced that TipTap's mount `onChange` persisted the unchanged doc, bumping `updated_at` on mere open. The hook now takes the loaded content as a baseline and skips unchanged writes (lastSaved promoted on success only, so a failed write retries). +1 dedupe test; verified live (no write / no indicator on reopen).
 
 ## 8. Rollback / risk
 - **Riskiest step:** 3.5 (dropping `content` from `updatePageSchema`) — a breaking API change if a caller passed content. Mitigated: rg confirms none do; the step is isolated + reverted by re-adding one line.

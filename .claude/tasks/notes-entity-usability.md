@@ -1,5 +1,5 @@
 # Task: notes-entity-usability
-# Status: planning — gate 1 APPROVED (Approval 1, 2026-10-20); gate 2 authored + /critique REVISE→folded + /preflight PASSED; Approval 2 pending
+# Status: BUILT + verified (both slices, 2026-10-20) — Approval 1+2 by Victor; PR pending
 # Linear: pending (guarded create — mint via track-sync when the tree clears, per the orphan-create guard)
 # Profile: Add Frontend Component (+ a small @vida/core content-write seam)
 # Created: 2026-10-20
@@ -31,6 +31,7 @@ listPages hooks (#149) · updatePage metadata path · createPage · the QA-1 Pla
 _(filled by the IMPLEMENTATION-PLAN after Approval 1 — not yet gated.)_
 
 ## Route History
+- 2026-10-20 (build + verify) — Built S1 (open-on-click + create-and-open) + S2 (writePageContent seam + onChange persistence) on branch `notes-entity-usability`. Both §XXVI gates cleared per slice; §XXVIII dedupe deviation (approved) added so mere-open doesn't write. tsc 0 · eslint 0 · core notes 31/31 · web notes tests pass · **verified live in Brave on the real OPFS worker** (open/create/type→Saved→reload persists; reopen = no spurious write; console clean). Durable docs promoted (notes current-spec/business-rules). Commits: initVault fix · planning · S1 · S2 · dedupe. §XXIX promotion done.
 - 2026-10-20 (planning) — Minted after the create-note vault-init fix (initVault in composition-root, verified live).
   Triage of "OS not usable": 3/4 reported symptoms = expected M1 stubs (home journal region, empty modules panel);
   the real gaps = open-on-click (no-op), create-opens (unwired), content persistence (IR-7 deferred). Why-IR-7-deferred
