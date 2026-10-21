@@ -211,20 +211,20 @@ encryption/sync/auth off. **Done-when:** *every module manually operable AND the
 
 ## Milestone M1.2.3 — Depth & Recovered · Frontend
 
-*(⛔ = schema-amendment gate from G5 (`surface-map.md §6.4`), carried as text: no amendment issue was minted at G6 — GAP-2.)*
+*(⛔ = schema-amendment gate from G5 (`surface-map.md §6.4`). GAP-2 resolved 2026-10-21 (`golive-replan/gap2-schema-gates.md`): every §6.4 table has landed (DB-3/DB-4); only fe-finance keeps a ⛔, re-described as a **service** gate homed in its own leading backend slice + front matter.)*
 
 | # | ID · LIF | Title | Home | ← Blocked-by | → Blocks | Prof | Status / Outcome |
 |---|----|-------|------|--------------|----------|------|---------|
-| 104 | ◻fe-routines · LIF-197 `[G5 #33]` | Routines (Collection · routine Entity · run-flow) ⛔v2 service | `apps/web/src/routines` | ← MOD-routines, fe-codec-collection, fe-codec-entity-facet | HARD-4 | Add Frontend Component |  |
+| 104 | ◻fe-routines · LIF-197 `[G5 #33]` | Routines (Collection · routine Entity · run-flow) | `apps/web/src/routines` | ← MOD-routines, fe-codec-collection, fe-codec-entity-facet | HARD-4 | Add Frontend Component |  |
 | 105 | ◻fe-sessions · LIF-198 `[G5 #34]` | Sessions ⊕split (Agenda · Availability · config · templates) — holds the sessions **ENTITY CLOSE** | `apps/web/src/sessions` | ← MOD-sessions, sessions-rescope, fe-codec-collection, fe-session-runtime, fe-session-hud | HARD-4 | Add Frontend Component |  |
 | 106 | ◻fe-learning-education · LIF-190 `[G5 #35]` | Learning ⊕split (hub · subject · grading · assessments) | `apps/web/src/learning` | ← MOD-learning-education, fe-codec-collection, fe-codec-entity-facet | HARD-4 | Add Frontend Component |  |
 | 107 | ◻fe-books · LIF-178 `[G5 #36]` | Books ⊕split (Bookshelf · Hub · Reader · Plans · wizards) | `apps/web/src/books` | ← MOD-books, fe-codec-collection, fe-codec-canvas-reader, fe-codec-entity-facet | HARD-4 | Add Frontend Component |  |
 | 108 | ◻fe-knowledge · LIF-188 `[G5 #37]` | Knowledge ⊕split (Catalog · Lab · Topic · Flashcards · FTS) | `apps/web/src/knowledge` | ← MOD-knowledge, fe-codec-collection, fe-codec-canvas-graph | HARD-4 | Add Frontend Component |  |
 | 109 | ◻fe-skills · LIF-200 `[G5 #38]` | Skills (landing · Skill Entity · Skill Graph · Def Library) | `apps/web/src/skills` | ← MOD-skills, fe-codec-collection, fe-codec-canvas-graph | HARD-4 | Add Frontend Component |  |
-| 110 | ◻fe-purposes-and-goals · LIF-195 `[G5 #39]` | Purposes ⊕split (Purpose/Target/Value/Dream · board · Contributions · Reviews) ⛔ | `apps/web/src/purposes` | ← MOD-purposes-and-goals, fe-codec-dashboard, fe-codec-entity-facet, fe-codec-canvas-board | HARD-4 | Add Frontend Component |  |
-| 111 | ◻fe-health · LIF-183 `[G5 #40]` | Health ⊕split umbrella (Core · Training · Nutrition) ⛔ — **fold** (LIF-184/185 retired) | `apps/web/src/health` | ← MOD-health-core, MOD-health-nutrition, MOD-health-training, fe-codec-dashboard, fe-codec-collection, fe-codec-entity-facet | HARD-4 | Add Frontend Component |  |
-| 112 | ◻fe-finance · LIF-180 `[G5 #41]` | Finance ⊕split (Dash · account · All-* · Chart · Store · Commitments · Import) ⛔ | `apps/web/src/finance` | ← MOD-finance, fe-codec-dashboard, fe-codec-entity-facet, fe-codec-canvas-graph | HARD-4 | Add Frontend Component |  |
-| 113 | ◻fe-relationships · LIF-196 `[G5 #42]` | Relationships (Dash⇄Graph⇄Contacts · contact Entity · Network · Reminders) ⛔ | `apps/web/src/relationships` | ← MOD-relationships, fe-codec-dashboard, fe-codec-canvas-graph, fe-codec-entity-facet | HARD-4 | Add Frontend Component |  |
+| 110 | ◻fe-purposes-and-goals · LIF-195 `[G5 #39]` | Purposes ⊕split (Purpose/Target/Value/Dream · board · Contributions · Reviews) | `apps/web/src/purposes` | ← MOD-purposes-and-goals, fe-codec-dashboard, fe-codec-entity-facet, fe-codec-canvas-board | HARD-4 | Add Frontend Component |  |
+| 111 | ◻fe-health · LIF-183 `[G5 #40]` | Health ⊕split umbrella (Core · Training · Nutrition) — **fold** (LIF-184/185 retired) | `apps/web/src/health` | ← MOD-health-core, MOD-health-nutrition, MOD-health-training, fe-codec-dashboard, fe-codec-collection, fe-codec-entity-facet | HARD-4 | Add Frontend Component |  |
+| 112 | ◻fe-finance · LIF-180 `[G5 #41]` | Finance ⊕split (Dash · account · All-* · Chart · Store · Commitments · Import) ⛔→ leading backend slice: store svc (FIN-18/23/24) · Commitments derive (FIN-36) + its liability slice (FIN-39, mechanism resolved at the Interpretation Gate) · FX-rate store (FIN-21); budgeting (FIN-38) = front-matter design pass + ADR; `import_staging` durable = P3-2 #124 (M2) | `apps/web/src/finance` | ← MOD-finance, fe-codec-dashboard, fe-codec-entity-facet, fe-codec-canvas-graph | HARD-4 | Add Frontend Component |  |
+| 113 | ◻fe-relationships · LIF-196 `[G5 #42]` | Relationships (Dash⇄Graph⇄Contacts · contact Entity · Network · Reminders) | `apps/web/src/relationships` | ← MOD-relationships, fe-codec-dashboard, fe-codec-canvas-graph, fe-codec-entity-facet | HARD-4 | Add Frontend Component |  |
 
 **Retired at G6 (no `#`, Linear → Canceled):** LIF-189 fe-languages (→ Spaces) · LIF-186 fe-integrations-ai-surfaces (→ M2 / capability blocks) · LIF-184 fe-health-nutrition + LIF-185 fe-health-training (→ folded into fe-health #111).
 **Off-order units (✅ merged, outside the `#` order — enhancement/fix units, no dependents):** fe-codec-primitives-refinement (LIF-230, PRs #88/#96/#97/#99/#101) · fe-codec-controls-refinement (LIF-231, PRs #90–95) · fix-entity-view-header (LIF-233, PR #110) · the three go-lives (PR #149 fe-notes-golive · #150 notes-entity-usability LIF-239 · #151 home-journal-go-live, no LIF) — their remaining debt is re-homed into M1.2.4 (golive-replan F4).
@@ -343,6 +343,10 @@ sub-issue is late, bounded by HARD-1 (`g3-order.md` §3).
   fe-health #111 · fe-finance #112 · fe-relationships #113 are carried as text (G5 `surface-map.md §6.4`). G6 never minted
   amendment issues (`g6-edge-ledger.md` §3 said to; §6 shows none created). Each unit verifies at its Interpretation Gate
   whether its ① twin already closed the amendment; if not, the amendment is homed then (lower `#` than the unit).
+  **Resolved 2026-10-21** (`golive-replan/gap2-schema-gates.md`): 4 of 5 gates void (#104 · #110 · #111 · #113 — all tables
+  landed; residual services are existing `←` edges); fe-finance #112 absorbs the store service · Commitments derive (+ liability
+  slice) · FX-rate store as leading backend-tagged slices (first-consumer-pull + `debt-plan.md:39` precedent), and budgeting's
+  design pass + ADR in its front matter. 0 orphans; no rows added or renumbered.
 
 ## 5. Verification (self-check before the Step-6 gate)
 Re-proven mechanically on 2026-10-21 (G3 critique rev) by parsing every table row of this doc (`#`, then each id token
