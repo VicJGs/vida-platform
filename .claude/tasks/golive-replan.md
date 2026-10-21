@@ -1,6 +1,6 @@
 # Task: golive-replan
-# Status: in-progress (G4 — executing the Linear ledger)
-# Linear: pending (minted at G4 with the debt units — orphan-create guard)
+# Status: in-progress (G4 DONE 2026-10-21 — Linear reshaped; campaign open only for follow-ups T0 + GAP-2; debt units now route)
+# Linear: LIF-240
 # Profile: Project Foundation
 # Scenario: Delivery Structure Reconstruction (establishment model of frontend-replan (EST → G0–G4))
 # Project: M1 — Whole Manual OS
@@ -29,10 +29,11 @@ usable; each go-live since is minted OUTSIDE the delivery structure to repay tha
 - [x] G1 — APPROVED 2026-10-21 · Debt census ASSEMBLED (debt-census.md + census/a–d) · critic REVISE→fixed (dedupe, backlinks→HARD-3, 6 RIDE ECs→⏳, #17 drop, ELC-6/7/8 gaps) — awaiting Victor
 - [x] G2 — APPROVED 2026-10-21 · debt-plan rev 3: 7 units (notes · journals · preferences(+onboarding) · sessions(debt-only; close→fe-sessions) · notifications · gamification · shell X-CUT) + 10 re-edged; coverage 226 rows 0/0/0 — awaiting Victor
 - [x] G3 — APPROVED 2026-10-21: g3-order.md · ONE structure (143, M1.2.4 #60–66, dashboard #115, HARD-4 #122←43) · MVP-PATH refreshed · g4-edge-ledger.md · 8 task files · _projects.md M1.2.4 · (was: Order + one structure + ledger (both reconstructed-structure · MVP-PATH · g4-edge-ledger.md)
-- [ ] G4 — Linear reshape (Victor approves ledger → --status clean → write)
+- [x] G4 — EXECUTED 2026-10-21: M1.2.4 + LIF-240…249 · 357 edges 0 failed · re-homes · titles/parent/comments · junk milestones removed · verify clean (was: Linear reshape (Victor approves ledger → --status clean → write)
 - [ ] debt-unit builds (Entity Delivery Flow ②, closing under the DoL)
 
 ## Route History
+- 2026-10-21 · **G4 executed** from the main checkout (branch golive-g4). Guard held 9 creates on stale-map orphans LIF-205/207/217 → triaged ISOLATED → map fixed (Linear already Done) → re-sync clean. Created LIF-240 (campaign) + LIF-241…249; 357 edges, 0 failed. Re-homed LIF-237/238/239; deleted 3 empty junk General milestones. Next: mod-routines finishes → M1.2.4 L1 (preferences · notes · sessions). Open follow-ups: **T0** (toolkit T1–T5) · **GAP-2**.
 - 2026-10-21 · G3: order (g3-order.md; ⊕split dashboard sub-issue, §XXVIII encoding note) · ONE canonical structure (143 issues, M1.2.4 #65–71, dashboard #115, HARD-4 #122; GAP-1 retired; EX-1…4) · MVP-PATH refreshed (archived-inclusive census + Linear drift: LIF-237 in General project, LIF-237/239 Backlog vs merged) · g4-edge-ledger drafted. **Follow-up logged: GAP-2** (⛔ schema-amendment gates on 5 unbuilt surfaces have no issue: home them before the first of those surfaces starts).
 - 2026-10-21 · G0 rev 3 (Envision delta per Victor: ECs never re-checked at the end; #150 carried 0/30, #151 SKIP dropped fe-home's) → critique REVISE→folded → **Approval 2**. Applied R1–R8 (10 files, +28/−7; one comment-only .ts). G0 PR opened. T1–T5 parked on T0.
 - 2026-10-21 · EST APPROVED (rev 3). G0 opened: `process.md` authored — the Entity Live Close (ELC-1…8), stubs
