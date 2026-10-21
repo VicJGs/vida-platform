@@ -12,6 +12,9 @@
 ## Goal
 ② Frontend build (add-frontend-component) for books — the UI/UX tier over the finished ① service (`mod-books`), 32 UI legs. Consumer-pull: rides its backend twin's wave 1:1. Per-slice blocking Visual Gate (Entity Delivery Flow ② track, ADR-021 §3.5).
 
+## golive-replan absorption (G4, 2026-10-21)
+Debt this issue absorbs (`docs/specs/foundation/golive-replan/debt-plan.md` §2 · coverage-report.md): canvas-reader ❌ EC-8 photo-saved-text-pending (IR-4) · BK-4 position mapping (Reader consumer).
+
 ## Dependencies
 - blocked by `fe-codec-collection`
 - blocked by `fe-codec-canvas-reader`

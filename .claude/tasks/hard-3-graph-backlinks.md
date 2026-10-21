@@ -8,6 +8,9 @@
 ## Goal
 Neural-graph + backlinks complete — working backlinks + neural graph
 
+## golive-replan absorption (G4, 2026-10-21)
+Debt this issue absorbs (`docs/specs/foundation/golive-replan/debt-plan.md` §2 · coverage-report.md): notes backlinks (useBacklinks + open-a-backlink) · BSE-23 neural graph · the 10K-node graph perf ceiling.
+
 ## Dependencies
 - blocked by `ar-6-spaces`
 - blocked by `ar-8-foundation-services`

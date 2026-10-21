@@ -6705,3 +6705,34 @@ Decisions / lessons:
 Next session:
   - **Work the approved go-live queue** → `.claude/tasks/module-go-lives.md` (direction approved; each runs its OWN §XXVI gate). Priority: **home/journal** (journals already in the composition root) → settings → notifications → gamification → session-hud. The notes unit (PR #150) is the worked precedent + the shared pattern.
   - Open threads: merge PR #150 (CI dark until Nov 1); `note-open-behavior-preference` (after settings); `fe-calendar` S5 (separate worktree, mid-build).
+
+---
+Date: 2026-10-21
+Task: home-journal-go-live (module-go-lives queue #1) — Add Frontend Component / Entity Delivery Flow ②
+Goal: Make the Home journal entry usable (land on /, write today's journal, persist locally) — first item of the approved go-live queue.
+Completed:
+  - **SHIPPED + MERGED to main (PR #151, merge `3b0ecc8`; commit `68245c9`).** Branch `home-journal-go-live` off main; worktree + local branch removed post-merge (remote branch still present — optional cleanup).
+  - **@vida/core** — `NotesService.ensureJournal(date)`: NP-8 idempotent get-or-create, in-service, mirrors `ensureEntityNote` (title = YYYY-MM-DD date, locale-free). `services/notes/{service,types}.ts` + 2 tests (33/33).
+  - **apps/web** — `home/use-journal-entry.ts` (new; TZ-safe `todayLocalYmd` built from local fields, `?sample` DEV path) + live `home/journal-page-region.tsx` (reuses `../notes/note-editor-body` + `useNoteContent` + `toNoteEntity`); `home-surface.tsx` unchanged. Tests: home 31/31 (hook TZ-proof, region states, arrangement mock).
+  - **Drift fix (Victor-directed doc+code check) — BR-NEU-5 conformance:** shipped `#150` `useNoteContent` wrote the editor mount-echo (BR-E1-2) on a blank/null-content page → "Saved" on an untouched new journal. Fix = `needsBaseline` ref adopts the first emit as the baseline when `initialContent==null`. Also fixes new notes. `notes/use-note-content.ts` + 3 hook tests updated to a real baseline + 1 new blank-page conformance test (5/5).
+  - **TipTap mount verified** (Victor asked): healthy by design — `immediatelyRender:false` (StrictMode-safe), created-once, onChange-via-ref, `setContent{emitUpdate:false}`. The mount-echo is documented (BR-E1-2); the app owns dedupe.
+  - **Verified LIVE in Brave on real OPFS** (fresh origin :5181): fresh journal opens silent (no "Saved") → type → Saved → reload persists → reopen no spurious write. Dashboard rail = honest stub. Also full flow on :5174 before the fix (write→persist→reopen-dedupe). Gates: tsc 0 (core+web) · eslint 0 · full web suite 665/671 (6 = settings/shell Tamagui flakes under concurrent load, pass 11/11 alone).
+  - Currency promoted (§XXIX): `docs/modules/notes/current-business-rules.md` BR-NEU-5 (blank-page clause) + `apps/web/src/home/CLAUDE.md` (journal region LIVE). Delivery docs `docs/specs/foundation/home-journal-go-live/`.
+In progress:
+  - Nothing mid-flight. Unit complete + merged.
+Decisions:
+  - **Scope corrected by grounding:** journal ENTRY rides `NotesService.ensureJournal`, NOT the `journals` aggregation service (queue one-liner was wrong); Dashboard can't light up until modules register providers → stays honest stub. [[home-journal-entry-rides-notesservice-not-journals-aggregation]]
+  - **Create-timing doc-resolved:** idempotent get-or-create-on-access, in-service (the `ensureEntityNote`/NP-8 convention) — not a fresh A/B decision, not a React-hook composition.
+  - **Merge choreography:** home-journal depended on unmerged #150 (writePageContent/useNoteContent); Victor merged #150 (admin, CI dark) first, then this branched off main. #151 merge: the auto-mode classifier blocked me ("Merge Without Review", enabled via /auto-mode-setup) → Victor merged it himself.
+  - **The BR-NEU-5 "fix" was almost a regression:** my first instinct (swallow any null-baseline first save) would have broken 3 shipped hook tests — the doc+code+tests check (Victor's steer) caught it; the correct fix relies on BR-E1-2 (first emit = mount-echo, always before a user edit).
+Next session:
+  - **Next go-live queue item = `settings`** (register `preferences` service + flip `settings/*` to `user_preferences`/`nav_preferences`; also unblocks `note-open-behavior-preference`). Fresh worktree off the now-updated `main` (Node 24; `pnpm install` + build @vida/types/ui/editor/core before typecheck — fresh worktree has no node_modules). Ground the real service+seam in docs+code first ([[home-journal-entry-rides-notesservice-not-journals-aggregation]]).
+  - Housekeeping: main checkout is still on branch `notes-entity-usability` — `git checkout main && git pull` to see #150+#151; optional `git push origin --delete home-journal-go-live`.
+  - Open threads elsewhere: `fe-calendar` S5 (separate worktree, mid-build); `mod-routines` (computed backend next head, worktree exists, not started).
+---
+
+---
+Date: 2026-10-21 (correction, appended — earlier entries are not rewritten)
+- The 2026-10-21 entry's "mod-routines (… worktree exists, not started)" was wrong: mod-routines is at **S3/8 shipped** in
+  its worktree (`1a61189`, unpushed). Found by the golive-replan triage; its task status is now `in-progress`.
+- golive-replan (EST→G3) merged as PR #152 (`d6c83e1`); G4 (Linear ledger) executing on branch `golive-g4`.

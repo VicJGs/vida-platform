@@ -12,6 +12,9 @@
 ## Goal
 ② Frontend build (add-frontend-component) for purposes & goals — the UI/UX tier over the finished ① service (`mod-purposes-and-goals`), 2 UI legs. Consumer-pull: rides its backend twin's wave 1:1. Per-slice blocking Visual Gate (Entity Delivery Flow ② track, ADR-021 §3.5).
 
+## golive-replan absorption (G4, 2026-10-21)
+Debt this issue absorbs (`docs/specs/foundation/golive-replan/debt-plan.md` §2 · coverage-report.md): canvas-board ❌ EC-2 reference tile (vision-board consumer).
+
 ## Dependencies
 - blocked by `fe-codec-dashboard`
 - blocked by `fe-codec-entity-facet`

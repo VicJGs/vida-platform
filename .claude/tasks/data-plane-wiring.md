@@ -1,10 +1,11 @@
 # Task: data-plane-wiring
-# Status: planning (foundational unit minted 2026-10-20 — §XXVI gate opening; nothing built)
-# Linear: pending (guarded create — parallel sessions in flight; mint via track-sync when the tree clears, per the orphan-create guard)
+# Status: done — built + merged via PR #148 (2026-10-20); re-homed by golive-replan G4
+# Linear: LIF-237
 # Profile: Generic Coding Session
 # Scenario: (resolved at the planning step)
 # Created: 2026-10-20
-# Milestone: M1 / M1.1.3 (Depth & Recovered · Backend) — DERIVED, not chosen
+# Project: M1 — Whole Manual OS
+# Milestone: M1.1.3 — Depth & Recovered · Backend
 # Home-derivation: docs/specs/fixes/home-deferred-substrate-pieces/PLAN.md §1 — first-consumer-pull ("a substrate lands when its first consuming module needs it") + build-order. fe-notes-and-pages (first consumer) is SHIPPED → pull-due NOW; completes AR-2's deferred "Drizzle-write variant" seam (ar-2 _index:24).
 
 ## Goal
@@ -39,7 +40,7 @@ Build the foundational live data plane so each module's frontend becomes usable 
 Record one authoritative alias — "`UI-3/M1.1+` = `data-plane-wiring`" — in `MVP-PATH.md` (the plan doc) + this unit's `_index` + a `.claude/docs/decisions.md` entry. Leave EVERY code/currency-doc phantom ref untouched; they resolve via the alias. (No `db/client.ts`, `notes/*`, etc. edited for homing — honors the additive invariant.)
 
 ## Build Steps
-_(filled by the IMPLEMENTATION-PLAN after Approval 1 — not yet gated.)_
+_Built + verified via PR #148 (see Route History); header refreshed at golive-replan G4 (F5)._
 
 ## Route History
 - 2026-10-20 (build + verify) — Built the in-place seam completion (worker.ts/client.ts values/exec/batch) + `composition-root.ts` singleton. **Fully verified:** tsc PASS · eslint clean · @vida/web **661/661** (zero regression) · OPFS E2E **4/4 green in real Brave on macOS 12** (the `PW_EXECUTABLE_PATH` escape hatch — exec/values(positional)/batch CRUD round-trip + persist-across-reload on a real wa-sqlite/OPFS worker). Headless Chromium (Codespace) can't boot the OPFS worker — a known harness-env limit, not the code (pre-existing AR-2 tests fail there too). PURELY ADDITIVE — zero frontend done-task files touched. PR #148.

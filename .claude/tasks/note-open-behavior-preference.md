@@ -1,6 +1,6 @@
 # Task: note-open-behavior-preference
 # Status: flagged / backlog (tracked — NOT started; split out of notes-entity-usability on 2026-10-20 per Victor)
-# Linear: pending (guarded create — mint via track-sync when the tree clears)
+# Linear: LIF-238
 # Profile: Greenfield-ish (spans preferences schema + settings UI + an IA/shell decision)
 # Created: 2026-10-20
 # Milestone: M1.x+ (DERIVED later — depends on the IA tab-workspace decision below; NOT M1 usability)
@@ -36,6 +36,7 @@ Investigated on 2026-10-20; the requested capability is **net-new / undocumented
 ## Dependencies
 - Blocked by: an IA/shell decision (ADR) on the tab/multi-document workspace model (undocumented today).
 - Relates to: `notes-entity-usability` (ships the hardcoded create-and-open default this task later makes configurable).
+- blocked by `preferences-rescope`
 
 ## Grounding references
 - `packages/core/src/db/schema/preferences.ts` (no field today) · `surface-map.md` (no tab workspace) ·

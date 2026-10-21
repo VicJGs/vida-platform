@@ -1,5 +1,5 @@
 # Task: fe-calendar
-# Status: in_progress
+# Status: in-progress
 # Linear: LIF-203
 # Profile: Add Frontend Component
 # Scenario: default
@@ -10,6 +10,9 @@
 
 ## Goal
 ② Frontend — unit #19. X-CUT · Global Calendar — dueIn cross-module lane (dayparted + timed), ProviderRead.
+
+## golive-replan absorption (G4, 2026-10-21)
+Debt this issue absorbs (`docs/specs/foundation/golive-replan/debt-plan.md` §2 · coverage-report.md): primitives-refinement Calendar "Today" SR label · S7 closes under the Entity Live Close (ELC-1…9, incl. every pinned EC live).
 
 ## Dependencies
 - blocked by `fe-codec-canvas-board`
@@ -33,6 +36,18 @@ vision doc FIRST when #19 is sequenced.
 
 
 ## Session Log
+- 2026-10-20 (S4 SHIPPED) — **`60dfde9`** on branch `fe-calendar` (NOT pushed): `@vida/ui` **`YearView`** (UI-2 · V12 — 12
+  mini-months, has 4px@.75 / busy 6px dots, today ring, current month accented only when the ring exists, each mini-month a
+  `role=table` with offset-aware `aria-colindex`) + pure `internal/year-layout.ts` (resolveYear · buildYear · indexDensity)
+  + surface Year dispatch + **month drill-in wired** (navigation, not a write → `clampToMonth` + `setRange('month')`, focus
+  lands on the Month grid — FOCUS_CONTRACT `tabChange → panel`). §XXVIII **D-S4-DEV-1** (has-dot .75; .55 failed 3:1 in
+  4/6) · **D-S4-DEV-2** (CalendarView opt-in `tabIndex` + ring). Full §XXVI stack: gate-1 REVISE (12) → re-critique SHIP
+  (+4) · Approval 1 (F5 heading-as-drill) · preflight PASSED · gate-2 REVISE (11) · **grounding pass** (Victor "ground it in
+  the documentation" → heading role REVERSED, focus-after-drill ADDED, weight 500) · Approval 2 · build · g2 review SHIP (9
+  folded) · **Visual Gate PASS (Victor-reviewed, 29 cells)**. @vida/ui 636/636 · @vida/web 683/683. Currency: v12 spec ·
+  v4 `tabIndex` · `_index` V12 · ui CLAUDE.md · runtime spec · slice-map · seam-contract §A · decisions · components.
+  **NEXT: S5 Living lens renderer** (slice-map S5, `LivingView`, EC-6..EC-10). Resume: cd worktree · nvm use 24 ·
+  `git log -1` = `60dfde9`.
 - 2026-10-20 (S3 SHIPPED) — **`84ce041`** on branch `fe-calendar` (NOT pushed): `@vida/ui` **`WeekView`** (UI-2 · V11 —
   Week AND Day, Day = one column) + pure `internal/week-layout.ts` (formatHour · normalizeSpan · windowFor · layoutDay) +
   surface Week/Day dispatch + **BR-16 root fix** — `timeFormat`/`weekStartsOn` READ from `preferences-store`;
@@ -91,6 +106,10 @@ vision doc FIRST when #19 is sequenced.
 | Fix build | §XXVIII D-FIX-DEV-1 (CanvasView actions wrap) | 48px toolbar overflowed at 768 / quietDesk 375 | ✅ approved, gate PASS |
 | S3 PLAN | Grounding pass — 3 "interpretations" were doc-resolved + missed BR-16 (locale prefs) | Victor: "check the documentation" ×3 | ✅ PLAN revised → Approval 1 |
 | S3 gate | sr-only containing-block page overflow · explicit column names · D-S3-DEV-1 short time | Visual Gate (screenshots + page probe) | ✅ fixed / approved, gate PASS |
+| S4 PLAN | gate-1 + gate-2 critiques (has-dot 3:1 computed · greybox governs the gap · colindex · button UA reset) | independent critics | ✅ 27 folded → Approvals 1/2 |
+| S4 PLAN | Grounding pass — G11 heading role reversed (sibling convention) · focus-after-drill added (FOCUS_CONTRACT) · weight 500 | Victor: "ground it in the documentation" | ✅ PLAN revised → proceed |
+| S4 build | D-S4-DEV-2 CalendarView `tabIndex` (tsc rejected rest passthrough) · accname leading-space fix | build-caught | ✅ approved at the S4 gate |
+| S4 gate | 1-up at 375 = HARNESS missing `index.css` (UA body margin) — not the product | Visual Gate probe of the container chain | ✅ harness fixed, gate PASS |
 
 ## Failures This Session
 - F001 — Visual-Gate static-box probe matched nothing (Chrome snaps 1.5px border → 1px) — resolved (select by box size; memory).
@@ -99,3 +118,7 @@ vision doc FIRST when #19 is sequenced.
 - F004 — Week page overflow at 375 from sr-only spans escaping the scroll region — resolved (`position:relative`; known-failures F004).
 - F005 — engine-dependent list accessible names ("Thu8" in jsdom) — resolved (explicit sr-only name; known-failures F005).
 - F006 — full suites killed by the background limit (10 min) then reaped under low system memory; 6 first-test cold-start timeouts — resolved (suites run sequentially; 105/105 alone; `testTimeout:15000` in week-view.test).
+- F007 — debug probe hung: a stray `cat > file` with no stdin blocked the command (misread as memory pressure) — resolved (Write tool for probe files).
+- F008 — accessible name "January2026" (accname drops a leading space inside an sr-only span) — resolved (sibling text node; memory tamagui gotchas).
+- F009 — Visual Gate read 1-up at 375: harness skipped the app's `index.css` → UA body margin −16px — resolved (harness mirrors main.tsx CSS; memory visual-gate-playbook).
+- F010 — CalendarView first test timed out under load (5.5s) — env flake (F003 pattern), green alone.

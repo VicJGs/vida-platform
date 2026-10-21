@@ -1,9 +1,10 @@
 # Task: notes-entity-usability
-# Status: BUILT + verified (both slices, 2026-10-20) — Approval 1+2 by Victor; PR pending
-# Linear: pending (guarded create — mint via track-sync when the tree clears, per the orphan-create guard)
+# Status: done — merged PR #150 (2026-10-20); repaid debt, homed in M1.2.4 by golive-replan G4
+# Linear: LIF-239
 # Profile: Add Frontend Component (+ a small @vida/core content-write seam)
 # Created: 2026-10-20
-# Milestone: M1 / M1.1.3+ (module usability — DERIVED: first-consumer-pull, the data plane is the resolving condition)
+# Project: M1 — Whole Manual OS
+# Milestone: M1.2.4 — Live Close: shipped-surface debt
 # Session: 2026-10-20-notes-entity-usability
 
 ## Goal
