@@ -19,7 +19,7 @@ entities (ADR-008 render-targets) — it owns no block body and no live data (al
   (debounced `writePageContent`, mount-echo deduped incl. blank pages — BR-NEU-5). `today` is a **local** `YYYY-MM-DD`
   (never `toISOString()`/UTC). Shell owns the terminal frames (loading/empty/error); `editorState?` is a test/gate override.
   Inline integration-block node-views (`/dailySummary`, …) remain the deferred #31 seam INSIDE the editor; multi-device
-  CRDT is M4. The **Dashboard** rail stays the honest stub (no journal providers registered — future module go-lives).
+  CRDT is M4. The **Dashboard** rail stays the honest stub (no journal providers registered — they land with each entity's live close / HARD-1 providers).
 - `home-surface.tsx` — **HomeSurface** (S3, EC-1/EC-2/EC-6/EC-7): the greet header + the **arrangement** layer composing
   S1+S2. `useHomeArrangement` = the READ seam (default `journalFirst`; the toggle CONTROL + persisted write = Settings/
   `fe-settings`, `decomposition.md:71`). fe-home OWNS the arrangement layout (RP4): Journal-first = page hero + a compact

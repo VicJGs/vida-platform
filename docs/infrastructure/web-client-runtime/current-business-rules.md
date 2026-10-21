@@ -61,7 +61,7 @@
   `DrizzleDb = createDrizzleProxy(client.driver)` + the module services (notes/journals + deps) ONCE, after the
   DB-ready gate, exposed as a `getServices()` singleton (not a React provider — App.tsx untouched; `seams/CLAUDE.md`
   sanctions the singleton). `deviceId` is read from / generated into `app_state['device_id']` (ADR-002 §5.0; `uuidv7()`).
-  Per-module go-live (`register + flip`) consumes it; adding a module appends its construction. `[FACT: db/composition-root.ts]`
+  Each entity's closing slice (`register + flip`, golive-replan ELC-3/4) consumes it; adding a module appends its construction. `[FACT: db/composition-root.ts]`
 - **[FACT] BR-RT-BOOT — no query before DB-ready.** `App.tsx` gates rendering (and thus any React Query read) on the
   one-time `open`+`migrate` resolving; the worker's `open` migrates internally (no double-migrate). `[FACT: App.tsx; boot.ts]`
 
