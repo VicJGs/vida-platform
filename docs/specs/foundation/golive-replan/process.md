@@ -222,3 +222,5 @@ project-neutral: "the real data store", never "OPFS/Brave"):
   are all diverging from the route I established on the envision". Verified: ≈185 ECs across 16 of 17 envision.md files; #150
   carried 0 of fe-notes' 30, and #151 SKIPped without carrying fe-home's. Added ELC-9, §2.5 (SKIP ≠ skip ECs · close
   re-verifies all ECs live · divergence corrected or re-pinned), T1/T2 Envision edits, and R8 (EC column in the G1 census).
+
+- **Applied 2026-10-21:** repo R1–R8 (PR #152) · toolkit T1–T5 after T0 (pending work parked on `wip/agy-engine-integration`) → `db98770`, guide `--check` green, `check_toolkit` unchanged vs HEAD (0 new errors). Anchor note: T3's "Task List :52" dispatch anchor was the `/critique` line; applied on the "Each re-scoped slice implemented … DISPATCHED BY TAG" item, by content.

@@ -1,5 +1,5 @@
 # Task: golive-replan
-# Status: in-progress (G4 DONE · GAP-2 RESOLVED 2026-10-21 — open only for T0: toolkit edits T1–T5, waiting on Victor)
+# Status: done — campaign COMPLETE 2026-10-21 (EST→G4 + GAP-2 + T0–T5; PRs #152 #153 #154; toolkit db98770)
 # Linear: LIF-240
 # Profile: Project Foundation
 # Scenario: Delivery Structure Reconstruction (establishment model of frontend-replan (EST → G0–G4))
@@ -30,9 +30,11 @@ usable; each go-live since is minted OUTSIDE the delivery structure to repay tha
 - [x] G2 — APPROVED 2026-10-21 · debt-plan rev 3: 7 units (notes · journals · preferences(+onboarding) · sessions(debt-only; close→fe-sessions) · notifications · gamification · shell X-CUT) + 10 re-edged; coverage 226 rows 0/0/0 — awaiting Victor
 - [x] G3 — APPROVED 2026-10-21: g3-order.md · ONE structure (143, M1.2.4 #60–66, dashboard #115, HARD-4 #122←43) · MVP-PATH refreshed · g4-edge-ledger.md · 8 task files · _projects.md M1.2.4 · (was: Order + one structure + ledger (both reconstructed-structure · MVP-PATH · g4-edge-ledger.md)
 - [x] G4 — EXECUTED 2026-10-21: M1.2.4 + LIF-240…249 · 357 edges 0 failed · re-homes · titles/parent/comments · junk milestones removed · verify clean (was: Linear reshape (Victor approves ledger → --status clean → write)
-- [ ] debt-unit builds (Entity Delivery Flow ②, closing under the DoL)
+- [x] T0–T5 — toolkit: pending work parked (wip/agy-engine-integration 7075f65, local) → T1–T4 applied by content anchor → guide regen green → check_toolkit unchanged vs HEAD (8 pre-existing errors, 0 new) → pushed db98770
+- [→] debt-unit builds (handed to the M1.2.4 units LIF-241…249 — each its own session) (Entity Delivery Flow ②, closing under the DoL)
 
 ## Route History
+- 2026-10-21 · **T0–T5 done; campaign CLOSED.** Toolkit pending work parked on local branch `wip/agy-engine-integration` (security review flagged its agy-* hooks: /tmp flag file injection HIGH + symlink clobber + heredoc JSON — Victor's unfinished work, unmodified, fix before resuming). T1–T4 applied, guide green, check_toolkit 8 errors pre-existing (identical on HEAD) → toolkit db98770 pushed. LIF-240 → Done. Handoffs: fe-calendar session (S7 = ELC close), mod-routines session (main's 9-slice map governs; entity-rescope reconcile; merge 0456c32).
 - 2026-10-21 · **GAP-2 resolved** (gap2-schema-gates.md, Victor-approved): 4/5 ⛔ gates void (tables landed); fe-finance #112 = service gate (store · Commitments+liability slice · FX) + budgeting design pass + ADR in its front matter; +4 edges (fe-health ← mod-health-*, fe-routines ← mod-routines), 361 set · 0 failed. Only **T0** remains.
 - 2026-10-21 · **G4 executed** from the main checkout (branch golive-g4). Guard held 9 creates on stale-map orphans LIF-205/207/217 → triaged ISOLATED → map fixed (Linear already Done) → re-sync clean. Created LIF-240 (campaign) + LIF-241…249; 357 edges, 0 failed. Re-homed LIF-237/238/239; deleted 3 empty junk General milestones. Next: mod-routines finishes → M1.2.4 L1 (preferences · notes · sessions). Open follow-ups: **T0** (toolkit T1–T5) · **GAP-2**.
 - 2026-10-21 · G3: order (g3-order.md; ⊕split dashboard sub-issue, §XXVIII encoding note) · ONE canonical structure (143 issues, M1.2.4 #65–71, dashboard #115, HARD-4 #122; GAP-1 retired; EX-1…4) · MVP-PATH refreshed (archived-inclusive census + Linear drift: LIF-237 in General project, LIF-237/239 Backlog vs merged) · g4-edge-ledger drafted. **Follow-up logged: GAP-2** (⛔ schema-amendment gates on 5 unbuilt surfaces have no issue: home them before the first of those surfaces starts).
