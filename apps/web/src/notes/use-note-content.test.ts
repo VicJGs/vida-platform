@@ -45,6 +45,17 @@ describe('useNoteContent (S2 — debounced content write, IR-7)', () => {
     expect(writeSpy).toHaveBeenCalledWith('p1', doc)
   })
 
+  it('dedupes: a save equal to the loaded content does not write (open-echo guard)', async () => {
+    const { result } = renderHook(() => useNoteContent('p4', doc), { wrapper }) // baseline = doc
+    act(() => {
+      result.current.save(doc) // identical to the loaded content → must be skipped
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(600)
+    })
+    expect(writeSpy).not.toHaveBeenCalled()
+  })
+
   it('flushes the pending write on unmount — never drops the last edit', async () => {
     const { result, unmount } = renderHook(() => useNoteContent('p2'), { wrapper })
     act(() => {

@@ -29,7 +29,7 @@ const SAVE_LABEL: Partial<Record<SaveState, string>> = {
 export function NoteEditorBody({ page }: NoteEditorBodyProps) {
   // Idempotent, browser-only — the canvas-editor.tsx render-body precedent. Scopes to `.vida-canvas-editor-page`.
   ensureCanvasEditorStyles()
-  const { save, saveState } = useNoteContent(page.id)
+  const { save, saveState } = useNoteContent(page.id, page.content)
   const label = SAVE_LABEL[saveState]
   return (
     <View className="vida-canvas-editor-page" width="100%" maxWidth={740} marginHorizontal="auto" gap="$8">

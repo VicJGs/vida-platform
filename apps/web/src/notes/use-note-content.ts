@@ -25,12 +25,21 @@ export interface NoteContentResult {
 
 const DEBOUNCE_MS = 500
 
-export function useNoteContent(id: string): NoteContentResult {
+/**
+ * @param initialContent the content already loaded from the DB — the dedupe baseline, so a write fires only when
+ *   the doc actually CHANGES. This collapses the editor's load-time `onChange` echo (TipTap emits once on mount):
+ *   if the emitted doc matches what was loaded, no write (no spurious `updated_at` bump / list re-sort on mere open).
+ */
+export function useNoteContent(id: string, initialContent?: EditorDocument | null): NoteContentResult {
   const qc = useQueryClient()
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pending = useRef<EditorDocument | null>(null)
+  const pending = useRef<{ doc: EditorDocument; serialized: string } | null>(null)
   const mounted = useRef(true)
+  // The last serialization known to be in the DB — initialised to the loaded content (the dedupe baseline).
+  const lastSaved = useRef<string | null>(initialContent != null ? JSON.stringify(initialContent) : null)
+  // The serialization currently being written (promoted to lastSaved only on success, so a failed write retries).
+  const inFlight = useRef<string | null>(null)
 
   const mutation = useMutation({
     mutationFn: async (doc: EditorDocument) => {
@@ -38,13 +47,14 @@ export function useNoteContent(id: string): NoteContentResult {
       return notes.writePageContent(id, doc)
     },
     onSuccess: () => {
+      if (inFlight.current != null) lastSaved.current = inFlight.current
       if (mounted.current) setSaveState('saved')
       void qc.invalidateQueries({ queryKey: ['pages', id] }) // keep a later re-open fresh
     },
     onError: (e) => {
       // M1 has no toast wired — surface write failures to the console + the honest save-state.
       console.error('[writeNoteContent failed]', e)
-      if (mounted.current) setSaveState('error')
+      if (mounted.current) setSaveState('error') // lastSaved unchanged → the next edit retries
     },
   })
 
@@ -56,15 +66,18 @@ export function useNoteContent(id: string): NoteContentResult {
       clearTimeout(timer.current)
       timer.current = null
     }
-    const doc = pending.current
-    if (doc != null) {
+    const p = pending.current
+    if (p != null) {
       pending.current = null
-      mutation.mutate(doc)
+      inFlight.current = p.serialized
+      mutation.mutate(p.doc)
     }
   }
 
   const save = (doc: EditorDocument) => {
-    pending.current = doc
+    const serialized = JSON.stringify(doc)
+    if (serialized === lastSaved.current) return // dedupe: unchanged since load/last save (e.g. the mount echo)
+    pending.current = { doc, serialized }
     if (mounted.current) setSaveState('saving')
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => flushRef.current(), DEBOUNCE_MS)
