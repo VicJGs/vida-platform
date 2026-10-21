@@ -10,6 +10,11 @@ vi.mock('../db/composition-root', () => ({
   getServices: () => Promise.resolve({ notes: { listPages: async () => [] } }),
 }))
 
+// NotesSurface + useCreateNote call useNavigate (open-on-click / create-and-open); stub the router.
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => vi.fn(),
+}))
+
 afterEach(cleanup)
 const renderUI = (ui: React.ReactNode) => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })

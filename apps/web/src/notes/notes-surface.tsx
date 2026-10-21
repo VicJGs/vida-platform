@@ -9,6 +9,7 @@
 // ============================================================================
 import type { ResolvedView } from '@vida/core'
 import type { ViewLayout } from '@vida/types'
+import { useNavigate } from '@tanstack/react-router'
 import { View } from '@tamagui/core'
 import { Button, CollectionView } from '@vida/ui'
 import { useCollection } from '../collection/use-collection'
@@ -23,6 +24,9 @@ export function NotesSurface() {
   const col = useCollection('notes-default', NOTES_LAYOUTS)
   const { rows, state } = useNotesRows()
   const { createNote, isPending } = useCreateNote()
+  const navigate = useNavigate()
+  // BR-NEU-1: a collection row/tile opens its entity page.
+  const onOpen = (id: string) => navigate({ to: '/notes/$id', params: { id } })
   // M1: the surface owns the data leg (default empty / dev sample). Live: `resolved` comes from
   // useQuery(['views','resolve','notes-default']) → ViewEngine.resolve — drop-in, no render change.
   const resolved: ResolvedView = { rows: rows as unknown[], groups: [], state, degraded: [] }
@@ -46,7 +50,7 @@ export function NotesSurface() {
           onFilter={col.onFilter}
           onSort={col.onSort}
           onNewView={col.onNewView}
-          renderView={(layout, viewState) => renderNotesView(layout, viewState, rows)}
+          renderView={(layout, viewState) => renderNotesView(layout, viewState, rows, onOpen)}
         />
       </View>
     </View>
