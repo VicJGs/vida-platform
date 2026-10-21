@@ -1,10 +1,10 @@
 # Task: golive-replan
-# Status: in-progress (G4 — G3 + ledger APPROVED 2026-10-21; waiting on preconditions: PR #152 merge + main checkout on main)
+# Status: in-progress (G4 — executing the Linear ledger)
 # Linear: pending (minted at G4 with the debt units — orphan-create guard)
 # Profile: Project Foundation
 # Scenario: Delivery Structure Reconstruction (establishment model of frontend-replan (EST → G0–G4))
 # Project: M1 — Whole Manual OS
-# Milestone: M1.2+ (frontend surface tier — cross-milestone) — the FE tier whose Done-when this corrects
+# Milestone: M1.2+ (frontend surface tier — cross-milestone)
 # Isolation: worktree .claude/worktrees/golive-replan (branch golive-replan), off main @ 3b0ecc8
 # Source: 2026-10-21 STRUCTURAL triage (in-session) → docs/specs/foundation/golive-replan/_index.md
 # Created: 2026-10-21

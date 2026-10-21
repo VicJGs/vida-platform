@@ -3,7 +3,8 @@
 # Linear: LIF-238
 # Profile: Greenfield-ish (spans preferences schema + settings UI + an IA/shell decision)
 # Created: 2026-10-20
-# Milestone: M1.x+ (DERIVED later — depends on the IA tab-workspace decision below; NOT M1 usability)
+# Project: M1 — Whole Manual OS
+# Milestone-note: M1.x+ (DERIVED later — depends on the IA tab-workspace decision below; NOT M1 usability). No milestone header until derived (golive-replan G4: a free-text Milestone header mints a junk Linear milestone).
 # Split-from: notes-entity-usability (the BR-NEU-2 create-behavior decision)
 
 ## Goal

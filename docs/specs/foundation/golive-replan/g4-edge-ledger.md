@@ -94,6 +94,18 @@ an old entry.
 - **Titles · parent link · comments:** `issueUpdate` back to the slug / `parentId: null` / `commentDelete` (ids in §7).
 - **No existing issue is deleted or retired** by this ledger.
 
+## 6b. Amendments found by the §0.2/§0.3 gates (2026-10-21, §XXVIII, logged before any write)
+- **A1 · golive-replan tracked** as the campaign umbrella in the existing `M1.2+ (frontend surface tier — cross-milestone)`
+  milestone (precedent: frontend-track LIF-202, backend-replan LIF-163). Its free-text header would have minted a junk milestone.
+- **A2 · note-open-behavior-preference** gets `# Project: M1` and **no milestone header** until its milestone is derived. Its
+  free-text `# Milestone:` would have minted a junk milestone. The text is kept as `# Milestone-note:`.
+- **A3 · archived task files are never synced** (`tracker_sync.py:1044-1048`), so the status drift on LIF-217 / LIF-207 /
+  LIF-205 is fixed by a **manual `issueUpdate(state=Done)`**, not by their `# Status:` lines.
+- **A4 · `in_progress` (underscore) normalizes to BACKLOG** (`config/tracker.config.json` stateMap). That is the root of the
+  fe-calendar/mod-routines drift; both now say `in-progress`.
+- **A5 · post-write cleanup:** the three junk milestones under the General project (`M1 / M1.1.3 … DERIVED`, `M1 — per-module
+  usability` ×2) are deleted **once empty**, after the re-homes move LIF-237/238 out.
+
 ## 7. Execution record (filled during G4)
 | Step | Result | Linear ids |
 |---|---|---|
