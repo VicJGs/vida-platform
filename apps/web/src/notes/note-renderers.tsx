@@ -32,9 +32,9 @@ function Icon({ icon: Ico, size = 16, tone = 'muted' }: { icon: LucideIcon; size
 const Row = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$8', flexWrap: 'wrap' })
 const Col = styled(View, { flexDirection: 'column', gap: '$4' })
 
-function NoteRowCard({ r }: { r: NotesRow }) {
+function NoteRowCard({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) {
   return (
-    <Card interactive onPress={() => {}} status={r.favorite ? 'warm' : 'neutral'} aria-label={r.title}
+    <Card interactive onPress={() => onOpen(r.id)} status={r.favorite ? 'warm' : 'neutral'} aria-label={r.title}
       header={<Row><Icon icon={typeIcon(r.type)} tone="primary" /><Text fontFamily="$display" fontSize="$body" color="$colorTextPrimary">{r.title}</Text></Row>}
       actions={r.favorite ? <Icon icon={Star} tone="accent" /> : undefined}>
       <Col>
@@ -45,9 +45,9 @@ function NoteRowCard({ r }: { r: NotesRow }) {
   )
 }
 
-function NoteTile({ r }: { r: NotesRow }) {
+function NoteTile({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) {
   return (
-    <Card interactive onPress={() => {}} status={r.favorite ? 'warm' : 'neutral'} aria-label={r.title}>
+    <Card interactive onPress={() => onOpen(r.id)} status={r.favorite ? 'warm' : 'neutral'} aria-label={r.title}>
       <Col>
         <View height={72} borderRadius="$sm" backgroundColor="$colorSurfaceSecondary" alignItems="center" justifyContent="center">
           <Icon icon={typeIcon(r.type)} size={24} />
@@ -61,10 +61,10 @@ function NoteTile({ r }: { r: NotesRow }) {
 
 /** Render the active layout's @vida/ui renderer with notes rows. `graph` always degrades to the `empty` terminal
  *  (AR-8 graph data-prep deferred, NOT-49) unless loading/error. `table`/`board`/`timeline` aren't offered for notes. */
-export function renderNotesView(layout: ViewLayout, state: ViewState, rows: readonly NotesRow[]): ReactNode {
+export function renderNotesView(layout: ViewLayout, state: ViewState, rows: readonly NotesRow[], onOpen: (id: string) => void): ReactNode {
   switch (layout) {
     case 'gallery':
-      return <GalleryView aria-label="Notes" items={rows} getKey={(r) => r.id} state={state} minTileWidth={220} renderItem={(r) => <NoteTile r={r} />} />
+      return <GalleryView aria-label="Notes" items={rows} getKey={(r) => r.id} state={state} minTileWidth={220} renderItem={(r) => <NoteTile r={r} onOpen={onOpen} />} />
     case 'calendar':
       return <CalendarView aria-label="Notes by day" items={rows} getKey={(r) => r.id} getDate={(r) => r.date} state={state === 'empty' ? 'success' : state} renderItem={(r) => <Row><Icon icon={typeIcon(r.type)} size={12} /><Text fontSize="$small">{r.title}</Text></Row>} />
     case 'graph':
@@ -75,6 +75,6 @@ export function renderNotesView(layout: ViewLayout, state: ViewState, rows: read
       )
     case 'list':
     default:
-      return <ListView aria-label="Notes" items={rows} getKey={(r) => r.id} state={state} dividers renderItem={(r) => <NoteRowCard r={r} />} />
+      return <ListView aria-label="Notes" items={rows} getKey={(r) => r.id} state={state} dividers renderItem={(r) => <NoteRowCard r={r} onOpen={onOpen} />} />
   }
 }

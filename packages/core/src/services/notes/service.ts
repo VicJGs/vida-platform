@@ -132,6 +132,12 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       return pageRepo.update(id, parsed)
     },
 
+    // IR-7: the editor body is written through its OWN path, never the updatePage LWW metadata patch, so the
+    // eventual M4 CRDT merge is not clobbered. M1 = a local write (serialized TipTap doc → the text column);
+    // M4 swaps the internals to the CRDT entry point — this signature is stable. (interpretation.md:159)
+    writePageContent: async (id: string, content: EditorDocument): Promise<PageRow> =>
+      pageRepo.update(id, { content: JSON.stringify(content) }),
+
     softDeletePage: async (id: string): Promise<void> => {
       await pageRepo.delete(id)
     },

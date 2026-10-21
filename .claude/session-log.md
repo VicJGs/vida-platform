@@ -6650,3 +6650,58 @@ Next session:
   - Run full suites sequentially (ui, then web) — the machine reaps parallel runs under memory pressure.
 ---
 
+
+---
+Date: 2026-10-20
+Task: fe-calendar (LIF-203 · #19) — Global Calendar, Entity Delivery Flow ②, worktree `.claude/worktrees/fe-calendar` (branch `fe-calendar`, Node 24)
+Goal: Build S4 (Year renderer) through the full §XXVI stack.
+Completed:
+  - **S4 committed `60dfde9`**: `packages/ui/src/components/year-view.tsx` (V12, 19 tests + stories) · `packages/ui/src/internal/year-layout.ts` (11 tests: resolveYear · buildYear · indexDensity) · `calendar-view.tsx` opt-in `tabIndex` + ring (D-S4-DEV-2, +1 test) · `apps/web/src/app/calendar/index.tsx` Year dispatch + `yearFixture` + `clampToMonth` + drill-in with focus-after-drill (+6 surface tests). PLAN `docs/specs/foundation/fe-calendar/delivery/PLAN-S4-year-renderer.md`; durable spec `docs/specs/components/ui-2-platform-views/v12-year-view.md`.
+  - Gates: gate-1 REVISE (12) → re-critique SHIP (+4) · Approval 1 · preflight PASSED · gate-2 REVISE (11) · grounding pass · Approval 2 · g2 code review SHIP (9 folded) · mutation check (drill focus killed) · Visual Gate PASS (Victor-reviewed; 29 cells: has 3:1 min 3.54 · names 6.47 · 0 page overflow · 2-up/4-up · Tab Jan→Dec · focus on "Month grid").
+  - Verification: tsc 0 (ui · web) · eslint 0 changed files (`index.ts:1` pre-existing) · @vida/ui 636/636 · @vida/web 683/683 · Verified against @tamagui/core 2.6.2 · date-fns 4.4.0 · React 19.2.4 (installed types; Context7 unauthenticated).
+  - Currency: v12 spec · v4 `tabIndex` row · ui-2 `_index` V12 · `packages/ui/src/CLAUDE.md` · web-client-runtime current-spec S4 · slice-map S4 ledger ✅ · seam-contract §A YearView ratified · decisions.md S4 section · components.md V12 row. Memory: visual-gate-playbook (harness imports app CSS) · tamagui gotchas (accname leading space + real atomic-class prefixes).
+In progress:
+  - Nothing mid-flight. Worktree clean at `60dfde9`. NOT pushed, no PR (branch merges after the slices).
+Decisions:
+  - Month HEADING is the drill target (a wrapping button would flatten the table for AT) — Victor-approved (F5).
+  - Drill-in wired in M1: it is NAVIGATION (calendar-ui-store), not a write; focus → Month grid per FOCUS_CONTRACT `tabChange → panel`.
+  - D-S4-DEV-1 has-dot .75 (mockup .55 failed 3:1 in 4/6) · D-S4-DEV-2 CalendarView `tabIndex` · `$8` gap (greybox governs, envision:60-61) · no `role=heading` (sibling convention; grounding pass reversed gate-2 G11).
+  - Feel notes kept as-is (Victor, no change): 375 cells ≈12.5px · names 4px inside the grid edge.
+Next session:
+  - **Start S5 — Living lens renderer** (slice-map S5: `@vida/ui` `LivingView` — ④ purpose-budget strip (honest-null) · ② habit threads (kept/miss/future + streak) · the 7 temporal day-columns as `Card`s with alive-hooks (past record · today live + ③ open-time + ⑤ slip-flag · future intention); EC-6..EC-10 + EC-11/12/13/14; seam §A `PurposeBudget`/`HabitThread`/`LivingDay`/`LivingViewProps` incl. the `onSlotOpenTime` intent (deny-safe absent in M1)). Greybox: `mockups/greybox/living{,-dark,-reader}.png` + `calendar-concept-board.html`.
+  - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git log -1` = `60dfde9`. GROUND FIRST (owner docs + Card alive-hooks + shipped stores + decisions ledger + calendar-vision §1-§6 + ADR-011 §3.6 honest-null) → PLAN-S5 → full §XXVI stack. S5 is the rule-of-three point for extracting `SR_ONLY`/`warn`/`parseLocalDate` (PLAN-S3 §5.2).
+  - Visual Gate harness: re-create `apps/web/vg-calendar.html` + `src/__envision__/vg-calendar.tsx` (MUST import `../fonts.css` + `../index.css`); driver pattern `scratchpad/vg-s4.mjs`. Run full suites sequentially.
+---
+
+---
+Date: 2026-10-20 — CI drifts resolved + the live data plane BUILT & MERGED (data-plane-wiring, PR #148)
+Task: started on CI problems (Cloudflare + prettier); expanded into the notes/journal data-plane foundational build. Profile: bug-fix → Generic Coding / foundation.
+Accomplished:
+  - **CI drifts (all grounded in "server = M4, not M1" per MVP-PATH §1/§6):** `pnpm dev:app` server-free dev + MVP-0 doc-honesty (PR #136, merged); CF "Workers Builds" = disable Preview Builds, steps documented (LIF-229); prettier reformat stays deferred (5 worktrees); **M4 deploy/server CI gated out of M1** — `deploy.yml`→`workflow_dispatch` + `ci.yml` paths-ignore docs (PR #147, merged; ~70-80% Actions-minutes reduction). Actions fully dark = account minutes/budget exhausted (LIF-236; $0 budgets, payment issue) → self-heals Nov 1; Codespaces NOT blocked.
+  - **notes-dataplane-orphan-deferral DIAGNOSED (PR #141):** the data plane was homed to a PHANTOM ("UI-3/M1.1+" = a CLOSED editor unit); no real owner. DF-12 orphan-deferral.
+  - **data-plane-wiring foundational unit — BUILT, VERIFIED, MERGED (PR #148, `67253648`).** Full §XXVI gate (baseline → PLAN → Approval 1 → IMPL-PLAN → Approval 2; §XXVIII re-gate; a docs-check course-correction that rejected a drifting net-new `live-driver.ts` for the documented in-place completion). Lands AR-4's reserved worker Drizzle seam (`values`/`exec`/`batch` on worker.ts+client.ts, calling the already-built `web-driver`) + a module-singleton `composition-root.ts` (deviceId from app_state). **PURELY ADDITIVE — zero frontend done-task files touched; per-module hook flips kept OUT** (Victor's "nothing changed on done tasks").
+  - **Verified:** tsc PASS · eslint clean · @vida/web **661/661** (zero regression) · OPFS CRUD **E2E 4/4 green in real Brave on macOS 12** (PW_EXECUTABLE_PATH escape hatch). Codespace headless Chromium CAN'T boot the OPFS worker (all e2e incl. pre-existing AR-2 timeout) — harness-env limit, not code; added `.devcontainer` for the non-OPFS case.
+Decisions / lessons:
+  - **Check the docs before treating anything as a decision** — recurring all session. The milestone home (M1.1.3) is DERIVED by first-consumer-pull, not chosen ([[deferred-substrate-home-is-derived-not-chosen]]); the composition mechanism/batch/deviceId were all doc-resolved; the `live-driver.ts` was a net-new substitute the docs made unnecessary.
+  - **The OPFS E2E's faithful env = a real local browser (Brave), not headless Chromium** (Codespace/CI). Reproduce locally via PW_EXECUTABLE_PATH, as QA-1 did. [[playwright-is-the-visual-gate-substrate-not-ci-cost]]
+  - **Purely-additive discipline:** the db-layer seam is AR-4's RESERVED hand-off (throwing placeholders commented for this unit) — completing it ≠ changing done work; the protected "done tasks" are the frontend surfaces (untouched).
+Next session:
+  - **Make the merged surfaces usable: per-module `register + flip`** on the data plane — start with **notes go-live** (register NotesService + flip the notes hooks) as its own additive unit; then home/journal, gamification, notifications, etc. Each is swap-ready. Residual seams: notes BODY = separate Yjs unit; search = FTS5/DB-8.
+  - Victor: apply the CF "disable Preview Builds" toggle; CI returns free on the Nov 1 Actions reset.
+
+---
+Date: 2026-10-20 — notes made USABLE (create-fix + open + write + persist) · PR #150 · go-live pattern established
+Task: triage "the OS is stuck in test mode / can't create or use notes" → fix the create bug → the first per-module go-live (notes-entity-usability). Profile: bug-fix → Add Frontend Component (+ a small @vida/core seam).
+Accomplished:
+  - **Create-note bug FIXED (`fix: initVault`).** Root-caused LIVE in Brave via Playwright MCP: the first real `createPage` threw `Vault not initialized` — `repository.computeSyncHash → hashContent` assertReady-guards on libsodium being loaded, and nothing called `initVault()` at startup. `initVault()` takes no secret (just `await sodium.ready`); the `_sync_hash` is an UNKEYED BLAKE2b content hash needed even in M1. Loaded once in `composition-root.build()`. [[repository-writes-need-initvault-even-in-m1]]
+  - **Triage of "OS non-functional":** 3/4 symptoms = the intended M1 stub state (home journal region is a designed placeholder; Modules panel = "empty-but-functional, lands with #15/#16"); the real gaps = open-on-click (a no-op) + write-and-save (IR-7, deferred). "Why IR-7 deferred" doc-grounded: #7 canvas-editor built `page-binding.ts` as a pure convention (no hook, defer to first consumer) + #27 fe-notes couldn't wire it with no data plane — BOTH resolved by data-plane-wiring. CRDT/Yjs sync stays M4 (@vida/editor has no Yjs dep → M1 local persistence needs none).
+  - **notes-entity-usability BUILT + verified (PR #150).** Full §XXVI per slice. **S1** open-on-click + create-and-open (`note-renderers` onOpen · `notes-surface`/`use-create-note` useNavigate). **S2** IR-7 content persistence: new `NotesService.writePageContent` (content's OWN path) + `content` dropped from `updatePageSchema` (can't be LWW-patched) + `useNoteContent` (debounced · flush-on-unmount · invalidate · honest saved|error) wired to `VidaEditor.onChange`. **§XXVIII dedupe** (Victor-approved): TipTap fires onChange on mount → baseline dedupe so mere-open doesn't write/bump `updated_at`. [[tiptap-onchange-fires-on-mount-dedupe-content-writes]]
+  - **Verified:** tsc 0 · eslint 0 · core notes 31/31 · web 666/667 (the 1 = App.integration lazy-load waitFor flake, passes 4/4 alone; `encryption/vault.test.ts` argon2id/1MB timeouts are pre-existing + untouched). **Verified LIVE in Brave on the real OPFS worker:** open/create/type→Saved→reload persists · reopen→no spurious write · console clean. Durable docs promoted (§XXIX). 5 commits: initVault · planning · S1 · S2 · dedupe.
+  - **Playwright MCP fix:** the MCP was pinned to Chrome (absent; un-installable on macOS 12 — Chrome needs Ventura, brew cask refuses, sudo needs a TTY). Pointed the plugin config at Brave (`--executable-path`) — the only OPFS-capable browser here.
+Decisions / lessons:
+  - **Check the docs before treating anything as a decision / expanding scope** — the configurable-create-behavior + "new tab" Victor asked for is net-new/undocumented (no preference field; no in-app tab workspace in the IA) → split to a tracked task, NOT invented inline.
+  - **Verify go-lives LIVE in the real app** — unit tests mock the service, so seam defects (initVault, the onChange echo) only surface in Brave on the real OPFS worker.
+  - A failed content write must retry: `lastSaved` promoted on SUCCESS only (dedupe must not swallow a retry).
+Next session:
+  - **Work the approved go-live queue** → `.claude/tasks/module-go-lives.md` (direction approved; each runs its OWN §XXVI gate). Priority: **home/journal** (journals already in the composition root) → settings → notifications → gamification → session-hud. The notes unit (PR #150) is the worked precedent + the shared pattern.
+  - Open threads: merge PR #150 (CI dark until Nov 1); `note-open-behavior-preference` (after settings); `fe-calendar` S5 (separate worktree, mid-build).

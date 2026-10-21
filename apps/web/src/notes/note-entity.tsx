@@ -82,12 +82,13 @@ export function NoteEntity() {
     )
   }
   if (state === 'empty' || page === null) {
-    // M1 honest-empty: no live data plane yet (useNoteEntity default). `?sample` renders a populated page for the gate.
+    // The data plane is live: a real note returns state:'success' (blank content is fine). This branch is
+    // genuine not-found — getPage(id) returned null (e.g. a deleted or bad id). `?sample` renders a populated page.
     return (
       <Centered>
-        <EmptyState title="This page isn’t available yet">
+        <EmptyState title="Note not found">
           <Text fontSize="$body" color="$colorTextMuted">
-            Notes open here once the local data plane is connected.
+            This note may have been deleted, or the link is out of date.
           </Text>
         </EmptyState>
       </Centered>

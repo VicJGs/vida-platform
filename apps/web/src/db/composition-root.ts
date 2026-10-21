@@ -15,6 +15,7 @@
 
 import {
   createDrizzleProxy,
+  initVault,
   uuidv7,
   createTaggableTypeRegistry,
   createSpacesService,
@@ -54,6 +55,11 @@ async function resolveDeviceId(driver: SqliteDriver): Promise<string> {
 
 async function build(): Promise<Services> {
   await ensureDbReady() // BR-RT-BOOT — never construct before the DB is open+migrated
+  // Load libsodium WASM once, before any write. Despite the name, initVault() takes no
+  // secret — it only awaits `sodium.ready` (vault.ts). The repository computes an UNKEYED
+  // _sync_hash (BLAKE2b, hashContent) on every row (ADR-002 sync metadata), which needs
+  // libsodium loaded even in M1 where field encryption stays dormant (crypto unlock = M3).
+  await initVault()
   const driver = getDbClient().driver
   const db: DrizzleDb = createDrizzleProxy(driver)
   const deviceId = await resolveDeviceId(driver)
