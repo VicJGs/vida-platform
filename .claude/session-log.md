@@ -6738,6 +6738,22 @@ Date: 2026-10-21 (correction, appended — earlier entries are not rewritten)
 - golive-replan (EST→G3) merged as PR #152 (`d6c83e1`); G4 (Linear ledger) executing on branch `golive-g4`.
 
 ---
+Date: 2026-10-21 (block 2026-10-19 → 2026-10-20)
+Task: mod-tasks (LIF-142 · #65) — close-out + repo bookkeeping
+Goal: Resolve the post-S9 "calls" from the docs, ship the Tasks ① backend, and leave main clean.
+Completed:
+  - **Grounding fix `1bf6caa`** — "open" = status ∉ {completed, cancelled} (shipped TERMINAL convention + projects intake G9): `ListTasksFilter.open` + provider key, Today/Board presets `{ open: true }`, the due lane skips cancelled; `todayYmd` → `utcDay` (UTC-day convention); date validity conforms to ADR-002 §2.8. tasks 98/98.
+  - **PR #145 merged (`e1fc356`)** after merging origin/main (41 commits, clean) into `mod-tasks`; vault 36/36 alone (F006); Actions did not run (billing). LIF-142 → Done; task archived; worktree + local branch removed; `.claude/docs/{api,decisions}.md` + known-failures F006.
+  - **PR #146 merged (`f296b5c`)** — every pending bookkeeping change in the main checkout (incl. other sessions' records + `docs/features/routines/delivery/`), merged with origin/main (6 bookkeeping conflicts resolved), `.playwright-mcp/` gitignored, stale pre-S1 `docs/features/tasks/delivery/` copy removed. Local main = origin/main, clean.
+In progress:
+  - Nothing. mod-tasks is closed.
+Decisions:
+  - A "flag for Victor's call" is drift like an interpretation — grep the shipped cross-module convention (same enum/concept across `services/*`) + intakes first, then fix (memory step 4c).
+  - With GitHub Actions blocked by billing, local gates (tsc · eslint · module suite · isolated core runs) are the verification of record, as for #142–#146.
+Next session:
+  - **`mod-routines`** (computed next head, M1.1.2 backend, 5 dependents): fresh worktree off origin/main (`.claude/worktrees/mod-routines`), Node 24 via `PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; read `docs/features/routines/delivery/{interpretation,slice-map,seam-contract}.md` + `docs/modules/tasks/current-spec.md` (the task-step driver seam: createTask/completeTask/getTask/listTasks + `open`).
+  - Owed elsewhere: `/task-complete fe-gamification` (PR #140 merged 2026-10-15, file still "in review"); fix GitHub Billing & plans so CI runs again.
+---
 Date: 2026-10-21 — golive-replan: the go-live drift triaged, planned, reshaped, closed
 Task: golive-replan (LIF-240) — Project Foundation / Delivery Structure Reconstruction (frontend-replan establishment model)
 Accomplished:
