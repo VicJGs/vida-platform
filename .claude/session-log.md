@@ -6754,3 +6754,17 @@ Next session:
   - Debt routes after mod-routines: L1 preferences-rescope (LIF-247) · notes-rescope (LIF-245) · sessions-rescope (LIF-248).
   - In flight elsewhere: fe-calendar (f8; S5 Visual Gate → merge main → S7 = ELC close) · mod-routines (9c; entity-rescope reconcile vs main's 9-slice map).
   - Open follow-ups: toolkit `check_toolkit` 8 pre-existing registry errors · fix the parked agy-* hooks (security review) before resuming that branch.
+
+---
+Date: 2026-10-21 (addendum — after golive-replan close-out)
+- Close-out PR #154 merged (`865d341`); campaign worktree + branches removed. Toolkit `db98770` (Entity Live Close) is the global method.
+- **Wave L1 is READY now** (blocked only by data-plane ✅; `--next` lists mod-routines first by milestone order, not by dependency).
+  Agreed start: **preferences-rescope (LIF-247) first** (the hub — unblocks shell · gamification · journals · notifications);
+  notes-rescope (LIF-245) in parallel if review bandwidth allows; sessions-rescope (LIF-248) after preferences merges
+  (both append to `composition-root.ts`; mod-routines S3 also consumes the sessions service).
+- **Before starting:** the main checkout holds the 9c session's uncommitted edits (`session-log.md`, `TASKS.md`,
+  `archive/mod-tasks.md`) — commit them (from 9c, on a branch) and `git pull` main before any new worktree.
+- Each L1 unit: own worktree + own session · `/begin` → task `preferences-rescope` → Add Frontend Component /
+  `entity-rescope` → Step 0 baseline → Documentation Gate → … → close on ELC-1…9 (every pinned EC re-verified live).
+- In flight elsewhere: fe-calendar (session f8, S5 Visual Gate → merge main → S7 = ELC close) · mod-routines (session 9c,
+  entity-rescope reconcile vs main's 9-slice map, merge `0456c32`).
