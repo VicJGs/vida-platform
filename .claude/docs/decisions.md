@@ -1166,3 +1166,15 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 - **S9 summary = the GOVERNING `docs/core/architecture/cross-module-integration.md` §2 row** (a LIST of tasks due/scheduled/completed on the date, title·status·priority); "the date" of a timestamp = the UTC calendar day (platform convention); due work registers ONCE, on the Sessions `dueIn` lane (SS-7).
 - **"Open" = status ∉ {completed, cancelled}** (platform TERMINAL convention + projects intake G9) — `open` filter, Today/Board presets, the due lane; S5 regen anchor re-pointed to the UTC day.
 - **Lesson (×4 Victor corrections):** interpretations, deferrals and "calls for Victor" were drift each time — ground in the "Governs:" core doc, both intakes' resolved G-items and the shipped cross-module convention before precedents (memory `ground-every-deferral-and-interpretation-before-presenting`).
+
+## golive-replan G0 — the Entity Live Close (2026-10-21 · Victor Approval 2 · `docs/specs/foundation/golive-replan/process.md`)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-21 | Unit of delivery | what makes a frontend unit "done"? | **the ENTITY closes once, live** — ① merged → ② on the seam contract → registered + hooks live + interactions wired → verified live on real OPFS (ELC-1…9) | ratified from entity-delivery-flow §1/§2 ENTITY CLOSE + ADR-019 §3.2 "usable"; Victor: "group work … so I can use it live and test it until the end of M1" | no (M1 bar) |
+| 2026-10-21 | Stubs | may a data leg ship stubbed? | **planning convenience only; at close an unwired leg needs a proven issue home (DF-12)** | "real or stubbed" (EDF:53) is for parallel tracks, never a close state | no |
+| 2026-10-21 | "Go-live" | keep go-lives as a unit type? | **retired** — half-wired shipped entities run the existing Entity Re-scope Flow (EDF §6); unmet ELC = ⛔ ungated-owed | out-of-structure go-lives were the drift (golive-replan triage F1–F9) | — |
+| 2026-10-21 | CODEC #13 | does #13 owe live engine wiring? | **no — met through consumers**; each engine is wired in its first consuming entity's closing slice | recorded #13 decision "Option A — convention + defer live" (this file, fe-codec-seams #13) | — |
+| 2026-10-21 | Envision | are pinned ECs checked at the end? | **yes — Envision is a contract to the end**: SKIP skips the greybox, never the ECs (inherited ECs are carried); ENTITY CLOSE re-verifies every EC live (feel ECs first become checkable here); a divergence is corrected or explicitly re-pinned | Victor 2026-10-21: features "diverging from the route I established on the envision"; #150 carried 0 of fe-notes' 30 ECs, #151 SKIPped without carrying fe-home's | no |
+
+- **Lesson:** the three "open G0 decisions" were doc-answered (Victor's correction at Approval 1) — a planning doc's open-decisions list must be empty of anything the governing docs already settle.

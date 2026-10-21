@@ -1,5 +1,6 @@
 # Task: module-go-lives (BACKLOG QUEUE — approved for the next fresh session)
-# Status: approved-queue (direction approved by Victor 2026-10-20; each item executes with its OWN §XXVI gate)
+# Status: SUPERSEDED 2026-10-21 by golive-replan (docs/specs/foundation/golive-replan/) — "go-live" retired as a unit type; the queued items become entity-rescope debt units homed at G2–G4. Kept as the G1 census seed.
+# (was: approved-queue, direction approved by Victor 2026-10-20)
 # Created: 2026-10-20
 # Milestone: M1 — per-module usability (the swap-ready fleet the data plane enabled)
 # Pattern established by: notes-entity-usability (PR #150) — the reference implementation
