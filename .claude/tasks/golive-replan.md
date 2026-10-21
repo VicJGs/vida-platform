@@ -1,5 +1,5 @@
 # Task: golive-replan
-# Status: in-progress (G4 DONE 2026-10-21 — Linear reshaped; campaign open only for follow-ups T0 + GAP-2; debt units now route)
+# Status: in-progress (G4 DONE · GAP-2 RESOLVED 2026-10-21 — open only for T0: toolkit edits T1–T5, waiting on Victor)
 # Linear: LIF-240
 # Profile: Project Foundation
 # Scenario: Delivery Structure Reconstruction (establishment model of frontend-replan (EST → G0–G4))
@@ -33,6 +33,7 @@ usable; each go-live since is minted OUTSIDE the delivery structure to repay tha
 - [ ] debt-unit builds (Entity Delivery Flow ②, closing under the DoL)
 
 ## Route History
+- 2026-10-21 · **GAP-2 resolved** (gap2-schema-gates.md, Victor-approved): 4/5 ⛔ gates void (tables landed); fe-finance #112 = service gate (store · Commitments+liability slice · FX) + budgeting design pass + ADR in its front matter; +4 edges (fe-health ← mod-health-*, fe-routines ← mod-routines), 361 set · 0 failed. Only **T0** remains.
 - 2026-10-21 · **G4 executed** from the main checkout (branch golive-g4). Guard held 9 creates on stale-map orphans LIF-205/207/217 → triaged ISOLATED → map fixed (Linear already Done) → re-sync clean. Created LIF-240 (campaign) + LIF-241…249; 357 edges, 0 failed. Re-homed LIF-237/238/239; deleted 3 empty junk General milestones. Next: mod-routines finishes → M1.2.4 L1 (preferences · notes · sessions). Open follow-ups: **T0** (toolkit T1–T5) · **GAP-2**.
 - 2026-10-21 · G3: order (g3-order.md; ⊕split dashboard sub-issue, §XXVIII encoding note) · ONE canonical structure (143 issues, M1.2.4 #65–71, dashboard #115, HARD-4 #122; GAP-1 retired; EX-1…4) · MVP-PATH refreshed (archived-inclusive census + Linear drift: LIF-237 in General project, LIF-237/239 Backlog vs merged) · g4-edge-ledger drafted. **Follow-up logged: GAP-2** (⛔ schema-amendment gates on 5 unbuilt surfaces have no issue: home them before the first of those surfaces starts).
 - 2026-10-21 · G0 rev 3 (Envision delta per Victor: ECs never re-checked at the end; #150 carried 0/30, #151 SKIP dropped fe-home's) → critique REVISE→folded → **Approval 2**. Applied R1–R8 (10 files, +28/−7; one comment-only .ts). G0 PR opened. T1–T5 parked on T0.
