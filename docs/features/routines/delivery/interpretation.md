@@ -1,146 +1,124 @@
-<!-- Interpretation Layer — features/routines · Entity Delivery Flow ① Step 1 · mod-routines (LIF-138, M1.1.2)
-     Makes the implicit explicit before decomposition. Every claim carries [FACT: path:line] or [INTENT]/[INTERP]. -->
+<!-- Interpretation Layer — features/routines · Entity Delivery Flow ① · Step 1 -->
+<!-- Makes the implicit explicit before decomposing. Every claim [FACT: path:line] or [INTERP]. -->
+<!-- Sources: aspect corpus (business-rules/contract/structure-data/conventions/identity) · intake §E ·
+     backend-intent/parts/routines.md (ROU-01…33) · schema/routines.ts · migrations/018_routines.ts ·
+     @vida/types/routine.ts · validators/routine.ts · services/routines/CLAUDE.md -->
 
-# Interpretation — Routines (①)  (mod-routines · LIF-138 · M1.1.2 Feature Modules · Backend)
+# Interpretation — Routines (① backend service)
 
-> Entity Delivery Flow ① over the shipped DB-4 reframe schema. Routines is the OS's **cross-module
-> orchestration cockpit** — a named ordered recurring sequence of polymorphic steps, each *driving* a
-> real entity elsewhere. It **composes, never duplicates** (RT-3). This service is an aggregator; it
-> re-implements no scheduler, session engine, policy store, or tag store.
-
----
-
-## 0. The scope-defining finding (As-is vs INTENDED is RESOLVED by the schema)
-
-The aspect corpus (`identity/business-rules/contract/structure-data`) flags the whole sequence/step/policy/
-provider/pursuable model as `⚠ INTENDED`, gated behind "an ADR-002 amendment + a Routines design-pass." **That
-prose is stale lag. The amendment already executed at DB-4 — the reframe tables physically exist.**
-
-- **The 3 reframe tables are shipped.** `routines` + `routine_step` + `routine_completions` are created by
-  migration 018. `[FACT: packages/core/src/db/migrations/018_routines.ts:40-119]` The schema mirror confirms:
-  "The reframe design LANDED … only the DDL was deferred '→ build phase' = this session. Supersedes the flat
-  2-table POC (`routine_actions` retired → `routine_step`)." `[FACT: packages/core/src/db/schema/routines.ts:8-10]`
-- **The flat POC is retired.** `routine_actions`, `RoutineAction`, `ROUTINE_ACTION_TYPE`,
-  `ROUTINE_RECURRENCE_FREQUENCY` survive only in `_legacy/` (deleted at parity, MIG-1) and in the stale
-  `@vida/types/routine.ts` interface (to be retired at this build's DB-11 reconcile).
-  `[FACT: packages/types/src/routine.ts:13,19,32; packages/core/src/db/schema/routines.ts:36]`
-- **Consequence:** ① scope = build `createRoutinesService` over the shipped 3-table schema, mirroring the twin
-  modules (habits/projects/purposes/relationships). This is **not** an AskUserQuestion — it is mechanically
-  doc-resolved (schema is the oracle over prose; the BASELINE step exists to catch exactly this drift).
-  `[[envision-gate-firing-is-a-doc-test-not-a-human-decision]]`
+> **Entity in one line:** a pure cross-module **orchestrator** — a named, ordered, recurring sequence of
+> polymorphic steps, each of which *drives* a real entity elsewhere; the service mostly **composes + derives**,
+> it writes almost nothing of its own. Schema is built (migration 018, 3 tables); service tier is 0 code.
 
 ---
 
-## 1. DEPENDENCIES — what this build consumes (all built; documented contracts only, no direct table access, §6)
+## 1. DEPENDENCIES — what the service binds to (persistence + composed substrates)
 
-| # | Dependency | What routines consumes | Status | Citation |
-|---|---|---|---|---|
-| D1 | **DB-6 Repository** | encrypt-on-write / decrypt-on-read CRUD; `encryptedFields:[]` M1.0 pass-through; `softDelete` per table | built | `[FACT: packages/core/src/services/habits/service.ts:18,135-137]` |
-| D2 | **Sessions & Scheduling (ADR-004)** | `SessionRegistry.createSession` for a step's runtime; `registerDueProvider(DueProvider)` + `dueIn(range)`; the Scheduler's availability/reschedule | built | `[FACT: packages/core/src/services/sessions/types.ts:234-238,216-232]` |
-| D3 | **Effect rail (xs-effect-rail, AR-7)** | emit-only fan-out: `effects.rail.applyEffect({subjectNaturalKey,transition,effectType,targetRef})`, guarded by `effects.registry.resolve(effectType)` | built | `[FACT: packages/core/src/services/habits/service.ts:143-151]` |
-| D4 | **Measurement (xs-measurement, ADR-011)** | routine is a pursuable: `measurement_kind='rate'` × `binding_mode` derived-pull; `progress()` derive-on-read | built | `[FACT: packages/core/src/db/schema/routines.ts:57-59; capability-framework.md:240]` |
-| D5 | **Spaces (xs-spaces-tags-links, ADR-006)** | `entity_tags` (SP1) reads via `associations.resolveAssociations`; tag/link WRITES via the Spaces service port | built | `[FACT: packages/core/src/services/habits/service.ts:410-414; projects/service.ts associations]` |
-| D6 | **Notes & Pages (mod-notes-and-pages)** | notes via `pages` (`entity_type='routine'`/`'routine_step'`); `entity_links` | built | `[FACT: docs/features/routines/business-rules.md:69-71; ADR-002 L1344]` |
-| D7 | **Journals (mod-journals)** | register a `JournalContribution` (`sectionKey:'summary'`, `summary(date):SectionData`) | built | `[FACT: packages/core/src/services/journals/types.ts:58-62; habits/journal.ts]` |
-| D8 | **Purpose (mod-purposes)** | contribute via the polymorphic weighted `contributions` primitive (ADR-011 M7); emit `contribute_purpose_metric` | built | `[FACT: docs/features/routines/business-rules.md:56-61; session.ts:90]` |
-| D9 | **Tasks / Habits / Health / Knowledge** | a step DRIVES one of these via its native completion or Session sub-type (RT-3/RT-4) | built | `[FACT: docs/features/routines/contract.md:28-36]` |
+### 1a. Persistence floor (BUILT — bind, don't author)
+- **3 tables, migration 018, registered** `[FACT: migrations/018_routines.ts:1-80; runner.ts:77; schema/index.ts:43]`:
+  - `routines` — pursuable: `measurement_kind` NN DEFAULT `'rate'`, `binding_mode` nullable (`NULL ⇒ derive derived-pull`),
+    `progress` nullable **override slot** (no cached streak), `lifecycle` ∈ active/paused/off, `recurrence_rule` (RRULE).
+    `[FACT: schema/routines.ts:47-67]`
+  - `routine_step` — `routine_id` (plain TEXT, no FK), `step_order`, `step_type` (**OPEN vocab, NO CHECK**),
+    `entity_type`+`entity_id` (nullable polymorphic driven-entity ref, RT-4), `is_required`, `title[E]`/`description[E]`,
+    `time_of_day` (nullable), `skip_dates` (JSON-as-TEXT, **plain text, never `json<T>()`**). `[FACT: schema/routines.ts:70-89]`
+  - `routine_completions` — per-step ledger, `routine_step_id` (no FK), `UNIQUE(routine_step_id, completed_date)`,
+    `skip_reason[E]`, **NO `deleted_at`** (hard-deletes with the step, RT-17). `[FACT: schema/routines.ts:92-109]`
+- **No hard cross-table FK** — `routine_id`/`routine_step_id`/`entity_id` are plain TEXT; **cascade is the app/sync layer's**
+  (RT-17/BR-DB3-1). `[FACT: schema/routines.ts:18-19,74,96]` → the service owns delete-cascade explicitly (routine→steps→completions).
+- **`routine_step` is a registered entity_type** `[FACT: _registry.ts:46]`.
+- **Repository** = table-agnostic encrypt-on-write/decrypt-on-read; pass table + encrypted-field names + device id. `[FACT: db/CLAUDE.md "Pattern in use"]`
 
-**Deferred dependencies — build a DENY-SAFE / default port now, swap zero-signature later (NOT built here):**
+### 1b. Composed substrates (consume via contract — NEVER reach into their tables, constitution §6) `[FACT: conventions.md:44-46]`
+Signatures **verified against the built code** (Step-0 substrate map). The factory convention: `db`+`deviceId` first,
+required foundation services as typed ports, cross-module drivers + rail as **deny-safe optionals** (projects precedent).
+- **Sessions — BUILT** (framework + service). `createSessionsService({db,deviceId,registry:SessionRegistry,rail:EffectRail,entityRegistry})`;
+  `createSession(input)` (`sub_type` OPEN vocab) · `registerDueProvider(provider)` (the SS-7 due lane) · `dueIn(range):DueItem[]`.
+  Sub-type registration: `SessionRegistry.register(def: SessionTypeDef)` — 4-dim contract, `effects[] ⊆ allowed_effects ⊆ shipped envelope`,
+  throws `CapabilityEnvelopeExceeded`. `SHIPPED_SESSION_TYPES` ships only `focus`. `[FACT: foundation/sessions/registry.ts:44,72; services/sessions/service.ts:177,163,164]`
+- **Habits — BUILT (#49).** `createHabitsService(deps)`; `logCompletion(habitId, input?)` is the native-tick seam a habit-step drives;
+  `getStreak`/`getCompletionRate`; `getDayCompletionDigest(date)` is the Journal-summary feeder. A habit completion already fires its OWN
+  effects (`complete_habit_occurrence`,`contribute_purpose_metric`,`award_xp`) — **routines must NOT re-fire them** (that's the RT-3 double-count). `[FACT: services/habits/service.ts:127,143; types.ts:135,152,175]`
+- **⚠ Tasks — NOT BUILT (#65).** `services/tasks/` is a CLAUDE.md stub; no `createTaskService` exists. The `task`-type step (ROU-04),
+  the actionable-step-as-recurrent-Task (ROU-11/RT-4), and `completeStep`-delegate-to-task (ROU-08) therefore compose a **deny-safe optional
+  `TasksPort`** (Projects' `TasksProjectsPort` precedent) — absent ⇒ a task-step surfaces `EntityUnavailable`/degraded, never a crash. `[FACT: services/tasks/CLAUDE.md; services/projects/types.ts:33]` → **gate decision, §5.**
+- **Health** — the `exercise` step drives a `workout` Session (Health composes Sessions, same `createSession` seam). `[FACT: contract.md:35; ROU-07]`
+- **Measurement — BUILT, pure.** `resolveProgress(stored, derive)` IS the override-slot fn routines' `progress()` calls (`stored` non-null = override, `NULL ⇒ derive()`).
+  `rollup()` is the weighted fractal (NOT routines' down-rollup — that's `completion_policy`). Routines advertises **NO** source (guard, outside M5 applies-to). `[FACT: foundation/measurement/engine.ts:56,38; source-registry.ts:21; ROU-13,14; rerun C5]`
+- **Effect-rail — BUILT.** `createEffectRail(db, registry)`; `applyEffect(event)` idempotent by `effect_event_id = (subjectNaturalKey, transition, effectType)`.
+  A routine-level completion emits `award_xp` (additive) + `contribute_purpose_metric` (keyed) via the rail; **Routines never writes XP/ledger** — the registered handler does, co-writing through the passed tx. Registry ships empty; routines registers no handler (it's a producer). `[FACT: foundation/effects/service.ts:29; types.ts:20,37; ROU-21; conventions.md:35-38]`
+- **Spaces — BUILT.** `createSpacesService(db, deviceId, registry)` (**positional** args); `tagEntity(tagId, entityType, entityId)` · `createLink(pageId, entityType, entityId, context?)`.
+  Routines must `register('routine'/'routine_step')` into the `TaggableTypeRegistry` at wire-up (no SQL CHECK edit). `[FACT: foundation/spaces/service.ts:63,44,47; registry.ts:15]`
+- **Purpose (ADR-011 M7)** — routine→purpose contribution rides the weighted `contributions` primitive (retires As-is `purpose_routines`); mapping is Purpose-owned; routines emits `contribute_purpose_metric` + guards (no apex/rollup tables). `[FACT: contract.md:38-40; ROU-22]`
+- **Notes — BUILT.** `createNotesService(deps)`; `ensureEntityNote(pageType, entityType, entityId, seed)` is the polymorphic routine/step note seam (validates entity_type against the registry). `[FACT: services/notes/service.ts:72; types.ts:68]`
+- **Journals — BUILT.** Two-lane register pattern (`services/relationships/journal.ts` canonical): a `createRoutinesJournalContribution(svc)` + `registerRoutinesJournal(registry, svc)` (`JournalContribution {module, sectionKey:'summary', dataPoints, summary(date)}`, PULL at render) **and** `registerRoutinesDueProvider(sessions, svc)` → `sessions.registerDueProvider({module:'routines', fetch:(range)=>svc.getDueReminders(range)})`. Routines exposes `getDueReminders(range):DueItem[]`. `[FACT: services/relationships/journal.ts:58; services/journals/registry.ts:15; services/sessions/types.ts:235]`
+- **Preferences/Spaces** — **home of the completion/miss/acceptance-window policy config** — the service *reads* it, never hardcodes. `[FACT: conventions.md:10-12; ROU-24]`
 
-| # | Deferred port | M1 behavior | Homed to | Citation |
-|---|---|---|---|---|
-| X1 | **Preferences — completion/miss/acceptance-window POLICY** | ship a sensible DEFAULT policy; optional `prefs?` port, absent ⇒ default | Preferences/Spaces | `[FACT: schema/routines.ts:30-33,62; business-rules.md:127]` |
-| X2 | **`routine_step_membership` — step-scoping (RT-10)** | single-routine ownership only; no membership table authored | Spaces design-pass (non-blocking) | `[FACT: schema/routines.ts:30-33; structure-data.md:33-34]` |
-| X3 | **Scheduler internals (reschedule-to-open-slot)** | compose `dueIn`/availability where present; `rescheduleStep` degrades to a typed "unavailable" when the Scheduler port is absent | Sessions (already exposes `dueIn`) | `[FACT: contract.md:17,29-31]` |
-| X4 | **Gamification XP application** | routines EMITS `grant_currency`/`award_xp` (feeder); Gamification applies → `consequence_ledger` (dormant until a handler resolves) | Gamification (built; handler-gated) | `[FACT: business-rules.md:39-42; session.ts:91,96]` |
+### 1c. Type/validator reconcile owed (DB-11 pattern — the first S1 concern)
+- `@vida/types/routine.ts` still ships the **POC**: `RoutineAction`, `RoutineCompletion` keyed on `routine_action_id`,
+  and `ROUTINE_ACTION_TYPE`/`ROUTINE_RECURRENCE_FREQUENCY`. `[FACT: @vida/types/routine.ts:13-20,32-63]`
+- `validators/routine.ts` imports the **retired** enums → compiles today only because the old types still exist. `[FACT: validators/routine.ts:3-5]`
+- Reconcile = add `Routine` + `RoutineStep` interfaces (mirroring the schema), re-key `RoutineCompletion` → `routine_step_id`
+  (+`updated_at` via base), retire the two POC enums, fix the validators. Mirror-only (DB-11 precedent, groups #1/#3/#4/#5/#6). `[FACT: schema/routines.ts:35-37]`
+- ⚠ **Rebuild `@vida/types` dist before `@vida/core` typecheck** after any src edit, or phantom TS2305/TS2339 appear on other modules. [[editing-vida-types-needs-dist-rebuild-before-core-typecheck]]
 
 ---
 
-## 2. NEEDS — what the service must provide (the exposed surface, from contract.md)
+## 2. NEEDS — what the service must provide (the ROU surface, grouped)
+- **Routine CRUD + lifecycle** — createRoutine/updateRoutine/archiveRoutine (soft-delete, preserve ledger) + setLifecycle(active|paused|off). `[FACT: ROU-01,02,03,17]`
+- **Step CRUD** — addStep (polymorphic) / reorderSteps / removeStep. `[FACT: ROU-04,05,06]`
+- **Run/complete/skip/reschedule** — runStep (drive entity, no parallel write) · completeStep (delegate) · skipStep (planned `skip_dates` vs logged `skipped`+`skip_reason`) · rescheduleStep (ask Scheduler; `OutsideAcceptanceWindow` typed error). `[FACT: ROU-07,08,09,10,11]`
+- **Derivations (the heart)** — evaluateRoutine(date)→{done|partial, percent, done[], not_done[]} by **completion_policy**; progress() derived-on-read; streak/rate/ranking/time-comparison recompute from the ledger; miss/acceptance-window computation. **No cache, ever.** `[FACT: ROU-12,13,15,16,18; conventions.md:13-16]`
+- **Provider seam** — dueIn(range) + summary(date) + emit completion event. `[FACT: ROU-19,20,21]`
+- **Cross-cutting consume/guard** — contributions emit (Purpose-owned), entity_tags consume (Spaces), pages/links (Notes), measurability axes validate, policy config read. `[FACT: ROU-22,23,24,25,26]`
+- **Typed errors (fail loud)** — `EntityUnavailable` · `OutsideAcceptanceWindow` · `PolicyUndefined` (→ shipped default, flagged) · `ProviderEmitFailed` (isolated). `[FACT: ROU-30; contract.md:50-54]`
 
-The `RoutinesService` factory (mirrors `createHabitsService(deps)`): `[FACT: contract.md:8-26]`
-- **Routine lifecycle:** `createRoutine / updateRoutine / archiveRoutine`; `setLifecycle(active|paused|off)`.
-- **Steps:** `addStep / reorderSteps / removeStep` — polymorphic `{step_type, entity_type, entity_id, step_order, is_required}`.
-- **Run/complete:** `runStep` (drive the entity — `SessionRegistry.createSession` or native completion, never a parallel record); `completeStep / skipStep({planned|logged, reason?}) / rescheduleStep`.
-- **Evaluate (derived):** `evaluateRoutine(routine, date): {done|partial, percent, done[], not_done[]}` — applies the completion policy; `progress()` derives-on-read from the ledger, no stored counter.
-- **Provider:** `dueIn(range):DueItem[]` (→ Calendar/Journal agenda) + `summary(date)` (→ Journal dashboard); emits completion events.
-- **Associations:** tags (`entity_tags`), notes (`pages`), links (`entity_links`).
+---
 
-## 3. ORGANIZATION — where the code lands (twin layout, ADR-017/018 per-feature authoring)
+## 3. ORGANIZATION — how the service tier is shaped `[INTERP, grounded in sibling pattern]`
+- `createRoutinesService(deps)` factory (sibling precedent: projects/relationships). Deps + exact factory shape → §5 (agent map).
+- Repositories over the 3 tables (`routines`, `routine_step`, `routine_completions`) via the generic Repository, `encryptedFields:[]`
+  in M1.0 (dormant seam — even for `[E]` cols). [[m10-repos-use-empty-encryptedfields-seam]] `[FACT: schema/routines.ts:39]`
+- The service is **thin on writes, thick on composition + derivation**: a `routine-progress`/`evaluate` pure module (policy over ledger),
+  a provider module (`dueIn`/`summary`), and delegation shims to Sessions/Tasks/Habits/Health for `runStep`.
+- **Slice shape (preview for Step 2 Decomposition Gate):** likely S1 routine+step CRUD + DB-11 reconcile · S2 completions ledger + skip · S3 run/complete (drive-entity composition) · S4 evaluate/policy derivation · S5 progress/analytics derivation · S6 reschedule/alarm (Scheduler) · S7 provider (dueIn/summary) + effect emission · S8 contributions/tags/pages cross-cutting · S9 Journal summary + DueProvider lane. **Exact slicing is the Step-2 gate, not decided here.**
 
-- `packages/core/src/services/routines/` — currently a directory home only (`CLAUDE.md` scaffold, no code). `[FACT: packages/core/src/services/routines/CLAUDE.md]`
-  - `service.ts` — `createRoutinesService(deps)` factory-object, hoisted closures, no `this.` (habits/finance/checkins precedent).
-  - `types.ts` — `RoutinesService` interface + input shapes + typed errors (`EntityUnavailable`, `OutsideAcceptanceWindow`, `PolicyUndefined`, `ProviderEmitFailed` — `[FACT: contract.md:50-54]`).
-  - `journal.ts` — `createRoutinesJournalContribution(svc)` + `registerRoutinesJournal(registry, svc)`.
-  - `index.ts` — barrel (factory + types + journal + the `DueProvider`).
-  - `__tests__/` — live-store Vitest.
-- `packages/types/src/routine.ts` — **DB-11 reconcile** (S1): author `Routine`, `RoutineStep`, re-key `RoutineCompletion` → `routine_step_id` (+ `updated_at` via `baseColumns`); retire `RoutineAction` / `ROUTINE_ACTION_TYPE` / `ROUTINE_RECURRENCE_FREQUENCY`; `ROUTINE_LIFECYCLE` already present. `[FACT: packages/types/src/routine.ts:22-26; schema/routines.ts:35-37]`
-- `packages/core/src/validators/routine.ts` — currently exports the retiring `RoutineActionTypeSchema` et al; S1 reconciles to the new shape. `[FACT: packages/core/src/validators/routine.ts:8]`
-- `packages/core/src/db/schema/_registry.ts` — register `entity_type` `'routine'` / `'routine_step'` as taggable/linkable/page targets (S7).
+---
 
-## 4. IMPLICIT RULES — the backend preconditions a mock hides (surfaced now, caught by the live-store gate)
+## 4. IMPLICIT RULES — the backend traps the gate must catch (why Step 1 exists)
+1. **Never write a parallel completion for a step** — completing a step *is* completing the driven entity; a routine-local
+   record would double-count. `routine_completions` is the **step ledger for alarm-like/actionable steps**, NOT a mirror of driven-entity completions. `[FACT: conventions.md:33-34 (RT-3)]` ← the single most load-bearing invariant.
+2. **Never write XP** — emit the `grant_currency` feeder; Gamification owns `consequence_ledger`, idempotent via `effect_event_id`. `[FACT: conventions.md:35-38; ROU-21]`
+3. **Derive, never cache** — `progress()`/streak/analytics recompute from the ledger; `progress` column is a **nullable override** (`NULL ⇒ derive`), never a `NOT NULL DEFAULT 0` counter. `[FACT: conventions.md:13-16; schema/routines.ts:59]`
+4. **Policy is configuration, not code** — completion/miss/acceptance-window are read from Preferences/Spaces; ship a default, never hardcode. `PolicyUndefined` falls back to the shipped default + flags. `[FACT: conventions.md:10-12,41; ROU-24,30]`
+5. **`step_type` is an OPEN vocab (NO SQL CHECK)** — validate against the **registry**, not an enum; a user-extensible type rides Spaces. Don't synthesize a closed enum. `[FACT: schema/routines.ts:76; ROU-04]` [[open-vocab-columns-take-no-sql-check]]
+6. **App-layer cascade** — no FK; deleting a routine must explicitly delete its steps + their completions (soft-delete the routine/steps, **hard-delete the completions ledger** — it has no `deleted_at`). `[FACT: schema/routines.ts:103 (RT-17)]`
+7. **`findWhere` skips the soft-delete filter** — the generic repo applies `isNull(deleted_at)` only on findAll/findById/count; a `routine_step` query via `findWhere` must filter `deleted_at` explicitly. (completions table has no `deleted_at` — N/A there.) [[repository-findwhere-skips-softdelete-filter]]
+8. **`Repository.create()` returns the INPUT row, not DB defaults** — omitted NN-default cols (e.g. `lifecycle`, `measurement_kind`, `sort_order`, `is_required`) come back `undefined`; backfill in the create input. [[repository-create-returns-input-row-not-db-defaults]]
+9. **`skip_dates` is plain-text JSON** — the service JSON.stringify on write / JSON.parse on read (schema uses plain `text()`, not `json<T>()`, to dodge the $type lie). `[FACT: schema/routines.ts:85]` [[json-t-columns-need-service-serialize-in-m10]]
+10. **M1.0 `[E]` seam is empty** — `encryptedFields:[]` even for `[E]`-marked `name`/`description`/`title`/`skip_reason`; getVaultKey throws vault-locked, so a non-empty set would break live. `[E]` wiring is homed M3/DB-5. `[FACT: schema/routines.ts:39; ROU-32]`
+11. **Drizzle Row ≠ `@vida/types` interface** — `$inferSelect` rows aren't assignable to the `Routine`/`RoutineStep` interfaces (`_sync_status` string vs union); raw list readers return Row types, merged/constructed returns use a view type. [[drizzle-row-not-assignable-to-vida-types-interface]]
+12. **Advertise NO M5 measure source** — a guard: the routine is outside the ADR-011 M5 applies-to set; it exposes its streak as a **READ seam** Gamification pulls, not an `advertise()` registration. `[FACT: ROU-14; rerun C5]` [[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]
+13. **Provider errors are isolated** — a `dueIn`/`summary` failure (`ProviderEmitFailed`) must not fail the routine or sibling providers; a contribution/emit failure flags, never drops. `[FACT: business-rules.md:118-120; ROU-30]`
+14. ⚠ **Notes entity_type naming drift — SURFACE, don't silently pick.** The aspect docs reserve `entity_type='routine_action'` for pages/links `[FACT: conventions.md:28-30; business-rules.md:70]`, but the reframe retired `routine_actions`→`routine_step` and `_registry.ts:46` registers `'routine_step'`. **Decision for the gate:** the go-forward pages/links target is `'routine_step'` (and/or a `'routine'` group-level type for RT-15 routine-group notes). Flagged as an explicit Decomposition-Gate decision, not an assumption. `[FACT: _registry.ts:46 vs conventions.md:28]`
 
-- **IR-1 — No cached counters; derive-on-read is mandatory (RT-14/RT-19).** Unlike habits (which caches
-  `current_streak`), `routines.progress` is a *nullable override slot* and there are **no** streak columns. Routine
-  "done"/streak/rate must recompute from `routine_completions` every read. `[FACT: schema/routines.ts:22-23,59; migrations/018:50-51]`
-- **IR-2 — Completion lives on the DRIVEN entity; the step NEVER writes a parallel completion for a driven step
-  (RT-3).** `routine_completions` is the ledger for the *step's own* occurrence (the alarm-like actionable step,
-  RT-4) and for reflecting a driven completion — but a driven step must not double-count. The service resolves the
-  entity and launches/ticks it; the ledger row records the routine-side occurrence, keyed `UNIQUE(routine_step_id,
-  completed_date)`. `[FACT: schema/routines.ts:106; business-rules.md:18-22,49-50]` **(This boundary is the sharpest
-  design question for S3/S4 — see Open Questions.)**
-- **IR-3 — No cross-table FK; cascade is the app layer's (RT-17, BR-DB3-1).** `routine_id`, `routine_step_id`,
-  `entity_id` are plain TEXT. Deleting a routine must app-cascade to its steps; deleting a step must hard-delete its
-  completions. No DB `ON DELETE CASCADE` guards this. `[FACT: migrations/018:74,102; schema/routines.ts:74,96]`
-- **IR-4 — `step_type` is OPEN vocab (no CHECK) — registry-validated, not enum-validated (RT-3).** A step type is
-  user-extensible via Spaces; the service must not hardcode a closed set. `entity_type`/`entity_id` are nullable (an
-  actionable alarm step has no driven entity, RT-4). `[FACT: migrations/018:76-78; schema/routines.ts:76-77]`
-- **IR-5 — Policy is configuration, not code (RT-5/RT-6).** The schema has **no** policy columns. The service ships a
-  DEFAULT completion policy (all-or-nothing / required-node via `is_required` / threshold) and a default miss/
-  acceptance-window; the real settings home is Preferences (deferred X1). Evaluate must never hardcode-and-hide a
-  policy. `[FACT: schema/routines.ts:62; migrations/018:27; business-rules.md:27-35]`
-- **IR-6 — `skip_dates` is plain-text JSON (never `json<T>()`); the service serializes/parses it.** Two skip
-  mechanisms with distinct meaning: `routine_step.skip_dates` = pre-planned; `routine_completions.skipped` +
-  `skip_reason` = logged (RT-8). `[FACT: schema/routines.ts:85; business-rules.md:43-46]`
-  `[[json-t-columns-need-service-serialize-in-m10]]`
-- **IR-7 — `_sync_status` is `string` on the Row but a union on the interface (whole-repo).** Row→interface mappers
-  (`toRoutine`/`toRoutineStep`/`toRoutineCompletion`) cast it; `encryptedFields:[]` in M1.0 even for `[E]`-marked
-  `name`/`description`/`skip_reason` (dormant seam → M3/DB-5). `[FACT: habits/service.ts:61-75,133;
-  [[drizzle-row-not-assignable-to-vida-types-interface]]; [[m10-repos-use-empty-encryptedfields-seam]]]`
-- **IR-8 — `create()` echoes the input row, not a DB re-read.** `serialize*()` must backfill every notNull-default
-  column (lifecycle `'active'`, measurement_kind `'rate'`, sort_order `0`, is_required `false`) or the returned row
-  lies. `[FACT: habits/service.ts:10-13,164-187; [[repository-create-returns-input-row-not-db-defaults]]]`
-- **IR-9 — Fan-out is emit-only, post-commit, failure-isolated, idempotent (RT-7/RT-12/RT-13).** A routine
-  completion fires feeder effects (`grant_currency`/`award_xp`, `contribute_purpose_metric`,
-  `emit_measurement_signal`) via the rail, each guarded by `registry.resolve` (dormant with no handler); a throw
-  is non-fatal (the completion stands). Routines NEVER writes XP or a contribution row itself. `[FACT:
-  habits/service.ts:140-161; session.ts:85-100; business-rules.md:119-120]`
-- **IR-10 — `findWhere` skips the soft-delete filter.** List readers must add `isNull(deleted_at)` explicitly;
-  `routine_completions` has no `deleted_at` (ledger). `[FACT: habits/service.ts:300; [[repository-findwhere-skips-softdelete-filter]]]`
+---
 
-## 5. OPEN QUESTIONS (doc-resolvable — I will ground each in the decomposition, none are AskUserQuestion by default)
-
-- **OQ-1 — The driven-step vs ledger boundary (IR-2).** When a step drives a Habit/Session, does completing the
-  step write a `routine_completions` row (to anchor the routine-level occurrence + skip + per-routine analytics),
-  or purely reflect the driven entity's state? → **Resolve in the S3/S4 forward spec from RT-3 + the "single
-  source of truth" rule**: the ledger records the *routine occurrence* (so the routine can evaluate/skip/reschedule
-  independently) but never a *second behavioral count* — the driven entity stays authoritative for its own metric.
-  Grounded, not guessed.
-- **OQ-2 — Default completion policy shape (IR-5/X1).** Which default ships? → all-or-nothing is the conservative
-  default; `is_required` steps form the required-node set; threshold is a param. Confirm against `business-rules.md:27-35`
-  in the S5 spec. If the docs under-determine the *numeric* threshold default, that single value is the one
-  legitimately-small Victor call (surface it in the S5 spec, don't block).
-- **OQ-3 — Effect token set for a routine completion.** habits emits `['complete_habit_occurrence',
-  'contribute_purpose_metric','award_xp']`; routines has no `complete_routine_occurrence` token in `EFFECT_TYPE`
-  `[FACT: session.ts:85-100]`. → Resolve in S8: use the generic `emit_measurement_signal` (the purposes precedent,
-  C-E2) + `grant_currency`/`award_xp` (RT-7 feeder) + `contribute_purpose_metric` (RT-12) — all existing tokens;
-  do NOT invent a new token.
-
-## 6. Envision Gate (Step 1.5) — N/A, stated not skipped
-
-Pure-backend entity; it renders no surface a user forms a mental model of (`entity-delivery-flow.md §3.75`). Any
-frontend slice is out of this ① (homed to `fe-routines`, P6). `[FACT: scenarios/default.md Step 1.5]`
-
-## Completion checklist
-- [x] dependencies (built + deny-safe deferred) each cited · [x] needs = exposed surface · [x] organization = twin layout
-- [x] implicit backend rules (persistence/cascade/crypto/derive/fan-out) surfaced with [FACT] · [x] open questions doc-homed · [x] Envision N/A stated
+## 5. Decisions for the Decomposition Gate (Victor — Approval 1)
+- **✅ Substrate seam signatures — RESOLVED** (§1b, verified against built code). All composed substrates are built
+  **except Tasks (#65)**.
+- **D1 — RESOLVED (Victor, 2026-10-14): build Tasks (#65 / LIF-142) FIRST, then resume routines.** Rejected the deny-safe
+  `TasksPort` workaround in favour of a real dependency. On resume, routines takes `tasks: TasksService` as a **required**
+  dep (not optional); S3 run/drive + RT-4 recurrent-task no longer degrade to `EntityUnavailable` for missing-port — only for
+  genuinely missing/deleted entities. **⏸ Routines is PAUSED pending mod-tasks.** Exact `TasksService` signatures reconcile
+  on resume against the shipped service (No-Guessing — not yet built). `[DECISION: Victor 2026-10-14]`
+- **D2 — Notes/pages entity_type = `routine_step` (+ a `routine` group-level type).** The docs' reserved `routine_action`
+  is pre-reframe; `_registry.ts:46` already registers `routine_step`. Register `'routine'` + `'routine_step'` into the
+  TaggableTypeRegistry at wire-up; retire the `routine_action` token. `[FACT: _registry.ts:46 vs conventions.md:28]` → **recommend: approve.**
+- **D3 — The two-seam completion wiring** (ROU-16 read vs ROU-21 emit, flagged `[DEFERRED — build]` in rerun N1): a routine
+  **step** completion drives the entity (which fires ITS own effects); the routine **-level** policy-`done` is what emits the
+  routine's `award_xp` + `contribute_purpose_metric`. Routines exposes the policy-derived streak as a READ seam (no advertise).
+  → resolve concretely in the effect-emission slice.
+- **Slice count + ①/② split** — my §3 preview (S1–S9) is the proposal; the gate ratifies. The today-list chrome, per-step
+  live render, standalone-page analytics, drag-reorder, alarm surface are **② UI (P6)** per ADR-020 — out of this ① scope. `[FACT: backend-intent routines.md:5]`
+- **CHECK defaults** for the pursuable axes are already in the schema (`rate` × nullable `binding_mode`) — **verify-only**, no decision. `[FACT: ROU-14 UNKNOWNs]`

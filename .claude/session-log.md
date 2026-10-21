@@ -1,4 +1,32 @@
 ---
+Date: 2026-10-12 — fe-settings (#24, LIF-193) SHIPPED — Settings surface, 6 slices, PR #137 merged
+Task: fe-settings (LIF-193) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · M1.2.1 · worktree off origin/main (5ef0ce7), Node 24
+Goal: ② Frontend build of the net-new Settings System surface at /settings (all 7 control groups + searchable index).
+Completed:
+  - **fe-settings COMPLETE — PR #137 merged (`95036bd`), LIF-193 → Done.** Two-pane System surface at /settings.
+  - Full Entity Delivery Flow ②: Baseline → Interpretation → Envision (12 ECs; D-ENV-1 net-new `Switch`) →
+    Decomposition (gate-1 SHIP, 3 refinements) → 6 gated slices: S1 `Switch` primitive (@vida/ui, `445894d`) ·
+    S2 theme store + App.tsx rewire (EC-5 keystone, `f8df47c`) · S3 shell+route+Appearance live re-theme (`e919309`) ·
+    S4 searchable index (`8eec9ae`) · S5 Modules show/hide+rename+Surfaces+escape-hatch (`9af6381`) ·
+    S6 Locale/Notifications+delegated (`16414b1`).
+  - typecheck 0 · eslint clean · @vida/web 524/525 (1 jsdom flake) · axe 0 across presets×modes · Visual Gate PASS
+    every slice (real vite app, Brave) · pre-ship /critique SHIP (1 a11y NIT folded).
+  - Close-out: branch + worktree removed · task archived (PR #138) · session file written.
+Decisions:
+  - **Merged on local-green** — CI repo-wide dark (exhausted GitHub Actions minutes, infra not code; main `94aeea1`
+    triage); Victor approved.
+  - **Persistence = deferred worker-`values` DB seam** (verified in code) — surface applies live in-session, persists
+    drop-in when the seam lands (same home fe-notes deferred). Saved memory [[apps-web-worker-values-seam-blocks-live-db-ops]].
+  - Net-new `Switch` primitive (Victor's Envision call); two-store split; Mode=Light/Dark only; all 7 controls in scope
+    (doc-resolved) via dashboard_layout/module_visibility, zero schema change.
+  - Merge-conflict: App.tsx unified on the theme store with fe-onboarding's guided-setup preview + kept both routes.
+Next session:
+  - **First: `mod-routines`** (backend, M1.1.2) — the computed next head. `/begin` reconciles + fast-forwards main
+    past the parallel-session WIP.
+  - NB: 4 parallel sessions were live this session (fe-calendar/gamification/notes-and-pages/onboarding worktrees);
+    close-out (archival + this log) was done in isolated worktrees off origin/main + docs PRs to avoid the contended tree.
+
+---
 Date: 2026-10-10 — fe-shell (CODEC #14) front matter LOCKED + S1 shipped (committed `df0cf8a`, branch `fe-shell`)
 Task: fe-shell (LIF-226) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · M1.2.1 · worktree `.claude/worktrees/fe-shell` off origin/main (a4f8962)
 Goal: pick up fe-shell (canvas-reader taken by another session); run the Entity Delivery Flow front matter, then build.
@@ -6276,6 +6304,75 @@ Next session:
   - NB: did NOT run `tracker_sync --sync` (parallel-session orphan-create CAUTION); LIF-192 reconciled Done via the merged oracle + it was already Done in Linear.
 
 ---
+Date: 2026-10-12 — fe-gamification (LIF-181) ② — front matter + Envision gate (approved) + slice G0 shipped. Also earlier blocks: Linear reconcile · main realign · MVP roadmap.
+Task: fe-gamification · Profile: Add Frontend Component · Scenario: default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-gamification`, branch `fe-gamification` off main `7657574`.
+Goal: start the next FRONTEND head to pair a wired surface with a finished backend; took it through the full Entity Delivery Flow front matter and built the first slice.
+Completed:
+  - **(earlier) Linear reconciled to merged reality** — `fe-onboarding` LIF-216 Backlog→Done; 4 orphan-dups LIF-223/224/225/226 → Canceled w/ canonical pointers (a prior session LOGGED the cancel but it never stuck — re-verify cancellations live); local `.tracker-map.json` de-staled. Oracle = merged-PR on origin/main > Linear > local. [[verify-misses-status-drift-and-stale-linear-relations]]
+  - **(earlier) local `main` realigned** (was 32 behind, pure stale) + **`docs/roadmap/MVP-PATH.md` refreshed** (MVP-0 complete — fe-notes-and-pages shipped; census M1.0 31/31, M1.2.2 opened 1/6) → **PR #135 merged**. Stale edits in `stash@{0}`.
+  - **fe-gamification ② front matter (all gated):** BASELINE (seam-contract + mod-gamification/current-*) → `interpretation.md` → **Envision Gate APPROVED after 6 doc-grounding iterations** (`envision.md`, EC-1…EC-12 pinned) → **Decomposition Approval 1** (`slice-map.md`, G0 + S1–S5). Delivery `docs/specs/foundation/fe-gamification/delivery/`.
+  - **Slice G0 ✅ — the `game` GLOBAL theme preset** (`3a7d525` + `0306eb0`): `color.game` ramp (cool-violet accent + slate neutral) + `fontFamily.game` (geometric sans) + `semantic.game(.dark).json` overlays + `build-tokens.mjs` PRESETS + `theme-resolution.ts`/`provider.tsx`; regenerated themes.ts (8 base) + fonts.ts. **tsc 0 · @vida/ui 526/526 · B10 AA matrix includes game · Visual Gate PASS** (Brave, MEASURED: surface/accent resolve to game ramp both modes · sans voice swaps · AA muted-light 4.88/body 16.91/accent-on-tinted 6.32–8.38 ≥ 4.5 · danger preset-invariant). §XXIX currency updated. Task slice-log recorded (`1a31452`).
+In progress:
+  - **S1 next** — multi-mode shell (`apps/web/src/gamification/`) + `/gamification` lazy route + `feature_gamification` dock gate + the Overview·Currencies·Achievements·Rules·Activity switcher + Overview mode over `DashboardView` + deny-safe Preferences `persona` read → reward-COPY framing. EC-3, EC-4, EC-10. Data stubbed type-correct against the seam (fe-notes precedent). Per-slice Visual Gate (both presets × L/D × 375/768/1440 + 8 states + no-overflow).
+Decisions:
+  - **Scope is doc-exact (not a judgment):** the gamification ② = a MULTI-MODE top view (IA §4, `hasMultiModeTopView:true`/`hasStandalonePages:false`) over currencies·levels·achievements + a rule-authoring Flow; lists paginate 50/page. quests/challenges = Spaces INTENDED-later (GM-17, OUT); Dreams/boxes/streaks = compose/read, never rebuild. Register = `game` is a GLOBAL preset applied by Preferences/Onboarding (GM-16 — System reads persona only for REWARD COPY). Icons lucide, never emoji.
+  - **Recurring drift the gate caught (all doc-resolved):** invented "Today's quests" widget; register mis-read as theming (it's reward framing); Dreams as a tile (it's a reward target); single-dashboard (it's multi-mode). Each was settled by grounding in the docs — the Envision greybox's job was to surface them pre-code.
+  - **Game preset = built in-unit** (Victor's call) as a global preset; sans "System" voice via Inter (bespoke face = M4/Figma per frontend-source-of-truth).
+Next session:
+  - **FIRST ACTION: build S1** (multi-mode shell + Overview + wiring). `/begin` → resume fe-gamification in this worktree (branch `fe-gamification`). Read `interpretation.md §2` (the 5 modes) + `slice-map.md` S1 + `envision.md` EC-3/4/10 first.
+  - **Env gotcha (critical):** the worktree consumes `@vida/ui` via `node_modules` symlinks → the MAIN repo's built `dist`, so edits to `@vida/ui` (e.g. the game preset) are NOT loaded by vite/tests unless aliased. The G0 Visual Gate used a throwaway `apps/web/vite.vg.config.ts` aliasing `@vida/ui` → worktree `src` (deleted). S1 mostly edits `apps/web` (consumes unchanged shells + the game preset) — rebuild the worktree `@vida/ui` dist OR re-add the src alias for any gate that must see the game preset. Node 24 via nvm. Commit with EXPLICIT paths (never stage the node_modules symlinks).
+  - Symlinks created this session (worktree): `node_modules`, `apps/web/node_modules`, `packages/{ui,types,core,editor}/node_modules` → main. `stash@{0}` on main holds superseded tracker edits.
+---
+
+---
+Date: 2026-10-14
+Task: fe-gamification (LIF-181)
+Goal: Build the ② "System" surface slices over the finished mod-gamification ①. This session: S1–S4, each §XXVI-gated + committed.
+Completed:
+  - S1 multi-mode shell + Overview (commit 79295c1) — 5-mode Tabs switcher + Overview over DashboardView (XP bar/ring PRESET-keyed via useActivePreset) + deny-safe persona→reward-copy (EC-3/4/10). apps/web/src/gamification/{use-gamification,use-active-preset,use-persona,reward-copy,xp-hero,gamification-overview,gamification-surface}.tsx + /gamification lazy route. In-issue fixes: provider PRESET_CLASSES += 'game' (stale-class bug the ring surfaced); onboarding theme-picker 'game' label; @vida/ui Tabs TabList scrollable (first 5-tab consumer at 375).
+  - S2 Currencies mode (1fbaa15) — CollectionView + grouped ListView (3 backing kinds) + Lucide Lock + pager 50/page + optimistic-local + New currency (EC-5).
+  - S3 Achievements mode (b253f9b) — the first 2-layout CollectionView: calm=list / game=trophy-wall gallery (PRESET-keyed default + switcher override), Lucide Medal ring ≥3:1, progress-toward-locked deny-safe (EC-6).
+  - S4 Rules mode + rule-authoring Flow (075393a) — CollectionView list + enable/disable/delete + the 3-stage FlowSessionView wizard (condition→reward→review; honest empty-seam measures [registry empty + no enumeration API]; reward money/allowance/time + deny-safe Dream earmark) (EC-7/9). @vida/ui fix: FlowSessionView affordances now render-when-handler (no dead buttons in a wizard).
+  - Per slice: tsc 0 · eslint 0 · unit tests · blocking real-browser Visual Gate PASS (Brave, presets × light/dark × {desktop,375}: AA ≥4.88 incl. warm game-dark, no overflow, tier ring/medal ≥3:1). Final suites: @vida/web 540/540 · @vida/ui 527/527.
+In progress:
+  - S5 Activity mode — NOT started. The LAST mode: the consequence-ledger history, paginated — a CollectionView list like S2 (EC-8).
+Decisions:
+  - Honored the slice-map's MANDATED shells (CollectionView, FlowSessionView) over swapping them — my "it doesn't fit" instincts were drift (Victor-corrected ×3: "check the documentation, everything is described"). Awkward fits resolved by body-composition + two backwards-compatible @vida/ui fix-the-roots (Tabs scrollable strip; FlowSessionView render-when-handler affordances), never a shell swap.
+  - Tier colors = label + a brand-accent medal ring, NOT bronze/silver/gold (no metal tokens; EC-11 token-purity → a Figma/M4 concern).
+  - The ring (S1) + register (EC-10) are preset-keyed-default idioms; reused for S3's calm=list/game=gallery default.
+Next session:
+  - FIRST ACTION: build S5 Activity. /begin → resume fe-gamification in this worktree (branch fe-gamification, 4 commits S1–S4). Read slice-map.md S5 + envision EC-8 first. GROUND the ledger read: the S1 seam subset exposes no listLedger — check the full gamification seam / whether a consequence-ledger read exists; if not, honest-empty/stub per IR-G1.
+  - Env: Node 24 via nvm. apps/web's @vida/ui symlink canonicalizes to MAIN (no 'game') — if S5 touches @vida/ui, re-point `ln -sfn "$PWD/packages/ui" apps/web/node_modules/@vida/ui` + `pnpm --filter @vida/ui build` before gates ([[worktree-apps-web-ui-symlink-resolves-to-main]]). Visual Gate = throwaway harness apps/web/vg.html + src/__vg__/gamification-entry.tsx (recreate; deleted after) + the window.process shim; drive /gamification, click the Activity tab.
+  - After S5 the unit is COMPLETE → open the PR (per-issue-branch workflow).
+---
+
+---
+Date: 2026-10-14 — fe-gamification S5 (Activity) COMPLETE → unit done → PR #140 open
+Task: fe-gamification (LIF-181) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · worktree `.claude/worktrees/fe-gamification` branch `fe-gamification` · Node 24
+Goal: build the LAST mode — S5 Activity (the consequence-ledger history) — then open the PR for the whole unit (G0 + S1–S5).
+Completed:
+  - **Baseline + seam grounding (Step 1):** the ① `GamificationService` exposes NO ledger-history read — `getBalance`/`getBalances` read `consequence_ledger` PRIVATELY inside `computeBalance`. Triple-confirmed: seam-contract.md surface · currencies-mode.tsx:26 · CLAUDE.md:50 ("S5 Activity owns the ledger"). Resolution (doc-grounded, IR-G1 + fe-notes F-S8-1 precedent): build the ②-side hook type-correct + STUBBED; file the enriched read as **F-S5-1** (unbuilt ①-tier first-consumer-pull; no @vida/core change).
+  - **PLAN gate (§XXVI g1):** persisted `PLAN-S5-activity.md` (forward spec: BR-S5-1..8, ActivityEntry §3, acceptance §4). /critique REVISE→fixed 2 blocking (timestamp under-spec'd; tabular alignment) + 2 nits → Approval 1. Grouping = flat reverse-chron (EC-8 silent on grouping; recommended default, Victor approved).
+  - **IMPL-PLAN gate (§XXVI g2):** /preflight PASSED (ListView flat `items` API confirmed; amount color pinned `$colorTextPrimary` = AA-by-construction, closed the one open assumption) → /critique SHIP → Approval 2.
+  - **§XXVIII deviation (date-fns → native `Intl.DateTimeFormat`):** the approved PLAN mandated date-fns, but it is NOT in apps/web's deps (phantom under pnpm-strict). "Check the documentation" → the apps/web convention is `Intl.DateTimeFormat` (home-surface.tsx:36) + hand-rolled relative-from-`now` (gamification-overview.tsx:23 `agoLabel`); date-fns unused in apps/web. Doc-resolved, spec updated.
+  - **Sign-semantics grounding (balance.ts):** `current = earned − locked − spent`; `distribute` does NOT affect `current` (draws the to-distribute ceiling). So NO uniform ± sign — direction is label-led (Earned/Locked/Spent/Distributed). Corrected the PLAN (my earlier "earn/distribute additive" was wrong).
+  - **Build (Step 4):** `use-activity.ts` (stubbed seam, honest-empty default, `?sample`/`?force`) · `activity-mode.tsx` (CollectionView + flat ListView + S2 pager; label+glyph rows; Intl timestamp, year only out-of-year) · `activity.test.tsx` · wired into `gamification-surface.tsx` (removed now-dead `ModeEmpty`/`EmptyState`) · updated the stale S1 Activity-placeholder test.
+  - **g2 independent review REVISE→fixed:** finding #1 (blocking) — the empty ledger fell back to the shell default "Items you add will show up here", a false create-promise for a read-only history → added an activity-honest `empty` override ("No activity yet"). Nits #2+#3 resolved together (consume `now` to show the year only for out-of-year entries) + #4 (comment the sample-builder `!` modulo-indexes). Added a unit test locking the honest-empty copy.
+  - **Gates:** tsc 0 · eslint 0 · gamification 31/31 · **@vida/web 546/546** · **Visual Gate PASS** on final code (Brave, editorial/game × light/dark, populated AA 4.88–6.53 + empty-state honest-copy + AA, 0 overflow 1280/375). Pre-ship /critique SHIP.
+  - **§XXIX currency:** `apps/web/src/gamification/CLAUDE.md` (S5 + F-S5-1) + slice-map.md (S5 ✅) — shipped in the build commit `a76f985`.
+  - **Committed `a76f985`, pushed, PR #140 opened** (base main; carries the whole unit G0 + S1–S5). TASKS.md → IN REVIEW.
+Decisions:
+  - Did NOT ask Victor stub-vs-build-the-read — the docs resolve it (seam has no read + IR-G1 + fe-notes precedent). Brought the facts, filed F-S5-1.
+  - Direction label-led, not ±-signed — grounded in balance.ts, not assumed.
+  - The @vida/ui symlink already resolved to the WORKTREE's packages/ui (not main) this session; S5 is apps/web-only (no @vida/ui edit) so no re-point needed, but I rebuilt @vida/ui dist for the gate to be safe.
+Lessons (for memory):
+  - A ② "render a history" slice whose ① has no history read = stub + F-finding (first-consumer-pull), NEVER invent the read. Three in-repo docs said "S5 owns the ledger" before I wrote a line.
+  - `Intl.DateTimeFormat` is the apps/web date convention; date-fns (REPO.md "repo date lib") is @vida/core-only, phantom in apps/web. Check the consuming workspace's deps, not the monorepo claim.
+  - Ledger sign = balance.ts truth (distribute ≠ a `current` delta) → label-led display, not a two-way ±.
+Next session:
+  - Merge PR #140 when CI green → LIF-181 Done (reconcile via `/begin --pull`); `/task-complete fe-gamification`. 2 pre-existing CI reds expected (Format repo-wide · Workers CF-config).
+  - Next head = `mod-routines` (backend, M1.1.2) OR `mod-tasks` S3 (backend, in-progress worktree) — Victor's call at `/begin`.
+---
 Date: 2026-10-12 — M1 local-dev unblock + MVP-0 doc honesty + CF Preview-Builds resolution (PR #136)
 Task: unfiled housekeeping (relates LIF-228 prettier, LIF-229 CF) · Profile: bug-fix / Generic Coding Session (engineering + process) · branch `fix/m1-local-dev-and-doc-honesty` off main `7657574`.
 Goal: Victor ran `pnpm dev` to test the built app — it failed; home/journal/notes didn't work. Triage + solve, plus the two tracked CI reds (Cloudflare LIF-229, prettier LIF-228).
@@ -6317,3 +6414,346 @@ Next session:
   - **S4 FIRST ACTION:** ground in the Sessions contract before writing — `runStep(stepId)` resolves the step's polymorphic `entity_type`/`entity_id` and DRIVES it (`SessionRegistry.createSession` OR the entity's native completion), returning live state; `EntityUnavailable` typed state; **never a parallel completion** (RT-3); deny-safe driver port for entities not wired at M1 (`RunStepResult.kind='unavailable'`). Read `packages/core/src/services/sessions/{types,service}.ts` (`createSession`/`SessionRegistry`) + how a built module launches a session.
   - Remaining: S4 runStep · S5 evaluate + derived analytics (derive-on-read; S5 MUST key on `skipped` not `skip_reason` presence — g2 N2) · S6 lifecycle + reschedule + scheduling seam · S7 tags/pages/links (register `entity_type` 'routine'/'routine_step') · S8 provider + fan-out + deletion closer (Journal summary + DueProvider + emit-only grant_currency/contribute_purpose_metric/emit_measurement_signal + full routine→step→completion cascade).
   - Approval 1 (interpretation + slice-map + seam-contract) is DONE — do NOT re-gate the decomposition.
+
+Date: 2026-10-14
+Task: mod-tasks (LIF-142 · #65) — ① backend, Add Backend Component / Entity Delivery Flow ①
+Goal: Build the Tasks module ① service tier. PULLED AHEAD of mod-routines (Victor's call): routines drives
+  task-type steps + the RT-4 recurrent task, so Tasks is routines' driven-entity dependency → build Tasks first.
+
+Completed:
+  - **PIVOT recorded.** Session opened on `mod-routines`: did its full Entity Delivery Flow front matter +
+    Decomposition Gate (Approval 1 — 9 slices, D1/D2/D3). Victor then chose "build tasks first." mod-routines
+    PAUSED: delivery docs at `docs/features/routines/delivery/{interpretation,slice-map,seam-contract}.md` (in
+    main, untracked), task file `.claude/tasks/mod-routines.md` = `Status: paused` + `blocked by mod-tasks`. D1 for
+    routines resolved: on resume `tasks` is a REQUIRED `TasksService` dep (not the deny-safe port).
+  - **mod-tasks front matter + Decomposition Gate APPROVED.** `docs/features/tasks/delivery/{interpretation,
+    slice-map,seam-contract,PLAN-S1,PLAN-S2}.md`. 9-slice plan (S1 foundation · S2 sub-tasks+rollup · S3 completion+
+    effects · S4 timer+log_time · S5 obligations · S6 measurability · S7 aggregation · S8 tags/notes/views · S9
+    Journal/DueProvider). Gate decisions: D1 `surface_calendar` is NOT a built effect type (calendar = read-seam);
+    D2 `task_time_logs`↔session-extension ownership deferred to S4; D3 aggregation providers deny-safe per source.
+  - **S1 BUILT + COMMITTED** (`8b60047`): `createTasksService` — CRUD + ≤1-parent-module guard (MultipleParentError,
+    re-checked on merged set at update) + app-layer cascade (sub-tasks soft, time_logs hard) + list filters.
+    **DB-11 reconcile**: `@vida/types.Task` +7 cols −`tags`; `TaskTimeLog` +`updated_at`; validators. `'task'`
+    pre-seeded in ENTITY_TYPES (no registry dep). Returns Drizzle `TaskRow`.
+  - **S2 BUILT + COMMITTED** (`158ca5b`): addSubtask (single-level TK-3, SubtaskNestingError, delegates to createTask)
+    · getSubtasks · getRollup → {done,total,progress} DERIVED (no stored col) via `foundation/measurement`
+    rollup()+normalize(), nesting_weight weighted, no-children⇒null. Read-only; parent completion ≠ child completion.
+  - Each slice gate stack PASSED: tsc 0 · eslint 0 · live-store tests (**20/20** total, better-sqlite3 Node 24) ·
+    full @vida/core **1918/1918** (S1 no-regression) · independent g2 review SHIP · /critique SHIP · currency docs
+    `docs/modules/tasks/current-{spec,business-rules}.md` + service CLAUDE.md.
+
+In progress:
+  - **mod-tasks S3–S9 remain.** All work is in the git worktree `.claude/worktrees/mod-tasks` on branch
+    `mod-tasks` (off main @ 1458b67). S1+S2 committed there; NOT pushed, NO PR yet. Build under **Node 24**
+    (`source ~/.nvm/nvm.sh && nvm use 24`) from inside the worktree.
+
+Decisions:
+  - Build Tasks before Routines (Victor, 2026-10-14) — Tasks is routines' driven-entity dep.
+  - mod-tasks gate D1/D2/D3 (above). Per-slice gate stack = forward spec `PLAN-S<n>` (§XXVI) → implement →
+    tsc/eslint/live-store test → g2 review → /critique → currency docs → commit.
+  - S1 nit (g2): PLAN said difficulty:null, code correctly uses 'medium' (schema DEFAULT) → doc fixed.
+  - S2 note (g2 L1): TK-3 single-level enforced at the `addSubtask` entry only; raw createTask/updateTask
+    parent_task_id is NOT data-layer-guarded (recorded in current-business-rules BR-TK-S2-1).
+
+Next session:
+  - **FIRST ACTION: resume mod-tasks S3** (Completion + effect fan-out). `cd .claude/worktrees/mod-tasks`,
+    `nvm use 24`. Read the slice-map + seam-contract in `docs/features/tasks/delivery/`.
+  - S3 = completeTask (status + completed_at) / reopenTask (clear) + on status→completed emit the S4 catalogue
+    (award_xp, contribute_purpose_metric, surface_journal, emit_measurement_signal) via the DENY-SAFE effect rail
+    (dormant without a handler — projects' `fanOutCompletion` precedent at `services/projects/service.ts:72`).
+    **Resolve D1**: verify `foundation/effects/types.ts` `EFFECT_CLASS_OF` has NO `surface_calendar` before relying
+    on it; the `effects?: EffectsPort` dep enters `TasksServiceDeps` this slice (deny-safe optional).
+  - Write `PLAN-S3-completion-effects.md` first (§XXVI). Same gate stack. Commit on the `mod-tasks` branch.
+  - mod-routines stays PAUSED until mod-tasks ships (then resume with `tasks: TasksService` required dep).
+---
+Date: 2026-10-15
+Task: mod-tasks (LIF-142 · #65) — ① backend, Add Backend Component / Entity Delivery Flow ①
+Goal: Build the Tasks module ① service tier, slices S3→S5 (completion+effects · timer+log_time · obligations+recurrence).
+  All in the git worktree `.claude/worktrees/mod-tasks` (branch `mod-tasks`, off main @ 1458b67, Node 24).
+
+Completed (3 slices, each: forward spec → /critique → /preflight → implement → tsc/eslint/live-store → g2 → /critique → eng-gate → currency → commit):
+  - **S3 Completion + effect fan-out** (`602ab63`): `completeTask`/`reopenTask` + a deny-safe completion fan-out.
+    Catalogue = the keyed/additive subset `[award_xp, contribute_purpose_metric, emit_measurement_signal]` (Tasks IS a
+    framework §4 economy feeder → `award_xp` legit, UNLIKE projects/books/education C-E2). The two projection effects
+    are pull-realized: `surface_journal` → S9 registry, `surface_calendar` → read-seam (D1 resolved: it IS a valid
+    EffectType but Tasks doesn't emit it). g2 F1 (test-fidelity) fixed: guard tests spy on `applyEffect` call-count.
+  - **S4 Timer + log_time + actual_minutes** (`302e4e6`): built to the DECIDED model (gap-overview
+    `part-1.2-reruns/tasks.md` G-S1/G-S4/C4 + interpretation §5 D2) — timer = a `'work'` sessions sub-type referencing
+    the task; `stopTimer` fires `log_time` via the rail (fire-first/commit-last); the tasks-owned `log_time` handler
+    writes the KEPT `task_time_logs` ledger (never a direct write, G-S4); `getActualMinutes` = SUM. One read-only
+    Sessions addition: `findOpenSessionForEntity`. g2 F1 (bogus-row landmine on the global log_time slot) + F3 fixed.
+  - **S5 Obligations + recurrence** (`f5c7430`): `setRecurrence` (obligation-only, guarded at every write path) +
+    `completeTask` regen hook; RRULE next-occurrence via canonical `ical.js@2.2.1` (ADR-001:137). Three outcomes:
+    spawn / exhausted-end (no error) / `RecurrenceRegenError` (invalid). g2 B1 (TIMEZONE drift) fixed + proven.
+  - Per-slice verification: tasks live-store 30→43→54, sessions 41, full `@vida/core` 1937→1950→1962, all green.
+    Currency docs refreshed each slice: `docs/modules/tasks/current-{spec,business-rules}.md` (BR-TK-S3..S5) + the
+    Sessions `current-spec` (findOpenSessionForEntity).
+
+In progress:
+  - **mod-tasks S6–S9 remain.** All work committed on branch `mod-tasks` in the worktree. NOT pushed, NO PR yet.
+
+Decisions / lessons (THE theme of this session — 3 Victor drift-catches, all "ground in the docs FIRST"):
+  - **A `[DEFERRED — build phase]` / `D<n>` marker is usually already DECIDED** in the campaign gap-overview
+    (`realignment-master-plan/part-1.2-reruns/<module>.md`), the `xcut-*.md` (Part B cross-cutting homing), and
+    `schema-audit-deferred-homes.md` — ground there before proposing a model OR asking Victor. S4 cost 3 corrections
+    (direct-write→log_time effect; "my call"→doc-decided; focus_sessions→'work' sub-type). [[deferred-build-marker-resolved-in-gap-overview-not-a-decision]]
+  - **A library choice is settled by the ADR-001 canonical-choice lock** — reuse the canonical lib (`ical.js`/`date-fns`);
+    a new lib needs a new ADR. Don't offer A/B/C. (S5 — Victor: "check the documentation and procedure".)
+  - **Date code needs TZ-forced tests — the BRT/UTC gate is timezone-blind.** g2 caught S5 B1 (toJSDate/UTC drift, one
+    day early in UTC-positive zones) that the gate structurally could not. [[date-code-needs-tz-forced-tests-gate-is-tz-blind]]
+  - **Run g2 (independent, read-only, no native rebuild) on every load-bearing emitter/date change** — it caught a
+    real bug in each of S3/S4/S5 that the code-gates passed.
+
+Next session (S6 — Measurability axes + contribution):
+  - **FIRST ACTION: `cd .claude/worktrees/mod-tasks`, `nvm use 24`.** Read `docs/features/tasks/delivery/{slice-map,
+    seam-contract,interpretation}.md` S6 row + TAS-25,26 + the governing ADR-011 (M1/M2/M5) / `contributions` ladder.
+  - S6 = expose/validate `measurement_kind`×`binding_mode` axes; completion = the event-trigger advancing the measure;
+    UP-contribution via the `contribute_purpose_metric` effect (already in the S3 catalogue — S6 wires its meaning) +
+    the guards: **C1 no M5 queryable-measure source** (tasks NOT in the M5 applies-to set), **C2 no M7 purpose tables**
+    (tasks is a CONTRIBUTOR, never owns Purpose rollup/apex). GROUND the homing in part-1.2-reruns/tasks.md + the
+    deferred-homes BEFORE proposing (the lesson above).
+  - Same per-slice gate stack. Commit on `mod-tasks`. mod-routines stays blocked until mod-tasks ships.
+---
+
+## 2026-10-15 — fe-session-runtime #23 (+ fe-shell content-inset)
+Shipped **fe-session-runtime #23** (LIF-218 → Done): `/sessions/$id` runtime page, first consumer of the Flow/Session
+codec seam. S1 `1e9f2e2` (toFlowSource + useFlowSession) + S2 `e9c9bff` (page + route). Visual Gate PASS (Victor-reviewed).
+PR #143 (base main). Entity Delivery Flow ②; Envision ratified; stages realization doc-fixed (no new plumbing).
+Spawned + shipped **fe-shell content vertical inset** (24/32/40, whole-OS fix Victor flagged): `815bd20`, PR #142,
+closed the shell-layout.md spec gap. Both branches pushed (worktrees kept). task-switched from mod-tasks (paused, S5 next).
+3 self-drifts caught by Victor → memory (stages fork · "engine deferred" · wrong ViewState import).
+
+---
+Date: 2026-10-16 (session opened 2026-10-15)
+Task: mod-tasks (LIF-142 · #65) — Tasks ① backend, Entity Delivery Flow, worktree `.claude/worktrees/mod-tasks` (branch `mod-tasks` off main @ 1458b67, Node 24)
+Goal: Resume at S6 and ship as many of the remaining ① slices as the per-slice gate allows (S6 → S7), each through the full §XXVI loop.
+Completed:
+  - **S6 — Measurability axes + contribution** (`6d96e31`): `getTaskProgress(id)` = the pursuable `progress()` contract (XCU-08/BR-8), derived-on-read (parent → M4 rollup; childless derived-pull → null; else milestone leaf; not-found → TaskNotFoundError); C1 by construction (no MeasurementSourceRegistry handle), C2 pure read. S3 emission untouched. No schema/enum/dep. Files: `packages/core/src/services/tasks/{service,types}.ts`, `__tests__/service.test.ts` (+12), `docs/features/tasks/delivery/PLAN-S6-measurability-contribution.md`, `docs/modules/tasks/current-{spec,business-rules}.md` (BR-TK-S6-1..8).
+  - **S7 — Aggregation, R7 fan-out** (`6d04285`): `getAggregatedTasks(grouping)` over own TOP-LEVEL tasks, parents resolved through the SHARED `foundation/views` `ViewProviderRegistry` (one parallel lookup per distinct parent, `predicates:{id}` + defensive `row.id` match, row attached opaque `object|null`); `AggGrouping = parent|parent_type|status`; standalone/Inbox = BR-10 ungrouped bucket, last; every failure path degrades its group only (never rejects); codepoint order. `providers?: ViewProviderRegistry` dep. Files: same + `packages/core/src/validators/task.ts` (`AggGroupingSchema`), `docs/features/tasks/delivery/{PLAN-S7-aggregation-r7,seam-contract}.md`, currency BR-TK-S7-1..9, `services/tasks/CLAUDE.md` (S1–S7).
+  - Verification: tsc 0 · eslint 0 · tasks **76/76** · full `@vida/core` **1984/1984** (unqualified, ran alone). Each slice: PLAN double-gated (Approval 1+2) · preflight · g2 code-review SHIP (S6: 5 findings, 4 fixed/1 accepted; S7: 10 findings all folded incl. 2 real bugs) · /critique SHIP · §XXIX currency committed with the code.
+  - Memories saved: `binding-mode-null-resolves-to-per-module-natural` (S6), `r7-read-seam-is-the-shared-view-provider-registry-not-a-per-module-port` (S7).
+In progress:
+  - Nothing mid-flight. Worktree clean at `6d04285`. NOT pushed, no PR (branch merges after S9).
+Decisions:
+  - **S6 — binding_mode is READ-side, not a push gate.** My first PLAN gated `emit_measurement_signal` by `binding_mode`; grounding against the shipped Projects resolver (`projects/service.ts:465-530`, emits unconditionally, resolves via binding_mode on read) + ADR-011 §3.5 corrected it. NULL binding_mode ⇒ the task's natural `event-trigger` = doc-FACT (`015_tasks.ts:21` ∘ `interpretation.md:33`), not an interpretation. `manual` is inert in M1 (no override column, XCU-16) — no `manual⇒null` special case.
+  - **S7 — consume the ONE shared R7/V4 seam; no bespoke port.** My first PLAN defined an `AggregationProviderPort` — a fork of `foundation/views` `ViewProviderRegistry` (XCU-07/08, ADR-007:78-80 "reuses the pattern, does not build a registry"); the slice-map's port name was a placeholder. `ViewEngine.resolve` is NOT used (saved-view-driven, single-field grouping ≠ a 4-FK partition + parent lookup) — grounded non-reuse.
+  - **S7 grain = top-level tasks (BR-TK-S7-8)** — g2 F1 exposed a contract silence (sub-tasks w/o a module FK were misrouted to the Inbox); resolved from TK-3/S2 ownership (sub-tasks via getSubtasks/getRollup), not by inventing FK inheritance. Recorded in the PLAN addendum (§XXVIII).
+  - Deferrals (all traced to homing docs, none manufactured): value-bearing measure columns → XCU-15 (not tasks); derived-pull source read + task↔source binding + `measurementSources` → XCU-13 (M1 null); live measurement/purpose handlers → verified dormant (zero `register()` sites), `contributions` → XCU-12 MOD-purposes; manual override column → XCU-16; provider REGISTRATION + composition root → "per-module at their build", M2/P6 (`projects/types.ts:31`); tasks-as-ReadProvider → S8; `getTaskRollup`/`getFocusMinutes` → Projects' own port, no TAS row.
+  - Environmental: `encryptBytes 1MB` (20s limit) + DB-6 time out under sustained concurrent suite runs on this older Mac (self-documented marginal-perf test, `7f90c9b`); green when the full suite runs alone. Not a tasks concern — a candidate 1-line timeout/`slow` follow-up outside mod-tasks.
+Next session:
+  - **Run S8 in a FRESH session** (`/clear` → `/begin` → pick mod-tasks). First action: `cd .claude/worktrees/mod-tasks` (the harness switches cwd when the worktree is selected) + `nvm use 24` (better-sqlite3 ABI; Node 20 fails every live test) → confirm `git log -1` = `6d04285`, clean tree.
+  - **S8 scope (slice-map):** TAS-27,28,30,31 — `entity_tags` via `spaces.tagEntity` (register `'task'`, cite-as-consumed, inline `tasks.tags` already dropped at DB-11); task notes via `notes.ensureEntityNote(...,'task',...)`; `saveView`/`listViews`/`reorderViews`/`pinView` over the `views` primitive (cite-level — the full V1 anatomy is the deferred ADR-007 pass, C8 → surface the scope call); **+ tasks registers itself as a `ReadProvider`** (`entityType:'task'`, XCU-07 — the other direction of the seam S7 consumed). Deps grow: `spaces`, `notes`, `registry` (TaggableTypeRegistry) — the seam-contract factory lists them.
+  - **Ground FIRST, per the pattern that caught two forks this session:** read `docs/features/tasks/delivery/{slice-map,seam-contract,interpretation}.md` S8 lines, `parts/tasks.md` TAS-27/28/30/31, `docs/specs/foundation/backend-intent/parts/xcut-{spaces,views}.md`, the built `foundation/{spaces,views}` (`SpacesService.tagEntity`/`createLink`, `ViewsService` CRUD + `cloneView`, `ViewProviderRegistry.register`), and how a shipped module already registers a `ReadProvider` or consumes `spaces.tagEntity`/`notes.ensureEntityNote` (grep `tagEntity|ensureEntityNote|ReadProvider` in `services/`). Memories: [[spaces-junctions-split-read-write-tagentity-blind-inserts]], [[r7-read-seam-is-the-shared-view-provider-registry-not-a-per-module-port]], [[barrel-export-star-collides-with-services-on-generic-names]].
+  - Per-slice loop unchanged: PLAN-S8 → /critique → Approval 1 → /preflight → /critique → Approval 2 → build (types→validators→service→tests) → tsc/eslint/tasks-suite → g2 code-review → /critique → currency (`current-{spec,business-rules}` BR-TK-S8-*, `services/tasks/CLAUDE.md`) → commit (same shape as `6d04285`). Run the full `@vida/core` suite ALONE at the end.
+  - After S8: S9 (Journal summary + DueProvider closer) → then merge PR → LIF-142 Done → `mod-routines` unblocks.
+---
+
+---
+Date: 2026-10-18 (session opened 2026-10-16)
+Task: mod-tasks (LIF-142 · #65) — Tasks ① backend, Entity Delivery Flow, worktree `.claude/worktrees/mod-tasks` (branch `mod-tasks`, Node 24)
+Goal: Build S8 (tags + notes + views + tasks-as-ReadProvider) through the full §XXVI loop.
+Completed:
+  - **S8** (`c7eafa6`): `tagTask`/`untagTask`/`getTaskTags` (spaces.tagEntity + live-tag orphan guard; `'task'` pre-seeded ⇒ no `registry` dep) · `getTaskNote` (`task_note` page via `notes.ensureEntityNote`) · `saveView`/`listViews` (a task view = `views` row with `entity_types` EXACTLY `['task']`, stamped; `id` ⇒ REPLACE the config, `space_id` = ownership; foreign/mixed rows untouched) + substrate `ViewsService.listViews()` (first-consumer-pull) · `TASK_VIEW_PRESETS` + `ListTasksFilter.kind` · `createTasksReadProvider`/`registerTasksReadProvider` (by-id short-circuit, per-key validation, top-level grain, `tags` = membership incl. NESTED over live tags, union) · deps `spaces?`/`notes?`/`views?` optional + fail-loud. Files: `services/tasks/{service,types}.ts`, `validators/task.ts`, `foundation/views/service.ts`, tests (tasks +11, spaces +2), `docs/features/tasks/delivery/PLAN-S8-tags-notes-views.md`, currency (tasks current-{spec,BR} BR-TK-S8-1..11 · spaces current-{spec,BR} BR-22 · 2 CLAUDE.md), amendments (seam-contract · slice-map · interpretation · TAS-28).
+  - Verification: tsc 0 · eslint 0 · tasks 87/87 · spaces 23/23 · full `@vida/core` 1996/1997 alone (+ `encryptBytes 1MB` green in isolation — F003 env). Gate: gate-1 REVISE→SHIP (3 rounds) · preflight PASSED · gate-2 SHIP · g2 REVISE→folded (1 blocking test-determinism + 5 nits) · /critique SHIP.
+Decisions:
+  - **Victor: "check the documentation"** — I had asked two calls (pin/reorder home; tag ANY/ALL) that the corpus fixes: `pinView`/`reorderViews` are Preferences-OWNED (ADR-007 §3.5 · IA §6 · XCU-21; intake G1 "named, reorderable, pinnable" = nav placement) → not a tasks op, filed as a Preferences first-consumer-pull gap; `tags` = membership incl. nested (ADR-007:57) → BUILT, not deferred. Memory `decide-dont-ask-when-docs-give-the-answer` extended ("surface" = present the doc answer).
+  - g2 F2 sharpened a semantic: a soft-deleted REQUESTED tag matches nothing (`deleteTag` does not cascade `entity_tags`) → memory `deletetag-does-not-cascade-entity-tags-filter-membership-by-live-tags`.
+  - The only INTERPRETATION in S8: several tags = UNION (docs fix only the single-root-tag case); recorded in interpretation.md.
+Next session:
+  - **S9 — Journal summary + DueProvider closer** (slice-map: TAS-29 config · 32 · 36 errors): `summary(date)` + `getDueReminders(range)` + `registerTasksJournal`/`registerTasksDueProvider`. GROUND FIRST: slice-map/seam-contract S9 lines, `parts/tasks.md` TAS-29/32/36, xcut-sessions `dueIn`, the Journals registry (`services/journals`), the shipped `registerProjectsJournal` (`projects/journal.ts`) + `registerGamificationJournal` precedents, Sessions `dueIn` provider shape. Same per-slice loop; commit on `mod-tasks`; then PR → LIF-142 Done → mod-routines unblocks.
+  - First action in a fresh session: `cd .claude/worktrees/mod-tasks` + `nvm use 24`; confirm `git log -1` = `c7eafa6`, clean tree.
+---
+
+## 2026-10-18 — fe-session-hud #16 shipped + the 142→143→144 stack merged
+Shipped **fe-session-hud #16** (LIF-217 → Done, PR #144 `33278c1`): the Session HUD (strip region 6) — S1
+substrate (tri-state HudRead · drift-free value-keyed clock · pause-freeze/hold-complete per PD-4/5/7 + the
+V5 precedent) · S2 pill (5 forms, sibling pause ghost, anchor-decoration reset) · S3 shell mount
+(router-subscribed `?sample`; D-S3-1 Victor-approved 375 strip-budget: scope globe-only + Search→first More
+row + HUD keeps time). Envision + Decomposition + 2 Visual Gates Victor-approved; grounding pass overturned
+my zero-cross-overtime → the doc-fixed hold-complete; F-HUD-1 filed (findActiveSession ① + focus-runtime
+client store ②). **Merged the whole blocked stack** (Victor-authorized over the CI billing outage, order
+142→143→144, two routes.tsx union conflicts resolved) — LIF-218 confirmed Done; 3 worktrees+branches cleaned.
+**fe-codec-system #12 CLOSED: ratified-by-consumption, dissolved** (reuse-UI-4 unit; all System-type
+consumers shipped; no residual scope; no Linear issue needed). 3 memories saved (anchor decoration ·
+location-read reactivity · overlap-vs-overflow). Sessions file: .claude/sessions/2026-10-16-fe-session-hud-1.md.
+Next FE heads: fe-calendar #19 (worktree exists — check state) / fe-projects; backend: mod-tasks S7 (in
+flight in a parallel session).
+
+## 2026-10-18 (close) — next head DECIDED: fe-calendar #19 resume
+Victor picked **fe-calendar** (resume S2+ over the approved S1/front matter) as the next session's head; the
+three small foundation closers (fe-spaces-page · fe-sync-log · fe-feature-atlas) queue after it — all four
+live-verified READY (the tracker's "blocked" is the archived-Done-blocker blind spot; **7 units false-blocked
+as of today** — fix tracker_sync's blocker-state read [includeArchived] before it misroutes a /begin).
+Foundation census at close: CODEC 13/13 · M1.2.1 shell/cross-cutting 10 done + 4 remaining (#19 in-flight,
+#20/#21/#22 untouched) · M1.2.2 3/6 (fe-projects/fe-habits/fe-check-ins ready; fe-tasks ⛔ mod-tasks S7).
+Main-checkout toolkit state left UNCOMMITTED (parallel-session entanglement; fe-gamification precedent).
+
+---
+Date: 2026-10-18
+Task: fe-calendar (LIF-203 · #19) — Global Calendar, Entity Delivery Flow ②, worktree `.claude/worktrees/fe-calendar` (branch `fe-calendar`, Node 24)
+Goal: Resume #19 (merge main, re-verify S1) → build S2 (Agenda) through the full §XXVI stack.
+Completed:
+  - **Resume:** merged origin/main into the worktree (`12639ee`, routes.tsx union); S1 re-verified (tsc 0 · lint 0 · calendar-view 22/22 · apps/web 661/661). Closed an S1 §XXIX lag (`hideHeader` missing from `v4-calendar-view.md` + ui CLAUDE.md).
+  - **S2 Agenda renderer** (`614c6b9`): `@vida/ui` `AgendaView` (UI-2 · V10; `packages/ui/src/components/agenda-view{,.test,.stories}.tsx`, 21 tests) + `@vida/types` `DAYPART`/`Daypart` (`common.ts`, slice-map D1) + surface `agendaFixture` + agenda dispatch (`apps/web/src/app/calendar/index.tsx`). PLAN `docs/specs/foundation/fe-calendar/delivery/PLAN-S2-agenda-renderer.md`; durable spec `docs/specs/components/ui-2-platform-views/v10-agenda-view.md`. Visual Gate PASS (Victor-reviewed).
+  - **S1 chrome fix** (`5e261ff`, bug unit `docs/specs/fixes/fe-calendar-s1-chrome-375/` RESOLVED): <768 `Range:` Menu condense (EC-1, `useMedia()` + `__bp`) · all range chrome `lg` 48px + ≥8px gaps · CanvasView title `lineHeight="$display"` + `Actions` `maxWidth:100%`/`flexWrap` (BR-CB-S1-12) · honest "This week ·" · clamped month/year nav. Visual Gate PASS (Victor-reviewed, 60 cells, 0 page overflow). S1 ledger's false "375 no-overflow ✓" CORRECTED.
+  - Verification at close: tsc 0 (@vida/ui · apps/web) · eslint 0 · @vida/ui 560/560 · calendar-surface 10/10 · canvas-view 10/10 · canvas-editor+calendar 21/21.
+  - Siblings recorded (NOT folded): `docs/specs/fixes/ds-type-lineheight-unpaired/` §Sibling records — 24 unpaired large-type sites (incl. lens-dispatches raw px) · `sm` 32px shell/Collection controls + Menu rows ~37px under the ≥44 floor · focus drop at the 768 condense swap.
+In progress:
+  - Nothing mid-flight. Worktree clean at `5e261ff`. NOT pushed, no PR (branch merges after the slices).
+Decisions:
+  - **Victor: "ground everything in the documentation" (×2) + "the decisions are in there".** S2: the D1 `Daypart` mint is homed IN S2 (slice-map:14-17 — my S7 deferral was manufactured); today-only daypart grouping = doc FACT (mockup + greybox); D1 bands settled (<12 / 12–17:59 / ≥18; all-day → morning). Fix unit: touch floor = `lg` (decisions.md:82); a shared defect a unit's own gate surfaces = ROOT fix in that unit (decisions.md:1117/1119/1120); latent siblings found by inspection = "→ sibling fix" (decisions.md:109); apps/web breakpoint = `useMedia()` + `__bp` (regions.ts:66-69), not a promoted @vida/ui hook.
+  - §XXVIII deviations (all Victor-approved): S2 DEV-1 Tamagui focus/hover pseudo-styles (not injected CSS) · DEV-2 375 rail reflow · DEV-3 surface passes NO `onToggleItem` (a no-op handler = dead focusable checkboxes; seam-contract:100 amended) · fix D-FIX-DEV-1 CanvasView actions wrap (BR-CB-S1-12) after the 48px toolbar overflowed at 768.
+  - Line-height root cause: `@tamagui/core` 2.6.2 `Text` never derives line-height from `fontSize` (no SizableText; core-only, ADR-001) → convention Rule "large type pairs `lineHeight="$<role>"`" in `packages/ui/src/CLAUDE.md`.
+  - Memories: `decide-dont-ask…` (+ decisions.md ledger variant) · `dont-manufacture-a-deferral…` (+ slice-map D-row homing) · visual-gate-playbook (+ region-vs-page overflow, false prior-ledger PASS, Chrome 1.5px→1px snap) · NEW `mutation-check-restore-from-copy-never-git-checkout`.
+Next session:
+  - **Start S3 — Week/Day renderer** (slice-map S3: `@vida/ui` `WeekView` time-column · hour gutter · all-day strip · timed blocks · Day = 1-column variant · fixtures; EC-4 + EC-11/12/13/14). Seam: seam-contract §A `TimedBlock`/`WeekViewProps`. Greybox evidence: `docs/specs/foundation/fe-calendar/mockups/greybox/{week,day}.png`.
+  - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git log -1` = `5e261ff`, clean tree. Then §XXVI: PLAN-S3 (GROUND FIRST — interpretation IR-6 "never assume time", envision EC-4, slice-map S3, seam-contract §A, `.claude/docs/decisions.md`, v10-agenda-view as the sibling renderer pattern) → /critique → Approval 1 → /preflight → /critique → Approval 2 → build → g2 review → Visual Gate (standalone-entry harness on the real CalendarSurface; score PAGE + REGION overflow; ≥44 controls) → currency (v11 spec + ui CLAUDE.md + slice-map) → commit.
+  - Apply the new Rule: any large type in WeekView pairs `lineHeight="$<role>"`.
+---
+
+---
+Date: 2026-10-19 (session opened 2026-10-18)
+Task: mod-tasks (LIF-142 · #65) — Tasks ① backend, Entity Delivery Flow, worktree `.claude/worktrees/mod-tasks` (branch `mod-tasks`, Node 24)
+Goal: Build S9 (Journal summary + DueProvider closer) through the full §XXVI loop → ① backend complete.
+Completed:
+  - **S9** built + gated + committed `88afb38`: `getDayTasksSummary(date)` (the Journal `/summary` SET per the GOVERNING
+    `docs/core/architecture/cross-module-integration.md` §2 row — every task due/scheduled/completed-on-date with
+    title·status·priority + membership flags; set union; no grain filter) · `utcDay` (the 7-module UTC-day convention,
+    TZ-independent) · `getDueReminders(range)` (the SS-7 due-bucket: OPEN tasks whose due_date OR scheduled_date ∈ the
+    window, `hard_deadline` = due date, UTC-midnight conversion, total order) · `services/tasks/journal.ts`
+    (summary-only contribution · `registerTasksJournal` · `registerTasksDueProvider` — ONE due-work registration, on
+    Sessions, SS-7) · TAS-29 `TaskViewConfig` + `TaskViewConfigSchema` · TAS-32/36 RATIFY. 9 gate tests through the
+    REAL journals engine + REAL `sessions.dueIn`. tsc 0 · eslint 0 · tasks **96/96** · full `@vida/core` alone
+    2004/2006 (F003 env flake, see below). Currency: BR-TK-S9-1..10, current-spec S9, CLAUDE.md, seam-contract:77
+    rewritten, slice-map S9 ✅, interpretation §6, journals + sessions current-spec registrant notes.
+  - Gates: PLAN-S9 g1 REVISE→SHIP (3 rounds) · preflight PASSED (A1–A6) · g2-critique SHIP · Approval 1+2 · g2 code
+    review SHIP (9 NITs; 7 folded) · /critique pre-ship.
+Decisions:
+  - **Victor ×2: "ground in the documentation" → "nothing is open, this is drift".** Rev 1–2 of the PLAN had four
+    labelled INTERPRETATIONS (local day · agenda placement · sub-task grain · completed∉due) + a counts-only
+    convention + a manufactured "overdue carry-forward" deferral — all reasoned from the three module precedents and
+    the five tasks aspect docs. The GOVERNING doc (`cross-module-integration.md` §2, "Governs: the daily-summary
+    aggregation") fixes the tasks row verbatim; the UTC-day convention ships in 7 modules; the sessions intake
+    G2-shape + tasks intake G6 fix the lane; JR-5 fixes open-only; "overdue" had zero doc hits. Rev 3 carries ZERO
+    interpretations. Memory `ground-every-deferral-and-interpretation-before-presenting` (read the "Governs:" core
+    doc + both intakes' resolved G-items + the shipped cross-module convention BEFORE precedents).
+  - Flagged for Victor, NOT changed (shipped-rule or doc-silent): `todayYmd()` local-day (BR-TK-S5-3) vs the UTC
+    convention · `cancelled`/`on_hold` dated tasks count as due work (the S1 `completed:false` open definition; no doc
+    defines them) · `CalendarDateSchema` regex-only (V8 rolls `2026-02-30` over; pre-existing, shared with projects).
+  - F005 env: `encryption/vault.test.ts` timeouts while a PARALLEL session ran the ui/web suites (load avg ~395→117);
+    isolated re-run 35/36 with only the self-documented `encryptBytes 1MB` marginal-perf test red (28.7 s / 20 s) —
+    the F003 pattern, green when idle in prior sessions; S9 touches no encryption file.
+Next session:
+  - **Push `mod-tasks` → open the PR (S1–S9, ① complete) → merge → LIF-142 Done → `mod-routines` unblocks.** First
+    action: `cd .claude/worktrees/mod-tasks`, Node 24 via `PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`,
+    confirm `git log -1` = the S9 commit, clean tree. Re-run `encryption/vault.test.ts` alone on an idle machine
+    before the PR (expect 36/36). Surface the three Victor-call flags at pickup.
+---
+
+---
+Date: 2026-10-20
+Task: fe-calendar (LIF-203 · #19) — Global Calendar, Entity Delivery Flow ②, worktree `.claude/worktrees/fe-calendar` (branch `fe-calendar`, Node 24)
+Goal: Build S3 (Week/Day renderer) through the full §XXVI stack.
+Completed:
+  - **S3 Week/Day renderer** (`84ce041`): `@vida/ui` `WeekView` (UI-2 · V11; Week AND Day = one component) + `internal/week-layout.ts` (pure, 23 tests) + 22 component tests + stories; surface Week/Day dispatch (`WeekRange`/`weekFixture`). PLAN `docs/specs/foundation/fe-calendar/delivery/PLAN-S3-week-day-renderer.md`; durable spec `docs/specs/components/ui-2-platform-views/v11-week-view.md`.
+  - **BR-16 root fix:** surface reads `timeFormat`/`weekStartsOn` from `preferences-store`; `weekStartOf` replaced `mondayOf` (periodLabel span + "This week", agenda, week) and Month passes `CalendarView weekStartsOn`.
+  - Verification: tsc 0 · eslint 0 (changed files) · @vida/ui 605/605 · @vida/web 677/677 · Visual Gate PASS (Victor-reviewed; Brave, real CalendarSurface, Week+Day × 3 presets × L/D × 375/768/1440 + overlap + states + 12h + Sunday: AA min 4.52–5.22, 0 page overflow, lanes never intersect, ring unclipped, axe 0).
+  - Currency: v11 spec · ui-2 `_index` V10 (missing since S2) + V11 rows · ui CLAUDE.md · web-client-runtime current-spec · slice-map ledger · seam-contract §A (WeekView ratified, `range` dropped) + §B (`useCalendar` takes `weekStartsOn`) · decisions ledger (5 rows) · components.md WeekView row.
+In progress:
+  - Nothing mid-flight. Worktree clean. NOT pushed, no PR.
+Decisions:
+  - **Victor: "check the documentation" ×3** on the 3 AskUserQuestion interpretations — I had read only the fe-calendar delivery folder. Sweep of the governing corpus: `/calendar` is Sessions-owned (IA); window auto-extend + overlap lanes = doc-DERIVED (EC-3/vision §6 no-hidden-items charter; Sessions intake :113-115 + SS-9); undated chips = doc-FIXED (a per-chip day was an ADD); + a missed BR (user locale prefs already live). Memory `ground-every-deferral…` extended: for a SURFACE find its IA owner + shipped stores first; never AskUserQuestion an interpretation pre-sweep.
+  - §XXVIII D-S3-DEV-1 (Victor-approved): shared-lane blocks show the start only; full range sr-only.
+  - Gate-caught: sr-only `position:absolute` spans escape an `overflow:auto` scroller whose containing block is outside it (→ `position:relative`, known-failures F004); engine-dependent accnames (→ explicit sr-only name, F005).
+Next session:
+  - **Start S4 — Year renderer** (slice-map S4: `@vida/ui` `YearView` — 12 mini-months · activity-density dots · today ringed · fixtures; EC-5 + EC-11/12/13/14; seam §A `YearDensity`/`YearViewProps` incl. the `onPickMonth` navigate intent). Greybox: `docs/specs/foundation/fe-calendar/mockups/greybox/year.png`.
+  - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git log -1`. GROUND FIRST (owner docs + shipped stores + decisions ledger) → PLAN-S4 → full §XXVI stack. Reuse `CalendarView weekStartsOn` + `preferences-store`; the Visual Gate driver pattern lives in the scratchpad `vg/week-gate.mjs` (re-create the standalone entry).
+  - Run full suites sequentially (ui, then web) — the machine reaps parallel runs under memory pressure.
+---
+
+
+---
+Date: 2026-10-20
+Task: fe-calendar (LIF-203 · #19) — Global Calendar, Entity Delivery Flow ②, worktree `.claude/worktrees/fe-calendar` (branch `fe-calendar`, Node 24)
+Goal: Build S4 (Year renderer) through the full §XXVI stack.
+Completed:
+  - **S4 committed `60dfde9`**: `packages/ui/src/components/year-view.tsx` (V12, 19 tests + stories) · `packages/ui/src/internal/year-layout.ts` (11 tests: resolveYear · buildYear · indexDensity) · `calendar-view.tsx` opt-in `tabIndex` + ring (D-S4-DEV-2, +1 test) · `apps/web/src/app/calendar/index.tsx` Year dispatch + `yearFixture` + `clampToMonth` + drill-in with focus-after-drill (+6 surface tests). PLAN `docs/specs/foundation/fe-calendar/delivery/PLAN-S4-year-renderer.md`; durable spec `docs/specs/components/ui-2-platform-views/v12-year-view.md`.
+  - Gates: gate-1 REVISE (12) → re-critique SHIP (+4) · Approval 1 · preflight PASSED · gate-2 REVISE (11) · grounding pass · Approval 2 · g2 code review SHIP (9 folded) · mutation check (drill focus killed) · Visual Gate PASS (Victor-reviewed; 29 cells: has 3:1 min 3.54 · names 6.47 · 0 page overflow · 2-up/4-up · Tab Jan→Dec · focus on "Month grid").
+  - Verification: tsc 0 (ui · web) · eslint 0 changed files (`index.ts:1` pre-existing) · @vida/ui 636/636 · @vida/web 683/683 · Verified against @tamagui/core 2.6.2 · date-fns 4.4.0 · React 19.2.4 (installed types; Context7 unauthenticated).
+  - Currency: v12 spec · v4 `tabIndex` row · ui-2 `_index` V12 · `packages/ui/src/CLAUDE.md` · web-client-runtime current-spec S4 · slice-map S4 ledger ✅ · seam-contract §A YearView ratified · decisions.md S4 section · components.md V12 row. Memory: visual-gate-playbook (harness imports app CSS) · tamagui gotchas (accname leading space + real atomic-class prefixes).
+In progress:
+  - Nothing mid-flight. Worktree clean at `60dfde9`. NOT pushed, no PR (branch merges after the slices).
+Decisions:
+  - Month HEADING is the drill target (a wrapping button would flatten the table for AT) — Victor-approved (F5).
+  - Drill-in wired in M1: it is NAVIGATION (calendar-ui-store), not a write; focus → Month grid per FOCUS_CONTRACT `tabChange → panel`.
+  - D-S4-DEV-1 has-dot .75 (mockup .55 failed 3:1 in 4/6) · D-S4-DEV-2 CalendarView `tabIndex` · `$8` gap (greybox governs, envision:60-61) · no `role=heading` (sibling convention; grounding pass reversed gate-2 G11).
+  - Feel notes kept as-is (Victor, no change): 375 cells ≈12.5px · names 4px inside the grid edge.
+Next session:
+  - **Start S5 — Living lens renderer** (slice-map S5: `@vida/ui` `LivingView` — ④ purpose-budget strip (honest-null) · ② habit threads (kept/miss/future + streak) · the 7 temporal day-columns as `Card`s with alive-hooks (past record · today live + ③ open-time + ⑤ slip-flag · future intention); EC-6..EC-10 + EC-11/12/13/14; seam §A `PurposeBudget`/`HabitThread`/`LivingDay`/`LivingViewProps` incl. the `onSlotOpenTime` intent (deny-safe absent in M1)). Greybox: `mockups/greybox/living{,-dark,-reader}.png` + `calendar-concept-board.html`.
+  - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git log -1` = `60dfde9`. GROUND FIRST (owner docs + Card alive-hooks + shipped stores + decisions ledger + calendar-vision §1-§6 + ADR-011 §3.6 honest-null) → PLAN-S5 → full §XXVI stack. S5 is the rule-of-three point for extracting `SR_ONLY`/`warn`/`parseLocalDate` (PLAN-S3 §5.2).
+  - Visual Gate harness: re-create `apps/web/vg-calendar.html` + `src/__envision__/vg-calendar.tsx` (MUST import `../fonts.css` + `../index.css`); driver pattern `scratchpad/vg-s4.mjs`. Run full suites sequentially.
+---
+
+---
+Date: 2026-10-20 — CI drifts resolved + the live data plane BUILT & MERGED (data-plane-wiring, PR #148)
+Task: started on CI problems (Cloudflare + prettier); expanded into the notes/journal data-plane foundational build. Profile: bug-fix → Generic Coding / foundation.
+Accomplished:
+  - **CI drifts (all grounded in "server = M4, not M1" per MVP-PATH §1/§6):** `pnpm dev:app` server-free dev + MVP-0 doc-honesty (PR #136, merged); CF "Workers Builds" = disable Preview Builds, steps documented (LIF-229); prettier reformat stays deferred (5 worktrees); **M4 deploy/server CI gated out of M1** — `deploy.yml`→`workflow_dispatch` + `ci.yml` paths-ignore docs (PR #147, merged; ~70-80% Actions-minutes reduction). Actions fully dark = account minutes/budget exhausted (LIF-236; $0 budgets, payment issue) → self-heals Nov 1; Codespaces NOT blocked.
+  - **notes-dataplane-orphan-deferral DIAGNOSED (PR #141):** the data plane was homed to a PHANTOM ("UI-3/M1.1+" = a CLOSED editor unit); no real owner. DF-12 orphan-deferral.
+  - **data-plane-wiring foundational unit — BUILT, VERIFIED, MERGED (PR #148, `67253648`).** Full §XXVI gate (baseline → PLAN → Approval 1 → IMPL-PLAN → Approval 2; §XXVIII re-gate; a docs-check course-correction that rejected a drifting net-new `live-driver.ts` for the documented in-place completion). Lands AR-4's reserved worker Drizzle seam (`values`/`exec`/`batch` on worker.ts+client.ts, calling the already-built `web-driver`) + a module-singleton `composition-root.ts` (deviceId from app_state). **PURELY ADDITIVE — zero frontend done-task files touched; per-module hook flips kept OUT** (Victor's "nothing changed on done tasks").
+  - **Verified:** tsc PASS · eslint clean · @vida/web **661/661** (zero regression) · OPFS CRUD **E2E 4/4 green in real Brave on macOS 12** (PW_EXECUTABLE_PATH escape hatch). Codespace headless Chromium CAN'T boot the OPFS worker (all e2e incl. pre-existing AR-2 timeout) — harness-env limit, not code; added `.devcontainer` for the non-OPFS case.
+Decisions / lessons:
+  - **Check the docs before treating anything as a decision** — recurring all session. The milestone home (M1.1.3) is DERIVED by first-consumer-pull, not chosen ([[deferred-substrate-home-is-derived-not-chosen]]); the composition mechanism/batch/deviceId were all doc-resolved; the `live-driver.ts` was a net-new substitute the docs made unnecessary.
+  - **The OPFS E2E's faithful env = a real local browser (Brave), not headless Chromium** (Codespace/CI). Reproduce locally via PW_EXECUTABLE_PATH, as QA-1 did. [[playwright-is-the-visual-gate-substrate-not-ci-cost]]
+  - **Purely-additive discipline:** the db-layer seam is AR-4's RESERVED hand-off (throwing placeholders commented for this unit) — completing it ≠ changing done work; the protected "done tasks" are the frontend surfaces (untouched).
+Next session:
+  - **Make the merged surfaces usable: per-module `register + flip`** on the data plane — start with **notes go-live** (register NotesService + flip the notes hooks) as its own additive unit; then home/journal, gamification, notifications, etc. Each is swap-ready. Residual seams: notes BODY = separate Yjs unit; search = FTS5/DB-8.
+  - Victor: apply the CF "disable Preview Builds" toggle; CI returns free on the Nov 1 Actions reset.
+
+---
+Date: 2026-10-20 — notes made USABLE (create-fix + open + write + persist) · PR #150 · go-live pattern established
+Task: triage "the OS is stuck in test mode / can't create or use notes" → fix the create bug → the first per-module go-live (notes-entity-usability). Profile: bug-fix → Add Frontend Component (+ a small @vida/core seam).
+Accomplished:
+  - **Create-note bug FIXED (`fix: initVault`).** Root-caused LIVE in Brave via Playwright MCP: the first real `createPage` threw `Vault not initialized` — `repository.computeSyncHash → hashContent` assertReady-guards on libsodium being loaded, and nothing called `initVault()` at startup. `initVault()` takes no secret (just `await sodium.ready`); the `_sync_hash` is an UNKEYED BLAKE2b content hash needed even in M1. Loaded once in `composition-root.build()`. [[repository-writes-need-initvault-even-in-m1]]
+  - **Triage of "OS non-functional":** 3/4 symptoms = the intended M1 stub state (home journal region is a designed placeholder; Modules panel = "empty-but-functional, lands with #15/#16"); the real gaps = open-on-click (a no-op) + write-and-save (IR-7, deferred). "Why IR-7 deferred" doc-grounded: #7 canvas-editor built `page-binding.ts` as a pure convention (no hook, defer to first consumer) + #27 fe-notes couldn't wire it with no data plane — BOTH resolved by data-plane-wiring. CRDT/Yjs sync stays M4 (@vida/editor has no Yjs dep → M1 local persistence needs none).
+  - **notes-entity-usability BUILT + verified (PR #150).** Full §XXVI per slice. **S1** open-on-click + create-and-open (`note-renderers` onOpen · `notes-surface`/`use-create-note` useNavigate). **S2** IR-7 content persistence: new `NotesService.writePageContent` (content's OWN path) + `content` dropped from `updatePageSchema` (can't be LWW-patched) + `useNoteContent` (debounced · flush-on-unmount · invalidate · honest saved|error) wired to `VidaEditor.onChange`. **§XXVIII dedupe** (Victor-approved): TipTap fires onChange on mount → baseline dedupe so mere-open doesn't write/bump `updated_at`. [[tiptap-onchange-fires-on-mount-dedupe-content-writes]]
+  - **Verified:** tsc 0 · eslint 0 · core notes 31/31 · web 666/667 (the 1 = App.integration lazy-load waitFor flake, passes 4/4 alone; `encryption/vault.test.ts` argon2id/1MB timeouts are pre-existing + untouched). **Verified LIVE in Brave on the real OPFS worker:** open/create/type→Saved→reload persists · reopen→no spurious write · console clean. Durable docs promoted (§XXIX). 5 commits: initVault · planning · S1 · S2 · dedupe.
+  - **Playwright MCP fix:** the MCP was pinned to Chrome (absent; un-installable on macOS 12 — Chrome needs Ventura, brew cask refuses, sudo needs a TTY). Pointed the plugin config at Brave (`--executable-path`) — the only OPFS-capable browser here.
+Decisions / lessons:
+  - **Check the docs before treating anything as a decision / expanding scope** — the configurable-create-behavior + "new tab" Victor asked for is net-new/undocumented (no preference field; no in-app tab workspace in the IA) → split to a tracked task, NOT invented inline.
+  - **Verify go-lives LIVE in the real app** — unit tests mock the service, so seam defects (initVault, the onChange echo) only surface in Brave on the real OPFS worker.
+  - A failed content write must retry: `lastSaved` promoted on SUCCESS only (dedupe must not swallow a retry).
+Next session:
+  - **Work the approved go-live queue** → `.claude/tasks/module-go-lives.md` (direction approved; each runs its OWN §XXVI gate). Priority: **home/journal** (journals already in the composition root) → settings → notifications → gamification → session-hud. The notes unit (PR #150) is the worked precedent + the shared pattern.
+  - Open threads: merge PR #150 (CI dark until Nov 1); `note-open-behavior-preference` (after settings); `fe-calendar` S5 (separate worktree, mid-build).
+
+---
+Date: 2026-10-21
+Task: home-journal-go-live (module-go-lives queue #1) — Add Frontend Component / Entity Delivery Flow ②
+Goal: Make the Home journal entry usable (land on /, write today's journal, persist locally) — first item of the approved go-live queue.
+Completed:
+  - **SHIPPED + MERGED to main (PR #151, merge `3b0ecc8`; commit `68245c9`).** Branch `home-journal-go-live` off main; worktree + local branch removed post-merge (remote branch still present — optional cleanup).
+  - **@vida/core** — `NotesService.ensureJournal(date)`: NP-8 idempotent get-or-create, in-service, mirrors `ensureEntityNote` (title = YYYY-MM-DD date, locale-free). `services/notes/{service,types}.ts` + 2 tests (33/33).
+  - **apps/web** — `home/use-journal-entry.ts` (new; TZ-safe `todayLocalYmd` built from local fields, `?sample` DEV path) + live `home/journal-page-region.tsx` (reuses `../notes/note-editor-body` + `useNoteContent` + `toNoteEntity`); `home-surface.tsx` unchanged. Tests: home 31/31 (hook TZ-proof, region states, arrangement mock).
+  - **Drift fix (Victor-directed doc+code check) — BR-NEU-5 conformance:** shipped `#150` `useNoteContent` wrote the editor mount-echo (BR-E1-2) on a blank/null-content page → "Saved" on an untouched new journal. Fix = `needsBaseline` ref adopts the first emit as the baseline when `initialContent==null`. Also fixes new notes. `notes/use-note-content.ts` + 3 hook tests updated to a real baseline + 1 new blank-page conformance test (5/5).
+  - **TipTap mount verified** (Victor asked): healthy by design — `immediatelyRender:false` (StrictMode-safe), created-once, onChange-via-ref, `setContent{emitUpdate:false}`. The mount-echo is documented (BR-E1-2); the app owns dedupe.
+  - **Verified LIVE in Brave on real OPFS** (fresh origin :5181): fresh journal opens silent (no "Saved") → type → Saved → reload persists → reopen no spurious write. Dashboard rail = honest stub. Also full flow on :5174 before the fix (write→persist→reopen-dedupe). Gates: tsc 0 (core+web) · eslint 0 · full web suite 665/671 (6 = settings/shell Tamagui flakes under concurrent load, pass 11/11 alone).
+  - Currency promoted (§XXIX): `docs/modules/notes/current-business-rules.md` BR-NEU-5 (blank-page clause) + `apps/web/src/home/CLAUDE.md` (journal region LIVE). Delivery docs `docs/specs/foundation/home-journal-go-live/`.
+In progress:
+  - Nothing mid-flight. Unit complete + merged.
+Decisions:
+  - **Scope corrected by grounding:** journal ENTRY rides `NotesService.ensureJournal`, NOT the `journals` aggregation service (queue one-liner was wrong); Dashboard can't light up until modules register providers → stays honest stub. [[home-journal-entry-rides-notesservice-not-journals-aggregation]]
+  - **Create-timing doc-resolved:** idempotent get-or-create-on-access, in-service (the `ensureEntityNote`/NP-8 convention) — not a fresh A/B decision, not a React-hook composition.
+  - **Merge choreography:** home-journal depended on unmerged #150 (writePageContent/useNoteContent); Victor merged #150 (admin, CI dark) first, then this branched off main. #151 merge: the auto-mode classifier blocked me ("Merge Without Review", enabled via /auto-mode-setup) → Victor merged it himself.
+  - **The BR-NEU-5 "fix" was almost a regression:** my first instinct (swallow any null-baseline first save) would have broken 3 shipped hook tests — the doc+code+tests check (Victor's steer) caught it; the correct fix relies on BR-E1-2 (first emit = mount-echo, always before a user edit).
+Next session:
+  - **Next go-live queue item = `settings`** (register `preferences` service + flip `settings/*` to `user_preferences`/`nav_preferences`; also unblocks `note-open-behavior-preference`). Fresh worktree off the now-updated `main` (Node 24; `pnpm install` + build @vida/types/ui/editor/core before typecheck — fresh worktree has no node_modules). Ground the real service+seam in docs+code first ([[home-journal-entry-rides-notesservice-not-journals-aggregation]]).
+  - Housekeeping: main checkout is still on branch `notes-entity-usability` — `git checkout main && git pull` to see #150+#151; optional `git push origin --delete home-journal-go-live`.
+  - Open threads elsewhere: `fe-calendar` S5 (separate worktree, mid-build); `mod-routines` (computed backend next head, worktree exists, not started).
+---
+
+---
+Date: 2026-10-21 (correction, appended — earlier entries are not rewritten)
+- The 2026-10-21 entry's "mod-routines (… worktree exists, not started)" was wrong: mod-routines is at **S3/8 shipped** in
+  its worktree (`1a61189`, unpushed). Found by the golive-replan triage; its task status is now `in-progress`.
+- golive-replan (EST→G3) merged as PR #152 (`d6c83e1`); G4 (Linear ledger) executing on branch `golive-g4`.

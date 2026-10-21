@@ -5,6 +5,7 @@
 
 import type { Id, Timestamp, Status, Priority } from './common'
 import type { SyncableEntity, SyncMetadata } from './sync'
+import type { MeasurementKind, BindingMode } from './measurement'
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -38,10 +39,23 @@ export interface Task extends SyncableEntity {
   difficulty: TaskDifficulty | null
   /** YYYY-MM-DD */
   due_date: string | null
+  /** YYYY-MM-DD — the planned work date (distinct from the hard due_date; DB-4 group #4) */
+  scheduled_date: string | null
   estimated_minutes: number | null
+  /** derived — auto-sum of task_time_logs.duration_minutes (TK-5), never hand-set */
   actual_minutes: number | null
-  /** @encrypted */
-  tags: string[]
+  /** set on the status→completed transition (TK-6); cleared on reopen */
+  completed_at: Timestamp | null
+  /** obligation discriminator — `obligation` carries a recurrence_rule (TK-7) */
+  kind: TaskKind
+  /** RRULE — obligations only (standard tasks never recur) */
+  recurrence_rule: string | null
+  /** ADR-011 M1 — the measure shape (natural `milestone`) */
+  measurement_kind: MeasurementKind
+  /** ADR-011 M2 — how progress binds (completion = `event-trigger`); NULL ⇒ derive-natural */
+  binding_mode: BindingMode | null
+  /** ADR-011 §3.3 M4 per-child sub-task rollup weight; NULL ⇒ equal-weight */
+  nesting_weight: number | null
   sort_order: number
   deleted_at: Timestamp | null
 }
@@ -50,7 +64,9 @@ export interface TaskTimeLog extends SyncMetadata {
   id: Id
   task_id: Id
   start_time: Timestamp
+  /** NULL = running */
   end_time: Timestamp | null
   duration_minutes: number | null
   created_at: Timestamp
+  updated_at: Timestamp
 }

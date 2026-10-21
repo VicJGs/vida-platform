@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in_progress
+# Status: in-progress — S3/8 shipped (1a61189); merged origin/main 2026-10-21, S4 next
 # Scenario: Default (Entity Delivery Flow ①)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -40,7 +40,15 @@ Sessions; XP application → Gamification. Delivery: `docs/features/routines/del
   @vida/core **1935/1935** · **g2 SHIP** (deviation APPROVED-sound; 4 cosmetic nits) · /critique SHIP · §XXIX refreshed.
 - S4–S8: pending (runStep · evaluate · lifecycle · tags/pages/links · provider+fan-out closer).
 
+## Status note (2026-10-14)
+⏸ PAUSED pending `mod-tasks` (#65 / LIF-142). Entity Delivery Flow front matter DONE through the
+Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretation,slice-map,seam-contract}.md`
+— 9 backend slices approved. **D1 resolved (Victor): build Tasks first**, then resume routines with a
+**required** `tasks: TasksService` dep (not the deny-safe port). D2 (notes entity_type=`routine_step`) + D3
+(two-seam completion) approved. Resume = reconcile substrate sigs vs the shipped TasksService, then start S1.
+
 ## Dependencies
+- blocked by `mod-tasks`  ← added 2026-10-14 (Tasks-first decision; routines drives task-type steps + RT-4 recurrent task)
 - blocked by `mod-journals`
 - blocked by `mod-knowledge`
 - blocked by `mod-notes-and-pages`

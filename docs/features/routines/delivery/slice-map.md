@@ -1,49 +1,51 @@
-<!-- Slice Map — features/routines · Entity Delivery Flow ① Step 2 · mod-routines (LIF-138) · Approval 1 artifact
-     Each slice tagged backend|frontend|shared. ① = backend only; frontend rides fe-routines (P6). -->
+<!-- Slice Map — features/routines · Entity Delivery Flow ① · Step 2 Decomposition Gate -->
+<!-- Each slice tagged backend|frontend|shared. ① = backend (this task). ② UI = P6 (separate). -->
+<!-- Ratifies the interpretation.md §3 preview against ROU-01…33 coverage. -->
 
-# Slice Map — Routines (①)  (mod-routines · LIF-138 · M1.1.2)
+# Slice Map — Routines (① backend)
 
-> 8 backend slices over the shipped DB-4 reframe schema (`routines` · `routine_step` · `routine_completions`).
-> Mirrors the twin MOD builds (habits 5 · projects/purposes/relationships 9). Each slice runs the full per-slice
-> service track (Steps 3–11): forward spec → §XXVI gate → implement → tsc 0 → **blocking live-store Verification
-> Gate** → g2 code-review → /critique SHIP → §XXIX currency. No batching; each slice's gate PASSES before the next.
+> **⏸ PAUSED (Victor, 2026-10-14) — pending `mod-tasks` (#65 / LIF-142).** Decomposition approved; build deferred so Tasks
+> ships first (D1 below). Resume after mod-tasks: `tasks` becomes a **required** `TasksService` dep; reconcile signatures then.
 
-## Backend / frontend split
-- **All 8 slices = `backend`.** Routines ① is a pure `@vida/core` service. No `@vida/ui`/`apps/web` surface here.
-- **Frontend = out of scope → `fe-routines` (P6).** The to-do view, standalone page, analytics charts, run-step UI.
-- **No `shared` slice** — the service API the UI will consume is frozen in `seam-contract.md` (this gate).
+> **Scope:** the `@vida/core` RoutineService tier over the BUILT schema (migration 018, 3 tables). 0 service code today.
+> **Out of scope (② UI / P6, ADR-020):** today-list grouping chrome, per-step live-entity render, standalone-page
+> analytics render, drag-reorder chrome, the alarm/timeframe surface. `[FACT: backend-intent/parts/routines.md:5]`
+> **Envision Gate:** N/A (pure backend — renders no surface). Any ② affordance is handed to add-frontend-component at P6.
 
-## Slices
+## Gate decisions (carried from interpretation.md §5 — Victor approves)
+- **D1** — RESOLVED (Victor, 2026-10-14): **build Tasks (#65) first**, then resume routines with a **required** `tasks: TasksService`
+  dep (not a deny-safe port). Routines paused; see banner above. `[DECISION: Victor 2026-10-14]`
+- **D2** — register `'routine'` + `'routine_step'` into the TaggableTypeRegistry; notes/pages/links target = `routine_step`
+  (+ `routine` group-level); retire the pre-reframe `routine_action` token. `[FACT: _registry.ts:46]`
+- **D3** — two-seam completion: a **step** completion drives the entity (fires ITS effects); the **routine-level** policy-`done`
+  emits the routine's `award_xp` + `contribute_purpose_metric`; streak exposed as a READ seam (no advertise).
 
-| # | Slice | Tag | Scope (legs) | Composes | Key invariants |
-|---|---|---|---|---|---|
-| **S1** | **Routine CRUD + DB-11 reconcile** | backend | `createRoutine/updateRoutine/archiveRoutine/getRoutine/listRoutines`; author `Routine`/`RoutineStep`/`RoutineCompletion` in `@vida/types`, retire `RoutineAction`+old enums; validators; pursuable columns (`measurement_kind`/`binding_mode`/`progress`) | Repository (D1) | IR-7, IR-8, IR-10 |
-| **S2** | **Step CRUD + app-cascade** | backend | `addStep/updateStep/reorderSteps/removeStep`; polymorphic `step_type`(OPEN)+`entity_type`/`entity_id`(nullable); `is_required`; delete-routine → app-cascade steps (IR-3) | Repository | IR-3, IR-4, IR-8 |
-| **S3** | **Completion ledger + skip** | backend | `completeStep/skipStep({planned\|logged,reason?})/editCompletion/deleteCompletion`; upsert `UNIQUE(step,date)`; planned (`skip_dates`) vs logged (`skipped`) RT-8; **partial always recorded** RT-5 | Repository | IR-2, IR-6, IR-10 |
-| **S4** | **runStep — drive the entity (keystone)** | backend | `runStep(step)`: resolve `entity_type`/`entity_id` → `SessionRegistry.createSession` OR native completion; `EntityUnavailable` typed state; **never a parallel completion** RT-3; deny-safe when a driver port is absent | Sessions registry (D2), Tasks/Habits (D9) | IR-2, RT-3 |
-| **S5** | **Evaluate + derived analytics** | backend | `evaluateRoutine(routine,date):{done\|partial,percent,done[],not_done[]}`; **default** completion policy (all-or-nothing / required-node via `is_required` / threshold); `progress()` derive-on-read; streak/rate recompute from ledger (no cache) RT-14/RT-19 | Measurement (D4) | IR-1, IR-5 |
-| **S6** | **Lifecycle + reschedule + scheduling seam** | backend | `setLifecycle(active\|paused\|off)` (paused/off → no misses); `rescheduleStep` → Scheduler open-slot (deny-safe X3); `recurrence_rule` RRULE → consumed by `dueIn`; `OutsideAcceptanceWindow` (default window, X1) | Sessions scheduler (D2), prefs? port | IR-5, RT-6 |
-| **S7** | **Tags + pages + links** | backend | register `entity_type` `'routine'`/`'routine_step'`; `getEntityTags` (read via `associations`); tag/link WRITES via Spaces port; notes via `pages` RT-15/RT-16 | Spaces (D5), Notes (D6) | IR-10 |
-| **S8** | **Provider + fan-out + deletion (① closer)** | backend | `JournalContribution` `summary(date)` + `registerRoutinesJournal`; `DueProvider` `fetch(range)` + `registerDueProvider`; emit-only effects `grant_currency`/`award_xp`+`contribute_purpose_metric`+`emit_measurement_signal` (guarded, post-commit, idempotent); routine→step→completion app-cascade deletion | Journals (D7), Sessions (D2), Effects (D3), Purpose (D8) | IR-2, IR-3, IR-9 |
+## Factory (established S1, used throughout)
+`createRoutinesService(deps): RoutinesService` — `deps = { db, deviceId, spaces: SpacesService, notes: NotesService,
+registry: TaggableTypeRegistry, sessions: SessionsService, habits?: HabitsService, tasks?: TasksPort,
+effects?: EffectsPort, measurementSources?: MeasurementSourceRegistry, prefs?: RoutinesPrefsPort }`.
+Required foundation services non-optional; cross-module drivers + rail + prefs are **deny-safe optionals**. `[FACT: services/projects/types.ts:21]`
 
-## Dependency order (build sequence)
-```
-S1 ─► S2 ─► S3 ─► S4 ─► S5 ─► S6 ─► S7 ─► S8
- types/CRUD  steps  ledger  drive  evaluate  schedule  assoc  provider+fanout+closer
-```
-S1 is the type/CRUD spine (every later slice imports the mappers). S4 depends on S2's steps + S3's ledger. S5
-depends on S3's ledger. S8 depends on S5 (summary digest), S3 (completion events), S6 (dueIn occurrences).
+## Slices (all `backend`; each closes with the per-slice Verification Gate — live-store, no batching)
 
-## Deferred — homed forward (NOT built, per interpretation §1 / §5)
-- **Completion/miss/acceptance POLICY store** → Preferences/Spaces (X1). S5/S6 ship a default + deny-safe `prefs?` port.
-- **`routine_step_membership` step-scoping (RT-10)** → Spaces design-pass (X2). S2 is single-routine ownership only.
-- **Scheduler internals** → Sessions (X3). S6 composes `dueIn`/availability; `rescheduleStep` degrades deny-safe.
-- **Gamification XP application** → Gamification handler (X4). S8 EMITS only; dormant until a handler resolves.
-- **Frontend (to-do view, standalone page, analytics, run UI)** → `fe-routines` (P6).
+| # | Slice | ROU rows | Why this boundary · key seam |
+|---|-------|----------|------------------------------|
+| **S1** | **Foundation — Routine+Step CRUD, lifecycle, DB-11 reconcile, type registration** | 01,02,03,04,05,06,14,17,29,33 | The floor every later slice stands on. `@vida/types` reconcile (add `Routine`/`RoutineStep`, re-key `RoutineCompletion`→`routine_step_id`, retire POC enums, fix validators) + factory + repos over `routines`/`routine_step` + CRUD + lifecycle + app-layer cascade + register `'routine'/'routine_step'` (D2) + pursuable-axes & open-vocab `step_type` validation. |
+| **S2** | **Completion ledger + skip mechanics** | 08(ledger),09,31 | `routine_completions` repo + the two distinct skip mechanisms (planned `skip_dates` vs logged `skipped`+`skip_reason`) + `UNIQUE(routine_step_id, completed_date)` merge. The ledger records actionable/no-entity step completions + skips — NOT driven-entity completions (those live on the entity, RT-3). |
+| **S3** | **Run/drive — the RT-3 composition core** | 07,08(drive),11,30a | `runStep` resolves the driven entity and launches its Session sub-type (`sessions.createSession`) OR native completion (`habits.logCompletion`) OR the deny-safe `TasksPort` (D1); returns live state; **never writes a parallel record**. `EntityUnavailable` typed state for missing/deleted/absent-port. The single most load-bearing slice. |
+| **S4** | **Policy evaluation derivation** | 12,24,30b | `evaluateRoutine(date) → {done\|partial, percent, done[], not_done[]}` applying `completion_policy` (all-or-nothing · required-node · threshold) **read from prefs config** (ROU-24), never hardcoded; `PolicyUndefined`→shipped default+flag; **always persist/return the partial** (RT-5 gratitude rule). |
+| **S5** | **Progress + analytics derivation** | 13,15,16,18 | `progress()` via `measurement.resolveProgress(stored, derive)` (override slot); streak/rate/ranking/time-comparison **recompute from the ledger** (no cache); miss + acceptance-window computation; the **policy-derived streak as a READ seam** Gamification pulls (not the Habits rule, not advertise). |
+| **S6** | **Reschedule / alarm (Scheduler)** | 10,28 | `rescheduleStep` asks the Sessions Scheduler for an open fitting slot (availability); `OutsideAcceptanceWindow` typed rejection. Broad cadence (day/week/month/year) resolved **through** the Scheduler — routines owns no scheduler. |
+| **S7** | **Effect emission + Purpose contribution** | 21,22 | On routine-level `done` (D3): emit `award_xp` (additive) + `contribute_purpose_metric` (keyed) via `effects.rail.applyEffect` (idempotent by `effect_event_id`); **Routines writes no XP/ledger/metric** — the registered handler does. Contribution rides `contributions` (M7, Purpose-owned); guard against owning apex/rollup tables. |
+| **S8** | **Tags + Notes** | 23,25,26 | `entity_tags` consume via `spaces.tagEntity` (routines as consumer of the registered types); routine/step notes via `notes.ensureEntityNote(pageType,'routine_step',id,seed)` + `entity_links`; saved-views cited-as-consumed (ADR-007, deferred pass). |
+| **S9** | **Provider + Journal closer (the ① closer)** | 19,20,30c,32 | `dueIn(range)` + `summary(date)` occurrence derivation (aggregator — read live, mirror nothing); expose `getDueReminders(range)`; ship `routines/journal.ts` = `createRoutinesJournalContribution` + `registerRoutinesJournal(registry, svc)` + `registerRoutinesDueProvider(sessions, svc)`; `ProviderEmitFailed` isolation. Confirms the `[E]` empty-seam (32) holds end-to-end. |
 
-## Per-slice Definition of Done (every slice)
-tsc 0 · eslint 0 · forward spec + §XXVI gate cleared · **live-store Verification Gate PASS** (functional + ≥2 failure
-paths + a real encrypt/persist write) · g2 code-review folded · /critique SHIP · §XXIX currency (`docs/modules/routines/current-*`).
+**Coverage check:** ROU-01…33 all homed (32 = the empty-`[E]` seam, held across every slice; 30 split a/b/c across S3/S4/S9 by error type). ✓
 
-## Completion checklist
-- [x] every slice tagged backend/frontend/shared · [x] legs mapped · [x] build order acyclic · [x] deferred homed · [x] DoD stated
+## Sequencing rationale
+- **Dependency order:** S1 (tables/types) → S2 (ledger) → S3 (drive) are the spine; S4–S5 derive over S2's ledger;
+  S6 composes Scheduler; S7 emits on S4's `done`; S8 cross-cuts; S9 registers providers over everything.
+- **Each slice is independently live-store verifiable** — a real SQLite write path exercises the encrypt/persist seam a
+  mock hides (the per-slice Verification Gate is blocking; no owed gates). `[FACT: scenario Step 9]`
+- **Worktree-isolated build** — a peer session was active this session; isolate into `.claude/worktrees/mod-routines`
+  before S1 implementation. [[parallel-session-shared-tree-collision-use-worktree]]

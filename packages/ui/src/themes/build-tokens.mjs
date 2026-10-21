@@ -171,6 +171,7 @@ const PRESETS = [
   { light: 'light', dark: 'dark', lightOverlay: null, darkOverlay: 'semantic.dark.json' }, // editorial (default, bare)
   { light: 'light_reader', dark: 'dark_reader', lightOverlay: 'semantic.reader.json', darkOverlay: 'semantic.reader.dark.json' },
   { light: 'light_quietDesk', dark: 'dark_quietDesk', lightOverlay: 'semantic.quietDesk.json', darkOverlay: 'semantic.quietDesk.dark.json' },
+  { light: 'light_game', dark: 'dark_game', lightOverlay: 'semantic.game.json', darkOverlay: 'semantic.game.dark.json' }, // fe-gamification G0 (LIF-181) — the motivating manhwa-"System" register
 ]
 
 StyleDictionary.registerFormat({
@@ -237,7 +238,7 @@ StyleDictionary.registerFormat({
     const obj = (o) => `{ ${Object.entries(o).map(([k, v]) => `${JSON.stringify(k)}: ${v}`).join(', ')} }`
     const note =
       totalOverrides > 0
-        ? `// ${Object.keys(themes).length} scheme-first base themes (3 presets × light/dark) + per-theme <Comp> sub-themes — parallel dark/preset VALUES (B-codec-1/B7). Theme-switch MECHANISM = DS-4/fe-codec S3.`
+        ? `// ${Object.keys(themes).length} scheme-first base themes (${PRESETS.length} presets × light/dark) + per-theme <Comp> sub-themes — parallel dark/preset VALUES (B-codec-1/B7). Theme-switch MECHANISM = DS-4/fe-codec S3.`
         : '// PLACEHOLDER: no overlays → all themes == editorial base. Overlays supply parallel preset/dark VALUES; MECHANISM = DS-4.'
     const out = [`${BANNER}import { tokens } from './tokens'\n`, note]
     for (const [name, themeObj] of Object.entries(themes)) out.push(`export const ${name} = ${obj(themeObj)}\n`)

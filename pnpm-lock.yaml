@@ -137,6 +137,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(@cloudflare/workers-types@4.20260316.1)(@types/better-sqlite3@7.6.13)(better-sqlite3@12.8.0)
+      ical.js:
+        specifier: 2.2.1
+        version: 2.2.1
       libsodium-wrappers-sumo:
         specifier: ^0.8.2
         version: 0.8.2
@@ -2667,6 +2670,9 @@ packages:
 
   hyphen@1.14.1:
     resolution: {integrity: sha512-kvL8xYl5QMTh+LwohVN72ciOxC0OEV79IPdJSTwEXok9y9QHebXGdFgrED4sWfiax/ODx++CAMk3hMy4XPJPOw==}
+
+  ical.js@2.2.1:
+    resolution: {integrity: sha512-yK/UlPbEs316igb/tjRgbFA8ZV75rCsBJp/hWOatpyaPNlgw0dGDmU+FoicOcwX4xXkeXOkYiOmCqNPFpNPkQg==}
 
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
@@ -6047,6 +6053,8 @@ snapshots:
   hyperdyperid@1.2.0: {}
 
   hyphen@1.14.1: {}
+
+  ical.js@2.2.1: {}
 
   ieee754@1.2.1: {}
 

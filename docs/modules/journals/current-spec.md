@@ -81,6 +81,15 @@ All in `@vida/core/services/journals` (barrel-exported from `@vida/core`). Types
   [S4] buildReview in-range composition + order, latest-per-date, out-of-range exclusion, InsufficientHistory (empty +
   all-malformed), malformed-skip.
 
+## Registered contributions (first-consumer-pull — each module registers at its own build; no composition root at M1)
+Shipped `register<X>Journal(registry, svc)` helpers (summary-only unless noted; the due-work agenda rides the SESSIONS
+`dueIn()` lane, not `JournalContribution.dueIn` — JR-5 / SS-7): gamification · projects · habits · finance · books ·
+knowledge · learning-education · purposes · relationships · notifications · **tasks (S9, 2026-10-19 —
+`services/tasks/journal.ts`: the `/summary` SET per `cross-module-integration.md` §2; `utcDay` = the UTC-day
+convention)**. Consequence (documented, not a defect): `buildDashboard().agenda` is EMPTY in M1 — no module registers
+`dueIn` on its contribution; the journals→Sessions `dueIn()` bridge (contract.md:32) is the journals-side seam still
+to pull.
+
 ## Not owned (delegated / cited — JR-1)
 The journal `pages` row + NP-2 + the `/summary` block interface + the free-form TipTap entry → **Notes & Pages**;
 metric math → `analytics.ts` (present, never recompute, JR-10); review scheduling/delivery → Notifications + Sessions

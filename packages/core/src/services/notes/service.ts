@@ -132,6 +132,12 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       return pageRepo.update(id, parsed)
     },
 
+    // IR-7: the editor body is written through its OWN path, never the updatePage LWW metadata patch, so the
+    // eventual M4 CRDT merge is not clobbered. M1 = a local write (serialized TipTap doc → the text column);
+    // M4 swaps the internals to the CRDT entry point — this signature is stable. (interpretation.md:159)
+    writePageContent: async (id: string, content: EditorDocument): Promise<PageRow> =>
+      pageRepo.update(id, { content: JSON.stringify(content) }),
+
     softDeletePage: async (id: string): Promise<void> => {
       await pageRepo.delete(id)
     },
@@ -174,6 +180,17 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
         entity_id: entityId,
         content: seedContent(seed),
       })
+    },
+
+    // NP-8 idempotent get-or-create for a day's journal page (mirrors ensureEntityNote). The home/journal
+    // surface's materialization seam: return the day's existing journal, else create it. Title = the YYYY-MM-DD
+    // date — non-empty (accname-safe for a borderless editor's aria-label) + deterministic + locale-free (keeps
+    // @vida/core Intl-free; the UI formats a prettier label for display). createPage's in-service NP-2 pre-check
+    // is the single-writer backstop (no explicit race-catch — single-user-local, same as ensureEntityNote).
+    ensureJournal: async (date: string): Promise<PageRow> => {
+      const existing = await getPageByJournalDate(date)
+      if (existing) return existing
+      return service.createPage({ type: 'journal', journal_date: date, title: date })
     },
 
     addAttachment: async (pageId: string, file: NewAttachment): Promise<NoteAttachmentRow> => {

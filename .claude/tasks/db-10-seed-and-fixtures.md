@@ -3,15 +3,9 @@
 # Linear: LIF-62
 # Profile: Add Backend Component
 # Scenario: Default
-#
-# ⏸ PARKED 2026-07-31 — build stood down. The db-10 triage escalated STRUCTURAL: db-10 is a SYMPTOM of a
-# malformed Project>Milestone>Issue delivery structure (mis-homed to M1.0; charter needs the whole OS). Superseded
-# by task `delivery-structure-reconstruction`. `sessions/PLAN-2026-07-31-*` is kept as DOGFOOD input, not deleted.
-# Do not build until the reconstruction re-homes + re-relates db-10.
+# Note: homed at M1.4 with its real blockers (DF-1); the 2026-07-31 park is resolved (delivery-structure-reconstruction done).
 # Project: M1 — Whole Manual OS
 # Milestone: M1.4 — Internal-Integration Hardening
-# Phase: 1.0 — Structural Foundation
-# Source: docs/roadmap.md → Phase 1.0 ① Database Layer
 
 ## Goal
 Build the dogfood seed + fixtures: a realistic single-user vault (Victor's data shapes) so every

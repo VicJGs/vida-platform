@@ -293,9 +293,9 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
   const subs = () => allExports().filter((n) => /_[A-Z]/.test(n))
   const grab = (name: string) => themes.match(new RegExp(`export const ${name} = (\\{.*?\\})\\n`, 's'))?.[1] ?? ''
 
-  it('emits exactly 6 scheme-first base themes', () => {
+  it('emits exactly 8 scheme-first base themes', () => {
     expect(new Set(bases())).toEqual(
-      new Set(['light', 'dark', 'light_reader', 'dark_reader', 'light_quietDesk', 'dark_quietDesk']),
+      new Set(['light', 'dark', 'light_reader', 'dark_reader', 'light_quietDesk', 'dark_quietDesk', 'light_game', 'dark_game']),
     )
   })
 
@@ -398,7 +398,7 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
       ['btnSecondary text.primary/surf.sec', 'P.neutral.900', 'P.neutral.100', 'P.neutral.50', 'P.neutral.800'],
     ] as const
     const sub = (s: string, p: string) => (s === 'white' ? 'white' : `color.${s.replace('P.', p + '.')}`)
-    for (const preset of ['editorial', 'reader', 'quietDesk']) {
+    for (const preset of ['editorial', 'reader', 'quietDesk', 'game']) {
       for (const [label, lf, lb, df, db] of pairs) {
         const light = ratio(sub(lf, preset), sub(lb, preset))
         const dark = ratio(sub(df, preset), sub(db, preset))

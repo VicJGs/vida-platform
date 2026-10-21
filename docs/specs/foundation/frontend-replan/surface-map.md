@@ -167,6 +167,8 @@ The surfaces do **not** build "18 modules in parallel." The audit reveals a hard
 | **Relationships** | `network_groups` · `network_group_contacts` · `closeness_tier` · restored fields → blocks Network pages · Neural Graph data · contact-health band |
 | **Routines** | v2 is schema-only (0 service) → blocks the run-flow + today surfacing |
 
+> **Status 2026-10-21:** superseded by `golive-replan/gap2-schema-gates.md` — all tables landed; only Finance services (+ budgeting design pass) remain, homed in fe-finance.
+
 ### 6.5 Status reality
 Most modules are **schema-floor only; services + surfaces = 0 lines** (`.gitkeep`). So this surface-map is a **design inventory**, not an audit of built screens. The per-surface WRONG findings are almost all *latent* (nothing built to be wrong yet); the dominant lens is **MISSING**. That's expected at G2 and is exactly what G3 (composition) + G5 (order) consume.
 

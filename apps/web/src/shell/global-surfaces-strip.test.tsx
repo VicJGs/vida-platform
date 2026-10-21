@@ -29,17 +29,19 @@ describe('GlobalSurfacesStrip', () => {
     expect(useCommandBarUIStore.getState().isOpen).toBe(true)
   })
 
-  it('condensed form: Search icon + overflow Menu — and NO hamburger (app-shell owns that now)', async () => {
+  it('condensed form: More-only — Search folds into the menu; no standalone button, no hamburger (#16 strip-budget)', async () => {
     const { getByRole, queryByRole } = await renderInShell(<GlobalSurfacesStrip mode="condensed" />)
-    expect(getByRole('button', { name: 'Search' })).not.toBeNull()
+    expect(queryByRole('button', { name: 'Search' })).toBeNull() // folded into More (Victor 2026-10-18)
     expect(getByRole('button', { name: 'More' })).not.toBeNull()
     expect(queryByRole('button', { name: 'Open navigation' })).toBeNull()
   })
 
-  it('condensed overflow Menu lists the route surfaces', async () => {
-    const { getByRole } = await renderInShell(<GlobalSurfacesStrip mode="condensed" />)
+  it('condensed overflow Menu: Search is the FIRST row (the ⌘K action, never a link) + the route surfaces', async () => {
+    const { getByRole, getAllByRole } = await renderInShell(<GlobalSurfacesStrip mode="condensed" />)
     fireEvent.click(getByRole('button', { name: 'More' }))
-    await waitFor(() => expect(getByRole('menuitem', { name: 'Settings' })).not.toBeNull())
+    await waitFor(() => expect(getByRole('menuitem', { name: 'Search' })).not.toBeNull())
+    expect(getAllByRole('menuitem')[0]!.textContent).toContain('Search')
+    expect(getByRole('menuitem', { name: 'Settings' })).not.toBeNull()
     expect(getByRole('menuitem', { name: 'Home' })).not.toBeNull()
   })
 })

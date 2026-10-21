@@ -12,6 +12,9 @@
 // Visual Gate — gated behind `?sample` in DEV only, off in prod.
 // ============================================================================
 import type { EditorDocument, PageType } from '@vida/types'
+import { useQuery } from '@tanstack/react-query'
+import { getServices } from '../db/composition-root'
+import { toNoteEntity } from './live-mappers'
 
 /** The fields the note-entity page needs (a `pages`-row projection; live mapping at the data-plane slice). */
 export interface NoteEntityData {
@@ -122,8 +125,16 @@ function devSampleActive(): boolean {
   )
 }
 
-/** M1 default (empty) + the DEV/gate sample. Live swap → React Query over `NotesService.getPage(id)`. */
+/** Live: React Query over `NotesService.getPage(id)` (zero signature change) + the DEV/gate sample. */
 export function useNoteEntity(id: string): NoteEntityResult {
-  if (devSampleActive()) return { page: sampleFor(id), state: 'success' }
-  return { page: null, state: 'empty' }
+  const sample = devSampleActive()
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['pages', id],
+    queryFn: async () => (await getServices()).notes.getPage(id),
+    enabled: !sample && Boolean(id),
+  })
+  if (sample) return { page: sampleFor(id), state: 'success' }
+  if (isError) return { page: null, state: 'error' }
+  if (isLoading) return { page: null, state: 'loading' }
+  return data ? { page: toNoteEntity(data), state: 'success' } : { page: null, state: 'empty' }
 }
