@@ -40,6 +40,12 @@ export function useNoteContent(id: string, initialContent?: EditorDocument | nul
   const lastSaved = useRef<string | null>(initialContent != null ? JSON.stringify(initialContent) : null)
   // The serialization currently being written (promoted to lastSaved only on success, so a failed write retries).
   const inFlight = useRef<string | null>(null)
+  // A page loaded with NO content (new journal / blank note) has no baseline to dedupe against, but the editor
+  // still fires one mount-echo of its normalized (empty) seed (BR-E1-2) BEFORE any user edit. That first emit is
+  // not an edit — adopt it as the baseline instead of writing it, so landing on a fresh page never writes/bumps
+  // `updated_at` (BR-NEU-5: "mere open never writes"). Only the NEXT, different emit is a real edit. A loaded-
+  // content page already has its baseline, so this is false and the first emit dedupes normally.
+  const needsBaseline = useRef<boolean>(initialContent == null)
 
   const mutation = useMutation({
     mutationFn: async (doc: EditorDocument) => {
@@ -76,6 +82,12 @@ export function useNoteContent(id: string, initialContent?: EditorDocument | nul
 
   const save = (doc: EditorDocument) => {
     const serialized = JSON.stringify(doc)
+    if (needsBaseline.current) {
+      // First emit after a blank load = the mount-echo (BR-E1-2), not a user edit → adopt as baseline, don't write.
+      needsBaseline.current = false
+      lastSaved.current = serialized
+      return
+    }
     if (serialized === lastSaved.current) return // dedupe: unchanged since load/last save (e.g. the mount echo)
     pending.current = { doc, serialized }
     if (mounted.current) setSaveState('saving')

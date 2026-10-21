@@ -62,6 +62,9 @@ export interface NotesService {
   writePageContent(id: string, content: EditorDocument): Promise<PageRow>
   softDeletePage(id: string): Promise<void>
   getPageByJournalDate(date: string): Promise<PageRow | null>
+  /** NP-8 idempotent get-or-create for a day's journal page (mirrors ensureEntityNote). Title = the YYYY-MM-DD
+   *  date (non-empty, deterministic, locale-free). The home/journal go-live's materialization seam. */
+  ensureJournal(date: string): Promise<PageRow>
   getPagesByType(type: PageType): Promise<PageRow[]>
   getPagesForEntity(entityType: string, entityId: string): Promise<PageRow[]>
   listPages(filters?: { favorite?: boolean; archived?: boolean }): Promise<PageRow[]>
