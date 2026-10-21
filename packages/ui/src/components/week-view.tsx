@@ -1,7 +1,8 @@
-import { useId, type CSSProperties, type ReactElement, type ReactNode, type Ref } from 'react'
+import { useId, type ReactElement, type ReactNode, type Ref } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { format } from 'date-fns'
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
+import { parseLocalDate, SR_ONLY } from '../internal/calendar-shared'
 import { formatHour, HOUR_PX, layoutDay, normalizeSpan, type Span, windowFor } from '../internal/week-layout'
 
 // fe-calendar #19 · S3 — week-view, the Week AND Day range renderer (Day = this with one column — EC-4).
@@ -60,25 +61,6 @@ export interface WeekViewProps {
 
 const GUTTER = 64
 const COL_MIN = 80
-const DATE_KEY = /^(\d{4})-(\d{2})-(\d{2})$/
-
-// sr-only — visually hidden but announced (the neural-graph NG-5 recipe).
-const SR_ONLY: CSSProperties = {
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: 'hidden',
-  clipPath: 'inset(50%)',
-  whiteSpace: 'nowrap',
-  border: 0,
-}
-
-function parseLocalDate(key: string): Date | null {
-  const m = DATE_KEY.exec(key)
-  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null
-}
 
 function warn(msg: string): void {
   console.warn(`[vida/ui] WeekView: ${msg}`)

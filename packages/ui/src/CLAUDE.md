@@ -356,6 +356,20 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   local noon). 19 + 11 tests. Visual Gate PASS (Brave, real CalendarSurface, 29 cells: has 3:1 min 3.54 · busy/ring 5.93 ·
   names 6.47 · 0 page overflow · Tab Jan→Dec · drill focus on "Month grid"). Spec:
   `docs/specs/components/ui-2-platform-views/v12-year-view.md`.
+  **living-view** is **UI-2 · V13** (fe-calendar #19 · S5, LIF-203) — the Global Calendar's signature **Living** range:
+  ④ purpose budget (accent bars; hours via `internal/living-format.ts` "6h"/"2h05"; 0 → "0h · none yet" in
+  `$colorBrandEmphasis` — the greybox red is danger, which fails AA as text; null → "unmeasured", never 0; `stale` → "as of
+  last read") · ② habit threads (7 `flex:1` node cells — kept/missed-dotted/today/future@.4, hollow nodes filled — joined by
+  the vision's connector, purpose colour @ .33 via `opacity`, never hex maths; each row = one sr sentence) · the 7 day **`Card`s
+  via alive-hooks** (past `faded` · today `warm` · future) named by an sr span, inside a keyboard-reachable `role="region"` whose
+  inset is sized to `shadow.resting` (+ a negative margin to keep edges aligned) — `tabIndex 0` ALWAYS (the loading skeleton still
+  scrolls; axe-caught). Today = ONE ordered `entries[]` (items + the open-time block; button only with `onSlotOpenTime`).
+  **⚠ SR suffixes go INSIDE the inline label Text** — a whitespace node between FLEX items gets no box and the browser drops it
+  ("Title(done)"; jsdom keeps it, so the test passes anyway — g2-review-caught). Lanes degrade alone (absent = "unavailable
+  right now"; `[]` = "No … yet"); an absent lane is never "empty". 26 + 4 tests. Visual Gate PASS (26 cells: text AA ≥ 4.52 ·
+  0 page overflow · axe 0). Spec: `docs/specs/components/ui-2-platform-views/v13-living-view.md`.
+  **`internal/calendar-shared.ts`** (S5): `SR_ONLY` · `DATE_KEY` · `parseLocalDate` shared by agenda/week/year/living (rule of
+  three); `Eyebrow` stays per-file (agenda's lacks the paired line-height).
   **fe-calendar S4 — `calendar-view` `tabIndex?`** (D-S4-DEV-2): an opt-in programmatic focus target; `CalRoot` carries the
   house 2px ring (renders only when opted in + focused). The surface focuses the Month grid after a Year drill-in.
   **pomodoro-widget** is **UI-2 · V5** — the interactive timer WIDGET `@vida/ui` ships (ADR-008:35). NOT a data-view: a

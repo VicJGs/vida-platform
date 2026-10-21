@@ -1,5 +1,16 @@
 <!-- Last updated: 2026-10-12 by /session-end -->
 
+## fe-calendar ② S5 — Living lens renderer (2026-10-21 — LIF-203)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-21 | Thread connector | greybox shows none; vision says lines | **draw it** — concept 2px purpose hex @ .33 | doc-FIXED: calendar-vision:22 + concept legend :161 + EC-F4 :39 name the line; envision:54 lists thread ink among what the greybox DEFERRED → its omission is silence, not a ruling | yes |
+| 2026-10-21 | Flag text colour | greybox red (danger) for "0h · none yet" + SLIPPING | **`$colorBrandEmphasis`**; ⤻ glyph stays danger (graphic) | doc-RESOLVED: EC-13 AA MUST + decisions.md:127 (danger-as-text fails AA) → the unit's own emphasised-tag token (S2 MUST tag) | yes |
+| 2026-10-21 | Today's items | separate live/openBlock/drift arrays (seam) | **ONE ordered `entries[]`** | the greybox interleaves items with the open block; the provider orders (BR-1) | yes |
+| 2026-10-21 | Lane outage | omit an unavailable lane? | **keep the lane, say "unavailable right now"**; an absent lane never makes the week "empty" | interpretation NEEDS-5 ("greys that lane, never blanks the calendar") | yes |
+| 2026-10-21 | 375 / 768 | how do 7 Cards fit | **keyboard-reachable scroll region** (always a tab stop); today not auto-scrolled | EC-8 "grow/scroll" + the WeekView region precedent; axe scrollable-region-focusable | yes |
+| 2026-10-21 | Rule of three | extract the calendar helpers | **`internal/calendar-shared.ts`** (SR_ONLY · DATE_KEY · parseLocalDate); `Eyebrow` NOT extracted | PLAN-S3 §5.2 deferred it to S5; agenda/week Eyebrows differ on line-height | yes |
+
 ## fe-calendar ② S4 — Year renderer (2026-10-20 — LIF-203)
 
 | Date | Area | Decision | Choice | Reason | Reversible |

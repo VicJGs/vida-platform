@@ -131,7 +131,7 @@ of their deferred hooks. The UI mechanics live in their own convention docs (`ap
 - **View dispatch** — `ViewLayout` union (`'list'|'table'|'board'|'gallery'|'calendar'|'timeline'|'graph'`) in `@vida/types`
   routes a saved-view's `layout` to its renderer; `'calendar'` → the `@vida/ui` `CalendarView` (month grid, LIF-230-refined,
   TZ-safe). The other 5 calendar ranges are **net-new renderers #19 builds** — Agenda = `AgendaView` (S2) · Week/Day =
-  `WeekView` (S3) · Year = `YearView` (S4), shipped; Living = S5. `[FACT: packages/types/src/view.ts; packages/ui/src/components/calendar-view.tsx]`
+  `WeekView` (S3) · Year = `YearView` (S4) · Living = `LivingView` (S5) — all shipped. `[FACT: packages/types/src/view.ts; packages/ui/src/components/calendar-view.tsx]`
 
 ## Downstream (INTENT — consumers)
 - **UI-3** (`@vida/editor`, LIF-88) ← UI-1, **AR-4** — the editor mounts in routes + issues React Query reads.
@@ -174,4 +174,11 @@ of their deferred hooks. The UI mechanics live in their own convention docs (`ap
   `tabChange → panel`, state-conventions §5): the pressed button unmounts with YearView, so a `focusMonthAfterDrill` ref +
   a `useEffect` on `range` focuses the Month grid (`CalendarView ref` + `tabIndex={-1}`, D-S4-DEV-2); the range switcher
   never moves focus. Only Living renders the placeholder now.
+  **S5 SHIPPED (2026-10-21):** **Living** dispatches to `@vida/ui` **`LivingView`** fed by `livingFixture(focused,
+  weekStartsOn)` — each day's kind derived from today (past < today < future by key), so a past/future week renders no today
+  Card and no today thread node; the fixture's streak copy names the missed day's real weekday, or a neutral streak when no
+  miss has happened. `weekSpan(focused, wso)` extracted (shared by `periodLabel` + the Living `weekLabel`: "This week" only for
+  the current week). **No `onSlotOpenTime`** (the slotting capability isn't wired — deny-safe). The S1 placeholder + its
+  `EmptyState` import are gone: **all six ranges are live** on fixtures; S6/S7 bring the real reads + `useCalendar`.
+  `[FACT: apps/web/src/app/calendar/index.tsx weekSpan · livingFixture · range==='living' dispatch; packages/ui/src/components/living-view.tsx; docs/specs/foundation/fe-calendar/delivery/PLAN-S5-living-renderer.md]`
   `[FACT: apps/web/src/app/calendar/index.tsx clampToMonth · yearFixture · pickMonth · range==='year' dispatch; packages/ui/src/components/year-view.tsx; docs/specs/foundation/fe-calendar/delivery/PLAN-S4-year-renderer.md BR-12, §5a]`

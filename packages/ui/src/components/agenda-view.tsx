@@ -1,7 +1,8 @@
-import { useId, type CSSProperties, type ReactElement, type ReactNode, type Ref } from 'react'
+import { useId, type ReactElement, type ReactNode, type Ref } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { format } from 'date-fns'
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
+import { parseLocalDate, SR_ONLY } from '../internal/calendar-shared'
 
 // fe-calendar #19 · S2 — agenda-view, the Agenda range renderer (the "another way" that solves the month grid's
 // info-crush). Spec: docs/specs/foundation/fe-calendar/delivery/PLAN-S2-agenda-renderer.md (→ ui-2 v10-agenda-view.md).
@@ -57,25 +58,6 @@ export interface AgendaViewProps {
 
 const DAYPART_ORDER: readonly Daypart[] = ['morning', 'afternoon', 'evening']
 const DAYPART_LABEL: Record<Daypart, string> = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening' }
-const DATE_KEY = /^(\d{4})-(\d{2})-(\d{2})$/
-
-// sr-only — visually hidden but announced (the neural-graph NG-5 recipe).
-const SR_ONLY: CSSProperties = {
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: 'hidden',
-  clipPath: 'inset(50%)',
-  whiteSpace: 'nowrap',
-  border: 0,
-}
-
-function parseLocalDate(key: string): Date | null {
-  const m = DATE_KEY.exec(key)
-  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null
-}
 
 // ── styled hosts (unnamed → base theme; DIRECT semantic tokens, no sub-theme) ─────────────────────────────
 const AgendaRoot = styled(View, { flexDirection: 'column' })

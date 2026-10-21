@@ -124,11 +124,6 @@ describe('CalendarSurface — Year dispatch + drill-in (S4)', () => {
     expect(container.textContent).not.toContain('ships in a later slice of #19 (S4')
   })
 
-  it('the placeholder now covers Living only', () => {
-    useCalendarUIStore.setState({ range: 'living', focusedDate: '2026-10-18' })
-    const { container } = renderSurface('tablet')
-    expect(container.textContent).toContain('ships in a later slice of #19 (S5)')
-  })
 
   it('weekStartsOn=0 reaches the grid (Oct 1 2026 = Thursday → column 5)', () => {
     usePreferencesStore.setState({ weekStartsOn: 0 })
@@ -163,6 +158,54 @@ describe('CalendarSurface — Year dispatch + drill-in (S4)', () => {
     fireEvent.click(monthToggle)
     expect(useCalendarUIStore.getState().range).toBe('month')
     expect(document.activeElement).toBe(getByRole('button', { name: 'Month' }))
+  })
+})
+
+describe('CalendarSurface — Living dispatch (S5)', () => {
+  it('Living renders LivingView: lanes + 7 named day Cards, the current week labelled "This week"', () => {
+    useCalendarUIStore.setState({ range: 'living', focusedDate: '2026-10-18' })
+    const { getByRole, container } = renderSurface('tablet')
+    expect(getByRole('group', { name: 'Living' })).toBeTruthy()
+    expect(getByRole('group', { name: 'Purpose budget · This week' })).toBeTruthy()
+    expect(getByRole('group', { name: 'Habit threads' })).toBeTruthy()
+    const region = getByRole('region', { name: 'Week columns' })
+    // NOW = Sun Oct 18 (Monday start → Oct 12–18): today is the last Card
+    expect(getByRole('group', { name: 'Mon 12' })).toBeTruthy()
+    expect(getByRole('group', { name: 'Sun 18, today' })).toBeTruthy()
+    expect(region.querySelectorAll('[role="group"]')).toHaveLength(7)
+    // all six ranges are live — no placeholder copy remains anywhere
+    expect(container.textContent).not.toContain('ships in a later slice')
+  })
+
+  it('no open-time button in M1 (the slotting capability is absent — deny-safe)', () => {
+    useCalendarUIStore.setState({ range: 'living', focusedDate: '2026-10-18' })
+    const { queryAllByRole } = renderSurface('tablet')
+    expect(queryAllByRole('button', { name: /open,/ })).toHaveLength(0)
+  })
+
+  it('weekStartsOn=0 starts the Living week on Sunday', () => {
+    usePreferencesStore.setState({ weekStartsOn: 0 })
+    useCalendarUIStore.setState({ range: 'living', focusedDate: '2026-10-18' })
+    const { getByRole } = renderSurface('tablet')
+    const first = getByRole('region', { name: 'Week columns' }).querySelector('[role="group"]')
+    expect(getByRole('group', { name: 'Sun 18, today' })).toBe(first)
+  })
+
+  it('a future week: no today Card and no "today" thread node', () => {
+    useCalendarUIStore.setState({ range: 'living', focusedDate: '2026-11-04' })
+    const { getByRole, queryByRole, container } = renderSurface('tablet')
+    expect(getByRole('group', { name: 'Purpose budget · Nov 2 – Nov 8, 2026' })).toBeTruthy()
+    expect(queryByRole('group', { name: /, today$/ })).toBeNull()
+    expect(container.querySelectorAll('.vida-thread-today')).toHaveLength(0)
+    expect(container.querySelectorAll('.vida-thread-missed')).toHaveLength(0)
+    expect(container.textContent).not.toContain('broke')
+  })
+
+  it('a past week: the budget is labelled with the span, and no day is today', () => {
+    useCalendarUIStore.setState({ range: 'living', focusedDate: '2026-10-05' })
+    const { getByRole, queryByRole } = renderSurface('tablet')
+    expect(getByRole('group', { name: 'Purpose budget · Oct 5 – Oct 11, 2026' })).toBeTruthy()
+    expect(queryByRole('group', { name: /, today$/ })).toBeNull()
   })
 })
 

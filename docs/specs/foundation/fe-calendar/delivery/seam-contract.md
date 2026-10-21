@@ -47,18 +47,24 @@ interface YearViewProps { year: number; density: readonly YearDensity[]; today?:
                           state?: CalState; empty?: ReactNode; error?: ReactNode
                           'aria-label'?: string; 'aria-labelledby'?: string; ref?: Ref<HTMLDivElement> }
 
-// — S5 · LivingView (EC-6..EC-10) — the signature, all data-prop; each lane degrades independently (honest-null) —
-interface PurposeBudget { id: string; name: ReactNode; color: string; hours: number | null; fraction: number | null } // null ⇒ unmeasured (EC-6)
-interface HabitThread   { id: string; name: ReactNode; color: string; days: ('kept'|'missed'|'future'|'today')[]; streak?: ReactNode }
+// — S5 · LivingView (EC-6..EC-10) — SHIPPED (ratified + refined R1–R5: LivingItem time/slipping · today = ONE ordered
+//   entries[] (the greybox interleaves items + the open block) · ThreadState + name:string · readonly/slots/labelledby ·
+//   weekLabel:string · stale? (ADR-011 §3.6 outage, forward vocabulary); v13-living-view.md). Each lane degrades alone. —
+interface PurposeBudget { id: string; name: string; color: string; hours: number | null; fraction: number | null; stale?: boolean }
+type ThreadState = 'kept' | 'missed' | 'today' | 'future'
+interface HabitThread   { id: string; name: string; color: string; days: readonly ThreadState[]; streak?: ReactNode }
+interface LivingItem extends CalChip { time?: string; slipping?: boolean }        // ⑤ = an item with the slip flag
+type TodayEntry = { kind: 'item'; item: LivingItem } | { kind: 'open'; label: string; hint: string }
 interface LivingDay {
   date: string; kind: 'past' | 'today' | 'future'
-  record?: ReactNode; done?: CalChip[]; focus?: ReactNode          // past
-  live?: CalChip[]; openBlock?: { label: ReactNode; hint: ReactNode }; drift?: CalChip[] // today (⑤ = a chip w/ a slip flag)
-  intent?: ReactNode; plan?: CalChip[]                             // future
+  record?: ReactNode; done?: readonly LivingItem[]; focus?: ReactNode   // past
+  entries?: readonly TodayEntry[]                                         // today, provider-ordered
+  intent?: ReactNode; plan?: readonly LivingItem[]                        // future
 }
-interface LivingViewProps { weekLabel?: ReactNode; budget?: PurposeBudget[]; threads?: HabitThread[]; days: LivingDay[]
-                            state?: CalState; onSlotOpenTime?: (date: string) => void  // INTENT only (EC-9/EC-12)
-                            'aria-label'?: string; ref?: Ref<HTMLDivElement> }
+interface LivingViewProps { days: readonly LivingDay[]; weekLabel?: string; budget?: readonly PurposeBudget[]
+                            threads?: readonly HabitThread[]; onSlotOpenTime?: (date: string) => void  // INTENT only
+                            state?: CalState; empty?: ReactNode; error?: ReactNode
+                            'aria-label'?: string; 'aria-labelledby'?: string; ref?: Ref<HTMLDivElement> }
 ```
 All renderers: no write control; `on*` are **intents**; `state` is a PROP (BR-2); LOCAL types; Visual-Gate'd with
 fixtures across preset×mode×widths (EC-11/13/14).
@@ -80,7 +86,9 @@ function useCalendar(range: Range, focusedDate: string, weekStartsOn: 0 | 1): {
   agenda?: AgendaDay[]                    // EC-3 — buildDashboard per-day + daypart mapping (D1)
   week?: { allDay: CalChip[]; blocks: TimedBlock[] }  // EC-4
   year?: YearDensity[]                    // EC-5
-  living?: { budget: PurposeBudget[]; threads: HabitThread[]; days: LivingDay[] } // EC-6..EC-10
+  living?: { budget?: PurposeBudget[]; threads?: HabitThread[]; days: LivingDay[] } // EC-6..EC-10 — lanes OPTIONAL:
+  //   absent = the source is unavailable (honest-null lane); S7 orders today's entries[] (the open block placed by its
+  //   time) and owns any last-known cache behind `stale` (until then `stale` is never set)
 }
 // Each provider is read as `useQuery({ queryKey, queryFn: provider })`, provider satisfies ProviderRead<T>.
 // Derivations live HERE (record-lines, thread states, budget fraction, open-time, slip-flag) — never in @vida/ui.

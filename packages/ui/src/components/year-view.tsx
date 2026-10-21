@@ -2,6 +2,7 @@ import { useId, type CSSProperties, type ReactElement, type ReactNode, type Ref 
 import { styled, Text, View } from '@tamagui/core'
 import { format } from 'date-fns'
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
+import { SR_ONLY } from '../internal/calendar-shared'
 import { buildYear, indexDensity, localDate, MONTH_MIN, resolveYear } from '../internal/year-layout'
 
 // fe-calendar #19 · S4 — year-view, the Year range renderer: 12 mini-months of activity-density dots (EC-5).
@@ -39,19 +40,6 @@ export interface YearViewProps {
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
   'aria-labelledby'?: string
-}
-
-// sr-only — visually hidden but announced (the neural-graph NG-5 recipe).
-const SR_ONLY: CSSProperties = {
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: 'hidden',
-  clipPath: 'inset(50%)',
-  whiteSpace: 'nowrap',
-  border: 0,
 }
 
 // The flex-wrap month grid (gallery-view GV-2): 22% caps a row at 4 (5 × 22% > 100%), the floor drops to 2-up at 375.

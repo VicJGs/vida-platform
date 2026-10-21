@@ -1,7 +1,7 @@
 // Global Calendar surface — fe-calendar #19 · S1. The read-only lens (ADR-007) composed in the CanvasView frame:
 // a period title per range + a range switcher + nav, dispatching to the active range's renderer. S1 ships the frame,
 // the switcher/nav, and Month (CalendarView headerless, D4); S2 Agenda; S3 Week/Day (WeekView); S4 Year (YearView,
-// a month drills into Month); S5 plugs in Living; S7 replaces the fixtures with the live `useCalendar` ProviderRead fan-out. Read-only: nav/switch are
+// a month drills into Month); S5 Living (LivingView — all six ranges live); S7 replaces the fixtures with the live `useCalendar` ProviderRead fan-out. Read-only: nav/switch are
 // navigation, no writes (EC-12). Locale is READ from the Settings prefs (time_format · week_starts_on — PLAN-S3 BR-16).
 import { useEffect, useMemo, useRef } from 'react'
 import { Text, useMedia, View } from '@tamagui/core'
@@ -12,7 +12,10 @@ import {
   type CalChip,
   CalendarView,
   CanvasView,
-  EmptyState,
+  type HabitThread,
+  type LivingDay,
+  LivingView,
+  type PurposeBudget,
   Menu,
   type TimedBlock,
   WeekView,
@@ -62,13 +65,18 @@ function periodLabel(range: CalendarRange, focused: Date, weekStartsOn: WeekStar
   if (range === 'month') return new Intl.DateTimeFormat('en-US', MON).format(focused)
   if (range === 'day') return new Intl.DateTimeFormat('en-US', WD).format(focused)
   // week / agenda / living → the 7-day span from the user's week start
+  const { span, isCurrent } = weekSpan(focused, weekStartsOn)
+  return range !== 'week' && isCurrent ? `This week · ${span}` : span
+}
+
+// The focused week's span ("Oct 12 – Oct 18, 2026") + whether it is the CURRENT week — "This week" is a claim about the
+// current week only (the S1-chrome honesty rule). Shared by the period title and the Living budget label.
+function weekSpan(focused: Date, weekStartsOn: WeekStartsOn): { span: string; isCurrent: boolean } {
   const first = weekStartOf(focused, weekStartsOn)
   const last = new Date(first)
   last.setDate(first.getDate() + 6)
   const span = `${new Intl.DateTimeFormat('en-US', DM).format(first)} – ${new Intl.DateTimeFormat('en-US', DM).format(last)}, ${last.getFullYear()}`
-  // "This week" is a claim about the CURRENT week — any other focused week gets the bare span (the Week range's form).
-  const isCurrentWeek = toKey(first) === toKey(weekStartOf(new Date(), weekStartsOn))
-  return range !== 'week' && isCurrentWeek ? `This week · ${span}` : span
+  return { span, isCurrent: toKey(first) === toKey(weekStartOf(new Date(), weekStartsOn)) }
 }
 
 // Month/year steps clamp the day to the target month's length — a bare setMonth on Jan 31 lands on "Feb 31" = Mar 3
@@ -184,6 +192,66 @@ function yearFixture(focused: Date): YearDensity[] {
   return out
 }
 
+// S5 living fixture — the approved greybox week over the focused week. Each day's KIND comes from today (past < today <
+// future by key), so a past or future week renders honestly: no today Card, no "today" thread node. S7's useCalendar
+// derives all of this (record lines, thread states, budget, open time, slip flag) from the module reads.
+const PAST_DAYS: Pick<LivingDay, 'record' | 'done' | 'focus'>[] = [
+  { record: 'Shipped the re-plan draft — a good, quiet start.', done: [{ id: 'p1', title: 'Re-plan draft', color: PURPOSE.career }, { id: 'p2', title: 'Morning check-in', color: PURPOSE.health }], focus: '2h40 deep focus' },
+  { record: 'Caught the finance import up; lighter afternoon.', done: [{ id: 'p3', title: '1:1 with Ana', color: PURPOSE.career }], focus: '1h10 focus' },
+  { record: 'A slow one — read, and let the rest drift.', done: [{ id: 'p4', title: 'Read ch. 4', color: PURPOSE.growth }], focus: '0h focus' },
+]
+const FUTURE_DAYS: Pick<LivingDay, 'intent' | 'plan'>[] = [
+  { intent: 'Wrap the week, review what moved.', plan: [{ id: 'f1', title: 'Design sync', time: '11:00', color: PURPOSE.career }] },
+  { intent: 'Rest. Nothing owed.', plan: [{ id: 'f2', title: 'Family lunch', color: PURPOSE.health }] },
+  { intent: 'Plan the week ahead.', plan: [{ id: 'f3', title: 'Weekly review', color: PURPOSE.admin }] },
+]
+function livingFixture(focused: Date, weekStartsOn: WeekStartsOn): { days: LivingDay[]; threads: HabitThread[]; budget: PurposeBudget[] } {
+  const keys = weekKeys(focused, weekStartsOn)
+  const today = toKey(new Date())
+  const kindOf = (k: string): LivingDay['kind'] => (k < today ? 'past' : k === today ? 'today' : 'future')
+  const days: LivingDay[] = keys.map((date, i) => {
+    const kind = kindOf(date)
+    if (kind === 'past') return { date, kind, ...PAST_DAYS[i % PAST_DAYS.length] }
+    if (kind === 'future') return { date, kind, ...FUTURE_DAYS[i % FUTURE_DAYS.length] }
+    return {
+      date,
+      kind,
+      entries: [
+        { kind: 'item', item: { id: 't1', title: 'Deep work', time: '09:00', color: PURPOSE.career } },
+        { kind: 'open', label: '2h open', hint: 'slot deep work or a study session?' },
+        { kind: 'item', item: { id: 't2', title: 'Send proposal', color: PURPOSE.career, slipping: true } },
+        { kind: 'item', item: { id: 't3', title: 'Gym', time: '18:00', color: PURPOSE.health } },
+      ],
+    }
+  })
+  const state = (i: number, missOn?: number) => {
+    const k = days[i].kind
+    return k === 'today' ? 'today' : k === 'future' ? 'future' : i === missOn ? 'missed' : 'kept'
+  }
+  // The streak copy must agree with the nodes: the miss sits on the week's 2nd day, named from its real weekday — and
+  // only when that day is already past (a future week / an early today has no miss to report).
+  const missOn = 1
+  const missed = days[missOn].kind === 'past'
+  const missDay = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(parseKey(keys[missOn]))
+  const threads: HabitThread[] = [
+    { id: 'h1', name: 'Meditate', color: PURPOSE.health, days: days.map((_, i) => state(i)), streak: '12-day streak' },
+    {
+      id: 'h2',
+      name: 'Read 20 min',
+      color: PURPOSE.growth,
+      days: days.map((_, i) => state(i, missOn)),
+      streak: missed ? `broke ${missDay} · back on` : '3-day streak',
+    },
+  ]
+  const budget: PurposeBudget[] = [
+    { id: 'b1', name: 'Career', color: PURPOSE.career, hours: 6, fraction: 1 },
+    { id: 'b2', name: 'Health', color: PURPOSE.health, hours: 0, fraction: 0 },
+    { id: 'b3', name: 'Growth', color: PURPOSE.growth, hours: 4, fraction: 0.67 },
+    { id: 'b4', name: 'Admin', color: PURPOSE.admin, hours: 2, fraction: 0.33 },
+  ]
+  return { days, threads, budget }
+}
+
 export interface CalendarSurfaceProps {
   /** Test/story-only breakpoint override (mirrors AppShell.__bp) — bypasses useMedia so jsdom can assert the condense. */
   __bp?: Breakpoint
@@ -197,6 +265,8 @@ export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
   const isTabletUp = __bp ? __bp !== 'mobile' : media.tablet
   const focused = useMemo(() => parseKey(focusedDate), [focusedDate])
   const title = periodLabel(range, focused, weekStartsOn)
+  const focusedWeek = weekSpan(focused, weekStartsOn)
+  const livingWeekLabel = focusedWeek.isCurrent ? 'This week' : focusedWeek.span
 
   // Year drill-in → Month. The pressed month button unmounts with YearView, so focus would fall to <body>; per the
   // FOCUS_CONTRACT (state-conventions §5 — an in-surface view swap is the `tabChange → panel` transition) the Month grid
@@ -294,9 +364,13 @@ export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
         ) : range === 'week' || range === 'day' ? (
           <WeekRange range={range} focused={focused} weekStartsOn={weekStartsOn} timeFormat={timeFormat} />
         ) : (
-          <EmptyState title={`${RANGE_LABEL[range]} view`} titleLevel={3}>
-            <Text fontSize="$small" color="$colorTextMuted">This range ships in a later slice of #19 (S5). The frame, switcher, Year, Month, Week, Day, and Agenda are live.</Text>
-          </EmptyState>
+          // No onSlotOpenTime: the slotting capability (Sessions/Planner) isn't wired in M1 — absent ⇒ the open-time
+          // offer is a read-only reveal, never a dead button (deny-safe, seam-contract.md:110-113).
+          <LivingView
+            {...livingFixture(focused, weekStartsOn)}
+            weekLabel={livingWeekLabel}
+            aria-label="Living"
+          />
         )}
       </CanvasView>
     </View>

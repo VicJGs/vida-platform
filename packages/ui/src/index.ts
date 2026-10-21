@@ -76,6 +76,16 @@ export {
   type CalChip,
 } from './components/week-view'
 export { YearView, type YearViewProps, type YearDensity } from './components/year-view'
+export {
+  LivingView,
+  type LivingViewProps,
+  type LivingDay,
+  type LivingItem,
+  type TodayEntry,
+  type PurposeBudget,
+  type HabitThread,
+  type ThreadState,
+} from './components/living-view'
 export { TableView, type TableViewProps, type Column } from './components/table-view'
 export { BoardView, type BoardViewProps, type BoardGroup } from './components/board-view'
 export { PomodoroWidget, type PomodoroWidgetProps, type PomodoroPhase } from './components/pomodoro-widget'
