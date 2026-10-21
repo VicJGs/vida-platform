@@ -1,5 +1,6 @@
 # Task: notifications-rescope
 # Status: planned
+# Linear: LIF-246
 # Profile: Add Frontend Component
 # Scenario: entity-rescope
 # Project: M1 — Whole Manual OS

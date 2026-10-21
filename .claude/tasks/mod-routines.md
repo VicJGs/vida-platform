@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: paused
+# Status: in-progress — S3/8 shipped in its worktree (1a61189), not pushed
 # Scenario: Default (Entity Delivery Flow ①)
 # Profile: Add Backend Component
 # Linear: LIF-138

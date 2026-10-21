@@ -8,6 +8,9 @@
 ## Goal
 `summary(date)` provider registry — journal summary aggregates all modules
 
+## golive-replan absorption (G4, 2026-10-21)
+Debt this issue absorbs (`docs/specs/foundation/golive-replan/debt-plan.md` §2 · coverage-report.md): the `summary(date)` providers = the data for journals-rescope-dashboard (home EC-4 + 11 widgets); the frontend bodies + the live EC-4 re-verify live there.
+
 ## Dependencies
 - blocked by `mod-books`
 - blocked by `mod-check-ins`

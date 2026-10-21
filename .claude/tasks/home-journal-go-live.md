@@ -1,5 +1,6 @@
 # Task: home-journal-go-live
-# Status: BUILT + VERIFIED LIVE (uncommitted in worktree; awaiting Victor's commit/PR call)
+# Status: done — merged PR #151 (2026-10-21); repaid debt, homed in M1.2.4 by golive-replan G4
+# Linear: LIF-242
 # Live gate (Brave, real OPFS, :5181 fresh origin): fresh journal opens with NO "Saved" (mount-echo swallowed) →
 #   type → "Saved" → reload → persists → reopen no spurious write. Dashboard rail = honest stub (no providers).
 # Drift fixed (Victor-directed doc+code check): BR-NEU-5 "mere open never writes" was violated for blank pages —
@@ -17,7 +18,8 @@
 # Created: 2026-10-20
 # Profile: Add Frontend Component
 # Scenario: Default (Entity Delivery Flow ②)
-# Milestone: M1 — per-module usability (module-go-lives queue, item #1)
+# Project: M1 — Whole Manual OS
+# Milestone: M1.2.4 — Live Close: shipped-surface debt
 # Pattern: notes-entity-usability (PR #150) — the worked precedent
 
 ## Goal

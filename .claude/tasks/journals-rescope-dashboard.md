@@ -1,5 +1,6 @@
 # Task: journals-rescope-dashboard
 # Status: planned
+# Linear: LIF-243
 # Profile: Add Frontend Component
 # Scenario: entity-rescope
 # Project: M1 — Whole Manual OS

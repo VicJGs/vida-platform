@@ -94,10 +94,37 @@ an old entry.
 - **Titles · parent link · comments:** `issueUpdate` back to the slug / `parentId: null` / `commentDelete` (ids in §7).
 - **No existing issue is deleted or retired** by this ledger.
 
-## 7. Execution record (filled during G4)
+## 6b. Amendments found by the §0.2/§0.3 gates (2026-10-21, §XXVIII, logged before any write)
+- **A1 · golive-replan tracked** as the campaign umbrella in the existing `M1.2+ (frontend surface tier — cross-milestone)`
+  milestone (precedent: frontend-track LIF-202, backend-replan LIF-163). Its free-text header would have minted a junk milestone.
+- **A2 · note-open-behavior-preference** gets `# Project: M1` and **no milestone header** until its milestone is derived. Its
+  free-text `# Milestone:` would have minted a junk milestone. The text is kept as `# Milestone-note:`.
+- **A3 · archived task files are never synced** (`tracker_sync.py:1044-1048`), so the status drift on LIF-217 / LIF-207 /
+  LIF-205 is fixed by a **manual `issueUpdate(state=Done)`**, not by their `# Status:` lines.
+- **A4 · `in_progress` (underscore) normalizes to BACKLOG** (`config/tracker.config.json` stateMap). That is the root of the
+  fe-calendar/mod-routines drift; both now say `in-progress`.
+- **A5 · post-write cleanup:** the three junk milestones under the General project (`M1 / M1.1.3 … DERIVED`, `M1 — per-module
+  usability` ×2) are deleted **once empty**, after the re-homes move LIF-237/238 out.
+
+## 7. Execution record (G4 executed 2026-10-21 from the main checkout, branch `golive-g4`)
 | Step | Result | Linear ids |
 |---|---|---|
-| preconditions §0 | — | — |
+| §0.1 local edits | committed `651b83e` (+ amendments `423a88a`) | — |
+| §0.2 `--status` | 0 warnings (after A1/A2 header fixes) | — |
+| §0.3 `--sync --dry-run` | matched ledger + A1 exactly | — |
+| `--sync` run 1 | milestone M1.2.4 created · golive-replan created (LIF-240). **Orphan-create guard held the other 9** (named LIF-205/207/217) · 329 edges set · 0 failed · 28 deferred | LIF-240 |
+| triage (ISOLATED) | the 3 "orphans" were archived Done units whose **local map** lagged (Linear already Done). A3 applied: map corrected (Linear `set_state` no-op). Guard kept ON, no `--allow-orphan-create` | LIF-205 · LIF-207 · LIF-217 (already Done) |
+| `--sync` run 2 | 9 created · **357 edges set · 0 failed · 0 deferred** | preferences LIF-247 · notes LIF-245 · sessions LIF-248 · gamification LIF-241 · shell LIF-249 · notifications LIF-246 · journals LIF-244 · journals-dashboard LIF-243 · home-journal-go-live LIF-242 (Done) |
+| re-homes (verified by query) | LIF-237 → M1 / M1.1.3 Done · LIF-239 → M1.2.4 Done · LIF-238 → M1 (no milestone) · LIF-242 → M1.2.4 Done | — |
+| §1b titles | 10 set (8 debt + LIF-242 + LIF-240) | — |
+| §1b parent | LIF-243 parent = LIF-244 | — |
+| §3 comments | 10: LIF-220 `6462c43e` · LIF-112 `19ea6580` · LIF-114 `3c5b1d90` · LIF-70 `697c2d6f` · LIF-201 `f791412e` · LIF-194 `f7cada33` · LIF-178 `abb5b9f0` · LIF-195 `ee5339f3` · LIF-203 `46af6bdc` · LIF-115 `f9296b72` | — |
+| A5 junk milestones | 3 deleted under General, after verifying they were empty | — |
+| `--verify` | all 173 mapped issues live | — |
+| `--pull` · `--next` | reconcile complete · next head = mod-routines (M1.1.2), then M1.2.4 L1 ready: preferences · notes · sessions | — |
+
+**Rollback reference (prior states):** LIF-237 General/junk milestone/Backlog · LIF-239 junk milestone/Backlog · LIF-238
+General/junk milestone · fe-calendar/mod-routines Backlog. Deleted milestones were empty (re-creatable by name).
 
 ## 8. Structure positions (from G3 part 2, `reconstructed-structure.md`, post-critique)
 data-plane-wiring **#59** (M1.1.3) · M1.2.4 **#60–66**: L1 #60–62 (preferences · notes · sessions), L2 #63–66
