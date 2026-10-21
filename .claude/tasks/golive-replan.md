@@ -1,5 +1,5 @@
 # Task: golive-replan
-# Status: in-progress (G3 — critique REVISE→fixed→SHIP — awaiting Victor approval (also approves the G4 ledger))
+# Status: in-progress (G4 — G3 + ledger APPROVED 2026-10-21; waiting on preconditions: PR #152 merge + main checkout on main)
 # Linear: pending (minted at G4 with the debt units — orphan-create guard)
 # Profile: Project Foundation
 # Scenario: Delivery Structure Reconstruction (establishment model of frontend-replan (EST → G0–G4))
@@ -28,7 +28,7 @@ usable; each go-live since is minted OUTSIDE the delivery structure to repay tha
 - [~] G0 — APPROVED 2026-10-21 (rev 3: ELC-1…9 + Envision-to-the-end). Repo R1–R8 APPLIED → G0 PR. Toolkit T1–T5 WAIT on T0 (Victor resolves toolkit pending work; guide --check already red pre-G0)
 - [x] G1 — APPROVED 2026-10-21 · Debt census ASSEMBLED (debt-census.md + census/a–d) · critic REVISE→fixed (dedupe, backlinks→HARD-3, 6 RIDE ECs→⏳, #17 drop, ELC-6/7/8 gaps) — awaiting Victor
 - [x] G2 — APPROVED 2026-10-21 · debt-plan rev 3: 7 units (notes · journals · preferences(+onboarding) · sessions(debt-only; close→fe-sessions) · notifications · gamification · shell X-CUT) + 10 re-edged; coverage 226 rows 0/0/0 — awaiting Victor
-- [~] G3 — DONE pending approval: g3-order.md · ONE structure (143, M1.2.4 #60–66, dashboard #115, HARD-4 #122←43) · MVP-PATH refreshed · g4-edge-ledger.md · 8 task files · _projects.md M1.2.4 · (was: Order + one structure + ledger (both reconstructed-structure · MVP-PATH · g4-edge-ledger.md)
+- [x] G3 — APPROVED 2026-10-21: g3-order.md · ONE structure (143, M1.2.4 #60–66, dashboard #115, HARD-4 #122←43) · MVP-PATH refreshed · g4-edge-ledger.md · 8 task files · _projects.md M1.2.4 · (was: Order + one structure + ledger (both reconstructed-structure · MVP-PATH · g4-edge-ledger.md)
 - [ ] G4 — Linear reshape (Victor approves ledger → --status clean → write)
 - [ ] debt-unit builds (Entity Delivery Flow ②, closing under the DoL)
 
