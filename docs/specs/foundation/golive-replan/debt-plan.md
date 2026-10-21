@@ -1,0 +1,99 @@
+# G2 — Debt Plan (decomposition + coverage)
+
+> **Status:** G2 output (draft for gate), 2026-10-21. Inputs: `debt-census.md` (G1, APPROVED) + `census/a–d`.
+> Yardstick: `process.md` (ELC-1…9). **Rules:** (1) a debt unit = **one entity run through the existing `entity-rescope`
+> scenario** (entity-delivery-flow §6), closing on the ELC (the close comes from process.md §6; entity-rescope has no close
+> step of its own). **Exception:** when the entity still has an unbuilt ② unit, the debt unit ships its legs live and the
+> ENTITY CLOSE moves to that unit (sessions-rescope → fe-sessions); (2) **reuse existing homes first**: debt an existing
+> issue already owns is **re-edged, not minted**; (3) db-10-proof: every unit names its file homes + real `←` edges;
+> (4) backend gaps ride the same unit as a `backend`-tagged slice (group work: ① slice → ② slices → live close).
+> **No-Guessing:** census row ids (`A-ORPHAN#n`, `B-…`, `C-#69 BSE-n`, `D-…`, `EC-n`) are the coverage keys.
+
+## 1. New debt units (7)
+
+Profile **Add Frontend Component → scenario `entity-rescope`**: backend-tagged slices go to the Verification Gate, frontend
+slices to the Visual Gate with the ELC-7 live leg (`entity-rescope.md:35-37`). The reconciliation ledger is written at the
+**entity's** `docs/features/<entity>/delivery/` (entity-delivery-flow.md:227-238). The one X-CUT surface unit
+(shell) uses its foundation spec home. Every unit `← data-plane-wiring ✅` (PR #148).
+
+| Slug | Entity (ledger home) | Debt it owns (census) | Backend slice? | Code homes | `←` edges (beyond data-plane) |
+|---|---|---|---|---|---|
+| **notes-rescope** | Notes & Pages (`docs/features/notes-and-pages/delivery/`) | fe-notes STUB/PARTIAL legs (metadata · attachments · `[[` picker + trigger · link preview · templates · view-config · rename/delete · mode memory) · **the #31/ui-3 root** (integration-block real bodies · palette compute · `[[` trigger; A#4,5,6,7,14,18) · fe-notes ❌ EC-5/7/10/11/13/15/18/18a · **cross-unit:** `offersEditor` page-type gate (EC-15; fix = gate on page type, owner fe-codec-entity-facet) · TZ date bug (`live-mappers.ts:25-26`) · empty excerpt (`:43`) · collection EC-5 `degraded` + XCU-14 view degradation · `SyncStatus` on a live surface (ELC-6) · dead seams `canvas-editor.tsx`/`page-binding.ts` (adopt or retire) · stale "M1 stub" comments · the `useJournalSummary` → `buildDashboard` **hook flip** (HARD-1 owns the providers) | **yes**, appended in RATIFY mode to the entities' existing slice-maps of record (no invented split, `entity-rescope.md:111`): templates capture + instantiate-fork S3–S5 → `docs/features/templates/delivery/slice-map.md`; XCU-14 field declarations → `docs/features/views/delivery/slice-map.md` | `packages/core/src/foundation/{templates,views}` · `apps/web/src/{notes,entity,canvas-editor}` · `packages/ui` · `packages/editor` | soft ← **preferences-rescope** (EC-5 per-type mode default, if stored as a preference; storage is design-pass-open, `a-notes-home.md:71`; resolved at the unit's Interpretation Gate) |
+| **journals-rescope** | Journals (`docs/features/journals/delivery/`): the Home journal surface | fe-home ❌ EC-3 (journal = prose + **inline** blocks + "/" hint reachable) · home STUB legs not owned by HARD-1 · dead dup `home/journal-contribution.ts` · fake-success widget states (ELC-6) · dashboard **widget-selection storage** + the **placement-edit Capability** (C-dashboard ORPHAN#8; Home = first dashboard consumer) · **final slices (the dashboard):** home ❌ EC-4 personalized grid + the **11 standalone widget bodies** (C-dashboard ORPHAN#9) rendered from HARD-1 providers. **The journals ENTITY CLOSE (ELC-9, incl. EC-4) runs here.** Earlier slices ship live on their own | none | `apps/web/src/{home,dashboard}` · `packages/ui/src/components/dashboard-view.tsx` | ← **notes-rescope** (inline blocks = the #31 root; shared integration-block rendering) · ← **preferences-rescope** (arrangement) · the final dashboard slices ← **HARD-1** (providers) |
+| **preferences-rescope** | Preferences (`docs/features/preferences/delivery/`): Settings UI + **onboarding writes** | register `preferences` · all 6 fe-settings STUB legs (persist) · theme persistence (BORROWED from fe-codec-theme, `d-foundation-codec.md:44`) · **home arrangement** persist/hydrate (§1b) · **locale readers** · the gamification **persona setter** (D-REG-2) · `usePreferences` fake `success` (ELC-6) · fe-settings ❌ ECs (2) · EC-7 optimistic+revert honored (BR-RT-4 "by default") · **onboarding** (merged in; its debt is preference writes): 2 STUB legs (module/theme selections persist) · its ❌ EC (1) · the `EmptyState` slot's first consumers | none (prefs service exists) | `apps/web/src/{settings,stores,onboarding}` · `apps/web/src/db/composition-root.ts` | — (**the hub**) |
+| **sessions-rescope** | Sessions & Scheduling (`docs/features/sessions-and-scheduling/delivery/`): **debt slices only; the entity close stays with fe-sessions** | register `sessions` · fe-session-hud 3 legs · fe-session-runtime 4 legs (mark-done · attach · proof **port wiring**) · flow-session consumer + the dead `bindFlowIntents` attach affordance (owner fe-codec-flow-session) · **backend:** `findActiveSession` (nearest: entity-scoped `findOpenSessionForEntity`) + an **applied-effects read** | **yes**: 2 reads | `packages/core/src/{services/sessions,foundation/effects}` · `apps/web/src/{session-hud,session-runtime}` | — · gates its legs live (ELC-3…7) but **does not run ELC-9 / ENTITY CLOSE**; that runs in **fe-sessions** (LIF-198, the entity's remaining ② unit, process.md §4), which gains `← sessions-rescope` |
+| **notifications-rescope** | Notifications (`docs/features/notifications/delivery/`) | construct the BUILT #46 engine (`foundation/notifications`, LIF-174) + register `notifications` · 3 STUB legs · **quiet-hours inputs** (B-settings ORPHAN#5) · fe-notifications ❌ ECs (2) | none | `apps/web/src/notifications` · `apps/web/src/db/composition-root.ts` | ← **sessions-rescope** (required `sessions.dueIn`, `services/notifications/types.ts:33`) · soft ← **preferences-rescope** (`preferences?` port optional, fail-open) |
+| **gamification-rescope** | Gamification (`docs/features/gamification/delivery/`) | register `gamification` · 7 STUB legs · the fail-closed flag → ⌘K reachability · fe-gamification ❌ ECs (2) · **backend:** a consequence-ledger read (`listConsequences`) | **yes**: 1 read | `packages/core/src/services/gamification` · `apps/web/src/gamification` | ← **preferences-rescope** (flag source = `nav_preferences`, `shell/feature-flags.ts:4`) |
+| **shell-rescope** | **X-CUT surface** (no owning entity; ledger home `docs/specs/foundation/fe-shell/delivery/`) | the **consumers** of preferences in chrome: `ModuleDock` has 0 mounts → mount it and read `moduleVisibility`/rename/`reduceMotion` · placement read/hydrate · Modules panel (empty) · **#69 ORPHANs:** BSE-15 search-provider consumer swap · BSE-19/20/21 MD/PDF/DOCX serializers wired to the app · BSE-22 export dialog wired to the app | none | `apps/web/src/{shell,command-bar}` · `packages/editor/src/serializers/` · `packages/ui/src/components/export-dialog.tsx` | ← **preferences-rescope** (it *persists*; shell *reads*, so no overlap) · **soft** DB-8: the seam swap closes here; DB-8's own close re-verifies live FTS search |
+
+*(rev 2 grain per G2 critique: home → **journals-rescope**, the entity; onboarding **merged into preferences-rescope**,
+since its debt is preference writes; shell = declared **X-CUT** surface unit that reads preferences, not persists them;
+sessions-rescope no longer claims the entity close (it belongs to fe-sessions); the HARD-1 widget bodies move to journals-rescope's
+**final slices**, because HARD-1 is a backend registry with no Visual Gate. rev 3: an interim separate `home-dashboard` unit was folded back,
+so that one entity has one unit, one ledger and one close.)*
+
+## 2. Re-edged existing issues (no new unit; the debt joins their scope)
+
+| Existing issue | Debt it absorbs | Basis |
+|---|---|---|
+| **fe-spaces-page** (#20, LIF-220; `listSpaces` is a backend-tagged slice: per `entity-rescope.md:37`'s dispatch rule it runs through add-backend-component's Service Build Flow via `/task-switch`, Verification Gate; `default.md:29` only tags it) | fe-shell-scope 2 STUB legs + ❌ EC-3/EC-4 (write Victor's recorded re-pins `decisions.md:1155` into `envision.md`) · **backend `listSpaces`** · SP-29 Space add-menu (A#13 ≡ C) · the #13 **Spaces engine** wiring · the tracked-but-untracked **ADR-006 amendment** (C-shell-scope ORPHAN#3). (EC-3 is a strip-budget re-pin from fe-session-hud: here only as the `envision.md` write, E22.) | first consumer of the Spaces engine (process.md §5; fe-codec-seams "Option A") |
+| **HARD-1** (LIF-112, backend) | the `summary(date)` providers = the **data** for home EC-4 and the 11 widgets. Gains `→ journals-rescope` final slices (the frontend bodies + the live EC-4 re-verify live there) · *(the `useJournalSummary` hook flip is notes-rescope's)* | `reconstructed-structure.md:176`; census §4 |
+| **HARD-3** (LIF-114) | notes backlinks (BORROWED) · BSE-23 neural graph · the 10K-node graph perf ceiling (A-canvas-graph ORPHAN#20) | `hard-3-graph-backlinks.md:9` |
+| **DB-8** (LIF-70) | BSE-14 live FTS · **soft** relation to shell-rescope: shell-rescope closes the seam swap; DB-8's close re-verifies ⌘K/notes search live | `reconstructed-structure.md:179` |
+| **fe-tasks** (LIF-201) · **fe-projects** (LIF-194) | fe-notes EC-18b/c/d/e · EC-20 · EC-21 (RIDE overviews, ⏳) · fe-tasks also: the collection **entity-write Capability** (C-collection ORPHAN#10; first board-consuming entity) · the task/milestone/deliverable page types gain an `← notes-rescope` edge (the `offersEditor` fix) | A §C HOMED (`a-notes-home.md:73-74`) |
+| **fe-books** | canvas-reader ❌ EC-8 photo-saved-text-pending · BK-4 position mapping (A-canvas-reader ORPHAN#21) (Reader consumer) | CODEC met through its consumer (process.md §5) |
+| **fe-purposes-and-goals** | canvas-board ❌ EC-2 reference tile (vision-board consumer) | same |
+| **fe-calendar** (in flight) | primitives-refinement Calendar "Today" SR label | its consumer; lands at its S7 ELC |
+| **HARD-4 / hard-4-polish** (LIF-115) | low CODEC polish: theme adaptive density + chrome faces (D-theme ORPHAN#1/#2) · patterns state-canon consolidation + `SearchStatus` re-expression (D-patterns ORPHAN#3/#4) | "Final M1 polish" (MVP-PATH:144); low, forward |
+
+**Edge-only notes (outside the coverage set; they absorb no census row):**
+- `fe-sessions` (LIF-198) gains `← sessions-rescope` and keeps the sessions **ENTITY CLOSE** (ELC-9), incl. the BORROWED proof-capture flow (shared with fe-routines).
+- `note-open-behavior-preference` (LIF-238) gains `← preferences-rescope`. Basis: its Goal needs a Settings control (`note-open-behavior-preference.md:10`); its Dependencies (`:36-38`) also keep the IA ADR. *(E11 corrected.)*
+- `mod-routines` (LIF-138): ① track continues; the routines entity closes live with FE-routines (process.md §4).
+
+## 3. Documented `⚠ INTENDED-later` (homed by milestone, not a debt unit)
+- controls-refinement mobile affordances → **M4** venues (web-only M1, `frontend-replan/_index.md:167-169`).
+- fe-home "Wrapped" reviews (A-home ORPHAN#17) → **post-M1** (recorded as post-M1 intent in its census row).
+- shell-scope account affordance (C-shell-scope ORPHAN#4) → **M3** Auth/Account (same as fe-settings' delegated Account pane).
+- Any remaining A–D ORPHAN that the coverage pass (§4) can only home to a later milestone is listed here **by row id
+  with its milestone**, never silently dropped.
+
+## 4. Coverage (set-cover, both directions): G2 acceptance
+- **Forward:** every census row with status STUB · PARTIAL · ORPHAN · ❌ maps to **exactly one** home in §1/§2/§3.
+- **Backward:** every §1 unit and every §2 absorption maps to ≥1 real census row.
+- Produced as `coverage-report.md` (row id → home), mechanically from `census/a–d`, then critic-checked.
+
+## 5. Shape check (the debt is bounded)
+7 new units (6 entity + 1 X-CUT) + 10 re-edged issues (+ 3 edge-only notes). Backend slices in 3 new units (sessions, gamification, notes: templates + view fields) + `listSpaces` in
+fe-spaces-page. **preferences-rescope is the hub** (journals · notifications (soft) · gamification · shell · notes (soft) depend on it), so G3's order starts there with notes-rescope
+in parallel; sessions-rescope precedes notifications; journals-rescope's final dashboard slices wait on HARD-1 (its earlier slices don't). **G4 action:** HARD-4 gains `← every debt unit` (process.md §2), so M1 can't close before the debt.
+
+## 6. Coverage resolutions (from `coverage-report.md` §2/§4, 2026-10-21)
+All 15 UNMAPPED, 2 DOUBLE, 2 EMPTY and 5 UNSUPPORTED items resolved from census evidence + existing homes (no new decisions):
+UNMAPPED → preferences-rescope (locale readers · persona setter) · notifications-rescope (quiet hours) · journals-rescope
+(placement-edit Capability) · journals-rescope final slices (11 widgets; data ← HARD-1) · HARD-3 (10K perf) · fe-books (BK-4) · fe-spaces-page (ADR-006
+amendment) · fe-tasks (entity-write Capability) · HARD-4 (4 low CODEC polish rows) · §3 (Wrapped → post-M1; account →
+M3) · sessions-rescope (`bindFlowIntents`). DOUBLE → summary hook flip = notes-rescope (providers = HARD-1); arrangement =
+preferences-rescope. EMPTY → both moved to edge-only notes. UNSUPPORTED → E11 basis fixed · E14 notes backend slice added ·
+E18 cite fixed · E19 widgets + EC-4 live re-verify in journals-rescope's final slices (← HARD-1) · E21 proof-capture flow borrowed by fe-sessions/fe-routines.
+**Result: 0 unmapped · 0 double · 0 empty.**
+
+## 7. Acceptance (G2)
+1. Every new unit names entity · scope by census id · homes · edges · backend slices; profile/scenario = entity-rescope.
+2. Every absorption into an existing issue cites its basis; no duplicate of an existing owner was minted.
+3. `coverage-report.md`: 0 unmapped rows, 0 double-mapped rows, 0 empty units.
+4. Independent critique SHIP + `/preflight` PASSED → Victor approval → G3 (order + one structure + ledger).
+
+## 8. Gate record
+- **Coverage pass 1:** 15 UNMAPPED · 2 DOUBLE · 2 EMPTY · 5 UNSUPPORTED → resolved (§6) → **0 · 0 · 0**.
+- **Independent critique: REVISE** (4 blocking · 4 nits) → rev 2:
+  - B1 grain: home → journals-rescope (entity); onboarding merged into preferences-rescope; shell = declared X-CUT surface unit;
+  - B2 notes' backend slices appended in RATIFY mode to the templates/views slice-maps of record;
+  - B3 sessions-rescope = debt slices only, and fe-sessions keeps the ENTITY CLOSE (`← sessions-rescope`);
+  - B4 HARD-1's frontend bodies moved to the frontend, and `listSpaces` dispatches to the Service Build Flow (entity-rescope.md:37);
+  - N5 code homes corrected (session-runtime · editor serializers · ui export-dialog · canvas-editor · dashboard);
+  - N6 notes ← preferences soft edge;
+  - N7 DB-8 soft;
+  - N8 HARD-4 ← every debt unit is now a G4 action.
+- coverage-report rev 2 synced (slugs + home-dashboard rows); still 0 · 0 · 0.
+- **rev 2 re-check: REVISE** (1 blocking · 3 nits) → rev 3: home-dashboard folded into journals-rescope as its final slices (one entity = one unit + one close); B4 dispatch cited; rule 1 gained the fe-sessions-style exception; §6 prose synced; coverage row :202 fixed.
