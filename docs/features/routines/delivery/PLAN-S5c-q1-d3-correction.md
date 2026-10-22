@@ -57,7 +57,9 @@ does so.
    maps to `workout` (same result while unregistered).
 11. A legacy null-entity step row → on `runStep`, a Task is created + linked, then driven.
 12. Focus and habit unchanged (S3 gates green).
-13. **Fixture rewrite (named):** about 45 entity-less `addStep` calls across the S1–S5 blocks become check-off Task steps (`registerTasksTimer` in the
+13. **Fixture rewrite (named, incl. the semantic changes):** the S3 task tests that expect the Task `completed` (`test.ts:609-617`, `:845`) move to
+   3a semantics (an occurrence session, the Task open) or to an **obligation** task (3b); the rule-17 `award_xp` test (`:785-800`) moves to an obligation
+   task (3a fires no Task effect); the S4/S5 reflection tests (`:1036`, `:1183`, `:1406`) move to obligation tasks. Plus: about 45 entity-less `addStep` calls across the S1–S5 blocks become check-off Task steps (`registerTasksTimer` in the
    harness). Expectations that relied on the 'actionable' target (7 references) move to the task-step semantics. S4: a standard task step's day is done
    iff stamped (a Task completed in Tasks no longer reflects); obligation steps keep the reflection.
 Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential · g2 · /critique · §XXIX.
@@ -71,17 +73,19 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
 | Durable-doc invariants | ✅ RT-3 (the entity side is always written), N7 drive-then-stamp, rule 1, the per-step lock, S4/S5 machinery | §Kept |
 
 **Assumptions pinned:**
-1. **Target resolution (sync, by fields only):**
+1. **Target resolution (approved row 2: a session step names a REGISTERED sub-type, else the task/habit ref), registration memoised per call:**
    - `step_type === 'focus'` → focus;
-   - `step_type` ∈ {`'task'`, null} with a task ref → task; `'habit'`/null with a habit ref → habit;
-   - `step_type` non-null and not `'task'`/`'habit'` → **session** (`'exercise'` maps to `workout`);
-   - no entity ref and `step_type` null or `'task'` → **check-off** (a Task is created on add or, for legacy rows, on first drive);
-   - else → unavailable.
+   - `step_type === 'work'` → **3a with the task ref** (Tasks' invariant: "a `'work'` timer is always task-attached", `tasks/service.ts:550-553`;
+     ADR-004 `work_sessions`→Tasks), unavailable without one;
+   - `step_type` (or `'exercise'` → `workout`) **registered** (`sessionRegistry.get` succeeds) → session;
+   - an unregistered `step_type` **falls through** to the task/habit ref when present, else unavailable;
+   - task ref → task; habit ref → habit;
+   - no entity ref and `step_type` null or `'task'` → check-off.
 
-   Registration is checked at drive time (`sessionRegistry.get` → `SessionTypeNotFound` ⇒ `EntityUnavailableError`).
+   Registration is resolved **once per call** (a memo inside the call), and `isDoneOn` (S4/S5 reflection) uses the same fall-through.
 2. **Task kind** is read via the memoised `getTask` (`kind === 'obligation'` ⇒ 3b; else 3a).
-3. **Generic session lifecycle:** with `def = sessionRegistry.get(sub_type)`, a session can be **running** iff the def declares a transition **into**
-   `in_progress`, or **from** `in_progress` with event `complete`.
+3. **Generic session lifecycle:** with `def = sessionRegistry.get(sub_type)`, a session can be **running** iff the def declares an `in_progress → *`
+   transition with event `complete` (`createSession` skips the lifecycle, so creating directly in `in_progress` is safe only then).
    - `runStep`: running-capable ⇒ `createSession({status:'in_progress', started_at})` + attach (or re-enter an open one via `findOpenSessionForEntity`).
      Otherwise ⇒ the same as `completeStep`.
    - `completeStep`: an open attached session ⇒ `completeSession`. Otherwise create in the state the def's `complete` transition starts from
@@ -92,10 +96,18 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
 5. **`completeStep` returns `StepRunState` for every step** (the 'actionable' `RoutineCompletion` branch is gone). The seam union collapses to
    `StepRunState`; `isStepRunState` stays exported for compatibility. Tests read `.completion`.
 6. **`StepRunState.target`** becomes `'task' | 'habit' | 'focus' | 'session'` (`'actionable'` removed).
-7. **Check-off add:** `tasks.createTask({ title })` → `stepsRepo.create`; if the step insert throws, `tasks.softDeleteTask(task.id)` best-effort, then rethrow.
+7. **Check-off add, ordered so a rejected add writes nothing:** Zod parse → `assertEntityType` → `loadRoutineOrThrow` → `step_order` → **then**
+   `tasks.createTask({ title })` → `stepsRepo.create`; if the step insert throws, `tasks.softDeleteTask(task.id)` best-effort, then rethrow.
+7b. **Legacy migration-on-touch runs INSIDE the per-step lock** on a step **re-loaded inside `serialized`** (a stale outer row on a double-tap would mint
+   a second Task and orphan the first). The link is `stepsRepo.update(entity_type/entity_id)`; if it fails, the new Task is soft-deleted best-effort.
 8. **S4 reflection:** a task step's day is done iff its ledger row is done, **or** the task is an obligation with `completed_at ≤ D` (3b). The
    `taskOnce` memo is reused.
-9. The test harness calls `registerTasksTimer` with the same session + effect registries, and passes `sessionRegistry` to routines.
+9. **Harness wiring:** one hoisted `sessionRegistry` + one `effectRegistry` are passed to `createSessionsService`, `registerTasksTimer` and routines;
+   `createTasksService` gets **`sessions`** + `effects` (else `assertTimerWired` throws, `tasks/service.ts:524-526`); `await registerTasksTimer(...)` runs
+   after the services are built and before the first drive.
+10. **3a `completeStep` with an open `work` session started in Tasks:** attach the `routine_step` **before** `stopTimer`, so the occurrence is linked.
+11. **Error mapping (step 3):** `TimerNotWiredError` (`tasks/types.ts:334`) and `TaskNotFoundError` from `startTimer` → `EntityUnavailableError`;
+    `TimerAlreadyRunningError` → adopt (row 3a); `SessionTypeNotFound` → the pin-1 fall-through.
 
 ## Implementation plan (§5)
 1. **Tests first (red):** S5c gates 1–13 + the named fixture rewrite (entity-less `addStep` → check-off Task steps; `completeActionable` → `.completion`;
@@ -104,9 +116,14 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
 3. **service.ts:** `resolveTarget` (pin 1) · `addStep` check-off creation · legacy migration-on-touch · `driveTask` split 3a/3b (timer, adopt, bare
    check) · `driveSession` (lifecycle-aware, about-entity attach, `exercise`→`workout`) · `isDoneOn` (pin 8) · remove the 'actionable' branch.
    **Gate point = 2–3.**
-4. **Docs (row 7):** A11 · interp 15/22, R2/R5 · BR-RT-S3d-2/3, S4e-3, S5a limit · seam (factory dep, completeStep, `StepRunState`, line 50) ·
+4. **Docs (row 7):** `services/routines/CLAUDE.md` · A11 · interp 15/22, R2/R5 · BR-RT-S3d-2/3, S4e-3, S5a limit · seam (factory dep, completeStep, `StepRunState`, line 50) ·
    slice-map (A11 cell, S5c row, borrowed legs).
 5. **Gates:** tsc · eslint · routines suite · full core · g2 · /critique · §XXIX.
+
+## Step-5 critique (folded): REVISE → 3 blocking fixed (pin 1 honours approved row 2: unregistered `step_type` falls through to the ref, memoised,
+same in `isDoneOn`; legacy migration inside the lock on a re-loaded step + orphan cleanup; harness wiring: shared registries, tasks gets `sessions`)
++ 6 non-blocking (running-capable = `in_progress→*` on `complete`; check-off add order; attach before `stopTimer`; error mapping named; fixture
+rewrite enumerated; `work` routed to 3a by Tasks' task-attached invariant + routines `CLAUDE.md` in the docs list)
 
 ## g1 critique (folded): REVISE → 4 blocking fixed (a bare check writes a completed `work` occurrence, never a stamp alone; obligation steps keep
 `completeTask`; routines registers NO sub-type, so an unregistered one is a borrowed leg; lifecycle-aware session completion under both `review` defs) +
