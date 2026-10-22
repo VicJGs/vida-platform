@@ -156,10 +156,20 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   (`activatePlan` writes no `planned_blocks` in M1.1 — proven by AC4), and the `completed`/`failed` terminal
   transitions → **M1.2 study-planner design-pass**.
 
+### Routines S6 (R1 first-consumer-pull) — owner-written planned blocks (`services/sessions/service.ts`)
+`[FACT: services/sessions/service.ts; validators/session.ts PlanBlockSchema/PlannedBlockPatchSchema; 4 tests]`
+- **`planBlock(input)`** — one block for a caller-given slot (`scheduled_end > scheduled_start` when given); `sub_type`
+  registry-validated (`SessionTypeNotFound`), `target_type` a registered target (`UnknownEntityType`, BR-6), status `planned`.
+  Malformed → `InvalidSessionInput`. No placement logic: the G5 algorithm stays M1.2.
+- **`updatePlannedBlock(id, {scheduled_start?, scheduled_end?, status?})`** — slot move / status flip; missing id →
+  `InvalidSessionInput('id')`. · **`softDeletePlannedBlock(id)`** · **`listPlannedBlocksForTarget(type, id)`** — live blocks
+  pointing at the owner's item (SS-7), by `scheduled_start`.
+- First consumer: routines `rescheduleStep` (an SS-8 intent block; the make-good links the session via `planned_block_id`).
+
 ### S7 — dueIn aggregator + analytics (`services/sessions/service.ts`)
 `[FACT: services/sessions/service.ts; 40 sessions tests green on a live unlocked vault]`
 - **`dueIn(range): DueItem[]`** — the shared platform primitive (IR-2; Journals + future Calendar consume it):
-  own `planned_blocks` in range (`deleted_at`-filtered) ∪ live provider reads. **SS-7 degrade:** a throwing
+  own `planned_blocks` in range (`deleted_at`-filtered; **routines S6: only `planned|scheduled`**, fulfilled/skipped intent isn't due, SS-8) ∪ live provider reads. **SS-7 degrade:** a throwing
   provider lane is caught + skipped; `dueIn` never throws. Empty registry + no blocks (M1.1) → `[]`.
 - **`registerDueProvider(provider)`** — the empty provider seam (N5); owning modules register lanes at their build.
   **Registered lanes (first-consumer-pull, composition root = UI-3/M1.1+):** purposes (`registerPurposesDueProvider`,

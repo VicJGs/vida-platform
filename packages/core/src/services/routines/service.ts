@@ -36,6 +36,7 @@ import {
   EditRoutineCompletionSchema,
   PlanSkipDatesSchema,
   RunStepSchema,
+  RescheduleStepSchema,
   EvaluateRoutineSchema,
   RoutineDateRangeSchema,
   SetRoutineLifecycleSchema,
@@ -45,6 +46,7 @@ import { UnknownEntityType } from '../../foundation/spaces/types'
 import { utcDay, TaskNotFoundError, RecurrenceRegenError, TimerAlreadyRunningError, TimerNotWiredError } from '../tasks'
 import { SessionTypeNotFound, type SessionTypeDef } from '../../foundation/sessions/types'
 import type { Session } from '../sessions'
+import type { PlannedBlockRow } from '../../db/schema/foundation/scheduling'
 import type { HabitsService } from '../habits'
 import type { TasksService } from '../tasks'
 import { resolveProgress } from '../../foundation/measurement/engine'
@@ -57,6 +59,9 @@ import {
   InvalidRecurrenceRuleError,
   EntityUnavailableError,
   InvalidRoutinePolicyError,
+  OutsideAcceptanceWindowError,
+  NotMissedOccurrenceError,
+  InvalidRescheduleSlotError,
   type RoutineEvaluation,
   type RoutinePolicy,
   type RoutineAnalytics,
@@ -454,6 +459,70 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     return state(step, date, 'task', { completion, ...(flag ? { flag } : {}) })
   }
 
+  // ── S6 — SS-8 intent blocks (PLAN-S6 v3) ────────────────────────────
+  // A rescheduled occurrence D is one `planned_blocks` row pointing at the step (SS-7), its D carried in the documented
+  // provenance column (`source = 'routines:<D>'`; R3 forbids a new column, Q3 forbids same-day-only). One parser below.
+  const BLOCK_SOURCE = 'routines:'
+  const blockSource = (date: string): string => `${BLOCK_SOURCE}${date}`
+  const blockDate = (source: string | null): string | null =>
+    source?.startsWith(BLOCK_SOURCE) && /^\d{4}-\d{2}-\d{2}$/.test(source.slice(BLOCK_SOURCE.length))
+      ? source.slice(BLOCK_SOURCE.length)
+      : null
+  const isPending = (b: PlannedBlockRow): boolean => b.status === 'planned' || b.status === 'scheduled'
+  const pendingBlock = async (stepId: string, date: string): Promise<PlannedBlockRow | undefined> =>
+    (await sessions.listPlannedBlocksForTarget('routine_step', stepId)).find((b) => b.source === blockSource(date) && isPending(b))
+  // R5b — the occurrence day of a session linked to one of this step's blocks, or null (then the S5c day rules apply).
+  const blockDay = async (stepId: string, plannedBlockId: string | null): Promise<string | null> => {
+    if (plannedBlockId == null) return null
+    const b = (await sessions.listPlannedBlocksForTarget('routine_step', stepId)).find((x) => x.id === plannedBlockId)
+    return b ? blockDate(b.source) : null
+  }
+  // R5 — after a durable make-good: link the occurrence session to D's pending block, and fulfil it once D is done.
+  const settleBlock = (stepId: string, st: StepRunState): Promise<void> =>
+    bestEffort(async () => {
+      const b = await pendingBlock(stepId, st.date)
+      if (!b) return
+      if (st.session_id) {
+        const s = await sessions.getSession(st.session_id)
+        if (s && s.session.planned_block_id == null) {
+          await sessions.updateSession(st.session_id, { planned_block_id: b.id, scheduling_mode: 'planned' })
+        }
+      }
+      if (st.status === 'done') await sessions.updatePlannedBlock(b.id, { status: 'fulfilled' })
+    })
+  // R6 — a skip of D cancels its pending block (best-effort after the durable skip write).
+  const cancelBlock = (stepId: string, date: string): Promise<void> =>
+    bestEffort(async () => {
+      const b = await pendingBlock(stepId, date)
+      if (b) await sessions.updatePlannedBlock(b.id, { status: 'skipped' })
+    })
+
+  // BR-RT-S6-5 — a make-good BEGUN in-window (a guarded runStep(D) linked to D's block) is still open: completing it is
+  // not a new make-good, so the window guard doesn't apply to it (contract.md:55 rejects a make-good begun PAST the window).
+  const runningMakeGood = async (stepId: string, date: string): Promise<boolean> => {
+    const b = await pendingBlock(stepId, date)
+    if (!b?.sub_type) return false
+    const open = await sessions.findOpenSessionForEntity(b.sub_type, 'routine_step', stepId)
+    return open?.planned_block_id === b.id
+  }
+
+  // W1–W3 — the acceptance-window guard. The user's window, validated ONCE here and by loadWindow (no drift).
+  const validWindow = (routineId: string, policy: RoutinePolicy | null | undefined): number | undefined => {
+    const w = policy?.miss?.acceptance_window_days
+    if (w !== undefined && !(Number.isInteger(w) && w >= 0)) throw new InvalidRoutinePolicyError(routineId, policy?.miss)
+    return w
+  }
+  // A step with no routine (nullable FK-less column) has no user policy → no window.
+  const windowOf = async (routineId: string | null): Promise<number | undefined> =>
+    routineId == null ? undefined : validWindow(routineId, prefs ? await prefs.policyFor(routineId) : null)
+  // Only a PAST date is judged (a malformed window never blocks a today/future write); no window ⇒ no guard (none invented).
+  const assertWritable = async (step: RoutineStepRow, date: string): Promise<void> => {
+    const today = clock()
+    if (date >= today) return
+    const w = await windowOf(step.routine_id)
+    if (w !== undefined && addDays(date, w) < today) throw new OutsideAcceptanceWindowError(step.id, date, w) // = S5's real miss
+  }
+
   // A session the routine just created must not outlive a failed link/complete (an open `work` session would block the
   // user's next startTimer; a `scheduled` one is invisible to findOpenSessionForEntity) — the startAttachedFocus compensation.
   const settleOrDrop = async (sessionId: string, fn: () => Promise<void>): Promise<void> => {
@@ -482,7 +551,11 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     }
     const openOnStep = await sessions.findOpenSessionForEntity('work', 'routine_step', step.id)
     if (mode === 'run') {
-      if (openOnStep) return state(step, date, 'task', { status: 'in_progress', session_id: openOnStep.id })
+      if (openOnStep) {
+        // R5b — a linked make-good is D's; an unlinked re-entered occurrence reports its own start day (g2 N2: never re-linked)
+        const day = (await blockDay(step.id, openOnStep.planned_block_id)) ?? (openOnStep.started_at != null ? utcDay(openOnStep.started_at) : date)
+        return state(step, day, 'task', { status: 'in_progress', session_id: openOnStep.id })
+      }
       const done = await findDone(step.id, date) // one occurrence per day: a done day starts nothing (the runFocus rule)
       if (done) return state(step, date, 'task', { completion: toRoutineCompletion(done) })
       let sessionId: string
@@ -515,17 +588,20 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         if (e instanceof TimerNotWiredError) throw new EntityUnavailableError(step.id, 'the tasks timer is not wired')
         throw e
       }
-      const completion = await stamp(step.id, date, minutes ?? elapsed)
-      return state(step, date, 'task', { completion, session_id: open.id })
+      const day = (await blockDay(step.id, open.planned_block_id)) ?? date // R5b — a linked make-good stamps its D
+      const completion = await stamp(step.id, day, minutes ?? elapsed)
+      return state(step, day, 'task', { completion, session_id: open.id })
     }
     // One occurrence per day: re-checking a done day creates no session; the row still upserts (BR-RT-S3-1 minutes).
     if (await findDone(step.id, date)) return state(step, date, 'task', { completion: await stamp(step.id, date, minutes) })
     if ((await subTypeDef(newReflection(), 'work')) == null) {
       throw new EntityUnavailableError(step.id, 'the tasks timer is not wired (no work sub-type)')
     }
+    const blk = await pendingBlock(step.id, date) // SS-8: a make-good is created carrying its block
     const created = await sessions.createSession({
       sub_type: 'work',
-      scheduling_mode: 'ad_hoc',
+      scheduling_mode: blk ? 'planned' : 'ad_hoc',
+      planned_block_id: blk?.id ?? null,
       status: 'in_progress',
       started_at: Date.now(),
     })
@@ -554,12 +630,17 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       if (r.about) await sessions.attach(id, r.about.type, r.about.id, 'instance')
     }
     if (mode === 'run' && runningCapable) {
-      if (open) return state(step, date, 'session', { status: 'in_progress', session_id: open.id })
+      if (open) {
+        const day = (await blockDay(step.id, open.planned_block_id)) ?? (open.started_at != null ? utcDay(open.started_at) : date) // R5b · g2 N2
+        return state(step, day, 'session', { status: 'in_progress', session_id: open.id })
+      }
       const done = await findDone(step.id, date)
       if (done) return state(step, date, 'session', { completion: toRoutineCompletion(done) })
+      const blk = await pendingBlock(step.id, date) // SS-8
       const created = await sessions.createSession({
         sub_type: r.subType,
-        scheduling_mode: 'ad_hoc',
+        scheduling_mode: blk ? 'planned' : 'ad_hoc',
+        planned_block_id: blk?.id ?? null,
         status: 'in_progress',
         started_at: Date.now(),
       })
@@ -569,8 +650,9 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     if (open) {
       const elapsed = nowMinutesSince(open.started_at)
       await sessions.completeSession(open.id) // fires the owner's declared effects
-      const completion = await stamp(step.id, date, minutes ?? elapsed)
-      return state(step, date, 'session', { completion, session_id: open.id })
+      const day = (await blockDay(step.id, open.planned_block_id)) ?? date // R5b
+      const completion = await stamp(step.id, day, minutes ?? elapsed)
+      return state(step, day, 'session', { completion, session_id: open.id })
     }
     // One occurrence per day (as for a task): no second session; the row still upserts (BR-RT-S3-1).
     if (await findDone(step.id, date)) return state(step, date, 'session', { completion: await stamp(step.id, date, minutes) })
@@ -578,9 +660,11 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     if (from !== 'in_progress' && from !== 'scheduled') {
       throw new EntityUnavailableError(step.id, `session sub-type ${r.subType} declares no completable state`)
     }
+    const blk = await pendingBlock(step.id, date) // SS-8
     const created = await sessions.createSession({
       sub_type: r.subType,
-      scheduling_mode: 'ad_hoc',
+      scheduling_mode: blk ? 'planned' : 'ad_hoc',
+      planned_block_id: blk?.id ?? null,
       status: from,
       ...(from === 'in_progress' ? { started_at: Date.now() } : {}),
     })
@@ -657,7 +741,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     s: Session & { extension: FocusSessionRow },
   ): Promise<StepRunState | null> => {
     const f = s.extension
-    if (f.status === 'completed' && utcDay(f.updated_at) === date) {
+    const finishedDay = (await blockDay(step.id, s.session.planned_block_id)) ?? utcDay(f.updated_at) // R5b
+    if (f.status === 'completed' && finishedDay === date) {
       const completion = await stamp(step.id, date, focusMinutes(f))
       await bestEffort(() => detachFocus(s.session.id, step.id))
       return state(step, date, 'focus', { completion, session_id: s.session.id, focus_id: f.id })
@@ -682,16 +767,31 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     return true
   }
 
-  const runFocus = async (step: RoutineStepRow, date: string): Promise<StepRunState> => {
-    const done = await findDone(step.id, date)
-    if (done) return state(step, date, 'focus', { completion: toRoutineCompletion(done) })
+  // R5b (g2 B1/N1) — an attached focus linked to D's block makes this call about D, decided BEFORE the done check.
+  const focusContext = async (step: RoutineStepRow, date: string) => {
     const attached = await attachedFocus(step.id)
+    const linked = attached ? await blockDay(step.id, attached.session.planned_block_id) : null
+    return { attached, linked, day: linked ?? date }
+  }
+
+  const runFocus = async (step: RoutineStepRow, requested: string): Promise<StepRunState> => {
+    const { attached, linked, day: date } = await focusContext(step, requested)
+    const done = await findDone(step.id, date)
+    if (done) {
+      // A finished focus linked to an already-stamped D (its earlier detach was swallowed) must not capture later runs.
+      if (attached && linked && !isRunning(attached.extension)) {
+        await bestEffort(() => detachFocus(attached.session.id, step.id))
+        return runFocus(step, requested)
+      }
+      return state(step, date, 'focus', { completion: toRoutineCompletion(done) })
+    }
     if (attached && isRunning(attached.extension) && (await dropIfAbandoned(attached, step.id))) {
       return startAttachedFocus(step, date)
     }
     if (attached) {
       if (isRunning(attached.extension)) {
-        return state(step, date, 'focus', {
+        // A re-entered UNLINKED focus reports its own day (g2 N2): it is never re-linked to another date's block.
+        return state(step, linked ?? focusDay(attached), 'focus', {
           status: 'in_progress',
           session_id: attached.session.id,
           focus_id: attached.extension.id,
@@ -718,15 +818,16 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     return state(step, date, 'focus', { status: 'in_progress', session_id: timer.session_id, focus_id: timer.id })
   }
 
-  const completeFocusStep = async (step: RoutineStepRow, date: string): Promise<StepRunState> => {
+  const completeFocusStep = async (step: RoutineStepRow, requested: string): Promise<StepRunState> => {
+    const { attached, day: date } = await focusContext(step, requested)
     const done = await findDone(step.id, date)
     if (done) return state(step, date, 'focus', { completion: toRoutineCompletion(done) })
-    const attached = await attachedFocus(step.id)
     if (attached && isRunning(attached.extension) && (await dropIfAbandoned(attached, step.id))) {
       throw new EntityUnavailableError(step.id, 'the running focus session was abandoned (started before yesterday; cancelled)')
     }
     if (attached && isRunning(attached.extension)) {
-      const occurrence = focusDay(attached) // the day it started — may differ from `date` across UTC midnight
+      // R5b — a make-good linked to D's block is D's; else the day it started (may differ from `date` across UTC midnight)
+      const occurrence = (await blockDay(step.id, attached.session.planned_block_id)) ?? focusDay(attached)
       const f = await sessions.completeFocus(attached.extension.id) // no effects; never completeSession (N9)
       const completion = await stamp(step.id, occurrence, focusMinutes(f)) // focus duration overrides a caller's (declared)
       await bestEffort(() => detachFocus(attached.session.id, step.id))
@@ -980,8 +1081,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   const loadWindow = async (routine: RoutineRow, from: string, to: string) => {
     const routineId = routine.id
     const policy = prefs ? await prefs.policyFor(routineId) : null
-    const w = policy?.miss?.acceptance_window_days
-    if (w !== undefined && !(Number.isInteger(w) && w >= 0)) throw new InvalidRoutinePolicyError(routineId, policy?.miss)
+    validWindow(routineId, policy)
     if (routine.recurrence_rule == null) return { routine, policy, all: [], rows: new Map() as RowsByDate, rf: newReflection() } // nothing to read
     const all = await stepsRepo.findWhere(eq(routineStep.routine_id, routineId) as SQL)
     const rows = await completionsBetween(all.map((st) => st.id), from, to)
@@ -1166,13 +1266,119 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       const date = p.date ?? clock()
       const minutes = p.actual_duration_minutes ?? null
       // RT-3 — every step drives its entity FIRST, then stamps the routine's own occurrence row (N7). Re-load inside the lock.
-      return serialized(stepId, async () => driveStep(await loadStepOrThrow(step.id), date, minutes, 'complete'))
+      return serialized(stepId, async () => {
+        const fresh = await loadStepOrThrow(step.id)
+        if (!(await runningMakeGood(fresh.id, date))) await assertWritable(fresh, date) // S6 W3 — before any drive
+        const st = await driveStep(fresh, date, minutes, 'complete')
+        await settleBlock(fresh.id, st) // S6 R5 — inside the lock, keyed on the occurrence actually stamped
+        return st
+      })
     },
 
     runStep: async (stepId, input = {}) => {
       const p = RunStepSchema.parse(input)
       const step = await loadStepOrThrow(stepId)
-      return serialized(stepId, async () => driveStep(await loadStepOrThrow(step.id), p.date ?? clock(), null, 'run'))
+      const date = p.date ?? clock()
+      return serialized(stepId, async () => {
+        const fresh = await loadStepOrThrow(step.id)
+        if (!(await runningMakeGood(fresh.id, date))) await assertWritable(fresh, date) // S6 W3
+        const st = await driveStep(fresh, date, null, 'run')
+        await settleBlock(fresh.id, st) // S6 R5 — a started make-good is linked to D's block at once (R5b)
+        return st
+      })
+    },
+
+    rescheduleStep: async (stepId, input) => {
+      const p = RescheduleStepSchema.parse(input)
+      const date = p.date
+      return serialized(stepId, async () => {
+        const step = await loadStepOrThrow(stepId)
+        const today = clock()
+        if (date > today) throw new NotMissedOccurrenceError(stepId, date, 'future')
+        await assertWritable(step, date) // W1–W2: beyond the window ⇒ OutsideAcceptanceWindowError
+        const window = await windowOf(step.routine_id) // the slot's upper bound needs the user's window (R2)
+        // R3 — what the make-good will drive (the S5c resolution); nothing is written before this passes.
+        const rf = newReflection()
+        const r = await resolveTarget(step, rf)
+        const needWork = async () => {
+          if ((await subTypeDef(rf, 'work')) == null) throw new EntityUnavailableError(stepId, 'the tasks timer is not wired')
+        }
+        let target: StepTarget
+        let subType: string | null
+        switch (r?.target) {
+          case 'task': {
+            const task = await taskOnce(rf, r.entityId)
+            if (!task) throw new EntityUnavailableError(stepId, `task ${r.entityId} is missing or deleted`)
+            target = 'task'
+            if (task.kind === 'obligation') {
+              if (task.status === 'cancelled') throw new EntityUnavailableError(stepId, `task ${task.id} is cancelled`)
+              subType = null // TK-7: an obligation's occurrence is its own completion, no session
+            } else {
+              if (task.status === 'completed' || task.status === 'cancelled') {
+                throw new EntityUnavailableError(stepId, `task ${task.id} is ${task.status} (the responsibility is closed)`)
+              }
+              await needWork()
+              subType = 'work'
+            }
+            break
+          }
+          case 'checkoff':
+            await needWork()
+            target = 'task'
+            subType = 'work'
+            break
+          case 'habit':
+            if (!habits) throw new EntityUnavailableError(stepId, 'the habits service is not wired')
+            target = 'habit'
+            subType = null
+            break
+          case 'focus':
+            target = 'focus'
+            subType = 'focus'
+            break
+          case 'session':
+            target = 'session'
+            subType = r.subType
+            break
+          default:
+            throw new EntityUnavailableError(stepId, 'target not drivable (see runStep)')
+        }
+        // R1 — make-good admissible at STEP level.
+        if (step.routine_id == null) throw new NotMissedOccurrenceError(stepId, date, 'not_an_occurrence') // no routine, no cadence
+        const routine = await loadRoutineOrThrow(step.routine_id)
+        if (routine.lifecycle !== 'active') throw new NotMissedOccurrenceError(stepId, date, 'inactive') // A3 (S5 precedent)
+        const rule = routine.recurrence_rule
+        if (rule == null || !occurrences(rule, utcDay(routine.created_at), date, date).includes(date)) {
+          throw new NotMissedOccurrenceError(stepId, date, 'not_an_occurrence')
+        }
+        const row = await findCompletion(stepId, date)
+        if (stepsAsOf([step], date, new Set(row ? [stepId] : [])).length === 0) {
+          throw new NotMissedOccurrenceError(stepId, date, 'not_in_step_set')
+        }
+        if ((parseJsonArray<string>(step.skip_dates) ?? []).includes(date)) {
+          throw new NotMissedOccurrenceError(stepId, date, 'planned_skip')
+        }
+        if (await isDoneOn(step, row, date, rf)) throw new NotMissedOccurrenceError(stepId, date, 'done')
+        // R2 — the slot: not before now, not before D's day, not past the last make-good day.
+        const slotDay = utcDay(p.slot.start)
+        if (p.slot.start < Date.now()) throw new InvalidRescheduleSlotError(stepId, 'before_now')
+        if (slotDay < date) throw new InvalidRescheduleSlotError(stepId, 'before_occurrence') // defence-in-depth: start ≥ now and D ≤ today imply it
+        if (window !== undefined && slotDay > addDays(date, window)) throw new InvalidRescheduleSlotError(stepId, 'past_window')
+        if (r.target === 'checkoff') await linkCheckoffTask(step) // S5c migrate-on-touch (self-compensating)
+        // R4 — one pending block per (step, D): a re-reschedule moves it.
+        const existing = await pendingBlock(stepId, date)
+        const block = existing
+          ? await sessions.updatePlannedBlock(existing.id, { scheduled_start: p.slot.start, scheduled_end: p.slot.end ?? null })
+          : await sessions.planBlock({
+              scheduled_start: p.slot.start,
+              scheduled_end: p.slot.end ?? null,
+              sub_type: subType,
+              target_type: 'routine_step',
+              target_id: stepId,
+              source: blockSource(date),
+            })
+        return state(step, date, target, { status: 'scheduled', planned_block_id: block.id })
+      })
     },
 
     // ── S4 ──────────────────────────────────────────────────────────
@@ -1239,34 +1445,49 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
 
     skipStep: async (stepId, input = {}) => {
       const p = SkipStepSchema.parse(input)
-      // RT-8 — a LOGGED skip on the day (completion row, skipped=true + reason). Distinct from a pre-planned skip.
-      return upsertCompletion(stepId, p.date ?? clock(), {
-        skipped: true,
-        skip_reason: p.reason ?? null,
-        actual_duration_minutes: null,
+      const date = p.date ?? clock()
+      return serialized(stepId, async () => {
+        await assertWritable(await loadStepOrThrow(stepId), date) // S6 — a skip is a miss write (BR:120)
+        // RT-8 — a LOGGED skip on the day (completion row, skipped=true + reason). Distinct from a pre-planned skip.
+        const row = await upsertCompletion(stepId, date, {
+          skipped: true,
+          skip_reason: p.reason ?? null,
+          actual_duration_minutes: null,
+        })
+        await cancelBlock(stepId, date) // S6 R6
+        return row
       })
     },
 
     planSkipDates: async (stepId, dates) => {
       const { dates: parsed } = PlanSkipDatesSchema.parse({ dates })
-      const step = await loadStepOrThrow(stepId)
-      // RT-8 — pre-planned skips live in step.skip_dates (declared ahead, may be future). Merge, dedupe, sort.
-      const merged = [...new Set([...(parseJsonArray<string>(step.skip_dates) ?? []), ...parsed])].sort()
-      const row = await stepsRepo.update(stepId, { skip_dates: JSON.stringify(merged) })
-      return toRoutineStep(row)
+      return serialized(stepId, async () => {
+        const step = await loadStepOrThrow(stepId)
+        for (const d of parsed) await assertWritable(step, d) // S6 — any past date beyond the window rejects the whole list
+        // RT-8 — pre-planned skips live in step.skip_dates (declared ahead, may be future). Merge, dedupe, sort.
+        const merged = [...new Set([...(parseJsonArray<string>(step.skip_dates) ?? []), ...parsed])].sort()
+        const row = await stepsRepo.update(stepId, { skip_dates: JSON.stringify(merged) })
+        for (const d of parsed) await cancelBlock(stepId, d) // S6 R6
+        return toRoutineStep(row)
+      })
     },
 
     editCompletion: async (stepId, date, patch) => {
       RoutineCalendarDateSchema.parse(date) // S2c (B1) — a malformed date is a ZodError, not CompletionNotFoundError
       const p = EditRoutineCompletionSchema.parse(patch)
-      await loadStepOrThrow(stepId)
-      const existing = await findCompletion(stepId, date)
-      if (!existing) throw new CompletionNotFoundError(stepId, date) // fail-loud (RT-5 edit path)
-      const out: UpdateInput<typeof routineCompletions> = {}
-      if ('skipped' in p) out.skipped = p.skipped
-      if ('skip_reason' in p) out.skip_reason = p.skip_reason
-      if ('actual_duration_minutes' in p) out.actual_duration_minutes = p.actual_duration_minutes
-      return toRoutineCompletion(await completionsRepo.update(existing.id, out))
+      return serialized(stepId, async () => {
+        const step = await loadStepOrThrow(stepId)
+        if ('skipped' in p) await assertWritable(step, date) // S6 — a skip/un-skip is a miss write (BR:120); other edits are free (RT-14)
+        const existing = await findCompletion(stepId, date)
+        if (!existing) throw new CompletionNotFoundError(stepId, date) // fail-loud (RT-5 edit path)
+        const out: UpdateInput<typeof routineCompletions> = {}
+        if ('skipped' in p) out.skipped = p.skipped
+        if ('skip_reason' in p) out.skip_reason = p.skip_reason
+        if ('actual_duration_minutes' in p) out.actual_duration_minutes = p.actual_duration_minutes
+        const row = toRoutineCompletion(await completionsRepo.update(existing.id, out))
+        if (p.skipped === true) await cancelBlock(stepId, date) // S6 R6
+        return row
+      })
     },
 
     deleteCompletion: async (stepId, date) => {

@@ -96,22 +96,27 @@ Errors: `RoutineNotFoundError` · `InvalidRecurrenceRuleError` (a stored rule ou
 | Method | Signature | Errors |
 |---|---|---|
 | `completeStep` | see Run / drive (S5c: always `StepRunState`) | — |
-| `skipStep` | `(stepId, input?: { date?, reason? }) => Promise<RoutineCompletion>` | `StepNotFoundError` |
-| `planSkipDates` | `(stepId, dates: string[]) => Promise<RoutineStep>` | `StepNotFoundError` |
-| `editCompletion` | `(stepId, date, patch: { skipped?, skip_reason?, actual_duration_minutes? }) => Promise<RoutineCompletion>` | `StepNotFoundError`; `CompletionNotFoundError` |
+| `skipStep` | `(stepId, input?: { date?, reason? }) => Promise<RoutineCompletion>` | `StepNotFoundError`; `OutsideAcceptanceWindowError` (S6) |
+| `planSkipDates` | `(stepId, dates: string[]) => Promise<RoutineStep>` | `StepNotFoundError`; `OutsideAcceptanceWindowError` (any past date, whole list, S6) |
+| `rescheduleStep` (S6) | `(stepId, { date, slot: { start, end? } }) => Promise<StepRunState>` (`status:'scheduled'`, `planned_block_id`) | writes ONE SS-8 intent block (`planned_blocks`, target `routine_step`, `source 'routines:<D>'`, `sub_type` = the occurrence's: `work`·`focus`·registered·null for habit/obligation); a re-reschedule moves it. `StepNotFoundError` · `OutsideAcceptanceWindowError` · `EntityUnavailableError` · `NotMissedOccurrenceError` · `InvalidRescheduleSlotError` · `ZodError` (malformed slot), all before any write |
+| `editCompletion` | `(stepId, date, patch: { skipped?, skip_reason?, actual_duration_minutes? }) => Promise<RoutineCompletion>` | `StepNotFoundError`; `CompletionNotFoundError`; `OutsideAcceptanceWindowError` when the patch touches `skipped` (S6) |
 | `deleteCompletion` | `(stepId, date) => Promise<void>` | `CompletionNotFoundError` (does NOT check the step exists) |
 | `listCompletions` | `(stepId) => Promise<RoutineCompletion[]>` | — (sorted by `completed_date`) |
 
+**S6 write guard:** `completeStep`/`runStep` (past date), `skipStep`, `planSkipDates` (any past date, whole list), and `editCompletion` touching
+`skipped` throw `OutsideAcceptanceWindowError` beyond the user's window; skip writes run under the per-step lock. The make-good links the
+occurrence session to D's block (`updateSession planned_block_id`) and fulfils it on done; a skip of D sets it `skipped`.
+
 Typed errors: `RoutineNotFoundError(id)` · `StepNotFoundError(id)` · `CompletionNotFoundError(stepId, date)` · `InvalidRecurrenceRuleError(rule)`
-(S2c) · `UnknownEntityType` (foundation, re-used) · `EntityUnavailableError(stepId, reason)` (S3) `[FACT: types.ts]`. A malformed positional `date` to `editCompletion`/`deleteCompletion`
+(S2c) · `UnknownEntityType` (foundation, re-used) · `EntityUnavailableError(stepId, reason)` (S3) · `InvalidRoutinePolicyError` (S4) ·
+`OutsideAcceptanceWindowError(stepId, date, windowDays)` · `NotMissedOccurrenceError(stepId, date, reason)` · `InvalidRescheduleSlotError(stepId, reason)` (S6) `[FACT: types.ts]`. A malformed positional `date` to `editCompletion`/`deleteCompletion`
 throws `ZodError` (S2c).
 `skipStep` + `planSkipDates` replace the single `skipStep({kind})` from the 2026-10-13 seam-contract. That was a §XXVIII
 deviation, grounded in RT-8 and g2-approved at S3 `[FACT: types.ts]`. Whether the governing seam-contract already has this
 split is checked in reconciliation.
 
-**Not built (governing surface, per `delivery/seam-contract.md`):** `progress`,
-streak/rate analytics, `rescheduleStep`, effect emission, tags/notes consumption, `dueIn`/`summary`/`getDueReminders`, journal +
-due-provider registration, and the typed errors `OutsideAcceptanceWindow` / `ProviderEmitFailed`.
+**Not built (governing surface, per `delivery/seam-contract.md`):** effect emission (S7), tags/notes consumption (S8),
+`dueIn`/`summary`/`getDueReminders`, journal + due-provider registration (S9), and the typed error `ProviderEmitFailed`.
 
 ### Inputs (Zod, `validators/routine.ts`)
 - `CreateRoutineSchema` = all routine fields optional except `name` (`.min(1)`, S2c) · `UpdateRoutineSchema` = all optional ·

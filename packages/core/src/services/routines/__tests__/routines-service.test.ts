@@ -32,6 +32,9 @@ import {
   InvalidRecurrenceRuleError,
   EntityUnavailableError,
   InvalidRoutinePolicyError,
+  OutsideAcceptanceWindowError,
+  NotMissedOccurrenceError,
+  InvalidRescheduleSlotError,
   type RoutinePolicy,
   type RoutinesPrefsPort,
   isStepRunState,
@@ -1691,5 +1694,402 @@ describe('mod-routines S5c — every step drives an entity; occurrences are sess
     const row = (await h.svc.listSteps(routineId)).find((x) => x.id === s.id)
     expect(row?.entity_type).toBe('task')
     expect(await h.tasks.getTask(row?.entity_id as string)).toBeTruthy()
+  })
+})
+
+// ============================================================================
+// S6 — reschedule as an SS-8 intent block + the acceptance-window write guard (PLAN-S6 v3 · Verification Gate)
+// ============================================================================
+describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard', () => {
+  let h: Harness
+  let clock: ReturnType<typeof vi.spyOn>
+  const at = (day: string, hhmm = '12:00') => Date.parse(`${day}T${hhmm}:00Z`)
+  const setNow = (day: string, hhmm = '12:00') => clock.mockImplementation(() => at(day, hhmm))
+  const prefsOf = (p: RoutinePolicy | null): RoutinesPrefsPort => ({ policyFor: async () => p })
+  const win = (w: number): RoutinesPrefsPort => prefsOf({ completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: w } })
+  const TODAY = '2026-10-26' // a Monday
+  afterEach(() => vi.restoreAllMocks())
+
+  // A routine created on 10-20 (steps added then); the caller moves the clock to `today` after adding steps.
+  async function world(opts: { prefs?: RoutinesPrefsPort; rule?: string; withHabits?: boolean; tasksTimer?: boolean } = {}) {
+    h = await setup({
+      ...(opts.prefs ? { prefs: opts.prefs } : {}),
+      ...(opts.withHabits === false ? { withHabits: false } : {}),
+      ...(opts.tasksTimer === false ? { tasksTimer: false } : {}),
+    })
+    clock = vi.spyOn(Date, 'now')
+    setNow('2026-10-20')
+    return (await h.svc.createRoutine({ name: 'R', recurrence_rule: opts.rule ?? 'FREQ=DAILY' })).id
+  }
+  const count = (sql: string): number => (h.bsql.prepare(sql).get() as { n: number }).n
+  const blocksOf = (stepId: string) => h.sessions.listPlannedBlocksForTarget('routine_step', stepId)
+  const slot = (day = TODAY, from = '15:00', to = '15:30') => ({ start: at(day, from), end: at(day, to) })
+  const dueAll = () => h.sessions.dueIn({ start: 0, end: at('2030-01-01') })
+  const reviewDef = (transitions: SessionTypeDef['lifecycle']['transitions']): SessionTypeDef => ({
+    sub_type: 'review',
+    owner_module: 'flashcards',
+    attachment_defaults: {},
+    effects: [],
+    lifecycle: { transitions, hooks: {} },
+    permissions: { allowed_effects: [] },
+    default_purpose: 'review',
+  })
+
+  // 1 — the guard on make-good writes
+  it('guard: a make-good beyond the window is rejected with no row, no session, no timer; the boundary day and today pass', async () => {
+    const rid = await world({ prefs: win(2) })
+    const t = await h.tasks.createTask({ title: 'Clean' })
+    const s = await h.svc.addStep(rid, { title: 'Clean', entity_type: 'task', entity_id: t.id })
+    setNow(TODAY)
+    await expect(h.svc.completeStep(s.id, { date: '2026-10-23' })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
+    await expect(h.svc.runStep(s.id, { date: '2026-10-23' })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+    expect(count("SELECT count(*) AS n FROM sessions WHERE sub_type = 'work'")).toBe(0)
+    expect((await h.svc.completeStep(s.id, { date: '2026-10-24' })).status).toBe('done') // boundary: addDays(24, 2) = 26
+    expect((await h.svc.completeStep(s.id, { date: TODAY })).status).toBe('done')
+  })
+
+  // 2 — the guard on skip writes; delete + non-skip edits are free (RT-14/G7)
+  it('guard: logged skip, planSkipDates (whole), editCompletion{skipped} rejected beyond; other edits and delete pass', async () => {
+    const rid = await world({ prefs: win(2) })
+    const s = await h.svc.addStep(rid, { title: 'Stretch' })
+    setNow('2026-10-22')
+    await h.svc.completeStep(s.id, { date: '2026-10-21' }) // written while still in-window
+    setNow(TODAY)
+    await expect(h.svc.skipStep(s.id, { date: '2026-10-22' })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
+    await expect(h.svc.planSkipDates(s.id, ['2026-10-20', '2026-10-30'])).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
+    expect((await h.svc.listSteps(rid))[0]?.skip_dates ?? null).toBeNull()
+    await expect(h.svc.editCompletion(s.id, '2026-10-21', { skipped: true })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
+    expect((await h.svc.editCompletion(s.id, '2026-10-21', { actual_duration_minutes: 5 })).actual_duration_minutes).toBe(5)
+    await expect(h.svc.deleteCompletion(s.id, '2026-10-21')).resolves.toBeUndefined()
+  })
+
+  // 3 — no window ⇒ no guard; a malformed window only blocks past writes
+  it('no window ⇒ no guard; a malformed window → InvalidRoutinePolicyError on a past write, a today write succeeds', async () => {
+    let rid = await world({ prefs: prefsOf({ completion: { kind: 'all_or_nothing' } }) })
+    let s = await h.svc.addStep(rid, { title: 'A' })
+    setNow(TODAY)
+    expect((await h.svc.completeStep(s.id, { date: '2026-10-21' })).status).toBe('done')
+    rid = await world({ prefs: prefsOf({ completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: -1 } }) })
+    s = await h.svc.addStep(rid, { title: 'B' })
+    setNow(TODAY)
+    await expect(h.svc.completeStep(s.id, { date: '2026-10-25' })).rejects.toBeInstanceOf(InvalidRoutinePolicyError)
+    expect((await h.svc.completeStep(s.id, { date: TODAY })).status).toBe('done')
+  })
+
+  // 4 — reschedule writes only the SS-8 intent block
+  it('reschedule a task step: one planned block (routine_step, routines:D, work) in the slot; no session, no row; due in the slot', async () => {
+    const rid = await world({ prefs: win(2) })
+    const t = await h.tasks.createTask({ title: 'Clean' })
+    const s = await h.svc.addStep(rid, { title: 'Clean', entity_type: 'task', entity_id: t.id })
+    setNow(TODAY)
+    const r = await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })
+    expect(r).toMatchObject({ step_id: s.id, date: '2026-10-25', target: 'task', status: 'scheduled', completion: null })
+    const [b, ...rest] = await blocksOf(s.id)
+    expect(rest).toEqual([])
+    expect(b).toMatchObject({
+      id: r.planned_block_id,
+      scheduled_start: slot().start,
+      scheduled_end: slot().end,
+      sub_type: 'work',
+      target_type: 'routine_step',
+      target_id: s.id,
+      source: 'routines:2026-10-25',
+      status: 'planned',
+    })
+    expect(count('SELECT count(*) AS n FROM sessions')).toBe(0)
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+    expect((await dueAll()).map((d) => d.ref_id)).toEqual([b?.id])
+  })
+
+  // 5 — the make-good creates the session carrying planned_block_id and fulfils the block
+  it('make-good: completeStep(D) → one completed work session linked to the block, block fulfilled, D done, not due; runStep links only', async () => {
+    const rid = await world({ prefs: win(2) })
+    const t = await h.tasks.createTask({ title: 'Clean' })
+    const s = await h.svc.addStep(rid, { title: 'Clean', entity_type: 'task', entity_id: t.id })
+    setNow(TODAY)
+    const r = await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })
+    const done = await h.svc.completeStep(s.id, { date: '2026-10-25' })
+    expect(done).toMatchObject({ status: 'done', date: '2026-10-25' })
+    const sess = await h.sessions.getSession(done.session_id as string)
+    expect(sess?.session).toMatchObject({ sub_type: 'work', status: 'completed', planned_block_id: r.planned_block_id, scheduling_mode: 'planned' })
+    expect(count("SELECT count(*) AS n FROM sessions WHERE sub_type = 'work'")).toBe(1)
+    expect((await blocksOf(s.id))[0]?.status).toBe('fulfilled')
+    expect((await h.svc.evaluateRoutine(rid, { date: '2026-10-25' })).status).toBe('done')
+    expect(await dueAll()).toEqual([])
+
+    const r2 = await h.svc.rescheduleStep(s.id, { date: '2026-10-24', slot: slot() })
+    const run = await h.svc.runStep(s.id, { date: '2026-10-24' })
+    expect(run.status).toBe('in_progress')
+    expect((await h.sessions.getSession(run.session_id as string))?.session.planned_block_id).toBe(r2.planned_block_id)
+    expect((await blocksOf(s.id)).find((b) => b.id === r2.planned_block_id)?.status).toBe('planned')
+  })
+
+  // 6 — one pending block per (step, D)
+  it('re-reschedule moves the slot of the same block; a concurrent double-tap writes one block', async () => {
+    const rid = await world({ prefs: win(2) })
+    const s = await h.svc.addStep(rid, { title: 'Stretch' })
+    setNow(TODAY)
+    const a = await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })
+    const b = await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot(TODAY, '18:00', '18:30') })
+    expect(b.planned_block_id).toBe(a.planned_block_id)
+    expect((await blocksOf(s.id)).map((x) => x.scheduled_start)).toEqual([at(TODAY, '18:00')])
+    await Promise.all([
+      h.svc.rescheduleStep(s.id, { date: '2026-10-24', slot: slot() }),
+      h.svc.rescheduleStep(s.id, { date: '2026-10-24', slot: slot() }),
+    ])
+    expect((await blocksOf(s.id)).filter((x) => x.source === 'routines:2026-10-24').length).toBe(1)
+  })
+
+  // 6b — R5b: a session linked to D's block belongs to D
+  it('R5b: runStep(D) then completeStep(today) completes D (block fulfilled), today untouched; two pending Ds stay separate', async () => {
+    const rid = await world({ prefs: win(2) })
+    const t = await h.tasks.createTask({ title: 'Clean' })
+    const s = await h.svc.addStep(rid, { title: 'Clean', entity_type: 'task', entity_id: t.id })
+    setNow(TODAY)
+    const b25 = await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })
+    const b24 = await h.svc.rescheduleStep(s.id, { date: '2026-10-24', slot: slot(TODAY, '17:00', '17:30') })
+    await h.svc.runStep(s.id, { date: '2026-10-25' })
+    const done = await h.svc.completeStep(s.id, { date: TODAY })
+    expect(done.date).toBe('2026-10-25')
+    expect((await h.svc.listCompletions(s.id)).map((c) => c.completed_date)).toEqual(['2026-10-25'])
+    const status = async (id: string | undefined) => (await blocksOf(s.id)).find((x) => x.id === id)?.status
+    expect(await status(b25.planned_block_id)).toBe('fulfilled')
+    expect(await status(b24.planned_block_id)).toBe('planned')
+    await h.svc.completeStep(s.id, { date: '2026-10-24' })
+    expect(await status(b24.planned_block_id)).toBe('fulfilled')
+  })
+
+  it('R5b: a running-capable review make-good run, then completed under today, stamps D', async () => {
+    const rid = await world({ prefs: win(2) })
+    await h.sessionRegistry.register(
+      reviewDef([
+        { from: 'scheduled', to: 'in_progress', event: 'start' },
+        { from: 'in_progress', to: 'completed', event: 'complete' },
+      ]),
+    )
+    const s = await h.svc.addStep(rid, { title: 'Review', step_type: 'review' })
+    setNow(TODAY)
+    const r = await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })
+    expect((await blocksOf(s.id))[0]?.sub_type).toBe('review')
+    await h.svc.runStep(s.id, { date: '2026-10-25' })
+    const done = await h.svc.completeStep(s.id, { date: TODAY })
+    expect(done.date).toBe('2026-10-25')
+    expect((await blocksOf(s.id)).find((x) => x.id === r.planned_block_id)?.status).toBe('fulfilled')
+  })
+
+  it('R5b: a focus make-good started on the slot day S > D stamps D and fulfils the block', async () => {
+    const rid = await world({ prefs: win(2) })
+    const s = await h.svc.addStep(rid, { title: 'Deep work', step_type: 'focus' })
+    setNow(TODAY)
+    const r = await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })
+    expect((await blocksOf(s.id))[0]?.sub_type).toBe('focus')
+    setNow(TODAY, '15:00')
+    const run = await h.svc.runStep(s.id, { date: '2026-10-25' })
+    expect(run.status).toBe('in_progress')
+    expect((await h.sessions.getSession(run.session_id as string))?.session.planned_block_id).toBe(r.planned_block_id)
+    setNow(TODAY, '15:30')
+    const done = await h.svc.completeStep(s.id, { date: '2026-10-25' })
+    expect(done.date).toBe('2026-10-25')
+    expect((await h.svc.listCompletions(s.id)).map((c) => c.completed_date)).toEqual(['2026-10-25'])
+    expect((await blocksOf(s.id))[0]?.status).toBe('fulfilled')
+  })
+
+  it('g2 B1/N1: a linked focus finished in the widget, then completed under today (already done) → D stamped, block fulfilled', async () => {
+    const rid = await world({ prefs: win(2) })
+    const s = await h.svc.addStep(rid, { title: 'Deep work', step_type: 'focus' })
+    const b = await h.svc.addStep(rid, { title: 'Second', step_type: 'focus' })
+    setNow(TODAY)
+    await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })
+    setNow(TODAY, '15:00')
+    const run = await h.svc.runStep(s.id, { date: '2026-10-25' })
+    await h.sessions.completeFocus(run.focus_id as string) // finished outside the routine (the focus widget)
+    const done = await h.svc.completeStep(s.id) // date defaults to today
+    expect(done.date).toBe('2026-10-25')
+    expect((await h.svc.listCompletions(s.id)).map((c) => c.completed_date)).toEqual(['2026-10-25'])
+    expect((await blocksOf(s.id))[0]?.status).toBe('fulfilled')
+
+    setNow(TODAY, '16:00')
+    await h.svc.rescheduleStep(b.id, { date: '2026-10-25', slot: slot(TODAY, '17:00', '17:30') })
+    const runToday = await h.svc.runStep(b.id) // today's own occurrence first
+    await h.svc.completeStep(b.id)
+    expect(runToday.date).toBe(TODAY)
+    await h.svc.runStep(b.id, { date: '2026-10-25' })
+    const again = await h.svc.completeStep(b.id) // today is done, but D's linked focus is running → D (N1)
+    expect(again.date).toBe('2026-10-25')
+    expect((await h.svc.listCompletions(b.id)).map((c) => c.completed_date).sort()).toEqual(['2026-10-25', TODAY])
+  })
+
+  it("g2 N2: an unlinked running occurrence re-entered under D reports its own day and is never linked to D's block", async () => {
+    const rid = await world({ prefs: win(2) })
+    const t = await h.tasks.createTask({ title: 'Clean' })
+    const s = await h.svc.addStep(rid, { title: 'Clean', entity_type: 'task', entity_id: t.id })
+    setNow(TODAY)
+    const today = await h.svc.runStep(s.id) // today's ad-hoc occurrence, unlinked
+    await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })
+    const re = await h.svc.runStep(s.id, { date: '2026-10-25' })
+    expect(re).toMatchObject({ session_id: today.session_id, date: TODAY })
+    expect((await h.sessions.getSession(today.session_id as string))?.session.planned_block_id).toBeNull()
+    expect((await blocksOf(s.id))[0]?.status).toBe('planned')
+  })
+
+  it('a make-good begun in-window (guarded runStep) completes after the window closes: stamps D (BR-RT-S6-5)', async () => {
+    const rid = await world({ prefs: win(0) })
+    const t = await h.tasks.createTask({ title: 'Clean' })
+    const s = await h.svc.addStep(rid, { title: 'Clean', entity_type: 'task', entity_id: t.id })
+    const s2 = await h.svc.addStep(rid, { title: 'Other', entity_type: 'task', entity_id: (await h.tasks.createTask({ title: 'Mop' })).id })
+    const s3 = await h.svc.addStep(rid, { title: 'Third' })
+    setNow(TODAY)
+    await h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot(TODAY, '23:00', '23:50') })
+    setNow(TODAY, '23:00')
+    await h.svc.runStep(s.id, { date: TODAY })
+    setNow('2026-10-27', '00:20') // the window (0 days) closed at midnight; the run began inside it
+    const done = await h.svc.completeStep(s.id)
+    expect(done.date).toBe(TODAY)
+
+    // The same with the date the caller got back from runStep (D itself), plus a NEW make-good past the window, which is rejected.
+    setNow(TODAY, '23:00')
+    await h.svc.rescheduleStep(s2.id, { date: TODAY, slot: slot(TODAY, '23:30', '23:50') })
+    const run2 = await h.svc.runStep(s2.id, { date: TODAY })
+    setNow('2026-10-27', '00:20')
+    const done2 = await h.svc.completeStep(s2.id, { date: run2.date })
+    expect(done2.date).toBe(TODAY)
+    expect((await blocksOf(s2.id))[0]?.status).toBe('fulfilled')
+    await expect(h.svc.completeStep(s3.id, { date: TODAY })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError) // not begun ⇒ a new make-good
+  })
+
+  // 7 — rejections, all with no write
+  it('rejections: beyond window · not a pending occurrence · bad slot · non-drivable — no block written', async () => {
+    const rid = await world({ prefs: win(2) })
+    const s = await h.svc.addStep(rid, { title: 'Stretch' })
+    setNow(TODAY)
+    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-23', slot: slot() })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
+    await h.svc.completeStep(s.id, { date: '2026-10-25' })
+    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError) // done
+    await h.svc.planSkipDates(s.id, ['2026-10-24'])
+    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-24', slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError) // planned skip
+    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-27', slot: slot('2026-10-27') })).rejects.toBeInstanceOf(
+      NotMissedOccurrenceError,
+    ) // future
+    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot(TODAY, '09:00', '09:30') })).rejects.toBeInstanceOf(
+      InvalidRescheduleSlotError,
+    ) // before now
+    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: { start: at(TODAY, '15:00'), end: at(TODAY, '15:00') } })).rejects.toBeInstanceOf(
+      ZodError,
+    ) // end ≤ start — a malformed input (the module's ZodError convention)
+    const s2 = await h.svc.addStep(rid, { title: 'Two' }) // added today → in today's step set
+    await expect(h.svc.rescheduleStep(s2.id, { date: TODAY, slot: slot('2026-10-29') })).rejects.toBeInstanceOf(
+      InvalidRescheduleSlotError,
+    ) // past the last make-good day (26 + 2 = 28)
+    await expect(h.svc.rescheduleStep(s2.id, { date: '2026-10-25', slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError) // not in D's step set
+    await h.svc.setLifecycle(rid, 'paused')
+    await expect(h.svc.rescheduleStep(s2.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError) // paused
+    await h.svc.setLifecycle(rid, 'active')
+    const work = await h.svc.addStep(rid, { title: 'W', step_type: 'work' })
+    const half = await h.svc.addStep(rid, { title: 'H', entity_type: 'task' })
+    const gym = await h.svc.addStep(rid, { title: 'G', step_type: 'workout' })
+    for (const x of [work, half, gym]) {
+      await expect(h.svc.rescheduleStep(x.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(EntityUnavailableError)
+    }
+    expect(count('SELECT count(*) AS n FROM planned_blocks')).toBe(0)
+  })
+
+  it('rejections: not an occurrence of the rule; no habits dep; unwired timer; an obligation gets a session-less block', async () => {
+    let rid = await world({ prefs: win(2), rule: 'FREQ=WEEKLY;BYDAY=MO' })
+    let s = await h.svc.addStep(rid, { title: 'Weekly' })
+    setNow(TODAY)
+    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError)
+    rid = await world({ prefs: win(2), withHabits: false })
+    s = await h.svc.addStep(rid, { title: 'Habit', entity_type: 'habit', entity_id: 'h1' })
+    setNow(TODAY)
+    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(EntityUnavailableError)
+    rid = await world({ prefs: win(2), tasksTimer: false })
+    s = await h.svc.addStep(rid, { title: 'Check' })
+    setNow(TODAY)
+    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect(count('SELECT count(*) AS n FROM planned_blocks')).toBe(0)
+    rid = await world({ prefs: win(2) })
+    const ob = await h.tasks.createTask({ title: 'Rent', kind: 'obligation', due_date: TODAY })
+    s = await h.svc.addStep(rid, { title: 'Rent', entity_type: 'task', entity_id: ob.id })
+    setNow(TODAY)
+    await h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot() })
+    expect((await blocksOf(s.id))[0]?.sub_type).toBeNull()
+  })
+
+  // 8 — admissibility is step-level
+  it('step level: on a threshold-done day an undone step is reschedulable; with no window a past undone day is reschedulable', async () => {
+    let rid = await world({ prefs: prefsOf({ completion: { kind: 'threshold', percent: 50 }, miss: { acceptance_window_days: 2 } }) })
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    const b = await h.svc.addStep(rid, { title: 'B' })
+    setNow(TODAY)
+    await h.svc.completeStep(a.id, { date: '2026-10-25' })
+    expect((await h.svc.evaluateRoutine(rid, { date: '2026-10-25' })).status).toBe('done')
+    expect((await h.svc.rescheduleStep(b.id, { date: '2026-10-25', slot: slot() })).status).toBe('scheduled')
+    rid = await world({ prefs: prefsOf({ completion: { kind: 'all_or_nothing' } }) })
+    const c = await h.svc.addStep(rid, { title: 'C' })
+    setNow(TODAY)
+    expect((await h.svc.rescheduleStep(c.id, { date: '2026-10-21', slot: slot('2026-11-30') })).status).toBe('scheduled')
+  })
+
+  // 9 — targets
+  it('targets: habit → a session-less block, advanced does not fulfil, done does', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }) // habits reads `new Date()`, which a Date.now spy doesn't pin
+    try {
+      vi.setSystemTime(at('2026-10-20'))
+      h = await setup({ prefs: win(2) })
+      const rid = (await h.svc.createRoutine({ name: 'R', recurrence_rule: 'FREQ=DAILY' })).id
+      const hab = await h.habits.createHabit({ name: 'Pushups', frequency: 'daily', target_count: 2 })
+      const s = await h.svc.addStep(rid, { title: 'Pushups', entity_type: 'habit', entity_id: hab.id })
+      vi.setSystemTime(at(TODAY))
+      await h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot() })
+      expect((await blocksOf(s.id))[0]?.sub_type).toBeNull()
+      expect((await h.svc.completeStep(s.id, { date: TODAY })).status).toBe('advanced')
+      expect((await blocksOf(s.id))[0]?.status).toBe('planned')
+      await h.habits.logCompletion(hab.id, { date: TODAY, count: 2 }) // the habit reaches its target natively (the target-3 test)
+      expect((await h.svc.completeStep(s.id, { date: TODAY })).status).toBe('done')
+      expect((await blocksOf(s.id))[0]?.status).toBe('fulfilled')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('targets: a legacy check-off is linked first; a registered review make-good completes and fulfils', async () => {
+    const rid = await world({ prefs: win(2) })
+    const legacy = await h.svc.addStep(rid, { title: 'Legacy' })
+    h.bsql.prepare('UPDATE routine_step SET entity_type = NULL, entity_id = NULL WHERE id = ?').run(legacy.id)
+    await h.sessionRegistry.register(reviewDef([{ from: 'scheduled', to: 'completed', event: 'complete' }]))
+    const rev = await h.svc.addStep(rid, { title: 'Review', step_type: 'review' })
+    setNow(TODAY)
+    const lr = await h.svc.rescheduleStep(legacy.id, { date: TODAY, slot: slot() })
+    expect(lr.target).toBe('task')
+    expect((await h.svc.listSteps(rid)).find((x) => x.id === legacy.id)?.entity_type).toBe('task')
+    expect((await blocksOf(legacy.id))[0]?.sub_type).toBe('work')
+
+    await h.svc.rescheduleStep(rev.id, { date: '2026-10-25', slot: slot() })
+    const d = await h.svc.completeStep(rev.id, { date: '2026-10-25' })
+    expect((await h.sessions.getSession(d.session_id as string))?.session.status).toBe('completed')
+    expect((await blocksOf(rev.id))[0]?.status).toBe('fulfilled')
+  })
+
+  // 10 — a skip cancels the pending block
+  it('skip cancels: logged skip, editCompletion{skipped:true}, planSkipDates([D]) → block skipped and not due', async () => {
+    const rid = await world({ prefs: win(2) })
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    const b = await h.svc.addStep(rid, { title: 'B' })
+    const c = await h.svc.addStep(rid, { title: 'C' })
+    setNow(TODAY)
+    await h.svc.rescheduleStep(a.id, { date: '2026-10-25', slot: slot() })
+    await h.svc.skipStep(a.id, { date: '2026-10-25', reason: 'sick' })
+    expect((await blocksOf(a.id))[0]?.status).toBe('skipped')
+
+    await h.svc.skipStep(b.id, { date: '2026-10-25' }) // a logged skip is still reschedulable (a make-good flips it, BR-RT-S3-2)
+    await h.svc.rescheduleStep(b.id, { date: '2026-10-25', slot: slot() })
+    await h.svc.editCompletion(b.id, '2026-10-25', { skipped: true, skip_reason: 'still sick' })
+    expect((await blocksOf(b.id))[0]?.status).toBe('skipped')
+
+    await h.svc.rescheduleStep(c.id, { date: TODAY, slot: slot() })
+    await h.svc.planSkipDates(c.id, [TODAY])
+    expect((await blocksOf(c.id))[0]?.status).toBe('skipped')
+    expect(await dueAll()).toEqual([])
   })
 })

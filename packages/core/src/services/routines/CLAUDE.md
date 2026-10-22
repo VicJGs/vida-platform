@@ -19,4 +19,5 @@ explicitly. Lists sort `sort_order|step_order`, then `created_at`, then id.
 As-built (re-scope 2026-10-21): S1 routine + step CRUD · S2 completion ledger + skips · S2c floor conformance
 (setLifecycle, entity_type registry check, date/progress/RRULE/name validation, ordering). S3 run/drive · S4 policy evaluation · S5 progress +
 analytics · S5c the Q1/RT-4/D3 correction (every step drives an entity: a check-off step IS a Task; a standard task's occurrences are Tasks `work`
-sessions; any REGISTERED session sub-type; routines registers no sub-type). Next: S6 reschedule. Composition-root registration is NOT this module's ① track (fe-routines entity close).
+sessions; any REGISTERED session sub-type; routines registers no sub-type) · S6 reschedule = an SS-8 intent block (Sessions
+`planBlock`, source `routines:<D>`; the make-good links + fulfils) + the acceptance-window write guard. Next: S7 routine-level effects. Composition-root registration is NOT this module's ① track (fe-routines entity close).

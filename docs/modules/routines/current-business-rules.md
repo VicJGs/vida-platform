@@ -154,6 +154,31 @@
 - **Recorded limits:** the obligation-only reflection limit (a completed obligation reads done on later days until reopened) carries into streak/rate/progress; archived routines aren't served; the ical.js helpers + hang guard
   aren't shared with tasks (tasks' `nextOccurrence` is exposed: Victor).
 
+**S6 — Reschedule + acceptance-window guard** (`delivery/PLAN-S6-reschedule-acceptance-window.md` v3)
+- **BR-RT-S6-1 · Guard (RT-6, contract.md:55, business-rules.md:120).** A make-good/skip write for a PAST date D is rejected when
+  `addDays(D, window) < today` (S5's real-miss predicate) → `OutsideAcceptanceWindowError`, no state change. Guarded: `completeStep`/`runStep`,
+  `skipStep`, `planSkipDates` (whole list), `editCompletion` touching `skipped`. Free: `deleteCompletion`, other edits (RT-14/G7). No window ⇒
+  no guard; a malformed window throws only on a past write. The step loads first (`StepNotFoundError` precedes). Lifecycle is ignored.
+- **BR-RT-S6-2 · Reschedule = an SS-8 intent block.** One `planned_blocks` row targeting `('routine_step', stepId)` in a caller-given slot;
+  D is the block's provenance (`source 'routines:<D>'`). No session, no ledger row. One pending block per (step, D): a re-reschedule moves it.
+- **BR-RT-S6-3 · Admissible = make-good-admissible at step level.** D ≤ today · an occurrence of the rule · in the step set as of D · not
+  planned-skipped · not done · routine active (A3). No window ⇒ any past undone D. A logged skip is admissible. The target must be drivable
+  (the S5c resolution; unwired timer / no habits dep / non-drivable → `EntityUnavailableError`).
+- **BR-RT-S6-4 · Slot.** `start ≥ now`, slot day ≥ D, and with a window ≤ the last make-good day → else `InvalidRescheduleSlotError`.
+- **BR-RT-S6-5 · Make-good fulfils (SS-8); a session linked to D's block is D's (R5b).** After a durable drive+stamp (best-effort, inside
+  the per-step lock): the occurrence session gets `planned_block_id` + `scheduling_mode 'planned'`; on done the block → `fulfilled`
+  (a habit `advanced` doesn't fulfil). Any open/finished session linked to a `routines:<D>` block stamps D (task, session, focus paths),
+  decided before the done check (a linked focus finished in the widget, then completed under today, stamps D). A make-good **begun**
+  in-window (a guarded `runStep(D)`) completes even after the window closes: completing it is not a new make-good (contract.md:55
+  rejects a make-good *past* the window; this one started inside it) — under any date the caller passes, D included (a running
+  session linked to D's pending block skips the guard). [INTERP — derived from contract.md:55 + RT-6, flagged to Victor at close-out] A re-entered UNLINKED running occurrence reports its own start
+  day and is never linked to another date's block.
+- **BR-RT-S6-6 · Skip cancels.** A logged skip, `editCompletion{skipped:true}`, or `planSkipDates` covering D sets D's pending block → `skipped`.
+- **S6 limits:** `rescheduleStep` reads the window even for D = today (the slot bound needs it), so a malformed window rejects it; an
+  UNLINKED running occurrence re-entered under another date keeps the S5c attribution limit; a stale pending block past its window →
+  S9 (the owner's live read, sessions business-rules.md:72-74).
+  A block cancelled by a skip stays `skipped` if its already-running linked session is then completed (D stamped done): edge, recorded.
+
 ## 2. Rule taxonomy
 | Category | Rules | Enforced by | Default when absent | Who changes it | Reset / delete semantics |
 |---|---|---|---|---|---|

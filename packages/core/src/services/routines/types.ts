@@ -24,6 +24,7 @@ import type {
   UpdateStepSchema,
   CompleteStepSchema,
   RunStepSchema,
+  RescheduleStepSchema,
   EvaluateRoutineSchema,
   SkipStepSchema,
   EditRoutineCompletionSchema,
@@ -134,6 +135,7 @@ export type AddStepInput = z.infer<typeof AddStepSchema>
 export type UpdateStepInput = z.infer<typeof UpdateStepSchema>
 export type CompleteStepInput = z.infer<typeof CompleteStepSchema>
 export type RunStepInput = z.infer<typeof RunStepSchema>
+export type RescheduleStepInput = z.infer<typeof RescheduleStepSchema>
 export type EvaluateRoutineInput = z.infer<typeof EvaluateRoutineSchema>
 export type SkipStepInput = z.infer<typeof SkipStepSchema>
 export type EditRoutineCompletionInput = z.infer<typeof EditRoutineCompletionSchema>
@@ -173,7 +175,7 @@ export class InvalidRecurrenceRuleError extends Error {
  *  session sub-type. There is no entity-less step. */
 export type StepTarget = 'task' | 'habit' | 'focus' | 'session'
 /** 'advanced' = a habit ticked but still below its target_count (a repeat run stays 'advanced': habits' re-log is a patch). */
-export type StepRunStatus = 'done' | 'advanced' | 'in_progress'
+export type StepRunStatus = 'done' | 'advanced' | 'in_progress' | 'scheduled' // 'scheduled' — S6 rescheduleStep (an SS-8 intent block)
 
 /** S3 — the live state of a driven step (seam `StepRunState`). `completion` is the stamped ledger row when status is 'done'. */
 export interface StepRunState {
@@ -184,6 +186,8 @@ export interface StepRunState {
   completion: RoutineCompletion | null
   session_id?: string
   focus_id?: string
+  /** S6 — the SS-8 intent block of a rescheduled occurrence (rescheduleStep), or the one a make-good fulfilled/linked. */
+  planned_block_id?: string
   /** TAS-23 complete-but-flag passthrough: the task IS completed, its next occurrence failed to spawn. */
   flag?: 'recurrence_regen_failed'
 }
@@ -202,6 +206,42 @@ export class EntityUnavailableError extends Error {
   ) {
     super(`Step ${stepId} cannot be driven: ${reason}`)
     this.name = 'EntityUnavailableError'
+  }
+}
+
+/** S6 (RT-6, contract.md:55, business-rules.md:120) — a make-good/skip/reschedule write for a day beyond the user's acceptance
+ *  window (`addDays(date, window) < today`): rejected, no state change. */
+export class OutsideAcceptanceWindowError extends Error {
+  constructor(
+    public readonly stepId: string,
+    public readonly date: string,
+    public readonly windowDays: number,
+  ) {
+    super(`Step ${stepId}: ${date} is beyond the ${windowDays}-day acceptance window`)
+    this.name = 'OutsideAcceptanceWindowError'
+  }
+}
+
+/** S6 (R1) — `rescheduleStep` for a date that is not a make-good-admissible occurrence of the step. */
+export class NotMissedOccurrenceError extends Error {
+  constructor(
+    public readonly stepId: string,
+    public readonly date: string,
+    public readonly reason: 'future' | 'not_an_occurrence' | 'not_in_step_set' | 'planned_skip' | 'done' | 'inactive',
+  ) {
+    super(`Step ${stepId}: ${date} is not a reschedulable occurrence (${reason})`)
+    this.name = 'NotMissedOccurrenceError'
+  }
+}
+
+/** S6 (R2) — the caller-given slot is before now, before D's day, or past the last make-good day. */
+export class InvalidRescheduleSlotError extends Error {
+  constructor(
+    public readonly stepId: string,
+    public readonly reason: 'before_now' | 'before_occurrence' | 'past_window',
+  ) {
+    super(`Step ${stepId}: invalid reschedule slot (${reason})`)
+    this.name = 'InvalidRescheduleSlotError'
   }
 }
 
@@ -259,6 +299,11 @@ export interface RoutinesService {
   /** ROU-07 — drive the step's target (task occurrence start · session start · habit tick · focus start/re-entry) (S5c).
    *  Drive first, stamp second (N7). Throws `EntityUnavailableError` / `StepNotFoundError` before any routine write. */
   runStep(stepId: string, input?: RunStepInput): Promise<StepRunState>
+  /** S6 (ROU-10, SS-8) — move a missed occurrence D into a caller-given slot: writes ONE planned block (intent), no session, no
+   *  ledger row; the make-good (`completeStep`/`runStep(D)`) creates the occurrence session carrying `planned_block_id` and
+   *  fulfils it. Throws `OutsideAcceptanceWindowError` · `NotMissedOccurrenceError` · `InvalidRescheduleSlotError` ·
+   *  `EntityUnavailableError` · `StepNotFoundError`, all before any write. */
+  rescheduleStep(stepId: string, input: RescheduleStepInput): Promise<StepRunState>
 
   // ── S4: policy evaluation (read-only, derive-on-read) ────────────
   /** ROU-12 — judge a routine's occurrence date under the USER's policy (prefs port). Always returns what was done (RT-5);

@@ -131,10 +131,10 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
 - §XXVIII-minor: steps 1–3 landed in one pass (code drafted alongside the test rewrite, not strictly red-first); gates re-proved green after.
 
-## Build Steps — S6 reschedule (SS-8 block) + acceptance-window guard (PLAN-S6 v3 §5 · awaiting Approval 2)
-- [ ] 1. Tests first (red): routines gates 1–10 (+6b) · sessions gate 11
-- [ ] 2. Sessions (R1): schemas · planBlock · updatePlannedBlock · softDeletePlannedBlock · listPlannedBlocksForTarget · dueIn status filter  (sessions suite green)
-- [ ] 3. Routines types/validators/index — 3 errors · RescheduleStepInput/Schema · StepRunState 'scheduled' + planned_block_id
-- [ ] 4. Routines service — a guard (+ shared window helper, serialized skips) · b blocks · c rescheduleStep · d0 R5b day attribution · d make-good hook · e skip hooks  (gate points after 4a and 4e)
-- [ ] 5. Docs (row 7)
+## Build Steps — S6 reschedule (SS-8 block) + acceptance-window guard (PLAN-S6 v3 §5 · Approval 2 2026-10-22)
+- [x] 1. Tests first (red): routines gates 1–10 (+6b) · sessions gate 11
+- [x] 2. Sessions (R1): schemas · planBlock · updatePlannedBlock · softDeletePlannedBlock · listPlannedBlocksForTarget · dueIn status filter  (sessions suite green)
+- [x] 3. Routines types/validators/index — 3 errors · RescheduleStepInput/Schema · StepRunState 'scheduled' + planned_block_id
+- [x] 4. Routines service — a guard (+ shared window helper, serialized skips) · b blocks · c rescheduleStep · d0 R5b day attribution · d make-good hook · e skip hooks  (gate points after 4a and 4e)
+- [x] 5. Docs (row 7)
 - [ ] 6. Gates — tsc · eslint · routines + sessions · full core · g2 · /critique · §XXIX

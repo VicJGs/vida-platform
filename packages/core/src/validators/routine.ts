@@ -78,6 +78,13 @@ export const CompleteStepSchema = z.object({
 export const RunStepSchema = z.object({
   date: CalendarDate.optional(),
 })
+// S6 — rescheduleStep: the missed occurrence D + the caller-given slot (Unix ms; end > start when given; the R2 day bounds are the service's).
+export const RescheduleStepSchema = z.object({
+  date: CalendarDate,
+  slot: z
+    .object({ start: z.number().int(), end: z.number().int().optional() })
+    .refine((s) => s.end === undefined || s.end > s.start, { message: 'slot.end must be > slot.start', path: ['end'] }),
+})
 // S4 — evaluateRoutine input: the occurrence date judged (default = UTC today).
 export const EvaluateRoutineSchema = z.object({
   date: CalendarDate.optional(),

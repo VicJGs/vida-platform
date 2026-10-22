@@ -66,8 +66,11 @@ planSkipDates(stepId: Id, dates: string[]): Promise<RoutineStep>                
 editCompletion(stepId: Id, date: string, patch: { skipped?; skip_reason?; actual_duration_minutes? }): Promise<RoutineCompletion>
 deleteCompletion(stepId: Id, date: string): Promise<void>          // HARD (ledger has no deleted_at)
 listCompletions(stepId: Id): Promise<RoutineCompletion[]>
-rescheduleStep(stepId: Id, date: string): Promise<DueItem>         // ⟲ amended (R3): moves the occurrence to the CALLER-given date/slot;
-                                                                   //   OutsideAcceptanceWindow if past window. Auto-slot (G5) = borrowed leg
+rescheduleStep(stepId: Id, input: { date: string; slot: { start: number; end?: number } }): Promise<StepRunState>
+                                                                   // ⟲ amended (S6 v3, SS-8): writes ONE planned_blocks row (intent) for occurrence D in the
+                                                                   //   CALLER-given slot (source 'routines:<D>'); no session, no ledger row. The make-good
+                                                                   //   (completeStep/runStep(D)) creates the session carrying planned_block_id + fulfils it;
+                                                                   //   a skip of D cancels it. Auto-slot (G5) = borrowed leg (M1.2)
 ```
 
 ## Derivations — evaluate / progress / analytics (S4, S5)
@@ -100,7 +103,9 @@ function registerRoutinesDueProvider(sessions: SessionsService, svc: RoutinesSer
 ## Typed errors (fail loud — ROU-30)
 ```ts
 EntityUnavailableError   // ⟲ renamed (S3, module *Error convention) — a step's driven entity missing/deleted/port-absent → typed step state, never silent skip (RT-3)
-OutsideAcceptanceWindow  // make-good/reschedule past the window → rejected, no state change (RT-6)
+OutsideAcceptanceWindowError  // ⟲ S6 (module *Error naming): make-good/skip/reschedule past the user's window → rejected, no state change (RT-6)
+NotMissedOccurrenceError      // S6: rescheduleStep for a date that isn't a make-good-admissible occurrence of the step (future · not an occurrence · not in the step set · planned skip · done · inactive)
+InvalidRescheduleSlotError    // S6: the slot is before now, before D's day, or past the last make-good day
 PolicyUndefined          // ⟲ S4: not thrown — evaluateRoutine returns policy_source 'undefined' (flagged); the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves
 InvalidRoutinePolicyError // S4: the port returned a completion kind the docs don't define (fails loud)
 ProviderEmitFailed       // dueIn/summary failure isolated — routine + sibling providers unaffected (RT-13)
