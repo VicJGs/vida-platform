@@ -28,49 +28,12 @@ import {
   getSchemaVersion,
   initializeConnection,
   DEFAULT_SQLCIPHER_CONFIG,
-  type SqliteDriver,
   type Migration,
+  type SqliteDriver,
 } from '@vida/core'
+import { createBetterSqlite3Driver } from './test-driver'
 
-/** Build an async SqliteDriver backed by a synchronous better-sqlite3 handle. */
-function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
-  return {
-    async exec(sqlText, params) {
-      const stmt = db.prepare(sqlText)
-      if (stmt.reader) {
-        const rows = stmt.all(...(params ?? [])) as Record<string, unknown>[]
-        return { rows, changes: 0, lastInsertRowId: 0 }
-      }
-      const info = stmt.run(...(params ?? []))
-      return { rows: [], changes: info.changes, lastInsertRowId: info.lastInsertRowid }
-    },
-    async run(sqlText, params) {
-      // Transaction-control + DDL statements must go through exec() in
-      // better-sqlite3 (prepared BEGIN/COMMIT is rejected); parameterised
-      // DML goes through a prepared statement.
-      if (!params || params.length === 0) {
-        db.exec(sqlText)
-      } else {
-        db.prepare(sqlText).run(...params)
-      }
-    },
-    async query(sqlText, params) {
-      return db.prepare(sqlText).all(...(params ?? [])) as never
-    },
-    async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
-    },
-    async batch(statements) {
-      for (const s of statements) {
-        if (s.params && s.params.length > 0) db.prepare(s.sql).run(...s.params)
-        else db.exec(s.sql)
-      }
-    },
-    async close() {
-      db.close()
-    },
-  }
-}
+// the shared better-sqlite3 stand-in (extracted to ./test-driver for reuse — fe-calendar S7 R13a)
 
 const fixture = sqliteTable('fixture', {
   id: text('id').primaryKey(),
@@ -148,9 +111,7 @@ describe('migration runner (async)', () => {
     // version stays 0
     expect(await getSchemaVersion(driver)).toBe(0)
     // the probe table was rolled back (SQLite has transactional DDL)
-    const tables = await driver.values(
-      `SELECT name FROM sqlite_master WHERE type='table' AND name='probe'`,
-    )
+    const tables = await driver.values(`SELECT name FROM sqlite_master WHERE type='table' AND name='probe'`)
     expect(tables).toHaveLength(0)
 
     await driver.close()

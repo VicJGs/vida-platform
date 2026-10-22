@@ -136,3 +136,8 @@ optional (D-S6-DEV-2).
   owning capability ships** (amended S2, D-S2-DEV-3: a no-op handler renders dead focusable controls; absent ⇒ the
   renderer's read-only state). The intent surface is fixed here so the renderer never changes when it lands — S7/the
   owning capability just passes the handler.
+
+## S7 — SHIPPED (2026-10-22, the entity close; PLAN-S7-entity-close.md)
+- **B realised:** `useCalendar(range, focusedDate, weekStartsOn, {enabled,timeFormat,now})` (`apps/web/src/app/calendar/use-calendar.ts`) over the pure `calendarQueries` + `calendar-derive.ts`; the live services come from `db/composition-root.ts` `composeServices` (sessions · habits · tasks · purposes · relationships + 3 dueIn lanes).
+- **Due-work feed = `sessions.dueIn`** (D-S7-DEV-1 — supersedes the `buildDashboard` per-day rows above for Month/Agenda/Week/Year): two calls per span (UTC bounds for date lanes · local bounds for planned blocks); tasks placed via the `listTasks({open:true})` join on each of due/scheduled. `review.getDue` is NOT a direct read (G2 — owning modules' dueIn lanes).
+- **V13 amended:** `color?` (absent → muted) + `ThreadState 'off'`. **CalendarView:** `, today` label + controlled unfurl. **`pulseKey`** on the 5 renderers + `RangeTransition`.

@@ -4,7 +4,7 @@ process.env.TZ = 'America/Sao_Paulo'
 import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, within } from '@testing-library/react'
-import { Text } from '@tamagui/core'
+import { Text, View } from '@tamagui/core'
 import { UIProvider } from '../provider'
 import { LivingView, type HabitThread, type LivingDay, type PurposeBudget } from './living-view'
 
@@ -137,6 +137,42 @@ describe('LivingView — layout + lanes', () => {
     expect(rows[1].textContent).toContain(
       'Read 20 min: kept Mon, Wed; missed Tue; today Thu; upcoming Fri, Sat, Sun — broke Tue · back on',
     )
+  })
+})
+
+describe('LivingView — S7 amendments (V13 color? · off)', () => {
+  // A rest day (a non-daily habit's unscheduled day) + a thread/purpose with no colour source (D-S6-DEV-2/-3).
+  const REST: HabitThread = { id: 'g', name: 'Gym', days: ['kept', 'off', 'missed', 'today', 'off', 'future', 'future'] }
+  const UNCOLOURED: PurposeBudget = { id: 'u', name: 'Health', hours: null, fraction: null }
+  const muted = () => {
+    const ref = renderUI(<View className="ref" backgroundColor="$colorTextMuted" />)
+    const out = { bg: cls(ref.container.querySelector('.ref'), '_backgroundColor-') }
+    ref.unmount()
+    expect(out.bg).not.toBe('') // a vacuous '' === '' comparison would pass anything
+    return out
+  }
+
+  it('an off day is a distinct node (no ring) named "rest day", never "missed"', () => {
+    const { getByRole } = renderUI(living({ threads: [REST] }))
+    const row = within(within(getByRole('group', { name: 'Habit threads' })).getByRole('list')).getByRole('listitem')
+    expect(row.querySelectorAll('.vida-thread-off')).toHaveLength(2)
+    expect(row.querySelectorAll('.vida-thread-missed')).toHaveLength(1)
+    // every day still draws a node + the connector runs through the rest days
+    expect(row.querySelectorAll('[class*="vida-thread-"]:not(.vida-thread-connector)')).toHaveLength(7)
+    expect(row.querySelectorAll('.vida-thread-connector')).toHaveLength(6)
+    expect(row.textContent).toContain('Gym: kept Mon; missed Wed; today Thu; upcoming Sat, Sun; rest day Tue, Fri')
+  })
+
+  it('absent colour → the neutral muted ink (dot, node fill, connector), never a fabricated hex', () => {
+    const ref = muted()
+    const { getByRole } = renderUI(living({ threads: [REST], budget: [UNCOLOURED] }))
+    const row = within(within(getByRole('group', { name: 'Habit threads' })).getByRole('list')).getByRole('listitem')
+    expect(cls(row.querySelector('.vida-thread-kept'), '_backgroundColor-')).toBe(ref.bg)
+    expect(cls(row.querySelector('.vida-thread-off'), '_backgroundColor-')).toBe(ref.bg)
+    expect(cls(row.querySelector('.vida-thread-connector'), '_backgroundColor-')).toBe(ref.bg)
+    const budget = within(getByRole('group', { name: /Purpose budget/ })).getByRole('listitem')
+    expect(cls(budget.querySelector('.vida-living-dot'), '_backgroundColor-')).toBe(ref.bg)
+    expect(budget.textContent).toContain('Health, unmeasured')
   })
 })
 

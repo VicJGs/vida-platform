@@ -62,6 +62,17 @@
   DB-ready gate, exposed as a `getServices()` singleton (not a React provider — App.tsx untouched; `seams/CLAUDE.md`
   sanctions the singleton). `deviceId` is read from / generated into `app_state['device_id']` (ADR-002 §5.0; `uuidv7()`).
   Each entity's closing slice (`register + flip`, golive-replan ELC-3/4) consumes it; adding a module appends its construction. `[FACT: db/composition-root.ts]`
+  **fe-calendar #19 S7 (2026-10-22):** construction is the exported PURE `composeServices(db, deviceId)` (no boot/worker/I/O —
+  `build()` = DB-ready → `initVault` → device id → `composeServices`), so a live better-sqlite3 vault can test it. Manifest now:
+  notes · journals · **sessions** (+ `SessionRegistry`, an `EffectRail` over an EMPTY effect registry) · **habits** · **tasks**
+  (`sessions`/`spaces`/`notes`) · **purposes** · **relationships**, then the three dueIn lanes (`register{Tasks,Purposes,Relationships}DueProvider`)
+  — the Calendar is the dueIn aggregator (first-consumer-pull). NO journal contributions (→ HARD-1) and NO effect handlers
+  (→ the owning units). `[FACT: db/composition-root.ts; composition-root{,.singleton}.test.ts]`
+- **[FACT] BR-RT-CAL-LIVE — the Global Calendar reads live, read-only.** `useCalendar` = `useQueries` over the pure
+  `calendarQueries` (only allowlisted reads — `dueIn`, `listAvailability*`, `getSessionAnalytics`, `getCompletionGrid`, `listTasks`,
+  `listPurposes`, `getPageByJournalDate`), keys under `['calendar', …]`; derivations in the pure `calendar-derive.ts`; the DEV `?sample`
+  fixtures (`calendar-sample.ts`) are router-subscribed and never reach prod. Proven read-only on a live vault (driver spy: 0 writes).
+  `[FACT: app/calendar/{use-calendar,calendar-derive,calendar-sample}.ts; calendar-readonly.test.ts]`
 - **[FACT] BR-RT-BOOT — no query before DB-ready.** `App.tsx` gates rendering (and thus any React Query read) on the
   one-time `open`+`migrate` resolving; the worker's `open` migrates internally (no double-migrate). `[FACT: App.tsx; boot.ts]`
 

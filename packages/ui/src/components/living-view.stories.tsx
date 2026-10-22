@@ -90,3 +90,11 @@ export const FutureWeek: Story = {
 export const Loading: Story = { args: { state: 'loading', budget: [], threads: [], days: DAYS.map(({ date, kind }) => ({ date, kind })) } }
 export const Empty: Story = { args: { state: 'empty', budget: [], threads: [], days: DAYS.map(({ date, kind }) => ({ date, kind })) } }
 export const Failed: Story = { args: { state: 'error' } }
+/** S7 (V13 amendments): a non-daily habit's rest days (`off` — a small solid dot, never a miss) + no colour source (the
+ *  neutral muted ink, D-S6-DEV-2) — the live M1 shape, since purposes/habits carry no colour column. */
+export const RestDaysNoColour: Story = {
+  args: {
+    budget: BUDGET.map(({ color: _c, ...b }) => ({ ...b, hours: null, fraction: null })),
+    threads: [{ id: 'gym', name: 'Gym', days: ['kept', 'off', 'missed', 'today', 'off', 'future', 'future'], streak: '3-day streak' }],
+  },
+}

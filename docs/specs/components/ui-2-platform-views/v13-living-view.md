@@ -53,9 +53,9 @@ renderer** (a calendar *range*, dispatched by the #19 `CalendarSurface`).
 
 ## 3. Contract (as shipped)
 ```ts
-export type ThreadState = 'kept' | 'missed' | 'today' | 'future'
-export interface PurposeBudget { id: string; name: string; color: string; hours: number | null; fraction: number | null; stale?: boolean }
-export interface HabitThread { id: string; name: string; color: string; days: readonly ThreadState[]; streak?: ReactNode }
+export type ThreadState = 'kept' | 'missed' | 'today' | 'future' | 'off'   // S7: off = a rest day
+export interface PurposeBudget { id: string; name: string; color?: string; hours: number | null; fraction: number | null; stale?: boolean }
+export interface HabitThread { id: string; name: string; color?: string; days: readonly ThreadState[]; streak?: ReactNode }
 export interface LivingItem extends CalChip { time?: string; slipping?: boolean }
 export type TodayEntry = { kind: 'item'; item: LivingItem } | { kind: 'open'; label: string; hint: string }
 export interface LivingDay { date: string; kind: 'past' | 'today' | 'future'; record?: ReactNode; done?: readonly LivingItem[]
@@ -91,3 +91,13 @@ agenda/week/year import it (no behaviour change); `Eyebrow` stays per-file (the 
 | Date | Session | Change |
 |------|---------|--------|
 | 2026-10-21 | fe-calendar #19 S5 | V13 authored at currency from the gated PLAN: BR-LV-1..9 + contract as shipped; no deviations (the flag colour + connector were doc-resolved); gate-caught fixes (thread spread · region tab stop). |
+
+## S7 amendments (fe-calendar S7, 2026-10-21 — PLAN-S7-entity-close.md G12/R7; D-S6-DEV-2/-3)
+- **`color?`** on `PurposeBudget` + `HabitThread`: no colour column exists on purposes/habits, so the live feed has none.
+  Absent ⇒ the neutral **`$colorTextMuted`** ink (dot · kept fill · node ring · connector) — never a fabricated hex (the
+  shipped `CalChip.color?` precedent). The purpose colour itself is a borrowed leg → fe-purposes-and-goals LIF-195.
+- **`ThreadState` `'off'`** = a non-daily habit's unscheduled (rest) day (BR-CAL-S6-7 — never a miss): a **5px solid
+  `$colorTextMuted` dot, no ring**, a different SHAPE from the hollow dotted `missed`; the connector still runs through it.
+  SR word **"rest day"** (`STATE_WORD`), grouped last in the row sentence. Story `RestDaysNoColour`.
+
+- **`pulseKey?: number` (fe-calendar S7, EC-F2 — PLAN-S7 G15/R9):** bump to pulse the today mark once (the #19 surface's Today button); 0/absent = no pulse (never on mount); each new value remounts the mark so the one-shot CSS animation (`internal/calendar-motion.ts`: `scale` 1→1.12→1, `slow` 400ms ease-out) restarts; reduced motion = none via the sheet's `@media` block. Shared with `RangeTransition` (the range fade, `moderate` 250ms opacity).

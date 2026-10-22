@@ -86,6 +86,7 @@ export {
   type HabitThread,
   type ThreadState,
 } from './components/living-view'
+export { RangeTransition, type RangeTransitionProps } from './components/range-transition'
 export { TableView, type TableViewProps, type Column } from './components/table-view'
 export { BoardView, type BoardViewProps, type BoardGroup } from './components/board-view'
 export { PomodoroWidget, type PomodoroWidgetProps, type PomodoroPhase } from './components/pomodoro-widget'

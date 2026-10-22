@@ -152,3 +152,5 @@ renders honestly-null (deny-safe absent-port precedent). **IN the greybox.** `[F
    `['morning','afternoon','evening']` subset for grouping. *(IR-5)*
 5. **Provider methods** — enumerate the thin backend reads #19 adds as first consumer (habit-completions slice ·
    study-availability · the measurement-source budget advertise on Purpose). *(IR-8)*
+
+> **S7 note (2026-10-22):** IR-2's "reuse `buildDashboard`" (:27, :71, :80-84) is SUPERSEDED for the due-work feed by D-S7-DEV-1 — the Calendar is the dueIn aggregator (IA §4) and reads `sessions.dueIn`; see PLAN-S7-entity-close.md G1.

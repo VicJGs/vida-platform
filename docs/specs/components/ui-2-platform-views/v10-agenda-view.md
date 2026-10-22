@@ -84,3 +84,5 @@ all-day task → morning (configurable).
 | Date | Session | Change |
 |------|---------|--------|
 | 2026-10-18 | fe-calendar #19 S2 | V10 authored at currency from the gated PLAN: BR-AV-1..12 + contract as shipped; deviations D-S2-DEV-1..3 (Victor-approved at the Visual Gate); gate-caught a11y fixes (border 3:1, hit 46). |
+
+- **`pulseKey?: number` (fe-calendar S7, EC-F2 — PLAN-S7 G15/R9):** bump to pulse the today mark once (the #19 surface's Today button); 0/absent = no pulse (never on mount); each new value remounts the mark so the one-shot CSS animation (`internal/calendar-motion.ts`: `scale` 1→1.12→1, `slow` 400ms ease-out) restarts; reduced motion = none via the sheet's `@media` block. Shared with `RangeTransition` (the range fade, `moderate` 250ms opacity).

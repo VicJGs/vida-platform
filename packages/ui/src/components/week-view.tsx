@@ -2,6 +2,7 @@ import { useId, type ReactElement, type ReactNode, type Ref } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { format } from 'date-fns'
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
+import { ensureCalendarMotionStyles, pulseClass } from '../internal/calendar-motion'
 import { parseLocalDate, SR_ONLY } from '../internal/calendar-shared'
 import { formatHour, HOUR_PX, layoutDay, normalizeSpan, type Span, windowFor } from '../internal/week-layout'
 
@@ -44,6 +45,9 @@ export interface WeekViewProps {
   allDay?: readonly CalChip[]
   /** 'YYYY-MM-DD'. Marks the column (accent number + underline + ", today"). */
   today?: string
+  /** fe-calendar S7 (EC-F2): bump to pulse the today mark ONCE (the surface's Today button). 0 / absent = no pulse (never on
+   *  mount); each new value remounts the mark, restarting the one-shot animation. Reduced motion = none (CSS @media). */
+  pulseKey?: number
   /** MINIMUM visible window, integer hours, half-open [start, end). Default [8, 20]. Grows to fit every block. */
   hours?: readonly [number, number]
   /** user_preferences.time_format. Default '24h'. */
@@ -120,6 +124,7 @@ export function WeekView({
   blocks,
   allDay,
   today,
+  pulseKey,
   hours,
   timeFormat = '24h',
   state = 'success',
@@ -128,6 +133,7 @@ export function WeekView({
   ref,
   ...rest
 }: WeekViewProps): ReactElement {
+  ensureCalendarMotionStyles()
   const r = rest as Record<string, unknown>
   const baseId = useId()
   const multi = days.length > 1
@@ -216,7 +222,13 @@ export function WeekView({
             </span>
             <View aria-hidden alignItems={multi ? 'center' : 'flex-start'} gap="$4">
               {local ? <Eyebrow>{format(local, 'EEE')}</Eyebrow> : null}
-              {isToday ? <TodayMark className="vida-week-today">{num}</TodayMark> : num}
+              {isToday ? (
+                <TodayMark key={pulseKey ?? 0} className={pulseClass(pulseKey, 'vida-week-today')}>
+                  {num}
+                </TodayMark>
+              ) : (
+                num
+              )}
             </View>
           </DayCol>
         )
@@ -232,7 +244,15 @@ export function WeekView({
             All day
           </Eyebrow>
         </GutterCell>
-        <View role="list" aria-labelledby={allDayId} flex={1} flexDirection="row" flexWrap="wrap" columnGap="$16" rowGap="$4">
+        <View
+          role="list"
+          aria-labelledby={allDayId}
+          flex={1}
+          flexDirection="row"
+          flexWrap="wrap"
+          columnGap="$16"
+          rowGap="$4"
+        >
           {chips.map((chip, i) => (
             <View key={`${chip.id}-${i}`} role="listitem" flexDirection="row" alignItems="center" gap="$8">
               <Dot aria-hidden backgroundColor={chip.color ?? '$colorTextMuted'} />
@@ -289,7 +309,14 @@ export function WeekView({
               ))}
             </View>
             {loading && i < 3 ? (
-              <SkeletonBar aria-hidden position="absolute" left={4} right={4} top={(i + 1) * HOUR_PX + 4} height={HOUR_PX - 8} />
+              <SkeletonBar
+                aria-hidden
+                position="absolute"
+                left={4}
+                right={4}
+                top={(i + 1) * HOUR_PX + 4}
+                height={HOUR_PX - 8}
+              />
             ) : null}
             {placed.length > 0 ? (
               <View role="list" aria-labelledby={headerId(i)} position="absolute" top={0} right={0} bottom={0} left={0}>

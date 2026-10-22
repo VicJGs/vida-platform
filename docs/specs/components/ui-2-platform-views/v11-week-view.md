@@ -90,3 +90,5 @@ Barrel: `WeekView`, `WeekViewProps`, `TimedBlock`, `CalChip`. Refinements vs the
 | Date | Session | Change |
 |------|---------|--------|
 | 2026-10-19 | fe-calendar #19 S3 | V11 authored at currency from the gated PLAN: BR-WV-1..13 + contract as shipped; deviation D-S3-DEV-1 (Victor-approved at the Visual Gate); gate-caught fixes (sr-only containing block → page overflow; explicit column names). |
+
+- **`pulseKey?: number` (fe-calendar S7, EC-F2 — PLAN-S7 G15/R9):** bump to pulse the today mark once (the #19 surface's Today button); 0/absent = no pulse (never on mount); each new value remounts the mark so the one-shot CSS animation (`internal/calendar-motion.ts`: `scale` 1→1.12→1, `slow` 400ms ease-out) restarts; reduced motion = none via the sheet's `@media` block. Shared with `RangeTransition` (the range fade, `moderate` 250ms opacity).

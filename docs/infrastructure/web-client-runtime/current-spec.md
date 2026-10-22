@@ -181,4 +181,10 @@ of their deferred hooks. The UI mechanics live in their own convention docs (`ap
   the current week). **No `onSlotOpenTime`** (the slotting capability isn't wired — deny-safe). The S1 placeholder + its
   `EmptyState` import are gone: **all six ranges are live** on fixtures; S6/S7 bring the real reads + `useCalendar`.
   `[FACT: apps/web/src/app/calendar/index.tsx weekSpan · livingFixture · range==='living' dispatch; packages/ui/src/components/living-view.tsx; docs/specs/foundation/fe-calendar/delivery/PLAN-S5-living-renderer.md]`
+  **S7 SHIPPED (2026-10-22) — the ENTITY LIVE CLOSE:** every range reads LIVE data via **`useCalendar`** (`app/calendar/use-calendar.ts`,
+  BR-RT-CAL-LIVE) over `getServices()` — the composition root now builds sessions/habits/tasks/purposes/relationships + the
+  dueIn lanes (BR-RT-COMPROOT). Due work = `sessions.dueIn` per span (D-S7-DEV-1); derivations in `calendar-derive.ts` (TZ-forced
+  tests). The S1–S5 fixtures moved to `calendar-sample.ts` (DEV `?sample` only). `calendar-ui-store` gains `expandedDay` (the Month
+  unfurl — the store collapses it on a month/range change); the surface owns a local armed/disarmed Today `pulseKey` and wraps the
+  range in `RangeTransition`. Live Visual Gate PASS on real OPFS (Victor 2026-10-22). Spec: `docs/specs/foundation/fe-calendar/delivery/PLAN-S7-entity-close.md`.
   `[FACT: apps/web/src/app/calendar/index.tsx clampToMonth · yearFixture · pickMonth · range==='year' dispatch; packages/ui/src/components/year-view.tsx; docs/specs/foundation/fe-calendar/delivery/PLAN-S4-year-renderer.md BR-12, §5a]`

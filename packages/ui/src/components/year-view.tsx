@@ -2,6 +2,7 @@ import { useId, type CSSProperties, type ReactElement, type ReactNode, type Ref 
 import { styled, Text, View } from '@tamagui/core'
 import { format } from 'date-fns'
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
+import { ensureCalendarMotionStyles, pulseClass } from '../internal/calendar-motion'
 import { SR_ONLY } from '../internal/calendar-shared'
 import { buildYear, indexDensity, localDate, MONTH_MIN, resolveYear } from '../internal/year-layout'
 
@@ -27,6 +28,9 @@ export interface YearViewProps {
   density: readonly YearDensity[]
   /** 'YYYY-MM-DD'. Rings that day and accents its month heading (only when it falls in `year`). */
   today?: string
+  /** fe-calendar S7 (EC-F2): bump to pulse the today mark ONCE (the surface's Today button). 0 / absent = no pulse (never on
+   *  mount); each new value remounts the mark, restarting the one-shot animation. Reduced motion = none (CSS @media). */
+  pulseKey?: number
   /** user_preferences.week_starts_on: 0 = Sunday, 1 = Monday. Default 1. */
   weekStartsOn?: 0 | 1
   /** INTENT (navigate): a month heading was pressed — month index 0–11. Absent → plain headings, no tab stops. */
@@ -129,6 +133,7 @@ export function YearView({
   year: yearProp,
   density,
   today,
+  pulseKey,
   weekStartsOn = 1,
   onPickMonth,
   state = 'success',
@@ -137,6 +142,7 @@ export function YearView({
   ref,
   ...rest
 }: YearViewProps): ReactElement {
+  ensureCalendarMotionStyles()
   const r = rest as Record<string, unknown>
   const baseId = useId()
   const dev = process.env.NODE_ENV !== 'production'
@@ -177,7 +183,10 @@ export function YearView({
   const months = buildYear(year, weekStartsOn)
   // Accent a month ONLY when a real day key in it equals `today` — so the heading accent can never appear without the
   // ring (BR-6: never the sole signal); a malformed `today` ("2026-10") accents nothing.
-  const currentMonth = today == null ? -1 : months.findIndex((mm) => mm.rows.some((row) => row.some((s) => s.kind === 'day' && s.key === today)))
+  const currentMonth =
+    today == null
+      ? -1
+      : months.findIndex((mm) => mm.rows.some((row) => row.some((s) => s.kind === 'day' && s.key === today)))
 
   return (
     <YearRoot ref={ref} {...rest} role="group" aria-busy={loading || undefined}>
@@ -187,8 +196,7 @@ export function YearView({
         const name = (
           <MonthName id={nameId} className="vida-year-month" current={isCurrent}>
             {format(localDate(year, m.month, 1), 'MMMM')}
-            {/* the space is a sibling text node: accname drops a LEADING space inside the sr span ("January2026") */}
-            {' '}
+            {/* the space is a sibling text node: accname drops a LEADING space inside the sr span ("January2026") */}{' '}
             <span style={SR_ONLY}>{year}</span>
           </MonthName>
         )
@@ -215,8 +223,16 @@ export function YearView({
                       (isToday ? ', today' : '')
                     return (
                       <Cell key={ci} role="cell" aria-colindex={slot.col} aria-label={label} style={CELL_STYLE}>
-                        {level != null ? <Dot aria-hidden className="vida-year-dot" level={level === 2 ? 'busy' : 'has'} /> : null}
-                        {isToday ? <TodayRing aria-hidden className="vida-year-today" /> : null}
+                        {level != null ? (
+                          <Dot aria-hidden className="vida-year-dot" level={level === 2 ? 'busy' : 'has'} />
+                        ) : null}
+                        {isToday ? (
+                          <TodayRing
+                            key={pulseKey ?? 0}
+                            aria-hidden
+                            className={pulseClass(pulseKey, 'vida-year-today')}
+                          />
+                        ) : null}
                       </Cell>
                     )
                   })}

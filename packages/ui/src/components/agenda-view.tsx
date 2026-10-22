@@ -2,6 +2,7 @@ import { useId, type ReactElement, type ReactNode, type Ref } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { format } from 'date-fns'
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
+import { ensureCalendarMotionStyles, pulseClass } from '../internal/calendar-motion'
 import { parseLocalDate, SR_ONLY } from '../internal/calendar-shared'
 
 // fe-calendar #19 · S2 — agenda-view, the Agenda range renderer (the "another way" that solves the month grid's
@@ -43,6 +44,9 @@ export interface AgendaViewProps {
   days: readonly AgendaDay[]
   /** 'YYYY-MM-DD'. Marks the day + gates its daypart grouping. */
   today?: string
+  /** fe-calendar S7 (EC-F2): bump to pulse the today mark ONCE (the surface's Today button). 0 / absent = no pulse (never on
+   *  mount); each new value remounts the mark, restarting the one-shot animation. Reduced motion = none (CSS @media). */
+  pulseKey?: number
   /** loading | empty | error | success. Default 'success' (a success with zero items self-heals to empty). */
   state?: ViewState
   /** INTENT — the owning module performs the write (EC-12). When absent, no completion control renders. */
@@ -142,7 +146,13 @@ const StaticBox = styled(View, {
 function CheckMark(): ReactElement {
   return (
     <svg width={14} height={14} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 12.5 10 17.5 19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M5 12.5 10 17.5 19 7"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
@@ -150,6 +160,7 @@ function CheckMark(): ReactElement {
 export function AgendaView({
   days,
   today,
+  pulseKey,
   state = 'success',
   onToggleItem,
   empty,
@@ -157,6 +168,7 @@ export function AgendaView({
   ref,
   ...rest
 }: AgendaViewProps): ReactElement {
+  ensureCalendarMotionStyles()
   const r = rest as Record<string, unknown>
   const baseId = useId()
   const visibleDays = days.filter((d) => d.items.length > 0)
@@ -168,7 +180,9 @@ export function AgendaView({
       console.warn('[vida/ui] AgendaView: state="success" with no items — pass state="empty" (the app derives it).')
     if (state === 'loading' && visibleDays.length > 0)
       // eslint-disable-next-line no-console
-      console.warn('[vida/ui] AgendaView: state="loading" with `days` present — a stale render (loading should have no items).')
+      console.warn(
+        '[vida/ui] AgendaView: state="loading" with `days` present — a stale render (loading should have no items).',
+      )
     if (state === 'loading' || (state === 'success' && !effectiveEmpty))
       warnMissingName('AgendaView', r['aria-label'] as string | undefined, r['aria-labelledby'] as string | undefined)
   }
@@ -213,7 +227,12 @@ export function AgendaView({
       <ItemRow key={item.id} role="listitem">
         <TimeCell>
           {item.time != null ? (
-            <Text fontFamily="$body" fontSize="$small" color="$colorTextMuted" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <Text
+              fontFamily="$body"
+              fontSize="$small"
+              color="$colorTextMuted"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
               {item.time}
             </Text>
           ) : (
@@ -271,6 +290,8 @@ export function AgendaView({
           <DayRow key={`${day.date}-${dIdx}`} separated={dIdx > 0}>
             <DayRail id={dayId}>
               <Text
+                key={isToday ? (pulseKey ?? 0) : undefined}
+                className={isToday ? pulseClass(pulseKey, 'vida-agenda-today') : undefined}
                 fontFamily="$display"
                 fontSize="$heading"
                 fontWeight="500"

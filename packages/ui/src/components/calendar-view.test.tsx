@@ -7,6 +7,8 @@ import { cleanup, fireEvent, render } from '@testing-library/react'
 import { UIProvider } from '../provider'
 import { CalendarView } from './calendar-view'
 
+// the first render pays the cold Tamagui load — the week/living-view precedent (F003/F010)
+vi.setConfig({ testTimeout: 15000 })
 afterEach(cleanup)
 function renderUI(ui: React.ReactElement) {
   return render(<UIProvider>{ui}</UIProvider>)
@@ -72,7 +74,7 @@ describe('CalendarView', () => {
     const { getByRole } = renderUI(
       <CalendarView items={many} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} maxPerDay={3} aria-label="Cal" />,
     )
-    const cell = getByRole('cell', { name: '10 August 2026' })
+    const cell = getByRole('cell', { name: '10 August 2026, today' })
     expect(cell.querySelectorAll('[data-chip]')).toHaveLength(3)
     expect(cell.textContent).toContain('+2 more')
   })
@@ -81,7 +83,7 @@ describe('CalendarView', () => {
     const { getByRole } = renderUI(
       <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} aria-label="Cal" />,
     )
-    const todayCell = getByRole('cell', { name: '10 August 2026' })
+    const todayCell = getByRole('cell', { name: '10 August 2026, today' })
     expect(todayCell.querySelector('.vida-cal-today')).not.toBeNull()
   })
 
@@ -184,7 +186,7 @@ describe('CalendarView', () => {
     const { getByRole } = renderUI(
       <CalendarView items={[]} getDate={(e: Evt) => e.on} getKey={key} renderItem={chip} month={AUG} today={TODAY} aria-label="Cal" />,
     )
-    const mark = getByRole('cell', { name: '10 August 2026' }).querySelector('.vida-cal-today') as HTMLElement
+    const mark = getByRole('cell', { name: '10 August 2026, today' }).querySelector('.vida-cal-today') as HTMLElement
     expect(mark).not.toBeNull()
     // the mark is an underline wrapper (border-bottom), NOT a filled brand blob (no backgroundColor on the wrapper)
     expect(mark.className).toContain('_borderBottomWidth-2px')
@@ -243,5 +245,85 @@ describe('CalendarView', () => {
     const sepSat = getByRole('cell', { name: '5 September 2026' }) // Sat but out-of-month → oos wins
     expect(sepSat.className).toContain('_backgroundColor-colorSurfac')
     expect(dayNum(sepSat).className).toContain('col-colorTextMu') // muted (oos), NOT primary (weekend)
+  })
+})
+
+// ── fe-calendar S7 — the "today" SR label (G13) + the controlled unfurl (EC-F3, G14/R8) ─────────────────────
+describe('CalendarView — S7 today label + unfurl', () => {
+  const many: Evt[] = Array.from({ length: 5 }, (_, i) => ({ id: `e${i}`, on: '2026-08-12', title: `E${i}` }))
+  const base = { items: many, getDate: (e: Evt) => e.on, getKey: key, renderItem: chip, month: AUG, today: TODAY, 'aria-label': 'Cal' }
+  const expanded = (items: readonly Evt[], day: string) => (
+    <ul data-expanded={day}>
+      {items.map((e) => (
+        <li key={e.id}>{e.title}</li>
+      ))}
+    </ul>
+  )
+
+  it('today cell is named with the sibling ", today" suffix; other days are not', () => {
+    const { getByRole } = renderUI(<CalendarView {...base} items={[]} />)
+    expect(getByRole('cell', { name: '10 August 2026, today' })).toBeTruthy()
+    expect(getByRole('cell', { name: '11 August 2026' })).toBeTruthy()
+  })
+
+  it('no handler → "+K more" stays static text (every other consumer unchanged)', () => {
+    const { getByRole, queryByRole } = renderUI(<CalendarView {...base} />)
+    expect(getByRole('cell', { name: '12 August 2026' }).textContent).toContain('+2 more')
+    expect(queryByRole('button', { name: /more|all/i })).toBeNull()
+  })
+
+  it('handler → "+K more" is a collapsed button that requests that day', () => {
+    const onChange = vi.fn()
+    const { getByRole } = renderUI(<CalendarView {...base} onExpandedDayChange={onChange} renderExpanded={expanded} />)
+    const btn = getByRole('button', { name: 'Show all 5 items, 12 August 2026' })
+    expect(btn.getAttribute('aria-expanded')).toBe('false')
+    expect(btn.textContent).toContain('+2 more')
+    fireEvent.click(btn)
+    expect(onChange).toHaveBeenCalledWith('2026-08-12')
+  })
+
+  it('expandedDay → one spanning row after that week, every item, labelled; second press / Esc collapse, focus stays', () => {
+    const onChange = vi.fn()
+    const { getByRole, getAllByRole } = renderUI(
+      <CalendarView {...base} expandedDay="2026-08-12" onExpandedDayChange={onChange} renderExpanded={expanded} />,
+    )
+    const region = getByRole('cell', { name: 'All items, 12 August 2026' })
+    expect(region.getAttribute('aria-colspan')).toBe('7')
+    expect(region.querySelectorAll('li')).toHaveLength(5)
+    expect(getAllByRole('row')).toHaveLength(1 + 6 + 1) // header + 6 weeks + the expansion
+    // the expansion row sits directly after the week holding Aug 12
+    const rows = getAllByRole('row')
+    const weekIdx = rows.findIndex((r) => r.querySelector('[aria-label="12 August 2026"]'))
+    expect(rows[weekIdx + 1]).toContain(region)
+    const btn = getByRole('button', { name: 'Show all 5 items, 12 August 2026' })
+    expect(btn.getAttribute('aria-expanded')).toBe('true')
+    expect(btn.getAttribute('aria-controls')).toBe(region.id)
+    fireEvent.click(btn)
+    expect(onChange).toHaveBeenLastCalledWith(null)
+    btn.focus()
+    fireEvent.keyDown(btn, { key: 'Escape' })
+    expect(onChange).toHaveBeenLastCalledWith(null)
+    expect(document.activeElement).toBe(btn)
+  })
+
+  it('the expanded button carries a visible pressed state (not only aria-expanded) — g2 review #16', () => {
+    const btnClass = (expandedDay?: string) => {
+      const r = renderUI(<CalendarView {...base} expandedDay={expandedDay} onExpandedDayChange={vi.fn()} renderExpanded={expanded} />)
+      const c = r.getByRole('button', { name: 'Show all 5 items, 12 August 2026' }).getAttribute('class') ?? ''
+      r.unmount()
+      // the RESTING left-border colour class (jsdom's long prefix; the 0hover variant excluded)
+      return c.split(/\s+/).filter((x) => x.startsWith('_borderLeftColor-') && !x.includes('hover')).join(' ')
+    }
+    const closed = btnClass(undefined)
+    expect(closed).not.toBe('')
+    expect(btnClass('2026-08-12')).not.toBe(closed)
+  })
+
+  it('an expandedDay outside the 42-day grid renders no expansion', () => {
+    const { queryByRole, getAllByRole } = renderUI(
+      <CalendarView {...base} expandedDay="2027-01-01" onExpandedDayChange={vi.fn()} renderExpanded={expanded} />,
+    )
+    expect(queryByRole('cell', { name: /All items/ })).toBeNull()
+    expect(getAllByRole('row')).toHaveLength(7)
   })
 })

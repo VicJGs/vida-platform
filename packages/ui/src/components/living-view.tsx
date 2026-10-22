@@ -2,6 +2,7 @@ import { useId, type CSSProperties, type ReactElement, type ReactNode, type Ref 
 import { styled, Text, View } from '@tamagui/core'
 import { format } from 'date-fns'
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
+import { ensureCalendarMotionStyles, pulseClass } from '../internal/calendar-motion'
 import { parseLocalDate, SR_ONLY } from '../internal/calendar-shared'
 import { formatHours } from '../internal/living-format'
 import { Card } from './card'
@@ -17,13 +18,15 @@ import type { CalChip } from './week-view'
 // - The greybox's red flag text fails AA as text → the unit's emphasised-tag token `$colorBrandEmphasis` (S2 MUST tag);
 //   only the ⤻ glyph stays `$colorSignalDanger`, as a graphic.
 
-export type ThreadState = 'kept' | 'missed' | 'today' | 'future'
+/** `off` = a scheduled-off (rest) day of a non-daily habit — never a miss (BR-CAL-S6-7, fe-calendar S7). */
+export type ThreadState = 'kept' | 'missed' | 'today' | 'future' | 'off'
 
 export interface PurposeBudget {
   id: string
   name: string
-  /** Purpose colour — USER DATA (hex), never a theme token. */
-  color: string
+  /** Purpose colour — USER DATA (hex), never a theme token. Absent ⇒ the neutral muted ink (no colour source in M1,
+   *  D-S6-DEV-2) — never a fabricated hex. */
+  color?: string
   /** Hours this week; null ⇒ unmeasured (honest-null, ADR-011 §3.6) — never shown as 0. */
   hours: number | null
   /** 0..1 of the bar; null ⇒ no fill. */
@@ -35,7 +38,8 @@ export interface PurposeBudget {
 export interface HabitThread {
   id: string
   name: string
-  color: string
+  /** The habit's purpose colour (USER DATA hex). Absent ⇒ the neutral muted ink (D-S6-DEV-2). */
+  color?: string
   /** One state per day, aligned with `days`. */
   days: readonly ThreadState[]
   streak?: ReactNode
@@ -74,6 +78,9 @@ export interface LivingViewProps {
   threads?: readonly HabitThread[]
   /** INTENT (EC-9): slot today's open time. Absent → the block is a read-only reveal (M1). */
   onSlotOpenTime?: (date: string) => void
+  /** fe-calendar S7 (EC-F2): bump to pulse the today mark ONCE (the surface's Today button). 0 / absent = no pulse (never on
+   *  mount); each new value remounts the mark, restarting the one-shot animation. Reduced motion = none (CSS @media). */
+  pulseKey?: number
   /** loading | empty | error | success. Default 'success' (success with nothing self-heals to empty). */
   state?: ViewState
   empty?: ReactNode
@@ -86,8 +93,14 @@ export interface LivingViewProps {
 // Day Cards share the row (the WeekView DayCol precedent — RNW flexShrink defaults to 0, so minWidth alone would let one
 // long record widen its Card). 7 × 140 + 6 × 8 = 1028 fits the 1136 canvas; the region scrolls below that.
 const DAY_STYLE: CSSProperties = { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 140 }
-const THREAD_STATES: readonly ThreadState[] = ['kept', 'missed', 'today', 'future']
-const STATE_WORD: Record<ThreadState, string> = { kept: 'kept', missed: 'missed', today: 'today', future: 'upcoming' }
+const THREAD_STATES: readonly ThreadState[] = ['kept', 'missed', 'today', 'future', 'off']
+const STATE_WORD: Record<ThreadState, string> = {
+  kept: 'kept',
+  missed: 'missed',
+  today: 'today',
+  future: 'upcoming',
+  off: 'rest day',
+}
 
 function warn(msg: string): void {
   console.warn(`[vida/ui] LivingView: ${msg}`)
@@ -116,8 +129,16 @@ const Voice = styled(Text, {
   color: '$colorTextMuted',
 })
 const Dot = styled(View, { width: 6, height: 6, borderRadius: '$full', flexShrink: 0 })
+/** The neutral ink for an item/purpose/habit with no colour source (D-S6-DEV-2) — the shipped `CalChip.color?` precedent. */
+const NO_COLOUR = '$colorTextMuted'
 const Row = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$8' })
-const Track = styled(View, { width: 52, height: 5, borderRadius: '$full', backgroundColor: '$colorSurfaceSecondary', overflow: 'hidden' })
+const Track = styled(View, {
+  width: 52,
+  height: 5,
+  borderRadius: '$full',
+  backgroundColor: '$colorSurfaceSecondary',
+  overflow: 'hidden',
+})
 const Fill = styled(View, { height: '100%', borderRadius: '$full', backgroundColor: '$colorBrandPrimary' })
 // The day-columns scroller (the WeekView region precedent). Inset sized to `shadow.resting` (0 6px 16px -4px) so the
 // Cards' shadows render inside the clip; the negative margin keeps the Cards' edges aligned with the lane Cards above.
@@ -134,7 +155,14 @@ const ScrollRegion = styled(View, {
 })
 const DayRow = styled(View, { flexDirection: 'row', gap: '$8', alignItems: 'flex-start' })
 const ThreadNodes = styled(View, { flexDirection: 'row', flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 7 * 24 })
-const NodeCell = styled(View, { position: 'relative', flex: 1, minWidth: 24, height: 24, alignItems: 'center', justifyContent: 'center' })
+const NodeCell = styled(View, {
+  position: 'relative',
+  flex: 1,
+  minWidth: 24,
+  height: 24,
+  alignItems: 'center',
+  justifyContent: 'center',
+})
 // the concept's `.node::before`: from the previous cell's centre to this one's, drawn BEFORE (under) the node
 const Connector = styled(View, {
   position: 'absolute',
@@ -158,6 +186,9 @@ const Node = styled(View, {
       missed: { borderStyle: 'dotted' },
       today: {},
       future: { opacity: 0.4 },
+      // a rest day: a small solid dot, no ring — a different SHAPE from the hollow dotted `missed` (R7), so it never reads
+      // as a miss; the connector still runs through it
+      off: { width: 5, height: 5, borderWidth: 0, backgroundColor: '$colorTextMuted' },
     },
   } as const,
 })
@@ -190,7 +221,15 @@ function hasContent(d: LivingDay): boolean {
   )
 }
 
-function Chip({ item, struck = false, tone = 'primary' }: { item: LivingItem; struck?: boolean; tone?: 'primary' | 'muted' }) {
+function Chip({
+  item,
+  struck = false,
+  tone = 'primary',
+}: {
+  item: LivingItem
+  struck?: boolean
+  tone?: 'primary' | 'muted'
+}) {
   const Label = tone === 'muted' || struck ? Muted : Body
   return (
     <View role="listitem" gap={2}>
@@ -203,7 +242,12 @@ function Chip({ item, struck = false, tone = 'primary' }: { item: LivingItem; st
         <Dot aria-hidden marginTop={7} backgroundColor={item.color ?? '$colorTextMuted'} />
         {/* sr suffixes live INSIDE the inline Text: a whitespace node between flex items gets no box, so a sibling
             space there is dropped by the browser ("Title(done)") — the S4 accname trap (year-view name span). */}
-        <Label className="vida-living-chip" flexShrink={1} minWidth={0} textDecorationLine={struck ? 'line-through' : 'none'}>
+        <Label
+          className="vida-living-chip"
+          flexShrink={1}
+          minWidth={0}
+          textDecorationLine={struck ? 'line-through' : 'none'}
+        >
           {item.time != null ? <span style={SR_ONLY}>{item.time} </span> : null}
           {item.title}
           {struck ? (
@@ -233,12 +277,14 @@ export function LivingView({
   budget,
   threads,
   onSlotOpenTime,
+  pulseKey,
   state = 'success',
   empty,
   error,
   ref,
   ...rest
 }: LivingViewProps): ReactElement {
+  ensureCalendarMotionStyles()
   const r = rest as Record<string, unknown>
   const baseId = useId()
   const dev = process.env.NODE_ENV !== 'production'
@@ -263,8 +309,10 @@ export function LivingView({
         warn(`budget "${b.id}" fraction ${String(b.fraction)} is outside [0, 1] — clamped (non-finite → no fill).`)
     }
     if (state === 'success' && nothing) warn('state="success" with nothing to render — pass state="empty".')
-    if (state === 'loading' && (anyDayContent || laneData > 0)) warn('state="loading" with content present — a stale render.')
-    if (state === 'empty' && anyDayContent) warn('state="empty" with day content present — the day content is not rendered.')
+    if (state === 'loading' && (anyDayContent || laneData > 0))
+      warn('state="loading" with content present — a stale render.')
+    if (state === 'empty' && anyDayContent)
+      warn('state="empty" with day content present — the day content is not rendered.')
     if (state !== 'error' && !(effectiveEmpty && empty != null))
       warnMissingName('LivingView', r['aria-label'] as string | undefined, r['aria-labelledby'] as string | undefined)
   }
@@ -306,12 +354,13 @@ export function LivingView({
         const fmt = b.hours == null ? null : formatHours(b.hours)
         const zero = b.hours === 0
         const stale = fmt != null && b.stale === true
-        const f = fmt != null && b.fraction != null && Number.isFinite(b.fraction) ? Math.min(1, Math.max(0, b.fraction)) : null
+        const f =
+          fmt != null && b.fraction != null && Number.isFinite(b.fraction) ? Math.min(1, Math.max(0, b.fraction)) : null
         const spoken = `${b.name}, ${fmt == null ? 'unmeasured' : fmt.sr}${zero ? ', none yet' : ''}${stale ? ', as of last read' : ''}`
         return (
           <View key={b.id} role="listitem">
             <Row aria-hidden>
-              <Dot backgroundColor={b.color} />
+              <Dot className="vida-living-dot" backgroundColor={b.color ?? NO_COLOUR} />
               <Body className="vida-living-budget-name" color={zero ? '$colorBrandEmphasis' : '$colorTextPrimary'}>
                 {b.name}
               </Body>
@@ -352,23 +401,28 @@ export function LivingView({
           const names = t.days.slice(0, n).flatMap((st, i) => (st === s ? [weekday(days[i].date)] : []))
           return names.length ? `${STATE_WORD[s]} ${names.join(', ')}` : null
         }).filter(Boolean)
+        const ink = t.color ?? NO_COLOUR
         return (
           <View key={t.id} role="listitem">
             <View aria-hidden flexDirection="row" flexWrap="wrap" alignItems="center" columnGap="$12">
               <Row minWidth={120}>
-                <Dot backgroundColor={t.color} />
+                <Dot className="vida-living-dot" backgroundColor={ink} />
                 <Body>{t.name}</Body>
               </Row>
               <ThreadNodes>
                 {t.days.slice(0, n).map((st, i) => (
                   <NodeCell key={i}>
-                    {i > 0 ? <Connector className="vida-thread-connector" backgroundColor={t.color} /> : null}
-                    <Node
-                      className={`vida-thread-${st}`}
-                      state={st}
-                      borderColor={t.color}
-                      {...(st === 'kept' ? { backgroundColor: t.color } : null)}
-                    />
+                    {i > 0 ? <Connector className="vida-thread-connector" backgroundColor={ink} /> : null}
+                    {st === 'off' ? (
+                      <Node className="vida-thread-off" state="off" />
+                    ) : (
+                      <Node
+                        className={`vida-thread-${st}`}
+                        state={st}
+                        borderColor={ink}
+                        {...(st === 'kept' ? { backgroundColor: ink } : null)}
+                      />
+                    )}
                   </NodeCell>
                 ))}
               </ThreadNodes>
@@ -410,7 +464,8 @@ export function LivingView({
             {isToday ? ' · Today' : ''}
           </Eyebrow>
           <Text
-            className="vida-living-daynum"
+            key={isToday ? (pulseKey ?? 0) : undefined}
+            className={isToday ? pulseClass(pulseKey, 'vida-living-daynum vida-living-today') : 'vida-living-daynum'}
             fontFamily="$display"
             fontSize="$subheading"
             lineHeight="$subheading"

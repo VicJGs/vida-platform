@@ -62,3 +62,6 @@ requirement AND a per-slice blocking Visual-Gate MUST. The throwaway greybox (`a
 
 → **Step 2 Decomposition** maps every `structural` EC to ≥1 slice (plane-aware: `@vida/ui` renderer slices carry the
 Visual-Gate MUST; the `apps/web` ProviderRead fan-out + first-consumer backend reads carry the data derivations).
+
+## Entity close — ELC-9 (2026-10-22)
+Every pinned checkpoint (EC-1…EC-14 + EC-F1…EC-F4) was re-verified in the LIVE app on real OPFS at fe-calendar S7 (PLAN-S7-entity-close.md §4 E; slice-map S7 row) — **Victor PASS 2026-10-22**. EC-F2 (motion) + EC-F3 (dense-day unfurl, the vision §6 option 1) were built at S7 (D-S7-DEV-2). No EC re-pinned; R17 (Week all-day strip density) kept as approved. Live legs that no M1 writer can seed (timed blocks · past done · past focus) are fixture-proven and ride LIF-198.

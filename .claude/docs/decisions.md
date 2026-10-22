@@ -1220,3 +1220,14 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-21 | Envision | are pinned ECs checked at the end? | **yes — Envision is a contract to the end**: SKIP skips the greybox, never the ECs (inherited ECs are carried); ENTITY CLOSE re-verifies every EC live (feel ECs first become checkable here); a divergence is corrected or explicitly re-pinned | Victor 2026-10-21: features "diverging from the route I established on the envision"; #150 carried 0 of fe-notes' 30 ECs, #151 SKIPped without carrying fe-home's | no |
 
 - **Lesson:** the three "open G0 decisions" were doc-answered (Victor's correction at Approval 1) — a planning doc's open-decisions list must be empty of anything the governing docs already settle.
+
+## fe-calendar ② S7 — the Entity Live Close (2026-10-22 — LIF-203; PLAN-S7-entity-close.md)
+| Date | Scope | Question | Decision | Why | Victor? |
+|------|-------|----------|----------|-----|---------|
+| 2026-10-21 | S7 G1 | Calendar due-work source | **`sessions.dueIn`** (D-S7-DEV-1, supersedes slice-map D2 `buildDashboard`) | IA §4 Calendar = dueIn aggregator; mod-tasks S9 left `buildDashboard().agenda` task-less | Approval 1 |
+| 2026-10-21 | S7 G3/G4 | who registers sessions/habits/tasks/purposes/relationships | **#19 S7, in `composeServices`** + the 3 dueIn lanes; sessions-rescope's "register sessions" → ratify | PLAN-S6 §1 homing + first-consumer-pull (sessions current-spec) | Approval 1 |
+| 2026-10-21 | S7 | Planner "orphan" / TZ "mismatch" | **Drift — removed.** Placement = the sessions entity (SES-23 → LIF-198); days = the user's timezone (settled) | Victor correction at Approval 1 | yes |
+| 2026-10-21 | S7 G8 (preflight) | Must/Can source | **`kind === 'obligation'` → must; standard → no weight** | tasks intake G8:84 (obligation = external consequence); no doc makes standard = can | Approval 2 |
+| 2026-10-21 | S7 G5 | day placement | **2 `dueIn` calls per span** (UTC bounds date lanes · local bounds planned blocks), tasks via the open-tasks join, carry-forward only pre-span | per-day windows duplicated the REL-36 nudge; mixed bounds leaked neighbour days | Approval 2 |
+| 2026-10-22 | S7 build | Living past-in-week relationships item | **D-S7-DEV-4: carried into today (plain, not slipping)** | REL-36 "overdue carries forward"; past columns are a record (EC-8) | yes |
+| 2026-10-22 | S7 gate | Week all-day strip density (R17) | **kept as approved** | Visual Gate PASS | yes |

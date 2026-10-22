@@ -26,7 +26,8 @@ function ymd(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10)
 }
 
-function parseContent(c: string | null): EditorDocument | null {
+/** Parse a stored page `content` (JSON) → the editor doc; malformed/absent → null. Shared with the calendar record line (fe-calendar S7). */
+export function parseContent(c: string | null): EditorDocument | null {
   if (!c) return null
   try {
     return JSON.parse(c) as EditorDocument

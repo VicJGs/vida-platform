@@ -370,6 +370,17 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   0 page overflow · axe 0). Spec: `docs/specs/components/ui-2-platform-views/v13-living-view.md`.
   **`internal/calendar-shared.ts`** (S5): `SR_ONLY` · `DATE_KEY` · `parseLocalDate` shared by agenda/week/year/living (rule of
   three); `Eyebrow` stays per-file (agenda's lacks the paired line-height).
+  **fe-calendar S7 (LIF-203, the entity close) — renderer amendments:** V13 **`color?`** on `PurposeBudget`/`HabitThread` (absent →
+  `$colorTextMuted` ink, never a fabricated hex) + **`ThreadState 'off'`** (a 5px solid muted dot, no ring — a different SHAPE from
+  the hollow dotted `missed`; SR "rest day"). **CalendarView:** today cell named `d MMMM yyyy, today` (the sibling suffix) + a
+  **controlled unfurl** (`expandedDay?` · `onExpandedDayChange?` · `renderExpanded?`): with both, "+K more" is a ≥44 native button
+  (`aria-expanded`/`aria-controls`, hairline hover + an `open` pressed variant), the day's full list unfurls in ONE `role="row"` /
+  `role="cell" aria-colspan={7}` after its week; Esc / second press collapse, focus stays; no handler ⇒ unchanged static text.
+  **`pulseKey?`** on Calendar/Agenda/Week/Year/Living: a new positive key remounts the today mark with the one-shot
+  `vida-today-pulse` (`internal/calendar-motion.ts`: scale 1→1.12→1, `slow` 400ms ease-out; reduced-motion `@media` → none; 0 = none,
+  never on mount). **`RangeTransition`** (`components/range-transition.tsx`): wraps a range region; a `transitionKey` change remounts it
+  with `vida-range-fade` (`moderate` 250ms opacity) — a latch, so the first render never fades but every later switch does.
+  ⚠ jsdom atomic prefixes mix forms (`_btc-` vs `_borderLeftColor-`) — compare against a reference element.
   **fe-calendar S4 — `calendar-view` `tabIndex?`** (D-S4-DEV-2): an opt-in programmatic focus target; `CalRoot` carries the
   house 2px ring (renders only when opted in + focused). The surface focuses the Month grid after a Year drill-in.
   **pomodoro-widget** is **UI-2 · V5** — the interactive timer WIDGET `@vida/ui` ships (ADR-008:35). NOT a data-view: a
