@@ -49,8 +49,8 @@ export interface TasksServiceDeps {
    *  the slice-map's `AggregationProviderPort` placeholder resolved to this type — tasks consumes the one OS seam, it
    *  defines no port of its own). `getAggregatedTasks` resolves cross-module PARENTS through it (never a direct
    *  cross-module table read, TK-9/C5). Absent, or a parent type with no registered `ReadProvider` ⇒ that group is
-   *  `degraded` (TAS-32 / BR-11). Ships EMPTY at M1 (providers register per-module at their build; no composition
-   *  root until M2/P6). */
+   *  `degraded` (TAS-32 / BR-11). Ships EMPTY at M1 (providers register per-module at their build; the apps/web
+   *  composition root — fe-calendar #19 S7 — constructs tasks without `providers`). */
   providers?: ViewProviderRegistry
   /** S8 — the Spaces substrate (ADR-006): tag WRITES delegate to `spaces.tagEntity`/`untagEntity` (BR-14/BR-15;
    *  `'task'` is pre-seeded in the taggable registry — no `registry` dep). Optional + fail-loud: `tagTask`/`untagTask`

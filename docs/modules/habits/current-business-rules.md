@@ -110,6 +110,13 @@
 - **BR-HB-34 · Journal contribution (HB-6).** `registerHabitsJournal` registers a `summary(date)` contribution
   (module='habits', sectionKey='summary') → `{due, done}`; `due>0 ⇒ success` else `empty` (TerminalState by TYPE).
   `getDayCompletionDigest(date)` is the read it consumes. `[FACT: services/habits/journal.ts; service.ts:450-461]`
+- **BR-HB-35 · `getCompletionGrid` — the cross-habit grid (fe-calendar S6, EC-7; first-consumer pull IR-8).** Every
+  ACTIVE, non-deleted habit, ordered `sort_order` then `id` (code-unit; `findWhere` has no orderBy), × every day of the
+  inclusive `[from,to]` → `{date, scheduled = isScheduledOn (BR-S2-4, the ONE predicate), count (0 when none), done =
+  count>=target_count}`; off-schedule completions keep `scheduled:false` with their count/done (BR-HB-14). ONE ledger
+  query (`completed_date` range, indexed). No range validation (the S4 range-read precedent; BR-HB-28 throws only for a
+  missing habit) — an inverted/malformed range walks zero days. Pure read; the thread-state mapping is the consumer's.
+  `[FACT: services/habits/service.ts getCompletionGrid; docs/specs/foundation/fe-calendar/delivery/PLAN-S6-first-consumer-reads.md]`
 
 ## ① COMPLETE
 S1–S5 landed. Habits reminder schedule (HAB-06) rides the S1/S4 reads; sync (HAB-25) rides the substrate; the

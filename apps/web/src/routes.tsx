@@ -64,6 +64,14 @@ const graphRoute = createRoute({
   component: lazyRouteComponent(() => import('./app/graph')),
 })
 
+// fe-calendar #19 · S1 — the Global Calendar surface (lazy-split; the CalendarView/date-fns weight stays out of the
+// initial bundle, the /graph precedent).
+const calendarRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/calendar',
+  component: lazyRouteComponent(() => import('./app/calendar')),
+})
+
 // fe-notes-and-pages #27 · S1 — the Notes Top view (lazy-split, the /graph precedent; BR-RT-8).
 const notesRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -114,6 +122,7 @@ const gamificationRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   graphRoute,
+  calendarRoute,
   notesRoute,
   noteEntityRoute,
   settingsRoute,

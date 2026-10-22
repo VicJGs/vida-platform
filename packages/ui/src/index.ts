@@ -62,6 +62,31 @@ export { ListView, type ListViewProps, type ViewState } from './components/list-
 export { GalleryView, type GalleryViewProps } from './components/gallery-view'
 export { Timeline, type TimelineProps, type TemporalState } from './components/timeline'
 export { CalendarView, type CalendarViewProps } from './components/calendar-view'
+export {
+  AgendaView,
+  type AgendaViewProps,
+  type AgendaItem,
+  type AgendaDay,
+  type Daypart,
+} from './components/agenda-view'
+export {
+  WeekView,
+  type WeekViewProps,
+  type TimedBlock,
+  type CalChip,
+} from './components/week-view'
+export { YearView, type YearViewProps, type YearDensity } from './components/year-view'
+export {
+  LivingView,
+  type LivingViewProps,
+  type LivingDay,
+  type LivingItem,
+  type TodayEntry,
+  type PurposeBudget,
+  type HabitThread,
+  type ThreadState,
+} from './components/living-view'
+export { RangeTransition, type RangeTransitionProps } from './components/range-transition'
 export { TableView, type TableViewProps, type Column } from './components/table-view'
 export { BoardView, type BoardViewProps, type BoardGroup } from './components/board-view'
 export { PomodoroWidget, type PomodoroWidgetProps, type PomodoroPhase } from './components/pomodoro-widget'

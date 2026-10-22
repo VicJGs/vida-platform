@@ -1,0 +1,67 @@
+# Envision — fe-calendar (Global Calendar, unit #19, LIF-203) · Step 1.5
+
+> Entity Delivery Flow ② · **Envision Gate** (§3.75 FIRED — novel interaction surface, module-hub-class).
+> The greybox renders the whole vision from **real `@vida/ui` primitives** + fake data so the human pins
+> **anchored checkpoints (EC-n)** BEFORE decomposition. Reviewer = **the human (Victor)**, blocking.
+>
+> **Greybox:** `apps/web/src/app/fe-calendar-envision/index.tsx` (THROWAWAY — delete + its route after the gate).
+> Driven in Brave at `http://localhost:6110/fe-calendar-envision`. Evidence: `/tmp/vg-calendar/*.png`
+> (6 ranges × editorial-light · Living × {dark, reader, quietDesk} · 3 states · 375/768 responsive).
+> Design source: `../calendar-vision.md` + `../mockups/{calendar-ranges-and-agenda,calendar-concept-board}.html`.
+
+---
+
+## Checkpoint types
+- **`structural`** — greybox-provable: MUST map to ≥1 decomposition slice (plane-aware) AND becomes a blocking
+  per-slice **Visual-Gate MUST**.
+- **`feel`** — deferred to the live per-slice Visual Gate (voice/motion/polish; not a decomposition-coverage gate).
+
+## Proposed anchored checkpoints (PENDING human pin/approval)
+
+| EC | Type | Screen/state | The checkpoint |
+|----|------|--------------|----------------|
+| **EC-1** | structural | all | **Range switcher** — 6 ranges (Year·Month·Week·Day·Agenda·Living) as a `role="toolbar"` with `aria-pressed` on the active; reflows to a dropdown < 768 (Collection precedent). |
+| **EC-2** | structural | month | **Month REUSES the shipped `CalendarView`** (not a rebuild) with purpose-dot chips + today mark. ⚠ the month title is owned **once** (the CanvasView masthead in production) — the greybox's double-title is a bug to NOT carry forward. |
+| **EC-3** | structural | agenda | **Agenda** — daypart groups (Morning/Afternoon/Evening); **timed vs all-day** split (time label vs a daypart tag); **Must/Can** weight; done-state (struck + checkbox). The info-crush is gone (nothing behind "+N more"). |
+| **EC-4** | structural | week · day | **Week/Day time-column** — hour gutter + day column(s), all-day strip on top, timed events positioned by hour; **Day = Week zoomed to one column**. |
+| **EC-5** | structural | year | **Year** — 12 mini-months, activity-density dots (has/busy), today ringed; a month drills in. |
+| **EC-6** | structural | living | **④ Purpose-budget strip** — per-purpose bar + hours; a zero-value purpose is flagged; **honest-null when unmeasured** (ADR-011 §3.6 read seam — absent ⇒ "unmeasured", never fabricated). |
+| **EC-7** | structural | living | **② Habit threads** — one continuous row per habit across the 7 days; filled = kept · dotted = miss · faded = future; streak label reads at a glance. |
+| **EC-8** | structural | living | **Temporal asymmetry** — past column (tinted record + italic "how it went" + struck completions + focus log) · today column (ringed + live items) · future column (light + italic intention + plan). ⚠ columns must not **clip** content (greybox today-column clipped — fix via grow/scroll). |
+| **EC-9** | structural | living | **③ Open-time** — a dashed "N open" block that *offers* to slot deep-work/study/a habit. The offer is a **read-only reveal**; the slot action is an **owning-module capability intent**, never a write here. |
+| **EC-10** | structural | living | **⑤ Drift** — the **reduced M1 slip-flag** ("slipping", derived from `scheduled_date`/`due_date`/`completed_at`); the **"pushed N× count" is OUT** (needs a Tasks reschedule ledger — ADR-008 backend). The lane renders the slip-flag now. |
+| **EC-11** | structural | states | **Terminal states per range region** — loading (skeleton, `aria-busy`) · empty (teaching `EmptyState`) · error (`role="status"`). |
+| **EC-12** | structural | all | **Read-only invariant (ADR-007/008)** — no range renders a write control; every check/slot/move is an **intent emission** to the owning module. The lens displays; the module mutates. |
+| **EC-13** | structural | all | **Preset × mode AA** — every range legible across editorial/reader/quietDesk × light/dark; contrast is a per-slice Visual-Gate MUST (the full-matrix lesson — warm dark surfaces are the tight constraint). |
+| **EC-F1** | feel | all | The **book/journal voice** — serif titles, italic record/intention lines, restrained today mark, paper tints per preset. |
+| **EC-F2** | feel | all | **Range-transition + today-pulse motion**, reduced-motion gated. |
+| **EC-F3** | feel | month · agenda | **Dense-day overflow treatment** — the §6 choice (unfurl-in-place · density-ink+peek · read-the-day panel); the specific one is a build-time design call. |
+| **EC-F4** | feel | living | **Habit-thread + open-time ink** — node/line weight, the "unbroken thread" read, the dashed open-block invitation. |
+| **EC-14** | structural | all | **OS-pattern conformance (Victor gate feedback, 2026-10-10).** The surface composes inside the real **`CanvasView`** frame (serif `$display` surface title · eyebrow · hairline · `$16` masthead→body); range chrome (switcher + nav) rides `actions`; Living day-columns are **`Card`s with alive-hooks** (`faded` past · `warm` today · neutral future) carrying **elevation**, NOT raw hairline boxes; the **`$12/$16/$24` breathing rhythm** + serif titles + tabular figures do the work (design.md §I: never a decorative-border crutch; §V: depth via elevation). Each range must read **as a calendar** (grid/time-column/date presence), not a list. |
+
+---
+
+## Greybox fidelity notes (what the greybox proves vs defers)
+- **v2 REBUILD (2026-10-10, after Victor's gate feedback "feel like a calendar" + "not following OS patterns, feels
+  cheap").** v1 composed raw `View`/`Text` with hairline borders as the structure (the design.md §I decorative-crutch
+  failure). v2 composes the real OS frame: **`CanvasView`** hosts each range; Living day-columns are **`Card`s with
+  alive-hooks** (faded/warm/neutral) carrying elevation; the `$12/$16/$24` rhythm + serif `$display`/`$heading` titles +
+  tabular figures carry the polish. v1 nits all fixed: month double-title (frame title = surface "Calendar", renderer owns
+  the period) · today-column clip (Cards grow with content) · gutter wrap ("08:00"/"ALL-DAY" — widened to 64px).
+- **Proves (structural):** the full 6-range model composes from real primitives inside the OS frame; the Living lens's
+  5 moves + temporal asymmetry render as elevated Cards; every terminal state + the preset×mode matrix + responsive reflow.
+- **Remaining greybox artifact (not a design question):** Agenda/Living "today" anchors (Thu 8) now aligned.
+- **Defers (feel):** voice, motion, dense-day treatment choice, thread ink — all to the live per-slice Visual Gate.
+
+## Gate status
+**PASSED — approved by Victor 2026-10-10** (after v1 → v2 "OS-pattern rebuild" → v3 "Month consistency + Agenda
+tidy"). The checkpoint set EC-1…EC-14 + EC-F1…F4 is **locked** — each `structural` EC is now a decomposition-coverage
+requirement AND a per-slice blocking Visual-Gate MUST. The throwaway greybox (`apps/web/src/app/fe-calendar-envision`
++ its route) was **deleted** per the methodology; durable gate evidence lives in `../mockups/greybox/*.png` (the
+8 approved frames: living/living-dark/living-reader · month · week · day · agenda · year).
+
+→ **Step 2 Decomposition** maps every `structural` EC to ≥1 slice (plane-aware: `@vida/ui` renderer slices carry the
+Visual-Gate MUST; the `apps/web` ProviderRead fan-out + first-consumer backend reads carry the data derivations).
+
+## Entity close — ELC-9 (2026-10-22)
+Every pinned checkpoint (EC-1…EC-14 + EC-F1…EC-F4) was re-verified in the LIVE app on real OPFS at fe-calendar S7 (PLAN-S7-entity-close.md §4 E; slice-map S7 row) — **Victor PASS 2026-10-22**. EC-F2 (motion) + EC-F3 (dense-day unfurl, the vision §6 option 1) were built at S7 (D-S7-DEV-2). No EC re-pinned; R17 (Week all-day strip density) kept as approved. Live legs that no M1 writer can seed (timed blocks · past done · past focus) are fixture-proven and ride LIF-198.

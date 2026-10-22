@@ -1,7 +1,18 @@
-import { useMemo, type CSSProperties, type ReactElement, type ReactNode, type Ref } from 'react'
+import { Fragment, useId, useMemo, type CSSProperties, type ReactElement, type ReactNode, type Ref } from 'react'
 import { styled, Text, View } from '@tamagui/core'
-import { addDays, addMonths, format, isSameDay, isSameMonth, isWeekend, startOfMonth, startOfWeek, subMonths } from 'date-fns'
+import {
+  addDays,
+  addMonths,
+  format,
+  isSameDay,
+  isSameMonth,
+  isWeekend,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from 'date-fns'
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
+import { ensureCalendarMotionStyles, pulseClass } from '../internal/calendar-motion'
 import { Button } from './button'
 
 // UI-2 · V4 · calendar-view — the renderer for the `calendar` VIEW_LAYOUT. Implements
@@ -32,12 +43,29 @@ export interface CalendarViewProps<T> {
   month?: Date
   /** When provided, prev/next nav buttons render + call this; when absent, no buttons (pure display). */
   onMonthChange?: (month: Date) => void
+  /** Suppress the grid's own month title + nav — for hosting inside a frame that owns the period title (the
+   *  fe-calendar #19 CanvasView, D4). Default false (standalone grid shows its title). */
+  hideHeader?: boolean
+  /** Make the grid a PROGRAMMATIC focus target (pass -1) — e.g. the #19 Year drill-in lands focus here when the button
+   *  that triggered it unmounts (FOCUS_CONTRACT). Absent = not focusable (the default). A focus ring shows when focused. */
+  tabIndex?: number
   /** Injection seam for "today" (marker + default month). Default new Date(), evaluated once. */
   today?: Date
+  /** fe-calendar S7 (EC-F2): bump to pulse the today mark ONCE (the surface's Today button). 0 / absent = no pulse (never on
+   *  mount); each new value remounts the mark, restarting the one-shot animation. Reduced motion = none (CSS @media). */
+  pulseKey?: number
   /** Week start: 0=Sun, 1=Mon. Default 1. */
   weekStartsOn?: 0 | 1
   /** Max chips per day before "+K more". Default 3. */
   maxPerDay?: number
+  /** fe-calendar S7 (EC-F3, the vision's "unfurl the day in place") — CONTROLLED, like `month`: the 'YYYY-MM-DD' day whose
+   *  full list is unfurled below its week row. Outside the 42-day grid ⇒ nothing renders. */
+  expandedDay?: string
+  /** When provided, a day's "+K more" becomes a button that requests that day (or `null` to collapse — second press /
+   *  Esc). Absent ⇒ "+K more" stays static text (every other consumer unchanged). */
+  onExpandedDayChange?: (day: string | null) => void
+  /** Renders the unfurled day's FULL item list (the consumer's anatomy — e.g. the #19 surface's dayparted rows). */
+  renderExpanded?: (items: readonly T[], day: string) => ReactNode
   /** loading | error | success (empty folds into success — the grid always renders). Default 'success'. */
   state?: ViewState
   /** Slot for the error state (else a default Message). */
@@ -48,11 +76,29 @@ export interface CalendarViewProps<T> {
 }
 
 // ── styled hosts (unnamed → base theme; no sub-theme) ───────────────────────────────────────────────────
-const CalRoot = styled(View, { flexDirection: 'column', gap: '$12' })
-const CalHeader = styled(View, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '$8' })
+// The focus ring only ever shows when a consumer opts in via `tabIndex` and focuses the grid (S4 drill-in).
+const CalRoot = styled(View, {
+  flexDirection: 'column',
+  gap: '$12',
+  borderRadius: '$sm',
+  focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: 2 },
+})
+const CalHeader = styled(View, {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '$8',
+})
 const Table = styled(View, { flexDirection: 'column', minWidth: 560 }) // 7×80 → forces the 375 horizontal scroll (CV-8)
 const Row = styled(View, { flexDirection: 'row' })
-const HeadCell = styled(View, { flexGrow: 1, flexBasis: 0, minWidth: 80, paddingVertical: '$8', paddingHorizontal: '$8', alignItems: 'flex-start' })
+const HeadCell = styled(View, {
+  flexGrow: 1,
+  flexBasis: 0,
+  minWidth: 80,
+  paddingVertical: '$8',
+  paddingHorizontal: '$8',
+  alignItems: 'flex-start',
+})
 const Day = styled(View, {
   flexGrow: 1,
   flexBasis: 0,
@@ -81,6 +127,49 @@ const TodayMark = styled(View, {
   paddingBottom: 2,
 })
 const SkeletonBar = styled(View, { height: '$12', borderRadius: '$md', backgroundColor: '$colorSurfaceSecondary' })
+// S7 unfurl: the "+K more" request — the year-view MonthButton UA reset; ≥44 hit height (decisions.md:82 touch floor).
+const MoreButton = styled(View, {
+  render: 'button',
+  alignSelf: 'flex-start',
+  minHeight: 44,
+  minWidth: 44,
+  justifyContent: 'center',
+  paddingHorizontal: '$4',
+  marginHorizontal: -4,
+  // hover/expanded = a hairline that reads on BOTH paper tones (a bg swap was invisible on the in-month primary cell —
+  // g2 review #8, §VIII); expanded keeps it on as the visual pressed state (#16). $colorTextMuted keeps the 3:1 boundary.
+  borderWidth: 1,
+  borderStyle: 'solid',
+  borderColor: 'transparent',
+  borderRadius: '$sm',
+  backgroundColor: 'transparent',
+  cursor: 'pointer',
+  hoverStyle: { borderColor: '$colorTextMuted' },
+  focusVisibleStyle: { outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: 2 },
+  variants: {
+    open: { true: { borderColor: '$colorTextMuted', backgroundColor: '$colorSurfacePrimary' } },
+  } as const,
+})
+// The unfurled day: ONE cell spanning the 7 columns (aria-colspan) in its own row after the week — instant, no height
+// animation (motion.md safe list).
+const Expanded = styled(View, {
+  flexGrow: 1,
+  padding: '$12',
+  gap: '$8',
+  borderWidth: 0.5,
+  borderColor: '$colorBorderDefault',
+  backgroundColor: '$colorSurfacePrimary',
+})
+
+// "+K more" — the shared eyebrow (static text, or the label inside the S7 unfurl button).
+const MoreLabel = styled(Text, {
+  fontSize: '$caption',
+  lineHeight: '$caption',
+  color: '$colorTextMuted',
+  fontWeight: '600',
+  textTransform: 'uppercase',
+  letterSpacing: 0.8,
+})
 
 // Web horizontal scroll for the 375 baseline (CV-8): the 560-min table scrolls rather than crushing to ~53px columns.
 const SCROLL_X: CSSProperties = { overflowX: 'auto', maxWidth: '100%' }
@@ -92,15 +181,22 @@ export function CalendarView<T>({
   getKey,
   month: monthProp,
   onMonthChange,
+  hideHeader = false,
   today: todayProp,
+  pulseKey,
   weekStartsOn = 1,
   maxPerDay = 3,
+  expandedDay,
+  onExpandedDayChange,
+  renderExpanded,
   state = 'success',
   error,
   ref,
   ...rest
 }: CalendarViewProps<T>): ReactElement {
+  ensureCalendarMotionStyles()
   const r = rest as Record<string, unknown>
+  const expandedId = `${useId()}-expanded`
   const today = todayProp ?? new Date()
   const month = monthProp ?? startOfMonth(today)
 
@@ -141,21 +237,40 @@ export function CalendarView<T>({
 
   return (
     <CalRoot ref={ref} {...rest} role="table" aria-busy={loading ? true : undefined}>
-      <CalHeader>
-        <Text className="vida-cal-title" fontFamily="$display" fontSize="$heading" fontWeight="500" letterSpacing={-0.3} color="$colorTextPrimary">
-          {format(month, 'MMMM yyyy')}
-        </Text>
-        {onMonthChange && (
-          <View flexDirection="row" gap="$8">
-            <Button intent="ghost" size="sm" aria-label="Previous month" onPress={() => onMonthChange(subMonths(month, 1))}>
-              ‹
-            </Button>
-            <Button intent="ghost" size="sm" aria-label="Next month" onPress={() => onMonthChange(addMonths(month, 1))}>
-              ›
-            </Button>
-          </View>
-        )}
-      </CalHeader>
+      {!hideHeader && (
+        <CalHeader>
+          <Text
+            className="vida-cal-title"
+            fontFamily="$display"
+            fontSize="$heading"
+            fontWeight="500"
+            letterSpacing={-0.3}
+            color="$colorTextPrimary"
+          >
+            {format(month, 'MMMM yyyy')}
+          </Text>
+          {onMonthChange && (
+            <View flexDirection="row" gap="$8">
+              <Button
+                intent="ghost"
+                size="sm"
+                aria-label="Previous month"
+                onPress={() => onMonthChange(subMonths(month, 1))}
+              >
+                ‹
+              </Button>
+              <Button
+                intent="ghost"
+                size="sm"
+                aria-label="Next month"
+                onPress={() => onMonthChange(addMonths(month, 1))}
+              >
+                ›
+              </Button>
+            </View>
+          )}
+        </CalHeader>
+      )}
 
       <View style={SCROLL_X}>
         <Table>
@@ -176,64 +291,101 @@ export function CalendarView<T>({
             ))}
           </Row>
 
-          {Array.from({ length: 6 }, (_, week) => (
-            <Row key={week} role="row">
-              {days.slice(week * 7, week * 7 + 7).map((day) => {
-                const inMonth = isSameMonth(day, month)
-                const isToday = isSameDay(day, today)
-                const tone = !inMonth ? 'oos' : isWeekend(day) ? 'weekend' : undefined
-                const dayItems = buckets.get(format(day, 'yyyy-MM-dd')) ?? EMPTY
-                const overflow = dayItems.length - maxPerDay
-                return (
-                  <Day key={day.getTime()} role="cell" aria-label={format(day, 'd MMMM yyyy')} tone={tone}>
-                    {isToday ? (
-                      <TodayMark className="vida-cal-today">
-                        <Text
-                          className="vida-cal-daynum"
-                          fontSize="$small"
-                          color="$colorBrandEmphasis"
-                          fontWeight="600"
-                          style={{ fontVariantNumeric: 'tabular-nums' }}
-                        >
-                          {format(day, 'd')}
-                        </Text>
-                      </TodayMark>
-                    ) : (
-                      <Text
-                        className="vida-cal-daynum"
-                        fontSize="$small"
-                        color={inMonth ? '$colorTextPrimary' : '$colorTextMuted'}
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
+          {Array.from({ length: 6 }, (_, week) => {
+            const weekDays = days.slice(week * 7, week * 7 + 7)
+            const open =
+              onExpandedDayChange != null && renderExpanded != null && !loading
+                ? weekDays.find((d) => format(d, 'yyyy-MM-dd') === expandedDay)
+                : undefined
+            return (
+              <Fragment key={week}>
+                <Row role="row">
+                  {weekDays.map((day) => {
+                    const inMonth = isSameMonth(day, month)
+                    const isToday = isSameDay(day, today)
+                    const tone = !inMonth ? 'oos' : isWeekend(day) ? 'weekend' : undefined
+                    const dayKey = format(day, 'yyyy-MM-dd')
+                    const dayItems = buckets.get(dayKey) ?? EMPTY
+                    const overflow = dayItems.length - maxPerDay
+                    const isOpen = open != null && dayKey === expandedDay
+                    return (
+                      <Day
+                        key={day.getTime()}
+                        role="cell"
+                        aria-label={`${format(day, 'd MMMM yyyy')}${isToday ? ', today' : ''}`}
+                        tone={tone}
                       >
-                        {format(day, 'd')}
-                      </Text>
-                    )}
-                    {loading ? (
-                      <SkeletonBar aria-hidden />
-                    ) : (
-                      <>
-                        {dayItems.slice(0, maxPerDay).map(([item, index]) => (
-                          <View key={getKey(item, index)}>{renderItem(item, index)}</View>
-                        ))}
-                        {overflow > 0 && (
+                        {isToday ? (
+                          <TodayMark key={pulseKey ?? 0} className={pulseClass(pulseKey, 'vida-cal-today')}>
+                            <Text
+                              className="vida-cal-daynum"
+                              fontSize="$small"
+                              color="$colorBrandEmphasis"
+                              fontWeight="600"
+                              style={{ fontVariantNumeric: 'tabular-nums' }}
+                            >
+                              {format(day, 'd')}
+                            </Text>
+                          </TodayMark>
+                        ) : (
                           <Text
-                            className="vida-cal-more"
-                            fontSize="$caption"
-                            color="$colorTextMuted"
-                            fontWeight="600"
-                            textTransform="uppercase"
-                            letterSpacing={0.8}
+                            className="vida-cal-daynum"
+                            fontSize="$small"
+                            color={inMonth ? '$colorTextPrimary' : '$colorTextMuted'}
+                            style={{ fontVariantNumeric: 'tabular-nums' }}
                           >
-                            +{overflow} more
+                            {format(day, 'd')}
                           </Text>
                         )}
-                      </>
-                    )}
-                  </Day>
-                )
-              })}
-            </Row>
-          ))}
+                        {loading ? (
+                          <SkeletonBar aria-hidden />
+                        ) : (
+                          <>
+                            {dayItems.slice(0, maxPerDay).map(([item, index]) => (
+                              <View key={getKey(item, index)}>{renderItem(item, index)}</View>
+                            ))}
+                            {overflow > 0 &&
+                              (onExpandedDayChange != null && renderExpanded != null ? (
+                                <MoreButton
+                                  open={isOpen}
+                                  className="vida-cal-more-button"
+                                  aria-label={`Show all ${dayItems.length} items, ${format(day, 'd MMMM yyyy')}`}
+                                  aria-expanded={isOpen}
+                                  aria-controls={isOpen ? expandedId : undefined}
+                                  onPress={() => onExpandedDayChange(isOpen ? null : dayKey)}
+                                  onKeyDown={(e: { key: string }) => {
+                                    if (e.key === 'Escape' && isOpen) onExpandedDayChange(null)
+                                  }}
+                                >
+                                  <MoreLabel>+{overflow} more</MoreLabel>
+                                </MoreButton>
+                              ) : (
+                                <MoreLabel className="vida-cal-more">+{overflow} more</MoreLabel>
+                              ))}
+                          </>
+                        )}
+                      </Day>
+                    )
+                  })}
+                </Row>
+                {open != null && renderExpanded != null ? (
+                  <Row role="row" className="vida-cal-expanded-row">
+                    <Expanded
+                      id={expandedId}
+                      role="cell"
+                      aria-colspan={7}
+                      aria-label={`All items, ${format(open, 'd MMMM yyyy')}`}
+                    >
+                      {renderExpanded(
+                        (buckets.get(format(open, 'yyyy-MM-dd')) ?? EMPTY).map(([item]) => item),
+                        format(open, 'yyyy-MM-dd'),
+                      )}
+                    </Expanded>
+                  </Row>
+                ) : null}
+              </Fragment>
+            )
+          })}
         </Table>
       </View>
     </CalRoot>

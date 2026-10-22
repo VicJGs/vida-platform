@@ -295,6 +295,94 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   no-overflow). **⟹ P5 ships the FINAL primitives-refinement phase — all 5 views (list·gallery·timeline·calendar) +
   pomodoro refined.** The living/multi-range calendar is the separate `fe-calendar #19` (NO Layer-2 here). Spec:
   `docs/specs/foundation/fe-codec-primitives-refinement/phases/P5-calendar.md`.
+  **fe-calendar #19 · S1 (LIF-203)** — **`hideHeader?: boolean`** (slice-map D4): suppresses the grid's own month
+  title + nav so a hosting frame (the #19 `CanvasView` Global Calendar surface) owns the period title ONCE (envision
+  EC-2 double-title fix). Default `false` — standalone grids unchanged; grid/roles/states untouched (+1 test, 22).
+  **agenda-view** is **UI-2 · V10** (fe-calendar #19 · S2, LIF-203) — the Global Calendar's **Agenda range** renderer
+  (a calendar RANGE dispatched by the #19 surface, NOT a `VIEW_LAYOUT`). Presentational read-only lens: `days:AgendaDay[]`
+  of **pre-dayparted, pre-ordered** items (the app's `useCalendar` maps dayparts, S7) — it arranges, never derives/sorts.
+  **Temporal asymmetry:** ONLY the `today` day (string-equal, no Date math) is grouped Morning→Afternoon→Evening; other
+  days are one flat list (the approved mockup + greybox). Rows: 64px gutter (tabular `time` | "ALL DAY" eyebrow) ·
+  purpose dot (user-data hex, aria-hidden) · title (`flexShrink:1 minWidth:0`; done = struck + muted) · Must
+  (`$colorBrandEmphasis`) / Can (muted) tag. Spine PIECES (`ViewState`/`Message`/`warnMissingName`), NOT
+  `resolveDataViewState` (outer `role="group"` of per-day `role="list"`s, names via `aria-labelledby` `[dayId]` or
+  `[dayId partId]`, `useId` index-keyed; day keys `${date}-${i}`). **Completion = intent, render-when-handler:** a native
+  `<button type="button" role="checkbox">` only when `onToggleItem` AND `done!==undefined` (named by the title's id);
+  `focusVisibleStyle` ring + `hoverStyle` are **Tamagui pseudo-styles on the host — no injected sheet** (injected CSS is
+  only for cross-element `:has` cases like checkbox-styles). **⚠ Resting border = `$colorTextMuted`, NOT
+  `$colorBorderDefault`** — the hairline is 1.2–1.7:1 on the surface, below WCAG 1.4.11's 3:1 for a control boundary
+  (Visual-Gate-caught; reuse this for any bordered control). **⚠ Hit-area insets resolve from the PADDING box** — a
+  1.5px border shrinks a 20px box's padding box to 17px, so −12 gave 42 (<44); −14 → 46. The HitArea is a
+  `render:'span'` (a `<div>` is invalid inside `<button>`). No handler + completable → inert `aria-hidden` box + sr-only
+  "(done)" — **a consumer with no wired capability passes NO handler** (a no-op handler = dead focusable checkboxes).
+  TZ: date parsed by parts. Narrow reflow = `DayRow flexWrap` + items `minWidth:240` (rail stacks above at 375). Also:
+  Chrome snaps a 1.5px border to 1px in `getComputedStyle` (Visual-Gate probes must not match `'1.5px'`). Visual Gate
+  PASS (Brave, real CalendarSurface, 3 presets × L/D × 375/768/1440: AA 4.94–6.53 · box 3:1 · 46×46 · ring · real
+  Space/Enter toggle · axe 0). 21 tests. Spec: `docs/specs/components/ui-2-platform-views/v10-agenda-view.md`.
+  **week-view** is **UI-2 · V11** (fe-calendar #19 · S3, LIF-203) — the Global Calendar's **Week AND Day ranges** (Day =
+  `days.length === 1`, one component). Time-column grid: 64px `aria-hidden` hour gutter · headed day columns · ONE
+  all-day strip of undated `CalChip`s · `TimedBlock`s positioned by `startHour`/`endHour` at 48px/h. **Geometry is pure
+  in `internal/week-layout.ts`** (unit-tested): `formatHour(h, fmt, kind)` (minute-rounded; start ≤23:59, end may be
+  24:00; 12h gutter drops ":00") · `normalizeSpan` (absent end → +1h, contradictory end → +1h flagged, start ∉ [0,24) →
+  skipped) · `windowFor` (hours = a MINIMUM, auto-extends to fit, clamped [0,24]) · `layoutDay` (late clamp BEFORE
+  clustering; drawn-extent transitive clusters; lowest free lane, every lane checked; output in INPUT order). Order:
+  validate → renderable set → window → layout (NaN-safe). Lane `left`/`width` go in inline `style` (gallery `tileStyle`
+  precedent — Tamagui would atomic-class every fraction). Compact (`h<44 || lanes≥3`) = one row; **short time**
+  (`compact || lanes≥2`) = start-only visible time, full range in an sr-only span (D-S3-DEV-1 — a range wrapped in a
+  ½-column lane and pushed the title out; screenshot-caught). A contradictory end is never LABELLED (IR-6). A11y: the
+  hour-line layer is an `aria-hidden` SIBLING of each column's positioned `role="list"` (never a parent); column lists
+  are named by ONE explicit sr-only string ("Thu 8, today") with the visual header `aria-hidden` — jsdom joins inline
+  header spans ("Thu8"). Week wraps the grid in a keyboard-reachable `role="region"` (`tabIndex 0`, 2px ring; axe
+  scrollable-region-focusable); Day has none. **⚠ `position:relative` on the root + scroll region:** an sr-only
+  `position:absolute` span whose containing block is OUTSIDE an `overflow:auto` scroller escapes the clip and widens the
+  PAGE (616px at 375, Visual-Gate-caught; jsdom can't see it) — reuse for any horizontal scroller holding sr-only text.
+  Empty (explicit or nothing renderable) = the designed empty grid + sr "Nothing scheduled", items never drawn under it.
+  `timeFormat` mirrors `user_preferences.time_format`. 45 tests. Visual Gate PASS (Brave, real CalendarSurface, 3 presets
+  × L/D × 375/768/1440 + overlap + states + 12h + Sunday: AA min 4.52–5.22 · 0 page overflow · lanes never intersect ·
+  ring unclipped · axe 0). Spec: `docs/specs/components/ui-2-platform-views/v11-week-view.md`.
+  **year-view** is **UI-2 · V12** (fe-calendar #19 · S4, LIF-203) — the Global Calendar's **Year range**: 12 mini-months of
+  activity-density dots (pre-derived `level` 0/1/2 — the renderer never thresholds). Layout = the RN-safe flex-wrap grid
+  (`flexBasis:'22%'` caps a row at 4, `minWidth:128` → 2-up at 375). Mini-month = 7-slot rows: leading blanks from
+  `weekStartsOn` + TRAILING `aria-hidden` spacers (so a short last row never stretches); square cells (`aspectRatio` in
+  `style`), `$8` gap (the greybox governs), no day numbers / weekday row. Dots: has = 4px @ **.75** (the mockup's .55 failed
+  3:1 in 4/6 preset×mode — D-S4-DEV-1), busy = 6px solid, `$colorBrandEmphasis`. Today = an absolute `aria-hidden` 2px ring
+  in a `position:relative` cell; the current-month accent is computed from the built day keys so it can never appear without
+  the ring. A11y: 12 `role="table"` (`aria-colcount=7`, offset-aware `aria-colindex`, cells labelled
+  `format(d,'EEEE, d MMMM')` + density + today). Drill-in = a render-when-handler native `<button>` heading (UA chrome reset,
+  44px, hover paper, ring) emitting `onPickMonth(0–11)` — a NAVIGATION intent, so the #19 surface wires it in M1. **⚠ accname
+  drops a LEADING space inside an sr-only span** ("January2026") — put the space in a SIBLING text node (`{' '}<span sr>`).
+  **⚠ jsdom atomic-class prefixes are the long names** (`_minHeight-`, not `_mih-`) — compare against a reference element.
+  Geometry pure in `internal/year-layout.ts` (`resolveYear` · `buildYear` · `indexDensity` · `localDate` — `setFullYear` at
+  local noon). 19 + 11 tests. Visual Gate PASS (Brave, real CalendarSurface, 29 cells: has 3:1 min 3.54 · busy/ring 5.93 ·
+  names 6.47 · 0 page overflow · Tab Jan→Dec · drill focus on "Month grid"). Spec:
+  `docs/specs/components/ui-2-platform-views/v12-year-view.md`.
+  **living-view** is **UI-2 · V13** (fe-calendar #19 · S5, LIF-203) — the Global Calendar's signature **Living** range:
+  ④ purpose budget (accent bars; hours via `internal/living-format.ts` "6h"/"2h05"; 0 → "0h · none yet" in
+  `$colorBrandEmphasis` — the greybox red is danger, which fails AA as text; null → "unmeasured", never 0; `stale` → "as of
+  last read") · ② habit threads (7 `flex:1` node cells — kept/missed-dotted/today/future@.4, hollow nodes filled — joined by
+  the vision's connector, purpose colour @ .33 via `opacity`, never hex maths; each row = one sr sentence) · the 7 day **`Card`s
+  via alive-hooks** (past `faded` · today `warm` · future) named by an sr span, inside a keyboard-reachable `role="region"` whose
+  inset is sized to `shadow.resting` (+ a negative margin to keep edges aligned) — `tabIndex 0` ALWAYS (the loading skeleton still
+  scrolls; axe-caught). Today = ONE ordered `entries[]` (items + the open-time block; button only with `onSlotOpenTime`).
+  **⚠ SR suffixes go INSIDE the inline label Text** — a whitespace node between FLEX items gets no box and the browser drops it
+  ("Title(done)"; jsdom keeps it, so the test passes anyway — g2-review-caught). Lanes degrade alone (absent = "unavailable
+  right now"; `[]` = "No … yet"); an absent lane is never "empty". 26 + 4 tests. Visual Gate PASS (26 cells: text AA ≥ 4.52 ·
+  0 page overflow · axe 0). Spec: `docs/specs/components/ui-2-platform-views/v13-living-view.md`.
+  **`internal/calendar-shared.ts`** (S5): `SR_ONLY` · `DATE_KEY` · `parseLocalDate` shared by agenda/week/year/living (rule of
+  three); `Eyebrow` stays per-file (agenda's lacks the paired line-height).
+  **fe-calendar S7 (LIF-203, the entity close) — renderer amendments:** V13 **`color?`** on `PurposeBudget`/`HabitThread` (absent →
+  `$colorTextMuted` ink, never a fabricated hex) + **`ThreadState 'off'`** (a 5px solid muted dot, no ring — a different SHAPE from
+  the hollow dotted `missed`; SR "rest day"). **CalendarView:** today cell named `d MMMM yyyy, today` (the sibling suffix) + a
+  **controlled unfurl** (`expandedDay?` · `onExpandedDayChange?` · `renderExpanded?`): with both, "+K more" is a ≥44 native button
+  (`aria-expanded`/`aria-controls`, hairline hover + an `open` pressed variant), the day's full list unfurls in ONE `role="row"` /
+  `role="cell" aria-colspan={7}` after its week; Esc / second press collapse, focus stays; no handler ⇒ unchanged static text.
+  **`pulseKey?`** on Calendar/Agenda/Week/Year/Living: a new positive key remounts the today mark with the one-shot
+  `vida-today-pulse` (`internal/calendar-motion.ts`: scale 1→1.12→1, `slow` 400ms ease-out; reduced-motion `@media` → none; 0 = none,
+  never on mount). **`RangeTransition`** (`components/range-transition.tsx`): wraps a range region; a `transitionKey` change remounts it
+  with `vida-range-fade` (`moderate` 250ms opacity) — a latch, so the first render never fades but every later switch does.
+  ⚠ jsdom atomic prefixes mix forms (`_btc-` vs `_borderLeftColor-`) — compare against a reference element.
+  **fe-calendar S4 — `calendar-view` `tabIndex?`** (D-S4-DEV-2): an opt-in programmatic focus target; `CalRoot` carries the
+  house 2px ring (renders only when opted in + focused). The surface focuses the Month grid after a Year drill-in.
   **pomodoro-widget** is **UI-2 · V5** — the interactive timer WIDGET `@vida/ui` ships (ADR-008:35). NOT a data-view: a
   self-timing single-interval countdown with a **DEFERRED session-engine seam** — the pomodoro *session*
   (lifecycle/persistence/effects/phase-sequencing) is a `sessions` sub-type owned by MOD-sessions (ADR-004); the widget
@@ -619,6 +707,13 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   apps/web `VisionBoardCanvas`/`CalendarGridCanvas` compositions (type+convention; measure-driven reference tile; live
   hooks deferred to first consumer — fe-purposes / #19). Spec:
   `docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md` (delivery: `docs/specs/foundation/fe-codec-canvas-board/delivery/`).
+  **fe-calendar S1-chrome fix (2026-10-18) — two frame corrections the #19 Visual Gate surfaced:** (1) the **title pairs
+  `lineHeight="$display"`** (was the 24px body line box → wrapped titles overlapped; see the Rules line-height entry);
+  (2) the **`Actions` slot now `maxWidth:'100%'` + `flexWrap:'wrap'`** (keeps `flexShrink:0`) — before, wide action
+  content (the calendar's 6-button 48px toolbar + nav at 768; quietDesk at 375) could never reflow and overflowed the
+  page, breaking BR-CB-S1-12's own "no overflow at 375/768/1440". Consumers pass actions as the slot's DIRECT children
+  so they wrap below each other. Visual Gate PASS (Victor-reviewed; calendar · CanvasView · CanvasEditor, 3 presets ×
+  L/D × 375/768/1440: 0 page overflow · title 36/41 · no wrap overlap · axe 0).
 - `internal/` — per-primitive injected stylesheets for what Tamagui styled() can't express: `interaction-styles.ts`
   (hover/press overlay via CSS descendant-hover), `input-styles.ts`, `checkbox-styles.ts` (state machine off the
   native input's `:checked`/`:indeterminate`/`:focus-visible` pseudo-classes), `select-styles.ts` (chevron rotate +
@@ -678,6 +773,16 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   `radius.control → '$md'` (Button/Input/Checkbox/Select/Menu) · `radius.card → '$lg'` (Card/Dialog/Popover/Toast). This
   is the radius analogue of the space lesson (Card `padding` uses `$8/$12/$24`, not the `card.padding` sub-theme key,
   DEF-U5-b). The three-layer component→semantic indirection is NOT expressible for dimensions through Tamagui theming.
+- **⚠ Large type PAIRS its line-height — `fontSize="$<role>"` ⇒ `lineHeight="$<role>"` (fe-calendar S1-chrome fix,
+  2026-10-18):** `@tamagui/core`'s `Text` never derives line-height from `fontSize` (its only variants are
+  `numberOfLines`/`ellipsis`; no `SizableText` — core-only, ADR-001), so an unpaired `$display`/`$heading`/`$subheading`
+  Text falls back to the font's `$true` = BODY line box (**24px**) — a 36px title that wraps overlaps itself (DS-4 §1.1-D
+  fixed the `fontSize` convention only; its render assertion checked size, never line-height). The role-keyed `lineScale`
+  already holds the paired values (`display` 41 · `heading` 31 · `subheading` 25) — just select them. design.md §III pairs
+  every size with its leading. Never a raw px (`lineHeight={40}` breaks "semantic type scale only, no px", decisions.md:57).
+  jsdom can't resolve the value: assert the `_lh-` atomic class equals a reference `lineHeight="$<role>"` Text's; measure
+  px in the browser. Applied so far: the CanvasView title. Remaining unpaired sites = recorded sibling fixes
+  (`docs/specs/fixes/ds-type-lineheight-unpaired/`).
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify

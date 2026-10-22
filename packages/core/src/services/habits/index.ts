@@ -19,4 +19,6 @@ export {
   type CompletionRate,
   type MoodPoint,
   type CalendarDay,
+  type HabitGridDay,
+  type HabitGridRow,
 } from './types'

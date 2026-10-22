@@ -34,6 +34,33 @@ Scope this surface should build:
 This is why #19 was always "dueIn cross-module lane, ProviderRead" — the vision now makes it concrete. Pick up the
 vision doc FIRST when #19 is sequenced.
 
+## Progress (Entity Delivery Flow ② · add-frontend-component / default)
+- **Step 0 Baseline** ✅ — refreshed `docs/infrastructure/web-client-runtime/current-spec.md` (CODEC seams + #19).
+- **Step 1 Interpretation** ✅ — `delivery/interpretation.md` (11 deps · 6 needs · 10 IRs).
+- **Step 1.5 Envision Gate** ✅ PASS (Victor, 2026-10-10; v1→v2 OS-rebuild→v3 Month-consistency+Agenda-tidy). Checkpoints EC-1…EC-14 + EC-F1…F4 locked in `delivery/envision.md`; evidence in `mockups/greybox/*.png` (greybox deleted).
+- **Step 2 Decomposition Gate** ✅ APPROVED (Victor) — `delivery/slice-map.md` (7 slices) + `delivery/seam-contract.md`. Decisions D1–D5 resolved (Daypart · reuse buildDashboard · first-consumer reads · CalendarView hideHeader · drift=slip-flag).
+- **S1** ✅ PASS (2026-10-10) — `CalendarSurface` + `calendar-ui-store` + `/calendar` route + `CalendarView.hideHeader`. Full Visual Gate green (AA matrix, axe 0). Month uses a fixture (live data = S7).
+
+## Next session (resume here)
+- **FIRST ACTION:** fresh `/begin` on the `fe-calendar` branch/worktree. Next slice = **S2 (Agenda renderer, `@vida/ui`)** per `delivery/slice-map.md`; then S3 Week/Day · S4 Year · S5 Living · S6 backend reads · S7 useCalendar fan-out.
+- Env: Node 24 for @vida/ui + @vida/web; Visual Gate = Brave via `/tmp/vg-calendar/s1-gate.mjs` pattern (poll past "Loading…" → complete onboarding → **client-side** nav `history.pushState`+popstate to the route, NOT page.goto which re-triggers onboarding; measure the digit TEXT node, not the wrapper div). Rebuild @vida/ui dist before an apps/web typecheck consuming new exports.
+- The slice-map ledger is the authoritative progress oracle (S1 ✅, S2–S7 ☐).
+
+## Build Steps (S7 — PLAN-S7-entity-close.md §5, Approval 2 2026-10-21)
+- [x] 1 V13 `color?` + `off` (R7)
+- [x] 2 CalendarView ", today" + controlled unfurl (G13/G14/R8)
+- [x] 3 `pulseKey` today pulse on 5 renderers (R9)
+- [x] 4 `@vida/ui` tsc · eslint · suite
+- [x] 5 `db/test-driver.ts` + `composeServices` + live-vault test
+- [x] 6 `calendar-derive.ts` (TZ-forced)
+- [x] 7 `calendarQueries` + `use-calendar.ts`
+- [x] 8 `calendar-sample.ts` (fixtures moved)
+- [x] 9 surface flip (useCalendar · unfurl · pulse · fade)
+- [x] 10 BR-6 node-env read-only test
+- [x] 11 repo tsc · eslint · suites sequential (Node 24)
+- [x] 12 /component-audit · code-review · /critique
+- [x] 13 live Visual Gate (Victor) — PASS 2026-10-22
+- [x] 14 ELC record · Linear · currency · commit · PR
 
 ## Session Log
 - 2026-10-20 (S4 SHIPPED) — **`60dfde9`** on branch `fe-calendar` (NOT pushed): `@vida/ui` **`YearView`** (UI-2 · V12 — 12
@@ -110,6 +137,8 @@ vision doc FIRST when #19 is sequenced.
 | S4 PLAN | Grounding pass — G11 heading role reversed (sibling convention) · focus-after-drill added (FOCUS_CONTRACT) · weight 500 | Victor: "ground it in the documentation" | ✅ PLAN revised → proceed |
 | S4 build | D-S4-DEV-2 CalendarView `tabIndex` (tsc rejected rest passthrough) · accname leading-space fix | build-caught | ✅ approved at the S4 gate |
 | S4 gate | 1-up at 375 = HARNESS missing `index.css` (UA body margin) — not the product | Visual Gate probe of the container chain | ✅ harness fixed, gate PASS |
+| S7 PLAN | G1 D2 superseded by dueIn · Planner "orphan" + TZ "mismatch" were drift (Victor) · G8 Must/Can source found at preflight | grounding + 2 critique rounds + Victor at Approval 1 + preflight | ✅ PLAN rev 2.1 → Approvals 1/2 |
+| S7 build | g2 code review: 15 folded · finding 3 (Living past relationships) | independent review | ✅ 15 folded · D-S7-DEV-4 Victor-approved 2026-10-22 + built |
 
 ## Failures This Session
 - F001 — Visual-Gate static-box probe matched nothing (Chrome snaps 1.5px border → 1px) — resolved (select by box size; memory).
@@ -122,3 +151,6 @@ vision doc FIRST when #19 is sequenced.
 - F008 — accessible name "January2026" (accname drops a leading space inside an sr-only span) — resolved (sibling text node; memory tamagui gotchas).
 - F009 — Visual Gate read 1-up at 375: harness skipped the app's `index.css` → UA body margin −16px — resolved (harness mirrors main.tsx CSS; memory visual-gate-playbook).
 - F010 — CalendarView first test timed out under load (5.5s) — env flake (F003 pattern), green alone.
+- F013 — live gate: "DB worker RPC 1 (open) timed out after 15000ms" — INTERMITTENT on a page load in the automated Chromium, on the dev server AND the prod preview (first diagnosis "vite reload lock" was incomplete — it recurred without a reload). The app's own Retry opened the DB with the seeded data intact each time → consistent with the previous document's worker still holding the exclusive AccessHandlePoolVFS OPFS handles. Boot path untouched by S7 (empty diff on worker/web-driver/boot/vite.config). Also observed: the PROD build's worker never fetches its wasm within the window. PRE-EXISTING data-plane boot behaviour → surfaced to Victor for a home; not an S7 defect.
+- F014 — live gate: a sliced body.innerText probe read the seeded Month as "no chips" — a PROBE bug, not product (the screenshot showed every seeded item on its day); measure with the screenshot + per-element queries, not a truncated text dump (memory: measure, don't hypothesize).
+- F015 — final full-suite run: 10 ui + 10 web FIRST-test-of-file timeouts (5–19s) while the dev server, prod preview and Playwright browser ran concurrently — env load (the F003/F006/F012 class); every failed file green in isolation after stopping the servers (ui 168/168 · web 134/134).

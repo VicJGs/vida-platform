@@ -1,5 +1,47 @@
 <!-- Last updated: 2026-10-20 by /session-end -->
 
+## fe-calendar S6 — first-consumer reads (2026-10-21 — LIF-203)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-21 | EC-9 open time | build `planner.getStudyAvailability`? | **RATIFY `sessions.listAvailability` + `listAvailabilityExceptions`** | no planner service; sessions owns availability (G7); weekly windows make a range arg meaningless — the dated reveal is S7's derivation | yes |
+| 2026-10-21 | EC-10 slip flag | `tasks.getSlipping` vs derive | **derive in S7 over `listTasks({open:true})`** | doc-CLOSED: tasks current-spec:286-289 "overdue reads ship as listTasks({open, due_before})" | yes |
+| 2026-10-21 | EC-6 purpose budget | `advertise('purpose_budget:<id>')` | **honest-null "unmeasured"** (D-S6-DEV-1); measure + colour → LIF-195 | registry is sync+scalar [0,1]; purposes is its consumer; hours-per-purpose + purpose colour have no source/definition (no column, no doc) | yes |
+| 2026-10-21 | EC-7 habit threads | raw completion rows | **`habits.getCompletionGrid`** (BR-HB-35) returning `scheduled` | "missed" needs the private BR-S2-4 predicate — re-deriving it in apps/web would duplicate business logic | yes |
+| 2026-10-21 | Thread rest day | how does a non-daily habit's unscheduled day read | **`off` ThreadState (never `missed`)**, render in S7 | the streak walk never counts an unscheduled day as a miss (BR-S2-4/S2-5) | yes |
+
+## fe-calendar ② S5 — Living lens renderer (2026-10-21 — LIF-203)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-21 | Thread connector | greybox shows none; vision says lines | **draw it** — concept 2px purpose hex @ .33 | doc-FIXED: calendar-vision:22 + concept legend :161 + EC-F4 :39 name the line; envision:54 lists thread ink among what the greybox DEFERRED → its omission is silence, not a ruling | yes |
+| 2026-10-21 | Flag text colour | greybox red (danger) for "0h · none yet" + SLIPPING | **`$colorBrandEmphasis`**; ⤻ glyph stays danger (graphic) | doc-RESOLVED: EC-13 AA MUST + decisions.md:127 (danger-as-text fails AA) → the unit's own emphasised-tag token (S2 MUST tag) | yes |
+| 2026-10-21 | Today's items | separate live/openBlock/drift arrays (seam) | **ONE ordered `entries[]`** | the greybox interleaves items with the open block; the provider orders (BR-1) | yes |
+| 2026-10-21 | Lane outage | omit an unavailable lane? | **keep the lane, say "unavailable right now"**; an absent lane never makes the week "empty" | interpretation NEEDS-5 ("greys that lane, never blanks the calendar") | yes |
+| 2026-10-21 | 375 / 768 | how do 7 Cards fit | **keyboard-reachable scroll region** (always a tab stop); today not auto-scrolled | EC-8 "grow/scroll" + the WeekView region precedent; axe scrollable-region-focusable | yes |
+| 2026-10-21 | Rule of three | extract the calendar helpers | **`internal/calendar-shared.ts`** (SR_ONLY · DATE_KEY · parseLocalDate); `Eyebrow` NOT extracted | PLAN-S3 §5.2 deferred it to S5; agenda/week Eyebrows differ on line-height | yes |
+
+## fe-calendar ② S4 — Year renderer (2026-10-20 — LIF-203)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-20 | Year drill target | what does "a month drills in" press? | **the month HEADING (a `<button>`)**, no extra box press | doc-DERIVED (EC-5 / mockup:205 name no target): a button WRAPPING the mini-month flattens its table for AT; the heading is the only control that keeps the grid (Victor-approved at Approval 1) | yes |
+| 2026-10-20 | Drill wiring | wire `onPickMonth` in M1 or leave absent like `onToggleItem`? | **wired now** | it is NAVIGATION (calendar-ui-store), not an owning-module write — the deny-safe-absent rule covers write intents only | yes |
+| 2026-10-20 | Focus after drill | where does focus go when the pressed button unmounts? | **the Month grid** (`CalendarView tabIndex={-1}`, D-S4-DEV-2) | FOCUS_CONTRACT `tabChange → panel` (state-conventions §5) — never drop to `<body>`; the switcher keeps its own focus | yes |
+| 2026-10-20 | Has-dot opacity | mockup .55? | **.75** (D-S4-DEV-1) | .55 = 2.39–3.27:1 vs the paper cell (fails 1.4.11 in 4/6); .75 → min 3.54 measured | yes |
+| 2026-10-20 | Cell gap | mockup 2px vs greybox? | **`$8` — the greybox governs** | envision.md:60-61: greybox/*.png is the approved record; ratio ≈0.38× cell | yes |
+| 2026-10-20 | Month headings | `role="heading"` on the 12 names? | **no** — each table is NAMED via labelledby | sibling convention (Agenda/Week/Board/Calendar group titles aren't headings); a heading role was an ADD (grounding pass) | yes |
+
+## fe-calendar ② S3 — Week/Day renderer (2026-10-19 — LIF-203)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-19 | Week/Day window | fixed 08–20, or extend to fit? | **auto-extend** — `hours` is a MINIMUM, grows to floor(earliest)…ceil(latest), clamped 0–24 | doc-DERIVED: #19's charter is "nothing behind +N more" (EC-3, vision §6) + IR-6; a fixed window re-creates the hidden-item defect | yes |
+| 2026-10-19 | Week/Day overlap | stack, cascade, or lanes? | **side-by-side lanes** (drawn-extent clusters, lowest free lane) | doc-DERIVED: co-timed items are real data (Sessions intake :113-115 Calendar = reader beside ICS/tasks/reminders; SS-9; overlapping windows valid) — occlusion hides an item | yes |
+| 2026-10-19 | All-day chips | add a per-chip day ("Thu ·")? | **NO — undated, as mocked** | doc-FIXED: mockup + greybox + seam `CalChip`; a per-chip day is an ADD beyond the approved visual (Victor: "check the documentation") | yes |
+| 2026-10-19 | Locale | calendar assumes Monday + 24h? | **READ `weekStartsOn`/`timeFormat` from preferences-store**; `weekStartOf` replaced `mondayOf` across every range (Month via `CalendarView weekStartsOn`) | ADR-002 `user_preferences` + the fe-settings store already live; fe-home READ precedent; shared defect → root fix in-unit (:1119-1121) | yes |
+| 2026-10-19 | Shared-lane time label | show the range in a ½-column lane? | **start-only visible, full range sr-only** (D-S3-DEV-1) | the range wrapped and clipped the title (screenshot-caught); height still shows duration | yes |
+
 ## fe-settings ② (2026-10-12 — LIF-193, PR #137)
 
 | Date | Area | Decision | Choice | Reason | Reversible |
@@ -1178,3 +1220,14 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-21 | Envision | are pinned ECs checked at the end? | **yes — Envision is a contract to the end**: SKIP skips the greybox, never the ECs (inherited ECs are carried); ENTITY CLOSE re-verifies every EC live (feel ECs first become checkable here); a divergence is corrected or explicitly re-pinned | Victor 2026-10-21: features "diverging from the route I established on the envision"; #150 carried 0 of fe-notes' 30 ECs, #151 SKIPped without carrying fe-home's | no |
 
 - **Lesson:** the three "open G0 decisions" were doc-answered (Victor's correction at Approval 1) — a planning doc's open-decisions list must be empty of anything the governing docs already settle.
+
+## fe-calendar ② S7 — the Entity Live Close (2026-10-22 — LIF-203; PLAN-S7-entity-close.md)
+| Date | Scope | Question | Decision | Why | Victor? |
+|------|-------|----------|----------|-----|---------|
+| 2026-10-21 | S7 G1 | Calendar due-work source | **`sessions.dueIn`** (D-S7-DEV-1, supersedes slice-map D2 `buildDashboard`) | IA §4 Calendar = dueIn aggregator; mod-tasks S9 left `buildDashboard().agenda` task-less | Approval 1 |
+| 2026-10-21 | S7 G3/G4 | who registers sessions/habits/tasks/purposes/relationships | **#19 S7, in `composeServices`** + the 3 dueIn lanes; sessions-rescope's "register sessions" → ratify | PLAN-S6 §1 homing + first-consumer-pull (sessions current-spec) | Approval 1 |
+| 2026-10-21 | S7 | Planner "orphan" / TZ "mismatch" | **Drift — removed.** Placement = the sessions entity (SES-23 → LIF-198); days = the user's timezone (settled) | Victor correction at Approval 1 | yes |
+| 2026-10-21 | S7 G8 (preflight) | Must/Can source | **`kind === 'obligation'` → must; standard → no weight** | tasks intake G8:84 (obligation = external consequence); no doc makes standard = can | Approval 2 |
+| 2026-10-21 | S7 G5 | day placement | **2 `dueIn` calls per span** (UTC bounds date lanes · local bounds planned blocks), tasks via the open-tasks join, carry-forward only pre-span | per-day windows duplicated the REL-36 nudge; mixed bounds leaked neighbour days | Approval 2 |
+| 2026-10-22 | S7 build | Living past-in-week relationships item | **D-S7-DEV-4: carried into today (plain, not slipping)** | REL-36 "overdue carries forward"; past columns are a record (EC-8) | yes |
+| 2026-10-22 | S7 gate | Week all-day strip density (R17) | **kept as approved** | Visual Gate PASS | yes |
