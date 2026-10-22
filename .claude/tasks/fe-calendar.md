@@ -1,5 +1,5 @@
 # Task: fe-calendar
-# Status: in-progress
+# Status: done
 # Linear: LIF-203
 # Profile: Add Frontend Component
 # Scenario: default
@@ -40,9 +40,11 @@ vision doc FIRST when #19 is sequenced.
 - **Step 1.5 Envision Gate** ✅ PASS (Victor, 2026-10-10; v1→v2 OS-rebuild→v3 Month-consistency+Agenda-tidy). Checkpoints EC-1…EC-14 + EC-F1…F4 locked in `delivery/envision.md`; evidence in `mockups/greybox/*.png` (greybox deleted).
 - **Step 2 Decomposition Gate** ✅ APPROVED (Victor) — `delivery/slice-map.md` (7 slices) + `delivery/seam-contract.md`. Decisions D1–D5 resolved (Daypart · reuse buildDashboard · first-consumer reads · CalendarView hideHeader · drift=slip-flag).
 - **S1** ✅ PASS (2026-10-10) — `CalendarSurface` + `calendar-ui-store` + `/calendar` route + `CalendarView.hideHeader`. Full Visual Gate green (AA matrix, axe 0). Month uses a fixture (live data = S7).
+- **S2–S6** ✅ (Agenda · S1 chrome fix · Week/Day · Year · Living · `getCompletionGrid`) — see the Session Log.
+- **S7 — the ENTITY LIVE CLOSE** ✅ (2026-10-22, `cc0e350`, PR #157 merged `98c6107`, LIF-203 → **Done**). Live Visual Gate PASS (Victor). ELC-1…9 recorded in the slice-map S7 row.
 
 ## Next session (resume here)
-- **FIRST ACTION:** fresh `/begin` on the `fe-calendar` branch/worktree. Next slice = **S2 (Agenda renderer, `@vida/ui`)** per `delivery/slice-map.md`; then S3 Week/Day · S4 Year · S5 Living · S6 backend reads · S7 useCalendar fan-out.
+- **UNIT COMPLETE — nothing to resume.** The Global Calendar closed live at S7 (PR #157). Borrowed legs light up as their owners close (LIF-195 · LIF-198 · LIF-179 · LIF-182 · LIF-178/188/190 · LIF-248 — `related` edges on LIF-203). Found + filed: **LIF-250** `fix-data-plane-boot-open` (structure #60, M1.2.4 L0′) — it also owns re-timing the Year range on a booting prod build.
 - Env: Node 24 for @vida/ui + @vida/web; Visual Gate = Brave via `/tmp/vg-calendar/s1-gate.mjs` pattern (poll past "Loading…" → complete onboarding → **client-side** nav `history.pushState`+popstate to the route, NOT page.goto which re-triggers onboarding; measure the digit TEXT node, not the wrapper div). Rebuild @vida/ui dist before an apps/web typecheck consuming new exports.
 - The slice-map ledger is the authoritative progress oracle (S1 ✅, S2–S7 ☐).
 
@@ -63,6 +65,15 @@ vision doc FIRST when #19 is sequenced.
 - [x] 14 ELC record · Linear · currency · commit · PR
 
 ## Session Log
+- 2026-10-21→22 (**S7 SHIPPED — the ENTITY LIVE CLOSE**) — `cc0e350` → **PR #157 merged `98c6107`** · LIF-203 → Done:
+  composition root `composeServices` (sessions · habits · tasks · purposes · relationships + 3 dueIn lanes) · `useCalendar`
+  over `calendarQueries` + pure `calendar-derive` (TZ-forced) · fixtures → DEV `?sample` · V13 `color?`/`off` · CalendarView
+  `, today` + controlled unfurl (EC-F3) · `pulseKey` + `RangeTransition` (EC-F2). Gates: PLAN g1 ×2 → Approval 1 (Victor
+  corrected 2 drifts: sessions placement is not deferred; TZ = the user's location) → preflight (G8 Must = `obligation`) →
+  g2 → Approval 2 → build (14 steps, mutation-checked) → g2 code review (15 folded; D-S7-DEV-4 Victor-approved) → /critique
+  SHIP → **live Visual Gate PASS (Victor)**: seed → reload → persists → reopen 0 writes; 108 cells 0 overflow · axe 0 · AA.
+  Linear: 8 `related` borrowed-leg edges + comments (LIF-203/248/246). **Filed LIF-250** (the data-plane boot defect) in the
+  plan (debt-plan §1) + the order (structure #60 — renumbered 1→144 — + g3-order L0′) + HARD-4 ← LIF-250.
 - 2026-10-21 (S5 + S6 SHIPPED, main merged) — branch `fe-calendar` (NOT pushed), HEAD **`a3e36ca`**:
   **S5 `8f98082`** — `@vida/ui` **`LivingView`** (V13: ④ budget honest-null · ② threads + the vision's connector · 7
   temporal day Cards via alive-hooks · today's ordered entries w/ open-time offer + slip flag; lanes degrade alone) +
@@ -157,6 +168,8 @@ vision doc FIRST when #19 is sequenced.
 | S6 PLAN | 3 of 4 seam §C reads already answered; colour has no source | grounding sweep + gate-1 (re-verified on disk) | ✅ one method built; D-S6-DEV-1/2/3 |
 | S7 PLAN | G1 D2 superseded by dueIn · Planner "orphan" + TZ "mismatch" were drift (Victor) · G8 Must/Can source found at preflight | grounding + 2 critique rounds + Victor at Approval 1 + preflight | ✅ PLAN rev 2.1 → Approvals 1/2 |
 | S7 build | g2 code review: 15 folded · finding 3 (Living past relationships) | independent review | ✅ 15 folded · D-S7-DEV-4 Victor-approved 2026-10-22 + built |
+| S7 gate | live boot timeout (F013) · Year render 1.5–2.6 s (dev) · prod build never opens | live Visual Gate | ✅ PASS; boot defect filed LIF-250 (owns the prod Year re-time) |
+| S7 close | CI dark (Actions billing — jobs never started) | PR #157 | ✅ merged on local-green, Victor-instructed |
 
 ## Failures This Session
 - F001 — Visual-Gate static-box probe matched nothing (Chrome snaps 1.5px border → 1px) — resolved (select by box size; memory).

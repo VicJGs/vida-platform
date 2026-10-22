@@ -6803,3 +6803,22 @@ Next session:
   - **Start S7 — the ENTITY-CLOSE slice** (fresh session): `useCalendar(range, focusedDate, weekStartsOn)` ProviderRead fan-out + derivations (open time · slip · threads incl. `off` · honest budget) per seam §B + §C S7 notes; composition-root registration question GROUNDED at the PLAN gate (web-client-runtime BR-RT-COMPROOT · golive-replan process.md §3/§4 · R7 shared ViewProviderRegistry — don't assume); V13 amendments (`color?`, `off`); the absorbed primitives-refinement Calendar "Today" SR label; PLAN must cite process.md ELC-1…9; live Visual Gate on real OPFS re-verifying all 14 pinned ECs; prove the LIF-195 Linear edge at close.
   - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git fetch` + `git rev-list --left-right --count origin/main...HEAD` · `git log -1` = `a3e36ca`. GROUND FIRST (process.md, BR-RT-COMPROOT, composition-root.ts, provider-read.ts, seam §B/§C, slice-map S7, envision EC list, golive-replan absorption section of the task file). Present no "calls".
 ---
+
+---
+Date: 2026-10-22 (session opened 2026-10-21)
+Task: fe-calendar (LIF-203 · #19) — S7, the Entity Live Close · worktree `.claude/worktrees/fe-calendar` (Node 24)
+Completed:
+  - **S7 `cc0e350` → PR #157 merged `98c6107`, LIF-203 → Done.** Live `useCalendar` fan-out over `composeServices`
+    (sessions/habits/tasks/purposes/relationships + 3 dueIn lanes); pure `calendar-derive`; fixtures → DEV `?sample`;
+    V13 `color?`/`off`; CalendarView `, today` + unfurl (EC-F3); today pulse + range fade (EC-F2). Live Visual Gate PASS
+    (Victor): real OPFS, 0 writes on reopen, 108 cells 0 overflow · axe 0 · AA.
+  - Linear: 8 `related` edges on LIF-203 + comments (LIF-203/248/246). **LIF-250 filed** (data-plane boot: dev open
+    intermittent, prod build never opens) in the plan (debt-plan §1) + order (structure #60, renumbered 1→144; g3-order L0′).
+  - Prior session's S5/S6 close-out records committed (branch `fe-calendar-closeout`).
+Decisions:
+  - D-S7-DEV-1…4 (DEV-4 Victor-approved) · Must = `obligation` · merge on local-green (Actions billing).
+  - Victor: "The sessions is not deferred, that is a drift" + "timezone … the user's location … already solved" → memory.
+Next session:
+  - LIF-250 `fix-data-plane-boot-open` first (#60, L0′), or Wave L1 (preferences-rescope) — Victor's pick at /begin.
+  - Watch: CI dark (Actions billing) · vault 1 MB F011 · the fe-calendar worktree can be removed.
+---

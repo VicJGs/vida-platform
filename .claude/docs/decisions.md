@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-20 by /session-end -->
+<!-- Last updated: 2026-10-22 by /session-end -->
 
 ## fe-calendar S6 — first-consumer reads (2026-10-21 — LIF-203)
 
@@ -1231,3 +1231,5 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-21 | S7 G5 | day placement | **2 `dueIn` calls per span** (UTC bounds date lanes · local bounds planned blocks), tasks via the open-tasks join, carry-forward only pre-span | per-day windows duplicated the REL-36 nudge; mixed bounds leaked neighbour days | Approval 2 |
 | 2026-10-22 | S7 build | Living past-in-week relationships item | **D-S7-DEV-4: carried into today (plain, not slipping)** | REL-36 "overdue carries forward"; past columns are a record (EC-8) | yes |
 | 2026-10-22 | S7 gate | Week all-day strip density (R17) | **kept as approved** | Visual Gate PASS | yes |
+| 2026-10-22 | S7 close | where the found data-plane boot defect lives | **LIF-250 `fix-data-plane-boot-open`: M1.2.4, structure `#60` (renumbered 1→144), g3-order wave L0′, debt-plan §1 row, → HARD-4** | g3-order §1 placement rule (a repair of a Done unit = debt, right after the data-plane row); every live surface sits behind the boot | yes ("file it properly in the plan and in the order") |
+| 2026-10-22 | S7 close | merge #157 with CI dark | **merged on local-green** | every CI job "not started — account payments failed" (0 steps); local tsc/suites/live gate green — the fe-settings/fe-session-hud precedent | yes |
