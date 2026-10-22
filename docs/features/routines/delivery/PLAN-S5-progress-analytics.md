@@ -124,8 +124,8 @@ export interface RoutineAnalytics {
   reflection read per driven step (tasks once each; habits per month). Classification is in memory.
 
 ## Verification Gate (blocking — live store, Node 24, real better-sqlite3, the S3/S4 harness; `Date.now` pinned)
-1. **Occurrences:** `FREQ=DAILY` 5 days → 5; `FREQ=WEEKLY;BYDAY=MO,WE` with a **Tuesday creation day** → no phantom Tuesday; `FREQ=HOURLY` → one per
-   day; future days excluded.
+1. **Occurrences:** `FREQ=DAILY` 5 days → 5; `FREQ=DAILY;BYDAY=MO,WE` and `FREQ=WEEKLY;BYDAY=MO,WE` with a **Tuesday creation day** → no Tuesday;
+   `FREQ=WEEKLY` (no BYDAY) from Tuesday → Tuesdays; `FREQ=HOURLY;INTERVAL=8` → one per day, no throw; future days excluded.
 2. **Streak with a window:** done, done, missed, done, done → `current` 2, `longest` 2, `total` 4.
 3. **Pending:** today undone with **no window** → pending (the streak carries over it); yesterday undone with a 3-day window → pending.
 4. **Neutral / lifecycle (A3):** a planned-skip day skipped. A `paused` routine: undone **today** and **in-window** days → neutral, but a day already
@@ -153,9 +153,15 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
 | Durable-doc invariants | ✅ derive-not-cache (BR-RT-S1-3) · S4e-1…6 reused unchanged through the shared pure day-judgment · planned skip neutral · RT-6 lifecycle | `current-business-rules.md` |
 
 **Assumptions pinned:**
-1. **Rule-membership of DTSTART (A1):** the iterator's first yield is DTSTART; it is kept only if a **second iterator anchored one day before DTSTART**
-   also yields DTSTART (i.e. the rule genuinely produces it). This is probed against ical.js 2.2.1 at step 4 before relying on it (the S2c "verify the
-   library" lesson); if the probe disagrees, the mechanism is replaced, recorded as §XXVIII, and the gate test is unchanged.
+1. **Occurrence expansion: probed against ical.js 2.2.1 (Node 24, 2026-10-22) before relying on it.**
+   - With a **date-only** DTSTART, the phantom start date appears **only** when an explicit BY-part filters a broader FREQ. `FREQ=DAILY;BYDAY=MO,WE`
+     from a Tuesday yields the Tuesday first. `WEEKLY;BYDAY=MO,WE`, `MONTHLY;BYMONTHDAY=15` and `YEARLY;BYMONTH=3` yield no phantom.
+     `FREQ=WEEKLY` with no BYDAY correctly inherits DTSTART's weekday.
+   - **Mechanism:** only the **first** yield is checked: kept iff it satisfies the rule's explicit `BYDAY` (weekday, ordinal prefix ignored),
+     `BYMONTHDAY` and `BYMONTH` parts (no part ⇒ accepted). *(A "second iterator anchored the day before" was rejected: it breaks implicit-weekday
+     rules like `FREQ=WEEKLY`.)*
+   - **Sub-daily FREQs** (SECONDLY/MINUTELY/HOURLY) **throw** on a date-only DTSTART ("Same occurrence found twice"), so they use a **date-time**
+     DTSTART `T00:00:00Z`, and their yields collapse to distinct `YYYY-MM-DD`.
 2. **Calendar-day arithmetic:** `addDays(ymd, n)` via `Date.UTC(y, m-1, d+n)` → `YYYY-MM-DD` from the UTC fields (no local time).
 3. `RoutineDateRange` is Zod-validated: both `YYYY-MM-DD`, `from <= to`, else `ZodError`.
 4. **The shared pure day-judgment:** `judgeDay(stepsAll, rowsByStepDate, reflection, policy, date)` → the S4 `RoutineEvaluation` body; `evaluateRoutine`
@@ -172,7 +178,7 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
 2. **validators:** `RoutineDateRangeSchema` (refine `from <= to`).
 3. **types.ts + index.ts:** `RoutineDateRange` · `OccurrenceStatus` · `RoutineStreak` · `RoutineCompletionRate` · `RoutineStepRank` · `RoutineAnalytics` ·
    `RoutinePolicy.miss` widened (both fields optional) · `getStreak`/`getAnalytics`/`progress` on the interface.
-4. **service.ts:** the ical.js membership probe (assumption 1) · `occurrences(rule, dtstart, from, to)` · `addDays` · extract `judgeDay` (S4 refactor) ·
+4. **service.ts:** `occurrences(rule, dtstart, from, to)` (first-yield BY-part check; date-time start for sub-daily; distinct dates) · `addDays` · extract `judgeDay` (S4 refactor) ·
    `loadWindow(routineId, from, to)` · `classifyOccurrence` (A2–A4 + window validation) · `streakOf` · `rateOf` · `rankSteps` · `getStreak` / `getAnalytics` /
    `progress`. **Gate point = steps 2–4** (S4's 83 tests must stay green across the refactor).
 5. **Docs:** the seam shapes + renames (`completionRate→completion`, `timePeriodComparison→comparison`, `TimeRange→RoutineDateRange`); the
