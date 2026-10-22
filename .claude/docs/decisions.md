@@ -1,13 +1,27 @@
 <!-- Last updated: 2026-10-20 by /session-end -->
 
+## preferences-rescope — Re-scope Gate (2026-10-21 — LIF-247, M1.2.4 Live Close)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-21 | Source of truth | stores vs React Query (A6) | **React Query over SQLite = source; `theme-store` = derived cache (PR-5); `preferences-store` dissolved** | Victor: "a clear drift". The 2026-10-12 stores existed only for the `values` seam, now live; BR-RT-1/7, data-flow.md:465, structure-data.md:46 | — (drift fix) |
+| 2026-10-21 | Onboarding module picks | which store? | **`module_visibility`** (unpicked → false) | intake G5 (Victor 2026-06-18): the per-module on/off system = visibility driving nav | — (doc-fact) |
+| 2026-10-21 | Readers of hide/rename/reduce-motion | preferences or shell? | **preferences-rescope** (shell mounts the dock + placement) | Victor: "follow the documentation that explains the architecture and the design". IA:46-47, IA:104, fe-settings EC-4 "+ wired" | — |
+| 2026-10-21 | `game` | theme or module? | **a module (the System), not a theme**; fe-gamification EC-1/EC-2 re-pinned as drift → gamification-rescope removes the token family | Victor: "game was not supposed to be a theme … it is supposed to be a module, with a currency and complementary system"; gamification/identity.md:5-30 | — |
+| 2026-10-21 | Data-plane write integrity (B5, STRUCTURAL) | concurrent transactions interleave on the worker connection | **one app-wide lock wrapping `db.transaction` in the composition root** (5 stated properties), slice R1 here; notes rebase after | verified: drizzle sqlite-proxy has no mutex; data-plane-wiring closed; first concurrent multi-table consumer | yes |
+| 2026-10-21 | Transition preference | home | **preference + control here (R-T, `dashboard_layout.transition`); engine at the shell Outlet → shell-rescope** | P2, decisions.md:291 "yes (prefs)"; Victor | yes |
+| 2026-10-21 | en/pt-BR i18n | home | **new platform i18n unit** (minted at close); the language pref rides it | quality bar :46-48 "ship in M1"; nothing homed it; Victor | yes |
+| 2026-10-21 | `feature_gamification` | default + control | **default → false** (GM-1 opt-in); control → **fe-feature-atlas LIF-215** (P5 enable/disable surface) | GM-1; decomposition.md:69; surface-map.md:31 | yes |
+| 2026-10-21 | B6 boot frame | flash before the provider mounts | **device-local theme hint** (inline `index.html` script; written only from a settled persist; never a source) | IR-4 makes a flip a feel-EC failure → "known limit" would fail ELC-9 | yes |
+
 ## fe-settings ② (2026-10-12 — LIF-193, PR #137)
 
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
 | 2026-10-12 | Settings controls | booleans — Checkbox or a toggle? | **net-new `Switch` pill-toggle primitive (@vida/ui)** | Envision call (D-ENV-1) — matches the OS System specimen's toggle; a reusable DS primitive every later surface needs | reversible |
 | 2026-10-12 | Theme state | where does the app-owned theme selection live? | **a Zustand theme-store → `UIProvider selection`** (replaced the `THEME_DEFAULT` const in App.tsx) | AR-4 (app owns theme state); makes preset/mode/density re-theme the whole app live (EC-5); needs no DB | reversible |
-| 2026-10-12 | Persistence | preferences persist to SQLite now, or defer? | **deferred seam — apply live in-session, persist drop-in later** | verified in code the apps/web worker-`values` DB seam blocks every live preferences op (repo.findAll → `.all()` → `values`); same first-consumer home fe-notes deferred | reversible (activates when the seam lands) |
-| 2026-10-12 | Store shape | one prefs store or two? | **two — theme-store + preferences-store** | theme-store is consumed at the provider root (minimal, independently subscribable); preferences-store holds the rest | reversible |
+| 2026-10-12 | Persistence | ~~preferences persist to SQLite now, or defer?~~ **SUPERSEDED 2026-10-21 (preferences-rescope A6: drift, Victor)** | **deferred seam — apply live in-session, persist drop-in later** | verified in code the apps/web worker-`values` DB seam blocks every live preferences op (repo.findAll → `.all()` → `values`); same first-consumer home fe-notes deferred | reversible (activates when the seam lands) |
+| 2026-10-12 | Store shape | ~~one prefs store or two?~~ **SUPERSEDED 2026-10-21 (A6): React Query = source; theme-store = derived cache; preferences-store dissolved** | **two — theme-store + preferences-store** | theme-store is consumed at the provider root (minimal, independently subscribable); preferences-store holds the rest | reversible |
 | 2026-10-12 | Mode control | offer a "System" option? | **Light/Dark only** | `ThemeMode` has no `system`; honest over a fake 3rd value | reversible |
 | 2026-10-12 | Control scope | all 7 control groups, or cut the unbacked ones? | **all 7** (doc-resolved, not a judgment) | `decomposition.md:71` + `reconstructed-structure.md:49` home all 7; storage shape is a build-phase call (`structure-data.md:18`) → ride the open `dashboard_layout`/`module_visibility` fields, zero schema change | — |
 | 2026-10-12 | Merge | merge with CI dark? | **merge on local-green** | CI repo-wide dark (exhausted GitHub Actions minutes, infra not code; main `94aeea1` triage); fe-settings exhaustively locally-verified; Victor approved | reversible |

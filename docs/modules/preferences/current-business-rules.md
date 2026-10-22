@@ -44,6 +44,13 @@
 All 3 slices shipped. Remaining for the module: ② frontend (fe-preferences, LIF-134) + the DB-11 `CommandBarHistory`
 interface reconcile (created_at/updated_at) + the deferred `sessions` inline-read migration onto the seam.
 
+## ② surface — what is NOT enforced live yet (baseline 2026-10-21, preferences-rescope Step 0)
+The service rules above hold **only at the service boundary**; the shipped ② surface never calls it (service not
+registered, `current-spec.md` "② Surface plane"). So live today: PR-2 (defaults) is met by store defaults, not
+`getMergedPreferences`; **PR-4 (persist + revert-on-error), PR-5 (theme from the DB value), PR-9 (local write +
+sync_queue) are unmet in the app**; the escape hatch (business-rules.md:28) is UI-enforced in `HIDEABLE_MODULES`
+(`settings/settings-model.ts:37-46`). preferences-rescope (LIF-247) closes these.
+
 ## Delegated (never enforced here — other domains own them)
 PR-8 (account/data), PR-10 (PII stays in `user_profile`), PR-11 (`sms` never a channel), PR-12 (integration
 `connection_config` is mediator-held `[E]`), N7 quiet-hours reschedule (Notifications' runtime; Preferences is the

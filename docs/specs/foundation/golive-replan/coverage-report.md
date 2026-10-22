@@ -322,12 +322,11 @@ with each `≡` twin resolved to its primary's home.
 |---|---|---|---|
 | notes-rescope | 26 | 27 | 53 |
 | journals-rescope | 5 | 4 | 9 |
-| preferences-rescope | 13 | 11 | 24 |
+| preferences-rescope (incl. merged-in onboarding; 2 rows merged 2026-10-21 by preferences-rescope Step 5) | 16 | 16 | 32 |
 | sessions-rescope | 8 | 11 | 19 |
 | notifications-rescope | 6 | 6 | 12 |
 | gamification-rescope | 9 | 6 | 15 |
 | shell-rescope | 7 | 6 | 13 |
-| preferences-rescope | 3 | 5 | 8 |
 | fe-spaces-page | 7 | 2 | 9 |
 | HARD-1 | 6 | 6 | 12 |
 | HARD-3 | 5 | 5 | 10 |
