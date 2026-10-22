@@ -110,6 +110,20 @@ facts (routing tree + store inventory) that the AR-4 snapshot above no longer de
   the AR-4 UI-only pattern (ADR-020; no vanilla-in-core until an M4 cross-platform consumer). `[FACT: stores/command-bar-ui-store.ts:1-4]`
 - The command-bar itself is an **overlay**, not a route (⌘K launcher composed by UI-4·S3), so it adds no route node.
 
+## preferences-rescope R1 — data-plane write integrity (2026-10-21 · LIF-247)
+- **`db/write-lock.ts`** — `createWriteLock({ waitTimeoutMs, holdWarnMs?, warn? })` → `{ runExclusive, isIdle }` (FIFO
+  promise-chain mutex with the timeout-forwarding rule) · the `writeLock` singleton (30 s wait, DEV 5 s hold-warn) ·
+  `withTransactionLock(db, lock)` (in-place wrap of `db.transaction`) · `TransactionLockTimeoutError`. `[FACT]`
+- **`db/composition-root.ts`** — `db = withTransactionLock(createDrizzleProxy(driver), writeLock)` (BR-RT-LOCK). `[FACT]`
+- **`onboarding/first-run-repo.ts`** — the marker write runs under `writeLock.runExclusive`. `[FACT]`
+- **`db/boot.ts`** — `registerTeardown(target, client, reload)` replaces the `beforeunload → terminate()` listener
+  (BR-RT-TEARDOWN). `[FACT]`
+- **Tests** — `db/write-lock.test.ts` (11, incl. the without-wrapper interleave regression proof) ·
+  `db/composition-root.test.ts` (real services over a fake driver) · `db/boot.test.ts` (5) · `first-run-repo.test.ts` (+1) ·
+  `e2e/write-lock.spec.ts` (CI; real OPFS). `[FACT]`
+- **M4 portability note** — mobile/desktop drizzle proxies (expo-sqlite / Tauri plugin) will need the same
+  transaction serialization if their drivers are async; not built (YAGNI). `[INTENT]`
+
 ## Downstream (INTENT — consumers)
 - **UI-3** (`@vida/editor`, LIF-88) ← UI-1, **AR-4** — the editor mounts in routes + issues React Query reads.
 - **UI-4** (app shell, LIF-89) ← UI-1, UX-3 — implements the UX-3 layout on AR-4's router.

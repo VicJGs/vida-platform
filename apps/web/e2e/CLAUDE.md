@@ -23,7 +23,16 @@ exec playwright test` (CWD = apps/web) discovers it and does NOT scan `src/**/*.
   Import `{ test, expect }` from here in every browser spec.
 - `db-persistence.spec.ts` — QA-1's AR-2 proof (open/reopen + OPFS persistence).
 
+- `write-lock.spec.ts` — preferences-rescope R1 (BR-RT-LOCK): drives the **app page** (`/`), not the harness — a burst of
+  concurrent service writes via `await import('/src/db/composition-root.ts')` (Vite dev; the app's own worker: a second
+  worker could not open OPFS) all succeed and persist across reload (today's journal is created first, local date: `ensureJournal` is
+  read-then-create, outside the lock's remit). Requests the `db` fixture only for its OPFS reset.
+
 ## Patterns / gotchas
+
+- **Reload releases OPFS handles without an unload terminate.** The harness never terminates on unload and reload/reopen is
+  green; the app terminates only on a bfcache `pagehide` (`db/boot.ts` `registerTeardown`), so a frozen page never holds
+  the exclusive AccessHandlePoolVFS handles.
 
 - **Clean OPFS = explicit reset, NOT context isolation.** Playwright does not reset OPFS between contexts
   (microsoft/playwright#29901). The `db` fixture wipes `/vida` via `navigator.storage…removeEntry` at setup, on a

@@ -55,13 +55,29 @@
   reads/writes go through `db/client.ts` (an `SqliteDriver` proxy over the worker RPC). **`exec`/`values`/`batch`
   landed via `data-plane-wiring` (2026-10-20)** — they RPC to the worker `exec`/`values`/`batch` ops, which call the
   in-worker `web-driver.ts` (`values` → positional arrays, the Drizzle sqlite-proxy read path). So
-  `createDrizzleProxy(client.driver)` works end-to-end. The client is spawned once + opened once (`db/boot.ts`,
+  `createDrizzleProxy(client.driver)` works end-to-end. Writes over it are serialized by BR-RT-LOCK. The client is spawned once + opened once (`db/boot.ts`,
   StrictMode-safe). `[FACT: db/{worker,client,boot}.ts]`
 - **[FACT] BR-RT-COMPROOT — the live services are a module singleton.** `db/composition-root.ts` lazily constructs
   `DrizzleDb = createDrizzleProxy(client.driver)` + the module services (notes/journals + deps) ONCE, after the
   DB-ready gate, exposed as a `getServices()` singleton (not a React provider — App.tsx untouched; `seams/CLAUDE.md`
   sanctions the singleton). `deviceId` is read from / generated into `app_state['device_id']` (ADR-002 §5.0; `uuidv7()`).
   Each entity's closing slice (`register + flip`, golive-replan ELC-3/4) consumes it; adding a module appends its construction. `[FACT: db/composition-root.ts]`
+- **[FACT] BR-RT-LOCK — writes are serialized app-wide (preferences-rescope R1, 2026-10-21).** drizzle's sqlite-proxy
+  runs a transaction as unlocked async `begin` → callback → `commit` calls, and every service shares ONE worker
+  connection, so concurrent writes interleaved ("cannot start a transaction within a transaction", or foreign statements
+  committing inside another write). `db/write-lock.ts` wraps `db.transaction` once in the composition root: FIFO, one
+  writer at a time, released in `finally`; a waiter past 30 s rejects with `TransactionLockTimeoutError` (its slot still
+  forwards the predecessor's release); a DEV-only warning names a holder kept > 5 s. **Rules:** inside a transaction
+  callback use only `tx` / `*InTx` (a nested `db.transaction` deadlocks → the 30 s typed timeout); every write after boot
+  is a `db.transaction`, a `*InTx` API, or `writeLock.runExclusive(...)` — never a bare `db.insert/update/delete().run()`
+  or `driver.run` (the first-run marker runs exclusive; the boot-time `deviceId` write precedes every service). Reads are
+  NOT locked (they may observe uncommitted rows; consumers that roll back optimistically re-read). Per-table write
+  queues above this (read-then-create races) stay the owning hook's job. `[FACT: db/write-lock.ts; composition-root.ts]`
+- **[FACT] BR-RT-TEARDOWN — worker teardown on non-cancelable lifecycle events only (R1).** `db/boot.ts`
+  `registerTeardown`: `pagehide` + `persisted` → `terminate()` (a bfcached page must not hold the exclusive OPFS
+  handles) · `pageshow` + `persisted` → reload · a normal unload → nothing (the browser discards the worker). Never
+  `beforeunload` (cancelable). A transaction cannot finish after unload; pending writes **will be** flushed by the writing hook while the page
+  is still visible (`visibilitychange`) — preferences-rescope R2, `[INTENT]`, not built in R1. `[FACT: db/boot.ts]`
 - **[FACT] BR-RT-BOOT — no query before DB-ready.** `App.tsx` gates rendering (and thus any React Query read) on the
   one-time `open`+`migrate` resolving; the worker's `open` migrates internally (no double-migrate). `[FACT: App.tsx; boot.ts]`
 

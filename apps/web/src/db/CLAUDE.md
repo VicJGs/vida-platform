@@ -16,6 +16,13 @@ M1.0 (SQLCipher → M3); the seam is pass-through.
   single client + one-time open. `exec`/`values`/`batch` on the client **landed via `data-plane-wiring` (2026-10-20)** — they RPC to the worker ops that call the in-worker `web-driver`; `createDrizzleProxy(client.driver)` works end-to-end. Live services are the `db/composition-root.ts` module singleton (`getServices()`).
 - **Registering a service in `composition-root.ts`** happens in an entity's closing slice, under the Entity Live Close
   (`docs/specs/foundation/golive-replan/process.md` ELC-3/4) — not as an out-of-structure "go-live".
+- **Writes are serialized app-wide (BR-RT-LOCK, `write-lock.ts`).** The composition root wraps `db.transaction` with
+  the `writeLock` FIFO mutex — drizzle's sqlite-proxy transactions are unlocked async begin/commit pairs over the ONE
+  worker connection. Inside a transaction callback use only `tx` / `*InTx` (a nested `db.transaction` deadlocks → a
+  30 s `TransactionLockTimeoutError`). Every write after boot is `db.transaction`, `*InTx`, or `writeLock.runExclusive`
+  — never a bare `driver.run` (the first-run marker runs exclusive). Reads are not locked.
+- **Teardown (`boot.ts` `registerTeardown`, BR-RT-TEARDOWN):** `pagehide`+persisted → terminate · `pageshow`+persisted
+  → reload · normal unload → nothing. **Never `beforeunload`** (cancelable → a live page with a dead worker).
 - **Sync WASM build + AccessHandlePoolVFS** (the non-Asyncify VFS): no SharedArrayBuffer → **no COOP/COEP headers**.
 - The proxy callback returns wa-sqlite's positional `row()` arrays; Drizzle maps them (`mapResultRow`) — we never
   import `mapResultRow`.

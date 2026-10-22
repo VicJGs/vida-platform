@@ -2,6 +2,7 @@
 // completion gate so `useFirstRun` + tests never hand-write SQL (the `lib/platform.ts` precedent). Mirrors
 // @vida/core's `getSchemaVersion`/`setSchemaVersion` (adapter.ts:210-232) — the canonical device-local KV idiom.
 import { getDbClient } from '../db/boot'
+import { writeLock } from '../db/write-lock'
 import { FIRST_RUN_COMPLETE_KEY, FIRST_RUN_COMPLETE_VALUE, isFirstRun } from './first-run'
 
 /**
@@ -18,10 +19,16 @@ export async function readFirstRunComplete(): Promise<boolean> {
   return !isFirstRun(rows[0]?.value)
 }
 
-/** Mark first-run complete. Idempotent (`INSERT OR REPLACE` — adapter.ts:230-232), so a retry is always safe. */
+/**
+ * Mark first-run complete. Idempotent (`INSERT OR REPLACE` — adapter.ts:230-232), so a retry is always safe.
+ * Runs under the app-wide write lock (BR-RT-LOCK, R1-BR-5): a raw write that landed inside another service's open
+ * transaction would roll back with it — after `markComplete` already resolved — and onboarding would re-show on reload.
+ */
 export async function writeFirstRunComplete(): Promise<void> {
-  await getDbClient().driver.run('INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)', [
-    FIRST_RUN_COMPLETE_KEY,
-    FIRST_RUN_COMPLETE_VALUE,
-  ])
+  await writeLock.runExclusive(() =>
+    getDbClient().driver.run('INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)', [
+      FIRST_RUN_COMPLETE_KEY,
+      FIRST_RUN_COMPLETE_VALUE,
+    ]),
+  )
 }

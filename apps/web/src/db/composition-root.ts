@@ -11,7 +11,8 @@
 // order. Each entity's closing slice (register + flip — the Entity Live Close,
 // docs/specs/foundation/golive-replan/process.md) consumes these; adding a
 // module APPENDS its construction here (seams/CLAUDE.md:85) — the mechanism is
-// build-once, the construction manifest grows.
+// build-once, the construction manifest grows. Every write is serialized by the app-wide
+// write lock (write-lock.ts, BR-RT-LOCK) applied to `db.transaction` below.
 // ============================================================================
 
 import {
@@ -30,6 +31,7 @@ import {
   type JournalsService,
 } from '@vida/core'
 import { getDbClient, ensureDbReady } from './boot'
+import { withTransactionLock, writeLock } from './write-lock'
 
 export interface Services {
   readonly notes: NotesService
@@ -62,7 +64,9 @@ async function build(): Promise<Services> {
   // libsodium loaded even in M1 where field encryption stays dormant (crypto unlock = M3).
   await initVault()
   const driver = getDbClient().driver
-  const db: DrizzleDb = createDrizzleProxy(driver)
+  // BR-RT-LOCK (preferences-rescope R1): every service shares this ONE db over ONE worker connection, and drizzle's
+  // sqlite-proxy transactions are unlocked async begin/commit pairs — serialize them app-wide (write-lock.ts).
+  const db: DrizzleDb = withTransactionLock(createDrizzleProxy(driver), writeLock)
   const deviceId = await resolveDeviceId(driver)
 
   // Dependency order per NotesServiceDeps (services/notes/types.ts): registry → spaces → backlinks → notes.

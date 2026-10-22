@@ -15,15 +15,36 @@ const DB_NAME = 'vida'
 let client: WorkerDbClient | null = null
 let readyPromise: Promise<WorkerDbClient> | null = null
 
+/**
+ * Worker teardown on NON-cancelable page-lifecycle events only (preferences-rescope R1, R1-BR-8):
+ * - `pagehide` + `persisted` (entering the bfcache) → `terminate()`: a frozen page must not keep the exclusive OPFS
+ *   handles (AccessHandlePoolVFS), or a new tab / a URL return would hit "in use" until eviction.
+ * - `pageshow` + `persisted` (restored from the bfcache) → `reload()`: the worker is gone, start clean.
+ * - a normal unload → nothing: the browser discards the dedicated worker with its document (e2e reloads prove it).
+ * Never `beforeunload` — it is cancelable, and a cancelled navigation would leave a live page with a dead worker.
+ * A transaction cannot finish after unload anyway (each statement needs a main-thread round trip); pending writes are
+ * protected by flushing while the page is still visible (R2), not here.
+ */
+export function registerTeardown(
+  target: Pick<EventTarget, 'addEventListener'>,
+  worker: Pick<WorkerDbClient, 'terminate'>,
+  reload: () => void,
+): void {
+  target.addEventListener('pagehide', (e) => {
+    if ((e as PageTransitionEvent).persisted) worker.terminate()
+  })
+  target.addEventListener('pageshow', (e) => {
+    if ((e as PageTransitionEvent).persisted) reload() // a reload is never `persisted` → no loop
+  })
+}
+
 /** The process-wide DB client (spawns the worker on first call). */
 export function getDbClient(): WorkerDbClient {
   if (client) return client
   client = new WorkerDbClient()
-  // The SPA holds one client for its whole lifetime; `close()` is logical-only,
-  // `terminate()` is the physical teardown. Terminate on unload so the worker
-  // isn't orphaned (no explicit close() in the app flow).
+  // The SPA holds one client for its whole lifetime; `close()` is logical-only, `terminate()` the physical teardown.
   if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', () => client?.terminate())
+    registerTeardown(window, client, () => window.location.reload())
   }
   return client
 }
