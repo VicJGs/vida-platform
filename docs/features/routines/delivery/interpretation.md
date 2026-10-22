@@ -68,7 +68,7 @@
 - **N3 · Injected deps (D1 + seam-contract):** `db`, `deviceId`, `clock?` (built `[FACT: routines/types.ts:28]`), **`tasks: TasksService`
   (required, D1)**, `habits?`, `sessions`, `spaces`, `notes`, `effects?: {rail, registry}`, `prefs?`, plus the foundation deps the seam-contract names. The exact required-vs-optional split is reconciled at Step 4/5 against (a) the governing
   seam-contract and (b) the shipped factory convention: Tasks/Habits make foundation deps **optional + fail-loud**
-  (`TasksDepNotWiredError`) `[FACT: tasks/types.ts:351-356]`. The seam-contract's **`registry` dep is not needed for REGISTRATION** (§1a seed), **but it is needed to VALIDATE `entity_type`**
+  (`TasksDepNotWiredError`) `[FACT: tasks/types.ts:351-356]`. **Resolved at the Re-scope Gate (Victor): the approved seam governs, so `sessions`/`spaces`/`notes`/`registry`/`tasks` are required.** The seam-contract's **`registry` dep is not needed for REGISTRATION** (§1a seed), **but it is needed to VALIDATE `entity_type`**
   at `addStep` (R2; the sessions `entityRegistry` precedent `[FACT: sessions/service.ts:114-115,393]`), so it stays. **`measurementSources?` is
   dead** given rule 12 (no M5 source).
 - **N4 · Session sub-types:** a session-driven step can only launch a sub-type the `SessionRegistry` resolves. In M1 that is

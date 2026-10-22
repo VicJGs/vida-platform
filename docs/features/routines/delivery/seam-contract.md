@@ -20,10 +20,10 @@ interface RoutinesServiceDeps {             // ⟲ amended (A2, N3, D1)
   clock?: () => string                       // ⟲ built (as-built S1): asOf YYYY-MM-DD, default UTC today
   tasks: TasksService                         // ⟲ REQUIRED (D1). Replaces the deny-safe TasksPort
   registry: TaggableTypeRegistry              // entity_type validation at addStep (R2). Registration already seeded (_registry.ts:45-46)
-  sessions?: SessionsService                  // ⟲ optional + fail-loud RoutinesDepNotWiredError (shipped convention)
+  sessions: SessionsService                   // required (createSession/startFocus, attach, registerDueProvider, dueIn)
   habits?: HabitsService                       // habit-step native tick
-  spaces?: SpacesService                      // ⟲ optional + fail-loud (tags/links)
-  notes?: NotesService                        // ⟲ optional + fail-loud (pages)
+  spaces: SpacesService                       // required (tags/links)
+  notes: NotesService                         // required (pages)
   effects?: { rail: EffectRail; registry: EffectRegistry }   // producer guard registry.resolve before applyEffect (N8)
   prefs?: RoutinesPrefsPort                    // completion/miss/acceptance-window config; absent ⇒ shipped default, FLAGGED (R4)
   // ⟲ dropped: measurementSources (rule 12: no M5 source)
@@ -101,7 +101,6 @@ ProviderEmitFailed       // dueIn/summary failure isolated — routine + sibling
 RoutineNotFoundError     // addStep on a missing/archived routine (no orphan step)
 StepNotFoundError        // complete/skip/plan/edit on a missing/archived step (no orphan completion)
 CompletionNotFoundError  // edit/delete an absent (step,date)
-RoutinesDepNotWiredError // an op needing an optional dep (sessions/spaces/notes) that is not wired (shipped convention)
 ```
 
 ## What ② must NOT expect from ① (boundary)

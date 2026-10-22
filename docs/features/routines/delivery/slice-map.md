@@ -25,13 +25,14 @@
   emits the routine's `award_xp` + `contribute_purpose_metric`; streak exposed as a READ seam (no advertise).
 
 ## Factory (re-scoped; reconciled at Step 4, interpretation N3)
-`createRoutinesService(deps): RoutinesService`. `deps = { db, deviceId, clock?, tasks: TasksService (REQUIRED, D1), registry:
-TaggableTypeRegistry (entity_type validation, R2), sessions: SessionsService, habits?: HabitsService, spaces, notes, effects?:
-{ rail, registry }, prefs?: RoutinesPrefsPort }`. **Dropped:** `measurementSources` (rule 12: no M5 source) and the `TasksPort`
-(D1). Each dep lands in the slice that first consumes it (the habits precedent). Required-vs-optional for
-`sessions`/`spaces`/`notes` follows the **shipped convention** (optional + fail-loud `RoutinesDepNotWiredError`, the
-`TasksDepNotWiredError` precedent `services/tasks/types.ts:351-356`), except **`tasks`, which D1 makes required**. This settles N3 by
-the newest shipped precedent, recorded here for approval.
+`createRoutinesService(deps): RoutinesService`. `deps = { db, deviceId, clock?, tasks: TasksService, registry: TaggableTypeRegistry,
+sessions: SessionsService, spaces: SpacesService, notes: NotesService, habits?: HabitsService, effects?: { rail, registry },
+prefs?: RoutinesPrefsPort }`.
+- **Required** (as approved 2026-10-14): `spaces`, `notes`, `registry`, `sessions`, plus **`tasks` (D1)**. `registry` validates
+  `entity_type` (R2); registration itself is already seeded.
+- **Optional:** `habits`, `effects` (producer guard, N8), `prefs` (fail-open shipped default, flagged, R4).
+- **Dropped:** `measurementSources` (rule 12) and the `TasksPort` (D1).
+- Each dep lands in the slice that first consumes it.
 
 ## Slices (all `backend`; each runs the full §XXVI gate and closes with the per-slice live-store Verification Gate)
 
@@ -55,7 +56,7 @@ the newest shipped precedent, recorded here for approval.
 | Leg | Owner | Named home | Status |
 |---|---|---|---|
 | `exercise` step → Health `workout` session (R5) | Health training | **MOD-health-training (#69)** `[FACT: delivery-structure-reconstruction/reconstructed-structure.md:164]` | ✅ named; until then `EntityUnavailable` |
-| Auto-slot placement for `rescheduleStep` (R3) | Scheduler G5 placement algorithm | documented as "M1.2 study-planner design-pass" `[FACT: docs/roadmap/m1.1-delivery-plan.md:247; sessions-and-scheduling/delivery/interpretation.md:79]`, but **no `#` row or issue exists** for it in the build order (grep of reconstructed-structure.md: no study-planner / G5 unit) | ⚠ **PHANTOM home**. Per process §3 it needs a minted issue with real edges (owner of minting = the delivery-structure / golive-replan work). Flagged for Victor at this gate |
+| Auto-slot placement for `rescheduleStep` (R3) | Scheduler G5 placement algorithm | **`⚠ INTENDED-later` → M1.2** (study-planner design-pass), a documented milestone home `[FACT: docs/roadmap/m1.1-delivery-plan.md:247; sessions-and-scheduling/delivery/interpretation.md:79]`. This is legitimate per the golive task organization: debt-plan §3 "homed by milestone, not a debt unit" + gap2 R2 (the tail position is the deferral) | ✅ homed. S6 ships caller-date reschedule |
 | Session-spine close after `completeFocus` (spine stays `in_progress`, N9) | Sessions | **sessions-rescope (#62)** "HUD + runtime legs" `[FACT: reconstructed-structure.md:150]` | informational. Routines works around it (reads focus-row status); not a routines dependency |
 
 ## Sequencing rationale

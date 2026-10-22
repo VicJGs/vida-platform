@@ -129,7 +129,7 @@ gate A11 (null-entity actionable step; built `routines-service.test.ts:212` ✅)
 | ❌ wrong → fix | 8 | **A16 (drive leg)**, B1 (date format), A8², A11², A12, B2², B11 (dup), B16³ |
 | 📄 undocumented → back-fill | 10 | A17, A18, A25, A2-clock, D2–D8 (D6/D7 at their homes) |
 | 🕳 gap → build | 14 | A2, A6, A10, **A15 runStep**, A19, A20, A21, A22, A23, A24, A26, A27, B3², C3/C4/C6/C7 (ride A15/A26) |
-| 🕳 borrowed (not routines') | 1 | A19 auto-slot leg (G5 placement). **Home is phantom**, see slice-map §Borrowed legs |
+| 🕳 borrowed (not routines') | 1 | A19 auto-slot leg (G5 placement) → `⚠ INTENDED-later` M1.2 (documented milestone home) |
 | ⛔ | — | E2 by construction; E4 homed to the fe-routines entity close |
 Open UNKNOWNs carried (not ledger defects): interp rules 22 (task step in a recurring routine) and 23 (habit tick vs done) → pinned
 at the run/drive slice PLAN; R4 default values → evaluate slice PLAN (Victor).
