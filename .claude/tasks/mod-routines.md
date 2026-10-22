@@ -1,6 +1,6 @@
 # Task: mod-routines
-# Status: in-progress — S3/8 shipped (1a61189); merged origin/main 2026-10-21, S4 next
-# Scenario: Default (Entity Delivery Flow ①)
+# Status: in-progress — re-scope from Step 0 (built S1–S3 @1a61189 reconcile vs main 9-slice map); merged origin/main 2026-10-21
+# Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
 # Project: M1 — Whole Manual OS

@@ -1,5 +1,8 @@
 <!-- Contract — features/routines · /documentation Phase 2 · sources: ADR-002 §5.6 · routine.ts · sessions/contract.md · docs/intake/routines.md §D/§E -->
 
+> ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
+> [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
+
 # Contract — Routines  (level: Feature)
 
 > ⚠ The surface below is **INTENDED** (the reframe); the v2 code is schema-only (2 tables, 0 service logic). Every
