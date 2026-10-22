@@ -144,6 +144,41 @@ export interface RoutineAnalytics {
 16. **Errors / read-only:** archived → `RoutineNotFoundError`; a bad range (from > to, or a malformed date) → `ZodError`; `sync_queue` unchanged.
 Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential · g2 · /critique · §XXIX.
 
+## Preflight (gate 2): `/preflight` PASSED, 0 gaps (after Approval 1, 2026-10-22)
+| Layer | Specified? | Where |
+|---|---|---|
+| Backend (in-process, read-only; no endpoint/auth) | ✅ `getStreak`, `getAnalytics`, `progress`, types, rules A1–A11 | §Types · §Rules |
+| Database | ✅ reads only: `routines`, `routine_step` (all, as-of), `routine_completions` for `[from,to]`. No writes, **no schema change** (A3 uses the acceptance-window procedure, no lifecycle column) | A1–A11 |
+| Integration | ✅ reflection via `tasks.getTask` / `habits.getCalendar` (public); policy via `prefs.policyFor`; occurrences via `ical.js` | A1, A2 |
+| Durable-doc invariants | ✅ derive-not-cache (BR-RT-S1-3) · S4e-1…6 reused unchanged through the shared pure day-judgment · planned skip neutral · RT-6 lifecycle | `current-business-rules.md` |
+
+**Assumptions pinned:**
+1. **Rule-membership of DTSTART (A1):** the iterator's first yield is DTSTART; it is kept only if a **second iterator anchored one day before DTSTART**
+   also yields DTSTART (i.e. the rule genuinely produces it). This is probed against ical.js 2.2.1 at step 4 before relying on it (the S2c "verify the
+   library" lesson); if the probe disagrees, the mechanism is replaced, recorded as §XXVIII, and the gate test is unchanged.
+2. **Calendar-day arithmetic:** `addDays(ymd, n)` via `Date.UTC(y, m-1, d+n)` → `YYYY-MM-DD` from the UTC fields (no local time).
+3. `RoutineDateRange` is Zod-validated: both `YYYY-MM-DD`, `from <= to`, else `ZodError`.
+4. **The shared pure day-judgment:** `judgeDay(stepsAll, rowsByStepDate, reflection, policy, date)` → the S4 `RoutineEvaluation` body; `evaluateRoutine`
+   becomes load-then-`judgeDay` (behaviour unchanged, the S4 suite is the regression check).
+5. **Reflection data per call:** task rows fetched **once per distinct task id**; habit calendars cached per (habit, month) across the whole range.
+6. **Ledger range read:** one query `completed_date BETWEEN from AND to` ∧ `routine_step_id IN (ids)`.
+7. `today = clock()`. `getStreak` covers DTSTART..today; `getAnalytics` covers the caller's range clamped to ≤ today; `comparison.previous` = the
+   preceding range of the same day count.
+8. `progress` stored int → `/100`; the result passes through `resolveProgress` unchanged.
+9. Gate 15 asserts boundedness as **equal `db.select` call counts for a 30-day vs a 60-day streak** (independent of day count).
+
+## Implementation plan (§5, worked via `victor:execute-plan-code`)
+1. **Tests first (red):** Gate 1–16 in a new `S5 — progress + analytics` block (`Date.now` pinned; stub prefs ports).
+2. **validators:** `RoutineDateRangeSchema` (refine `from <= to`).
+3. **types.ts + index.ts:** `RoutineDateRange` · `OccurrenceStatus` · `RoutineStreak` · `RoutineCompletionRate` · `RoutineStepRank` · `RoutineAnalytics` ·
+   `RoutinePolicy.miss` widened (both fields optional) · `getStreak`/`getAnalytics`/`progress` on the interface.
+4. **service.ts:** the ical.js membership probe (assumption 1) · `occurrences(rule, dtstart, from, to)` · `addDays` · extract `judgeDay` (S4 refactor) ·
+   `loadWindow(routineId, from, to)` · `classifyOccurrence` (A2–A4 + window validation) · `streakOf` · `rateOf` · `rankSteps` · `getStreak` / `getAnalytics` /
+   `progress`. **Gate point = steps 2–4** (S4's 83 tests must stay green across the refactor).
+5. **Docs:** the seam shapes + renames (`completionRate→completion`, `timePeriodComparison→comparison`, `TimeRange→RoutineDateRange`); the
+   current-spec "lifecycle has no behavioural effect yet" line → A3; record that editing `recurrence_rule` re-derives history.
+6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` sequential · g2 · /critique · §XXIX.
+
 ## g1 critique (folded): REVISE → 5 blocking fixed (today pending; ical.js DTSTART/BYxxx/sub-daily; the inherited task-reflection limit restated +
 tested; `miss` fields optional + window validated; one-load bounded evaluation) + 7 non-blocking (ranking grounded in v1 action granularity + the G1
 page composes on ②; `longest` with unjudged; lifecycle via the RT-6/Q3 acceptance-window procedure (real misses are final; pause affects only make-good-able days); `policy_source` = S4 meaning; ranking over judged days; A7
