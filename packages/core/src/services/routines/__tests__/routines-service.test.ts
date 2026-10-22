@@ -1186,3 +1186,289 @@ describe('mod-routines S4 — policy evaluation', () => {
     expect(e.done.map((x) => x.step_id)).toEqual([st.id])
   })
 })
+
+// ============================================================================
+// S5 — progress + analytics (PLAN-S5-progress-analytics.md · Verification Gate 1–16)
+// Clock pinned via Date.now (routines' clock = utcDay(Date.now())). Policies injected through a stub port.
+// ============================================================================
+describe('mod-routines S5 — progress + analytics', () => {
+  let h: Harness
+  let clock: ReturnType<typeof vi.spyOn>
+  const setNow = (day: string) => clock.mockImplementation(() => Date.parse(`${day}T12:00:00Z`))
+  const policy = (p: RoutinePolicy | null): RoutinesPrefsPort => ({ policyFor: async () => p })
+  const AON = (window?: number): RoutinePolicy => ({
+    completion: { kind: 'all_or_nothing' },
+    ...(window === undefined ? {} : { miss: { acceptance_window_days: window } }),
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  // A routine (and its steps) created on `created`, so DTSTART = created.
+  async function routineOn(created: string, rule: string | null, opts: { steps?: number; prefs?: RoutinesPrefsPort } = {}) {
+    h = await setup(opts.prefs ? { prefs: opts.prefs } : {})
+    clock = vi.spyOn(Date, 'now')
+    setNow(created)
+    const rid = (await h.svc.createRoutine({ name: 'R', recurrence_rule: rule })).id
+    const steps = []
+    for (let i = 0; i < (opts.steps ?? 1); i++) steps.push(await h.svc.addStep(rid, { title: `S${i}` }))
+    return { rid, steps }
+  }
+  const doneOn = async (stepId: string, days: string[]) => {
+    for (const d of days) await h.svc.completeStep(stepId, { date: d })
+  }
+
+  // 1 — occurrences (ical.js expansion, probed behaviours)
+  it('occurrences (minimal allowlist): DAILY, WEEKLY;BYDAY, WEEKLY inherits weekday, MONTHLY ordinal, YEARLY ordinal with BYMONTH, COUNT kept, BYMONTHDAY=-1, Feb-29 roll-over filtered', async () => {
+    const scheduled = async (created: string, rule: string, today: string, from = created) => {
+      const { rid } = await routineOn(created, rule)
+      setNow(today)
+      const a = await h.svc.getAnalytics(rid, { from, to: today })
+      vi.restoreAllMocks()
+      return a.completion.scheduled
+    }
+    expect(await scheduled('2026-10-20', 'FREQ=DAILY', '2026-10-24')).toBe(5)
+    expect(await scheduled('2026-10-20', 'FREQ=WEEKLY;BYDAY=MO,WE', '2026-10-28')).toBe(3)
+    expect(await scheduled('2026-10-20', 'FREQ=WEEKLY', '2026-10-28')).toBe(2) // Tue20, Tue27
+    expect(await scheduled('2026-10-20', 'FREQ=YEARLY;BYMONTH=5;BYDAY=-1MO', '2027-06-01')).toBe(1) // last Monday of May: accepted (2027-05-31)
+    expect(await scheduled('2026-10-20', 'FREQ=WEEKLY;BYDAY=MO,WE;COUNT=3', '2026-11-30')).toBe(3)
+    expect(await scheduled('2026-10-20', 'FREQ=MONTHLY;BYDAY=-1FR', '2026-12-31')).toBe(3) // last Friday: 10-30, 11-27, 12-25
+    expect(await scheduled('2026-10-31', 'FREQ=MONTHLY;BYMONTHDAY=-1', '2026-11-30')).toBe(2) // keeps its real start 10-31
+    expect(await scheduled('2026-10-20', 'FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=29', '2027-03-05')).toBe(0) // no false 03-01
+    expect(await scheduled('2026-10-20', 'FREQ=DAILY', '2026-10-24', '2026-10-22')).toBe(3) // range-bounded; future excluded
+  })
+
+  it('the day-grain RRULE allowlist (RT-11) rejects hang/throw/sub-daily shapes at write and on read of a pre-stored rule', async () => {
+    const { rid } = await routineOn('2026-10-20', 'FREQ=DAILY')
+    for (const bad of [
+      'FREQ=DAILY;BYMONTHDAY=-1', // hangs ical.js
+      'FREQ=DAILY;BYDAY=2MO', // hangs
+      'FREQ=WEEKLY;BYWEEKNO=10', // hangs
+      'FREQ=DAILY;BYMONTH=2;BYMONTHDAY=30', // impossible pair, hangs
+      'FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=30', // impossible pair
+      'FREQ=WEEKLY;BYMONTHDAY=-1', // ical.js throws at iterator construction
+      'FREQ=DAILY;BYYEARDAY=100', // ical.js throws at iterator construction
+      'FREQ=YEARLY;BYDAY=20MO', // mis-expands (ordinal YEARLY without BYMONTH)
+      'FREQ=HOURLY;INTERVAL=8', // sub-daily: outside a day-grain cadence
+      'FREQ=DAILY;INTERVAL=7;BYDAY=MO', // hangs from a Thursday DTSTART (weekday-dependent)
+      'FREQ=DAILY;BYDAY=MO,WE', // DAILY takes no BY-parts (use WEEKLY;BYDAY)
+      'FREQ=MONTHLY;INTERVAL=12;BYMONTH=2', // wrong dates
+      'FREQ=MONTHLY;BYDAY=6FR', // throws at iterator construction
+      'FREQ=YEARLY;BYYEARDAY=100', // outside the minimal forms
+      'FREQ=MONTHLY;BYMONTHDAY=0', // RFC-forbidden 0
+      'FREQ=YEARLY;BYMONTH=1;BYDAY=20MO', // ordinal out of the 1–5 in-month range
+      'FREQ=MONTHLY;BYSETPOS=5;BYDAY=FR', // BYSETPOS outside the minimal forms
+      'FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=-30', // impossible pair (negative)
+    ]) {
+      await expect(h.svc.createRoutine({ name: 'X', recurrence_rule: bad })).rejects.toBeInstanceOf(InvalidRecurrenceRuleError)
+    }
+    h.bsql.prepare('UPDATE routines SET recurrence_rule = ? WHERE id = ?').run('FREQ=DAILY;BYDAY=2MO', rid)
+    await expect(h.svc.getStreak(rid)).rejects.toBeInstanceOf(InvalidRecurrenceRuleError)
+  })
+
+  // 2 — streak with a window
+  it('streak with a window: done, done, missed, done, done (+ today pending) → current 2, longest 2, total 4', async () => {
+    const { rid, steps } = await routineOn('2026-10-21', 'FREQ=DAILY', { prefs: policy(AON(1)) })
+    await doneOn(steps[0].id, ['2026-10-21', '2026-10-22', '2026-10-24', '2026-10-25'])
+    setNow('2026-10-26')
+    expect(await h.svc.getStreak(rid)).toMatchObject({ current: 2, longest: 2, total: 4, policy_source: 'user' })
+  })
+
+  // 3 — pending
+  it('pending: today undone with no window; yesterday undone within a 3-day window — the streak carries over both', async () => {
+    let r = await routineOn('2026-10-24', 'FREQ=DAILY', { prefs: policy(AON()) })
+    await doneOn(r.steps[0].id, ['2026-10-24', '2026-10-25'])
+    setNow('2026-10-26')
+    expect(await h.svc.getStreak(r.rid)).toMatchObject({ current: 2, policy_source: 'user' })
+    vi.restoreAllMocks()
+    r = await routineOn('2026-10-23', 'FREQ=DAILY', { prefs: policy(AON(3)) })
+    await doneOn(r.steps[0].id, ['2026-10-23', '2026-10-24'])
+    setNow('2026-10-26')
+    const a = await h.svc.getAnalytics(r.rid, { from: '2026-10-23', to: '2026-10-26' })
+    expect(a.completion).toMatchObject({ done: 2, pending: 2, missed: 0 })
+    expect((await h.svc.getStreak(r.rid)).current).toBe(2)
+  })
+
+  // 4 — neutral + lifecycle via the acceptance-window procedure (A3)
+  it('neutral: planned skip skipped; paused → today/in-window undone neutral, but a real (beyond-window) miss stays missed', async () => {
+    const { rid, steps } = await routineOn('2026-10-20', 'FREQ=DAILY', { prefs: policy(AON(2)) })
+    await doneOn(steps[0].id, ['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-25'])
+    // 10-20 undone (beyond window by 10-26 → a REAL miss); 10-24 undone (24+2 = 26 ≥ today → in window); 10-26 today undone
+    await h.svc.setLifecycle(rid, 'paused')
+    setNow('2026-10-26')
+    const a = await h.svc.getAnalytics(rid, { from: '2026-10-20', to: '2026-10-26' })
+    expect(a.completion).toMatchObject({ done: 4, missed: 1, neutral: 2 })
+    expect((await h.svc.getStreak(rid)).current).toBe(4) // 25, (24 neutral), 23, 22, 21 → then the real miss on 20 breaks
+    // planned skip = neutral (applicable 0)
+    await h.svc.setLifecycle(rid, 'active')
+    await h.svc.planSkipDates(steps[0].id, ['2026-10-24'])
+    expect((await h.svc.getAnalytics(rid, { from: '2026-10-24', to: '2026-10-24' })).completion.neutral).toBe(1)
+  })
+
+  // 5 — unjudged
+  it('unjudged: no window and a past undone day stops the walk and flags; longest ends the run at it', async () => {
+    const { rid, steps } = await routineOn('2026-10-22', 'FREQ=DAILY', { prefs: policy(AON()) })
+    await doneOn(steps[0].id, ['2026-10-22', '2026-10-23', '2026-10-25'])
+    setNow('2026-10-26')
+    expect(await h.svc.getStreak(rid)).toMatchObject({ current: 1, longest: 2, total: 3, policy_source: 'undefined' })
+  })
+
+  // 6 — policy_source meaning
+  it("policy_source: no policy + every day done → 'undefined'; a user policy with all days judged → 'user'", async () => {
+    let r = await routineOn('2026-10-24', 'FREQ=DAILY')
+    await doneOn(r.steps[0].id, ['2026-10-24', '2026-10-25'])
+    setNow('2026-10-25')
+    expect((await h.svc.getStreak(r.rid)).policy_source).toBe('undefined')
+    vi.restoreAllMocks()
+    r = await routineOn('2026-10-24', 'FREQ=DAILY', { prefs: policy(AON(0)) })
+    await doneOn(r.steps[0].id, ['2026-10-24', '2026-10-25'])
+    setNow('2026-10-25')
+    expect((await h.svc.getStreak(r.rid)).policy_source).toBe('user')
+  })
+
+  // 7 — unscheduled
+  it('unscheduled: no recurrence_rule → {0,0,0}, unscheduled, rate null', async () => {
+    const { rid } = await routineOn('2026-10-20', null, { prefs: policy(AON(1)) })
+    setNow('2026-10-26')
+    expect(await h.svc.getStreak(rid)).toMatchObject({ current: 0, longest: 0, total: 0, unscheduled: true })
+    const a = await h.svc.getAnalytics(rid, { from: '2026-10-20', to: '2026-10-26' })
+    expect(a).toMatchObject({ unscheduled: true })
+    expect(a.completion.rate).toBeNull()
+  })
+
+  // 8 — rate
+  it('rate = done / (done + missed): 3 done, 1 missed, 1 pending → 0.75; nothing judged → null', async () => {
+    const { rid, steps } = await routineOn('2026-10-21', 'FREQ=DAILY', { prefs: policy(AON(1)) })
+    await doneOn(steps[0].id, ['2026-10-21', '2026-10-23', '2026-10-24'])
+    setNow('2026-10-25')
+    const c = (await h.svc.getAnalytics(rid, { from: '2026-10-21', to: '2026-10-25' })).completion
+    expect(c).toMatchObject({ scheduled: 5, done: 3, missed: 1, pending: 1, rate: 0.75 })
+    expect((await h.svc.getAnalytics(rid, { from: '2026-10-25', to: '2026-10-25' })).completion.rate).toBeNull()
+  })
+
+  // 9 — ranking over judged days
+  it('ranking: steps by rate over judged days (A 4/4, C 2/3, B 2/4) → A, C, B', async () => {
+    const { rid, steps } = await routineOn('2026-10-22', 'FREQ=DAILY', { steps: 3, prefs: policy(AON(0)) })
+    const [A, B, C] = steps
+    await doneOn(A.id, ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25'])
+    await doneOn(B.id, ['2026-10-22', '2026-10-23'])
+    await h.svc.planSkipDates(C.id, ['2026-10-25'])
+    await doneOn(C.id, ['2026-10-22', '2026-10-23'])
+    setNow('2026-10-26') // today pending → excluded from judged days
+    const r = (await h.svc.getAnalytics(rid, { from: '2026-10-22', to: '2026-10-26' })).ranking
+    expect(r.map((x) => x.step_id)).toEqual([A.id, C.id, B.id])
+    expect(r.map((x) => [x.done, x.applicable])).toEqual([[4, 4], [2, 3], [2, 4]])
+  })
+
+  // 10 — time-period comparison
+  it('comparison: the preceding equal range; a previous range before DTSTART → null side, null delta', async () => {
+    const { rid, steps } = await routineOn('2026-10-21', 'FREQ=DAILY', { prefs: policy(AON(0)) })
+    await doneOn(steps[0].id, ['2026-10-21', '2026-10-23', '2026-10-24'])
+    setNow('2026-10-26')
+    const a = await h.svc.getAnalytics(rid, { from: '2026-10-23', to: '2026-10-24' })
+    expect(a.comparison.previous).toEqual({ from: '2026-10-21', to: '2026-10-22' })
+    expect(a.comparison.completion.rate).toBe(0.5)
+    expect(a.comparison.rate_delta).toBe(0.5) // 1.0 − 0.5
+    const b = await h.svc.getAnalytics(rid, { from: '2026-10-21', to: '2026-10-22' })
+    expect(b.comparison.completion.rate).toBeNull()
+    expect(b.comparison.rate_delta).toBeNull()
+  })
+
+  // 11 — progress
+  it('progress(): the stored 0–100 override wins (40 → 0.4); null → the all-time rate; unscheduled → null', async () => {
+    const { rid, steps } = await routineOn('2026-10-21', 'FREQ=DAILY', { prefs: policy(AON(0)) })
+    await doneOn(steps[0].id, ['2026-10-21', '2026-10-22', '2026-10-23'])
+    setNow('2026-10-25') // 21–23 done, 24 missed, 25 today pending → 0.75
+    expect(await h.svc.progress(rid)).toBe(0.75)
+    await h.svc.updateRoutine(rid, { progress: 40 })
+    expect(await h.svc.progress(rid)).toBe(0.4)
+    await h.svc.updateRoutine(rid, { progress: null, recurrence_rule: null })
+    expect(await h.svc.progress(rid)).toBeNull()
+  })
+
+  // 12 — re-derive
+  it('re-derive: deleting a past completion changes streak, rate and progress (no cache)', async () => {
+    const { rid, steps } = await routineOn('2026-10-21', 'FREQ=DAILY', { prefs: policy(AON(0)) })
+    await doneOn(steps[0].id, ['2026-10-21', '2026-10-22', '2026-10-23'])
+    setNow('2026-10-24')
+    expect((await h.svc.getStreak(rid)).current).toBe(3)
+    await h.svc.deleteCompletion(steps[0].id, '2026-10-22')
+    expect((await h.svc.getStreak(rid)).current).toBe(1)
+    expect(await h.svc.progress(rid)).toBeCloseTo(2 / 3)
+  })
+
+  // 13 — inherited S4 limit
+  it('inherited limit: a completed task step counts done on later days until reopened', async () => {
+    h = await setup({ prefs: policy(AON(0)) })
+    clock = vi.spyOn(Date, 'now')
+    setNow('2026-10-21')
+    const rid = (await h.svc.createRoutine({ name: 'R', recurrence_rule: 'FREQ=DAILY' })).id
+    const t = await h.tasks.createTask({ title: 'Once' })
+    await h.svc.addStep(rid, { title: 'Once', entity_type: 'task', entity_id: t.id })
+    await h.tasks.completeTask(t.id)
+    setNow('2026-10-24')
+    expect((await h.svc.getStreak(rid)).current).toBe(4) // 21, 22, 23 and today 24 all reflect the completed task (documented limit)
+  })
+
+  // 14 — window validation; a window-only policy works
+  it('a malformed acceptance window → InvalidRoutinePolicyError; a policy with only a window works', async () => {
+    for (const bad of [Number.NaN, -1, 1.5]) {
+      const { rid } = await routineOn('2026-10-21', 'FREQ=DAILY', { prefs: policy(AON(bad)) })
+      setNow('2026-10-25')
+      await expect(h.svc.getStreak(rid)).rejects.toBeInstanceOf(InvalidRoutinePolicyError)
+      vi.restoreAllMocks()
+    }
+    const { rid, steps } = await routineOn('2026-10-24', 'FREQ=DAILY', { prefs: policy(AON(1)) })
+    await doneOn(steps[0].id, ['2026-10-24'])
+    setNow('2026-10-25')
+    expect((await h.svc.getStreak(rid)).current).toBe(1)
+  })
+
+  // 15 — bounded queries
+  it('bounded: a 30-day and a 60-day streak issue the same number of db.select calls', async () => {
+    const count = async (days: number) => {
+      const created = '2026-08-01'
+      const { rid, steps } = await routineOn(created, 'FREQ=DAILY', { steps: 3, prefs: policy(AON(0)) })
+      await doneOn(steps[0].id, [created])
+      const today = new Date(Date.parse(`${created}T12:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10)
+      setNow(today)
+      const spy = vi.spyOn(h.db, 'select')
+      await h.svc.getStreak(rid)
+      const n = spy.mock.calls.length
+      vi.restoreAllMocks()
+      return n
+    }
+    expect(await count(30)).toBe(await count(60))
+  })
+
+  // 16 — errors / read-only
+  it('errors + read-only: archived → RoutineNotFoundError; a bad range → ZodError; sync_queue unchanged', async () => {
+    const { rid, steps } = await routineOn('2026-10-21', 'FREQ=DAILY', { prefs: policy(AON(0)) })
+    await doneOn(steps[0].id, ['2026-10-21'])
+    setNow('2026-10-24')
+    const before = (await h.db.select().from(syncQueue).all()).length
+    await h.svc.getStreak(rid)
+    await h.svc.getAnalytics(rid, { from: '2026-10-21', to: '2026-10-24' })
+    await h.svc.progress(rid)
+    expect((await h.db.select().from(syncQueue).all()).length).toBe(before)
+    await expect(h.svc.getAnalytics(rid, { from: '2026-10-24', to: '2026-10-21' })).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.getAnalytics(rid, { from: '2026-1-1', to: '2026-10-21' })).rejects.toBeInstanceOf(ZodError)
+    await h.svc.archiveRoutine(rid)
+    await expect(h.svc.getStreak(rid)).rejects.toBeInstanceOf(RoutineNotFoundError)
+  })
+
+  it('day arithmetic keeps years 0–99 literal (comparison range of a year-0050 range)', async () => {
+    const { rid } = await routineOn('2026-10-20', 'FREQ=DAILY', { prefs: policy(AON(0)) })
+    setNow('2026-10-22')
+    const a = await h.svc.getAnalytics(rid, { from: '0050-01-01', to: '0050-01-10' })
+    expect(a.comparison.previous).toEqual({ from: '0049-12-22', to: '0049-12-31' })
+  })
+
+  it('a paused routine: a day S4 cannot judge (partial + undefined) inside the window is neutral, not unjudged', async () => {
+    const pol: RoutinePolicy = { completion: { kind: 'required_node' }, miss: { acceptance_window_days: 7 } }
+    const { rid, steps } = await routineOn('2026-10-20', 'FREQ=DAILY', { steps: 2, prefs: policy(pol) })
+    await doneOn(steps[0].id, ['2026-10-25']) // no required steps ⇒ S4 'undefined'; 1 of 2 done ⇒ partial
+    await h.svc.setLifecycle(rid, 'paused')
+    setNow('2026-10-26')
+    const a = await h.svc.getAnalytics(rid, { from: '2026-10-25', to: '2026-10-25' })
+    expect(a.completion).toMatchObject({ neutral: 1, unjudged: 0 })
+  })
+})

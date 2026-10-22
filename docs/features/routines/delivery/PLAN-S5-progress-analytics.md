@@ -205,6 +205,49 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
    current-spec "lifecycle has no behavioural effect yet" line → A3; the `setLifecycle` comment "vacuous until then" (`types.ts`) → A3; record that editing `recurrence_rule` re-derives history.
 6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` sequential · g2 · /critique · §XXIX.
 
+## Addendum — g2 code review (post-implementation; §XXVIII)
+**§XXVIII deviation — the hang guard is an ALLOWLIST, not a denylist.** g2 found the denylist incomplete: `FREQ=DAILY;BYMONTH=2;BYMONTHDAY=30` still hung
+(re-probed), `WEEKLY;BYMONTHDAY=-1` / `DAILY;BYYEARDAY=100` passed the write and then threw an untyped `Error` at iterator construction, and the guard
+wrongly rejected valid `YEARLY;BYMONTH=5;BYDAY=-1MO`. Grounding: **RT-11** makes a routine's cadence day-grain ("day · day+timeframe-of-week ·
+day+time-of-month · day+time-of-year"). So `assertExpandable` accepts only:
+- `FREQ` ∈ DAILY/WEEKLY/MONTHLY/YEARLY. Sub-daily FREQs are rejected, which also removes the unbounded per-second/minute expansion cost.
+- Per-FREQ BY-parts that were probed to expand correctly: DAILY/WEEKLY `BYDAY` (weekday) + `BYMONTH`; MONTHLY `BYDAY` (incl. ordinal) + `BYMONTHDAY`
+  (±) + `BYSETPOS` + `BYMONTH`; YEARLY `BYMONTH` + `BYDAY` (ordinal only with BYMONTH) + `BYMONTHDAY` + `BYYEARDAY`.
+- Rejected: impossible BYMONTH/BYMONTHDAY pairs; iterator-construction errors are mapped to `InvalidRecurrenceRuleError`.
+
+It runs at write (tightening BR-RT-S2c-5) and before every expansion.
+**Fixed:**
+- `addDays` keeps years 0–99 literal (`setUTCFullYear` + `toISOString`).
+- `classify` applies paused/off first: everything not already a real miss is neutral, even a day S4 couldn't judge.
+- `getAnalytics` expands **once** over the range + comparison range and splits.
+- `loadWindow` takes the already-loaded routine (one routine read) and skips the step/ledger reads for an unscheduled routine.
+- The day judgments run in parallel, sharing the memo and calendar caches.
+
+**Recorded, not changed:** the ical.js/day helpers duplicate private code in tasks/books/relationships, and tasks' `nextOccurrence` has the same hang
+exposure without this guard. A shared recurrence module would fix both, but it is cross-module (Tasks) scope, so it goes to Victor.
+**Tests:** allowlist cases (9 rejected shapes incl. sub-daily, last-Monday-of-May accepted) + year-0050 arithmetic + the paused/undefined-day case → routines
+**102/102** · tsc 0 · eslint 0.
+
+## Addendum — final /critique (REVISE → fixed)
+The first allowlist still accepted hanging rules: `DAILY;INTERVAL=7;BYDAY=MO` hangs **depending on the creation weekday** (from a Thursday DTSTART).
+Rules that throw at iterator construction (`MONTHLY;BYDAY=6FR`, BYYEARDAY+BYMONTH) passed the write and failed every read, and ordinals mis-expanded
+(`YEARLY;BYMONTH=1;BYDAY=20MO`, `MONTHLY;BYSETPOS=5;BYDAY=FR`).
+**Fix: the MINIMAL RT-11 allowlist**:
+- `DAILY[;INTERVAL]`;
+- `WEEKLY[;INTERVAL][;BYDAY=weekdays]`;
+- `MONTHLY[;INTERVAL][;BYMONTHDAY=±1..31 | ;BYDAY=±1..5 ordinals]`;
+- `YEARLY[;INTERVAL][;BYMONTH[;BYMONTHDAY | ;BYDAY ordinal]]`;
+- (+ COUNT/UNTIL/WKST).
+
+**Every allowed form was probed across 9 DTSTARTs (all weekdays + month-ends): 145 shapes, 0 hang, 0 error.** Also:
+- a trial iterator build at write (construction errors are typed and rejected on save);
+- the nth-weekday ordinal is checked in the every-yield filter;
+- 0 values and negative impossible pairs are rejected;
+- `rankSteps` has no type assertions;
+- two stale "lands with S5" doc lines are fixed.
+
+Routines **102/102** · tsc 0 · eslint 0.
+
 ## Step-5 critique (folded): REVISE → 3 blocking fixed (non-terminating ical.js rules guarded by `assertExpandable` at write + before expansion; COUNT+1
 rebuild after a phantom drop; negative BYMONTHDAY resolved) + 4 non-blocking (BY-part check on every yield; `getTask` memo + gate-15 fixture without
 habits; step 4 split into a green-S4 refactor commit then S5 code; stale `types.ts` comment + window validated on S5 reads only)

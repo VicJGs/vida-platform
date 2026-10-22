@@ -35,7 +35,7 @@ interface RoutinesServiceDeps {             // ⟲ amended (A2, N3, D1)
 createRoutine(input: CreateRoutineInput): Promise<Routine>           // {name, description?, recurrence_rule?, measurement_kind?, binding_mode?, sort_order?}
 updateRoutine(id: Id, patch: UpdateRoutineInput): Promise<Routine>   // re-validates axes + lifecycle
 archiveRoutine(id: Id): Promise<void>                                // soft-delete; cascades to steps; ledger preserved (RT-17)
-setLifecycle(id: Id, lifecycle: 'active'|'paused'|'off'): Promise<Routine>   // S2c. Miss suppression for paused/off lands with S5's miss derivation (vacuous until then)
+setLifecycle(id: Id, lifecycle: 'active'|'paused'|'off'): Promise<Routine>   // S2c. paused/off generate no misses via the S5 acceptance-window procedure (real misses stay final)
 getRoutine(id: Id): Promise<Routine | null>
 listRoutines(filter?: { lifecycle?: RoutineLifecycle }): Promise<Routine[]>
 ```
@@ -76,9 +76,13 @@ evaluateRoutine(routineId: Id, input?: { date?: string }): Promise<RoutineEvalua
 //                         policy_source: 'user'|'undefined', routine_id, date, applicable, neutral: RoutineStepRef[], policy_note? }
 //   ⟲ S4: RoutineStepRef = { step_id, title }; percent display-only (threshold judges the exact ratio); undefined ⇒ only all-done/none-done judged
 //   applies completion_policy (read from prefs); partial ALWAYS returned (RT-5)
-progress(routineId: Id): Promise<number | null>                     // resolveProgress(stored, derive); NULL ⇒ derived-on-read
+progress(routineId: Id): Promise<number | null>                     // ⟲ S5: resolveProgress(stored/100, all-time A7 rate); null when nothing judged/unscheduled
 getStreak(routineId: Id): Promise<RoutineStreak>                    // POLICY-derived (not Habits rule); the READ seam Gamification pulls
-getAnalytics(routineId: Id, range: TimeRange): Promise<RoutineAnalytics>  // {completionRate, ranking, timePeriodComparison} — recomputed from ledger, no cache
+//   ⟲ S5: RoutineStreak = { current, longest, total, policy_source: 'user'|'undefined', unscheduled? }
+getAnalytics(routineId: Id, range: RoutineDateRange): Promise<RoutineAnalytics>   // ⟲ S5 renames: TimeRange→RoutineDateRange,
+//   completionRate→completion, timePeriodComparison→comparison. RoutineAnalytics = { range, completion: RoutineCompletionRate
+//   {scheduled,done,missed,pending,neutral,unjudged,rate}, ranking: RoutineStepRank[] (steps over judged days), comparison: { previous,
+//   completion, rate_delta }, policy_source, unscheduled? } — recomputed from the ledger, no cache
 ```
 
 ## Provider seam + Journal wiring (S9)

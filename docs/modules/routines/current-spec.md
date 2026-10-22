@@ -3,7 +3,7 @@
 > Coverage: 8/8 files read — **full** (`services/routines/{service,types,index}.ts` + `CLAUDE.md` + `__tests__/routines-service.test.ts`
 > · `validators/routine.ts` · `@vida/types/routine.ts` · `db/schema/routines.ts`; ~52.7 KB).
 > Inherits: `docs/core` (constitution: `business-rules.md`, `conventions.md`, `architecture/data-flow.md`) → this module.
-> Last refreshed: 2026-10-22 · **S4 policy evaluation promoted (§XXIX)** · S3 run/drive · S2c floor conformance · earlier: entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
+> Last refreshed: 2026-10-22 · **S5 progress + analytics promoted (§XXIX)** · S4 policy evaluation · S3 run/drive · S2c floor conformance · earlier: entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
 > = built S1–S3 `1a61189` + merged `origin/main`). Source of truth = the code (Currency Rule §XXIX).
 
 > **Baseline note (2026-10-21).** This doc records the code AS-IS. The code was built 2026-10-13 against an
@@ -18,12 +18,11 @@ The `@vida/core` **① service tier for Routines**: the cross-module *orchestrat
 recurring sequence of polymorphic steps, and each step drives a real entity elsewhere. The intended service
 "composes + derives, writes almost nothing of its own" `[FACT: docs/features/routines/delivery/interpretation.md:13-15]`.
 
-**As-built today (S1–S4):** routine + step CRUD, the ledger + skips, floor conformance (S2c), run/drive over the real Tasks/Habits/
-Sessions (S3), and policy evaluation (S4) `[FACT: services/routines/types.ts RoutinesService]`.
+**As-built today (S1–S5):** routine + step CRUD, the ledger + skips, floor conformance (S2c), run/drive over the real Tasks/Habits/
+Sessions (S3), policy evaluation (S4), and progress + analytics (S5) `[FACT: services/routines/types.ts RoutinesService]`.
 
 **What it is NOT (yet / ever):**
-- NOT a full derivation engine yet: `evaluateRoutine` is built (S4), but `progress()` / streak / analytics / misses are S5; `progress` is stored as the
-  caller's value or null.
+- A derivation engine for evaluation (S4) and progress/streak/analytics/misses (S5); `progress` stays a nullable override slot.
 - NOT a provider yet. There is no `dueIn` / `summary` / journal / due-lane registration.
 - NOT registered in the app composition-root. That happens in the routines ENTITY close (fe-routines ②), not this track
   `[FACT: docs/specs/foundation/golive-replan/process.md §4]`.
@@ -84,6 +83,14 @@ flag? }`. `isStepRunState` narrows the completeStep union.
 `RoutineEvaluation = { routine_id, date, status: 'done'|'partial'|'not_started', percent (display), applicable, done/not_done/neutral:
 RoutineStepRef[], policy_source: 'user'|'undefined', policy_note? }`. `RoutinePolicy = { completion: all_or_nothing | required_node |
 threshold{percent}, miss?: { logged_skip } }` (port contract; storage = Spaces/Preferences).
+
+**Progress + analytics (S5)**: read-only, derive-on-read
+| Method | Signature | Notes |
+|---|---|---|
+| `getStreak` | `(routineId) => Promise<RoutineStreak>` | `{current, longest, total, policy_source, unscheduled?}`: the policy-derived READ seam Gamification pulls (D3) |
+| `getAnalytics` | `(routineId, range: RoutineDateRange) => Promise<RoutineAnalytics>` | completion `{scheduled, done, missed, pending, neutral, unjudged, rate}` · step ranking · comparison with the preceding equal range. `ZodError` for a bad range |
+| `progress` | `(routineId) => Promise<number \| null>` | `resolveProgress(stored/100, all-time rate)` |
+Errors: `RoutineNotFoundError` · `InvalidRecurrenceRuleError` (a stored rule outside the cadence allowlist) · `InvalidRoutinePolicyError` (a malformed window).
 
 **Completion ledger + skip** (`service.ts`)
 | Method | Signature | Errors |
@@ -158,8 +165,9 @@ Coupling budget (constitution §6): respected. There are no reads of other modul
 
 ## 5. Key states
 - **Routine:** live (`deleted_at` NULL) × `lifecycle` ∈ {active, paused, off} | archived (`deleted_at` set; steps cascade-archived).
-  `lifecycle` changes via `setLifecycle` (S2c) or `updateRoutine`. It has **no behavioral effect yet**; "paused/off generate no misses"
-  (RT-6) needs the unbuilt miss derivation.
+  `lifecycle` changes via `setLifecycle` (S2c) or `updateRoutine`. **Effect (S5 A3):** paused/off neutralise only undone occurrences that are
+  today or still inside the user's acceptance window; a real (beyond-window) miss stays missed (RT-6 + business-rules.md:120). Editing
+  `recurrence_rule` re-derives the whole history under the new rule (derive-on-read).
 - **Step:** live | soft-deleted. A soft-deleted step can still be `updateStep`-ed (it gets re-stamped, ratified g2 N1).
 - **Completion (per step × date):** absent | done (`skipped=false`) | logged-skip (`skipped=true`, `skip_reason`). The row flips
   in place via upsert. A **pre-planned skip** is not a completion state; it is a date in `step.skip_dates`.
@@ -168,7 +176,7 @@ Coupling budget (constitution §6): respected. There are no reads of other modul
 
 ## Verification (as-built, re-run at baseline)
 `routines-service.test.ts`: live store (better-sqlite3 in-memory, `migrate()` applies 018), **28/28 green on Node 24 after the
-merge**; after **S2c: 41/41** (+13 Gate tests) · **S3: 64/64** · **S4: 82/82** · tsc 0 · eslint 0 · full `@vida/core` 2050/2052 (2 = F006 vault timeouts under load; 36/36 alone) · tsc 0 · eslint 0.
+merge**; after **S2c: 41/41** (+13 Gate tests) · **S3: 64/64** · **S4: 82/82** · **S5: 102/102** · tsc 0 · eslint 0 · full `@vida/core` 2050/2052 (2 = F006 vault timeouts under load; 36/36 alone) · tsc 0 · eslint 0.
 ⚠ Run on **Node 24**. The worktree's better-sqlite3 binary is built for ABI 137, so under `.nvmrc`'s Node 22 all 28 fail to load
 the native module (environment, not code).
 

@@ -14,7 +14,7 @@
 // (RT-14/RT-19); routine-level done/streak DERIVES on read from the ledger (S5).
 // ============================================================================
 
-import { and, eq, inArray, isNull, type SQL } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNull, lte, type SQL } from 'drizzle-orm'
 import ICAL from 'ical.js'
 import type { Routine, RoutineStep, RoutineCompletion } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
@@ -37,6 +37,7 @@ import {
   PlanSkipDatesSchema,
   RunStepSchema,
   EvaluateRoutineSchema,
+  RoutineDateRangeSchema,
   SetRoutineLifecycleSchema,
   RoutineCalendarDateSchema,
 } from '../../validators/routine'
@@ -44,6 +45,8 @@ import { UnknownEntityType } from '../../foundation/spaces/types'
 import { utcDay, TaskNotFoundError, RecurrenceRegenError } from '../tasks'
 import type { Session } from '../sessions'
 import type { HabitsService } from '../habits'
+import type { TasksService } from '../tasks'
+import { resolveProgress } from '../../foundation/measurement/engine'
 import type { FocusSessionRow } from '../../db/schema/foundation/session-extensions'
 import {
   RoutineNotFoundError,
@@ -54,6 +57,12 @@ import {
   InvalidRoutinePolicyError,
   type RoutineEvaluation,
   type RoutinePolicy,
+  type RoutineAnalytics,
+  type RoutineCompletionRate,
+  type RoutineDateRange,
+  type RoutineStepRank,
+  type RoutineStreak,
+  type OccurrenceStatus,
   type RoutineStepRef,
   type StepRunState,
   type StepTarget,
@@ -86,6 +95,128 @@ const byCodepoint = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 
 // S2c (B3) — a usable RFC-5545 RRULE. Verified against ical.js 2.2.1: invalid part VALUES throw, but a missing FREQ
 // parses silently with `freq = null` ('', 'NOT A RULE', 'BYDAY=MO', 'RRULE:FREQ=DAILY'), and a later iterator throws.
 // So both legs are checked. INTERVAL<=0 is coerced to 1 by the parser (accepted).
+// S5 — a MINIMAL allowlist of the day-grain RRULE forms a routine's cadence needs (RT-11: "day · day+timeframe-of-week · day+time-of-month ·
+// day+time-of-year"). ical.js 2.2.1 HANGS inside next() on valid RFC shapes, sometimes depending on DTSTART's weekday (probed 2026-10-22, e.g.
+// DAILY;INTERVAL=7;BYDAY=MO from a Thursday), mis-expands ordinals and throws on others at iterator construction. Only these forms are accepted —
+// each probed across 9 DTSTARTs (all 7 weekdays + month-ends) with no hang/error (137 + 8 shapes):
+//   DAILY[;INTERVAL]                      — every n days
+//   WEEKLY[;INTERVAL][;BYDAY=<weekdays>]   — days of the week (no ordinals)
+//   MONTHLY[;INTERVAL][;BYMONTHDAY=±1..31 | ;BYDAY=<±1..5 ordinal weekdays>]   — day / nth weekday of the month
+//   YEARLY[;INTERVAL][;BYMONTH=1..12[;BYMONTHDAY=±1..31 | ;BYDAY=<±1..5 ordinal weekdays>]]  — day / nth weekday of a month of the year
+// plus COUNT / UNTIL / WKST. Checked at write AND before every expansion (a stored rule never freezes a read).
+const MAX_DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] // Feb = 29 (leap years exist)
+const PLAIN_WEEKDAY = /^(MO|TU|WE|TH|FR|SA|SU)$/
+const ORDINAL_WEEKDAY = /^([+-]?)([1-5])(MO|TU|WE|TH|FR|SA|SU)$/
+function assertExpandable(rule: string): void {
+  const recur = ICAL.Recur.fromString(rule)
+  const fail = (): never => {
+    throw new InvalidRecurrenceRuleError(rule)
+  }
+  const freq = String(recur.freq)
+  const parts = Object.fromEntries(
+    Object.entries(recur.parts as Record<string, unknown[] | undefined>).filter(([, v]) => v?.length),
+  ) as Record<string, unknown[]>
+  const keys = Object.keys(parts)
+  const only = (...allowed: string[]) => keys.every((k) => allowed.includes(k))
+  const byday = (parts.BYDAY ?? []).map(String)
+  const mdays = (parts.BYMONTHDAY ?? []).map(Number)
+  const months = (parts.BYMONTH ?? []).map(Number)
+  const validMdays = () => mdays.every((d) => Number.isInteger(d) && d !== 0 && Math.abs(d) <= 31)
+  if (freq === 'DAILY') {
+    if (!only()) fail()
+  } else if (freq === 'WEEKLY') {
+    if (!only('BYDAY') || !byday.every((d) => PLAIN_WEEKDAY.test(d))) fail()
+  } else if (freq === 'MONTHLY') {
+    if (!only('BYMONTHDAY', 'BYDAY') || (mdays.length && byday.length)) fail()
+    if (!validMdays() || !byday.every((d) => ORDINAL_WEEKDAY.test(d))) fail()
+  } else if (freq === 'YEARLY') {
+    if (!only('BYMONTH', 'BYMONTHDAY', 'BYDAY') || (mdays.length && byday.length)) fail()
+    if ((mdays.length || byday.length) && !months.length) fail() // a day/nth-weekday needs its month (ordinal YEARLY mis-expands)
+    if (!months.every((m) => Number.isInteger(m) && m >= 1 && m <= 12)) fail()
+    if (!validMdays() || !byday.every((d) => ORDINAL_WEEKDAY.test(d))) fail()
+    // An impossible month/day pair (e.g. Feb 30, Feb −30) never yields.
+    if (mdays.length && mdays.every((d) => months.every((m) => Math.abs(d) > MAX_DAYS[m - 1]))) fail()
+  } else {
+    fail() // sub-daily FREQs are outside a day-grain cadence (RT-11)
+  }
+  try {
+    recur.iterator(ICAL.Time.fromDateString('2000-01-01')) // construction-time errors surface at write, typed
+  } catch {
+    fail()
+  }
+}
+
+const pad2 = (n: number): string => String(n).padStart(2, '0')
+const WEEKDAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
+// Calendar-day arithmetic on YYYY-MM-DD via UTC fields (never local time).
+const addDays = (ymd: string, n: number): string => {
+  const [y, m, d] = ymd.split('-').map(Number)
+  const t = new Date(0)
+  t.setUTCFullYear(y, m - 1, d + n) // setUTCFullYear keeps years 0–99 literal (Date.UTC would map them to 1900–1999)
+  return t.toISOString().slice(0, 10) // YYYY-MM-DD for years 0000–9999
+}
+const daysBetween = (from: string, to: string): number => (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000
+
+// The rule's explicit BY-parts as a date predicate: applied to EVERY yield (filters the phantom DTSTART and ical.js mis-yields; every
+// real occurrence passes). BYDAY ordinals are ignored (weekday only); negative BYMONTHDAY is resolved against the month length.
+function byPartsMatch(recur: InstanceType<typeof ICAL.Recur>, ymd: string): boolean {
+  const parts = recur.parts as Record<string, unknown[] | undefined>
+  const [y, m, d] = ymd.split('-').map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d))
+  const dim = new Date(Date.UTC(y, m, 0)).getUTCDate()
+  if (parts.BYDAY?.length) {
+    const wd = WEEKDAY[date.getUTCDay()]
+    const matchesToken = (v: unknown): boolean => {
+      const t = String(v)
+      const ord = /^([+-]?)(\d+)([A-Z]{2})$/.exec(t)
+      if (!ord) return t === wd
+      if (ord[3] !== wd) return false
+      const n = Number(ord[2])
+      // The nth weekday of the month, counted from the start (+) or the end (−).
+      return ord[1] === '-' ? Math.ceil((dim - d + 1) / 7) === n : Math.ceil(d / 7) === n
+    }
+    if (!parts.BYDAY.some(matchesToken)) return false
+  }
+  if (parts.BYMONTHDAY?.length) {
+    if (!parts.BYMONTHDAY.some((v) => (Number(v) < 0 ? dim + Number(v) + 1 : Number(v)) === d)) return false
+  }
+  if (parts.BYMONTH?.length && !parts.BYMONTH.some((v) => Number(v) === m)) return false
+  return true
+}
+
+// S5 A1 — the routine's occurrence dates in [from, to] (YYYY-MM-DD), expanded from DTSTART with the canonical ical.js.
+function occurrences(rule: string, dtstart: string, from: string, to: string): string[] {
+  assertExpandable(rule)
+  const run = (countBump: number): { dates: string[]; firstDropped: boolean } => {
+    const recur = ICAL.Recur.fromString(rule)
+    if (countBump && recur.count != null) recur.count = recur.count + countBump
+    let it: ReturnType<typeof recur.iterator>
+    try {
+      it = recur.iterator(ICAL.Time.fromDateString(dtstart))
+    } catch {
+      throw new InvalidRecurrenceRuleError(rule) // ical.js rejects some parsed rules only when building the iterator
+    }
+    const seen = new Set<string>()
+    let firstDropped = false
+    let first = true
+    let occ: InstanceType<typeof ICAL.Time> | null
+    while ((occ = it.next())) {
+      const ymd = `${occ.year}-${pad2(occ.month)}-${pad2(occ.day)}` // calendar fields, never toISOString (tasks g2 B1)
+      if (ymd > to) break
+      const ok = byPartsMatch(recur, ymd)
+      if (first && !ok) firstDropped = true
+      first = false
+      if (ok && ymd >= from) seen.add(ymd)
+    }
+    return { dates: [...seen], firstDropped }
+  }
+  const once = run(0)
+  // Dropping a phantom first yield would cost a COUNTed occurrence: rebuild with COUNT + 1 (probed). Defensive: no allowlisted form is known to
+  // yield a phantom start (probed), but the every-yield filter + this rebuild keep COUNT exact if ical.js ever does.
+  if (once.firstDropped && ICAL.Recur.fromString(rule).count != null) return run(1).dates.sort()
+  return once.dates.sort()
+}
+
 function assertValidRrule(rule: string): void {
   let freq: string | null = null
   try {
@@ -94,6 +225,7 @@ function assertValidRrule(rule: string): void {
     throw new InvalidRecurrenceRuleError(rule)
   }
   if (freq == null) throw new InvalidRecurrenceRuleError(rule)
+  assertExpandable(rule) // S5 — never store a rule ical.js would hang on
 }
 
 // Habits throws an UNTYPED Error when a habit is missing/deleted (services/habits/service.ts loadHabitOrThrow). One matcher, used by
@@ -495,19 +627,41 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       )
       .sort(bySequence)
 
-  // One query for the day's ledger rows across the routine's steps (UNIQUE(step,date) ⇒ ≤1 row per step).
-  const completionsOn = async (stepIds: string[], date: string): Promise<Map<string, RoutineCompletionRow>> => {
-    if (stepIds.length === 0) return new Map() // perf shortcut (drizzle's inArray([]) would be a no-match, not an error)
+  // One query for the ledger rows of [from, to] across the routine's steps → date → (step → row). UNIQUE(step,date) ⇒ ≤1 row per step/day.
+  type RowsByDate = Map<string, Map<string, RoutineCompletionRow>>
+  const completionsBetween = async (stepIds: string[], from: string, to: string): Promise<RowsByDate> => {
+    const byDate: RowsByDate = new Map()
+    if (stepIds.length === 0) return byDate // perf shortcut (drizzle's inArray([]) would be a no-match, not an error)
     const rows = await completionsRepo.findWhere(
-      and(eq(routineCompletions.completed_date, date), inArray(routineCompletions.routine_step_id, stepIds)) as SQL,
+      and(
+        gte(routineCompletions.completed_date, from),
+        lte(routineCompletions.completed_date, to),
+        inArray(routineCompletions.routine_step_id, stepIds),
+      ) as SQL,
     )
-    return new Map(rows.map((r) => [r.routine_step_id, r]))
+    for (const r of rows) {
+      let day = byDate.get(r.completed_date)
+      if (!day) byDate.set(r.completed_date, (day = new Map()))
+      day.set(r.routine_step_id, r)
+    }
+    return byDate
   }
 
   // E2 — done for `date` = the routine's own occurrence row (U1: the record of that occurrence, RT-5) OR the driven entity done AS OF
   // `date` in its own module (RT-3 reflects). Reflection only ADDS dones; a later change in the entity never rewrites D (a backfilled
   // stamp counts; a task reopened later doesn't erase D). Focus / actionable steps have no reflection source.
   type CalendarCache = Map<string, Promise<{ date: string; done: boolean }[] | null>>
+  // One reflection context per read call: task rows memoised per id, habit calendars per (habit, month) — S5 bounded queries.
+  interface Reflection {
+    calendars: CalendarCache
+    tasks: Map<string, ReturnType<TasksService['getTask']>>
+  }
+  const newReflection = (): Reflection => ({ calendars: new Map(), tasks: new Map() })
+  const taskOnce = (rf: Reflection, id: string): ReturnType<TasksService['getTask']> => {
+    let p = rf.tasks.get(id)
+    if (!p) rf.tasks.set(id, (p = tasks.getTask(id)))
+    return p
+  }
   const habitMonth = (svc: HabitsService, cache: CalendarCache, habitId: string, month: string) => {
     const key = `${habitId}|${month}`
     let p = cache.get(key)
@@ -524,16 +678,16 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     step: RoutineStepRow,
     row: RoutineCompletionRow | undefined,
     date: string,
-    cache: CalendarCache,
+    rf: Reflection,
   ): Promise<boolean> => {
     if (row != null && !row.skipped) return true
     const r = resolveTarget(step)
     if (r?.target === 'task') {
-      const task = await tasks.getTask(r.entityId)
+      const task = await taskOnce(rf, r.entityId)
       return task?.status === 'completed' && task.completed_at != null && utcDay(task.completed_at) <= date
     }
     if (r?.target === 'habit' && habits) {
-      const days = await habitMonth(habits, cache, r.entityId, date.slice(0, 7))
+      const days = await habitMonth(habits, rf.calendars, r.entityId, date.slice(0, 7))
       return days?.some((d) => d.date === date && d.done) ?? false
     }
     return false
@@ -593,6 +747,140 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     // E4 precedence: the user's rule decides; an unmet rule with nothing done ⇒ not_started.
     if (met) return { status: 'done', policy_source: 'user' }
     return { status: done.length === 0 ? 'not_started' : 'partial', policy_source: 'user' }
+  }
+
+  // S4 E1b–E6 as ONE pure-over-loaded-data day judgment (shared by evaluateRoutine and the S5 occurrence walk).
+  const judgeDay = async (
+    routineId: string,
+    all: RoutineStepRow[],
+    rows: ReadonlyMap<string, RoutineCompletionRow>,
+    date: string,
+    policy: RoutinePolicy | null,
+    rf: Reflection,
+  ): Promise<RoutineEvaluation> => {
+    const steps = stepsAsOf(all, date, new Set(rows.keys()))
+    const doneFlags = await Promise.all(steps.map((st) => isDoneOn(st, rows.get(st.id), date, rf)))
+    const done: RoutineStepRow[] = []
+    const notDone: RoutineStepRow[] = []
+    const neutral: RoutineStepRow[] = []
+    steps.forEach((st, i) => {
+      // Done first: work actually done on a planned-skip day still counts (RT-5 never discarded).
+      if (doneFlags[i]) {
+        done.push(st)
+        return
+      }
+      const row = rows.get(st.id)
+      const planned = (parseJsonArray<string>(st.skip_dates) ?? []).includes(date) // RT-8 planned skip = neutral
+      const loggedNeutral = row?.skipped === true && policy?.miss?.logged_skip === 'neutral'
+      if (planned || loggedNeutral) neutral.push(st)
+      else notDone.push(st)
+    })
+    const applicable = done.length + notDone.length
+    return {
+      routine_id: routineId,
+      date,
+      ...judge(routineId, policy, done, notDone, neutral, applicable),
+      percent: applicable ? Math.round((100 * done.length) / applicable) : 0,
+      applicable,
+      done: done.map(ref),
+      not_done: notDone.map(ref),
+      neutral: neutral.map(ref),
+    }
+  }
+
+  // ── S5 — progress + analytics (PLAN-S5-progress-analytics.md) ──────
+  // One load per call: routine, policy (window validated), all steps, the ledger rows for [from, to], one reflection context.
+  const loadWindow = async (routine: RoutineRow, from: string, to: string) => {
+    const routineId = routine.id
+    const policy = prefs ? await prefs.policyFor(routineId) : null
+    const w = policy?.miss?.acceptance_window_days
+    if (w !== undefined && !(Number.isInteger(w) && w >= 0)) throw new InvalidRoutinePolicyError(routineId, policy?.miss)
+    if (routine.recurrence_rule == null) return { routine, policy, all: [], rows: new Map() as RowsByDate, rf: newReflection() } // nothing to read
+    const all = await stepsRepo.findWhere(eq(routineStep.routine_id, routineId) as SQL)
+    const rows = await completionsBetween(all.map((st) => st.id), from, to)
+    return { routine, policy, all, rows, rf: newReflection() }
+  }
+  type Window = Awaited<ReturnType<typeof loadWindow>>
+
+  // A2–A4 — one occurrence's status. Today undone is pending (the day isn't over); paused/off neutralise only not-yet-real misses (A3);
+  // a past undone day is pending inside the user's window, missed beyond it, unjudged when the user set no window (none invented).
+  const classify = (ev: RoutineEvaluation, date: string, today: string, win: Window): OccurrenceStatus => {
+    if (ev.status === 'done') return 'done'
+    if (ev.applicable === 0) return 'neutral'
+    const window = win.policy?.miss?.acceptance_window_days
+    const cannotJudgeDone = ev.status === 'partial' && ev.policy_source === 'undefined'
+    const realMiss = date !== today && window !== undefined && addDays(date, window) < today && !cannotJudgeDone
+    // A3 — paused/off generate no misses: everything that is not ALREADY a real (final) miss is neutral.
+    if (win.routine.lifecycle !== 'active') return realMiss ? 'missed' : 'neutral'
+    if (date === today) return 'pending' // the day isn't over (RT-5 "at the timeframe's end")
+    if (cannotJudgeDone || window === undefined) return 'unjudged' // no window/policy ⇒ never invent one
+    return realMiss ? 'missed' : 'pending' // a real miss is final (RT-6, business-rules.md:120)
+  }
+
+  type Judged = { date: string; status: OccurrenceStatus; ev: RoutineEvaluation }
+  // Expand once over [from, min(to, today)] and judge every occurrence; day judgments run in parallel (shared memo/caches).
+  const judgeOccurrences = async (win: Window, from: string, to: string, today: string): Promise<Judged[]> => {
+    const rule = win.routine.recurrence_rule
+    if (rule == null) return []
+    const upto = to < today ? to : today
+    if (from > upto) return []
+    const dates = occurrences(rule, utcDay(win.routine.created_at), from, upto)
+    const evs = await Promise.all(
+      dates.map((date) => judgeDay(win.routine.id, win.all, win.rows.get(date) ?? new Map(), date, win.policy, win.rf)),
+    )
+    return dates.map((date, i) => ({ date, status: classify(evs[i], date, today, win), ev: evs[i] }))
+  }
+
+  const rateOf = (js: Judged[]): RoutineCompletionRate => {
+    const c = { scheduled: js.length, done: 0, missed: 0, pending: 0, neutral: 0, unjudged: 0 }
+    for (const j of js) c[j.status] += 1
+    const denom = c.done + c.missed
+    return { ...c, rate: denom ? c.done / denom : null }
+  }
+  const sourceOf = (win: Window, js: Judged[]): 'user' | 'undefined' =>
+    win.policy == null || js.some((j) => j.status === 'unjudged') ? 'undefined' : 'user'
+
+  // A5 — the policy-derived streak.
+  const streakOf = (js: Judged[]): Pick<RoutineStreak, 'current' | 'longest' | 'total'> => {
+    let current = 0
+    for (let i = js.length - 1; i >= 0; i--) {
+      const st = js[i].status
+      if (st === 'done') current += 1
+      else if (st === 'missed' || st === 'unjudged') break
+    }
+    let longest = 0
+    let run = 0
+    for (const j of js) {
+      if (j.status === 'done') longest = Math.max(longest, (run += 1))
+      else if (j.status === 'missed' || j.status === 'unjudged') run = 0
+    }
+    return { current, longest, total: js.filter((j) => j.status === 'done').length }
+  }
+
+  // A8 — steps ranked over the judged (done/missed) days.
+  const rankSteps = (win: Window, js: Judged[]): RoutineStepRank[] => {
+    const byId = new Map(win.all.map((st) => [st.id, st]))
+    const tally = new Map<string, { step: RoutineStepRow; done: number; applicable: number }>()
+    for (const j of js) {
+      if (j.status !== 'done' && j.status !== 'missed') continue
+      const doneIds = new Set(j.ev.done.map((r) => r.step_id))
+      for (const r of [...j.ev.done, ...j.ev.not_done]) {
+        const step = byId.get(r.step_id)
+        if (!step) continue
+        const t = tally.get(r.step_id) ?? { step, done: 0, applicable: 0 }
+        t.applicable += 1
+        if (doneIds.has(r.step_id)) t.done += 1
+        tally.set(r.step_id, t)
+      }
+    }
+    return [...tally.values()]
+      .map((t) => ({ ...t, rate: t.applicable ? t.done / t.applicable : null }))
+      .sort((a, b) => {
+        if (a.rate !== b.rate) return a.rate == null ? 1 : b.rate == null ? -1 : b.rate - a.rate
+        if (a.done !== b.done) return b.done - a.done
+        return bySequence(a.step, b.step)
+      })
+      .map((t) => ({ step_id: t.step.id, title: t.step.title, done: t.done, applicable: t.applicable, rate: t.rate }))
   }
 
   const service: RoutinesService = {
@@ -697,37 +985,60 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       await loadRoutineOrThrow(routineId) // archived/missing → RoutineNotFoundError (known limit for past-date reads, S5/S9)
       const date = p.date ?? clock()
       const all = await stepsRepo.findWhere(eq(routineStep.routine_id, routineId) as SQL) // one read (incl. soft-deleted, E1b)
-      const rows = await completionsOn(all.map((st) => st.id), date)
-      const steps = stepsAsOf(all, date, new Set(rows.keys()))
+      const rows = await completionsBetween(all.map((st) => st.id), date, date)
       const policy = prefs ? await prefs.policyFor(routineId) : null // a port throw propagates (fail loud)
-      const cache: CalendarCache = new Map()
-      const doneFlags = await Promise.all(steps.map((st) => isDoneOn(st, rows.get(st.id), date, cache)))
-      const done: RoutineStepRow[] = []
-      const notDone: RoutineStepRow[] = []
-      const neutral: RoutineStepRow[] = []
-      steps.forEach((st, i) => {
-        // Done first: work actually done on a planned-skip day still counts (RT-5 never discarded).
-        if (doneFlags[i]) {
-          done.push(st)
-          return
-        }
-        const row = rows.get(st.id)
-        const planned = (parseJsonArray<string>(st.skip_dates) ?? []).includes(date) // RT-8 planned skip = neutral
-        const loggedNeutral = row?.skipped === true && policy?.miss?.logged_skip === 'neutral'
-        if (planned || loggedNeutral) neutral.push(st)
-        else notDone.push(st)
-      })
-      const applicable = done.length + notDone.length
-      return {
-        routine_id: routineId,
-        date,
-        ...judge(routineId, policy, done, notDone, neutral, applicable),
-        percent: applicable ? Math.round((100 * done.length) / applicable) : 0,
-        applicable,
-        done: done.map(ref),
-        not_done: notDone.map(ref),
-        neutral: neutral.map(ref),
+      return judgeDay(routineId, all, rows.get(date) ?? new Map(), date, policy, newReflection())
+    },
+
+    // ── S5 ──────────────────────────────────────────────────────────
+    getStreak: async (routineId) => {
+      const today = clock()
+      const routine = await loadRoutineOrThrow(routineId)
+      const dtstart = utcDay(routine.created_at)
+      const win = await loadWindow(routine, dtstart, today)
+      if (win.routine.recurrence_rule == null) {
+        return { current: 0, longest: 0, total: 0, policy_source: win.policy ? 'user' : 'undefined', unscheduled: true }
       }
+      const js = await judgeOccurrences(win, dtstart, today, today)
+      return { ...streakOf(js), policy_source: sourceOf(win, js) }
+    },
+
+    getAnalytics: async (routineId, range) => {
+      const r: RoutineDateRange = RoutineDateRangeSchema.parse(range)
+      const today = clock()
+      const n = daysBetween(r.from, r.to) + 1
+      const previous: RoutineDateRange = { from: addDays(r.from, -n), to: addDays(r.from, -1) }
+      const routine = await loadRoutineOrThrow(routineId)
+      const win = await loadWindow(routine, previous.from, r.to) // one load covers the range + the comparison range
+      const both = await judgeOccurrences(win, previous.from, r.to, today) // ONE expansion, split at r.from
+      const js = both.filter((j) => j.date >= r.from)
+      const prev = both.filter((j) => j.date < r.from)
+      const completion = rateOf(js)
+      const prevCompletion = rateOf(prev)
+      const out: RoutineAnalytics = {
+        range: r,
+        completion,
+        ranking: rankSteps(win, js),
+        comparison: {
+          previous,
+          completion: prevCompletion,
+          rate_delta: completion.rate != null && prevCompletion.rate != null ? completion.rate - prevCompletion.rate : null,
+        },
+        policy_source: sourceOf(win, both),
+      }
+      if (win.routine.recurrence_rule == null) out.unscheduled = true
+      return out
+    },
+
+    progress: async (routineId) => {
+      const routine = await loadRoutineOrThrow(routineId)
+      const stored = routine.progress == null ? null : routine.progress / 100 // the 0–100 override (projects precedent)
+      if (stored != null) return resolveProgress(stored, () => null) // the override always wins (ADR-011 M3) — no derive needed
+      const today = clock()
+      const dtstart = utcDay(routine.created_at)
+      const win = await loadWindow(routine, dtstart, today)
+      const js = await judgeOccurrences(win, dtstart, today, today)
+      return resolveProgress(null, () => rateOf(js).rate) // A10: the all-time completion rate; null when nothing judged
     },
 
     skipStep: async (stepId, input = {}) => {

@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope approved; S2c ✅ + S3 ✅ + S4 ✅ shipped (local commits); next = S5 progress + analytics
+# Status: in-progress — re-scope approved; S2c–S5 ✅ shipped (local commits); next = S6 reschedule
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -18,6 +18,12 @@ completion/miss policy → Preferences; `routine_step_membership` → Spaces des
 Sessions; XP application → Gamification. Delivery: `docs/features/routines/delivery/`.
 
 ## Slice log
+- **S5 — Progress + analytics ✅ (2026-10-22)** — `getStreak` / `getAnalytics` / `progress` derive-on-read over the routine's occurrences
+  (ical.js, minimal RT-11 day-grain allowlist probed 145 shapes × 9 starts: ical.js 2.2.1 hangs on some valid RFC rules); occurrence status
+  done/missed/pending/neutral/unjudged under the USER's policy + acceptance window (today pending; real misses final; paused/off via the RT-6/Q3
+  window procedure, Victor); policy-derived streak; rate/ranking/comparison; one ledger read per call. routines **102/102** · tsc 0 · eslint 0 ·
+  core 2110/2111 (F006). g1/step-5/g2/final critiques folded (§XXVIII: denylist → minimal allowlist). Cross-module note for Victor: tasks'
+  `nextOccurrence` shares the ical.js hang exposure. Spec `delivery/PLAN-S5-progress-analytics.md`.
 - **S4 — Policy evaluation ✅ (2026-10-22)** — `evaluateRoutine(id, {date?})`: derive-on-read over the as-of-date step set; done = the
   routine row OR the driven entity done as of D (reflection only adds; history never rewritten); planned skip neutral; the USER's policy via
   `prefs?: RoutinesPrefsPort` (**no routines-side default**, Victor: defaults = Spaces templates/presets); no policy ⇒ only all/none judged,
@@ -97,4 +103,13 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 3. types.ts + index.ts — CompletionRule · RoutinePolicy · RoutinesPrefsPort · RoutineStepRef · RoutineEvaluation · InvalidRoutinePolicyError · prefs? dep
 - [x] 4. service.ts — bySequence · stepsAsOf · completionsOn · isDoneOn · classify · judge · evaluateRoutine  (gate point 2–4)
 - [x] 5. Docs — amend "shipped default" lines + seam signature/additions + S5 note
+- [x] 6. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
+
+## Build Steps — S5 progress + analytics (PLAN-S5 §5 · Approval 2 2026-10-22)
+- [x] 1. Tests first (red): Gate 1–16
+- [x] 2. validators — RoutineDateRangeSchema
+- [x] 3. types.ts + index.ts — S5 types · miss widened · getStreak/getAnalytics/progress
+- [x] 4a. service.ts refactor — judgeDay + range completions (S4 83 green, commit)
+- [x] 4b. service.ts S5 — assertExpandable · occurrences · classify · streak/rate/rank · ops  (gate point 2–4b)
+- [x] 5. Docs — seam shapes/renames · current-spec lifecycle line · types comment
 - [x] 6. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX

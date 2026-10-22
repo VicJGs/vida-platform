@@ -82,6 +82,10 @@ export const RunStepSchema = z.object({
 export const EvaluateRoutineSchema = z.object({
   date: CalendarDate.optional(),
 })
+// S5 — an analytics range: YYYY-MM-DD inclusive, from <= to.
+export const RoutineDateRangeSchema = z
+  .object({ from: CalendarDate, to: CalendarDate })
+  .refine((r) => r.from <= r.to, { message: 'from must be <= to' })
 export const SkipStepSchema = z.object({
   date: CalendarDate.optional(),
   reason: z.string().nullable().optional(),

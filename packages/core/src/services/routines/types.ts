@@ -54,8 +54,10 @@ export type CompletionRule =
   | { kind: 'threshold'; percent: number }
 export interface RoutinePolicy {
   completion: CompletionRule
-  /** The miss policy (Q3 "how misses count"): how a LOGGED skip counts (RT-8). [INTERP — minimal encoding.] */
-  miss?: { logged_skip: 'neutral' | 'not_done' }
+  /** The miss policy (Q3 "how misses count"), both parts optional. [INTERP — minimal encoding.]
+   *  `logged_skip`: how a LOGGED skip counts (RT-8; S4). `acceptance_window_days`: how many days a miss stays make-good-able before it is a
+   *  real (final) miss (Q3 "one week · N days · …"; S5). */
+  miss?: { logged_skip?: 'neutral' | 'not_done'; acceptance_window_days?: number }
 }
 export interface RoutinesPrefsPort {
   /** The user's policy for this routine, or null when none is configured (→ policy_source 'undefined'). */
@@ -78,6 +80,47 @@ export interface RoutineEvaluation {
   neutral: RoutineStepRef[]
   policy_source: 'user' | 'undefined'
   policy_note?: 'no_required_steps' | 'required_steps_all_neutral'
+}
+
+// --- S5 — progress + analytics (derive-on-read; PLAN-S5) ---
+export interface RoutineDateRange {
+  from: string // YYYY-MM-DD inclusive
+  to: string // YYYY-MM-DD inclusive
+}
+/** How one scheduled occurrence is judged: done · a real miss (beyond the window) · still make-good-able · neutral · not judgeable. */
+export type OccurrenceStatus = 'done' | 'missed' | 'pending' | 'neutral' | 'unjudged'
+/** The policy-derived streak (ROU-16): the READ seam Gamification pulls (D3). */
+export interface RoutineStreak {
+  current: number
+  longest: number
+  total: number
+  policy_source: 'user' | 'undefined'
+  unscheduled?: true
+}
+export interface RoutineCompletionRate {
+  scheduled: number
+  done: number
+  missed: number
+  pending: number
+  neutral: number
+  unjudged: number
+  /** done / (done + missed); null when nothing was judged (not a silent 0). */
+  rate: number | null
+}
+export interface RoutineStepRank {
+  step_id: string
+  title: string
+  done: number
+  applicable: number
+  rate: number | null
+}
+export interface RoutineAnalytics {
+  range: RoutineDateRange
+  completion: RoutineCompletionRate
+  ranking: RoutineStepRank[]
+  comparison: { previous: RoutineDateRange; completion: RoutineCompletionRate; rate_delta: number | null }
+  policy_source: 'user' | 'undefined'
+  unscheduled?: true
 }
 
 // --- Zod-inferred input shapes (validators/routine.ts) ----------------------
@@ -183,8 +226,8 @@ export interface RoutinesService {
   getRoutine(id: string): Promise<Routine | null>
   /** Ordered by sort_order, then created_at, then id (S2c A8). */
   listRoutines(filter?: RoutineFilter): Promise<Routine[]>
-  /** ROU-17 — set the routine lifecycle. Throws `RoutineNotFoundError` if missing/archived. Miss suppression for
-   *  paused/off lands with the S5 miss derivation (vacuous until then). */
+  /** ROU-17 — set the routine lifecycle. Throws `RoutineNotFoundError` if missing/archived. paused/off generate no misses (RT-6), applied
+   *  through the acceptance-window procedure (S5 A3): only today / in-window undone occurrences become neutral; a real miss stays missed. */
   setLifecycle(id: string, lifecycle: RoutineLifecycle): Promise<Routine>
 
   // ── S2: step CRUD + ordering ─────────────────────────────────────
@@ -216,6 +259,14 @@ export interface RoutinesService {
   /** ROU-12 — judge a routine's occurrence date under the USER's policy (prefs port). Always returns what was done (RT-5);
    *  without a policy, only the policy-independent judgments are made and the result is flagged 'undefined'. */
   evaluateRoutine(routineId: string, input?: EvaluateRoutineInput): Promise<RoutineEvaluation>
+
+  // ── S5: progress + analytics (read-only, derive-on-read) ──────────
+  /** ROU-16 — the policy-derived streak over the routine's occurrences (DTSTART..today). */
+  getStreak(routineId: string): Promise<RoutineStreak>
+  /** ROU-15 — completion rate · step ranking · comparison with the preceding equal range. */
+  getAnalytics(routineId: string, range: RoutineDateRange): Promise<RoutineAnalytics>
+  /** ROU-13 — resolveProgress(stored override /100, all-time completion rate); null when nothing is judgeable. */
+  progress(routineId: string): Promise<number | null>
   /** RT-8 — log a SKIP on the day (completion row, skipped=true + reason); UPSERT per (step,date). */
   skipStep(stepId: string, input?: SkipStepInput): Promise<RoutineCompletion>
   /** RT-8 — declare PRE-PLANNED skip dates (merged into step.skip_dates, deduped+sorted); not a completion row. */

@@ -4,7 +4,7 @@
 > Inherits: `docs/core/business-rules.md` + `docs/core/conventions.md` (constitution) → this module. Intent authority:
 > `docs/features/routines/{identity,business-rules,contract,structure-data,conventions}.md` (RT-1…RT-19) + the GOVERNING
 > `delivery/interpretation.md` (main's 9-slice set, Victor 2026-10-14; implicit rules cited as **interp §4.n**).
-> Last refreshed: 2026-10-22 · **S4 promoted (§XXIX)** · S3 · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
+> Last refreshed: 2026-10-22 · **S5 promoted (§XXIX)** · S4 · S3 · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
 
 > **Baseline note.** This doc records what the CODE enforces. The `BR-RT-S1/S2/S3-n` IDs are kept stable from the
 > as-built slices so existing cites keep resolving. They are **as-built labels**, not the governing slice numbers. Gaps
@@ -53,8 +53,8 @@
   `skipped`. `[FACT: service.ts]`
 
 **S2c — Floor conformance** (`delivery/PLAN-S2c-floor-conformance.md`)
-- **BR-RT-S2c-1 · setLifecycle (ROU-17).** Zod-validated enum; missing/archived routine → `RoutineNotFoundError`, no write. No
-  behavioural effect yet: miss suppression for paused/off lands with S5's miss derivation.
+- **BR-RT-S2c-1 · setLifecycle (ROU-17).** Zod-validated enum; missing/archived routine → `RoutineNotFoundError`, no write. Its effect
+  on misses is the S5 acceptance-window procedure (BR-RT-S5a-3: paused/off neutralise only not-yet-real misses).
 - **BR-RT-S2c-2 · Step append (A11).** An unordered `addStep` gets `step_order = max(live step_order) + 1` (soft-deleted steps don't
   count); an explicit `step_order` wins. Concurrent unordered adds may share a value; the 3-key sort keeps the order stable.
 - **BR-RT-S2c-3 · Calendar-date shape (B1, rule 16).** Every date input (`completeStep`/`skipStep` `date`, `planSkipDates` dates,
@@ -62,7 +62,7 @@
   Shape only (not calendar validity), like tasks/projects/purposes.
 - **BR-RT-S2c-4 · progress 0–100 (B2).** The override slot is an int 0–100 or null (projects parity; read as `/100` by `resolveProgress`
   consumers).
-- **BR-RT-S2c-5 · RRULE validated at write (B3, [INTERP] approved).** A non-null `recurrence_rule` (incl. `''`) must parse with ical.js
+- *(⟲ tightened by BR-RT-S5a-1: the day-grain cadence allowlist)* **BR-RT-S2c-5 · RRULE validated at write (B3, [INTERP] approved).** A non-null `recurrence_rule` (incl. `''`) must parse with ical.js
   2.2.1 AND carry FREQ, else `InvalidRecurrenceRuleError`, no write. Parse + FREQ only, no semantic check. INTERVAL≤0 is coerced to 1 by
   the parser (accepted).
 - **BR-RT-S2c-6 · Non-empty name/title (B16).** `.min(1)` on create and update.
@@ -112,6 +112,35 @@
 - **BR-RT-S4e-6 · Read-only + RT-5.** No writes, no effects; lifecycle doesn't change the evaluation. Every done step is always listed. **Known
   limits:** habit done uses the current `target_count`; archived routines' past dates aren't served.
 
+**S5 — Progress + analytics** (`delivery/PLAN-S5-progress-analytics.md`)
+- **BR-RT-S5a-1 · Minimal day-grain cadence allowlist (RT-11).** `recurrence_rule` must be one of:
+  - `DAILY[;INTERVAL]`;
+  - `WEEKLY[;INTERVAL][;BYDAY=weekdays]`;
+  - `MONTHLY[;INTERVAL][;BYMONTHDAY=±1..31 | ;BYDAY=±1..5 ordinal weekdays]`;
+  - `YEARLY[;INTERVAL][;BYMONTH=1..12[;BYMONTHDAY | ;BYDAY ordinal]]` (a possible month/day pair);
+  - (+ COUNT/UNTIL/WKST).
+
+  Each form was probed across 9 DTSTARTs with no hang/error. Anything else (sub-daily, BYSETPOS, BYYEARDAY, BYWEEKNO, DAILY BY-parts, 0 values, ordinals
+  outside ±1..5, iterator-construction errors) → `InvalidRecurrenceRuleError` **at write and before every expansion**. ical.js 2.2.1 hangs on some valid
+  RFC shapes, weekday-dependently. This tightens BR-RT-S2c-5. The every-yield filter also checks the nth-weekday ordinal.
+- **BR-RT-S5a-2 · Occurrences.** Expanded with ical.js from DTSTART = the creation day. The rule's explicit BY-parts filter every yield (phantom start +
+  library mis-yields); COUNT is rebuilt +1 after a phantom drop; dates come from the calendar fields; future dates are never judged. Editing the rule
+  re-derives history.
+- **BR-RT-S5a-3 · Occurrence status.** Each day is judged by S4's day judgment, then:
+  - done → done; `applicable = 0` → neutral;
+  - a **paused/off** routine → neutral unless already a real miss (RT-6 via the acceptance window);
+  - **today** undone → pending;
+  - no window/policy, or an S4 day S4 couldn't judge → **unjudged** (flagged; no window invented);
+  - inside the window → pending; beyond it → **missed**, which is final (RT-6, business-rules.md:120).
+- **BR-RT-S5a-4 · Streak (policy-derived, ROU-16).** `current`: newest→oldest, done +1, neutral/pending skipped, missed breaks, unjudged stops + flags.
+  `longest`: missed/unjudged end a run. `total` = done count. `policy_source:'undefined'` iff no policy or any unjudged occurrence.
+- **BR-RT-S5a-5 · Rate / ranking / comparison.** `rate = done/(done+missed)`, null when nothing was judged. Steps are ranked over judged days (rate desc,
+  done desc, sequence). The comparison is the preceding equal-length range. Read-only, no cache; one ledger read per call.
+- **BR-RT-S5a-6 · progress().** `resolveProgress(stored/100, all-time rate)`: the stored 0–100 override wins (ADR-011 M3); null when nothing is judged
+  or unscheduled. A routine with no rule is `unscheduled` (no cadence invented).
+- **Recorded limits:** S4's task-reflection limit carries into streak/rate/progress; archived routines aren't served; the ical.js helpers + hang guard
+  aren't shared with tasks (tasks' `nextOccurrence` is exposed: Victor).
+
 ## 2. Rule taxonomy
 | Category | Rules | Enforced by | Default when absent | Who changes it | Reset / delete semantics |
 |---|---|---|---|---|---|
@@ -119,7 +148,8 @@
 | Referential integrity (app-layer, no FK) | S2-2, S2-5, S3-4 | `load*OrThrow` guards + explicit cascade | fail loud | code | soft (routine/step) · hard (ledger) |
 | Ledger semantics | S3-1, S3-2, S3-3, S3-5 | `upsertCompletion`, skip split | date = UTC today | user (per occurrence) | row flips in place; delete = hard |
 | Derive-not-cache | S1-3 | absence of counters | `progress` NULL ⇒ derive (unbuilt) | — | n/a |
-| Policy (completion / miss) | S4e-1…S4e-6 | `evaluateRoutine` over the user's policy (prefs port) | **no routines-side default**: none ⇒ `policy_source:'undefined'` (the shipped default = Spaces templates/presets, SP5) | the user (Spaces personalization) | derived on read, never stored |
+| Policy (completion / miss) | S5a-1…S5a-6 | cadence allowlist · occurrences · occurrence status · streak · rate/ranking/comparison · progress | EXPLICIT (RT-6/7/11/14/19, Q3/Q4, ROU-13/15/16/18, ADR-011 M3) + INTERP (ranking, comparison, DTSTART) | PLAN-S5 | ✅ |
+| S4e-1…S4e-6 | `evaluateRoutine` over the user's policy (prefs port) | **no routines-side default**: none ⇒ `policy_source:'undefined'` (the shipped default = Spaces templates/presets, SP5) | the user (Spaces personalization) | derived on read, never stored |
 | Fan-out (effects / provider / contributions) | — **not enforced** | — | emit-only, isolated (interp §4.2/§4.13) | — | — |
 
 ## 3. Rule inventory — explicit · implicit · invented · findings
@@ -130,11 +160,12 @@
 | S2-1…S2-6 | step rules above | EXPLICIT (S2-6 ordering semantics = IMPLICIT, ratified g2) | RT-2/3/4/17 · interp §4.5/4.6/4.9 | ✅ (S2-5 partial) |
 | S3-1…S3-5 | ledger rules above | EXPLICIT | RT-5/8/14/17/18 | ✅ |
 | RT-3 / ADR-004 §3.2.4 | a driven step completes its entity once, via the entity's API; no second entity occurrence/effect | EXPLICIT | business-rules.md RT-3; ADR-004 §3.2.4 | ✅ S3 (BR-RT-S3d-1) |
+| S5a-1…S5a-6 | cadence allowlist · occurrences · occurrence status · streak · rate/ranking/comparison · progress | EXPLICIT (RT-6/7/11/14/19, Q3/Q4, ROU-13/15/16/18, ADR-011 M3) + INTERP (ranking, comparison, DTSTART) | PLAN-S5 | ✅ |
 | S4e-1…S4e-6 | user policy · as-of set · done = row OR entity-as-of · neutral · judgment · read-only | EXPLICIT (intake Q2/Q3, RT-5/8/14, U1) + INTERP-minimal (`miss.logged_skip`) | PLAN-S4 | ✅ |
 | S3d-1…S3d-6 | drive-then-stamp · target precedence · task TERMINAL · habit HB-5 reflect · focus lifecycle + detach · re-run | EXPLICIT (RT-3, ADR-004 §3.2.1/§3.2.4, HB-5, TAS-23, TERMINAL convention) | PLAN-S3 | ✅ |
 | S2c-1…S2c-6 | setLifecycle · step append · date shape · progress 0–100 · RRULE parse+FREQ · non-empty names | EXPLICIT (S2c-5 [INTERP] approved) | PLAN-S2c; rule 16; ROU-17/29 | ✅ |
-| RT-6 | paused/off generate no misses · acceptance window | EXPLICIT | RT-6 | ⚠ `setLifecycle` built (S2c); misses not yet derived (S5) |
-| RT-5/7 | policy-derived done / streak | EXPLICIT | RT-5, RT-7 | ⚠ done built (S4); streak = S5 |
+| RT-6 | paused/off generate no misses · acceptance window | EXPLICIT | RT-6 | ✅ S5 (acceptance-window procedure) |
+| RT-5/7 | policy-derived done / streak | EXPLICIT | RT-5, RT-7 | ✅ S4 done + S5 streak |
 | RT-15/16 | notes via pages, tags via entity_tags (`routine` / `routine_step`, D2) | EXPLICIT | RT-15/16 · interp §5 D2 | ❌ not built (registry tokens exist: `_registry.ts:45-46`) |
 | RT-12/13 | purpose contribution · provider registration | EXPLICIT | RT-12/13 | ❌ not built |
 | D1 | `tasks: TasksService` is a **required** dep | EXPLICIT (decision) | interp §5 D1 | ✅ S3 |
