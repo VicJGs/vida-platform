@@ -4,7 +4,7 @@
 > Inherits: `docs/core/business-rules.md` + `docs/core/conventions.md` (constitution) → this module. Intent authority:
 > `docs/features/routines/{identity,business-rules,contract,structure-data,conventions}.md` (RT-1…RT-19) + the GOVERNING
 > `delivery/interpretation.md` (main's 9-slice set, Victor 2026-10-14; implicit rules cited as **interp §4.n**).
-> Last refreshed: 2026-10-22 · **S5 promoted (§XXIX)** · S4 · S3 · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
+> Last refreshed: 2026-10-22 · **S5c promoted (§XXIX)** · S5 · S4 · S3 · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
 
 > **Baseline note.** This doc records what the CODE enforces. The `BR-RT-S1/S2/S3-n` IDs are kept stable from the
 > as-built slices so existing cites keep resolving. They are **as-built labels**, not the governing slice numbers. Gaps
@@ -74,12 +74,21 @@
 
 **S3 — Run/drive** (`delivery/PLAN-S3-run-drive.md`)
 - **BR-RT-S3d-1 · Drive first, stamp second (N7, rule 1).** No routine write precedes a successful entity call. The routine stamps its own
-  occurrence row and never fires the entity's effects (the habit/task fire their own; `completeFocus` fires none; `completeSession` is never called).
-- **BR-RT-S3d-2 · Target precedence.** focus `step_type` → task/habit ref → actionable (no ref, no type) → else `EntityUnavailableError` (rule 15).
-  A focus step's entity ref is ignored in M1.
-- **BR-RT-S3d-3 · Task step (TERMINAL convention).** `cancelled` → `EntityUnavailableError` (never force-completed); `completed` → reflected
-  (stamp only, `completed_at` untouched); open/`on_hold` → `completeTask` then stamp. `RecurrenceRegenError` ⇒ stamped + `flag:'recurrence_regen_failed'`
-  (TAS-23). Chain-following to an obligation's next occurrence is not owed (tasks G8, duties D3).
+  occurrence row and never fires effects of its own (the habit/obligation fire theirs; `completeFocus` fires none, never `completeSession`, N9).
+  Standard-task and session occurrences complete through the Sessions lifecycle (`stopTimer`/`completeSession`), which fires only the
+  owner's declared effects (`work` declares none) (S5c, g2 B2).
+- **BR-RT-S3d-2 · Targets (S5c, Q1/RT-4/D3).** Every step drives an entity. focus → `work` (task ref required) → a REGISTERED session sub-type
+  (`exercise`→`workout`) → task ref → habit ref → check-off (no ref ⇒ a Task is created + linked) → `EntityUnavailableError`. An unregistered `step_type`
+  falls through to the ref. Routines registers no sub-type (ADR-004 §3.1/§3.3; first-wins registry).
+- **BR-RT-S3d-3 · Task step (S5c).** A **standard** task is the responsibility; each occurrence is a Tasks `work` session (Duties D3):
+  - `runStep` starts it via `tasks.startTimer` (or adopts a timer started in Tasks) and attaches the step;
+  - `completeStep` stops it via `tasks.stopTimer` (Tasks logs the time), or a **bare check** writes a completed `work` session (no time log);
+  - the routine never completes the Task; a TERMINAL task or an unwired timer → `EntityUnavailableError`;
+  - **one occurrence per day** (task and session steps): a done day creates no second session (re-complete re-stamps the row, BR-RT-S3-1;
+    re-run returns `done`); a session the routine created is soft-deleted if linking/completing it then fails (g2 B1/NB3);
+  - a half ref (only one of `entity_type`/`entity_id`) is not a check-off → `EntityUnavailableError` on drive.
+  An **obligation** keeps `completeTask` (TK-7): `cancelled` → unavailable, `completed` → reflected (stamp only), `RecurrenceRegenError` ⇒
+  stamped + `flag`. A **session step** completes per its owner's declared lifecycle and attaches its about-entity alongside the step.
 - **BR-RT-S3d-4 · Habit step (HB-5, RT-3 reflects).** One native tick `logCompletion(habitId, {date})`. Done ⇔ `count >= target_count` ⇒ stamp;
   otherwise `'advanced'`, and any stale done stamp for the occurrence is removed. A repeat run is a patch (no +1). Absent `habits` dep or a
   missing/deleted habit → `EntityUnavailableError`; `BackfillWindowError` propagates with no stamp.
@@ -102,15 +111,19 @@
   default = Spaces templates/presets, `intake/spaces.md:178-185`). No policy ⇒ `policy_source:'undefined'`: only all-done ⇒ `done` and none-done ⇒
   `not_started`; anything else `partial` (flagged).
 - **BR-RT-S4e-2 · As-of-date step set.** Steps created on/before D and not deleted on/before D, plus any step with a ledger row on D. No retroactive change.
-- **BR-RT-S4e-3 · Done = the routine's occurrence row OR the driven entity done as of D** (task `completed` with `utcDay(completed_at) <= D`; habit
-  `CalendarDay.done` for D). Reflection only adds; later entity changes never rewrite D (RT-5, U1). Done is checked before neutral.
+- **BR-RT-S4e-3 · Done = the routine's occurrence row OR the driven entity done as of D.** Reflection (S5c): an **obligation** task
+  completed with `utcDay(completed_at) <= D`; a habit's `CalendarDay.done` for D. A standard task's occurrences are recorded by the routine's
+  own row (its `work` sessions), so the Task's own status never reflects. Reflection only adds; later entity changes never rewrite D. Done
+  is checked before neutral.
 - **BR-RT-S4e-4 · Neutral.** A planned skip (`skip_dates`), or a logged skip when the user's `miss.logged_skip === 'neutral'`, is excluded from `applicable`.
 - **BR-RT-S4e-5 · Judgment (user policy).** `applicable = 0` ⇒ `not_started`. all_or_nothing: nothing undone. threshold: exact ratio
   `done·100 >= percent·applicable` (`percent` display-only; non-finite → `InvalidRoutinePolicyError`; the user's 0 honoured). required_node:
   every applicable required step done; none applicable ⇒ `'undefined'` + `no_required_steps` | `required_steps_all_neutral`. Unmet with 0 done ⇒
   `not_started`, else `partial`. An unknown kind → `InvalidRoutinePolicyError`.
 - **BR-RT-S4e-6 · Read-only + RT-5.** No writes, no effects; lifecycle doesn't change the evaluation. Every done step is always listed. **Known
-  limits:** habit done uses the current `target_count`; archived routines' past dates aren't served.
+  limits:** habit done uses the current `target_count`; archived routines' past dates aren't served. **S5c limits (g2):** a running `work`
+  occurrence is stamped on the day `completeStep` names, with no abandon rule (stopping/cancelling a stale timer is Tasks'); two steps sharing one
+  Task can adopt the same running `work` session (RT-10 sharing).
 
 **S5 — Progress + analytics** (`delivery/PLAN-S5-progress-analytics.md`)
 - **BR-RT-S5a-1 · Minimal day-grain cadence allowlist (RT-11).** `recurrence_rule` must be one of:
@@ -138,7 +151,7 @@
   done desc, sequence). The comparison is the preceding equal-length range. Read-only, no cache; one ledger read per call.
 - **BR-RT-S5a-6 · progress().** `resolveProgress(stored/100, all-time rate)`: the stored 0–100 override wins (ADR-011 M3); null when nothing is judged
   or unscheduled. A routine with no rule is `unscheduled` (no cadence invented).
-- **Recorded limits:** S4's task-reflection limit carries into streak/rate/progress; archived routines aren't served; the ical.js helpers + hang guard
+- **Recorded limits:** the obligation-only reflection limit (a completed obligation reads done on later days until reopened) carries into streak/rate/progress; archived routines aren't served; the ical.js helpers + hang guard
   aren't shared with tasks (tasks' `nextOccurrence` is exposed: Victor).
 
 ## 2. Rule taxonomy

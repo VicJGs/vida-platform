@@ -47,7 +47,7 @@ export const UpdateRoutineSchema = RoutineFields.partial()
 
 // --- routine_step (RT-3/RT-4/RT-8 · S2) -------------------------------------
 // `step_type` is OPEN vocab (user-extensible, registry-validated) → plain string, NO enum.
-// `entity_type`/`entity_id` are nullable (an actionable "alarm" step has no driven entity, RT-4).
+// `entity_type`/`entity_id` are nullable on input: a check-off step with neither gets a Task created + linked (S5c, Q1/RT-4).
 // `skip_dates` is a JSON array of YYYY-MM-DD (planned skips, RT-8) → serialized to TEXT by the service.
 // `routine_id` is NOT in the input shape — addStep takes it as an argument (the habit-completion precedent).
 const RoutineStepFields = z.object({

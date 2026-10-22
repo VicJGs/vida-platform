@@ -16,6 +16,7 @@ import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
 import type { TasksService } from '../tasks'
 import type { HabitsService } from '../habits'
 import type { SessionsService } from '../sessions'
+import type { SessionRegistry } from '../../foundation/sessions/registry'
 import type {
   CreateRoutineSchema,
   UpdateRoutineSchema,
@@ -36,10 +37,13 @@ export interface RoutinesServiceDeps {
   /** S2c — the shared entity-type registry: validates a step's `entity_type` (R2; sessions precedent). Required (seam).
    *  Registration is not needed here: 'routine'/'routine_step' are pre-seeded from ENTITY_TYPES (_registry.ts:45-46). */
   registry: TaggableTypeRegistry
-  /** S3 — REQUIRED (D1): task steps drive `completeTask` (the routine never writes a parallel task completion). */
+  /** S3 — REQUIRED (D1). S5c: a standard task occurrence = a Tasks `work` session (startTimer/stopTimer); an obligation drives `completeTask`. */
   tasks: TasksService
-  /** S3 — REQUIRED (seam): focus steps drive `startFocus`/`completeFocus` + the routine_step instance attachment. */
+  /** S3 — REQUIRED (seam): session steps (focus timer + any registered sub-type) + the routine_step instance attachment. */
   sessions: SessionsService
+  /** S5c — REQUIRED (read-only): resolve a step's session sub-type + its declared lifecycle. Routines registers NO sub-type
+   *  (ADR-004 §3.1/§3.3: owners author their types; first-wins registry). */
+  sessionRegistry: SessionRegistry
   /** S3 — optional (seam): habit steps drive the native tick. Absent ⇒ a habit step is `EntityUnavailableError`. */
   habits?: HabitsService
   /** S4 — the USER's policy (intake Q2/Q3; a Spaces personalization surface, defaults via templates/presets SP5). Optional:
@@ -165,8 +169,9 @@ export class InvalidRecurrenceRuleError extends Error {
   }
 }
 
-/** S3 — what a step drives (resolved by precedence, PLAN-S3): focus · task · habit · actionable (no entity). */
-export type StepTarget = 'actionable' | 'task' | 'habit' | 'focus'
+/** S5c — what a step drives (Q1/RT-4/D3): a task (check-off steps ARE tasks), a habit, the focus timer, or any registered
+ *  session sub-type. There is no entity-less step. */
+export type StepTarget = 'task' | 'habit' | 'focus' | 'session'
 /** 'advanced' = a habit ticked but still below its target_count (a repeat run stays 'advanced': habits' re-log is a patch). */
 export type StepRunStatus = 'done' | 'advanced' | 'in_progress'
 
@@ -183,7 +188,7 @@ export interface StepRunState {
   flag?: 'recurrence_regen_failed'
 }
 
-/** Narrow `completeStep`'s union: a driven step returns a StepRunState, an actionable step its RoutineCompletion. */
+/** Kept for callers that still narrow: since S5c every step is driven, so `completeStep` always returns a StepRunState. */
 export function isStepRunState(x: RoutineCompletion | StepRunState): x is StepRunState {
   return 'target' in x && 'status' in x
 }
@@ -250,8 +255,8 @@ export interface RoutinesService {
   // them (a planned future skip has no RoutineCompletion to return). Corrected here: `skipStep` = logged;
   // `planSkipDates` = pre-planned. Grounded in docs/features/routines/business-rules.md RT-8.
   /** RT-5 — log a DONE occurrence; UPSERT per (step,date). Throws `StepNotFoundError` if the step is missing. */
-  completeStep(stepId: string, input?: CompleteStepInput): Promise<RoutineCompletion | StepRunState>
-  /** ROU-07 — drive the step's target (task completion · habit tick · focus start/re-entry); actionable = completeStep.
+  completeStep(stepId: string, input?: CompleteStepInput): Promise<StepRunState>
+  /** ROU-07 — drive the step's target (task occurrence start · session start · habit tick · focus start/re-entry) (S5c).
    *  Drive first, stamp second (N7). Throws `EntityUnavailableError` / `StepNotFoundError` before any routine write. */
   runStep(stepId: string, input?: RunStepInput): Promise<StepRunState>
 

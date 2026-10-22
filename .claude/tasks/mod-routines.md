@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope approved; S2c–S5 ✅ shipped (local commits); next = S6 reschedule
+# Status: in-progress — re-scope approved; S2c–S5 + S5c ✅ shipped (local commits); next = S6 reschedule (rewrite on the S5c model)
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -18,6 +18,15 @@ completion/miss policy → Preferences; `routine_step_membership` → Spaces des
 Sessions; XP application → Gamification. Delivery: `docs/features/routines/delivery/`.
 
 ## Slice log
+- **S5c — Q1/RT-4/D3 correction ✅ (2026-10-22)** — every step drives an entity: a check-off step IS a Task (created + linked on add;
+  legacy null rows migrated on first drive); a standard task occurrence = a Tasks `work` session (startTimer/stopTimer, adopt a Tasks-started
+  timer, bare check = completed `work` session); obligation keeps `completeTask` (TK-7); any REGISTERED session sub-type is driven
+  lifecycle-aware (`exercise`→`workout`), routines registers none; `completeStep` always returns StepRunState; new required dep
+  `sessionRegistry`. A11 superseded (documentation-gate/interpretation/seam/slice-map amended). tsc 0 · eslint 0 · **routines 118/118** ·
+  full @vida/core 2110/2111 (the 1 = vault Argon2 timeout at load ~300, F006) · **g2 FINDINGS 2 blocking → fixed** (B1 one occurrence per
+  day; B2 BR-RT-S3d-1 stale) + NB fixes (settleOrDrop compensation, half-ref predicate, subTypeDef reuse, 7 gate tests, drift) ·
+  **/critique REVISE→fixed** (exercise→workout test; wording; error message) · §XXIX promoted. Named limits: stale running `work`
+  occurrence has no abandon rule (Tasks'); shared-Task adoption (RT-10). Open NB: orphan-Task cleanup branches untested.
 - **S5 — Progress + analytics ✅ (2026-10-22)** — `getStreak` / `getAnalytics` / `progress` derive-on-read over the routine's occurrences
   (ical.js, minimal RT-11 day-grain allowlist probed 145 shapes × 9 starts: ical.js 2.2.1 hangs on some valid RFC rules); occurrence status
   done/missed/pending/neutral/unjudged under the USER's policy + acceptance window (today pending; real misses final; paused/off via the RT-6/Q3
@@ -113,3 +122,11 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 4b. service.ts S5 — assertExpandable · occurrences · classify · streak/rate/rank · ops  (gate point 2–4b)
 - [x] 5. Docs — seam shapes/renames · current-spec lifecycle line · types comment
 - [x] 6. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
+
+## Build Steps — S5c Q1/RT-4/D3 correction (PLAN-S5c §5 · Approval 2 2026-10-22)
+- [x] 1. Tests first (red): S5c gates 1–13 + named fixture rewrite
+- [x] 2. types.ts / index.ts — sessionRegistry dep · StepRunState.target · completeStep return
+- [x] 3. service.ts — resolveTarget · check-off add · legacy migration · task 3a/3b · generic session · isDoneOn  (gate point 2–3)
+- [x] 4. Docs (row 7)
+- [x] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
+- §XXVIII-minor: steps 1–3 landed in one pass (code drafted alongside the test rewrite, not strictly red-first); gates re-proved green after.

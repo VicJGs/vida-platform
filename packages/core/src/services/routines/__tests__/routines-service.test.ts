@@ -19,8 +19,9 @@ import { syncQueue } from '../../../db/schema'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
 import { UnknownEntityType, type TaggableTypeRegistry } from '../../../foundation/spaces/types'
 import { createSessionRegistry } from '../../../foundation/sessions/registry'
+import type { SessionTypeDef } from '../../../foundation/sessions/types'
 import { createEffectRegistry, createEffectRail, type EffectRegistry } from '../../../foundation/effects'
-import { createTasksService, type TasksService } from '../../tasks'
+import { createTasksService, registerTasksTimer, type TasksService } from '../../tasks'
 import { createHabitsService, BackfillWindowError, type HabitsService } from '../../habits'
 import { createSessionsService, type SessionsService } from '../../sessions'
 import {
@@ -79,6 +80,7 @@ interface Harness {
   tasks: TasksService
   habits: HabitsService
   sessions: SessionsService
+  sessionRegistry: ReturnType<typeof createSessionRegistry>
 }
 
 interface SetupOpts {
@@ -86,6 +88,7 @@ interface SetupOpts {
   effectRegistry?: EffectRegistry // tasks fan-out spies (rule 1 / rule 17 test)
   sessionsEntityRegistry?: TaggableTypeRegistry // force an attach failure (focus edge case)
   prefs?: RoutinesPrefsPort // S4 — the user's policy port
+  tasksTimer?: boolean // S5c — default true; false ⇒ registerTasksTimer not called (timer unwired)
 }
 
 // S3 — REAL substrates (the tasks `setupWithTimer` pattern): Sessions (registry + rail + entity registry), Tasks, Habits.
@@ -98,14 +101,17 @@ async function setup(opts: SetupOpts = {}): Promise<Harness> {
   const registry = createTaggableTypeRegistry()
   const effectRegistry = opts.effectRegistry ?? createEffectRegistry()
   const rail = createEffectRail(db, effectRegistry)
+  // S5c pin 9 — ONE session registry + ONE effect registry shared by Sessions, the Tasks timer and Routines.
+  const sessionRegistry = createSessionRegistry(db, 'test-device')
   const sessions = createSessionsService({
     db,
     deviceId: 'test-device',
-    registry: createSessionRegistry(db, 'test-device'),
+    registry: sessionRegistry,
     rail,
     entityRegistry: opts.sessionsEntityRegistry ?? registry,
   })
-  const tasks = createTasksService({ db, deviceId: 'test-device', effects: { rail, registry: effectRegistry } })
+  const tasks = createTasksService({ db, deviceId: 'test-device', sessions, effects: { rail, registry: effectRegistry } })
+  if (opts.tasksTimer !== false) await registerTasksTimer({ sessionRegistry, effectRegistry, db, deviceId: 'test-device' })
   const habits = createHabitsService({ db, deviceId: 'test-device' })
   const svc = createRoutinesService({
     db,
@@ -113,20 +119,22 @@ async function setup(opts: SetupOpts = {}): Promise<Harness> {
     registry,
     tasks,
     sessions,
+    sessionRegistry,
     ...(opts.withHabits === false ? {} : { habits }),
     ...(opts.prefs ? { prefs: opts.prefs } : {}),
   })
-  return { svc, db, bsql, tasks, habits, sessions }
+  return { svc, db, bsql, tasks, habits, sessions, sessionRegistry }
 }
 
 // Actionable steps return the ledger row; narrow the S3 completeStep union for the as-built tests.
+// S5c — every step is driven (a check-off step IS a task); the stamped occurrence row is `.completion`.
 async function completeActionable(
   svc: RoutinesService,
   ...args: Parameters<RoutinesService['completeStep']>
 ): Promise<RoutineCompletion> {
   const r = await svc.completeStep(...args)
-  if (isStepRunState(r)) throw new Error('expected an actionable step (RoutineCompletion)')
-  return r
+  if (!r.completion) throw new Error(`expected a stamped occurrence, got status ${r.status}`)
+  return r.completion
 }
 
 describe('mod-routines S1 — routine definition CRUD', () => {
@@ -239,8 +247,8 @@ describe('mod-routines S2 — step CRUD + ordering + cascade', () => {
     expect(s.step_order).toBe(0) // default backfilled
     expect(s.is_required).toBe(false) // default backfilled
     expect(s.step_type).toBeNull() // nullable coalesced
-    expect(s.entity_type).toBeNull()
-    expect(s.entity_id).toBeNull()
+    expect(s.entity_type).toBe('task') // S5c — a check-off step IS a Task (Q1/RT-4)
+    expect(s.entity_id).toBeTruthy()
     expect(s.description).toBeNull()
     expect(s.time_of_day).toBeNull()
     expect(s.skip_dates).toEqual(['2026-10-20', '2026-10-21']) // JSON round-trip (interp §4.9)
@@ -266,10 +274,11 @@ describe('mod-routines S2 — step CRUD + ordering + cascade', () => {
     expect(s.step_order).toBe(2)
   })
 
-  it('addStep allows an alarm-like actionable step with NO driven entity (RT-4)', async () => {
-    const s = await h.svc.addStep(routineId, { title: 'Drink water', step_type: 'task' })
-    expect(s.entity_type).toBeNull()
-    expect(s.entity_id).toBeNull()
+  it('a check-off step with no driven entity IS a Task: created + linked (Q1/RT-4, S5c)', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Water plants' })
+    expect(s.entity_type).toBe('task')
+    const task = await h.tasks.getTask(s.entity_id as string)
+    expect(task).toMatchObject({ title: 'Water plants', kind: 'standard' })
   })
 
   it('addStep on a missing/archived routine throws RoutineNotFoundError — no orphan step (RT-3, interp §4.6)', async () => {
@@ -458,7 +467,7 @@ describe('mod-routines S2c — floor conformance', () => {
   // 4 — addStep entity_type validated against the registry (A10, R2)
   it('addStep validates entity_type against the registry; unregistered → UnknownEntityType, no row', async () => {
     await expect(h.svc.addStep(routineId, { title: 'Read', entity_type: 'habit', entity_id: 'h1' })).resolves.toBeTruthy()
-    await expect(h.svc.addStep(routineId, { title: 'Alarm' })).resolves.toBeTruthy() // null entity_type = actionable
+    await expect(h.svc.addStep(routineId, { title: 'Alarm' })).resolves.toBeTruthy() // null entity_type = check-off (a Task is minted, S5c)
     const before = await queueCount()
     await expect(
       h.svc.addStep(routineId, { title: 'Bad', entity_type: 'not_a_type', entity_id: 'x' }),
@@ -598,23 +607,29 @@ describe('mod-routines S3 — run/drive', () => {
   })
   afterEach(() => vi.restoreAllMocks())
 
-  // 1 — actionable
-  it('actionable step: runStep and completeStep stamp the ledger; completeStep returns a RoutineCompletion', async () => {
+  // 1 — check-off
+  it('check-off step, bare check: a completed work occurrence (no time log) + stamp; the Task stays open (S5c 3a)', async () => {
     const s = await h.svc.addStep(routineId, { title: 'Stretch' })
-    const run = await h.svc.runStep(s.id, { date: DAY })
-    expect(run).toMatchObject({ target: 'actionable', status: 'done', date: DAY })
+    const run = await h.svc.completeStep(s.id, { date: DAY })
+    expect(run).toMatchObject({ target: 'task', status: 'done', date: DAY })
     expect(run.completion?.skipped).toBe(false)
-    const c = await h.svc.completeStep(s.id, { date: DAY })
-    expect(isStepRunState(c)).toBe(false)
+    expect((await h.sessions.getSession(run.session_id as string))?.session).toMatchObject({ sub_type: 'work', status: 'completed' })
+    expect((await h.tasks.getTask(s.entity_id as string))?.status).not.toBe('completed')
+    expect((h.bsql.prepare('SELECT count(*) AS n FROM task_time_logs').get() as { n: number }).n).toBe(0)
   })
 
   // 2 — task
-  it('task step: runStep completes the real task and stamps the ledger', async () => {
-    const t = await h.tasks.createTask({ title: 'Pay bill' })
-    const s = await h.svc.addStep(routineId, { title: 'Bill', entity_type: 'task', entity_id: t.id })
+  it('standard task step: runStep starts a work occurrence on task + step; completeStep stops it (time logged); the Task stays open (S5c 3a)', async () => {
+    const t = await h.tasks.createTask({ title: 'Deep clean' })
+    const s = await h.svc.addStep(routineId, { title: 'Clean', entity_type: 'task', entity_id: t.id })
     const run = await h.svc.runStep(s.id, { date: DAY })
-    expect(run).toMatchObject({ target: 'task', status: 'done' })
-    expect((await h.tasks.getTask(t.id))?.status).toBe('completed')
+    expect(run).toMatchObject({ target: 'task', status: 'in_progress' })
+    const targets = await h.sessions.resolveTargets(run.session_id as string)
+    expect(targets.map((x) => x.entityType).sort()).toEqual(['routine_step', 'task'])
+    const done = await h.svc.completeStep(s.id, { date: DAY })
+    expect(done.status).toBe('done')
+    expect((await h.tasks.getTask(t.id))?.status).not.toBe('completed')
+    expect((h.bsql.prepare('SELECT count(*) AS n FROM task_time_logs WHERE task_id = ?').get(t.id) as { n: number }).n).toBe(1)
     expect((await h.svc.listCompletions(s.id)).map((c) => c.completed_date)).toEqual([DAY])
   })
 
@@ -782,7 +797,7 @@ describe('mod-routines S3 — run/drive', () => {
   })
 
   // 13 — rule 1 + rule 17: the task's own award_xp fires exactly once across a re-complete; nothing keyed on the routine
-  it('re-completing a task step re-drives the task but its award_xp fires exactly once, keyed on the task', async () => {
+  it('re-completing an obligation step re-drives the task but its award_xp fires exactly once, keyed on the task', async () => {
     const fired: string[] = []
     const effectRegistry = createEffectRegistry()
     effectRegistry.register('award_xp', async (ev) => {
@@ -790,7 +805,7 @@ describe('mod-routines S3 — run/drive', () => {
     })
     h = await setup({ effectRegistry })
     const rid = (await h.svc.createRoutine({ name: 'R' })).id
-    const t = await h.tasks.createTask({ title: 'Ship' })
+    const t = await h.tasks.createTask({ title: 'Ship', kind: 'obligation', due_date: DAY }) // S5c: completeTask = obligations (3b)
     const s = await h.svc.addStep(rid, { title: 'Ship', entity_type: 'task', entity_id: t.id })
     await h.svc.completeStep(s.id, { date: DAY })
     await h.svc.completeStep(s.id, { date: DAY })
@@ -802,7 +817,7 @@ describe('mod-routines S3 — run/drive', () => {
     const t = await h.tasks.createTask({ title: 'Mail' })
     const s = await h.svc.addStep(routineId, { title: 'Mail', entity_type: 'task', entity_id: t.id })
     await h.svc.skipStep(s.id, { date: DAY, reason: 'busy' })
-    await h.svc.runStep(s.id, { date: DAY })
+    await h.svc.completeStep(s.id, { date: DAY })
     const rows = await h.svc.listCompletions(s.id)
     expect(rows).toHaveLength(1)
     expect([rows[0].skipped, rows[0].skip_reason]).toEqual([false, null])
@@ -827,21 +842,24 @@ describe('mod-routines S3 — run/drive', () => {
   })
 
   // g2 fixes (post-implementation, PLAN-S3 addendum)
-  it('task TERMINAL convention: a cancelled task is unavailable; a completed task is reflected without moving completed_at', async () => {
+  it('task TERMINAL convention: a cancelled/completed standard task is unavailable; an obligation is reflected without moving completed_at', async () => {
     const c = await h.tasks.createTask({ title: 'Dropped' })
     await h.tasks.updateTask(c.id, { status: 'cancelled' })
     const sc = await h.svc.addStep(routineId, { title: 'Dropped', entity_type: 'task', entity_id: c.id })
     await expect(h.svc.runStep(sc.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
-    expect((await h.tasks.getTask(c.id))?.status).toBe('cancelled')
-    const t = await h.tasks.createTask({ title: 'Once' })
+    const d = await h.tasks.createTask({ title: 'Closed' })
+    await h.tasks.updateTask(d.id, { status: 'completed' })
+    const sd = await h.svc.addStep(routineId, { title: 'Closed', entity_type: 'task', entity_id: d.id })
+    await expect(h.svc.completeStep(sd.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    const t = await h.tasks.createTask({ title: 'Once', kind: 'obligation', due_date: '2026-10-20' })
     const st = await h.svc.addStep(routineId, { title: 'Once', entity_type: 'task', entity_id: t.id })
-    await h.svc.runStep(st.id, { date: '2026-10-20' })
+    await h.svc.completeStep(st.id, { date: '2026-10-20' })
     const completedAt = (await h.tasks.getTask(t.id))?.completed_at
-    const next = await h.svc.runStep(st.id, { date: '2026-10-21' })
+    const next = await h.svc.completeStep(st.id, { date: '2026-10-21' })
     expect(next.status).toBe('done')
     expect((await h.tasks.getTask(t.id))?.completed_at).toBe(completedAt)
     await h.tasks.reopenTask(t.id) // reopened → re-driven (RT-3)
-    await h.svc.runStep(st.id, { date: '2026-10-22' })
+    await h.svc.completeStep(st.id, { date: '2026-10-22' })
     expect((await h.tasks.getTask(t.id))?.status).toBe('completed')
   })
 
@@ -907,11 +925,10 @@ describe('mod-routines S3 — run/drive', () => {
     expect(await h.svc.listCompletions(s.id)).toEqual([])
   })
 
-  it('re-running an already-done step keeps its recorded duration and completed_at', async () => {
-    const t = await h.tasks.createTask({ title: 'Report' })
-    const s = await h.svc.addStep(routineId, { title: 'Report', entity_type: 'task', entity_id: t.id })
-    const first = asRun(await h.svc.completeStep(s.id, { date: DAY, actual_duration_minutes: 30 }))
-    const again = await h.svc.runStep(s.id, { date: DAY })
+  it('re-checking an already-done occurrence keeps its recorded duration and completed_at', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Report' })
+    const first = await h.svc.completeStep(s.id, { date: DAY, actual_duration_minutes: 30 })
+    const again = await h.svc.completeStep(s.id, { date: DAY })
     expect(again.completion?.actual_duration_minutes).toBe(30)
     expect(again.completion?.completed_at).toBe(first.completion?.completed_at)
   })
@@ -928,7 +945,7 @@ describe('mod-routines S4 — policy evaluation', () => {
   let h: Harness
   afterEach(() => vi.restoreAllMocks())
 
-  // A routine with N actionable steps created on D (so they belong to D's as-of step set).
+  // A routine with N check-off steps created on D (so they belong to D's as-of step set).
   async function routineWith(n: number, opts: SetupOpts = {}, required: number[] = []) {
     h = await setup(opts)
     at(`${D}T08:00:00Z`)
@@ -1027,8 +1044,8 @@ describe('mod-routines S4 — policy evaluation', () => {
     const clock = at(`${D}T08:00:00Z`)
     const rid = (await h.svc.createRoutine({ name: 'R' })).id
     const hab = await h.habits.createHabit({ name: 'Water', frequency: 'daily' })
-    const tD = await h.tasks.createTask({ title: 'On D' })
-    const tLater = await h.tasks.createTask({ title: 'Later' })
+    const tD = await h.tasks.createTask({ title: 'On D', kind: 'obligation', due_date: D }) // S5c: only obligations reflect (3b)
+    const tLater = await h.tasks.createTask({ title: 'Later', kind: 'obligation', due_date: D })
     const sh = await h.svc.addStep(rid, { title: 'Water', entity_type: 'habit', entity_id: hab.id })
     const st = await h.svc.addStep(rid, { title: 'On D', entity_type: 'task', entity_id: tD.id })
     const sl = await h.svc.addStep(rid, { title: 'Later', entity_type: 'task', entity_id: tLater.id })
@@ -1047,7 +1064,7 @@ describe('mod-routines S4 — policy evaluation', () => {
     await h.habits.editCompletion(hab.id, D, { count: 0 })
     expect((await h.svc.evaluateRoutine(rid, { date: D })).done.map((x) => x.step_id)).toContain(sh.id)
     // a task deleted after a routine stamp → the ledger fallback keeps D's done
-    const tGone = await h.tasks.createTask({ title: 'Gone' })
+    const tGone = await h.tasks.createTask({ title: 'Gone', kind: 'obligation', due_date: D })
     clock.mockImplementation(() => Date.parse(`${D}T09:00:00Z`))
     const sg = await h.svc.addStep(rid, { title: 'Gone', entity_type: 'task', entity_id: tGone.id })
     await h.svc.completeStep(sg.id, { date: D })
@@ -1177,7 +1194,7 @@ describe('mod-routines S4 — policy evaluation', () => {
     const hab = await h.habits.createHabit({ name: 'Gone', frequency: 'daily' })
     const sh = await h.svc.addStep(rid, { title: 'Gone', entity_type: 'habit', entity_id: hab.id })
     await h.habits.softDeleteHabit(hab.id)
-    const t = await h.tasks.createTask({ title: 'Did it anyway' })
+    const t = await h.tasks.createTask({ title: 'Did it anyway', kind: 'obligation', due_date: D })
     const st = await h.svc.addStep(rid, { title: 'Did it anyway', entity_type: 'task', entity_id: t.id })
     await h.svc.skipStep(st.id, { date: D, reason: 'thought I would skip' })
     await h.tasks.completeTask(t.id) // done in Tasks on D
@@ -1396,12 +1413,12 @@ describe('mod-routines S5 — progress + analytics', () => {
   })
 
   // 13 — inherited S4 limit
-  it('inherited limit: a completed task step counts done on later days until reopened', async () => {
+  it('inherited limit (obligation steps only, S5c): a completed obligation counts done on later days until reopened', async () => {
     h = await setup({ prefs: policy(AON(0)) })
     clock = vi.spyOn(Date, 'now')
     setNow('2026-10-21')
     const rid = (await h.svc.createRoutine({ name: 'R', recurrence_rule: 'FREQ=DAILY' })).id
-    const t = await h.tasks.createTask({ title: 'Once' })
+    const t = await h.tasks.createTask({ title: 'Once', kind: 'obligation', due_date: '2026-10-21' })
     await h.svc.addStep(rid, { title: 'Once', entity_type: 'task', entity_id: t.id })
     await h.tasks.completeTask(t.id)
     setNow('2026-10-24')
@@ -1470,5 +1487,209 @@ describe('mod-routines S5 — progress + analytics', () => {
     setNow('2026-10-26')
     const a = await h.svc.getAnalytics(rid, { from: '2026-10-25', to: '2026-10-25' })
     expect(a.completion).toMatchObject({ neutral: 1, unjudged: 0 })
+  })
+})
+
+// ============================================================================
+// S5c — Q1/RT-4/D3 correction (PLAN-S5c-q1-d3-correction.md · Verification Gate)
+// ============================================================================
+describe('mod-routines S5c — every step drives an entity; occurrences are sessions', () => {
+  const DAY = '2026-10-21'
+  let h: Harness
+  let routineId: string
+  beforeEach(async () => {
+    h = await setup()
+    routineId = (await h.svc.createRoutine({ name: 'Morning' })).id
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it("check-off add: step_type 'task' with no entity creates + links a Task; linking an existing task shares it across routines", async () => {
+    const a = await h.svc.addStep(routineId, { title: 'Pay rent', step_type: 'task' })
+    expect(a.entity_type).toBe('task')
+    const shared = await h.tasks.createTask({ title: 'Shared chore' })
+    const r2 = (await h.svc.createRoutine({ name: 'Evening' })).id
+    const s1 = await h.svc.addStep(routineId, { title: 'Chore', entity_type: 'task', entity_id: shared.id })
+    const s2 = await h.svc.addStep(r2, { title: 'Chore', entity_type: 'task', entity_id: shared.id })
+    expect([s1.entity_id, s2.entity_id]).toEqual([shared.id, shared.id])
+    const n = (h.bsql.prepare("SELECT count(*) AS n FROM tasks WHERE title = 'Chore'").get() as { n: number }).n
+    expect(n).toBe(0) // no duplicate Task minted for a linked step
+  })
+
+  it('adopts a timer the user started in Tasks as the occurrence (no TimerAlreadyRunningError)', async () => {
+    const t = await h.tasks.createTask({ title: 'Write' })
+    const s = await h.svc.addStep(routineId, { title: 'Write', entity_type: 'task', entity_id: t.id })
+    const userTimer = await h.tasks.startTimer(t.id)
+    const run = await h.svc.runStep(s.id, { date: DAY })
+    expect(run.session_id).toBe(userTimer.id)
+    expect((await h.sessions.resolveTargets(userTimer.id)).map((x) => x.entityType)).toContain('routine_step')
+  })
+
+  it('two days → two occurrence sessions + two ledger rows; the Task is untouched', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Stretch' })
+    await h.svc.completeStep(s.id, { date: '2026-10-20' })
+    await h.svc.completeStep(s.id, { date: '2026-10-21' })
+    expect((await h.svc.listCompletions(s.id)).length).toBe(2)
+    expect((h.bsql.prepare("SELECT count(*) AS n FROM sessions WHERE sub_type = 'work' AND status = 'completed'").get() as { n: number }).n).toBe(2)
+    expect((await h.tasks.getTask(s.entity_id as string))?.status).not.toBe('completed')
+  })
+
+  it('tasks timer not wired → EntityUnavailableError (run and bare check)', async () => {
+    h = await setup({ tasksTimer: false })
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const s = await h.svc.addStep(rid, { title: 'Stretch' })
+    await expect(h.svc.runStep(s.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    await expect(h.svc.completeStep(s.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+  })
+
+  const reviewDef = (transitions: SessionTypeDef['lifecycle']['transitions']): SessionTypeDef => ({
+    sub_type: 'review',
+    owner_module: 'flashcards',
+    attachment_defaults: {},
+    effects: [],
+    lifecycle: { transitions, hooks: {} },
+    permissions: { allowed_effects: [] },
+    default_purpose: 'review',
+  })
+
+  it("a registered session sub-type ('review') completes under BOTH registration orders (lifecycle-aware)", async () => {
+    for (const transitions of [
+      [{ from: 'scheduled', to: 'completed', event: 'complete' }], // the purposes def
+      [
+        { from: 'scheduled', to: 'in_progress', event: 'start' },
+        { from: 'in_progress', to: 'completed', event: 'complete' },
+      ], // the flashcards def
+    ] satisfies SessionTypeDef['lifecycle']['transitions'][]) {
+      h = await setup()
+      await h.sessionRegistry.register(reviewDef(transitions))
+      const rid = (await h.svc.createRoutine({ name: 'R' })).id
+      const s = await h.svc.addStep(rid, { title: 'Review', step_type: 'review' })
+      const done = await h.svc.completeStep(s.id, { date: DAY })
+      expect(done).toMatchObject({ target: 'session', status: 'done' })
+      expect((await h.sessions.getSession(done.session_id as string))?.session.status).toBe('completed')
+    }
+  })
+
+  it("a session step's about-entity is attached alongside the routine_step", async () => {
+    await h.sessionRegistry.register(reviewDef([{ from: 'scheduled', to: 'completed', event: 'complete' }]))
+    const t = await h.tasks.createTask({ title: 'Topic' })
+    const s = await h.svc.addStep(routineId, { title: 'Review topic', step_type: 'review', entity_type: 'task', entity_id: t.id })
+    const done = await h.svc.completeStep(s.id, { date: DAY })
+    const types = (await h.sessions.resolveTargets(done.session_id as string)).map((x) => x.entityType).sort()
+    expect(types).toEqual(['routine_step', 'task'])
+  })
+
+  const count = (sql: string): number => (h.bsql.prepare(sql).get() as { n: number }).n
+
+  it('g2 B1 — one occurrence per day: re-completing / re-running a done day creates no second session', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Stretch' })
+    await h.svc.completeStep(s.id, { date: DAY })
+    const again = await h.svc.completeStep(s.id, { date: DAY })
+    const rerun = await h.svc.runStep(s.id, { date: DAY })
+    expect(again.status).toBe('done')
+    expect(rerun).toMatchObject({ status: 'done', target: 'task' })
+    expect(count("SELECT count(*) AS n FROM sessions WHERE sub_type = 'work'")).toBe(1)
+    await h.sessionRegistry.register(reviewDef([{ from: 'scheduled', to: 'completed', event: 'complete' }]))
+    const r = await h.svc.addStep(routineId, { title: 'Review', step_type: 'review' })
+    await h.svc.completeStep(r.id, { date: DAY })
+    await h.svc.completeStep(r.id, { date: DAY })
+    await h.svc.runStep(r.id, { date: DAY })
+    expect(count("SELECT count(*) AS n FROM sessions WHERE sub_type = 'review'")).toBe(1)
+  })
+
+  it('runStep on a session step: running-capable → in_progress, then completeStep completes THAT session; not running-capable → run = complete', async () => {
+    await h.sessionRegistry.register(
+      reviewDef([
+        { from: 'scheduled', to: 'in_progress', event: 'start' },
+        { from: 'in_progress', to: 'completed', event: 'complete' },
+      ]),
+    )
+    const s = await h.svc.addStep(routineId, { title: 'Review', step_type: 'review' })
+    const run = await h.svc.runStep(s.id, { date: DAY })
+    expect(run).toMatchObject({ target: 'session', status: 'in_progress' })
+    expect((await h.svc.runStep(s.id, { date: DAY })).session_id).toBe(run.session_id) // re-entry returns the same occurrence
+    const done = await h.svc.completeStep(s.id, { date: DAY })
+    expect(done).toMatchObject({ status: 'done', session_id: run.session_id })
+    expect((await h.sessions.getSession(run.session_id as string))?.session.status).toBe('completed')
+
+    h = await setup()
+    await h.sessionRegistry.register(reviewDef([{ from: 'scheduled', to: 'completed', event: 'complete' }]))
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const s2 = await h.svc.addStep(rid, { title: 'Review', step_type: 'review' })
+    const run2 = await h.svc.runStep(s2.id, { date: DAY })
+    expect(run2.status).toBe('done')
+    expect((await h.svc.listCompletions(s2.id)).length).toBe(1)
+  })
+
+  it('completeStep stops a timer the user started in Tasks: attached to the step before the stop, time logged (pin 10)', async () => {
+    const t = await h.tasks.createTask({ title: 'Write' })
+    const s = await h.svc.addStep(routineId, { title: 'Write', entity_type: 'task', entity_id: t.id })
+    const userTimer = await h.tasks.startTimer(t.id)
+    const done = await h.svc.completeStep(s.id, { date: DAY })
+    expect(done.session_id).toBe(userTimer.id)
+    expect((await h.sessions.getSession(userTimer.id))?.session.status).toBe('completed')
+    expect((await h.sessions.resolveTargets(userTimer.id)).map((x) => x.entityType)).toContain('routine_step')
+    expect(count(`SELECT count(*) AS n FROM task_time_logs WHERE task_id = '${t.id}'`)).toBe(1)
+  })
+
+  it('an obligation step with a rule completes the task and TK-7 regenerates the next occurrence', async () => {
+    const t = await h.tasks.createTask({ title: 'Rent', kind: 'obligation', due_date: DAY, recurrence_rule: 'FREQ=MONTHLY' })
+    const s = await h.svc.addStep(routineId, { title: 'Rent', entity_type: 'task', entity_id: t.id })
+    const done = await h.svc.completeStep(s.id, { date: DAY })
+    expect(done.flag).toBeUndefined()
+    expect((await h.tasks.getTask(t.id))?.status).toBe('completed')
+    expect(count("SELECT count(*) AS n FROM tasks WHERE title = 'Rent' AND deleted_at IS NULL")).toBe(2)
+  })
+
+  it('a half ref (entity_type without entity_id) is not a check-off: no Task minted, drive → EntityUnavailableError', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Half', entity_type: 'task' })
+    expect(s.entity_id).toBeNull()
+    await expect(h.svc.completeStep(s.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect(count("SELECT count(*) AS n FROM tasks WHERE title = 'Half'")).toBe(0)
+  })
+
+  it('a failed link after the routine created the occurrence drops that session (no open/orphan work session)', async () => {
+    const base = createTaggableTypeRegistry()
+    const denyStep: TaggableTypeRegistry = { ...base, isRegistered: (t) => t !== 'routine_step' && base.isRegistered(t) }
+    h = await setup({ sessionsEntityRegistry: denyStep })
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const s = await h.svc.addStep(rid, { title: 'Stretch' })
+    await expect(h.svc.completeStep(s.id, { date: DAY })).rejects.toBeInstanceOf(UnknownEntityType)
+    expect(count('SELECT count(*) AS n FROM sessions WHERE deleted_at IS NULL')).toBe(0)
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+    await expect(h.tasks.startTimer(s.entity_id as string)).resolves.toBeTruthy() // nothing left blocking the user's timer
+  })
+
+  it("an unregistered sub-type ('workout', 'exercise') → EntityUnavailableError; routines registers nothing and creates no session", async () => {
+    for (const st of ['workout', 'exercise', 'not_a_type']) {
+      const s = await h.svc.addStep(routineId, { title: st, step_type: st })
+      await expect(h.svc.completeStep(s.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    }
+    await expect(h.sessionRegistry.get('workout')).rejects.toBeTruthy()
+    expect((h.bsql.prepare('SELECT count(*) AS n FROM sessions').get() as { n: number }).n).toBe(0)
+  })
+
+  it("'exercise' maps to the registered 'workout' sub-type (intake §D:94-98)", async () => {
+    await h.sessionRegistry.register({ ...reviewDef([{ from: 'scheduled', to: 'completed', event: 'complete' }]), sub_type: 'workout', default_purpose: undefined })
+    const s = await h.svc.addStep(routineId, { title: 'Run', step_type: 'exercise' })
+    const done = await h.svc.completeStep(s.id, { date: DAY })
+    expect(done.target).toBe('session')
+    expect((await h.sessions.getSession(done.session_id as string))?.session.sub_type).toBe('workout')
+  })
+
+  it('an unregistered step_type with a task ref falls through to the task (approved row 2)', async () => {
+    const t = await h.tasks.createTask({ title: 'Lift' })
+    const s = await h.svc.addStep(routineId, { title: 'Lift', step_type: 'workout', entity_type: 'task', entity_id: t.id })
+    expect((await h.svc.completeStep(s.id, { date: DAY })).target).toBe('task')
+  })
+
+  it('a legacy null-entity step row gets its Task created + linked on first drive', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Legacy' })
+    h.bsql.prepare('UPDATE routine_step SET entity_type = NULL, entity_id = NULL WHERE id = ?').run(s.id)
+    const done = await h.svc.completeStep(s.id, { date: DAY })
+    expect(done.target).toBe('task')
+    const row = (await h.svc.listSteps(routineId)).find((x) => x.id === s.id)
+    expect(row?.entity_type).toBe('task')
+    expect(await h.tasks.getTask(row?.entity_id as string)).toBeTruthy()
   })
 })

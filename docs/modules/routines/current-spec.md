@@ -3,7 +3,7 @@
 > Coverage: 8/8 files read — **full** (`services/routines/{service,types,index}.ts` + `CLAUDE.md` + `__tests__/routines-service.test.ts`
 > · `validators/routine.ts` · `@vida/types/routine.ts` · `db/schema/routines.ts`; ~52.7 KB).
 > Inherits: `docs/core` (constitution: `business-rules.md`, `conventions.md`, `architecture/data-flow.md`) → this module.
-> Last refreshed: 2026-10-22 · **S5 progress + analytics promoted (§XXIX)** · S4 policy evaluation · S3 run/drive · S2c floor conformance · earlier: entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
+> Last refreshed: 2026-10-22 · **S5c correction promoted (§XXIX)** · S5 progress + analytics · S4 policy evaluation · S3 run/drive · S2c floor conformance · earlier: entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
 > = built S1–S3 `1a61189` + merged `origin/main`). Source of truth = the code (Currency Rule §XXIX).
 
 > **Baseline note (2026-10-21).** This doc records the code AS-IS. The code was built 2026-10-13 against an
@@ -34,7 +34,7 @@ Sessions (S3), policy evaluation (S4), and progress + analytics (S5) `[FACT: ser
 ### Composition
 `createRoutinesService(deps: RoutinesServiceDeps): RoutinesService`: a factory-object with hoisted closures and no `this.`.
 `RoutinesServiceDeps = { db: DrizzleDb; deviceId: string; clock?: () => string; registry: TaggableTypeRegistry; tasks: TasksService;
-sessions: SessionsService; habits?: HabitsService; prefs?: RoutinesPrefsPort }` (S3 added `tasks`/`sessions` required, `habits` optional; default `clock` = tasks' `utcDay`) (`registry` added in
+sessions: SessionsService; sessionRegistry: SessionRegistry; habits?: HabitsService; prefs?: RoutinesPrefsPort }` (S3 added `tasks`/`sessions` required, `habits` optional; default `clock` = tasks' `utcDay`) (`registry` added in
 S2c: validates a step's `entity_type`; required per the approved seam) `[FACT: types.ts RoutinesServiceDeps]`.
 - `clock` defaults to `utcDay(Date.now())` (tasks' public helper, S3), i.e. **today's UTC calendar day** `[FACT: service.ts]`.
 - **Factory vs the governing shape:** `registry` (S2c), `tasks`/`sessions` (required) and `habits?` (S3) have landed, plus `prefs?` (S4). `spaces`/`notes`/`effects?`
@@ -70,11 +70,11 @@ Repositories (DB-6 generic Repository, `encryptedFields: []`, the M1.0 dormant `
 **Run / drive (S3)**: the RT-3 composition core
 | Method | Signature | Notes |
 |---|---|---|
-| `runStep` | `(stepId, input?: { date? }) => Promise<StepRunState>` | drives the step's target: task → `completeTask` (or reflect if already completed) · habit → one `logCompletion` tick · focus → `startFocus({})` + attach to the `routine_step` (or re-entry) · actionable → ledger done. `StepNotFoundError` / `EntityUnavailableError` before any routine write |
-| `completeStep` (driven) | `(stepId, input?) => Promise<StepRunState>` | task/habit = runStep; focus → `completeFocus` + stamp (duration from the focus) + best-effort detach. Actionable steps still return the `RoutineCompletion` |
-Target precedence: `step_type='focus'` → focus · `entity_type` task/habit with an id → that · no entity and no type → actionable · else
+| `runStep` | `(stepId, input?: { date? }) => Promise<StepRunState>` | drives the step's entity (S5c): **standard task** → start its Tasks `work` occurrence (`tasks.startTimer`, or adopt a timer started in Tasks) + attach the step · **obligation** → `completeTask` · **habit** → one native tick · **focus** → `startFocus({})` + attach · **any registered session sub-type** → `createSession(in_progress)` + attach (lifecycle-aware). `StepNotFoundError` / `EntityUnavailableError` before any occurrence stamp (a legacy null-entity row is first linked to its new Task, which persists) |
+| `completeStep` | `(stepId, input?) => Promise<StepRunState>` (every step; S5c) | standard task → stop the running occurrence (time logged by Tasks), or a **bare check** = a completed `work` session (no time log); obligation → `completeTask` (TK-7); habit = runStep; focus → `completeFocus` + detach; session → `completeSession` (the owner's lifecycle). Then stamp. The Task itself is never completed for a standard task |
+Target resolution (S5c, Q1/RT-4/D3): `focus` → `work` (needs its task ref) → a **registered** sub-type (`exercise`→`workout`) → task ref → habit ref → **check-off** (no ref: a Task is created + linked on add, or on first drive for a legacy row) → `EntityUnavailableError`. An unregistered `step_type` falls through to the ref. Routines registers **no** sub-type. `StepRunState.target` ∈ `task · habit · focus · session`.
 `EntityUnavailableError`. `StepRunState = { step_id, date, target, status: 'done'|'advanced'|'in_progress', completion, session_id?, focus_id?,
-flag? }`. `isStepRunState` narrows the completeStep union.
+flag? }`. `completeStep` and `runStep` both return it (S5c — no union).
 
 **Policy evaluation (S4)**: read-only, derive-on-read
 | Method | Signature | Notes |
@@ -95,7 +95,7 @@ Errors: `RoutineNotFoundError` · `InvalidRecurrenceRuleError` (a stored rule ou
 **Completion ledger + skip** (`service.ts`)
 | Method | Signature | Errors |
 |---|---|---|
-| `completeStep` | `(stepId, input?: { date?, actual_duration_minutes? }) => Promise<RoutineCompletion \| StepRunState>` | `StepNotFoundError`; `EntityUnavailableError` (driven, S3). Actionable → the ledger row; driven → drive first, then stamp (see Run / drive) |
+| `completeStep` | see Run / drive (S5c: always `StepRunState`) | — |
 | `skipStep` | `(stepId, input?: { date?, reason? }) => Promise<RoutineCompletion>` | `StepNotFoundError` |
 | `planSkipDates` | `(stepId, dates: string[]) => Promise<RoutineStep>` | `StepNotFoundError` |
 | `editCompletion` | `(stepId, date, patch: { skipped?, skip_reason?, actual_duration_minutes? }) => Promise<RoutineCompletion>` | `StepNotFoundError`; `CompletionNotFoundError` |

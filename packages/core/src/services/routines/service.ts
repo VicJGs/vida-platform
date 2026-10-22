@@ -42,12 +42,14 @@ import {
   RoutineCalendarDateSchema,
 } from '../../validators/routine'
 import { UnknownEntityType } from '../../foundation/spaces/types'
-import { utcDay, TaskNotFoundError, RecurrenceRegenError } from '../tasks'
+import { utcDay, TaskNotFoundError, RecurrenceRegenError, TimerAlreadyRunningError, TimerNotWiredError } from '../tasks'
+import { SessionTypeNotFound, type SessionTypeDef } from '../../foundation/sessions/types'
 import type { Session } from '../sessions'
 import type { HabitsService } from '../habits'
 import type { TasksService } from '../tasks'
 import { resolveProgress } from '../../foundation/measurement/engine'
 import type { FocusSessionRow } from '../../db/schema/foundation/session-extensions'
+import type { TaskRow } from '../../db/schema/tasks'
 import {
   RoutineNotFoundError,
   StepNotFoundError,
@@ -252,7 +254,7 @@ const toRoutineCompletion = (r: RoutineCompletionRow): RoutineCompletion => ({
 })
 
 export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService {
-  const { db, deviceId, registry, tasks, sessions, habits, prefs } = deps
+  const { db, deviceId, registry, tasks, sessions, sessionRegistry, habits, prefs } = deps
   const clock = deps.clock ?? (() => utcDay(Date.now())) // YYYY-MM-DD — the platform UTC-day convention (tasks' public utcDay)
   const cfg = { deviceId, encryptedFields: [] as string[] } // M1.0: [E] fields dormant (→ M3/DB-5)
 
@@ -356,15 +358,32 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     return out
   }
 
-  // ── S3 — run/drive (PLAN-S3-run-drive.md) ───────────────────────────
-  // Target precedence (first match wins): focus step_type → task/habit ref → actionable (no ref, no type) → unavailable.
-  type Resolved = { target: 'focus' | 'actionable' } | { target: 'task' | 'habit'; entityId: string } | null
-  const resolveTarget = (step: RoutineStepRow): Resolved => {
-    if (step.step_type === 'focus') return { target: 'focus' } // a step entity ref is ignored for focus in M1 (R2)
-    if (step.entity_type === 'task' && step.entity_id != null) return { target: 'task', entityId: step.entity_id }
-    if (step.entity_type === 'habit' && step.entity_id != null) return { target: 'habit', entityId: step.entity_id }
-    if (step.entity_type == null && step.step_type == null) return { target: 'actionable' }
-    return null // workout/other session sub-types, a type without a ref, an undrivable registered type (rule 15, R5)
+  // ── S3 + S5c — run/drive (PLAN-S3-run-drive.md, PLAN-S5c-q1-d3-correction.md) ─────
+  // Every step drives an entity (Q1/RT-4): a task (a check-off step IS a task), a habit, the focus timer, or a REGISTERED
+  // session sub-type (routines registers none). Resolution (pin 1): focus → work (needs its task) → a registered sub-type
+  // (exercise ⇒ workout) → task ref → habit ref → check-off (no ref; becomes a Task) → unavailable. An UNREGISTERED step_type
+  // falls through to the ref (approved row 2).
+  type Resolved =
+    | { target: 'focus' }
+    | { target: 'session'; subType: string; def: SessionTypeDef; about: { type: string; id: string } | null }
+    | { target: 'task' | 'habit'; entityId: string }
+    | { target: 'checkoff' }
+    | null
+  const resolveTarget = async (step: RoutineStepRow, rf: Reflection): Promise<Resolved> => {
+    const st = step.step_type
+    const ref = step.entity_type != null && step.entity_id != null ? { type: step.entity_type, id: step.entity_id } : null
+    if (st === 'focus') return { target: 'focus' }
+    if (st === 'work') return ref?.type === 'task' ? { target: 'task', entityId: ref.id } : null // a work timer is always task-attached
+    if (st != null && st !== 'task' && st !== 'habit') {
+      const subType = st === 'exercise' ? 'workout' : st // intake §D:94-98
+      const def = await subTypeDef(rf, subType)
+      if (def) return { target: 'session', subType, def, about: ref }
+    }
+    if (ref?.type === 'task') return { target: 'task', entityId: ref.id }
+    if (ref?.type === 'habit') return { target: 'habit', entityId: ref.id }
+    const noRef = step.entity_type == null && step.entity_id == null // the addStep predicate; a half ref is unresolvable
+    if (noRef && (st == null || st === 'task')) return { target: 'checkoff' }
+    return null
   }
 
   const findDone = async (stepId: string, date: string): Promise<RoutineCompletionRow | undefined> => {
@@ -414,31 +433,175 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     ...extra,
   })
 
-  const driveTask = async (
-    step: RoutineStepRow,
-    taskId: string,
-    date: string,
-    minutes: number | null,
-  ): Promise<StepRunState> => {
-    const task = await tasks.getTask(taskId)
-    if (!task) throw new EntityUnavailableError(step.id, `task ${taskId} is missing or deleted`)
-    // The platform TERMINAL convention {completed, cancelled} (services/tasks/service.ts:185-188): a cancelled task was
-    // abandoned, so it is never force-completed; an already-completed task is REFLECTED (no completeTask call, which would
-    // rewrite its completed_at). Open or on_hold tasks are driven (a reopened task is re-driven, RT-3).
-    if (task.status === 'cancelled') throw new EntityUnavailableError(step.id, `task ${taskId} is cancelled`)
+  const nowMinutesSince = (startedAt: number | null): number | null =>
+    startedAt == null ? null : Math.max(0, Math.round((Date.now() - startedAt) / 60_000))
+
+  // S3 (obligation, 3b) — TK-7 regeneration is the obligation's own occurrence engine: completeTask, TERMINAL reflection.
+  const driveObligation = async (step: RoutineStepRow, task: TaskRow, date: string, minutes: number | null): Promise<StepRunState> => {
+    if (task.status === 'cancelled') throw new EntityUnavailableError(step.id, `task ${task.id} is cancelled`)
     if (task.status === 'completed') {
       return state(step, date, 'task', { completion: await stamp(step.id, date, minutes) })
     }
     let flag: StepRunState['flag']
     try {
-      await tasks.completeTask(taskId) // re-drive is effect-idempotent (fan-out only on a fresh transition, rule 17)
+      await tasks.completeTask(task.id) // effect-idempotent re-drive (rule 17)
     } catch (e) {
-      if (e instanceof TaskNotFoundError) throw new EntityUnavailableError(step.id, `task ${taskId} is missing or deleted`)
+      if (e instanceof TaskNotFoundError) throw new EntityUnavailableError(step.id, `task ${task.id} is missing or deleted`)
       if (!(e instanceof RecurrenceRegenError)) throw e
       flag = 'recurrence_regen_failed' // TAS-23: the completion is durable; only the next occurrence failed
     }
     const completion = await stamp(step.id, date, minutes)
     return state(step, date, 'task', { completion, ...(flag ? { flag } : {}) })
+  }
+
+  // A session the routine just created must not outlive a failed link/complete (an open `work` session would block the
+  // user's next startTimer; a `scheduled` one is invisible to findOpenSessionForEntity) — the startAttachedFocus compensation.
+  const settleOrDrop = async (sessionId: string, fn: () => Promise<void>): Promise<void> => {
+    try {
+      await fn()
+    } catch (e) {
+      await bestEffort(() => sessions.softDeleteSession(sessionId))
+      throw e
+    }
+  }
+
+  // S5c (3a) — a standard task is the RESPONSIBILITY; each occurrence is a Tasks `work` session (Duties D3; ADR-004 work_sessions→Tasks).
+  // The routine never completes the Task itself.
+  const driveTask = async (
+    step: RoutineStepRow,
+    taskId: string,
+    date: string,
+    minutes: number | null,
+    mode: 'run' | 'complete',
+  ): Promise<StepRunState> => {
+    const task = await tasks.getTask(taskId)
+    if (!task) throw new EntityUnavailableError(step.id, `task ${taskId} is missing or deleted`)
+    if (task.kind === 'obligation') return driveObligation(step, task, date, minutes)
+    if (task.status === 'completed' || task.status === 'cancelled') {
+      throw new EntityUnavailableError(step.id, `task ${taskId} is ${task.status} (the responsibility is closed)`)
+    }
+    const openOnStep = await sessions.findOpenSessionForEntity('work', 'routine_step', step.id)
+    if (mode === 'run') {
+      if (openOnStep) return state(step, date, 'task', { status: 'in_progress', session_id: openOnStep.id })
+      const done = await findDone(step.id, date) // one occurrence per day: a done day starts nothing (the runFocus rule)
+      if (done) return state(step, date, 'task', { completion: toRoutineCompletion(done) })
+      let sessionId: string
+      try {
+        sessionId = (await tasks.startTimer(taskId)).id
+      } catch (e) {
+        if (e instanceof TimerAlreadyRunningError) {
+          // A timer the user started in Tasks: adopt it as this occurrence (the N9 adoption pattern).
+          const open = await sessions.findOpenSessionForEntity('work', 'task', taskId)
+          if (!open) throw e
+          sessionId = open.id
+        } else if (e instanceof TimerNotWiredError || e instanceof SessionTypeNotFound) {
+          throw new EntityUnavailableError(step.id, 'the tasks timer is not wired')
+        } else if (e instanceof TaskNotFoundError) {
+          throw new EntityUnavailableError(step.id, `task ${taskId} is missing or deleted`)
+        } else throw e
+      }
+      // No drop on failure: the timer is the Task's own occurrence (fresh or adopted); the next runStep re-adopts + re-attaches it.
+      await sessions.attach(sessionId, 'routine_step', step.id, 'instance')
+      return state(step, date, 'task', { status: 'in_progress', session_id: sessionId })
+    }
+    // complete: stop the running occurrence (incl. one started in Tasks), else a bare check = a completed work occurrence.
+    const open = openOnStep ?? (await sessions.findOpenSessionForEntity('work', 'task', taskId))
+    if (open) {
+      await sessions.attach(open.id, 'routine_step', step.id, 'instance') // link a Tasks-started occurrence before stopping (pin 10)
+      const elapsed = nowMinutesSince(open.started_at)
+      try {
+        await tasks.stopTimer(open.id) // Tasks logs the time via its own log_time, then completes the session
+      } catch (e) {
+        if (e instanceof TimerNotWiredError) throw new EntityUnavailableError(step.id, 'the tasks timer is not wired')
+        throw e
+      }
+      const completion = await stamp(step.id, date, minutes ?? elapsed)
+      return state(step, date, 'task', { completion, session_id: open.id })
+    }
+    // One occurrence per day: re-checking a done day creates no session; the row still upserts (BR-RT-S3-1 minutes).
+    if (await findDone(step.id, date)) return state(step, date, 'task', { completion: await stamp(step.id, date, minutes) })
+    if ((await subTypeDef(newReflection(), 'work')) == null) {
+      throw new EntityUnavailableError(step.id, 'the tasks timer is not wired (no work sub-type)')
+    }
+    const created = await sessions.createSession({
+      sub_type: 'work',
+      scheduling_mode: 'ad_hoc',
+      status: 'in_progress',
+      started_at: Date.now(),
+    })
+    await settleOrDrop(created.session.id, async () => {
+      await sessions.attach(created.session.id, 'task', taskId, 'instance')
+      await sessions.attach(created.session.id, 'routine_step', step.id, 'instance')
+      await sessions.completeSession(created.session.id) // `work` declares effects:[] → no time log for a bare check
+    })
+    const completion = await stamp(step.id, date, minutes)
+    return state(step, date, 'task', { completion, session_id: created.session.id })
+  }
+
+  // S5c (row 4) — any REGISTERED session sub-type, lifecycle-aware (pin 3); the session's about-entity is attached alongside.
+  const driveSession = async (
+    step: RoutineStepRow,
+    r: Extract<Resolved, { target: 'session' }>,
+    date: string,
+    minutes: number | null,
+    mode: 'run' | 'complete',
+  ): Promise<StepRunState> => {
+    const transitions = r.def.lifecycle.transitions
+    const runningCapable = transitions.some((t) => t.from === 'in_progress' && t.event === 'complete')
+    const open = runningCapable ? await sessions.findOpenSessionForEntity(r.subType, 'routine_step', step.id) : null
+    const attachAll = async (id: string) => {
+      await sessions.attach(id, 'routine_step', step.id, 'instance')
+      if (r.about) await sessions.attach(id, r.about.type, r.about.id, 'instance')
+    }
+    if (mode === 'run' && runningCapable) {
+      if (open) return state(step, date, 'session', { status: 'in_progress', session_id: open.id })
+      const done = await findDone(step.id, date)
+      if (done) return state(step, date, 'session', { completion: toRoutineCompletion(done) })
+      const created = await sessions.createSession({
+        sub_type: r.subType,
+        scheduling_mode: 'ad_hoc',
+        status: 'in_progress',
+        started_at: Date.now(),
+      })
+      await settleOrDrop(created.session.id, () => attachAll(created.session.id))
+      return state(step, date, 'session', { status: 'in_progress', session_id: created.session.id })
+    }
+    if (open) {
+      const elapsed = nowMinutesSince(open.started_at)
+      await sessions.completeSession(open.id) // fires the owner's declared effects
+      const completion = await stamp(step.id, date, minutes ?? elapsed)
+      return state(step, date, 'session', { completion, session_id: open.id })
+    }
+    // One occurrence per day (as for a task): no second session; the row still upserts (BR-RT-S3-1).
+    if (await findDone(step.id, date)) return state(step, date, 'session', { completion: await stamp(step.id, date, minutes) })
+    const from = transitions.find((t) => t.event === 'complete')?.from
+    if (from !== 'in_progress' && from !== 'scheduled') {
+      throw new EntityUnavailableError(step.id, `session sub-type ${r.subType} declares no completable state`)
+    }
+    const created = await sessions.createSession({
+      sub_type: r.subType,
+      scheduling_mode: 'ad_hoc',
+      status: from,
+      ...(from === 'in_progress' ? { started_at: Date.now() } : {}),
+    })
+    await settleOrDrop(created.session.id, async () => {
+      await attachAll(created.session.id)
+      await sessions.completeSession(created.session.id)
+    })
+    const completion = await stamp(step.id, date, minutes)
+    return state(step, date, 'session', { completion, session_id: created.session.id })
+  }
+
+  // S5c (row 8 / pin 7b) — a check-off step (or a legacy null-entity row) IS a Task: create + link it, cleaning up on failure.
+  const linkCheckoffTask = async (step: RoutineStepRow): Promise<string> => {
+    const task = await tasks.createTask({ title: step.title })
+    try {
+      await stepsRepo.update(step.id, { entity_type: 'task', entity_id: task.id })
+    } catch (e) {
+      await bestEffort(() => tasks.softDeleteTask(task.id))
+      throw e
+    }
+    return task.id
   }
 
   const driveHabit = async (
@@ -590,27 +753,31 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     }
   }
 
-  // Shared drive for runStep/completeStep's driven targets (task/habit are identical in both).
+  // Shared drive for runStep/completeStep. Runs INSIDE the per-step lock on a step re-loaded there (pin 7b).
   const driveStep = async (
     step: RoutineStepRow,
     date: string,
     minutes: number | null,
     mode: 'run' | 'complete',
   ): Promise<StepRunState> => {
-    const r = resolveTarget(step)
+    const r = await resolveTarget(step, newReflection())
     switch (r?.target) {
       case 'task':
-        return driveTask(step, r.entityId, date, minutes)
+        return driveTask(step, r.entityId, date, minutes, mode)
+      case 'checkoff':
+        return driveTask(step, await linkCheckoffTask(step), date, minutes, mode) // legacy null-entity row: migrate on touch
       case 'habit':
         return driveHabit(step, r.entityId, date, minutes)
       case 'focus':
         return mode === 'run' ? runFocus(step, date) : completeFocusStep(step, date)
-      case 'actionable':
-        return state(step, date, 'actionable', { completion: await stamp(step.id, date, minutes) })
+      case 'session':
+        return driveSession(step, r, date, minutes, mode)
       default:
         throw new EntityUnavailableError(
           step.id,
-          `target not drivable in M1 (step_type=${String(step.step_type)}, entity_type=${String(step.entity_type)})`,
+          step.step_type === 'work'
+            ? 'a work step needs a task ref (a work occurrence is always task-attached)'
+            : `target not drivable (step_type=${String(step.step_type)}, entity_type=${String(step.entity_type)}): an unregistered session sub-type is a borrowed leg of its owner, and a half ref resolves to nothing`,
         )
     }
   }
@@ -649,14 +816,27 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
 
   // E2 — done for `date` = the routine's own occurrence row (U1: the record of that occurrence, RT-5) OR the driven entity done AS OF
   // `date` in its own module (RT-3 reflects). Reflection only ADDS dones; a later change in the entity never rewrites D (a backfilled
-  // stamp counts; a task reopened later doesn't erase D). Focus / actionable steps have no reflection source.
+  // stamp counts; a task reopened later doesn't erase D). Focus and session steps have no reflection source (only their own row).
   type CalendarCache = Map<string, Promise<{ date: string; done: boolean }[] | null>>
   // One reflection context per read call: task rows memoised per id, habit calendars per (habit, month) — S5 bounded queries.
   interface Reflection {
     calendars: CalendarCache
     tasks: Map<string, ReturnType<TasksService['getTask']>>
+    subTypes: Map<string, Promise<SessionTypeDef | null>>
   }
-  const newReflection = (): Reflection => ({ calendars: new Map(), tasks: new Map() })
+  const newReflection = (): Reflection => ({ calendars: new Map(), tasks: new Map(), subTypes: new Map() })
+  // A sub-type's registered def, or null when unregistered (SessionTypeNotFound); any other registry error propagates.
+  const subTypeDef = (rf: Reflection, subType: string): Promise<SessionTypeDef | null> => {
+    let p = rf.subTypes.get(subType)
+    if (!p) {
+      p = sessionRegistry.get(subType).catch((e: unknown) => {
+        if (e instanceof SessionTypeNotFound) return null
+        throw e
+      })
+      rf.subTypes.set(subType, p)
+    }
+    return p
+  }
   const taskOnce = (rf: Reflection, id: string): ReturnType<TasksService['getTask']> => {
     let p = rf.tasks.get(id)
     if (!p) rf.tasks.set(id, (p = tasks.getTask(id)))
@@ -681,10 +861,17 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     rf: Reflection,
   ): Promise<boolean> => {
     if (row != null && !row.skipped) return true
-    const r = resolveTarget(step)
+    const r = await resolveTarget(step, rf)
     if (r?.target === 'task') {
+      // S5c — only an OBLIGATION reflects its own completion (TK-7, 3b); a standard task's occurrences are its work sessions,
+      // recorded by the routine's own row (D3).
       const task = await taskOnce(rf, r.entityId)
-      return task?.status === 'completed' && task.completed_at != null && utcDay(task.completed_at) <= date
+      return (
+        task?.kind === 'obligation' &&
+        task.status === 'completed' &&
+        task.completed_at != null &&
+        utcDay(task.completed_at) <= date
+      )
     }
     if (r?.target === 'habit' && habits) {
       const days = await habitMonth(habits, rf.calendars, r.entityId, date.slice(0, 7))
@@ -934,7 +1121,18 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       // S2c (A11) — append: step_order = max(live) + 1 unless given. One extra read, skipped when step_order is given.
       const step_order =
         p.step_order ?? (await liveSteps(routineId)).reduce((m, s) => Math.max(m, s.step_order), -1) + 1
-      return toRoutineStep(await stepsRepo.create(serializeStep(routineId, { ...p, step_order })))
+      // S5c (row 1, Q1/RT-4) — a check-off step (no ref; step_type null or 'task') IS a Task: created only after every check passed.
+      const isCheckoff = p.entity_type == null && p.entity_id == null && (p.step_type == null || p.step_type === 'task')
+      if (!isCheckoff) return toRoutineStep(await stepsRepo.create(serializeStep(routineId, { ...p, step_order })))
+      const task = await tasks.createTask({ title: p.title })
+      try {
+        return toRoutineStep(
+          await stepsRepo.create(serializeStep(routineId, { ...p, step_order, entity_type: 'task', entity_id: task.id })),
+        )
+      } catch (e) {
+        await bestEffort(() => tasks.softDeleteTask(task.id)) // no orphan responsibility
+        throw e
+      }
     },
 
     updateStep: async (stepId, patch) => {
@@ -967,16 +1165,14 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       const step = await loadStepOrThrow(stepId) // BR-RT-S3-4 — before any drive
       const date = p.date ?? clock()
       const minutes = p.actual_duration_minutes ?? null
-      // RT-5 — an actionable step is a DONE occurrence in the ledger (as built; upsert, so a re-complete updates the row).
-      if (resolveTarget(step)?.target === 'actionable') return stamp(stepId, date, minutes)
-      // RT-3 — a driven step drives its entity FIRST, then stamps the routine's own occurrence row (N7).
-      return serialized(stepId, () => driveStep(step, date, minutes, 'complete'))
+      // RT-3 — every step drives its entity FIRST, then stamps the routine's own occurrence row (N7). Re-load inside the lock.
+      return serialized(stepId, async () => driveStep(await loadStepOrThrow(step.id), date, minutes, 'complete'))
     },
 
     runStep: async (stepId, input = {}) => {
       const p = RunStepSchema.parse(input)
       const step = await loadStepOrThrow(stepId)
-      return serialized(stepId, () => driveStep(step, p.date ?? clock(), null, 'run'))
+      return serialized(stepId, async () => driveStep(await loadStepOrThrow(step.id), p.date ?? clock(), null, 'run'))
     },
 
     // ── S4 ──────────────────────────────────────────────────────────

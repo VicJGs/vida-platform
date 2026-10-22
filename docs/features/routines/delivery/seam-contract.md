@@ -15,6 +15,7 @@
 function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService
 
 interface RoutinesServiceDeps {             // ⟲ amended (A2, N3, D1)
+  sessionRegistry: SessionRegistry            // ⟲ S5c REQUIRED (read-only): resolve sub-types + lifecycles; routines registers none
   db: DrizzleDb
   deviceId: string
   clock?: () => string                       // ⟲ built (as-built S1): asOf YYYY-MM-DD, default UTC today
@@ -47,17 +48,17 @@ reorderSteps(routineId: Id, orderedStepIds: Id[]): Promise<RoutineStep[]>
 removeStep(stepId: Id): Promise<void>
 listSteps(routineId: Id): Promise<RoutineStep[]>
 // ⟲ step_type OPEN vocab, stored as-is (no M1 registry, R2); entity_type validated against TaggableTypeRegistry; entity ref
-//   nullable = actionable (alarm-like) step completing in the ledger (gate A11). addStep APPENDS (step_order = max+1) unless given (A11)
+//   ⟲ S5c: NO entity-less step — a check-off step (no ref; step_type null|'task') creates + links a Task (Q1/RT-4); addStep APPENDS
 ```
 
 ## Run / complete / skip / reschedule (S2, S3, S6)
 ```ts
-runStep(stepId: Id, input?: { date?: string }): Promise<StepRunState>  // ⟲ amended (S3, input added): drives tasks.completeTask | habits.logCompletion(date) |
+runStep(stepId: Id, input?: { date?: string }): Promise<StepRunState>  // ⟲ amended (S3, input added; S5c): drives tasks.startTimer (standard; obligation → completeTask) | a registered session sub-type | habits.logCompletion(date) |
                                                                    //   focus: startFocus({}) + attach(routine_step, instance) → completeFocus + detach (S3) (never completeSession, N9);
                                                                    //   returns live state; one entity completion per event (rule 1)
-completeStep(stepId: Id, input?: { date?: string; actual_duration_minutes?: number | null }):
-  Promise<RoutineCompletion | StepRunState>   // ⟲ amended (A16/S3: RoutineCompletion iff actionable, StepRunState for driven): actionable → ledger row; driven → DRIVE the entity first, then stamp
-                                               //   the routine's own occurrence row (rule 1, N7). Never fires the entity's effects
+completeStep(stepId: Id, input?: { date?: string; actual_duration_minutes?: number | null }):   // ⟲ S5c: returns StepRunState for EVERY step (target 'task'|'habit'|'focus'|'session')
+  Promise<StepRunState>   // ⟲ S5c (supersedes A16's union): every step is driven — DRIVE the entity first, then stamp the routine's own
+                          //   occurrence row (rule 1, N7); the stamped row is `.completion`. One occurrence per day.
 // ⟲ amended (A17): RT-8's two mechanisms have different storage, so there are two methods (§XXVIII, as-built S3, g2-approved)
 skipStep(stepId: Id, input?: { date?: string; reason?: string | null }): Promise<RoutineCompletion>   // LOGGED skip on the day
 planSkipDates(stepId: Id, dates: string[]): Promise<RoutineStep>                                     // PRE-PLANNED, merged into skip_dates

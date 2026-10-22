@@ -135,7 +135,7 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
 13. **Provider/emit failures are isolated.** A post-commit fan-out failure never fails the write (the habits pattern
     `[FACT: habits/service.ts:151-159]`); `ProviderEmitFailed` stays isolated (ROU-30).
 14. ✱ **Notes/tags target `routine_step` (+ `routine`)**: D2, pre-seeded (§1a). `routine_action` is retired.
-15. ✱ **The drive path is chosen by the step's target, and an unavailable target is a typed state.** A missing/deleted entity,
+15. ✱ *(S5c-amended: targets are task (check-offs ARE tasks) · habit · focus · any REGISTERED session sub-type; an unregistered sub-type is a borrowed leg of its owner; routines registers none.)* **The drive path is chosen by the step's target, and an unavailable target is a typed state.** A missing/deleted entity,
     or an unshipped session sub-type, → `EntityUnavailable` (RT-3 fail-loud). It never becomes a silent skip and never a
     ledger "done" `[FACT: ROU-30; contract.md:54]`.
 16. ✱ **Calendar dates are `YYYY-MM-DD`** (ADR-002 §2.8). Validate the format at the boundary; build dates from calendar
@@ -158,7 +158,7 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
     keyed `subjectNaturalKey=routine.id`, `transition='completed:<date>'` (the habits key shape `[FACT: habits/service.ts:145-149]`).
     `award_xp` is additive, so an undo after done does **not** retract (the same as habits). The exact write path is pinned in the
     effects slice PLAN `[INTERP, habits precedent]`.
-22. ✱ **RESOLVED in S3 (PLAN-S3):** reflect the referenced task; chain-following not owed (tasks G8 + duties D3). *Original:* **[UNKNOWN] Task step in a recurring routine.** A task step references one task id. After the first completion,
+22. ✱ *(S5c-amended: a STANDARD task step's occurrences are Tasks `work` sessions (D3), so the Task is never completed by the routine and no reflect-forever limit exists; only OBLIGATION steps keep completeTask + the lineage limit.)* **RESOLVED in S3 (PLAN-S3):** reflect the referenced task; chain-following not owed (tasks G8 + duties D3). *Original:* **[UNKNOWN] Task step in a recurring routine.** A task step references one task id. After the first completion,
     re-driving it on later occurrences changes nothing on the task, and an obligation's next occurrence is a **new id** the step
     does not re-point to (§1b). No doc fixes whether a task step is (a) a one-shot ("done until the task is reopened"), (b) a
     follower of the obligation chain, or (c) per-occurrence. Checked: routines intake §D ("a Tasks step of type standard/duty/
@@ -185,7 +185,7 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
 
 ### Resolutions of the Documentation-Gate UNKNOWNs (doc/code-derived — not decisions)
 - **R1 (U1) — Ledger semantics:** FACT from ADR-004 §3.2.1/§3.2.4/§3.2.5 → rules 1, 17, 18.
-- **R2 (U2) — `step_type` validation:** no step-type registry exists, and none is owed in M1. The user-extensible step/session
+- **R2 (U2) — `step_type` validation:** no step-type registry exists, and none is owed in M1. The user-extensible step/session *(S5c: `step_type` names a registered session sub-type (or 'exercise'→workout, 'work'→the task's timer); otherwise the task/habit ref; a check-off step (no ref) becomes a Task.)*
   type registry is ROU-25 (Spaces/007/SP5 pass, deferred) `[FACT: db-4-routines/_index.md:33 "User-extensible step/session
   types → the Spaces/ADR-004 registry"; backend-intent ROU-25]`. M1 validates what has a registry: `entity_type` against
   `TaggableTypeRegistry`, and a session sub-type against `SessionRegistry` (at `createSession`).
@@ -218,7 +218,7 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
   - ⟲ **SUPERSEDED (S4):** there are no routines-side default values to set; that framing was drift. the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves. *(Original:)* **Open, small, deliberately deferred:** the shipped default *values* (completion policy, threshold, acceptance-window
     length). The docs say "ships a default" without naming values, so these are a **Victor call at the evaluate slice's PLAN**.
     The only stated default is "planned skip = neutral" (RT-8). This does not change the yardstick's shape.
-- **R5 (U5) — Live drive targets in M1:**
+- **R5 (U5) — Live drive targets in M1:** *(S5c-amended: habit · task (3a work-session occurrences / 3b obligation completeTask) · focus · ANY registered session sub-type, lifecycle-aware; unregistered → borrowed leg; routines registers no sub-type.)*
   - **habit** (HabitsService) and **task** (TasksService): live.
   - **focus** session: **live**. Start via `startFocus({})` + `attach`, complete via `completeFocus` + detach (N9, S3). Not via `completeSession`.
   - `exercise`/`workout` (no Health service; no shipped sub-type) and other session sub-types → `EntityUnavailable` until their
