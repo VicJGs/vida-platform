@@ -52,11 +52,11 @@ listSteps(routineId: Id): Promise<RoutineStep[]>
 
 ## Run / complete / skip / reschedule (S2, S3, S6)
 ```ts
-runStep(stepId: Id): Promise<StepRunState>                          // ⟲ amended: drives tasks.completeTask | habits.logCompletion(date) |
-                                                                   //   focus: startFocus({attach routine_step, instance}) → completeFocus (never completeSession, N9);
+runStep(stepId: Id, input?: { date?: string }): Promise<StepRunState>  // ⟲ amended (S3, input added): drives tasks.completeTask | habits.logCompletion(date) |
+                                                                   //   focus: startFocus({}) + attach(routine_step, instance) → completeFocus + detach (S3) (never completeSession, N9);
                                                                    //   returns live state; one entity completion per event (rule 1)
 completeStep(stepId: Id, input?: { date?: string; actual_duration_minutes?: number | null }):
-  Promise<RoutineCompletion | StepRunState>   // ⟲ amended (A16): actionable → ledger row; driven → DRIVE the entity first, then stamp
+  Promise<RoutineCompletion | StepRunState>   // ⟲ amended (A16/S3: RoutineCompletion iff actionable, StepRunState for driven): actionable → ledger row; driven → DRIVE the entity first, then stamp
                                                //   the routine's own occurrence row (rule 1, N7). Never fires the entity's effects
 // ⟲ amended (A17): RT-8's two mechanisms have different storage, so there are two methods (§XXVIII, as-built S3, g2-approved)
 skipStep(stepId: Id, input?: { date?: string; reason?: string | null }): Promise<RoutineCompletion>   // LOGGED skip on the day
@@ -93,7 +93,7 @@ function registerRoutinesDueProvider(sessions: SessionsService, svc: RoutinesSer
 
 ## Typed errors (fail loud — ROU-30)
 ```ts
-EntityUnavailable        // a step's driven entity missing/deleted/port-absent → typed step state, never silent skip (RT-3)
+EntityUnavailableError   // ⟲ renamed (S3, module *Error convention) — a step's driven entity missing/deleted/port-absent → typed step state, never silent skip (RT-3)
 OutsideAcceptanceWindow  // make-good/reschedule past the window → rejected, no state change (RT-6)
 PolicyUndefined          // evaluate before policy resolves → falls back to shipped default, flagged
 ProviderEmitFailed       // dueIn/summary failure isolated — routine + sibling providers unaffected (RT-13)

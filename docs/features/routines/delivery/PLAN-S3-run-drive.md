@@ -173,6 +173,31 @@ Gates: tsc 0 · eslint 0 · routines suite green (41 + new) · full `@vida/core`
    the target precedence, the focus detach workaround, the drive-error map) is done at step 6 §XXIX.
 6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` sequential · g2 · /critique · §XXIX.
 
+## Addendum — g2 code review (post-implementation; §XXVIII: the spec never lags the code)
+**§XXVIII deviation (scope 5 narrowed, doc-grounded):** a task step no longer re-drives an already-`completed` task (that rewrote
+`completed_at` on every occurrence). The step reflects it, applying the platform TERMINAL convention `{completed, cancelled}`
+(`services/tasks/service.ts:185-188`): `cancelled` → `EntityUnavailableError` (never force-complete an abandoned task); `completed` →
+stamp only; open/`on_hold` → drive (a reopened task is re-driven, RT-3 preserved).
+**Fixed:** a running focus that started on another UTC day is cancelled + detached and never stamped onto today; a per-step in-flight lock (a
+double-tap starts one session); best-effort detach after the durable write; a habit below target removes a stale done stamp (RT-3
+reflects); the stamp writes with the already-loaded step (no StepNotFoundError after a drive, BR-RT-S3-4); a habit deleted mid-drive maps to
+`EntityUnavailableError`; pinned clocks in the focus tests (no midnight straddle); the seam comment de-garbled.
+**Recorded, not changed:** `detachFocus` looks up via the idempotent `attach` (safe here because the attachment was just found; a read-only
+lookup API is Sessions' to add) · the approved completeStep union kept (seam) · gate 11 reproduces the post-failed-stamp state directly
+rather than injecting a write failure (the completions repo is internal).
+**Tests:** +4 (TERMINAL task, stale cross-day focus, double-tap, stale habit stamp) → routines **60/60** · tsc 0 · eslint 0.
+
+## Addendum — final /critique (REVISE → fixed)
+- **Focus staleness corrected (blocking):** the g2-introduced rule compared `utcDay(started)` to the caller's `date`, which cancelled a focus
+  crossing UTC midnight (21:00 in Brasília) and let a past `date` cancel a running focus. Now a running focus belongs to the UTC day it **started**:
+  `completeStep` completes it and stamps **that** day (StepRunState `date` = the focus day). It is abandoned only when it started **before
+  yesterday**, judged against now, never the caller's date. A failed cancel aborts before the detach (no orphan).
+- §XXIX drift closed (clock, factory gap, completeStep row, not-built list, RT-3/D1/F5/F6 rows, "not yet representable").
+- Gate 12 completed (a focus started outside routines → `EntityUnavailableError`); gate 8 asserts `BackfillWindowError`; gate 3 checks no
+  `routine_completions` sync_queue row.
+- A re-run of a done occurrence keeps its `actual_duration_minutes` and `completed_at`; `resolveTarget` returns the narrowed `entityId` (no casts).
+- **Tests:** +4 (midnight crossing, caller-date safety, outside-routines focus, re-run preservation) → routines **64/64** · tsc 0 · eslint 0.
+
 ## Step-5 critique (folded): REVISE → 2 blocking fixed (a cancelled focus is never stamped done; the stamp-retry path is same-day only) + 6
 non-blocking (narrow existing completeStep call sites + `isStepRunState`, a real type guard for the focus extension, value imports from `../tasks`
 declared, step order swapped, gate tests for skip overwrite + soft-deleted step, durable-doc promotion named)

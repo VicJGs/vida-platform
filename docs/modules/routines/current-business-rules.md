@@ -4,7 +4,7 @@
 > Inherits: `docs/core/business-rules.md` + `docs/core/conventions.md` (constitution) → this module. Intent authority:
 > `docs/features/routines/{identity,business-rules,contract,structure-data,conventions}.md` (RT-1…RT-19) + the GOVERNING
 > `delivery/interpretation.md` (main's 9-slice set, Victor 2026-10-14; implicit rules cited as **interp §4.n**).
-> Last refreshed: 2026-10-21 · **S2c promoted (§XXIX)** · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
+> Last refreshed: 2026-10-22 · **S3 promoted (§XXIX)** · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
 
 > **Baseline note.** This doc records what the CODE enforces. The `BR-RT-S1/S2/S3-n` IDs are kept stable from the
 > as-built slices so existing cites keep resolving. They are **as-built labels**, not the governing slice numbers. Gaps
@@ -72,6 +72,31 @@
   - `reorderSteps` updates every owned step in its own transaction (even unchanged ones), so it's not atomic and causes sync churn.
     This is as-built S2 behaviour; a candidate for a later slice.
 
+**S3 — Run/drive** (`delivery/PLAN-S3-run-drive.md`)
+- **BR-RT-S3d-1 · Drive first, stamp second (N7, rule 1).** No routine write precedes a successful entity call. The routine stamps its own
+  occurrence row and never fires the entity's effects (the habit/task fire their own; `completeFocus` fires none; `completeSession` is never called).
+- **BR-RT-S3d-2 · Target precedence.** focus `step_type` → task/habit ref → actionable (no ref, no type) → else `EntityUnavailableError` (rule 15).
+  A focus step's entity ref is ignored in M1.
+- **BR-RT-S3d-3 · Task step (TERMINAL convention).** `cancelled` → `EntityUnavailableError` (never force-completed); `completed` → reflected
+  (stamp only, `completed_at` untouched); open/`on_hold` → `completeTask` then stamp. `RecurrenceRegenError` ⇒ stamped + `flag:'recurrence_regen_failed'`
+  (TAS-23). Chain-following to an obligation's next occurrence is not owed (tasks G8, duties D3).
+- **BR-RT-S3d-4 · Habit step (HB-5, RT-3 reflects).** One native tick `logCompletion(habitId, {date})`. Done ⇔ `count >= target_count` ⇒ stamp;
+  otherwise `'advanced'`, and any stale done stamp for the occurrence is removed. A repeat run is a patch (no +1). Absent `habits` dep or a
+  missing/deleted habit → `EntityUnavailableError`; `BackfillWindowError` propagates with no stamp.
+- **BR-RT-S3d-5 · Focus step.**
+  - `runStep` starts `startFocus({})` + an instance attachment to the `routine_step`, or re-enters a running one.
+  - `completeStep` completes via `completeFocus` and stamps `round(duration_seconds/60)`, which overrides a caller's duration.
+  - After completion the attachment is **detached**, best-effort. This is the workaround for the spine staying `in_progress`, a Sessions gap
+    owned by sessions-rescope #62.
+  - A completed attached focus is stamped only for the UTC day it completed (the stamp-retry path).
+  - A cancel is never a done.
+  - A running focus belongs to the UTC day it **started**: completing it stamps that day (a session crossing UTC midnight, 21:00 in
+    Brasília, keeps its work). It is treated as abandoned (cancelled, then detached; if the cancel fails nothing is detached) only when it started
+    **before yesterday**, judged against now, never against a caller-supplied date.
+  - A per-step in-flight lock serializes overlapping drives of the same step.
+- **BR-RT-S3d-6 · Re-run.** A focus step with a done row returns it. Task/habit steps re-reflect their entity (no second effect: tasks fan out only
+  on a fresh transition, habits dedup on `completed:<date>`). A logged skip flips to done on a successful drive (BR-RT-S3-2).
+
 ## 2. Rule taxonomy
 | Category | Rules | Enforced by | Default when absent | Who changes it | Reset / delete semantics |
 |---|---|---|---|---|---|
@@ -89,16 +114,17 @@
 | S1-1…S1-7 | routine CRUD rules above | EXPLICIT | RT-2/14/17/18/19 · interp §4.3/4.7/4.8 | ✅ |
 | S2-1…S2-6 | step rules above | EXPLICIT (S2-6 ordering semantics = IMPLICIT, ratified g2) | RT-2/3/4/17 · interp §4.5/4.6/4.9 | ✅ (S2-5 partial) |
 | S3-1…S3-5 | ledger rules above | EXPLICIT | RT-5/8/14/17/18 | ✅ |
-| RT-3 / ADR-004 §3.2.4 | a driven step completes its entity once, via the entity's API; no second entity occurrence/effect | EXPLICIT | business-rules.md RT-3; ADR-004 §3.2.4 | ⚠ drive leg not built (F1) |
+| RT-3 / ADR-004 §3.2.4 | a driven step completes its entity once, via the entity's API; no second entity occurrence/effect | EXPLICIT | business-rules.md RT-3; ADR-004 §3.2.4 | ✅ S3 (BR-RT-S3d-1) |
+| S3d-1…S3d-6 | drive-then-stamp · target precedence · task TERMINAL · habit HB-5 reflect · focus lifecycle + detach · re-run | EXPLICIT (RT-3, ADR-004 §3.2.1/§3.2.4, HB-5, TAS-23, TERMINAL convention) | PLAN-S3 | ✅ |
 | S2c-1…S2c-6 | setLifecycle · step append · date shape · progress 0–100 · RRULE parse+FREQ · non-empty names | EXPLICIT (S2c-5 [INTERP] approved) | PLAN-S2c; rule 16; ROU-17/29 | ✅ |
 | RT-6 | paused/off generate no misses · acceptance window | EXPLICIT | RT-6 | ⚠ `setLifecycle` built (S2c); misses not yet derived (S5) |
 | RT-5/7 | policy-derived done / streak | EXPLICIT | RT-5, RT-7 | ❌ not built |
 | RT-15/16 | notes via pages, tags via entity_tags (`routine` / `routine_step`, D2) | EXPLICIT | RT-15/16 · interp §5 D2 | ❌ not built (registry tokens exist: `_registry.ts:45-46`) |
 | RT-12/13 | purpose contribution · provider registration | EXPLICIT | RT-12/13 | ❌ not built |
-| D1 | `tasks: TasksService` is a **required** dep | EXPLICIT (decision) | interp §5 D1 | ❌ not in deps (F5) |
+| D1 | `tasks: TasksService` is a **required** dep | EXPLICIT (decision) | interp §5 D1 | ✅ S3 |
 
 **Findings (reconciliation inputs; none fixed at baseline):**
-- **F1 · Drive leg missing (RT-3), re-classified per Documentation Gate U1.** A ledger row for a driven step is aligned:
+- **F1 · Drive leg — RESOLVED in S3 (BR-RT-S3d-1…6).** *(was:)* **Drive leg missing (RT-3), re-classified per Documentation Gate U1.** A ledger row for a driven step is aligned:
   it is the routine's own occurrence record, and ADR-004 §3.2.4 scopes "no double-count" to one XP / one habit-occurrence per
   event. The gap is that `completeStep` writes the row **without driving the entity** (no delegate to the habit/task/session
   API). The run/drive slice owes that leg, and the routine side must never fire the entity's effects.
@@ -107,11 +133,8 @@
   leave the step's completion rows in place. That is correct: archive/soft-delete preserves the ledger (RT-17; ROU-03). Completions
   hard-delete only with a hard PURGE of their step (`routines.ts:103`), and that purge path is the only owed piece.
 - **F4 · `setLifecycle` — RESOLVED in S2c (BR-RT-S2c-1).** *(was: absent)* Lifecycle changes only through `updateRoutine`. The governing S1 lists ROU-17.
-- **F5 · Factory deps short of the governing shape.** `registry` landed in S2c. Still absent: `tasks` (required, D1), `spaces`, `notes`,
-  `sessions` and the optionals, each landing in its first-consuming slice.
-- **F6 · Duplicated day helper.** `clock` inlines `toISOString().slice(0,10)` while `services/tasks` exports `utcDay`, the
-  documented cross-module "day of a timestamp" convention `[FACT: services/tasks/service.ts]`. Same semantics (UTC);
-  INVENTED duplication, minor.
+- **F5 · Factory deps — mostly RESOLVED.** `registry` (S2c), `tasks`/`sessions`/`habits?` (S3) landed; `spaces`/`notes`/`effects?`/`prefs?` land in S4–S8.
+- **F6 · Day helper — RESOLVED in S3** (default clock = tasks' public `utcDay`).
 - **F7 · Stale aspect prose (flag, interp §4.14).** The aspect docs still name `routine_actions` / `routine_action` (e.g.
   business-rules.md RT-1/RT-8/RT-16/RT-17). The code and `_registry.ts` use the reframe names (`routine_step`, plus `routine`).
   The code is right; the prose lags.
@@ -134,16 +157,17 @@
 - **Success:** a typed entity returned (`Routine` / `RoutineStep` / `RoutineCompletion`) `RoutineStep[]` (reorder, S2c), or `void` (archive/remove/delete).
 - **Empty:** `[]` from list readers; `null` from `getRoutine`.
 - **Validation error:** `ZodError` · `InvalidRecurrenceRuleError` (S2c) · `UnknownEntityType` (S2c).
+- **Undrivable target:** `EntityUnavailableError` (S3). **Run states:** `done` · `advanced` (habit below target) · `in_progress` (focus running).
 - **Not found:** `RoutineNotFoundError` · `StepNotFoundError` · `CompletionNotFoundError` · generic `Error('Row not found: <id>')`
   from `updateRoutine`/`updateStep` (Repository).
-- **Not yet representable:** `EntityUnavailable`, `OutsideAcceptanceWindow`, `PolicyUndefined`, `ProviderEmitFailed` (governing
+- **Not yet representable:** `OutsideAcceptanceWindow`, `PolicyUndefined`, `ProviderEmitFailed` (governing
   contract; unbuilt).
 
 ## 6. Failure behavior (fail loud)
 Typed errors are thrown before any write for missing parents (routine → step → completion). There are no swallowing catches;
 the catches are `parseJsonArray`'s malformed-JSON → `null` (a documented degrade at a read boundary) and `assertValidRrule`, which
-catches the parser's throw only to rethrow the typed `InvalidRecurrenceRuleError` `[FACT: service.ts]`. One failure mode is not yet loud:
-the RT-3 drive leg (F1, S3). It is a finding, not accepted behaviour.
+catches the parser's throw only to rethrow the typed `InvalidRecurrenceRuleError` `[FACT: service.ts]`. Driven-target failures are loud (`EntityUnavailableError`, typed, before any routine write; BR-RT-S3d-2). The only swallowed error is the
+best-effort detach/cancel after a durable write, which is documented (BR-RT-S3d-5).
 
 ## Completion checklist
 - [x] §1 invariants with [FACT] · [x] §4 validation/edge · [x] §6 fail-loud

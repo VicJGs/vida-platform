@@ -13,12 +13,16 @@ import type { z } from 'zod'
 import type { Routine, RoutineStep, RoutineCompletion, RoutineLifecycle } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
+import type { TasksService } from '../tasks'
+import type { HabitsService } from '../habits'
+import type { SessionsService } from '../sessions'
 import type {
   CreateRoutineSchema,
   UpdateRoutineSchema,
   AddStepSchema,
   UpdateStepSchema,
   CompleteStepSchema,
+  RunStepSchema,
   SkipStepSchema,
   EditRoutineCompletionSchema,
 } from '../../validators/routine'
@@ -31,6 +35,12 @@ export interface RoutinesServiceDeps {
   /** S2c — the shared entity-type registry: validates a step's `entity_type` (R2; sessions precedent). Required (seam).
    *  Registration is not needed here: 'routine'/'routine_step' are pre-seeded from ENTITY_TYPES (_registry.ts:45-46). */
   registry: TaggableTypeRegistry
+  /** S3 — REQUIRED (D1): task steps drive `completeTask` (the routine never writes a parallel task completion). */
+  tasks: TasksService
+  /** S3 — REQUIRED (seam): focus steps drive `startFocus`/`completeFocus` + the routine_step instance attachment. */
+  sessions: SessionsService
+  /** S3 — optional (seam): habit steps drive the native tick. Absent ⇒ a habit step is `EntityUnavailableError`. */
+  habits?: HabitsService
 }
 
 // --- Zod-inferred input shapes (validators/routine.ts) ----------------------
@@ -39,6 +49,7 @@ export type UpdateRoutineInput = z.infer<typeof UpdateRoutineSchema>
 export type AddStepInput = z.infer<typeof AddStepSchema>
 export type UpdateStepInput = z.infer<typeof UpdateStepSchema>
 export type CompleteStepInput = z.infer<typeof CompleteStepSchema>
+export type RunStepInput = z.infer<typeof RunStepSchema>
 export type SkipStepInput = z.infer<typeof SkipStepSchema>
 export type EditRoutineCompletionInput = z.infer<typeof EditRoutineCompletionSchema>
 
@@ -70,6 +81,41 @@ export class InvalidRecurrenceRuleError extends Error {
   constructor(public readonly rule: string) {
     super(`Invalid recurrence rule (RFC-5545 RRULE with FREQ required): ${JSON.stringify(rule)}`)
     this.name = 'InvalidRecurrenceRuleError'
+  }
+}
+
+/** S3 — what a step drives (resolved by precedence, PLAN-S3): focus · task · habit · actionable (no entity). */
+export type StepTarget = 'actionable' | 'task' | 'habit' | 'focus'
+/** 'advanced' = a habit ticked but still below its target_count (a repeat run stays 'advanced': habits' re-log is a patch). */
+export type StepRunStatus = 'done' | 'advanced' | 'in_progress'
+
+/** S3 — the live state of a driven step (seam `StepRunState`). `completion` is the stamped ledger row when status is 'done'. */
+export interface StepRunState {
+  step_id: string
+  date: string
+  target: StepTarget
+  status: StepRunStatus
+  completion: RoutineCompletion | null
+  session_id?: string
+  focus_id?: string
+  /** TAS-23 complete-but-flag passthrough: the task IS completed, its next occurrence failed to spawn. */
+  flag?: 'recurrence_regen_failed'
+}
+
+/** Narrow `completeStep`'s union: a driven step returns a StepRunState, an actionable step its RoutineCompletion. */
+export function isStepRunState(x: RoutineCompletion | StepRunState): x is StepRunState {
+  return 'target' in x && 'status' in x
+}
+
+/** S3 (ROU-30a, RT-3 fail-loud) — a step's driven target is missing/deleted, its optional dep is absent, or the target is not
+ *  drivable in M1 (R5). Thrown before any routine write; the step is never silently marked done. */
+export class EntityUnavailableError extends Error {
+  constructor(
+    public readonly stepId: string,
+    public readonly reason: string,
+  ) {
+    super(`Step ${stepId} cannot be driven: ${reason}`)
+    this.name = 'EntityUnavailableError'
   }
 }
 
@@ -115,7 +161,10 @@ export interface RoutinesService {
   // them (a planned future skip has no RoutineCompletion to return). Corrected here: `skipStep` = logged;
   // `planSkipDates` = pre-planned. Grounded in docs/features/routines/business-rules.md RT-8.
   /** RT-5 — log a DONE occurrence; UPSERT per (step,date). Throws `StepNotFoundError` if the step is missing. */
-  completeStep(stepId: string, input?: CompleteStepInput): Promise<RoutineCompletion>
+  completeStep(stepId: string, input?: CompleteStepInput): Promise<RoutineCompletion | StepRunState>
+  /** ROU-07 — drive the step's target (task completion · habit tick · focus start/re-entry); actionable = completeStep.
+   *  Drive first, stamp second (N7). Throws `EntityUnavailableError` / `StepNotFoundError` before any routine write. */
+  runStep(stepId: string, input?: RunStepInput): Promise<StepRunState>
   /** RT-8 — log a SKIP on the day (completion row, skipped=true + reason); UPSERT per (step,date). */
   skipStep(stepId: string, input?: SkipStepInput): Promise<RoutineCompletion>
   /** RT-8 — declare PRE-PLANNED skip dates (merged into step.skip_dates, deduped+sorted); not a completion row. */

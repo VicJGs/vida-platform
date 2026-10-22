@@ -9,7 +9,7 @@
 // missing-name reject) + co-transactional sync_queue enqueue (persistence probe).
 // ============================================================================
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ZodError } from 'zod'
 import Database from 'better-sqlite3'
 import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../db/adapter'
@@ -17,15 +17,24 @@ import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
-import { UnknownEntityType } from '../../../foundation/spaces/types'
+import { UnknownEntityType, type TaggableTypeRegistry } from '../../../foundation/spaces/types'
+import { createSessionRegistry } from '../../../foundation/sessions/registry'
+import { createEffectRegistry, createEffectRail, type EffectRegistry } from '../../../foundation/effects'
+import { createTasksService, type TasksService } from '../../tasks'
+import { createHabitsService, BackfillWindowError, type HabitsService } from '../../habits'
+import { createSessionsService, type SessionsService } from '../../sessions'
 import {
   createRoutinesService,
   RoutineNotFoundError,
   StepNotFoundError,
   CompletionNotFoundError,
   InvalidRecurrenceRuleError,
+  EntityUnavailableError,
+  isStepRunState,
   type RoutinesService,
+  type StepRunState,
 } from '../index'
+import type { RoutineCompletion } from '@vida/types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
   return {
@@ -64,16 +73,55 @@ interface Harness {
   svc: RoutinesService
   db: DrizzleDb
   bsql: Database.Database
+  tasks: TasksService
+  habits: HabitsService
+  sessions: SessionsService
 }
 
-async function setup(): Promise<Harness> {
+interface SetupOpts {
+  withHabits?: boolean // default true; false ⇒ the optional `habits` dep is absent
+  effectRegistry?: EffectRegistry // tasks fan-out spies (rule 1 / rule 17 test)
+  sessionsEntityRegistry?: TaggableTypeRegistry // force an attach failure (focus edge case)
+}
+
+// S3 — REAL substrates (the tasks `setupWithTimer` pattern): Sessions (registry + rail + entity registry), Tasks, Habits.
+async function setup(opts: SetupOpts = {}): Promise<Harness> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createRoutinesService({ db, deviceId: 'test-device', registry: createTaggableTypeRegistry() })
-  return { svc, db, bsql }
+  const registry = createTaggableTypeRegistry()
+  const effectRegistry = opts.effectRegistry ?? createEffectRegistry()
+  const rail = createEffectRail(db, effectRegistry)
+  const sessions = createSessionsService({
+    db,
+    deviceId: 'test-device',
+    registry: createSessionRegistry(db, 'test-device'),
+    rail,
+    entityRegistry: opts.sessionsEntityRegistry ?? registry,
+  })
+  const tasks = createTasksService({ db, deviceId: 'test-device', effects: { rail, registry: effectRegistry } })
+  const habits = createHabitsService({ db, deviceId: 'test-device' })
+  const svc = createRoutinesService({
+    db,
+    deviceId: 'test-device',
+    registry,
+    tasks,
+    sessions,
+    ...(opts.withHabits === false ? {} : { habits }),
+  })
+  return { svc, db, bsql, tasks, habits, sessions }
+}
+
+// Actionable steps return the ledger row; narrow the S3 completeStep union for the as-built tests.
+async function completeActionable(
+  svc: RoutinesService,
+  ...args: Parameters<RoutinesService['completeStep']>
+): Promise<RoutineCompletion> {
+  const r = await svc.completeStep(...args)
+  if (isStepRunState(r)) throw new Error('expected an actionable step (RoutineCompletion)')
+  return r
 }
 
 describe('mod-routines S1 — routine definition CRUD', () => {
@@ -280,7 +328,7 @@ describe('mod-routines S3 — completion ledger + skip', () => {
   })
 
   it('completeStep records a DONE occurrence (skipped=false, completed_at stamped) (RT-5)', async () => {
-    const c = await h.svc.completeStep(stepId, { date: '2026-10-13', actual_duration_minutes: 12 })
+    const c = await completeActionable(h.svc, stepId, { date: '2026-10-13', actual_duration_minutes: 12 })
     expect(c.routine_step_id).toBe(stepId)
     expect(c.completed_date).toBe('2026-10-13')
     expect(c.skipped).toBe(false)
@@ -291,8 +339,8 @@ describe('mod-routines S3 — completion ledger + skip', () => {
   })
 
   it('completeStep UPSERTs per (step,date) — no duplicate row (RT-18 UNIQUE)', async () => {
-    await h.svc.completeStep(stepId, { date: '2026-10-13' })
-    await h.svc.completeStep(stepId, { date: '2026-10-13', actual_duration_minutes: 30 })
+    await completeActionable(h.svc, stepId, { date: '2026-10-13' })
+    await completeActionable(h.svc, stepId, { date: '2026-10-13', actual_duration_minutes: 30 })
     const ledger = await h.svc.listCompletions(stepId)
     expect(ledger.length).toBe(1) // upsert, not insert
     expect(ledger[0]!.actual_duration_minutes).toBe(30)
@@ -305,10 +353,10 @@ describe('mod-routines S3 — completion ledger + skip', () => {
   })
 
   it('complete→skip and skip→complete flip the SAME (step,date) row (upsert)', async () => {
-    await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    await completeActionable(h.svc, stepId, { date: '2026-10-13' })
     const skipped = await h.svc.skipStep(stepId, { date: '2026-10-13', reason: 'changed mind' })
     expect(skipped.skipped).toBe(true)
-    const redone = await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    const redone = await completeActionable(h.svc, stepId, { date: '2026-10-13' })
     expect(redone.skipped).toBe(false)
     expect(redone.skip_reason).toBeNull() // done clears the skip reason
     expect((await h.svc.listCompletions(stepId)).length).toBe(1)
@@ -324,7 +372,7 @@ describe('mod-routines S3 — completion ledger + skip', () => {
   })
 
   it('editCompletion patches an existing (step,date); CompletionNotFoundError if absent (RT-5)', async () => {
-    await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    await completeActionable(h.svc, stepId, { date: '2026-10-13' })
     const edited = await h.svc.editCompletion(stepId, '2026-10-13', { actual_duration_minutes: 45, skipped: true, skip_reason: 'late' })
     expect(edited.actual_duration_minutes).toBe(45)
     expect(edited.skipped).toBe(true)
@@ -333,15 +381,15 @@ describe('mod-routines S3 — completion ledger + skip', () => {
   })
 
   it('deleteCompletion HARD-deletes; CompletionNotFoundError if absent (RT-14 ledger)', async () => {
-    await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    await completeActionable(h.svc, stepId, { date: '2026-10-13' })
     await h.svc.deleteCompletion(stepId, '2026-10-13')
     expect((await h.svc.listCompletions(stepId)).length).toBe(0)
     await expect(h.svc.deleteCompletion(stepId, '2026-10-13')).rejects.toBeInstanceOf(CompletionNotFoundError)
   })
 
   it('listCompletions returns the ledger sorted by date', async () => {
-    await h.svc.completeStep(stepId, { date: '2026-10-15' })
-    await h.svc.completeStep(stepId, { date: '2026-10-13' })
+    await completeActionable(h.svc, stepId, { date: '2026-10-15' })
+    await completeActionable(h.svc, stepId, { date: '2026-10-13' })
     await h.svc.skipStep(stepId, { date: '2026-10-14', reason: 'x' })
     expect((await h.svc.listCompletions(stepId)).map((c) => c.completed_date)).toEqual([
       '2026-10-13',
@@ -426,7 +474,7 @@ describe('mod-routines S2c — floor conformance', () => {
   // 6 — calendar-date shape on every date entry point (B1, rule 16)
   it('rejects a non YYYY-MM-DD date at every date entry point, with no write', async () => {
     const s = await h.svc.addStep(routineId, { title: 'Read' })
-    await h.svc.completeStep(s.id, { date: '2026-10-20' })
+    await completeActionable(h.svc, s.id, { date: '2026-10-20' })
     const before = await queueCount()
     await expect(h.svc.completeStep(s.id, { date: '2026-1-5' })).rejects.toBeInstanceOf(ZodError)
     await expect(h.svc.skipStep(s.id, { date: 'yesterday' })).rejects.toBeInstanceOf(ZodError)
@@ -521,5 +569,345 @@ describe('mod-routines S2c — floor conformance', () => {
     await h.svc.setLifecycle(routineId, 'paused')
     const after = (await h.db.select().from(syncQueue).all()).filter((x) => x.row_id === routineId).length
     expect(after).toBeGreaterThan(before)
+  })
+})
+
+// ============================================================================
+// S3 — run/drive: the RT-3 composition core (PLAN-S3-run-drive.md · Verification Gate 1–15)
+// ============================================================================
+describe('mod-routines S3 — run/drive', () => {
+  const DAY = '2026-10-21'
+  let h: Harness
+  let routineId: string
+  const queueFor = async (rowId: string): Promise<number> =>
+    (await h.db.select().from(syncQueue).all()).filter((x) => x.row_id === rowId).length
+  const focusStatus = (focusId: string): string =>
+    (h.bsql.prepare('SELECT status FROM focus_sessions WHERE id = ?').get(focusId) as { status: string }).status
+  const asRun = (r: RoutineCompletion | StepRunState): StepRunState => {
+    if (!isStepRunState(r)) throw new Error('expected a StepRunState')
+    return r
+  }
+  beforeEach(async () => {
+    h = await setup()
+    routineId = (await h.svc.createRoutine({ name: 'Morning' })).id
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  // 1 — actionable
+  it('actionable step: runStep and completeStep stamp the ledger; completeStep returns a RoutineCompletion', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Stretch' })
+    const run = await h.svc.runStep(s.id, { date: DAY })
+    expect(run).toMatchObject({ target: 'actionable', status: 'done', date: DAY })
+    expect(run.completion?.skipped).toBe(false)
+    const c = await h.svc.completeStep(s.id, { date: DAY })
+    expect(isStepRunState(c)).toBe(false)
+  })
+
+  // 2 — task
+  it('task step: runStep completes the real task and stamps the ledger', async () => {
+    const t = await h.tasks.createTask({ title: 'Pay bill' })
+    const s = await h.svc.addStep(routineId, { title: 'Bill', entity_type: 'task', entity_id: t.id })
+    const run = await h.svc.runStep(s.id, { date: DAY })
+    expect(run).toMatchObject({ target: 'task', status: 'done' })
+    expect((await h.tasks.getTask(t.id))?.status).toBe('completed')
+    expect((await h.svc.listCompletions(s.id)).map((c) => c.completed_date)).toEqual([DAY])
+  })
+
+  // 3 — task missing / soft-deleted; soft-deleted step
+  it('missing or soft-deleted task → EntityUnavailableError with no routine write; a soft-deleted step → StepNotFoundError first', async () => {
+    const ghost = await h.svc.addStep(routineId, { title: 'Ghost', entity_type: 'task', entity_id: 'no-such-task' })
+    const ledgerQueueBefore = (await h.db.select().from(syncQueue).all()).filter((x) => x.table_name === 'routine_completions').length
+    await expect(h.svc.runStep(ghost.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect(await h.svc.listCompletions(ghost.id)).toEqual([])
+    expect((await h.db.select().from(syncQueue).all()).filter((x) => x.table_name === 'routine_completions').length).toBe(ledgerQueueBefore)
+    const t = await h.tasks.createTask({ title: 'Gone' })
+    await h.tasks.softDeleteTask(t.id)
+    const s = await h.svc.addStep(routineId, { title: 'Gone', entity_type: 'task', entity_id: t.id })
+    await expect(h.svc.completeStep(s.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+    const live = await h.tasks.createTask({ title: 'Live' })
+    const st = await h.svc.addStep(routineId, { title: 'Live', entity_type: 'task', entity_id: live.id })
+    await h.svc.removeStep(st.id)
+    await expect(h.svc.runStep(st.id, { date: DAY })).rejects.toBeInstanceOf(StepNotFoundError)
+    expect((await h.tasks.getTask(live.id))?.status).not.toBe('completed')
+  })
+
+  // 4 — obligation regen failure (TAS-23 complete-but-flag)
+  it('obligation whose regeneration fails: the task is completed, the ledger stamped, the flag passed through', async () => {
+    const t = await h.tasks.createTask({ title: 'Tax', kind: 'obligation', due_date: DAY })
+    await h.tasks.setRecurrence(t.id, 'FREQ=BOGUS') // tasks doesn't validate the rule (tasks test precedent)
+    const s = await h.svc.addStep(routineId, { title: 'Tax', entity_type: 'task', entity_id: t.id })
+    const run = asRun(await h.svc.completeStep(s.id, { date: DAY }))
+    expect(run).toMatchObject({ status: 'done', flag: 'recurrence_regen_failed' })
+    expect((await h.tasks.getTask(t.id))?.status).toBe('completed')
+    expect(await h.svc.listCompletions(s.id)).toHaveLength(1)
+  })
+
+  // 5 — habit target 1
+  it('habit step (target 1): one native tick completes the habit and stamps the ledger', async () => {
+    const hab = await h.habits.createHabit({ name: 'Water', frequency: 'daily' })
+    const s = await h.svc.addStep(routineId, { title: 'Water', entity_type: 'habit', entity_id: hab.id })
+    const today = new Date().toISOString().slice(0, 10)
+    const run = await h.svc.runStep(s.id, { date: today })
+    expect(run).toMatchObject({ target: 'habit', status: 'done' })
+    expect(await h.svc.listCompletions(s.id)).toHaveLength(1)
+  })
+
+  // 6 — habit target 3: advanced, repeat stays advanced, done once the habit reaches target
+  it('habit step (target 3): advanced without a stamp; a repeat stays advanced; done once the habit is done', async () => {
+    const hab = await h.habits.createHabit({ name: 'Pushups', frequency: 'daily', target_count: 3 })
+    const s = await h.svc.addStep(routineId, { title: 'Pushups', entity_type: 'habit', entity_id: hab.id })
+    const today = new Date().toISOString().slice(0, 10)
+    expect((await h.svc.runStep(s.id, { date: today })).status).toBe('advanced')
+    expect((await h.svc.runStep(s.id, { date: today })).status).toBe('advanced')
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+    await h.habits.logCompletion(hab.id, { date: today, count: 3 })
+    expect((await h.svc.runStep(s.id, { date: today })).status).toBe('done')
+    expect(await h.svc.listCompletions(s.id)).toHaveLength(1)
+  })
+
+  // 7 — habit dep absent / missing / soft-deleted
+  it('habit step with no habits dep, a missing habit, or a soft-deleted habit → EntityUnavailableError', async () => {
+    const hab = await h.habits.createHabit({ name: 'Read', frequency: 'daily' })
+    const s = await h.svc.addStep(routineId, { title: 'Read', entity_type: 'habit', entity_id: hab.id })
+    const noHabits = await setup({ withHabits: false })
+    const r2 = (await noHabits.svc.createRoutine({ name: 'R' })).id
+    const s2 = await noHabits.svc.addStep(r2, { title: 'H', entity_type: 'habit', entity_id: 'x' })
+    await expect(noHabits.svc.runStep(s2.id)).rejects.toBeInstanceOf(EntityUnavailableError)
+    const ghost = await h.svc.addStep(routineId, { title: 'G', entity_type: 'habit', entity_id: 'no-such-habit' })
+    await expect(h.svc.runStep(ghost.id)).rejects.toBeInstanceOf(EntityUnavailableError)
+    await h.habits.softDeleteHabit(hab.id)
+    await expect(h.svc.runStep(s.id)).rejects.toBeInstanceOf(EntityUnavailableError)
+  })
+
+  // 8 — habit date pass-through; future date rejected by habits
+  it('habit step passes the occurrence date to the habit; a future date → BackfillWindowError, no stamp', async () => {
+    const hab = await h.habits.createHabit({ name: 'Walk', frequency: 'daily' })
+    const s = await h.svc.addStep(routineId, { title: 'Walk', entity_type: 'habit', entity_id: hab.id })
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+    await h.svc.runStep(s.id, { date: yesterday })
+    const cal = await h.habits.getCalendar(hab.id, yesterday.slice(0, 7))
+    expect(cal.some((d) => d.date === yesterday && d.done)).toBe(true)
+    await expect(h.svc.runStep(s.id, { date: '2999-01-01' })).rejects.toBeInstanceOf(BackfillWindowError)
+    expect((await h.svc.listCompletions(s.id)).map((c) => c.completed_date)).toEqual([yesterday])
+  })
+
+  // 9 — focus start + re-entry
+  it('focus step: runStep starts an attached session; a second runStep re-enters the same one', async () => {
+    vi.spyOn(Date, 'now').mockImplementation(() => Date.parse(`${DAY}T09:00:00Z`)) // the session starts on DAY
+    const s = await h.svc.addStep(routineId, { title: 'Deep work', step_type: 'focus' })
+    const a = await h.svc.runStep(s.id, { date: DAY })
+    expect(a).toMatchObject({ target: 'focus', status: 'in_progress' })
+    expect(a.session_id).toBeTruthy()
+    expect(a.focus_id).toBeTruthy()
+    expect((await h.sessions.findOpenSessionForEntity('focus', 'routine_step', s.id))?.id).toBe(a.session_id)
+    const b = await h.svc.runStep(s.id, { date: DAY })
+    expect([b.session_id, b.focus_id]).toEqual([a.session_id, a.focus_id])
+  })
+
+  // 10 — focus cycle ×2 (re-entry survives completion: detach workaround)
+  it('focus step survives two full cycles: run → complete → run → run → complete, one ledger row per day', async () => {
+    let now = Date.parse('2026-10-21T08:00:00Z')
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+    const s = await h.svc.addStep(routineId, { title: 'Deep work', step_type: 'focus' })
+    const first = await h.svc.runStep(s.id, { date: '2026-10-21' })
+    now += 25 * 60_000
+    const done1 = asRun(await h.svc.completeStep(s.id, { date: '2026-10-21' }))
+    expect(done1.status).toBe('done')
+    expect(done1.completion?.actual_duration_minutes).toBe(25)
+    expect(focusStatus(first.focus_id!)).toBe('completed')
+    now = Date.parse('2026-10-22T08:00:00Z')
+    const second = await h.svc.runStep(s.id, { date: '2026-10-22' })
+    expect(second.session_id).not.toBe(first.session_id)
+    const again = await h.svc.runStep(s.id, { date: '2026-10-22' })
+    expect(again.session_id).toBe(second.session_id)
+    now += 50 * 60_000
+    const done2 = asRun(await h.svc.completeStep(s.id, { date: '2026-10-22' }))
+    expect(done2.completion?.actual_duration_minutes).toBe(50)
+    expect((await h.svc.listCompletions(s.id)).map((c) => c.completed_date)).toEqual(['2026-10-21', '2026-10-22'])
+  })
+
+  // 11 — focus stamp retry: focus completed (e.g. a stamp failed after completeFocus) → completeStep stamps from it
+  it('focus stamp retry: an attached focus completed the same day with no ledger row is stamped from, then detached', async () => {
+    vi.spyOn(Date, 'now').mockImplementation(() => Date.parse('2026-10-21T09:00:00Z')) // no midnight straddle
+    const s = await h.svc.addStep(routineId, { title: 'Deep work', step_type: 'focus' })
+    const today = '2026-10-21'
+    const run = await h.svc.runStep(s.id, { date: today })
+    // The exact state a stamp failure after completeFocus leaves behind (focus completed, no ledger row, still attached).
+    await h.sessions.completeFocus(run.focus_id!)
+    const done = asRun(await h.svc.completeStep(s.id, { date: today }))
+    expect(done.status).toBe('done')
+    expect(await h.svc.listCompletions(s.id)).toHaveLength(1)
+    expect(await h.sessions.findOpenSessionForEntity('focus', 'routine_step', s.id)).toBeNull() // detached
+  })
+
+  // 12 — focus edge cases
+  it('focus edges: cancelled → never done, restarts; previous-day completion not stamped today; no running focus; attach failure cancels', async () => {
+    let now = Date.parse('2026-10-21T09:00:00Z')
+    const clockSpy = vi.spyOn(Date, 'now').mockImplementation(() => now)
+    const s = await h.svc.addStep(routineId, { title: 'Deep work', step_type: 'focus' })
+    const today = '2026-10-21'
+    const run = await h.svc.runStep(s.id, { date: today })
+    await h.sessions.cancelFocus(run.focus_id!)
+    await expect(h.svc.completeStep(s.id, { date: today })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+    const restarted = await h.svc.runStep(s.id, { date: today })
+    expect(restarted.session_id).not.toBe(run.session_id)
+    // a focus completed on a previous day is not stamped for today
+    const s2 = await h.svc.addStep(routineId, { title: 'Old', step_type: 'focus' })
+    now = Date.parse('2026-01-01T10:00:00Z')
+    const old = await h.svc.runStep(s2.id, { date: '2026-01-01' })
+    await h.sessions.completeFocus(old.focus_id!)
+    now = Date.parse('2026-10-21T09:30:00Z')
+    await expect(h.svc.completeStep(s2.id, { date: today })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect(await h.svc.listCompletions(s2.id)).toEqual([])
+    // no running focus at all
+    const s3 = await h.svc.addStep(routineId, { title: 'Never ran', step_type: 'focus' })
+    await expect(h.svc.completeStep(s3.id, { date: today })).rejects.toBeInstanceOf(EntityUnavailableError)
+    // attach failure → the just-started focus is cancelled and the error rethrown
+    const base = createTaggableTypeRegistry()
+    const denyStep: TaggableTypeRegistry = { ...base, isRegistered: (t) => t !== 'routine_step' && base.isRegistered(t) }
+    const h2 = await setup({ sessionsEntityRegistry: denyStep })
+    const r2 = (await h2.svc.createRoutine({ name: 'R' })).id
+    const s4 = await h2.svc.addStep(r2, { title: 'F', step_type: 'focus' })
+    await expect(h2.svc.runStep(s4.id)).rejects.toBeInstanceOf(UnknownEntityType)
+    const statuses = (h2.bsql.prepare('SELECT status FROM focus_sessions').all() as { status: string }[]).map((r) => r.status)
+    expect(statuses).toEqual(['cancelled'])
+    clockSpy.mockRestore()
+  })
+
+  // 13 — rule 1 + rule 17: the task's own award_xp fires exactly once across a re-complete; nothing keyed on the routine
+  it('re-completing a task step re-drives the task but its award_xp fires exactly once, keyed on the task', async () => {
+    const fired: string[] = []
+    const effectRegistry = createEffectRegistry()
+    effectRegistry.register('award_xp', async (ev) => {
+      fired.push(ev.subjectNaturalKey)
+    })
+    h = await setup({ effectRegistry })
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const t = await h.tasks.createTask({ title: 'Ship' })
+    const s = await h.svc.addStep(rid, { title: 'Ship', entity_type: 'task', entity_id: t.id })
+    await h.svc.completeStep(s.id, { date: DAY })
+    await h.svc.completeStep(s.id, { date: DAY })
+    expect(fired).toEqual([t.id])
+  })
+
+  // 14 — skip overwrite + unsupported targets
+  it('a logged skip flips to done on a successful drive; unsupported targets → EntityUnavailableError with no session', async () => {
+    const t = await h.tasks.createTask({ title: 'Mail' })
+    const s = await h.svc.addStep(routineId, { title: 'Mail', entity_type: 'task', entity_id: t.id })
+    await h.svc.skipStep(s.id, { date: DAY, reason: 'busy' })
+    await h.svc.runStep(s.id, { date: DAY })
+    const rows = await h.svc.listCompletions(s.id)
+    expect(rows).toHaveLength(1)
+    expect([rows[0].skipped, rows[0].skip_reason]).toEqual([false, null])
+    const cases = [
+      { title: 'Workout', step_type: 'workout' },
+      { title: 'Habit w/o ref', step_type: 'habit' },
+      { title: 'Session ref', entity_type: 'session', entity_id: 'x' },
+    ]
+    for (const c of cases) {
+      const st = await h.svc.addStep(routineId, c)
+      await expect(h.svc.runStep(st.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    }
+    expect((h.bsql.prepare('SELECT count(*) AS n FROM focus_sessions').get() as { n: number }).n).toBe(0)
+  })
+
+  // 15 — persistence probe
+  it('a driven completeStep enqueues the ledger row in sync_queue', async () => {
+    const t = await h.tasks.createTask({ title: 'Sync' })
+    const s = await h.svc.addStep(routineId, { title: 'Sync', entity_type: 'task', entity_id: t.id })
+    const run = asRun(await h.svc.completeStep(s.id, { date: DAY }))
+    expect(await queueFor(run.completion!.id)).toBeGreaterThanOrEqual(1)
+  })
+
+  // g2 fixes (post-implementation, PLAN-S3 addendum)
+  it('task TERMINAL convention: a cancelled task is unavailable; a completed task is reflected without moving completed_at', async () => {
+    const c = await h.tasks.createTask({ title: 'Dropped' })
+    await h.tasks.updateTask(c.id, { status: 'cancelled' })
+    const sc = await h.svc.addStep(routineId, { title: 'Dropped', entity_type: 'task', entity_id: c.id })
+    await expect(h.svc.runStep(sc.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect((await h.tasks.getTask(c.id))?.status).toBe('cancelled')
+    const t = await h.tasks.createTask({ title: 'Once' })
+    const st = await h.svc.addStep(routineId, { title: 'Once', entity_type: 'task', entity_id: t.id })
+    await h.svc.runStep(st.id, { date: '2026-10-20' })
+    const completedAt = (await h.tasks.getTask(t.id))?.completed_at
+    const next = await h.svc.runStep(st.id, { date: '2026-10-21' })
+    expect(next.status).toBe('done')
+    expect((await h.tasks.getTask(t.id))?.completed_at).toBe(completedAt)
+    await h.tasks.reopenTask(t.id) // reopened → re-driven (RT-3)
+    await h.svc.runStep(st.id, { date: '2026-10-22' })
+    expect((await h.tasks.getTask(t.id))?.status).toBe('completed')
+  })
+
+  it('a focus left running from another day is cancelled + detached, never stamped onto today', async () => {
+    let now = Date.parse('2026-10-20T08:00:00Z')
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+    const s = await h.svc.addStep(routineId, { title: 'Deep work', step_type: 'focus' })
+    const stale = await h.svc.runStep(s.id, { date: '2026-10-20' })
+    now = Date.parse('2026-10-22T08:00:00Z')
+    await expect(h.svc.completeStep(s.id, { date: '2026-10-22' })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect(focusStatus(stale.focus_id!)).toBe('cancelled')
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+    const fresh = await h.svc.runStep(s.id, { date: '2026-10-22' })
+    expect(fresh.session_id).not.toBe(stale.session_id)
+  })
+
+  it('overlapping runStep calls on a focus step (double-tap) start exactly one attached session', async () => {
+    vi.spyOn(Date, 'now').mockImplementation(() => Date.parse(`${DAY}T09:00:00Z`))
+    const s = await h.svc.addStep(routineId, { title: 'Deep work', step_type: 'focus' })
+    const [a, b] = await Promise.all([h.svc.runStep(s.id, { date: DAY }), h.svc.runStep(s.id, { date: DAY })])
+    expect(a.session_id).toBe(b.session_id)
+    expect((h.bsql.prepare('SELECT count(*) AS n FROM focus_sessions').get() as { n: number }).n).toBe(1)
+  })
+
+  it('a habit step reflects a habit that is no longer done: the stale done stamp is removed', async () => {
+    const hab = await h.habits.createHabit({ name: 'Floss', frequency: 'daily' })
+    const s = await h.svc.addStep(routineId, { title: 'Floss', entity_type: 'habit', entity_id: hab.id })
+    const today = new Date().toISOString().slice(0, 10)
+    await h.svc.runStep(s.id, { date: today })
+    expect(await h.svc.listCompletions(s.id)).toHaveLength(1)
+    await h.habits.updateHabit(hab.id, { target_count: 3 })
+    expect((await h.svc.runStep(s.id, { date: today })).status).toBe('advanced')
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+  })
+
+  // final-critique fixes
+  it('a focus crossing UTC midnight keeps its work: completed and stamped on the day it started', async () => {
+    let now = Date.parse('2026-10-21T23:50:00Z') // 20:50 in Brasília
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+    const s = await h.svc.addStep(routineId, { title: 'Evening focus', step_type: 'focus' })
+    await h.svc.runStep(s.id) // default date = UTC 2026-10-21
+    now = Date.parse('2026-10-22T00:20:00Z') // 21:20 in Brasília, a new UTC day
+    const done = asRun(await h.svc.completeStep(s.id)) // default date = UTC 2026-10-22
+    expect(done).toMatchObject({ status: 'done', date: '2026-10-21' })
+    expect(done.completion?.actual_duration_minutes).toBe(30)
+    expect((await h.svc.listCompletions(s.id)).map((c) => c.completed_date)).toEqual(['2026-10-21'])
+  })
+
+  it('a caller-supplied past date never cancels a focus that is running now', async () => {
+    vi.spyOn(Date, 'now').mockImplementation(() => Date.parse('2026-10-22T10:00:00Z'))
+    const s = await h.svc.addStep(routineId, { title: 'Deep work', step_type: 'focus' })
+    const a = await h.svc.runStep(s.id, { date: '2026-10-22' })
+    const b = await h.svc.runStep(s.id, { date: '2026-10-01' })
+    expect(b.session_id).toBe(a.session_id)
+    expect(focusStatus(a.focus_id!)).toBe('running')
+  })
+
+  it('a focus started outside routines (not attached to the step) is invisible: completeStep → EntityUnavailableError', async () => {
+    vi.spyOn(Date, 'now').mockImplementation(() => Date.parse(`${DAY}T09:00:00Z`))
+    const s = await h.svc.addStep(routineId, { title: 'Deep work', step_type: 'focus' })
+    await h.sessions.startFocus({})
+    await expect(h.svc.completeStep(s.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
+    expect(await h.svc.listCompletions(s.id)).toEqual([])
+  })
+
+  it('re-running an already-done step keeps its recorded duration and completed_at', async () => {
+    const t = await h.tasks.createTask({ title: 'Report' })
+    const s = await h.svc.addStep(routineId, { title: 'Report', entity_type: 'task', entity_id: t.id })
+    const first = asRun(await h.svc.completeStep(s.id, { date: DAY, actual_duration_minutes: 30 }))
+    const again = await h.svc.runStep(s.id, { date: DAY })
+    expect(again.completion?.actual_duration_minutes).toBe(30)
+    expect(again.completion?.completed_at).toBe(first.completion?.completed_at)
   })
 })

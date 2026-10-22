@@ -72,7 +72,7 @@ Verdict:    CLEAR to proceed
 | B8 | Ledger upsert per (step,date); done clears skip | `service.ts:97-128,239-257` | RT-18; RT-5/8; rule 17 | ✅ B |
 | B9 | Ledger hard-delete; no orphan completion | `service.ts:83,91-95,280-284` | RT-14/17; rule 6 | ✅ B |
 | B10 | `[E]` seam empty · Row→interface mappers | `service.ts:79-83,61-75` | rules 10/11 | ✅ B |
-| B11 | "Today" = UTC day | inline `toISOString().slice(0,10)` `service.ts:78` | N6 (`utcDay` convention, `tasks/service.ts:178-199`) | ✅ semantics · ❌ low duplication (baseline F6). Reuse `utcDay` once `tasks` is a dep (D1) |
+| B11 | "Today" = UTC day | **S3: default clock = `utcDay(Date.now())`** (tasks' public helper) | N6 | ✅ resolved in S3 |
 | B12 | Update-by-id on a missing row → generic `Row not found` | Repository `db/repository.ts:413` | ratified twin-repo behaviour (g2 N1, current-business-rules) | ✅ B |
 | B14³ | `deleteCompletion` does not check the step exists (asymmetric with `editCompletion`) | `service.ts:280-284` | finds by (step,date) only, so a missing step ⇒ `CompletionNotFoundError` anyway | ✅ B (harmless) |
 | B15³ | `updateStep` on a soft-deleted step re-stamps it | `service.ts:208-211` | ratified twin-repo behaviour (g2 N1, as-built S2) | ✅ B |

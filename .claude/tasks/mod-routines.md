@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope approved; S2c ✅ shipped (local commit); next = S3 run/drive (keystone)
+# Status: in-progress — re-scope approved; S2c ✅ + S3 ✅ shipped (local commits); next = S4 policy evaluation
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -18,6 +18,12 @@ completion/miss policy → Preferences; `routine_step_membership` → Spaces des
 Sessions; XP application → Gamification. Delivery: `docs/features/routines/delivery/`.
 
 ## Slice log
+- **S3 — Run/drive ✅ (2026-10-22)** — `runStep` + `completeStep` drive leg over REAL tasks/habits/sessions: target precedence; task
+  TERMINAL convention (cancelled unavailable, completed reflected, open driven, TAS-23 flag); habit one tick + HB-5 reflect (stale stamp
+  removed); focus `startFocus({})`+attach / `completeFocus`+detach (N9 workaround), stamped on its start day (UTC-midnight safe), abandoned
+  only before yesterday; per-step lock; `EntityUnavailableError`; `utcDay` clock. routines **64/64** · tsc 0 · eslint 0 · core 2066/2067
+  (F006). g1 REVISE→folded · preflight PASSED · step-5 REVISE→folded · g2 10 → fixed (§XXVIII scope-5 narrowed) · final /critique
+  REVISE→fixed · §XXIX. Spec `delivery/PLAN-S3-run-drive.md`.
 - **S2c — Floor conformance ✅ (re-scope, 2026-10-21)** — setLifecycle · entity_type registry check (+ `registry` dep) · YYYY-MM-DD dates ·
   progress 0–100 · RRULE parse+FREQ (ical.js verified) · non-empty names · 3-key ordering · max+1 append · reorder returns steps · doc
   back-fills. routines **41/41** · tsc 0 · eslint 0 · core 2050/2052 (F006). g1 REVISE→folded · preflight PASSED · step-5 SHIP · g2 10 →
@@ -70,3 +76,11 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 4. service.ts — RRULE guard · entity_type guard · setLifecycle · max+1 append · 3-key sorts · reorder returns · positional-date parse · D8 comment  (gate point 2–4)
 - [x] 5. Back-fills — layer CLAUDE.md (D2) · introspection note (D5) · seam setLifecycle annotation
 - [x] 6. Gates — tsc 0 · eslint 0 · routines suite · full @vida/core sequential · g2 · /critique · §XXIX
+
+## Build Steps — S3 run/drive (PLAN-S3 §5 · Approval 2 2026-10-21)
+- [x] 1. Tests first (red): real Tasks/Habits/Sessions harness + Gate 1–15 + narrow existing completeStep call sites
+- [x] 2. validators — RunStepSchema
+- [x] 3. types.ts + index.ts — deps · StepRunState · EntityUnavailableError · runStep · isStepRunState
+- [x] 4. service.ts — utcDay clock · resolveTarget · drive legs · focus guard/retry/cancel · completeStep drive  (gate point 2–4)
+- [x] 5. Docs annotations (interp 18/R5/23 · seam · slice-map · ledger B11)
+- [x] 6. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX

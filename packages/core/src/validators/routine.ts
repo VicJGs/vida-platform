@@ -74,6 +74,10 @@ export const CompleteStepSchema = z.object({
   date: CalendarDate.optional(),
   actual_duration_minutes: z.number().int().nullable().optional(),
 })
+// S3 — runStep input: the occurrence date (default = UTC today).
+export const RunStepSchema = z.object({
+  date: CalendarDate.optional(),
+})
 export const SkipStepSchema = z.object({
   date: CalendarDate.optional(),
   reason: z.string().nullable().optional(),

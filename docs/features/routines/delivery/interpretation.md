@@ -145,7 +145,8 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
     `completed:<date>` (§1b). The routine adds no guard that changes these semantics, and passes `date` explicitly to
     `logCompletion` so the habit occurrence lands on the routine's occurrence date.
 18. ✱ **A session step's link is an ADR-004 §3.2.1 instance attachment to the `routine_step`.** For focus that means
-    `startFocus({attach:{entityType:'routine_step', entityId, level:'instance'}})`. The step reflects the session's lifecycle
+    `startFocus({})` + `sessions.attach(session_id,'routine_step',stepId,'instance')` *(S3-amended: `startFocus({attach})` needs a pre-existing
+    `sessionId`)*, detached after completion (N9 workaround). The step reflects the session's lifecycle
     without reading `session_attachments` (§6 coupling). Re-entry finds a **running** session via `findOpenSessionForEntity`
     (in_progress only) `[FACT: sessions/service.ts:131-139,428,444-469]`. Note: the instance attachment makes the step an effect target.
 19. ✱ **Routine/step notes use `pageType:'note'`.** `PAGE_TYPE` is CHECK-fixed with no routine type `[FACT: packages/types/src/note.ts:23-30]`
@@ -157,13 +158,13 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
     keyed `subjectNaturalKey=routine.id`, `transition='completed:<date>'` (the habits key shape `[FACT: habits/service.ts:145-149]`).
     `award_xp` is additive, so an undo after done does **not** retract (the same as habits). The exact write path is pinned in the
     effects slice PLAN `[INTERP, habits precedent]`.
-22. ✱ **[UNKNOWN] Task step in a recurring routine.** A task step references one task id. After the first completion,
+22. ✱ **RESOLVED in S3 (PLAN-S3):** reflect the referenced task; chain-following not owed (tasks G8 + duties D3). *Original:* **[UNKNOWN] Task step in a recurring routine.** A task step references one task id. After the first completion,
     re-driving it on later occurrences changes nothing on the task, and an obligation's next occurrence is a **new id** the step
     does not re-point to (§1b). No doc fixes whether a task step is (a) a one-shot ("done until the task is reopened"), (b) a
     follower of the obligation chain, or (c) per-occurrence. Checked: routines intake §D ("a Tasks step of type standard/duty/
     obligation"), duties intake RESOLUTION (dissolved into Tasks + Spaces), tasks TK-7. **Resolution path:** ground it at the
     run/drive slice PLAN; if the docs still don't settle it there, it is a Victor call.
-23. ✱ **[UNKNOWN] Habit tick vs habit done.** One routine run of a habit step = one `logCompletion` (`count` +1). A habit with
+23. ✱ **RESOLVED in S3 (PLAN-S3):** step done ⇔ habit done (HB-5); a run = one native tick, and a repeat run is a patch (no +1). *Original:* **[UNKNOWN] Habit tick vs habit done.** One routine run of a habit step = one `logCompletion` (`count` +1). A habit with
     `target_count > 1` is not "done" after one tick (§1b). Whether the step counts as done after one tick or only when the
     habit reaches its target is unsettled (RT-3 "the routine reflects the entity" suggests the latter). **Resolution path:**
     same as 22, grounded in HAB-07/HB-5.
@@ -219,7 +220,7 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
     The only stated default is "planned skip = neutral" (RT-8). This does not change the yardstick's shape.
 - **R5 (U5) — Live drive targets in M1:**
   - **habit** (HabitsService) and **task** (TasksService): live.
-  - **focus** session: **live**. Start via `startFocus({attach})`, complete via `completeFocus` (N9). Not via `completeSession`.
+  - **focus** session: **live**. Start via `startFocus({})` + `attach`, complete via `completeFocus` + detach (N9, S3). Not via `completeSession`.
   - `exercise`/`workout` (no Health service; no shipped sub-type) and other session sub-types → `EntityUnavailable` until their
     owner registers them. These are borrowed legs, and their named home issues are fixed at the Re-scope Gate.
 

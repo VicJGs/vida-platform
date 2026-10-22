@@ -35,15 +35,23 @@ import {
   SkipStepSchema,
   EditRoutineCompletionSchema,
   PlanSkipDatesSchema,
+  RunStepSchema,
   SetRoutineLifecycleSchema,
   RoutineCalendarDateSchema,
 } from '../../validators/routine'
 import { UnknownEntityType } from '../../foundation/spaces/types'
+import { utcDay, TaskNotFoundError, RecurrenceRegenError } from '../tasks'
+import type { Session } from '../sessions'
+import type { HabitsService } from '../habits'
+import type { FocusSessionRow } from '../../db/schema/foundation/session-extensions'
 import {
   RoutineNotFoundError,
   StepNotFoundError,
   CompletionNotFoundError,
   InvalidRecurrenceRuleError,
+  EntityUnavailableError,
+  type StepRunState,
+  type StepTarget,
   type RoutinesService,
   type RoutinesServiceDeps,
   type CreateRoutineInput,
@@ -79,6 +87,10 @@ function assertValidRrule(rule: string): void {
   if (freq == null) throw new InvalidRecurrenceRuleError(rule)
 }
 
+// S3 — `Session.extension` is a non-discriminated FocusSessionRow | StudySessionRow | null; narrow on the spine's sub_type.
+const hasFocusExtension = (s: Session): s is Session & { extension: FocusSessionRow } =>
+  s.session.sub_type === 'focus' && s.extension != null
+
 // --- Row → @vida/types interface (DB-11; _sync_status string → union cast) ---
 const toRoutine = (r: RoutineRow): Routine => ({
   ...r,
@@ -95,8 +107,8 @@ const toRoutineCompletion = (r: RoutineCompletionRow): RoutineCompletion => ({
 })
 
 export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService {
-  const { db, deviceId, registry } = deps
-  const clock = deps.clock ?? (() => new Date().toISOString().slice(0, 10)) // YYYY-MM-DD, default today
+  const { db, deviceId, registry, tasks, sessions, habits } = deps
+  const clock = deps.clock ?? (() => utcDay(Date.now())) // YYYY-MM-DD — the platform UTC-day convention (tasks' public utcDay)
   const cfg = { deviceId, encryptedFields: [] as string[] } // M1.0: [E] fields dormant (→ M3/DB-5)
 
   const routinesRepo = createRepository(db, routines, { ...cfg, softDelete: true })
@@ -201,6 +213,265 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     return out
   }
 
+  // ── S3 — run/drive (PLAN-S3-run-drive.md) ───────────────────────────
+  // Target precedence (first match wins): focus step_type → task/habit ref → actionable (no ref, no type) → unavailable.
+  type Resolved = { target: 'focus' | 'actionable' } | { target: 'task' | 'habit'; entityId: string } | null
+  const resolveTarget = (step: RoutineStepRow): Resolved => {
+    if (step.step_type === 'focus') return { target: 'focus' } // a step entity ref is ignored for focus in M1 (R2)
+    if (step.entity_type === 'task' && step.entity_id != null) return { target: 'task', entityId: step.entity_id }
+    if (step.entity_type === 'habit' && step.entity_id != null) return { target: 'habit', entityId: step.entity_id }
+    if (step.entity_type == null && step.step_type == null) return { target: 'actionable' }
+    return null // workout/other session sub-types, a type without a ref, an undrivable registered type (rule 15, R5)
+  }
+
+  const findDone = async (stepId: string, date: string): Promise<RoutineCompletionRow | undefined> => {
+    const row = await findCompletion(stepId, date)
+    return row && !row.skipped ? row : undefined
+  }
+
+  // N7 — the stamp runs only AFTER a successful drive (the routine's own occurrence row; never the entity's effects).
+  // It writes the ledger directly (the step was loaded before the drive), so a step deleted mid-drive can't surface as
+  // StepNotFoundError AFTER the entity was driven (BR-RT-S3-4: that error only ever precedes a drive).
+  const stamp = async (stepId: string, date: string, minutes: number | null): Promise<RoutineCompletion> => {
+    const existing = await findCompletion(stepId, date)
+    const reRun = existing != null && !existing.skipped // re-stamping an already-done occurrence keeps its record
+    const row = existing
+      ? await completionsRepo.update(existing.id, {
+          skipped: false,
+          skip_reason: null,
+          actual_duration_minutes: minutes ?? (reRun ? existing.actual_duration_minutes : null),
+          completed_at: reRun ? existing.completed_at : Date.now(),
+        })
+      : await completionsRepo.create({
+          routine_step_id: stepId,
+          completed_date: date,
+          completed_at: Date.now(),
+          skipped: false,
+          skip_reason: null,
+          actual_duration_minutes: minutes,
+        })
+    return toRoutineCompletion(row)
+  }
+
+  // Best-effort side effect after a durable write: it must never turn a persisted success into a thrown failure.
+  const bestEffort = async (fn: () => Promise<unknown>): Promise<void> => {
+    try {
+      await fn()
+    } catch {
+      /* the drive + stamp already persisted; a retry/next run re-settles */
+    }
+  }
+
+  const state = (step: RoutineStepRow, date: string, target: StepTarget, extra: Partial<StepRunState>): StepRunState => ({
+    step_id: step.id,
+    date,
+    target,
+    status: 'done',
+    completion: null,
+    ...extra,
+  })
+
+  const driveTask = async (
+    step: RoutineStepRow,
+    taskId: string,
+    date: string,
+    minutes: number | null,
+  ): Promise<StepRunState> => {
+    const task = await tasks.getTask(taskId)
+    if (!task) throw new EntityUnavailableError(step.id, `task ${taskId} is missing or deleted`)
+    // The platform TERMINAL convention {completed, cancelled} (services/tasks/service.ts:185-188): a cancelled task was
+    // abandoned, so it is never force-completed; an already-completed task is REFLECTED (no completeTask call, which would
+    // rewrite its completed_at). Open or on_hold tasks are driven (a reopened task is re-driven, RT-3).
+    if (task.status === 'cancelled') throw new EntityUnavailableError(step.id, `task ${taskId} is cancelled`)
+    if (task.status === 'completed') {
+      return state(step, date, 'task', { completion: await stamp(step.id, date, minutes) })
+    }
+    let flag: StepRunState['flag']
+    try {
+      await tasks.completeTask(taskId) // re-drive is effect-idempotent (fan-out only on a fresh transition, rule 17)
+    } catch (e) {
+      if (e instanceof TaskNotFoundError) throw new EntityUnavailableError(step.id, `task ${taskId} is missing or deleted`)
+      if (!(e instanceof RecurrenceRegenError)) throw e
+      flag = 'recurrence_regen_failed' // TAS-23: the completion is durable; only the next occurrence failed
+    }
+    const completion = await stamp(step.id, date, minutes)
+    return state(step, date, 'task', { completion, ...(flag ? { flag } : {}) })
+  }
+
+  const driveHabit = async (
+    step: RoutineStepRow,
+    habitId: string,
+    date: string,
+    minutes: number | null,
+  ): Promise<StepRunState> => {
+    if (!habits) throw new EntityUnavailableError(step.id, 'the habits service is not wired')
+    const habit = await habits.getHabit(habitId)
+    if (!habit) throw new EntityUnavailableError(step.id, `habit ${habitId} is missing or deleted`)
+    let c: Awaited<ReturnType<HabitsService['logCompletion']>>
+    try {
+      c = await habits.logCompletion(habitId, { date }) // one native tick (BackfillWindowError propagates, no stamp)
+    } catch (e) {
+      // habits throws an untyped Error when the habit vanished between getHabit and the write (the race tasks maps too)
+      if (e instanceof Error && e.message.startsWith('Habit not found')) {
+        throw new EntityUnavailableError(step.id, `habit ${habitId} is missing or deleted`)
+      }
+      throw e
+    }
+    if (c.count < habit.target_count) {
+      // HB-5: not done. The step REFLECTS the habit (RT-3), so a stale done stamp for this occurrence is removed.
+      const stale = await findDone(step.id, date)
+      if (stale) await completionsRepo.delete(stale.id)
+      return state(step, date, 'habit', { status: 'advanced' })
+    }
+    const completion = await stamp(step.id, date, minutes)
+    return state(step, date, 'habit', { completion })
+  }
+
+  // The routine_step attachment of a session, or null. Re-entry rides findOpenSessionForEntity (spine in_progress only).
+  const attachedFocus = async (stepId: string): Promise<(Session & { extension: FocusSessionRow }) | null> => {
+    const spine = await sessions.findOpenSessionForEntity('focus', 'routine_step', stepId)
+    if (!spine) return null
+    const s = await sessions.getSession(spine.id)
+    return s && hasFocusExtension(s) ? s : null
+  }
+
+  // N9 workaround: completeFocus leaves the spine in_progress, so drop the step's attachment once the focus is finished.
+  // attach() is idempotent and returns the existing row; detach() hard-deletes it. (Spine close = sessions-rescope #62.)
+  const detachFocus = async (sessionId: string, stepId: string): Promise<void> => {
+    const att = await sessions.attach(sessionId, 'routine_step', stepId, 'instance')
+    await sessions.detach(att.id)
+  }
+
+  const focusMinutes = (f: FocusSessionRow): number => Math.round((f.duration_seconds ?? 0) / 60)
+
+  // A completed focus is stamped only for the day it completed (the stamp-retry path); a cancel is never a done.
+  const settleFinishedFocus = async (
+    step: RoutineStepRow,
+    date: string,
+    s: Session & { extension: FocusSessionRow },
+  ): Promise<StepRunState | null> => {
+    const f = s.extension
+    if (f.status === 'completed' && utcDay(f.updated_at) === date) {
+      const completion = await stamp(step.id, date, focusMinutes(f))
+      await bestEffort(() => detachFocus(s.session.id, step.id))
+      return state(step, date, 'focus', { completion, session_id: s.session.id, focus_id: f.id })
+    }
+    await detachFocus(s.session.id, step.id) // cancelled, or completed on another day → not this occurrence (pre-write)
+    return null
+  }
+
+  const isRunning = (f: FocusSessionRow): boolean => f.status === 'running' || f.status === 'paused'
+
+  // A running focus belongs to the occurrence of the UTC day it STARTED (completing it stamps that day, so a session that
+  // crosses UTC midnight — 21:00 in Brasília — keeps its work). It is abandoned only when it started before YESTERDAY,
+  // judged against now, never against a caller-supplied date. An abandoned focus is cancelled, then detached; if the
+  // cancel fails nothing is detached (no orphan running focus that re-entry can't find) and the error propagates.
+  const focusDay = (s: Session & { extension: FocusSessionRow }): string =>
+    utcDay(s.session.started_at ?? s.extension.created_at)
+  const dropIfAbandoned = async (s: Session & { extension: FocusSessionRow }, stepId: string): Promise<boolean> => {
+    const yesterday = utcDay(Date.now() - 86_400_000)
+    if (focusDay(s) >= yesterday) return false
+    await sessions.cancelFocus(s.extension.id) // pre-write: nothing has been stamped yet
+    await detachFocus(s.session.id, stepId)
+    return true
+  }
+
+  const runFocus = async (step: RoutineStepRow, date: string): Promise<StepRunState> => {
+    const done = await findDone(step.id, date)
+    if (done) return state(step, date, 'focus', { completion: toRoutineCompletion(done) })
+    const attached = await attachedFocus(step.id)
+    if (attached && isRunning(attached.extension) && (await dropIfAbandoned(attached, step.id))) {
+      return startAttachedFocus(step, date)
+    }
+    if (attached) {
+      if (isRunning(attached.extension)) {
+        return state(step, date, 'focus', {
+          status: 'in_progress',
+          session_id: attached.session.id,
+          focus_id: attached.extension.id,
+        })
+      }
+      const settled = await settleFinishedFocus(step, date, attached)
+      if (settled) return settled
+    }
+    return startAttachedFocus(step, date)
+  }
+
+  const startAttachedFocus = async (step: RoutineStepRow, date: string): Promise<StepRunState> => {
+    const timer = await sessions.startFocus({}) // fresh path; startFocus({attach}) needs a pre-existing sessionId
+    try {
+      await sessions.attach(timer.session_id, 'routine_step', step.id, 'instance') // ADR-004 §3.2.1 instance link
+    } catch (e) {
+      try {
+        await sessions.cancelFocus(timer.id) // best-effort: never leave an orphan running focus re-entry can't find
+      } catch {
+        /* the original error is what matters */
+      }
+      throw e
+    }
+    return state(step, date, 'focus', { status: 'in_progress', session_id: timer.session_id, focus_id: timer.id })
+  }
+
+  const completeFocusStep = async (step: RoutineStepRow, date: string): Promise<StepRunState> => {
+    const done = await findDone(step.id, date)
+    if (done) return state(step, date, 'focus', { completion: toRoutineCompletion(done) })
+    const attached = await attachedFocus(step.id)
+    if (attached && isRunning(attached.extension) && (await dropIfAbandoned(attached, step.id))) {
+      throw new EntityUnavailableError(step.id, 'the running focus session was abandoned (started before yesterday; cancelled)')
+    }
+    if (attached && isRunning(attached.extension)) {
+      const occurrence = focusDay(attached) // the day it started — may differ from `date` across UTC midnight
+      const f = await sessions.completeFocus(attached.extension.id) // no effects; never completeSession (N9)
+      const completion = await stamp(step.id, occurrence, focusMinutes(f)) // focus duration overrides a caller's (declared)
+      await bestEffort(() => detachFocus(attached.session.id, step.id))
+      return state(step, occurrence, 'focus', { completion, session_id: attached.session.id, focus_id: f.id })
+    }
+    if (attached) {
+      const settled = await settleFinishedFocus(step, date, attached)
+      if (settled) return settled
+    }
+    throw new EntityUnavailableError(step.id, 'no running focus session')
+  }
+
+  // Per-step in-flight lock: overlapping drives of the SAME step (a UI double-tap) run one after the other, so a focus
+  // step can't start two attached sessions (check-then-act). Single-user local-first: an in-process lock is sufficient.
+  const inFlight = new Map<string, Promise<unknown>>()
+  const serialized = async <T>(stepId: string, fn: () => Promise<T>): Promise<T> => {
+    const prev = inFlight.get(stepId) ?? Promise.resolve()
+    const run = prev.catch(() => undefined).then(fn)
+    inFlight.set(stepId, run)
+    try {
+      return await run
+    } finally {
+      if (inFlight.get(stepId) === run) inFlight.delete(stepId)
+    }
+  }
+
+  // Shared drive for runStep/completeStep's driven targets (task/habit are identical in both).
+  const driveStep = async (
+    step: RoutineStepRow,
+    date: string,
+    minutes: number | null,
+    mode: 'run' | 'complete',
+  ): Promise<StepRunState> => {
+    const r = resolveTarget(step)
+    switch (r?.target) {
+      case 'task':
+        return driveTask(step, r.entityId, date, minutes)
+      case 'habit':
+        return driveHabit(step, r.entityId, date, minutes)
+      case 'focus':
+        return mode === 'run' ? runFocus(step, date) : completeFocusStep(step, date)
+      case 'actionable':
+        return state(step, date, 'actionable', { completion: await stamp(step.id, date, minutes) })
+      default:
+        throw new EntityUnavailableError(
+          step.id,
+          `target not drivable in M1 (step_type=${String(step.step_type)}, entity_type=${String(step.entity_type)})`,
+        )
+    }
+  }
+
   const service: RoutinesService = {
     // ── S1 ──────────────────────────────────────────────────────────
     createRoutine: async (input) => {
@@ -282,12 +553,19 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     // ── S3 ──────────────────────────────────────────────────────────
     completeStep: async (stepId, input = {}) => {
       const p = CompleteStepSchema.parse(input)
-      // RT-5 — a DONE occurrence. skipped=false; a prior logged-skip on the same date flips to done (upsert).
-      return upsertCompletion(stepId, p.date ?? clock(), {
-        skipped: false,
-        skip_reason: null,
-        actual_duration_minutes: p.actual_duration_minutes ?? null,
-      })
+      const step = await loadStepOrThrow(stepId) // BR-RT-S3-4 — before any drive
+      const date = p.date ?? clock()
+      const minutes = p.actual_duration_minutes ?? null
+      // RT-5 — an actionable step is a DONE occurrence in the ledger (as built; upsert, so a re-complete updates the row).
+      if (resolveTarget(step)?.target === 'actionable') return stamp(stepId, date, minutes)
+      // RT-3 — a driven step drives its entity FIRST, then stamps the routine's own occurrence row (N7).
+      return serialized(stepId, () => driveStep(step, date, minutes, 'complete'))
+    },
+
+    runStep: async (stepId, input = {}) => {
+      const p = RunStepSchema.parse(input)
+      const step = await loadStepOrThrow(stepId)
+      return serialized(stepId, () => driveStep(step, p.date ?? clock(), null, 'run'))
     },
 
     skipStep: async (stepId, input = {}) => {
