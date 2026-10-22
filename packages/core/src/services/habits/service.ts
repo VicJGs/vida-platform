@@ -40,6 +40,8 @@ import {
   type CompletionRate,
   type MoodPoint,
   type CalendarDay,
+  type HabitGridDay,
+  type HabitGridRow,
 } from './types'
 
 // The 3 S4-catalogue effects a DONE completion fans out (HAB-16). Producer-only — habits emits, never handles.
@@ -393,6 +395,29 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
       return comps
         .sort((a, b) => a.completed_date.localeCompare(b.completed_date))
         .map((c) => ({ date: c.completed_date, count: c.count, done: c.count >= habit.target_count }))
+    },
+
+    // ── fe-calendar S6 (EC-7): the cross-habit completion grid ──────────
+    getCompletionGrid: async (range: HabitDateRange): Promise<HabitGridRow[]> => {
+      const rows = await habitsRepo.findWhere(and(isNull(habits.deleted_at), eq(habits.is_active, true)) as SQL)
+      // findWhere has no orderBy → a deterministic JS sort (code-unit id compare, never localeCompare)
+      rows.sort((a, b) => a.sort_order - b.sort_order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+      // ONE ledger query for every habit (indexed completed_date range; UNIQUE(habit_id, completed_date) → one per day)
+      const comps = await completionsRepo.findWhere(
+        and(gte(habitCompletions.completed_date, range.from), lte(habitCompletions.completed_date, range.to)) as SQL,
+      )
+      const countOf = new Map<string, number>()
+      for (const c of comps) countOf.set(`${c.habit_id}|${c.completed_date}`, c.count)
+      return rows.map((r) => {
+        const days: HabitGridDay[] = []
+        // the getCompletionRate day loop — a NaN bound (malformed range) or from > to walks zero days
+        for (let n = toDayNum(range.from); n <= toDayNum(range.to); n++) {
+          const date = fromDayNum(n)
+          const count = countOf.get(`${r.id}|${date}`) ?? 0
+          days.push({ date, scheduled: isScheduledOn(r, date), count, done: count >= r.target_count })
+        }
+        return { habit: toHabit(r), days } // the predicate runs on the ROW before toHabit (getTodayHabits)
+      })
     },
 
     // ── S5: cross-module seams ────────────────────────────────────────

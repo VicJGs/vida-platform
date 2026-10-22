@@ -1,0 +1,142 @@
+# PLAN — fe-calendar S6 · First-consumer cross-module reads (`@vida/core`)
+
+> Entity Delivery Flow ② · per-slice §XXVI gate 1 · **backend slice → Verification Gate** (slice-map.md:39, :73).
+> Slice-map S6: "the thin reads the fan-out needs (D3): `getHabitCompletions(from,to)` · `getStudyAvailability(range)` ·
+> Purpose `advertise('purpose_budget:…')` · a task slip-flag derive (D5) · reuse `buildDashboard` per-day (D2). Each a
+> read/advertise on an existing service, **no schema change**." Seam: seam-contract.md §C (PROPOSED — refined per slice
+> [FACT: seam-contract.md:5-6]). **Grounding pass FIRST** (memory: ground every deferral/interpretation before presenting):
+> each proposed read was checked against the shipped services + the owner modules' governing docs. Result: **3 of the 4
+> are already answered by shipped reads or by the docs; S6 builds ONE method.**
+
+## 1. Identity
+
+- **What:** one new read on the habits service — `getCompletionGrid(range)` — plus the RATIFICATION (with citations) of
+  the existing reads S7's `useCalendar` will consume for EC-9/EC-10, the honest-null resolution of EC-6, and the
+  seam-contract §C + slice-map D3 currency.
+- **Why:** IR-8 "first consumer builds the provider methods" — only where a governing doc/shipped read doesn't already
+  answer [FACT: interpretation.md:107-111]; memory "grep the capability before building" (the slice may be a RATIFY).
+- **Not S6 (homed):** registering habits/tasks/sessions/purposes in the apps/web composition root, the `useCalendar` fan-out,
+  every derivation (thread states, open time, slip flag, budget) → **S7**, the entity-close slice (golive-replan
+  process.md ELC-3…7 + §4 "the entity's closing slice" [FACT: process.md:94-98]; BR-RT-COMPROOT "adding a module appends its
+  construction" [FACT: docs/infrastructure/web-client-runtime/current-business-rules.md:60-64]).
+- **Seam form (doc-fixed):** plain service methods consumed by apps/web via `ProviderRead<T> = () => Promise<T>`
+  [FACT: web-client-runtime current-spec.md:118-121; slice-map S7] — NOT new `ReadProvider`s on the `ViewProviderRegistry`,
+  which governs a `@vida/core` module reading another module and saved views [FACT: ADR-007 §3.4; memory r7-read-seam].
+
+## 2. The four reads — grounded verdicts
+
+| EC | Seam §C proposal | Verdict | Grounding |
+|----|------------------|---------|-----------|
+| EC-7 habit threads | `habits.getHabitCompletions(from,to) → HabitCompletionRow[]` | **ADD `habits.getCompletionGrid(range)`** (§3) | Only per-habit reads exist (`getCalendar` · `getCompletionRate` · `getStreak` [FACT: habits/types.ts:152-158]). A thread needs `missed` = a SCHEDULED day without a done completion; "scheduled" is the private `isScheduledOn` (BR-S2-4) [FACT: habits/service.ts:83-89] — "one predicate, no Habit overload" [:338]. Raw rows can't express it; re-deriving it in apps/web would duplicate business logic. |
+| EC-9 open time | `planner.getStudyAvailability(range)` | **RATIFY `sessions.listAvailability()` + `sessions.listAvailabilityExceptions()`** — no new code | There is no `planner` service; availability is owned by `sessions` (G7 "availability is Planner-owned", the Planner = the sessions scheduling layer) [FACT: services/sessions/service.ts:155,158,583-605; intake/sessions-and-scheduling.md:110-116 (G7 Planner = writer,
+Calendar = reader); interpretation.md:29 "`study_availability` … the open-time source"]. Windows are WEEKLY (`day_of_week`, HH:MM) + dated exceptions [FACT: db/schema/foundation/scheduling.ts:44-66], so a `range` arg means nothing; turning them into a dated "N open" block is a `useCalendar` derivation [FACT: seam-contract §B:83]. **Reconciled (not a conflict):** S4-availability §6 homes "Global Calendar render → M2" — that is the Planner's PLACED-block layer ("the Global Calendar only renders placed results (M2)" [FACT: features/sessions-and-scheduling/service/S4-availability.md:44-45,78]); EC-9 is a read-only REVEAL of the availability input, Envision-locked 2026-10-10 [FACT: envision.md:31] + slice-map D3 — it places nothing, writes nothing. |
+| EC-10 slip flag (D5) | `tasks.getSlipping(asOf)` or a derivation in `useCalendar` | **RATIFY `tasks.listTasks({ open: true })`**, derive in S7 — no `getSlipping` | The tasks docs CLOSE the seam's open bullet: "overdue reads ship as `listTasks({ open:true, due_before })`" [FACT: docs/modules/tasks/current-spec.md:286-289]; the filter exists (`due_before` inclusive, `open` = status ∉ {completed, cancelled}) [FACT: services/tasks/types.ts:115-131; service.ts:387,400-401]; `TaskRow` carries `due_date`/`scheduled_date`/`completed_at` for the D5 reduced flag [FACT: slice-map.md:27-28]. `getDueReminders` can't express "scheduled past due" (its `DueItem` has no `scheduled_date`) [FACT: sessions/types.ts:224-231]. The tasks "Calendar sees tasks only through this lane" note [FACT: tasks/types.ts:288-290] is the FORWARD agenda lane; the same spec names `listTasks` as the overdue read — S7 cites both. mod-tasks S1–S9 is merged on this branch [FACT: `e1fc356`, `1bf6caa` ancestors of HEAD]. |
+| EC-6 purpose budget | `purposes.registerMeasures(reg)` → `reg.advertise('purpose_budget:<id>', () => hours\|null)` | **HONEST-NULL in M1 — no advertise, no new code;** the lane lists `purposes.listPurposes()` with `hours: null, fraction: null` → "unmeasured" | The registry is SYNC + SCALAR + a flat global key (`() => number \| null`) [FACT: foundation/measurement/source-registry.ts:11-19] feeding `derived-pull` measurables in [0,1] (ADR-011 §3.5-3.6); purposes is its query-side CONSUMER (`measurementSources?.query(...)`) [FACT: services/purposes/service.ts:540,579]; a per-purpose, DB-backed, per-range measure is a method, never `advertise` [memory: measurement-source-registry-is-sync-scalar]. And the measure is UNDEFINED: `contributions` stores a WEIGHT only (PG-10) [FACT: db/schema/foundation/purpose.ts:8,33-41]; no doc defines hours-per-purpose (time source, formula) [IR-4, interpretation.md:91-95; purposes docs grep-empty]. ADR-011 §3.6 + interpretation RESOLVED §2: "absent measure ⇒ unmeasured, never fabricated" [FACT: interpretation.md:143-147] — exactly what V13 renders (BR-LV-2). **Borrowed-leg home (process.md §3 [FACT: process.md:84-92]):** the hours measure is the purposes entity's to define → homed as an edge to **fe-purposes-and-goals (LIF-195)**'s Entity Live Close [FACT: MVP-PATH.md:170]; S7 proves the Linear edge at close. |
+| EC-2/3 agenda + month | `journals.buildDashboard` per day (D2) | **RATIFY** (reuse, no code) | slice-map D2 [FACT: slice-map.md:18-21]; seam §C:99. |
+
+## 3. Business rules — `getCompletionGrid` (BR-CAL-S6-*)
+
+1. **BR-CAL-S6-1 · Contract.** `getCompletionGrid(range: HabitDateRange): Promise<HabitGridRow[]>` where
+   `HabitGridRow = { habit: Habit; days: HabitGridDay[] }` (the full `Habit` — name, current_streak — so S7 gets the
+   thread's name + streak and the SAME habit set/order in ONE call; the `getTodayHabits → Habit[]` via `toHabit` precedent
+   [FACT: service.ts:336-341]; a second unsorted `listHabits` read would race the grid's set [service.ts:299-306]) and `HabitGridDay = { date: string; scheduled: boolean;
+   count: number; done: boolean }`. `HabitDateRange` is the existing S4 DTO (inclusive YYYY-MM-DD) [FACT: habits/types.ts:60-63];
+   `HabitGridDay` extends the shipped `CalendarDay{date,count,done}` shape [FACT: types.ts:85-89] with `scheduled`.
+   Service-local DTOs (the finance-S3 precedent — `@vida/types` untouched) [FACT: types.ts:59].
+2. **BR-CAL-S6-2 · Which habits.** Active, non-deleted habits — the `getDayCompletionDigest` / `getTodayHabits` filter
+   `and(isNull(deleted_at), eq(is_active, true))` [FACT: service.ts:339,451-454] (findWhere skips soft-delete — IR-3).
+   Order deterministic: `sort_order` asc, then `id` asc — a JS sort (the repository's `findWhere` has no `orderBy`
+   [FACT: repository.ts:213,379-382]): `(a,b) => a.sort_order - b.sort_order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)`
+   (code-unit compare, never `localeCompare`); `isScheduledOn` runs on the `HabitRow` BEFORE `toHabit` (getTodayHabits :339-340) [FACT: schema habits.ts:77; tasks current-spec:233-234 precedent].
+3. **BR-CAL-S6-3 · Every day, both flags.** For each habit, one `HabitGridDay` per calendar day in `[from, to]` (inclusive,
+   ascending) — `scheduled = isScheduledOn(habit, date)` (BR-S2-4, the ONE predicate), `count` = that day's completion count
+   (0 when none), `done = count >= target_count` (the getCalendar/digest rule [FACT: service.ts:395,459]). Off-schedule
+   completions keep `scheduled: false` with their count/done (they exist in the ledger — BR-HB-14 [FACT: current-business-
+   rules.md:51]); the ThreadState mapping is S7's (it is a derivation — seam §B:83).
+4. **BR-CAL-S6-4 · One completions query.** `completed_date BETWEEN from AND to` (gte/lte, indexed `idx_habit_comp_date`
+   [FACT: schema habits.ts:111-112]) — never N per-habit queries. Day iteration reuses the module's `toDayNum`/`fromDayNum`
+   UTC day maths (TZ-independent string days) [FACT: service.ts:79-80].
+5. **BR-CAL-S6-5 · Range handling — doc-FIXED: no validation, no new error.** The shipped S4 range reads
+   (`getCompletionRate`, `getMoodTrend`) take an inclusive `{from,to}` and do not validate it [FACT: PLAN-S4.md:19-24,38-39;
+   service.ts:366-376]; BR-HB-28 "reads are pure + fail-loud" throws ONLY for a missing per-habit target [FACT:
+   current-business-rules.md:88-89] — this read has no per-habit target. So an inverted (`from > to`) or malformed range
+   walks zero days → each habit row carries `days: []` (the same day-loop as `getCompletionRate`). No bespoke error type
+   (memory: never invent a fail-loud error the docs don't declare).
+6. **BR-CAL-S6-6 · Read-only, no schema change, no cross-module import.** Pure read on the habits module's own tables.
+7. **BR-CAL-S6-7 · ThreadState semantics — doc-FIXED by the streak walk (the S7 mapping, stated now).** The streak walks
+   SCHEDULED occurrences only and never counts an unscheduled day as a miss (BR-S2-4/BR-S2-5 [FACT: service.ts:83-101];
+   BR-HB-14 counts off-schedule done rows in totals [current-business-rules.md:51]). So per grid day: `done` → **kept**
+   (scheduled or not) · scheduled ∧ ¬done ∧ past → **missed** · today → **today** · future → **future** · ¬scheduled ∧
+   ¬done ∧ not today/future → **off** (never `missed`). `off` is a NEW V13 `ThreadState`; its render (a rest-day node) is
+   homed to **S7** as a V13 amendment under S7's live Visual Gate (§5a D-S6-DEV-3) — the concept data only shows daily
+   habits [FACT: concept-board :172-173], so no record draws it yet.
+
+## 4. Acceptance — Verification Gate
+
+- [ ] `services/habits/__tests__/` (live better-sqlite3 vault, `migrate` + `initVault`, `setup(() => ASOF)` with completions
+      seeded on/before ASOF — writes are clock-guarded [FACT: service.ts:264]; reads are not, so the range may pass ASOF). The
+      grid assertions run under BOTH `America/Sao_Paulo` AND `Asia/Tokyo` (`describe.each`, `process.env.TZ` saved/restored in
+      `finally` — the tasks precedent [FACT: tasks/__tests__/service.test.ts:773-789]; a negative AND a positive offset catch
+      both date-bug classes — memory: the gate is TZ-blind): daily habit → every day `scheduled`; custom (Mon/Wed/Fri) → only those days; inactive + soft-
+      deleted habits excluded; `target_count = 2` with count 1 → `done:false`, count 2 → `true`; an off-schedule completion →
+      `scheduled:false, count:1, done:true`; inclusive bounds (from/to days present); ordering by `sort_order` then `id` (equal-`sort_order` habits expect `[a.id, b.id].sort()` — uuidv7 has no counter, so
+      creation order ≠ id order within a millisecond [FACT: repository.ts:67-83]); a
+      7-day range returns 7 days per habit; empty (no habits) → `[]`; inverted + malformed range → rows with `days: []`, no throw; exactly ONE completions query —
+      the repos are private to the factory [FACT: service.ts:135-137], so `setup()` returns `{svc, db, bsql}` and the driver calls `bsql.prepare` at
+      query time [FACT: test:34,50,64-81] → wrap `h.bsql.prepare`, reset the counter right BEFORE `getCompletionGrid` (seeding
+      runs its own completions SELECTs), count SQL matching `/^select/i` ∧ `/"habit_completions"/` → exactly 1. Malformed range input pinned as `'nope'` (NaN day → zero-day walk), never `2026-02-30` (engine-dependent).
+- [ ] BR-CAL-S6-7 (the ThreadState mapping) is S7's derivation → verified under S7's gate, not here.
+- [ ] `@vida/core` tsc 0 · eslint 0 (changed) · habits suite + full `@vida/core` suite green (run alone — memory).
+- [ ] Ratification evidence recorded (§2 table) — no code for EC-9/EC-10/EC-6/D2.
+- [ ] Currency: `docs/modules/habits/current-spec.md` (a `getCompletionGrid` row by :53-55) + `current-business-rules.md`
+      (**BR-HB-35** — the current max is HB-34) · seam-contract §C
+      REWRITTEN to the grounded verdicts (+ "Open at build": the slip-flag bullet CLOSED by tasks current-spec:286-289) ·
+      slice-map D3 wording (2 of the reads already existed) + S6 ledger row · S7 notes in seam §B: (a) open time = weekly
+      windows ∩ the focused week − exceptions, (b) slip = `listTasks({open:true})` rows with `due_date < today` or
+      `scheduled_date > due_date` (`TaskRow` carries them [FACT: schema tasks.ts:60-64]; the read is unwindowed — S7 limits it
+      to the focused week), (c) budget = `listPurposes()` → `name ← purpose.title`, `color` absent (§5a D-S6-DEV-2), hours/fraction null → honest
+      "unmeasured" + the LIF-195 edge, (d) ThreadState per BR-CAL-S6-7 (`off` render = the S7 V13 amendment) ·
+      `.claude/docs/decisions.md` S6 rows.
+
+## 5. Implementation prompt (ordered)
+
+1. Tests FIRST in `services/habits/__tests__/` (the existing suite's vault helpers).
+2. `types.ts`: `HabitGridDay`, `HabitGridRow`, `getCompletionGrid` on the service interface (JSDoc citing EC-7/BR-S2-4).
+3. `service.ts`: the closure (no `this.`) next to `getCalendar` — active habits (the BR-2 JS sort) + one ranged completions query →
+   map by `habit_id|date` → per-habit day walk with `isScheduledOn`.
+4. Barrel: export `HabitGridDay` + `HabitGridRow` from the habits barrel (it exports its other read DTOs — `CalendarDay`,
+   `CompletionRate`; no repo-wide collision on these names, so core index.ts:187's `export *` is safe).
+5. tsc / eslint / suites → Verification Gate → currency → commit.
+
+## 5a. Deviation record (§XXVIII)
+
+**D-S6-DEV-1 · Purpose budget: NO `advertise` (slice-map S6 :39 + interpretation :154 named "Purpose advertise").**
+Grounds: the registry is sync + scalar + a flat global key feeding [0,1] derived-pull measurables [FACT:
+source-registry.ts:11-19; ADR-011 §3.5-3.6]; purposes is its CONSUMER [FACT: purposes/service.ts:540,579]; the hours measure
+itself is undefined — `contributions` is a weight only and no doc defines the time source/formula [FACT: IR-4,
+interpretation.md:91-95]. → M1 = honest-null "unmeasured" (ADR-011 §3.6 / interpretation RESOLVED §2 :143-147 / EC-6
+"honest-null when unmeasured"); the measure is a borrowed leg → fe-purposes-and-goals (LIF-195) ELC (process.md §3
+:84-92), the Linear edge proven at S7 close. Not a manufactured deferral: every ground is a doc/code FACT.
+
+**D-S6-DEV-2 · Colour has no source (seam-contract:15 "purpose colour is USER DATA (hex)" assumed a column that was never
+built).** `purposes` has `title` (not `name`) and NO colour column [FACT: schema purposes.ts:52-71]; `habits` has none
+[FACT: schema habits.ts:55-86]; ADR-002's CREATE TABLEs for habits (:1658) + purposes (:1797) carry none (colour exists only
+on tags/projects/accounts); no domain→hex canon exists (the concept's `P={career,…}` is mockup data). → (a) S7 maps
+`name ← purpose.title`; (b) V13 `PurposeBudget.color` + `HabitThread.color` become OPTIONAL — the shipped `CalChip.color?`
+precedent (seam-contract:15; week/agenda "absent → muted dot") — absent renders the neutral muted ring/dot, never a
+fabricated hex; homed to **S7** as a V13 amendment; (c) a purpose's colour (and so a habit thread's, which is its purpose's
+via `contributions`) is a borrowed leg with the hours → **LIF-195** ELC.
+
+**D-S6-DEV-3 · ThreadState gains `off` (BR-CAL-S6-7).** V13 shipped kept/missed/today/future; a non-daily habit's rest day
+is none of them (the streak walk never calls it a miss). The type + render land in **S7** (the slice that maps the data),
+gated by S7's live Visual Gate.
+
+## 6. Change log
+
+| Date | Session | Change |
+|------|---------|--------|
+| 2026-10-21 | fe-calendar S6 | PLAN authored (gate 1) AFTER a grounding sweep of the four seam §C proposals against the shipped services + owner docs: EC-9 → RATIFY sessions `listAvailability`/`listAvailabilityExceptions` (no planner service; the S4-availability "→ M2" is the placed-block layer, not the EC-9 reveal) · EC-10 → RATIFY `listTasks({open})` (tasks current-spec:286-289 closes the seam's open bullet) · EC-6 → HONEST-NULL via `listPurposes` (registry is sync+scalar [0,1]; hours-per-purpose undefined; borrowed leg → LIF-195 ELC) · EC-7 → ADD `getCompletionGrid` (missed needs the private scheduled predicate) · D2 RATIFY. S6 builds one method. |
+| 2026-10-21 | fe-calendar S6 | gate-1 independent critique **REVISE → 12 folded** (citations verified on disk; colour claim re-verified by me: no colour column on purposes/habits, no domain→hex canon): **B1** colour has no source → D-S6-DEV-2 (optional V13 colour, S7 amendment; colour homed to LIF-195; `name ← title`) · **B2** unscheduled day → BR-CAL-S6-7 semantics fixed by the streak walk + `off` state homed to S7 (D-S6-DEV-3) · **M3** advertise drop recorded D-S6-DEV-1 · **M4** single-query assertion via the test's own driver · **M5** `HabitGridRow.habit: Habit` (getTodayHabits precedent; one call, same set) · NITs: interpretation:29 cite · path fix · unconditional barrel export · BR-HB-35 + current-spec row · `'nope'` malformed input · S7 (b) week-window note · BR-5 confirmed. **Awaiting Approval 1.** |
+| 2026-10-21 | fe-calendar S6 | **Approval 1 (Victor).** Preflight: anchors verified on disk — habits service.ts:135 (private repos) · types.ts:60 `HabitDateRange` · :85 `CalendarDay` · habits barrel exports `CalendarDay`/`CompletionRate` · core index.ts:187 `export * from './services/habits'` · test driver `createBetterSqlite3Driver` (test:31,76) · habits BR max = HB-34 · current-spec rows :53-55 · purposes `listPurposes(): PurposeRow[]` (types.ts:128) · sessions `listAvailability()`/`listAvailabilityExceptions()` on the `SessionsService` interface IN service.ts:155,158 (impl :583-605; `findAll`, hard-delete tables). **Preflight PASSED.** |
+| 2026-10-21 | fe-calendar S6 | gate-2 independent critique **REVISE → 6 folded** (0 blockers; buildability confirmed: helpers module-level, NaN loop = zero days, `Habit` already imported, no barrel collision, UNIQUE ledger, no clock needed): **M1** ordering test uses `[a.id,b.id].sort()` (uuidv7 has no counter) · **M2** grid tests under BOTH America/Sao_Paulo + Asia/Tokyo (tasks precedent) · **N3** query counter = wrap `h.bsql.prepare`, reset before the call · **N4** explicit JS sort (findWhere has no orderBy) · **N5** `setup(() => ASOF)` + seed ≤ ASOF (writes clock-guarded) · **N6** 5 line-cite fixes + typo; BR-7 verified at S7. **Awaiting Approval 2.** |
+| 2026-10-21 | fe-calendar S6 | **Approval 2 → BUILT → Verification Gate PASS.** TDD: 7 grid tests × {America/Sao_Paulo, Asia/Tokyo} red → `getCompletionGrid` (types + closure + barrel) → green; habits suite **60/60**; mutation (scheduled ≡ true) killed 4. tsc 0 · eslint 0 (changed). Full `@vida/core` **2024/2025** — the 1 failure is `encryption/vault.test.ts` "handles large data (1 MB)": a PRE-EXISTING environment timeout (libsodium 1 MB round-trip ≈28s on this machine vs its 20s budget; the test is untouched since DB-6 `7f90c9b` and imports nothing S6 changed; fails identically alone) — recorded, not touched (out of scope). Currency → habits current-spec row + BR-HB-35 · seam-contract §C rewritten + S7 derivation notes + the slip bullet CLOSED · slice-map D3 + S6 ledger · decisions.md S6 rows. |

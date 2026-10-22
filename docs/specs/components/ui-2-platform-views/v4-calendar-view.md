@@ -96,6 +96,11 @@ export interface CalendarViewProps<T> {
   month?: Date
   /** When provided, prev/next nav buttons render + call this; when absent, no buttons (pure display). */
   onMonthChange?: (month: Date) => void
+  /** Suppress the grid's own month title + nav — for hosting inside a frame that owns the period title (the
+   *  fe-calendar #19 CanvasView, slice-map D4). Default false (standalone grid shows its title). */
+  hideHeader?: boolean
+  /** Programmatic focus target opt-in (pass -1) — the #19 Year drill-in lands focus here (D-S4-DEV-2). Absent = not focusable. */
+  tabIndex?: number
   /** Injection seam for "today" (marker + default month). Default new Date(), evaluated once — deterministic tests. */
   today?: Date
   /** Week start: 0=Sun, 1=Mon. Default 1. */
@@ -178,3 +183,20 @@ horizontal scroll — the deferral is the nicer stacked layout, not basic mobile
 | 2026-08-10 | ui-2-platform-views | Rev 2 — gate-1 critique REVISE→fixed (divergence thesis validated correct): **B1** (TZ off-by-one — 'YYYY-MM-DD' key as-is, no UTC round-trip, + TZ=America/Sao_Paulo test), **B2** (invalid ARIA `table`+`gridcell` → `table`+`cell`), **M1** (month CONTROLLED, nav opt-in on onMonthChange, NO internal state — matches the stateless-display siblings), **M2** (`today` injection seam), **M3** (reuse extracted `warnMissingName`, not re-hand-rolled), **M4** (375 usable via CV-8 horizontal scroll — not a silent design.md §X violation); minors (icon-ghost nav Buttons+aria-label, headers from first-week, always-42 grid via addDays, frozen-EMPTY Map lookup) |
 | 2026-08-10 | ui-2-platform-views | preflight PASSED (`$colorBrandPrimary` today-marker verified base key; date-fns 4.4.0). Gate-2 critique **REVISE**→fixed: B1/B2/M1/M2/M4 confirmed correct; 1 material = **M3 state-gate** (`resolveDataViewState` must RETAIN its `(loading || success-non-empty)` gate around `warnMissingName` or the 4 empty/error no-warn tests break) — made explicit; minors (date-fns barrel-import/consumer-shakes phrasing, month-without-onMonthChange mode documented, malformed-string silent-drop). **Approval 2 pending.** |
 | 2026-10-07 | fe-codec-primitives-refinement P5 (LIF-230) | **Editorial Layer-1 refinement** (chrome only — NO interface/behavior change; TZ keying, 42-cell grid, `role="table"` roles untouched): serif `$heading`/500 title · weekday eyebrows (CSS `textTransform`, DOM stays "Mon"; raw `letterSpacing:0.8`) · `$small` tabular day figures · **today: filled brand blob → accent number + underline** (`TodayMark`, keeps `.vida-cal-today`) · weekend+oos `$colorSurfaceSecondary` paper (`tone` variant; number colour differentiates, oos>weekend) · "+K more" eyebrow. **Today number = `$colorBrandEmphasis`** (not `brandPrimary`) — Visual-Gate caught `brandPrimary` at 4.39/4.44 < 4.5 AA on a secondary-surface (weekend/oos) today; emphasis = the higher-contrast brand step → 5.93–8.89. Chip dot = consumer `renderItem` (LV-5). +7 tests (21 total). Visual Gate PASS (2 stories × 3 presets × light/dark). Spec: `docs/specs/foundation/fe-codec-primitives-refinement/phases/P5-calendar.md`. |
+| 2026-10-10 | fe-calendar #19 S1 (LIF-203) | **`hideHeader?: boolean` (slice-map D4 — headerless mode):** suppresses the grid's own month title + nav so a hosting frame (the #19 `CanvasView` surface) owns the period title ONCE (envision EC-2 double-title fix). Default `false` — standalone grids unchanged. Grid/roles/states untouched; +1 test (22 total). _(Doc entry added 2026-10-18 at the S2 baseline — S1's currency pass refreshed only the apps/web context; §XXIX lag closed.)_ |
+| 2026-10-20 | fe-calendar #19 S4 (LIF-203) | **`tabIndex?: number` (D-S4-DEV-2, Victor-approved):** an opt-in programmatic focus target — the #19 surface passes `-1` so focus lands on the Month grid after a Year drill-in (FOCUS_CONTRACT `tabChange → panel`; the pressed month button unmounts). `CalRoot` gains the house `focusVisibleStyle` 2px `$colorFocusRing` ring + `$sm` radius, which renders only when a consumer opts in AND focuses the grid. Absent = not focusable (unchanged default). +1 test (23). |
+
+## fe-calendar S7 amendments (2026-10-21 — PLAN-S7-entity-close.md G13/G14/R8)
+- **Today SR label (absorbed primitives-refinement debt, P5-calendar.md:115):** the today cell's name = `d MMMM yyyy, today`
+  — the **suffix** form the sibling renderers ship (week-view · year-view · living-view).
+- **Controlled unfurl (EC-F3 — the vision's "unfurl the day in place", calendar-vision.md §6 option 1):** three optional
+  props — `expandedDay?: string` (CONTROLLED, like `month`) · `onExpandedDayChange?(day | null)` · `renderExpanded?(items,
+  day)`. With both handler + renderer, a day's "+K more" is a native `<button>` (≥44 hit, `aria-expanded`, `aria-controls`
+  when open, named "Show all N items, d MMMM yyyy"); activating it requests the day, a second press or **Esc** requests
+  `null` (focus stays on the button). The unfurled list is ONE `role="row"` holding a `role="cell" aria-colspan={7}` named
+  "All items, d MMMM yyyy", inserted directly after the week row — instant (no height animation, motion.md safe list). An
+  `expandedDay` outside the 42-day grid renders nothing; collapse-on-month-change is the CONSUMER's store (the grid stays
+  stateless). **No handler ⇒ unchanged static "+K more"** — every other consumer is untouched. Blur does not collapse
+  (D-S7-DEV-3). Story `Unfurl`. The "+K more" eyebrow now pairs its line-height (`$caption`).
+
+- **`pulseKey?: number` (fe-calendar S7, EC-F2 — PLAN-S7 G15/R9):** bump to pulse the today mark once (the #19 surface's Today button); 0/absent = no pulse (never on mount); each new value remounts the mark so the one-shot CSS animation (`internal/calendar-motion.ts`: `scale` 1→1.12→1, `slow` 400ms ease-out) restarts; reduced motion = none via the sheet's `@media` block. Shared with `RangeTransition` (the range fade, `moderate` 250ms opacity).

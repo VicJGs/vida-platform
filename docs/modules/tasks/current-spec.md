@@ -281,8 +281,8 @@ no dependency). Prior through S5: g2 SHIP (S5 B1 timezone-drift fixed; S4 F1/F3)
 **① BACKEND COMPLETE (S1–S9).** **S9 deferrals (each homed in a DOC):** urgency ranking (`urgency:0`) → ADR-004 §3.3
 L139 + `parts/xcut-sessions.md` UNKNOWN-1 (G5 placement design-pass) · a user-timezone day bucket → the designed
 `user_profile.timezone` (ADR-002:3370-3381, unbuilt) + journals BR-S3-4 ("strict tz-aware today = design-pass");
-`utcDay` is the one seam · composition-root CALLS of `registerTasksJournal`/`registerTasksDueProvider` → MVP-PATH:
-108-111 (UI-3 / M1.1+) · the 12→7 layout mapping → `schema-audit-deferred-homes.md:281-282` (007 anatomy pass).
+`utcDay` is the one seam · `registerTasksDueProvider` is CALLED by the apps/web composition root (fe-calendar #19 S7, 2026-10-22); `registerTasksJournal`
+→ the dashboard aggregator HARD-1 (LIF-112) · the 12→7 layout mapping → `schema-audit-deferred-homes.md:281-282` (007 anatomy pass).
 **Closed by the docs (not deferrals, not calls):** `todayYmd()` → the UTC day (the platform convention, re-pointed) ·
 "open" = status ∉ `{completed, cancelled}` (the shipped TERMINAL convention + projects intake G9) · calendar-date
 validity = the ADR-002 §2.8 format, shape-validated like every module · "overdue carry-forward" (the lane's window IS

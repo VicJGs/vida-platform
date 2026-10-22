@@ -34,6 +34,9 @@ no writes. The frame `#19` and `fe-purposes` later fill (R3).
 - **BR-CB-S1-12** — **Responsive masthead (375/768/1440):** the masthead is a flex row (title-group · actions); on
   narrow it must reflow so `actions` wrap below the title-group (never collide), and eyebrow/title/meta/progress never
   overflow. `maxWidth` content cap (the dashboard/entity `marginHorizontal:'auto'` precedent). (§XIII / components)
+  **Realized 2026-10-18** (see §Change log): the `Actions` slot is `maxWidth:'100%'` + `flexWrap:'wrap'` so wide actions
+  content reflows instead of overflowing the page, and the title pairs `lineHeight="$display"` so a wrapped title never
+  overlaps itself.
 - **BR-CB-S1-8** — DIRECT semantic tokens only; no sub-theme keys, no hard-coded palette; unnamed `styled` hosts
   (LV-3). Preset-invariant structure; fonts/accent inherit the preset at component scope (EC-7).
 - **BR-CB-S1-9** — Read-only: the frame renders NO write affordance; `actions` is a caller slot (the caller is
@@ -68,3 +71,8 @@ Per `seam-contract.md` §1 (`CanvasViewProps`) + §2 (state rule). No API additi
 3. `canvas-view.test.tsx` — jsdom: slots, title-names-region, empty behavior (both branches), ref, name-warn.
 4. Barrel: export `CanvasView` + `CanvasViewProps` from `packages/ui/src/index.ts`.
 5. `/component-audit` → `/critique` → Visual Gate (Brave) → §XXIX currency (`packages/ui/src/CLAUDE.md` digest).
+
+## Change log
+| Date | Session | Change |
+|------|---------|--------|
+| 2026-10-18 | fe-calendar #19 S1-chrome fix (`docs/specs/fixes/fe-calendar-s1-chrome-375/`) | Two corrections the #19 Visual Gate surfaced, both making the frame meet BR-CB-S1-12: **(1) title `lineHeight="$display"`** — the title was set on the body `$true` line box (24px for 36px glyphs; `@tamagui/core` `Text` never derives line-height from `fontSize`), so a wrapped title overlapped itself; now 36/41. **(2) `Actions` `maxWidth:'100%'` + `flexWrap:'wrap'`** (keeps `flexShrink:0`) — wide action content (the calendar's 6×48px toolbar + nav at 768; quietDesk at 375) couldn't reflow and overflowed the page. Consumers pass actions as the slot's direct children. Visual Gate PASS (Victor-reviewed): calendar · CanvasView (single + wrapping title) · CanvasEditor, 3 presets × L/D × 375/768/1440 — 0 page overflow, no wrap overlap, axe 0. |

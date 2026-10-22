@@ -77,7 +77,16 @@ const MastheadRow = styled(View, {
   rowGap: '$8',
 })
 const TitleGroup = styled(View, { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 220, gap: '$4' })
-const Actions = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$8', flexShrink: 0 })
+// flexShrink:0 keeps actions from squeezing the title (they reflow BELOW it); maxWidth + flexWrap keep the slot inside
+// the masthead so wide action content wraps instead of overflowing the page (BR-CB-S1-12: no overflow at 375/768/1440).
+const Actions = styled(View, {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: '$8',
+  flexShrink: 0,
+  maxWidth: '100%',
+})
 const Hairline = styled(View, { height: 1, backgroundColor: '$colorBorderDefault', marginTop: '$12' })
 
 export function CanvasView({
@@ -120,7 +129,17 @@ export function CanvasView({
                 {eyebrow}
               </Text>
             ) : null}
-            <Text id={titleId} className="vida-canvas-title" fontFamily="$display" fontSize="$display" fontWeight="500" color="$colorTextPrimary">
+            {/* lineHeight is paired explicitly: @tamagui/core's Text never derives it from fontSize, so an unpaired
+                $display title gets the body $true line box (24px for 36px glyphs) and its wrapped lines overlap. */}
+            <Text
+              id={titleId}
+              className="vida-canvas-title"
+              fontFamily="$display"
+              fontSize="$display"
+              lineHeight="$display"
+              fontWeight="500"
+              color="$colorTextPrimary"
+            >
               {title}
             </Text>
             {meta != null ? (

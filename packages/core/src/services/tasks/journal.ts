@@ -53,7 +53,8 @@ export function registerTasksJournal(registry: JournalRegistry, svc: TasksServic
 }
 
 /** Register the tasks due-work lane into the sessions SS-7 seam (the `getDueReminders` producer) — the ONE lane through
- *  which the Calendar, the Journals agenda and the planner will read tasks (SS-7); at M1 no composition root calls it. */
+ *  which the Calendar, the Journals agenda and the planner read tasks (SS-7); called by the apps/web composition root
+ *  (fe-calendar #19 S7, 2026-10-22). */
 export function registerTasksDueProvider(sessions: SessionsService, svc: TasksService): void {
   sessions.registerDueProvider({ module: 'tasks', fetch: (range) => svc.getDueReminders(range) })
 }
