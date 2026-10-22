@@ -36,6 +36,20 @@ vision doc FIRST when #19 is sequenced.
 
 
 ## Session Log
+- 2026-10-21 (S5 + S6 SHIPPED, main merged) — branch `fe-calendar` (NOT pushed), HEAD **`a3e36ca`**:
+  **S5 `8f98082`** — `@vida/ui` **`LivingView`** (V13: ④ budget honest-null · ② threads + the vision's connector · 7
+  temporal day Cards via alive-hooks · today's ordered entries w/ open-time offer + slip flag; lanes degrade alone) +
+  `internal/calendar-shared.ts` (rule of three) + `living-format.ts` + surface Living dispatch (`livingFixture`, `weekSpan`)
+  — **all six ranges live** on fixtures. Visual Gate PASS (Victor, 26 cells, text AA ≥4.52, axe 0). **Victor: "there should
+  be no calls for me — check the documentation"** → connector (envision:54 deferred thread ink) + flag colour (EC-13 +
+  decisions:127 → S2 MUST token) were doc-resolved, D-S5-DEV-1 withdrawn. **Merge `5d23b48`** of origin/main (51 behind —
+  golive-replan ELC process.md landed; kept both sides of this file + components.md); post-merge ui 666/666 · web 698/698.
+  **S6 `a3e36ca`** — grounding first: 3 of 4 seam §C reads already answered (EC-9 RATIFY sessions `listAvailability`/
+  `listAvailabilityExceptions` · EC-10 RATIFY `listTasks({open})` per tasks current-spec:286-289 · EC-6 HONEST-NULL via
+  `listPurposes`, no advertise — D-S6-DEV-1, borrowed leg → LIF-195); BUILT `habits.getCompletionGrid` (BR-HB-35; 14 tests
+  Sao_Paulo + Tokyo; mutation killed). Found: purposes/habits have NO colour column → V13 `color?` (S7); rest day → `off`
+  ThreadState (S7). **NEXT: S7 — the ENTITY-CLOSE slice** (fresh session). Resume: cd worktree · nvm use 24 · `git log -1` =
+  `a3e36ca` · `git fetch` + ahead/behind (memory).
 - 2026-10-20 (S4 SHIPPED) — **`60dfde9`** on branch `fe-calendar` (NOT pushed): `@vida/ui` **`YearView`** (UI-2 · V12 — 12
   mini-months, has 4px@.75 / busy 6px dots, today ring, current month accented only when the ring exists, each mini-month a
   `role=table` with offset-aware `aria-colindex`) + pure `internal/year-layout.ts` (resolveYear · buildYear · indexDensity)
@@ -110,6 +124,10 @@ vision doc FIRST when #19 is sequenced.
 | S4 PLAN | Grounding pass — G11 heading role reversed (sibling convention) · focus-after-drill added (FOCUS_CONTRACT) · weight 500 | Victor: "ground it in the documentation" | ✅ PLAN revised → proceed |
 | S4 build | D-S4-DEV-2 CalendarView `tabIndex` (tsc rejected rest passthrough) · accname leading-space fix | build-caught | ✅ approved at the S4 gate |
 | S4 gate | 1-up at 375 = HARNESS missing `index.css` (UA body margin) — not the product | Visual Gate probe of the container chain | ✅ harness fixed, gate PASS |
+| S5 PLAN | Two "calls" presented for Approval 1 (connector · flag colour) were doc-resolved | Victor: "There should be no calls for me, check the documentation" | ✅ envision:54 + EC-13/decisions:127 → no deviation |
+| S5 build | sr suffix in a flex row dropped by browsers · lanes blanked by state · loading tab stop (axe) | g2 review + Visual Gate | ✅ inside inline Text · lanes independent · tabIndex 0 always |
+| S5→S6 | merge origin/main (golive-replan ELC process.md) relayed by the golive session | cross-session request (Victor's direction) | ✅ `5d23b48`, after S5's gate (not mid-gate) |
+| S6 PLAN | 3 of 4 seam §C reads already answered; colour has no source | grounding sweep + gate-1 (re-verified on disk) | ✅ one method built; D-S6-DEV-1/2/3 |
 
 ## Failures This Session
 - F001 — Visual-Gate static-box probe matched nothing (Chrome snaps 1.5px border → 1px) — resolved (select by box size; memory).
@@ -122,3 +140,5 @@ vision doc FIRST when #19 is sequenced.
 - F008 — accessible name "January2026" (accname drops a leading space inside an sr-only span) — resolved (sibling text node; memory tamagui gotchas).
 - F009 — Visual Gate read 1-up at 375: harness skipped the app's `index.css` → UA body margin −16px — resolved (harness mirrors main.tsx CSS; memory visual-gate-playbook).
 - F010 — CalendarView first test timed out under load (5.5s) — env flake (F003 pattern), green alone.
+- F011 — `@vida/core` encryption/vault.test "handles large data (1 MB)" times out (≈28s vs 20s) even alone — PRE-EXISTING environment slowness (test untouched since DB-6, unrelated to S6); open, not touched.
+- F012 — ModuleDock timeout (5–6.5s) under full-suite load twice — env flake (memory: heavy Tamagui shell tests), 5/5 alone.
