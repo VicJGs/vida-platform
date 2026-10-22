@@ -118,7 +118,7 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
    `effect_event_id` `[FACT: conventions.md:39-41; ROU-21]`.
 3. **Derive, never cache.** Routine done/streak/analytics recompute from the ledger; `progress` stays a nullable override
    (`resolveProgress`) `[FACT: RT-14; routines.ts:59]`.
-4. ✱ **Policy is configuration, not code.** It is read through a prefs port with a shipped default when absent (the habits
+4. ✱ **Policy is configuration, not code — and entirely the USER's (S4, Victor 2026-10-22).** the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves. *(Superseded text:)*  It is read through a prefs port with a shipped default when absent (the habits
    `HabitsPrefsPort` fail-open precedent `[FACT: habits/types.ts:36-46]`). The default *values* are not stated by the docs
    except "a planned skip is neutral" (RT-8) → §5 R4.
 5. ✱ **`step_type` is OPEN vocab, stored as given (no M1 registry).** Validation happens where a registry exists:
@@ -210,12 +210,12 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
   - M1 `rescheduleStep` ships the routine-owned legs: move a missed occurrence to a caller-given date/slot, acceptance-window
     check → `OutsideAcceptanceWindow`. The auto-slot leg degrades honestly (golive process §3 borrowed legs).
 - **R4 (U4) — Policy store:**
-  - Read through an optional **`RoutinesPrefsPort`** that falls back to the shipped default (fail-open, "not a security gate", the
+  - ⟲ SUPERSEDED (S4): no routines-side default; an unresolved policy is `policy_source:'undefined'`. *(Original:)* Read through an optional **`RoutinesPrefsPort`** that falls back to the shipped default (fail-open, "not a security gate", the
     `HabitsPrefsPort` precedent `[FACT: habits/service.ts:130-131]`).
-  - **The fallback must be FLAGGED.** ROU-30 / slice-map S4: `PolicyUndefined` → "shipped default, **flagged**". `RoutineEvaluation`
+  - ⟲ SUPERSEDED (S4): no routines-side default; an unresolved policy is `policy_source:'undefined'`. *(Original:)* **The fallback must be FLAGGED.** ROU-30 / slice-map S4: `PolicyUndefined` → "shipped default, **flagged**". `RoutineEvaluation`
     has no field for that today `[FACT: seam-contract.md:58-60]`, so this is a seam amendment for Step 4/5.
   - The Preferences-side keys are Preferences-owned, a recorded deferred home `[FACT: schema-audit-deferred-homes.md:263-264]`.
-  - **Open, small, deliberately deferred:** the shipped default *values* (completion policy, threshold, acceptance-window
+  - ⟲ **SUPERSEDED (S4):** there are no routines-side default values to set; that framing was drift. the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves. *(Original:)* **Open, small, deliberately deferred:** the shipped default *values* (completion policy, threshold, acceptance-window
     length). The docs say "ships a default" without naming values, so these are a **Victor call at the evaluate slice's PLAN**.
     The only stated default is "planned skip = neutral" (RT-8). This does not change the yardstick's shape.
 - **R5 (U5) — Live drive targets in M1:**

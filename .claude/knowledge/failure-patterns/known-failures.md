@@ -59,3 +59,11 @@
 **Symptom:** full `@vida/core` run shows 1–4 reds in `src/encryption/__tests__/vault.test.ts` (`deriveMasterKey`, `unlockKeyChain`, `encryptBytes … handles large data (1 MB)`) taking 6–143 s against a 20 s budget.
 **Root cause:** ENVIRONMENTAL. CPU-bound Argon2id + 1 MB XChaCha tests are marginal on this Mac; they time out when the full suite runs concurrently or another session runs vitest (load avg 100–400). Not a code regression — appears on branches that touch no encryption file.
 **Fix:** check `uptime` + `pgrep -fl vitest`; re-run `npx vitest run src/encryption/__tests__/vault.test.ts` alone on an idle machine (expect 36/36, seen 2026-10-20). Record, don't patch. Candidate follow-up outside any module: mark the 1 MB test `slow`/raise its timeout.
+
+## F007 — `sync/__tests__/scaffold.test.ts` "no-consumer guard" times out under extreme load
+**Symptom:** a full `@vida/core` run shows `AR-9 sync scaffold — no-consumer guard … no non-test module under packages/ or apps/` red (seen
+2026-10-22 at load average ~387, mod-routines S4).
+**Root cause:** ENVIRONMENTAL. The guard scans the repo tree, which is slow when the machine is saturated (the same load class as F006).
+**Fix:** check `uptime`; re-run `npx vitest run src/sync/__tests__/scaffold.test.ts` alone (expect 6/6). Record, don't patch. If it fails ALONE, it
+is real: something under packages/ or apps/ imports the sync scaffold.
+

@@ -30,6 +30,9 @@ import {
   CompletionNotFoundError,
   InvalidRecurrenceRuleError,
   EntityUnavailableError,
+  InvalidRoutinePolicyError,
+  type RoutinePolicy,
+  type RoutinesPrefsPort,
   isStepRunState,
   type RoutinesService,
   type StepRunState,
@@ -82,6 +85,7 @@ interface SetupOpts {
   withHabits?: boolean // default true; false ⇒ the optional `habits` dep is absent
   effectRegistry?: EffectRegistry // tasks fan-out spies (rule 1 / rule 17 test)
   sessionsEntityRegistry?: TaggableTypeRegistry // force an attach failure (focus edge case)
+  prefs?: RoutinesPrefsPort // S4 — the user's policy port
 }
 
 // S3 — REAL substrates (the tasks `setupWithTimer` pattern): Sessions (registry + rail + entity registry), Tasks, Habits.
@@ -110,6 +114,7 @@ async function setup(opts: SetupOpts = {}): Promise<Harness> {
     tasks,
     sessions,
     ...(opts.withHabits === false ? {} : { habits }),
+    ...(opts.prefs ? { prefs: opts.prefs } : {}),
   })
   return { svc, db, bsql, tasks, habits, sessions }
 }
@@ -909,5 +914,275 @@ describe('mod-routines S3 — run/drive', () => {
     const again = await h.svc.runStep(s.id, { date: DAY })
     expect(again.completion?.actual_duration_minutes).toBe(30)
     expect(again.completion?.completed_at).toBe(first.completion?.completed_at)
+  })
+})
+
+// ============================================================================
+// S4 — policy evaluation (PLAN-S4-policy-evaluation.md · Verification Gate 1–14)
+// The policy is the USER's: tests inject it through a stub RoutinesPrefsPort; no routines-side default exists.
+// ============================================================================
+describe('mod-routines S4 — policy evaluation', () => {
+  const D = '2026-10-20'
+  const at = (iso: string) => vi.spyOn(Date, 'now').mockImplementation(() => Date.parse(iso))
+  const port = (policy: RoutinePolicy | null): RoutinesPrefsPort => ({ policyFor: async () => policy })
+  let h: Harness
+  afterEach(() => vi.restoreAllMocks())
+
+  // A routine with N actionable steps created on D (so they belong to D's as-of step set).
+  async function routineWith(n: number, opts: SetupOpts = {}, required: number[] = []) {
+    h = await setup(opts)
+    at(`${D}T08:00:00Z`)
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const steps = []
+    for (let i = 0; i < n; i++) {
+      steps.push(await h.svc.addStep(rid, { title: `S${i}`, is_required: required.includes(i) }))
+    }
+    return { rid, steps }
+  }
+  const doneOn = async (stepIds: string[]) => {
+    for (const id of stepIds) await h.svc.completeStep(id, { date: D })
+  }
+
+  // 1 — no policy: policy-independent judgments + flag
+  it('no policy: 0 done → not_started; some → partial flagged undefined; all → done', async () => {
+    const { rid, steps } = await routineWith(3)
+    expect(await h.svc.evaluateRoutine(rid, { date: D })).toMatchObject({ status: 'not_started', policy_source: 'undefined', applicable: 3 })
+    await doneOn([steps[0].id])
+    const e = await h.svc.evaluateRoutine(rid, { date: D })
+    expect(e).toMatchObject({ status: 'partial', policy_source: 'undefined', percent: 33 })
+    expect(e.done.map((x) => x.step_id)).toEqual([steps[0].id])
+    expect(e.not_done.map((x) => x.step_id)).toEqual([steps[1].id, steps[2].id])
+    await doneOn([steps[1].id, steps[2].id])
+    expect((await h.svc.evaluateRoutine(rid, { date: D })).status).toBe('done')
+  })
+
+  // 2 — all_or_nothing
+  it('all_or_nothing: 2/3 → partial; 3/3 → done; policy_source user', async () => {
+    const { rid, steps } = await routineWith(3, { prefs: port({ completion: { kind: 'all_or_nothing' } }) })
+    await doneOn([steps[0].id, steps[1].id])
+    expect(await h.svc.evaluateRoutine(rid, { date: D })).toMatchObject({ status: 'partial', policy_source: 'user' })
+    await doneOn([steps[2].id])
+    expect((await h.svc.evaluateRoutine(rid, { date: D })).status).toBe('done')
+  })
+
+  // 3 — threshold: exact ratio, 100, 0
+  it('threshold: 60 with 2/3 → done; 67 with 2/3 → partial (exact ratio); 100 = all-or-nothing; 0 with 0 done → done', async () => {
+    for (const [pct, doneCount, want] of [[60, 2, 'done'], [67, 2, 'partial'], [100, 2, 'partial'], [100, 3, 'done'], [0, 0, 'done']] as const) {
+      const { rid, steps } = await routineWith(3, { prefs: port({ completion: { kind: 'threshold', percent: pct } }) })
+      await doneOn(steps.slice(0, doneCount).map((x) => x.id))
+      expect((await h.svc.evaluateRoutine(rid, { date: D })).status, `threshold ${pct} with ${doneCount}/3`).toBe(want)
+      vi.restoreAllMocks()
+    }
+  })
+
+  // 4 — required_node
+  it('required_node: required done → done; required not done → partial; no required / required all neutral → undefined + note', async () => {
+    let r = await routineWith(3, { prefs: port({ completion: { kind: 'required_node' } }) }, [0])
+    await doneOn([r.steps[0].id])
+    expect((await h.svc.evaluateRoutine(r.rid, { date: D })).status).toBe('done')
+    vi.restoreAllMocks()
+    r = await routineWith(3, { prefs: port({ completion: { kind: 'required_node' } }) }, [0])
+    await doneOn([r.steps[1].id])
+    expect((await h.svc.evaluateRoutine(r.rid, { date: D })).status).toBe('partial')
+    vi.restoreAllMocks()
+    r = await routineWith(2, { prefs: port({ completion: { kind: 'required_node' } }) })
+    await doneOn([r.steps[0].id])
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ policy_source: 'undefined', policy_note: 'no_required_steps', status: 'partial' })
+    vi.restoreAllMocks()
+    r = await routineWith(2, { prefs: port({ completion: { kind: 'required_node' } }) }, [0])
+    await h.svc.planSkipDates(r.steps[0].id, [D])
+    await doneOn([r.steps[1].id])
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ policy_source: 'undefined', policy_note: 'required_steps_all_neutral', status: 'done' })
+  })
+
+  // 5 — planned skip neutral
+  it('a planned skip is neutral: excluded from applicable and listed in neutral', async () => {
+    const { rid, steps } = await routineWith(3, { prefs: port({ completion: { kind: 'all_or_nothing' } }) })
+    await h.svc.planSkipDates(steps[1].id, [D])
+    await doneOn([steps[0].id, steps[2].id])
+    const e = await h.svc.evaluateRoutine(rid, { date: D })
+    expect(e).toMatchObject({ status: 'done', applicable: 2 })
+    expect(e.neutral.map((x) => x.step_id)).toEqual([steps[1].id])
+  })
+
+  // 6 — logged skip per the user's miss policy
+  it("a logged skip follows the user's miss policy: neutral → excluded; not_done → undone; undefined policy → undone", async () => {
+    const cases: [RoutinePolicy | null, string][] = [
+      [{ completion: { kind: 'all_or_nothing' }, miss: { logged_skip: 'neutral' } }, 'done'],
+      [{ completion: { kind: 'all_or_nothing' }, miss: { logged_skip: 'not_done' } }, 'partial'],
+      [null, 'partial'],
+    ]
+    for (const [policy, want] of cases) {
+      const { rid, steps } = await routineWith(2, { prefs: port(policy) })
+      await doneOn([steps[0].id])
+      await h.svc.skipStep(steps[1].id, { date: D, reason: 'sick' })
+      expect((await h.svc.evaluateRoutine(rid, { date: D })).status).toBe(want)
+      vi.restoreAllMocks()
+    }
+  })
+
+  // 7 — reflection (done = the routine row OR the entity as-of D)
+  it('reflection: entity done in its own module counts; as-of D; history (the routine row) is never rewritten by later entity changes', async () => {
+    h = await setup({ prefs: port({ completion: { kind: 'all_or_nothing' } }) })
+    const clock = at(`${D}T08:00:00Z`)
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const hab = await h.habits.createHabit({ name: 'Water', frequency: 'daily' })
+    const tD = await h.tasks.createTask({ title: 'On D' })
+    const tLater = await h.tasks.createTask({ title: 'Later' })
+    const sh = await h.svc.addStep(rid, { title: 'Water', entity_type: 'habit', entity_id: hab.id })
+    const st = await h.svc.addStep(rid, { title: 'On D', entity_type: 'task', entity_id: tD.id })
+    const sl = await h.svc.addStep(rid, { title: 'Later', entity_type: 'task', entity_id: tLater.id })
+    await h.habits.logCompletion(hab.id, { date: D }) // reached target in Habits, not via the routine
+    await h.tasks.completeTask(tD.id) // completed in Tasks on D
+    clock.mockImplementation(() => Date.parse('2026-10-21T08:00:00Z'))
+    await h.tasks.completeTask(tLater.id) // completed on D+1
+    const e = await h.svc.evaluateRoutine(rid, { date: D })
+    expect(e.done.map((x) => x.step_id).sort()).toEqual([sh.id, st.id].sort())
+    expect(e.not_done.map((x) => x.step_id)).toEqual([sl.id]) // D+1 completion does not leak into D
+    expect((await h.svc.evaluateRoutine(rid, { date: '2026-10-21' })).done.map((x) => x.step_id)).toContain(st.id) // S3 reflection on D+1
+    await h.tasks.reopenTask(tD.id)
+    expect((await h.svc.evaluateRoutine(rid, { date: '2026-10-21' })).not_done.map((x) => x.step_id)).toContain(st.id)
+    // habit decremented in Habits AFTER the routine stamped D → D stays done (the routine row is that occurrence's record, RT-5/U1)
+    await h.svc.completeStep(sh.id, { date: D })
+    await h.habits.editCompletion(hab.id, D, { count: 0 })
+    expect((await h.svc.evaluateRoutine(rid, { date: D })).done.map((x) => x.step_id)).toContain(sh.id)
+    // a task deleted after a routine stamp → the ledger fallback keeps D's done
+    const tGone = await h.tasks.createTask({ title: 'Gone' })
+    clock.mockImplementation(() => Date.parse(`${D}T09:00:00Z`))
+    const sg = await h.svc.addStep(rid, { title: 'Gone', entity_type: 'task', entity_id: tGone.id })
+    await h.svc.completeStep(sg.id, { date: D })
+    await h.tasks.softDeleteTask(tGone.id)
+    expect((await h.svc.evaluateRoutine(rid, { date: D })).done.map((x) => x.step_id)).toContain(sg.id)
+  })
+
+  it('reflection: a getCalendar failure other than "Habit not found" is rethrown', async () => {
+    h = await setup()
+    at(`${D}T08:00:00Z`)
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const hab = await h.habits.createHabit({ name: 'Water', frequency: 'daily' })
+    await h.svc.addStep(rid, { title: 'Water', entity_type: 'habit', entity_id: hab.id })
+    vi.spyOn(h.habits, 'getCalendar').mockRejectedValue(new Error('disk I/O error'))
+    await expect(h.svc.evaluateRoutine(rid, { date: D })).rejects.toThrow('disk I/O error')
+  })
+
+  // 8 — as-of step set
+  it('as-of step set: a step done on D then deleted still counts for D; a step added after D is absent', async () => {
+    const { rid, steps } = await routineWith(2)
+    await doneOn([steps[0].id])
+    at('2026-10-21T08:00:00Z')
+    await h.svc.removeStep(steps[0].id)
+    const late = await h.svc.addStep(rid, { title: 'Late' })
+    const e = await h.svc.evaluateRoutine(rid, { date: D })
+    expect(e.done.map((x) => x.step_id)).toEqual([steps[0].id])
+    expect([...e.done, ...e.not_done, ...e.neutral].map((x) => x.step_id)).not.toContain(late.id)
+  })
+
+  // 9 + 14 — no applicable steps / empty routine
+  it('no applicable steps (all planned-skipped, or none) → not_started, percent 0, applicable 0', async () => {
+    let r = await routineWith(1)
+    await h.svc.planSkipDates(r.steps[0].id, [D])
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ status: 'not_started', percent: 0, applicable: 0 })
+    vi.restoreAllMocks()
+    r = await routineWith(0)
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ status: 'not_started', percent: 0, applicable: 0 })
+  })
+
+  // 10 — errors
+  it('errors: archived/missing routine → RoutineNotFoundError; bad date → ZodError; a port throw propagates', async () => {
+    const { rid } = await routineWith(1, { prefs: { policyFor: async () => { throw new Error('prefs offline') } } })
+    await expect(h.svc.evaluateRoutine(rid, { date: '2026-1-5' })).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.evaluateRoutine(rid, { date: D })).rejects.toThrow('prefs offline')
+    await h.svc.archiveRoutine(rid)
+    await expect(h.svc.evaluateRoutine(rid, { date: D })).rejects.toBeInstanceOf(RoutineNotFoundError)
+    await expect(h.svc.evaluateRoutine('no-such', { date: D })).rejects.toBeInstanceOf(RoutineNotFoundError)
+  })
+
+  // 11 — read-only
+  it('evaluateRoutine writes nothing (sync_queue unchanged)', async () => {
+    const { rid, steps } = await routineWith(2)
+    await doneOn([steps[0].id])
+    const before = (await h.db.select().from(syncQueue).all()).length
+    await h.svc.evaluateRoutine(rid, { date: D })
+    expect((await h.db.select().from(syncQueue).all()).length).toBe(before)
+  })
+
+  // 12 — partial always returned (RT-5)
+  it('a partial evaluation always lists every done step, under every policy kind', async () => {
+    const policies: (RoutinePolicy | null)[] = [
+      null,
+      { completion: { kind: 'all_or_nothing' } },
+      { completion: { kind: 'threshold', percent: 90 } },
+      { completion: { kind: 'required_node' } },
+    ]
+    for (const p of policies) {
+      const { rid, steps } = await routineWith(3, { prefs: port(p) }, [2])
+      await doneOn([steps[0].id, steps[1].id])
+      const e = await h.svc.evaluateRoutine(rid, { date: D })
+      expect(e.status).toBe('partial')
+      expect(e.done.map((x) => x.step_id)).toEqual([steps[0].id, steps[1].id])
+      vi.restoreAllMocks()
+    }
+  })
+
+  // 13 — unknown policy kind fails loud
+  it('an unknown completion kind from the port → InvalidRoutinePolicyError', async () => {
+    const { rid } = await routineWith(1, { prefs: port({ completion: { kind: 'vibes' } } as unknown as RoutinePolicy) })
+    await expect(h.svc.evaluateRoutine(rid, { date: D })).rejects.toBeInstanceOf(InvalidRoutinePolicyError)
+  })
+
+  // g2 fixes (PLAN-S4 addendum)
+  it('a backfilled task-step stamp counts for its date even though the task completed later', async () => {
+    h = await setup()
+    const clock = at(`${D}T08:00:00Z`)
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const t = await h.tasks.createTask({ title: 'Backfill' })
+    const st = await h.svc.addStep(rid, { title: 'Backfill', entity_type: 'task', entity_id: t.id })
+    clock.mockImplementation(() => Date.parse('2026-10-21T08:00:00Z'))
+    await h.svc.completeStep(st.id, { date: D }) // completed_at = 10-21, stamped for D
+    expect((await h.svc.evaluateRoutine(rid, { date: D })).status).toBe('done')
+  })
+
+  it('a step actually done on a planned-skip day counts as done, not neutral', async () => {
+    const { rid, steps } = await routineWith(2, { prefs: port({ completion: { kind: 'all_or_nothing' } }) })
+    await h.svc.planSkipDates(steps[1].id, [D])
+    await doneOn([steps[0].id, steps[1].id])
+    const e = await h.svc.evaluateRoutine(rid, { date: D })
+    expect(e.done.map((x) => x.step_id)).toEqual([steps[0].id, steps[1].id])
+    expect(e.neutral).toEqual([])
+  })
+
+  it('a habit deleted after a routine stamp: D stays done via the routine row (no throw)', async () => {
+    h = await setup()
+    at(`${D}T08:00:00Z`)
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const hab = await h.habits.createHabit({ name: 'Read', frequency: 'daily' })
+    const sh = await h.svc.addStep(rid, { title: 'Read', entity_type: 'habit', entity_id: hab.id })
+    await h.svc.completeStep(sh.id, { date: D })
+    await h.habits.softDeleteHabit(hab.id)
+    expect((await h.svc.evaluateRoutine(rid, { date: D })).done.map((x) => x.step_id)).toEqual([sh.id])
+  })
+
+  it('a threshold with a missing/NaN percent fails loud; required_node with no applicable steps → user not_started', async () => {
+    let r = await routineWith(1, { prefs: port({ completion: { kind: 'threshold', percent: Number.NaN } }) })
+    await expect(h.svc.evaluateRoutine(r.rid, { date: D })).rejects.toBeInstanceOf(InvalidRoutinePolicyError)
+    vi.restoreAllMocks()
+    r = await routineWith(0, { prefs: port({ completion: { kind: 'required_node' } }) })
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ status: 'not_started', policy_source: 'user' })
+  })
+
+  it('a soft-deleted habit with no routine row reflects not_done (no throw); a logged skip whose task was completed on D is done', async () => {
+    h = await setup()
+    at(`${D}T08:00:00Z`)
+    const rid = (await h.svc.createRoutine({ name: 'R' })).id
+    const hab = await h.habits.createHabit({ name: 'Gone', frequency: 'daily' })
+    const sh = await h.svc.addStep(rid, { title: 'Gone', entity_type: 'habit', entity_id: hab.id })
+    await h.habits.softDeleteHabit(hab.id)
+    const t = await h.tasks.createTask({ title: 'Did it anyway' })
+    const st = await h.svc.addStep(rid, { title: 'Did it anyway', entity_type: 'task', entity_id: t.id })
+    await h.svc.skipStep(st.id, { date: D, reason: 'thought I would skip' })
+    await h.tasks.completeTask(t.id) // done in Tasks on D
+    const e = await h.svc.evaluateRoutine(rid, { date: D })
+    expect(e.not_done.map((x) => x.step_id)).toEqual([sh.id])
+    expect(e.done.map((x) => x.step_id)).toEqual([st.id])
   })
 })

@@ -88,7 +88,7 @@ policy") but not its encoding. This is the smallest encoding that expresses it, 
   guaranteed by `uq_routine_completions_date`, `db/schema/routines.ts:106`.)*
 - **E2 · Classify each step for the date** (first match wins):
   - **neutral:** `date ∈ step.skip_dates` (planned, RT-8); or its ledger row is a logged skip and `policy?.miss?.logged_skip === 'neutral'`.
-  - **done**, by target (RT-3 "reflects"; **the entity wins when it exists**, and the ledger row is the fallback when the entity is gone, which
+  - **done** *(⟲ reversed by the g2 addendum: done = the routine row OR the entity as-of D)*, by target (RT-3 "reflects"; **the entity wins when it exists**, and the ledger row is the fallback when the entity is gone, which
     keeps history, RT-5):
     - **task step:** if `tasks.getTask(id)` returns the task ⇒ done ⇔ `status === 'completed' && completed_at != null && utcDay(completed_at) <= date`.
       This is **as-of D**: a completion after D never leaks back into D. It matches S3's rule-22 reflection ("a completed task reads as done on
@@ -135,7 +135,7 @@ policy") but not its encoding. This is the smallest encoding that expresses it, 
    `'no_required_steps'`; the only required step planned-skipped → `'undefined'` + `'required_steps_all_neutral'`.
 5. **Planned skip neutral:** B has `skip_dates=[date]` → excluded (`applicable` 2), in `neutral`; all-or-nothing with A and C done → `done`.
 6. **Logged skip:** `miss.logged_skip:'neutral'` → excluded; `'not_done'` → undone (`partial`); undefined policy → undone.
-7. **Reflection (fix E2, entity wins, as-of D):** a habit reaching its target **in Habits** → done; a task completed **in Tasks** on D → done; a task
+7. **Reflection (fix E2, as-of D; ⟲ the decrement case is reversed by the g2 addendum: D stays done):** a habit reaching its target **in Habits** → done; a task completed **in Tasks** on D → done; a task
    completed on **D+1** → **not done on D**; a completed task → done on D+1 (S3 reflection) and not done again once **reopened**; a habit decremented
    after the routine stamped it → not done (entity wins); a task/habit **deleted** after a routine stamp → done via the ledger fallback; a
    `getCalendar` failure other than "Habit not found" → rethrown.
@@ -188,6 +188,19 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
 5. **Docs (scope 5/6):** amend the "shipped default" lines (contract, seam, slice-map S4, interp rule 4/R4, current BR; annotate ROU-24/30) + the
    seam `RoutineEvaluation` additions + the S5 note (applicable = 0 is neutral).
 6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` sequential · g2 · /critique · §XXIX.
+
+## Addendum — g2 code review (post-implementation; §XXVIII)
+**§XXVIII deviation (reverses the step-5 "entity wins" precedence, better grounded):** done = **the routine's occurrence row OR the driven
+entity done as of D**. "Entity wins" let later entity changes rewrite history: a backfilled task stamp never counted (`completed_at` after D), and
+a task reopened later erased a past done. That breaks RT-5 ("never discarded") and the E1b as-of principle. U1 already fixes the model: the
+routine row **is** the record of that occurrence, and reflection (RT-3) only **adds** dones made in the entity's own module. A drive-time
+reflection still updates the row (S3 removes a stale habit stamp when the user runs the step); evaluation never rewrites history.
+**Fixed:** done is checked before neutral (work done on a planned-skip day counts, RT-5); E4.1 `applicable = 0` precedes the required_node note; a
+non-finite threshold `percent` → `InvalidRoutinePolicyError` (a type check, no range invented); one step read per evaluation; reflection checks in
+parallel with a per-evaluation habit-month calendar cache; one `isHabitNotFound` matcher (S3 + S4); slice-map S4 row de-duplicated and the S5
+(neutral day) + S7 (emission) notes written into the durable slice-map rows.
+**Not tested (noted):** the empty-routine query guard is a performance shortcut (drizzle `inArray([])` is a no-match, not an error).
+**Tests:** +4 (backfilled stamp, done on a planned-skip day, deleted-habit fallback, NaN threshold + required_node empty) → routines **82/82** · tsc 0 · eslint 0.
 
 ## Step-5 critique (folded): REVISE → 2 blocking fixed (task reflection as-of D via `utcDay(completed_at) <= date`, reconciled with S3 rule 22;
 consistent options-object signature + seam signature amendment) + 6 non-blocking (exact `Habit not found` match + rethrow; unknown kind fails loud

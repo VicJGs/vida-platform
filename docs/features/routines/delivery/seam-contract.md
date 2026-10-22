@@ -25,7 +25,7 @@ interface RoutinesServiceDeps {             // ⟲ amended (A2, N3, D1)
   spaces: SpacesService                       // required (tags/links)
   notes: NotesService                         // required (pages)
   effects?: { rail: EffectRail; registry: EffectRegistry }   // producer guard registry.resolve before applyEffect (N8)
-  prefs?: RoutinesPrefsPort                    // completion/miss/acceptance-window config; absent ⇒ shipped default, FLAGGED (R4)
+  prefs?: RoutinesPrefsPort                    // the USER's policy (S4); absent/none ⇒ policy_source 'undefined' (no routines-side default)
   // ⟲ dropped: measurementSources (rule 12: no M5 source)
 }
 ```
@@ -71,9 +71,10 @@ rescheduleStep(stepId: Id, date: string): Promise<DueItem>         // ⟲ amende
 
 ## Derivations — evaluate / progress / analytics (S4, S5)
 ```ts
-evaluateRoutine(routineId: Id, date: string): Promise<RoutineEvaluation>
+evaluateRoutine(routineId: Id, input?: { date?: string }): Promise<RoutineEvaluation>   // ⟲ S4: options object
 //   RoutineEvaluation = { status: 'done'|'partial'|'not_started', percent: number, done: StepRef[], not_done: StepRef[],
-//                         policy_source: 'user'|'default' }   // ⟲ added (R4): PolicyUndefined ⇒ shipped default, FLAGGED
+//                         policy_source: 'user'|'undefined', routine_id, date, applicable, neutral: RoutineStepRef[], policy_note? }
+//   ⟲ S4: RoutineStepRef = { step_id, title }; percent display-only (threshold judges the exact ratio); undefined ⇒ only all-done/none-done judged
 //   applies completion_policy (read from prefs); partial ALWAYS returned (RT-5)
 progress(routineId: Id): Promise<number | null>                     // resolveProgress(stored, derive); NULL ⇒ derived-on-read
 getStreak(routineId: Id): Promise<RoutineStreak>                    // POLICY-derived (not Habits rule); the READ seam Gamification pulls
@@ -95,7 +96,8 @@ function registerRoutinesDueProvider(sessions: SessionsService, svc: RoutinesSer
 ```ts
 EntityUnavailableError   // ⟲ renamed (S3, module *Error convention) — a step's driven entity missing/deleted/port-absent → typed step state, never silent skip (RT-3)
 OutsideAcceptanceWindow  // make-good/reschedule past the window → rejected, no state change (RT-6)
-PolicyUndefined          // evaluate before policy resolves → falls back to shipped default, flagged
+PolicyUndefined          // ⟲ S4: not thrown — evaluateRoutine returns policy_source 'undefined' (flagged); the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves
+InvalidRoutinePolicyError // S4: the port returned a completion kind the docs don't define (fails loud)
 ProviderEmitFailed       // dueIn/summary failure isolated — routine + sibling providers unaffected (RT-13)
 // ⟲ added (A25): the as-built errors
 RoutineNotFoundError     // addStep on a missing/archived routine (no orphan step)

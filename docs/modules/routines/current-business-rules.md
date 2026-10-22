@@ -4,7 +4,7 @@
 > Inherits: `docs/core/business-rules.md` + `docs/core/conventions.md` (constitution) → this module. Intent authority:
 > `docs/features/routines/{identity,business-rules,contract,structure-data,conventions}.md` (RT-1…RT-19) + the GOVERNING
 > `delivery/interpretation.md` (main's 9-slice set, Victor 2026-10-14; implicit rules cited as **interp §4.n**).
-> Last refreshed: 2026-10-22 · **S3 promoted (§XXIX)** · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
+> Last refreshed: 2026-10-22 · **S4 promoted (§XXIX)** · S3 · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
 
 > **Baseline note.** This doc records what the CODE enforces. The `BR-RT-S1/S2/S3-n` IDs are kept stable from the
 > as-built slices so existing cites keep resolving. They are **as-built labels**, not the governing slice numbers. Gaps
@@ -97,6 +97,21 @@
 - **BR-RT-S3d-6 · Re-run.** A focus step with a done row returns it. Task/habit steps re-reflect their entity (no second effect: tasks fan out only
   on a fresh transition, habits dedup on `completed:<date>`). A logged skip flips to done on a successful drive (BR-RT-S3-2).
 
+**S4 — Policy evaluation** (`delivery/PLAN-S4-policy-evaluation.md`)
+- **BR-RT-S4e-1 · The policy is the user's.** Read via `prefs?.policyFor(routineId)`. Routines hardcodes no policy values (intake Q2/Q3; the shipped
+  default = Spaces templates/presets, `intake/spaces.md:178-185`). No policy ⇒ `policy_source:'undefined'`: only all-done ⇒ `done` and none-done ⇒
+  `not_started`; anything else `partial` (flagged).
+- **BR-RT-S4e-2 · As-of-date step set.** Steps created on/before D and not deleted on/before D, plus any step with a ledger row on D. No retroactive change.
+- **BR-RT-S4e-3 · Done = the routine's occurrence row OR the driven entity done as of D** (task `completed` with `utcDay(completed_at) <= D`; habit
+  `CalendarDay.done` for D). Reflection only adds; later entity changes never rewrite D (RT-5, U1). Done is checked before neutral.
+- **BR-RT-S4e-4 · Neutral.** A planned skip (`skip_dates`), or a logged skip when the user's `miss.logged_skip === 'neutral'`, is excluded from `applicable`.
+- **BR-RT-S4e-5 · Judgment (user policy).** `applicable = 0` ⇒ `not_started`. all_or_nothing: nothing undone. threshold: exact ratio
+  `done·100 >= percent·applicable` (`percent` display-only; non-finite → `InvalidRoutinePolicyError`; the user's 0 honoured). required_node:
+  every applicable required step done; none applicable ⇒ `'undefined'` + `no_required_steps` | `required_steps_all_neutral`. Unmet with 0 done ⇒
+  `not_started`, else `partial`. An unknown kind → `InvalidRoutinePolicyError`.
+- **BR-RT-S4e-6 · Read-only + RT-5.** No writes, no effects; lifecycle doesn't change the evaluation. Every done step is always listed. **Known
+  limits:** habit done uses the current `target_count`; archived routines' past dates aren't served.
+
 ## 2. Rule taxonomy
 | Category | Rules | Enforced by | Default when absent | Who changes it | Reset / delete semantics |
 |---|---|---|---|---|---|
@@ -104,7 +119,7 @@
 | Referential integrity (app-layer, no FK) | S2-2, S2-5, S3-4 | `load*OrThrow` guards + explicit cascade | fail loud | code | soft (routine/step) · hard (ledger) |
 | Ledger semantics | S3-1, S3-2, S3-3, S3-5 | `upsertCompletion`, skip split | date = UTC today | user (per occurrence) | row flips in place; delete = hard |
 | Derive-not-cache | S1-3 | absence of counters | `progress` NULL ⇒ derive (unbuilt) | — | n/a |
-| Policy (completion / miss / acceptance) | — **not enforced** | — | governing docs: shipped default + Preferences config (interp §4.4) | user via Preferences | — |
+| Policy (completion / miss) | S4e-1…S4e-6 | `evaluateRoutine` over the user's policy (prefs port) | **no routines-side default**: none ⇒ `policy_source:'undefined'` (the shipped default = Spaces templates/presets, SP5) | the user (Spaces personalization) | derived on read, never stored |
 | Fan-out (effects / provider / contributions) | — **not enforced** | — | emit-only, isolated (interp §4.2/§4.13) | — | — |
 
 ## 3. Rule inventory — explicit · implicit · invented · findings
@@ -115,10 +130,11 @@
 | S2-1…S2-6 | step rules above | EXPLICIT (S2-6 ordering semantics = IMPLICIT, ratified g2) | RT-2/3/4/17 · interp §4.5/4.6/4.9 | ✅ (S2-5 partial) |
 | S3-1…S3-5 | ledger rules above | EXPLICIT | RT-5/8/14/17/18 | ✅ |
 | RT-3 / ADR-004 §3.2.4 | a driven step completes its entity once, via the entity's API; no second entity occurrence/effect | EXPLICIT | business-rules.md RT-3; ADR-004 §3.2.4 | ✅ S3 (BR-RT-S3d-1) |
+| S4e-1…S4e-6 | user policy · as-of set · done = row OR entity-as-of · neutral · judgment · read-only | EXPLICIT (intake Q2/Q3, RT-5/8/14, U1) + INTERP-minimal (`miss.logged_skip`) | PLAN-S4 | ✅ |
 | S3d-1…S3d-6 | drive-then-stamp · target precedence · task TERMINAL · habit HB-5 reflect · focus lifecycle + detach · re-run | EXPLICIT (RT-3, ADR-004 §3.2.1/§3.2.4, HB-5, TAS-23, TERMINAL convention) | PLAN-S3 | ✅ |
 | S2c-1…S2c-6 | setLifecycle · step append · date shape · progress 0–100 · RRULE parse+FREQ · non-empty names | EXPLICIT (S2c-5 [INTERP] approved) | PLAN-S2c; rule 16; ROU-17/29 | ✅ |
 | RT-6 | paused/off generate no misses · acceptance window | EXPLICIT | RT-6 | ⚠ `setLifecycle` built (S2c); misses not yet derived (S5) |
-| RT-5/7 | policy-derived done / streak | EXPLICIT | RT-5, RT-7 | ❌ not built |
+| RT-5/7 | policy-derived done / streak | EXPLICIT | RT-5, RT-7 | ⚠ done built (S4); streak = S5 |
 | RT-15/16 | notes via pages, tags via entity_tags (`routine` / `routine_step`, D2) | EXPLICIT | RT-15/16 · interp §5 D2 | ❌ not built (registry tokens exist: `_registry.ts:45-46`) |
 | RT-12/13 | purpose contribution · provider registration | EXPLICIT | RT-12/13 | ❌ not built |
 | D1 | `tasks: TasksService` is a **required** dep | EXPLICIT (decision) | interp §5 D1 | ✅ S3 |
@@ -133,7 +149,7 @@
   leave the step's completion rows in place. That is correct: archive/soft-delete preserves the ledger (RT-17; ROU-03). Completions
   hard-delete only with a hard PURGE of their step (`routines.ts:103`), and that purge path is the only owed piece.
 - **F4 · `setLifecycle` — RESOLVED in S2c (BR-RT-S2c-1).** *(was: absent)* Lifecycle changes only through `updateRoutine`. The governing S1 lists ROU-17.
-- **F5 · Factory deps — mostly RESOLVED.** `registry` (S2c), `tasks`/`sessions`/`habits?` (S3) landed; `spaces`/`notes`/`effects?`/`prefs?` land in S4–S8.
+- **F5 · Factory deps — mostly RESOLVED.** `registry` (S2c), `tasks`/`sessions`/`habits?` (S3), `prefs?` (S4) landed; `spaces`/`notes`/`effects?` land in S7–S8.
 - **F6 · Day helper — RESOLVED in S3** (default clock = tasks' public `utcDay`).
 - **F7 · Stale aspect prose (flag, interp §4.14).** The aspect docs still name `routine_actions` / `routine_action` (e.g.
   business-rules.md RT-1/RT-8/RT-16/RT-17). The code and `_registry.ts` use the reframe names (`routine_step`, plus `routine`).
@@ -158,16 +174,18 @@
 - **Empty:** `[]` from list readers; `null` from `getRoutine`.
 - **Validation error:** `ZodError` · `InvalidRecurrenceRuleError` (S2c) · `UnknownEntityType` (S2c).
 - **Undrivable target:** `EntityUnavailableError` (S3). **Run states:** `done` · `advanced` (habit below target) · `in_progress` (focus running).
+- **Invalid policy:** `InvalidRoutinePolicyError` (S4: unknown completion kind / non-finite threshold).
 - **Not found:** `RoutineNotFoundError` · `StepNotFoundError` · `CompletionNotFoundError` · generic `Error('Row not found: <id>')`
   from `updateRoutine`/`updateStep` (Repository).
-- **Not yet representable:** `OutsideAcceptanceWindow`, `PolicyUndefined`, `ProviderEmitFailed` (governing
+- **Not yet representable:** `OutsideAcceptanceWindow`, `ProviderEmitFailed` (governing
   contract; unbuilt).
 
 ## 6. Failure behavior (fail loud)
 Typed errors are thrown before any write for missing parents (routine → step → completion). There are no swallowing catches;
 the catches are `parseJsonArray`'s malformed-JSON → `null` (a documented degrade at a read boundary) and `assertValidRrule`, which
-catches the parser's throw only to rethrow the typed `InvalidRecurrenceRuleError` `[FACT: service.ts]`. Driven-target failures are loud (`EntityUnavailableError`, typed, before any routine write; BR-RT-S3d-2). The only swallowed error is the
-best-effort detach/cancel after a durable write, which is documented (BR-RT-S3d-5).
+catches the parser's throw only to rethrow the typed `InvalidRecurrenceRuleError` `[FACT: service.ts]`. Driven-target failures are loud (`EntityUnavailableError`, typed, before any routine write; BR-RT-S3d-2). The swallowed errors are documented: the best-effort
+detach/cancel after a durable write (BR-RT-S3d-5), and the S4 reflection's `Habit not found` → no reflection (the ledger row still counts;
+any other error rethrows, BR-RT-S4e-3).
 
 ## Completion checklist
 - [x] §1 invariants with [FACT] · [x] §4 validation/edge · [x] §6 fail-loud

@@ -54,6 +54,7 @@
 - `EntityUnavailable` — a step's driven entity is missing/deleted → typed step state, never silent skip (RT-3).
 - `OutsideAcceptanceWindow` — a make-good/reschedule past the window → rejected, no state change (RT-6).
 - `PolicyUndefined` — evaluate called before a completion policy resolves → falls back to the shipped default, flagged.
+  > ⟲ Clarified (S4, 2026-10-22, Victor: the policy is entirely the user's): the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves. Routines hardcodes no policy values.
 - `ProviderEmitFailed` — `dueIn`/`summary` failure is isolated; other providers + the routine itself are unaffected (RT-13).
 
 ## Completion checklist

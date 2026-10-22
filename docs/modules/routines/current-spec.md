@@ -3,7 +3,7 @@
 > Coverage: 8/8 files read — **full** (`services/routines/{service,types,index}.ts` + `CLAUDE.md` + `__tests__/routines-service.test.ts`
 > · `validators/routine.ts` · `@vida/types/routine.ts` · `db/schema/routines.ts`; ~52.7 KB).
 > Inherits: `docs/core` (constitution: `business-rules.md`, `conventions.md`, `architecture/data-flow.md`) → this module.
-> Last refreshed: 2026-10-22 · **S3 run/drive promoted (§XXIX)** · S2c floor conformance · earlier: entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
+> Last refreshed: 2026-10-22 · **S4 policy evaluation promoted (§XXIX)** · S3 run/drive · S2c floor conformance · earlier: entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
 > = built S1–S3 `1a61189` + merged `origin/main`). Source of truth = the code (Currency Rule §XXIX).
 
 > **Baseline note (2026-10-21).** This doc records the code AS-IS. The code was built 2026-10-13 against an
@@ -18,12 +18,12 @@ The `@vida/core` **① service tier for Routines**: the cross-module *orchestrat
 recurring sequence of polymorphic steps, and each step drives a real entity elsewhere. The intended service
 "composes + derives, writes almost nothing of its own" `[FACT: docs/features/routines/delivery/interpretation.md:13-15]`.
 
-**As-built today (S1–S3):** the persistence floor only, meaning routine-definition CRUD, step CRUD + ordering + app-cascade,
-and the per-step completion ledger + both skip mechanisms. `[FACT: services/routines/types.ts]`
+**As-built today (S1–S4):** routine + step CRUD, the ledger + skips, floor conformance (S2c), run/drive over the real Tasks/Habits/
+Sessions (S3), and policy evaluation (S4) `[FACT: services/routines/types.ts RoutinesService]`.
 
 **What it is NOT (yet / ever):**
-- NOT the driver of entities. `runStep` (Sessions / Habits / Tasks composition) is unbuilt `[FACT: types.ts — no runStep]`.
-- NOT a derivation engine yet. There is no `evaluateRoutine` / `progress()` / streak; `progress` is stored as the caller's value or null.
+- NOT a full derivation engine yet: `evaluateRoutine` is built (S4), but `progress()` / streak / analytics / misses are S5; `progress` is stored as the
+  caller's value or null.
 - NOT a provider yet. There is no `dueIn` / `summary` / journal / due-lane registration.
 - NOT registered in the app composition-root. That happens in the routines ENTITY close (fe-routines ②), not this track
   `[FACT: docs/specs/foundation/golive-replan/process.md §4]`.
@@ -35,11 +35,11 @@ and the per-step completion ledger + both skip mechanisms. `[FACT: services/rout
 ### Composition
 `createRoutinesService(deps: RoutinesServiceDeps): RoutinesService`: a factory-object with hoisted closures and no `this.`.
 `RoutinesServiceDeps = { db: DrizzleDb; deviceId: string; clock?: () => string; registry: TaggableTypeRegistry; tasks: TasksService;
-sessions: SessionsService; habits?: HabitsService }` (S3 added `tasks`/`sessions` required, `habits` optional; default `clock` = tasks' `utcDay`) (`registry` added in
+sessions: SessionsService; habits?: HabitsService; prefs?: RoutinesPrefsPort }` (S3 added `tasks`/`sessions` required, `habits` optional; default `clock` = tasks' `utcDay`) (`registry` added in
 S2c: validates a step's `entity_type`; required per the approved seam) `[FACT: types.ts RoutinesServiceDeps]`.
 - `clock` defaults to `utcDay(Date.now())` (tasks' public helper, S3), i.e. **today's UTC calendar day** `[FACT: service.ts]`.
-- **Factory vs the governing shape:** `registry` (S2c), `tasks`/`sessions` (required) and `habits?` (S3) have landed. `spaces`/`notes`/`effects?`/`prefs?`
-  land in S4–S8.
+- **Factory vs the governing shape:** `registry` (S2c), `tasks`/`sessions` (required) and `habits?` (S3) have landed, plus `prefs?` (S4). `spaces`/`notes`/`effects?`
+  land in S7–S8.
 
 Repositories (DB-6 generic Repository, `encryptedFields: []`, the M1.0 dormant `[E]` seam) `[FACT: service.ts]`:
 | Repo | Table | softDelete |
@@ -77,6 +77,14 @@ Target precedence: `step_type='focus'` → focus · `entity_type` task/habit wit
 `EntityUnavailableError`. `StepRunState = { step_id, date, target, status: 'done'|'advanced'|'in_progress', completion, session_id?, focus_id?,
 flag? }`. `isStepRunState` narrows the completeStep union.
 
+**Policy evaluation (S4)**: read-only, derive-on-read
+| Method | Signature | Notes |
+|---|---|---|
+| `evaluateRoutine` | `(routineId, input?: { date? }) => Promise<RoutineEvaluation>` | judges the occurrence date under the **user's** policy (`prefs?.policyFor`). `RoutineNotFoundError` (missing/archived; past-date reads of archived routines are a known limit), `ZodError` (date), `InvalidRoutinePolicyError` (unknown kind / non-finite threshold), a port throw propagates. Writes nothing |
+`RoutineEvaluation = { routine_id, date, status: 'done'|'partial'|'not_started', percent (display), applicable, done/not_done/neutral:
+RoutineStepRef[], policy_source: 'user'|'undefined', policy_note? }`. `RoutinePolicy = { completion: all_or_nothing | required_node |
+threshold{percent}, miss?: { logged_skip } }` (port contract; storage = Spaces/Preferences).
+
 **Completion ledger + skip** (`service.ts`)
 | Method | Signature | Errors |
 |---|---|---|
@@ -94,9 +102,9 @@ throws `ZodError` (S2c).
 deviation, grounded in RT-8 and g2-approved at S3 `[FACT: types.ts]`. Whether the governing seam-contract already has this
 split is checked in reconciliation.
 
-**Not built (governing surface, per `delivery/seam-contract.md`):** `evaluateRoutine`, `progress`,
+**Not built (governing surface, per `delivery/seam-contract.md`):** `progress`,
 streak/rate analytics, `rescheduleStep`, effect emission, tags/notes consumption, `dueIn`/`summary`/`getDueReminders`, journal +
-due-provider registration, and the typed errors `OutsideAcceptanceWindow` / `PolicyUndefined` / `ProviderEmitFailed`.
+due-provider registration, and the typed errors `OutsideAcceptanceWindow` / `ProviderEmitFailed`.
 
 ### Inputs (Zod, `validators/routine.ts`)
 - `CreateRoutineSchema` = all routine fields optional except `name` (`.min(1)`, S2c) · `UpdateRoutineSchema` = all optional ·
@@ -150,7 +158,7 @@ Coupling budget (constitution §6): respected. There are no reads of other modul
 
 ## 5. Key states
 - **Routine:** live (`deleted_at` NULL) × `lifecycle` ∈ {active, paused, off} | archived (`deleted_at` set; steps cascade-archived).
-  `lifecycle` currently changes only via `updateRoutine`. It has **no behavioral effect yet**; "paused/off generate no misses"
+  `lifecycle` changes via `setLifecycle` (S2c) or `updateRoutine`. It has **no behavioral effect yet**; "paused/off generate no misses"
   (RT-6) needs the unbuilt miss derivation.
 - **Step:** live | soft-deleted. A soft-deleted step can still be `updateStep`-ed (it gets re-stamped, ratified g2 N1).
 - **Completion (per step × date):** absent | done (`skipped=false`) | logged-skip (`skipped=true`, `skip_reason`). The row flips
@@ -160,7 +168,7 @@ Coupling budget (constitution §6): respected. There are no reads of other modul
 
 ## Verification (as-built, re-run at baseline)
 `routines-service.test.ts`: live store (better-sqlite3 in-memory, `migrate()` applies 018), **28/28 green on Node 24 after the
-merge**; after **S2c: 41/41** (+13 Gate tests) · full `@vida/core` 2050/2052 (2 = F006 vault timeouts under load; 36/36 alone) · tsc 0 · eslint 0.
+merge**; after **S2c: 41/41** (+13 Gate tests) · **S3: 64/64** · **S4: 82/82** · tsc 0 · eslint 0 · full `@vida/core` 2050/2052 (2 = F006 vault timeouts under load; 36/36 alone) · tsc 0 · eslint 0.
 ⚠ Run on **Node 24**. The worktree's better-sqlite3 binary is built for ABI 137, so under `.nvmrc`'s Node 22 all 28 fail to load
 the native module (environment, not code).
 

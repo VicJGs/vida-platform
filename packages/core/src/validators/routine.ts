@@ -78,6 +78,10 @@ export const CompleteStepSchema = z.object({
 export const RunStepSchema = z.object({
   date: CalendarDate.optional(),
 })
+// S4 — evaluateRoutine input: the occurrence date judged (default = UTC today).
+export const EvaluateRoutineSchema = z.object({
+  date: CalendarDate.optional(),
+})
 export const SkipStepSchema = z.object({
   date: CalendarDate.optional(),
   reason: z.string().nullable().optional(),

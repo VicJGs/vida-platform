@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope approved; S2c ✅ + S3 ✅ shipped (local commits); next = S4 policy evaluation
+# Status: in-progress — re-scope approved; S2c ✅ + S3 ✅ + S4 ✅ shipped (local commits); next = S5 progress + analytics
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -18,6 +18,12 @@ completion/miss policy → Preferences; `routine_step_membership` → Spaces des
 Sessions; XP application → Gamification. Delivery: `docs/features/routines/delivery/`.
 
 ## Slice log
+- **S4 — Policy evaluation ✅ (2026-10-22)** — `evaluateRoutine(id, {date?})`: derive-on-read over the as-of-date step set; done = the
+  routine row OR the driven entity done as of D (reflection only adds; history never rewritten); planned skip neutral; the USER's policy via
+  `prefs?: RoutinesPrefsPort` (**no routines-side default**, Victor: defaults = Spaces templates/presets); no policy ⇒ only all/none judged,
+  `policy_source:'undefined'`; exact-ratio threshold; required_node notes; `InvalidRoutinePolicyError`. routines **83/83** · tsc 0 · eslint 0 ·
+  core 2087/2089 (F006 + F007 under load ~387, both green alone). g1 REVISE→folded · step-5 REVISE→folded · g2 → §XXVIII (entity-wins
+  reversed) · final /critique REVISE→fixed · §XXIX. Spec `delivery/PLAN-S4-policy-evaluation.md`.
 - **S3 — Run/drive ✅ (2026-10-22)** — `runStep` + `completeStep` drive leg over REAL tasks/habits/sessions: target precedence; task
   TERMINAL convention (cancelled unavailable, completed reflected, open driven, TAS-23 flag); habit one tick + HB-5 reflect (stale stamp
   removed); focus `startFocus({})`+attach / `completeFocus`+detach (N9 workaround), stamped on its start day (UTC-midnight safe), abandoned
@@ -83,4 +89,12 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 3. types.ts + index.ts — deps · StepRunState · EntityUnavailableError · runStep · isStepRunState
 - [x] 4. service.ts — utcDay clock · resolveTarget · drive legs · focus guard/retry/cancel · completeStep drive  (gate point 2–4)
 - [x] 5. Docs annotations (interp 18/R5/23 · seam · slice-map · ledger B11)
+- [x] 6. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
+
+## Build Steps — S4 policy evaluation (PLAN-S4 §5 · Approval 2 2026-10-22)
+- [x] 1. Tests first (red): Gate 1–14 + harness `prefs` option
+- [x] 2. validators — EvaluateRoutineSchema
+- [x] 3. types.ts + index.ts — CompletionRule · RoutinePolicy · RoutinesPrefsPort · RoutineStepRef · RoutineEvaluation · InvalidRoutinePolicyError · prefs? dep
+- [x] 4. service.ts — bySequence · stepsAsOf · completionsOn · isDoneOn · classify · judge · evaluateRoutine  (gate point 2–4)
+- [x] 5. Docs — amend "shipped default" lines + seam signature/additions + S5 note
 - [x] 6. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX

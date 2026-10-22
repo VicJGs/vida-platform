@@ -23,6 +23,7 @@ import type {
   UpdateStepSchema,
   CompleteStepSchema,
   RunStepSchema,
+  EvaluateRoutineSchema,
   SkipStepSchema,
   EditRoutineCompletionSchema,
 } from '../../validators/routine'
@@ -41,6 +42,42 @@ export interface RoutinesServiceDeps {
   sessions: SessionsService
   /** S3 — optional (seam): habit steps drive the native tick. Absent ⇒ a habit step is `EntityUnavailableError`. */
   habits?: HabitsService
+  /** S4 — the USER's policy (intake Q2/Q3; a Spaces personalization surface, defaults via templates/presets SP5). Optional:
+   *  absent ⇒ every evaluation is policy_source 'undefined' (PolicyUndefined, flagged). Routines hardcodes no policy values. */
+  prefs?: RoutinesPrefsPort
+}
+
+// --- S4 — the user's policy (port contract; storage is Spaces/Preferences-owned) ---
+export type CompletionRule =
+  | { kind: 'all_or_nothing' }
+  | { kind: 'required_node' }
+  | { kind: 'threshold'; percent: number }
+export interface RoutinePolicy {
+  completion: CompletionRule
+  /** The miss policy (Q3 "how misses count"): how a LOGGED skip counts (RT-8). [INTERP — minimal encoding.] */
+  miss?: { logged_skip: 'neutral' | 'not_done' }
+}
+export interface RoutinesPrefsPort {
+  /** The user's policy for this routine, or null when none is configured (→ policy_source 'undefined'). */
+  policyFor(routineId: string): Promise<RoutinePolicy | null>
+}
+export interface RoutineStepRef {
+  step_id: string
+  title: string
+}
+export interface RoutineEvaluation {
+  routine_id: string
+  date: string
+  status: 'done' | 'partial' | 'not_started'
+  /** round(100 × done / applicable) — display only; the threshold judges the exact ratio. */
+  percent: number
+  applicable: number
+  /** RT-5 — always returned, never discarded. */
+  done: RoutineStepRef[]
+  not_done: RoutineStepRef[]
+  neutral: RoutineStepRef[]
+  policy_source: 'user' | 'undefined'
+  policy_note?: 'no_required_steps' | 'required_steps_all_neutral'
 }
 
 // --- Zod-inferred input shapes (validators/routine.ts) ----------------------
@@ -50,6 +87,7 @@ export type AddStepInput = z.infer<typeof AddStepSchema>
 export type UpdateStepInput = z.infer<typeof UpdateStepSchema>
 export type CompleteStepInput = z.infer<typeof CompleteStepSchema>
 export type RunStepInput = z.infer<typeof RunStepSchema>
+export type EvaluateRoutineInput = z.infer<typeof EvaluateRoutineSchema>
 export type SkipStepInput = z.infer<typeof SkipStepSchema>
 export type EditRoutineCompletionInput = z.infer<typeof EditRoutineCompletionSchema>
 
@@ -119,6 +157,14 @@ export class EntityUnavailableError extends Error {
   }
 }
 
+/** S4 — the port returned a policy whose completion kind is none of the three the docs define. Fails loud (the port owner validates). */
+export class InvalidRoutinePolicyError extends Error {
+  constructor(public readonly routineId: string, public readonly kind: unknown) {
+    super(`Routine ${routineId} has an unrecognized completion policy kind: ${JSON.stringify(kind)}`)
+    this.name = 'InvalidRoutinePolicyError'
+  }
+}
+
 /** S3 — editing/deleting a (step,date) completion that isn't in the ledger. */
 export class CompletionNotFoundError extends Error {
   constructor(stepId: string, date: string) {
@@ -165,6 +211,11 @@ export interface RoutinesService {
   /** ROU-07 — drive the step's target (task completion · habit tick · focus start/re-entry); actionable = completeStep.
    *  Drive first, stamp second (N7). Throws `EntityUnavailableError` / `StepNotFoundError` before any routine write. */
   runStep(stepId: string, input?: RunStepInput): Promise<StepRunState>
+
+  // ── S4: policy evaluation (read-only, derive-on-read) ────────────
+  /** ROU-12 — judge a routine's occurrence date under the USER's policy (prefs port). Always returns what was done (RT-5);
+   *  without a policy, only the policy-independent judgments are made and the result is flagged 'undefined'. */
+  evaluateRoutine(routineId: string, input?: EvaluateRoutineInput): Promise<RoutineEvaluation>
   /** RT-8 — log a SKIP on the day (completion row, skipped=true + reason); UPSERT per (step,date). */
   skipStep(stepId: string, input?: SkipStepInput): Promise<RoutineCompletion>
   /** RT-8 — declare PRE-PLANNED skip dates (merged into step.skip_dates, deduped+sorted); not a completion row. */

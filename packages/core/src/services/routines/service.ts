@@ -14,7 +14,7 @@
 // (RT-14/RT-19); routine-level done/streak DERIVES on read from the ledger (S5).
 // ============================================================================
 
-import { and, eq, isNull, type SQL } from 'drizzle-orm'
+import { and, eq, inArray, isNull, type SQL } from 'drizzle-orm'
 import ICAL from 'ical.js'
 import type { Routine, RoutineStep, RoutineCompletion } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
@@ -36,6 +36,7 @@ import {
   EditRoutineCompletionSchema,
   PlanSkipDatesSchema,
   RunStepSchema,
+  EvaluateRoutineSchema,
   SetRoutineLifecycleSchema,
   RoutineCalendarDateSchema,
 } from '../../validators/routine'
@@ -50,6 +51,10 @@ import {
   CompletionNotFoundError,
   InvalidRecurrenceRuleError,
   EntityUnavailableError,
+  InvalidRoutinePolicyError,
+  type RoutineEvaluation,
+  type RoutinePolicy,
+  type RoutineStepRef,
   type StepRunState,
   type StepTarget,
   type RoutinesService,
@@ -71,6 +76,10 @@ function parseJsonArray<T>(value: string | null): T[] | null {
   }
 }
 
+// Sequence order for steps: step_order, then created_at, then id (S2c; shared by liveSteps and the S4 as-of set).
+const bySequence = (a: RoutineStepRow, b: RoutineStepRow): number =>
+  a.step_order - b.step_order || a.created_at - b.created_at || byCodepoint(a.id, b.id)
+
 // Deterministic, platform-independent tie-break (the tasks precedent, services/tasks/service.ts:237 — private there).
 const byCodepoint = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
 
@@ -86,6 +95,10 @@ function assertValidRrule(rule: string): void {
   }
   if (freq == null) throw new InvalidRecurrenceRuleError(rule)
 }
+
+// Habits throws an UNTYPED Error when a habit is missing/deleted (services/habits/service.ts loadHabitOrThrow). One matcher, used by
+// the S3 drive and the S4 reflection, so a future typed HabitNotFoundError changes one place.
+const isHabitNotFound = (e: unknown): boolean => e instanceof Error && e.message.startsWith('Habit not found')
 
 // S3 — `Session.extension` is a non-discriminated FocusSessionRow | StudySessionRow | null; narrow on the spine's sub_type.
 const hasFocusExtension = (s: Session): s is Session & { extension: FocusSessionRow } =>
@@ -107,7 +120,7 @@ const toRoutineCompletion = (r: RoutineCompletionRow): RoutineCompletion => ({
 })
 
 export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService {
-  const { db, deviceId, registry, tasks, sessions, habits } = deps
+  const { db, deviceId, registry, tasks, sessions, habits, prefs } = deps
   const clock = deps.clock ?? (() => utcDay(Date.now())) // YYYY-MM-DD — the platform UTC-day convention (tasks' public utcDay)
   const cfg = { deviceId, encryptedFields: [] as string[] } // M1.0: [E] fields dormant (→ M3/DB-5)
 
@@ -138,9 +151,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     const rows = await stepsRepo.findWhere(
       and(eq(routineStep.routine_id, routineId), isNull(routineStep.deleted_at)) as SQL,
     )
-    return rows.sort(
-      (a, b) => a.step_order - b.step_order || a.created_at - b.created_at || byCodepoint(a.id, b.id),
-    )
+    return rows.sort(bySequence)
   }
 
   const findCompletion = async (stepId: string, date: string): Promise<RoutineCompletionRow | undefined> => {
@@ -312,7 +323,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       c = await habits.logCompletion(habitId, { date }) // one native tick (BackfillWindowError propagates, no stamp)
     } catch (e) {
       // habits throws an untyped Error when the habit vanished between getHabit and the write (the race tasks maps too)
-      if (e instanceof Error && e.message.startsWith('Habit not found')) {
+      if (isHabitNotFound(e)) {
         throw new EntityUnavailableError(step.id, `habit ${habitId} is missing or deleted`)
       }
       throw e
@@ -472,6 +483,118 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     }
   }
 
+  // ── S4 — policy evaluation (PLAN-S4-policy-evaluation.md) ───────────
+  // E1b — the step set AS OF `date`: created on/before it and not deleted on/before it, plus any step with a ledger row that day
+  // (RT-5 never discarded; no retroactive change). findWhere without the soft-delete filter is deliberate here (rule-7 exception).
+  const stepsAsOf = (all: RoutineStepRow[], date: string, withRow: ReadonlySet<string>): RoutineStepRow[] =>
+    all
+      .filter(
+        (st) =>
+          withRow.has(st.id) ||
+          (utcDay(st.created_at) <= date && (st.deleted_at == null || utcDay(st.deleted_at) > date)),
+      )
+      .sort(bySequence)
+
+  // One query for the day's ledger rows across the routine's steps (UNIQUE(step,date) ⇒ ≤1 row per step).
+  const completionsOn = async (stepIds: string[], date: string): Promise<Map<string, RoutineCompletionRow>> => {
+    if (stepIds.length === 0) return new Map() // perf shortcut (drizzle's inArray([]) would be a no-match, not an error)
+    const rows = await completionsRepo.findWhere(
+      and(eq(routineCompletions.completed_date, date), inArray(routineCompletions.routine_step_id, stepIds)) as SQL,
+    )
+    return new Map(rows.map((r) => [r.routine_step_id, r]))
+  }
+
+  // E2 — done for `date` = the routine's own occurrence row (U1: the record of that occurrence, RT-5) OR the driven entity done AS OF
+  // `date` in its own module (RT-3 reflects). Reflection only ADDS dones; a later change in the entity never rewrites D (a backfilled
+  // stamp counts; a task reopened later doesn't erase D). Focus / actionable steps have no reflection source.
+  type CalendarCache = Map<string, Promise<{ date: string; done: boolean }[] | null>>
+  const habitMonth = (svc: HabitsService, cache: CalendarCache, habitId: string, month: string) => {
+    const key = `${habitId}|${month}`
+    let p = cache.get(key)
+    if (!p) {
+      p = svc.getCalendar(habitId, month).catch((e: unknown) => {
+        if (isHabitNotFound(e)) return null // entity gone → no reflection (the ledger row still counts)
+        throw e // never swallow a real failure
+      })
+      cache.set(key, p)
+    }
+    return p
+  }
+  const isDoneOn = async (
+    step: RoutineStepRow,
+    row: RoutineCompletionRow | undefined,
+    date: string,
+    cache: CalendarCache,
+  ): Promise<boolean> => {
+    if (row != null && !row.skipped) return true
+    const r = resolveTarget(step)
+    if (r?.target === 'task') {
+      const task = await tasks.getTask(r.entityId)
+      return task?.status === 'completed' && task.completed_at != null && utcDay(task.completed_at) <= date
+    }
+    if (r?.target === 'habit' && habits) {
+      const days = await habitMonth(habits, cache, r.entityId, date.slice(0, 7))
+      return days?.some((d) => d.date === date && d.done) ?? false
+    }
+    return false
+  }
+
+  const ref = (st: RoutineStepRow): RoutineStepRef => ({ step_id: st.id, title: st.title })
+
+  // E4–E6 — the judgment. `percent` is display-only; the threshold compares the exact ratio.
+  type Judgment = Pick<RoutineEvaluation, 'status' | 'policy_source' | 'policy_note'>
+  const judge = (
+    routineId: string,
+    policy: RoutinePolicy | null,
+    done: RoutineStepRow[],
+    notDone: RoutineStepRow[],
+    neutral: RoutineStepRow[],
+    applicable: number,
+  ): Judgment => {
+    // E6 — no (applicable) policy: only the judgments every doc policy agrees on; everything in between is flagged.
+    const undefinedJudgment = (note?: RoutineEvaluation['policy_note']): Judgment => ({
+      status: applicable === 0 || done.length === 0 ? 'not_started' : notDone.length === 0 ? 'done' : 'partial',
+      policy_source: 'undefined',
+      ...(note ? { policy_note: note } : {}),
+    })
+    if (!policy) return undefinedJudgment()
+    const rule = policy.completion
+    // E4.1 first: no applicable steps ⇒ not_started under the user's policy (before any rule-specific note).
+    if (applicable === 0) return { status: 'not_started', policy_source: 'user' }
+    let met: boolean
+    switch (rule.kind) {
+      case 'all_or_nothing':
+        met = notDone.length === 0
+        break
+      case 'threshold':
+        // A type check only (the range is the policy owner's): a missing/NaN/non-number percent fails loud, never a silent verdict.
+        if (typeof rule.percent !== 'number' || !Number.isFinite(rule.percent)) {
+          throw new InvalidRoutinePolicyError(routineId, rule)
+        }
+        met = done.length * 100 >= rule.percent * applicable // exact ratio (2/3 vs 67 ⇒ not met)
+        break
+      case 'required_node': {
+        const required = [...done, ...notDone].filter((st) => st.is_required)
+        if (required.length === 0) {
+          // E5 — the rule can't be applied: tell a configuration gap apart from "required steps are neutral today".
+          return undefinedJudgment(
+            neutral.some((st) => st.is_required) ? 'required_steps_all_neutral' : 'no_required_steps',
+          )
+        }
+        const doneIds = new Set(done.map((st) => st.id))
+        met = required.every((st) => doneIds.has(st.id))
+        break
+      }
+      default: {
+        const unknownRule: never = rule // compile-time exhaustiveness over the three doc kinds
+        throw new InvalidRoutinePolicyError(routineId, (unknownRule as { kind?: unknown }).kind)
+      }
+    }
+    // E4 precedence: the user's rule decides; an unmet rule with nothing done ⇒ not_started.
+    if (met) return { status: 'done', policy_source: 'user' }
+    return { status: done.length === 0 ? 'not_started' : 'partial', policy_source: 'user' }
+  }
+
   const service: RoutinesService = {
     // ── S1 ──────────────────────────────────────────────────────────
     createRoutine: async (input) => {
@@ -566,6 +689,45 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       const p = RunStepSchema.parse(input)
       const step = await loadStepOrThrow(stepId)
       return serialized(stepId, () => driveStep(step, p.date ?? clock(), null, 'run'))
+    },
+
+    // ── S4 ──────────────────────────────────────────────────────────
+    evaluateRoutine: async (routineId, input = {}) => {
+      const p = EvaluateRoutineSchema.parse(input)
+      await loadRoutineOrThrow(routineId) // archived/missing → RoutineNotFoundError (known limit for past-date reads, S5/S9)
+      const date = p.date ?? clock()
+      const all = await stepsRepo.findWhere(eq(routineStep.routine_id, routineId) as SQL) // one read (incl. soft-deleted, E1b)
+      const rows = await completionsOn(all.map((st) => st.id), date)
+      const steps = stepsAsOf(all, date, new Set(rows.keys()))
+      const policy = prefs ? await prefs.policyFor(routineId) : null // a port throw propagates (fail loud)
+      const cache: CalendarCache = new Map()
+      const doneFlags = await Promise.all(steps.map((st) => isDoneOn(st, rows.get(st.id), date, cache)))
+      const done: RoutineStepRow[] = []
+      const notDone: RoutineStepRow[] = []
+      const neutral: RoutineStepRow[] = []
+      steps.forEach((st, i) => {
+        // Done first: work actually done on a planned-skip day still counts (RT-5 never discarded).
+        if (doneFlags[i]) {
+          done.push(st)
+          return
+        }
+        const row = rows.get(st.id)
+        const planned = (parseJsonArray<string>(st.skip_dates) ?? []).includes(date) // RT-8 planned skip = neutral
+        const loggedNeutral = row?.skipped === true && policy?.miss?.logged_skip === 'neutral'
+        if (planned || loggedNeutral) neutral.push(st)
+        else notDone.push(st)
+      })
+      const applicable = done.length + notDone.length
+      return {
+        routine_id: routineId,
+        date,
+        ...judge(routineId, policy, done, notDone, neutral, applicable),
+        percent: applicable ? Math.round((100 * done.length) / applicable) : 0,
+        applicable,
+        done: done.map(ref),
+        not_done: notDone.map(ref),
+        neutral: neutral.map(ref),
+      }
     },
 
     skipStep: async (stepId, input = {}) => {
