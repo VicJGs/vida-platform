@@ -125,7 +125,10 @@ export interface RoutineAnalytics {
 
 ## Verification Gate (blocking — live store, Node 24, real better-sqlite3, the S3/S4 harness; `Date.now` pinned)
 1. **Occurrences:** `FREQ=DAILY` 5 days → 5; `FREQ=DAILY;BYDAY=MO,WE` and `FREQ=WEEKLY;BYDAY=MO,WE` with a **Tuesday creation day** → no Tuesday;
-   `FREQ=WEEKLY` (no BYDAY) from Tuesday → Tuesdays; `FREQ=HOURLY;INTERVAL=8` → one per day, no throw; future days excluded.
+   `FREQ=WEEKLY` (no BYDAY) from Tuesday → Tuesdays; `FREQ=HOURLY;INTERVAL=8` → one per day, no throw; future days excluded;
+   `DAILY;BYDAY=MO,WE;COUNT=3` → exactly 3 real occurrences; `MONTHLY;BYMONTHDAY=-1` from 10-31 keeps 10-31; `YEARLY;BYMONTH=2;BYMONTHDAY=29` → no
+   03-01; **`FREQ=DAILY;BYMONTHDAY=-1` / `DAILY;BYDAY=2MO` / `WEEKLY;BYWEEKNO=10` → `InvalidRecurrenceRuleError` at `createRoutine` and on read of a
+   pre-stored rule (no hang).**
 2. **Streak with a window:** done, done, missed, done, done → `current` 2, `longest` 2, `total` 4.
 3. **Pending:** today undone with **no window** → pending (the streak carries over it); yesterday undone with a 3-day window → pending.
 4. **Neutral / lifecycle (A3):** a planned-skip day skipped. A `paused` routine: undone **today** and **in-window** days → neutral, but a day already
@@ -157,33 +160,54 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
    - With a **date-only** DTSTART, the phantom start date appears **only** when an explicit BY-part filters a broader FREQ. `FREQ=DAILY;BYDAY=MO,WE`
      from a Tuesday yields the Tuesday first. `WEEKLY;BYDAY=MO,WE`, `MONTHLY;BYMONTHDAY=15` and `YEARLY;BYMONTH=3` yield no phantom.
      `FREQ=WEEKLY` with no BYDAY correctly inherits DTSTART's weekday.
-   - **Mechanism:** only the **first** yield is checked: kept iff it satisfies the rule's explicit `BYDAY` (weekday, ordinal prefix ignored),
-     `BYMONTHDAY` and `BYMONTH` parts (no part ⇒ accepted). *(A "second iterator anchored the day before" was rejected: it breaks implicit-weekday
-     rules like `FREQ=WEEKLY`.)*
+   - **Mechanism (step-5 corrected):** the explicit BY-part check runs on **every** yield, not just the first. Every real occurrence passes it, and it
+     also filters ical.js mis-yields (e.g. `YEARLY;BYMONTH=2;BYMONTHDAY=29` → a false 2027-03-01). Parts checked: `BYDAY` weekday (ordinal prefix
+     ignored), `BYMONTHDAY` (**negative values resolved**: `v<0 ⇒ daysInMonth+v+1`, so `MONTHLY;BYMONTHDAY=-1` from 10-31 keeps its real start) and
+     `BYMONTH` (which also catches the `MONTHLY;BYMONTH=3` / `WEEKLY;BYMONTH=3` phantoms). No part ⇒ accepted.
+     *(A "second iterator anchored the day before" was rejected: it breaks implicit-weekday rules like `FREQ=WEEKLY`.)*
+   - **COUNT:** when the phantom first yield is dropped and the rule has `COUNT`, expansion is rebuilt with `COUNT + 1`, so the rule still yields its
+     declared number (probe: `DAILY;BYDAY=MO,WE;COUNT=3` → 10-20 phantom, 10-21, 10-26 ⇒ with count+1 → 10-21, 10-26, 10-28). `UNTIL` needs nothing.
+   - **Non-terminating rules (BLOCKING, probed):** ical.js 2.2.1 **hangs forever inside `next()`** for valid RFC rules: `FREQ=DAILY;BYMONTHDAY=-1`,
+     `FREQ=DAILY;BYDAY=2MO`, `FREQ=WEEKLY;BYWEEKNO=10` (killed after 4 s). It also mis-expands `YEARLY;BYDAY=20MO` (every Monday) and silently yields
+     nothing for `YEARLY;BYWEEKNO=10`. A date bound can't help, because the hang is inside the library. **`assertExpandable(rule)`** therefore throws the
+     existing `InvalidRecurrenceRuleError` for: an ordinal `BYDAY` (e.g. `2MO`, `-1FR`) outside `MONTHLY`; any `BYWEEKNO`; a negative `BYMONTHDAY` with
+     `DAILY` or a sub-daily FREQ. It runs **at write** (it tightens S2c's `assertValidRrule`, BR-RT-S2c-5) **and before every expansion** (an old stored
+     rule never freezes a read). *Cross-module note for Victor: tasks' `nextOccurrence` (`services/tasks/service.ts:161`) has the same hang exposure; out
+     of scope here.*
    - **Sub-daily FREQs** (SECONDLY/MINUTELY/HOURLY) **throw** on a date-only DTSTART ("Same occurrence found twice"), so they use a **date-time**
      DTSTART `T00:00:00Z`, and their yields collapse to distinct `YYYY-MM-DD`.
 2. **Calendar-day arithmetic:** `addDays(ymd, n)` via `Date.UTC(y, m-1, d+n)` → `YYYY-MM-DD` from the UTC fields (no local time).
 3. `RoutineDateRange` is Zod-validated: both `YYYY-MM-DD`, `from <= to`, else `ZodError`.
 4. **The shared pure day-judgment:** `judgeDay(stepsAll, rowsByStepDate, reflection, policy, date)` → the S4 `RoutineEvaluation` body; `evaluateRoutine`
    becomes load-then-`judgeDay` (behaviour unchanged, the S4 suite is the regression check).
-5. **Reflection data per call:** task rows fetched **once per distinct task id**; habit calendars cached per (habit, month) across the whole range.
+5. **Reflection data per call:** task rows **memoised per distinct task id** (`getTask` once per id, not per step × date); habit calendars cached per
+   (habit, month) across the whole range.
 6. **Ledger range read:** one query `completed_date BETWEEN from AND to` ∧ `routine_step_id IN (ids)`.
 7. `today = clock()`. `getStreak` covers DTSTART..today; `getAnalytics` covers the caller's range clamped to ≤ today; `comparison.previous` = the
    preceding range of the same day count.
 8. `progress` stored int → `/100`; the result passes through `resolveProgress` unchanged.
-9. Gate 15 asserts boundedness as **equal `db.select` call counts for a 30-day vs a 60-day streak** (independent of day count).
+9. Gate 15 asserts boundedness as **equal `db.select` call counts for a 30-day vs a 60-day streak**, using a fixture of actionable/focus/task steps only
+   (habit calendars are per month, so they legitimately scale with months). Repository calls `db.select()` at call time (`db/repository.ts:362,380`).
+10. The acceptance window is validated on the **S5 reads** that consume it (`getStreak`/`getAnalytics`/`progress`); `evaluateRoutine` (S4) doesn't read
+    the window, so a malformed window doesn't affect it.
 
 ## Implementation plan (§5, worked via `victor:execute-plan-code`)
 1. **Tests first (red):** Gate 1–16 in a new `S5 — progress + analytics` block (`Date.now` pinned; stub prefs ports).
 2. **validators:** `RoutineDateRangeSchema` (refine `from <= to`).
 3. **types.ts + index.ts:** `RoutineDateRange` · `OccurrenceStatus` · `RoutineStreak` · `RoutineCompletionRate` · `RoutineStepRank` · `RoutineAnalytics` ·
    `RoutinePolicy.miss` widened (both fields optional) · `getStreak`/`getAnalytics`/`progress` on the interface.
-4. **service.ts:** `occurrences(rule, dtstart, from, to)` (first-yield BY-part check; date-time start for sub-daily; distinct dates) · `addDays` · extract `judgeDay` (S4 refactor) ·
-   `loadWindow(routineId, from, to)` · `classifyOccurrence` (A2–A4 + window validation) · `streakOf` · `rateOf` · `rankSteps` · `getStreak` / `getAnalytics` /
-   `progress`. **Gate point = steps 2–4** (S4's 83 tests must stay green across the refactor).
+4a. **service.ts — refactor only:** extract `judgeDay` + a range-map `completionsOn(stepIds, from, to)`; `evaluateRoutine` = load + `judgeDay`. **The S4 83-test
+    suite must be green here** (commit point), before any S5 code.
+4b. **service.ts — S5:** `assertExpandable` (at write + before expansion) · `occurrences(rule, dtstart, from, to)` (every-yield BY-part check incl. negative
+    BYMONTHDAY; COUNT+1 rebuild; date-time start for sub-daily; distinct dates) · `addDays` · memoised `getTask` · `loadWindow(routineId, from, to)` ·
+    `classifyOccurrence` (A2–A4 + window validation) · `streakOf` · `rateOf` · `rankSteps` · `getStreak` / `getAnalytics` / `progress`. **Gate point = 2–4b.**
 5. **Docs:** the seam shapes + renames (`completionRate→completion`, `timePeriodComparison→comparison`, `TimeRange→RoutineDateRange`); the
-   current-spec "lifecycle has no behavioural effect yet" line → A3; record that editing `recurrence_rule` re-derives history.
+   current-spec "lifecycle has no behavioural effect yet" line → A3; the `setLifecycle` comment "vacuous until then" (`types.ts`) → A3; record that editing `recurrence_rule` re-derives history.
 6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` sequential · g2 · /critique · §XXIX.
+
+## Step-5 critique (folded): REVISE → 3 blocking fixed (non-terminating ical.js rules guarded by `assertExpandable` at write + before expansion; COUNT+1
+rebuild after a phantom drop; negative BYMONTHDAY resolved) + 4 non-blocking (BY-part check on every yield; `getTask` memo + gate-15 fixture without
+habits; step 4 split into a green-S4 refactor commit then S5 code; stale `types.ts` comment + window validated on S5 reads only)
 
 ## g1 critique (folded): REVISE → 5 blocking fixed (today pending; ical.js DTSTART/BYxxx/sub-daily; the inherited task-reflection limit restated +
 tested; `miss` fields optional + window validated; one-load bounded evaluation) + 7 non-blocking (ranking grounded in v1 action granularity + the G1
