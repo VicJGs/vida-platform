@@ -42,7 +42,7 @@ over migration 018 (`services/routines/{service,types,index}.ts`, `validators/ro
 |---|---|---|---|
 | 1 | A6 | **`setLifecycle(id, lifecycle): Promise<Routine>`**: Zod-validate the enum, `loadRoutineOrThrow` (archived/missing → `RoutineNotFoundError`), update, return the faithful row. No behavioural effect yet (miss suppression = S5) | seam :38 · ROU-17 · module's typed-guard pattern |
 | 2 | A10 | **`entity_type` validated against `TaggableTypeRegistry`** on `addStep` and `updateStep` whenever a non-null `entity_type` is passed. Unregistered → `UnknownEntityType` (foundation error), no write. Adds the **required** `registry: TaggableTypeRegistry` dep (seam Factory) | R2 · N3 · sessions `:393` precedent |
-| 3 | B1 | **Calendar-date format** (shape only, `YYYY-MM-DD`, precedent parity: not a calendar-validity check) on `CompleteStepSchema.date`, `SkipStepSchema.date`, `PlanSkipDatesSchema.dates[]`, `RoutineStepFields.skip_dates[]`. Also the `date` **argument** of `editCompletion`/`deleteCompletion` (a positional string today) | rule 16 · 4 shipped precedents |
+| 3 | B1 | **Calendar-date format** (shape only, `YYYY-MM-DD`, precedent parity: not a calendar-validity check) on `CompleteStepSchema.date`, `SkipStepSchema.date`, `PlanSkipDatesSchema.dates[]`, `RoutineStepFields.skip_dates[]`. Also the `date` **argument** of `editCompletion`/`deleteCompletion` (a positional string today). **Declared error-type change:** a malformed date there now throws `ZodError` instead of `CompletionNotFoundError` | rule 16 · 4 shipped precedents |
 | 4 | B2 | **`progress`** = `z.number().int().min(0).max(100).nullable()` | projects `ProgressSchema` |
 | 5 | B3 | **`recurrence_rule` parse-validated at write** (create/update) via `ICAL.Recur.fromString`. Invalid → `InvalidRecurrenceRuleError(rule)` (new typed error), no write. `null` always allowed | **[INTERP]** constitution §5 fail-loud + ADR-002:1160 RFC-5545 + canonical parser. Tasks defers detection to regen (TAS-23), but routines reads its rule on every `dueIn`/`summary`/evaluate (S5/S9), so a bad rule would break providers silently. Approved as ledger row B3 |
 | 6 | B16 | **Non-empty `name` / `title`** (`.min(1)`) on create and update. Put it on **both** the base fields **and** the `.extend({name|title})` overrides in `CreateRoutineSchema`/`AddStepSchema` (`validators/routine.ts:35-37,56-58`), because the override would bypass a base-only `.min(1)` | tasks/projects convention |
@@ -67,7 +67,7 @@ export class InvalidRecurrenceRuleError extends Error { constructor(public reado
 ```
 `validators/routine.ts`: a module-local `CalendarDate = z.string().regex(YMD, 'expected YYYY-MM-DD')` (the tasks/projects
 per-validator-file pattern; no shared export is introduced). `ProgressField` 0–100. `.min(1)` on `name`/`title`. A
-`SetLifecycleSchema = z.object({ lifecycle: RoutineLifecycleSchema })`.
+`SetRoutineLifecycleSchema = z.object({ lifecycle: RoutineLifecycleSchema })`.
 
 ## Operation flow + invariants
 - **setLifecycle:** parse → `loadRoutineOrThrow(id)` → `routinesRepo.update(id, {lifecycle})` → `toRoutine`. A same-value set is a
@@ -114,6 +114,48 @@ New tests (the existing 28 must stay green, with retitled `IR-n` labels):
 13. **Persistence probe:** `setLifecycle` enqueues a `sync_queue` row (local-first, RT-18).
 Gates: `@vida/core` tsc 0 · eslint 0 · routines suite green · full `@vida/core` suite run sequentially (no regression; the DB-11
 enum parity test untouched) · g2 code review · /critique SHIP · §XXIX promotion (`current-*` + layer `CLAUDE.md`).
+
+## Preflight (gate 2): `/preflight` PASSED, 0 gaps (after Approval 1, 2026-10-21)
+| Layer | Specified? | Where |
+|---|---|---|
+| Backend (in-process `@vida/core` service; no HTTP endpoint, no auth: single-user local-first, ZK seam `encryptedFields:[]` unchanged) | ✅ signatures, inputs (Zod), typed errors, flows | §Operations · §Operation flow · §Scope |
+| Database | ✅ tables `routines` · `routine_step` (read + update; no new columns, **no migration**) · `routine_completions` untouched | §Scope |
+| Integration | ✅ service → Repository (`update` re-reads the full row `db/repository.ts:204,425-440`, so `setLifecycle`'s echo is faithful) · registry injected · no frontend (② = fe-routines) | §Deps |
+| Durable-doc invariants | ✅ no BR contradicted. The append rule is a **new** BR (no current BR states the default-0 order). §XXIX re-promotes **BR-RT-S1-6** (list now sorted), **S2-1** (`entity_type` now registry-validated), **S2-6** (reorder now returns rows; ownership + contiguity preserved), plus new validation BRs for B1/B2/B3/B16 and `setLifecycle` | `current-business-rules.md` |
+
+**Assumptions that would have been made, now pinned:**
+1. `InvalidRecurrenceRuleError` lives in `services/routines/types.ts` and is re-exported by the routines barrel (no collision: g1 #6).
+2. `UnknownEntityType` is **imported** from `../../foundation/spaces/types`, not redefined or re-exported.
+3. The positional `date` args of `editCompletion`/`deleteCompletion` are validated by parsing through the module-local `CalendarDate`
+   schema (→ `ZodError`, the module's validation error type) before any read or write.
+4. `ical.js` is imported as `import ICAL from 'ical.js'` (the tasks style, `services/tasks/service.ts:16`).
+5. The max+1 append **adds one live-steps read** (`stepsRepo.findWhere(routine_id ∧ isNull(deleted_at))`), skipped when `step_order`
+   is given. Soft-deleted steps don't count toward max. **Declared:** concurrent unordered adds (e.g. `Promise.all`) can compute the
+   same max+1. The 3-key sort keeps that order stable, which is acceptable for single-user local-first.
+6. The RRULE guard runs when `p.recurrence_rule != null` (**not** a truthiness check, so `''` is validated and rejected, Gate 8). A patch of `null` clears the rule with no validation. An absent key leaves it untouched (partial update, BR-RT-S1-4).
+7. `byCodepoint` is a module-local one-liner (the tasks helper is not exported; copying 1 line beats a cross-module import of a private).
+8. Node 24 for all gates (the better-sqlite3 ABI), full suites run sequentially.
+
+## Implementation plan (§5, worked via `victor:execute-plan-code`)
+1. **validators/routine.ts:** module-local `YMD` + `CalendarDate` regex · `ProgressField` 0–100 · `.min(1)` on base + `.extend` `name`/`title`
+   · `skip_dates: z.array(CalendarDate)` · `CompleteStep/SkipStep/PlanSkipDates` use `CalendarDate` · export `SetRoutineLifecycleSchema`.
+2. **types.ts:** `registry: TaggableTypeRegistry` dep · `setLifecycle` + `reorderSteps(): Promise<RoutineStep[]>` on the interface ·
+   `InvalidRecurrenceRuleError` · refresh the header (D3). **index.ts:** export the new error. *(No `SetLifecycleInput` type: `setLifecycle(id, lifecycle)` takes a positional enum.)*
+3. **service.ts:** `assertValidRrule` (throw ∨ `freq==null`) in create/update · `assertEntityType` in addStep/updateStep ·
+   `setLifecycle` · max+1 append in `addStep` · `byCodepoint` + 3-key sorts in `listRoutines`/`listSteps` · `reorderSteps` returns
+   `listSteps` · positional-date parse in `editCompletion`/`deleteCompletion` · fix the `archiveRoutine` comment (D8).
+4. **Tests** (`routines-service.test.ts`): construct with `createTaggableTypeRegistry()`. Retitle `IR-n` (D4). Add Verification Gate
+   tests 1–13.
+5. **Back-fills:** `services/routines/CLAUDE.md` (D2) · `db/tests/routines-introspection.test.ts:13-15` (D5) · the seam `setLifecycle`
+   annotation.
+**Gate point:** steps 2–4 are **one** gate point. Making `registry` required + adding `setLifecycle` turns tsc red until step 3 and
+the suite red until step 4, so verify only after step 4 (write the step-4 tests first as red, then 2–3).
+6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` suite sequentially · g2 review · /critique · §XXIX
+   (`current-*` + BR-RT-S2-3 change).
+
+## Step-5 critique (folded): SHIP + 7 non-blocking (schema renamed `SetRoutineLifecycleSchema`, dropped phantom
+`SetLifecycleInput`, BR re-promotion list corrected, pin 5 reworded + concurrency declared, `!= null` RRULE guard, steps 2–4 as one
+gate point, ZodError change on positional dates declared)
 
 ## g1 critique (folded): REVISE → 1 blocking (A11 deviation withdrawn → max+1) + 6 non-blocking (byCodepoint tie-break,
 ical.js grounding corrected, B1 gate gaps, B16 `.extend` trap, stale seam cites + seam annotation, no-write assertions)
