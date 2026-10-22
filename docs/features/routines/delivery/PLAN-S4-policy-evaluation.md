@@ -59,16 +59,16 @@ export interface RoutinesPrefsPort {
    *  whether Preferences stores one global policy or per-routine overrides is the owner's choice behind this port. */
   policyFor(routineId: string): Promise<RoutinePolicy | null>
 }
-export interface StepRef { step_id: string; title: string }
+export interface RoutineStepRef { step_id: string; title: string }   // namespaced: two `export *` barrels carry it
 export interface RoutineEvaluation {
   routine_id: string
   date: string
   status: 'done' | 'partial' | 'not_started'
   percent: number                 // round(100 × done / applicable); 0 when applicable = 0
   applicable: number              // live steps minus neutral ones
-  done: StepRef[]                 // RT-5 — always returned, never discarded
-  not_done: StepRef[]
-  neutral: StepRef[]              // planned skips (+ logged skips when the user's policy says 'neutral')
+  done: RoutineStepRef[]                 // RT-5 — always returned, never discarded
+  not_done: RoutineStepRef[]
+  neutral: RoutineStepRef[]              // planned skips (+ logged skips when the user's policy says 'neutral')
   policy_source: 'user' | 'undefined'
   policy_note?: 'no_required_steps' | 'required_steps_all_neutral'   // see rule E5
 }
@@ -136,6 +136,41 @@ policy") but not its encoding. This is the smallest encoding that expresses it, 
 11. **Read-only:** `sync_queue` count unchanged by `evaluateRoutine`.
 12. **Partial always returned (RT-5):** a `partial` evaluation lists every done step under every policy kind.
 Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential · g2 · /critique · §XXIX.
+
+## Preflight (gate 2): `/preflight` PASSED, 0 gaps (after Approval 1, 2026-10-22)
+| Layer | Specified? | Where |
+|---|---|---|
+| Backend (in-process, read-only op; no endpoint/auth) | ✅ `evaluateRoutine`, `RoutineEvaluation`, `RoutinePolicy`/`RoutinesPrefsPort`, rules E1–E8 | §Types · §Operation flow |
+| Database | ✅ reads only: `routines` (guard), `routine_step` (all, incl. soft-deleted, for the as-of set), `routine_completions` (rows for `date`). No writes, no schema change | E1/E1b/E2 |
+| Integration | ✅ reflection reads via public APIs only: `tasks.getTask`, `habits.getCalendar`; the policy via `prefs.policyFor` | E2 |
+| Durable-doc invariants | ✅ derive-not-cache (BR-RT-S1-3, rule 3) · planned skip neutral (BR-RT-S3-3) · the S3d drive rules untouched. Doc drift lines amended (scope 5) | `current-business-rules.md` |
+
+**Assumptions pinned:**
+1. The habit day comes from `habits.getCalendar(habitId, date.slice(0,7))`; no entry for `date` ⇒ not done. `getCalendar` throws an **untyped** `Error`
+   for a missing/soft-deleted habit (`services/habits/service.ts:383-384`, `loadHabitOrThrow`) ⇒ caught ⇒ "not done by reflection" (read-only
+   degrade, E2). The calendar is called **once per habit step** (M1 cost is acceptable).
+2. Task reflection: `tasks.getTask(id)` returns null for a missing/soft-deleted task ⇒ not done.
+3. The ledger rows for `date`: one query `routine_completions.completed_date = date`, filtered to the routine's step ids (no per-step query).
+4. All steps: `stepsRepo.findWhere(eq(routine_id))` **without** the soft-delete filter (this is the one deliberate exception to rule 7; the as-of filter
+   E1b applies instead). `created_at`/`deleted_at` (ms) → `utcDay` for the comparison.
+5. `done`/`not_done`/`neutral` lists are in sequence order (`step_order`, `created_at`, id: the S2c 3-key sort).
+6. The port's policy is **trusted as typed** (no routines-side Zod or range check: validation belongs to the policy owner, Spaces/Preferences).
+   An unknown `completion.kind` at runtime ⇒ treated as undefined (E6), never a throw.
+7. New names (`RoutineEvaluation`, `RoutinePolicy`, `RoutinesPrefsPort`, `CompletionRule`, `RoutineStepRef`, `EvaluateRoutineSchema`) collide with
+   nothing in `packages/core/src` or `packages/types/src` (grep).
+8. `EvaluateRoutineSchema = z.object({ date: CalendarDate.optional() })`; signature `evaluateRoutine(routineId, input?: { date? })` (an options object,
+   consistent with `runStep`; seam amended).
+
+## Implementation plan (§5, worked via `victor:execute-plan-code`)
+1. **Tests first (red):** Gate 1–12 in a new `S4 — policy evaluation` block (a stub `RoutinesPrefsPort` per test; a harness option `prefs`).
+2. **validators/routine.ts:** `EvaluateRoutineSchema`.
+3. **types.ts + index.ts:** `CompletionRule` · `RoutinePolicy` · `RoutinesPrefsPort` · `RoutineStepRef` · `RoutineEvaluation` · `prefs?` dep ·
+   `evaluateRoutine` on the interface · exports.
+4. **service.ts:** `stepsAsOf(routineId, date)` · `completionsOn(stepIds, date)` · `reflectsDone(step, date)` · `classify` · `judge(policy, buckets)` ·
+   `evaluateRoutine`. **Gate point = steps 2–4.**
+5. **Docs (scope 5/6):** amend the "shipped default" lines (contract, seam, slice-map S4, interp rule 4/R4, current BR; annotate ROU-24/30) + the
+   seam `RoutineEvaluation` additions + the S5 note (applicable = 0 is neutral).
+6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` sequential · g2 · /critique · §XXIX.
 
 ## g1 critique (folded): REVISE → 4 blocking fixed (reflection per the slice-map "ledger + driven-step occurrences"; exact-ratio threshold; as-of-date
 step set; every contradicting "shipped default" line amended) + 7 non-blocking (miss sub-object, window deferred to S5; E4 precedence + threshold 0;
