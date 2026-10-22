@@ -1,5 +1,15 @@
 <!-- Last updated: 2026-10-20 by /session-end -->
 
+## fe-calendar S6 — first-consumer reads (2026-10-21 — LIF-203)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-21 | EC-9 open time | build `planner.getStudyAvailability`? | **RATIFY `sessions.listAvailability` + `listAvailabilityExceptions`** | no planner service; sessions owns availability (G7); weekly windows make a range arg meaningless — the dated reveal is S7's derivation | yes |
+| 2026-10-21 | EC-10 slip flag | `tasks.getSlipping` vs derive | **derive in S7 over `listTasks({open:true})`** | doc-CLOSED: tasks current-spec:286-289 "overdue reads ship as listTasks({open, due_before})" | yes |
+| 2026-10-21 | EC-6 purpose budget | `advertise('purpose_budget:<id>')` | **honest-null "unmeasured"** (D-S6-DEV-1); measure + colour → LIF-195 | registry is sync+scalar [0,1]; purposes is its consumer; hours-per-purpose + purpose colour have no source/definition (no column, no doc) | yes |
+| 2026-10-21 | EC-7 habit threads | raw completion rows | **`habits.getCompletionGrid`** (BR-HB-35) returning `scheduled` | "missed" needs the private BR-S2-4 predicate — re-deriving it in apps/web would duplicate business logic | yes |
+| 2026-10-21 | Thread rest day | how does a non-daily habit's unscheduled day read | **`off` ThreadState (never `missed`)**, render in S7 | the streak walk never counts an unscheduled day as a miss (BR-S2-4/S2-5) | yes |
+
 ## fe-calendar ② S5 — Living lens renderer (2026-10-21 — LIF-203)
 
 | Date | Area | Decision | Choice | Reason | Reversible |

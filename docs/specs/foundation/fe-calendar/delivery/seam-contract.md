@@ -101,14 +101,26 @@ never fabricates a write.
 ## C · `@vida/core` first-consumer reads (S6 — thin, additive, no schema change; honest-null on absence)
 
 ```ts
-// Each returns a ProviderRead-shaped promise consumed by B. All reads; none write.
-habits.getHabitCompletions(from: string, to: string): Promise<HabitCompletionRow[]>     // EC-7 (habit_completions, YYYY-MM-DD)
-planner.getStudyAvailability(range: { from: string; to: string }): Promise<StudyAvailabilityRow[]> // EC-9 (study_availability)
-tasks.getSlipping(asOf: number): Promise<{ id: string; title: string; dueDate: string }[]>  // EC-10 (derive scheduled_date vs due_date vs completed_at — D5, no history)
-// EC-6 — Purpose advertises a queryable budget measure via the shipped measurement-source registry (ADR-011 §3.6):
-purposes.registerMeasures(reg: MeasurementSourceRegistry): void  // reg.advertise('purpose_budget:<id>', () => hours|null) — unadvertised ⇒ null (honest)
+// S6 SHIPPED (grounded — PLAN-S6-first-consumer-reads.md §2): ONE new read; the rest were already answered.
+// Each is consumed by B as a ProviderRead<T> (() => Promise<T>) — plain service methods, NOT ViewProviderRegistry providers.
+// EC-7 — NEW (BR-HB-35): every active habit (sort_order, id) × every day of [from,to], one ledger query.
+habits.getCompletionGrid(range: { from: string; to: string }): Promise<{ habit: Habit; days: { date: string; scheduled: boolean; count: number; done: boolean }[] }[]>
+// EC-9 — RATIFIED (no planner service exists; sessions owns availability): weekly windows + dated exceptions.
+sessions.listAvailability(): Promise<Availability[]>            // day_of_week · start/end HH:MM · is_available
+sessions.listAvailabilityExceptions(): Promise<AvailabilityException[]>  // exception_date · is_available · times
+// EC-10 — RATIFIED (tasks current-spec:286-289 — "overdue reads ship as listTasks({open:true, due_before})"):
+tasks.listTasks({ open: true }): Promise<TaskRow[]>             // due_date · scheduled_date · completed_at → the D5 slip derive (S7)
+// EC-6 — HONEST-NULL in M1 (D-S6-DEV-1): NO advertise (the registry is sync+scalar [0,1]; hours-per-purpose undefined).
+purposes.listPurposes(): Promise<PurposeRow[]>                  // name ← title · color absent (D-S6-DEV-2) · hours/fraction null
 // EC-2/EC-3 — REUSE (no new code): journals.buildDashboard(registry, date, selection?) per day (D2).
 ```
+**S7 derivation notes (from S6):** (a) open time = the weekly windows on the focused week's dates − that date's
+exceptions; (b) slip = `listTasks({open:true})` rows with `due_date < today` or `scheduled_date > due_date`, limited to
+the focused week (the read is unwindowed); (c) budget = `listPurposes()` → `name ← title`, colour absent, hours/fraction
+null → "unmeasured"; the hours + colour measure is a borrowed leg → **fe-purposes-and-goals (LIF-195)** ELC (prove the
+Linear edge at S7 close); (d) ThreadState per BR-CAL-S6-7: `done` → kept · scheduled ∧ ¬done ∧ past → missed · today ·
+future · ¬scheduled ∧ ¬done → **off** (a new V13 state, rendered + Visual-Gated in S7, D-S6-DEV-3); V13 `color` becomes
+optional (D-S6-DEV-2).
 
 ## Open at build (ratify per slice)
 - ~~The exact `Daypart` clock-bands (D1) + the all-day-task default band — settle at S2 `/contract`.~~ **SETTLED
@@ -116,8 +128,10 @@ purposes.registerMeasures(reg: MeasurementSourceRegistry): void  // reg.advertis
   greybox: 09:30→Morning, 17:00→Afternoon); an all-day task defaults to **morning**, configurable at `useCalendar`.
   Applied by `useCalendar` (S7), never by the renderer. Canonical `DAYPART` minted in `@vida/types` `common.ts`.
   [PLAN-S2-agenda-renderer.md §3 · v10-agenda-view.md §3]
-- Whether `tasks.getSlipping` is a tasks-service method or a derivation folded into `useCalendar` from a plain
-  `tasks` list read — settle at S6 (both honest-null; no schema either way).
+- ~~Whether `tasks.getSlipping` is a tasks-service method or a derivation folded into `useCalendar` from a plain
+  `tasks` list read — settle at S6 (both honest-null; no schema either way).~~ **CLOSED (S6, 2026-10-21) by the tasks
+  docs:** "overdue reads ship as `listTasks({ open:true, due_before })`" [docs/modules/tasks/current-spec.md:286-289] →
+  derived in `useCalendar` (S7) over `listTasks({open:true})`; no `getSlipping`.
 - `onToggleItem`/`onSlotOpenTime` target capabilities — **M1 wiring = the handler is ABSENT (deny-safe) until the
   owning capability ships** (amended S2, D-S2-DEV-3: a no-op handler renders dead focusable controls; absent ⇒ the
   renderer's read-only state). The intent surface is fixed here so the renderer never changes when it lands — S7/the

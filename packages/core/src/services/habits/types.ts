@@ -88,6 +88,21 @@ export interface CalendarDay {
   done: boolean
 }
 
+/** fe-calendar S6 (EC-7) — one day of the cross-habit completion grid: `scheduled` = the BR-S2-4 predicate; `count`
+ *  = that day's ledger count (0 when none); `done = count >= target_count`. An off-schedule completion keeps
+ *  `scheduled:false` with its count/done (BR-HB-14). Mapping to a thread state is the consumer's (fe-calendar S7). */
+export interface HabitGridDay {
+  date: string
+  scheduled: boolean
+  count: number
+  done: boolean
+}
+/** fe-calendar S6 (EC-7) — an active habit with one `HabitGridDay` per day of the range (inclusive, ascending). */
+export interface HabitGridRow {
+  habit: Habit
+  days: HabitGridDay[]
+}
+
 /** listHabits filter (HAB-04) — narrow the Dashboard / All-Habits read (M1). */
 export interface HabitFilter {
   is_active?: boolean
@@ -173,4 +188,9 @@ export interface HabitsService {
   /** HB-6 journal-support — the day's due-habit count + how many are done (the Journal `/summary` consumption
    *  shape; used by the registered JournalContribution). */
   getDayCompletionDigest(date: string): Promise<{ due: number; done: number }>
+
+  /** BR-HB-35 · fe-calendar S6 (EC-7) — the cross-habit completion grid the Global Calendar's habit threads read:
+   *  every active, non-deleted habit (sort_order, then id) × every day of `[from, to]`. One ledger query. An inverted or
+   *  malformed range walks zero days (the S4 range reads don't validate — BR-HB-28 throws only for a missing habit). */
+  getCompletionGrid(range: HabitDateRange): Promise<HabitGridRow[]>
 }
