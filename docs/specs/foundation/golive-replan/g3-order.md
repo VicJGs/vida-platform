@@ -20,10 +20,15 @@
 | Wave | Units | Why here |
 |---|---|---|
 | **L0** | `data-plane-wiring` ✅ (#148): its missing row is added | the shared root (`← AR-2, AR-4`) |
+| **L0′** *(added 2026-10-22)* | **fix-data-plane-boot-open** (structure `#60`) | a repair of the Done data plane, found by the fe-calendar S7 live gate (dev boot intermittent · prod build never opens) — every live surface sits behind the boot, so it routes ahead of L1 (§1 rule: debt right after the data-plane row) · bug unit `docs/specs/fixes/data-plane-boot-open/` |
 | **L1** | **preferences-rescope** · **notes-rescope** · **sessions-rescope** | no debt blockers: preferences = the hub; notes' only edge to preferences is soft; sessions is independent |
 | **L2** | **gamification-rescope** · **shell-rescope** · **notifications-rescope** · **journals-rescope** (slices before the dashboard) | ← preferences (all) · notifications ← sessions · journals ← notes + preferences |
 | **late** | **journals-rescope·dashboard** (sub-issue: EC-4 + 11 widgets + the **journals ENTITY CLOSE**) | ← HARD-1 (M1.4, ← every `MOD-*`). Encoded as a **⊕split sub-issue** of journals-rescope (same unit, same ledger, `frontend-replan/reconstructed-structure.md` §0 "⊕split → sub-issues"), so the early slices aren't held at the tail. *§XXVIII note: G2 rev 3 said "final slices"; G3 encodes them as a sub-issue so the late blocker stays db-10-proof. Scope unchanged.* |
 | **downstream edges** | fe-sessions ← sessions-rescope (holds the sessions ENTITY CLOSE) · fe-tasks / fe-projects ← notes-rescope · note-open-behavior-preference ← preferences-rescope · **HARD-4 ← all 7 units + the dashboard sub-issue** | from debt-plan §1/§2/edge-only notes |
+
+> **Renumbered 2026-10-22:** `fix-data-plane-boot-open` (LIF-250) took structure **#60** (L0′), so the structure now runs
+> **1→144** and every later `#` shifted +1 (the debt units are #61–67, the dashboard sub-issue #116, HARD-4 #123). `#` values
+> quoted in this doc's gate log and in `g4-edge-ledger.md` are records of 2026-10-21 and predate the shift.
 
 **Parallel tracks keep running:** mod-routines (① backend, M1.1.2) and fe-calendar (S5–S7, in flight) are independent
 of L1/L2. fe-calendar's S7 closes under the ELC.

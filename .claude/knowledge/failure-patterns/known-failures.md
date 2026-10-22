@@ -59,3 +59,21 @@
 **Symptom:** full `@vida/core` run shows 1–4 reds in `src/encryption/__tests__/vault.test.ts` (`deriveMasterKey`, `unlockKeyChain`, `encryptBytes … handles large data (1 MB)`) taking 6–143 s against a 20 s budget.
 **Root cause:** ENVIRONMENTAL. CPU-bound Argon2id + 1 MB XChaCha tests are marginal on this Mac; they time out when the full suite runs concurrently or another session runs vitest (load avg 100–400). Not a code regression — appears on branches that touch no encryption file.
 **Fix:** check `uptime` + `pgrep -fl vitest`; re-run `npx vitest run src/encryption/__tests__/vault.test.ts` alone on an idle machine (expect 36/36, seen 2026-10-20). Record, don't patch. Candidate follow-up outside any module: mark the 1 MB test `slow`/raise its timeout.
+
+## F007 — the live app shows "Failed to open the local database: DB worker RPC 1 (open) timed out after 15000ms"
+**Symptom:** on a page load of the running app (dev server or a `vite preview` production build) the boot screen shows the
+timeout + Retry. Dev: intermittent, Retry opens the DB with data intact. Production build: every load; the worker chunk
+loads (200) but never requests its wasm. (fe-calendar S7 live gate, 2026-10-22.)
+**Root cause:** UNKNOWN — filed as **LIF-250** `fix-data-plane-boot-open` (bug unit `docs/specs/fixes/data-plane-boot-open/`:
+hypotheses = the previous document's worker still holding the exclusive AccessHandlePoolVFS OPFS handles · the prod
+worker's wasm locate path). NOT caused by a feature change if the diff doesn't touch `apps/web/src/db/*` / `vite.config.ts`.
+**Fix (until LIF-250 lands):** in a gate, press the app's own Retry (or wait, then reload) — don't misread it as your
+regression; never measure performance on the prod build until LIF-250 is fixed (it can't boot).
+
+## F008 — a wave of FIRST-test-of-file timeouts across unrelated files in a full-suite run
+**Symptom:** 10+ files fail their first test at 5–19 s (Select, Tabs, Menu, AppShell, App first-run…) — files the change
+never touched.
+**Root cause:** ENVIRONMENTAL load — the run competed with a dev server, a `vite preview` and a Playwright browser
+(same class as the cold Tamagui load under concurrency).
+**Fix:** stop the servers/browsers you started, re-run ONLY the failed files in isolation; green there = flake, not a
+regression. Run full suites on a quiet machine, sequentially per package.
