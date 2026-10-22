@@ -59,3 +59,16 @@
 **Symptom:** full `@vida/core` run shows 1–4 reds in `src/encryption/__tests__/vault.test.ts` (`deriveMasterKey`, `unlockKeyChain`, `encryptBytes … handles large data (1 MB)`) taking 6–143 s against a 20 s budget.
 **Root cause:** ENVIRONMENTAL. CPU-bound Argon2id + 1 MB XChaCha tests are marginal on this Mac; they time out when the full suite runs concurrently or another session runs vitest (load avg 100–400). Not a code regression — appears on branches that touch no encryption file.
 **Fix:** check `uptime` + `pgrep -fl vitest`; re-run `npx vitest run src/encryption/__tests__/vault.test.ts` alone on an idle machine (expect 36/36, seen 2026-10-20). Record, don't patch. Candidate follow-up outside any module: mark the 1 MB test `slow`/raise its timeout.
+
+## F007 — "Failed to open the local database: DB worker RPC 1 (open) timed out after 15000ms" on a dev-server RELOAD
+**Symptom:** in `vite` dev, a page **reload** shows the boot error screen with the 15 s `open` RPC timeout; clicking
+**Retry** boots in ~250 ms on the same worker. The first navigation to a fresh origin usually boots (slowly).
+**Root cause:** ENVIRONMENTAL. The fresh worker's first `open` (Vite dev serving + transforming the worker + wa-sqlite
+WASM, OPFS pool open, migrations) exceeds `RPC_TIMEOUT_MS = 15_000` (`apps/web/src/db/client.ts:50`) when the machine is
+saturated (load avg 85–320, other sessions running full suites). **Not a code regression:** reproduced identically on
+`main` @ c025710 (with the old `beforeunload → terminate()`), and on preferences-rescope with the worker explicitly
+terminated before the reload (so it is not OPFS handles held by a lingering worker). Seen 2026-10-22 (preferences-rescope
+R2 live smoke).
+**Fix:** check `uptime`; re-run the live check when the machine is quiet, or click Retry and continue. Record, don't patch.
+Candidate follow-up outside any unit: a longer timeout for the `open` op specifically (cold WASM), keeping 15 s for
+statements.

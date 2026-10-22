@@ -124,6 +124,16 @@ facts (routing tree + store inventory) that the AR-4 snapshot above no longer de
 - **M4 portability note** — mobile/desktop drizzle proxies (expo-sqlite / Tauri plugin) will need the same
   transaction serialization if their drivers are async; not built (YAGNI). `[INTENT]`
 
+## preferences-rescope R2 — the live Preferences seam (2026-10-22 · LIF-247)
+- **`preferences/`** (new feature folder): `preferences-keys.ts` · `preferences-view.ts` (pure mapper + the one map-aware
+  merge per table) · `write-queue.ts` (serial + debounced, `onSettled` per batch) · `preferences-writer.ts` (cache truth;
+  the exported write path; BR-PREF-6 key validation) · `writer-instance.ts` (the app singleton) · `use-preferences.ts`
+  (`usePreferences` / `useUpdatePreferences`) · `preferences-bridge.tsx` (transitional mirror + hide flush). `[FACT]`
+- **`db/composition-root.ts`** — `Services.preferences` (`createPreferencesService`, no deps). `[FACT]`
+- **`App.tsx`** — `QueryClientProvider` hoisted (BR-RT-11 as-built); `<PreferencesBridge/>` mounted once. `[FACT]`
+- **Tests** — `src/test/preferences-test-utils.tsx` (singleton-client wrapper, in-memory fake service,
+  `compositionRootMock(extra)`); mapper 13 · queue 6 · writer 11 · hooks 6 · bridge 3. `[FACT]`
+
 ## Downstream (INTENT — consumers)
 - **UI-3** (`@vida/editor`, LIF-88) ← UI-1, **AR-4** — the editor mounts in routes + issues React Query reads.
 - **UI-4** (app shell, LIF-89) ← UI-1, UX-3 — implements the UX-3 layout on AR-4's router.

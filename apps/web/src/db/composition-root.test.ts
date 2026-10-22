@@ -25,6 +25,7 @@ describe('composition root', () => {
   it('serializes concurrent service writes through the write lock', async () => {
     const { getServices } = await import('./composition-root')
     const services = await getServices()
+    expect(services.preferences).toBeDefined() // ELC-3 — preferences-rescope R2
     await Promise.all([
       services.notes.createPage({ type: 'note', title: 'a' }),
       services.notes.createPage({ type: 'note', title: 'b' }),

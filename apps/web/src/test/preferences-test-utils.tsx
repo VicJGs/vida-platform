@@ -1,0 +1,91 @@
+// preferences-rescope R2 (LIF-247) — shared test utilities for the live Preferences seam.
+//
+// ⚠ This module must NOT import `db/composition-root` or `preferences/preferences-writer`, even transitively: tests mock
+// the composition root with an async factory that imports THIS file while the mocked module is being created.
+//   vi.mock('../db/composition-root', async () =>
+//     (await import('../test/preferences-test-utils')).compositionRootMock())
+// The wrapper provides the app's SINGLETON queryClient — the writer syncs that client, so a per-test client would never
+// see writer updates. Reset between tests: `afterEach(() => { queryClient.clear(); resetPreferencesWriterForTests() })`.
+import { createElement, type ReactNode } from 'react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { NAV_PREFERENCES_DEFAULTS, USER_PREFERENCES_DEFAULTS, type PreferencesService } from '@vida/core'
+import type { MergedNavPreferences, MergedPreferences } from '@vida/types'
+import { queryClient } from '../lib/query-client'
+
+export function createPrefsWrapper() {
+  return function PrefsWrapper({ children }: { children: ReactNode }) {
+    return createElement(QueryClientProvider, { client: queryClient }, children)
+  }
+}
+
+const tick = () => new Promise((r) => setTimeout(r, 0))
+
+/**
+ * An in-memory PreferencesService. Like the real one, the singleton write is read-then-create with an await in between
+ * (service.ts:263-266), so concurrent first writes would double-create unless the caller serializes them (IR-10).
+ */
+export function fakePreferencesService() {
+  const state = {
+    user: null as MergedPreferences | null,
+    nav: null as MergedNavPreferences | null,
+    creates: { user: 0, nav: 0 },
+    updates: { user: 0, nav: 0 },
+    failNext: null as Error | null,
+    reads: { user: 0, nav: 0 },
+  }
+  const svc = {
+    async getMergedPreferences() {
+      state.reads.user++
+      await tick()
+      return { ...(state.user ?? USER_PREFERENCES_DEFAULTS) }
+    },
+    async updatePreferences(patch: Partial<MergedPreferences>) {
+      if (state.failNext) {
+        const e = state.failNext
+        state.failNext = null
+        throw e
+      }
+      const existing = state.user
+      await tick() // the read-then-create window
+      if (!existing) state.creates.user++
+      else state.updates.user++
+      state.user = { ...(existing ?? USER_PREFERENCES_DEFAULTS), ...patch }
+      return { ...state.user }
+    },
+    async getNavPreferences() {
+      state.reads.nav++
+      await tick()
+      return { ...(state.nav ?? NAV_PREFERENCES_DEFAULTS) }
+    },
+    async updateNavPreferences(patch: Partial<MergedNavPreferences>) {
+      if (state.failNext) {
+        const e = state.failNext
+        state.failNext = null
+        throw e
+      }
+      const existing = state.nav
+      await tick()
+      if (!existing) state.creates.nav++
+      else state.updates.nav++
+      state.nav = { ...(existing ?? NAV_PREFERENCES_DEFAULTS), ...patch }
+      return { ...state.nav }
+    },
+  }
+  return { svc: svc as unknown as PreferencesService, state }
+}
+
+/** The fake the composition-root mock serves (module singleton — tests import it from here too). */
+export let testPreferences = fakePreferencesService()
+
+/** Fresh fake per test (call in beforeEach when a test needs a clean store). */
+export function resetTestPreferences() {
+  testPreferences = fakePreferencesService()
+  return testPreferences
+}
+
+/** The `../db/composition-root` mock: `getServices()` serves the current fake + any extra services. */
+export function compositionRootMock(extra: Record<string, unknown> = {}) {
+  return {
+    getServices: () => Promise.resolve({ preferences: testPreferences.svc, ...extra }),
+  }
+}

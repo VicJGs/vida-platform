@@ -6,6 +6,8 @@ import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/re
 
 const h = vi.hoisted(() => ({ ensureDbReady: vi.fn(), read: vi.fn(), write: vi.fn() }))
 vi.mock('./db/boot', () => ({ ensureDbReady: h.ensureDbReady }))
+// preferences-rescope R2: the PreferencesBridge (mounted in App) reads via the composition root — serve the fake.
+vi.mock('./db/composition-root', async () => (await import('./test/preferences-test-utils')).compositionRootMock())
 vi.mock('./onboarding/first-run-repo', () => ({
   readFirstRunComplete: h.read,
   writeFirstRunComplete: h.write,

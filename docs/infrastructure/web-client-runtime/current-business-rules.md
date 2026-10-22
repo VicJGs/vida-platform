@@ -16,7 +16,9 @@
    `false` because there is no remote server to re-fetch from (local-first / ZK — the server is a blob relay only).
    `[performance-strategy.md:295,301; CLAUDE.md core privacy model]`
 4. **[INTENT] BR-RT-4 — no optimistic updates by default.** Local reads are <10 ms, so writes invalidate and
-   re-read rather than optimistically patching the cache. `[data-flow.md:427]`
+   re-read rather than optimistically patching the cache. `[data-flow.md:427]` **Pinned exception (preferences-rescope
+   R2):** Preferences writes are optimistic + revert — fe-settings EC-7 pins it — via the writer's
+   `confirmed + pending` cache model (`apps/web/src/preferences/`). `[FACT]`
 5. **[INTENT] BR-RT-5 — cache times are set by volatility, not per-query guesswork.** Global defaults
    `staleTime 30s · gcTime 5m · retry 1`; category overrides high 30s/5m · medium 60s/10m · low 5m/30m ·
    reactive 0s/5m. `[performance-strategy.md:238-301]`
@@ -40,6 +42,9 @@
 ## Provider hierarchy & standards inheritance
 11. **[INTENT] BR-RT-11 — providers mount in `App.tsx`** (the "provider hierarchy"): `QueryClientProvider` wraps
     `RouterProvider`; `main.tsx` stays a bare root. `[platform-strategy.md:296; system-overview.md:269]`
+    **As-built (preferences-rescope R2):** `UIProvider ⊃ QueryClientProvider ⊃ { PreferencesBridge · first-run
+    Onboarding | RouterProvider · guided-setup overlay · ToastProvider }` — hoisted so onboarding writes reach the same
+    cache Settings reads. `[FACT: App.tsx]`
 12. **[FACT] BR-RT-12 — inherits engineering §XVI–XVII:** logic-bearing components extract a custom hook (component
     = pure UI); one Zustand store per domain, no giant global store; local UI state stays in `useState`.
     `[STANDARDS engineering §XVI-XVII]` (Note: this is a **Vite SPA**, so the Next.js App-Router/Server-Component
@@ -50,7 +55,8 @@
   Zustand stores are per-app React hooks at `apps/web/src/stores/<feature>-ui-store.ts` (v5 curried `create<T>()`),
   NOT vanilla-in-`packages/core`. Revisit at M4 if a cross-platform store consumer appears. `[FACT: ADR-020; stores/app-shell-ui-store.ts]`
 - **[FACT] BR-RT-HOME — RESOLVED:** homes are `stores/`·`hooks/`·`routes.tsx`·`App.tsx`·`lib/`·`db/` (architecture
-  docs over the §149 shorthand). `[FACT: apps/web/src/* as-built]`
+  docs over the §149 shorthand), **plus per-feature folders holding their own `use-*.ts` hooks** — the as-built practice
+  (`notes/`, `home/`, `preferences/`). `[FACT: apps/web/src/* as-built]`
 - **[FACT] BR-RT-D5 — the DB is reached via the worker client.** The main thread never holds a driver directly; all
   reads/writes go through `db/client.ts` (an `SqliteDriver` proxy over the worker RPC). **`exec`/`values`/`batch`
   landed via `data-plane-wiring` (2026-10-20)** — they RPC to the worker `exec`/`values`/`batch` ops, which call the
@@ -58,8 +64,8 @@
   `createDrizzleProxy(client.driver)` works end-to-end. Writes over it are serialized by BR-RT-LOCK. The client is spawned once + opened once (`db/boot.ts`,
   StrictMode-safe). `[FACT: db/{worker,client,boot}.ts]`
 - **[FACT] BR-RT-COMPROOT — the live services are a module singleton.** `db/composition-root.ts` lazily constructs
-  `DrizzleDb = createDrizzleProxy(client.driver)` + the module services (notes/journals + deps) ONCE, after the
-  DB-ready gate, exposed as a `getServices()` singleton (not a React provider — App.tsx untouched; `seams/CLAUDE.md`
+  `DrizzleDb = createDrizzleProxy(client.driver)` + the module services (notes/journals/preferences + deps) ONCE, after the
+  DB-ready gate, exposed as a `getServices()` singleton (not a React provider; `seams/CLAUDE.md`
   sanctions the singleton). `deviceId` is read from / generated into `app_state['device_id']` (ADR-002 §5.0; `uuidv7()`).
   Each entity's closing slice (`register + flip`, golive-replan ELC-3/4) consumes it; adding a module appends its construction. `[FACT: db/composition-root.ts]`
 - **[FACT] BR-RT-LOCK — writes are serialized app-wide (preferences-rescope R1, 2026-10-21).** drizzle's sqlite-proxy
@@ -73,6 +79,12 @@
   or `driver.run` (the first-run marker runs exclusive; the boot-time `deviceId` write precedes every service). Reads are
   NOT locked (they may observe uncommitted rows; consumers that roll back optimistically re-read). Per-table write
   queues above this (read-then-create races) stay the owning hook's job. `[FACT: db/write-lock.ts; composition-root.ts]`
+- **[FACT] BR-RT-PREFS — the Preferences seam (preferences-rescope R2, 2026-10-22).** React Query over SQLite is the source
+  of truth (Zustand stores are at most derived caches — `preferences-store` is a transitional mirror until R6). Two exact
+  keys `['preferences','user']` / `['preferences','nav']`, low-volatility category 5 min / 30 min. ONE writer owns cache
+  truth per table (`confirmed` + `pending`; cache = pending re-applied on confirmed), serial + 500 ms debounced queues,
+  per-sub-key `dashboard_layout` + map merges, a hide/pagehide flush. **Every `user_preferences`/`nav_preferences` writer in
+  any unit uses `preferences/writer-instance.ts`**, never the raw service. `[FACT: apps/web/src/preferences/]`
 - **[FACT] BR-RT-TEARDOWN — worker teardown on non-cancelable lifecycle events only (R1).** `db/boot.ts`
   `registerTeardown`: `pagehide` + `persisted` → `terminate()` (a bfcached page must not hold the exclusive OPFS
   handles) · `pageshow` + `persisted` → reload · a normal unload → nothing (the browser discards the worker). Never

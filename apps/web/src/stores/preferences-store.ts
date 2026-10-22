@@ -4,10 +4,10 @@ import { create } from 'zustand'
 // selection lives in theme-store.ts). House Zustand pattern (app-shell-ui-store.ts). Ephemeral UI state, module-scope
 // singleton.
 //
-// ⚠ Hydrate-on-boot + persistence are DEFERRED SEAMS (seam-contract §A0): the live preferences read/write path is
-// blocked by the apps/web worker-RPC `values` seam (db/client.ts:154) — the same first-consumer home fe-notes deferred.
-// `hydrate()` is the activation point (use-preferences.ts calls it once the seam lands). In M1 these are in-session only
-// (do not survive reload). S5 extends this store with moduleVisibility / moduleNames for the Modules pane.
+// ⚠ TRANSITIONAL MIRROR (preferences-rescope R2): React Query over SQLite is the source of truth (apps/web/src/preferences/);
+// `PreferencesBridge` hydrates this store from the persisted view so the not-yet-migrated panes render persisted values.
+// Each pane moves onto `useUpdatePreferences` in its slice (R3/R5/R6); R6 deletes this store. Pane edits made here
+// before their slice lands are in-session only. S5 extends this store with moduleVisibility / moduleNames for the Modules pane.
 
 export type HomeArrangement = 'journalFirst' | 'dashboardFirst'
 export type TimeFormat = '12h' | '24h'

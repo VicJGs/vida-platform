@@ -42,8 +42,10 @@ import { InvalidModuleError } from './types'
 
 /**
  * The merge base (PR-2 single source, structure-data.md:44). Mirrors every `.default(...)` in
- * schema/preferences.ts EXACTLY — a field's default is authored here in the same shape as its column.
- * `[FACT: schema/preferences.ts:45-88]`
+ * schema/preferences.ts — a field's default is authored here in the same shape as its column — with ONE deliberate
+ * divergence: `feature_gamification` is `false` here (GM-1 opt-in, gamification/business-rules.md:12-16;
+ * preferences-rescope F11) while the DDL keeps `DEFAULT 1`. The service always writes the full defaults on create, so
+ * the DDL default is never used. `[FACT: schema/preferences.ts:45-88]`
  */
 export const USER_PREFERENCES_DEFAULTS: MergedPreferences = {
   // Appearance
@@ -84,8 +86,8 @@ export const USER_PREFERENCES_DEFAULTS: MergedPreferences = {
   push_routines: true,
   push_contacts: true,
   push_study: true,
-  // Features
-  feature_gamification: true,
+  // Features — GM-1: the System is opt-in (diverges from the DDL default on purpose; see the docblock above)
+  feature_gamification: false,
   // Onboarding & persona (E9)
   persona: null,
   motivation_style: null,

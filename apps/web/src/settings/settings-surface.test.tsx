@@ -1,18 +1,36 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, within } from '@testing-library/react'
+
+// preferences-rescope R2: Settings reads the live seam (React Query over the composition root) — serve the fake.
+vi.mock('../db/composition-root', async () => (await import('../test/preferences-test-utils')).compositionRootMock())
 import { UIProvider, THEME_DEFAULT } from '@vida/ui'
 import SettingsSurface from './settings-surface'
 import { useThemeStore } from '../stores/theme-store'
 import { usePreferencesStore } from '../stores/preferences-store'
+import { queryClient } from '../lib/query-client'
+import { createPrefsWrapper, resetTestPreferences } from '../test/preferences-test-utils'
+import { resetPreferencesWriterForTests } from '../preferences/writer-instance'
 
-afterEach(cleanup)
+const PrefsWrapper = createPrefsWrapper()
+
+afterEach(() => {
+  cleanup()
+  queryClient.clear()
+  resetPreferencesWriterForTests()
+  resetTestPreferences()
+})
 beforeEach(() => {
   useThemeStore.setState({ selection: THEME_DEFAULT })
   usePreferencesStore.setState({ reduceMotion: false, arrangement: 'journalFirst' })
 })
 
-const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
+const renderUI = (ui: React.ReactNode) =>
+  render(
+    <PrefsWrapper>
+      <UIProvider>{ui}</UIProvider>
+    </PrefsWrapper>,
+  )
 
 describe('SettingsSurface (fe-settings S3 — EC-1/EC-7/EC-8)', () => {
   it('EC-1 — renders a named Settings region with the two-pane layout', () => {

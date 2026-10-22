@@ -15,6 +15,7 @@ import { GuidedSetupInvitation } from './onboarding/guided-setup-entry'
 import { GuidedSetupTakeover } from './onboarding/guided-setup-mount'
 import { router } from './routes'
 import { useThemeStore } from './stores/theme-store'
+import { PreferencesBridge } from './preferences/preferences-bridge'
 
 export function App() {
   // Gate rendering on the local DB being open+migrated: React Query reads local
@@ -28,10 +29,10 @@ export function App() {
   // (before the early returns) — Rules of Hooks. `status` gates the branch below (S4-BR-c).
   const firstRun = useFirstRun(dbReady)
 
-  // fe-settings S2 (EC-5): the theme selection is app-owned (AR-4) and lives in the Zustand theme store — the SINGLE
-  // source of truth. The Settings Appearance controls (S3) and the guided-setup theme picker (fe-onboarding S4) both
-  // dispatch here, so the whole app re-themes live. Boots at THEME_DEFAULT; hydrate-on-boot is a deferred seam
-  // (seam-contract §A0 — blocked by the worker `values` seam, first-consumer home).
+  // fe-settings S2 (EC-5): the theme selection is app-owned (AR-4) and feeds `UIProvider` from the Zustand theme store.
+  // The Settings Appearance controls (S3) and the guided-setup theme picker (fe-onboarding S4) both dispatch here, so the
+  // whole app re-themes live. preferences-rescope: React Query over SQLite is the source of truth (gate A6); this store
+  // becomes a derived cache hydrated before first paint in R3 — until then it boots at THEME_DEFAULT.
   const selection = useThemeStore((s) => s.selection)
   const setPreset = useThemeStore((s) => s.setPreset)
 
@@ -97,35 +98,48 @@ export function App() {
   //
   // UI-4 · S4: the first-run branch (FIRST_RUN_BRANCH — before <RouterProvider>). On first launch render the
   // onboarding takeover (full-viewport, OUTSIDE the router/AppShell — S4-BR-h); its completion write flips
-  // `status` to 'ready', mounting the app at `/`. Onboarding needs neither the router nor the query client.
+  // `status` to 'ready', mounting the app at `/`. Onboarding needs no router.
+  //
+  // preferences-rescope R2: QueryClientProvider is HOISTED over both boot branches + the guided-setup overlay + the toast
+  // host, so onboarding/guided-setup preference writes reach the same cache Settings reads (N7). PreferencesBridge
+  // (mounted once, under it) mirrors the persisted view into the not-yet-migrated panes' store + flushes on hide.
   return (
     <UIProvider selection={selection}>
-      {firstRun.status === 'onboarding' ? (
-        <Onboarding onComplete={handleOnboardingComplete} />
-      ) : (
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <PreferencesBridge />
+        {firstRun.status === 'onboarding' ? (
+          <Onboarding onComplete={handleOnboardingComplete} />
+        ) : (
           <RouterProvider router={router} />
-        </QueryClientProvider>
-      )}
+        )}
 
-      {/* fe-onboarding S4 — the guided-setup overlay (opt-in, never a wall — IR2). A fixed, opaque takeover OVER the app
+        {/* fe-onboarding S4 — the guided-setup overlay (opt-in, never a wall — IR2). A fixed, opaque takeover OVER the app
           so it never remounts the router (no lost route state); the app re-themes live behind it as the picker previews. */}
-      {guidedPhase !== 'none' && (
-        <View position="fixed" top={0} left={0} right={0} bottom={0} zIndex="$modal" backgroundColor="$colorSurfacePrimary">
-          {guidedPhase === 'invited' ? (
-            <GuidedSetupInvitation onStart={startGuidedSetup} onSkip={dismissGuidedSetup} />
-          ) : (
-            <GuidedSetupTakeover
-              mode={selection.mode}
-              initialPreset={selection.preset}
-              onPreview={previewPreset}
-              onClose={dismissGuidedSetup}
-            />
-          )}
-        </View>
-      )}
+        {guidedPhase !== 'none' && (
+          <View
+            position="fixed"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            zIndex="$modal"
+            backgroundColor="$colorSurfacePrimary"
+          >
+            {guidedPhase === 'invited' ? (
+              <GuidedSetupInvitation onStart={startGuidedSetup} onSkip={dismissGuidedSetup} />
+            ) : (
+              <GuidedSetupTakeover
+                mode={selection.mode}
+                initialPreset={selection.preset}
+                onPreview={previewPreset}
+                onClose={dismissGuidedSetup}
+              />
+            )}
+          </View>
+        )}
 
-      <ToastProvider />
+        <ToastProvider />
+      </QueryClientProvider>
     </UIProvider>
   )
 }

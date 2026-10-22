@@ -31,8 +31,11 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 - [x] Step 4 Reconciliation: `delivery/reconciliation.md`, DRY at pass 9 (72 rows after Re-scope Gate corrections)
 - [x] Step 5 Re-scope Gate: `delivery/slice-map.md` re-scope slices **APPROVED by Victor 2026-10-21** (R1 → R8 + R-T)
 - [x] R1 write integrity — Verification Gate PASS 2026-10-21 (PLAN-R1 §8); awaiting Victor's commit go
+- [x] R2 live preferences seam — Verification Gate PASS 2026-10-22 (PLAN-R2 §7); committed + pushed
 - [ ] Step 6 slices (remaining): R2 live seam → R3 boot/Appearance → R4 reduce-motion → R5 Modules+⌘K → R6 Locale/Notif → R7 onboarding → R-T transition → R8 entity close (ELC-1…9)
 - [ ] Owed at close (from the main checkout): mint the i18n platform unit (task + Linear) · write cross-unit edges onto owning tasks
 
 ## Route History
 - 2026-10-21 Victor corrections: U1 (intake G5) · A13 (architecture > planning artifacts) · `game` = module, not theme (fe-gamification EC-1/2 re-pinned).
+
+- 2026-10-22: paused after R2 at Victor's request (commit + push, review before R3). Next: PLAN-R3.

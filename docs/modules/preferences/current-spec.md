@@ -55,6 +55,15 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
 `services/preferences/__tests__/preferences-service.test.ts` — 10 live-store tests (better-sqlite3 + migrate +
 `initVault`), covering AC1–9 + the metadata-strip assertion.
 
+## ② Live seam — preferences-rescope R2 (2026-10-22)
+- **Registered** in the composition root (`Services.preferences`, no deps). The ② read/write seam is
+  `apps/web/src/preferences/` (see its CLAUDE.md): React Query over SQLite (`['preferences','user']` /
+  `['preferences','nav']`, 5 min / 30 min); one writer per table owning cache truth (`confirmed` + `pending`); serial +
+  500 ms debounced writes; per-sub-key `dashboard_layout` + map merges; BR-PREF-6 key validation on the ② side.
+- **DEFAULTS divergence (F11):** `USER_PREFERENCES_DEFAULTS.feature_gamification = false` (GM-1 opt-in); the DDL keeps
+  `DEFAULT 1` (unused — the service always writes full defaults on create).
+- Surfaces still bind the stores (hydrated from the view by `PreferencesBridge`) until their slices (R3/R5/R6).
+
 ## ② Surface plane — as-built baseline (preferences-rescope Step 0, 2026-10-21, worktree @ `c025710`)
 Cross-plane baseline for the entity re-scope. Service plane above is **current** (no service commit since `3e82608`).
 The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/CLAUDE.md`; this section pins the

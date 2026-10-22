@@ -40,8 +40,9 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
 - `delegated-pane.tsx` — **S6 (EC-9):** the `DelegatedPane` + `DELEGATED_PANES` (Data · Account) — calm, muted
   `role="status"` placeholders ("a later release"); Settings RENDERS but never OWNS these (PR-8, identity.md:24-25 —
   owners = Data/Sync + Auth/Account, M3/M4). Visually distinct from the live control panes.
-- `use-preferences.ts` — the read/write SEAM: `usePreferences()` (in-session stores over defaults; `state`) +
-  `useUpdatePreferences()` (optimistic store setters). The live DB read/write is DEFERRED (see below).
+- The read/write SEAM moved to **`../preferences/`** (preferences-rescope R2): `usePreferences()` (live, React Query over
+  SQLite; honest `state`) + `useUpdatePreferences()` (writer-backed, optimistic + revert, `saveState`). See
+  `../preferences/CLAUDE.md`.
 
 ## Stores (app-owned theme/pref state — AR-4)
 - `../stores/theme-store.ts` (S2) — `{preset,mode,density}` → `<UIProvider selection>`; the EC-5 keystone (replaced the
@@ -50,13 +51,11 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
   `moduleVisibility`/`moduleNames` (S5) + `dateFormat`/`timeFormat`/`weekStartsOn` + `notifInApp`/`notifPush`/`notifEmail`/
   `quietHours` (S6); defaults mirror USER_PREFERENCES_DEFAULTS. All persist via the deferred seam.
 
-## ⚠ The deferred-DB-seam constraint (seam-contract §A0 — verified in code)
-The apps/web worker-RPC driver implements `query`/`run`; `values`/`batch`/`exec` throw `SEAM` (db/client.ts:154).
-Drizzle `.all()`→`driver.values()` (adapter.ts:189), and `repo.findAll` uses `.all()` → **every live preferences DB op
-is blocked today** (updatePreferences does a findAll first). This is the "live Drizzle-proxy bootstrap → first-consumer"
-home fe-notes also deferred (useNotesRows is stubbed). **Consequence:** theme/prefs apply **live in-session** (store →
-UIProvider / useHomeArrangement) but do **not survive reload** in M1. Hydrate-on-boot + persistence activate (drop-in)
-when the worker `values` seam lands — the store `hydrate()` + the use-preferences `persist` are the activation points.
+## Live data (preferences-rescope — supersedes the 2026-10-12 "deferred seam")
+The worker data plane is live (data-plane-wiring) and the Preferences seam is wired (R2): reads come from React Query over
+SQLite; the panes still bind `preferences-store` / `theme-store`, which are now hydrated FROM the persisted view (the
+`PreferencesBridge` mirror). Each pane moves onto `useUpdatePreferences` in its own slice (R3 Appearance · R5 Modules ·
+R6 Locale/Notifications — R6 deletes `preferences-store`); until then a pane edit is in-session only.
 
 ## ECs covered — S1–S6 (surface COMPLETE)
 S1 `Switch` primitive (EC-3) · S2 theme store (EC-5 mechanism) · S3 shell+route+Appearance (EC-1,2,5-live,7,8,10) +

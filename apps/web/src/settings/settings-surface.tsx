@@ -8,14 +8,14 @@ import { NotificationsPane } from './notifications-pane'
 import { DelegatedPane, DELEGATED_PANES } from './delegated-pane'
 import { SettingsSearchResults } from './settings-search-results'
 import { SETTINGS_CATEGORIES, type SettingsCategoryId } from './settings-model'
-import { usePreferences } from './use-preferences'
+import { usePreferences } from '../preferences/use-preferences'
 
 // fe-settings S3 — the Settings surface: a two-pane System archetype (EC-1) at /settings. Left category rail + right
 // pane (search chrome on top + the active category's content). Composes shipped primitives; DIRECT semantic tokens.
 // Responsive (EC-10): stacks to a single column below 768 (nav above the pane) via the $tablet media token. Reachability
 // (EC-8): the shell + ⌘K already register a Settings entry (nav/module-map.ts:104); this is its route target.
 // Honest states (EC-7): threads usePreferences().state — loading → skeleton; error → defaults read-only + calm flag;
-// success → the panes. In M1 the read is a deferred-default seam (§A0) so state is 'success'.
+// success → the panes. The read is LIVE (preferences-rescope R2: React Query over SQLite); R3 rebuilds these states.
 
 const RailItem = styled(View, {
   name: 'SettingsRailItem',

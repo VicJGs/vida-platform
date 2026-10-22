@@ -124,8 +124,8 @@ describe('mod-preferences Slice 1 — user_preferences service', () => {
     await h.svc.setModuleVisibility('habits', false)
     await h.svc.setModuleVisibility('finance', true)
     expect(await h.svc.getModuleVisibility()).toEqual({ habits: false, finance: true })
-    // distinct concern: feature flag untouched (PR-7)
-    expect((await h.svc.getMergedPreferences()).feature_gamification).toBe(true)
+    // distinct concern: feature flag untouched (PR-7) — still its GM-1 opt-in default (off; preferences-rescope F11)
+    expect((await h.svc.getMergedPreferences()).feature_gamification).toBe(false)
   })
 
   // AC6 — invalid module key (D3)

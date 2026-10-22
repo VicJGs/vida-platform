@@ -44,6 +44,13 @@
 All 3 slices shipped. Remaining for the module: ② frontend (fe-preferences, LIF-134) + the DB-11 `CommandBarHistory`
 interface reconcile (created_at/updated_at) + the deferred `sessions` inline-read migration onto the seam.
 
+## ② seam — enforced live (preferences-rescope R2, 2026-10-22)
+- **PR-2** read never `undefined` (the view mapper over DEFAULTS) · **PR-4** auto-save debounced 500 ms + optimistic with
+  revert (the writer; the visible copy lands in R3) · **PR-9** every write local + sync_queue (via the service) ·
+  **BR-PREF-3** one row per vault even under concurrent first writes (serial queue) · **BR-PREF-6** ② side: visibility
+  keys must be dock modules or `features`/`sync`, else `InvalidModuleError` (Settings/Home never hideable) ·
+  **BR-PREF-9** falsy values survive (spread merges, `??` reads). `feature_gamification` defaults OFF (GM-1).
+
 ## ② surface — what is NOT enforced live yet (baseline 2026-10-21, preferences-rescope Step 0)
 The service rules above hold **only at the service boundary**; the shipped ② surface never calls it (service not
 registered, `current-spec.md` "② Surface plane"). So live today: PR-2 (defaults) is met by store defaults, not

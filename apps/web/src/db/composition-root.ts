@@ -3,7 +3,7 @@
 //
 // The live service composition root for apps/web. A lazily-initialized MODULE
 // SINGLETON (seams/CLAUDE.md sanctions "a module singleton" as the injection
-// mechanism) — NOT a React provider, so App.tsx is untouched. Constructed ONCE,
+// mechanism) — NOT a React provider. Constructed ONCE,
 // after the DB-ready gate (BR-RT-BOOT), on first `getServices()` call.
 //
 // It builds `DrizzleDb` over the now-live `client.driver` (the data-plane seam),
@@ -25,10 +25,12 @@ import {
   createNotesService,
   createJournalRegistry,
   createJournalsService,
+  createPreferencesService,
   type DrizzleDb,
   type SqliteDriver,
   type NotesService,
   type JournalsService,
+  type PreferencesService,
 } from '@vida/core'
 import { getDbClient, ensureDbReady } from './boot'
 import { withTransactionLock, writeLock } from './write-lock'
@@ -36,6 +38,7 @@ import { withTransactionLock, writeLock } from './write-lock'
 export interface Services {
   readonly notes: NotesService
   readonly journals: JournalsService
+  readonly preferences: PreferencesService
 }
 
 let buildPromise: Promise<Services> | null = null
@@ -78,7 +81,10 @@ async function build(): Promise<Services> {
   const journalRegistry = createJournalRegistry()
   const journals = createJournalsService({ db, deviceId, registry: journalRegistry })
 
-  return { notes, journals }
+  // Preferences — no service deps (out-degree 0); ELC-3 of preferences-rescope (R2).
+  const preferences = createPreferencesService({ db, deviceId })
+
+  return { notes, journals, preferences }
 }
 
 /**
