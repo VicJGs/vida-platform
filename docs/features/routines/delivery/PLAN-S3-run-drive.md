@@ -133,6 +133,39 @@ tasks built with `effects:{rail, registry}` and a registered spy `award_xp` hand
 15. **Persistence probe:** a driven `completeStep` enqueues the ledger row's `sync_queue` entry.
 Gates: tsc 0 · eslint 0 · routines suite green (41 + new) · full `@vida/core` sequential · g2 · /critique · §XXIX.
 
+## Preflight (gate 2): `/preflight` PASSED, 0 gaps (after Approval 1, 2026-10-21)
+| Layer | Specified? | Where |
+|---|---|---|
+| Backend (in-process service; no endpoint/auth: single-user local-first) | ✅ `runStep`, `completeStep` drive leg, `StepRunState`, `EntityUnavailableError`, the drive table + precedence | §Scope · §Types · §Drive |
+| Database | ✅ no schema change. Writes = routines' own `routine_completions` upsert only; entity writes go through the owners' services | §Operation flow |
+| Integration | ✅ routines → Tasks/Habits/Sessions **public** service APIs only (§6); no frontend (② fe-routines) | §Grounding |
+| Durable-doc invariants | ✅ BR-RT-S3-1…5 preserved (upsert per (step,date); done clears skip; StepNotFoundError before any write; ledger hard-delete). BR-RT-S2c-* untouched | `current-business-rules.md` |
+
+**Assumptions pinned:**
+1. `runStep`/`completeStep` call `loadStepOrThrow` **first**, so a missing/archived step stays `StepNotFoundError` before any drive (BR-RT-S3-4).
+2. `input.date` is validated with the S2c `CalendarDate` (via `CompleteStepSchema`/a `RunStepSchema = {date?}`), else `ZodError`.
+3. The habit done-check reads `target_count` from the `getHabit` pre-check and `count` from the returned completion.
+4. The stamp for a task/habit target carries the caller's `actual_duration_minutes ?? null`. For focus it is `round(duration_seconds/60)` (declared override).
+5. Detach: `sessions.attach(session_id, 'routine_step', stepId, 'instance')` (idempotent → the existing row) then `sessions.detach(row.id)`.
+6. `cancelFocus` after an `attach` failure is best-effort (its own try/catch); the **original** error is rethrown.
+7. A `TaskNotFoundError` from `completeTask` (a race after `getTask`) maps to `EntityUnavailableError`. Any other substrate error propagates unchanged.
+8. A logged-skip row for (step, date) is overwritten by a successful drive (the existing upsert, BR-RT-S3-2).
+9. Cross-module imports are **types only** from the barrels (`TasksService` `../tasks`, `HabitsService` `../habits`, `SessionsService` `../sessions`) plus the
+   `utcDay` value from `../tasks`. No barrel-collision risk: no new exported generic names (`StepRunState`/`StepRunStatus`/`EntityUnavailableError` are unique; grep at build).
+10. `getSession(id)` returns `Session | null`. The focus extension is narrowed by `session.sub_type === 'focus'`.
+
+## Implementation plan (§5, worked via `victor:execute-plan-code`)
+1. **Tests first (red):** upgrade the harness to real Tasks/Habits/Sessions (+ effect registry, spy `award_xp`); add Gate tests 1–15.
+2. **types.ts + index.ts:** deps (`tasks`, `sessions`, `habits?`) · `StepRunState`/`StepRunStatus` · `EntityUnavailableError` · `runStep` + the completeStep
+   union on the interface · export the new names.
+3. **validators/routine.ts:** `RunStepSchema` (`{ date?: CalendarDate }`).
+4. **service.ts:** default clock → `utcDay` · `resolveTarget(step)` (precedence) · `driveTask`/`driveHabit`/`driveFocus`/`completeFocusStep` · `runStep` ·
+   the `completeStep` drive leg · the stamp via the existing `upsertCompletion`.
+   **Gate point = steps 2–4** (required deps turn tsc red until the service + harness land).
+5. **Docs (§XXVIII-minor annotations):** interp rule 18 / R5 / rule 23 · seam (`runStep` input, completeStep union, `EntityUnavailableError`,
+   `startFocus({})` + attach) · slice-map S3 line · ledger B11 → ✅ via `utcDay`.
+6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` sequential · g2 · /critique · §XXIX.
+
 ## g1 critique (folded): REVISE → 5 blocking fixed
 B1 `utcDay` is public, so it's reused (draft claim withdrawn). B2 focus re-entry after cycle 1 → detach-after-complete workaround. B3 focus
 stamp-retry path. B4 re-drive default (early-return only for focus done rows). B5 ordered target precedence. Non-blocking N1–N7 folded:
