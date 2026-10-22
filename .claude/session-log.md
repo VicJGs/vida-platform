@@ -6786,6 +6786,44 @@ Date: 2026-10-21 (addendum — after golive-replan close-out)
   entity-rescope reconcile vs main's 9-slice map, merge `0456c32`).
 
 ---
+Date: 2026-10-21 (session opened 2026-10-20)
+Task: fe-calendar (LIF-203 · #19) — Global Calendar, Entity Delivery Flow ②, worktree `.claude/worktrees/fe-calendar` (branch `fe-calendar`, Node 24)
+Goal: S5 Living renderer + S6 first-consumer reads, each through the full §XXVI stack.
+Completed:
+  - **S5 `8f98082`** — `packages/ui/src/components/living-view.tsx` (V13, 26 tests + 8 stories) · `internal/living-format.ts` (4) · `internal/calendar-shared.ts` (SR_ONLY/DATE_KEY/parseLocalDate, rule-of-three; agenda/week/year refactored, 104/104 unchanged) · `apps/web/src/app/calendar/index.tsx` Living dispatch (`livingFixture`, `weekSpan`; placeholder removed — all six ranges live). Spec `docs/specs/components/ui-2-platform-views/v13-living-view.md`. Visual Gate PASS (Victor, 26 cells: text AA ≥4.52 · graphics ≥3.36 · 0 page overflow · axe 0). ui 666/666 · web 687/687.
+  - **Merge `5d23b48`** origin/main (51 behind; golive-replan ELC process.md) — conflicts additive (components.md · fe-calendar.md), kept both; post-merge rebuild + ui 666/666 · web 698/698 (ModuleDock flake 5/5 alone).
+  - **S6 `a3e36ca`** — `habits.getCompletionGrid(range)` (BR-HB-35, `packages/core/src/services/habits/{types,service,index}.ts` + 14 tests Sao_Paulo/Tokyo); seam-contract §C rewritten to the grounded verdicts + S7 derivation notes; habits current-spec/BR; slice-map S6 ✅; decisions S6 rows. habits 60/60 · core 2024/2025 (vault 1MB = pre-existing env timeout).
+In progress:
+  - Nothing mid-flight. Worktree clean at `a3e36ca`. NOT pushed, no PR.
+Decisions:
+  - **Victor: "There should be no calls for me, check the documentation beforehand and present me proper information."** S5's connector + flag colour were doc-resolved (envision:54 greybox DEFERRED thread ink; EC-13 + decisions:127 → the S2 MUST-tag token). Memory `decide-dont-ask…` extended.
+  - S6: EC-9 ratify sessions availability · EC-10 ratify listTasks (tasks current-spec:286-289) · EC-6 honest-null, no advertise (D-S6-DEV-1) → LIF-195 · no colour column anywhere (D-S6-DEV-2 → V13 `color?` in S7) · `off` ThreadState (D-S6-DEV-3, S7).
+  - Merge timing: the golive-replan relay ("merge before S6") was applied AFTER S5's Visual Gate, not mid-gate.
+Next session:
+  - **Start S7 — the ENTITY-CLOSE slice** (fresh session): `useCalendar(range, focusedDate, weekStartsOn)` ProviderRead fan-out + derivations (open time · slip · threads incl. `off` · honest budget) per seam §B + §C S7 notes; composition-root registration question GROUNDED at the PLAN gate (web-client-runtime BR-RT-COMPROOT · golive-replan process.md §3/§4 · R7 shared ViewProviderRegistry — don't assume); V13 amendments (`color?`, `off`); the absorbed primitives-refinement Calendar "Today" SR label; PLAN must cite process.md ELC-1…9; live Visual Gate on real OPFS re-verifying all 14 pinned ECs; prove the LIF-195 Linear edge at close.
+  - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git fetch` + `git rev-list --left-right --count origin/main...HEAD` · `git log -1` = `a3e36ca`. GROUND FIRST (process.md, BR-RT-COMPROOT, composition-root.ts, provider-read.ts, seam §B/§C, slice-map S7, envision EC list, golive-replan absorption section of the task file). Present no "calls".
+---
+
+---
+Date: 2026-10-22 (session opened 2026-10-21)
+Task: fe-calendar (LIF-203 · #19) — S7, the Entity Live Close · worktree `.claude/worktrees/fe-calendar` (Node 24)
+Completed:
+  - **S7 `cc0e350` → PR #157 merged `98c6107`, LIF-203 → Done.** Live `useCalendar` fan-out over `composeServices`
+    (sessions/habits/tasks/purposes/relationships + 3 dueIn lanes); pure `calendar-derive`; fixtures → DEV `?sample`;
+    V13 `color?`/`off`; CalendarView `, today` + unfurl (EC-F3); today pulse + range fade (EC-F2). Live Visual Gate PASS
+    (Victor): real OPFS, 0 writes on reopen, 108 cells 0 overflow · axe 0 · AA.
+  - Linear: 8 `related` edges on LIF-203 + comments (LIF-203/248/246). **LIF-250 filed** (data-plane boot: dev open
+    intermittent, prod build never opens) in the plan (debt-plan §1) + order (structure #60, renumbered 1→144; g3-order L0′).
+  - Prior session's S5/S6 close-out records committed (branch `fe-calendar-closeout`).
+Decisions:
+  - D-S7-DEV-1…4 (DEV-4 Victor-approved) · Must = `obligation` · merge on local-green (Actions billing).
+  - Victor: "The sessions is not deferred, that is a drift" + "timezone … the user's location … already solved" → memory.
+Next session:
+  - LIF-250 `fix-data-plane-boot-open` first (#60, L0′), or Wave L1 (preferences-rescope) — Victor's pick at /begin.
+  - Watch: CI dark (Actions billing) · vault 1 MB F011 · the fe-calendar worktree can be removed.
+---
+
+---
 Date: 2026-10-21 → 2026-10-22
 Task: preferences-rescope (LIF-247) — wave L1, M1.2.4 Live Close · Add Frontend Component / entity-rescope
 Worktree: `.claude/worktrees/preferences-rescope` · branch `preferences-rescope` (pushed; no PR yet)

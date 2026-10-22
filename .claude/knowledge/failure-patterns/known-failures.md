@@ -60,15 +60,29 @@
 **Root cause:** ENVIRONMENTAL. CPU-bound Argon2id + 1 MB XChaCha tests are marginal on this Mac; they time out when the full suite runs concurrently or another session runs vitest (load avg 100–400). Not a code regression — appears on branches that touch no encryption file.
 **Fix:** check `uptime` + `pgrep -fl vitest`; re-run `npx vitest run src/encryption/__tests__/vault.test.ts` alone on an idle machine (expect 36/36, seen 2026-10-20). Record, don't patch. Candidate follow-up outside any module: mark the 1 MB test `slow`/raise its timeout.
 
-## F007 — "Failed to open the local database: DB worker RPC 1 (open) timed out after 15000ms" on a dev-server RELOAD
-**Symptom:** in `vite` dev, a page **reload** shows the boot error screen with the 15 s `open` RPC timeout; clicking
-**Retry** boots in ~250 ms on the same worker. The first navigation to a fresh origin usually boots (slowly).
-**Root cause:** ENVIRONMENTAL. The fresh worker's first `open` (Vite dev serving + transforming the worker + wa-sqlite
-WASM, OPFS pool open, migrations) exceeds `RPC_TIMEOUT_MS = 15_000` (`apps/web/src/db/client.ts:50`) when the machine is
-saturated (load avg 85–320, other sessions running full suites). **Not a code regression:** reproduced identically on
-`main` @ c025710 (with the old `beforeunload → terminate()`), and on preferences-rescope with the worker explicitly
-terminated before the reload (so it is not OPFS handles held by a lingering worker). Seen 2026-10-22 (preferences-rescope
-R2 live smoke).
-**Fix:** check `uptime`; re-run the live check when the machine is quiet, or click Retry and continue. Record, don't patch.
-Candidate follow-up outside any unit: a longer timeout for the `open` op specifically (cold WASM), keeping 15 s for
-statements.
+## F007 — the live app shows "Failed to open the local database: DB worker RPC 1 (open) timed out after 15000ms"
+**Symptom:** on a page load of the running app (dev server or a `vite preview` production build) the boot screen shows the
+timeout + Retry. Dev: intermittent, Retry opens the DB with data intact. Production build: every load; the worker chunk
+loads (200) but never requests its wasm. (fe-calendar S7 live gate, 2026-10-22.)
+**Root cause:** UNKNOWN — filed as **LIF-250** `fix-data-plane-boot-open` (bug unit `docs/specs/fixes/data-plane-boot-open/`:
+hypotheses = the previous document's worker still holding the exclusive AccessHandlePoolVFS OPFS handles · the prod
+worker's wasm locate path). NOT caused by a feature change if the diff doesn't touch `apps/web/src/db/*` / `vite.config.ts`.
+**Fix (until LIF-250 lands):** in a gate, press the app's own Retry (or wait, then reload) — don't misread it as your
+regression; never measure performance on the prod build until LIF-250 is fixed (it can't boot).
+**Evidence (preferences-rescope R2 live smoke, 2026-10-22):** on a dev RELOAD, Retry boots in ~250 ms on the same
+worker; reproduced identically on `main` @ c025710 (old `beforeunload → terminate()`) and with the worker explicitly
+terminated before the reload — weighs AGAINST the lingering-worker OPFS-handle hypothesis for the dev case; it
+coincided with a saturated machine (load 85–320). Candidate: a longer timeout for the cold `open` op only, 15 s for statements.
+
+## F008 — a wave of FIRST-test-of-file timeouts across unrelated files in a full-suite run
+**Symptom:** 10+ files fail their first test at 5–19 s (Select, Tabs, Menu, AppShell, App first-run…) — files the change
+never touched.
+**Root cause:** ENVIRONMENTAL load — the run competed with a dev server, a `vite preview` and a Playwright browser
+(same class as the cold Tamagui load under concurrency).
+**Fix:** stop the servers/browsers you started, re-run ONLY the failed files in isolation; green there = flake, not a
+regression. Run full suites on a quiet machine, sequentially per package.
+**Variant — fails even ALONE (2026-10-22, preferences-rescope merge of fe-calendar):** at load ~300–400 a heavy Tamagui
+render can exceed Testing Library's DEFAULT 1 s `findBy*` wait, so the test fails deterministically in isolation too
+(`calendar-surface` "a dense live day unfurls…": 0 items painted at 1 s). Discriminate before blaming the change: re-run a
+throwaway copy with `configure({ asyncUtilTimeout: 30000 })` + `vi.setConfig({ testTimeout: 60000 })` — pass = environment
+(it passed in 27 s); also check a lighter sibling on the same path. Never commit the raised timeouts as the "fix".

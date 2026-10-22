@@ -26,11 +26,27 @@ import {
   createJournalRegistry,
   createJournalsService,
   createPreferencesService,
+  createSessionRegistry,
+  createEffectRegistry,
+  createEffectRail,
+  createSessionsService,
+  createHabitsService,
+  createTasksService,
+  createPurposesService,
+  createRelationshipsService,
+  registerTasksDueProvider,
+  registerPurposesDueProvider,
+  registerRelationshipsDueProvider,
   type DrizzleDb,
   type SqliteDriver,
   type NotesService,
   type JournalsService,
   type PreferencesService,
+  type SessionsService,
+  type HabitsService,
+  type TasksService,
+  type PurposesService,
+  type RelationshipsService,
 } from '@vida/core'
 import { getDbClient, ensureDbReady } from './boot'
 import { withTransactionLock, writeLock } from './write-lock'
@@ -39,6 +55,12 @@ export interface Services {
   readonly notes: NotesService
   readonly journals: JournalsService
   readonly preferences: PreferencesService
+  // fe-calendar #19 S7 (ELC-3) — the services the Global Calendar reads; the dueIn aggregator + its lanes.
+  readonly sessions: SessionsService
+  readonly habits: HabitsService
+  readonly tasks: TasksService
+  readonly purposes: PurposesService
+  readonly relationships: RelationshipsService
 }
 
 let buildPromise: Promise<Services> | null = null
@@ -49,14 +71,56 @@ let buildPromise: Promise<Services> | null = null
  * generate a time-sortable UUIDv7 (ADR-002 §2.1) + persist on first boot.
  */
 async function resolveDeviceId(driver: SqliteDriver): Promise<string> {
-  const rows = await driver.query<{ value: string }>(
-    "SELECT value FROM app_state WHERE key = 'device_id'",
-  )
+  const rows = await driver.query<{ value: string }>("SELECT value FROM app_state WHERE key = 'device_id'")
   const existing = rows[0]?.value
   if (existing) return existing
   const id = uuidv7()
   await driver.run("INSERT OR REPLACE INTO app_state (key, value) VALUES ('device_id', ?)", [id])
   return id
+}
+
+/**
+ * The PURE half of the composition root — constructs every module service over a ready `DrizzleDb` in dependency
+ * order (each service's `types.ts`). No boot, no worker, no I/O at construction (every factory closes over its deps;
+ * lazy registrations — e.g. purposes' `review` sub-type — run on write paths only). Exported so the live-vault test
+ * drives it over better-sqlite3 (fe-calendar S7, BR-CAL-S7-7); `build()` is the only production caller.
+ */
+export function composeServices(db: DrizzleDb, deviceId: string): Services {
+  // Dependency order per NotesServiceDeps (services/notes/types.ts): registry → spaces → backlinks → notes.
+  const registry = createTaggableTypeRegistry()
+  const spaces = createSpacesService(db, deviceId, registry)
+  const backlinks = createBacklinkResolver(db, deviceId)
+  const notes = createNotesService({ db, deviceId, spaces, backlinks, registry })
+
+  const journalRegistry = createJournalRegistry()
+  const journals = createJournalsService({ db, deviceId, registry: journalRegistry })
+
+  // Preferences — no service deps (out-degree 0); ELC-3 of preferences-rescope (R2).
+  const preferences = createPreferencesService({ db, deviceId })
+
+  // fe-calendar #19 S7 — the Global Calendar's reads (PLAN-S7 G3; homed by PLAN-S6 §1). The Calendar is the dueIn
+  // aggregator (IA §4), so Sessions + its due-work LANES are constructed here, first-consumer-pull (sessions
+  // current-spec:164-168). The effect registry is EMPTY by design: nothing here completes a session or fires an
+  // effect; handlers (e.g. registerTasksTimer) are their owning units' (sessions-rescope LIF-248 · fe-tasks LIF-201).
+  // Journal contributions are NOT registered — the dashboard aggregator's (HARD-1 LIF-112).
+  const sessionRegistry = createSessionRegistry(db, deviceId)
+  const rail = createEffectRail(db, createEffectRegistry())
+  const sessions = createSessionsService({ db, deviceId, registry: sessionRegistry, rail, entityRegistry: registry })
+  const habits = createHabitsService({ db, deviceId })
+  const tasks = createTasksService({ db, deviceId, sessions, spaces, notes })
+  const purposes = createPurposesService({
+    db,
+    deviceId,
+    sessions: { registry: sessionRegistry, service: sessions },
+    spaces,
+    notes,
+  })
+  const relationships = createRelationshipsService({ db, deviceId, spaces, notes })
+  registerTasksDueProvider(sessions, tasks)
+  registerPurposesDueProvider(sessions, purposes)
+  registerRelationshipsDueProvider(sessions, relationships)
+
+  return { notes, journals, preferences, sessions, habits, tasks, purposes, relationships }
 }
 
 async function build(): Promise<Services> {
@@ -71,20 +135,7 @@ async function build(): Promise<Services> {
   // sqlite-proxy transactions are unlocked async begin/commit pairs — serialize them app-wide (write-lock.ts).
   const db: DrizzleDb = withTransactionLock(createDrizzleProxy(driver), writeLock)
   const deviceId = await resolveDeviceId(driver)
-
-  // Dependency order per NotesServiceDeps (services/notes/types.ts): registry → spaces → backlinks → notes.
-  const registry = createTaggableTypeRegistry()
-  const spaces = createSpacesService(db, deviceId, registry)
-  const backlinks = createBacklinkResolver(db, deviceId)
-  const notes = createNotesService({ db, deviceId, spaces, backlinks, registry })
-
-  const journalRegistry = createJournalRegistry()
-  const journals = createJournalsService({ db, deviceId, registry: journalRegistry })
-
-  // Preferences — no service deps (out-degree 0); ELC-3 of preferences-rescope (R2).
-  const preferences = createPreferencesService({ db, deviceId })
-
-  return { notes, journals, preferences }
+  return composeServices(db, deviceId)
 }
 
 /**

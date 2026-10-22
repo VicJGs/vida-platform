@@ -91,6 +91,37 @@ function NavDemo() {
 }
 export const WithNav: Story = { render: () => <NavDemo /> }
 
+// fe-calendar S7 (EC-F3) — the controlled unfurl: "+K more" is a button when the handler exists; the day's FULL list
+// unfurls in a row spanning the 7 columns below its week (Esc / second press collapses). The list anatomy is the
+// consumer's `renderExpanded` (the #19 surface renders dayparted rows).
+function UnfurlDemo() {
+  const [open, setOpen] = useState<string | null>('2026-08-10')
+  return (
+    <View padding="$16">
+      <CalendarView<Evt>
+        items={EVENTS}
+        getDate={(e) => e.on}
+        getKey={(e) => e.id}
+        renderItem={chip}
+        month={MONTH}
+        today={TODAY}
+        maxPerDay={2}
+        expandedDay={open ?? undefined}
+        onExpandedDayChange={setOpen}
+        renderExpanded={(items) => (
+          <View gap="$8">
+            {items.map((e) => (
+              <View key={e.id}>{chip(e)}</View>
+            ))}
+          </View>
+        )}
+        aria-label="Schedule"
+      />
+    </View>
+  )
+}
+export const Unfurl: Story = { render: () => <UnfurlDemo /> }
+
 // Today on a weekend cell — exercises the brand ACCENT NUMBER on a $colorSurfaceSecondary (weekend) surface, the P5 AA
 // case the default month (today = Mon, paper) doesn't cover. Aug 8 2026 is a Saturday.
 export const TodayOnWeekend: Story = {

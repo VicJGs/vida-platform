@@ -68,6 +68,12 @@
   DB-ready gate, exposed as a `getServices()` singleton (not a React provider; `seams/CLAUDE.md`
   sanctions the singleton). `deviceId` is read from / generated into `app_state['device_id']` (ADR-002 §5.0; `uuidv7()`).
   Each entity's closing slice (`register + flip`, golive-replan ELC-3/4) consumes it; adding a module appends its construction. `[FACT: db/composition-root.ts]`
+  **fe-calendar #19 S7 (2026-10-22):** construction is the exported PURE `composeServices(db, deviceId)` (no boot/worker/I/O —
+  `build()` = DB-ready → `initVault` → the BR-RT-LOCK-wrapped db + device id → `composeServices`), so a live better-sqlite3 vault can test it. Manifest now:
+  notes · journals · **preferences** (R2) · **sessions** (+ `SessionRegistry`, an `EffectRail` over an EMPTY effect registry) · **habits** · **tasks**
+  (`sessions`/`spaces`/`notes`) · **purposes** · **relationships**, then the three dueIn lanes (`register{Tasks,Purposes,Relationships}DueProvider`)
+  — the Calendar is the dueIn aggregator (first-consumer-pull). NO journal contributions (→ HARD-1) and NO effect handlers
+  (→ the owning units). `[FACT: db/composition-root.ts; composition-root{,.singleton}.test.ts]`
 - **[FACT] BR-RT-LOCK — writes are serialized app-wide (preferences-rescope R1, 2026-10-21).** drizzle's sqlite-proxy
   runs a transaction as unlocked async `begin` → callback → `commit` calls, and every service shares ONE worker
   connection, so concurrent writes interleaved ("cannot start a transaction within a transaction", or foreign statements
@@ -90,6 +96,11 @@
   handles) · `pageshow` + `persisted` → reload · a normal unload → nothing (the browser discards the worker). Never
   `beforeunload` (cancelable). A transaction cannot finish after unload; pending writes **will be** flushed by the writing hook while the page
   is still visible (`visibilitychange`) — preferences-rescope R2, `[INTENT]`, not built in R1. `[FACT: db/boot.ts]`
+- **[FACT] BR-RT-CAL-LIVE — the Global Calendar reads live, read-only.** `useCalendar` = `useQueries` over the pure
+  `calendarQueries` (only allowlisted reads — `dueIn`, `listAvailability*`, `getSessionAnalytics`, `getCompletionGrid`, `listTasks`,
+  `listPurposes`, `getPageByJournalDate`), keys under `['calendar', …]`; derivations in the pure `calendar-derive.ts`; the DEV `?sample`
+  fixtures (`calendar-sample.ts`) are router-subscribed and never reach prod. Proven read-only on a live vault (driver spy: 0 writes).
+  `[FACT: app/calendar/{use-calendar,calendar-derive,calendar-sample}.ts; calendar-readonly.test.ts]`
 - **[FACT] BR-RT-BOOT — no query before DB-ready.** `App.tsx` gates rendering (and thus any React Query read) on the
   one-time `open`+`migrate` resolving; the worker's `open` migrates internally (no double-migrate). `[FACT: App.tsx; boot.ts]`
 

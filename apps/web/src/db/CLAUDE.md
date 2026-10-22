@@ -35,6 +35,10 @@ M1.0 (SQLCipher → M3); the seam is pass-through.
 - `web-adapter.ts` — the `DatabaseAdapter` impl (`open`/`migrate`/`createDrizzle`/`exists`/`destroy`). `exists`/`destroy`
   are VFS-directory-scoped (the VFS stores files under opaque OPFS names); per-name first-run detection is AR-4.
 - `wa-sqlite-vendor.d.ts` — ambient type shim for `AccessHandlePoolVFS` (ships as JS with no `.d.ts`).
+- `composition-root.ts` — the live-services singleton: `getServices()` → `build()` → the PURE exported `composeServices(db, deviceId)`
+  (fe-calendar S7) — tested over better-sqlite3 in `composition-root{,.singleton}.test.ts`.
+- `test-driver.ts` — TEST-ONLY async `SqliteDriver` over better-sqlite3 (+ an optional `onSql` observer that sees every statement
+  on every method — the calendar read-only proof). Never imported by app code.
 - `web-adapter.test.ts` — Node contract test: drives the real `createDrizzleProxy` over a better-sqlite3 stand-in
   (proves the row-shape contract), migrate no-op + failing-migration rollback, and the encryption seam.
 

@@ -9,7 +9,7 @@
 // sync_queue enqueue.
 // ============================================================================
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../db/adapter'
 import { migrate } from '../../../db/migrations/runner'
@@ -637,5 +637,99 @@ describe('mod-habits S5 — effect fan-out + cross-module seams', () => {
     const s = await contrib.summary(ASOF)
     expect(s.state).toBe('success')
     expect(s.items?.[0]).toEqual({ due: 1, done: 1 })
+  })
+})
+
+// ── fe-calendar #19 · S6 — getCompletionGrid (BR-CAL-S6-1..6, PLAN-S6-first-consumer-reads.md) ───────────────
+// The cross-habit grid the Living lens's habit threads read (EC-7): every day of an inclusive range per active habit,
+// with `scheduled` (the ONE BR-S2-4 predicate), `count` and `done`. Run under a negative AND a positive UTC offset —
+// each catches a different date-bug class (the tasks Asia/Tokyo precedent; the gate is TZ-blind otherwise).
+describe.each(['America/Sao_Paulo', 'Asia/Tokyo'])('fe-calendar S6 — getCompletionGrid (TZ=%s)', (tz) => {
+  const ASOF = '2026-10-14' // Wed — completions are seeded on/before it (writes are clock-guarded; reads are not)
+  const WEEK = { from: '2026-10-12', to: '2026-10-18' } // Mon … Sun
+  const days7 = ['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18']
+  let h: Harness
+  let origTz: string | undefined
+  beforeEach(async () => {
+    origTz = process.env.TZ
+    process.env.TZ = tz
+    h = await setup(() => ASOF)
+  })
+  afterEach(() => {
+    if (origTz === undefined) delete process.env.TZ
+    else process.env.TZ = origTz
+  })
+
+  it('a daily habit: every day of the inclusive range, ascending, all scheduled', async () => {
+    const hab = await h.svc.createHabit({ name: 'Meditate', frequency: 'daily' })
+    const grid = await h.svc.getCompletionGrid(WEEK)
+    expect(grid).toHaveLength(1)
+    expect(grid[0].habit.id).toBe(hab.id)
+    expect(grid[0].habit.name).toBe('Meditate')
+    expect(grid[0].days.map((d) => d.date)).toEqual(days7)
+    expect(grid[0].days.every((d) => d.scheduled && d.count === 0 && !d.done)).toBe(true)
+  })
+
+  it('a custom habit is scheduled only on its weekdays (the BR-S2-4 predicate)', async () => {
+    await h.svc.createHabit({ name: 'Run', frequency: 'custom', days_of_week: [dow('2026-10-12'), dow('2026-10-14'), dow('2026-10-16')] })
+    const [row] = await h.svc.getCompletionGrid(WEEK)
+    expect(row.days.filter((d) => d.scheduled).map((d) => d.date)).toEqual(['2026-10-12', '2026-10-14', '2026-10-16'])
+  })
+
+  it('done = count >= target_count; an off-schedule completion keeps scheduled:false with its count/done', async () => {
+    const pushups = await h.svc.createHabit({ name: 'Pushups', frequency: 'daily', target_count: 2 })
+    await h.svc.logCompletion(pushups.id, { date: '2026-10-12', count: 1 })
+    await h.svc.logCompletion(pushups.id, { date: '2026-10-13', count: 2 })
+    const mondays = await h.svc.createHabit({ name: 'Plan', frequency: 'custom', days_of_week: [dow('2026-10-12')], sort_order: 1 })
+    await h.svc.logCompletion(mondays.id, { date: '2026-10-13' }) // Tuesday — off-schedule
+    const grid = await h.svc.getCompletionGrid(WEEK)
+    const p = grid.find((r) => r.habit.id === pushups.id)!
+    expect(p.days[0]).toMatchObject({ date: '2026-10-12', scheduled: true, count: 1, done: false })
+    expect(p.days[1]).toMatchObject({ date: '2026-10-13', scheduled: true, count: 2, done: true })
+    const m = grid.find((r) => r.habit.id === mondays.id)!
+    expect(m.days[1]).toMatchObject({ date: '2026-10-13', scheduled: false, count: 1, done: true })
+  })
+
+  it('excludes inactive and soft-deleted habits', async () => {
+    const keep = await h.svc.createHabit({ name: 'Keep' })
+    await h.svc.createHabit({ name: 'Paused', is_active: false })
+    const gone = await h.svc.createHabit({ name: 'Gone' })
+    await h.svc.softDeleteHabit(gone.id)
+    const grid = await h.svc.getCompletionGrid(WEEK)
+    expect(grid.map((r) => r.habit.id)).toEqual([keep.id])
+  })
+
+  it('orders by sort_order, then id (code-unit) — never creation order', async () => {
+    const late = await h.svc.createHabit({ name: 'Late', sort_order: 2 })
+    const a = await h.svc.createHabit({ name: 'A', sort_order: 1 })
+    const b = await h.svc.createHabit({ name: 'B', sort_order: 1 })
+    const ids = (await h.svc.getCompletionGrid(WEEK)).map((r) => r.habit.id)
+    // uuidv7 has no counter: two ids minted in one millisecond can sort either way — expect the id order itself
+    expect(ids).toEqual([...[a.id, b.id].sort(), late.id])
+  })
+
+  it('no habits → []; an inverted or malformed range → rows with zero days, no throw', async () => {
+    expect(await h.svc.getCompletionGrid(WEEK)).toEqual([])
+    await h.svc.createHabit({ name: 'Water' })
+    expect((await h.svc.getCompletionGrid({ from: '2026-10-18', to: '2026-10-12' }))[0].days).toEqual([])
+    expect((await h.svc.getCompletionGrid({ from: 'nope', to: '2026-10-18' }))[0].days).toEqual([])
+  })
+
+  it('reads the completions ledger with exactly ONE query (never one per habit)', async () => {
+    for (const name of ['A', 'B', 'C']) {
+      const hab = await h.svc.createHabit({ name })
+      await h.svc.logCompletion(hab.id, { date: ASOF })
+    }
+    // the driver prepares every statement through bsql.prepare at query time — count SELECTs on the ledger
+    const prepare = h.bsql.prepare.bind(h.bsql)
+    let ledgerSelects = 0
+    h.bsql.prepare = ((sql: string) => {
+      if (/^\s*select/i.test(sql) && /"habit_completions"/.test(sql)) ledgerSelects++
+      return prepare(sql)
+    }) as typeof h.bsql.prepare
+    ledgerSelects = 0 // reset right before the call — seeding ran its own ledger SELECTs
+    const grid = await h.svc.getCompletionGrid(WEEK)
+    expect(grid).toHaveLength(3)
+    expect(ledgerSelects).toBe(1)
   })
 })

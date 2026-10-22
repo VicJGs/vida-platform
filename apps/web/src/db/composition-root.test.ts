@@ -1,52 +1,58 @@
-// preferences-rescope R1 (LIF-247) — the composition root applies the app-wide write lock (BR-RT-LOCK). Without this
-// test nothing would catch the wrapper being dropped from `build()`: two concurrent service writes must not interleave.
-import { describe, it, expect, vi } from 'vitest'
+// fe-calendar S7 (ELC-3, PLAN-S7 G3/BR-7) — the composition root's PURE half, `composeServices(db, deviceId)`, over a live
+// better-sqlite3 vault (real migrations, real Drizzle proxy): the five calendar services construct after notes/journals,
+// and the Calendar's due-work feed — `sessions.dueIn` — returns the three registered lanes (tasks · purposes ·
+// relationships), the first-consumer-pull registrations (sessions current-spec:164-168).
+import { describe, expect, it } from 'vitest'
+import Database from 'better-sqlite3'
+import { createDrizzleProxy, initVault, migrate } from '@vida/core'
+import { createBetterSqlite3Driver } from './test-driver'
+import { composeServices } from './composition-root'
+import { withTransactionLock, writeLock } from './write-lock'
 
-const h = vi.hoisted(() => ({ log: [] as string[] }))
+async function compose() {
+  const driver = createBetterSqlite3Driver(new Database(':memory:'))
+  await migrate(driver)
+  await initVault() // libsodium for the unkeyed _sync_hash on every write (BR-RT-COMPROOT)
+  // Wrapped exactly as `build()` wraps it (BR-RT-LOCK) — a service that nests `db.transaction` deadlocks here, not in prod.
+  return composeServices(withTransactionLock(createDrizzleProxy(driver), writeLock), 'device-test')
+}
 
-vi.mock('./boot', () => ({
-  ensureDbReady: () => Promise.resolve(),
-  getDbClient: () => ({
-    driver: {
-      exec: async () => ({ rows: [], changes: 0 }),
-      run: async (s: string) => {
-        h.log.push(s.split(' ')[0]!.toLowerCase())
-      },
-      // The device_id read (composition-root resolveDeviceId) — an existing id, so no raw write at boot.
-      query: async () => [{ value: 'dev-1' }],
-      values: async () => [],
-      batch: async () => {},
-      close: async () => {},
-    },
-  }),
-}))
+// UTC-midnight bounds — the date lanes' window convention (sessions current-spec:168)
+const day = (y: number, m: number, d: number) => Date.UTC(y, m - 1, d)
+const WEEK = { start: day(2026, 10, 5), end: day(2026, 10, 11) + 86_399_999 }
 
-describe('composition root', () => {
-  it('serializes concurrent service writes through the write lock', async () => {
-    const { getServices } = await import('./composition-root')
-    const services = await getServices()
-    expect(services.preferences).toBeDefined() // ELC-3 — preferences-rescope R2
-    await Promise.all([
-      services.notes.createPage({ type: 'note', title: 'a' }),
-      services.notes.createPage({ type: 'note', title: 'b' }),
+describe('composeServices (the composition root, pure half)', () => {
+  it('constructs notes + journals + preferences + the five calendar services', async () => {
+    const s = await compose()
+    expect(Object.keys(s).sort()).toEqual([
+      'habits',
+      'journals',
+      'notes',
+      'preferences',
+      'purposes',
+      'relationships',
+      'sessions',
+      'tasks',
     ])
-    // Each createPage = one transaction (pages insert + sync_queue insert). Blocks must never overlap.
-    const blocks: string[][] = []
-    let current: string[] | null = null
-    for (const s of h.log) {
-      if (s === 'begin') {
-        expect(current).toBeNull() // a second begin before commit = interleaved
-        current = []
-      } else if (s === 'commit' || s === 'rollback') {
-        expect(current).not.toBeNull()
-        blocks.push(current!)
-        current = null
-      } else {
-        expect(current).not.toBeNull() // no statement outside a transaction block
-        current!.push(s)
-      }
-    }
-    expect(current).toBeNull()
-    expect(blocks).toHaveLength(2)
-  }, 30_000) // cold @vida/core import + libsodium (initVault) exceed the 5 s default
+  })
+
+  it('sessions.dueIn returns every registered lane: tasks (due + scheduled-only) · purposes · relationships', async () => {
+    const s = await compose()
+    await s.tasks.createTask({ title: 'Send proposal', due_date: '2026-10-08' })
+    await s.tasks.createTask({ title: 'Deep work', scheduled_date: '2026-10-09' })
+    await s.purposes.createTarget({ title: 'Read 24 books', next_review_date: '2026-10-08' })
+    const c = await s.relationships.createContact({ first_name: 'Ana' })
+    await s.relationships.createReminder({ contact_id: c.id, title: 'Call Ana', reminder_date: '2026-10-10' })
+
+    const items = await s.sessions.dueIn(WEEK)
+    expect(items.map((i) => `${i.source_module}:${i.label}`).sort()).toEqual([
+      'purposes:Read 24 books',
+      'relationships:Call Ana',
+      'tasks:Deep work',
+      'tasks:Send proposal',
+    ])
+    // the due task carries its date anchor; the scheduled-only task has none (G5 — placed via the listTasks join)
+    expect(items.find((i) => i.label === 'Send proposal')?.hard_deadline).toBe(day(2026, 10, 8))
+    expect(items.find((i) => i.label === 'Deep work')?.hard_deadline).toBeUndefined()
+  })
 })

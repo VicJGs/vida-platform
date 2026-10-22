@@ -63,6 +63,12 @@ export const LIFE_DOMAIN = [
 ] as const
 export type LifeDomain = (typeof LIFE_DOMAIN)[number]
 
+/** Canonical cross-module daypart — the Calendar's Agenda/Living grouping axis (fe-calendar slice-map D1).
+ *  Supersedes nothing: habits/routines keep their own `time_of_day`; modules MAP onto this at the calendar
+ *  seam. Backs no column → no SQL CHECK / enum-parity row. */
+export const DAYPART = ['morning', 'afternoon', 'evening'] as const
+export type Daypart = (typeof DAYPART)[number]
+
 // ---------------------------------------------------------------------------
 // Base interfaces
 // ---------------------------------------------------------------------------
