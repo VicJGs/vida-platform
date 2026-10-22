@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope approved; S2c–S5 + S5c ✅ shipped (local commits); next = S6 reschedule (rewrite on the S5c model)
+# Status: in-progress — re-scope approved; S2c–S6 (+S5c) ✅ shipped (local commits); next = S7 routine-level effects
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -18,6 +18,16 @@ completion/miss policy → Preferences; `routine_step_membership` → Spaces des
 Sessions; XP application → Gamification. Delivery: `docs/features/routines/delivery/`.
 
 ## Slice log
+- **S6 — Reschedule (SS-8 intent block) + acceptance-window guard ✅ (2026-10-22)** — v1 (no persistence) revised by Victor; v2 (eager
+  scheduled session, my framing) failed g1 (focus/TAS-12/time-log); **v3 = SS-8 literal**: `rescheduleStep(stepId,{date,slot})` writes one
+  `planned_blocks` row (target `routine_step`, `source 'routines:<D>'` — derived: R3 no MOD schema, Q3 no same-day-only), the make-good creates
+  the session carrying `planned_block_id` and fulfils it; a skip cancels it. Step-level admissibility (R1), slot bounds (R2), one pending block
+  per (step,D) (R4), R5b (a session linked to D's block stamps D). W1–W3 guard on make-good/skip writes (`OutsideAcceptanceWindowError`).
+  Sessions (R1 first-consumer-pull): `planBlock`/`updatePlannedBlock`/`softDeletePlannedBlock`/`listPlannedBlocksForTarget` + `dueIn`
+  pending-only filter. tsc 0 · eslint 0 · **routines + sessions 181/181** · full @vida/core 2147/2148 (vault 1MB F006) · **g2 FINDINGS 1
+  blocking → fixed** (linked focus finished in-widget) + N1–N4 · **/critique REVISE → fixed** (guard skip for a running linked make-good under
+  any date; table break) + a/c folded · §XXIX promoted. **[INTERP for Victor]** a make-good begun in-window completes after the window
+  closes (BR-RT-S6-5, derived from contract.md:55 + RT-6). Limits: skipped block beside a done D (edge); stale pending block → S9.
 - **S5c — Q1/RT-4/D3 correction ✅ (2026-10-22)** — every step drives an entity: a check-off step IS a Task (created + linked on add;
   legacy null rows migrated on first drive); a standard task occurrence = a Tasks `work` session (startTimer/stopTimer, adopt a Tasks-started
   timer, bare check = completed `work` session); obligation keeps `completeTask` (TK-7); any REGISTERED session sub-type is driven
@@ -137,4 +147,4 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 3. Routines types/validators/index — 3 errors · RescheduleStepInput/Schema · StepRunState 'scheduled' + planned_block_id
 - [x] 4. Routines service — a guard (+ shared window helper, serialized skips) · b blocks · c rescheduleStep · d0 R5b day attribution · d make-good hook · e skip hooks  (gate points after 4a and 4e)
 - [x] 5. Docs (row 7)
-- [ ] 6. Gates — tsc · eslint · routines + sessions · full core · g2 · /critique · §XXIX
+- [x] 6. Gates — tsc · eslint · routines + sessions · full core · g2 · /critique · §XXIX
