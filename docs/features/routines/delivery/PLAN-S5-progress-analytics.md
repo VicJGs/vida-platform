@@ -87,9 +87,15 @@ export interface RoutineAnalytics {
 
   **Inherited recorded limit (S4 E2, rule 22):** a completed task step reflects as done on every later date, so it counts done in streak/rate/progress
   until the task is reopened. This is tested and noted in the durable docs.
-- **A3 · Lifecycle (RT-6).** Current `lifecycle` `paused`/`off` ⇒ an undone occurrence is **neutral**.
-  - **Recorded limit + exploit:** there is no lifecycle history, so pausing hides past misses (inflating the streak Gamification reads).
-  - **Home:** a lifecycle-history column is an **ADR-002 amendment candidate** (the routines design-pass / schema-amendment track), not built here.
+- **A3 · Lifecycle, applied through the acceptance-window procedure (RT-6 + Q3 + `business-rules.md:120`; Victor 2026-10-22).** A miss stays
+  make-good-able only inside the user's window; beyond it, "it is a real miss", and "a miss/skip outside the acceptance window is **rejected** … not
+  silently absorbed". So a real miss is **final**. "Paused/off routines generate no misses" therefore applies only to occurrences that are **not yet
+  real misses**:
+  - current `lifecycle` `paused`/`off` ⇒ an undone occurrence that is **today** or still **inside the window** is **neutral** (no miss generated);
+  - an occurrence already **beyond the window** stays **missed**: a later pause cannot absorb it.
+
+  This closes the "pause to erase past misses" exploit without lifecycle history or a schema amendment.
+  *(Withdrawn draft: "no lifecycle history ⇒ ADR-002 amendment candidate". The docs already settle it; no new column is owed.)*
 - **A4 · Pending vs missed vs unjudged** (the user's window, Q3):
   - **today** (`date === clock()`) undone ⇒ **pending**, regardless of window (RT-5 "at the timeframe's end": the day isn't over);
   - a **past** undone day with `date + acceptance_window_days ≥ today` (calendar-day arithmetic on `YYYY-MM-DD`, not ms) ⇒ **pending**; beyond it ⇒ **missed**;
@@ -122,7 +128,8 @@ export interface RoutineAnalytics {
    day; future days excluded.
 2. **Streak with a window:** done, done, missed, done, done → `current` 2, `longest` 2, `total` 4.
 3. **Pending:** today undone with **no window** → pending (the streak carries over it); yesterday undone with a 3-day window → pending.
-4. **Neutral:** a planned-skip day skipped; a `paused` routine → undone days neutral.
+4. **Neutral / lifecycle (A3):** a planned-skip day skipped. A `paused` routine: undone **today** and **in-window** days → neutral, but a day already
+   **beyond the window** stays **missed** (a pause can't absorb a real miss: the exploit is closed).
 5. **Unjudged:** no window and a past undone day → the walk stops, `'undefined'`; `longest` with an unjudged day in the middle ends that run and flags.
 6. **policy_source:** no policy + every day done → `'undefined'` (A5b); a user policy + all days judged → `'user'`.
 7. **Unscheduled:** no rule → `{0,0,0}`, `unscheduled: true`, rate null.
@@ -139,9 +146,9 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
 
 ## g1 critique (folded): REVISE → 5 blocking fixed (today pending; ical.js DTSTART/BYxxx/sub-daily; the inherited task-reflection limit restated +
 tested; `miss` fields optional + window validated; one-load bounded evaluation) + 7 non-blocking (ranking grounded in v1 action granularity + the G1
-page composes on ②; `longest` with unjudged; lifecycle exploit + ADR-002 amendment home; `policy_source` = S4 meaning; ranking over judged days; A7
+page composes on ②; `longest` with unjudged; lifecycle via the RT-6/Q3 acceptance-window procedure (real misses are final; pause affects only make-good-able days); `policy_source` = S4 meaning; ranking over judged days; A7
 deviation from habits stated; seam renames + §XXIX row)
 
 ## Out of scope (homed)
-Reschedule (S6, consumes the same window) · emitting rewards on done (S7) · providers (S9) · lifecycle history (no doc or column; recorded limit) ·
+Reschedule (S6, consumes the same window and its BR:120 rejection) · emitting rewards on done (S7) · providers (S9) ·
 the policy's storage/UI (Spaces/Preferences).
