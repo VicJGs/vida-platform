@@ -6784,3 +6784,55 @@ Date: 2026-10-21 (addendum — after golive-replan close-out)
   `entity-rescope` → Step 0 baseline → Documentation Gate → … → close on ELC-1…9 (every pinned EC re-verified live).
 - In flight elsewhere: fe-calendar (session f8, S5 Visual Gate → merge main → S7 = ELC close) · mod-routines (session 9c,
   entity-rescope reconcile vs main's 9-slice map, merge `0456c32`).
+
+---
+Date: 2026-10-21 → 2026-10-22
+Task: preferences-rescope (LIF-247) — wave L1, M1.2.4 Live Close · Add Frontend Component / entity-rescope
+Worktree: `.claude/worktrees/preferences-rescope` · branch `preferences-rescope` (pushed; no PR yet)
+Completed:
+  - **Steps 0–5 (`95dd073`).**
+    - Step 0: baseline added the ② surface plane to `docs/modules/preferences/current-*`.
+    - Step 1: Documentation Gate rev 4.
+    - Steps 2–3: interpretation rev 5, each through an independent critique.
+    - Step 4: reconciliation ledger, 72 rows, DRY at pass 9.
+    - Step 5: the re-scope slice-map **APPROVED** (R1→R8 + R-T).
+    - Record fixes: debt-plan, coverage-report, decisions.md, and the fe-gamification EC-1/2 re-pin.
+  - **R1 write integrity (`7647502`).** STRUCTURAL data-plane fix:
+    - an app-wide lock on `db.transaction`;
+    - pagehide/pageshow teardown (no `beforeunload`).
+    - Live on OPFS: main 19/20 concurrent writes failed → 0.
+  - **R2 live preferences seam (`9a678cf`).**
+    - React Query over SQLite is the source of truth; `apps/web/src/preferences/`.
+    - The writer owns cache truth (confirmed + pending).
+    - Serial debounced queues; an exported write path; BR-PREF-6 enforced on the ② side.
+    - `feature_gamification` defaults off.
+    - 44 tests, 3 mutation checks; live: 1 row per table, hide flush in 51 ms.
+Decisions (Victor):
+  - U1 is answered by **intake G5**: onboarding picks → `module_visibility`.
+  - A6 store-as-source = **drift**.
+  - A13 → **architecture/design docs decide, not planning artifacts**; the readers close here.
+  - **`game` is a module (the System), not a theme** → fe-gamification EC-1/2 re-pinned.
+  - Transition preference here, its engine → shell-rescope.
+  - i18n → a new platform unit.
+Known limits / failures:
+  - A reload within ~500 ms of a change loses it (stated, approved); a tab hide saves it.
+  - **F007:** a dev-reload worker open can time out under heavy load (reproduces on `main`).
+  - F006 (vault).
+  - The machine was saturated by other sessions (load 85–370) → every red was triaged alone + vs `main`.
+Edges to record on owning tasks (at R8):
+  - **notes-rescope:** the `ensureJournal` concurrency UNIQUE race; rebase after R1.
+  - **gamification-rescope:** remove the `game` token family; the flag control → the Feature Atlas; `seedAchievements`
+    bare insert.
+  - **sessions-rescope:** the `composition-root.ts` collision + the A3 raw prefs read.
+  - **shell-rescope:** dock mount, placement, `shell-panel-styles`, the transition engine.
+  - **i18n unit:** mint it from the main checkout.
+Next session:
+  - Fresh session: `/begin` → `preferences-rescope` (worktree above, Node 24
+    `PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`).
+  - **R3**: boot hydrate-before-paint + the B6 theme hint, theme-store → derived cache, Settings skeleton / read-only
+    error / "Saved on this device" / revert toast, the persona row (pin its VG MUST), theme + arrangement persist,
+    `useHomeArrangement` live.
+  - Full Visual Gate (light/dark × 375/768/1440, a11y, stage-4 Victor approval).
+  - Read `docs/features/preferences/delivery/{slice-map,reconciliation}.md` + `sessions/PLAN-R2` (it inherits R2's
+    writer API) first.
+  - Run suites with no dev servers up; check `uptime` first.
