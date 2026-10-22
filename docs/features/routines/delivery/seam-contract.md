@@ -4,6 +4,9 @@
 
 # Seam Contract — `RoutinesService` (① exposes → ② consumes)
 
+> **Amended at the Re-scope Gate (2026-10-21, ledger D7)**, pending Victor's approval. Changes are marked `// ⟲ amended` and
+> cite the ledger row. The as-built S1/S2 surface is now part of the frozen seam.
+
 > Shapes are indicative TS (final types land in `@vida/types` at S1 DB-11 reconcile). Row-vs-view typing follows the
 > repo rule: raw readers return `*Row` types, constructed/merged returns use view types. [[drizzle-row-not-assignable-to-vida-types-interface]]
 
@@ -11,18 +14,19 @@
 ```ts
 function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService
 
-interface RoutinesServiceDeps {
+interface RoutinesServiceDeps {             // ⟲ amended (A2, N3, D1)
   db: DrizzleDb
   deviceId: string
-  spaces: SpacesService                       // required (tags/links)
-  notes: NotesService                         // required (pages)
-  registry: TaggableTypeRegistry              // required (register 'routine'/'routine_step')
-  sessions: SessionsService                   // required (createSession, registerDueProvider, dueIn)
-  habits?: HabitsService                       // deny-safe — habit-step native tick
-  tasks?: TasksPort                            // deny-safe — Tasks #65 not built (D1)
-  effects?: EffectsPort                        // deny-safe — { rail: EffectRail; registry: EffectRegistry }
-  measurementSources?: MeasurementSourceRegistry
-  prefs?: RoutinesPrefsPort                    // deny-safe — completion/miss/acceptance-window config (ROU-24)
+  clock?: () => string                       // ⟲ built (as-built S1): asOf YYYY-MM-DD, default UTC today
+  tasks: TasksService                         // ⟲ REQUIRED (D1). Replaces the deny-safe TasksPort
+  registry: TaggableTypeRegistry              // entity_type validation at addStep (R2). Registration already seeded (_registry.ts:45-46)
+  sessions?: SessionsService                  // ⟲ optional + fail-loud RoutinesDepNotWiredError (shipped convention)
+  habits?: HabitsService                       // habit-step native tick
+  spaces?: SpacesService                      // ⟲ optional + fail-loud (tags/links)
+  notes?: NotesService                        // ⟲ optional + fail-loud (pages)
+  effects?: { rail: EffectRail; registry: EffectRegistry }   // producer guard registry.resolve before applyEffect (N8)
+  prefs?: RoutinesPrefsPort                    // completion/miss/acceptance-window config; absent ⇒ shipped default, FLAGGED (R4)
+  // ⟲ dropped: measurementSources (rule 12: no M5 source)
 }
 ```
 
@@ -31,7 +35,7 @@ interface RoutinesServiceDeps {
 createRoutine(input: CreateRoutineInput): Promise<Routine>           // {name, description?, recurrence_rule?, measurement_kind?, binding_mode?, sort_order?}
 updateRoutine(id: Id, patch: UpdateRoutineInput): Promise<Routine>   // re-validates axes + lifecycle
 archiveRoutine(id: Id): Promise<void>                                // soft-delete; cascades to steps; ledger preserved (RT-17)
-setLifecycle(id: Id, lifecycle: 'active'|'paused'|'off'): Promise<Routine>   // paused/off generate no misses
+setLifecycle(id: Id, lifecycle: 'active'|'paused'|'off'): Promise<Routine>   // paused/off generate no misses (S2c)
 getRoutine(id: Id): Promise<Routine | null>
 listRoutines(filter?: { lifecycle?: RoutineLifecycle }): Promise<Routine[]>
 ```
@@ -42,21 +46,34 @@ addStep(routineId: Id, step: AddStepInput): Promise<RoutineStep>     // {step_ty
 reorderSteps(routineId: Id, orderedStepIds: Id[]): Promise<RoutineStep[]>
 removeStep(stepId: Id): Promise<void>
 listSteps(routineId: Id): Promise<RoutineStep[]>
-// step_type validated against the registry (OPEN vocab, no enum); entity ref nullable (actionable step, RT-4)
+// ⟲ step_type OPEN vocab, stored as-is (no M1 registry, R2); entity_type validated against TaggableTypeRegistry; entity ref
+//   nullable = actionable (alarm-like) step completing in the ledger (gate A11). addStep APPENDS (step_order = max+1) unless given (A11)
 ```
 
 ## Run / complete / skip / reschedule (S2, S3, S6)
 ```ts
-runStep(stepId: Id): Promise<StepRunState>                          // drives entity: sessions.createSession | habits.logCompletion | tasks?.*; returns live state; NEVER a parallel record (RT-3)
-completeStep(stepId: Id, date: string): Promise<RoutineCompletion | StepRunState>   // actionable step → ledger row; driven step → delegates
-skipStep(stepId: Id, kind: 'planned'|'logged', opts?: { date?: string; reason?: string }): Promise<void>  // planned→skip_dates; logged→routine_completions.skipped+skip_reason
-rescheduleStep(stepId: Id, date: string): Promise<DueItem>         // asks Scheduler for an open slot; OutsideAcceptanceWindow if past window
+runStep(stepId: Id): Promise<StepRunState>                          // ⟲ amended: drives tasks.completeTask | habits.logCompletion(date) |
+                                                                   //   focus: startFocus({attach routine_step, instance}) → completeFocus (never completeSession, N9);
+                                                                   //   returns live state; one entity completion per event (rule 1)
+completeStep(stepId: Id, input?: { date?: string; actual_duration_minutes?: number | null }):
+  Promise<RoutineCompletion | StepRunState>   // ⟲ amended (A16): actionable → ledger row; driven → DRIVE the entity first, then stamp
+                                               //   the routine's own occurrence row (rule 1, N7). Never fires the entity's effects
+// ⟲ amended (A17): RT-8's two mechanisms have different storage, so there are two methods (§XXVIII, as-built S3, g2-approved)
+skipStep(stepId: Id, input?: { date?: string; reason?: string | null }): Promise<RoutineCompletion>   // LOGGED skip on the day
+planSkipDates(stepId: Id, dates: string[]): Promise<RoutineStep>                                     // PRE-PLANNED, merged into skip_dates
+// ⟲ added (A18): the ledger edit path RT-14 re-derives from
+editCompletion(stepId: Id, date: string, patch: { skipped?; skip_reason?; actual_duration_minutes? }): Promise<RoutineCompletion>
+deleteCompletion(stepId: Id, date: string): Promise<void>          // HARD (ledger has no deleted_at)
+listCompletions(stepId: Id): Promise<RoutineCompletion[]>
+rescheduleStep(stepId: Id, date: string): Promise<DueItem>         // ⟲ amended (R3): moves the occurrence to the CALLER-given date/slot;
+                                                                   //   OutsideAcceptanceWindow if past window. Auto-slot (G5) = borrowed leg
 ```
 
 ## Derivations — evaluate / progress / analytics (S4, S5)
 ```ts
 evaluateRoutine(routineId: Id, date: string): Promise<RoutineEvaluation>
-//   RoutineEvaluation = { status: 'done'|'partial'|'not_started', percent: number, done: StepRef[], not_done: StepRef[] }
+//   RoutineEvaluation = { status: 'done'|'partial'|'not_started', percent: number, done: StepRef[], not_done: StepRef[],
+//                         policy_source: 'user'|'default' }   // ⟲ added (R4): PolicyUndefined ⇒ shipped default, FLAGGED
 //   applies completion_policy (read from prefs); partial ALWAYS returned (RT-5)
 progress(routineId: Id): Promise<number | null>                     // resolveProgress(stored, derive); NULL ⇒ derived-on-read
 getStreak(routineId: Id): Promise<RoutineStreak>                    // POLICY-derived (not Habits rule); the READ seam Gamification pulls
@@ -80,6 +97,11 @@ EntityUnavailable        // a step's driven entity missing/deleted/port-absent �
 OutsideAcceptanceWindow  // make-good/reschedule past the window → rejected, no state change (RT-6)
 PolicyUndefined          // evaluate before policy resolves → falls back to shipped default, flagged
 ProviderEmitFailed       // dueIn/summary failure isolated — routine + sibling providers unaffected (RT-13)
+// ⟲ added (A25): the as-built errors
+RoutineNotFoundError     // addStep on a missing/archived routine (no orphan step)
+StepNotFoundError        // complete/skip/plan/edit on a missing/archived step (no orphan completion)
+CompletionNotFoundError  // edit/delete an absent (step,date)
+RoutinesDepNotWiredError // an op needing an optional dep (sessions/spaces/notes) that is not wired (shipped convention)
 ```
 
 ## What ② must NOT expect from ① (boundary)

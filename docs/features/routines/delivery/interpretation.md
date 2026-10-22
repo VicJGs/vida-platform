@@ -55,7 +55,7 @@
 | `TaskNotFoundError` · habits `Error('Habit not found')` (untyped) · `SessionTypeNotFound` | `EntityUnavailable` (rule 15). The habit case needs a defensive match because it is untyped |
 | `RecurrenceRegenError` (task completion already durable) | the step **is** done: stamp the ledger, surface the flag (TAS-23 complete-but-flag) |
 | `BackfillWindowError` | rejected, no ledger stamp (the entity refused the date) |
-| `NoEffectHandler` from `completeSession`/`completeFocus` | not done: the session did not complete (fire-first, N9). No stamp |
+| `NoEffectHandler` (only reachable via `completeSession`, which routines does not call, N9) | not done, no stamp |
 
 ---
 
@@ -82,10 +82,13 @@
   The reverse order would create the "ledger done without entity" state rule 15 forbids `[INTERP from rule 1 + §1b]`.
 - **N8 · Effect emission needs the producer guard.** D3's routine-level emission needs `effects: {rail, registry}` and must
   check `registry.resolve(type)` before `applyEffect`. Otherwise every call throws `NoEffectHandler` in M1 (§1b; habits precedent).
-- **N9 · A focus step's completion leg needs handlers that don't exist yet.** `completeSession`/`completeFocus` fire `attach_pomodoro`
-  + `log_time` before committing. No `attach_pomodoro` handler is registered anywhere, and `log_time` is registered only by
-  `registerTasksTimer` `[FACT: services/tasks/service.ts:112-126]`, so completing a focus session throws today (§1b). The owner is
-  Sessions/pomodoro (borrowed leg). The named home is fixed at the Re-scope Gate (golive process §3).
+- **N9 · A focus step completes through `completeFocus`, not `completeSession`.** `completeFocus` completes the focus timer row
+  only. It fires **no** effects and does **not** transition the session spine `[FACT: services/sessions/service.ts:507-531]`. So the
+  completion leg is live today. `completeSession` would throw `NoEffectHandler`, because nothing registers `attach_pomodoro`
+  (§1b; `log_time` is registered only by `registerTasksTimer` `[FACT: services/tasks/service.ts:112-126]`), so routines must not
+  call it. **Quirk to respect:** after `completeFocus` the spine stays `in_progress`, so `findOpenSessionForEntity` still returns it.
+  A re-entering focus step must read the focus row's status, not trust "open spine = running". *(Re-scope-gate correction of the
+  Step-3 critique's N9, which assumed the completeSession path.)*
 - **N6 · Clock:** "today" = UTC calendar day (the platform convention, `utcDay`) `[FACT: services/tasks/service.ts:178-199]`.
 
 ---
@@ -216,8 +219,7 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
     The only stated default is "planned skip = neutral" (RT-8). This does not change the yardstick's shape.
 - **R5 (U5) — Live drive targets in M1:**
   - **habit** (HabitsService) and **task** (TasksService): live.
-  - **focus** session: the **start leg** is live (`startFocus`), but the **completion leg** throws until an `attach_pomodoro` handler
-    (and `log_time` outside the tasks timer) is registered (N9). Borrowed leg, owner = Sessions/pomodoro.
+  - **focus** session: **live**. Start via `startFocus({attach})`, complete via `completeFocus` (N9). Not via `completeSession`.
   - `exercise`/`workout` (no Health service; no shipped sub-type) and other session sub-types → `EntityUnavailable` until their
     owner registers them. These are borrowed legs, and their named home issues are fixed at the Re-scope Gate.
 
@@ -242,7 +244,7 @@ reconciliation sweep (Step 4) still checks the ② plane. There is no built rout
 - [x] DEPENDENCIES — built floor + substrate signatures **and their throws** verified in code (incl. startFocus/completeFocus, NoEffectHandler,
       RecurrenceRegenError, BackfillWindowError, PageType), cited; drive-error map
 - [x] NEEDS — vault, registry seed, deps, session sub-types, composition root (not this track), clock, drive-then-stamp ordering,
-      effect producer guard, focus-completion handlers
+      effect producer guard, focus completes via completeFocus
 - [x] ORGANIZATION — owns / consumes / delegates table
 - [x] IMPLICIT RULES — 1–23 (✱ = changed), each cited; 22–23 explicit [UNKNOWN] with a resolution path
 - [x] Gate UNKNOWNs U1–U5 resolved (R1–R5) or explicitly deferred with an owner (R4 values → evaluate PLAN)

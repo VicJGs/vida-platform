@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope from Step 0 (built S1–S3 @1a61189 reconcile vs main 9-slice map); merged origin/main 2026-10-21
+# Status: in-progress — re-scope Step 5 Re-scope Gate (awaiting Victor approval); next = S2c floor conformance
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
