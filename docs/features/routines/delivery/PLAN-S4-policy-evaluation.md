@@ -35,7 +35,7 @@
 | # | Ledger | Change |
 |---|---|---|
 | 1 | A2 (S4 dep) | Factory gains **`prefs?: RoutinesPrefsPort`** (optional, seam). Absent ⇒ every evaluation is `policy_source:'undefined'` |
-| 2 | A20 | **`evaluateRoutine(routineId, date?): Promise<RoutineEvaluation>`** (date default = `clock()`, `YYYY-MM-DD`-validated) |
+| 2 | A20 | **`evaluateRoutine(routineId, input?: { date? }): Promise<RoutineEvaluation>`** (an options object like `runStep`; date default = `clock()`, `YYYY-MM-DD`-validated; seam signature amended) |
 | 3 | R4 seam | **`RoutineEvaluation.policy_source: 'user' \| 'undefined'`** (the seam's `'user'\|'default'` is amended: there is no routines-side default) |
 | 4 | — | **`RoutinePolicy` + `RoutinesPrefsPort` types**: the port contract Spaces/Preferences will implement |
 | 5 | doc drift | **Amend every "falls back to the shipped default" line** to "the shipped default = Spaces templates/presets (SP5, `intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves": `contract.md:56` · `seam-contract.md` (prefs dep, `RoutineEvaluation`, `PolicyUndefined`) · `slice-map.md` S4 ("Victor sets the shipped default values") · interp rule 4 + R4 · `current-business-rules.md` · annotate ROU-24 / ROU-30 |
@@ -88,11 +88,18 @@ policy") but not its encoding. This is the smallest encoding that expresses it, 
   guaranteed by `uq_routine_completions_date`, `db/schema/routines.ts:106`.)*
 - **E2 · Classify each step for the date** (first match wins):
   - **neutral:** `date ∈ step.skip_dates` (planned, RT-8); or its ledger row is a logged skip and `policy?.miss?.logged_skip === 'neutral'`.
-  - **done:** its ledger row exists and is not skipped; **or** its driven entity is done for `date` (read-only, through the owners' public APIs):
-    - task step: `tasks.getTask(id)?.status === 'completed'` (the S3 TERMINAL reflection);
-    - habit step: the habit's day for `date` has `done` (`habits.getCalendar(habitId, month)` → the `CalendarDay` for `date`, HB-5).
-    - Focus and actionable steps have no reflection source, so the ledger only. A missing entity or an absent `habits` dep means "not done by
-      reflection" (no throw: evaluation is read-only and degrades per step).
+  - **done**, by target (RT-3 "reflects"; **the entity wins when it exists**, and the ledger row is the fallback when the entity is gone, which
+    keeps history, RT-5):
+    - **task step:** if `tasks.getTask(id)` returns the task ⇒ done ⇔ `status === 'completed' && completed_at != null && utcDay(completed_at) <= date`.
+      This is **as-of D**: a completion after D never leaks back into D. It matches S3's rule-22 reflection ("a completed task reads as done on
+      later occurrences until reopened"); a reopened task is not done. If the task is missing/deleted ⇒ the ledger row decides.
+    - **habit step:** if the habit loads ⇒ done ⇔ the `CalendarDay` for `date` from `habits.getCalendar(habitId, date.slice(0,7))` has `done`
+      (HB-5). A habit decremented after the routine's stamp is therefore not done (the entity wins, as S3 removes stale stamps). If the habit is
+      missing/deleted (`getCalendar` throws the untyped `Error('Habit not found…')`, matched exactly as in S3; any other error rethrows) **or** no
+      `habits` dep ⇒ the ledger row decides.
+    - **focus / actionable step:** the ledger row exists and is not skipped (no reflection source).
+    - **Recorded limits:** habit `done` uses the habit's **current** `target_count` (Habits exposes no as-of target); a recurring obligation's step
+      keeps reflecting its first (completed) occurrence on later dates (the rule-22 M1 limitation, tasks G8 / duties D3).
   - **not_done:** otherwise (incl. a logged skip under `'not_done'` or an undefined policy).
 - **E3 · applicable = done + not_done; `percent` = `applicable ? round(100·done/applicable) : 0`, for display only.**
 - **E4 · Status with a user policy (`policy_source:'user'`)**, in precedence order:
@@ -128,13 +135,17 @@ policy") but not its encoding. This is the smallest encoding that expresses it, 
    `'no_required_steps'`; the only required step planned-skipped → `'undefined'` + `'required_steps_all_neutral'`.
 5. **Planned skip neutral:** B has `skip_dates=[date]` → excluded (`applicable` 2), in `neutral`; all-or-nothing with A and C done → `done`.
 6. **Logged skip:** `miss.logged_skip:'neutral'` → excluded; `'not_done'` → undone (`partial`); undefined policy → undone.
-7. **Reflection (fix E2):** a habit reaching its target **in Habits** (not via the routine) → its step done; a task completed **in Tasks** → done; a habit
-   below target → not done; a task step whose task was deleted → not done, no throw.
+7. **Reflection (fix E2, entity wins, as-of D):** a habit reaching its target **in Habits** → done; a task completed **in Tasks** on D → done; a task
+   completed on **D+1** → **not done on D**; a completed task → done on D+1 (S3 reflection) and not done again once **reopened**; a habit decremented
+   after the routine stamped it → not done (entity wins); a task/habit **deleted** after a routine stamp → done via the ledger fallback; a
+   `getCalendar` failure other than "Habit not found" → rethrown.
 8. **As-of step set (fix E1b):** a step done on D then soft-deleted after D → still in D's `done[]`; a step added after D → absent from D's evaluation.
 9. **No applicable steps** → `not_started`, percent 0, applicable 0.
 10. **Errors:** archived/missing routine → `RoutineNotFoundError`; a bad date → `ZodError`; a port throw propagates.
 11. **Read-only:** `sync_queue` count unchanged by `evaluateRoutine`.
 12. **Partial always returned (RT-5):** a `partial` evaluation lists every done step under every policy kind.
+13. **Policy shape:** a port returning an unknown `completion.kind` → `InvalidRoutinePolicyError`.
+14. **Empty routine:** no steps → `not_started`, `applicable` 0, and no ledger query issued (no error).
 Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential · g2 · /critique · §XXIX.
 
 ## Preflight (gate 2): `/preflight` PASSED, 0 gaps (after Approval 1, 2026-10-22)
@@ -146,31 +157,41 @@ Gates: tsc 0 · eslint 0 · routines suite green · full `@vida/core` sequential
 | Durable-doc invariants | ✅ derive-not-cache (BR-RT-S1-3, rule 3) · planned skip neutral (BR-RT-S3-3) · the S3d drive rules untouched. Doc drift lines amended (scope 5) | `current-business-rules.md` |
 
 **Assumptions pinned:**
-1. The habit day comes from `habits.getCalendar(habitId, date.slice(0,7))`; no entry for `date` ⇒ not done. `getCalendar` throws an **untyped** `Error`
-   for a missing/soft-deleted habit (`services/habits/service.ts:383-384`, `loadHabitOrThrow`) ⇒ caught ⇒ "not done by reflection" (read-only
-   degrade, E2). The calendar is called **once per habit step** (M1 cost is acceptable).
-2. Task reflection: `tasks.getTask(id)` returns null for a missing/soft-deleted task ⇒ not done.
-3. The ledger rows for `date`: one query `routine_completions.completed_date = date`, filtered to the routine's step ids (no per-step query).
+1. The habit day comes from `habits.getCalendar(habitId, date.slice(0,7))` (lexical month range, no boundary trap); no entry for `date` ⇒ not done.
+   `getCalendar` throws an **untyped** `Error('Habit not found…')` for a missing/soft-deleted habit (`services/habits/service.ts:383-384`) ⇒
+   matched by message (the S3 precedent) ⇒ the ledger row decides; **any other error rethrows** (never swallow a DB failure). One call per habit step
+   (bounded N+1, acceptable for M1).
+2. Task reflection: `tasks.getTask(id)` (current row) judged **as-of D** via `utcDay(completed_at) <= date`; null (missing/soft-deleted) ⇒ the ledger
+   row decides.
+3. The ledger rows for `date`: one query `and(eq(completed_date, date), inArray(routine_step_id, ids))` (`inArray` imported from drizzle-orm);
+   **return `[]` before querying when the step set is empty**.
 4. All steps: `stepsRepo.findWhere(eq(routine_id))` **without** the soft-delete filter (this is the one deliberate exception to rule 7; the as-of filter
    E1b applies instead). `created_at`/`deleted_at` (ms) → `utcDay` for the comparison.
-5. `done`/`not_done`/`neutral` lists are in sequence order (`step_order`, `created_at`, id: the S2c 3-key sort).
-6. The port's policy is **trusted as typed** (no routines-side Zod or range check: validation belongs to the policy owner, Spaces/Preferences).
-   An unknown `completion.kind` at runtime ⇒ treated as undefined (E6), never a throw.
+5. `done`/`not_done`/`neutral` lists are in sequence order via an extracted **`bySequence`** comparator (`step_order`, `created_at`, id), shared by
+   `liveSteps` and `stepsAsOf`.
+6. The port's policy is **trusted as typed** (no routines-side Zod or range check: validation belongs to the policy owner, Spaces/Preferences). A
+   `completion.kind` outside the three doc kinds at runtime fails loud with **`InvalidRoutinePolicyError`** (consistent with E1 "a port throw
+   propagates"). It is never relabelled as `'undefined'`.
 7. New names (`RoutineEvaluation`, `RoutinePolicy`, `RoutinesPrefsPort`, `CompletionRule`, `RoutineStepRef`, `EvaluateRoutineSchema`) collide with
    nothing in `packages/core/src` or `packages/types/src` (grep).
 8. `EvaluateRoutineSchema = z.object({ date: CalendarDate.optional() })`; signature `evaluateRoutine(routineId, input?: { date? })` (an options object,
-   consistent with `runStep`; seam amended).
+   consistent with `runStep`; the seam **signature** and the `RoutineEvaluation` additions are both amended in step 5).
 
 ## Implementation plan (§5, worked via `victor:execute-plan-code`)
 1. **Tests first (red):** Gate 1–12 in a new `S4 — policy evaluation` block (a stub `RoutinesPrefsPort` per test; a harness option `prefs`).
 2. **validators/routine.ts:** `EvaluateRoutineSchema`.
 3. **types.ts + index.ts:** `CompletionRule` · `RoutinePolicy` · `RoutinesPrefsPort` · `RoutineStepRef` · `RoutineEvaluation` · `prefs?` dep ·
    `evaluateRoutine` on the interface · exports.
-4. **service.ts:** `stepsAsOf(routineId, date)` · `completionsOn(stepIds, date)` · `reflectsDone(step, date)` · `classify` · `judge(policy, buckets)` ·
+4. **service.ts:** extract `bySequence` (used by `liveSteps` + `stepsAsOf`) · `stepsAsOf(routineId, date)` · `completionsOn(stepIds, date)` (`inArray`,
+   empty guard) · `isDoneOn(step, row, date)` (entity-wins, ledger fallback) · `classify` · `judge(policy, buckets)` (+ `InvalidRoutinePolicyError`) ·
    `evaluateRoutine`. **Gate point = steps 2–4.**
 5. **Docs (scope 5/6):** amend the "shipped default" lines (contract, seam, slice-map S4, interp rule 4/R4, current BR; annotate ROU-24/30) + the
    seam `RoutineEvaluation` additions + the S5 note (applicable = 0 is neutral).
 6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` sequential · g2 · /critique · §XXIX.
+
+## Step-5 critique (folded): REVISE → 2 blocking fixed (task reflection as-of D via `utcDay(completed_at) <= date`, reconciled with S3 rule 22;
+consistent options-object signature + seam signature amendment) + 6 non-blocking (exact `Habit not found` match + rethrow; unknown kind fails loud
+`InvalidRoutinePolicyError`; `bySequence` extracted; `inArray` + empty guard; entity-wins precedence with ledger fallback; gate cases 13–14 + rethrow)
 
 ## g1 critique (folded): REVISE → 4 blocking fixed (reflection per the slice-map "ledger + driven-step occurrences"; exact-ratio threshold; as-of-date
 step set; every contradicting "shipped default" line amended) + 7 non-blocking (miss sub-object, window deferred to S5; E4 precedence + threshold 0;
