@@ -68,7 +68,9 @@
 - **N3 · Injected deps (D1 + seam-contract):** `db`, `deviceId`, `clock?` (built `[FACT: routines/types.ts:28]`), **`tasks: TasksService`
   (required, D1)**, `habits?`, `sessions`, `spaces`, `notes`, `effects?: {rail, registry}`, `prefs?`, plus the foundation deps the seam-contract names. The exact required-vs-optional split is reconciled at Step 4/5 against (a) the governing
   seam-contract and (b) the shipped factory convention: Tasks/Habits make foundation deps **optional + fail-loud**
-  (`TasksDepNotWiredError`) `[FACT: tasks/types.ts:351-356]`. The seam-contract's **`registry` dep is unnecessary** (§1a seed), and **`measurementSources?` is dead** given rule 12 (no M5 source).
+  (`TasksDepNotWiredError`) `[FACT: tasks/types.ts:351-356]`. The seam-contract's **`registry` dep is not needed for REGISTRATION** (§1a seed), **but it is needed to VALIDATE `entity_type`**
+  at `addStep` (R2; the sessions `entityRegistry` precedent `[FACT: sessions/service.ts:114-115,393]`), so it stays. **`measurementSources?` is
+  dead** given rule 12 (no M5 source).
 - **N4 · Session sub-types:** a session-driven step can only launch a sub-type the `SessionRegistry` resolves. In M1 that is
   `focus`; others throw `SessionTypeNotFound` (§1b) → §5 R5.
 - **N5 · Composition-root registration is NOT this track's.** The journal contribution + due-provider + service wiring into
@@ -220,10 +222,10 @@ Shape: `createRoutinesService(deps)`, a factory-object with hoisted closures and
     owner registers them. These are borrowed legs, and their named home issues are fixed at the Re-scope Gate.
 
 ### Reconciliation inputs surfaced here (for Step 4 — not decided here)
-- Factory dep split (N3): seam-contract "required" vs the shipped optional+fail-loud convention; drop the `registry` dep.
+- Factory dep split (N3): seam-contract "required" vs the shipped optional+fail-loud convention.
 - Seam amendments: the `skipStep`/`planSkipDates` split (§XXVIII, as-built S3); `completeStep`'s return now distinguishes
   drive + occurrence; `rescheduleStep`'s borrowed auto-slot leg (R3).
-- `RoutineEvaluation` gains the PolicyUndefined flag (R4); drop the `registry` + `measurementSources` deps (N3).
+- `RoutineEvaluation` gains the PolicyUndefined flag (R4); keep `registry` (validation), drop `measurementSources` (N3).
 - UNKNOWNs 22–23 are pinned at the run/drive slice PLAN.
 - Baseline F1 (drive leg missing), F2 (date format, rule 16), F4 (`setLifecycle`), F5 (deps), F6 (day helper), F7/F8 (stale prose).
 
