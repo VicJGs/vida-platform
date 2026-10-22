@@ -66,7 +66,7 @@ service APIs only (constitution §6).
 | actionable | = completeStep | ledger done upsert (as built) → `RoutineCompletion` |
 | task | `getTask` (null/soft-deleted → `EntityUnavailableError`) → `completeTask` → stamp → `{status:'done'}`. `RecurrenceRegenError` ⇒ completed: stamp + `flag:'recurrence_regen_failed'` | = runStep |
 | habit | `habits` absent / `getHabit` null → `EntityUnavailableError` → `logCompletion(habitId, {date})` → `count >= target_count` ⇒ stamp + `'done'`, else `'advanced'`. `BackfillWindowError` rethrown, no stamp | = runStep |
-| focus | done row for (step, date) ⇒ return it (`'done'`). Attached spine (`findOpenSessionForEntity`) whose extension (narrowed by `session.sub_type === 'focus'`) is `running`/`paused` ⇒ `{status:'in_progress', session_id, focus_id}` (re-entry). Attached focus already `completed`/`cancelled` and no done row ⇒ stamp from it + detach (stamp-retry path). Else `startFocus({})` → `attach(session_id,'routine_step',stepId,'instance')`; if `attach` throws, best-effort `cancelFocus(focus_id)` then rethrow (no orphan running focus) → `{status:'in_progress', session_id, focus_id}` | done row ⇒ return it. Running/paused attached focus → `completeFocus(focus_id)` → stamp (`actual_duration_minutes = round(duration_seconds/60)`; a caller-passed duration is **overridden** for focus, declared) → detach → `'done'`. Attached focus `completed` + no done row ⇒ stamp from it + detach (retry). No attached focus → `EntityUnavailableError('no running focus session')`. A focus started outside routines (not attached to the step) is invisible here → `EntityUnavailableError` (declared) |
+| focus | done row for (step, date) ⇒ return it (`'done'`). Attached spine (`findOpenSessionForEntity`) whose extension (narrowed by `session.sub_type === 'focus'`) is `running`/`paused` ⇒ `{status:'in_progress', session_id, focus_id}` (re-entry). Attached focus `completed`, no done row, **and `utcDay(focus.updated_at) === date`** ⇒ stamp from it + detach (stamp-retry path). Attached focus `cancelled`, or `completed` on another day ⇒ detach and fall through to a fresh start (a cancel is never a done). Else `startFocus({})` → `attach(session_id,'routine_step',stepId,'instance')`; if `attach` throws, best-effort `cancelFocus(focus_id)` then rethrow (no orphan running focus) → `{status:'in_progress', session_id, focus_id}` | done row ⇒ return it. Running/paused attached focus → `completeFocus(focus_id)` → stamp (`actual_duration_minutes = round(duration_seconds/60)`; a caller-passed duration is **overridden** for focus, declared) → detach → `'done'`. Attached focus `completed` + no done row + `utcDay(focus.updated_at) === date` ⇒ stamp from it + detach (retry). Attached focus `cancelled`, or `completed` on another day ⇒ detach, then `EntityUnavailableError('no running focus session')`. No attached focus → `EntityUnavailableError('no running focus session')`. A focus started outside routines (not attached to the step) is invisible here → `EntityUnavailableError` (declared) |
 
 ## Types (net-new)
 ```ts
@@ -88,8 +88,7 @@ export class EntityUnavailableError extends Error { constructor(public readonly 
 
 ## Operation flow + invariants
 - **N7 — drive first, stamp second.** No routine write precedes the entity call. **Retry after a stamp failure is safe for every
-  target:** task (re-drive is effect-idempotent), habit (patch upsert + rail dedup), and focus (the stamp-retry path above reads the
-  completed focus row).
+  target:** task (re-drive is effect-idempotent), habit (patch upsert + rail dedup), and focus (the stamp-retry path reads the completed focus row **only when it completed on the same UTC day as `date`**; a cancelled or other-day row is detached, never stamped).
 - **Rule 1.** The routine never fires an entity's effects (tasks/habits fire their own; `completeFocus` fires none; `completeSession`
   is never called).
 - **Date:** `input.date` (validated `YYYY-MM-DD`) or `clock()` (UTC day via `utcDay`). It is passed to `logCompletion`. Tasks has no
@@ -111,7 +110,8 @@ Harness: the tasks `setupWithTimer` pattern (`createSessionRegistry` + `createEf
 tasks built with `effects:{rail, registry}` and a registered spy `award_xp` handler for test 13; `vi.setSystemTime` for focus durations.
 1. **Actionable:** `runStep`/`completeStep` on a null-entity step → ledger done; completeStep returns a `RoutineCompletion`.
 2. **Task:** `runStep` → `tasks.getTask` is `completed`; ledger done; `StepRunState{target:'task', status:'done'}`.
-3. **Task missing / soft-deleted:** → `EntityUnavailableError`; no routines ledger row; no routines `sync_queue` row.
+3. **Task missing / soft-deleted:** → `EntityUnavailableError`; no routines ledger row; no routines `sync_queue` row. A soft-deleted **step** →
+   `StepNotFoundError` before any drive (the task is untouched).
 4. **Task obligation regen failure** (`setRecurrence(id, 'FREQ=BOGUS')`, which Tasks doesn't validate, the tasks test precedent) → the task is
    completed, ledger stamped, `flag:'recurrence_regen_failed'` (also via `completeStep`).
 5. **Habit target 1:** `runStep` → a habit completion for the date (count 1); ledger done.
@@ -124,11 +124,14 @@ tasks built with `effects:{rail, registry}` and a registered spy `award_xp` hand
     run (same new session) → complete (day 2) → a ledger row per date; no `EntityUnavailableError`.
 11. **Focus stamp retry (B3):** simulate a stamp failure after `completeFocus` (spy the completions write to throw once) → retry `completeStep`
     → stamped from the completed focus row; the attachment is then detached.
-12. **Focus edge cases:** `completeStep` with no attached running focus → `EntityUnavailableError`; a focus started outside routines →
+12. **Focus edge cases:** a **cancelled** attached focus → `runStep` starts a new session (detached, never stamped) and `completeStep` →
+    `EntityUnavailableError`; a completed focus from a **previous day** with no done row → not stamped for today; `completeStep` with no
+    attached running focus → `EntityUnavailableError`; a focus started outside routines →
     `EntityUnavailableError`; `attach` failure after `startFocus` → the focus is cancelled (no orphan running focus) and the error rethrown.
 13. **Rule 1 + re-drive (rule 17):** completing a task step twice → the task's `award_xp` handler runs **exactly once** (the effect-idempotency
     guarantee), and no effect is keyed on the routine/step.
-14. **Unsupported targets:** `step_type:'workout'`; `step_type:'habit'` with no ref; `entity_type:'session'` → `EntityUnavailableError`, no
+14. **Skip overwrite:** a logged skip on (step, date), then a successful task drive → the same row flips to done (BR-RT-S3-2).
+    **Unsupported targets:** `step_type:'workout'`; `step_type:'habit'` with no ref; `entity_type:'session'` → `EntityUnavailableError`, no
     session created.
 15. **Persistence probe:** a driven `completeStep` enqueues the ledger row's `sync_queue` entry.
 Gates: tsc 0 · eslint 0 · routines suite green (41 + new) · full `@vida/core` sequential · g2 · /critique · §XXIX.
@@ -150,21 +153,29 @@ Gates: tsc 0 · eslint 0 · routines suite green (41 + new) · full `@vida/core`
 6. `cancelFocus` after an `attach` failure is best-effort (its own try/catch); the **original** error is rethrown.
 7. A `TaskNotFoundError` from `completeTask` (a race after `getTask`) maps to `EntityUnavailableError`. Any other substrate error propagates unchanged.
 8. A logged-skip row for (step, date) is overwritten by a successful drive (the existing upsert, BR-RT-S3-2).
-9. Cross-module imports are **types only** from the barrels (`TasksService` `../tasks`, `HabitsService` `../habits`, `SessionsService` `../sessions`) plus the
-   `utcDay` value from `../tasks`. No barrel-collision risk: no new exported generic names (`StepRunState`/`StepRunStatus`/`EntityUnavailableError` are unique; grep at build).
-10. `getSession(id)` returns `Session | null`. The focus extension is narrowed by `session.sub_type === 'focus'`.
+9. Cross-module imports from the barrels: types (`TasksService`, `HabitsService`, `SessionsService`) plus **values** from `../tasks`: `utcDay`,
+   `TaskNotFoundError` and `RecurrenceRegenError` (for `instanceof`). No cycle: tasks/sessions/habits import nothing from routines. No barrel-collision risk: no new exported generic names (`StepRunState`/`StepRunStatus`/`EntityUnavailableError` are unique; grep at build).
+10. `getSession(id)` returns `Session | null`. `Session.extension` is a non-discriminated `FocusSessionRow | StudySessionRow | null`, so the narrowing is a local
+    type guard `(s): s.extension is FocusSessionRow` keyed on `s.session.sub_type === 'focus' && s.extension != null`.
 
 ## Implementation plan (§5, worked via `victor:execute-plan-code`)
-1. **Tests first (red):** upgrade the harness to real Tasks/Habits/Sessions (+ effect registry, spy `award_xp`); add Gate tests 1–15.
-2. **types.ts + index.ts:** deps (`tasks`, `sessions`, `habits?`) · `StepRunState`/`StepRunStatus` · `EntityUnavailableError` · `runStep` + the completeStep
-   union on the interface · export the new names.
-3. **validators/routine.ts:** `RunStepSchema` (`{ date?: CalendarDate }`).
-4. **service.ts:** default clock → `utcDay` · `resolveTarget(step)` (precedence) · `driveTask`/`driveHabit`/`driveFocus`/`completeFocusStep` · `runStep` ·
-   the `completeStep` drive leg · the stamp via the existing `upsertCompletion`.
+1. **Tests first (red):** upgrade the harness to real Tasks/Habits/Sessions (+ effect registry, spy `award_xp`); add Gate tests 1–15. **Narrow
+   the existing `completeStep` call sites** (actionable steps → `RoutineCompletion`) via an exported `isStepRunState` guard: the tests live under
+   `src`, so tsc checks them.
+2. **validators/routine.ts:** `RunStepSchema` (`{ date?: CalendarDate }`). *(Before types.ts: types infer from the schemas.)*
+3. **types.ts + index.ts:** deps (`tasks`, `sessions`, `habits?`) · `StepRunState`/`StepRunStatus` · `EntityUnavailableError` · `runStep` + the
+   completeStep union on the interface · `isStepRunState` · export the new names.
+4. **service.ts:** default clock → `utcDay` · `resolveTarget(step)` (precedence) · `driveTask`/`driveHabit`/`driveFocus`/`completeFocusStep` (focus guard,
+   same-day retry, cancel → fresh start) · `runStep` · the `completeStep` drive leg · the stamp via the existing `upsertCompletion`.
    **Gate point = steps 2–4** (required deps turn tsc red until the service + harness land).
 5. **Docs (§XXVIII-minor annotations):** interp rule 18 / R5 / rule 23 · seam (`runStep` input, completeStep union, `EntityUnavailableError`,
-   `startFocus({})` + attach) · slice-map S3 line · ledger B11 → ✅ via `utcDay`.
+   `startFocus({})` + attach) · slice-map S3 line · ledger B11 → ✅ via `utcDay`. The durable `current-*` promotion (`runStep`, `EntityUnavailableError`,
+   the target precedence, the focus detach workaround, the drive-error map) is done at step 6 §XXIX.
 6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` sequential · g2 · /critique · §XXIX.
+
+## Step-5 critique (folded): REVISE → 2 blocking fixed (a cancelled focus is never stamped done; the stamp-retry path is same-day only) + 6
+non-blocking (narrow existing completeStep call sites + `isStepRunState`, a real type guard for the focus extension, value imports from `../tasks`
+declared, step order swapped, gate tests for skip overwrite + soft-deleted step, durable-doc promotion named)
 
 ## g1 critique (folded): REVISE → 5 blocking fixed
 B1 `utcDay` is public, so it's reused (draft claim withdrawn). B2 focus re-entry after cycle 1 → detach-after-complete workaround. B3 focus
