@@ -4,7 +4,7 @@
 
 # Slice Map — Routines (① backend)
 
-> **▶ RE-SCOPED (entity-rescope, 2026-10-21) — pending Victor's Re-scope Gate approval.** The 2026-10-14 decomposition (S1–S9,
+> **▶ RE-SCOPED (entity-rescope, 2026-10-21) — APPROVED by Victor at the Re-scope Gate (2026-10-21).** The 2026-10-14 decomposition (S1–S9,
 > D1–D3) stands. This revision folds in the reconciliation ledger (`delivery/reconciliation.md`): the as-built work (2026-10-13,
 > superseded 8-slice plan) covers governing **S1 + S2**, and the ❌/📄/🕳 rows become a conformance slice (**S2c**) plus amendments
 > to S3–S9. *Original pause banner:* paused 2026-10-14 pending `mod-tasks`. That condition was met when mod-tasks merged
