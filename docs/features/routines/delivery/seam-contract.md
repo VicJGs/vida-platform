@@ -35,7 +35,7 @@ interface RoutinesServiceDeps {             // ⟲ amended (A2, N3, D1)
 createRoutine(input: CreateRoutineInput): Promise<Routine>           // {name, description?, recurrence_rule?, measurement_kind?, binding_mode?, sort_order?}
 updateRoutine(id: Id, patch: UpdateRoutineInput): Promise<Routine>   // re-validates axes + lifecycle
 archiveRoutine(id: Id): Promise<void>                                // soft-delete; cascades to steps; ledger preserved (RT-17)
-setLifecycle(id: Id, lifecycle: 'active'|'paused'|'off'): Promise<Routine>   // paused/off generate no misses (S2c)
+setLifecycle(id: Id, lifecycle: 'active'|'paused'|'off'): Promise<Routine>   // S2c. Miss suppression for paused/off lands with S5's miss derivation (vacuous until then)
 getRoutine(id: Id): Promise<Routine | null>
 listRoutines(filter?: { lifecycle?: RoutineLifecycle }): Promise<Routine[]>
 ```

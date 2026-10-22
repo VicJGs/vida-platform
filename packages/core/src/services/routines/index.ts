@@ -4,6 +4,7 @@ export {
   RoutineNotFoundError,
   StepNotFoundError,
   CompletionNotFoundError,
+  InvalidRecurrenceRuleError,
   type RoutinesService,
   type RoutinesServiceDeps,
   type CreateRoutineInput,

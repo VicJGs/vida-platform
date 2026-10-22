@@ -15,6 +15,7 @@
 // ============================================================================
 
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
+import ICAL from 'ical.js'
 import type { Routine, RoutineStep, RoutineCompletion } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
@@ -34,11 +35,15 @@ import {
   SkipStepSchema,
   EditRoutineCompletionSchema,
   PlanSkipDatesSchema,
+  SetRoutineLifecycleSchema,
+  RoutineCalendarDateSchema,
 } from '../../validators/routine'
+import { UnknownEntityType } from '../../foundation/spaces/types'
 import {
   RoutineNotFoundError,
   StepNotFoundError,
   CompletionNotFoundError,
+  InvalidRecurrenceRuleError,
   type RoutinesService,
   type RoutinesServiceDeps,
   type CreateRoutineInput,
@@ -58,6 +63,22 @@ function parseJsonArray<T>(value: string | null): T[] | null {
   }
 }
 
+// Deterministic, platform-independent tie-break (the tasks precedent, services/tasks/service.ts:237 — private there).
+const byCodepoint = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
+
+// S2c (B3) — a usable RFC-5545 RRULE. Verified against ical.js 2.2.1: invalid part VALUES throw, but a missing FREQ
+// parses silently with `freq = null` ('', 'NOT A RULE', 'BYDAY=MO', 'RRULE:FREQ=DAILY'), and a later iterator throws.
+// So both legs are checked. INTERVAL<=0 is coerced to 1 by the parser (accepted).
+function assertValidRrule(rule: string): void {
+  let freq: string | null = null
+  try {
+    freq = ICAL.Recur.fromString(rule).freq ?? null
+  } catch {
+    throw new InvalidRecurrenceRuleError(rule)
+  }
+  if (freq == null) throw new InvalidRecurrenceRuleError(rule)
+}
+
 // --- Row → @vida/types interface (DB-11; _sync_status string → union cast) ---
 const toRoutine = (r: RoutineRow): Routine => ({
   ...r,
@@ -74,7 +95,7 @@ const toRoutineCompletion = (r: RoutineCompletionRow): RoutineCompletion => ({
 })
 
 export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService {
-  const { db, deviceId } = deps
+  const { db, deviceId, registry } = deps
   const clock = deps.clock ?? (() => new Date().toISOString().slice(0, 10)) // YYYY-MM-DD, default today
   const cfg = { deviceId, encryptedFields: [] as string[] } // M1.0: [E] fields dormant (→ M3/DB-5)
 
@@ -92,6 +113,22 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     const s = await stepsRepo.findById(stepId) // excludes soft-deleted
     if (!s) throw new StepNotFoundError(stepId) // fail-loud — no orphan completion (no FK guards this, IR-3)
     return s
+  }
+
+  // S2c (A10, R2) — a non-null entity_type must be registered (sessions precedent, services/sessions/service.ts:393).
+  const assertEntityType = (entityType: string | null | undefined): void => {
+    if (entityType != null && !registry.isRegistered(entityType)) throw new UnknownEntityType(entityType)
+  }
+
+  // Live steps of a routine (rule 7: findWhere skips the soft-delete filter, so filter explicitly), in sequence order:
+  // step_order, then created_at, then id (the tasks 3-key precedent).
+  const liveSteps = async (routineId: string): Promise<RoutineStepRow[]> => {
+    const rows = await stepsRepo.findWhere(
+      and(eq(routineStep.routine_id, routineId), isNull(routineStep.deleted_at)) as SQL,
+    )
+    return rows.sort(
+      (a, b) => a.step_order - b.step_order || a.created_at - b.created_at || byCodepoint(a.id, b.id),
+    )
   }
 
   const findCompletion = async (stepId: string, date: string): Promise<RoutineCompletionRow | undefined> => {
@@ -145,7 +182,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   // --- S2 serialize (step; faithful echo + skip_dates JSON) ---
   const serializeStep = (routineId: string, p: AddStepInput): CreateInput<typeof routineStep> => ({
     routine_id: routineId,
-    step_order: p.step_order ?? 0,
+    step_order: p.step_order ?? 0, // addStep always supplies it (max+1 append, S2c A11); the fallback only types the input
     step_type: p.step_type ?? null, // OPEN vocab — no enum validation (RT-3)
     entity_type: p.entity_type ?? null, // nullable driven ref (RT-4)
     entity_id: p.entity_id ?? null,
@@ -168,21 +205,22 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     // ── S1 ──────────────────────────────────────────────────────────
     createRoutine: async (input) => {
       const p = CreateRoutineSchema.parse(input)
+      if (p.recurrence_rule != null) assertValidRrule(p.recurrence_rule) // != null, not truthiness: '' is validated (B3)
       return toRoutine(await routinesRepo.create(serializeRoutine(p)))
     },
 
     updateRoutine: async (id, patch) => {
       const p = UpdateRoutineSchema.parse(patch)
+      if (p.recurrence_rule != null) assertValidRrule(p.recurrence_rule) // null clears; absent leaves untouched
       return toRoutine(await routinesRepo.update(id, serializeRoutineUpdate(p)))
     },
 
     archiveRoutine: async (id) => {
-      // RT-17 / IR-3 app-cascade: soft-delete the routine, then its steps (no FK). The step→completion
-      // hard-delete closer lands in S8 (the ledger ships in S3). Idempotent: already-deleted steps re-stamp.
+      // RT-17 app-cascade (interp rule 6): soft-delete the routine, then its LIVE steps (no FK). Already-deleted steps
+      // are not re-touched (the read filters deleted_at). The ledger is preserved: completions hard-delete only with a
+      // hard purge of their step, and no purge op exists (ledger B13).
       await routinesRepo.delete(id) // softDelete:true → sets deleted_at; ledger untouched
-      const steps = await stepsRepo.findWhere(
-        and(eq(routineStep.routine_id, id), isNull(routineStep.deleted_at)) as SQL,
-      )
+      const steps = await liveSteps(id)
       for (const s of steps) await stepsRepo.delete(s.id)
     },
 
@@ -192,21 +230,34 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     },
 
     listRoutines: async (filter = {}) => {
-      const conds: SQL[] = [isNull(routines.deleted_at)] // findWhere skips the soft-delete filter (IR-10)
+      const conds: SQL[] = [isNull(routines.deleted_at)] // findWhere skips the soft-delete filter (rule 7)
       if (filter.lifecycle !== undefined) conds.push(eq(routines.lifecycle, filter.lifecycle))
       const rows = await routinesRepo.findWhere(and(...conds) as SQL)
+      // S2c (A8) — sort_order, then created_at, then id (tasks precedent).
+      rows.sort((a, b) => a.sort_order - b.sort_order || a.created_at - b.created_at || byCodepoint(a.id, b.id))
       return rows.map(toRoutine)
+    },
+
+    setLifecycle: async (id, lifecycle) => {
+      const p = SetRoutineLifecycleSchema.parse({ lifecycle })
+      await loadRoutineOrThrow(id) // typed — no write on a missing/archived routine
+      return toRoutine(await routinesRepo.update(id, { lifecycle: p.lifecycle }))
     },
 
     // ── S2 ──────────────────────────────────────────────────────────
     addStep: async (routineId, step) => {
       const p = AddStepSchema.parse(step)
+      assertEntityType(p.entity_type)
       await loadRoutineOrThrow(routineId) // RT-3 — fail-loud; no orphan step
-      return toRoutineStep(await stepsRepo.create(serializeStep(routineId, p)))
+      // S2c (A11) — append: step_order = max(live) + 1 unless given. One extra read, skipped when step_order is given.
+      const step_order =
+        p.step_order ?? (await liveSteps(routineId)).reduce((m, s) => Math.max(m, s.step_order), -1) + 1
+      return toRoutineStep(await stepsRepo.create(serializeStep(routineId, { ...p, step_order })))
     },
 
     updateStep: async (stepId, patch) => {
       const p = UpdateStepSchema.parse(patch)
+      assertEntityType(p.entity_type) // ignores null/undefined
       return toRoutineStep(await stepsRepo.update(stepId, serializeStepUpdate(p)))
     },
 
@@ -215,25 +266,18 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     },
 
     reorderSteps: async (routineId, orderedStepIds) => {
-      // Only steps that actually belong to this routine are reordered; foreign/unknown ids are ignored (IR-3).
-      const live = await stepsRepo.findWhere(
-        and(eq(routineStep.routine_id, routineId), isNull(routineStep.deleted_at)) as SQL,
-      )
-      const owned = new Set(live.map((s) => s.id))
+      // Only steps that actually belong to this routine are reordered; foreign/unknown ids are ignored (BR-RT-S2-6).
+      const owned = new Set((await liveSteps(routineId)).map((s) => s.id))
       let order = 0
       for (const id of orderedStepIds) {
         if (!owned.has(id)) continue
         await stepsRepo.update(id, { step_order: order })
         order += 1
       }
+      return (await liveSteps(routineId)).map(toRoutineStep) // S2c (A12) — the seam returns the reordered steps
     },
 
-    listSteps: async (routineId) => {
-      const rows = await stepsRepo.findWhere(
-        and(eq(routineStep.routine_id, routineId), isNull(routineStep.deleted_at)) as SQL,
-      )
-      return rows.sort((a, b) => a.step_order - b.step_order).map(toRoutineStep)
-    },
+    listSteps: async (routineId) => (await liveSteps(routineId)).map(toRoutineStep),
 
     // ── S3 ──────────────────────────────────────────────────────────
     completeStep: async (stepId, input = {}) => {
@@ -266,6 +310,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     },
 
     editCompletion: async (stepId, date, patch) => {
+      RoutineCalendarDateSchema.parse(date) // S2c (B1) — a malformed date is a ZodError, not CompletionNotFoundError
       const p = EditRoutineCompletionSchema.parse(patch)
       await loadStepOrThrow(stepId)
       const existing = await findCompletion(stepId, date)
@@ -278,6 +323,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     },
 
     deleteCompletion: async (stepId, date) => {
+      RoutineCalendarDateSchema.parse(date) // S2c (B1)
       const existing = await findCompletion(stepId, date)
       if (!existing) throw new CompletionNotFoundError(stepId, date)
       await completionsRepo.delete(existing.id) // HARD delete (softDelete:false — ledger has no deleted_at)

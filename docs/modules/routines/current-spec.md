@@ -3,7 +3,7 @@
 > Coverage: 8/8 files read — **full** (`services/routines/{service,types,index}.ts` + `CLAUDE.md` + `__tests__/routines-service.test.ts`
 > · `validators/routine.ts` · `@vida/types/routine.ts` · `db/schema/routines.ts`; ~52.7 KB).
 > Inherits: `docs/core` (constitution: `business-rules.md`, `conventions.md`, `architecture/data-flow.md`) → this module.
-> Last refreshed: 2026-10-21 · mod-routines entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
+> Last refreshed: 2026-10-21 · **S2c floor conformance promoted (§XXIX)** · earlier: entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
 > = built S1–S3 `1a61189` + merged `origin/main`). Source of truth = the code (Currency Rule §XXIX).
 
 > **Baseline note (2026-10-21).** This doc records the code AS-IS. The code was built 2026-10-13 against an
@@ -19,7 +19,7 @@ recurring sequence of polymorphic steps, and each step drives a real entity else
 "composes + derives, writes almost nothing of its own" `[FACT: docs/features/routines/delivery/interpretation.md:13-15]`.
 
 **As-built today (S1–S3):** the persistence floor only, meaning routine-definition CRUD, step CRUD + ordering + app-cascade,
-and the per-step completion ledger + both skip mechanisms. `[FACT: services/routines/types.ts:70-109]`
+and the per-step completion ledger + both skip mechanisms. `[FACT: services/routines/types.ts]`
 
 **What it is NOT (yet / ever):**
 - NOT the driver of entities. `runStep` (Sessions / Habits / Tasks composition) is unbuilt `[FACT: types.ts — no runStep]`.
@@ -34,13 +34,14 @@ and the per-step completion ledger + both skip mechanisms. `[FACT: services/rout
 
 ### Composition
 `createRoutinesService(deps: RoutinesServiceDeps): RoutinesService`: a factory-object with hoisted closures and no `this.`.
-`RoutinesServiceDeps = { db: DrizzleDb; deviceId: string; clock?: () => string }` `[FACT: types.ts:25-30; service.ts:76-83]`.
-- `clock` defaults to `new Date().toISOString().slice(0, 10)`, i.e. **today's UTC calendar day** `[FACT: service.ts:78]`.
+`RoutinesServiceDeps = { db: DrizzleDb; deviceId: string; clock?: () => string; registry: TaggableTypeRegistry }` (`registry` added in
+S2c: validates a step's `entity_type`; required per the approved seam) `[FACT: types.ts RoutinesServiceDeps]`.
+- `clock` defaults to `new Date().toISOString().slice(0, 10)`, i.e. **today's UTC calendar day** `[FACT: service.ts]`.
 - ⚠ **Gap vs the governing factory:** interpretation §5/D1 and slice-map "Factory" require `tasks: TasksService` (**required**)
-  plus `spaces` / `notes` / `registry` / `sessions` foundation deps and the deny-safe optionals. None are in the built deps
-  `[FACT: types.ts:25-30 vs delivery/slice-map.md "Factory"]`. → reconciliation input.
+  plus `spaces` / `notes` / `sessions` foundation deps and the optionals. Only `registry` has landed (S2c); the rest land in the
+  slice that first consumes them (S3: `tasks`/`habits`/`sessions`; S7: `effects`; S8: `spaces`/`notes`; S4: `prefs`).
 
-Repositories (DB-6 generic Repository, `encryptedFields: []`, the M1.0 dormant `[E]` seam) `[FACT: service.ts:79-83]`:
+Repositories (DB-6 generic Repository, `encryptedFields: []`, the M1.0 dormant `[E]` seam) `[FACT: service.ts]`:
 | Repo | Table | softDelete |
 |---|---|---|
 | `routinesRepo` | `routines` | true |
@@ -48,25 +49,26 @@ Repositories (DB-6 generic Repository, `encryptedFields: []`, the M1.0 dormant `
 | `completionsRepo` | `routine_completions` | **false** (ledger, hard delete) |
 
 ### Operations (as-built)
-**Routine definition** (`service.ts:169-199`)
+**Routine definition** (`service.ts`)
 | Method | Signature | Errors |
 |---|---|---|
-| `createRoutine` | `(input: CreateRoutineInput) => Promise<Routine>` | `ZodError` (bad enum / missing `name`) |
-| `updateRoutine` | `(id, patch: UpdateRoutineInput) => Promise<Routine>` | `ZodError`; `Error('Row not found: <id>')` from Repository `[FACT: db/repository.ts:413]` |
+| `createRoutine` | `(input: CreateRoutineInput) => Promise<Routine>` | `ZodError` (bad enum / missing or empty `name` / progress out of 0–100); `InvalidRecurrenceRuleError` (S2c) |
+| `updateRoutine` | `(id, patch: UpdateRoutineInput) => Promise<Routine>` | `ZodError`; `InvalidRecurrenceRuleError` (S2c); `Error('Row not found: <id>')` from Repository `[FACT: db/repository.ts:413]` |
 | `archiveRoutine` | `(id) => Promise<void>` | soft-deletes the routine, then cascade-soft-deletes its live steps; ledger untouched |
 | `getRoutine` | `(id) => Promise<Routine \| null>` | null if missing/soft-deleted |
-| `listRoutines` | `(filter?: { lifecycle? }) => Promise<Routine[]>` | — |
+| `listRoutines` | `(filter?: { lifecycle? }) => Promise<Routine[]>` | ordered `sort_order`, `created_at`, id (S2c) |
+| `setLifecycle` | `(id, lifecycle) => Promise<Routine>` | **S2c.** `ZodError` (off-tuple); `RoutineNotFoundError` (missing/archived), no write |
 
-**Steps** (`service.ts:202-236`)
+**Steps** (`service.ts`)
 | Method | Signature | Errors |
 |---|---|---|
-| `addStep` | `(routineId, step: AddStepInput) => Promise<RoutineStep>` | `ZodError`; `RoutineNotFoundError` (missing/archived parent) |
-| `updateStep` | `(stepId, patch: UpdateStepInput) => Promise<RoutineStep>` | `ZodError`; `Row not found` |
+| `addStep` | `(routineId, step: AddStepInput) => Promise<RoutineStep>` | `ZodError`; `UnknownEntityType` (unregistered `entity_type`, S2c); `RoutineNotFoundError` (missing/archived parent). Appends (`step_order` = max+1) unless given (S2c) |
+| `updateStep` | `(stepId, patch: UpdateStepInput) => Promise<RoutineStep>` | `ZodError`; `UnknownEntityType` (S2c); `Row not found` |
 | `removeStep` | `(stepId) => Promise<void>` | soft-delete only. **Its completions are NOT removed** (see BR doc §3) |
-| `reorderSteps` | `(routineId, orderedStepIds: string[]) => Promise<void>` | foreign/unknown ids silently ignored |
-| `listSteps` | `(routineId) => Promise<RoutineStep[]>` | live steps, sorted by `step_order` |
+| `reorderSteps` | `(routineId, orderedStepIds: string[]) => Promise<RoutineStep[]>` | foreign/unknown ids silently ignored; returns the live steps (S2c) |
+| `listSteps` | `(routineId) => Promise<RoutineStep[]>` | live steps, ordered `step_order`, `created_at`, id (S2c) |
 
-**Completion ledger + skip** (`service.ts:239-290`)
+**Completion ledger + skip** (`service.ts`)
 | Method | Signature | Errors |
 |---|---|---|
 | `completeStep` | `(stepId, input?: { date?, actual_duration_minutes? }) => Promise<RoutineCompletion>` | `StepNotFoundError` |
@@ -76,31 +78,35 @@ Repositories (DB-6 generic Repository, `encryptedFields: []`, the M1.0 dormant `
 | `deleteCompletion` | `(stepId, date) => Promise<void>` | `CompletionNotFoundError` (does NOT check the step exists) |
 | `listCompletions` | `(stepId) => Promise<RoutineCompletion[]>` | — (sorted by `completed_date`) |
 
-Typed errors: `RoutineNotFoundError(id)` · `StepNotFoundError(id)` · `CompletionNotFoundError(stepId, date)` `[FACT: types.ts:47-68]`.
+Typed errors: `RoutineNotFoundError(id)` · `StepNotFoundError(id)` · `CompletionNotFoundError(stepId, date)` · `InvalidRecurrenceRuleError(rule)`
+(S2c) · `UnknownEntityType` (foundation, re-used) `[FACT: types.ts]`. A malformed positional `date` to `editCompletion`/`deleteCompletion`
+throws `ZodError` (S2c).
 `skipStep` + `planSkipDates` replace the single `skipStep({kind})` from the 2026-10-13 seam-contract. That was a §XXVIII
-deviation, grounded in RT-8 and g2-approved at S3 `[FACT: types.ts:92-97]`. Whether the governing seam-contract already has this
+deviation, grounded in RT-8 and g2-approved at S3 `[FACT: types.ts]`. Whether the governing seam-contract already has this
 split is checked in reconciliation.
 
-**Not built (governing surface, per `delivery/seam-contract.md`):** `setLifecycle`, `runStep`, `evaluateRoutine`, `progress`,
+**Not built (governing surface, per `delivery/seam-contract.md`):** `runStep`, `evaluateRoutine`, `progress`,
 streak/rate analytics, `rescheduleStep`, effect emission, tags/notes consumption, `dueIn`/`summary`/`getDueReminders`, journal +
 due-provider registration, and the typed errors `EntityUnavailable` / `OutsideAcceptanceWindow` / `PolicyUndefined` / `ProviderEmitFailed`.
 
 ### Inputs (Zod, `validators/routine.ts`)
-- `CreateRoutineSchema` = all routine fields optional except `name` · `UpdateRoutineSchema` = all optional `[FACT: validators/routine.ts:35-40]`.
-- `AddStepSchema` = all step fields optional except `title`; `step_type` is a **plain string** (OPEN vocab) `[FACT: :45-58]`.
-- `CompleteStepSchema` / `SkipStepSchema` / `EditRoutineCompletionSchema` / `PlanSkipDatesSchema` `[FACT: :65-83]`.
-  `CalendarDate = z.string()` has **no YYYY-MM-DD format check** `[FACT: :65]` → BR doc §4.
+- `CreateRoutineSchema` = all routine fields optional except `name` (`.min(1)`, S2c) · `UpdateRoutineSchema` = all optional ·
+  `progress` int 0–100 (S2c) · `recurrence_rule` parse + FREQ validated at write (S2c) · `SetRoutineLifecycleSchema` (S2c).
+- `AddStepSchema` = all step fields optional except `title`; `step_type` is a **plain string** (OPEN vocab).
+- `CompleteStepSchema` / `SkipStepSchema` / `EditRoutineCompletionSchema` / `PlanSkipDatesSchema`.
+  Dates use a module-local `CalendarDate` = `YYYY-MM-DD` shape regex (S2c; exported as `RoutineCalendarDateSchema`). Shape only, like the
+  other modules.
 - Enums reuse the shared tuples: `ROUTINE_LIFECYCLE`, `ROUTINE_TIME_OF_DAY`, and `MeasurementKindSchema`/`BindingModeSchema`
-  re-exported from `./measurement` (no redefinition) `[FACT: :17-22]`.
+  re-exported from `./measurement` (no redefinition).
 
 ## 3. Structure & key data
 - `service.ts`: the factory. Row→interface mappers (`toRoutine`/`toRoutineStep`/`toRoutineCompletion`, `_sync_status` union
   cast, interp §4.11) · `parseJsonArray` (defensive JSON, malformed→null) · `loadRoutineOrThrow`/`loadStepOrThrow` (fail-loud
   guards) · `findCompletion` + `upsertCompletion` (the shared complete/skip path) · `serializeRoutine`/`serializeStep` (faithful-echo
-  backfill, interp §4.8) · the service object `[FACT: service.ts:52-293]`.
+  backfill, interp §4.8) · the service object `[FACT: service.ts]`.
 - `types.ts`: deps, Zod-inferred input types, filter, typed errors, the `RoutinesService` interface `[FACT: types.ts]`.
 - `index.ts`: the barrel, re-exported by `@vida/core` `[FACT: services/routines/index.ts; packages/core/src/index.ts]`.
-- `CLAUDE.md`: **stale**. It still says "Directory home only … No feature code lives here yet" `[FACT: services/routines/CLAUDE.md:15-16]` → refresh at §XXIX.
+- `CLAUDE.md`: current (refreshed in S2c).
 
 **Schema served (migration 018, the orchestration reframe)** `[FACT: db/schema/routines.ts:47-108]`:
 - `routines`: `name[E]`, `description[E]`, `recurrence_rule` (RRULE), `lifecycle` ∈ {active,paused,off} NN DEFAULT active,
@@ -112,14 +118,15 @@ due-provider registration, and the typed errors `EntityUnavailable` / `OutsideAc
 
 **`@vida/types` (DB-11 reconcile, done in as-built S1):** `Routine`, `RoutineStep`, `RoutineCompletion` (re-keyed to
 `routine_step_id`, extends `SyncableEntity`). Retired: `RoutineAction`, `ROUTINE_ACTION_TYPE`, `ROUTINE_RECURRENCE_FREQUENCY`
-`[FACT: packages/types/src/routine.ts:1-13]`. ⚠ The governing interpretation §1c still lists this reconcile as *owed*
+`[FACT: packages/types/src/routine.ts]`. ⚠ The governing interpretation §1c still lists this reconcile as *owed*
 (its baseline predates the build) → reconciliation marks it ✅.
 
 ## 4. Dependencies
 **Consumes:** `drizzle-orm` (`and`/`eq`/`isNull`) · `db/repository` (`createRepository`) · `db/schema/routines` ·
-`validators/routine` (→ `validators/measurement`) · `@vida/types` `[FACT: service.ts:17-49]`. **Consumes no other service or
-foundation substrate today.** Everything else the governing map composes (Sessions, Habits, **Tasks (required, D1)**, Spaces,
-Notes, Effect-rail, Measurement, Journals, Preferences) is unbound.
+`validators/routine` (→ `validators/measurement`) · `@vida/types` · **`ical.js`** (RRULE parse, S2c) · **`foundation/spaces`**
+(`TaggableTypeRegistry` dep + `UnknownEntityType`, S2c) `[FACT: service.ts imports]`. **Consumes no other service yet.** Everything else
+the governing map composes (Sessions, Habits, **Tasks (required, D1)**, Spaces service, Notes, Effect-rail, Measurement, Journals,
+Preferences) lands per slice.
 
 **Consumed by** (bounded reverse-search of `packages/` + `apps/`, not truncated):
 - `packages/core/src/index.ts`: the `export * from './services/routines'` barrel line.
@@ -144,7 +151,7 @@ Coupling budget (constitution §6): respected. There are no reads of other modul
 
 ## Verification (as-built, re-run at baseline)
 `routines-service.test.ts`: live store (better-sqlite3 in-memory, `migrate()` applies 018), **28/28 green on Node 24 after the
-merge** (S1 9 · S2 + S3 the rest; `describe` blocks at :75/:169/:269) · `@vida/core` tsc 0 · tasks suite 98/98 alongside.
+merge**; after **S2c: 41/41** (+13 Gate tests) · full `@vida/core` 2050/2052 (2 = F006 vault timeouts under load; 36/36 alone) · tsc 0 · eslint 0.
 ⚠ Run on **Node 24**. The worktree's better-sqlite3 binary is built for ABI 137, so under `.nvmrc`'s Node 22 all 28 fail to load
 the native module (environment, not code).
 

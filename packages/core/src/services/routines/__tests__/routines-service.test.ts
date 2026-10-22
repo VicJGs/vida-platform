@@ -1,5 +1,5 @@
 // ============================================================================
-// mod-routines #64 ① · S1 — routine definition CRUD + @vida/types reconcile (LIF-138)
+// mod-routines #64 ① · S1 + S2 (built) + S2c floor conformance (LIF-138)
 //
 // Node / better-sqlite3 live-store harness (mirrors habits/finance/checkins): REAL data store,
 // UNLOCKED vault (the sync-hash path runs even with empty [E]), migrate() applies 018_routines so
@@ -9,17 +9,21 @@
 // missing-name reject) + co-transactional sync_queue enqueue (persistence probe).
 // ============================================================================
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { ZodError } from 'zod'
 import Database from 'better-sqlite3'
 import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../db/adapter'
 import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
+import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { UnknownEntityType } from '../../../foundation/spaces/types'
 import {
   createRoutinesService,
   RoutineNotFoundError,
   StepNotFoundError,
   CompletionNotFoundError,
+  InvalidRecurrenceRuleError,
   type RoutinesService,
 } from '../index'
 
@@ -68,7 +72,7 @@ async function setup(): Promise<Harness> {
   const driver = createBetterSqlite3Driver(bsql)
   await migrate(driver)
   const db = createDrizzleProxy(driver)
-  const svc = createRoutinesService({ db, deviceId: 'test-device' })
+  const svc = createRoutinesService({ db, deviceId: 'test-device', registry: createTaggableTypeRegistry() })
   return { svc, db, bsql }
 }
 
@@ -78,7 +82,7 @@ describe('mod-routines S1 — routine definition CRUD', () => {
     h = await setup()
   })
 
-  it('createRoutine echoes a FAITHFUL row — notNull-defaults backfilled, nullables → null (RT-2/RT-19, IR-8)', async () => {
+  it('createRoutine echoes a FAITHFUL row — notNull-defaults backfilled, nullables → null (RT-2/RT-19, interp §4.8)', async () => {
     const r = await h.svc.createRoutine({ name: 'Morning sequence' })
     expect(r.id).toBeTruthy()
     expect(r.name).toBe('Morning sequence')
@@ -135,7 +139,7 @@ describe('mod-routines S1 — routine definition CRUD', () => {
     expect(all.find((x) => x.id === r.id)).toBeUndefined()
   })
 
-  it('listRoutines filters by lifecycle (IR-10 — explicit soft-delete filter)', async () => {
+  it('listRoutines filters by lifecycle (interp §4.7 — explicit soft-delete filter)', async () => {
     await h.svc.createRoutine({ name: 'A', lifecycle: 'active' })
     await h.svc.createRoutine({ name: 'B', lifecycle: 'paused' })
     await h.svc.createRoutine({ name: 'C', lifecycle: 'active' })
@@ -174,7 +178,7 @@ describe('mod-routines S2 — step CRUD + ordering + cascade', () => {
     routineId = (await h.svc.createRoutine({ name: 'Morning' })).id
   })
 
-  it('addStep echoes a FAITHFUL step — defaults backfilled, nullables → null, skip_dates round-trips (RT-3/RT-8, IR-8)', async () => {
+  it('addStep echoes a FAITHFUL step — defaults backfilled, nullables → null, skip_dates round-trips (RT-3/RT-8, interp §4.8)', async () => {
     const s = await h.svc.addStep(routineId, { title: 'Stretch', skip_dates: ['2026-10-20', '2026-10-21'] })
     expect(s.id).toBeTruthy()
     expect(s.routine_id).toBe(routineId)
@@ -186,7 +190,7 @@ describe('mod-routines S2 — step CRUD + ordering + cascade', () => {
     expect(s.entity_id).toBeNull()
     expect(s.description).toBeNull()
     expect(s.time_of_day).toBeNull()
-    expect(s.skip_dates).toEqual(['2026-10-20', '2026-10-21']) // JSON round-trip (IR-6)
+    expect(s.skip_dates).toEqual(['2026-10-20', '2026-10-21']) // JSON round-trip (interp §4.9)
     expect(s.deleted_at).toBeNull()
     expect(s._sync_status).toBe('pending')
   })
@@ -215,7 +219,7 @@ describe('mod-routines S2 — step CRUD + ordering + cascade', () => {
     expect(s.entity_id).toBeNull()
   })
 
-  it('addStep on a missing/archived routine throws RoutineNotFoundError — no orphan step (RT-3, IR-3)', async () => {
+  it('addStep on a missing/archived routine throws RoutineNotFoundError — no orphan step (RT-3, interp §4.6)', async () => {
     await expect(h.svc.addStep('no-such-routine', { title: 'X' })).rejects.toBeInstanceOf(RoutineNotFoundError)
     await h.svc.archiveRoutine(routineId)
     await expect(h.svc.addStep(routineId, { title: 'Y' })).rejects.toBeInstanceOf(RoutineNotFoundError)
@@ -248,7 +252,7 @@ describe('mod-routines S2 — step CRUD + ordering + cascade', () => {
     expect((await h.svc.listSteps(routineId)).map((s) => s.title)).toEqual(['first', 'second', 'third'])
   })
 
-  it('reorderSteps sets step_order by position; foreign/unknown ids are ignored (IR-3)', async () => {
+  it('reorderSteps sets step_order by position; foreign/unknown ids are ignored (BR-RT-S2-6)', async () => {
     const a = await h.svc.addStep(routineId, { title: 'A', step_order: 0 })
     const b = await h.svc.addStep(routineId, { title: 'B', step_order: 1 })
     const c = await h.svc.addStep(routineId, { title: 'C', step_order: 2 })
@@ -257,7 +261,7 @@ describe('mod-routines S2 — step CRUD + ordering + cascade', () => {
     expect(steps.map((s) => s.title)).toEqual(['C', 'A', 'B']) // C→0, A→1, B→2
   })
 
-  it('archiveRoutine cascade-soft-deletes its steps (RT-17, IR-3)', async () => {
+  it('archiveRoutine cascade-soft-deletes its steps (RT-17, interp §4.6)', async () => {
     await h.svc.addStep(routineId, { title: 'A' })
     await h.svc.addStep(routineId, { title: 'B' })
     expect((await h.svc.listSteps(routineId)).length).toBe(2)
@@ -355,5 +359,167 @@ describe('mod-routines S3 — completion ledger + skip', () => {
 
   it('planSkipDates on a missing step throws StepNotFoundError', async () => {
     await expect(h.svc.planSkipDates('no-such-step', ['2026-10-20'])).rejects.toBeInstanceOf(StepNotFoundError)
+  })
+})
+
+// ============================================================================
+// S2c — floor conformance (PLAN-S2c-floor-conformance.md · Verification Gate 1–13)
+// ============================================================================
+describe('mod-routines S2c — floor conformance', () => {
+  let h: Harness
+  let routineId: string
+  const queueCount = async (): Promise<number> => (await h.db.select().from(syncQueue).all()).length
+  beforeEach(async () => {
+    h = await setup()
+    routineId = (await h.svc.createRoutine({ name: 'Morning' })).id
+  })
+
+  // 1 — setLifecycle happy path (ROU-17, A6)
+  it('setLifecycle moves paused → off → active, each returning the faithful row', async () => {
+    for (const lc of ['paused', 'off', 'active'] as const) {
+      const r = await h.svc.setLifecycle(routineId, lc)
+      expect(r.lifecycle).toBe(lc)
+      expect((await h.svc.getRoutine(routineId))?.lifecycle).toBe(lc)
+    }
+  })
+
+  // 2 — setLifecycle on an archived / missing routine → typed, no write
+  it('setLifecycle on an archived or missing routine throws RoutineNotFoundError with no write', async () => {
+    await h.svc.archiveRoutine(routineId)
+    const rowBefore = (await h.bsql.prepare('SELECT _sync_version, updated_at, lifecycle FROM routines WHERE id = ?').get(routineId)) as Record<string, unknown>
+    const before = await queueCount()
+    await expect(h.svc.setLifecycle(routineId, 'paused')).rejects.toBeInstanceOf(RoutineNotFoundError)
+    await expect(h.svc.setLifecycle('no-such-routine', 'paused')).rejects.toBeInstanceOf(RoutineNotFoundError)
+    expect(await queueCount()).toBe(before)
+    expect(h.bsql.prepare('SELECT _sync_version, updated_at, lifecycle FROM routines WHERE id = ?').get(routineId)).toEqual(rowBefore)
+  })
+
+  // 3 — setLifecycle off-tuple → ZodError, no write
+  it('setLifecycle rejects an off-tuple lifecycle before any write', async () => {
+    const before = await queueCount()
+    await expect(h.svc.setLifecycle(routineId, 'sleeping' as never)).rejects.toBeInstanceOf(ZodError)
+    expect((await h.svc.getRoutine(routineId))?.lifecycle).toBe('active')
+    expect(await queueCount()).toBe(before)
+  })
+
+  // 4 — addStep entity_type validated against the registry (A10, R2)
+  it('addStep validates entity_type against the registry; unregistered → UnknownEntityType, no row', async () => {
+    await expect(h.svc.addStep(routineId, { title: 'Read', entity_type: 'habit', entity_id: 'h1' })).resolves.toBeTruthy()
+    await expect(h.svc.addStep(routineId, { title: 'Alarm' })).resolves.toBeTruthy() // null entity_type = actionable
+    const before = await queueCount()
+    await expect(
+      h.svc.addStep(routineId, { title: 'Bad', entity_type: 'not_a_type', entity_id: 'x' }),
+    ).rejects.toBeInstanceOf(UnknownEntityType)
+    expect((await h.svc.listSteps(routineId)).length).toBe(2)
+    expect(await queueCount()).toBe(before)
+  })
+
+  // 5 — updateStep entity_type validated too
+  it('updateStep setting an unregistered entity_type throws UnknownEntityType and leaves the step unchanged', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Read', entity_type: 'habit', entity_id: 'h1' })
+    const before = await queueCount()
+    await expect(h.svc.updateStep(s.id, { entity_type: 'not_a_type' })).rejects.toBeInstanceOf(UnknownEntityType)
+    expect((await h.svc.listSteps(routineId))[0].entity_type).toBe('habit')
+    expect(await queueCount()).toBe(before)
+  })
+
+  // 6 — calendar-date shape on every date entry point (B1, rule 16)
+  it('rejects a non YYYY-MM-DD date at every date entry point, with no write', async () => {
+    const s = await h.svc.addStep(routineId, { title: 'Read' })
+    await h.svc.completeStep(s.id, { date: '2026-10-20' })
+    const before = await queueCount()
+    await expect(h.svc.completeStep(s.id, { date: '2026-1-5' })).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.skipStep(s.id, { date: 'yesterday' })).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.planSkipDates(s.id, ['2026/10/01'])).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.addStep(routineId, { title: 'X', skip_dates: ['bad'] })).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.updateStep(s.id, { skip_dates: ['bad'] })).rejects.toBeInstanceOf(ZodError)
+    // ZodError, not CompletionNotFoundError — the declared B1 error-type change (pre-S2c code threw the latter).
+    await expect(h.svc.editCompletion(s.id, 'bad', { skipped: true })).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.deleteCompletion(s.id, 'bad')).rejects.toBeInstanceOf(ZodError)
+    expect(await queueCount()).toBe(before)
+    await expect(h.svc.planSkipDates(s.id, ['2026-12-24'])).resolves.toBeTruthy()
+  })
+
+  // 7 — progress override 0..100 int (B2)
+  it('progress accepts 0, 100, null and rejects 101, -1, 1.5', async () => {
+    for (const ok of [0, 100, null]) await expect(h.svc.updateRoutine(routineId, { progress: ok })).resolves.toBeTruthy()
+    await h.svc.updateRoutine(routineId, { progress: 40 })
+    for (const bad of [101, -1, 1.5]) await expect(h.svc.updateRoutine(routineId, { progress: bad })).rejects.toBeInstanceOf(ZodError)
+    expect((await h.svc.getRoutine(routineId))?.progress).toBe(40) // rejected updates leave the stored value
+  })
+
+  // 8 — recurrence_rule parse-validated at write (B3; verified ical.js 2.2.1 behaviour)
+  it('validates recurrence_rule: FREQ required, parser throws rejected, null allowed', async () => {
+    for (const ok of ['FREQ=DAILY', 'FREQ=WEEKLY;BYDAY=MO,WE', 'FREQ=DAILY;INTERVAL=0']) {
+      await expect(h.svc.createRoutine({ name: 'R', recurrence_rule: ok })).resolves.toBeTruthy()
+    }
+    await expect(h.svc.createRoutine({ name: 'R', recurrence_rule: null })).resolves.toBeTruthy()
+    const routinesBefore = (await h.svc.listRoutines()).length
+    const queueBefore = await queueCount()
+    for (const bad of ['NOT A RULE', 'BYDAY=MO', '', 'RRULE:FREQ=DAILY', 'FREQ=BOGUS', 'FREQ=DAILY;COUNT=abc', 'FREQ=DAILY;BYDAY=XX']) {
+      await expect(h.svc.createRoutine({ name: 'R', recurrence_rule: bad })).rejects.toBeInstanceOf(InvalidRecurrenceRuleError)
+    }
+    expect((await h.svc.listRoutines()).length).toBe(routinesBefore)
+    expect(await queueCount()).toBe(queueBefore)
+    await h.svc.updateRoutine(routineId, { recurrence_rule: 'FREQ=DAILY' })
+    await expect(h.svc.updateRoutine(routineId, { recurrence_rule: 'BYDAY=MO' })).rejects.toBeInstanceOf(InvalidRecurrenceRuleError)
+    expect((await h.svc.getRoutine(routineId))?.recurrence_rule).toBe('FREQ=DAILY')
+  })
+
+  // 9 — non-empty name/title (B16)
+  it('rejects an empty name or title on create and update', async () => {
+    await expect(h.svc.createRoutine({ name: '' })).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.updateRoutine(routineId, { name: '' })).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.addStep(routineId, { title: '' })).rejects.toBeInstanceOf(ZodError)
+    const s = await h.svc.addStep(routineId, { title: 'Ok' })
+    await expect(h.svc.updateStep(s.id, { title: '' })).rejects.toBeInstanceOf(ZodError)
+  })
+
+  // 10 — listRoutines ordering: sort_order, created_at, id codepoint (A8)
+  it('listRoutines orders by sort_order, then created_at, then id', async () => {
+    await h.svc.archiveRoutine(routineId)
+    let t = 1_000
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => (t += 10))
+    const c = await h.svc.createRoutine({ name: 'C', sort_order: 1 })
+    const a = await h.svc.createRoutine({ name: 'A', sort_order: 0 })
+    const b = await h.svc.createRoutine({ name: 'B', sort_order: 0 })
+    spy.mockImplementation(() => 5_000) // forced same created_at → id codepoint decides
+    const x = await h.svc.createRoutine({ name: 'X', sort_order: 2 })
+    const y = await h.svc.createRoutine({ name: 'Y', sort_order: 2 })
+    spy.mockRestore()
+    const ids = (await h.svc.listRoutines()).map((r) => r.id)
+    const [first, second] = [x.id, y.id].sort()
+    expect(ids).toEqual([a.id, b.id, c.id, first, second])
+  })
+
+  // 11 — addStep appends (max+1); reorder then add lands last (A11)
+  it('addStep appends at max+1 over live steps; explicit step_order wins; reorder-then-add lands last', async () => {
+    const a = await h.svc.addStep(routineId, { title: 'A' })
+    const b = await h.svc.addStep(routineId, { title: 'B' })
+    const c = await h.svc.addStep(routineId, { title: 'C' })
+    expect([a.step_order, b.step_order, c.step_order]).toEqual([0, 1, 2])
+    const pinned = await h.svc.addStep(routineId, { title: 'P', step_order: 0 })
+    expect(pinned.step_order).toBe(0)
+    await h.svc.removeStep(pinned.id)
+    await h.svc.reorderSteps(routineId, [c.id, a.id, b.id])
+    const d = await h.svc.addStep(routineId, { title: 'D' })
+    expect((await h.svc.listSteps(routineId)).map((s) => s.id)).toEqual([c.id, a.id, b.id, d.id])
+  })
+
+  // 12 — reorderSteps returns the live steps (A12)
+  it('reorderSteps returns the live steps in the new order, deep-equal to a fresh listSteps', async () => {
+    const a = await h.svc.addStep(routineId, { title: 'A' })
+    const b = await h.svc.addStep(routineId, { title: 'B' })
+    const returned = await h.svc.reorderSteps(routineId, [b.id, a.id])
+    expect(returned.map((s) => s.id)).toEqual([b.id, a.id])
+    expect(returned).toEqual(await h.svc.listSteps(routineId))
+  })
+
+  // 13 — persistence probe (RT-18)
+  it('setLifecycle enqueues a co-transactional sync_queue row', async () => {
+    const before = (await h.db.select().from(syncQueue).all()).filter((x) => x.row_id === routineId).length
+    await h.svc.setLifecycle(routineId, 'paused')
+    const after = (await h.db.select().from(syncQueue).all()).filter((x) => x.row_id === routineId).length
+    expect(after).toBeGreaterThan(before)
   })
 })

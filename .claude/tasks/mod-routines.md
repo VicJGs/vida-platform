@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope Step 5 Re-scope Gate (awaiting Victor approval); next = S2c floor conformance
+# Status: in-progress — re-scope approved; S2c ✅ shipped (local commit); next = S3 run/drive (keystone)
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -18,6 +18,11 @@ completion/miss policy → Preferences; `routine_step_membership` → Spaces des
 Sessions; XP application → Gamification. Delivery: `docs/features/routines/delivery/`.
 
 ## Slice log
+- **S2c — Floor conformance ✅ (re-scope, 2026-10-21)** — setLifecycle · entity_type registry check (+ `registry` dep) · YYYY-MM-DD dates ·
+  progress 0–100 · RRULE parse+FREQ (ical.js verified) · non-empty names · 3-key ordering · max+1 append · reorder returns steps · doc
+  back-fills. routines **41/41** · tsc 0 · eslint 0 · core 2050/2052 (F006). g1 REVISE→folded · preflight PASSED · step-5 SHIP · g2 10 →
+  4 fixed/2 recorded · final /critique REVISE→fixed · §XXIX promoted. Spec `delivery/PLAN-S2c-floor-conformance.md`.
+- *(Re-scope 2026-10-21: as-built S1–S3 below = governing S1+S2; docs `delivery/{documentation-gate,interpretation,reconciliation,slice-map}.md`.)*
 - **S1 — Routine CRUD + DB-11 reconcile ✅** — `@vida/types/routine.ts` reconciled (new `Routine`/`RoutineStep`,
   re-key `RoutineCompletion`→`routine_step_id` (SyncableEntity), retire `RoutineAction`+`ROUTINE_ACTION_TYPE`+
   `ROUTINE_RECURRENCE_FREQUENCY`; zero live consumers); validators; `createRoutinesService` S1 CRUD (faithful echo
@@ -57,3 +62,11 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - blocked by `xs-measurement-engine`
 - blocked by `xs-spaces-tags-links`
 - blocked by `xs-views`
+
+## Build Steps — S2c floor conformance (PLAN-S2c §5 · Approval 2 2026-10-21)
+- [x] 1. Gate tests 1–13 written first (red) + construct with registry + retitle IR-n (D4)
+- [x] 2. validators/routine.ts — CalendarDate · ProgressField · .min(1) base+extend · SetRoutineLifecycleSchema
+- [x] 3. types.ts + index.ts — registry dep · setLifecycle · reorderSteps → RoutineStep[] · InvalidRecurrenceRuleError · header (D3)
+- [x] 4. service.ts — RRULE guard · entity_type guard · setLifecycle · max+1 append · 3-key sorts · reorder returns · positional-date parse · D8 comment  (gate point 2–4)
+- [x] 5. Back-fills — layer CLAUDE.md (D2) · introspection note (D5) · seam setLifecycle annotation
+- [x] 6. Gates — tsc 0 · eslint 0 · routines suite · full @vida/core sequential · g2 · /critique · §XXIX

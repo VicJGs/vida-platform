@@ -153,6 +153,22 @@ the suite red until step 4, so verify only after step 4 (write the step-4 tests 
 6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` suite sequentially · g2 review · /critique · §XXIX
    (`current-*` + BR-RT-S2-3 change).
 
+## Implementation notes (§XXVIII-minor, recorded)
+- The calendar-date schema is module-local (`CalendarDate`) but **exported under the namespaced name `RoutineCalendarDateSchema`**, because the
+  service (another module) needs it for the positional-date checks (pin 3). This keeps pin 3's intent (no `export *` collision) while
+  satisfying the cross-file import. No behaviour change.
+
+## Addendum — g2 code review + final /critique (post-implementation; §XXVIII: the spec never lags the code)
+- **g2 (10 findings):** fixed the exact-error-type assertions in Gate tests 2/3/6 (+ `_sync_version`/`updated_at` no-write check), the
+  `archiveRoutine` reuse of `liveSteps()`, and the RRULE docstring (parse + FREQ only). Recorded, not changed: `updateRoutine` writes on an
+  archived routine (ratified twin behaviour); `reorderSteps` per-step transactions (as-built S2) → "Known edges" in current-business-rules.
+  Already decided and left as-is: `updateStep` on soft-deleted (g2 N1), shape-only dates (PLAN), drivable-type check (S3 R5), `byCodepoint`
+  copy (pin 7).
+- **Final /critique: REVISE → fixed.** Gate 9 (+6/7) assert `ZodError`; gate 7 checks the stored progress is unchanged; §XXIX drift
+  closed in both `current-*` docs (error rows, deps, §5/§6, taxonomy/inventory, F2/F5); stale line cites → symbol cites; a redundant
+  `'entity_type' in p` guard removed.
+- **Gates (final):** routines 41/41 · `@vida/core` tsc 0 · eslint 0 · full `@vida/core` 2050/2052 (2 = F006 vault timeouts, 36/36 alone).
+
 ## Step-5 critique (folded): SHIP + 7 non-blocking (schema renamed `SetRoutineLifecycleSchema`, dropped phantom
 `SetLifecycleInput`, BR re-promotion list corrected, pin 5 reworded + concurrency declared, `!= null` RRULE guard, steps 2–4 as one
 gate point, ZodError change on positional dates declared)

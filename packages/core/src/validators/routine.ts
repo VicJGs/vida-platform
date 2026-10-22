@@ -17,23 +17,31 @@ import { ROUTINE_LIFECYCLE, ROUTINE_TIME_OF_DAY } from '@vida/types'
 import { MeasurementKindSchema, BindingModeSchema } from './measurement'
 
 export const RoutineLifecycleSchema = z.enum(ROUTINE_LIFECYCLE)
+// S2c — setLifecycle input (ROU-17). Namespaced: two `export *` barrels carry this file.
+export const SetRoutineLifecycleSchema = z.object({ lifecycle: RoutineLifecycleSchema })
 export const RoutineTimeOfDaySchema = z.enum(ROUTINE_TIME_OF_DAY)
 // Re-export the shared measurability validators for the routines surface (no redefine).
 export { MeasurementKindSchema, BindingModeSchema }
 
+// S2c (B1, interp rule 16, ADR-002 §2.8) — calendar dates are YYYY-MM-DD. Shape only, the tasks/projects/purposes parity.
+const YMD = /^\d{4}-\d{2}-\d{2}$/
+const CalendarDate = z.string().regex(YMD, 'expected YYYY-MM-DD')
+// Namespaced export for the service's positional-date checks (editCompletion/deleteCompletion) — avoids an `export *` collision.
+export const RoutineCalendarDateSchema = CalendarDate
+
 // --- routines (RT-2/RT-19) --------------------------------------------------
 const RoutineFields = z.object({
-  name: z.string(),
+  name: z.string().min(1), // S2c (B16) — a routine is a NAMED sequence (RT-2)
   description: z.string().nullable(),
   recurrence_rule: z.string().nullable(), // RRULE (RT-11)
   lifecycle: RoutineLifecycleSchema,
   measurement_kind: MeasurementKindSchema, // ADR-011 M1 (RT-19 natural 'rate')
   binding_mode: BindingModeSchema.nullable(), // null ⇒ derive derived-pull
-  progress: z.number().int().nullable(), // nullable override slot (RT-14 — no cached streak)
+  progress: z.number().int().min(0).max(100).nullable(), // override slot 0–100 (RT-14; projects ProgressSchema parity, S2c B2)
   sort_order: z.number().int(),
 })
 export const CreateRoutineSchema = RoutineFields.partial().extend({
-  name: z.string(),
+  name: z.string().min(1), // the extend override must carry min(1) too, or it bypasses the base field's
 })
 export const UpdateRoutineSchema = RoutineFields.partial()
 
@@ -47,14 +55,14 @@ const RoutineStepFields = z.object({
   entity_type: z.string().nullable(),
   entity_id: z.string().nullable(),
   is_required: z.boolean(),
-  title: z.string(),
+  title: z.string().min(1), // S2c (B16)
   description: z.string().nullable(),
   time_of_day: RoutineTimeOfDaySchema.nullable(),
-  skip_dates: z.array(z.string()).nullable(),
+  skip_dates: z.array(CalendarDate).nullable(), // S2c (B1)
   step_order: z.number().int(),
 })
 export const AddStepSchema = RoutineStepFields.partial().extend({
-  title: z.string(),
+  title: z.string().min(1), // the extend override must carry min(1) too
 })
 export const UpdateStepSchema = RoutineStepFields.partial()
 
@@ -62,7 +70,6 @@ export const UpdateStepSchema = RoutineStepFields.partial()
 // The per-step ledger. `completeStep` = a DONE occurrence (skipped=false); `skipStep` = a LOGGED skip on the day
 // (skipped=true + reason, RT-8). `completed_date` defaults to today (clock) in the service. Pre-planned skips are a
 // DISTINCT mechanism (step.skip_dates) → `planSkipDates`, not a completion row (RT-8).
-const CalendarDate = z.string() // YYYY-MM-DD
 export const CompleteStepSchema = z.object({
   date: CalendarDate.optional(),
   actual_duration_minutes: z.number().int().nullable().optional(),
