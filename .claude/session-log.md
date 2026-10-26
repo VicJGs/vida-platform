@@ -6822,3 +6822,15 @@ Next session:
   - LIF-250 `fix-data-plane-boot-open` first (#60, L0′), or Wave L1 (preferences-rescope) — Victor's pick at /begin.
   - Watch: CI dark (Actions billing) · vault 1 MB F011 · the fe-calendar worktree can be removed.
 ---
+
+---
+Date: 2026-10-25 (session opened 2026-10-22)
+Task: fix-data-plane-boot-open (LIF-250) — Bug Fix / Hotfix, worktree `.claude/worktrees/fix-data-plane-boot-open` (removed after merge)
+Accomplished:
+  - **PR #159 merged (`bc37310`)** — the boot no longer times out a live first-run `open`. Root cause FACT (reproduced dev 5/7 · prod 3/3 under load): a fixed 15 s client RPC timer wrapped `open` = module eval + 32 migrations (9–27 s). Fix: worker receipt ack + opened-once (BR-RT-D5) · receipt-only deadline for open/migrate (60 s), reads 15 s · single-flight adapter bootstrap · `getServices()` retries a rejected build · prod-build Playwright smoke + `e2e` script. 49/49 boots; Year on prod median 347 ms. LIF-250 → Done; task archived.
+Decisions / lessons:
+  - Victor ×2: "the main points … are already solved in the documentation … we are only creating the M1 without any layers of cryptography" → "Everything needs to be grounded in the /docs of the OS". Never argue an M1 fix from M3/M4; verify sub-agent claims on disk (one was false: "no PRAGMAs"). Memory `ground-every-deferral…` 8th repeat.
+  - A bug filing's hypotheses, numbers and acceptance are claims too — corrected 3 (prod "every load", wasm "never requested", the unsourced ≤1 s budget); acceptance item 3 dropped via §XXVIII.
+Next session:
+  - **notes-rescope (L1, LIF-245)** — Victor's pick. preferences-rescope (LIF-247) stays in flight in its own worktree; tell it the R3 `buildPromise` limit is fixed on main.
+  - Watch: CI dark (billing) · post-ack `open` unbounded (recorded trade-off).

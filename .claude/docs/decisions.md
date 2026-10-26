@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-22 by /session-end -->
+<!-- Last updated: 2026-10-25 by /session-end -->
 
 ## fe-calendar S6 — first-consumer reads (2026-10-21 — LIF-203)
 
@@ -1244,3 +1244,10 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-22 | plan | filing acceptance item 3 (pagehide handle release / retry-with-backoff) | **§XXVIII deviation — dropped** | targeted refuted hypothesis (a); teardown = preferences R1 BR-8 | yes |
 | 2026-10-22 | build | prod smoke console-clean vs `/favicon.ico` 404 | **answered by a 204 route in the spec, not by loosening the check** | docs classify the favicon 404 as noise (fe-notes envision.md:21,99) | — |
 | 2026-10-22 | verify | Year settle on the booting prod build | **recorded: median 347 ms (210–373 steady; first switch 1 495 ms incl. lazy chunk), fresh vault** | PLAN-S7 §D "measured and recorded"; the filing's "≤ 1 s budget" had no source | — |
+
+## fix-data-plane-boot-open — completed 2026-10-25 (PR #159, `bc37310`)
+- Root cause FACT: a fixed 15 s client RPC timer failed a live first-run `open` (module eval + every migration). The fix
+  restores documented rules (resilience "no hang", BR-RT-D5 "opened once", the boot.ts memo rule); no new architecture.
+- `open`/`migrate` deadline = receipt only (60 s, INTERP-grounded on the measured 12.2 s worst module load); reads/writes 15 s.
+- The filing's acceptance item 3 (pagehide release / retry-with-backoff) was dropped via §XXVIII; teardown stays with preferences R1.
+- Production-build boot smoke (`test:e2e:prod`) is the regression guard; CI's `e2e` script now exists.
