@@ -1,4 +1,5 @@
 import { MODULE_MAP } from '../nav/module-map'
+import { SETTINGS_COPY } from './settings-copy'
 
 // fe-settings S3 — the Settings index model. The category list drives the left rail; the per-setting index entries
 // (label · description · keywords) are the SEARCHABLE INDEX that both the search box and the section grouping consume
@@ -89,6 +90,14 @@ export const SETTINGS_INDEX: readonly SettingIndexEntry[] = [
     label: 'Density',
     description: 'Comfortable or compact spacing',
     keywords: ['density', 'compact', 'comfortable', 'spacing'],
+  },
+  // preferences-rescope R3 (D4) — the persona row, under the theme rows. Keywords = the PERSONA values (types/entities/user.ts).
+  {
+    id: 'persona',
+    category: 'appearance',
+    label: SETTINGS_COPY.personaLabel,
+    description: SETTINGS_COPY.personaDescription,
+    keywords: ['persona', 'role', 'student', 'professional', 'entrepreneur', 'creative', 'parent', 'retiree', 'rewards'],
   },
   {
     id: 'reduce-motion',

@@ -124,7 +124,9 @@ Local SQLite reads are <10 ms (BR-RT-4), so a write **invalidates its query keys
 optimistically patching the cache. This is the convention; it keeps the cache and the DB trivially consistent. The
 **only** grounded exception is a write whose downstream re-read is genuinely slow (e.g. one that must cross the
 deferred sync/transport seam) — that is a **future, opt-in, per-mutation** decision, never a default. No module
-reaches for optimistic patching casually.
+reaches for optimistic patching casually. **Pinned exception (already decided):** preferences writes — optimistic +
+debounced + revert-on-error (fe-settings EC-7 · preferences-rescope gate A7 · BR-RT-4's pinned exception in
+`docs/infrastructure/web-client-runtime/current-business-rules.md`).
 
 ## 5. Keyboard model
 

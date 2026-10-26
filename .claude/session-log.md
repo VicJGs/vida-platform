@@ -6874,3 +6874,64 @@ Next session:
   - Read `docs/features/preferences/delivery/{slice-map,reconciliation}.md` + `sessions/PLAN-R2` (it inherits R2's
     writer API) first.
   - Run suites with no dev servers up; check `uptime` first.
+
+---
+Date: 2026-10-22
+Task: preferences-rescope (LIF-247) — R3 boot + Appearance + honest states · Add Frontend Component / entity-rescope
+Worktree: `.claude/worktrees/preferences-rescope` · branch `preferences-rescope` @ `f796c34` (merge, LOCAL — not pushed) + R3 work UNCOMMITTED
+Goal: merge main, then take R3 through its §XXVI double gate and build it TDD.
+Completed:
+  - **Merge origin/main `f796c34`** (fe-calendar #157/#158 + LIF-250 filing). `composition-root.ts` = main's pure `composeServices`
+    + R2 `preferences` + R1 BR-RT-LOCK applied in `build()`. R1's lock test → `db/composition-root.lock.test.ts`; main's pure
+    test now composes over the LOCKED db (a nested `db.transaction` in any calendar service would deadlock in CI). Docs
+    additive. tsc 0 · eslint 0 · db+prefs+calendar 160/163 (3 = F008, triaged: pass alone / with raised waits).
+  - **PLAN-R3** `docs/features/preferences/delivery/sessions/PLAN-R3-boot-appearance.md` rev 2 → **Approval 1 (Victor)**;
+    rev 2.1 (2 gate-2 refinements: SyncStatus clears on failure · `?force=prefs-refetch-error`) approved with Approval 2.
+    Independent critique: REVISE (6 blocking — preview never cleared · `<html>` clear exposes white in router-suspend ·
+    "Saving…" vs P4 contract · read-only copy false on later error · no-flash method unfalsifiable · toast trigger) → folded.
+  - **IMPLEMENTATION-PLAN-R3** `…/sessions/IMPLEMENTATION-PLAN-R3-boot-appearance.md` rev 3: preflight PASSED (5 gaps) +
+    gate-2 critique REVISE (6 blocking — theme tokens are Tamagui `Variable`s · `import.meta.env` untyped · later-error
+    unreachable · 2 mutation checks survived · no seed seam · build-order) → folded → **Approval 2 (Victor)**.
+  - **Built (TDD), all green in isolation:** step 0 fake read knobs (`failReads`, `holdReads`/`releaseReads`) + `settings/settings-copy.ts`
+    (+lintCopy test) · 1 writer `onConfirmed`/`onFailed` hooks (20/20) · 2 `preferences/theme-hint.ts` (`getVariableValue`,
+    12/12) · 3 `preferences/preferences-queries.ts` + `force-flag.ts` (7/7) · 4 `writer-instance.ts` → hint + ONE revert
+    toast per failed batch + DEV write-failure (3/3) · 5 `usePreferences` on the shared defs + `hasData` + module `updateView`
+    · 6 `HomeArrangement` → `preferences-view.ts` · 7 derived `stores/theme-store.ts` (cache subscription, preview layer,
+    7/7) · 8 inline `<script id="vida-theme-hint">` in `index.html` (8/8) · 9 `App.tsx` seed gate + preview clear on
+    `'none'` + guarded `paintRoot` layout effect (App 11/12 — the 1 red = step 17's kill target, expected) · 11 `settings-context.tsx`
+    · 12 `settings-skeleton.tsx` · 13 Appearance on the view + persona row (8/8) · 14 `disabled` in Modules/Locale/
+    Notifications · 15 persona index entry (10/10) · 16 surface states + `SyncStatus` (4/5 new state tests).
+In progress:
+  - **§XXVIII DEVIATION — awaiting Victor's approval (do NOT fix before it):** the surface's "first-read error" test exposed a
+    **refetch LOOP** (STRUCTURAL): an errored, data-less query is refetched by every newly mounted observer
+    (query-core `retryOnMount`, `queryObserver.js:445`), and the surface's loading branch remounts the panes' observers on
+    each pending↔error flip → reads 2→4→8→16, Settings flickers forever. Proposed fix: `retryOnMount: false` on BOTH
+    definitions in `preferences/preferences-queries.ts` (query-level, protects every reader); replaces PLAN-R3 R3-BR-2's
+    "useQuery refetches on mount" failed-seed path (trade-off: no auto-retry after a failed first read — reload or a later
+    invalidation recovers; removes the ~1 s skeleton flicker known limit). Rejected alt: view via context (fixes Settings only).
+    Plus a guard test: a failed read is NOT refetched when readers mount (read count flat over time). Debug code removed.
+  - Remaining build steps after approval: record the deviation (PLAN-R3 R3-BR-2 + IMPL-PLAN + Route History) → apply fix →
+    surface test green · **17** `useHomeArrangement` → `usePreferences().view.arrangement` (+ home test) · **18** remove
+    `arrangement` from `preferences-store` + bridge `MIRRORED` (10 fields) · **19** remaining blast radius: `routes.test.tsx` +
+    `session-hud/session-hud-surface.test.tsx` (add `compositionRootMock({ notes })`), `home/home-surface.test.tsx`,
+    guided-setup tests, `stores/preferences-store.test.ts` · tsc (expected red until 13 — now verify) + eslint (also fixes the
+    `it , vi` spacing in 3 pane tests via prettier) · **20** 3 mutation checks (restore from copy) · **21** suites on a QUIET
+    machine · **22** live Visual Gate (PLAN §4 9–15; negative control first) · **23** docs §XXIX (+ `onboarding/CLAUDE.md:31,36`),
+    `/critique`, Victor `visual-approved`, commit (+ push incl. the merge).
+Decisions:
+  - Victor: Approval 1 (PLAN-R3 rev 2) · Approval 2 (IMPL-PLAN-R3 rev 3 + PLAN rev 2.1).
+  - Preview reverts on EVERY guided-setup exit until R7 commits the pick (stated interim; option "preview writes through"
+    rejected — it would persist a skipped pick, E7).
+  - `<html>` paint never cleared; follows the selection (no reliance on unverified Tamagui CSS-variable names).
+  - Revert toast fired by the WRITER per failed batch (lifetime-independent); `SyncStatus` = saved only, clears on failure.
+Failures this session:
+  - F008 variant (fails even ALONE at load ~300–400): `calendar-surface` dense-day + cold first tests of ModulesPane /
+    SettingsSurface — **reproduced on `main`** under the same load → environmental. Recorded in known-failures F008.
+  - Genuine, caught by tests (not environmental): the refetch loop above (deviation pending) · pane tests lacked the
+    composition-root mock once panes read `useSettings()` (fixed).
+Next session:
+  - FIRST: `cd .claude/worktrees/preferences-rescope` · `PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"` · `uptime` ·
+    `git status` (expect the R3 files above, uncommitted). Read IMPLEMENTATION-PLAN-R3 rev 3 + PLAN-R3 rev 2.1 + this entry.
+  - Ask Victor for the pending §XXVIII approval (`retryOnMount: false`) if not already given; on approval resume at
+    "record the deviation → apply fix" then steps 17→23. Machine load has been 200–400 all day: discriminate reds vs `main`.
+---

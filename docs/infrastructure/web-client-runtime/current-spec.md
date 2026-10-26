@@ -134,6 +134,29 @@ facts (routing tree + store inventory) that the AR-4 snapshot above no longer de
 - **Tests** — `src/test/preferences-test-utils.tsx` (singleton-client wrapper, in-memory fake service,
   `compositionRootMock(extra)`); mapper 13 · queue 6 · writer 11 · hooks 6 · bridge 3. `[FACT]`
 
+## preferences-rescope R3 — boot seed + derived theme + honest Settings (2026-10-26 · LIF-247 · built, pending Visual Gate)
+- **Boot (BR-RT-BOOT amended)** — `App.tsx` gates on `dbReady` + **`prefsSeeded`** + the first-run read;
+  `seedPreferences(queryClient)` (`preferences/preferences-queries.ts`) `fetchQuery`s both keys with `retry: 0` and never
+  rejects. The composition root is therefore built inside the Loading window (BR-RT-COMPROOT). `[FACT]`
+- **`preferences/preferences-queries.ts`** (new) — `userPreferencesQuery()` / `navPreferencesQuery()` (key + `queryFn` with the
+  writer's epoch/`noteConfirmed` reconcile, **`retryOnMount: false`**) shared by `usePreferences` and the seed;
+  `preferences/force-flag.ts` (new) — the DEV-only `?force=prefs-read-error|prefs-refetch-error|prefs-write-error` boot
+  flag (off in production). `[FACT]`
+- **Theme (BR-RT-7 amended)** — `stores/theme-store.ts` is a derived cache `{ persisted, previewPreset, selection }` +
+  `setPreview(preset | null)`, re-derived by one query-cache subscription on `['preferences','user']` (a cache `removed`
+  → `THEME_DEFAULT`; no HMR dispose — the listener is idempotent); `resetThemeStoreForTests()`. `App` clears the preview
+  whenever `guidedPhase` returns to `'none'`. `[FACT]`
+- **Theme hint** — `preferences/theme-hint.ts` (`THEME_HINT_KEY`, `toThemeHint`, `writeThemeHint`, `paintRoot`) + the
+  inline `<script id="vida-theme-hint">` in `index.html` (`<head>`, after the process shim) paint `<html>`'s
+  background/colour/`color-scheme` before React; after the seed, an `App` layout effect repaints `<html>` from the live
+  selection (never cleared). `[FACT]`
+- **Writer hooks** — `createPreferencesWriter({ …, onConfirmed?, onFailed? })`; `writer-instance.ts` wires
+  `onConfirmed` (user table) → `writeThemeHint` and `onFailed` → one `toast({ intent: 'danger' })` per failed batch — the
+  first `toast()` caller in apps/web. `[FACT]`
+- **Tests** — `preferences-queries.test.ts` · `theme-hint.test.ts` · `writer-instance.test.ts` · `index-hint-script.test.ts`
+  (the inline script extracted from `index.html` and run in jsdom) · `settings/settings-copy.test.ts` + the updated
+  App / theme-store / writer / hook / Settings / Home suites; the fake service gained `failReads` + `holdReads()`. `[FACT]`
+
 ## CODEC frontend seams — IMPLEMENTED (runtime deltas · fe-codec-* units · baseline-refreshed 2026-10-10 by fe-calendar #19)
 The `fe-codec-*` frontend wave added three **cross-module read + view-adapter seams** under `apps/web/src/` that the
 AR-4/UI-4 snapshots above predate. Recorded here because `fe-calendar` #19 (LIF-203) is the **first consumer** of one

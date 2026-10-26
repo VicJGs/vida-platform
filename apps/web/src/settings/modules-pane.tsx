@@ -4,6 +4,7 @@ import { Button, Card, Input, Switch } from '@vida/ui'
 import { usePreferencesStore } from '../stores/preferences-store'
 import { HIDEABLE_MODULES, MANAGEABLE_SURFACES, type HideableModule } from './settings-model'
 import { OptionRow } from './option-row'
+import { useSettings } from './settings-context'
 
 // fe-settings S5 — the Modules pane (EC-4 module controls · EC-8 escape hatch · EC-12 inline rename). Per-module nav
 // show/hide (Switch) + inline rename (pencil → Input + save/cancel), over the DOCK module list MINUS the always-reachable
@@ -47,6 +48,7 @@ function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) 
   const displayName = customName ?? module.label
 
   const [editing, setEditing] = useState(false)
+  const { readOnly } = useSettings()
   const [draft, setDraft] = useState('')
 
   const startEdit = () => {
@@ -91,10 +93,12 @@ function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) 
         </Text>
       )}
       <View flexDirection="row" alignItems="center" gap="$8" flexShrink={0}>
-        {!editing && (
+        {/* R3 (EC-7): read-only hides rename (an inline editor can't be "disabled" meaningfully) and disables the switch. */}
+        {!editing && !readOnly && (
           <Button size="sm" intent="ghost" aria-label={`Rename ${module.label}`} leading={<PencilIcon />} onPress={startEdit} />
         )}
         <Switch
+          disabled={readOnly}
           aria-label={`Show ${displayName} in the nav`}
           checked={visible}
           onCheckedChange={(v) => setModuleVisible(module.key, v)}
@@ -105,6 +109,7 @@ function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) 
 }
 
 export function ModulesPane() {
+  const { readOnly } = useSettings()
   const moduleVisibility = usePreferencesStore((s) => s.moduleVisibility)
   const setModuleVisible = usePreferencesStore((s) => s.setModuleVisible)
 
@@ -142,6 +147,7 @@ export function ModulesPane() {
               last={i === MANAGEABLE_SURFACES.length - 1}
               control={
                 <Switch
+                  disabled={readOnly}
                   aria-label={s.label}
                   checked={moduleVisibility[s.key] ?? true}
                   onCheckedChange={(v) => setModuleVisible(s.key, v)}

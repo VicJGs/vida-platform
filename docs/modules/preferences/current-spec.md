@@ -14,8 +14,10 @@ over the finished DB-4 #2 schema (`user_preferences`, `nav_preferences`, `comman
 - **Slice 3 · `command_bar_history` — SHIPPED** (this session). `recordCommand` (upsert-by-key) /
   `pinCommand` / `getCommandHistory` (pinned-then-frecency) + `RecordCommandSchema`. **① backend complete.**
 - **② frontend** — shipped as **fe-settings** (LIF-193; renamed from `fe-preferences` LIF-134, decisions.md:302) +
-  **fe-onboarding** guided setup (LIF-216), both **in-session only**. The live close is **preferences-rescope**
-  (LIF-247, M1.2.4). See "② Surface plane — as-built baseline" below.
+  **fe-onboarding** guided setup (LIF-216), originally in-session only. The live close is **preferences-rescope**
+  (LIF-247, M1.2.4): R2 made the seam live; **R3 persists Appearance** (theme · persona · Home arrangement) and seeds it
+  at boot; reduce motion (R4), Modules (R5), Locale/Notifications (R6) and the onboarding commit (R7) are still
+  in-session. See "② Live seam" / "② Surface — R3" below and the as-built baseline.
 
 ## Exposed surface (SHIPPED — Slice 1)
 `createPreferencesService(opts: { db: DrizzleDb; deviceId: string }): PreferencesService` — factory-object, single
@@ -64,6 +66,24 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
   `DEFAULT 1` (unused — the service always writes full defaults on create).
 - Surfaces still bind the stores (hydrated from the view by `PreferencesBridge`) until their slices (R3/R5/R6).
 
+## ② Surface — preferences-rescope R3 (2026-10-26 · built, pending Visual Gate)
+- **Boot seed.** `App` holds Loading until `seedPreferences` settles (both keys, `retry: 0`, never rejects), so the theme
+  and the Home arrangement render the persisted value from the first frame; a failed read boots on the defaults (PR-2).
+  Read definitions are shared (`preferences/preferences-queries.ts`, `retryOnMount: false`).
+- **Appearance persists.** The pane reads `usePreferences().view` and writes `update(viewPatch)`: preset →
+  `dashboard_layout.theme` · mode → `theme` (light|dark) · density → `compact_mode` · arrangement →
+  `dashboard_layout.arrangement` · persona → `persona` (`Not set` ↔ `null`). The persona row sits directly under the three
+  theme rows (+ a `persona` search entry). **Reduce motion still binds `preferences-store`** (R4).
+- **Theme = derived.** `theme-store` follows the `['preferences','user']` cache (optimistic re-theme, reverts on a failed
+  save) + a guided-setup preview layer cleared on every exit. The theme hint (`localStorage`, confirmed rows only) paints
+  `<html>` pre-React (BR-RT-7 amendment).
+- **Home.** `useHomeArrangement` reads `usePreferences().view.arrangement`; `arrangement` left `preferences-store` and the
+  bridge (10 mirrored fields remain).
+- **Settings honest states (EC-7).** loading → static §3.1 skeleton (`aria-busy`) · error → every pane read-only + a calm
+  `role="status"` line (first-read: "showing defaults"; later: "showing what was last loaded") + a `Retry` button
+  (`usePreferences().retry` re-reads only the errored key(s)) · success → editable. One `SyncStatus` ("Saved on this
+  device", no Saving state); a failed batch → the writer's one revert toast. All R3 copy: `settings/settings-copy.ts`.
+
 ## ② Surface plane — as-built baseline (preferences-rescope Step 0, 2026-10-21, worktree @ `c025710`)
 Cross-plane baseline for the entity re-scope. Service plane above is **current** (no service commit since `3e82608`).
 The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/CLAUDE.md`; this section pins the
@@ -80,7 +100,8 @@ The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/C
   `state:'success'`; `useUpdatePreferences()` returns store setters, `persist` a commented no-op, and has **no callers**
   (panes bind the stores directly) `[FACT: settings/use-preferences.ts:19-43]`. `SettingsSurface` has **no loading
   branch** and the error branch replaces the pane `[FACT: settings/settings-surface.tsx:65,117-133]`.
-- **Stores.** `theme-store` `{selection: THEME_DEFAULT}` feeds `<UIProvider selection>` `[FACT: App.tsx:35-40,102]`;
+- **Stores.** *(baseline; R3 made `theme-store` a derived cache and moved `arrangement` off `preferences-store`.)*
+  `theme-store` `{selection: THEME_DEFAULT}` feeds `<UIProvider selection>` `[FACT: App.tsx:35-40,102]`;
   `preferences-store` holds reduceMotion · arrangement · moduleVisibility · moduleNames · dateFormat · timeFormat ·
   weekStartsOn · notifInApp/Push/Email · quietHours `[FACT: stores/preferences-store.ts:68-80]`. Both expose a
   `hydrate()` with **no caller**.
@@ -91,12 +112,14 @@ The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/C
   replaces whole JSON columns → `dashboard_layout` writes must be read-merge-write (§B HARD INVARIANT `:60-68`).
 - **Readers.** `moduleVisibility`/`moduleNames`/`reduceMotion`/`dateFormat`/`timeFormat`/`weekStartsOn` have **0
   readers** outside settings/ + the stores; `useHomeArrangement` reads `arrangement` live in-session
-  `[FACT: home/home-surface.tsx:25-27,74-76]`; `ModuleDock` is mounted nowhere (test-only import); `isFeatureEnabled`
+  `[FACT: home/home-surface.tsx:25-27,74-76]` *(baseline; since R3 it reads the persisted
+  `usePreferences().view.arrangement`)*; `ModuleDock` is mounted nowhere (test-only import); `isFeatureEnabled`
   always `false` `[FACT: shell/feature-flags.ts:10-12]`; `stubShellPrefs` resolves `DEFAULT_PLACEMENT`
   `[FACT: shell/shell-prefs.ts:15-16]`; `usePersona()` = `?persona` dev override or `'neutral'`
   `[FACT: gamification/use-persona.ts:33-36]`.
 - **Gaps in the controls.** No `game` preset in the Settings preset Select (`appearance-pane.tsx:16-20` vs
-  `packages/ui/src/theme-resolution.ts:30`); no persona control; Mode offers Light/Dark only while `theme` allows
+  `packages/ui/src/theme-resolution.ts:30`) *(kept by design: `game` is a module, not a theme — D3)*; no persona control
+  *(R3 added it)*; Mode offers Light/Dark only while `theme` allows
   `system` (default) `[FACT: appearance-pane.tsx:13-14; packages/types/src/entities/user.ts:186]`.
 - **Onboarding.** `useModuleSelection().commit` and `useThemeSelection().commit` are `Promise.resolve()`
   `[FACT: onboarding/use-module-selection.ts:36; use-theme-selection.ts:39]`; `GuidedSetupSlotButton` has **0

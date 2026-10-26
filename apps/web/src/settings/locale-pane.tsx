@@ -2,6 +2,7 @@ import { Text, View } from '@tamagui/core'
 import { Card, Select } from '@vida/ui'
 import { usePreferencesStore, type TimeFormat, type WeekStartsOn } from '../stores/preferences-store'
 import { OptionRow } from './option-row'
+import { useSettings } from './settings-context'
 
 // fe-settings S6 — the Locale pane (EC-4). Option-rows over the existing user_preferences locale fields
 // (date_format · time_format · week_starts_on), dispatching to the in-session preferences-store; live DB persist is the
@@ -26,6 +27,7 @@ const toWeekValue = (d: WeekStartsOn): WeekStartValue => (d === 0 ? 'sunday' : '
 const fromWeekValue = (v: WeekStartValue): WeekStartsOn => (v === 'sunday' ? 0 : 1)
 
 export function LocalePane() {
+  const { readOnly } = useSettings() // R3 (EC-7): read-only on a read error
   const dateFormat = usePreferencesStore((s) => s.dateFormat)
   const setDateFormat = usePreferencesStore((s) => s.setDateFormat)
   const timeFormat = usePreferencesStore((s) => s.timeFormat)
@@ -48,6 +50,7 @@ export function LocalePane() {
           description="How dates are written across the app"
           control={
             <Select
+              disabled={readOnly}
               aria-label="Date format"
               value={dateFormat}
               options={DATE_FORMAT_OPTIONS}
@@ -60,6 +63,7 @@ export function LocalePane() {
           description="12-hour or 24-hour clock"
           control={
             <Select<TimeFormat>
+              disabled={readOnly}
               aria-label="Time format"
               value={timeFormat}
               options={TIME_FORMAT_OPTIONS}
@@ -73,6 +77,7 @@ export function LocalePane() {
           last
           control={
             <Select<WeekStartValue>
+              disabled={readOnly}
               aria-label="Week starts on"
               value={toWeekValue(weekStartsOn)}
               options={WEEK_START_OPTIONS}

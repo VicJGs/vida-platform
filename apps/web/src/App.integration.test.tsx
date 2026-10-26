@@ -21,6 +21,10 @@ vi.mock('./onboarding/first-run-repo', () => ({
 
 import { App } from './App'
 import { router } from './routes'
+import { queryClient } from './lib/query-client'
+import { resetPreferencesWriterForTests } from './preferences/writer-instance'
+import { resetTestPreferences } from './test/preferences-test-utils'
+import { resetThemeStoreForTests } from './stores/theme-store'
 import { useCommandBarUIStore } from './stores/command-bar-ui-store'
 import { useAppShellUIStore } from './stores/app-shell-ui-store'
 
@@ -43,6 +47,11 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup()
+  // preferences-rescope R3: the preferences cache/writer/theme store are module singletons (5 min stale) — reset them.
+  queryClient.clear()
+  resetPreferencesWriterForTests()
+  resetTestPreferences()
+  resetThemeStoreForTests()
 })
 
 describe('App shell — whole-shell integration (S5)', () => {

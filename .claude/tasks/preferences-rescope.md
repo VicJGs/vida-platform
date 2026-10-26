@@ -32,10 +32,30 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 - [x] Step 5 Re-scope Gate: `delivery/slice-map.md` re-scope slices **APPROVED by Victor 2026-10-21** (R1 → R8 + R-T)
 - [x] R1 write integrity — Verification Gate PASS 2026-10-21 (PLAN-R1 §8); awaiting Victor's commit go
 - [x] R2 live preferences seam — Verification Gate PASS 2026-10-22 (PLAN-R2 §7); committed + pushed
-- [ ] Step 6 slices (remaining): R2 live seam → R3 boot/Appearance → R4 reduce-motion → R5 Modules+⌘K → R6 Locale/Notif → R7 onboarding → R-T transition → R8 entity close (ELC-1…9)
+- [x] Merge origin/main `f796c34` (fe-calendar #157/#158): composition-root = main's pure `composeServices` + R2 preferences + R1 lock in `build()`; the pure compose test now runs over the locked db (nested-tx deadlock guard)
+- [x] R3 boot/Appearance — PLAN-R3 rev 2.2 + IMPL rev 3.1 (Victor 2026-10-26). Build steps 0–23 done (uncommitted): 16b loop guard + Retry · 17 Home live arrangement · 18 store/bridge 10 fields · 19 blast radius · 20 mutations #1–#5 killed · 21 suite 895/895, tsc 0, eslint 0 · 22 live Visual Gate items 9–14 PASS (no-flash w/ negative control · arrangement first frame · states · 108-cell matrix text ≥4.52/axe 0/0 overflow · persistence · boot +70 ms ≈ noise) · 23 docs §XXIX + independent /critique REVISE→folded→**SHIP**. Victor `visual-approved` 2026-10-26 → committed. **Next: R4 reduce-motion.**
+- [ ] Step 6 slices (remaining): R3 boot/Appearance → R4 reduce-motion → R5 Modules+⌘K → R6 Locale/Notif → R7 onboarding → R-T transition → R8 entity close (ELC-1…9)
 - [ ] Owed at close (from the main checkout): mint the i18n platform unit (task + Linear) · write cross-unit edges onto owning tasks
 
 ## Route History
 - 2026-10-21 Victor corrections: U1 (intake G5) · A13 (architecture > planning artifacts) · `game` = module, not theme (fe-gamification EC-1/2 re-pinned).
 
 - 2026-10-22: paused after R2 at Victor's request (commit + push, review before R3). Next: PLAN-R3.
+- 2026-10-22: merged origin/main (`f796c34`). R3 gated (Approvals 1+2). Build 0–16.
+
+| Step | Detour | Why | Resolved |
+|---|---|---|---|
+| merge | composition-root conflict (main's pure `composeServices` vs R1 lock + R2 prefs) | both sides edited `build()` | ✅ lock applied in `build()`; lock test split out; pure test runs over the locked db |
+| R3 step 16 | refetch loop on a first-read error — PLAN-R3 R3-BR-2's "refetches once on mount" contradicted query-core 5.101.4 + the governing `state-conventions.md` §3 | plan premise drifted from the doc | ✅ Victor 2026-10-26: PLAN-R3 rev 2.2 / IMPL rev 3.1 — corrected TO the doc (`retryOnMount: false` + §3 Retry affordance); build step 16b |
+| R3 step 16 | pane tests import the real composition root via `useSettings()` | blast radius missed | ✅ `compositionRootMock()` added to 3 pane tests |
+
+## Knowledge Loaded
+- `docs/features/preferences/delivery/{slice-map,reconciliation,interpretation}.md` · `sessions/PLAN-R2-live-seam.md` — R3 PLAN
+- fe-settings / fe-home / fe-gamification `envision.md` ECs · `docs/core/architecture/state-conventions.md` §3.1 — R3 PLAN
+- `docs/modules/preferences/current-*` · web-client-runtime `current-business-rules.md` — preflight
+- `@tanstack/query-core` 5.101.4 `retryer.js` · `queryObserver.js:445` · `focusManager.js` — the loop triage
+
+## Failures This Session
+- F008 — cold first-test timeouts + calendar dense-day fail even alone at load 300–400 — environmental (reproduced on `main`), recorded
+- (new, unnumbered) — first-read-error refetch loop — **open**, deviation pending approval
+

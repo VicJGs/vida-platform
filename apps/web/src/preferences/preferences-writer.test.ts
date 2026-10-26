@@ -3,15 +3,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { InvalidModuleError, USER_PREFERENCES_DEFAULTS } from '@vida/core'
 import type { MergedPreferences } from '@vida/types'
-import { createPreferencesWriter, PreferencesWriteError } from './preferences-writer'
+import { createPreferencesWriter, PreferencesWriteError, type PreferencesWriterOptions } from './preferences-writer'
 import { NAV_PREFS_KEY, USER_PREFS_KEY } from './preferences-keys'
 import { fakePreferencesService } from '../test/preferences-test-utils'
 
 let fake: ReturnType<typeof fakePreferencesService>
 let qc: QueryClient
 
-function makeWriter() {
-  return createPreferencesWriter({ getService: async () => fake.svc, queryClient: qc, debounceMs: 500 })
+function makeWriter(hooks: Pick<PreferencesWriterOptions, 'onConfirmed' | 'onFailed'> = {}) {
+  return createPreferencesWriter({ getService: async () => fake.svc, queryClient: qc, debounceMs: 500, ...hooks })
 }
 
 /** Simulate the hook's read: seed `confirmed` through noteConfirmed, exactly as the queryFn does. */
@@ -217,5 +217,78 @@ describe('preferences writer', () => {
     void w.writePreferences({ time_format: '12h' }) // nobody awaits it (an F10 consumer)
     await w.flushAll()
     await new Promise((r) => setTimeout(r, 10)) // vitest fails the run on an unhandled rejection
+  })
+
+  // ── preferences-rescope R3 — the writer hooks (IMPL-PLAN-R3 step 1): DB truth only, one failure report per batch ──
+  describe('R3 hooks: onConfirmed (DB truth) + onFailed (once per failed batch)', () => {
+    it('an accepted read calls onConfirmed with the read row; a stale read does not', async () => {
+      const onConfirmed = vi.fn()
+      const w = makeWriter({ onConfirmed })
+      await seed(w)
+      expect(onConfirmed).toHaveBeenCalledWith('user', expect.objectContaining({ theme: 'system' }))
+      expect(onConfirmed).toHaveBeenCalledWith('nav', expect.anything())
+      onConfirmed.mockClear()
+      const e = w.epoch('user')
+      await w.writePreferences({ time_format: '12h' }) // a batch settles → the epoch moves
+      onConfirmed.mockClear()
+      w.noteConfirmed('user', { ...USER_PREFERENCES_DEFAULTS }, e) // began before the batch → rejected
+      expect(onConfirmed).not.toHaveBeenCalled()
+    })
+
+    it('a successful batch calls onConfirmed with the DB result; enqueue alone calls nothing', async () => {
+      const onConfirmed = vi.fn()
+      const onFailed = vi.fn()
+      const w = makeWriter({ onConfirmed, onFailed })
+      await seed(w)
+      onConfirmed.mockClear()
+      vi.useFakeTimers()
+      const p = w.writePreferences({ theme: 'dark' })
+      expect(onConfirmed).not.toHaveBeenCalled() // optimistic enqueue is NOT DB truth
+      await vi.advanceTimersByTimeAsync(600)
+      await p
+      expect(onConfirmed).toHaveBeenCalledTimes(1)
+      expect(onConfirmed).toHaveBeenCalledWith('user', expect.objectContaining({ theme: 'dark' }))
+      expect(onFailed).not.toHaveBeenCalled()
+    })
+
+    it('a failed batch NEVER calls onConfirmed (mutation-#1 kill target) and calls onFailed exactly once', async () => {
+      const onConfirmed = vi.fn()
+      const onFailed = vi.fn()
+      const w = makeWriter({ onConfirmed, onFailed })
+      await seed(w)
+      onConfirmed.mockClear()
+      vi.useFakeTimers()
+      fake.state.failNext = new Error('boom')
+      const a = w.writePreferences({ theme: 'dark' }).catch(() => {})
+      const b = w.writePreferences({ compact_mode: true }).catch(() => {}) // same batch
+      await vi.advanceTimersByTimeAsync(600)
+      await Promise.all([a, b])
+      expect(onConfirmed).not.toHaveBeenCalled()
+      expect(onFailed).toHaveBeenCalledTimes(1)
+      expect(onFailed.mock.calls[0]?.[0]).toBe('user')
+      expect(onFailed.mock.calls[0]?.[1]).toBeInstanceOf(PreferencesWriteError)
+    })
+
+    it('two failing batches in sequence → onFailed twice', async () => {
+      const onFailed = vi.fn()
+      const w = makeWriter({ onFailed })
+      await seed(w)
+      fake.state.failNext = new Error('one')
+      await w.writePreferences({ theme: 'dark' }).catch(() => {})
+      fake.state.failNext = new Error('two')
+      await w.writePreferences({ theme: 'dark' }).catch(() => {})
+      expect(onFailed).toHaveBeenCalledTimes(2)
+    })
+
+    it('a throwing hook never breaks the cache sync', async () => {
+      const w = makeWriter({
+        onConfirmed: () => {
+          throw new Error('hook boom')
+        },
+      })
+      await seed(w)
+      await w.writePreferences({ time_format: '12h' })
+      expect(userCache()?.time_format).toBe('12h')
+    })
   })
 })

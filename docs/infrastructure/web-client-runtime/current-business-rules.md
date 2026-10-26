@@ -29,6 +29,15 @@
    `[data-flow.md:454-461]`
 7. **[INTENT] BR-RT-7 — Zustand must NOT hold:** entity data (→ React Query), user preferences/theme/locale
    (→ SQLite via React Query), or anything that persists across sessions (→ SQLite). `[data-flow.md:463-466]`
+   **Amended (preferences-rescope R3):** the ONE exemption is `stores/theme-store.ts`, a **derived cache** of the
+   `['preferences','user']` entry (PR-5, `structure-data.md:46`) — `UIProvider` renders outside `QueryClientProvider`, so
+   it needs a store. It has no setters for the persisted theme: one query-cache subscription (installed at module load over
+   the `lib/query-client` singleton) re-derives `persisted`; the only writable field is the guided-setup `previewPreset`
+   layer (cleared whenever guided setup closes). Besides it, **the theme hint** (`localStorage['vida.theme-hint.v1']` =
+   `{ scheme, bg, fg }`, `preferences/theme-hint.ts`) is a *device-local paint cache*: derived from SQLite, written only
+   from confirmed DB rows (the writer's `onConfirmed`), read only by the pre-React inline `<script id="vida-theme-hint">`
+   in `index.html`, never by the app. It is the one cross-session value outside SQLite — stated here so it cannot become
+   a precedent. `[FACT: stores/theme-store.ts; preferences/theme-hint.ts; index.html]`
 
 ## Routing & forms
 8. **[INTENT] BR-RT-8 — routing is code-based + type-safe with route-based lazy code-splitting.** A central
@@ -66,7 +75,10 @@
 - **[FACT] BR-RT-COMPROOT — the live services are a module singleton.** `db/composition-root.ts` lazily constructs
   `DrizzleDb = createDrizzleProxy(client.driver)` + the module services (notes/journals/preferences + deps) ONCE, after the
   DB-ready gate, exposed as a `getServices()` singleton (not a React provider; `seams/CLAUDE.md`
-  sanctions the singleton). `deviceId` is read from / generated into `app_state['device_id']` (ADR-002 §5.0; `uuidv7()`).
+  sanctions the singleton). **Built during boot (R3):** the preferences seed (BR-RT-BOOT) calls `getServices()` inside the
+  Loading window, so `initVault` + `resolveDeviceId` + the two preferences reads now run before first paint, not after it.
+  `getServices()` memoizes its build promise, so a failure *inside* `build()` is not recovered by a query refetch (a
+  recorded edge, LIF-250's area). `deviceId` is read from / generated into `app_state['device_id']` (ADR-002 §5.0; `uuidv7()`).
   Each entity's closing slice (`register + flip`, golive-replan ELC-3/4) consumes it; adding a module appends its construction. `[FACT: db/composition-root.ts]`
   **fe-calendar #19 S7 (2026-10-22):** construction is the exported PURE `composeServices(db, deviceId)` (no boot/worker/I/O —
   `build()` = DB-ready → `initVault` → the BR-RT-LOCK-wrapped db + device id → `composeServices`), so a live better-sqlite3 vault can test it. Manifest now:
@@ -91,6 +103,12 @@
   truth per table (`confirmed` + `pending`; cache = pending re-applied on confirmed), serial + 500 ms debounced queues,
   per-sub-key `dashboard_layout` + map merges, a hide/pagehide flush. **Every `user_preferences`/`nav_preferences` writer in
   any unit uses `preferences/writer-instance.ts`**, never the raw service. `[FACT: apps/web/src/preferences/]`
+  **R3 (2026-10-26):** both read definitions live in `preferences/preferences-queries.ts` (one read path for the hook and
+  the boot seed) and set `retryOnMount: false` — an errored, data-less query is otherwise refetched by every mounting
+  observer and reset to `pending`, an unbounded loading↔error loop; recovery is the error state's explicit Retry →
+  `refetch()` (`docs/core/architecture/state-conventions.md` §3). The writer gains `onConfirmed` (accepted read / successful
+  batch → the theme hint) and `onFailed` (exactly once per failed batch → one revert toast, from `writer-instance.ts`,
+  whatever surface is mounted). `[FACT: preferences/{preferences-queries,preferences-writer,writer-instance}.ts]`
 - **[FACT] BR-RT-TEARDOWN — worker teardown on non-cancelable lifecycle events only (R1).** `db/boot.ts`
   `registerTeardown`: `pagehide` + `persisted` → `terminate()` (a bfcached page must not hold the exclusive OPFS
   handles) · `pageshow` + `persisted` → reload · a normal unload → nothing (the browser discards the worker). Never
@@ -103,6 +121,11 @@
   `[FACT: app/calendar/{use-calendar,calendar-derive,calendar-sample}.ts; calendar-readonly.test.ts]`
 - **[FACT] BR-RT-BOOT — no query before DB-ready.** `App.tsx` gates rendering (and thus any React Query read) on the
   one-time `open`+`migrate` resolving; the worker's `open` migrates internally (no double-migrate). `[FACT: App.tsx; boot.ts]`
+  **Amended (preferences-rescope R3):** the gate also waits for the **preferences seed** — after `dbReady`,
+  `seedPreferences(queryClient)` `fetchQuery`s both preferences keys (`retry: 0`), and the provider tree renders only once
+  it **settles**, so the theme and every reader (Home arrangement) draw the persisted value from their first frame. The
+  seed **never rejects** (`Promise.allSettled`): a failed read leaves the queries in error, the app boots on the defaults
+  (PR-2) and Settings shows its read-only state — never a stuck "Loading…". `[FACT: App.tsx; preferences/preferences-queries.ts]`
 
 ## Boundary (what AR-4 does NOT do)
 - **[INTENT]** No per-module hooks/stores/forms — those land with each module's later wave (M1.1+). AR-4 ships the

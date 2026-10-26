@@ -1,4 +1,13 @@
-<!-- Last updated: 2026-10-22 by /session-end -->
+<!-- Last updated: 2026-10-26 (preferences-rescope R3) -->
+
+## preferences-rescope R3 — failed-read recovery (2026-10-26 — LIF-247)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-26 | R3 / honest states | how a failed preferences read recovers | **user Retry → `refetch()` (state-conventions §3); `retryOnMount: false` on both query definitions** — NOT refetch-on-mount | query-core 5.101.4 `shouldLoadOnMount` refetches an errored data-less query on EVERY observer mount and `fetchState` resets it to `pending` → a loading↔content surface loops forever; §3 already fixes recovery as an explicit Retry. PLAN-R3 rev 2.2 | yes |
+| 2026-10-26 | R3 / non-text contrast | secondary-button fill + Select-trigger border measure 1.24–1.68 vs the surface | **accepted, no change in R3** — WCAG 1.4.11 needs ≥3:1 only for the visual information that IDENTIFIES a control/state: Retry's label 15.71, Select chevron ≥ 4.94, active rail tick ≥ 4.39 | both are shipped `@vida/ui` primitives (not R3 code); `standards/design.md` "design above the floor" → raising control boundaries is a DS-level call, recorded here as a sibling | yes |
+| 2026-10-26 | R3 / Retry size | Retry button size in the Settings error state | **`size="lg"` (48px)** — not the notifications/gamification `small` | `standards/design.md:218` ≥44 · decisions:138; the two precedents' `small` Retry (and their missing `onPress`) are recorded siblings, not folded | yes |
+
 
 ## fe-calendar S6 — first-consumer reads (2026-10-21 — LIF-203)
 

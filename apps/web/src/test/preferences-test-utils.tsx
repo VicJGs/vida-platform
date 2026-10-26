@@ -32,11 +32,32 @@ export function fakePreferencesService() {
     updates: { user: 0, nav: 0 },
     failNext: null as Error | null,
     reads: { user: 0, nav: 0 },
+    /** R3 read knobs: `'all'` rejects every read · `'after-first'` lets the first read per table succeed, then rejects. */
+    failReads: 'none' as 'none' | 'all' | 'after-first',
+    /** R3: while set, every read awaits it (a deferred boot seed). Release with `releaseReads()`. */
+    readGate: null as Promise<void> | null,
+    releaseReads: () => {},
+  }
+  /** Close the read gate: reads hang until `state.releaseReads()` (R3 — "Loading holds until the seed settles"). */
+  function holdReads() {
+    state.readGate = new Promise<void>((r) => {
+      state.releaseReads = () => {
+        state.readGate = null
+        r()
+      }
+    })
+  }
+  async function read(t: 'user' | 'nav') {
+    state.reads[t]++
+    if (state.readGate) await state.readGate
+    await tick()
+    if (state.failReads === 'all' || (state.failReads === 'after-first' && state.reads[t] > 1)) {
+      throw new Error(`fake: ${t} read failed`)
+    }
   }
   const svc = {
     async getMergedPreferences() {
-      state.reads.user++
-      await tick()
+      await read('user')
       return { ...(state.user ?? USER_PREFERENCES_DEFAULTS) }
     },
     async updatePreferences(patch: Partial<MergedPreferences>) {
@@ -53,8 +74,7 @@ export function fakePreferencesService() {
       return { ...state.user }
     },
     async getNavPreferences() {
-      state.reads.nav++
-      await tick()
+      await read('nav')
       return { ...(state.nav ?? NAV_PREFERENCES_DEFAULTS) }
     },
     async updateNavPreferences(patch: Partial<MergedNavPreferences>) {
@@ -71,7 +91,7 @@ export function fakePreferencesService() {
       return { ...state.nav }
     },
   }
-  return { svc: svc as unknown as PreferencesService, state }
+  return { svc: svc as unknown as PreferencesService, state, holdReads }
 }
 
 /** The fake the composition-root mock serves (module singleton — tests import it from here too). */

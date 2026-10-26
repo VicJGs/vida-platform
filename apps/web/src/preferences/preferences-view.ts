@@ -17,7 +17,10 @@
 import { THEME_DEFAULT, THEME_PRESETS, type ThemePreset, type ThemeSelection } from '@vida/ui'
 import { NAV_PREFERENCES_DEFAULTS, USER_PREFERENCES_DEFAULTS } from '@vida/core'
 import { PERSONA, type MergedNavPreferences, type MergedPreferences, type Persona } from '@vida/types'
-import type { HomeArrangement, TimeFormat, WeekStartsOn } from '../stores/preferences-store'
+import type { TimeFormat, WeekStartsOn } from '../stores/preferences-store'
+
+/** The Home arrangement (fe-home EC-2) — owned here since R3 (it left the transitional store). */
+export type HomeArrangement = 'journalFirst' | 'dashboardFirst'
 
 /** "Not set" in a persona Select — a string sentinel, because `Select` treats `undefined` as uncontrolled. */
 export const PERSONA_UNSET = 'unset' as const

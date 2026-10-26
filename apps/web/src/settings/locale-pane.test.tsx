@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it , vi } from 'vitest'
+
+// preferences-rescope R3: the pane reads `useSettings()` (→ the preferences writer → the composition root) — serve the fake.
+vi.mock('../db/composition-root', async () => (await import('../test/preferences-test-utils')).compositionRootMock())
 import { cleanup, render } from '@testing-library/react'
 import { UIProvider } from '@vida/ui'
 import { LocalePane } from './locale-pane'

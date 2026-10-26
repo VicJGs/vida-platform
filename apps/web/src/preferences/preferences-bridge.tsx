@@ -17,10 +17,9 @@ import { usePreferences } from './use-preferences'
 import type { PreferencesView } from './preferences-view'
 import { preferencesWriter } from './writer-instance'
 
-/** The 11 fields `preferences-store` mirrors (view key = store key). */
+/** The 10 fields `preferences-store` mirrors (view key = store key; R3 moved `arrangement` to the live read). */
 const MIRRORED = [
   'reduceMotion',
-  'arrangement',
   'moduleVisibility',
   'moduleNames',
   'dateFormat',

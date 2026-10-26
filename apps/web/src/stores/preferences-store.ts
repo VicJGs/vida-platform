@@ -7,9 +7,9 @@ import { create } from 'zustand'
 // ⚠ TRANSITIONAL MIRROR (preferences-rescope R2): React Query over SQLite is the source of truth (apps/web/src/preferences/);
 // `PreferencesBridge` hydrates this store from the persisted view so the not-yet-migrated panes render persisted values.
 // Each pane moves onto `useUpdatePreferences` in its slice (R3/R5/R6); R6 deletes this store. Pane edits made here
-// before their slice lands are in-session only. S5 extends this store with moduleVisibility / moduleNames for the Modules pane.
+// before their slice lands are in-session only. R3 moved the Home arrangement off this store (Home reads
+// `usePreferences().view.arrangement`; the Appearance pane writes it through the writer). S5 extends this store with moduleVisibility / moduleNames for the Modules pane.
 
-export type HomeArrangement = 'journalFirst' | 'dashboardFirst'
 export type TimeFormat = '12h' | '24h'
 /** 0 = Sunday, 1 = Monday (mirrors user_preferences.week_starts_on). */
 export type WeekStartsOn = 0 | 1
@@ -18,8 +18,6 @@ interface PreferencesStoreState {
   /** App-pref mirror of nav_preferences.reduce_motion. NOTE: actual motion gating is OS-media-query-driven
    *  (@vida/ui useReducedMotion); this app-pref override's live effect is persistence-gated (§A0). */
   reduceMotion: boolean
-  /** Home layout arrangement — read live by useHomeArrangement (home-surface.tsx) so the toggle applies in-session. */
-  arrangement: HomeArrangement
   /** S5 — per-module nav show/hide (key → visible). Absent key ⇒ visible (default true). Persist seam → module_visibility. */
   moduleVisibility: Record<string, boolean>
   /** S5 — per-module custom name (key → label). Absent ⇒ the canonical module-map label. Persist seam → dashboard_layout.moduleNames. */
@@ -34,7 +32,6 @@ interface PreferencesStoreState {
   notifEmail: boolean
   quietHours: boolean
   setReduceMotion: (on: boolean) => void
-  setArrangement: (arrangement: HomeArrangement) => void
   setModuleVisible: (key: string, visible: boolean) => void
   setModuleName: (key: string, name: string) => void
   setDateFormat: (format: string) => void
@@ -44,13 +41,12 @@ interface PreferencesStoreState {
   setNotifPush: (on: boolean) => void
   setNotifEmail: (on: boolean) => void
   setQuietHours: (on: boolean) => void
-  /** Deferred-seam activation point — the read hook calls this with the persisted values once the DB seam lands. */
+  /** Hydration point — `PreferencesBridge` calls this with the persisted values (R2) so the mirrored panes render them. */
   hydrate: (
     patch: Partial<
       Pick<
         PreferencesStoreState,
         | 'reduceMotion'
-        | 'arrangement'
         | 'moduleVisibility'
         | 'moduleNames'
         | 'dateFormat'
@@ -67,7 +63,6 @@ interface PreferencesStoreState {
 
 export const usePreferencesStore = create<PreferencesStoreState>()((set) => ({
   reduceMotion: false,
-  arrangement: 'journalFirst',
   moduleVisibility: {},
   moduleNames: {},
   // S6 defaults mirror USER_PREFERENCES_DEFAULTS (service.ts:55-77).
@@ -79,7 +74,6 @@ export const usePreferencesStore = create<PreferencesStoreState>()((set) => ({
   notifEmail: true,
   quietHours: false,
   setReduceMotion: (reduceMotion) => set({ reduceMotion }),
-  setArrangement: (arrangement) => set({ arrangement }),
   // read-merge-write into the map (the §B dashboard_layout/module_visibility merge discipline, applied in-session).
   setModuleVisible: (key, visible) =>
     set((s) => ({ moduleVisibility: { ...s.moduleVisibility, [key]: visible } })),

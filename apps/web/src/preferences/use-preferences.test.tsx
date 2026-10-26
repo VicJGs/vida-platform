@@ -8,7 +8,9 @@ vi.mock('../db/composition-root', async () => (await import('../test/preferences
 import { queryClient } from '../lib/query-client'
 import { createPrefsWrapper, resetTestPreferences, testPreferences } from '../test/preferences-test-utils'
 import { resetPreferencesWriterForTests, preferencesWriter } from './writer-instance'
-import { usePreferences, useUpdatePreferences } from './use-preferences'
+import { updateView, usePreferences, useUpdatePreferences } from './use-preferences'
+import { NAV_PREFS_KEY } from './preferences-keys'
+import { seedPreferences } from './preferences-queries'
 
 const wrapper = createPrefsWrapper()
 
@@ -22,6 +24,30 @@ afterEach(() => {
 })
 
 describe('usePreferences', () => {
+  it('R3 hasData: false while loading/first-read error; true after success, and KEPT through a later refetch error', async () => {
+    const { result } = renderHook(() => usePreferences(), { wrapper })
+    expect(result.current.hasData).toBe(false)
+    await waitFor(() => expect(result.current.state).toBe('success'))
+    expect(result.current.hasData).toBe(true)
+    testPreferences.state.failReads = 'all'
+    await act(async () => {
+      await queryClient.refetchQueries({ queryKey: NAV_PREFS_KEY }).catch(() => {})
+    })
+    await waitFor(() => expect(result.current.state).toBe('error'), { timeout: 3000 })
+    expect(result.current.hasData).toBe(true) // the last good view is shown → the "last loaded" copy
+  })
+
+  it('R3 hasData is false when only ONE table has data (the "last loaded" copy would be partly false)', async () => {
+    testPreferences.state.failReads = 'all'
+    await seedPreferences(queryClient) // both error, no data
+    testPreferences.state.failReads = 'none'
+    await queryClient.fetchQuery({ queryKey: ['preferences', 'user'], queryFn: () => testPreferences.svc.getMergedPreferences() })
+    testPreferences.state.failReads = 'all'
+    const { result } = renderHook(() => usePreferences(), { wrapper })
+    await waitFor(() => expect(result.current.state).toBe('error'), { timeout: 3000 })
+    expect(result.current.hasData).toBe(false)
+  })
+
   it('goes loading → success with the persisted view', async () => {
     testPreferences.state.user = { ...(await testPreferences.svc.getMergedPreferences()), date_format: 'DD/MM/YYYY' }
     const { result } = renderHook(() => usePreferences(), { wrapper })
@@ -99,5 +125,16 @@ describe('useUpdatePreferences', () => {
     expect(result.current.write.saveState).toBe('error')
     expect(result.current.write.lastError?.kind).toBe('validation')
     expect(testPreferences.state.user).toBeNull()
+  })
+})
+
+describe('updateView (R3 — the module-level write the Settings context defaults to)', () => {
+  it('writes through the writer and drops echo patches', async () => {
+    await seedPreferences(queryClient)
+    await updateView({ timeFormat: '12h' })
+    expect(testPreferences.state.user?.time_format).toBe('12h')
+    const before = testPreferences.state.updates.user + testPreferences.state.creates.user
+    await updateView({ timeFormat: '12h' }) // equal to the cache → no write
+    expect(testPreferences.state.updates.user + testPreferences.state.creates.user).toBe(before)
   })
 })

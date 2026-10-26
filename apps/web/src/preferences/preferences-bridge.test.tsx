@@ -36,6 +36,17 @@ describe('PreferencesBridge', () => {
     expect(usePreferencesStore.getState().reduceMotion).toBe(true)
   })
 
+  it('R3 — mirrors 10 fields: the Home arrangement is NOT bridged (Home reads usePreferences directly)', async () => {
+    testPreferences.state.user = {
+      ...(await testPreferences.svc.getMergedPreferences()),
+      date_format: 'DD/MM/YYYY',
+      dashboard_layout: { arrangement: 'dashboardFirst' },
+    }
+    mount()
+    await waitFor(() => expect(usePreferencesStore.getState().dateFormat).toBe('DD/MM/YYYY'))
+    expect('arrangement' in usePreferencesStore.getState()).toBe(false)
+  })
+
   it('re-hydrates ONLY changed fields — an in-session edit to another field survives', async () => {
     mount()
     await waitFor(() => expect(queryClient.getQueryData(['preferences', 'nav'])).toBeDefined())

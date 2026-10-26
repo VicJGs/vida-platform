@@ -16,6 +16,23 @@
     <script>
       window.process = window.process || { env: { NODE_ENV: 'development' } }
     </script>
+    <!-- preferences-rescope R3 (B6): paint the PERSISTED theme's canvas before React, so a reload never flashes the default
+         (IR-4). The hint is a device-local mirror written only from confirmed DB rows (src/preferences/theme-hint.ts); the
+         app never reads it. Anything invalid paints nothing (the browser default, as before). Tested verbatim by
+         src/index-hint-script.test.ts. -->
+    <script id="vida-theme-hint">
+      try {
+        var h = JSON.parse(localStorage.getItem('vida.theme-hint.v1') || 'null')
+        var hex = /^#[0-9a-f]{6}$/i
+        if (h && typeof h.bg === 'string' && typeof h.fg === 'string' && hex.test(h.bg) && hex.test(h.fg) &&
+            (h.scheme === 'light' || h.scheme === 'dark')) {
+          var s = document.documentElement.style
+          s.backgroundColor = h.bg
+          s.color = h.fg
+          s.colorScheme = h.scheme
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -51,12 +51,38 @@ interface reconcile (created_at/updated_at) + the deferred `sessions` inline-rea
   keys must be dock modules or `features`/`sync`, else `InvalidModuleError` (Settings/Home never hideable) ·
   **BR-PREF-9** falsy values survive (spread merges, `??` reads). `feature_gamification` defaults OFF (GM-1).
 
-## ② surface — what is NOT enforced live yet (baseline 2026-10-21, preferences-rescope Step 0)
+## ② surface — enforced live (preferences-rescope R3, 2026-10-26 · built, pending Visual Gate)
+- **R3-BR-1** one read definition per table (`preferences-queries.ts`), used by `usePreferences` and the boot seed — one
+  read path, one cache entry per table.
+- **R3-BR-2 (B2, N6)** boot seeds both keys before the first themed paint; the seed never rejects (MUST-4) — a failed read
+  boots on the defaults (PR-2). Both definitions set `retryOnMount: false`, so an errored query stays in error until the
+  user presses Retry (`state-conventions.md` §3); without it every mounting reader refetches → an unbounded loop.
+  Recorded limits: on a failed seed a later successful read can flip theme/arrangement to the persisted value; a failure
+  *inside* the memoized composition-root `build()` is not recovered by refetch.
+- **R3-BR-3 (PR-5, C3 theme)** `theme-store` is a derived cache of the user row — no theme setters; writes go through the
+  writer (optimistic re-theme, follows a revert). The guided-setup preview is a layer, cleared on every exit (finish ·
+  skip · close); until R7 a finish also returns to the saved theme.
+- **R3-BR-4 (B6)** the theme hint is written only from DB truth (an accepted read or a successful batch, never on enqueue
+  or a failed batch), read only by the inline `index.html` script; blocked/corrupt storage paints nothing.
+- **R3-BR-5 (F13)** Home's arrangement is read from the seeded cache (`usePreferences().view.arrangement`); failed seed →
+  `journalFirst`.
+- **R3-BR-6 (D1, EC-7)** Settings: loading → skeleton; error → every pane read-only (`disabled`, rename hidden) + a
+  `role="status"` line matching what is shown (defaults vs last loaded, via `hasData`) + a `Retry` (`size="lg"`, never
+  disabled) that re-reads only the errored key(s), with focus placed (skeleton → pane / Retry); a Retry ends when its
+  re-reads settle (a later refetch never moves focus) and each failed Retry re-announces the line; success → editable.
+- **R3-BR-7 (PR-4, C5 UI)** one `SyncStatus` "Saved on this device" (no Saving state; clears on failure); **one revert
+  toast per failed batch**, fired by the writer (`onFailed`) whatever surface is mounted — PR-4 "never silently dropped".
+- **R3-BR-8/9 (D4, D6, D7, D10)** preset/mode/density/arrangement/persona persist through `update(viewPatch)` (per-sub-key
+  merge, IR-2); persona `Not set` ↔ `null`; no `game` preset (D3). Reduce motion stays on the mirror (R4).
+- **R3-BR-10 (F17)** every R3 string lives in `settings/settings-copy.ts`, `lintCopy`-tested.
+
+## ② surface — what is NOT enforced live yet (baseline 2026-10-21, preferences-rescope Step 0 — superseded in part by R2/R3)
 The service rules above hold **only at the service boundary**; the shipped ② surface never calls it (service not
 registered, `current-spec.md` "② Surface plane"). So live today: PR-2 (defaults) is met by store defaults, not
 `getMergedPreferences`; **PR-4 (persist + revert-on-error), PR-5 (theme from the DB value), PR-9 (local write +
 sync_queue) are unmet in the app**; the escape hatch (business-rules.md:28) is UI-enforced in `HIDEABLE_MODULES`
-(`settings/settings-model.ts:37-46`). preferences-rescope (LIF-247) closes these.
+(`settings/settings-model.ts:37-46`). preferences-rescope (LIF-247) closes these. **Still unmet after R3:** reduce
+motion (R4), Modules (R5), Locale/Notifications (R6) persist; the onboarding commit (R7).
 
 ## Delegated (never enforced here — other domains own them)
 PR-8 (account/data), PR-10 (PII stays in `user_profile`), PR-11 (`sms` never a channel), PR-12 (integration

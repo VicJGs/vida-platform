@@ -5,16 +5,15 @@ describe('preferences store (fe-settings S3 — in-session non-theme prefs, §A0
   beforeEach(() =>
     usePreferencesStore.setState({
       reduceMotion: false,
-      arrangement: 'journalFirst',
       moduleVisibility: {},
       moduleNames: {},
     }),
   )
 
-  it('defaults: reduceMotion off, arrangement journalFirst', () => {
+  it('defaults: reduceMotion off; the Home arrangement is no longer mirrored here (R3 — live via usePreferences)', () => {
     const s = usePreferencesStore.getState()
     expect(s.reduceMotion).toBe(false)
-    expect(s.arrangement).toBe('journalFirst')
+    expect('arrangement' in s).toBe(false)
   })
 
   it('setReduceMotion toggles the flag', () => {
@@ -22,14 +21,9 @@ describe('preferences store (fe-settings S3 — in-session non-theme prefs, §A0
     expect(usePreferencesStore.getState().reduceMotion).toBe(true)
   })
 
-  it('setArrangement switches the home arrangement', () => {
-    usePreferencesStore.getState().setArrangement('dashboardFirst')
-    expect(usePreferencesStore.getState().arrangement).toBe('dashboardFirst')
-  })
-
   it('hydrate (the deferred-seam activation point) merges a partial patch', () => {
-    usePreferencesStore.getState().hydrate({ arrangement: 'dashboardFirst' })
-    expect(usePreferencesStore.getState().arrangement).toBe('dashboardFirst')
+    usePreferencesStore.getState().hydrate({ moduleVisibility: { finance: false } })
+    expect(usePreferencesStore.getState().moduleVisibility).toEqual({ finance: false })
     expect(usePreferencesStore.getState().reduceMotion).toBe(false) // untouched key preserved
   })
 

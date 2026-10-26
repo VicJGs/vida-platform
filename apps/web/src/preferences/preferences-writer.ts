@@ -82,9 +82,20 @@ export interface PreferencesWriterOptions {
   getService: () => Promise<PreferencesService>
   queryClient: QueryClient
   debounceMs: number
+  /** R3 — fires when `confirmed` takes a DB value: an ACCEPTED read or a SUCCESSFUL batch. Never on enqueue (optimistic)
+   *  and never on a failed batch, so a mirror fed from it (the theme hint) can't hold an unsaved or reverted value. */
+  onConfirmed?: (t: PreferencesTable, row: Row) => void
+  /** R3 — fires exactly once per FAILED batch (one settle = one batch), whoever is mounted (PR-4: never silent). */
+  onFailed?: (t: PreferencesTable, error: PreferencesWriteError) => void
 }
 
-export function createPreferencesWriter({ getService, queryClient, debounceMs }: PreferencesWriterOptions) {
+export function createPreferencesWriter({
+  getService,
+  queryClient,
+  debounceMs,
+  onConfirmed,
+  onFailed,
+}: PreferencesWriterOptions) {
   queryClient.setQueryDefaults(PREFERENCES_FAMILY, { staleTime: PREFERENCES_STALE_MS, gcTime: PREFERENCES_GC_MS })
 
   const KEY = { user: USER_PREFS_KEY, nav: NAV_PREFS_KEY } as const
@@ -100,6 +111,16 @@ export function createPreferencesWriter({ getService, queryClient, debounceMs }:
 
   function cacheValue(t: PreferencesTable): Row {
     return pending[t].reduce((acc, env) => apply[t](acc, env.patch), confirmed[t] ?? DEFAULTS[t])
+  }
+
+  // Best-effort side effects: a throwing hook must never break the cache sync that follows it.
+  function confirm(t: PreferencesTable, row: Row): void {
+    confirmed[t] = row
+    try {
+      onConfirmed?.(t, row)
+    } catch {
+      /* the mirror is a convenience; the cache is the truth */
+    }
   }
 
   function syncCache(t: PreferencesTable): void {
@@ -122,7 +143,14 @@ export function createPreferencesWriter({ getService, queryClient, debounceMs }:
       },
       onSettled(outcome, { batch, idle }) {
         epochs[t]++
-        if (outcome.ok) confirmed[t] = outcome.value
+        if (outcome.ok) confirm(t, outcome.value)
+        else {
+          try {
+            onFailed?.(t, classify(outcome.error))
+          } catch {
+            /* reporting must not break the restore below */
+          }
+        }
         const done = new Set(batch)
         pending[t] = pending[t].filter((env) => !done.has(env))
         syncCache(t)
@@ -165,7 +193,7 @@ export function createPreferencesWriter({ getService, queryClient, debounceMs }:
     epoch: (t: PreferencesTable) => epochs[t],
     /** Accept a read only if no batch settled since it began; ALWAYS return the cache truth (pending re-applied). */
     noteConfirmed<T extends Row>(t: PreferencesTable, read: T, epochAtStart: number): T {
-      if (epochs[t] === epochAtStart || confirmed[t] === undefined) confirmed[t] = read
+      if (epochs[t] === epochAtStart || confirmed[t] === undefined) confirm(t, read)
       return cacheValue(t) as T
     },
     /** The cache truth for a table — the echo-check source (defined even while the query loads). */

@@ -12,9 +12,26 @@ vi.mock('./onboarding/first-run-repo', () => ({
   readFirstRunComplete: h.read,
   writeFirstRunComplete: h.write,
 }))
+// preferences-rescope R3 — the first-render log (mutation-#2 kill target): wrap the real HomeSurface (routes.tsx:17
+// imports it by name) to record the arrangement it renders on EVERY render.
+const renderLog = vi.hoisted(() => ({ arrangements: [] as string[] }))
+vi.mock('./home/home-surface', async (orig) => {
+  const m = await orig<typeof import('./home/home-surface')>()
+  function LoggedHomeSurface(props: Parameters<typeof m.HomeSurface>[0]) {
+    renderLog.arrangements.push(m.useHomeArrangement())
+    return m.HomeSurface(props)
+  }
+  return { ...m, HomeSurface: LoggedHomeSurface, default: LoggedHomeSurface }
+})
 
+import { USER_PREFERENCES_DEFAULTS } from '@vida/core'
 import { App } from './App'
 import { useGuidedSetupStore } from './onboarding/guided-setup-store'
+import { queryClient } from './lib/query-client'
+import { preferencesWriter, resetPreferencesWriterForTests } from './preferences/writer-instance'
+import { paintRoot, toThemeHint } from './preferences/theme-hint'
+import { resetTestPreferences, testPreferences } from './test/preferences-test-utils'
+import { resetThemeStoreForTests, useThemeStore } from './stores/theme-store'
 
 // "Is the app shell mounted?" — the reserved top strip is present iff the shell frame mounted. (fe-shell #14 reshape:
 // the Modules nav is now a dock⇄float panel built in S3; the always-present frame signal is the top strip / banner.)
@@ -25,10 +42,18 @@ beforeEach(() => {
   h.read.mockReset()
   h.write.mockReset()
   useGuidedSetupStore.setState({ phase: 'none' }) // the launch phase is a module-global store — reset between tests
+  resetTestPreferences()
+  renderLog.arrangements = []
 })
 
+// R3: the preferences cache + writer + theme store are module singletons; with a 5 min stale time a cached seed would
+// make every boot-gate test below order-dependent. Reset them all.
 afterEach(() => {
   cleanup()
+  queryClient.clear()
+  resetPreferencesWriterForTests()
+  resetThemeStoreForTests()
+  document.documentElement.removeAttribute('style')
 })
 
 describe('App first-run branch', () => {
@@ -109,4 +134,81 @@ describe('App first-run branch', () => {
     // the flow's first step is the module enable-set picker (Notes toggle present)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Notes', pressed: true })).toBeTruthy())
   })
+})
+
+// preferences-rescope R3 (PLAN-R3 R3-BR-2/3/4/5; IMPL-PLAN-R3 step 9) — the boot seed gate, the preview clear, the
+// guarded canvas paint, and the first-render guarantee.
+describe('App boot — preferences seed (R3)', () => {
+  const darkHint = toThemeHint({ preset: 'editorial', mode: 'dark', density: 'calm' })
+  const lightHint = toThemeHint({ preset: 'editorial', mode: 'light', density: 'calm' })
+  const htmlBg = () => document.documentElement.style.backgroundColor
+  const asRgb = (hex: string) => {
+    const el = document.createElement('div')
+    el.style.backgroundColor = hex
+    return el.style.backgroundColor
+  }
+
+  it('holds Loading (no shell) while the seed is pending, then mounts the app', async () => {
+    h.read.mockResolvedValue(true)
+    testPreferences.holdReads()
+    render(<App />)
+    await waitFor(() => expect(screen.getByText('Loading…')).toBeTruthy())
+    // Without the gate the shell mounts as soon as the first-run read resolves (well inside 1.5 s); with it, Loading holds.
+    await new Promise((r) => setTimeout(r, 1500))
+    expect(screen.getByText('Loading…')).toBeTruthy()
+    expect(shellChrome()).toBeNull()
+    testPreferences.state.releaseReads()
+    await waitFor(() => expect(shellChrome()).not.toBeNull(), { timeout: 10_000 })
+  }, 30_000)
+
+  it('a FAILED seed never blocks boot: the app mounts on the defaults', async () => {
+    h.read.mockResolvedValue(true)
+    testPreferences.state.failReads = 'all'
+    render(<App />)
+    await waitFor(() => expect(shellChrome()).not.toBeNull(), { timeout: 10_000 })
+  }, 30_000)
+
+  it('guarded paint: the inline dark paint stands while the seed is pending, then follows the seeded selection', async () => {
+    h.read.mockResolvedValue(true)
+    paintRoot(darkHint) // what index.html's inline script did before React
+    testPreferences.state.user = { ...USER_PREFERENCES_DEFAULTS, theme: 'dark' }
+    testPreferences.holdReads()
+    render(<App />)
+    await waitFor(() => expect(screen.getByText('Loading…')).toBeTruthy())
+    expect(htmlBg()).toBe(asRgb(darkHint.bg)) // NOT overwritten by THEME_DEFAULT (light) during Loading
+    testPreferences.state.releaseReads()
+    await waitFor(() => expect(shellChrome()).not.toBeNull(), { timeout: 10_000 })
+    expect(htmlBg()).toBe(asRgb(darkHint.bg))
+  }, 30_000)
+
+  it('guarded paint: a failed seed paints the default selection (the app renders the defaults)', async () => {
+    h.read.mockResolvedValue(true)
+    paintRoot(darkHint)
+    testPreferences.state.failReads = 'all'
+    render(<App />)
+    await waitFor(() => expect(htmlBg()).toBe(asRgb(lightHint.bg)), { timeout: 10_000 })
+  }, 30_000)
+
+  it('mutation-#2 kill target: a persisted dashboardFirst is the arrangement of the FIRST Home render', async () => {
+    h.read.mockResolvedValue(true)
+    testPreferences.state.user = { ...USER_PREFERENCES_DEFAULTS, dashboard_layout: { arrangement: 'dashboardFirst' } }
+    render(<App />)
+    await waitFor(() => expect(renderLog.arrangements.length).toBeGreaterThan(0), { timeout: 10_000 })
+    expect(renderLog.arrangements[0]).toBe('dashboardFirst')
+  }, 30_000)
+
+  it('leaving guided setup (every exit = dismiss) clears the preview; a Settings preset change then applies', async () => {
+    h.read.mockResolvedValue(true)
+    useGuidedSetupStore.setState({ phase: 'running' })
+    render(<App />)
+    await waitFor(() => expect(shellChrome()).not.toBeNull(), { timeout: 10_000 })
+    useThemeStore.getState().setPreview('reader')
+    expect(useThemeStore.getState().selection.preset).toBe('reader')
+    useGuidedSetupStore.getState().dismiss() // finish, skip and close all call dismiss (guided-setup-store.ts:16-17)
+    await waitFor(() => expect(useThemeStore.getState().previewPreset).toBeNull())
+    expect(useThemeStore.getState().selection.preset).toBe('editorial') // back to the persisted theme
+    void preferencesWriter.patchDashboardLayout({ theme: 'quietDesk' }) // what the Appearance preset control does
+    expect(useThemeStore.getState().selection.preset).toBe('quietDesk')
+    await preferencesWriter.flushAll()
+  }, 30_000)
 })
