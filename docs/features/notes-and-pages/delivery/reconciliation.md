@@ -10,6 +10,21 @@
 > `ui/` = packages/ui/src/components · `core/` = packages/core/src · `I` = interpretation.md · `E2` = this unit's envision.md ·
 > `E1` = fe-notes envision.md · `P` = golive-replan/process.md.
 
+## Summary (exit: DRY)
+- **184 rows** — A 44 · B 66 · C 52 · E 11 · F 10 · G 1 (+ the EC sweep and impact scan). Buckets: ✅ 31 · ❌ 50 · 🕳 71 ·
+  📄 12 · ⛔ 10 · mixed 10.
+- **Dry passes:** #1 → 10 new (E) · #2 → 10 new (F) · #3 → 1 new (G) · #4 → **0 new — dry** (envision screenshots, CODEC prop
+  gaps, task-file scope line all covered). Exit condition met (`entity-delivery-flow.md §6`).
+- **Data-safety first:** B-50 / C-46 (malformed or unknown-node content is overwritten) · E-1 (last 500 ms of edits lost on tab
+  close) · B-52/B-53 (stale caches can re-seed the editor) · A-7 (writes to deleted pages) · IR-R2 delete-vs-pending-flush (B-30).
+- **Live bug:** B-24/EC-15 — four `*_note` page types open with no editor.
+- **Dead affordances in production (ELC-5):** B-6 · B-36 · B-41 · B-58.
+- **Engines this unit wires first (P:107-108):** Views/ViewEngine + pages ReadProvider · Templates (+ instantiate, pages writer) ·
+  Capability registry/offered set · OS-wide Trash seam (new).
+- **Step 5 doc carries (⛔/📄 doc rows):** B-32 IA row · fe-shell-scope EC-3 re-pin (D) · E-7 templates S3–S5 + XCU-14 appends ·
+  E-8 template-writer edges · E-9 surface-map + current-* · E-10 journals edges · F-8 currency set · F-10 extension-catalog +
+  ② task-file edges · C-35 `/class-notes` · C-33 `habit_logger` vs `habitsBlock` · C-52 capability-framework:239 · B-21 ADR-006 append.
+
 ## Area A — ① service, composition, foundations (44 rows: 19 ✅ · 4 ❌ · 2 📄 · 19 🕳)
 
 | id | item | plane | bucket | built evidence | anchor | EC/IR | fix direction |
@@ -20,7 +35,7 @@
 | A-4 | `icon` / `cover_image` value validation | backend | 🕳 | validators/note.ts:56-57 (any string) | contract (homed slice PLAN); E2 EC-29 | EC-29 | fix icon domain (Lucide name) + cover ref, tighten validator |
 | A-5 | every update stamps `updated_at` | backend | ✅ | repository.ts:421-428 | I IR-R9 | IR-R9 | view sort must be explicit |
 | A-6 | `writePageContent` has no content shape guard | backend | ❌ | service.ts:138-139 | BR fail-loud; current BR-5 | IR-R4 | minimal EditorDocument guard |
-| A-7 | writes succeed on a soft-deleted page | backend | ❌ | repository.ts:404-413; current BR-7c | I IR-R2/R3 | IR-R2/R3 | reject writes when `deleted_at` set (typed error) — scope: notes vs repository-wide |
+| A-7 | writes succeed on a soft-deleted page — also create-type writes (`addAttachment` service.ts:196-210, `createPageLink` :220-242, `createEntityLink` :265-273) leave orphans (no FKs) | backend | ❌ | repository.ts:404-413; current BR-7c | I IR-R2/R3 | IR-R2/R3 | reject writes/creates against a deleted or unknown page (typed error) — scope: notes vs repository-wide |
 | A-8 | `word_count` not derived | backend | ✅ (homed) | service.ts:138-139 | current-spec (editor/FTS) | — | — |
 | A-9 | `softDeletePage` | backend | ✅ | service.ts:141-143; repository.ts:457-461 | BR NP-9 | EC-26 | — |
 | A-10 | re-deleting re-stamps `deleted_at` (resets the 30-day clock) | backend | 📄 | repository.ts:458-461 | BR NP-9 (30 days) | EC-26/27 | no-op when already deleted |
@@ -151,7 +166,7 @@
 | C-13 | preview of a deleted/archived target | frontend | 🕳 | n/link-preview-card.tsx:13 | I IR-R11/R3 | EC-11 | honest "Page deleted" |
 | C-14 | preview renders available data | frontend | ✅ | n/link-preview-card.tsx:13-35 | E1 EC-11 | EC-11 | keep |
 | C-15 | token render (icon + underlined title) | frontend | 🕳 | no node-view | E2 EC-31 | EC-31/22 | via note-chrome `typeIcon` |
-| C-16 | serializers drop inline nodes | shared (editor) | 🕳 | ed/serializers to-markdown.ts:89 · to-pdf.tsx:78 · to-docx.ts:94 | I §2 | IR-R12 | md `[[Title]]` (+id); pdf/docx label; spec rows |
+| C-16 | serializers drop inline nodes | shared (editor) | 🕳 | ed/serializers to-markdown.ts:91 · to-pdf.tsx:78 · to-docx.ts:94 | I §2 | IR-R12 | md `[[Title]]` (+id); pdf/docx label; spec rows |
 | C-17 | `/entity-link` block vs `[[` token | shared | 📄 | block atom stores `label` (integration-blocks.tsx:49-53) | e4-slash-menu.md:31; E2 EC-32 | EC-32/IR-R12 | Step 5: block = widget card, token = inline; label fallback-only |
 | C-18 | node-view injection seam | frontend (editor) | 🕳 | ed/editor.tsx:25-43; integration-blocks.tsx:202-204 | I §2 N-2 | EC-32/14 | `blockViews` prop via context; reaches Home's body |
 | C-19 | widget frame | frontend | 🕳 | only `IntegrationBlockPlaceholder` (integration-blocks.tsx:147-163) | E2 EC-32; ADR-008 L142-143 | EC-32 | shared `BlockWidget` (header · 4 states · actions) |
@@ -182,7 +197,7 @@
 | C-44 | template entry points DEV-only | frontend | ❌ | n/note-entity.tsx:128,143-147 | E2 EC-35/13 | EC-13/35 | `/notes` header dialog + ⋯ "Save as template"; delete overlay |
 | C-45 | Save as template (page capture) | backend | 🕳 | ≡ A-38 | BR NP-12 | EC-13 | Step 5 RATIFY rule, then build |
 | C-46 | **malformed OR unknown-node content is wiped** (lenient TipTap load → empty → mount echo ≠ baseline → write) | shared | ❌ (data loss) | n/live-mappers.ts:30-37; ed/editor.tsx:146-174; n/use-note-content.ts:40,91; packages/editor/src/CLAUDE.md:123-124 | E2 EC-33; I IR-R4 | EC-33 | `enableContentCheck` + `onInvalidContent` prop; validate before mount; lossy load → read-only + notice, never write; also covers future nodes from another device |
-| C-47 | read-only seam exists | frontend (editor) | ✅ | ed/editor.tsx:30,177-179 | E2 EC-33 | EC-33 | use it |
+| C-47 | read-only seam exists | frontend (editor) | ✅ | ed/editor.tsx:31,177-179 | E2 EC-33 | EC-33 | use it |
 | C-48 | "Export a copy" has no consumer | frontend | 🕳 | no apps/web use of toMarkdown/toPdf/toDocx | E2 EC-33; coverage-report:89 (general export → shell-rescope) | EC-33 | at least `toMarkdown` on the raw content |
 | C-49 | serializer copy for live blocks | shared (editor) | ❌ | to-markdown.ts:155; serialization-spec.md:107-108,159-160; to-docx.test.ts:276 | E2 EC-32 | EC-32 | label-only marker for live blocks |
 | C-50 | `taskList` vs `taskChecklist` vs `/task` | shared | 📄 | extension-catalog.md:21,30-31 | E2 EC-36 | EC-36 | Step 5: record all three in the catalog |
@@ -194,6 +209,45 @@ them; the catalog's MOD-tasks home is closed and `P:84-87` forbids homing to a c
 seam and registry wiring → notes-rescope (first Capability consumer, `P:107-108`). `/tasks` → fe-tasks · `/habits` → fe-habits ·
 the other module blocks → their open ② units, as **edges** (`P:88-92`), honest placeholders here until then. Step 5 amends
 the extension-catalog Real-body column and adds those legs to the ② units' task files.
+
+## Dry pass 1 — new items (E-1…E-11)
+
+| id | item | plane | bucket | built evidence | anchor | EC/IR | fix direction |
+|---|---|---|---|---|---|---|---|
+| E-1 | edits within the 500 ms debounce are lost on tab close / reload (flush only on unmount) `[INTERP]` | shared | ❌ | n/use-note-content.ts:26,95,98-104 | current BR-NEU-3; LF-2 | IR-R2/ELC-7 | flush on `pagehide` + `visibilitychange:hidden` (the B-30 `flush()`); reaches Home |
+| E-2 | read errors offer no retry (collection · page · Home) | frontend | 🕳 | n/use-notes-rows.ts:60; n/note-entity.tsx:75-83; home/journal-page-region.tsx:66 | contract terminal states ("typed read error, retry") | ELC-6 | Retry (`refetch`) on all three |
+| E-3 | untitled `*_note` pages → empty H1 + editor accname " editor" once EC-15 opens them | frontend | 🕳 | n/live-mappers.ts:55; n/note-entity.tsx:112; n/note-editor-body.tsx:51 | NP-8; E1 EC-15/16 | EC-15/16 | label fallback = type label + parent entity name (shared with A-25's projection) |
+| E-4 | collection rows/tiles ignore `icon` + `cover_image` | frontend | 🕳 | n/live-mappers.ts:39-48; n/note-renderers.tsx:37-38,52-54 | contract Views (gallery → cover); E2 EC-29 | EC-29/XCU-14 | carry icon + cover in the row; gallery declares `cover` |
+| E-5 | stale comments missed by B-55/B-56 | frontend | ❌ | n/use-templates.ts:4 · use-note-content.ts:61 · use-create-note.ts:34 · attachments.ts:5 · attachments-list.tsx:5 · template-picker.tsx:8 · link-preview-card.tsx:4 · overview-registry.ts:5,37 · home/journal-page-region.tsx:11 | I IR-R16; debt-plan:22 | IR-R16 | rewrite; flip `foundation/{views,templates,capability}/CLAUDE.md`, `collection/` + `entity/CLAUDE.md` Status on compose |
+| E-6 | dead 0-byte `tag-extension.ts` | frontend (editor) | 📄 | packages/editor/src/extensions/tag-extension.ts; editor CLAUDE.md:243 | debt-plan:22 (dead seams) | — | retire or record its owner (ADR-006 tags) |
+| E-7 | templates S3–S5 + XCU-14 RATIFY appends not yet in their slice-maps | doc | ⛔ | docs/features/templates/delivery/slice-map.md; docs/features/views/delivery/slice-map.md | debt-plan:22; I §5 | EC-13/XCU-14 | Step 5 appends |
+| E-8 | no edges for module create-from-template writers | doc/shared | ⛔ | foundation/templates/types.ts:25-29 | E2 grounded changes; templates interpretation.md:15-22,108-111 | EC-13 | Step 5 edges → fe-tasks · fe-projects · routines …; unregistered → partial-failure flag |
+| E-9 | docs the rescope invalidates: surface-map:48 "Calendar"; current BR-7b / BR-SUR-1/5/6 | doc | ⛔ | frontend-replan/surface-map.md:48; docs/modules/notes/current-business-rules.md | I §5 | EC-1/35 | Step 5 re-pin surface-map; §XXIX current-* refresh at close |
+| E-10 | unhomed Journals legs: journal views + where a journal opens from `[[` | doc | ⛔ | journals/delivery/slice-map.md:88; n/note-entity.tsx:103-123 | I §5 (re-homed) | EC-18a/10 | Step 5 edge → journals-rescope (already noted on its task file) |
+| E-11 | list tag filter (contract ⚠ INTENDED) | shared | 🕳 (folded) | service.ts:302-303 | contract; ADR-007 `ViewFilter.tags` (foundation/views/types.ts:11-20) | EC-35 | rides the view-config leg (B-7/A-31) as a view filter predicate — no separate leg |
+
+## Dry pass 2 — new items (F-1…F-10)
+
+`sh/` = apps/web/src/shell · `nav/` = apps/web/src/nav.
+
+| id | item | plane | bucket | evidence | anchor | EC/IR | fix direction |
+|---|---|---|---|---|---|---|---|
+| F-1 | Trash as a 7th `GLOBAL_SURFACES` entry fans out: icon map (test-enforced), command-bar nav command, strip + list, and the already over-committed 375 strip | frontend | 🕳 | nav/module-map.ts:114-121 · sh/nav-icons.ts:56 + nav-icons.test.ts:13 · command-bar/nav-commands.ts:7,15 · sh/global-surfaces-{strip,list}.tsx · sh/CLAUDE.md:34-38 | E2 EC-27; fe-shell-scope EC-3/4 | EC-27/16 | impact-scan row; icon + nav command; place in the System list/More, not the 375 strip; per-element 375 fit |
+| F-2 | count-pinned tests flip when `taskBlock` / `/class-notes` join; core test asserts null-title pages excluded from `[[` | shared | ⛔ | ed/commands.test.ts:10 · ed/extensions/integration-blocks.test.tsx:45,162 · ed/slash-commands.test.ts:50-52 · core/services/notes/__tests__/notes-service.test.ts:322-330 | I N-4 | N-4 | add to the flip list; derive counts from `INTEGRATION_BLOCK_TYPE` |
+| F-3 | markdown round-trip (BR-5) for `wikiLink` / `taskBlock` — parse-back or declared-lossy | shared (editor) | 🕳 | ed/serializers/serializers.test.ts:1; ed/CLAUDE.md:77-89 | serialization-spec BR-5; I IR-R12 | IR-R12 | md form parses back with ids, or a declared-lossy spec row |
+| F-4 | atom node-views have no event/keyboard seam for interactive controls (tick, Open, create/search input, token preview) | frontend (editor) | 🕳 | ed/extensions/integration-blocks.tsx:143-177 | E2 EC-31/32/36; §XIV | EC-17/31/32/36 | `stopEvent`; Enter on a selected node focuses the widget; keyboard tests |
+| F-5 | focus after removals (Restore / Delete forever / Empty Trash / dialog trigger gone) + Esc reverts inline rename | frontend | 🕳 | E2 EC-25/27 | §XIV | EC-25/27 | focus next row / list heading / empty-state heading; Esc restores the title |
+| F-6 | Trash surface state machine (loading · empty · error + retry · partial when a provider fails) | frontend | 🕳 | B-31; A-14 | P ELC-6 | EC-27 | states over the A-14 registry; failing provider = degraded section |
+| F-7 | every new mutation lacks an error path (only create has one, B-15) | frontend | 🕳 | n/use-create-note.ts:33-36 | BR fail-loud; P ELC-6 | ELC-6 | one shared danger toast naming the action, on every `useMutation` |
+| F-8 | ELC-8 currency set: web-client-runtime · editor · capability · backlinks · journals current-* + db · home · shell · nav · editor · command-bar CLAUDE.md; notes/ has no layer CLAUDE.md | doc | ⛔ | docs/infrastructure/web-client-runtime/current-business-rules.md:60-70 · docs/editor/current-* · docs/core/capability/current-* · docs/core/backlinks/current-* · docs/modules/journals/current-* · apps/web/src/{db,home,shell,nav,command-bar}/CLAUDE.md · packages/editor/src/CLAUDE.md:96-125 | P ELC-8; §XXIX | ELC-8 | refresh each context with its leg; add a notes/ layer doc |
+| F-9 | ELC-7 live leg must cover the shared consumers: Home (write → reload → reopen, no spurious write), calendar (malformed/unknown page), Trash (delete → reload → restore) | shared | 🕳 | home/journal-page-region.tsx:70 · app/calendar/use-calendar.ts:19,138 · B-53 | P ELC-7 | ELC-7 | name the live-leg script: /notes/$id + Home + calendar + Trash, reload + clean console |
+| F-10 | Step 5 doc edits held only in prose: extension-catalog Real-body column + fe-tasks / fe-habits / other ② task-file edges for module block bodies | doc | ⛔ | docs/editor/extension-catalog.md:33-45; .claude/tasks/{fe-tasks,fe-habits}.md | Area C ownership note; P:88-92 | EC-32 | Step 5 amends the catalog + adds the legs/edges |
+
+## Dry pass 3 — new item (G-1)
+
+| id | item | plane | bucket | evidence | anchor | EC/IR | fix direction |
+|---|---|---|---|---|---|---|---|
+| G-1 | name → Lucide component lookup (icon grid · header · rows) would pull the whole Lucide set into `/notes` (> 50 KB) | frontend | 🕳 | apps/web/package.json:27; only named imports today | performance-strategy.md §6 (L307-335: >50 KB libraries dynamically imported) | EC-29/22 | lazy-load the picker grid; curated map or on-demand load for render with type-icon fallback; bundle check in the metadata leg's gate |
 
 ## Area D — EC sweep (the ELC-9 close set)
 
@@ -238,7 +292,7 @@ Buckets here: ✅ met as built · ❌ missing/diverging, notes-rescope owns it �
 | EC-29 icon grid + cover picker | no-ops | ❌ |
 | EC-30 upload UX | no file path | ❌ |
 | EC-31 `[[` token + preview + grouped picker | no node, no seam | ❌ |
-| EC-32 blocks are widgets | placeholder node-views (integration-blocks.tsx:119,209) | ❌ |
+| EC-32 blocks are widgets | placeholder node-views (integration-blocks.tsx:147-163, wired :202-204) | ❌ |
 | EC-33 unreadable → read-only | **data-loss path** (B-50) | ❌ |
 | EC-34 one SyncStatus beside ⋯ | ad-hoc text (n/note-editor-body.tsx:23-44) | ❌ |
 | EC-35 collection header | only New note; calendar offered | ❌ |
