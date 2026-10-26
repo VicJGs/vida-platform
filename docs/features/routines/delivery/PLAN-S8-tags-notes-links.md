@@ -93,3 +93,59 @@ reads) · routine-group-level notes (RT-15 ⚠ INTENDED extension, no doc define
 
 **Non-blocking, folded:** N1 (ROU ids, no phantom "rule 25") · N2 (T3 grounded on RT-17 + ADR-006) · N3 (gate edges) · N4 (harness) ·
 N5 (seam ⟲ amendment; `linkPage` follows the purposes shape) · N6 (residual risk recorded).
+
+## Approval 1 — Victor 2026-10-26 ("Approved")
+
+## /preflight — PASSED
+- **Frontend:** none.
+- **Backend:**
+  - New required deps `spaces: SpacesService`, `notes: NotesService`.
+  - 10 ops: `tagRoutine` / `untagRoutine` / `getRoutineTags` / `tagStep` / `untagStep` / `getStepTags` / `getRoutineNote` / `getStepNote` /
+    `linkPage` / `unlinkPage`.
+  - Errors are reused: `RoutineNotFoundError` · `StepNotFoundError` · `TagNotFound` (Spaces) · `UnknownEntityType` (Spaces registry) · `ZodError`.
+  - Auth N/A.
+- **Database:** no schema change.
+  - Writes go through Spaces (`entity_tags`, `entity_links`) and Notes (`pages`).
+  - The one direct read is the soft-delete-filtered `tags` repo (liveness).
+- **Integration:**
+  - routines → `spaces.tagEntity` / `untagEntity` / `createLink` / `removeLink`;
+  - routines → `notes.getTagsForEntity` / `ensureEntityNote`.
+- **Ground truth:** routines current-* (S7). No conflict.
+- **Assumptions (grounded):**
+  1. Tag reads return `EntityTagRow[]` (the tasks `getTaskTags` shape).
+  2. `linkPage` validates `context` as an optional string (`z.string().nullish()`).
+  3. A target id is validated with `loadRoutineOrThrow` / `loadStepOrThrow` (live only).
+
+## Implementation plan (§5)
+1. **Tests first (red) + harness:**
+   - `setup()` builds one `TaggableTypeRegistry` shared by `createSpacesService(db, deviceId, registry)`,
+     `createNotesService({ db, deviceId, spaces, backlinks: createBacklinkResolver(db, deviceId), registry })` and routines (the tasks
+     `setupWithSubstrates` pattern), and returns `spaces` / `notes`.
+   - VG 1–7.
+2. **Types / validators / index (green):**
+   - deps += `spaces`, `notes`;
+   - the 10 methods on the interface (`EntityTagRow` / `PageRow` / `EntityLinkRow` types);
+   - `LinkPageSchema` (`pageId` string min 1, `target { type: 'routine'|'routine_step', id }`, `context?`);
+   - the harness passes the deps, so step 1's existing tests stay green.
+3. **Service:**
+   - `tagsRepo` (read-only, soft-delete-filtered) for liveness;
+   - `liveTagRows(type, id)` = `notes.getTagsForEntity` ∩ live tags;
+   - the tag writes with the entity guard first, then `TagNotFound` on tag (not on untag);
+   - the notes via `ensureEntityNote('note', …, { title })`;
+   - the links via `createLink` / `removeLink` after a target guard by type.
+
+   Gate point: the routines suite green.
+4. **Docs:** seam `// ⟲ amended (A27)` surface + deps as-built · slice-map S8 row · `current-spec` / `current-business-rules` (BR-RT-S8-*) · `routines/CLAUDE.md`.
+5. **Gates:** tsc · eslint · routines suite · full core · g2 · /critique · §XXIX.
+
+## Step-5 critique (folded): SHIP + 6 notes
+1. `createBacklinkResolver` is imported from `services/search/backlink-resolver` (the tasks test, `:31`).
+2. Spaces and Notes get the plain shared `registry`, never the `sessionsEntityRegistry` override; `Harness` gains `spaces` / `notes`.
+3. "Green" at step 2 means vitest only; tsc goes green at the step-3 gate point (the interface members land with the implementation).
+4. `liveTagRows` reads the tags with `findWhere(and(inArray(tags.id, ids), isNull(tags.deleted_at)))`, because `findWhere` skips the
+   soft-delete filter.
+5. VG6 checks the archived routine's note through `notes.getPagesForEntity('routine', rid)` (`getRoutineNote` throws by T2). VG5 uses
+   `linkPage(pageId, { type, id }, ctx?)`.
+6. The schema is named `LinkRoutinePageSchema` (`export *` barrel hygiene).
+
+Recorded consequence of T2: once a routine is archived, its tags are removable only through Spaces directly.

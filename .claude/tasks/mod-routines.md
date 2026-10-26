@@ -164,3 +164,10 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 3. Service — a emission context · b drives (prior-row holder, R5b date) · c other writes (deleteCompletion soft-deleted lookup, updateStep guard) · e flag  (gate: routines green)
 - [x] 4. Docs
 - [x] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
+
+## Build Steps — S8 tags + notes + links (PLAN-S8 §5 · awaiting Approval 2)
+- [ ] 1. Tests first (red) + harness (shared registry, Spaces + Notes)
+- [ ] 2. Types / validators / index (green)
+- [ ] 3. Service — live-tag reads · tag writes · notes · links  (gate: routines green)
+- [ ] 4. Docs
+- [ ] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
