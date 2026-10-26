@@ -216,3 +216,69 @@ Assumptions made explicit (each verified, or given a STOP):
 - rev 2 · gate-2 critique round 2 = **SHIP** (G2-B1/B2 verified resolved; harness-first seeding verified viable). Two
   advisories folded in: the read-back transitions are named and covered by the retry-once/STOP rule; the editor dist added to
   preflight #7 and the risks.
+- **APPROVAL 2 — Victor, 2026-10-26.** Build started.
+
+## 5a. Deviation record (§XXVIII)
+
+### DEV-R0-1 · Write-through at flush time is too late for a warm cache (B-53 still reproduces) — STOPPED, pending approval
+**Found:** step 7 live leg (Brave, real OPFS, 2026-10-26). Check "B-53 warm: Home shows the note-page edit" FAILED: Home
+showed `OLD` after an edit on `/notes/$id`. Then typing on Home wrote `OLD HOME` over `OLD NEW` (the later "NEW" wait timed
+out) — **the B-53 data loss, live.** Steps 1–6 otherwise pass (core 57/57 R0, editor 237/237, web 811/811; the 5 live
+parse/notice cases PASS).
+**Reproduced deterministically** (jsdom, `apps/web/src/notes/__repro-b53.test.tsx`): a warm `['journal',D]`, a writer with a
+pending edit, one state update that swaps writer → reader → the reader's FIRST render reads `OLD`.
+**Root cause (FACT):** a route swap renders the incoming tree (Home reads the cache synchronously, `useQuery` → `OLD`)
+BEFORE the commit runs the outgoing tree's unmount cleanup (`useNoteContent`'s flush → `setQueryData`). The editor is
+uncontrolled and the dedupe baseline is a `useRef` initial value, so both are fixed at that first render and never
+re-seed. The round-3 critique's "commit order is on our side" holds for the reader's EFFECTS and query function (hence
+the barrier works for cold caches) but not for its first render. Classification: **STRUCTURAL** (the approved
+mechanism is ordered wrong; a symptom patch, e.g. re-seeding the editor on prop change, would race live typing).
+
+**Proposed revision — rev 2 (deviation critique r1 = REVISE folded in; for preflight → Victor's approval):**
+a module-level **latest-body overlay** written synchronously by `save()` and read **at the editor's seed point**.
+- Why the seed point, not the reader hooks (critique r1 B1, verified): the editor body also remounts WITHOUT a new read.
+  Switching merged ⇄ tabbed, or a tab switch in tabbed mode (only the active panel mounts), re-renders
+  `NoteEntityView` with the SAME `page` prop from `NoteEntity`'s last render [FACT: note-entity.tsx:99,104-115;
+  packages/ui/src/components/entity-view.tsx:180-205]. Reading at the seed covers route swaps (both directions) and every
+  facet/tab remount, with no change to the reader hooks.
+- Why no effect-based flush can work (critique r1, FACT): Home and `/notes/$id` are sibling routes in one `<Outlet/>`
+  [routes.tsx:19-38,52-57,83-87,122-132], with no keep-alive. React renders the incoming tree before ANY cleanup of the
+  outgoing one (passive or layout), so only data written by `save()` and read during render closes the gap.
+- Why no `setQueryData` per keystroke (r1 #6, verified real): it re-renders `NoteEntity` → `toEntityProps` → the overview
+  layout (a DashboardView grid in merged mode) → `EntityView` on every key, plus `replaceEqualDeep` over the doc.
+- **`body-writes.ts` overlay API** (keyed `page:<id>` only — Home's journal entity carries `page.id`): entries
+  `{doc, serialized, gen, owner}`. `setLatestBody(id, doc, serialized, owner) → gen`; `clearLatestBody(id, {owner} | {gen})`
+  clears only the owner's entry, or only when `gen` ≥ the entry's (an older write settling never clears a newer
+  `save()`); `latestBody(id)`. A plain `Map`, no subscriptions.
+- **`useNoteContent`**: the seed is decided once at first render (`useState` initializer):
+  `seed = latestBody(page.id) ?? page.content`. `NoteEditorBody` feeds `seed.doc` to `defaultValue`. The dedupe
+  baseline stays the STORED body (`page.content`), so a mount seeded from an overlay re-saves it once through the
+  normal debounce. **Ownership by design:** the new mount retries an edit whose outgoing write may still fail after
+  unmount (round-2's stated limit closes). Cost: one redundant write of identical content, only when an unsaved
+  overlay exists. Mere open of a clean page still never writes. `needsBaseline = page.content == null && no overlay`.
+  `save()` sets the overlay on every REAL edit (after the dedupe). Cleared on: a write success (by gen) · `cancel()` /
+  `lock()` (own entry) · a terminal error. A retryable error keeps it, and the next mount re-saves it.
+- Kept unchanged: the barrier (cold caches), the flush-time warm `setQueryData`, the invalidation set.
+- **Forward obligation (R5):** "Move to Trash" must call `cancel()` before the soft delete, so the overlay and the pending
+  edit are dropped (no delete flow is wired in R0; recorded on R5).
+- **Tests (r1 #7):** (a) the repro becomes permanent, in StrictMode, both directions, with the real `NoteEditorBody` (mocked
+  editor probe for the seed); (b) facet switch in `note-entity.test.tsx`: type → toggle merged⇄tabbed AND tab-away/back
+  within 500 ms → the new editor seeds NEW → typing writes NEW + edit; (c) an overlay-seeded mount writes the same doc
+  once (ownership), never the stale body; (d) blank page + overlay → writes the overlay, no stale write; (e) overlay
+  units: older-gen success keeps a newer overlay; cancel/lock clear only their own; terminal clears; success clears;
+  (f) cold-barrier tests unchanged and green; (g) live B-53 warm re-run + a live tab-away/back case.
+- PLAN impact: G13/G14 + BR-R0-8 reworded to "write-through at save time via the seed-point overlay". BR-R0-7 gains the
+  ownership re-save. No BR removed.
+
+**Deviation critique round 2 = SHIP** (2026-10-26). Advisories folded into rev 2:
+- `NoteEditorBody`'s `invalid` and the hook's `locked` derive from the SAME seed object (one source; can't diverge).
+- Terminal errors: `InvalidPageContentError` clears **by gen** (an older terminal write never drops a newer `save()`);
+  `PageNotFoundError` clears unconditionally.
+- BR-R0-7 wording states the real cost: a quick type-then-navigate usually costs one redundant identical write + its
+  invalidations (the overlay lives until a write succeeds). It's cheap, and it's the price of the retry guarantee.
+- **Forward obligation:** every NON-editor body writer (template apply R9, import, M4 sync pull) must clear
+  `latestBody(id)` before writing, or a kept overlay would overwrite its body on the next mount. Recorded for R9 and M4.
+- Tests (h)–(l) added: (h) a retryable failure after unmount, then remount → re-save succeeds, overlay clears;
+  (i) gen race: gen-2 echo before the gen-1 success → survives gen 1, clears on gen 2; (j) exactly one redundant write
+  under StrictMode; (k) a terminal `InvalidPageContentError` on an older gen keeps a newer entry; (l) (b) under StrictMode.
+**Status: AWAITING Victor's approval (§XXVIII step 4).**
