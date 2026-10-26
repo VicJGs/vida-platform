@@ -179,6 +179,24 @@
   S9 (the owner's live read, sessions business-rules.md:72-74).
   A block cancelled by a skip stays `skipped` if its already-running linked session is then completed (D stamped done): edge, recorded.
 
+**S7 — Routine-level effects** (`delivery/PLAN-S7-effects.md`)
+- **BR-RT-S7-1 · What (D3, RT-7/ROU-21/22).** The routine emits `award_xp` (the XP case of `grant_currency`, ADR-012 E2) and
+  `contribute_purpose_metric` through `effects.rail`, keyed `subjectNaturalKey = routine.id`, `transition = completed:<date>`,
+  `targetRef = routine.id`, no payload. It never writes XP (rule 2). No `emit_measurement_signal` (RT-19: no M5 source; a derived-pull READ).
+- **BR-RT-S7-2 · When (rule 21).** On a WRITE to the occurrence record whose date goes not-done → done (evaluated before and after inside
+  the per-step lock), only for a scheduled occurrence (no rule ⇒ never). Reads never emit (E7, BR-RT-S4e-6). A later policy change
+  never emits for past dates; a done reached with no routine write (reflection-only) emits nothing. For a drive whose stamp lands on another
+  date (R5b, cross-midnight focus), that date's before-state is rebuilt from the step's prior row.
+- **BR-RT-S7-3 · Guarded + isolated + flagged (N8, rule 13, G8).** No `effects` / no handler ⇒ nothing (zero extra reads). A handler throw
+  never fails the write: drives return `flag:'effect_emit_failed'` (the entity's `recurrence_regen_failed` keeps precedence), and
+  `contributeToPurposeMetrics` re-drives the contribution (`RoutineContributionError`). An evaluation failure (e.g. a malformed policy) skips
+  emission; the write persists.
+- **BR-RT-S7-4 · One grant per routine-day.** Rail dedup on the key: an undo does not retract; a re-done does not re-grant.
+- **BR-RT-S7-5 · `updateStep{skip_dates}`** is a skip write: newly added past dates take the S6 window guard (an old past date already in the
+  array never blocks an unrelated edit). A truly missing step → `StepNotFoundError` first; a soft-deleted step still updates (g2 N1, unchanged).
+- **S7 limits:** a failed `award_xp` on a write is not re-driven (the transition doesn't recur; habits' auto path is silent too);
+  `planSkipDates`/`updateStep` evaluate per added date (no batching).
+
 ## 2. Rule taxonomy
 | Category | Rules | Enforced by | Default when absent | Who changes it | Reset / delete semantics |
 |---|---|---|---|---|---|
@@ -218,7 +236,7 @@
   leave the step's completion rows in place. That is correct: archive/soft-delete preserves the ledger (RT-17; ROU-03). Completions
   hard-delete only with a hard PURGE of their step (`routines.ts:103`), and that purge path is the only owed piece.
 - **F4 · `setLifecycle` — RESOLVED in S2c (BR-RT-S2c-1).** *(was: absent)* Lifecycle changes only through `updateRoutine`. The governing S1 lists ROU-17.
-- **F5 · Factory deps — mostly RESOLVED.** `registry` (S2c), `tasks`/`sessions`/`habits?` (S3), `prefs?` (S4) landed; `spaces`/`notes`/`effects?` land in S7–S8.
+- **F5 · Factory deps — mostly RESOLVED.** `registry` (S2c), `tasks`/`sessions`/`habits?` (S3), `prefs?` (S4), `effects?` (S7) landed; `spaces`/`notes` land in S8.
 - **F6 · Day helper — RESOLVED in S3** (default clock = tasks' public `utcDay`).
 - **F7 · Stale aspect prose (flag, interp §4.14).** The aspect docs still name `routine_actions` / `routine_action` (e.g.
   business-rules.md RT-1/RT-8/RT-16/RT-17). The code and `_registry.ts` use the reframe names (`routine_step`, plus `routine`).

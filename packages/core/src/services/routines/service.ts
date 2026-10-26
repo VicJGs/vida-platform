@@ -16,7 +16,7 @@
 
 import { and, eq, gte, inArray, isNull, lte, type SQL } from 'drizzle-orm'
 import ICAL from 'ical.js'
-import type { Routine, RoutineStep, RoutineCompletion } from '@vida/types'
+import type { Routine, RoutineStep, RoutineCompletion, EffectType } from '@vida/types'
 import { createRepository, type CreateInput, type UpdateInput } from '../../db/repository'
 import {
   routines,
@@ -62,6 +62,7 @@ import {
   OutsideAcceptanceWindowError,
   NotMissedOccurrenceError,
   InvalidRescheduleSlotError,
+  RoutineContributionError,
   type RoutineEvaluation,
   type RoutinePolicy,
   type RoutineAnalytics,
@@ -259,7 +260,7 @@ const toRoutineCompletion = (r: RoutineCompletionRow): RoutineCompletion => ({
 })
 
 export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService {
-  const { db, deviceId, registry, tasks, sessions, sessionRegistry, habits, prefs } = deps
+  const { db, deviceId, registry, tasks, sessions, sessionRegistry, habits, prefs, effects } = deps
   const clock = deps.clock ?? (() => utcDay(Date.now())) // YYYY-MM-DD — the platform UTC-day convention (tasks' public utcDay)
   const cfg = { deviceId, encryptedFields: [] as string[] } // M1.0: [E] fields dormant (→ M3/DB-5)
 
@@ -399,8 +400,13 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   // N7 — the stamp runs only AFTER a successful drive (the routine's own occurrence row; never the entity's effects).
   // It writes the ledger directly (the step was loaded before the drive), so a step deleted mid-drive can't surface as
   // StepNotFoundError AFTER the entity was driven (BR-RT-S3-4: that error only ever precedes a drive).
+  // S7 (B1) — while a drive runs, each stamp records the step's PRIOR ledger row per date (keyed by step: the per-step lock makes one
+  // drive per step in flight). The emission rebuilds a stamped date's before-state from it when that date isn't the requested one.
+  const priorRows = new Map<string, Map<string, RoutineCompletionRow | undefined>>()
   const stamp = async (stepId: string, date: string, minutes: number | null): Promise<RoutineCompletion> => {
     const existing = await findCompletion(stepId, date)
+    const probe = priorRows.get(stepId)
+    if (probe && !probe.has(date)) probe.set(date, existing)
     const reRun = existing != null && !existing.skipped // re-stamping an already-done occurrence keeps its record
     const row = existing
       ? await completionsRepo.update(existing.id, {
@@ -496,6 +502,95 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       const b = await pendingBlock(stepId, date)
       if (b) await sessions.updatePlannedBlock(b.id, { status: 'skipped' })
     })
+
+  // ── S7 — routine-level effects (PLAN-S7-effects.md, D3 + rule 21) ──
+  // The routine's `award_xp` + `contribute_purpose_metric` fire on the WRITE whose date goes not-done → done (never on a read), only for a
+  // scheduled occurrence, guarded by registry.resolve (N8), post-commit + isolated (rule 13). Keyed routine.id + completed:<date>.
+  const EMITTED: readonly EffectType[] = ['award_xp', 'contribute_purpose_metric']
+  type EmitCtx = { routine: RoutineRow; policy: RoutinePolicy | null }
+  // Guard FIRST: no effects dep / no handler / no routine ⇒ null with zero reads. Any read failure ⇒ null (the write still runs, N2).
+  const emitContext = async (routineId: string | null): Promise<EmitCtx | null> => {
+    if (!effects || !EMITTED.some((t) => effects.registry.resolve(t)) || routineId == null) return null
+    try {
+      const routine = await routinesRepo.findById(routineId)
+      if (!routine || routine.recurrence_rule == null) return null // no rule ⇒ no occurrences ⇒ nothing emits (S5 A6)
+      return { routine, policy: prefs ? await prefs.policyFor(routineId) : null }
+    } catch {
+      return null
+    }
+  }
+  // Policy-done for D from FRESH reads (steps incl. soft-deleted, the day's rows, a new reflection — N1); null when D is not an
+  // occurrence (S4 E8: the caller picks the occurrence). `swap` rebuilds a before-state: one step's row replaced by its prior row (B1).
+  const evalDone = async (
+    ctx: EmitCtx,
+    date: string,
+    swap?: { stepId: string; row: RoutineCompletionRow | undefined },
+  ): Promise<boolean | null> => {
+    const rule = ctx.routine.recurrence_rule
+    if (rule == null || !occurrences(rule, utcDay(ctx.routine.created_at), date, date).includes(date)) return null
+    const all = await stepsRepo.findWhere(eq(routineStep.routine_id, ctx.routine.id) as SQL)
+    const rows = new Map((await completionsBetween(all.map((st) => st.id), date, date)).get(date) ?? [])
+    if (swap) {
+      if (swap.row) rows.set(swap.stepId, swap.row)
+      else rows.delete(swap.stepId)
+    }
+    return (await judgeDay(ctx.routine.id, all, rows, date, ctx.policy, newReflection())).status === 'done'
+  }
+  const doneOn = async (...args: Parameters<typeof evalDone>): Promise<boolean | null> => {
+    try {
+      return await evalDone(...args)
+    } catch {
+      return null // e.g. a malformed policy: no emission; the error surfaces on reads (rule 13)
+    }
+  }
+  // Fire both types for (routine, date); returns true when a handler threw (G8 — the caller flags it).
+  const fire = async (routineId: string, date: string): Promise<boolean> => {
+    let failed = false
+    for (const effectType of EMITTED) {
+      if (!effects?.registry.resolve(effectType)) continue // dormant per type (N8)
+      try {
+        await effects.rail.applyEffect({ subjectNaturalKey: routineId, transition: `completed:${date}`, effectType, targetRef: routineId })
+      } catch {
+        failed = true // post-commit, isolated: the write stands (rule 13); flagged on drives, re-drivable for the contribution
+      }
+    }
+    return failed
+  }
+  // A non-drive write on known dates: before → write → after; emit each date that went not-done → done.
+  const withEmission = async <T>(routineId: string | null, dates: readonly string[], write: () => Promise<T>): Promise<T> => {
+    const ctx = dates.length ? await emitContext(routineId) : null
+    if (!ctx) return write()
+    const days = [...new Set(dates)]
+    const before = new Map<string, boolean | null>()
+    for (const d of days) before.set(d, await doneOn(ctx, d))
+    const result = await write()
+    for (const d of days) {
+      if (before.get(d) !== false) continue // not an occurrence / unreadable / already done (done → done never emits)
+      if ((await doneOn(ctx, d)) === true) await fire(ctx.routine.id, d)
+    }
+    return result
+  }
+  // A drive (completeStep/runStep): the requested D is read before (reflection may change); a stamped date ≠ D (R5b / cross-midnight
+  // focus) is non-reflecting, so its before-state is the post-write day with this step's prior row swapped back in (exact, B1).
+  const driveWithEmission = async (step: RoutineStepRow, date: string, drive: () => Promise<StepRunState>): Promise<StepRunState> => {
+    const ctx = await emitContext(step.routine_id)
+    if (!ctx) return drive()
+    const beforeD = await doneOn(ctx, date)
+    const probe = new Map<string, RoutineCompletionRow | undefined>()
+    priorRows.set(step.id, probe)
+    let st: StepRunState
+    try {
+      st = await drive()
+    } finally {
+      priorRows.delete(step.id)
+    }
+    if (st.completion == null) return st // nothing stamped (e.g. in_progress) ⇒ no date written
+    const day = st.date
+    const before = day === date ? beforeD : probe.has(day) ? await doneOn(ctx, day, { stepId: step.id, row: probe.get(day) }) : null
+    if (before !== false || (await doneOn(ctx, day)) !== true) return st
+    const failed = await fire(ctx.routine.id, day)
+    return failed && st.flag == null ? { ...st, flag: 'effect_emit_failed' } : st // the entity's regen failure keeps precedence
+  }
 
   // BR-RT-S6-5 — a make-good BEGUN in-window (a guarded runStep(D) linked to D's block) is still open: completing it is
   // not a new make-good, so the window guard doesn't apply to it (contract.md:55 rejects a make-good begun PAST the window).
@@ -1238,7 +1333,18 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     updateStep: async (stepId, patch) => {
       const p = UpdateStepSchema.parse(patch)
       assertEntityType(p.entity_type) // ignores null/undefined
-      return toRoutineStep(await stepsRepo.update(stepId, serializeStepUpdate(p)))
+      return serialized(stepId, async () => {
+        // Incl. soft-deleted: updateStep on a removed step still succeeds (ratified, g2 N1 twin-repo behaviour, BR §4); only a truly
+        // missing step is StepNotFoundError (was the repo's generic 'Row not found'), before any window error (S6 W1).
+        const step = (await stepsRepo.findWhere(eq(routineStep.id, stepId) as SQL))[0]
+        if (!step) throw new StepNotFoundError(stepId)
+        // S7 — skip_dates is the planned-skip half of the occurrence record (RT-8): newly ADDED past dates take the S6 window guard
+        // (the whole array is replaced, so an old past date already in it must not block an unrelated edit), then emission.
+        const had = new Set(parseJsonArray<string>(step.skip_dates) ?? [])
+        const added = p.skip_dates ? [...new Set(p.skip_dates)].filter((d) => !had.has(d)) : []
+        for (const d of added) await assertWritable(step, d)
+        return toRoutineStep(await withEmission(step.routine_id, added, () => stepsRepo.update(stepId, serializeStepUpdate(p))))
+      })
     },
 
     removeStep: async (stepId) => {
@@ -1269,7 +1375,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       return serialized(stepId, async () => {
         const fresh = await loadStepOrThrow(step.id)
         if (!(await runningMakeGood(fresh.id, date))) await assertWritable(fresh, date) // S6 W3 — before any drive
-        const st = await driveStep(fresh, date, minutes, 'complete')
+        const st = await driveWithEmission(fresh, date, () => driveStep(fresh, date, minutes, 'complete')) // S7
         await settleBlock(fresh.id, st) // S6 R5 — inside the lock, keyed on the occurrence actually stamped
         return st
       })
@@ -1282,7 +1388,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       return serialized(stepId, async () => {
         const fresh = await loadStepOrThrow(step.id)
         if (!(await runningMakeGood(fresh.id, date))) await assertWritable(fresh, date) // S6 W3
-        const st = await driveStep(fresh, date, null, 'run')
+        const st = await driveWithEmission(fresh, date, () => driveStep(fresh, date, null, 'run')) // S7
         await settleBlock(fresh.id, st) // S6 R5 — a started make-good is linked to D's block at once (R5b)
         return st
       })
@@ -1447,13 +1553,12 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       const p = SkipStepSchema.parse(input)
       const date = p.date ?? clock()
       return serialized(stepId, async () => {
-        await assertWritable(await loadStepOrThrow(stepId), date) // S6 — a skip is a miss write (BR:120)
+        const step = await loadStepOrThrow(stepId)
+        await assertWritable(step, date) // S6 — a skip is a miss write (BR:120)
         // RT-8 — a LOGGED skip on the day (completion row, skipped=true + reason). Distinct from a pre-planned skip.
-        const row = await upsertCompletion(stepId, date, {
-          skipped: true,
-          skip_reason: p.reason ?? null,
-          actual_duration_minutes: null,
-        })
+        const row = await withEmission(step.routine_id, [date], () =>
+          upsertCompletion(stepId, date, { skipped: true, skip_reason: p.reason ?? null, actual_duration_minutes: null }),
+        ) // S7 — a neutral skip can reach policy-done
         await cancelBlock(stepId, date) // S6 R6
         return row
       })
@@ -1465,8 +1570,10 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         const step = await loadStepOrThrow(stepId)
         for (const d of parsed) await assertWritable(step, d) // S6 — any past date beyond the window rejects the whole list
         // RT-8 — pre-planned skips live in step.skip_dates (declared ahead, may be future). Merge, dedupe, sort.
-        const merged = [...new Set([...(parseJsonArray<string>(step.skip_dates) ?? []), ...parsed])].sort()
-        const row = await stepsRepo.update(stepId, { skip_dates: JSON.stringify(merged) })
+        const had = new Set(parseJsonArray<string>(step.skip_dates) ?? [])
+        const merged = [...new Set([...had, ...parsed])].sort()
+        const added = parsed.filter((d) => !had.has(d))
+        const row = await withEmission(step.routine_id, added, () => stepsRepo.update(stepId, { skip_dates: JSON.stringify(merged) })) // S7
         for (const d of parsed) await cancelBlock(stepId, d) // S6 R6
         return toRoutineStep(row)
       })
@@ -1484,7 +1591,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         if ('skipped' in p) out.skipped = p.skipped
         if ('skip_reason' in p) out.skip_reason = p.skip_reason
         if ('actual_duration_minutes' in p) out.actual_duration_minutes = p.actual_duration_minutes
-        const row = toRoutineCompletion(await completionsRepo.update(existing.id, out))
+        const row = toRoutineCompletion(await withEmission(step.routine_id, [date], () => completionsRepo.update(existing.id, out))) // S7
         if (p.skipped === true) await cancelBlock(stepId, date) // S6 R6
         return row
       })
@@ -1492,9 +1599,33 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
 
     deleteCompletion: async (stepId, date) => {
       RoutineCalendarDateSchema.parse(date) // S2c (B1)
-      const existing = await findCompletion(stepId, date)
-      if (!existing) throw new CompletionNotFoundError(stepId, date)
-      await completionsRepo.delete(existing.id) // HARD delete (softDelete:false — ledger has no deleted_at)
+      return serialized(stepId, async () => {
+        const existing = await findCompletion(stepId, date)
+        if (!existing) throw new CompletionNotFoundError(stepId, date)
+        // S7 (B2) — the step may be soft-deleted (its row keeps it in D's set); the unfiltered read is the rule-7 exception. Absent ⇒ no emission.
+        const step = (await stepsRepo.findWhere(eq(routineStep.id, stepId) as SQL))[0]
+        // HARD delete (softDelete:false — ledger has no deleted_at). Removing a skipped row can drop a step from D's set → done.
+        await withEmission(step?.routine_id ?? null, [date], () => completionsRepo.delete(existing.id))
+      })
+    },
+
+    contributeToPurposeMetrics: async (routineId, date) => {
+      RoutineCalendarDateSchema.parse(date)
+      const routine = await loadRoutineOrThrow(routineId)
+      if (!effects || !effects.registry.resolve('contribute_purpose_metric')) return // dormant (the habits precedent)
+      if (routine.recurrence_rule == null) return
+      const ctx: EmitCtx = { routine, policy: prefs ? await prefs.policyFor(routineId) : null }
+      if ((await evalDone(ctx, date)) !== true) return // not an occurrence / not done ⇒ nothing to contribute
+      try {
+        await effects.rail.applyEffect({
+          subjectNaturalKey: routineId,
+          transition: `completed:${date}`,
+          effectType: 'contribute_purpose_metric',
+          targetRef: routineId,
+        })
+      } catch (e) {
+        throw new RoutineContributionError(routineId, date, e instanceof Error ? e.message : String(e)) // HAB-19 precedent
+      }
     },
 
     listCompletions: async (stepId) => {

@@ -17,6 +17,7 @@ import type { TasksService } from '../tasks'
 import type { HabitsService } from '../habits'
 import type { SessionsService } from '../sessions'
 import type { SessionRegistry } from '../../foundation/sessions/registry'
+import type { EffectRail, EffectRegistry } from '../../foundation/effects'
 import type {
   CreateRoutineSchema,
   UpdateRoutineSchema,
@@ -50,6 +51,9 @@ export interface RoutinesServiceDeps {
   /** S4 — the USER's policy (intake Q2/Q3; a Spaces personalization surface, defaults via templates/presets SP5). Optional:
    *  absent ⇒ every evaluation is policy_source 'undefined' (PolicyUndefined, flagged). Routines hardcodes no policy values. */
   prefs?: RoutinesPrefsPort
+  /** S7 (seam `effects?`, N8) — the routine-level `award_xp` + `contribute_purpose_metric` (D3) go through the rail, guarded by
+   *  `registry.resolve`. Absent ⇒ dormant. Inline shape: the `EffectsPort` name is owned by checkins/habits (barrel collision). */
+  effects?: { rail: EffectRail; registry: EffectRegistry }
 }
 
 // --- S4 — the user's policy (port contract; storage is Spaces/Preferences-owned) ---
@@ -189,7 +193,7 @@ export interface StepRunState {
   /** S6 — the SS-8 intent block of a rescheduled occurrence (rescheduleStep), or the one a make-good fulfilled/linked. */
   planned_block_id?: string
   /** TAS-23 complete-but-flag passthrough: the task IS completed, its next occurrence failed to spawn. */
-  flag?: 'recurrence_regen_failed'
+  flag?: 'recurrence_regen_failed' | 'effect_emit_failed' // S7: a routine-level effect handler threw (G8 — flagged, never dropped)
 }
 
 /** Kept for callers that still narrow: since S5c every step is driven, so `completeStep` always returns a StepRunState. */
@@ -242,6 +246,18 @@ export class InvalidRescheduleSlotError extends Error {
   ) {
     super(`Step ${stepId}: invalid reschedule slot (${reason})`)
     this.name = 'InvalidRescheduleSlotError'
+  }
+}
+
+/** S7 (G8, business-rules.md:122-123) — the re-drivable purpose contribution for a done routine-day failed (habits' MetricContributionError precedent). */
+export class RoutineContributionError extends Error {
+  constructor(
+    public readonly routineId: string,
+    public readonly date: string,
+    public readonly reason: string,
+  ) {
+    super(`Routine ${routineId}: the purpose contribution for ${date} failed: ${reason}`)
+    this.name = 'RoutineContributionError'
   }
 }
 
@@ -304,6 +320,10 @@ export interface RoutinesService {
    *  fulfils it. Throws `OutsideAcceptanceWindowError` · `NotMissedOccurrenceError` · `InvalidRescheduleSlotError` ·
    *  `EntityUnavailableError` · `StepNotFoundError`, all before any write. */
   rescheduleStep(stepId: string, input: RescheduleStepInput): Promise<StepRunState>
+  /** S7 (G8, ROU-22) — re-drive the routine-level `contribute_purpose_metric` for a done, scheduled day (rail-idempotent). Not done /
+   *  not an occurrence / no effects or handler ⇒ no-op. `RoutineNotFoundError` · `ZodError` (date) · `RoutineContributionError`; an evaluation
+   *  failure propagates like a read (`InvalidRoutinePolicyError` · `InvalidRecurrenceRuleError`). */
+  contributeToPurposeMetrics(routineId: string, date: string): Promise<void>
 
   // ── S4: policy evaluation (read-only, derive-on-read) ────────────
   /** ROU-12 — judge a routine's occurrence date under the USER's policy (prefs port). Always returns what was done (RT-5);

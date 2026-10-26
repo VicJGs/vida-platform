@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope approved; S2c–S6 (+S5c) ✅ shipped (local commits); next = S7 routine-level effects
+# Status: in-progress — re-scope approved; S2c–S7 (+S5c) ✅ shipped (local commits); next = S8 tags/notes/links
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -18,6 +18,15 @@ completion/miss policy → Preferences; `routine_step_membership` → Spaces des
 Sessions; XP application → Gamification. Delivery: `docs/features/routines/delivery/`.
 
 ## Slice log
+- **S7 — Routine-level effects ✅ (2026-10-26)** — D3 `award_xp` + `contribute_purpose_metric` keyed `routine.id` + `completed:<date>`
+  on the WRITE whose date goes not-done → done (rule 21; transition read before/after inside the per-step lock; R5b/cross-midnight
+  stamped dates rebuilt from the step's prior row), occurrence-gated, guarded first (zero reads without effects/handlers), isolated,
+  drives flag `effect_emit_failed`, re-drivable `contributeToPurposeMetrics` (G8). Reads pure. Wired: complete/run/skip/edit/delete/
+  planSkipDates/updateStep{skip_dates} (+ the S6 window guard on updateStep's newly added past dates — an S6 miss). Victor 2026-10-26: the
+  reflection case is settled by rule 21 ("everything is described in the documentation") — my settleToday/amendment detour reverted.
+  tsc 0 · eslint 0 · **routines 151/151** · full @vida/core **2164/2164** · mutation-checked · **g2 FINDINGS 1 blocking → fixed**
+  (updateStep on a soft-deleted step keeps the ratified g2-N1 success) + N1–N5 · **/critique REVISE → fixed** (G5 no-evaluation test
+  non-vacuous, mutation-proved) · §XXIX promoted.
 - **S6 — Reschedule (SS-8 intent block) + acceptance-window guard ✅ (2026-10-22)** — v1 (no persistence) revised by Victor; v2 (eager
   scheduled session, my framing) failed g1 (focus/TAS-12/time-log); **v3 = SS-8 literal**: `rescheduleStep(stepId,{date,slot})` writes one
   `planned_blocks` row (target `routine_step`, `source 'routines:<D>'` — derived: R3 no MOD schema, Q3 no same-day-only), the make-good creates
@@ -149,9 +158,9 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 5. Docs (row 7)
 - [x] 6. Gates — tsc · eslint · routines + sessions · full core · g2 · /critique · §XXIX
 
-## Build Steps — S7 routine-level effects (PLAN-S7 §5 v2 · awaiting Approval 2)
-- [ ] 1. Tests first (red) + harness (effects wired, rail returned, opt-out, pinned clock)
-- [ ] 2. Types/index + contributeToPurposeMetrics (green)
-- [ ] 3. Service — a emission context · b drives (prior-row holder, R5b date) · c other writes (deleteCompletion soft-deleted lookup, updateStep guard) · e flag  (gate: routines green)
-- [ ] 4. Docs
-- [ ] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
+## Build Steps — S7 routine-level effects (PLAN-S7 §5 v2 · Approval 2 2026-10-26)
+- [x] 1. Tests first (red) + harness (effects wired, rail returned, opt-out, pinned clock)
+- [x] 2. Types/index + contributeToPurposeMetrics (green)
+- [x] 3. Service — a emission context · b drives (prior-row holder, R5b date) · c other writes (deleteCompletion soft-deleted lookup, updateStep guard) · e flag  (gate: routines green)
+- [x] 4. Docs
+- [x] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX

@@ -10,6 +10,7 @@ export {
   OutsideAcceptanceWindowError,
   NotMissedOccurrenceError,
   InvalidRescheduleSlotError,
+  RoutineContributionError,
   type RescheduleStepInput,
   type CompletionRule,
   type RoutinePolicy,

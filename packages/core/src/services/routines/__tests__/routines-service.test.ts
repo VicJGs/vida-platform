@@ -35,6 +35,7 @@ import {
   OutsideAcceptanceWindowError,
   NotMissedOccurrenceError,
   InvalidRescheduleSlotError,
+  RoutineContributionError,
   type RoutinePolicy,
   type RoutinesPrefsPort,
   isStepRunState,
@@ -84,6 +85,7 @@ interface Harness {
   habits: HabitsService
   sessions: SessionsService
   sessionRegistry: ReturnType<typeof createSessionRegistry>
+  rail: ReturnType<typeof createEffectRail> // S7 — spy target for applyEffect call counts
 }
 
 interface SetupOpts {
@@ -92,6 +94,7 @@ interface SetupOpts {
   sessionsEntityRegistry?: TaggableTypeRegistry // force an attach failure (focus edge case)
   prefs?: RoutinesPrefsPort // S4 — the user's policy port
   tasksTimer?: boolean // S5c — default true; false ⇒ registerTasksTimer not called (timer unwired)
+  effects?: boolean // S7 — default true (routines gets the shared rail/registry); false ⇒ no effects dep
 }
 
 // S3 — REAL substrates (the tasks `setupWithTimer` pattern): Sessions (registry + rail + entity registry), Tasks, Habits.
@@ -125,8 +128,9 @@ async function setup(opts: SetupOpts = {}): Promise<Harness> {
     sessionRegistry,
     ...(opts.withHabits === false ? {} : { habits }),
     ...(opts.prefs ? { prefs: opts.prefs } : {}),
+    ...(opts.effects === false ? {} : { effects: { rail, registry: effectRegistry } }),
   })
-  return { svc, db, bsql, tasks, habits, sessions, sessionRegistry }
+  return { svc, db, bsql, tasks, habits, sessions, sessionRegistry, rail }
 }
 
 // Actionable steps return the ledger row; narrow the S3 completeStep union for the as-built tests.
@@ -2091,5 +2095,369 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
     await h.svc.planSkipDates(c.id, [TODAY])
     expect((await blocksOf(c.id))[0]?.status).toBe('skipped')
     expect(await dueAll()).toEqual([])
+  })
+})
+
+// ============================================================================
+// S7 — routine-level effects (PLAN-S7 §5 v2 · Verification Gate). Rule 21: fire on the WRITE whose date goes not-done → done.
+// ============================================================================
+describe('mod-routines S7 — routine-level award_xp + contribute_purpose_metric (D3, rule 21)', () => {
+  const D = '2026-10-26' // a Monday
+  let h: Harness
+  let clock: ReturnType<typeof vi.spyOn>
+  let fired: { type: string; key: string; transition: string; target: string }[]
+  let policyNow: RoutinePolicy | null
+  const setNow = (day: string, hhmm = '12:00') => clock.mockImplementation(() => Date.parse(`${day}T${hhmm}:00Z`))
+  const prefs: RoutinesPrefsPort = { policyFor: async () => policyNow }
+  const AON: RoutinePolicy = { completion: { kind: 'all_or_nothing' } }
+  afterEach(() => vi.restoreAllMocks())
+
+  // A fresh registry with spy handlers for both routine-level types (+ optional overrides); the clock pinned BEFORE createRoutine.
+  async function world(
+    opts: { rule?: string | null; policy?: RoutinePolicy | null; effects?: boolean; handlers?: Partial<Record<'award_xp' | 'contribute_purpose_metric', 'spy' | 'throw' | 'none'>> } = {},
+  ) {
+    fired = []
+    policyNow = opts.policy === undefined ? AON : opts.policy
+    const effectRegistry = createEffectRegistry()
+    for (const type of ['award_xp', 'contribute_purpose_metric'] as const) {
+      const mode = opts.handlers?.[type] ?? 'spy'
+      if (mode === 'none') continue
+      effectRegistry.register(type, async (ev) => {
+        if (mode === 'throw') throw new Error(`${type} handler down`)
+        fired.push({ type, key: ev.subjectNaturalKey, transition: ev.transition, target: ev.targetRef })
+      })
+    }
+    h = await setup({ effectRegistry, prefs, ...(opts.effects === false ? { effects: false } : {}) })
+    clock = vi.spyOn(Date, 'now')
+    setNow(D)
+    const rid = (await h.svc.createRoutine({ name: 'R', recurrence_rule: opts.rule === undefined ? 'FREQ=DAILY' : opts.rule })).id
+    return rid
+  }
+  const mine = (rid: string) => fired.filter((f) => f.key === rid)
+
+  // 1
+  it('done emits once: both types keyed routine.id + completed:D, targetRef routine.id; partial nothing; a re-complete adds nothing', async () => {
+    const rid = await world()
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    const b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    expect(mine(rid)).toEqual([])
+    const spy = vi.spyOn(h.rail, 'applyEffect')
+    await h.svc.completeStep(b.id, { date: D })
+    expect(mine(rid)).toEqual([
+      { type: 'award_xp', key: rid, transition: `completed:${D}`, target: rid },
+      { type: 'contribute_purpose_metric', key: rid, transition: `completed:${D}`, target: rid },
+    ])
+    const routineCalls = () => spy.mock.calls.filter(([ev]) => ev.subjectNaturalKey === rid).length
+    expect(routineCalls()).toBe(2)
+    await h.svc.completeStep(b.id, { date: D })
+    expect(routineCalls()).toBe(2) // no transition ⇒ the service doesn't even call the rail
+  })
+
+  // 2
+  it('partial never emits: threshold 100 with 1 of 2 done; undefined policy + partial', async () => {
+    let rid = await world({ policy: { completion: { kind: 'threshold', percent: 100 } } })
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    expect(mine(rid)).toEqual([])
+    rid = await world({ policy: null })
+    const c = await h.svc.addStep(rid, { title: 'C' })
+    await h.svc.addStep(rid, { title: 'D' })
+    await h.svc.completeStep(c.id, { date: D })
+    expect(mine(rid)).toEqual([])
+  })
+
+  // 3
+  it('reached via skip: neutral logged skip · planned skip (any policy) · updateStep skip_dates; undefined policy + logged skip → nothing', async () => {
+    const neutral: RoutinePolicy = { completion: { kind: 'all_or_nothing' }, miss: { logged_skip: 'neutral' } }
+    let rid = await world({ policy: neutral })
+    let a = await h.svc.addStep(rid, { title: 'A' })
+    let b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    expect(mine(rid)).toEqual([])
+    await h.svc.skipStep(b.id, { date: D, reason: 'x' })
+    expect(mine(rid).map((f) => f.type)).toEqual(['award_xp', 'contribute_purpose_metric'])
+
+    rid = await world({ policy: null })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    await h.svc.planSkipDates(b.id, [D])
+    expect(mine(rid)).toHaveLength(2)
+
+    rid = await world({ policy: null })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    await h.svc.updateStep(b.id, { skip_dates: [D] })
+    expect(mine(rid)).toHaveLength(2)
+
+    rid = await world({ policy: null })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    await h.svc.skipStep(b.id, { date: D })
+    expect(mine(rid)).toEqual([])
+  })
+
+  // 3b — E7
+  it('E7: a policy change that makes a past day done emits nothing, and a later duration-only edit on it emits nothing', async () => {
+    const rid = await world({ policy: { completion: { kind: 'threshold', percent: 100 } } })
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    await h.svc.addStep(rid, { title: 'B' })
+    setNow('2026-10-27')
+    await h.svc.completeStep(a.id, { date: D })
+    policyNow = { completion: { kind: 'threshold', percent: 50 } }
+    expect((await h.svc.evaluateRoutine(rid, { date: D })).status).toBe('done')
+    await h.svc.editCompletion(a.id, D, { actual_duration_minutes: 12 })
+    expect(mine(rid)).toEqual([])
+  })
+
+  // 3c — edits, delete (incl. a step soft-deleted on D), neutral-skip threshold lift
+  it('edits and delete reach done: un-skip emits; deleting the skipped row of a step removed on D emits; a neutral skip lifts a threshold', async () => {
+    let rid = await world({ policy: { completion: { kind: 'all_or_nothing' }, miss: { logged_skip: 'not_done' } } })
+    let a = await h.svc.addStep(rid, { title: 'A' })
+    let b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    await h.svc.skipStep(b.id, { date: D })
+    expect(mine(rid)).toEqual([])
+    await h.svc.editCompletion(b.id, D, { skipped: false })
+    expect(mine(rid)).toHaveLength(2)
+
+    rid = await world({ policy: { completion: { kind: 'all_or_nothing' }, miss: { logged_skip: 'not_done' } } })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    await h.svc.skipStep(b.id, { date: D })
+    await h.svc.removeStep(b.id) // soft-deleted on D → kept in D's set only by its row
+    expect((await h.svc.evaluateRoutine(rid, { date: D })).status).not.toBe('done')
+    await h.svc.deleteCompletion(b.id, D)
+    expect((await h.svc.evaluateRoutine(rid, { date: D })).status).toBe('done')
+    expect(mine(rid)).toHaveLength(2)
+
+    rid = await world({ policy: { completion: { kind: 'threshold', percent: 100 }, miss: { logged_skip: 'neutral' } } })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    await h.svc.skipStep(b.id, { date: D })
+    expect(mine(rid)).toHaveLength(2)
+  })
+
+  // 4 + 6b — guarded, isolated, flagged
+  it('guarded + flagged: no effects dep → nothing; only award_xp registered → only award_xp; a throwing handler → flag, row persists', async () => {
+    let rid = await world({ effects: false })
+    let a = await h.svc.addStep(rid, { title: 'A' })
+    await h.svc.completeStep(a.id, { date: D })
+    expect(fired).toEqual([])
+
+    rid = await world({ handlers: { contribute_purpose_metric: 'none' } })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    await h.svc.completeStep(a.id, { date: D })
+    expect(mine(rid).map((f) => f.type)).toEqual(['award_xp'])
+
+    rid = await world({ handlers: { award_xp: 'none', contribute_purpose_metric: 'none' } }) // effects wired, no handler
+    a = await h.svc.addStep(rid, { title: 'A' })
+    const reads = vi.spyOn(prefs, 'policyFor')
+    reads.mockClear()
+    await h.svc.completeStep(a.id, { date: D })
+    expect(reads).not.toHaveBeenCalled() // guard first: zero extra reads (BR-RT-S7-3)
+
+    rid = await world({ handlers: { contribute_purpose_metric: 'throw' } })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    const run = await h.svc.completeStep(a.id, { date: D })
+    expect(run).toMatchObject({ status: 'done', flag: 'effect_emit_failed' })
+    expect(mine(rid).map((f) => f.type)).toEqual(['award_xp'])
+    expect(await h.svc.listCompletions(a.id)).toHaveLength(1)
+    await expect(h.svc.contributeToPurposeMetrics(rid, D)).rejects.toBeInstanceOf(RoutineContributionError)
+  })
+
+  it('contributeToPurposeMetrics: re-drives a done day; not-done → no-op; ZodError; RoutineNotFoundError; no effects → no-op', async () => {
+    let rid = await world()
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    const b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.completeStep(a.id, { date: D })
+    await h.svc.contributeToPurposeMetrics(rid, D) // not done
+    expect(mine(rid)).toEqual([])
+    await h.svc.completeStep(b.id, { date: D })
+    fired = []
+    await h.svc.contributeToPurposeMetrics(rid, D) // rail-deduped: already applied
+    expect(mine(rid)).toEqual([])
+    await expect(h.svc.contributeToPurposeMetrics(rid, '26/10/2026')).rejects.toBeInstanceOf(ZodError)
+    await expect(h.svc.contributeToPurposeMetrics('no-such', D)).rejects.toBeInstanceOf(RoutineNotFoundError)
+    rid = await world({ effects: false })
+    await expect(h.svc.contributeToPurposeMetrics(rid, D)).resolves.toBeUndefined()
+  })
+
+  it('g2 N5: a re-drive after a failed contribution applies it with the routine key; no effects ⇒ no policy read', async () => {
+    let fail = true
+    fired = []
+    policyNow = AON
+    const effectRegistry = createEffectRegistry()
+    effectRegistry.register('contribute_purpose_metric', async (ev) => {
+      if (fail) throw new Error('down')
+      fired.push({ type: 'contribute_purpose_metric', key: ev.subjectNaturalKey, transition: ev.transition, target: ev.targetRef })
+    })
+    h = await setup({ effectRegistry, prefs })
+    clock = vi.spyOn(Date, 'now')
+    setNow(D)
+    const rid = (await h.svc.createRoutine({ name: 'R', recurrence_rule: 'FREQ=DAILY' })).id
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    expect((await h.svc.completeStep(a.id, { date: D })).flag).toBe('effect_emit_failed')
+    fail = false
+    await h.svc.contributeToPurposeMetrics(rid, D)
+    expect(fired).toEqual([{ type: 'contribute_purpose_metric', key: rid, transition: `completed:${D}`, target: rid }])
+
+    const countingPrefs: RoutinesPrefsPort = { policyFor: vi.fn(async () => AON) }
+    h = await setup({ prefs: countingPrefs, effects: false })
+    const r2 = (await h.svc.createRoutine({ name: 'R', recurrence_rule: 'FREQ=DAILY' })).id
+    const b = await h.svc.addStep(r2, { title: 'B' })
+    await h.svc.completeStep(b.id, { date: D }) // today: no window read either
+    await h.svc.skipStep(b.id, { date: D })
+    expect(countingPrefs.policyFor).not.toHaveBeenCalled()
+  })
+
+  it('g2 B1/N5: updateStep on a soft-deleted step still succeeds; an old past skip date never blocks an edit; a re-planned date re-evaluates nothing', async () => {
+    const rid = await world({ policy: { completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: 1 } } })
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    const b = await h.svc.addStep(rid, { title: 'B' })
+    await h.svc.updateStep(a.id, { skip_dates: [D] }) // in-window today
+    setNow('2026-10-30') // D is now beyond the window
+    expect((await h.svc.updateStep(a.id, { title: 'renamed', skip_dates: [D, '2026-10-31'] })).title).toBe('renamed') // D was already there
+    await h.svc.removeStep(b.id)
+    expect((await h.svc.updateStep(b.id, { title: 'ghost' })).title).toBe('ghost') // ratified (g2 N1)
+    fired = []
+    const reads = vi.spyOn(prefs, 'policyFor')
+    reads.mockClear()
+    await h.svc.planSkipDates(a.id, ['2026-10-31']) // already present → not "added" → no evaluation at all
+    expect(reads).not.toHaveBeenCalled()
+    expect(mine(rid)).toEqual([])
+  })
+
+  // 5
+  it('undo does not retract; re-done does not re-grant (handler calls stay one per type)', async () => {
+    const rid = await world()
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    await h.svc.completeStep(a.id, { date: D })
+    await h.svc.deleteCompletion(a.id, D)
+    await h.svc.completeStep(a.id, { date: D })
+    expect(mine(rid).map((f) => f.type)).toEqual(['award_xp', 'contribute_purpose_metric'])
+  })
+
+  // 6 — reflection-only done (rule 21)
+  it('reflection-only done emits nothing for the routine; a later completeStep on the already-done day emits nothing', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }) // habits reads `new Date()`
+    try {
+      vi.setSystemTime(Date.parse(`${D}T12:00:00Z`))
+      fired = []
+      policyNow = AON
+      const effectRegistry = createEffectRegistry()
+      effectRegistry.register('award_xp', async (ev) => void fired.push({ type: 'award_xp', key: ev.subjectNaturalKey, transition: ev.transition, target: ev.targetRef }))
+      h = await setup({ effectRegistry, prefs })
+      const rid = (await h.svc.createRoutine({ name: 'R', recurrence_rule: 'FREQ=DAILY' })).id
+      const hab = await h.habits.createHabit({ name: 'Read', frequency: 'daily' })
+      const s = await h.svc.addStep(rid, { title: 'Read', entity_type: 'habit', entity_id: hab.id })
+      await h.habits.logCompletion(hab.id, { date: D })
+      expect((await h.svc.evaluateRoutine(rid, { date: D })).status).toBe('done')
+      expect(mine(rid)).toEqual([])
+      await h.svc.completeStep(s.id, { date: D })
+      expect(mine(rid)).toEqual([])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // 6c
+  it('a step with a null routine_id: writes succeed, nothing emitted', async () => {
+    const rid = await world()
+    const a = await h.svc.addStep(rid, { title: 'A' })
+    h.bsql.prepare('UPDATE routine_step SET routine_id = NULL WHERE id = ?').run(a.id)
+    expect((await h.svc.completeStep(a.id, { date: D })).status).toBe('done')
+    expect(fired).toEqual([])
+  })
+
+  // 7 — R5b + cross-midnight focus (B1)
+  it('R5b: a make-good completed under today emits completed:D; a cross-midnight focus emits completed:<yesterday>', async () => {
+    let rid = await world({ policy: { completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: 2 } } })
+    const t = await h.tasks.createTask({ title: 'Clean' })
+    const s = await h.svc.addStep(rid, { title: 'Clean', entity_type: 'task', entity_id: t.id })
+    setNow('2026-10-27')
+    await h.svc.rescheduleStep(s.id, { date: D, slot: { start: Date.parse('2026-10-27T15:00:00Z') } })
+    setNow('2026-10-27', '15:00')
+    await h.svc.runStep(s.id, { date: D })
+    await h.svc.completeStep(s.id) // today = 10-27
+    expect(mine(rid).map((f) => f.transition)).toEqual([`completed:${D}`, `completed:${D}`])
+
+    rid = await world()
+    const f = await h.svc.addStep(rid, { title: 'Focus', step_type: 'focus' })
+    setNow(D, '23:00')
+    await h.svc.runStep(f.id, { date: D })
+    setNow('2026-10-27', '00:20')
+    const done = await h.svc.completeStep(f.id) // stamps the day it started
+    expect(done.date).toBe(D)
+    expect(mine(rid).map((x) => x.transition)).toEqual([`completed:${D}`, `completed:${D}`])
+  })
+
+  // 8 + runStep stamping + flag precedence
+  it('entity effects stay on their own key; a stamping runStep (obligation) emits; regen failure keeps its flag over an effect failure', async () => {
+    let rid = await world()
+    const t = await h.tasks.createTask({ title: 'Ship', kind: 'obligation', due_date: D })
+    const s = await h.svc.addStep(rid, { title: 'Ship', entity_type: 'task', entity_id: t.id })
+    await h.svc.runStep(s.id, { date: D })
+    expect(fired.filter((x) => x.type === 'award_xp').map((x) => x.key).sort()).toEqual([rid, t.id].sort())
+
+    rid = await world({ handlers: { award_xp: 'throw' } })
+    const bad = await h.tasks.createTask({ title: 'Tax', kind: 'obligation', due_date: D })
+    await h.tasks.setRecurrence(bad.id, 'FREQ=BOGUS')
+    const s2 = await h.svc.addStep(rid, { title: 'Tax', entity_type: 'task', entity_id: bad.id })
+    expect((await h.svc.completeStep(s2.id, { date: D })).flag).toBe('recurrence_regen_failed')
+  })
+
+  // 9 + G1 + G3 + G5 + planSkipDates multi + updateStep guard order + malformed threshold
+  it('paused emits; reads never call the rail; occurrence-gated; skip-date removals and multi-date plans; guard order; malformed policy', async () => {
+    let rid = await world()
+    let a = await h.svc.addStep(rid, { title: 'A' })
+    await h.svc.setLifecycle(rid, 'paused')
+    await h.svc.completeStep(a.id, { date: D })
+    expect(mine(rid)).toHaveLength(2)
+    const spy = vi.spyOn(h.rail, 'applyEffect')
+    await h.svc.evaluateRoutine(rid, { date: D })
+    await h.svc.getStreak(rid)
+    await h.svc.getAnalytics(rid, { from: D, to: D })
+    await h.svc.progress(rid)
+    expect(spy).not.toHaveBeenCalled()
+
+    rid = await world({ rule: 'FREQ=WEEKLY;BYDAY=MO' })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    const b = await h.svc.addStep(rid, { title: 'B' })
+    setNow('2026-10-28')
+    await h.svc.completeStep(a.id, { date: '2026-10-27' }) // Tuesday: not an occurrence
+    await h.svc.completeStep(b.id, { date: '2026-10-27' })
+    expect(mine(rid)).toEqual([])
+    await h.svc.completeStep(a.id, { date: D })
+    await h.svc.planSkipDates(b.id, ['2026-10-27', D, '2026-10-27']) // non-occurrence + occurrence (+dup)
+    expect(mine(rid).map((f) => f.transition)).toEqual([`completed:${D}`, `completed:${D}`])
+    const reads = vi.spyOn(prefs, 'policyFor')
+    reads.mockClear()
+    await h.svc.updateStep(b.id, { skip_dates: [] }) // removal only → no evaluation, no emit
+    expect(reads).not.toHaveBeenCalled()
+    expect(mine(rid)).toHaveLength(2)
+
+    rid = await world({ rule: null })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    await h.svc.completeStep(a.id, { date: D })
+    expect(mine(rid)).toEqual([])
+
+    rid = await world({ policy: { completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: 1 } } })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    setNow('2026-10-30')
+    await expect(h.svc.updateStep('no-such-step', { skip_dates: [D] })).rejects.toBeInstanceOf(StepNotFoundError)
+    await expect(h.svc.updateStep(a.id, { skip_dates: [D] })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
+    await h.svc.updateStep(a.id, { title: 'renamed' }) // no skip_dates change → no guard
+
+    rid = await world({ policy: { completion: { kind: 'threshold', percent: Number.NaN } } })
+    a = await h.svc.addStep(rid, { title: 'A' })
+    expect((await h.svc.completeStep(a.id, { date: D })).status).toBe('done') // the write persists
+    expect(mine(rid)).toEqual([])
   })
 })

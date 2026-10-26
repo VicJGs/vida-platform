@@ -25,7 +25,7 @@ interface RoutinesServiceDeps {             // ⟲ amended (A2, N3, D1)
   habits?: HabitsService                       // habit-step native tick
   spaces: SpacesService                       // required (tags/links)
   notes: NotesService                         // required (pages)
-  effects?: { rail: EffectRail; registry: EffectRegistry }   // producer guard registry.resolve before applyEffect (N8)
+  effects?: { rail: EffectRail; registry: EffectRegistry }   // producer guard registry.resolve before applyEffect (N8) — as-built S7
   prefs?: RoutinesPrefsPort                    // the USER's policy (S4); absent/none ⇒ policy_source 'undefined' (no routines-side default)
   // ⟲ dropped: measurementSources (rule 12: no M5 source)
 }
@@ -66,6 +66,7 @@ planSkipDates(stepId: Id, dates: string[]): Promise<RoutineStep>                
 editCompletion(stepId: Id, date: string, patch: { skipped?; skip_reason?; actual_duration_minutes? }): Promise<RoutineCompletion>
 deleteCompletion(stepId: Id, date: string): Promise<void>          // HARD (ledger has no deleted_at)
 listCompletions(stepId: Id): Promise<RoutineCompletion[]>
+contributeToPurposeMetrics(routineId: Id, date: string): Promise<void> // S7 (G8): re-drive the routine-level contribution for a done, scheduled day; RoutineContributionError
 rescheduleStep(stepId: Id, input: { date: string; slot: { start: number; end?: number } }): Promise<StepRunState>
                                                                    // ⟲ amended (S6 v3, SS-8): writes ONE planned_blocks row (intent) for occurrence D in the
                                                                    //   CALLER-given slot (source 'routines:<D>'); no session, no ledger row. The make-good
@@ -106,6 +107,8 @@ EntityUnavailableError   // ⟲ renamed (S3, module *Error convention) — a ste
 OutsideAcceptanceWindowError  // ⟲ S6 (module *Error naming): make-good/skip/reschedule past the user's window → rejected, no state change (RT-6)
 NotMissedOccurrenceError      // S6: rescheduleStep for a date that isn't a make-good-admissible occurrence of the step (future · not an occurrence · not in the step set · planned skip · done · inactive)
 InvalidRescheduleSlotError    // S6: the slot is before now, before D's day, or past the last make-good day
+RoutineContributionError      // S7: the re-drivable purpose contribution failed (G8; habits MetricContributionError precedent)
+// S7: updateStep throws StepNotFoundError for a truly missing step (was the repo's generic 'Row not found'; soft-deleted still succeeds, g2 N1) · OutsideAcceptanceWindowError / InvalidRoutinePolicyError for newly added past skip_dates
 PolicyUndefined          // ⟲ S4: not thrown — evaluateRoutine returns policy_source 'undefined' (flagged); the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves
 InvalidRoutinePolicyError // S4: the port returned a completion kind the docs don't define (fails loud)
 ProviderEmitFailed       // dueIn/summary failure isolated — routine + sibling providers unaffected (RT-13)
