@@ -16,6 +16,10 @@ import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
 import type { TasksService } from '../tasks'
 import type { HabitsService } from '../habits'
 import type { SessionsService } from '../sessions'
+import type { SpacesService } from '../../foundation/spaces'
+import type { NotesService } from '../notes'
+import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
+import type { PageRow } from '../../db/schema/notes' // not re-exported by the notes barrel (the tasks precedent)
 import type { SessionRegistry } from '../../foundation/sessions/registry'
 import type { EffectRail, EffectRegistry } from '../../foundation/effects'
 import type {
@@ -54,6 +58,16 @@ export interface RoutinesServiceDeps {
   /** S7 (seam `effects?`, N8) — the routine-level `award_xp` + `contribute_purpose_metric` (D3) go through the rail, guarded by
    *  `registry.resolve`. Absent ⇒ dormant. Inline shape: the `EffectsPort` name is owned by checkins/habits (barrel collision). */
   effects?: { rail: EffectRail; registry: EffectRegistry }
+  /** S8 — REQUIRED (seam `:26`): tag + link WRITES delegate to Spaces (`tagEntity`/`untagEntity`/`createLink`/`removeLink`, ADR-006 SP1/SP4). */
+  spaces: SpacesService
+  /** S8 — REQUIRED (seam `:27`): the routine/step note is a `pages` row via `ensureEntityNote('note', …)` (rule 19); tag junction reads. */
+  notes: NotesService
+}
+
+/** S8 — a page-link target (D2: notes/tags/links target `routine_step` + `routine`). */
+export interface RoutineLinkTarget {
+  type: 'routine' | 'routine_step'
+  id: string
 }
 
 // --- S4 — the user's policy (port contract; storage is Spaces/Preferences-owned) ---
@@ -324,6 +338,24 @@ export interface RoutinesService {
    *  not an occurrence / no effects or handler ⇒ no-op. `RoutineNotFoundError` · `ZodError` (date) · `RoutineContributionError`; an evaluation
    *  failure propagates like a read (`InvalidRoutinePolicyError` · `InvalidRecurrenceRuleError`). */
   contributeToPurposeMetrics(routineId: string, date: string): Promise<void>
+
+  // ── S8: tags · notes · links (D2, ROU-23/26; writes via Spaces/Notes, T1) ── // ⟲ amended (A27)
+  /** Tag a live routine with a LIVE tag (`TagNotFound`); idempotent (Spaces revives a soft-deleted junction row). */
+  tagRoutine(routineId: string, tagId: string): Promise<EntityTagRow>
+  /** Untag a live routine (a deleted tag is still cleanable); no-op when absent. */
+  untagRoutine(routineId: string, tagId: string): Promise<void>
+  /** The routine's live junction rows whose tag is LIVE (deleteTag doesn't cascade); never throws — unknown id ⇒ []. */
+  getRoutineTags(routineId: string): Promise<EntityTagRow[]>
+  tagStep(stepId: string, tagId: string): Promise<EntityTagRow>
+  untagStep(stepId: string, tagId: string): Promise<void>
+  getStepTags(stepId: string): Promise<EntityTagRow[]>
+  /** The routine's note page (find-or-create, `type:'note'`, rule 19). The seed name is creation-only (content H1). */
+  getRoutineNote(routineId: string): Promise<PageRow>
+  getStepNote(stepId: string): Promise<PageRow>
+  /** Link a page to a live routine/step (idempotent). `pageId` is not validated (no FK). */
+  linkPage(pageId: string, target: RoutineLinkTarget, context?: string | null): Promise<EntityLinkRow>
+  /** Remove a page link (no-op when absent). */
+  unlinkPage(pageId: string, target: RoutineLinkTarget): Promise<void>
 
   // ── S4: policy evaluation (read-only, derive-on-read) ────────────
   /** ROU-12 — judge a routine's occurrence date under the USER's policy (prefs port). Always returns what was done (RT-5);

@@ -197,6 +197,20 @@
 - **S7 limits:** a failed `award_xp` on a write is not re-driven (the transition doesn't recur; habits' auto path is silent too);
   `planSkipDates`/`updateStep` evaluate per added date (no batching).
 
+**S8 — Tags · notes · links** (`delivery/PLAN-S8-tags-notes-links.md`)
+- **BR-RT-S8-1 · Targets (D2, rule 14).** Tags, notes and links target `routine` and `routine_step` (pre-seeded; routines registers nothing).
+- **BR-RT-S8-2 · Consumer only (T1, RT-16, constitution §6).** Writes go through Spaces (`tagEntity`/`untagEntity`/`createLink`/
+  `removeLink`) and Notes (`ensureEntityNote`); the one direct read is `tags` liveness (no contract exists — the codebase-wide exception).
+- **BR-RT-S8-3 · Live tags.** A tag write needs a LIVE tag (`TagNotFound`, no row); an untag doesn't (a deleted tag stays cleanable). Reads
+  return live junction rows whose tag is live.
+- **BR-RT-S8-4 · Notes (rule 19, RT-15).** One find-or-create `type 'note'` page per routine/step; the seed name is creation-only.
+- **BR-RT-S8-5 · Fail loud on writes, never on reads (T2).** Writes (incl. a note find-or-create and links) on a missing/archived routine or a
+  removed step throw NotFound; tag reads never throw.
+- **BR-RT-S8-6 · Archive keeps them (T3; RT-17, ADR-006).** Tags, notes and links survive an archive; once archived, its tags and links are
+  removable only through Spaces directly.
+- **S8 limits:** `pageId` is not validated (no FK, the platform-wide `createLink` contract); `ensureEntityNote` may return a second
+  user-made `'note'` page attached to the same routine (unordered — books/knowledge share it).
+
 ## 2. Rule taxonomy
 | Category | Rules | Enforced by | Default when absent | Who changes it | Reset / delete semantics |
 |---|---|---|---|---|---|
@@ -236,7 +250,7 @@
   leave the step's completion rows in place. That is correct: archive/soft-delete preserves the ledger (RT-17; ROU-03). Completions
   hard-delete only with a hard PURGE of their step (`routines.ts:103`), and that purge path is the only owed piece.
 - **F4 · `setLifecycle` — RESOLVED in S2c (BR-RT-S2c-1).** *(was: absent)* Lifecycle changes only through `updateRoutine`. The governing S1 lists ROU-17.
-- **F5 · Factory deps — mostly RESOLVED.** `registry` (S2c), `tasks`/`sessions`/`habits?` (S3), `prefs?` (S4), `effects?` (S7) landed; `spaces`/`notes` land in S8.
+- **F5 · Factory deps — mostly RESOLVED.** `registry` (S2c), `tasks`/`sessions`/`habits?` (S3), `prefs?` (S4), `effects?` (S7), `spaces`/`notes` (S8) landed — RESOLVED.
 - **F6 · Day helper — RESOLVED in S3** (default clock = tasks' public `utcDay`).
 - **F7 · Stale aspect prose (flag, interp §4.14).** The aspect docs still name `routine_actions` / `routine_action` (e.g.
   business-rules.md RT-1/RT-8/RT-16/RT-17). The code and `_registry.ts` use the reframe names (`routine_step`, plus `routine`).

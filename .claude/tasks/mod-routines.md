@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope approved; S2c–S7 (+S5c) ✅ shipped (local commits); next = S8 tags/notes/links
+# Status: in-progress — re-scope approved; S2c–S8 (+S5c) ✅ shipped (local commits); next = S9 providers + Journal (① track closer)
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -18,6 +18,12 @@ completion/miss policy → Preferences; `routine_step_membership` → Spaces des
 Sessions; XP application → Gamification. Delivery: `docs/features/routines/delivery/`.
 
 ## Slice log
+- **S8 — Tags + notes + links ✅ (2026-10-26)** — `tagRoutine`/`untagRoutine`/`getRoutineTags` + step twins via Spaces (live-tag reads:
+  `notes.getTagsForEntity` ∩ a read-only soft-delete-filtered `tags` repo; `TagNotFound` on tag, not untag), `getRoutineNote`/`getStepNote`
+  (`ensureEntityNote('note', …)`, seed creation-only), `linkPage`/`unlinkPage` (purposes `linkEntity` shape; target guarded, `pageId` unvalidated
+  — no FK); `spaces`/`notes` REQUIRED per the seam. Writes fail loud, reads never; archive keeps tags/notes/links. tsc 0 · eslint 0 ·
+  **routines 157/157** · full @vida/core 2168/2172 (the 4 = load timeouts at load ~250, each green alone; vault F006) · mutation-checked ·
+  **g2 0 blocking** (4 folded) · **/critique SHIP** (3 optional folded) · §XXIX promoted.
 - **S7 — Routine-level effects ✅ (2026-10-26)** — D3 `award_xp` + `contribute_purpose_metric` keyed `routine.id` + `completed:<date>`
   on the WRITE whose date goes not-done → done (rule 21; transition read before/after inside the per-step lock; R5b/cross-midnight
   stamped dates rebuilt from the step's prior row), occurrence-gated, guarded first (zero reads without effects/handlers), isolated,
@@ -165,9 +171,9 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 4. Docs
 - [x] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
 
-## Build Steps — S8 tags + notes + links (PLAN-S8 §5 · awaiting Approval 2)
-- [ ] 1. Tests first (red) + harness (shared registry, Spaces + Notes)
-- [ ] 2. Types / validators / index (green)
-- [ ] 3. Service — live-tag reads · tag writes · notes · links  (gate: routines green)
-- [ ] 4. Docs
-- [ ] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
+## Build Steps — S8 tags + notes + links (PLAN-S8 §5 · Approval 2 2026-10-26)
+- [x] 1. Tests first (red) + harness (shared registry, Spaces + Notes)
+- [x] 2. Types / validators / index (green)
+- [x] 3. Service — live-tag reads · tag writes · notes · links  (gate: routines green)
+- [x] 4. Docs
+- [x] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX

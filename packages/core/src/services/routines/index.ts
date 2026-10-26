@@ -11,6 +11,7 @@ export {
   NotMissedOccurrenceError,
   InvalidRescheduleSlotError,
   RoutineContributionError,
+  type RoutineLinkTarget,
   type RescheduleStepInput,
   type CompletionRule,
   type RoutinePolicy,

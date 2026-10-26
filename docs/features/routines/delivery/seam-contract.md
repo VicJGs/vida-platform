@@ -23,8 +23,8 @@ interface RoutinesServiceDeps {             // ⟲ amended (A2, N3, D1)
   registry: TaggableTypeRegistry              // entity_type validation at addStep (R2). Registration already seeded (_registry.ts:45-46)
   sessions: SessionsService                   // required (createSession/startFocus, attach, registerDueProvider, dueIn)
   habits?: HabitsService                       // habit-step native tick
-  spaces: SpacesService                       // required (tags/links)
-  notes: NotesService                         // required (pages)
+  spaces: SpacesService                       // required (tags/links) — as-built S8
+  notes: NotesService                         // required (pages) — as-built S8
   effects?: { rail: EffectRail; registry: EffectRegistry }   // producer guard registry.resolve before applyEffect (N8) — as-built S7
   prefs?: RoutinesPrefsPort                    // the USER's policy (S4); absent/none ⇒ policy_source 'undefined' (no routines-side default)
   // ⟲ dropped: measurementSources (rule 12: no M5 source)
@@ -88,6 +88,18 @@ getAnalytics(routineId: Id, range: RoutineDateRange): Promise<RoutineAnalytics> 
 //   completionRate→completion, timePeriodComparison→comparison. RoutineAnalytics = { range, completion: RoutineCompletionRate
 //   {scheduled,done,missed,pending,neutral,unjudged,rate}, ranking: RoutineStepRank[] (steps over judged days), comparison: { previous,
 //   completion, rate_delta }, policy_source, unscheduled? } — recomputed from the ledger, no cache
+```
+
+## Tags · notes · links (S8) — ⟲ amended (A27): the frozen seam listed no surface; shapes follow tasks (tagTask/getTaskNote) + purposes (linkEntity)
+```ts
+tagRoutine(routineId: Id, tagId: Id): Promise<EntityTagRow>    // live routine + LIVE tag (TagNotFound); idempotent via spaces.tagEntity
+untagRoutine(routineId: Id, tagId: Id): Promise<void>          // live routine; a deleted tag stays cleanable
+getRoutineTags(routineId: Id): Promise<EntityTagRow[]>         // notes.getTagsForEntity ∩ live tags; never throws
+tagStep / untagStep / getStepTags                              // the same on 'routine_step'
+getRoutineNote(routineId: Id): Promise<PageRow>                // ensureEntityNote('note','routine',id,{title}) — rule 19; seed creation-only
+getStepNote(stepId: Id): Promise<PageRow>                      // ensureEntityNote('note','routine_step',id,{title})
+linkPage(pageId: Id, target: { type: 'routine'|'routine_step'; id: Id }, context?): Promise<EntityLinkRow>  // spaces.createLink; pageId unvalidated (no FK)
+unlinkPage(pageId: Id, target): Promise<void>                  // spaces.removeLink; no-op when absent
 ```
 
 ## Provider seam + Journal wiring (S9)

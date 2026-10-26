@@ -17,6 +17,9 @@ import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { syncQueue } from '../../../db/schema'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
+import { createSpacesService, TagNotFound, type SpacesService } from '../../../foundation/spaces'
+import { createNotesService, type NotesService } from '../../notes'
+import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { UnknownEntityType, type TaggableTypeRegistry } from '../../../foundation/spaces/types'
 import { createSessionRegistry } from '../../../foundation/sessions/registry'
 import type { SessionTypeDef } from '../../../foundation/sessions/types'
@@ -86,6 +89,8 @@ interface Harness {
   sessions: SessionsService
   sessionRegistry: ReturnType<typeof createSessionRegistry>
   rail: ReturnType<typeof createEffectRail> // S7 — spy target for applyEffect call counts
+  spaces: SpacesService // S8
+  notes: NotesService // S8
 }
 
 interface SetupOpts {
@@ -119,6 +124,9 @@ async function setup(opts: SetupOpts = {}): Promise<Harness> {
   const tasks = createTasksService({ db, deviceId: 'test-device', sessions, effects: { rail, registry: effectRegistry } })
   if (opts.tasksTimer !== false) await registerTasksTimer({ sessionRegistry, effectRegistry, db, deviceId: 'test-device' })
   const habits = createHabitsService({ db, deviceId: 'test-device' })
+  // S8 — Spaces + Notes on the PLAIN shared registry (never the sessions deny-override; the tasks setupWithSubstrates pattern).
+  const spaces = createSpacesService(db, 'test-device', registry)
+  const notes = createNotesService({ db, deviceId: 'test-device', spaces, backlinks: createBacklinkResolver(db, 'test-device'), registry })
   const svc = createRoutinesService({
     db,
     deviceId: 'test-device',
@@ -126,11 +134,13 @@ async function setup(opts: SetupOpts = {}): Promise<Harness> {
     tasks,
     sessions,
     sessionRegistry,
+    spaces,
+    notes,
     ...(opts.withHabits === false ? {} : { habits }),
     ...(opts.prefs ? { prefs: opts.prefs } : {}),
     ...(opts.effects === false ? {} : { effects: { rail, registry: effectRegistry } }),
   })
-  return { svc, db, bsql, tasks, habits, sessions, sessionRegistry, rail }
+  return { svc, db, bsql, tasks, habits, sessions, sessionRegistry, rail, spaces, notes }
 }
 
 // Actionable steps return the ledger row; narrow the S3 completeStep union for the as-built tests.
@@ -2459,5 +2469,126 @@ describe('mod-routines S7 — routine-level award_xp + contribute_purpose_metric
     a = await h.svc.addStep(rid, { title: 'A' })
     expect((await h.svc.completeStep(a.id, { date: D })).status).toBe('done') // the write persists
     expect(mine(rid)).toEqual([])
+  })
+})
+
+// ============================================================================
+// S8 — tags · notes · links on `routine` + `routine_step` (PLAN-S8 · Verification Gate)
+// ============================================================================
+describe('mod-routines S8 — tags + notes + links', () => {
+  let h: Harness
+  let rid: string
+  let stepId: string
+  beforeEach(async () => {
+    h = await setup()
+    rid = (await h.svc.createRoutine({ name: 'Morning' })).id
+    stepId = (await h.svc.addStep(rid, { title: 'Stretch' })).id
+  })
+  const tagIds = (rows: { tag_id: string }[]) => rows.map((r) => r.tag_id).sort()
+  const junction = (type: string, id: string) =>
+    (h.bsql.prepare('SELECT count(*) AS n FROM entity_tags WHERE entity_type = ? AND entity_id = ?').get(type, id) as { n: number }).n
+
+  // 1 + 7
+  it('tags round-trip on routine and step: idempotent tag, untag removes, re-tag revives one row', async () => {
+    const a = await h.spaces.createTag({ name: 'health' })
+    const b = await h.spaces.createTag({ name: 'am' })
+    await h.svc.tagRoutine(rid, a.id)
+    await h.svc.tagRoutine(rid, a.id)
+    await h.svc.tagRoutine(rid, b.id)
+    await h.svc.tagStep(stepId, b.id)
+    expect(tagIds(await h.svc.getRoutineTags(rid))).toEqual([a.id, b.id].sort())
+    expect(tagIds(await h.svc.getStepTags(stepId))).toEqual([b.id])
+    expect(junction('routine', rid)).toBe(2)
+    await h.svc.untagRoutine(rid, a.id)
+    expect(tagIds(await h.svc.getRoutineTags(rid))).toEqual([b.id])
+    await h.svc.tagRoutine(rid, a.id)
+    expect(tagIds(await h.svc.getRoutineTags(rid))).toEqual([a.id, b.id].sort())
+    expect(junction('routine', rid)).toBe(2) // revived, not duplicated
+    await h.svc.untagStep(stepId, b.id)
+    expect(await h.svc.getStepTags(stepId)).toEqual([])
+  })
+
+  // 2 + 7
+  it('reads list LIVE tags only (deleteTag does not cascade the junction); untagging a deleted tag still cleans it', async () => {
+    const t = await h.spaces.createTag({ name: 'gone' })
+    await h.svc.tagRoutine(rid, t.id)
+    await h.spaces.deleteTag(t.id)
+    expect(await h.svc.getRoutineTags(rid)).toEqual([])
+    expect(junction('routine', rid)).toBe(1) // the junction row is still there
+    await expect(h.svc.untagRoutine(rid, t.id)).resolves.toBeUndefined()
+    expect((h.bsql.prepare('SELECT deleted_at FROM entity_tags WHERE entity_id = ?').get(rid) as { deleted_at: number | null }).deleted_at).not.toBeNull()
+  })
+
+  // 3
+  it('guards: unknown/deleted tag → TagNotFound with no row; missing/archived routine or removed step → NotFound; reads of unknown ids → []', async () => {
+    await expect(h.svc.tagRoutine(rid, 'no-such-tag')).rejects.toBeInstanceOf(TagNotFound)
+    const dead = await h.spaces.createTag({ name: 'dead' })
+    await h.spaces.deleteTag(dead.id)
+    await expect(h.svc.tagStep(stepId, dead.id)).rejects.toBeInstanceOf(TagNotFound)
+    expect(junction('routine', rid) + junction('routine_step', stepId)).toBe(0)
+    const tag = await h.spaces.createTag({ name: 'x' })
+    await expect(h.svc.tagRoutine('nope', tag.id)).rejects.toBeInstanceOf(RoutineNotFoundError)
+    await expect(h.svc.getRoutineNote('nope')).rejects.toBeInstanceOf(RoutineNotFoundError)
+    const page = await h.notes.createPage({ title: 'P', type: 'note' })
+    await h.svc.removeStep(stepId)
+    await expect(h.svc.tagStep(stepId, tag.id)).rejects.toBeInstanceOf(StepNotFoundError)
+    await expect(h.svc.untagStep(stepId, tag.id)).rejects.toBeInstanceOf(StepNotFoundError)
+    await expect(h.svc.getStepNote(stepId)).rejects.toBeInstanceOf(StepNotFoundError)
+    await expect(h.svc.linkPage(page.id, { type: 'routine_step', id: stepId })).rejects.toBeInstanceOf(StepNotFoundError)
+    await h.svc.archiveRoutine(rid)
+    await expect(h.svc.untagRoutine(rid, tag.id)).rejects.toBeInstanceOf(RoutineNotFoundError)
+    await expect(h.svc.getRoutineNote(rid)).rejects.toBeInstanceOf(RoutineNotFoundError)
+    await expect(h.svc.linkPage(page.id, { type: 'routine', id: rid })).rejects.toBeInstanceOf(RoutineNotFoundError)
+    await expect(h.svc.unlinkPage(page.id, { type: 'routine', id: rid })).rejects.toBeInstanceOf(RoutineNotFoundError)
+    await expect(h.svc.untagRoutine('nope', tag.id)).rejects.toBeInstanceOf(RoutineNotFoundError)
+    await expect(h.svc.linkPage('', { type: 'routine', id: rid })).rejects.toBeInstanceOf(ZodError)
+    expect(await h.svc.getRoutineTags('nope')).toEqual([])
+    expect(await h.svc.getStepTags('nope')).toEqual([])
+  })
+
+  // 4
+  it('notes: one find-or-create page per routine/step, type note, the seed title in content (title column NULL)', async () => {
+    const n1 = await h.svc.getRoutineNote(rid)
+    const n2 = await h.svc.getRoutineNote(rid)
+    expect(n2.id).toBe(n1.id)
+    expect(n1).toMatchObject({ type: 'note', entity_type: 'routine', entity_id: rid })
+    expect(n1.content).toContain('Morning')
+    // Repository.create returns the input row → assert the stored column (the seed title lives only in the content H1)
+    expect((h.bsql.prepare('SELECT title FROM pages WHERE id = ?').get(n1.id) as { title: string | null }).title).toBeNull()
+    const sn = await h.svc.getStepNote(stepId)
+    expect(sn).toMatchObject({ type: 'note', entity_type: 'routine_step', entity_id: stepId })
+    expect(sn.content).toContain('Stretch')
+    expect(sn.id).not.toBe(n1.id)
+  })
+
+  // 5 + 7
+  it('links: linkPage is idempotent, unlinkPage soft-deletes, an absent link unlinks as a no-op; a routine id as a step target → StepNotFoundError', async () => {
+    const page = await h.notes.createPage({ title: 'Journal', type: 'note' })
+    const l1 = await h.svc.linkPage(page.id, { type: 'routine', id: rid }, 'mentions')
+    const l2 = await h.svc.linkPage(page.id, { type: 'routine', id: rid })
+    expect(l2.id).toBe(l1.id)
+    const live = () =>
+      (h.bsql.prepare('SELECT count(*) AS n FROM entity_links WHERE page_id = ? AND deleted_at IS NULL').get(page.id) as { n: number }).n
+    expect(live()).toBe(1)
+    await h.svc.linkPage(page.id, { type: 'routine_step', id: stepId })
+    expect(live()).toBe(2)
+    await h.svc.unlinkPage(page.id, { type: 'routine', id: rid })
+    expect(live()).toBe(1)
+    await expect(h.svc.unlinkPage(page.id, { type: 'routine', id: rid })).resolves.toBeUndefined()
+    await expect(h.svc.linkPage(page.id, { type: 'routine_step', id: rid })).rejects.toBeInstanceOf(StepNotFoundError)
+  })
+
+  // 6
+  it('archive keeps tags and the note (RT-17 / ADR-006)', async () => {
+    const t = await h.spaces.createTag({ name: 'keep' })
+    await h.svc.tagRoutine(rid, t.id)
+    const note = await h.svc.getRoutineNote(rid)
+    const page = await h.notes.createPage({ title: 'J', type: 'note' })
+    await h.svc.linkPage(page.id, { type: 'routine', id: rid })
+    await h.svc.archiveRoutine(rid)
+    expect(tagIds(await h.svc.getRoutineTags(rid))).toEqual([t.id])
+    const liveLinks = (h.bsql.prepare('SELECT count(*) AS n FROM entity_links WHERE entity_id = ? AND deleted_at IS NULL').get(rid) as { n: number }).n
+    expect(liveLinks).toBe(1)
+    expect((await h.notes.getPagesForEntity('routine', rid)).map((p) => p.id)).toContain(note.id)
   })
 })

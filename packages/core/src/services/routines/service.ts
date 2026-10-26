@@ -37,12 +37,14 @@ import {
   PlanSkipDatesSchema,
   RunStepSchema,
   RescheduleStepSchema,
+  LinkRoutinePageSchema,
   EvaluateRoutineSchema,
   RoutineDateRangeSchema,
   SetRoutineLifecycleSchema,
   RoutineCalendarDateSchema,
 } from '../../validators/routine'
-import { UnknownEntityType } from '../../foundation/spaces/types'
+import { UnknownEntityType, TagNotFound } from '../../foundation/spaces/types'
+import { tags } from '../../db/schema/foundation/spaces'
 import { utcDay, TaskNotFoundError, RecurrenceRegenError, TimerAlreadyRunningError, TimerNotWiredError } from '../tasks'
 import { SessionTypeNotFound, type SessionTypeDef } from '../../foundation/sessions/types'
 import type { Session } from '../sessions'
@@ -74,6 +76,7 @@ import {
   type RoutineStepRef,
   type StepRunState,
   type StepTarget,
+  type RoutineLinkTarget,
   type RoutinesService,
   type RoutinesServiceDeps,
   type CreateRoutineInput,
@@ -260,13 +263,15 @@ const toRoutineCompletion = (r: RoutineCompletionRow): RoutineCompletion => ({
 })
 
 export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService {
-  const { db, deviceId, registry, tasks, sessions, sessionRegistry, habits, prefs, effects } = deps
+  const { db, deviceId, registry, tasks, sessions, sessionRegistry, habits, prefs, effects, spaces, notes } = deps
   const clock = deps.clock ?? (() => utcDay(Date.now())) // YYYY-MM-DD — the platform UTC-day convention (tasks' public utcDay)
   const cfg = { deviceId, encryptedFields: [] as string[] } // M1.0: [E] fields dormant (→ M3/DB-5)
 
   const routinesRepo = createRepository(db, routines, { ...cfg, softDelete: true })
   const stepsRepo = createRepository(db, routineStep, { ...cfg, softDelete: true })
   const completionsRepo = createRepository(db, routineCompletions, { ...cfg, softDelete: false }) // ledger — hard delete
+  // S8 — READ-ONLY tag liveness: no Spaces tag-read contract exists (the codebase-wide exception: tasks/flashcards/books/knowledge).
+  const tagsRepo = createRepository(db, tags, { ...cfg, softDelete: true })
 
   const loadRoutineOrThrow = async (routineId: string): Promise<RoutineRow> => {
     const r = await routinesRepo.findById(routineId) // excludes soft-deleted
@@ -502,6 +507,27 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       const b = await pendingBlock(stepId, date)
       if (b) await sessions.updatePlannedBlock(b.id, { status: 'skipped' })
     })
+
+  // ── S8 helpers ──
+  // A tag write needs a LIVE tag (Spaces' tagEntity doesn't check it — the tasks guard): unknown/deleted ⇒ TagNotFound, no row.
+  const tagLive = async (tagId: string, entityType: RoutineLinkTarget['type'], entityId: string) => {
+    if ((await tagsRepo.findById(tagId)) == null) throw new TagNotFound(tagId)
+    return spaces.tagEntity(tagId, entityType, entityId)
+  }
+  // Live junction rows (Notes' documented read) ∩ LIVE tags (deleteTag doesn't cascade the junction). findWhere skips the
+  // soft-delete filter ⇒ isNull(deleted_at) is explicit.
+  const liveTagRows = async (entityType: RoutineLinkTarget['type'], entityId: string) => {
+    const rows = await notes.getTagsForEntity(entityType, entityId)
+    if (rows.length === 0) return rows
+    const live = await tagsRepo.findWhere(and(inArray(tags.id, rows.map((r) => r.tag_id)), isNull(tags.deleted_at)) as SQL)
+    const liveIds = new Set(live.map((t) => t.id))
+    return rows.filter((r) => liveIds.has(r.tag_id))
+  }
+  // Routines guards its own side of a page link (the page isn't validated anywhere — no FK), by the target's type.
+  const assertLinkTarget = async (target: RoutineLinkTarget): Promise<void> => {
+    if (target.type === 'routine') await loadRoutineOrThrow(target.id)
+    else await loadStepOrThrow(target.id)
+  }
 
   // ── S7 — routine-level effects (PLAN-S7-effects.md, D3 + rule 21) ──
   // The routine's `award_xp` + `contribute_purpose_metric` fire on the WRITE whose date goes not-done → done (never on a read), only for a
@@ -1626,6 +1652,46 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       } catch (e) {
         throw new RoutineContributionError(routineId, date, e instanceof Error ? e.message : String(e)) // HAB-19 precedent
       }
+    },
+
+    // ── S8 — tags · notes · links (PLAN-S8, D2 / ROU-23/26). Writes via Spaces/Notes only (T1); fail loud on writes, never on reads (T2).
+    tagRoutine: async (routineId, tagId) => {
+      await loadRoutineOrThrow(routineId)
+      return tagLive(tagId, 'routine', routineId)
+    },
+    untagRoutine: async (routineId, tagId) => {
+      await loadRoutineOrThrow(routineId)
+      await spaces.untagEntity(tagId, 'routine', routineId) // a deleted tag stays cleanable (no tag guard)
+    },
+    getRoutineTags: (routineId) => liveTagRows('routine', routineId),
+    tagStep: async (stepId, tagId) => {
+      await loadStepOrThrow(stepId)
+      return tagLive(tagId, 'routine_step', stepId)
+    },
+    untagStep: async (stepId, tagId) => {
+      await loadStepOrThrow(stepId)
+      await spaces.untagEntity(tagId, 'routine_step', stepId)
+    },
+    getStepTags: (stepId) => liveTagRows('routine_step', stepId),
+
+    getRoutineNote: async (routineId) => {
+      const routine = await loadRoutineOrThrow(routineId) // a find-or-create is a write (T2)
+      return notes.ensureEntityNote('note', 'routine', routineId, { title: routine.name }) // rule 19; seed is creation-only
+    },
+    getStepNote: async (stepId) => {
+      const step = await loadStepOrThrow(stepId)
+      return notes.ensureEntityNote('note', 'routine_step', stepId, { title: step.title })
+    },
+
+    linkPage: async (pageId, target, context) => {
+      const p = LinkRoutinePageSchema.parse({ pageId, target, context })
+      await assertLinkTarget(p.target)
+      return spaces.createLink(p.pageId, p.target.type, p.target.id, p.context ?? null)
+    },
+    unlinkPage: async (pageId, target) => {
+      const p = LinkRoutinePageSchema.parse({ pageId, target })
+      await assertLinkTarget(p.target)
+      await spaces.removeLink(p.pageId, p.target.type, p.target.id)
     },
 
     listCompletions: async (stepId) => {

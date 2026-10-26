@@ -34,11 +34,11 @@ Sessions (S3), policy evaluation (S4), and progress + analytics (S5) `[FACT: ser
 ### Composition
 `createRoutinesService(deps: RoutinesServiceDeps): RoutinesService`: a factory-object with hoisted closures and no `this.`.
 `RoutinesServiceDeps = { db: DrizzleDb; deviceId: string; clock?: () => string; registry: TaggableTypeRegistry; tasks: TasksService;
-sessions: SessionsService; sessionRegistry: SessionRegistry; habits?: HabitsService; prefs?: RoutinesPrefsPort; effects?: { rail: EffectRail; registry: EffectRegistry } }` (S7 `effects?`) (S3 added `tasks`/`sessions` required, `habits` optional; default `clock` = tasks' `utcDay`) (`registry` added in
+sessions: SessionsService; sessionRegistry: SessionRegistry; habits?: HabitsService; prefs?: RoutinesPrefsPort; effects?: { rail: EffectRail; registry: EffectRegistry }; spaces: SpacesService; notes: NotesService }` (S7 `effects?`; S8 `spaces`/`notes` required) (S3 added `tasks`/`sessions` required, `habits` optional; default `clock` = tasks' `utcDay`) (`registry` added in
 S2c: validates a step's `entity_type`; required per the approved seam) `[FACT: types.ts RoutinesServiceDeps]`.
 - `clock` defaults to `utcDay(Date.now())` (tasks' public helper, S3), i.e. **today's UTC calendar day** `[FACT: service.ts]`.
 - **Factory vs the governing shape:** `registry` (S2c), `tasks`/`sessions` (required) and `habits?` (S3) have landed, plus `prefs?` (S4) and
-  `effects?` (S7). `spaces`/`notes` land in S8.
+  `effects?` (S7) and `spaces`/`notes` (S8, required per the seam).
 
 Repositories (DB-6 generic Repository, `encryptedFields: []`, the M1.0 dormant `[E]` seam) `[FACT: service.ts]`:
 | Repo | Table | softDelete |
@@ -46,6 +46,7 @@ Repositories (DB-6 generic Repository, `encryptedFields: []`, the M1.0 dormant `
 | `routinesRepo` | `routines` | true |
 | `stepsRepo` | `routine_step` | true |
 | `completionsRepo` | `routine_completions` | **false** (ledger, hard delete) |
+| `tagsRepo` (S8, read-only) | `tags` | true (liveness reads only — no Spaces tag-read contract) |
 
 ### Operations (as-built)
 **Routine definition** (`service.ts`)
@@ -104,6 +105,16 @@ Errors: `RoutineNotFoundError` · `InvalidRecurrenceRuleError` (a stored rule ou
 | `contributeToPurposeMetrics` (S7) | `(routineId, date) => Promise<void>` | re-drives the routine-level `contribute_purpose_metric` for a done, scheduled day (rail-idempotent); not done / no effects ⇒ no-op. `ZodError` · `RoutineNotFoundError` · `RoutineContributionError`; an evaluation failure propagates like a read (`InvalidRoutinePolicyError` · `InvalidRecurrenceRuleError`) |
 | `listCompletions` | `(stepId) => Promise<RoutineCompletion[]>` | — (sorted by `completed_date`) |
 
+**Tags · notes · links (S8)** (`service.ts`; writes via Spaces/Notes only)
+| Method | Signature | Errors / notes |
+|---|---|---|
+| `tagRoutine` / `tagStep` | `(id, tagId) => Promise<EntityTagRow>` | `RoutineNotFoundError` / `StepNotFoundError` (live only); `TagNotFound` for an unknown or deleted tag (no row); idempotent, a soft-deleted junction row is revived |
+| `untagRoutine` / `untagStep` | `(id, tagId) => Promise<void>` | NotFound for the routine/step; no tag guard (a deleted tag stays cleanable); no-op when absent |
+| `getRoutineTags` / `getStepTags` | `(id) => Promise<EntityTagRow[]>` | `notes.getTagsForEntity` ∩ LIVE tags (deleteTag doesn't cascade); never throws, unknown id ⇒ `[]`; still readable after archive |
+| `getRoutineNote` / `getStepNote` | `(id) => Promise<PageRow>` | find-or-create `type 'note'` page (rule 19), `entity_type 'routine'`/`'routine_step'`; the seed name is the content H1 (title column NULL), creation-only; NotFound when archived/removed |
+| `linkPage` | `(pageId, { type: 'routine'\|'routine_step', id }, context?) => Promise<EntityLinkRow>` | target guarded by type (NotFound); `pageId` not validated (no FK, the other `createLink` consumers); idempotent; `ZodError` |
+| `unlinkPage` | `(pageId, target) => Promise<void>` | target guarded; no-op when absent |
+
 **S7 effects:** with `effects?: { rail, registry }` wired, every write to the occurrence record (`completeStep`/`runStep`/`skipStep`/
 `editCompletion`/`deleteCompletion`/`planSkipDates`/`updateStep{skip_dates}`) emits the routine-level `award_xp` + `contribute_purpose_metric`
 (keyed `routine.id` + `completed:<date>`) when the written date is a scheduled occurrence that goes not-done → done. Reads never emit.
@@ -122,7 +133,7 @@ throws `ZodError` (S2c).
 deviation, grounded in RT-8 and g2-approved at S3 `[FACT: types.ts]`. Whether the governing seam-contract already has this
 split is checked in reconciliation.
 
-**Not built (governing surface, per `delivery/seam-contract.md`):** tags/notes consumption (S8),
+**Not built (governing surface, per `delivery/seam-contract.md`):**
 `dueIn`/`summary`/`getDueReminders`, journal + due-provider registration (S9), and the typed error `ProviderEmitFailed`.
 
 ### Inputs (Zod, `validators/routine.ts`)
@@ -132,6 +143,7 @@ split is checked in reconciliation.
 - `CompleteStepSchema` / `SkipStepSchema` / `EditRoutineCompletionSchema` / `PlanSkipDatesSchema`.
   Dates use a module-local `CalendarDate` = `YYYY-MM-DD` shape regex (S2c; exported as `RoutineCalendarDateSchema`). Shape only, like the
   other modules.
+- `RescheduleStepSchema` (S6) · `LinkRoutinePageSchema` (S8: `pageId` min 1, `target { type: 'routine'|'routine_step', id }`, `context?`).
 - Enums reuse the shared tuples: `ROUTINE_LIFECYCLE`, `ROUTINE_TIME_OF_DAY`, and `MeasurementKindSchema`/`BindingModeSchema`
   re-exported from `./measurement` (no redefinition).
 

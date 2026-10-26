@@ -78,6 +78,13 @@ export const CompleteStepSchema = z.object({
 export const RunStepSchema = z.object({
   date: CalendarDate.optional(),
 })
+// S8 — linkPage / unlinkPage: a page linked to a routine or a step (entity_links via Spaces, SP4). `pageId` is NOT validated by
+// Spaces/Notes (no FK, `entity_links.page_id`); routines guards its own side (the target). The purposes linkEntity shape.
+export const LinkRoutinePageSchema = z.object({
+  pageId: z.string().min(1),
+  target: z.object({ type: z.enum(['routine', 'routine_step']), id: z.string().min(1) }),
+  context: z.string().nullish(),
+})
 // S6 — rescheduleStep: the missed occurrence D + the caller-given slot (Unix ms; end > start when given; the R2 day bounds are the service's).
 export const RescheduleStepSchema = z.object({
   date: CalendarDate,
