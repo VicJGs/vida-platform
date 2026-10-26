@@ -1,10 +1,10 @@
 # Current Business Rules — routines   (level: module · tier: DEEP)
 > Language: English.
-> Coverage: 8/8 files read — **full** (same set as `current-spec.md`).
+> Coverage: 9/9 files read — **full** (same set as `current-spec.md`, incl. `journal.ts`).
 > Inherits: `docs/core/business-rules.md` + `docs/core/conventions.md` (constitution) → this module. Intent authority:
 > `docs/features/routines/{identity,business-rules,contract,structure-data,conventions}.md` (RT-1…RT-19) + the GOVERNING
 > `delivery/interpretation.md` (main's 9-slice set, Victor 2026-10-14; implicit rules cited as **interp §4.n**).
-> Last refreshed: 2026-10-22 · **S5c promoted (§XXIX)** · S5 · S4 · S3 · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
+> Last refreshed: 2026-10-26 · **① track closed — S9 promoted (§XXIX)** · S8 · S7 · S6 · S5c · S5 · S4 · S3 · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
 
 > **Baseline note.** This doc records what the CODE enforces. The `BR-RT-S1/S2/S3-n` IDs are kept stable from the
 > as-built slices so existing cites keep resolving. They are **as-built labels**, not the governing slice numbers. Gaps
@@ -211,6 +211,24 @@
 - **S8 limits:** `pageId` is not validated (no FK, the platform-wide `createLink` contract); `ensureEntityNote` may return a second
   user-made `'note'` page attached to the same routine (unordered — books/knowledge share it).
 
+**S9 — Providers + Journal (the ① track closer)** (`delivery/PLAN-S9-providers-journal.md` v2)
+- **BR-RT-S9-1 · Due predicate (RT-13 "scheduled occurrences"; S5/S6 logic).** A routine-day D of an active routine is due iff some step in
+  `stepsAsOf(D)` is still owed (a removed step never is — make-good needs a live step; a step with its own done row on D never is,
+  incl. one stamped ahead on a future D — U1): D<today — make-good-admissible (BR-RT-S6-3) with no pending `routines:<D>` block and the routine not
+  done; D=today — not done, not planned-skipped, no pending block; D>today — not planned-skipped (no reflection on future days). Neutral,
+  beyond-window and fully rescheduled days are not due; a logged-skip step stays due.
+- **BR-RT-S9-2 · One due lane (SS-7).** `registerRoutinesDueProvider` on Sessions; the Journal contribution is summary-only.
+- **BR-RT-S9-3 · Owner's live drop (sessions BR :72-74).** `getDueReminders` sets a pending routines block `skipped` when its occurrence
+  closed by time (window closed / D done at step grain); never a running make-good (BR-RT-S6-5), never by lifecycle. `removeStep` /
+  `archiveRoutine` cancel their pending blocks (the S6→S8 hand-off, absorbed in S9).
+- **BR-RT-S9-4 · Summary (§2 :69 + RT-5).** Per routine with ledger rows on the date (archived included): the steps' completed/skipped/
+  reason/duration + the evaluation (status · policy_source · not_done). Pure; `'empty'` for an idle day.
+- **BR-RT-S9-5 · Isolation (RT-13, ProviderEmitFailed).** One routine's failure skips only that routine (lane, drop, summary evaluation).
+- **S9 limits:** Sessions lists a dropped block until its next read (it reads its own blocks before the lanes); `skipped` is shared with
+  user skips; `occurrences` cost is linear in `range.end − created_at`; `removeStep` isn't under the per-step lock (a racing reschedule
+  could slip a block in); the Journal agenda carries no routines until journals' Sessions bridge lands (borrowed leg); a pending block
+  whose D stops being an occurrence (rule edited) is not dropped when there is no window (drop = window or done only).
+
 ## 2. Rule taxonomy
 | Category | Rules | Enforced by | Default when absent | Who changes it | Reset / delete semantics |
 |---|---|---|---|---|---|
@@ -278,15 +296,17 @@
 - **Invalid policy:** `InvalidRoutinePolicyError` (S4: unknown completion kind / non-finite threshold).
 - **Not found:** `RoutineNotFoundError` · `StepNotFoundError` · `CompletionNotFoundError` · generic `Error('Row not found: <id>')`
   from `updateRoutine`/`updateStep` (Repository).
-- **Not yet representable:** `OutsideAcceptanceWindow`, `ProviderEmitFailed` (governing
-  contract; unbuilt).
+- **Provider isolation (S9):** `ProviderEmitFailed` is the as-built isolation (journals degrades a throwing summary to `error`;
+  sessions skips a throwing lane); `OutsideAcceptanceWindowError` is built (S6).
 
 ## 6. Failure behavior (fail loud)
 Typed errors are thrown before any write for missing parents (routine → step → completion). There are no swallowing catches;
 the catches are `parseJsonArray`'s malformed-JSON → `null` (a documented degrade at a read boundary) and `assertValidRrule`, which
 catches the parser's throw only to rethrow the typed `InvalidRecurrenceRuleError` `[FACT: service.ts]`. Driven-target failures are loud (`EntityUnavailableError`, typed, before any routine write; BR-RT-S3d-2). The swallowed errors are documented: the best-effort
 detach/cancel after a durable write (BR-RT-S3d-5), and the S4 reflection's `Habit not found` → no reflection (the ledger row still counts;
-any other error rethrows, BR-RT-S4e-3).
+any other error rethrows, BR-RT-S4e-3); the S6 block hooks (link/fulfil/cancel) and S7 effect emission after a durable write
+(BR-RT-S6-5/6, BR-RT-S7-3 — flagged on drives); and the **S9 provider isolation**: per-routine skips in the due lane, the block drop and the
+summary evaluation (BR-RT-S9-5, RT-13 — the routine and its siblings stay unaffected).
 
 ## Completion checklist
 - [x] §1 invariants with [FACT] · [x] §4 validation/edge · [x] §6 fail-loud

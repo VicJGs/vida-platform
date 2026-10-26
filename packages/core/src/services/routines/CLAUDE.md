@@ -22,4 +22,5 @@ analytics · S5c the Q1/RT-4/D3 correction (every step drives an entity: a check
 sessions; any REGISTERED session sub-type; routines registers no sub-type) · S6 reschedule = an SS-8 intent block (Sessions
 `planBlock`, source `routines:<D>`; the make-good links + fulfils) + the acceptance-window write guard · S7 routine-level `award_xp` + `contribute_purpose_metric` on the write that reaches
 policy-done (transition, occurrence-gated, guarded, flagged) · S8 tags/notes/links on `routine` + `routine_step` (via Spaces/Notes,
-live-tag reads). Next: S9 providers + Journal (the ① track closer). Composition-root registration is NOT this module's ① track (fe-routines entity close).
+live-tag reads) · S9 providers (`dueIn`/`getDueReminders`/`summary`) + `routines/journal.ts` register helpers (shipped, not called).
+**① track closed (2026-10-26).** Composition-root registration is NOT this module's ① track (fe-routines entity close).

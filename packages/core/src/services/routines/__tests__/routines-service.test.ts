@@ -10,6 +10,10 @@
 // ============================================================================
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { createJournalRegistry, buildDashboard } from '../../journals'
+import { createRoutinesJournalContribution, registerRoutinesJournal, registerRoutinesDueProvider } from '../journal'
+import { registerTasksJournal } from '../../tasks'
 import { ZodError } from 'zod'
 import Database from 'better-sqlite3'
 import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../db/adapter'
@@ -2590,5 +2594,303 @@ describe('mod-routines S8 — tags + notes + links', () => {
     const liveLinks = (h.bsql.prepare('SELECT count(*) AS n FROM entity_links WHERE entity_id = ? AND deleted_at IS NULL').get(rid) as { n: number }).n
     expect(liveLinks).toBe(1)
     expect((await h.notes.getPagesForEntity('routine', rid)).map((p) => p.id)).toContain(note.id)
+  })
+})
+
+// ============================================================================
+// S9 — providers + Journal, the ① track closer (PLAN-S9 v2 + step-5 amendments · Verification Gate)
+// ============================================================================
+describe('mod-routines S9 — dueIn / getDueReminders / summary + journal.ts', () => {
+  const TODAY = '2026-10-26' // a Monday
+  let h: Harness
+  let clock: ReturnType<typeof vi.spyOn>
+  let policies: Record<string, RoutinePolicy | null | 'throw'>
+  const at = (day: string, hhmm = '12:00') => Date.parse(`${day}T${hhmm}:00Z`)
+  const setNow = (day: string, hhmm = '12:00') => clock.mockImplementation(() => at(day, hhmm))
+  const prefs: RoutinesPrefsPort = {
+    policyFor: async (rid) => {
+      const p = policies[rid]
+      if (p === 'throw') throw new Error('prefs down')
+      return p ?? { completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: 2 } }
+    },
+  }
+  const range = (from: string, to: string) => ({ start: at(from, '00:00'), end: at(to, '23:59') })
+  afterEach(() => vi.restoreAllMocks())
+  beforeEach(async () => {
+    policies = {}
+    h = await setup({ prefs })
+    clock = vi.spyOn(Date, 'now')
+    setNow('2026-10-20')
+  })
+  const routine = async (name: string, rule: string | null = 'FREQ=DAILY', sort_order = 0) =>
+    (await h.svc.createRoutine({ name, recurrence_rule: rule, sort_order })).id
+  const refs = (items: { ref_id: string }[]) => items.map((i) => i.ref_id)
+
+  // 1
+  it('dueIn: shape, past-in-window/today/future, done / beyond-window / neutral omitted, weekly, lifecycle, order', async () => {
+    const r = await routine('Morning')
+    const a = await h.svc.addStep(r, { title: 'A' })
+    const w = await routine('Weekly', 'FREQ=WEEKLY;BYDAY=MO', 1)
+    await h.svc.addStep(w, { title: 'W' })
+    const p = await routine('Paused')
+    await h.svc.addStep(p, { title: 'P' })
+    await h.svc.setLifecycle(p, 'paused')
+    const none = await routine('No rule', null)
+    await h.svc.addStep(none, { title: 'N' })
+    setNow(TODAY)
+    await h.svc.completeStep(a.id, { date: '2026-10-25' }) // done → omitted
+    await h.svc.planSkipDates(a.id, ['2026-10-28']) // neutral future day → omitted
+    const items = await h.svc.dueIn(range('2026-10-22', '2026-10-29'))
+    // 10-22/23 beyond the 2-day window; 10-24 in-window; 10-25 done; 10-26 today; 10-27 future; 10-28 neutral; 10-29 future
+    expect(refs(items)).toEqual([
+      `${r}|2026-10-24`,
+      `${r}|${TODAY}`,
+      `${w}|${TODAY}`,
+      `${r}|2026-10-27`,
+      `${r}|2026-10-29`,
+    ])
+    expect(items[0]).toEqual({
+      source_module: 'routines',
+      ref_id: `${r}|2026-10-24`,
+      label: 'Morning',
+      est_minutes: 0,
+      urgency: 0,
+      hard_deadline: Date.parse('2026-10-24T00:00:00Z'),
+    })
+    await h.svc.archiveRoutine(w)
+    expect(refs(await h.svc.dueIn(range(TODAY, TODAY)))).toEqual([`${r}|${TODAY}`])
+    expect(await h.svc.dueIn({ start: Number.NaN, end: 1 })).toEqual([])
+    expect(await h.svc.dueIn({ start: at(TODAY), end: at('2026-10-20') })).toEqual([])
+  })
+
+  it('dueIn: a range bound at a UTC-day edge maps by utcDay, forced to Brasília', async () => {
+    const r = await routine('Morning')
+    await h.svc.addStep(r, { title: 'A' })
+    setNow(TODAY)
+    const orig = process.env.TZ
+    process.env.TZ = 'America/Sao_Paulo'
+    try {
+      const edge = Date.parse('2026-10-27T02:30:00Z') // 23:30 on 10-26 in Brasília
+      expect(new Date(edge).getDate()).toBe(26) // the zone took effect
+      expect(refs(await h.svc.dueIn({ start: edge, end: edge }))).toEqual([`${r}|2026-10-27`]) // UTC day, not local
+    } finally {
+      if (orig === undefined) delete process.env.TZ
+      else process.env.TZ = orig
+    }
+  })
+
+  it('a step removed after D no longer keeps D due (BR-RT-S6-3: only a live step can be made good)', async () => {
+    const r = await routine('R')
+    const a = await h.svc.addStep(r, { title: 'A' })
+    const b = await h.svc.addStep(r, { title: 'B' })
+    setNow(TODAY)
+    await h.svc.completeStep(a.id, { date: '2026-10-25' })
+    expect(refs(await h.svc.dueIn(range('2026-10-25', '2026-10-25')))).toEqual([`${r}|2026-10-25`])
+    await h.svc.removeStep(b.id)
+    expect(await h.svc.dueIn(range('2026-10-25', '2026-10-25'))).toEqual([])
+  })
+
+  it('a future day completed ahead (its own row, U1) is not due; dueIn agrees with evaluateRoutine', async () => {
+    const r = await routine('R')
+    const a = await h.svc.addStep(r, { title: 'A' })
+    setNow(TODAY)
+    await h.svc.completeStep(a.id, { date: '2026-10-27' })
+    expect((await h.svc.evaluateRoutine(r, { date: '2026-10-27' })).status).toBe('done')
+    expect(refs(await h.svc.dueIn(range('2026-10-27', '2026-10-28')))).toEqual([`${r}|2026-10-28`])
+  })
+
+  // 2 + logged skip
+  it('a completed obligation does not make future days done; a logged-skip step stays due (BR-RT-S6-3)', async () => {
+    const r = await routine('Bills')
+    const t = await h.tasks.createTask({ title: 'Rent', kind: 'obligation', due_date: TODAY })
+    const s = await h.svc.addStep(r, { title: 'Rent', entity_type: 'task', entity_id: t.id })
+    const r2 = await routine('Skippy', 'FREQ=DAILY', 1)
+    const s2 = await h.svc.addStep(r2, { title: 'X' })
+    setNow(TODAY)
+    await h.svc.completeStep(s.id, { date: TODAY })
+    expect(refs(await h.svc.dueIn(range('2026-10-27', '2026-10-27')))).toContain(`${r}|2026-10-27`)
+    await h.svc.skipStep(s2.id, { date: '2026-10-25', reason: 'sick' })
+    expect(refs(await h.svc.dueIn(range('2026-10-25', '2026-10-25')))).toContain(`${r2}|2026-10-25`)
+  })
+
+  // 3
+  it('a fully rescheduled day is omitted (the block lists it in Sessions); a partly rescheduled day stays', async () => {
+    const one = await routine('One')
+    const s1 = await h.svc.addStep(one, { title: 'A' })
+    const two = await routine('Two', 'FREQ=DAILY', 1)
+    const t1 = await h.svc.addStep(two, { title: 'B' })
+    await h.svc.addStep(two, { title: 'C' })
+    setNow(TODAY)
+    const slot = { start: at(TODAY, '15:00'), end: at(TODAY, '15:30') }
+    await h.svc.rescheduleStep(s1.id, { date: '2026-10-25', slot })
+    await h.svc.rescheduleStep(t1.id, { date: '2026-10-25', slot })
+    const due = refs(await h.svc.dueIn(range('2026-10-25', '2026-10-25')))
+    expect(due).not.toContain(`${one}|2026-10-25`)
+    expect(due).toContain(`${two}|2026-10-25`)
+    expect((await h.sessions.dueIn(range(TODAY, TODAY))).length).toBe(2) // the two blocks
+  })
+
+  // 4
+  it('getDueReminders drops closed blocks (window / done), never a running make-good or a paused routine’s, idempotently, isolated per routine', async () => {
+    const r = await routine('R')
+    const a = await h.svc.addStep(r, { title: 'A' })
+    const hab = await h.habits.createHabit({ name: 'Water', frequency: 'daily' })
+    const b = await h.svc.addStep(r, { title: 'B', entity_type: 'habit', entity_id: hab.id })
+    const c = await h.svc.addStep(r, { title: 'C', entity_type: 'task', entity_id: (await h.tasks.createTask({ title: 'T' })).id })
+    const keep = await h.svc.addStep(r, { title: 'Keep' })
+    const p = await routine('Paused', 'FREQ=DAILY', 1)
+    const ps = await h.svc.addStep(p, { title: 'P' })
+    const bad = await routine('Bad', 'FREQ=DAILY', -1) // processed FIRST: its failure must not stop the others' drops
+    const bs = await h.svc.addStep(bad, { title: 'Bad' })
+    setNow('2026-10-25')
+    const slot = (d: string) => ({ start: at(d, '20:00'), end: at(d, '20:30') })
+    await h.svc.rescheduleStep(a.id, { date: '2026-10-24', slot: slot('2026-10-25') }) // window closes after 10-26
+    await h.svc.rescheduleStep(b.id, { date: '2026-10-25', slot: slot('2026-10-25') }) // will be done
+    await h.svc.rescheduleStep(c.id, { date: '2026-10-24', slot: slot('2026-10-25') }) // running make-good
+    await h.svc.rescheduleStep(keep.id, { date: '2026-10-25', slot: slot('2026-10-26') }) // still valid
+    await h.svc.rescheduleStep(ps.id, { date: '2026-10-24', slot: slot('2026-10-25') })
+    await h.svc.rescheduleStep(bs.id, { date: '2026-10-24', slot: slot('2026-10-25') })
+    setNow('2026-10-25', '20:00')
+    await h.svc.runStep(c.id, { date: '2026-10-24' })
+    await h.svc.setLifecycle(p, 'paused')
+    setNow('2026-10-27') // 10-24's window (2 days) closed at the end of 10-26
+    await h.habits.logCompletion(hab.id, { date: '2026-10-25' }) // done by reflection: ticked in Habits, no routine write
+    policies[bad] = 'throw'
+    const status = async (stepId: string) => (await h.sessions.listPlannedBlocksForTarget('routine_step', stepId))[0]?.status
+    await h.svc.getDueReminders(range('2026-10-27', '2026-10-27'))
+    expect(await status(a.id)).toBe('skipped')
+    expect(await status(b.id)).toBe('skipped')
+    expect(await status(c.id)).toBe('planned') // BR-RT-S6-5
+    expect(await status(keep.id)).toBe('planned')
+    expect(await status(ps.id)).toBe('planned') // lifecycle never drops
+    expect(await status(bs.id)).toBe('planned') // its routine's policy threw → skipped, others still dropped
+    const writes = vi.spyOn(h.sessions, 'updatePlannedBlock')
+    await h.svc.getDueReminders(range('2026-10-27', '2026-10-27'))
+    expect(writes).not.toHaveBeenCalled() // idempotent
+    writes.mockRestore()
+  })
+
+  it('a failing drop write never fails the lane; Sessions lists a dropped block until its next read (as-built lag)', async () => {
+    const r = await routine('R')
+    const a = await h.svc.addStep(r, { title: 'A' })
+    const b = await h.svc.addStep(r, { title: 'B' })
+    setNow('2026-10-25')
+    const ra = await h.svc.rescheduleStep(a.id, { date: '2026-10-24', slot: { start: at('2026-10-25', '20:00'), end: at('2026-10-25', '20:30') } })
+    setNow(TODAY)
+    await h.svc.rescheduleStep(b.id, { date: TODAY, slot: { start: at(TODAY, '20:00') } }) // closes after 10-28
+    registerRoutinesDueProvider(h.sessions, h.svc)
+    setNow('2026-10-27')
+    const wide = { start: at('2026-10-20'), end: at('2026-10-30') }
+    const listsA = async () => (await h.sessions.dueIn(wide)).some((i) => i.ref_id === ra.planned_block_id)
+    expect(await listsA()).toBe(true) // Sessions reads its own blocks before the lane drops it
+    expect(await listsA()).toBe(false)
+
+    setNow('2026-10-29')
+    vi.spyOn(h.sessions, 'updatePlannedBlock').mockRejectedValue(new Error('down'))
+    await expect(h.svc.getDueReminders(range('2026-10-29', '2026-10-29'))).resolves.toBeInstanceOf(Array)
+  })
+
+  // 5
+  it('removeStep / archiveRoutine cancel their pending blocks (the S6→S8 hand-off, absorbed)', async () => {
+    const r = await routine('R')
+    const a = await h.svc.addStep(r, { title: 'A' })
+    const b = await h.svc.addStep(r, { title: 'B' })
+    setNow(TODAY)
+    const slot = { start: at(TODAY, '15:00') }
+    await h.svc.rescheduleStep(a.id, { date: TODAY, slot })
+    await h.svc.rescheduleStep(b.id, { date: TODAY, slot })
+    await h.svc.removeStep(a.id)
+    expect((await h.sessions.listPlannedBlocksForTarget('routine_step', a.id))[0]?.status).toBe('skipped')
+    expect((await h.sessions.listPlannedBlocksForTarget('routine_step', b.id))[0]?.status).toBe('planned')
+    await h.svc.archiveRoutine(r)
+    expect((await h.sessions.listPlannedBlocksForTarget('routine_step', b.id))[0]?.status).toBe('skipped')
+  })
+
+  // 6
+  it('per-routine isolation: a malformed policy, a throwing port, a raw-invalidated rule each skip only that routine', async () => {
+    const good = await routine('Good')
+    await h.svc.addStep(good, { title: 'G' })
+    const ids: string[] = []
+    for (const [i, name] of ['Malformed', 'Throws', 'BadRule'].entries()) {
+      const id = await routine(name, 'FREQ=DAILY', i + 1)
+      await h.svc.addStep(id, { title: name })
+      ids.push(id)
+    }
+    h.bsql.prepare('UPDATE routines SET sort_order = -1 WHERE id = ?').run(ids[1]) // a failing routine first in order
+    policies[ids[0]!] = { completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: -3 } }
+    policies[ids[1]!] = 'throw'
+    h.bsql.prepare("UPDATE routines SET recurrence_rule = 'FREQ=DAILY;BYDAY=2MO' WHERE id = ?").run(ids[2])
+    setNow(TODAY)
+    expect(refs(await h.svc.dueIn(range('2026-10-25', TODAY)))).toEqual([`${good}|2026-10-25`, `${good}|${TODAY}`])
+  })
+
+  // 7
+  it('summary: per-routine items (steps + status + policy_source + not_done), not_started, archived included, empty day, [E] plaintext, isolated', async () => {
+    const r = await routine('Morning routine')
+    const a = await h.svc.addStep(r, { title: 'Stretch' })
+    const b = await h.svc.addStep(r, { title: 'Read' })
+    await h.svc.addStep(r, { title: 'Journal' })
+    const k = await routine('Skip only', 'FREQ=DAILY', 1)
+    const ks = await h.svc.addStep(k, { title: 'Run' })
+    const old = await routine('Old', 'FREQ=DAILY', 2)
+    const os = await h.svc.addStep(old, { title: 'Gone' })
+    setNow(TODAY)
+    await h.svc.completeStep(a.id, { date: TODAY, actual_duration_minutes: 10 })
+    await h.svc.skipStep(b.id, { date: TODAY, reason: 'tired' })
+    await h.svc.skipStep(ks.id, { date: TODAY })
+    await h.svc.completeStep(os.id, { date: TODAY })
+    await h.svc.archiveRoutine(old)
+    const sd = await h.svc.summary(TODAY)
+    expect(sd).toMatchObject({ sectionKey: 'summary', module: 'routines', state: 'success' })
+    expect(sd.dataPoints.map((d) => d.id)).toEqual(['completed_today', 'skipped_today'])
+    const items = sd.items as { routine_id: string; name: string; status?: string; policy_source?: string; not_done?: { title: string }[]; steps: unknown[] }[]
+    expect(items.map((i) => i.routine_id)).toEqual([r, k, old])
+    expect(items[0]).toMatchObject({
+      name: 'Morning routine', // [E] column, plaintext in M1.0
+      status: 'partial',
+      policy_source: 'user',
+      steps: [
+        { step_id: a.id, title: 'Stretch', skipped: false, skip_reason: null, duration_minutes: 10 },
+        { step_id: b.id, title: 'Read', skipped: true, skip_reason: 'tired', duration_minutes: null },
+      ],
+    })
+    expect(items[0]!.not_done!.map((x) => x.title)).toEqual(['Read', 'Journal'])
+    expect(items[1]!.status).toBe('not_started')
+    expect(items[2]!.name).toBe('Old')
+    expect((await h.svc.summary('2026-10-01')).state).toBe('empty')
+    policies[r] = 'throw'
+    const iso = await h.svc.summary(TODAY)
+    expect(iso.state).toBe('success')
+    expect((iso.items as { routine_id: string; status?: string }[]).find((i) => i.routine_id === r)?.status).toBeUndefined()
+    await expect(h.svc.summary('26/10/2026')).rejects.toBeInstanceOf(ZodError)
+  })
+
+  // 8
+  it('journal.ts: summary-only contribution; buildDashboard degrades a throwing routines summary only; the due lane; structural imports', async () => {
+    const c = createRoutinesJournalContribution(h.svc)
+    expect(c).toMatchObject({ module: 'routines', sectionKey: 'summary' })
+    expect(c.dueIn).toBeUndefined()
+    expect(c.dataPoints.map((d) => d.id)).toEqual(['completed_today', 'skipped_today'])
+    const registry = createJournalRegistry()
+    registerRoutinesJournal(registry, h.svc)
+    registerTasksJournal(registry, h.tasks)
+    vi.spyOn(h.svc, 'summary').mockRejectedValue(new Error('down'))
+    const dash = await buildDashboard(registry, TODAY)
+    expect(dash.summary.find((s) => s.module === 'routines')?.state).toBe('error')
+    expect(dash.summary.find((s) => s.module === 'tasks')?.state).not.toBe('error')
+
+    const r = await routine('R')
+    await h.svc.addStep(r, { title: 'A' })
+    setNow(TODAY)
+    registerRoutinesDueProvider(h.sessions, h.svc)
+    expect((await h.sessions.dueIn(range(TODAY, TODAY))).map((i) => i.ref_id)).toEqual([`${r}|${TODAY}`])
+    vi.spyOn(h.svc, 'getDueReminders').mockRejectedValue(new Error('lane down'))
+    await expect(h.sessions.dueIn(range(TODAY, TODAY))).resolves.toEqual([]) // SS-7: the throwing lane is skipped
+
+    const imports = readFileSync(new URL('../journal.ts', import.meta.url), 'utf8')
+      .split('\n')
+      .filter((l) => l.trimStart().startsWith('import'))
+    expect(imports.length).toBeGreaterThan(0)
+    expect(imports.every((l) => /from '(\.\.\/journals|\.\.\/sessions|\.\/types)'/.test(l))).toBe(true)
   })
 })

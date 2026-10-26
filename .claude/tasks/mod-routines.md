@@ -178,11 +178,11 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 4. Docs
 - [x] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
 
-## Build Steps — S9 providers + Journal, ① track closer (PLAN-S9 v2 §5 + step-5 amendments · awaiting Approval 2)
-- [ ] 1. Tests first (red): VG 1–8
-- [ ] 2. Types / index
-- [ ] 3. Service — a dueDays predicate · b dueIn · c getDueReminders + drop · d write-time cancel · e summary + routines/journal.ts
-- [ ] 4. Gate point: routines suite green (journal.ts lands in step 3)
-- [ ] 5. Docs
+## Build Steps — S9 providers + Journal, ① track closer (PLAN-S9 v2 §5 + step-5 amendments · Approval 2 2026-10-26)
+- [x] 1. Tests first (red): VG 1–8
+- [x] 2. Types / index
+- [x] 3. Service — a dueDays predicate · b dueIn · c getDueReminders + drop · d write-time cancel · e summary + routines/journal.ts
+- [x] 4. Gate point: routines suite green (journal.ts lands in step 3)
+- [x] 5. Docs
 - [ ] 6. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
 - [ ] 7. ① Track close — slice-map S6–S9 ✅ + borrowed legs · fe-routines N5 edge · task close-out · ask Victor: PR/merge + tracker

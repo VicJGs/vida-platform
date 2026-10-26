@@ -12,6 +12,7 @@ export {
   InvalidRescheduleSlotError,
   RoutineContributionError,
   type RoutineLinkTarget,
+  type RoutineDaySummaryItem,
   type RescheduleStepInput,
   type CompletionRule,
   type RoutinePolicy,
@@ -41,3 +42,5 @@ export {
   type EditRoutineCompletionInput,
   type RoutineFilter,
 } from './types'
+// S9 — the Journal contribution + the SS-7 due-lane register helpers (shipped, NOT called — N5)
+export { createRoutinesJournalContribution, registerRoutinesJournal, registerRoutinesDueProvider } from './journal'

@@ -15,7 +15,8 @@ import type { DrizzleDb } from '../../db/adapter'
 import type { TaggableTypeRegistry } from '../../foundation/spaces/types'
 import type { TasksService } from '../tasks'
 import type { HabitsService } from '../habits'
-import type { SessionsService } from '../sessions'
+import type { SessionsService, TimeRange, DueItem } from '../sessions'
+import type { SectionData, DataPoint } from '../journals'
 import type { SpacesService } from '../../foundation/spaces'
 import type { NotesService } from '../notes'
 import type { EntityTagRow, EntityLinkRow } from '../../db/schema/foundation/spaces'
@@ -62,6 +63,24 @@ export interface RoutinesServiceDeps {
   spaces: SpacesService
   /** S8 — REQUIRED (seam `:27`): the routine/step note is a `pages` row via `ensureEntityNote('note', …)` (rule 19); tag junction reads. */
   notes: NotesService
+}
+
+/** S9 — the Journal recap data points routines advertises (cross-module-integration §2 :69 completed/skipped; JR-4 selection).
+ *  One home, shared by `summary` and `journal.ts` (kept out of the explicit barrel). */
+export const ROUTINES_DATA_POINTS: readonly DataPoint[] = [
+  { id: 'completed_today', label: 'Completed' },
+  { id: 'skipped_today', label: 'Skipped' },
+]
+
+/** S9 — one routine's day in the Journal recap (§2 :69 + RT-5 "what was done vs not", surfaced positively). `status` /
+ *  `policy_source` / `not_done` are absent when that routine's evaluation failed (per-routine isolation, RT-13). */
+export interface RoutineDaySummaryItem {
+  routine_id: string
+  name: string
+  status?: RoutineEvaluation['status']
+  policy_source?: RoutineEvaluation['policy_source']
+  not_done?: RoutineStepRef[]
+  steps: { step_id: string; title: string; skipped: boolean; skip_reason: string | null; duration_minutes: number | null }[]
 }
 
 /** S8 — a page-link target (D2: notes/tags/links target `routine_step` + `routine`). */
@@ -356,6 +375,14 @@ export interface RoutinesService {
   linkPage(pageId: string, target: RoutineLinkTarget, context?: string | null): Promise<EntityLinkRow>
   /** Remove a page link (no-op when absent). */
   unlinkPage(pageId: string, target: RoutineLinkTarget): Promise<void>
+
+  // ── S9: providers (RT-13; seam S9) — the routines due lane + the Journal recap ──
+  /** Scheduled routine occurrences (routine-days) still due in the window, by the due predicate (PLAN-S9). Pure; per-routine isolated. */
+  dueIn(range: TimeRange): Promise<DueItem[]>
+  /** The SS-7 lane impl = `dueIn`, after the owner's live drop of closed reschedule blocks (sessions BR :72-74). */
+  getDueReminders(range: TimeRange): Promise<DueItem[]>
+  /** The Journal `/summary` section for a date (PULL at render): each routine's ledger rows + its evaluation. Never throws for an idle day. */
+  summary(date: string): Promise<SectionData>
 
   // ── S4: policy evaluation (read-only, derive-on-read) ────────────
   /** ROU-12 — judge a routine's occurrence date under the USER's policy (prefs port). Always returns what was done (RT-5);

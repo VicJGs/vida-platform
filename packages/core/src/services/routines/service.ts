@@ -47,7 +47,8 @@ import { UnknownEntityType, TagNotFound } from '../../foundation/spaces/types'
 import { tags } from '../../db/schema/foundation/spaces'
 import { utcDay, TaskNotFoundError, RecurrenceRegenError, TimerAlreadyRunningError, TimerNotWiredError } from '../tasks'
 import { SessionTypeNotFound, type SessionTypeDef } from '../../foundation/sessions/types'
-import type { Session } from '../sessions'
+import type { Session, TimeRange, DueItem } from '../sessions'
+import type { SectionData } from '../journals'
 import type { PlannedBlockRow } from '../../db/schema/foundation/scheduling'
 import type { HabitsService } from '../habits'
 import type { TasksService } from '../tasks'
@@ -77,6 +78,8 @@ import {
   type StepRunState,
   type StepTarget,
   type RoutineLinkTarget,
+  type RoutineDaySummaryItem,
+  ROUTINES_DATA_POINTS,
   type RoutinesService,
   type RoutinesServiceDeps,
   type CreateRoutineInput,
@@ -508,6 +511,137 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       if (b) await sessions.updatePlannedBlock(b.id, { status: 'skipped' })
     })
 
+  // ── S9 — providers (PLAN-S9 v2: the due predicate rebuilt from S5/S6; the owner's live block drop) ──
+  const byRoutineOrder = (a: RoutineRow, b: RoutineRow): number =>
+    a.sort_order - b.sort_order || a.created_at - b.created_at || byCodepoint(a.id, b.id)
+  const activeRoutines = async (): Promise<RoutineRow[]> =>
+    (await routinesRepo.findWhere(and(isNull(routines.deleted_at), eq(routines.lifecycle, 'active')) as SQL)).sort(byRoutineOrder)
+  type BlocksByStep = Map<string, PlannedBlockRow[]>
+  const blocksOf = async (cache: BlocksByStep, stepId: string): Promise<PlannedBlockRow[]> => {
+    let b = cache.get(stepId)
+    if (!b) cache.set(stepId, (b = await sessions.listPlannedBlocksForTarget('routine_step', stepId)))
+    return b
+  }
+  const hasPendingBlock = async (cache: BlocksByStep, stepId: string, date: string): Promise<boolean> =>
+    (await blocksOf(cache, stepId)).some((b) => b.source === blockSource(date) && isPending(b))
+  // BR-RT-S6-5 — a pending block with an open session linked to it is a make-good in flight (never dropped).
+  const isRunningMakeGood = async (b: PlannedBlockRow, stepId: string): Promise<boolean> =>
+    b.sub_type != null && (await sessions.findOpenSessionForEntity(b.sub_type, 'routine_step', stepId))?.planned_block_id === b.id
+  const plannedSkips = (st: RoutineStepRow): readonly string[] => parseJsonArray<string>(st.skip_dates) ?? []
+
+  // The due predicate for one active routine over [from, to] (UTC days): a routine-day D is due iff some step in stepsAsOf(D) —
+  //  · D < today: is make-good-admissible (S6 BR-RT-S6-3: not done, not planned-skipped, window open/undefined) with no pending
+  //    routines:<D> block (the block lists it in Sessions — SS-7), and the routine is not done on D;
+  //  · D = today: the same without the window (S5 A2: today is pending);
+  //  · D > today: is not planned-skipped (no reflection on future days — a completed obligation would read done forever).
+  // Throws on a malformed policy / unexpandable rule / reflection failure → the caller isolates the routine (RT-13).
+  const dueDays = async (routine: RoutineRow, from: string, to: string, today: string, cache: BlocksByStep): Promise<string[]> => {
+    const rule = routine.recurrence_rule
+    if (rule == null) return []
+    const dates = occurrences(rule, utcDay(routine.created_at), from, to)
+    if (dates.length === 0) return []
+    const policy = prefs ? await prefs.policyFor(routine.id) : null
+    const window = validWindow(routine.id, policy)
+    const all = await stepsRepo.findWhere(eq(routineStep.routine_id, routine.id) as SQL) // incl. soft-deleted (stepsAsOf, rule 7)
+    // Rows over the whole window: a future day's own (U1) done row counts (a completion stamped ahead), reflection never does.
+    const rows = await completionsBetween(all.map((st) => st.id), from, to)
+    const rf = newReflection()
+    const due: string[] = []
+    for (const date of dates) {
+      const dayRows = rows.get(date) ?? new Map<string, RoutineCompletionRow>()
+      const steps = stepsAsOf(all, date, new Set(dayRows.keys()))
+      if (date > today) {
+        const owed = (st: RoutineStepRow): boolean => {
+          const own = dayRows.get(st.id)
+          return st.deleted_at == null && !plannedSkips(st).includes(date) && !(own != null && !own.skipped)
+        }
+        if (steps.some(owed)) due.push(date)
+        continue
+      }
+      if (date < today && window !== undefined && addDays(date, window) < today) continue // a real miss is final (RT-6)
+      if ((await judgeDay(routine.id, all, dayRows, date, policy, rf)).status === 'done') continue
+      for (const st of steps) {
+        if (st.deleted_at != null) continue // a removed step can't be made good (BR-RT-S6-3: make-good paths need a live step)
+        if (plannedSkips(st).includes(date)) continue
+        if (await isDoneOn(st, dayRows.get(st.id), date, rf)) continue
+        if (await hasPendingBlock(cache, st.id, date)) continue
+        due.push(date)
+        break
+      }
+    }
+    return due
+  }
+
+  const dueItems = async (range: TimeRange, cache: BlocksByStep): Promise<DueItem[]> => {
+    const MAX_MS = 8.64e15 // the Date range: beyond it utcDay's toISOString throws
+    if (![range.start, range.end].every((x) => Number.isFinite(x) && Math.abs(x) <= MAX_MS) || range.start > range.end) return []
+    const from = utcDay(range.start)
+    const to = utcDay(range.end)
+    const today = clock()
+    const out: { date: string; item: DueItem }[] = []
+    for (const routine of await activeRoutines()) {
+      let days: string[]
+      try {
+        days = await dueDays(routine, from, to, today, cache)
+      } catch {
+        continue // per-routine isolation: one routine's failure never blanks the lane (RT-13, ProviderEmitFailed)
+      }
+      for (const date of days) {
+        out.push({
+          date,
+          item: {
+            source_module: 'routines',
+            ref_id: `${routine.id}|${date}`,
+            label: routine.name,
+            est_minutes: 0, // no estimate/urgency algorithm in M1 (the sessions/relationships precedent)
+            urgency: 0,
+            hard_deadline: Date.parse(`${date}T00:00:00Z`), // the platform date→ms convention (UTC midnight)
+          },
+        })
+      }
+    }
+    // Deterministic: by day, then routine order (Array.prototype.sort is stable; `out` is already in routine order).
+    return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)).map((x) => x.item)
+  }
+
+  // The owner's live read realizing "auto-dropped/flagged, never a dangling row" (sessions BR :72-74): a pending routines block
+  // whose occurrence closed BY TIME — the window has closed, or D is done (step grain, as settleBlock fulfils) — goes to
+  // `skipped`. Never a running make-good (BR-RT-S6-5), never by lifecycle (paused is reversible). Per routine, best-effort.
+  const dropClosedBlocks = async (cache: BlocksByStep): Promise<void> => {
+    const today = clock()
+    for (const routine of await activeRoutines()) {
+      try {
+        const window = validWindow(routine.id, prefs ? await prefs.policyFor(routine.id) : null)
+        const rf = newReflection()
+        for (const st of await liveSteps(routine.id)) {
+          const blocks = await blocksOf(cache, st.id)
+          for (const [i, b] of blocks.entries()) {
+            const date = blockDate(b.source)
+            if (date == null || !isPending(b)) continue
+            const closed =
+              (window !== undefined && addDays(date, window) < today) ||
+              (await isDoneOn(st, await findCompletion(st.id, date), date, rf))
+            if (!closed || (await isRunningMakeGood(b, st.id))) continue // the cheap time check first
+            await bestEffort(async () => {
+              await sessions.updatePlannedBlock(b.id, { status: 'skipped' })
+              blocks[i] = { ...b, status: 'skipped' }
+            })
+          }
+        }
+      } catch {
+        /* per-routine isolation: a malformed policy / port failure skips this routine's drops only */
+      }
+    }
+  }
+
+  // S9 (2b) — removeStep / archiveRoutine cancel their pending blocks (the S6 → S8 hand-off, absorbed). Best-effort.
+  const cancelStepBlocks = (stepId: string): Promise<void> =>
+    bestEffort(async () => {
+      for (const b of await sessions.listPlannedBlocksForTarget('routine_step', stepId)) {
+        if (isPending(b) && blockDate(b.source) != null) await sessions.updatePlannedBlock(b.id, { status: 'skipped' })
+      }
+    })
+
   // ── S8 helpers ──
   // A tag write needs a LIVE tag (Spaces' tagEntity doesn't check it — the tasks guard): unknown/deleted ⇒ TagNotFound, no row.
   const tagLive = async (tagId: string, entityType: RoutineLinkTarget['type'], entityId: string) => {
@@ -622,9 +756,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   // not a new make-good, so the window guard doesn't apply to it (contract.md:55 rejects a make-good begun PAST the window).
   const runningMakeGood = async (stepId: string, date: string): Promise<boolean> => {
     const b = await pendingBlock(stepId, date)
-    if (!b?.sub_type) return false
-    const open = await sessions.findOpenSessionForEntity(b.sub_type, 'routine_step', stepId)
-    return open?.planned_block_id === b.id
+    return b != null && isRunningMakeGood(b, stepId) // ONE BR-RT-S6-5 check (S9 g2/critique N2)
   }
 
   // W1–W3 — the acceptance-window guard. The user's window, validated ONCE here and by loadWindow (no drift).
@@ -1312,6 +1444,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       await routinesRepo.delete(id) // softDelete:true → sets deleted_at; ledger untouched
       const steps = await liveSteps(id)
       for (const s of steps) await stepsRepo.delete(s.id)
+      for (const s of steps) await cancelStepBlocks(s.id) // S9 2b
     },
 
     getRoutine: async (id) => {
@@ -1375,6 +1508,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
 
     removeStep: async (stepId) => {
       await stepsRepo.delete(stepId) // soft-delete; completion ledger cascade is S3/S8
+      await cancelStepBlocks(stepId) // S9 2b — its pending reschedule blocks can no longer be made good
     },
 
     reorderSteps: async (routineId, orderedStepIds) => {
@@ -1692,6 +1826,64 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       const p = LinkRoutinePageSchema.parse({ pageId, target })
       await assertLinkTarget(p.target)
       await spaces.removeLink(p.pageId, p.target.type, p.target.id)
+    },
+
+    // ── S9 — providers (PLAN-S9 v2) ──
+    dueIn: (range) => dueItems(range, new Map()),
+
+    getDueReminders: async (range) => {
+      const cache: BlocksByStep = new Map()
+      try {
+        await dropClosedBlocks(cache)
+      } catch {
+        /* the drop never fails the lane */
+      }
+      return dueItems(range, cache) // the same block lists (updated in memory after a drop)
+    },
+
+    summary: async (date) => {
+      RoutineCalendarDateSchema.parse(date)
+      const empty: SectionData = { sectionKey: 'summary', module: 'routines', dataPoints: ROUTINES_DATA_POINTS, state: 'empty', items: [] }
+      const rows = await completionsRepo.findWhere(eq(routineCompletions.completed_date, date) as SQL)
+      if (rows.length === 0) return empty
+      // Unfiltered reads: steps/routines removed or archived since still carry their ledger (RT-17).
+      const steps = await stepsRepo.findWhere(inArray(routineStep.id, [...new Set(rows.map((r) => r.routine_step_id))]) as SQL)
+      const stepById = new Map(steps.map((st) => [st.id, st]))
+      const routineIds = [...new Set(steps.map((st) => st.routine_id).filter((x): x is string => x != null))]
+      if (routineIds.length === 0) return empty
+      const owners = (await routinesRepo.findWhere(inArray(routines.id, routineIds) as SQL)).sort(byRoutineOrder)
+      const items: RoutineDaySummaryItem[] = []
+      for (const routine of owners) {
+        const mine = rows
+          .map((row) => ({ row, step: stepById.get(row.routine_step_id) }))
+          .filter((x): x is { row: RoutineCompletionRow; step: RoutineStepRow } => x.step?.routine_id === routine.id)
+          .sort((a, b) => bySequence(a.step, b.step))
+        if (mine.length === 0) continue
+        const item: RoutineDaySummaryItem = {
+          routine_id: routine.id,
+          name: routine.name,
+          steps: mine.map(({ row, step }) => ({
+            step_id: step.id,
+            title: step.title,
+            skipped: row.skipped,
+            skip_reason: row.skip_reason,
+            duration_minutes: row.actual_duration_minutes,
+          })),
+        }
+        try {
+          const all = await stepsRepo.findWhere(eq(routineStep.routine_id, routine.id) as SQL)
+          const dayRows = new Map(mine.map(({ row, step }) => [step.id, row]))
+          const policy = prefs ? await prefs.policyFor(routine.id) : null
+          const ev = await judgeDay(routine.id, all, dayRows, date, policy, newReflection())
+          item.status = ev.status
+          item.policy_source = ev.policy_source
+          item.not_done = ev.not_done
+        } catch {
+          /* per-routine isolation: the recap still lists what was done; the evaluation is omitted (RT-13) */
+        }
+        items.push(item)
+      }
+      return items.length ? { ...empty, state: 'success', items } : empty
     },
 
     listCompletions: async (stepId) => {

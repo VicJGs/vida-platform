@@ -1,9 +1,9 @@
 # Current Spec — routines   (level: module · tier: DEEP)
 > Language: English (code + docs agree).
-> Coverage: 8/8 files read — **full** (`services/routines/{service,types,index}.ts` + `CLAUDE.md` + `__tests__/routines-service.test.ts`
-> · `validators/routine.ts` · `@vida/types/routine.ts` · `db/schema/routines.ts`; ~52.7 KB).
+> Coverage: 9/9 files read — **full** (`services/routines/{service,types,index,journal}.ts` + `CLAUDE.md` + `__tests__/routines-service.test.ts`
+> · `validators/routine.ts` · `@vida/types/routine.ts` · `db/schema/routines.ts`).
 > Inherits: `docs/core` (constitution: `business-rules.md`, `conventions.md`, `architecture/data-flow.md`) → this module.
-> Last refreshed: 2026-10-22 · **S5c correction promoted (§XXIX)** · S5 progress + analytics · S4 policy evaluation · S3 run/drive · S2c floor conformance · earlier: entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
+> Last refreshed: 2026-10-26 · **① track closed — S9 providers + Journal promoted (§XXIX)** · S8 tags/notes/links · S7 effects · S6 reschedule + window guard · S5c correction · S5 progress + analytics · S4 policy evaluation · S3 run/drive · S2c floor conformance · earlier: entity-rescope **Step 0 BASELINE** (worktree `mod-routines` @ `0456c32`,
 > = built S1–S3 `1a61189` + merged `origin/main`). Source of truth = the code (Currency Rule §XXIX).
 
 > **Baseline note (2026-10-21).** This doc records the code AS-IS. The code was built 2026-10-13 against an
@@ -18,12 +18,13 @@ The `@vida/core` **① service tier for Routines**: the cross-module *orchestrat
 recurring sequence of polymorphic steps, and each step drives a real entity elsewhere. The intended service
 "composes + derives, writes almost nothing of its own" `[FACT: docs/features/routines/delivery/interpretation.md:13-15]`.
 
-**As-built today (S1–S5):** routine + step CRUD, the ledger + skips, floor conformance (S2c), run/drive over the real Tasks/Habits/
-Sessions (S3), policy evaluation (S4), and progress + analytics (S5) `[FACT: services/routines/types.ts RoutinesService]`.
+**As-built today (S1–S9, the ① track closed):** routine + step CRUD, the ledger + skips, floor conformance (S2c), run/drive over the real Tasks/Habits/
+Sessions (S3, S5c), policy evaluation (S4), progress + analytics (S5), reschedule + the window guard (S6), routine-level effects (S7),
+tags/notes/links (S8), and the providers + Journal contribution (S9) `[FACT: services/routines/types.ts RoutinesService]`.
 
 **What it is NOT (yet / ever):**
 - A derivation engine for evaluation (S4) and progress/streak/analytics/misses (S5); `progress` stays a nullable override slot.
-- NOT a provider yet. There is no `dueIn` / `summary` / journal / due-lane registration.
+- A provider since S9: `dueIn` / `getDueReminders` / `summary` + `routines/journal.ts` register helpers — shipped, NOT called (N5).
 - NOT registered in the app composition-root. That happens in the routines ENTITY close (fe-routines ②), not this track
   `[FACT: docs/specs/foundation/golive-replan/process.md §4]`.
 - NEVER an owner of policy config (→ Preferences/Spaces), the Scheduler (→ Sessions), XP (→ Gamification handler) or
@@ -105,6 +106,16 @@ Errors: `RoutineNotFoundError` · `InvalidRecurrenceRuleError` (a stored rule ou
 | `contributeToPurposeMetrics` (S7) | `(routineId, date) => Promise<void>` | re-drives the routine-level `contribute_purpose_metric` for a done, scheduled day (rail-idempotent); not done / no effects ⇒ no-op. `ZodError` · `RoutineNotFoundError` · `RoutineContributionError`; an evaluation failure propagates like a read (`InvalidRoutinePolicyError` · `InvalidRecurrenceRuleError`) |
 | `listCompletions` | `(stepId) => Promise<RoutineCompletion[]>` | — (sorted by `completed_date`) |
 
+**Providers + Journal (S9)** (`service.ts` + `routines/journal.ts`)
+| Method | Signature | Notes |
+|---|---|---|
+| `dueIn` | `(range: TimeRange) => Promise<DueItem[]>` | active routines with a rule; a routine-day D is due iff some step in `stepsAsOf(D)` is still owed (D<today: make-good-admissible, no pending block, routine not done; D=today: not done/planned-skipped/blocked; D>today: not planned-skipped). Items ordered by (D, routine order); `hard_deadline` = UTC midnight; est/urgency 0. Per-routine isolated; a non-finite / reversed range ⇒ `[]`. Pure |
+| `getDueReminders` | `(range) => Promise<DueItem[]>` | the SS-7 lane impl = `dueIn` after dropping closed reschedule blocks (window closed or D done; never a running make-good, never by lifecycle) to `skipped` — best-effort, per-routine isolated, idempotent |
+| `summary` | `(date) => Promise<SectionData>` | `module:'routines'`, `dataPoints` completed_today/skipped_today; one `RoutineDaySummaryItem` per routine with ledger rows on the date (archived included): steps (title · skipped · skip_reason · duration) + `status`/`policy_source`/`not_done` (omitted if that routine's evaluation fails). `'empty'` for an idle day; `ZodError` for a malformed date. Pure |
+| `createRoutinesJournalContribution` / `registerRoutinesJournal` / `registerRoutinesDueProvider` | module helpers | summary-only Journal contribution + ONE sessions due lane (SS-7). Shipped, not called (N5) |
+
+`removeStep` / `archiveRoutine` also cancel the step(s)' pending reschedule blocks (S9, best-effort).
+
 **Tags · notes · links (S8)** (`service.ts`; writes via Spaces/Notes only)
 | Method | Signature | Errors / notes |
 |---|---|---|
@@ -133,8 +144,8 @@ throws `ZodError` (S2c).
 deviation, grounded in RT-8 and g2-approved at S3 `[FACT: types.ts]`. Whether the governing seam-contract already has this
 split is checked in reconciliation.
 
-**Not built (governing surface, per `delivery/seam-contract.md`):**
-`dueIn`/`summary`/`getDueReminders`, journal + due-provider registration (S9), and the typed error `ProviderEmitFailed`.
+**Not built (governing surface):** nothing owed by the ① track. `ProviderEmitFailed` is the as-built isolation (S9); calling the register
+helpers is the fe-routines entity close (N5).
 
 ### Inputs (Zod, `validators/routine.ts`)
 - `CreateRoutineSchema` = all routine fields optional except `name` (`.min(1)`, S2c) · `UpdateRoutineSchema` = all optional ·

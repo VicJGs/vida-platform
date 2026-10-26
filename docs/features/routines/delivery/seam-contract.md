@@ -104,6 +104,12 @@ unlinkPage(pageId: Id, target): Promise<void>                  // spaces.removeL
 
 ## Provider seam + Journal wiring (S9)
 ```ts
+// ⟲ as-built S9 (2026-10-26): dueIn = routine-days still due by the PLAN-S9 predicate (S5/S6 logic), per-routine isolated, item
+//   { source_module:'routines', ref_id:'<routineId>|<D>', label: name, est_minutes:0, urgency:0, hard_deadline: UTC midnight of D };
+//   getDueReminders = dueIn after the owner's live drop of closed reschedule blocks (sessions BR :72-74; never a running make-good);
+//   summary = { sectionKey:'summary', module:'routines', dataPoints:[completed_today, skipped_today], state, items: RoutineDaySummaryItem[] }.
+//   ProviderEmitFailed = as-built isolation: journals degrades a throwing summary to state:'error' (dashboard.ts:66-74); sessions skips a
+//   throwing lane (SS-7). The ProviderUnavailable flag is Sessions/Journals-owned, unbuilt. Helpers shipped in routines/journal.ts, NOT called (N5).
 dueIn(range: TimeRange): Promise<DueItem[]>                         // scheduled occurrences → Calendar + Journal agenda
 getDueReminders(range: TimeRange): Promise<DueItem[]>              // the DueProvider.fetch impl (SS-7 lane)
 summary(date: string): Promise<SectionData>                        // Journal /summary contribution (PULL at render)

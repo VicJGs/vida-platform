@@ -16,3 +16,8 @@
 - blocked by `mod-routines`
 - blocked by `fe-codec-collection`
 - blocked by `fe-codec-entity-facet`
+- **Edge from mod-routines ① close (N5, golive process §3/§4):** this entity close owns the composition-root wiring —
+  `createRoutinesService({ db, deviceId, registry, tasks, sessions, sessionRegistry, spaces, notes, habits?, prefs?, effects? })` +
+  `registerRoutinesJournal(journalRegistry, svc)` + `registerRoutinesDueProvider(sessions, svc)` (shipped in
+  `packages/core/src/services/routines/journal.ts`, not called by ①). The Journal agenda shows routines only once journals' Sessions
+  `dueIn` bridge lands (borrowed leg, routines slice-map).
