@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-25 by /session-end -->
+<!-- Last updated: 2026-10-26 by /session-end -->
 
 ## fe-calendar S6 — first-consumer reads (2026-10-21 — LIF-203)
 
@@ -1251,3 +1251,16 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 - `open`/`migrate` deadline = receipt only (60 s, INTERP-grounded on the measured 12.2 s worst module load); reads/writes 15 s.
 - The filing's acceptance item 3 (pagehide release / retry-with-backoff) was dropped via §XXVIII; teardown stays with preferences R1.
 - Production-build boot smoke (`test:e2e:prod`) is the regression guard; CI's `e2e` script now exists.
+
+## notes-rescope Steps 0–5 (2026-10-26 — LIF-245)
+| 2026-10-26 | notes docs | N&P aspect docs + intake (deleted by the MOD-notes teardown `eaf64f8`) | restored at original paths, realigned to the rebuilt schema + ADR-004/006/007/008/009/021; intake append-only | features/README lists them; every other module kept its 5 aspects | yes |
+| 2026-10-26 | journals vs notes | journal page TYPE = Notes; journal surface (EC-18a Overview, journal views, day page + arrangement) = Journals/Home | EC-18a + ORPHAN#12 re-homed to journals-rescope; journals out of `/notes` | Victor: "journals is supposed to be a module within its own"; JR-1 | yes |
+| 2026-10-26 | `[[` candidates (EC-10) | every OS entity that is a page | page → `page_links`, entity → `entity_links` to the entity | Victor; cross-module-integration.md:96,125; G6 | yes |
+| 2026-10-26 | `/notes` collection (EC-1) | List · Gallery · Graph; default = live non-archived `note` pages | no Calendar (consequence of the journals ruling + G3) | intake G3; JR-1 | yes |
+| 2026-10-26 | mode memory (EC-5) | `app_state` KV `entity_mode:<type>:<id>`; `note` = tabbed/editor | no Preferences field (PR-3); ADR-006 append owed (R2) | EC-4; data-flow.md:466; onboarding.md:59 | yes |
+| 2026-10-26 | delete / Trash | soft delete + Undo + one OS-wide Trash (System panel; strip unchanged) + Empty Trash | fe-shell-scope EC-4 re-pinned | P4 quality bar + specimen (30 days); Victor's pick | yes |
+| 2026-10-26 | templates (EC-13) | entity-based (ADR-009 bundles of any module), grouped by type; notes builds engine + pages writer | modules register their own writers | Victor; ADR-009 L15-17 | yes |
+| 2026-10-26 | blocks (EC-32/36) | every block is a widget; `/task` creates or binds; bodies here = /summary /entity-link /backlink /task | other module bodies = placeholders + edges to their ② units | Victor; ADR-008 L145-146; P:84-92 | yes |
+| 2026-10-26 | graph | lands with HARD-3 (M1.4, #118) for `/notes` + `/graph` | notes keeps the honest empty state | hard-3 task; reconstructed-structure:242 | yes |
+| 2026-10-26 | rescope plan | slice-map R0…R10, data safety first | approved at the Re-scope Gate | reconciliation (184 rows, DRY) | yes |
+

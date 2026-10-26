@@ -1,5 +1,6 @@
 # Task: notes-rescope
-# Status: planned
+# Status: in_progress — Steps 0–5 done (Re-scope Gate approved 2026-10-26); next Step 6 R0
+# Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
 # Scenario: entity-rescope

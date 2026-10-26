@@ -6834,3 +6834,15 @@ Decisions / lessons:
 Next session:
   - **notes-rescope (L1, LIF-245)** — Victor's pick. preferences-rescope (LIF-247) stays in flight in its own worktree; tell it the R3 `buildPromise` limit is fixed on main.
   - Watch: CI dark (billing) · post-ack `open` unbounded (recorded trade-off).
+
+---
+Date: 2026-10-26
+Task: notes-rescope (LIF-245) — Add Frontend Component / entity-rescope · worktree `.claude/worktrees/notes-rescope` (branch pushed)
+Completed:
+  - Worktree close-out (PR #161). Steps 0–5 of entity-rescope: baseline both planes · Documentation Gate (restored the 5 aspect docs + intake deleted by `eaf64f8`) · interpretation + gate · Envision APPROVED (EC-25…36, EC-13 re-pin) · reconciliation 184 rows DRY · slice-map R0…R10 APPROVED + fe-shell-scope EC-4 re-pin. Docs only; no code changed.
+Decisions:
+  - Victor: Journals is its own module (EC-18a + journal views → journals-rescope); `[[` = every page-able entity; templates entity-based; blocks are widgets, `/task` create-or-bind; one OS-wide Trash (System panel); graph lands with HARD-3 (M1.4).
+  - "Check the documentation" ×2 on Q1/Q2 → memory 9th repeat (read the owning module's identity + the pinned ECs before asking).
+Next session:
+  - R0 data safety (§XXVI PLAN first) in the notes-rescope worktree. Data-loss paths B-50/C-46 + E-1 are R0; EC-15 live bug is R1.
+---
