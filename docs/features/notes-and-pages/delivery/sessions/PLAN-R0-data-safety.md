@@ -174,3 +174,4 @@ keyboard: Tab reaches both export actions, Enter downloads; VoiceOver announces 
 - rev 3 · round 3 (2026-10-26) — critique = **SHIP**. Its three implementation conditions recorded as BR-R0-8b (synchronous
   registration in `flush()`, per-key chain + `finally` release + non-rejecting reader await, `cancelQueries` only on warm
   entries); advisory folded into test 9c (rejected write + overlapping writes).
+- **APPROVAL 1 — Victor, 2026-10-26.** Gate 2 (IMPLEMENTATION-PLAN → /preflight → /critique → Approval 2) next.

@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in_progress — Steps 0–5 done (Re-scope Gate approved 2026-10-26); next Step 6 R0
+# Status: in_progress — Step 6 R0: PLAN approved (Approval 1, 2026-10-26); gate 2 in progress
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -35,3 +35,4 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 - 2026-10-26 (Step 4 — Reconciliation, DRY) — Ledger docs/features/notes-and-pages/delivery/reconciliation.md: 184 rows over both planes (A ① · B ② · C editor · E/F/G dry-pass adds) + EC sweep (fe-notes EC-1…24, EC-25…36, inherited CODEC ECs) + impact scan (12 shared contracts, 0 untreated). Dry passes 10→10→1→0. Headline: data-loss paths (B-50/C-46, E-1, B-52/53), EC-15 live bug, dead prod affordances, first-consumer engines (views, templates, capability, Trash seam), fe-shell-scope EC-3 collides with the OS-wide Trash (re-pin at Re-scope Gate).
 - 2026-10-26 (Step 5 — Re-scope Gate, slice-map drafted) — delivery/slice-map.md: R0 data safety → R1 page frame → R2 mode memory → R3 metadata+rename → R4 attachments → R5 delete+OS-wide Trash → R6 collection+views → R7 editor seams+[[ → R8 blocks as widgets+capability → R9 entity templates → R10 live close; every ledger row + every structural EC mapped. Awaiting Victor: plan approval + fe-shell-scope EC-4 re-pin (Trash in the System list).
 - 2026-10-26 (Step 5 — Re-scope Gate APPROVED) — Victor approved slice-map R0…R10; fe-shell-scope EC-4 re-pinned (Trash in the System panel; EC-3 strip unchanged), recorded in fe-shell-scope envision.md. Next: Step 6 R0 data safety — §XXVI PLAN (gate 1).
+- 2026-10-26 (Step 6 · R0 gate 1 — APPROVAL 1) — 1a: docs/editor/current-* refreshed (#7 S1 drift: `chrome`, EC-7 text colour, blockquote/taskList; BR-E1-6). PLAN-R0-data-safety.md rev 3: independent critique r1 REVISE (4 blocking: B-53 needs write-through · always-on check rejects our own seeds `{doc,content:[]}`/empty text — reproduced on 3.30.0 · no-write mechanism (setEditable emits update) · headers+journals currency) → r2 REVISE (B-53 cold cache → read-after-write barrier) → r3 SHIP (+3 impl conditions = BR-R0-8b). Victor approved.
