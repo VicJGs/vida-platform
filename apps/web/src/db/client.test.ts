@@ -93,12 +93,74 @@ describe('WorkerDbClient', () => {
     await expect(client.driver.batch([{ sql: 'UPDATE t SET a = 1' }])).resolves.toBeUndefined()
   })
 
-  it('rejects (does not hang) when the worker never replies (timeout)', async () => {
+  it('rejects (does not hang) when the worker never replies to a read (timeout)', async () => {
+    vi.useFakeTimers()
+    try {
+      const client = new WorkerDbClient(silentWorker())
+      const p = client.driver.query('SELECT 1')
+      const assertion = expect(p).rejects.toThrow(/timed out after 15000ms/)
+      await vi.advanceTimersByTimeAsync(15_000)
+      await assertion
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // LIF-250 — `open` runs every pending migration (BR-RT-BOOT), so its deadline covers RECEIPT, not completion.
+  it('open() rejects (does not hang) when the worker never acknowledges it', async () => {
     vi.useFakeTimers()
     try {
       const client = new WorkerDbClient(silentWorker())
       const p = client.open('vida')
-      const assertion = expect(p).rejects.toThrow(/timed out/)
+      let settled = false
+      p.catch(() => {}).finally(() => (settled = true))
+      await vi.advanceTimersByTimeAsync(15_000)
+      expect(settled).toBe(false) // the old 15 s read budget no longer applies to open
+      const assertion = expect(p).rejects.toThrow(/not acknowledged within 60000ms/)
+      await vi.advanceTimersByTimeAsync(45_000)
+      await assertion
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('an acknowledged open() that takes longer than every budget still resolves (slow first-run migrate)', async () => {
+    vi.useFakeTimers()
+    try {
+      const w = silentWorker()
+      const client = new WorkerDbClient(w)
+      const p = client.open('vida')
+      w.onmessage?.({ data: { id: 1, ack: true } } as MessageEvent) // alive, migrating
+      await vi.advanceTimersByTimeAsync(120_000)
+      w.onmessage?.({ data: { id: 1, ok: true } } as MessageEvent)
+      await expect(p).resolves.toBeUndefined()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('an acknowledged open() still rejects when the worker crashes or replies an error', async () => {
+    const w = silentWorker()
+    const client = new WorkerDbClient(w)
+    const crashed = client.open('vida')
+    w.onmessage?.({ data: { id: 1, ack: true } } as MessageEvent)
+    w.onerror?.(new Error('kaboom'))
+    await expect(crashed).rejects.toThrow(/crashed/)
+
+    const failed = client.open('vida')
+    w.onmessage?.({ data: { id: 2, ack: true } } as MessageEvent)
+    w.onmessage?.({ data: { id: 2, ok: false, error: 'migration 33 failed' } } as MessageEvent)
+    await expect(failed).rejects.toThrow(/migration 33 failed/)
+  })
+
+  it('an ack never settles a request, and an ack for a read does not stop its 15 s clock', async () => {
+    vi.useFakeTimers()
+    try {
+      const w = silentWorker()
+      const client = new WorkerDbClient(w)
+      const p = client.driver.query('SELECT 1')
+      w.onmessage?.({ data: { id: 1, ack: true } } as MessageEvent)
+      const assertion = expect(p).rejects.toThrow(/timed out after 15000ms/)
       await vi.advanceTimersByTimeAsync(15_000)
       await assertion
     } finally {
