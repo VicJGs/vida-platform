@@ -34,7 +34,7 @@ root cause FACT: the fixed 15 s client RPC timer fails a live first-run `open` �
 - [x] 4. `composition-root.ts` clear `buildPromise` on rejection (+ test)
 - [x] 5. Prod-build Playwright config + boot smoke + `e2e` script
 - [x] 6. Verify: 10/10 dev + prod (fresh · reload · 3-parallel load) · Retry probe · Year re-time · suites/tsc/eslint
-- [ ] 7. §XXIX currency (F007 · web-client-runtime current-* · decisions) + commit/PR
+- [x] 7. §XXIX currency (F007 · web-client-runtime current-* · decisions) + commit/PR
 
 ## Route History
 - 2026-10-22 — worktree `.claude/worktrees/fix-data-plane-boot-open` off origin/main `8f2542b`. Steps 1–2 (reproduce +
@@ -43,3 +43,4 @@ root cause FACT: the fixed 15 s client RPC timer fails a live first-run `open` �
   retry-with-backoff) replaced — it targeted a refuted hypothesis.
 - 2026-10-22 — plan approved (Victor); Steps 1–6 built + verified (unit tests mutation-checked; dev/prod boot matrix
   incl. 3-parallel load all green; Year median 347 ms on prod); engineering gate PASS; currency done.
+- 2026-10-25 — /critique SHIP; committed `dcd80fe`; PR #159 opened (awaiting Victor's merge — CI dark, local gates of record).
