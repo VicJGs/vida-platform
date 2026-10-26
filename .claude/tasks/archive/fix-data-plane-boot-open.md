@@ -1,5 +1,5 @@
 # Task: fix-data-plane-boot-open
-# Status: in-progress
+# Status: done
 # Linear: LIF-250
 # Profile: Bug Fix / Hotfix
 # Scenario: default
