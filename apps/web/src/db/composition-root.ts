@@ -132,5 +132,10 @@ async function build(): Promise<Services> {
  * module scope — nothing runs until the first call. Hooks consume it in `queryFn`.
  */
 export function getServices(): Promise<Services> {
-  return (buildPromise ??= build())
+  // LIF-250: a rejected build is NOT cached (the boot.ts ensureDbReady rule) — the next call re-builds, so a
+  // failed boot/initVault recovers on retry instead of poisoning every query until reload.
+  return (buildPromise ??= build().catch((e: unknown) => {
+    buildPromise = null
+    throw e
+  }))
 }

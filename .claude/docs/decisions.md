@@ -1233,3 +1233,14 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 | 2026-10-22 | S7 gate | Week all-day strip density (R17) | **kept as approved** | Visual Gate PASS | yes |
 | 2026-10-22 | S7 close | where the found data-plane boot defect lives | **LIF-250 `fix-data-plane-boot-open`: M1.2.4, structure `#60` (renumbered 1→144), g3-order wave L0′, debt-plan §1 row, → HARD-4** | g3-order §1 placement rule (a repair of a Done unit = debt, right after the data-plane row); every live surface sits behind the boot | yes ("file it properly in the plan and in the order") |
 | 2026-10-22 | S7 close | merge #157 with CI dark | **merged on local-green** | every CI job "not started — account payments failed" (0 steps); local tsc/suites/live gate green — the fe-settings/fe-session-hud precedent | yes |
+
+## fix-data-plane-boot-open — LIF-250 (2026-10-22; docs/specs/fixes/data-plane-boot-open/)
+| Date | Scope | Question | Decision | Why | Victor? |
+|------|-------|----------|----------|-----|---------|
+| 2026-10-22 | triage | root cause of the boot "open timed out after 15000ms" | **the fixed 15 s client RPC timer failed a live first-run `open`** (module eval + 32 migrations; ok=true at 16.8–26.9 s) — ISOLATED; the filing's hypotheses (a)(b)(c) refuted | reproduced dev 5/7 · prod 3/3 under load, phase-timed in the worker | yes (plan approval) |
+| 2026-10-22 | plan | how `open` keeps "no hang" (current-spec:77) without failing live work | **receipt ack + receipt-only deadline for `open`/`migrate` (60 s); reads/writes keep 15 s** | the rule's intent is a dead worker; crash → onerror, failure → error reply; 60 s ≈ 5× the 12.2 s worst module load [INTERP — grounded] | yes |
+| 2026-10-22 | plan | Retry re-sending `open` | **worker opens once (BR-RT-D5); adapter bootstrap single-flight** | BR-RT-D5 "spawned once + opened once" | yes |
+| 2026-10-22 | plan | `getServices()` caching a rejected build | **cleared on rejection (boot.ts rule)** | homed to LIF-250 by preferences R3 PLAN R3-BR-2 limit (2) | yes |
+| 2026-10-22 | plan | filing acceptance item 3 (pagehide handle release / retry-with-backoff) | **§XXVIII deviation — dropped** | targeted refuted hypothesis (a); teardown = preferences R1 BR-8 | yes |
+| 2026-10-22 | build | prod smoke console-clean vs `/favicon.ico` 404 | **answered by a 204 route in the spec, not by loosening the check** | docs classify the favicon 404 as noise (fe-notes envision.md:21,99) | — |
+| 2026-10-22 | verify | Year settle on the booting prod build | **recorded: median 347 ms (210–373 steady; first switch 1 495 ms incl. lazy chunk), fresh vault** | PLAN-S7 §D "measured and recorded"; the filing's "≤ 1 s budget" had no source | — |

@@ -75,6 +75,18 @@
   `[FACT: app/calendar/{use-calendar,calendar-derive,calendar-sample}.ts; calendar-readonly.test.ts]`
 - **[FACT] BR-RT-BOOT — no query before DB-ready.** `App.tsx` gates rendering (and thus any React Query read) on the
   one-time `open`+`migrate` resolving; the worker's `open` migrates internally (no double-migrate). `[FACT: App.tsx; boot.ts]`
+- **[FACT] BR-RT-RPC-DEADLINE — the worker RPC never hangs and never fails a live boot (LIF-250, 2026-10-22).** Reads/writes
+  (`query`/`run`/`exec`/`values`/`batch`/`exists`/`close`) reject after a fixed 15 s. `open`/`migrate` run every pending
+  migration (first run 9–27 s measured), so the worker **acks them on receipt** and their deadline covers **receipt only**
+  (`OPEN_ACK_TIMEOUT_MS` 60 s, above the 12.2 s worst-case worker module load); after the ack the request waits for its
+  reply — a crash rejects via `onerror`, a failure via `{ ok: false }`. An ack never settles a request.
+  `[FACT: db/client.ts ACKED_OPS/OPEN_ACK_TIMEOUT_MS; db/worker.ts; client.test.ts]`
+- **[FACT] BR-RT-D5 enforced in the worker — opened once.** A repeated or concurrent `open` (the boot Retry while the first
+  open still migrates) shares the in-flight/completed open; a failed open is not cached and releases any half-open
+  connection; `close` resets it. The web adapter's module + VFS bootstrap is single-flight. `[FACT: db/worker.ts open();
+  db/web-adapter.ts ensureModule(); worker.test.ts]`
+- **[FACT] BR-RT-COMPROOT — a rejected build is not cached.** `getServices()` clears its memo on rejection (the `boot.ts`
+  rule), so a failed boot/`initVault` recovers on the next call. `[FACT: db/composition-root.ts; composition-root.singleton.test.ts]`
 
 ## Boundary (what AR-4 does NOT do)
 - **[INTENT]** No per-module hooks/stores/forms — those land with each module's later wave (M1.1+). AR-4 ships the

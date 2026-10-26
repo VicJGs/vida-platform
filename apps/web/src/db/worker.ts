@@ -17,15 +17,30 @@ import { createWebDatabaseAdapter } from './web-adapter'
 const adapter = createWebDatabaseAdapter()
 let driver: SqliteDriver | null = null
 let db: DrizzleDb | null = null
+// LIF-250 — BR-RT-D5 "opened once": a repeated or concurrent `open` (e.g. the boot screen's Retry while the
+// first open is still migrating) shares the in-flight/completed open instead of opening a second connection
+// over the same OPFS file. Cleared on failure (a retry re-opens) and by `close`.
+let opening: Promise<void> | null = null
 
-async function open(dbName: string): Promise<void> {
+async function openOnce(dbName: string): Promise<void> {
   driver = await adapter.open({ dbName }) // plain — no sqlCipher in M1.0
-  await migrate(driver) // bootstraps app_state (DB-7 ensureInfra) + applies 001/002/003
+  await migrate(driver) // bootstraps app_state (DB-7 ensureInfra) + applies every pending migration (runner.ts)
   db = adapter.createDrizzle(driver)
   // Prove the Drizzle proxy callback fires end-to-end against wa-sqlite
   // (raw SQL — the schema barrel has no tables yet; table CRUD is covered by
   // the Node contract test).
   await db.run(sql`SELECT 1`)
+}
+
+function open(dbName: string): Promise<void> {
+  return (opening ??= openOnce(dbName).catch(async (e: unknown) => {
+    // A failed open leaves nothing half-open: release a connection opened before migrate failed.
+    await driver?.close().catch(() => {})
+    driver = null
+    db = null
+    opening = null
+    throw e
+  }))
 }
 
 // AR-4 extends AR-2's minimal `open|exec|query|close` proof to the surface the
@@ -51,6 +66,11 @@ type WorkerRequest =
 type WorkerResponse =
   | { id: number; ok: true; rows?: Record<string, unknown>[]; result?: unknown }
   | { id: number; ok: false; error: string }
+  // LIF-250 — receipt ack for the long-running lifecycle ops (`open`/`migrate`: every pending migration runs
+  // inside them). Proves the worker is alive and working; the final reply still follows. Never settles a request.
+  | { id: number; ack: true }
+
+const ACKED_OPS = new Set<WorkerRequest['op']>(['open', 'migrate'])
 
 function assertOpen(d: SqliteDriver | null): asserts d is SqliteDriver {
   if (!d) throw new Error('Database not open — send { op: "open" } first')
@@ -66,6 +86,7 @@ const workerScope = self as unknown as {
 
 workerScope.onmessage = async (event: MessageEvent<WorkerRequest>): Promise<void> => {
   const msg = event.data
+  if (ACKED_OPS.has(msg.op)) workerScope.postMessage({ id: msg.id, ack: true })
   try {
     let response: WorkerResponse
     switch (msg.op) {
@@ -117,9 +138,11 @@ workerScope.onmessage = async (event: MessageEvent<WorkerRequest>): Promise<void
         break
       }
       case 'close':
+        await opening?.catch(() => {}) // never close under an in-flight open
         await driver?.close()
         driver = null
         db = null
+        opening = null // a later `open` opens again
         response = { id: msg.id, ok: true }
         break
       default: {
