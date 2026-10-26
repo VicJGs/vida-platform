@@ -81,7 +81,7 @@ R8 before R9 (templates carry live blocks). R6 before R9 (the "New from template
 - ⋯ "Move to Trash" → settle pending flush (R0) → soft delete → toast with Undo; deleted-aware page banner + Restore
   (B-29 · B-30 · IR-R2/R3).
 - **OS-wide Trash system surface:** shell global surface + route + icon + command-bar nav command, placed in the System
-  panel list + the ≤375 overflow (strip icons unchanged, pending the fe-shell-scope re-pin); grouped by module; Restore · Delete forever · Empty Trash with danger confirms; states incl.
+  panel list + the ≤375 overflow (strip icons unchanged — fe-shell-scope EC-4 re-pinned 2026-10-26); grouped by module; Restore · Delete forever · Empty Trash with danger confirms; states incl.
   partial provider failure; focus after removals (B-31 · B-33 · B-34 · F-1 · F-5 · F-6).
 - Docs: IA global-surfaces row + surface-map row (B-32); **fe-shell-scope EC-4 re-pin** (see Approval).
 - Purge timing (30-day enforcement) decided in this slice's PLAN.
@@ -168,4 +168,6 @@ Requested from Victor:
    Proposed: **EC-4** — the System panel's labeled nav list = the 6 surfaces **+ Trash** (icon + label); **EC-3 unchanged** —
    the strip keeps its 6 icons at ≥768 and Search + overflow at ≤375 (Trash reachable from the overflow / System panel).
    Alternative: Trash also as a 7th strip icon at ≥768 (re-pins EC-3 too).
-_Pending._
+**APPROVED by Victor on 2026-10-26:** slice plan R0…R10 as written; fe-shell-scope re-pin = **System panel only** —
+EC-4 gains Trash in the System panel list; EC-3 unchanged (strip keeps 6 icons; Trash via the ≤375 overflow / System panel).
+Step 6 starts at R0 (§XXVI double gate per slice).
