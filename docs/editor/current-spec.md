@@ -27,6 +27,8 @@ interface VidaEditorProps {
   defaultValue?: EditorDocument          // seeds the doc ONCE (uncontrolled)
   onChange?: (doc: EditorDocument) => void // emitted on user edits (+ one benign mount echo)
   editable?: boolean                     // default true; false = read-only, no caret
+  toolbar?: boolean                      // default true; ignored when editable=false (E3)
+  chrome?: 'framed' | 'bare'             // default 'framed'; 'bare' = host supplies the surface (#7 S1)
   placeholder?: string                   // empty-state text
   'aria-label'?: string                  // one of aria-label/-labelledby REQUIRED (dev-warns if neither)
   'aria-labelledby'?: string
@@ -44,9 +46,16 @@ interface VidaEditorHandle { setContent(doc): void; focus(): void; getDocument()
 - Frame = an unnamed `@tamagui/core` `styled(View)` on BASE semantic tokens — `$colorSurfacePrimary` bg,
   `$colorBorderDefault` 1px border, `borderRadius:'$md'` (radius token SCALE, not a sub-theme key), `$12`/`$8` inset,
   `minHeight:120`. **No `light_/dark_Editor` sub-theme; `tamagui.config.ts` untouched** (base tokens suffice).
+- **`chrome` variant (fe-codec-canvas-editor #7 S1).** `variants.chrome`: `framed` (default, `defaultVariants`) = the
+  box above; `bare` = transparent bg, border/radius/padding 0 — the HOST supplies the page surface. The
+  `.vida-editor-frame` class is kept in both, so every injected rule + the focus ring still apply. `[FACT: editor.tsx:80-106]`
 - Injected CSS (`internal/editor-styles.ts`, idempotent, browser-only) for what the frame can't reach on the inner
   `.ProseMirror`: focus ring on the frame via `:has(.ProseMirror:focus-visible)` → `var(--colorFocusRing)`;
   placeholder `::before` → `var(--colorTextMuted)` (base semantic, NOT sub-theme-only `--placeholder`).
+- **Content text colour (EC-7, #7 S1).** `.ProseMirror{color:var(--colorTextPrimary);line-height:1.7}` — the
+  contenteditable otherwise inherits the UA black, unreadable in dark. font-size/family stay host-owned.
+  Blockquote is styled (tokened left bar + muted italic); taskList rows align the checkbox to the first text line.
+  `[FACT: internal/editor-styles.ts:40-67]`
 
 ## Standard blocks (E2) `[FACT: src/extensions/standard-blocks.ts; src/extensions/callout.ts; editor.tsx extensions]`
 The full `STANDARD_BLOCK_TYPE` set (11) is registered. E1's StarterKit provides 7 (paragraph · heading · bulletList ·
