@@ -22,6 +22,10 @@ exec playwright test` (CWD = apps/web) discovers it and does NOT scan `src/**/*.
 - `fixtures.ts` — **the reusable surface.** `test.extend` providing `db` (the backdoor) + a per-test OPFS reset.
   Import `{ test, expect }` from here in every browser spec.
 - `db-persistence.spec.ts` — QA-1's AR-2 proof (open/reopen + OPFS persistence).
+- **Production-build boot smoke lives OUTSIDE this folder** — `../playwright.prod.config.ts` + `../e2e-prod/boot.spec.ts`
+  (LIF-250): `vite build` + `vite preview` on port 4174, drives the REAL app boot (this harness bypasses it — which is how
+  the boot-timeout defect stayed latent). OPFS is wiped from a route-served blank same-origin page. Run:
+  `pnpm --filter @vida/web test:e2e:prod`; `e2e` runs both suites (CI's `turbo run e2e`).
 
 - `write-lock.spec.ts` — preferences-rescope R1 (BR-RT-LOCK): drives the **app page** (`/`), not the harness — a burst of
   concurrent service writes via `await import('/src/db/composition-root.ts')` (Vite dev; the app's own worker: a second

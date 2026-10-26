@@ -30,8 +30,11 @@ M1.0 (SQLCipher → M3); the seam is pass-through.
 ## Key files
 - `web-driver.ts` — async `SqliteDriver` over wa-sqlite's `statements()` iterator (owns prepare/finalize, no leak).
   `query()` → object rows (internal); `values()` → positional arrays (the ORM proxy path).
-- `worker.ts` — the Web Worker: bootstraps the VFS, opens, migrates (empty registry = no-op v0), builds the Drizzle
-  proxy, and exposes an `open|exec|query|close` message protocol (AR-2's in-worker proof).
+- `worker.ts` — the Web Worker: bootstraps the VFS, opens, migrates (every pending migration), builds the Drizzle
+  proxy, and serves the `open|exists|migrate|run|exec|query|values|batch|close` protocol. **Opens once** (BR-RT-D5: a
+  repeated/concurrent `open` shares the in-flight one) and **acks `open`/`migrate` on receipt** (LIF-250).
+- `client.ts` — `WorkerDbClient`: reads/writes time out at 15 s; `open`/`migrate` time out only if never acknowledged
+  (60 s) — a first-run open runs every migration (9–27 s measured), so never put a wall-clock budget on completion.
 - `web-adapter.ts` — the `DatabaseAdapter` impl (`open`/`migrate`/`createDrizzle`/`exists`/`destroy`). `exists`/`destroy`
   are VFS-directory-scoped (the VFS stores files under opaque OPFS names); per-name first-run detection is AR-4.
 - `wa-sqlite-vendor.d.ts` — ambient type shim for `AccessHandlePoolVFS` (ships as JS with no `.d.ts`).

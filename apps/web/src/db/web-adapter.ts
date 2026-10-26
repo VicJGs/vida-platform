@@ -31,26 +31,33 @@ const VFS_DIRECTORY = '/vida'
  * once (lazily) and reused across `open()` calls within the worker.
  */
 export function createWebDatabaseAdapter(): DatabaseAdapter {
-  let api: ReturnType<typeof SQLite.Factory> | null = null
   let vfs: AccessHandlePoolVFS | null = null
+  // LIF-250: memoize the bootstrap PROMISE, not its result. Setting a value only after the awaits let two
+  // concurrent first calls each instantiate a module + a VFS over the same OPFS pool. Cleared on failure
+  // (a retry re-bootstraps) and by destroy().
+  let bootstrap: Promise<ReturnType<typeof SQLite.Factory>> | null = null
 
-  async function ensureModule(): Promise<ReturnType<typeof SQLite.Factory>> {
-    if (!api) {
-      const module = await SQLiteESMFactory()
-      const sqlite3 = SQLite.Factory(module)
-      const poolVfs = new AccessHandlePoolVFS(VFS_DIRECTORY)
-      await poolVfs.isReady
-      // AccessHandlePoolVFS extends wa-sqlite's VFS.Base and IS a valid
-      // SQLiteVFS at runtime; the local shim (wa-sqlite-vendor.d.ts) doesn't
-      // restate the full 14-method interface, so narrow the type here.
-      sqlite3.vfs_register(
-        poolVfs as unknown as Parameters<typeof sqlite3.vfs_register>[0],
-        true, // makeDefault → open_v2 needs no VFS name
-      )
-      api = sqlite3
-      vfs = poolVfs
-    }
-    return api
+  async function bootstrapModule(): Promise<ReturnType<typeof SQLite.Factory>> {
+    const module = await SQLiteESMFactory()
+    const sqlite3 = SQLite.Factory(module)
+    const poolVfs = new AccessHandlePoolVFS(VFS_DIRECTORY)
+    await poolVfs.isReady
+    // AccessHandlePoolVFS extends wa-sqlite's VFS.Base and IS a valid
+    // SQLiteVFS at runtime; the local shim (wa-sqlite-vendor.d.ts) doesn't
+    // restate the full 14-method interface, so narrow the type here.
+    sqlite3.vfs_register(
+      poolVfs as unknown as Parameters<typeof sqlite3.vfs_register>[0],
+      true, // makeDefault → open_v2 needs no VFS name
+    )
+    vfs = poolVfs
+    return sqlite3
+  }
+
+  function ensureModule(): Promise<ReturnType<typeof SQLite.Factory>> {
+    return (bootstrap ??= bootstrapModule().catch((e: unknown) => {
+      bootstrap = null
+      throw e
+    }))
   }
 
   return {
@@ -95,7 +102,7 @@ export function createWebDatabaseAdapter(): DatabaseAdapter {
         // Directory absent — nothing to destroy.
       }
       // Force a fresh bootstrap on the next open().
-      api = null
+      bootstrap = null
       vfs = null
     },
   }

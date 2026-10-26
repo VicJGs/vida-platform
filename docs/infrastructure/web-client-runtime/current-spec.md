@@ -77,6 +77,11 @@ The client runtime + its DB binding are built. `[FACT: apps/web/src/*]`
 - **Resilience (post-impl gate):** RPC client rejects on worker crash (`onerror`) + per-request timeout (no hang);
   worker replies an error for unknown ops (no id-less `undefined`); `App.tsx` shows an error+retry state; `boot.ts`
   clears the open-memo on failure (retry works) + terminates the worker on unload. `[FACT: client.ts, worker.ts, boot.ts, App.tsx]`
+- **Resilience amended (LIF-250, 2026-10-22):** the per-request timeout stays for reads/writes (15 s); `open`/`migrate`
+  are receipt-acked by the worker and time out only if never acknowledged (60 s) — the fixed 15 s had failed first-run
+  boots that were still migrating. The worker opens once (BR-RT-D5); `getServices()` retries a rejected build. A
+  production-build boot smoke guards it: `playwright.prod.config.ts` + `e2e-prod/boot.spec.ts` (`test:e2e:prod`; the
+  `e2e` script runs dev + prod). See `current-business-rules.md` BR-RT-RPC-DEADLINE. `[FACT: db/{client,worker,web-adapter,composition-root}.ts]`
 - **Verify:** typecheck 10/10 · `@vida/web` 21/21 (incl. timeout/crash/malformed-reply paths; env-split node + jsdom mock-worker) · build green · grep-clean. `[FACT]`
 - **Follow-up (non-blocking):** Vite `^6.3.5` vs ADR-001 §22 `7.x` — deferred to its own build-infra unit; live
   OPFS round-trip → Playwright (LIF-103); bundle budget (<80 KB) is a UI-4/shell-era gate, not AR-4 DoD.

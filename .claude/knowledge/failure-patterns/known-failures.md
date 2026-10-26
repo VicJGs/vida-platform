@@ -64,15 +64,15 @@
 **Symptom:** on a page load of the running app (dev server or a `vite preview` production build) the boot screen shows the
 timeout + Retry. Dev: intermittent, Retry opens the DB with data intact. Production build: every load; the worker chunk
 loads (200) but never requests its wasm. (fe-calendar S7 live gate, 2026-10-22.)
-**Root cause:** UNKNOWN — filed as **LIF-250** `fix-data-plane-boot-open` (bug unit `docs/specs/fixes/data-plane-boot-open/`:
-hypotheses = the previous document's worker still holding the exclusive AccessHandlePoolVFS OPFS handles · the prod
-worker's wasm locate path). NOT caused by a feature change if the diff doesn't touch `apps/web/src/db/*` / `vite.config.ts`.
-**Fix (until LIF-250 lands):** in a gate, press the app's own Retry (or wait, then reload) — don't misread it as your
-regression; never measure performance on the prod build until LIF-250 is fixed (it can't boot).
-**Evidence (preferences-rescope R2 live smoke, 2026-10-22):** on a dev RELOAD, Retry boots in ~250 ms on the same
-worker; reproduced identically on `main` @ c025710 (old `beforeunload → terminate()`) and with the worker explicitly
-terminated before the reload — weighs AGAINST the lingering-worker OPFS-handle hypothesis for the dev case; it
-coincided with a saturated machine (load 85–320). Candidate: a longer timeout for the cold `open` op only, 15 s for statements.
+**Root cause (FIXED by LIF-250, 2026-10-22):** the client armed one fixed 15 s RPC timer per request at `postMessage`, `open`
+included, while the worker's `open` = module evaluation + wasm + VFS + every pending migration (32 ≈ 8 s). A first-run open
+took 9–27 s and was failed while the worker was alive and succeeding (it replied ok=true at 16.8–26.9 s); Retry "worked"
+because the first open finished in the background. The filing's prod claims were wrong: prod timed out only under load, and the
+wasm was always requested. **Fix:** `open`/`migrate` are acked on receipt and their deadline covers receipt only
+(`OPEN_ACK_TIMEOUT_MS` 60 s); reads/writes keep 15 s; the worker opens once (BR-RT-D5); `getServices()` retries a rejected
+build. **If it ever reappears:** "not acknowledged within 60000ms" = the worker never started (module load); "timed out after
+15000ms" on a read = a hung worker. Guard: `pnpm --filter @vida/web test:e2e:prod` (prod-build boot smoke). Bug unit:
+`docs/specs/fixes/data-plane-boot-open/`.
 
 ## F008 — a wave of FIRST-test-of-file timeouts across unrelated files in a full-suite run
 **Symptom:** 10+ files fail their first test at 5–19 s (Select, Tabs, Menu, AppShell, App first-run…) — files the change
