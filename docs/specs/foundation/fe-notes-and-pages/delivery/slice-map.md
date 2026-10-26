@@ -43,7 +43,7 @@ surfaces. It consumes `@vida/editor` for the editor + its blocks (NOT re-authore
 | EC-22 (icons) | ALL slices (cross-cutting MUST) |
 | EC-24 (editor blocks) | **ui-3 `@vida/editor`** change (done: blockquote + taskList CSS) + consume-verify at S2/S9 |
 | **RIDE — homed to other ② units** (fe-notes provides the S2 slot; the overview is theirs): | |
-| EC-18a (journal overview) | ~~`fe-journals`~~ → **`notes-rescope`** (fe-journals was renamed fe-home and closed without it; re-homed by golive-replan coverage-report.md:64 — amended 2026-10-26) |
+| EC-18a (journal overview) | ~~`fe-journals`~~ → **`journals-rescope`** (fe-journals was renamed fe-home and closed without it; Journals is its own module — Victor 2026-10-26; JR-1) |
 | EC-18b (task work-canvas), EC-18c (task-group), EC-20 (effect rail) | `fe-tasks` (+ sessions for the rail) |
 | EC-18d (milestone), EC-18e (deliverable), EC-21 (staged proof), EC-20 (rail) | `fe-projects` (+ sessions) |
 | EC-16, EC-17 (feel) | live per-slice Visual Gate (every FE slice) |

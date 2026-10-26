@@ -6,8 +6,8 @@
 > Supersedes the ① build's interpretation (`git show ef8c1ed:docs/features/notes-and-pages/delivery/interpretation.md`);
 > reads alongside the ② build's (`docs/specs/foundation/fe-notes-and-pages/delivery/interpretation.md`).
 > **Scope (charter):** `golive-replan/debt-plan.md:22` + `coverage-report.md` notes-rescope rows `:21-64, :81 (fe-home
-> ORPHAN#14), :228-232 (ViewEngine logic · live `useCollection` · collection EC-5), :241 (XCU-14), :255 (viewmodes first
-> consumer), :267-274 (X1–X8)` → closed on the Entity Live Close (`golive-replan/process.md` ELC-1…9).
+> ORPHAN#14), :228-229/:231-232 (ViewEngine logic · live `useCollection` · collection EC-5; :230 is fe-tasks'), :241 (XCU-14),
+> :255 (viewmodes first consumer), :267-274 (X1–X8; X5 = the notes-owned stale headers only — other stores close with their entities)` → closed on the Entity Live Close (`golive-replan/process.md` ELC-1…9).
 
 ---
 
@@ -64,6 +64,8 @@ and closes on ELC-1…9. Doc intent of record = `docs/features/notes-and-pages/*
 | `offersEditor` gate | owner fe-codec-entity-facet, fix executed here | `[FACT: debt-census.md:84-88]` |
 | the 8 module inline-block bodies (`/tasks` `/habits` `/chart` `/events` `/classes` `/pomodoro` `/milestone` `/timeline`) | each module's unit (catalog "MOD-*" column) | `[FACT: docs/editor/extension-catalog.md:35-45,53-54]` |
 | `has_pomodoro` setter | rides the `/pomodoro` body (fe-sessions) — not a notes-rescope leg | `[FACT: sessions-and-scheduling/contract.md:55; pomodoro/identity.md:21-22; extension-catalog.md:42]` |
+| `/summary` block body vs Journals: Notes' **app layer** mounts `SummaryBlock` over `journals.buildDashboard` (debt-plan:22 hook flip); the ① service never depends on Journals (JR-2 holds) — "Journals fills the block" = the engine/data | Journals engine; notes-rescope renders | `[FACT: debt-plan.md:22; journals/identity.md:43]` |
+| the journal SURFACE: EC-18a journal Overview · journal views (Calendar/List/Gallery) · the day page + its mode/arrangement (Home Journal-first/Dashboard-first pref) | **Journals → journals-rescope** (Notes owns only the journal page TYPE: `pages` row, NP-2, `ensureJournal`, the editor entry, the `/summary` block interface + body) | `[FACT: journals/identity.md:13-15,24-27,42-43; journals/business-rules.md:12-14 (JR-1); intake/journals.md:25-26,43-45; information-architecture.md:71,102,142; surface-map.md:50; fe-home envision.md:43,52-54; decisions.md:1154,1171; Victor 2026-10-26: "the journals is supposed to be a module within its own … a very separated entity organization from notes (that should include journals) and journals"]` |
 
 **DEPENDED-ON-BY:** journals-rescope ← notes-rescope `[FACT: debt-plan.md:23; coverage-report.md:354 (E2)]` ·
 fe-tasks / fe-projects ← notes-rescope `[FACT: debt-plan.md:44; coverage-report.md:362 (E10)]`.
@@ -82,7 +84,7 @@ fe-tasks / fe-projects ← notes-rescope `[FACT: debt-plan.md:44; coverage-repor
 | collection `degraded` + XCU-14 | pass the engine's `degraded` through the collection adapter; declare layout fields | ❌ (engine ✅) | `[FACT: engine.ts:43-58; collection/adapter.ts:60-69; xcut-views.md:27]` |
 | mode memory (EC-5) | durable `readMode`/`persistMode` over SQLite | ❌ | `[FACT: entity-facet seam-contract.md:86-88; data-flow.md:431,466]` |
 | attachments (EC-8) | service ✅ + a browser file→bytes path ❌ | partial | `[FACT: service.ts:196-217; PLAN-s6 D-S6-5]` |
-| `[[` picker + trigger (EC-10) | ① ops ✅ · editor: a consumer-supplied **suggestion seam** + ARIA writer ❌ · a **`wikiLink` inline node** (+ serializers) ❌ · entity candidates via registered ReadProviders ❌ | ❌ | `[FACT: editor.tsx:25-43,139-160; cross-module-integration.md:125; ADR-007 §3.4]` |
+| `[[` picker + trigger (EC-10) | ① ops ✅ (but `resolveWikiLink` = `like(pages.title)` only, and `*_note` pages carry no title) · editor: a consumer-supplied **suggestion seam** + ARIA writer ❌ · a **`wikiLink` inline node** (page **and** entity targets, + serializers) ❌ · entity candidates with a title/label projection ❌ (`ReadProvider.list(filter)` has no text query or label; only tasks registers one) | ❌ | `[FACT: service.ts:177-182,259-260; editor.tsx:25-43,139-160; cross-module-integration.md:96,125,144; foundation/views/types.ts:11-27]` |
 | link preview (EC-11) | `getPage(target)` ✅; a deleted target → honest state | ✅ | `[FACT: service.ts:128]` |
 | inline blocks (#31 root) | ⛳ capability registry + offered-set resolver (page → Spaces `enabled_blocks` ∪ editor base, CAP-13); an editor **node-view renderer injection seam** ❌; reconcile editor-local defs vs the ADR-008 registry | ❌ | `[FACT: ADR-008 L120-124,133-137; offered-set.ts; integration-blocks.tsx:202-209]` |
 | block bodies here | `/summary` (mount `SummaryBlock`) · `/entity-link` · `/backlink` | ❌ | `[FACT: extension-catalog.md:35-45]` |
@@ -90,11 +92,13 @@ fe-tasks / fe-projects ← notes-rescope `[FACT: debt-plan.md:44; coverage-repor
 | templates (EC-13) | ⛳ compose `TemplatesService`; instantiate (+ a `pages` writer) + capture ❌ | ❌ | `[FACT: templates slice-map.md:24-51]` |
 | editor for 6 page types (EC-15) | page-type gate | ❌ | `[FACT: adapter.ts:33-35; _registry.ts:7-8]` |
 | SyncStatus (ELC-6) | map `NoteEditorBody`'s saving/saved/error onto `SyncStatus` (`saved|error`) — one live region | ❌ | `[FACT: sync-status.tsx:19-20; note-editor-body.tsx:23-27,38-44]` |
-| journal Overview (EC-18a) | `registerOverview('journal', …)` rendered as a COMPONENT | ❌ | `[FACT: overview-registry.ts:28-39; note-entity.tsx:110]` |
+| Overview slot (registry) | stays notes'; the `journal` registration moves to journals-rescope (EC-18a) — the slot must mount registrants as COMPONENTS | ❌ | `[FACT: overview-registry.ts:28-39; note-entity.tsx:110]` |
 
 Cross-cutting:
-- **N-1 cache coherence.** Every mutation names all affected keys: content write → `['pages',id]` + `['notes','pages']` +
-  `['journal',date]` (today only the first) `[FACT: use-note-content.ts:58]`; metadata/rename/delete/restore → the same set.
+- **N-1 cache coherence.** Every mutation names all affected keys: content write → `['pages',id]` + the list key (today
+  `['notes','pages']`, after the views flip the `ViewEngine` resolve key) + `['journal',date]` + fe-calendar's
+  `['calendar','journal',from,today]` (journal pages) `[FACT: use-note-content.ts:58; app/calendar/use-calendar.ts:132]`;
+  metadata/rename/delete/restore → the same set + the Trash read key.
 - **N-2 editor is closed.** `[[`, real block bodies and the palette all require editing `@vida/editor` to open seams; the
   picker/panels stay in apps/web (package direction editor → ui) `[FACT: editor.tsx:25-43; TASKS.md:29]`.
 - **N-3 ELC-9 close set.** Own ECs + inherited CODEC ECs exercised by these surfaces are mapped in §6.
@@ -107,9 +111,9 @@ Cross-cutting:
 
 | | notes-rescope |
 |---|---|
-| **OWNS** | stub→live flips (metadata · attachments · `[[` picker · preview · templates apply/save · view-config · mode memory · journal summary) · rename · delete/undo/**notes-scoped Trash** + Empty Trash · `[[` trigger + `wikiLink` node · #31 root: capability-registry → inline node-view wiring, CAP-13 compute, bodies of `/summary` `/entity-link` `/backlink` · EC-5/7/10/11/13/15/18/18a · cross-unit: page-type gate, local-day row date, excerpt, `degraded` + XCU-14, SyncStatus, `canvas-editor`/`page-binding` adopt-or-retire, stale headers · ① additions (`restorePage`, deleted read, hard delete + cascade, archived exclusion) · composition: Views/ViewEngine/pages ReadProvider, Templates, Capability · templates S3–S5 + XCU-14 RATIFY appends |
+| **OWNS** | stub→live flips (metadata · attachments · `[[` picker · preview · templates apply/save · view-config · mode memory · journal summary hook) · rename · delete/undo/Trash + Empty Trash · `[[` trigger + `wikiLink` node · #31 root: capability-registry → inline node-view wiring, CAP-13 compute, bodies of `/summary` `/entity-link` `/backlink` · the Overview SLOT + the `note` Overview (EC-18/18f) · EC-5/7/10/11/13/15 · cross-unit: page-type gate, local-day row date, excerpt, `degraded` + XCU-14, SyncStatus, `canvas-editor`/`page-binding` adopt-or-retire, stale headers · ① additions (`restorePage`, deleted read, hard delete + cascade, archived exclusion) · composition: Views/ViewEngine/pages ReadProvider, Templates, Capability · templates S3–S5 + XCU-14 RATIFY appends |
 | **CONSUMES** | ① + Spaces/Views/Templates/Capability foundations · `@vida/ui` · `@vida/editor` (seams opened here) · composition root |
-| **DELEGATES / BORROWS** | backlinks + neural → HARD-3 · summary providers → HARD-1 · FTS → DB-8 · `*_note` Overviews → fe-tasks/fe-projects · Space add-menu → fe-spaces-page · 8 module block bodies → their units · `has_pomodoro` → fe-sessions |
+| **DELEGATES / BORROWS** | the journal surface (EC-18a Overview, journal views, day page + arrangement) → journals-rescope · backlinks + neural → HARD-3 · summary providers → HARD-1 · FTS → DB-8 · `*_note` Overviews → fe-tasks/fe-projects · Space add-menu → fe-spaces-page · 8 module block bodies → their units · `has_pomodoro` → fe-sessions |
 | **DEPENDED-ON-BY** | journals-rescope · fe-tasks · fe-projects |
 
 ---
@@ -131,9 +135,12 @@ Cross-cutting:
 - **IR-R6 · Home shares the body** (and is in the live-close verification set) `[FACT: journal-page-region.tsx:22,70]`.
 - **IR-R7 · Archiving must not orphan the open page** — `getPage` does not filter `is_archived` `[FACT: service.ts:128]`.
 - **IR-R8 · Local day everywhere**; `relLabel` goes stale without a render tick `[FACT: live-mappers.ts:15-27]`.
-- **IR-R9 · Every update moves the row.** `repository.update` stamps `updated_at` `[FACT: repository.ts:421-424]` and a
+- **IR-R9 · Every update moves the row — and notes have no Calendar layout.** `repository.update` stamps `updated_at` `[FACT: repository.ts:421-424]` and a
   non-journal row's calendar date is `ymd(updated_at)` `[FACT: live-mappers.ts:45-46; PLAN-s1:36-37]` → favoriting,
-  archiving or renaming moves the note to today on the Calendar and relabels "updated". `listPages` has no ORDER BY
+  archiving or renaming moves the note to today on the Calendar and relabels "updated". Per G3 a `note` offers List ·
+  Gallery · Neural only (`intake/notes-and-pages.md:55`) and journals left `/notes` (§5 #2) → `/notes` has no Calendar
+  (EC-1 re-pinned, §5); the `updated_at` calendar-placement problem disappears with it. The `updated_at` bump still
+  relabels "updated" and affects any updated-desc sort. `listPages` has no ORDER BY
   `[FACT: repository.ts:379-382]` → list order must be defined by the view's sort.
 - **IR-R10 · Restore can collide.** The journal partial-UNIQUE excludes deleted rows `[FACT: migrations/033_notes.ts:72]`
   and Home re-ensures today's journal on load `[FACT: use-journal-entry.ts:66-68]` → restoring a deleted journal whose date
@@ -141,9 +148,12 @@ Cross-cutting:
   `ensureEntityNote` ignores deleted rows `[FACT: service.ts:165-182]` → restore must check for a live duplicate.
 - **IR-R11 · Soft delete does not cascade.** `page_links`, attachments, `entity_links` stay live `[FACT: service.ts:141-143,255-256]`
   → links/preview cards to a deleted target need an honest "page deleted" state; the NP-9 cascade runs only on hard delete.
-- **IR-R12 · Doc-nodes ↔ `page_links` stay consistent.** A `wikiLink` node carries `target_page_id` (NP-7) and renders its
-  label from the target; removing the token must `removePageLink` `[FACT: service.ts:244-250]`, or backlinks lie.
-- **IR-R13 · Data-bearing Overviews render as components.** `OverviewRenderer` is invoked as a plain function inside
+- **IR-R12 · Doc-nodes ↔ link rows stay consistent.** A `wikiLink` node to a page carries `target_page_id` (NP-7) and keeps
+  `page_links` in step (`createPageLink`/`removePageLink`); a node to an entity carries `entity_type`/`entity_id` and keeps
+  `entity_links` in step (`createEntityLink`/`removeEntityLink`) — the link targets the entity itself, not its `*_note`
+  `[FACT: service.ts:220-277; cross-module-integration.md:125,144]`. Labels render from the target; removing a token removes
+  its row, or merged backlinks (EC-6) lie.
+- **IR-R13 · Data-bearing Overviews render as components (any registrant — note here, journal from journals-rescope).** `OverviewRenderer` is invoked as a plain function inside
   `NoteEntityView` `[FACT: note-entity.tsx:110; overview-registry.ts:23,33-35]` → an EC-18a journal Overview with hooks
   must be mounted as `<Component/>` or its hooks bind to the parent.
 - **IR-R14 · Templates fork into a new page.** Apply = instantiate a NEW page (deep copy, no `template_id`) and navigate
@@ -151,7 +161,7 @@ Cross-cutting:
   Capture is Space-shaped in ADR-009 (`captureFromSpace`) and excludes accumulated data `[FACT: ADR-009 L67-69,77;
   templates slice-map.md:29-33]` — the page-doc boundary is open (§5 Step 5).
 - **IR-R15 · Single save announcement.** `NoteEditorBody`'s `role=status` and a `SyncStatus` chip must not both announce.
-- **IR-R16 · Stale headers mislead** (8 hooks + `use-collection.ts:8-12` "worker `values` seam") — verify and rewrite on flip.
+- **IR-R16 · Stale headers mislead** (8 hooks + `use-collection.ts:8-12` "worker `values` seam" + `entity/adapter.ts:82-84` storage note) — verify and rewrite on flip.
 
 ---
 
@@ -159,30 +169,39 @@ Cross-cutting:
 
 | # | Item | Resolution | Grounding |
 |---|---|---|---|
-| 1 | Delete leg scope | **IN:** soft-delete + undo toast + Trash (restore · delete forever · Empty Trash behind a danger confirm) + NP-9 cascade; 30 days. Trash = **notes-scoped** (a `/notes` collection entry over a NotesService deleted read); a global `/trash` would be a net-new IA surface — not invented here | `frontend-quality-bar:83`; p4 specimen `:120-127`; ADR-003 `:589`; intake G1; `data-flow.md:154`; `process.md:84-86` (no stub to a closed unit) |
-| 2 | `/notes` default | default view = `note` pages, not archived; **Archived** and **type (Journal)** are view-filter predicates; journals' own views belong to Journals/Home. Changes BR-7b/BR-SUR-1 | JR-1 `journals/business-rules.md:11-13`; `information-architecture.md:71,102`; ADR-007 `:48-58`; `fe-codec-collection slice-map.md:65-66` |
-| 3 | Mode memory | storage = `app_state` KV (`entity_mode:<type>:<id>`, device-local, not synced; boot-warmed cache); per-type defaults = OS constants in the adapter (no preference). **Preferences edge dropped** (PR-3: singletons, no per-instance list) | `frontend-quality-bar:127`; `data-flow.md:~455-466`; `entity-facet seam-contract.md:86-88`; `adapter.ts:91`; `preferences/business-rules.md:11`; `onboarding.md:59` |
+| 1 | Delete leg scope | **IN:** soft-delete + undo toast + Trash (restore · delete forever · Empty Trash behind a danger confirm) + NP-9 cascade; Trash keeps 30 days. The deleted-pages read is built so Trash can widen to other entities; the Trash SURFACE scope (in `/notes` vs global) has no IA row → **Envision (Step 3.5)** | `frontend-quality-bar:83`; p4 specimen `:120-127` (`:123` "kept 30 days"); intake G1; `data-flow.md:154`; `process.md:84-86` |
+| 2 | `/notes` default | default view = `note` pages, not archived (`[INTERP]` default); **journals are not part of `/notes`** — their views/day surface are Journals' (= Home). A Journal type filter is not offered by Notes. Changes BR-7b/BR-SUR-1 | Victor 2026-10-26; JR-1 `journals/business-rules.md:12-14`; `intake/journals.md:25-26,43-45`; `information-architecture.md:71,102`; `surface-map.md:48,50` |
+| 3 | Mode memory | per-type defaults: `note` = **tabbed, editor active** `[INTERP]` (EC-4 "LEADS with the Editor facet (default active = editor)" + `envision.md:141`); `journal` = not a Notes mode — Home's Journal-first/Dashboard-first arrangement (journals-rescope ← preferences-rescope); `*_note` = their RIDE owners (fe-tasks/fe-projects). Storage = `app_state` KV `entity_mode:<type>:<id>` — no new schema (M1 foundation owns the schema); `app_state` is device-local by design (ADR-002 §5.0 L1262), so cross-device mode memory would need a different store at M4; precedent `onboarding.md:59`; not a Preferences field (PR-3 singletons, `preferences/business-rules.md:11`). Owed: an ADR-006 per-instance-memory append (Step 5 carry) | `envision.md:31,141`; `frontend-quality-bar:129,150-152`; `data-flow.md:466`; `adapter.ts:82-91`; ADR-002 L1264-1268; `fe-home envision.md:43,52-54` |
 | 4 | `has_pomodoro` setter | **OUT of scope** → rides `/pomodoro` body (fe-sessions) | §1c |
 | 5 | Block bodies | here: registry wiring + `[[` + CAP-13 + `/summary` `/entity-link` `/backlink`; other 8 = honest placeholders with edges to their units | `extension-catalog.md:35-45,53-54`; census A#4-7,14,18 (`a-notes-home.md:307-321`) |
-| 6 | `/notes` views row | **YES** — a global (`space_id` NULL) row; layout/filter/sort persist through `ViewsService` | `process.md:107-108`; `coverage-report.md:21,42`; `fe-codec-collection slice-map.md:26,78-87`; ADR-007 `:48-52` |
-| 7 | G6 creation half | **IN:** `/entity-link` body + entities as `[[` candidates from registered ReadProviders (types without a provider degrade, XCU-12) | `cross-module-integration.md:125`; intake `:67`; ADR-007 §3.4 |
-| 8 | Template Apply | **new page (fork) + navigate**; entry "New from template" | IR-R14 |
+| 6 | `/notes` views row | **YES** — a global (`space_id` NULL) row; layout/filter/sort persist through `ViewsService`. NOT-48's "selection primitive DEFERRED (design-pass)" (`parts/notes-and-pages.md:62`) is **superseded** by the first-consumer rule + the census re-homing | `process.md:107-108`; `coverage-report.md:21,42,229`; `fe-codec-collection slice-map.md:26,78-87`; ADR-007 `:48-52` |
+| 7 | `[[` candidates (G6) | **every OS entity that is a page:** `pages` rows by title + registered entity types with an entity page, grouped by type; a page → `page_links`, an entity → `entity_links` to the entity itself. EC-10 **re-pinned** (below). Create-on-miss stays a `note` (G2/NOT-19) | Victor 2026-10-26: "the pages mentioned is supposed to be all the entities inside the OS that are pages"; intake G6 `:67`; `cross-module-integration.md:96,125,144`; `frontend-quality-bar:116-118` |
+| 8 | Template Apply | **new page (fork) + navigate**; entry point (note-page menu "New from template" vs collection `+`) → Envision | IR-R14; PLAN-s8 `:39-40` |
 
-**Still open — needs Victor (no doc decides):**
-- **Q1 · per-type default mode values.** Docs fix "per-type default, remembered per instance" but no values; the
-  approval note only says what tabbed shows first (`envision.md:141`) and the code default is a global `tabbed`.
-- **Q2 · EC-10 re-pin.** EC-10 pins title-LIKE *page* candidates (`envision.md:37`); item 7 widens the picker to entities —
-  a pinned EC changes only by Victor's re-pin (`process.md` §2.5).
+**Victor re-pin (2026-10-26) — EC-10:** "typing `[[` shows title-matching candidates across **every OS entity that is a page**
+(pages + registered entity types, grouped by type) + an explicit '+ Create '<text>''; create-on-miss is never silent."
+Recorded in `fe-notes-and-pages/delivery/envision.md` §Re-pins.
+
+**EC-1 (consequence of the journals ruling):** journals left `/notes` and G3 gives `note` List · Gallery · Neural → "Notes Top view
+offers **List · Gallery · Neural** and switches live". `surface-map.md:48` ("Calendar·List·Gallery·Neural") is stale on this point.
+
+**Re-homed (Victor 2026-10-26, journals is its own module):** EC-18a journal Overview + ORPHAN#12 → **journals-rescope**
+(`coverage-report.md:55,64`, `debt-plan.md:22-23`, `fe-notes slice-map.md:46` amended). Unhomed Journals legs surfaced
+for journals-rescope (edge, not a notes call): journal views (Calendar/List/Gallery, `journals/delivery/slice-map.md:88`) and
+where a journal opens when reached from `[[` (its day surface).
 
 **Carried forward (homed):**
 - Step 3.5 Envision trigger test — rename affordance · Trash surface · attachment upload · icon/cover picker · `[[` token +
-  hover preview · journal Overview EC-18a; inherited ECs carried regardless (ELC-9).
-- Step 4 — CAP-12 page applicability (ADR-008 L120-124) · EC-1 per-type views (census ✅ lenient) · editor-local block defs
+  hover preview · the Overview slot + `note` Overview (EC-18f) · template entry point (note-page menu vs collection `+`);
+  inherited ECs carried regardless (ELC-9).
+- Step 4 — CAP-12 page applicability (ADR-008 L120-124) · EC-1 as-built (4 layouts incl. Calendar) vs re-pinned (List · Gallery · Neural) · editor-local block defs
   vs ADR-008 registry.
 - Step 5 — templates S3–S5 RATIFY append incl. the page-doc capture boundary (business-rules NP-12) + the XCU-06 default
-  notes view seed · XCU-14 RATIFY append · cross-unit edges for the 8 module block bodies.
+  notes view seed · XCU-14 RATIFY append · ADR-006 per-instance-memory append · cross-unit edges for the 8 module block
+  bodies + journals-rescope (EC-18a, journal views/day surface).
 - Slice PLANs — purge timing · excerpt rule · `summary_config` → `JournalSelection` · icon domain / cover ref · attachment
-  upload UX · whether metadata edits should move calendar placement (IR-R9) · `resolveWikiLink` escape/limit/archived.
+  upload UX · `resolveWikiLink` escape/limit/archived · the entity-candidate label seam (ReadProvider + label projection vs
+  the ⌘K `SearchProvider`) · `[[` page-able scope (all registered types vs those with an entity route).
 
 ---
 
@@ -190,9 +209,9 @@ Cross-cutting:
 
 | EC | What | Leg | Owner |
 |---|---|---|---|
-| EC-1/2 | collection layouts per type | view-config + default scope | notes-rescope |
+| EC-1/2 | collection: List · Gallery · Neural (EC-1 re-pinned as a consequence of the journals ruling) | view-config + default scope | notes-rescope |
 | EC-3 | graph honest empty | neural | HARD-3 (borrowed; lights up at its close, `process.md:88-92`) |
-| EC-4/5/19 | merged⇄tabbed · per-type remembered mode · merged continuous | mode memory | notes-rescope |
+| EC-4/5/19 | editor-led note page · per-type remembered mode · merged continuous | mode memory | notes-rescope |
 | EC-6 | backlinks grouped by source | backlinks | HARD-3 (borrowed) |
 | EC-7 | metadata reflects state | metadata | notes-rescope |
 | EC-8 | attachments | attachments | notes-rescope |
@@ -202,8 +221,10 @@ Cross-cutting:
 | EC-13 | templates | templates | notes-rescope |
 | EC-14 | capability palette | #31 root / CAP-13 | notes-rescope |
 | EC-15 | 6 page types editor-led | page-type gate | notes-rescope |
-| EC-18/18a/18f | per-type Overviews (note, journal) | Overviews | notes-rescope |
+| EC-18/18f | per-type Overview slot + note Overview | Overviews | notes-rescope |
+| EC-18a | journal Overview | journal surface | **journals-rescope** (re-homed 2026-10-26) |
 | EC-18b–e/20/21 | `*_note` Overviews | — | fe-tasks · fe-projects |
+| EC-16/17 | light/dark × 375·768·1440 · editor/link feel (`feel`) | all surfaces | notes-rescope — live Visual Gate at close (`process.md` §2.5) |
 | EC-22/23/24 | Lucide glyphs · chrome · editor blocks render | all surfaces | notes-rescope (re-verify) |
 | inherited | fe-codec-collection EC set · entity-facet ECs · canvas-editor ECs (for the bare editor) | exercised surfaces | re-verified live at close — enumerated in the Step 4 ledger |
 

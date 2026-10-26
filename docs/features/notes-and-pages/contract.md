@@ -55,7 +55,8 @@ capability registry. `/summary` data and the NP-8 seed are read-only integration
 ## Surface intent (② — the page + collection surfaces)
 - **Per-type Overviews (EC-18):** each page type has a distinctive Overview, not a generic dashboard. `note` = clean
   freeform: properties · attachments · backlinks (EC-18f). `journal` = the daily OS dashboard: today's agenda ·
-  streaks/stats · `/summary` across the OS · check-in (EC-18a, re-homed to notes-rescope). `*_note` Overviews ride
+  streaks/stats · `/summary` across the OS · check-in (EC-18a — owned by the Journals module → journals-rescope; Notes provides
+  the Overview slot). `*_note` Overviews ride
   fe-tasks / fe-projects (EC-18b–e). Merged mode renders the SAME per-type sections as one continuous page (EC-19).
   `[FACT: fe-notes envision.md:45-52]`
 - **Journal summary on the page:** `useJournalSummary` reads Journals `buildDashboard(date)`; until HARD-1 registers
@@ -75,7 +76,7 @@ capability registry. `/summary` data and the NP-8 seed are read-only integration
 - **View-config persistence:** layouts are ADR-007 `views` rows; whether `/notes` persists a global row
   (`space_id` NULL) given NOT-48's "selection primitive DEFERRED (design-pass)": **RESOLVED (delivery/interpretation.md §5 #6): YES** — a global row; layout/filter/sort persist via `ViewsService`.
 - **Entity links from the editor (G6 creation half):** `/entity-link` block and entities as `[[` candidates — EC-10
-  pins page candidates only → **RESOLVED (delivery/interpretation.md §5 #7):** in scope (cross-module-integration.md:125); EC-10 re-pin = Victor Q2.
+  pins page candidates only → **RESOLVED (delivery/interpretation.md §5 #7):** `[[` candidates = every OS entity that is a page (pages + registered entity types); page → `page_links`, entity → `entity_links`; EC-10 re-pinned by Victor 2026-10-26.
 
 ## Contract error cases
 - journal clash → `JournalExistsError` (NP-2) · unregistered `entity_type` → `UnregisteredEntityTypeError` (NP-6)

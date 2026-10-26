@@ -34,11 +34,13 @@
   `[FACT: PLAN-s1:36-37; NP-2 local-day rule]`
 
 ## Collection views (ADR-007)
-- One Notes collection (`/notes`) — List · Gallery · Calendar · Neural. `[FACT: surface-map.md:48; envision EC-1]`
-- **Availability by type** `[INTENT G3]`: **Journal** → Calendar · List · Gallery; **Note** → List · Gallery · Neural.
+- One Notes collection (`/notes`) — List · Gallery · Neural (EC-1 re-pinned 2026-10-26: journals left `/notes`; `surface-map.md:48`'s
+  Calendar is stale). `[FACT: intake G3 :55; fe-notes envision §Re-pins]`
+- **Availability by type** `[INTENT G3]`: **Note** → List · Gallery · Neural (no Calendar); **Journal** → Calendar · List · Gallery,
+  rendered by the Journals module (journal views, JR-1), not by `/notes`.
   `*_note` pages are reached from their parent entity's page, not as a standalone collection. `[INTERP: NP-8 + CLAUDE.md]`
-- Archived pages / journals in `/notes` by default: **RESOLVED (Interpretation Gate, delivery/interpretation.md §5 #2):** default view = `note` pages, not archived; Archived + Journal are view-filter predicates (see
-  business-rules "Validation & edge cases").
+- `/notes` default = `note` pages, not archived (Archived = a filter predicate); journals are not part of `/notes` — journal
+  views (Calendar/List/Gallery) are the Journals module's (JR-1; `intake/journals.md:25-26`). **RESOLVED (delivery/interpretation.md §5 #2).**
 - **Field declarations (XCU-14):** calendar needs a date, gallery a cover/image, neural the link graph; a layout whose
   field is absent is **degraded** (declared, non-error), never a crash. The declarations are renderer knowledge
   (RATIFY into the views slice-map). `[FACT: ADR-007 §3.3; xcut-views:27; views interpretation.md:64-74; debt-plan.md:22]`
@@ -56,7 +58,8 @@
   survive a session lives in SQLite). Convention `readMode`/`persistMode(entityType, entityId)` from
   fe-codec-entity-facet O4. `[FACT: frontend-quality-bar:129; entity-facet seam-contract.md:86-89; data-flow.md:431,466]`
   **RESOLVED (delivery/interpretation.md §5 #3):** storage = `app_state` KV (`entity_mode:<type>:<id>`, device-local); per-type defaults =
-  OS constants (values: `[UNKNOWN — Victor Q1]`); no Preferences edge (PR-3).
+  OS constants — `note` = tabbed, editor active (EC-4); `journal` = Home's arrangement (journals-rescope); `*_note` = their
+  RIDE owners. Storage needs no new schema (sync OFF in M1). ADR-006 per-instance-memory append owed (Step 5).
 
 ## Page / route map
 - `/notes` collection · `/notes/$id` any page · Home `/` = today's journal (same editor body). `[FACT: apps/web/src/routes.tsx:76-87;

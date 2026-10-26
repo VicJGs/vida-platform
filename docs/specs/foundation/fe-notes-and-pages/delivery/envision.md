@@ -141,3 +141,8 @@ DELETED after the gate per §3.75. The `@vida/editor` editor-styles fix (Quote +
 - **Merged editor-order** → RESOLVED: merged = continuous Notion page (header + inline per-type sections → editor); tabbed default = editor facet active. EC-19.
 - **Backlinks grouping** → grouped by source module (EC-6).
 - **`/summary` on which types** → journal (EC-18a); any page may add the `/summary` block via the editor (NOT-32 block).
+
+### Re-pins (Victor, 2026-10-26 — notes-rescope Interpretation Gate)
+- **EC-10** → "typing `[[` shows title-matching candidates across **every OS entity that is a page** (pages + registered entity types, grouped by type) + an explicit '+ Create '<text>''; create-on-miss is never silent (NOT-19)." Victor: "the pages mentioned is supposed to be all the entities inside the OS that are pages." A page target writes `page_links`; an entity target writes `entity_links` (cross-module-integration.md:125,144).
+- **EC-1** → "Notes Top view offers **List · Gallery · Neural** and switches live" — consequence of the journals ruling (journals left `/notes`; G3 gives `note` no Calendar). `surface-map.md:48` stale on Calendar.
+- **EC-18a** → owner re-homed to **journals-rescope** (Journals is its own module; the journal Overview is the Journals surface). Notes keeps the Overview slot.

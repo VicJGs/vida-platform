@@ -54,8 +54,8 @@
 - `journal_date` is `YYYY-MM-DD` TEXT, required iff `type='journal'`. `[FACT: validators/note.ts:42-45]`
 - `parent_id` self-references `pages` (deliverable_note → milestone_note); orphan → NULL on hard delete (NP-9).
 - Tag names are `[E]` (ADR-006 §3.2); tag rules are owned by ADR-006 / Spaces, not here.
-- `/notes` default view = `note` pages, not archived; Archived + Journal are filter predicates (journal views are
-  Journals'/Home's, JR-1) — **RESOLVED (delivery/interpretation.md §5 #2)**; a delta vs as-built BR-7b / BR-SUR-1. The `show_archived` pref is
+- `/notes` default view = `note` pages, not archived (Archived = a filter predicate); journals are NOT part of `/notes`
+  — their views and day surface are Journals'/Home's (JR-1; Victor 2026-10-26) — **RESOLVED (delivery/interpretation.md §5 #2)**; a delta vs as-built BR-7b / BR-SUR-1. The `show_archived` pref is
   Tasks-only (ADR-002 L3537-3539) — not the basis.
 
 ## Terminal states (enumerated before build)

@@ -61,7 +61,7 @@
 | A·fe-notes·D·EC-13 | template picker/apply/save | notes-rescope | ❌ EC list |
 | A·fe-notes·D·EC-15 | 6 page-types editor-led (`offersEditor`) | notes-rescope | ❌ EC list + cross-unit fix |
 | A·fe-notes·D·EC-18 | distinctive per-type Overview | notes-rescope | ❌ EC list |
-| A·fe-notes·D·EC-18a | journal Overview | notes-rescope | ❌ EC list |
+| A·fe-notes·D·EC-18a | journal Overview | ~~notes-rescope~~ → **journals-rescope** (Victor 2026-10-26: Journals is its own module; JR-1) | ❌ EC list |
 | A·fe-notes·D·EC-18b | task_note work-canvas (⏳ RIDE) | fe-tasks | §2 fe-tasks · fe-projects |
 | A·fe-notes·D·EC-18c | task_group_note roll-up (⏳ RIDE) | fe-tasks | §2 |
 | A·fe-notes·D·EC-18d | milestone_note Overview (⏳ RIDE) | fe-projects | §2 |
