@@ -6935,3 +6935,28 @@ Next session:
   - Ask Victor for the pending §XXVIII approval (`retryOnMount: false`) if not already given; on approval resume at
     "record the deviation → apply fix" then steps 17→23. Machine load has been 200–400 all day: discriminate reds vs `main`.
 ---
+
+---
+Date: 2026-10-26 (session opened 2026-10-25)
+Task: preferences-rescope (LIF-247) — slice R3 boot + Appearance + honest states · Add Frontend Component / entity-rescope · worktree `.claude/worktrees/preferences-rescope` (Node 24)
+Goal: resolve the R3 refetch-loop hold, finish build steps 17–23, ship R3.
+Completed:
+  - **Rev 2.2, grounded — no deviation:** PLAN-R3 R3-BR-2's "useQuery refetches once on mount" was false (query-core 5.101.4 `shouldLoadOnMount` refetches an errored data-less query on EVERY observer mount; `fetchState` resets it to `pending`) and contradicted the GOVERNING `state-conventions.md` §3 (recovery = explicit Retry → `refetch()`). Corrected TO the doc: `retryOnMount: false` on both definitions (`preferences/preferences-queries.ts`) + §3 Retry (`Button secondary lg`, `usePreferences().retry(): Promise<boolean>`, errored keys only, focus placed, repeat failure re-announced). PLAN rev 2.2 / IMPL rev 3.1, 2nd-gate critique REVISE→folded.
+  - Build steps 16b–23: loop guard (flat read count) · Home live arrangement (`home/home-surface.tsx`) · `preferences-store`/bridge → 10 fields · blast radius · mutations #1–#5 killed · apps/web **895/895** · tsc 0 · eslint 0.
+  - Live Visual Gate items 9–14 PASS (harness `scratchpad/vg-r3/`): no-flash w/ negative control (274 white frames caught; 0/483 with hint) · arrangement first frame · all states · 108-cell matrix text ≥4.52 / axe 0 / 0 overflow · persistence · boot vs merge base f796c34: Loading +70 ms, time-to-shell +45 ms (10 interleaved reloads).
+  - Docs §XXIX (agent pass + review): preferences + web-client-runtime current-*, 4 layer CLAUDE.md, reconciliation (C8 corrected), slice-map, C5 quality-bar amendment + state-conventions §4 pointer, decisions rows (failed-read recovery · Retry lg · non-text contrast).
+  - Independent /critique REVISE (boot unmeasured · C8 stale · focus leak after a failed later-error Retry) → folded → **SHIP**. **Victor visual-approved.** Commit `600edbc` pushed with merge f796c34.
+In progress:
+  - Nothing mid-flight. Worktree clean at `600edbc`, pushed. No PR (merges at R8 entity close).
+Decisions:
+  - Victor: "ground everything on the documentation before any deviation" → the loop fix is a PLAN correction to state-conventions §3, not a §XXVIII deviation (Route History + decisions.md).
+  - Error line stays polite `role="status"` (decisions.md:162), not §3's assertive; Retry copy 'Retry' (shipped wording); size lg (design.md:218).
+  - Non-text contrast: secondary-button fill / Select border 1.24–1.68 accepted under WCAG 1.4.11 (label/chevron identify) → DS-level sibling.
+  - Boot cost measured vs the merge base, not main (main carries LIF-250's boot change).
+  - Siblings recorded, not folded: notifications/gamification Retry `small` + no `onPress` · no favicon (404).
+  - Memory: visual-gate-playbook += no-flash probe (transparent root = UA white), forced-error cells = default theme only, OPFS reopen pause.
+Next session:
+  - **Start R4 — reduce motion end to end** (slice-map R4: persist `nav_preferences.reduce_motion` (D8) + the provider-applied root data-attribute that `useReducedMotion` + the 12 CSS gates key on — a `packages/ui` CODEC edit + `shell-panel-styles.ts`; `clearCodec`). Full §XXVI: PLAN-R4 → /critique → Approval 1 → IMPL → /preflight → /critique → Approval 2 → TDD → gates → Visual Gate → currency → commit.
+  - First actions: `cd .claude/worktrees/preferences-rescope` · `PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"` · `git fetch` + `git rev-list --left-right --count origin/main...HEAD` (main has LIF-250 #159 — consider merging before R4) · `git log -1` = `600edbc`. GROUND FIRST: slice-map R4 row, reconciliation rows D8 + the reduce-motion EC rows, `packages/ui` motion docs (ds-3-motion-foundation), state/motion standards, decisions.md — present no "calls" the docs already answer.
+  - Packages edit ⇒ note memory `worktree-apps-web-ui-symlink-resolves-to-main` + `editing-vida-types-needs-dist-rebuild-before-core-typecheck` (rebuild @vida/ui dist before apps/web typecheck).
+---

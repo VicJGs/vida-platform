@@ -48,14 +48,21 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 | merge | composition-root conflict (main's pure `composeServices` vs R1 lock + R2 prefs) | both sides edited `build()` | ✅ lock applied in `build()`; lock test split out; pure test runs over the locked db |
 | R3 step 16 | refetch loop on a first-read error — PLAN-R3 R3-BR-2's "refetches once on mount" contradicted query-core 5.101.4 + the governing `state-conventions.md` §3 | plan premise drifted from the doc | ✅ Victor 2026-10-26: PLAN-R3 rev 2.2 / IMPL rev 3.1 — corrected TO the doc (`retryOnMount: false` + §3 Retry affordance); build step 16b |
 | R3 step 16 | pane tests import the real composition root via `useSettings()` | blast radius missed | ✅ `compositionRootMock()` added to 3 pane tests |
+| R3 /critique | pre-ship critique REVISE: boot cost unmeasured · C8 stale · failed later-error Retry leaked focus | gaps the tests didn't cover | ✅ measured (+70 ms vs merge base) · C8 fixed · end-Retry-on-settle + re-key status (mutation #5) → SHIP |
+| R3 step 22 | matrix graphics probe measured text-only rail buttons, then Select borders | probe over-reached WCAG 1.4.11 | ✅ narrowed to identifying graphics; low boundaries recorded in decisions.md |
 
 ## Knowledge Loaded
 - `docs/features/preferences/delivery/{slice-map,reconciliation,interpretation}.md` · `sessions/PLAN-R2-live-seam.md` — R3 PLAN
 - fe-settings / fe-home / fe-gamification `envision.md` ECs · `docs/core/architecture/state-conventions.md` §3.1 — R3 PLAN
 - `docs/modules/preferences/current-*` · web-client-runtime `current-business-rules.md` — preflight
 - `@tanstack/query-core` 5.101.4 `retryer.js` · `queryObserver.js:445` · `focusManager.js` — the loop triage
+- 2026-10-26: `docs/core/architecture/state-conventions.md` §2/§3/§4 · `performance-strategy.md` §5 · `query.js:411-417` (fetchState) — rev 2.2 grounding
+- 2026-10-26: `.claude/docs/decisions.md:138,162` · `standards/design.md:218` · `standards/engineering.md:117` (WCAG 1.4.11) · `standards/process.md` §XXVIII — Retry design + gate
+- 2026-10-26: memory `visual-gate-playbook` — Step 22 live gate
 
 ## Failures This Session
 - F008 — cold first-test timeouts + calendar dense-day fail even alone at load 300–400 — environmental (reproduced on `main`), recorded
-- (new, unnumbered) — first-read-error refetch loop — **open**, deviation pending approval
+- (new, unnumbered) — first-read-error refetch loop — **resolved** 2026-10-26: PLAN-R3 rev 2.2 (`retryOnMount: false` + §3 Retry), mutation #4
+- F008 (2026-10-26 variant) — 2 `App.test` timeouts at load ~40 → 12/12 alone ×2 — environmental, recorded
+- Visual-Gate harness (not product): OPFS `createSyncAccessHandle` "another open Access Handle" on reopening a persistent profile right after close → 4 s pause + retry · the no-flash probe first missed the transparent-root UA canvas (negative control caught it) — resolved
 
