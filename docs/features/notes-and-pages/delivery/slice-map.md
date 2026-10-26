@@ -83,7 +83,7 @@ R8 before R9 (templates carry live blocks). R6 before R9 (the "New from template
 - **OS-wide Trash system surface:** shell global surface + route + icon + command-bar nav command, placed in the System
   panel list + the ≤375 overflow (strip icons unchanged, pending the fe-shell-scope re-pin); grouped by module; Restore · Delete forever · Empty Trash with danger confirms; states incl.
   partial provider failure; focus after removals (B-31 · B-33 · B-34 · F-1 · F-5 · F-6).
-- Docs: IA global-surfaces row + surface-map row (B-32); **fe-shell-scope EC-3 re-pin** (see Approval).
+- Docs: IA global-surfaces row + surface-map row (B-32); **fe-shell-scope EC-4 re-pin** (see Approval).
 - Purge timing (30-day enforcement) decided in this slice's PLAN.
 **ECs:** EC-26 · EC-27 · EC-28. **Gate:** shared (live: delete → reload → restore → persists).
 
