@@ -166,7 +166,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
 `availability_exceptions` · `study_plan_batches` · `session_templates` (`schema/foundation/scheduling.ts`), DDL in
 `migrations/014_sessions_scheduling.ts`. `[FACT: those files]`
 - **[FACT] BR-S4-1 — `focus_sessions` IS the `focus` timer runtime; `pomodoro_sessions` is RETIRED (not authored).**
-  Doc-determined by the consuming-module reframe (`notes-and-pages/structure-data.md:30`, `contract.md:19`): the
+  Doc-determined by the consuming-module reframe (`notes-and-pages/structure-data.md:30`, `contract.md:19` — line cites at `eaf64f8^`; realigned 2026-10-26 → structure-data "Consumed, not owned" + contract "Pomodoro"): the
   `/pomodoro` widget is a lens onto the `focus_sessions` extension keyed by `session_id`. The retired v2 Notes table's
   columns land on `focus_sessions` (`type`/`status`/`completed_count`/`duration_seconds` + v1 restores
   `paused_at`/`total_pause_seconds`/`was_interrupted`/`interruption_reason`); `entity_type`/`entity_id`/`page_id`

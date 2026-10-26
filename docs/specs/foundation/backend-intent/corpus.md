@@ -700,3 +700,5 @@ untrusted-import surface. A1 is therefore **not orphaned**; it homes to xcut-cap
   gamification (6). GG4 flagged as a **ratification gap** (needs Victor), not a shape-open build detail.
   The one cross-corpus orphan-risk (templates A1) resolved to xcut-capability; the dangling GM-12 Part B
   reference now resolves to `parts/gamification.md` GM-12.
+
+> Note (2026-10-26): line cites into `docs/features/notes-and-pages/*` and `docs/intake/notes-and-pages.md` refer to their text at `eaf64f8^` (resolve with `git show eaf64f8^:<path>`); the aspect docs were restored + realigned by notes-rescope.
