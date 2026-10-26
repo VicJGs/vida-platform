@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — re-scope approved; S2c–S8 (+S5c) ✅ shipped (local commits); next = S9 providers + Journal (① track closer)
+# Status: in-progress — ① TRACK CLOSED (S1–S9 + S2c/S5c, local commits); next = PR → merge + LIF-138 status (on Victor's go)
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
@@ -18,6 +18,13 @@ completion/miss policy → Preferences; `routine_step_membership` → Spaces des
 Sessions; XP application → Gamification. Delivery: `docs/features/routines/delivery/`.
 
 ## Slice log
+- **S9 — Providers + Journal ✅ (2026-10-26) — the ① track closer** (`03aa5e9`) — `dueIn` (the S5/S6-derived due predicate, per-routine
+  isolated), `getDueReminders` (the SS-7 lane + the owner's live drop of closed blocks; never a running make-good), `summary` (§2 :69 +
+  RT-5), `routines/journal.ts` (summary-only + ONE due lane, shipped not called — N5), removeStep/archiveRoutine cancel pending blocks
+  (S6→S8 hand-off absorbed). tsc 0 · eslint 0 · **routines 169/169** · full @vida/core 2179/2182 (3 = load timeouts/F006, green alone) ·
+  mutation-checked · **g2 CLEAN** (5 folded incl. removed-step) · **/critique REVISE → fixed** (§XXIX headers/§6; N1 future own row; N2
+  one running check) · §XXIX promoted. **Track close:** slice-map S6–S9 ✅ + agenda-bridge borrowed leg + close section; fe-routines N5
+  edge written. **Pending Victor's go:** branch → PR → merge; LIF-138 status via tracker_sync from the main checkout after merge.
 - **S8 — Tags + notes + links ✅ (2026-10-26)** — `tagRoutine`/`untagRoutine`/`getRoutineTags` + step twins via Spaces (live-tag reads:
   `notes.getTagsForEntity` ∩ a read-only soft-delete-filtered `tags` repo; `TagNotFound` on tag, not untag), `getRoutineNote`/`getStepNote`
   (`ensureEntityNote('note', …)`, seed creation-only), `linkPage`/`unlinkPage` (purposes `linkEntity` shape; target guarded, `pageId` unvalidated
@@ -184,5 +191,5 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 3. Service — a dueDays predicate · b dueIn · c getDueReminders + drop · d write-time cancel · e summary + routines/journal.ts
 - [x] 4. Gate point: routines suite green (journal.ts lands in step 3)
 - [x] 5. Docs
-- [ ] 6. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
-- [ ] 7. ① Track close — slice-map S6–S9 ✅ + borrowed legs · fe-routines N5 edge · task close-out · ask Victor: PR/merge + tracker
+- [x] 6. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
+- [~] 7. ① Track close — slice-map S6–S9 ✅ + borrowed legs · fe-routines N5 edge · task close-out · ask Victor: PR/merge + tracker
