@@ -43,8 +43,8 @@ Notes & Pages is the **hub (in-degree 14)**. `[FACT: module-dependency-graph.md]
   needs (XCU-14; calendar → date, gallery → cover) and degrades when absent. `[FACT: ADR-007 §3.3 (L60-64); xcut-views XCU-14]`
 - **Pomodoro** — a widget-lens: the `/pomodoro` block launches a `focus_sessions` timer via the Sessions realm and the
   page links to that `session_id`. `[INTENT: ADR-004 §3.1]` `has_pomodoro` is caller-supplied (BR-8); who sets it
-  (the `/pomodoro` block insert vs a Sessions effect, ADR-004 `attach_pomodoro`) is `[UNKNOWN — homed: notes-rescope
-  Interpretation Gate]`.
+  (the `/pomodoro` block insert vs a Sessions effect, ADR-004 `attach_pomodoro`) is **OUT of notes-rescope scope** — it rides the `/pomodoro`
+  body (fe-sessions) (delivery/interpretation.md §5 #4).
 
 ## What it consumes
 Structurally nothing (Wave 0) beyond the Spaces foundation it sits on: AR-6 `SpacesService` (entity-link/tag writes,
@@ -63,8 +63,8 @@ capability registry. `/summary` data and the NP-8 seed are read-only integration
   empty state. The `summary_config` → `JournalSelection` mapping is `[UNKNOWN — homed: the hook-flip slice PLAN]`.
 - **Inline palette (CAP-13):** offers the union of the page's Spaces' capabilities + the editor base (ADR-008
   L134-137); inline instances live in the page doc (L120-124). Which registry entries get real bodies in this unit vs
-  keep the honest "available when its module ships" placeholder: `[UNKNOWN — homed: notes-rescope Interpretation Gate
-  (the #31 root, debt-plan.md:22)]`. CAP-12 `block_instances` placement is homed to notes-rescope by
+  keep the honest "available when its module ships" placeholder: **RESOLVED (delivery/interpretation.md §5 #5):** `/summary` `/entity-link` `/backlink`
+  get bodies here; the other 8 stay honest placeholders with edges to their units (extension-catalog.md:35-45). CAP-12 `block_instances` placement is homed to notes-rescope by
   coverage-report.md:50; whether it applies to the page surface at all (ADR-008 L120-124) is `[UNKNOWN — homed: notes-rescope Step 4 reconciliation]`.
 - **Metadata values:** favorite/archive are booleans; glyphs are Lucide icons, never emoji (EC-22, envision.md:55);
   `cover_image` = a user-chosen image URL `[E]` (security-model.md:465). The icon value domain (Lucide name?) and
@@ -73,10 +73,9 @@ capability registry. `/summary` data and the NP-8 seed are read-only integration
   (performance-strategy.md:132). Picker UX, size limit and storage (DB blob vs OPFS): `[UNKNOWN — homed: the
   attachments leg's slice PLAN / Envision Gate]`.
 - **View-config persistence:** layouts are ADR-007 `views` rows; whether `/notes` persists a global row
-  (`space_id` NULL) given NOT-48's "selection primitive DEFERRED (design-pass)": `[UNKNOWN — homed: notes-rescope
-  Interpretation Gate]`.
+  (`space_id` NULL) given NOT-48's "selection primitive DEFERRED (design-pass)": **RESOLVED (delivery/interpretation.md §5 #6): YES** — a global row; layout/filter/sort persist via `ViewsService`.
 - **Entity links from the editor (G6 creation half):** `/entity-link` block and entities as `[[` candidates — EC-10
-  pins page candidates only: `[UNKNOWN — homed: notes-rescope Interpretation Gate]`.
+  pins page candidates only → **RESOLVED (delivery/interpretation.md §5 #7):** in scope (cross-module-integration.md:125); EC-10 re-pin = Victor Q2.
 
 ## Contract error cases
 - journal clash → `JournalExistsError` (NP-2) · unregistered `entity_type` → `UnregisteredEntityTypeError` (NP-6)

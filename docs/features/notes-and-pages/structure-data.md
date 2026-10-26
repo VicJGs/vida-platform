@@ -37,7 +37,7 @@
 - One Notes collection (`/notes`) — List · Gallery · Calendar · Neural. `[FACT: surface-map.md:48; envision EC-1]`
 - **Availability by type** `[INTENT G3]`: **Journal** → Calendar · List · Gallery; **Note** → List · Gallery · Neural.
   `*_note` pages are reached from their parent entity's page, not as a standalone collection. `[INTERP: NP-8 + CLAUDE.md]`
-- Archived pages / journals in `/notes` by default: `[UNKNOWN — homed: notes-rescope Interpretation Gate]` (see
+- Archived pages / journals in `/notes` by default: **RESOLVED (Interpretation Gate, delivery/interpretation.md §5 #2):** default view = `note` pages, not archived; Archived + Journal are view-filter predicates (see
   business-rules "Validation & edge cases").
 - **Field declarations (XCU-14):** calendar needs a date, gallery a cover/image, neural the link graph; a layout whose
   field is absent is **degraded** (declared, non-error), never a crash. The declarations are renderer knowledge
@@ -55,8 +55,8 @@
 - **Mode memory** (merged/tabbed, EC-5): per-type default, remembered per instance, persisted (anything that must
   survive a session lives in SQLite). Convention `readMode`/`persistMode(entityType, entityId)` from
   fe-codec-entity-facet O4. `[FACT: frontend-quality-bar:129; entity-facet seam-contract.md:86-89; data-flow.md:431,466]`
-  Storage home + per-type defaults beyond `note`: `[UNKNOWN — homed: notes-rescope Interpretation Gate, soft ←
-  preferences-rescope (debt-plan.md:22)]`.
+  **RESOLVED (delivery/interpretation.md §5 #3):** storage = `app_state` KV (`entity_mode:<type>:<id>`, device-local); per-type defaults =
+  OS constants (values: `[UNKNOWN — Victor Q1]`); no Preferences edge (PR-3).
 
 ## Page / route map
 - `/notes` collection · `/notes/$id` any page · Home `/` = today's journal (same editor body). `[FACT: apps/web/src/routes.tsx:76-87;

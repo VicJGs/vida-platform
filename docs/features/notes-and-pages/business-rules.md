@@ -36,9 +36,8 @@
   orchestrates — `page_links`, `note_attachments`, the page's `entity_links` and `entity_tags` rows, and
   `parent_id → NULL` on children. Trash keeps a page **30 days**. `[FACT: frontend-quality-bar/_index.md:83 (P4);
   p4-trust-reversibility-specimen.html:120-157 (":123 kept 30 days"); NOT-39/41; migrations/033_notes.ts:14 (no REFERENCES)]`
-  Open, homed: (i) whether notes-rescope's delete leg ships Empty-Trash/hard delete or only soft-delete + undo + Trash
-  restore (NOT-39 still parks the cascade under the closed "Part 2") — `[UNKNOWN — homed: notes-rescope Interpretation
-  Gate]`; (ii) purge timing/mechanics — `[UNKNOWN — homed: the delete leg's slice PLAN]`.
+  **RESOLVED (delivery/interpretation.md §5 #1):** the delete leg ships soft-delete + undo + a notes-scoped Trash (restore · delete forever ·
+  Empty Trash behind a danger confirm) + the cascade. Open, homed: (ii) purge timing/mechanics — `[UNKNOWN — homed: the delete leg's slice PLAN]`.
 - **NP-10 — Every page type is editor-capable.** On the page surface the editor gate keys on **page type**
   (`PAGE_TYPE`), not on the `ENTITY_TYPES` polymorphic-reference registry, which governs module-entity surfaces.
   `[FACT: debt-census.md:84-88; envision EC-15; surface-map.md:48]`
@@ -55,10 +54,9 @@
 - `journal_date` is `YYYY-MM-DD` TEXT, required iff `type='journal'`. `[FACT: validators/note.ts:42-45]`
 - `parent_id` self-references `pages` (deliverable_note → milestone_note); orphan → NULL on hard delete (NP-9).
 - Tag names are `[E]` (ADR-006 §3.2); tag rules are owned by ADR-006 / Spaces, not here.
-- Whether archived pages (and journals) appear in the `/notes` collection by default: `[UNKNOWN — homed: notes-rescope
-  Interpretation Gate, soft ← preferences-rescope]`. The only `show_archived` default (0) is a **Tasks** preference
-  (ADR-002 L3537-3539; features/preferences/contract.md:37) — not evidence for notes. As-built: archived + journals are
-  listed (current BR-7b / BR-SUR-1).
+- `/notes` default view = `note` pages, not archived; Archived + Journal are filter predicates (journal views are
+  Journals'/Home's, JR-1) — **RESOLVED (delivery/interpretation.md §5 #2)**; a delta vs as-built BR-7b / BR-SUR-1. The `show_archived` pref is
+  Tasks-only (ADR-002 L3537-3539) — not the basis.
 
 ## Terminal states (enumerated before build)
 | Capability | loading | empty | error | success |
