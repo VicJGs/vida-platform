@@ -18,32 +18,15 @@
   - emit only for `status === 'done'`, under either `policy_source`;
   - `partial` + `'undefined'` never emits;
   - a later policy change never emits for past dates.
-- **Authority = D3** (`interpretation.md:182-184`, approved by Victor 2026-10-14): "The routine-level **policy-done** emits the routine's
-  `award_xp` + `contribute_purpose_metric`." RT-7 / ROU-21: "a routine-completion event fires `grant_currency(XP)`". The trigger is the
-  routine **reaching policy-done**, whatever made it done: a routine write, or an entity completed in its own module that the routine
-  reflects (RT-3, S4 E2). **⟲ §XXVIII amendment of rule 21:** rule 21's "fire on the ledger write" was my `[INTERP, habits precedent]`
-  (`:156-160`, "the exact write path is pinned in the effects slice PLAN"). It narrowed D3 to routine writes and is corrected here.
-- **Detection — every read stays pure.** E7 / BR-RT-S4e-6 ("Read-only. No writes, no effects"), the S5 read-only rule and rule 21's
-  "Evaluation is a read" all stand. Routines has no documented listener on other modules. So a reflected done is settled by **one
-  explicit, effectful operation**, not by reads:
-  - **Writes (any date):** inside the per-step lock, D is evaluated before and after the write; not-done → done ⇒ emit (the transition).
-  - **`settleToday(routineId)`:** if today is a scheduled occurrence and is done (any cause, D3), emit; the rail dedups. Called by the
-    surface that renders the routine/Journal day (composition-root wiring = fe-routines entity close, the N5 "shipped, not called"
-    pattern of S9).
-- **Occurrence-gated** (S4 E8 "the caller picks the occurrence"; S5 A6 "no rule ⇒ no occurrences"): emission, on writes and on settle,
-  requires `date ∈ occurrences(recurrence_rule)`. No rule ⇒ nothing emits. So a routine-day emits the same way whichever path reaches it.
-- **E7 kept by construction.** E7 forbids a policy-change emit for past dates. With no per-day prior state, a past day's cause can't be told
-  apart, so past days emit **only** through a write's transition; `settleToday` covers today only (not yet judged final, `classify` keeps
-  today `pending`, `service.ts:1102`).
-- **Recorded limit (raised at Approval 1):** a reflected completion on a past day emits nothing if the routine never settled that day. This
-  is E7 enforced without per-day prior state. Examples: a habit backfilled in Habits for yesterday, or habits ticked on a day the
-  routine/Journal wasn't opened. Meanwhile a make-good through `completeStep(D)` does emit (it is a write transition).
-- **⟲ §XXVIII amendments (Approval 1):**
-  1. **Rule 21** (`interpretation.md:156-160`, `[INTERP]`) "fire on the ledger write" → "fire on the write's not-done→done transition,
-     **plus** `settleToday` for a reflected done today" (under D3);
-  2. **slice-map S7 row** (`:49`) "on the write that reaches policy-done" → the same, plus occurrence gating and `settleToday`.
-
-  No read rule is amended.
+- **When — rule 21** (`interpretation.md:156-160`, Interpretation Gate; slice-map S7 row `:49`): the trigger is a **write path**, never
+  `evaluateRoutine` (a read). The effects fire "on the ledger write that makes the routine's evaluation **reach** policy-done for that
+  date": the not-done → done transition of D, evaluated before and after the write inside the per-step lock. Reads stay pure (E7,
+  BR-RT-S4e-6, S5).
+- **Reflection-only done → no emission** (rule 21 + slice-map S7; this answers S4 E7's "S7 decides" item). A day that becomes done with no
+  routine write behind it has no write to fire on. The step's own entity still fires its own effects on its own key (D3, F4).
+- **E7** (`PLAN-S4:118-123`) holds by construction: emission only on a write's transition, so a later policy change never emits for past dates.
+- **Occurrence-gated** (S4 E8 "the caller picks the occurrence"; S5 A6 "no rule ⇒ no occurrences"): emission requires
+  `date ∈ occurrences(recurrence_rule)`, so a routine-day behaves the same in emission and in analytics. No rule ⇒ nothing emits.
 - **Idempotency** is also the rail's (`subjectNaturalKey | transition | effectType | targetRef`, composite PK on `applied_effects`).
   A day undone and re-done re-transitions, but the same key dedups it: one grant per routine-day. Habits' "every done-leaving mutation"
   stance is not borrowed: habits has no policy layer, so E7 can't arise there.
@@ -58,13 +41,12 @@
 | 1 | C7 | `RoutinesServiceDeps.effects?: { rail: EffectRail; registry: EffectRegistry }` (seam `:28`); dormant when absent |
 | 2 | A26 | `withEmission(step, dates, write)`, the transition gate:<br>1. **Guard first** (N1): no `effects` dep, no resolvable type, or a null `routine_id` ⇒ run the write only, with zero extra reads.<br>2. Evaluate each date (internal `judgeDay`, as `evaluateRoutine`).<br>3. Run the write.<br>4. Re-evaluate, and for each date that went not-done → done, fire `award_xp` then `contribute_purpose_metric`: guard `resolve`, then `applyEffect({ subjectNaturalKey: routineId, transition: 'completed:'+date, effectType, targetRef: routineId })`, each in its own try/catch.<br>5. Return the failures for the flag |
 | 3 | A26 | **Wired on every write to the occurrence record** (interpretation §3 "Occurrence record" = `routine_completions` incl. logged skips + `skip_dates`), inside the per-step lock:<br>• `completeStep` / `runStep`: before = `input.date`; after = the stamped `state.date` (R5b), whose own before-state is read before the drive;<br>• `skipStep` · `editCompletion`;<br>• `deleteCompletion` (moved under `serialized`): deleting a non-neutral skipped row of a step outside D's base set can drop it from `stepsAsOf`, so D can reach done;<br>• `planSkipDates` and `updateStep` with `skip_dates` in the patch, for each newly added date.<br>Not wired: other step CRUD and `rescheduleStep`, which don't write the occurrence record |
-| 3a | D3 | **`settleToday(routineId): Promise<{ emitted: EffectType[]; failed: EffectType[] }>`**: `RoutineNotFoundError` (archived/missing); guard first (no `effects` / no resolvable type ⇒ `{[],[]}`, zero reads); today ∈ occurrences and `status === 'done'` ⇒ fire both effects, isolated; failures are returned, never thrown (the caller can flag; the next settle retries, because a handler throw rolls back the rail's `applied_effects` insert) |
 | 3b | G8 | `StepRunState.flag` += `'effect_emit_failed'` (set when an effect handler threw on a drive); `contributeToPurposeMetrics(routineId, date)`, re-drivable: `RoutineNotFoundError`; not done ⇒ no-op; guarded; a throw ⇒ `RoutineContributionError(routineId, date, cause)`. Seam + typed-error list updated |
 | 4 | docs | seam `effects` dep (as-built) · slice-map S7 row · `current-*` (§XXIX) · routines `CLAUDE.md` |
 
 ## Rules
-- **F1 · Transition only (writes) · done-today (settle) · occurrences only.** A write emits iff D is an occurrence and went not-`done` → `done`
-  (E7: either `policy_source`; partial + undefined never). `settleToday` emits iff today is an occurrence and `done`. A failing evaluation (e.g. a malformed policy) skips emission: the write already persisted (rule 13), and the error
+- **F1 · Transition only, occurrences only.** A write emits iff D is an occurrence and went not-`done` → `done` (E7: either
+  `policy_source`; partial + undefined never). A failing evaluation (e.g. a malformed policy) skips emission: the write already persisted (rule 13), and the error
   still surfaces on reads.
 - **F2 · Key.** `routine.id` + `completed:<date>`, targetRef `routine.id`, no payload (the habits/tasks precedent; the handler reads the
   date from the transition). One routine-day = one grant: an undo then re-do re-transitions but dedups on the same key (additive, never
@@ -98,11 +80,9 @@ Spies are filtered by `subjectNaturalKey === routine.id` (the shared registry al
    the write still returns its normal result and the row persists.
 5. **Undo doesn't retract; re-done doesn't re-grant:** done → emitted → `deleteCompletion` (not done) → re-complete → still exactly 1
    grant per type.
-6. **Reflected completion emits via `settleToday` (D3):**
-   - a habit step completed in Habits today → `settleToday(rid)` emits once; a second settle → `{emitted:[], failed:[]}` with no new grant;
-   - an obligation completed in Tasks today → settle emits once;
-   - a habit completed in Habits yesterday and never settled → nothing ever emits for yesterday (the recorded limit).
-6a. **E7:** the threshold is loosened so a past day becomes done → no path emits for it; loosened so today becomes done → `settleToday` emits.
+6. **Reflection-only done (rule 21):** a habit step completed in Habits → the day is done in `evaluateRoutine`, and nothing is emitted for the
+   routine (the habit's own effects fire on the habit's key). A later `completeStep` on that already-done day → still nothing (no transition).
+6a. **E7:** the threshold is loosened so a past day becomes done → nothing emits; a later duration-only edit on that day → still nothing.
 6b. **Flagged:** a throwing `contribute_purpose_metric` handler → the drive returns `flag:'effect_emit_failed'` with the row persisted;
    `contributeToPurposeMetrics(rid, D)` → `RoutineContributionError`; on a not-done day → no-op.
 6c. **Null `routine_id`** step → writes succeed, no evaluation, no emit.
@@ -116,31 +96,27 @@ Gates: tsc 0 · eslint 0 · routines suite · full `@vida/core` · g2 · /critiq
 **Additional gates (re-check):**
 - **G1 · Read purity:** `evaluateRoutine` / `getStreak` / `getAnalytics` / `progress` never call the rail (spy count 0), with effects wired
   and today done.
-- **G2 · Settle guard:** no `effects` ⇒ `settleToday` makes no rail calls. A throwing handler ⇒ `failed` lists it, and the next settle
-  applies it once.
 - **G3 · Occurrence gating:** a write that completes a non-occurrence day (Tue for `WEEKLY;BYDAY=MO`) emits nothing; a routine with no rule
   emits nothing on writes or settle.
-- **G4 · Archived:** `settleToday` → `RoutineNotFoundError`, no emit.
 - **G5 · `updateStep`** that only removes a skip date → no evaluation, no emit.
 
 **G8 residual (stated):** the flag channel exists on drives only. The other writes isolate silently, as habits' auto path does. A failed
-`award_xp` on a past-date write is not re-driven (the transition doesn't recur). `contribute_purpose_metric` has the re-drivable
-`contributeToPurposeMetrics`, and today's grants self-heal through `settleToday`.
+`award_xp` is not re-driven (the transition doesn't recur); `contribute_purpose_metric` has the re-drivable `contributeToPurposeMetrics`.
 
 ## Out of scope (homed)
-Calling `settleToday` from the rendered day (composition root, fe-routines entity close, N5) · Gamification's handlers / `consequence_ledger` (Gamification module) · the Purposes contribution handler and the `contributions` junction
+Gamification's handlers / `consequence_ledger` (Gamification module) · the Purposes contribution handler and the `contributions` junction
 (Purposes, ADR-011) · composition-root wiring of `effects` (fe-routines entity close, process §4) · providers/fan-out (S9).
 
 ## g1 critique (folded): REVISE
 **3 blocking:**
-- B1 emit on the transition for writes (E7), and the reflection case: Victor said "check the documentation", and D3 answers it (→ today-settle + rule-21 amendment);
+- B1 emit on the transition for writes (E7); the reflection case is answered by rule 21 (Victor: "check the documentation");
 - B2 failures flagged + a re-drivable contribution (G8, the habits precedent);
 - B3 the trigger set grounded in the occurrence record (+`updateStep{skip_dates}`, +`deleteCompletion`), and VG3 corrected.
 
 **Non-blocking, folded:** N1 guard first · N2 null `routine_id` · N3 spy filter · N4 RT-19 grounding · N5 future dates stated · N6 gates · N7 concurrency.
 
 ## g1 re-check (folded): REVISE
-- B1: the amendment is declared in full; reads stay pure, so only rule 21 and the slice-map S7 row change.
-- B2: read-settle replaced by an explicit `settleToday`.
+- B1/B2: reverted to the documented trigger (Victor 2026-10-26: "everything is described in the documentation"). Rule 21 decides the
+  reflection case, so there is no amendment, no read-settle and no `settleToday`; reads stay pure.
 - B3: occurrence gating.
 - Non-blocking, folded: N1 (the limit reworded and raised) · N2 (G8 residual stated) · N3 (RT-5 citation dropped) · N4 · gates G1–G5.
