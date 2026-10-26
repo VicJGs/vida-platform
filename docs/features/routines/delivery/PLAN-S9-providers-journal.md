@@ -130,3 +130,88 @@ bridge (journals) · the `ProviderUnavailable` flag (Sessions/Journals) · urgen
 
 **Non-blocking, folded:** N1 summary shape · N2 ProviderEmitFailed as built · N3 per-routine isolation · N4 no lifecycle drop · N5 order · N6 gates ·
 N7 batching · N8 `skipped` noted.
+
+## Approval 1 — Victor 2026-10-26 ("Approved", v2)
+
+## /preflight — PASSED
+- **Frontend:** none (register helpers shipped, not called — N5).
+- **Backend:** new service methods `dueIn(range: TimeRange): Promise<DueItem[]>` · `getDueReminders(range)` · `summary(date): Promise<SectionData>`
+  (`TimeRange` / `DueItem` from `../sessions`; `SectionData` / `DataPoint` from `../journals`). New module `routines/journal.ts`. Errors: no new
+  class (A24 = as-built isolation); `ZodError` for a malformed `summary` date (the module convention).
+- **Database:** no schema change.
+  - Reads: `routines`, `routine_step`, `routine_completions`; blocks via `sessions.listPlannedBlocksForTarget`.
+  - Writes: block status via `sessions.updatePlannedBlock` (read-time drop, write-time cancel).
+- **Integration:**
+  - routines → sessions (`listPlannedBlocksForTarget`, `updatePlannedBlock`, `findOpenSessionForEntity` via `runningMakeGood`);
+  - `journal.ts` → `journals.register` and `sessions.registerDueProvider`.
+- **Ground truth:** routines current-* (S8). No conflict.
+- **Assumptions (grounded):**
+  1. `TimeRange` is Unix ms (`sessions/types.ts:236`); days via `utcDay` (the module `clock()` convention).
+  2. The routine order key is `sort_order` (S2c `listRoutines` ordering: sort_order → created_at → id).
+  3. `RoutineStepRef` is reused from S4 for `not_done`.
+
+## Implementation plan (§5)
+1. **Tests first (red):** VG 1–8 (+ the `[E]` round-trip, the TZ-edge range bound, the journals degrade through `buildDashboard`).
+2. **Types/index (green after step 3):**
+   - `RoutineDaySummaryItem`;
+   - the `dueIn` / `getDueReminders` / `summary` interface members;
+   - barrel names checked against `export *` (`createRoutinesJournalContribution` / `registerRoutinesJournal` /
+     `registerRoutinesDueProvider` exported from the routines barrel, as tasks does).
+3. **Service:**
+   - **a. `dueDays(routine, from, to, today, ctx)`** implements the due predicate:
+     - reads: steps once (incl. soft-deleted, for `stepsAsOf`); ledger rows over `[from, min(to, today)]` once; blocks once per step;
+     - occurrences via `occurrences()`;
+     - judgments: `judgeDay` only for D ≤ today; admissibility per S6; future = any step not planned-skipped.
+   - **b. `dueIn`:** active, non-archived routines with a rule, in (`sort_order`, `created_at`, id) order. Each routine runs in its own
+     try/catch (skipped on a throw). Items are sorted by (D, routine order).
+   - **c. `getDueReminders`:** first the drop pass, over active routines' live steps; a block is dropped iff its window closed or D is done, and
+     not when `runningMakeGood`; best-effort. Then `dueIn`.
+   - **d. Write-time cancel:** `removeStep` and `archiveRoutine` → pending blocks `skipped`, best-effort after the durable delete.
+   - **e. `summary(date)`:**
+     - parse the date;
+     - the ledger rows on `date` (all steps incl. soft-deleted) → their routines (incl. archived, via an unfiltered read);
+     - per routine: `judgeDay` (policy read; a throw ⇒ `status` omitted for that routine, never a throw for the section) + the step rows;
+     - `state` = `success` / `empty`.
+
+   Gate point: the routines suite green.
+4. **`routines/journal.ts`:** contribution (summary-only, DATA_POINTS) + the two register helpers.
+5. **Docs:**
+   - seam S9 block as-built (+ ProviderEmitFailed as-built);
+   - slice-map S9 ✅;
+   - `current-*` (§XXIX incl. the stale lines);
+   - routines `CLAUDE.md`.
+6. **Gates:** tsc · eslint · routines suite · full core · g2 · /critique · §XXIX.
+7. **① Track close (B7):**
+   - slice-map S6–S9 ✅ with SHAs + borrowed legs;
+   - the fe-routines N5 edge;
+   - task file close-out;
+   - **then ask Victor** for the PR / merge and the tracker update.
+
+## Step-5 critique (folded): REVISE → §5 amendments
+**Blocking (3):**
+1. **Step order:** `journal.ts` is created in step 3, alongside the service, so step 1's VG8 import resolves; the "routines suite green" gate
+   point moves to after step 4.
+2. **`ROUTINES_DATA_POINTS`** is declared once in `routines/types.ts` (kept out of the explicit barrel) and imported by both `service.ts`
+   (`summary`) and `journal.ts`.
+3. **The TZ-edge test is forced** with the tasks `withTz('America/Sao_Paulo', …)` helper. It asserts the zone took effect
+   (`new Date(02:30Z).getDate()` is the previous local day), then that the bound maps by `utcDay`.
+
+**Folded into the build:**
+- **Drop pass:**
+  - its try/catch runs per routine (VG4 + 1 case);
+  - per-step block lists are loaded once and passed to `dueDays`, with the in-memory status updated after a drop;
+  - the running check uses the loaded block (`b.sub_type` + `findOpenSessionForEntity(...).planned_block_id === b.id`, the BR-RT-S6-5 logic);
+  - "D is done" = step-level `isDoneOn` (the `settleBlock` grain).
+- **Summary:**
+  - its try/catch covers all of `judgeDay`, so `status` / `policy_source` / `not_done` are optional (VG7 + `policyFor` throws → still
+    `success`);
+  - ordered by (`sort_order`, `created_at`, id) with steps by `bySequence`;
+  - rows with a null `routine_id` or a missing routine row are skipped.
+- **VG6** uses a policy port keyed by routine id: a malformed policy, a throwing `policyFor`, and a raw-invalidated rule are each isolated.
+- **Range guard:** a non-finite bound or `start > end` ⇒ `[]`. The cost is linear in `to − created_at` (recorded; nothing calls it in M1, N5).
+- **Logged skip:** a step with a logged skip stays due (BR-RT-S6-3); pinned by a test.
+- **Write-time cancel:** filters `isPending(b) && blockDate(b.source) != null`; `archiveRoutine` reuses its `steps` list. `removeStep`
+  isn't under the per-step lock, so a racing reschedule could slip a block in (negligible; recorded).
+- **D < today block check** uses the **as-of** step set (incl. steps deleted after D).
+- **Barrel:** explicit additions (`type RoutineDaySummaryItem` + the three journal helpers). `hard_deadline` =
+  `Date.parse(\`${D}T00:00:00Z\`)` inline.
