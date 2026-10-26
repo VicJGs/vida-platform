@@ -22,3 +22,6 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 ## Dependencies
 - blocked by `data-plane-wiring`
 - soft: preferences-rescope (EC-5 per-type mode default, if stored as a preference — resolve at the Interpretation Gate)
+
+## Route History
+- 2026-10-26 (Step 0 — baseline) — Worktree `.claude/worktrees/notes-rescope` off origin/main @ 78d02d8. document-context BASELINE over BOTH planes (① services/notes full; ② apps/web/src/notes 31/31 non-test full). Refreshed `docs/modules/notes/current-{spec,business-rules}.md`: ① citations re-anchored, `ensureJournal` + BR-7b (listPages includes archived) + BR-7c (writes ignore deleted_at) added, BR-10 wording corrected; ② surface plane documented (hooks LIVE/STUB table, components, editor gate, BR-SUR-1…9). Baseline findings feeding reconciliation: `offersEditor` excludes the 4 `*_note` types (EC-15) · UTC `ymd` row date (TZ bug) · empty excerpt · `degraded:[]` + no SyncStatus · no `[[` input rule · 8 stale "no composition root" headers · journals registry empty in apps/web.
