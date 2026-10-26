@@ -120,3 +120,100 @@ Gamification's handlers / `consequence_ledger` (Gamification module) · the Purp
   reflection case, so there is no amendment, no read-settle and no `settleToday`; reads stay pure.
 - B3: occurrence gating.
 - Non-blocking, folded: N1 (the limit reworded and raised) · N2 (G8 residual stated) · N3 (RT-5 citation dropped) · N4 · gates G1–G5.
+
+## Approval 1 — Victor 2026-10-26 ("Approved")
+
+## /preflight — PASSED
+- **Frontend:** none.
+- **Backend:**
+  - New dep `effects?: { rail: EffectRail; registry: EffectRegistry }` (inline shape: the `EffectsPort` name is owned by checkins, a barrel collision, per memory).
+  - New op `contributeToPurposeMetrics(routineId, date): Promise<void>`.
+  - New error `RoutineContributionError(routineId, date, cause)`.
+  - `StepRunState.flag` += `'effect_emit_failed'`.
+  - Auth N/A.
+- **Database:** no schema change. Writes go through the rail only (`applied_effects` + the handlers' own tables; routines never writes XP, rule 2).
+- **Integration:** routines → `effects.rail.applyEffect`, guarded by `registry.resolve` (N8).
+- **Ground truth:** routines current-* (S6). No conflict; reads stay pure (BR-RT-S4e-6).
+- **Assumptions (grounded):**
+  1. "Done" = `judgeDay(...).status === 'done'` under the user's policy at write time.
+  2. The occurrence check reuses `occurrences(rule, utcDay(created_at), D, D)` (the S5/S6 expansion).
+  3. Precedence when a drive hits both failures: `recurrence_regen_failed` wins, because it is the entity's failure; the contribution stays
+     re-drivable through `contributeToPurposeMetrics`.
+  4. Found while grounding: `updateStep{skip_dates}` is a skip write that S6's guard missed. It gets the same W1–W3 guard here (BR:120),
+     alongside its new emission wiring.
+
+## Implementation plan (§5) — v2 (step-5 critique folded)
+1. **Tests first (red) + harness:**
+   - `setup()` passes `effects: { rail, registry }` (opt-out `effects:false` for VG4) and returns `rail`.
+   - Routines calls `deps.effects.rail.applyEffect(...)` (no destructured method), so `vi.spyOn(rail, 'applyEffect')` works.
+   - Spy handlers for both types are registered on the fresh registry passed through `setup({ effectRegistry })` (the test-#13 pattern).
+     Tasks only *emits* `award_xp`, so there is no duplicate registration.
+   - Counts are filtered by `subjectNaturalKey === rid`. Tests pin `Date.now` before `createRoutine`, so DTSTART ≤ D and occurrence
+     gating isn't vacuous.
+   - VG6 asserts only the routine side (habits is built without `effects`).
+   - Tests cover VG 1–9, 3b, 3c, 6, 6a, 6b, 6c, G1/G3/G5, plus:
+     - cross-midnight focus → `completed:<yesterday>` (B1);
+     - deleting a row of a step soft-deleted on D (B2);
+     - `planSkipDates` with several dates (occurrence and non-occurrence days, one already present);
+     - a stamping `runStep` (obligation);
+     - flag precedence (both failures);
+     - `contributeToPurposeMetrics`: `ZodError` on a malformed date, `RoutineNotFoundError`, no-op without `effects`;
+     - `updateStep` ordering (`StepNotFoundError` before the window error) and a malformed threshold (write persists, no emit);
+     - VG5 counts handler calls, not `applyEffect` calls.
+2. **Types/index + service skeleton (one gated step, green):**
+   - `effects?` dep; `StepRunState.flag` union; `RoutineContributionError`; explicit barrel names;
+   - `contributeToPurposeMetrics` implemented in full here (step 3d below), so tsc stays green.
+3. **Service:**
+   - **a. Emission context** (guard first: no `effects`, no resolvable type, or a null `routine_id` ⇒ none, zero reads).
+     - Load the routine (a missing routine ⇒ none). No rule ⇒ none (no step reads).
+     - Read the policy and `all` (`findWhere` incl. soft-deleted).
+     - `doneOn(date)` = occurrence check (cheap, first) → `completionsBetween` → `judgeDay` with a fresh `Reflection`.
+     - **Every read is wrapped (N2):** a throw in the before- or after-evaluation ⇒ no emission. The write always runs and returns.
+   - **b. Drives (`completeStep` / `runStep`), around `driveStep` only, inside the lock** (emission and `settleBlock` are independent;
+     `settleBlock` writes no occurrence record):
+     1. Before the drive: `before(D)` for the input date. Obligation and habit drives change reflection, so this is a real pre-write read.
+     2. `stamp` records the step's prior ledger row in a per-call holder scoped to the per-step lock.
+     3. After the drive: if nothing was stamped (`completion == null`, e.g. `in_progress`), no date is evaluated.
+     4. If `state.date === D`: `after(D)` via fresh reads → transition check.
+     5. If `state.date ≠ D` (R5b / cross-midnight focus): D wasn't written and is skipped. The target is non-reflecting (work / session /
+        focus; only obligation and habit reflect, and both stamp D), so `before(state.date)` = `judgeDay` over the fresh post-write rows with
+        this step's entry swapped for the recorded prior row (or removed). This is exact. `after(state.date)` = the fresh read.
+     6. Skip the after-read for a date already done before (done → done never emits).
+   - **c. Other writes** (fresh `all` + rows + `Reflection` for after; only routine and policy are reused, N1):
+     - `skipStep` · `editCompletion`: D.
+     - `deleteCompletion`, moved under `serialized`. Zod → find the step **without** the soft-delete filter (`findWhere(eq(routineStep.id,
+       …))`, the rule-7 exception) → `CompletionNotFoundError` → delete. An absent step only skips emission. No window guard (S6 leaves
+       it unguarded).
+     - `planSkipDates`: one `completionsBetween(min, max)`, evaluating only newly added occurrence dates.
+     - **`updateStep`, under `serialized` (N3):**
+       1. parse and `assertEntityType`;
+       2. `loadStepOrThrow`: `StepNotFoundError` (was a generic `Row not found`, a recorded behaviour change);
+       3. the W1–W3 guard on **newly added** past `skip_dates` only, always (with or without `effects`). This deliberately differs from
+          `planSkipDates`: `updateStep` replaces the whole array, so an old past date must not block an unrelated edit;
+       4. write;
+       5. emission over the newly added dates.
+   - **d. `contributeToPurposeMetrics(routineId, date)`:**
+     1. `RoutineCalendarDateSchema.parse(date)`, then `loadRoutineOrThrow`;
+     2. no `effects` / no handler ⇒ no-op;
+     3. not an occurrence, or not done ⇒ no-op;
+     4. `applyEffect` (rail-idempotent);
+     5. a throw ⇒ `RoutineContributionError`.
+   - **e. Flag:** a drive whose emission had a failure sets `flag:'effect_emit_failed'` unless `recurrence_regen_failed` is already set.
+
+   Gate point: the full routines suite green.
+4. **Docs:**
+   - seam: the `effects` dep as-built, `contributeToPurposeMetrics`, `RoutineContributionError`, and `updateStep`'s new errors
+     (`StepNotFoundError` · `OutsideAcceptanceWindowError` · `InvalidRoutinePolicyError`);
+   - the slice-map S7 row;
+   - routines `current-spec` / `current-business-rules` (BR-RT-S7-*) (§XXIX);
+   - `routines/CLAUDE.md`.
+5. **Gates:** tsc · eslint · routines suite · full core · g2 · /critique · §XXIX.
+
+**Cost with effects wired:** a write costs about 2×(4 + reflecting steps) reads; there is an early exit with no rule, and no after-read when D
+was already done. With no `effects` dep: zero.
+
+## Step-5 critique (folded): REVISE
+- **B1:** the stamped date's before-state is rebuilt from the prior-row holder.
+- **B2:** `deleteCompletion` finds the step without the soft-delete filter.
+- **Non-blocking:** N1 fresh after-reads · N2 before-read throw isolation · N3 `updateStep` guard order/scope · N4 harness · N5 merged step 2 ·
+  gate gaps · minor.

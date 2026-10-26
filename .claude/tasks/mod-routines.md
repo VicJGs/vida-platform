@@ -148,3 +148,10 @@ Decomposition Gate (Approval 1): `docs/features/routines/delivery/{interpretatio
 - [x] 4. Routines service — a guard (+ shared window helper, serialized skips) · b blocks · c rescheduleStep · d0 R5b day attribution · d make-good hook · e skip hooks  (gate points after 4a and 4e)
 - [x] 5. Docs (row 7)
 - [x] 6. Gates — tsc · eslint · routines + sessions · full core · g2 · /critique · §XXIX
+
+## Build Steps — S7 routine-level effects (PLAN-S7 §5 v2 · awaiting Approval 2)
+- [ ] 1. Tests first (red) + harness (effects wired, rail returned, opt-out, pinned clock)
+- [ ] 2. Types/index + contributeToPurposeMetrics (green)
+- [ ] 3. Service — a emission context · b drives (prior-row holder, R5b date) · c other writes (deleteCompletion soft-deleted lookup, updateStep guard) · e flag  (gate: routines green)
+- [ ] 4. Docs
+- [ ] 5. Gates — tsc · eslint · routines · full core · g2 · /critique · §XXIX
