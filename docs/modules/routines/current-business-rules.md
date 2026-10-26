@@ -171,7 +171,7 @@
   decided before the done check (a linked focus finished in the widget, then completed under today, stamps D). A make-good **begun**
   in-window (a guarded `runStep(D)`) completes even after the window closes: completing it is not a new make-good (contract.md:55
   rejects a make-good *past* the window; this one started inside it) — under any date the caller passes, D included (a running
-  session linked to D's pending block skips the guard). [INTERP — derived from contract.md:55 + RT-6, flagged to Victor at close-out] A re-entered UNLINKED running occurrence reports its own start
+  session linked to D's pending block skips the guard). [derived from contract.md:55 + RT-6; **ratified by Victor 2026-10-26**] A re-entered UNLINKED running occurrence reports its own start
   day and is never linked to another date's block.
 - **BR-RT-S6-6 · Skip cancels.** A logged skip, `editCompletion{skipped:true}`, or `planSkipDates` covering D sets D's pending block → `skipped`.
 - **S6 limits:** `rescheduleStep` reads the window even for D = today (the slot bound needs it), so a malformed window rejects it; an
