@@ -6394,6 +6394,27 @@ Next session:
   - Computed next backend head remains `mod-routines` (M1.1.2).
 
 ---
+
+Date: 2026-10-13 — mod-routines ① (#64, LIF-138) — Front matter (Approval 1) + S1–S3 of 8 shipped
+Task: mod-routines · Profile: Add Backend Component · Scenario: Default (Entity Delivery Flow ①) · worktree `.claude/worktrees/mod-routines` off fresh origin/main @ 5c85401, Node 24.
+Goal: the ① backend service tier for Routines (the cross-module orchestration cockpit) over the shipped DB-4 reframe schema. Computed next backend head (`--next`).
+Accomplished:
+  - **BASELINE scope finding (the crux):** the aspect corpus flags the whole orchestration reframe `⚠ INTENDED` (ADR-002 amendment + design-pass), but the **reframe DDL already shipped at DB-4** — migration 018 creates `routines` + `routine_step` + `routine_completions`. Prose is stale lag; **schema is the oracle**. `@vida/types/routine.ts` was stale (`RoutineAction` + 2 retired enums) → that became S1's DB-11 reconcile. [[discontinued-impl-and-frozen-decomposition-are-reference-not-authority]] / verify-vs-reality.
+  - **Approval 1 (gated):** wrote `docs/features/routines/delivery/{interpretation,slice-map,seam-contract}.md` — interpretation (deps D1–D9 built + deny-safe deferred X1–X4; implicit rules IR-1…IR-10 each `[FACT: path:line]`; Envision N/A stated), 8-slice map (all backend; fe → fe-routines P6), frozen seam-contract. Victor approved.
+  - **S1 — Routine CRUD + DB-11 reconcile** (`cb9ee27`): authored `Routine`/`RoutineStep`, re-keyed `RoutineCompletion` (→`routine_step_id`, `SyncableEntity`), retired `RoutineAction`/`ROUTINE_ACTION_TYPE`/`ROUTINE_RECURRENCE_FREQUENCY` (0 live consumers); validators; `createRoutinesService` CRUD (faithful echo · soft-delete · lifecycle filter). 9/9 gate.
+  - **S2 — Step CRUD + app-cascade** (`c768132`): `addStep`/`updateStep`/`removeStep`/`reorderSteps`/`listSteps`; polymorphic `step_type` OPEN-vocab + nullable entity ref (RT-3/RT-4); `skip_dates` JSON serialize (IR-6); `addStep` guards parent (`RoutineNotFoundError`); `archiveRoutine` cascade-soft-deletes steps (IR-3); reorder ownership-scoped+contiguous. +9 gate.
+  - **S3 — Completion ledger + skip** (`2b26e2a`): `completeStep`/`skipStep`(logged)/`editCompletion`/`deleteCompletion`/`listCompletions` (upsert UNIQUE(step,date); hard-delete ledger RT-14) + `planSkipDates`→`step.skip_dates` (pre-planned, RT-8). +10 gate.
+  - Every slice: tsc 0 · eslint 0 · **live-store Verification Gate** (28/28 cumulative) · full **@vida/core 1935/1935** (DB-11 enum retirement 0 regression) · **independent g2 review SHIP** · /critique SHIP · §XXIX currency (`docs/modules/routines/current-*`, BR-RT-S1…S3). 3 clean per-slice commits.
+Decisions / lessons:
+  - **§XXVIII deviation (g2-APPROVED), S3 skip model:** RT-8 defines TWO skip mechanisms with distinct storage — a LOGGED skip (completion row, on the day) vs a PRE-PLANNED skip (`step.skip_dates`, possibly future, no row). My own Approval-1 seam-contract's single `skipStep({kind})` was internally inconsistent (a planned future skip has no `RoutineCompletion` to return). Split into `skipStep` (logged) + `planSkipDates` (pre-planned); documented at the divergence. Ground the seam in the aspect doc even when the seam is mine.
+  - **Barrel collision:** routines' `EditCompletionInput`/`EditCompletionSchema` clashed with habits via `export *` (TS2308) → namespaced to `EditRoutineCompletion*`. [[barrel-export-star-collides-with-services-on-generic-names]]. tsc caught it (per-slice typecheck gate before tests).
+  - **Worktree setup:** fresh worktree has no node_modules → one-time `pnpm install` (Node 24, better-sqlite3 ABI). Editing `@vida/types` needs a dist rebuild before the core typecheck ([[editing-vida-types-needs-dist-rebuild-before-core-typecheck]]).
+Next session:
+  - **`/begin` fresh → resume mod-routines at S4 — `runStep` (drive the entity, the RT-3 keystone).** Worktree `.claude/worktrees/mod-routines` (branch `mod-routines`, S1–S3 committed); Node 24; `pnpm --filter @vida/core`.
+  - **S4 FIRST ACTION:** ground in the Sessions contract before writing — `runStep(stepId)` resolves the step's polymorphic `entity_type`/`entity_id` and DRIVES it (`SessionRegistry.createSession` OR the entity's native completion), returning live state; `EntityUnavailable` typed state; **never a parallel completion** (RT-3); deny-safe driver port for entities not wired at M1 (`RunStepResult.kind='unavailable'`). Read `packages/core/src/services/sessions/{types,service}.ts` (`createSession`/`SessionRegistry`) + how a built module launches a session.
+  - Remaining: S4 runStep · S5 evaluate + derived analytics (derive-on-read; S5 MUST key on `skipped` not `skip_reason` presence — g2 N2) · S6 lifecycle + reschedule + scheduling seam · S7 tags/pages/links (register `entity_type` 'routine'/'routine_step') · S8 provider + fan-out + deletion closer (Journal summary + DueProvider + emit-only grant_currency/contribute_purpose_metric/emit_measurement_signal + full routine→step→completion cascade).
+  - Approval 1 (interpretation + slice-map + seam-contract) is DONE — do NOT re-gate the decomposition.
+
 Date: 2026-10-14
 Task: mod-tasks (LIF-142 · #65) — ① backend, Add Backend Component / Entity Delivery Flow ①
 Goal: Build the Tasks module ① service tier. PULLED AHEAD of mod-routines (Victor's call): routines drives
@@ -6836,6 +6857,43 @@ Next session:
   - Watch: CI dark (billing) · post-ack `open` unbounded (recorded trade-off).
 
 ---
+Date: 2026-10-27 (session opened 2026-10-21)
+Task: mod-routines (LIF-138 · #64) — Entity Re-scope, ① track close · worktree `.claude/worktrees/mod-routines` (Node 24)
+Completed:
+  - **PR #162 merged (`d2bc57a`) + close-out PR #163 (`879d8a6`); LIF-138 → Done** (tracker_sync `--task` from main, file swapped + restored around the other session's dirty tree).
+  - Slices S5c, S6, S7, S8, S9 built this stretch (S2c–S5 earlier in the same session): each g1 → Approval 1 → preflight/§5 → step-5 → Approval 2 → tests-first build → g2 → /critique → §XXIX, mutation-checked.
+  - Track close: slice-map S6–S9 ✅ with SHAs, agenda-bridge borrowed leg, fe-routines N5 edge; merged main into the branch (known-failures F007 clash → mine renumbered F009).
+Decisions:
+  - S6 SS-8 intent block (v1 no-persistence → v2 eager session → v3 SS-8); BR-RT-S6-5 ratified by Victor.
+  - S7: Victor "nothing to approve, everything is in the documentation" — rule 21 settles reflection; the settleToday detour reverted (memory 8th repeat).
+  - Merged on local-green (core 2198/2198); CI dark = Actions minutes (jobs ran 0 steps).
+Next session:
+  - **fe-routines (LIF-197)** — ② surface + the composition-root wiring (service deps + `registerRoutinesJournal` / `registerRoutinesDueProvider` + effects).
+  - Watch: CI dark (billing) · the journals→Sessions agenda bridge (routines absent from the Journal agenda until it lands) · the mod-routines worktree can be removed.
+---
+
+---
+Date: 2026-10-27
+Task: sessions-rescope (LIF-248 · #63) — Sessions debt rescope, entity-rescope scenario, worktree `.claude/worktrees/sessions-rescope` (branch `sessions-rescope`, Node 24)
+Goal: run the entity-rescope front matter (Steps 0–5) and open Step 6 (X1 PLAN).
+Completed:
+  - Setup: worktree off origin/main `0055a64`; data-plane-wiring verified done (unblocked); task header → in-progress.
+  - Step 0 baseline + Step 1 Documentation Gate (2 rounds): sessions current-* refreshed (BR-36/37, HUD section FE-BR-5..8, stale "no composition root"); "#46" misread corrected everywhere (coverage-report:179, census b:295, current-*); routines "#62"→#63; 3 inbound homings added to scope.
+  - Steps 2–3: `docs/features/sessions-and-scheduling/delivery/interpretation.md` (rev 8.4) — Interpretation Gate PASS (3 rounds) + delta gate; IR-S1…S19, L1–L19; §5 = ONE register (10 §XXVIII + routed divergences). Step 3.5 Envision SKIP (no new affordance; ECs inherited).
+  - Step 4: `delivery/reconciliation.md` R-1…R-49 + impact scan (20 rows) — DRY at pass 10.
+  - Step 5: `delivery/slice-map.md` X1 engine → X2 focus lifecycle + routines → X3 reads ∥ X4 composition root → X5 HUD live ∥ X6 runtime live → X7 live close. **Victor APPROVED** ("if grounded in the documentation" — they are) + **R-45 EC-4 re-pinned** (unapplied effects muted in the same list; recorded in fe-codec-flow-session envision § Re-pins).
+  - Edges written: fe-sessions (EC-5 ⋯ · EC-2 proof/attach · countdown · idle) · fe-habits + fe-routines (ReadProvider).
+  - Step 6 X1: `delivery/sessions/PLAN-X1-effect-engine.md` — g1 /critique REVISE→**SHIP** (`43b99935`).
+In progress:
+  - X1 awaiting **Victor Approval 1** (incl. §XXVIII #3 per-run+per-target keying for log_time/attach_pomodoro, #8 completion continues past EffectFailed). No code written yet.
+Decisions:
+  - Victor ×2: "check the documentation to leave nothing behind" → cancel→spine `skipped` (elimination) and `attach_pomodoro` = bind run→subject were doc-resolved, not calls. Focus-store writer = fe-sessions; store + HUD reader here (orphan homing superseded by debt-plan rev 3).
+  - "Logged" = the typed result (core has no logging convention); existence via the documented `row.id === id` provider match; subject reads via the ONE shared ViewProviderRegistry (ADR-007 §3.4), tasks provider only today, fail-open.
+Next session:
+  - `/begin` → sessions-rescope → ask Victor for X1 **Approval 1** (PLAN-X1 §6 deviations #3/#8) → `/preflight` → IMPLEMENTATION-PLAN-X1 → `/critique` → Approval 2 → build → Verification Gate.
+  - First actions: `cd .claude/worktrees/sessions-rescope` · `source ~/.nvm/nvm.sh && nvm use 24` · `git fetch` + `git rev-list --left-right --count origin/main...HEAD` · `git log -1` = `43b99935`, clean tree.
+  - Context: `.claude/tasks/sessions-rescope.md` (Route History) · interpretation §4–§6 · reconciliation §2 impact rows for X1.
+  - Watch: branch NOT pushed; Linear LIF-248 NOT synced (tracker_sync from a worktree is unsafe; from main it would revert to Backlog — surgical update at merge) · close-time: notes-rescope ReadProvider edge + Linear relations · parallel notes/preferences sessions load the machine.
 Date: 2026-10-26
 Task: notes-rescope (LIF-245) — Add Frontend Component / entity-rescope · worktree `.claude/worktrees/notes-rescope` (branch pushed)
 Completed:
@@ -6927,4 +6985,28 @@ Next session:
   - Watch: suites under machine load (run alone; heavy page tests carry 20 s timeouts) · polish left from R3 audit (P2
     `:focus` vs `:focus-visible`, P4 `as never` ref casts, P6 raw CSS-var colours) · pre-existing @vida/ui Tabs tablist has
     no accessible name (recorded, R2).
+---
+
+---
+Date: 2026-10-27
+Task: preferences-rescope (LIF-247) — Add Frontend Component / entity-rescope, worktree `.claude/worktrees/preferences-rescope`
+Goal: R6 Locale + Notifications — run §XXVI gate 1 + gate 2 (PLAN → Approval 1 → IMPL-PLAN → preflight → critique → Approval 2).
+Completed:
+  - §XXVI.1a: `docs/modules/preferences/current-spec.md` re-swept — fe-calendar (#157/#158) reads `weekStartsOn`/`timeFormat` from the mirror; the bridge owns the hide flush.
+  - `docs/features/preferences/delivery/sessions/PLAN-R6-locale-notifications.md` rev 3 — **Approval 1 (Victor)**. Gate-1 critique REVISE (4 blocking) folded → rev 2; governing-doc check folded → rev 3.
+  - `IMPLEMENTATION-PLAN-R6-locale-notifications.md` rev 1 (TDD steps 0–11, mutations M1–M8, G-1…G-4) · **/preflight PASSED** (4 assumptions resolved).
+  - Memory `ground-every-deferral…` — 10th repeat appended.
+In progress:
+  - Gate 2: the independent /critique on IMPLEMENTATION-PLAN-R6 + preflight is NOT run yet; Approval 2 pending. No code written. Plan docs + current-spec edit uncommitted in the worktree.
+Decisions:
+  - R6 deletes `preferences-store` (BR-RT-7 / `data-flow.md:463-466`); `PreferencesBridge` → `PreferencesHideFlush` (flush only).
+  - Notes `CalendarView` NOT wired — doc-resolved by backend-intent NOT-48 (G3: Note → List/Gallery/Neural); week-start reader = Global Calendar. Edge → notes-rescope task file at §XXIX.
+  - Activity 12h = native `Intl` (`Oct 27, 2:05 PM`; 24h `14:05`/`00:05` via `h23`) per BR-S5-8. Calendar's two 12h shapes (`am` vs `AM`) → edge sessions-rescope.
+  - The slice-map's "fe-settings EC-4" cite corrected → EC-1/2/3/6/7/10/11.
+  - Victor: "check the documentation" — slice-map lines written from a code sweep are not intent; ground in governing docs (memory).
+Next session:
+  - First: in `.claude/worktrees/preferences-rescope`, run the independent gate-2 /critique on `IMPLEMENTATION-PLAN-R6-locale-notifications.md` (+ its Preflight section) → fold → present Approval 2.
+  - Then build steps 0–11 on Node ≥ 22 (`nvm use 24`; shell default is v20.20.2), suites alone (F008).
+  - Context: PLAN-R6 rev 3 · IMPL-PLAN-R6 · `.claude/tasks/preferences-rescope.md` · memory `visual-gate-playbook`.
+  - Watch: tracker not synced (worktree-unsafe) · origin/main 2 docs-only commits ahead · CI dark.
 ---

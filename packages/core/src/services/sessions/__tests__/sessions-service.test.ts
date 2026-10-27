@@ -672,3 +672,63 @@ describe('findOpenSessionForEntity — reverse attachment lookup (the Tasks time
     await driver.close()
   })
 })
+
+// ============================================================================
+// Routines S6 (R1 first-consumer-pull) — planned-block writes/reads + the dueIn status filter (SS-7/SS-8)
+// ============================================================================
+describe('planned blocks (routines S6, R1) — planBlock · update · soft-delete · listForTarget · dueIn filter', () => {
+  it('planBlock round-trips; listPlannedBlocksForTarget returns only live blocks of that target', async () => {
+    const { svc, driver } = await setup()
+    const b = await svc.planBlock({
+      scheduled_start: 5000,
+      scheduled_end: 8000,
+      sub_type: 'focus',
+      target_type: 'routine_step',
+      target_id: 's1',
+      source: 'routines:2026-10-21',
+    })
+    expect(b).toMatchObject({ scheduled_start: 5000, scheduled_end: 8000, sub_type: 'focus', status: 'planned', source: 'routines:2026-10-21' })
+    const other = await svc.planBlock({ scheduled_start: 6000, target_type: 'routine_step', target_id: 's2' })
+    const gone = await svc.planBlock({ scheduled_start: 7000, target_type: 'routine_step', target_id: 's1' })
+    await svc.softDeletePlannedBlock(gone.id)
+    expect((await svc.listPlannedBlocksForTarget('routine_step', 's1')).map((x) => x.id)).toEqual([b.id])
+    expect((await svc.listPlannedBlocksForTarget('routine_step', 's2')).map((x) => x.id)).toEqual([other.id])
+    await driver.close()
+  })
+
+  it('updatePlannedBlock patches only passed keys (slot move, status)', async () => {
+    const { svc, driver } = await setup()
+    const b = await svc.planBlock({ scheduled_start: 5000, scheduled_end: 8000, target_type: 'routine_step', target_id: 's1' })
+    const moved = await svc.updatePlannedBlock(b.id, { scheduled_start: 9000, scheduled_end: 12_000 })
+    expect(moved).toMatchObject({ scheduled_start: 9000, scheduled_end: 12_000, status: 'planned' })
+    expect((await svc.updatePlannedBlock(b.id, { status: 'fulfilled' })).status).toBe('fulfilled')
+    await driver.close()
+  })
+
+  it('rejects an unregistered sub_type, an unregistered target_type, end ≤ start, a bad status — no write', async () => {
+    const { svc, db, driver } = await setup()
+    await expect(svc.planBlock({ scheduled_start: 1, sub_type: 'no_such_type' })).rejects.toBeInstanceOf(SessionTypeNotFound)
+    await expect(svc.planBlock({ scheduled_start: 1, target_type: 'no_such_entity', target_id: 'x' })).rejects.toBeInstanceOf(
+      UnknownEntityType,
+    )
+    await expect(svc.planBlock({ scheduled_start: 5000, scheduled_end: 5000 })).rejects.toBeInstanceOf(InvalidSessionInput)
+    expect(await db.select().from(plannedBlocks).all()).toHaveLength(0)
+    const b = await svc.planBlock({ scheduled_start: 5000 })
+    await expect(svc.updatePlannedBlock(b.id, { status: 'nope' as never })).rejects.toBeInstanceOf(InvalidSessionInput)
+    await expect(svc.updatePlannedBlock('missing', { status: 'skipped' })).rejects.toBeInstanceOf(InvalidSessionInput)
+    await driver.close()
+  })
+
+  it('dueIn surfaces only pending intent (planned|scheduled); fulfilled and skipped blocks are not due (SS-8)', async () => {
+    const { svc, driver } = await setup()
+    const a = await svc.planBlock({ scheduled_start: 1000 })
+    const b = await svc.planBlock({ scheduled_start: 2000 })
+    const c = await svc.planBlock({ scheduled_start: 3000 })
+    await svc.planBlock({ scheduled_start: 4000 })
+    await svc.updatePlannedBlock(a.id, { status: 'fulfilled' })
+    await svc.updatePlannedBlock(b.id, { status: 'skipped' })
+    await svc.updatePlannedBlock(c.id, { status: 'scheduled' })
+    expect((await svc.dueIn({ start: 0, end: 10_000 })).map((x) => x.ref_id).length).toBe(2)
+    await driver.close()
+  })
+})

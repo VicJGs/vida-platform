@@ -81,3 +81,10 @@ never touched.
 (same class as the cold Tamagui load under concurrency).
 **Fix:** stop the servers/browsers you started, re-run ONLY the failed files in isolation; green there = flake, not a
 regression. Run full suites on a quiet machine, sequentially per package.
+
+## F009 — `sync/__tests__/scaffold.test.ts` "no-consumer guard" times out under extreme load
+**Symptom:** a full `@vida/core` run shows `AR-9 sync scaffold — no-consumer guard … no non-test module under packages/ or apps/` red (seen
+2026-10-22 at load average ~387, mod-routines S4).
+**Root cause:** ENVIRONMENTAL. The guard scans the repo tree, which is slow when the machine is saturated (the same load class as F006).
+**Fix:** check `uptime`; re-run `npx vitest run src/sync/__tests__/scaffold.test.ts` alone (expect 6/6). Record, don't patch. If it fails ALONE, it
+is real: something under packages/ or apps/ imports the sync scaffold.

@@ -10,9 +10,9 @@
 // migrations APPLY. Neither catches a NOT-NULL-in-mirror-but-nullable-in-SQL drift.
 // Origin: group #2 P5 (time_format type-lie). schema-foundation-build-flow.md §2 Phase 5.
 //
-// Interface (@vida/types) divergences DEFERRED to DB-11 (new Routine/RoutineStep;
-// RoutineCompletion re-key +updated_at; retire RoutineAction/ROUTINE_ACTION_TYPE/
-// ROUTINE_RECURRENCE_FREQUENCY) — cited in the spec, not asserted here.
+// Interface (@vida/types) divergences were reconciled at DB-11 in mod-routines S1 (new Routine/RoutineStep;
+// RoutineCompletion re-key +updated_at; RoutineAction/ROUTINE_ACTION_TYPE/ROUTINE_RECURRENCE_FREQUENCY retired).
+// Not asserted here (this test covers the DDL only).
 // ============================================================================
 
 import { describe, it, expect } from 'vitest'

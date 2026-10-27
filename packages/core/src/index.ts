@@ -223,5 +223,8 @@ export * from './services/relationships'
 // Service — Tasks (mod-tasks #65 · LIF-142 · S1: tasks CRUD + ≤1-parent guard + cascade over DB-4 015_tasks)
 export * from './services/tasks'
 
+// Service — Routines (mod-routines #64 · LIF-138 · S1: routine CRUD + @vida/types reconcile over DB-4 018_routines reframe)
+export * from './services/routines'
+
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'

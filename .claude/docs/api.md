@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-20 by /session-end -->
+<!-- Last updated: 2026-10-27 by /session-end -->
 | Method | Path | Auth | Request | Response | Notes |
 |--------|------|------|---------|----------|-------|
 | *(add rows as endpoints are built)* | | | | | |
@@ -66,3 +66,17 @@ Errors: `BookNotFoundError` · `ChapterUniqueViolation` · `ChapterNotFoundError
 | S8 tags/notes/views | `tagTask`/`untagTask`/`getTaskTags` · `getTaskNote` · `saveView`/`listViews` · `TASK_VIEW_PRESETS` · `createTasksReadProvider`/`registerTasksReadProvider` |
 | S9 journal/due | `getDayTasksSummary(date)` (cross-module-integration §2 set) · `getDueReminders(range)` (SS-7 lane) · `utcDay` · `registerTasksJournal` / `registerTasksDueProvider` · `TaskViewConfig`/`TaskViewConfigSchema` |
 Errors: `TaskNotFoundError` · `MultipleParentError` · `SubtaskNestingError` · `TimerAlreadyRunningError` · `TimerNotFoundError` · `TimerNotWiredError` · `RecurrenceNotAllowedError` · `RecurrenceRegenError` · `TasksDepNotWiredError` · `TaskViewNotFoundError`.
+
+
+## @vida/core — RoutinesService (mod-routines ①, LIF-138) — COMPLETE (S1–S9 + S2c/S5c) · PR #162 (`d2bc57a`)
+`createRoutinesService({ db, deviceId, clock?, registry, tasks, sessions, sessionRegistry, spaces, notes, habits?, prefs?, effects? }): RoutinesService` — over migration 018 (`routines` · `routine_step` · `routine_completions`); factory-object, no `this.`; per-step serialized drives. Durable docs: `docs/modules/routines/current-{spec,business-rules}.md` (BR-RT-*); delivery `docs/features/routines/delivery/`.
+| Slice | Surface |
+|---|---|
+| S1/S2c CRUD | `createRoutine` · `updateRoutine` · `archiveRoutine` · `getRoutine` · `listRoutines` · `setLifecycle` · `addStep` (check-off ⇒ a Task) · `updateStep` · `removeStep` · `listSteps` · `reorderSteps` |
+| S2/S3 ledger | `completeStep` · `runStep` (drive the entity first: task `work` session · obligation `completeTask` · habit tick · focus · any registered session sub-type) · `skipStep` · `planSkipDates` · `editCompletion` · `deleteCompletion` · `listCompletions` |
+| S4/S5 judge | `evaluateRoutine` (the user's policy, `policy_source`) · `getStreak` · `getAnalytics` · `progress` (day-grain RRULE allowlist) |
+| S6 reschedule | `rescheduleStep(stepId, {date, slot})` → an SS-8 `planned_blocks` intent; the acceptance-window write guard |
+| S7 effects | routine-level `award_xp` + `contribute_purpose_metric` on the write that reaches policy-done · `contributeToPurposeMetrics` |
+| S8 tags/notes/links | `tagRoutine`/`untagRoutine`/`getRoutineTags` + step twins · `getRoutineNote`/`getStepNote` · `linkPage`/`unlinkPage` |
+| S9 providers | `dueIn(range)` · `getDueReminders(range)` (SS-7 lane + closed-block drop) · `summary(date)` (Journal) · `registerRoutinesJournal` / `registerRoutinesDueProvider` (shipped, not called — fe-routines wires them) |
+Errors: `RoutineNotFoundError` · `StepNotFoundError` · `CompletionNotFoundError` · `InvalidRecurrenceRuleError` · `EntityUnavailableError` · `InvalidRoutinePolicyError` · `OutsideAcceptanceWindowError` · `NotMissedOccurrenceError` · `InvalidRescheduleSlotError` · `RoutineContributionError`. Sessions additions (S6, R1): `planBlock` · `updatePlannedBlock` · `softDeletePlannedBlock` · `listPlannedBlocksForTarget`; `dueIn` lists pending block intent only.

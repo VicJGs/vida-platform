@@ -2,15 +2,25 @@
 # Auto-read by Claude when editing this layer. Structural home stood up in Part 2 (ADR-018).
 
 ## What this module is
-Routine actions, recurrence, linked to habits/tasks
+Routines — the cross-module ORCHESTRATOR: a named, ordered, recurring sequence of polymorphic steps, each driving a
+real entity elsewhere (habit · task · session). Composes and derives; owns only its 3 tables (migration 018).
 
 ## Owning ADR / context
-routines context
+routines context · durable docs `docs/modules/routines/current-{spec,business-rules}.md` · delivery
+`docs/features/routines/delivery/` (interpretation · reconciliation · slice-map · seam-contract · PLAN-S*)
 
 ## Pattern
-Follows the service data-flow pattern GOVERNED by docs/core/architecture/data-flow.md
-(validate -> repository -> encrypt-seam -> return). Rides foundation/ substrates; does not re-implement them.
+`createRoutinesService(deps)` — factory-object, hoisted closures, no `this.`. Data flow GOVERNED by
+docs/core/architecture/data-flow.md (validate → repository → encrypt-seam → return). Rides foundation/ substrates; does not
+re-implement them. Repos `encryptedFields: []` (M1.0 dormant `[E]` seam). `findWhere` reads add `isNull(deleted_at)`
+explicitly. Lists sort `sort_order|step_order`, then `created_at`, then id.
 
 ## Status
-Directory home only (ADR-018). Service logic is authored PER-FEATURE at build phase (ADR-017).
-Types + Zod live in @vida/types. No feature code lives here yet.
+As-built (re-scope 2026-10-21): S1 routine + step CRUD · S2 completion ledger + skips · S2c floor conformance
+(setLifecycle, entity_type registry check, date/progress/RRULE/name validation, ordering). S3 run/drive · S4 policy evaluation · S5 progress +
+analytics · S5c the Q1/RT-4/D3 correction (every step drives an entity: a check-off step IS a Task; a standard task's occurrences are Tasks `work`
+sessions; any REGISTERED session sub-type; routines registers no sub-type) · S6 reschedule = an SS-8 intent block (Sessions
+`planBlock`, source `routines:<D>`; the make-good links + fulfils) + the acceptance-window write guard · S7 routine-level `award_xp` + `contribute_purpose_metric` on the write that reaches
+policy-done (transition, occurrence-gated, guarded, flagged) · S8 tags/notes/links on `routine` + `routine_step` (via Spaces/Notes,
+live-tag reads) · S9 providers (`dueIn`/`getDueReminders`/`summary`) + `routines/journal.ts` register helpers (shipped, not called).
+**① track closed (2026-10-26).** Composition-root registration is NOT this module's ① track (fe-routines entity close).

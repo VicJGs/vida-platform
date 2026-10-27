@@ -4,8 +4,9 @@
 
 # Current Spec — Sessions & Scheduling (built slice)
 
-**Status:** AR-5 shipped the Pillar-1 STRUCTURAL foundation. Everything else in the 5-aspect design docs
-remains INTENDED (not yet built). `[FACT: this branch — commit pending]`
+**Status:** ① service tier BUILT (AR-5 spine · #32 rail · DB-4 schema · MOD-sessions S1–S7 · routines-S6 planned blocks);
+② fe-session-runtime #23 + fe-session-hud #16 BUILT with M1 stub data legs (debt → `sessions-rescope`). What remains
+INTENDED is listed under "What is DEFERRED". `[FACT: sections below; baseline 2026-10-27]`
 
 ## What is BUILT (AR-5 · ADR-004 §3.1/§3.2)
 
@@ -98,7 +99,7 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
 - **`completeSession`/`transitionSession`** — delegate to the built #32 `transition({db, registry, rail, deviceId},
   id, event)` (IR-1 — no second firing path). Completion fires declared effects through the rail, which is
   **fail-loud**: a non-`projection` effect with no handler throws `NoEffectHandler`. So `completeSession('focus')`
-  throws in M1.1 (`log_time`/`attach_pomodoro` handlers deferred #46); a no-effect type completes `fired:0`.
+  throws in M1.1 (`log_time`/`attach_pomodoro` handlers deferred — focus handlers → sessions-rescope); a no-effect type completes `fired:0`.
   **⚠ focus-completion behavior in M1.1 → resolved in S3 (below).**
 
 ### S3 — Pomodoro focus runtime (`services/sessions/service.ts`)
@@ -119,7 +120,7 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
 - **S2-flag RESOLVED (intake:166,179 "stub the contract, wire later"):** `completeFocus` finalizes the
   **focus_sessions run only** (status + duration + `completed_count`); it does **NOT** auto-fire session effects
   in M1.1 — the session stays `in_progress`, and session-completion-with-effects remains S2's single
-  `completeSession` path (fired when #46 wires handlers). The shipped `focus` def is untouched (registry.test-pinned).
+  `completeSession` path (fired once the focus handlers register — sessions-rescope, which also closes the spine). The shipped `focus` def is untouched (registry.test-pinned).
 
 ### S4 — Availability (`services/sessions/service.ts`)
 `[FACT: services/sessions/service.ts; 28 sessions tests green on a live unlocked vault]`
@@ -156,10 +157,20 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   (`activatePlan` writes no `planned_blocks` in M1.1 — proven by AC4), and the `completed`/`failed` terminal
   transitions → **M1.2 study-planner design-pass**.
 
+### Routines S6 (R1 first-consumer-pull) — owner-written planned blocks (`services/sessions/service.ts`)
+`[FACT: services/sessions/service.ts; validators/session.ts PlanBlockSchema/PlannedBlockPatchSchema; 4 tests]`
+- **`planBlock(input)`** — one block for a caller-given slot (`scheduled_end > scheduled_start` when given); `sub_type`
+  registry-validated (`SessionTypeNotFound`), `target_type` a registered target (`UnknownEntityType`, BR-6), status `planned`.
+  Malformed → `InvalidSessionInput`. No placement logic: the G5 algorithm stays M1.2.
+- **`updatePlannedBlock(id, {scheduled_start?, scheduled_end?, status?})`** — slot move / status flip; missing id →
+  `InvalidSessionInput('id')`. · **`softDeletePlannedBlock(id)`** · **`listPlannedBlocksForTarget(type, id)`** — live blocks
+  pointing at the owner's item (SS-7), by `scheduled_start`.
+- First consumer: routines `rescheduleStep` (an SS-8 intent block; the make-good links the session via `planned_block_id`).
+
 ### S7 — dueIn aggregator + analytics (`services/sessions/service.ts`)
 `[FACT: services/sessions/service.ts; 40 sessions tests green on a live unlocked vault]`
 - **`dueIn(range): DueItem[]`** — the shared platform primitive (IR-2; Journals + future Calendar consume it):
-  own `planned_blocks` in range (`deleted_at`-filtered) ∪ live provider reads. **SS-7 degrade:** a throwing
+  own `planned_blocks` in range (`deleted_at`-filtered; **routines S6: only `planned|scheduled`**, fulfilled/skipped intent isn't due, SS-8) ∪ live provider reads. **SS-7 degrade:** a throwing
   provider lane is caught + skipped; `dueIn` never throws. Empty registry + no blocks (M1.1) → `[]`.
 - **`registerDueProvider(provider)`** — the empty provider seam (N5); owning modules register lanes at their build.
   **Registered lanes (first-consumer-pull — registered in the apps/web composition root `db/composition-root.ts` by fe-calendar #19 S7, 2026-10-22; the Calendar is the dueIn consumer):** purposes (`registerPurposesDueProvider`,
@@ -182,26 +193,47 @@ endpoints · templates · dueIn+analytics. `@vida/core` 879/879. Next: ② UI = 
 The first frontend consumer of the Flow/Session codec seam — the `/sessions/$id` runtime page (deliverable-per-stage).
 - **S1 — data leg** (`apps/web/src/flow/`): `toFlowSource(session, deliverable?, attachments?, effects?)` assembles a
   single-stage `FlowSource` (EC-9; total `SESSION_STATUS→StageStatus` map; proof from `session_attachments`; effects via
-  `mapEffectLog`); `useFlowSession(sessionId)` is the data hook. **M1 data leg is a stub** (no apps/web `@vida/core`
-  composition root + the worker-RPC Drizzle `values` seam throws, S1-D2): empty default + `?sample` DEV seed, **zero-signature
-  live swap** documented (`useQuery → sessions.getSession + resolveTargets + applied_effects`). `state: TerminalState`.
+  `mapEffectLog`); `useFlowSession(sessionId)` is the data hook. **The data leg is still a stub** — empty default + `?sample`
+  DEV seed, **zero-signature live swap** documented (`useQuery → sessions.getSession + resolveTargets + applied_effects`).
+  `state: TerminalState`. Its original blockers (S1-D2: no composition root · worker `values` seam) are **GONE** since
+  `data-plane-wiring` (PR #148, 2026-10-20): `apps/web/src/db/composition-root.ts:100` constructs `sessions` (+ the tasks/
+  purposes/relationships due lanes, :111-113) and `values` is live (`db/worker.ts:122`). The hook flip itself is unbuilt →
+  `sessions-rescope` (LIF-248). `[FACT: baseline 2026-10-27]`
 - **S2 — surface** (`apps/web/src/session-runtime/`): `session-runtime-surface.tsx` (router-free: hook → terminal-state
   ladder → `FlowSessionView` via `toFlowProps` + `bindFlowIntents`; effect rail always renders, EC-4) + the thin routed
   `session-runtime-page.tsx` (`/sessions/$id`, lazy) in `routes.tsx`.
 - **Verification:** tsc 0 · eslint 0 · apps/web flow+surface tests green · **Visual Gate PASS** (standalone entry, Brave,
   3 presets × light/dark × 375/768/1440: AA 4.94–6.03 incl. warm-dark · no 375 overflow · axe clean). EC-2/4/5/7/8/9/11
   confirmed live; EC-1/3 shell-inherited (single-stage per O7); EC-10 (advance feel) live-deferred (M1 no-op port).
-- **Deferred (not #23):** multi-stage per-module assembly (O7) · effect WRITES/lifecycle consumption handlers (#46/MOD-*) ·
-  the session HUD (#16). Spec: `docs/specs/foundation/fe-session-runtime/`.
+- **M1 stubs (surface):** `session-runtime-surface.tsx:78-79` passes `attachTarget: () => undefined` + `onProof: () => {}`
+  into `bindFlowIntents` (`flow/adapter.ts:113-122`) — so Attach renders but drops the intent (X12) and Require-proof is a no-op.
+- **Deferred (not #23):** multi-stage per-module assembly (O7) · effect WRITES/lifecycle consumption handlers (per receiving module, SES-13; focus's → sessions-rescope).
+  Spec: `docs/specs/foundation/fe-session-runtime/`.
+
+## ② FRONTEND — Session HUD (fe-session-hud #16, LIF-217 · merged 2026-10-18, PR #144 `33278c1`)
+The persistent shell-strip indicator (region 6) for an active session (no single-active invariant exists on disk). `[FACT: apps/web/src/session-hud/*; its CLAUDE.md]`
+- **S1 — seam** (`types.ts`, `use-hud-clock.ts`, `use-active-session.ts`): tri-state `HudRead` (`hidden`/`idle`/`active`);
+  `HudSource` derives paused from `timing.pausedAt`; `HudTiming` = `countdown` (phase · `endAt` · `durationSeconds` ·
+  `pausedAt?`) | `elapsed` (`startedAt`); `HudSessionsPort` = `pauseFocus`/`resumeFocus`. `deriveHudClock(timing, now)` is a
+  pure projection (paused ⇒ frozen at `endAt − pausedAt`, PD-5 · zero-cross ⇒ hold `0:00` + complete, never overtime).
+- **S2 — pill** (`session-hud.tsx`): ring + tabular time + phase eyebrow (≥tablet) + title; body = one SPA link →
+  `/sessions/$id`; pause/resume ghost is a DOM sibling, only when `canPause && !complete && ≥tablet`.
+- **S3 — mount** (`session-hud-surface.tsx` + the `routes.tsx` hudSlot): router-subscribed search → `useActiveSession`.
+- **M1 stubs:** `useActiveSession` defaults to `{kind:'hidden'}` (renders nothing in prod) with DEV `?sample=` forms; the
+  port is a logging no-op (`use-active-session.ts`). Live swap = the two-source model: ① `findActiveSession()` (**does not
+  exist** — the service has `getSession(id)` + entity-scoped `findOpenSessionForEntity`, S1 section above) + ② the shared focus-runtime
+  client store (ships with the first live timer driver). Debt → `sessions-rescope`; findings `docs/specs/foundation/
+  fe-session-hud/delivery/findings.md` F-HUD-1.
 
 ## What is DEFERRED (NOT built — homed beyond MOD-sessions ①)
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
 BUILT; S1–S7 the full ① service tier BUILT (above).** Still deferred (NOT ①'s scope):
-per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → #46/MOD-* ·
+per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → the receiving MOD-* tracks (SES-13) ·
 non-completion firing + heterogeneous-attachment target disambiguation → with handlers · the plan **placement
 algorithm** + SS-8 bridge + `completed`/`failed` → M1.2 · live **`dueIn` provider lanes** (Books/Flashcards/
 Knowledge/Education/Language) → owning modules (the S7 registry is the seam) · richer analytics (per-module time,
-planned-vs-actual, streaks) → later getters · **② UI** (session/planner hub, `/pomodoro` widget) → `fe-sessions` ·
+planned-vs-actual, streaks) → later getters · **② UI** (session/planner hub, `/pomodoro` widget) → `fe-sessions`; the shipped ② stubs (HUD · runtime intents ·
+`useFlowSession`) + the 2 missing reads → `sessions-rescope` ·
 view layer → G9 · shipped-type editing → later · `key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).
 
 ## Verification (2026-07-28)

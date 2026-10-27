@@ -23,8 +23,8 @@
 //   (RT-14, analytics derive from routine_completions).
 // - `routine_step.step_type` is an OPEN vocab (user-extensible, §E Q1) → plain TEXT,
 //   NO CHECK (session sub_type precedent, [[open-vocab-columns-take-no-sql-check]]).
-//   The driven entity is a polymorphic entity_type+entity_id ref (nullable — an
-//   actionable step may have none, RT-4).
+//   The driven entity is a polymorphic entity_type+entity_id ref (nullable on the
+//   column; a check-off step is linked to a Task it creates — S5c, Q1/RT-4).
 // - cadence = `recurrence_rule` (RRULE, the platform canon — tasks precedent;
 //   "broad schedule" RT-11, consumed by the Scheduler).
 // - Doc-decided BOUNDARIES (NOT authored here): completion/miss/acceptance POLICY

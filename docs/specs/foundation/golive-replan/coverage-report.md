@@ -176,7 +176,7 @@
 | B·session-runtime·C·ORPHAN#17 | live leg re-deferred by its own first consumer | ≡ B·session-runtime·A·flow | same |
 | B·session-runtime·C·BORROWED:proof-flow | proof-capture flow → driving modules | EXT: fe-sessions (LIF-198) / fe-routines (LIF-197) | see §4 E21 |
 | B·session-runtime·C·BORROWED:o7 | multi-stage assembly | EXT: module ② tracks | existing owners |
-| B·session-runtime·C·BORROWED:handlers | per-module effect handlers (#46/MOD-*) | EXT: MOD-* tracks (#46 constructed by notifications-rescope) | existing owners |
+| B·session-runtime·C·BORROWED:handlers | per-module effect handlers (#46/MOD-*) | EXT: MOD-* tracks — `attach_pomodoro` is Sessions-realm (sessions contract.md:57) → sessions-rescope; `log_time` = Tasks (TAS-16) | existing owners · **corrected 2026-10-27 (sessions-rescope Doc Gate):** "#46" here is `decomposition.md:46` = XS-measurement-engine (xs-effect-rail interpretation.md:16), NOT XS-notifications-delivery #46 |
 
 ### C — shell + composing CODEC + #69 (`census/c-shell-codec.md`)
 

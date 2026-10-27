@@ -68,3 +68,11 @@ header breathing-room). The two precisions confirmed: **mirror** `EntityView`'s 
 **`Timeline`** for the stage rail + **`ListView`** for the effect-rail log. Progress = a **`HonestProgress` bar** (not a
 text subtitle). (blocking — decomposition follows.) The greybox `packages/ui/src/__envision__/flow-session.stories.tsx` is
 retired after the gate; the durable record = this file + the `/tmp/vg/flow/` screenshots.
+
+## Re-pins
+- **EC-4 re-pinned — Victor, 2026-10-27 (sessions-rescope LIF-248, Re-scope Gate, R-45).** The effect rail shows the
+  effects a session **fired + any declared effect that did not apply** — the unapplied ones in the SAME chronological
+  list as calm muted rows ("Not applied — <kind> · retry pending"), never flipping the whole log to `error`. Grounds the
+  typed error state (sessions business-rules:84-85; pomodoro BR:78-79 "flagged"). Mechanism: an additive optional
+  `status` on `@vida/ui` `FlowEffect` (a recorded §XXVIII change to this shipped shell, carrying this unit's Visual-Gate
+  MUST) and the log's aria-label → "Session effects". The empty log stays a teaching `EmptyState`.
