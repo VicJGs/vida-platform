@@ -71,7 +71,7 @@ docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconc
   Doc-resolved (were flagged "Victor"):
   · **Focus-runtime store WRITER = fe-sessions** — its reshape title "#34 Sessions ⊕split — … Pomodoro (runtime/HUD
     split)" (fe-sessions.md:9) + start flow (HUD seam-contract:121). Store + HUD reader are HERE (coverage-report:163);
-    countdown ECs EC-3/3c/3d are re-verified at fe-sessions' ENTITY CLOSE (debt-plan:25,51 — no ELC-9 here, process §6).
+    countdown ECs EC-3/3c/3d are re-verified at fe-sessions' ENTITY CLOSE (debt-plan:25,51 — no ELC-9 here; the fe-sessions-style exception to process.md:116-117).
     Store location/shape: ADR-020:15 `apps/web/src/stores/focus-runtime-ui-store.ts` (Zustand v5, scope-store pattern).
   · **EC-2 attach/proof — no re-pin**: EC-2 is checked at fe-sessions' close, which owns the BORROWED capture flow
     (debt-plan:51, E21). Here: port wiring (`attach`→`sessions.attach`, proof→port) + X12 fix = render the affordance only
@@ -94,3 +94,13 @@ docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconc
   done), OWNS/CONSUMES/DELEGATES, IR-S1…S15, inherited EC map (HUD EC-1…10 · Flow EC-1…11) → here vs fe-sessions close.
   Envision Gate 3.5 → SKIP (no new affordance; ECs inherited + carried). IR-S5 resolved from code: the rail writes the
   ledger BEFORE the handler (effects/service.ts:58-68) → applicability filtered before applyEffect (declared targets).
+- 2026-10-27 (Step 3 — Interpretation Gate, round 1) — critic REVISE (9 blocking), all cites verified on disk → rev 2:
+  IR-S4 rebuilt on the CONTRACT's typed errors (canTouch(type,effect,target) contract:30 completed with catalogue
+  target typing ADR-004:61 → `PermissionDenied` continues; vanished target = loud no-op; `NoEffectHandler` fail-closed;
+  handler throw → `EffectFailed`, completion commits; "flagged" = unapplied effects derived-on-read on the EC-4 rail;
+  retry = `replayCompletionEffects`) · IR-S5 payload = real focus time from the runtime (spine `ended_at` is stamped
+  after firing) + Tasks handler throws (A.3) · NEW IR-S16 event identity by effect class (additive/intra-realm per run —
+  a 2nd focus run same task/day was being deduped) · NEW IR-S17 close ordering + soft-deleted spine · IR-S9 = a HUD
+  state-derivation change (§XXVIII) · IR-S10 store authority: the HUD homing was an ORPHAN, re-homed here by the
+  approved debt-plan rev 3 → countdown ECs verified LIVE via the real store API (G18 harness precedent), not `?sample`
+  · NEW L17 routines stamp-retry via L9 · L18 test-harness handler registration · L19 ELC-7 live seed path (G18).
