@@ -282,3 +282,41 @@ a module-level **latest-body overlay** written synchronously by `save()` and rea
   (i) gen race: gen-2 echo before the gen-1 success → survives gen 1, clears on gen 2; (j) exactly one redundant write
   under StrictMode; (k) a terminal `InvalidPageContentError` on an older gen keeps a newer entry; (l) (b) under StrictMode.
 **Status: AWAITING Victor's approval (§XXVIII step 4).**
+- **DEV-R0-1 APPROVED — Victor, 2026-10-26.** Implementing (§XXVIII step 5).
+
+### DEV-R0-2 · Undo-to-stored within the debounce writes the intermediate doc (pre-existing) — STOPPED, pending approval
+**Found** while implementing DEV-R0-1 in `useNoteContent.save()`. **Reproduced:** `use-note-content.test.ts` — an
+`it.fails` case (`DEV-R0-2`) passes, i.e. the defect is real: `save(edited)` then `save(loaded)` (undo back to the stored
+body, inside 500 ms) → the dedupe `return` skips the second call but leaves the FIRST pending edit armed → the timer
+writes `edited` while the editor shows `loaded`. **Root cause (FACT):** the dedupe branch returns without clearing
+`pending`/the timer [use-note-content.ts `save` — the `serialized === lastSaved.current` line]. Pre-dates R0 (the
+original hook had the same branch); squarely R0 scope (silent wrong content).
+**Proposed fix:** in the dedupe branch, if an edit is pending, drop it (`clearTimer` + `pending = null`), clear this
+writer's overlay (`clearLatestBody(id, {owner})` — the stored body is current again) and set save-state `saved`. Test:
+flip the `it.fails` to `it` + assert no write at all + overlay cleared. Classification: ISOLATED (one branch, one cause).
+- **DEV-R0-2 APPROVED — Victor, 2026-10-26; DONE.** The dedupe branch now drops a pending edit + this writer's overlay
+  and sets `saved`; the `it.fails` test flipped to `it` (no write, overlay cleared, `saved`). Notes suite 169/169.
+- **Step 7 gates (2026-10-26):** live OPFS (Brave) 18/18 · Visual Gate automated 18/18 (axe 0 light/dark on all 3
+  surfaces, heading L2 in `role="status"`, Tab → "Export a copy", Enter → raw `.json`, no overflow at 375/768/1440) ·
+  **Visual Gate ACCEPTED by Victor** (18 screenshots) · VoiceOver manual trace: **not done — Victor accepted on the
+  automated a11y evidence** · core 2049/2049 (isolated run) · editor 237/237 · web 829/829 · tsc + lint clean.
+  Live-run fixes inside approved scope: G4 normalization also drops an empty `content` key (the mount echo matched no
+  baseline → mere open rewrote the page) · the live driver dismisses fe-onboarding's guided-setup modal. Noted,
+  out of scope: `/favicon.ico` 404 (no icon in apps/web/index.html, also on main).
+- **Post-implementation `/critique` r1 = REVISE (2026-10-26) → folded in.** **B1 (DEV-R0-2, second window — same
+  approved defect):** the dedupe compared to `lastSaved` (moves only on success), so an undo made while a write was in
+  flight was skipped and the in-flight write landed the undone body; the overlay-seeded mount had the same hole against
+  the outgoing owner's in-flight NEW → dedupe target is now `expected` (what the DB will hold once queued writes settle);
+  an echo while a foreign overlay exists is never deduped (keeps the ownership re-save); the undo branch drops only a
+  DIFFERENT pending edit. Tests: own-write in-flight undo · overlay-seeded undo to the stale body. Advisories: the
+  B-53 test no longer claims two directions it doesn't run (live run proves both) · test (j) renamed (no StrictMode
+  claim) · the at-load fixture is shape-invalid bytes the parser really tags malformed · `role="status"` narrowed to the
+  sentence (no controls in the live region) · stale BR cites fixed · `setContent(invalid)` behaviour MEASURED and pinned
+  (throws; no latch; mount stays editable — the critique's "locks a healthy mount" risk does not occur) + CanvasEditor
+  limit recorded · an overlay never unlocks currently-malformed bytes (seed stays malformed).
+- **Post-implementation `/critique` r2 = SHIP (2026-10-26).** A1 folded in: a sticky `inheritsHandover` (set when seeded
+  from an overlay, cleared by this mount's own successful write) disables the dedupe, so echo → type → undo inside the
+  debounce can't cancel the ownership re-save (test added; red → green). A2 recorded as a stated limit (in-order worker).
+  BR-NEU-5 reworded to the `expected` dedupe. Re-runs after the r1 fixes: live OPFS 18/18 · Visual Gate 18/18 (new a11y
+  structure: sentence = live region, no controls in it, heading L2).
+

@@ -117,7 +117,7 @@ apps/web live calls: `composition-root.ts` (construction) · `home/use-journal-e
 |---|---|---|---|
 | `useNotesRows` | **LIVE** | `notes.listPages()` (no filters) · `['notes','pages']` | use-notes-rows.ts:52-64 |
 | `useNoteEntity` | **LIVE** | `notes.getPage(id)` · `['pages',id]`; null → `empty` | use-note-entity.ts:129-140 |
-| `useNoteContent` | **LIVE write** | `notes.writePageContent` · debounce 500 ms · invalidates `['pages',id]` | use-note-content.ts:26,50-65 |
+| `useNoteContent(page)` | **LIVE write** | `notes.writePageContent` (direct promise) · debounce 500 ms · flush on unmount/hide/pagehide · `flush`/`cancel`/`lock` · `seed` (overlay ?? page) · latest-body overlay + barrier + warm write-through · invalidates page·list·journal·calendar-journal (notes-rescope R0, BR-R0-7/8/8a/8b) | use-note-content.ts; body-writes.ts |
 | `useCreateNote` | **LIVE write** | `notes.createPage({type:'note',title:'New note'})` → invalidate `['notes','pages']` → navigate | use-create-note.ts:24-37 |
 | `useBacklinks` | STUB | `{groups:[],count:0,state:'empty'}` | use-backlinks.ts:68-76 |
 | `useAttachments` | STUB | `[]`, add/remove no-op | use-attachments.ts:38-45 |
@@ -151,8 +151,11 @@ use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; colle
   [FACT: entity/adapter.ts:33-35]. `ENTITY_TYPES` holds `note`, `journal` (+ `task`, `milestone`, `deliverable` …) but no
   `*_note` page types [FACT: packages/core/src/db/schema/_registry.ts:7-8,31,36-37] ⇒ only 2 of the 6 `PAGE_TYPE`s
   [FACT: packages/types/src/note.ts:23-29] get the editor facet.
-- **NoteEditorBody** `{page}` — `<VidaEditor chrome="bare" defaultValue={page.content} onChange={save}>` (uncontrolled);
-  `role=status` save label Saving…/Saved/Couldn't save [FACT: note-editor-body.tsx:18-55]. Does not use
+- **NoteEditorBody** `{page}` — `<VidaEditor chrome="bare" defaultValue={seed.doc} onChange={save} onInvalidContent>`
+  (uncontrolled; `seed` from `useNoteContent` = the latest-body overlay ?? `page.content`); `role=status` save label
+  Saving…/Saved/Couldn't save. Unreadable body (`seed.status==='malformed'`, or the editor's `onInvalidContent`, which
+  locks the write seam) → the EC-33 notice instead of the editor: `EmptyState` in `role="status"` + "Export a copy"
+  (raw `.json`) + "Export as Markdown" when the bytes parse (notes-rescope R0, BR-R0-1/9) [FACT: note-editor-body.tsx]. Does not use
   `canvas-editor/page-binding.ts` (no production importer) [FACT: note-editor-body.tsx:14,31].
 - **Overviews** — registry holds `note` (`noteOverview`) + `journal` (`journalOverviewStub`); any other type falls back to
   `noteOverview` [FACT: overview-registry.ts:33-39]. noteOverview merged = NotionHeader + Attachments + Backlinks;
@@ -178,12 +181,12 @@ use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; colle
 
 ### Key states
 List: loading · empty · error · success (`degraded` never populated) · DEV sample. Page: loading · error · not-found ·
-success. Editor save: idle · saving · saved · error. Picker: populated · empty (searching/error unreachable).
+success. Editor save: idle · saving · saved · error. Editor body: editable · unreadable (EC-33 notice). Picker: populated · empty (searching/error unreachable).
 
 ### Consumers outside `notes/`
 `home/journal-page-region.tsx:22,70` mounts `NoteEditorBody` (journal writes go through `useNoteContent`);
-`home/use-journal-entry.ts:15-16,67-68` reuses `toNoteEntity` (key `['journal',date]`); `app/calendar/use-calendar.ts:19,138`
-reuses `parseContent`.
+`home/use-journal-entry.ts` reuses `toNoteEntity` (key `['journal',date]`, read via `readAfterWrites(['journal:<date>'])`);
+`app/calendar/use-calendar.ts:19,138` reuses `parseContent` (the null-contract wrapper of `parseContentResult`).
 
 ---
 

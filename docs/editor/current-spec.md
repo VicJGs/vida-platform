@@ -29,6 +29,7 @@ interface VidaEditorProps {
   editable?: boolean                     // default true; false = read-only, no caret
   toolbar?: boolean                      // default true; ignored when editable=false (E3)
   chrome?: 'framed' | 'bare'             // default 'framed'; 'bare' = host supplies the surface (#7 S1)
+  onInvalidContent?: (error: Error) => void // notes-rescope R0: fired once at mount when the doc fails the schema
   placeholder?: string                   // empty-state text
   'aria-label'?: string                  // one of aria-label/-labelledby REQUIRED (dev-warns if neither)
   'aria-labelledby'?: string
@@ -36,6 +37,15 @@ interface VidaEditorProps {
 interface VidaEditorHandle { setContent(doc): void; focus(): void; getDocument(): EditorDocument }
 ```
 - `forwardRef` (mandatory, §VII) carries the imperative handle.
+- **Content check — always on (notes-rescope R0, BR-E1-7).** `useEditor({ enableContentCheck: true, onContentError })`.
+  A doc the schema rejects (unknown node/mark, empty `doc`, empty text node) raises `contentError` inside the Editor
+  constructor, before any `update` [FACT: @tiptap/core 3.30.0 dist/index.js:6424,6435,6711-6735]. The editor then sets
+  `invalidRef` + `invalid` state, calls `onInvalidContent?.(error)`, forces `setEditable(false, /*emit*/ false)`, hides
+  the toolbar and returns from `onUpdate` without emitting — zero `onChange` for that mount. A valid mount keeps the
+  default `setEditable(editable)` emit (the one mount echo, BR-E1-2). `VidaEditorHandle.setContent` THROWS on an invalid
+  doc (`[tiptap error]: Invalid JSON content` — it inherits `enableContentCheck`) and leaves the mount intact: no
+  `contentError` latch, still editable, nothing emitted (measured on 3.30.0, pinned by `editor.test.tsx`). Callers must
+  catch; none exist in the app. [FACT: editor.tsx:139-215]
 - Built on `useEditor({ extensions:[StarterKit, Placeholder], content:defaultValue, editable,
   immediatelyRender:false, editorProps:{attributes:{role:'textbox','aria-multiline':'true', <name>}}, onUpdate })`.
   `immediatelyRender:false` defers first render to a post-mount effect (StrictMode safety).

@@ -4,7 +4,8 @@
 > (2026-09-19); ② rules from fe-notes #27 + notes-entity-usability (2026-10-20). Intent authority:
 > `backend-intent/parts/notes-and-pages.md` (①) · `docs/specs/foundation/fe-notes-and-pages/` (②).
 > Last refreshed: 2026-10-26 — notes-rescope (LIF-245) Step 0 baseline (citations re-anchored to current lines;
-> `ensureJournal` + 2 undocumented ① behaviors + the ② surface rules added). Paths: `packages/core/src/` for ①,
+> `ensureJournal` + 2 undocumented ① behaviors + the ② surface rules added); same day — **notes-rescope R0 data safety**
+> (BR-R0-1…9; BR-7c superseded; BR-S2-2 · BR-S3-1 · BR-NEU-3 · BR-SUR-3 amended). Paths: `packages/core/src/` for ①,
 > `apps/web/src/` for ②, unless prefixed.
 
 ## ① S1 — Pages core
@@ -28,9 +29,9 @@
   [FACT: service.ts:98-103,147-162,212-213,252-260,293-303 · exception 227-229,245-247; db/repository.ts:379-382; NOT-17]
 - **BR-7b (listPages default includes archived):** `listPages()` filters `is_favorite`/`is_archived` only when the flag is
   truthy; called with no filter it returns archived pages alongside live ones. [FACT: service.ts:155-162]
-- **BR-7c (writes don't check deleted_at):** `updatePage`/`writePageContent` resolve the row by id with no `deleted_at`
-  filter, so they succeed on a soft-deleted page; an unknown id throws a plain `Error('Row not found')`.
-  [FACT: db/repository.ts:404-413] — recorded as-built, not an intended rule [INTERP].
+- ~~**BR-7c (writes don't check deleted_at)**~~ — **superseded by BR-R0-5/6** (notes-rescope R0, 2026-10-26). The
+  repository's `update` still ignores `deleted_at` [FACT: db/repository.ts:404-413]; the notes service now guards
+  above it.
 - **BR-8 (word_count / has_pomodoro pass-through):** caller-supplied; never derived in ①. notNull-default columns
   (`word_count` 0, `is_favorite`/`is_archived`/`has_pomodoro` false) are backfilled on create so the returned `PageRow`
   is faithful. [FACT: service.ts:119-125; validators/note.ts:38-39,59-60; NOT-45/46]
@@ -54,7 +55,8 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
 - **BR-S2-1 (NP-8 idempotent auto-exist):** `ensureEntityNote` returns the existing live `*_note` for
   `(pageType, entity_type, entity_id)`, else creates via `createPage`. [FACT: service.ts:165-183; NOT-11]
 - **BR-S2-2 (seed determinism):** `content = seedContent(seed)` — leading title→type→status then sorted keys, nullish
-  skipped, no Date/random. [FACT: service.ts:41-58; NOT-12]
+  skipped, no Date/random. **Editor-valid (BR-R0-4b):** an empty title emits no heading; an otherwise-empty seed emits
+  one empty paragraph. [FACT: service.ts:46-65; NOT-12]
 - **BR-S2-3 (registry on create):** inherits BR-3. [FACT: service.ts:177→114] _(test file labels this "BR-S2-4",
   `__tests__/notes-service.test.ts:251` — id mismatch, rule identical.)_
 - **BR-S2-4 (attachments):** add validates via `newAttachmentSchema` + camelCase→snake_case; get filters live; remove
@@ -63,8 +65,8 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
   [FACT: service.ts:202-207]
 
 ## ① S3 — Page-links + wiki resolution
-- **BR-S3-1 (NP-5 idempotent + revive):** live → no-op · soft-deleted → revive · absent → create.
-  [FACT: service.ts:220-242; migrations/033_notes.ts:91; NOT-14]
+- **BR-S3-1 (NP-5 idempotent + revive):** live → no-op · soft-deleted → revive · absent → create — and both pages
+  must be live (BR-R0-5), a revive included. [FACT: service.ts:243-268; migrations/033_notes.ts:91; NOT-14]
 - **BR-S3-2 (resolve-then-soft-delete):** `removePageLink` soft-deletes the live row; no-op if absent. [FACT: service.ts:244-250; NOT-16]
 - **BR-S3-3 (direction reads):** `getPageLinksFrom`/`getPageLinksTo` live-filtered. [FACT: service.ts:252-256; NOT-17]
 - **BR-S3-4 (NP-7 resolve by id):** `resolveWikiLink` returns live title-LIKE candidates; the caller binds a concrete
@@ -86,17 +88,23 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
   [FACT: notes/notes-surface.tsx:29; notes/note-renderers.tsx:35-46]
 - **BR-NEU-2 (create-opens, in place):** `createPage({type:'note', title:'New note'})` → invalidate `['notes','pages']` →
   navigate; no optimistic row; failure only `console.error`. [FACT: notes/use-create-note.ts:24-37]
-- **BR-NEU-3 (content persists locally):** editor `onChange` → debounced 500 ms `writePageContent`, flush-on-unmount,
-  invalidate `['pages',id]`; a failed write leaves the baseline so the next edit retries.
-  [FACT: notes/use-note-content.ts:26,50-65,98-104]
-- **BR-NEU-5 (honest save-state, no spurious write):** `saving | saved | error` only — no fake "synced". Unchanged
-  serialized content is deduped against the loaded content; on a blank page the editor's first mount-echo is ADOPTED as
-  the baseline, not written. [FACT: notes/use-note-content.ts:40,48,85-91; notes/note-editor-body.tsx:22-27]
+- **BR-NEU-3 (content persists locally):** editor `onChange` → debounced 500 ms `writePageContent` (a direct promise,
+  not a React Query mutation: it never pauses under v5's `networkMode:'online'`, which fits a local-first write).
+  Flushes on unmount, `visibilitychange:hidden` and `pagehide`. A failed write re-queues unless it's terminal
+  (`PageNotFoundError` / `InvalidPageContentError`, matched by `.name`) or a newer edit replaced it. A failure that lands
+  after unmount is lost (R1's error toast, F-7, will surface it). Write-through + barrier + invalidation per BR-R0-8.
+  [FACT: notes/use-note-content.ts:42,74-111,113-139,141-153]
+- **BR-NEU-5 (honest save-state, no spurious write):** `saving | saved | error` only — no fake "synced". A save is
+  deduped against `expected` — what the DB will hold once queued writes settle (initially the loaded body, or the
+  inherited overlay body; see BR-R0-7) — so a mere open of a clean page never writes; on a blank page the editor's first
+  mount-echo is ADOPTED as the baseline, not written. The one deliberate exception is the ownership re-save of an
+  inherited unsaved edit (BR-R0-8a). [FACT: notes/use-note-content.ts:79-91,147-178; notes/note-editor-body.tsx:28-33]
 - **BR-SUR-1 (list scope):** the collection lists every live page of every type, **including archived pages and
   journals** (`listPages()` with no filter, see BR-7b); no client sort. [FACT: notes/use-notes-rows.ts:56]
 - **BR-SUR-2 (not-found):** `getPage` → `null` renders "Note not found". [FACT: notes/use-note-entity.ts:139; notes/note-entity.tsx:84-96]
-- **BR-SUR-3 (title fallbacks):** rows `'(untitled)'`, entity page `''`; malformed/absent content parses to `null`.
-  [FACT: notes/live-mappers.ts:30-37,42,55]
+- **BR-SUR-3 (title fallbacks):** rows `'(untitled)'`, entity page `''`. Content parses to a tagged result
+  (BR-R0-4); `NoteEntityData.content` is the doc only for `ok`; `contentStatus` + `rawContent` carry the rest.
+  [FACT: notes/live-mappers.ts:50-68,81-95]
 - **BR-SUR-4 (editor gate):** the Note/editor facet is offered iff `isEntityType(page.type) && hasPage`
   [FACT: entity/adapter.ts:33-35] — today true only for `note` and `journal` (see current-spec ② Editor gate).
 - **BR-SUR-5 (mode default):** merged/tabbed defaults to `tabbed`, opens on the editor facet; remembered per `type:id`
@@ -114,6 +122,55 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
   notes are indexed.") — never a fake empty result. [FACT: notes/notes-search.tsx:30-68]
 - Stubbed legs (no rule enforced against real data yet): metadata toggles, attachments, backlinks, `[[` picker, link
   preview, `/summary`, templates, view-config, mode persistence, rename/delete — see current-spec ② Hooks.
+
+## notes-rescope R0 — data safety (both planes · 2026-10-26)
+Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R0-data-safety.md` (rev 3) + IMPLEMENTATION-PLAN.
+- **BR-R0-1 · An unreadable body is never written.** Malformed bytes → no editor mounts and the write seam starts
+  locked. A doc the editor's schema rejects → `onInvalidContent` locks the seam in the same callback. A page whose
+  CURRENT bytes are malformed stays locked even if a latest-body overlay exists (the overlay is kept, never written over
+  the protected bytes). [FACT: notes/note-editor-body.tsx:93,116-119; notes/use-note-content.ts:73-79]
+- **BR-R0-2 · Stored bytes stay intact.** Nothing is migrated on read. The only form change is lossless: after a real
+  edit, the written doc is the BR-R0-4-normalized one (no empty text nodes).
+- **BR-R0-3 · The editor content check is always on** (`@vida/editor` BR-E1-7). [FACT: packages/editor/src/editor.tsx:183-205]
+- **BR-R0-4 · One parser.** `parseContentResult` → `absent | ok | malformed`, with two lossless normalizations (an empty
+  doc → absent; empty text nodes dropped; an empty `content` key on a non-doc node dropped) — the normalized doc equals
+  ProseMirror's own `toJSON`, so a mere open dedupes. `parseContent` is its null-contract wrapper (fe-calendar).
+  [FACT: notes/live-mappers.ts:29-70]
+- **BR-R0-4b · Seeds are editor-valid** (see BR-S2-2).
+- **BR-R0-5 · Writes need a live page.** `updatePage` · `writePageContent` · `addAttachment` · `createPageLink` (both
+  ends) · `createEntityLink` (after `assertRegistered`) reject a deleted or unknown id with `PageNotFoundError`
+  (`.name`, `.pageId`). Notes-scoped (R5's restore writes deleted rows). Check-then-write isn't one transaction,
+  which is accepted for single-user-local. [FACT: service.ts:109-113,149,157-161,220,248-249,297; types.ts:124-138]
+- **BR-R0-6 · Body shape guard.** `writePageContent` → `InvalidPageContentError` before any read; `createPage.content`
+  must be a serialized EditorDocument. [FACT: service.ts:158; validators/editor.ts:27-43; validators/note.ts:31-38]
+- **BR-R0-7 · The write seam settles on demand and on hide:** `flush` · `cancel` · `lock` (+ hide/pagehide/unmount
+  flush, retryable re-queue). **Dedupe target = what the DB WILL hold once queued writes settle** (`expected`; DEV-R0-2):
+  an undo back to that body drops a DIFFERENT pending edit (within the debounce) and an undo made while a write is in
+  flight is still written. A mount that inherited an overlay never dedupes until its own write succeeds (sticky
+  `inheritsHandover`), so the ownership re-save survives a type-then-undo. Stated limit: a failed write's `expected`
+  fallback assumes no earlier write is still in flight (the one worker runs writes in order).
+  [FACT: notes/use-note-content.ts:84,101-145,147-190]
+- **BR-R0-8a · Seed-point handover (DEV-R0-1).** `save()` records every real edit in the latest-body overlay
+  (`body-writes.ts`, one entry per page id, `{doc, serialized, gen, owner}`) synchronously. A mounting body seeds once
+  from `latestBody(id) ?? page.content` (the incoming body renders before the outgoing unmount flush: route swaps both
+  ways — proven live, warm + cold — merged ⇄ tabbed, tab switches). The dedupe baseline stays the STORED body, so an overlay-seeded mount re-saves it
+  once (ownership: retries an outgoing write that may fail after unmount). Cleared by a successful write of gen ≥ the
+  entry's, the owner's `cancel`/`lock`, `PageNotFoundError` (all) or `InvalidPageContentError` (by gen). Forward
+  obligation: every non-editor body writer (R9 templates, import, M4 sync) clears the entry first; R5 delete calls
+  `cancel()`. [FACT: notes/body-writes.ts (overlay); notes/use-note-content.ts (seed, save, flush settle, cancel)]
+- **BR-R0-8 · Write-through, then invalidate.** At flush, synchronously: `setQueryData` the doc into a WARM
+  `['pages',id]` / `['journal',date]` (never creates an entry). On success: invalidate `['pages',id]` ·
+  `['notes','pages']` · journal → `['journal',date]` + `['calendar','journal']`.
+  [FACT: notes/use-note-content.ts:108-129]
+- **BR-R0-8b · Read-after-write barrier.** Each write registers under `page:<id>` (+ `journal:<date>`) in the same tick
+  it starts. `useNoteEntity` / `useJournalEntry` read via `readAfterWrites`: generations snapshotted before the wait,
+  re-read on change. Per-key chains; rejections never fail a read; a hung write holds its readers (stated limit).
+  [FACT: notes/body-writes.ts:26-50; notes/use-note-entity.ts (queryFn); home/use-journal-entry.ts (queryFn)]
+- **BR-R0-9 · EC-33 notice.** `EmptyState` (heading level 2); the SENTENCE is the polite live region (`role="status"`
+  on the body text only — a live region holds no controls). "Export a copy" = the raw
+  bytes as `.json`, always. "Export as Markdown" (`toMarkdown`, `integration_block_handling:'comment'`) only when the
+  bytes parse to a doc and the conversion doesn't throw. [FACT: notes/note-editor-body.tsx:36-86; notes/export-copy.ts]
+- Known limit: undeclared node ATTRIBUTES are silently dropped by ProseMirror and not detected (PLAN-R0 G15; M4).
 
 ## Deferred (documented)
 CRDT/Yjs multi-device merge of `content` (M4) · `[E]` content encryption (M3) · FTS5 of content (DB-8) · `word_count`

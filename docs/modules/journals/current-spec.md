@@ -91,6 +91,10 @@ convention)**. Consequence (documented, not a defect): `buildDashboard().agenda`
 to pull.
 
 ## Not owned (delegated / cited — JR-1)
+- **The journal ENTRY body** (today's `type:'journal'` page) is Notes-owned and rides `NotesService.ensureJournal`. Its
+  Home cache key `['journal', date]` is read through the notes read-after-write barrier (`readAfterWrites(['journal:<date>'])`).
+  A body write invalidates it plus `['calendar','journal']`, and the editor seeds from the notes latest-body overlay
+  (notes-rescope R0 — `docs/modules/notes/current-business-rules.md` BR-R0-8/8a/8b).
 The journal `pages` row + NP-2 + the `/summary` block interface + the free-form TipTap entry → **Notes & Pages**;
 metric math → `analytics.ts` (present, never recompute, JR-10); review scheduling/delivery → Notifications + Sessions
 (Wave 4). The `apps/web/src/home` UX-6 placeholder migration to re-import these types → **fe-journals** first-consumer pull.

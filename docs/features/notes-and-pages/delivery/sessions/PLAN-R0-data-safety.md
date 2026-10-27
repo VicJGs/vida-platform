@@ -69,7 +69,10 @@
 - **BR-R0-7 · The write seam settles on demand and on hide.** `flush()` writes the pending edit now; `cancel()` drops it;
   `lock()` drops it and disables `save` for the mount; hide/pagehide flush; unmount flush (unchanged); a failed write
   re-queues (unless superseded).
-- **BR-R0-8 · A body write writes through every cached body, then invalidates every body-showing key** (G13).
+- **BR-R0-8 · A body write hands over at SAVE time, writes through every warm cached body, then invalidates every
+  body-showing key** (G13; amended by DEV-R0-1 — see IMPLEMENTATION-PLAN §5a: a mounting editor seeds from the
+  latest-body overlay written synchronously by `save()`, because a route swap or a facet/tab switch renders the
+  incoming body before the outgoing flush).
 - **BR-R0-8b · The barrier never loses a write and never fails a read.** Registered **synchronously in `flush()`**, before
   `mutate` (React Query v5 awaits before `mutationFn`); a per-key chain/counter (two writes can be in flight — re-queue,
   back-to-back flushes), an entry deleted only if it is still the promise that created it; released in `finally` on success
@@ -175,3 +178,6 @@ keyboard: Tab reaches both export actions, Enter downloads; VoiceOver announces 
   registration in `flush()`, per-key chain + `finally` release + non-rejecting reader await, `cancelQueries` only on warm
   entries); advisory folded into test 9c (rejected write + overlapping writes).
 - **APPROVAL 1 — Victor, 2026-10-26.** Gate 2 (IMPLEMENTATION-PLAN → /preflight → /critique → Approval 2) next.
+- **DEV-R0-1 (2026-10-26, Victor-approved)** — G13/G14 + BR-R0-7/8 amended: the flush-time write-through alone left B-53 open
+  for warm caches (live + jsdom repro). Handover = a seed-point latest-body overlay + an ownership re-save. Record:
+  IMPLEMENTATION-PLAN §5a.

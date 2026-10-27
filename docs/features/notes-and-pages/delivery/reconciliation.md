@@ -34,8 +34,8 @@
 | A-3 | `updatePage` metadata-only (title · favorite · archive · icon · cover) | backend | ✅ | service.ts:130-133; validators/note.ts:50-62 | BR NP-11 | EC-7/25/29 | — |
 | A-4 | `icon` / `cover_image` value validation | backend | 🕳 | validators/note.ts:56-57 (any string) | contract (homed slice PLAN); E2 EC-29 | EC-29 | fix icon domain (Lucide name) + cover ref, tighten validator |
 | A-5 | every update stamps `updated_at` | backend | ✅ | repository.ts:421-428 | I IR-R9 | IR-R9 | view sort must be explicit |
-| A-6 | `writePageContent` has no content shape guard | backend | ❌ | service.ts:138-139 | BR fail-loud; current BR-5 | IR-R4 | minimal EditorDocument guard |
-| A-7 | writes succeed on a soft-deleted page — also create-type writes (`addAttachment` service.ts:196-210, `createPageLink` :220-242, `createEntityLink` :265-273) leave orphans (no FKs) | backend | ❌ | repository.ts:404-413; current BR-7c | I IR-R2/R3 | IR-R2/R3 | reject writes/creates against a deleted or unknown page (typed error) — scope: notes vs repository-wide |
+| A-6 | `writePageContent` has no content shape guard | backend | ✅ R0 (2026-10-26) | service.ts:138-139 | BR fail-loud; current BR-5 | IR-R4 | minimal EditorDocument guard |
+| A-7 | writes succeed on a soft-deleted page — also create-type writes (`addAttachment` service.ts:196-210, `createPageLink` :220-242, `createEntityLink` :265-273) leave orphans (no FKs) | backend | ✅ R0 (2026-10-26) | repository.ts:404-413; current BR-7c | I IR-R2/R3 | IR-R2/R3 | reject writes/creates against a deleted or unknown page (typed error) — scope: notes vs repository-wide |
 | A-8 | `word_count` not derived | backend | ✅ (homed) | service.ts:138-139 | current-spec (editor/FTS) | — | — |
 | A-9 | `softDeletePage` | backend | ✅ | service.ts:141-143; repository.ts:457-461 | BR NP-9 | EC-26 | — |
 | A-10 | re-deleting re-stamps `deleted_at` (resets the 30-day clock) | backend | 📄 | repository.ts:458-461 | BR NP-9 (30 days) | EC-26/27 | no-op when already deleted |
@@ -107,7 +107,7 @@
 | B-27 | ⋯ action menu never passed | frontend | 🕳 | slot exists ui/entity-view.tsx:39; dropped by ent/adapter.ts:39-79 | E2 EC-25/26/34 | EC-25/26/34 | carry `action` through `EntitySource`; Menu: Rename · Save as template · Move to Trash |
 | B-28 | ⋯ → Rename dialog | frontend | 🕳 | none | E2 EC-25 | EC-25 | same mutation as B-26 |
 | B-29 | delete → undo toast → in-Trash banner | shared | 🕳 | no delete affordance; deleted id → "Note not found" n/note-entity.tsx:84-95 | E2 EC-26; BR NP-9 | EC-26 | soft delete + toast Undo (`restorePage`) + deleted-aware read for the banner |
-| B-30 | delete must settle the pending flush | frontend | 🕳 | n/use-note-content.ts:98-104 (no flush/cancel API) | I IR-R2 | IR-R2 | expose `flush()/cancel()`; delete awaits settle |
+| B-30 | delete must settle the pending flush | frontend | ◐ R0 seam (`flush`/`cancel`) · delete consumes it in R5 | n/use-note-content.ts:98-104 (no flush/cancel API) | I IR-R2 | IR-R2 | expose `flush()/cancel()`; delete awaits settle |
 | B-31 | OS-wide Trash surface | frontend | 🕳 | not in nav/module-map.ts:114-121; no route | E2 EC-27 | EC-27 | shell global surface + route over the A-14 seam |
 | B-32 | IA/surface-map Trash row | doc | ⛔ | docs/core/architecture/information-architecture.md:96-107 (no Trash) | E2 Picks | EC-27 | Step 5 append + owner |
 | B-33 | restore conflict UI | shared | 🕳 | no restore path | E2 EC-28; I IR-R10 | EC-28 | inline typed message in the Trash row |
@@ -127,10 +127,10 @@
 | B-47 | fallback Overview for unregistered types | frontend | ✅ | n/overview-registry.ts:33-35 | E1 EC-18b–e | — | — |
 | B-48 | `/summary` render ✅; data never fetched | frontend | ✅/❌ | n/summary-block.tsx:46-71; n/use-journal-summary.ts:48-51 | E1 EC-9 | EC-9 | ≡ A-44 |
 | B-49 | save status is its own text, not SyncStatus | frontend | ❌ | n/note-editor-body.tsx:23-27,36-46 | E2 EC-34 | EC-34/IR-R15 | `<SyncStatus>` beside ⋯; Home placement too |
-| B-50 | malformed content → blank editor → overwrite | shared | ❌ (data loss) | n/live-mappers.ts:30-37; n/note-editor-body.tsx:49; n/use-note-content.ts:48,85-90 | E2 EC-33; I IR-R4 | EC-33 | tagged parse result; malformed → `editable={false}` + notice + export; never write |
-| B-51 | calendar shares `parseContent` | shared | ❌ | app/calendar/use-calendar.ts:19,138 | I IR-R4 | IR-R4 | adapt to the tagged result |
-| B-52 | content write invalidates only `['pages',id]` | shared | ❌ | n/use-note-content.ts:58 | I N-1 | N-1 | full key set |
-| B-53 | Home re-mount within 30 s may re-seed from a stale doc `[INTERP — needs live repro]` | shared | ❌ | home/use-journal-entry.ts:67 | I N-1, IR-R6 | ELC-7 | covered by B-52; verify live |
+| B-50 | malformed content → blank editor → overwrite | shared | ✅ R0 (2026-10-26) | n/live-mappers.ts:30-37; n/note-editor-body.tsx:49; n/use-note-content.ts:48,85-90 | E2 EC-33; I IR-R4 | EC-33 | tagged parse result; malformed → `editable={false}` + notice + export; never write |
+| B-51 | calendar shares `parseContent` | shared | ✅ R0 (2026-10-26) | app/calendar/use-calendar.ts:19,138 | I IR-R4 | IR-R4 | adapt to the tagged result |
+| B-52 | content write invalidates only `['pages',id]` | shared | ✅ R0 (2026-10-26) | n/use-note-content.ts:58 | I N-1 | N-1 | full key set |
+| B-53 | Home re-mount within 30 s may re-seed from a stale doc `[INTERP — needs live repro]` | shared | ✅ R0 (2026-10-26) | home/use-journal-entry.ts:67 | I N-1, IR-R6 | ELC-7 | covered by B-52; verify live |
 | B-54 | keys for metadata/rename/delete/restore | shared | 🕳 | mutations absent | I N-1 | N-1 | name the full set per mutation |
 | B-55 | stale hook headers | frontend | ❌ | n/use-notes-rows.ts:5-9 · use-note-entity.ts:3-9 · use-backlinks.ts:3-5 · use-attachments.ts:3-4 · use-page-metadata.ts:4-5 · use-wikilink-picker.ts:3-5 · use-journal-summary.ts:6-7 · col/use-collection.ts:8-12 | I IR-R16 | IR-R16 | rewrite on flip |
 | B-56 | stale / false component headers (note-overview claims "LIVE") | frontend | ❌ | n/note-overview.tsx:9-10; notes-surface.tsx:6-8; note-entity.tsx:9-13; notion-header.tsx:4-5; page-metadata.tsx:3; ent/adapter.ts:82-84 | I IR-R16 | IR-R16 | rewrite |
@@ -196,9 +196,9 @@
 | C-43 | "Use template" forks + opens | backend + frontend | ❌ | no-op "Apply" (n/template-picker.tsx:95) | E2 EC-13; I IR-R14 | EC-13 | ≡ A-37; navigate to the first created item |
 | C-44 | template entry points DEV-only | frontend | ❌ | n/note-entity.tsx:128,143-147 | E2 EC-35/13 | EC-13/35 | `/notes` header dialog + ⋯ "Save as template"; delete overlay |
 | C-45 | Save as template (page capture) | backend | 🕳 | ≡ A-38 | BR NP-12 | EC-13 | Step 5 RATIFY rule, then build |
-| C-46 | **malformed OR unknown-node content is wiped** (lenient TipTap load → empty → mount echo ≠ baseline → write) | shared | ❌ (data loss) | n/live-mappers.ts:30-37; ed/editor.tsx:146-174; n/use-note-content.ts:40,91; packages/editor/src/CLAUDE.md:123-124 | E2 EC-33; I IR-R4 | EC-33 | `enableContentCheck` + `onInvalidContent` prop; validate before mount; lossy load → read-only + notice, never write; also covers future nodes from another device |
+| C-46 | **malformed OR unknown-node content is wiped** (lenient TipTap load → empty → mount echo ≠ baseline → write) | shared | ✅ R0 (2026-10-26) | n/live-mappers.ts:30-37; ed/editor.tsx:146-174; n/use-note-content.ts:40,91; packages/editor/src/CLAUDE.md:123-124 | E2 EC-33; I IR-R4 | EC-33 | `enableContentCheck` + `onInvalidContent` prop; validate before mount; lossy load → read-only + notice, never write; also covers future nodes from another device |
 | C-47 | read-only seam exists | frontend (editor) | ✅ | ed/editor.tsx:31,177-179 | E2 EC-33 | EC-33 | use it |
-| C-48 | "Export a copy" has no consumer | frontend | 🕳 | no apps/web use of toMarkdown/toPdf/toDocx | E2 EC-33; coverage-report:89 (general export → shell-rescope) | EC-33 | at least `toMarkdown` on the raw content |
+| C-48 | "Export a copy" has no consumer | frontend | ✅ R0 (2026-10-26) | no apps/web use of toMarkdown/toPdf/toDocx | E2 EC-33; coverage-report:89 (general export → shell-rescope) | EC-33 | at least `toMarkdown` on the raw content |
 | C-49 | serializer copy for live blocks | shared (editor) | ❌ | to-markdown.ts:155; serialization-spec.md:107-108,159-160; to-docx.test.ts:276 | E2 EC-32 | EC-32 | label-only marker for live blocks |
 | C-50 | `taskList` vs `taskChecklist` vs `/task` | shared | 📄 | extension-catalog.md:21,30-31 | E2 EC-36 | EC-36 | Step 5: record all three in the catalog |
 | C-51 | EC-24 quote / task-list render | frontend (editor) | ✅ | editor-styles.ts:54-64 | E1 EC-24 | EC-24 | re-verify live; catalog styling note |
@@ -214,7 +214,7 @@ the extension-catalog Real-body column and adds those legs to the ② units' tas
 
 | id | item | plane | bucket | built evidence | anchor | EC/IR | fix direction |
 |---|---|---|---|---|---|---|---|
-| E-1 | edits within the 500 ms debounce are lost on tab close / reload (flush only on unmount) `[INTERP]` | shared | ❌ | n/use-note-content.ts:26,95,98-104 | current BR-NEU-3; LF-2 | IR-R2/ELC-7 | flush on `pagehide` + `visibilitychange:hidden` (the B-30 `flush()`); reaches Home |
+| E-1 | edits within the 500 ms debounce are lost on tab close / reload (flush only on unmount) `[INTERP]` | shared | ✅ R0 (2026-10-26) | n/use-note-content.ts:26,95,98-104 | current BR-NEU-3; LF-2 | IR-R2/ELC-7 | flush on `pagehide` + `visibilitychange:hidden` (the B-30 `flush()`); reaches Home |
 | E-2 | read errors offer no retry (collection · page · Home) | frontend | 🕳 | n/use-notes-rows.ts:60; n/note-entity.tsx:75-83; home/journal-page-region.tsx:66 | contract terminal states ("typed read error, retry") | ELC-6 | Retry (`refetch`) on all three |
 | E-3 | untitled `*_note` pages → empty H1 + editor accname " editor" once EC-15 opens them | frontend | 🕳 | n/live-mappers.ts:55; n/note-entity.tsx:112; n/note-editor-body.tsx:51 | NP-8; E1 EC-15/16 | EC-15/16 | label fallback = type label + parent entity name (shared with A-25's projection) |
 | E-4 | collection rows/tiles ignore `icon` + `cover_image` | frontend | 🕳 | n/live-mappers.ts:39-48; n/note-renderers.tsx:37-38,52-54 | contract Views (gallery → cover); E2 EC-29 | EC-29/XCU-14 | carry icon + cover in the row; gallery declares `cover` |
