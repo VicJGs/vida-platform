@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R2 mode memory DONE (Visual Gate ACCEPTED by Victor 2026-10-27); next R3 metadata + rename (§XXVI gate 1)
+# Status: in-progress — Step 6: R3 PLAN APPROVED (Approval 1, 2026-10-27); gate 2 next
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -110,3 +110,6 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
   existing @vida/ui Tabs gap, recorded). Final /critique SHIP; folded refetchOnReconnect:false, a real retryOnMount test,
   the in-flight precondition, the deleteAppState note.
 - 2026-10-27 (Step 6 · R2 — DONE) — Visual Gate ACCEPTED by Victor. Next: R3 metadata + rename.
+- 2026-10-27 (Step 6 · R3 gate 1) — PLAN-R3-metadata-rename.md: critique r1 REVISE (7 doc-fidelity blockers: tabbed cover,
+  invented 160 height, R1 focus targets, region name in edit, A-4 create path, perf attachment rule, unlabelled fills) → rev 2 →
+  r2 REVISE (arrow keys saving; unrequired thumbnail → R4 obligation) → rev 3 → r3 SHIP. Victor: APPROVED (Approval 1).
