@@ -89,3 +89,8 @@ docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconc
   `ProviderUnavailable` (barrel collision) · `listSessionsForEntity(type,id,range)` (routines BR-RT-S4e-3 consumer, borrowed)
   · log_time focus fix = engine payload + Tasks-side task-target guard (routine_step target) · rail fire-before-commit vs
   pomodoro BR:78-79 ❌ (in scope: foundation/effects).
+- 2026-10-27 (Step 2 — Interpretation) — `delivery/interpretation.md` rewritten as the cross-plane RESCOPE interpretation
+  (supersedes the ① build's, kept at 5c961c4): deps per plane + borrowed legs, NEEDS L1–L16 (L1 register = ✅ already
+  done), OWNS/CONSUMES/DELEGATES, IR-S1…S15, inherited EC map (HUD EC-1…10 · Flow EC-1…11) → here vs fe-sessions close.
+  Envision Gate 3.5 → SKIP (no new affordance; ECs inherited + carried). IR-S5 resolved from code: the rail writes the
+  ledger BEFORE the handler (effects/service.ts:58-68) → applicability filtered before applyEffect (declared targets).
