@@ -6,7 +6,7 @@
 
 AR-5 enforces the STRUCTURAL half of the Integration Contract. XS-effect-rail **#32** added the runtime lifecycle
 engine + fire step (lifecycle legality + effect firing + no-double-count). Sensitive-consent stays handler-side
-(deferred with per-module handlers, #46).
+(deferred with per-module handlers — the receiving MOD-* tracks, SES-13).
 
 ## ENFORCED now (AR-5)
 - **BR-1 (SS-1) — one spine, unique sub_type.** `session_type_registry.sub_type` UNIQUE; `SessionRegistry.register`
@@ -79,7 +79,7 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
 - **BR-20 (IR-1, SS-1/SS-8) — completion routes through the #32 engine, fail-loud.** `completeSession`/
   `transitionSession` delegate to `transition({db, registry, rail, deviceId}, id, event)` — no second firing
   path (preserves BR-8..BR-12). Completion fires declared effects via the rail; a non-`projection` effect with no
-  handler → `NoEffectHandler` (fail-loud). `completeSession('focus')` throws in M1.1 (its handlers deferred #46);
+  handler → `NoEffectHandler` (fail-loud). `completeSession('focus')` throws until its handlers register (`attach_pomodoro` + `log_time` → sessions-rescope);
   a no-effect type completes `fired:0`; an illegal `(status,event)` → `InvalidTransition`. Focus-completion M1.1
   behavior → S3. `[FACT: service.ts; lifecycle.ts; effects/service.ts:38-40]`
 
@@ -98,7 +98,7 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
   (no `template_id` binding — reconciled in S6). `[FACT: service.ts; preferences.ts]`
 - **BR-25 (§0, intake:166,179) — run-complete ≠ session-complete in M1.1.** `completeFocus` finalizes the
   focus_sessions run only; the session stays `in_progress` and effect-firing stays S2's `completeSession` path
-  (deferred handlers #46). No second firing path (IR-1). `[FACT: service.ts; intake/pomodoro.md:166,179]`
+  (focus handlers → sessions-rescope). No second firing path (IR-1). `[FACT: service.ts; intake/pomodoro.md:166,179]`
 
 ## ENFORCED now (MOD-sessions ① · S4 — availability, `services/sessions/service.ts`)
 - **BR-26 (SS-9) — availability CRUD, Planner-owned.** `study_availability` + `availability_exceptions` CRUD;
@@ -142,7 +142,16 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
   `{total, completed, completionRate, avgFocusRating, totalFocusSeconds}` from the session log (`deleted_at`-
   filtered) + `focus_sessions`; writes no aggregate. `[FACT: service.ts]`
 
-## ✅ ① BACKEND COMPLETE — S1–S7 enforced (BR-13..BR-35). Next: ② UI (fe-sessions).
+## ENFORCED now (Routines S6 · R1 first-consumer-pull — owner-written planned blocks, `services/sessions/service.ts`)
+- **BR-36 (SS-8) — an owner-written planned block carries no placement logic.** `planBlock(input)` writes one
+  `planned_blocks` row for the caller's slot (`scheduled_end > scheduled_start` when given), status `planned`;
+  `sub_type` registry-validated (`SessionTypeNotFound`), `target_type` a registered target (`UnknownEntityType`, BR-6);
+  malformed → `InvalidSessionInput`. `updatePlannedBlock` moves the slot / flips status; a missing id →
+  `InvalidSessionInput('id')`. `[FACT: service.ts; validators/session.ts PlanBlockSchema/PlannedBlockPatchSchema]`
+- **BR-37 (SS-8) — only pending intent is due.** `dueIn` lists own blocks with status `planned|scheduled` only;
+  fulfilled/skipped intent is not due work. `[FACT: service.ts; 23aba04]`
+
+## ✅ ① BACKEND COMPLETE — S1–S7 enforced (BR-13..BR-35; BR-36/37 added by routines S6). Next: ② UI (fe-sessions).
 
 ## ENFORCED now (② FRONTEND · fe-session-runtime #23 — the runtime page, `apps/web/src/{flow,session-runtime}/`)
 - **FE-BR-1** — the runtime page NEVER writes directly; `mark-done`/`attach`/`require-proof` are intents bound to the
@@ -152,16 +161,26 @@ engine + fire step (lifecycle legality + effect firing + no-double-count). Sensi
 - **FE-BR-3** — the effect rail ALWAYS renders (teaching-empty when a session fired nothing — EC-4), never a blank.
 - **FE-BR-4** — degrade-never-crash: `useFlowSession` returns a `TerminalState`; the surface owns the loading/empty/error
   ladder before the frame; a missing session → honest-empty, never a throw.
-- **M1 reality:** the live data leg is a stub (no apps/web composition root + the worker `values` seam throws); `?sample`
-  seeds the gate; the live swap is zero-signature. Mark-done is a no-op in M1 (stage-advance feel, EC-10, is live-deferred).
+- **M1 reality:** the live data leg is still a stub (empty default; `?sample` seeds the gate; the live swap is
+  zero-signature). Its original blockers are gone (composition root constructs `sessions`, `composition-root.ts:100`;
+  worker `values` live since data-plane-wiring) — the flip is `sessions-rescope` debt. Mark-done is a no-op in M1
+  (stage-advance feel, EC-10, is live-deferred); Attach drops the intent (`attachTarget → undefined`); proof is a no-op.
+
+## ENFORCED now (② FRONTEND · fe-session-hud #16 — the shell HUD, `apps/web/src/session-hud/`)
+- **FE-BR-5** — the HUD never writes; pause/resume go through `HudSessionsPort` (no `@vida/core` import in the surface).
+- **FE-BR-6** — the clock is a pure projection of `(timing, now)`: no stored/decremented countdown; paused ⇒ frozen;
+  zero-cross ⇒ hold `0:00` + complete; elapsed ⇒ honest count-up. No invented remaining time, no overtime.
+- **FE-BR-7** — loading and failure both render `hidden` (a strip indicator shows no loading/error chrome, BR-HUD-S1-6b).
+- **FE-BR-8** — pause is focus-runtime-only (`canPause` gates it; `SESSION_STATUS` has no `paused`).
+- **M1 reality:** `useActiveSession` → `hidden` in prod; the port is a logging no-op; `findActiveSession` is unbuilt.
 
 ## NOT YET enforced (deferred — do not claim)
 - Per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + fire-time sensitive-consent
-  enforcement + consent-threading → #46 / MOD-*. The gate utility (`assertEffectPermitted`) ships; its callers do not.
+  enforcement + consent-threading → the receiving MOD-* tracks (SES-13). The gate utility (`assertEffectPermitted`) ships; its callers do not.
 - Non-completion firing + heterogeneous-attachment (habit+task) per-effect target disambiguation → with handlers.
-- SS-7/SS-9/SS-10/SS-12 (aggregator, availability, signal-emit, read-time analytics) → scheduler pass (G5).
-- Session/attachment WRITE paths (`attach()`, session CRUD) + their runtime `sub_type`/`entity_type` validation →
-  with those write paths. `key_learnings` encryption (M1.0 `encryptedFields:[]` pass-through seam).
+- SS-10 completion signal-emit to Knowledge/Education (no emitter in `services/sessions/`) → with its consumers.
+  (SS-7 aggregator · SS-9 availability · SS-12 analytics · attach/CRUD + validation are ENFORCED above — BR-13..BR-37.)
+- `key_learnings` encryption (M1.0 `encryptedFields:[]` pass-through seam).
 
 ## Failure behaviour (fail loud) — enforced
 Registry validation failures are typed hard rejections with no partial write (BR-3/BR-4/BR-1). DB CHECK/UNIQUE

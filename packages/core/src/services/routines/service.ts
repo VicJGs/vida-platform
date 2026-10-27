@@ -979,7 +979,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   }
 
   // N9 workaround: completeFocus leaves the spine in_progress, so drop the step's attachment once the focus is finished.
-  // attach() is idempotent and returns the existing row; detach() hard-deletes it. (Spine close = sessions-rescope #62.)
+  // attach() is idempotent and returns the existing row; detach() hard-deletes it. (Spine close = sessions-rescope #63.)
   const detachFocus = async (sessionId: string, stepId: string): Promise<void> => {
     const att = await sessions.attach(sessionId, 'routine_step', stepId, 'instance')
     await sessions.detach(att.id)
