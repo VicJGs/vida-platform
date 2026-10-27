@@ -1,5 +1,14 @@
 <!-- Last updated: 2026-10-27 by /session-end -->
 
+## preferences-rescope R5 — Modules + ⌘K (2026-10-27 — LIF-247)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-27 | R5 / pin gesture | how a user pins a ⌘K command (D-R5-1, Victor) | **Alt+P on the active option, matched by `e.code === 'KeyP'` + altKey (no ctrl/meta); a Pin mark + "pinned" in the name; an always-mounted polite live region** | no doc defines a palette gesture; the combobox's options are non-focusable (S3-BR-b) and a nested button fails axe `nested-interactive`; `e.key` is `π` on mac Option | yes |
+| 2026-10-27 | R5 / pin absent key | `pinCommand` on a never-run command (D-R5-1 A1, Victor) | **creates the row (`use_count 0`, `last_used_at null`, pinned)** — revises mod-preferences D-S3 ("no-op", a docs-silent default) | the palette is the first consumer; a no-op would make the announcement lie and block pinning a first-time command | yes |
+| 2026-10-27 | R5 / scope | the specimen's Settings "⌘K pinned commands" row (p5-discover-own-specimen.html:189) | **not in R5** — filed as an fe-settings follow-up edge at R8 | outside fe-settings EC-4 + the approved slice-map | yes |
+| 2026-10-27 | R5 / history writes | the `recordCommand` UNIQUE race + `pinCommand` read-then-update | **one app-side serial chain (`preferences/command-history.ts`) for record + pin; best-effort record after run** | reconciliation F9 offers queue-or-upsert; the lock doesn't cover non-transactional ops (R1-BR-7); one tab owns the DB (R1-BR-8) | yes |
+
 ## preferences-rescope R4 — reduce motion end to end (2026-10-26/27 — LIF-247)
 
 | Date | Area | Decision | Choice | Reason | Reversible |
