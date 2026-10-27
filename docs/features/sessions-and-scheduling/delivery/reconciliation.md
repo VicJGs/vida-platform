@@ -105,4 +105,5 @@ Verdict:    CLEAR to proceed (re-run per slice at PLAN gate 2)
 - **Pass 6** (independent): NOT DRY — 2 items: tasks tests backdating `started_at` (already fixed in rev 8.1) · `createSession` = a second lifecycle door → IR-S18(e) entry-state rule + impact row (rev 8.2).
 - **Pass 7** (independent): NOT DRY — 3 doc-consistency items (§5 register incomplete → ONE register of 8 §XXVIII + 1 Victor item + 2 routed divergences · `:229` misdescribed · header rev) → rev 8.3.
 - **Pass 8** (independent): NOT DRY — 1 item: tasks BR-TK-S4-6 narrowing missing from the register → §XXVIII #9 + R-36 (rev 8.4).
-- **Pass 9:** pending — must be DRY.
+- **Pass 9** (independent, incl. slice-map mapping): NOT DRY — X3→X5/X6 deps missing · X2 left routines red (routines adaptation + `listSessionsForEntity` folded into X2; slices renumbered X1–X7) · ✅/edge/routed rows listed · backend R-48 + factory `providers?` → X1.
+- **Pass 10:** pending — must be DRY.
