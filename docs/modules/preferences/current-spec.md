@@ -69,6 +69,12 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
 - **DEFAULTS divergence (F11):** `USER_PREFERENCES_DEFAULTS.feature_gamification = false` (GM-1 opt-in); the DDL keeps
   `DEFAULT 1` (unused — the service always writes full defaults on create).
 - Only Locale/Notifications still bind the mirror store (hydrated from the view by `PreferencesBridge`) — until R6.
+  **Mirror readers outside settings/ (2026-10-27 re-sweep, post fe-calendar #157/#158):** the Global Calendar reads
+  `weekStartsOn` + `timeFormat` from `preferences-store` `[FACT: app/calendar/index.tsx:25,105-106]` (fe-calendar PLAN-S3
+  BR-16) — so a Locale edit reaches it in-session and, via the bridge hydrate, after reload. The notes `CalendarView`
+  passes no `weekStartsOn` (defaults Monday, `[FACT: notes/note-renderers.tsx:69]`, `packages/ui calendar-view.tsx:187`)
+  and the Activity ledger formats with a fixed `hour: '2-digit'` (no `hourCycle`, `[FACT: gamification/activity-mode.tsx:24-25]`).
+  `PreferencesBridge` also owns the hide flush (`visibilitychange`/`pagehide` → `flushAll`) `[FACT: preferences/preferences-bridge.tsx:52-63]`.
 
 ## ② Surface — preferences-rescope R5 (2026-10-27 · Visual Gate PASS, Victor `visual-approved`)
 - **Modules pane** reads the view, writes `update(viewPatch)` (map merges; rename trimmed ≤ 40; `lg` controls).
@@ -131,7 +137,8 @@ The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/C
   readers** outside settings/ + the stores; `useHomeArrangement` reads `arrangement` live in-session
   `[FACT: home/home-surface.tsx:25-27,74-76]` *(baseline; since R3 it reads the persisted
   `usePreferences().view.arrangement`)* *(R5: the module maps are read by the Modules pane, ⌘K and the dock reader via
-  `usePreferences().view` + `nav/nav-prefs` `applyNavPrefs`)*; `ModuleDock` is mounted nowhere (test-only import — still
+  `usePreferences().view` + `nav/nav-prefs` `applyNavPrefs`)* *(fe-calendar #157/#158 later added a mirror reader of
+  `timeFormat`/`weekStartsOn` — see "② Live seam" above)*; `ModuleDock` is mounted nowhere (test-only import — still
   true after R5; mounting is shell-rescope's, D-R5-2); `isFeatureEnabled`
   always `false` `[FACT: shell/feature-flags.ts:10-12]`; `stubShellPrefs` resolves `DEFAULT_PLACEMENT`
   `[FACT: shell/shell-prefs.ts:15-16]`; `usePersona()` = `?persona` dev override or `'neutral'`
