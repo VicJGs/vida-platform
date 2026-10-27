@@ -34,6 +34,8 @@
   + Journals agenda). `DueItem = { source_module, ref_id, label, est_minutes, urgency, hard_deadline? }`.
   `[INTENT G2-shape; promoted to platform primitive 2026-07-10]`
 - **`createSession(block): Session`** — the owner instantiates its sub-type on block completion (SS-8). `[INTENT G4]`
+- **Owner-written blocks (as-built, routines S6 R1):** `planBlock` · `updatePlannedBlock` · `softDeletePlannedBlock` ·
+  `listPlannedBlocksForTarget`. `dueIn` lists only pending intent (`planned|scheduled`). `[FACT: services/sessions/service.ts]`
 - **`generatePlan(scope, window): Batch`** — produces a `study_plan_batches` row + `planned_blocks` (internals
   = G5 design-pass). **`approve/activate(batch)`**, **`recalc(batch)`** on miss. `[FACT study_plan_batches L2798-2817]`
 - **Availability** — `setAvailability(day_of_week, window, preference)` + `addException(date, …)`. `[FACT L2748-2792]`

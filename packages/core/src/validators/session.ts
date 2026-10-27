@@ -42,6 +42,32 @@ export const CreateSessionSchema = z
     { message: 'ended_at must be >= started_at', path: ['ended_at'] },
   )
 
+// Routines S6 (R1 first-consumer-pull) — planned_blocks write (SS-7/SS-8 intent). Unix-ms slot, end > start when given;
+// sub_type/target_type are OPEN (no SQL CHECK) and registry-validated in the service; status FIXED → the enum tuple.
+export const PlanBlockSchema = z
+  .object({
+    scheduled_start: z.number().int(),
+    scheduled_end: z.number().int().nullish(),
+    sub_type: z.string().min(1).nullish(),
+    target_type: z.string().min(1).nullish(),
+    target_id: z.string().min(1).nullish(),
+    source: z.string().nullish(),
+  })
+  .refine((d) => d.scheduled_end == null || d.scheduled_end > d.scheduled_start, {
+    message: 'scheduled_end must be > scheduled_start',
+    path: ['scheduled_end'],
+  })
+export const PlannedBlockPatchSchema = z
+  .object({
+    scheduled_start: z.number().int().optional(),
+    scheduled_end: z.number().int().nullable().optional(),
+    status: PlannedBlockStatusSchema.optional(),
+  })
+  .refine((d) => d.scheduled_start == null || d.scheduled_end == null || d.scheduled_end > d.scheduled_start, {
+    message: 'scheduled_end must be > scheduled_start',
+    path: ['scheduled_end'],
+  })
+
 // MOD-sessions ① S4 — Availability (SS-9). Mirrors migration 014 CHECKs: day 0..6, score 1..5,
 // preset_block ∈ PRESET_BLOCK, HH:MM times, YYYY-MM-DD date. Fail-loud before the write (IR-5).
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/

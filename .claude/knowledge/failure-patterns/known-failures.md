@@ -86,3 +86,10 @@ render can exceed Testing Library's DEFAULT 1 s `findBy*` wait, so the test fail
 (`calendar-surface` "a dense live day unfurls…": 0 items painted at 1 s). Discriminate before blaming the change: re-run a
 throwaway copy with `configure({ asyncUtilTimeout: 30000 })` + `vi.setConfig({ testTimeout: 60000 })` — pass = environment
 (it passed in 27 s); also check a lighter sibling on the same path. Never commit the raised timeouts as the "fix".
+
+## F009 — `sync/__tests__/scaffold.test.ts` "no-consumer guard" times out under extreme load
+**Symptom:** a full `@vida/core` run shows `AR-9 sync scaffold — no-consumer guard … no non-test module under packages/ or apps/` red (seen
+2026-10-22 at load average ~387, mod-routines S4).
+**Root cause:** ENVIRONMENTAL. The guard scans the repo tree, which is slow when the machine is saturated (the same load class as F006).
+**Fix:** check `uptime`; re-run `npx vitest run src/sync/__tests__/scaffold.test.ts` alone (expect 6/6). Record, don't patch. If it fails ALONE, it
+is real: something under packages/ or apps/ imports the sync scaffold.

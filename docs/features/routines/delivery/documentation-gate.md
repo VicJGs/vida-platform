@@ -1,0 +1,110 @@
+<!-- Documentation Gate — features/routines · Entity Delivery Flow ① RECOVERY (entity-rescope) · Step 1 (blocking) -->
+<!-- Gates the SOURCE corpus every later step reads + is judged against: complete · coherent · No-Guessing-clean. -->
+
+# Documentation Gate — Routines (mod-routines · LIF-138 · re-scope)
+
+> **Glossary.** ① = the backend service track (② = the UI track, fe-routines). **as-built S1–S3** = the slices built
+> 2026-10-13 against the superseded 8-slice plan (`git show 1a61189:docs/features/routines/delivery/`). **g2** = the
+> per-slice code-review gate. **§XXVIII** = the deviation protocol; **§XXIX** = the currency rule (durable docs refresh
+> with the code at unit close).
+>
+> **Gated set:** aspect corpus `docs/features/routines/{identity,structure-data,business-rules,contract,conventions}.md`
+> · `docs/intake/routines.md` · `docs/specs/foundation/backend-intent/parts/routines.md` (ROU-01…33) · governing delivery set
+> `delivery/{interpretation,slice-map,seam-contract}.md` (Victor re-approval 2026-10-14, D1–D3; predates the built code) ·
+> Step-0 baseline `docs/modules/routines/current-{spec,business-rules}.md` (F1–F8).
+> **Oracles:** `db/schema/routines.ts` + `migrations/018_routines.ts` + `docs/specs/foundation/db-4-routines/_index.md` (the
+> shipped-schema spec) · `db/schema/_registry.ts` · Victor's D1–D3 · shipped services (`tasks`, `sessions`, `preferences`).
+> Rule: **stale source + live oracle = FACT, not a decision**. A contradiction *between approved texts* that no oracle settles
+> is a Victor call.
+
+## Verdict: PASS-with-carry-forwards (post-critique; U1 resolved from the docs)
+The intent is complete. RT-1…19, ROU-01…33 and D1–D3 cover the orchestrator, and every capability has an owner or a recorded
+deferred home. The as-is/naming layer is stale. Each stale claim has one governing FACT (§A), which needs no decision.
+**U1**, the load-bearing apparent contradiction (what the ledger is), is **settled by ADR-004**, which defines the contested
+term (§B). U2–U5 have doc/code resolution paths for Step 2.
+*(History: the pre-critique draft said PASS; the independent /critique returned REVISE with 5 blocking items, all folded in. The
+revised draft wrongly escalated U1 to Victor, who sent it back with "check the documentation". The ADR sweep resolved it.)*
+
+## A. Supersession map — stale claim → governing FACT
+| # | Stale claim (where) | Governing FACT | Effect downstream |
+|---|---|---|---|
+| A1 | "As-is" = v2 POC `routine_actions` (`action_type`, `linked_*_id`, `recurrence_frequency/_days`, `is_active`); reframe flagged ⚠ INTENDED (structure-data.md:7-21; business-rules.md:12-14 RT-1, :43 RT-8, flagged-delta :123-134; conventions.md:20; ROU-01/04/14/29/32) | Reframe **shipped**: `routines` + `routine_step` + `routine_completions` (`routines.ts:47-108`; mig 018; db-4-routines spec) | 3 tables = the floor; no amendment owed for them |
+| A2 | Notes/tags `entity_type='routine_action'` (identity.md:58-59; conventions.md:28-30; contract.md:48; RT-15/16; ROU-23/26) | **D2**: `'routine'` + `'routine_step'` (`_registry.ts:45-46`) | tags/notes target `routine_step` (+ `routine`) |
+| A3 | Policy columns + `schedule` on `routines` (structure-data.md:24-26; contract.md:9-10; ROU-01/02) | **No policy columns** (`routines.ts:62`); cadence = `recurrence_rule` RRULE (`:55`). Policy home = Preferences/Spaces (structure-data.md:66; ROU-24), still a recorded deferred home (`schema-audit-deferred-homes.md:263-264`) → U4 | `createRoutine` takes no policy fields |
+| A4 | Single `entity_ref`; step `scope` (contract.md:11-12; ROU-04) | `entity_type` + `entity_id`, nullable (`routines.ts:77-78`). Step-scoping not in 018: home = Spaces design-pass (`routines.ts:30-32`; `schema-audit-deferred-homes.md:257-258`) | no `scope`; ROU-27 out of ① (homed) |
+| A5 | RT-17 "`ON DELETE CASCADE`"; RT-18/ROU-31 key `routine_action_id` | No FK (`routines.ts:18-19,96`); key `UNIQUE(routine_step_id, completed_date)` (`:106`) | service owns the cascade (see A10) |
+| A6 | ROU-29 = v2 CHECKs (`action_type`, `recurrence_frequency`, "custom requires `recurrence_days`") | Retired (DB-11). Live CHECKs: `lifecycle`, `time_of_day`, `measurement_kind`, `binding_mode` (`routines.ts:56-58,84`); `step_type` OPEN; dates per ADR-002 §2.8 (`YYYY-MM-DD`) | ROU-29 = live enums + calendar-date format |
+| A7 | "0 service code / DB-11 reconcile owed" (contract.md:5; ROU-33; interpretation.md §1a/§1c; slice-map scope) | as-built S1–S3 exist (`services/routines/*`; `@vida/types/routine.ts` reconciled) | Step 2 baselines on built code |
+| A8 | conventions.md:16 "no stored progress column" | `progress` = nullable **override slot** (`routines.ts:59`; RT-19 "nullable override") | derive-on-read with override (`resolveProgress`) |
+| A9 | Tasks "NOT BUILT", `tasks?: TasksPort`, "absent-port" (interpretation.md §1b; slice-map:25,35; seam-contract:22,50,79) | **D1**: `tasks: TasksService` **required**; mod-tasks shipped (PR #145) | absent-port degrade paths are removed; `EntityUnavailable` only for missing/deleted entities |
+| A10 | interpretation.md:95 (§4.6) "deleting a routine … hard-delete the completions ledger" | Archive/soft-delete **preserves** the ledger (business-rules.md:77 RT-17; ROU-03; seam-contract:33). Completions hard-delete only with a **hard purge** of their step (`routines.ts:103`; db-4-routines:51) | §4.6 superseded. **Baseline F3 re-classified:** soft `removeStep`/`archiveRoutine` keeping the ledger is ✅ aligned; only a purge path is owed |
+| A11 | *(drift; superseded)*  RT-4 / ROU-11 / contract.md:32: "actionable step = a recurrent Task using Tasks' recurrence-in-a-timeframe (every 3h)" | Shipped Tasks recurs **only `obligation`s** (`tasks/types.ts:341-347`, TK-7), day-grain `due_date`, and each recurrence **spawns a new task id** (`tasks/service.ts:464-490`). The intake/tasks.md ADDENDUM has no sub-day recurrence, and intake/tasks.md:66 hands behaviour recurrence back to Habits/Routines. The shipped schema already models the actionable step as **null-entity**: "an actionable step may have none, RT-4" (`routines.ts:26-27,77`) | actionable step = a null-entity `routine_step` whose done/skip lives in `routine_completions`; RT-4's "is a Task" wording is superseded by the shipped DDL. Alarm-like reschedule → U3 — ⟲ **Superseded by S5c (Victor 2026-10-22):** intake Q1 RESOLVED "actionable step (no rich entity) = a recurrent TASK"; a schema comment never overrides a resolved intake gap. Every step drives an entity; a check-off step IS a Task; occurrences are Sessions (Duties D3). See `delivery/PLAN-S5c-q1-d3-correction.md`. |
+
+**Not a contradiction (recorded so Step 2 doesn't reopen it):** D3 layers rewards on purpose. A habit step fires the habit's
+own effects, and the routine-level policy-done fires the routine's `award_xp` + `contribute_purpose_metric` (slice-map D3).
+These are two subjects with two `effect_event_id`s, so this is not an RT-3 double-count. `grant_currency` vs `award_xp` wording is
+reconciled at business-rules.md:41.
+
+**Step-4/5 input (not a FACT here):** the as-built `skipStep` + `planSkipDates` split vs the governing single
+`skipStep(kind)` (seam-contract:51; ROU-09). It is grounded in RT-8 and was g2-approved as a §XXVIII deviation (`types.ts:92-97`).
+It is amended through the Re-scope Gate.
+
+## B. UNKNOWNs
+- **U1 · RESOLVED (FACT) — a driven step's completion stamps the routine's OWN occurrence row; the driven entity completes once,
+  through its own API, and is the only source of its effects.**
+  - **The apparent conflict:** RT-3 / intake G3 ("no parallel record, never double-counts"), slice-map:34 (S2: the ledger holds
+    "NOT driven-entity completions") and seam-contract:50 ("driven → delegates") seem to clash with RT-14 (business-rules.md:66-68),
+    RT-19 (:84-85), ROU-12/13/15, db-4-routines/_index.md:34,50, `routines.ts:22-23`, cross-module-integration.md:26,38 (Journal
+    and Purposes read "routine completions for the date" / "completion rates") and system-overview.md:78 ("tracks actual vs
+    estimated duration").
+  - **Resolution — the ADR defines the contested term.** ADR-004 §3.2.4 defines **"no double-count" = "one XP / one
+    habit-occurrence per event"**, with the mechanism in §3.2.5 (idempotent `effect_event_id`, grain = the occurrence). So RT-3
+    forbids a second completion *of the driven entity* (a second habit occurrence, a second XP or purpose contribution, a routine
+    mirror of `habit_completions`). It does not forbid the routine's own step-occurrence row, which carries no behavioural effect
+    of the entity.
+  - **How the texts read together:**
+    - The driven entity completes via its contract and fires its own effects once. That is S2's "driven-entity completions live
+      on the entity" and the seam-contract's "delegates".
+    - The routine records `(routine_step_id, date)` + `actual_duration_minutes` in `routine_completions`, which is the shape
+      `UNIQUE(step,date)` encodes.
+    - Routine-level done/streak/analytics derive from that ledger (RT-14/19, db-4, the Journal and Purposes contracts).
+    - The routine-level policy-done fires only the **routine's** own effects (D3: a distinct subject, so a distinct
+      `effect_event_id`).
+  - **Session linkage** (a session step has no id until it runs): ADR-004 §3.2.1 *instance-level attachment*. The session that
+    `runStep` creates attaches to the `routine_step`, which is how the step reflects the session's lifecycle.
+  - **Consequence for baseline F1:** a ledger row for a driven step is **not** itself the violation. The gap is that today's
+    `completeStep` writes the row **without driving the entity**. The drive leg (runStep / delegate) is owed, and a completion
+    must never fire the entity's effects from the routine side.
+- **U2 · Which registry validates `step_type`?** The oracles assert one (`routines.ts:76` "registry-validated";
+  validators/routine.ts:41) but none exists in code. The relation to `entity_type` is also unstated (for a session step, is
+  `step_type` the session `sub_type`?). → Step 2 grounds it in ADR-004 (SessionRegistry sub-types) / ADR-006 / the ROU-25
+  user-extensible-type home (007/SP5, deferred). Outcome open; not pre-selected.
+- **U3 · Reschedule + broad cadence have no M1 substrate.**
+  - RT-11 / ROU-10 / ROU-28 assume a Scheduler that resolves cadence and finds an open slot.
+  - Sessions' placement algorithm is deferred to **M1.2** (`sessions/service.ts:672-677`), and `dueIn` only aggregates providers.
+  - → Step 2 derives the home per the deferred-substrate homing rules (first-consumer-pull + build order). That is a derivation,
+    not a choice.
+- **U4 · Policy store + shipped default values.**
+  - The home (Preferences/Spaces) is a recorded deferred home (`schema-audit-deferred-homes.md:263-264`). Preferences has no
+    policy keys today (`preferences/service.ts:84` has only `push_routines`).
+  - The docs say "ships a default" but name no values: completion policy, threshold, acceptance-window length. One value is
+    stated: a planned skip is neutral by default (RT-8).
+  - → Step 2 derives the store home. The unstated default **values** are a Victor call **at the evaluate slice's PLAN**, not
+    here (they do not change the yardstick's shape).
+- **U5 · `exercise` step owner.** No `services/health` exists, and `SHIPPED_SESSION_TYPES` ships only `focus`
+  (`foundation/sessions/registry.ts:26`). → Step 2 records which driven targets are live in M1 (habit, task, focus session)
+  vs `EntityUnavailable`.
+
+## C. Completeness
+- **ROU rows:** all homed. ROU-25 → 007/SP5 pass; ROU-27 → Spaces design-pass (A4 cites); ROU-10/28 → U3; ROU-24 → U4.
+- **Backend-intent UNKNOWNs:** delivery bucket → P3 slice-map ✅ · CHECK defaults → 018 ✅ · two-seam wiring → D3 ✅ ·
+  policy engine → U4 · step taxonomy → U2 · membership → Spaces design-pass ✅.
+- **Baseline vs corpus:** F3 rested on the A10 contradiction (now re-classified ✅). F1 is re-classified per U1: the ledger stamp is aligned; the drive leg is missing. F2, F4–F8
+  are code-vs-intent gaps for Step 4.
+
+## D. Carry-forwards into Step 2 (Interpretation)
+1. Rebase on A1–A11 (built floor · D1 required Tasks · D2 tokens · no policy columns · archive preserves the ledger · actionable step = null-entity).
+2. Carry U1 as FACT (ADR-004 §3.2.1/§3.2.4/§3.2.5). Resolve U2/U3/U5 from docs + code; home U4's store, park its values for the evaluate PLAN.
+3. Reconcile `TasksService` + `SessionsService` signatures (D1; session/step linkage per U1).
+4. **Aspect docs:** each of the 5 gets a one-line banner now ("superseded in part — see `delivery/documentation-gate.md` §A").
+   Full rewording happens in the §XXIX pass at unit close.

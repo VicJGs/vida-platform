@@ -22,6 +22,23 @@ import type {
   SessionTemplateRow,
   StudyPlanBatchRow,
 } from '../../db/schema/foundation/scheduling'
+import type { PlannedBlockStatus } from '@vida/types'
+
+/** Routines S6 (R1) — an owner-written planned block (SS-8 intent). No placement logic: the slot is the caller's. */
+export interface PlanBlockInput {
+  scheduled_start: number
+  scheduled_end?: number | null
+  sub_type?: string | null // registry-validated when given (SS-5/BR-6)
+  target_type?: string | null // a registered polymorphic target (BR-6, the attach precedent)
+  target_id?: string | null
+  source?: string | null // provenance (e.g. 'routines:<YYYY-MM-DD>')
+}
+/** Slot move and/or status flip (planned|scheduled|fulfilled|skipped). */
+export interface PlannedBlockPatch {
+  scheduled_start?: number
+  scheduled_end?: number | null
+  status?: PlannedBlockStatus
+}
 
 /** The `focus` sub-type 1:1 extension input (PD-4/PD-5/PD-6 fields; spine fields NEVER here — BR-S1). */
 export interface FocusExtensionInput {

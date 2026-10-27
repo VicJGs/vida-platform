@@ -1,5 +1,8 @@
 <!-- Contract — features/routines · /documentation Phase 2 · sources: ADR-002 §5.6 · routine.ts · sessions/contract.md · docs/intake/routines.md §D/§E -->
 
+> ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
+> [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
+
 # Contract — Routines  (level: Feature)
 
 > ⚠ The surface below is **INTENDED** (the reframe); the v2 code is schema-only (2 tables, 0 service logic). Every
@@ -51,6 +54,7 @@
 - `EntityUnavailable` — a step's driven entity is missing/deleted → typed step state, never silent skip (RT-3).
 - `OutsideAcceptanceWindow` — a make-good/reschedule past the window → rejected, no state change (RT-6).
 - `PolicyUndefined` — evaluate called before a completion policy resolves → falls back to the shipped default, flagged.
+  > ⟲ Clarified (S4, 2026-10-22, Victor: the policy is entirely the user's): the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves. Routines hardcodes no policy values.
 - `ProviderEmitFailed` — `dueIn`/`summary` failure is isolated; other providers + the routine itself are unaffected (RT-13).
 
 ## Completion checklist
