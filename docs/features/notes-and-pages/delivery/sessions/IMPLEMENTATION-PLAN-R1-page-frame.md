@@ -192,3 +192,20 @@ Untouched: `@vida/ui`, `@vida/core`, `@vida/types`, `@vida/editor`.
 - rev 3 (2026-10-27) — critique r2: Step 5's Home bullet aligned with R-3 (`PageSaveStatus` forwards `alignSelf`); the 3
   `saveState` test assertions named; the R-6 remount-within-gcTime note. Critique r2 conditional SHIP once this fix lands.
 - **APPROVED by Victor (Approval 2) on 2026-10-27.**
+
+## 5. Deviations (§XXVIII)
+
+### DEV-R1-1 · The title row at narrow widths (Visual Gate finding, 2026-10-27) — AWAITING VICTOR
+- **Found:** live Visual Gate (`.playwright-mcp/r1-live/vg-shots/note-tabbed-*-375.png`, `toast-dark-768.png`). (a) At 375 px the
+  save chip (~170 px, `flexShrink:0`) shares `EntityView`'s `TitleRow` (`flexDirection:'row'`, no wrap,
+  `entity-view.tsx:72`), squeezing a long title into a ~170 px column (6 lines). R-4 assumed "the title wraps", but it
+  wraps badly. The approved greybox had the same squeeze (`envision-evidence/g-375.png`, "Proje/ct kicko/ff"), so the
+  envision never resolved it. (b) **Pre-existing, not caused by R1:** the `$display` title `Text` (`entity-view.tsx:151-153`)
+  sets `fontSize` but no `lineHeight`, so wrapped title lines collide. The token defines `display` line-height 1.15
+  (`themes/fonts.ts:9`); R1's narrower title column just exposes it more often.
+- **Why it's a deviation:** both fixes live in `@vida/ui` `entity-view.tsx`, which the plan listed as **untouched** (§2).
+- **Proposal (one small `@vida/ui` change):** `TitleRow` gets `flexWrap: 'wrap'`; `TitleGroup` gets `flexGrow: 1, flexBasis: 240`, so
+  when title + actions don't fit the action slot drops below the title (375), and stays beside it at 768/1440. The title
+  `Text` gets `lineHeight="$display"`. Every `EntityView` consumer inherits both (today: notes only, `toEntityProps` has one
+  live caller). Gate: the `entity-view` tests + a Visual re-shoot of the same matrix.
+- **Alternative:** accept (a) for R1 and leave (b) to a `@vida/ui` follow-up.

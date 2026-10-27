@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R1 building (Approval 2, 2026-10-27)
+# Status: in-progress — Step 6: R1 built (532e5ce) — Visual Gate + DEV-R1-1 awaiting Victor (2026-10-27)
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -85,3 +85,8 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 - 2026-10-27 (Step 6 · R1 gate 2) — /preflight PASSED (5 assumptions resolved). IMPLEMENTATION-PLAN-R1: critique r1 REVISE (2
   blocking: v5 resets a no-data query to pending on refetch → R-6 errorUpdateCount-based `retrying`; Home chip 34 px +
   self-aligns left → R-3) → rev 2 → r2 one leftover (Step 5 Home bullet) → rev 3 = SHIP. Victor: APPROVED (Approval 2).
+- 2026-10-27 (Step 6 · R1 build) — Steps 1–7 tests-first, green: web 890/890 · tsc 0 · lint 0 errors · 532e5ce. Live leg
+  (Brave, real OPFS): e2e/notes-page-frame.spec.ts 2/2 (B10–B12) · R0 spec still green · prod build: 0 `readerror` in
+  dist. Visual Gate script 34/34 (axe 0 · one chip per host · Retry by keyboard). Own screenshot review found DEV-R1-1:
+  375 px title squeeze (chip shares a no-wrap TitleRow; the greybox had it too) + a pre-existing EntityView title
+  lineHeight bug → @vida/ui change proposed (plan said untouched) → awaiting Victor with the Visual Gate.
