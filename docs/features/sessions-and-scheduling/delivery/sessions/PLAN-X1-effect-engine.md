@@ -19,11 +19,11 @@ replay entry, and (h) builds its event inputs in ONE shared function that X3's r
 |---|---|---|
 | R-12 preflight | BUILD — `transition()` checks a handler exists for every NON-projection `def.effects` member before firing; missing → `NoEffectHandler`, nothing written | ADR-004:91-92 "fails closed" · IR-S17(0) |
 | R-13 soft-deleted spine | BUILD — a spine with `deleted_at` ≠ null is treated as missing → `InvalidTransition(id,'missing',event)`, nothing written | pomodoro BR:63-64 · IR-S17 |
-| R-9 canTouch | BUILD — `canTouch(def, effectType, target)`: effect ∈ `def.permissions.allowed_effects` (as today) AND the catalogue's target typing — `log_time` → target `entity_type ∈ {task, project}` (ADR-004:61); `attach_pomodoro` → needs a REAL attachment (the self-target fallback is denied, IR-S3). Every other effect: no type constraint (the docs fix none — not invented here). Denied → `PermissionDenied(type, effect, target)`, logged, completion continues | contract.md:30,64 · ADR-004:61 |
-| R-11/R-44 vanished subject | BUILD — with `providers?` present and a provider registered for the target's `entity_type`, a by-id read (`predicates: { id }`, the shipped tasks short-circuit `tasks/service.ts:943-948`) returning no row → `AttachmentTargetMissing(entity)`, logged, not applied, not retried. No provider / no `providers` → existence unknown → treated as existing (fail-open) | contract.md:65 · sessions BR:79-80 · IR-S19 |
+| R-9 canTouch | BUILD — `canTouch(def, effectType, target)`: effect ∈ `def.permissions.allowed_effects` (as today) AND the catalogue's target typing — `log_time` → target `entity_type ∈ {task, project}` (ADR-004:61); `attach_pomodoro` → needs a REAL attachment (the self-target fallback is denied, IR-S3). Every other effect: no type constraint (the docs fix none — not invented here). The self-fallback target is typed `session` (so a self-target `log_time` is denied). Denied → `PermissionDenied(type, effect, target)`, completion continues | contract.md:30,64 · ADR-004:61 |
+| R-11/R-44 vanished subject | BUILD — with `providers?` present and a provider registered for the target's `entity_type`, the DOCUMENTED by-id path: `list({ predicates: { id } })` as a HINT + a defensive `row.id === id` match (BR-TK-S7-2/3, `docs/modules/tasks/current-business-rules.md:171-180`; a provider may ignore unknown predicates, XCU-13 / ADR-007:67-68). Missing ⇔ no returned row has `row.id === id` → `AttachmentTargetMissing(entity)`, not applied, not retried. No provider / no `providers` → existence unknown → treated as existing (fail-open) | contract.md:65 · sessions BR:79-80 · IR-S19 |
 | R-10 handler failure | BUILD — a handler throw inside `applyEffect` (its tx rolls back ledger + write) → `EffectFailed(effect, target, cause)`, logged; the remaining effects still fire; the status still commits | pomodoro BR:78-79 · contract:59 · IR-S4(4) |
 | R-42 `fired` | BUILD — `fired` counts only `{applied:true}` for NON-projection effects (projection returns `applied:true` at `effects/service.ts:35-36` without a row) | ADR-004:84 · `lifecycle.ts:47` |
-| R-7 keying | BUILD — `log_time` + `attach_pomodoro`: `subjectNaturalKey = session.id`, `transition = 'completed'`, `targetRef = target.entityId` (per run). All other effects unchanged: `(target ‖ utcDate(started_at ?? created_at))`. Self-fallback unchanged | IR-S16 · TAS-17 · PD-12 · ADR-004:83,99-100 · §XXVIII #3 |
+| R-7 keying | BUILD — `log_time` + `attach_pomodoro`: `subjectNaturalKey = session.id`, `transition = target.entityId`, `targetRef = target.entityId` → id `session.id ‖ target ‖ type` exactly as IR-S16 (per run AND per target — ADR-4:83: the id is an additive effect's ONLY convergence key, so two targets of one run must not share it; the `|` invariant holds, both parts are UUIDs, `event-id.ts:15-19`). All other effects unchanged: `(target ‖ utcDate(started_at ?? created_at))`. Self-fallback unchanged | IR-S16 · TAS-17 · PD-12 · ADR-004:83,99-100 · §XXVIII #3 |
 | IR-S5 seam | BUILD — optional `TransitionDeps.payloadFor?(session, effectType): Promise<Record<string, unknown> \| undefined>`; the fire step attaches its result as `event.payload`. X1 supplies none (payload-less as today); X2 plugs the focus resolver | IR-S5 |
 | R-15 replay | BUILD — `replayCompletionEffects(deps, sessionId)`: only for a `completed` spine (else `InvalidTransition`); re-runs the fire step with the SAME rules + payload seam; never writes status; returns `{fired, denied, missing, failed}` | ADR-004 B.2 · IR-S4 |
 | IR-S11 inputs | BUILD — `buildCompletionEvents(session, def, targets)` (pure) = the ONE event-input construction (keying + canTouch verdicts), used by the fire step, replay, and X3's read | IR-S11 · R-17 (X3 consumes) |
@@ -44,17 +44,23 @@ inline, `composition-root.ts:99`).
   (no ledger row). `EffectFailed` rolls back that pair only.
 - **BR-X1-4 · Completion continues.** `PermissionDenied`, `AttachmentTargetMissing`, `EffectFailed` are COLLECTED, never
   thrown; the status commits LAST (BR-S3-8 crash ordering kept). `NoEffectHandler` (wiring) and `UnknownEffectType`
-  stay thrown. Every collected outcome is logged once via `console.warn` with a typed prefix (the core convention for
-  best-effort side effects — confirmed at gate 2).
+  stay thrown. "Logged" (contract.md:64; pomodoro BR:79) = the TYPED RESULT is the record: core has no logging convention (zero
+  `console.*` in non-test `packages/core/src`; best-effort precedents swallow silently — routines `bestEffort`
+  `routines/service.ts:438-444`, tasks `fanOutCompletion` `tasks/service.ts:258-266`). The engine emits no console
+  output; callers surface `denied/missing/failed`, and the EC-4 rail derives unapplied effects on read (X3/X6).
 - **BR-X1-5 · Result.** `TransitionResult = { status, fired, denied: PermissionDenied[], missing: AttachmentTargetMissing[],
   failed: EffectFailed[] }` — additive; all three default `[]`.
 - **BR-X1-6 · `fired`** = count of non-projection `{applied:true}`. A replay of an applied set → `fired: 0`.
 - **BR-X1-7 · Per-run keying** for `log_time` + `attach_pomodoro` only (IR-S16); every other effect per occurrence.
 - **BR-X1-8 · Payload seam.** `payloadFor` is consulted per (session, effectType); `undefined` → no payload.
 - **BR-X1-9 · Replay** re-applies only what has no ledger row (B.2); the same inputs → the same ids → the same payload.
+  A still-denied / still-missing pair is re-reported and writes nothing. Determinism depends on `started_at` never being
+  patched after start — built in **X2** (IR-S18(d), R-41); until X2 lands, replay is deterministic for unpatched spines.
 - **BR-X1-10 · Typed errors** `PermissionDenied(sessionType, effectType, targetRef)`, `AttachmentTargetMissing(entityType,
   entityId)`, `EffectFailed(effectType, targetRef, cause)` live in `foundation/sessions` and are exported by name from the
-  `@vida/core` barrel (collision-checked at gate 2 — memory: `export *` collides on generic names).
+  `@vida/core` barrel (no class of these names exists in core today; gate-2 grep kept). Argument order vs the contract's
+  `(type, effect, target)` · `(entity)` · `(effect, target)` is compatible (entity = `entityType + entityId`; `EffectFailed`
+  adds `cause`) — recorded in sessions current-spec.
 
 ## 4. Acceptance — Verification Gate
 Vitest (real SQLite store, the lifecycle/sessions harness):
@@ -73,6 +79,12 @@ Vitest (real SQLite store, the lifecycle/sessions harness):
 10. `fired` excludes projection (R-42); replay of an all-applied session → `fired: 0`.
 11. Payload seam: a `payloadFor` stub's object arrives on the handler's `event.payload`.
 12. `buildCompletionEvents` is pure and yields the same inputs the fire step used (ids identical).
+13a. Preflight runs per def BEFORE canTouch: an unhandled effect that would be denied for every target still throws
+    `NoEffectHandler`.
+13b. Denied and missing pairs leave NO ledger row (alongside test 7's failed pair).
+13c. Replay of a still-denied / still-missing pair re-reports it, writes nothing.
+13d. A provider that IGNORES the `id` predicate (returns unrelated rows) → the subject is still detected missing.
+13e. Per-target ids: one run, two task targets → two distinct `log_time` ids.
 13. Flipped tests (impact §2): lifecycle.test A2/A4/A5 re-seeded with real targets of the right type; sessions-service
     4b re-pointed (self-target `log_time` → `PermissionDenied`); 4c title corrected.
 Then: `tsc` 0 (core + web) · eslint 0 · full `@vida/core` suite · live smoke: a scratch session on a real store through
@@ -87,6 +99,12 @@ Then: `tsc` 0 (core + web) · eslint 0 · full `@vida/core` suite · live smoke:
 5. `replayCompletionEffects`.
 6. `payloadFor` + `providers?` deps; `SessionsServiceDeps` pass-through.
 7. Flip/extend tests; fix stale comments; currency (§8).
+
+**Impact (reconciliation §2) — covered:** `transition()` 2 prod callers (`service.ts:449,453`) · `completeSession` prod
+callers tasks:565 · flashcards:260 · books:804 · routines:864,905,926 — all `effects: []` sub-types → behaviour unchanged
+(SAFE) · `fireCompletionEffects` (lifecycle:113 + test A4) · the rail's other consumer `foundation/economy/handlers.ts:74-76`
+(`applyEffect` only) unaffected by the additive `hasHandler`; no hand-written `EffectRail` fakes exist (grep) · factory
+`providers?` (10 construction files, optional → SAFE).
 
 ## 6. Deviations (§XXVIII register)
 - **#3** — BR-S3-5 per-occurrence keying narrowed: `log_time` + `attach_pomodoro` per run (IR-S16).
@@ -104,3 +122,5 @@ current-{spec,business-rules}.md` (BR-9 keying, BR-10 replay/self-heal + handled
 
 ## 9. Change log
 - 2026-10-27 — drafted (gate 1).
+- 2026-10-27 — g1 /critique REVISE (3 blocking: per-run id lacked the target · no core logging convention · existence
+  must use the documented `row.id === id` match) → rev 2.
