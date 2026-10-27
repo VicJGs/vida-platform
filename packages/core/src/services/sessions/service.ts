@@ -56,6 +56,7 @@ import {
   studyPlanBatches,
   plannedBlocks,
   type StudyPlanBatchRow,
+  type PlannedBlockRow,
 } from '../../db/schema/foundation/scheduling'
 import type { PomodoroType } from '@vida/types'
 import { resolveTargets, type ResolvedTarget } from '../../foundation/sessions/attachments'
@@ -74,6 +75,8 @@ import {
   AvailabilityExceptionSchema,
   TemplateSchema,
   TemplatePatchSchema,
+  PlanBlockSchema,
+  PlannedBlockPatchSchema,
 } from '../../validators/session'
 import {
   type CreateSessionInput,
@@ -96,6 +99,8 @@ import {
   type DueItem,
   type DueProvider,
   type SessionAnalytics,
+  type PlanBlockInput,
+  type PlannedBlockPatch,
   InvalidSessionInput,
   InvalidFocusTransition,
   SessionMissing,
@@ -171,6 +176,14 @@ export interface SessionsService {
   dueIn(range: TimeRange): Promise<DueItem[]>
   registerDueProvider(provider: DueProvider): void
   getSessionAnalytics(range: TimeRange): Promise<SessionAnalytics>
+  // --- Routines S6 (R1 first-consumer-pull) · owner-written planned blocks (SS-7/SS-8 intent; no placement algorithm) ---
+  /** Write one block for a caller-given slot. `sub_type` registry-validated; `target_type` must be a registered target. */
+  planBlock(input: PlanBlockInput): Promise<PlannedBlockRow>
+  /** Move the slot and/or flip the status. Missing/deleted id → `InvalidSessionInput('id')`. */
+  updatePlannedBlock(id: string, patch: PlannedBlockPatch): Promise<PlannedBlockRow>
+  softDeletePlannedBlock(id: string): Promise<void>
+  /** The LIVE blocks pointing at `(targetType, targetId)` (SS-7: a block points at the owner's item), by scheduled_start. */
+  listPlannedBlocksForTarget(targetType: string, targetId: string): Promise<PlannedBlockRow[]>
 }
 
 // The single source of the sub_type → extension routing (B1). Only these two
@@ -709,6 +722,53 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       return batchRepo.update(id, { generated_at: Date.now() })
     },
 
+    // --- Routines S6 (R1) · owner-written planned blocks ----------------------
+    async planBlock(input) {
+      const parsed = PlanBlockSchema.safeParse(input)
+      if (!parsed.success) throw new InvalidSessionInput(parsed.error.issues[0]?.path.join('.') || 'input')
+      const v = parsed.data
+      if (v.sub_type != null) await registry.get(v.sub_type) // SessionTypeNotFound before any write (the createSession gate)
+      if (v.target_type != null && !entityRegistry.isRegistered(v.target_type)) throw new UnknownEntityType(v.target_type)
+      return plannedBlocksRepo.create({
+        scheduled_start: v.scheduled_start,
+        scheduled_end: v.scheduled_end ?? null,
+        sub_type: v.sub_type ?? null,
+        target_type: v.target_type ?? null,
+        target_id: v.target_id ?? null,
+        source: v.source ?? null,
+        status: 'planned', // the column default, written explicitly (create returns the input row)
+        deleted_at: null,
+      })
+    },
+
+    async updatePlannedBlock(id, patch) {
+      const parsed = PlannedBlockPatchSchema.safeParse(patch)
+      if (!parsed.success) throw new InvalidSessionInput(parsed.error.issues[0]?.path.join('.') || 'input')
+      const current = await plannedBlocksRepo.findById(id)
+      if (!current) throw new InvalidSessionInput('id')
+      const v = parsed.data
+      const start = v.scheduled_start ?? current.scheduled_start
+      const end = v.scheduled_end !== undefined ? v.scheduled_end : current.scheduled_end
+      if (end != null && end <= start) throw new InvalidSessionInput('scheduled_end')
+      return plannedBlocksRepo.update(id, {
+        ...(v.scheduled_start !== undefined && { scheduled_start: v.scheduled_start }),
+        ...(v.scheduled_end !== undefined && { scheduled_end: v.scheduled_end }),
+        ...(v.status !== undefined && { status: v.status }),
+      })
+    },
+
+    async softDeletePlannedBlock(id) {
+      await plannedBlocksRepo.delete(id) // soft (has deleted_at)
+    },
+
+    async listPlannedBlocksForTarget(targetType, targetId) {
+      // findWhere is soft-delete-blind → filter deleted_at explicitly (the dueIn idiom).
+      const rows = await plannedBlocksRepo.findWhere(
+        and(eq(plannedBlocks.target_type, targetType), eq(plannedBlocks.target_id, targetId))!,
+      )
+      return rows.filter((b) => b.deleted_at == null).sort((a, b) => a.scheduled_start - b.scheduled_start)
+    },
+
     // --- S7 · dueIn aggregator (SS-7) + derived analytics (SS-12/IR-6) -------
     async dueIn(range) {
       const items: DueItem[] = []
@@ -721,6 +781,7 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       )
       for (const b of blocks) {
         if (b.deleted_at != null) continue
+        if (b.status !== 'planned' && b.status !== 'scheduled') continue // SS-8 — fulfilled/skipped intent isn't due
         items.push({
           source_module: 'sessions',
           ref_id: b.id,

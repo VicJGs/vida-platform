@@ -1,5 +1,8 @@
 <!-- Business Rules — features/routines · /documentation Phase 2 · sources: ADR-002 §5.6 · routine.ts · docs/intake/routines.md §D/§E -->
 
+> ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
+> [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
+
 # Business Rules — Routines  (level: Feature)
 
 > Inherits the CORE constitution `[[../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3, SU-1, INT-1. Every rule
