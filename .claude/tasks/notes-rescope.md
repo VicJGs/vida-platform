@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R2 mode memory PLAN APPROVED (Approval 1, 2026-10-27); gate 2 next
+# Status: in-progress — Step 6: R2 building (Approval 2, 2026-10-27)
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -102,3 +102,6 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
   Awaiting Victor: Approval 1.
   → Victor: "You should follow the documentation, don't try to change that, it is there for a reason." G4 refinement
   withdrawn → rev 4 delivers "seeded per-type default while loading" verbatim. Memory deliverable-is-the-doc… 3rd case.
+- 2026-10-27 (Step 6 · R2 gate 2) — /preflight PASSED. IMPLEMENTATION-PLAN-R2: critique r1 REVISE (2: a toggle during the
+  in-flight read was overwritten by setData → R-4 sessionWrites; ?sample code didn't compile → devFlagActive) → rev 2 →
+  r2 SHIP → rev 3. Victor: APPROVED (Approval 2).
