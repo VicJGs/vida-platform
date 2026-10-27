@@ -4,13 +4,15 @@
 // editor facet + the per-type Layout-facet slot. First consumer of the #6 entity
 // adapter (`toEntityProps` + `EntityModeStore`) and the #7 editor binding.
 //
-// Editor-led (EC-4): `defaultFacet='editor'` opens on the Note tab. The merged layout
-// is a continuous Notion page; the tabbed Overview is the per-type DashboardView grid
-// (overview-registry). Data is M1-stub (useNoteEntity — honest-empty / `?sample`).
+// Editor-led (EC-4): `defaultFacet='editor'` opens on the Note tab — for EVERY page type
+// (notes-rescope R1: the page gate keys on PAGE_TYPE, NP-10 / EC-15). The merged layout is
+// a continuous Notion page; the tabbed Overview is the per-type component from
+// overview-registry, mounted as `<Overview/>`. Data is LIVE (useNoteEntity → getPage);
+// `?sample` is the DEV fixture. The title row carries the one save chip + the ⋯ slot
+// (PageActions); a read error offers Retry in place.
 //
-// Memory (D-S2-3 / O4): the merged/tabbed choice rides the `EntityModeStore`
-// CONVENTION on the in-memory reference store — the durable storage schema is
-// design-pass-open, never invented here.
+// Memory: the merged/tabbed choice rides the `EntityModeStore` CONVENTION on the
+// in-memory reference store until R2 (the durable `app_state` store).
 // ============================================================================
 import { useState } from 'react'
 import { getRouteApi } from '@tanstack/react-router'

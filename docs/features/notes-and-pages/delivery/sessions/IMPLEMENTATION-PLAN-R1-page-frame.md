@@ -195,7 +195,7 @@ Untouched: `@vida/ui`, `@vida/core`, `@vida/types`, `@vida/editor`.
 
 ## 5. Deviations (§XXVIII)
 
-### DEV-R1-1 · The title row at narrow widths (Visual Gate finding, 2026-10-27) — AWAITING VICTOR
+### DEV-R1-1 · The title row at narrow widths (Visual Gate finding, 2026-10-27) — APPROVED by Victor ("Fix it now")
 - **Found:** live Visual Gate (`.playwright-mcp/r1-live/vg-shots/note-tabbed-*-375.png`, `toast-dark-768.png`). (a) At 375 px the
   save chip (~170 px, `flexShrink:0`) shares `EntityView`'s `TitleRow` (`flexDirection:'row'`, no wrap,
   `entity-view.tsx:72`), squeezing a long title into a ~170 px column (6 lines). R-4 assumed "the title wraps", but it

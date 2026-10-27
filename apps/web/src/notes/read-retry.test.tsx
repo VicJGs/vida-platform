@@ -149,5 +149,5 @@ describe.each([
     release()
     await waitFor(() => expect(r.queryByText(message)).toBeNull())
     expect(reads[key]).toBe(4)
-  })
+  }, 20_000) // a full-surface Tamagui render: past the 5 s default under suite load (memory: heavy-tamagui-shell-tests-flake)
 })

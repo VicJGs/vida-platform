@@ -4,12 +4,12 @@
 > connective HUB) and ② the `apps/web` **notes surface** (`/notes`, `/notes/$id`, the shared note editor body).
 > Every claim cites the code as-is.
 > Coverage: ① `services/notes/{index,types,service}.ts` + `validators/note.ts` + `schema/notes.ts` + `033_notes.ts` +
-> the one test file — **full** · ② `apps/web/src/notes/` 31/31 non-test files **full**, 17 test files counted
+> the one test file — **full** · ② `apps/web/src/notes/` non-test files **full** (R1 added `save-status` · `page-actions` · `read-error` · `read-error-message`), 17 test files counted
 > (122 `it`) not read; routes + `db/composition-root.ts` + `entity/adapter.ts` + `collection/*` read.
 > Inherits: `docs/core` → ADR-002 (data model) · ADR-006 (spaces/registry) · ADR-008 (render targets) · ADR-009 (templates).
 > Intent authority: ① `docs/specs/foundation/backend-intent/parts/notes-and-pages.md` (NOT-01…54) ·
 > ② `docs/specs/foundation/fe-notes-and-pages/` (envision EC-1…24).
-> Last refreshed: 2026-10-26 — notes-rescope (LIF-245) Step 0 baseline. Source of truth = the code.
+> Last refreshed: 2026-10-27 — notes-rescope (LIF-245) R1 page frame (② surface; ① unchanged). Source of truth = the code.
 
 ## Status
 - **① BACKEND COMPLETE** — S1 pages core · S2 entity notes + attachments · S3 page-links + wiki resolution · S4
@@ -137,30 +137,31 @@ use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; colle
 - **NotesSurface** (`/notes`) — 4 layouts list/gallery/calendar/graph [FACT: notes-surface.tsx:21]; "New note" (disabled
   while pending) [FACT: :39-41]; `NotesSearch` above the collection; open → `/notes/$id` [FACT: :29];
   `resolved = {rows, groups:[], state, degraded:[]}` [FACT: :32]; filter/sort/new-view → no-op [FACT: :50-52].
-- **renderNotesView** — list `NoteRowCard` (interactive Card, `aria-label=title`, favorite Star) [FACT: note-renderers.tsx:35-46];
-  gallery tiles [FACT: :48-60]; calendar on `r.date`, `empty`→`success` so the grid renders [FACT: :69]; graph `NeuralGraph
-  nodes=[]` [FACT: :70-75]. TYPE_ICON/TYPE_LABEL duplicated vs note-chrome with different labels
-  [FACT: note-renderers.tsx:16-25 vs note-chrome.tsx:43-50].
-- **NoteEntity** (`/notes/$id`) — loading (`aria-busy`) · error (`role=status`) · empty ("Note not found") · success →
-  `NoteEntityView` [FACT: note-entity.tsx:61-100].
-- **NoteEntityView** — `toEntityProps({entityType: page.type, hasPage:true, editorState:'success' (hard-coded),
-  defaultFacet:'editor'})`; mode from a module-level in-memory store, default `tabbed` [FACT: note-entity.tsx:42,103-151;
-  entity/adapter.ts:93-102]. **No rename / delete affordance** (EntityView `title` is a plain string)
-  [FACT: packages/ui/src/components/entity-view.tsx:35-36].
-- **Editor gate** — `offersEditor(entityType, hasPage) = schema.isEntityType(entityType) && hasPage`
-  [FACT: entity/adapter.ts:33-35]. `ENTITY_TYPES` holds `note`, `journal` (+ `task`, `milestone`, `deliverable` …) but no
-  `*_note` page types [FACT: packages/core/src/db/schema/_registry.ts:7-8,31,36-37] ⇒ only 2 of the 6 `PAGE_TYPE`s
-  [FACT: packages/types/src/note.ts:23-29] get the editor facet.
+- **renderNotesView** — list `NoteRowCard` + gallery tiles (interactive Card; accessible name = `cardName`: title · type ·
+  "edited …" · favorite, the type dropped when the title came from it); calendar on `r.date`, `empty`→`success`; graph
+  `NeuralGraph nodes=[]`. Icons + type labels from `note-chrome` (one set, R1 B-60) [FACT: note-renderers.tsx].
+- **NoteEntity** (`/notes/$id`) — loading (`aria-busy`) · error (`ReadErrorMessage` "Couldn’t load this page." + Retry,
+  R1 BR-R1-8) · empty ("Note not found") · success → `NoteEntityView` [FACT: note-entity.tsx].
+- **NoteEntityView** — `toEntityProps({title: pageLabel(page), entityType: page.type, hasPage:true, gate:'page',
+  action: <PageActions/>, editorState:'success', defaultFacet:'editor'})`; the Overview is mounted as a component; mode
+  from a module-level in-memory store, default `tabbed` (R2 makes it durable) [FACT: note-entity.tsx]. **No rename /
+  delete affordance yet** — the ⋯ slot exists with no items (R3/R5/R9).
+- **Editor gate** — the page surface uses `offersPageEditor(pageType)` (`PAGE_TYPE` membership — all 6 types, R1 EC-15);
+  module-entity surfaces keep `offersEditor(entityType, hasPage) = schema.isEntityType(entityType) && hasPage`
+  (`ENTITY_TYPES` has no `*_note` types) [FACT: entity/adapter.ts; packages/core/src/db/schema/_registry.ts].
 - **NoteEditorBody** `{page}` — `<VidaEditor chrome="bare" defaultValue={seed.doc} onChange={save} onInvalidContent>`
-  (uncontrolled; `seed` from `useNoteContent` = the latest-body overlay ?? `page.content`); `role=status` save label
-  Saving…/Saved/Couldn't save. Unreadable body (`seed.status==='malformed'`, or the editor's `onInvalidContent`, which
+  (uncontrolled; `seed` from `useNoteContent` = the latest-body overlay ?? `page.content`); editor accname
+  "`pageLabel(page)` editor"; **no save label of its own** — the host renders the one `PageSaveStatus` chip (R1). Unreadable body (`seed.status==='malformed'`, or the editor's `onInvalidContent`, which
   locks the write seam) → the EC-33 notice instead of the editor: `EmptyState` in `role="status"` + "Export a copy"
   (raw `.json`) + "Export as Markdown" when the bytes parse (notes-rescope R0, BR-R0-1/9) [FACT: note-editor-body.tsx]. Does not use
   `canvas-editor/page-binding.ts` (no production importer) [FACT: note-editor-body.tsx:14,31].
-- **Overviews** — registry holds `note` (`noteOverview`) + `journal` (`journalOverviewStub`); any other type falls back to
-  `noteOverview` [FACT: overview-registry.ts:33-39]. noteOverview merged = NotionHeader + Attachments + Backlinks;
-  tabbed = DashboardView blocks, all `state:'success'` [FACT: note-overview.tsx:36-76]. Journal tabbed has no Backlinks
-  block, merged does [FACT: note-overview.tsx:88-98].
+- **Overviews** — components (`ComponentType<OverviewContext>`); the registry holds only `note` (`NoteOverview`), which
+  is also the fallback for every other type (journal → journals-rescope; `*_note` → fe-tasks/fe-projects) [FACT:
+  overview-registry.ts]. NoteOverview merged = NotionHeader + Attachments + Backlinks; tabbed = DashboardView blocks, all
+  `state:'success'` [FACT: note-overview.tsx].
+- **PageActions / PageSaveStatus** — the title-row slot: the `SyncStatus` chip from the per-page `save-status` store
+  (hidden when locked) + the ⋯ `Menu` only with items; `PageSaveStatus` is also Home's chip [FACT: page-actions.tsx;
+  save-status.ts]. **ReadErrorMessage** — the in-place read error + Retry [FACT: read-error-message.tsx; read-error.ts].
 - **NotionHeader / MetadataControls** — cover banner placeholder (`role=img`), type badge, Favorite/Archive
   `aria-pressed` toggles + icon/cover actions (`role=group` "Page metadata"), read-only Type/Updated rows
   [FACT: notion-header.tsx:13-62; page-metadata.tsx:57-121].

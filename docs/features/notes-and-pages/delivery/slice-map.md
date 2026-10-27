@@ -42,7 +42,8 @@ R8 before R9 (templates carry live blocks). R6 before R9 (the "New from template
 
 ## R1 — Page frame  ·  FRONTEND (+ shared gate fn)
 - Page-surface editor gate keyed on `PAGE_TYPE` — new fn, entity gate unchanged (B-24 · IR-R5 · impact A) → EC-15.
-- Untitled `*_note` label fallback (type label + parent name) for H1 + editor accname (E-3).
+- Untitled `*_note` label fallback for H1 + editor accname (E-3). **R1 ships** `pageLabel`: the type label ("Task note") —
+  the seed H1 already carries the parent title; **R7 feeds the parent name** from the A-33 label seam (PLAN-R1 G2).
 - Overview renderers mounted as components; remove the notes-owned journal Overview registration → edge journals-rescope
   (B-45 · B-46 · IR-R13 · EC-18a).
 - `action` slot carried through `EntitySource`/`toEntityProps`; the ⋯ menu shell (B-27).
@@ -107,7 +108,8 @@ R8 before R9 (templates carry live blocks). R6 before R9 (the "New from template
   declared-lossy row (C-3 · C-15 · C-16 · F-3); node-view event/keyboard seam (F-4). Optional props only (impact B).
 - Picker live: `resolveWikiLink` (escape · limit · archived policy · `*_note` labels) + entity candidates through a label
   seam (decided in PLAN: ReadProvider label vs SearchProvider) + page-able scope; grouped by type; "Create note '…'";
-  discriminated pick → `page_links` / `entity_links` (C-4…C-10 · A-25 · A-33 · A-34).
+  discriminated pick → `page_links` / `entity_links` (C-4…C-10 · A-25 · A-33 · A-34). The same label seam feeds
+  `pageLabel`'s `parentName` (E-3's parent-name half, R1 forward obligation).
 - Doc ↔ link-row reconcile in ① on content write (set semantics) (C-5 · IR-R12).
 - Hover/focus preview; deleted target state (C-12 · C-13 · C-14). Remove the `?picker` DEV overlay (B-58 · C-11).
 **ECs:** EC-10 (re-pin) · EC-11 · EC-31 · EC-17. **Gate:** shared.

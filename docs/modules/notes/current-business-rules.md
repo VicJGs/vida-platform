@@ -87,26 +87,33 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
 - **BR-NEU-1 (open-on-click):** a collection row/tile opens `/notes/$id`; keyboard-operable (Card `role=button`).
   [FACT: notes/notes-surface.tsx:29; notes/note-renderers.tsx:35-46]
 - **BR-NEU-2 (create-opens, in place):** `createPage({type:'note', title:'New note'})` → invalidate `['notes','pages']` →
-  navigate; no optimistic row; failure only `console.error`. [FACT: notes/use-create-note.ts:24-37]
+  navigate; no optimistic row; a failure raises one danger toast "Couldn’t create the note" (`notifyError`, BR-R1-7).
+  [FACT: notes/use-create-note.ts:24-34; lib/notify-error.ts]
 - **BR-NEU-3 (content persists locally):** editor `onChange` → debounced 500 ms `writePageContent` (a direct promise,
   not a React Query mutation: it never pauses under v5's `networkMode:'online'`, which fits a local-first write).
   Flushes on unmount, `visibilitychange:hidden` and `pagehide`. A failed write re-queues unless it's terminal
-  (`PageNotFoundError` / `InvalidPageContentError`, matched by `.name`) or a newer edit replaced it. A failure that lands
-  after unmount is lost (R1's error toast, F-7, will surface it). Write-through + barrier + invalidation per BR-R0-8.
+  (`PageNotFoundError` / `InvalidPageContentError`, matched by `.name`) or a newer edit replaced it. A failure no chip
+  observes (the user left the page) raises the shared error toast naming the page (BR-R1-7); its edit stays in the
+  overlay, so a reopen re-seeds + re-saves it. Write-through + barrier + invalidation per BR-R0-8.
   [FACT: notes/use-note-content.ts:42,74-111,113-139,141-153]
-- **BR-NEU-5 (honest save-state, no spurious write):** `saving | saved | error` only — no fake "synced". A save is
+- **BR-NEU-5 (honest save status, no spurious write):** the visible state is the per-page store's `saved | error | locked`
+  (BR-R1-5) — no "Saving…", no fake "synced". A save is
   deduped against `expected` — what the DB will hold once queued writes settle (initially the loaded body, or the
   inherited overlay body; see BR-R0-7) — so a mere open of a clean page never writes; on a blank page the editor's first
   mount-echo is ADOPTED as the baseline, not written. The one deliberate exception is the ownership re-save of an
-  inherited unsaved edit (BR-R0-8a). [FACT: notes/use-note-content.ts:79-91,147-178; notes/note-editor-body.tsx:28-33]
+  inherited unsaved edit (BR-R0-8a). [FACT: notes/use-note-content.ts; notes/save-status.ts]
 - **BR-SUR-1 (list scope):** the collection lists every live page of every type, **including archived pages and
   journals** (`listPages()` with no filter, see BR-7b); no client sort. [FACT: notes/use-notes-rows.ts:56]
 - **BR-SUR-2 (not-found):** `getPage` → `null` renders "Note not found". [FACT: notes/use-note-entity.ts:139; notes/note-entity.tsx:84-96]
-- **BR-SUR-3 (title fallbacks):** rows `'(untitled)'`, entity page `''`. Content parses to a tagged result
-  (BR-R0-4); `NoteEntityData.content` is the doc only for `ok`; `contentStatus` + `rawContent` carry the rest.
-  [FACT: notes/live-mappers.ts:50-68,81-95]
-- **BR-SUR-4 (editor gate):** the Note/editor facet is offered iff `isEntityType(page.type) && hasPage`
-  [FACT: entity/adapter.ts:33-35] — today true only for `note` and `journal` (see current-spec ② Editor gate).
+- **BR-SUR-3 (page names):** one projection, `pageLabel` (note-chrome): a non-empty title; else an untitled `*_note` →
+  "<Type> note" (e.g. "Task note" — the seed H1 carries the parent title; R7 feeds a parent name); else "Untitled note".
+  Used by the H1, the editor accname, collection rows (`labelFromType` marks a type-derived name) and card names.
+  `NoteEntityData.title` stays the raw stored value. Content parses to a tagged result (BR-R0-4); `NoteEntityData.content`
+  is the doc only for `ok`; `contentStatus` + `rawContent` carry the rest.
+  [FACT: notes/note-chrome.tsx (pageLabel); notes/live-mappers.ts (toNotesRow, toNoteEntity)]
+- **BR-SUR-4 (editor gate):** the note PAGE surface gates on page type — `offersPageEditor` (every `PAGE_TYPE` member),
+  selected by `EntitySource.gate:'page'`; module-entity surfaces keep `offersEditor` (`isEntityType && hasPage`).
+  [FACT: entity/adapter.ts (offersPageEditor, toEntityProps); notes/note-entity.tsx]
 - **BR-SUR-5 (mode default):** merged/tabbed defaults to `tabbed`, opens on the editor facet; remembered per `type:id`
   in memory only (lost on reload). [FACT: notes/note-entity.tsx:42,120; entity/adapter.ts:93-102]
 - **BR-SUR-6 (row date):** `NotesRow.date = journal_date ?? ymd(updated_at)` where `ymd` slices `toISOString()` — a
@@ -171,6 +178,39 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R0-data-saf
   bytes as `.json`, always. "Export as Markdown" (`toMarkdown`, `integration_block_handling:'comment'`) only when the
   bytes parse to a doc and the conversion doesn't throw. [FACT: notes/note-editor-body.tsx:36-86; notes/export-copy.ts]
 - Known limit: undeclared node ATTRIBUTES are silently dropped by ProseMirror and not detected (PLAN-R0 G15; M4).
+
+## notes-rescope R1 — page frame (surface plane · 2026-10-27)
+Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R1-page-frame.md` (rev 3) + IMPLEMENTATION-PLAN (rev 3,
+R-1…R-6, DEV-R1-1).
+- **BR-R1-1 · Page surfaces gate on page type** (BR-SUR-4). EC-15: all 6 types open with the editor, the Note tab leads.
+- **BR-R1-2 · No empty page name** (BR-SUR-3, `pageLabel`).
+- **BR-R1-3 · Overviews are components.** `OverviewRenderer = ComponentType<OverviewContext>`, mounted `<Overview/>`.
+  [FACT: notes/overview-registry.ts; notes/note-entity.tsx]
+- **BR-R1-4 · Notes registers only the `note` Overview** (also the fallback for unregistered types). The journal
+  Overview is journals-rescope's (EC-18a); `*_note` Overviews ride in from fe-tasks/fe-projects. `SummaryBlock` has no
+  notes consumer (R8's `/summary` body). [FACT: notes/overview-registry.ts; notes/note-overview.tsx]
+- **BR-R1-5 · One save announcement per host.** `save-status.ts`: a per-page store (`SaveStatus = LocalSyncState |
+  'locked'`, default `saved`, `locked` sticky, `error` → `saved` only on the next successful write), read by
+  `useSaveStatus` (memoized subscribe). Hosts render `PageSaveStatus` (`@vida/ui` SyncStatus, "Saved on this device"):
+  the note page's title row (`PageActions`) and Home's journal frame (right-aligned). Hidden while locked (malformed at
+  load via the host prop; `onInvalidContent` → `lock()` → `locked`). `NoteEditorBody` renders no status of its own.
+  [FACT: notes/save-status.ts; notes/page-actions.tsx; notes/use-note-content.ts; home/journal-page-region.tsx]
+- **BR-R1-6 · No dead ⋯.** `PageActions` renders the ⋯ `Menu` only with ≥1 item; R1 passes none (R3 Rename · R5 Move
+  to Trash · R9 Save as template add them). [FACT: notes/page-actions.tsx; notes/note-entity.tsx (NO_ACTIONS)]
+- **BR-R1-7 · Failures are never silent.** `notifyError(action, e)` = console + one danger toast "Couldn’t <action>" (no
+  raw error text). Callers: create; a body-write failure with no chip observing (`observed(id)` = live subscriptions).
+  [FACT: lib/notify-error.ts; notes/use-note-content.ts]
+- **BR-R1-8 · Read errors are recoverable in place.** `useNoteEntity` / `useNotesRows` / `useJournalEntry` expose
+  `retry` + `retrying`; `retryState` keeps the error branch up while a retry runs (`isFetching && data===undefined &&
+  errorUpdateCount>0` — v5 resets a no-data query to pending). `ReadErrorMessage` = polite message + Retry (`Button
+  loading`) outside the live region. DEV `?readerror` (NODE_ENV-gated, absent from prod) forces the error until the first
+  Retry. [FACT: notes/read-error.ts; notes/read-error-message.tsx; the three hooks]
+- **BR-R1-9 · One type-label set** — `note-chrome` `typeIcon`/`typeLabel`; card names = title · type · edited · favorite.
+  [FACT: notes/note-renderers.tsx]
+- **`@vida/ui` EntityView (DEV-R1-1):** the title row wraps (`flexBasis:240` title group) and the title applies
+  `lineHeight="$display"`. [FACT: packages/ui/src/components/entity-view.tsx:71-82,159]
+- Forward obligations: R7 feeds `pageLabel`'s `parentName` (A-33); R3/R5/R9 add the ⋯ items and call `notifyError`
+  from their mutations; R10 re-checks `SummaryBlock`.
 
 ## Deferred (documented)
 CRDT/Yjs multi-device merge of `content` (M4) · `[E]` content encryption (M3) · FTS5 of content (DB-8) · `word_count`

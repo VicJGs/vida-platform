@@ -68,11 +68,19 @@ export interface EntityViewProps {
 // ── styled hosts (unnamed → base theme; no sub-theme — the LV-3 convention) ──────────────────────────────
 const EntityRoot = styled(View, { flexDirection: 'column', gap: '$16', width: '100%', maxWidth: 1136, marginHorizontal: 'auto' })
 const Header = styled(View, { flexDirection: 'column', gap: '$8' })
-const TitleRow = styled(View, { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: '$12' })
+// Wraps (notes-rescope R1, DEV-R1-1): when the title and the action slot don't both fit (375 px), the action drops below
+// the title instead of squeezing it into a narrow column; at 768/1440 they sit side by side.
+const TitleRow = styled(View, {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: '$12',
+})
 // $16 title→metadata rhythm (EC-5 / review-2 — the title-hero canonical header; mirrors flow-session-view.tsx:97,
 // on branch fe-codec-flow-session).
 // Without it the $display title + $small subtitle render flush (fix-entity-view-header).
-const TitleGroup = styled(View, { flexShrink: 1, gap: '$16' })
+const TitleGroup = styled(View, { flexShrink: 1, flexGrow: 1, flexBasis: 240, gap: '$16' })
 // The merged⇄tabbed toggle — a role="toolbar" of aria-pressed buttons (the collection-view switcher precedent).
 const ModeToolbar = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$4' })
 const MergedStack = styled(View, { flexDirection: 'column', gap: '$24' })
@@ -148,7 +156,7 @@ export function EntityView({
       <Header>
         <TitleRow>
           <TitleGroup>
-            <Text id={titleId} fontFamily="$display" fontSize="$display" color="$colorTextPrimary">
+            <Text id={titleId} fontFamily="$display" fontSize="$display" lineHeight="$display" color="$colorTextPrimary">
               {title}
             </Text>
             {subtitle != null && (
