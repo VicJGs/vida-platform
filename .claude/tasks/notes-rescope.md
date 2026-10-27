@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in_progress — Step 6: R0 DONE (853570e…f2c35cc, 2026-10-26); next R1 page frame (§XXVI gate 1)
+# Status: in-progress — Step 6: R0 shipped (853570e…f2c35cc, 2026-10-26); next R1 page frame (§XXVI gate 1)
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
