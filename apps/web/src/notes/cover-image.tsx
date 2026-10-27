@@ -82,7 +82,9 @@ function Placeholder({ variant, height }: { variant: CoverImageProps['variant'];
 export function CoverImage({ cover, variant, height = 96 }: CoverImageProps) {
   const attachmentId = ATTACHMENT_COVER.exec(cover)?.[1] ?? null
   const isUrl = URL_COVER.test(cover)
-  const [failed, setFailed] = useState(false)
+  // Which cover failed to load — a NEW cover clears it (no remount needed; critique B1).
+  const [failedFor, setFailedFor] = useState<string | null>(null)
+  const failed = failedFor === cover
   const [ref, inView] = useInView(variant === 'tile' && attachmentId != null)
   const thumb = useQuery({
     queryKey: ['attachments', 'thumbnail', attachmentId],
@@ -105,7 +107,7 @@ export function CoverImage({ cover, variant, height = 96 }: CoverImageProps) {
           alt=""
           referrerPolicy="no-referrer"
           loading={variant === 'tile' ? 'lazy' : undefined}
-          onError={() => setFailed(true)}
+          onError={() => setFailedFor(cover)}
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
       ) : null}

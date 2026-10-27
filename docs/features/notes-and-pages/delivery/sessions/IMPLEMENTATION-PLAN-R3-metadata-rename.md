@@ -212,3 +212,12 @@ note-renderers.tsx, live-mappers.ts, use-notes-rows.ts, page-actions.tsx, note-e
   real OPFS): `e2e/notes-metadata-rename.spec.ts` ✓ + R0/R1/R2 specs ✓ (5/5). Visual Gate `.playwright-mcp/r3-live/` 28/28
   (axe 0 light/dark; greybox order; H1; cover both modes; focus returns; DEV-R3-1 token font on the input surfaces).
   Bundle: eager JS +6.9 KB gzip (≤ 10 KB, G6); the lazy pickers +1.8 KB on open.
+- **Noted at the final critique (owner's rule — no silent divergence):** R-10 said `isPending` is shared across actions; the
+  build has TWO `usePageMetadata` instances (rename in `NoteEntityView`, the controls in `MetadataControls`), so R-10 holds
+  **per instance** — a pending rename doesn't block a toggle (they write different fields, so R-10's aim — no same-value
+  double write — still holds). The guard is scoped to toggles only (picker/rename writes are never dropped — critique I3).
+- Final /critique r1 **REVISE** → fixed: B1 a failed cover now recovers when the cover changes (`failedFor`), B2 current-spec
+  (live metadata, rename, `getAttachmentThumbnail`), B3 collection-view `titleRef` contract, B4 this note; I1 the link error
+  is `role="alert"` in the danger colour with a `useId` id; I2 an unchanged rename writes nothing; I3 toggle-only guard;
+  P1 busy dimming; stale headers; the C6 test asserts the NAMED focus target.
+

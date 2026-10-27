@@ -101,4 +101,16 @@ describe('usePageMetadata — live (R3)', () => {
     await act(async () => release())
     await waitFor(() => expect(result.current.isPending).toBe(false))
   })
+
+  it('I3 — only toggles are dropped while pending; a picker write is never dropped', async () => {
+    let release: () => void = () => {}
+    updatePage.mockImplementationOnce(() => new Promise((r) => (release = () => r({}))))
+    const { result } = renderHook(() => usePageMetadata(page()), { wrapper })
+    await run(() => result.current.toggleFavorite())
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+    await run(() => result.current.setIcon('star'))
+    expect(updatePage).toHaveBeenCalledWith('p1', { icon: 'star' })
+    await act(async () => release())
+  })
 })
+

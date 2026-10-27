@@ -4,7 +4,7 @@
 // thumbnail — "Use as cover" writes `attachment:<id>`), and "Remove cover" when one is set. The attachment list rides
 // `useAttachments`, a stub until R4 makes it live — so today it shows the honest empty line. Loaded lazily.
 // ============================================================================
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Text, View } from '@tamagui/core'
 import { Button, Dialog, Input } from '@vida/ui'
 import { useAttachments } from './use-attachments'
@@ -23,6 +23,7 @@ const LINK = /^https?:\/\/\S+$/i
 export function CoverPickerDialog({ open, onOpenChange, pageId, current, onChoose }: CoverPickerDialogProps) {
   const [link, setLink] = useState(current != null && LINK.test(current) ? current : '')
   const [invalid, setInvalid] = useState(false)
+  const errorId = useId()
   const { attachments } = useAttachments(pageId)
   const images = attachments.filter((a) => a.mime.startsWith('image/'))
   const choose = (ref: string | null) => {
@@ -60,7 +61,7 @@ export function CoverPickerDialog({ open, onOpenChange, pageId, current, onChoos
                 placeholder="https://…"
                 value={link}
                 invalid={invalid}
-                aria-describedby={invalid ? 'cover-link-error' : undefined}
+                aria-describedby={invalid ? errorId : undefined}
                 onChangeText={(v) => {
                   setLink(v)
                   setInvalid(false)
@@ -72,7 +73,8 @@ export function CoverPickerDialog({ open, onOpenChange, pageId, current, onChoos
             </Button>
           </View>
           {invalid ? (
-            <Text id="cover-link-error" fontSize="$small" color="$colorTextPrimary">
+            // Announced (focus stays on "Use link"), in the danger signal colour (critique I1).
+            <Text id={errorId} role="alert" fontSize="$small" color="$colorSignalDanger">
               Enter an image link starting with http:// or https://
             </Text>
           ) : null}
@@ -94,7 +96,7 @@ export function CoverPickerDialog({ open, onOpenChange, pageId, current, onChoos
                 <Text flex={1} fontSize="$small" color="$colorTextPrimary">
                   {a.filename}
                 </Text>
-                <Button size="sm" intent="ghost" aria-label={`Use ${a.filename} as cover`} onPress={() => choose(`attachment:${a.id}`)}>
+                <Button size="sm" intent="ghost" aria-label={`Use as cover: ${a.filename}`} onPress={() => choose(`attachment:${a.id}`)}>
                   Use as cover
                 </Button>
               </View>

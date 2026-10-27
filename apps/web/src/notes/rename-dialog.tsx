@@ -24,7 +24,8 @@ export function RenameDialog({ open, onOpenChange, value, onSave }: RenameDialog
     }
   }, [open, value])
   const save = () => {
-    onSave(draft)
+    // An unchanged title writes nothing (no spurious updated_at bump — the inline seam's rule too; critique I2).
+    if (draft.trim() !== value.trim()) onSave(draft)
     onOpenChange(false)
   }
   return (

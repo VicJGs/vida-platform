@@ -6,6 +6,8 @@
 // the forward keys ['pages','resolve'] + ['links','backlinks'] (title search / backlink rows, live at R7).
 // A failure → one toast naming the action (BR-R1-7). While a write is in flight further writes are ignored (R-10 — the
 // re-read hasn't landed, so a quick double toggle would write the same value twice); the controls stay focusable.
+// Rename (NoteEntityView) and the controls (MetadataControls) are separate instances — R-10 holds per instance; the
+// two write different fields, so neither needs to wait for the other.
 // ============================================================================
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { getServices } from '../db/composition-root'
@@ -32,6 +34,8 @@ interface Write {
   /** The verb phrase for the failure toast ("Couldn’t …"). */
   action: string
   rename?: boolean
+  /** A toggle — dropped while a write is pending (R-10). Picker/rename writes are never dropped. */
+  toggle?: boolean
 }
 
 export function usePageMetadata(page: NoteEntityData): PageMetadata {
@@ -50,7 +54,7 @@ export function usePageMetadata(page: NoteEntityData): PageMetadata {
     onError: (e, { action }) => notifyError(action, e),
   })
   const write = (w: Write) => {
-    if (m.isPending) return // R-10
+    if (w.toggle && m.isPending) return // R-10: only a toggle is guarded (its re-read hasn't landed)
     m.mutate(w)
   }
   return {
@@ -58,8 +62,8 @@ export function usePageMetadata(page: NoteEntityData): PageMetadata {
     archived: page.archived,
     icon: page.icon,
     cover: page.cover,
-    toggleFavorite: () => write({ patch: { is_favorite: !page.favorite }, action: 'favorite the page' }),
-    toggleArchive: () => write({ patch: { is_archived: !page.archived }, action: 'archive the page' }),
+    toggleFavorite: () => write({ patch: { is_favorite: !page.favorite }, action: 'favorite the page', toggle: true }),
+    toggleArchive: () => write({ patch: { is_archived: !page.archived }, action: 'archive the page', toggle: true }),
     setIcon: (name) => write({ patch: { icon: name }, action: 'change the icon' }),
     setCover: (ref) => write({ patch: { cover_image: ref }, action: 'change the cover' }),
     rename: (next) => {

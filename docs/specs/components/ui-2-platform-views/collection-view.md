@@ -17,6 +17,7 @@ type ViewState = 'loading' | 'empty' | 'error' | 'success'                      
 
 interface CollectionViewProps {
   title: string
+  titleRef?: Ref<HTMLElement>                 // notes-rescope R3: the title element (tabIndex -1) — a focus target after a recovered read
   count?: number                              // success → shown; else rendered '—' (honest)
   layout: ViewLayout                          // CONTROLLED
   layouts: readonly ViewLayout[]              // available subset; order = switcher display order

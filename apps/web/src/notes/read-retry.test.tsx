@@ -130,11 +130,15 @@ describe.each(HOOKS)('%s — retry contract', (_name, useHook, key) => {
   })
 })
 
+// The NAMED focus target after recovery (R3 G14): the page H1 · the collection title · the journal frame.
+const isNoteH1 = (el: Element | null) => el?.getAttribute('role') === 'heading' && el.getAttribute('aria-level') === '1'
+const isNotesTitle = (el: Element | null) => el?.textContent === 'Notes'
+const isJournalFrame = (el: Element | null) => el?.getAttribute('aria-label') === 'Journal entry'
 describe.each([
-  ['the note page', () => <NoteEntity />, 'Couldn’t load this page.', 'getPage'],
-  ['the collection', () => <NotesSurface />, 'Couldn’t load your notes.', 'listPages'],
-  ['Home', () => <JournalPageRegion />, 'Couldn’t load today’s page.', 'ensureJournal'],
-] as const)('%s — Retry in place (BR-R1-8)', (_n, ui, message, key) => {
+  ['the note page', () => <NoteEntity />, 'Couldn’t load this page.', 'getPage', isNoteH1],
+  ['the collection', () => <NotesSurface />, 'Couldn’t load your notes.', 'listPages', isNotesTitle],
+  ['Home', () => <JournalPageRegion />, 'Couldn’t load today’s page.', 'ensureJournal', isJournalFrame],
+] as const)('%s — Retry in place (BR-R1-8)', (_n, ui, message, key, isTarget) => {
   it('shows the polite message + a Retry OUTSIDE the live region; pressing it recovers', async () => {
     fail = 3 // initial + retry, then the first press's attempt fails once → its retry succeeds
     const r = renderUI(ui())
@@ -151,7 +155,7 @@ describe.each([
     release()
     await waitFor(() => expect(r.queryByText(message)).toBeNull())
     // R3 G14: focus moves to the surface heading (never left on <body>)
-    await waitFor(() => expect(document.activeElement).not.toBe(document.body))
+    await waitFor(() => expect(isTarget(document.activeElement)).toBe(true))
     expect(document.activeElement?.getAttribute('tabindex')).toBe('-1')
     expect(reads[key]).toBe(4)
   }, 20_000) // a full-surface Tamagui render: past the 5 s default under suite load (memory: heavy-tamagui-shell-tests-flake)

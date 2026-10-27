@@ -20,6 +20,7 @@ vi.mock('../db/composition-root', () => ({
 }))
 
 import { CoverImage } from './cover-image'
+import { CoverBanner } from './page-metadata'
 
 const renderUI = (ui: React.ReactNode) =>
   render(
@@ -75,4 +76,19 @@ describe('CoverImage', () => {
     const { getByRole } = renderUI(<CoverImage cover="cover-sample" variant="header" />)
     expect(getByRole('img', { name: 'Cover unavailable' })).not.toBeNull()
   })
+
+  it('B1 — a failed cover recovers when the cover changes (no remount needed)', () => {
+    const r = renderUI(<CoverBanner cover="https://e.com/broken.png" />)
+    fireEvent.error(r.container.querySelector('img')!)
+    expect(r.getByRole('img', { name: 'Cover unavailable' })).not.toBeNull()
+    r.rerender(
+      <UIProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          <CoverBanner cover="https://e.com/good.png" />
+        </QueryClientProvider>
+      </UIProvider>,
+    )
+    expect(r.container.querySelector('img')?.getAttribute('src')).toBe('https://e.com/good.png')
+  })
 })
+

@@ -1,6 +1,6 @@
 // ============================================================================
-// PageMetadata — the note-page metadata controls (fe-notes #27, S6; EC-7). favorite ·
-// archive · icon · cover, reflecting state + mutating via (stubbed) updatePage. Split
+// PageMetadata — the note-page metadata controls (fe-notes #27, S6; EC-7; live since notes-rescope R3). favorite ·
+// archive · icon · cover, reflecting state + mutating via `updatePage` (usePageMetadata). Split
 // (the BacklinksView precedent): MetadataControlsView is pure presentational; MetadataControls
 // is the hook shell. CoverBanner is the real cover strip (R3 G10: URL or attachment thumbnail, both modes).
 // ============================================================================
@@ -52,13 +52,14 @@ function Ctrl({
       tabIndex={0}
       onPress={press}
       onKeyDown={onKeyDown}
-      cursor="pointer"
       flexDirection="row"
       alignItems="center"
       gap="$4"
       paddingVertical="$4"
       paddingHorizontal="$8"
       borderRadius="$sm"
+      opacity={busy ? 0.6 : 1}
+      cursor={busy ? 'progress' : 'pointer'}
       backgroundColor={on ? '$colorSurfaceSecondary' : 'transparent'}
       hoverStyle={{ backgroundColor: '$colorSurfaceSecondary' }}
       focusStyle={{ outlineColor: '$colorFocusRing', outlineStyle: 'solid', outlineWidth: 2 }}

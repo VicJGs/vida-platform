@@ -7,8 +7,8 @@
 // Notes ships only the `note` Overview (also the fallback for unregistered types). The
 // journal Overview is journals-rescope's (EC-18a re-pin); task/milestone/deliverable
 // Overviews RIDE in from fe-tasks/fe-projects via `registerOverview` (overview-registry).
-// Backlinks is LIVE (S3 — BacklinksPanel). Attachments + metadata are LIVE (S6 —
-// AttachmentsPanel + MetadataControls/CoverBanner via NotionHeader).
+// Backlinks render through BacklinksPanel (S3); metadata writes are LIVE (notes-rescope R3 — MetadataControls); the
+// cover strip (CoverBanner) leads the Overview in both modes (R3 G10); attachments go live at R4.
 // ============================================================================
 import type { ReactNode } from 'react'
 import { View } from '@tamagui/core'
@@ -32,7 +32,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** The `note` Overview: Properties · Attachments · Backlinks (EC-18f). Metadata controls ride in via NotionHeader
- *  (merged) + the Properties block (tabbed); the cover banner is merged-only (S6). */
+ *  (merged) + the Properties block (tabbed); the cover strip leads the Overview in BOTH modes (R3 G10). */
 export function NoteOverview({ page, mode }: OverviewContext) {
   if (mode === 'merged') {
     return (

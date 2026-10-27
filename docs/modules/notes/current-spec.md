@@ -57,7 +57,9 @@ Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `
 - `ensureEntityNote(pageType, entityType, entityId, seed: EntityNoteSeed): Promise<PageRow>` — NP-8 idempotent
   find-then-create via `getPagesForEntity` + type filter; `content = seedContent(seed)` (deterministic minimal
   `EditorDocument`) [FACT: service.ts:165-183, 41-58].
-- `addAttachment(pageId, file: NewAttachment)` · `getAttachments(pageId)` · `removeAttachment(id)` over
+- `addAttachment(pageId, file: NewAttachment)` · `getAttachments(pageId)` · `removeAttachment(id)` ·
+  `getAttachmentThumbnail(id)` (R3 — a projected select of `thumbnail_blob` only, never `encrypted_blob`; `null` when absent
+  or removed) over
   `note_attachments` [FACT: service.ts:196-217; schema/notes.ts:91-107]. `NewAttachment` is camelCase with `Uint8Array`
   blobs; the boundary cast to Drizzle's `Buffer` is documented [FACT: service.ts:202-207].
 
@@ -121,7 +123,7 @@ apps/web live calls: `composition-root.ts` (construction) · `home/use-journal-e
 | `useCreateNote` | **LIVE write** | `notes.createPage({type:'note',title:'New note'})` → invalidate `['notes','pages']` → navigate | use-create-note.ts:24-37 |
 | `useBacklinks` | STUB | `{groups:[],count:0,state:'empty'}` | use-backlinks.ts:68-76 |
 | `useAttachments` | STUB | `[]`, add/remove no-op | use-attachments.ts:38-45 |
-| `usePageMetadata` | STUB | reflects fields; favorite/archive/icon/cover no-op | use-page-metadata.ts:27-39 |
+| `usePageMetadata` | LIVE (R3) | favorite · archive · icon · cover · rename via one `updatePage` mutation; key sets; `notifyError`; toggles guarded while pending | use-page-metadata.ts |
 | `useWikiLinkPicker` | STUB | candidates `[]`, pick/create no-op | use-wikilink-picker.ts:49-63 |
 | `useJournalSummary` | STUB | `{sections:[],state:'empty'}` (never calls `buildDashboard`) | use-journal-summary.ts:48-51 |
 | `useNotesSearch` | PARTIAL | `useCommandSearch(query, stubSearchProvider)` → honest `search-unavailable` | use-notes-search.ts:36-40 |
@@ -145,8 +147,8 @@ use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; colle
 - **NoteEntityView** — `toEntityProps({title: pageLabel(page), entityType: page.type, hasPage:true, gate:'page',
   action: <PageActions/>, editorState:'success', defaultFacet:'editor'})`; the Overview is mounted as a component; mode
   from `NoteEntity`'s `useEntityModeStore` (app_state, seeded per-type default while loading; R2) as
-  `override ?? modeStore.readMode` [FACT: note-entity.tsx; use-entity-modes.ts]. **No rename /
-  delete affordance yet** — the ⋯ slot exists with no items (R3/R5/R9).
+  `override ?? modeStore.readMode` [FACT: note-entity.tsx; use-entity-modes.ts]. **Rename (R3):** the inline title seam (`onTitleCommit`, Enter/blur commit, Esc reverts) + ⋯ → "Rename" dialog, one
+  mutation; delete arrives at R5.
 - **Editor gate** — the page surface uses `offersPageEditor(pageType)` (`PAGE_TYPE` membership — all 6 types, R1 EC-15);
   module-entity surfaces keep `offersEditor(entityType, hasPage) = schema.isEntityType(entityType) && hasPage`
   (`ENTITY_TYPES` has no `*_note` types) [FACT: entity/adapter.ts; packages/core/src/db/schema/_registry.ts].
