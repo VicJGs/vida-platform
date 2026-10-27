@@ -16,3 +16,4 @@
 - blocked by `fe-codec-dashboard`
 - blocked by `fe-codec-collection`
 - blocked by `fe-codec-entity-facet`
+- **Edge from sessions-rescope (LIF-248):** register a habits `ReadProvider` (by-id `getHabit`, habits/service.ts:296) on the shared `ViewProviderRegistry` at this build (provider-registry.ts:6-7) — sessions resolves subject title/existence through it (interpretation IR-S19); until then habit subjects fall back to `humanizeSubType`, existence fail-open.

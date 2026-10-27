@@ -21,7 +21,7 @@ economy, and every module handler. Ships the rail structure; per-module handlers
   fire-time sensitive-consent gate: throws `EffectConsentMissing` iff the effect targets a sensitive module
   (∈ `SENSITIVE_MODULE_CLASSES`, reused from `foundation/capability`) not in `ctx.consentedSensitiveModules`.
   Pure, producer-agnostic; projection + non-sensitive/undefined targets pass. **Handler-side seam** — invoked by
-  consuming sensitive-module handlers (deferred #46), not by the session engine (ADR-004 §3.2.5-A3 / BR-17).
+  consuming sensitive-module handlers (the receiving MOD-* tracks, SES-13), not by the session engine (ADR-004 §3.2.5-A3 / BR-17).
 
 ## applyEffect flow
 `class = EFFECT_CLASS_OF[type]` (unknown→`UnknownEffectType`) → projection: `{applied:true}`, no handler/no ledger

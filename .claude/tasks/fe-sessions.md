@@ -17,3 +17,4 @@
 - blocked by `fe-session-runtime`
 - blocked by `fe-session-hud`
 - blocked by `sessions-rescope`
+- **Inherited from sessions-rescope (LIF-248) — must close at this ENTITY CLOSE (ELC-9):** Flow EC-5 `⋯` action set (hidden there — no documented session actions) · Flow EC-2 proof + target-less attach (the BORROWED capture flow, E21) · HUD EC-3/3c/3d countdown live re-verification with THIS unit's timer driver as the focus-runtime store's production writer (`apps/web/src/stores/focus-runtime-ui-store.ts`) · HUD idle (Begin) form once the start flow ships. Source: `docs/features/sessions-and-scheduling/delivery/{interpretation,reconciliation}.md` §6 / R-40, R-46.
