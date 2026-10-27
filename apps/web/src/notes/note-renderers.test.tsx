@@ -1,12 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, fireEvent } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UIProvider } from '@vida/ui'
 import { renderNotesView } from './note-renderers'
 import type { NotesRow } from './use-notes-rows'
 
 afterEach(cleanup)
-const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
+const renderUI = (ui: React.ReactNode) =>
+  render(
+    <UIProvider>
+      <QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>
+    </UIProvider>,
+  )
 const noop = (): void => {}
 
 const ROWS: NotesRow[] = [
@@ -74,4 +80,20 @@ describe('renderNotesView (S1, NOT-48/49)', () => {
     const { getByRole } = renderUI(<>{renderNotesView('gallery', 'success', rows, noop)}</>)
     expect(getByRole('button', { name: 'Task note, edited now' })).not.toBeNull()
   })
+
+  it('E-4 / B-38 — rows and tiles show the chosen icon; a tile shows its cover image', () => {
+    const rows: NotesRow[] = [
+      { id: '8', title: 'Iconed', type: 'note', excerpt: '', updated: 'now', date: '2026-10-10', favorite: false, icon: 'book-open', cover: 'https://e.com/c.png' },
+    ]
+    const list = renderUI(<>{renderNotesView('list', 'success', rows, noop)}</>)
+    expect(list.container.querySelector('svg.lucide-book-open')).not.toBeNull()
+    list.unmount()
+    // A tile with a cover shows the cover in its media area (PLAN G10 — "when set, else the type icon").
+    const gallery = renderUI(<>{renderNotesView('gallery', 'success', rows, noop)}</>)
+    expect(gallery.container.querySelector('img')?.getAttribute('src')).toBe('https://e.com/c.png')
+    gallery.unmount()
+    const noCover = renderUI(<>{renderNotesView('gallery', 'success', [{ ...rows[0]!, cover: null }], noop)}</>)
+    expect(noCover.container.querySelector('svg.lucide-book-open')).not.toBeNull()
+  })
 })
+

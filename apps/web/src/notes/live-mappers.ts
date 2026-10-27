@@ -75,6 +75,8 @@ export function toNotesRow(p: PageRow): NotesRow {
     id: p.id,
     title: pageLabel({ type: p.type, title: p.title }), // never empty (E-3)
     labelFromType: !p.title?.trim(),
+    icon: p.icon ?? null,
+    cover: p.cover_image ?? null,
     type: p.type,
     excerpt: '',
     updated: relLabel(p.updated_at),

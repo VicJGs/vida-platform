@@ -150,6 +150,9 @@ describe.each([
     expect(r.getByRole('button', { name: 'Retry' })).toBe(button) // the same element — focus can't be lost
     release()
     await waitFor(() => expect(r.queryByText(message)).toBeNull())
+    // R3 G14: focus moves to the surface heading (never left on <body>)
+    await waitFor(() => expect(document.activeElement).not.toBe(document.body))
+    expect(document.activeElement?.getAttribute('tabindex')).toBe('-1')
     expect(reads[key]).toBe(4)
   }, 20_000) // a full-surface Tamagui render: past the 5 s default under suite load (memory: heavy-tamagui-shell-tests-flake)
 })

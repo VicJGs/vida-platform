@@ -235,6 +235,29 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R2-mode-mem
 - Core: `@vida/core` `readAppState` · `readAppStatePrefix` (`substr`, not LIKE) · `writeAppState` · `deleteAppState` ·
   `entityModeKey` · `ENTITY_MODE_PREFIX`. DEV `?sample` uses the in-memory reference store (no app_state I/O).
 
+## notes-rescope R3 — metadata + rename (both planes · 2026-10-27)
+Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R3-metadata-rename.md` (rev 3) + IMPLEMENTATION-PLAN
+(rev 3, R-1…R-10, DEV-R3-1).
+- **BR-R3-1 · Metadata persists** — favorite · archive · icon · cover through `updatePage`; no optimistic patch (invalidate
+  + re-read); archiving keeps the open page. [FACT: notes/use-page-metadata.ts]
+- **BR-R3-2 · Keys** — every write: `['pages',id]` + `['notes','pages']` (+ `['journal',date]` for a journal); a rename
+  also: the forward keys `['pages','resolve']` + `['links','backlinks']`. [FACT: notes/use-page-metadata.ts]
+- **BR-R3-3 · Icon = a Lucide name** (core `pageIconSchema`, create + update); the UI's curated `PAGE_ICONS` (~48) +
+  `pageIconFor` → the type icon for an unknown/unset name; the picker = a `radiogroup` (arrows select, Enter/Space/click
+  commit). [FACT: validators/note.ts; notes/page-icons.ts; notes/icon-picker.tsx]
+- **BR-R3-4 · Cover = http(s) URL | `attachment:<id>`** (core `pageCoverSchema`); shown at the top of the Overview in both
+  modes (96 px) and in gallery tiles; a URL → `<img alt="" referrerPolicy="no-referrer">`; an attachment → its thumbnail
+  only (`getAttachmentThumbnail`, a projected select), tiles once in view; failure → placeholder (header `role="img"`
+  "Cover unavailable", tile decorative). [FACT: notes/cover-image.tsx; services/notes/service.ts]
+- **BR-R3-5 · Rename both ways, one mutation** — the EntityView seam (Enter/blur commit once, Esc reverts) + ⋯ → "Rename"
+  dialog (raw-title seed); an empty title stores `null`. [FACT: notes/note-entity.tsx; notes/rename-dialog.tsx]
+- **BR-R3-6 · Fails loud** — each write's error → one toast naming it. **BR-R3-7 · Focus** — Esc/Enter return focus to the
+  title; dialogs return it to their trigger; a recovered read focuses the page H1 / collection title / journal frame
+  (`useFocusOnRecovery`). Controls are `aria-disabled` (still focusable) while a write is pending.
+- **Controls** — icon + visible label in the greybox order (Change icon · Change cover · Favorite · Archive).
+- **DEV-R3-1** — `@vida/ui` `Input`'s native element is a Text host (font tokens now apply to every size).
+- Forward obligations (R4): the live attachments list; a thumbnail for every image attachment.
+
 ## Deferred (documented)
 CRDT/Yjs multi-device merge of `content` (M4) · `[E]` content encryption (M3) · FTS5 of content (DB-8) · `word_count`
 auto-derive · hard-delete cascade (Part 2) · blob-type reconcile (DB-11/M3).

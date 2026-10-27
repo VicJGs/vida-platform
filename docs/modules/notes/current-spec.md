@@ -9,7 +9,7 @@
 > Inherits: `docs/core` → ADR-002 (data model) · ADR-006 (spaces/registry) · ADR-008 (render targets) · ADR-009 (templates).
 > Intent authority: ① `docs/specs/foundation/backend-intent/parts/notes-and-pages.md` (NOT-01…54) ·
 > ② `docs/specs/foundation/fe-notes-and-pages/` (envision EC-1…24).
-> Last refreshed: 2026-10-27 — notes-rescope (LIF-245) R2 mode memory (② surface + the core app_state accessor). Source of truth = the code.
+> Last refreshed: 2026-10-27 — notes-rescope (LIF-245) R3 metadata + rename (② surface; ① validators + `getAttachmentThumbnail`). Source of truth = the code.
 
 ## Status
 - **① BACKEND COMPLETE** — S1 pages core · S2 entity notes + attachments · S3 page-links + wiki resolution · S4
@@ -163,9 +163,10 @@ use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; colle
 - **PageActions / PageSaveStatus** — the title-row slot: the `SyncStatus` chip from the per-page `save-status` store
   (hidden when locked) + the ⋯ `Menu` only with items; `PageSaveStatus` is also Home's chip [FACT: page-actions.tsx;
   save-status.ts]. **ReadErrorMessage** — the in-place read error + Retry [FACT: read-error-message.tsx; read-error.ts].
-- **NotionHeader / MetadataControls** — cover banner placeholder (`role=img`), type badge, Favorite/Archive
-  `aria-pressed` toggles + icon/cover actions (`role=group` "Page metadata"), read-only Type/Updated rows
-  [FACT: notion-header.tsx:13-62; page-metadata.tsx:57-121].
+- **NotionHeader / MetadataControls** — the cover strip (`CoverBanner` → `CoverImage`, both Overview modes) · the icon badge
+  (`pageIconFor`) · the labelled controls (icon + visible label; Favorite/Archive `aria-pressed`; `aria-disabled` while a
+  write is pending) opening the lazy `IconPickerDialog` / `CoverPickerDialog` · read-only Type/Updated rows (R3)
+  [FACT: notion-header.tsx; page-metadata.tsx; icon-picker.tsx; cover-picker.tsx].
 - **AttachmentsPanel** — 4 states, `role=list`, per-item "Remove {filename}", "Add attachment" [FACT: attachments-list.tsx:87-132].
 - **BacklinksPanel** — 4 states, grouped by module, "· N links"; items **not navigable** [FACT: backlinks-panel.tsx:26-67].
 - **SummaryBlock** `{date}` — per-section degrade ladder [FACT: summary-block.tsx:46-92].

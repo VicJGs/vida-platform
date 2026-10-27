@@ -99,3 +99,16 @@ describe('toNotesRow — labels (notes-rescope R1, E-3 / BR-R1-2)', () => {
     expect(toNotesRow(row('task_note', null))).toMatchObject({ title: 'Task note', labelFromType: true })
   })
 })
+
+describe('toNotesRow — icon + cover (notes-rescope R3, E-4)', () => {
+  const row = (icon: string | null, cover_image: string | null) =>
+    ({
+      id: 'p1', type: 'note', title: 'T', content: null, is_favorite: false, is_archived: false,
+      updated_at: Date.now(), journal_date: null, icon, cover_image,
+    }) as unknown as Parameters<typeof toNotesRow>[0]
+  it('carries icon + cover from the page row', () => {
+    expect(toNotesRow(row('book-open', 'https://e.com/c.png'))).toMatchObject({ icon: 'book-open', cover: 'https://e.com/c.png' })
+    expect(toNotesRow(row(null, null))).toMatchObject({ icon: null, cover: null })
+  })
+})
+

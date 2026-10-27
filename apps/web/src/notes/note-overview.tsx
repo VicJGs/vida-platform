@@ -17,7 +17,7 @@ import { AttachmentsPanel } from './attachments-list'
 import { BacklinksPanel } from './backlinks-panel'
 import { Eyebrow } from './note-chrome'
 import { NotionHeader, PropertyRows } from './notion-header'
-import { MetadataControls } from './page-metadata'
+import { CoverBanner, MetadataControls } from './page-metadata'
 // Type-only (erased at build) → no runtime import cycle with overview-registry.
 import type { OverviewContext } from './overview-registry'
 
@@ -54,23 +54,27 @@ export function NoteOverview({ page, mode }: OverviewContext) {
     { id: 'backlinks', title: 'Backlinks', size: 'full', state: 'success' },
   ]
   return (
-    <DashboardView
-      title="Overview"
-      aria-label="Note overview"
-      blocks={blocks}
-      renderBlock={(b) => {
-        // Properties block carries the read-only facts + the interactive metadata controls (D-S6-8).
-        if (b.id === 'properties')
-          return (
-            <>
-              <PropertyRows page={page} />
-              <MetadataControls page={page} />
-            </>
-          )
-        if (b.id === 'attachments') return <AttachmentsPanel pageId={page.id} />
-        if (b.id === 'backlinks') return <BacklinksPanel entityType={page.type} entityId={page.id} />
-        return null
-      }}
-    />
+    // R3 G10: the cover strip at the TOP of the tabbed Overview too (the approved greybox), above the blocks.
+    <View gap="$16">
+      <CoverBanner cover={page.cover} />
+      <DashboardView
+        title="Overview"
+        aria-label="Note overview"
+        blocks={blocks}
+        renderBlock={(b) => {
+          // Properties block carries the read-only facts + the interactive metadata controls (D-S6-8).
+          if (b.id === 'properties')
+            return (
+              <>
+                <PropertyRows page={page} />
+                <MetadataControls page={page} />
+              </>
+            )
+          if (b.id === 'attachments') return <AttachmentsPanel pageId={page.id} />
+          if (b.id === 'backlinks') return <BacklinksPanel entityType={page.type} entityId={page.id} />
+          return null
+        }}
+      />
+    </View>
   )
 }

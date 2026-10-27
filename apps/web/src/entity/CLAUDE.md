@@ -12,6 +12,8 @@ boundary forbids this in `@vida/ui` (BR-2). The collection/dashboard adapter pre
   editor. A source picks it with `gate: 'page'` (`hasPage` ignored); the default `'entity'` keeps `offersEditor`. Note pages use
   `'page'` — the four `*_note` types are page types but not registered entity types.
 - **`action`** — the ⋯ slot (save status + menu) passed straight through to `EntityView.action`.
+- **`onTitleCommit` · `titleEditValue` · `titleRef`** (notes-rescope R3) — the in-place rename seam + the H1 focus target,
+  passed straight through to EntityView (its BR-E-9).
 - **`toEntityProps(src)`** — the pure mapping entity → `EntityViewProps`; passes the `editor` slot **only when the gate is
   open** (a non-page-able entity gets no editor → the shell shows no Content tab/section).
 - **`EntityModeStore`** — the merged/tabbed per-instance memory CONVENTION. Durable store (notes-rescope R2, ADR-006 §3.6):

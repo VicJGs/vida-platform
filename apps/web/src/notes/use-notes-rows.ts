@@ -29,6 +29,10 @@ export interface NotesRow {
   favorite: boolean
   /** The title came from the type (an untitled page, `pageLabel`) — the card name then drops its doubled type segment. */
   labelFromType?: boolean
+  /** The page's chosen Lucide icon name (R3, E-4) — rendered via `pageIconFor`, falling back to the type icon. */
+  icon?: string | null
+  /** The page's cover (R3, E-4) — gallery tiles show it. */
+  cover?: string | null
 }
 
 export type NotesDataState = 'loading' | 'empty' | 'error' | 'success'

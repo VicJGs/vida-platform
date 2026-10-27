@@ -20,11 +20,13 @@
 //   • editorState? — an OVERRIDE for tests/the Visual Gate; default derives from the live read.
 //   • EC-8 — DIRECT semantic tokens, serif prose, AA both modes
 // ============================================================================
+import { useRef } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { EmptyState, type ViewState } from '@vida/ui'
 import { NoteEditorBody } from '../notes/note-editor-body'
 import { PageSaveStatus } from '../notes/page-actions'
 import { ReadErrorMessage } from '../notes/read-error-message'
+import { useFocusOnRecovery } from '../notes/use-focus-on-recovery'
 import { useJournalEntry } from './use-journal-entry'
 
 export interface JournalPageRegionProps {
@@ -49,8 +51,11 @@ export function JournalPageRegion({ editorState, 'aria-label': ariaLabel = 'Jour
   // `editorState` is a test/Visual-Gate override; default to the live read. `ensureJournal` never yields 'empty',
   // but the override (ViewState) can — keep the arm so it never renders a silent blank.
   const effective: ViewState = editorState ?? state
+  // R3 G14: after a recovered read, focus the journal frame (the Retry button is gone).
+  const frameRef = useRef<HTMLElement>(null)
+  useFocusOnRecovery(effective, frameRef)
   return (
-    <PageFrame role="region" aria-label={ariaLabel}>
+    <PageFrame ref={frameRef as never} role="region" aria-label={ariaLabel} tabIndex={-1}>
       {effective === 'loading' && (
         <View aria-busy="true">
           <SkeletonRow width="80%" />

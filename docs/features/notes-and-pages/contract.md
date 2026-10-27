@@ -68,8 +68,9 @@ capability registry. `/summary` data and the NP-8 seed are read-only integration
   get bodies here; the other 8 stay honest placeholders with edges to their units (extension-catalog.md:35-45). CAP-12 `block_instances` placement is homed to notes-rescope by
   coverage-report.md:50; whether it applies to the page surface at all (ADR-008 L120-124) is `[UNKNOWN — homed: notes-rescope Step 4 reconciliation]`.
 - **Metadata values:** favorite/archive are booleans; glyphs are Lucide icons, never emoji (EC-22, envision.md:55);
-  `cover_image` = a user-chosen image URL `[E]` (security-model.md:465). The icon value domain (Lucide name?) and
-  whether a cover can reference an attachment: `[UNKNOWN — homed: the metadata leg's slice PLAN]`.
+  `cover_image` = a user-chosen image URL `[E]` (security-model.md:465). **RESOLVED (notes-rescope R3, PLAN-R3 G4/G5):**
+  `icon` = a Lucide icon name (kebab-case, shape-validated on create + update); `cover_image` = an `http(s)` image URL
+  (≤ 2048) or `attachment:<id>` (one of the page's attachments, rendered from its thumbnail only).
 - **Attachment upload (M1, plaintext pass-through):** file → blob + optional thumbnail, lazy thumbnails
   (performance-strategy.md:132). Picker UX, size limit and storage (DB blob vs OPFS): `[UNKNOWN — homed: the
   attachments leg's slice PLAN / Envision Gate]`.

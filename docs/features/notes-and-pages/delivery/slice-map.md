@@ -78,6 +78,9 @@ R8 before R9 (templates carry live blocks). R6 before R9 (the "New from template
 ## R4 — Attachments  ·  SHARED
 - Live `['attachments',pageId]` query; remove (B-41).
 - File input + drop zone → bytes → `addAttachment`; honest progress; size limit (typed error naming file + limit) (B-42 · A-23).
+- **From R3:** (1) the live attachments read makes the cover picker's "From this page's attachments" list real; (2) **an
+  image attachment gets a thumbnail on add** — attachment covers render from `getAttachmentThumbnail` only (PLAN-R3 G9/G10,
+  `[INTERP]` there).
 **ECs:** EC-8 · EC-30. **Gate:** shared (live: add → reload → listed).
 
 ## R5 — Delete, undo, OS-wide Trash  ·  SHARED

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StrictMode, useState } from 'react'
-import { act, cleanup, fireEvent, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import type { EditorDocument } from '@vida/types'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UIProvider } from '@vida/ui'
@@ -15,8 +15,15 @@ import type { NoteEntityData } from './use-note-entity'
 
 // The editor body persists content via the composition root (useNoteContent); mock it (no write in these tests).
 const writeSpy = vi.fn<(id: string, d: EditorDocument) => Promise<unknown>>(async () => undefined)
+const updateSpy = vi.fn<(id: string, p: Record<string, unknown>) => Promise<unknown>>(async () => ({}))
 vi.mock('../db/composition-root', () => ({
-  getServices: () => Promise.resolve({ notes: { writePageContent: (id: string, d: EditorDocument) => writeSpy(id, d) } }),
+  getServices: () =>
+    Promise.resolve({
+      notes: {
+        writePageContent: (id: string, d: EditorDocument) => writeSpy(id, d),
+        updatePage: (id: string, p: Record<string, unknown>) => updateSpy(id, p),
+      },
+    }),
 }))
 
 // The editor is a probe that records each mount's seed (DEV-R0-1 facet-switch tests); it renders a marker.
@@ -128,9 +135,47 @@ describe('NoteEntityView (S2 — the note-entity frame)', () => {
     errSpy.mockRestore()
   })
 
-  it('BR-R1-6 — no ⋯ in R1 (no items yet → no dead affordance)', () => {
-    const { queryByRole } = renderUI(<NoteEntityView page={{ ...notePage, id: 's2' }} />)
-    expect(queryByRole('button', { name: 'Page actions' })).toBeNull()
+  it('R3 G10 — the cover sits at the TOP of the tabbed Overview too (the greybox), above the metadata controls', () => {
+    const { getByRole, container } = renderUI(<NoteEntityView page={{ ...notePage, id: 'cv', cover: 'https://e.com/c.png' }} />)
+    fireEvent.click(getByRole('tab', { name: 'Overview' }))
+    const img = container.querySelector('img[src="https://e.com/c.png"]')
+    expect(img).not.toBeNull()
+    const controls = getByRole('group', { name: 'Page metadata' })
+    expect(img!.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('R3 G13 — the ⋯ now carries "Rename" (EC-34 "beside the ⋯" closes); the panel is labelled by its trigger', async () => {
+    const { getByRole, findByRole } = renderUI(<NoteEntityView page={{ ...notePage, id: 's2' }} />)
+    const trigger = getByRole('button', { name: 'Page actions' })
+    fireEvent.click(trigger)
+    const menu = await findByRole('menu')
+    expect(menu.getAttribute('aria-labelledby')).toBe(trigger.id)
+    expect(menu.getAttribute('aria-label')).toBeNull()
+    expect(getByRole('menuitem', { name: 'Rename' })).not.toBeNull()
+  })
+
+  it('R3 EC-25 — inline rename: click the title, type, Enter → updatePage({title}) once', async () => {
+    updateSpy.mockClear()
+    const { getByRole } = renderUI(<NoteEntityView page={{ ...notePage, id: 'rn1' }} />)
+    fireEvent.click(getByRole('button', { name: 'Project kickoff' }))
+    const input = getByRole('textbox', { name: 'Page title' })
+    fireEvent.change(input, { target: { value: 'Kickoff v2' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    await waitFor(() => expect(updateSpy).toHaveBeenCalledWith('rn1', { title: 'Kickoff v2' }))
+    expect(updateSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('R3 EC-25 — ⋯ → Rename opens a dialog seeded with the RAW title; Save runs the same mutation', async () => {
+    updateSpy.mockClear()
+    const { getByRole, findByRole } = renderUI(<NoteEntityView page={{ ...notePage, id: 'rn2', type: 'task_note', title: '' }} />)
+    fireEvent.click(getByRole('button', { name: 'Page actions' }))
+    fireEvent.click(await findByRole('menuitem', { name: 'Rename' }))
+    const dialog = await findByRole('dialog', { name: 'Rename page' })
+    const input = dialog.querySelector('input') as HTMLInputElement
+    expect(input.value).toBe('') // the raw title, not the "Task note" label
+    fireEvent.change(input, { target: { value: 'Ship it' } })
+    fireEvent.click(getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(updateSpy).toHaveBeenCalledWith('rn2', { title: 'Ship it' }))
   })
 
   it('EC-33 + BR-R1-5 — a malformed page shows the notice and NO save chip', () => {

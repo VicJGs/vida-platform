@@ -12,7 +12,9 @@ import {
   type ViewLayout, type ViewState,
 } from '@vida/ui'
 import { Star } from 'lucide-react'
-import { Icon, typeIcon, typeLabel } from './note-chrome'
+import { Icon, typeLabel } from './note-chrome'
+import { pageIconFor } from './page-icons'
+import { CoverImage } from './cover-image'
 import type { NotesRow } from './use-notes-rows'
 
 /** The card's full accessible name (B-63): title · type · edited · favorite — the type is dropped when the title IS the
@@ -29,7 +31,7 @@ const Col = styled(View, { flexDirection: 'column', gap: '$4' })
 function NoteRowCard({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) {
   return (
     <Card interactive onPress={() => onOpen(r.id)} status={r.favorite ? 'warm' : 'neutral'} aria-label={cardName(r)}
-      header={<Row><Icon icon={typeIcon(r.type)} tone="primary" /><Text fontFamily="$display" fontSize="$body" color="$colorTextPrimary">{r.title}</Text></Row>}
+      header={<Row><Icon icon={pageIconFor({ icon: r.icon ?? null, type: r.type })} tone="primary" /><Text fontFamily="$display" fontSize="$body" color="$colorTextPrimary">{r.title}</Text></Row>}
       actions={r.favorite ? <Icon icon={Star} tone="accent" /> : undefined}>
       <Col>
         <Text fontSize="$small" color="$colorTextMuted">{r.excerpt}</Text>
@@ -43,9 +45,16 @@ function NoteTile({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) 
   return (
     <Card interactive onPress={() => onOpen(r.id)} status={r.favorite ? 'warm' : 'neutral'} aria-label={cardName(r)}>
       <Col>
-        <View height={72} borderRadius="$sm" backgroundColor="$colorSurfaceSecondary" alignItems="center" justifyContent="center">
-          <Icon icon={typeIcon(r.type)} size={24} />
-        </View>
+        {r.cover ? (
+          // The tile's media area carries the cover (R3, E-4); attachment covers load once in view (R-8).
+          <View height={72}>
+            <CoverImage cover={r.cover} variant="tile" />
+          </View>
+        ) : (
+          <View height={72} borderRadius="$sm" backgroundColor="$colorSurfaceSecondary" alignItems="center" justifyContent="center">
+            <Icon icon={pageIconFor({ icon: r.icon ?? null, type: r.type })} size={24} />
+          </View>
+        )}
         <Row><Text fontFamily="$display" fontSize="$body" color="$colorTextPrimary">{r.title}</Text>{r.favorite && <Icon icon={Star} tone="accent" />}</Row>
         <Text fontSize="$small" color="$colorTextMuted">{typeLabel(r.type)} · {r.updated}</Text>
       </Col>
@@ -60,7 +69,7 @@ export function renderNotesView(layout: ViewLayout, state: ViewState, rows: read
     case 'gallery':
       return <GalleryView aria-label="Notes" items={rows} getKey={(r) => r.id} state={state} minTileWidth={220} renderItem={(r) => <NoteTile r={r} onOpen={onOpen} />} />
     case 'calendar':
-      return <CalendarView aria-label="Notes by day" items={rows} getKey={(r) => r.id} getDate={(r) => r.date} state={state === 'empty' ? 'success' : state} renderItem={(r) => <Row><Icon icon={typeIcon(r.type)} size={12} /><Text fontSize="$small">{r.title}</Text></Row>} />
+      return <CalendarView aria-label="Notes by day" items={rows} getKey={(r) => r.id} getDate={(r) => r.date} state={state === 'empty' ? 'success' : state} renderItem={(r) => <Row><Icon icon={pageIconFor({ icon: r.icon ?? null, type: r.type })} size={12} /><Text fontSize="$small">{r.title}</Text></Row>} />
     case 'graph':
       return (
         <NeuralGraph aria-label="Notes graph" nodes={[]} edges={[]} height={380}

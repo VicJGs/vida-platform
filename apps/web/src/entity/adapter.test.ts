@@ -121,3 +121,15 @@ describe('createAppStateEntityModeStore — app_state-backed memory (notes-resco
     expect(persist).toHaveBeenCalledWith('entity_mode:task_note:t1', 'merged')
   })
 })
+
+describe('toEntityProps — the rename seam passes through (notes-rescope R3)', () => {
+  it('onTitleCommit · titleEditValue · titleRef reach EntityView', () => {
+    const onTitleCommit = vi.fn()
+    const titleRef = { current: null }
+    const p = toEntityProps({ ...base, onTitleCommit, titleEditValue: '', titleRef })
+    expect(p.onTitleCommit).toBe(onTitleCommit)
+    expect(p.titleEditValue).toBe('')
+    expect(p.titleRef).toBe(titleRef)
+  })
+})
+

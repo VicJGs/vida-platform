@@ -15,7 +15,7 @@
 // merged/tabbed memory CONVENTION and its durable store `createAppStateEntityModeStore` (notes-rescope R2: `app_state`
 // `entity_mode:<type>:<id>`, ADR-006 §3.6 — the notes page binds it via `notes/use-entity-modes.ts`). See ./CLAUDE.md.
 // ============================================================================
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { entityModeKey, schema } from '@vida/core'
 import { PAGE_TYPE } from '@vida/types'
 import type { EntityViewProps, Facet, FacetMode } from '@vida/ui'
@@ -54,6 +54,10 @@ export interface EntitySource {
   gate?: 'entity' | 'page'
   /** The ⋯ entity-action slot (save status + menu) — passed through to `EntityView.action`. */
   action?: ReactNode
+  /** notes-rescope R3 — the in-place rename seam + the H1 focus target, passed through to EntityView. */
+  onTitleCommit?: (next: string) => void
+  titleEditValue?: string
+  titleRef?: Ref<HTMLElement>
   /** The composed Editor facet body — gated: only reaches EntityView when the entity is page-able. */
   editorNode?: ReactNode
   editorState?: EditorState
@@ -80,6 +84,9 @@ export function toEntityProps(src: EntitySource): EntityViewProps {
     title: src.title,
     subtitle: src.subtitle,
     action: src.action,
+    onTitleCommit: src.onTitleCommit,
+    titleEditValue: src.titleEditValue,
+    titleRef: src.titleRef,
     mode: src.mode,
     onModeChange: src.onModeChange,
     defaultFacet: src.defaultFacet,
