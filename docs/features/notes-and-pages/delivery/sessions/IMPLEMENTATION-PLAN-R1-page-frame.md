@@ -209,3 +209,4 @@ Untouched: `@vida/ui`, `@vida/core`, `@vida/types`, `@vida/editor`.
   `Text` gets `lineHeight="$display"`. Every `EntityView` consumer inherits both (today: notes only, `toEntityProps` has one
   live caller). Gate: the `entity-view` tests + a Visual re-shoot of the same matrix.
 - **Alternative:** accept (a) for R1 and leave (b) to a `@vida/ui` follow-up.
+- **Visual Gate ACCEPTED by Victor on 2026-10-27** (re-shoot after DEV-R1-1). R1 done.
