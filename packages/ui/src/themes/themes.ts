@@ -2,323 +2,39 @@
 import { tokens } from './tokens'
 
 // 8 scheme-first base themes (4 presets × light/dark) + per-theme <Comp> sub-themes — parallel dark/preset VALUES (B-codec-1/B7). Theme-switch MECHANISM = DS-4/fe-codec S3.
-export const light = {
-  colorBorderDefault: tokens.color.editorialNeutral200,
-  colorBrandEmphasis: tokens.color.editorialAccent600,
-  colorBrandPrimary: tokens.color.editorialAccent500,
-  colorFocusRing: tokens.color.editorialAccent500,
-  colorSignalDanger: tokens.color.danger500,
-  colorSignalSuccess: tokens.color.success500,
-  colorSurfaceInverse: tokens.color.editorialNeutral900,
-  colorSurfacePrimary: tokens.color.editorialNeutral50,
-  colorSurfaceSecondary: tokens.color.editorialNeutral100,
-  colorTextInverse: tokens.color.white,
-  colorTextMuted: tokens.color.editorialNeutral500,
-  colorTextPrimary: tokens.color.editorialNeutral900,
-  radiusCard: tokens.radius.lg,
-  radiusControl: tokens.radius.md,
-  radiusPill: tokens.radius.full,
-  spaceInsetCompact: tokens.space['8'],
-  spaceInsetDefault: tokens.space['12'],
-  spaceInsetLoose: tokens.space['16'],
-  spaceInsetSpacious: tokens.space['24'],
-}
+export const light = { "colorBorderDefault": tokens.color.editorialNeutral200, "colorBrandEmphasis": tokens.color.editorialAccent600, "colorBrandPrimary": tokens.color.editorialAccent500, "colorFocusRing": tokens.color.editorialAccent500, "colorSignalDanger": tokens.color.danger500, "colorSignalSuccess": tokens.color.success500, "colorSurfaceInverse": tokens.color.editorialNeutral900, "colorSurfacePrimary": tokens.color.editorialNeutral50, "colorSurfaceSecondary": tokens.color.editorialNeutral100, "colorTextInverse": tokens.color.white, "colorTextMuted": tokens.color.editorialNeutral500, "colorTextPrimary": tokens.color.editorialNeutral900, "radiusCard": tokens.radius.lg, "radiusControl": tokens.radius.md, "radiusPill": tokens.radius.full, "spaceInsetCompact": tokens.space["8"], "spaceInsetDefault": tokens.space["12"], "spaceInsetLoose": tokens.space["16"], "spaceInsetSpacious": tokens.space["24"] }
 
-export const dark = {
-  colorBorderDefault: tokens.color.editorialNeutral700,
-  colorBrandEmphasis: tokens.color.editorialAccent300,
-  colorBrandPrimary: tokens.color.editorialAccent400,
-  colorFocusRing: tokens.color.editorialAccent400,
-  colorSignalDanger: tokens.color.danger500,
-  colorSignalSuccess: tokens.color.success500,
-  colorSurfaceInverse: tokens.color.white,
-  colorSurfacePrimary: tokens.color.editorialNeutral900,
-  colorSurfaceSecondary: tokens.color.editorialNeutral800,
-  colorTextInverse: tokens.color.editorialNeutral900,
-  colorTextMuted: tokens.color.editorialNeutral400,
-  colorTextPrimary: tokens.color.editorialNeutral50,
-  radiusCard: tokens.radius.lg,
-  radiusControl: tokens.radius.md,
-  radiusPill: tokens.radius.full,
-  spaceInsetCompact: tokens.space['8'],
-  spaceInsetDefault: tokens.space['12'],
-  spaceInsetLoose: tokens.space['16'],
-  spaceInsetSpacious: tokens.space['24'],
-}
+export const dark = { "colorBorderDefault": tokens.color.editorialNeutral700, "colorBrandEmphasis": tokens.color.editorialAccent300, "colorBrandPrimary": tokens.color.editorialAccent400, "colorFocusRing": tokens.color.editorialAccent400, "colorSignalDanger": tokens.color.danger500, "colorSignalSuccess": tokens.color.success500, "colorSurfaceInverse": tokens.color.white, "colorSurfacePrimary": tokens.color.editorialNeutral900, "colorSurfaceSecondary": tokens.color.editorialNeutral800, "colorTextInverse": tokens.color.editorialNeutral900, "colorTextMuted": tokens.color.editorialNeutral400, "colorTextPrimary": tokens.color.editorialNeutral50, "radiusCard": tokens.radius.lg, "radiusControl": tokens.radius.md, "radiusPill": tokens.radius.full, "spaceInsetCompact": tokens.space["8"], "spaceInsetDefault": tokens.space["12"], "spaceInsetLoose": tokens.space["16"], "spaceInsetSpacious": tokens.space["24"] }
 
-export const light_reader = {
-  colorBorderDefault: tokens.color.readerNeutral200,
-  colorBrandEmphasis: tokens.color.readerAccent600,
-  colorBrandPrimary: tokens.color.readerAccent500,
-  colorFocusRing: tokens.color.readerAccent500,
-  colorSignalDanger: tokens.color.danger500,
-  colorSignalSuccess: tokens.color.success500,
-  colorSurfaceInverse: tokens.color.readerNeutral900,
-  colorSurfacePrimary: tokens.color.readerNeutral50,
-  colorSurfaceSecondary: tokens.color.readerNeutral100,
-  colorTextInverse: tokens.color.white,
-  colorTextMuted: tokens.color.readerNeutral500,
-  colorTextPrimary: tokens.color.readerNeutral900,
-  radiusCard: tokens.radius.lg,
-  radiusControl: tokens.radius.md,
-  radiusPill: tokens.radius.full,
-  spaceInsetCompact: tokens.space['8'],
-  spaceInsetDefault: tokens.space['12'],
-  spaceInsetLoose: tokens.space['16'],
-  spaceInsetSpacious: tokens.space['24'],
-}
+export const light_reader = { "colorBorderDefault": tokens.color.readerNeutral200, "colorBrandEmphasis": tokens.color.readerAccent600, "colorBrandPrimary": tokens.color.readerAccent500, "colorFocusRing": tokens.color.readerAccent500, "colorSignalDanger": tokens.color.danger500, "colorSignalSuccess": tokens.color.success500, "colorSurfaceInverse": tokens.color.readerNeutral900, "colorSurfacePrimary": tokens.color.readerNeutral50, "colorSurfaceSecondary": tokens.color.readerNeutral100, "colorTextInverse": tokens.color.white, "colorTextMuted": tokens.color.readerNeutral500, "colorTextPrimary": tokens.color.readerNeutral900, "radiusCard": tokens.radius.lg, "radiusControl": tokens.radius.md, "radiusPill": tokens.radius.full, "spaceInsetCompact": tokens.space["8"], "spaceInsetDefault": tokens.space["12"], "spaceInsetLoose": tokens.space["16"], "spaceInsetSpacious": tokens.space["24"] }
 
-export const dark_reader = {
-  colorBorderDefault: tokens.color.readerNeutral700,
-  colorBrandEmphasis: tokens.color.readerAccent300,
-  colorBrandPrimary: tokens.color.readerAccent400,
-  colorFocusRing: tokens.color.readerAccent400,
-  colorSignalDanger: tokens.color.danger500,
-  colorSignalSuccess: tokens.color.success500,
-  colorSurfaceInverse: tokens.color.white,
-  colorSurfacePrimary: tokens.color.readerNeutral900,
-  colorSurfaceSecondary: tokens.color.readerNeutral800,
-  colorTextInverse: tokens.color.readerNeutral900,
-  colorTextMuted: tokens.color.readerNeutral400,
-  colorTextPrimary: tokens.color.readerNeutral50,
-  radiusCard: tokens.radius.lg,
-  radiusControl: tokens.radius.md,
-  radiusPill: tokens.radius.full,
-  spaceInsetCompact: tokens.space['8'],
-  spaceInsetDefault: tokens.space['12'],
-  spaceInsetLoose: tokens.space['16'],
-  spaceInsetSpacious: tokens.space['24'],
-}
+export const dark_reader = { "colorBorderDefault": tokens.color.readerNeutral700, "colorBrandEmphasis": tokens.color.readerAccent300, "colorBrandPrimary": tokens.color.readerAccent400, "colorFocusRing": tokens.color.readerAccent400, "colorSignalDanger": tokens.color.danger500, "colorSignalSuccess": tokens.color.success500, "colorSurfaceInverse": tokens.color.white, "colorSurfacePrimary": tokens.color.readerNeutral900, "colorSurfaceSecondary": tokens.color.readerNeutral800, "colorTextInverse": tokens.color.readerNeutral900, "colorTextMuted": tokens.color.readerNeutral400, "colorTextPrimary": tokens.color.readerNeutral50, "radiusCard": tokens.radius.lg, "radiusControl": tokens.radius.md, "radiusPill": tokens.radius.full, "spaceInsetCompact": tokens.space["8"], "spaceInsetDefault": tokens.space["12"], "spaceInsetLoose": tokens.space["16"], "spaceInsetSpacious": tokens.space["24"] }
 
-export const light_quietDesk = {
-  colorBorderDefault: tokens.color.quietDeskNeutral200,
-  colorBrandEmphasis: tokens.color.quietDeskAccent600,
-  colorBrandPrimary: tokens.color.quietDeskAccent500,
-  colorFocusRing: tokens.color.quietDeskAccent500,
-  colorSignalDanger: tokens.color.danger500,
-  colorSignalSuccess: tokens.color.success500,
-  colorSurfaceInverse: tokens.color.quietDeskNeutral900,
-  colorSurfacePrimary: tokens.color.quietDeskNeutral50,
-  colorSurfaceSecondary: tokens.color.quietDeskNeutral100,
-  colorTextInverse: tokens.color.white,
-  colorTextMuted: tokens.color.quietDeskNeutral500,
-  colorTextPrimary: tokens.color.quietDeskNeutral900,
-  radiusCard: tokens.radius.lg,
-  radiusControl: tokens.radius.md,
-  radiusPill: tokens.radius.full,
-  spaceInsetCompact: tokens.space['8'],
-  spaceInsetDefault: tokens.space['12'],
-  spaceInsetLoose: tokens.space['16'],
-  spaceInsetSpacious: tokens.space['24'],
-}
+export const light_quietDesk = { "colorBorderDefault": tokens.color.quietDeskNeutral200, "colorBrandEmphasis": tokens.color.quietDeskAccent600, "colorBrandPrimary": tokens.color.quietDeskAccent500, "colorFocusRing": tokens.color.quietDeskAccent500, "colorSignalDanger": tokens.color.danger500, "colorSignalSuccess": tokens.color.success500, "colorSurfaceInverse": tokens.color.quietDeskNeutral900, "colorSurfacePrimary": tokens.color.quietDeskNeutral50, "colorSurfaceSecondary": tokens.color.quietDeskNeutral100, "colorTextInverse": tokens.color.white, "colorTextMuted": tokens.color.quietDeskNeutral500, "colorTextPrimary": tokens.color.quietDeskNeutral900, "radiusCard": tokens.radius.lg, "radiusControl": tokens.radius.md, "radiusPill": tokens.radius.full, "spaceInsetCompact": tokens.space["8"], "spaceInsetDefault": tokens.space["12"], "spaceInsetLoose": tokens.space["16"], "spaceInsetSpacious": tokens.space["24"] }
 
-export const dark_quietDesk = {
-  colorBorderDefault: tokens.color.quietDeskNeutral700,
-  colorBrandEmphasis: tokens.color.quietDeskAccent300,
-  colorBrandPrimary: tokens.color.quietDeskAccent400,
-  colorFocusRing: tokens.color.quietDeskAccent400,
-  colorSignalDanger: tokens.color.danger500,
-  colorSignalSuccess: tokens.color.success500,
-  colorSurfaceInverse: tokens.color.white,
-  colorSurfacePrimary: tokens.color.quietDeskNeutral900,
-  colorSurfaceSecondary: tokens.color.quietDeskNeutral800,
-  colorTextInverse: tokens.color.quietDeskNeutral900,
-  colorTextMuted: tokens.color.quietDeskNeutral400,
-  colorTextPrimary: tokens.color.quietDeskNeutral50,
-  radiusCard: tokens.radius.lg,
-  radiusControl: tokens.radius.md,
-  radiusPill: tokens.radius.full,
-  spaceInsetCompact: tokens.space['8'],
-  spaceInsetDefault: tokens.space['12'],
-  spaceInsetLoose: tokens.space['16'],
-  spaceInsetSpacious: tokens.space['24'],
-}
+export const dark_quietDesk = { "colorBorderDefault": tokens.color.quietDeskNeutral700, "colorBrandEmphasis": tokens.color.quietDeskAccent300, "colorBrandPrimary": tokens.color.quietDeskAccent400, "colorFocusRing": tokens.color.quietDeskAccent400, "colorSignalDanger": tokens.color.danger500, "colorSignalSuccess": tokens.color.success500, "colorSurfaceInverse": tokens.color.white, "colorSurfacePrimary": tokens.color.quietDeskNeutral900, "colorSurfaceSecondary": tokens.color.quietDeskNeutral800, "colorTextInverse": tokens.color.quietDeskNeutral900, "colorTextMuted": tokens.color.quietDeskNeutral400, "colorTextPrimary": tokens.color.quietDeskNeutral50, "radiusCard": tokens.radius.lg, "radiusControl": tokens.radius.md, "radiusPill": tokens.radius.full, "spaceInsetCompact": tokens.space["8"], "spaceInsetDefault": tokens.space["12"], "spaceInsetLoose": tokens.space["16"], "spaceInsetSpacious": tokens.space["24"] }
 
-export const light_game = {
-  colorBorderDefault: tokens.color.gameNeutral200,
-  colorBrandEmphasis: tokens.color.gameAccent600,
-  colorBrandPrimary: tokens.color.gameAccent500,
-  colorFocusRing: tokens.color.gameAccent500,
-  colorSignalDanger: tokens.color.danger500,
-  colorSignalSuccess: tokens.color.success500,
-  colorSurfaceInverse: tokens.color.gameNeutral900,
-  colorSurfacePrimary: tokens.color.gameNeutral50,
-  colorSurfaceSecondary: tokens.color.gameNeutral100,
-  colorTextInverse: tokens.color.white,
-  colorTextMuted: tokens.color.gameNeutral500,
-  colorTextPrimary: tokens.color.gameNeutral900,
-  radiusCard: tokens.radius.lg,
-  radiusControl: tokens.radius.md,
-  radiusPill: tokens.radius.full,
-  spaceInsetCompact: tokens.space['8'],
-  spaceInsetDefault: tokens.space['12'],
-  spaceInsetLoose: tokens.space['16'],
-  spaceInsetSpacious: tokens.space['24'],
-}
+export const light_game = { "colorBorderDefault": tokens.color.gameNeutral200, "colorBrandEmphasis": tokens.color.gameAccent600, "colorBrandPrimary": tokens.color.gameAccent500, "colorFocusRing": tokens.color.gameAccent500, "colorSignalDanger": tokens.color.danger500, "colorSignalSuccess": tokens.color.success500, "colorSurfaceInverse": tokens.color.gameNeutral900, "colorSurfacePrimary": tokens.color.gameNeutral50, "colorSurfaceSecondary": tokens.color.gameNeutral100, "colorTextInverse": tokens.color.white, "colorTextMuted": tokens.color.gameNeutral500, "colorTextPrimary": tokens.color.gameNeutral900, "radiusCard": tokens.radius.lg, "radiusControl": tokens.radius.md, "radiusPill": tokens.radius.full, "spaceInsetCompact": tokens.space["8"], "spaceInsetDefault": tokens.space["12"], "spaceInsetLoose": tokens.space["16"], "spaceInsetSpacious": tokens.space["24"] }
 
-export const dark_game = {
-  colorBorderDefault: tokens.color.gameNeutral700,
-  colorBrandEmphasis: tokens.color.gameAccent300,
-  colorBrandPrimary: tokens.color.gameAccent400,
-  colorFocusRing: tokens.color.gameAccent400,
-  colorSignalDanger: tokens.color.danger500,
-  colorSignalSuccess: tokens.color.success500,
-  colorSurfaceInverse: tokens.color.white,
-  colorSurfacePrimary: tokens.color.gameNeutral900,
-  colorSurfaceSecondary: tokens.color.gameNeutral800,
-  colorTextInverse: tokens.color.gameNeutral900,
-  colorTextMuted: tokens.color.gameNeutral400,
-  colorTextPrimary: tokens.color.gameNeutral50,
-  radiusCard: tokens.radius.lg,
-  radiusControl: tokens.radius.md,
-  radiusPill: tokens.radius.full,
-  spaceInsetCompact: tokens.space['8'],
-  spaceInsetDefault: tokens.space['12'],
-  spaceInsetLoose: tokens.space['16'],
-  spaceInsetSpacious: tokens.space['24'],
-}
+export const dark_game = { "colorBorderDefault": tokens.color.gameNeutral700, "colorBrandEmphasis": tokens.color.gameAccent300, "colorBrandPrimary": tokens.color.gameAccent400, "colorFocusRing": tokens.color.gameAccent400, "colorSignalDanger": tokens.color.danger500, "colorSignalSuccess": tokens.color.success500, "colorSurfaceInverse": tokens.color.white, "colorSurfacePrimary": tokens.color.gameNeutral900, "colorSurfaceSecondary": tokens.color.gameNeutral800, "colorTextInverse": tokens.color.gameNeutral900, "colorTextMuted": tokens.color.gameNeutral400, "colorTextPrimary": tokens.color.gameNeutral50, "radiusCard": tokens.radius.lg, "radiusControl": tokens.radius.md, "radiusPill": tokens.radius.full, "spaceInsetCompact": tokens.space["8"], "spaceInsetDefault": tokens.space["12"], "spaceInsetLoose": tokens.space["16"], "spaceInsetSpacious": tokens.space["24"] }
 
-export const light_Button = {
-  backgroundDanger: light.colorSignalDanger,
-  backgroundPrimary: light.colorBrandEmphasis,
-  backgroundSecondary: light.colorSurfaceSecondary,
-  borderSecondary: light.colorBorderDefault,
-  padding: light.spaceInsetDefault,
-  radius: light.radiusControl,
-  textDanger: light.colorTextInverse,
-  textGhost: light.colorBrandPrimary,
-  textPrimary: light.colorTextInverse,
-  textSecondary: light.colorTextPrimary,
-}
-export const light_Card = {
-  background: light.colorSurfacePrimary,
-  border: light.colorBorderDefault,
-  padding: light.spaceInsetDefault,
-  radius: light.radiusCard,
-}
-export const light_Checkbox = {
-  backgroundChecked: light.colorBrandEmphasis,
-  border: light.colorBorderDefault,
-  borderError: light.colorSignalDanger,
-  checkmark: light.colorTextInverse,
-  radius: light.radiusControl,
-}
-export const light_Dialog = { background: light.colorSurfacePrimary, radius: light.radiusCard }
-export const light_Input = {
-  background: light.colorSurfacePrimary,
-  border: light.colorBorderDefault,
-  borderError: light.colorSignalDanger,
-  borderFocus: light.colorFocusRing,
-  padding: light.spaceInsetDefault,
-  placeholder: light.colorTextMuted,
-  radius: light.radiusControl,
-  text: light.colorTextPrimary,
-}
-export const light_Menu = {
-  background: light.colorSurfacePrimary,
-  border: light.colorBorderDefault,
-  itemBackgroundHover: light.colorSurfaceSecondary,
-  itemText: light.colorTextPrimary,
-  radius: light.radiusControl,
-}
-export const light_Popover = {
-  background: light.colorSurfacePrimary,
-  border: light.colorBorderDefault,
-  radius: light.radiusCard,
-}
-export const light_Select = {
-  background: light.colorSurfacePrimary,
-  border: light.colorBorderDefault,
-  borderError: light.colorSignalDanger,
-  padding: light.spaceInsetDefault,
-  panelBackground: light.colorSurfacePrimary,
-  placeholder: light.colorTextMuted,
-  radius: light.radiusControl,
-  text: light.colorTextPrimary,
-}
-export const light_Tabs = {
-  border: light.colorBorderDefault,
-  indicator: light.colorBrandPrimary,
-  text: light.colorTextMuted,
-  textActive: light.colorTextPrimary,
-}
-export const light_Toast = {
-  accentDanger: light.colorSignalDanger,
-  accentInfo: light.colorBrandPrimary,
-  accentSuccess: light.colorSignalSuccess,
-  background: light.colorSurfacePrimary,
-  radius: light.radiusCard,
-  text: light.colorTextPrimary,
-}
-export const dark_Button = {
-  backgroundDanger: dark.colorSignalDanger,
-  backgroundPrimary: dark.colorBrandEmphasis,
-  backgroundSecondary: dark.colorSurfaceSecondary,
-  borderSecondary: dark.colorBorderDefault,
-  padding: dark.spaceInsetDefault,
-  radius: dark.radiusControl,
-  textDanger: dark.colorTextInverse,
-  textGhost: dark.colorBrandPrimary,
-  textPrimary: dark.colorTextInverse,
-  textSecondary: dark.colorTextPrimary,
-}
-export const dark_Card = {
-  background: dark.colorSurfacePrimary,
-  border: dark.colorBorderDefault,
-  padding: dark.spaceInsetDefault,
-  radius: dark.radiusCard,
-}
-export const dark_Checkbox = {
-  backgroundChecked: dark.colorBrandEmphasis,
-  border: dark.colorBorderDefault,
-  borderError: dark.colorSignalDanger,
-  checkmark: dark.colorTextInverse,
-  radius: dark.radiusControl,
-}
-export const dark_Dialog = { background: dark.colorSurfacePrimary, radius: dark.radiusCard }
-export const dark_Input = {
-  background: dark.colorSurfacePrimary,
-  border: dark.colorBorderDefault,
-  borderError: dark.colorSignalDanger,
-  borderFocus: dark.colorFocusRing,
-  padding: dark.spaceInsetDefault,
-  placeholder: dark.colorTextMuted,
-  radius: dark.radiusControl,
-  text: dark.colorTextPrimary,
-}
-export const dark_Menu = {
-  background: dark.colorSurfacePrimary,
-  border: dark.colorBorderDefault,
-  itemBackgroundHover: dark.colorSurfaceSecondary,
-  itemText: dark.colorTextPrimary,
-  radius: dark.radiusControl,
-}
-export const dark_Popover = {
-  background: dark.colorSurfacePrimary,
-  border: dark.colorBorderDefault,
-  radius: dark.radiusCard,
-}
-export const dark_Select = {
-  background: dark.colorSurfacePrimary,
-  border: dark.colorBorderDefault,
-  borderError: dark.colorSignalDanger,
-  padding: dark.spaceInsetDefault,
-  panelBackground: dark.colorSurfacePrimary,
-  placeholder: dark.colorTextMuted,
-  radius: dark.radiusControl,
-  text: dark.colorTextPrimary,
-}
-export const dark_Tabs = {
-  border: dark.colorBorderDefault,
-  indicator: dark.colorBrandPrimary,
-  text: dark.colorTextMuted,
-  textActive: dark.colorTextPrimary,
-}
-export const dark_Toast = {
-  accentDanger: dark.colorSignalDanger,
-  accentInfo: dark.colorBrandPrimary,
-  accentSuccess: dark.colorSignalSuccess,
-  background: dark.colorSurfacePrimary,
-  radius: dark.radiusCard,
-  text: dark.colorTextPrimary,
-}
+export const light_Button = { "backgroundDanger": light.colorSignalDanger, "backgroundPrimary": light.colorBrandEmphasis, "backgroundSecondary": light.colorSurfaceSecondary, "borderSecondary": light.colorBorderDefault, "padding": light.spaceInsetDefault, "radius": light.radiusControl, "textDanger": light.colorTextInverse, "textGhost": light.colorBrandPrimary, "textPrimary": light.colorTextInverse, "textSecondary": light.colorTextPrimary }
+export const light_Card = { "background": light.colorSurfacePrimary, "border": light.colorBorderDefault, "padding": light.spaceInsetDefault, "radius": light.radiusCard }
+export const light_Checkbox = { "backgroundChecked": light.colorBrandEmphasis, "border": light.colorBorderDefault, "borderError": light.colorSignalDanger, "checkmark": light.colorTextInverse, "radius": light.radiusControl }
+export const light_Dialog = { "background": light.colorSurfacePrimary, "radius": light.radiusCard }
+export const light_Input = { "background": light.colorSurfacePrimary, "border": light.colorBorderDefault, "borderError": light.colorSignalDanger, "borderFocus": light.colorFocusRing, "padding": light.spaceInsetDefault, "placeholder": light.colorTextMuted, "radius": light.radiusControl, "text": light.colorTextPrimary }
+export const light_Menu = { "background": light.colorSurfacePrimary, "border": light.colorBorderDefault, "itemBackgroundHover": light.colorSurfaceSecondary, "itemText": light.colorTextPrimary, "radius": light.radiusControl }
+export const light_Popover = { "background": light.colorSurfacePrimary, "border": light.colorBorderDefault, "radius": light.radiusCard }
+export const light_Select = { "background": light.colorSurfacePrimary, "border": light.colorBorderDefault, "borderError": light.colorSignalDanger, "padding": light.spaceInsetDefault, "panelBackground": light.colorSurfacePrimary, "placeholder": light.colorTextMuted, "radius": light.radiusControl, "text": light.colorTextPrimary }
+export const light_Tabs = { "border": light.colorBorderDefault, "indicator": light.colorBrandPrimary, "text": light.colorTextMuted, "textActive": light.colorTextPrimary }
+export const light_Toast = { "accentDanger": light.colorSignalDanger, "accentInfo": light.colorBrandPrimary, "accentSuccess": light.colorSignalSuccess, "background": light.colorSurfacePrimary, "radius": light.radiusCard, "text": light.colorTextPrimary }
+export const dark_Button = { "backgroundDanger": dark.colorSignalDanger, "backgroundPrimary": dark.colorBrandEmphasis, "backgroundSecondary": dark.colorSurfaceSecondary, "borderSecondary": dark.colorBorderDefault, "padding": dark.spaceInsetDefault, "radius": dark.radiusControl, "textDanger": dark.colorTextInverse, "textGhost": dark.colorBrandPrimary, "textPrimary": dark.colorTextInverse, "textSecondary": dark.colorTextPrimary }
+export const dark_Card = { "background": dark.colorSurfacePrimary, "border": dark.colorBorderDefault, "padding": dark.spaceInsetDefault, "radius": dark.radiusCard }
+export const dark_Checkbox = { "backgroundChecked": dark.colorBrandEmphasis, "border": dark.colorBorderDefault, "borderError": dark.colorSignalDanger, "checkmark": dark.colorTextInverse, "radius": dark.radiusControl }
+export const dark_Dialog = { "background": dark.colorSurfacePrimary, "radius": dark.radiusCard }
+export const dark_Input = { "background": dark.colorSurfacePrimary, "border": dark.colorBorderDefault, "borderError": dark.colorSignalDanger, "borderFocus": dark.colorFocusRing, "padding": dark.spaceInsetDefault, "placeholder": dark.colorTextMuted, "radius": dark.radiusControl, "text": dark.colorTextPrimary }
+export const dark_Menu = { "background": dark.colorSurfacePrimary, "border": dark.colorBorderDefault, "itemBackgroundHover": dark.colorSurfaceSecondary, "itemText": dark.colorTextPrimary, "radius": dark.radiusControl }
+export const dark_Popover = { "background": dark.colorSurfacePrimary, "border": dark.colorBorderDefault, "radius": dark.radiusCard }
+export const dark_Select = { "background": dark.colorSurfacePrimary, "border": dark.colorBorderDefault, "borderError": dark.colorSignalDanger, "padding": dark.spaceInsetDefault, "panelBackground": dark.colorSurfacePrimary, "placeholder": dark.colorTextMuted, "radius": dark.radiusControl, "text": dark.colorTextPrimary }
+export const dark_Tabs = { "border": dark.colorBorderDefault, "indicator": dark.colorBrandPrimary, "text": dark.colorTextMuted, "textActive": dark.colorTextPrimary }
+export const dark_Toast = { "accentDanger": dark.colorSignalDanger, "accentInfo": dark.colorBrandPrimary, "accentSuccess": dark.colorSignalSuccess, "background": dark.colorSurfacePrimary, "radius": dark.radiusCard, "text": dark.colorTextPrimary }
