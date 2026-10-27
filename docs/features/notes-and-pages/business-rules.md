@@ -34,7 +34,8 @@
   (`deleted_at`) with **undo by default** (undo toast + Trash restore); a hard confirm exists only for the
   irreversible (emptying Trash). There are **no SQL FKs**: a hard delete is an app-layer cleanup the notes service
   orchestrates — `page_links`, `note_attachments`, the page's `entity_links` and `entity_tags` rows, its `app_state`
-  `entity_mode` row (ADR-006 §3.6, notes-rescope R2), and `parent_id → NULL` on children. Trash keeps a page **30 days**. `[FACT: frontend-quality-bar/_index.md:83 (P4);
+  `entity_mode` row (ADR-006 §3.6, notes-rescope R2), and `parent_id → NULL` on children.
+  Trash keeps a page **30 days**. `[FACT: frontend-quality-bar/_index.md:83 (P4);
   p4-trust-reversibility-specimen.html:120-157 (":123 kept 30 days"); NOT-39/41; migrations/033_notes.ts:14 (no REFERENCES)]`
   **RESOLVED (delivery/interpretation.md §5 #1):** the delete leg ships soft-delete + undo + a notes-scoped Trash (restore · delete forever ·
   Empty Trash behind a danger confirm) + the cascade. Open, homed: (ii) purge timing/mechanics — `[UNKNOWN — homed: the delete leg's slice PLAN]`.

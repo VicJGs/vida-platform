@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R2 building (Approval 2, 2026-10-27)
+# Status: in-progress — Step 6: R2 built + critique SHIP — awaiting Victor: Visual Gate acceptance (2026-10-27)
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -28,7 +28,7 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 ## Active Tasks (slice-map R0…R10 — `docs/features/notes-and-pages/delivery/slice-map.md`)
 - [x] R0 — data safety (2026-10-26 · 853570e · 84b7f58 · a6bd158 · f2c35cc)
 - [x] R1 — page frame (2026-10-27 · 532e5ce · 82b0a0d · 6e54402 · 1e8105b)
-- [ ] R2 — mode memory  ← NEXT (§XXVI gate 1)
+- [~] R2 — mode memory (5f80e5a + critique follow-ups) — awaiting Visual Gate acceptance
 - [ ] R3 — metadata + rename
 - [ ] R4 — attachments
 - [ ] R5 — delete, undo, OS-wide Trash (must call `useNoteContent.cancel()` before the soft delete — R0 forward obligation)
@@ -105,3 +105,7 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 - 2026-10-27 (Step 6 · R2 gate 2) — /preflight PASSED. IMPLEMENTATION-PLAN-R2: critique r1 REVISE (2: a toggle during the
   in-flight read was overwritten by setData → R-4 sessionWrites; ?sample code didn't compile → devFlagActive) → rev 2 →
   r2 SHIP → rev 3. Victor: APPROVED (Approval 2).
+- 2026-10-27 (Step 6 · R2 build) — Steps 1–5 tests-first: core app-state 4/4 · web 906/906 · tsc 0 · lint 0 errors · e2e
+  notes-mode-memory ✓ (+R0/R1 ✓) · Visual Gate 7/7 · 5f80e5a. e2e locator fix: the facet tablist has no accname (pre-
+  existing @vida/ui Tabs gap, recorded). Final /critique SHIP; folded refetchOnReconnect:false, a real retryOnMount test,
+  the in-flight precondition, the deleteAppState note.

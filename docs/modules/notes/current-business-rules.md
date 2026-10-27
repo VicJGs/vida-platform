@@ -227,7 +227,7 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R2-mode-mem
   until it lands every page reads its default, then the remembered mode applies; a toggle made meanwhile wins
   (`override ?? readMode`), and toggles are kept in a per-tab `sessionWrites` overlay merged into every read.
   [FACT: notes/use-entity-modes.ts; notes/note-entity.tsx (NoteEntityView)]
-- **BR-R2-4 · A failed read keeps the default** (`retry:false`, `retryOnMount:false`, one observer — read once, console
+- **BR-R2-4 · A failed read keeps the default** (`retry:false`, `retryOnMount:false`, `refetchOnReconnect:false`, one observer — read once, console
   only); **a failed write** → one toast "Couldn’t remember this page’s layout", the mode stays for the session.
 - **BR-R2-5 · Only `merged`/`tabbed` count**; anything else → the default, never written back. [FACT: entity/adapter.ts]
 - **BR-R2-6 · A mere open never writes** — only the toggle handler persists. **BR-R2-7** · the hard delete (R5) removes

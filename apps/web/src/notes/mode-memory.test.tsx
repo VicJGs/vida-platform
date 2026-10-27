@@ -123,6 +123,7 @@ describe('NoteEntity — mode memory (R2)', () => {
     store.set('entity_mode:note:n1', 'tabbed') // the row the in-flight read already snapshotted
     const r = render(ui())
     await waitFor(() => expect(r.getByRole('button', { name: 'Merged' })).not.toBeNull())
+    expect(reads).toBe(1) // the read is in flight (held by the gate) BEFORE the toggle
     fireEvent.click(r.getByRole('button', { name: 'Merged' }))
     expect(merged(r)).toBe(true)
     release()
@@ -145,6 +146,12 @@ describe('NoteEntity — mode memory (R2)', () => {
     expect(reads).toBe(1)
     expect(notifySpy).not.toHaveBeenCalled()
     await go(r, 'n2')
+    await settle()
+    expect(reads).toBe(1)
+    // retryOnMount:false — unmount the only observer, mount a fresh NoteEntity on the same client: still no re-read.
+    r.unmount()
+    const again = render(ui())
+    await waitFor(() => expect(again.getByRole('button', { name: 'Merged' })).not.toBeNull())
     await settle()
     expect(reads).toBe(1)
     errors.mockRestore()

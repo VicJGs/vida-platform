@@ -44,6 +44,8 @@ export async function writeAppState(driver: SqliteDriver, key: string, value: st
   await driver.run('INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)', [key, value])
 }
 
+/** Driver-level delete. NOT for a hard-delete purge: R5's `deletePageForever` removes `entity_mode` rows inside its
+ *  transaction through the Drizzle `appState` mirror (a driver call can't join it — ADR-006 §3.6). */
 export async function deleteAppState(driver: SqliteDriver, key: string): Promise<void> {
   await driver.run('DELETE FROM app_state WHERE key = ?', [key])
 }

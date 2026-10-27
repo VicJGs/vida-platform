@@ -4,7 +4,7 @@
 // "Async read, seeded per-type default while loading" (slice R2): one React Query read of every `entity_mode:` row in the
 // device-local `app_state` (ADR-002 §5.0, ADR-006 §3.6). While it loads the store has no rows, so every page reads its
 // per-type default; when the rows land the store re-derives and pages switch to their remembered mode.
-// - ONE observer (NoteEntity), `retry:false` + `retryOnMount:false`: a failed read is read once and never again on remount
+// - ONE observer (NoteEntity), `retry:false` + `retryOnMount:false` + `refetchOnReconnect:false`: a failed read is read once and never again on remount
 //   (the page keeps its default — no toast; a layout preference isn't worth one).
 // - The cache IS the map. A toggle `setQueryData`s it, then writes app_state; a write failure → one toast, and the mode stays
 //   for the session.
@@ -46,6 +46,7 @@ export function useEntityModeStore(enabled: boolean): EntityModeStore {
     staleTime: Infinity,
     retry: false,
     retryOnMount: false,
+    refetchOnReconnect: false, // an errored no-data query is stale; an `online` event must not re-read it (BR-R2-4)
   })
 
   useEffect(() => {
