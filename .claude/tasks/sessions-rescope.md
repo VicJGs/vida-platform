@@ -1,5 +1,5 @@
 # Task: sessions-rescope
-# Status: planned
+# Status: in-progress
 # Linear: LIF-248
 # Profile: Add Frontend Component
 # Scenario: entity-rescope
@@ -16,9 +16,76 @@ each ❌ EC corrected or explicitly re-pinned by Victor.
 ## Scope (census rows → `docs/specs/foundation/golive-replan/coverage-report.md`)
 register `sessions` · fe-session-hud legs · fe-session-runtime mark-done/attach/proof port wiring · flow-session consumer + dead `bindFlowIntents` · backend: `findActiveSession` + applied-effects read. Ships its legs live (ELC-3…7); NO ENTITY CLOSE here (process.md §6 exception)
 
+**Inbound homings found at the Documentation Gate (2026-10-27) — homed HERE by delivery docs, in scope:**
+- spine close after `completeFocus` (N9) — routines slice-map.md:62 · routines current-BR:97-99 · routines service.ts:981
+- failed-lane surfacing in `dueIn` (`ProviderUnavailable(module)`, G17) — fe-calendar PLAN-S7-entity-close.md:55 · sessions S7-duein-analytics.md:21-23
+- "list sessions by attached entity + date" read — routines PLAN-S5c-q1-d3-correction.md:134-136
+
 ## Ledger home
 docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconciliation.md + slice-map.md here
 
 ## Dependencies
 - blocked by `data-plane-wiring`
 - (entity close lives in fe-sessions, which is blocked by this unit)
+
+## Route History
+- 2026-10-27 (setup) — worktree `.claude/worktrees/sessions-rescope` off origin/main `0055a64`, Node 24, deps installed.
+  `data-plane-wiring` verified done (PR #148) → unblocked.
+- 2026-10-27 (Step 0 — Baseline) — current-* vs code, per context:
+  · sessions service (`services/sessions`, last code 23aba04): current-spec current; **current-business-rules LAGGED**
+    (routines-S6 planned-block rules absent; "NOT YET" listed built SS-7/9/12 + attach/CRUD) → BR-36/37 added, NOT-YET corrected.
+  · ② runtime + flow (`session-runtime`, `flow`): both docs said "no composition root + `values` throws" — **STALE**
+    (composition-root.ts:100 constructs `sessions`; `values` live, worker.ts:122) → corrected; stub stays (hook unflipped).
+  · ② HUD (`session-hud`, merged 6ac01bd): **ABSENT from sessions current-* ("deferred: HUD #16")** → HUD section + FE-BR-5..8.
+  · effects (`foundation/effects`, 52c2f69): code unchanged since its doc → current.
+  · web-client-runtime current-spec:66 still said `values` throws (its current-BR:55 already corrected) → fixed.
+  · Code-comment lags left for the build (they change with the flip): `use-active-session.ts:4-5` + session-hud/
+    session-runtime CLAUDE.md "no composition root" wording.
+  · Pre-interpretation FACT for the ledger: "register `sessions`" (scope) is ALREADY DONE by data-plane-wiring.
+- 2026-10-27 (Step 1 — Documentation Gate, round 1) — independent critic REVISE (B1–B7) → grounding pass (B1–B9) → spot-verified.
+  Corrected now (doc errors): baseline nits (status header, PR #144, no single-active claim) · "#46" misread as
+  XS-notifications in coverage-report:179 + census b:295 (it is decomposition.md:46 = XS-measurement-engine) · routines
+  "sessions-rescope #62"→#63 ×5 · 3 inbound homings added to Scope. Carried to Step 2 as interpretation NEEDS (doc-derivable
+  shapes): findActiveSession ordering/concurrency/title · applied-effects per-session keying + `detail` · HUD spine→timer id
+  (HUD interpretation.md:30 = focus row id) · dueIn failed-lane shape · attached-entity read shape · attach/proof interim.
+  Reconciliation-bound ❌ (doc intent vs built code): rail fires-before-commit vs "completion records even if an effect
+  fails" (pomodoro BR:78-79) · focus `log_time` fires payload-less → tasks handler skips (PD-9) · focus def lacks PD-10 effects.
+  Open for Victor: cancelled-focus → spine status · what the Sessions-owned `attach_pomodoro` handler writes.
+- 2026-10-27 (Step 1 — round 1 follow-up, Victor: "check the documentation to leave nothing behind") — both "open" items
+  are DOC-RESOLVED (no call):
+  · **Cancel → spine `skipped`, no effects.** The `focus_sessions` row = the whole run (nextInterval advances inside it;
+    `startFocus` on a terminal timer errors; pomodoro BR:62 "start a new one") ⇒ `cancelFocus` = run abandoned (BR:70-72).
+    Session terminal set = completed|skipped|missed(attended only)|rescheduled (ADR-004 §3.2.3:65; sessions BR:84) ⇒ the
+    one fit is `skipped` (elimination, labeled). Effects fire on completion only (pomodoro contract:20-21; identity:56-57).
+    `completeFocus` ⇒ spine `transition(id,'complete')` → declared effects (BR-25 temporary split; IR-1 one firing path).
+    Needs the focus def's `in_progress→skipped` transition.
+  · **`attach_pomodoro` = bind the focus run to its subject entity** — TAS-17 (backend-intent/parts/tasks.md:27) "binds a
+    pomodoro focus run … to the task"; XCU-29 "surfaces the timer link"; Sessions realm (contract:57); intra-realm handler
+    path + deterministic id (ADR-004:85). The binding = the session attachment (idempotent `attach`). Conflict for the
+    ledger: routines detaches after completeFocus (routines service.ts:981, the N9 workaround).
+- 2026-10-27 (Step 1 — Documentation Gate, round 2) — independent critic REVISE (9) → all addressed; Doc Gate CLOSED
+  (the Interpretation Gate re-checks these with fresh eyes).
+  Fixed: remaining bare "#46" in sessions current-spec/current-BR + effects current-spec/current-BR → real homes (SES-13) ·
+  HUD seam-contract:101,124 falsely put next-interval/timer controls on `/sessions/$id` → fe-sessions' Pomodoro runtime ·
+  fe-calendar PLAN-S7:43 stale cite → service.ts:795-800.
+  Doc-resolved (were flagged "Victor"):
+  · **Focus-runtime store WRITER = fe-sessions** — its reshape title "#34 Sessions ⊕split — … Pomodoro (runtime/HUD
+    split)" (fe-sessions.md:9) + start flow (HUD seam-contract:121). Store + HUD reader are HERE (coverage-report:163);
+    countdown ECs EC-3/3c/3d are re-verified at fe-sessions' ENTITY CLOSE (debt-plan:25,51 — no ELC-9 here, process §6).
+    Store location/shape: ADR-020:15 `apps/web/src/stores/focus-runtime-ui-store.ts` (Zustand v5, scope-store pattern).
+  · **EC-2 attach/proof — no re-pin**: EC-2 is checked at fe-sessions' close, which owns the BORROWED capture flow
+    (debt-plan:51, E21). Here: port wiring (`attach`→`sessions.attach`, proof→port) + X12 fix = render the affordance only
+    when a target/handler exists (dead-affordance rulings decisions.md:65,1177) — hidden ≠ no-op (ELC-5).
+  · **`award_xp` home = Gamification** (SES-13 "award_xp→Gamification write API"; cross-module-integration:298-299,338
+    two-layer: session fires `award_xp`, applied as `grant_currency`). Handler absent today (economy/handlers.ts has
+    grant/lock only) → gamification-rescope registers it; the focus def gains `award_xp` with that registration (declaring
+    it earlier throws NoEffectHandler). `surface_journal` (projection, no handler) is declarable HERE.
+  · Spine close needs handlers at the web root: `attach_pomodoro` (own) + `log_time` via `registerTasksTimer`
+    (composition-root.ts:96 names this unit) → registered HERE (first-consumer-pull).
+  Precisions carried into the interpretation: findActiveSession excludes focus spines whose run is terminal (legacy rows)
+  · attach_pomodoro handler co-writes in the rail tx (no `sessions.attach` — nested tx) + self-target no-op · resume =
+  `startFocus({sessionId})`, pause = focus-row id resolved in the binding · applied-effects read re-derives the engine's
+  ids (extract the builder from lifecycle.ts) · dueIn additive `{items, unavailable}` variant reusing journals'
+  `ProviderUnavailable` (barrel collision) · `listSessionsForEntity(type,id,range)` (routines BR-RT-S4e-3 consumer, borrowed)
+  · log_time focus fix = engine payload + Tasks-side task-target guard (routine_step target) · rail fire-before-commit vs
+  pomodoro BR:78-79 ❌ (in scope: foundation/effects).

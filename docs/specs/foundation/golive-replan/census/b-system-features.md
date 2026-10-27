@@ -292,7 +292,7 @@
 | "the data leg is DEFERRED … live swap zero-signature-change". This unit **was** the named first consumer (R3) and re-deferred | fe-session-runtime/delivery/slice-map.md:30,37-44 · seam-contract.md:43 | repo-wide data-leg deferral (BR-6) | data plane landed; `sessions` not registered; no issue | **ORPHAN** |
 | attachTarget / onProof: "the proof-capture flow is a driving module's" | sessions/PLAN-2026-10-15-s2-runtime-page.md:26-28,63 | driving modules | fe-sessions LIF-198 / fe-routines LIF-197 (planned) | BORROWED |
 | Multi-stage per-module assembly (O7) | slice-map.md:86 | each module's ② track | open fe-* tasks | BORROWED |
-| Per-module effect handlers + scheduler (#46/MOD-*) | slice-map.md:44 · seam-contract.md:40 | #46 / MOD-* | #46 = foundation/notifications delivery engine (notifications/types.ts:29); MOD-* ① tracks | BORROWED |
+| Per-module effect handlers + scheduler (#46/MOD-*) | slice-map.md:44 · seam-contract.md:40 | #46 / MOD-* | ~~#46 = foundation/notifications delivery engine~~ **corrected 2026-10-27:** "#46" = `decomposition.md:46` (XS-measurement-engine, xs-effect-rail interpretation.md:16); `attach_pomodoro` = Sessions realm (sessions contract.md:57), `log_time` = Tasks; MOD-* ① tracks | BORROWED |
 
 ### D. Envision conformance (inherited fe-codec-flow-session EC-1…11)
 | EC | Type | Assertion | Status | Evidence |

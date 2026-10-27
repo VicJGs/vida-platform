@@ -132,5 +132,5 @@ attached-session read homed to Sessions; the full docs list incl. the seam `sess
 
 ## Out of scope
 Reschedule as a scheduled occurrence session (S6, next, on this model) · Task `duty` type + its preset (TAS-24, Tasks' ADR-002 amendment) · a
-Sessions "list sessions by attached entity + date" read (to reflect occurrences driven outside routines). **Named home: sessions-rescope #62** ("backend
-`findActiveSession` + applied-effects read", `reconstructed-structure.md:150`), a borrowed leg per golive §3.
+Sessions "list sessions by attached entity + date" read (to reflect occurrences driven outside routines). **Named home: sessions-rescope #63** ("backend
+`findActiveSession` + applied-effects read", `reconstructed-structure.md:151`), a borrowed leg per golive §3.
