@@ -8,6 +8,14 @@ import { motion, shadow } from '@vida/ui'
 
 let injected = false
 
+const REDUCED_SELECTORS = [
+  '.vida-shell-scrim',
+  '.vida-shell-panel-left',
+  '.vida-shell-panel-right',
+  '.vida-shell-panel-top',
+  '.vida-shell-panel-bottom',
+]
+
 export function ensureShellPanelStyles(): void {
   if (injected || typeof document === 'undefined') return
   injected = true
@@ -33,7 +41,11 @@ export function ensureShellPanelStyles(): void {
     '.vida-shell-panel-top{animation:vida-shell-panel-in-top ' + panel + ' both}',
     '.vida-shell-panel-bottom{animation:vida-shell-panel-in-bottom ' + panel + ' both}',
     // Reduced motion: no entrance animation; the visible base (scrim 0.5 / panel 1, transform none) appears instantly.
-    '@media (prefers-reduced-motion:reduce){.vida-shell-scrim,.vida-shell-panel-left,.vida-shell-panel-right,.vida-shell-panel-top,.vida-shell-panel-bottom{animation:none}}',
+    // Two triggers (preferences-rescope R4): the OS query OR the in-app preference, which UIProvider writes to
+    // <html data-vida-motion="reduce">. Hand-written twin of @vida/ui's internal `reducedMotionCss` (not exported);
+    // shell-panel-styles.test.ts pins it to the same contract.
+    `@media (prefers-reduced-motion: reduce){${REDUCED_SELECTORS.join(',')}{animation:none}}`,
+    `${REDUCED_SELECTORS.map((s) => `[data-vida-motion="reduce"] ${s}`).join(',')}{animation:none}`,
   ].join('')
   document.head.appendChild(style)
 }

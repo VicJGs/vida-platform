@@ -31,6 +31,7 @@ function resolveTheme(sel: ThemeSelection): {
 // provider — extends today's UIProvider; `selection` replaces the `theme?: 'light'|'dark'` prop
 interface UIProviderProps extends Omit<TamaguiProviderProps,'config'|'defaultTheme'> {
   selection?: ThemeSelection   // defaults to THEME_DEFAULT
+  reduceMotion?: boolean       // preferences-rescope R4 — the in-app preference; default false = OS query only
 }
 function UIProvider(props: UIProviderProps): JSX.Element
 
@@ -57,8 +58,17 @@ Tamagui theme or token-value swap** — it is a **provider-applied CSS data-attr
 injected-CSS precedent) that rescales `space.inset` + the type ramp. Built in **S3** (co-located with its mechanism);
 S1 authors **no density tokens**. Not a Victor decision — a lib-constraint fact.
 
+## Reduce motion (preferences-rescope R4, 2026-10-26 — a scoped CODEC edit, edge recorded in the preferences slice-map)
+`reduceMotion` is an app-owned prop, **not** a `ThemeSelection` axis (`resolveTheme` is unchanged). The provider turns it
+into two carriers of one value (PLAN-R4 §XXVIII D-R4-1): **`<html data-vida-motion="reduce"|"full">`** for CSS (its own
+`[reduceMotion]` layout effect; its cleanup removes it on unmount — NOT `clearCodec`, which runs on every preset/density
+swap, D-R4-2) and **`ReducedMotionContext`** for JS, read by `useReducedMotion()` during render (= context OR the OS
+query). Every injected reduced-motion rule is emitted by `internal/reduced-motion-css.ts` `reducedMotionCss()` — the
+`@media` rule + a `[data-vida-motion="reduce"]` twin with identical declarations; a guard test fails any other file
+that names the media query. The preference only adds reduction: off never forces motion.
+
 ## Invariants (contract-level)
 - No hard-coded palette in any consumer; all color/type via tokens (R1, themes/CLAUDE.md).
 - Dark = B7 overlay per preset; never a hand-authored dark theme (R7).
-- Swap honours `prefers-reduced-motion` (instant; animate only transform/opacity) (B12, EC-7).
+- Swap honours reduced motion — the OS query **or** the in-app preference (instant; animate only transform/opacity) (B12, EC-7).
 - The codec holds **no state** and does **no persistence** — it is a pure mechanism fed by the app (R5).

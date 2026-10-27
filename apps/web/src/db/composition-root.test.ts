@@ -7,12 +7,14 @@ import Database from 'better-sqlite3'
 import { createDrizzleProxy, initVault, migrate } from '@vida/core'
 import { createBetterSqlite3Driver } from './test-driver'
 import { composeServices } from './composition-root'
+import { withTransactionLock, writeLock } from './write-lock'
 
 async function compose() {
   const driver = createBetterSqlite3Driver(new Database(':memory:'))
   await migrate(driver)
   await initVault() // libsodium for the unkeyed _sync_hash on every write (BR-RT-COMPROOT)
-  return composeServices(createDrizzleProxy(driver), 'device-test')
+  // Wrapped exactly as `build()` wraps it (BR-RT-LOCK) — a service that nests `db.transaction` deadlocks here, not in prod.
+  return composeServices(withTransactionLock(createDrizzleProxy(driver), writeLock), 'device-test')
 }
 
 // UTC-midnight bounds — the date lanes' window convention (sessions current-spec:168)
@@ -20,12 +22,13 @@ const day = (y: number, m: number, d: number) => Date.UTC(y, m - 1, d)
 const WEEK = { start: day(2026, 10, 5), end: day(2026, 10, 11) + 86_399_999 }
 
 describe('composeServices (the composition root, pure half)', () => {
-  it('constructs notes + journals + the five calendar services', async () => {
+  it('constructs notes + journals + preferences + the five calendar services', async () => {
     const s = await compose()
     expect(Object.keys(s).sort()).toEqual([
       'habits',
       'journals',
       'notes',
+      'preferences',
       'purposes',
       'relationships',
       'sessions',

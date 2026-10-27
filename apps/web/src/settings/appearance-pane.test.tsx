@@ -1,45 +1,145 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, render } from '@testing-library/react'
-import { UIProvider, THEME_DEFAULT } from '@vida/ui'
-import { AppearancePane } from './appearance-pane'
-import { useThemeStore } from '../stores/theme-store'
-import { usePreferencesStore } from '../stores/preferences-store'
+// fe-settings S3 (EC-4/EC-5) → preferences-rescope R3 (D4/D6/D7/D10, EC-7): the Appearance pane reads the persisted view
+// and writes through the preferences writer (theme · arrangement · persona persist); R4: reduce motion persists too
+// (nav_preferences.reduce_motion). Read-only (a read error) disables every control.
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
-afterEach(cleanup)
-beforeEach(() => {
-  useThemeStore.setState({ selection: THEME_DEFAULT })
-  usePreferencesStore.setState({ reduceMotion: false, arrangement: 'journalFirst' })
+vi.mock('../db/composition-root', async () => (await import('../test/preferences-test-utils')).compositionRootMock())
+
+import { UIProvider } from '@vida/ui'
+import { UpdatePreferencesSchema } from '@vida/core'
+import { AppearancePane } from './appearance-pane'
+import { SettingsContext } from './settings-context'
+import { useThemeStore, resetThemeStoreForTests } from '../stores/theme-store'
+import { queryClient } from '../lib/query-client'
+import { seedPreferences } from '../preferences/preferences-queries'
+import { preferencesWriter, resetPreferencesWriterForTests } from '../preferences/writer-instance'
+import { createPrefsWrapper, resetTestPreferences, testPreferences } from '../test/preferences-test-utils'
+
+const PrefsWrapper = createPrefsWrapper()
+
+beforeEach(async () => {
+  resetTestPreferences()
+  await seedPreferences(queryClient)
+})
+afterEach(() => {
+  cleanup()
+  queryClient.clear()
+  resetPreferencesWriterForTests()
+  resetThemeStoreForTests()
 })
 
-const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
+const renderUI = (ui: React.ReactNode) =>
+  render(
+    <PrefsWrapper>
+      <UIProvider>{ui}</UIProvider>
+    </PrefsWrapper>,
+  )
 
-describe('AppearancePane (fe-settings S3 — EC-4/EC-5)', () => {
-  it('renders all five Appearance controls', () => {
-    const { getByText } = renderUI(<AppearancePane />)
-    for (const label of ['Theme preset', 'Mode', 'Density', 'Reduce motion', 'Home arrangement']) {
-      expect(getByText(label)).not.toBeNull()
+/** Open a Select by its accessible name and pick an option by its label. */
+function choose(name: string, option: string) {
+  fireEvent.click(screen.getByLabelText(name))
+  fireEvent.click(screen.getByRole('option', { name: option }))
+}
+
+describe('AppearancePane (EC-4/EC-5 · R3 persistence)', () => {
+  it('renders the six Appearance controls, the persona row directly under the three theme rows', () => {
+    const { container } = renderUI(<AppearancePane />)
+    const labels = ['Theme preset', 'Mode', 'Density', 'Persona', 'Reduce motion', 'Home arrangement']
+    const text = container.textContent ?? ''
+    let at = -1
+    for (const label of labels) {
+      const i = text.indexOf(label, at + 1)
+      expect(i).toBeGreaterThan(at) // present, and in this order
+      at = i
     }
   })
 
   it('each control carries its own accessible name', () => {
-    const { getByLabelText } = renderUI(<AppearancePane />)
-    expect(getByLabelText('Theme preset')).not.toBeNull()
-    expect(getByLabelText('Reduce motion')).not.toBeNull()
-    expect(getByLabelText('Home arrangement')).not.toBeNull()
+    renderUI(<AppearancePane />)
+    for (const name of ['Theme preset', 'Mode', 'Density', 'Persona', 'Reduce motion', 'Home arrangement']) {
+      expect(screen.getByLabelText(name)).not.toBeNull()
+    }
   })
 
-  it('EC-5 — the reduce-motion Switch dispatches to the preferences store (live apply)', () => {
-    const { getByLabelText } = renderUI(<AppearancePane />)
-    const sw = getByLabelText('Reduce motion') as HTMLInputElement
-    expect(usePreferencesStore.getState().reduceMotion).toBe(false)
+  it('a preset choice re-themes instantly (optimistic) and persists to dashboard_layout.theme', async () => {
+    renderUI(<AppearancePane />)
+    choose('Theme preset', 'Quiet Desk')
+    expect(useThemeStore.getState().selection.preset).toBe('quietDesk') // EC-5: same tick, no DB round trip
+    await preferencesWriter.flushAll()
+    expect(testPreferences.state.user?.dashboard_layout).toMatchObject({ theme: 'quietDesk' })
+  })
+
+  it('mode + density + arrangement persist to their columns / sub-key (siblings survive, IR-2)', async () => {
+    renderUI(<AppearancePane />)
+    choose('Theme preset', 'Reader')
+    choose('Mode', 'Dark')
+    choose('Density', 'Compact')
+    choose('Home arrangement', 'Dashboard first')
+    await preferencesWriter.flushAll()
+    expect(testPreferences.state.user).toMatchObject({
+      theme: 'dark',
+      compact_mode: true,
+      dashboard_layout: { theme: 'reader', arrangement: 'dashboardFirst' },
+    })
+  })
+
+  it('persona: lists Not set + the 6 personas; a pick writes it, Not set writes null (accepted by the real schema)', async () => {
+    renderUI(<AppearancePane />)
+    fireEvent.click(screen.getByLabelText('Persona'))
+    const names = screen.getAllByRole('option').map((o) => o.textContent?.trim())
+    expect(names).toEqual(['Not set', 'Student', 'Professional', 'Entrepreneur', 'Creative', 'Parent', 'Retiree'])
+    fireEvent.click(screen.getByRole('option', { name: 'Creative' }))
+    await preferencesWriter.flushAll()
+    expect(testPreferences.state.user?.persona).toBe('creative')
+    choose('Persona', 'Not set')
+    await preferencesWriter.flushAll()
+    expect(testPreferences.state.user?.persona).toBeNull()
+    expect(UpdatePreferencesSchema.safeParse({ persona: null }).success).toBe(true)
+  })
+
+  it('reduce motion persists through the seam (R4-BR-1): toggle → nav_preferences.reduce_motion; a fresh cache reads it', async () => {
+    renderUI(<AppearancePane />)
+    const sw = screen.getByLabelText('Reduce motion') as HTMLInputElement
+    expect(sw.checked).toBe(false)
     fireEvent.click(sw)
-    expect(usePreferencesStore.getState().reduceMotion).toBe(true)
+    expect(useThemeStore.getState().reduceMotion).toBe(true) // optimistic — the provider input moves at once
+    await preferencesWriter.flushAll()
+    expect(testPreferences.state.nav?.reduce_motion).toBe(true)
+    // reload: a fresh cache over the same store reads it back and drives `checked`
+    cleanup()
+    queryClient.clear()
+    resetPreferencesWriterForTests()
+    await seedPreferences(queryClient)
+    renderUI(<AppearancePane />)
+    expect((screen.getByLabelText('Reduce motion') as HTMLInputElement).checked).toBe(true)
   })
 
-  it('the reduce-motion Switch reflects the store value', () => {
-    usePreferencesStore.setState({ reduceMotion: true, arrangement: 'journalFirst' })
-    const { getByLabelText } = renderUI(<AppearancePane />)
-    expect((getByLabelText('Reduce motion') as HTMLInputElement).checked).toBe(true)
+  it('reflects the persisted values (a seeded row)', async () => {
+    cleanup()
+    queryClient.clear()
+    resetPreferencesWriterForTests()
+    testPreferences.state.user = {
+      ...(await testPreferences.svc.getMergedPreferences()),
+      persona: 'parent',
+      dashboard_layout: { arrangement: 'dashboardFirst' },
+    }
+    await seedPreferences(queryClient)
+    renderUI(<AppearancePane />)
+    await waitFor(() => expect(within(screen.getByLabelText('Persona')).getByText('Parent')).toBeTruthy())
+    expect(within(screen.getByLabelText('Home arrangement')).getByText('Dashboard first')).toBeTruthy()
+  })
+
+  it('read-only (EC-7): every control is disabled', () => {
+    renderUI(
+      <SettingsContext.Provider value={{ readOnly: true, update: async () => {} }}>
+        <AppearancePane />
+      </SettingsContext.Provider>,
+    )
+    for (const name of ['Theme preset', 'Mode', 'Density', 'Persona', 'Home arrangement']) {
+      expect((screen.getByLabelText(name) as HTMLButtonElement).disabled).toBe(true)
+    }
+    expect((screen.getByLabelText('Reduce motion') as HTMLInputElement).disabled).toBe(true)
   })
 })

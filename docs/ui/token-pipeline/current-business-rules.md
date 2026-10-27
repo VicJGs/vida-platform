@@ -48,6 +48,11 @@
     properties only** — animate `transform`/`opacity`/`clip-path` only, never `color`/`background`/`box-shadow`/
     `border`/`width`/`height`/`top-left-right-bottom`/`margin`/`padding`. Enforced at the component gate (DS-5/UI-*);
     the themes layer-doc is B12's enforcement artifact. `[motion.md §IX]`
+    **Two triggers (preferences-rescope R4, 2026-10-26):** motion reduces on the OS query **or** the in-app preference
+    (`<html data-vida-motion="reduce">`, written by `UIProvider`). Every CSS gate is emitted by
+    `packages/ui/src/internal/reduced-motion-css.ts` `reducedMotionCss()` (the `@media` rule + the attribute twin, one
+    declaration body); JS gates read `useReducedMotion()` (context OR OS). `[reduced-motion-css.ts; use-reduced-motion.ts;
+    reduced-motion-css.test.ts guard]`
 
 ## Rules established by DS-1 (IMPLEMENTED 2026-07-26)
 - **[NEW]** design.md §II three-layer architecture is now **enforced mechanically** by the build (B2), not by review

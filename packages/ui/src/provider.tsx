@@ -5,6 +5,8 @@
 import { useLayoutEffect } from 'react'
 import { TamaguiProvider, getConfig, getToken, type TamaguiProviderProps } from '@tamagui/core'
 import { config } from './tamagui.config'
+import { ReducedMotionContext } from './hooks/use-reduced-motion'
+import { MOTION_ATTR, MOTION_FULL, MOTION_REDUCE } from './internal/reduced-motion-css'
 import { fonts } from './themes/fonts'
 import {
   DENSE_SPACE_PX,
@@ -36,6 +38,10 @@ export {
 export interface UIProviderProps extends Omit<TamaguiProviderProps, 'config' | 'defaultTheme'> {
   /** Resolved active selection, owned by the app (Zustand). Defaults to THEME_DEFAULT (Editorial + light + calm). */
   selection?: ThemeSelection
+  /** The in-app reduce-motion preference, owned by the app (preferences-rescope R4). Default `false` = OS query only.
+   *  Written to `<html data-vida-motion>` for the CSS gates AND provided to `useReducedMotion()` — one prop, two
+   *  carriers (PLAN-R4 R4-BR-3, D-R4-1). It only ADDS reduction: off never forces motion. */
+  reduceMotion?: boolean
 }
 
 // Per-preset font-family VALUES for the S2 CSS-var seam (createFont bakes `--f-family: var(--vida-font-*, <Spectral>)`).
@@ -151,14 +157,14 @@ function clearCodec() {
   for (const p of PRESET_CLASSES) document.body.classList.remove(`t_${p}`)
 }
 
-export function UIProvider({ selection = THEME_DEFAULT, children, ...rest }: UIProviderProps) {
+export function UIProvider({ selection = THEME_DEFAULT, reduceMotion = false, children, ...rest }: UIProviderProps) {
   const { density } = resolveTheme(selection)
   const { preset, mode } = selection
 
   // Apply the codec layer on selection change. useLayoutEffect = before paint (minimise FOUT). Density stylesheet is
   // injected once; density is a pure attribute toggle; the font-family vars + preset class are idempotent writes.
   // Deps = what the effect consumes. Cleanup clears everything so a provider that unmounts (tests/nested) leaves the
-  // document clean. The swap is INSTANT by construction (no transition added) → honours prefers-reduced-motion (B12).
+  // document clean. The swap is INSTANT by construction (no transition added) → honours reduced motion (B12, EC-7).
   useLayoutEffect(() => {
     ensureDensityStylesheet()
     applyFontFamily(preset)
@@ -167,12 +173,19 @@ export function UIProvider({ selection = THEME_DEFAULT, children, ...rest }: UIP
     return clearCodec
   }, [preset, density])
 
+  // Reduce motion (R4): its OWN effect + cleanup. NOT in clearCodec — that is the cleanup above, so React runs it on every
+  // preset/density swap, and the attribute must survive a swap (D-R4-2). Removing it here covers unmount (idempotent).
+  useLayoutEffect(() => {
+    document.documentElement.setAttribute(MOTION_ATTR, reduceMotion ? MOTION_REDUCE : MOTION_FULL)
+    return () => document.documentElement.removeAttribute(MOTION_ATTR)
+  }, [reduceMotion])
+
   // SCHEME (light|dark) rides defaultTheme → the t_light|t_dark class on <html> (addThemeClassName:'html'); the PRESET
   // rides the <body> class above. Tamagui's nested sub-theme CSS (`:root.t_<mode> .t_<preset>`) then resolves the preset
   // palette for the whole document incl. portals. A flat defaultTheme={`${mode}_${preset}`} would NOT (Visual-Gate-proven).
   return (
     <TamaguiProvider config={config} defaultTheme={mode} {...rest}>
-      {children}
+      <ReducedMotionContext.Provider value={reduceMotion}>{children}</ReducedMotionContext.Provider>
     </TamaguiProvider>
   )
 }

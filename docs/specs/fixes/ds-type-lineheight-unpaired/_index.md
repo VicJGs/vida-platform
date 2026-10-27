@@ -90,6 +90,14 @@ element — it inherits the font's **`$true`** default.
    menu (shell More, scope selector, Collection + Calendar condense) [g2 review, fe-calendar-s1-chrome-375 #9].
 4. **Focus drop at the 768 condense swap** (toolbar ⇄ Menu unmount the focused control) — shared by the Collection and
    Calendar condense [g2 review #8].
+5. **`Switch` `lg` is 44×24, not 44×44** — fe-settings `s1-switch.md:31,38` names `lg` "the 44×44 touch target" but the
+   built track (= the `<label>` hit box when no visible label) is 44×24: it meets WCAG 2.5.8 AA (24×24) but not
+   design.md §X's ≥44 height. A `@vida/ui` contract gap (every Switch consumer) [preferences-rescope R5 Visual Gate,
+   2026-10-27, measured live]. R5 moved the Modules pane to `lg`; the primitive fix belongs to its own unit.
+6. **Settings surface chrome under ≥44** — the category rail rows (220×40) + the search box (38 tall)
+   (`settings/settings-surface.tsx`), and the Appearance / Locale / Notifications switches still at `md` 36×20
+   (R6 rebinds Locale/Notifications — the natural place to size those; the rail/search/Appearance switch → a
+   sibling fix) [preferences-rescope R5 Visual Gate, 2026-10-27].
 Each is triaged + gated as its own fix when picked up (the triage protocol); neither blocks fe-calendar.
 
 ## Change log

@@ -7,6 +7,8 @@ import { Text, View } from '@tamagui/core'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Button } from '@vida/ui'
 import { MODULE_MAP, type ModuleGroup, type ModuleNavEntry } from '../nav/module-map'
+import { applyNavPrefs, type NavPrefs } from '../nav/nav-prefs'
+import { usePreferences } from '../preferences/use-preferences'
 import { useAppShellUIStore } from '../stores/app-shell-ui-store'
 import { isFeatureEnabled } from './feature-flags'
 import { navIcon } from './nav-icons'
@@ -35,11 +37,15 @@ interface DockGroupModel {
  * The visible dock groups in declaration order. Filters `placement:'dock'` by `isFeatureEnabled` FIRST, then groups —
  * so a group left with zero visible entries never appears (S2-BR-a2: no empty heading; e.g. `platform-services` has
  * only the hidden `gamification` in M1.0).
+ * preferences-rescope R5 (R5-BR-2/3/4): the user's module prefs run through the shared `applyNavPrefs` too — hidden
+ * modules leave the dock (their route still opens, PR-7), renamed ones show the custom label (text + the rail's
+ * `aria-label`). Same filter-then-group order, so a group emptied by hiding drops its heading. This file owns the
+ * READER; mounting the dock (the Modules panel body) is shell-rescope's (D-R5-2).
  */
-function visibleDockGroups(): DockGroupModel[] {
+function visibleDockGroups(prefs?: NavPrefs): DockGroupModel[] {
   const order: ModuleGroup[] = []
   const byGroup = new Map<ModuleGroup, ModuleNavEntry[]>()
-  for (const entry of MODULE_MAP) {
+  for (const entry of applyNavPrefs(MODULE_MAP, prefs)) {
     if (entry.placement !== 'dock') continue
     if (entry.visibleWhen != null && !isFeatureEnabled(entry.visibleWhen)) continue // S2-BR-b fail-closed
     const existing = byGroup.get(entry.group)
@@ -69,7 +75,8 @@ export function ModuleDock({ dock }: ModuleDockProps) {
   // The collapse toggle exists only on the desktop sidebar (both expanded and collapsed → it can always re-expand);
   // never on the tablet rail or mobile drawer (M4/FOLD-1).
   const showToggle = dock === 'sidebar'
-  const groups = visibleDockGroups()
+  const { view } = usePreferences()
+  const groups = visibleDockGroups({ visibility: view.moduleVisibility, names: view.moduleNames })
 
   return (
     <View flex={1} flexDirection="column" gap="$4" paddingVertical="$12" paddingHorizontal="$8">

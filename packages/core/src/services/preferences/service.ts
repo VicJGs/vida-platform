@@ -42,8 +42,10 @@ import { InvalidModuleError } from './types'
 
 /**
  * The merge base (PR-2 single source, structure-data.md:44). Mirrors every `.default(...)` in
- * schema/preferences.ts EXACTLY — a field's default is authored here in the same shape as its column.
- * `[FACT: schema/preferences.ts:45-88]`
+ * schema/preferences.ts — a field's default is authored here in the same shape as its column — with ONE deliberate
+ * divergence: `feature_gamification` is `false` here (GM-1 opt-in, gamification/business-rules.md:12-16;
+ * preferences-rescope F11) while the DDL keeps `DEFAULT 1`. The service always writes the full defaults on create, so
+ * the DDL default is never used. `[FACT: schema/preferences.ts:45-88]`
  */
 export const USER_PREFERENCES_DEFAULTS: MergedPreferences = {
   // Appearance
@@ -84,8 +86,8 @@ export const USER_PREFERENCES_DEFAULTS: MergedPreferences = {
   push_routines: true,
   push_contacts: true,
   push_study: true,
-  // Features
-  feature_gamification: true,
+  // Features — GM-1: the System is opt-in (diverges from the DDL default on purpose; see the docblock above)
+  feature_gamification: false,
   // Onboarding & persona (E9)
   persona: null,
   motivation_style: null,
@@ -220,8 +222,17 @@ export interface PreferencesService {
   updateNavPreferences(patch: Partial<MergedNavPreferences>): Promise<MergedNavPreferences>
   /** Upsert a Cmd+K command by `command_key`: increment use_count + set last_used_at, or create (PR-6/BR-P3). */
   recordCommand(command_key: string, command_label: string, command_category?: string | null): Promise<void>
-  /** Set a command's pinned flag; no-op if the key was never recorded (docs silent — D-S3). */
-  pinCommand(command_key: string, pinned: boolean): Promise<void>
+  /**
+   * Set a command's pinned flag. An unrecorded key: with `pinned` + a non-empty `command_label` → create the row pinned
+   * and unused (`use_count 0`, `last_used_at null`) so it leads the palette (preferences-rescope D-R5-3, revising D-S3);
+   * otherwise a no-op. A present row only changes its flag (its label is never rewritten).
+   */
+  pinCommand(
+    command_key: string,
+    pinned: boolean,
+    command_label?: string,
+    command_category?: string | null,
+  ): Promise<void>
   /** Palette list: pinned-first, then frecency (use_count desc, last_used_at desc). PR-6. */
   getCommandHistory(): Promise<CommandBarHistoryRow[]>
 }
@@ -328,10 +339,34 @@ export function createPreferencesService(opts: {
     }
   }
 
-  async function pinCommand(command_key: string, pinned: boolean): Promise<void> {
+  async function pinCommand(
+    command_key: string,
+    pinned: boolean,
+    command_label?: string,
+    command_category?: string | null,
+  ): Promise<void> {
     const found = (await commandRepo.findWhere(eq(commandBarHistory.command_key, command_key)))[0]
-    // D-S3: no-op on an unrecorded key — the ② palette only pins commands already in history (single-user).
-    if (found) await commandRepo.update(found.id, { is_pinned: pinned })
+    if (found) {
+      await commandRepo.update(found.id, { is_pinned: pinned })
+      return
+    }
+    // D-R5-3 (revises D-S3): the palette can pin a never-run command; it needs a label to create the row. Without
+    // one (or when unpinning), an unrecorded key stays a no-op.
+    if (!pinned || command_label === undefined || command_label.trim() === '') return
+    const parsed = RecordCommandSchema.safeParse({ command_key, command_label, command_category })
+    if (!parsed.success) {
+      throw new Error(
+        `Invalid command record: ${parsed.error.issues[0]?.path.join('.') || 'unknown field'}`,
+      )
+    }
+    await commandRepo.create({
+      command_key,
+      command_label,
+      command_category: command_category ?? null,
+      use_count: 0,
+      last_used_at: null,
+      is_pinned: true,
+    })
   }
 
   async function getCommandHistory(): Promise<CommandBarHistoryRow[]> {

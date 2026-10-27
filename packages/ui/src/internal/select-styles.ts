@@ -1,4 +1,5 @@
 import { motion } from '../themes/motion'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // Injected CSS for the Select primitive — the pieces a Tamagui styled(View) can't express, using REAL switching
 // theme vars + the motion.ts foundation (the shipped interaction/checkbox precedent, NOT Tamagui enterStyle — which
@@ -26,7 +27,7 @@ export function ensureSelectStyles(): void {
     // active option (keyboard highlight OR pointer hover, both set activeIndex) — instant surface swap.
     '.vida-select-option.is-active{background-color:var(--colorSurfaceSecondary)}',
     // reduced motion: panel + chevron appear/rotate instantly.
-    `@media (prefers-reduced-motion:reduce){.vida-select-chevron,.vida-select-panel{transition:none}}`,
+    reducedMotionCss(['.vida-select-chevron', '.vida-select-panel'], 'transition:none'),
   ].join('')
   document.head.appendChild(style)
 }

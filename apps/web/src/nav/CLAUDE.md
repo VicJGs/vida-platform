@@ -7,6 +7,11 @@ The **canonical nav / module map** — central DATA describing what modules exis
 and how it is reached. Consumed by the nav chrome (UI-4) and by each module's route wiring when it lands (M1.1+).
 
 - `module-map.ts` — `ModuleGroup`, `NavPlacement`, `ModuleNavEntry`, `NAV_AXES`, `MODULE_MAP`, `GLOBAL_SURFACES`.
+- `nav-prefs.ts` (preferences-rescope R5) — the user's module prefs, nav side: `ALWAYS_REACHABLE_KEYS` (Settings/Home) ·
+  `isHideableModule` (dock ∖ always-reachable — THE hideable rule; settings-model + the preferences writer derive from it)
+  · `MANAGED_SURFACE_KEYS` (`features`/`sync`) · `applyNavPrefs(entries, prefs?)` — the ONE pure filter both nav readers
+  use (⌘K + the dock): hidden out, renamed relabelled, hideable keys only; unknown keys ignored + DEV-warned once. Pure data
+  logic — no JSX, no store, no service.
 
 ## Rules (do not violate)
 - **Data, not chrome.** This layer holds no JSX, no components, no layout. Rendering is UI-4 (chrome) / UX-3 (layout).

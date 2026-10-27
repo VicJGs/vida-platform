@@ -80,6 +80,7 @@ export const userPreferences = sqliteTable('user_preferences', {
   push_contacts: boolInt('push_contacts').notNull().default(true),
   push_study: boolInt('push_study').notNull().default(true),
   // Features
+  // DDL default kept; the service DEFAULTS write `false` (GM-1 opt-in) on create — preferences-rescope F11.
   feature_gamification: boolInt('feature_gamification').notNull().default(true),
   // Onboarding & persona (E9 split, ADR-012 §3.10 — Preferences single-writer owner)
   persona: enumText('persona', PERSONA), // FIXED → SQL CHECK; nullable

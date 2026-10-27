@@ -1,4 +1,5 @@
 import { motion } from '../themes/motion'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // Parent-driven interaction overlays (hover/press darkening) for Vida primitives, via plain CSS
 // descendant-hover — NOT Tamagui's `group`. `group` sets `container-type: inline-size`, which makes an
@@ -21,7 +22,7 @@ export function ensureInteractionStyles(): void {
     `.vida-overlay{opacity:0;transition:opacity ${ease}}`,
     `.vida-interactive:hover>.vida-overlay{opacity:0.08}`,
     `.vida-interactive:active>.vida-overlay{opacity:0.16}`,
-    `@media (prefers-reduced-motion: reduce){.vida-overlay{transition:none}}`,
+    reducedMotionCss(['.vida-overlay'], 'transition:none'),
   ].join('')
   document.head.appendChild(style)
 }

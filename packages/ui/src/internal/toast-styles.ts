@@ -1,5 +1,6 @@
 import { motion } from '../themes/motion'
 import { shadow } from '../themes/shadow'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // Injected CSS for the Toast primitive — the enter/exit motion a Tamagui styled(View) can't express across a
 // react-dom portal (the shipped Select/Menu/Dialog/Popover precedent). Contract (toast.md:37-42):
@@ -32,7 +33,8 @@ export function ensureToastStyles(): void {
     `.vida-toast-elevation{box-shadow:${shadow.raised};transition:opacity ${hover}}`,
     '.vida-toast-wrap:hover .vida-toast-elevation{opacity:1}',
     // reduced motion: instant appear/disappear — state still conveyed via aria-live (B12(a)); elevation = instant.
-    '@media (prefers-reduced-motion:reduce){.vida-toast[data-phase="entering"]{animation:none}.vida-toast[data-phase="exiting"]{transition:none}.vida-toast-elevation{transition:none}}',
+    reducedMotionCss(['.vida-toast[data-phase="entering"]'], 'animation:none'),
+    reducedMotionCss(['.vida-toast[data-phase="exiting"]', '.vida-toast-elevation'], 'transition:none'),
   ].join('')
   document.head.appendChild(style)
 }

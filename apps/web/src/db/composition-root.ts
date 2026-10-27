@@ -3,7 +3,7 @@
 //
 // The live service composition root for apps/web. A lazily-initialized MODULE
 // SINGLETON (seams/CLAUDE.md sanctions "a module singleton" as the injection
-// mechanism) — NOT a React provider, so App.tsx is untouched. Constructed ONCE,
+// mechanism) — NOT a React provider. Constructed ONCE,
 // after the DB-ready gate (BR-RT-BOOT), on first `getServices()` call.
 //
 // It builds `DrizzleDb` over the now-live `client.driver` (the data-plane seam),
@@ -11,7 +11,8 @@
 // order. Each entity's closing slice (register + flip — the Entity Live Close,
 // docs/specs/foundation/golive-replan/process.md) consumes these; adding a
 // module APPENDS its construction here (seams/CLAUDE.md:85) — the mechanism is
-// build-once, the construction manifest grows.
+// build-once, the construction manifest grows. Every write is serialized by the app-wide
+// write lock (write-lock.ts, BR-RT-LOCK) applied to `db.transaction` below.
 // ============================================================================
 
 import {
@@ -24,6 +25,7 @@ import {
   createNotesService,
   createJournalRegistry,
   createJournalsService,
+  createPreferencesService,
   createSessionRegistry,
   createEffectRegistry,
   createEffectRail,
@@ -39,6 +41,7 @@ import {
   type SqliteDriver,
   type NotesService,
   type JournalsService,
+  type PreferencesService,
   type SessionsService,
   type HabitsService,
   type TasksService,
@@ -46,10 +49,12 @@ import {
   type RelationshipsService,
 } from '@vida/core'
 import { getDbClient, ensureDbReady } from './boot'
+import { withTransactionLock, writeLock } from './write-lock'
 
 export interface Services {
   readonly notes: NotesService
   readonly journals: JournalsService
+  readonly preferences: PreferencesService
   // fe-calendar #19 S7 (ELC-3) — the services the Global Calendar reads; the dueIn aggregator + its lanes.
   readonly sessions: SessionsService
   readonly habits: HabitsService
@@ -90,6 +95,9 @@ export function composeServices(db: DrizzleDb, deviceId: string): Services {
   const journalRegistry = createJournalRegistry()
   const journals = createJournalsService({ db, deviceId, registry: journalRegistry })
 
+  // Preferences — no service deps (out-degree 0); ELC-3 of preferences-rescope (R2).
+  const preferences = createPreferencesService({ db, deviceId })
+
   // fe-calendar #19 S7 — the Global Calendar's reads (PLAN-S7 G3; homed by PLAN-S6 §1). The Calendar is the dueIn
   // aggregator (IA §4), so Sessions + its due-work LANES are constructed here, first-consumer-pull (sessions
   // current-spec:164-168). The effect registry is EMPTY by design: nothing here completes a session or fires an
@@ -112,7 +120,7 @@ export function composeServices(db: DrizzleDb, deviceId: string): Services {
   registerPurposesDueProvider(sessions, purposes)
   registerRelationshipsDueProvider(sessions, relationships)
 
-  return { notes, journals, sessions, habits, tasks, purposes, relationships }
+  return { notes, journals, preferences, sessions, habits, tasks, purposes, relationships }
 }
 
 async function build(): Promise<Services> {
@@ -123,8 +131,11 @@ async function build(): Promise<Services> {
   // libsodium loaded even in M1 where field encryption stays dormant (crypto unlock = M3).
   await initVault()
   const driver = getDbClient().driver
+  // BR-RT-LOCK (preferences-rescope R1): every service shares this ONE db over ONE worker connection, and drizzle's
+  // sqlite-proxy transactions are unlocked async begin/commit pairs — serialize them app-wide (write-lock.ts).
+  const db: DrizzleDb = withTransactionLock(createDrizzleProxy(driver), writeLock)
   const deviceId = await resolveDeviceId(driver)
-  return composeServices(createDrizzleProxy(driver), deviceId)
+  return composeServices(db, deviceId)
 }
 
 /**

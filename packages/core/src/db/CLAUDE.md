@@ -22,3 +22,13 @@ Drizzle ORM SQLite schema, a platform-agnostic DB adapter, and a generic reposit
 - `adapter.ts`: `DatabaseAdapter` interface + `DrizzleDb` type + migration shape.
 - `migrations/runner.ts`: applies hand-written SQL migrations (ADR-016 §3.2). `migrate()` first runs `ensureInfra` (idempotently bootstraps the `app_state` version store — DB-7) then applies the registry (`ALL_MIGRATIONS` = 001 sync_queue · 002 sessions · 003 spaces), each in a `BEGIN/COMMIT`. Also exports `resetDev` (dev-only DB rebuild). Forward-only (no `down()`).
 - `_legacy/`: the quarantined v1 `schema.v1.ts` (81 tables, ~60% stale) + `001_initial.v1.ts` — reference-only, do not import (ADR-018). Deleted at parity.
+
+## Transaction rule (BR-RT-LOCK, preferences-rescope R1 · 2026-10-21)
+The web composition root serializes `db.transaction` app-wide (`apps/web/src/db/write-lock.ts`) because the
+sqlite-proxy transaction is an unlocked async begin/commit pair over one connection. So in `@vida/core`:
+- **Inside a `db.transaction` callback use only `tx` / `*InTx` APIs** — never the outer `db` (or a repo method that opens
+  its own transaction): that nests a lock acquisition and deadlocks (surfacing as a 30 s `TransactionLockTimeoutError`).
+  Nested atomic work → `tx.transaction(...)` (a SAVEPOINT on the same connection; it does not take the lock).
+- **Every write is transactional** — never a bare `db.insert/update/delete(...).run()` outside a transaction (it can land
+  inside another caller's open transaction and roll back with it). Known exception to fix when wired:
+  `services/gamification/service.ts` `seedAchievements` (bare inserts; edge → gamification-rescope).

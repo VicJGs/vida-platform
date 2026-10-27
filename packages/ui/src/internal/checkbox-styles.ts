@@ -1,4 +1,5 @@
 import { motion } from '../themes/motion'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // Injected CSS for the Checkbox primitive — the state machine a Tamagui styled(View) can't express, driven off the
 // native <input type="checkbox">'s own `:checked` / `:indeterminate` / `:focus-visible` pseudo-classes with REAL
@@ -45,7 +46,7 @@ export function ensureCheckboxStyles(): void {
     '.vida-checkbox:has(.vida-checkbox-input:focus-visible) .vida-checkbox-box' +
       '{outline:2px solid var(--colorFocusRing);outline-offset:2px}',
     // reduced motion: checkmark/dash appear instantly (checkbox.md:45).
-    '@media (prefers-reduced-motion:reduce){.vida-checkbox-check,.vida-checkbox-dash{transition:none}}',
+    reducedMotionCss(['.vida-checkbox-check', '.vida-checkbox-dash'], 'transition:none'),
   ].join('')
   document.head.appendChild(style)
 }

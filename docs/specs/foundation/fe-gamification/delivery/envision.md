@@ -33,7 +33,17 @@ performance-strategy.md:413]`
 | **EC-11** | discipline | icons = **lucide/SVG, never emoji** (EC-15 house rule); **compose/read, don't rebuild** — Dreams(Purposes)/boxes(Finance) = reward targets, streaks(modules) = reads; quests/challenges = **Spaces**, INTENDED-later, OUT | structural |
 | **EC-12** | all | all 8 interaction states + 375/768/1440 + **both presets × light/dark**; **no overflow / no overlap** (content-height containers — the greybox `Panel` flexBasis trap; the real build composes shipped `CollectionView`/`Card`) | structural |
 
-## Register note (the architecture, doc-resolved)
+## Re-pin — Victor, 2026-10-21 (golive-replan process.md §2.5 rule 3; recorded by preferences-rescope at its Re-scope Gate)
+> "The thing is that game was not supposed to be a theme, check the documentation, it is supposed to be a module, with a
+> currency and complementary system to help the user and gamify his life." (Victor)
+
+**EC-1 + EC-2 (the `game` GLOBAL preset) are re-pinned as drift**, and so are the preset branches of EC-4 ("game = ring"),
+EC-6 ("game = trophy wall") and EC-12 ("both presets"). The System is the gamification **module**: an incentive/consequence
+engine with a multi-currency economy (`docs/features/gamification/identity.md:5-30`), never a visual theme. EC-10 stands:
+persona drives reward **copy** only. **Correction owner: gamification-rescope** (remove the `game` token family / G0 from
+`@vida/ui` + `THEME_PRESETS`, and re-express EC-4/EC-6/EC-12 without a preset branch). The register note below is superseded.
+
+## Register note (the architecture, doc-resolved) — *superseded 2026-10-21, see Re-pin above*
 `game` is a **global preset** applied via the Preferences/Onboarding theme picker (GM-16 — the System does NOT
 own theming); persona → suggest-`game`-at-onboarding is **Onboarding's** hand-off, not this unit. The System
 reads persona only for reward COPY (EC-10).

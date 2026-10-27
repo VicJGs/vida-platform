@@ -9,21 +9,24 @@
 // first only), so Journal-first's page-hero + glance-rail is this surface's bespoke
 // 2-col. The greet header (EC-6) + 375 reflow (EC-7) live here.
 //
-// Seams: useHomeArrangement (READ, A — default 'journalFirst'; write = Settings).
+// Seams: useHomeArrangement (READ, A — the live preferences view, default 'journalFirst'; write = Settings).
 // ============================================================================
 import { styled, Text, View } from '@tamagui/core'
 import { HomeDashboard, useHomeWidgets, renderHomeWidget, type HomeWidget, type HomeWidgetId } from './home-dashboard'
 import { JournalPageRegion } from './journal-page-region'
-import { usePreferencesStore, type HomeArrangement as PrefArrangement } from '../stores/preferences-store'
+import { usePreferences } from '../preferences/use-preferences'
+import type { HomeArrangement as PrefArrangement } from '../preferences/preferences-view'
 
 /** The Home arrangement — a user personalization chosen in Settings (decomposition.md:71). */
 export type HomeArrangement = 'journalFirst' | 'dashboardFirst'
 
-/** The useHomeArrangement READ seam (A). fe-settings S3 ACTIVATED the read: it now reads the app-owned preferences
- *  store (the Settings arrangement control writes it, so the toggle applies in-session). The default is 'journalFirst'.
- *  Cross-reload PERSISTENCE is still a deferred seam (seam-contract §A0 — the worker `values` seam blocks the live DB). */
+/** The useHomeArrangement READ seam (A), live since preferences-rescope R3 (IMPL step 17): the persisted
+ *  `dashboard_layout.arrangement` via `usePreferences().view` — the boot seed fills the cache before the first render, so
+ *  a persisted Dashboard-first is the FIRST arrangement drawn; a Settings write applies optimistically through the writer.
+ *  Loading / a failed read → the defaults ('journalFirst', PR-2). */
 export function useHomeArrangement(): HomeArrangement {
-  return usePreferencesStore((s): PrefArrangement => s.arrangement)
+  const arrangement: PrefArrangement = usePreferences().view.arrangement
+  return arrangement
 }
 
 // Time-of-day greeting. The user NAME is a user_profile seam (deferred); M1 greets without a name.

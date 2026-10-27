@@ -2,6 +2,7 @@ import { Text, View } from '@tamagui/core'
 import { Card, Switch } from '@vida/ui'
 import { usePreferencesStore } from '../stores/preferences-store'
 import { OptionRow } from './option-row'
+import { useSettings } from './settings-context'
 
 // fe-settings S6 — the Notifications pane (EC-4). Channel toggles + quiet hours over the existing user_preferences
 // notification fields, dispatching to the in-session preferences-store; live DB persist is the deferred seam (§A0).
@@ -9,6 +10,7 @@ import { OptionRow } from './option-row'
 // delivery-engine routing is M2); a single toggle row is honest for M1. Switches carry their own accessible name.
 
 export function NotificationsPane() {
+  const { readOnly } = useSettings() // R3 (EC-7): read-only on a read error
   const notifInApp = usePreferencesStore((s) => s.notifInApp)
   const setNotifInApp = usePreferencesStore((s) => s.setNotifInApp)
   const notifPush = usePreferencesStore((s) => s.notifPush)
@@ -31,23 +33,23 @@ export function NotificationsPane() {
         <OptionRow
           label="In-app"
           description="Show notifications inside Vida"
-          control={<Switch aria-label="In-app notifications" checked={notifInApp} onCheckedChange={setNotifInApp} />}
+          control={<Switch disabled={readOnly} aria-label="In-app notifications" checked={notifInApp} onCheckedChange={setNotifInApp} />}
         />
         <OptionRow
           label="Push"
           description="Send notifications to this device"
-          control={<Switch aria-label="Push notifications" checked={notifPush} onCheckedChange={setNotifPush} />}
+          control={<Switch disabled={readOnly} aria-label="Push notifications" checked={notifPush} onCheckedChange={setNotifPush} />}
         />
         <OptionRow
           label="Email"
           description="Send notifications by email"
-          control={<Switch aria-label="Email notifications" checked={notifEmail} onCheckedChange={setNotifEmail} />}
+          control={<Switch disabled={readOnly} aria-label="Email notifications" checked={notifEmail} onCheckedChange={setNotifEmail} />}
         />
         <OptionRow
           label="Quiet hours"
           description="Pause notifications overnight"
           last
-          control={<Switch aria-label="Quiet hours" checked={quietHours} onCheckedChange={setQuietHours} />}
+          control={<Switch disabled={readOnly} aria-label="Quiet hours" checked={quietHours} onCheckedChange={setQuietHours} />}
         />
       </View>
     </Card>

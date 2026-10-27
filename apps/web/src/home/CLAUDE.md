@@ -22,7 +22,10 @@ entities (ADR-008 render-targets) — it owns no block body and no live data (al
   CRDT is M4. The **Dashboard** rail stays the honest stub (no journal providers registered — they land with each entity's live close / HARD-1 providers).
 - `home-surface.tsx` — **HomeSurface** (S3, EC-1/EC-2/EC-6/EC-7): the greet header + the **arrangement** layer composing
   S1+S2. `useHomeArrangement` = the READ seam (default `journalFirst`; the toggle CONTROL + persisted write = Settings/
-  `fe-settings`, `decomposition.md:71`). fe-home OWNS the arrangement layout (RP4): Journal-first = page hero + a compact
+  `fe-settings`, `decomposition.md:71`). **Live since preferences-rescope R3:** it reads the persisted
+  `usePreferences().view.arrangement` (`dashboard_layout.arrangement`; no longer `preferences-store`). The boot seed fills
+  the cache before the router mounts, so a persisted Dashboard-first is the FIRST arrangement drawn; loading / a failed read
+  → `journalFirst` (PR-2). HomeSurface therefore needs the query provider + `compositionRootMock()` in tests. fe-home OWNS the arrangement layout (RP4): Journal-first = page hero + a compact
   "At a glance" dashboard rail; Dashboard-first = full OS grid + page below. EntityView `merged` = fixed layout→editor,
   so Journal-first is this surface's bespoke 2-col.
 - Gates: tsc 0 · home+routes tests green · **Visual Gate PASS** (Brave, 2 arrangements × 3 presets × light/dark ×

@@ -1,5 +1,38 @@
 <!-- Last updated: 2026-10-27 by /session-end -->
 
+## preferences-rescope R5 — Modules + ⌘K (2026-10-27 — LIF-247)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-27 | R5 / pin gesture | how a user pins a ⌘K command (D-R5-1, Victor) | **Alt+P on the active option, matched by `e.code === 'KeyP'` + altKey (no ctrl/meta); a Pin mark + "pinned" in the name; an always-mounted polite live region** | no doc defines a palette gesture; the combobox's options are non-focusable (S3-BR-b) and a nested button fails axe `nested-interactive`; `e.key` is `π` on mac Option | yes |
+| 2026-10-27 | R5 / pin absent key | `pinCommand` on a never-run command (D-R5-1 A1, Victor) | **creates the row (`use_count 0`, `last_used_at null`, pinned)** — revises mod-preferences D-S3 ("no-op", a docs-silent default) | the palette is the first consumer; a no-op would make the announcement lie and block pinning a first-time command | yes |
+| 2026-10-27 | R5 / scope | the specimen's Settings "⌘K pinned commands" row (p5-discover-own-specimen.html:189) | **not in R5** — filed as an fe-settings follow-up edge at R8 | outside fe-settings EC-4 + the approved slice-map | yes |
+| 2026-10-27 | R5 / dock live proof | the dock has no production mount (fe-shell #14 reshape; mount = shell-rescope) (D-R5-2, Victor) | **R5 ships the dock READER (unit-proven); live cells re-verified when shell-rescope mounts it** | decisions.md:80 homes readers here, mounting is shell's; the R4 graph precedent for unmountable surfaces | yes |
+| 2026-10-27 | R5 / pinCommand API | how A1 creates a row without a label (D-R5-3, Victor) | **`pinCommand(key, pinned, label?, category?)`; create only when absent + pinned + non-empty label** | `command_label` NOT NULL; optional params break no caller | yes |
+| 2026-10-27 | R5 / touch targets (in-gate) | the Modules pane measured 36×20 switches + 40×32 icon buttons | **Switch `lg` (its documented touch size) + icon Buttons `lg` 48 in the Modules pane; rail/search/other panes + the Switch primitive's 44×24 `lg` → recorded siblings** | the unit's own gate on its own surface = fix in-unit; latent siblings found by inspection → sibling records (decisions.md:109) | yes |
+| 2026-10-27 | R5 / pin hint placement (in-gate) | the PLAN's footer hint sat below a ~22-row scrolling list | **under the input**, still the combobox's `aria-describedby` | a hint nobody sees fails its purpose (WCAG 1.3.1 intent) | yes |
+| 2026-10-27 | R5 / history writes | the `recordCommand` UNIQUE race + `pinCommand` read-then-update | **one app-side serial chain (`preferences/command-history.ts`) for record + pin; best-effort record after run** | reconciliation F9 offers queue-or-upsert; the lock doesn't cover non-transactional ops (R1-BR-7); one tab owns the DB (R1-BR-8) | yes |
+
+## preferences-rescope R4 — reduce motion end to end (2026-10-26/27 — LIF-247)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-26 | R4 / hook | how `useReducedMotion` reads the in-app preference (D-R4-1, Victor) | **a `ReducedMotionContext` from `UIProvider`, fed by the same `reduceMotion` prop that writes `<html data-vida-motion>`** — one prop, two carriers; NOT observing the attribute | React 19 subscribes `useSyncExternalStore` in a passive effect, after the provider's layout-effect write → a boot frame could animate; context is read during render | yes |
+| 2026-10-26 | R4 / provider | where the attribute is removed (D-R4-2, Victor) | **its own `[reduceMotion]` effect's cleanup; `clearCodec` unchanged** | `clearCodec` is the `[preset, density]` effect's cleanup → runs on every theme swap; removing the attribute there turns the CSS gates off while JS says reduce (EC-7) | yes |
+| 2026-10-26 | R4 / graph | Sigma camera under reduced motion (D-R4-3, Victor) | **`zoomDuration`/`doubleClickZoomingDuration`/`inertiaDuration` = 1 ms + `inertiaRatio` 0** | sigma 3.0.3 divides by the duration (`sigma.esm.js:199`) → 0 is a NaN (blank) frame | yes |
+| 2026-10-26 | R4 / CSS gates | how the 13 gates key on the preference (D-R4-4, Victor) | **`internal/reduced-motion-css.ts` `reducedMotionCss()` emits the `@media` rule + the `[data-vida-motion="reduce"]` twin; a glob guard fails any other file naming the media query** | CSS can't OR a media query with a selector; one body → can't drift; stronger than a per-file twin check (catches a half-converted module) | yes |
+| 2026-10-26 | R4 / state | where the app derives the provider input | **`theme-store` gains `reduceMotion`, derived from `['preferences','nav']` in its ONE cache subscription** | `UIProvider` renders outside `QueryClientProvider`; a second store would be a second Zustand-holds-prefs exemption (PR-5) | yes |
+
+
+## preferences-rescope R3 — failed-read recovery (2026-10-26 — LIF-247)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-26 | R3 / honest states | how a failed preferences read recovers | **user Retry → `refetch()` (state-conventions §3); `retryOnMount: false` on both query definitions** — NOT refetch-on-mount | query-core 5.101.4 `shouldLoadOnMount` refetches an errored data-less query on EVERY observer mount and `fetchState` resets it to `pending` → a loading↔content surface loops forever; §3 already fixes recovery as an explicit Retry. PLAN-R3 rev 2.2 | yes |
+| 2026-10-26 | R3 / non-text contrast | secondary-button fill + Select-trigger border measure 1.24–1.68 vs the surface | **accepted, no change in R3** — WCAG 1.4.11 needs ≥3:1 only for the visual information that IDENTIFIES a control/state: Retry's label 15.71, Select chevron ≥ 4.94, active rail tick ≥ 4.39 | both are shipped `@vida/ui` primitives (not R3 code); `standards/design.md` "design above the floor" → raising control boundaries is a DS-level call, recorded here as a sibling | yes |
+| 2026-10-26 | R3 / Retry size | Retry button size in the Settings error state | **`size="lg"` (48px)** — not the notifications/gamification `small` | `standards/design.md:218` ≥44 · decisions:138; the two precedents' `small` Retry (and their missing `onPress`) are recorded siblings, not folded | yes |
+
+
 ## fe-calendar S6 — first-consumer reads (2026-10-21 — LIF-203)
 
 | Date | Area | Decision | Choice | Reason | Reversible |
@@ -42,14 +75,28 @@
 | 2026-10-19 | Locale | calendar assumes Monday + 24h? | **READ `weekStartsOn`/`timeFormat` from preferences-store**; `weekStartOf` replaced `mondayOf` across every range (Month via `CalendarView weekStartsOn`) | ADR-002 `user_preferences` + the fe-settings store already live; fe-home READ precedent; shared defect → root fix in-unit (:1119-1121) | yes |
 | 2026-10-19 | Shared-lane time label | show the range in a ½-column lane? | **start-only visible, full range sr-only** (D-S3-DEV-1) | the range wrapped and clipped the title (screenshot-caught); height still shows duration | yes |
 
+## preferences-rescope — Re-scope Gate (2026-10-21 — LIF-247, M1.2.4 Live Close)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-21 | Source of truth | stores vs React Query (A6) | **React Query over SQLite = source; `theme-store` = derived cache (PR-5); `preferences-store` dissolved** | Victor: "a clear drift". The 2026-10-12 stores existed only for the `values` seam, now live; BR-RT-1/7, data-flow.md:465, structure-data.md:46 | — (drift fix) |
+| 2026-10-21 | Onboarding module picks | which store? | **`module_visibility`** (unpicked → false) | intake G5 (Victor 2026-06-18): the per-module on/off system = visibility driving nav | — (doc-fact) |
+| 2026-10-21 | Readers of hide/rename/reduce-motion | preferences or shell? | **preferences-rescope** (shell mounts the dock + placement) | Victor: "follow the documentation that explains the architecture and the design". IA:46-47, IA:104, fe-settings EC-4 "+ wired" | — |
+| 2026-10-21 | `game` | theme or module? | **a module (the System), not a theme**; fe-gamification EC-1/EC-2 re-pinned as drift → gamification-rescope removes the token family | Victor: "game was not supposed to be a theme … it is supposed to be a module, with a currency and complementary system"; gamification/identity.md:5-30 | — |
+| 2026-10-21 | Data-plane write integrity (B5, STRUCTURAL) | concurrent transactions interleave on the worker connection | **one app-wide lock wrapping `db.transaction` in the composition root** (5 stated properties), slice R1 here; notes rebase after | verified: drizzle sqlite-proxy has no mutex; data-plane-wiring closed; first concurrent multi-table consumer | yes |
+| 2026-10-21 | Transition preference | home | **preference + control here (R-T, `dashboard_layout.transition`); engine at the shell Outlet → shell-rescope** | P2, decisions.md:291 "yes (prefs)"; Victor | yes |
+| 2026-10-21 | en/pt-BR i18n | home | **new platform i18n unit** (minted at close); the language pref rides it | quality bar :46-48 "ship in M1"; nothing homed it; Victor | yes |
+| 2026-10-21 | `feature_gamification` | default + control | **default → false** (GM-1 opt-in); control → **fe-feature-atlas LIF-215** (P5 enable/disable surface) | GM-1; decomposition.md:69; surface-map.md:31 | yes |
+| 2026-10-21 | B6 boot frame | flash before the provider mounts | **device-local theme hint** (inline `index.html` script; written only from a settled persist; never a source) | IR-4 makes a flip a feel-EC failure → "known limit" would fail ELC-9 | yes |
+
 ## fe-settings ② (2026-10-12 — LIF-193, PR #137)
 
 | Date | Area | Decision | Choice | Reason | Reversible |
 |------|------|----------|--------|--------|------------|
 | 2026-10-12 | Settings controls | booleans — Checkbox or a toggle? | **net-new `Switch` pill-toggle primitive (@vida/ui)** | Envision call (D-ENV-1) — matches the OS System specimen's toggle; a reusable DS primitive every later surface needs | reversible |
 | 2026-10-12 | Theme state | where does the app-owned theme selection live? | **a Zustand theme-store → `UIProvider selection`** (replaced the `THEME_DEFAULT` const in App.tsx) | AR-4 (app owns theme state); makes preset/mode/density re-theme the whole app live (EC-5); needs no DB | reversible |
-| 2026-10-12 | Persistence | preferences persist to SQLite now, or defer? | **deferred seam — apply live in-session, persist drop-in later** | verified in code the apps/web worker-`values` DB seam blocks every live preferences op (repo.findAll → `.all()` → `values`); same first-consumer home fe-notes deferred | reversible (activates when the seam lands) |
-| 2026-10-12 | Store shape | one prefs store or two? | **two — theme-store + preferences-store** | theme-store is consumed at the provider root (minimal, independently subscribable); preferences-store holds the rest | reversible |
+| 2026-10-12 | Persistence | ~~preferences persist to SQLite now, or defer?~~ **SUPERSEDED 2026-10-21 (preferences-rescope A6: drift, Victor)** | **deferred seam — apply live in-session, persist drop-in later** | verified in code the apps/web worker-`values` DB seam blocks every live preferences op (repo.findAll → `.all()` → `values`); same first-consumer home fe-notes deferred | reversible (activates when the seam lands) |
+| 2026-10-12 | Store shape | ~~one prefs store or two?~~ **SUPERSEDED 2026-10-21 (A6): React Query = source; theme-store = derived cache; preferences-store dissolved** | **two — theme-store + preferences-store** | theme-store is consumed at the provider root (minimal, independently subscribable); preferences-store holds the rest | reversible |
 | 2026-10-12 | Mode control | offer a "System" option? | **Light/Dark only** | `ThemeMode` has no `system`; honest over a fake 3rd value | reversible |
 | 2026-10-12 | Control scope | all 7 control groups, or cut the unbacked ones? | **all 7** (doc-resolved, not a judgment) | `decomposition.md:71` + `reconstructed-structure.md:49` home all 7; storage shape is a build-phase call (`structure-data.md:18`) → ride the open `dashboard_layout`/`module_visibility` fields, zero schema change | — |
 | 2026-10-12 | Merge | merge with CI dark? | **merge on local-green** | CI repo-wide dark (exhausted GitHub Actions minutes, infra not code; main `94aeea1` triage); fe-settings exhaustively locally-verified; Victor approved | reversible |

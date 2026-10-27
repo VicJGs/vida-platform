@@ -1,5 +1,6 @@
 import { motion } from '../themes/motion'
 import { shadow } from '../themes/shadow'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // Injected CSS for the Popover primitive — the panel ENTER animation a Tamagui styled(View) can't express across a
 // react-dom portal (the shipped Select/Menu/Dialog precedent). Contract (popover.md:34): open = opacity + a
@@ -22,7 +23,7 @@ export function ensurePopoverStyles(): void {
     `.vida-popover-panel{opacity:0;transform:scale(0.96);transition:opacity ${t},transform ${t};box-shadow:${shadow.overlay}}`,
     '.vida-popover-panel.is-open{opacity:1;transform:none}',
     // reduced motion: appears instantly.
-    `@media (prefers-reduced-motion:reduce){.vida-popover-panel{transition:none}}`,
+    reducedMotionCss(['.vida-popover-panel'], 'transition:none'),
   ].join('')
   document.head.appendChild(style)
 }

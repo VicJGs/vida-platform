@@ -44,3 +44,33 @@ describe('deriveNavCommands', () => {
     expect(commands.every((c) => c.category === 'navigation')).toBe(true)
   })
 })
+
+// preferences-rescope R5 (PLAN-R5 R5-BR-2/4) — ⌘K's nav commands honor the user's module visibility + names.
+describe('deriveNavCommands with nav prefs', () => {
+  const prefs = {
+    visibility: { tasks: false, preferences: false, journals: false },
+    names: { habits: 'Rituals', preferences: 'Nope' },
+  }
+
+  it('omits a hidden module and relabels a renamed one; the id (history key) is unchanged', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const commands = deriveNavCommands(undefined, undefined, prefs)
+    const ids = commands.map((c) => c.id)
+    expect(ids).not.toContain('nav:/tasks')
+    expect(commands.find((c) => c.id === 'nav:/habits')?.label).toBe('Rituals')
+    expect(commands).toHaveLength(20)
+    warn.mockRestore()
+  })
+
+  it('keeps Settings and Home under a forged false / name (EC-8 read side)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const commands = deriveNavCommands(undefined, undefined, prefs)
+    expect(commands.find((c) => c.id === 'nav:/settings')?.label).toBe('Settings')
+    expect(commands.find((c) => c.id === 'nav:/')?.label).toBe('Home')
+    warn.mockRestore()
+  })
+
+  it('no prefs → today’s 21', () => {
+    expect(deriveNavCommands(undefined, undefined, undefined)).toHaveLength(21)
+  })
+})

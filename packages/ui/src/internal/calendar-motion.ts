@@ -1,4 +1,5 @@
 import { motion } from '../themes/motion'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // fe-calendar S7 (EC-F2 — "range-transition + today-pulse motion, reduced-motion gated"; PLAN-S7 G15/R9). Injected because a
 // @keyframes can't be a Tamagui style prop (the sync-status/toast precedent). Motion communicates STATE, never decoration:
@@ -21,7 +22,7 @@ export function ensureCalendarMotionStyles(): void {
     `.vida-today-pulse{animation:vida-today-pulse ${motion.duration.slow}ms ${out};transform-origin:center}`,
     `@keyframes vida-range-fade{from{opacity:0}to{opacity:1}}`,
     `.vida-range-fade{animation:vida-range-fade ${motion.duration.moderate}ms ${out}}`,
-    `@media (prefers-reduced-motion: reduce){.vida-today-pulse,.vida-range-fade{animation:none}}`,
+    reducedMotionCss(['.vida-today-pulse', '.vida-range-fade'], 'animation:none'),
   ].join('')
   document.head.appendChild(style)
 }

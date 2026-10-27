@@ -1,5 +1,6 @@
 import { shadow } from '../themes/shadow'
 import { motion } from '../themes/motion'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // Card elevation — injected because a box-shadow + a descendant-hover opacity transition are things Tamagui
 // `styled()` can't cleanly express. Elevation is communicated as the OPACITY of a raised-shadow overlay (B12:
@@ -32,7 +33,7 @@ export function ensureCardStyles(): void {
     `.vida-card-flat{box-shadow:none}`,
     `.vida-card-elevation{opacity:0;box-shadow:${shadow.raised};transition:opacity ${ease}}`,
     `.vida-card-interactive:hover>.vida-card-elevation,.vida-card-interactive:active>.vida-card-elevation{opacity:1}`,
-    `@media (prefers-reduced-motion: reduce){.vida-card-elevation{transition:none}}`,
+    reducedMotionCss(['.vida-card-elevation'], 'transition:none'),
   ].join('')
   document.head.appendChild(style)
 }

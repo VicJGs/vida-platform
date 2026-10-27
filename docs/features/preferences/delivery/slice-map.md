@@ -56,3 +56,70 @@ Independent slices (3 tables, no cross-slice dependency). Build order 1 → 2 �
 type-reconcile + DEFAULTS + read-or-create pattern the others mirror). Each slice runs its own §XXVI double-gate at
 implementation and closes with the **per-slice blocking Verification Gate** (Vitest logic + ≥2 failure paths +
 live-store smoke with `initVault()`) before the next begins — no batching.
+
+---
+
+## Re-scope slices — preferences-rescope (LIF-247 · M1.2.4 Live Close) · Step 5 Re-scope Gate
+
+> **Appended in RATIFY mode, 2026-10-21 (rev 2, after an independent critique: REVISE, 6 blocking + 8 nits, folded).**
+> The ① slices above shipped (PR #44). The ② surfaces shipped as fe-settings S1–S6 (LIF-193) and fe-onboarding S1–S4
+> (LIF-216), both in-session only. These slices close the entity **live** (ELC-1…9). Every slice traces to
+> `delivery/reconciliation.md` (DRY at pass 9, 71 rows).
+>
+> **Gates by plane (entity-rescope Step 6):**
+> - backend/shared rows → **Verification Gate**: Vitest + typed failure paths + a live smoke on the real store.
+> - frontend rows → **Visual Gate**: real browser · every state × light/dark × 375/768/1440 · §XIV a11y · stage-2 AA
+>   critique · stage-4 Victor `visual-approved` (F15).
+> - A **mixed slice runs both gates.**
+>
+> **Every slice:** its own §XXVI double gate (PLAN → critique → Approval 1 → IMPL-PLAN → preflight → critique →
+> Approval 2). It **refreshes the `current-*` of every context it touches** and fixes the stale comments (X5: C8/B4) **in
+> the files it touches**, in the same commit (§XXIX). It PASSes before the next slice starts. No batching, no "owed".
+
+| # | Slice | Plane | Ledger rows | ECs (Visual-Gate MUSTs) | Done-when (named checks) |
+|---|---|---|---|---|---|
+| **R1** | **Write integrity (data plane):** one app-wide transaction lock wrapping `db.transaction` on the composition-root `DrizzleDb`, with 5 properties: `finally` release · no re-entrancy (`tx`/`*InTx` only) · per-table queues still required · the accepted uncommitted-read leak, documented · the first-run marker write routed through the lock. Plus **teardown on non-cancelable events** (`pagehide`+persisted → terminate · `pageshow`+persisted → reload · no `beforeunload`), amended at PLAN-R1 §6 (Victor-approved) | shared | B5 · F18 (lock half) | — | **Verification:** concurrent cross-table writes never interleave · a nested `repo.*` inside a callback is rejected by test · worker death releases the lock and queued transactions fail loudly · first-run marker + a prefs write overlap safely · teardown registers only `pagehide`/`pageshow` · notes/journals suites green |
+| **R2** | **Preferences live seam:** register `preferences` · hoist `QueryClientProvider` over both boot branches + the overlay · the two query keys (5 min / 30 min) · the mapper (system→light, sub-key + scalar degrade, persona sentinel, defaults parity) · per-table serial queues + `patchDashboardLayout` + whole-map `module_visibility` · **C5 mechanism** (cancel → setQueryData → debounce → setQueryData from result → invalidate on an empty queue → restore) · echo dedupe · the exported write path (F10) · **`preferences-store` → a transitional mirror hydrated from the query** (each pane slice moves its fields; R6 deletes it) · `feature_gamification` default → `false` (GM-1; no visible change, the flag read is still stubbed) · the shared test wrapper · **F18 queue half:** flush on `visibilitychange`/`pagehide` · **inherits from R1:** R1-BR-6 (unlocked reads may see uncommitted rows → invalidate-on-empty-queue re-reads) + R1-BR-7 (the lock does not replace per-table queues) | shared (+ backend F11) | B1 · B3 · A4 · C1 · C2 · C3 (mirror) · C4 · C5 (mechanism) · C6 · C7 · C9 · C10 · C11 · F1 · F2 · F10 · F11 (default) · F18 (queue half) | — | **Verification:** mapper round-trip via `getMergedPreferences` · `user_preferences` + `nav_preferences` row count == 1 after rapid multi-table edits on a fresh vault · preset ×2 within 500 ms holds · a sibling `dashboard_layout` key survives · a rejected write restores the snapshot · reload inside the debounce window persists (real OPFS) · **regression:** existing Settings/Home/onboarding suites green; a live smoke shows Settings rendering service-persisted values |
+| **R3** | *Status: **built 2026-10-26, uncommitted — Visual Gate pending** (not shipped); PLAN-R3 rev 2.2 · IMPL-PLAN rev 3.1. As built, the hint is also written from an accepted DB read (DB truth, PLAN-R3 R3-BR-4), and the error state gained a Retry (`retryOnMount: false`, rev 2.2).* **Boot + Appearance + honest states:** `theme-store` → derived cache (C3, theme half) · boot prefetch before first paint, non-blocking on failure · **B6 option (a):** device-local theme hint read by an inline `index.html` script, written only from a settled persist · readers on the boot-seeded cache (F13) · Settings skeleton · read-only error · **C5 UI half** ("Saved on this device" + revert toast) · **persona row** (+ "Not set" + index entry) · theme + arrangement persist · Appearance + Home fields rebound from the mirror to the query | frontend + shared | C3 (theme) · B2 · B6 · F13 · D1 · C5 (UI) · D4 · D6 · D7 · D10 | fe-settings EC-1, 2, 3, 4 (Appearance), 5, 7, 10, 11 · fe-home EC-2, EC-9 · **persona-row MUST** | **Verification:** prefetch failure falls through to defaults (test) · hint never written from an unsettled or reverted persist. **Visual:** reload with dark + dense + Quiet Desk paints the persisted theme from the first frame (no white, no flip) · reload with `dashboardFirst` shows no journal-first frame · error state = read-only panes + the safe-on-device line · a write shows "Saved on this device" · a forced failure reverts + toasts |
+| **R4** | **Reduce-motion, end to end:** persist to `nav_preferences.reduce_motion` (D8) + the provider-applied root data-attribute that `useReducedMotion` + all 12 CSS gates key on (`packages/ui` CODEC edit + `shell-panel-styles.ts`); `clearCodec` clears it. Refresh the fe-codec-theme context docs | shared (CODEC) + frontend | D8 · D9 | fe-codec-theme seam EC-7 · fe-onboarding EC-10 · fe-home EC-9 · fe-shell EC-12 | **Verification:** the attribute is set from the pref, cleared by `clearCodec`; the hook ORs it with the OS query. **Visual:** toggle → persist → reload → every animated primitive instant, both modes; a theme swap honours it (codec EC-7) |
+| **R5** | *Status: **SHIPPED 2026-10-27** — PLAN-R5 rev 2 · IMPL-PLAN rev 2 (D-R5-1 A+A1 · D-R5-2 dock unit-proven · D-R5-3 `pinCommand` label params); Visual Gate PASS, Victor `visual-approved`. In-gate: Modules-pane controls → `lg` (targets) · pin hint under the input.* **Modules + ⌘K:** show/hide · rename · Atlas/Sync persist (whole map + `patchDashboardLayout`) · `deriveNavCommands` + `visibleDockGroups` honor visibility + names; the ⌘K memo is reactive; Settings/Home never hidden (EC-8 read side) · ⌘K **history**: record on run (best-effort, own try/catch, UNIQUE race guard), ranked + pinned into `collect`, live labels · Modules fields rebound | frontend + shared | D11 · D12 · D13b · F9 | fe-settings EC-4 (Modules), EC-8, EC-12 | **Verification:** two first runs of one command don't throw · a record failure never blocks `run()` · the dock filter (unit) omits hidden + relabels renamed · a synced `false` on Settings/Home is ignored. **Visual:** hide a module → gone from ⌘K; rename → the new label in ⌘K; reload persists; a frequent command ranks first; a pinned one leads |
+| **R6** | **Locale + Notifications:** date/time/week + channels + quiet-hours toggle persist · `CalendarView weekStartsOn` · activity `hourCycle` · scalar read-degrade · Locale/Notification fields rebound · **`preferences-store` + its test deleted** (the last pane slice) | frontend | D16 · D17 · D19 · C3 (dissolve complete) | fe-settings EC-4 (Locale/Notifications) | **Verification:** `week_starts_on` 7 → 1, unknown `date_format` → `YYYY-MM-DD`. **Visual:** Sunday start renders the notes calendar Sunday-first; 12h/24h switches activity times (fresh vault = 24h, the expected shift); reload persists |
+| **R7** | **Onboarding writes:** picks → `module_visibility` (seeded from current visibility, flag-only lockstep, `moduleNames` labels) · theme commit (shared path) · `onboarding_completed` on complete + skipAll, not on "Skip for now" · only Continue'd steps commit · preview = a layer over the cache, reverted if uncommitted · both picks = one write · finalize flushes + awaits persist · the picker lists fe-onboarding EC-5's **3 presets** (no `game`, E11) · `EmptyState.guidedSetup` first consumers: **the notes list empty state (`notes/note-renderers.tsx`) and the notifications empty state (`notifications/notifications-surface.tsx`)**, the two module empties a fresh vault shows | frontend + shared | E1 · E2 · E3 · E4 · E5 · E7 · E8 · E10 · E11 | fe-onboarding EC-1 … EC-10 | **Verification:** complete → `onboarding_completed=true`; skipAll → true; dismiss → unchanged · a skipped step writes nothing · a failed finalize rejects → the retryable "Could not finish setup" · the picker is seeded from visibility. **Visual:** both slot paths open guided setup (EC-1 ≥2 paths) · the preview never flips back mid-flow · close without commit restores the saved theme |
+| **R8** | **Entity close:** the ELC-7 live leg on real OPFS (write → reload → persists · reopen with no spurious write · row count == 1 · reload inside the debounce window · console clean) · **ELC-9: every EC re-verified live** (EC-4 hide/rename through ⌘K) · final stale-doc sweep (F7) · remaining F3 docs · cross-unit edges written onto the owning tasks · `/critique` SHIP | shared | F6 · F8 · F7 · F3 · F5 | **all** (§H) | the ELC-1…9 checklist, each item evidenced |
+| **R-T** | **Transition preference** (Victor 2026-10-21: the preference + Settings control here; the route-transition engine at the shell Outlet = **shell-rescope**, edge): `page-turn · cross-fade · slide · none` persisted as the `dashboard_layout.transition` sub-key via `patchDashboardLayout` (zero schema change, the same rule as the preset; decisions.md:12), honoring reduce-motion (→ `none`) | frontend | F16 | P2 (decisions.md:291) | **Visual:** the control persists + reloads; with reduce-motion on, it reads `none`. **Verification:** mapper + default. The engine re-verifies live when shell-rescope lands |
+
+**Order:** R1 → R2 → R3 → R4 → R5 → R6 → R7 → R-T → R8. *(F17 i18n → a new platform unit, Victor 2026-10-21; this unit routes its new copy through one module so externalizing is mechanical, and the language preference rides that unit as an edge. **The i18n unit's task + Linear issue are minted from the main checkout at close**, not from this worktree, because tracker sync is worktree-unsafe.)* Each blocks the next. Parallel-safe in principle: R4 needs only R2, and
+R6 is independent of R5. Kept sequential for one reviewer and one worktree.
+
+### Row coverage
+- **Built:** the table above (C5 split R2 mechanism / R3 UI; C3 split R2 mirror / R3 theme / R6 dissolve; F18 split R1 lock / R2 queue).
+- **Kept, no work (✅):** A1 · A2 · D3 (Settings correctly omits `game`) · C10/C11 (guards asserted in R2) · D2 · D5 · D6 (re-verified R3) · D13 · D13b (asserted R5) · D15 · D21 · E6 · F14.
+- **Per-slice, not a row of any one slice:** F15 (every frontend slice's Visual Gate) · B4/C8 X5 (each slice, in its own files).
+- **Records only (📄), no build:** E9 (void: `game` is a module, EC-P1 withdrawn) · A3 → sessions-rescope edge · D14 · D18 · D20 → notifications-rescope edge · F12 census
+  (incl. `default_dashboard_view` → first-consumer-pull, `pomodoro_*` control → fe-sessions' session-type config surface
+  per `frontend-replan/decomposition.md:94`, writing through F10) · F11 control → fe-feature-atlas LIF-215 edge
+  (decomposition.md:69 "enable/disable pref"; surface-map.md:31; frontend-quality-bar :87-88).
+- **Step-5 records:** F4 (below).
+
+### Cross-unit edges (written onto each owning task in R8)
+- **notes-rescope:** B5/F18 autosave hazard **fixed by R1; rebase after it** · **`notes.ensureJournal` is not idempotent under concurrency** (found live at R1's gate: 5 concurrent calls for one day → 1 ok + 4 `UNIQUE constraint failed: pages.journal_date`; integrity holds, exactly 1 row). It should treat the UNIQUE violation as "exists" and re-read (R1-BR-7: read-then-create races are the owner's) · `note-renderers` week start + the
+  EmptyState slot · soft EC-5.
+- **sessions-rescope:** A3 raw prefs read · **`composition-root.ts` collision** (both append; L1 parallel,
+  g3-order.md:23).
+- **journals-rescope (G3-E3):** `patchDashboardLayout` + `home-surface`.
+- **gamification-rescope:** **remove the `game` token family / G0 and correct EC-1/EC-2/EC-4/EC-6/EC-12's preset branches** (Victor 2026-10-21: `game` is a module, not a theme) · `activity-mode` hourCycle · `use-persona` + `feature-flags` stale comments · the flag read ·
+  `feature_gamification` now defaults off.
+- **notifications-rescope:** the exported write path · quiet-hours copy · the empty-state slot.
+- **shell-rescope:** dock mount · placement · `shell-panel-styles` · `command-bar.tsx`.
+- **fe-codec-theme:** the `packages/ui` reduce-motion attribute.
+- **LIF-238 note-open-behavior:** the exported write path.
+- **fe-calendar:** the real week-start reader; re-sweep on its merge.
+- **fe-feature-atlas LIF-215:** the `feature_gamification` control. Until it lands, gamification is reachable only by
+  its dev override.
+- **fe-sessions LIF-198:** the `pomodoro_*` control, writing through F10.
+
+### Step-5 record fixes (applied on approval)
+- debt-plan.md:27 reader clause (A13 → architecture).
+- coverage-report: merge the duplicate `preferences-rescope` totals rows.
+- decisions.md:9-10 superseded (A6 drift) + new rows for this gate's decisions.
+- interpretation N5 (whole-map write).

@@ -1,15 +1,20 @@
 import { useState } from 'react'
 import { Text, View } from '@tamagui/core'
 import { Button, Card, Input, Switch } from '@vida/ui'
-import { usePreferencesStore } from '../stores/preferences-store'
+import { usePreferences } from '../preferences/use-preferences'
 import { HIDEABLE_MODULES, MANAGEABLE_SURFACES, type HideableModule } from './settings-model'
 import { OptionRow } from './option-row'
+import { useSettings } from './settings-context'
 
 // fe-settings S5 — the Modules pane (EC-4 module controls · EC-8 escape hatch · EC-12 inline rename). Per-module nav
 // show/hide (Switch) + inline rename (pencil → Input + save/cancel), over the DOCK module list MINUS the always-reachable
-// surfaces (settings-model HIDEABLE_MODULES enforces the escape hatch in-UI — the service doesn't guard it). Plus a
-// "Surfaces" subsection toggling the discovered global surfaces (Feature Atlas · Sync log). State lives in the in-session
-// preferences-store; persistence is the deferred seam (§A0: → module_visibility + dashboard_layout.moduleNames). DIRECT tokens.
+// surfaces (HIDEABLE_MODULES, from `nav/nav-prefs` — the nav readers apply the same rule on read). Plus a "Surfaces"
+// subsection toggling the discovered global surfaces (Feature Atlas · Sync log). DIRECT tokens.
+// preferences-rescope R5 (R5-BR-1): reads the persisted view and writes through the Settings save path
+// (`useSettings().update` → the writer): show/hide → `module_visibility` (map merge), rename → `dashboard_layout.moduleNames`
+// (map merge, trimmed, ≤ 40 chars). Every row control speaks the DISPLAY name, so a renamed row has one spoken name.
+// Touch targets (R5 Visual Gate): Switch `lg` (the documented touch size, fe-settings s1-switch.md) + `lg` icon
+// buttons (≥44, decisions.md:138) — the S5 `md`/`sm` controls measured 36×20 / 40×32.
 
 function PencilIcon() {
   return (
@@ -39,12 +44,14 @@ function XIcon() {
   )
 }
 
+/** A custom name's ceiling — a nav label, not a sentence (R5-BR-1). */
+export const MODULE_NAME_MAX = 40
+
 function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) {
-  const visible = usePreferencesStore((s) => s.moduleVisibility[module.key] ?? true)
-  const setModuleVisible = usePreferencesStore((s) => s.setModuleVisible)
-  const customName = usePreferencesStore((s) => s.moduleNames[module.key])
-  const setModuleName = usePreferencesStore((s) => s.setModuleName)
-  const displayName = customName ?? module.label
+  const { view } = usePreferences()
+  const { readOnly, update } = useSettings()
+  const visible = view.moduleVisibility[module.key] ?? true
+  const displayName = view.moduleNames[module.key] ?? module.label
 
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -54,8 +61,8 @@ function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) 
     setEditing(true)
   }
   const save = () => {
-    const v = draft.trim()
-    if (v.length > 0) setModuleName(module.key, v)
+    const v = draft.trim().slice(0, MODULE_NAME_MAX)
+    if (v.length > 0) void update({ moduleNames: { [module.key]: v } })
     setEditing(false)
   }
   const cancel = () => setEditing(false)
@@ -75,15 +82,16 @@ function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) 
           <Input
             value={draft}
             onChangeText={setDraft}
-            aria-label={`Rename ${module.label}`}
+            aria-label={`Rename ${displayName}`}
+            maxLength={MODULE_NAME_MAX}
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') save()
               else if (e.key === 'Escape') cancel()
             }}
           />
-          <Button size="sm" intent="ghost" aria-label={`Save name for ${module.label}`} leading={<CheckIcon />} onPress={save} />
-          <Button size="sm" intent="ghost" aria-label={`Cancel renaming ${module.label}`} leading={<XIcon />} onPress={cancel} />
+          <Button size="lg" intent="ghost" aria-label={`Save name for ${displayName}`} leading={<CheckIcon />} onPress={save} />
+          <Button size="lg" intent="ghost" aria-label={`Cancel renaming ${displayName}`} leading={<XIcon />} onPress={cancel} />
         </View>
       ) : (
         <Text flexShrink={1} fontFamily="$body" fontSize="$body" color="$colorTextPrimary">
@@ -91,13 +99,16 @@ function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) 
         </Text>
       )}
       <View flexDirection="row" alignItems="center" gap="$8" flexShrink={0}>
-        {!editing && (
-          <Button size="sm" intent="ghost" aria-label={`Rename ${module.label}`} leading={<PencilIcon />} onPress={startEdit} />
+        {/* R3 (EC-7): read-only hides rename (an inline editor can't be "disabled" meaningfully) and disables the switch. */}
+        {!editing && !readOnly && (
+          <Button size="lg" intent="ghost" aria-label={`Rename ${displayName}`} leading={<PencilIcon />} onPress={startEdit} />
         )}
         <Switch
+          size="lg"
+          disabled={readOnly}
           aria-label={`Show ${displayName} in the nav`}
           checked={visible}
-          onCheckedChange={(v) => setModuleVisible(module.key, v)}
+          onCheckedChange={(v) => void update({ moduleVisibility: { [module.key]: v } })}
         />
       </View>
     </View>
@@ -105,8 +116,8 @@ function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) 
 }
 
 export function ModulesPane() {
-  const moduleVisibility = usePreferencesStore((s) => s.moduleVisibility)
-  const setModuleVisible = usePreferencesStore((s) => s.setModuleVisible)
+  const { readOnly, update } = useSettings()
+  const { view } = usePreferences()
 
   return (
     <View gap="$16">
@@ -142,9 +153,11 @@ export function ModulesPane() {
               last={i === MANAGEABLE_SURFACES.length - 1}
               control={
                 <Switch
+                  size="lg"
+                  disabled={readOnly}
                   aria-label={s.label}
-                  checked={moduleVisibility[s.key] ?? true}
-                  onCheckedChange={(v) => setModuleVisible(s.key, v)}
+                  checked={view.moduleVisibility[s.key] ?? true}
+                  onCheckedChange={(v) => void update({ moduleVisibility: { [s.key]: v } })}
                 />
               }
             />

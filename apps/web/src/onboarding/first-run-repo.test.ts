@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({ query: vi.fn(), run: vi.fn() }))
 vi.mock('../db/boot', () => ({ getDbClient: () => ({ driver: { query: h.query, run: h.run } }) }))
 
 import { readFirstRunComplete, writeFirstRunComplete } from './first-run-repo'
+import { writeLock } from '../db/write-lock'
 
 beforeEach(() => {
   h.query.mockReset()
@@ -45,5 +46,27 @@ describe('writeFirstRunComplete', () => {
       FIRST_RUN_COMPLETE_KEY,
       FIRST_RUN_COMPLETE_VALUE,
     ])
+  })
+
+  it('waits for an in-flight exclusive write before writing the marker (BR-RT-LOCK, R1-BR-5)', async () => {
+    h.run.mockResolvedValue(undefined)
+    let release!: () => void
+    let acquired!: () => void
+    const isHeld = new Promise<void>((r) => (acquired = r))
+    const held = writeLock.runExclusive(
+      () =>
+        new Promise<void>((r) => {
+          release = r
+          acquired()
+        }),
+    )
+    await isHeld // the "open transaction" now holds the lock
+    const marker = writeFirstRunComplete()
+    await new Promise((r) => setTimeout(r, 10))
+    expect(h.run).not.toHaveBeenCalled() // still queued behind the open transaction
+    release()
+    await held
+    await marker
+    expect(h.run).toHaveBeenCalledTimes(1)
   })
 })

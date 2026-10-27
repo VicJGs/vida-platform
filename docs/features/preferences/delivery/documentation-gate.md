@@ -1,0 +1,105 @@
+<!-- Documentation Gate — features/preferences · Entity Delivery Flow RECOVERY (entity-rescope) · Step 1 (blocking) -->
+<!-- Gates the SOURCE corpus every later step reads + is judged against: complete · coherent · No-Guessing-clean. -->
+
+# Documentation Gate — Preferences (preferences-rescope · LIF-247 · M1.2.4 Live Close)
+
+> **Status:** rev 2, 2026-10-21. rev 1 went to an independent critique (REVISE: 5 blocking, 7 nits); all are folded in (§E).
+> **Gated set:** aspect corpus `docs/features/preferences/{identity,structure-data,business-rules,contract,conventions}.md`
+> · ① delivery set `delivery/{interpretation,slice-map,seam-contract,service-spec}.md` (mod-preferences #37) · ② delivery
+> sets `docs/specs/foundation/fe-settings/delivery/*` + `docs/specs/foundation/fe-onboarding/delivery/*` · pinned ECs
+> (fe-settings EC-1…12, fe-onboarding EC-1…10; inherited fe-home EC-2/9, fe-gamification EC-1/10) · the G1 census rows
+> (`golive-replan/census/{a-notes-home,b-system-features,c-shell-codec,d-foundation-codec}.md`) + the G2 homes
+> (`golive-replan/{debt-plan,coverage-report}.md`) · the Step-0 baseline `docs/modules/preferences/current-*`
+> (2026-10-21, "② Surface plane — as-built baseline").
+> **Oracles (No-Guessing):** the shipped schema `packages/core/src/db/schema/preferences.ts`, the shipped service
+> `packages/core/src/services/preferences/service.ts`, the live data plane `apps/web/src/db/client.ts`, recorded decisions
+> (`.claude/docs/decisions.md`), and, where two approved artifacts disagree, the one that defines the unit.
+> Rule: **stale source + live oracle = FACT, not a decision.**
+
+## Verdict: PASS-with-carry-forwards
+**Intent is complete.** PR-1…PR-12, the fe-settings/fe-onboarding ECs and the G2 scope fully describe the entity.
+**The as-is layer is stale in 15 places** (§A). Each has one governing FACT. At rev 3 (Interpretation Gate, with Victor)
+three were corrected or confirmed: **A6** is drift (React Query is the source), **A8** follows intake G5 (picks →
+`module_visibility`), and **A13** follows the architecture + design docs (the readers close here). One UNKNOWN remains
+open (U3, locale readers), plus U2, which is resolved (§B).
+
+## A. Supersession map — stale claim → governing FACT
+| # | Stale claim (where) | Governing FACT | Effect downstream |
+|---|---|---|---|
+| A1 | "modules not implemented", "no `@vida/types` preferences file", types TBD (contract.md:3-5; business-rules.md:45; structure-data.md:19) | ① shipped: `createPreferencesService` (9 methods), `UserPreferences`/`MergedPreferences` in `@vida/types/entities/user.ts`, validators in `@vida/core/src/validators/user.ts`; on the `@vida/core` barrel (`packages/core/src/index.ts:169`) | Interpretation consumes the shipped API |
+| A2 | ② = "`fe-preferences` LIF-134" (① interpretation.md:12; ① slice-map; old current-spec) | Renamed **fe-settings LIF-193** (decisions.md:302); onboarding ② = fe-onboarding LIF-216; live close = this unit (debt-plan.md:23) | Naming only (current-spec corrected at Step 0) |
+| A3 | ① slice-map.md:24 "read-or-create singleton" | Reads **never persist**; the row is created on the first write (service-spec.md:15,47; BR-PREF-2/3) | A first-run read leaves the DB untouched, which supports ELC-7's "no spurious write" |
+| A4 | "every live preferences DB op is blocked by the worker `values` seam" (fe-settings seam-contract.md §A0 :6-25; settings/CLAUDE.md; comments `preferences-store.ts:7-10`, `theme-store.ts:9-13`, `use-preferences.ts:6-7`, `home-surface.tsx:24`, `App.tsx:33-34`) | Data plane **live**: `exec`/`values`/`batch` (`apps/web/src/db/client.ts:12-15,157-167`, data-plane-wiring 2026-10-20) | The "activation points" (`hydrate()`, `persist`) are now owed (⛔). Stale comments = this unit's X5 rows |
+| A5 | fe-codec-theme seam-contract.md:45 "Settings writes `theme_preset`/`compact_mode`/`font_size`" | **No `theme_preset` column** (`schema/preferences.ts:45-58`). Governing = fe-settings seam-contract §B :46-58 (later, approved; decisions.md:12 "zero schema change"): preset → `dashboard_layout.theme`, density → `compact_mode`, `font_size` unwritten | Theme writes follow §B, under the HARD INVARIANT `dashboard_layout` read-merge-write (:60-68) |
+| A6 | decisions.md:9-10 (2026-10-12): "deferred seam — apply live in-session"; "two stores — theme-store + preferences-store" | **Source of truth = React Query over SQLite**: BR-RT-1 (web-client-runtime/current-business-rules.md:10-12), data-flow.md:465, structure-data.md:46 ("the Zustand store is a **derived cache**, not a second source"). Decision :9's only basis was the `values` seam ("activates when the seam lands"), and A4 shows it has landed. **This reverses the in-session-source reading of :9-10.** Note: BR-RT-* are `[INTENT]`, seeded from docs (`:3-5`), but data-flow.md + structure-data.md say the same | Reads come from **two query keys**, matching the service: `getMergedPreferences` (user_preferences) + `getNavPreferences` (nav_preferences; `reduce_motion` lives here, `service.ts:218`). Any Zustand residue is a **derived cache** hydrated from the queries. Whether `preferences-store` dissolves or stays as a cache is a Step-4/5 bucket, recorded as a reversal of decisions.md:10 |
+| A7 | PR-4 "optimistic + 500 ms debounce" vs BR-RT-4 "no optimistic updates **by default**" (= ELC-4) | fe-settings **EC-7 pins** "optimistic + 'Saved on this device' + revert-on-error"; debt-plan.md:23 "EC-7 optimistic+revert honored (BR-RT-4 'by default')" | Optimistic + revert is the pinned exception. Structured keys + invalidate/re-read still hold. "Saved on this device" is **reused** copy: it passes `lintCopy` (`voice/voice-copy.test.ts:25`) and already ships in canvas-editor |
+| A8 *(corrected rev 3)* | fe-onboarding seam-contract.md:8-20: module `commit` → "nav_preferences / feature-flags" | **Intake G5, resolved by Victor 2026-06-18:** the per-module on/off system **is per-module visibility, driving nav**, stored as the `module_visibility` JSON map; `feature_gamification` is the separate logic flag ("G5 dual system") `[FACT: docs/intake/preferences.md:37,61-63,82]`. Same in cross-module-integration.md:55 ("Module enable/disable flags … user toggles module in settings"). `nav_preferences` has no enable-set column | Onboarding `commit` → **`module_visibility`** (unpicked → `false`), the same store and the same single reader (the dock, shell-rescope) as Settings → Modules, so picks are undoable there. `active_modules` (E9) is **not written**: no doc requires it and nothing reads it (PRE-19 distinctness holds). rev 2 targeted `active_modules` from conventions.md:31 without reading the intake's resolved G-items; that was a grounding miss |
+| A9 | fe-onboarding seam-contract.md:22-31: theme `commit` → "the deferred switcher Zustand store" | `theme-store` shipped (fe-settings S2) and `App.tsx:35-40` reads it. Persistence uses the same write path as the Settings preset (A5) | One theme write path for Settings + onboarding |
+| A10 | fe-gamification interpretation.md:152-154 "D-REG-2 … DISSOLVED" vs census ORPHAN#13 "persona setter"; `use-persona.ts:19-22` "the full persona→register table … is a fe-settings-era decision" | Only the **scoped-register seam** + the `motivation_style` angle dissolved (GM-16). The **`persona` read stays** (`use-persona.ts:33-36`; gamification/CLAUDE.md:18-19). Preferences is its single writer (PR-10). **The register table is doc-fixed:** the game register is "students/teens" (fe-gamification interpretation.md:118-120, §7), and of the PERSONA enum (`student`·`professional`·`entrepreneur`·`creative`·`parent`·`retiree`, `types/entities/user.ts:13-20`) only `student` falls in that group → `student → game`, every other value or absent → neutral. That is the as-built `toRegister` | Scope = a Settings **`persona`** control + the live `usePersona` read (the read itself is gamification-rescope's, coverage :148). No `motivation_style` control. The "fe-settings-era decision" comment is stale (X5) |
+| A11 *(corrected rev 4 — Victor 2026-10-21)* | fe-onboarding EC-5 names 3 presets; fe-gamification EC-1 added a 4th global `game` preset "applied via the Preferences/Onboarding theme picker" | **Victor: "`game` was not supposed to be a theme … it is supposed to be a module, with a currency and complementary system to help the user and gamify his life."** The feature docs agree: the System is an incentive/consequence engine (gamification/identity.md:5-30), never a theme. fe-gamification EC-1/EC-2 = drift, re-pinned (recorded in its envision.md §Approval) | **fe-onboarding EC-5's 3 presets govern.** Settings correctly omits `game`; the onboarding picker offering it is ❌ (reconciliation E11). rev 2–3 read EC-5 as a "superset": wrong |
+| A12 | coverage-report.md:325 **and** :330 both list `preferences-rescope` (13/11/24 and 3/5/8) | The second row is the merged-in onboarding-rescope (debt-plan.md:29; coverage-report.md:384). Combined = **16 primary · 16 twin · 32** (A13 rev 3 keeps all rows here) | Doc fix at Step 5: merge the two rows |
+| A13 *(corrected rev 3 — Victor: "follow the documentation that explains the architecture and the design")* | debt-plan.md:27 (planning artifact) gives the chrome **readers** of `moduleVisibility`/rename/`reduceMotion` to shell-rescope ("it persists; shell reads") | **Architecture + design govern, not planning artifacts.** information-architecture.md:46-47: the nav is "designed to read" the preference store, a consume-shape seam "**built with Preferences**"; IA:104,106: ⌘K **and** Settings are Preferences-owned surfaces; fe-settings **EC-4** (approved design): "All 7 controls present **+ wired**". So the readers that make hide/rename/reduce-motion take effect are part of closing **this** entity, and coverage-report :109/:110/:111 were right | **Readers stay here:** ⌘K nav commands (`command-bar/nav-commands.ts`) + the dock's filter function (`shell/module-dock.tsx` `visibleDockGroups`) honor `module_visibility` + `moduleNames`; app-wide reduce-motion; EC-8's escape hatch enforced on both write and read sides. **shell-rescope keeps** what the architecture gives the shell: **mounting** `ModuleDock` + placement (fe-shell L5, coverage :185/:186). debt-plan.md:27's reader clause is the drift, fixed at Step 5. rev 2's A13 judged by the planning artifact; that was the miss |
+| A14 | fe-settings seam-contract.md:49 "Mode (light/dark/system)" | decisions.md:11 (later): **Light/Dark only** (`ThemeMode` has no `system`) | The control writes `light`/`dark` only. How a stored `system` is read is U2 |
+| A15 | onboarding.md:69-71: `onboarding_completed`'s "table lands with the user_profile module, M1.1+"; UX-5 PLAN:89,93,150 `app_state['onboarding_completed']` | E9 moved `onboarding_*` to **`user_preferences`** (ADR-012 §3.10; PR-10, business-rules.md:18). The device-local marker shipped as `first_run:completed` (onboarding.md:58). m1.1-delivery-plan.md:208 places "onboarding wizard (… module selection → `onboarding_completed`)" in M1.1 ② UI NOW, and the reconciliation was homed "UX-5b/M1.1", which is now | **Finishing guided setup writes `onboarding_completed = true` via `updatePreferences`.** `first_run:completed` stays device-local and unchanged (two-signal independence) |
+
+## B. UNKNOWNs — each with its resolution path
+- *(**Closed rev 3:** intake G5 answers it, see A8. Picks write `module_visibility`, and the dock is the one reader.)*
+  ~~U1 · What reads `active_modules` so that onboarding picks change the dock?~~ Nothing does (0 consumers). The dock reads
+  `module_visibility` (debt-plan.md:27), and the twin B·fe-onboarding·B·module-picks (coverage :137) closes with the commit
+  (:134). fe-onboarding IR6 frames the enable-set as "which modules are ON (feature-flags/visibleWhen)", default all ON
+  (seam-contract.md:16). **Path:** Step 2 reads information-architecture.md + fe-onboarding interpretation IR6 + shell's
+  dock filter. Either a doc fixes the reader (dock filters on `active_modules` ∧ visibility, owned by shell-rescope's dock
+  read), or commit also seeds `module_visibility`. **If the docs are silent → Victor** (it decides the visible effect of
+  EC-4 onboarding picks).
+- *(Resolved at Step 2/3: `system` → `light`, per the fe-codec-theme cold start, interpretation.md:52-54; see interpretation N9.)*
+  **U2 · How is a stored `theme='system'` (the column default, `types/entities/user.ts:186`) read into a Light/Dark-only
+  `ThemeMode`?** **Path:** Step 2 checks fe-codec-theme interpretation/seam-contract. If silent, the as-built-compatible
+  floor applies: `system` resolves to the OS `prefers-color-scheme` on read, and the control writes only light|dark.
+- **U3 · Which live surfaces are the "locale readers"?** The census shows 0 consumers. The only `CalendarView` passes no
+  `weekStartsOn` (`notes/note-renderers.tsx:69`), and apps/web formats with `Intl`. **Path:** Step 2 enumerates them from
+  code, and Step 4 buckets each.
+- *(rev 2 closed ⌘K `command_bar_history` as out of scope, citing "⌘K is HOMED (census fe-settings C)". **Wrong, reopened at Step 4:** that census row homes command *registration* to fe-cmdk, which was never minted. The architecture gives the history store to MOD-prefs (command-bar-and-search.md:40-44) and ⌘K to Preferences (IA:104), so it lands here: reconciliation F9.)*
+
+## C. Completeness checks
+- **Aspect corpus:** all 5 aspects present, each with a completion checklist ✅. The ⚠ INTENDED deltas (6 G4 columns,
+  `module_visibility`, E9) are authored in the schema (schema-audit-appendix.md:288) → closed by A1.
+- **ECs:** 22 own + 4 inherited ECs located, approvals dated (fe-settings 2026-10-12, fe-onboarding 2026-10-11), no
+  re-pins ✅. fe-codec-theme has no `envision.md` (only the seam EC-7 reduced-motion note, seam-contract.md:63).
+- **Census → home:** 32 rows (A12), + X5 (stale comments in this unit's files) + X9 (`usePreferences` fake
+  `success`) ✅. Edges out: journals E3 · notifications E5 (soft) · gamification E6 · shell E7 · onboarding self-edge E9 ·
+  note-open-behavior-preference E11.
+- **Live-close criteria:** ELC-1 ✅ (① merged, PR #44). ELC-2…9 are unmet → the Step-4 ⛔ bucket.
+
+## D. Carry-forwards into Step 2 (interpretation)
+1. **U1–U3** (above).
+2. **One debounced write path.** PR-4's 500 ms debounce + batching has no apps/web hook convention named. The precedent
+   is `notes/use-note-content.ts` (dedupe baseline · debounce · flush-on-unmount · invalidate). Three `dashboard_layout`
+   sub-keys (theme · arrangement · moduleNames), plus `setModuleVisibility`'s own read-merge-write (`service.ts:279-280`),
+   lose updates under concurrent debounced patches unless all of them serialise through **one** `patchDashboardLayout`.
+   This must be an IMPLICIT RULE.
+3. **`dashboard_layout` is shared across units (edge E3).** Widget-selection storage is homed "Preferences/MOD-journals"
+   (home-journal-dashboard.md:54) and given to journals-rescope (debt-plan.md:22). If it lands in `dashboard_layout`, the
+   §B HARD INVARIANT (fe-settings seam-contract.md:60-68) must be **exported over E3**: journals writes via the same
+   `patchDashboardLayout`.
+4. **Overlays outside `QueryClientProvider`** (`App.tsx:103-125`). Onboarding commits can't use `useMutation` as mounted.
+   This is a NEED, resolved at Step 2/4 (hoist the provider, or call `getServices()` directly).
+5. **A6 / A13 reversals** are presented to Victor with Step 3's interpretation.
+
+## E. Gate record
+- **rev 1 → independent critique: REVISE** (5 blocking · 7 nits). Folded:
+  - B1 A13 split: dock reduceMotion → shell-rescope; app-wide gate kept with its own basis (:111/:115, census :75). Twin
+    :114 added. Counts 14/15/29. EC-8 carried as a reader-side MUST.
+  - B2 A8 narrowed to the write target; the reader gap is U1.
+  - B3 A6 restated: query = source, store = derived cache. The decisions.md:9-10 reversal is named. nav-prefs key added.
+  - B4 persona→register table resolved from fe-gamification interp §7 (A10). This is a doc-FACT, not a Victor decision.
+  - B5 mis-cites fixed: structure-data :19/:46, conventions :31, 17 style files, the `packages/ui/src/theme-resolution.ts` path.
+  - N6 U2 (old) answered → A15 (+ UX-5 PLAN supersession).
+  - N7 → A14.
+  - N8 ⌘K closed.
+  - N9 → §D.2.
+  - N10 → §D.3.
+  - N11 → A7 reuse.
+  - N12 §D carry-forwards added.
+- **rev 2:** PASS-with-carry-forwards.
+- **rev 4 (Victor, Re-scope Gate):** A11 corrected: `game` is a module (the System), not a theme; fe-gamification EC-1/EC-2 re-pinned as drift.
+- **rev 3 (Victor, Interpretation Gate):** A8 corrected by intake G5 (picks → `module_visibility`); A13 corrected by the architecture + design docs (readers stay here; shell-rescope keeps the dock mount + placement); A6 confirmed as drift.

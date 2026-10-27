@@ -49,7 +49,7 @@ additions below are *only* what this re-plan adds on top.
 5. **Gestalt & cross-module coherence** — delivered structurally by the **archetype catalog** (§4): surfaces compose
    from a small set of shells + renderers, so consistency can't drift. (P6/F3-F4)
 6. **Offline / local-first state** — honest **sync status** (calm, never alarming); **no fake spinners** (writes are
-   instantly real locally — optimistic layer = none, a **P4-derived decision**, not an inherited standard); **honest progress** for genuinely-slow ops (FTS rebuild, sync,
+   instantly real locally — optimistic layer = none, a **P4-derived decision**, not an inherited standard; **one pinned exception:** preferences writes are optimistic + debounced with revert-on-error and "Saved on this device" — fe-settings EC-7, gate A7, BR-RT-4's pinned exception, built by preferences-rescope R2/R3); **honest progress** for genuinely-slow ops (FTS rebuild, sync,
    export, vault unlock); the full **8-state** component machine. (P4) **Enforced at entity close** — the Entity Live
    Close, `golive-replan/process.md` ELC-6/7/9 (real data, live on OPFS, every pinned EC re-verified).
 7. **Reduced motion** — every animation ships a `prefers-reduced-motion` alternative (both designed + tested).

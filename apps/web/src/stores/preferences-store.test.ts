@@ -4,52 +4,27 @@ import { usePreferencesStore } from './preferences-store'
 describe('preferences store (fe-settings S3 — in-session non-theme prefs, §A0 deferred persistence)', () => {
   beforeEach(() =>
     usePreferencesStore.setState({
-      reduceMotion: false,
-      arrangement: 'journalFirst',
-      moduleVisibility: {},
-      moduleNames: {},
+      timeFormat: '24h',
+      dateFormat: 'YYYY-MM-DD',
     }),
   )
 
-  it('defaults: reduceMotion off, arrangement journalFirst', () => {
+  it('no longer mirrors the Home arrangement (R3) or reduce motion (R4) — both are live via usePreferences', () => {
     const s = usePreferencesStore.getState()
-    expect(s.reduceMotion).toBe(false)
-    expect(s.arrangement).toBe('journalFirst')
+    expect('arrangement' in s).toBe(false)
+    expect('reduceMotion' in s).toBe(false)
+    expect('setReduceMotion' in s).toBe(false)
   })
 
-  it('setReduceMotion toggles the flag', () => {
-    usePreferencesStore.getState().setReduceMotion(true)
-    expect(usePreferencesStore.getState().reduceMotion).toBe(true)
-  })
-
-  it('setArrangement switches the home arrangement', () => {
-    usePreferencesStore.getState().setArrangement('dashboardFirst')
-    expect(usePreferencesStore.getState().arrangement).toBe('dashboardFirst')
+  it('no longer mirrors the module maps (R5) — the Modules pane, dock and ⌘K read the seam', () => {
+    const s = usePreferencesStore.getState()
+    for (const key of ['moduleVisibility', 'moduleNames', 'setModuleVisible', 'setModuleName']) expect(key in s).toBe(false)
   })
 
   it('hydrate (the deferred-seam activation point) merges a partial patch', () => {
-    usePreferencesStore.getState().hydrate({ arrangement: 'dashboardFirst' })
-    expect(usePreferencesStore.getState().arrangement).toBe('dashboardFirst')
-    expect(usePreferencesStore.getState().reduceMotion).toBe(false) // untouched key preserved
-  })
-
-  // S5 — module show/hide + rename (read-merge-write into the maps; absent key ⇒ visible/canonical label)
-  it('setModuleVisible merges into the map without clobbering siblings', () => {
-    const s = usePreferencesStore.getState()
-    s.setModuleVisible('finance', false)
-    s.setModuleVisible('habits', true)
-    expect(usePreferencesStore.getState().moduleVisibility).toEqual({ finance: false, habits: true })
-  })
-
-  it('setModuleName merges into the names map', () => {
-    usePreferencesStore.getState().setModuleName('habits', 'Rituals')
-    expect(usePreferencesStore.getState().moduleNames.habits).toBe('Rituals')
-  })
-
-  it('hydrate also merges module maps', () => {
-    usePreferencesStore.getState().hydrate({ moduleVisibility: { sync: false }, moduleNames: { notes: 'Pages' } })
-    expect(usePreferencesStore.getState().moduleVisibility.sync).toBe(false)
-    expect(usePreferencesStore.getState().moduleNames.notes).toBe('Pages')
+    usePreferencesStore.getState().hydrate({ dateFormat: 'DD/MM/YYYY' })
+    expect(usePreferencesStore.getState().dateFormat).toBe('DD/MM/YYYY')
+    expect(usePreferencesStore.getState().timeFormat).toBe('24h') // untouched key preserved
   })
 
   // S6 — Locale + Notifications (defaults mirror USER_PREFERENCES_DEFAULTS)

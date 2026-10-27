@@ -42,4 +42,19 @@ describe('groupResults', () => {
   it('empty input → no groups', () => {
     expect(groupResults([])).toEqual([])
   })
+
+})
+
+describe('searchSettings — R3 index entries', () => {
+  it('R3 (D4) — "persona" and a persona value both find the Persona row (Appearance)', () => {
+    for (const q of ['persona', 'student', 'Retiree']) {
+      const hits = searchSettings(q)
+      expect(hits.map((h) => h.id)).toContain('persona')
+      expect(hits.find((h) => h.id === 'persona')?.category).toBe('appearance')
+    }
+  })
+
+  it('no setting offers a `game` theme (D3: game is a module, not a theme)', () => {
+    expect(searchSettings('game').map((h) => h.id)).not.toContain('theme-preset')
+  })
 })
