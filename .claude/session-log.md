@@ -6871,3 +6871,27 @@ Next session:
   - **fe-routines (LIF-197)** — ② surface + the composition-root wiring (service deps + `registerRoutinesJournal` / `registerRoutinesDueProvider` + effects).
   - Watch: CI dark (billing) · the journals→Sessions agenda bridge (routines absent from the Journal agenda until it lands) · the mod-routines worktree can be removed.
 ---
+
+---
+Date: 2026-10-27
+Task: sessions-rescope (LIF-248 · #63) — Sessions debt rescope, entity-rescope scenario, worktree `.claude/worktrees/sessions-rescope` (branch `sessions-rescope`, Node 24)
+Goal: run the entity-rescope front matter (Steps 0–5) and open Step 6 (X1 PLAN).
+Completed:
+  - Setup: worktree off origin/main `0055a64`; data-plane-wiring verified done (unblocked); task header → in-progress.
+  - Step 0 baseline + Step 1 Documentation Gate (2 rounds): sessions current-* refreshed (BR-36/37, HUD section FE-BR-5..8, stale "no composition root"); "#46" misread corrected everywhere (coverage-report:179, census b:295, current-*); routines "#62"→#63; 3 inbound homings added to scope.
+  - Steps 2–3: `docs/features/sessions-and-scheduling/delivery/interpretation.md` (rev 8.4) — Interpretation Gate PASS (3 rounds) + delta gate; IR-S1…S19, L1–L19; §5 = ONE register (10 §XXVIII + routed divergences). Step 3.5 Envision SKIP (no new affordance; ECs inherited).
+  - Step 4: `delivery/reconciliation.md` R-1…R-49 + impact scan (20 rows) — DRY at pass 10.
+  - Step 5: `delivery/slice-map.md` X1 engine → X2 focus lifecycle + routines → X3 reads ∥ X4 composition root → X5 HUD live ∥ X6 runtime live → X7 live close. **Victor APPROVED** ("if grounded in the documentation" — they are) + **R-45 EC-4 re-pinned** (unapplied effects muted in the same list; recorded in fe-codec-flow-session envision § Re-pins).
+  - Edges written: fe-sessions (EC-5 ⋯ · EC-2 proof/attach · countdown · idle) · fe-habits + fe-routines (ReadProvider).
+  - Step 6 X1: `delivery/sessions/PLAN-X1-effect-engine.md` — g1 /critique REVISE→**SHIP** (`43b99935`).
+In progress:
+  - X1 awaiting **Victor Approval 1** (incl. §XXVIII #3 per-run+per-target keying for log_time/attach_pomodoro, #8 completion continues past EffectFailed). No code written yet.
+Decisions:
+  - Victor ×2: "check the documentation to leave nothing behind" → cancel→spine `skipped` (elimination) and `attach_pomodoro` = bind run→subject were doc-resolved, not calls. Focus-store writer = fe-sessions; store + HUD reader here (orphan homing superseded by debt-plan rev 3).
+  - "Logged" = the typed result (core has no logging convention); existence via the documented `row.id === id` provider match; subject reads via the ONE shared ViewProviderRegistry (ADR-007 §3.4), tasks provider only today, fail-open.
+Next session:
+  - `/begin` → sessions-rescope → ask Victor for X1 **Approval 1** (PLAN-X1 §6 deviations #3/#8) → `/preflight` → IMPLEMENTATION-PLAN-X1 → `/critique` → Approval 2 → build → Verification Gate.
+  - First actions: `cd .claude/worktrees/sessions-rescope` · `source ~/.nvm/nvm.sh && nvm use 24` · `git fetch` + `git rev-list --left-right --count origin/main...HEAD` · `git log -1` = `43b99935`, clean tree.
+  - Context: `.claude/tasks/sessions-rescope.md` (Route History) · interpretation §4–§6 · reconciliation §2 impact rows for X1.
+  - Watch: branch NOT pushed; Linear LIF-248 NOT synced (tracker_sync from a worktree is unsafe; from main it would revert to Backlog — surgical update at merge) · close-time: notes-rescope ReadProvider edge + Linear relations · parallel notes/preferences sessions load the machine.
+---

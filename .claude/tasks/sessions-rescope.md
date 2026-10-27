@@ -28,6 +28,25 @@ docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconc
 - blocked by `data-plane-wiring`
 - (entity close lives in fe-sessions, which is blocked by this unit)
 
+## Active Tasks (slice-map X1…X7 — `docs/features/sessions-and-scheduling/delivery/slice-map.md`)
+- [x] Steps 0–5 — baseline · Doc Gate · interpretation · Interpretation Gate · reconciliation (DRY) · Re-scope Gate APPROVED
+- [~] X1 — effect engine (PLAN g1 SHIP; awaiting Approval 1)
+- [ ] X2 — focus lifecycle + routines
+- [ ] X3 — reads
+- [ ] X4 — composition root
+- [ ] X5 — focus store + HUD live
+- [ ] X6 — runtime page live
+- [ ] X7 — live close (ELC-3…7) + close-time edges
+
+## Knowledge Loaded (session 1)
+- entity-delivery-flow.md §3, §3.5, §3.75, §5, §6 — Step 2
+- golive-replan process.md (ELC-1…9, §2.5, §6), debt-plan.md, coverage-report.md — Step 0
+- ~/dev-toolkit/standards/{process,engineering,components}.md — session open
+
+## Failures This Session (session 1)
+- F001 — sub-agent claims needed on-disk verification each round (critic/sweeper) — resolved (every cite spot-checked)
+- F002 — zsh glob `--include=*.ts` unquoted → "no matches" — resolved (quote globs)
+
 ## Route History
 - 2026-10-27 (setup) — worktree `.claude/worktrees/sessions-rescope` off origin/main `0055a64`, Node 24, deps installed.
   `data-plane-wiring` verified done (PR #148) → unblocked.
