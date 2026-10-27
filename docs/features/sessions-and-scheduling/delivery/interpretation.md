@@ -180,14 +180,22 @@
   event)`. So (a) on a `focus` spine, `completeSession`/`transitionSession(…,'complete'|'skip')` delegate to
   `completeFocus`/`cancelFocus` on its run (a focus spine must never close with a `running` run — IR-S5 would read
   `duration_seconds = null`); (b) `updateSession` stops accepting `status` (it bypasses the engine, `service.ts:366`) —
-  a status patch → `InvalidSessionInput('status')`. Callers of `updateSession` with `status`: verify none at PLAN.
+  a status patch → `InvalidSessionInput('status')`; (c) likewise the focus RUN state in `SessionPatch.extension`
+  (`status`, `duration_seconds`, `total_pause_seconds`, `paused_at`, `completed_count`, interval `type` —
+  `types.ts:44-54,96-98`, written at `service.ts:378-384`) is rejected: run state moves only through the focus runtime
+  (BR-21 state machine; IR-S5 derives the payload from those rows). Callers: none pass `status`/`extension`
+  (`routines/service.ts:502` · `tasks/__tests__/service.test.ts:556,582,585` pass other fields) → SAFE.
 - **IR-S19 · Subject reads go through the ONE shared `ViewProviderRegistry` (R-43).** ADR-007 §3.4 (:78-82): cross-module
   reads fan out to each entity's documented read API via the provider pattern (`foundation/views/provider-registry.ts:12`)
   — never a per-module port or a table join. The sessions service takes an optional `providers?: ViewProviderRegistry`
   dep; subject EXISTENCE (IR-S4(2), the unapplied set), the HUD/runtime TITLE (IR-S8, EC-5) and the effect `detail`
-  (IR-S11) resolve through it; the web root builds the registry once and registers the providers that exist (tasks,
-  notes pages, habits…). An unregistered type ⇒ title falls back to the bare kind label; existence unknown ⇒ treated as
-  existing (fail-open, never a false "missing").
+  (IR-S11) resolve through it; the web root builds the registry once and registers the providers that EXIST. Built today: ONLY tasks
+  (`createTasksReadProvider`/`registerTasksReadProvider`, `tasks/service.ts:936-981`; by-id via `getTask`, soft-delete
+  filtered `:382-384`). Providers "register per-module at their build" (`provider-registry.ts:6-7`), so notes pages
+  (`getPage`, notes/service.ts:128), habits (`getHabit`, habits/service.ts:296) and `routine_step` (no by-id getter;
+  routines not composed at the web root) are their OWNING modules' — recorded as edges (notes-rescope · fe-habits ·
+  fe-routines). Until then, for every non-task subject: title = the bare kind label, existence UNKNOWN ⇒ treated as
+  existing (fail-open, never a false `AttachmentTargetMissing`) — stated, not implied.
 - **IR-S6 · HUD port ids.** The service's pause takes the `focus_sessions.id` (`service.ts:151`; HUD interpretation:30);
   the HUD emits the spine id (`session-hud.tsx:205`). The binding resolves it: pause = `getSession(id).extension.id →
   pauseFocus` (`service.ts:151`); resume = `startFocus({sessionId})` (resumes a paused run by spine id,
@@ -272,7 +280,7 @@ binding precedent) · `award_xp` → Gamification (FACT) · handler registration
 | Flow EC-1, EC-3 (multi-stage) | — | single-stage only (O7, driving modules) | per driving module |
 | Flow EC-2 (attach / mark-done / proof) | L14 | mark-done ✅ live; attach when a `deliverable_note` target exists; **proof + target-less attach = recorded DIVERGENCE pending the fe-sessions close** (§2.5 rule 3; IR-S14) | ✅ with the borrowed capture flow |
 | Flow EC-4 (effect rail) | L7/L13 | ✅ live (completed session with effects) | ✅ |
-| Flow EC-5 (title-hero + `SyncStatus` + `⋯`) | L13 + R-46 | ❌ narrowed at its gate → rebuilt to the pinned EC, then ✅ live | ✅ |
+| Flow EC-5 (title-hero + `SyncStatus` + `⋯`) | L13 + R-46 | title-hero + subject title + `SyncStatus` (canvas-editor precedent) ✅ live; **`⋯` hidden** (no documented session action set; a contentless ⋯ = dead affordance, IR-S14) → recorded DIVERGENCE pending fe-sessions' close (session hub owns session actions) | ✅ incl. `⋯` |
 | Flow EC-6…9, EC-11 | L13 | ✅ live | ✅ |
 | Flow EC-10 (advance feel) | L14 | mark-done feel ✅ live | ✅ |
 
