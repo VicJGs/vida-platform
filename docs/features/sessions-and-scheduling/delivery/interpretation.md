@@ -1,7 +1,7 @@
 <!-- Interpretation Layer — features/sessions-and-scheduling · RESCOPE (sessions-rescope, LIF-248 · #63) · BOTH planes.
      Entity Delivery Flow §3 + §6 (recovery). Supersedes the MOD-sessions ① build's interpretation (kept in git at
      5c961c4). Every claim FACT / DERIVATION / ELIMINATION / UNKNOWN, cited path:line.
-     REVISION: rev 8.3 (rev 1–4 Interpretation Gate rounds 1–3 → PASS @3441419; rev 5–7 = Step-4 sweep amendments
+     REVISION: rev 8.4 (rev 1–4 Interpretation Gate rounds 1–3 → PASS @3441419; rev 5–7 = Step-4 sweep amendments
      @3e48e6b/31d768b/d0b9238 + rev 8 delta-gate fixes → delta Interpretation Gate). Input corpus gated by the
      Documentation Gate (rounds 1–2, 2026-10-27 — `.claude/tasks/sessions-rescope.md` Route History). -->
 
@@ -309,6 +309,9 @@ canTouch's (IR-S4(1)), handlers throw (A.3).
 7. IR-S18(e) — `createSession` only in entry states; a focus run only with an `in_progress` spine.
 8. IR-S4 — transition completion continues past a runtime handler failure (`EffectFailed`), vs fire-then-commit abort
    (BR-S3-8 crash ordering kept).
+9. IR-S5/R-8 — the tasks `log_time` handler throws (A.3) instead of skipping a payload-less event; narrows tasks
+   BR-TK-S4-6 (`docs/modules/tasks/current-business-rules.md:102-107`, "revisited when the pomodoro lens lands" — it
+   lands here); pinned by tasks test 13 (`tasks/__tests__/service.test.ts:648-662`).
 
 *Victor items — at the Re-scope Gate:*
 - **R-45** — EC-4 re-pin: where the unapplied/error effect state renders (the rail is pinned to "fired").

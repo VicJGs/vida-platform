@@ -1,5 +1,5 @@
 <!-- Reconciliation ledger — features/sessions-and-scheduling · RESCOPE (sessions-rescope, LIF-248) · Entity Delivery Flow §6 Step 4.
-     BUILT code (both planes) vs `delivery/interpretation.md` rev 8.3 (rev 4 = Interpretation Gate PASS; rev 5–8 = sweep-driven amendments, delta-gated — see §3) + the inherited ECs.
+     BUILT code (both planes) vs `delivery/interpretation.md` rev 8.4 (rev 4 = Interpretation Gate PASS; rev 5–8 = sweep-driven amendments, delta-gated — see §3) + the inherited ECs.
      Buckets: ✅ aligned · ❌ wrong (→fix) · 📄 undocumented/stale doc (→back-fill) · 🕳 gap (→build) · ⛔ ungated-owed (→run gate).
      Plane: B = backend (①) · F = frontend (②) · S = shared. Exit condition = a DRY pass (§3). -->
 
@@ -44,7 +44,7 @@
 | R-33 | Routines stamp-retry / re-entry vs a closed spine (L17) | B (routines) | ❌ (after R-4) | relies on `findOpenSessionForEntity` (`in_progress` only, `sessions/service.ts:442`); `routines/service.ts:990-1003,1084-1085`; `isRunningMakeGood` on focus blocks (`:528-529`, used `:624,:759`). Tasks' caller (`tasks/service.ts:532`) is `'work'`-only → unaffected | BR-RT-S3d-5 |
 | R-34 | Test harnesses register focus handlers + tasks timer tests stop backdating via `updateSession` (L18) | B | 🕳 | routines harness registers the tasks timer optionally (`routines-service.test.ts:105,129`); sessions tests have no focus handlers | IR-S4(3) |
 | R-35 | Stale code comments (L16) | F | 📄 | `use-active-session.ts:4-5` · `use-flow-session.ts:4-6` · `session-runtime/CLAUDE.md:21` · `flow/CLAUDE.md:24-25` | §XXIX |
-| R-36 | Current-* currency for changed rules (BR-9, BR-10, BR-21, BR-25; effects current-BR; tasks/routines current-*) | S | 📄 | rules change with R-4…R-14, R-32/33 | §XXIX |
+| R-36 | Current-* currency for changed rules (BR-9, BR-10, BR-21, BR-25; effects current-BR; tasks current-BR incl. BR-TK-S4-6; routines current-*) | S | 📄 | rules change with R-4…R-14, R-32/33 | §XXIX |
 | R-37 | HUD idle form stays hidden in M1 | F | ✅ | `hidden` default; no start flow | HUD Envision answer 1 |
 | R-38 | Runtime page terminal ladder | F | ✅ | `deriveTerminalState` ladder in the surface | state-conventions · EC-6 |
 | R-39 | ELC-7 live leg for HUD EC-1…10 + Flow EC-2/4/5–11 | S | ⛔ | gated on DEV `?sample` only (fe-session-hud/runtime Visual Gates) | ELC-7 (process.md:41,172) · L19 seed path |
@@ -104,4 +104,5 @@ Verdict:    CLEAR to proceed (re-run per slice at PLAN gate 2)
 - **Pass 5** (independent): NOT DRY — 3 doc items (R-46 wording · revision marker · rev 5–7 un-gated) → fixed + delta Interpretation Gate run: REVISE (IR-S18 `start` door + `started_at` mutability → rev 8; R-45 = EC-4 re-pin → Victor at Re-scope Gate).
 - **Pass 6** (independent): NOT DRY — 2 items: tasks tests backdating `started_at` (already fixed in rev 8.1) · `createSession` = a second lifecycle door → IR-S18(e) entry-state rule + impact row (rev 8.2).
 - **Pass 7** (independent): NOT DRY — 3 doc-consistency items (§5 register incomplete → ONE register of 8 §XXVIII + 1 Victor item + 2 routed divergences · `:229` misdescribed · header rev) → rev 8.3.
-- **Pass 8:** pending — must be DRY.
+- **Pass 8** (independent): NOT DRY — 1 item: tasks BR-TK-S4-6 narrowing missing from the register → §XXVIII #9 + R-36 (rev 8.4).
+- **Pass 9:** pending — must be DRY.
