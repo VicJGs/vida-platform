@@ -6871,3 +6871,27 @@ Next session:
   - **fe-routines (LIF-197)** — ② surface + the composition-root wiring (service deps + `registerRoutinesJournal` / `registerRoutinesDueProvider` + effects).
   - Watch: CI dark (billing) · the journals→Sessions agenda bridge (routines absent from the Journal agenda until it lands) · the mod-routines worktree can be removed.
 ---
+
+---
+Date: 2026-10-27
+Task: preferences-rescope (LIF-247) — Add Frontend Component / entity-rescope, worktree `.claude/worktrees/preferences-rescope`
+Goal: R6 Locale + Notifications — run §XXVI gate 1 + gate 2 (PLAN → Approval 1 → IMPL-PLAN → preflight → critique → Approval 2).
+Completed:
+  - §XXVI.1a: `docs/modules/preferences/current-spec.md` re-swept — fe-calendar (#157/#158) reads `weekStartsOn`/`timeFormat` from the mirror; the bridge owns the hide flush.
+  - `docs/features/preferences/delivery/sessions/PLAN-R6-locale-notifications.md` rev 3 — **Approval 1 (Victor)**. Gate-1 critique REVISE (4 blocking) folded → rev 2; governing-doc check folded → rev 3.
+  - `IMPLEMENTATION-PLAN-R6-locale-notifications.md` rev 1 (TDD steps 0–11, mutations M1–M8, G-1…G-4) · **/preflight PASSED** (4 assumptions resolved).
+  - Memory `ground-every-deferral…` — 10th repeat appended.
+In progress:
+  - Gate 2: the independent /critique on IMPLEMENTATION-PLAN-R6 + preflight is NOT run yet; Approval 2 pending. No code written. Plan docs + current-spec edit uncommitted in the worktree.
+Decisions:
+  - R6 deletes `preferences-store` (BR-RT-7 / `data-flow.md:463-466`); `PreferencesBridge` → `PreferencesHideFlush` (flush only).
+  - Notes `CalendarView` NOT wired — doc-resolved by backend-intent NOT-48 (G3: Note → List/Gallery/Neural); week-start reader = Global Calendar. Edge → notes-rescope task file at §XXIX.
+  - Activity 12h = native `Intl` (`Oct 27, 2:05 PM`; 24h `14:05`/`00:05` via `h23`) per BR-S5-8. Calendar's two 12h shapes (`am` vs `AM`) → edge sessions-rescope.
+  - The slice-map's "fe-settings EC-4" cite corrected → EC-1/2/3/6/7/10/11.
+  - Victor: "check the documentation" — slice-map lines written from a code sweep are not intent; ground in governing docs (memory).
+Next session:
+  - First: in `.claude/worktrees/preferences-rescope`, run the independent gate-2 /critique on `IMPLEMENTATION-PLAN-R6-locale-notifications.md` (+ its Preflight section) → fold → present Approval 2.
+  - Then build steps 0–11 on Node ≥ 22 (`nvm use 24`; shell default is v20.20.2), suites alone (F008).
+  - Context: PLAN-R6 rev 3 · IMPL-PLAN-R6 · `.claude/tasks/preferences-rescope.md` · memory `visual-gate-playbook`.
+  - Watch: tracker not synced (worktree-unsafe) · origin/main 2 docs-only commits ahead · CI dark.
+---
