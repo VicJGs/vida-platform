@@ -22,6 +22,24 @@ export const PageTypeSchema = z.enum(PAGE_TYPE)
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 /** createPage input — reuses PageTypeSchema (never re-declares z.enum(PAGE_TYPE)). */
+/**
+ * Page icon = a Lucide icon NAME in kebab-case (notes-rescope R3, A-4 · EC-29/EC-22: a Lucide grid, never emoji). Core
+ * validates the shape; the UI owns which names it offers (and renders the type icon for an unknown one).
+ */
+export const pageIconSchema = z
+  .string()
+  .max(64)
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'icon must be a Lucide icon name (kebab-case)')
+
+/**
+ * Page cover = an http(s) image URL (≤ 2048 chars, no whitespace) or `attachment:<id>` (one of the page's attachments) —
+ * notes-rescope R3, A-4 · EC-29 "paste an image link · use an attachment". `cover_image` stays [E].
+ */
+export const pageCoverSchema = z.union([
+  z.string().max(2048).regex(/^https?:\/\/\S+$/i, 'cover must be an http(s) URL'),
+  z.string().regex(/^attachment:[0-9A-Za-z-]+$/, 'cover must be attachment:<id>'),
+])
+
 export const createPageSchema = z
   .object({
     type: PageTypeSchema,
@@ -40,8 +58,8 @@ export const createPageSchema = z
     journal_date: z.string().regex(CALENDAR_DATE, 'journal_date must be YYYY-MM-DD').nullish(),
     is_favorite: z.boolean().optional(),
     is_archived: z.boolean().optional(),
-    icon: z.string().nullish(),
-    cover_image: z.string().nullish(),
+    icon: pageIconSchema.nullish(),
+    cover_image: pageCoverSchema.nullish(),
     summary_config: z.string().nullish(),
     has_pomodoro: z.boolean().optional(),
     word_count: z.number().int().nonnegative().optional(),
@@ -61,8 +79,8 @@ export const updatePageSchema = z
     parent_id: z.string().nullish(),
     is_favorite: z.boolean().optional(),
     is_archived: z.boolean().optional(),
-    icon: z.string().nullish(),
-    cover_image: z.string().nullish(),
+    icon: pageIconSchema.nullish(),
+    cover_image: pageCoverSchema.nullish(),
     summary_config: z.string().nullish(),
     has_pomodoro: z.boolean().optional(),
     word_count: z.number().int().nonnegative().optional(),

@@ -181,3 +181,18 @@ note-renderers.tsx, live-mappers.ts, use-notes-rows.ts, page-actions.tsx, note-e
   effect keyed on `finish`'s kind, the e2e route kept across reload, the Input contract risk.
 - rev 3 → critique r3 **SHIP** (Step 4 wording: aria-disabled, R-10).
 - **APPROVED by Victor (Approval 2) on 2026-10-27.**
+
+## 5. Deviations (§XXVIII)
+
+### DEV-R3-1 · `Input`'s font styles never apply (found building Step 2, 2026-10-27) — APPROVED by Victor: option (A) root fix
+- **Found:** writing R-4's test. `Input`'s native element is `styled(View, { render: 'input', fontFamily: '$body', variants:
+  { size: { sm|md|lg: { fontSize } } } })` (`input.tsx` NativeInput). A Tamagui **`View` drops font props**: the rendered
+  `<input>` carries no font class and no inline style for any size (probe: `md` → no `_ff-`/`_fs-`/`_lh-`; a `$display` Text →
+  `font_display _ff-… _fs-… _lh-…`), and `input-styles.ts` sets no font. So every `Input` in the app renders in the
+  **browser's default input font**, and R-4's `display` size (family/size/leading) cannot take effect either.
+- **Pre-existing:** not caused by R3; R3's approved R-4 depends on it.
+- **Classified STRUCTURAL:** a shared primitive used by every input surface.
+- **Options:** (A) **root fix** — NativeInput becomes `styled(Text, { render: 'input', … })` so its font props apply for every
+  size (all `Input` consumers change from the browser default to their intended token font — a visible change, checked at
+  a Visual Gate over the input surfaces); (B) **scoped** — only the `display` size gets its font via an injected CSS rule
+  (`.vida-input-display`), the other sizes stay as they render today (the defect remains, recorded for `@vida/ui`).

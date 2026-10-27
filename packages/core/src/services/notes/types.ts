@@ -79,6 +79,9 @@ export interface NotesService {
   addAttachment(pageId: string, file: NewAttachment): Promise<NoteAttachmentRow>
   getAttachments(pageId: string): Promise<NoteAttachmentRow[]>
   removeAttachment(id: string): Promise<void>
+  /** The attachment's THUMBNAIL bytes only (never the full blob — performance-strategy "attachments never pre-loaded");
+   *  `null` when it has none, is unknown, or was removed. notes-rescope R3 (cover render). */
+  getAttachmentThumbnail(id: string): Promise<Uint8Array | null>
 
   // ── S3: Page-links + wiki resolution ────────────────────────────
   createPageLink(sourcePageId: string, targetPageId: string, context?: string): Promise<PageLinkRow>

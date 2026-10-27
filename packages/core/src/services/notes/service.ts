@@ -239,6 +239,17 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       await attachRepo.delete(id)
     },
 
+    // notes-rescope R3 (IMPL R-7): a PROJECTED select — only `thumbnail_blob`. `attachRepo.findById` selects every column,
+    // incl. the full `encrypted_blob`, which on web would cross the worker postMessage for every cover render.
+    getAttachmentThumbnail: async (id: string): Promise<Uint8Array | null> => {
+      const rows = await db
+        .select({ thumb: noteAttachments.thumbnail_blob })
+        .from(noteAttachments)
+        .where(and(eq(noteAttachments.id, id), isNull(noteAttachments.deleted_at)))
+      const thumb = rows[0]?.thumb
+      return thumb == null ? null : new Uint8Array(thumb)
+    },
+
     // ── S3: page-links + wiki resolution ────────────────────────────
     createPageLink: async (
       sourcePageId: string,

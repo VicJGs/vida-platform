@@ -29,6 +29,11 @@ export interface InputProps {
 // forwardRef<HTMLInputElement | TextInput, InputProps> — REQUIRED. Props exported.
 ```
 
+**Amendment (notes-rescope R3, 2026-10-27):** a fourth size, **`display`** — the in-place editor for a `$display` title
+(EntityView rename): `fontFamily`/`fontSize`/`lineHeight` = `$display`, auto height. **DEV-R3-1:** the native element is a
+Tamagui `Text` host (`render:'input'`) — as a `View` it dropped every font prop, so all sizes rendered in the browser's
+default input font; the size tokens above now apply.
+
 ## Visual States (State | Trigger | Visual | Token used — component tokens, §II)
 | State | Trigger | Visual | Token used |
 |-------|---------|--------|------------|

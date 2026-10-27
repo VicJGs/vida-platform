@@ -1,5 +1,5 @@
 import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react'
-import { styled, View } from '@tamagui/core'
+import { styled, Text, View } from '@tamagui/core'
 import { ensureInputStyles } from '../internal/input-styles'
 
 // UI-1 · Input (primitive 2/10) — implements ds-5-primitive-contracts/input.md against Tamagui v2.
@@ -14,7 +14,9 @@ import { ensureInputStyles } from '../internal/input-styles'
 //   switching theme vars. Error precedence handled there via `:not(.vida-input-invalid)`.
 // - B12: no color/border is animated — focus/hover/error are instant state swaps.
 
-type InputSize = 'sm' | 'md' | 'lg'
+// `display` (notes-rescope R3, R-4): the in-place editor for a `$display` title (EntityView rename) — the title's own
+// family/size/leading, auto height.
+type InputSize = 'sm' | 'md' | 'lg' | 'display'
 type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url'
 
 const InputFrame = styled(View, {
@@ -42,6 +44,7 @@ const InputFrame = styled(View, {
       sm: { height: '$32', paddingHorizontal: '$12', gap: '$4' },
       md: { height: '$40', paddingHorizontal: '$16', gap: '$8' },
       lg: { height: '$48', paddingHorizontal: '$20', gap: '$8' },
+      display: { height: 'auto', paddingHorizontal: '$12', paddingVertical: '$4', gap: '$8' },
     },
     // error precedence: danger border wins over hover (contract: border → danger when invalid). Focus-border is
     // excluded from an invalid frame by the `:not(.vida-input-invalid)` guard in input-styles.ts.
@@ -61,7 +64,9 @@ const InputFrame = styled(View, {
 
 // The real <input>: transparent, borderless (the frame draws the box), text token color, no own outline (the ring
 // is on the frame). minWidth:0 lets flex:1 shrink so long values never push the frame wider. size → font size.
-const NativeInput = styled(View, {
+// A Text host (notes-rescope R3 DEV-R3-1): a Tamagui `View` drops font props, so as a View every size rendered in the
+// browser's default input font. As Text, the family/size/leading tokens below apply.
+const NativeInput = styled(Text, {
   name: 'Input',
   render: 'input',
   flex: 1,
@@ -77,6 +82,8 @@ const NativeInput = styled(View, {
       sm: { fontSize: '$caption' },
       md: { fontSize: '$small' },
       lg: { fontSize: '$body' },
+      // NativeInput hard-codes `fontFamily: '$body'`; the display size overrides the family, size AND leading (paired).
+      display: { fontFamily: '$display', fontSize: '$display', lineHeight: '$display', height: 'auto' },
     },
   } as const,
   defaultVariants: { size: 'md' },

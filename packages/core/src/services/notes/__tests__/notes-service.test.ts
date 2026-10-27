@@ -470,3 +470,88 @@ describe('notes-rescope R0 — data safety (live store)', () => {
     expect(hasEmptyText(stored)).toBe(false)
   })
 })
+
+// ── notes-rescope R3 · icon / cover domains (A-4) + the thumbnail-only read (PLAN-R3 G4/G5/G10 · IMPL R-7) ──────────
+describe('notes-rescope R3 — icon/cover domains on create AND update; getAttachmentThumbnail', () => {
+  let h: Harness
+  let sql: string[]
+  beforeEach(async () => {
+    await initVault()
+    const bsql = new Database(':memory:')
+    await migrate(createBetterSqlite3Driver(bsql))
+    sql = []
+    const base = createBetterSqlite3Driver(bsql)
+    const spy: SqliteDriver = {
+      ...base,
+      exec: (s, p) => (sql.push(s), base.exec(s, p)),
+      query: (s, p) => (sql.push(s), base.query(s, p)),
+      values: (s, p) => (sql.push(s), base.values(s, p)),
+    }
+    const db = createDrizzleProxy(spy)
+    const registry = createTaggableTypeRegistry()
+    const spaces = createSpacesService(db, DEVICE, registry)
+    const backlinks = createBacklinkResolver(db, DEVICE)
+    h = { svc: createNotesService({ db, deviceId: DEVICE, spaces, backlinks, registry }), db, registry, spaces }
+  })
+
+  const VALID_ICONS = ['star', 'book-open', 'heart-pulse', 'a1']
+  const BAD_ICONS = ['Star', '⭐', 'book_open', '-star', 'star-', 'a'.repeat(65), 'javascript:alert(1)']
+  const VALID_COVERS = ['https://example.com/a.png', 'http://localhost:5173/__e2e/cover.png', 'attachment:0190a1b2-c3d4']
+  const BAD_COVERS = ['javascript:alert(1)', 'data:image/png;base64,AAA', 'ftp://x/y.png', 'attachment:', `https://x/${'a'.repeat(2040)}`, 'https://a b']
+
+  it.each(VALID_ICONS)('icon %s is accepted on create and update', async (icon) => {
+    const p = await h.svc.createPage({ type: 'note', title: 'i', icon })
+    expect(p.icon).toBe(icon)
+    expect((await h.svc.updatePage(p.id, { icon })).icon).toBe(icon)
+  })
+  it.each(BAD_ICONS)('icon %s is rejected on create and update', async (icon) => {
+    await expect(h.svc.createPage({ type: 'note', title: 'i', icon })).rejects.toThrow()
+    const p = await h.svc.createPage({ type: 'note', title: 'i' })
+    await expect(h.svc.updatePage(p.id, { icon })).rejects.toThrow()
+  })
+  it.each(VALID_COVERS)('cover %s is accepted on create and update', async (cover_image) => {
+    const p = await h.svc.createPage({ type: 'note', title: 'c', cover_image })
+    expect(p.cover_image).toBe(cover_image)
+    expect((await h.svc.updatePage(p.id, { cover_image })).cover_image).toBe(cover_image)
+  })
+  it.each(BAD_COVERS)('cover %s is rejected on create and update', async (cover_image) => {
+    await expect(h.svc.createPage({ type: 'note', title: 'c', cover_image })).rejects.toThrow()
+    const p = await h.svc.createPage({ type: 'note', title: 'c' })
+    await expect(h.svc.updatePage(p.id, { cover_image })).rejects.toThrow()
+  })
+  it('null clears icon and cover', async () => {
+    const p = await h.svc.createPage({ type: 'note', title: 'x', icon: 'star', cover_image: 'https://e.com/a.png' })
+    const cleared = await h.svc.updatePage(p.id, { icon: null, cover_image: null })
+    expect(cleared.icon).toBeNull()
+    expect(cleared.cover_image).toBeNull()
+  })
+
+  it('getAttachmentThumbnail returns only the thumbnail bytes — the full blob is never selected', async () => {
+    const page = await h.svc.createPage({ type: 'note', title: 'img' })
+    const att = await h.svc.addAttachment(page.id, {
+      filename: 'p.png',
+      mimeType: 'image/png',
+      encryptedBlob: new Uint8Array([1, 2, 3]),
+      thumbnailBlob: new Uint8Array([7, 7]),
+      sizeBytes: 3,
+    })
+    sql.length = 0
+    const thumb = await h.svc.getAttachmentThumbnail(att.id)
+    expect(thumb && Array.from(thumb)).toEqual([7, 7])
+    expect(sql.join('\n')).toContain('thumbnail_blob')
+    expect(sql.join('\n')).not.toContain('encrypted_blob')
+  })
+  it('getAttachmentThumbnail → null with no thumbnail, an unknown id, or a removed attachment', async () => {
+    const page = await h.svc.createPage({ type: 'note', title: 'img' })
+    const noThumb = await h.svc.addAttachment(page.id, {
+      filename: 'a.bin', mimeType: 'image/png', encryptedBlob: new Uint8Array([1]), sizeBytes: 1,
+    })
+    expect(await h.svc.getAttachmentThumbnail(noThumb.id)).toBeNull()
+    expect(await h.svc.getAttachmentThumbnail('nope')).toBeNull()
+    const gone = await h.svc.addAttachment(page.id, {
+      filename: 'b.png', mimeType: 'image/png', encryptedBlob: new Uint8Array([1]), thumbnailBlob: new Uint8Array([2]), sizeBytes: 1,
+    })
+    await h.svc.removeAttachment(gone.id)
+    expect(await h.svc.getAttachmentThumbnail(gone.id)).toBeNull()
+  })
+})

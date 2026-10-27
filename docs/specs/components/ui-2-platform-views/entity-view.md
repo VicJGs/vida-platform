@@ -76,6 +76,12 @@ crossing into `@vida/ui` [FACT: packages/core/src/db/schema/_registry.ts:5-158 l
   heading like dashboard's `$heading`) (S1); named region (`warnMissingName`); Tabs owns the `role="tabpanel"` + roving-tab
   a11y; reduced-motion honored on the Tabs indicator/panel motion (the Tabs `@media` convention) [FACT: tabs.tsx:27,127-131;
   packages/ui/src/CLAUDE.md "use-reduced-motion"] [EC-7].
+- **BR-E-9 The title is the H1 + an optional rename seam (notes-rescope R3, 2026-10-27).** The title is a persistent
+  `role="heading" aria-level=1` element (`tabIndex=-1`, exposed by `titleRef` as a focus target). The region is named by a
+  span that always holds `title` (also while editing), so its name is exactly the title. With `onTitleCommit`, the title is a
+  button inside the heading (hint "Rename the page" via `aria-describedby`, outside the heading); click/Enter → an `Input
+  size="display"` seeded from `titleEditValue ?? title`; Enter or blur commits a changed trimmed value (empty passes
+  through), Esc reverts; each edit ends exactly once and focus returns to the title after Enter/Esc.
 - **BR-E-8 Responsive** — both modes reflow 375→768→1440 with no 375 overflow; a `maxWidth` content column centered on
   desktop; Tabs usable at 375 [FACT: collection-view.tsx:37-52 useTabletUp precedent] [EC-6].
   **Title row (notes-rescope R1, DEV-R1-1, 2026-10-27):** the title row wraps — the title group has `flexBasis: 240`, so when

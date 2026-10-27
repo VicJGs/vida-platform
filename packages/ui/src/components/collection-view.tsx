@@ -64,6 +64,8 @@ const LAYOUT_LABEL: Record<ViewLayout, string> = {
 export interface CollectionViewProps {
   /** The collection's name (e.g. 'Tasks') — a string so it can name the region (aria-labelledby) + render as the title. */
   title: string
+  /** notes-rescope R3: the title element (`tabIndex=-1`) — a focus target (e.g. after a recovered read). */
+  titleRef?: Ref<HTMLElement>
   /** Result count — shown only in `success` (honest; `—` otherwise, no fake number while loading/empty/error). */
   count?: number
   /** The current view-mode (CONTROLLED — the app owns the state + persists via ViewsService). */
@@ -116,6 +118,7 @@ const SwitcherBar = styled(View, { flexDirection: 'row', alignItems: 'center', g
 
 export function CollectionView({
   title,
+  titleRef,
   count,
   layout,
   layouts,
@@ -167,7 +170,7 @@ export function CollectionView({
       {/* chrome row 1 — title + honest count (left) · the view-config entry points (right, S2) */}
       <ChromeRow>
         <TitleGroup>
-          <Text id={titleId} fontFamily="$display" fontSize="$h3" color="$colorTextPrimary">
+          <Text id={titleId} ref={titleRef as never} tabIndex={-1} fontFamily="$display" fontSize="$h3" color="$colorTextPrimary">
             {title}
           </Text>
           <Text fontSize="$small" color="$colorTextMuted">

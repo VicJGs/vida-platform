@@ -3,6 +3,7 @@ import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { UIProvider } from '../provider'
+import { Text } from '@tamagui/core'
 import { Input } from './input'
 
 afterEach(cleanup)
@@ -115,3 +116,35 @@ describe('Input', () => {
     warn.mockRestore()
   })
 })
+
+describe('Input size="display" (notes-rescope R3 R-4 — the in-place title editor)', () => {
+  it('pairs the $display font, size AND line-height on the native input (wrapped lines never collide)', () => {
+    const { container } = render(
+      <UIProvider>
+        <Input size="display" aria-label="Page title" defaultValue="A title" />
+        <Text data-ref="display" fontFamily="$display" fontSize="$display" lineHeight="$display">ref</Text>
+      </UIProvider>,
+    )
+    const cls = (el: Element | null, prefix: string) => (el?.className.split(/\s+/) ?? []).find((c) => c.startsWith(prefix))
+    const input = container.querySelector('input')
+    const ref = container.querySelector('[data-ref="display"]')
+    for (const prefix of ['_lh-', '_fs-', '_ff-', 'font_']) {
+      expect(cls(input, prefix), prefix).toBeDefined()
+      expect(cls(input, prefix), prefix).toBe(cls(ref, prefix))
+    }
+  })
+
+  it('DEV-R3-1 — every size applies its font (the native input is a Text host; as a View it dropped font props)', () => {
+    const { container } = render(
+      <UIProvider>
+        <Input size="md" aria-label="m" />
+        <Text data-ref="small" fontFamily="$body" fontSize="$small">ref</Text>
+      </UIProvider>,
+    )
+    const cls = (el: Element | null, prefix: string) => (el?.className.split(/\s+/) ?? []).find((c) => c.startsWith(prefix))
+    const input = container.querySelector('input')
+    expect(cls(input, 'font_')).toBe('font_body')
+    expect(cls(input, '_fs-')).toBe(cls(container.querySelector('[data-ref="small"]'), '_fs-'))
+  })
+})
+
