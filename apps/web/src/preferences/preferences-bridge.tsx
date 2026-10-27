@@ -5,7 +5,7 @@
 // the store), today's panes still read `preferences-store`. This keeps it hydrated
 // from the persisted view — only after BOTH reads succeed, and only the fields whose
 // value changed since the last hydrate (so a write to one field never wipes another
-// pane's in-session edit). It also owns the hide flush: on `visibilitychange: hidden`
+// pane's in-session edit; R6 deletes the mirror). It also owns the hide flush: on `visibilitychange: hidden`
 // and `pagehide` every pending debounced write is sealed and sent while the page is
 // still alive (a transaction can't finish after unload — BR-RT-TEARDOWN).
 // Mounted once, under QueryClientProvider, in App.tsx.
@@ -17,11 +17,9 @@ import { usePreferences } from './use-preferences'
 import type { PreferencesView } from './preferences-view'
 import { preferencesWriter } from './writer-instance'
 
-/** The 9 fields `preferences-store` mirrors (view key = store key; R3 moved `arrangement` and R4 `reduceMotion` to the
- *  live read). */
+/** The 7 fields `preferences-store` mirrors (view key = store key; R3 moved `arrangement`, R4 `reduceMotion` and R5 the
+ *  module maps to the live read). R6 moves the rest and deletes the store. */
 const MIRRORED = [
-  'moduleVisibility',
-  'moduleNames',
   'dateFormat',
   'timeFormat',
   'weekStartsOn',

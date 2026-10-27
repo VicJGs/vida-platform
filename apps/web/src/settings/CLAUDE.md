@@ -28,7 +28,7 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
   of `OptionRow`s reading `usePreferences().view` and writing `useSettings().update` — Theme preset → `dashboard_layout.theme`
   / Mode → `theme` / Density → `compact_mode` (the writer's optimistic cache → the derived `theme-store` → **live re-theme
   of the whole app**, reverted on a failed save) · **Persona** (D4, directly under the theme rows: `Not set` + the 6
-  `PERSONA` values; `Not set` ↔ `null`) · Reduce motion (`Switch` → still `preferences-store` until R4) · Home arrangement
+  `PERSONA` values; `Not set` ↔ `null`) · Reduce motion (`Switch` → `nav_preferences.reduce_motion`, persisted since R4) · Home arrangement
   → `dashboard_layout.arrangement` (read by `useHomeArrangement`). Every control `disabled` when read-only. Each control
   carries its own `aria-label`. **Mode = Light/Dark only** (ThemeMode has no 'system'; honest > a fake 3rd value). No
   `game` preset (`game` is a module, not a theme — D3).
@@ -37,8 +37,9 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
 - `settings-skeleton.tsx` (R3) — the state-conventions §3.1 pane skeleton: a Card of option-row-height bars on
   `$colorSurfaceSecondary`, `$md` radius, STATIC (nothing to gate under reduced motion), `role="region"` + `aria-busy`,
   `tabIndex=-1` (the Retry focus target). Rare live: the boot seed fills the cache before Settings can mount.
-- `settings-copy.ts` (R3) — **every user-facing string R3 added** (read-error ×2, save-failed toast, persona row, Retry,
-  loading label), one module (F17); `settings-copy.test.ts` runs `lintCopy` over every entry. Imports nothing.
+- `settings-copy.ts` (R3/R5) — **every user-facing string this unit adds** (read-error ×2, save-failed toast, persona row,
+  Retry, loading label; R5: the ⌘K pin announcements as functions of the label, the pinned suffix, the pin hint), one
+  module (F17); `settings-copy.test.ts` runs `lintCopy` over every entry (functions with a sample label). Imports nothing.
 - `option-row.tsx` — **OptionRow** (EC-2): label (+ muted description) ↔ control slot, hairline divider. Layout only;
   the control owns the accessible name.
 - `settings-model.ts` — `SETTINGS_CATEGORIES` (rail, `built` flag) + `SETTINGS_INDEX` (the searchable index entries:
@@ -52,9 +53,12 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
   (controlled `query`; non-empty → results replace the pane; clearing restores it).
 - `modules-pane.tsx` — **S5 (EC-4 module controls · EC-8 escape hatch · EC-12 rename):** a **Modules** Card of
   per-module rows (show/hide `Switch` + inline rename: pencil → `Input` + save/cancel icon buttons, Enter/Esc) over
-  `HIDEABLE_MODULES`, plus a **Surfaces** Card (Feature Atlas · Sync log toggles). All state → the in-session
-  `preferences-store` (`moduleVisibility`/`moduleNames`); persist = R5. Read-only (R3) hides rename + disables the switches. The hideable list EXCLUDES the
-  always-reachable surfaces (Settings/Home) — the escape hatch is UI-enforced here (the service doesn't guard it).
+  `HIDEABLE_MODULES`, plus a **Surfaces** Card (Feature Atlas · Sync log toggles). **Persisted since preferences-rescope
+  R5:** reads `usePreferences().view` and writes `useSettings().update` — show/hide + Surfaces → `module_visibility`, rename
+  → `dashboard_layout.moduleNames` (map merges; trimmed, ≤ 40 chars `MODULE_NAME_MAX`). Every row control speaks the
+  DISPLAY name. Controls are `lg` (Switch `lg` = its documented touch size; icon Buttons `lg` 48). Read-only (R3) hides
+  rename + disables the switches. The hideable list EXCLUDES the always-reachable surfaces (Settings/Home); the rule lives
+  in `../nav/nav-prefs` (`isHideableModule`), and the nav readers apply it on read too (EC-8 read side).
 - `locale-pane.tsx` — **S6 (EC-4):** a `Card` of `OptionRow`s — Date format · Time format · Week starts on (`Select`s
   over the existing `user_preferences` locale fields; week_starts_on 0|1 ↔ Sunday/Monday at the Select boundary).
   Still on `preferences-store` (persist = R6); `disabled` when read-only (R3).
@@ -72,16 +76,15 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
 - `../stores/theme-store.ts` (S2; **derived since R3**) — `{ persisted, previewPreset, selection, reduceMotion }` →
   `<UIProvider selection reduceMotion>` (R4: `reduceMotion` follows the `['preferences','nav']` entry in the same subscription); the EC-5 keystone. `persisted` follows the `['preferences','user']` cache through one query-cache
   subscription (no theme setters — Settings writes go through the writer); `setPreview` is the guided-setup preview layer.
-- `../stores/preferences-store.ts` (S3 + S5 + S6) — TRANSITIONAL mirror (hydrated by `PreferencesBridge`):
-  `moduleVisibility`/`moduleNames` (S5) + `dateFormat`/`timeFormat`/`weekStartsOn` + `notifInApp`/`notifPush`/`notifEmail`/
-  `quietHours` (S6). `arrangement` left it in R3, `reduceMotion` in R4 (the Appearance switch writes `update({ reduceMotion })`). Persist per
+- `../stores/preferences-store.ts` (S3 + S6) — TRANSITIONAL mirror (hydrated by `PreferencesBridge`): `dateFormat`/`timeFormat`/`weekStartsOn` + `notifInApp`/`notifPush`/`notifEmail`/
+  `quietHours` (S6). `arrangement` left it in R3, `reduceMotion` in R4, the module maps in R5 (the Appearance switch writes `update({ reduceMotion })`). Persist per
   slice (R5/R6); R6 deletes it.
 
 ## Live data (preferences-rescope — supersedes the 2026-10-12 "deferred seam")
 The worker data plane is live (data-plane-wiring) and the Preferences seam is wired (R2): reads come from React Query over
-SQLite. **R3 moved Appearance onto the seam** (theme · persona · arrangement persist; reduce motion waits for R4). The
+SQLite. **R3 moved Appearance onto the seam** (theme · persona · arrangement persist; reduce motion in R4; **Modules in R5**). The
 other panes still bind `preferences-store`, hydrated FROM the persisted view (the `PreferencesBridge` mirror), and move in
-their own slice (R5 Modules · R6 Locale/Notifications — R6 deletes `preferences-store`); until then their edits are
+their own slice (R6 Locale/Notifications — R6 deletes `preferences-store`); until then their edits are
 in-session only.
 
 ## ECs covered — S1–S6 (surface COMPLETE)
@@ -95,4 +98,5 @@ categories built. EC-11 (editorial voice/feel) = verified per-slice at each live
   raw service, never hardcode a palette. Not-yet-migrated panes still dispatch to `preferences-store`.
 - Every pane honours `useSettings().readOnly` (`disabled` / rename hidden). New user-facing copy goes in `settings-copy.ts`.
 - `dashboard_layout` writes are per-sub-key merges (the writer, seam-contract §B) — never clobber sibling sub-keys.
-- The escape hatch (S5): module-visibility can never hide Settings itself (business-rules.md:27 — UI-enforced, not service).
+- The escape hatch (S5): module-visibility can never hide Settings itself (business-rules.md:27 — UI-enforced, not
+  service). Since R5 it holds on READ too: `../nav/nav-prefs` `applyNavPrefs` ignores any map entry for Settings/Home.

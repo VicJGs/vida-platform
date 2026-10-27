@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createCommandRegistry, navProvider, shellActionsProvider } from './registry'
+import { createCommandRegistry, createNavProvider, navProvider, shellActionsProvider } from './registry'
 import { useAppShellUIStore } from '../stores/app-shell-ui-store'
 import type { CommandProvider } from './types'
 
@@ -39,5 +39,13 @@ describe('createCommandRegistry', () => {
     const before = useAppShellUIStore.getState().isSidebarOpen
     shellActionsProvider.getCommands()[0]?.run({ navigate: () => {} })
     expect(useAppShellUIStore.getState().isSidebarOpen).toBe(!before)
+  })
+
+  it('createNavProvider(prefs) feeds the registry the filtered nav commands (R5)', () => {
+    const registry = createCommandRegistry()
+    registry.register(createNavProvider({ visibility: { tasks: false }, names: { notes: 'Pages' } }))
+    const commands = registry.collect()
+    expect(commands.some((c) => c.id === 'nav:/tasks')).toBe(false)
+    expect(commands.find((c) => c.id === 'nav:/notes')?.label).toBe('Pages')
   })
 })

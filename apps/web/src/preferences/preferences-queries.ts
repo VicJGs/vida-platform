@@ -14,7 +14,9 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { MergedNavPreferences, MergedPreferences } from '@vida/types'
 import { getServices } from '../db/composition-root'
-import { NAV_PREFS_KEY, USER_PREFS_KEY } from './preferences-keys'
+import { COMMANDS_KEY, NAV_PREFS_KEY, PREFERENCES_GC_MS, PREFERENCES_STALE_MS, USER_PREFS_KEY } from './preferences-keys'
+import type { CommandHistoryEntry } from '../command-bar/types'
+import { toHistoryEntry } from './command-history'
 import type { PreferencesTable } from './preferences-writer'
 import { FORCED_PREFS_FAILURE } from './force-flag'
 import { preferencesWriter } from './writer-instance'
@@ -55,6 +57,23 @@ export function navPreferencesQuery() {
       const read = await (await getServices()).preferences.getNavPreferences()
       return preferencesWriter.noteConfirmed('nav', read, epoch)
     },
+  }
+}
+
+/**
+ * preferences-rescope R5 (R5-BR-5) — ⌘K history, ranked by the palette (`rankByFrecency`). Its own stale/gc (it can't rely
+ * on the writer's `setQueryDefaults` having run), `retry: 0` (a local read), and NOT in the boot seed: an unread or
+ * failed history just leaves the palette unranked ("query error, keep typing", business-rules.md:34).
+ */
+export function commandHistoryQuery() {
+  return {
+    queryKey: COMMANDS_KEY,
+    retryOnMount: false,
+    retry: 0,
+    staleTime: PREFERENCES_STALE_MS,
+    gcTime: PREFERENCES_GC_MS,
+    queryFn: async (): Promise<CommandHistoryEntry[]> =>
+      (await (await getServices()).preferences.getCommandHistory()).map(toHistoryEntry),
   }
 }
 

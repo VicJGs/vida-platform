@@ -1,4 +1,5 @@
 import { MODULE_MAP } from '../nav/module-map'
+import { ALWAYS_REACHABLE_KEYS, MANAGED_SURFACE_KEYS, isHideableModule } from '../nav/nav-prefs'
 import { SETTINGS_COPY } from './settings-copy'
 
 // fe-settings S3 — the Settings index model. The category list drives the left rail; the per-setting index entries
@@ -32,24 +33,25 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
 ]
 
 // S5 — the Modules pane list. EC-8 escape hatch (seam-contract §E): the nav show/hide list is the DOCK content modules,
-// MINUS any surface that would hide the path back to Settings/Home. The service does NOT guard this (`setModuleVisibility`
-// persists anything) — it's UI-enforced here. `preferences` (Settings) + `journals` (Home) are `global`, so the dock
-// filter already excludes them; the explicit set documents the escape-hatch intent (belt + suspenders).
-export const ALWAYS_REACHABLE_KEYS: ReadonlySet<string> = new Set(['preferences', 'journals'])
+// MINUS any surface that would hide the path back to Settings/Home. R5: the rule itself lives in `nav/nav-prefs`
+// (`isHideableModule` + `ALWAYS_REACHABLE_KEYS`) — the nav readers apply the same rule on read, so a synced `false`
+// can't hide Settings/Home either. Re-exported here for the existing importers.
+export { ALWAYS_REACHABLE_KEYS }
 
 export interface HideableModule {
   key: string
   label: string
 }
 
-export const HIDEABLE_MODULES: readonly HideableModule[] = MODULE_MAP.filter(
-  (m) => m.placement === 'dock' && !ALWAYS_REACHABLE_KEYS.has(m.key),
-).map((m) => ({ key: m.key, label: m.label }))
+export const HIDEABLE_MODULES: readonly HideableModule[] = MODULE_MAP.filter(isHideableModule).map((m) => ({
+  key: m.key,
+  label: m.label,
+}))
 
 // S5 — the "Surfaces" subsection: discovered global surfaces the user enables/disables (not dock modules).
 // Keys map to module_visibility['features'|'sync'] (seam-contract §B). Match the greybox "Surfaces".
 export interface ManageableSurface {
-  key: string
+  key: (typeof MANAGED_SURFACE_KEYS)[number]
   label: string
   description: string
 }

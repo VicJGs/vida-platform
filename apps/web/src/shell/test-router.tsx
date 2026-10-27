@@ -11,9 +11,14 @@ import {
   RouterProvider,
 } from '@tanstack/react-router'
 import { UIProvider } from '@vida/ui'
+import { createPrefsWrapper } from '../test/preferences-test-utils'
 
-/** Render `ui` inside a UIProvider + a loaded memory router at `path`. Await it (the router resolves asynchronously). */
-export async function renderInShell(ui: ReactNode, path = '/') {
+/**
+ * Render `ui` inside a UIProvider + a loaded memory router at `path`. Await it (the router resolves asynchronously).
+ * `prefs: true` (preferences-rescope R5) also wraps the app's singleton QueryClient, for chrome that reads the live
+ * preferences (the dock). Opt-in, so other `renderInShell` users keep their own client and never share its cache.
+ */
+export async function renderInShell(ui: ReactNode, path = '/', options: { prefs?: boolean } = {}) {
   const rootRoute = createRootRoute({ component: () => <>{ui}</> })
   const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => null })
   const notesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/notes', component: () => null })
@@ -22,9 +27,12 @@ export async function renderInShell(ui: ReactNode, path = '/') {
     history: createMemoryHistory({ initialEntries: [path] }),
   })
   await router.load()
-  return render(
+  const tree = (
     <UIProvider>
       <RouterProvider router={router} />
-    </UIProvider>,
+    </UIProvider>
   )
+  if (!options.prefs) return render(tree)
+  const Prefs = createPrefsWrapper()
+  return render(<Prefs>{tree}</Prefs>)
 }

@@ -9,3 +9,6 @@ export const NAV_PREFS_KEY = ['preferences', 'nav'] as const
 /** Low-volatility category (performance-strategy.md:242,263-268 — "Preferences 5 min / 30 min"). */
 export const PREFERENCES_STALE_MS = 5 * 60_000
 export const PREFERENCES_GC_MS = 30 * 60_000
+
+/** preferences-rescope R5 — ⌘K history (`command_bar_history`, many rows). Exact; doesn't overlap `user`/`nav`. */
+export const COMMANDS_KEY = ['preferences', 'commands'] as const

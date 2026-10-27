@@ -36,14 +36,20 @@ SQLite is the source of truth**; Zustand stores are at most derived caches (gate
 - `use-preferences.ts` — `usePreferences()` (`view` · `state` · `error` · `hasData` · `retry`) and
   `useUpdatePreferences()` (`update(viewPatch)` · `saveState` · `lastError`); `updateView(patch)` is the module-level write
   (no React state — the `SettingsContext` default). `retry()` refetches **only the errored key(s)**, fire-and-forget.
-- `preferences-bridge.tsx` — TRANSITIONAL mirror into `stores/preferences-store` (field-diff, after both reads; **10
-  fields** — `arrangement` left in R3, the theme was never mirrored) + the `visibilitychange`/`pagehide` flush. Mounted
+- `command-history.ts` (R5) — **the ONE write path for `command_bar_history`**: `createCommandHistory` → `{ record, pin,
+  idle }` on ONE serial promise chain (both service ops read-then-write; the chain fixes the UNIQUE first-run race and
+  orders a pin after its record). `record` is best-effort (after `run()`, logged, never thrown); `pin` resolves
+  true/false. The history query is invalidated after each op, **fire-and-forget** (`invalidateQueries` awaits the
+  refetch). `toHistoryEntry` maps `is_pinned` → `0|1`. App instance `commandHistory` (+ `resetCommandHistoryForTests`).
+  `commandHistoryQuery()` lives in `preferences-queries.ts` (own stale/gc, `retry: 0`, NOT in the boot seed).
+- `preferences-bridge.tsx` — TRANSITIONAL mirror into `stores/preferences-store` (field-diff, after both reads; **7
+  fields** — `arrangement` left in R3, `reduceMotion` in R4, the module maps in R5; the theme was never mirrored) + the `visibilitychange`/`pagehide` flush. Mounted
   once in `App.tsx`.
 
 ## Rules (do not violate)
 - **Every preferences writer in every unit uses `writer-instance.ts`** (`writePreferences` · `writeNavPreferences` ·
   `patchDashboardLayout` · `patchModuleNames` · `setModuleVisibilityMap` · `flushAll`) — never the raw service (it would
-  bypass the queue → double-create + a stale cache).
+  bypass the queue → double-create + a stale cache). **`command_bar_history` goes through `command-history.ts`** (R5).
 - `dashboard_layout` writes merge **per sub-key** (and `moduleNames` as a map): a writer call can never replace the whole
   object or delete a sub-key — by design.
 - No echo writes: `useUpdatePreferences` drops keys that would not change the cache truth.

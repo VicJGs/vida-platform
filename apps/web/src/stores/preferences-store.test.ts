@@ -5,8 +5,7 @@ describe('preferences store (fe-settings S3 — in-session non-theme prefs, §A0
   beforeEach(() =>
     usePreferencesStore.setState({
       timeFormat: '24h',
-      moduleVisibility: {},
-      moduleNames: {},
+      dateFormat: 'YYYY-MM-DD',
     }),
   )
 
@@ -17,29 +16,15 @@ describe('preferences store (fe-settings S3 — in-session non-theme prefs, §A0
     expect('setReduceMotion' in s).toBe(false)
   })
 
-  it('hydrate (the deferred-seam activation point) merges a partial patch', () => {
-    usePreferencesStore.getState().hydrate({ moduleVisibility: { finance: false } })
-    expect(usePreferencesStore.getState().moduleVisibility).toEqual({ finance: false })
-    expect(usePreferencesStore.getState().timeFormat).toBe('24h') // untouched key preserved
-  })
-
-  // S5 — module show/hide + rename (read-merge-write into the maps; absent key ⇒ visible/canonical label)
-  it('setModuleVisible merges into the map without clobbering siblings', () => {
+  it('no longer mirrors the module maps (R5) — the Modules pane, dock and ⌘K read the seam', () => {
     const s = usePreferencesStore.getState()
-    s.setModuleVisible('finance', false)
-    s.setModuleVisible('habits', true)
-    expect(usePreferencesStore.getState().moduleVisibility).toEqual({ finance: false, habits: true })
+    for (const key of ['moduleVisibility', 'moduleNames', 'setModuleVisible', 'setModuleName']) expect(key in s).toBe(false)
   })
 
-  it('setModuleName merges into the names map', () => {
-    usePreferencesStore.getState().setModuleName('habits', 'Rituals')
-    expect(usePreferencesStore.getState().moduleNames.habits).toBe('Rituals')
-  })
-
-  it('hydrate also merges module maps', () => {
-    usePreferencesStore.getState().hydrate({ moduleVisibility: { sync: false }, moduleNames: { notes: 'Pages' } })
-    expect(usePreferencesStore.getState().moduleVisibility.sync).toBe(false)
-    expect(usePreferencesStore.getState().moduleNames.notes).toBe('Pages')
+  it('hydrate (the deferred-seam activation point) merges a partial patch', () => {
+    usePreferencesStore.getState().hydrate({ dateFormat: 'DD/MM/YYYY' })
+    expect(usePreferencesStore.getState().dateFormat).toBe('DD/MM/YYYY')
+    expect(usePreferencesStore.getState().timeFormat).toBe('24h') // untouched key preserved
   })
 
   // S6 — Locale + Notifications (defaults mirror USER_PREFERENCES_DEFAULTS)

@@ -116,7 +116,10 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   by `shell-panel-styles.test.ts` — preferences-rescope R4). B12:
   opacity/transform only.
 - `module-dock.tsx` (S2) — the dock content: `MODULE_MAP` grouped, drawer/rail/sidebar forms, empty-group skip,
-  collapse toggle. _(`global-bar.tsx` was DELETED at fe-shell-scope #15 S3 — superseded by `global-bar-1.tsx` +
+  collapse toggle. **preferences-rescope R5:** reads `usePreferences().view` and runs the map through `../nav/nav-prefs`
+  `applyNavPrefs` (hidden out, renamed labels incl. the rail `aria-label`; filter-then-group, so an emptied group drops
+  its heading). Still mounted NOWHERE in production — mounting it in the Modules panel body is shell-rescope's (D-R5-2);
+  the reader is unit-proven until then. _(`global-bar.tsx` was DELETED at fe-shell-scope #15 S3 — superseded by `global-bar-1.tsx` +
   `global-surfaces-{strip,list}.tsx`.)_
 - `global-bar-1.tsx` (fe-shell-scope #15, S3) — **Bar 1 assembly.** `variant="strip"` = the top-strip chrome (bar1Slot):
   scope (left, `compact` ≤375) · spacer · surfaces strip (mode resolved from the breakpoint). `variant="panel"` = the
@@ -144,8 +147,14 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 - `command-bar.tsx` (S3) — the ⌘K launcher overlay: COMPOSES UI-1 `Dialog` (modal envelope) + `Input` (a `role=combobox`
   field via Input's `{...rest}` pass-through — no `packages/ui` edit) + a hand-rolled `role=listbox` of non-focusable
   `role=option` divs (aria-activedescendant, ↑/↓, Enter — the Select pattern, one tab stop). Builds the registry
-  (`navProvider`+`shellActionsProvider`), injects `useShellNavigate` into `CommandRunContext`, `visibleWhen`-filters
-  (gamification fail-closed). Two STORE-driven modes: empty query → command list; non-empty → the `SearchProvider`
+  (`createNavProvider(prefs)`+`shellActionsProvider`), injects `useShellNavigate` into `CommandRunContext`, `visibleWhen`-filters
+  (gamification fail-closed). **preferences-rescope R5:** the list is reactive to the user's module prefs
+  (`createNavProvider(prefs)`) and ranked by the persisted history (`commandHistoryQuery`, pinned → frecency; loading /
+  error → unranked); `execute` = run → close → `commandHistory.record` (best-effort); **Alt+P** (`e.code === 'KeyP'`,
+  no ctrl/meta) pins/unpins the active option (pending-pins overlay; an always-mounted SR-only `role=status` announcer,
+  clear-then-set after `ANNOUNCE_GAP_MS`); pinned rows carry a Lucide `Pin` + ", pinned" in the name; the pin hint sits
+  UNDER the input as the combobox's `aria-describedby`; the active option is tracked by command id (reset on mode/open).
+  Two STORE-driven modes: empty query → command list; non-empty → the `SearchProvider`
   outcome (`search-unavailable` in M1.0 — a loud `role=status`, the grouped `results` UI is a DB-8 seam). Self-portals
   via Dialog (the `overlayHost` region stays a reserved marker). `use-command-keybind.ts` (S3) — the global launcher
   keydown; opens on **EITHER ⌘ or Ctrl + K** (lenient mod — reachability must not hinge on fragile `navigator`

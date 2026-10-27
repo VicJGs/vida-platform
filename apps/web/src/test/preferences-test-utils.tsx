@@ -24,6 +24,16 @@ const tick = () => new Promise((r) => setTimeout(r, 0))
  * An in-memory PreferencesService. Like the real one, the singleton write is read-then-create with an await in between
  * (service.ts:263-266), so concurrent first writes would double-create unless the caller serializes them (IR-10).
  */
+/** The `command_bar_history` fields the palette reads (the Drizzle row minus base/sync columns). */
+export interface HistoryRow {
+  command_key: string
+  command_label: string
+  command_category: string | null
+  use_count: number
+  last_used_at: number | null
+  is_pinned: boolean
+}
+
 export function fakePreferencesService() {
   const state = {
     user: null as MergedPreferences | null,
@@ -37,6 +47,15 @@ export function fakePreferencesService() {
     /** R3: while set, every read awaits it (a deferred boot seed). Release with `releaseReads()`. */
     readGate: null as Promise<void> | null,
     releaseReads: () => {},
+    /** R5 — `command_bar_history` rows (the service's Drizzle shape: `is_pinned` boolean). */
+    history: [] as HistoryRow[],
+    /** R5 — `'read'` rejects `getCommandHistory`; `'write'` rejects `recordCommand`/`pinCommand`. */
+    failHistory: 'none' as 'none' | 'read' | 'write',
+    /** R5 — while set, `getCommandHistory` awaits it (a held read). */
+    historyReadGate: null as Promise<void> | null,
+    historyCalls: [] as string[],
+    /** R5 — `getCommandHistory` calls (reads), separate from the write log above. */
+    historyReads: 0,
   }
   /** Close the read gate: reads hang until `state.releaseReads()` (R3 — "Loading holds until the seed settles"). */
   function holdReads() {
@@ -55,7 +74,62 @@ export function fakePreferencesService() {
       throw new Error(`fake: ${t} read failed`)
     }
   }
+  /** Like the real service: look up by key, then (after an await) insert — a duplicate insert throws (UNIQUE). */
+  async function insertHistory(row: HistoryRow) {
+    await tick() // the read-then-create window (service.ts recordCommand/pinCommand)
+    if (state.history.some((r) => r.command_key === row.command_key)) {
+      throw new Error('UNIQUE constraint failed: command_bar_history.command_key')
+    }
+    state.history.push(row)
+  }
+  function historyWriteGuard() {
+    if (state.failHistory === 'write') throw new Error('fake: history write failed')
+  }
   const svc = {
+    async recordCommand(command_key: string, command_label: string, command_category?: string | null) {
+      state.historyCalls.push(`record:${command_key}`)
+      historyWriteGuard()
+      const found = state.history.find((r) => r.command_key === command_key)
+      if (found) {
+        await tick()
+        found.use_count += 1
+        found.last_used_at = Date.now()
+      } else {
+        await insertHistory({
+          command_key,
+          command_label,
+          command_category: command_category ?? null,
+          use_count: 1,
+          last_used_at: Date.now(),
+          is_pinned: false,
+        })
+      }
+    },
+    async pinCommand(command_key: string, pinned: boolean, command_label?: string, command_category?: string | null) {
+      state.historyCalls.push(`pin:${command_key}:${pinned}`)
+      historyWriteGuard()
+      const found = state.history.find((r) => r.command_key === command_key)
+      if (found) {
+        await tick()
+        found.is_pinned = pinned
+      } else if (pinned && command_label !== undefined && command_label.trim() !== '') {
+        await insertHistory({
+          command_key,
+          command_label,
+          command_category: command_category ?? null,
+          use_count: 0,
+          last_used_at: null,
+          is_pinned: true,
+        })
+      }
+    },
+    async getCommandHistory() {
+      state.historyReads++
+      if (state.historyReadGate) await state.historyReadGate
+      await tick()
+      if (state.failHistory === 'read') throw new Error('fake: history read failed')
+      return state.history.map((r) => ({ ...r }))
+    },
     async getMergedPreferences() {
       await read('user')
       return { ...(state.user ?? USER_PREFERENCES_DEFAULTS) }

@@ -142,7 +142,7 @@ idle = () => tail.then(() => undefined)
    - The search-mode `SearchStatusRegion` keeps its own `role="status"`. The two never announce at once.
 7. **Pinned rows.** A trailing Lucide `Pin` (16, `aria-hidden`, `$colorTextMuted`) and an `aria-label` of
    `label + SETTINGS_COPY.cmdPinnedSuffix` on the option (the visible text stays the label).
-8. **Footer hint.** `<Text id={hintId} fontSize="$caption" color="$colorTextMuted">` reading `SETTINGS_COPY.cmdHintMac`
+8. **Footer hint** *(as built: UNDER the input, not a footer — in-gate fix 2, PLAN-R5 §7)*. `<Text id={hintId} fontSize="$caption" color="$colorTextMuted">` reading `SETTINGS_COPY.cmdHintMac`
    when `detectPlatform() === 'mac'`, else `cmdHintOther`. It renders in command mode with ≥1 option and is **exposed**:
    the combobox gets `aria-describedby={hintId}` (Input forwards it, `input.tsx:105-109`). That is the SR path to learn
    the gesture (WCAG 1.3.1: visible instructions not hidden from assistive tech). No `aria-keyshortcuts`: on the
@@ -253,6 +253,63 @@ idle = () => tail.then(() => undefined)
 
 ## Gate record
 - **Approval 2 (Victor, 2026-10-27):** D-R5-2 + D-R5-3 approved; build starts.
+- **Build + gates (2026-10-27):**
+  - **TDD:** steps 1–10, each red → green, except `command-history`: its module was written in the same pass as its
+    first run, so it went straight to green; the mutations cover it.
+  - **Mutations:** **14/14 killed** (copy-restored; all 30 files verified byte-identical afterwards). #8 (record before
+    run) first SURVIVED: the chain makes the service call async either way. It is now killed by an order probe —
+    `record` must see `navigate` called and the bar closed.
+  - **Suites:**
+    - apps/web **126 files · 966/966**, one pass. R4 recorded 999 over two chunked runs; R5 deleted no test files.
+    - core preferences 27/27.
+    - tsc 0 (core · ui · web).
+    - eslint 0 errors (4 pre-existing warnings in `db/client.test.ts`).
+  - **Harness fixes (test-only):**
+    - Drain the history chain in `afterEach`: an in-flight record leaked into the next test's fake.
+    - Find the search status by text: the always-mounted announcer is a second `role=status`.
+  - **Live smoke (real OPFS, Brave):**
+    - two quick first runs → 1 row, `use_count 2`
+    - pin never-run → `use_count 0`, pinned
+    - `user_preferences` 1 row
+    - the `dashboard_layout.theme` sibling survives
+    - reload → order, hides and renames hold
+    - a forged `false` on Settings/Home is ignored + DEV-flagged
+    - a hidden route still opens
+  - **Visual Gate** (Modules pane + ⌘K × light/dark × 375/768/1440, 12 cells): axe 0 · text AA 4.86–5.76 · 0
+    page/region overflow · keyboard `:focus-visible` · ⌘K options ≥44 · the keyboard pin keeps the highlight ·
+    read-only ✓. Victor **`visual-approved`** 2026-10-27.
+  - **In-gate fixes:**
+    1. Modules-pane targets measured 36×20 / 40×32 → Switch `lg` (its documented touch size, `s1-switch.md`) + icon
+       Buttons `lg` 48 (decisions.md:138).
+    2. The pin hint moved from a footer to UNDER the input: the Dialog body scrolls, so a footer after ~22 rows is
+       never seen. It is still the combobox's `aria-describedby`.
+    3. Clear-then-set uses a 50 ms timeout (`ANNOUNCE_GAP_MS`), not rAF: jsdom rAF timing is unreliable, and
+       screen readers need a gap anyway.
+  - **Siblings recorded** (`docs/specs/fixes/ds-type-lineheight-unpaired/` items 5–6): Switch `lg` = 44×24 (a
+    primitive contract gap) · the Settings rail (40) and search (38) · the other panes' `md` switches.
+  - **Unattributed:** one console 404 in a reopened profile, not reproducible on a fresh one. Likely a worker request,
+    which page listeners can't see; R5 adds no fetched resource.
+  - **Pointer note:** after a pin re-ranks, the highlight follows the row under a stationary pointer (Chromium re-fires
+    hover). That is expected; id tracking is the keyboard guarantee.
+  - **Pre-ship /critique (independent): REVISE → folded → SHIP-ready.** The code was judged ship-quality; 5 blocking items
+    were doc/comment currency:
+    - `current-spec` status, mirror count 9 → 7, the third key, and an R5 surface section
+    - the "footer" wording in `command-bar.tsx` and `settings-copy.ts`
+    - the `registry.ts` header
+
+    Nits folded:
+    - A pending pin now settles only after its own latest write (per-id sequence). Three quick presses end pinned.
+    - A pin that settles after close is no longer announced on the next open (test red → green).
+    - The read-failure test now waits on the query's error state.
+    - The stale R4 line in `settings/CLAUDE.md` is fixed.
+    - The IMPL-PLAN "footer" now carries an as-built pointer.
+
+    Recorded for R8:
+    - No way to reset a custom name (fe-settings follow-up edge).
+    - `pinCommand`/`recordCommand` `findWhere` skips the soft-delete filter. Pre-existing pattern; nothing soft-deletes
+      history today.
+
+    After the fold: the touched suites pass 27 files / 260 tests, and App/integration/routes pass 18/18; tsc 0; eslint 0.
 - **rev 1.1 → rev 2 (2026-10-27): independent gate-2 critique REVISE**, 3 blocking, all folded:
   1. §B awaited the invalidate, and `invalidateQueries` awaits the refetch (query-core `queryClient.js:148-179`) → the
      next write waited on a read and its retry → fire-and-forget invalidate + `retry: 0` + a non-blocking test.

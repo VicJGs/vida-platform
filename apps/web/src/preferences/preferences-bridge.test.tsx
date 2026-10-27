@@ -34,16 +34,18 @@ describe('PreferencesBridge', () => {
     await waitFor(() => expect(usePreferencesStore.getState().dateFormat).toBe('DD/MM/YYYY'))
   })
 
-  it('R4 — mirrors 9 fields: neither the Home arrangement (R3) nor reduce motion (R4) is bridged — both read the seam', async () => {
+  it('R5 — mirrors 7 fields: the arrangement (R3), reduce motion (R4) and the module maps (R5) read the seam', async () => {
     testPreferences.state.user = {
       ...(await testPreferences.svc.getMergedPreferences()),
       date_format: 'DD/MM/YYYY',
-      dashboard_layout: { arrangement: 'dashboardFirst' },
+      module_visibility: { tasks: false },
+      dashboard_layout: { arrangement: 'dashboardFirst', moduleNames: { habits: 'Rituals' } },
     }
     mount()
     await waitFor(() => expect(usePreferencesStore.getState().dateFormat).toBe('DD/MM/YYYY'))
-    expect('arrangement' in usePreferencesStore.getState()).toBe(false)
-    expect('reduceMotion' in usePreferencesStore.getState()).toBe(false)
+    for (const key of ['arrangement', 'reduceMotion', 'moduleVisibility', 'moduleNames']) {
+      expect(key in usePreferencesStore.getState()).toBe(false)
+    }
   })
 
   it('re-hydrates ONLY changed fields — an in-session edit to another field survives', async () => {

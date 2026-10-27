@@ -4,7 +4,11 @@
 // and DEDUPED by routePath (MODULE_MAP wins). The `command-palette` surface self-excludes (its routePath is
 // null — no "go to search" command). `routePath` is UX-facing and MAY differ from `key` (relationships→/people)
 // — never assume `'/'+key`. `visibleWhen` is carried onto the command so the host filters by flag.
+// preferences-rescope R5: optional `prefs` (the user's module visibility + names) run the MAP entries through the shared
+// `applyNavPrefs` first — hidden → no command, renamed → the custom label; the id (`nav:<routePath>`, the history key)
+// never changes. Surfaces are never filtered (Settings/Home stay reachable, EC-8).
 import { MODULE_MAP, GLOBAL_SURFACES } from '../nav/module-map'
+import { applyNavPrefs, type NavPrefs } from '../nav/nav-prefs'
 import type { ModuleNavEntry } from '../nav/module-map'
 import type { Command } from './types'
 
@@ -13,10 +17,11 @@ type NavSurface = { readonly routePath: string | null; readonly label: string }
 export function deriveNavCommands(
   map: readonly ModuleNavEntry[] = MODULE_MAP,
   surfaces: readonly NavSurface[] = GLOBAL_SURFACES,
+  prefs?: NavPrefs,
 ): Command[] {
   const byRoute = new Map<string, Command>()
 
-  for (const entry of map) {
+  for (const entry of applyNavPrefs(map, prefs)) {
     if (entry.routePath === null) continue
     if (byRoute.has(entry.routePath)) continue
     byRoute.set(entry.routePath, navCommand(entry.routePath, entry.label, entry.visibleWhen))

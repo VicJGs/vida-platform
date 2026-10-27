@@ -43,6 +43,17 @@ A command is `{ id, label, category, run(ctx) }`. Displayed order is **frecency*
 re-affirms as the v2 MOD-prefs target shape. Ranking is a pure function (`rankByFrecency`, `now` injected); the
 store that persists history is MOD-prefs' to build (seam).
 
+**Live since preferences-rescope R5 (2026-10-27).** The palette reads the persisted history (MOD-prefs
+`getCommandHistory`) and records each run AFTER it executes (best-effort — a failed record never blocks the command);
+history joins on `command_key` = the command id, so renaming a module never orphans its history (labels always come
+from the live command, never `command_label`). **Pinning (D-R5-1):** `Alt+P` (matched by key position, `e.code`) on
+the active option pins/unpins it — a never-run command is created pinned (`pinCommand` with its label); the result is
+announced in a polite live region, and the hint under the input is the combobox's description. A pointer user hovers
+then presses the key; a touch pin waits for the reserved non-keyboard affordance (§3). The Settings "⌘K pinned
+commands" list (p5-discover-own-specimen.html:189) is a separate surface, homed as an fe-settings follow-up.
+User module prefs also shape the list: a hidden module has no nav command, a renamed one carries its custom label
+(Settings/Home are never hidden).
+
 ### Command sources (providers)
 Commands come from typed **providers**, never a hardcoded master list:
 - **Navigation commands are derived** from the UX-1 nav map (`nav/module-map.ts`) — one "Go to X" per navigable

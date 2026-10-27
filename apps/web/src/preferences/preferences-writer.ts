@@ -24,7 +24,7 @@ import {
 } from '@vida/core'
 import type { MergedNavPreferences, MergedPreferences } from '@vida/types'
 import { MODULE_MAP } from '../nav/module-map'
-import { MANAGEABLE_SURFACES } from '../settings/settings-model'
+import { MANAGED_SURFACE_KEYS } from '../nav/nav-prefs'
 import { TransactionLockTimeoutError } from '../db/write-lock'
 import { NAV_PREFS_KEY, PREFERENCES_FAMILY, PREFERENCES_GC_MS, PREFERENCES_STALE_MS, USER_PREFS_KEY } from './preferences-keys'
 import { applyNavPatch, applyUserPatch } from './preferences-view'
@@ -52,10 +52,11 @@ function classify(e: unknown): PreferencesWriteError {
   return new PreferencesWriteError('unknown', e)
 }
 
-/** Keys the nav show/hide map may carry (BR-PREF-6 membership, ② side): dock modules + the managed surfaces. */
+/** Keys the nav show/hide map may carry (BR-PREF-6 membership, ② side): dock modules + the managed surfaces. The write
+ *  side accepts every dock key (D13b); the READ side (`nav/nav-prefs` `isHideableModule`) is what keeps Settings/Home. */
 export const VISIBILITY_KEYS: ReadonlySet<string> = new Set([
   ...MODULE_MAP.filter((m) => m.placement === 'dock').map((m) => m.key),
-  ...MANAGEABLE_SURFACES.map((s) => s.key),
+  ...MANAGED_SURFACE_KEYS,
 ])
 
 type Row = MergedPreferences | MergedNavPreferences

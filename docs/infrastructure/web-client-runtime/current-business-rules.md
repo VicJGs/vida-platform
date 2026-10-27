@@ -109,6 +109,12 @@
   `refetch()` (`docs/core/architecture/state-conventions.md` §3). The writer gains `onConfirmed` (accepted read / successful
   batch → the theme hint) and `onFailed` (exactly once per failed batch → one revert toast, from `writer-instance.ts`,
   whatever surface is mounted). `[FACT: preferences/{preferences-queries,preferences-writer,writer-instance}.ts]`
+  **R5 (2026-10-27):** a third key `['preferences','commands']` (⌘K history, many rows; own stale/gc, `retry: 0`, not in
+  the boot seed). **Every `command_bar_history` write goes through `preferences/command-history.ts`** — one serial promise
+  chain for `record` + `pin` (both service ops read-then-write over a UNIQUE key; the chain is what keeps two first runs
+  to one row), best-effort `record` after `run()`, and a fire-and-forget invalidate after each op (`invalidateQueries`
+  awaits the refetch — chaining on it would stall later writes). One chain suffices: one tab owns the DB (R1-BR-8).
+  `[FACT: preferences/{command-history,preferences-queries,preferences-keys}.ts]`
 - **[FACT] BR-RT-TEARDOWN — worker teardown on non-cancelable lifecycle events only (R1).** `db/boot.ts`
   `registerTeardown`: `pagehide` + `persisted` → `terminate()` (a bfcached page must not hold the exclusive OPFS
   handles) · `pageshow` + `persisted` → reload · a normal unload → nothing (the browser discards the worker). Never

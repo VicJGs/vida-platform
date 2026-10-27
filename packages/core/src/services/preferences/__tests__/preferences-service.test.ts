@@ -275,14 +275,39 @@ describe('mod-preferences Slice 3 — command_bar_history service', () => {
     expect(hist.map((c) => c.command_key)).toEqual(['high', 'low'])
   })
 
-  // AC5 — pinCommand sets flag; no-op on unrecorded key (D-S3)
-  it('pins an existing command and no-ops on an unrecorded key', async () => {
+  // AC5 — pinCommand sets the flag on an existing row; with no label an unrecorded key is still a no-op (D-S3)
+  it('pins an existing command and no-ops on an unrecorded key without a label', async () => {
     await h.svc.recordCommand('open.tasks', 'Open Tasks')
     await h.svc.pinCommand('open.tasks', true)
     expect((await cmdRepo().findAll())[0].is_pinned).toBe(true)
-    // unrecorded key → no throw, no row created
+    // unrecorded key, no label → no throw, no row created
     await h.svc.pinCommand('never.seen', true)
+    await h.svc.pinCommand('never.seen', true, '   ') // an empty label creates nothing either
     expect(await cmdRepo().findAll()).toHaveLength(1)
+  })
+
+  // AC5b — preferences-rescope R5 (D-R5-3, A1): pinning a never-run command WITH its label creates the row, pinned,
+  // unused (use_count 0, last_used_at null) — so it leads the palette.
+  it('creates a pinned, unused row for an unrecorded key when given a label', async () => {
+    await h.svc.recordCommand('open.notes', 'Open Notes')
+    await h.svc.pinCommand('nav:/finance', true, 'Finance', 'navigation')
+    const row = (await cmdRepo().findAll()).find((r) => r.command_key === 'nav:/finance')
+    expect(row).toMatchObject({
+      command_label: 'Finance',
+      command_category: 'navigation',
+      use_count: 0,
+      last_used_at: null,
+      is_pinned: true,
+    })
+    expect((await h.svc.getCommandHistory())[0].command_key).toBe('nav:/finance')
+  })
+
+  it('unpinning an unrecorded key creates nothing; a present row keeps its label', async () => {
+    await h.svc.pinCommand('nav:/finance', false, 'Finance')
+    expect(await cmdRepo().findAll()).toHaveLength(0)
+    await h.svc.recordCommand('nav:/habits', 'Habits')
+    await h.svc.pinCommand('nav:/habits', true, 'Rituals')
+    expect((await cmdRepo().findAll())[0]).toMatchObject({ command_label: 'Habits', is_pinned: true, use_count: 1 })
   })
 
   // AC6 — empty command_key rejected (fail-loud)

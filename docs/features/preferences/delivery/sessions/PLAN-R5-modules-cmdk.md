@@ -6,7 +6,7 @@
 
 # PLAN-R5 — Modules + ⌘K
 
-> **Status:** rev 2, 2026-10-27 — **Approval 1 given (Victor), D-R5-1 = A + A1** (Alt+P by `e.code`; `pinCommand`
+> **Status:** **SHIPPED 2026-10-27** (Visual Gate PASS, Victor `visual-approved`; build record in §7). rev 2 — **Approval 1 given (Victor), D-R5-1 = A + A1** (Alt+P by `e.code`; `pinCommand`
 > creates the row when absent) **and D not taken** (the Settings pinned-commands row → an fe-settings follow-up edge at
 > R8). rev 1 went to an independent critique: REVISE, 4 blocking + 11 nits, all folded in (§7).
 > **Plane:** frontend + shared (+ one backend line if D-R5-1 picks A1). Both gates run: the **Verification Gate**
@@ -298,6 +298,64 @@ Edges filed at R8 (not built here):
 
 ## 7. Gate record
 - **Approval 1 (Victor, 2026-10-27):** D-R5-1 = **A + A1**; option D not taken (edge at R8).
+- **Approval 2 (Victor, 2026-10-27):** IMPL-PLAN rev 2 incl. D-R5-2 (dock unit-proven) + D-R5-3 (`pinCommand` label params).
+- **Build + gates (2026-10-27):**
+  - **TDD:** steps 1–10, each red → green, except `command-history`: its module was written in the same pass as its
+    first run, so it went straight to green; the mutations cover it.
+  - **Mutations:** **14/14 killed** (copy-restored; all 30 files verified byte-identical afterwards). #8 (record before
+    run) first SURVIVED: the chain makes the service call async either way. It is now killed by an order probe —
+    `record` must see `navigate` called and the bar closed.
+  - **Suites:**
+    - apps/web **126 files · 966/966**, one pass. R4 recorded 999 over two chunked runs; R5 deleted no test files.
+    - core preferences 27/27.
+    - tsc 0 (core · ui · web).
+    - eslint 0 errors (4 pre-existing warnings in `db/client.test.ts`).
+  - **Harness fixes (test-only):**
+    - Drain the history chain in `afterEach`: an in-flight record leaked into the next test's fake.
+    - Find the search status by text: the always-mounted announcer is a second `role=status`.
+  - **Live smoke (real OPFS, Brave):**
+    - two quick first runs → 1 row, `use_count 2`
+    - pin never-run → `use_count 0`, pinned
+    - `user_preferences` 1 row
+    - the `dashboard_layout.theme` sibling survives
+    - reload → order, hides and renames hold
+    - a forged `false` on Settings/Home is ignored + DEV-flagged
+    - a hidden route still opens
+  - **Visual Gate** (Modules pane + ⌘K × light/dark × 375/768/1440, 12 cells): axe 0 · text AA 4.86–5.76 · 0
+    page/region overflow · keyboard `:focus-visible` · ⌘K options ≥44 · the keyboard pin keeps the highlight ·
+    read-only ✓. Victor **`visual-approved`** 2026-10-27.
+  - **In-gate fixes:**
+    1. Modules-pane targets measured 36×20 / 40×32 → Switch `lg` (its documented touch size, `s1-switch.md`) + icon
+       Buttons `lg` 48 (decisions.md:138).
+    2. The pin hint moved from a footer to UNDER the input: the Dialog body scrolls, so a footer after ~22 rows is
+       never seen. It is still the combobox's `aria-describedby`.
+    3. Clear-then-set uses a 50 ms timeout (`ANNOUNCE_GAP_MS`), not rAF: jsdom rAF timing is unreliable, and
+       screen readers need a gap anyway.
+  - **Siblings recorded** (`docs/specs/fixes/ds-type-lineheight-unpaired/` items 5–6): Switch `lg` = 44×24 (a
+    primitive contract gap) · the Settings rail (40) and search (38) · the other panes' `md` switches.
+  - **Unattributed:** one console 404 in a reopened profile, not reproducible on a fresh one. Likely a worker request,
+    which page listeners can't see; R5 adds no fetched resource.
+  - **Pointer note:** after a pin re-ranks, the highlight follows the row under a stationary pointer (Chromium re-fires
+    hover). That is expected; id tracking is the keyboard guarantee.
+  - **Pre-ship /critique (independent): REVISE → folded → SHIP-ready.** The code was judged ship-quality; 5 blocking items
+    were doc/comment currency:
+    - `current-spec` status, mirror count 9 → 7, the third key, and an R5 surface section
+    - the "footer" wording in `command-bar.tsx` and `settings-copy.ts`
+    - the `registry.ts` header
+
+    Nits folded:
+    - A pending pin now settles only after its own latest write (per-id sequence). Three quick presses end pinned.
+    - A pin that settles after close is no longer announced on the next open (test red → green).
+    - The read-failure test now waits on the query's error state.
+    - The stale R4 line in `settings/CLAUDE.md` is fixed.
+    - The IMPL-PLAN "footer" now carries an as-built pointer.
+
+    Recorded for R8:
+    - No way to reset a custom name (fe-settings follow-up edge).
+    - `pinCommand`/`recordCommand` `findWhere` skips the soft-delete filter. Pre-existing pattern; nothing soft-deletes
+      history today.
+
+    After the fold: the touched suites pass 27 files / 260 tests, and App/integration/routes pass 18/18; tsc 0; eslint 0.
 - **rev 1 → rev 2 (2026-10-27):** independent critique REVISE, 4 blocking, all folded in:
   1. `pinCommand` is a no-op on a never-recorded key, so the announcement would lie → A1/A2 sub-choice + acceptance 7.
   2. Pin wasn't on the serial chain (it reads, then updates) → one chain for `record` + `pin` (R5-BR-6), mutation.

@@ -1,4 +1,4 @@
-// preferences-rescope R3 (LIF-247) — every user-facing string R3 adds, in ONE module (F17: the i18n platform unit
+// preferences-rescope R3/R5 (LIF-247) — every user-facing string this unit adds, in ONE module (F17: the i18n platform unit
 // externalizes from here mechanically). Plain, calm, honest, on-device (VOICE); `settings-copy.test.ts` runs `lintCopy`
 // over every entry. Imports nothing, so the writer can use it without a cycle.
 
@@ -18,4 +18,14 @@ export const SETTINGS_COPY = {
   retry: 'Retry',
   /** The skeleton's accessible name while the pane loads. */
   loadingLabel: 'Loading your settings',
+  // preferences-rescope R5 — ⌘K pinning (D-R5-1). Announced in the palette's live region after the write settles.
+  cmdPinned: (label: string) => `Pinned ${label}`,
+  cmdUnpinned: (label: string) => `Unpinned ${label}`,
+  cmdPinFailed: (label: string) => `Couldn’t pin ${label}. Try again.`,
+  cmdUnpinFailed: (label: string) => `Couldn’t unpin ${label}. Try again.`,
+  /** Appended to a pinned option's accessible name (the visible text stays the label — label-in-name holds). */
+  cmdPinnedSuffix: ', pinned',
+  /** The hint under the palette input, also the combobox's description (how screen-reader users learn the gesture). */
+  cmdHintMac: '⌥P pins the highlighted command · ↵ opens it',
+  cmdHintOther: 'Alt+P pins the highlighted command · Enter opens it',
 } as const

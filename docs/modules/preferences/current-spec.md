@@ -16,8 +16,9 @@ over the finished DB-4 #2 schema (`user_preferences`, `nav_preferences`, `comman
 - **② frontend** — shipped as **fe-settings** (LIF-193; renamed from `fe-preferences` LIF-134, decisions.md:302) +
   **fe-onboarding** guided setup (LIF-216), originally in-session only. The live close is **preferences-rescope**
   (LIF-247, M1.2.4): R2 made the seam live; **R3 persists Appearance** (theme · persona · Home arrangement) and seeds it
-  at boot; **R4 persists reduce motion and makes it gate all motion app-wide**; Modules (R5), Locale/Notifications (R6)
-  and the onboarding commit (R7) are still in-session. See "② Live seam" / "② Surface — R3" below and the as-built baseline.
+  at boot; **R4 persists reduce motion and makes it gate all motion app-wide**; **R5 persists Modules (show/hide ·
+  rename · Atlas/Sync), makes ⌘K honor them, and ranks ⌘K by the persisted history with pinning** (the dock reader is
+  unit-proven, D-R5-2); Locale/Notifications (R6) and the onboarding commit (R7) are still in-session. See "② Live seam" / "② Surface — R3" below and the as-built baseline.
 
 ## Exposed surface (SHIPPED — Slice 1)
 `createPreferencesService(opts: { db: DrizzleDb; deviceId: string }): PreferencesService` — factory-object, single
@@ -33,7 +34,9 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
 - `getNavPreferences(): Promise<MergedNavPreferences>` — read-or-DEFAULT nav config (Slice 2).
 - `updateNavPreferences(patch): Promise<MergedNavPreferences>` — Zod-validated create-if-absent-or-update (Slice 2).
 - `recordCommand(command_key, command_label, command_category?): Promise<void>` — upsert-by-key (PR-6/BR-P3) (Slice 3).
-- `pinCommand(command_key, pinned): Promise<void>` — set pin; no-op on unrecorded key (D-S3) (Slice 3).
+- `pinCommand(command_key, pinned, command_label?, command_category?): Promise<void>` — set the pin on a recorded key; an
+  unrecorded key with `pinned` + a non-empty label is CREATED pinned and unused (`use_count 0`, `last_used_at null`),
+  otherwise a no-op (preferences-rescope D-R5-3, revising Slice 3's D-S3). A present row's label is never rewritten.
 - `getCommandHistory(): Promise<CommandBarHistoryRow[]>` — pinned-then-frecency; returns the Drizzle Row (house
   convention for raw list readers; `_sync_status` union boundary → DB-11 interface reconcile) (Slice 3).
 
@@ -60,11 +63,21 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
 ## ② Live seam — preferences-rescope R2 (2026-10-22)
 - **Registered** in the composition root (`Services.preferences`, no deps). The ② read/write seam is
   `apps/web/src/preferences/` (see its CLAUDE.md): React Query over SQLite (`['preferences','user']` /
-  `['preferences','nav']`, 5 min / 30 min); one writer per table owning cache truth (`confirmed` + `pending`); serial +
+  `['preferences','nav']`, 5 min / 30 min; R5 adds `['preferences','commands']` — `commandHistoryQuery`, written only
+  through `command-history.ts`'s serial chain); one writer per table owning cache truth (`confirmed` + `pending`); serial +
   500 ms debounced writes; per-sub-key `dashboard_layout` + map merges; BR-PREF-6 key validation on the ② side.
 - **DEFAULTS divergence (F11):** `USER_PREFERENCES_DEFAULTS.feature_gamification = false` (GM-1 opt-in); the DDL keeps
   `DEFAULT 1` (unused — the service always writes full defaults on create).
-- Surfaces still bind the stores (hydrated from the view by `PreferencesBridge`) until their slices (R3/R5/R6).
+- Only Locale/Notifications still bind the mirror store (hydrated from the view by `PreferencesBridge`) — until R6.
+
+## ② Surface — preferences-rescope R5 (2026-10-27 · Visual Gate PASS, Victor `visual-approved`)
+- **Modules pane** reads the view, writes `update(viewPatch)` (map merges; rename trimmed ≤ 40; `lg` controls).
+- **Nav readers** (⌘K `deriveNavCommands`, the dock's `visibleDockGroups`) run the map through `nav/nav-prefs`
+  `applyNavPrefs` — hideable keys only (Settings/Home never hidden, EC-8 read side). The dock has no production mount yet
+  (shell-rescope; D-R5-2).
+- **⌘K history** — ranked by `commandHistoryQuery` (pinned → frecency; unranked while loading / on error); `record`
+  after `run()` and `pin` (Alt+P by `e.code`) on one serial chain; an always-mounted announcer; the hint under the input
+  is the combobox's description. Rules: `current-business-rules.md` "R5".
 
 ## ② Surface — preferences-rescope R3 (2026-10-26 · built, pending Visual Gate)
 - **Boot seed.** `App` holds Loading until `seedPreferences` settles (both keys, `retry: 0`, never rejects), so the theme
@@ -76,12 +89,13 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
   theme rows (+ a `persona` search entry). **R4:** the Reduce motion switch reads `view.reduceMotion` and writes
   `update({ reduceMotion })` → `nav_preferences.reduce_motion`; `theme-store.reduceMotion` follows the
   `['preferences','nav']` entry → `<UIProvider reduceMotion>` → `<html data-vida-motion>` (the 13 CSS gates) +
-  `ReducedMotionContext` (`useReducedMotion()` = context OR OS). The mirror store no longer holds it (9 fields).
+  `ReducedMotionContext` (`useReducedMotion()` = context OR OS). The mirror store no longer holds it (9 fields after R4;
+  **7 after R5**, which moved the module maps).
 - **Theme = derived.** `theme-store` follows the `['preferences','user']` cache (optimistic re-theme, reverts on a failed
   save) + a guided-setup preview layer cleared on every exit. The theme hint (`localStorage`, confirmed rows only) paints
   `<html>` pre-React (BR-RT-7 amendment).
 - **Home.** `useHomeArrangement` reads `usePreferences().view.arrangement`; `arrangement` left `preferences-store` and the
-  bridge (9 mirrored fields remain — R3 `arrangement`, R4 `reduceMotion` left).
+  bridge (7 mirrored fields remain — R3 `arrangement`, R4 `reduceMotion`, R5 the module maps left).
 - **Settings honest states (EC-7).** loading → static §3.1 skeleton (`aria-busy`) · error → every pane read-only + a calm
   `role="status"` line (first-read: "showing defaults"; later: "showing what was last loaded") + a `Retry` button
   (`usePreferences().retry` re-reads only the errored key(s)) · success → editable. One `SyncStatus` ("Saved on this
@@ -116,7 +130,9 @@ The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/C
 - **Readers.** `moduleVisibility`/`moduleNames`/`reduceMotion`/`dateFormat`/`timeFormat`/`weekStartsOn` have **0
   readers** outside settings/ + the stores; `useHomeArrangement` reads `arrangement` live in-session
   `[FACT: home/home-surface.tsx:25-27,74-76]` *(baseline; since R3 it reads the persisted
-  `usePreferences().view.arrangement`)*; `ModuleDock` is mounted nowhere (test-only import); `isFeatureEnabled`
+  `usePreferences().view.arrangement`)* *(R5: the module maps are read by the Modules pane, ⌘K and the dock reader via
+  `usePreferences().view` + `nav/nav-prefs` `applyNavPrefs`)*; `ModuleDock` is mounted nowhere (test-only import — still
+  true after R5; mounting is shell-rescope's, D-R5-2); `isFeatureEnabled`
   always `false` `[FACT: shell/feature-flags.ts:10-12]`; `stubShellPrefs` resolves `DEFAULT_PLACEMENT`
   `[FACT: shell/shell-prefs.ts:15-16]`; `usePersona()` = `?persona` dev override or `'neutral'`
   `[FACT: gamification/use-persona.ts:33-36]`.

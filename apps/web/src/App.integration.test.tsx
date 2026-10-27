@@ -92,7 +92,8 @@ describe('App shell — whole-shell integration (S5)', () => {
     const input = await screen.findByRole('combobox')
     fireEvent.change(input, { target: { value: 'anything' } })
     // The stub provider degrades to the announced search-unavailable status (references the DB-8 seam), not silence.
-    await waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/DB-8/))
+    // (R5: the palette also holds an always-mounted pin announcer — a second, empty role=status.)
+    await waitFor(() => expect(screen.getAllByRole('status').some((el) => /DB-8/.test(el.textContent ?? ''))).toBe(true))
   })
 
   it('the /graph route is lazy-split and degrades to the empty graph (BR-7 + BR-4-S5)', async () => {

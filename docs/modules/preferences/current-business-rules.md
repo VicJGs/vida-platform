@@ -37,7 +37,8 @@
 - **BR-PREF-10 (PR-6/BR-P3)** — `recordCommand` upserts by `command_key` (UNIQUE): re-record increments `use_count`
   + sets `last_used_at`, never duplicates. `getCommandHistory` orders pinned-first, then frecency (`use_count` desc,
   `last_used_at` desc, nulls last). `pinCommand` sets `is_pinned`; **no-op on an unrecorded key** (D-S3, docs silent).
-  `RecordCommandSchema` fail-loud on empty `command_key`. Returns the Drizzle `CommandBarHistoryRow` (raw-reader house
+  *(Revised by preferences-rescope D-R5-3: with a non-empty `command_label`, `pinCommand` on an unrecorded key creates the
+  row pinned + unused.)* `RecordCommandSchema` fail-loud on empty `command_key`. Returns the Drizzle `CommandBarHistoryRow` (raw-reader house
   convention; the `@vida/types` interface reconcile is DB-11). `[FACT: service.ts recordCommand/pinCommand/getCommandHistory]`
 
 ## ① backend complete
@@ -87,12 +88,30 @@ interface reconcile (created_at/updated_at) + the deferred `sessions` inline-rea
 - **R4-BR-7/8** theme swaps stay instant (the attribute survives a swap — its own effect, not `clearCodec`); the graph
   camera goes instant (1 ms durations, no inertia).
 
+## ② surface — enforced live (preferences-rescope R5, 2026-10-27 · Visual Gate PASS, Victor `visual-approved` 2026-10-27)
+- **R5-BR-1 (D11)** the Modules pane persists through `update(viewPatch)`: show/hide + Atlas/Sync → `module_visibility`,
+  rename → `dashboard_layout.moduleNames` (both map merges, IR-2; rename trimmed, ≤ 40 chars). Every row control speaks
+  the display name. Controls are `lg` (≥44 targets). The mirror no longer holds the module maps.
+- **R5-BR-2/3/4 (D12, EC-8 read side)** ONE nav filter, `nav/nav-prefs` `applyNavPrefs`, used by ⌘K
+  (`deriveNavCommands`) and the dock reader: hidden → out of the nav (the route still opens, PR-7), renamed → the custom
+  label (the command id / history key never changes). It acts ONLY on hideable keys, so Settings/Home/global surfaces
+  ignore a synced `false` or name; any other key is ignored + DEV-flagged once (business-rules.md:36).
+- **R5-BR-5 (F9)** ⌘K ranks by the persisted history (`commandHistoryQuery`, pinned → frecency), reactive to prefs and
+  history; loading / a read error → unranked, never an error (business-rules.md:34). Not in the boot seed.
+- **R5-BR-6** history writes ride ONE serial chain (`preferences/command-history.ts`): `record` after `run()`
+  (best-effort, logged, never thrown), `pin` resolves true/false; the history query is invalidated after each op
+  (fire-and-forget — never waits on a read). Fixes the read-then-create UNIQUE race (two first runs → one row).
+- **R5-BR-7/8 (D-R5-1)** Alt+P (by `e.code`) pins/unpins the active option; an always-mounted polite region announces
+  the settled result; pinned rows carry a mark + ", pinned" in the name; the hint under the input is the combobox's
+  description. The active option is tracked by command id (a re-rank never retargets Enter/Alt+P).
+- **Not live (D-R5-2):** the dock reader is unit-proven only — `ModuleDock` has no production mount (shell-rescope).
+
 ## ② surface — what is NOT enforced live yet (baseline 2026-10-21, preferences-rescope Step 0 — superseded in part by R2/R3)
 The service rules above hold **only at the service boundary**; the shipped ② surface never calls it (service not
 registered, `current-spec.md` "② Surface plane"). So live today: PR-2 (defaults) is met by store defaults, not
 `getMergedPreferences`; **PR-4 (persist + revert-on-error), PR-5 (theme from the DB value), PR-9 (local write +
 sync_queue) are unmet in the app**; the escape hatch (business-rules.md:28) is UI-enforced in `HIDEABLE_MODULES`
-(`settings/settings-model.ts:37-46`). preferences-rescope (LIF-247) closes these. **Still unmet after R4:** Modules (R5), Locale/Notifications (R6) persist; the onboarding commit (R7).
+(`settings/settings-model.ts:37-46`). preferences-rescope (LIF-247) closes these. **Still unmet after R5:** Locale/Notifications (R6) persist; the onboarding commit (R7).
 
 ## Delegated (never enforced here — other domains own them)
 PR-8 (account/data), PR-10 (PII stays in `user_profile`), PR-11 (`sms` never a channel), PR-12 (integration
