@@ -53,6 +53,7 @@ the shared completion write path (log/detailed/backfill), never on edit/delete. 
 | `getCompletionRate` | `(habitId, {from,to}) => Promise<CompletionRate>` | done ÷ scheduled; `rate:null` when scheduled==0; the M5 seam |
 | `getMoodTrend` | `(habitId, {from,to}) => Promise<MoodPoint[]>` | per-completion mood points (charts = ②) |
 | `getCalendar` | `(habitId, month) => Promise<CalendarDay[]>` | month completions (`done = count>=target`) |
+| `getCompletionGrid` | `({from,to}) => Promise<HabitGridRow[]>` | fe-calendar S6 (EC-7): every active habit (sort_order, id) × every day of the inclusive range → `{habit, days:{date, scheduled, count, done}[]}`; one ledger query; inverted/malformed range ⇒ zero days (BR-HB-35) |
 
 Service-local DTOs (`HabitDateRange`/`StreakSummary`/`CompletionRate`/`MoodPoint`/`CalendarDay`; `@vida/types`
 untouched — finance-S3 precedent). `HabitDateRange` (not `DateRange`) to avoid a `@vida/core` barrel collision with

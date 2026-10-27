@@ -6757,3 +6757,101 @@ Date: 2026-10-21 (correction, appended — earlier entries are not rewritten)
 - The 2026-10-21 entry's "mod-routines (… worktree exists, not started)" was wrong: mod-routines is at **S3/8 shipped** in
   its worktree (`1a61189`, unpushed). Found by the golive-replan triage; its task status is now `in-progress`.
 - golive-replan (EST→G3) merged as PR #152 (`d6c83e1`); G4 (Linear ledger) executing on branch `golive-g4`.
+
+---
+Date: 2026-10-21 (block 2026-10-19 → 2026-10-20)
+Task: mod-tasks (LIF-142 · #65) — close-out + repo bookkeeping
+Goal: Resolve the post-S9 "calls" from the docs, ship the Tasks ① backend, and leave main clean.
+Completed:
+  - **Grounding fix `1bf6caa`** — "open" = status ∉ {completed, cancelled} (shipped TERMINAL convention + projects intake G9): `ListTasksFilter.open` + provider key, Today/Board presets `{ open: true }`, the due lane skips cancelled; `todayYmd` → `utcDay` (UTC-day convention); date validity conforms to ADR-002 §2.8. tasks 98/98.
+  - **PR #145 merged (`e1fc356`)** after merging origin/main (41 commits, clean) into `mod-tasks`; vault 36/36 alone (F006); Actions did not run (billing). LIF-142 → Done; task archived; worktree + local branch removed; `.claude/docs/{api,decisions}.md` + known-failures F006.
+  - **PR #146 merged (`f296b5c`)** — every pending bookkeeping change in the main checkout (incl. other sessions' records + `docs/features/routines/delivery/`), merged with origin/main (6 bookkeeping conflicts resolved), `.playwright-mcp/` gitignored, stale pre-S1 `docs/features/tasks/delivery/` copy removed. Local main = origin/main, clean.
+In progress:
+  - Nothing. mod-tasks is closed.
+Decisions:
+  - A "flag for Victor's call" is drift like an interpretation — grep the shipped cross-module convention (same enum/concept across `services/*`) + intakes first, then fix (memory step 4c).
+  - With GitHub Actions blocked by billing, local gates (tsc · eslint · module suite · isolated core runs) are the verification of record, as for #142–#146.
+Next session:
+  - **`mod-routines`** (computed next head, M1.1.2 backend, 5 dependents): fresh worktree off origin/main (`.claude/worktrees/mod-routines`), Node 24 via `PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"`; read `docs/features/routines/delivery/{interpretation,slice-map,seam-contract}.md` + `docs/modules/tasks/current-spec.md` (the task-step driver seam: createTask/completeTask/getTask/listTasks + `open`).
+  - Owed elsewhere: `/task-complete fe-gamification` (PR #140 merged 2026-10-15, file still "in review"); fix GitHub Billing & plans so CI runs again.
+---
+Date: 2026-10-21 — golive-replan: the go-live drift triaged, planned, reshaped, closed
+Task: golive-replan (LIF-240) — Project Foundation / Delivery Structure Reconstruction (frontend-replan establishment model)
+Accomplished:
+  - **Triage (STRUCTURAL):** the entity stopped being the unit of delivery — FE units closed with stubbed data legs, ENTITY CLOSE never ran, go-lives were minted outside the structure (F1–F9).
+  - **EST + G0 (PR #152):** the **Entity Live Close** (ELC-1…9) ratified from the docs; Envision carried to the end (SKIP ≠ skip ECs; close re-verifies every pinned EC live); "go-live" retired → Entity Re-scope Flow. Repo propagation R1–R8.
+  - **G1 census:** 24 shipped units — 0/10 feature surfaces live, ~52 orphan deferrals, 22 diverged ECs, 4 missing core reads, offersEditor/TZ/excerpt defects.
+  - **G2/G3:** 7 entity-rescope debt units (M1.2.4) + 10 re-edged issues, coverage 226 rows 0/0/0; ONE canonical structure (143 issues); MVP-PATH refreshed.
+  - **G4 (PR #153):** Linear reshaped — M1.2.4, LIF-240…249, 361 edges 0 failed; LIF-237/238/239 re-homed; junk General milestones deleted. GAP-2 resolved (4/5 schema gates void).
+  - **T0–T5:** toolkit pending work parked (`wip/agy-engine-integration`, local); Entity Live Close pushed to the global toolkit (`db98770`).
+Decisions / lessons:
+  - Victor ×2: doc-answered questions are not decisions (G0 open-questions; mod-routines "fork" = later approval governs → reconcile).
+  - Tracker header traps (memory `tracker-sync-task-header-gotchas`): `in_progress`→Backlog · free-text Milestone mints junk milestones · `# Linear: pending` skips the orphan guard · archived files never sync.
+Next session:
+  - Debt routes after mod-routines: L1 preferences-rescope (LIF-247) · notes-rescope (LIF-245) · sessions-rescope (LIF-248).
+  - In flight elsewhere: fe-calendar (f8; S5 Visual Gate → merge main → S7 = ELC close) · mod-routines (9c; entity-rescope reconcile vs main's 9-slice map).
+  - Open follow-ups: toolkit `check_toolkit` 8 pre-existing registry errors · fix the parked agy-* hooks (security review) before resuming that branch.
+
+---
+Date: 2026-10-21 (addendum — after golive-replan close-out)
+- Close-out PR #154 merged (`865d341`); campaign worktree + branches removed. Toolkit `db98770` (Entity Live Close) is the global method.
+- **Wave L1 is READY now** (blocked only by data-plane ✅; `--next` lists mod-routines first by milestone order, not by dependency).
+  Agreed start: **preferences-rescope (LIF-247) first** (the hub — unblocks shell · gamification · journals · notifications);
+  notes-rescope (LIF-245) in parallel if review bandwidth allows; sessions-rescope (LIF-248) after preferences merges
+  (both append to `composition-root.ts`; mod-routines S3 also consumes the sessions service).
+- **Before starting:** the main checkout holds the 9c session's uncommitted edits (`session-log.md`, `TASKS.md`,
+  `archive/mod-tasks.md`) — commit them (from 9c, on a branch) and `git pull` main before any new worktree.
+- Each L1 unit: own worktree + own session · `/begin` → task `preferences-rescope` → Add Frontend Component /
+  `entity-rescope` → Step 0 baseline → Documentation Gate → … → close on ELC-1…9 (every pinned EC re-verified live).
+- In flight elsewhere: fe-calendar (session f8, S5 Visual Gate → merge main → S7 = ELC close) · mod-routines (session 9c,
+  entity-rescope reconcile vs main's 9-slice map, merge `0456c32`).
+
+---
+Date: 2026-10-21 (session opened 2026-10-20)
+Task: fe-calendar (LIF-203 · #19) — Global Calendar, Entity Delivery Flow ②, worktree `.claude/worktrees/fe-calendar` (branch `fe-calendar`, Node 24)
+Goal: S5 Living renderer + S6 first-consumer reads, each through the full §XXVI stack.
+Completed:
+  - **S5 `8f98082`** — `packages/ui/src/components/living-view.tsx` (V13, 26 tests + 8 stories) · `internal/living-format.ts` (4) · `internal/calendar-shared.ts` (SR_ONLY/DATE_KEY/parseLocalDate, rule-of-three; agenda/week/year refactored, 104/104 unchanged) · `apps/web/src/app/calendar/index.tsx` Living dispatch (`livingFixture`, `weekSpan`; placeholder removed — all six ranges live). Spec `docs/specs/components/ui-2-platform-views/v13-living-view.md`. Visual Gate PASS (Victor, 26 cells: text AA ≥4.52 · graphics ≥3.36 · 0 page overflow · axe 0). ui 666/666 · web 687/687.
+  - **Merge `5d23b48`** origin/main (51 behind; golive-replan ELC process.md) — conflicts additive (components.md · fe-calendar.md), kept both; post-merge rebuild + ui 666/666 · web 698/698 (ModuleDock flake 5/5 alone).
+  - **S6 `a3e36ca`** — `habits.getCompletionGrid(range)` (BR-HB-35, `packages/core/src/services/habits/{types,service,index}.ts` + 14 tests Sao_Paulo/Tokyo); seam-contract §C rewritten to the grounded verdicts + S7 derivation notes; habits current-spec/BR; slice-map S6 ✅; decisions S6 rows. habits 60/60 · core 2024/2025 (vault 1MB = pre-existing env timeout).
+In progress:
+  - Nothing mid-flight. Worktree clean at `a3e36ca`. NOT pushed, no PR.
+Decisions:
+  - **Victor: "There should be no calls for me, check the documentation beforehand and present me proper information."** S5's connector + flag colour were doc-resolved (envision:54 greybox DEFERRED thread ink; EC-13 + decisions:127 → the S2 MUST-tag token). Memory `decide-dont-ask…` extended.
+  - S6: EC-9 ratify sessions availability · EC-10 ratify listTasks (tasks current-spec:286-289) · EC-6 honest-null, no advertise (D-S6-DEV-1) → LIF-195 · no colour column anywhere (D-S6-DEV-2 → V13 `color?` in S7) · `off` ThreadState (D-S6-DEV-3, S7).
+  - Merge timing: the golive-replan relay ("merge before S6") was applied AFTER S5's Visual Gate, not mid-gate.
+Next session:
+  - **Start S7 — the ENTITY-CLOSE slice** (fresh session): `useCalendar(range, focusedDate, weekStartsOn)` ProviderRead fan-out + derivations (open time · slip · threads incl. `off` · honest budget) per seam §B + §C S7 notes; composition-root registration question GROUNDED at the PLAN gate (web-client-runtime BR-RT-COMPROOT · golive-replan process.md §3/§4 · R7 shared ViewProviderRegistry — don't assume); V13 amendments (`color?`, `off`); the absorbed primitives-refinement Calendar "Today" SR label; PLAN must cite process.md ELC-1…9; live Visual Gate on real OPFS re-verifying all 14 pinned ECs; prove the LIF-195 Linear edge at close.
+  - First actions: `cd .claude/worktrees/fe-calendar` · `nvm use 24` · `git fetch` + `git rev-list --left-right --count origin/main...HEAD` · `git log -1` = `a3e36ca`. GROUND FIRST (process.md, BR-RT-COMPROOT, composition-root.ts, provider-read.ts, seam §B/§C, slice-map S7, envision EC list, golive-replan absorption section of the task file). Present no "calls".
+---
+
+---
+Date: 2026-10-22 (session opened 2026-10-21)
+Task: fe-calendar (LIF-203 · #19) — S7, the Entity Live Close · worktree `.claude/worktrees/fe-calendar` (Node 24)
+Completed:
+  - **S7 `cc0e350` → PR #157 merged `98c6107`, LIF-203 → Done.** Live `useCalendar` fan-out over `composeServices`
+    (sessions/habits/tasks/purposes/relationships + 3 dueIn lanes); pure `calendar-derive`; fixtures → DEV `?sample`;
+    V13 `color?`/`off`; CalendarView `, today` + unfurl (EC-F3); today pulse + range fade (EC-F2). Live Visual Gate PASS
+    (Victor): real OPFS, 0 writes on reopen, 108 cells 0 overflow · axe 0 · AA.
+  - Linear: 8 `related` edges on LIF-203 + comments (LIF-203/248/246). **LIF-250 filed** (data-plane boot: dev open
+    intermittent, prod build never opens) in the plan (debt-plan §1) + order (structure #60, renumbered 1→144; g3-order L0′).
+  - Prior session's S5/S6 close-out records committed (branch `fe-calendar-closeout`).
+Decisions:
+  - D-S7-DEV-1…4 (DEV-4 Victor-approved) · Must = `obligation` · merge on local-green (Actions billing).
+  - Victor: "The sessions is not deferred, that is a drift" + "timezone … the user's location … already solved" → memory.
+Next session:
+  - LIF-250 `fix-data-plane-boot-open` first (#60, L0′), or Wave L1 (preferences-rescope) — Victor's pick at /begin.
+  - Watch: CI dark (Actions billing) · vault 1 MB F011 · the fe-calendar worktree can be removed.
+---
+
+---
+Date: 2026-10-25 (session opened 2026-10-22)
+Task: fix-data-plane-boot-open (LIF-250) — Bug Fix / Hotfix, worktree `.claude/worktrees/fix-data-plane-boot-open` (removed after merge)
+Accomplished:
+  - **PR #159 merged (`bc37310`)** — the boot no longer times out a live first-run `open`. Root cause FACT (reproduced dev 5/7 · prod 3/3 under load): a fixed 15 s client RPC timer wrapped `open` = module eval + 32 migrations (9–27 s). Fix: worker receipt ack + opened-once (BR-RT-D5) · receipt-only deadline for open/migrate (60 s), reads 15 s · single-flight adapter bootstrap · `getServices()` retries a rejected build · prod-build Playwright smoke + `e2e` script. 49/49 boots; Year on prod median 347 ms. LIF-250 → Done; task archived.
+Decisions / lessons:
+  - Victor ×2: "the main points … are already solved in the documentation … we are only creating the M1 without any layers of cryptography" → "Everything needs to be grounded in the /docs of the OS". Never argue an M1 fix from M3/M4; verify sub-agent claims on disk (one was false: "no PRAGMAs"). Memory `ground-every-deferral…` 8th repeat.
+  - A bug filing's hypotheses, numbers and acceptance are claims too — corrected 3 (prod "every load", wasm "never requested", the unsourced ≤1 s budget); acceptance item 3 dropped via §XXVIII.
+Next session:
+  - **notes-rescope (L1, LIF-245)** — Victor's pick. preferences-rescope (LIF-247) stays in flight in its own worktree; tell it the R3 `buildPromise` limit is fixed on main.
+  - Watch: CI dark (billing) · post-ack `open` unbounded (recorded trade-off).

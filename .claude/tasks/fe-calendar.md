@@ -1,5 +1,5 @@
 # Task: fe-calendar
-# Status: in-progress
+# Status: done
 # Linear: LIF-203
 # Profile: Add Frontend Component
 # Scenario: default
@@ -34,8 +34,60 @@ Scope this surface should build:
 This is why #19 was always "dueIn cross-module lane, ProviderRead" — the vision now makes it concrete. Pick up the
 vision doc FIRST when #19 is sequenced.
 
+## Progress (Entity Delivery Flow ② · add-frontend-component / default)
+- **Step 0 Baseline** ✅ — refreshed `docs/infrastructure/web-client-runtime/current-spec.md` (CODEC seams + #19).
+- **Step 1 Interpretation** ✅ — `delivery/interpretation.md` (11 deps · 6 needs · 10 IRs).
+- **Step 1.5 Envision Gate** ✅ PASS (Victor, 2026-10-10; v1→v2 OS-rebuild→v3 Month-consistency+Agenda-tidy). Checkpoints EC-1…EC-14 + EC-F1…F4 locked in `delivery/envision.md`; evidence in `mockups/greybox/*.png` (greybox deleted).
+- **Step 2 Decomposition Gate** ✅ APPROVED (Victor) — `delivery/slice-map.md` (7 slices) + `delivery/seam-contract.md`. Decisions D1–D5 resolved (Daypart · reuse buildDashboard · first-consumer reads · CalendarView hideHeader · drift=slip-flag).
+- **S1** ✅ PASS (2026-10-10) — `CalendarSurface` + `calendar-ui-store` + `/calendar` route + `CalendarView.hideHeader`. Full Visual Gate green (AA matrix, axe 0). Month uses a fixture (live data = S7).
+- **S2–S6** ✅ (Agenda · S1 chrome fix · Week/Day · Year · Living · `getCompletionGrid`) — see the Session Log.
+- **S7 — the ENTITY LIVE CLOSE** ✅ (2026-10-22, `cc0e350`, PR #157 merged `98c6107`, LIF-203 → **Done**). Live Visual Gate PASS (Victor). ELC-1…9 recorded in the slice-map S7 row.
+
+## Next session (resume here)
+- **UNIT COMPLETE — nothing to resume.** The Global Calendar closed live at S7 (PR #157). Borrowed legs light up as their owners close (LIF-195 · LIF-198 · LIF-179 · LIF-182 · LIF-178/188/190 · LIF-248 — `related` edges on LIF-203). Found + filed: **LIF-250** `fix-data-plane-boot-open` (structure #60, M1.2.4 L0′) — it also owns re-timing the Year range on a booting prod build.
+- Env: Node 24 for @vida/ui + @vida/web; Visual Gate = Brave via `/tmp/vg-calendar/s1-gate.mjs` pattern (poll past "Loading…" → complete onboarding → **client-side** nav `history.pushState`+popstate to the route, NOT page.goto which re-triggers onboarding; measure the digit TEXT node, not the wrapper div). Rebuild @vida/ui dist before an apps/web typecheck consuming new exports.
+- The slice-map ledger is the authoritative progress oracle (S1 ✅, S2–S7 ☐).
+
+## Build Steps (S7 — PLAN-S7-entity-close.md §5, Approval 2 2026-10-21)
+- [x] 1 V13 `color?` + `off` (R7)
+- [x] 2 CalendarView ", today" + controlled unfurl (G13/G14/R8)
+- [x] 3 `pulseKey` today pulse on 5 renderers (R9)
+- [x] 4 `@vida/ui` tsc · eslint · suite
+- [x] 5 `db/test-driver.ts` + `composeServices` + live-vault test
+- [x] 6 `calendar-derive.ts` (TZ-forced)
+- [x] 7 `calendarQueries` + `use-calendar.ts`
+- [x] 8 `calendar-sample.ts` (fixtures moved)
+- [x] 9 surface flip (useCalendar · unfurl · pulse · fade)
+- [x] 10 BR-6 node-env read-only test
+- [x] 11 repo tsc · eslint · suites sequential (Node 24)
+- [x] 12 /component-audit · code-review · /critique
+- [x] 13 live Visual Gate (Victor) — PASS 2026-10-22
+- [x] 14 ELC record · Linear · currency · commit · PR
 
 ## Session Log
+- 2026-10-21→22 (**S7 SHIPPED — the ENTITY LIVE CLOSE**) — `cc0e350` → **PR #157 merged `98c6107`** · LIF-203 → Done:
+  composition root `composeServices` (sessions · habits · tasks · purposes · relationships + 3 dueIn lanes) · `useCalendar`
+  over `calendarQueries` + pure `calendar-derive` (TZ-forced) · fixtures → DEV `?sample` · V13 `color?`/`off` · CalendarView
+  `, today` + controlled unfurl (EC-F3) · `pulseKey` + `RangeTransition` (EC-F2). Gates: PLAN g1 ×2 → Approval 1 (Victor
+  corrected 2 drifts: sessions placement is not deferred; TZ = the user's location) → preflight (G8 Must = `obligation`) →
+  g2 → Approval 2 → build (14 steps, mutation-checked) → g2 code review (15 folded; D-S7-DEV-4 Victor-approved) → /critique
+  SHIP → **live Visual Gate PASS (Victor)**: seed → reload → persists → reopen 0 writes; 108 cells 0 overflow · axe 0 · AA.
+  Linear: 8 `related` borrowed-leg edges + comments (LIF-203/248/246). **Filed LIF-250** (the data-plane boot defect) in the
+  plan (debt-plan §1) + the order (structure #60 — renumbered 1→144 — + g3-order L0′) + HARD-4 ← LIF-250.
+- 2026-10-21 (S5 + S6 SHIPPED, main merged) — branch `fe-calendar` (NOT pushed), HEAD **`a3e36ca`**:
+  **S5 `8f98082`** — `@vida/ui` **`LivingView`** (V13: ④ budget honest-null · ② threads + the vision's connector · 7
+  temporal day Cards via alive-hooks · today's ordered entries w/ open-time offer + slip flag; lanes degrade alone) +
+  `internal/calendar-shared.ts` (rule of three) + `living-format.ts` + surface Living dispatch (`livingFixture`, `weekSpan`)
+  — **all six ranges live** on fixtures. Visual Gate PASS (Victor, 26 cells, text AA ≥4.52, axe 0). **Victor: "there should
+  be no calls for me — check the documentation"** → connector (envision:54 deferred thread ink) + flag colour (EC-13 +
+  decisions:127 → S2 MUST token) were doc-resolved, D-S5-DEV-1 withdrawn. **Merge `5d23b48`** of origin/main (51 behind —
+  golive-replan ELC process.md landed; kept both sides of this file + components.md); post-merge ui 666/666 · web 698/698.
+  **S6 `a3e36ca`** — grounding first: 3 of 4 seam §C reads already answered (EC-9 RATIFY sessions `listAvailability`/
+  `listAvailabilityExceptions` · EC-10 RATIFY `listTasks({open})` per tasks current-spec:286-289 · EC-6 HONEST-NULL via
+  `listPurposes`, no advertise — D-S6-DEV-1, borrowed leg → LIF-195); BUILT `habits.getCompletionGrid` (BR-HB-35; 14 tests
+  Sao_Paulo + Tokyo; mutation killed). Found: purposes/habits have NO colour column → V13 `color?` (S7); rest day → `off`
+  ThreadState (S7). **NEXT: S7 — the ENTITY-CLOSE slice** (fresh session). Resume: cd worktree · nvm use 24 · `git log -1` =
+  `a3e36ca` · `git fetch` + ahead/behind (memory).
 - 2026-10-20 (S4 SHIPPED) — **`60dfde9`** on branch `fe-calendar` (NOT pushed): `@vida/ui` **`YearView`** (UI-2 · V12 — 12
   mini-months, has 4px@.75 / busy 6px dots, today ring, current month accented only when the ring exists, each mini-month a
   `role=table` with offset-aware `aria-colindex`) + pure `internal/year-layout.ts` (resolveYear · buildYear · indexDensity)
@@ -110,6 +162,14 @@ vision doc FIRST when #19 is sequenced.
 | S4 PLAN | Grounding pass — G11 heading role reversed (sibling convention) · focus-after-drill added (FOCUS_CONTRACT) · weight 500 | Victor: "ground it in the documentation" | ✅ PLAN revised → proceed |
 | S4 build | D-S4-DEV-2 CalendarView `tabIndex` (tsc rejected rest passthrough) · accname leading-space fix | build-caught | ✅ approved at the S4 gate |
 | S4 gate | 1-up at 375 = HARNESS missing `index.css` (UA body margin) — not the product | Visual Gate probe of the container chain | ✅ harness fixed, gate PASS |
+| S5 PLAN | Two "calls" presented for Approval 1 (connector · flag colour) were doc-resolved | Victor: "There should be no calls for me, check the documentation" | ✅ envision:54 + EC-13/decisions:127 → no deviation |
+| S5 build | sr suffix in a flex row dropped by browsers · lanes blanked by state · loading tab stop (axe) | g2 review + Visual Gate | ✅ inside inline Text · lanes independent · tabIndex 0 always |
+| S5→S6 | merge origin/main (golive-replan ELC process.md) relayed by the golive session | cross-session request (Victor's direction) | ✅ `5d23b48`, after S5's gate (not mid-gate) |
+| S6 PLAN | 3 of 4 seam §C reads already answered; colour has no source | grounding sweep + gate-1 (re-verified on disk) | ✅ one method built; D-S6-DEV-1/2/3 |
+| S7 PLAN | G1 D2 superseded by dueIn · Planner "orphan" + TZ "mismatch" were drift (Victor) · G8 Must/Can source found at preflight | grounding + 2 critique rounds + Victor at Approval 1 + preflight | ✅ PLAN rev 2.1 → Approvals 1/2 |
+| S7 build | g2 code review: 15 folded · finding 3 (Living past relationships) | independent review | ✅ 15 folded · D-S7-DEV-4 Victor-approved 2026-10-22 + built |
+| S7 gate | live boot timeout (F013) · Year render 1.5–2.6 s (dev) · prod build never opens | live Visual Gate | ✅ PASS; boot defect filed LIF-250 (owns the prod Year re-time) |
+| S7 close | CI dark (Actions billing — jobs never started) | PR #157 | ✅ merged on local-green, Victor-instructed |
 
 ## Failures This Session
 - F001 — Visual-Gate static-box probe matched nothing (Chrome snaps 1.5px border → 1px) — resolved (select by box size; memory).
@@ -122,3 +182,8 @@ vision doc FIRST when #19 is sequenced.
 - F008 — accessible name "January2026" (accname drops a leading space inside an sr-only span) — resolved (sibling text node; memory tamagui gotchas).
 - F009 — Visual Gate read 1-up at 375: harness skipped the app's `index.css` → UA body margin −16px — resolved (harness mirrors main.tsx CSS; memory visual-gate-playbook).
 - F010 — CalendarView first test timed out under load (5.5s) — env flake (F003 pattern), green alone.
+- F011 — `@vida/core` encryption/vault.test "handles large data (1 MB)" times out (≈28s vs 20s) even alone — PRE-EXISTING environment slowness (test untouched since DB-6, unrelated to S6); open, not touched.
+- F012 — ModuleDock timeout (5–6.5s) under full-suite load twice — env flake (memory: heavy Tamagui shell tests), 5/5 alone.
+- F013 — live gate: "DB worker RPC 1 (open) timed out after 15000ms" — INTERMITTENT on a page load in the automated Chromium, on the dev server AND the prod preview (first diagnosis "vite reload lock" was incomplete — it recurred without a reload). The app's own Retry opened the DB with the seeded data intact each time → consistent with the previous document's worker still holding the exclusive AccessHandlePoolVFS OPFS handles. Boot path untouched by S7 (empty diff on worker/web-driver/boot/vite.config). Also observed: the PROD build's worker never fetches its wasm within the window. PRE-EXISTING data-plane boot behaviour → surfaced to Victor for a home; not an S7 defect.
+- F014 — live gate: a sliced body.innerText probe read the seeded Month as "no chips" — a PROBE bug, not product (the screenshot showed every seeded item on its day); measure with the screenshot + per-element queries, not a truncated text dump (memory: measure, don't hypothesize).
+- F015 — final full-suite run: 10 ui + 10 web FIRST-test-of-file timeouts (5–19s) while the dev server, prod preview and Playwright browser ran concurrently — env load (the F003/F006/F012 class); every failed file green in isolation after stopping the servers (ui 168/168 · web 134/134).

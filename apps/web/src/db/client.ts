@@ -35,12 +35,15 @@ type WorkerRequest = RequestBody & { id: number }
 
 type OkResponse = { id: number; ok: true; rows?: Record<string, unknown>[]; result?: unknown }
 type ErrResponse = { id: number; ok: false; error: string }
+// LIF-250 — the worker's receipt ack for `open`/`migrate` (worker.ts). Never settles a request.
+type AckMessage = { id: number; ack: true }
 type WorkerResponse = OkResponse | ErrResponse
+type WorkerMessage = WorkerResponse | AckMessage
 
 /** The minimal structural surface AR-4 needs from a Worker (real or mocked). */
 export interface WorkerLike {
   postMessage(message: WorkerRequest): void
-  onmessage: ((event: MessageEvent<WorkerResponse>) => void) | null
+  onmessage: ((event: MessageEvent<WorkerMessage>) => void) | null
   onerror: ((event: unknown) => void) | null
   terminate(): void
 }
@@ -48,6 +51,14 @@ export interface WorkerLike {
 // A worker RPC that never replies (worker crash, WASM load failure, killed
 // worker) must fail loud, not hang the boot gate. 15s is generous vs a local read.
 const RPC_TIMEOUT_MS = 15_000
+
+// LIF-250 — `open`/`migrate` are NOT local reads: they run every pending migration (BR-RT-BOOT; 32 migrations ≈ 8 s on
+// a first run, measured 9–27 s end to end), so a fixed wall-clock budget failed a worker that was alive and succeeding.
+// For these ops the deadline only covers RECEIPT: the worker acks on receipt, and after the ack the request waits for
+// its reply (a crash still rejects via `onerror`, a failure via `{ ok: false }`). The ack can only be sent once the
+// worker module has evaluated (measured up to 12.2 s in dev under load), so the receipt watchdog sits well above that.
+const ACKED_OPS = new Set<RequestBody['op']>(['open', 'migrate'])
+const OPEN_ACK_TIMEOUT_MS = 60_000
 
 /** Spawn the real DB worker (Vite resolves the URL + bundles it as an ES worker). */
 function spawnDefaultWorker(): WorkerLike {
@@ -61,7 +72,7 @@ export class WorkerDbClient {
   private seq = 0
   private readonly pending = new Map<
     number,
-    { resolve: (r: WorkerResponse) => void; reject: (e: Error) => void }
+    { resolve: (r: WorkerResponse) => void; reject: (e: Error) => void; acknowledged: () => void }
   >()
 
   /** `worker` is injectable so tests supply a mock (jsdom has no `Worker`). */
@@ -74,6 +85,11 @@ export class WorkerDbClient {
       if (res == null || typeof res.id !== 'number') return
       const entry = this.pending.get(res.id)
       if (!entry) return
+      // A receipt ack proves the worker is alive and working; the request stays pending for its reply.
+      if ('ack' in res) {
+        entry.acknowledged()
+        return
+      }
       this.pending.delete(res.id)
       entry.resolve(res)
     }
@@ -88,20 +104,36 @@ export class WorkerDbClient {
 
   private request(body: RequestBody): Promise<WorkerResponse> {
     const id = ++this.seq
+    const acked = ACKED_OPS.has(body.op)
+    const budget = acked ? OPEN_ACK_TIMEOUT_MS : RPC_TIMEOUT_MS
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
+      let timer: ReturnType<typeof setTimeout> | undefined = setTimeout(() => {
         if (this.pending.delete(id)) {
-          reject(new Error(`DB worker RPC ${id} (${body.op}) timed out after ${RPC_TIMEOUT_MS}ms`))
+          reject(
+            new Error(
+              acked
+                ? `DB worker RPC ${id} (${body.op}) was not acknowledged within ${budget}ms`
+                : `DB worker RPC ${id} (${body.op}) timed out after ${budget}ms`,
+            ),
+          )
         }
-      }, RPC_TIMEOUT_MS)
+      }, budget)
+      const stopTimer = () => {
+        clearTimeout(timer)
+        timer = undefined
+      }
       this.pending.set(id, {
         resolve: (r) => {
-          clearTimeout(timer)
+          stopTimer()
           resolve(r)
         },
         reject: (e) => {
-          clearTimeout(timer)
+          stopTimer()
           reject(e)
+        },
+        // Only a receipt-deadline op stops its clock on the ack; any other op keeps its full budget.
+        acknowledged: () => {
+          if (acked) stopTimer()
         },
       })
       this.worker.postMessage({ ...body, id })

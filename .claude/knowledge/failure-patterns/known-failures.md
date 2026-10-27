@@ -60,10 +60,31 @@
 **Root cause:** ENVIRONMENTAL. CPU-bound Argon2id + 1 MB XChaCha tests are marginal on this Mac; they time out when the full suite runs concurrently or another session runs vitest (load avg 100–400). Not a code regression — appears on branches that touch no encryption file.
 **Fix:** check `uptime` + `pgrep -fl vitest`; re-run `npx vitest run src/encryption/__tests__/vault.test.ts` alone on an idle machine (expect 36/36, seen 2026-10-20). Record, don't patch. Candidate follow-up outside any module: mark the 1 MB test `slow`/raise its timeout.
 
-## F007 — `sync/__tests__/scaffold.test.ts` "no-consumer guard" times out under extreme load
+## F007 — the live app shows "Failed to open the local database: DB worker RPC 1 (open) timed out after 15000ms"
+**Symptom:** on a page load of the running app (dev server or a `vite preview` production build) the boot screen shows the
+timeout + Retry. Dev: intermittent, Retry opens the DB with data intact. Production build: every load; the worker chunk
+loads (200) but never requests its wasm. (fe-calendar S7 live gate, 2026-10-22.)
+**Root cause (FIXED by LIF-250, 2026-10-22):** the client armed one fixed 15 s RPC timer per request at `postMessage`, `open`
+included, while the worker's `open` = module evaluation + wasm + VFS + every pending migration (32 ≈ 8 s). A first-run open
+took 9–27 s and was failed while the worker was alive and succeeding (it replied ok=true at 16.8–26.9 s); Retry "worked"
+because the first open finished in the background. The filing's prod claims were wrong: prod timed out only under load, and the
+wasm was always requested. **Fix:** `open`/`migrate` are acked on receipt and their deadline covers receipt only
+(`OPEN_ACK_TIMEOUT_MS` 60 s); reads/writes keep 15 s; the worker opens once (BR-RT-D5); `getServices()` retries a rejected
+build. **If it ever reappears:** "not acknowledged within 60000ms" = the worker never started (module load); "timed out after
+15000ms" on a read = a hung worker. Guard: `pnpm --filter @vida/web test:e2e:prod` (prod-build boot smoke). Bug unit:
+`docs/specs/fixes/data-plane-boot-open/`.
+
+## F008 — a wave of FIRST-test-of-file timeouts across unrelated files in a full-suite run
+**Symptom:** 10+ files fail their first test at 5–19 s (Select, Tabs, Menu, AppShell, App first-run…) — files the change
+never touched.
+**Root cause:** ENVIRONMENTAL load — the run competed with a dev server, a `vite preview` and a Playwright browser
+(same class as the cold Tamagui load under concurrency).
+**Fix:** stop the servers/browsers you started, re-run ONLY the failed files in isolation; green there = flake, not a
+regression. Run full suites on a quiet machine, sequentially per package.
+
+## F009 — `sync/__tests__/scaffold.test.ts` "no-consumer guard" times out under extreme load
 **Symptom:** a full `@vida/core` run shows `AR-9 sync scaffold — no-consumer guard … no non-test module under packages/ or apps/` red (seen
 2026-10-22 at load average ~387, mod-routines S4).
 **Root cause:** ENVIRONMENTAL. The guard scans the repo tree, which is slow when the machine is saturated (the same load class as F006).
 **Fix:** check `uptime`; re-run `npx vitest run src/sync/__tests__/scaffold.test.ts` alone (expect 6/6). Record, don't patch. If it fails ALONE, it
 is real: something under packages/ or apps/ imports the sync scaffold.
-

@@ -172,7 +172,7 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   own `planned_blocks` in range (`deleted_at`-filtered; **routines S6: only `planned|scheduled`**, fulfilled/skipped intent isn't due, SS-8) ∪ live provider reads. **SS-7 degrade:** a throwing
   provider lane is caught + skipped; `dueIn` never throws. Empty registry + no blocks (M1.1) → `[]`.
 - **`registerDueProvider(provider)`** — the empty provider seam (N5); owning modules register lanes at their build.
-  **Registered lanes (first-consumer-pull, composition root = UI-3/M1.1+):** purposes (`registerPurposesDueProvider`,
+  **Registered lanes (first-consumer-pull — registered in the apps/web composition root `db/composition-root.ts` by fe-calendar #19 S7, 2026-10-22; the Calendar is the dueIn consumer):** purposes (`registerPurposesDueProvider`,
   target reviews) · relationships (`registerRelationshipsDueProvider`, reminders/nudges/groups) · **tasks
   (`registerTasksDueProvider`, S9 2026-10-19 — OPEN tasks whose `due_date` OR `scheduled_date` ∈ window, `hard_deadline`
   = due date; the Calendar sees tasks only through this lane)**. All three convert calendar dates at UTC midnight —
