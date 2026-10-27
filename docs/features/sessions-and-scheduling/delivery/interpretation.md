@@ -115,13 +115,18 @@
   (1) **canTouch(type, effect, target)** (contract.md:30) — today only structural; completed here with the catalogue's
   target typing (`log_time(task|project)`, ADR-004:61; `attach_pomodoro` needs an attachment) → denied =
   **`PermissionDenied(type, effect, target)`: rejected, logged, completion continues** (contract.md:64);
-  (2) **target vanished** (soft-deleted subject) → **no-op loudly, logged; not a failure, not retried** (sessions
-  BR:79-80); (3) **no handler registered** → `NoEffectHandler`, fail-loud, nothing written (ADR-004:91-92 "fails
+  (2) **target vanished** (soft-deleted subject, via IR-S19) → **`AttachmentTargetMissing(entity)`** (contract.md:65):
+  no-op loudly, logged, returned in `TransitionResult.missing[]`; not a failure, not retried (sessions BR:79-80); (3) **no handler registered** → `NoEffectHandler`, fail-loud, nothing written (ADR-004:91-92 "fails
   closed") — a wiring defect; caught by the IR-S17 preflight inside `transition()` before the FIRST effect (without it, a
   mid-loop throw would leave earlier effects applied — replay would dedupe them, but the preflight removes the case); (4) **handler throws** (A.3 validation or a write
   error) → that effect's tx rolls back (ledger + write) → **`EffectFailed(effect, target)`** (pomodoro contract:59),
   logged, the remaining effects still fire and the status still commits (pomodoro BR:78-79 "completion still records").
-  `TransitionResult` gains `denied[]` + `failed[]` of those typed errors (additive).
+  `TransitionResult` gains `denied[]` + `missing[]` + `failed[]` of those typed errors (additive); `fired` counts only
+  ledger-applied (non-projection) effects — today projections count (`effects/service.ts:35-36` → `lifecycle.ts:83-84`),
+  contradicting `lifecycle.ts:47` (R-42).
+  The EC-4 rail shows an unapplied effect as a calm muted per-item status (EC-6's "errored = calm muted message"),
+  never by flipping the whole log to `error` (`flow-session-view.tsx:270-272`) — an additive `status?` on `FlowEffect`
+  in `@vida/ui` (R-45).
   **"Flagged / retried"** without new storage (PD-11 derived-on-read): a session's UNAPPLIED effects =
   declared NON-PROJECTION effects (`def.effects` minus projection-class — they never write a row, ADR-004:84) ×
   canTouch-allowed targets that still EXIST (a vanished target is a loud no-op, not a failure — IR-S4(2)) minus ledger rows — derived by the L7 read and shown on the EC-4
@@ -171,6 +176,18 @@
   treats a soft-deleted spine as missing (pomodoro BR:63-64 "no-ops its pending effects loudly", never resurrects) →
   the run is finalized and the no-op logged. `restoreSession` restores `deleted_at` only — status unchanged
   (`service.ts:395-400`); a restored completed/skipped spine stays terminal.
+- **IR-S18 · The lifecycle has one door (reconciliation R-41).** contract.md:27-28: lifecycle = `transition(session_id,
+  event)`. So (a) on a `focus` spine, `completeSession`/`transitionSession(…,'complete'|'skip')` delegate to
+  `completeFocus`/`cancelFocus` on its run (a focus spine must never close with a `running` run — IR-S5 would read
+  `duration_seconds = null`); (b) `updateSession` stops accepting `status` (it bypasses the engine, `service.ts:366`) —
+  a status patch → `InvalidSessionInput('status')`. Callers of `updateSession` with `status`: verify none at PLAN.
+- **IR-S19 · Subject reads go through the ONE shared `ViewProviderRegistry` (R-43).** ADR-007 §3.4 (:78-82): cross-module
+  reads fan out to each entity's documented read API via the provider pattern (`foundation/views/provider-registry.ts:12`)
+  — never a per-module port or a table join. The sessions service takes an optional `providers?: ViewProviderRegistry`
+  dep; subject EXISTENCE (IR-S4(2), the unapplied set), the HUD/runtime TITLE (IR-S8, EC-5) and the effect `detail`
+  (IR-S11) resolve through it; the web root builds the registry once and registers the providers that exist (tasks,
+  notes pages, habits…). An unregistered type ⇒ title falls back to the bare kind label; existence unknown ⇒ treated as
+  existing (fail-open, never a false "missing").
 - **IR-S6 · HUD port ids.** The service's pause takes the `focus_sessions.id` (`service.ts:151`; HUD interpretation:30);
   the HUD emits the spine id (`session-hud.tsx:205`). The binding resolves it: pause = `getSession(id).extension.id →
   pauseFocus` (`service.ts:151`); resume = `startFocus({sessionId})` (resumes a paused run by spine id,
@@ -181,7 +198,9 @@
   single-active invariant on disk; only one open session per task, BR-TK-S4-2) — the HUD shows the most recent.
 - **IR-S8 · HUD title + kind.** `title` = the instance-level attached subject's title (flow-session
   interpretation.md:189-191; the `?sample` forms use entity titles, use-active-session.ts:83,103) resolved via the
-  owning registered service; fallback `humanizeSubType` (flow-source.ts:63-67). `kindLabel` = humanized `sub_type`.
+  shared provider registry (IR-S19); fallback = the kind label. `kindLabel` = the bare eyebrow ("Focus", "Work";
+  `session-hud/types.ts:34`) — NOT `humanizeSubType`, which appends " session" (`flow-source.ts:64-67`). The runtime
+  hero title (EC-5) uses the same subject title (flow interp:189-191), today `humanizeSubType` (`flow-source.ts:99`, R-46).
 - **IR-S9 · HUD timing without the store.** Countdown is NOT reconstructable from persistence (no interval start
   column; HUD seam-contract:64-67; findings.md:21-26 forbids adding persistence) → with no client clock the HUD serves
   `elapsed`. For a focus row, elapsed = PD-5 real focus time (`now − started_at − total_pause_seconds`), and a `paused`
@@ -205,8 +224,9 @@
   HUD serves `elapsed` (HUD seam-contract:65-66) — 'persists' applies to the session rows, not the ephemeral clock.
   fe-sessions' timer driver becomes
   the store's production writer and its ENTITY CLOSE re-verifies them (ELC-9).
-- **IR-S11 · Applied-effects read re-derives the engine's ids.** Extract the event-id builder from `lifecycle.ts:68-81`
-  into one shared function; the read computes the ids for `def.effects × resolveTargets(session)` with each
+- **IR-S11 · Applied-effects read re-derives the engine's ids.** The id fn is already shared (`deriveEffectEventId`,
+  `effects/event-id.ts:20-26`); extract the event-INPUT construction (`lifecycle.ts:72-81`, incl. the self-fallback) into
+  one shared function; the read computes the ids for `def.effects × resolveTargets(session)` with each
   effect's class keying (IR-S16); a canTouch-denied self-target fallback has no row and is NOT an error and selects `applied_effects` by id, ordered `applied_at` ASC (EC-4 "chronological").
   `detail` = the resolved target title (+ applied time). Projection effects never appear (no row, by design,
   ADR-004:84); the device-local ledger is moot in M1 (no sync, ADR-017). With IR-S16 the `log_time`/`attach_pomodoro` ids are
@@ -252,7 +272,8 @@ binding precedent) · `award_xp` → Gamification (FACT) · handler registration
 | Flow EC-1, EC-3 (multi-stage) | — | single-stage only (O7, driving modules) | per driving module |
 | Flow EC-2 (attach / mark-done / proof) | L14 | mark-done ✅ live; attach when a `deliverable_note` target exists; **proof + target-less attach = recorded DIVERGENCE pending the fe-sessions close** (§2.5 rule 3; IR-S14) | ✅ with the borrowed capture flow |
 | Flow EC-4 (effect rail) | L7/L13 | ✅ live (completed session with effects) | ✅ |
-| Flow EC-5…9, EC-11 | L13 | ✅ live | ✅ |
+| Flow EC-5 (title-hero + `SyncStatus` + `⋯`) | L13 + R-46 | ❌ narrowed at its gate → rebuilt to the pinned EC, then ✅ live | ✅ |
+| Flow EC-6…9, EC-11 | L13 | ✅ live | ✅ |
 | Flow EC-10 (advance feel) | L14 | mark-done feel ✅ live | ✅ |
 
 ## 7. Sources
