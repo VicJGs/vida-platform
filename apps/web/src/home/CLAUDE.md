@@ -16,7 +16,10 @@ entities (ADR-008 render-targets) — it owns no block body and no live data (al
   real editor. `useJournalEntry` (`use-journal-entry.ts`) reads today's `type:'journal'` page via
   `NotesService.ensureJournal(todayLocalYmd())` (NP-8 get-or-create, IN-SERVICE — mirrors `ensureEntityNote`); on
   `success` it mounts the reused `../notes/note-editor-body` `<VidaEditor chrome='bare'>` + `useNoteContent` persistence
-  (debounced `writePageContent`, mount-echo deduped incl. blank pages — BR-NEU-5). `today` is a **local** `YYYY-MM-DD`
+  (debounced `writePageContent`, mount-echo deduped incl. blank pages — BR-NEU-5). Data safety (notes-rescope R0): the
+  body seeds from the latest-body overlay (an edit made on `/notes/$id` a moment ago survives the route swap — B-53),
+  the read waits for in-flight writes (`readAfterWrites(['journal:<date>'])`), and an unreadable body shows the EC-33
+  read-only notice. Rules: `docs/modules/notes/current-business-rules.md` BR-R0-*. `today` is a **local** `YYYY-MM-DD`
   (never `toISOString()`/UTC). Shell owns the terminal frames (loading/empty/error); `editorState?` is a test/gate override.
   Inline integration-block node-views (`/dailySummary`, …) remain the deferred #31 seam INSIDE the editor; multi-device
   CRDT is M4. The **Dashboard** rail stays the honest stub (no journal providers registered — they land with each entity's live close / HARD-1 providers).

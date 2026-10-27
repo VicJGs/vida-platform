@@ -1,12 +1,8 @@
 // ============================================================================
-// useNoteEntity — the note-ENTITY-page DATA seam (fe-notes-and-pages #27, S2).
-// The sibling of `useNotesRows` (S1), same stub discipline: M1 DEFAULT = empty
-// (honest — no live `NotesService` composition root for apps/web yet; a live
-// `getPage(id)` would throw on the worker-RPC Drizzle `values` seam — S1 D2 / F3).
-//
-// Live swap (zero signature change):
-//   const { data } = useQuery({ queryKey: ['pages', id], queryFn: () => notes.getPage(id) })
-//   return data ? { page: toNoteEntity(data), state: 'success' } : { page: null, state: 'loading' }
+// useNoteEntity — the note-ENTITY-page DATA seam (fe-notes-and-pages #27, S2; live since the notes go-live).
+// React Query over `NotesService.getPage(id)` → `toNoteEntity`. The read waits for any in-flight body write of
+// this page (notes-rescope R0 — the read-after-write barrier, `body-writes.ts`), so a fresh mount never seeds the
+// editor from a pre-write row.
 //
 // A DEV-ONLY sample (NOT shipped live data) renders a populated page for the blocking
 // Visual Gate — gated behind `?sample` in DEV only, off in prod.
@@ -14,6 +10,8 @@
 import type { EditorDocument, PageType } from '@vida/types'
 import { useQuery } from '@tanstack/react-query'
 import { getServices } from '../db/composition-root'
+import { readAfterWrites } from './body-writes'
+import { retryState, throwIfReadErrorArmed } from './read-error'
 import { toNoteEntity } from './live-mappers'
 
 /** The fields the note-entity page needs (a `pages`-row projection; live mapping at the data-plane slice). */
@@ -23,6 +21,10 @@ export interface NoteEntityData {
   title: string
   /** The stored editor document; `null` = an untouched/blank page. Written via the Yjs/editor binding, never patched (IR-7). */
   content: EditorDocument | null
+  /** notes-rescope R0 (BR-R0-4): how the stored body parsed. `malformed` ⇒ never edited, never written (EC-33). */
+  contentStatus: 'ok' | 'absent' | 'malformed'
+  /** The stored `pages.content` string as-is — the lossless source for "Export a copy" (EC-33). */
+  rawContent: string | null
   favorite: boolean
   archived: boolean
   /** A relative "edited" label (live: formatted from `updated_at`). */
@@ -40,6 +42,10 @@ export type NoteEntityState = 'loading' | 'empty' | 'error' | 'success'
 export interface NoteEntityResult {
   page: NoteEntityData | null
   state: NoteEntityState
+  /** Re-read after an error (notes-rescope R1, BR-R1-8). */
+  retry: () => void
+  /** A Retry is in flight — the surface stays on its error branch with a busy button (R-6). */
+  retrying: boolean
 }
 
 // id→type mirrors the S1 collection sample so `/notes/2?sample` is a journal, `/notes/4` a milestone, etc.
@@ -107,6 +113,8 @@ function sampleFor(id: string): NoteEntityData {
     type,
     title,
     content: sampleDoc(title),
+    contentStatus: 'ok',
+    rawContent: JSON.stringify(sampleDoc(title)),
     favorite: id === '1',
     archived: false,
     updated: '2h ago',
@@ -128,13 +136,19 @@ function devSampleActive(): boolean {
 /** Live: React Query over `NotesService.getPage(id)` (zero signature change) + the DEV/gate sample. */
 export function useNoteEntity(id: string): NoteEntityResult {
   const sample = devSampleActive()
-  const { data, isLoading, isError } = useQuery({
+  const q = useQuery({
     queryKey: ['pages', id],
-    queryFn: async () => (await getServices()).notes.getPage(id),
+    queryFn: () => {
+      throwIfReadErrorArmed()
+      return readAfterWrites([`page:${id}`], async () => (await getServices()).notes.getPage(id))
+    },
     enabled: !sample && Boolean(id),
   })
-  if (sample) return { page: sampleFor(id), state: 'success' }
-  if (isError) return { page: null, state: 'error' }
-  if (isLoading) return { page: null, state: 'loading' }
-  return data ? { page: toNoteEntity(data), state: 'success' } : { page: null, state: 'empty' }
+  const { error, retrying, retry } = retryState(q)
+  if (sample) return { page: sampleFor(id), state: 'success', retry, retrying: false }
+  if (error) return { page: null, state: 'error', retry, retrying }
+  if (q.isLoading) return { page: null, state: 'loading', retry, retrying }
+  return q.data
+    ? { page: toNoteEntity(q.data), state: 'success', retry, retrying }
+    : { page: null, state: 'empty', retry, retrying }
 }

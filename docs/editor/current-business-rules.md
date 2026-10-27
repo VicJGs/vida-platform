@@ -33,6 +33,18 @@
 - **BR-E1-5 · Base tokens, no raw values, no sub-theme.** Chrome uses DS base semantic tokens; a `light_/dark_Editor`
   sub-theme is registered ONLY if bespoke color keys are needed — E1 needs none, so `tamagui.config.ts` is untouched
   (the UI-2 conditional-sub-theme rule). `[FACT: editor.tsx EditorFrame; tamagui.config.ts unchanged]`
+- **BR-E1-6 · `chrome` is additive + back-compat.** Omitted ⇒ `'framed'`; `'bare'` only removes the box (bg/border/
+  radius/padding) and never the `.vida-editor-frame` hook, so focus ring + block CSS hold in both. Content text binds
+  `--colorTextPrimary` on every mount (EC-7 — readable in dark). `[FACT: editor.tsx:80-106; editor-styles.ts:40-45;
+  editor.test.tsx chrome cases]`
+- **BR-E1-7 · The content check is always on; an invalid mount never emits.** (notes-rescope R0 BR-R0-3.) Without it,
+  TipTap's lenient load swaps a schema-rejected doc for an EMPTY doc and the editor emits it, so the host overwrote the
+  stored body (C-46). Now: `onContentError` → read-only, toolbar hidden, `onUpdate` silenced, optional
+  `onInvalidContent(error)`. The host owns the notice. `setContent(invalid)` throws and leaves a healthy mount intact
+  (pinned). Known limits: undeclared ATTRS on known nodes are still dropped silently by ProseMirror (`computeAttrs`)
+  and not detected; a host that passes no `onInvalidContent` (the unrouted `CanvasEditor`, retired in R10) shows an
+  invalid doc as a silent empty read-only editor — not a loss, but no notice. `[FACT: editor.tsx:139-205; editor.test.tsx content-check
+  cases + the 6b schema table]`
 
 ## Standard blocks (E2)
 - **BR-E2-1 · Implement the enum, not the prose.** The block set is derived from `STANDARD_BLOCK_TYPE` (11) minus what

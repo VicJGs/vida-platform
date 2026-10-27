@@ -6,7 +6,8 @@
 // ============================================================================
 import { Text, View } from '@tamagui/core'
 import { Clock, Hash, type LucideIcon } from 'lucide-react'
-import { Icon, Row, typeIcon, typeLabel } from './note-chrome'
+import { Icon, Row, typeLabel } from './note-chrome'
+import { pageIconFor } from './page-icons'
 import { CoverBanner, MetadataControls } from './page-metadata'
 import type { NoteEntityData } from './use-note-entity'
 
@@ -41,7 +42,7 @@ export function PropertyRows({ page }: NotionHeaderProps) {
 
 /** The merged-mode page head: cover banner (if set) · icon badge · metadata controls · property rows (EC-7/EC-19/EC-22). */
 export function NotionHeader({ page }: NotionHeaderProps) {
-  const PageIcon = typeIcon(page.type)
+  const PageIcon = pageIconFor(page) // the chosen icon, else the type icon (R3, B-38)
   return (
     <View gap="$12">
       <CoverBanner cover={page.cover} />

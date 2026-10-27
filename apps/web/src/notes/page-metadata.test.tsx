@@ -1,11 +1,17 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UIProvider } from '@vida/ui'
 import { CoverBanner, MetadataControlsView } from './page-metadata'
 
 afterEach(cleanup)
-const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
+const renderUI = (ui: React.ReactNode) =>
+  render(
+    <UIProvider>
+      <QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>
+    </UIProvider>,
+  )
 const noop = () => {}
 
 const baseProps = {
@@ -58,13 +64,28 @@ describe('MetadataControlsView (S6 — EC-7)', () => {
   })
 })
 
-describe('CoverBanner (S6 — merged placeholder, D-S6-5)', () => {
+describe('CoverBanner (R3 G10 — the real cover strip)', () => {
   it('renders nothing when cover is null', () => {
     const { container } = renderUI(<CoverBanner cover={null} />)
     expect(container.querySelector('[aria-label="Cover"]')).toBeNull()
   })
-  it('renders a placeholder strip when cover is set', () => {
+  it('a value that is not a URL or attachment:<id> renders the neutral placeholder', () => {
     const { getByRole } = renderUI(<CoverBanner cover="cover-1" />)
-    expect(getByRole('img', { name: 'Cover' })).not.toBeNull()
+    expect(getByRole('img', { name: 'Cover unavailable' })).not.toBeNull()
+  })
+  it('a URL cover renders the image', () => {
+    const { container } = renderUI(<CoverBanner cover="https://e.com/c.png" />)
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('https://e.com/c.png')
   })
 })
+
+describe('R3 G16 — controls match the greybox: icon + visible label, greybox order, name = label', () => {
+  it('shows the labels as text, in order Change icon · Change cover · Favorite · Archive', () => {
+    const { getAllByRole } = renderUI(<MetadataControlsView {...baseProps} icon="star" cover="https://e.com/c.png" />)
+    const group = getAllByRole('group', { name: 'Page metadata' })[0]!
+    const labels = Array.from(group.querySelectorAll('[role="button"]')).map((b) => b.textContent)
+    expect(labels).toEqual(['Change icon', 'Change cover', 'Favorite', 'Archive'])
+    for (const b of Array.from(group.querySelectorAll('[role="button"]'))) expect(b.getAttribute('aria-label')).toBeNull()
+  })
+})
+

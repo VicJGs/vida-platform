@@ -7,6 +7,7 @@
 **Tags:** architecture · data model · extensibility · personalization
 **Builds on:** Knowledge KN-A / structure-data (open registry retiring `resource_type` CHECK — the precedent) · Notes & Pages (current owner of `tags`/`page_tags`/`entity_links`, becomes a consumer) · [ADR-002](ADR-002-data-model.md) §2.7 (polymorphic `entity_type`/`entity_id` pattern)
 **Amends:** ADR-002 — retires the page-only `tags` + `page_tags` model for a universal `entity_tags`; opens the `entity_links` `entity_type` CHECK enum to a registry; adds the `spaces` and `entity_tags` tables.
+**Amended:** 2026-10-27 (notes-rescope R2, LIF-245) — added **§3.6** (per-instance facet-mode memory): the merged⇄tabbed choice of an entity page is remembered per instance in the device-local `app_state` (`entity_mode:<type>:<id>`), seeded with a per-type default while it loads. No schema change.
 
 ---
 
@@ -125,6 +126,16 @@ build-phase ADR-002 amendment (recorded in the durable owed-tables ledger, **ADR
 descriptions are user content and encrypt (EN-2). This tier introduces *no* server-visible plaintext and *no*
 sharing (SU-1 holds). The full personalization-within-ZK invariant is written into `core/business-rules.md` at
 Accept and enforced for user-authored capabilities by ADR-010. `[FACT: intake SP8/SP9-CONFIRMED]`
+
+**3.6 Per-instance facet-mode memory (Amendment · 2026-10-27 · notes-rescope R2).** An entity page's merged ⇄ tabbed
+composition (EntityView, EC-4/EC-5) is a **per-type default, remembered per instance**. Storage: the device-local
+`app_state` KV (ADR-002 §5.0 — not synced), key `entity_mode:<entityType>:<entityId>`, value `merged | tabbed`; no new
+schema, not a Preferences field (Preferences are singletons). The page does not wait for it: an **async read, seeded with
+the per-type default while loading**, then the remembered mode applies (a toggle made meanwhile wins). Per-type defaults
+are registered by each page type's owning unit (the Overview-slot RIDE pattern); unregistered → tabbed. A soft delete
+keeps the row (restore brings the layout back); **each entity's hard-delete owner removes its own key inside its purge
+transaction**. Memory is per device in M1; cross-device memory needs a synced store (M4). `[FACT: notes-rescope
+PLAN-R2-mode-memory.md G1–G12; slice-map R2]`
 
 **What this decision does NOT do:** it locks that the unify ⇄ separate **resolution** exists and is user-owned, but
 does not specify the resolution layer's internals or its surface (build-time design-pass); it does not build views,

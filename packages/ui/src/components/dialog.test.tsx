@@ -319,3 +319,42 @@ describe('Dialog — inert background + motion base', () => {
     spy.mockRestore()
   })
 })
+
+describe('Dialog — focus returns to the trigger AFTER the background is un-inerted (notes-rescope R3 DEV-R3-2)', () => {
+  it('restores focus to the trigger with no `inert` ancestor at the moment of focus (a browser ignores focus() inside inert)', () => {
+    function Harness() {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Open it</button>
+          <Dialog open={open} onOpenChange={setOpen} title="T">
+            <button>Inside</button>
+          </Dialog>
+        </>
+      )
+    }
+    const { getByText } = render(
+      <UIProvider>
+        <Harness />
+      </UIProvider>,
+    )
+    const trigger = getByText('Open it')
+    trigger.focus()
+    fireEvent.click(trigger)
+    const calls: Array<{ el: Element; inertAncestor: boolean }> = []
+    const orig = HTMLElement.prototype.focus
+    HTMLElement.prototype.focus = function (this: HTMLElement, ...a: Parameters<HTMLElement['focus']>) {
+      calls.push({ el: this, inertAncestor: this.closest('[inert]') != null })
+      return orig.apply(this, a)
+    }
+    try {
+      fireEvent.keyDown(getByText('Inside'), { key: 'Escape' })
+    } finally {
+      HTMLElement.prototype.focus = orig
+    }
+    const toTrigger = calls.filter((c) => c.el === trigger)
+    expect(toTrigger.length).toBeGreaterThan(0)
+    expect(toTrigger.every((c) => !c.inertAncestor)).toBe(true)
+    expect(document.activeElement).toBe(trigger)
+  })
+})

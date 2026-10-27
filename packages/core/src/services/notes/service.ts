@@ -21,8 +21,11 @@ import {
 } from '../../db/schema/notes'
 import { entityTags, type EntityLinkRow, type EntityTagRow } from '../../db/schema/foundation/spaces'
 import { createPageSchema, updatePageSchema, newAttachmentSchema } from '../../validators/note'
+import { isEditorDocument } from '../../validators/editor'
 import {
+  InvalidPageContentError,
   JournalExistsError,
+  PageNotFoundError,
   UnregisteredEntityTypeError,
   type CreatePageInput,
   type EntityNoteSeed,
@@ -37,10 +40,12 @@ import {
  * a minimal TipTap `EditorDocument` (heading = title; a paragraph of the remaining fields), leading
  * fields in a FIXED order then the rest via `Object.keys().sort()` — NOT insertion order, which isn't
  * guaranteed across callers. No `Date.now()`/random → same seed ⇒ byte-identical string (BR-S2-2).
+ * Editor-valid by construction (BR-R0-4b): an empty title emits no heading (ProseMirror rejects empty text nodes) and
+ * an otherwise-empty seed emits one empty paragraph (the `doc` node is `block+`) — else the editor would refuse to open it.
  */
 function seedContent(seed: EntityNoteSeed): string {
   const content: EditorNode[] = []
-  if (seed.title != null) {
+  if (seed.title != null && seed.title !== '') {
     content.push({ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: seed.title }] })
   }
   const LEADING = ['type', 'status']
@@ -53,6 +58,7 @@ function seedContent(seed: EntityNoteSeed): string {
   if (lines.length > 0) {
     content.push({ type: 'paragraph', content: [{ type: 'text', text: lines.join(' · ') }] })
   }
+  if (content.length === 0) content.push({ type: 'paragraph' })
   const doc: EditorDocument = { type: 'doc', content }
   return JSON.stringify(doc)
 }
@@ -95,6 +101,17 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
     }
   }
 
+  /**
+   * BR-R0-5 — every write/create against a page requires it LIVE: `findById` already filters `deleted_at`, so a deleted
+   * page is "not found" (IR-R3). Notes-scoped on purpose: DB-6 serves every module, and R5's restore must still update
+   * a deleted row. Check-then-write is not one transaction — accepted for single-user-local (the ensureJournal convention).
+   */
+  async function requireLivePage(id: string): Promise<PageRow> {
+    const page = await pageRepo.findById(id)
+    if (!page) throw new PageNotFoundError(id)
+    return page
+  }
+
   async function getPageByJournalDate(date: string): Promise<PageRow | null> {
     const rows = await pageRepo.findWhere(
       allOf(eq(pages.journal_date, date), eq(pages.type, 'journal'), isNull(pages.deleted_at)),
@@ -129,14 +146,19 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
 
     updatePage: async (id: string, patch: UpdatePageInput): Promise<PageRow> => {
       const parsed = updatePageSchema.parse(patch)
+      await requireLivePage(id)
       return pageRepo.update(id, parsed)
     },
 
     // IR-7: the editor body is written through its OWN path, never the updatePage LWW metadata patch, so the
     // eventual M4 CRDT merge is not clobbered. M1 = a local write (serialized TipTap doc → the text column);
     // M4 swaps the internals to the CRDT entry point — this signature is stable. (interpretation.md:159)
-    writePageContent: async (id: string, content: EditorDocument): Promise<PageRow> =>
-      pageRepo.update(id, { content: JSON.stringify(content) }),
+    // BR-R0-6: the shape is checked first so a bad body never costs a read; BR-R0-5: then the page must be live.
+    writePageContent: async (id: string, content: EditorDocument): Promise<PageRow> => {
+      if (!isEditorDocument(content)) throw new InvalidPageContentError(id)
+      await requireLivePage(id)
+      return pageRepo.update(id, { content: JSON.stringify(content) })
+    },
 
     softDeletePage: async (id: string): Promise<void> => {
       await pageRepo.delete(id)
@@ -195,6 +217,7 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
 
     addAttachment: async (pageId: string, file: NewAttachment): Promise<NoteAttachmentRow> => {
       const f = newAttachmentSchema.parse(file)
+      await requireLivePage(pageId) // BR-R0-5 — no attachment orphaned on a deleted page (no FKs)
       return attachRepo.create({
         page_id: pageId,
         filename: f.filename,
@@ -216,12 +239,25 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       await attachRepo.delete(id)
     },
 
+    // notes-rescope R3 (IMPL R-7): a PROJECTED select — only `thumbnail_blob`. `attachRepo.findById` selects every column,
+    // incl. the full `encrypted_blob`, which on web would cross the worker postMessage for every cover render.
+    getAttachmentThumbnail: async (id: string): Promise<Uint8Array | null> => {
+      const rows = await db
+        .select({ thumb: noteAttachments.thumbnail_blob })
+        .from(noteAttachments)
+        .where(and(eq(noteAttachments.id, id), isNull(noteAttachments.deleted_at)))
+      const thumb = rows[0]?.thumb
+      return thumb == null ? null : new Uint8Array(thumb)
+    },
+
     // ── S3: page-links + wiki resolution ────────────────────────────
     createPageLink: async (
       sourcePageId: string,
       targetPageId: string,
       context?: string,
     ): Promise<PageLinkRow> => {
+      await requireLivePage(sourcePageId) // BR-R0-5 — both ends live (a revive included)
+      await requireLivePage(targetPageId)
       // Business-key query INCLUDING soft-deleted (the revive path needs it) — UNIQUE(source,target)
       // is FULL, so ≤1 row per key exists (BR-S3-1, mirror spaces/service.ts:158-180).
       const existing = await linkRepo.findWhere(
@@ -268,7 +304,8 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       entityId: string,
       context?: string,
     ): Promise<EntityLinkRow> => {
-      assertRegistered(entityType)
+      assertRegistered(entityType) // BR-S4-1: the notes registry error first …
+      await requireLivePage(pageId) // … then BR-R0-5
       return spaces.createLink(pageId, entityType, entityId, context ?? null)
     },
 

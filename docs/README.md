@@ -93,7 +93,7 @@ Core → Wave 0 (Notes & Pages, Preferences) → Wave 1 → Services (as feature
 | Context | Identity | Business Rules | Contract | Structure | other aspects |
 |---------|:--:|:--:|:--:|:--:|:--|
 | Core | 🔄 architecture/* migrated | ✅ business-rules.md (verified) | 🔄 server-api.md (scaffold — routes unimplemented) | 🔄 ADRs + dep-graph migrated | ✅ conventions.md |
-| Notes & Pages (Wave 0) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ designed iface — modules not yet coded) | ✅ structure-data.md | ✅ conventions.md |
+| Notes & Pages (Wave 0) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (① service BUILT; restored + realigned 2026-10-26) | ✅ structure-data.md | ✅ conventions.md |
 | Preferences (Wave 0) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ designed iface — no @vida/types yet) | ✅ structure-data.md (⚠ 6 fields + visibility store INTENDED) | ✅ conventions.md |
 | Tasks (Wave 1) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ services not coded) | ✅ structure-data.md (⚠ 5 additions → ADR-002 amendment) | ✅ conventions.md |
 | Habits (Wave 1) | ✅ identity.md | ✅ business-rules.md | ✅ contract.md (⚠ core model empty) | ✅ structure-data.md (⚠ G8 4 fields + G7/G9 → ADR-002 amendment) | ✅ conventions.md |

@@ -5,7 +5,11 @@ import { act, cleanup, render, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { UIProvider } from '@vida/ui'
 import type { EditorDocument } from '@vida/types'
+import { Editor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
 import { VidaEditor, assertEditorDocument, type VidaEditorHandle } from './editor'
+import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
+import { INTEGRATION_BLOCK_EXTENSIONS } from './extensions/integration-blocks'
 
 afterEach(cleanup)
 
@@ -119,6 +123,105 @@ describe('VidaEditor', () => {
     const pm = await findTextbox(container)
     expect(pm.getAttribute('role')).toBe('textbox')
     expect(container.querySelector('.vida-editor-frame')).not.toBeNull()
+  })
+})
+
+// notes-rescope R0 · BR-R0-3 — the always-on content check. TipTap's lenient load (the default) replaces a doc the
+// schema rejects with an EMPTY doc and the editor then emits it → the app wrote it over the stored body (C-46). With
+// `enableContentCheck` the error arrives before any update; the editor goes read-only and emits nothing.
+describe('VidaEditor — content check (notes-rescope R0, BR-R0-3)', () => {
+  const unknownNode = { type: 'doc', content: [{ type: 'futureBlock' }] } as unknown as EditorDocument
+
+  it('an unknown node → onInvalidContent once, ZERO onChange, read-only, no toolbar', async () => {
+    const onInvalidContent = vi.fn()
+    const { onChange, container } = renderEditor({ defaultValue: unknownNode, onInvalidContent })
+    const pm = await findTextbox(container)
+    await waitFor(() => expect(onInvalidContent).toHaveBeenCalledTimes(1))
+    // Let the editable-sync effect (the mount-echo source, setEditable) run before asserting silence.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20))
+    })
+    expect(onInvalidContent.mock.calls[0]![0]).toBeInstanceOf(Error)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(pm.getAttribute('contenteditable')).toBe('false')
+    expect(container.querySelector('[role="toolbar"]')).toBeNull()
+  })
+
+  it('an invalid editor stays silent even if the user types (no keystroke reaches onChange)', async () => {
+    const user = userEvent.setup()
+    const { onChange, container } = renderEditor({ defaultValue: unknownNode, onInvalidContent: vi.fn() })
+    const pm = await findTextbox(container)
+    await waitFor(() => expect(pm.getAttribute('contenteditable')).toBe('false'))
+    await user.click(pm)
+    await user.keyboard('x')
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('a valid doc → no onInvalidContent; exactly ONE mount echo (BR-E1-2 unchanged; needsBaseline depends on it)', async () => {
+    const onInvalidContent = vi.fn()
+    const { onChange, container } = renderEditor({ defaultValue: docOf('hello'), onInvalidContent })
+    await findTextbox(container)
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20))
+    })
+    expect(onInvalidContent).not.toHaveBeenCalled()
+    expect(onChange).toHaveBeenCalledTimes(1) // render() is not StrictMode → one echo
+    expect(onChange.mock.calls[0]![0]).toEqual(docOf('hello'))
+  })
+
+  it('ref.setContent with an invalid doc THROWS (enableContentCheck is inherited) and leaves the mount intact', async () => {
+    const onInvalidContent = vi.fn()
+    const { ref, onChange, container } = renderEditor({ defaultValue: docOf('ok'), onInvalidContent })
+    const pm = await findTextbox(container)
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1)) // the valid mount echo
+    const handle = ref.current
+    if (handle == null) throw new Error('editor handle not mounted')
+    expect(() => act(() => handle.setContent(unknownNode))).toThrow(/Invalid JSON content/)
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20))
+    })
+    // PINNED (measured on 3.30.0): the throw is the whole effect — no contentError latch, so a healthy mount stays
+    // editable with its content, and nothing is emitted. Callers must catch (none exist in the app today).
+    expect(onInvalidContent).not.toHaveBeenCalled()
+    expect(pm.getAttribute('contenteditable')).toBe('true')
+    expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('toolbar still renders for a valid editable doc', async () => {
+    const { container } = renderEditor({ defaultValue: docOf('x') })
+    await findTextbox(container)
+    await waitFor(() => expect(container.querySelector('[role="toolbar"]')).not.toBeNull())
+  })
+})
+
+// 6b — the schema table the app's normalizations (G4) + the core seeds (G16) rely on: these are the exact shapes
+// the always-on check accepts/rejects, against the SAME extension set VidaEditor wires.
+describe('content-check schema table (notes-rescope R0, 6b)', () => {
+  function check(content: unknown): boolean {
+    let failed = false
+    const e = new Editor({
+      extensions: [StarterKit, ...STANDARD_BLOCK_EXTENSIONS, ...INTEGRATION_BLOCK_EXTENSIONS],
+      content: content as EditorDocument,
+      enableContentCheck: true,
+      onContentError: () => {
+        failed = true
+      },
+    })
+    e.destroy()
+    return !failed
+  }
+
+  it.each([
+    ['empty doc (`doc` is block+)', { type: 'doc', content: [] }, false],
+    ['heading with an empty text node', { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: '' }] }] }, false],
+    ['unknown node', { type: 'doc', content: [{ type: 'futureBlock' }] }, false],
+    ['unknown mark', { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x', marks: [{ type: 'futureMark' }] }] }] }, false],
+    ['one empty paragraph (the empty-seed fallback)', { type: 'doc', content: [{ type: 'paragraph' }] }, true],
+    ['heading + paragraph (a full seed)', { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'T' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'type: a' }] }] }, true],
+    ['heading with no content (an empty-text heading after G4 stripping)', { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [] }] }, true],
+  ])('%s → valid=%s', (_l, content, valid) => {
+    expect(check(content)).toBe(valid)
   })
 })
 

@@ -1,8 +1,10 @@
-import { useId, type ReactNode, type Ref } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { Button } from './button'
 import { Tabs } from './tabs'
 import { EmptyState } from './empty-state'
+import { Input } from './input'
+import { SR_ONLY } from '../internal/calendar-shared'
 import { warnMissingName, type ViewState } from '../internal/data-view'
 
 // ============================================================================
@@ -34,6 +36,13 @@ export type Facet = 'layout' | 'editor'
 export interface EntityViewProps {
   /** The entity title — names the region (aria-labelledby) + renders as the serif $display H1. */
   title: string
+  /** notes-rescope R3 (EC-25): makes the title renamable in place — click/Enter opens an input; Enter or blur commits a
+   *  changed, trimmed value (an empty string passes through); Esc reverts. Absent → the title is plain text. */
+  onTitleCommit?: (next: string) => void
+  /** The raw value the rename input starts from (the visible `title` may be a fallback label). Default `title`. */
+  titleEditValue?: string
+  /** The persistent H1 (`tabIndex=-1`) — a focus target (e.g. after a recovered read). */
+  titleRef?: Ref<HTMLElement>
   /** Bio / summary line (type · counts · updated) — a slot. */
   subtitle?: ReactNode
   /** The ⋯ entity-action SLOT (a Menu trigger etc.). */
@@ -68,11 +77,19 @@ export interface EntityViewProps {
 // ── styled hosts (unnamed → base theme; no sub-theme — the LV-3 convention) ──────────────────────────────
 const EntityRoot = styled(View, { flexDirection: 'column', gap: '$16', width: '100%', maxWidth: 1136, marginHorizontal: 'auto' })
 const Header = styled(View, { flexDirection: 'column', gap: '$8' })
-const TitleRow = styled(View, { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: '$12' })
+// Wraps (notes-rescope R1, DEV-R1-1): when the title and the action slot don't both fit (375 px), the action drops below
+// the title instead of squeezing it into a narrow column; at 768/1440 they sit side by side.
+const TitleRow = styled(View, {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: '$12',
+})
 // $16 title→metadata rhythm (EC-5 / review-2 — the title-hero canonical header; mirrors flow-session-view.tsx:97,
 // on branch fe-codec-flow-session).
 // Without it the $display title + $small subtitle render flush (fix-entity-view-header).
-const TitleGroup = styled(View, { flexShrink: 1, gap: '$16' })
+const TitleGroup = styled(View, { flexShrink: 1, flexGrow: 1, flexBasis: 240, gap: '$16' })
 // The merged⇄tabbed toggle — a role="toolbar" of aria-pressed buttons (the collection-view switcher precedent).
 const ModeToolbar = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$4' })
 const MergedStack = styled(View, { flexDirection: 'column', gap: '$24' })
@@ -115,9 +132,129 @@ function EditorBody({ editor, editorState }: { editor: ReactNode; editorState: V
   }
 }
 
+type EditEnd = 'enter' | 'escape' | 'blur'
+
+/**
+ * The entity title (notes-rescope R3, PLAN G11 · IMPL R-5/R-6): a PERSISTENT level-1 heading (the contract's "entity page's
+ * H1"), focusable by script. The region is labelled by `textId`, a span that ALWAYS holds `title` — the visible text, the
+ * button's text, or a hidden copy beside the input while editing — so the region name is exactly the title (the rename hint
+ * sits OUTSIDE the heading, reached by aria-describedby). Enter / Esc / blur all end an edit through `finish`, exactly once.
+ */
+function EntityTitle({
+  title,
+  textId,
+  onTitleCommit,
+  titleEditValue,
+  titleRef,
+}: {
+  title: string
+  textId: string
+  onTitleCommit?: (next: string) => void
+  titleEditValue?: string
+  titleRef?: Ref<HTMLElement>
+}) {
+  const hintId = useId()
+  const [editing, setEditing] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const buttonRef = useRef<HTMLElement>(null)
+  const endedRef = useRef(false)
+  const lastEnd = useRef<EditEnd | null>(null)
+  const seed = titleEditValue ?? title
+
+  useEffect(() => {
+    if (editing) {
+      endedRef.current = false
+      inputRef.current?.select()
+    } else if (lastEnd.current === 'enter' || lastEnd.current === 'escape') {
+      lastEnd.current = null
+      buttonRef.current?.focus() // never on first mount, never after a blur (focus already moved on)
+    }
+  }, [editing])
+
+  const finish = (kind: EditEnd) => {
+    if (endedRef.current) return
+    endedRef.current = true
+    lastEnd.current = kind
+    if (kind !== 'escape') {
+      const next = (inputRef.current?.value ?? '').trim()
+      if (next !== seed.trim()) onTitleCommit?.(next)
+    }
+    setEditing(false)
+  }
+
+  const textStyle = { fontFamily: '$display', fontSize: '$display', lineHeight: '$display', color: '$colorTextPrimary' } as const
+  let body: ReactNode
+  if (onTitleCommit == null) {
+    body = (
+      <Text id={textId} {...textStyle}>
+        {title}
+      </Text>
+    )
+  } else if (editing) {
+    body = (
+      <>
+        <span id={textId} style={SR_ONLY}>
+          {title}
+        </span>
+        <Input
+          ref={inputRef}
+          size="display"
+          aria-label="Page title"
+          defaultValue={seed}
+          onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+              e.preventDefault()
+              finish('enter')
+            } else if (e.key === 'Escape') {
+              e.preventDefault()
+              finish('escape')
+            }
+          }}
+          onBlur={() => finish('blur')}
+        />
+      </>
+    )
+  } else {
+    body = (
+      <Text
+        ref={buttonRef as never}
+        role="button"
+        tabIndex={0}
+        aria-describedby={hintId}
+        cursor="text"
+        onPress={() => setEditing(true)}
+        onKeyDown={(e: KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setEditing(true)
+          }
+        }}
+        {...textStyle}
+      >
+        <span id={textId}>{title}</span>
+      </Text>
+    )
+  }
+  return (
+    <>
+      <View role="heading" aria-level={1} tabIndex={-1} ref={titleRef as never}>
+        {body}
+      </View>
+      {onTitleCommit != null && (
+        <span id={hintId} style={SR_ONLY}>
+          Rename the page
+        </span>
+      )}
+    </>
+  )
+}
+
 // A plain component — non-generic (the shell holds no entity data). React 19 spreads `ref` as a prop (no forwardRef).
 export function EntityView({
   title,
+  onTitleCommit,
+  titleEditValue,
+  titleRef,
   subtitle,
   action,
   mode,
@@ -148,9 +285,13 @@ export function EntityView({
       <Header>
         <TitleRow>
           <TitleGroup>
-            <Text id={titleId} fontFamily="$display" fontSize="$display" color="$colorTextPrimary">
-              {title}
-            </Text>
+            <EntityTitle
+              title={title}
+              textId={titleId}
+              onTitleCommit={onTitleCommit}
+              titleEditValue={titleEditValue}
+              titleRef={titleRef}
+            />
             {subtitle != null && (
               <Text fontSize="$small" color="$colorTextMuted">
                 {subtitle}

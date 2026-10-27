@@ -111,3 +111,10 @@
 - G6 entity-link UX + merged-backlink shape held **tentative** ("leave it open, may change at implementation") — whether `/entity-link` block AND `[[` picker both create entity links, and the exact merged/grouped backlink presentation → intake:66-69,79 (G6 tentative carry-forward); current-business-rules.md:33-34 (② page+entity merge tentative) → blocker: explicitly deferred to implementation/② design-pass (owner: Notes ② build). Homed provisionally to NOT-19/NOT-24; the SHAPE stays tentative.
 - ADR-007 saved-view SELECTION primitive reshape (how a `views` row selects the collection renderer) → structure-data.md:32,41 "the saved-view-primitive reframe is pulled to a dedicated views/Spaces pass" `[INTENT — DEFERRED]` → blocker: dedicated Views/Spaces design-pass, not decided here (owner: Views/Spaces design-pass). Homed provisionally to NOT-48; renderers hard-coded meanwhile.
 - Hard-delete cascade + `entity_tags`/`entity_links` cleanup MECHANICS (no SQL FK → app/service-driven) → business-rules.md:17 (NP-9) "mechanics `[DEFERRED — Part 2]`"; current-business-rules.md:35 "hard-delete cascade → deferred (no FK; service-driven cleanup, later)" → blocker: deferred to Part 2 / a later increment (owner: Notes later increment + sync layer). Homed provisionally to NOT-39; the mechanics stay open.
+
+> **Citation note (2026-10-26, notes-rescope Documentation Gate):** the `source (file:line)` column cites the notes
+> docs as they stood at `eaf64f8^` (before the MOD-notes teardown). The 5 aspect docs + intake are restored at their
+> original paths but realigned, so their line numbers moved — resolve a cite with `git show eaf64f8^:<path>`.
+> Bare `current-spec.md` / `current-business-rules.md` cites mean `docs/features/notes-and-pages/current-*` at
+> `eaf64f8^`; the live as-built docs are `docs/modules/notes/current-*`. Not built here but present in code:
+> `ensureJournal(date)` and `writePageContent(id, doc)` (see docs/modules/notes/current-spec.md ①).

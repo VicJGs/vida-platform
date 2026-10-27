@@ -23,3 +23,8 @@ docs/features/journals/delivery/ — entity-rescope writes reconciliation.md + s
 - blocked by `data-plane-wiring`
 - blocked by `notes-rescope`
 - blocked by `preferences-rescope`
+
+## Inbound from notes-rescope (2026-10-26, Victor: "the journals is supposed to be a module within it's own")
+- **fe-notes EC-18a journal Overview** (+ ORPHAN#12) re-homed here from notes-rescope (coverage-report A·fe-notes·D·EC-18a; debt-plan row). Notes keeps the Overview SLOT (`apps/web/src/notes/overview-registry.ts`); register the journal Overview there and mount it as a COMPONENT (notes interpretation IR-R13).
+- **Journal views** (Calendar/List/Gallery by week/month/year — `docs/features/journals/delivery/slice-map.md:88`, intake/journals.md:25-26) and **where a journal opens** when reached from `[[` / a link (its day surface) — no golive-replan home found; surfaced here as the owning entity's legs.
+- Journal mode/arrangement = Home's Journal-first/Dashboard-first pref (fe-home RP2/RP4) — not a Notes per-type mode.

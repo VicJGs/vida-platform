@@ -73,6 +73,16 @@ export {
   initializeConnection,
 } from './db/adapter'
 
+// app_state — the device-local KV accessor (notes-rescope R2, A-42).
+export {
+  ENTITY_MODE_PREFIX,
+  entityModeKey,
+  readAppState,
+  readAppStatePrefix,
+  writeAppState,
+  deleteAppState,
+} from './db/app-state'
+
 export type {
   DrizzleDb,
   RawQueryResult,

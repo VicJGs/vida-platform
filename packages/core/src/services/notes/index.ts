@@ -1,7 +1,9 @@
 // services/notes — barrel (mod-notes-and-pages ①)
 export { createNotesService } from './service'
 export {
+  InvalidPageContentError,
   JournalExistsError,
+  PageNotFoundError,
   UnregisteredEntityTypeError,
   type CreatePageInput,
   type EntityNoteSeed,

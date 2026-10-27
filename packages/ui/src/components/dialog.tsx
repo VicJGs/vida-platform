@@ -154,6 +154,13 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
 
   const panelRef = useRef<HTMLDivElement | null>(null)
   const prevFocusRef = useRef<HTMLElement | null>(null)
+  const inertActiveRef = useRef(false)
+  const restorePendingRef = useRef(false)
+  const restoreFocus = () => {
+    const prev = prevFocusRef.current
+    if (prev && document.contains(prev) && typeof prev.focus === 'function') prev.focus()
+    else document.body?.focus?.() // fallback: the trigger unmounted while open — don't throw, don't strand focus
+  }
 
   // Portal root — created DURING first render (lazy init) so createPortal has a target in the first commit.
   const [portalRoot] = useState<HTMLDivElement | null>(() =>
@@ -195,10 +202,13 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
       )
     }
 
+    // DEV-R3-2 (notes-rescope R3): focus is restored by `restoreFocus`, called from the inert effect's cleanup AFTER the
+    // background is un-inerted — a layout-effect cleanup runs BEFORE passive cleanups, and a browser ignores focus() on an
+    // element inside an `inert` subtree (so the contract's "returns to trigger on close" silently failed). When the inert
+    // effect never ran (no portal root), this cleanup restores directly.
     return () => {
-      const prev = prevFocusRef.current
-      if (prev && document.contains(prev) && typeof prev.focus === 'function') prev.focus()
-      else document.body?.focus?.() // fallback: the trigger unmounted while open — don't throw, don't strand focus
+      if (inertActiveRef.current) restorePendingRef.current = true
+      else restoreFocus()
     }
   }, [open, dismissible])
 
@@ -216,12 +226,18 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
       el.setAttribute('aria-hidden', 'true')
       el.setAttribute('inert', '')
     })
+    inertActiveRef.current = true
     return () => {
       prev.forEach(({ el, ariaHidden, hadInert }) => {
         if (ariaHidden === null) el.removeAttribute('aria-hidden')
         else el.setAttribute('aria-hidden', ariaHidden)
         if (!hadInert) el.removeAttribute('inert')
       })
+      inertActiveRef.current = false
+      if (restorePendingRef.current) {
+        restorePendingRef.current = false
+        restoreFocus() // now the trigger is focusable again (DEV-R3-2)
+      }
     }
   }, [open, portalRoot])
 

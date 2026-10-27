@@ -41,3 +41,6 @@ strip (tablet+), **C** = expanded System panel body.
 **APPROVED by Victor (2026-10-10)** — greybox + EC-1…EC-8 ratified as-is. Greybox + throwaway route DELETED.
 Proceed to Decomposition (Step 2): every `structural` EC (EC-1…EC-6) maps to ≥1 slice; `feel` EC-7/EC-8 defer to
 the live per-slice Visual Gate.
+
+### Re-pin (Victor, 2026-10-26 — notes-rescope Re-scope Gate)
+- **EC-4** → System panel expanded body = scope + the 6 surfaces **+ Trash** (the OS-wide Trash, notes-rescope EC-27) as a labeled nav list (icon + label; ⌘K hint on Search) + account. **EC-3 unchanged:** the strip keeps its 6 icons at ≥768; at ≤375 Trash is reached via the overflow / System panel. Source: `docs/features/notes-and-pages/delivery/slice-map.md` §Approval.

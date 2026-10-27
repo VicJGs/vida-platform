@@ -194,3 +194,16 @@ describe('CollectionView — condensed switcher (<768)', () => {
     expect(getByRole('button', { name: /View: List/ })).not.toBeNull()
   })
 })
+
+describe('CollectionView titleRef (notes-rescope R3 — the Retry focus target)', () => {
+  it('points at the title element, focusable by script (tabIndex -1)', () => {
+    const ref = { current: null as HTMLElement | null }
+    const { getByText } = render(
+      <UIProvider>
+        <CollectionView title="Notes" titleRef={ref} renderView={() => null} layouts={['list']} layout="list" onLayoutChange={() => {}} state="success" />
+      </UIProvider>,
+    )
+    expect(ref.current).toBe(getByText('Notes'))
+    expect(ref.current?.getAttribute('tabindex')).toBe('-1')
+  })
+})

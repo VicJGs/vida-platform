@@ -1,59 +1,201 @@
-# Notes & Pages — current-spec (as-built)
+# Current Spec — notes (Notes & Pages)   (level: module · tier: DEEP · both planes)
 
-> §XXIX living doc. The `@vida/core` **Notes & Pages service** — the in-degree-14 connective HUB — over the
-> finished DB-4 schema (`schema/notes.ts` + migration `033_notes.ts`). Every claim cites the code as-is.
-> Authority (intent): `docs/specs/foundation/backend-intent/parts/notes-and-pages.md` (NOT-01…54).
-> Delivery: `docs/features/notes-and-pages/delivery/*`. Slices ship incrementally (see Status).
+> §XXIX living doc. Covers BOTH planes of the entity: ① the `@vida/core` **Notes & Pages service** (the in-degree-14
+> connective HUB) and ② the `apps/web` **notes surface** (`/notes`, `/notes/$id`, the shared note editor body).
+> Every claim cites the code as-is.
+> Coverage: ① `services/notes/{index,types,service}.ts` + `validators/note.ts` + `schema/notes.ts` + `033_notes.ts` +
+> the one test file — **full** · ② `apps/web/src/notes/` non-test files **full** (R1 added `save-status` · `page-actions` · `read-error` · `read-error-message`), 26 test files counted
+> (~204 `it`) not read; routes + `db/composition-root.ts` + `entity/adapter.ts` + `collection/*` read.
+> Inherits: `docs/core` → ADR-002 (data model) · ADR-006 (spaces/registry) · ADR-008 (render targets) · ADR-009 (templates).
+> Intent authority: ① `docs/specs/foundation/backend-intent/parts/notes-and-pages.md` (NOT-01…54) ·
+> ② `docs/specs/foundation/fe-notes-and-pages/` (envision EC-1…24).
+> Last refreshed: 2026-10-27 — notes-rescope (LIF-245) R3 metadata + rename (② surface; ① validators + `getAttachmentThumbnail`). Source of truth = the code.
 
 ## Status
-- **S1 — Service shell + Pages core: BUILT** (2026-09-19, LIF-131). `services/notes/{types,service,index}.ts` + live-store tests. @vida/core 979 green.
-- **S2 — Entity notes + attachments: BUILT** (2026-09-19). `ensureEntityNote` + `seedContent` + attachments; `newAttachmentSchema` appended to validators/note.ts. @vida/core 985 green (+6).
-- **S3 — Page-links + wiki resolution: BUILT** (2026-09-19). `createPageLink` (idempotent+revive) + `removePageLink` + `getPageLinksFrom`/`getPageLinksTo` + `resolveWikiLink`. @vida/core 990 green (+5).
-- **S4 — Delegation facade + registry: BUILT** (2026-09-19). entity-link facade (→AR-6/AR-8) + entity-tag reads + `getBacklinks`. @vida/core 995 green (+5).
-- **① BACKEND COMPLETE** (S1–S4, 2026-09-19). ② `fe-notes-and-pages` (UI) is a separate issue.
+- **① BACKEND COMPLETE** — S1 pages core · S2 entity notes + attachments · S3 page-links + wiki resolution · S4
+  delegation facade (2026-09-19, LIF-131) + `writePageContent` (2026-10-20, notes-entity-usability S2).
+- **② SURFACE — PARTIALLY LIVE.** fe-notes #27 S1–S9 shipped 2026-10-11 on stubs; data-plane-wiring (PR #148) +
+  notes-entity-usability (PR #150) flipped the **read list · read page · create · content write** legs live. Every
+  other leg is still a stub (§② Hooks). The remaining legs are notes-rescope's scope (golive-replan coverage-report §A).
 
-## Construction
-`createNotesService(deps): NotesService` — factory-object, hoisted closures, no `this.` [FACT: services/notes/service.ts:35-38].
-Deps `{db, deviceId, spaces, backlinks, registry}` [FACT: services/notes/types.ts:19-30]; S1 exercises only `registry`
-(spaces/backlinks are injected for S4). `pageRepo = createRepository(db, pages, {deviceId, encryptedFields:[], softDelete:true})`
-[FACT: service.ts:41-42].
+---
 
-## Contract (S1 — built)
-Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `Page` interface (DB-11 reconcile) [FACT: schema/notes.ts:110].
-- `createPage(input: CreatePageInput): Promise<PageRow>` — validate → NP-2 clash check → registry-validate `entity_type` → create [FACT: service.ts:53-74].
-- `getPage(id): Promise<PageRow|null>` · `updatePage(id, patch: UpdatePageInput): Promise<PageRow>` (metadata only — `content` is NOT in the `.strict()` whitelist) · `softDeletePage(id): Promise<void>` [FACT: service.ts:76-86].
-- `writePageContent(id, content: EditorDocument): Promise<PageRow>` — the IR-7 editor-body write path (serializes to the `content` text column via the repo), SEPARATE from `updatePage`'s LWW metadata patch so M4 can re-home `content` to the CRDT merge without touching callers (added 2026-10-20, notes-entity-usability S2) [FACT: service.ts writePageContent; interpretation.md:159].
-- `getPageByJournalDate(date): Promise<PageRow|null>` · `getPagesByType(type): Promise<PageRow[]>` · `getPagesForEntity(entityType, entityId): Promise<PageRow[]>` · `listPages({favorite?,archived?}): Promise<PageRow[]>` [FACT: service.ts:48-52,88-107].
-- Errors: `JournalExistsError(journalDate)`, `UnregisteredEntityTypeError(entityType)` — bespoke `extends Error`, stable `.name` [FACT: types.ts:49-64]. `ServiceError` reconcile → DB-11.
-- Input types: `CreatePageInput`/`UpdatePageInput` = `z.infer` of `validators/note.ts` [FACT: types.ts:33-36].
+## ① Service plane — `@vida/core` `services/notes`
 
-## Contract (S2 — built)
-- `ensureEntityNote(pageType, entityType, entityId, seed: EntityNoteSeed): Promise<PageRow>` — NP-8 idempotent (find-then-create by `(pageType, entity_type, entity_id)` via `getPagesForEntity`); `content` = `seedContent(seed)`, a deterministic minimal `EditorDocument` JSON (fixed leading fields + sorted dynamic keys, no Date/random) [FACT: service.ts seedContent + ensureEntityNote].
-- `addAttachment(pageId, file: NewAttachment): Promise<NoteAttachmentRow>` · `getAttachments(pageId): Promise<NoteAttachmentRow[]>` · `removeAttachment(id): Promise<void>` over `note_attachments` [FACT: schema/notes.ts:91-107; service.ts].
-- `NewAttachment` is camelCase (`Uint8Array` blobs); the service maps to snake_case columns. **First blob consumer:** Drizzle types `blob('buffer')` as `Buffer` but the platform-neutral value is `Uint8Array` (libsodium at M3); a documented boundary cast bridges it — blob-type reconcile → DB-11/M3.
-- `newAttachmentSchema` appended to `validators/note.ts` (no `entityNoteSeedSchema` — seed is caller-internal). `EntityNoteSeed`/`NewAttachment` are plain TS types.
+### Construction
+`createNotesService(deps): NotesService` — factory-object, no `this.` [FACT: services/notes/service.ts:72].
+Deps `{db, deviceId, spaces, backlinks, registry}` [FACT: services/notes/types.ts:20-29]: `registry` (S1 create + S4
+links), `spaces` (S4 writes, service.ts:272,276), `backlinks` (S4 reads, service.ts:280,288).
+`pageRepo = createRepository(db, pages, {deviceId, encryptedFields:[], softDelete:true})` [FACT: service.ts:75];
+attachment / page-link / read-only entity-tag repos [FACT: service.ts:77-89]. The file opens with the pure
+`seedContent` + `allOf` helpers [FACT: service.ts:41-58].
 
-## Contract (S3 — built)
-- `createPageLink(source, target, context?): Promise<PageLinkRow>` — NP-5 idempotent: live → no-op · soft-deleted → **revive** · absent → create (full `UNIQUE(source,target)` mandates revive; mirror AR-6 `createLink`). The existing-check query intentionally includes soft-deleted rows. [FACT: service.ts createPageLink; migrations/033_notes.ts:91]
-- `removePageLink(source, target): Promise<void>` — resolve-then-soft-delete (no-op if absent). `getPageLinksFrom`/`getPageLinksTo(pageId): Promise<PageLinkRow[]>` — direction reads, `isNull(deleted_at)`. [FACT: service.ts; NOT-16/17]
-- `resolveWikiLink(text): Promise<PageRow[]>` — NP-7: non-deleted pages with `title` LIKE `%text%` (candidates; caller binds a concrete `target_page_id` → id-based, rename-safe). Excludes null-title + soft-deleted. M1.0 uses plain LIKE (no wildcard-escape; title→FTS5/DB-8 at M3). [FACT: service.ts resolveWikiLink; NOT-18/50]
+### Contract — S1 pages core
+Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `Page` interface (DB-11 reconcile)
+[FACT: schema/notes.ts:110]. Interface: [FACT: types.ts:56-105].
+- `createPage(input: CreatePageInput): Promise<PageRow>` — Zod parse → journal clash check → `assertRegistered(entity_type)`
+  → create with notNull defaults backfilled [FACT: service.ts:106-126].
+- `getPage(id): Promise<PageRow|null>` — `findById` (soft-delete filtered) [FACT: service.ts:128; db/repository.ts:356-361].
+- `updatePage(id, patch: UpdatePageInput): Promise<PageRow>` — metadata only; `updatePageSchema.strict()` (no `content`)
+  [FACT: service.ts:130-133; validators/note.ts:47-62].
+- `writePageContent(id, content: EditorDocument): Promise<PageRow>` — the IR-7 editor-body write path,
+  `update({content: JSON.stringify(content)})`, SEPARATE from `updatePage`'s LWW metadata patch so M4 can re-home
+  `content` to the CRDT merge without touching callers [FACT: service.ts:135-139;
+  docs/specs/foundation/fe-notes-and-pages/delivery/interpretation.md:159]. No Zod check on `content`.
+- `softDeletePage(id): Promise<void>` [FACT: service.ts:141-143].
+- `getPageByJournalDate(date)` [FACT: service.ts:98-103, bound 145] · **`ensureJournal(date): Promise<PageRow>`** —
+  get-or-create the day's journal, title = the date string [FACT: types.ts:67; service.ts:190-194] ·
+  `getPagesByType(type)` [FACT: service.ts:147-148] · `getPagesForEntity(entityType, entityId)` [FACT: service.ts:150-153] ·
+  `listPages({favorite?, archived?})` — a flag filters only when truthy; **no flag ⇒ archived pages are included**
+  [FACT: service.ts:155-162].
+- Errors: `JournalExistsError(journalDate)`, `UnregisteredEntityTypeError(entityType)` — bespoke `extends Error`, stable
+  `.name` [FACT: types.ts:107-121]. A missing id on update throws the repository's plain `Error('Row not found: …')`
+  [FACT: db/repository.ts:412-413]. `ServiceError` reconcile → DB-11.
+- Input types: `CreatePageInput`/`UpdatePageInput` = `z.infer` of `validators/note.ts` [FACT: types.ts:31-34].
 
-## Contract (S4 — built)
-- `createEntityLink(pageId, entityType, entityId, context?): Promise<EntityLinkRow>` — validates with the NOTES `UnregisteredEntityTypeError` (S1 assertRegistered) THEN delegates the WRITE to **AR-6** `spaces.createLink` (a pure passthrough would leak spaces' `UnknownEntityType`). `removeEntityLink` → `spaces.removeLink`. Notes never re-implements entity_links idempotence. [FACT: service.ts; NOT-20/22/23; spaces/service.ts:158-192]
-- `getEntityLinksFrom(pageId): Promise<EntityLinkRow[]>` → **AR-8** `backlinks.getLinksFrom`. `getBacklinks(entityType, entityId): Promise<{pageLinks, entityLinks}>` → `entityLinks` via AR-8 `getBacklinksTo` + `pageLinks` via local `getPageLinksTo(entityId)` (unconditional; non-page id → `[]`); UNMERGED (G6 merge → ②). [FACT: service.ts; NOT-24/25]
-- `getTagsForEntity(entityType, entityId)` / `getEntitiesByTag(tagId): Promise<EntityTagRow[]>` — read-only `entity_tags` repo (AR-6 owns writes; ② calls `spaces.tagEntity` directly). [FACT: service.ts; NOT-26/27/28]
+### Contract — S2 entity notes + attachments
+- `ensureEntityNote(pageType, entityType, entityId, seed: EntityNoteSeed): Promise<PageRow>` — NP-8 idempotent
+  find-then-create via `getPagesForEntity` + type filter; `content = seedContent(seed)` (deterministic minimal
+  `EditorDocument`) [FACT: service.ts:165-183, 41-58].
+- `addAttachment(pageId, file: NewAttachment)` · `getAttachments(pageId)` · `removeAttachment(id)` ·
+  `getAttachmentThumbnail(id)` (R3 — a projected select of `thumbnail_blob` only, never `encrypted_blob`; `null` when absent
+  or removed) over
+  `note_attachments` [FACT: service.ts:196-217; schema/notes.ts:91-107]. `NewAttachment` is camelCase with `Uint8Array`
+  blobs; the boundary cast to Drizzle's `Buffer` is documented [FACT: service.ts:202-207].
 
-## Delegation topology (as-built)
-`NotesServiceDeps = {db, deviceId, spaces: SpacesService (AR-6), backlinks: BacklinkResolver (AR-8), registry: TaggableTypeRegistry}`. Locally-owned repos: `pages`, `page_links`, `note_attachments`, + a read-only `entity_tags` repo. Delegated: entity-link writes→AR-6, entity-link reads→AR-8, tag writes→AR-6.
+### Contract — S3 page-links + wiki resolution
+- `createPageLink(source, target, context?)` — NP-5 idempotent: live → no-op · soft-deleted → revive · absent → create;
+  the business-key lookup intentionally includes soft-deleted rows [FACT: service.ts:220-242; migrations/033_notes.ts:91].
+- `removePageLink(source, target)` [FACT: service.ts:244-250] · `getPageLinksFrom` / `getPageLinksTo` [FACT: service.ts:252-256].
+- `resolveWikiLink(text): Promise<PageRow[]>` — live pages with `title LIKE %text%`; no wildcard escape, no LIMIT; null
+  titles never match [FACT: service.ts:259-260].
 
-## Composition seams (delegation topology — built at S2–S4)
-- entity-link/tag **WRITES** → AR-6 `SpacesService` (`deps.spaces`) — S4.
-- entity-link **READS** → AR-8 `BacklinkResolver` (`deps.backlinks`) — S4.
-- `entity_type` validation → `deps.registry.isRegistered` (open taggable-type registry) — S1 (create) + S4 (links).
-- `page_links` (S3) + `note_attachments` + entity-note seed (S2) — owned locally.
+### Contract — S4 delegation facade
+- `createEntityLink(pageId, entityType, entityId, context?)` — notes `assertRegistered` THEN AR-6 `spaces.createLink`
+  [FACT: service.ts:265-273]. `removeEntityLink` → `spaces.removeLink` [FACT: service.ts:275-277].
+- `getEntityLinksFrom(pageId)` → AR-8 `backlinks.getLinksFrom` [FACT: service.ts:279-280].
+- `getBacklinks(entityType, entityId): {entityLinks, pageLinks}` — UNMERGED (merge is ②) [FACT: service.ts:284-290].
+- `getTagsForEntity` / `getEntitiesByTag` — read-only `entity_tags` [FACT: service.ts:293-303].
 
-## Deferred / homed elsewhere (not in this service)
-`/summary` aggregation engine → journals · wider `/summary` menu → M1.4 · pomodoro lens → Sessions realm ·
-Views selection primitive + neural data-prep → design-pass/AR-8 · FTS5 → DB-8 · templates apply → ADR-009 ·
-`[E]` field encryption wiring → M3/DB-5 (M1.0 pass-through) · hard-delete cascade → Part 2 ·
-`word_count` derivation → editor/FTS (① stores the caller-supplied value, default 0). [FACT: notes-and-pages.md §4a]
+### Consumers (blast radius)
+Core (injected via each module's `types.ts`): tasks · books · knowledge → `ensureEntityNote`; learning-education →
+`getPagesForEntity`; projects → `createPage`, `getPagesForEntity`; purposes → `createPage`, `ensureEntityNote`,
+`getPagesForEntity`; relationships → `getPagesForEntity` + `createPage`; check-ins → structural `JournalLinkPort`
+`{getPageByJournalDate, createEntityLink}` [FACT: services/checkins/types.ts:28-31].
+apps/web live calls: `composition-root.ts` (construction) · `home/use-journal-entry.ts:68` `ensureJournal` ·
+`notes/use-create-note.ts:27` · `notes/use-note-content.ts:53` · `notes/use-note-entity.ts:133` ·
+`notes/use-notes-rows.ts:56` · `app/calendar/use-calendar.ts:137` `getPageByJournalDate`.
+**No production caller:** `getPagesByType`, `softDeletePage`, `removePageLink`, `getPageLinksFrom`, `getEntityLinksFrom`,
+`removeEntityLink`, `getTagsForEntity`, `getEntitiesByTag`, attachments, `resolveWikiLink`, `createPageLink`,
+`getBacklinks`, `updatePage` [INTERP: bounded grep].
+
+### Adjacent services the surface depends on (not owned here)
+- **Templates** (`foundation/templates`): CRUD only — `createTemplate/listTemplates/getTemplate/deleteTemplate`
+  [FACT: foundation/templates/service.ts:24-59]; `InstantiationResult`/`TemplateCaptureError` are types with no impl
+  [FACT: foundation/templates/types.ts:25-29,45-50]. Instantiate/capture = "first-consumer-pull SEAMS (0 code)"
+  [FACT: docs/features/templates/delivery/slice-map.md:24-51].
+- **Views** (`foundation/views`): `create/update/delete/get/listViews`, `cloneView(sourceId, targetSpaceId: string|null)`
+  [FACT: foundation/views/service.ts:26-45] over `views{space_id,name,layout,filter,grouping,sort}`
+  [FACT: db/schema/foundation/spaces.ts:113-128]. XCU-14 = "✅ (seam; no code owed)" → renderer
+  [FACT: docs/features/views/delivery/reconciliation.md:25].
+- **Journals** `buildDashboard` exists [FACT: services/journals/dashboard.ts:41-44; services/journals/service.ts:48-50] and
+  is composed in apps/web over an EMPTY `JournalRegistry` — no `register*Journal` call in apps/web
+  [FACT: apps/web/src/db/composition-root.ts:90-91,97].
+
+---
+
+## ② Surface plane — `apps/web/src/notes`
+
+### Routes + composition
+- `/notes` → lazy `notes-surface` [FACT: apps/web/src/routes.tsx:76-80]; `/notes/$id` → lazy `note-entity`
+  [FACT: routes.tsx:83-87]; dock entry `routePath:'/notes'` [FACT: nav/module-map.ts:68].
+- `getServices()` — lazy singleton after `ensureDbReady` → `initVault` → `resolveDeviceId`; a rejected build is not cached
+  [FACT: apps/web/src/db/composition-root.ts:118-141]. **NotesService is registered**: `registry → spaces → backlinks →
+  createNotesService` [FACT: composition-root.ts:85-88], exposed as `Services.notes` [FACT: :51,:115] and injected
+  into tasks/purposes/relationships [FACT: :102-110].
+
+### Hooks (data legs)
+| Hook | Status | Call · query key | Cite |
+|---|---|---|---|
+| `useNotesRows` | **LIVE** | `notes.listPages()` (no filters) · `['notes','pages']` | use-notes-rows.ts:52-64 |
+| `useNoteEntity` | **LIVE** | `notes.getPage(id)` · `['pages',id]`; null → `empty` | use-note-entity.ts:129-140 |
+| `useNoteContent(page)` | **LIVE write** | `notes.writePageContent` (direct promise) · debounce 500 ms · flush on unmount/hide/pagehide · `flush`/`cancel`/`lock` · `seed` (overlay ?? page) · latest-body overlay + barrier + warm write-through · invalidates page·list·journal·calendar-journal (notes-rescope R0, BR-R0-7/8/8a/8b) | use-note-content.ts; body-writes.ts |
+| `useCreateNote` | **LIVE write** | `notes.createPage({type:'note',title:'New note'})` → invalidate `['notes','pages']` → navigate | use-create-note.ts:24-37 |
+| `useBacklinks` | STUB | `{groups:[],count:0,state:'empty'}` | use-backlinks.ts:68-76 |
+| `useAttachments` | STUB | `[]`, add/remove no-op | use-attachments.ts:38-45 |
+| `usePageMetadata` | LIVE (R3) | favorite · archive · icon · cover · rename via one `updatePage` mutation; key sets; `notifyError`; toggles guarded while pending | use-page-metadata.ts |
+| `useWikiLinkPicker` | STUB | candidates `[]`, pick/create no-op | use-wikilink-picker.ts:49-63 |
+| `useJournalSummary` | STUB | `{sections:[],state:'empty'}` (never calls `buildDashboard`) | use-journal-summary.ts:48-51 |
+| `useNotesSearch` | PARTIAL | `useCommandSearch(query, stubSearchProvider)` → honest `search-unavailable` | use-notes-search.ts:36-40 |
+| `useTemplates` | STUB | `[]`, apply/saveCurrent no-op | use-templates.ts:55-62 |
+| `useCollection` (shared) | STUB view-config | layout in local `useState`; filter/sort/new-view `() => {}` | collection/use-collection.ts:32-43 |
+
+DEV-only fixtures: `?sample` (gated `NODE_ENV !== 'production'`) [FACT: use-notes-rows.ts:41-44]; `?picker` /
+`?templates` dev-mounts [FACT: note-entity.tsx:32-38,127-150]. Eight hook headers still claim "no live composition
+root" (stale) [FACT: use-attachments.ts:3-4; use-backlinks.ts:3-5; use-wikilink-picker.ts:3-4; use-page-metadata.ts:4;
+use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; collection/use-collection.ts:8-10].
+
+### Components (contract · states · interactions)
+- **NotesSurface** (`/notes`) — 4 layouts list/gallery/calendar/graph [FACT: notes-surface.tsx:21]; "New note" (disabled
+  while pending) [FACT: :39-41]; `NotesSearch` above the collection; open → `/notes/$id` [FACT: :29];
+  `resolved = {rows, groups:[], state, degraded:[]}` [FACT: :32]; filter/sort/new-view → no-op [FACT: :50-52].
+- **renderNotesView** — list `NoteRowCard` + gallery tiles (interactive Card; accessible name = `cardName`: title · type ·
+  "edited …" · favorite, the type dropped when the title came from it); calendar on `r.date`, `empty`→`success`; graph
+  `NeuralGraph nodes=[]`. Icons + type labels from `note-chrome` (one set, R1 B-60) [FACT: note-renderers.tsx].
+- **NoteEntity** (`/notes/$id`) — loading (`aria-busy`) · error (`ReadErrorMessage` "Couldn’t load this page." + Retry,
+  R1 BR-R1-8) · empty ("Note not found") · success → `NoteEntityView` [FACT: note-entity.tsx].
+- **NoteEntityView** — `toEntityProps({title: pageLabel(page), entityType: page.type, hasPage:true, gate:'page',
+  action: <PageActions/>, editorState:'success', defaultFacet:'editor'})`; the Overview is mounted as a component; mode
+  from `NoteEntity`'s `useEntityModeStore` (app_state, seeded per-type default while loading; R2) as
+  `override ?? modeStore.readMode` [FACT: note-entity.tsx; use-entity-modes.ts]. **Rename (R3):** the inline title seam (`onTitleCommit`, Enter/blur commit, Esc reverts) + ⋯ → "Rename" dialog, one
+  mutation; delete arrives at R5.
+- **Editor gate** — the page surface uses `offersPageEditor(pageType)` (`PAGE_TYPE` membership — all 6 types, R1 EC-15);
+  module-entity surfaces keep `offersEditor(entityType, hasPage) = schema.isEntityType(entityType) && hasPage`
+  (`ENTITY_TYPES` has no `*_note` types) [FACT: entity/adapter.ts; packages/core/src/db/schema/_registry.ts].
+- **NoteEditorBody** `{page}` — `<VidaEditor chrome="bare" defaultValue={seed.doc} onChange={save} onInvalidContent>`
+  (uncontrolled; `seed` from `useNoteContent` = the latest-body overlay ?? `page.content`); editor accname
+  "`pageLabel(page)` editor"; **no save label of its own** — the host renders the one `PageSaveStatus` chip (R1). Unreadable body (`seed.status==='malformed'`, or the editor's `onInvalidContent`, which
+  locks the write seam) → the EC-33 notice instead of the editor: `EmptyState` in `role="status"` + "Export a copy"
+  (raw `.json`) + "Export as Markdown" when the bytes parse (notes-rescope R0, BR-R0-1/9) [FACT: note-editor-body.tsx]. Does not use
+  `canvas-editor/page-binding.ts` (no production importer) [FACT: note-editor-body.tsx:14,31].
+- **Overviews** — components (`ComponentType<OverviewContext>`); the registry holds only `note` (`NoteOverview`), which
+  is also the fallback for every other type (journal → journals-rescope; `*_note` → fe-tasks/fe-projects) [FACT:
+  overview-registry.ts]. NoteOverview merged = NotionHeader + Attachments + Backlinks; tabbed = DashboardView blocks, all
+  `state:'success'` [FACT: note-overview.tsx].
+- **PageActions / PageSaveStatus** — the title-row slot: the `SyncStatus` chip from the per-page `save-status` store
+  (hidden when locked) + the ⋯ `Menu` only with items; `PageSaveStatus` is also Home's chip [FACT: page-actions.tsx;
+  save-status.ts]. **ReadErrorMessage** — the in-place read error + Retry [FACT: read-error-message.tsx; read-error.ts].
+- **NotionHeader / MetadataControls** — the cover strip (`CoverBanner` → `CoverImage`, both Overview modes) · the icon badge
+  (`pageIconFor`) · the labelled controls (icon + visible label; Favorite/Archive `aria-pressed`; `aria-disabled` while a
+  write is pending) opening the lazy `IconPickerDialog` / `CoverPickerDialog` · read-only Type/Updated rows (R3)
+  [FACT: notion-header.tsx; page-metadata.tsx; icon-picker.tsx; cover-picker.tsx].
+- **AttachmentsPanel** — 4 states, `role=list`, per-item "Remove {filename}", "Add attachment" [FACT: attachments-list.tsx:87-132].
+- **BacklinksPanel** — 4 states, grouped by module, "· N links"; items **not navigable** [FACT: backlinks-panel.tsx:26-67].
+- **SummaryBlock** `{date}` — per-section degrade ladder [FACT: summary-block.tsx:46-92].
+- **NotesSearch** — `role=search`, Esc clears, exhaustive `never` status switch, results plain text (no navigation)
+  [FACT: notes-search.tsx:30-105].
+- **WikiLinkPicker** — `role=listbox`/`option`, arrow/Enter, explicit "Create “q”" row; **no text input** (query can't
+  change in UI) [FACT: wikilink-picker.tsx:28-141]. **PreviewCard** — title + type only [FACT: link-preview-card.tsx:13-37].
+- **TemplatePicker** — `role=group`, 4 states, Apply/Save no-op [FACT: template-picker.tsx:65-125].
+
+### Editor integration (`@vida/editor`)
+- The only suggestion trigger is `/` [FACT: packages/editor/src/extensions/slash-command.ts:96]; **no `[[` input rule**
+  exists. The picker mounts only under DEV `?picker` [FACT: note-entity.tsx:127,134-141].
+- `/summary` = `dailySummary` node with a generic placeholder node-view "Available when its module ships"
+  [FACT: packages/editor/src/commands.ts:10-15; extensions/integration-blocks.tsx:147-161,202-204].
+
+### Key states
+List: loading · empty · error · success (`degraded` never populated) · DEV sample. Page: loading · error · not-found ·
+success. Editor save: idle · saving · saved · error. Editor body: editable · unreadable (EC-33 notice). Picker: populated · empty (searching/error unreachable).
+
+### Consumers outside `notes/`
+`home/journal-page-region.tsx:22,70` mounts `NoteEditorBody` (journal writes go through `useNoteContent`);
+`home/use-journal-entry.ts` reuses `toNoteEntity` (key `['journal',date]`, read via `readAfterWrites(['journal:<date>'])`);
+`app/calendar/use-calendar.ts:19,138` reuses `parseContent` (the null-contract wrapper of `parseContentResult`).
+
+---
+
+## Deferred / homed elsewhere (not in this context)
+`/summary` providers → HARD-1 · backlinks + neural graph data → HARD-3 · FTS5 search → DB-8 · `[E]` field encryption →
+M3/DB-5 · CRDT/Yjs `content` merge → M4 · hard-delete cascade → Part 2 · `word_count` derivation → editor/FTS ·
+EC-18b–e/20/21 entity overviews → fe-tasks / fe-projects (RIDE) [FACT: docs/specs/foundation/golive-replan/coverage-report.md:21-72].

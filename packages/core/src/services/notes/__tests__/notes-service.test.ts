@@ -18,7 +18,9 @@ import { createSpacesService } from '../../../foundation/spaces/service'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService } from '../service'
 import {
+  InvalidPageContentError,
   JournalExistsError,
+  PageNotFoundError,
   UnregisteredEntityTypeError,
   type NotesService,
   type UpdatePageInput,
@@ -376,5 +378,180 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
     const entities = await h.svc.getEntitiesByTag(tag.id)
     expect(entities).toHaveLength(1)
     expect(entities[0]!.entity_id).toBe('t3')
+  })
+})
+
+// ── notes-rescope R0 · data safety (PLAN-R0 §4 A, tests 1–4) ─────────────────
+describe('notes-rescope R0 — data safety (live store)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+  const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hi' }] }] }
+  type Doc = Parameters<NotesService['writePageContent']>[1]
+  const bytes = { filename: 'a.bin', mimeType: 'application/octet-stream', encryptedBlob: new Uint8Array([1]), sizeBytes: 1 }
+
+  async function deletedPage() {
+    const p = await h.svc.createPage({ type: 'note', title: 'gone' })
+    await h.svc.softDeletePage(p.id)
+    return p
+  }
+
+  it('writePageContent / updatePage reject a soft-deleted page with PageNotFoundError (BR-R0-5)', async () => {
+    const p = await deletedPage()
+    await expect(h.svc.writePageContent(p.id, doc as unknown as Doc)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.updatePage(p.id, { title: 'x' })).rejects.toBeInstanceOf(PageNotFoundError)
+  })
+
+  it('writePageContent / updatePage reject an unknown id with PageNotFoundError (BR-R0-5)', async () => {
+    await expect(h.svc.writePageContent('nope', doc as unknown as Doc)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.updatePage('nope', { title: 'x' })).rejects.toBeInstanceOf(PageNotFoundError)
+  })
+
+  it('addAttachment · createPageLink (either end) · createEntityLink reject a deleted page (BR-R0-5)', async () => {
+    h.registry.register('task')
+    const live = await h.svc.createPage({ type: 'note', title: 'live' })
+    const gone = await deletedPage()
+    await expect(h.svc.addAttachment(gone.id, bytes)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.createPageLink(gone.id, live.id)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.createPageLink(live.id, gone.id)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.createEntityLink(gone.id, 'task', 't1')).rejects.toBeInstanceOf(PageNotFoundError)
+  })
+
+  it('createEntityLink keeps the BR-S4-1 order: an unregistered type fails before the page check', async () => {
+    const gone = await deletedPage()
+    await expect(h.svc.createEntityLink(gone.id, 'nope_type', 'x')).rejects.toBeInstanceOf(
+      UnregisteredEntityTypeError,
+    )
+  })
+
+  it('typed errors carry a stable .name + the page id (BR-S1-6 convention)', async () => {
+    const err = await h.svc.writePageContent('nope', doc as unknown as Doc).catch((e: unknown) => e)
+    expect(err).toMatchObject({ name: 'PageNotFoundError', pageId: 'nope' })
+  })
+
+  it.each([
+    ['non-doc root', { type: 'paragraph' }],
+    ['doc without content', { type: 'doc' }],
+    ['child without a type', { type: 'doc', content: [{ text: 'x' }] }],
+  ])('writePageContent rejects a %s with InvalidPageContentError; the row is unchanged (BR-R0-6)', async (_l, bad) => {
+    const p = await h.svc.createPage({ type: 'note', title: 'keep' })
+    await h.svc.writePageContent(p.id, doc as unknown as Doc)
+    const err = await h.svc.writePageContent(p.id, bad as unknown as Doc).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(InvalidPageContentError)
+    expect(err).toMatchObject({ name: 'InvalidPageContentError', pageId: p.id })
+    expect((await h.svc.getPage(p.id))?.content).toBe(JSON.stringify(doc))
+  })
+
+  it('createPage rejects non-JSON and non-doc content (BR-R0-6 on the create path)', async () => {
+    await expect(h.svc.createPage({ type: 'note', content: 'not json' })).rejects.toBeTruthy()
+    await expect(h.svc.createPage({ type: 'note', content: '{"type":"paragraph"}' })).rejects.toBeTruthy()
+    await expect(h.svc.createPage({ type: 'note', content: JSON.stringify(doc) })).resolves.toBeTruthy()
+  })
+
+  // G16 / BR-R0-4b: seeds must pass the EDITOR's schema check — ≥1 block, no empty text node.
+  function hasEmptyText(n: unknown): boolean {
+    const node = n as { type?: string; text?: string; content?: unknown[] }
+    if (node.type === 'text' && node.text === '') return true
+    return (node.content ?? []).some(hasEmptyText)
+  }
+
+  it.each([
+    ['empty seed', {}],
+    ['empty title', { title: '' }],
+    ['title only', { title: 'Chapter 1' }],
+    ['full seed', { title: 'T', type: 'feature', status: 'open', priority: 2 }],
+  ])('ensureEntityNote with a %s stores an editor-valid doc (BR-R0-4b)', async (_l, seed) => {
+    h.registry.register('book_bookmark')
+    const page = await h.svc.ensureEntityNote('note', 'book_bookmark', `e-${_l}`, seed)
+    const stored = JSON.parse(page.content ?? 'null') as { type: string; content: unknown[] }
+    expect(stored.type).toBe('doc')
+    expect(stored.content.length).toBeGreaterThanOrEqual(1)
+    expect(hasEmptyText(stored)).toBe(false)
+  })
+})
+
+// ── notes-rescope R3 · icon / cover domains (A-4) + the thumbnail-only read (PLAN-R3 G4/G5/G10 · IMPL R-7) ──────────
+describe('notes-rescope R3 — icon/cover domains on create AND update; getAttachmentThumbnail', () => {
+  let h: Harness
+  let sql: string[]
+  beforeEach(async () => {
+    await initVault()
+    const bsql = new Database(':memory:')
+    await migrate(createBetterSqlite3Driver(bsql))
+    sql = []
+    const base = createBetterSqlite3Driver(bsql)
+    const spy: SqliteDriver = {
+      ...base,
+      exec: (s, p) => (sql.push(s), base.exec(s, p)),
+      query: (s, p) => (sql.push(s), base.query(s, p)),
+      values: (s, p) => (sql.push(s), base.values(s, p)),
+    }
+    const db = createDrizzleProxy(spy)
+    const registry = createTaggableTypeRegistry()
+    const spaces = createSpacesService(db, DEVICE, registry)
+    const backlinks = createBacklinkResolver(db, DEVICE)
+    h = { svc: createNotesService({ db, deviceId: DEVICE, spaces, backlinks, registry }), db, registry, spaces }
+  })
+
+  const VALID_ICONS = ['star', 'book-open', 'heart-pulse', 'a1']
+  const BAD_ICONS = ['Star', '⭐', 'book_open', '-star', 'star-', 'a'.repeat(65), 'javascript:alert(1)']
+  const VALID_COVERS = ['https://example.com/a.png', 'http://localhost:5173/__e2e/cover.png', 'attachment:0190a1b2-c3d4']
+  const BAD_COVERS = ['javascript:alert(1)', 'data:image/png;base64,AAA', 'ftp://x/y.png', 'attachment:', `https://x/${'a'.repeat(2040)}`, 'https://a b']
+
+  it.each(VALID_ICONS)('icon %s is accepted on create and update', async (icon) => {
+    const p = await h.svc.createPage({ type: 'note', title: 'i', icon })
+    expect(p.icon).toBe(icon)
+    expect((await h.svc.updatePage(p.id, { icon })).icon).toBe(icon)
+  })
+  it.each(BAD_ICONS)('icon %s is rejected on create and update', async (icon) => {
+    await expect(h.svc.createPage({ type: 'note', title: 'i', icon })).rejects.toThrow()
+    const p = await h.svc.createPage({ type: 'note', title: 'i' })
+    await expect(h.svc.updatePage(p.id, { icon })).rejects.toThrow()
+  })
+  it.each(VALID_COVERS)('cover %s is accepted on create and update', async (cover_image) => {
+    const p = await h.svc.createPage({ type: 'note', title: 'c', cover_image })
+    expect(p.cover_image).toBe(cover_image)
+    expect((await h.svc.updatePage(p.id, { cover_image })).cover_image).toBe(cover_image)
+  })
+  it.each(BAD_COVERS)('cover %s is rejected on create and update', async (cover_image) => {
+    await expect(h.svc.createPage({ type: 'note', title: 'c', cover_image })).rejects.toThrow()
+    const p = await h.svc.createPage({ type: 'note', title: 'c' })
+    await expect(h.svc.updatePage(p.id, { cover_image })).rejects.toThrow()
+  })
+  it('null clears icon and cover', async () => {
+    const p = await h.svc.createPage({ type: 'note', title: 'x', icon: 'star', cover_image: 'https://e.com/a.png' })
+    const cleared = await h.svc.updatePage(p.id, { icon: null, cover_image: null })
+    expect(cleared.icon).toBeNull()
+    expect(cleared.cover_image).toBeNull()
+  })
+
+  it('getAttachmentThumbnail returns only the thumbnail bytes — the full blob is never selected', async () => {
+    const page = await h.svc.createPage({ type: 'note', title: 'img' })
+    const att = await h.svc.addAttachment(page.id, {
+      filename: 'p.png',
+      mimeType: 'image/png',
+      encryptedBlob: new Uint8Array([1, 2, 3]),
+      thumbnailBlob: new Uint8Array([7, 7]),
+      sizeBytes: 3,
+    })
+    sql.length = 0
+    const thumb = await h.svc.getAttachmentThumbnail(att.id)
+    expect(thumb && Array.from(thumb)).toEqual([7, 7])
+    expect(sql.join('\n')).toContain('thumbnail_blob')
+    expect(sql.join('\n')).not.toContain('encrypted_blob')
+  })
+  it('getAttachmentThumbnail → null with no thumbnail, an unknown id, or a removed attachment', async () => {
+    const page = await h.svc.createPage({ type: 'note', title: 'img' })
+    const noThumb = await h.svc.addAttachment(page.id, {
+      filename: 'a.bin', mimeType: 'image/png', encryptedBlob: new Uint8Array([1]), sizeBytes: 1,
+    })
+    expect(await h.svc.getAttachmentThumbnail(noThumb.id)).toBeNull()
+    expect(await h.svc.getAttachmentThumbnail('nope')).toBeNull()
+    const gone = await h.svc.addAttachment(page.id, {
+      filename: 'b.png', mimeType: 'image/png', encryptedBlob: new Uint8Array([1]), thumbnailBlob: new Uint8Array([2]), sizeBytes: 1,
+    })
+    await h.svc.removeAttachment(gone.id)
+    expect(await h.svc.getAttachmentThumbnail(gone.id)).toBeNull()
   })
 })

@@ -79,6 +79,9 @@ export interface NotesService {
   addAttachment(pageId: string, file: NewAttachment): Promise<NoteAttachmentRow>
   getAttachments(pageId: string): Promise<NoteAttachmentRow[]>
   removeAttachment(id: string): Promise<void>
+  /** The attachment's THUMBNAIL bytes only (never the full blob — performance-strategy "attachments never pre-loaded");
+   *  `null` when it has none, is unknown, or was removed. notes-rescope R3 (cover render). */
+  getAttachmentThumbnail(id: string): Promise<Uint8Array | null>
 
   // ── S3: Page-links + wiki resolution ────────────────────────────
   createPageLink(sourcePageId: string, targetPageId: string, context?: string): Promise<PageLinkRow>
@@ -117,5 +120,21 @@ export class UnregisteredEntityTypeError extends Error {
   constructor(public readonly entityType: string) {
     super(`Unregistered entity_type: "${entityType}"`)
     this.name = 'UnregisteredEntityTypeError'
+  }
+}
+
+/** BR-R0-5 — a write/create against a deleted or unknown page (deleted ⇒ unreachable by id, IR-R3). */
+export class PageNotFoundError extends Error {
+  constructor(public readonly pageId: string) {
+    super(`Page not found: ${pageId}`)
+    this.name = 'PageNotFoundError'
+  }
+}
+
+/** BR-R0-6 — a body that is not a shape-valid EditorDocument; nothing is written. */
+export class InvalidPageContentError extends Error {
+  constructor(public readonly pageId: string) {
+    super(`Invalid page content for ${pageId}: not an EditorDocument`)
+    this.name = 'InvalidPageContentError'
   }
 }

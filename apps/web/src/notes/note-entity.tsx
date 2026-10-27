@@ -4,21 +4,31 @@
 // editor facet + the per-type Layout-facet slot. First consumer of the #6 entity
 // adapter (`toEntityProps` + `EntityModeStore`) and the #7 editor binding.
 //
-// Editor-led (EC-4): `defaultFacet='editor'` opens on the Note tab. The merged layout
-// is a continuous Notion page; the tabbed Overview is the per-type DashboardView grid
-// (overview-registry). Data is M1-stub (useNoteEntity — honest-empty / `?sample`).
+// Editor-led (EC-4): `defaultFacet='editor'` opens on the Note tab — for EVERY page type
+// (notes-rescope R1: the page gate keys on PAGE_TYPE, NP-10 / EC-15). The merged layout is
+// a continuous Notion page; the tabbed Overview is the per-type component from
+// overview-registry, mounted as `<Overview/>`. Data is LIVE (useNoteEntity → getPage);
+// `?sample` is the DEV fixture. The title row carries the one save chip + the ⋯ slot
+// (PageActions); a read error offers Retry in place.
 //
-// Memory (D-S2-3 / O4): the merged/tabbed choice rides the `EntityModeStore`
-// CONVENTION on the in-memory reference store — the durable storage schema is
-// design-pass-open, never invented here.
+// Memory (notes-rescope R2, EC-5): the merged/tabbed choice is remembered per page on this device (`app_state`,
+// `useEntityModeStore`) — seeded with the type's default while the read loads; the DEV `?sample` page uses the
+// in-memory reference store.
 // ============================================================================
-import { useState } from 'react'
+import { useRef, useState, type Ref } from 'react'
 import { getRouteApi } from '@tanstack/react-router'
 import { Text, View } from '@tamagui/core'
 import { EmptyState, EntityView, type FacetMode } from '@vida/ui'
-import { createInMemoryEntityModeStore, toEntityProps } from '../entity/adapter'
+import { createInMemoryEntityModeStore, toEntityProps, type EntityModeStore } from '../entity/adapter'
 import { NoteEditorBody } from './note-editor-body'
 import { overviewFor } from './overview-registry'
+import { pageLabel } from './note-chrome'
+import { PageActions } from './page-actions'
+import { ReadErrorMessage } from './read-error-message'
+import { useEntityModeStore } from './use-entity-modes'
+import { usePageMetadata } from './use-page-metadata'
+import { RenameDialog } from './rename-dialog'
+import { useFocusOnRecovery } from './use-focus-on-recovery'
 import { useNoteEntity, type NoteEntityData } from './use-note-entity'
 import { WikiLinkPicker } from './wikilink-picker'
 import { PreviewCard } from './link-preview-card'
@@ -37,9 +47,9 @@ function devFlagActive(flag: string): boolean {
   )
 }
 
-// The merged/tabbed memory store (O4 CONVENTION on the in-memory reference impl; durable schema deferred).
-// Default 'tabbed' so `defaultFacet='editor'` opens the note on its Note (editor) tab (EC-4/EC-5).
-const modeStore = createInMemoryEntityModeStore('tabbed')
+// The in-memory reference store — the DEV `?sample` page and tests (the live page passes the app_state store, R2).
+const referenceModeStore = createInMemoryEntityModeStore('tabbed')
+
 
 /** A centered page-level state host (the surface owns loading/empty/error before the frame mounts). */
 function Centered({ children, role, busy }: { children: React.ReactNode; role?: 'status'; busy?: boolean }) {
@@ -60,7 +70,13 @@ function Centered({ children, role, busy }: { children: React.ReactNode; role?: 
 
 export function NoteEntity() {
   const { id } = routeApi.useParams()
-  const { page, state } = useNoteEntity(id)
+  const sample = devFlagActive('sample')
+  const { page, state, retry, retrying } = useNoteEntity(id)
+  // Called before any early return (hook order). The page never waits on it: seeded default while loading (R2 G4).
+  const modeStore = useEntityModeStore(!sample)
+  // R3 G14: after a recovered read, focus the page's H1 (the Retry button is gone).
+  const titleRef = useRef<HTMLElement>(null)
+  useFocusOnRecovery(state, titleRef)
 
   // Explicit per-state ladder (g2 N1) — covers the live-swap's future loading+null; aria-busy on the region HOST (g2 B1).
   if (state === 'loading') {
@@ -74,10 +90,8 @@ export function NoteEntity() {
   }
   if (state === 'error') {
     return (
-      <Centered role="status">
-        <Text fontSize="$small" color="$colorTextMuted">
-          Couldn’t load this page.
-        </Text>
+      <Centered>
+        <ReadErrorMessage message="Couldn’t load this page." retry={retry} retrying={retrying} />
       </Centered>
     )
   }
@@ -95,24 +109,47 @@ export function NoteEntity() {
     )
   }
 
-  // key={id} resets the per-instance mode state on navigation between note pages.
-  return <NoteEntityView key={id} page={page} />
+  // key={id} resets the per-page toggle override on navigation between note pages.
+  return <NoteEntityView key={id} page={page} modeStore={sample ? undefined : modeStore} titleRef={titleRef} />
 }
 
 /** The success body — page is guaranteed, so the mode hook sits here (clean hook order). */
-export function NoteEntityView({ page }: { page: NoteEntityData }) {
-  const [mode, setMode] = useState<FacetMode>(() => modeStore.readMode(page.type, page.id))
+export function NoteEntityView({
+  page,
+  modeStore = referenceModeStore,
+  titleRef,
+}: {
+  page: NoteEntityData
+  modeStore?: EntityModeStore
+  /** The H1 — NoteEntity's focus target after a recovered read (R3 G14). */
+  titleRef?: Ref<HTMLElement>
+}) {
+  // R3: rename both ways (EC-25) — the inline title seam and ⋯ → Rename share ONE mutation.
+  const m = usePageMetadata(page)
+  const [renaming, setRenaming] = useState(false)
+  // The ⋯ items arrive with their legs: Rename (R3) · Move to Trash (R5) · Save as template (R9).
+  const actions = [{ id: 'rename', label: 'Rename', onSelect: () => setRenaming(true) }]
+  // The user's toggle for this mount wins; otherwise the store (remembered, or the per-type default while loading).
+  const [override, setOverride] = useState<FacetMode | null>(null)
+  const mode = override ?? modeStore.readMode(page.type, page.id)
   const onModeChange = (next: FacetMode) => {
-    modeStore.persistMode(page.type, page.id, next)
-    setMode(next)
+    modeStore.persistMode(page.type, page.id, next) // in the handler — never in a state updater (StrictMode)
+    setOverride(next)
   }
 
-  const layout = overviewFor(page.type)({ page, mode })
+  const Overview = overviewFor(page.type)
+  const layout = <Overview page={page} mode={mode} /> // a component (IR-R13): its hooks bind to it, not to this page
   const props = toEntityProps({
-    title: page.title,
+    title: pageLabel(page), // never empty (E-3 / BR-R1-2)
     entityType: page.type,
     hasPage: true,
-    editorNode: <NoteEditorBody page={page} />, // gated by offersEditor inside toEntityProps
+    gate: 'page', // NP-10 / EC-15: every page type is editor-capable on the page surface
+    // The title-row slot: the ONE save chip (EC-34) + the ⋯ menu (Rename now; Trash R5 · template R9).
+    action: <PageActions pageId={page.id} locked={page.contentStatus === 'malformed'} items={actions} />,
+    onTitleCommit: m.rename,
+    titleEditValue: page.title, // the RAW title — the visible one may be a pageLabel fallback
+    titleRef,
+    editorNode: <NoteEditorBody page={page} />, // gated by offersPageEditor inside toEntityProps
     editorState: 'success',
     layout,
     mode,
@@ -123,7 +160,12 @@ export function NoteEntityView({ page }: { page: NoteEntityData }) {
   })
 
   // EntityView self-names its region via the visible title (aria-labelledby → titleId); no redundant aria-label (g2 N-corr-2).
-  const view = <EntityView {...props} />
+  const view = (
+    <>
+      <EntityView {...props} />
+      <RenameDialog open={renaming} onOpenChange={setRenaming} value={page.title} onSave={m.rename} />
+    </>
+  )
   const showPicker = devFlagActive('picker')
   const showTemplates = devFlagActive('templates')
   if (!showPicker && !showTemplates) return view

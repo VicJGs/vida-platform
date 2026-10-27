@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PAGE_TYPE } from '@vida/types'
+import { isEditorDocumentJson } from './editor'
 
 // ============================================================================
 // Notes & Pages validators (DB-9) — REBUILT in P2 (backend-replan).
@@ -21,19 +22,44 @@ export const PageTypeSchema = z.enum(PAGE_TYPE)
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 /** createPage input — reuses PageTypeSchema (never re-declares z.enum(PAGE_TYPE)). */
+/**
+ * Page icon = a Lucide icon NAME in kebab-case (notes-rescope R3, A-4 · EC-29/EC-22: a Lucide grid, never emoji). Core
+ * validates the shape; the UI owns which names it offers (and renders the type icon for an unknown one).
+ */
+export const pageIconSchema = z
+  .string()
+  .max(64)
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'icon must be a Lucide icon name (kebab-case)')
+
+/**
+ * Page cover = an http(s) image URL (≤ 2048 chars, no whitespace) or `attachment:<id>` (one of the page's attachments) —
+ * notes-rescope R3, A-4 · EC-29 "paste an image link · use an attachment". `cover_image` stays [E].
+ */
+export const pageCoverSchema = z.union([
+  z.string().max(2048).regex(/^https?:\/\/\S+$/i, 'cover must be an http(s) URL'),
+  z.string().regex(/^attachment:[0-9A-Za-z-]+$/, 'cover must be attachment:<id>'),
+])
+
 export const createPageSchema = z
   .object({
     type: PageTypeSchema,
     title: z.string().nullish(),
-    content: z.string().nullish(),
+    // BR-R0-6 (notes-rescope R0): a body, when given, must be a serialized EditorDocument — the create path gets the
+    // same shape guard as writePageContent, so no writer can store a body the editor would blank and overwrite.
+    content: z
+      .string()
+      .nullish()
+      .refine((c) => c == null || isEditorDocumentJson(c), {
+        message: 'content must be a serialized EditorDocument',
+      }),
     parent_id: z.string().nullish(),
     entity_type: z.string().nullish(),
     entity_id: z.string().nullish(),
     journal_date: z.string().regex(CALENDAR_DATE, 'journal_date must be YYYY-MM-DD').nullish(),
     is_favorite: z.boolean().optional(),
     is_archived: z.boolean().optional(),
-    icon: z.string().nullish(),
-    cover_image: z.string().nullish(),
+    icon: pageIconSchema.nullish(),
+    cover_image: pageCoverSchema.nullish(),
     summary_config: z.string().nullish(),
     has_pomodoro: z.boolean().optional(),
     word_count: z.number().int().nonnegative().optional(),
@@ -53,8 +79,8 @@ export const updatePageSchema = z
     parent_id: z.string().nullish(),
     is_favorite: z.boolean().optional(),
     is_archived: z.boolean().optional(),
-    icon: z.string().nullish(),
-    cover_image: z.string().nullish(),
+    icon: pageIconSchema.nullish(),
+    cover_image: pageCoverSchema.nullish(),
     summary_config: z.string().nullish(),
     has_pomodoro: z.boolean().optional(),
     word_count: z.number().int().nonnegative().optional(),

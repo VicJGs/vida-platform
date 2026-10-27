@@ -1,17 +1,18 @@
 // ============================================================================
 // overview-registry — the Layout-facet SLOT (the cross-unit RIDE seam, slice-map D1
-// / seam-contract 3a). A module-level map from `entity_type` → an Overview renderer.
+// / seam-contract 3a). A module-level map from page type → an Overview COMPONENT.
 //
-// S2 registers `note` (full) + `journal` (stub); fe-tasks/fe-projects call
-// `registerOverview` for their types later (zero-signature swap). An ABSENT renderer
-// falls back to fe-notes' own `note` layout — empty-but-functional, no dead
-// affordance (the fe-shell panel-slot precedent).
+// Notes registers only `note` (BR-R1-4); the journal Overview is journals-rescope's (EC-18a re-pin), and
+// fe-tasks/fe-projects register their `*_note` types (zero-signature swap). An ABSENT renderer falls back to
+// fe-notes' own `note` layout — empty-but-functional, no dead affordance (the fe-shell panel-slot precedent).
+// Renderers are components, mounted as `<Overview/>` (notes-rescope R1, IR-R13): a registrant's hooks bind to its own
+// instance, never to the page that hosts it.
 // ============================================================================
-import type { ReactNode } from 'react'
+import type { ComponentType } from 'react'
 import type { FacetMode } from '@vida/ui'
 import type { PageType } from '@vida/types'
 import type { NoteEntityData } from './use-note-entity'
-import { noteOverview, journalOverviewStub } from './note-overview'
+import { NoteOverview } from './note-overview'
 
 /** What a renderer receives: the page + the active facet mode (it branches merged⇄tabbed). */
 export interface OverviewContext {
@@ -19,8 +20,8 @@ export interface OverviewContext {
   mode: FacetMode
 }
 
-/** A per-entity-type Layout-facet renderer (the RIDE contract the owning unit implements). */
-export type OverviewRenderer = (ctx: OverviewContext) => ReactNode
+/** A per-page-type Layout-facet component (the RIDE contract the owning unit implements). */
+export type OverviewRenderer = ComponentType<OverviewContext>
 
 const registry = new Map<PageType, OverviewRenderer>()
 
@@ -31,9 +32,8 @@ export function registerOverview(type: PageType, renderer: OverviewRenderer): vo
 
 /** Resolve the slot for an entity type. Absent ⇒ fe-notes' own `note` layout (empty-but-functional; seam-contract 3a). */
 export function overviewFor(type: PageType): OverviewRenderer {
-  return registry.get(type) ?? noteOverview
+  return registry.get(type) ?? NoteOverview
 }
 
-// S2 ships note (full) + journal (stub); the rest RIDE in later.
-registerOverview('note', noteOverview)
-registerOverview('journal', journalOverviewStub)
+// Notes owns the `note` Overview only; every other type RIDEs in from its owning unit.
+registerOverview('note', NoteOverview)

@@ -7,6 +7,7 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
   type ForwardRefExoticComponent,
   type RefAttributes,
 } from 'react'
@@ -35,6 +36,11 @@ export interface VidaEditorProps {
    *  `'bare'` = transparent, no border/radius/padding — the HOST supplies the surface (the Canvas: Editor notebook
    *  page); the focus-ring-on-frame host + writing flow are preserved. Additive + back-compat (omit ⇒ `'framed'`). */
   chrome?: 'framed' | 'bare'
+  /** notes-rescope R0 (BR-R0-3). Called ONCE at mount when the stored document fails the editor's schema (an unknown
+   *  node/mark, an empty doc, an empty text node). The editor is then read-only and emits NOTHING through `onChange`
+   *  for the rest of the mount — TipTap would otherwise load an EMPTY doc and the host would persist it over the real
+   *  content. The host decides what to show (e.g. a read-only notice). Optional + additive. */
+  onInvalidContent?: (error: Error) => void
   /** Placeholder text for the empty state. */
   placeholder?: string
   /** Accessible name for the textbox (a11y — BR-6). One of these is REQUIRED. */
@@ -124,9 +130,17 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
   // onChange is read through a ref so an unstable inline handler never recreates the Tiptap editor (which would
   // reset ProseMirror state + cursor). The editor is created ONCE (default `[]` deps).
   const onChangeRef = useRef(onChange)
+  const onInvalidContentRef = useRef(props.onInvalidContent)
   useEffect(() => {
     onChangeRef.current = onChange
+    onInvalidContentRef.current = props.onInvalidContent
   })
+
+  // BR-R0-3: set SYNCHRONOUSLY by `onContentError`, which TipTap emits inside the Editor constructor — before any
+  // `update` can fire (core binds the listener before createDoc). The ref gates onUpdate; the state re-renders the
+  // read-only/toolbar gates.
+  const invalidRef = useRef(false)
+  const [invalid, setInvalid] = useState(false)
 
   // Host attributes are a FUNCTION of state (not a static object) so the E4 slash menu can flip the host `role`
   // textbox→combobox while it is open (post-impl B1). editorProps.attributes is the SINGLE `role` writer — a plugin
@@ -164,7 +178,16 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
     // Vite SPA (spec §2). Tests must waitFor(editor.isEditable) before asserting the first onChange.
     immediatelyRender: false,
     editorProps: { attributes },
+    // BR-R0-3 — always on: a doc the schema rejects raises `contentError` instead of TipTap's silent swap to an empty
+    // doc (the C-46 data-loss path). The fallback doc is still empty, so the editor must never emit it.
+    enableContentCheck: true,
+    onContentError: ({ error }) => {
+      invalidRef.current = true
+      setInvalid(true)
+      onInvalidContentRef.current?.(error)
+    },
     onUpdate: ({ editor }) => {
+      if (invalidRef.current) return // BR-R0-3: an invalid mount never reaches the host's persistence
       // Fires on real keystrokes AND once on mount when Tiptap normalizes the seeded content. The mount emit is a
       // benign, idempotent echo of the initial doc (the app persists the value it just seeded — a no-op re-write, not
       // a loop). Programmatic RESETS are silenced at the source (setContent `emitUpdate:false`, BR-E1-1); consumers
@@ -173,10 +196,13 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
     },
   })
 
-  // `editable` is applied at creation, then kept in sync imperatively (no editor recreation).
+  // `editable` is applied at creation, then kept in sync imperatively (no editor recreation). The valid path keeps
+  // setEditable's DEFAULT update emit — that is the one benign mount echo hosts dedupe against (BR-E1-2). An invalid
+  // mount is forced read-only WITHOUT an emit (setEditable(false, false)); onUpdate's ref guard backs it up.
   useEffect(() => {
-    editor?.setEditable(editable)
-  }, [editor, editable])
+    const isInvalid = invalid || invalidRef.current
+    editor?.setEditable(editable && !isInvalid, !isInvalid)
+  }, [editor, editable, invalid])
 
   useImperativeHandle(
     ref,
@@ -201,7 +227,7 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
       {/* E3 toolbar — rendered ONLY when editor is non-null (useEditor is Editor|null under immediatelyRender:false,
           the null-editor gate, BR-E3-1) and the editor is editable + toolbar-enabled. A sibling ABOVE EditorContent,
           NOT inside the contenteditable (the role=textbox is on the inner .ProseMirror). */}
-      {toolbar && editable && editor ? (
+      {toolbar && editable && !invalid && editor ? (
         <EditorToolbar editor={editor} aria-label={ariaLabel ? `${ariaLabel} formatting` : undefined} />
       ) : null}
       <EditorContent editor={editor} />

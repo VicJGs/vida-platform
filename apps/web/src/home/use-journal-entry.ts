@@ -12,12 +12,18 @@
 // ============================================================================
 import { useQuery } from '@tanstack/react-query'
 import { getServices } from '../db/composition-root'
+import { readAfterWrites } from '../notes/body-writes'
+import { retryState, throwIfReadErrorArmed } from '../notes/read-error'
 import { toNoteEntity } from '../notes/live-mappers'
 import type { NoteEntityData, NoteEntityState } from '../notes/use-note-entity'
 
 export interface JournalEntryResult {
   page: NoteEntityData | null
   state: NoteEntityState
+  /** Re-read after an error (notes-rescope R1, BR-R1-8). */
+  retry: () => void
+  /** A Retry is in flight — the error branch stays with a busy button (R-6). */
+  retrying: boolean
 }
 
 /**
@@ -50,6 +56,8 @@ function sampleJournal(date: string): NoteEntityData {
       type: 'doc',
       content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Today’s entry — start writing.' }] }],
     },
+    contentStatus: 'ok',
+    rawContent: null,
     favorite: false,
     archived: false,
     updated: 'just now',
@@ -63,14 +71,22 @@ function sampleJournal(date: string): NoteEntityData {
 export function useJournalEntry(): JournalEntryResult {
   const sample = devSampleActive()
   const date = todayLocalYmd()
-  const { data, isLoading, isError } = useQuery({
+  const q = useQuery({
     queryKey: ['journal', date],
-    queryFn: async () => toNoteEntity(await (await getServices()).notes.ensureJournal(date)),
+    // Waits for any in-flight write of today's journal body (notes-rescope R0 barrier) — a mount right after the note
+    // page saved it must not seed the editor from the pre-write row (B-53).
+    queryFn: () => {
+      throwIfReadErrorArmed()
+      return readAfterWrites([`journal:${date}`], async () =>
+        toNoteEntity(await (await getServices()).notes.ensureJournal(date)),
+      )
+    },
     enabled: !sample,
   })
-  if (sample) return { page: sampleJournal(date), state: 'success' }
-  if (isError) return { page: null, state: 'error' }
+  const { error, retrying, retry } = retryState(q)
+  if (sample) return { page: sampleJournal(date), state: 'success', retry, retrying: false }
+  if (error) return { page: null, state: 'error', retry, retrying }
   // ensureJournal always yields a page → there is no 'empty' live state; a pending/absent read is 'loading'.
-  if (isLoading || !data) return { page: null, state: 'loading' }
-  return { page: data, state: 'success' }
+  if (q.isLoading || !q.data) return { page: null, state: 'loading', retry, retrying }
+  return { page: q.data, state: 'success', retry, retrying }
 }

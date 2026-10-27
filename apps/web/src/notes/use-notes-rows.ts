@@ -15,6 +15,7 @@ import type { PageType } from '@vida/types'
 import { useQuery } from '@tanstack/react-query'
 import { getServices } from '../db/composition-root'
 import { toNotesRow } from './live-mappers'
+import { retryState, throwIfReadErrorArmed } from './read-error'
 
 /** The row projection the notes collection renderers consume (a `pages`-row view; live mapping at the data-plane slice). */
 export interface NotesRow {
@@ -26,6 +27,12 @@ export interface NotesRow {
   /** YYYY-MM-DD for the calendar layout (live: journal_date ?? updated_at). */
   date: string
   favorite: boolean
+  /** The title came from the type (an untitled page, `pageLabel`) — the card name then drops its doubled type segment. */
+  labelFromType?: boolean
+  /** The page's chosen Lucide icon name (R3, E-4) — rendered via `pageIconFor`, falling back to the type icon. */
+  icon?: string | null
+  /** The page's cover (R3, E-4) — gallery tiles show it. */
+  cover?: string | null
 }
 
 export type NotesDataState = 'loading' | 'empty' | 'error' | 'success'
@@ -46,19 +53,27 @@ function devSampleActive(): boolean {
 export interface NotesRowsResult {
   rows: readonly NotesRow[]
   state: NotesDataState
+  /** Re-read after an error (notes-rescope R1, BR-R1-8). */
+  retry: () => void
+  /** A Retry is in flight — the error branch stays with a busy button (R-6). */
+  retrying: boolean
 }
 
 /** Live: React Query over `NotesService.listPages()` (zero signature change) + the DEV/gate sample. */
 export function useNotesRows(): NotesRowsResult {
   const sample = devSampleActive()
-  const { data, isLoading, isError } = useQuery({
+  const q = useQuery({
     queryKey: ['notes', 'pages'],
-    queryFn: async () => (await getServices()).notes.listPages(),
+    queryFn: async () => {
+      throwIfReadErrorArmed()
+      return (await getServices()).notes.listPages()
+    },
     enabled: !sample,
   })
-  if (sample) return { rows: DEV_SAMPLE, state: 'success' }
-  if (isError) return { rows: [], state: 'error' }
-  if (isLoading) return { rows: [], state: 'loading' }
-  const rows = (data ?? []).map(toNotesRow)
-  return { rows, state: rows.length ? 'success' : 'empty' }
+  const { error, retrying, retry } = retryState(q)
+  if (sample) return { rows: DEV_SAMPLE, state: 'success', retry, retrying: false }
+  if (error) return { rows: [], state: 'error', retry, retrying }
+  if (q.isLoading) return { rows: [], state: 'loading', retry, retrying }
+  const rows = (q.data ?? []).map(toNotesRow)
+  return { rows, state: rows.length ? 'success' : 'empty', retry, retrying }
 }
