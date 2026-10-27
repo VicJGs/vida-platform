@@ -781,7 +781,8 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   already holds the paired values (`display` 41 · `heading` 31 · `subheading` 25) — just select them. design.md §III pairs
   every size with its leading. Never a raw px (`lineHeight={40}` breaks "semantic type scale only, no px", decisions.md:57).
   jsdom can't resolve the value: assert the `_lh-` atomic class equals a reference `lineHeight="$<role>"` Text's; measure
-  px in the browser. Applied so far: the CanvasView title. Remaining unpaired sites = recorded sibling fixes
+  px in the browser. Applied so far: the CanvasView title · the EntityView title (notes-rescope R1 DEV-R1-1 — its title
+  row also wraps: `flexBasis:240` title group, the action slot drops below at 375). Remaining unpaired sites = recorded sibling fixes
   (`docs/specs/fixes/ds-type-lineheight-unpaired/`).
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 

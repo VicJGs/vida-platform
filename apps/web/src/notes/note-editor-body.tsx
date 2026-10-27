@@ -36,7 +36,9 @@ function markdownOf(raw: string | null): string | null {
     const value: unknown = JSON.parse(raw)
     // 'comment' keeps each integration block as a marker (least lossy for a rescue copy). BR-E6-9 degrades unknown
     // nodes/marks; the guard is top-level only, so malformed children can still throw here.
-    return isEditorDocument(value) ? toMarkdown(value, { include_frontmatter: false, integration_block_handling: 'comment' }) : null
+    return isEditorDocument(value)
+      ? toMarkdown(value, { include_frontmatter: false, integration_block_handling: 'comment' })
+      : null
   } catch {
     return null
   }
@@ -92,7 +94,7 @@ export function NoteEditorBody({ page }: NoteEditorBodyProps) {
       {invalid ? (
         <UnreadableNotice page={page} />
       ) : (
-      <VidaEditor
+        <VidaEditor
           chrome="bare"
           defaultValue={seed.doc ?? undefined}
           onChange={save}

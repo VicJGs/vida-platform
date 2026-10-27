@@ -80,7 +80,7 @@ crossing into `@vida/ui` [FACT: packages/core/src/db/schema/_registry.ts:5-158 l
   desktop; Tabs usable at 375 [FACT: collection-view.tsx:37-52 useTabletUp precedent] [EC-6].
   **Title row (notes-rescope R1, DEV-R1-1, 2026-10-27):** the title row wraps — the title group has `flexBasis: 240`, so when
   the title and the `action` slot don't both fit (375) the action drops below the title instead of squeezing it; the
-  `$display` title applies `lineHeight="$display"` (1.15) so wrapped lines never collide [FACT: entity-view.tsx:71-82,159].
+  `$display` title applies `lineHeight="$display"` (1.15) so wrapped lines never collide [FACT: entity-view.tsx:71-83,159].
 
 ## Resolved contract points (pinned at Envision; ratified here)
 1. **The registry gate is slot presence, not a `hasEditor` boolean** — forced by the `@vida/ui` boundary (can't consult the

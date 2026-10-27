@@ -208,9 +208,11 @@ R-1…R-6, DEV-R1-1).
 - **BR-R1-9 · One type-label set** — `note-chrome` `typeIcon`/`typeLabel`; card names = title · type · edited · favorite.
   [FACT: notes/note-renderers.tsx]
 - **`@vida/ui` EntityView (DEV-R1-1):** the title row wraps (`flexBasis:240` title group) and the title applies
-  `lineHeight="$display"`. [FACT: packages/ui/src/components/entity-view.tsx:71-82,159]
+  `lineHeight="$display"`. [FACT: packages/ui/src/components/entity-view.tsx:71-83,159]
 - Forward obligations: R7 feeds `pageLabel`'s `parentName` (A-33); R3/R5/R9 add the ⋯ items and call `notifyError`
-  from their mutations; R10 re-checks `SummaryBlock`.
+  from their mutations; R3 moves focus to the surface heading after a successful Retry; R10 re-checks `SummaryBlock`;
+  `locked` is sticky for the session — when a content-repair path or M4 sync can change a page's bytes, the store needs
+  a `clear(id)`.
 
 ## Deferred (documented)
 CRDT/Yjs multi-device merge of `content` (M4) · `[E]` content encryption (M3) · FTS5 of content (DB-8) · `word_count`

@@ -7,6 +7,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UIProvider } from '@vida/ui'
 import { NoteEntityView } from './note-entity'
 import { registerOverview } from './overview-registry'
+
+// R1 (BR-R1-7): a write failure the chip shows must NOT also toast — spy the shared toast.
+const notifySpy = vi.fn()
+vi.mock('../lib/notify-error', () => ({ notifyError: (...a: unknown[]) => notifySpy(...a) }))
 import type { NoteEntityData } from './use-note-entity'
 
 // The editor body persists content via the composition root (useNoteContent); mock it (no write in these tests).
@@ -106,6 +110,22 @@ describe('NoteEntityView (S2 — the note-entity frame)', () => {
     expect(getAllByText('Saved on this device')).toHaveLength(1)
     fireEvent.click(getByRole('button', { name: 'Merged' }))
     expect(getAllByText('Saved on this device')).toHaveLength(1)
+  })
+
+  it('A5 — tabbed: an edit flushed by switching to Overview fails → the chip reads "Couldn\'t save on this device", no toast', async () => {
+    seeds.length = 0
+    notifySpy.mockReset()
+    writeSpy.mockRejectedValueOnce(new Error('disk busy'))
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { getByRole, findByText } = renderUI(<NoteEntityView page={{ ...notePage, id: 'a5' }} />)
+    const edited: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }] }
+    const echo: EditorDocument = { type: 'doc', content: [{ type: 'paragraph' }] }
+    act(() => seeds.at(-1)?.onChange?.(echo)) // a blank page: the first emit is the mount echo, adopted (BR-NEU-5)
+    act(() => seeds.at(-1)?.onChange?.(edited)) // the real edit, pending
+    fireEvent.click(getByRole('tab', { name: 'Overview' })) // the body unmounts → its flush writes → rejects
+    expect(await findByText("Couldn't save on this device")).not.toBeNull()
+    expect(notifySpy).not.toHaveBeenCalled() // the chip observes the page → one announcement, no toast
+    errSpy.mockRestore()
   })
 
   it('BR-R1-6 — no ⋯ in R1 (no items yet → no dead affordance)', () => {

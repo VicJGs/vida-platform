@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R1 built (532e5ce) — Visual Gate + DEV-R1-1 awaiting Victor (2026-10-27)
+# Status: in-progress — Step 6: R1 built + critique SHIP — awaiting Victor: Visual Gate acceptance of the DEV-R1-1 re-shoot (2026-10-27); next R2 mode memory
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -27,7 +27,7 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 
 ## Active Tasks (slice-map R0…R10 — `docs/features/notes-and-pages/delivery/slice-map.md`)
 - [x] R0 — data safety (2026-10-26 · 853570e · 84b7f58 · a6bd158 · f2c35cc)
-- [ ] R1 — page frame  ← NEXT (§XXVI gate 1)
+- [~] R1 — page frame (532e5ce · 82b0a0d · 6e54402 · + critique follow-ups) — awaiting Visual Gate acceptance
 - [ ] R2 — mode memory
 - [ ] R3 — metadata + rename
 - [ ] R4 — attachments
@@ -90,3 +90,8 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
   dist. Visual Gate script 34/34 (axe 0 · one chip per host · Retry by keyboard). Own screenshot review found DEV-R1-1:
   375 px title squeeze (chip shares a no-wrap TitleRow; the greybox had it too) + a pre-existing EntityView title
   lineHeight bug → @vida/ui change proposed (plan said untouched) → awaiting Victor with the Visual Gate.
+- 2026-10-27 (Step 6 · R1 close) — Victor: DEV-R1-1 "Fix it now" → EntityView title row wraps + title lineHeight (6e54402),
+  re-shoot 34/34 (one run discarded: Vite reload sent the page Home). Full suite: 4 unrelated files timed out under load
+  avg 52–89, 30/30 alone. /component-audit 8.5. Final /critique SHIP; folded: A5 UI test, EntityView line-height test
+  (mutation-killed), lineheight-unpaired entry closed, citation/header nits, formatting; follow-ups homed: R3 focus-after-
+  Retry + ⋯ panel labelledby, R5 notifyError/toast bound, M4 save-status clear(id).

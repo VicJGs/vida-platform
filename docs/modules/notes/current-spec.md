@@ -4,8 +4,8 @@
 > connective HUB) and ② the `apps/web` **notes surface** (`/notes`, `/notes/$id`, the shared note editor body).
 > Every claim cites the code as-is.
 > Coverage: ① `services/notes/{index,types,service}.ts` + `validators/note.ts` + `schema/notes.ts` + `033_notes.ts` +
-> the one test file — **full** · ② `apps/web/src/notes/` non-test files **full** (R1 added `save-status` · `page-actions` · `read-error` · `read-error-message`), 17 test files counted
-> (122 `it`) not read; routes + `db/composition-root.ts` + `entity/adapter.ts` + `collection/*` read.
+> the one test file — **full** · ② `apps/web/src/notes/` non-test files **full** (R1 added `save-status` · `page-actions` · `read-error` · `read-error-message`), 26 test files counted
+> (~204 `it`) not read; routes + `db/composition-root.ts` + `entity/adapter.ts` + `collection/*` read.
 > Inherits: `docs/core` → ADR-002 (data model) · ADR-006 (spaces/registry) · ADR-008 (render targets) · ADR-009 (templates).
 > Intent authority: ① `docs/specs/foundation/backend-intent/parts/notes-and-pages.md` (NOT-01…54) ·
 > ② `docs/specs/foundation/fe-notes-and-pages/` (envision EC-1…24).

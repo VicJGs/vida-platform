@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { UIProvider } from '../provider'
+import { Text } from '@tamagui/core'
 import { EntityView } from './entity-view'
 
 afterEach(cleanup)
@@ -119,5 +120,22 @@ describe('EntityView — the Entity shell', () => {
       <EntityView title="Task" mode="merged" onModeChange={noop} layout={LAYOUT} editor={EDITOR} />,
     )
     expect(getByText('EDITOR BODY')).not.toBeNull()
+  })
+
+  it('DEV-R1-1 — the title pairs a display line-height with its display size (wrapped lines must not collide)', () => {
+    const { container, getByText } = renderUI(
+      <>
+        <EntityView title="A long entity title that wraps at 375" mode="merged" onModeChange={() => {}} layout={<div />} />
+        <Text data-ref="display" fontFamily="$display" fontSize="$display" lineHeight="$display">ref</Text>
+        <Text data-ref="body" fontFamily="$display" fontSize="$display" lineHeight="$body">ref</Text>
+      </>,
+    )
+    // jsdom resolves no CSS vars — assert the pairing STRUCTURALLY (the canvas-view precedent, packages/ui/src/CLAUDE.md):
+    // the title carries the same `_lh-` atomic class as a reference `lineHeight="$display"` Text, not a `$body` one.
+    const lhClass = (el: Element | null) => (el?.className.split(/\s+/) ?? []).find((c) => c.startsWith('_lh-'))
+    const displayLh = lhClass(container.querySelector('[data-ref="display"]'))
+    expect(displayLh).toBeDefined()
+    expect(lhClass(getByText('A long entity title that wraps at 375'))).toBe(displayLh)
+    expect(lhClass(container.querySelector('[data-ref="body"]'))).not.toBe(displayLh)
   })
 })

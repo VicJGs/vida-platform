@@ -68,6 +68,11 @@ R8 before R9 (templates carry live blocks). R6 before R9 (the "New from template
 - Rename both ways: editable title seam in `@vida/ui` EntityView (Enter/blur saves, Esc reverts) + ⋯ "Rename" dialog;
   same mutation (B-26 · B-28 · F-5).
 - Key set per mutation (B-54).
+- **From R1 (final critique, 2026-10-27):** focus after a successful Retry — the Retry button unmounts when content
+  replaces the error, focus falls to `<body>` (WCAG 2.4.3 best practice). On the error→success transition move focus to the
+  surface heading: note page = the EntityView H1 (this slice reworks the title seam — expose a focus target), collection
+  = the CollectionView title, Home = the journal frame (`tabIndex={-1}`). The ⋯ panel is labelled by its trigger
+  (`aria-labelledby`) once the first item (Rename) ships. Rename/metadata mutations call `notifyError` (BR-R1-7).
 **ECs:** EC-7 · EC-25 · EC-29 · EC-22. **Gate:** shared.
 
 ## R4 — Attachments  ·  SHARED
@@ -76,6 +81,8 @@ R8 before R9 (templates carry live blocks). R6 before R9 (the "New from template
 **ECs:** EC-8 · EC-30. **Gate:** shared (live: add → reload → listed).
 
 ## R5 — Delete, undo, OS-wide Trash  ·  SHARED
+- **From R1:** Trash adds mutations → each calls `notifyError`; bound the toast volume (one toast per failed write after
+  unmount, IMPLEMENTATION-PLAN-R1 §3).
 - ① `restorePage` (collision check → `JournalExistsError` / typed `*_note` conflict) · `listDeletedPages` · `deletePageForever`
   (NP-9 cascade, one tx; spaces rows via AR-6) · `emptyTrash`; re-delete is a no-op (A-10…A-16 · IR-R10/R11 · impact A).
 - Cross-module **Trash provider registry** `{entityType, listDeleted, restore, purge}`; notes registers first; composed (A-14).

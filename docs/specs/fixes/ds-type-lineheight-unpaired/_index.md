@@ -75,8 +75,8 @@ element — it inherits the font's **`$true`** default.
   work below, now under a stated convention rather than ad hoc.
 
 ## Sibling records (latent, found by inspection — "→ sibling fix", decisions.md:109 precedent; NOT folded)
-1. **Unpaired large type — 24 sites** (the 25-file sweep minus the CanvasView title fixed in F3): `@vida/ui` entity-view
-   · flow-session-view · canvas-reader · dialog · empty-state · pomodoro-widget · dashboard-view · calendar-view ·
+1. **Unpaired large type — 23 sites** (the 25-file sweep minus the CanvasView title fixed in F3 and the EntityView title
+   fixed by notes-rescope R1 DEV-R1-1, 2026-10-27): `@vida/ui` flow-session-view · canvas-reader · dialog · empty-state · pomodoro-widget · dashboard-view · calendar-view ·
    agenda-view; `apps/web` settings (surface + 5 panes) · gamification (surface, xp-hero) · home-surface · shell
    (app-shell, shell-panel) · notifications (surface, lens-dispatches) · onboarding (onboarding, guided-setup). Note
    `lens-dispatches.tsx:33,75` already worked around this with raw px (`lineHeight={40}`/`{30}`) — which breaks the
